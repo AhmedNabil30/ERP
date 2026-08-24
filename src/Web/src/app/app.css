@@ -1,0 +1,50 @@
+/*
+  Logical properties only. `margin-inline-start`, never `margin-left` — CLAUDE.md treats RTL as the
+  primary direction rather than a mirrored afterthought, and logical properties are what make one
+  stylesheet correct in both.
+*/
+
+.app-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: baseline;
+  justify-content: space-between;
+  padding-block: var(--space-3);
+  padding-inline: var(--space-4);
+  border-block-end: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.app-title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.locale-switch {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.locale-button {
+  padding-block: var(--space-1);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  min-block-size: 2.75rem;
+}
+
+.locale-button.is-active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.app-main {
+  padding-block: var(--space-4);
+  padding-inline: var(--space-4);
+}

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Kaff.Api.Tests</RootNamespace>
+    <AssemblyName>Kaff.Api.Tests</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Api\Kaff.Api.csproj" />
+    <ProjectReference Include="..\..\src\Domain\Kaff.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Infrastructure\Kaff.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Npgsql" />
+  </ItemGroup>
+
+</Project>

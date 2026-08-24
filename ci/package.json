@@ -1,0 +1,10 @@
+{
+  "name": "kaff-ci",
+  "private": true,
+  "type": "module",
+  "description": "Serves the built Angular application for the end-to-end job, proxying /api to the running API.",
+  "dependencies": {
+    "express": "^4.21.2",
+    "http-proxy-middleware": "^3.0.3"
+  }
+}

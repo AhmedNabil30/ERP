@@ -1,0 +1,211 @@
+name: CI
+
+# Every push and every pull request. CLAUDE.md: "The compiler is the first gate. If it doesn't build
+# clean, your work isn't done." This workflow is that gate, plus formatting and the test suites.
+
+on:
+  push:
+    branches: [main, 'slice/**']
+  pull_request:
+    branches: [main]
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  CI: true
+
+jobs:
+  backend:
+    name: Backend — format, build, test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        # 16 rather than latest: the guard script uses NULLS NOT DISTINCT, which needs 15 or later.
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore KaffErp.sln
+
+      # .editorconfig is enforced, not advisory. A formatting difference fails the build here rather
+      # than turning into review noise later.
+      - name: Verify formatting
+        run: dotnet format KaffErp.sln --verify-no-changes --no-restore
+
+      - name: Build
+        run: dotnet build KaffErp.sln --configuration Release --no-restore
+
+      # The test projects are Microsoft.Testing.Platform executables and are invoked directly, not
+      # through `dotnet test`.
+      #
+      # This is not a style preference. On this stack — SDK 10.0.400, xunit.v3 4.0.0, MTP 2.3.3 —
+      # `dotnet test` launches the host with `--server dotnettestcli`, the handshake produces
+      # nothing, and it reports "Zero tests ran" with exit code 5 after about 200ms. The same
+      # executable run directly discovers and runs every test and writes the same TRX. Verified on
+      # 2026-08-20; see decisions.md D-046. Revisit when the SDK or xunit.v3 moves.
+      - name: Domain tests
+        run: ./tests/Domain.Tests/bin/Release/net10.0/Kaff.Domain.Tests --report-trx --report-trx-filename domain.trx
+
+      # These need a real PostgreSQL: the append-only triggers, the non-negative balance guard and
+      # the ledger rules are enforced there, not in C#.
+      - name: Api and database tests
+        env:
+          KAFF_TEST_DB: "Host=localhost;Port=5432;Database=postgres;Username=postgres;Password=postgres;Include Error Detail=true"
+        run: ./tests/Api.Tests/bin/Release/net10.0/Kaff.Api.Tests --report-trx --report-trx-filename api.trx
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-test-results
+          path: '**/TestResults/**/*.trx'
+          if-no-files-found: ignore
+
+  web:
+    name: Web — build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/Web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: src/Web/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # strictTemplates is on, so this is a type check of every template as well as a build.
+      - name: Build
+        run: npm run build
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: src/Web/dist/kaff-web
+
+  e2e:
+    name: End to end — Playwright
+    runs-on: ubuntu-latest
+    needs: [backend, web]
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: kaff_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      KAFF_E2E_BASE_URL: http://localhost:4173
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build the API
+        run: dotnet build src/Api/Kaff.Api.csproj --configuration Release
+
+      - name: Build the E2E tests
+        run: dotnet build tests/E2E.Tests/Kaff.E2E.Tests.csproj --configuration Release
+
+      - name: Install Playwright browsers
+        run: pwsh tests/E2E.Tests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: Download the web build
+        uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: web-dist
+
+      - name: Start the API
+        env:
+          ASPNETCORE_ENVIRONMENT: Staging
+          ASPNETCORE_URLS: http://localhost:5080
+          ConnectionStrings__KaffDatabase: "Host=localhost;Port=5432;Database=kaff_e2e;Username=postgres;Password=postgres"
+          Jwt__Issuer: kaff-erp-e2e
+          Jwt__Audience: kaff-erp-e2e
+          Jwt__SigningKey: end-to-end-only-signing-key-long-enough-for-hmac
+          Kaff__ApplyMigrationsOnStartup: 'true'
+        run: |
+          nohup dotnet run --project src/Api/Kaff.Api.csproj --configuration Release --no-build > api.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:5080/api/health > /dev/null; then
+              echo "API is up."; exit 0
+            fi
+            sleep 2
+          done
+          echo "API did not become healthy."; cat api.log; exit 1
+
+      # A static server for the built SPA, proxying /api to the running API — the same shape as the
+      # nginx configuration used in the container image.
+      - name: Serve the web build
+        run: |
+          npm --prefix ci install
+          node ci/serve-e2e.mjs > web.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:4173/ > /dev/null; then
+              echo "Web is up."; exit 0
+            fi
+            sleep 2
+          done
+          echo "Web did not start."; cat web.log; exit 1
+
+      # Invoked directly, for the reason given on the backend job's test steps.
+      - name: Run the smoke suite
+        run: ./tests/E2E.Tests/bin/Release/net10.0/Kaff.E2E.Tests --report-trx --report-trx-filename e2e.trx
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-logs
+          path: |
+            api.log
+            web.log
+            '**/TestResults/*.trx'
+          if-no-files-found: ignore

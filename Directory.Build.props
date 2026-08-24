@@ -1,0 +1,49 @@
+<Project>
+
+  <!--
+    Applies to every .NET project in the repository.
+    CLAUDE.md: "The compiler is the first gate. If it doesn't build clean, your work isn't done."
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      Suppressions are deliberate and each carries a reason, per CLAUDE.md.
+      Nothing here relaxes a money, permission or audit rule.
+
+      CA1848  Use LoggerMessage delegates. High-frequency-logging micro-optimisation;
+              this codebase logs at request granularity, not in hot loops.
+      CA1873  Guard log calls with IsEnabled. Same family as CA1848 and the same reasoning: the
+              call sites are start-up (schema guards, seeding) and refused-request paths, none of
+              them hot. Revisit if logging ever appears inside a loop over postings.
+      CA1515  Make public types internal. Api types are bound by the framework and by
+              the test host; internal-by-default fights minimal APIs and WebApplicationFactory.
+      CA2007  ConfigureAwait(false). ASP.NET Core has no synchronisation context; the
+              analyser adds noise to every await for no behavioural difference.
+      CA1707  Underscores in member names. Test method names read as sentences.
+    -->
+    <NoWarn>$(NoWarn);CA1848;CA1873;CA1515;CA2007;CA1707</NoWarn>
+  </PropertyGroup>
+
+  <!--
+    InvariantGlobalization stays false: the UI is Arabic, dates and numbers are
+    formatted per locale, and phone normalisation depends on culture-aware digits.
+  -->
+
+</Project>

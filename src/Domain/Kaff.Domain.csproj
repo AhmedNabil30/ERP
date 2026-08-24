@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Domain has no infrastructure dependencies. No EF Core, no ASP.NET Core, no DI container.
+    Entities are plain classes; persistence is configured in Kaff.Infrastructure.
+    If a package reference appears here, something has leaked.
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Kaff.Domain</RootNamespace>
+    <AssemblyName>Kaff.Domain</AssemblyName>
+  </PropertyGroup>
+
+</Project>

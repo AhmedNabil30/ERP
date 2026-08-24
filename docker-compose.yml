@@ -1,0 +1,27 @@
+# Local development dependencies. The API and the Angular application run from your IDE against these.
+#
+# PostgreSQL 16 rather than latest: the guard script uses NULLS NOT DISTINCT, which needs 15 or later.
+# Pinning the same major version CI runs means a guard that works locally works there too.
+
+services:
+  db:
+    image: postgres:16
+    container_name: kaff-db
+    environment:
+      POSTGRES_USER: kaff
+      POSTGRES_PASSWORD: kaff
+      POSTGRES_DB: kaff
+      # Arabic collation for ordering names and Arabic text correctly.
+      LANG: C.UTF-8
+    ports:
+      - "5432:5432"
+    volumes:
+      - kaff-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kaff -d kaff"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  kaff-db-data:

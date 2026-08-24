@@ -1,0 +1,20 @@
+<header class="app-header">
+  <h1 class="app-title" data-testid="app-title">{{ i18n.t('app.name') }}</h1>
+
+  <nav class="locale-switch" [attr.aria-label]="i18n.t('app.language')">
+    @for (option of locales; track option.code) {
+      <button
+        type="button"
+        class="locale-button"
+        [class.is-active]="i18n.locale() === option.code"
+        [attr.aria-pressed]="i18n.locale() === option.code"
+        (click)="switchLocale(option.code)">
+        {{ option.label }}
+      </button>
+    }
+  </nav>
+</header>
+
+<main class="app-main">
+  <router-outlet />
+</main>

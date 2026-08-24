@@ -1,0 +1,42 @@
+# Rendered at container start by the nginx image's envsubst step.
+# Only KAFF_-prefixed variables are substituted (NGINX_ENVSUBST_FILTER in the Dockerfile), so nginx's
+# own $uri, $host and friends survive untouched.
+
+server {
+    listen 8080;
+    server_name _;
+    root /usr/share/nginx/html;
+
+    # UTF-8 by default: every page is Arabic.
+    charset utf-8;
+
+    # The Angular router owns every path that is not a real file.
+    location / {
+        try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-cache";
+    }
+
+    # Hashed build output is safe to cache for a long time.
+    location ~* \.(js|css|woff2?|png|jpe?g|svg|ico)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Translation catalogues are not hashed and change with content, so they must revalidate.
+    # A stale catalogue would show raw keys to users.
+    location /locales/ {
+        add_header Cache-Control "no-cache";
+    }
+
+    location /api/ {
+        proxy_pass ${KAFF_API_URL};
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "same-origin" always;
+}

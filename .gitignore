@@ -1,0 +1,38 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+artifacts/
+TestResults/
+*.trx
+*.coverage
+coverage/
+.vs/
+.idea/
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+
+# Playwright
+playwright-report/
+test-results/
+src/Web/.playwright/
+
+# Local secrets and environment
+*.env
+.env.*
+appsettings.Local.json
+appsettings.*.Local.json
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Screenshots and logs from .claude/skills/run-kaff-erp/driver.mjs
+shots/
+api.log
+web.log

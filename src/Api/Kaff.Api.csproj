@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>Kaff.Api</RootNamespace>
+    <AssemblyName>Kaff.Api</AssemblyName>
+    <UserSecretsId>kaff-erp-api</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Domain\Kaff.Domain.csproj" />
+    <ProjectReference Include="..\Infrastructure\Kaff.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Kaff.Api.Tests drives the real host, including its internal wiring. -->
+    <InternalsVisibleTo Include="Kaff.Api.Tests" />
+  </ItemGroup>
+
+</Project>

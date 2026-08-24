@@ -1,0 +1,97 @@
+name: Deploy to staging
+
+# Merge to main deploys to staging. CLAUDE.md's definition of done includes "Runs on staging, not
+# only locally" — that is not true until this pipeline puts it there.
+#
+# OPEN QUESTION — the staging target is not specified anywhere in spec.md or CLAUDE.md. This workflow
+# therefore builds and publishes container images, which is the portable part, and stops at a
+# deployment step that is gated on secrets. Filling in that step needs an answer from Nabil: where
+# does staging run, and how is it reached? See decisions.md D-023.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository }}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  images:
+    name: Build and publish images
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Sign in to the registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push the API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: src/Api/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/api:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/api:staging
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push the web image
+        uses: docker/build-push-action@v6
+        with:
+          context: src/Web
+          file: src/Web/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/web:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/web:staging
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: images
+    environment:
+      name: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Deliberately explicit rather than a guessed deployment. Inventing infrastructure would be the
+      # same mistake as inventing a business rule: plausible, unreviewed, and wrong.
+      - name: Check the target is configured
+        run: |
+          if [ -z "${{ vars.STAGING_DEPLOY_TARGET }}" ]; then
+            echo "::warning::No staging target configured. Images are published and tagged 'staging';"
+            echo "::warning::set the STAGING_DEPLOY_TARGET variable and complete this job once Nabil"
+            echo "::warning::confirms where staging runs. See decisions.md D-023."
+            exit 0
+          fi
+          echo "Deploying ${{ github.sha }} to ${{ vars.STAGING_DEPLOY_TARGET }}."
+
+      - name: Smoke check
+        if: vars.STAGING_URL != ''
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf "${{ vars.STAGING_URL }}/api/health" | grep -q '"guardsInstalled":true'; then
+              echo "Staging is healthy and its database guards are installed."; exit 0
+            fi
+            sleep 10
+          done
+          echo "Staging did not report healthy with guards installed."; exit 1

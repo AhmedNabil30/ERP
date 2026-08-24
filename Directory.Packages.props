@@ -1,0 +1,83 @@
+<Project>
+
+  <!--
+    Central Package Management. One version per package for the whole solution so a session cannot
+    silently introduce a second version of EF Core or Npgsql.
+
+    NuGet audit is on and its findings are errors, because Directory.Build.props sets
+    TreatWarningsAsErrors. That is deliberate for a system holding real money: a build that ships a
+    package with a known high-severity vulnerability should not be a build that succeeds.
+
+    The consequence is real and worth stating. A new advisory published tomorrow will fail a build
+    for a change that has nothing to do with it. When that happens the fix is to bump the package —
+    as was done here — and NOT to disable the audit. If a fix genuinely is not available yet,
+    suppress that one advisory by id in Directory.Build.props with a comment naming the package and
+    the date, so the suppression is visible and expires by review rather than by being forgotten.
+  -->
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+
+    <!-- Audit transitive packages too, not only direct references. Both vulnerabilities found on
+         the first restore of this repository were transitive. -->
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <NuGetAuditLevel>low</NuGetAuditLevel>
+  </PropertyGroup>
+
+  <ItemGroup Label="Data">
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
+    <!--
+      Design 10.0.0 reached System.Security.Cryptography.Xml 9.0.0 through
+      Microsoft.Build.Tasks.Core, which carried eight known high-severity advisories.
+      10.0.11 no longer depends on Build.Tasks.Core at all.
+    -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.11" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+  </ItemGroup>
+
+  <ItemGroup Label="Api">
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.11" />
+    <!--
+      10.0.0 pinned Microsoft.OpenApi to exactly 2.0.0, which carries GHSA-v5pm-xwqc-g5wc.
+      10.0.11 widens the range to [2.7.5, 3.0.0), which resolves to a patched version.
+    -->
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
+  </ItemGroup>
+
+  <ItemGroup Label="Extensions">
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.11" />
+  </ItemGroup>
+
+  <ItemGroup Label="Test">
+    <!--
+      No Microsoft.NET.Test.Sdk and no xunit.runner.visualstudio. Those drive the VSTest host, and
+      the .NET 10 SDK no longer supports running Microsoft.Testing.Platform through it. xunit.v3 4.x
+      can host MTP, but does so only when `UseMicrosoftTestingPlatformRunner` is set — see
+      tests/Directory.Build.props, which is where that actually happens, and decisions.md D-046.
+    -->
+    <PackageVersion Include="xunit.v3" Version="4.0.0" />
+    <!--
+      TRX output. Not a convenience: CI publishes a test report from it, and a run whose results
+      cannot be read is a run nobody looks at. The TRX writer is a separate MTP extension. xunit.v3
+      brings TrxReport.Abstractions but not the writer, so the report-trx option is rejected as
+      unknown without this. Version tracks Microsoft.Testing.Platform 2.3.3, which xunit.v3 4.0.0
+      carries; the two are a matched pair and should move together.
+    -->
+    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport" Version="2.3.3" />
+    <!--
+      FluentAssertions is pinned to 7.2.0 deliberately, and this is NOT a stale version to bump.
+      Version 8 and later moved to the Xceed commercial licence, which requires a paid seat for a
+      commercial product such as Kaff. 7.2.0 is the last Apache-2.0 release. See decisions.md D-021 —
+      the decision to stay, buy licences, or move to another assertion library is Nabil's.
+    -->
+    <PackageVersion Include="FluentAssertions" Version="7.2.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Playwright" Version="1.62.0" />
+    <PackageVersion Include="Npgsql" Version="10.0.3" />
+  </ItemGroup>
+
+</Project>

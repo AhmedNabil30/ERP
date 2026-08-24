@@ -1,0 +1,42 @@
+<Project>
+
+  <!--
+    MSBuild stops at the FIRST Directory.Build.props it finds walking up from a project, so this
+    file shadows the repository-root one rather than adding to it. Without the import below, the
+    test projects lose TargetFramework, nullable, warnings-as-errors and central package
+    management, and restore fails outright with NETSDK1013.
+
+    Imported by explicit relative path. The GetPathOfFileAbove idiom searches strictly above the
+    directory it is handed, so from tests/ it steps over the repository root and finds nothing.
+  -->
+  <Import Project="..\Directory.Build.props" />
+
+  <PropertyGroup>
+    <!--
+      Selects Microsoft.Testing.Platform as the runner these test executables host.
+
+      This is NOT redundant with global.json's `"test": { "runner": "Microsoft.Testing.Platform" }`.
+      The two settings answer different questions, and until 2026-08-20 only the first was set:
+
+        global.json                        what `dotnet test` SPEAKS to the executable
+        UseMicrosoftTestingPlatformRunner  what the executable IS
+
+      xunit.v3 generates the entry point at build time and reads this property to decide which
+      runner to emit. Left unset it emits xUnit's own in-process console runner, which does not
+      speak the MTP protocol, so `dotnet test` connected, got nothing back, and reported
+      "Zero tests ran" with exit code 5 in about 200ms. The executable meanwhile ran every test
+      correctly when invoked directly, which is how this survived a whole slice: every green
+      result recorded in decisions.md D-043 came from running the .exe.
+
+      CI invokes `dotnet test` with the TRX reporter options, so CI would have failed on its first
+      test step. See decisions.md D-046.
+    -->
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Every test project reports TRX, so CI can publish results from any of them. -->
+    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
+  </ItemGroup>
+
+</Project>

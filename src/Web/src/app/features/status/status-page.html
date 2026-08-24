@@ -1,0 +1,40 @@
+<section class="status" data-testid="status-panel">
+  <h2 class="status-heading">{{ i18n.t('status.title') }}</h2>
+
+  @if (isLoading()) {
+    <p class="status-line" data-testid="status-loading">{{ i18n.t('status.loading') }}</p>
+  }
+
+  @if (errorKey(); as key) {
+    <p class="status-line status-line--bad" data-testid="status-error">{{ i18n.t(key) }}</p>
+  }
+
+  @if (health(); as health) {
+    <dl class="status-grid">
+      <dt>{{ i18n.t('status.api') }}</dt>
+      <dd data-testid="status-api">{{ i18n.t('status.reachable') }}</dd>
+
+      <dt>{{ i18n.t('status.database') }}</dt>
+      <dd data-testid="status-database">
+        {{ i18n.t(health.databaseReachable ? 'status.reachable' : 'status.unreachable') }}
+      </dd>
+
+      <dt>{{ i18n.t('status.guards') }}</dt>
+      <dd data-testid="status-guards">
+        {{ i18n.t(health.guardsInstalled ? 'status.guards.installed' : 'status.guards.missing') }}
+      </dd>
+    </dl>
+
+    @if (!health.guardsInstalled) {
+      <ul class="status-missing" data-testid="status-missing-guards">
+        @for (guard of health.missingGuards; track guard) {
+          <li>{{ guard }}</li>
+        }
+      </ul>
+    }
+  }
+
+  <button type="button" class="status-refresh" (click)="refresh()">
+    {{ i18n.t('status.refresh') }}
+  </button>
+</section>
