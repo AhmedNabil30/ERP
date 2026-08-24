@@ -7,10 +7,14 @@ name: Deploy to staging
 # therefore builds and publishes container images, which is the portable part, and stops at a
 # deployment step that is gated on secrets. Filling in that step needs an answer from Nabil: where
 # does staging run, and how is it reached? See decisions.md D-023.
+#
+# MANUAL ONLY, until that question is answered. This ran `on: push` to main until 2026-08-24, which
+# meant it failed on every single push — not because anything was wrong, but because it has no target
+# to deploy to. A workflow that is red on every commit stops being a signal: the next real CI failure
+# arrives on a page that was already red, and nobody looks twice. Restore the push trigger in the
+# same change that answers D-023, not before.
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 env:
