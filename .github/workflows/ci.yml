@@ -105,11 +105,23 @@ jobs:
       - name: Build
         run: npm run build
 
+      # The BROWSER subdirectory, not the project output root. Angular's application builder emits
+      # dist/kaff-web/browser/index.html, and the e2e job downloads this artifact into `web-dist`
+      # and serves that directory as the site root — ci/serve-e2e.mjs resolves `../web-dist` and
+      # sends `web-dist/index.html`.
+      #
+      # Uploading the parent instead put index.html at web-dist/browser/index.html, and the e2e job
+      # failed with `ENOENT: no such file or directory, stat '.../web-dist/index.html'`. Fixed
+      # 2026-08-25, on the first CI run this repository has ever completed.
+      #
+      # The artifact is the site root. If a future Angular version changes that layout, this path
+      # changes with it — src/Web/nginx.conf and ci/serve-e2e.mjs both assume index.html sits at the
+      # top of what they are given.
       - name: Upload build
         uses: actions/upload-artifact@v4
         with:
           name: web-dist
-          path: src/Web/dist/kaff-web
+          path: src/Web/dist/kaff-web/browser
 
   e2e:
     name: End to end — Playwright
