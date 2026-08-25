@@ -31,10 +31,25 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
     public static readonly IPAddress TestRemoteAddress = IPAddress.Parse("203.0.113.42");
 
     private readonly string _connectionString;
+    private readonly IPAddress _remoteAddress;
 
-    public KaffApiFactory(string connectionString)
+    /// <param name="connectionString">The test database.</param>
+    /// <param name="remoteAddress">
+    /// What <see cref="FakeConnectionStartupFilter"/> puts on the connection. Defaults to
+    /// <see cref="TestRemoteAddress"/>; a test of decisions.md D-079 passes an address inside the
+    /// network it also declares trusted, because that is what makes this host a proxied one.
+    /// </param>
+    /// <param name="trustedProxyNetwork">
+    /// <c>Kaff:TrustedProxyNetworks:0</c>. <see langword="null"/> — the default — clears it, which is
+    /// the shipped default and means <c>UseForwardedHeaders</c> is not registered at all.
+    /// </param>
+    public KaffApiFactory(
+        string connectionString,
+        IPAddress? remoteAddress = null,
+        string? trustedProxyNetwork = null)
     {
         _connectionString = connectionString;
+        _remoteAddress = remoteAddress ?? TestRemoteAddress;
 
         // Set as environment variables, not through ConfigureAppConfiguration.
         //
@@ -48,6 +63,11 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable("Jwt__Audience", "kaff-erp-tests");
         Environment.SetEnvironmentVariable("Jwt__SigningKey", "tests-only-signing-key-long-enough-for-hmac-sha256");
         Environment.SetEnvironmentVariable("Kaff__ApplyMigrationsOnStartup", "false");
+
+        // Always set, including to null, so one factory's trust setting cannot survive into the
+        // next one built in the same process. Program.cs reads this before Build(), so — like the
+        // values above — the in-memory configuration below arrives too late for it.
+        Environment.SetEnvironmentVariable("Kaff__TrustedProxyNetworks__0", trustedProxyNetwork);
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -78,18 +98,22 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
             // it — so a test asserting on decisions.md D-063 §2 needs a stand-in for what a real
             // connection always carries. Registered as a startup filter, not a feature set in a test,
             // so it runs ahead of AuditCorrelationMiddleware exactly the way a real connection would.
-            services.AddSingleton<IStartupFilter, FakeConnectionStartupFilter>();
+            services.AddSingleton<IStartupFilter>(new FakeConnectionStartupFilter(_remoteAddress));
         });
     }
 
     /// <summary>See the comment where this is registered above.</summary>
     private sealed class FakeConnectionStartupFilter : IStartupFilter
     {
+        private readonly IPAddress _remoteAddress;
+
+        public FakeConnectionStartupFilter(IPAddress remoteAddress) => _remoteAddress = remoteAddress;
+
         public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
         {
             app.Use((context, nextMiddleware) =>
             {
-                context.Connection.RemoteIpAddress ??= TestRemoteAddress;
+                context.Connection.RemoteIpAddress ??= _remoteAddress;
                 return nextMiddleware();
             });
 

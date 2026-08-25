@@ -552,6 +552,91 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// With no proxy network configured — the shipped default — a forwarded header is not read.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is the guard on decisions.md D-079's one footgun. <c>ForwardedHeadersMiddleware</c> reads
+    /// "no known proxies and no known networks" as <i>check nobody</i>, i.e. trust every peer that
+    /// sends the header — so registering it unconditionally would turn an empty allowlist into
+    /// universal trust, which is the opposite of what an empty allowlist means everywhere else in
+    /// this application [Verified: 2026-08-25 @ <c>Program.cs</c> -&gt; the
+    /// <c>Kaff:TrustedProxyNetworks</c> block]. <c>Program.cs</c> therefore registers it only when
+    /// the list is non-empty, and this test is what turns red if somebody lifts it out of that
+    /// conditional to tidy the pipeline.
+    /// </para>
+    /// <para>
+    /// It also holds D-063 §2's original rule for development, CI and the test host: those have no
+    /// proxy, and a header there is a caller-supplied string and nothing more.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task A_forwarded_header_is_ignored_when_no_proxy_network_is_trusted()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, Write(_projectId));
+        request.Headers.Add("X-Forwarded-For", "198.51.100.7");
+        await StampAsync(request, _financeAssigned, Role.Finance, Department.Finance);
+
+        (await _client.SendAsync(request, Ct)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (AuditRecord change, _) = await TheWritesRecordsAsync();
+
+        change.IpAddress.Should().Be(KaffApiFactory.TestRemoteAddress);
+    }
+
+    /// <summary>
+    /// Behind a trusted proxy the audited address is the caller's, and a forged entry does not
+    /// displace it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// decisions.md D-079. Staging's API is reachable only from nginx
+    /// [Verified: 2026-08-25 @ <c>deploy/docker-compose.staging.yml</c> -&gt; the <c>api</c> service's
+    /// <c>expose</c>], so without this every audit row there would carry the proxy's container
+    /// address — including the failed sign-ins the column exists for.
+    /// </para>
+    /// <para>
+    /// <b>The header shape is nginx's, not a convenient one.</b> <c>$proxy_add_x_forwarded_for</c>
+    /// appends the peer's address to the <i>right</i> of whatever the caller sent
+    /// [Verified: 2026-08-25 @ <c>src/Web/nginx.conf.template</c> -&gt; the <c>location /api/</c>
+    /// block], so a caller who forges <c>198.51.100.9</c> produces exactly the two-entry header
+    /// below. Asserting that the <i>rightmost</i> entry is recorded is therefore asserting that a
+    /// forged one is not — a single-entry header would prove only half of that.
+    /// </para>
+    /// <para>
+    /// <b>What stops the forgery is the allowlist, not <c>ForwardLimit</c>.</b> Raising the limit to
+    /// 2 was tried on 2026-08-25 and this test stayed green: the middleware stops as soon as the
+    /// address it would consume next is not a known proxy, and <c>198.51.100.7</c> is not in
+    /// <c>192.0.2.0/24</c>. Recorded because the first draft of this remark claimed the opposite,
+    /// and a plausible wrong reason in a test's own documentation is what a later session copies.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task Behind_a_trusted_proxy_the_recorded_address_is_the_caller_not_the_proxy()
+    {
+        IPAddress proxy = IPAddress.Parse("192.0.2.10");
+        IPAddress caller = IPAddress.Parse("198.51.100.7");
+
+        await using var proxied = new KaffApiFactory(
+            _database.ConnectionString,
+            remoteAddress: proxy,
+            trustedProxyNetwork: "192.0.2.0/24");
+
+        using HttpClient client = proxied.CreateClient();
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, Write(_projectId));
+        request.Headers.Add("X-Forwarded-For", $"198.51.100.9, {caller}");
+        await StampAsync(request, _financeAssigned, Role.Finance, Department.Finance);
+
+        (await client.SendAsync(request, Ct)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (AuditRecord change, _) = await TheWritesRecordsAsync();
+
+        change.IpAddress.Should().Be(caller);
+        change.IpAddress.Should().NotBe(proxy);
+    }
+
+    /// <summary>
     /// The two records one probe write leaves: the change to the project, and the company-level
     /// client created in the same save.
     /// </summary>
@@ -623,6 +708,28 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, route);
 
+        await StampAsync(request, userId, role, department, subDepartment, clientId, securityStamp);
+
+        return await _client.SendAsync(request, Ct);
+    }
+
+    /// <summary>
+    /// The identity headers <see cref="TestAuthHandler"/> reads, put on a request the caller owns.
+    /// </summary>
+    /// <remarks>
+    /// Split out of <see cref="SendAsync"/> so the two decisions.md D-079 tests can add a forwarded
+    /// header — and one of them use its own client — without a second copy of the header block that
+    /// would drift the moment a claim is added.
+    /// </remarks>
+    private async Task StampAsync(
+        HttpRequestMessage request,
+        Guid userId,
+        Role role,
+        Department? department = null,
+        OperationsSubDepartment? subDepartment = null,
+        Guid? clientId = null,
+        string? securityStamp = null)
+    {
         request.Headers.Add(TestAuthHandler.UserIdHeader, userId.ToString());
         request.Headers.Add(TestAuthHandler.RoleHeader, role.ToString());
         request.Headers.Add(
@@ -643,8 +750,6 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
         {
             request.Headers.Add(TestAuthHandler.ClientIdHeader, clientId.Value.ToString());
         }
-
-        return await _client.SendAsync(request, Ct);
     }
 
     /// <summary>The stamp stored for this user right now, or a placeholder if they no longer exist.</summary>

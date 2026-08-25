@@ -14,6 +14,7 @@ using Kaff.Infrastructure.Persistence;
 using Kaff.Infrastructure.Persistence.Seeding;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -191,6 +192,64 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
     .AllowCredentials()
     .WithExposedHeaders(AuditCorrelationMiddleware.HeaderName)));
 
+// ---------------------------------------------------------------------------------------------
+//  The audited address is the caller's, not the proxy's — decisions.md D-079.
+//
+//  Staging puts nginx in front of the API: the api service is `expose`d and never `ports`ed, so
+//  nginx is the only thing on the box that can open a connection to it. Without this, every audit
+//  row on the only deployed environment records the nginx container's address, including the
+//  failed sign-ins the column exists for.
+//
+//  D-063 §2 named the single condition under which the forwarded header becomes readable — an
+//  explicit allowlist of proxies we trust, held in configuration rather than inferred from a
+//  header. This is that allowlist, and nothing else changes: AuditCorrelationMiddleware still
+//  reads only Connection.RemoteIpAddress. ForwardedHeadersMiddleware rewrites that value in place
+//  when, and only when, the immediate peer is on the list.
+//
+//  ⚠️ The list must be non-empty for this to be registered at all. ForwardedHeadersMiddleware
+//  treats "no known proxies and no known networks" as "check nobody", i.e. trust every peer that
+//  sends the header — the opposite of a safe default. So an unset Kaff:TrustedProxyNetworks means
+//  the middleware is absent and the connection address stands, which is exactly what development,
+//  CI and the test host want. Do not lift this out of the conditional.
+// ---------------------------------------------------------------------------------------------
+
+string[] trustedProxyNetworks =
+    builder.Configuration.GetSection("Kaff:TrustedProxyNetworks").Get<string[]>() ?? [];
+
+if (trustedProxyNetworks.Length > 0)
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        // XForwardedFor only. Proto and Host are not needed by anything here, and forwarding Host
+        // is a redirect-poisoning surface we would be opening for no reader.
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor;
+
+        // The framework defaults trust loopback. Cleared: the configured list is the whole of the
+        // trust decision, and a default that nobody wrote down is trust nobody reviewed.
+        options.KnownProxies.Clear();
+        options.KnownIPNetworks.Clear();
+
+        foreach (string network in trustedProxyNetworks)
+        {
+            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(network));
+        }
+
+        // One hop, because there is one proxy. nginx sends `$proxy_add_x_forwarded_for`, which
+        // appends the peer's address to the *right* of whatever the caller supplied, and the
+        // middleware reads from the right — so a caller who forges an entry leaves it to the left
+        // of his real address, where it is never read.
+        //
+        // ⚠️ What makes the forgery unreachable is the allowlist above, not this number. The
+        // middleware stops the moment the address it would consume next is not a known proxy, and a
+        // forged entry never is. Verified empirically on 2026-08-25: raising this to 2 left
+        // Behind_a_trusted_proxy_the_recorded_address_is_the_caller_not_the_proxy green, which is
+        // the opposite of what the first draft of this comment asserted. It is 1 anyway, because
+        // that is the true hop count and a second proxy should have to be declared rather than
+        // tolerated — but do not read it as the security control.
+        options.ForwardLimit = 1;
+    });
+}
+
 WebApplication app = builder.Build();
 
 // ---------------------------------------------------------------------------------------------
@@ -242,6 +301,16 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors();
+
+// Before AuditCorrelationMiddleware, which is where the address is read, and therefore before
+// authentication too — a failed sign-in is an anonymous request and is precisely the row that needs
+// the caller's address. Registered only when a proxy network is configured; see the block above
+// Build() for why an empty list must mean "absent", not "trust everyone".
+if (trustedProxyNetworks.Length > 0)
+{
+    app.UseForwardedHeaders();
+}
+
 app.UseMiddleware<AuditCorrelationMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();

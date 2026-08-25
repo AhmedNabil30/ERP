@@ -50,6 +50,13 @@ services:
       Jwt__SigningKey: ${JWT_SIGNING_KEY:?JWT_SIGNING_KEY must be set}
       Kaff__ApplyMigrationsOnStartup: "true"
       Kaff__AllowedOrigins__0: ${STAGING_ORIGIN}
+      # The audit trail's IP column. nginx is the only thing that can open a connection to this
+      # service (`expose`, never `ports`), so without this every audit row would record the nginx
+      # container's address rather than the caller's — see decisions.md D-079. The value is the
+      # subnet declared at the bottom of this same file, deliberately: the network that carries the
+      # proxy and the allowlist that trusts it must not be able to drift apart across two files.
+      # If you change one, change the other.
+      Kaff__TrustedProxyNetworks__0: "172.28.0.0/24"
     expose:
       - "8080"
 
@@ -69,3 +76,14 @@ services:
 
 volumes:
   kaff-staging-db:
+
+# Pinned rather than left to Compose's default address pool, because the API trusts this subnet to
+# have told it the truth about who is calling (Kaff__TrustedProxyNetworks above, decisions.md D-079)
+# and an allowlist cannot name a subnet Docker picks at `up` time. Only the three containers here
+# are on it. If 172.28.0.0/24 collides with something else on the box, `docker compose up` says so
+# loudly — change both this and the API's allowlist entry, which is why they sit in one file.
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24

@@ -5301,3 +5301,147 @@ mechanism or to any migration; this story needed neither, and none was added. No
 is not in this sprint") is now stale — KAFF-114 shipped this session — but that file is not this
 story's to edit and the comment does not affect what the test does; noted here rather than changed
 there.
+
+---
+
+### D-079 · The audited address is the caller's, and the trust that makes it so lives in the compose file · 2026-08-25
+
+**Architect.** D-063 §2 decided the audit trail records `Connection.RemoteIpAddress` and never
+`X-Forwarded-For`, and gave one condition under which that would change: *"Reading it becomes
+legitimate only once `ForwardedHeadersOptions` is configured with an explicit `KnownProxies` /
+`KnownNetworks` allowlist, which is a deployment fact this project does not have — **D-023, the
+staging target, is still open**."* D-077 flagged that the premise had moved. **This entry is that
+condition being met, not D-063 being reopened.** The prohibition on trusting an unattested header
+stands exactly as written; what changed is that one peer is now attested.
+
+#### The premise, re-read rather than taken from D-077
+
+* **Staging puts nginx in front of the API, and nothing else can reach it.** The `api` service
+  declares `expose: "8080"` and no `ports` mapping; the `web` service — nginx serving the Angular
+  build — is the only one that publishes a host port. So every request the API sees on the only
+  deployed environment arrives from the nginx container on the Compose network
+  [`deploy/docker-compose.staging.yml`, the `api` and `web` services].
+* **nginx already sends the header.** `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`
+  has been in the template since it was written [`src/Web/nginx.conf.template`, the
+  `location /api/` block]. Nothing was added there by this session.
+* **`AuditCorrelationMiddleware` passes the connection address**
+  [Verified: 2026-08-25 @ `AuditCorrelationMiddleware.cs` -> `InvokeAsync`].
+
+**So the defect is real and total, not partial.** Every audit row written on staging — including the
+failed sign-ins KAFF-101a is about to start writing, which are the rows D-063 §2 built the column
+for — would carry a Docker bridge address that identifies nothing. Not a degraded value: a value
+with no information in it at all, in a table with no delete path and no backfill.
+
+#### Decision
+
+**The source of truth for the audited address is the connection, and the connection is allowed to be
+rewritten by `ForwardedHeadersMiddleware` when — and only when — the immediate peer appears in a
+configured allowlist.** Three parts, and the third is the one that matters:
+
+1. **`Kaff:TrustedProxyNetworks`**, a list of CIDR networks, empty in `appsettings.json`
+   [Verified: 2026-08-25 @ `appsettings.json` -> `TrustedProxyNetworks`]. The trust decision is
+   configuration, never a header, which is the constraint D-063 §2 set and this keeps.
+2. **`Program.cs` registers `UseForwardedHeaders` only when that list is non-empty**, with the
+   framework's loopback defaults cleared and `ForwardedHeaders.XForwardedFor` alone
+   [Verified: 2026-08-25 @ `Program.cs` -> `trustedProxyNetworks`]. It is placed before
+   `AuditCorrelationMiddleware` and therefore before authentication, because an anonymous failed
+   sign-in is exactly the row that needs the caller's address.
+3. **`AuditCorrelationMiddleware` is unchanged.** It still reads `Connection.RemoteIpAddress` and
+   still reads no header. The audit mechanism has no opinion about proxies; the pipeline hands it a
+   connection address that is either the peer's or, where we have said the peer is a proxy we run,
+   the peer's peer. **This is what keeps D-063 §2's rule literally true in the code it was written
+   about.**
+
+**Staging's allowlist is `172.28.0.0/24`, and the compose file both creates that network and names
+it as trusted, in the same file, eleven lines apart.** Compose's default address pool assigns a
+subnet at `up` time, which an allowlist cannot name, so the network is pinned. Two files could not
+have drifted apart quietly; one file, twice, can be reviewed in one glance.
+
+#### What this rules out
+
+* **Reading `X-Forwarded-For` unconditionally.** Never proposed and still refused. An unattested
+  header is a caller-supplied string, and D-063 §2's reasoning about writing one into an append-only
+  table is untouched.
+* **Reading `X-Real-IP`.** nginx sets it too, and it is the shorter path. Rejected: it is a
+  single-value convention with no framework support, so the trust check would have to be hand-written
+  beside it — a second implementation of the thing the framework already does, on the security path.
+* **Registering `UseForwardedHeaders` unconditionally.** ⚠️ **This is the footgun and it is not
+  theoretical.** `ForwardedHeadersMiddleware` treats *no known proxies and no known networks* as
+  *check nobody* — that is, trust every peer that sends the header. An empty allowlist would
+  therefore mean universal trust, the exact inverse of what an empty `Kaff:AllowedOrigins` means ten
+  lines above it. **Measured, not reasoned about:** registered unconditionally, the suite went red
+  with the forged address recorded, `Expected object to be 203.0.113.42, but found 198.51.100.7`.
+  Left in the conditional, and the conditional is now held by a test.
+* **Trusting the RFC1918 private ranges, or "anything on a Docker network".** Broader than the
+  deployment, and it would keep passing on the day somebody adds a `ports` mapping to the `api`
+  service and puts it on the public internet.
+* **Making the allowlist an application constant.** The peer differs per deployment. D-063 §2 said
+  the trust decision belongs in configuration and that is where it is.
+* **Trusting `ForwardLimit` to be the security control.** It is set to 1, correctly, but it is not
+  what stops a forgery — see below.
+
+#### One claim in the first draft of this change was wrong, and it was caught by measuring it
+
+The comment shipped beside `ForwardLimit = 1` originally said that the limit is what defeats a forged
+`X-Forwarded-For` entry. **It is not.** Raising it to 2 and re-running the suite left
+`Behind_a_trusted_proxy_the_recorded_address_is_the_caller_not_the_proxy` green: the middleware stops
+as soon as the next address it would consume is not a known proxy, and a forged entry never is. The
+allowlist does the work; `ForwardLimit` is the true hop count and nothing more. Both the code comment
+and the test's own remarks now say so, and say that the earlier version said the opposite — a
+plausible wrong reason in a test's documentation is what the next session copies.
+
+#### Tests
+
+Two, both in `PermissionMechanismTests.cs`, both watched to fail for the right reason before being
+trusted:
+
+* **`A_forwarded_header_is_ignored_when_no_proxy_network_is_trusted`**
+  [Verified: 2026-08-25 @ `PermissionMechanismTests.cs` ->
+  `A_forwarded_header_is_ignored_when_no_proxy_network_is_trusted`] — the shipped default, with a
+  header on the request. This is the guard on the footgun above, and the existing
+  `A_write_through_a_real_request_records_the_connections_address` **would not have caught it**,
+  because it sends no header. Verified red under unconditional registration.
+* **`Behind_a_trusted_proxy_the_recorded_address_is_the_caller_not_the_proxy`**
+  [Verified: 2026-08-25 @ `PermissionMechanismTests.cs` ->
+  `Behind_a_trusted_proxy_the_recorded_address_is_the_caller_not_the_proxy`] — its own host, peer
+  inside a trusted `/24`, and a **two-entry** header in nginx's real shape
+  (`forged, real`), asserting the rightmost wins. Verified red with `UseForwardedHeaders` removed:
+  `Expected object to be 198.51.100.7, but found 192.0.2.10` — which is the staging defect itself,
+  reproduced.
+
+`KaffApiFactory` gained two optional constructor parameters so the second test can have a proxied
+host [Verified: 2026-08-25 @ `KaffApiFactory.cs` -> `FakeConnectionStartupFilter`]. The trusted
+network is set as an environment variable **always, including to null**, because `Program.cs` reads
+it before `Build()` and one factory's trust setting must not survive into the next factory built in
+the same process.
+
+#### Verified
+
+Clean `--no-incremental` Release build: **0 warnings / 0 errors**.
+`dotnet format KaffErp.sln --verify-no-changes` exit 0. Domain **75/75** (unchanged). Api
+**123/123**, up from 121. `/run-kaff-erp` smoke: all seven checks passed, `guardsInstalled: []`.
+
+#### Deadline met, and why it was one
+
+**Before KAFF-101a writes its first row**, per D-063 §2's own N-19 reasoning: the column cannot be
+backfilled into a trigger-protected append-only table, so a row written with the proxy's address is
+wrong permanently. KAFF-101a is not built. No production row has been written with either value.
+
+#### For Nabil — Q54 just became a real question rather than a theoretical one
+
+**Q54** (indefinite retention of an IP address in a table with no delete path) has been open with
+Nabil and Karim since D-063. **This entry does not answer it and does not touch it — but it does
+change what it is about.** Until today the column would have recorded a Docker container's internal
+address on staging, which is not personal data by any reading. From the next deploy it records a real
+end user's address, which is. The retention question is the same question; it now has a subject.
+Routed, not decided — it is a data-protection rule and `spec.md` does not state one.
+
+#### Not done, and named so nobody assumes otherwise
+
+No TLS, and this does not add any — staging is still plain HTTP (`deploy/README.md`, "What staging
+does not have"). **A TLS terminator or CDN added in front of nginx later would make the nginx-appended
+address that terminator's, and this allowlist would then be recording the wrong hop with no test
+turning red** — the allowlist and `ForwardLimit` must both be revisited the day anything is put in
+front of the box. No change to `AuditCorrelationMiddleware`, `IAuditContext`, `AuditRecord`, the
+schema, or any migration; none was needed. No change to `src/Web/`. No retention or partitioning
+mechanism for `ip_address` (Q54). No story was built.
