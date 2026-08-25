@@ -43,7 +43,7 @@ approved.
 Given a Site Engineer assigned to project A, holding a valid token, who has just written a daily-log-style request successfully
 When HR revokes the assignment
 And the engineer repeats the identical request with the same token
-Then it is refused with `errors.auth.not_assigned_to_project`
+Then it is refused with 403 and `errors.auth.forbidden`
 
 **AC-114-B — the row survives** *(fails if the rule is broken)*
 Given a revoked assignment

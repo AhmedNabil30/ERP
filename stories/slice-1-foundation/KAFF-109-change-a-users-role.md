@@ -101,7 +101,7 @@ Then every revoked row is still present with its original `AssignedAt`, its `Ass
 **AC-109-E — nothing is restored**
 Given the same user, now Technical Office
 When they call any endpoint on project A
-Then it is refused with `errors.auth.not_assigned_to_project`
+Then it is refused with 403 and `errors.auth.forbidden`
 And putting them back requires HR to create a **new** assignment row (KAFF-113)
 
 **AC-109-F — a role change takes effect immediately** *(fails if the rule is broken)*

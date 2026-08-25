@@ -508,7 +508,9 @@ public sealed class AssignUserToProjectTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Revokes directly, because the endpoint for it is KAFF-114 and is not in this sprint.
+    /// Revokes directly against the database rather than through the endpoint, so this setup
+    /// step does not depend on KAFF-114's HTTP layer. KAFF-114 shipped (commit 33010e2, D-078);
+    /// its own endpoint is exercised by RevokeProjectAssignmentTests.
     /// </summary>
     private async Task RevokeAsync(Guid projectId, Guid userId)
     {

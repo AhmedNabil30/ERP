@@ -64,8 +64,9 @@ correctly-roled user is refused, which is the rule the whole permission model re
 - **i18n:** `assignments.action.assign`, `assignments.assign.title`, `assignments.field.user`,
   `assignments.field.level`, `assignments.hint.level_per_project`,
   `enum.AssignmentLevel.Standard` / `.Junior` / `.Supervisor`, and the existing
-  `errors.identity.assignment_level_not_applicable`, `errors.identity.client_is_not_assignable`,
-  `errors.auth.not_assigned_to_project`.
+  `errors.identity.assignment_level_not_applicable`, `errors.identity.client_is_not_assignable`.
+  *(`errors.auth.not_assigned_to_project` removed 2026-08-25 under D-080 — the gate never sends
+  it, so this screen has no reason to carry it.)*
 
   *(Corrected 2026-08-22 under **SM-15**, finding **V-07** / **N-05**. This bullet said
   `assignments.add` and `assignments.level.standard` / `.junior` / `.supervisor`. S-010 draws the

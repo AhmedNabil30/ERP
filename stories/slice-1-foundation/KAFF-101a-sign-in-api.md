@@ -309,7 +309,7 @@ And given a session used every 20 minutes for two hours, it is still valid
 **AC-101a-K — the session grants nothing by itself** *(fails if the rule is broken)*
 Given a valid session for a Site Engineer assigned to no project
 When they call a `ProjectScoped` endpoint for any project
-Then the request is refused with `errors.auth.not_assigned_to_project`
+Then the request is refused with 403 and `errors.auth.forbidden`
 
 **AC-101a-L — the password never leaves the database**
 Given any successful or failed sign-in

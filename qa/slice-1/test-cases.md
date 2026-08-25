@@ -405,7 +405,7 @@ first half instant by re-reading the user row per request; the second half is th
 **TC-1-013 · the session grants nothing by itself**
 `AC-101a-K` · P1 · Api · spec.md §9 *"Role alone is insufficient"*
 Given a valid session for a Site Engineer assigned to no project, when any `ProjectScoped` endpoint is
-called for any project, then it is refused with `errors.auth.not_assigned_to_project`.
+called for any project, then it is refused with 403 `errors.auth.forbidden`.
 *Fails if:* authentication is mistaken for authorization — the single most common shape of this bug.
 **Executable today** through `TestAuthHandler` without a login endpoint.
 
@@ -1627,7 +1627,7 @@ Given an assignment created by HR, when the audit record is read, then it is `Cr
 `AC-114-A` · P1 · Api · spec.md §9
 Given a Site Engineer assigned to project A holding a valid token who has just succeeded on a project
 request, when HR revokes the assignment and the engineer repeats the identical request with the same
-token, then it is refused with `errors.auth.not_assigned_to_project`.
+token, then it is refused with 403 `errors.auth.forbidden`.
 *Fails if:* the assignment is cached in the token or in memory rather than read per request.
 
 **TC-1-114 · the row survives, fully populated**
@@ -2897,8 +2897,8 @@ assignment**, because there is nothing yet to be assigned to.
 `permission-matrix.md` · P1 · Api · **SLICE 4, KAFF-416** · **D-055 §1** · D-049 rulings 9, 10 · spec.md §6.7
 Given the endpoint behind `Project.SetWithholding`, when its authorization requirement is read, then it
 names **`ProjectFinancialsEdit`**; and when an **assigned** Finance user calls it, then it succeeds;
-and when an **unassigned** Finance user calls it, then it is refused with
-`errors.auth.not_assigned_to_project`; and when Marketing, the Technical Office and HR call it — HR on
+and when an **unassigned** Finance user calls it, then it is refused with 403
+`errors.auth.forbidden`; and when Marketing, the Technical Office and HR call it — HR on
 a project it reaches globally — then all three are refused with 403.
 *Fails if:* the endpoint is gated on `ProjectManage`, which refuses Finance the one field Karim
 assigned to them (D-049 ruling 10) and admits the Technical Office to a strict accounting parameter.

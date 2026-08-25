@@ -69,7 +69,7 @@ Then it is the same user id, and all twelve records still resolve to it
 Given a user who was deactivated while assigned to three projects
 When the Owner reactivates them and they sign in
 Then they hold zero active assignments
-And a request against any of those three projects is refused with `errors.auth.not_assigned_to_project`
+And a request against any of those three projects is refused with 403 and `errors.auth.forbidden`
 
 **AC-112-C — the revoked rows are not resurrected** *(fails if the rule is broken)*
 Given the same three assignments
