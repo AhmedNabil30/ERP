@@ -24,7 +24,14 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ${{ github.repository }}
+  # Lowercase, and literal rather than ${{ github.repository }}, which expands to AhmedNabil30/ERP.
+  # A Docker reference must be lowercase — an uppercase tag is refused by the client before the
+  # registry is ever contacted — so the interpolated form could never have pushed. Set by Nabil
+  # 2026-08-25.
+  #
+  # This is the one value here that must track the repository if it is ever renamed or moved, and
+  # nothing will remind you: the images simply start publishing under a name nothing pulls.
+  IMAGE_PREFIX: ahmednabil30/erp
 
 permissions:
   contents: read
