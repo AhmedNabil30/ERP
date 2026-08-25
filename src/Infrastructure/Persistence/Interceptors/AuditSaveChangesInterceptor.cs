@@ -131,7 +131,7 @@ public sealed class AuditSaveChangesInterceptor : SaveChangesInterceptor
     /// Normally the caller <b>as the authorization gate read them from the users table</b>, never as
     /// their token described them. Claims go stale — that is why D-048 stopped the gate trusting them
     /// — and a stale role written here is wrong permanently, because the table is append-only by
-    /// trigger and CLAUDE.md allows no update or delete path. See decisions.md D-074.
+    /// trigger and CLAUDE.md allows no update or delete path. See decisions.md D-075.
     /// </para>
     /// <para>
     /// <b>There is deliberately no fallback to the claim</b> when no gate ran. An authenticated

@@ -39,6 +39,24 @@ internal sealed class AuditRecordConfiguration : IEntityTypeConfiguration<AuditR
             table.HasCheckConstraint(
                 "ck_audit_records_grant_path",
                 "grant_path IS NULL OR (project_id IS NOT NULL AND grant_path <> 'None')");
+
+            // An actor is named completely or not at all. The one legitimate unnamed actor is work
+            // outside a request — migrations, seeding, scheduled jobs (SystemCurrentUser) — and it
+            // carries no role either. Everything else names a user, and a user without the role they
+            // acted under is a permanently unattributed row in a table that is append-only by
+            // trigger and has no correction path.
+            //
+            // A constraint rather than IsRequired() on ActorRole, because the column must stay
+            // nullable for that one case: NOT NULL would refuse the system actor, which is the only
+            // row shape that is genuinely roleless.
+            //
+            // A constraint rather than the AuditContext guard alone, because the guard sits on the
+            // two channels that *declare* an actor and the interceptor's fallback constructs one
+            // without passing through either. See decisions.md D-075. Held together by
+            // An_actor_is_named_completely_or_not_at_all.
+            table.HasCheckConstraint(
+                "ck_audit_records_actor_is_named_completely",
+                "(actor_user_id IS NULL) = (actor_role IS NULL)");
         });
 
         builder.HasKey(record => record.Id);

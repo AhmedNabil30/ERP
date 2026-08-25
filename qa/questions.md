@@ -770,7 +770,7 @@ In `PermissionCatalogue.cs`, on the `Permission.ProjectManage` row (then at line
 
 **The first test exists** [Verified: 2026-08-22 @ `PermissionEvaluatorTests.cs` -> `An_unassigned_holder_of_ProjectManage_cannot_edit_a_project`].
 **The second does not.** `Opening_a_project_needs_no_project` appears in exactly two places in this
-repository: `proposals/N10-project-creation.md:287`, where it was a **proposed** name, and the comment
+repository: in a proposal file where it was a **proposed** name, and the comment
 above. **The identifier is absent from every file under `tests/`**
 [Verified: 2026-08-22 — repository-wide search for the identifier returns `decisions.md`,
 `process/agile.md`, the proposal and the catalogue comment, and no test source].
@@ -808,9 +808,9 @@ Backend as well: *"the enforceable half is coverage, not prose."*
 
 | | Says |
 |---|---|
-| **`AC-105b-C`** [Verified: 2026-08-22 @ `stories/slice-1-foundation/KAFF-105b-api-me-project-list.md:80-85`] | HR calls `GET /api/auth/me` and *"all three are listed with **name and code**"*, with no value, cost, margin, balance, budget, status or client field, and no `ProjectRead`. `AC-105b-E` then flags each entry as reachable through the Project Team surface only, and refuses HR the dashboard. |
+| **`AC-105b-C`** [Verified: 2026-08-22 @ `KAFF-105b-api-me-project-list.md` -> `AC-105b-C`] | HR calls `GET /api/auth/me` and *"all three are listed with **name and code**"*, with no value, cost, margin, balance, budget, status or client field, and no `ProjectRead`. `AC-105b-E` then flags each entry as reachable through the Project Team surface only, and refuses HR the dashboard. |
 | **`TC-1-040`** | HR's payload names **no project at all** — *"not by name, not by code, not by id, and not as a count."* |
-| **D-051 Q32, verbatim** (`decisions.md:1787`) | *"HR may only see the project name and the list of assigned engineers … If the main project dashboard contains financial data, HR must be routed to a separate 'Project Team' tab/screen that contains zero financial details."* |
+| **D-051 Q32, verbatim** | *"HR may only see the project name and the list of assigned engineers … If the main project dashboard contains financial data, HR must be routed to a separate 'Project Team' tab/screen that contains zero financial details."* |
 
 **Both were written from the same ruling and they cannot both pass.** The reading that produced
 `TC-1-040` treats *"a separate surface, not a filtered view"* as applying to `/api/auth/me`; the
@@ -839,7 +839,7 @@ stable AC ID surfaces and a positional label hides. **`TC-1-041` is unaffected**
 a new narrow permission rather than granting HR `ProjectRead`"*, and that **naming it is the story's**.
 The story has now named it: **`ProjectTeamRead`**, `ProjectScoped`, granted to `Role.Owner` and
 `Role.Hr` with the same global reach `ProjectAssignmentManage` already gives both
-[Verified: 2026-08-22 @ `stories/slice-1-foundation/KAFF-115-project-team-panel.md:28, :36-39`], with
+[Verified: 2026-08-22 @ `KAFF-115-project-team-panel.md` -> `ProjectTeamRead`], with
 `AC-115-H` and `AC-115-I` written against it, and `AC-105b-E` routing HR to it.
 
 **The identifier appears in `stories/questions-for-karim.md`,

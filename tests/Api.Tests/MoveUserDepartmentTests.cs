@@ -344,7 +344,7 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// decisions.md D-074. The trail records the role the <b>database</b> holds for the actor, not
+    /// decisions.md D-075. The trail records the role the <b>database</b> holds for the actor, not
     /// the one their token claims.
     /// </summary>
     /// <remarks>
@@ -352,7 +352,7 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
     /// <b>The only way to test this is to make the two disagree</b>, so this sends the Owner's user
     /// id with a token claiming <c>SiteEngineer</c>. That is the shape a stale token takes the moment
     /// KAFF-109 adds a role mutator — D-048 already re-reads authority from the database on every
-    /// request, and until D-074 the audit trail alone still believed the claim.
+    /// request, and until D-075 the audit trail alone still believed the claim.
     /// </para>
     /// <para>
     /// The display name is asserted for the same reason and in the same act: <c>TestAuthHandler</c>
@@ -375,11 +375,11 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// decisions.md D-074, the half that needs no role change to happen: a token carrying <b>no</b>
+    /// decisions.md D-075, the half that needs no role change to happen: a token carrying <b>no</b>
     /// role claim at all still produces an attributed record.
     /// </summary>
     /// <remarks>
-    /// Before D-074 this wrote a permanently unattributed row into a table that is append-only and
+    /// Before D-075 this wrote a permanently unattributed row into a table that is append-only and
     /// no-truncate by trigger, so it could never be corrected. It is stated as its own test rather
     /// than left to <see cref="MoveAsync"/>'s default, because a default can be changed back without
     /// anything naming what was lost — which is how the property went unobserved in the first place.
@@ -435,7 +435,7 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
     /// <param name="roleClaim">
     /// What the caller's token says their role is — <b>omitted entirely by default, and never read
     /// from the database.</b> A helper that filled this in from the users table would make the claim
-    /// and the database incapable of disagreeing, and D-074's whole subject is what happens when they
+    /// and the database incapable of disagreeing, and D-075's whole subject is what happens when they
     /// do. See <see cref="The_trail_records_the_role_the_database_holds_not_the_role_the_token_claims"/>.
     /// </param>
     private async Task<HttpResponseMessage> MoveAsync(

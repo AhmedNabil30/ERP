@@ -4045,7 +4045,13 @@ on the day, and sign-in is about to become the second member. Raised for the Arc
 
 ---
 
-### D-073 · The audit trail attributes acts to the role the token claims, not the role the user has · **OPEN — for the Architect**
+### D-073 · The audit trail attributes acts to the role the token claims, not the role the user has · **CLOSED 2026-08-25 by D-075**
+
+> **Closed, not deferred to KAFF-109.** Both halves are answered in D-075: the trail now takes the
+> actor from the row the gate read out of the users table, so it no longer reads the claimed role at
+> all, and `ck_audit_records_actor_is_named_completely` refuses the half-named actor this entry
+> routed separately. D-075 §6 says why the "reachable when KAFF-109 lands" reasoning does not survive
+> the fix. **Read D-075 before acting on anything below.**
 
 > **Renumbered from D-068 to D-073 on 2026-08-25 by the Scrum Master.** It was written as D-068 while
 > a D-068 already existed — *"The fourth instance, and why it does not get a fourth rule"* — which is
@@ -4751,3 +4757,191 @@ KAFF-110/KAFF-113 UI bullets — are Angular screen labels with no screen built 
 `MessageKey`s, and `TranslationCatalogueTests` cannot see them because it enumerates `*Errors` static
 classes, not arbitrary catalogue keys. They remain Frontend's, with the screens, exactly as the
 Verifier routed them.
+
+---
+
+### D-075 · The audit trail takes the actor the gate verified, and the database now says an actor is named completely · 2026-08-25
+
+**Architect. Closes D-073.** The entry the code was already citing — as **D-074**, which is Backend's
+build record for KAFF-108/110/113 and says nothing about actors. Thirteen comments across seven files
+pointed at it; every one now points here. **F-28's shape, third instance this sprint**, and it
+happened the ordinary way: the entry was written into the comments before it was written into the
+file, and the session ended in between.
+
+---
+
+#### 1. Why the trail takes the verified actor and not the claim
+
+D-048 stopped the **gate** trusting the token, because claims go stale: a deactivated Owner kept
+`UserManage` until his token expired. The **trail** went on believing the same token (the defect, as
+raised, is D-073). So the permission system distrusted the token and the audit trail believed it,
+about the same user, on the same request.
+
+**Decision: the gate hands the trail the row it just read.** On a grant,
+`PermissionAuthorizationHandler` calls `IAuditContext.ActorVerifiedAs` with the `PermissionSubject`
+it loaded from the users table, and `AuditSaveChangesInterceptor` prefers that over anything the
+token says [Verified: 2026-08-25 @ `PermissionAuthorizationHandler.cs` -> `ActorVerifiedAs`] and
+[Verified: 2026-08-25 @ `AuditSaveChangesInterceptor.cs` -> `ResolveActor`].
+
+**Why this and not the alternatives D-073 listed.**
+
+* **Record both the claimed and the effective role.** Two columns, one of which is a value the system
+  has already decided not to act on. A reader of an append-only table would have to know which one
+  the gate honoured, forever. The trail's job is to say what happened, not to preserve what the token
+  guessed.
+* **Rotate the security stamp on a role or department change.** It contradicts KAFF-108's documented
+  behaviour — *"no claim is re-issued, no token is minted, no cache is invalidated"* — which was a
+  deliberate decision, not an oversight. And it fixes attribution by making stale tokens impossible
+  rather than by making attribution correct, which leaves the trail still reading a source it should
+  not read.
+* **A second read of the users table in the interceptor.** An extra query per audited write on a path
+  that has already read that exact row. The actor's name rides along on `PermissionSubject` for
+  precisely this reason [Verified: 2026-08-25 @ `PermissionSubjectReader.cs` -> `FullName`]; the
+  evaluator never reads it.
+
+**There is deliberately no fallback to the claim** when no gate ran. An authenticated request that
+reaches a save without passing the gate is the D-067 shape that `EndpointPermissionCoverageTests`
+makes a build failure, and attributing that save from an unverified claim would reintroduce the
+defect. What is left is a named actor with no role — §3 is what happens to it.
+
+**`ActorDisplayName` is fixed by the same act**, which D-073's closing line asked for: the name comes
+from the same row as the role, so a renamed user's later acts are attributed to the name the database
+holds. `TestAuthHandler` puts a synthetic name in the name claim and never the user's real name, so
+the assertion on the display name can only pass if the value came from the database
+[Verified: 2026-08-25 @ `MoveUserDepartmentTests.cs` ->
+`The_trail_records_the_role_the_database_holds_not_the_role_the_token_claims`].
+
+---
+
+#### 2. Why there are two actor channels and not one
+
+`IAuditContext` carries two, and they are not redundant.
+
+| Channel | Who calls it | Why it cannot be the other one |
+|---|---|---|
+| `ActorVerifiedAs` | the authorization gate, on a grant, and nothing else | States what the gate **already decided**. It is a fact the request carries, so it survives `Clear()` — who the caller is is not a property of one save within the request. Same arrangement as `GrantedThrough` (KAFF-116 rule 6) |
+| `AttributeTo` | bootstrap (KAFF-100), and nothing else | The request has **no identity to verify** — the endpoint is anonymous by definition and the Owner is created by the very transaction being audited. There is no gate, so there is nothing for `ActorVerifiedAs` to report |
+
+**They are held apart by a refusal, not by convention.** `AttributeTo` on a request that already
+carries an identity throws: an authenticated caller naming a different actor is impersonation written
+into a table with no correction path [Verified: 2026-08-25 @ `AuditSaveChangesInterceptor.cs` ->
+`ResolveActor`]. Collapsing the two into one setter would delete that distinction — the setter could
+no longer tell "the gate verified this" from "the handler asserted this".
+
+---
+
+#### 3. When there is genuinely no actor, and the constraint that had been described but not built
+
+**The one legitimate unnamed actor is work outside a request** — migrations, seeding, scheduled jobs.
+`SystemCurrentUser` reports no user id and no role [Verified: 2026-08-25 @ `AuditContext.cs` ->
+`SystemCurrentUser`], and those rows name nobody, honestly, in both columns.
+
+**Everything else names a user, and a user without the role they acted under is a permanently
+unattributed row.** D-073 routed this as the reachable half needing no role change: `ActorRole` was
+nullable, was not `IsRequired()`, and carried no check constraint.
+
+**The claim was in the comments and the constraint was not.** `AuditContext.cs` and `IAuditContext.cs`
+both named `ck_audit_records_actor_is_named_completely`, and `AuditContext.cs` said *"the constraint
+is still the authority."* It existed in no EF configuration and no migration. **D-067's shape — prose
+describing a guard that is not there — inside the audit mechanism, on an append-only table.**
+
+**Decision: build it.** `(actor_user_id IS NULL) = (actor_role IS NULL)`
+[Verified: 2026-08-25 @ `AuditConfiguration.cs` -> `ck_audit_records_actor_is_named_completely`],
+migrated as `AuditActorIsNamedCompletely` [Verified: 2026-08-25 @
+`20260825102403_AuditActorIsNamedCompletely.cs` -> `AddCheckConstraint`].
+
+**Three things about its shape.**
+
+* **A check constraint rather than `IsRequired()` on the role.** The column must stay nullable, or
+  the system actor — the one row shape that is genuinely roleless — becomes illegal. The rule is a
+  pairing, and only a constraint can say a pairing.
+* **A biconditional rather than one direction.** The documented rule is that the two are *null
+  together*, so the constraint says that, not half of it. The mirror — a role over nobody — is not
+  reachable through any code path today, which is exactly the argument the grant-path constraint
+  already rejected: the interceptor is one writer today and the table outlives it.
+* **No entry in a guard list, because there is no list to enter.** D-064 made
+  `FindMissingGuardsAsync` read the check-constraint names **from the design-time EF model**, so
+  declaring it with `HasCheckConstraint` is what puts it in the start-up guard check
+  [Verified: 2026-08-25 @ `DatabaseInitializer.cs` -> `FindMissingGuardsAsync`]. The brief for this
+  work asked for a third step here; D-064 had already removed it.
+
+**Why not simply delete the claim and rely on the application guard.** `AuditContext.FullyNamed`
+refuses a half-named actor at both channels [Verified: 2026-08-25 @ `AuditContext.cs` ->
+`FullyNamed`], and that is genuinely enforcement — but **only of actors that pass through a channel.**
+`ResolveActor`'s fallback constructs a user id, a display name and a null role **directly**, reaching
+neither channel, so no application guard has ever seen it. That is not a theoretical bypass; §5 is the
+measurement of it.
+
+---
+
+#### 4. The forward consequence, named because it lands on an unbuilt story
+
+**An authenticated endpoint with no permission requirement can no longer write an audit record.** Its
+save resolves a named actor with no role and the database refuses it. The candidate is **KAFF-102
+sign-out**: authenticated, and its whole mechanism is clearing a cookie, so there is no obvious
+permission to require.
+
+This does not create a silent trap — `EndpointPermissionCoverageTests` already goes red the day such
+a route is mapped, and the allow-list is a decision rather than a formality
+[Verified: 2026-08-25 @ `EndpointPermissionCoverageTests.cs` -> `AllowList`]. It makes the same
+requirement twice, once at build time and once at the save. **The requirement is the point:** a
+sign-out that records who signed out must know who they are from the database, and an endpoint that
+never reads that row cannot say it.
+
+---
+
+#### 5. Watched to fail, twice
+
+**The constraint removed from the model.** With `ck_audit_records_actor_is_named_completely` deleted
+from `AuditConfiguration` and the suite rebuilt, `An_actor_is_named_completely_or_not_at_all` failed
+on its **first** assertion — *"Expected caught not to be null because the database must refuse this
+operation"*. The save **committed**: an authenticated request that reached the interceptor without a
+gate wrote `actor_user_id` set and `actor_role` null into an append-only table, and returned success.
+**`FullyNamed` was present and unchanged throughout that run.** That is the measurement of §3's last
+paragraph — the application guard alone does not catch what this constraint catches, because the
+defective actor never passes through it [Verified: 2026-08-25 @ `AuditMechanismTests.cs` ->
+`An_actor_is_named_completely_or_not_at_all`]. Restored; 109/109.
+
+**The constraint dropped from the live database**, the way D-064 did with
+`ck_postings_amount_positive`. `/api/health` went from `200 healthy … missingGuards: []` to
+`503 degraded … missingGuards: ["ck_audit_records_actor_is_named_completely"]`, and a Staging
+start-up refused with *"Refusing to start: database guards are missing —
+ck_audit_records_actor_is_named_completely."* (exit 82). Restored, and health returned to
+`200 healthy … missingGuards: []`.
+
+**The migration was applied against the live `kaff` database before the drop, over its 14 existing
+audit rows, and passed.** That is worth recording because it is the one way this migration can fail:
+`ALTER TABLE ADD CONSTRAINT` validates existing rows, and `audit_records` is append-only **and**
+no-truncate by trigger — a database holding one half-named row could neither pass the migration nor
+delete the row. The remedy, if a deployment ever hits it, is to add the constraint `NOT VALID` so it
+binds new rows only; nothing needs it today, and it is not written into the migration on speculation.
+CI is unaffected: the e2e database is created fresh per run and the test fixture builds from the
+model.
+
+---
+
+#### 6. D-073's disposition: **CLOSED**, not deferred to KAFF-109
+
+D-073 stayed open on the reasoning that the divergence becomes reachable when KAFF-109 adds a role
+mutator — the role is assigned once in the constructor with no mutator anywhere
+[Verified: 2026-08-25 @ `User.cs` -> `Role`]. **That reasoning applied to the symptom. It does not
+survive the fix.**
+
+The trail no longer *reads* the claimed role at all. A role mutator changes the database row; the
+gate reads the database row; the trail records what the gate read. There is no path by which KAFF-109
+reintroduces the divergence, so there is nothing for a deferred entry to wait for. The stamp-rotation
+question D-073 raised as its third option is moot for the same reason — rotation was a way to stop
+stale claims existing, and attribution no longer consults them.
+
+Its separately routed half — the nullable, unconstrained `ActorRole` — is §3. Both halves are closed
+here, which is why this entry closes D-073 rather than partially answering it.
+
+**What is not claimed.** This was never an authorization hole and is not one now; D-048 and D-069
+were always holding. It was forensic accuracy in the one table whose entire purpose is to be believed
+later.
+
+---
+
+**Revisit if.** An endpoint legitimately needs to write an audit record without a permission gate. The
+answer is not to relax the constraint — it is to give that endpoint a verified read of its own
+caller, or to name it in the allow-list with the reason, which is where the decision belongs.

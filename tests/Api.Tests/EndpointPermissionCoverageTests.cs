@@ -49,7 +49,7 @@ namespace Kaff.Api.Tests;
 public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
 {
     /// <summary>
-    /// The endpoints that may ship with no permission requirement. Two members means two decisions.
+    /// The endpoints that may ship with no permission requirement. One member today; each is a decision.
     /// </summary>
     /// <remarks>
     /// <b>Adding a member is the decision, not a formality.</b> An allow-list that grows by accident

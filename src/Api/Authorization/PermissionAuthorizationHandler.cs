@@ -87,7 +87,7 @@ public sealed class PermissionAuthorizationHandler : AuthorizationHandler<Permis
 
         if (decision == PermissionDecision.Granted)
         {
-            // D-074. Who the trail names, taken from the row this handler has just read out of the
+            // D-075. Who the trail names, taken from the row this handler has just read out of the
             // users table rather than from the token's claims — which is what stops the trail and the
             // permission system disagreeing about the same user on the same request. A grant always
             // has a subject: PermissionEvaluator refuses a null one before anything else.
@@ -131,7 +131,7 @@ public sealed class PermissionAuthorizationHandler : AuthorizationHandler<Permis
     /// <see cref="IProjectAccessPolicy"/> unnecessary: no decision made here consults a claimed role.
     ///
     /// <b>The claimed role does not stop existing, though</b> — a token issued before a role change
-    /// still carries the old one, and until decisions.md D-074 the audit trail read it. That is why
+    /// still carries the old one, and until decisions.md D-075 the audit trail read it. That is why
     /// the row this method returns is handed to <see cref="IAuditContext.ActorVerifiedAs"/> on a
     /// grant: the trail and the gate must not be able to describe the same request differently.
     /// </remarks>

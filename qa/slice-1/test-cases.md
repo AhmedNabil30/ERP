@@ -263,8 +263,7 @@ can happen without anybody noticing, and it would defeat the only reason Karim c
 if the record names nobody, which is the state D-051 Q31 chose this shape to avoid.
 
 **Corrected 2026-08-21 (SM-12).** This case previously asserted `ActorUserId` **is null** *"because
-nobody was signed in"*. **D-051 Q31 exists precisely to prevent that record**
-(`decisions.md:1774-1778`): Karim's reason for the setup screen is an audit argument — *"my name and
+nobody was signed in"*. **D-051 Q31 exists precisely to prevent that record**: Karim's reason for the setup screen is an audit argument — *"my name and
 account creation date must appear naturally in the Audit Trail from day one"* — and the entry's own
 next line is that *"a seeded account has no actor — the first row in the trail would name nobody."*
 An unauthenticated request does not make the actor unknown here: the request creates the person it is
@@ -610,11 +609,11 @@ without a decision, because that means somebody added per-session state and the 
 drift rather than by a ruling.
 
 **Corrected 2026-08-21 (SM-12).** This case previously asserted that the **replay is refused**, and
-called itself expected-to-fail. **D-051 N5 settles it the other way** (`decisions.md:1823-1829`):
+called itself expected-to-fail. **D-051 N5 settles it the other way**: 
 routine per-device sign-out clears the cookie in that browser, the global kill rotates
 `User.SecurityStamp`, and there is **no session table** — *"with no per-session identity there is no
 way to revoke one **other** device"*, accepted as the right trade for a first-party SPA on one origin.
-`AC-102-B` (`stories/slice-1-foundation/KAFF-102-sign-out.md:44-47`) now states the replay *"**is
+@ `KAFF-102-sign-out.md` -> `AC-102-B` now states the replay *"**is
 still accepted**"* deliberately, and exists so that the day it stops being true, somebody decided it.
 
 **The story is right and this case was stale — so the old instruction here, *"do not resolve it by
@@ -949,12 +948,12 @@ payload. A test still asserting the old result would certify the leak the ruling
 **Relock 2026-08-22 — the label resolves and the case contradicts it. Raised as `F-29`, not fixed.**
 The citation `KAFF-105b AC — HR` is a description; the map's HR criterion is
 **`AC-105b-C` — *"HR gets names, and only names"***. **The criterion says the opposite of this case.**
-`AC-105b-C` [Verified: 2026-08-22 @ `stories/slice-1-foundation/KAFF-105b-api-me-project-list.md:80-85`]
-reads *"all three are listed with name and code"*, with no value, cost, margin, balance, budget, status
+@ `KAFF-105b-api-me-project-list.md` -> `AC-105b-C` 
+[Verified: 2026-08-22] reads *"all three are listed with name and code"*, with no value, cost, margin, balance, budget, status
 or client field and no `ProjectRead`; **`AC-105b-E`** then flags each entry as reachable
 through the Project Team surface only. This case asserts **no project, "not by name, not by code, not
 by id, and not as a count"**.
-**D-051 Q32 verbatim** (`decisions.md:1787`): *"HR may only see the project name and the list of
+**D-051 Q32 verbatim**: *"HR may only see the project name and the list of
 assigned engineers."* That is a **bounded** payload, not an empty one — the ruling's *"separate
 surface, not a filtered view"* is about the **dashboard**, not about `/api/auth/me`. So the reversal
 this case performed on 2026-08-21 over-read the ruling by one step, and the story did not follow it.
@@ -972,7 +971,7 @@ this is the assertion that pins it.
 **Relock 2026-08-22.** Cited `KAFF-105b AC — HR`. **`AC-105b-C`** carries this half verbatim —
 *"the payload … contains **no** value, cost, margin, balance, budget, status or client field"* and
 *"`ProjectRead` appears nowhere in my permissions"*
-[Verified: 2026-08-22 @ `stories/slice-1-foundation/KAFF-105b-api-me-project-list.md:84-85`].
+[Verified: 2026-08-22 @ `KAFF-105b-api-me-project-list.md` -> `AC-105b-C`].
 **This half of the criterion is not disputed** — only `TC-1-040`'s half is. This case is runnable.
 
 **TC-1-043 · client Y appears nowhere in a client X payload**
@@ -1234,7 +1233,7 @@ gave up, only what they gained.
 > ~~⚠ **`stories/KAFF-109` has not been rewritten yet.** Its rule 2 and `AC-109-A`–`AC-109-C` still say
 > *refused*, and it is still marked `BLOCKED — Q27`.~~ **This warning was stale and is withdrawn,
 > 2026-08-22.** The story is `Status: Ready`
-> [Verified: 2026-08-22 @ `stories/slice-1-foundation/KAFF-109-change-a-users-role.md:3`] and its
+> [Verified: 2026-08-22 @ `KAFF-109-change-a-users-role.md` -> `KAFF-109`] and its
 > criteria carry the reversal: `AC-109-A` *"a supervisor comes off site, **and is not refused**"*,
 > `AC-109-B` *"junior assignments go too"*, `AC-109-C` *"the mirror case"*. **The cases below
 > now cite the story's own criteria rather than a D-number standing in for a story that had not caught
@@ -1399,8 +1398,7 @@ deactivated"* and *"the deactivation succeeds and the record simply carries no r
 states which.
 
 **Corrected 2026-08-21 (SM-12).** This case asserted the **refusal** and called itself
-expected-to-fail. `AC-110-G`
-(`stories/slice-1-foundation/KAFF-110-deactivate-a-user.md:75-78`) says only that the reason is
+expected-to-fail. @ `KAFF-110-deactivate-a-user.md` -> `AC-110-G` says only that the reason is
 *"stored **when it is given**"* — which describes a reason that may be absent, not one that is
 demanded. So the case asserted one of two plausible answers against a story that states the other,
 and **a case that encodes a guess is worse than a `PENDING`**, which is this file's own rule and the
@@ -1731,8 +1729,7 @@ The answer is a second surface, not a softer gate on this one.
 **Relock 2026-08-22 — the citation resolves and the case as written was half wrong. Raised as `F-30`.**
 Cited `KAFF-115 rule 5`, which is not an identifier. The map's criterion is
 **`AC-115-H` — *"HR reads the team, and reaches nothing else"*** — and **the criterion says HR
-*reads* the team.** [Verified: 2026-08-22 @
-`stories/slice-1-foundation/KAFF-115-project-team-panel.md:82-87`]: *"When I open the Project Team
+*reads* the team.** [Verified: 2026-08-22 @ `KAFF-115-project-team-panel.md` -> `AC-115-H`]: *"When I open the Project Team
 screen for project A, then I see its name, its code and its members with their roles and levels"*, with
 no money field, **and** the project dashboard refused with 403. Rule 5 names the mechanism —
 two surfaces, and HR's is the new narrow **`ProjectTeamRead`**.
@@ -1892,8 +1889,7 @@ an insufficient claim: it existed, was clean, was covered by 51 passing tests, a
 once.
 
 **Split 2026-08-21 (SM-12).** This case asserted *"exactly one"* record across a list that included
-**deactivation**, while `AC-118-C`
-(`stories/slice-1-foundation/KAFF-118-every-slice-1-change-is-audited.md:52-55`) requires **four** —
+**deactivation**, while @ `KAFF-118-every-slice-1-change-is-audited.md` -> `AC-118-C` requires **four** —
 one `User` and three `ProjectAssignment`, sharing one `CorrelationId`. Both are right for their own
 subject: `AC-118-A`'s user holds no assignments, `AC-118-C`'s holds three, which is why the story separates them
 and says so in as many words (*"as AC1c below, not as a step in AC1's list, because it writes more
@@ -2446,7 +2442,7 @@ then it matches.
 > because, when they were written, no story named HR's surface. **That is no longer true and was not
 > re-checked before today.** `KAFF-115` is `Status: Ready`, carries the surface as rule 5 and names the
 > permission **`ProjectTeamRead`**, and carries `AC-115-H` and `AC-115-I` for it
-> [Verified: 2026-08-22 @ `stories/slice-1-foundation/KAFF-115-project-team-panel.md:3, :28, :82-93`];
+> [Verified: 2026-08-22 @ `KAFF-115-project-team-panel.md` -> `AC-115-H`, `AC-115-I`];
 > `KAFF-105b` `AC-105b-E` routes HR to it. **`qa/questions.md` F-24's "there is no story"
 > half is closed; its "there is no permission" half is not** — `ProjectTeamRead` is named in four story
 > files and in **no file under `src/`** [Verified: 2026-08-22]. The three cases below are relocked to

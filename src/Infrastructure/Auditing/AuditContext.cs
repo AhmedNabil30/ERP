@@ -54,8 +54,10 @@ public sealed class AuditContext : IAuditContext
     /// The half-named actor is the case the database refuses through
     /// <c>ck_audit_records_actor_is_named_completely</c>, and refusing it here as well means the
     /// caller gets an argument error at the point of the mistake rather than a constraint violation
-    /// at the point of the save. The constraint is still the authority; this is only the earlier
-    /// signal. See decisions.md D-074.
+    /// at the point of the save. <b>The constraint is the authority, not this method</b>, and not
+    /// only for the usual reason: this guard sits on the two channels that <i>declare</i> an actor,
+    /// and <c>AuditSaveChangesInterceptor.ResolveActor</c> constructs one directly when no gate ran
+    /// — a path that never reaches here. See decisions.md D-075.
     /// </remarks>
     private static AuditActor FullyNamed(AuditActor actor, string kind)
     {

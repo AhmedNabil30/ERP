@@ -33,7 +33,7 @@ public sealed record AuditEvent(AuditEventKind Kind, string SubjectType, Guid Su
 /// <para>
 /// Normally <see cref="IAuditContext.VerifiedActor"/> — the row the authorization gate read from the
 /// users table on this request. <b>Never the token's claims</b>: see
-/// <see cref="IAuditContext.ActorVerifiedAs"/> and decisions.md D-074.
+/// <see cref="IAuditContext.ActorVerifiedAs"/> and decisions.md D-075.
 /// </para>
 /// <para>
 /// <see cref="IAuditContext.AttributeTo"/> is the other source and has one caller: bootstrap
@@ -44,8 +44,10 @@ public sealed record AuditEvent(AuditEventKind Kind, string SubjectType, Guid Su
 /// <para>
 /// <see cref="UserId"/> and <see cref="Role"/> are null together, for the one case where there is
 /// genuinely no actor: work outside a request — migrations, seeding, scheduled jobs
-/// (<c>SystemCurrentUser</c>). <b>A named actor without a role is refused by the database</b>, which
-/// is the whole of <c>ck_audit_records_actor_is_named_completely</c>.
+/// (<c>SystemCurrentUser</c>). <b>A named actor without a role — or a role over nobody — is refused
+/// by the database</b>, which is the whole of <c>ck_audit_records_actor_is_named_completely</c>:
+/// <c>(actor_user_id IS NULL) = (actor_role IS NULL)</c>. A check constraint rather than
+/// <c>IsRequired()</c> on the role, because that one genuinely roleless case must stay legal.
 /// </para>
 /// </remarks>
 public sealed record AuditActor(Guid? UserId, string DisplayName, Role? Role);
@@ -118,7 +120,7 @@ public interface IAuditContext
     /// <para>
     /// <b>This is what keeps the trail and the permission system from disagreeing about the same user
     /// on the same request.</b> D-048 stopped the gate trusting the token because claims go stale;
-    /// until decisions.md D-074 the audit trail still believed them, so a role change would have
+    /// until decisions.md D-075 the audit trail still believed them, so a role change would have
     /// attributed an act to a role the gate had already stopped honouring — permanently, in a table
     /// that is append-only by trigger.
     /// </para>

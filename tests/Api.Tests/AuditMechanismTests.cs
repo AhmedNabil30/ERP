@@ -23,11 +23,32 @@ public sealed class AuditMechanismTests
     /// <summary>Ambient test cancellation, threaded through every database call.</summary>
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
+    /// <summary>
+    /// The audit context of a request that passed the gate — which is every authenticated request
+    /// the application serves.
+    /// </summary>
+    /// <remarks>
+    /// <c>PermissionAuthorizationHandler</c> hands the row it read out of the users table to
+    /// <see cref="IAuditContext.ActorVerifiedAs"/> on every grant, and D-069 makes an endpoint with
+    /// no gate a build failure. These tests invoke the interceptor without an HTTP request, so the
+    /// gate cannot run and the actor has to be stated. Stated here rather than defaulted inside
+    /// <c>PostgresDatabase</c>, because a harness that supplies a verified actor to every save could
+    /// no longer exhibit a save that lacks one — which is
+    /// <see cref="An_actor_is_named_completely_or_not_at_all"/>'s whole subject. See decisions.md
+    /// D-075.
+    /// </remarks>
+    private static AuditContext Gated(StubCurrentUser actor)
+    {
+        var auditContext = new AuditContext();
+        auditContext.ActorVerifiedAs(new AuditActor(actor.UserId, actor.DisplayName, actor.Role));
+        return auditContext;
+    }
+
     [Fact]
     public async Task Creating_an_entity_writes_an_audit_record_without_the_feature_asking()
     {
         var actor = new StubCurrentUser();
-        var auditContext = new AuditContext();
+        AuditContext auditContext = Gated(actor);
 
         Domain.MasterData.Client client = NewClient();
 
@@ -56,13 +77,13 @@ public sealed class AuditMechanismTests
         var actor = new StubCurrentUser();
         Domain.MasterData.Client client = NewClient();
 
-        await using (KaffDbContext context = _database.CreateContext(actor))
+        await using (KaffDbContext context = _database.CreateContext(actor, Gated(actor)))
         {
             context.Clients.Add(client);
             await context.SaveChangesAsync(Ct);
         }
 
-        var auditContext = new AuditContext();
+        AuditContext auditContext = Gated(actor);
         auditContext.SetReason("العميل طلب تحديث بيانات التواصل");
 
         await using (KaffDbContext context = _database.CreateContext(actor, auditContext))
@@ -99,13 +120,13 @@ public sealed class AuditMechanismTests
             Now,
             Department.Finance).Value;
 
-        await using (KaffDbContext context = _database.CreateContext(actor))
+        await using (KaffDbContext context = _database.CreateContext(actor, Gated(actor)))
         {
             context.Users.Add(user);
             await context.SaveChangesAsync(Ct);
         }
 
-        await using (KaffDbContext context = _database.CreateContext(actor))
+        await using (KaffDbContext context = _database.CreateContext(actor, Gated(actor)))
         {
             User tracked = await context.Users.SingleAsync(u => u.Id == user.Id, Ct);
             tracked.SetOwnPassword("a-hash-that-must-never-reach-the-audit-trail");
@@ -129,7 +150,7 @@ public sealed class AuditMechanismTests
         var actor = new StubCurrentUser();
         Domain.MasterData.Client client = NewClient();
 
-        await using (KaffDbContext context = _database.CreateContext(actor))
+        await using (KaffDbContext context = _database.CreateContext(actor, Gated(actor)))
         {
             context.Clients.Add(client);
             await context.SaveChangesAsync(Ct);
@@ -156,7 +177,7 @@ public sealed class AuditMechanismTests
     public async Task An_event_that_changes_no_entity_still_writes_a_record()
     {
         var actor = new StubCurrentUser();
-        var auditContext = new AuditContext();
+        AuditContext auditContext = Gated(actor);
         Guid subjectId = Guid.CreateVersion7();
 
         await using (KaffDbContext context = _database.CreateContext(actor, auditContext))
@@ -188,7 +209,7 @@ public sealed class AuditMechanismTests
     public async Task An_event_and_an_entity_change_saved_together_share_one_correlation_id()
     {
         var actor = new StubCurrentUser();
-        var auditContext = new AuditContext();
+        AuditContext auditContext = Gated(actor);
         Domain.MasterData.Client client = NewClient();
 
         await using (KaffDbContext context = _database.CreateContext(actor, auditContext))
@@ -300,6 +321,52 @@ public sealed class AuditMechanismTests
             "ck_audit_records_grant_path");
     }
 
+    /// <summary>
+    /// An actor is named completely or not at all, and the database is what says so.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// decisions.md D-075. <c>ActorRole</c> cannot be <c>IsRequired()</c> — the one genuinely
+    /// roleless actor is work outside a request, which names no user either — so the pairing is a
+    /// check constraint or it is nothing.
+    /// </para>
+    /// <para>
+    /// <b>The first half is the reachable one, and it is reachable past the application guard.</b>
+    /// <c>AuditContext.FullyNamed</c> refuses a half-named actor on both channels that
+    /// <i>declare</i> one, but <c>AuditSaveChangesInterceptor.ResolveActor</c> falls back to
+    /// constructing <c>(user id, display name, null role)</c> directly when no gate ran on the
+    /// request — it passes through neither channel, so no application guard sees it. This save is
+    /// exactly that shape, and before the constraint existed it committed silently into a table that
+    /// is append-only and no-truncate by trigger.
+    /// </para>
+    /// <para>
+    /// The second half is the mirror, written raw because nothing constructs it: a role over nobody.
+    /// It is refused for the same reason the grant-path constraint refuses a path over no project —
+    /// the interceptor is one writer today and the table outlives it.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task An_actor_is_named_completely_or_not_at_all()
+    {
+        var actor = new StubCurrentUser();
+
+        await using (KaffDbContext context = _database.CreateContext(actor, new AuditContext()))
+        {
+            context.Clients.Add(NewClient());
+
+            await DatabaseGuard.RefusesAsync(
+                () => context.SaveChangesAsync(Ct),
+                "ck_audit_records_actor_is_named_completely");
+        }
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+
+        await DatabaseGuard.RefusesAsync(
+            () => InsertRawAuditRecordAsync(
+                reader, action: "Modified", eventType: null, actorRole: nameof(Role.Owner)),
+            "ck_audit_records_actor_is_named_completely");
+    }
+
     private const string EmptyJsonObject = "{}";
 
     private static Task<int> InsertRawAuditRecordAsync(
@@ -307,17 +374,19 @@ public sealed class AuditMechanismTests
         string action,
         string? eventType,
         Guid? projectId = null,
-        string? grantPath = null)
+        string? grantPath = null,
+        Guid? actorUserId = null,
+        string? actorRole = null)
         => context.Database.ExecuteSqlAsync(
             $"""
              INSERT INTO audit_records
                (id, occurred_at, action, entity_type, entity_id, event_type,
                 actor_display_name, changed_properties, correlation_id, after_json,
-                project_id, grant_path)
+                project_id, grant_path, actor_user_id, actor_role)
              VALUES
                ({Guid.CreateVersion7()}, {Now}, {action}, 'User', {Guid.CreateVersion7()}, {eventType},
                 'raw', '[]'::jsonb, {Guid.CreateVersion7()}, {EmptyJsonObject}::jsonb,
-                {projectId}, {grantPath})
+                {projectId}, {grantPath}, {actorUserId}, {actorRole})
              """,
             Ct);
 

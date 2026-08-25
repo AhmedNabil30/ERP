@@ -748,3 +748,74 @@ fell today.
 billing issue."* **Not recorded as attempted-and-failed, because it was not attempted** — a failed run
 tells you something; a run that never started tells you nothing. Nabil's, at
 `github.com/settings/billing`.
+
+---
+
+## 17. Sprint close — where slice 1 actually stands
+
+### Verified by me, on a genuinely clean build
+
+| | |
+|---|---|
+| Build Release, warnings as errors | **0 errors, 0 warnings, zero MSB302x**, exit 0 |
+| `dotnet format --verify-no-changes` | clean, exit 0 |
+| Domain / Api | **75 / 75** · **109 / 109** |
+| `check-citations.ps1` | **631 checked, 0 broken, 0 legacy — exit 0 for the first time** |
+
+**The citation debt is gone.** 97 → 46 → **0**, including the 76 in my own meeting file. **The Definition
+of Done line I rescoped in D-068 no longer needs its scoping** — the debt it was written around does
+not exist. The scoping stays, because it was right about *why*: a Definition of Done is about the
+change in front of you.
+
+### D-075 — and the Architect corrected me on the point the whole task turned on
+
+I briefed it that `ck_audit_records_actor_is_named_completely` was named in two comments, existed
+nowhere, but that **"the behaviour is genuinely enforced by `FullyNamed`, so this is not a hole
+today"** — and told it to build the constraint *or delete the claim*.
+
+**It was a hole today.** `FullyNamed` guards the two channels that *declare* an actor.
+`AuditSaveChangesInterceptor.ResolveActor`'s fallback constructs a half-named actor **directly** and
+reaches neither channel. **Measured, not argued:** with the constraint removed, an authenticated
+request reaching the interceptor without a gate **committed** a row with `actor_user_id` set and
+`actor_role` null into the append-only table, and returned success — with `FullyNamed` present and
+unchanged.
+
+**So the answer was never "delete the claim".** My brief offered a wrong option as an equal one, and
+the agent declined it on evidence. That is principle 7 paying for itself for the fifth time this
+sprint.
+
+**D-073 is CLOSED**, not held for KAFF-109. The trail no longer reads the claimed role at all, so a
+future role mutator changes the row the gate reads *and* the row the trail records — the "reachable
+when KAFF-109 lands" reasoning applied to the symptom and does not survive the fix.
+
+**A second correction worth keeping:** I told it to add the constraint to `DatabaseInitializer`'s
+guard list. **There is no list.** D-064 made `FindMissingGuardsAsync` read check-constraint names from
+the design-time EF model precisely so nobody maintains one — `HasCheckConstraint` *is* the
+registration. Confirmed by dropping the constraint from the live database and watching start-up refuse
+with exit 82 **without anyone touching `DatabaseInitializer`.**
+
+### §M applied, and the boundary held
+
+Three agents, three models, stated when briefed: **Architect on the strongest** (append-only table,
+migration, unbackfillable), **Backend on mid** (implementation against written criteria), **the
+citation sweep on the smallest** (mechanical, checker-verified).
+
+**The sweep took 46 citations to zero with 0 broken and no encoding damage.** The Backend agent
+**refused invented work** — it found the i18n keys I had sent it after were already present in both
+catalogues, and that the genuinely missing ones were Angular labels belonging to Frontend, not backend
+keys. **§M says never downgrade a task where the agent must refuse; this one had to, on a mid model,
+and did.** The rule's boundary is about *judging a trade-off nobody has written down*, and "check
+whether the keys are there" is not that.
+
+### One thing I got wrong and reversed inside an hour
+
+I found the deploy workflow's secret names changed in a commit containing agent work, traced no brief
+that asked for it, and **reverted them**. They were **Nabil's own change**, reconciling the repository
+to the variable names that already exist in GitHub. **I restored them; the file is byte-identical to
+what he committed.**
+
+**The lesson is about the inference, not the edit.** A commit containing agent work is not evidence
+every hunk in it is an agent's. I had a `git log -S` result naming the commit and treated it as naming
+the author of that hunk. **The repository was the thing that was wrong, and reconciling it to the
+outside world was the correct direction** — which I reversed because I assumed the outside world had
+not moved.

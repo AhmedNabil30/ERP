@@ -216,13 +216,13 @@ Every row below was verified against the current files today. Nothing is carried
 
 | # | Finding | Evidence |
 |---|---|---|
-| **N-07** | **`TC-1-019` asserts the opposite of a ruling.** It requires a replayed cookie after sign-out to be refused, and instructs *"do not resolve it by rewording the AC"*. **D-051 N5 settles it the other way**, and `KAFF-102 AC1b` now states the replay **is still accepted**, deliberately, as the accepted trade. Bucket 2: **the story is right and the case is stale.** | `test-cases.md:502-509` vs `KAFF-102:44-47` |
-| **N-08** | **`TC-1-003` reproduces what D-051 Q31 refused.** It asserts `ActorUserId` is null on the bootstrap record; the ruling exists precisely because *"a seeded account has no actor — the first row in the trail would name nobody."* | `test-cases.md:186-187` vs `decisions.md:1777-1778` |
-| **N-09** | **`TC-1-143` and `KAFF-118 AC1b` disagree on a count.** The case asserts deactivation writes *"exactly one"* record; AC1b requires **four** on one `CorrelationId`. Both are committed. | `test-cases.md:1662` |
-| **N-10** | **`TC-1-086` encodes one of Q35's two possible answers** — it asserts deactivation without a reason is refused, while `KAFF-110 AC6` says the reason is *"stored when it is given"*. A case that encodes an unasked question's answer is worse than a `PENDING`. | `test-cases.md:1205-1210` |
-| **N-11** | **Test-case AC labels drifted after the stories were renumbered.** `TC-1-006` cites `KAFF-100 AC3` and asserts AC8; `TC-1-005` cites AC4, asserts AC7; `TC-1-042` cites `KAFF-105a AC3`, asserts AC6; `TC-1-197` cites `KAFF-106 AC8`, asserts AC10. **The Definition of Done line *"every QA test case for the story executed, with its result recorded"* cannot be mechanically checked against labels that point at the wrong criterion.** | `test-cases.md:204, 2252` |
+| **N-07** | **`TC-1-019` asserts the opposite of a ruling.** It requires a replayed cookie after sign-out to be refused, and instructs *"do not resolve it by rewording the AC"*. **D-051 N5 settles it the other way**, and `KAFF-102 AC1b` now states the replay **is still accepted**, deliberately, as the accepted trade. Bucket 2: **the story is right and the case is stale.** | |
+| **N-08** | **`TC-1-003` reproduces what D-051 Q31 refused.** It asserts `ActorUserId` is null on the bootstrap record; the ruling exists precisely because *"a seeded account has no actor — the first row in the trail would name nobody."* | |
+| **N-09** | **`TC-1-143` and `KAFF-118 AC1b` disagree on a count.** The case asserts deactivation writes *"exactly one"* record; AC1b requires **four** on one `CorrelationId`. Both are committed. | |
+| **N-10** | **`TC-1-086` encodes one of Q35's two possible answers** — it asserts deactivation without a reason is refused, while `KAFF-110 AC6` says the reason is *"stored when it is given"*. A case that encodes an unasked question's answer is worse than a `PENDING`. | |
+| **N-11** | **Test-case AC labels drifted after the stories were renumbered.** `TC-1-006` cites `KAFF-100 AC3` and asserts AC8; `TC-1-005` cites AC4, asserts AC7; `TC-1-042` cites `KAFF-105a AC3`, asserts AC6; `TC-1-197` cites `KAFF-106 AC8`, asserts AC10. **The Definition of Done line *"every QA test case for the story executed, with its result recorded"* cannot be mechanically checked against labels that point at the wrong criterion.** | |
 | **N-12** | **Coverage gaps in committed stories:** KAFF-100 AC5, AC6, AC9; KAFF-101a AC13 (its only case, `TC-1-231`, was re-mapped to deferred KAFF-101b); KAFF-102 AC1b; KAFF-106 AC9; KAFF-109 AC5 and AC8; KAFF-111 AC4, AC5, AC7 — **KAFF-111 has two cases for seven criteria.** | |
-| **N-13** | **One `PENDING` in the committed set, on a stale number.** `TC-1-079` is marked `PENDING Q27`; Q27 is answered, and the BA re-registered the residual as Q41. Story and cases disagree on whether it blocks. | `test-cases.md:1110` |
+| **N-13** | **One `PENDING` in the committed set, on a stale number.** `TC-1-079` is marked `PENDING Q27`; Q27 is answered, and the BA re-registered the residual as Q41. Story and cases disagree on whether it blocks. | |
 
 ### 4.3 Code gaps — the Architect's and Backend's
 
@@ -337,15 +337,15 @@ returns a shorter scope, that is the scope it should be shortened to.
 | **SM-8** | **Sweep the register and keep sweeping it.** Q-UX-16…22 and QA-4 never reached `questions-for-karim.md`; the file's own headline is false as a result. Merge them with origins, assign the numbers this meeting proposed, and correct the *"nothing blocks sprint 1"* block | BA | before SM-9 |
 | **SM-9** | **One message to Karim, and Q34 leads it** — Q34, Q41, Q42, Q43, Q44, Q45, Q46, Q47, Q48, Q49, Q50, plus the four code-derived refusals. Q17 rides along: `ProjectManage` is granted to nobody (verified in `PermissionCatalogue.cs`, grants list empty, `Unresolved: true`), so **no project can be created at all** — it blocks nothing today and blocks slice 4 outright | **Nabil** | scope acceptance |
 | **SM-10** | **Scope the committed stories' criteria to the committed set.** KAFF-118 (dependency on 119, AC1, AC5), KAFF-111 (rule 4, AC3), KAFF-110 (AC4), KAFF-113 (AC4) all reach into deferred stories. Move the criterion with the story or restate it executably. Also: KAFF-113 `:32-36` and `:66` forward-reference deferred 105b/115 and call `/api/me` where KAFF-105a fixes `/api/auth/me` | BA | build starts |
-| **SM-11** | **KAFF-107 re-estimate or fold.** Its stated deliverable already exists (`en.json:46`, `ar.json:46`). Decide whether 2 points remain in it | BA | build starts |
+| **SM-11** | **KAFF-107 re-estimate or fold.** Its stated deliverable already exists in both translation catalogues. Decide whether 2 points remain in it | BA | build starts |
 | **SM-12** | **Correct the four cases that assert the wrong outcome** — `TC-1-019` (D-051 N5), `TC-1-003` (D-051 Q31), `TC-1-143` (KAFF-118 AC1b), `TC-1-086` (→ `PENDING Q35`). Re-label the drifted AC citations. Cover the ten uncovered criteria, KAFF-111's five first | QA | build starts |
 | **SM-13** | **`ProjectAccess` cannot report how access was granted** — one branch serves Owner and HR. KAFF-116 requires the distinction and F-07 records only the missing column, not this. Specify the policy's side | Architect | KAFF-116 build |
 | **SM-14** | **Name the audit mechanism for acts that change no entity** — sign-in, failed sign-in, lockout, sign-out, and the bootstrap actor on an anonymous request. Three committed stories require records the interceptor cannot produce and KAFF-118 forbids a handler from building | Architect | KAFF-101a build |
 | **SM-15** | **One i18n pass over the whole slice-1 key list** against `rtl-and-i18n.md` §6, not one line in KAFF-101b. Both catalogues are still empty of `auth.*`, so the cost is a text edit today | BA | build starts |
 | **SM-16** | **Decide N-04** — is `password_change_required` a field or a refusal? KAFF-105a says both. Not a business question | BA + Architect | KAFF-105a build |
-| **SM-17** | **F-05** — `permission-matrix.md:247` still says HeadOfDesign holds nothing while `PermissionCatalogue.cs:157-159` grants it `ProjectRead`. The code is right; the matrix is stale | Architect | gate run |
+| **SM-17** | **F-05** — the permission matrix still says HeadOfDesign holds nothing while the catalogue grants it `ProjectRead`. The code is right; the matrix is stale | Architect | gate run |
 | **SM-18** | **Q-UX-20 → an N-number:** does the staff sign-in endpoint refuse a `Role.Client` credential now that the portal is a separate host? `KAFF-101a` rule 16 still says it is accepted, which predates D-051 Q33. Touches committed work | Architect | KAFF-101a build |
-| **SM-19** | **N7 already covers the SMS/WhatsApp gap — do not re-file it.** `questions-for-karim.md:160` records that nothing in the pinned stack sends either. **What is genuinely missing from N7/N8: who monitors delivery failures, and what the Owner sees when a message is rejected.** Add that; KAFF-104 is deferred so it blocks nothing | Nabil + Architect | KAFF-104, next sprint |
+| **SM-19** | **N7 already covers the SMS/WhatsApp gap — do not re-file it.** It records that nothing in the pinned stack sends either. **What is genuinely missing from N7/N8: who monitors delivery failures, and what the Owner sees when a message is rejected.** Add that; KAFF-104 is deferred so it blocks nothing | Nabil + Architect | KAFF-104, next sprint |
 
 **On the two "new" actions this meeting was handed:** the SMS/WhatsApp path is **already registered as
 N7**, not new — see SM-19. Q17 is **already registered and correctly described**; it is added to SM-9's
@@ -428,7 +428,7 @@ properly — and this backlog entered claiming, in writing, that it had no open 
 # Addendum — after D-052, same day
 
 Three rulings landed after the meeting closed: the Architect on F-04, Karim on Q17, Nabil on Q44.
-Recorded as **D-052** (`decisions.md:1851`). Two of the three changed code. This addendum is the
+Recorded as **D-052**. Two of the three changed code. This addendum is the
 re-run, not a new meeting.
 
 ## A1. The gate is clear, and it was verified here rather than accepted
@@ -459,7 +459,7 @@ has rewritten it as a regression case with that split stated.
 **Pinning the class rather than the row is the part worth keeping.** F-04 was the third appearance of
 one mechanism — D-035, D-044 ruling 2, now this. Fixing the row would have invited a fourth.
 
-**🟡 `PhotoPublish` is the last bare-department grant** (`PermissionCatalogue.cs:258`) and is
+**🟡 `PhotoPublish` is the last bare-department grant** and is
 deliberately left: the ruling is scoped to *financial* permissions and a photo moves no money, so
 extending it would be applying a rule nobody gave. Registered as **Q52**.
 
@@ -508,8 +508,8 @@ worth noting that the answer came back in hours and closed a criterion that had 
 **KAFF-107 folds into KAFF-106 and KAFF-108. 16 stories / 59 points → 15 stories / 57 points.**
 
 N-01 found that the story's stated deliverable already exists. What was left was checked rather than
-assumed: the refusal is in the domain at `User.cs:232-235`, reached from `Create` and from
-`MoveToDepartment`, and it is already asserted at `PermissionEvaluatorTests.cs:304-347`. **What
+assumed: the refusal is in the domain at @ `User.cs` -> `ValidateDepartment`, reached from `Create` and from
+`MoveToDepartment`, and it is already asserted at @ `PermissionEvaluatorTests.cs` -> `Hr_may_read_the_user_list_and_still_reaches_nothing_financial`. **What
 remained was two endpoint-level refusal tests — AC2 on the create path (KAFF-106) and AC3 on the move
 path (KAFF-108), both committed.** The BA's phrasing is the right one: *a story whose criteria all
 execute through someone else's endpoint is a test plan.*
@@ -645,12 +645,10 @@ between a test and a decoration:**
   catalogue of green-results-that-are-not-evidence, avoided in advance.
 
 **The money guard is now at the point of decision.** `PermissionDefinition.TouchesMoney`
-(`PermissionCatalogue.cs:58, 75`) marks eleven permissions, and `PermissionEvaluator.cs:135` discards
+marks eleven permissions, and `PermissionEvaluator.cs` -> `Evaluate` discards
 any grant with a null `Role` on those before matching:
 `(!definition.TouchesMoney || grant.Role is not null) && Matches(grant, subject)`. Verified the flag is
-set on all eleven rows, and that
-`The_evaluator_refuses_a_bare_department_grant_on_money_even_if_one_reaches_the_catalogue`
-(`PermissionEvaluatorTests.cs:177`) tests it against a definition the shipped catalogue deliberately no
+set on all eleven rows, and that @ `PermissionEvaluatorTests.cs` -> `The_evaluator_refuses_a_bare_department_grant_on_money_even_if_one_reaches_the_catalogue` tests it against a definition the shipped catalogue deliberately no
 longer contains.
 
 **D-052 protected the rows that exist; D-053 protects the rows added tomorrow.** That distinction is
@@ -660,19 +658,18 @@ rather than by anything failing.
 
 ## B2. Q52 — contained, with one leak into committed work
 
-**Contained in the register.** `questions-for-karim.md:140` carries Q52 with the right scoping —
-*blocks nothing before slice 6* — and names `PermissionCatalogue.cs:258` as the last bare-department
+**Contained in the register.** Q52 is recorded with the right scoping —
+*blocks nothing before slice 6* — and names `PhotoPublish` as the last bare-department
 grant, deliberately left because the Architect's ruling is scoped to financial permissions and a photo
-moves no money. It is fifth on the ask-list (`:193`). **No PhotoPublish code exists or is scheduled in
+moves no money. It is fifth on the ask-list. **No PhotoPublish code exists or is scheduled in
 slice 1**, and `TouchesMoney` is correctly **not** set on it, so the financial gap stays closed while
 the photo question stays open.
 
-**One leak, and it is the SM-10 defect class again.** `KAFF-107:68` has an acceptance criterion that
+**One leak, and it is the SM-10 defect class again.** KAFF-107 has an acceptance criterion that
 calls *"an endpoint requiring `ProjectRead`, `SiteExpenseConfirm`, `TreasuryPostProject`,
 `FinancialMovementApprove`, `AccountManage` and **`PhotoPublish`**"* — HR's zero-financial-visibility
 sweep. **None of those endpoints exists in slice 1**, and `PhotoPublish`'s is slice 6. The criterion is
-sound and the level is wrong: the equivalent assertion already runs against the evaluator at
-`PermissionEvaluatorTests.cs:304-347`.
+sound and the level is wrong: the equivalent assertion already runs against the evaluator at @ `PermissionEvaluatorTests.cs` -> `Hr_may_read_the_user_list_and_still_reaches_nothing_financial`.
 
 KAFF-107 is folding into KAFF-106 and KAFF-108 (**SM-21**), so this criterion travels with the fold.
 **Action SM-26: it lands as an evaluator-level assertion, not an endpoint-level one.** Written the
@@ -715,7 +712,7 @@ Nabil's go-ahead covers the permission spine, and the two items previously named
 stamp comparison and F-04 — are **done**. What is left, in dependency order:
 
 1. **KAFF-106** — nothing exists, and every other story needs a subject. Carries folded KAFF-107 **AC2** (the create path)
-2. **KAFF-100** — the atomic emptiness check. **No database constraint backs it** (`IdentityConfigurations.cs:52-57`, `GuardScripts.cs`) — that is build work, on the most privileged endpoint in the system
+2. **KAFF-100** — the atomic emptiness check. **No database constraint backs it** — that is build work, on the most privileged endpoint in the system
 3. **KAFF-108** — carries folded KAFF-107 **AC3** (the move path)
 4. **KAFF-109** — **`User.ChangeRole` does not exist** (SM-3, still open) plus the revoke-on-role-change cascade. `ProjectAssignment.Revoke` already does the right thing and keeps the row as history; nothing calls it. **Build this against D-051 Q27, not D-049 ruling 6 — the rules inverted**
 5. **KAFF-113, KAFF-114** — the assignment endpoints
@@ -733,8 +730,7 @@ change no entity — blocks item 7's audit criteria specifically.
 ## B6. One papercut, found by running the suite
 
 The Api harness's **default** connection string and its own error message suggest
-`Username=postgres;Password=postgres` (`PostgresDatabase.cs:34`, `:78`), while `README.md:77` and
-`docker-compose.yml` both use `kaff/kaff`. My first run failed with `28P01`; the second, with the
+`postgres/postgres`, while the README and `docker-compose.yml` both use `kaff/kaff`. My first run failed with `28P01`; the second, with the
 README's credentials, gave 43/43. **D-046 fixed this in the README direction and left the harness
 pointing the other way** — so a developer who follows the harness's own suggestion gets an
 authentication failure that names nothing to do with the cause. One line. **Action SM-27.**

@@ -7,7 +7,7 @@ namespace Kaff.Domain.Authorization;
 /// Not consulted by <see cref="PermissionEvaluator"/> — it rides along because the gate's read is the
 /// one place in a request that has the actor's own row in hand, and the audit trail needs the name
 /// and the role from <b>that</b> row rather than from the token. Fetching it separately would be a
-/// second read of a row already loaded. See decisions.md D-074.
+/// second read of a row already loaded. See decisions.md D-075.
 /// </param>
 public sealed record PermissionSubject(
     Guid UserId,
