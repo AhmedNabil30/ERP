@@ -202,6 +202,20 @@ uses and still works; the *reason* recorded for it is stale. Flagged, not change
   not watch. Found 2026-08-24 by the Architect during A-04; recorded as D-069 §6.
 
   **Two rules, not one:** kill `Kaff.Api.Tests` as well as `Kaff.Api`, and **treat `MSB3026` on a
+
+  > **⚠️ Amended 2026-08-25 by the Scrum Master, after hitting this live.** The paragraph above is
+  > true **only for a bare `dotnet build`**. With the project standard **`-warnaserror`, MSB3026 is
+  > promoted to an error and the build fails loudly** — verified 2026-08-25: **exit 1, 24 errors**,
+  > naming `Kaff.Api (21724)` as the holder.
+  >
+  > **So the standard command protects you and a bare `dotnet build` does not.** What does *not*
+  > protect you either way: **the test executables still run, and still report green off the stale
+  > binary** — 75/75 and 106/106 on that same failed build. **Read the build result before the test
+  > result, every time**; a green suite next to a failed build is the stale binary, not a passing one.
+  >
+  > **And `Stop-Process -Name` is not enough.** The holder survived two name-based kills and had to be
+  > taken by PID, read out of the MSB3026 message itself. The error names the process and its pid —
+  > use it.
   succeeded build as a failed build.**
 
   ```powershell

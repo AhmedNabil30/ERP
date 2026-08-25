@@ -343,6 +343,68 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
             .Should().Be(nameof(OperationsSubDepartment.Financial));
     }
 
+    /// <summary>
+    /// decisions.md D-074. The trail records the role the <b>database</b> holds for the actor, not
+    /// the one their token claims.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The only way to test this is to make the two disagree</b>, so this sends the Owner's user
+    /// id with a token claiming <c>SiteEngineer</c>. That is the shape a stale token takes the moment
+    /// KAFF-109 adds a role mutator — D-048 already re-reads authority from the database on every
+    /// request, and until D-074 the audit trail alone still believed the claim.
+    /// </para>
+    /// <para>
+    /// The display name is asserted for the same reason and in the same act: <c>TestAuthHandler</c>
+    /// puts <c>test-user-{id}</c> in the name claim, which is never the user's name, so a record
+    /// carrying the real one can only have come from the database.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task The_trail_records_the_role_the_database_holds_not_the_role_the_token_claims()
+    {
+        (await MoveAsync(_owner, _finance, "Marketing", null, roleClaim: nameof(Role.SiteEngineer)))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        AuditRecord record = await MoveRecordAsync(_finance);
+
+        record.ActorUserId.Should().Be(_owner);
+        record.ActorRole.Should().Be(
+            Role.Owner, "the gate read the role from the users table and the token lied about it");
+        record.ActorDisplayName.Should().Be("mov-owner", "the name is read from the same row as the role");
+    }
+
+    /// <summary>
+    /// decisions.md D-074, the half that needs no role change to happen: a token carrying <b>no</b>
+    /// role claim at all still produces an attributed record.
+    /// </summary>
+    /// <remarks>
+    /// Before D-074 this wrote a permanently unattributed row into a table that is append-only and
+    /// no-truncate by trigger, so it could never be corrected. It is stated as its own test rather
+    /// than left to <see cref="MoveAsync"/>'s default, because a default can be changed back without
+    /// anything naming what was lost — which is how the property went unobserved in the first place.
+    /// </remarks>
+    [Fact]
+    public async Task A_token_with_no_role_claim_still_writes_an_attributed_record()
+    {
+        (await MoveAsync(_owner, _finance, "Marketing", null))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        AuditRecord record = await MoveRecordAsync(_finance);
+
+        record.ActorUserId.Should().Be(_owner);
+        record.ActorRole.Should().Be(Role.Owner);
+    }
+
+    private async Task<AuditRecord> MoveRecordAsync(Guid movedUserId)
+    {
+        await using KaffDbContext reader = _database.CreateBareContext();
+
+        return await reader.AuditRecords.SingleAsync(
+            candidate => candidate.EntityId == movedUserId && candidate.Action == AuditAction.Modified,
+            Ct);
+    }
+
     /// <summary>A route naming a user that does not exist is a 404 the client can translate.</summary>
     /// <remarks>
     /// KAFF-108 names no such refusal; an endpoint addressing a user by id has to answer something.
@@ -370,11 +432,18 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
     /// test that serialises with the same converter the server deserialises with would pass on a
     /// numeric wire form too.
     /// </remarks>
+    /// <param name="roleClaim">
+    /// What the caller's token says their role is — <b>omitted entirely by default, and never read
+    /// from the database.</b> A helper that filled this in from the users table would make the claim
+    /// and the database incapable of disagreeing, and D-074's whole subject is what happens when they
+    /// do. See <see cref="The_trail_records_the_role_the_database_holds_not_the_role_the_token_claims"/>.
+    /// </param>
     private async Task<HttpResponseMessage> MoveAsync(
         Guid actorId,
         Guid targetUserId,
         string? department,
-        string? subDepartment)
+        string? subDepartment,
+        string? roleClaim = null)
     {
         User? actor = await FindUserAsync(actorId);
 
@@ -386,8 +455,12 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
         };
 
         request.Headers.Add(TestAuthHandler.UserIdHeader, actorId.ToString());
-        request.Headers.Add(TestAuthHandler.RoleHeader, (actor?.Role ?? Role.Owner).ToString());
         request.Headers.Add(TestAuthHandler.SecurityStampHeader, actor?.SecurityStamp ?? "no-such-user");
+
+        if (roleClaim is not null)
+        {
+            request.Headers.Add(TestAuthHandler.RoleHeader, roleClaim);
+        }
 
         if (actor?.Department is not null)
         {

@@ -4058,6 +4058,34 @@ Raised 2026-08-25 while checking a diagnosis Backend made in passing and did not
 actor's role comes from the token claim, not the database."* It is correct, and its consequence is
 larger than the test failure that surfaced it.
 
+> ### ⚠️ CORRECTED 2026-08-25 — this entry's original worked example cannot happen
+>
+> **It led with a department move**: move a user out of Technical Office, they act, the gate decides
+> on the new role and the trail records the old one. **That is wrong, and the Verifier caught it.**
+> `MoveToDepartment` writes only `Department` and `OperationsSubDepartment`
+> [Verified: 2026-08-25 @ `User.cs` -> `MoveToDepartment`], and `AuditRecord` has **no department
+> field at all** [Verified: 2026-08-25 @ `AuditRecord.cs` -> `class AuditRecord`]. **A department move
+> cannot make `ActorRole` stale, because `ActorRole` records the role and a department move does not
+> change it.**
+>
+> **The only trigger that would is a role change, and `Role` is assigned once in the constructor with
+> no mutator anywhere** [Verified: 2026-08-25 @ `User.cs` -> `Role`]. **So the divergence is not
+> reachable today.** It becomes reachable the moment **KAFF-109** adds one, which is why this stays
+> **OPEN** rather than closing.
+>
+> **Consequently D-073 does not block KAFF-108**, and the Verifier accepted that story on exactly
+> this reasoning.
+>
+> **The correction is left in place rather than the entry rewritten**, because a `decisions.md` entry
+> that quietly loses its wrong argument teaches nobody. **This is the file `CLAUDE.md` sends every
+> agent to first, and it led with an example that does not happen for a day.**
+>
+> **What is real, reachable and separate — routed on its own, not as part of this entry:**
+> **`AuditRecord.ActorRole` is nullable, is not `IsRequired()`, and carries no check constraint.** A
+> token arriving without the role claim writes a **permanently unattributed row** into an append-only
+> table. That needs no role change to happen and it is due **before KAFF-109, and before KAFF-101a
+> mints real tokens.**
+
 **The two halves disagree, and only one of them was fixed.**
 
 * **Authority** is read from the database on every request. That is D-048, and it exists precisely
@@ -4588,3 +4616,138 @@ same change that answers D-023. Commit `37fdaa5`.
 [Verified: 2026-08-24 — no tracked path under `bin`, `obj`, `node_modules`, `dist` or `TestResults`],
 working tree clean, pushed to `github.com/AhmedNabil30/ERP`. **Four days of decision history had no
 version control until today.** From here the Definition of Done can reasonably include a commit.
+
+---
+
+### D-074 · KAFF-108, KAFF-110 and KAFF-113 built — one entry for three, closing W-7 · 2026-08-25
+
+**Backend, recording after the fact — verification finding W-7.** D-066 covers KAFF-106 and D-070
+covers KAFF-116; D-067 is a defect entry for KAFF-108, not a build entry. KAFF-108, KAFF-110 and
+KAFF-113 had no entry at all. One entry for three because none of the three added a permission,
+a catalogue row, a migration, or anything the other two would need to cross-reference — each is a
+short, independent note, and three short entries would have repeated the same shape three times.
+
+#### 1. KAFF-108 — `PUT /api/users/{userId}/department`, and the defect this entry cannot omit
+
+**The permission is `Permission.UserManage`, `CompanyWide`, Owner alone**
+[Verified: 2026-08-25 @ `src/Api/Features/Users/MoveUserDepartment/Endpoint.cs` -> `Map`], the same
+row KAFF-106 uses (D-044 ruling 1) — moving a department is not a capability of its own, it is
+`UserManage`. It sits at company scope rather than project scope because the route names a *user*,
+not a project: `ProjectScope.FromRoute()` would find nothing to check and refuse every caller
+including the Owner. The handler refuses nothing at the permission level itself — everything past the
+gate is a domain refusal from `User.MoveToDepartment`, which calls the same `ValidateDepartment` that
+`User.Create` calls, so a department rule has exactly one place to be wrong in
+[Verified: 2026-08-25 @ `src/Domain/Identity/User.cs` -> `MoveToDepartment`].
+
+**This endpoint shipped with no permission gate at all.** `.RequirePermission(Permission.UserManage)`
+was absent from the `Map` chain, so any authenticated caller — any role — could move any user between
+departments, and department is one of the two axes a permission is granted against (§9), so an
+ungated move route is a privilege-escalation primitive, not a missing check. **The endpoint's own XML
+doc claimed otherwise while the line was not there** — *"the permission check is the
+`RequirePermission` line below and nowhere else,"* sitting above a chain that enforced none of it.
+D-067 records the discovery (a red test, not a review) and the fix. This entry exists so the story's
+own build history — shipped with no gate, caught by `Nobody_but_the_owner_can_move_a_user_between_departments`
+going red on 403-expected/204-received, fixed same day — is written down once, in the story's own
+build record, rather than only inside a defect entry a future reader might not think to open.
+
+**No `Response.cs` and no `Validator.cs` in this slice, and that is correct, not an oversight.** The
+move returns **204 No Content**
+[Verified: 2026-08-25 @ `src/Api/Features/Users/MoveUserDepartment/Handler.cs` -> `HandleAsync`] — S-008
+re-reads the user it is showing, and the authority the move actually changes is never in a response
+body, it is re-read from the database on the moved user's next request (D-048). There is nothing to
+shape a `Response` around. And the request's only rule — Operations needs a sub-department, nobody
+else may carry one, HR cannot leave HR — is the domain's `ValidateDepartment`, called once, from
+`MoveToDepartment`; a `Validator.cs` here would be a second place for a rule that must have exactly
+one. **A future session should not "restore" either file.** CLAUDE.md's five-file list is what a
+slice needs when it needs all five, not a fixed shape every slice must fill in.
+
+#### 2. KAFF-110 — `POST /api/users/{userId}/deactivate`, and why KAFF-111 has no handler of its own
+
+**Same permission shape as KAFF-108** — `Permission.UserManage`, `CompanyWide`, Owner alone
+[Verified: 2026-08-25 @ `src/Api/Features/Users/DeactivateUser/Endpoint.cs` -> `Map`] — and it refuses
+HR here even though HR holds `ProjectAssignmentManage`: ending somebody's access company-wide is not
+staffing a project, and the two permissions do not overlap by construction. Same file shape too: no
+`Response.cs` (204; the act has no result to report and the change is only observable on the next
+request the way KAFF-108's is) and no `Validator.cs` (the one optional field, `Reason`, has no rule
+today — Q35 is open, and the endpoint's own remarks say where a `Validator.cs` would go if Karim
+answers yes: `src/Api/Features/Users/DeactivateUser/Request.cs` -> `Reason`). Not repeating KAFF-108's
+full paragraph on this; the reasoning is identical.
+
+**KAFF-111 (revoke every active assignment on deactivation) is built inside KAFF-110's handler and has
+no endpoint or handler folder of its own.** The two are one act by rule: *"one request, one correlation
+id"* (KAFF-110 rule 7), so the deactivation and every revocation it causes are one `SaveChangesAsync`
+[Verified: 2026-08-25 @ `src/Api/Features/Users/DeactivateUser/Handler.cs` -> `HandleAsync`] — one
+transaction, so there is no state where a user is switched off but a stale assignment still reads
+them as on the team. The revocation is handler work rather than entity work: `User` cannot reach its
+own `ProjectAssignment` rows, and giving it a query to do that would put persistence access inside an
+entity to satisfy one rule. `ProjectAssignment.Revoke` still does the actual stamping and is called
+once per active row; the handler's job is only finding the rows and calling it in a loop, discarding a
+`Result` that cannot fail here because every row in the loop is already known to be active. A reader
+looking for "the KAFF-111 endpoint" will not find one — it does not exist and should not be built;
+KAFF-111's acceptance criteria are exercised through KAFF-110's handler, and that is where its tests
+live.
+
+#### 3. KAFF-113 — `POST /api/projects/{projectId}/assignments`, and the race the unique index alone would 500 on
+
+**The permission is `Permission.ProjectAssignmentManage`, `ProjectScoped`, Owner and Hr**
+[Verified: 2026-08-25 @ `src/Api/Features/Assignments/AssignUserToProject/Endpoint.cs` -> `Map`],
+staying project-scoped even though HR reaches every project with no assignment row of its own — reach
+and capability are answered by two different mechanisms on purpose. The scope makes the route require
+a real project (`AC-113-C`); HR's global reach is `IProjectAccessPolicy`'s `GlobalReachAsync` branch,
+which is itself bounded by the project existing
+[Verified: 2026-08-25 @ `src/Infrastructure/Authorization/ProjectAccessPolicy.cs` ->
+`GlobalReachAsync`]. Widening the catalogue row to `CompanyWide` to "simplify" HR's reach would delete
+the requirement that a real project be named, which is exactly the criterion the scope exists to hold.
+**Reach is not capability, either**: HR's global reach admits it to this endpoint and to nothing
+financial, because HR is deliberately absent from `Permission.ProjectRead` (D-044 ruling 2) — the same
+call that staffs a project cannot open it.
+
+**Past the gate, the handler refuses at three levels, in order, and the order is load-bearing.** (1)
+`UserNotFound` if the named user does not exist. (2) `UserIsInactive` if the user exists but is
+deactivated — checked in the handler rather than in `ProjectAssignment.Create`, deliberately: the
+assignment row is not what makes a leaver safe, the subject read is (D-048), and this refusal is about
+the request making a false statement rather than about the entity being invalid. (3) Everything about
+*who* may be assigned and *at what level* — external roles, seniority legal only for site engineers —
+goes through `ProjectAssignment.Create` and nowhere else
+[Verified: 2026-08-25 @ `src/Domain/Identity/ProjectAssignment.cs` -> `Create`], so the handler passes
+the request's level through untouched rather than "helpfully" coercing it, the same mutation D-066 §2
+recorded on the create-user path.
+
+**The duplicate-assignment refusal is enforced twice, deliberately, and the two do not agree by
+coincidence.** The handler pre-checks for an existing active row and returns
+`UserAlreadyAssignedToProject` as a friendly 409 before ever touching `SaveChangesAsync`
+[Verified: 2026-08-25 @ `src/Api/Features/Assignments/AssignUserToProject/Handler.cs` ->
+`HandleAsync`]. **That check is not the enforcement** — two concurrent requests can both pass it — so
+the unique index `ux_project_assignments_active` is the real rule, and the handler catches the
+resulting `DbUpdateException`, inspects it for `PostgresErrorCodes.UniqueViolation` on that exact
+constraint name, and maps the loser of the race to the identical `UserAlreadyAssignedToProject` 409
+rather than letting a constraint violation surface as a 500
+[Verified: 2026-08-25 @ `src/Api/Features/Assignments/AssignUserToProject/Handler.cs` ->
+`IsDuplicateActiveAssignment`]. Matching on the constraint name rather than only the SQL state is
+deliberate: a different unique violation on the same table must not be swallowed by this catch and
+reported as "already assigned" when it is not.
+
+**No `Validator.cs` here either, and unlike the other two this slice does have a `Response.cs`** — the
+created row, because `POST .../assignments` returns **201 Created** with the assignment's id, level
+and who assigned it (S-010 needs to show it after the sheet closes)
+[Verified: 2026-08-25 @ `src/Api/Features/Assignments/AssignUserToProject/Response.cs`]. The request
+carries exactly two fields and every rule about either of them already lives in the domain, so there
+is nothing left for a validator to check.
+
+#### What this entry does not do
+
+**It records, it does not decide.** Nothing above changes a permission, adds a catalogue row, or
+answers an open question — Q35 and Q51 stay open exactly as the stories leave them. The i18n claim in
+the Verifier's report is addressed separately: every `MessageKey` these three slices can emit —
+`errors.identity.user_not_found`, `.user_is_inactive`, `.user_already_assigned_to_project`,
+`.client_is_not_assignable`, `.assignment_level_not_applicable`, and the gate's own
+`errors.auth.forbidden` / `.not_authenticated` / `.not_assigned_to_project` — was already present in
+both catalogues with real Arabic before this entry was written
+[Verified: 2026-08-25 @ `src/Web/public/locales/en.json`, `src/Web/public/locales/ar.json`], and
+`TranslationCatalogueTests` is green in the 75/75 Domain run this session produced. The keys the
+verification report flagged as absent — `assignments.action.assign`, `assignments.field.*`,
+`enum.AssignmentLevel.*`, `users.action.deactivate`, `users.confirm.deactivate.*` and the rest of the
+KAFF-110/KAFF-113 UI bullets — are Angular screen labels with no screen built yet, not `Error`
+`MessageKey`s, and `TranslationCatalogueTests` cannot see them because it enumerates `*Errors` static
+classes, not arbitrary catalogue keys. They remain Frontend's, with the screens, exactly as the
+Verifier routed them.

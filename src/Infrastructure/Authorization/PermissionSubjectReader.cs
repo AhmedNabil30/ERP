@@ -42,7 +42,13 @@ public sealed class PermissionSubjectReader : IPermissionSubjectReader
                 user.Role,
                 user.Department,
                 user.OperationsSubDepartment,
-                user.ClientId))
+                user.ClientId,
+
+                // Not an authorization fact, and the evaluator never reads it. The audit trail needs
+                // the actor's own name and role from the row the gate has just verified rather than
+                // from the token's claims, and this is the one read in a request that already has
+                // that row in hand. See decisions.md D-074.
+                user.FullName))
             .FirstOrDefaultAsync(cancellationToken);
     }
 }

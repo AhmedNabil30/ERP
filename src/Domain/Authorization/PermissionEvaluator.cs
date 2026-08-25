@@ -2,13 +2,20 @@ using Kaff.Domain.Identity;
 
 namespace Kaff.Domain.Authorization;
 
-/// <summary>The identity facts a permission decision is made from.</summary>
+/// <summary>The caller's live facts, read from the users table on this request.</summary>
+/// <param name="FullName">
+/// Not consulted by <see cref="PermissionEvaluator"/> — it rides along because the gate's read is the
+/// one place in a request that has the actor's own row in hand, and the audit trail needs the name
+/// and the role from <b>that</b> row rather than from the token. Fetching it separately would be a
+/// second read of a row already loaded. See decisions.md D-074.
+/// </param>
 public sealed record PermissionSubject(
     Guid UserId,
     Role Role,
     Department? Department,
     OperationsSubDepartment? OperationsSubDepartment,
-    Guid? ClientId);
+    Guid? ClientId,
+    string FullName);
 
 /// <summary>
 /// How a user came to reach a project — or <see cref="None"/>, meaning they did not.

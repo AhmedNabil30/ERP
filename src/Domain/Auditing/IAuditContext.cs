@@ -27,15 +27,26 @@ public enum AuditEventKind
 public sealed record AuditEvent(AuditEventKind Kind, string SubjectType, Guid SubjectId);
 
 /// <summary>
-/// Who a record names. Normally taken from <see cref="ICurrentUser"/>, where the id and the role are
-/// null for work that happens outside a request; supplied explicitly by <see cref="IAuditContext.AttributeTo"/>,
-/// where neither may be.
+/// Who a record names.
 /// </summary>
 /// <remarks>
-/// <see cref="IAuditContext.AttributeTo"/> has one caller: bootstrap (KAFF-100), where the Owner is
-/// created by the very transaction being audited and the endpoint is anonymous by definition. Left
-/// alone it would put a null actor on the first row of the trail, which is the outcome D-051 (Q31)
-/// rejected the seed to avoid.
+/// <para>
+/// Normally <see cref="IAuditContext.VerifiedActor"/> — the row the authorization gate read from the
+/// users table on this request. <b>Never the token's claims</b>: see
+/// <see cref="IAuditContext.ActorVerifiedAs"/> and decisions.md D-074.
+/// </para>
+/// <para>
+/// <see cref="IAuditContext.AttributeTo"/> is the other source and has one caller: bootstrap
+/// (KAFF-100), where the Owner is created by the very transaction being audited and the endpoint is
+/// anonymous by definition. Left alone it would put a null actor on the first row of the trail, which
+/// is the outcome D-051 (Q31) rejected the seed to avoid.
+/// </para>
+/// <para>
+/// <see cref="UserId"/> and <see cref="Role"/> are null together, for the one case where there is
+/// genuinely no actor: work outside a request — migrations, seeding, scheduled jobs
+/// (<c>SystemCurrentUser</c>). <b>A named actor without a role is refused by the database</b>, which
+/// is the whole of <c>ck_audit_records_actor_is_named_completely</c>.
+/// </para>
 /// </remarks>
 public sealed record AuditActor(Guid? UserId, string DisplayName, Role? Role);
 
@@ -84,6 +95,40 @@ public interface IAuditContext
     /// </para>
     /// </remarks>
     void GrantedThrough(ProjectAccessPath path);
+
+    /// <summary>
+    /// Who the authorization gate verified this caller to be, read from the users table, or null when
+    /// no gate ran on this request.
+    /// </summary>
+    /// <remarks>
+    /// See <see cref="ActorVerifiedAs"/> for why the trail takes the actor from here and not from the
+    /// token.
+    /// </remarks>
+    AuditActor? VerifiedActor { get; }
+
+    /// <summary>
+    /// Records the actor exactly as the gate read them from the database.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Called by the authorization gate on a grant, and by nothing else — the same arrangement as
+    /// <see cref="GrantedThrough"/> and for the same reason (KAFF-116 rule 6): the gate has already
+    /// read the caller's row, so a second read here would be a second source of truth.
+    /// </para>
+    /// <para>
+    /// <b>This is what keeps the trail and the permission system from disagreeing about the same user
+    /// on the same request.</b> D-048 stopped the gate trusting the token because claims go stale;
+    /// until decisions.md D-074 the audit trail still believed them, so a role change would have
+    /// attributed an act to a role the gate had already stopped honouring — permanently, in a table
+    /// that is append-only by trigger.
+    /// </para>
+    /// <para>
+    /// Set once per request alongside <see cref="CorrelationId"/>, and deliberately <b>not</b>
+    /// discarded by <see cref="Clear"/>: who the caller is is a fact about the request, not about one
+    /// save within it.
+    /// </para>
+    /// </remarks>
+    void ActorVerifiedAs(AuditActor actor);
 
     /// <summary>Events declared for the next save, in the order they were declared.</summary>
     IReadOnlyList<AuditEvent> Events { get; }

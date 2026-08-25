@@ -104,8 +104,8 @@ jobs:
         if: vars.STAGING_DEPLOY_TARGET != ''
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.STAGING_SSH_HOST }}
-          username: ${{ secrets.STAGING_SSH_USER }}
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           source: deploy/docker-compose.staging.yml
           target: ${{ vars.STAGING_DEPLOY_TARGET }}
@@ -118,8 +118,8 @@ jobs:
           API_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/api:${{ github.sha }}
           WEB_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/web:${{ github.sha }}
         with:
-          host: ${{ secrets.STAGING_SSH_HOST }}
-          username: ${{ secrets.STAGING_SSH_USER }}
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
           envs: API_IMAGE,WEB_IMAGE
           # Pinned to the commit SHA, not the `staging` tag. Both are pushed, but deploying the

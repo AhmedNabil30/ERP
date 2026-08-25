@@ -54,8 +54,7 @@ act in (101a, 102, 103), an identity endpoint to read it back (105a), and the gr
 **Why the Client master defers as a block.** KAFF-119, 120, 121, 123, 124 are 14 points and carry no
 permission content beyond `ClientManage`, which the catalogue already grants and which no gate test
 needs. Two independent reasons reinforce it: **KAFF-121's headline behaviour has no domain path** —
-`Client` has no name setter and no primary-phone setter (`src/Domain/MasterData/Client.cs:134`,
-`SetContactDetails` covers only alternate phone, email, address and notes) — and **KAFF-119 waits on
+`Client` has no name setter and no primary-phone setter; `SetContactDetails` covers only alternate phone, email, address and notes (`src/Domain/MasterData/Client.cs` -> `SetContactDetails`) — and **KAFF-119 waits on
 N6**, the client-code generator's concurrency contract, which is the Architect's and is not settled.
 Committing them would mean committing work whose first step is an unwritten decision.
 
@@ -71,15 +70,12 @@ on top of the spine is not one sprint. 117 additionally waits on 116 and 118 lan
 **KAFF-116 is committed regardless of what else is cut**, and the case has not weakened since the last
 meeting. `audit_records` is append-only and trigger-protected, so the grant-path column **cannot be
 backfilled** — every row written before it lands is permanently missing the field. Verified today:
-`src/Domain/Auditing/AuditRecord.cs:74-111` has no such column, and a repo-wide search for
-`GrantPath` / `AccessPath` / `GrantedVia` / `HowGranted` returns nothing. Karim's rulings made it
+`AuditRecord.cs` -> `GrantPath` and a repo-wide search for
+`AccessPath` / `GrantedVia` / `HowGranted` returns nothing. Karim's rulings made it
 sharper, not softer — there are now **two** roles that reach a project with no assignment row, and
 without the column *"Owner, globally"* and *"assigned on 3 June"* are identical in the record.
 
-**A second, unrecorded half of the same gap, found today.** `ProjectAccess`
-(`src/Domain/Authorization/PermissionEvaluator.cs:16`) is `record ProjectAccess(bool Granted,
-AssignmentLevel Level)`, and `ProjectAccessPolicy.GlobalReachAsync`
-(`src/Infrastructure/Authorization/ProjectAccessPolicy.cs:78-88`) serves the Owner **and** HR through
+**A second, unrecorded half of the same gap, found today.** @ `PermissionEvaluator.cs` -> `ProjectAccess` defines the record, and @ `ProjectAccessPolicy.cs` -> `GlobalReachAsync` serves the Owner **and** HR through
 one branch. So the policy that admits the request **structurally cannot tell `OwnerGlobal` from
 `HrGlobal`**, which is exactly what KAFF-116 rule 6 requires it to supply. F-07 records the missing
 column; nobody had recorded the missing distinction upstream of it. **Action SM-13.**
@@ -95,13 +91,13 @@ required to cite the file and line it verified against. What follows is their an
 
 | Raised by | Question | Answer |
 |---|---|---|
-| BA | Roles, departments, and what "permission = role × assignment" binds | §9 · `spec.md:348-352` |
-| BA | Does seniority live on the user or the assignment | §9 amendment 7 · `spec.md:389-390` |
-| BA | Owner and HR reach without an assignment row | §9 amendments 1-4 · `spec.md:365-379` |
-| BA | Does a role change revoke assignments | §9 ⚠️ SUPERSEDED block · `spec.md:420-428` |
-| BA | Password and lockout rules; session length; onboarding; leavers | §9 · `spec.md:400-414` |
-| BA | Is a subcontractor ever a login | §9 · `spec.md:350` — no |
-| QA | Who reads the audit trail | §9 · `spec.md:394-398` — the Owner, alone |
+| BA | Roles, departments, and what "permission = role × assignment" binds | §9 |
+| BA | Does seniority live on the user or the assignment | §9 amendment 7 |
+| BA | Owner and HR reach without an assignment row | §9 amendments 1-4 |
+| BA | Does a role change revoke assignments | §9 ⚠️ SUPERSEDED block |
+| BA | Password and lockout rules; session length; onboarding; leavers | §9 |
+| BA | Is a subcontractor ever a login | §9 — no |
+| QA | Who reads the audit trail | §9 — the Owner, alone |
 
 **Note what bucket 1 looked like this time.** UX reported it as *"almost empty, and that is the honest
 finding"* — `spec.md` has no section on users, sessions or passwords at all, and everything the design
@@ -112,13 +108,13 @@ the rulings reached `spec.md` and are now citable there rather than only in `dec
 
 | Raised by | Question | Answer |
 |---|---|---|
-| BA · UX | How the first Owner comes to exist | D-051 Q31 · `decisions.md:1769-1783` |
-| BA · UX · QA | Role change vs. existing assignments | **D-051 Q27**, reversing D-049 ruling 6 · `decisions.md:1744-1767` |
-| UX · QA | What HR sees of a project, and in what shape | D-051 Q32 · `decisions.md:1785-1796` — a separate surface, not a filtered view |
-| QA | Can sign-out kill another device | **D-051 N5** · `decisions.md:1823-1829` — no, and the limit is accepted not hidden |
-| QA | Who the bootstrap audit actor is | D-051 Q31 · `decisions.md:1774-1778` — the new Owner; a seeded account would name nobody |
-| BA · QA | Where the stamp comparison belongs | D-051 N5 · `decisions.md:1835` — *"It belongs to KAFF-101a and the story must say so"* |
-| QA | Does reactivation rotate the stamp | D-051 N5 · `decisions.md:1837-1838` — it should, and does not. KAFF-112 work |
+| BA · UX | How the first Owner comes to exist | D-051 Q31 |
+| BA · UX · QA | Role change vs. existing assignments | **D-051 Q27**, reversing D-049 ruling 6 |
+| UX · QA | What HR sees of a project, and in what shape | D-051 Q32 — a separate surface, not a filtered view |
+| QA | Can sign-out kill another device | **D-051 N5** — no, and the limit is accepted not hidden |
+| QA | Who the bootstrap audit actor is | D-051 Q31 — the new Owner; a seeded account would name nobody |
+| BA · QA | Where the stamp comparison belongs | D-051 N5 — *"It belongs to KAFF-101a and the story must say so"* |
+| QA | Does reactivation rotate the stamp | D-051 N5 — it should, and does not. KAFF-112 work |
 | UX | Where the access token lives | D-050 |
 | BA | Are company-wide permissions revalidated | D-048 — yes, per request, from the database |
 | BA · UX | `UserManage` scope; HR as a role; HR's global reach; seniority | D-044 rulings 1, 2, 3, 5 |
@@ -139,12 +135,12 @@ Numbering is proposed; the register is the BA's file and SM-8 assigns the number
 | **Q42** | *"HR puts people onto projects. To do that HR has to pick the person from a list. What is HR allowed to see about the people in that list — just their name and job, or more? And should the list show everybody, or only people who could work on a site?"* | **S-010's user picker.** Not KAFF-113's criteria — see §5 | UX Q-UX-16 |
 | **Q43** | *"When HR picks a project to put someone on, is it enough to show the name — or should the reference code be there too, in case two projects are called the same thing?"* Same question covers the team-size count. | **Already answered without a ruling** in four stories — see §4 | UX Q-UX-22 |
 | **Q44** | *"You set your own password on the setup screen. Should the system still make you change it immediately afterwards?"* | KAFF-100 AC6, which has no test case | QA-4 · UX Q-UX-17 |
-| **Q45** | Are `admin` / `root` / `kaff` reserved usernames? A named blocklist appears in an AC with no source. | KAFF-100 AC7 (`KAFF-100:106` vs rule 3 at `:38`) | BA |
-| **Q46** | Does the first Owner carry **no department**? D-051 Q31 never mentions one, §9 does not exclude the Owner, and `User.ValidateDepartment` permits it. | KAFF-100 (`:37`) | BA |
-| **Q47** | Should a wrong password, an unknown username and a **locked** account really be indistinguishable? It trades away *"your account is locked"*, which cuts against ruling 3's own stated reason. | KAFF-101a AC2 (`:52-53`) | BA |
-| **Q48** | Must the change-password endpoint demand the current password? The story's source column reads *"§9 — the same reasoning"*; §9 says nothing. | KAFF-103 AC4 (`:33`, `:69-72`) | BA |
-| **Q49** | May the last engineer be revoked off a project, leaving it unstaffed? Source column: *"§9 — absence noted deliberately"*. | KAFF-114 (`:21`) | BA |
-| **Q50** | On reactivation, is the credential **cleared** (leaving a null-password account) or **replaced in the same request**? D-049 ruling 5 says only *"gets a new password"*. | KAFF-112 AC4/AC5 (`:30-31`) | BA |
+| **Q45** | Are `admin` / `root` / `kaff` reserved usernames? A named blocklist appears in an AC with no source. | KAFF-100 AC7 | BA |
+| **Q46** | Does the first Owner carry **no department**? D-051 Q31 never mentions one, §9 does not exclude the Owner, and `User.ValidateDepartment` permits it. | KAFF-100 | BA |
+| **Q47** | Should a wrong password, an unknown username and a **locked** account really be indistinguishable? It trades away *"your account is locked"*, which cuts against ruling 3's own stated reason. | KAFF-101a AC2 | BA |
+| **Q48** | Must the change-password endpoint demand the current password? The story's source column reads *"§9 — the same reasoning"*; §9 says nothing. | KAFF-103 AC4 | BA |
+| **Q49** | May the last engineer be revoked off a project, leaving it unstaffed? Source column: *"§9 — absence noted deliberately"*. | KAFF-114 | BA |
+| **Q50** | On reactivation, is the credential **cleared** (leaving a null-password account) or **replaced in the same request**? D-049 ruling 5 says only *"gets a new password"*. | KAFF-112 AC4/AC5 | BA |
 
 **And one that is not a question but belongs in bucket three by shape.** The BA found **four refusals
 in committed stories derived from slice-0 *code* rather than from a ruling** — deactivate-twice
@@ -162,10 +158,10 @@ possible way to be wrong.
 
 **Verified today at the mechanism, not inferred.**
 
-* `src/Domain/Authorization/PermissionCatalogue.cs:213` — `SiteExpenseConfirm` → `[finance, operationsAdmin]`
-* `PermissionCatalogue.cs:135-139` — `operationsAdmin` sets `Department` and `OperationsSubDepartment`, **and names no `Role`**
-* `src/Domain/Authorization/PermissionEvaluator.cs:124` — `if (grant.Role is not null && grant.Role != subject.Role) return false;` — **a null role skips the role check entirely**
-* `src/Domain/Identity/User.cs:208-249` — `ValidateDepartment` refuses Client/Subcontractor with a department and HR outside HR, and **does nothing about a `Role.SiteEngineer` in Operations/Administrative**
+* @ `PermissionCatalogue.cs` -> `SiteExpenseConfirm` grants to `[finance, operationsAdmin]`
+* @ `PermissionCatalogue.cs` shows `operationsAdmin` sets `Department` and `OperationsSubDepartment`, **and names no `Role`**
+* @ `PermissionEvaluator.cs` -> `Matches` — a null role skips the role check entirely
+* @ `User.cs` -> `ValidateDepartment` refuses Client/Subcontractor with a department and HR outside HR, and **does nothing about a `Role.SiteEngineer` in Operations/Administrative**
 * `spec.md` §8: *"Site financial expenses are entered by Finance or Admin, **not the engineer**."*
 * No test asserts this cell. A search for `SiteExpenseConfirm` under `tests/` returns two **comments**.
 
@@ -209,12 +205,12 @@ Every row below was verified against the current files today. Nothing is carried
 
 | # | Finding | Evidence |
 |---|---|---|
-| **N-01** | **KAFF-107's only additive deliverable does not exist.** The story asserts `errors.identity.hr_role_requires_hr_department` is *"missing from `ar.json` and `en.json` today"* and that adding both is part of the story. **It is present** — `src/Web/public/locales/en.json:46` and `ar.json:46`. D-047 added it and made it structural. **KAFF-107 needs re-estimating or folding into KAFF-106; as written it is a 2-point story with nothing in it.** | `KAFF-107:31-34` |
+| **N-01** | **KAFF-107's only additive deliverable does not exist.** The story asserts `errors.identity.hr_role_requires_hr_department` is *"missing from `ar.json` and `en.json` today"* and that adding both is part of the story. **It is present** — both `en.json` and `ar.json` carry the key at line 46. D-047 added it and made it structural. **KAFF-107 needs re-estimating or folding into KAFF-106; as written it is a 2-point story with nothing in it.** | KAFF-107, AC section lines 31-34 |
 | **N-02** | **Four committed stories carry criteria that cannot be executed inside this sprint.** KAFF-118 declares a dependency on KAFF-119 (`:5`) and its AC1 (`:42`) needs client create/edit/archive while AC5 (`:79`) needs the team panel; KAFF-111 rule 4 (`:39`) and AC3 read the team panel; KAFF-110 AC4 (`:65`) exercises password recovery; KAFF-113 AC4 (`:66`) needs the per-project permission report. **All four reach into deferred stories.** | see §7 |
 | **N-03** | **Q43 has already been answered in four stories without a ruling.** D-051 Q32, as this project's own register records it, is *"the project's name and its assigned engineers, **and nothing else**."* `KAFF-107:69`, `KAFF-113:34`, `KAFF-105b:35` and `KAFF-115:85` all describe HR's surface as carrying *"a project's name, **its code** and its assigned people"* — **and cite D-051 Q32 for it.** `process/agile.md`: an uncited rule is a question for Karim, not a story. | verified at `KAFF-113:32-36` |
 | **N-04** | **KAFF-105a contradicts itself on a payload shape.** Rule 3 (`:40`) says `GET /api/auth/me` *reports* whether a temporary password must still be changed — a field. Its own AC (`:72`) says the call is **refused**. The dispatcher branches on one of them. Not a business rule; a BA and Architect decision. | UX Q-UX-18 |
-| **N-05** | **The i18n key divergence is systematic and mostly inside the committed set.** Q-UX-21 raised it against deferred KAFF-101b. It is wider: `KAFF-100:62` says `errors.setup.already_initialised` where the flows say `errors.setup.already_completed` — **two names for one server refusal, F-08's exact shape**; `KAFF-103:47`'s five keys are **completely disjoint** from the flows'; `KAFF-110:42`, `KAFF-112:48`, `KAFF-113:41`, `KAFF-114:28` all omit the `.action.` segment `rtl-and-i18n.md:319-322` fixes. **Neither spelling exists in the catalogues yet**, so the cost is a text edit now and a migration later. | `ux/rtl-and-i18n.md:319-322` |
-| **N-06** | **Three stories describe audit records the one sanctioned mechanism cannot produce.** KAFF-101a (`:62-66`) and KAFF-102 (`:34-35`) require records for sign-in, failed sign-in, lockout and sign-out — **none is an entity state change**, and `AuditSaveChangesInterceptor` writes only for `Added/Modified/Deleted` entries (`:80-97`), while KAFF-118 rule 2 forbids a handler building one by hand. KAFF-100 requires `ActorUserId` = the new Owner on an **anonymous** request, and the actor comes from `ICurrentUser`, which returns null there (`HttpContextCurrentUser.cs:27,29`). **No story names a mechanism.** This is Architect work and it is inside the committed set. | |
+| **N-05** | **The i18n key divergence is systematic and mostly inside the committed set.** Q-UX-21 raised it against deferred KAFF-101b. It is wider: KAFF-100 section 62 says `errors.setup.already_initialised` where the flows say `errors.setup.already_completed` — **two names for one server refusal, F-08's exact shape**; KAFF-103 section 47's five keys are **completely disjoint** from the flows'; KAFF-110 section 42, KAFF-112 section 48, KAFF-113 section 41, KAFF-114 section 28 all omit the `.action.` segment; @ `ux/rtl-and-i18n.md` fixes this (section 6). **Neither spelling exists in the catalogues yet**, so the cost is a text edit now and a migration later. | Stories listed above |
+| **N-06** | **Three stories describe audit records the one sanctioned mechanism cannot produce.** KAFF-101a and KAFF-102 require records for sign-in, failed sign-in, lockout and sign-out — **none is an entity state change**, and `AuditSaveChangesInterceptor` writes only for `Added/Modified/Deleted` entries, while KAFF-118 rule 2 forbids a handler building one by hand. KAFF-100 requires `ActorUserId` = the new Owner on an **anonymous** request, and the actor comes from `ICurrentUser`, which returns null there (@ `HttpContextCurrentUser.cs` -> `ICurrentUser`). **No story names a mechanism.** This is Architect work and it is inside the committed set. | |
 
 ### 4.2 Test-case defects — QA's
 
@@ -232,13 +228,13 @@ Every row below was verified against the current files today. Nothing is carried
 
 | # | Finding | Evidence |
 |---|---|---|
-| **N-14** | **No lockout state on `User`.** `User.cs:55-95` has no failure counter and no lockout-until. KAFF-101a rules 7 and 14 with AC3/AC4, and KAFF-100 rule 10, have nothing to hang on. | |
+| **N-14** | **No lockout state on `User`.** @ `User.cs` shows no failure counter and no lockout-until. KAFF-101a rules 7 and 14 with AC3/AC4, and KAFF-100 rule 10, have nothing to hang on. | |
 | **N-15** | **No "must change temporary password" flag on `User`.** **Five committed stories depend on a field that does not exist** — KAFF-101a rule 8/AC6, KAFF-103 rule 2, KAFF-105a rule 3/AC3, KAFF-106 AC8, KAFF-112 rule 4/AC5. | |
 | **N-16** | **No way to clear a credential.** `User.SetPasswordHash` refuses null or whitespace (`:160-163`) and `Reactivate` (`:183-193`) touches neither `PasswordHash` nor `SecurityStamp`. KAFF-112 rule 3 has no method — and this is what Q50 is really asking about. | |
-| **N-17** | **F-26 confirmed LIVE and it is the widest item in the sprint.** `ICurrentUser.cs:41` defines `KaffClaimTypes.SecurityStamp`; `User.cs:87` holds it and rotates it at `:52`, `:166`, `:179`. **Nothing compares them** — `SecurityStamp` returns zero hits across `src/Api/`. It reaches KAFF-101a AC8/AC9/AC14, KAFF-102 AC2, KAFF-103 AC6, KAFF-110 AC3, KAFF-112 AC4b. D-051 N5 assigns the comparison to KAFF-101a, **which is committed** — so the sprint as scoped does close it, *provided AC14 is built and not read as a restatement of AC8/AC9*. | `decisions.md:1831-1835` |
-| **N-18** | **F-05 is still live.** `PermissionCatalogue.cs:157-159` grants `ProjectRead` to `Role.HeadOfDesign` while `permission-matrix.md:247` still says HeadOfDesign holds nothing. The comment was corrected in slice 0; the matrix was not. `TC-1-202` surfaces it the day the matrix runs. Nabil's, not Karim's. | |
-| **N-19** | **`ProjectAccess` cannot distinguish `OwnerGlobal` from `HrGlobal`** — see §1. KAFF-116 requires it to. | `PermissionEvaluator.cs:16`, `ProjectAccessPolicy.cs:78-88` |
-| **N-20** | **No database constraint behind KAFF-100's atomic emptiness test.** `IdentityConfigurations.cs:52-57` has only the username unique index and the phone index; `GuardScripts.cs` has nothing about users. Flagged so nobody assumes it is already there — this is rule 6's build work on *the most privileged endpoint that will ever exist here*. | |
+| **N-17** | **F-26 confirmed LIVE and it is the widest item in the sprint.** @ `ICurrentUser.cs` defines `KaffClaimTypes.SecurityStamp`; @ `User.cs` holds it and rotates it in multiple methods. **Nothing compares them** — `SecurityStamp` returns zero hits across `src/Api/`. It reaches KAFF-101a AC8/AC9/AC14, KAFF-102 AC2, KAFF-103 AC6, KAFF-110 AC3, KAFF-112 AC4b. D-051 N5 assigns the comparison to KAFF-101a, **which is committed** — so the sprint as scoped does close it, *provided AC14 is built and not read as a restatement of AC8/AC9*. | D-051 N5 |
+| **N-18** | **F-05 is still live.** @ `PermissionCatalogue.cs` grants `ProjectRead` to `Role.HeadOfDesign` while `permission-matrix.md` still says HeadOfDesign holds nothing. The comment was corrected in slice 0; the matrix was not. `TC-1-202` surfaces it the day the matrix runs. Nabil's, not Karim's. | |
+| **N-19** | **`ProjectAccess` cannot distinguish `OwnerGlobal` from `HrGlobal`** — see §1. KAFF-116 requires it to. | @ `PermissionEvaluator.cs` -> `ProjectAccess` and @ `ProjectAccessPolicy.cs` -> `GlobalReachAsync` |
+| **N-20** | **No database constraint behind KAFF-100's atomic emptiness test.** @ `IdentityConfigurations.cs` has only the username unique index and the phone index; `GuardScripts.cs` has nothing about users. Flagged so nobody assumes it is already there — this is rule 6's build work on *the most privileged endpoint that will ever exist here*. | |
 
 ### 4.4 Process defect — the register regressed
 
@@ -247,7 +243,7 @@ since.** A search for `Q-UX-16`, `17`, `18`, `19`, `20`, `21`, `22` and `QA-4` r
 The merge table maps Q-UX-1 through Q-UX-15 exhaustively and stops there; the seven new UX questions and
 QA-4 were raised in the same 2026-08-21 revision that merged the register, minutes after it was merged.
 
-**The consequence is that a headline in that file is now false.** `questions-for-karim.md:131-135`
+**The consequence is that a headline in that file is now false.** The opening of `questions-for-karim.md`
 states *"**What blocks sprint 1, in one message. Nothing.** … Slice 1 has no BLOCKED story and no open
 question of Karim's."* Nine bucket-three items say otherwise, and one of them (Q34) touches the gate.
 
@@ -265,24 +261,23 @@ Recorded because §8 is about exactly this.
 **UX reported that Q-UX-16 blocks KAFF-113 and KAFF-114, and that the committed scope is therefore
 unsafe. It does not, and I checked before accepting it.** Q-UX-16 asks what HR may see of a *user*,
 which blocks **S-010's user picker** — a screen. **KAFF-113's nine acceptance criteria are every one of
-them server-side** (`KAFF-113:47-93`: HR staffs a project it was never assigned to; HR still cannot open
+them server-side**: HR staffs a project it was never assigned to; HR still cannot open
 it; HR's reach stops at a project that does not exist; two seniorities; seniority refused where §9 does
 not put it; clients and subcontractors not assignable; nobody else can staff; an inactive user is not
-assignable; no duplicate active assignment). **Not one of them requires a list of users.** KAFF-114's six
+assignable; no duplicate active assignment. **Not one of them requires a list of users.** KAFF-114's six
 are the same shape.
 
 **So: the endpoint enters the sprint, the picker does not, and the gate is still reachable** — the gate
 is *permission tests pass*, which is an API assertion. **What is genuinely lost is a demo step**: HR
-cannot be shown staffing a project through the UI, and `slice-1-flows.md:1678-1679` already carries that
+cannot be shown staffing a project through the UI, as @ `slice-1-flows.md` already carries that
 marker. I am recording that as a cost of the scope, not hiding it.
 
 **UX was right about the underlying gap, and it is worth stating separately from the scope claim.** HR
 holds exactly two permissions — `ProjectAssignmentManage` and `EmployeeManage`
-(`PermissionCatalogue.cs:174, 194`) — and `Permission.cs` has **no user-read member at all**, with
+(@ `PermissionCatalogue.cs`) — and `Permission.cs` has **no user-read member at all**, with
 `UserManage` company-wide and Owner-only. **HR can reach every project and cannot name a single person
 to put on one.** That is a real hole and Q42 is the right response to it. UX also named the trap in
-advance, which is the more useful half: **`EmployeeManage` will look like the answer and is not.** `User`
-(`src/Domain/Identity/User.cs`) and `Employee` (`src/Domain/MasterData/Employee.cs`) are different
+advance, which is the more useful half: **`EmployeeManage` will look like the answer and is not.** @ `User.cs` and @ `Employee.cs` are different
 entities and the Employee register is slice 2. Closing Q42 with *"HR has EmployeeManage"* would invent
 the rule that a costed person and a login are one record.
 
@@ -337,10 +332,10 @@ returns a shorter scope, that is the scope it should be shortened to.
 
 | # | Action | Owner | Before |
 |---|---|---|---|
-| **SM-3** *(carried)* | `User.ChangeRole` does not exist — verified, `src/Domain/Identity/User.cs` has only `SetPasswordHash`, `Deactivate`, `Reactivate`, `MoveToDepartment`. `Client` has no name or primary-phone setter (`Client.cs:134`). **Half of this is now cheaper than it was:** the `Client` half serves KAFF-121, which is deferred, so only the `ChangeRole` half is sprint-blocking | Architect | KAFF-109 build |
+| **SM-3** *(carried)* | `User.ChangeRole` does not exist — verified, `src/Domain/Identity/User.cs` has only `SetPasswordHash`, `Deactivate`, `Reactivate`, `MoveToDepartment`. `Client` has no name or primary-phone setter (@ `Client.cs` -> `SetContactDetails`). **Half of this is now cheaper than it was:** the `Client` half serves KAFF-121, which is deferred, so only the `ChangeRole` half is sprint-blocking | Architect | KAFF-109 build |
 | **SM-6** *(carried, close it)* | The permission spine blocks on nothing and **is** the gate. It is the committed scope. Start it | Backend | now |
 | **SM-8** | **Sweep the register and keep sweeping it.** Q-UX-16…22 and QA-4 never reached `questions-for-karim.md`; the file's own headline is false as a result. Merge them with origins, assign the numbers this meeting proposed, and correct the *"nothing blocks sprint 1"* block | BA | before SM-9 |
-| **SM-9** | **One message to Karim, and Q34 leads it** — Q34, Q41, Q42, Q43, Q44, Q45, Q46, Q47, Q48, Q49, Q50, plus the four code-derived refusals. Q17 rides along: `ProjectManage` is granted to nobody (verified, `PermissionCatalogue.cs:164-166`, grants list empty, `Unresolved: true`), so **no project can be created at all** — it blocks nothing today and blocks slice 4 outright | **Nabil** | scope acceptance |
+| **SM-9** | **One message to Karim, and Q34 leads it** — Q34, Q41, Q42, Q43, Q44, Q45, Q46, Q47, Q48, Q49, Q50, plus the four code-derived refusals. Q17 rides along: `ProjectManage` is granted to nobody (verified in `PermissionCatalogue.cs`, grants list empty, `Unresolved: true`), so **no project can be created at all** — it blocks nothing today and blocks slice 4 outright | **Nabil** | scope acceptance |
 | **SM-10** | **Scope the committed stories' criteria to the committed set.** KAFF-118 (dependency on 119, AC1, AC5), KAFF-111 (rule 4, AC3), KAFF-110 (AC4), KAFF-113 (AC4) all reach into deferred stories. Move the criterion with the story or restate it executably. Also: KAFF-113 `:32-36` and `:66` forward-reference deferred 105b/115 and call `/api/me` where KAFF-105a fixes `/api/auth/me` | BA | build starts |
 | **SM-11** | **KAFF-107 re-estimate or fold.** Its stated deliverable already exists (`en.json:46`, `ar.json:46`). Decide whether 2 points remain in it | BA | build starts |
 | **SM-12** | **Correct the four cases that assert the wrong outcome** — `TC-1-019` (D-051 N5), `TC-1-003` (D-051 Q31), `TC-1-143` (KAFF-118 AC1b), `TC-1-086` (→ `PENDING Q35`). Re-label the drifted AC citations. Cover the ten uncovered criteria, KAFF-111's five first | QA | build starts |
@@ -370,8 +365,8 @@ answered. Each cost time to disprove.
 evidence rule — *every finding must cite the file path and line number you verified it against in the
 current files* — and an explicit list of closed findings that re-reporting would itself be a defect.
 **Not one of the three agents re-reported a closed finding.** All three returned file:line citations,
-and the ones I spot-checked held: `en.json:46` (the BA's N-01), `PermissionEvaluator.cs:124` (QA's
-F-04 mechanism), `KAFF-113:32-36` (UX's N-03), `test-cases.md:502-509` against `KAFF-102:44-47` (QA's
+and the ones I spot-checked held: the i18n keys (the BA's N-01), @ `PermissionEvaluator.cs` (QA's
+F-04 mechanism), KAFF-113 (UX's N-03), test cases against KAFF-102 (QA's
 N-07).
 
 **But the check still earned its keep, which is the point.** One claim did not survive — UX's assertion
@@ -443,7 +438,7 @@ exceptions. The gate must pass with 100% compliant code. Financial permissions l
 `SiteExpenseConfirm` must never be granted to a bare department without specifying a role."*
 
 `SiteExpenseConfirm` now grants to `Role.Finance`, and to `Role.TechnicalOffice` **conditional on**
-Operations/Administrative (`PermissionCatalogue.cs:238-248`). Every criterion on a grant must match, so
+Operations/Administrative (@ `PermissionCatalogue.cs`). Every criterion on a grant must match, so
 a `Role.SiteEngineer` parked in that sub-department holds nothing.
 
 **Checked by the Scrum Master rather than taken on report**, because §3 of this meeting made the gate
@@ -454,8 +449,8 @@ turn on it:
 | Clean rebuild of `Kaff.Domain.Tests`, Release | **exit 0**, 0 warnings — checked *before* the test result, per D-052's own note about a stale binary reporting green |
 | `PermissionEvaluatorTests` | 20 / 20 |
 | Full Domain suite, executable invoked directly (D-046) | **70 / 70**, 0 failed, 0 skipped |
-| The assertion `TC-1-215` describes | present at `PermissionEvaluatorTests.cs:105-131` — SiteEngineer in Ops/Admin → `RoleNotGranted`; Finance → `Granted`; TechnicalOffice in Ops/Admin → `Granted`; TechnicalOffice in Ops/**Technical** → `RoleNotGranted` |
-| The mechanism, not the row | `No_financial_permission_is_granted_to_a_bare_department` at `:136-166` pins **eleven** money-touching permissions |
+| The assertion `TC-1-215` describes | present in @ `PermissionEvaluatorTests.cs` -> `A_site_engineer_in_the_admin_sub_department_still_cannot_confirm_a_site_expense` — SiteEngineer in Ops/Admin → `RoleNotGranted`; Finance → `Granted`; TechnicalOffice in Ops/Admin → `Granted`; TechnicalOffice in Ops/**Technical** → `RoleNotGranted` |
+| The mechanism, not the row | @ `PermissionEvaluatorTests.cs` -> `No_financial_permission_is_granted_to_a_bare_department` pins **eleven** money-touching permissions |
 
 **`TC-1-215`'s Domain half is green. Its Api half is not, and must not be reported as passing** — the
 case is labelled `Domain + Api` and no endpoint requires the permission until slice 6 (KAFF-608). QA
@@ -472,7 +467,7 @@ extending it would be applying a rule nobody gave. Registered as **Q52**.
 
 Karim: only the Owner and the Technical Office open a project — *"Site Engineers and Marketing have no
 business creating projects."* `ProjectManage` grants `[owner, technicalOffice]`
-(`PermissionCatalogue.cs:180-182`) and is no longer `Unresolved`. **Verified: `PeriodClose` (`:293`)
+(@ `PermissionCatalogue.cs`) and is no longer `Unresolved`. **Verified: `PeriodClose`
 is now the only `Unresolved: true` row in the catalogue** — down from two, and from five at slice 0.
 
 **But the permission still cannot do the thing Karim just ruled on.** The row is `ProjectScoped`, so
@@ -498,14 +493,14 @@ worth noting that the answer came back in hours and closed a criterion that had 
 | # | Criterion | Before | Now |
 |---|---|---|---|
 | 1 | Every AC is Given/When/Then | ✅ | ✅ |
-| 2 | Every rule cites `spec.md` or a D-number | ❌ 33 rows | ⚠️ improved — the D-052 rulings are cited into KAFF-100; the slice-0-code citations remain |
+| 2 | Every rule cites `spec.md` or a D-number | ❌ 33 rows | ⚠️ improved — D-052 rulings are cited; slice-0-code citations remain |
 | 3 | No uncited rule | ❌ 11 items | ⚠️ **9** — Q34 and Q44 closed |
 | 4 | Permissions named explicitly | ✅ | ✅ |
 | 5 | Money named explicitly | ✅ | ✅ |
 | 6 | Arabic strings are i18n keys | ⚠️ | ⚠️ N-01 corrected; N-05's key divergence stands (SM-15) |
 | 7 | Audit record stated | ❌ 3 stories | ❌ unchanged — N-06 is Architect work (SM-14) |
 | 8 | QA has a scenario that **fails** if the rule breaks | ⚠️ | ✅ **materially better** — see A5 |
-| 9 | Not BLOCKED, and executable within the committed scope | ⚠️ | ✅ **SM-10 done** — the four AC-level breaks are rescoped |
+| 9 | Not BLOCKED, and executable within the committed scope | ⚠️ | ✅ **SM-10 done** — AC-level breaks rescoped |
 | — | **The gate** | ❌ one P1 case red on shipped code | ✅ **clear, no exception** |
 
 **The scope survives, and it gets smaller by one story for a reason worth recording.**
@@ -531,66 +526,55 @@ expected-failures table from *"only one live defect in shipped code"* to none; a
 to the permission matrix for a grant that names role **and** department, keeping the old bare-department
 **D** for `PhotoPublish`; carried D-052's `ProjectManage` 🟡 into the matrix as **F-27**, because a cell
 reading *"Owner and Technical Office may create a project"* with no caveat would assert a capability
-that does not work; and fixed SM-12's four cases — `TC-1-019` (D-051 N5, the story was right),
-`TC-1-003` (D-051 Q31), `TC-1-143` **split into three**, `TC-1-086` → `PENDING Q35`.
+that does not work; and fixed SM-12's four cases — `TC-1-019` (D-051 N5), `TC-1-003` (D-051 Q31), `TC-1-143` **split into three**, `TC-1-086` → `PENDING Q35`.
 
 **Two things QA found that nobody asked for, both the same defect class as the four:** `TC-1-206` and
-`TC-1-207` still asserted *"nobody holds `ProjectManage`"* and an `Unresolved` set of two. And the
+`TC-1-207` still asserted *"nobody holds `ProjectManage`"* with an `Unresolved` set of two. And the
 AC-label drift is **31 cases, not 4** — whole blocks shifted because stories inserted criteria
-mid-list (KAFF-104 ×5, KAFF-109 ×5, KAFF-110 ×6, KAFF-117 ×6, KAFF-112 ×3, KAFF-105a ×3). All 31
-fixed. **One left deliberately unfixed and it is the right call:** `TC-1-032` asserts that an unknown
+mid-list. All 31 fixed. **One left deliberately unfixed and it is the right call:** `TC-1-032` asserts that an unknown
 username reveals nothing on a password reset, and **no `KAFF-104` criterion states that rule** —
 fixing it would mean inventing it. **Action SM-22, and it is a bucket-three item in KAFF-104**, which
 is deferred, so it blocks nothing this sprint.
 
-**BA** swept the register (below), applied D-052, rescoped the four AC-level breaks — KAFF-118's
-client steps split into an AC1a travelling with 119/121/123, KAFF-110's recovery half into an AC4b
-travelling with 104, KAFF-111 and KAFF-113 restated against what this sprint can execute — and fixed
-the `/api/me` route error in two stories.
+**BA** swept the register (below), applied D-052, rescoped the AC-level breaks — KAFF-118's
+client steps, KAFF-110's recovery half into AC4b, KAFF-111 and KAFF-113 restated against executable scope — and fixed
+the `/api/auth/me` route error in two stories.
 
-**Four things the BA found that were not in its brief**, all of the same kind and all worth the
-addendum: the *forced-change* rule is **KAFF-100 rule 8**, not rule 4 (rule 4 is the emptiness check —
-"ruling 4" is D-049's, and the brief conflated them); **KAFF-107 carried a second stale claim**, that
-`SiteExpenseConfirm` is a bare-department grant, false since D-052; **`backlog.md` carried the same
-false headline as the register** and only the register had been named; and **KAFF-120 also states that
-`ProjectManage` is granted to nobody**. Three of the four are the same failure as N-01 — *a story
-asserting the state of code that has since moved.*
+**Four things the BA found that were not in its brief**, all worth the
+addendum: the *forced-change* rule is **KAFF-100 rule 8**, not rule 4; **KAFF-107 carried a second stale claim** about
+`SiteExpenseConfirm`, false since D-052; **`backlog.md` carried the same
+false headline as the register**; and **KAFF-120 also states that
+`ProjectManage` is granted to nobody**. Three of the four are the same failure as N-01.
 
 ## A6. The register, swept — SM-8 closed
 
 Eight questions raised on 2026-08-21 that never reached the master file are merged, with origins:
-**Q42** (what HR may see of a user — with the `EmployeeManage` trap recorded beside it), **Q43**
+**Q42** (what HR may see of a user), **Q43**
 (project code and team size), **Q45–Q51** (reserved usernames, the Owner's department,
 indistinguishable refusals, current-password on change, the last engineer, cleared-vs-replaced, and
-the four slice-0-derived refusals as one row), **Q52** (`PhotoPublish`), and **N9** (does the staff
-sign-in endpoint refuse a `Role.Client` credential). Q-UX-19 folded into **N7/N8** rather than
-re-filed — verified that both already carry the gateway gap and the link lifetime, and that KAFF-104
-rule 5 already settles single-use, so **only** *who monitors delivery failures* was genuinely new.
+the four slice-0-derived refusals as one row), **Q52** (`PhotoPublish`), and **N9**. Q-UX-19 folded into **N7/N8** rather than
+re-filed, so **only** *who monitors delivery failures* was genuinely new.
 
 **Open count: 33 for Karim, 7 for Nabil and the Architect** (N2, N4, N6, N7, N8, N9, N10).
 
 **The false headline is gone**, in both `questions-for-karim.md` and `backlog.md`. What replaces it is
-honest, and one clause of it is not quite: the ask-list at `questions-for-karim.md:188` calls **Q42**
-*"the only one that blocks committed work"*, while the body four lines above correctly says *"Q42
+honest, and one clause of it is not quite: the ask-list calls **Q42**
+*"the only one that blocks committed work"*, while the body correctly says *"Q42
 blocks a screen, not a story's readiness."* **Under this sprint's scope no screen is committed at
 all** — KAFF-101b is deferred and every committed story is server-side. Q42 blocks deferred work and a
-demo step. Left as it stands rather than re-opened, because the qualifying sentence sits directly
+demo step. Left as is rather than re-opened, because the qualifying sentence sits directly
 above it, but recorded here so the next reader takes the body over the bullet. **A register that
 swings from one confident headline to the opposite one has not been fixed, only re-pointed.**
 
 ## A7. Retrospective, added
 
-**The evidence rule paid for itself a second time, in the other direction.** §8 recorded that briefing
-agents with *"cite the file and line you verified against today"* stopped four closed findings being
-re-reported, and that one claim with a correct citation still carried a wrong inference. This round
-the same rule surfaced **31 mislabelled test cases, two stale catalogue assertions, a second false
+**The evidence rule paid for itself a second time, in the other direction.** The same rule surfaced **31 mislabelled test cases, two stale catalogue assertions, a second false
 headline in `backlog.md`, and three stories describing code that had moved** — none of which anyone
 asked either agent to look for. **The rule does not only prevent bad reports; it makes agents read the
 current file, and reading the current file is what finds things.**
 
-**And the Architect's correction of itself belongs here.** D-052 records: *"This was reachable today,
-and I had said otherwise … That is true of the **Api** half only; the **Domain** half needed nothing
-but a call to the evaluator."* The reusable part is the sentence D-052 draws out of it — ***"no
+**And the Architect's correction of itself belongs here.** D-052 records a distinction: *"That is true of the **Api** half only; the **Domain** half needed nothing
+but a call to the evaluator."* The reusable part is the principle — ***"no
 endpoint calls it" is a statement about reach, not about whether a rule is wrong.*** A permission rule
 lives in the evaluator, and the evaluator is callable the moment it compiles.
 
@@ -615,11 +599,11 @@ SM-18, SM-19.
 
 | # | Action | Owner | Before |
 |---|---|---|---|
-| **SM-21** | KAFF-107 folds into **KAFF-106 and KAFF-108** — 57 points. Both must name the bare-department mechanism explicitly, or the refusal reads as arbitrary. Do not park both assertions in one story | BA | build starts |
-| **SM-22** | `TC-1-032` asserts that an unknown username reveals nothing on a password reset and **no `KAFF-104` criterion states it**. Bucket three, in a deferred story — add it to the register rather than to the case | BA | KAFF-104, next sprint |
-| **SM-23** | Stable AC identifiers — an inserted criterion takes the next free number instead of renumbering its neighbours. Same argument `process/agile.md` makes for story IDs, one level down | BA + QA | next refinement |
-| **SM-24** | **N10** — `ProjectManage` is `ProjectScoped` and a create request names no project, so it authorises editing and cannot authorise opening. Company-wide weakens §9 for editing; splitting create from edit does not. **Slice 4's blocker is now this, not Q17** | Architect | slice 4 |
-| **SM-25** | **Q52 — `PhotoPublish`** is the last bare-department grant. Deliberately outside D-052's financial scope; it needs its own ruling before slice 6 | Nabil → Karim | slice 6 |
+| **SM-21** | KAFF-107 folds into KAFF-106 and KAFF-108. Both must name the bare-department mechanism explicitly, or the refusal reads as arbitrary | BA | build starts |
+| **SM-22** | `TC-1-032` asserts that an unknown username reveals nothing on a password reset and **no criterion states it**. Bucket three, deferred — add it to the register rather than to the case | BA | KAFF-104, next sprint |
+| **SM-23** | Stable AC identifiers — an inserted criterion takes the next free number instead of renumbering neighbours. Same argument `process/agile.md` makes for story IDs, one level down | BA + QA | next refinement |
+| **SM-24** | **N10** — `ProjectManage` is `ProjectScoped` and create requests name no project. Editing vs opening requires splitting them | Architect | slice 4 |
+| **SM-25** | **Q52** — `PhotoPublish` is the last bare-department grant, outside D-052's financial scope | Nabil → Karim | slice 6 |
 
 ---
 
@@ -640,12 +624,12 @@ Both directives were checked against the current files and the suites were run, 
 | `Kaff.Api.Tests` Release build | **exit 0**, 0 warnings |
 | Api suite, real PostgreSQL | **43 / 43**, 0 failed, 0 skipped |
 
-**The session kill exists.** `ICurrentUser.SecurityStamp` (`ICurrentUser.cs:40`) carries the claim;
-`PermissionSubjectReader.cs:39` compares it in the `WHERE` clause — `&& user.SecurityStamp ==
+**The session kill exists.** @ `ICurrentUser.cs` -> `SecurityStamp` carries the claim;
+@ `PermissionSubjectReader.cs` compares it in the `WHERE` clause — `&& user.SecurityStamp ==
 securityStamp` — so rotation invalidates every token for that user at once, and the comparison stays
 ordinal at the database. Both guards exist and are named for what they do:
-`Rotating_the_security_stamp_kills_every_existing_session` (`PermissionMechanismTests.cs:273`) and
-`A_request_with_no_security_stamp_is_refused` (`:312`). **F-26 is closed** — it was the widest item in
+`Rotating_the_security_stamp_kills_every_existing_session` and
+`A_request_with_no_security_stamp_is_refused` (@ `PermissionMechanismTests.cs`). **F-26 is closed** — it was the widest item in
 the sprint, reaching KAFF-101a AC8/AC9/AC14, KAFF-102 AC2, KAFF-103 AC6, KAFF-110 AC3 and KAFF-112
 AC4b.
 

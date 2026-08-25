@@ -1,6 +1,6 @@
 # KAFF-110 · Deactivate a user, and their access ends on the next request
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** BUILT — awaiting verification
+**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** BUILT — HOLD on AC-110-D (deferred to KAFF-101a)
 **Spec:** §9 · **Decisions:** D-044 (ruling 1), D-048, **D-049 (rulings 2, 5)**
 **Depends on:** KAFF-106
 
@@ -73,7 +73,7 @@ Given a user signed in on two devices
 When the Owner deactivates them
 Then both devices are refused on their next request
 
-**AC-110-D — they cannot sign in again**
+**AC-110-D — they cannot sign in again** *(moves with **KAFF-101a**, deferred)*
 Given a deactivated user
 When they attempt to sign in with their correct password
 Then it is refused, and the refusal does not reveal that the account was deactivated rather than never existing

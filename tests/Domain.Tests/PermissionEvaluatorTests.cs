@@ -22,7 +22,7 @@ public sealed class PermissionEvaluatorTests
         Department? department = null,
         OperationsSubDepartment? subDepartment = null,
         Guid? clientId = null)
-        => new(UserId, role, department, subDepartment, clientId);
+        => new(UserId, role, department, subDepartment, clientId, "permission-subject");
 
     [Fact]
     public void An_unauthenticated_caller_is_refused()

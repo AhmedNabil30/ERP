@@ -169,7 +169,12 @@ public sealed class AssignUserToProjectTests : IAsyncLifetime
         (await LevelOnAsync(_projectB, _siteEngineer)).Should().Be(AssignmentLevel.Junior);
 
         var subject = new PermissionSubject(
-            _siteEngineer, Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical, null);
+            _siteEngineer,
+            Role.SiteEngineer,
+            Department.Operations,
+            OperationsSubDepartment.Technical,
+            null,
+            "site-engineer");
 
         PermissionEvaluator
             .Evaluate(subject, Permission.DraftSubmit, _projectA, await AccessAsync(subject, _projectA))

@@ -107,7 +107,7 @@ Given the Owner creates a user with an 8-character all-lower-case temporary pass
 When the request is submitted
 Then it is accepted — no complexity rule refuses it (D-049 ruling 3)
 
-**AC-106-J — Arabic, RTL, at mobile width**
+**AC-106-J — Arabic, RTL, at mobile width** *(deferred to Frontend)*
 Given the user form at 390px in Arabic
 When it renders
 Then direction is RTL, every label resolves from the catalogue, and there is no horizontal overflow

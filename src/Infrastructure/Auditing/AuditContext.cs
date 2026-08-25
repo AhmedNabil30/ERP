@@ -16,6 +16,8 @@ public sealed class AuditContext : IAuditContext
 
     public ProjectAccessPath? GrantPath { get; private set; }
 
+    public AuditActor? VerifiedActor { get; private set; }
+
     private readonly List<AuditEvent> _events = [];
 
     public IReadOnlyList<AuditEvent> Events => _events;
@@ -30,6 +32,8 @@ public sealed class AuditContext : IAuditContext
 
     public void GrantedThrough(ProjectAccessPath path) => GrantPath = path;
 
+    public void ActorVerifiedAs(AuditActor actor) => VerifiedActor = FullyNamed(actor, "verified");
+
     public void Record<TSubject>(AuditEventKind kind, Guid subjectId)
         where TSubject : Entity
     {
@@ -41,23 +45,35 @@ public sealed class AuditContext : IAuditContext
         _events.Add(new AuditEvent(kind, typeof(TSubject).Name, subjectId));
     }
 
-    public void AttributeTo(AuditActor actor)
+    public void AttributeTo(AuditActor actor) => Actor = FullyNamed(actor, "declared");
+
+    /// <summary>
+    /// Both actor channels take an actor that is named completely — id, name and role.
+    /// </summary>
+    /// <remarks>
+    /// The half-named actor is the case the database refuses through
+    /// <c>ck_audit_records_actor_is_named_completely</c>, and refusing it here as well means the
+    /// caller gets an argument error at the point of the mistake rather than a constraint violation
+    /// at the point of the save. The constraint is still the authority; this is only the earlier
+    /// signal. See decisions.md D-074.
+    /// </remarks>
+    private static AuditActor FullyNamed(AuditActor actor, string kind)
     {
         ArgumentNullException.ThrowIfNull(actor);
 
         if (actor.UserId is not { } userId || userId == Guid.Empty)
         {
-            throw new ArgumentException("A declared actor must name a user.", nameof(actor));
+            throw new ArgumentException($"A {kind} actor must name a user.", nameof(actor));
         }
 
         ArgumentException.ThrowIfNullOrWhiteSpace(actor.DisplayName);
 
         if (actor.Role is null)
         {
-            throw new ArgumentException("A declared actor must carry a role.", nameof(actor));
+            throw new ArgumentException($"A {kind} actor must carry a role.", nameof(actor));
         }
 
-        Actor = actor;
+        return actor;
     }
 
     public void Clear()

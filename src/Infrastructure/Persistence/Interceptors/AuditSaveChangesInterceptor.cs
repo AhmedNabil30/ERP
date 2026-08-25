@@ -127,16 +127,34 @@ public sealed class AuditSaveChangesInterceptor : SaveChangesInterceptor
     /// Who the records name.
     /// </summary>
     /// <remarks>
-    /// Normally the caller. A request that carries no identity at all may declare its actor —
-    /// bootstrap creates the Owner that is itself the actor, on an anonymous endpoint (KAFF-100). A
-    /// request that <i>does</i> carry an identity may not, because that is impersonation written into
-    /// a table nobody can correct afterwards.
+    /// <para>
+    /// Normally the caller <b>as the authorization gate read them from the users table</b>, never as
+    /// their token described them. Claims go stale — that is why D-048 stopped the gate trusting them
+    /// — and a stale role written here is wrong permanently, because the table is append-only by
+    /// trigger and CLAUDE.md allows no update or delete path. See decisions.md D-074.
+    /// </para>
+    /// <para>
+    /// <b>There is deliberately no fallback to the claim</b> when no gate ran. An authenticated
+    /// request that reaches a save without passing the gate is the D-067 shape that
+    /// <c>EndpointPermissionCoverageTests</c> (D-069) makes a build failure, and attributing such a
+    /// save from an unverified claim would be the defect this method exists to remove. What is left
+    /// is a named actor with no role, which the database refuses outright — loudly, at the save,
+    /// rather than quietly forever.
+    /// </para>
+    /// <para>
+    /// The remaining actor is <c>null, null</c>: work outside a request, where there is genuinely
+    /// nobody. A request that carries no identity at all may instead declare its actor — bootstrap
+    /// creates the Owner that is itself the actor, on an anonymous endpoint (KAFF-100). A request
+    /// that <i>does</i> carry an identity may not, because that is impersonation written into a table
+    /// nobody can correct afterwards.
+    /// </para>
     /// </remarks>
     private AuditActor ResolveActor()
     {
         if (_auditContext.Actor is not { } declared)
         {
-            return new AuditActor(_currentUser.UserId, _currentUser.DisplayName, _currentUser.Role);
+            return _auditContext.VerifiedActor
+                   ?? new AuditActor(_currentUser.UserId, _currentUser.DisplayName, Role: null);
         }
 
         if (_currentUser.UserId is not null)
