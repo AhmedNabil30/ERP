@@ -8,13 +8,18 @@ name: Deploy to staging
 # deployment step that is gated on secrets. Filling in that step needs an answer from Nabil: where
 # does staging run, and how is it reached? See decisions.md D-023.
 #
-# MANUAL ONLY, until that question is answered. This ran `on: push` to main until 2026-08-24, which
-# meant it failed on every single push — not because anything was wrong, but because it has no target
-# to deploy to. A workflow that is red on every commit stops being a signal: the next real CI failure
-# arrives on a page that was already red, and nobody looks twice. Restore the push trigger in the
-# same change that answers D-023, not before.
+# ANSWERED 2026-08-25 — Nabil: staging is a VPS, reached over SSH, running the images this workflow
+# publishes via deploy/docker-compose.staging.yml. The push trigger is restored in the same change
+# that answers D-023, which is what the note here said to do.
+#
+# It is still safe when nothing is configured: every deploy step is gated on
+# `vars.STAGING_DEPLOY_TARGET`, and the check step exits 0 with a warning rather than failing. That
+# matters — this ran `on: push` until 2026-08-24 with no target and would have been red on every
+# commit, and a workflow that is always red stops being a signal.
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 env:
@@ -88,6 +93,46 @@ jobs:
             exit 0
           fi
           echo "Deploying ${{ github.sha }} to ${{ vars.STAGING_DEPLOY_TARGET }}."
+
+      # Copies the compose file from the repository rather than trusting one on the box, so what
+      # staging runs is what was reviewed, and a rollback is `git revert` plus a re-run.
+      #
+      # The host's .env is NOT written here and never will be: JWT_SIGNING_KEY and POSTGRES_PASSWORD
+      # live beside the compose file on the host. A secret that passes through a workflow can be
+      # printed by any step added later.
+      - name: Copy the compose file
+        if: vars.STAGING_DEPLOY_TARGET != ''
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          source: deploy/docker-compose.staging.yml
+          target: ${{ vars.STAGING_DEPLOY_TARGET }}
+          strip_components: 1
+
+      - name: Pull and restart
+        if: vars.STAGING_DEPLOY_TARGET != ''
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          API_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/api:${{ github.sha }}
+          WEB_IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/web:${{ github.sha }}
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          envs: API_IMAGE,WEB_IMAGE
+          # Pinned to the commit SHA, not the `staging` tag. Both are pushed, but deploying the
+          # mutable tag makes "what is on staging" unanswerable the moment a second build lands.
+          script: |
+            set -euo pipefail
+            cd "${{ vars.STAGING_DEPLOY_TARGET }}"
+            echo "REGISTRY_IMAGE_API=$API_IMAGE" > .env.images
+            echo "REGISTRY_IMAGE_WEB=$WEB_IMAGE" >> .env.images
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+            docker compose --env-file .env --env-file .env.images -f docker-compose.staging.yml pull
+            docker compose --env-file .env --env-file .env.images -f docker-compose.staging.yml up -d
+            docker image prune -f
 
       - name: Smoke check
         if: vars.STAGING_URL != ''

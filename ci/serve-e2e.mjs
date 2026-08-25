@@ -24,8 +24,10 @@ const app = express();
 // the Angular dev server, whose proxy.conf.json preserves the prefix, and in CI the e2e job had
 // never got this far. Fixed 2026-08-25, on the first run that reached the tests.
 //
-// src/Web/nginx.conf must keep the prefix too — the API's routes all begin /api and nothing rewrites
-// them at either end.
+// src/Web/nginx.conf.template keeps the prefix correctly by a different route: `location /api/` with
+// `proxy_pass ${KAFF_API_URL}` where that value ends in /api/, so nginx substitutes the matched
+// prefix rather than dropping it. Same destination, opposite mechanism — do not "align" one to the
+// other without re-reading both.
 app.use(createProxyMiddleware({ pathFilter: '/api', target: apiTarget, changeOrigin: true }));
 app.use(express.static(root));
 

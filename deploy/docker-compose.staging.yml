@@ -1,0 +1,71 @@
+# Staging. Lives in the repository, not hand-maintained on the box, so what runs there is reviewable
+# and a rollback is a git operation rather than an SSH session.
+#
+# The deploy job copies this file to the host and runs `docker compose pull && up -d` against it.
+# Values come from a .env file beside it on the host, which CI never writes and never reads — the
+# signing key and the database password are the two things that must not pass through a build log.
+#
+# Images are published by the same workflow to ghcr.io and tagged `staging`.
+
+name: kaff-staging
+
+services:
+  db:
+    # Pinned to match CI and docker-compose.yml. The guard script uses NULLS NOT DISTINCT, which
+    # needs 15 or later, and a version drift between environments is a guard that passes in one
+    # place and not another.
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      LANG: C.UTF-8
+    volumes:
+      - kaff-staging-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # Not published to the host. Only the API needs to reach it.
+    expose:
+      - "5432"
+
+  api:
+    image: ${REGISTRY_IMAGE_API}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Staging
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__KaffDatabase: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      Jwt__Issuer: kaff-erp-staging
+      Jwt__Audience: kaff-erp-web-staging
+      # From the host's .env. There is no default and there must not be one: appsettings.json ships
+      # an empty SigningKey precisely so a missing secret fails loudly instead of running on a
+      # placeholder somebody forgot to replace.
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:?JWT_SIGNING_KEY must be set}
+      Kaff__ApplyMigrationsOnStartup: "true"
+      Kaff__AllowedOrigins__0: ${STAGING_ORIGIN}
+    expose:
+      - "8080"
+
+  web:
+    image: ${REGISTRY_IMAGE_WEB}
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      # nginx.conf.template proxies /api/ here. The trailing /api/ is load-bearing: nginx substitutes
+      # the matched location prefix with this URI, so dropping it would forward /api/health to the
+      # API as /health — a route that does not exist, which the API answers 401 rather than 404.
+      # That exact mistake was live in ci/serve-e2e.mjs until 2026-08-25.
+      KAFF_API_URL: "http://api:8080/api/"
+    ports:
+      - "${STAGING_HTTP_PORT:-80}:8080"
+
+volumes:
+  kaff-staging-db:
