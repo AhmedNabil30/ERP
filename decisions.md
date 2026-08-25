@@ -5445,3 +5445,150 @@ turning red** — the allowlist and `ForwardLimit` must both be revisited the da
 front of the box. No change to `AuditCorrelationMiddleware`, `IAuditContext`, `AuditRecord`, the
 schema, or any migration; none was needed. No change to `src/Web/`. No retention or partitioning
 mechanism for `ip_address` (Q54). No story was built.
+
+
+---
+
+### D-080 · The blanket 403 key satisfies D-071. Four acceptance criteria and three test cases are what is wrong · 2026-08-25
+
+**Architect, answering the question D-078 refused to answer from inside a 3-point story.** That
+refusal was right and this entry does not overturn it — it answers it.
+
+**The question:** `Program.cs` -> `CustomizeProblemDetails` stamps every 403 with
+`errors.auth.forbidden`; `AuthorizationErrors.NotAssignedToProject` is declared, translated, and
+called by nothing. `AC-114-A` commands a key the shipped pipeline cannot produce. Is D-071 satisfied
+by the blanket key, or is the flattening a defect?
+
+**Answer: D-071 is satisfied, and it already said so in as many words.** *"The generic key is
+deliberate for gate refusals. The gate knows why it refused — `NotAssignedToProject`,
+`RoleNotGranted`, `AssignmentLevelTooLow` — and logs it. It is not returned … telling an unauthorised
+caller which of the two axes they failed describes the permission model to the person who has just
+been refused by it."* D-071 gave every refusal **a** key, not a specific one. The pipeline built is
+the pipeline D-071 decided.
+
+#### The premises, re-read today rather than taken from D-078
+
+All four hold [Verified: 2026-08-25]:
+
+* One callback stamps every 401 and 403 after the fact, with no access to the decision that produced
+  it [@ `Program.cs` -> `CustomizeProblemDetails`].
+* The handler only declines to call `context.Succeed`; it reaches nothing that could return a
+  `Problem` of its own [@ `PermissionAuthorizationHandler.cs` -> `HandleRequirementAsync`].
+* `AuthorizationErrors.NotAssignedToProject` has **zero call sites anywhere in the solution** —
+  confirmed by a repository-wide search, not inferred [@ `SeparationOfDuties.cs` ->
+  `NotAssignedToProject`]. The name that *is* used everywhere is the enum member
+  `PermissionDecision.NotAssignedToProject` [@ `PermissionEvaluator.cs` -> `NotAssignedToProject`],
+  which is a decision the gate logs, never an `Error` it returns. **Two different things with one
+  name**, and D-078's brief called the `Error` "`SeparationOfDuties.NotAssignedToProject`" — that is
+  the file, not the owner; the member belongs to `AuthorizationErrors`.
+* Existing 403 assertions expect the blanket key [@ `AssignUserToProjectTests.cs` ->
+  `Nobody_but_the_owner_and_hr_can_staff_a_project`; @ `RevokeProjectAssignmentTests.cs` ->
+  `Access_ends_on_the_next_request_after_revocation`].
+
+#### Why the Q47 reasoning does apply, even though the caller is authenticated
+
+The brief asked whether **Q47** and **D-072 §1** — a role-specific sign-in refusal tells an attacker
+the account exists — carry over to a caller who already holds a session. The obvious objection is
+that they should not: this caller is known, and can read their own role and their own assignment list
+from their own profile, so a specific key tells them nothing they cannot already look up.
+
+**The objection fails, and the reason is in the evaluator's ordering rather than in an analogy.**
+`PermissionDecision.NotAssignedToProject` is only reachable **after** `matching.Count == 0` has
+already been ruled out [@ `PermissionEvaluator.cs` -> `Evaluate`]. So the two keys do not distinguish
+two facts about the *caller*; they distinguish two facts about the **endpoint**:
+
+| Key | What the caller learns |
+|---|---|
+| `errors.auth.forbidden` (from `RoleNotGranted`) | their role does not hold the permission this route requires |
+| `errors.auth.not_assigned_to_project` | **their role does hold it** — the route is project-scoped and only the assignment stopped them |
+| `errors.auth.assignment_level_too_low` | their role holds it, they are assigned, **and the grant carries a seniority floor** |
+
+That is the `PermissionCatalogue` row, read off a refusal. A caller cannot look that up; it is the
+security-relevant map of which permission each route requires, on which axis, at what seniority — and
+it is enumerable one endpoint at a time by anyone holding any session. **The value of the specific
+key and its cost are the same disclosure.** Q47's shape holds: what varies with the answer is what
+leaks, and being authenticated changes who is doing the enumerating, not what is enumerated.
+
+**Stated narrowly, because the wider claim is not true.** This is *not* an existence oracle for
+projects. For every role but the Owner, `AssignedAccessAsync` matches an assignment row, so a
+non-existent project and an unassigned one are indistinguishable. For the Owner, `GlobalReachAsync`
+is "bounded by the project existing" [@ `ProjectAccessPolicy.cs` -> `GlobalReachAsync`], so a refusal
+does imply non-existence — to the one role that can list every project anyway. Immaterial, and named
+so nobody cites this entry for a leak it does not claim.
+
+#### What the specific key would have bought, priced honestly
+
+Not nothing. A refused user sees one Arabic string and cannot tell "ask HR to assign me" from "this
+is not my job". **That is a real cost and this decision accepts it**, for two reasons: the gate
+already logs the decision with its reason [@ `PermissionAuthorizationHandler.cs` ->
+`HandleRequirementAsync`], so support can answer the question from the log rather than from the
+screen; and the audience for the distinction is the assigned user's manager, not the refused request.
+
+**And the build cost, so the trade is visible rather than asserted:** carrying the decision to the
+response means `PermissionAuthorizationHandler` writing its reason onto `HttpContext` and the
+`CustomizeProblemDetails` callback reading it — perhaps 15 lines. It is not expensive. **It is
+refused on the disclosure, not the price.** D-078 was right that it is Architect-sized work under a
+3-point story; it is now Architect-answered, and the answer is no.
+
+#### Consequence: what is wrong is the story text, and it is the BA's to fix — not mine, not a test's
+
+**Four acceptance criteria command a key the gate is decided never to send.** Every one re-read in
+its own file today:
+
+| Criterion | File | What it says |
+|---|---|---|
+| `AC-101a-K` | `stories/slice-1-foundation/KAFF-101a-sign-in-api.md` | "Then the request is refused with `errors.auth.not_assigned_to_project`" |
+| `AC-109-E` | `stories/slice-1-foundation/KAFF-109-change-a-users-role.md` | "Then it is refused with `errors.auth.not_assigned_to_project`" |
+| `AC-112-B` | `stories/slice-1-foundation/KAFF-112-reactivate-a-user.md` | "And a request against any of those three projects is refused with `errors.auth.not_assigned_to_project`" |
+| `AC-114-A` | `stories/slice-1-foundation/KAFF-114-revoke-a-project-assignment.md` | "Then it is refused with `errors.auth.not_assigned_to_project`" — **already built against the real key**, discrepancy recorded in the test (D-078) |
+
+**Three QA test cases inherit it**, in `qa/slice-1/test-cases.md`: **TC-1-013**, **TC-1-113**,
+**TC-1-257** (the last is a slice-4 case, so it is a correction not a rework).
+
+**One story bullet that is not a criterion:** KAFF-113's i18n list names
+`errors.auth.not_assigned_to_project` among the keys its screen needs. The screen does not need it.
+
+**Two UX documents assert it as server behaviour**, and one of them already hedges correctly:
+`ux/slice-1-flows.md` S-016 says the key "or the more specific … **when the server sends it**", which
+survives this ruling unchanged; the same file's per-screen error table and `ux/navigation.md` state it
+flatly, including `errors.auth.assignment_level_too_low`, and do not.
+
+**The recommended correction, offered to the BA rather than made here.** In every case the criterion's
+real content is behavioural — *access ended*, *nothing was restored*, *the session grants nothing by
+itself* — and the key was decoration that hardened into a false claim about the wire. The fix is to
+assert **403 and `errors.auth.forbidden`**, which is what the gate sends and what the existing
+assertions already expect. Naming a specific key in a criterion is what made a UI string into an
+acceptance gate; the criteria are better without it.
+
+#### What this rules out
+
+* **Wiring `PermissionDecision` through to the response body.** Refused above, on disclosure.
+* **A per-endpoint refusal that returns its own key.** D-071's own reasoning: a guard the endpoint
+  must remember is the guard the endpoint forgets, which is D-067's shape.
+* **Editing the four criteria, the three test cases or the two UX documents in this session.** They
+  belong to the BA, QA and UX. `agents.md`: "Architect — never change a business rule to make the
+  architecture cleaner", and an agent editing another's story to make its own ruling true is the same
+  move in a smaller frame. Routed, per principle 8.
+* **Deleting `AuthorizationErrors.NotAssignedToProject`, `.AssignmentLevelTooLow` and
+  `.ProjectNotSpecified` as dead code.** They are unreachable **from the gate**, which is not the same
+  as unreachable. A later handler that takes a project id from a request body rather than the route
+  refuses it itself, as a domain `Result` — and that is a handler's refusal, which D-071's `TryAdd`
+  deliberately preserves. `errors.auth.role_cannot_log_in` is the standing precedent: KAFF-101a
+  records it as "not deleted; it stops being reachable from this door." Same disposition. **Nobody
+  should wire one of them into the gate to satisfy a criterion** — that is the move this entry exists
+  to forbid.
+
+#### Nothing here went to Nabil, and that is deliberate
+
+Neither half of this turns on a rule `spec.md` does not state. `spec.md` §9 says enforcement is
+server-side and that permission is role × assignment; it says nothing about what a refusal tells the
+person refused, which is a security-disclosure question and therefore the Architect's. **Karim is not
+asked.** Q47 and D-072 §1 are cited as the reasoning Nabil has already applied to this exact shape,
+not as authority delegated back to him.
+
+#### Not done
+
+No code changed by this entry — not `Program.cs`, not `PermissionAuthorizationHandler`, not
+`SeparationOfDuties.cs`, not a test, not a locale catalogue. No story, test case or UX document was
+edited. `AC-114-A` remains built and green against `errors.auth.forbidden`, with D-078's note in the
+test's own remarks now upgraded from "flagged" to "answered here."
