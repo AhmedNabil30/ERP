@@ -105,7 +105,7 @@ Every driver command:
 | `driver.mjs shot <url> <out.png>` | full-page screenshot |
 | `driver.mjs eval <url> "<js>"` | evaluate JavaScript in the page, print the JSON result |
 | `driver.mjs flow <outDir>` | the language-switch flow: clicks, two screenshots, asserts direction flips |
-| `driver.mjs smoke` | API + guards + SPA render + RTL + Arabic |
+| `driver.mjs smoke` | API + guards + app mounted + SPA render + RTL + Arabic |
 
 `KAFF_API` and `KAFF_WEB` override the two base URLs. `CHROME` overrides the browser binary.
 
@@ -241,6 +241,15 @@ uses and still works; the *reason* recorded for it is stale. Flagged, not change
   when the PostgreSQL guards are absent, because the append-only and non-negative-balance rules live
   in the database. A stack that is "up" without them reports a safety it does not have — `smoke`
   asserts it for that reason, not for completeness.
+- **⚠️ Chromium's own error page passes the RTL and Arabic checks.** "This site can't be reached" is
+  served in the browser's UI locale, so against a web server that is not up yet it renders as Arabic,
+  RTL, 176 characters of text — and `SPA renders content`, `document direction is RTL` and
+  `page contains Arabic text` **all three pass while the application is not running at all.** This is
+  not hypothetical; it produced a green smoke run on 2026-08-25 against a dev server that had not
+  finished building. `smoke` now asserts `kaff-root` is present first, because that element is ours
+  and no error page has one. **If you add a check about the page, make it about *our* markup** — a
+  check that a wrong page can satisfy reports a safety that is not there, which is `agents.md` §3c's
+  rule for test cases and applies here for the same reason.
 - **`pwsh` is not installed.** Every CI line that calls it needs `powershell -NoProfile -File` here.
 - **Editing files with PowerShell string replacement corrupts them.** PowerShell 5.1 reads BOM-less
   UTF-8 as Windows-1252, so `Get-Content -Raw` / `Set-Content` silently double-encodes every `§`,

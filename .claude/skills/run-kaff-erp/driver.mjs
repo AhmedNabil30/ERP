@@ -297,7 +297,15 @@ async function smoke() {
     dir: await evaluate('document.documentElement.getAttribute("dir")'),
     lang: await evaluate('document.documentElement.getAttribute("lang")'),
     text: await evaluate('document.body.innerText.trim()'),
+    mounted: await evaluate('document.querySelector("kaff-root") !== null'),
   }));
+
+  // This check is the reason the other three can be trusted. Chromium's own "site can't be reached"
+  // page is served in the browser's UI locale — which here is Arabic, RTL, and non-empty — so it
+  // passes "renders content", "direction is RTL" and "contains Arabic text" while the application is
+  // not running at all. Caught 2026-08-25 against a dev server that had not finished building yet.
+  // kaff-root is ours (src/Web/src/index.html), and no error page has one.
+  say(page.mounted === true, 'the Angular application mounted', `kaff-root present=${page.mounted}`);
 
   say(page.text.length > 0, 'SPA renders content', `${page.text.length} chars`);
   say(page.dir === 'rtl', 'document direction is RTL', `dir=${page.dir}`);
@@ -386,7 +394,7 @@ try {
           '  api <METHOD> <path> [json]  any API call\n' +
           '  shot <url> <out.png>        screenshot a page\n' +
           '  eval <url> <js>             evaluate JavaScript in the page\n' +
-          '  smoke                       API + guards + SPA render + RTL + Arabic\n' +
+          '  smoke                       API + guards + app mounted + SPA render + RTL + Arabic\n' +
           '  flow <outDir>               language switch, two screenshots, asserts dir flips\n' +
           `\nKAFF_API=${API}  KAFF_WEB=${WEB}  (override with env vars)`,
       );
