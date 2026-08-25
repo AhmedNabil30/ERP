@@ -15,7 +15,18 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'w
 
 const app = express();
 
-app.use('/api', createProxyMiddleware({ target: apiTarget, changeOrigin: true }));
+// pathFilter, NOT app.use('/api', …). Express strips the mount path before the handler sees it, so
+// mounting on '/api' forwarded `/api/health` to the API as `/health` — a route that does not exist,
+// which the API answers with 401 rather than 404 because authorization runs before routing resolves.
+// The SPA then showed the API as unreachable and every smoke assertion failed.
+//
+// It had never been caught because nothing had ever run this file: locally the suite is pointed at
+// the Angular dev server, whose proxy.conf.json preserves the prefix, and in CI the e2e job had
+// never got this far. Fixed 2026-08-25, on the first run that reached the tests.
+//
+// src/Web/nginx.conf must keep the prefix too — the API's routes all begin /api and nothing rewrites
+// them at either end.
+app.use(createProxyMiddleware({ pathFilter: '/api', target: apiTarget, changeOrigin: true }));
 app.use(express.static(root));
 
 // SPA fallback: the Angular router owns every other path.
