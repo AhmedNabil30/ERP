@@ -1,0 +1,49 @@
+# Build context for src/Api/Dockerfile, which is the repository root so that Directory.Build.props
+# and Directory.Packages.props are available at restore time.
+#
+# This file did not exist until 2026-08-25, and its absence was not merely slow — it was a
+# correctness bug. `COPY src/ src/` copied the HOST's bin/ and obj/ into the image, overwriting the
+# restore output produced by the layer above with a project.assets.json full of Windows paths. The
+# publish then failed with NETSDK1064 "Package Microsoft.AspNetCore.OpenApi ... was not found",
+# which reads like a NuGet problem and is not one.
+#
+# It also cut the context from 522 MB to a few megabytes.
+
+# Build output — the image builds its own.
+**/bin/
+**/obj/
+**/node_modules/
+src/Web/dist/
+web-dist/
+
+# Version control and tooling.
+.git/
+.github/
+.vs/
+.vscode/
+.idea/
+
+# Test and local artefacts.
+TestResults/
+**/*.trx
+shots/
+*.log
+
+# Local secrets and overrides. Nothing here should ever reach an image.
+**/appsettings.Local.json
+**/appsettings.*.Local.json
+**/.env
+**/.env.*
+
+# Documentation and process. None of it is needed to compile the API, and excluding it keeps a
+# rebuild off the critical path when only a story or a decision changes.
+*.md
+docs/
+meetings/
+proposals/
+qa/
+stories/
+ux/
+process/
+deploy/
+.claude/

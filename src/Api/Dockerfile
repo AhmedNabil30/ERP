@@ -24,10 +24,19 @@ WORKDIR /app
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false \
     ASPNETCORE_URLS=http://+:8080
 
-RUN adduser --system --group --no-create-home kaff
-USER kaff
+COPY --from=build /app ./
 
-COPY --from=build --chown=kaff:kaff /app ./
+# The base image already ships a non-root user — `app`, uid 1654, exposed as $APP_UID
+# [Verified: 2026-08-25 by `docker run --rm mcr.microsoft.com/dotnet/aspnet:10.0 id $APP_UID`].
+#
+# This ran `adduser --system --group --no-create-home kaff` until 2026-08-25 and **failed the image
+# build entirely** with exit 127: the .NET 10 runtime image is Azure Linux based, not Debian, and has
+# no `adduser`. So the line was both broken and unnecessary — it was creating a user the image had
+# already created.
+#
+# After the COPY, deliberately: the copy runs as root and the process then drops to a user with read
+# access, which is all it needs. Switching first would require a --chown and buy nothing.
+USER $APP_UID
 
 EXPOSE 8080
 

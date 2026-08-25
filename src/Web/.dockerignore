@@ -1,0 +1,11 @@
+# Build context for src/Web/Dockerfile, which is src/Web rather than the repository root.
+#
+# node_modules is the important line: the image runs `npm ci` itself, so shipping the host's copy
+# is both slow and wrong — it may hold platform-specific binaries built for Windows.
+
+node_modules/
+dist/
+.angular/
+*.log
+.env
+.env.*
