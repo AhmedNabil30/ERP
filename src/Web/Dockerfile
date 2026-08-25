@@ -1,4 +1,10 @@
-FROM node:22-alpine AS build
+# --platform=$BUILDPLATFORM: the build stage runs on the RUNNER's architecture. Angular's output is
+# JavaScript, CSS and HTML — identical whatever machine emits it — so there is nothing to
+# cross-compile and no reason to emulate. Only the nginx runtime stage below is built per target.
+#
+# Without this, a multi-platform build runs `npm ci` and the whole Angular build under QEMU for the
+# arm64 leg, which is slow and pulls in platform-specific native modules for no benefit.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 WORKDIR /source
 
 COPY package.json package-lock.json ./

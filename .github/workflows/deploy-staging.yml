@@ -55,11 +55,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # linux/arm64 is what staging actually runs — an Oracle Cloud ARM machine. Without it the pull
+      # on the host failed with `no matching manifest for linux/arm64/v8 in the manifest list
+      # entries`: buildx defaults to the runner's platform, and the runners are amd64.
+      #
+      # amd64 stays in the list because the images are built and run on developer machines to verify
+      # them — that is how the web image's 404 and the API's adduser failure were caught on
+      # 2026-08-25, before either had ever reached a host.
+      #
+      # Cross-compiled, not emulated. Both Dockerfiles pin their build stage to $BUILDPLATFORM and
+      # target $TARGETARCH, so no QEMU is set up here and none is needed. Adding
+      # docker/setup-qemu-action would make this work too, and would make every push minutes slower.
       - name: Build and push the API image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: src/Api/Dockerfile
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/api:${{ github.sha }}
@@ -72,6 +84,7 @@ jobs:
         with:
           context: src/Web
           file: src/Web/Dockerfile
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/web:${{ github.sha }}

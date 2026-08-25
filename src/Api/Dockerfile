@@ -1,7 +1,15 @@
 # Build context is the repository root, so Directory.Build.props and Directory.Packages.props are
 # available — central package management needs them at restore time.
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+# --platform=$BUILDPLATFORM pins the SDK stage to the RUNNER's architecture, and `-a $TARGETARCH`
+# cross-compiles from there. Staging is an ARM64 machine (Oracle Cloud) and CI runners are amd64.
+#
+# The alternative — emulating arm64 with QEMU and building natively — also works and is much slower:
+# a .NET restore and publish under emulation is minutes, not seconds, on every push. Cross-compiling
+# is what the SDK is for. No QEMU is set up in the workflow, deliberately, and none is needed: the
+# runtime stage below only COPYs, so nothing built for the target ever executes during the build.
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+ARG TARGETARCH
 WORKDIR /source
 
 COPY global.json Directory.Build.props Directory.Packages.props ./
@@ -9,12 +17,14 @@ COPY src/Domain/Kaff.Domain.csproj src/Domain/
 COPY src/Infrastructure/Kaff.Infrastructure.csproj src/Infrastructure/
 COPY src/Api/Kaff.Api.csproj src/Api/
 
-RUN dotnet restore src/Api/Kaff.Api.csproj
+# The restore must name the same architecture as the publish, or the publish restores again and
+# --no-restore fails on assets that were resolved for the wrong RID.
+RUN dotnet restore src/Api/Kaff.Api.csproj -a $TARGETARCH
 
 COPY src/ src/
 COPY .editorconfig ./
 
-RUN dotnet publish src/Api/Kaff.Api.csproj -c Release -o /app --no-restore
+RUN dotnet publish src/Api/Kaff.Api.csproj -c Release -a $TARGETARCH -o /app --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
