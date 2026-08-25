@@ -1,6 +1,6 @@
 # KAFF-108 · Move a user between departments
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** BUILT — awaiting verification (D-067 gate defect fixed)
+**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** ACCEPTED 2026-08-25 — 7 of 7 criteria satisfied
 **Spec:** §9, §8 · **Decisions:** D-044 (ruling 2), D-035
 **Depends on:** KAFF-106
 

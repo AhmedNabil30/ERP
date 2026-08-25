@@ -1,6 +1,6 @@
 # KAFF-110 · Deactivate a user, and their access ends on the next request
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** BUILT — HOLD on AC-110-D (deferred to KAFF-101a)
+**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** BUILT, verified 2026-08-25 — 8 of 10 satisfied, `AC-110-E` deferred to KAFF-104, `AC-110-D` deferred to KAFF-101a. **The deferral marker was already in this file** — the Verifier's finding W-9 was stale when written, not unactioned; the Scrum Master's ruling of 2026-08-25 confirms it rather than creating it. W-9 is closed; awaiting Nabil's acceptance
 **Spec:** §9 · **Decisions:** D-044 (ruling 1), D-048, **D-049 (rulings 2, 5)**
 **Depends on:** KAFF-106
 

@@ -1,6 +1,6 @@
 # KAFF-111 · Deactivating a user revokes their project assignments
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** Ready
+**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** BUILT 2026-08-25 — and built **inside KAFF-110's handler**, with no endpoint or handler folder of its own. A reader looking for "the KAFF-111 endpoint" will not find one; it does not exist and should not be built. Not yet separately verified
 **Spec:** §9 · **Decisions:** **D-049 (ruling 5)**
 **Depends on:** KAFF-110, KAFF-113
 

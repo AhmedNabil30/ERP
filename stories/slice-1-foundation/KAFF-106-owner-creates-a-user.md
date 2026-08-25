@@ -1,6 +1,6 @@
 # KAFF-106 · The Owner creates a user with a role and a department
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** BUILT — V-A cleared 2026-08-25, awaiting an independent Verifier pass
+**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** BUILT, verified 2026-08-25 — 9 of 11 criteria satisfied, 2 deferred (`AC-106-H` to KAFF-101a/KAFF-103, `AC-106-J` to Frontend). HOLD on `AC-106-J` — Arabic/RTL at mobile width, and no screen exists. V-A is closed
 **Spec:** §9, §2 · **Decisions:** D-044 (rulings 1, 2), D-035, **D-049 (rulings 3, 4)**
 **Depends on:** KAFF-100 *(soft — the Api harness issues identities directly, so this endpoint can be
 built and tested before the bootstrap shape is decided; only the demo waits on it)*

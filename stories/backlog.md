@@ -118,7 +118,7 @@ startable now rather than third.
 
 | Story | Pts | State |
 |---|---:|---|
-| KAFF-116 | 3 | **ACCEPTED** 2026-08-23 — D-068, D-070 |
+| KAFF-116 | 3 | **ACCEPTED** 2026-08-24 — D-070. *(An earlier draft of this row said 2026-08-23; D-070 is the accepting entry and it is dated the 24th.)* |
 | KAFF-108 | 3 | **ACCEPTED** 2026-08-25 — 7 of 7, `qa/slice-1/verification-2026-08-25.md` §8 |
 | KAFF-113 | 5 | **ACCEPTED** 2026-08-25 — 9 of 9, same report |
 | KAFF-106 | 5 | **BUILT**, verified — 9 of 11, 2 deferred. **HOLD on `AC-106-J`**: Arabic, RTL, mobile width, and there is no screen. Deferred to **Frontend**, explicitly, and it is not a pass |
