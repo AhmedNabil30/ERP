@@ -1,7 +1,7 @@
 # KAFF-101a · Sign in, and the server sets an `HttpOnly` session cookie
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** `Ready` — **with one clause held and two builds sequenced first.** See **Status, precisely** below
-**Spec:** §9 · **Decisions:** D-011, D-035, D-044 (ruling 2), **D-049 (rulings 2, 3, 4)**, **D-050**, **D-051 (N5, Q33)**, **D-062 §1/§2/§3**, **D-063 §1/§2/§3**, **D-065**
+**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** **`Ready to start` — no open question remains, and it cannot yet be built end to end.** Two decided-but-unbuilt mechanisms sit behind `AC-101a-O`. See **Status, precisely** below
+**Spec:** §9 · **Decisions:** D-011, D-035, D-044 (ruling 2), **D-049 (rulings 2, 3, 4)**, **D-050**, **D-051 (N5, Q33)**, **D-062 §1/§2/§3**, **D-063 §1/§2/§3**, **D-065**, **D-072 §1**
 **Depends on:** KAFF-100 *(now `Ready` — the soft-dependency argument is retired, see below)*
 
 > **Split from KAFF-101** on 2026-08-21. The API half is answerable and is this story. The login
@@ -31,29 +31,33 @@
 
 ## Status, precisely
 
-**`Ready` for everything except one clause, and shippable only after two builds land.** Written out
-because *"most of it is buildable"* is not a status somebody can act on.
+**Every question on this story is answered. It is not yet buildable end to end**, because two
+mechanisms `AC-101a-O` depends on are decided and unbuilt. Written out because *"most of it is
+buildable"* is not a status somebody can act on.
 
 | # | What | State | Who |
 |---|---|---|---|
 | 1 | **Cases 1, 2, 4 and 5 of Q47** — wrong password · unknown username · `Role.Client` at the staff door · `Role.Subcontractor` | **✅ RULED — one generic `401`, identical in status, body and `messageKey`.** **D-065**, 2026-08-23. Build them | — |
-| 2 | **The locked account** — struck from `AC-101a-B` on 2026-08-23 and covered by no criterion; **rule 14**, which is the same case, is left unchanged and unruled | **🟡 OPEN — Q47 case 3.** Nabil ruled a distinct **423** and the ruling is **flagged back to him**, because a 423 only exists when the username does, which is the enumeration Cases 2 and 5 were ruled to close, and five failed attempts manufacture it on demand. **D-065, the first 🟡 block.** **Write no criterion for it in either shape.** Sequenced last: it is a prerequisite for nothing | **Nabil** |
+| 2 | **The locked account** — Q47 case 3, the last of the five | **✅ RULED 2026-08-24 — `423 Locked` *only when the submitted password is correct*; a wrong password against a locked account gets the same generic `401` as every other refusal. D-072 §1.** The narrowing D-065 put to Nabil, accepted: *"An attacker guessing passwords learns nothing, while the legitimate user receives the necessary UX feedback that their account is locked."* **Rule 14 is rewritten, rule 14a carries the ordering constraint the ruling creates, `AC-101a-B` regains the case in its wrong-password half, and `AC-101a-P` is appended for the correct-password half.** Build them | — |
 | 3 | **The IP column** on `AuditRecord` — `AC-101a-O` cannot pass without it | 🟡 **Decided, not built. D-063 §2.** **N-19 applies in full: it must land before this story ships**, because a column never written cannot be backfilled into an append-only table. **A build dependency, not a question** | Backend |
 | 4 | **The nullable subject** — `AuditRecord.EntityId` and `AuditEvent.SubjectId` become `Guid?`, `EntityType` stays required, plus `ck_audit_records_entity_change_has_subject` | 🟡 **Decided, not built. D-063 §3.** May land in this story's own migration. **A build dependency, not a question** | Backend |
-| 5 | **The `AuditEventKind` member** `SignInFailedUnknownUser` | 🟡 **Delegated to this story by D-063 §3** and not yet drafted. **Decoupled from `AC-101a-G` by D-065**: the second member D-063 §3 *"arguably implies"* was coupled to `AC-101a-G`'s open shape, and that shape is now ruled — so whether the client and subcontractor refusals need their own kinds is a vocabulary question this story answers, not a Karim one | BA / Architect |
+| 5 | **The `AuditEventKind` member** `SignInFailedUnknownUser` | 🟡 **Delegated to this story by D-063 §3** and not yet drafted. **Decoupled from `AC-101a-G` by D-065**: the second member D-063 §3 *"arguably implies"* was coupled to `AC-101a-G`'s open shape, and that shape has been ruled since 2026-08-23 — so whether the client, subcontractor and locked-account refusals need their own kinds is a vocabulary question this story answers, not a Karim one. **Adding a member is one line and needs no backfill (D-061)**, so it does not gate the start | BA / Architect |
 | 6 | **Q28** — lockout per account, or per account **and** address | Open, and **does not block**. The ruling as given is buildable | Karim |
+| 7 | **Password verification does not exist.** `PasswordHasher` exposes `Hash` and nothing else — its own remarks say so: *"Verification is KAFF-101a's and reads the parameters from the string rather than from these constants"* [Verified: 2026-08-24 @ `PasswordHasher.cs` -> `PasswordHasher`] | **This story's own work, not a dependency on anyone.** Named here because rule 14a is a constraint on the function that does not exist yet, and a reader looking for it will not find it | Backend, in this story |
 
-**No longer blocked on the Architect** — D-063 decided all three things D-062 routed to him — **and no
-longer blocked on Karim** — D-065 ruled Q47's four unambiguous cases. What is left is one clause with
-Nabil and two migrations with Backend.
+**Nothing on this story is waiting on an answer.** D-063 decided all three things D-062 routed to the
+Architect; D-065 ruled Q47's four unambiguous cases; **D-072 §1 ruled the fifth.** What is left is two
+migrations with Backend.
 
-**Why `Ready` and not `BLOCKED`.** `stories/README.md` — *"block the smallest thing that is actually
-unanswerable. A question about one field blocks that field, not the story"* — and it names KAFF-101
-itself as one of the two places that was got wrong. Q47 case 3 is one clause of one criterion; D-065
-says in its own words *"Cases 1, 2, 4 and 5 are built; Case 3 is built neither way. Sequenced last so
-it is not a prerequisite."* **Row 2 is the thing nobody may build, and it is the only one.** Rows 3
-and 4 are this story's own migration work and gate the **ship**, not the **start** — `AC-101a-O` is
-the only criterion behind them.
+**Why `Ready to start` and not `Ready`, and why not `BLOCKED`.** `process/agile.md` reads `Ready` as
+buildable end to end, and **rows 3 and 4 mean this story cannot be built through**: `AC-101a-O`
+asserts an IP address on a record that has no IP column [Verified: 2026-08-24 @ `AuditRecord.cs` ->
+`class AuditRecord`] and a subject that can be absent, where `AuditContext.Record` still throws on
+`Guid.Empty` [Verified: 2026-08-24 @ `AuditContext.cs` -> `Record`]. **`BLOCKED` would be equally
+false** — `process/agile.md` reserves it for *"a business rule that does not exist yet"*, and there is
+no such rule left here. **Every criterion but `AC-101a-O` is startable today**; `AC-101a-O` is the
+only one behind rows 3 and 4, and **N-19 means those must land before the story ships**, not before it
+starts.
 
 ## Story
 As a member of Kaff staff, I sign in with my username and password, and the server puts my session
@@ -86,7 +90,7 @@ JavaScript defeats the decision, whatever the storage.
 | 5 | The session expires after **30 minutes of inactivity**, sliding on activity. The number is `JwtOptions.InactivityMinutes`, not a literal in a handler | D-049 ruling 2 |
 | 6 | A password of at least **8 characters** is accepted, and **no complexity is demanded**. Karim's reason is itself a requirement: *"so site workers don't struggle to log in"* | D-049 ruling 3 |
 | 7 | **5 consecutive failed attempts lock the account for 15 minutes.** A success resets the count. The state and the transitions are on the entity — `RecordFailedSignIn` takes the two numbers as arguments rather than writing them, and restarts the counter when the lock is applied [Verified: 2026-08-22 @ `src/Domain/Identity/User.cs` -> `RecordFailedSignIn`, `FailedSignInAttempts`, `LockedOutUntil`] | D-049 ruling 3 |
-| 8 | A user whose password was set for them by the Owner MUST change it before the session may do anything else. The flag is `User.MustChangePassword`, set by `SetTemporaryPassword` and cleared by `SetOwnPassword` — there is no boolean parameter, deliberately [Verified: 2026-08-22 @ `src/Domain/Identity/User.cs` -> `MustChangePassword`, `SetTemporaryPassword`, `SetOwnPassword`] | D-049 ruling 4 · KAFF-103 |
+| 8 | A user whose password was set for them by the Owner MUST change it before the session may do anything else. The flag is `User.MustChangePassword`, set by `SetTemporaryPassword` and cleared by `SetOwnPassword` — there is no boolean parameter, deliberately [Verified: 2026-08-22 @ `src/Domain/Identity/User.cs` -> `MustChangePassword`, `SetTemporaryPassword`, `SetOwnPassword`]. ⚠️ **One member of *"anything else"* is now carved out and the rest is an open question.** **`GET /api/auth/me` is NOT refused** — it authenticates, mints a full session token and carries `mustChangePassword: true` in the payload (**D-072 §2**, KAFF-105a rule 3). **What any *other* endpoint does with that token is a rule nobody has stated** — see `AC-101a-F` and the **Questions** section. Sign-in itself succeeds either way, so this story is buildable on both readings | D-049 ruling 4 · **D-072 §2** · KAFF-103 · KAFF-105a |
 | 9 | `Role.Subcontractor` cannot log in at all — *"Subcontractor (record only, no login)"*. The refusal is in the entity's private `StorePasswordHash`, so **both** public setters inherit it and neither can be given a credential [Verified: 2026-08-22 @ `src/Domain/Identity/User.cs` -> `StorePasswordHash`]. The evaluator refuses the role before the catalogue is consulted as well [Verified: 2026-08-22 @ `src/Domain/Authorization/PermissionEvaluator.cs` -> `RoleCannotLogIn`]. **What the *door* tells the caller is not this path**: it is the generic `401` / `errors.auth.invalid_credentials`, **D-065 case 5** — see `AC-101a-G` | §9 · `User.StorePasswordHash` · **D-065 (case 5)** |
 | 10 | An inactive user cannot sign in, and cannot use a cookie issued before deactivation. D-048 already makes this instant: every authorized request re-reads the user row | §9 · D-048 |
 | 11 | A password change or a deactivation invalidates **every** active session, everywhere, immediately. `User.SecurityStamp` is the hook. **`SetPasswordHash` no longer exists** — it was split into `SetOwnPassword` and `SetTemporaryPassword`, both of which rotate through the private `StorePasswordHash`; `ClearPassword` and `Deactivate` rotate too [Verified: 2026-08-22 @ `src/Domain/Identity/User.cs` -> `SetOwnPassword`, `SetTemporaryPassword`, `StorePasswordHash`, `ClearPassword`, `Deactivate`]. **`Reactivate` does not rotate** [Verified: 2026-08-22 @ `src/Domain/Identity/User.cs` -> `Reactivate`] — that gap is KAFF-112 rule 9a, not this story | D-049 ruling 2 · D-048 |
@@ -94,7 +98,8 @@ JavaScript defeats the decision, whatever the storage.
 | 11b | **There is no session table.** Per-device sign-out is clearing the cookie (KAFF-102); the global kill is the stamp. **The accepted limit, stated rather than hidden:** with no per-session identity there is no way to revoke *one other* device — losing a phone means signing out everywhere. Do not add a session table to close it; D-051 records this as the right trade for a first-party SPA on one origin, and adding one later is additive | **D-051 (N5)** |
 | 12 | The token carries the user id, display name and role. It carries **no permission list and no assignment list** — those are re-evaluated server-side per request against `PermissionCatalogue` and `ProjectAssignment` | §9 (*"Enforcement is server-side"*) · D-012 |
 | 13 | A wrong password and an unknown username produce the same refusal — **`401`, `errors.auth.invalid_credentials`, the same body** — in the same time envelope. ✅ **CITED. No longer a waiver: Q47 cases 1 and 2 are ruled.** *"Never tell an attacker the account does not exist."* | **D-065 (cases 1, 2)** · §9 |
-| 14 | A **locked** account produces that same refusal. Saying "locked" tells an attacker the username is real and that their lockout worked. 🟡 **NOT RULED. This is Q47 case 3 and it is OPEN with Nabil** — he ruled a distinct `423` and the ruling is flagged back to him in D-065's own first 🟡 block, on this rule's reasoning. **The rule text is unchanged and is not the answer; build no criterion for this case in either shape until he answers.** *(The Q47 waiver is spent: it covered rules 13 and 14 together, and rule 13 is now ruled.)* | 🟡 **D-065 — OPEN, case 3** · §9, same reasoning as rule 13 |
+| 14 | A **locked** account answers on the truth of the password, and on nothing else. **Wrong password against a locked account → the same generic `401` as rule 13**, indistinguishable from it. **Correct password against a locked account → `423 Locked`, `errors.auth.account_locked`.** ✅ **RULED — Q47 case 3, D-072 §1.** *"The system will return 423 Locked only if the provided password is correct. If the password is wrong, it must return the generic 401 Unauthorized. This perfectly seals the enumeration leak."* **The 423 leaks nothing because only somebody who already holds the correct password can ever see it** — which is exactly the legitimate user the UX argument is about. *(The Q47 waiver is spent: it covered rules 13 and 14 together, and both are now ruled.)* | **D-072 §1** · D-065 (the narrowing) · §9 |
+| 14a | ⚠️ **The password is verified BEFORE the lockout state decides the response. A locked account still performs a full hash comparison — 600,000 PBKDF2 iterations** [Verified: 2026-08-24 @ `PasswordHasher.cs` -> `Iterations`]. **Deliberate twice over.** ① It is the only ordering that can tell *"correct password, locked"* from *"wrong password, locked"*, which is the whole of what rule 14 turns on. ② **It keeps the timing envelope even.** The obvious implementation — check lockout first, short-circuit before hashing — **restores the enumeration oracle through timing at the exact moment the status code stops leaking it**: a locked account would answer in microseconds while every other path pays for the hash, so an attacker times the door instead of reading it. **"Check lockout first" is not an optimisation here, it is the defect** — and it is written down because it is the shape a later session will tidy toward, **and the tidy version passes every test that asserts status codes.** `AC-101a-P` is the test that does not. This is rule 16a's constraint applied to a second case, not a new principle | **D-072 §1** · D-063 §1 (rule 16a, same mechanism) · rule 13's *"same time envelope"* |
 | 15 | Passwords are stored only as a hash; `User.PasswordHash` is `[AuditRedacted]` and must never reach a response, a log or an audit record [Verified: 2026-08-22 @ `src/Domain/Identity/User.cs` -> `PasswordHash`, `SecurityStamp` — both carry the attribute] | CLAUDE.md audit · slice 0 `User` |
 | 16 | **A `Role.Client` credential is refused at the staff sign-in endpoint. It never authenticates and no staff session is minted for it** — the refusal is a property of the door, not of what the catalogue happens to contain. The refusal is **`401`, with the same body, the same `messageKey` (`errors.auth.invalid_credentials`) and the same time envelope as rule 13**: it is the fourth member of that one indistinguishable set, not a fourth answer. **Confirmed as Q47 case 4 by D-065**, which also makes `Role.Subcontractor` the fifth member (case 5, rule 9 and `AC-101a-G`). *(The cross-reference used to read "rules 13 and 14"; rule 14 — the locked account — is Q47 case 3 and is not ruled, so it is no longer cited as the yardstick.)* **No `Set-Cookie`, no distinguishing field anywhere in the response.** A 403 was rejected — *"your credential was valid and you may not come in"* fires only when the credential is real, which is the single most informative answer an anonymous door can give | **D-062 §2** · **D-063 §1** · **D-065 (case 4)** · §12 · D-035 · D-051 (Q33) · KAFF-101b rule 3 |
 | 16a | **The role is checked *after* the password verification has run**, never before. A handler that short-circuits on `Role.Client` before hashing returns in a fraction of the time and re-creates the oracle rule 16 just closed — as a clock instead of a status code. Rule 13's *"same time envelope"* already says this; it is repeated because the natural way to write the guard breaks it | **D-063 §1** |
@@ -159,9 +164,14 @@ JavaScript defeats the decision, whatever the storage.
   [Verified: 2026-08-23 @ `PermissionEvaluator.cs` -> `RoleCannotLogIn`]. **Nobody deletes that key on
   the strength of this ruling**, in either catalogue.
 
-  **No key for a locked account is specified.** That is Q47 case 3 and it is open — see rule 14 and
-  **Status, precisely** row 2. D-065 floats `account_locked`; it is named here only so that its
-  absence is visibly deliberate.
+  **The locked-account key is `errors.auth.account_locked`**, and it is reached on exactly one path —
+  a **correct** password against a locked account (rule 14, `AC-101a-P`). ~~*"No key for a locked
+  account is specified. That is Q47 case 3 and it is open."*~~ — **specified 2026-08-24, D-072 §1.**
+  The namespace follows the same consistency call as `invalid_credentials` above: D-065 named
+  `errors.identity.account_locked`, a sign-in refusal is a door refusal, and door refusals are
+  `errors.auth.*`. **It does not exist in either catalogue today**
+  [Verified: 2026-08-24 — absent from `en.json` and `ar.json`] and must be added to both together, or
+  `TranslationCatalogueTests` fails the build.
 
 ## Acceptance criteria
 **AC-101a-A — a valid credential opens a session and hands JavaScript nothing** *(fails if the rule is broken)*
@@ -171,30 +181,30 @@ Then the response body contains no token in any field
 And a `Set-Cookie` header sets `__Host-kaff-auth` with `HttpOnly`, `Secure`, `SameSite=Strict`, path `/` and no `Domain`
 And the next request carrying that cookie is authenticated
 
-**AC-101a-B — a wrong password, an unknown username, a client and a subcontractor are indistinguishable** *(fails if the rule is broken)*
-~~*"— wrong password, unknown user and locked account are indistinguishable"*~~ — the title's third case is struck 2026-08-23; see the note below.
+**AC-101a-B — a wrong password, an unknown username, a client, a subcontractor and a locked account given the wrong password are indistinguishable** *(fails if the rule is broken)*
+~~*"— wrong password, unknown user and locked account are indistinguishable"*~~ — the original title is superseded twice over; see the note below.
 Given an active user with a password set
-When I post the correct username with a wrong password; then a username that does not exist; then a `Role.Client` credential; then a `Role.Subcontractor` username
-Then all four responses are identical in status, body and `messageKey`, and none reveals which case it was
+When I post the correct username with a wrong password; then a username that does not exist; then a `Role.Client` credential; then a `Role.Subcontractor` username; then **a locked account's username with a wrong password**
+Then all five responses are identical in status, body and `messageKey`, and none reveals which case it was
 And the shared answer is **`401`** with `messageKey` **`errors.auth.invalid_credentials`** and no other distinguishing field
-~~*"then the username of a locked account ... all three responses are identical"*~~ — **the locked-account case is struck from this criterion on 2026-08-23, and replaced by nothing.**
+And **the fifth case is not distinguishable by how long it takes** — rule 14a; the locked account pays for the same hash as the other four
 
-> 🟡 **Why struck, and why nothing replaces it. The locked account is Q47 case 3 and it is OPEN.**
-> **The ID is not retired and the criterion is not weakened** — it lost one case and gained two,
-> because D-065 ruled the `Role.Client` and `Role.Subcontractor` cases into the same set (cases 4
-> and 5) alongside the wrong password and the unknown username (cases 1 and 2).
+> ✅ **RULED IN FULL 2026-08-24 — `decisions.md` D-072 §1. The set is five.** ~~*"the locked-account
+> case is struck from this criterion on 2026-08-23, and replaced by nothing"*~~ — **the strike is
+> lifted, and it is lifted by a narrower rule than the one that was struck.** What was struck was the
+> *flat* locked-account clause, which would have made every locked attempt indistinguishable and left
+> a legitimate locked-out user with no feedback at all. What returns is **half** of that case: the
+> locked account **given the wrong password**. The other half — locked, **correct** password — answers
+> **423** and is `AC-101a-P`.
 >
-> **The locked case is the one Nabil ruled the other way**, to a distinct `423`, and that ruling is
-> **flagged back to him** in D-065's own text, on this story's rule 14. **Leaving the clause standing
-> would have this criterion command the 401** — one of the two shapes nobody may build yet — and a
-> story that commands a shape the decision owner has questioned is the failure `process/agile.md`
-> names: *"A story can command a defect."* **Striking it commands neither**, which is the required
-> state.
+> **The ID is not retired, its letter is not free, and the count does not move.** The criterion has
+> now lost a case (2026-08-23) and gained three: `Role.Client` and `Role.Subcontractor` (D-065 cases
+> 4 and 5) and locked-with-wrong-password (D-072 §1). **An amended criterion keeps its ID.**
 >
-> **What QA and Backend do until Nabil answers:** assert the four cases above; **write nothing that
-> asserts a locked account's status, body or `messageKey`, in either shape.** `AC-101a-C` is
-> unaffected — it asserts that the sixth attempt *fails*, not what it says. See **Status, precisely**
-> row 2, and rule 14, whose text is deliberately unchanged.
+> **What QA and Backend assert:** the five cases above, byte-for-byte identical, **and the timing** —
+> a suite that checks only status codes cannot fail on the one implementation rule 14a forbids. See
+> `AC-101a-P`, which is where that failure is designed to happen. `AC-101a-C` is unaffected: it
+> asserts that the sixth attempt *fails*, not what it says.
 
 **AC-101a-C — five failures lock the account for fifteen minutes** *(fails if the rule is broken)*
 Given an active user
@@ -213,10 +223,18 @@ Given a password of exactly 8 lower-case letters, with no digit and no symbol
 When it is set and then used to sign in
 Then both succeed — no complexity rule refuses it
 
-**AC-101a-F — a temporary password has exactly one destination**
+**AC-101a-F — a temporary password has exactly one destination** — ⚠️ **`GET /api/auth/me` is now
+carved out of *"any endpoint"*, and what is left of the criterion is an open question.** **D-072 §2
+rules that `/api/auth/me` is NOT refused**: the API authenticates, issues the session token and
+carries `mustChangePassword: true` in the payload. **Whether a *list* or a *write* endpoint refuses
+that token has never been ruled** — this criterion, `AC-103-B` and rule 8 are the strict reading
+written down, all three sourced to D-049 ruling 4, **which says only *"the user must change it on
+first sign-in"* and names no endpoint at all.** **Marked, not edited, and not resolved by whoever
+builds the handler.** See **Questions for Karim** below.
 Given a user whose password was set by the Owner and never changed
-When they sign in and then call any endpoint other than the change-password endpoint
+When they sign in and then call any endpoint other than the change-password endpoint **and other than `GET /api/auth/me`**
 Then the request is refused with `errors.auth.password_change_required`
+And **`GET /api/auth/me` is not among them** — it answers `200` and reports the flag (D-072 §2, KAFF-105a rule 3, `AC-105a-C`)
 
 **AC-101a-G — a subcontractor cannot sign in, and the door says nothing that reveals it** *(fails if the rule is broken)*
 Given a `User` with `Role.Subcontractor`
@@ -350,9 +368,45 @@ And the response to the caller is unchanged: the same 401, body and `messageKey`
 >    second member. D-063 §3 says it *"arguably implies another"* and stops there; it is left undrafted
 >    rather than guessed, and it is coupled to `AC-101a-G`'s open shape.
 >
-> **The retention of the IP is Karim's and is open — `Q54`** [Verified: 2026-08-23 @
-> `questions-for-karim.md` -> `Q54`]. It does **not** block this criterion: Karim has already ruled the
-> address is captured; Q54 is only what happens to it afterwards.
+> **The retention of the IP is Karim's and is answered — `Q54`, `decisions.md` D-072 §3:** PostgreSQL
+> **table partitioning by month** on `audit_records` at slice 9, so an expired partition is detached
+> rather than a row deleted. It never blocked this criterion — Karim had already ruled the address is
+> captured — and it does not now. **What D-072 §3 raises instead is a build-order question routed to
+> the Architect, not to this story:** converting a populated append-only table to a partitioned one is
+> materially harder than creating it partitioned, so *"partition from the start?"* is due **before the
+> first production rows exist**, not at slice 9.
+>
+> **Item 3 above is corrected, 2026-08-24.** It said the second `AuditEventKind` member is *"coupled to
+> `AC-101a-G`'s open shape"*. **`AC-101a-G` has not been open since 2026-08-23** (D-065 case 5), and
+> Q47 case 3 closed on 2026-08-24 (D-072 §1). The vocabulary question is now entirely this story's:
+> whether the client, subcontractor and locked-account refusals each need their own kind, or whether
+> `SignInFailedUnknownUser` plus the existing kinds cover them. **Still undrafted rather than guessed**
+> — and D-061 settled that adding a member is one line with no backfill, so it gates nothing.
+
+**AC-101a-P — the locked account answers on the truth of the password, and the hash runs either way** *(fails if the rule is broken — and it is the only criterion that fails on the wrong ordering)*
+Given a user whose account is locked by five consecutive failures
+When the **correct** password is posted
+Then the response is **`423`** with `messageKey` **`errors.auth.account_locked`**, and no session cookie is set
+And given the **wrong** password is posted against that same locked account
+Then the response is the generic **`401`** / `errors.auth.invalid_credentials`, byte-for-byte what `AC-101a-B` returns for an unknown username
+And **the two responses take the same time as each other and as every case in `AC-101a-B`** — a locked account performs the full 600,000-iteration comparison before its lock is consulted (rule 14a)
+And an implementation that consults `User.LockedOutUntil` before verifying the password **fails this criterion** even though it returns the right status codes for both halves
+
+> ✅ **Appended 2026-08-24 under `decisions.md` D-072 §1**, which closes Q47's fifth and last case.
+> **New ID, next unused letter, nothing recycled.** `AC-101a-B` was *amended* rather than replaced, so
+> only this criterion moves the count: **KAFF-101a 15 → 16**, `ac-id-map.md` **231 → 232**.
+>
+> **Why the timing clause is inside the criterion rather than beside it.** The whole point of D-072 §1
+> is that the status code stops leaking whether a username exists. **Check-lockout-first returns both
+> ruled status codes correctly and re-opens the leak as a clock** — a locked account answering in
+> microseconds while every other path pays for the hash. A status-code suite reports green on it.
+> **This criterion is the one that does not**, and it is written to fail on the ordering, not on the
+> response.
+>
+> **What it depends on that does not exist yet:** the verification function itself. `PasswordHasher`
+> has `Hash` and no verifier — *"Verification is KAFF-101a's"*
+> [Verified: 2026-08-24 @ `PasswordHasher.cs` -> `PasswordHasher`]. That is this story's own work, not
+> a dependency on another agent. See **Status, precisely** row 7.
 
 ## Not in this story
 The login screen, and where each role lands after signing in — **KAFF-101b**, now `Ready`.
@@ -396,13 +450,14 @@ and 14 are uncited and are built anyway, under a named waiver** (`decisions.md` 
 |---|---|
 | ~~**Rules 13 and 14** — one refusal for a wrong password, an unknown username and a locked account. The source column reads *"§9 — derived"*. It is a security convention, correctly applied, and **it is not something Karim said**~~ | ~~**Q47**, open, for Karim~~ |
 | **✅ RULE 13 IS OFF THE WAIVER, 2026-08-23.** Q47 cases 1 and 2 are ruled — **D-065**. Rule 13 now cites a D-number and the waiver no longer carries it | **Closed. D-065** |
-| **🟡 RULE 14 IS NOT WAIVED EITHER, AND IT IS NOT RULED.** Q47 case 3 — the locked account — is **open with Nabil** (D-065's first 🟡 block). A waiver permits a build; there is nothing here to permit, because **the case is built neither way** | **Q47 case 3**, open, **with Nabil** — not Karim |
+| **✅ RULE 14 IS OFF THE WAIVER TOO, 2026-08-24.** ~~*"NOT WAIVED EITHER, AND IT IS NOT RULED"*~~ — Q47 case 3 is ruled: **423 only on a correct password, the generic 401 otherwise.** Rule 14 now cites a D-number and rule 14a carries the ordering constraint the ruling creates | **Closed. D-072 §1** |
 
 **What the waiver did and what replaced it.** The waiver let this story be built while rules 13 and 14
-were uncited. **Rule 13 no longer needs it** — D-065 cites it. **Rule 14 does not use it** — the
-instruction on case 3 is not *"build it under a waiver"* but *"do not build it at all yet"*, which is a
-stronger constraint than the waiver ever was. **The waiver is spent for this story.** The rest of the
-seven stories it covers are untouched by D-065 — checked, not assumed.
+were uncited. ~~**Rule 14 does not use it** — the instruction on case 3 is not *"build it under a
+waiver"* but *"do not build it at all yet"*.~~ **Both rules now cite rulings** — D-065 for rule 13,
+D-072 §1 for rule 14. **The waiver is spent for this story, and it is spent by being answered rather
+than by being relied on**, which is the outcome it existed to make unnecessary. The rest of the seven
+stories it covers are untouched by D-065 and D-072 — checked, not assumed.
 
 ## Questions for Karim
 - **Q28** — when somebody gets a password wrong five times, should the lock be on the account, or on
@@ -411,16 +466,21 @@ seven stories it covers are untouched by D-065 — checked, not assumed.
   **This does not block the story.** The ruling as given is buildable; the answer would tighten it
   rather than change its shape. It is raised because the ruling has a live consequence Karim was not
   shown.
-- **Q47** — **CLOSED for four of its five cases, 2026-08-23, `decisions.md` D-065.** Cases ① wrong
-  password, ② unknown username, ④ `Role.Client` at the staff door and ⑤ `Role.Subcontractor` all
-  produce **one generic `401`**, identical in status, body and `messageKey`. Rules 13 and 16 and
-  criteria `AC-101a-B` and `AC-101a-G` carry the citation.
-  **🟡 Case ③ — the locked account — is OPEN, and it is with Nabil, not Karim.** He ruled a distinct
-  `423`; a 423 only exists when the username does, so it announces the thing cases ② and ⑤ were ruled
-  to hide, and five failed attempts manufacture it for any username on demand. **A narrowing has been
-  put to him — return the 423 only when the submitted credentials were otherwise correct**, so only
-  the password-holder ever sees it. **Until he answers, rule 14 stands unruled and no criterion is
-  written for the case in either shape.** See **Status, precisely** row 2.
+- **Q47** — **CLOSED IN FULL, all five cases. 2026-08-23 `decisions.md` D-065 (cases ①②④⑤) and
+  2026-08-24 D-072 §1 (case ③).** Cases ① wrong password, ② unknown username, ④ `Role.Client` at the
+  staff door, ⑤ `Role.Subcontractor` **and ③ a locked account given the *wrong* password** all produce
+  **one generic `401`**, identical in status, body and `messageKey`. **A locked account given the
+  *correct* password is the single case that answers differently — `423` / `errors.auth.account_locked`.**
+  Rules 13, 14, 14a and 16 and criteria `AC-101a-B`, `AC-101a-G` and `AC-101a-P` carry the citations.
+  **Nothing on Q47 remains open.** See **Status, precisely** row 2.
+- **🟡 NEW, and it is not Karim's — the reach of a `mustChangePassword` session.** D-072 §2 rules that
+  the sign-in succeeds and issues a **full** session token whose payload carries the flag. **Whether
+  any endpoint beyond the password-change one and `/api/auth/me` refuses that token has never been
+  stated by anyone.** Rule 8, `AC-101a-F` and `KAFF-103` `AC-103-B` all assert the strict reading and
+  all three cite D-049 ruling 4, **which names no endpoint**. The two readings differ by whether a
+  hostile client can skip the change screen entirely. **Raised, not settled** — see KAFF-105a
+  -> *"What D-072 §2 settled, and the one thing it did not"*. **It does not block this story:** sign-in
+  itself succeeds on either reading.
 - **N9** *(Architect, not Karim)* — rule 16 still says a `Role.Client` credential *"authenticates"*
   here, which was written before D-051 (Q33) made the portal a separate host. Accepting it mints a
   valid session cookie on the staff origin for somebody with no business holding one; it reaches

@@ -67,16 +67,22 @@ Given the Owner created my account with a temporary password
 When I sign in and change it
 Then I can use the rest of the system, and an audit record of `Modified` names me as the actor
 
-**AC-103-B — until then, nothing else is reachable** *(fails if the rule is broken)* — ⚠️ **one of the
-three endpoints it names is contested.** `GET /api/auth/me` is the endpoint the shell needs in order to
-know a forced change is required at all; whether it is inside this gate (refused) or outside it
-(answers, carrying the flag) is **N-04 / Q-UX-18, action SM-16, open, BA + Architect** — see
-`KAFF-105a` -> *"The `password_change_required` shape is undecided"*. **The list endpoint and the write
-endpoint are not contested and this criterion is executable against them today.** Do not resolve the
-`/api/auth/me` half by building it. Finding **V-03**.
+**AC-103-B — until then, nothing else is reachable** *(fails if the rule is broken)* — ✅ **RULED for
+one of the three endpoints it named, 2026-08-24, `decisions.md` D-072 §2. `GET /api/auth/me` is
+OUTSIDE this gate.** ~~*"whether it is inside this gate (refused) or outside it (answers, carrying the
+flag) is N-04 / Q-UX-18, action SM-16, open"*~~ — **closed.** The API *"must successfully authenticate
+the user, issue the session token, and include a `mustChangePassword: true` flag inside the payload"*,
+because the shell needs this endpoint to know a forced change is required at all and refusing it makes
+a dead-end loop. Finding **V-03** closed. 🟡 **The list endpoint and the write endpoint are a
+different question and it is open:** D-072 §2 says what `/api/auth/me` does and **nothing about what
+else that full token may reach** — see `KAFF-105a` -> *"🟡 OPEN, and it is not Karim's — how far a
+`mustChangePassword` session reaches"*. **This criterion is executable against those two today, on the
+reading it has always carried; do not harden it and do not weaken it.**
 Given I have signed in with a temporary password and not yet changed it
-When I call, in turn, `GET /api/auth/me`, a list endpoint and a write endpoint
+When I call, in turn, a list endpoint and a write endpoint
 Then every one except the change-password endpoint is refused with `errors.auth.password_change_required`
+And **`GET /api/auth/me` is not in that set** — it answers `200` and carries `mustChangePassword: true` (D-072 §2, `AC-105a-C`)
+~~*"When I call, in turn, `GET /api/auth/me`, a list endpoint and a write endpoint"*~~ — **`GET /api/auth/me` struck from the refused list 2026-08-24, D-072 §2. Same ID, amended not retired.**
 
 **AC-103-C — the Owner's credential stops working the moment I change it** *(fails if the rule is broken)*
 Given the Owner knows the temporary password

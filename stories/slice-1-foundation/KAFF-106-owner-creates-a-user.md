@@ -1,6 +1,6 @@
 # KAFF-106 · The Owner creates a user with a role and a department
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** BUILT — 8 of 11 verified, V-A open
+**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** BUILT — V-A cleared 2026-08-25, awaiting an independent Verifier pass
 **Spec:** §9, §2 · **Decisions:** D-044 (rulings 1, 2), D-035, **D-049 (rulings 3, 4)**
 **Depends on:** KAFF-100 *(soft — the Api harness issues identities directly, so this endpoint can be
 built and tested before the bootstrap shape is decided; only the demo waits on it)*

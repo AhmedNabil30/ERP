@@ -1,6 +1,6 @@
 # KAFF-110 · Deactivate a user, and their access ends on the next request
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** Ready
+**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** BUILT — awaiting verification
 **Spec:** §9 · **Decisions:** D-044 (ruling 1), D-048, **D-049 (rulings 2, 5)**
 **Depends on:** KAFF-106
 

@@ -1,6 +1,6 @@
 # KAFF-113 · Assign a user to a project, with seniority for site engineers
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** Ready
+**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** BUILT — awaiting verification
 **Spec:** §9, §8 · **Decisions:** D-010, D-012, D-044 (rulings 3, 5), D-035
 **Depends on:** KAFF-106
 

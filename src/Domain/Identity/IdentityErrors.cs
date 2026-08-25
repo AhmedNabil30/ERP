@@ -81,4 +81,43 @@ public static class IdentityErrors
 
     public static readonly Error ClientIsNotAssignable =
         Error.Validation("identity.client_is_not_assignable", "errors.identity.client_is_not_assignable");
+
+    /// <summary>
+    /// KAFF-113 rule 8 — a deactivated account is not assignable, and an assignment does not
+    /// resurrect one.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Refused in the handler rather than in <c>ProjectAssignment.Create</c>, which is handed a
+    /// <c>User</c> and could see <c>IsActive</c>. Deliberately not moved there: the assignment row is
+    /// not what makes a leaver safe — the subject read is, and it filters on <c>user.IsActive</c>
+    /// before any role is considered [Verified: 2026-08-24 @ <c>PermissionSubjectReader.cs</c> ->
+    /// <c>ReadAsync</c>]. What this refusal prevents is a row that says something untrue about who is
+    /// on a team, which is a statement about the request rather than about the entity.
+    /// </para>
+    /// <para>
+    /// Distinct from <see cref="UserAlreadyInactive"/>, which is deactivation refusing a second
+    /// deactivation. The two read alike and mean different things: that one is about the act, this
+    /// one is about the target.
+    /// </para>
+    /// </remarks>
+    public static readonly Error UserIsInactive =
+        Error.Conflict("identity.user_is_inactive", "errors.identity.user_is_inactive");
+
+    /// <summary>
+    /// KAFF-113 rule 9 — one active assignment per user per project.
+    /// </summary>
+    /// <remarks>
+    /// The rule is held by <c>ux_project_assignments_active</c>, whose filter is
+    /// <c>revoked_at IS NULL</c> [Verified: 2026-08-24 @ <c>IdentityConfigurations.cs</c> ->
+    /// <c>ProjectAssignmentConfiguration</c>], so re-assignment after a revocation is legal by
+    /// construction rather than by a second rule. The handler's pre-check is the friendly path; the
+    /// index is the enforcement, and the loser of a race gets this same refusal rather than a 500.
+    /// <b>Sourced to the slice-0 index and to nothing Karim said</b>, which is the shape of Q51 —
+    /// see <see cref="UserNameTaken"/>.
+    /// </remarks>
+    public static readonly Error UserAlreadyAssignedToProject =
+        Error.Conflict(
+            "identity.user_already_assigned_to_project",
+            "errors.identity.user_already_assigned_to_project");
 }

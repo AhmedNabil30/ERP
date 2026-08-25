@@ -115,12 +115,13 @@ Then it is still refused — rule 4 counts users, not active users, and a system
 Given the Owner created in AC-100-A
 When they sign in with the password they typed on the setup screen
 Then they reach the application, and are **not** routed to the change-password screen — no temporary credential exists to change
-And `GET /api/auth/me` answers, and says no password change is required (KAFF-105a rule 3) — ⚠️ **the
-*shape* of that answer is contested, the substance is not.** Whether the fact travels as a field on a
-200 or as the absence of a 403 is **N-04 / Q-UX-18, action SM-16, open, BA + Architect**; see
-`KAFF-105a` -> *"The `password_change_required` shape is undecided"*. **This criterion is executable
-either way** — the Owner is not forced to change anything (D-052 §3), so no refusal is due on any
-reading. Marked, not edited. Finding **V-03**.
+And `GET /api/auth/me` answers `200` and carries **`mustChangePassword: false`** (KAFF-105a rule 3) —
+✅ **the shape is RULED, 2026-08-24, `decisions.md` D-072 §2: a field on a `200`, not a status code.**
+~~*"the shape of that answer is contested ... N-04 / Q-UX-18, action SM-16, open, BA + Architect"*~~ —
+**closed.** **This criterion was executable either way and still is** — the Owner is not forced to
+change anything (D-052 §3), so no refusal was ever due on any reading; **it is the side of V-03 that
+did not have to move**, and it is recorded here because *"nothing changed"* is only trustworthy when
+somebody checked. Finding **V-03** closed.
 
 *This criterion was written before it was ruled on, by reading D-049 ruling 4 for what it says. QA
 (QA-4) and UX (Q-UX-17) both flagged that as a story answering its own question, and they were right

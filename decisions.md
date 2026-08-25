@@ -4045,6 +4045,75 @@ on the day, and sign-in is about to become the second member. Raised for the Arc
 
 ---
 
+### D-073 · The audit trail attributes acts to the role the token claims, not the role the user has · **OPEN — for the Architect**
+
+> **Renumbered from D-068 to D-073 on 2026-08-25 by the Scrum Master.** It was written as D-068 while
+> a D-068 already existed — *"The fourth instance, and why it does not get a fourth rule"* — which is
+> cited in `process/agile.md`, `stories/backlog.md`, `KAFF-116` and the execution log, and referenced
+> by D-069. **This entry was cited nowhere**, so it moved and the other stayed. **A duplicate D-number
+> in the file `CLAUDE.md` sends every agent to first is a worse defect than it looks:** two entries
+> answering to one name means a citation resolves to whichever a reader scrolls to.
+
+Raised 2026-08-25 while checking a diagnosis Backend made in passing and did not pursue: *"the audit
+actor's role comes from the token claim, not the database."* It is correct, and its consequence is
+larger than the test failure that surfaced it.
+
+**The two halves disagree, and only one of them was fixed.**
+
+* **Authority** is read from the database on every request. That is D-048, and it exists precisely
+  *because a token's claims go stale* — a deactivated Owner kept `UserManage`, a deactivated Finance
+  user kept `TreasuryPostCompany`.
+* **The audit actor's role** is read from the token claim
+  [Verified: 2026-08-25 @ `HttpContextCurrentUser.cs` -> `Role`, which is
+  `ReadEnum<Role>(KaffClaimTypes.Role)`], and flows into `AuditRecord.ActorRole`
+  [Verified: 2026-08-25 @ `AuditRecord.cs` -> `ActorRole`].
+
+**So the permission system distrusts the token and the audit trail believes it**, about the same
+user, on the same request.
+
+#### Why the gap is reachable rather than theoretical
+
+`SecurityStamp` rotates on `StorePasswordHash`, `ClearPassword` and `Deactivate`
+[Verified: 2026-08-25 @ `User.cs`]. **It does not rotate on a department move, and there is no
+role-change method on `User` at all** — KAFF-109 is not built yet. So a moved or re-roled user keeps
+a working token carrying their *former* role and department.
+
+KAFF-108's endpoint says this deliberately and correctly: *"no claim is re-issued, no token is
+minted, no cache is invalidated… The moved user's existing token keeps working and carries different
+authority on its next request — which is the behaviour, not a side effect of one."* That reasoning is
+right about authority. **Nobody checked what it does to attribution.**
+
+**The concrete case, in a story that is already built:** the Owner moves a user out of Technical
+Office. The user acts. The gate correctly refuses or permits them on their **new** role, and the
+audit record correctly names *who* they are — and attributes the act to the **old** role. A reader of
+the trail sees a role that had no such authority performing the act, or worse, sees a plausible role
+that is simply not the one the system decided on.
+
+#### Why it cannot be left for later
+
+`audit_records` is append-only and no-truncate by trigger, and `CLAUDE.md` forbids a delete or update
+path without qualification. **A wrong `ActorRole` is wrong permanently.** This is the same argument
+as N-19's grant path, which was built before its first consumer for exactly this reason — except this
+column already exists and is already being written on every audited request.
+
+#### What is *not* claimed here
+
+**This is not an authorization hole.** Nothing is permitted that should be refused; D-048 holds and
+`EndpointPermissionCoverageTests` (D-069) holds. It is a **forensic accuracy** defect, in the one
+table whose entire purpose is to be believed later.
+
+Nor is it obviously "read the role from the database too". That is one option and it has a cost — an
+extra read on every audited write, on a path that already reads the subject once. The alternatives
+worth weighing are recording **both** the claimed and effective role, or rotating the stamp on a role
+or department change so a stale claim cannot exist. **That third option contradicts KAFF-108's
+documented behaviour**, which was itself a deliberate decision, so it is not a free choice — which is
+why this is the Architect's and not Backend's.
+
+**Routed to the Architect. Not fixed here.** `ActorDisplayName` has the same shape and should be
+considered in the same decision: a renamed user's later acts are attributed to their old name.
+
+---
+
 ### D-068 · The fourth instance, and why it does not get a fourth rule · 2026-08-24
 
 **Scrum Master.** I said on 2026-08-22 that the claim-hardening pattern had three instances and that
@@ -4397,3 +4466,125 @@ already existed in both catalogues.**
 * [@ `CreateUserTests.cs` -> `Nobody_but_the_owner_can_create_a_user`] — the key is now asserted
   beside the status inside the six-role loop that already existed. That is `AC-106-B` verbatim, and
   the missing line is the whole reason the criterion read as satisfied on a green suite.
+
+---
+
+### D-072 · Nabil's rulings of 2026-08-24 — the last two blockers fall · **APPROVED**
+
+Four rulings. **Two unblock the last two `BLOCKED` stories in the sprint**, one defers a compliance
+problem to a slice with a named mechanism, and one sets the shape of the next message to Karim.
+
+---
+
+#### 1. Q47 Case 3 — 423 only when the password is correct. **UNBLOCKS KAFF-101a**
+
+**Decision, verbatim:** *"The system will return **423 Locked only if the provided password is
+correct**. If the password is wrong, it must return the generic 401 Unauthorized. This perfectly seals
+the enumeration leak. An attacker guessing passwords learns nothing, while the legitimate user
+receives the necessary UX feedback that their account is locked."*
+
+**This is the conditional resolution D-065 put to him, accepted.** Q47 is now answered in full — all
+five cases at the door. The flat 423 is not built and never was; **the trade-off D-065 flagged is
+resolved rather than accepted.**
+
+**⚠️ The ordering constraint this creates, and it must be written into the story explicitly.** The
+password has to be **verified before the lockout state decides the response**. That means **a locked
+account still performs a full hash comparison** — 600,000 PBKDF2 iterations
+[Verified: 2026-08-24 @ `PasswordHasher.cs` -> `Hash`] — and that is deliberate twice over:
+
+* it is the only ordering that can distinguish *"correct password, locked"* from *"wrong password,
+  locked"*, which is what the ruling turns on; and
+* **it keeps the timing envelope even.** The obvious implementation — check lockout first,
+  short-circuit before hashing — **restores the enumeration oracle through timing exactly as the
+  status code stops leaking it.** A locked account would answer in microseconds while every other
+  path pays for the hash.
+
+**So "check lockout first" is not an optimisation here, it is the defect.** Written down because it is
+the shape a later session will "tidy" toward, and the tidy version passes every test that asserts
+status codes.
+
+---
+
+#### 2. V-03 — the flag travels in the payload, not a refusal. **UNBLOCKS KAFF-105a**
+
+**Decision, verbatim:** *"Do not refuse the call at the API level. The API must successfully
+authenticate the user, issue the session token, and include a `mustChangePassword: true` flag inside
+the payload. The Angular frontend will intercept this flag and explicitly route the user to the
+mandatory password change screen, preventing the sign-in dead-end loop."*
+
+**Resolved in favour of rule 3; `AC-105a-C` is the side that changes.** It is also what the frontend
+already assumes — `AuthService.Session.mustChangePassword` exists and reads it
+[Verified: 2026-08-24 @ `auth.service.ts` -> `Session`].
+
+**It is a three-way reconciliation, not a one-story fix.** The Verifier found **KAFF-103 and KAFF-100
+taking opposite sides of the same question**. All three stories are corrected together or the
+contradiction simply moves.
+
+**🟡 One thing the ruling implies and does not say — raised, not settled.** A token issued to a
+must-change-password user is a **full** token. Whether any endpoint beyond the password-change one
+should refuse it is **a rule nobody has stated**. The ruling closes the dead-end loop; it does not say
+what else that session may reach. **Do not assume either way** — the permissive reading is that the
+flag is advisory and the SPA honours it, the strict reading is that the server refuses everything
+else, and those differ by whether a hostile client can skip the change screen entirely.
+
+---
+
+#### 3. Q54 — partition by month at slice 9, and the consequence is due now
+
+**Decision, verbatim:** *"We will not solve this in application code, and it does not block this
+sprint. Once we reach **Slice 9 (Compliance/Archival)**, we will implement **PostgreSQL table
+partitioning by month** on `audit_records`. This allows us to drop entire historical partitions once
+the legal retention period expires, effectively deleting the PII without violating the
+append-only/no-truncate triggers on the active partitions."*
+
+**One of the two mechanisms the Architect named as compatible with append-only**, chosen over the
+keyed hash. It answers how an IP address in a table with no delete path ever expires.
+
+**🟡 What it creates now, and it is the reason this is not simply filed under slice 9.** **Converting
+a populated table to a partitioned one is materially harder than creating it partitioned** — in
+PostgreSQL it is a new table plus a data migration plus a swap, on a table that is **append-only and
+trigger-protected**, which is precisely the kind of table you least want to rewrite. **If
+`audit_records` should be partitioned from the start, that decision is due now, not at slice 9.**
+
+**Routed to the Architect as an open question, not settled here.** The deadline is not slice 9 — it is
+**before the first production rows exist**, and the cheapest moment is before slice 3 starts writing
+real money history.
+
+---
+
+#### 4. Karim's next message — four questions, one theme
+
+**Decision, verbatim:** *"Batch Q-N10-1, Q-N10-2b, and Q-N10-3 into a single message for Karim, as
+they all address who can touch a newly created project."*
+
+And on **V-I**: *"This is defensible as a 'placeholder' profile (e.g. for assigning tasks to a worker
+who doesn't log in). **Ask Karim if the business logic actually requires these placeholder accounts**
+before we write a criterion rejecting them."*
+
+**Note the shape of the V-I instruction and preserve it.** It is a question about whether the
+capability is **wanted**, not an instruction to keep it or to remove it. A story criterion rejecting
+placeholder accounts would be inventing a rule; so would one permitting them. **Karim decides whether
+the business needs them at all.**
+
+---
+
+#### 5. CI — still never run, and the reason is not in this repository
+
+**Recorded so nobody re-investigates it.** All three jobs are annotated *"The job was not started
+because your account is locked due to a billing issue."* Two seconds, zero steps, no runner assigned.
+**Nothing in the workflow files is wrong, and CI has still never actually executed.** It clears at
+`github.com/settings/billing`, then Re-run jobs — **Nabil's, and it is not an engineering task.**
+
+**It is not recorded as attempted-and-failed, because it was not attempted.** The Definition of Done's
+*"runs on staging"* and the CI line both remain **untested**, not failed. The distinction matters: a
+failed run tells you something, and a run that never started tells you nothing at all.
+
+**Already fixed and pushed:** `deploy-staging.yml` fired on every push to `main` and has no target
+(D-023), so it would have been red on every commit — **burying the first real CI failure on a page
+that was already red.** Now `workflow_dispatch` only, with a note to restore the push trigger in the
+same change that answers D-023. Commit `37fdaa5`.
+
+**And the repository now exists.** `git init`, **252 files tracked, zero build output**
+[Verified: 2026-08-24 — no tracked path under `bin`, `obj`, `node_modules`, `dist` or `TestResults`],
+working tree clean, pushed to `github.com/AhmedNabil30/ERP`. **Four days of decision history had no
+version control until today.** From here the Definition of Done can reasonably include a commit.

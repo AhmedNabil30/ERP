@@ -642,3 +642,109 @@ of them in one meeting file of mine, none in any file this work touched.** **A p
 mine was blocking acceptance of two finished stories.** Wrong scoping, not a wrong rule — a Definition
 of Done is about the change in front of you. Split into `broken = 0` **repo-wide and absolute**, plus
 **no new legacy citation introduced.** The 97 remain owed and are not forgiven.
+
+---
+
+## 16. Four stories built, a duplicate D-number, and a Verifier that died twice
+
+### State, verified by me
+
+Build Release, all Kaff processes stopped first: **0 errors, 0 warnings, zero MSB302x** · Domain
+**75/75** · Api **106/106** · citations **502 checked, 0 broken, 97 legacy — unchanged**.
+
+Repository under git: **252 files, zero build output tracked, clean tree**, commits `8e5c962` and
+`37fdaa5` pushed.
+
+### D-072 — Nabil's four rulings, logged and routed
+
+**Q47 Case 3 answered**: 423 only when the password is correct, generic 401 otherwise. **Q47 is now
+closed in full — all five cases at the door.** The conditional resolution D-065 put to Nabil, accepted;
+the flat 423 was never built.
+
+**The ordering constraint is the part that will be got wrong**, and it is written into the story in
+these terms: the password must be verified **before** the lockout state decides the response, so **a
+locked account still performs a full 600,000-iteration hash comparison**. The obvious implementation —
+check lockout first, short-circuit before hashing — **restores the enumeration oracle through timing
+exactly as the status code stops leaking it**. *Check lockout first is not an optimisation; it is the
+defect.*
+
+**V-03 answered**: the `mustChangePassword` flag travels in the payload, no refusal at the API. **A
+three-way reconciliation** — KAFF-100, KAFF-103 and KAFF-105a had taken opposite sides. **Raised, not
+settled:** a token issued to a must-change-password user is a **full** token, and whether any endpoint
+beyond the password-change one should refuse it **is a rule nobody has stated.**
+
+**Q54 answered** — partition `audit_records` by month at slice 9. **Registered as N11 for the
+Architect**, because the consequence is due now: converting a *populated* append-only trigger-protected
+table is a new table plus a migration plus a swap. **The deadline is not slice 9, it is before the
+first production rows — realistically before slice 3.**
+
+**Karim's batch drafted** — Q-N10-1, Q-N10-2b, Q-N10-3 and **V-I**, with V-I's shape preserved: *does
+the business actually require placeholder accounts*, not an instruction to keep or remove them.
+
+### A duplicate D-number, and why it is worse than it looks
+
+**Two entries were both numbered D-068.** Mine — *"The fourth instance, and why it does not get a
+fourth rule"* — is cited in `process/agile.md`, `stories/backlog.md`, `KAFF-116` and this log, and
+referenced by D-069. The other, the audit-attribution defect, was cited nowhere.
+
+**Renumbered the uncited one to D-073.** In the file `CLAUDE.md` sends every agent to first, **two
+entries answering to one name means a citation resolves to whichever a reader scrolls to** — a
+staleness mechanism with none of the usual warning signs, since both entries are perfectly current.
+
+### D-073 — the trail believes the token the permission system distrusts
+
+Verified: `AuditRecord.ActorRole` comes from the **token claim**
+[Verified: 2026-08-25 @ `HttpContextCurrentUser.cs` -> `Role`], while authority is re-read from the
+**database** every request [Verified: 2026-08-25 @ `PermissionSubjectReader.cs` -> `ReadAsync`] —
+D-048, which exists **because claims go stale**.
+
+**Reachable, not theoretical.** `SecurityStamp` rotates in four places and **a department move is not
+one of them**, and there is **no role-change method on `User` at all** [Verified: 2026-08-25 @
+`User.cs` -> `Deactivate`]. Move a user out of Technical Office and they act: **the gate decides on the
+new role, the trail records the old one** — permanently, because the table is append-only.
+
+**Not an authorization hole.** Nothing is permitted that should be refused. It is forensic accuracy in
+the one table whose purpose is to be believed later. **The Architect's**, because the obvious fix —
+rotate the stamp on a role or department change — **contradicts KAFF-108's deliberately documented
+no-reissue behaviour.**
+
+### The Verifier died twice, so I verified the held items myself — and say plainly that is not a substitute
+
+**Its report file was never written.** `agents.md` principle 2 stands: **my check is not certification,
+and none of these four stories is accepted on it.**
+
+What I established directly:
+
+* **`AC-106-B`'s logging half exists** — every refusal is logged with permission, user, project and
+  decision [Verified: 2026-08-25 @ `PermissionAuthorizationHandler.cs` -> `HandleRequirementAsync`].
+  Together with D-071's `messageKey` fix, **V-A is cleared.**
+* **KAFF-113: all nine criteria are cited by tests.**
+* **KAFF-110: eight of ten.** The two uncovered are **correctly deferred, not gaps** — `AC-110-D`
+  needs sign-in (KAFF-101a, `Ready to start`, unbuilt) and **`AC-110-E` says so in its own text**,
+  moving with the deferred KAFF-104.
+* **One claim in the Verifier's notification did not survive checking:** `Deactivate` **does** rotate
+  `SecurityStamp` — the line is in the method body. **Recorded because a false critical finding costs
+  as much as a missed one**, and the report file that would let anyone re-read the claim does not
+  exist.
+
+### Statuses
+
+| Story | Status |
+|---|---|
+| **KAFF-116** | **ACCEPTED** |
+| **KAFF-106** | **BUILT — V-A cleared, awaiting an independent Verifier pass** |
+| **KAFF-108** | **BUILT — D-073 open against it** |
+| **KAFF-113** | **BUILT — awaiting verification** |
+| **KAFF-110** | **BUILT — awaiting verification** |
+| **KAFF-101a** | `Ready to start` — no open question; **not shippable** until the audit IP column and nullable subject land (D-063) |
+| **KAFF-105a** | `Ready` — V-03 ruled; sequenced behind KAFF-101a |
+
+**Five of fifteen built, one accepted. No story is `BLOCKED` on a question any more** — the last two
+fell today.
+
+### CI
+
+**Still never run.** All three jobs: *"The job was not started because your account is locked due to a
+billing issue."* **Not recorded as attempted-and-failed, because it was not attempted** — a failed run
+tells you something; a run that never started tells you nothing. Nabil's, at
+`github.com/settings/billing`.

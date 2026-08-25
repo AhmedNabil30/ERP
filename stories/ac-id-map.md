@@ -11,7 +11,7 @@ It exists because guessing is what caused the defect. Thirty-one cases had alrea
 cited a position, a criterion was inserted above it, and the position silently came to mean a
 different rule. **Relock every citation from this table, not by counting down the story file.**
 
-**231 criteria across 26 live stories.** KAFF-122 is `Superseded` and has none.
+**232 criteria across 26 live stories.** KAFF-122 is `Superseded` and has none.
 
 *(Corrected 2026-08-22: this read **228**, and the per-story table gave KAFF-108 **6** while its own
 criterion table listed **7**. The figure was then 229. The `AC-108-B2` → `AC-108-G` retirement made on
@@ -25,6 +25,14 @@ KAFF-105a's count is unchanged. See the note under *Count, per story*.)*
 unknown username, from **D-062 §3** and **D-063 §2/§3**. **KAFF-101a goes 14 → 15.** Nothing was
 retired: `AC-101a-G` was amended, not replaced, and an amended criterion keeps its ID and does not
 move the count.)*
+
+*(**231 → 232, 2026-08-24.** `AC-101a-P` appended — the locked account answering on the truth of the
+password, from **D-072 §1**, which closes Q47's fifth and last case. **KAFF-101a goes 15 → 16.**
+**Three criteria were amended on the same day and none of them moves the count:** `AC-101a-B` regained
+the locked-account case in its wrong-password half, `AC-105a-C` changed sides from refusal to field
+(**D-072 §2**), and `AC-103-B` lost `GET /api/auth/me` from the endpoints it refuses. **`AC-101a-F` and
+`AC-100-F` were amended too** — same rule, and `AC-101a-F` was the artefact V-03's own table missed.
+**Nothing was retired and no letter was recycled.**)*
 
 ---
 
@@ -85,7 +93,7 @@ somewhere upstream.
 | Old reference | Stable ID | Criterion |
 |---|---|---|
 | `KAFF-101a AC1` | **`AC-101a-A`** | a valid credential opens a session and hands JavaScript nothing |
-| `KAFF-101a AC2` | **`AC-101a-B`** | ~~wrong password, unknown user and locked account are indistinguishable~~ → **a wrong password, an unknown username, a client and a subcontractor are indistinguishable.** Retitled 2026-08-23 under **D-065**: the locked-account case is **struck** (Q47 case 3, open) and the `Role.Client` and `Role.Subcontractor` cases are **added** (D-065 cases 4 and 5). **Same ID, same letter, not retired** |
+| `KAFF-101a AC2` | **`AC-101a-B`** | ~~wrong password, unknown user and locked account are indistinguishable~~ → ~~a wrong password, an unknown username, a client and a subcontractor are indistinguishable~~ → **a wrong password, an unknown username, a client, a subcontractor and a locked account given the wrong password are indistinguishable.** Retitled twice: 2026-08-23 under **D-065** (locked-account case struck, `Role.Client` and `Role.Subcontractor` added), and **2026-08-24 under D-072 §1** (the locked account returns, narrowed to its wrong-password half). **Same ID, same letter, never retired** |
 | `KAFF-101a AC3` | **`AC-101a-C`** | five failures lock the account for fifteen minutes |
 | `KAFF-101a AC4` | **`AC-101a-D`** | a success resets the counter |
 | `KAFF-101a AC5` | **`AC-101a-E`** | eight characters is enough, and nothing more is demanded |
@@ -99,6 +107,7 @@ somewhere upstream.
 | `KAFF-101a AC13` | **`AC-101a-M`** | the browser store stays empty |
 | `KAFF-101a AC14` | **`AC-101a-N`** | a stale security stamp is refused |
 | — *(new 2026-08-23)* | **`AC-101a-O`** | a failed sign-in against an unknown username is recorded, and what was typed is not — no old reference; a case citing this is new work, not a relabel. Appended under **D-062 §3** (Karim's Q53 ruling) and **D-063 §2/§3**. 🟡 **Its mechanism is decided and not yet built** — the IP column and the nullable subject — and the criterion says so in its own text. **Do not write a case that expects it to pass today** |
+| — *(new 2026-08-24)* | **`AC-101a-P`** | the locked account answers on the truth of the password, and the hash runs either way — no old reference; a case citing this is new work, not a relabel. Appended under **D-072 §1**, which closes Q47's last case. **The criterion has a timing clause and it is load-bearing**: a case that asserts only the two status codes passes on the implementation the ruling forbids. **Write the case so that checking the lockout before verifying the password turns it red** |
 
 > **`AC-101a-G` is not retired and its letter is not free.** It always asserted the refusal, which was
 > certain; what was struck on 2026-08-23 is the status and the `messageKey` it used to name, which
@@ -110,15 +119,22 @@ somewhere upstream.
 > record, and that the body is byte-for-byte the one `AC-101a-B` returns for an unknown username.**
 > The struck clause stays struck: D-065 supplied a shape, it did not restore the one that was removed.
 
-> **`AC-101a-B` lost a case and gained two, and it is not a new ID.** Its **locked-account** third is
-> **Q47 case 3**, which D-065 ruled to a distinct `423` and **flagged back to Nabil in the same
-> entry**, because a 423 exists only when the username does. **That clause is struck from the
-> criterion and replaced by nothing** — leaving it would have the criterion command the 401, which is
-> one of the two shapes nobody may build yet. In its place D-065 cases 4 and 5 add the `Role.Client`
-> and `Role.Subcontractor` cases to the same identical set. **A QA case citing `AC-101a-B` asserts
-> those four cases and says nothing about a locked account's status, body or `messageKey`, in either
-> shape.** **No AC ID was added or retired for any of this** — the count is unchanged at **231**, and
-> KAFF-101a stays at **15**, A–O with no gaps.
+> **`AC-101a-B` lost a case and gained three, and it is not a new ID.** ~~*"Its locked-account third is
+> Q47 case 3 ... That clause is struck from the criterion and replaced by nothing ... A QA case citing
+> `AC-101a-B` asserts those four cases and says nothing about a locked account's status, body or
+> `messageKey`, in either shape."*~~ — **superseded 2026-08-24, D-072 §1.**
+>
+> **The set is five and the fifth is half a case.** D-065 added `Role.Client` and `Role.Subcontractor`
+> (cases 4 and 5); **D-072 §1 returns the locked account, split on the truth of the password.**
+> Locked **plus wrong password** joins this criterion's identical set. Locked **plus correct password**
+> answers **`423`** and is **`AC-101a-P`**, a new ID.
+>
+> **A QA case citing `AC-101a-B` asserts those five cases byte-for-byte — and asserts the timing.** A
+> suite that checks only status codes reports green on the one implementation D-072 §1's ordering
+> constraint forbids (lockout checked before the hash runs). **`AC-101a-P` is where that has to fail.**
+>
+> **`AC-101a-B` was amended, not retired** — the count moves only for `AC-101a-P`: **231 → 232**, and
+> KAFF-101a **15 → 16**, A–P with no gaps.
 
 ### KAFF-101b · The staff sign-in screen, and where each role lands after it
 
@@ -183,7 +199,7 @@ somewhere upstream.
 |---|---|---|
 | `KAFF-105a AC1` | **`AC-105a-A`** | the caller learns who they are |
 | `KAFF-105a AC2` | **`AC-105a-B`** | no token, anywhere |
-| `KAFF-105a AC3` | **`AC-105a-C`** | a forced password change is announced |
+| `KAFF-105a AC3` | **`AC-105a-C`** | **a forced password change is announced, as a field on a `200`.** Retitled 2026-08-24 under **D-072 §2** (finding **V-03**): the criterion said the call is *refused*, the ruling says it **succeeds and carries `mustChangePassword: true`**. **The assertion inverts; the ID does not move.** A QA case citing this must now assert a `200` and the flag, **and must not assert any refusal shape** — the old case asserts the withdrawn rule and is a case to retire, not to relabel |
 | `KAFF-105a AC4` | **`AC-105a-D`** | signed out is not "signed in as nobody" |
 | `KAFF-105a AC5` | **`AC-105a-E`** | the endpoint and the catalogue cannot drift |
 | `KAFF-105a AC6` | **~~`AC-105a-F`~~ — RETIRED 2026-08-22** | *a portal client gets two permissions and no more — **superseded by `AC-105a-H`**. It asserted that `GET /api/auth/me` returns a portal client `PortalRead` and `PortalApprove`; both rows are `ProjectScoped` and the payload carries `CompanyWide` rows only, so it contradicted its own story's rule 4 — finding **V-04**. **Retired, not recycled:** never issued to a different criterion. The old reference is kept so a case citing `KAFF-105a AC6` still resolves — and learns the criterion is dead. `qa/slice-1/test-cases.md` -> `TC-1-042` cites it and asserts the withdrawn rule: **relock it to `AC-105a-H`, whose assertion is the inverse — it cannot be carried across unrewritten.*** |
@@ -460,7 +476,7 @@ somewhere upstream.
 | Story | Criteria |
 |---|---:|
 | KAFF-100 | 9 |
-| KAFF-101a | **15** |
+| KAFF-101a | **16** |
 | KAFF-101b | 8 |
 | KAFF-102 | 6 |
 | KAFF-103 | 9 |
@@ -486,7 +502,7 @@ somewhere upstream.
 | KAFF-122 | 0 |
 | KAFF-123 | 5 |
 | KAFF-124 | 9 |
-| **Total** | **231** |
+| **Total** | **232** |
 
 *(Moved from 229 to 230 on 2026-08-22, and the arithmetic is worth stating because two of the three
 changes cancel. **KAFF-106 goes 10 → 11**: `AC-106-K` appended under **SM-21** (finding **V-05**), the
