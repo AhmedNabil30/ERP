@@ -5698,3 +5698,112 @@ app title ("كف"), not the earlier false pass this session caught and re-ran �
 not finished its first build when `smoke` was first invoked, and Chromium's own offline error page,
 which is itself Arabic and RTL, passed every check the first time. Re-run once the dev server's
 `Local: http://localhost:4200/` line appeared; genuinely green after that.
+
+---
+
+### D-082 · KAFF-109 built — changing a role, and the reversal D-051 (Q27) already ruled · 2026-08-25
+
+**Backend.** `PUT /api/users/{userId}/role`. Same permission shape as `CreateUser`, `MoveUserDepartment`,
+`DeactivateUser` and `ReactivateUser` — `Permission.UserManage`, `CompanyWide`, `Owner` alone
+[Verified: 2026-08-25 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> the `Permission.UserManage`
+row], D-044 ruling 1. No new catalogue row; SM-30 asked and the answer is the same as the four stories
+before it.
+
+**Not D-049 ruling 6.** That ruling — refuse a role change while the user actively supervises a
+project — was reversed the next day by D-051 (Q27), and the story was rewritten to say so loudly, with
+the superseded block left visible in `spec.md` §9 rather than edited away. This build implements Q27:
+the change always succeeds and always revokes every active `ProjectAssignment` the user holds —
+Supervisor, Junior and Standard alike — never refuses on that ground, and re-assignment afterwards is a
+separate, deliberate act through `AssignUserToProject` (KAFF-113).
+
+#### 1. `User.ChangeRole` — one new entity method, reusing `ValidateDepartment`
+
+Added [Verified: 2026-08-25 @ `src/Domain/Identity/User.cs` -> `ChangeRole`]. Reapplies exactly the
+invariants `Create` applies — department compatibility through the existing private `ValidateDepartment`
+(the same reuse `MoveToDepartment` already established), the client-id rule for `Role.Client`, and the
+no-department rule for external roles — against the account's *existing* `Department`,
+`OperationsSubDepartment` and `ClientId`, none of which this method touches. Rule 8 (a request naming
+the role already held is not a change) is **not** special-cased inside it: re-validating state that was
+already valid cannot fail, so the call simply succeeds, and the handler is what compares the role before
+and after to decide whether there is anything left to revoke. Five new `Domain.Tests` cases pin this
+directly [Verified: 2026-08-25 @ `tests/Domain.Tests/UserTests.cs` ->
+`ChangeRole_reapplies_the_hr_department_rule`].
+
+#### 2. The revocation is handler work, the KAFF-111 shape, not a second mechanism
+
+`Handler.cs` loads every active `ProjectAssignment` for the user and calls `ProjectAssignment.Revoke` in
+a loop, discarding the `Result` for the same reason `DeactivateUser`'s handler does: every row in the
+loop is already known to be active, so `AssignmentAlreadyRevoked` cannot occur
+[Verified: 2026-08-25 @ `src/Api/Features/Users/ChangeUserRole/Handler.cs` -> `HandleAsync`]. One
+`SaveChangesAsync` call carries the role change and every revocation together — CLAUDE.md's "If two
+features need the same thing, it moves to Domain/", applied to the mechanism rather than to a rule: the
+mechanism itself was already written once, for KAFF-111 inside KAFF-110's handler (D-074 §2), and this
+story calls the same `ProjectAssignment.Revoke`, not a copy of the loop's reasoning.
+
+#### 3. The one shape difference from its four siblings: 200 with a body, not 204
+
+KAFF-109 rule 6 requires the response to name every project the change took the user off, so whoever
+re-assigns them afterwards knows what to re-assign. `CreateUser`, `MoveUserDepartment`, `DeactivateUser`
+and `ReactivateUser` all return 204 because none of them has anything to report that is not already
+re-readable from the user row on the next request. This one does, so it returns
+`Response(UserId, Role, RevokedProjectIds)` and 200
+[Verified: 2026-08-25 @ `src/Api/Features/Users/ChangeUserRole/Response.cs`]. No `Validator.cs`, for the
+same reason `MoveUserDepartment` has none: the request carries one field, and every rule about it is
+`ChangeRole`'s.
+
+#### 4. AC-109-K — not independently fault-injected, and that is recorded rather than hidden
+
+`AC-109-K` asks for a case where "the third revocation fails" mid-batch and the whole request rolls
+back. As built, that specific failure is structurally unreachable through the public surface of this
+codebase: the query that loads the revocation loop filters to `RevokedAt IS NULL`, so
+`ProjectAssignment.Revoke` cannot fail on any row in it, and EF Core's single `SaveChangesAsync` call is
+already the atomicity boundary CLAUDE.md names ("EF Core's `DbContext` is the unit of work") — the same
+boundary KAFF-110/KAFF-111 relied on for the identical "one transaction" claim without a dedicated
+fault-injection test (D-074 §2's evidence for that claim is the shared-correlation-id test, not an
+induced failure). Producing a genuine mid-batch DB-level failure here would need fault-injection test
+scaffolding — a `SavingChangesAsync` interceptor able to corrupt one tracked row deterministically
+between the read and the flush — that exists nowhere else in this suite. Not built for one criterion
+without precedent. What **is** built and proven: the refusal half (`AC-109-G`) — a domain-level failure
+before the revocation loop starts leaves the role and every assignment untouched — and the
+one-transaction structural guarantee via code review and the single `SaveChangesAsync` call. Routed
+forward as a genuine coverage gap, not a silent pass: a fault-injection harness for this class of claim,
+if Nabil wants one, is Verifier-sized work that would also retroactively strengthen KAFF-110/111's
+identical claim.
+
+#### 5. The question this entry does not answer
+
+Whether the Owner may change their own role is unaddressed by every source cited to this story —
+spec.md §9's "nobody creates and approves the same movement" governs financial movements, and a role
+change moves no money. `Endpoint.cs` says so in its own remarks rather than deciding either way; no test
+refuses a self-change and none asserts one succeeds beyond what the general suite already exercises
+incidentally. **Raised for Nabil, not decided.**
+
+#### What this entry does not do
+
+It records, it does not decide. No permission row, no migration, no i18n key was added — every
+`Error` this slice can emit (`identity.hr_role_requires_hr_department`,
+`.external_role_cannot_hold_department`, `.client_user_requires_client`,
+`.non_client_user_cannot_carry_client`, `.operations_requires_sub_department`,
+`.sub_department_only_for_operations`, `.user_not_found`, plus the gate's own `errors.auth.forbidden`)
+already carried real Arabic and English before this session
+[Verified: 2026-08-25 @ `src/Web/public/locales/en.json`, `src/Web/public/locales/ar.json`]. KAFF-109
+rule 12's withdrawal (`errors.identity.role_change_blocked_by_supervision` must not be added) is
+observed by omission — grep confirms it is absent from `IdentityErrors.cs` and both locale files, and
+nothing in this session added it. The one touch under `tests/Api.Tests/Infrastructure/` is
+`ProbeEndpoint.cs`'s new `TreasuryPostRoute`, added because `AC-109-F` names `Permission.TreasuryPostProject`
+by name and no existing probe route was gated on it. Nothing under `src/Web/` was touched; `enum.Role.*`
+and the `users.confirm.change_role.*` family stay Frontend's, unbuilt.
+
+#### Verified
+
+Build: 0 warnings / 0 errors, clean `--no-incremental` Release. `dotnet format KaffErp.sln
+--verify-no-changes` exit 0. Domain **83/83**, up from 78 — five new, in `UserTests.cs`. Api **143/143**,
+up from 132 — eleven new, in `ChangeUserRoleTests.cs`. `Nobody_but_the_owner_can_change_a_role` and
+`EndpointPermissionCoverageTests.Every_mapped_endpoint_carries_a_permission_requirement` were both
+watched to fail before being trusted: `.RequirePermission(Permission.UserManage)` removed from
+`Endpoint.cs` -> `Map`, both went red — the coverage test naming the ungated route directly, the
+permission test with a 500 rather than a 403, the same D-078 shape (no gate ran, so no actor was ever
+verified before the save, and the audit check constraint refused the row) — then the line was restored
+and the full suite re-run green: Domain 83/83, Api 143/143.
+`scripts/check-citations.ps1`: **657 checked, 0 broken, 0 legacy, exit 0**. `/run-kaff-erp` smoke: all
+seven checks passed, `kaff-root present=true`, against the real app title ("كف").

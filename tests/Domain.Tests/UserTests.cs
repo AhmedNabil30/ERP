@@ -73,5 +73,107 @@ public sealed class UserTests
             Department.Operations,
             OperationsSubDepartment.Technical).Value;
 
+    // ---- ChangeRole — KAFF-109, decisions.md D-051 (Q27) -------------------------------------------
+
+    /// <summary>
+    /// KAFF-109 rule 11: department compatibility is re-applied against the new role, exactly as
+    /// <c>Create</c> applies it. An HR user in the wrong department cannot be created; the same user
+    /// cannot be turned into one either, without moving the department first (<c>AC-109-G</c>).
+    /// </summary>
+    [Fact]
+    public void ChangeRole_reapplies_the_hr_department_rule()
+    {
+        User user = User.Create(
+            "change-role-marketing",
+            "Marketing User",
+            PhoneNumber.Create("01000000010").Value,
+            Role.MarketingSales,
+            Now,
+            Department.Marketing).Value;
+
+        Result changed = user.ChangeRole(Role.Hr);
+
+        changed.IsFailure.Should().BeTrue();
+        changed.Error.Should().Be(IdentityErrors.HrRoleRequiresHrDepartment);
+        user.Role.Should().Be(Role.MarketingSales, "a refused change is not a change");
+    }
+
+    /// <summary>KAFF-109 rule 11 — the no-department rule for external roles, reapplied.</summary>
+    [Fact]
+    public void ChangeRole_reapplies_the_external_role_department_rule()
+    {
+        User user = User.Create(
+            "change-role-finance",
+            "Finance User",
+            PhoneNumber.Create("01000000011").Value,
+            Role.Finance,
+            Now,
+            Department.Finance).Value;
+
+        Result changed = user.ChangeRole(Role.Client);
+
+        changed.IsFailure.Should().BeTrue(
+            "Role.Client cannot hold a department, and this account still carries Department.Finance");
+        changed.Error.Should().Be(IdentityErrors.ExternalRoleCannotHoldDepartment);
+        user.Role.Should().Be(Role.Finance);
+    }
+
+    /// <summary>KAFF-109 rule 11 — the client-id rule for <see cref="Role.Client"/>, reapplied.</summary>
+    /// <remarks>
+    /// <c>Role.Owner</c> and no department, so <c>ValidateDepartment</c> passes and the client-id
+    /// check is the one this test actually exercises — a departmented user would fail on the
+    /// no-department rule first, which is <see cref="ChangeRole_reapplies_the_external_role_department_rule"/>'s job.
+    /// </remarks>
+    [Fact]
+    public void ChangeRole_refuses_role_client_with_no_client_id()
+    {
+        User user = User.Create(
+            "change-role-owner",
+            "Owner User",
+            PhoneNumber.Create("01000000013").Value,
+            Role.Owner,
+            Now).Value;
+
+        Result changed = user.ChangeRole(Role.Client);
+
+        changed.IsFailure.Should().BeTrue();
+        changed.Error.Should().Be(IdentityErrors.ClientUserRequiresClient);
+        user.Role.Should().Be(Role.Owner);
+    }
+
+    /// <summary>A compatible change succeeds and sets the new role.</summary>
+    [Fact]
+    public void ChangeRole_succeeds_when_the_new_role_fits_the_existing_department()
+    {
+        User user = User.Create(
+            "change-role-tech",
+            "Technical Office User",
+            PhoneNumber.Create("01000000012").Value,
+            Role.SiteEngineer,
+            Now,
+            Department.Operations,
+            OperationsSubDepartment.Technical).Value;
+
+        Result changed = user.ChangeRole(Role.TechnicalOffice);
+
+        changed.IsSuccess.Should().BeTrue();
+        user.Role.Should().Be(Role.TechnicalOffice);
+    }
+
+    /// <summary>
+    /// KAFF-109 rule 8 — a request naming the role already held succeeds without altering anything.
+    /// Not special-cased: re-validating state that was already valid cannot fail.
+    /// </summary>
+    [Fact]
+    public void ChangeRole_to_the_role_already_held_succeeds_and_changes_nothing()
+    {
+        User user = MakeActiveUser();
+
+        Result changed = user.ChangeRole(Role.SiteEngineer);
+
+        changed.IsSuccess.Should().BeTrue();
+        user.Role.Should().Be(Role.SiteEngineer);
+    }
+
     private static DateTimeOffset Now => new(2026, 5, 1, 8, 0, 0, TimeSpan.Zero);
 }

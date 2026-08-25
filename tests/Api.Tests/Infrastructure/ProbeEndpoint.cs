@@ -53,6 +53,14 @@ public sealed class ProbeEndpoint : IEndpoint
     public const string SiteExpenseConfirmRoute = "/probe/projects/{projectId:guid}/site-expense-confirm";
 
     /// <summary>
+    /// Finance, project-scoped. KAFF-109 <c>AC-109-F</c> needs a route behind a permission Finance
+    /// actually holds, so a role change taking effect mid-session is observable on more than
+    /// <c>UserManage</c> — the same permission every other probe route in this file already exists to
+    /// avoid over-using.
+    /// </summary>
+    public const string TreasuryPostRoute = "/probe/projects/{projectId:guid}/treasury-post";
+
+    /// <summary>
     /// The portal's own surface. A client reaches a project through this and nothing else —
     /// see decisions.md D-035.
     /// </summary>
@@ -108,6 +116,9 @@ public sealed class ProbeEndpoint : IEndpoint
 
         app.MapGet(SiteExpenseConfirmRoute, (Guid projectId) => Results.Ok(projectId))
             .RequirePermission(Permission.SiteExpenseConfirm, ProjectScope.FromRoute());
+
+        app.MapGet(TreasuryPostRoute, (Guid projectId) => Results.Ok(projectId))
+            .RequirePermission(Permission.TreasuryPostProject, ProjectScope.FromRoute());
 
         app.MapGet(WriteAssignedRoute, WriteAsync)
             .RequirePermission(Permission.ProjectRead, ProjectScope.FromRoute());

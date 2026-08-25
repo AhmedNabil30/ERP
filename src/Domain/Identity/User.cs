@@ -362,6 +362,54 @@ public sealed class User : Entity
         return Result.Success();
     }
 
+    /// <summary>
+    /// Changes the role the account holds. KAFF-109.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Reapplies exactly the invariants <see cref="Create"/> applies at creation — department
+    /// compatibility through <see cref="ValidateDepartment"/>, the client-id rule for
+    /// <see cref="Identity.Role.Client"/>, and the no-department rule for external roles — against
+    /// the <b>new</b> role and the account's existing <see cref="Department"/>,
+    /// <see cref="OperationsSubDepartment"/> and <see cref="ClientId"/> (KAFF-109 rule 11). None of
+    /// those three fields moves here: KAFF-108 owns the department move and this method does not
+    /// repeat it.
+    /// </para>
+    /// <para>
+    /// <b>Revoking project assignments is not this method's job.</b> A <see cref="User"/> cannot reach
+    /// its own <see cref="ProjectAssignment"/> rows, so the revocation is handler work — the same
+    /// shape KAFF-111 already established inside KAFF-110's handler (decisions.md D-051 Q27, D-074
+    /// §2). This method only decides whether the role transition itself is legal.
+    /// </para>
+    /// <para>
+    /// KAFF-109 rule 8: a request naming the role already held is not a change. It is not special-cased
+    /// here — re-validating state that was already valid cannot fail, so this call simply succeeds
+    /// without altering anything observable, and the handler is what compares before and after to
+    /// decide whether there is anything left to revoke.
+    /// </para>
+    /// </remarks>
+    public Result ChangeRole(Role role)
+    {
+        Result departmentCheck = ValidateDepartment(role, Department, OperationsSubDepartment);
+        if (departmentCheck.IsFailure)
+        {
+            return departmentCheck;
+        }
+
+        if (role == Role.Client && ClientId is null)
+        {
+            return Result.Failure(IdentityErrors.ClientUserRequiresClient);
+        }
+
+        if (role != Role.Client && ClientId is not null)
+        {
+            return Result.Failure(IdentityErrors.NonClientUserCannotCarryClient);
+        }
+
+        Role = role;
+        return Result.Success();
+    }
+
     private static Result ValidateDepartment(
         Role role,
         Department? department,
