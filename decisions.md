@@ -5167,3 +5167,137 @@ one interactive smoke run against the local `kaff` database, and changes nothing
 No `AuditEventKind` member. No handler calls `IAuditContext.Record` with a null subject — nothing
 exists yet that would. No retention or partitioning mechanism for `ip_address` (Q54). No change to
 `src/Web/`. No story was built; KAFF-101a still owns the vocabulary this mechanism now has room for.
+
+---
+
+### D-078 · KAFF-114 built — revoking an assignment, and a stale claim the story made about its own 403 · 2026-08-25
+
+**Backend.** `POST /api/projects/{projectId}/assignments/{assignmentId}/revoke`. Almost everything the
+story needed already existed in slice 0 — `ProjectAssignment.Revoke`, `IdentityErrors
+.AssignmentAlreadyRevoked`, `ProjectAccessPolicy.AssignedAccessAsync`'s per-request `RevokedAt == null`
+read — so this entry is the endpoint, the handler, one new `IdentityErrors` member, and the tests.
+
+#### What was built
+
+* **The permission is `Permission.ProjectAssignmentManage`, `ProjectScoped`, `Owner` and `Hr`** — the
+  same row `AssignUserToProject` uses, not a new one
+  [Verified: 2026-08-25 @ `PermissionCatalogue.cs` -> the `Permission.ProjectAssignmentManage` row].
+  The story's permissions bullet names `ProjectScoped`, which is the scope, not the permission; the
+  permission that actually appears in the catalogue is `ProjectAssignmentManage`, matched against
+  `AssignUserToProject/Endpoint.cs` before writing this one
+  [Verified: 2026-08-25 @ `src/Api/Features/Assignments/AssignUserToProject/Endpoint.cs` -> `Map`].
+  SM-30 asked whether this change adds a catalogue row: it does not, and this is what checking looked
+  like rather than assuming it.
+* **The route names both the project (for the scope) and the assignment (the row being closed)**:
+  `/api/projects/{projectId:guid}/assignments/{assignmentId:guid}/revoke`
+  [Verified: 2026-08-25 @ `src/Api/Features/Assignments/RevokeProjectAssignment/Endpoint.cs` -> `Route`].
+  A `POST .../revoke` rather than a `DELETE`, matching `DeactivateUser`'s `POST .../deactivate` shape
+  — the row is never removed, only stamped, and a `DELETE` verb on a route that soft-closes a row
+  would be the wrong claim for a client to read off the URL.
+* **No `Response.cs` and no `Validator.cs`**, for the reason D-074 §1 already gave `AssignUserToProject`
+  and `MoveUserDepartment`: 204 has nothing to shape a response around, and the request's only rule —
+  refuse a second revocation — lives in `ProjectAssignment.Revoke` and nowhere else
+  [Verified: 2026-08-25 @ `src/Domain/Identity/ProjectAssignment.cs` -> `Revoke`]. A `Validator.cs`
+  here would be a second place for a rule that must have exactly one.
+* **One new `IdentityErrors` member, `ProjectAssignmentNotFound`**, for a route naming an assignment id
+  that does not exist on that project — matched on `Id` and `ProjectId` together, whether or not the
+  row is already revoked, so an already-revoked row is still found and gets
+  `AssignmentAlreadyRevoked` from `Revoke` rather than a false "not found"
+  [Verified: 2026-08-25 @ `src/Api/Features/Assignments/RevokeProjectAssignment/Handler.cs` ->
+  `HandleAsync`]. Not sourced to an acceptance criterion — KAFF-114's criteria assume the row exists —
+  so this is REST plumbing for a route parameter, the same shape as KAFF-108's `UserNotFound`, not a
+  business rule read out of a gap.
+* **No audit code in the handler.** The revocation is an entity change (`RevokedAt`,
+  `RevokedByUserId`), so `AuditSaveChangesInterceptor` writes the `Modified` record in the same
+  transaction the handler already opens, naming both properties in `ChangedProperties` and carrying
+  the `ProjectId` and whichever `GrantPath` the gate granted on — asserted directly rather than trusted
+  [Verified: 2026-08-25 @ `tests/Api.Tests/RevokeProjectAssignmentTests.cs` ->
+  `The_revocation_leaves_a_modified_audit_record_naming_what_changed`].
+
+#### `TranslationCatalogueTests` required touching two lines under `src/Web/`, and that is the one
+exception to "never touches `src/Web/`" this session made
+
+`ProjectAssignmentNotFound`'s key has no entry in either locale catalogue by default, and
+`Kaff.Domain.Tests.TranslationCatalogueTests.Every_domain_error_key_has_an_arabic_and_an_english
+_translation` fails the Domain suite on any `*Errors` member with no translation
+[Verified: 2026-08-25 @ `tests/Domain.Tests/TranslationCatalogueTests.cs` ->
+`Every_domain_error_key_has_an_arabic_and_an_english_translation`] — that test's own remarks call the
+two catalogues "the contract's other end," not a screen. `errors.identity.project_assignment_not_found`
+was added to both `src/Web/public/locales/en.json` and `ar.json`, one line each, next to
+`user_already_assigned_to_project`. **Nothing else under `src/Web/` was touched.** The
+`assignments.action.revoke` / `assignments.confirm.revoke.*` / `a11y.revoke_assignment` /
+`assignments.revoked_on` family the story's i18n bullet names is Frontend's and there is no screen yet
+— confirmed absent from both catalogues, not added.
+
+#### A stale claim in the story, found by running the test rather than trusting the text (SM-31)
+
+**AC-114-A says the refusal on the next request carries `errors.auth.not_assigned_to_project`. The
+shipped gate cannot produce that key, for anybody, on any endpoint, today.**
+`Program.cs`'s `CustomizeProblemDetails` stamps every 401/403 with one blanket key —
+`AuthorizationErrors.NotAuthenticated` / `.Forbidden` — because it is the single place that sees the
+status code after the fact, not the specific `PermissionDecision` that produced it
+[Verified: 2026-08-25 @ `src/Api/Program.cs` -> `AddProblemDetails`].
+`PermissionAuthorizationHandler.HandleRequirementAsync` only declines to call `context.Succeed` on a
+refusal — it never reaches a handler that could return a more specific `Problem`, so
+`SeparationOfDuties.NotAssignedToProject` is declared, translated in both catalogues, and never
+referenced by anything in `src/Api`
+[Verified: 2026-08-25 @ `src/Domain/Authorization/SeparationOfDuties.cs` -> `NotAssignedToProject`] —
+confirmed by a solution-wide search finding zero call sites, not assumed from the class existing.
+`AssignUserToProjectTests`' own 403 assertions already expect `errors.auth.forbidden` for the identical
+reason [Verified: 2026-08-25 @ `tests/Api.Tests/AssignUserToProjectTests.cs` ->
+`Nobody_but_the_owner_and_hr_can_staff_a_project`]. `AC-114-A` is built and asserts the real key,
+`errors.auth.forbidden`, with the discrepancy recorded in the test's own remarks
+[Verified: 2026-08-25 @ `tests/Api.Tests/RevokeProjectAssignmentTests.cs` ->
+`Access_ends_on_the_next_request_after_revocation`]. **Not fixed here.** Distinguishing 403 reasons at
+the HTTP layer is a change to `PermissionAuthorizationHandler` and `Program.cs` — the one gate every
+protected route in the application shares — and every existing 403 assertion in both test files would
+need re-auditing against it. That is Architect-sized work under a 3-point story, not something to
+wire quietly to make one criterion's exact string true. Flagged, not built.
+
+#### `AC-114-E` watched to fail for the right reason before being trusted
+
+Per the brief: `.RequirePermission(Permission.ProjectAssignmentManage, ProjectScope.FromRoute())` was
+removed from `Endpoint.cs`'s `Map` chain, the solution rebuilt, and both
+`Nobody_but_the_owner_and_hr_can_revoke_an_assignment` (this story) and
+`EndpointPermissionCoverageTests.Every_mapped_endpoint_carries_a_permission_requirement` (the
+mechanical A-04 gate) went red — the former with a 500 rather than a clean 403 mismatch, because an
+unauthorized caller now reached `SaveChangesAsync` with no `GrantPath` recorded, which is the
+D-067 shape exactly: a caller that should never have reached the handler, reaching it. The line was
+then restored and the full suite re-run green. Not a permanent change; the endpoint always shipped
+with the line — this was a check that the test can actually catch its own defect class, done once,
+in this session, rather than assumed from the test's name.
+
+#### Verified
+
+Build: 0 warnings / 0 errors, clean `--no-incremental` Release. `dotnet format KaffErp.sln
+--verify-no-changes` exit 0. Domain **75/75** (unchanged — no new Domain test; the new `IdentityErrors`
+member is exercised through the Api suite). Api **121/121**, up from 113 — eight new:
+seven in `RevokeProjectAssignmentTests.cs`, one in `EndpointPermissionCoverageTests.cs`
+(`No_endpoint_deletes_a_project_assignment`, `AC-114-F`, enumerating the host's actually-mapped routes
+for a `DELETE` verb anywhere under `.../assignments`, rather than asserting one hand-picked URL 404s).
+`scripts/check-citations.ps1`: run after this entry was written, **645 checked, 0 broken, 0 legacy,
+exit 0** — up from 639, this entry's own citations included; the count did not move when the `.cs`
+files above were written, because the checker only walks `*.md` files for citations to verify, not
+source — a fact this entry's citations style (`<c>File.cs</c>` in the C# XML doc, backtick-fenced here)
+was written to match rather than assumed. `/run-kaff-erp` smoke: all seven checks passed, API and SPA
+both started clean.
+
+#### Q49 and Q51 — untouched, as instructed
+
+Neither open question was resolved, softened or extended. Rule 7 (Q49, the last engineer may be
+revoked off a project) is exercised nowhere in `RevokeProjectAssignmentTests.cs` on purpose — a test
+proving "revoking the last engineer succeeds" would not be wrong, but it would be this session reading
+a minimum-team-size question into a settled answer the suite then defends, and Q49 is Karim's to close,
+not a test's. Rule 4 / `AC-114-D` (Q51, revoking an already-revoked assignment is refused) is asserted
+exactly as built, sourced to slice-0 code as the story already says.
+
+#### Not done, and named so nobody assumes otherwise
+
+No change to `PermissionAuthorizationHandler`, `Program.cs`, or `SeparationOfDuties` — the
+`errors.auth.not_assigned_to_project` gap above is flagged, not closed. No change to the audit
+mechanism or to any migration; this story needed neither, and none was added. No screen — the
+`assignments.action.revoke` family stays Frontend's, unbuilt keys named above rather than filled in.
+`AssignUserToProjectTests.cs`'s own `RevokeAsync` helper comment ("the endpoint for it is KAFF-114 and
+is not in this sprint") is now stale — KAFF-114 shipped this session — but that file is not this
+story's to edit and the comment does not affect what the test does; noted here rather than changed
+there.

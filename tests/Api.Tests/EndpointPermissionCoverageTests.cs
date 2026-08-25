@@ -173,6 +173,35 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
             + "and the gate believes both");
     }
 
+    /// <summary>
+    /// KAFF-114 <c>AC-114-F</c> — "revocation is not deletion" is a claim about the absence of an
+    /// endpoint, and the only place that claim can be checked is against every route the host actually
+    /// maps, the same source of truth <see cref="Every_mapped_endpoint_carries_a_permission_requirement"/>
+    /// reads. A grep over <c>Endpoint.cs</c> files would only see what somebody wrote — the artefact
+    /// D-067 shows is not trustworthy on its own.
+    /// </summary>
+    /// <remarks>
+    /// Matches on the HTTP method and on the route containing <c>"assignments"</c> rather than on one
+    /// exact path, so the assertion survives the revoke route's shape changing and still catches a
+    /// delete-shaped endpoint added anywhere under <c>/api/projects/.../assignments</c> —
+    /// <c>POST .../assignments</c> (KAFF-113) and <c>POST .../assignments/{id}/revoke</c> (KAFF-114)
+    /// both pass today; a <c>DELETE</c> verb on either shape would fail this.
+    /// </remarks>
+    [Fact]
+    public void No_endpoint_deletes_a_project_assignment()
+    {
+        List<string> deleteShaped = [.. ShippedEndpoints()
+            .Where(mapped =>
+                mapped.Route.Contains("assignments", StringComparison.Ordinal)
+                && mapped.Method.Contains("DELETE", StringComparison.Ordinal))
+            .Select(mapped => mapped.ToString())];
+
+        deleteShaped.Should().BeEmpty(
+            "CLAUDE.md forbids deleting a ProjectAssignment row — revocation (KAFF-114) is the only "
+            + "way this codebase closes one, and it is a POST that stamps RevokedAt rather than a "
+            + "DELETE that removes the row");
+    }
+
     private static List<PermissionRequirement> DeclaredPermissions(MappedEndpoint mapped)
     {
         List<PermissionRequirement> requirements = [];

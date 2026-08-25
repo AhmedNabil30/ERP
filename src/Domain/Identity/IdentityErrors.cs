@@ -76,6 +76,26 @@ public static class IdentityErrors
     public static readonly Error AssignmentAlreadyRevoked =
         Error.Conflict("identity.assignment_already_revoked", "errors.identity.assignment_already_revoked");
 
+    /// <summary>
+    /// KAFF-114 — the route names an assignment that does not exist on that project.
+    /// </summary>
+    /// <remarks>
+    /// Same shape as <see cref="UserNotFound"/> (KAFF-108): an endpoint addressing a row by id in the
+    /// route has to say something translatable when the id names nobody, rather than a bare 404 with
+    /// no <c>messageKey</c>. Not sourced to an acceptance criterion — KAFF-114's criteria assume the
+    /// row exists — so this is REST plumbing for a route parameter, not a business rule. Matched on
+    /// both <c>Id</c> and <c>ProjectId</c>: an assignment id that exists but belongs to a different
+    /// project is "not found on this project" rather than leaked as found elsewhere.
+    /// <c>TranslationCatalogueTests</c> requires every <c>*Errors</c> key to carry a real translation
+    /// in both locale catalogues, so its two lines were added there too — the only touch this session
+    /// made under <c>src/Web/</c>, and it is the error-catalogue contract, not a screen. See
+    /// decisions.md D-078.
+    /// </remarks>
+    public static readonly Error ProjectAssignmentNotFound =
+        Error.NotFound(
+            "identity.project_assignment_not_found",
+            "errors.identity.project_assignment_not_found");
+
     public static readonly Error AssignmentLevelNotApplicable =
         Error.Validation("identity.assignment_level_not_applicable", "errors.identity.assignment_level_not_applicable");
 
