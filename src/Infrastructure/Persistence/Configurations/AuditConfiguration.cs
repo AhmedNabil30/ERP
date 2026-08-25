@@ -57,6 +57,13 @@ internal sealed class AuditRecordConfiguration : IEntityTypeConfiguration<AuditR
             table.HasCheckConstraint(
                 "ck_audit_records_actor_is_named_completely",
                 "(actor_user_id IS NULL) = (actor_role IS NULL)");
+
+            // decisions.md D-063 §3. Dropping NOT NULL from entity_id silently permits an entity
+            // change with no subject, which was impossible before — this is the point of the change,
+            // not a side effect of it. An event (action = 'Occurred') may still name none.
+            table.HasCheckConstraint(
+                "ck_audit_records_entity_change_has_subject",
+                "action = 'Occurred' OR entity_id IS NOT NULL");
         });
 
         builder.HasKey(record => record.Id);
@@ -64,10 +71,18 @@ internal sealed class AuditRecordConfiguration : IEntityTypeConfiguration<AuditR
         builder.Property(record => record.OccurredAt).IsRequired();
         builder.Property(record => record.Action).IsRequired();
         builder.Property(record => record.EntityType).IsRequired().HasMaxLength(128);
-        builder.Property(record => record.EntityId).IsRequired();
+
+        // entity_id is nullable by CLR type (Guid?) and no IsRequired() call here — decisions.md
+        // D-063 §3. It is still required for every entity change; that is enforced in the database by
+        // ck_audit_records_entity_change_has_subject, not here, because the one legal exception (an
+        // event) shares this same column.
         builder.Property(record => record.ActorDisplayName).IsRequired().HasMaxLength(200);
         builder.Property(record => record.CorrelationId).IsRequired();
         builder.Property(record => record.RequestPath).HasMaxLength(512);
+
+        // System.Net.IPAddress maps natively to PostgreSQL's inet — no converter, no varchar. See
+        // decisions.md D-063 §2. Null for work outside a request, same as RequestPath.
+        builder.Property(record => record.IpAddress);
 
         // spec.md §7 requires a written reason on every rejection.
         builder.Property(record => record.Reason).HasMaxLength(DbLimits.LongTextLength);

@@ -34,8 +34,8 @@ Thumbs.db
 
 # Screenshots and logs from .claude/skills/run-kaff-erp/driver.mjs
 shots/
-api.log
-web.log
+api*.log
+web*.log
 
 # The e2e job's staging directory: the Angular build, downloaded as an artifact in CI and copied
 # there by hand when reproducing that job locally. Always generated, never edited.

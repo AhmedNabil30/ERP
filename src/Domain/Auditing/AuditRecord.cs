@@ -1,3 +1,4 @@
+using System.Net;
 using Kaff.Domain.Authorization;
 using Kaff.Domain.Common;
 using Kaff.Domain.Identity;
@@ -50,7 +51,7 @@ public sealed class AuditRecord : Entity, IAuditExempt
         DateTimeOffset occurredAt,
         AuditAction action,
         string entityType,
-        Guid entityId,
+        Guid? entityId,
         AuditEventKind? eventType,
         Guid? actorUserId,
         string actorDisplayName,
@@ -62,7 +63,8 @@ public sealed class AuditRecord : Entity, IAuditExempt
         Guid correlationId,
         Guid? projectId,
         ProjectAccessPath? grantPath,
-        string? requestPath)
+        string? requestPath,
+        IPAddress? ipAddress)
         : base(id)
     {
         OccurredAt = occurredAt;
@@ -81,6 +83,7 @@ public sealed class AuditRecord : Entity, IAuditExempt
         ProjectId = projectId;
         GrantPath = grantPath;
         RequestPath = requestPath;
+        IpAddress = ipAddress;
     }
 
     public DateTimeOffset OccurredAt { get; private set; }
@@ -90,7 +93,13 @@ public sealed class AuditRecord : Entity, IAuditExempt
     /// <summary>CLR short name of the entity, e.g. <c>Posting</c>.</summary>
     public string EntityType { get; private set; } = null!;
 
-    public Guid EntityId { get; private set; }
+    /// <summary>
+    /// Null only for an <see cref="AuditAction.Occurred"/> event that declares no subject.
+    /// <c>EntityType</c> stays required even then — see decisions.md D-063 §3 and
+    /// <c>ck_audit_records_entity_change_has_subject</c>, which refuses an entity change with no
+    /// subject while leaving this legal for an event.
+    /// </summary>
+    public Guid? EntityId { get; private set; }
 
     /// <summary>
     /// What occurred, or null when this record describes an entity change instead.
@@ -164,6 +173,18 @@ public sealed class AuditRecord : Entity, IAuditExempt
 
     public string? RequestPath { get; private set; }
 
+    /// <summary>
+    /// The connection address the request arrived on, or null for work outside a request —
+    /// migrations, seeding, scheduled work. Populated by <c>AuditCorrelationMiddleware</c> from
+    /// <c>HttpContext.Connection.RemoteIpAddress</c> and never from a caller-supplied header. See
+    /// decisions.md D-063 §2.
+    /// </summary>
+    public IPAddress? IpAddress { get; private set; }
+
+    /// <summary>
+    /// An entity change. <paramref name="entityId"/> is required here — the check constraint's
+    /// nullability exists for <see cref="ForEvent"/>, not for this factory.
+    /// </summary>
     public static AuditRecord For(
         DateTimeOffset occurredAt,
         AuditAction action,
@@ -177,7 +198,8 @@ public sealed class AuditRecord : Entity, IAuditExempt
         Guid correlationId,
         Guid? projectId,
         ProjectAccessPath? grantPath,
-        string? requestPath)
+        string? requestPath,
+        IPAddress? ipAddress)
     {
         ArgumentNullException.ThrowIfNull(actor);
         ArgumentException.ThrowIfNullOrWhiteSpace(entityType);
@@ -199,7 +221,8 @@ public sealed class AuditRecord : Entity, IAuditExempt
             correlationId,
             projectId,
             grantPath,
-            requestPath);
+            requestPath,
+            ipAddress);
     }
 
     /// <summary>
@@ -222,7 +245,8 @@ public sealed class AuditRecord : Entity, IAuditExempt
         AuditActor actor,
         string? reason,
         Guid correlationId,
-        string? requestPath)
+        string? requestPath,
+        IPAddress? ipAddress)
     {
         ArgumentNullException.ThrowIfNull(occurrence);
         ArgumentNullException.ThrowIfNull(actor);
@@ -244,6 +268,7 @@ public sealed class AuditRecord : Entity, IAuditExempt
             correlationId,
             projectId: null,
             grantPath: null,
-            requestPath);
+            requestPath,
+            ipAddress);
     }
 }

@@ -536,6 +536,22 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// decisions.md D-063 §2. Written by the same middleware that already writes the request path,
+    /// from <c>HttpContext.Connection.RemoteIpAddress</c> — this is the one test in the suite that
+    /// actually goes through that middleware rather than constructing an <c>AuditContext</c> by hand.
+    /// </summary>
+    [Fact]
+    public async Task A_write_through_a_real_request_records_the_connections_address()
+    {
+        (await SendAsync(Write(_projectId), _financeAssigned, Role.Finance, Department.Finance))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (AuditRecord change, _) = await TheWritesRecordsAsync();
+
+        change.IpAddress.Should().Be(KaffApiFactory.TestRemoteAddress);
+    }
+
+    /// <summary>
     /// The two records one probe write leaves: the change to the project, and the company-level
     /// client created in the same save.
     /// </summary>

@@ -4,7 +4,8 @@ using Microsoft.AspNetCore.Http;
 namespace Kaff.Api.Common.Middleware;
 
 /// <summary>
-/// Gives every request a correlation id and hands it, with the request path, to the audit context.
+/// Gives every request a correlation id and hands it, with the request path and the connection
+/// address, to the audit context.
 /// </summary>
 /// <remarks>
 /// One approval touches several records — the extract, its postings, the ledger entries. Sharing a
@@ -33,7 +34,10 @@ public sealed class AuditCorrelationMiddleware
                 ? inbound
                 : Guid.CreateVersion7();
 
-        auditContext.BindToRequest(correlationId, context.Request.Path.Value);
+        // HttpContext.Connection.RemoteIpAddress, never X-Forwarded-For — decisions.md D-063 §2. A
+        // header is a caller-supplied string, and writing one into an append-only table nobody can
+        // correct is exactly the class of act that ruling forbids.
+        auditContext.BindToRequest(correlationId, context.Request.Path.Value, context.Connection.RemoteIpAddress);
         context.Response.Headers[HeaderName] = correlationId.ToString();
 
         await _next(context);

@@ -1,3 +1,4 @@
+using System.Net;
 using Kaff.Domain.Auditing;
 using Kaff.Domain.Authorization;
 using Kaff.Domain.Common;
@@ -13,6 +14,8 @@ public sealed class AuditContext : IAuditContext
     public string? Reason { get; private set; }
 
     public string? RequestPath { get; private set; }
+
+    public IPAddress? IpAddress { get; private set; }
 
     public ProjectAccessPath? GrantPath { get; private set; }
 
@@ -34,9 +37,13 @@ public sealed class AuditContext : IAuditContext
 
     public void ActorVerifiedAs(AuditActor actor) => VerifiedActor = FullyNamed(actor, "verified");
 
-    public void Record<TSubject>(AuditEventKind kind, Guid subjectId)
+    public void Record<TSubject>(AuditEventKind kind, Guid? subjectId)
         where TSubject : Entity
     {
+        // Guid.Empty is a handler that forgot the id, not a deliberate absence — that is still
+        // refused. An explicit null is legal: decisions.md D-063 §3. This guard predates the
+        // nullable subject and must survive it, so the table can go on distinguishing "deliberately
+        // subjectless" from "somebody's bug".
         if (subjectId == Guid.Empty)
         {
             throw new ArgumentException("An audited event must name its subject.", nameof(subjectId));
@@ -87,12 +94,14 @@ public sealed class AuditContext : IAuditContext
 
     /// <summary>
     /// Adopts the ambient request identifiers. Called once per request by the Api so that every audit
-    /// record written while handling it shares a correlation id and carries the path.
+    /// record written while handling it shares a correlation id and carries the path and the
+    /// connection address.
     /// </summary>
-    public void BindToRequest(Guid correlationId, string? requestPath)
+    public void BindToRequest(Guid correlationId, string? requestPath, IPAddress? ipAddress)
     {
         CorrelationId = correlationId;
         RequestPath = requestPath;
+        IpAddress = ipAddress;
     }
 }
 

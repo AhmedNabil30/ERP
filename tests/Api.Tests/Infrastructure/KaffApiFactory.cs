@@ -1,6 +1,9 @@
+using System.Net;
 using Kaff.Api.Common.Endpoints;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
@@ -21,6 +24,12 @@ namespace Kaff.Api.Tests.Infrastructure;
 /// </remarks>
 public sealed class KaffApiFactory : WebApplicationFactory<Program>
 {
+    /// <summary>
+    /// What every request through this factory's client carries as its connection address — see
+    /// <see cref="FakeConnectionStartupFilter"/>.
+    /// </summary>
+    public static readonly IPAddress TestRemoteAddress = IPAddress.Parse("203.0.113.42");
+
     private readonly string _connectionString;
 
     public KaffApiFactory(string connectionString)
@@ -64,6 +73,27 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
             services
                 .AddAuthentication(TestAuthHandler.SchemeName)
                 .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
+
+            // TestServer never populates Connection.RemoteIpAddress — there is no real socket behind
+            // it — so a test asserting on decisions.md D-063 §2 needs a stand-in for what a real
+            // connection always carries. Registered as a startup filter, not a feature set in a test,
+            // so it runs ahead of AuditCorrelationMiddleware exactly the way a real connection would.
+            services.AddSingleton<IStartupFilter, FakeConnectionStartupFilter>();
         });
+    }
+
+    /// <summary>See the comment where this is registered above.</summary>
+    private sealed class FakeConnectionStartupFilter : IStartupFilter
+    {
+        public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next) => app =>
+        {
+            app.Use((context, nextMiddleware) =>
+            {
+                context.Connection.RemoteIpAddress ??= TestRemoteAddress;
+                return nextMiddleware();
+            });
+
+            next(app);
+        };
     }
 }

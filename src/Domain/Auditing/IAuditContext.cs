@@ -1,3 +1,4 @@
+using System.Net;
 using Kaff.Domain.Authorization;
 using Kaff.Domain.Common;
 using Kaff.Domain.Identity;
@@ -24,7 +25,13 @@ public enum AuditEventKind
 /// An event a handler declares. The interceptor turns it into an <see cref="AuditRecord"/>; no
 /// handler ever constructs one itself.
 /// </summary>
-public sealed record AuditEvent(AuditEventKind Kind, string SubjectType, Guid SubjectId);
+/// <remarks>
+/// <paramref name="SubjectId"/> is nullable — decisions.md D-063 §3: an event can name what kind of
+/// thing it is about (<see cref="SubjectType"/>) without naming a specific row, e.g. a failed sign-in
+/// against a username that does not exist. <c>Guid.Empty</c> is never a legal value here; see
+/// <see cref="IAuditContext.Record{TSubject}"/>.
+/// </remarks>
+public sealed record AuditEvent(AuditEventKind Kind, string SubjectType, Guid? SubjectId);
 
 /// <summary>
 /// Who a record names.
@@ -76,6 +83,12 @@ public interface IAuditContext
 
     /// <summary>The request path, recorded for traceability.</summary>
     string? RequestPath { get; }
+
+    /// <summary>
+    /// The connection address the request arrived on, or null for work outside a request. See
+    /// decisions.md D-063 §2 — never taken from <c>X-Forwarded-For</c>.
+    /// </summary>
+    IPAddress? IpAddress { get; }
 
     /// <summary>
     /// How the access policy admitted this request to the project it named, or null when it named
@@ -148,7 +161,13 @@ public interface IAuditContext
     /// describes. The record is written by the interceptor on the next save, in the same transaction
     /// and under the same correlation id as anything else that save writes.
     /// </summary>
-    void Record<TSubject>(AuditEventKind kind, Guid subjectId)
+    /// <param name="kind">What happened.</param>
+    /// <param name="subjectId">
+    /// The row the event is about, or an explicit <c>null</c> when the event names no specific row —
+    /// decisions.md D-063 §3. <c>Guid.Empty</c> is never legal: that is a handler that forgot the id,
+    /// and it throws.
+    /// </param>
+    void Record<TSubject>(AuditEventKind kind, Guid? subjectId)
         where TSubject : Entity;
 
     /// <summary>

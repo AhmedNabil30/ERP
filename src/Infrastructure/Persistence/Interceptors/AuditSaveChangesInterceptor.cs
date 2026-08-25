@@ -108,7 +108,8 @@ public sealed class AuditSaveChangesInterceptor : SaveChangesInterceptor
                 actor,
                 _auditContext.Reason,
                 _auditContext.CorrelationId,
-                _auditContext.RequestPath));
+                _auditContext.RequestPath,
+                _auditContext.IpAddress));
         }
 
         if (records.Count == 0)
@@ -236,7 +237,8 @@ public sealed class AuditSaveChangesInterceptor : SaveChangesInterceptor
             // the project rather than with the request: one request may save a project-scoped change
             // and a company-level one, and only the first was reached by any grant path.
             projectId is null ? null : _auditContext.GrantPath,
-            _auditContext.RequestPath);
+            _auditContext.RequestPath,
+            _auditContext.IpAddress);
     }
 
     private static JsonNode? ToNode(object? value, bool redacted)

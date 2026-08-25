@@ -199,6 +199,73 @@ public sealed class AuditMechanismTests
         record.CorrelationId.Should().Be(auditContext.CorrelationId);
         record.BeforeJson.Should().BeNull();
         record.AfterJson.Should().BeNull();
+
+        // decisions.md D-063 §2. These tests never bind an AuditContext to a request, which is
+        // exactly the shape work outside a request has — a migration, a seed, a scheduled job.
+        record.IpAddress.Should().BeNull();
+    }
+
+    /// <summary>
+    /// decisions.md D-063 §3. An event can name what kind of thing it is about without naming a
+    /// specific row — a failed sign-in against a username that does not exist is the case Karim asked
+    /// for. <c>ck_audit_records_entity_change_has_subject</c> is the database's half of this; this is
+    /// the application's.
+    /// </summary>
+    [Fact]
+    public async Task An_event_may_declare_no_subject()
+    {
+        var actor = new StubCurrentUser();
+        AuditContext auditContext = Gated(actor);
+
+        await using (KaffDbContext context = _database.CreateContext(actor, auditContext))
+        {
+            auditContext.Record<User>(AuditEventKind.SignedOut, subjectId: null);
+            await context.SaveChangesAsync(Ct);
+        }
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+
+        AuditRecord record = await reader.AuditRecords
+            .SingleAsync(entry => entry.CorrelationId == auditContext.CorrelationId, Ct);
+
+        record.Action.Should().Be(AuditAction.Occurred);
+        record.EntityType.Should().Be(nameof(User));
+        record.EntityId.Should().BeNull();
+    }
+
+    /// <summary>
+    /// decisions.md D-063 §3: the nullable subject must not swallow the guard that already existed.
+    /// <c>Guid.Empty</c> is a handler that forgot the id, not a deliberate absence, and stays a
+    /// programmer error.
+    /// </summary>
+    [Fact]
+    public void Recording_an_event_with_Guid_Empty_as_the_subject_still_throws()
+    {
+        var auditContext = new AuditContext();
+
+        Action record = () => auditContext.Record<User>(AuditEventKind.SignedOut, Guid.Empty);
+
+        record.Should().Throw<ArgumentException>()
+            .WithMessage("An audited event must name its subject.*");
+    }
+
+    /// <summary>
+    /// decisions.md D-063 §3, the constraint's whole reason to exist: dropping <c>NOT NULL</c> from
+    /// <c>entity_id</c> must not silently permit an entity change with no subject, which was
+    /// impossible before. Hits PostgreSQL directly, like <c>Only_an_Occurred_record_carries_an_event_type</c>.
+    /// </summary>
+    [Fact]
+    public async Task An_entity_change_with_no_subject_is_refused_by_the_database()
+    {
+        await using KaffDbContext reader = _database.CreateBareContext();
+
+        await DatabaseGuard.RefusesAsync(
+            () => InsertRawAuditRecordAsync(reader, action: "Modified", eventType: null, subjectless: true),
+            "ck_audit_records_entity_change_has_subject");
+
+        // The mirror: an event with no subject is exactly as legal at the database as it is through
+        // AuditContext.Record above.
+        await InsertRawAuditRecordAsync(reader, action: "Occurred", eventType: "SignedOut", subjectless: true);
     }
 
     /// <summary>
@@ -376,19 +443,27 @@ public sealed class AuditMechanismTests
         Guid? projectId = null,
         string? grantPath = null,
         Guid? actorUserId = null,
-        string? actorRole = null)
-        => context.Database.ExecuteSqlAsync(
+        string? actorRole = null,
+        bool subjectless = false)
+    {
+        // subjectless, not a Guid? entityId parameter defaulting to null: an optional parameter
+        // cannot tell "the caller wants a fresh random subject" apart from "the caller wants
+        // literally no subject", and this helper's callers need both.
+        Guid? entityId = subjectless ? null : Guid.CreateVersion7();
+
+        return context.Database.ExecuteSqlAsync(
             $"""
              INSERT INTO audit_records
                (id, occurred_at, action, entity_type, entity_id, event_type,
                 actor_display_name, changed_properties, correlation_id, after_json,
                 project_id, grant_path, actor_user_id, actor_role)
              VALUES
-               ({Guid.CreateVersion7()}, {Now}, {action}, 'User', {Guid.CreateVersion7()}, {eventType},
+               ({Guid.CreateVersion7()}, {Now}, {action}, 'User', {entityId}, {eventType},
                 'raw', '[]'::jsonb, {Guid.CreateVersion7()}, {EmptyJsonObject}::jsonb,
                 {projectId}, {grantPath}, {actorUserId}, {actorRole})
              """,
             Ct);
+    }
 
     private static User NewOwner()
     {
