@@ -495,7 +495,7 @@ touches an existing one.
 
 ---
 
-### D-023 · The staging deployment target is unspecified · **OPEN**
+### D-023 · The staging deployment target is unspecified · **ANSWERED 2026-08-25 — see D-076**
 
 **Decision.** `deploy-staging.yml` builds and publishes container images for the API and the web
 application on merge to main, tags them `staging`, and stops at a deployment step gated on a
@@ -506,10 +506,15 @@ application on merge to main, tags them `staging`, and stops at a deployment ste
 inventing a business rule: plausible, unreviewed, and wrong. Container images are the portable half
 and are genuinely useful whatever the answer.
 
-**OPEN for Nabil.** Where does staging run — a VPS, a managed container platform, Azure? How is the
-database provisioned and backed up? Who holds the secrets?
+**~~OPEN for Nabil.~~ ANSWERED 2026-08-25.** An **Oracle Cloud ARM64 VPS**, reached over SSH, running
+the published images through `deploy/docker-compose.staging.yml`. Secrets live on the host in a
+`.env` CI never reads or writes. **The application is deployed and reports healthy with its database
+guards installed.** Full record in **D-076**; operational steps in `deploy/README.md`.
 
-**Revisit if.** Nabil answers. The deploy job is a handful of lines once the target is known.
+**~~Revisit if.~~** It said *"the deploy job is a handful of lines once the target is known."* It was
+four steps and **four defects**, none of which were about deployment — see D-076. The estimate was
+wrong in a way worth remembering: the unknown was never the deploy job, it was everything the deploy
+job would be the first thing to execute.
 
 ---
 
@@ -4945,3 +4950,104 @@ later.
 **Revisit if.** An endpoint legitimately needs to write an audit record without a permission gate. The
 answer is not to relax the constraint — it is to give that endpoint a verified read of its own
 caller, or to name it in the allow-list with the reason, which is where the decision belongs.
+
+
+---
+
+### D-076 · Staging is real — an ARM64 VPS, and the four defects that had been waiting for it · 2026-08-25
+
+**Answers D-023, open since slice 0.** Nabil: staging is an **Oracle Cloud ARM64 VPS**, reached over
+SSH, running the images `deploy-staging.yml` publishes. Operational steps are in `deploy/README.md`;
+this entry is the reasoning and the record.
+
+#### What was built
+
+`deploy/docker-compose.staging.yml`, **in the repository rather than on the box**, so what staging
+runs is reviewable and a rollback is `git revert` plus a re-run. The deploy job scps it to the host
+and runs `docker compose pull && up -d`.
+
+Two choices worth defending:
+
+* **Images are pinned to the commit SHA, not the `staging` tag.** Both are pushed. Deploying the
+  mutable tag makes *"what is on staging?"* unanswerable the moment a second build lands.
+* **CI never reads or writes the host's `.env`.** `JWT_SIGNING_KEY` and `POSTGRES_PASSWORD` live
+  beside the compose file on the host. A secret that passes through a workflow can be printed by any
+  step somebody adds later. The compose file uses `${JWT_SIGNING_KEY:?...}` so a missing secret fails
+  loudly rather than starting on a placeholder — the same reason `appsettings.json` ships an empty
+  key.
+
+#### The four defects, and why they matter more than the deploy job
+
+D-023 predicted *"a handful of lines once the target is known."* The deploy job **was** four steps.
+What it was not was the work. **Every one of these had been sitting in a file that nothing had ever
+executed:**
+
+1. **The web image served 404 for the entire application.** `COPY --from=build /source/dist/kaff-web`
+   into nginx's root, but Angular emits `dist/kaff-web/**browser**/index.html`, so `index.html` sat
+   one directory below `root`.
+2. **The API image did not build.** `adduser` exits 127 — the .NET 10 runtime image is Azure Linux,
+   not Debian. The line was also unnecessary: the base image already ships `app` at uid 1654 as
+   `$APP_UID`.
+3. **No `.dockerignore` existed**, and that was a correctness bug rather than a slow build:
+   `COPY src/ src/` copied the host's `bin/` and `obj/` over the restore output, and the publish
+   failed with `NETSDK1064` naming a NuGet package, which reads like a restore problem and is not one.
+   Context also dropped from 522 MB.
+4. **`IMAGE_PREFIX: ${{ github.repository }}`** expands to `AhmedNabil30/ERP`, and a Docker reference
+   must be lowercase — **the client refuses it before the registry is contacted**, so that form could
+   never have pushed.
+
+**And the same shape appeared in CI on the same day**: the e2e job's artifact path had the identical
+`browser` mistake, and `ci/serve-e2e.mjs` mounted its proxy with `app.use('/api', …)`, which strips
+the mount path, so `/api/health` reached the API as `/health` — answered **401, not 404**, because
+authorization runs before routing resolves.
+
+**The theme, stated plainly because it will recur:** *a path that only one pipeline exercises, and
+that pipeline has never run.* D-054 recorded it about a test-harness default. This is the same fact
+at the scale of two container images, a proxy, and an artifact — **six defects, one cause, all found
+within hours of the first run.**
+
+#### ARM64: cross-compiled, not emulated
+
+The host rejected the first successful pull with `no matching manifest for linux/arm64/v8`. buildx
+defaults to the runner's platform and the runners are amd64.
+
+The reflex fix is `docker/setup-qemu-action` plus a `platforms:` list. It works, and it makes every
+push minutes slower — a .NET restore and publish under emulation is not cheap. **Both Dockerfiles
+instead pin their build stage to `$BUILDPLATFORM` and target `$TARGETARCH`:** the API restores *and*
+publishes with `-a $TARGETARCH`, and the web build stage runs on the runner because Angular's output
+is JavaScript and identical whatever emits it. **No QEMU is configured and none is needed** — the
+runtime stages only `COPY`, so nothing built for the target executes during the build.
+
+**The restore needs the architecture too.** Without `-a` on the restore, publish restores again and
+`--no-restore` fails on assets resolved for the wrong RID.
+
+**`linux/amd64` stays in the platform list.** These images get built and run on a developer machine to
+check them, which is how defects 1 and 2 above were both caught before either reached a host.
+
+#### Verified
+
+`docker buildx build --platform linux/arm64` produces `linux/arm64` for both images, checked with
+`docker image inspect`. On the host: all three containers up, nginx answering 200, and
+`curl http://localhost/api/health` returning
+`{"status":"healthy","databaseReachable":true,"guardsInstalled":true,"missingGuards":[]}`.
+
+**`guardsInstalled: true` is the part that matters.** D-033 refuses to start the application when the
+PostgreSQL guards are absent, so a staging box that answers this is one where append-only postings and
+the non-negative balance rule are actually enforced — not merely a container that stayed up.
+
+#### 🟡 Still open
+
+**The pipeline cannot yet observe staging.** The smoke check curls `STAGING_URL/api/health` from
+GitHub's runners and fails; the application is healthy when curled on the box. Oracle Cloud needs
+**two** firewalls opened and the second is easy to miss — the VCN security list, *and* the instance's
+own iptables REJECT rule, which blocks inbound regardless of the security list. Steps in
+`deploy/README.md`.
+
+**So the Definition of Done's *"runs on staging"* is met in substance and should not be ticked yet.**
+Those are different claims: the application runs on staging, and the pipeline proves it. The smoke
+check exists so the second is true rather than remembered, and holding the tick until it passes is
+the whole point of having it.
+
+**Not built, and named so nobody assumes otherwise:** no TLS, no backups of the staging database, no
+log shipping, no restart policy beyond `unless-stopped`, and no second environment. Staging is one
+box. None of that is required by anything yet, and each is a decision rather than an oversight.
