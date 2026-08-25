@@ -39,6 +39,54 @@ nobody is a defect nobody is fixing.
 check live there, verified, in one place. An agent that invents its own `dotnet run` invocation gets
 a different stack from everyone else's, and "works on my machine" becomes unfalsifiable. See §B0.
 
+**10. Match the model to the task. Budget is a real constraint on this project.** See §M below. The
+short version: **routine work runs on a small model, judgement about money, permissions or
+architecture does not.**
+
+---
+
+## §M · Which model runs which agent
+
+Adopted 2026-08-25, at Nabil's direction, after the Scrum Master was killed by a spend limit **seven
+times in four days** — each death costing a full context rebuild on the next run, which is itself
+expensive. Budget exhaustion is not a background annoyance here; it is the single largest cause of
+lost work in this project so far.
+
+**The rule is not "use the cheap model". It is "stop spending the expensive one on work that does not
+need it."** Most of what these agents do is mechanical: renaming a citation, marking a status,
+sweeping a register, listing which keys are missing from a catalogue. None of that benefits from the
+strongest model, and all of it has been consuming it.
+
+| Task | Model | Why |
+|---|---|---|
+| Architect — permission scope, the audit mechanism, anything touching money or the ledger | **strongest** | These decisions are unbackfillable. D-061, D-063 and D-073 all turned on a distinction a weaker model would have flattened |
+| Verifier | **strongest** | Its whole job is finding what another agent missed. It has caught a real defect on every run |
+| Scrum Master — refinement, routing, ruling on a rule | **strongest** | Judgement, and it has repeatedly declined to do the wrong obvious thing |
+| Backend / Frontend — implementing a story whose criteria are already written | **mid** | The thinking is in the story. This is transcription with a compiler as the gate |
+| BA — writing stories from an answered ruling | **mid** | |
+| QA — test cases from stable AC identifiers | **mid** | |
+| Citation sweeps, status updates, register bookkeeping, i18n key inventories, renames | **small** | Mechanical, verifiable, and the checker catches a mistake |
+
+**Where the line actually is.** Not "important vs unimportant" — everything here is important. It is
+**"is the answer discoverable by following a rule, or does it require judging a trade-off nobody has
+written down?"** Marking `AC-110-D` deferred follows a rule. Deciding *whether* a deferred criterion
+is honest is a judgement.
+
+**Never downgrade for:**
+- Anything that decides who may touch money, or what the ledger records.
+- Anything appended to `decisions.md` as a **decision**. Recording one is bookkeeping; making one is not.
+- A Verifier pass. A cheap verification that misses a defect costs more than the defect.
+- Anything where the agent must **refuse** — a business rule that does not exist, a story that
+  contradicts `spec.md`. Refusing well is the most valuable behaviour in this project and the easiest
+  to lose.
+
+**How.** The `model` parameter on the spawn selects it. Say which model a delegated task runs on when
+you brief it, so the choice is visible and can be argued with.
+
+**And split the task before downgrading it.** A brief that mixes a register sweep with a ruling has to
+run on the strongest model for the ruling's sake, and pays that rate for the sweep. Send the sweep
+separately. That is most of the saving.
+
 ---
 
 ## Phase A — Before any code
@@ -254,6 +302,7 @@ Mobile joins at the offline layer. Support starts at go-live.
 | **All** | Add anything from the out-of-scope list in `spec.md` §1 |
 | **All** | Report something as running without `/run-kaff-erp` — no hand-rolled commands, no invented ports (principle 9, §B0) |
 | **All** | Repeat a claim about the code from a document without re-reading the file it names (SM-29/SM-31) |
+| **All** | Run a money, permission, or Verifier task on a downgraded model to save budget (§M) |
 
 ---
 
