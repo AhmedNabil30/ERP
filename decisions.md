@@ -5592,3 +5592,109 @@ No code changed by this entry — not `Program.cs`, not `PermissionAuthorization
 `SeparationOfDuties.cs`, not a test, not a locale catalogue. No story, test case or UX document was
 edited. `AC-114-A` remains built and green against `errors.auth.forbidden`, with D-078's note in the
 test's own remarks now upgraded from "flagged" to "answered here."
+
+---
+
+### D-081 · KAFF-112 built — reactivating a user, and the one path D-051 (N5) named that still did not rotate · 2026-08-25
+
+**Backend.** `POST /api/users/{userId}/reactivate`. Same permission shape as `DeactivateUser` and
+`CreateUser` — `Permission.UserManage`, `CompanyWide`, `Owner` alone
+[Verified: 2026-08-25 @ `PermissionCatalogue.cs` -> the `Permission.UserManage` row], D-044 ruling 1,
+KAFF-112 rule 1. No new catalogue row; SM-30 asked and the answer is the same as KAFF-108/110/114's.
+
+#### 1. The domain fix rule 9a named, and it is one line
+
+`User.Reactivate()` did not rotate `SecurityStamp` — `Deactivate`, `ClearPassword` and the private
+`StorePasswordHash` behind both password setters all did, and `Reactivate` was "the one path that
+should rotate and does not" (decisions.md D-051 N5). Fixed
+[Verified: 2026-08-25 @ `src/Domain/Identity/User.cs` -> `Reactivate`]. **Deliberately independent of
+whatever the handler does with the credential**: the entity's own invariant is that reactivating an
+account must not leave a pre-existing token able to authenticate against it, and that must hold even
+if a future reading of Q50 stops clearing the credential on reactivation at all. Proven as its own
+fact rather than assumed from the handler's behaviour —
+[Verified: 2026-08-25 @ `tests/Domain.Tests/UserTests.cs` ->
+`Reactivate_rotates_the_security_stamp_on_its_own`] calls only `Deactivate` and `Reactivate`, touches
+no credential method, and would fail on its own if the fix were reverted. `ReactivateUserTests` proves
+the same fact again at the API layer under reassignment
+[Verified: 2026-08-25 @ `tests/Api.Tests/ReactivateUserTests.cs` ->
+`A_token_minted_before_deactivation_is_still_refused_even_after_reassignment`], which is the one that
+can distinguish "refused because the token is stale" from "refused because there is no assignment"
+(AC-112-B would otherwise mask AC-112-E — every project the leaver held was revoked, so a stale token
+and a valid-but-unassigned one look identical unless the person is reassigned first).
+
+#### 2. Rules 3 and 4, built under the readiness waiver, in the order the story reads them
+
+`User.ClearPassword()` runs unconditionally in the handler — the old credential does not survive a
+reactivation whether or not a new one replaces it. `User.SetTemporaryPassword` runs afterwards only
+when the request carries a `TemporaryPassword`, mirroring `CreateUser.Request`'s identical field for
+the identical reason: KAFF-106 rule 10 makes "no credential" a legitimate state, and nothing forces
+the Owner to issue one in the same request as the reactivation
+[Verified: 2026-08-25 @ `src/Api/Features/Users/ReactivateUser/Handler.cs` -> `HandleAsync`]. **This
+is the story's own reading of D-049 ruling 5, not Karim's** — the ruling says only "a new password."
+Built under the readiness waiver of decisions.md D-062 §1; **Q50 stays open**, exactly as the story
+leaves it.
+
+#### 3. Rule 5/6 — the handler that must not query `ProjectAssignment`, and does not
+
+No line in `Handler.cs` reads or writes `ProjectAssignment`. This is the central rule of the story
+(D-049 ruling 5: "zero project assignments — nothing is restored automatically") and the safest way
+to build it was to give the handler no path to the table at all, rather than a loop that runs zero
+times by construction the way `DeactivateUser`'s revocation loop does. `AC-112-C` asserts the three
+rows KAFF-111 revoked are bit-for-bit unchanged — same `RevokedAt`, same `RevokedByUserId` — after the
+reactivation, not merely still present
+[Verified: 2026-08-25 @ `tests/Api.Tests/ReactivateUserTests.cs` ->
+`Reactivation_restores_no_assignment_and_leaves_the_revoked_rows_exactly_as_they_were`].
+
+#### 4. D-080 applied, not re-litigated
+
+`AC-112-B`'s messageKey was corrected to `errors.auth.forbidden` in the story and in
+`qa/slice-1/test-cases.md` by the BA/QA session that ran concurrently with this one (commit
+`5a2c282`, visible in `git log` before this entry was written) — D-080 had already ruled the blanket
+key correct for this exact criterion by name. `ReactivateUserTests` was written against the same key
+independently and agrees with the corrected story rather than the one this session's brief quoted.
+`AC-112-H`'s refusal (HR and Finance) is asserted the same way, for the same reason `DeactivateUserTests`
+and `RevokeProjectAssignmentTests` already do.
+
+#### 5. AC-112-D and AC-112-F — named as not fully built, not silently dropped
+
+Neither KAFF-101a (sign-in) nor KAFF-103 (change password) exists yet
+[Verified: 2026-08-25 — no `SignIn` or `ChangePassword` folder under `src/Api/Features`, no `Verify`
+method on `PasswordHasher`]. `AC-112-D` ("attempt to sign in with the old password") and `AC-112-F`
+("can reach only the change-password endpoint," sourced by the criterion itself to `AC-103-B`, which
+D-072 §2 left partly open) both name a mechanism this story cannot reach. Built instead, and asserted
+as what makes each criterion true once its dependency lands: `AC-112-D` as the stored hash changing to
+a value produced from a fresh salt, which is what makes the old plaintext unable to verify
+[Verified: 2026-08-25 @ `tests/Api.Tests/ReactivateUserTests.cs` ->
+`The_stored_credential_changes_when_a_temporary_password_is_issued_on_reactivation`]; `AC-112-F` not
+asserted at all — there is no session-reach gate in this codebase to assert against, and a test
+asserting `MustChangePassword == true` alone would not be `AC-112-F`, it would be rule 4 again. Routed
+forward: `AC-112-F` is KAFF-103's to close, the same story its own criterion already points at.
+
+#### What this entry does not do
+
+It records, it does not decide. Q50 and Q51 stay open exactly as the story leaves them. No permission
+row, no migration, no i18n key was added — every `MessageKey` this slice can emit
+(`errors.identity.user_not_found`, `.user_already_active`, `errors.auth.forbidden`,
+`errors.auth.password_too_short`) already existed in both catalogues before this session
+[Verified: 2026-08-25 — `TranslationCatalogueTests` green in the 78/78 Domain run this session
+produced, with no new `*Errors` member]. Nothing under `src/Web/` was touched; the
+`users.action.reactivate` / `users.confirm.reactivate.*` family stays Frontend's, unbuilt.
+
+#### Verified
+
+Build: 0 warnings / 0 errors, clean `--no-incremental` Release. `dotnet format KaffErp.sln
+--verify-no-changes` exit 0. Domain **78/78**, up from 75 — three new, in `UserTests.cs` (rule 7, rule
+8, rule 9a). Api **132/132**, up from 123 before this session's two new files — nine new, in
+`ReactivateUserTests.cs`. `Nobody_but_the_owner_can_reactivate_a_user` and
+`EndpointPermissionCoverageTests.Every_mapped_endpoint_carries_a_permission_requirement` were both
+watched to fail before being trusted: `.RequirePermission(Permission.UserManage)` removed from
+`Endpoint.cs` -> `Map`, both went red — the coverage test naming
+`POST /api/users/{userId:guid}/reactivate` directly, the permission test with a 500 rather than a
+clean 403 mismatch, the exact D-078 shape (no gate ran, so no actor was ever verified before the
+save, and the audit check constraint refused the row) — then the line was restored and the full
+suite re-run green. `scripts/check-citations.ps1`: **654 checked, 0 broken, 0 legacy, exit 0** before
+this entry's own citations were added. `/run-kaff-erp` smoke: all seven checks passed against the real
+app title ("كف"), not the earlier false pass this session caught and re-ran — the SPA dev server had
+not finished its first build when `smoke` was first invoked, and Chromium's own offline error page,
+which is itself Arabic and RTL, passed every check the first time. Re-run once the dev server's
+`Local: http://localhost:4200/` line appeared; genuinely green after that.

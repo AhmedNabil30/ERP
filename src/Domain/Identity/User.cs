@@ -241,10 +241,13 @@ public sealed class User : Entity
     /// credential that no longer exists must not leave live sessions behind it.
     /// </para>
     /// <para>
-    /// 🟡 <b>Nothing calls this yet, deliberately.</b> Whether a returning employee arrives with no
-    /// password or is given one at the moment of reactivation is Q50, open, for Karim — so
-    /// <see cref="Reactivate"/> is left untouched. Building the mechanism is not choosing when it
-    /// fires.
+    /// <b>Called by <c>ReactivateUser</c>'s handler, unconditionally, on every reactivation</b> —
+    /// KAFF-112 rule 3, built under the readiness waiver of decisions.md D-062 §1 (Q50 stays open).
+    /// Q50 asked whether the returning employee arrives with no credential at all or is given one in
+    /// the same request; the story's reading is both, in that order — this method clears what was
+    /// there, and the handler calls <see cref="SetTemporaryPassword"/> afterwards only when the Owner
+    /// supplied one. <see cref="Reactivate"/> does not depend on this call for its own stamp rotation
+    /// (D-051 N5) — the two are independent invariants that happen to run in the same transaction.
     /// </para>
     /// </remarks>
     public void ClearPassword()
@@ -321,6 +324,18 @@ public sealed class User : Entity
         return Result.Success();
     }
 
+    /// <summary>
+    /// KAFF-112 rule 8. Brings the account back with no credential and no session that survives it.
+    /// </summary>
+    /// <remarks>
+    /// <b>Rotates <see cref="SecurityStamp"/>.</b> Every other method that changes what this account
+    /// can do already does — <see cref="Deactivate"/>, <see cref="ClearPassword"/>, and
+    /// <see cref="StorePasswordHash"/> behind both password setters — and until now this was "the one
+    /// path that should rotate and does not" (decisions.md D-051 N5, KAFF-112 rule 9a). The rotation
+    /// does not depend on the caller also clearing or reissuing the credential in the same request:
+    /// this method's own invariant is that reactivating an account cannot leave a pre-existing token
+    /// able to authenticate against it, independent of whatever a handler does next.
+    /// </remarks>
     public Result Reactivate()
     {
         if (IsActive)
@@ -330,6 +345,7 @@ public sealed class User : Entity
 
         IsActive = true;
         DeactivatedAt = null;
+        SecurityStamp = Guid.CreateVersion7().ToString("N");
         return Result.Success();
     }
 
