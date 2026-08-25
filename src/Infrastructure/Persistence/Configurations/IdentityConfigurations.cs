@@ -56,11 +56,22 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(user => user.LockedOutUntil);
 
         builder.Property(user => user.IsActive).IsRequired();
+        builder.Property(user => user.IsBootstrapOwner).IsRequired().HasDefaultValue(false);
         builder.Property(user => user.CreatedAt).IsRequired();
 
         builder.HasIndex(user => user.UserName)
             .IsUnique()
             .HasDatabaseName("ux_users_user_name");
+
+        // KAFF-100 rule 6: the check and the insert are one atomic operation, enforced by the
+        // database. Only User.CreateBootstrapOwner ever sets IsBootstrapOwner true, and this index
+        // permits at most one such row for the life of the table — so two concurrent setup requests
+        // can insert at the same instant and still produce exactly one Owner and one unique-violation,
+        // whatever either request's own read of Users.AnyAsync() believed. See User.IsBootstrapOwner.
+        builder.HasIndex(user => user.IsBootstrapOwner)
+            .IsUnique()
+            .HasFilter("is_bootstrap_owner = true")
+            .HasDatabaseName("ux_users_bootstrap_owner_once");
 
         builder.HasIndex(user => user.PhoneNormalised)
             .HasDatabaseName("ix_users_phone_normalised");

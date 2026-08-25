@@ -28,6 +28,8 @@
 
   "errors.unknown": "حدث خطأ غير متوقع. حاول مرة أخرى.",
 
+  "errors.setup.already_completed": "تم إعداد هذا النظام بالفعل.",
+
   "errors.phone.required": "رقم الهاتف مطلوب.",
   "errors.phone.too_long": "رقم الهاتف أطول من المسموح.",
   "errors.phone.too_short": "رقم الهاتف أقصر من المسموح.",
@@ -51,6 +53,7 @@
   "errors.identity.external_role_cannot_hold_department": "العميل ومقاول الباطن ليسوا من موظفي الشركة ولا يتبعون قسماً.",
   "errors.identity.hr_role_requires_hr_department": "موظف الموارد البشرية يتبع قسم الموارد البشرية فقط.",
   "errors.identity.username_taken": "اسم المستخدم محجوز بالفعل.",
+  "errors.identity.username_reserved": "هذا الاسم محجوز ولا يمكن استخدامه.",
   "errors.identity.user_not_found": "لا يوجد مستخدم بهذا المعرّف.",
   "errors.identity.subcontractor_cannot_log_in": "مقاول الباطن مسجّل كبيانات فقط ولا يملك دخولاً.",
   "errors.identity.user_already_active": "المستخدم مفعّل بالفعل.",

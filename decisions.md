@@ -5807,3 +5807,131 @@ verified before the save, and the audit check constraint refused the row) — th
 and the full suite re-run green: Domain 83/83, Api 143/143.
 `scripts/check-citations.ps1`: **657 checked, 0 broken, 0 legacy, exit 0**. `/run-kaff-erp` smoke: all
 seven checks passed, `kaff-root present=true`, against the real app title ("كف").
+
+---
+
+### D-083 · KAFF-100 built — the setup screen, and the constraint the whole story turns on · 2026-08-26
+
+**Backend.** `GET /api/setup` and `POST /api/setup` — the second and third anonymous endpoints the
+system will ever have (the first is `GET /api/health`). Both are named in
+`EndpointPermissionCoverageTests`'s allow-list rather than left to the fallback policy
+[Verified: 2026-08-26 @ `EndpointPermissionCoverageTests.cs` -> `AllowList`], each with its own reason —
+D-069's rule that the list grows by decision, not by accident.
+
+#### 1. Rule 6 — the atomic guard is a unique index, not a read-then-write
+
+**The mechanism is `User.IsBootstrapOwner`, a column only `User.CreateBootstrapOwner` ever sets,
+paired with `ux_users_bootstrap_owner_once` — a unique index filtered to `is_bootstrap_owner = true`**
+[Verified: 2026-08-26 @ `src/Domain/Identity/User.cs` -> `IsBootstrapOwner`, `CreateBootstrapOwner`;
+@ `IdentityConfigurations.cs` -> `UserConfiguration`].
+
+The rule this story states — "the check and the insert are one atomic operation, enforced by the
+database" — could not be built as a table-wide uniqueness rule the way `ux_users_user_name` is,
+because a table-wide "at most one row, ever" constraint would also forbid the ordinary second, third
+and fortieth user KAFF-106 creates. Nothing in `spec.md` or a ruling says the Owner may exist only
+once forever, either — `CreateUser` can mint a second `Role.Owner` account today, and nothing here
+should quietly stop that. **The flag names the one row the setup screen itself produces, and the index
+is scoped to that flag, not to the role.** A second Owner created through the ordinary path carries
+`IsBootstrapOwner = false` and is untouched by the index
+[Verified: 2026-08-26 @ `tests/Domain.Tests/UserTests.cs` ->
+`An_owner_created_through_the_ordinary_path_does_not_carry_the_bootstrap_flag`].
+
+`CreateOwner/Handler.cs`'s `Users.AnyAsync()` check is the courtesy path, exactly the shape
+`CreateUser/Handler.cs` already established for `ux_users_user_name`: it saves hashing a password for
+a request that cannot succeed, and it is not what the atomicity claim rests on. What actually decides
+two concurrent requests is the unique index — a real Postgres `23505` on `SaveChangesAsync`, caught and
+translated to the same `SetupErrors.AlreadyCompleted` a plain second call gets
+[Verified: 2026-08-26 @ `src/Api/Features/Setup/CreateOwner/Handler.cs` -> `IsBootstrapRace`].
+
+**Watched to fail, not assumed.** `ux_users_bootstrap_owner_once` was commented out of
+`IdentityConfigurations.cs`, the solution rebuilt, and
+`CreateOwnerTests.Two_concurrent_requests_produce_exactly_one_owner_and_one_refusal` went red —
+`Expected … to be 1 … but found 2`, two `201`s and two Owner rows. The index was restored and the same
+test, and the full suite, re-run green. The race is fired as two genuinely concurrent
+`HttpClient.SendAsync` calls against the same running host and the same database
+(`Task.WhenAll`), not simulated — decisions.md asked for a test that actually races it, and this one
+does, against a real PostgreSQL server rather than a provider that would not enforce the index at all
+(decisions.md D-022's reasoning, applied to a new class of guard).
+
+#### 2. The audit actor is D-061's mechanism, exercised for the first time
+
+`Handler.cs` calls `IAuditContext.AttributeTo(new AuditActor(owner.Id, owner.FullName, owner.Role))`
+before `SaveChangesAsync` [Verified: 2026-08-26 @ `src/Api/Features/Setup/CreateOwner/Handler.cs` ->
+`HandleAsync`] — the one caller `IAuditContext.cs`'s own remarks already named when D-061 built the
+mechanism. No handler constructs an `AuditRecord`; the interceptor writes the `Created` row exactly as
+it does for `CreateUser`, with the new Owner naming itself as actor
+[Verified: 2026-08-26 @ `tests/Api.Tests/CreateOwnerTests.cs` ->
+`The_creation_leaves_an_audit_record_naming_the_new_owner_as_its_own_actor`].
+
+#### 3. AC-100-G's waived half, built as waived
+
+`IdentityErrors.UserNameReserved` refuses `admin`, `root` and `kaff`, case-insensitively, in
+`CreateOwner/Validator.cs` — not in `User.Create`, because the rule is this one screen's, not a
+company-wide username policy (nothing stops an ordinary `CreateUser` call naming somebody `admin`).
+Still uncited to a ruling; **Q45 stays open**, exactly as the story's readiness waiver (D-062 §1) left
+it. The empty-full-name half needed no new code — `IdentityErrors.FullNameRequired` already refuses it
+through `User.Create`, reused rather than duplicated.
+
+#### 4. What AC-100-D is, and why it is not a test
+
+AC-100-D asks the codebase to be searched for a setup flag, a `SetupComplete` column, a configuration
+switch or an environment variable that re-opens the screen. There is none — `GetSetupAvailability`
+and `CreateOwner` both compute their answer from `Users.AnyAsync()` and nothing else
+[Verified: 2026-08-26 @ `src/Api/Features/Setup/GetSetupAvailability/Endpoint.cs` -> `HandleAsync`;
+@ `src/Api/Features/Setup/CreateOwner/Handler.cs` -> `HandleAsync`]. This is a claim about the absence
+of a mechanism, not a behaviour an HTTP test can provoke, so it is recorded here rather than encoded as
+a test that would only ever pass — the same reasoning `agents.md` §3c gives for QA's "a scenario that
+cannot fail is worse than no scenario."
+
+#### 5. AC-100-F and part of AC-100-I are out of reach, and are named rather than assumed
+
+Neither `KAFF-101a` (sign-in) nor `KAFF-105a` (`GET /api/auth/me`) exists yet — the same gap D-081
+recorded for KAFF-112. What is built and proven instead: the created row's `MustChangePassword` is
+`false` [Verified: 2026-08-26 @ `tests/Api.Tests/CreateOwnerTests.cs` ->
+`The_owner_is_not_forced_to_change_the_password_he_typed`], which is the fact those endpoints will read
+once they exist. The Arabic/RTL screen (AC-100-I) is Frontend's; no screen exists under `src/Web` yet,
+and nothing beyond the two locale lines below was added there.
+
+#### 6. `errors.setup.already_completed` and `errors.identity.username_reserved`
+
+Both added to `src/Web/public/locales/en.json` and `ar.json`, next to their nearest siblings —
+`TranslationCatalogueTests` requires it and the story's own i18n bullet names the first by exact
+string. **Nothing else under `src/Web/` was touched.**
+
+#### A test-infrastructure correction, made and then re-corrected in the same session
+
+`CreateOwnerTests`'s first shape created and dropped a fresh `PostgresDatabase` per `[Fact]` — thirteen
+`CREATE DATABASE`/`DROP DATABASE` cycles, run in xUnit's own collection (no `[Collection(...)]`
+attribute means its own, parallel to `postgres`). That churn measurably destabilised an unrelated test:
+`AssignUserToProjectTests.Assigning_a_user_who_does_not_exist_is_refused` intermittently saw a `403`
+where it expected `404`, reproduced twice with the thirteen-database shape present and absent zero
+times in three back-to-back runs without it. Replaced with a single `IClassFixture` database, reset
+between tests by truncating `users` alone — **not `audit_records`**, which refused the `TRUNCATE`
+outright: `23001: KAFF_APPEND_ONLY … TRUNCATE is not permitted`, the guard working exactly as designed
+against a test that reached for it as a shortcut. The two tests that needed an audit count were
+rewritten to assert the *change* their own call made, not the table's total, once it was clear the
+total is shared and cumulative across every test method in the class. Both mistakes were caught by
+running the suite repeatedly rather than once, per the standard KAFF-112, 114 and 109 all met.
+
+#### Not done
+
+* **Q45 and Q46** — untouched. `AC-100-G`'s blocklist is built under the waiver exactly as written; rule
+  2's no-department reading is unchanged.
+* **No change to `PermissionAuthorizationHandler`, `Program.cs`'s `CustomizeProblemDetails`, or any
+  other endpoint's gate.** `POST /api/setup` needed no permission line — its gate is rules 4/5/6, not
+  `RequirePermission` — and nothing else in the pipeline was touched.
+* **No sign-in, no `GET /api/auth/me`.** KAFF-101a and KAFF-105a are unbuilt; §5 above names exactly
+  what this story could and could not prove as a result.
+
+#### Verified
+
+Build: 0 warnings / 0 errors, clean `--no-incremental` Release, `-warnaserror`. `dotnet format
+KaffErp.sln --verify-no-changes` exit 0. Domain **86/86**, up from 83 — three new, in `UserTests.cs`.
+Api **156/156**, up from 143 — thirteen new, in `CreateOwnerTests.cs`.
+`Two_concurrent_requests_produce_exactly_one_owner_and_one_refusal` and
+`EndpointPermissionCoverageTests`'s two existing facts were watched to fail before being trusted, per
+§1 above and per the allow-list additions being new, reason-carrying entries rather than a bare route
+string. `scripts/check-citations.ps1`: **660 checked, 0 broken, 0 legacy, exit 0** before this entry's
+own citations were added. `/run-kaff-erp` smoke: all seven checks passed, `kaff-root present=true`,
+against the real app title ("كف"); `GET /api/setup` confirmed live against the running dev database,
+returning `{"available":true}`.

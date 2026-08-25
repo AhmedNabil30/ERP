@@ -50,6 +50,20 @@ public static class IdentityErrors
         Error.Conflict("identity.username_taken", "errors.identity.username_taken");
 
     /// <summary>
+    /// KAFF-100 <c>AC-100-G</c> — <c>admin</c>, <c>root</c> and <c>kaff</c> are refused on the setup
+    /// screen, so the first account names a person rather than a shared login (rule 3).
+    /// </summary>
+    /// <remarks>
+    /// ⚠️ **UNCITED — waived, Q45** (decisions.md D-062 §1, the KAFF-100 readiness waiver). Rule 3
+    /// argues the account must name a person, which is a different claim from a list of forbidden
+    /// words; the list itself cites nothing Karim said. If Karim answers Q45 "no", this error stops
+    /// being reachable and is not deleted — the same disposition D-080 gives an unreachable
+    /// <c>AuthorizationErrors</c> member.
+    /// </remarks>
+    public static readonly Error UserNameReserved =
+        Error.Validation("identity.username_reserved", "errors.identity.username_reserved");
+
+    /// <summary>
     /// The route names a user that does not exist.
     /// </summary>
     /// <remarks>

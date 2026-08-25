@@ -175,5 +175,70 @@ public sealed class UserTests
         user.Role.Should().Be(Role.SiteEngineer);
     }
 
+    // ---- CreateBootstrapOwner — KAFF-100 ------------------------------------------------------
+
+    /// <summary>
+    /// KAFF-100 rule 2 (no department), rule 7/8 (own password, no forced change) and the
+    /// database-enforced half of rule 6 (<see cref="User.IsBootstrapOwner"/>) — all applied by the one
+    /// factory rather than assembled correctly by every caller.
+    /// </summary>
+    [Fact]
+    public void CreateBootstrapOwner_produces_an_owner_with_no_department_and_no_forced_change()
+    {
+        Result<User> created = User.CreateBootstrapOwner(
+            "karim",
+            "Karim",
+            PhoneNumber.Create("01000000090").Value,
+            "hashed-password",
+            Now);
+
+        created.IsSuccess.Should().BeTrue();
+
+        User owner = created.Value;
+
+        owner.Role.Should().Be(Role.Owner, "rule 2 — the account this screen mints is always the Owner");
+        owner.Department.Should().BeNull("rule 2 — the Owner is not one of §9's four departments");
+        owner.IsBootstrapOwner.Should().BeTrue("rule 6 — the marker the unique index enforces");
+        owner.MustChangePassword.Should().BeFalse(
+            "rule 7/8 — SetOwnPassword, not SetTemporaryPassword: he typed it himself");
+        owner.PasswordHash.Should().Be("hashed-password");
+        owner.IsActive.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// An ordinary <see cref="User.Create"/>d Owner — the KAFF-106 path — carries no flag. Only the
+    /// one row the setup screen itself creates does; a second Owner minted later through the normal
+    /// path is not mistaken for it, and the unique index does not block that second Owner from
+    /// existing.
+    /// </summary>
+    [Fact]
+    public void An_owner_created_through_the_ordinary_path_does_not_carry_the_bootstrap_flag()
+    {
+        User user = User.Create(
+            "ordinary-owner",
+            "Ordinary Owner",
+            PhoneNumber.Create("01000000091").Value,
+            Role.Owner,
+            Now).Value;
+
+        user.IsBootstrapOwner.Should().BeFalse(
+            "only CreateBootstrapOwner ever sets this, and nothing here called it");
+    }
+
+    /// <summary>Rule 3, reapplied through the same <see cref="User.Create"/> path every account uses.</summary>
+    [Fact]
+    public void CreateBootstrapOwner_refuses_an_empty_full_name()
+    {
+        Result<User> created = User.CreateBootstrapOwner(
+            "karim",
+            string.Empty,
+            PhoneNumber.Create("01000000092").Value,
+            "hashed-password",
+            Now);
+
+        created.IsFailure.Should().BeTrue();
+        created.Error.Should().Be(IdentityErrors.FullNameRequired);
+    }
+
     private static DateTimeOffset Now => new(2026, 5, 1, 8, 0, 0, TimeSpan.Zero);
 }

@@ -28,6 +28,8 @@
 
   "errors.unknown": "Something went wrong. Try again.",
 
+  "errors.setup.already_completed": "Setup has already been completed on this system.",
+
   "errors.phone.required": "A phone number is required.",
   "errors.phone.too_long": "That phone number is too long.",
   "errors.phone.too_short": "That phone number is too short.",
@@ -51,6 +53,7 @@
   "errors.identity.external_role_cannot_hold_department": "Clients and subcontractors are not staff and belong to no department.",
   "errors.identity.hr_role_requires_hr_department": "An HR user belongs to the HR department and no other.",
   "errors.identity.username_taken": "That user name is already taken.",
+  "errors.identity.username_reserved": "That user name is reserved and cannot be used.",
   "errors.identity.user_not_found": "No such user.",
   "errors.identity.subcontractor_cannot_log_in": "A subcontractor is a record only and has no login.",
   "errors.identity.user_already_active": "The user is already active.",

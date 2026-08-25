@@ -55,7 +55,7 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
     /// <b>Adding a member is the decision, not a formality.</b> An allow-list that grows by accident
     /// is the defect wearing the fix's clothes (decisions.md D-068), so each entry names the method,
     /// the route and the reason it is reachable unauthenticated, and the entry is what a reviewer
-    /// reads. Sign-in (KAFF-101a) is expected to become the second member and is deliberately
+    /// reads. Sign-in (KAFF-101a) is expected to become the fourth member and is deliberately
     /// <b>not</b> pre-listed: the test going red on the day that route is mapped is the visible act.
     /// </remarks>
     private static readonly AnonymousEndpoint[] AllowList =
@@ -67,6 +67,21 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
             + "an unauthenticated caller must be able to ask: are the PostgreSQL guards installed on "
             + "this deployment (decisions.md D-033). It discloses whether the database answers and "
             + "which guards are missing, and nothing else."),
+        new(
+            "GET",
+            "/api/setup",
+            "KAFF-100. The SPA must learn whether the one-time setup screen may still be reached "
+            + "before anybody has signed in, or it can never route to it. The answer is exactly "
+            + "!Users.AnyAsync() — the same emptiness test the gate below enforces — and discloses "
+            + "nothing a stranger could not already infer from the setup screen itself."),
+        new(
+            "POST",
+            "/api/setup",
+            "KAFF-100 — the most privileged endpoint the system will ever have, and it is anonymous by "
+            + "construction: there is no identity to check on a database with no users. Its gate is "
+            + "not RequirePermission but two properties of the database itself — the users table is "
+            + "empty (rule 4/5) and ux_users_bootstrap_owner_once, a unique index that turns two "
+            + "concurrent requests into one Owner and one refusal (rule 6, decisions.md D-051 Q31)."),
     ];
 
     private readonly PostgresDatabase _database;

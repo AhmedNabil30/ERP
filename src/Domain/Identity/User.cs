@@ -131,6 +131,30 @@ public sealed class User : Entity
 
     public bool IsActive { get; private set; }
 
+    /// <summary>
+    /// True for exactly the one row the setup screen creates. KAFF-100.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is the mechanism behind KAFF-100 rule 6 — "the check and the insert are one atomic
+    /// operation, enforced by the database" — and it is a marker, not a business rule about who may
+    /// hold the flag: nothing stops the Owner minting a second <see cref="Identity.Role.Owner"/>
+    /// account later through the ordinary <see cref="Create"/> path (KAFF-106), and that account
+    /// carries <see langword="false"/> here. Only <see cref="CreateBootstrapOwner"/> ever sets it
+    /// true, and it is set once, at construction — there is no setter that flips it later.
+    /// </para>
+    /// <para>
+    /// <c>ux_users_bootstrap_owner_once</c>, a unique index filtered to <c>is_bootstrap_owner =
+    /// true</c>, is what makes two concurrent bootstrap requests produce one Owner and one refusal
+    /// (<c>AC-100-C</c>) — CLAUDE.md's safe-balance precedent, applied here: "enforced by a database
+    /// constraint, not application code." The friendly <c>Users.AnyAsync()</c> check in the handler is
+    /// the courtesy path that avoids hashing a password for nothing; this index is the one that
+    /// actually holds when two requests arrive in the same instant, because a unique index rejects
+    /// the loser's <c>INSERT</c> regardless of what either request's transaction already believed.
+    /// </para>
+    /// </remarks>
+    public bool IsBootstrapOwner { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
 
     public DateTimeOffset? DeactivatedAt { get; private set; }
@@ -189,6 +213,49 @@ public sealed class User : Entity
             createdAt);
 
         return Result.Success(user);
+    }
+
+    /// <summary>
+    /// Creates the one Owner the setup screen mints. KAFF-100.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Every invariant KAFF-100 states about this specific row is applied here, once, rather than left
+    /// for the handler to assemble correctly: <see cref="Identity.Role.Owner"/>, no department (rule
+    /// 2 — the Owner is not one of §9's four departments), <see cref="IsBootstrapOwner"/> set true (the
+    /// database-enforced half of rule 6), and the password set through <see cref="SetOwnPassword"/>
+    /// rather than <see cref="SetTemporaryPassword"/> (rule 7/8 — he types it himself, so
+    /// <see cref="MustChangePassword"/> stays false and there is no boolean parameter for a caller to
+    /// get wrong).
+    /// </para>
+    /// <para>
+    /// Reuses <see cref="Create"/> rather than duplicating its checks — the username and full-name
+    /// requirements (rule 3) are the same rule for every account, not a second copy that could drift.
+    /// </para>
+    /// </remarks>
+    public static Result<User> CreateBootstrapOwner(
+        string userName,
+        string fullName,
+        PhoneNumber phone,
+        string passwordHash,
+        DateTimeOffset createdAt)
+    {
+        Result<User> created = Create(userName, fullName, phone, Role.Owner, createdAt);
+        if (created.IsFailure)
+        {
+            return created;
+        }
+
+        User owner = created.Value;
+        owner.IsBootstrapOwner = true;
+
+        Result passwordSet = owner.SetOwnPassword(passwordHash);
+        if (passwordSet.IsFailure)
+        {
+            return Result.Failure<User>(passwordSet.Error);
+        }
+
+        return Result.Success(owner);
     }
 
     /// <summary>
