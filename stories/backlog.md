@@ -90,6 +90,76 @@ keeps hitting. The backlog lists what exists; this section says what was *agreed
 **KAFF-107 folded** into KAFF-106 and KAFF-108 (16/59 → 15/57). **KAFF-122 superseded** by KAFF-416.
 
 
+### Build order — re-derived 2026-08-25, and the 111-vs-114 conflict resolved
+
+**Supersedes both orders below.** Two records disagreed and the disagreement is recorded rather than
+quietly picked: the **table below** listed `114` at position 6 and `111` at position 7, while a
+previous Scrum Master run published **`111 → 112 → 114 → 109 → 100 → 101a → 102 → 103 → 105a`**.
+
+**Resolved against the dependency facts in this file, and then dissolved by one of them.**
+
+* On the facts as the table states them, **114 wins**: `KAFF-114` depends on `113` alone; `KAFF-111`
+  depends on `113` **and** `110`. Fewer dependencies, and the one it has was further along. The prose
+  under the old table agrees — *"114, 111, 112 and 109 behind those"*.
+* **But the conflict is moot, because `KAFF-111` is already built.** It has no endpoint or handler
+  folder of its own and must not be given one: the revocation runs inside `KAFF-110`'s handler, as one
+  request, one correlation id, one `SaveChangesAsync`
+  [Verified: 2026-08-25 @ `src/Api/Features/Users/DeactivateUser/Handler.cs` -> `HandleAsync`], and
+  `decisions.md` **D-074 §2** records why. A reader looking for "the KAFF-111 endpoint" will not find
+  one.
+
+**So the published order was not merely mis-sequenced — its first item was already done.** Both orders
+were derived before D-074 was written, which is SM-29's subject exactly.
+
+**`KAFF-112` moves up as a consequence.** It depended on `110` and `111`; both are built, so it is
+startable now rather than third.
+
+#### What is actually built, checked today
+
+| Story | Pts | State |
+|---|---:|---|
+| KAFF-116 | 3 | **ACCEPTED** 2026-08-23 — D-068, D-070 |
+| KAFF-108 | 3 | **ACCEPTED** 2026-08-25 — 7 of 7, `qa/slice-1/verification-2026-08-25.md` §8 |
+| KAFF-113 | 5 | **ACCEPTED** 2026-08-25 — 9 of 9, same report |
+| KAFF-106 | 5 | **BUILT**, verified — 9 of 11, 2 deferred. **HOLD on `AC-106-J`**: Arabic, RTL, mobile width, and there is no screen. Deferred to **Frontend**, explicitly, and it is not a pass |
+| KAFF-110 | 5 | **BUILT**, verified — 8 of 10, `AC-110-E` deferred to KAFF-104, and **`AC-110-D` deferred to KAFF-101a by Scrum Master ruling, 2026-08-25**, which clears the Verifier's hold (**W-9**) |
+| KAFF-111 | 3 | **BUILT** inside KAFF-110's handler — D-074 §2. Not separately verified |
+
+**24 of 57 points are built. 33 remain.** The brief that opened this run said *"21 points accepted"*
+and listed KAFF-111 as unbuilt; both figures are corrected here rather than worked around.
+
+#### The order for the remainder
+
+| # | Story | Pts | Depends on | Status |
+|---|---|---:|---|---|
+| 0 | **The two audit prerequisites** — the **IP column** (D-063 §2, N-19) and the **nullable subject** (D-063 §3) | — | — | Not a story. Decided in full, built in none, and `KAFF-101a` cannot **ship** without them: a column never written cannot be backfilled into a table that is append-only by trigger |
+| 1 | KAFF-114 | 3 | 113 ✅ | Clean |
+| 2 | KAFF-112 | 3 | 110 ✅, 111 ✅ | Clean — **moved up**, both dependencies are built |
+| 3 | KAFF-109 | 5 | 106 ✅, 113 ✅, 111 ✅ | Clean |
+| 4 | KAFF-100 | 5 | — | Clean. Unblocked by D-061 |
+| 5 | KAFF-101a | 5 | 100, **item 0** | `Ready to start`; shippable only after item 0 |
+| 6 | KAFF-102 | 2 | 101a | Unblocked by D-061 — sign-out is an `AuditEventKind.SignedOut` event |
+| 7 | KAFF-103 | 5 | 100, 101a, 106 | Clean |
+| 8 | KAFF-105a | 2 | 101a | `Ready` — D-072 §2 |
+| — | **KAFF-118** | 3 | 106 ✅, 109, 110 ✅, 111 ✅, 113 ✅, **119** | ⚠️ **Depends on KAFF-119, which is deferred out of sprint 1.** See below |
+
+#### KAFF-118 — the dependency that leaves the sprint
+
+**`KAFF-118` names `KAFF-119` as a dependency and `KAFF-119` is in the deferred list at the top of this
+section.** A story inside the sprint cannot be completed as written when one of its dependencies was
+deliberately taken out of it.
+
+A previous run proposed **cutting KAFF-118 as a story and keeping it as an acceptance check**. That
+proposal stands and **the reasoning is sound** — 118's rule 2 (*no handler constructs an audit record*)
+is a cross-cutting property of the mechanism, not a feature, and it is already asserted by the
+interceptor's own tests.
+
+**But the sprint scope is locked by Nabil at 15 stories / 57 points, and cutting 3 points from a locked
+sprint is his call, not the Scrum Master's.** Routed to Nabil. Until he rules, `KAFF-118` sits last and
+its client-registration half is not buildable in this sprint regardless.
+
+---
+
 ### Build order — re-derived 2026-08-22, after D-061
 
 **Supersedes the 19:22 order.** That one was derived before the Architect closed V-01, and two
