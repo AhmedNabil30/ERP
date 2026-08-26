@@ -372,14 +372,26 @@ request path.
 *Fails if:* sessions start invisibly, so *"was he signed in when that extract was approved"* has no
 answer.
 
-**TC-1-009 · a wrong password, an unknown username and a locked account are indistinguishable**
-`AC-101a-B` · P1 · Api · spec.md §9 · KAFF-101a rules 13, 14
-Given an active user, when the correct username with a wrong password is posted, then a username that
-does not exist, then the username of an account locked by five failures, then all three responses are
-identical in status, body and `messageKey`.
-*Fails if:* the API distinguishes them. *"No such user"* turns the login form into a directory of
-Kaff's staff; *"locked"* tells an attacker both that the username is real and that their lockout
-worked.
+**TC-1-009 · five different refusals, one answer**
+`AC-101a-B` · P1 · Api · **D-065 (cases 1, 2, 4, 5) · D-072 §1 (case 3)** · spec.md §9
+
+**Corrected 2026-08-26.** Superseded by D-065 and D-072 §1 (routed via D-084): this case described
+three refusal cases where the door now has five. Rewritten to the five rather than reworded around
+them — see `TC-1-011` and `TC-1-016` for the two that gained their own cases too.
+
+Given an active user, when the correct username with a wrong password is posted; then a username that
+does not exist; then the username of an account locked by five failures, given the **wrong** password
+against it; then a `Role.Client` user's own correct credentials; then a `Role.Subcontractor` user's own
+credentials — then all **five** responses are identical: **401**, `messageKey`
+**`errors.auth.invalid_credentials`**, the same body, and no field anywhere distinguishes one from
+another.
+*Fails if:* any of the five is distinguishable from the others in status, body or `messageKey`.
+*"No such user"* turns the login form into a directory of Kaff's staff; a distinct answer for the
+locked case tells an attacker the username is real and the lockout worked; a distinct answer for the
+client or the subcontractor case tells an attacker the account exists and what kind it is — D-065's own
+reasoning for the subcontractor, extended by the ruling to all five. **The locked account given the
+correct password is deliberately not part of this set** — it answers `423` by design (D-072 §1) — and
+asserting it identical here would fail a correct implementation.
 
 **TC-1-010 · and they take the same time**
 `AC-101a-B` · P2 · Api · spec.md §9
@@ -388,12 +400,23 @@ distinguishable envelope separates them.
 *Fails if:* the unknown-user path returns before hashing, so timing enumerates accounts even though
 the bodies match.
 
-**TC-1-011 · a subcontractor cannot sign in**
-`AC-101a-G` · P1 · Api · spec.md §9 *"record only, no login"*
-Given a `User` with `Role.Subcontractor`, when sign-in is attempted, then it is refused with
-`errors.auth.role_cannot_log_in` and the refusal is audited.
+**TC-1-011 · a subcontractor cannot sign in, and the door does not say why**
+`AC-101a-G` · P1 · Api · **D-065 case 5** · spec.md §9 *"record only, no login"*
+
+**Corrected 2026-08-26.** Superseded by D-065 case 5 (routed via D-084): as written this case commanded
+`errors.auth.role_cannot_log_in` for the refusal, which is now the exact leak Nabil ruled against —
+*"If we return a specific `errors.auth.role_cannot_log_in`, we are explicitly telling the attacker:
+'This account exists and belongs to a subcontractor.' That is a security breach."* `AC-101a-G` was
+corrected on 2026-08-23; this case was not.
+
+Given a `User` with `Role.Subcontractor`, when sign-in is attempted with any password, then it is
+refused with **401** and `messageKey` **`errors.auth.invalid_credentials`** — byte-for-byte the same
+body `TC-1-009` returns for an unknown username — and the refusal is audited.
 *Fails if:* a subcontractor record becomes a login, which puts an outside party inside the permission
-model.
+model — or if the refusal carries `errors.auth.role_cannot_log_in`, or any other subcontractor-specific
+key or status, which is precisely the disclosure D-065 case 5 forbids. `errors.auth.role_cannot_log_in`
+is not deleted — `SeparationOfDuties` still uses it for an already-authenticated request — it simply
+must not be reachable from this door.
 
 **TC-1-012 · a deactivated user cannot sign in, and their open session dies**
 `AC-101a-H` · P1 · Api · spec.md §9 · D-048
@@ -415,29 +438,81 @@ Given any successful and any failed sign-in, when the response body, the applica
 records are inspected, then none contains the password, the hash or the security stamp.
 *Fails if:* a hash reaches a log line, where it outlives every rotation policy the system has.
 
-**TC-1-015 · a failed sign-in is recorded too, and so is the lockout**
-`KAFF-101a` audit section · P2 · Api · CLAUDE.md audit · D-049 ruling 3
-Given three failed attempts against one username and then five against another, when audit records are
-read, then a record exists for each failure carrying the attempted username and a null actor id, and a
-**separate record** records the lockout.
-*Fails if:* only successes are recorded. Repeated failures against one username is the signal that
-matters, and *"the account was locked at 14:02"* is the fact somebody will ask about.
+**TC-1-015 · a failed sign-in is recorded too, and so is the lockout — and neither one stores what was typed**
+`AC-101a-O` · P1 · Api · **D-062 §3** · CLAUDE.md audit · D-049 ruling 3
 
-**TC-1-016 · a portal client signs in and reaches only the portal**
-`AC-101a-A, rule 16` · P1 · Api · spec.md §12 · D-035
-Given a `Role.Client` user, when they sign in and then call an internal `ProjectRead` endpoint on their
-own project, then sign-in succeeds and the internal call is refused with 403.
-*Fails if:* `Role.Client` regains `ProjectRead`, which is the exact leak D-035 closed.
-**Note:** *where* they sign in — same host or a separate one — is Q33 and belongs to `TC-1-017`.
+**Corrected 2026-08-26.** Superseded by D-062 §3 (routed via D-084): this case required the failure
+record to carry *"the attempted username"* — exactly the field Nabil's ruling forbids. *"Strictly
+FORBID storing the typed input. Users frequently type their password into the username/email field by
+mistake. Storing the exact typed input in the audit log means we risk recording actual plaintext
+passwords in the database, which is a critical security vulnerability."* The table is append-only by
+trigger, so a credential written into it can never be deleted — not by an admin, not by a migration.
+The assertion below is rewritten rather than deleted: what the record **must** contain (so the failure
+and the lockout are still on the record, per D-049 ruling 3) and what it **must never** contain.
 
-**TC-1-018 · a temporary password has exactly one destination**
-`AC-101a-F` · P1 · Api · **D-049 ruling 4**
+Given three failed attempts against one existing, active user's username (wrong password each time),
+then five more against a second existing user (triggering the lockout), then one attempt against a
+username that does not exist, when audit records are read, then: each of the eight failures against an
+existing user is a `SignInFailed` record naming that user as the subject, with **no `ActorUserId`**
+(nobody was authenticated); the failure that triggers the lockout also produces a separate
+`AccountLockedOut` record naming the same user; the attempt against the unknown username is a
+`SignInFailedUnknownUser` record with **no subject at all**; and every one of these records carries the
+connection's IP address and the request path.
+And in none of them — not in `Reason`, not in any other column, not anywhere `AuditRecord` has a
+free-text field — does the string the caller typed as a username or a password appear. `AuditRecord`
+has no `Username` field and no field named for a credential.
+*Fails if:* only successes are recorded, so nobody can answer *"was this account being brute-forced"*
+or *"when did it lock."* Equally *fails if* any record carries the username or the password as typed,
+anywhere — including a plausible-looking `Reason` such as `"Failed sign-in for {input}"`, which would
+satisfy the first half of this case while still writing an unvalidated string into a table nothing can
+ever delete from.
+
+**TC-1-016 · a portal client is refused at the staff door — not admitted and then contained**
+`AC-101a-B (case 4) · KAFF-101a rule 16` · P1 · Api · **D-062 §2 · D-063 §1 · D-065 (case 4)** ·
+spec.md §12 · D-035
+
+**Corrected 2026-08-26.** Superseded by D-062 §2 and D-065 case 4 (routed via D-084): this case
+predates both rulings and asserted *"sign-in succeeds"* for a `Role.Client`, which D-062 §2 reverses
+outright — *"it is strictly forbidden from a security standpoint for any user holding the `Role.Client`
+to sign in or authenticate through the staff portal (Staff Origin)."* The old assertion — authenticate,
+then get refused on the first internal call — is a property of what `PermissionCatalogue` happens to
+grant `Role.Client` today; the ruling is a property of the door and survives any catalogue change.
+
+Given a `Role.Client` user with a correct password, when they post it to the **staff** sign-in
+endpoint, then no session is minted, no `Set-Cookie` header is returned, and the response is **401**
+with `messageKey` **`errors.auth.invalid_credentials`** — byte-for-byte the same body as an unknown
+username, in the same time envelope.
+*Fails if:* the credential authenticates at the staff door at all, however narrowly the resulting
+session is then contained afterward. A 403 on a later internal call is not a substitute for a 401 at
+the door: it fires only after a valid credential has already been accepted, which is the exact
+disclosure the ruling exists to prevent — and it depends on the catalogue never granting `Role.Client`
+a company-wide row, which is the fragile half D-063 §1 replaced.
+**Note:** *where* a client signs in for the portal — same host or a separate one — is Q33 and belongs
+to `TC-1-017`; this case is only about what the **staff** door does with a client credential, which is
+answered.
+
+**TC-1-018 · a temporary password has exactly one destination — and `/api/auth/me` is the one carve-out**
+`AC-101a-F` · P1 · Api · **D-049 ruling 4 · D-072 §2**
+
+**Corrected 2026-08-26.** This case omitted the `/api/auth/me` carve-out D-072 §2 added to `AC-101a-F`
+(routed via D-084): as written it would refuse the one endpoint the ruling requires to succeed, and
+fail a correct implementation.
+
 Given a user whose password was set by the Owner and never changed, when they sign in and then call
-any endpoint other than the change-password endpoint, then the request is refused with
-`errors.auth.password_change_required`.
-*Fails if:* the temporary password opens a working session. Karim's reason is the requirement: the
-forced change protects *"the integrity of the audit trail (non-repudiation)"* — until it happens,
-every action that account takes has two possible authors.
+any endpoint other than the change-password endpoint **and other than `GET /api/auth/me`**, then the
+request is refused with `errors.auth.password_change_required`.
+And `GET /api/auth/me` is **not** among them: it succeeds, `200`, and reports `mustChangePassword: true`
+in the payload (D-072 §2) — this is what closes the sign-in dead-end the strict reading would otherwise
+create, since the SPA has to read the flag from somewhere to route to the change screen at all.
+*Fails if:* the temporary password opens a working session on anything but these two carved-out
+endpoints. Karim's reason is the requirement: the forced change protects *"the integrity of the audit
+trail (non-repudiation)"* — until it happens, every action that account takes has two possible authors.
+Equally *fails if* `GET /api/auth/me` itself is refused, which recreates the exact dead-end D-072 §2
+exists to close.
+🟡 **Beyond these two endpoints, whether any other route also refuses the token is an open question**
+(D-072 §2, D-084's question 1) — not a Karim ruling, and not built anywhere yet. This case asserts the
+strict reading the story's own criterion currently states; if that reading changes, this case changes
+with it.
 *(This case replaces the old `TC-1-018`, which was PENDING on password policy and session lifetime.
 D-049 rulings 2 and 3 answered both; they are now `TC-1-226`…`TC-1-229`.)*
 
