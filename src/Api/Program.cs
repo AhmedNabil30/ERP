@@ -55,6 +55,12 @@ builder.Services
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 
+// The one place a staff session comes into existence — KAFF-101a rule 16b, decisions.md D-063 §1.
+// Every present and future staff door mints through it: this sign-in endpoint, KAFF-103's forced
+// change, KAFF-104's reset link. Singleton because it holds only the validated JwtOptions and the
+// signing key derived from them once.
+builder.Services.AddSingleton<StaffSessionMinter>();
+
 builder.Services.AddKaffInfrastructure(connectionString);
 
 // ---------------------------------------------------------------------------------------------
@@ -313,6 +319,12 @@ if (trustedProxyNetworks.Length > 0)
 
 app.UseMiddleware<AuditCorrelationMiddleware>();
 app.UseAuthentication();
+
+// After authentication, because it slides a window the framework has already agreed is still open.
+// KAFF-101a rule 5 / D-049 ruling 2 — "30 minutes of inactivity", which is a window that has to be
+// pushed forward by activity or it is an absolute expiry wearing the wrong name.
+app.UseMiddleware<SlidingSessionMiddleware>();
+
 app.UseAuthorization();
 
 app.MapKaffEndpoints();

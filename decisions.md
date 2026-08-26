@@ -5935,3 +5935,178 @@ string. `scripts/check-citations.ps1`: **660 checked, 0 broken, 0 legacy, exit 0
 own citations were added. `/run-kaff-erp` smoke: all seven checks passed, `kaff-root present=true`,
 against the real app title ("كف"); `GET /api/setup` confirmed live against the running dev database,
 returning `{"available":true}`.
+
+---
+
+### D-084 · KAFF-101a built — the staff door, and the ordering that no status code can prove · 2026-08-26
+
+**Backend.** `POST /api/auth/sign-in`. The story was `Ready to start` rather than `Ready` because
+`AC-101a-O` sat behind two decided-but-unbuilt mechanisms; both landed on 2026-08-25 (D-077, D-079),
+so this session had nothing left to wait for. Nothing below is a new ruling except where it says so.
+
+#### The one thing to read if you read nothing else
+
+**`PasswordHasher.Verify` runs before the lockout, the role and the active flag decide the response,
+and it runs for every caller including one whose username matches no row.** KAFF-101a rules 14a and
+16a, decisions.md D-072 §1 and D-063 §1. Moving any of those checks earlier is **the defect, not the
+optimisation** — it re-opens the user-enumeration oracle as a clock at the exact moment the status
+code stopped leaking it.
+
+**How that is held in place, since a comment is not a mechanism.**
+`PasswordHasher.Verify` takes a **nullable** stored hash and has no early return: a null falls back
+to a random salt and 32 random bytes at the shipped iteration count
+[Verified: 2026-08-26 @ `PasswordHasher.cs` -> `Absent`]. **There is no branch in the handler to
+tidy** — the absent case does the same 600,000 iterations the present case does, because there is
+nowhere to put the shortcut. That is the design decision this entry most wants to survive.
+
+#### The route, which nothing named
+
+**`POST /api/auth/sign-in`.** The story, `qa/slice-1/test-cases.md` and `ux/slice-1-flows.md` all
+describe the endpoint and none of them names its path. `/api/auth/me` is fixed (KAFF-105a) and the
+frontend already calls it [Verified: 2026-08-26 @ `auth.service.ts` -> `Session`], so the door is its
+sibling. **Recorded because it is now a wire contract KAFF-101b and KAFF-102 must match.**
+
+#### What was built
+
+* **`PasswordHasher.Verify`** — parameters read out of the stored string rather than from the
+  constants, so raising the work factor never invalidates a credential issued before it;
+  `CryptographicOperations.FixedTimeEquals` for the compare
+  [Verified: 2026-08-26 @ `PasswordHasher.cs` -> `Verify`].
+* **`AuthorizationErrors.InvalidCredentials`** (401) and **`AuthorizationErrors.AccountLocked`** (423)
+  [Verified: 2026-08-26 @ `SeparationOfDuties.cs` -> `InvalidCredentials`]. Both keys added to
+  `en.json` and `ar.json` together; nothing else under `src/Web/` was touched.
+* **`ErrorType.Locked` and its `StatusFor` row** [Verified: 2026-08-26 @ `Error.cs` -> `Locked`;
+  @ `ResultExtensions.cs` -> `StatusFor`]. A bare 423 in one handler would have put a status mapping
+  outside the one place `ResultExtensions` keeps it.
+* **`StaffSessionMinter`** — rule 16b and D-063 §1's *"one guard there refuses `Role.Client` for all
+  of them"*. It throws; it is a programmer-error guard and never the user-facing path
+  [Verified: 2026-08-26 @ `StaffSessionMinter.cs` -> `Issue`]. `Role.Subcontractor` is refused beside
+  it, on spec.md §9's *"record only, no login"* — the same guarantee, and not a new rule.
+* **`SlidingSessionMiddleware`** — rule 5's *sliding*, which is a separate mechanism from the expiry
+  and had no home [Verified: 2026-08-26 @ `SlidingSessionMiddleware.cs` -> `InvokeAsync`].
+  Cookie-borne sessions only, and never on an `AllowAnonymous` endpoint.
+* **Three `AuditEventKind` members** — `SignInFailed`, `SignInFailedUnknownUser`, `AccountLockedOut`
+  [Verified: 2026-08-26 @ `IAuditContext.cs` -> `SignInFailedUnknownUser`].
+* **No migration.** Nothing about this story changes the schema — which is what D-077 and D-079
+  landing first bought.
+
+#### Four decisions this session made rather than transcribed
+
+**1. `AuditEventKind` gets three members, not six.** D-063 §3 delegated the vocabulary here and said
+the unknown-username case *"arguably implies another"*. It implies exactly one — the subjectless
+`SignInFailedUnknownUser`. Every refusal against an account that **exists** is one `SignInFailed`,
+because the subject already names the row and the row already carries the role and the active flag;
+splitting by reason would put the door's decision into the trail for no reader. `AccountLockedOut` is
+the third, and it is the story's own audit paragraph asking for the lockout as a searchable fact
+rather than as a property diff somebody has to notice.
+
+**2. The success response is `204`, not `200` with an empty object.** D-050: the body carries no
+token in any field under any name. A `204` has no body for one to be added to later.
+
+**3. `nbf` is not on the token.** It was, and it broke the sliding session: the framework validates
+lifetimes against its own clock, so a token renewed by a host whose clock is ahead is refused as
+not-yet-valid on the very next request. Measured, not reasoned about. `exp` is the whole lifetime.
+
+**4. The handler discards the caller's identity before doing anything.** Signing in while already
+holding a cookie is an ordinary act — the SPA submits the form, the browser attaches the old cookie —
+and without this it is a **500**: no gate runs on an anonymous endpoint, so `ResolveActor` builds an
+actor from the token's claims with no verified role beside it
+[Verified: 2026-08-26 @ `AuditSaveChangesInterceptor.cs` -> `ResolveActor`], and
+`ck_audit_records_actor_is_named_completely` refuses a half-named actor outright. It is also what the
+act means: a sign-in replaces the session, it does not extend it. Held by
+[Verified: 2026-08-26 @ `SignInTests.cs` -> `Signing_in_again_while_holding_a_session_replaces_it`].
+
+#### How the ordering was proved, since this is the claim that matters
+
+**Three defects were injected, built, and watched.** Not one of them is hypothetical; each is the
+shape a later session tidies toward.
+
+| Injected defect | What went red | What stayed green |
+|---|---|---|
+| `if (storedHash is null) return false;` as `Verify`'s first line | the hasher timing test — **0 ticks against 4,458,099** | the three other `Verify` tests |
+| the lockout check hoisted above `PasswordHasher.Verify` | `A_locked_account_answers_423_to_the_right_password_and_401_to_a_wrong_one` **and** `Five_different_refusals_are_one_answer` — *"Expected 401, but found 423 Locked"* | everything else, 19 of 21 |
+| `if (user is null) return Unauthorized;` before the hash | `No_refusal_is_faster_than_the_hash_it_should_have_paid_for` — **61,475 ticks against a 4,653,877 baseline, 1.3% of the work** | **every other test in the file, 20 of 21** |
+
+**The third row is the whole argument for keeping a timing test in this suite, and it answers the
+question honestly.** The lockout-first defect *is* caught deterministically, by a status code — D-072
+§1's own ruling makes it impossible to answer 401 and 423 correctly without knowing the password
+first. The unknown-username defect is **not**, by anything except a clock, and it is the more likely
+of the two to be written.
+
+**The timing assertion is not a micro-benchmark.** The statistic is the **minimum** of three runs, the
+threshold is **half the baseline**, and the margin between doing the work and skipping it is three
+orders of magnitude — no scheduler noise reaches that from either side. The same property is asserted
+once more against the pure function with no HTTP in the way
+[Verified: 2026-08-26 @ `PasswordHasherTests.cs` -> `Verifying_against_no_stored_hash_costs_what_verifying_against_one_costs`].
+**If it ever flakes, the answer is a wider margin or a longer sample — not deleting it**, because
+deleting it leaves the one defect nothing else can see.
+
+#### 🟡 For Nabil — three questions this build raises and does not answer
+
+**1. The reach of a `mustChangePassword` session. Not answered here, deliberately.** D-072 §2 issues
+a **full** token and puts the flag in `/api/auth/me`'s payload. Rule 8, `AC-101a-F` and `AC-103-B` all
+assert the strict reading and all three cite D-049 ruling 4, **which names no endpoint**. The
+criterion says in its own text that it must not be resolved by whoever writes the handler, so it is
+not: **sign-in succeeds and consults the flag for nothing**, which is what D-072 §2 rules, and no gate
+was added anywhere. The two readings differ by whether a hostile client can skip the change screen.
+**`AC-101a-F` is therefore not covered by a test and is reported uncovered rather than quietly
+dropped.**
+
+**2. The inactive account has no ruled refusal shape, and it now has a built one.** The story's i18n
+bullet names `errors.auth.account_inactive`; **no criterion reaches it** — `AC-101a-H` says only
+*"refused"*. This build answers with the **generic 401**, folded in with the client and the
+subcontractor, because a distinct answer is reachable **from the username alone** and announces that
+the account exists, which is precisely what D-065 case 5 refused for the subcontractor. **That is an
+extension of Nabil's reasoning to a case he was not asked about, and it is flagged rather than
+buried.** `errors.auth.account_inactive` is consequently **not** in either catalogue: adding an
+unreachable key would have been the more misleading half of the choice. One line in the handler and
+one assertion in
+[Verified: 2026-08-26 @ `SignInTests.cs` -> `An_inactive_account_is_refused_like_a_stranger`] are what
+change if he rules the other way.
+
+**3. Q28 is still open and is now observable.** The lockout is per account, so anybody who knows a
+site engineer's username can hold him out fifteen minutes at a time, from anywhere, indefinitely —
+and the test suite does it in five HTTP requests. Nothing here anticipates the second reading.
+
+#### What the story and the test cases got wrong
+
+**Named, not edited — `qa/` and `stories/` belong to QA and the BA.**
+
+* **`TC-1-011` commands `errors.auth.role_cannot_log_in` for the subcontractor.** Superseded by
+  **D-065 case 5**; the door answers the generic 401 and the case as written would fail a correct
+  implementation. `AC-101a-G` was corrected on 2026-08-23 and the test case was not.
+* **`TC-1-015` requires the failure record to carry *"the attempted username"*.** Superseded by
+  **D-062 §3**, which strikes exactly that. The story's audit paragraph carries the strike; the test
+  case still commands the thing Nabil forbade.
+* **`TC-1-009` and `TC-1-016` predate D-065 and D-072 §1** — three cases where there are now five, and
+  *"sign-in succeeds"* for a `Role.Client`, which D-062 §2 reverses outright.
+* **`TC-1-018` omits the `/api/auth/me` carve-out** that D-072 §2 added to `AC-101a-F`.
+
+#### Not done, and named so nobody assumes it exists
+
+* **No `GET /api/auth/me`** (KAFF-105a), **no sign-out** (KAFF-102), **no change-password** (KAFF-103),
+  **no reset** (KAFF-104), **no sign-in screen** (KAFF-101b). The cookie this mints is what all five
+  build on.
+* **No `mustChangePassword` gate on any endpoint.** See question 1.
+* **No `errors.auth.account_inactive` and no `errors.auth.password_change_required`** in either
+  catalogue. Both are named by the story's i18n bullet and neither is reachable from anything built;
+  the second belongs to KAFF-103.
+* **`AC-101a-M` is not covered here.** It is a browser assertion about `localStorage` and
+  `sessionStorage` and belongs to the E2E suite with KAFF-101b's screen. What this story can guarantee
+  — that nothing is handed to JavaScript to store — is covered by the empty `204` body and the
+  `HttpOnly` assertion.
+* **No rehash-on-sign-in.** `Verify` reads the work factor from the stored string, so a credential at
+  an older factor keeps working; nothing upgrades it. Add it beside `Hash` when the factor first moves.
+* **No change to `AuditCorrelationMiddleware`, `IAuditContext`, `AuditRecord`, the schema or any
+  migration.** None was needed.
+
+#### Verified
+
+Clean `--no-incremental` Release build: **0 warnings / 0 errors**. `dotnet format KaffErp.sln
+--verify-no-changes` exit 0. Domain **86/86** (unchanged). Api **181/181**, up from 156 — twenty-one
+in `SignInTests.cs` and four in `PasswordHasherTests.cs`. `/run-kaff-erp` smoke: all eight checks
+passed, `kaff-root present=true`, `guardsInstalled: []`. The endpoint was exercised against the
+running Development stack, not only the test host: `POST /api/auth/sign-in` for an unknown username
+returned `401` / `errors.auth.invalid_credentials`, and the row it wrote reads
+`SignInFailedUnknownUser | User | <no entity_id> | <no actor> | ::1 | /api/auth/sign-in` — a subject
+that is absent, an address taken from the connection, and no trace of what was typed.

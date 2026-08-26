@@ -55,8 +55,10 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
     /// <b>Adding a member is the decision, not a formality.</b> An allow-list that grows by accident
     /// is the defect wearing the fix's clothes (decisions.md D-068), so each entry names the method,
     /// the route and the reason it is reachable unauthenticated, and the entry is what a reviewer
-    /// reads. Sign-in (KAFF-101a) is expected to become the fourth member and is deliberately
-    /// <b>not</b> pre-listed: the test going red on the day that route is mapped is the visible act.
+    /// reads. Sign-in (KAFF-101a) was expected to become the fourth member and was deliberately
+    /// <b>not</b> pre-listed: the test going red on the day that route was mapped was the visible
+    /// act. It went red on 2026-08-26 with <c>{"POST /api/auth/sign-in"}</c>, and the fourth entry
+    /// below is the answer to it.
     /// </remarks>
     private static readonly AnonymousEndpoint[] AllowList =
     [
@@ -82,6 +84,17 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
             + "not RequirePermission but two properties of the database itself — the users table is "
             + "empty (rule 4/5) and ux_users_bootstrap_owner_once, a unique index that turns two "
             + "concurrent requests into one Owner and one refusal (rule 6, decisions.md D-051 Q31)."),
+        new(
+            "POST",
+            "/api/auth/sign-in",
+            "KAFF-101a — the staff door, and the one endpoint whose whole job is to produce the "
+            + "identity every other endpoint requires. There is nothing to check a permission "
+            + "against. Its gate is the credential itself: PasswordHasher.Verify runs before "
+            + "anything else decides the response (rule 14a, decisions.md D-072 §1), and every "
+            + "refusal it can give is the same 401 / errors.auth.invalid_credentials bar one — a "
+            + "locked account whose password was correct, which gets 423 and can only be seen by "
+            + "somebody who already holds that password (D-065, D-072 §1). It discloses nothing "
+            + "about which usernames exist, by status code or by clock."),
     ];
 
     private readonly PostgresDatabase _database;

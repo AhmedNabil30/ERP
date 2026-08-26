@@ -32,6 +32,8 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
 
     private readonly string _connectionString;
     private readonly IPAddress _remoteAddress;
+    private readonly bool _useRealAuthentication;
+    private readonly TimeProvider? _clock;
 
     /// <param name="connectionString">The test database.</param>
     /// <param name="remoteAddress">
@@ -43,13 +45,30 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
     /// <c>Kaff:TrustedProxyNetworks:0</c>. <see langword="null"/> — the default — clears it, which is
     /// the shipped default and means <c>UseForwardedHeaders</c> is not registered at all.
     /// </param>
+    /// <param name="useRealAuthentication">
+    /// <see langword="false"/> — the default — substitutes <see cref="TestAuthHandler"/>, so a suite
+    /// can issue an identity from request headers without a sign-in endpoint. <b>KAFF-101a's own
+    /// suite passes <see langword="true"/></b>: the thing it is testing is the cookie the shipped
+    /// JWT bearer scheme reads, and a harness that replaces that scheme cannot see it. Only
+    /// authentication changes either way — authorization, the gate, the evaluator and the audit
+    /// interceptor are the shipped ones in both modes.
+    /// </param>
+    /// <param name="clock">
+    /// Replaces <c>TimeProvider.System</c> everywhere the host resolves one. The lockout window and
+    /// the sliding session are the two rules in this system defined in minutes rather than in
+    /// states, and neither is observable without moving a clock.
+    /// </param>
     public KaffApiFactory(
         string connectionString,
         IPAddress? remoteAddress = null,
-        string? trustedProxyNetwork = null)
+        string? trustedProxyNetwork = null,
+        bool useRealAuthentication = false,
+        TimeProvider? clock = null)
     {
         _connectionString = connectionString;
         _remoteAddress = remoteAddress ?? TestRemoteAddress;
+        _useRealAuthentication = useRealAuthentication;
+        _clock = clock;
 
         // Set as environment variables, not through ConfigureAppConfiguration.
         //
@@ -90,9 +109,17 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
         {
             services.AddSingleton<IEndpoint, ProbeEndpoint>();
 
-            services
-                .AddAuthentication(TestAuthHandler.SchemeName)
-                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
+            if (_clock is not null)
+            {
+                services.AddSingleton(_clock);
+            }
+
+            if (!_useRealAuthentication)
+            {
+                services
+                    .AddAuthentication(TestAuthHandler.SchemeName)
+                    .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
+            }
 
             // TestServer never populates Connection.RemoteIpAddress — there is no real socket behind
             // it — so a test asserting on decisions.md D-063 §2 needs a stand-in for what a real
