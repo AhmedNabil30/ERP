@@ -9,13 +9,20 @@ namespace Kaff.Domain.Authorization;
 /// and the role from <b>that</b> row rather than from the token. Fetching it separately would be a
 /// second read of a row already loaded. See decisions.md D-075.
 /// </param>
+/// <param name="MustChangePassword">
+/// <see cref="Kaff.Domain.Identity.User.MustChangePassword"/>, read from the same row. KAFF-103 rule 2:
+/// until the holder replaces a temporary credential, the session may reach nothing this evaluator
+/// would otherwise grant. Defaulted so every call site that predates this flag keeps compiling — the
+/// flag being absent means "not forced", which is the safe reading for a subject nobody asked about it.
+/// </param>
 public sealed record PermissionSubject(
     Guid UserId,
     Role Role,
     Department? Department,
     OperationsSubDepartment? OperationsSubDepartment,
     Guid? ClientId,
-    string FullName);
+    string FullName,
+    bool MustChangePassword = false);
 
 /// <summary>
 /// How a user came to reach a project — or <see cref="None"/>, meaning they did not.
@@ -95,6 +102,13 @@ public enum PermissionDecision
 
     /// <summary>spec.md §9: a junior may draft but not submit.</summary>
     AssignmentLevelTooLow = 7,
+
+    /// <summary>
+    /// decisions.md D-049 ruling 4, KAFF-103 rule 2: a temporary credential must be replaced before the
+    /// session may reach anything else. Refused ahead of every other check — a subject who has not yet
+    /// changed a temporary password holds nothing else, whatever the catalogue would otherwise grant.
+    /// </summary>
+    PasswordChangeRequired = 8,
 }
 
 /// <summary>
@@ -139,6 +153,14 @@ public static class PermissionEvaluator
             return PermissionDecision.RoleCannotLogIn;
         }
 
+        // decisions.md D-049 ruling 4, KAFF-103 rule 2 — refused before the catalogue for the same
+        // reason as the subcontractor check above: nothing a grant lists matters until the temporary
+        // credential is replaced.
+        if (subject.MustChangePassword)
+        {
+            return PermissionDecision.PasswordChangeRequired;
+        }
+
         if (!PermissionCatalogue.TryGet(permission, out PermissionDefinition? definition) || definition is null)
         {
             return PermissionDecision.UnknownPermission;
@@ -171,6 +193,11 @@ public static class PermissionEvaluator
         if (subject.Role == Role.Subcontractor)
         {
             return PermissionDecision.RoleCannotLogIn;
+        }
+
+        if (subject.MustChangePassword)
+        {
+            return PermissionDecision.PasswordChangeRequired;
         }
 
         // A grant that names a department and no role is satisfied by ANY role carrying that

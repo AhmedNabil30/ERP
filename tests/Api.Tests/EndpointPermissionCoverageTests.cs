@@ -106,6 +106,34 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
             + "gets the same 204 with nothing disclosed about any account."),
     ];
 
+    /// <summary>
+    /// The endpoints that may ship with no permission requirement <b>and</b> no <c>AllowAnonymous()</c>
+    /// — reachable only by an authenticated caller, acting on nothing but their own row.
+    /// </summary>
+    /// <remarks>
+    /// <b>Distinct from <see cref="AllowList"/>, and deliberately not folded into it.</b> That list is
+    /// for a route with no identity to check at all; <see cref="Every_allow_list_member_is_mapped_and_says_so_in_its_own_file"/>
+    /// requires every member to carry <c>AllowAnonymous()</c>, which would make an unauthenticated
+    /// caller reach it too — exactly wrong for an endpoint like KAFF-103's, whose whole point is that
+    /// only the signed-in holder of the row may call it. There is no catalogue <c>Permission</c> for
+    /// "act on yourself alone", and inventing one would misstate the rule: this is not a grant any role
+    /// holds over anyone. KAFF-100 added a narrow <c>AllowList</c> exemption and KAFF-108 shipped with
+    /// no gate at all (D-067) — this is the same discipline applied to the shape D-067 did not
+    /// anticipate: authenticated, but with no permission because there is nothing to grant.
+    /// </remarks>
+    private static readonly SelfOnlyEndpoint[] SelfOnlyEndpoints =
+    [
+        new(
+            "POST",
+            "/api/auth/change-password",
+            "KAFF-103. \"Authenticated as the user themselves. Not UserManage — only the person "
+            + "changes it.\" The handler re-reads the caller's own row and re-checks IsActive and the "
+            + "security stamp itself (decisions.md D-048), because no permission gate runs here to do "
+            + "it — the same freshness PermissionSubjectReader applies to every RequirePermission "
+            + "route. A future endpoint that wants this shape for anything wider than a caller's own "
+            + "row is not this one; it needs a real permission."),
+    ];
+
     private readonly PostgresDatabase _database;
     private KaffApiFactory _factory = null!;
 
@@ -130,7 +158,7 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
 
         foreach (MappedEndpoint mapped in ShippedEndpoints())
         {
-            if (IsAllowListed(mapped) || DeclaredPermissions(mapped).Count > 0)
+            if (IsAllowListed(mapped) || IsSelfOnlyListed(mapped) || DeclaredPermissions(mapped).Count > 0)
             {
                 continue;
             }
@@ -139,10 +167,54 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
         }
 
         ungated.Should().BeEmpty(
-            "every mapped endpoint must declare RequirePermission(...), or be a named member of "
-            + "AllowList in this file with the reason it is reachable unauthenticated. An endpoint "
-            + "behind the fallback policy alone is open to every authenticated caller — decisions.md "
-            + "D-067, where that was a privilege-escalation primitive");
+            "every mapped endpoint must declare RequirePermission(...), be a named member of AllowList "
+            + "with the reason it is reachable unauthenticated, or be a named member of "
+            + "SelfOnlyEndpoints with the reason it needs no permission beyond being signed in. An "
+            + "endpoint behind the fallback policy alone with none of the three is open to every "
+            + "authenticated caller for whatever it does — decisions.md D-067, where that was a "
+            + "privilege-escalation primitive");
+    }
+
+    /// <summary>
+    /// Every <see cref="SelfOnlyEndpoints"/> member is mapped, requires authentication, and carries no
+    /// <c>RequirePermission</c> of its own.
+    /// </summary>
+    /// <remarks>
+    /// The mirror of <see cref="Every_allow_list_member_is_mapped_and_says_so_in_its_own_file"/>, but
+    /// asserting the opposite metadata: <b>no</b> <see cref="IAllowAnonymous"/> — an unauthenticated
+    /// caller must still be refused by the fallback policy — and <b>no</b> parseable
+    /// <see cref="PermissionRequirement"/>, so a route that already declares a real permission is not
+    /// also (redundantly, or misleadingly) named here.
+    /// </remarks>
+    [Fact]
+    public void Every_self_only_member_is_mapped_and_requires_authentication_with_no_permission_of_its_own()
+    {
+        List<MappedEndpoint> shipped = [.. ShippedEndpoints()];
+
+        foreach (SelfOnlyEndpoint entry in SelfOnlyEndpoints)
+        {
+            MappedEndpoint? mapped = shipped.SingleOrDefault(
+                candidate => string.Equals(entry.Method, candidate.Method, StringComparison.Ordinal)
+                             && string.Equals(entry.Route, candidate.Route, StringComparison.Ordinal));
+
+            mapped.Should().NotBeNull(
+                "SelfOnlyEndpoints names {0} {1}, which no endpoint maps. A dead exemption is one "
+                + "nobody re-reads, and it silently pre-authorises whatever claims that route next",
+                entry.Method,
+                entry.Route);
+
+            mapped!.Endpoint.Metadata.GetMetadata<IAllowAnonymous>().Should().BeNull(
+                "{0} {1} is listed as self-only, not anonymous — an unauthenticated caller must still "
+                + "be refused by the fallback policy",
+                entry.Method,
+                entry.Route);
+
+            DeclaredPermissions(mapped).Should().BeEmpty(
+                "{0} {1} is listed as self-only because it carries no RequirePermission. If it has "
+                + "grown one, it belongs to the ordinary gated set instead and should come off this list",
+                entry.Method,
+                entry.Route);
+        }
     }
 
     [Fact]
@@ -260,6 +332,11 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
             string.Equals(entry.Method, mapped.Method, StringComparison.Ordinal)
             && string.Equals(entry.Route, mapped.Route, StringComparison.Ordinal));
 
+    private static bool IsSelfOnlyListed(MappedEndpoint mapped) =>
+        SelfOnlyEndpoints.Any(entry =>
+            string.Equals(entry.Method, mapped.Method, StringComparison.Ordinal)
+            && string.Equals(entry.Route, mapped.Route, StringComparison.Ordinal));
+
     private IEnumerable<MappedEndpoint> ShippedEndpoints()
     {
         Assembly shipped = typeof(PermissionRequirement).Assembly;
@@ -298,4 +375,10 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
 
     /// <summary>One deliberate exemption: what it is, and why it may be reached without a permission.</summary>
     private sealed record AnonymousEndpoint(string Method, string Route, string Reason);
+
+    /// <summary>
+    /// One deliberate exemption: an endpoint reachable by any authenticated caller, acting on nothing
+    /// but their own row, with no catalogue permission to declare.
+    /// </summary>
+    private sealed record SelfOnlyEndpoint(string Method, string Route, string Reason);
 }

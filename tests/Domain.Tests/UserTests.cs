@@ -240,5 +240,66 @@ public sealed class UserTests
         created.Error.Should().Be(IdentityErrors.FullNameRequired);
     }
 
+    // ---- SetOwnPassword — KAFF-103 ------------------------------------------------------------
+
+    /// <summary>
+    /// AC-103-H. A subcontractor has nothing to change — StorePasswordHash refuses the role before
+    /// either public setter can touch PasswordHash, whichever one is called.
+    /// </summary>
+    /// <remarks>
+    /// Exercised at the entity rather than through <c>POST /api/auth/change-password</c>: a
+    /// subcontractor can never hold the session that endpoint requires (spec.md §9 — "record only, no
+    /// login" — refuses the credential a session would need in the first place), so this is the one
+    /// place the rule is reachable at all.
+    /// </remarks>
+    [Fact]
+    public void SetOwnPassword_refuses_a_subcontractor()
+    {
+        User subcontractor = User.Create(
+            "change-password-sub",
+            "Subcontractor Record",
+            PhoneNumber.Create("01000000098").Value,
+            Role.Subcontractor,
+            Now).Value;
+
+        Result changed = subcontractor.SetOwnPassword("hashed-password");
+
+        changed.IsFailure.Should().BeTrue();
+        changed.Error.Should().Be(IdentityErrors.SubcontractorCannotLogIn);
+        subcontractor.PasswordHash.Should().BeNull("a refused change leaves no credential behind");
+    }
+
+    /// <summary>
+    /// KAFF-103 rule 4. The method the holder calls on themselves clears the forced-change flag and
+    /// rotates the stamp — the same rotation every password write already carries, and the reason a
+    /// temporary password stops being usable the moment it is replaced (AC-103-C, AC-103-F).
+    /// </summary>
+    [Fact]
+    public void SetOwnPassword_clears_must_change_password_and_rotates_the_stamp()
+    {
+        User user = User.Create(
+            "change-password-holder",
+            "Password Holder",
+            PhoneNumber.Create("01000000097").Value,
+            Role.SiteEngineer,
+            Now,
+            Department.Operations,
+            OperationsSubDepartment.Technical).Value;
+
+        user.SetTemporaryPassword("temporary-hash").IsSuccess.Should().BeTrue();
+        user.MustChangePassword.Should().BeTrue("the Owner set this one, so the holder must replace it");
+
+        string stampAfterTemporary = user.SecurityStamp;
+
+        Result changed = user.SetOwnPassword("chosen-hash");
+
+        changed.IsSuccess.Should().BeTrue();
+        user.MustChangePassword.Should().BeFalse("the holder just typed this one themselves");
+        user.PasswordHash.Should().Be("chosen-hash");
+        user.SecurityStamp.Should().NotBe(
+            stampAfterTemporary,
+            "rule 4 — the change must end every session the temporary credential could still open");
+    }
+
     private static DateTimeOffset Now => new(2026, 5, 1, 8, 0, 0, TimeSpan.Zero);
 }

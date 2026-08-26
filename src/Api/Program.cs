@@ -154,7 +154,10 @@ builder.Services.AddAuthorizationBuilder()
 // as AuthorizationErrors.SameActorCreatedAndApproved — keeps the more specific one.
 builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
 {
-    Error? refusal = context.ProblemDetails.Status switch
+    // KAFF-103 AC-103-B. The gate stashes a more specific refusal on HttpContext.Items when it has
+    // one (SpecificRefusal) — checked first because it is a fact this exact request's gate already
+    // decided, not the shape a bare status code always maps to.
+    Error? refusal = SpecificRefusal.Get(context.HttpContext) ?? context.ProblemDetails.Status switch
     {
         StatusCodes.Status401Unauthorized => AuthorizationErrors.NotAuthenticated,
         StatusCodes.Status403Forbidden => AuthorizationErrors.Forbidden,

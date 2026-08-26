@@ -76,6 +76,30 @@ public static class AuthorizationErrors
     public static readonly Error PasswordTooShort =
         Error.Validation("auth.password_too_short", "errors.auth.password_too_short");
 
+    /// <summary>
+    /// KAFF-103 AC-103-D. The change-password endpoint's own refusal — never produced by the gate.
+    /// </summary>
+    /// <remarks>
+    /// Validation rather than Forbidden: the caller is already authenticated, so this states that one
+    /// field of the request was wrong, the same shape as <see cref="PasswordTooShort"/>, not a claim
+    /// about who they are.
+    /// </remarks>
+    public static readonly Error CurrentPasswordIncorrect =
+        Error.Validation("auth.current_password_incorrect", "errors.auth.current_password_incorrect");
+
+    /// <summary>
+    /// KAFF-103 AC-103-B, decisions.md D-049 ruling 4. The one refusal <see cref="PermissionEvaluator"/>
+    /// gives every permission-gated request while <c>User.MustChangePassword</c> is true.
+    /// </summary>
+    /// <remarks>
+    /// Forbidden rather than the blanket key D-071/D-080 give every other gate refusal: the shell needs
+    /// a distinct signal to route to the change-password screen, and unlike the axis a role × assignment
+    /// refusal would disclose, "you must change your password" tells an attacker nothing they could not
+    /// already infer from having the credential at all. See <c>PermissionAuthorizationHandler</c>.
+    /// </remarks>
+    public static readonly Error PasswordChangeRequired =
+        Error.Forbidden("auth.password_change_required", "errors.auth.password_change_required");
+
     /// <summary>CLAUDE.md and spec.md §9: "Nobody creates and approves the same movement."</summary>
     public static readonly Error SameActorCreatedAndApproved =
         Error.Forbidden("auth.same_actor_created_and_approved", "errors.auth.same_actor_created_and_approved");

@@ -21,8 +21,9 @@ public sealed class PermissionEvaluatorTests
         Role role,
         Department? department = null,
         OperationsSubDepartment? subDepartment = null,
-        Guid? clientId = null)
-        => new(UserId, role, department, subDepartment, clientId, "permission-subject");
+        Guid? clientId = null,
+        bool mustChangePassword = false)
+        => new(UserId, role, department, subDepartment, clientId, "permission-subject", mustChangePassword);
 
     [Fact]
     public void An_unauthenticated_caller_is_refused()
@@ -386,6 +387,38 @@ public sealed class PermissionEvaluatorTests
             new ProjectAccess(ProjectAccessPath.Assignment, AssignmentLevel.Standard));
 
         decision.Should().Be(PermissionDecision.RoleCannotLogIn);
+    }
+
+    /// <summary>
+    /// KAFF-103 rule 2, decisions.md D-049 ruling 4. Refused ahead of the catalogue, the same shape as
+    /// the subcontractor check above — a temporary credential must be replaced before anything a grant
+    /// lists matters, whatever permission the request names and whatever the catalogue would otherwise
+    /// give it.
+    /// </summary>
+    [Fact]
+    public void A_caller_who_must_change_their_password_is_refused_before_the_catalogue_is_consulted()
+    {
+        // Owner, company-wide, would otherwise be Granted unconditionally — the strongest possible
+        // case for "the catalogue would have said yes".
+        PermissionDecision decision = PermissionEvaluator.Evaluate(
+            Subject(Role.Owner, mustChangePassword: true),
+            Permission.UserManage,
+            projectId: null,
+            projectAccess: null);
+
+        decision.Should().Be(PermissionDecision.PasswordChangeRequired);
+    }
+
+    /// <summary>The same caller, once the flag is cleared, reaches what the catalogue always granted.</summary>
+    [Fact]
+    public void Clearing_the_flag_restores_ordinary_access()
+    {
+        PermissionEvaluator.Evaluate(
+                Subject(Role.Owner, mustChangePassword: false),
+                Permission.UserManage,
+                projectId: null,
+                projectAccess: null)
+            .Should().Be(PermissionDecision.Granted);
     }
 
     [Fact]

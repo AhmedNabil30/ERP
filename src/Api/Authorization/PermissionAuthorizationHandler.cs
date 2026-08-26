@@ -85,6 +85,19 @@ public sealed class PermissionAuthorizationHandler : AuthorizationHandler<Permis
 
         PermissionDecision decision = PermissionEvaluator.Evaluate(subject, requirement.Permission, projectId, access);
 
+        // KAFF-103 AC-103-B. Every other decision below is flattened to the blanket 401/403 (D-071,
+        // D-080); this one gets its own key because the shell must be able to tell "you must change
+        // your password" apart from an ordinary refusal, and doing so discloses nothing an attacker
+        // could not already infer from holding the credential. See SpecificRefusal's remarks.
+        if (decision == PermissionDecision.PasswordChangeRequired)
+        {
+            HttpContext? current = _httpContextAccessor.HttpContext;
+            if (current is not null)
+            {
+                SpecificRefusal.Set(current, AuthorizationErrors.PasswordChangeRequired);
+            }
+        }
+
         if (decision == PermissionDecision.Granted)
         {
             // D-075. Who the trail names, taken from the row this handler has just read out of the

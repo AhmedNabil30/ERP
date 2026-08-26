@@ -43,6 +43,8 @@
   "errors.auth.invalid_credentials": "The user name or password is incorrect.",
   "errors.auth.account_locked": "This account is locked for 15 minutes after five failed attempts.",
   "errors.auth.password_too_short": "A password must be at least 8 characters.",
+  "errors.auth.current_password_incorrect": "The current password is incorrect.",
+  "errors.auth.password_change_required": "You must change your password before continuing.",
   "errors.auth.same_actor_created_and_approved": "The same person cannot create and approve a movement.",
 
   "errors.identity.username_required": "A user name is required.",

@@ -6194,3 +6194,131 @@ the running Development stack, `kaff-root present=true`, `guardsInstalled: []`.
 * **No client-portal sign-in door.** See above — `AC-102-F` is exercised against a hand-minted token,
   not a shipped mechanism.
 * **The no-op audit question above is unresolved**, deliberately, pending Nabil.
+
+---
+
+### D-086 · KAFF-103 built — changing your own password, and the third shape a permission-coverage test needed · 2026-08-26
+
+**Backend.** `POST /api/auth/change-password`
+[@ `src/Api/Features/Auth/ChangePassword/Endpoint.cs`, `Handler.cs`]. `User.SetOwnPassword`,
+`SetTemporaryPassword`, `MustChangePassword` and the `StorePasswordHash` guard that refuses
+`Role.Subcontractor` all existed already, cited by the story as built — this session's own work is the
+API surface, the `MustChangePassword` gate (`AC-103-B`), and the tests, not the domain method.
+
+#### The shape the coverage test did not have
+
+The story's line — "authenticated as the user themselves. Not `UserManage`" — names a permission model
+`EndpointPermissionCoverageTests` had no room for. Every mapped route until now was either
+`RequirePermission(...)` or a named `AllowList` member requiring `AllowAnonymous()`
+[@ `tests/Api.Tests/EndpointPermissionCoverageTests.cs` -> `AllowList`,
+`Every_allow_list_member_is_mapped_and_says_so_in_its_own_file`]. Neither fits an endpoint that must
+refuse an unauthenticated caller but grants no role anything — there is no catalogue `Permission` for
+"act on your own row alone", and inventing one would misstate the rule: it is not a grant any role holds
+over anyone.
+
+**Built a third category, `SelfOnlyEndpoints`**
+[@ `tests/Api.Tests/EndpointPermissionCoverageTests.cs` -> `SelfOnlyEndpoints`], narrow by construction
+the same way `AllowList` is (D-069): one member, one named reason, and a mirror test asserting the entry
+is mapped, carries **no** `IAllowAnonymous` (an unauthenticated caller must still be refused) and **no**
+`RequirePermission` of its own
+[@ `tests/Api.Tests/EndpointPermissionCoverageTests.cs` ->
+`Every_self_only_member_is_mapped_and_requires_authentication_with_no_permission_of_its_own`]. Watched
+red before being named: with the list emptied to `[]`,
+`Every_mapped_endpoint_carries_a_permission_requirement` failed on the new route, exactly the shape
+D-067 exists to catch. Restored; Api **200/200**.
+
+#### `AC-103-B`: one check in the one evaluator, not a filter bolted beside it
+
+**Decision.** `PermissionSubject` gains `MustChangePassword`
+[@ `src/Domain/Authorization/PermissionEvaluator.cs` -> `PermissionSubject`], read fresh from the users
+table on every request by `PermissionSubjectReader`
+[@ `src/Infrastructure/Authorization/PermissionSubjectReader.cs` -> `ReadAsync`] — the same freshness
+discipline D-048 and D-053 already hold every other authorization fact to. `PermissionEvaluator.Evaluate`
+refuses with the new `PermissionDecision.PasswordChangeRequired` immediately after the `Role.Subcontractor`
+check and before the catalogue is consulted, in both overloads
+[@ `src/Domain/Authorization/PermissionEvaluator.cs` -> `Evaluate`], so a temporary credential blocks a
+company-wide, unconditionally-granted permission (`UserManage` for the Owner) exactly as it blocks a
+project-scoped one — proved directly against the pure function
+[@ `tests/Domain.Tests/PermissionEvaluatorTests.cs` ->
+`A_caller_who_must_change_their_password_is_refused_before_the_catalogue_is_consulted`].
+
+**One route, every `RequirePermission` endpoint at once, by construction — not a second rule layered on
+top of the first.** The check lives in the one place every gated request already passes through, so
+"every endpoint except the change-password one" needs no enumeration of endpoints. The change-password
+endpoint is exempt for the same reason it needed `SelfOnlyEndpoints` above: it carries no
+`RequirePermission`, so the gate this decision lives inside never runs on it at all.
+
+**The refusal needed its own key, and D-071/D-080 do not hand out a mechanism for that on purpose.**
+Both entries flatten every gate refusal to the blanket `errors.auth.forbidden` deliberately, because
+telling a caller which axis of role × assignment failed is a disclosure question. A must-change-password
+refusal is not that disclosure — it tells the caller nothing beyond what holding the credential already
+implies, and the shell needs the distinct key to route to the change-password screen rather than treat
+it as an ordinary 403 (D-072 §2's own reasoning against a dead-end loop, applied one endpoint over).
+Built `SpecificRefusal` [@ `src/Api/Authorization/SpecificRefusal.cs`], the ~15-line mechanism D-080
+priced and declined for the axis-disclosure case: the gate stashes the specific `Error` on
+`HttpContext.Items`, and `CustomizeProblemDetails` reads it ahead of the generic 401/403 switch
+[@ `src/Api/Program.cs` -> `AddProblemDetails`]. Watched red: with the `MustChangePassword` check
+removed from both `PermissionEvaluator` overloads,
+`Until_the_password_is_changed_every_other_endpoint_refuses_it_and_this_one_does_not` failed
+[@ `tests/Api.Tests/ChangePasswordTests.cs`]; restored.
+
+#### The endpoint re-checks its own caller — nothing else will
+
+No permission gate runs on a `SelfOnlyEndpoints` route, so `Handler.cs` reads the user id and security
+stamp from the token's own claims, loads the row fresh, and refuses (`errors.auth.forbidden`, the same
+generic key a stale token gets everywhere else) when the account is inactive or the stamp no longer
+matches [@ `src/Api/Features/Auth/ChangePassword/Handler.cs` -> `HandleAsync`] — the same freshness
+`PermissionSubjectReader` applies to every `RequirePermission` route, reapplied by hand because nothing
+upstream of this handler will apply it here. Proved by
+[@ `tests/Api.Tests/ChangePasswordTests.cs` -> `A_deactivated_account_cannot_change_its_own_password`].
+
+The actor is declared, not read from a grant, for the identical reason KAFF-101a's sign-in and
+KAFF-102's sign-out declare theirs (D-075): the handler discards the inbound identity and calls
+`IAuditContext.AttributeTo` itself before saving, because no gate populated `VerifiedActor`.
+
+#### A second `Set-Cookie`, and it is not a bug
+
+`SlidingSessionMiddleware` renews the session with the request's own **pre-change** stamp before the
+handler runs, because this endpoint is authenticated, not anonymous
+[@ `src/Api/Common/Middleware/SlidingSessionMiddleware.cs` -> `InvokeAsync`]. `SetOwnPassword` then
+rotates the stamp, and the handler mints a **second** cookie with the new one so the calling device is
+not signed out by its own change (`AC-103-A`) — the same two-`Set-Cookie` shape that middleware's own
+remarks already document for the sign-in case, last one wins in a real browser. The test suite's cookie
+helper takes the last header for the same reason
+[@ `tests/Api.Tests/ChangePasswordTests.cs` -> `Cookie`].
+
+#### What was not generalised, on purpose
+
+The brief for this story warned against inventing a wider rule than `AC-103-B` states, and nothing here
+does. `PasswordChangeRequired` applies to every `RequirePermission`-gated route because that is the one
+mechanism CLAUDE.md asks for — not because this session decided how far a `mustChangePassword` session
+should reach in the abstract. `GET /api/auth/me` (KAFF-105a) is still unbuilt, so `AC-103-B`'s carve-out
+for it could not be exercised either way; nothing here assumes an answer for it. The open question D-084
+and D-072 §2 both raised — what a full token issued to a must-change-password user may reach beyond the
+change endpoint and `/api/auth/me` — stays open, for Nabil, not decided sideways by this build.
+
+#### Verified
+
+Clean `--no-incremental` Release build, `-warnaserror`: **0 warnings / 0 errors**.
+`dotnet format KaffErp.sln --verify-no-changes` exit 0. Domain **90/90**, up from 86 — four new, in
+`PermissionEvaluatorTests.cs` (two) and `UserTests.cs` (two, `AC-103-H`'s subcontractor refusal and
+rule 4's stamp rotation, exercised at the entity since a subcontractor can never hold the session the
+API endpoint requires). Api **200/200**, up from 191 — nine in `ChangePasswordTests.cs` and one in
+`EndpointPermissionCoverageTests.cs`. `check-citations.ps1`: **682 checked, 0 broken, 0 legacy**.
+`/run-kaff-erp` smoke: all seven checks passed, `kaff-root present=true`, `guardsInstalled: []`.
+
+#### Not done, and named so nobody assumes it exists
+
+* **`AC-103-I` — Arabic, RTL, at mobile width.** A screen, owned by the Frontend agent under
+  `src/Web/`. Nothing here touches it.
+* **No `auth.password.*` / `auth.field.*` / `action.save` UI keys added.** The story's i18n bullet
+  names them for the screen that does not exist yet; only the two server-owned refusal keys —
+  `errors.auth.current_password_incorrect`, `errors.auth.password_change_required` — were added, to
+  both catalogues, per CLAUDE.md's rule that a domain error key needs both lines and nothing else under
+  `src/Web/`.
+* **`GET /api/auth/me` was not built and not touched.** KAFF-105a's, not this story's.
+* **Q37 and Q48 stay open** — no expiry on a temporary password, and whether the current password is
+  genuinely required. Rule 5 is built under the story's own readiness waiver (D-062 §1); nothing here
+  answers Q48.
+* **The reach of a `mustChangePassword` session beyond this story's own criterion is not decided.** See
+  above.

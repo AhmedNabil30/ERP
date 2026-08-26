@@ -43,6 +43,8 @@
   "errors.auth.invalid_credentials": "اسم المستخدم أو كلمة المرور غير صحيحة.",
   "errors.auth.account_locked": "هذا الحساب مقفل لمدة 15 دقيقة بعد خمس محاولات فاشلة.",
   "errors.auth.password_too_short": "كلمة المرور يجب ألا تقل عن 8 أحرف.",
+  "errors.auth.current_password_incorrect": "كلمة المرور الحالية غير صحيحة.",
+  "errors.auth.password_change_required": "يجب تغيير كلمة المرور قبل المتابعة.",
   "errors.auth.same_actor_created_and_approved": "لا يجوز لنفس الشخص إنشاء الحركة واعتمادها.",
 
   "errors.identity.username_required": "اسم المستخدم مطلوب.",

@@ -48,7 +48,11 @@ public sealed class PermissionSubjectReader : IPermissionSubjectReader
                 // the actor's own name and role from the row the gate has just verified rather than
                 // from the token's claims, and this is the one read in a request that already has
                 // that row in hand. See decisions.md D-075.
-                user.FullName))
+                user.FullName,
+
+                // KAFF-103 rule 2. Read fresh on every request, like everything else this record
+                // carries — a password change clears it in the same row the gate already reads.
+                user.MustChangePassword))
             .FirstOrDefaultAsync(cancellationToken);
     }
 }
