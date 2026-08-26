@@ -24,6 +24,20 @@ public enum ErrorType
 
     /// <summary>The caller is not authenticated. 401.</summary>
     Unauthenticated = 5,
+
+    /// <summary>
+    /// The account itself is temporarily closed to the caller who otherwise holds the right
+    /// credential. 423.
+    /// </summary>
+    /// <remarks>
+    /// One member, one caller: the locked account of spec.md §9's amendment, answered only when the
+    /// submitted password was correct (decisions.md D-072 §1). It is not a general "resource is
+    /// busy" status — <see cref="Conflict"/> already carries every business-state refusal — and it
+    /// exists as an <see cref="ErrorType"/> rather than as a bare <c>Results.Problem(423)</c> in one
+    /// handler so that the status mapping stays in the one place <c>ResultExtensions.StatusFor</c>
+    /// keeps it.
+    /// </remarks>
+    Locked = 6,
 }
 
 /// <summary>
@@ -52,4 +66,6 @@ public sealed record Error(string Code, string MessageKey, ErrorType Type)
     public static Error Forbidden(string code, string messageKey) => new(code, messageKey, ErrorType.Forbidden);
 
     public static Error Unauthenticated(string code, string messageKey) => new(code, messageKey, ErrorType.Unauthenticated);
+
+    public static Error Locked(string code, string messageKey) => new(code, messageKey, ErrorType.Locked);
 }

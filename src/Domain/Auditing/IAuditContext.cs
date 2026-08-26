@@ -19,6 +19,47 @@ public enum AuditEventKind
 {
     SignedIn = 1,
     SignedOut = 2,
+
+    /// <summary>
+    /// A sign-in refused against an account that exists. The subject names the row.
+    /// </summary>
+    /// <remarks>
+    /// <b>One member for every reason the door refuses a known account</b> — a wrong password, a
+    /// <see cref="Role.Client"/> at the staff origin, a subcontractor, a deactivated account, a
+    /// locked one. decisions.md D-063 §3 left this vocabulary to KAFF-101a and observed that the
+    /// unknown-username case <i>"arguably implies another"</i> member; it implies exactly one, and
+    /// that is <see cref="SignInFailedUnknownUser"/>, whose subject is absent. Splitting the
+    /// remaining reasons into members would put the door's <i>decision</i> into the trail, which
+    /// nothing asks for — the subject already names the row, and the row already carries the role
+    /// and the active flag. Adding a member later is one line and needs no backfill (D-061).
+    /// </remarks>
+    SignInFailed = 3,
+
+    /// <summary>
+    /// A sign-in refused against a username no row matches. Declared with <b>no subject</b>.
+    /// </summary>
+    /// <remarks>
+    /// The member decisions.md D-063 §3 names, and the reason
+    /// <see cref="IAuditContext.Record{TSubject}"/> takes a nullable subject at all. <b>The string
+    /// the caller typed is never recorded</b> — D-062 §3, Nabil: <i>"strictly FORBID storing the
+    /// typed input. Users frequently type their password into the username/email field by
+    /// mistake."</i> <c>audit_records</c> is append-only by trigger, so a plaintext password written
+    /// into it could never be removed. The record keeps the address and the timestamp and nothing
+    /// else; <c>KAFF-101a AC-101a-O</c>.
+    /// </remarks>
+    SignInFailedUnknownUser = 4,
+
+    /// <summary>
+    /// The failure run reached <c>LockoutOptions.MaxFailedAttempts</c> and the account was locked.
+    /// </summary>
+    /// <remarks>
+    /// Declared beside the <see cref="SignInFailed"/> that caused it. The lock is also an entity
+    /// change — <c>User.LockedOutUntil</c> moves, so the interceptor writes a <c>Modified</c> record
+    /// for it either way — but KAFF-101a's audit paragraph asks for the lockout as a fact somebody
+    /// can search for rather than as a property diff somebody has to notice: <i>"the account was
+    /// locked at 14:02 is the fact somebody will ask about."</i>
+    /// </remarks>
+    AccountLockedOut = 5,
 }
 
 /// <summary>

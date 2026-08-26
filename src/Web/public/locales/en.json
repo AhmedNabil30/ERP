@@ -40,6 +40,8 @@
   "errors.auth.assignment_level_too_low": "This action requires a supervising engineer.",
   "errors.auth.project_not_specified": "The request does not name a project.",
   "errors.auth.role_cannot_log_in": "This role is a record only and has no login.",
+  "errors.auth.invalid_credentials": "The user name or password is incorrect.",
+  "errors.auth.account_locked": "This account is locked for 15 minutes after five failed attempts.",
   "errors.auth.password_too_short": "A password must be at least 8 characters.",
   "errors.auth.same_actor_created_and_approved": "The same person cannot create and approve a movement.",
 

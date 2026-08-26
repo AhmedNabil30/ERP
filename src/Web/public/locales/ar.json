@@ -40,6 +40,8 @@
   "errors.auth.assignment_level_too_low": "هذا الإجراء يتطلب مهندساً مشرفاً.",
   "errors.auth.project_not_specified": "لم يُحدَّد المشروع في الطلب.",
   "errors.auth.role_cannot_log_in": "هذه الصفة مسجّلة كبيانات فقط ولا تملك دخولاً.",
+  "errors.auth.invalid_credentials": "اسم المستخدم أو كلمة المرور غير صحيحة.",
+  "errors.auth.account_locked": "هذا الحساب مقفل لمدة 15 دقيقة بعد خمس محاولات فاشلة.",
   "errors.auth.password_too_short": "كلمة المرور يجب ألا تقل عن 8 أحرف.",
   "errors.auth.same_actor_created_and_approved": "لا يجوز لنفس الشخص إنشاء الحركة واعتمادها.",
 

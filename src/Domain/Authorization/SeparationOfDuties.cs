@@ -24,6 +24,45 @@ public static class AuthorizationErrors
         Error.Forbidden("auth.role_cannot_log_in", "errors.auth.role_cannot_log_in");
 
     /// <summary>
+    /// The one refusal the staff sign-in door gives for every reason it refuses, bar one.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Five cases, one answer</b> — decisions.md D-065 (cases 1, 2, 4, 5) and D-072 §1 (case 3):
+    /// a wrong password, a username that does not exist, a <see cref="Kaff.Domain.Identity.Role.Client"/>
+    /// credential at the staff origin, a <see cref="Kaff.Domain.Identity.Role.Subcontractor"/>, and a
+    /// locked account given the wrong password. Nabil: <i>"Never tell an attacker the account does not
+    /// exist"</i>, and on the subcontractor <i>"the door must treat a subcontractor exactly the same
+    /// way it treats a non-existent user."</i>
+    /// </para>
+    /// <para>
+    /// <b>401 rather than 403, and that is not a drafting choice.</b> A 403 means "your credential
+    /// was valid and you may not come in", which fires only on a real credential and is the single
+    /// most informative answer an anonymous door can give (decisions.md D-063 §1). This is the same
+    /// reason <see cref="RoleCannotLogIn"/> — an <see cref="ErrorType.Forbidden"/> — is unreachable
+    /// from that door. It is not dead: <c>PermissionEvaluator</c> still returns it on an
+    /// already-authenticated request, and nobody deletes it on the strength of D-065.
+    /// </para>
+    /// </remarks>
+    public static readonly Error InvalidCredentials =
+        Error.Unauthenticated("auth.invalid_credentials", "errors.auth.invalid_credentials");
+
+    /// <summary>
+    /// The account is inside a lockout window, and the caller proved they hold its password.
+    /// </summary>
+    /// <remarks>
+    /// spec.md §9 amendment (D-049 ruling 3): five consecutive failures lock the account for fifteen
+    /// minutes. <b>This is the only sign-in answer that is not
+    /// <see cref="InvalidCredentials"/>, and it is reachable on exactly one path</b> — decisions.md
+    /// D-072 §1: <i>"423 Locked only if the provided password is correct. If the password is wrong,
+    /// it must return the generic 401."</i> It leaks nothing, because only somebody who already
+    /// holds the credential can ever see it, which is exactly the legitimate user the UX argument is
+    /// about.
+    /// </remarks>
+    public static readonly Error AccountLocked =
+        Error.Locked("auth.account_locked", "errors.auth.account_locked");
+
+    /// <summary>
     /// spec.md §9 amendment, decisions.md D-049 ruling 3 — "at least 8 characters, no forced
     /// complexity". The length is <see cref="Kaff.Domain.Identity.User.MinimumPasswordLength"/>.
     /// </summary>
