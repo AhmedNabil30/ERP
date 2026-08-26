@@ -395,6 +395,13 @@ public sealed class PermissionEvaluatorTests
     /// lists matters, whatever permission the request names and whatever the catalogue would otherwise
     /// give it.
     /// </summary>
+    /// <remarks>
+    /// ⚠️ <b>This test's name overstates what it proves, and the next one is what proves it.</b> The
+    /// subject here holds the permission, so moving the <c>MustChangePassword</c> check <i>below</i>
+    /// the catalogue lookup leaves this assertion green — measured on 2026-08-26 by doing exactly
+    /// that. What it does catch is the check being deleted. The ordering is pinned by
+    /// <see cref="The_password_change_refusal_is_identical_for_a_caller_who_holds_the_permission_and_one_who_does_not"/>.
+    /// </remarks>
     [Fact]
     public void A_caller_who_must_change_their_password_is_refused_before_the_catalogue_is_consulted()
     {
@@ -407,6 +414,63 @@ public sealed class PermissionEvaluatorTests
             projectAccess: null);
 
         decision.Should().Be(PermissionDecision.PasswordChangeRequired);
+    }
+
+    /// <summary>
+    /// <c>V-26-F</c>. The <c>MustChangePassword</c> check must sit <b>before</b> the catalogue is
+    /// consulted, and this is the assertion that says so — the position of one statement, which no
+    /// outcome asserted on its own can see.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>What is at stake is a disclosure, not a status code.</b> <c>SpecificRefusal</c> (D-086)
+    /// carries <c>errors.auth.password_change_required</c> past the blanket 401/403 of D-071 and D-080,
+    /// and it is safe for exactly one reason: the evaluator never looked at the catalogue, so a caller
+    /// receiving that key learns nothing about whether they hold the permission. Move the check below
+    /// the grant match and the same key becomes a "you would have been allowed" oracle on every
+    /// endpoint in the system — the axis disclosure D-080 declined to make, arriving through a
+    /// <c>messageKey</c> instead of through a status code, and changing no status code on the way.
+    /// </para>
+    /// <para>
+    /// <b>The same shape as <c>AC-101a-P</c>, which has <c>TC-1-258</c> for the same reason.</b> Both
+    /// halves are asserted together because the property is that they are equal: a holder and a
+    /// non-holder must be indistinguishable.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void The_password_change_refusal_is_identical_for_a_caller_who_holds_the_permission_and_one_who_does_not()
+    {
+        // Owner holds UserManage company-wide and unconditionally; Role.Finance holds no grant on it
+        // at all. Whatever this evaluator answers, it must answer the same thing to both.
+        PermissionDecision holder = PermissionEvaluator.Evaluate(
+            Subject(Role.Owner, mustChangePassword: true),
+            Permission.UserManage,
+            projectId: null,
+            projectAccess: null);
+
+        PermissionDecision nonHolder = PermissionEvaluator.Evaluate(
+            Subject(Role.Finance, Department.Finance, mustChangePassword: true),
+            Permission.UserManage,
+            projectId: null,
+            projectAccess: null);
+
+        PermissionEvaluator.Evaluate(
+                Subject(Role.Finance, Department.Finance),
+                Permission.UserManage,
+                projectId: null,
+                projectAccess: null)
+            .Should().Be(
+                PermissionDecision.RoleNotGranted,
+                "the non-holder really does not hold it — otherwise the assertion below is vacuous");
+
+        nonHolder.Should().Be(
+            holder,
+            "the MustChangePassword check runs before the catalogue is consulted, so the refusal "
+            + "cannot tell a caller whether the grant would have matched. Swap those two statements "
+            + "and errors.auth.password_change_required becomes a per-endpoint permission oracle "
+            + "(V-26-F, decisions.md D-080 and D-086)");
+
+        holder.Should().Be(PermissionDecision.PasswordChangeRequired);
     }
 
     /// <summary>The same caller, once the flag is cleared, reaches what the catalogue always granted.</summary>

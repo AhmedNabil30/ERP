@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Kaff.Api.Tests.Infrastructure;
 using Kaff.Domain.Auditing;
 using Kaff.Domain.Identity;
@@ -31,6 +32,7 @@ public sealed class ChangePasswordTests : IAsyncLifetime
     private string _forcedName = null!;
     private string _ordinaryName = null!;
     private string _inactiveName = null!;
+    private string _forcedNonHolderName = null!;
 
     private Guid _forced;
     private Guid _ordinary;
@@ -109,6 +111,54 @@ public sealed class ChangePasswordTests : IAsyncLifetime
             HttpStatusCode.NoContent,
             "the change-password endpoint carries no RequirePermission, so PasswordChangeRequired "
             + "never applies to it");
+    }
+
+    /// <summary>
+    /// <c>V-26-F</c>. The forced-change refusal is byte-for-byte the same for a caller who holds the
+    /// permission and one who does not — so <c>errors.auth.password_change_required</c> cannot be
+    /// read as "you would have been allowed".
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The safety here is the <b>position</b> of one statement in <c>PermissionEvaluator.Evaluate</c>:
+    /// the <c>MustChangePassword</c> check runs before the catalogue is consulted, so the evaluator
+    /// never looked. Move it below the grant match and this key becomes a per-endpoint permission
+    /// oracle — the axis disclosure D-080 declined to make, arriving through a <c>messageKey</c>
+    /// rather than through a status code, and **changing no status code on the way**. Nothing in the
+    /// suite pinned it; <c>TC-1-258</c> exists for the identical shape in <c>AC-101a-P</c>.
+    /// </para>
+    /// <para>
+    /// <c>/probe/company</c> is behind <c>Permission.ClientManage</c>, whose catalogue row grants
+    /// <see cref="Role.Owner"/> and <see cref="Role.MarketingSales"/> and nobody else — so the
+    /// Marketing caller holds it and the Finance caller does not, on the same route, with the same
+    /// flag set.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task The_forced_change_refusal_is_the_same_for_a_caller_who_holds_the_permission_and_one_who_does_not()
+    {
+        HttpResponseMessage holder = await GetWithCookie(
+            "/probe/company",
+            Cookie(await SignIn(_forcedName, TemporaryPassword)));
+
+        HttpResponseMessage nonHolder = await GetWithCookie(
+            "/probe/company",
+            Cookie(await SignIn(_forcedNonHolderName, TemporaryPassword)));
+
+        nonHolder.StatusCode.Should().Be(holder.StatusCode, "the two callers must be indistinguishable");
+
+        string? holderKey = await MessageKeyAsync(holder);
+        string? nonHolderKey = await MessageKeyAsync(nonHolder);
+
+        holderKey.Should().Be(
+            "errors.auth.password_change_required",
+            "the caller who holds ClientManage gets the specific key D-086 built");
+
+        nonHolderKey.Should().Be(
+            holderKey,
+            "and so does the caller who does not hold it. If this ever reads errors.auth.forbidden, "
+            + "the MustChangePassword check has moved below the catalogue lookup and the key now "
+            + "discloses whether the grant would have matched (V-26-F)");
     }
 
     // ---- AC-103-C · the temporary password stops working the moment it is replaced ---------------
@@ -285,6 +335,14 @@ public sealed class ChangePasswordTests : IAsyncLifetime
     private static string Cookie(HttpResponseMessage response) =>
         response.Headers.GetValues("Set-Cookie").Last().Split(';')[0];
 
+    /// <summary>The i18n key the Angular shell renders, or null when the body carries none.</summary>
+    private static async Task<string?> MessageKeyAsync(HttpResponseMessage response)
+    {
+        using JsonDocument problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+
+        return problem.RootElement.TryGetProperty("messageKey", out JsonElement key) ? key.GetString() : null;
+    }
+
     private async Task SeedAsync()
     {
         await using KaffDbContext context = _database.CreateContext();
@@ -292,13 +350,17 @@ public sealed class ChangePasswordTests : IAsyncLifetime
         User forced = MakeUser("chg-forced", Role.MarketingSales, Department.Marketing);
         forced.SetTemporaryPassword(PasswordHasher.Hash(TemporaryPassword)).IsSuccess.Should().BeTrue();
 
+        // V-26-F. Same forced-change flag, a role the ClientManage catalogue row does not grant.
+        User forcedNonHolder = MakeUser("chg-forced-finance", Role.Finance, Department.Finance);
+        forcedNonHolder.SetTemporaryPassword(PasswordHasher.Hash(TemporaryPassword)).IsSuccess.Should().BeTrue();
+
         User ordinary = MakeUser("chg-ordinary", Role.MarketingSales, Department.Marketing);
         ordinary.SetOwnPassword(PasswordHasher.Hash(TemporaryPassword)).IsSuccess.Should().BeTrue();
 
         User inactive = MakeUser("chg-inactive", Role.MarketingSales, Department.Marketing);
         inactive.SetOwnPassword(PasswordHasher.Hash(TemporaryPassword)).IsSuccess.Should().BeTrue();
 
-        context.Users.AddRange(forced, ordinary, inactive);
+        context.Users.AddRange(forced, ordinary, inactive, forcedNonHolder);
         await context.SaveChangesAsync(Ct);
 
         _forced = forced.Id;
@@ -308,6 +370,7 @@ public sealed class ChangePasswordTests : IAsyncLifetime
         _forcedName = forced.UserName;
         _ordinaryName = ordinary.UserName;
         _inactiveName = inactive.UserName;
+        _forcedNonHolderName = forcedNonHolder.UserName;
     }
 
     private static User MakeUser(string userName, Role role, Department? department = null)

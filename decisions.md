@@ -6751,3 +6751,68 @@ in `EndpointPermissionCoverageTests`, `MeTests` and `SignOutTests`.
 * **`V-26-G` is untouched.** `TC-1-042` lives under `qa/`, which this session must not edit; it is the
   Scrum Master's per SM-30, and `V-26-B`'s fix makes it more wrong, not less — the endpoint now refuses
   the caller that case describes.
+
+---
+
+### D-090 · `V-26-F` fixed — the statement whose position is the whole of the safety · 2026-08-26
+
+**Backend, defect-fix session.** Third of three, and the smallest: two tests and no production change.
+
+#### What was unpinned
+
+D-086 built `SpecificRefusal` so the shell can tell *"you must change your password"* apart from an
+ordinary refusal, carrying `errors.auth.password_change_required` past the blanket `401`/`403` that
+D-071 and D-080 give every other gate refusal. **It is safe for exactly one reason, and it is not the
+reason its own remarks give.** They argue from *what is disclosed*; the actual guarantee is *where the
+check sits*. `PermissionEvaluator.Evaluate` returns `PasswordChangeRequired` **before**
+`PermissionCatalogue` is consulted at all
+[Verified: 2026-08-26 @ `src/Domain/Authorization/PermissionEvaluator.cs` -> `Evaluate`], so a caller
+receiving that key learns nothing about whether they hold the permission — the evaluator never looked.
+
+Move it below the grant match and the same key becomes a *"you would have been allowed"* oracle on
+every endpoint in the system: the axis disclosure D-080 declined to make, arriving through a
+`messageKey` instead of a status code, **changing no status code on the way**. Nothing in the suite
+pinned it. `AC-101a-P` has the identical shape and has `TC-1-258`; this had nothing.
+
+#### Pinned at both levels, because the leak is observable at both
+
+* **The rule, as a pure function** [Verified: 2026-08-26 @
+  `tests/Domain.Tests/PermissionEvaluatorTests.cs` ->
+  `The_password_change_refusal_is_identical_for_a_caller_who_holds_the_permission_and_one_who_does_not`]:
+  an Owner (holds `UserManage` company-wide, unconditionally) and a Finance user (holds no grant on it
+  at all), both with the flag set, must receive the **same** decision. The non-holder's lack of the
+  grant is asserted separately with the flag off, so the comparison cannot pass vacuously.
+* **The wire** [Verified: 2026-08-26 @ `tests/Api.Tests/ChangePasswordTests.cs` ->
+  `The_forced_change_refusal_is_the_same_for_a_caller_who_holds_the_permission_and_one_who_does_not`]:
+  the same two roles against `/probe/company` (`Permission.ClientManage`, granted to `Role.Owner` and
+  `Role.MarketingSales` and nobody else) must get the same status **and** the same `messageKey`. This
+  is the oracle a caller would actually use.
+
+#### The test that was already there does not prove what its name says
+
+`A_caller_who_must_change_their_password_is_refused_before_the_catalogue_is_consulted`
+[Verified: 2026-08-26 @ `tests/Domain.Tests/PermissionEvaluatorTests.cs` ->
+`A_caller_who_must_change_their_password_is_refused_before_the_catalogue_is_consulted`] uses a subject
+that **holds** the permission, so the swap leaves it green — measured, not reasoned. It catches the
+check being *deleted*, which is worth having. A one-paragraph remark now says so on the test itself,
+rather than leaving the next reader to inherit the name as evidence.
+
+#### Watched red
+
+Both `MustChangePassword` blocks were moved below the catalogue lookup and the grant match in
+`PermissionEvaluator.Evaluate`'s two overloads; the solution rebuilt clean. **Exactly two tests went
+red — the two above, and nothing else in either suite** (Domain 96/97 with the new one, Api's
+`ChangePasswordTests` 8/9). The Domain failure reads `PermissionDecision.RoleNotGranted` where
+`PasswordChangeRequired` is required, and the Api failure reads two `messageKey`s differing at index
+12 — `errors.auth.forbidden` against `errors.auth.password_change_required`, the leak itself. Reverted.
+
+**That "nothing else went red" is the finding, restated as a measurement.** The swap changes no status
+code, breaks no assertion about which error a permission holder receives, and reintroduces the axis
+disclosure.
+
+#### Not done
+
+* **`SpecificRefusal`'s own remarks still argue from disclosure rather than from position.** They are
+  not wrong, they are incomplete, and D-086 §`SpecificRefusal` plus this entry are the record. No
+  source change: the guarantee now has a test, which is what it was missing.
+* **No production code changed in this defect.** The ordering was already correct.
