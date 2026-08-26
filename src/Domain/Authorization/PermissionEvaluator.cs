@@ -243,6 +243,48 @@ public static class PermissionEvaluator
         return levelSatisfied ? PermissionDecision.Granted : PermissionDecision.AssignmentLevelTooLow;
     }
 
+    /// <summary>
+    /// Every <see cref="PermissionScope.CompanyWide"/> permission <paramref name="subject"/> holds
+    /// today. KAFF-105a rules 4 and 5 — <c>GET /api/auth/me</c>'s whole permission payload.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Runs the ordinary <see cref="Evaluate(PermissionSubject?, Permission, Guid?, ProjectAccess?)"/>
+    /// once per company-wide catalogue row rather than re-matching grants by hand, so a permission
+    /// added to <see cref="PermissionCatalogue"/> with a grant this subject satisfies appears here with
+    /// no change to this method (rule 5, <c>AC-105a-E</c>).
+    /// </para>
+    /// <para>
+    /// <see cref="PermissionScope.ProjectScoped"/> rows are excluded by construction, not by a
+    /// role check: a project-scoped permission placed in a company-wide list is read as holding
+    /// everywhere, with no project check and no client check at all, which is exactly what spec.md §12
+    /// forbids (decisions.md D-035). <see cref="Role.Client"/>'s only two grants —
+    /// <see cref="Permission.PortalRead"/> and <see cref="Permission.PortalApprove"/> — are both
+    /// project-scoped, so a client subject's set is empty here with no <see cref="Role"/> check written
+    /// by hand (<c>AC-105a-H</c>).
+    /// </para>
+    /// <para>
+    /// <see cref="PermissionSubject.MustChangePassword"/> is not special-cased: <c>Evaluate</c> already
+    /// refuses every permission with <see cref="PermissionDecision.PasswordChangeRequired"/> while it is
+    /// true, so this returns an honest empty set for such a caller — what they may reach right now —
+    /// rather than a second rule invented about what they may merely see.
+    /// </para>
+    /// </remarks>
+    public static IReadOnlyList<Permission> CompanyWidePermissionsHeld(PermissionSubject subject)
+    {
+        ArgumentNullException.ThrowIfNull(subject);
+
+        return
+        [
+            .. PermissionCatalogue.All
+                .Where(definition => definition.Scope == PermissionScope.CompanyWide)
+                .Where(definition => Evaluate(subject, definition.Permission, projectId: null, projectAccess: null)
+                    == PermissionDecision.Granted)
+                .Select(definition => definition.Permission)
+                .OrderBy(permission => permission),
+        ];
+    }
+
     private static bool Matches(AccessGrant grant, PermissionSubject subject)
     {
         if (grant.Role is not null && grant.Role != subject.Role)

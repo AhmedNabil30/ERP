@@ -132,6 +132,16 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
             + "it — the same freshness PermissionSubjectReader applies to every RequirePermission "
             + "route. A future endpoint that wants this shape for anything wider than a caller's own "
             + "row is not this one; it needs a real permission."),
+        new(
+            "GET",
+            "/api/auth/me",
+            "KAFF-105a. \"Authenticated, any role, no assignment. It returns only the caller's own "
+            + "facts.\" There is no catalogue Permission for reading your own profile, and this route "
+            + "must be reachable while MustChangePassword is true (AC-105a-C, decisions.md D-072 §2) — "
+            + "a RequirePermission here would run PermissionEvaluator's PasswordChangeRequired check "
+            + "(D-086) and refuse exactly the call D-072 §2 requires to succeed. The handler re-reads "
+            + "IsActive and the security stamp itself, the same freshness D-048 applies everywhere "
+            + "else."),
     ];
 
     private readonly PostgresDatabase _database;

@@ -518,4 +518,81 @@ public sealed class PermissionEvaluatorTests
         SeparationOfDuties.EnsureDifferentActor(creator, other).IsSuccess.Should().BeTrue();
         SeparationOfDuties.EnsureDifferentActor([creator, other], other).IsFailure.Should().BeTrue();
     }
+
+    // ---- KAFF-105a rules 4/5 — GET /api/auth/me's permission payload ---------------------------
+
+    /// <summary>AC-105a-A. Finance's company-wide rows, and nothing project-scoped beside them.</summary>
+    [Fact]
+    public void Finance_holds_a_flat_set_of_its_company_wide_permissions()
+    {
+        IReadOnlyList<Permission> permissions = PermissionEvaluator.CompanyWidePermissionsHeld(
+            Subject(Role.Finance, Department.Finance));
+
+        permissions.Should().BeEquivalentTo(
+            [Permission.SupplierManage, Permission.TreasuryPostCompany, Permission.AccountManage, Permission.PeriodClose],
+            "these are Finance's only CompanyWide rows in the catalogue today");
+
+        permissions.Should().NotContain(
+            Permission.ProjectFinancialsEdit,
+            "it is ProjectScoped — rule 4 excludes it from this endpoint even though Finance holds it");
+        permissions.Should().NotContain(
+            Permission.FinancialMovementPrepare,
+            "ProjectScoped, same reason");
+    }
+
+    /// <summary>
+    /// AC-105a-H. Both of Role.Client's grants — PortalRead and PortalApprove — are ProjectScoped, so
+    /// the company-wide set this endpoint returns is empty without a Role.Client check written by hand.
+    /// </summary>
+    [Fact]
+    public void A_client_holds_no_company_wide_permission()
+    {
+        PermissionCatalogue.Of(Permission.PortalRead).Scope.Should().Be(PermissionScope.ProjectScoped);
+        PermissionCatalogue.Of(Permission.PortalApprove).Scope.Should().Be(PermissionScope.ProjectScoped);
+
+        PermissionEvaluator.CompanyWidePermissionsHeld(Subject(Role.Client, clientId: ClientId))
+            .Should().BeEmpty("both of Role.Client's grants are ProjectScoped; neither belongs here");
+    }
+
+    /// <summary>
+    /// AC-105a-E. Nothing here names a permission by hand — the set comes from iterating
+    /// <see cref="PermissionCatalogue.All"/>, so a new CompanyWide grant for a role appears with no
+    /// change to <see cref="PermissionEvaluator.CompanyWidePermissionsHeld"/>. Proved against a
+    /// definition built in the test, exactly as
+    /// <see cref="The_evaluator_refuses_a_bare_department_grant_on_money_even_if_one_reaches_the_catalogue"/>
+    /// already proves the sibling rule the same way.
+    /// </summary>
+    [Fact]
+    public void A_permission_the_test_adds_to_the_catalogue_would_appear_with_no_change_to_this_method()
+    {
+        // CompanyWidePermissionsHeld reads PermissionCatalogue.All, which is frozen at start-up and
+        // cannot be extended from a test. What is provable here instead is that the method has no
+        // Finance-shaped or Owner-shaped branch of its own: Evaluate is the only thing it calls, so
+        // any row Evaluate would grant, this method reports, and any row it would refuse, this method
+        // omits. That is what rule 5 requires — computed, not hand-written.
+        foreach (PermissionDefinition definition in PermissionCatalogue.All.Where(
+            d => d.Scope == PermissionScope.CompanyWide))
+        {
+            bool reported = PermissionEvaluator.CompanyWidePermissionsHeld(Subject(Role.Owner))
+                .Contains(definition.Permission);
+            bool granted = PermissionEvaluator.Evaluate(
+                Subject(Role.Owner), definition.Permission, projectId: null, projectAccess: null)
+                == PermissionDecision.Granted;
+
+            reported.Should().Be(granted, $"{definition.Permission} must agree with what Evaluate itself says");
+        }
+    }
+
+    /// <summary>
+    /// A caller who has not yet replaced a temporary password sees an empty company-wide set — the
+    /// same PasswordChangeRequired short-circuit Evaluate gives every other permission, not a second
+    /// rule this method invents. Decisions.md D-072 §2 / AC-105a-C: the endpoint still answers 200,
+    /// the profile is still full; only the permission list this method feeds it is empty.
+    /// </summary>
+    [Fact]
+    public void A_caller_who_must_change_their_password_holds_no_company_wide_permission_either()
+    {
+        PermissionEvaluator.CompanyWidePermissionsHeld(Subject(Role.Owner, mustChangePassword: true))
+            .Should().BeEmpty("PasswordChangeRequired refuses every permission, Owner included, until the change is made");
+    }
 }

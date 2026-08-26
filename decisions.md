@@ -6322,3 +6322,142 @@ API endpoint requires). Api **200/200**, up from 191 — nine in `ChangePassword
   answers Q48.
 * **The reach of a `mustChangePassword` session beyond this story's own criterion is not decided.** See
   above.
+
+---
+
+### D-087 · KAFF-105a built — `GET /api/auth/me`, and the trap the brief named by name · 2026-08-26
+
+**Backend.** `GET /api/auth/me`
+[@ `src/Api/Features/Auth/WhoAmI/Endpoint.cs`, `Handler.cs`, `Response.cs`]. Last story in sprint 1.
+Folder is `WhoAmI`, not `Me` — `Me` is a reserved word in a CLS-consuming language and CA1716 refuses
+the namespace outright the first time the solution builds with `-warnaserror`; the route itself is
+still `/api/auth/me`, fixed by decisions.md D-084, and nothing about the wire contract moved.
+
+#### The trap named in the brief, and how it is closed
+
+**Every field in the response is read from a fresh `Users` row, never from the token's claims.**
+`StaffSessionMinter.ClaimsFor` issues four claims — user id, display name, role at mint time, security
+stamp — and department is not among them at all
+[Verified: 2026-08-26 @ `StaffSessionMinter.cs` -> `ClaimsFor`]. A role changed by KAFF-109 does not
+rotate the stamp (decisions.md D-051 Q27, D-082), so the claim would go on reading the old role for as
+long as the token lives. The handler loads `User` by id and builds the response from that row's
+`Role`, `Department` and `OperationsSubDepartment`
+[Verified: 2026-08-26 @ `Handler.cs` -> `HandleAsync`] — there is no code path here that ever reads
+`KaffClaimTypes.Role`. Proved rather than merely built: `A_role_changed_after_sign_in_is_reported_fresh_not_from_the_stale_token`
+[@ `tests/Api.Tests/MeTests.cs`] signs in, rewrites the row's role directly (the KAFF-109 shape, no
+stamp rotation), and asserts the response follows the row. **Watched red first** — with the handler
+temporarily made to read `claimedRole` off `http.User.FindFirst(KaffClaimTypes.Role)` instead, this one
+test failed and no other did; reverted.
+
+#### The second trap: the projection is the control, not the permission
+
+Rule 4 restricts the payload to `PermissionScope.CompanyWide` rows, and `Role.Client` must see an empty
+set even though the catalogue does grant it two rows (`PortalRead`, `PortalApprove`) — both
+`ProjectScoped` (decisions.md D-035, the KAFF-105a/105b split). Rather than special-case `Role.Client`,
+`PermissionEvaluator.CompanyWidePermissionsHeld(PermissionSubject)`
+[@ `src/Domain/Authorization/PermissionEvaluator.cs` -> `CompanyWidePermissionsHeld`] filters
+`PermissionCatalogue.All` to `CompanyWide` rows and runs the ordinary `Evaluate` once per row — the
+same function every `RequirePermission` route already calls, not a second matcher written for this
+endpoint. A client's set is empty as a consequence of the catalogue shape, not a role check in the
+handler; the same is true of the story's rule 5 (a catalogue addition needs no change here), held by
+`A_permission_the_test_adds_to_the_catalogue_would_appear_with_no_change_to_this_method`
+[@ `tests/Domain.Tests/PermissionEvaluatorTests.cs`].
+
+**`CompanyWidePermissionsHeld` does not special-case `MustChangePassword` either.** `Evaluate` already
+refuses every permission with `PermissionDecision.PasswordChangeRequired` while the flag is set
+(D-086), so a forced-change caller's permission list is empty — an honest "nothing yet", not a second
+rule invented for this endpoint. Pinned by
+`A_caller_who_must_change_their_password_holds_no_company_wide_permission_either`
+[@ `tests/Domain.Tests/PermissionEvaluatorTests.cs`]. Nobody asked for this reading and nobody asked
+against it either; it is the reading that falls out of reusing `Evaluate` rather than writing a second
+rule, and is named here so a future session sees it was a choice.
+
+#### Why the endpoint carries no `RequirePermission` — `AC-105a-C`'s whole mechanism
+
+There is no catalogue `Permission` for "read your own profile" — the story's own line, "authenticated,
+any role, no assignment" — so this route needed the same shape D-086 built for `change-password`:
+authenticated, but gated by nothing `PermissionAuthorizationHandler` would refuse on. Added as the
+second member of `EndpointPermissionCoverageTests.SelfOnlyEndpoints`
+[@ `tests/Api.Tests/EndpointPermissionCoverageTests.cs` -> `SelfOnlyEndpoints`], with its own mirror
+assertion: no `IAllowAnonymous` (an unauthenticated caller is still refused 401 by the fallback policy
+— `AC-105a-D`) and no `RequirePermission` of its own.
+
+**That absence is `AC-105a-C`'s whole mechanism, not incidental to it.** D-072 §2 requires a
+`mustChangePassword` caller to get a `200` and a full profile rather than a refusal.
+`PermissionEvaluator.Evaluate`'s `PasswordChangeRequired` short-circuit only ever runs inside the
+`RequirePermission` pipeline (D-086); an endpoint with no `RequirePermission` never reaches it, by
+construction, the same way `change-password` never reaches it. **Watched red**: with
+`.RequirePermission(Permission.UserRead)` temporarily added to the `Map` chain,
+`A_forced_password_change_is_announced_as_a_field_on_a_200_not_a_refusal` failed — 403 instead of
+200 — and no other `MeTests` case did; reverted.
+
+#### The freshness re-check nothing upstream applies here
+
+No permission gate runs on this route, so nothing re-validates `IsActive` or the security stamp the way
+`PermissionSubjectReader` does for every `RequirePermission` route (D-048, D-053). The handler
+reapplies both by hand, refusing with the ordinary `errors.auth.forbidden` a stale token gets everywhere
+else (D-071, D-080) rather than answering a deactivated account, or a token a later password change
+already superseded, with a profile as if the session were live
+[@ `src/Api/Features/Auth/WhoAmI/Handler.cs` -> `HandleAsync`]. Not commanded by any acceptance
+criterion — the story is silent on what a stale token does here — and built anyway on the strength of
+the identical shape `ChangePassword.Handler` already carries for the same reason (D-086), rather than
+leaving this the one `SelfOnlyEndpoints` route that answers a dead session as a live one. **Watched
+red twice**: with the check narrowed to `user is null` alone,
+`A_deactivated_accounts_token_is_refused_not_answered_with_a_profile` and
+`A_password_changed_on_another_device_ends_this_endpoints_answer_too`
+[@ `tests/Api.Tests/MeTests.cs`] both failed and nothing else did; reverted.
+
+#### What the response projects, and what it deliberately does not
+
+**Projects:** `userId`, `displayName`, `role`, `department`, `operationsSubDepartment`,
+`mustChangePassword`, `permissions` (flat `CompanyWide` set) — exactly rule 1 plus rules 3 and 4, no
+more [@ `src/Api/Features/Auth/WhoAmI/Response.cs` -> `Response`].
+
+**Does not project:** `clientId`, `email`, `phone`, `employeeId`, `isActive`, `failedSignInAttempts`,
+`lockedOutUntil`, `createdAt`, `deactivatedAt`, `userName` — none of these is named by rule 1, and Q42's
+ruling (D-055 §2, cited in the catalogue's own `UserRead` remarks) is the standing warning against
+shipping the row instead of the projection the story asked for. No money field, no cost, no margin
+(rule, "money" bullet). No `PasswordHash`, no `SecurityStamp` — `AC-105a-G`.
+
+#### Two things this session decided rather than transcribed, both narrower than they could have been
+
+1. **The freshness re-check above.** Not asked for by name; built because `SelfOnlyEndpoints` already
+   established the pattern for exactly this shape of route and leaving it out here would make this the
+   one exception.
+2. **Reusing `PermissionEvaluator.Evaluate` unmodified for the `MustChangePassword` and `Role.Subcontractor`
+   short-circuits**, rather than writing a permission-list builder that bypasses them. Discussed above.
+   Both are read-time consequences of reuse, not new rules; flagged so a future session does not read
+   an empty permission list under `mustChangePassword` as a bug.
+
+Neither widens what a `mustChangePassword` session may **reach** — the 🟡 question D-084 and D-072 §2
+both raised, about every endpoint beyond this one and `change-password`, is untouched here exactly as
+the story's own text requires ("Handed back to Nabil, not settled here").
+
+#### What the story got wrong
+
+Nothing. Every criterion was buildable as written; the one open question (`mustChangePassword` reach
+beyond this endpoint and `change-password`) was already correctly identified in the story as Nabil's,
+not Karim's, and not this session's to answer.
+
+#### Verified
+
+Clean `--no-incremental` Release build, `-warnaserror`: **0 warnings / 0 errors**.
+`dotnet format KaffErp.sln --verify-no-changes` exit 0. Domain **94/94**, up from 90 — four new in
+`PermissionEvaluatorTests.cs`, and `PermissionCoverageTests.cs`'s `NamedInNoTestYet` list lost
+`Permission.SupplierManage`, now named by one of them (SM-30 — a row stops being a known gap the day a
+test names it, and leaving the line in would itself have failed the file's own check). Api **209/209**,
+up from 200 — nine in `MeTests.cs` and the second `SelfOnlyEndpoints` entry.
+`check-citations.ps1`: **692 checked, 0 broken, 0 legacy** — unchanged by the build itself; this entry's
+own citations are what raise it from here. `/run-kaff-erp` smoke: all eight checks passed,
+`kaff-root present=true`, `guardsInstalled: []`; `GET /api/auth/me` exercised against the running
+Development stack with no cookie returned `401` / `errors.auth.not_authenticated`.
+
+#### Not done, and named so nobody assumes it exists
+
+* **`KAFF-105b` — the per-project list and a portal client's two permissions.** Rule 4 and `AC-105a-H`
+  are exactly the boundary that story starts from; nothing here builds any part of it.
+* **No i18n catalogue change.** Both refusal keys this handler emits (`errors.auth.not_authenticated`,
+  `errors.auth.forbidden`) already existed in both catalogues before this session.
+* **No audit record.** A read; CLAUDE.md requires one on a state change, and this is not one.
+* **The reach of a `mustChangePassword` session beyond this endpoint and `change-password` is still
+  undecided.** D-084 and D-072 §2 both raised it; this entry does not narrow it in either direction.

@@ -45,7 +45,9 @@ public sealed class PermissionCoverageTests
         Permission.CatalogueManage,     // slice 2 — masters
         Permission.BabManage,           // slice 2
         Permission.SubcontractorManage, // slice 2
-        Permission.SupplierManage,      // slice 2
+        // Permission.SupplierManage left this list on 2026-08-26 (KAFF-105a): it is one of
+        // Finance's CompanyWide rows GET /api/auth/me reports, and Finance_holds_a_flat_set_of_its_company_wide_permissions
+        // (tests/Domain.Tests/PermissionEvaluatorTests.cs) names it.
         Permission.OpportunityManage,   // slice 4 — the spine
         Permission.ExtractPrepare,      // slice 5 — billing
         Permission.QuantityGateApprove, // slice 5
