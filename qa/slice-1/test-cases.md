@@ -1,6 +1,6 @@
 # Slice 1 — test cases
 
-**252 live cases**, grouped by story, in `KAFF-1nn` order. Every acceptance criterion in the slice-1
+**253 live cases**, grouped by story, in `KAFF-1nn` order. Every acceptance criterion in the slice-1
 stories appears below with a case, an explicit `PENDING` row, or a named coverage gap.
 
 **Revised 2026-08-21** against `decisions.md` **D-049** (Karim's ten rulings), **D-050** (the access
@@ -13,11 +13,16 @@ permissions (D-055 §§1–3, D-056 §3).**
 
 | | |
 |---|---|
-| `TC-1-nnn` identifiers in this file | **258** |
+| `TC-1-nnn` identifiers in this file | **259** |
 | Of which `TC-1-000` | **not a case** — the format template in *How to read a case* below |
-| Real cases, `TC-1-001` … `TC-1-257` | **257**, **no gap and no duplicate** [Verified: 2026-08-22, every id in the range present exactly once as a heading] |
+| Real cases, `TC-1-001` … `TC-1-258` | **258**, **no gap and no duplicate** [Verified: 2026-08-26, every id in the range present exactly once as a heading] |
 | `RETIRED` | **5** — `TC-1-175` … `TC-1-179` |
-| **Live** | **252** |
+| **Live** | **253** |
+
+**`TC-1-258` added 2026-08-26** — `AC-101a-P` (D-072 §1, the locked-account exception) was ruled and
+built with no case in this file asserting it, found in the same sweep that corrected `TC-1-009`,
+`TC-1-011`, `TC-1-015`, `TC-1-016` and `TC-1-018`. Next unused id after `TC-1-257`; nothing renumbered,
+nothing retired.
 
 **Where the wrong numbers came from, recorded so they are not re-derived.** The brief for this session
 said **241**; the header of this file said **243** and its own totals line agreed with itself; a sweep
@@ -129,7 +134,7 @@ reads a token out of a response body cannot be written any more, because there i
 | Story | Status | Cases | PENDING / NO STORY |
 |---|---|---|---|
 | KAFF-100 bootstrap the first Owner | **Ready** — Q31 answered | TC-1-001…006, 216…219 | 0 |
-| KAFF-101a sign in, and the cookie | Ready | TC-1-007…016, 018, 220…230 | 0 |
+| KAFF-101a sign in, and the cookie | Ready | TC-1-007…016, 018, 220…230, 258 | 0 |
 | KAFF-101b the sign-in screen | BLOCKED Q33 | TC-1-017, 231 | 1 |
 | KAFF-102 sign out | Ready | TC-1-019…022, 232 | 0 |
 | KAFF-103 set first password | Ready | TC-1-023…029 | 0 |
@@ -160,7 +165,7 @@ reads a token out of a response body cannot be written any more, because there i
 | — the permission matrix, executed | Ready — **the gate** | TC-1-202…215 | 0 |
 | — `ProjectCreate` / `ProjectFinancialsEdit` / `UserRead` | Ready — **new 2026-08-22** | TC-1-248…254 slice 1 · TC-1-255…257 slice 4 | 0 |
 
-**Totals: 252 live cases · P1 195 · P2 50 · P3 8.**
+**Totals: 253 live cases · P1 196 · P2 50 · P3 8.**
 **4 PENDING** — one on Q33 (`TC-1-017`), one on Q27's residue (`TC-1-079`), one on the reset link's
 lifetime, which is the **story's** to settle and not Karim's (`TC-1-036`), and one on **Q35**
 (`TC-1-086`, the reason on a deactivation — `qa/questions.md` QA-3, still unasked).
@@ -395,10 +400,17 @@ asserting it identical here would fail a correct implementation.
 
 **TC-1-010 · and they take the same time**
 `AC-101a-B` · P2 · Api · spec.md §9
+
+**"The same attempts" means `TC-1-009`'s current five** — wrong password, unknown username,
+`Role.Client`, `Role.Subcontractor`, and a locked account given the wrong password — **not the three
+this case was written against.** Named explicitly rather than left implicit, because this case's
+correctness today depends entirely on a neighbouring case's wording and would silently go stale again
+the next time that wording changes without this line changing with it.
+
 Given the same attempts repeated, when response times are compared over a sample, then no
 distinguishable envelope separates them.
-*Fails if:* the unknown-user path returns before hashing, so timing enumerates accounts even though
-the bodies match.
+*Fails if:* the unknown-user path — or the client, subcontractor or locked-wrong-password path —
+returns before hashing, so timing enumerates accounts even though the bodies match.
 
 **TC-1-011 · a subcontractor cannot sign in, and the door does not say why**
 `AC-101a-G` · P1 · Api · **D-065 case 5** · spec.md §9 *"record only, no login"*
@@ -622,6 +634,32 @@ on the other device is refused on its next request.
 *Fails if:* only the changing device is affected. This is the half `TC-1-225`'s stamp check exists to
 deliver, and it is the reason a stolen phone is recoverable at all. **Expected to fail on first run**,
 for the same reason as `TC-1-225`.
+
+**TC-1-258 · the locked account answers on the truth of the password, and the hash runs either way**
+`AC-101a-P` · P1 · Api · **D-072 §1**
+
+**New, 2026-08-26 — closing a coverage gap.** `AC-101a-P` was ruled (D-072 §1) and built, and no case
+in this file asserted it: found in the sweep that corrected `TC-1-009`, `TC-1-011`, `TC-1-015`,
+`TC-1-016` and `TC-1-018` against the same family of rulings, and flagged rather than filled at the
+time. Next unused id.
+
+Given a user whose account is locked by five consecutive failed attempts, when the **correct**
+password is posted, then the response is **`423`** with `messageKey` **`errors.auth.account_locked`**,
+and no session cookie is set.
+And given the **wrong** password is posted against that same locked account, then the response is the
+generic **`401`** / **`errors.auth.invalid_credentials`** — byte-for-byte what `TC-1-009` asserts for
+every other refusal, in the **same time envelope** as every one of those.
+*Fails if:* either half is right without the other. `423` on **every** locked attempt regardless of
+the password re-opens the enumeration oracle D-072 §1 closes — an attacker who deliberately triggers a
+lockout then learns "locked" for a wrong guess too, which confirms the username is real. The flat
+`401` on every locked attempt, including the correct password, leaves the legitimate locked-out user
+with no signal at all, which is the UX half Nabil's ruling exists to keep. **And it fails on the
+ordering even when both status codes are right:** an implementation that consults
+`User.LockedOutUntil` *before* verifying the password returns `423` and `401` correctly and still fails
+this case, because the correct-password and wrong-password attempts must cost **the same time** as
+each other and as every case in `TC-1-009` — a locked account pays for the full password comparison
+before its lock is ever consulted (rule 14a). A suite that checks status codes alone cannot see that
+defect; this case is written so it can.
 
 ---
 
