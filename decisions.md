@@ -6110,3 +6110,87 @@ running Development stack, not only the test host: `POST /api/auth/sign-in` for 
 returned `401` / `errors.auth.invalid_credentials`, and the row it wrote reads
 `SignInFailedUnknownUser | User | <no entity_id> | <no actor> | ::1 | /api/auth/sign-in` — a subject
 that is absent, an address taken from the connection, and no trace of what was typed.
+
+---
+
+### D-085 · KAFF-102 built — sign-out, and the no-op the story left open · 2026-08-26
+
+**Backend.** `POST /api/auth/sign-out`
+[@ `src/Api/Features/Auth/SignOut/Endpoint.cs`, `Handler.cs`]. Re-estimated 3 → 2 on the strength of
+D-051 (N5): no session table, so the whole mechanism is clearing the `__Host-kaff-auth` cookie and
+writing one `AuditEventKind.SignedOut` — a member D-061 shipped on 2026-08-22 and no feature had
+consumed since. **No migration, no session store, no revocation list.** The story's own guardrail
+against a session table was not tested by tempting circumstance — nothing about this build wanted one.
+
+#### What was built
+
+* **`Endpoint.cs`** — `AllowAnonymous()`, the fifth member of
+  `EndpointPermissionCoverageTests.AllowList`
+  [@ `tests/Api.Tests/EndpointPermissionCoverageTests.cs` -> `AllowList`]. Rule 7 forces this: behind
+  the fallback policy an unauthenticated caller is refused `401` before the handler runs at all, which
+  is exactly the refusal rule 7 says signing out twice must not get.
+* **`Handler.cs`** — reads the caller's identity from `http.User` **before** discarding it, loads the
+  row fresh from `Users` (never the token's claims — D-075's discipline extended here on the same
+  reasoning: a stale role written into an append-only trail is wrong permanently), then discards the
+  identity and calls `AttributeTo` exactly as `SignIn.Handler` does (D-084 point 4) — required because
+  no permission gate runs on an `AllowAnonymous` endpoint to populate `VerifiedActor`, and an
+  authenticated request may not `AttributeTo` a different actor without it.
+* **`StaffSessionMinter.CookieAttributes()` went from `private` to `internal`**
+  [@ `src/Api/Identity/StaffSessionMinter.cs` -> `CookieAttributes`], and `SignOut.Handler` calls it
+  rather than building its own `CookieOptions`. The brief's own warning — "any clear you write must
+  match the attributes the mint used or the browser will not remove it" — is a fact about two literals
+  agreeing forever, and the only mechanism that guarantees that is one literal, not a second one kept
+  in sync by hand.
+
+#### One decision this session made rather than transcribed
+
+**An already-unauthenticated caller writes no audit record.** Rule 7 rules out refusing the call; it
+does not say whether a call that changed nothing — no cookie existed to clear, no actor to name —
+still owes CLAUDE.md's "every state change writes an audit record" a row. The story's audit paragraph
+describes only the signed-in case. A `SignedOut` row with a null actor is legal at the database (D-063
+§3 built exactly that shape), but it would assert "somebody signed out" with no way to say who, which
+nothing asks for. **Not written, and flagged rather than decided silently** — asserted by
+`Signing_out_with_no_session_writes_no_audit_record`
+[@ `tests/Api.Tests/SignOutTests.cs` -> `Signing_out_with_no_session_writes_no_audit_record`], so a
+later session that starts writing one does so on purpose. **Question for Nabil:** should a no-op
+sign-out leave a trace at all, and if so, naming whom?
+
+#### AC-102-F could not be exercised through a door that exists
+
+**`StaffSessionMinter.Issue` throws for `Role.Client` by construction** (decisions.md D-063 §1) — the
+client portal is a separate host with its own door (D-051 Q33) that no story has built yet. There is
+therefore no way, today, for a `Role.Client` caller to hold a cookie this endpoint would ever see.
+`A_client_role_session_can_sign_out_too` hand-signs a token with the same key, issuer and audience
+`KaffApiFactory` configures for every test host — the same shape `StaffSessionMinter.Mint` produces,
+built independently since that class refuses to build one for this role — and asserts sign-out handles
+it identically. **That proves the handler is role-agnostic; it does not prove a client can reach it
+today**, and the gap is named here rather than papered over with a mechanism that does not ship.
+
+**Watched red, the way it was meant to be caught.** The first run of that test failed with
+`System.InvalidOperationException: Sequence contains no elements` — not the assertion failing, the
+audit query finding no row at all. Cause: the hand-minted token's `Expires` was computed from the
+suite's fixed `Now` (`2026-05-01`), but this factory runs no `TestClock`, so the shipped JWT bearer
+scheme validated lifetime against the real system clock and the token read as already expired — the
+handler correctly treated the caller as unauthenticated and wrote nothing. Fixed by minting from
+`DateTimeOffset.UtcNow` instead. Left in `SignOutTests.cs`'s remarks so the next session does not
+reintroduce it.
+
+#### Verified
+
+Clean `--no-incremental` Release build: **0 warnings / 0 errors**. `dotnet format KaffErp.sln
+--verify-no-changes` exit 0. Domain **86/86** (unchanged — no Domain code touched). Api **191/191**,
+up from 181 — ten new facts in `SignOutTests.cs` and the fifth allow-list entry.
+`check-citations.ps1`: **679 checked, 0 broken, 0 legacy** (unchanged — this story cited existing
+identifiers rather than adding bracketed ones). `/run-kaff-erp` smoke: all seven checks passed against
+the running Development stack, `kaff-root present=true`, `guardsInstalled: []`.
+
+#### Not done, and named so nobody assumes it exists
+
+* **No session table, no revocation list, no token blacklist.** The story's own re-estimation says
+  this is the whole point; nothing here second-guesses D-051 (N5).
+* **No i18n catalogue change.** No new domain error key: the story's `auth.action.sign_out` and
+  `auth.signed_out` are UI-facing action/message keys for the sign-in screen's owner, not a backend
+  refusal key, and this build introduces no refusal of its own.
+* **No client-portal sign-in door.** See above — `AC-102-F` is exercised against a hand-minted token,
+  not a shipped mechanism.
+* **The no-op audit question above is unresolved**, deliberately, pending Nabil.

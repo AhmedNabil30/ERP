@@ -95,6 +95,15 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
             + "locked account whose password was correct, which gets 423 and can only be seen by "
             + "somebody who already holds that password (D-065, D-072 §1). It discloses nothing "
             + "about which usernames exist, by status code or by clock."),
+        new(
+            "POST",
+            "/api/auth/sign-out",
+            "KAFF-102 — story rule 7: \"signing out when already signed out is not an error worth a "
+            + "refusal.\" Behind the fallback policy an unauthenticated caller would be refused 401 "
+            + "before the handler ran, which is exactly the refusal the rule forbids. There is no "
+            + "permission to check either way: any authenticated role may end its own device's "
+            + "session (story bullet \"authenticated, any role\"), and a caller who holds no session "
+            + "gets the same 204 with nothing disclosed about any account."),
     ];
 
     private readonly PostgresDatabase _database;

@@ -172,11 +172,19 @@ public sealed class StaffSessionMinter
     /// The five attributes <c>AC-101a-A</c> and <c>TC-1-220</c> assert, in one place.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// No <c>Expires</c> and no <c>Max-Age</c>: the token's own <c>exp</c> is the lifetime, and a
     /// cookie carrying a second one would be a second clock to disagree with it. <c>Domain</c> is
     /// left unset rather than set to anything — the <c>__Host-</c> prefix forbids it.
+    /// </para>
+    /// <para>
+    /// <b>Internal, not private — KAFF-102's sign-out reuses this exact set</b> to build the
+    /// <c>CookieOptions</c> it hands <c>Response.Cookies.Delete</c>. Rule 3 / D-050: "a cookie cleared
+    /// with different attributes is not cleared at all." A second literal in the sign-out handler
+    /// could drift from this one the day either changes; one shared source cannot.
+    /// </para>
     /// </remarks>
-    private static CookieOptions CookieAttributes() => new()
+    internal static CookieOptions CookieAttributes() => new()
     {
         HttpOnly = true,
         Secure = true,
