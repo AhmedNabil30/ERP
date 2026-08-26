@@ -47,6 +47,8 @@ public sealed class ChangeUserRoleTests : IAsyncLifetime
     private Guid _juniorEngineer;
     private Guid _mirrorFinance;
     private Guid _marketingUser;
+    private Guid _credentialedOwner;
+    private Guid _recordlessOwner;
 
     public ChangeUserRoleTests(PostgresDatabase database) => _database = database;
 
@@ -335,6 +337,63 @@ public sealed class ChangeUserRoleTests : IAsyncLifetime
             .Should().BeEquivalentTo(new Guid?[] { _projectA, _projectB, _projectC });
     }
 
+    // ---- V-26-A · the reachable 500 -------------------------------------------------------------
+
+    /// <summary>
+    /// <c>V-26-A</c>. Converting an account that holds a credential into a subcontractor is refused
+    /// with a translatable key, not a bare <c>500</c>.
+    /// </summary>
+    /// <remarks>
+    /// The target is a departmentless <see cref="Role.Owner"/> — the shape KAFF-100's setup screen
+    /// mints, and the one that passes every check <c>User.ChangeRole</c> used to apply. The save then
+    /// violated <c>ck_users_subcontractor_cannot_log_in</c> and the <c>DbUpdateException</c> reached
+    /// the caller as a ProblemDetails carrying no <c>code</c> and no <c>messageKey</c>, which the
+    /// Arabic shell cannot render — CLAUDE.md, "no hardcoded user-facing strings", and "domain errors
+    /// are <c>Result&lt;T&gt;</c>, not exceptions".
+    /// </remarks>
+    [Fact]
+    public async Task Converting_an_account_that_holds_a_credential_into_a_subcontractor_is_refused()
+    {
+        HttpResponseMessage response = await ChangeRoleAsync(_owner, _credentialedOwner, Role.Subcontractor);
+
+        response.StatusCode.Should().Be(
+            HttpStatusCode.Conflict,
+            "the database's own rule, translated back into a Result — never a 500");
+        (await MessageKeyAsync(response)).Should().Be("errors.identity.subcontractor_cannot_log_in");
+
+        (await ActorRoleAsync(_credentialedOwner)).Should().Be(Role.Owner, "a refused change is not a change");
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+
+        List<ProjectAssignment> rows = await reader.ProjectAssignments
+            .Where(assignment => assignment.UserId == _credentialedOwner)
+            .ToListAsync(Ct);
+
+        rows.Should().HaveCount(2);
+        rows.Should().AllSatisfy(row => row.IsActive.Should().BeTrue(
+            "AC-109-G — a refused change revokes nothing. This is the request decisions.md D-082 §4 "
+            + "argued could not fail mid-batch; it could, and now it is refused before the loop runs"));
+    }
+
+    /// <summary>
+    /// The same conversion on an account holding no credential succeeds. The refusal above is about
+    /// the credential, not about the role.
+    /// </summary>
+    /// <remarks>
+    /// Exactly what <c>ck_users_subcontractor_cannot_log_in</c> permits. Here so nobody reads
+    /// <see cref="Converting_an_account_that_holds_a_credential_into_a_subcontractor_is_refused"/> as
+    /// "a user may never become a subcontractor" — a rule no source states, and the open half of
+    /// decisions.md D-088's question for Nabil.
+    /// </remarks>
+    [Fact]
+    public async Task Converting_an_account_with_no_credential_into_a_subcontractor_succeeds()
+    {
+        HttpResponseMessage response = await ChangeRoleAsync(_owner, _recordlessOwner, Role.Subcontractor);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ActorRoleAsync(_recordlessOwner)).Should().Be(Role.Subcontractor);
+    }
+
     /// <summary>A route naming a user that does not exist is a 404 the client can translate.</summary>
     [Fact]
     public async Task Changing_the_role_of_a_user_who_does_not_exist_is_refused()
@@ -452,9 +511,17 @@ public sealed class ChangeUserRoleTests : IAsyncLifetime
         User mirrorFinance = MakeUser("crr-mirror", Role.Finance, Department.Finance);
         User marketingUser = MakeUser("crr-marketing", Role.MarketingSales, Department.Marketing);
 
+        // V-26-A's two targets. Both are departmentless Role.Owner accounts — the shape KAFF-100's
+        // setup screen mints, and the one that reaches ck_users_subcontractor_cannot_log_in — and they
+        // differ in exactly one thing: whether a credential is stored.
+        User credentialedOwner = MakeUser("crr-spare-owner", Role.Owner);
+        User recordlessOwner = MakeUser("crr-recordless-owner", Role.Owner, holdsCredential: false);
+
         context.Clients.Add(client);
         context.Projects.AddRange(projectA, projectB, projectC);
-        context.Users.AddRange(owner, hr, financeProbe, supervisorEngineer, juniorEngineer, mirrorFinance, marketingUser);
+        context.Users.AddRange(
+            owner, hr, financeProbe, supervisorEngineer, juniorEngineer, mirrorFinance, marketingUser,
+            credentialedOwner, recordlessOwner);
 
         await context.SaveChangesAsync(Ct);
 
@@ -466,7 +533,13 @@ public sealed class ChangeUserRoleTests : IAsyncLifetime
             ProjectAssignment.Create(projectC.Id, juniorEngineer, AssignmentLevel.Junior, owner.Id, Now).Value,
             ProjectAssignment.Create(projectA.Id, mirrorFinance, AssignmentLevel.Standard, owner.Id, Now).Value,
             ProjectAssignment.Create(projectB.Id, mirrorFinance, AssignmentLevel.Standard, owner.Id, Now).Value,
-            ProjectAssignment.Create(projectA.Id, marketingUser, AssignmentLevel.Standard, owner.Id, Now).Value);
+            ProjectAssignment.Create(projectA.Id, marketingUser, AssignmentLevel.Standard, owner.Id, Now).Value,
+
+            // Two rows on the credentialed owner, so the refusal below is also the AC-109-K shape:
+            // the request that used to fail at the database, with the role change and both revocations
+            // in the change tracker together, now fails before the revocation loop starts.
+            ProjectAssignment.Create(projectA.Id, credentialedOwner, AssignmentLevel.Standard, owner.Id, Now).Value,
+            ProjectAssignment.Create(projectB.Id, credentialedOwner, AssignmentLevel.Standard, owner.Id, Now).Value);
 
         await context.SaveChangesAsync(Ct);
 
@@ -480,14 +553,36 @@ public sealed class ChangeUserRoleTests : IAsyncLifetime
         _juniorEngineer = juniorEngineer.Id;
         _mirrorFinance = mirrorFinance.Id;
         _marketingUser = marketingUser.Id;
+        _credentialedOwner = credentialedOwner.Id;
+        _recordlessOwner = recordlessOwner.Id;
     }
 
+    /// <summary>
+    /// A seeded user, <b>holding a credential</b> unless the caller asks for one without.
+    /// </summary>
+    /// <remarks>
+    /// <b>The credential is the point, not decoration.</b> This helper built every user through
+    /// <c>User.Create</c> alone, so no seeded row had a <c>PasswordHash</c> and
+    /// <c>ck_users_subcontractor_cannot_log_in</c> — <c>role &lt;&gt; 'Subcontractor' OR password_hash
+    /// IS NULL</c> — was satisfied vacuously by every case in this file at once. The suite was green
+    /// and <c>PUT /api/users/{userId}/role</c> answered <c>500</c> to a request the Owner can make on
+    /// his own account (qa/slice-1/verification-2026-08-26.md, <c>V-26-A</c>). A test that cannot fail
+    /// is worse than no test; these rows now carry what a real staff account carries.
+    /// <para>
+    /// The value is a literal rather than a <c>PasswordHasher.Hash</c> call because nothing in this
+    /// file verifies it — every request here authenticates through <see cref="TestAuthHandler"/> — and
+    /// paying 600,000 PBKDF2 iterations per seeded user for a string nobody reads would be a cost with
+    /// no assertion behind it.
+    /// </para>
+    /// </remarks>
     private static User MakeUser(
         string userName,
         Role role,
         Department? department = null,
-        OperationsSubDepartment? subDepartment = null)
-        => User.Create(
+        OperationsSubDepartment? subDepartment = null,
+        bool holdsCredential = true)
+    {
+        User user = User.Create(
             UniqueNames.Code(userName),
             userName,
             UniqueNames.Phone(),
@@ -495,6 +590,17 @@ public sealed class ChangeUserRoleTests : IAsyncLifetime
             Now,
             department,
             subDepartment).Value;
+
+        if (holdsCredential)
+        {
+            user.SetOwnPassword(SeededCredential).IsSuccess.Should().BeTrue();
+        }
+
+        return user;
+    }
+
+    /// <summary>What a seeded staff account stores in <c>PasswordHash</c>. See <see cref="MakeUser"/>.</summary>
+    private const string SeededCredential = "seeded-credential-not-verified-by-these-tests";
 
     /// <summary>The shape <c>ChangeUserRole.Response</c> carries, read back from JSON in these tests.</summary>
     private sealed record Response(Guid UserId, Role Role, IReadOnlyList<Guid> RevokedProjectIds);

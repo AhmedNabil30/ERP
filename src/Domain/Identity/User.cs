@@ -473,6 +473,24 @@ public sealed class User : Entity
             return Result.Failure(IdentityErrors.NonClientUserCannotCarryClient);
         }
 
+        // spec.md §9, "Subcontractor — record only, no login", the transition half of it. The entity
+        // already refuses a subcontractor a credential on the way in (StorePasswordHash) and the
+        // database refuses the pair outright — ck_users_subcontractor_cannot_log_in, "role <>
+        // 'Subcontractor' OR password_hash IS NULL". Nothing re-applied it on the way *round*, so a
+        // departmentless staff account holding a hash — every Role.Owner, including the one the setup
+        // screen mints — passed every check here and violated the constraint at SaveChangesAsync,
+        // arriving at the caller as an untranslatable 500 (qa/slice-1/verification-2026-08-26.md,
+        // V-26-A). This is that same constraint, stated where a Result can carry it.
+        //
+        // 🟡 It REFUSES rather than clearing the credential, and which of the two Kaff wants is a
+        // business question nobody has answered — see decisions.md D-088. Refusing is the reversible
+        // half: a ruling can relax it to "convert and clear" later, and nothing was destroyed in the
+        // meantime. Clearing a credential the Owner did not ask to clear cannot be undone.
+        if (role == Role.Subcontractor && PasswordHash is not null)
+        {
+            return Result.Failure(IdentityErrors.SubcontractorCannotLogIn);
+        }
+
         Role = role;
         return Result.Success();
     }

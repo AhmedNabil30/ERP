@@ -5753,6 +5753,41 @@ same reason `MoveUserDepartment` has none: the request carries one field, and ev
 
 #### 4. AC-109-K — not independently fault-injected, and that is recorded rather than hidden
 
+> ### ⚠️ CORRECTED 2026-08-26 — the premise below is **false**. The conclusion survives on other evidence.
+>
+> **"Structurally unreachable through the public surface of this codebase" was wrong when it was
+> written.** `PUT /api/users/{userId}/role` with `{"role":"Subcontractor"}`, against a departmentless
+> staff account holding a credential — every `Role.Owner`, including the one KAFF-100's setup screen
+> mints — passed every check in `User.ChangeRole` and then violated
+> `ck_users_subcontractor_cannot_log_in` at `SaveChangesAsync`, **with the role change and every
+> revocation in the change tracker together.** That is a real fault at exactly the point this section
+> says nothing can fail. See `qa/slice-1/verification-2026-08-26.md` §3 `V-26-A` and §4.1.
+>
+> **The conclusion — the batch is atomic — is now on evidence rather than on the argument.** The
+> Verifier injected that real fault against a target holding two active assignments and measured
+> `roleBefore=Owner roleAfter=Owner assignments=2 stillActive=2` (PROBE-6). EF Core's implicit
+> transaction around the single `SaveChangesAsync` did the work, exactly as the handler claims.
+>
+> **Read the sections that cite this one accordingly.** KAFF-109, KAFF-110 and KAFF-111 all lean on
+> "one `SaveChangesAsync`, therefore one transaction", and that part is true and demonstrated. What
+> must not be inherited is the second sentence — *"a fault-injection test would pass regardless"*. A
+> handler that opens its own transaction, or saves twice, breaks the invariant, and the recorded
+> reason for having no test would still have read "unreachable". **The reachable door named above is
+> closed as of D-088** — `ChangeRole` now refuses the conversion as a `Result` before the revocation
+> loop starts, pinned by
+> [Verified: 2026-08-26 @ `tests/Api.Tests/ChangeUserRoleTests.cs` ->
+> `Converting_an_account_that_holds_a_credential_into_a_subcontractor_is_refused`], which asserts both
+> assignments are still active. **Closing one door is not the same as there being none**, and this
+> correction stands rather than being deleted for that reason.
+>
+> **No source file restates the false half.** `DeactivateUser.Handler`'s and `ChangeUserRole.Handler`'s
+> remarks claim only "one `SaveChangesAsync`, therefore one transaction" and that
+> `AssignmentAlreadyRevoked` cannot occur because the loading query filters `RevokedAt == null`
+> [Verified: 2026-08-26 @ `src/Api/Features/Users/DeactivateUser/Handler.cs` -> `HandleAsync`;
+> @ `src/Api/Features/Users/ChangeUserRole/Handler.cs` -> `HandleAsync`] — both still true. The
+> unreachability argument lives here and nowhere else, which is why the correction is here.
+
+
 `AC-109-K` asks for a case where "the third revocation fails" mid-batch and the whole request rolls
 back. As built, that specific failure is structurally unreachable through the public surface of this
 codebase: the query that loads the revocation loop filters to `RevokedAt IS NULL`, so
@@ -6461,3 +6496,106 @@ Development stack with no cookie returned `401` / `errors.auth.not_authenticated
 * **No audit record.** A read; CLAUDE.md requires one on a state change, and this is not one.
 * **The reach of a `mustChangePassword` session beyond this endpoint and `change-password` is still
   undecided.** D-084 and D-072 §2 both raised it; this entry does not narrow it in either direction.
+
+---
+
+### D-088 · `V-26-A` fixed — the reachable 500, and the seeding that made the whole suite vacuous · 2026-08-26
+
+**Backend, defect-fix session.** `qa/slice-1/verification-2026-08-26.md` rejected KAFF-109, KAFF-105a
+and KAFF-102. This entry is the first of three and covers `V-26-A` (HIGH) and the correction to
+D-082 §4 above.
+
+#### What was wrong
+
+`User.ChangeRole` re-applied the *creation* invariants and nothing about the *transition*
+[Verified: 2026-08-26 @ `src/Domain/Identity/User.cs` -> `ChangeRole`]. spec.md §9 — *"Subcontractor
+— record only, no login"* — is enforced by the entity on the way **in**
+[Verified: 2026-08-26 @ `src/Domain/Identity/User.cs` -> `StorePasswordHash`] and by the database
+outright [Verified: 2026-08-26 @
+`src/Infrastructure/Persistence/Configurations/IdentityConfigurations.cs` ->
+`ck_users_subcontractor_cannot_log_in`], and by nothing at all on the way **round**. A departmentless
+staff account holding a credential — every `Role.Owner`, including the one `CreateBootstrapOwner`
+mints [Verified: 2026-08-26 @ `src/Domain/Identity/User.cs` -> `CreateBootstrapOwner`] — passed every
+check and violated the constraint at `SaveChangesAsync`. The `DbUpdateException` was unhandled and the
+caller got a `500` carrying no `code` and no `messageKey`, which the Arabic shell cannot render.
+
+**KAFF-100 already had the pattern this was missing** — its handler catches the unique-violation by
+constraint name and returns `setup.already_completed` rather than a `500`
+[Verified: 2026-08-26 @ `src/Api/Features/Setup/CreateOwner/Handler.cs` -> `IsBootstrapRace`]. The fix
+here takes the other route available: state the rule in the domain, where a `Result` can carry it,
+rather than catch the database's refusal in a handler.
+
+#### The decision, and it is half a decision
+
+**Refuse, do not clear.** `ChangeRole` refuses `Role.Subcontractor` while `PasswordHash is not null`
+and returns the `IdentityErrors.SubcontractorCannotLogIn` the entity already uses for the same rule
+[Verified: 2026-08-26 @ `src/Domain/Identity/IdentityErrors.cs` -> `SubcontractorCannotLogIn`] — a
+`409` with a key that already carries real Arabic and English
+[Verified: 2026-08-26 @ `src/Web/public/locales/ar.json` ->
+`errors.identity.subcontractor_cannot_log_in`]. No new error, no new key, no catalogue change.
+
+**This is not a new business rule and is deliberately not one.** It is
+`ck_users_subcontractor_cannot_log_in` — *"`role <> 'Subcontractor' OR password_hash IS NULL`"* —
+restated where a `Result` can carry it. An account holding **no** credential still converts, which is
+exactly what the constraint permits, pinned by
+[Verified: 2026-08-26 @ `tests/Api.Tests/ChangeUserRoleTests.cs` ->
+`Converting_an_account_with_no_credential_into_a_subcontractor_succeeds`] so that nobody reads the
+refusal as *"a user may never become a subcontractor"*, a rule no source states.
+
+#### 🟡 For Nabil — the half this session refused to decide
+
+**Should converting a user to `Role.Subcontractor` (a) refuse, or (b) succeed and clear the
+credential?** KAFF-109 does not say. spec.md §9 says only *"record only, no login"*, which both
+readings satisfy. KAFF-109's own **Q41** raises the sibling question for `Role.Client` and is open.
+
+**Refusing was built because it is the reversible half.** A later ruling can relax it to "convert and
+clear" and nothing has been lost in the meantime; clearing a credential the Owner did not ask to clear
+destroys it, kills every session the account holds, and cannot be undone by a ruling that arrives
+afterwards. CLAUDE.md: *"If `spec.md` doesn't answer a business question, stop and ask. Do not
+decide."* — this is the safe build plus the question, not the decision.
+
+**What (b) would look like if Karim wants it:** `ChangeRole` calls the existing `ClearPassword`
+[Verified: 2026-08-26 @ `src/Domain/Identity/User.cs` -> `ClearPassword`], which nulls the hash and
+rotates the stamp — so it would also close `V-26-B`'s production reachability as a side effect. That
+is an argument for (b) and it is **not** why (b) should be chosen; `V-26-B` is closed on its own terms
+in D-089, so this question is free to be answered on the business merits alone.
+
+#### The durable half: a constraint that was satisfied vacuously by the entire suite
+
+`ChangeUserRoleTests` seeded every user through `User.Create` alone, so **no row in the file held a
+`PasswordHash` and `ck_users_subcontractor_cannot_log_in` could not be violated by any case in it.**
+The suite was green and the endpoint answered `500`. `MakeUser` now stores a credential unless the
+caller asks for one without
+[Verified: 2026-08-26 @ `tests/Api.Tests/ChangeUserRoleTests.cs` -> `MakeUser`], and the two `V-26-A`
+targets are departmentless `Role.Owner` accounts differing in exactly that.
+
+**The seeded value is a literal, not a `PasswordHasher.Hash` call**, because nothing in that file
+verifies it — every request there authenticates through `TestAuthHandler` — and 600,000 PBKDF2
+iterations per seeded row for a string nobody reads is cost with no assertion behind it.
+
+**The other suites were surveyed and are not vacuous in the same way.** Four seed no credential at all
+— `AssignUserToProjectTests`, `DeactivateUserTests`, `MoveUserDepartmentTests`,
+`RevokeProjectAssignmentTests` — and none of them changes a role or writes a credential, so the
+constraint is not a rule they claim to cover and leave untested. It is not a general "seed everything"
+rule: a credential on a seeded row earns its place where a rule reads it, and nowhere else.
+
+#### Watched red before being trusted
+
+The guard was deleted from `ChangeRole`, the solution rebuilt clean, and the two suites run:
+`ChangeRole_refuses_a_subcontractor_conversion_while_a_credential_is_stored` failed on
+`changed.IsFailure` being false, and
+`Converting_an_account_that_holds_a_credential_into_a_subcontractor_is_refused` failed with
+**`Expected HttpStatusCode.Conflict {409} … but found HttpStatusCode.InternalServerError {500}`** —
+the Verifier's PROBE-1 reproduced by the suite. Nothing else went red. Restored; Domain **96/96**
+(up from 94), Api **211/211** (up from 209).
+
+#### Not done, and named so nobody assumes it exists
+
+* **`ChangeRole` still does not rotate `SecurityStamp`.** Deliberate, D-051 Q27, and unchanged here.
+  The session a role change leaves alive is `V-26-B`'s subject and is closed in D-089 at the door
+  rather than by rotating a stamp this story rules must not rotate.
+* **Nothing catches `DbUpdateException` generically.** Every other check constraint on `users` remains
+  unmapped to a `Result`; this fixes the one the Verifier found reachable, not the class. A generic
+  translator would be guessing which constraint means which business rule.
+* **Q41 is untouched.** Whether a staff account may become a `Role.Client` portal login at all is
+  still nobody's decision but Karim's.

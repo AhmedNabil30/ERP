@@ -141,6 +141,65 @@ public sealed class UserTests
         user.Role.Should().Be(Role.Owner);
     }
 
+    /// <summary>
+    /// V-26-A. A staff account that holds a credential cannot be converted into a subcontractor.
+    /// </summary>
+    /// <remarks>
+    /// spec.md §9, "record only, no login". The database says the same thing —
+    /// <c>ck_users_subcontractor_cannot_log_in</c>, <c>role &lt;&gt; 'Subcontractor' OR password_hash
+    /// IS NULL</c> — and until qa/slice-1/verification-2026-08-26.md this was the <b>only</b> place
+    /// saying it on this path, so the refusal arrived as an unhandled <c>DbUpdateException</c> with no
+    /// <c>messageKey</c>. A departmentless <see cref="Role.Owner"/> is the reachable case and it is
+    /// the shape of the first account the system ever creates.
+    /// </remarks>
+    [Fact]
+    public void ChangeRole_refuses_a_subcontractor_conversion_while_a_credential_is_stored()
+    {
+        User user = User.Create(
+            "change-role-credentialed",
+            "Owner With A Credential",
+            PhoneNumber.Create("01000000013").Value,
+            Role.Owner,
+            Now).Value;
+
+        user.SetOwnPassword("stored-hash").IsSuccess.Should().BeTrue();
+
+        Result changed = user.ChangeRole(Role.Subcontractor);
+
+        changed.IsFailure.Should().BeTrue();
+        changed.Error.Should().Be(IdentityErrors.SubcontractorCannotLogIn);
+        user.Role.Should().Be(Role.Owner, "a refused change is not a change");
+        user.PasswordHash.Should().Be(
+            "stored-hash",
+            "the refusal does not clear the credential — which of the two Kaff wants is decisions.md "
+            + "D-088's open question, and destroying a credential is the half that cannot be undone");
+    }
+
+    /// <summary>
+    /// The same conversion on an account holding no credential succeeds — the refusal above is about
+    /// the credential, not about the role.
+    /// </summary>
+    /// <remarks>
+    /// This is exactly what <c>ck_users_subcontractor_cannot_log_in</c> permits, restated in the
+    /// domain. It is here so nobody reads the refusal above as "a user may never become a
+    /// subcontractor", a rule no source states.
+    /// </remarks>
+    [Fact]
+    public void ChangeRole_allows_a_subcontractor_conversion_when_no_credential_is_stored()
+    {
+        User user = User.Create(
+            "change-role-credentialless",
+            "Owner With No Credential",
+            PhoneNumber.Create("01000000014").Value,
+            Role.Owner,
+            Now).Value;
+
+        Result changed = user.ChangeRole(Role.Subcontractor);
+
+        changed.IsSuccess.Should().BeTrue();
+        user.Role.Should().Be(Role.Subcontractor);
+    }
+
     /// <summary>A compatible change succeeds and sets the new role.</summary>
     [Fact]
     public void ChangeRole_succeeds_when_the_new_role_fits_the_existing_department()
