@@ -6428,6 +6428,17 @@ construction, the same way `change-password` never reaches it. **Watched red**: 
 
 #### The freshness re-check nothing upstream applies here
 
+> **⚠️ CORRECTED 2026-08-26 by D-089 — this re-check was two of three, and the missing one was a
+> security defect.** What a `RequirePermission` route gets is `IsActive`, the stamp, **and** the role
+> bar `PermissionEvaluator` applies before the catalogue is consulted. This section describes copying
+> the first two by hand and says so accurately; it does not notice the third, so `GET /api/auth/me`
+> answered `Role.Subcontractor` with a `200` and their name — spec.md §9, "record only, no login".
+> See `qa/slice-1/verification-2026-08-26.md` `V-26-B`. **The hand-copy is gone**: all three now live
+> in `LiveSession` and are applied by `RequireLiveSession()`, which is also the only thing that marks
+> a route as exempt, so the two acts cannot come apart again. The paragraph below stands as written
+> because the reasoning that produced it — "leaving it out here would make this the one exception" —
+> was right, and reached for the wrong half of the answer: **the pattern, not the instance.**
+
 No permission gate runs on this route, so nothing re-validates `IsActive` or the security stamp the way
 `PermissionSubjectReader` does for every `RequirePermission` route (D-048, D-053). The handler
 reapplies both by hand, refusing with the ordinary `errors.auth.forbidden` a stale token gets everywhere
@@ -6599,3 +6610,144 @@ the Verifier's PROBE-1 reproduced by the suite. Nothing else went red. Restored;
   translator would be guessing which constraint means which business rule.
 * **Q41 is untouched.** Whether a staff account may become a `Role.Client` portal login at all is
   still nobody's decision but Karim's.
+
+---
+
+### D-089 · `V-26-B` and `V-26-C` fixed — what an endpoint outside the gate owes, applied by construction · 2026-08-26
+
+**Backend, defect-fix session.** Second of three. `V-26-B` is HIGH and is a security defect against a
+rule Nabil stated absolutely; `V-26-C` is MEDIUM and falls out of the same mechanism.
+
+#### The finding is the category, not the route
+
+`GET /api/auth/me` answered `Role.Subcontractor` with a `200` and their name. spec.md §9: *"record
+only, no login."* **Adding the missing check to that one endpoint would have left the hole open**, and
+the Verifier said so in as many words: two endpoints are exempt today, the list is designed to grow,
+each entry records why it is exempt and none records what it therefore owes.
+
+**What a gated route gets is three things, not two.** `PermissionSubjectReader` establishes
+`IsActive` and the security stamp in one `WHERE` clause
+[Verified: 2026-08-26 @ `src/Infrastructure/Authorization/PermissionSubjectReader.cs` -> `ReadAsync`],
+and `PermissionEvaluator.Evaluate` refuses `Role.Subcontractor` before the catalogue is consulted at
+all [Verified: 2026-08-26 @ `src/Domain/Authorization/PermissionEvaluator.cs` -> `Evaluate`].
+`StaffSessionMinter.Issue` bars both external roles by construction
+[Verified: 2026-08-26 @ `src/Api/Identity/StaffSessionMinter.cs` -> `Issue`]. D-086 and D-087 each
+re-applied two of the three by hand on a route the gate does not run on, and dropped the third;
+`SignOut` re-applied none.
+
+#### The fix: one mechanism, and declaring the exemption is the same act as paying for it
+
+**`LiveSession`** [Verified: 2026-08-26 @ `src/Api/Authorization/LiveSession.cs` -> `ResolveAsync`] is
+the one place the three checks are written. `RequireLiveSession()` applies them in an endpoint filter
+**and** stamps the route with `LiveSession.Marker`
+[Verified: 2026-08-26 @ `src/Api/Authorization/LiveSession.cs` -> `RequireLiveSession`], and nothing
+else adds that metadata. `EndpointPermissionCoverageTests.IsSelfOnlyListed` exempts a route only when
+it is both named on the list **and** carries the marker
+[Verified: 2026-08-26 @ `tests/Api.Tests/EndpointPermissionCoverageTests.cs` -> `IsSelfOnlyListed`], so
+a new self-only endpoint that skips the checks is not exempt at all — it falls through to
+`Every_mapped_endpoint_carries_a_permission_requirement` as an ungated route, D-067's own failure.
+
+**The anonymous half cannot take a refusing filter, and is covered by a different assertion.**
+Sign-out must answer `204` to a caller holding no session (KAFF-102 rule 7), so it calls
+`LiveSession.ResolveAsync` directly and writes its audit row only on a live answer
+[Verified: 2026-08-26 @ `src/Api/Features/Auth/SignOut/Handler.cs` -> `HandleAsync`]. What is checkable
+there is the hand-roll itself: all three defective handlers each carried a private
+`ReadUserId(ClaimsPrincipal)` over `KaffClaimTypes.UserId`, so
+`No_feature_handler_reads_the_callers_identity_from_the_token_itself`
+[Verified: 2026-08-26 @ `tests/Api.Tests/EndpointPermissionCoverageTests.cs` ->
+`No_feature_handler_reads_the_callers_identity_from_the_token_itself`] fails when any file under
+`src/Api/Features/` names a claim type. **Its ceiling is named rather than hidden:** a handler could
+still load its own caller's row through `ICurrentUser.UserId` without naming a claim. That is the
+reviewer's, and it is not the shape any of the three defects had.
+
+**The role bar itself moved to Domain** as `StaffSessionRules.MayHoldStaffSession`
+[Verified: 2026-08-26 @ `src/Domain/Identity/Role.cs` -> `MayHoldStaffSession`], now called by
+`StaffSessionMinter.Issue`, `SignIn.Handler` and `LiveSession` — CLAUDE.md, *"if two features need the
+same thing, it moves to `Domain/`"*. **It deliberately does not replace `PermissionEvaluator`'s bar**,
+which is a narrower statement: the evaluator refuses `Role.Subcontractor` a permission and says nothing
+about `Role.Client`, because a client legitimately holds `PortalRead` and `PortalApprove` on their own
+project (D-035) — through the portal door, when it ships. This predicate is about the staff session.
+
+#### The refusal shape did not move, and must not
+
+Every failure here answers `403` / `errors.auth.forbidden`, the blanket pair of D-071 and D-080.
+`AuthorizationErrors.RoleCannotLogIn` is **not** used, and `SpecificRefusal` (D-086) is **not** used —
+Nabil: *"If we return a specific `errors.auth.role_cannot_log_in`, we are explicitly telling the
+attacker: 'This account exists and belongs to a subcontractor.' That is a security breach."* Asserted
+both ways: the body must contain `errors.auth.forbidden` and must not contain `role_cannot_log_in` or
+the role's name [Verified: 2026-08-26 @ `tests/Api.Tests/MeTests.cs` ->
+`A_subcontractor_session_is_refused_not_answered_with_a_profile`].
+
+#### `V-26-C` is covered by construction, not by a second fix
+
+Sign-out asks `LiveSession` the same question every other exempt route asks. A cookie the global kill
+of D-053 already ended gets the same `204` and the same cleared cookie — rule 7 unchanged, nothing
+disclosed — and writes no row into a table that is append-only and trigger-protected, where a wrong
+row can never be corrected by anyone
+[Verified: 2026-08-26 @ `tests/Api.Tests/SignOutTests.cs` ->
+`A_cookie_the_global_kill_already_ended_writes_no_audit_row`].
+
+#### ⚠️ A correction to the Verifier's report: `V-26-B`'s production reachability is overstated
+
+The report says the subcontractor half is *"reachable in production, through KAFF-109"*, because
+`ChangeRole` does not rotate the stamp. **Re-derived against the files, that path does not close.**
+Holding a live staff session means having signed in, which means holding a credential; a credential is
+exactly what blocks the conversion (a `500` before D-088, a `409` after it); and the only way to remove
+it — `User.ClearPassword` — rotates the stamp
+[Verified: 2026-08-26 @ `src/Domain/Identity/User.cs` -> `ClearPassword`], which kills the session.
+**Both halves of `V-26-B` need a hand-issued identity today**, exactly as the report already concedes
+for `Role.Client` in its §8. Its own PROBE-2 is consistent with this: that account converted with a
+`200`, which after D-088 means it held no credential, which means its session was not obtained by
+signing in.
+
+**This changes nothing about the fix and is recorded because the reasoning is what a later session
+inherits.** The defect is real and was demonstrated: the endpoint answers a subcontractor with a `200`
+and their name. The bar belongs there because *"no staff session exists for this role"* is a property
+of the door — the argument `StaffSessionMinter` already makes for itself — and not because a path to
+it happens to be open today. That is the D-082 §4 mistake, and this session declines to repeat it in
+the opposite direction.
+
+#### 🟡 Two things for Nabil, both changes to what an accepted criterion is proved against
+
+1. **`AC-102-F`'s audit half is reversed.** `A_client_role_session_can_sign_out_too` asserted a
+   `SignedOut` row with `ActorRole == Role.Client`; it now asserts the `204`, the cleared cookie, and
+   **no** row [Verified: 2026-08-26 @ `tests/Api.Tests/SignOutTests.cs` ->
+   `A_client_role_session_can_sign_out_too`]. The criterion's own text — a portal user can sign out —
+   is unchanged and still passes. The alternative was a per-route list of which of the three checks
+   each exempt endpoint owes, which is the hand-copy that produced `V-26-B`.
+2. **`GET /api/auth/me` now refuses `Role.Client`.** `AC-105a-H`'s substance is untouched and is proved
+   where it is a fact about the rule rather than about this route
+   [Verified: 2026-08-26 @ `tests/Domain.Tests/PermissionEvaluatorTests.cs` ->
+   `A_portal_client_holds_no_company_wide_permission`]. When the portal door of D-051 Q33 ships,
+   whether it reuses this endpoint is that story's question — it must widen one line in Domain
+   deliberately, which is the point of it being one line.
+
+#### Watched red — four mutations, each reverted, each naming what it proves
+
+| Mutation | Red | What it proves |
+|---|---|---|
+| Delete `MayHoldStaffSession()` from `LiveSession.ResolveAsync` | `MeTests` -> `A_subcontractor_session_is_refused_not_answered_with_a_profile` and `A_hand_minted_portal_client_session_is_refused_by_the_staff_door` (**both `200`** — the Verifier's PROBE-4 and PROBE-5 reproduced), plus `SignOutTests` -> `A_client_role_session_can_sign_out_too` | The role bar is live, on both roles and on both route shapes |
+| Delete `.RequireLiveSession()` from `WhoAmI.Endpoint` | `Every_mapped_endpoint_carries_a_permission_requirement` naming `GET /api/auth/me` **and** `Every_self_only_member_is_mapped_and_requires_authentication_with_no_permission_of_its_own` on the null marker | A self-only route that skips the checks is not exempt — it is ungated, which is D-067's own failure |
+| Reintroduce a `KaffClaimTypes` reference in a feature handler | `No_feature_handler_reads_the_callers_identity_from_the_token_itself` naming the file | The hand-roll that produced all three defects cannot come back quietly |
+| Delete `IsActive` and the stamp comparison from `ResolveAsync` | `SignOutTests` -> `A_cookie_the_global_kill_already_ended_writes_no_audit_row` (**2 rows, expected 1** — PROBE-3 reproduced), `MeTests` -> both freshness cases, `ChangePasswordTests` -> `A_deactivated_account_cannot_change_its_own_password` | The two checks D-087 did copy are still live, and now cover sign-out too |
+
+#### Verified
+
+Clean `--no-incremental` Release build, `-warnaserror`: **0 warnings / 0 errors**.
+`dotnet format KaffErp.sln --verify-no-changes` exit 0. Domain **96/96**, Api **214/214** — three new
+in `EndpointPermissionCoverageTests`, `MeTests` and `SignOutTests`.
+
+#### Not done, and named so nobody assumes it exists
+
+* **`ChangeRole` still does not rotate the stamp**, and this entry does not propose that it should.
+  D-051 Q27 rules that a role change takes effect on the next request through the gate's re-read, not
+  by ending the session; the door is the right place for the bar.
+* **No new i18n key.** Every refusal here is `errors.auth.forbidden`, which both catalogues carry.
+* **`AllowList` members other than sign-out were checked and owe nothing.** `GET /api/health`,
+  `GET /api/setup` and `POST /api/setup` never read the caller's identity, and `POST /api/auth/sign-in`
+  discards it before doing anything [Verified: 2026-08-26 @ `src/Api/Features/Auth/SignIn/Handler.cs`
+  -> `HandleAsync`]. Sign-in's own role bar is the shared predicate now, in the same statement and the
+  same position — the ordering D-072 §1 turns on did not move.
+* **`V-26-G` is untouched.** `TC-1-042` lives under `qa/`, which this session must not edit; it is the
+  Scrum Master's per SM-30, and `V-26-B`'s fix makes it more wrong, not less — the endpoint now refuses
+  the caller that case describes.

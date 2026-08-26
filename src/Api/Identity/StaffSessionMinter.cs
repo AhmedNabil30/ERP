@@ -74,7 +74,11 @@ public sealed class StaffSessionMinter
         // ck_users_subcontractor_cannot_log_in, so this is the third lock on a door with no key —
         // and it is here because "no staff session exists for this role" is exactly the guarantee
         // this method is the single point of.
-        if (user.Role is Role.Client or Role.Subcontractor)
+        //
+        // The pair itself is StaffSessionRules.MayHoldStaffSession, in Domain: it was written by hand
+        // here, again in SignIn.Handler, and left out of the two SelfOnlyEndpoints routes entirely
+        // (V-26-B). CLAUDE.md — "if two features need the same thing, it moves to Domain/".
+        if (!user.Role.MayHoldStaffSession())
         {
             throw new InvalidOperationException(
                 $"No staff session may be minted for {user.Role}. The caller must refuse the request "

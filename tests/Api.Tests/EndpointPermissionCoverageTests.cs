@@ -224,7 +224,78 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
                 + "grown one, it belongs to the ordinary gated set instead and should come off this list",
                 entry.Method,
                 entry.Route);
+
+            mapped.Endpoint.Metadata.GetMetadata<LiveSession.Marker>().Should().NotBeNull(
+                "{0} {1} is outside the permission gate, so nothing upstream re-reads IsActive, the "
+                + "security stamp, or whether the role may hold a staff session at all. It must "
+                + "declare RequireLiveSession(), which is the only thing that adds this metadata — "
+                + "the entry above records why the route is exempt, and this records that it paid "
+                + "what the exemption costs (V-26-B, decisions.md D-089)",
+                entry.Method,
+                entry.Route);
         }
+    }
+
+    /// <summary>
+    /// <c>V-26-B</c>, the pattern rather than the instance: no endpoint re-implements "who is calling"
+    /// from the token by hand.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>This is how the defect was written, three times.</b> <c>WhoAmI</c>, <c>ChangePassword</c> and
+    /// <c>SignOut</c> each carried their own <c>ReadUserId(ClaimsPrincipal)</c> over
+    /// <c>KaffClaimTypes.UserId</c> and then decided, per file, which of the gate's checks to re-apply.
+    /// Two of three applied two of three; one applied none. Every one of them is a route the gate does
+    /// not run on, and every one of them was free to be one item short.
+    /// </para>
+    /// <para>
+    /// <b>Why a source scan and not metadata.</b> The metadata assertion above covers the authenticated
+    /// exemption, because a filter can be required there. It cannot cover the anonymous one — sign-out
+    /// must answer <c>204</c> to a caller holding no session at all (rule 7), so no refusing filter can
+    /// sit in front of it — and sign-out is precisely where the hand-roll did the most damage
+    /// (<c>V-26-C</c>: a permanent audit row on a dead token). What is checkable there is the hand-roll
+    /// itself: turning a token into a caller is <c>LiveSession</c>'s job and no feature's, so no file
+    /// under <c>src/Api/Features/</c> has any business naming a claim type. D-067's warning about
+    /// source text does not apply — this asserts what the text is, not that a comment describes the
+    /// code correctly.
+    /// </para>
+    /// <para>
+    /// <b>Its ceiling, named.</b> A handler could still load its own caller's row through
+    /// <c>ICurrentUser.UserId</c> without naming a claim type. Nothing here catches that; the reviewer
+    /// does. It catches the shape all three defective handlers actually had.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void No_feature_handler_reads_the_callers_identity_from_the_token_itself()
+    {
+        DirectoryInfo features = new(Path.Combine(RepositoryRoot().FullName, "src", "Api", "Features"));
+
+        features.Exists.Should().BeTrue("this test reads the shipped feature slices from disk");
+
+        List<string> handRolled = [.. features
+            .EnumerateFiles("*.cs", SearchOption.AllDirectories)
+            .Where(file => File.ReadAllText(file.FullName).Contains("KaffClaimTypes", StringComparison.Ordinal))
+            .Select(file => Path.GetRelativePath(features.FullName, file.FullName))];
+
+        handRolled.Should().BeEmpty(
+            "a route outside the permission gate that answers 'who is calling' from the token itself "
+            + "also decides, alone, which of the gate's checks to re-apply — and three of them did, "
+            + "each one item short (V-26-B, V-26-C). LiveSession.ResolveAsync is the one answer, and "
+            + "it applies all three");
+    }
+
+    /// <summary>The directory holding <c>KaffErp.sln</c>, walked up from the test binary.</summary>
+    private static DirectoryInfo RepositoryRoot()
+    {
+        DirectoryInfo? directory = new(AppContext.BaseDirectory);
+
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "KaffErp.sln")))
+        {
+            directory = directory.Parent;
+        }
+
+        return directory ?? throw new InvalidOperationException(
+            $"No KaffErp.sln above '{AppContext.BaseDirectory}'.");
     }
 
     [Fact]
@@ -342,10 +413,22 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
             string.Equals(entry.Method, mapped.Method, StringComparison.Ordinal)
             && string.Equals(entry.Route, mapped.Route, StringComparison.Ordinal));
 
+    /// <summary>
+    /// Named on the self-only list <b>and</b> carrying the checks that exemption owes.
+    /// </summary>
+    /// <remarks>
+    /// <b>The second half is the point.</b> Being on the list is a claim; carrying
+    /// <see cref="LiveSession.Marker"/> is the claim being paid for, and only
+    /// <c>RequireLiveSession()</c> adds it. A route added to <see cref="SelfOnlyEndpoints"/> without it
+    /// is not exempt here — it falls through to
+    /// <see cref="Every_mapped_endpoint_carries_a_permission_requirement"/> as an ungated endpoint,
+    /// which is what makes skipping the checks impossible to do quietly.
+    /// </remarks>
     private static bool IsSelfOnlyListed(MappedEndpoint mapped) =>
         SelfOnlyEndpoints.Any(entry =>
             string.Equals(entry.Method, mapped.Method, StringComparison.Ordinal)
-            && string.Equals(entry.Route, mapped.Route, StringComparison.Ordinal));
+            && string.Equals(entry.Route, mapped.Route, StringComparison.Ordinal))
+        && mapped.Endpoint.Metadata.GetMetadata<LiveSession.Marker>() is not null;
 
     private IEnumerable<MappedEndpoint> ShippedEndpoints()
     {
@@ -390,5 +473,14 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
     /// One deliberate exemption: an endpoint reachable by any authenticated caller, acting on nothing
     /// but their own row, with no catalogue permission to declare.
     /// </summary>
+    /// <remarks>
+    /// <b><see cref="Reason"/> says why the route is exempt. It does not say what the exemption owes,
+    /// and it must not have to.</b> Two entries recorded their reason well and both shipped one check
+    /// short of the gate they replaced (<c>V-26-B</c>) — prose a reviewer reads is the artefact D-067
+    /// showed is not trustworthy. What each member owes is
+    /// <c>LiveSession.RequireLiveSession()</c>, asserted from the route's own metadata by
+    /// <see cref="Every_self_only_member_is_mapped_and_requires_authentication_with_no_permission_of_its_own"/>
+    /// and enforced by <see cref="IsSelfOnlyListed"/>.
+    /// </remarks>
     private sealed record SelfOnlyEndpoint(string Method, string Route, string Reason);
 }

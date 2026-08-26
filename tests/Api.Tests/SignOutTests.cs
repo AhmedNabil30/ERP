@@ -30,9 +30,16 @@ namespace Kaff.Api.Tests;
 /// (decisions.md D-063 §1) — spec.md's client portal is a separate host with its own door (D-051
 /// Q33), and that door does not exist yet. <see cref="MintToken"/> signs a token by hand, with the
 /// same key, issuer and audience <see cref="KaffApiFactory"/> configures, so it authenticates through
-/// the real JWT bearer scheme exactly as a future client-portal token would. This proves the sign-out
-/// handler is role-agnostic; it does not prove a client can reach it today, because nothing issues
-/// that caller a session yet. Flagged in the session report rather than silently worked around.
+/// the real JWT bearer scheme exactly as a future client-portal token would. It does not prove a
+/// client can reach it today, because nothing issues that caller a session yet. Flagged in the session
+/// report rather than silently worked around.
+/// </para>
+/// <para>
+/// <b>The handler is no longer role-agnostic, and <c>AC-102-F</c>'s evidence changed with it.</b> A
+/// <see cref="Role.Client"/> and a <see cref="Role.Subcontractor"/> may hold no staff session at all
+/// (spec.md §9, decisions.md D-062 §2), so <c>LiveSession</c> refuses to recognise one — the caller
+/// still gets rule 7's <c>204</c> and a cleared cookie, and no permanent audit row is written on the
+/// authority of a session that may not exist. See <c>V-26-B</c>, <c>V-26-C</c> and decisions.md D-089.
 /// </para>
 /// </remarks>
 [Collection(DatabaseCollection.Name)]
@@ -52,9 +59,11 @@ public sealed class SignOutTests : IAsyncLifetime
 
     private string _ownerName = null!;
     private string _portalName = null!;
+    private string _leaverName = null!;
 
     private Guid _owner;
     private Guid _portalUser;
+    private Guid _leaver;
 
     public SignOutTests(PostgresDatabase database) => _database = database;
 
@@ -182,11 +191,74 @@ public sealed class SignOutTests : IAsyncLifetime
             + "rotating here would sign the caller out on every other device too, which rule 1 forbids");
     }
 
+    // ---- V-26-C · a dead token clears its cookie and writes nothing -----------------------------
+
+    /// <summary>
+    /// <c>V-26-C</c>. A cookie the global kill has already ended still gets its <c>204</c> — and no
+    /// longer writes a permanent audit row saying its holder signed out.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>audit_records</c> is append-only and trigger-protected: a row written here can never be
+    /// corrected or removed, by anyone. This handler looked the caller up by the token's id claim alone
+    /// and, if the row existed, attributed a <see cref="AuditEventKind.SignedOut"/> event to them — so
+    /// a holder of a captured cookie for a deactivated account could write an unbounded number of
+    /// permanent records naming that person as having signed out at times they did not, while every
+    /// other route in the system refused the same token <c>403</c>.
+    /// </para>
+    /// <para>
+    /// <b>The <c>204</c> is unchanged and must be.</b> Rule 7 — signing out when already signed out is
+    /// not an error worth a refusal — and a <c>403</c> here would also tell the holder of a stolen
+    /// cookie something about the account behind it.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task A_cookie_the_global_kill_already_ended_writes_no_audit_row()
+    {
+        string cookie = Cookie(await SignIn(_leaverName, Password));
+
+        await using (KaffDbContext context = _database.CreateContext())
+        {
+            User leaver = await context.Users.SingleAsync(candidate => candidate.Id == _leaver, Ct);
+            leaver.Deactivate(Now).IsSuccess.Should().BeTrue();
+            await context.SaveChangesAsync(Ct);
+        }
+
+        int before = await SignedOutEventCount();
+
+        (await SignOut(cookie)).StatusCode.Should().Be(
+            HttpStatusCode.NoContent,
+            "rule 7 — the caller is not told anything about the account behind the cookie");
+
+        (await SignedOutEventCount()).Should().Be(
+            before,
+            "the token every gated route already refuses has no authority to write into an "
+            + "append-only table that nobody can correct afterwards (V-26-C)");
+    }
+
     // ---- AC-102-F · a portal user can sign out -------------------------------------------------
 
     /// <summary>
-    /// See the class remarks: the session is hand-minted because no client-portal door ships yet.
+    /// <c>AC-102-F</c> and <c>V-26-B</c> together: the hand-minted <see cref="Role.Client"/> session
+    /// gets its <c>204</c> and its cookie cleared, and is named in no audit row.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The status half is <c>AC-102-F</c> unchanged</b> — "sign-out is available to every
+    /// authenticated role", and nothing about any client is exposed.
+    /// </para>
+    /// <para>
+    /// <b>The audit half is reversed on purpose, and it is a behaviour change.</b> This case used to
+    /// assert a <see cref="AuditEventKind.SignedOut"/> row with <c>ActorRole == Role.Client</c>. A
+    /// <see cref="Role.Client"/> may not authenticate at the staff portal at all (D-062 §2, D-063 §1),
+    /// so the row recorded an act on the authority of a session that may not exist — the same
+    /// question <c>V-26-C</c> raises for a killed session, with the same answer: one rule, applied by
+    /// <c>LiveSession</c>, for every route outside the gate. The alternative — a per-route list of
+    /// which of the three checks each exempt endpoint owes — is exactly the hand-copy that produced
+    /// <c>V-26-B</c>. 🟡 Recorded in decisions.md D-089 as a change to a criterion's evidence, for
+    /// Nabil to confirm rather than to discover.
+    /// </para>
+    /// </remarks>
     [Fact]
     public async Task A_client_role_session_can_sign_out_too()
     {
@@ -206,15 +278,19 @@ public sealed class SignOutTests : IAsyncLifetime
         (await response.Content.ReadAsStringAsync(Ct)).Should().BeEmpty(
             "nothing about any client is exposed in the response");
 
+        response.Headers.GetValues("Set-Cookie").Single().Should().StartWith(
+            CookieName + "=;",
+            "rule 3 — the cookie is cleared for this caller exactly as for any other");
+
         await using KaffDbContext reader = _database.CreateBareContext();
 
-        AuditRecord record = await reader.Set<AuditRecord>()
-            .Where(candidate => candidate.EventType == AuditEventKind.SignedOut
-                                 && candidate.EntityId == _portalUser)
-            .OrderByDescending(candidate => candidate.OccurredAt)
-            .FirstAsync(Ct);
+        bool named = await reader.Set<AuditRecord>()
+            .AnyAsync(candidate => candidate.EventType == AuditEventKind.SignedOut
+                                   && candidate.EntityId == _portalUser, Ct);
 
-        record.ActorRole.Should().Be(Role.Client);
+        named.Should().BeFalse(
+            "no staff session may exist for Role.Client (D-062 §2), so no permanent row is written on "
+            + "the authority of one");
     }
 
     // ---- Rule 7 · already signed out is not an error -------------------------------------------
@@ -358,12 +434,17 @@ public sealed class SignOutTests : IAsyncLifetime
             UniqueNames.Code("sgo-owner"), "sgo-owner", UniqueNames.Phone(), Role.Owner, Now).Value;
         owner.SetOwnPassword(PasswordHasher.Hash(Password)).IsSuccess.Should().BeTrue();
 
+        User leaver = User.Create(
+            UniqueNames.Code("sgo-leaver"), "sgo-leaver", UniqueNames.Phone(), Role.Finance, Now,
+            Department.Finance).Value;
+        leaver.SetOwnPassword(PasswordHasher.Hash(Password)).IsSuccess.Should().BeTrue();
+
         User portal = User.Create(
             UniqueNames.Code("sgo-client"), "عميل البوابة", UniqueNames.Phone(), Role.Client, Now,
             clientId: client.Id).Value;
 
         context.Clients.Add(client);
-        context.Users.AddRange(owner, portal);
+        context.Users.AddRange(owner, portal, leaver);
 
         await context.SaveChangesAsync(Ct);
 
@@ -371,6 +452,8 @@ public sealed class SignOutTests : IAsyncLifetime
         _ownerName = owner.UserName;
         _portalUser = portal.Id;
         _portalName = portal.UserName;
+        _leaver = leaver.Id;
+        _leaverName = leaver.UserName;
     }
 
     private static DateTimeOffset Now => new(2026, 5, 1, 8, 0, 0, TimeSpan.Zero);

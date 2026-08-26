@@ -71,3 +71,37 @@ public enum Role
     /// </remarks>
     Hr = 9,
 }
+
+/// <summary>
+/// The two roles that may never hold a staff session, in one place.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>spec.md §9 for <see cref="Role.Subcontractor"/> — "record only, no login"</b>, and decisions.md
+/// D-062 §2 for <see cref="Role.Client"/>, Nabil: <i>"strictly forbidden from a security standpoint for
+/// any user holding the <c>Role.Client</c> to sign in or authenticate through the staff portal."</i>
+/// spec.md's client portal is a separate host with its own door (D-051 Q33), and that door does not
+/// exist yet.
+/// </para>
+/// <para>
+/// <b>Why this is a shared predicate rather than an <c>is Role.Client or Role.Subcontractor</c> in
+/// each door.</b> It was written by hand in <c>StaffSessionMinter.Issue</c> and in
+/// <c>SignIn.Handler</c>, and left out of <c>GET /api/auth/me</c> and
+/// <c>POST /api/auth/change-password</c> entirely — two of four, which is what a hand-copy always
+/// eventually is (qa/slice-1/verification-2026-08-26.md, <c>V-26-B</c>). CLAUDE.md: "If two features
+/// need the same thing, it moves to <c>Domain/</c>."
+/// </para>
+/// <para>
+/// <b>This is a narrower statement than <c>PermissionEvaluator</c>'s subcontractor bar and does not
+/// replace it.</b> The evaluator refuses <see cref="Role.Subcontractor"/> a permission and says
+/// nothing about <see cref="Role.Client"/>, because a client legitimately holds
+/// <c>Permission.PortalRead</c> and <c>Permission.PortalApprove</c> on their own project (spec.md §12,
+/// decisions.md D-035) — through the portal door, when it ships. This predicate is about the
+/// <b>staff</b> session only.
+/// </para>
+/// </remarks>
+public static class StaffSessionRules
+{
+    /// <summary>False for the roles no staff session may ever be minted for, or honoured for.</summary>
+    public static bool MayHoldStaffSession(this Role role) => role is not (Role.Client or Role.Subcontractor);
+}

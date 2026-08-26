@@ -1,3 +1,4 @@
+using Kaff.Api.Authorization;
 using Kaff.Api.Common.Endpoints;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
@@ -29,6 +30,14 @@ namespace Kaff.Api.Features.Auth.WhoAmI;
 /// <b>The route is fixed by decisions.md D-084</b> as the sibling of <c>POST /api/auth/sign-in</c> —
 /// <c>AuthService</c> already calls it by this exact path.
 /// </para>
+/// <para>
+/// <b><c>RequireLiveSession()</c> is what the exemption costs.</b> No permission gate runs here, so the
+/// three checks one would have applied — active, current stamp, and a role that may hold a staff
+/// session at all — are applied by <see cref="LiveSession"/> instead. They were hand-copied here once
+/// and came out one short: this endpoint answered a <c>Role.Subcontractor</c> with a <c>200</c> and
+/// their name (qa/slice-1/verification-2026-08-26.md, <c>V-26-B</c>). Declaring the exemption and
+/// paying for it are now the same act.
+/// </para>
 /// </remarks>
 public sealed class Endpoint : IEndpoint
 {
@@ -39,6 +48,7 @@ public sealed class Endpoint : IEndpoint
         ArgumentNullException.ThrowIfNull(app);
 
         app.MapGet(Route, Handler.HandleAsync)
+            .RequireLiveSession()
             .WithName("Me")
             .WithTags("Auth");
     }

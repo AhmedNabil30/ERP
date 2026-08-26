@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Kaff.Api.Authorization;
 using Kaff.Api.Identity;
 using Kaff.Api.Options;
 using Kaff.Domain.Auditing;
@@ -31,6 +32,18 @@ namespace Kaff.Api.Features.Auth.SignOut;
 /// naming itself the actor.
 /// </para>
 /// <para>
+/// <b>The audit row follows a session the rest of the system would still honour, and nothing less.</b>
+/// This handler used to look the caller up by the token's id claim alone and write an
+/// <see cref="AuditEventKind.SignedOut"/> row if the row existed — re-checking neither
+/// <c>IsActive</c> nor the security stamp. So a captured cookie for an account the global kill of
+/// D-053 had already ended was refused <c>403</c> by every other route in the system and accepted
+/// here, writing a permanent row into an append-only, trigger-protected table that names that person
+/// as having signed out at a time they did not, an unbounded number of times
+/// (qa/slice-1/verification-2026-08-26.md, <c>V-26-C</c>). It now asks <c>LiveSession</c> the same
+/// question every other exempt route asks (decisions.md D-089); a caller it does not recognise gets
+/// the cookie cleared and the same <c>204</c>, which is rule 7 unchanged and discloses nothing.
+/// </para>
+/// <para>
 /// 🟡 <b>An already-unauthenticated caller writes no audit record.</b> Rule 7 says signing out twice
 /// is not an error; nothing in the story or CLAUDE.md's "every state change writes an audit record"
 /// says whether a call that changes nothing — no cookie existed to clear, no actor to name — is a
@@ -52,22 +65,21 @@ internal static class Handler
     {
         ArgumentNullException.ThrowIfNull(http);
 
-        if (http.User.Identity?.IsAuthenticated == true
-            && ReadUserId(http.User) is { } userId)
+        // The same three checks every RequirePermission route gets, and every other exempt route now
+        // gets by construction — active, current stamp, a role that may hold a staff session at all.
+        // A null answer here is not a refusal: rule 7 gives this caller the same 204 either way. It is
+        // the difference between clearing a cookie and writing a row nobody can ever correct.
+        User? user = await LiveSession.ResolveAsync(http, database, cancellationToken);
+
+        if (user is not null)
         {
-            User? user = await database.Users
-                .FirstOrDefaultAsync(candidate => candidate.Id == userId, cancellationToken);
+            // Discard the inbound identity before naming an actor — see the class remarks.
+            http.User = new ClaimsPrincipal(new ClaimsIdentity());
 
-            if (user is not null)
-            {
-                // Discard the inbound identity before naming an actor — see the class remarks.
-                http.User = new ClaimsPrincipal(new ClaimsIdentity());
+            auditContext.AttributeTo(new AuditActor(user.Id, user.FullName, user.Role));
+            auditContext.Record<User>(AuditEventKind.SignedOut, user.Id);
 
-                auditContext.AttributeTo(new AuditActor(user.Id, user.FullName, user.Role));
-                auditContext.Record<User>(AuditEventKind.SignedOut, user.Id);
-
-                await database.SaveChangesAsync(cancellationToken);
-            }
+            await database.SaveChangesAsync(cancellationToken);
         }
 
         // Rule 3 / D-050: the same name, same attributes StaffSessionMinter minted it with, expired.
@@ -76,7 +88,4 @@ internal static class Handler
 
         return Results.NoContent();
     }
-
-    private static Guid? ReadUserId(ClaimsPrincipal principal) =>
-        Guid.TryParse(principal.FindFirst(KaffClaimTypes.UserId)?.Value, out Guid id) ? id : null;
 }

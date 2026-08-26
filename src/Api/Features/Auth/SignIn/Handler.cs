@@ -133,7 +133,12 @@ internal static class Handler
         // errors.auth.account_inactive, which the story's i18n bullet names but no criterion reaches.
         // See decisions.md D-084 and the question raised there: a distinct answer is the same oracle
         // D-065 closed for the subcontractor, and inventing one is not this handler's to do.
-        if (user.Role is Role.Client or Role.Subcontractor || !user.IsActive)
+        //
+        // The role half is StaffSessionRules.MayHoldStaffSession — the same predicate
+        // StaffSessionMinter.Issue and LiveSession apply, in Domain rather than typed out a third
+        // time here (V-26-B, decisions.md D-089). This statement has not moved: it is still after the
+        // hash and still folded into the generic 401.
+        if (!user.Role.MayHoldStaffSession() || !user.IsActive)
         {
             auditContext.Record<User>(AuditEventKind.SignInFailed, user.Id);
             await database.SaveChangesAsync(cancellationToken);

@@ -1,10 +1,7 @@
-using System.Security.Claims;
-using Kaff.Api.Common.Results;
+using Kaff.Api.Authorization;
 using Kaff.Domain.Authorization;
 using Kaff.Domain.Identity;
-using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 
 namespace Kaff.Api.Features.Auth.WhoAmI;
 
@@ -19,15 +16,20 @@ namespace Kaff.Api.Features.Auth.WhoAmI;
 /// and the security stamp — department is not a claim at all. A role changed after the token was minted
 /// (KAFF-109, decisions.md D-051 Q27) does not rotate the stamp, so the claim would still read the old
 /// role. This is the one endpoint the frontend trusts to say who it is talking to (decisions.md D-050),
-/// so answering from the claim would be the exact defect the brief for this story named.
+/// so answering from the claim would be the exact defect the brief for this story named. The row this
+/// handler projects is the one <see cref="LiveSession"/> loaded and checked for this request.
 /// </para>
 /// <para>
-/// <b>Self-only, like KAFF-103's endpoint and for the same reason.</b> No permission gate runs here, so
-/// the handler re-applies the freshness <c>PermissionSubjectReader</c> gives every
-/// <c>RequirePermission</c> route by hand: <c>IsActive</c> and the security stamp are re-checked
-/// (decisions.md D-048, D-053), refusing with the same generic <c>errors.auth.forbidden</c> a stale
-/// token gets everywhere else in this system (D-071, D-080) rather than answering with a profile built
-/// from a row that no longer describes a live session.
+/// <b>The freshness checks are <see cref="LiveSession.RequireLiveSession"/>'s, not this handler's —
+/// and that is the fix, not a tidy-up.</b> They lived here as a hand-copy of what
+/// <c>PermissionSubjectReader</c> and <c>PermissionEvaluator</c> do together on a gated route, and the
+/// copy carried two of the three: <see cref="User.IsActive"/> and the stamp, but not the role bar. So
+/// this endpoint answered a <see cref="Role.Subcontractor"/> — spec.md §9, "record only, no login" —
+/// with a <c>200</c> and their name (qa/slice-1/verification-2026-08-26.md, <c>V-26-B</c>). All three
+/// now live in one place that every exempt route shares. The bar is here because no staff session may
+/// exist for that role at all, which is a property of the door — not because a path to it is open
+/// today; see decisions.md D-089 on why the report's "reachable in production" is one step longer than
+/// recorded, and D-082 §4 on what arguing from reachability costs.
 /// </para>
 /// <para>
 /// <b>Not gated by <c>MustChangePassword</c>, on purpose — <c>AC-105a-C</c>.</b> The endpoint carries no
@@ -37,6 +39,8 @@ namespace Kaff.Api.Features.Auth.WhoAmI;
 /// such a caller sees is still empty, because <see cref="PermissionEvaluator.CompanyWidePermissionsHeld"/>
 /// runs the ordinary evaluator per permission and that evaluator refuses everything while the flag is
 /// set — an honest answer to "what can you do right now", not a second rule invented here.
+/// <see cref="LiveSession"/> does not consult the flag either, for the same reason: it applies the
+/// three session facts and nothing about what a session may reach.
 /// </para>
 /// <para>
 /// <b>No audit record.</b> A read changes nothing; CLAUDE.md requires a record on a state change, and
@@ -45,32 +49,16 @@ namespace Kaff.Api.Features.Auth.WhoAmI;
 /// </remarks>
 internal static class Handler
 {
-    public static async Task<IResult> HandleAsync(
-        HttpContext http,
-        KaffDbContext database,
-        CancellationToken cancellationToken)
+    /// <remarks>
+    /// Returns a completed <see cref="ValueTask{TResult}"/> rather than being <c>async</c>: the one
+    /// database read this endpoint needs has already happened in <c>RequireLiveSession</c>'s filter,
+    /// so nothing here awaits. <b>The name stays <c>HandleAsync</c> deliberately</b> — it is a cited
+    /// identifier (decisions.md D-087, qa/slice-1/verification-2026-08-26.md), and SM-31's whole
+    /// point is that a citation names something stable.
+    /// </remarks>
+    public static ValueTask<IResult> HandleAsync(HttpContext http)
     {
-        ArgumentNullException.ThrowIfNull(http);
-
-        Guid? userId = ReadUserId(http.User);
-        string? securityStamp = http.User.FindFirst(KaffClaimTypes.SecurityStamp)?.Value;
-
-        if (userId is null)
-        {
-            return ResultExtensions.Problem(AuthorizationErrors.Forbidden);
-        }
-
-        User? user = await database.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(candidate => candidate.Id == userId, cancellationToken);
-
-        // The same freshness PermissionSubjectReader applies on every RequirePermission route (D-048,
-        // D-053) — no gate ran here to apply it for us. A deactivated account, or a token a later stamp
-        // rotation already superseded, must not be answered with a profile as if the session were live.
-        if (user is null || !user.IsActive || user.SecurityStamp != securityStamp)
-        {
-            return ResultExtensions.Problem(AuthorizationErrors.Forbidden);
-        }
+        User user = LiveSession.Caller(http);
 
         var subject = new PermissionSubject(
             user.Id,
@@ -83,16 +71,13 @@ internal static class Handler
 
         IReadOnlyList<Permission> permissions = PermissionEvaluator.CompanyWidePermissionsHeld(subject);
 
-        return Results.Ok(new Response(
+        return ValueTask.FromResult<IResult>(Results.Ok(new Response(
             user.Id,
             user.FullName,
             user.Role,
             user.Department,
             user.OperationsSubDepartment,
             user.MustChangePassword,
-            permissions));
+            permissions)));
     }
-
-    private static Guid? ReadUserId(ClaimsPrincipal principal) =>
-        Guid.TryParse(principal.FindFirst(KaffClaimTypes.UserId)?.Value, out Guid id) ? id : null;
 }

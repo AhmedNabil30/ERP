@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Kaff.Api.Authorization;
 using Kaff.Api.Common.Results;
 using Kaff.Api.Identity;
 using Kaff.Domain.Auditing;
@@ -8,7 +9,6 @@ using Kaff.Domain.Identity;
 using Kaff.Infrastructure.Identity;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 
 namespace Kaff.Api.Features.Auth.ChangePassword;
 
@@ -27,11 +27,14 @@ namespace Kaff.Api.Features.Auth.ChangePassword;
 /// requires and why it is not a gap the blanket rule should widen to cover.
 /// </para>
 /// <para>
-/// <b>The row is re-read fresh and re-checked for the same reasons D-048 checks it everywhere else</b>
-/// — no permission gate runs here to do it for us. A deactivated account, or a stamp a later change
-/// elsewhere has already superseded, is refused exactly as <c>PermissionSubjectReader</c> would refuse
-/// it, with the same generic <c>errors.auth.forbidden</c> a stale token gets everywhere else in this
-/// system (D-071, D-080) — not a status this handler invents.
+/// <b>The row is read fresh and re-checked for the same reasons D-048 checks it everywhere else</b>
+/// — no permission gate runs here to do it for us. That is <see cref="LiveSession"/>'s job now, not
+/// this handler's: a deactivated account, a stamp a later change elsewhere has already superseded,
+/// <b>and</b> a role that may never hold a staff session at all are refused before this method runs,
+/// with the same generic <c>errors.auth.forbidden</c> a stale token gets everywhere else in this
+/// system (D-071, D-080). The third of those three was missing while the checks were written by hand
+/// here — see qa/slice-1/verification-2026-08-26.md <c>V-26-B</c>, which found it missing on the
+/// sibling route, and decisions.md D-089.
 /// </para>
 /// <para>
 /// <b>No audit record is hand-written here.</b> <c>SetOwnPassword</c> changes <c>PasswordHash</c>,
@@ -68,24 +71,9 @@ internal static class Handler
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(http);
 
-        Guid? userId = ReadUserId(http.User);
-        string? securityStamp = http.User.FindFirst(KaffClaimTypes.SecurityStamp)?.Value;
-
-        if (userId is null)
-        {
-            return ResultExtensions.Problem(AuthorizationErrors.Forbidden);
-        }
-
-        User? user = await database.Users
-            .FirstOrDefaultAsync(candidate => candidate.Id == userId, cancellationToken);
-
-        // The same freshness check PermissionSubjectReader applies everywhere else (D-048, D-053) —
-        // no permission gate ran here to apply it for us, and this endpoint must not be the one place
-        // a deactivated account or a superseded token still works.
-        if (user is null || !user.IsActive || user.SecurityStamp != securityStamp)
-        {
-            return ResultExtensions.Problem(AuthorizationErrors.Forbidden);
-        }
+        // Active, current stamp, and a role that may hold a staff session — all three already applied
+        // by RequireLiveSession, on the same scoped DbContext, so this row is tracked and savable.
+        User user = LiveSession.Caller(http);
 
         bool currentIsCorrect = PasswordHasher.Verify(request.CurrentPassword ?? string.Empty, user.PasswordHash);
 
@@ -99,10 +87,14 @@ internal static class Handler
 
         if (changed.IsFailure)
         {
-            // Today only Role.Subcontractor (AC-103-H) — unreachable through this door in practice,
-            // since StorePasswordHash already refuses that role a credential, so no subcontractor can
-            // ever hold the session this endpoint requires. Handled anyway: the refusal lives in one
-            // place and every caller of SetOwnPassword gets it.
+            // Today only Role.Subcontractor (AC-103-H), and it is unreachable for two reasons rather
+            // than the one this comment used to give. V-26-D corrected the old claim — "no
+            // subcontractor can ever hold the session this endpoint requires" was false while the
+            // session checks here were a hand-copy missing the role bar, and what actually kept
+            // AC-103-H unreachable was one line earlier: PasswordHasher.Verify against a null stored
+            // hash fails, so the caller gets current_password_incorrect first. Both are true now —
+            // RequireLiveSession refuses the role outright (D-089). Handled anyway: the refusal lives
+            // in one place and every caller of SetOwnPassword gets it.
             return ResultExtensions.Problem(changed.Error);
         }
 
@@ -125,7 +117,4 @@ internal static class Handler
 
         return Results.NoContent();
     }
-
-    private static Guid? ReadUserId(ClaimsPrincipal principal) =>
-        Guid.TryParse(principal.FindFirst(KaffClaimTypes.UserId)?.Value, out Guid id) ? id : null;
 }

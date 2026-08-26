@@ -1,3 +1,4 @@
+using Kaff.Api.Authorization;
 using Kaff.Api.Common.Endpoints;
 using Kaff.Api.Common.Validation;
 using Microsoft.AspNetCore.Builder;
@@ -31,6 +32,13 @@ namespace Kaff.Api.Features.Auth.ChangePassword;
 /// <b>The route is a sibling of <c>/api/auth/sign-in</c> and <c>/api/auth/sign-out</c></b>, all three
 /// under the one prefix decisions.md D-063 §1 names as every present and future staff door.
 /// </para>
+/// <para>
+/// <b><c>RequireLiveSession()</c> is what the exemption costs</b> (<c>LiveSession</c>, D-089): the
+/// three checks no gate applies here — active, current stamp, and a role that may hold a staff session
+/// — are applied by one shared mechanism rather than re-typed in this handler, where the copy carried
+/// two of the three. It sits <b>after</b> the validation filter so the order of refusals is exactly
+/// what it was before: a malformed body is still a <c>400</c>, a dead session still a <c>403</c>.
+/// </para>
 /// </remarks>
 public sealed class Endpoint : IEndpoint
 {
@@ -42,6 +50,7 @@ public sealed class Endpoint : IEndpoint
 
         app.MapPost(Route, Handler.HandleAsync)
             .AddEndpointFilter<ValidationFilter<Request>>()
+            .RequireLiveSession()
             .WithName("ChangePassword")
             .WithTags("Auth");
     }

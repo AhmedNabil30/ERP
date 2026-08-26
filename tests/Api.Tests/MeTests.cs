@@ -42,6 +42,7 @@ public sealed class MeTests : IAsyncLifetime
     private string _technicalOfficeName = null!;
     private string _inactiveName = null!;
     private string _portalName = null!;
+    private string _subcontractorName = null!;
 
     // The sign-in identifier (UniqueNames.Code-suffixed) and User.FullName are deliberately not the
     // same string — Create trims fullName but leaves it otherwise untouched — so displayName
@@ -54,6 +55,7 @@ public sealed class MeTests : IAsyncLifetime
     private Guid _technicalOffice;
     private Guid _inactive;
     private Guid _portalUser;
+    private Guid _subcontractor;
 
     public MeTests(PostgresDatabase database) => _database = database;
 
@@ -158,32 +160,105 @@ public sealed class MeTests : IAsyncLifetime
         (await response.Content.ReadAsStringAsync(Ct)).Should().Contain("errors.auth.not_authenticated");
     }
 
+    // ---- V-26-B · the two roles that may never hold a staff session --------------------------------
+
+    /// <summary>
+    /// <c>V-26-B</c>. spec.md §9: a subcontractor is <i>"record only, no login"</i> — and this endpoint
+    /// answered one with a <c>200</c> and their name.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Hand-minted, and the reason is worth stating exactly, because the Verifier's report says
+    /// otherwise.</b> qa/slice-1/verification-2026-08-26.md calls this half "reachable in production"
+    /// through KAFF-109, on the reasoning that <c>User.ChangeRole</c> does not rotate the security
+    /// stamp (D-051 Q27) so a converted account keeps its live session. Holding a live staff session
+    /// means having signed in, which means holding a credential — and a credential is exactly what
+    /// blocks the conversion, with a <c>500</c> before D-088 and a <c>409</c> after it. Clearing the
+    /// credential first is the only way through, and <c>User.ClearPassword</c> rotates the stamp, which
+    /// kills the session. **Both halves of <c>V-26-B</c> therefore need a hand-issued identity today**,
+    /// exactly as the report already concedes for <see cref="Role.Client"/> in its §8. The defect it
+    /// found is real; the route to it was one step longer than recorded. See decisions.md D-089.
+    /// </para>
+    /// <para>
+    /// <b>Which is why the bar is a property of the door rather than a patch on a path.</b> The
+    /// hand-minted token below is a faithful reproduction of a session <c>StaffSessionMinter</c> refuses
+    /// to create and the portal door of D-051 Q33 will one day create for the sibling role. This test
+    /// fails the moment the bar is removed from <c>LiveSession</c>; nothing else in the suite does.
+    /// </para>
+    /// <para>
+    /// <b>The refusal must be the blanket one.</b> Nabil: <i>"If we return a specific
+    /// <c>errors.auth.role_cannot_log_in</c>, we are explicitly telling the attacker: 'This account
+    /// exists and belongs to a subcontractor.' That is a security breach."</i> The key asserted below
+    /// is the same <c>errors.auth.forbidden</c> a deactivated account and a stale stamp both get.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task A_subcontractor_session_is_refused_not_answered_with_a_profile()
+    {
+        string stamp = await StampOf(_subcontractor);
+        string cookie =
+            $"{CookieName}={MintToken(_subcontractor, _subcontractorName, Role.Subcontractor, stamp, DateTimeOffset.UtcNow)}";
+
+        HttpResponseMessage refused = await GetWithCookie(cookie);
+
+        refused.StatusCode.Should().Be(
+            HttpStatusCode.Forbidden,
+            "spec.md §9 — record only, no login. The role bar the sign-in door and the permission "
+            + "evaluator both apply is not optional on the routes the gate does not run on");
+
+        string body = await refused.Content.ReadAsStringAsync(Ct);
+
+        body.Should().Contain(
+            "errors.auth.forbidden",
+            "the blanket refusal D-080 requires — the same one a deactivated account gets");
+        body.Should().NotContain(
+            "role_cannot_log_in",
+            "a specific key here tells an attacker the account exists and what it is (Nabil, D-080)");
+        body.Should().NotContain(
+            nameof(Role.Subcontractor),
+            "and neither does the body name the role in any other field");
+    }
+
     // ---- AC-105a-H · a portal client's company-wide set is empty -----------------------------------
 
     /// <summary>
-    /// AC-105a-H. Both of <see cref="Role.Client"/>'s grants — PortalRead and PortalApprove — are
-    /// ProjectScoped, so this endpoint's CompanyWide payload is empty. Hand-minted for the same reason
-    /// <c>SignOutTests.A_client_role_session_can_sign_out_too</c> hand-mints one: <c>StaffSessionMinter</c>
-    /// refuses to issue a session for <see cref="Role.Client"/> at all (D-063 §1), and no client-portal
-    /// door has shipped yet (D-051 Q33) — this proves the handler is role-agnostic, not that a client
-    /// reaches it today through a shipped door.
+    /// <c>V-26-B</c>, the sibling half: a hand-minted <see cref="Role.Client"/> staff session is
+    /// refused rather than answered.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>This case used to assert the opposite</b> — a <c>200</c> carrying an empty permission array,
+    /// on the reasoning that <c>StaffSessionMinter</c> refuses that role so no such caller could exist.
+    /// The token was treated as a stand-in for an unreachable state; <c>V-26-B</c> showed it is a
+    /// faithful reproduction of a state KAFF-109 <i>can</i> produce for the sibling role, and the
+    /// endpoint answered it. decisions.md D-062 §2, Nabil: a <see cref="Role.Client"/> may not
+    /// <i>"sign in or authenticate through the staff portal"</i>, and <c>/api/auth/*</c> is that portal
+    /// (D-063 §1).
+    /// </para>
+    /// <para>
+    /// <b><c>AC-105a-H</c>'s substance — a client holds no company-wide permission — is unaffected and
+    /// is proved where it is a fact about the rule rather than about this route</b>
+    /// [@ <c>tests/Domain.Tests/PermissionEvaluatorTests.cs</c> -&gt;
+    /// <c>A_portal_client_holds_no_company_wide_permission</c>]. 🟡 When the portal door of D-051 Q33
+    /// ships, whether it reuses this endpoint is a question for that story — it would have to widen
+    /// this bar deliberately, which is the point of it being one line in Domain.
+    /// </para>
+    /// </remarks>
     [Fact]
-    public async Task A_portal_client_holds_no_company_wide_permission()
+    public async Task A_hand_minted_portal_client_session_is_refused_by_the_staff_door()
     {
         string stamp = await StampOf(_portalUser);
         string cookie = $"{CookieName}={MintToken(_portalUser, _portalName, Role.Client, stamp, DateTimeOffset.UtcNow)}";
 
         HttpResponseMessage response = await GetWithCookie(cookie);
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
-        body.RootElement.GetProperty("role").GetString().Should().Be(nameof(Role.Client));
-        body.RootElement.GetProperty("permissions").EnumerateArray().Should().BeEmpty();
+        string raw = await response.Content.ReadAsStringAsync(Ct);
 
-        string raw = body.RootElement.GetRawText();
-        raw.Should().NotContain("PortalRead", "ProjectScoped rows never appear in this payload (rule 4)");
+        raw.Should().Contain("errors.auth.forbidden");
+        raw.Should().NotContain(nameof(Role.Client), "a refusal names no role");
+        raw.Should().NotContain("PortalRead");
         raw.Should().NotContain("PortalApprove");
     }
 
@@ -360,12 +435,17 @@ public sealed class MeTests : IAsyncLifetime
         User inactive = MakeUser("me-inactive", Role.Finance, Department.Finance);
         inactive.SetOwnPassword(PasswordHasher.Hash(Password)).IsSuccess.Should().BeTrue();
 
+        // A subcontractor record: no department (ValidateDepartment refuses an external role one),
+        // no credential (StorePasswordHash refuses that role one), active. Everything a live session
+        // needs except a role that may hold one.
+        User subcontractor = MakeUser("me-subcontractor", Role.Subcontractor);
+
         User portal = User.Create(
             UniqueNames.Code("me-portal"), "عميل البوابة", UniqueNames.Phone(), Role.Client, Now,
             clientId: client.Id).Value;
 
         context.Clients.Add(client);
-        context.Users.AddRange(finance, forced, technicalOffice, inactive, portal);
+        context.Users.AddRange(finance, forced, technicalOffice, inactive, portal, subcontractor);
 
         await context.SaveChangesAsync(Ct);
 
@@ -374,12 +454,14 @@ public sealed class MeTests : IAsyncLifetime
         _technicalOffice = technicalOffice.Id;
         _inactive = inactive.Id;
         _portalUser = portal.Id;
+        _subcontractor = subcontractor.Id;
 
         _financeName = finance.UserName;
         _forcedName = forced.UserName;
         _technicalOfficeName = technicalOffice.UserName;
         _inactiveName = inactive.UserName;
         _portalName = portal.UserName;
+        _subcontractorName = subcontractor.UserName;
 
         _financeFullName = finance.FullName;
         _forcedFullName = forced.FullName;
