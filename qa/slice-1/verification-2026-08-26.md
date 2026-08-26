@@ -19,21 +19,36 @@ with the reason*. A story that could not be verified is **not accepted**.
 
 ## 0. Progress of this report
 
-This file is written incrementally and committed as each section closes, so a session that dies
-mid-run still leaves something a reader can act on. **A story not listed as reached below has not
-been verified and must not be read as passing.**
+This file was written incrementally and committed as each section closed. **Every story in the brief's
+table was reached.**
+
 
 | Story | Reached | Verdict |
 |---|---|---|
 | KAFF-109 change a user's role | **yes** | **REJECT** — two defects, `V-26-A` and `V-26-B` |
-| KAFF-105a `GET /api/auth/me` | **yes** | **REJECT** — `V-26-B` |
-| KAFF-102 sign-out | **yes** | **REJECT (conditional)** — `V-26-C` |
-| KAFF-103 change password | **yes** | accept, with `V-26-D` (observation) |
-| KAFF-111 revoke on deactivation | **yes** | accept |
-| KAFF-114 revoke assignment | **yes** | accept |
-| KAFF-112 reactivate a user | **yes** | accept |
-| KAFF-100 bootstrap the Owner | **yes** | accept |
-| KAFF-101a sign-in | **yes** | accept, with `V-26-E` (observation) |
+| KAFF-105a `GET /api/auth/me` | **yes** | **REJECT** — `V-26-B`, plus `V-26-G` |
+| KAFF-102 sign-out | **yes** | **REJECT** — `V-26-C` |
+| KAFF-103 change password | **yes** | **accept** — `V-26-D` (wrong comment, correct behaviour) |
+| KAFF-111 revoke on deactivation | **yes** | **accept** |
+| KAFF-114 revoke assignment | **yes** | **accept**, one uncovered case |
+| KAFF-112 reactivate a user | **yes** | **accept**, one uncovered case |
+| KAFF-100 bootstrap the Owner | **yes** | **accept** |
+| KAFF-101a sign-in | **yes** | **accept** — `V-26-E` (observation) |
+
+### Findings index
+
+| Id | Severity | Story | What |
+|---|---|---|---|
+| `V-26-A` | **HIGH** | KAFF-109 | `PUT /api/users/{id}/role` returns a bare `500` with no `messageKey` on a reachable input |
+| `V-26-B` | **HIGH** | KAFF-105a, KAFF-109 | `GET /api/auth/me` answers `200` to `Role.Subcontractor` and `Role.Client` |
+| `V-26-C` | **MEDIUM** | KAFF-102 | A cookie the global kill already ended still writes a permanent audit row through sign-out |
+| `V-26-F` | **MEDIUM** | KAFF-103 / D-086 | The statement ordering that keeps `SpecificRefusal` from leaking the axis is pinned by no test |
+| `V-26-G` | **MEDIUM** | QA artefact | `TC-1-042` was never relocked; `AC-105a-H` has no live QA case |
+| `V-26-D` | LOW | KAFF-103 | `AC-103-H` is unreachable for a different reason than the handler records |
+| `V-26-E` | observation | KAFF-102 | `AC-102-F` is proved against a state the system forbids |
+
+Also recorded, not numbered: **D-082 §4's premise is false** (§4.1) — the conclusion it supports holds,
+but it is cited in three stories and a later handler could rely on it.
 
 ---
 
@@ -66,7 +81,7 @@ Run against the files, not against a test's assertion about them.
 |---|---|
 | No `float` / `double` anywhere near money | **Clean.** Zero occurrences of either keyword in any `.cs` under `src/` or `tests/`, money-related or not |
 | No stored balance column | **Clean.** `AccountBalance` is keyless and read-only, backed by the `account_balances` view [Verified: 2026-08-26 @ `src/Domain/Treasury/AccountBalance.cs` -> `AccountBalance`]. No entity carries a `Balance` property; every other hit on the word is prose |
-| Every money property `HasPrecision(18, 4)` | **Clean at the level slice 1 reaches.** `Money` is a single value object over `decimal` with its own `Scale`/range guard [Verified: 2026-08-26 @ `src/Domain/Common/Money.cs` -> `Money(decimal)`], converted centrally [Verified: 2026-08-26 @ `src/Infrastructure/Persistence/Converters/ValueConverters.cs`]; the model snapshot carries `HasPrecision(18, 4)` on every money column and `(18, 6)` on percentage columns. The one bare `decimal?` on an entity is `Project.AreaSquareMetres`, which is an area and not money [Verified: 2026-08-26 @ `src/Domain/Projects/Project.cs` -> `AreaSquareMetres`] |
+| Every money property `HasPrecision(18, 4)` | **Clean at the level slice 1 reaches.** `Money` is a single value object over `decimal` with its own `Scale`/range guard [Verified: 2026-08-26 @ `src/Domain/Common/Money.cs` -> `MaxMagnitude`], converted centrally [Verified: 2026-08-26 @ `src/Infrastructure/Persistence/Converters/ValueConverters.cs`]; the model snapshot carries `HasPrecision(18, 4)` on every money column and `(18, 6)` on percentage columns. The one bare `decimal?` on an entity is `Project.AreaSquareMetres`, which is an area and not money [Verified: 2026-08-26 @ `src/Domain/Projects/Project.cs` -> `AreaSquareMetres`] |
 | No endpoint updates or deletes a posting | **Clean.** No posting endpoint exists at all in slice 1; the shipped route table is health, setup ×2, auth ×4, users ×5, assignments ×2. Asserted mechanically for assignments [Verified: 2026-08-26 @ `tests/Api.Tests/EndpointPermissionCoverageTests.cs` -> `No_endpoint_deletes_a_project_assignment`] |
 | No typed credential is ever stored (D-062 §3) | **Clean.** `PasswordHash` and `SecurityStamp` are the only credential-shaped columns and both carry `[AuditRedacted]` [Verified: 2026-08-26 @ `src/Domain/Identity/User.cs` -> `PasswordHash`, `SecurityStamp`]. The submitted plaintext is a request-record field that reaches `PasswordHasher` and nothing else [Verified: 2026-08-26 @ `src/Api/Features/Auth/SignIn/Request.cs` -> `Request`]. No `SetReason`, no logger call and no audit path anywhere receives it — checked by grep over `src/`, not by reading `SignInTests` |
 | Every endpoint checks role **and** assignment | **Clean for the gated set**, and the exemption categories are enumerated and asserted [Verified: 2026-08-26 @ `tests/Api.Tests/EndpointPermissionCoverageTests.cs` -> `Every_mapped_endpoint_carries_a_permission_requirement`]. **But see §3 — the exemption categories have a hole the test cannot see** |
@@ -238,7 +253,7 @@ unreachable** — that is `V-26-B`.
 
 ---
 
-*(Section 6 — per-story verdicts, QA case execution, and what could not be verified — follows.)*
+
 D-084 timing tests, and what could not be verified — follow in the next increment of this file.)*
 
 ---
@@ -422,3 +437,208 @@ passes in the suite. A green build beside a QA file asserting the opposite is ex
 verification pass exists to catch.
 
 Not a code defect. Owner: the Scrum Master, per SM-30.
+
+---
+
+## 6. Per-story verdicts
+
+A story with an open defect against it is **rejected**. A story whose criteria could not be exercised
+is **not accepted** — it is recorded as unverified, which is a different thing from a pass.
+
+| Story | Verdict | Reason |
+|---|---|---|
+| **KAFF-111** revoke on deactivation | **ACCEPT** | Both its QA cases are covered by named, passing tests, and `AC-109-K`'s sibling atomicity claim is now demonstrated under a real fault (§4.1). See the caveat on D-082 §4's *reasoning* below — it does not change the verdict |
+| **KAFF-114** revoke an assignment | **ACCEPT, with one uncovered case** | 7 of 8 QA cases covered. `TC-1-120` has no test |
+| **KAFF-112** reactivate a user | **ACCEPT, with one uncovered case** | 5 of 6 QA cases covered. `TC-1-094` has no test |
+| **KAFF-100** bootstrap the Owner | **ACCEPT** | All 10 QA cases covered, including the concurrency one against real PostgreSQL. The route's anonymity is deliberate, allow-listed with a written reason, and the allow-list is now proved to fail closed (§4.4) |
+| **KAFF-101a** sign-in | **ACCEPT** | Including `TC-1-258`. The one endpoint in this slice that gets the role bar right — see `V-26-B` |
+| **KAFF-103** change password | **ACCEPT** | `V-26-D` is a wrong comment beside correct behaviour, and `AC-103-H` is uncovered at the API |
+| **KAFF-102** sign-out | **REJECT** | `V-26-C` — a token the global kill already ended writes a permanent audit row |
+| **KAFF-105a** `GET /api/auth/me` | **REJECT** | `V-26-B` — answers `200` to `Role.Subcontractor` and `Role.Client`. Compounded by `V-26-G`: its replacement criterion has no live QA case |
+| **KAFF-109** change a user's role | **REJECT** | `V-26-A` (a reachable `500` with no `messageKey`) and `V-26-B` (the role change that produces the unsafe session) |
+
+### KAFF-111 — accept
+
+Both cases pass: `TC-1-091` [Verified: 2026-08-26 @ `tests/Api.Tests/DeactivateUserTests.cs` ->
+`The_assignments_are_revoked_kept_on_file_and_audited_one_by_one`] and `TC-1-092`
+[@ `DeactivateUserTests.cs` -> `The_next_request_on_the_same_session_is_refused_with_no_re_authentication`,
+`Both_devices_are_refused_on_their_next_request`]. Rule 9 — a leaver with no assignments — has its own
+case [@ `DeactivateUserTests.cs` -> `A_user_with_no_assignments_deactivates_and_writes_one_record`].
+
+**This is the story the brief flags as never covered on its own criteria by any verification report.**
+It is covered now, on its own criteria, and it passes. The one thing it shares with KAFF-109 and
+KAFF-110 — D-082 §4's "structurally unreachable" claim — is addressed in §4.1: the conclusion holds,
+the premise does not.
+
+### KAFF-114 — accept, one case uncovered
+
+`AC-114-A` … `AC-114-F` are each covered [@ `RevokeProjectAssignmentTests.cs` ->
+`Access_ends_on_the_next_request_after_revocation`, `The_revoked_row_stays_on_file_with_every_column_populated`,
+`Re_assignment_after_revocation_creates_a_new_row_and_leaves_the_old_one_untouched`,
+`Revoking_an_already_revoked_assignment_is_refused`, `Nobody_but_the_owner_and_hr_can_revoke_an_assignment`,
+`The_revocation_leaves_a_modified_audit_record_naming_what_changed`], and `AC-114-F`'s route half is
+asserted against the host's own route table rather than against source text
+[@ `EndpointPermissionCoverageTests.cs` -> `No_endpoint_deletes_a_project_assignment`].
+
+**`TC-1-120` — "revoking the last person on a project is allowed" (KAFF-114 rule 7) — has no test.**
+The QA case exists to pin an *absence*: no rule anywhere forbids emptying a project's team, and the
+day somebody adds one, nothing goes red. Uncovered, P2, recorded.
+
+### KAFF-112 — accept, one case uncovered
+
+`AC-112-A`, `-B`, `-D`, `-G`, `-H` and `-I` each have a passing test
+[@ `ReactivateUserTests.cs` -> `Twelve_audit_records_written_before_leaving_still_name_the_reactivated_user`,
+`Reactivation_restores_no_assignment_and_leaves_the_revoked_rows_exactly_as_they_were`,
+`Reactivating_with_no_temporary_password_still_clears_the_old_credential`,
+`The_stored_credential_changes_when_a_temporary_password_is_issued_on_reactivation`,
+`Reactivating_an_active_user_is_refused`, `Nobody_but_the_owner_can_reactivate_a_user`,
+`Assigning_a_reactivated_user_to_their_old_project_creates_a_new_row_with_a_fresh_author`].
+
+Rule 9a — `Reactivate()` rotating the stamp independently of the credential — is real in the entity
+[Verified: 2026-08-26 @ `src/Domain/Identity/User.cs` -> `Reactivate`] and covered
+[@ `ReactivateUserTests.cs` -> `A_token_minted_before_deactivation_is_still_refused_even_after_reassignment`].
+
+**`TC-1-094` — "the username stays reserved while the account is off" (rule 4) — has no test.** It
+asserts that `ux_users_user_name` is not filtered on `is_active`, which is exactly the kind of index
+predicate a later migration adds without noticing. Uncovered, P2, recorded.
+
+### KAFF-100 — accept
+
+All ten cases are covered, and the two that matter most are covered properly rather than by proxy:
+`TC-1-216` runs two genuinely concurrent requests against real PostgreSQL
+[@ `CreateOwnerTests.cs` -> `Two_concurrent_requests_produce_exactly_one_owner_and_one_refusal`], and
+`TC-1-218`'s "emptiness test, not a flag" is asserted through a deactivated Owner still closing the
+screen [@ `CreateOwnerTests.cs` -> `A_deactivated_owner_still_refuses_a_second_setup`].
+
+The handler is right about which of its two checks is load-bearing, and it catches the unique-violation
+by **constraint name** rather than by error class, so the loser of the race gets `setup.already_completed`
+and never a `500` [Verified: 2026-08-26 @ `src/Api/Features/Setup/CreateOwner/Handler.cs` ->
+`IsBootstrapRace`]. **That is the pattern `V-26-A` is missing** — KAFF-100 translates a database refusal
+back into a `Result`; KAFF-109 does not.
+
+The two anonymous routes are narrow: `GET /api/setup` discloses `!Users.AnyAsync()` and nothing else,
+`POST /api/setup` cannot succeed against a non-empty table. §4.4 proves the allow-list fails closed.
+
+### KAFF-101a — accept
+
+All 23 cases including `TC-1-258` are covered by `SignInTests` and `PasswordHasherTests`, and the two
+that pin an *ordering* rather than an outcome were both **watched red** by their authors and are
+robust under load (§4.3).
+
+`SignIn.Handler` is the one place in this slice that gets the role bar right: `Role.Client` and
+`Role.Subcontractor` are folded into the generic `401` before a session is minted
+[Verified: 2026-08-26 @ `src/Api/Features/Auth/SignIn/Handler.cs` -> `HandleAsync`]. **That check
+existing here is what makes its absence on `/api/auth/me` a defect rather than a design choice** — the
+system already knows those two roles may not hold a session; one route forgot to ask.
+
+🟡 The handler's own open question stands and this report does not close it: an inactive account is
+folded into the generic `401` rather than given `errors.auth.account_inactive`, which the story's i18n
+bullet names and no criterion reaches. Correctly flagged for Nabil rather than decided.
+
+### KAFF-103 — accept, with `V-26-D`
+
+Seven of seven QA cases are covered at the level they name, except `TC-1-027`'s API half.
+`TC-1-027` (`AC-103-H`) is *Domain + Api*: the Domain half passes
+[@ `tests/Domain.Tests/UserTests.cs` -> the `SubcontractorCannotLogIn` assertion], **the Api half has
+no test** — and per `V-26-D`, the handler's recorded reason for not needing one is wrong.
+
+The rest is sound, including the carve-out that makes `AC-103-B` work
+[@ `ChangePasswordTests.cs` -> `Until_the_password_is_changed_every_other_endpoint_refuses_it_and_this_one_does_not`]
+and the deactivated-account refusal, which `MUT2` proved is a test that can fail
+[@ `ChangePasswordTests.cs` -> `A_deactivated_account_cannot_change_its_own_password`].
+
+### KAFF-102 — reject
+
+Its five QA cases all pass, `TC-1-019`'s deliberate replay half included
+[@ `SignOutTests.cs` -> `A_replayed_cookie_still_works_because_nothing_is_revoked`], and the
+cookie-attribute case that D-050 exists for
+[@ `SignOutTests.cs` -> `The_cookie_is_cleared_with_the_same_name_path_and_attributes_it_was_minted_with`].
+`Sign_out_never_rotates_the_security_stamp` pins the trade the other way, correctly.
+
+**It is rejected on `V-26-C`, which no QA case asks about.** The suite proves sign-out does the right
+thing for a live session and for no session; nobody asked what it does for a session the system has
+already killed. It accepts it and writes an uncorrectable audit row.
+
+### KAFF-105a — reject
+
+`TC-1-045`, `TC-1-235`, `TC-1-236` and `AC-105a-A/B/C/G` are covered. `TC-1-046` ("the payload carries
+no money") has no test but is satisfied structurally — the response record has seven fields and none is
+a `Money` or a `decimal` [Verified: 2026-08-26 @ `src/Api/Features/Auth/WhoAmI/Response.cs` ->
+`Response`].
+
+**Rejected on `V-26-B`.** And its coverage picture is worse than the suite suggests: per `V-26-G`, the
+one QA case mapped to `AC-105a-H` still asserts the criterion it replaced, so the endpoint's
+best-tested behaviour is documented in `test-cases.md` as the opposite of what it does.
+
+### KAFF-109 — reject
+
+Nine QA cases, eight covered and passing; `TC-1-079` is `PENDING Q27 (residual)` and cannot be
+executed. `AC-109-K` is now demonstrated under a real fault (§4.1).
+
+**Rejected on `V-26-A` and `V-26-B`.** Both come from the same root: `User.ChangeRole` re-applies the
+*creation* invariants and nothing about the *transition*. It does not ask whether the target role may
+hold a session, whether the account holds a credential the new role may not, or whether the change
+should end the session it silently leaves alive.
+
+---
+
+## 7. QA cases: what ran, what did not
+
+**75 cases** map to these nine stories (`TC-1-001` … `TC-1-258`, per the story headings in
+`qa/slice-1/test-cases.md`). All are `Api`, `Domain + Api` or `Api + E2E` — none is Web-only, so the
+execution vehicle is `Kaff.Api.Tests` and `Kaff.Domain.Tests`, both green.
+
+| Outcome | Count | Which |
+|---|---|---|
+| **Pass** — covered by a named test in a green suite | **69** | The bulk of `TC-1-001`…`006`, `007`…`018`, `019`…`022`, `023`…`029`, `045`, `046`, `075`…`080`, `091`…`098`, `113`…`119`, and `216`…`239`, `258` |
+| **Fail** | **1** | **`TC-1-042`** — asserts the withdrawn `AC-105a-F` rule against correct code. See `V-26-G` |
+| **Cannot be executed** | **1** | **`TC-1-079`** — `PENDING Q27 (residual)`. The case itself says it cannot be written until the residual half of Q27 is ruled. Not a gap in the build |
+| **No test exists** | **4** | **`TC-1-120`** (KAFF-114 rule 7), **`TC-1-094`** (KAFF-112 rule 4), **`TC-1-027`'s Api half** (`AC-103-H`), and **`TC-1-046`** (satisfied structurally, but by inspection rather than by an assertion) |
+
+`TC-1-258`, the case the brief singles out, **passes**, and both of its halves are genuinely covered —
+the status-code half [@ `SignInTests.cs` -> `A_locked_account_answers_423_to_the_right_password_and_401_to_a_wrong_one`]
+and the time-envelope half [@ `SignInTests.cs` -> `No_refusal_is_faster_than_the_hash_it_should_have_paid_for`],
+which §4.3 establishes is a test that can fail without being one that fails spuriously.
+
+---
+
+## 8. What this session could **not** verify
+
+Recorded rather than folded into a pass.
+
+* **`TC-1-079`** — `PENDING Q27 (residual)`. Blocked on a ruling, not on a build.
+* **The E2E half of `TC-1-223`** (`SameSite=Strict` as the whole CSRF control, `Api + E2E`). The Api
+  half is covered; the browser half was not exercised — the E2E suite was not run against a real
+  cross-site request, and asserting a browser's cookie policy from a `TestServer` proves nothing about
+  a browser.
+* **Whether `V-26-B`'s `Role.Client` half is reachable in production.** `Role.Subcontractor` is
+  reachable and demonstrated; `Role.Client` was proved only from a hand-issued identity, because
+  `User.ChangeRole` closes the staff-to-client transition (`V-26-E`). If a future story opens any path
+  by which a client identity acquires a staff cookie, `V-26-B` becomes materially worse and nothing
+  will announce it.
+* **Anything about a real deployment.** The stack was run locally (§4.7). Staging was verified by
+  reading `deploy/docker-compose.staging.yml`, not by connecting to it.
+
+---
+
+## 9. The one thing Nabil should know
+
+**`GET /api/auth/me` will tell a subcontractor who they are.**
+
+spec.md §9 says a subcontractor is *"record only, no login"*, and the system enforces that in three
+places — the entity refuses the credential, the database refuses it with a check constraint, and the
+sign-in door refuses the role outright. All three are real and all three work.
+
+But a fourth place had to re-apply those checks by hand, because it deliberately sits outside the
+permission gate, and it copied two of the three. So the endpoint the frontend trusts to answer *"who
+am I and what may I do"* answers a subcontractor with a `200` and their name — and the route that puts
+a subcontractor in that position, `PUT /api/users/{id}/role`, is one the Owner can call on any
+departmentless account, including his own.
+
+**The pattern is what matters, not the one route.** Every time an endpoint is exempted from the gate
+for a good reason, somebody re-implements the gate's checks by hand, and hand-copies are one item
+short. There are two such endpoints today and the exemption list is designed to grow. The list
+records *why* each is exempt; nothing records *what each therefore owes*, and no test checks that it
+paid. Two of the seven findings in this report — `V-26-B` and `V-26-F` — are that same shape: a safety
+that exists only as a line somebody remembered to write, with nothing that goes red when the next
+person does not.
