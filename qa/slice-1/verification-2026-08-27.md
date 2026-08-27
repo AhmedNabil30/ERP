@@ -211,3 +211,64 @@ shape all three original defects actually had. It is recorded so the next sessio
 test's name as broader cover than it is. **The `AllowList` half of the exemption surface is covered by
 one grep and a reviewer.**
 
+---
+
+## 4. `V-26-F`'s pin — and exactly which ordering it holds
+
+D-090 claims that moving the two `MustChangePassword` blocks below the catalogue lookup turns
+**exactly two** tests red. Re-executed, and the answer is yes — with one precision the entry does not
+carry, found by getting the mutation wrong first.
+
+### `MUT-F` — the leak, reproduced
+
+Both blocks moved so that neither runs before the grant match: the block deleted from the first
+overload entirely (it delegates), and the second overload's moved below `matching.Count == 0`.
+
+```
+Domain  failed  PermissionEvaluatorTests
+        -> The_password_change_refusal_is_identical_for_a_caller_who_holds_the_permission_and_one_who_does_not
+        found PermissionDecision.RoleNotGranted {4}, required PasswordChangeRequired {8}      96 / 97
+
+Api     failed  ChangePasswordTests
+        -> The_forced_change_refusal_is_the_same_for_a_caller_who_holds_the_permission_and_one_who_does_not
+                                                                                            214 / 215
+```
+
+**Exactly two, one per suite, and nothing else in either.** The Domain failure is the leak stated
+plainly: a Finance caller with the flag set, who holds no grant on `UserManage`, is told
+`RoleNotGranted` where an Owner with the same flag is told `PasswordChangeRequired` — a per-endpoint
+*"you would have been allowed"* oracle, arriving through a `messageKey` and changing no status code.
+`V-26-F` is closed, at both levels, and the pin can fail.
+
+### The precision D-090 does not carry, and a later session would trip on
+
+**A first, weaker mutation left the entire suite green — 97 / 97 and 215 / 215.** In it, the first
+overload's check was moved *below the catalogue lookup* but still *above the delegation*, and only the
+second overload's went below the grant match.
+
+D-090's own wording is *"moved below the catalogue lookup"*. Read literally, that mutation is what it
+describes, and it does not go red. **The property the tests actually pin is narrower and is the
+correct one: the refusal must precede the *grant match*, not the *catalogue lookup*.**
+
+That distinction is not a defect and the tests are not weak — it is the right property. Consulting
+`PermissionCatalogue.TryGet` discloses only whether a permission *exists*, which is static, public by
+construction and unreachable from any route, since every endpoint declares a real permission. Nothing
+leaks. **But a future session that reads D-090, performs the mutation its sentence describes, and sees
+green will conclude the pin is broken when it is not.** Recorded here so that reading is available;
+the fix is one word in D-090, and it is **BA/Backend bookkeeping, not a code change.**
+
+### `SpecificRefusal` still cannot distinguish a gate refusal — D-086, re-established
+
+`SpecificRefusal.Set` has one caller and fires on one decision
+[Verified: 2026-08-27 @ `src/Api/Authorization/PermissionAuthorizationHandler.cs` ->
+`HandleRequirementAsync`], read in one place
+[Verified: 2026-08-27 @ `src/Api/Program.cs` -> `AddProblemDetails`]. **And the mechanism is
+deliberately not wired into the route that could most easily have used it:** every refusal from
+`RequireLiveSession` is the blanket `403` / `errors.auth.forbidden`, with neither
+`AuthorizationErrors.RoleCannotLogIn` nor `SpecificRefusal` reachable from it
+[Verified: 2026-08-27 @ `src/Api/Authorization/LiveSession.cs` -> `RequireLiveSession`]. **No route
+leaks which of the three axes failed** — inactive, stale stamp and barred role are one response.
+
+The `MUT-F` run is the evidence that this is held by a test rather than by care: the Api half of the
+pin fails on the `messageKey` alone, which is the only channel by which the axis could escape.
+
