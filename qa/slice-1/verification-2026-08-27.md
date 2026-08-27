@@ -272,3 +272,74 @@ leaks which of the three axes failed** — inactive, stale stamp and barred role
 The `MUT-F` run is the evidence that this is held by a test rather than by care: the Api half of the
 pin fails on the `messageKey` alone, which is the only channel by which the axis could escape.
 
+---
+
+## 5. The rest of the guards — the same treatment, and the two halves diverge
+
+`V-27-A` raised the question for one constraint. The brief asks it of the others. Four more mutations,
+one build each, all reverted.
+
+| # | Removed | Result |
+|---|---|---|
+| **MUT-G4** | `trg_postings_append_only` from `001_guards.sql` | **182 / 215 failed.** The host refuses to boot: *"Refusing to start: database guards are missing — trg_postings_append_only."* |
+| **MUT-G1** | `ck_postings_amount_positive` from the model | **1 red**, and **for the wrong reason** — see below |
+| **MUT-G2** | `ck_audit_records_actor_is_named_completely` from the model | **1 red** — `AuditMechanismTests` -> `An_actor_is_named_completely_or_not_at_all` |
+| **MUT-G3** | `ck_users_client_scope` from the model | **nothing red** |
+
+### The triggers are covered twice. The check constraints are covered by nothing systematic.
+
+**`MUT-G4` is the strongest result in this section.** Removing the append-only trigger — CLAUDE.md's
+*"Never update or delete a posting"* — does not merely turn a test red; **the application refuses to
+start**, and 182 tests fail because there is no host [Verified: 2026-08-27 @ `src/Api/Program.cs`, the
+`missingGuards.Count > 0` block]. `requiredTriggers` and `requiredIndexes` in
+`FindMissingGuardsAsync` are **hand-written name lists**, so a removed trigger is genuinely detected
+rather than defined away. The file's own comment worries that a hand-maintained list is one somebody
+forgets to extend — true, and it is nonetheless the half that works.
+
+**The check-constraint half is the half that does not**, and `MUT-G1` shows why in miniature.
+`ck_postings_amount_positive` is the money rule spec.md §6.1 states, and its one red test failed like
+this:
+
+```
+Npgsql.PostgresException : 42704: constraint "ck_postings_amount_positive"
+                           of relation "postings" does not exist
+```
+
+That is `A_dropped_check_constraint_is_reported_as_a_missing_guard` failing because **its own
+`ALTER TABLE … DROP CONSTRAINT` could not find the constraint it hard-codes** — not because
+`FindMissingGuardsAsync` reported anything. `before.Should().BeEmpty()` passed, exactly as `V-27-A`
+predicts: the model no longer required it, so the checker no longer expected it. **The one test that
+proves the guard checker sees constraints at all is itself the only reason a removed money constraint
+turns red, and it does so by accident of naming.**
+
+`MUT-G3` is `V-27-A` again on a different rule: `ck_users_client_scope` is spec.md §12's *"a portal
+user is scoped to exactly one client; nobody else carries one"*, and deleting it is invisible to
+215 Api tests and 97 Domain tests.
+
+`MUT-G2` is the counter-example that keeps this honest — `W-1`'s constraint **is** covered, by a named
+behavioural test that goes red on its own terms. So the gap is not universal; it is unsystematic,
+which is worse to reason about.
+
+### `V-27-A`, restated at its real scope
+
+The finding is not about one constraint. **`DatabaseInitializer.FindMissingGuardsAsync` derives its
+required check-constraint list from the same EF model a regression would edit**, so for the whole
+class of check constraints the guard checker, `/api/health`'s `guardsInstalled`, and the `smoke`
+command are all incapable of noticing a rule that was removed rather than lost. Coverage exists only
+where somebody happened to write a behavioural test — one of the three sampled here, plus the audit
+one, and not the two spec-stated rules.
+
+**Severity stays MEDIUM for slice 1** — no postings endpoint exists, so no money is at risk today.
+**It is the slice-3 risk that matters:** `ck_postings_amount_positive`, `ck_postings_distinct_accounts`
+and `ck_postings_not_self_reversing` are money rules whose enforcement nothing would miss, on the day
+somebody edits `TreasuryConfigurations.cs`. **Owner: QA → Backend, before slice 3.**
+
+### What was not mutated, and the count
+
+**Sampled 4 of 30 check constraints** declared across the five configuration files
+[Verified: 2026-08-27 — counted from `HasCheckConstraint` call sites under
+`src/Infrastructure/Persistence/Configurations/`], and **1 of 8 required triggers**. The remaining
+**26 constraints and 7 triggers were not individually mutated** — see §9 for the full skipped count.
+The four sampled were chosen to span identity, audit, treasury and the one the retrospective named;
+the mechanism finding (`V-27-A`) is structural and applies to all 30 regardless of which were run.
+
