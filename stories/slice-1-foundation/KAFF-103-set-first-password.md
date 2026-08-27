@@ -1,6 +1,6 @@
 # KAFF-103 · Change the temporary password on first sign-in
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** Ready
+**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** **ACCEPTED 2026-08-26, then the code moved underneath the verdict.** Built `a90fa4b` (D-086) and accepted at `e43e9ac`; `f807364` (D-089) rewrote the handler's freshness check onto `LiveSession` and `4f9fc62` (D-090) pinned the ordering `V-26-F` found unpinned. **Not re-verified at HEAD.** `V-26-D` is closed — the handler's comment now states both reasons and names the one that was false [Verified: 2026-08-26 @ `src/Api/Features/Auth/ChangePassword/Handler.cs` -> `HandleAsync`]
 **Spec:** §9 · **Decisions:** **D-049 (rulings 3, 4)**, D-050
 **Depends on:** KAFF-100 *(soft)*, KAFF-101a, KAFF-106
 

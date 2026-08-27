@@ -1,6 +1,6 @@
 # KAFF-101a · Sign in, and the server sets an `HttpOnly` session cookie
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** **`Ready to start` — no open question remains, and it cannot yet be built end to end.** Two decided-but-unbuilt mechanisms sit behind `AC-101a-O`. See **Status, precisely** below
+**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** **ACCEPTED 2026-08-26, then the code moved underneath the verdict.** Built `fc19b31`+`497823e` (D-084) and accepted at `e43e9ac`; `f807364` (D-089) replaced this story's role bar with the shared `StaffSessionRules.MayHoldStaffSession`. **Not re-verified at HEAD, and therefore not accepted at HEAD.** `AC-101a-F` is covered by no test — it turns on the open `mustChangePassword` reach question, which is Nabil's
 **Spec:** §9 · **Decisions:** D-011, D-035, D-044 (ruling 2), **D-049 (rulings 2, 3, 4)**, **D-050**, **D-051 (N5, Q33)**, **D-062 §1/§2/§3**, **D-063 §1/§2/§3**, **D-065**, **D-072 §1**
 **Depends on:** KAFF-100 *(now `Ready` — the soft-dependency argument is retired, see below)*
 

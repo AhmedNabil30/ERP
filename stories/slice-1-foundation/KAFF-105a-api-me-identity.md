@@ -1,6 +1,6 @@
 # KAFF-105a · `GET /api/auth/me` returns who I am and what I may do
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 2 · **Status:** ~~BLOCKED~~ **`Ready` — V-03 is ruled (D-072 §2) and every criterion here is buildable.** Its only remaining dependency is **KAFF-101a**, which is `Ready to start` but not shippable until the audit IP column and the nullable subject land (D-063 §2/§3) — **that gates the sequence, not this story's readiness**
+**Slice:** 1 · **Epic:** Foundation · **Points:** 2 · **Status:** **REJECTED 2026-08-26** on `V-26-B` — `GET /api/auth/me` answered `Role.Subcontractor` and `Role.Client` with a `200` and their name, against spec.md §9 *"record only, no login"*. **Fixed `f807364` (D-089).** **Not re-verified — not accepted.** `V-26-G` is still open and is QA's: `TC-1-042` still cites the retired `AC-105a-F`, and the fix makes it more wrong, not less. Built `e43e9ac` (D-087)
 **Spec:** §9, §12 · **Decisions:** D-012, D-035, D-044, **D-050**, **D-051 (KAFF-105 split)**, **D-072 §2**
 **Depends on:** KAFF-101a
 

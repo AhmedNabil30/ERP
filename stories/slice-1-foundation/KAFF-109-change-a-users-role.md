@@ -1,6 +1,6 @@
 # KAFF-109 · Change a user's role
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** Ready
+**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** **REJECTED 2026-08-26** on `V-26-A` (a reachable `500` with no `messageKey`) and `V-26-B`. **Fixed `7ff500e` (D-088) and `f807364` (D-089).** **Not re-verified — not accepted.** Built `d5a1f87` (D-082). 🟡 D-088 leaves a question with Nabil and it is not this story's to answer: converting a user to `Role.Subcontractor` refuses today because refusing is the reversible half
 **Spec:** §9 (2026-08-21 amendment, and the **⚠️ SUPERSEDED** block inside it) · **Decisions:** D-044 (rulings 1, 5), ~~D-049 (ruling 6)~~ **reversed by D-051 (Q27)**
 **Depends on:** KAFF-106, KAFF-113, KAFF-111 *(shares the revocation mechanism)*
 

@@ -372,7 +372,7 @@ two `SelfOnlyEndpoints` refuse the same token `403`; sign-out returns `204`.
 * `UseForwardedHeaders` is registered **only** when `Kaff:TrustedProxyNetworks` is non-empty
   [Verified: 2026-08-26 @ `src/Api/Program.cs`, the `trustedProxyNetworks.Length > 0` block], and the
   shipped default is `[]` [Verified: 2026-08-26 @ `src/Api/appsettings.json` ->
-  `Kaff:TrustedProxyNetworks`], so development, CI and the test host never trust a header. The polarity
+  `TrustedProxyNetworks`], so development, CI and the test host never trust a header. The polarity
   is the correct one: `ForwardedHeadersOptions` with no known proxies means *trust every peer*, and the
   conditional is what stops that being the default.
 * Staging is coherent, which is the half a config change could silently break: the allowlist names
@@ -432,7 +432,7 @@ unrewritten**"* [Verified: 2026-08-26 @ `stories/ac-id-map.md` -> the `KAFF-105a
 `qa/slice-1/test-cases.md` -> `TC-1-042`]. The shipped endpoint returns `[]`, correctly, because both
 grants are `ProjectScoped` and the payload carries company-wide rows only. **`TC-1-042` therefore fails
 against correct code**, and it is the only case in the file mapped to this criterion — so `AC-105a-H`
-has no live QA coverage at all, while `MeTests` -> `A_portal_client_holds_no_company_wide_permission`
+has no live QA coverage at all, while `PermissionEvaluatorTests` -> `A_client_holds_no_company_wide_permission`
 passes in the suite. A green build beside a QA file asserting the opposite is exactly the state a
 verification pass exists to catch.
 

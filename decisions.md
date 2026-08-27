@@ -6718,7 +6718,7 @@ the opposite direction.
 2. **`GET /api/auth/me` now refuses `Role.Client`.** `AC-105a-H`'s substance is untouched and is proved
    where it is a fact about the rule rather than about this route
    [Verified: 2026-08-26 @ `tests/Domain.Tests/PermissionEvaluatorTests.cs` ->
-   `A_portal_client_holds_no_company_wide_permission`]. When the portal door of D-051 Q33 ships,
+   `A_client_holds_no_company_wide_permission`]. When the portal door of D-051 Q33 ships,
    whether it reuses this endpoint is that story's question — it must widen one line in Domain
    deliberately, which is the point of it being one line.
 

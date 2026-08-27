@@ -1,6 +1,6 @@
 # KAFF-102 · Sign out
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 2 · **Status:** Ready
+**Slice:** 1 · **Epic:** Foundation · **Points:** 2 · **Status:** **REJECTED 2026-08-26** on `V-26-C` — a cookie the global kill had already ended still wrote a permanent audit row. **Fixed `f807364` (D-089)**, by construction rather than per-route. **Not re-verified — not accepted.** Built `070d643` (D-085)
 **Spec:** §9 · **Decisions:** **D-049 (ruling 2)**, **D-050**, **D-051 (N5)**
 **Depends on:** KAFF-101a
 

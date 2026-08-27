@@ -14,6 +14,11 @@ Estimates are Fibonacci and mean **uncertainty**, not hours. A story that moves 
 Architect's three (**D-051**) on top of D-049 and D-050, and recomputing Ready / BLOCKED
 **transitively** — action **SM-1** from the sprint-1 refinement.
 
+**Sprint 1 closed and recomputed 2026-08-26** at `e9f3dcf`, by the Scrum Master. The build orders
+below are spent — every story in them is built except `KAFF-118`. See *Sprint 1 — closed and
+recomputed* below for the arithmetic; the slice-1 inventory table at the bottom now carries the same
+verdicts and no longer disagrees with an order that has nothing left to sequence.
+
 ---
 
 ## Where the work sits
@@ -89,6 +94,66 @@ keeps hitting. The backlog lists what exists; this section says what was *agreed
 **Deferred — 10 stories, 33 points:** KAFF-101b, 104, 105b, 115, 117, 119, 120, 121, 123, 124.
 **KAFF-107 folded** into KAFF-106 and KAFF-108 (16/59 → 15/57). **KAFF-122 superseded** by KAFF-416.
 
+### Sprint 1 — closed and recomputed, 2026-08-26 at `e9f3dcf`
+
+**Supersedes every build order below.** Every story in the 2026-08-25 order is built except
+`KAFF-118`, so the order is spent; it is left in place because the reasoning that produced it is the
+record of how the 111-vs-114 conflict was resolved, not because anything is still waiting in it.
+
+**Nabil's lock stands: 15 stories / 57 points.** Nothing was added, cut or re-estimated. The
+arithmetic below re-derives the lock rather than restating it: 26 slice-1 stories at 92 points
+(`KAFF-122` superseded), minus the 10 deferred (33 points), minus `KAFF-107` folded into 106 and 108
+(2 points) = **15 / 57**.
+
+#### The five buckets, and the second and third are the honest part
+
+| Bucket | Stories | Pts |
+|---|---|---:|
+| **Accepted** — verified by a session that did not write the code, no defect open against it, and its own behaviour is unchanged since that verification | KAFF-116, 108, 113, 100, 111, 112, 114 | **25** |
+| **Verified, then the code moved underneath the verdict** — accepted at `e43e9ac`, changed at `f807364` / `4f9fc62` | KAFF-101a, 103 | **10** |
+| **Rejected, fixed, not re-verified** | KAFF-109, 105a, 102 | **9** |
+| **Built and verified with a criterion still held** | KAFF-106, 110 | **10** |
+| **Unbuilt** | KAFF-118 | **3** |
+| | **15** | **57** |
+
+**25 of 57 points stand. 19 do not, and they are the sprint's whole finding.**
+
+**Five stories' shipped code changed after the session that judged it, and no independent session has
+looked at any of them since** — checked against `git show --stat`, not against a report's summary of
+itself:
+
+| Story | What changed after `2e56943` | Commit |
+|---|---|---|
+| KAFF-109 | `User.ChangeRole` gained the guard that closes `V-26-A` | `7ff500e` (D-088) |
+| KAFF-105a | `WhoAmI/Endpoint.cs` + `Handler.cs` — the hand-copied checks replaced by `RequireLiveSession()` | `f807364` (D-089) |
+| KAFF-102 | `SignOut/Handler.cs` — `LiveSession.ResolveAsync` before the audit row | `f807364` (D-089) |
+| **KAFF-101a** | `SignIn/Handler.cs` and `StaffSessionMinter.cs` — the role bar became the shared `StaffSessionRules.MayHoldStaffSession` | `f807364` (D-089) |
+| **KAFF-103** | `ChangePassword/Endpoint.cs` + `Handler.cs` rewritten onto `LiveSession`; the `V-26-F` ordering pinned | `f807364`, `4f9fc62` |
+
+**The last two were *accepted*, and their acceptance is dated to a commit that is no longer HEAD.**
+That is SM-29 applied to an acceptance rather than to a story: a verdict is a claim about a tree, and
+this one aged in eleven hours. The fixes are good and the suite is green at HEAD (Domain **97/97**,
+Api **215/215**, build **0/0**, `dotnet format` clean — all re-run 2026-08-26 on this tree). **A green
+suite is not an independent verification**, and three of these five stories were green when they were
+rejected.
+
+**None of the 57 points has passed Nabil's acceptance gate.** `process/agile.md` §4 makes acceptance
+Nabil running the demo script; no demo script has been run and there is no screen to run one against.
+`ACCEPTED` in the tables below means *an independent session verified it and found no open defect* —
+the meaning this file has used since KAFF-116. It does not mean Nabil has accepted it.
+
+#### What sprint 2 must not start until
+
+* **A Verifier pass over the five stories above**, in a fresh session, against HEAD. Not a re-read of
+  `qa/slice-1/verification-2026-08-26.md` — that report judged a different tree.
+* **`AC-106-H` and `AC-110-D` are now dischargeable.** Both were deferred to stories that did not
+  exist; `KAFF-101a` and `KAFF-103` exist now (D-084, D-086). The deferrals were honest and are now
+  spent — they belong in the same Verifier pass.
+* **`KAFF-118` is unbuilt and its cut is Nabil's.** It depends on `KAFF-119`, deliberately deferred out
+  of this sprint, so it cannot complete as written whatever he rules. The proposal to keep it as an
+  acceptance check rather than a story still stands and is still not the Scrum Master's to take.
+
+---
 
 ### Build order — re-derived 2026-08-25, and the 111-vs-114 conflict resolved
 
@@ -219,13 +284,13 @@ criterion behind them. **KAFF-105a is untouched by D-065 — checked, not assume
 
 | ID | Title | Pts | Status | Depends on |
 |---|---|---:|---|---|
-| KAFF-100 | Bootstrap the first Owner through a one-time setup screen | **5** | Ready | — |
-| KAFF-101a | Sign in, and the server sets an `HttpOnly` session cookie | 5 | **`Ready to start`** — Q47 closed in full (D-072 §1); **not shippable** until the audit **IP column** and the **nullable subject** land (D-063 §2/§3) | 100 |
+| KAFF-100 | Bootstrap the first Owner through a one-time setup screen | **5** | ACCEPTED 2026-08-26 — all 10 QA cases covered, `qa/slice-1/verification-2026-08-26.md` §6. | — |
+| KAFF-101a | Sign in, and the server sets an `HttpOnly` session cookie | 5 | **ACCEPTED 2026-08-26, then the code moved underneath the verdict.** | 100 |
 | KAFF-101b | The staff sign-in screen, and where each role lands after it | 3 | Ready | 101a, 105a |
-| KAFF-102 | Sign out | **2** | Ready | 101a |
-| KAFF-103 | Change the temporary password on first sign-in | 5 | Ready | 100, 101a, 106 |
+| KAFF-102 | Sign out | **2** | **REJECTED 2026-08-26** on `V-26-C` — a cookie the global kill had already ended still wrote a permanent audit row. | 101a |
+| KAFF-103 | Change the temporary password on first sign-in | 5 | **ACCEPTED 2026-08-26, then the code moved underneath the verdict.** | 100, 101a, 106 |
 | KAFF-104 | Reset a forgotten password with an Owner-generated link | 5 | Ready | 101a, 103, 106 |
-| KAFF-105a | `GET /api/auth/me` returns who I am and what I may do | **2** | ~~**BLOCKED**~~ **`Ready`** — V-03 ruled (D-072 §2): the flag travels in the payload, `AC-105a-C` changed sides | 101a |
+| KAFF-105a | `GET /api/auth/me` returns who I am and what I may do | **2** | **REJECTED 2026-08-26** on `V-26-B` — `GET /api/auth/me` answered `Role.Subcontractor` and `Role.Client` with a `200` and their name, against spec.md §9 *"record only, no login"*. | 101a |
 
 > **⚠️ This table records story *state*, and it contradicted the build order above it until 2026-08-23.**
 > `KAFF-105a` read `Ready` here while the order three rows up read `BLOCKED`. **A Backend agent reading
@@ -233,19 +298,19 @@ criterion behind them. **KAFF-105a is untouched by D-065 — checked, not assume
 > and fixed by the Scrum Master, who does. **When these two disagree the build order is authoritative**
 > — it is recomputed every time a blocker moves; this table is a backlog inventory.
 | KAFF-105b | `GET /api/auth/me` returns the projects I reach, and how | **3** | Ready | 105a, 113, 114 |
-| KAFF-106 | The Owner creates a user with a role and a department | 5 | Ready | 100 |
+| KAFF-106 | The Owner creates a user with a role and a department | 5 | BUILT, verified 2026-08-25 — 9 of 11 criteria satisfied. | 100 |
 | KAFF-107 | An HR user cannot be created or moved outside the HR department | 2 | Ready | 106 |
 | KAFF-108 | Move a user between departments | 3 | Ready | 106 |
-| KAFF-109 | Change a user's role — **rewritten, D-051 reverses D-049 ruling 6** | 5 | Ready | 106, 113, 111 |
-| KAFF-110 | Deactivate a user, and their access ends on the next request | 5 | Ready | 106 |
-| KAFF-111 | Deactivating a user revokes their project assignments | 3 | Ready | 110, 113 |
-| KAFF-112 | Reactivate a user, who comes back with nothing | 3 | Ready | 110, 111 |
+| KAFF-109 | Change a user's role — **rewritten, D-051 reverses D-049 ruling 6** | 5 | **REJECTED 2026-08-26** on `V-26-A` (a reachable `500` with no `messageKey`) and `V-26-B`. | 106, 113, 111 |
+| KAFF-110 | Deactivate a user, and their access ends on the next request | 5 | BUILT, verified 2026-08-25 — 8 of 10 satisfied. | 106 |
+| KAFF-111 | Deactivating a user revokes their project assignments | 3 | ACCEPTED 2026-08-26 — verified on its own criteria for the first time and both QA cases pass. | 110, 113 |
+| KAFF-112 | Reactivate a user, who comes back with nothing | 3 | ACCEPTED 2026-08-26 — 5 of 6 QA cases covered; **`TC-1-094` has no test** (the username stays reserved while the account is off — an index predicate a later migration removes without noticing). | 110, 111 |
 | KAFF-113 | Assign a user to a project, with seniority for site engineers | 5 | Ready | 106 |
-| KAFF-114 | Revoke a project assignment without losing who could act when | 3 | Ready | 113 |
+| KAFF-114 | Revoke a project assignment without losing who could act when | 3 | ACCEPTED 2026-08-26 — 7 of 8 QA cases covered; **`TC-1-120` has no test** (revoking the last person on a project is allowed — the case exists to pin an absence, so nothing goes red the day somebody adds the rule). | 113 |
 | KAFF-115 | The project team panel, and HR's separate Project Team screen | **3** | Ready | 113, 114, 105b |
 | KAFF-116 | Every audit record says how the actor reached the project | 3 | Ready | — |
 | KAFF-117 | The Owner reads the audit trail, and nobody else does | 5 | Ready | 116, 118 |
-| KAFF-118 | Every state change in slice 1 writes an audit record | 3 | Ready | 106, 109, 110, 111, 113, 119 |
+| KAFF-118 | Every state change in slice 1 writes an audit record | 3 | **UNBUILT.** Nothing of this story was started. | 106, 109, 110, 111, 113, 119 |
 | KAFF-119 | Register a client, with a generated code and a duplicate-phone warning | 5 | Ready | 106 |
 | KAFF-120 | An individual's contract cannot carry a withholding rate — **defect, now wiring** | 2 | Ready | 119 |
 | KAFF-121 | Edit a client's name and contact details | 3 | Ready | 119 |

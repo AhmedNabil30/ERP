@@ -239,7 +239,7 @@ public sealed class MeTests : IAsyncLifetime
     /// <b><c>AC-105a-H</c>'s substance — a client holds no company-wide permission — is unaffected and
     /// is proved where it is a fact about the rule rather than about this route</b>
     /// [@ <c>tests/Domain.Tests/PermissionEvaluatorTests.cs</c> -&gt;
-    /// <c>A_portal_client_holds_no_company_wide_permission</c>]. 🟡 When the portal door of D-051 Q33
+    /// <c>A_client_holds_no_company_wide_permission</c>]. 🟡 When the portal door of D-051 Q33
     /// ships, whether it reuses this endpoint is a question for that story — it would have to widen
     /// this bar deliberately, which is the point of it being one line in Domain.
     /// </para>

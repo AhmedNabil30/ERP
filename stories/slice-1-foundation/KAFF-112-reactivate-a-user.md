@@ -1,6 +1,6 @@
 # KAFF-112 · Reactivate a user, who comes back with nothing
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** Ready
+**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** ACCEPTED 2026-08-26 — 5 of 6 QA cases covered; **`TC-1-094` has no test** (the username stays reserved while the account is off — an index predicate a later migration removes without noticing). P2, recorded, owed to QA/Backend. Built `1b6c7d6` (D-081)
 **Spec:** §9 · **Decisions:** D-044 (ruling 1), **D-049 (rulings 4, 5)**, **D-051 (N5)**
 **Depends on:** KAFF-110, KAFF-111
 
