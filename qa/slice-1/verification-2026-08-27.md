@@ -24,13 +24,23 @@ A story that could not be verified is **not accepted**.
 
 Written incrementally and committed as each section closed, per the brief.
 
-| Story | Reached | Verdict |
-|---|---|---|
-| KAFF-109 change a user's role | **in progress** | pending — `V-27-A` open against it |
-| KAFF-105a `GET /api/auth/me` | pending | pending |
-| KAFF-102 sign-out | pending | pending |
-| KAFF-101a sign-in | pending | pending |
-| KAFF-103 change password | pending | pending |
+| Story | Reached | Verdict | Where |
+|---|---|---|---|
+| KAFF-109 change a user's role | **yes** | **ACCEPT, with `V-27-C` recorded against a rule it does not state** | §6 |
+| KAFF-105a `GET /api/auth/me` | pending | pending | |
+| KAFF-102 sign-out | pending | pending | |
+| KAFF-101a sign-in | pending | pending | |
+| KAFF-103 change password | pending | pending | |
+
+### Findings index, so far
+
+| Id | Severity | Against | What |
+|---|---|---|---|
+| `V-27-A` | **MEDIUM** | the guard mechanism, not a story | `ck_users_subcontractor_cannot_log_in` — and the check-constraint class generally — is covered by nothing, and `FindMissingGuardsAsync` cannot notice because its required list is derived from the same model a regression edits (§2, §5) |
+| `V-27-B` | **MEDIUM** | D-089's mechanism | `LiveSession.Marker` can be claimed without being paid for: `Instance` is `internal` and every feature slice compiles into `Kaff.Api` (§3) |
+| `V-27-C` | **MEDIUM** | KAFF-109 | `PUT /api/users/{id}/role` accepts and persists a `Role` value outside the enum — `role = '99'` — and both role-based security predicates are deny-lists that fail open on it (§6) |
+| — | note | D-090 | The tests pin *before the grant match*, not *before the catalogue lookup* as the entry's prose says; the literal mutation leaves the suite green (§4) |
+| — | note | `AllowList` | On `AllowAnonymous` sign-out no metadata assertion is possible, so one source grep is the whole mechanical cover (§3.1) |
 
 ---
 
@@ -342,4 +352,92 @@ somebody edits `TreasuryConfigurations.cs`. **Owner: QA → Backend, before slic
 **26 constraints and 7 triggers were not individually mutated** — see §9 for the full skipped count.
 The four sampled were chosen to span identity, audit, treasury and the one the retrospective named;
 the mechanism finding (`V-27-A`) is structural and applies to all 30 regardless of which were run.
+
+---
+
+## 6. KAFF-109 — change a user's role · **ACCEPT**
+
+Rejected on 2026-08-26 for `V-26-A` (a reachable `500` with no `messageKey`) and `V-26-B`. Both are
+closed. `V-26-A` is closed here; `V-26-B` is closed at the door and is judged in §7.
+
+### `V-26-A` is closed, on evidence
+
+**The guard is real and covered** — `MUT-B` (§2) deletes it and exactly two tests go red, one per
+suite, the Api one reproducing the Verifier's own PROBE-1 as a `500`. **The refusal is the shape
+D-080 requires** and D-088 claims: `409` with `errors.identity.subcontractor_cannot_log_in`, an
+existing key carrying real Arabic and English, no new error and no new catalogue row
+[Verified: 2026-08-27 @ `src/Domain/Identity/IdentityErrors.cs` -> `SubcontractorCannotLogIn`;
+@ `src/Domain/Identity/User.cs` -> `ChangeRole`]. A refused change revokes nothing — asserted, with
+both assignments still active [Verified: 2026-08-27 @ `tests/Api.Tests/ChangeUserRoleTests.cs` ->
+`Converting_an_account_that_holds_a_credential_into_a_subcontractor_is_refused`].
+
+**The open half stays open and this report does not close it.** Whether converting to
+`Role.Subcontractor` should refuse or clear the credential is Nabil's, per D-088's 🟡. What is
+verified is only that the built half is the reversible one and that the account holding **no**
+credential still converts, so nobody reads the refusal as *"a user may never become a
+subcontractor"* [@ `ChangeUserRoleTests.cs` -> `Converting_an_account_with_no_credential_into_a_subcontractor_succeeds`].
+
+### `MUT-I` — no input produces a `500`
+
+Every role name, three out-of-range integers and five malformed bodies, against a credentialed and a
+credentialless target — **36 requests, no `500`**:
+
+```
+"Owner"…"MarketingSales"  -> 200          null, "", "NotARole", {}, []  -> 400 (no messageKey)
+"Client"                  -> 400 errors.identity.client_user_requires_client
+"Hr"                      -> 400 errors.identity.hr_role_requires_hr_department
+"Subcontractor"           -> 409 errors.identity.subcontractor_cannot_log_in   (credentialed)
+"subcontractor"           -> 409 errors.identity.subcontractor_cannot_log_in   (case-insensitive)
+-1, 0, 99                 -> 200
+```
+
+The `400`s carrying no `messageKey` are **`W-5`**, already open with the Architect as a scope question
+— framework-produced `400`/`404`/`415` are unfilled while `401` and `403` are. Confirmed still true,
+not re-logged as new.
+
+### `V-27-C` — **MEDIUM** · a role outside the enum is accepted and persisted
+
+**`-1`, `0` and `99` each answer `200`.** Read back from the users table after the sweep:
+
+```
+STORED role column for the swept account = '99'
+```
+
+An account holds a role that exists in neither `Role`, spec.md §9's list of nine, nor
+`PermissionCatalogue`. The enum is stored as text, so the column reads `'99'`. No check constraint
+refuses it: `ck_users_client_scope` and `ck_users_operations_sub_department` are both satisfied by a
+value that is neither `'Client'` nor `'Operations'`. There is **no `Validator.cs` in the
+`ChangeUserRole` slice** [Verified: 2026-08-27 — the folder holds `Endpoint.cs`, `Handler.cs`,
+`Request.cs`, `Response.cs` only], and `ChangeRole` re-applies the creation invariants without
+asking whether the role is a role.
+
+**Why MEDIUM and not HIGH.** No privilege is gained: `PermissionEvaluator` matches no grant, so such
+an account is refused everything, and only the Owner can call this endpoint at all. Nothing in slice 1
+moves money.
+
+**Why it is not LOW, and this is the part worth reading.** Both role-based security predicates are
+**deny-lists that fail open on an unknown value**:
+
+* `MayHoldStaffSession` is `role is not (Role.Client or Role.Subcontractor)`
+  [Verified: 2026-08-27 @ `src/Domain/Identity/Role.cs` -> `MayHoldStaffSession`] — `(Role)99`
+  therefore **may hold a staff session**, and `GET /api/auth/me` will answer it.
+* `PermissionEvaluator.Evaluate` bars `subject.Role == Role.Subcontractor`
+  [Verified: 2026-08-27 @ `src/Domain/Authorization/PermissionEvaluator.cs` -> `Evaluate`] — same
+  shape.
+
+Neither is wrong for the nine real roles. Both answer *"permitted"* for every value outside them,
+which is the wrong default for a predicate whose whole job is to refuse. And any audit row such an
+account later authors carries `actor_role = '99'` **into an append-only, trigger-protected table
+where it can never be corrected**.
+
+**This is not a rule KAFF-109 states, and the story is not rejected for it.** It is a gap between the
+enum and the wire that the story never had to think about. **Owner: QA → Backend**; the sibling
+question — should an unknown role fail closed everywhere — is **Architect's**, and matters before
+slice 3, when a role gates money.
+
+### Verdict — **ACCEPT**
+
+Both defects it was rejected for are closed, each confirmed by watching the guard fail rather than by
+reading D-088. `V-27-C` is recorded against it but is a new finding about a rule the story does not
+make, and it grants nothing to anybody. The story's own criteria hold.
 
