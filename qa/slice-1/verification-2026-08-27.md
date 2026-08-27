@@ -27,10 +27,15 @@ Written incrementally and committed as each section closed, per the brief.
 | Story | Reached | Verdict | Where |
 |---|---|---|---|
 | KAFF-109 change a user's role | **yes** | **ACCEPT, with `V-27-C` recorded against a rule it does not state** | §6 |
-| KAFF-105a `GET /api/auth/me` | pending | pending | |
-| KAFF-102 sign-out | pending | pending | |
-| KAFF-101a sign-in | pending | pending | |
-| KAFF-103 change password | pending | pending | |
+| KAFF-105a `GET /api/auth/me` | **yes** | **ACCEPT** | §8 |
+| KAFF-102 sign-out | **yes** | **ACCEPT** | §9 |
+| KAFF-101a sign-in | **yes** | **ACCEPT** | §10 |
+| KAFF-103 change password | **yes** | **ACCEPT** | §11 |
+
+**All five reached. All five accepted.** Every prior verdict was re-established at HEAD `559ac45`;
+none was inherited. The three defects recorded below are new findings, and none of them rejects a
+story — two are about the mechanisms that verify the code rather than the code, and the third is a
+rule no story states.
 
 ### Findings index, so far
 
@@ -440,4 +445,203 @@ slice 3, when a role gates money.
 Both defects it was rejected for are closed, each confirmed by watching the guard fail rather than by
 reading D-088. `V-27-C` is recorded against it but is a new finding about a rule the story does not
 make, and it grants nothing to anybody. The story's own criteria hold.
+
+---
+
+## 7. The two remaining mutations, shared by the last four stories
+
+Two more, each built clean and reverted, because the four stories below share one mechanism and
+judging them separately would mean mutating it four times.
+
+### `MUT-H` — the shared role bar, deleted in `Domain/`
+
+`StaffSessionRules.MayHoldStaffSession` made to answer `true` for every role. **Five red, spanning
+every door that uses it:**
+
+```
+SignInTests   -> The_staff_session_minter_refuses_a_client_and_a_subcontractor
+SignInTests   -> Five_different_refusals_are_one_answer
+MeTests       -> A_subcontractor_session_is_refused_not_answered_with_a_profile
+MeTests       -> A_hand_minted_portal_client_session_is_refused_by_the_staff_door
+SignOutTests  -> A_client_role_session_can_sign_out_too                          Api 210 / 215
+```
+
+The predicate moved to `Domain/` per CLAUDE.md and **every one of the three doors that consumes it has
+its own failing test.** `V-26-B` is closed at the mechanism, not only at the route that reported it.
+
+*One observation, not a defect:* the Domain suite stays **97 / 97** through this mutation. The rule
+lives in `Domain/` and is covered entirely from the Api suite. Nothing is wrong — the doors are what
+matter — but the cheapest possible test of the predicate itself does not exist.
+
+### `MUT-J` — `IsActive` and the stamp comparison, deleted from `ResolveAsync`
+
+**Four red, one per exempt route plus both halves on `/api/auth/me`:**
+
+```
+SignOutTests       -> A_cookie_the_global_kill_already_ended_writes_no_audit_row   (V-26-C's own test)
+MeTests            -> A_deactivated_accounts_token_is_refused_not_answered_with_a_profile
+MeTests            -> A_password_changed_on_another_device_ends_this_endpoints_answer_too
+ChangePasswordTests-> A_deactivated_account_cannot_change_its_own_password         Api 211 / 215
+```
+
+**All three checks are live on all three exempt routes**, each observed failing. That is what D-089
+claims and it is true.
+
+---
+
+## 8. KAFF-105a — `GET /api/auth/me` · **ACCEPT**
+
+Rejected on 2026-08-26 for `V-26-B`. Closed: the endpoint carries `RequireLiveSession()`
+[Verified: 2026-08-27 @ `src/Api/Features/Auth/WhoAmI/Endpoint.cs` -> `Map`], the handler reads the
+row that filter already checked [Verified: 2026-08-27 @ `src/Api/Features/Auth/WhoAmI/Handler.cs` ->
+`HandleAsync`], and `MUT-H` and `MUT-J` show all three checks failing on this route by name.
+
+**`AC-105a-C` survives the fix**, which was the thing most at risk: the route still answers `200` with
+`mustChangePassword: true` rather than refusing, because it carries no `RequirePermission` and
+`LiveSession` deliberately does not consult the flag [@ `MeTests.cs` ->
+`A_forced_password_change_is_announced_as_a_field_on_a_200_not_a_refusal`]. D-072 §2's dead-end loop
+stays closed.
+
+### `AC-105a-H` — judged. Honestly covered in substance; **no longer honestly stated**
+
+The brief asks whether the criterion is honestly covered at the Domain level alone, after `V-26-B`'s
+fix made `/api/auth/me` refuse `Role.Client` outright (SM-32). **Two separate answers, and they differ.**
+
+**The substance is genuinely covered, and I did not take that on the author's word.** `MUT-K` reopened
+D-035 — `Permission.PortalRead` flipped from `ProjectScoped` to `CompanyWide` in the catalogue — and
+**two Domain tests went red**, `A_client_holds_no_company_wide_permission` among them. The test also
+asserts both rows' scope explicitly before evaluating, so it cannot pass vacuously. And the coverage
+is not indirect: `WhoAmI.Handler` builds its payload from
+`PermissionEvaluator.CompanyWidePermissionsHeld(subject)` verbatim, which is the exact function the
+Domain test exercises. **What the criterion protects — no project-scoped row leaking into a
+company-wide payload — is proved, and the proof can fail.**
+
+**The criterion's text is now false about the system.** `AC-105a-H` reads *"Given I am `Role.Client` /
+When I call this endpoint / Then the permission set is empty"*
+[Verified: 2026-08-27 @ `stories/slice-1-foundation/KAFF-105a-api-me-identity.md` -> the `AC-105a-H`
+block]. A `Role.Client` calling this endpoint now receives `403` and **no permission set at all**. The
+Given/When is unsatisfiable at this route, exactly as `V-26-E` found for `AC-102-F`'s sibling.
+
+**The system is stricter than the criterion requires** — refusing the caller is a superset of
+returning them an empty set — so nothing is unsafe. But a reader of KAFF-105a will believe a portal
+client can call `/api/auth/me`, and that is SM-29's named failure mode: a story asserting a state the
+code no longer has. **This does not reject the story**; the rule holds and is proved. It is
+**BA bookkeeping**, already routed as `SM-32`, and this report confirms it is still owed.
+
+### Verdict — **ACCEPT**
+
+`V-26-B` closed at the mechanism and watched failing. `AC-105a-H` covered in substance at the level
+where it is a fact about the rule. `V-26-G` / `TC-1-042` is a QA artefact defect, already routed, and
+**not** a defect in this code — the brief is explicit that it fails against correct code.
+
+---
+
+## 9. KAFF-102 — sign-out · **ACCEPT**
+
+Rejected on 2026-08-26 for `V-26-C`: a cookie the global kill had already ended was accepted and wrote
+a permanent, uncorrectable audit row.
+
+**Closed, and by construction rather than by a second check.** The handler asks `LiveSession` the same
+question every other exempt route asks, **before** naming an actor
+[Verified: 2026-08-27 @ `src/Api/Features/Auth/SignOut/Handler.cs` -> `HandleAsync`], and writes the
+`SignedOut` row only inside `if (user is not null)`. `MUT-J` turns
+`A_cookie_the_global_kill_already_ended_writes_no_audit_row` red, so the ordering is pinned and not
+merely present.
+
+**Rule 7 survives the fix, which is what a refusing filter would have broken.** Sign-out stays
+`AllowAnonymous` and cannot take `RequireLiveSession()`, so it calls `ResolveAsync` directly; a caller
+with no session still gets `204` and a cleared cookie, and writes nothing
+[@ `SignOutTests.cs` -> `Signing_out_with_no_session_is_not_an_error`,
+`Signing_out_with_no_session_writes_no_audit_record`]. `AC-102-B`'s deliberate trade is still asserted
+the right way round [@ `SignOutTests.cs` -> `A_replayed_cookie_still_works_because_nothing_is_revoked`,
+`Sign_out_never_rotates_the_security_stamp`].
+
+**`V-26-E` confirmed, and its shape is exactly as the close records it.**
+`A_client_role_session_can_sign_out_too` now asserts `204`, an empty body, a cleared cookie and
+**`named.Should().BeFalse()`** — no `SignedOut` row [Verified: 2026-08-27 @
+`tests/Api.Tests/SignOutTests.cs` -> `A_client_role_session_can_sign_out_too`]. `AC-102-F`'s own text
+— a portal user can sign out — still passes; its **audit half is inverted**. That is Nabil's to accept
+per D-089 §🟡 1, not this report's to wave through, and it is **not** a reason to reject: the endpoint
+does the safer thing, and the change is recorded rather than silent.
+
+**The 🟡 the handler raises is still open and still correctly open** — whether an unauthenticated
+sign-out should leave any trace, and naming whom. D-085, Nabil's.
+
+### Verdict — **ACCEPT**
+
+---
+
+## 10. KAFF-101a — sign-in · **ACCEPT**
+
+**Prior `ACCEPTED` treated as carrying no weight.** `f807364` rewrote the role bar in
+`SignIn/Handler.cs` and `StaffSessionMinter.cs` after that verdict.
+
+**The change is a substitution, not a relocation.** `role is Role.Client or Role.Subcontractor` became
+`!user.Role.MayHoldStaffSession()`, and the predicate is exactly that pair
+[Verified: 2026-08-27 @ `src/Domain/Identity/Role.cs` -> `MayHoldStaffSession`]. **The statement has
+not moved**: `PasswordHasher.Verify` still runs before anything else decides, the role bar still sits
+after both password branches, and it is still folded into the generic `401`
+[Verified: 2026-08-27 @ `src/Api/Features/Auth/SignIn/Handler.cs` -> `HandleAsync`]. The one answer
+that is not the generic `401` — `423` for a locked account — is still reachable only by a caller who
+has already proved they hold the password.
+
+**Both orderings are pinned by tests that can fail.** `MUT-H` turns
+`The_staff_session_minter_refuses_a_client_and_a_subcontractor` and `Five_different_refusals_are_one_answer`
+red — the second being the disclosure test, which is the one that matters: five distinct refusal
+reasons must be one answer.
+
+**`TC-1-258` passes**, both halves: the status-code half [@ `SignInTests.cs` ->
+`A_locked_account_answers_423_to_the_right_password_and_401_to_a_wrong_one`] and the time-envelope
+half [@ `SignInTests.cs` -> `No_refusal_is_faster_than_the_hash_it_should_have_paid_for`]. **I did not
+re-derive the timing test's robustness** — §4.3 of the 2026-08-26 report establishes it and that
+analysis is unaffected by `f807364`, which did not touch the hash ordering. Recorded as inherited
+rather than re-established.
+
+**🟡 unchanged and still Nabil's:** an inactive account is folded into the generic `401` rather than
+given `errors.auth.account_inactive`. D-084 §🟡 2.
+
+### Verdict — **ACCEPT**
+
+---
+
+## 11. KAFF-103 — change your own password · **ACCEPT**
+
+**Prior `ACCEPTED` treated as carrying no weight.** `f807364` and `4f9fc62` rewrote the endpoint and
+handler onto `LiveSession` and added `V-26-F`'s pin after that verdict.
+
+**The rewrite is sound and every check it delegates is live.** The handler takes the row
+`RequireLiveSession` already checked, on the same scoped `DbContext` so the row is tracked and savable
+[Verified: 2026-08-27 @ `src/Api/Features/Auth/ChangePassword/Handler.cs` -> `HandleAsync`], and
+`MUT-J` turns `A_deactivated_account_cannot_change_its_own_password` red.
+
+**`AC-103-B`'s carve-out survives**, which the rewrite could easily have broken: a caller who must
+change their password still reaches this endpoint while every other refuses them
+[@ `ChangePasswordTests.cs` -> `Until_the_password_is_changed_every_other_endpoint_refuses_it_and_this_one_does_not`].
+
+**`V-26-F` is pinned** — §4. `MUT-F` turns exactly two red, one of them this story's
+[@ `ChangePasswordTests.cs` -> `The_forced_change_refusal_is_the_same_for_a_caller_who_holds_the_permission_and_one_who_does_not`].
+
+**`V-26-D` is closed and credited.** The handler's comment now states both reasons and names which one
+was false, rather than the single wrong reason it carried
+[Verified: 2026-08-27 @ `src/Api/Features/Auth/ChangePassword/Handler.cs` -> `HandleAsync`, the
+`changed.IsFailure` block]. The close's §2.1 says D-089's *"Not done"* list never credited it; the
+code does now say it, so the record and the code agree at last.
+
+### `AC-103-H` is still uncovered at the Api, and has now moved level like `AC-105a-H`
+
+`TC-1-027` is *Domain + Api*. The Domain half passes [@ `tests/Domain.Tests/UserTests.cs` — the
+`SubcontractorCannotLogIn` assertion]. **The Api half still has no test** — no case in
+`ChangePasswordTests` names `Role.Subcontractor` [Verified: 2026-08-27 — listed every `[Fact]` in the
+file].
+
+And the criterion has moved for the same reason `AC-105a-H` did: `RequireLiveSession` now refuses
+`Role.Subcontractor` with `403` **before the handler runs**, so `SetOwnPassword`'s refusal is
+unreachable from the wire entirely. An Api test for `AC-103-H` would now assert a `403` from the gate,
+not the domain refusal the criterion describes. **Uncovered, P2, already routed** (close §2.3), and
+this report adds that the replacement is not the same test the criterion originally implied.
+
+### Verdict — **ACCEPT**
+
+`TC-1-027`'s Api half is an uncovered case, not an open defect — the behaviour is right and is proved
+one level down and one level up.
 
