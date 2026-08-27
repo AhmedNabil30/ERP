@@ -116,3 +116,98 @@ and the smoke check would all still be green.
 
 **Owner: QA → Backend**, per `agents.md` §3b. Not fixed here — the Verifier reports.
 
+---
+
+## 3. D-089's central claim, tested by writing the endpoint it forbids
+
+D-089's claim is that `RequireLiveSession()` makes the three checks apply **by construction** to every
+route outside `RequirePermission`, because it *"stamps the route with `LiveSession.Marker` … and
+nothing else adds that metadata"*, so `IsSelfOnlyListed` cannot be satisfied by a route that skips
+them. **Tested by writing such an endpoint, not by reading the mechanism.**
+
+A new slice was added under `src/Api/Features/Auth/VerifierProbe/` — discovered automatically by the
+assembly scan [Verified: 2026-08-27 @ `src/Api/Common/Endpoints/IEndpoint.cs` -> `AddKaffEndpoints`],
+so no shared registration file had to be edited, which is how a real one would arrive. Its handler
+reads the caller's own row through `ICurrentUser.UserId` and applies **none** of the three checks. It
+was then named in `SelfOnlyEndpoints` with a plausible reason, in the same shape as the two real
+entries.
+
+### `MUT-D` — the honest author. The claim holds, twice over.
+
+```
+failed  Every_mapped_endpoint_carries_a_permission_requirement
+        found at least one item {"GET /api/auth/probe-exempt"}
+failed  Every_self_only_member_is_mapped_and_requires_authentication_with_no_permission_of_its_own
+        Expected …GetMetadata<LiveSession.Marker>() not to be <null>
+                                                        Api 213 / 215
+```
+
+**Two independent refusals, not one.** Being named on the list did not exempt the route — it fell
+through to the ungated check, which is D-067's own failure — *and* the marker assertion fired
+separately. A new exempt endpoint cannot silently skip the three checks. **That half of D-089 is
+real and is now confirmed by a session that did not write it.**
+
+Worth recording: `No_feature_handler_reads_the_callers_identity_from_the_token_itself` did **not**
+fire, because this handler used `ICurrentUser.UserId` rather than `KaffClaimTypes` — precisely the
+ceiling Backend named for itself. **The ceiling is real and, here, did not matter**: the other two
+assertions caught the route anyway. See §3.1.
+
+### `V-27-B` — **MEDIUM** · the marker can be claimed without being paid for
+
+**`MUT-E`: the same endpoint, with `.WithMetadata(LiveSession.Marker.Instance)` written in place of
+`.RequireLiveSession()`. It compiles, and the suite reports 215 / 215.**
+
+```
+Api  total: 215   failed: 0   succeeded: 215
+```
+
+An endpoint that applies none of the three checks, reachable by any authenticated caller, acting on
+the caller's row — and **every assertion in `EndpointPermissionCoverageTests` is satisfied.**
+
+**Why it is reachable.** `Marker`'s constructor is private, so no caller can build one — but
+`Instance` is `internal`, and **every feature slice compiles into `Kaff.Api`**
+[Verified: 2026-08-27 @ `src/Api/Authorization/LiveSession.cs` -> `Marker`]. `internal` is the
+assembly, and the assembly is where endpoints live. The guarantee is enforced by convention, not by
+construction.
+
+**The realistic path is not sabotage — it is the failing test's own advice.** An author who adds a
+self-only route and sees `MUT-D`'s second failure reads a message telling them the route *"must
+declare `RequireLiveSession()`, which is the only thing that adds this metadata"*. The sentence is
+false, `Instance` is one dot away in the same assembly, and attaching it turns the red test green
+while applying nothing. That is `decisions.md` D-046's green light in the one mechanism written to
+prevent it.
+
+**Not HIGH:** no shipped route does this, and it takes a deliberate act rather than the one-item-short
+hand-copy that produced `V-26-B`. `V-26-B` is genuinely closed for the two real routes (§4, §5).
+**But the claim written in three places — the `Marker` summary, `IsSelfOnlyListed`'s remarks, and
+D-089 — is stronger than the code**, and the whole value of the mechanism is that a reader can trust
+it without re-deriving it.
+
+**Owner: QA → Backend.** `Instance` has exactly one reference in shipped source — `RequireLiveSession`
+itself, in the same class [Verified: 2026-08-27 — searched every `.cs` under `src/`]. Nothing else in
+`src/` names `Marker` at all. Not fixed here.
+
+### 3.1 The named ceiling — judged
+
+`No_feature_handler_reads_the_callers_identity_from_the_token_itself` scans `src/Api/Features/` for
+`KaffClaimTypes` [Verified: 2026-08-27 @ `tests/Api.Tests/EndpointPermissionCoverageTests.cs` ->
+`No_feature_handler_reads_the_callers_identity_from_the_token_itself`]. Backend named its ceiling
+honestly: a handler could still query by `ICurrentUser.UserId`.
+
+**Judgement: the ceiling does not matter for the authenticated half, and it is the whole of the cover
+for the anonymous half.**
+
+* **Authenticated routes** — `MUT-D` walked straight through this test using `ICurrentUser` and was
+  caught twice by the metadata assertions instead. The scan is redundant there, which is the right
+  kind of redundant.
+* **`POST /api/auth/sign-out`** is the exposure. It is `AllowAnonymous` and can take no refusing
+  filter (rule 7), so **no metadata assertion covers it** and this source scan is the only mechanical
+  thing standing between it and a second `V-26-C`. A future edit that resolved the caller through
+  `ICurrentUser.UserId` instead of `LiveSession.ResolveAsync` would pass every test in the suite and
+  reintroduce the permanent-audit-row defect exactly.
+
+That is a **named, open gap**, not a defect: nothing today has that shape, and the test catches the
+shape all three original defects actually had. It is recorded so the next session does not read the
+test's name as broader cover than it is. **The `AllowList` half of the exemption surface is covered by
+one grep and a reviewer.**
+
