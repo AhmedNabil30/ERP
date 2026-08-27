@@ -226,3 +226,48 @@ that now exists.
 settled by any agent"* [Verified: 2026-08-26]. **Routed to the BA** — mark it answered against D-072 §3
 and carry the consequence to N11. This is bookkeeping against a ruling Nabil already made, not a
 resolution.
+
+---
+
+## 4. Definition of Done — what is tickable and what is not
+
+`CLAUDE.md`'s list, answered line by line. A line is ticked only where the claim is *proven*, not
+where it is believed.
+
+| Line | | Why |
+|---|---|---|
+| Builds clean with warnings as errors | ✅ | `--no-incremental` Release, every project relinked — not the MSB3026 "succeeded and copied nothing" case. 0 warnings, 0 errors |
+| `spec.md` acceptance criteria for this slice pass | ⬜ | **25 of 57 points stand; 19 do not** (§1). Five stories' code moved after the session that judged it, two of them *after acceptance* |
+| Permission tests pass | ✅ | Domain 97/97, Api 215/215. Every endpoint's gate was watched failing before it was trusted, from KAFF-112 onward |
+| Runs on staging, not only locally | ⬜ | **The application runs there. The pipeline cannot see it.** Different claims — `deploy/README.md` §4, both Oracle firewalls, Nabil's to open |
+| Arabic RTL correct at mobile width | ⬜ | No screen exists. `AC-106-J` and `AC-105a-I` are deferred to Frontend, explicitly and not as a pass |
+| Audit records written for every state change | ✅ | Through the one mechanism in `Domain/`; no handler constructs a record, and a handler may no longer read identity from the token |
+| No hardcoded strings | ✅ | Every domain error key carries its `en.json` and `ar.json` line; the Domain suite fails otherwise |
+| `decisions.md` updated | ✅ | D-076 → D-090, plus marked in-place corrections to D-082 §4 and D-087 |
+| Demo script runs end to end | ⬜ | There is no screen to run it against |
+
+**Four of nine.** The five unticked lines fail for two reasons only: **no frontend exists yet**, and
+**verification has not caught up with the fixes**.
+
+### The two that must not be rounded off
+
+**Green is not accepted.** Three stories were rejected on 2026-08-26, fixed, and no independent
+session has looked at them since. Two more were *accepted at a commit that is no longer HEAD*. The
+separation of authorship from certification has to survive the fix, not only the build — otherwise
+the fix is certified by the session that wrote it, which is the one thing `CLAUDE.md` forbids by name.
+
+**Staging is one firewall rule from tickable.** The stack is up on the box and reports
+`guardsInstalled: true` with an empty `missingGuards`. The CI smoke check cannot reach it, because
+Oracle's instance-level iptables REJECT sits behind the VCN security list and blocks inbound
+regardless of it. Until that check passes on its own, *"runs on staging"* is something this team
+remembers rather than something the pipeline proves — and the check exists precisely to close that gap.
+
+### What sprint 2 inherits
+
+- **A re-verification pass** over 109, 105a, 102, 101a and 103, by a session that wrote none of the
+  fixes. This is the first thing, not a background task: **19 points depend on it.**
+- **Four rulings standing with Nabil** (§3). None blocked the build; all four decide whether it is right.
+- **`SM-32`** and the routed findings of §2, each with a named owner.
+- **The four retrospective changes** — `meetings/2026-08-27-sprint-1-retrospective.md` §3. Two are
+  cheap enough for the first hour: mutate the rule rather than only the route, and make every tool
+  report what it skipped.
