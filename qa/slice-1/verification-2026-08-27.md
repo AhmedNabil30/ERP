@@ -66,6 +66,20 @@ pool was not invalidated.
 
 Matches the brief's stated baseline on every figure.
 
+### Closing gates — re-run after every mutation was reverted
+
+Eleven mutations were applied and reverted during this pass. The tree was confirmed clean by
+`git status` after each, and these are the gates at the end of it:
+
+| Gate | Result |
+|---|---|
+| `git status` | clean — no file under `src/` or `tests/` differs from `559ac45` |
+| `dotnet build KaffErp.sln -c Release --no-incremental` | **0 Warning(s), 0 Error(s)**, all six projects relinked |
+| `Kaff.Domain.Tests.exe` | **97 / 97** |
+| `Kaff.Api.Tests.exe` | **215 / 215** |
+| `dotnet format --verify-no-changes` | exit **0** |
+| `scripts/check-citations.ps1` | **913 checked, 0 broken, 0 legacy** — 883 plus this report's own 30, every one resolving |
+
 ---
 
 ## 2. Mutating the rule, not only the route — `ck_users_subcontractor_cannot_log_in`
@@ -644,4 +658,102 @@ this report adds that the replacement is not the same test the criterion origina
 
 `TC-1-027`'s Api half is an uncovered case, not an open defect — the behaviour is right and is proved
 one level down and one level up.
+
+---
+
+## 12. The mechanical prohibition sweep — re-run after three fix commits
+
+Clean on 2026-08-26; `7ff500e`, `f807364` and `4f9fc62` have landed since. Run against the files.
+
+| Prohibition | Result |
+|---|---|
+| No `float` / `double` near money | **Clean.** Four occurrences of either word under `src/` and `tests/`, **all four in prose** — two comments quoting CLAUDE.md's own rule, one about double-counting a correction, one about a test double. Zero as a type |
+| No stored balance | **Clean.** `AccountBalance` is the keyless view; the only `Balance`-named properties are `RawBalance`, `SignedBalance` and `NormalBalance` on it and on `Account`, all excluded by name in `SchemaInvariantTests` -> `No_entity_stores_a_balance` |
+| `HasPrecision(18, 4)` on every money property | **Clean, and enforced rather than asserted.** Precision is applied centrally through the value converters, and two model-level tests fail on a bare decimal [Verified: 2026-08-27 @ `tests/Api.Tests/SchemaInvariantTests.cs` -> `Every_money_property_is_decimal_18_4`, `No_decimal_column_is_left_at_the_provider_default`] |
+| No endpoint updates or deletes a posting | **Clean.** No posting endpoint exists; the shipped table is health, setup ×2, auth ×4, users ×5, assignments ×2. The absence is asserted from the host's own route table [@ `EndpointPermissionCoverageTests.cs` -> `No_endpoint_deletes_a_project_assignment`], and `MUT-G4` shows the database-level append-only trigger is load-bearing enough that its absence stops the application booting |
+| No typed credential stored | **Clean.** `PasswordHash` and `SecurityStamp` remain the only credential-shaped columns, both `[AuditRedacted]`. The three rewritten handlers introduced no new path: `ChangePassword` passes the plaintext to `PasswordHasher` and nothing else, and `No_audit_record_the_door_writes_contains_the_credential` still passes |
+| Every endpoint checks role **and** assignment | **Clean for the gated set, and the exemption surface is now mechanically bounded** — §3. Two exemption lists, five and two members, each entry reasoned, and `MUT-D` proves a new unpaid exemption is refused. **Qualified by `V-27-B`** |
+| Nobody creates and approves the same movement | Not reachable in slice 1 — no movement exists |
+| Every state change writes an audit record | **Improved since 2026-08-26.** The one place that wrote a row the rest of the system would refuse (`V-26-C`) no longer does, and `MUT-J` pins it |
+| No hardcoded user-facing strings | **Clean at the API for every refusal the application writes.** `W-5` stands unchanged — framework-produced `400`s carry no `messageKey`, re-observed in `MUT-I`'s sweep. Already the Architect's scope question |
+
+**Nothing regressed across the three fix commits.**
+
+---
+
+## 13. QA cases — what ran, and what it produced
+
+**49 cases** map to these five stories, from the story coverage index
+[Verified: 2026-08-27 @ `qa/slice-1/test-cases.md` -> the *Story coverage index* table]:
+KAFF-101a `TC-1-007…016, 018, 220…230, 258` (23) · KAFF-102 `TC-1-019…022, 232` (5) ·
+KAFF-103 `TC-1-023…029` (7) · KAFF-105a `TC-1-042, 045, 046, 235, 236` (5) ·
+KAFF-109 `TC-1-075…080, 237…239` (9).
+
+All are `Api`, `Domain + Api` or `Api + E2E`, so the vehicle is the two suites, both green.
+
+| Outcome | Count | Which |
+|---|---|---|
+| **Pass** — covered by a named test in a green suite | **45** | The bulk of all five sets |
+| **Fails against correct code** | **1** | **`TC-1-042`** — cites the retired `AC-105a-F` and asserts the withdrawn rule. `V-26-B`'s fix makes it *more* wrong: the route now refuses the caller the case describes. **Routed to QA, not a defect in the code** |
+| **Cannot be executed** | **1** | **`TC-1-079`** — `PENDING Q27 (residual)`. Blocked on a ruling, and the close notes the register says Q27 is closed, so the marker itself is BA's |
+| **No test exists** | **2** | **`TC-1-027`'s Api half** (`AC-103-H` — §11, and it has moved level) and **`TC-1-046`** (the `/api/auth/me` payload carries no money — satisfied structurally, by inspection, not by an assertion) |
+
+**`TC-1-258` passes**, both halves — §10.
+
+---
+
+## 14. What this session did **not** do — as a count, not as prose
+
+The retrospective's change 2: *"a checker that says N checked must also say M unparsed."* Applied to
+this pass.
+
+| Skipped | Count | Why, and what it would cost to close |
+|---|---|---|
+| **Check constraints not individually mutated** | **26 of 30** | 4 were sampled (§2, §5). `V-27-A` is a **structural** finding about `FindMissingGuardsAsync` and applies to all 30 regardless — but *which* of the other 26 have a behavioural test is unmeasured, and on today's evidence the answer is "some do, some do not" |
+| **Required triggers not individually mutated** | **7 of 8** | `MUT-G4` covered one and showed the class is detected by a hand-written list plus a start-up refusal. The other seven are assumed covered by the same mechanism, **not observed** |
+| **SQL guard branches not individually mutated** | **16 of 17** `RAISE EXCEPTION` sites | `TreasuryGuardTests` exercises ten of them behaviourally; I confirmed the file's names, not each branch failing |
+| **Domain guards not individually mutated** | **~99 of 103** `Result.Failure` sites under `Domain/` | Four were mutated — `ChangeRole`'s subcontractor bar, `MayHoldStaffSession`, `PermissionEvaluator`'s ordering, `PortalRead`'s scope. **The retrospective's change 1, applied in full, is a bigger job than one verification pass** and this pass did not do it |
+| **E2E suite** | **not run** | `TC-1-223`'s browser half (`SameSite=Strict` as the whole CSRF control) is unexercised, exactly as on 2026-08-26. Asserting a browser's cookie policy from a `TestServer` proves nothing about a browser |
+| **`/run-kaff-erp smoke`** | **not run this session** | Every result in this report comes from the test host, and **nothing here is claimed about a running stack.** The 2026-08-26 pass ran it green at `e43e9ac`; three commits have landed since and I did not re-run it |
+| **Staging** | **not connected to** | Unchanged from 2026-08-26 and from the close: the pipeline still cannot see it |
+| **The D-084 timing analysis** | **inherited, not re-derived** | §4.3 of the 2026-08-26 report. `f807364` did not touch the hash ordering, so the analysis carries — recorded as inherited rather than silently re-asserted |
+| **`V-27-B`'s exploitability as a live request** | **not executed** | I proved the *coverage mechanism* is satisfied by an unpaid route (215/215 green). I did **not** separately drive a `Role.Subcontractor` request at that probe route to watch it answered. The finding is about the mechanism and is demonstrated; the endpoint's behaviour follows from a handler that contains no check, which is visible in the file |
+
+**Nine skipped items.** None of them is a silent gap in a verdict below: where a skip touches a story,
+it is named in that story's section too.
+
+---
+
+## 15. The one thing Nabil should know
+
+**The three fixes are real. Every one of them was watched failing, and none of them is where the risk
+now is.**
+
+`V-26-A`, `V-26-B`, `V-26-C` and `V-26-F` are closed, and closed at the mechanism rather than at the
+route that reported them — the role bar moved into `Domain/` and every door that uses it has a test
+that goes red when it is deleted; the exempt-route checks are one filter and a new endpoint that skips
+them is refused twice over. **Five stories, 19 points, all five accepted.**
+
+**What this pass found instead is that two of the mechanisms we now rely on to tell us the code is
+safe cannot tell us that.**
+
+* **`V-27-B`** — the test that enforces *"an exempt route must pay for its exemption"* prints a message
+  saying `RequireLiveSession()` *"is the only thing that adds this metadata."* **That sentence is
+  false.** The marker is one dot away in the same assembly, and attaching it turns the failing test
+  green while applying none of the three checks. The suite reported **215 / 215** against exactly such
+  an endpoint.
+* **`V-27-A`** — the constraint the retrospective picked out **by name**, as the exemplar of the whole
+  problem, is *still* covered by nothing. Delete it and 312 tests stay green. And the health check
+  that reports `guardsInstalled` cannot notice, because it asks the same file a regression would edit.
+
+**This is the retrospective's own pattern, one level up.** It said: *a passing check and an absent
+check produced identical output.* Sprint 1 fixed the seven instances. **Both findings above are that
+same shape living inside the machinery built to prevent it** — a green light whose greenness is not
+evidence.
+
+**Nothing is unsafe today.** No shipped route claims an unpaid exemption, both subcontractor rules are
+enforced twice over, and no money exists yet. **The date that matters is slice 3.** That is when
+`ck_postings_amount_positive` and the netting rules start standing between the ledger and a wrong
+number — and today, on the evidence of `MUT-A` and `MUT-G1`, **removing one of those constraints is
+something this project would not notice.**
 
