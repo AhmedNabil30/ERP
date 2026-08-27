@@ -255,6 +255,23 @@ checker cannot see is indistinguishable from a violation it cannot see**, which 
 citation. It was added on 2026-08-22 after both the BA and QA independently found locale citations
 that were invisible to the check in both directions.
 
+**A reference without the `@` marker is not a citation.** Ruled by the Scrum Master, 2026-08-27, at the
+sprint-1 close, after `e9f3dcf` repaired a matcher that worked line by line — **118 citations wrapped
+across two lines had never been checked at all**, 753 → 871, and two of them were broken. The fix
+reported one gap it does not close: a reference written without the `@` marker is counted as neither
+legacy nor verified. **The boundary stays.** Widening the pattern to every backticked arrow would flag
+this section, every meeting file and every discussion of a past citation — D-059 §9's exemption problem
+inverted, and *a checker that cries wolf gets muted, which is D-046's green light by another name.*
+What closes the gap is the rule, not the regex: **a reference without `@` carries no verification claim
+and must not be written where one is needed.** Write the claim as a citation, or do not make it.
+
+**The larger blind spot, named so nobody reads the total as coverage: the checker walks `*.md` and
+`.json`, never source.** Every `<c>File.cs</c>` arrow citation inside an XML doc comment — and this
+codebase is full of them, deliberately, because the reasoning lives beside the code — is verified by
+nothing. In the week this was written the same non-existent test name sat in three artefacts and the
+checker saw exactly one. Extending it to `*.cs` needs the writing convention restated for XML docs
+first, so it is not a one-line change; it is **open, and owed by Backend.**
+
 **Why the date survives and the line number does not — they were doing different jobs and only one of
 them was doing it.** The date says **when the claim was checked**, which nothing else carries and
 which tells a reader how much to trust it. The line number said **where**, which an identifier says
