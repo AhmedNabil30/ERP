@@ -78,7 +78,7 @@ Eleven mutations were applied and reverted during this pass. The tree was confir
 | `Kaff.Domain.Tests.exe` | **97 / 97** |
 | `Kaff.Api.Tests.exe` | **215 / 215** |
 | `dotnet format --verify-no-changes` | exit **0** |
-| `scripts/check-citations.ps1` | **913 checked, 0 broken, 0 legacy** — 883 plus this report's own 30, every one resolving |
+| `scripts/check-citations.ps1` | **915 checked, 0 broken, 0 legacy** — the brief's 883 plus this report's own 32, every one resolving |
 
 ---
 
