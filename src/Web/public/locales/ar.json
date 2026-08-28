@@ -4,6 +4,12 @@
   "app.name": "كف",
   "app.language": "اللغة",
 
+  "auth.login.title": "تسجيل الدخول",
+  "auth.login.username": "اسم المستخدم",
+  "auth.login.password": "كلمة المرور",
+  "auth.login.submit": "دخول",
+  "auth.login.submitting": "جارٍ تسجيل الدخول…",
+
   "status.title": "حالة النظام",
   "status.loading": "جارٍ التحميل…",
   "status.refresh": "تحديث",

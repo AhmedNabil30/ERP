@@ -1,0 +1,45 @@
+<main class="sign-in">
+  <form class="card" (submit)="$event.preventDefault(); onSubmit()">
+    <h1 class="title">{{ i18n.t('auth.login.title') }}</h1>
+
+    <label class="field">
+      <span class="label">{{ i18n.t('auth.login.username') }}</span>
+      <!--
+        [formField] binds value and events both ways. There is no [value] and no (input) handler here
+        on purpose — signal forms own the control, which is what keeps $any out of the template and
+        leaves strictTemplates something it can actually check.
+      -->
+      <input class="input" type="text" autocomplete="username" [formField]="loginForm.userName" />
+    </label>
+
+    <label class="field">
+      <span class="label">{{ i18n.t('auth.login.password') }}</span>
+      <!--
+        The schema carries the only rule: eight characters. No pattern attribute, no strength meter —
+        D-049 ruling 3, and AC-101b-E fails if either appears.
+      -->
+      <input
+        class="input"
+        type="password"
+        autocomplete="current-password"
+        [formField]="loginForm.password"
+      />
+    </label>
+
+    <!--
+      One region for every refusal, and it sits between the fields and the button rather than under
+      either input. Placement is itself an answer: a message under the password box says the user name
+      was found, which is the distinction D-065 refuses to make. AC-101b-G checks that a wrong
+      password, an unknown user name and a locked account read identically.
+
+      role="alert" so a screen reader announces it rather than leaving it to be discovered.
+    -->
+    @if (refusalKey(); as key) {
+      <p class="refusal" role="alert">{{ i18n.t(key) }}</p>
+    }
+
+    <button class="submit" type="submit" [disabled]="!canSubmit()">
+      {{ i18n.t(isSubmitting() ? 'auth.login.submitting' : 'auth.login.submit') }}
+    </button>
+  </form>
+</main>

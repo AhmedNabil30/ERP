@@ -6816,3 +6816,71 @@ disclosure.
   not wrong, they are incomplete, and D-086 §`SpecificRefusal` plus this entry are the record. No
   source change: the guarantee now has a test, which is what it was missing.
 * **No production code changed in this defect.** The ordering was already correct.
+
+---
+
+### D-091 · KAFF-101b — the first screen, and the conventions it sets · 2026-08-28
+
+**Nothing had ever rendered before this.** Every choice here becomes the pattern later screens copy,
+so they are recorded rather than left to be inferred from one file.
+
+**Signal forms, not signals with `(input)` handlers.** The first version used plain signals and two
+event handlers — smaller for two fields, and wrong as a precedent. **Nabil overturned it on
+2026-08-28**, and he was right: CLAUDE.md mandates signal forms, this is the file every later screen
+will be read against, and "it was fewer lines for this one case" is exactly how a codebase ends up
+mixing Angular eras. The form is `form(model, schema)` from `@angular/forms/signals`, bound through
+the `FormField` directive (`[formField]`), with validity and submitting read from
+`loginForm().valid()` and `loginForm().submitting()`.
+
+**The API was verified against the installed types, not written from memory.** `@angular/forms`
+v22.1.2's own declarations gave `form`, `schema`, `submit`, `required`, `minLength` and the directive's
+real selector. Worth keeping as a habit: the signal-forms surface is new enough that a plausible
+guess compiles into something else entirely, or not at all.
+
+**The whole password policy is two lines of schema.** `required` and `minLength(8)` — no `pattern`, no
+strength meter, D-049 ruling 3. Expressing it as a schema puts `AC-101b-E`'s "and nothing else" in one
+place a reviewer can check, instead of spread across a template attribute and a `computed`.
+
+**⚠️ The server's refusal is held beside the form, never as a field error.** A field-level error
+renders next to the input it belongs to, and *that placement is itself an answer*: "wrong password"
+under the password box says the user name was found. That is precisely the distinction D-065 and
+D-072 §1 refuse to make, and Nabil's reasoning on the subcontractor case applies unchanged. One
+page-level message, one key from the server, no field named, and no `switch` on status anywhere in
+the component. Signal forms make attaching it to a field the easy thing to do, which is why this is
+written down rather than left to taste.
+
+**`$any` stays out of templates.** `[formField]` binds value and events both ways, so there is no
+`[value]`/`(input)` pair and no cast at all — strictly better than the first version, which only
+moved the cast into TypeScript where the compiler could still see it.
+
+**Two rules are implemented as a held message rather than a redirect, and that is deliberate.**
+Rule 8 sends a `mustChangePassword` user to the change-password screen; **that screen is KAFF-103's
+`AC-103-I` and does not exist.** Navigating to `/change-password` today falls through
+`app.routes.ts`'s wildcard onto the landing page — a user with an Owner-set password inside the
+application, the one outcome rule 8 exists to prevent, reached by code that reads as correct. The
+screen holds them with the server's own `messageKey` instead. The server is what actually stops them
+(D-086 put the check inside `PermissionEvaluator`); this is only where they are told.
+
+**The wildcard route is now the hazard to remove.** It makes an unbuilt route indistinguishable from
+the landing page. When KAFF-103's screen and KAFF-105b's shell land, `path: '**'` should become a 404
+rather than a redirect, so a missing route fails loudly. Noted in `app.routes.ts` at the wildcard.
+
+**Deferred, and to which story:** `AC-101b-A` and `AC-101b-D` (the staff shell and HR's Project Team
+landing) move with **KAFF-105b** and **KAFF-115**; `AC-101b-F` moves with **KAFF-103**. Everyone
+currently lands on `/`, and that is not a decision that HR and Finance share a landing page — it is
+the statement that there is one page.
+
+**Verified by running it, not by building it.** Production build clean (250.69 kB initial, 0 errors,
+0 warnings); `smoke` all eight checks; the screen driven end to end against the live stack — Owner
+bootstrapped through `POST /api/setup`, a wrong password refused with
+`اسم المستخدم أو كلمة المرور غير صحيحة.`, the correct one landing on `/` with the cookie carrying the
+session; screenshot at **390px in Arabic**, RTL, `scrollWidth - clientWidth = 0`.
+
+**The driver gained a width argument** — `shot <url> <out.png> [width]`. It was fixed at 1280, and
+CLAUDE.md requires testing at mobile width: an RTL row that fits on a desktop and overflows on a phone
+looks correct in every screenshot taken at the default.
+
+**One thing found while driving it, not fixed here and routed to Backend:** a malformed JSON body to
+`POST /api/setup` returns **500**, not 400. `BadHttpRequestException` from the body reader escapes the
+handler, so a client bug is reported as a server fault and lands in the log as an unhandled exception.
+Reproduced deliberately; the endpoint's own behaviour on well-formed input is unaffected.

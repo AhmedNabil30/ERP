@@ -25,6 +25,18 @@ export interface Session {
   readonly department: string | null;
   readonly operationsSubDepartment: string | null;
   readonly mustChangePassword: boolean;
+
+  /**
+   * The caller's own company-wide permissions, added when KAFF-105a shipped (decisions.md D-087).
+   *
+   * It is the effective set for *this* user, not the `PermissionCatalogue` — that shape describes how
+   * every route in the system is gated and is deliberately not sent to a client. Project-scoped
+   * permissions are not here either; they arrive with KAFF-105b.
+   *
+   * **This decides what the UI shows and nothing else.** CLAUDE.md: "Never enforce permissions in the
+   * frontend alone." Every request is authorised again on the server against role × assignment.
+   */
+  readonly permissions: readonly string[];
 }
 
 /**

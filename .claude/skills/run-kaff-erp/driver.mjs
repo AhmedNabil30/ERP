@@ -258,13 +258,17 @@ async function apiRequest(method, urlPath, body) {
   return { status: response.status, body: text };
 }
 
-async function screenshot(url, out) {
+// `width` matters more here than on most projects. CLAUDE.md: "Test at mobile width. The daily log
+// is designed mobile-first", and RTL layouts break at narrow widths in ways a 1280px shot never
+// shows — a row that fits on a desktop and overflows on a phone looks correct in every screenshot
+// taken at the default.
+async function screenshot(url, out, width) {
   return withPage(url, async ({ call }) => {
     const { data } = await call('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true });
     mkdirSync(path.dirname(path.resolve(out)), { recursive: true });
     writeFileSync(out, Buffer.from(data, 'base64'));
     return path.resolve(out);
-  });
+  }, width ? { width: Number(width) } : undefined);
 }
 
 /** The end-to-end check: API healthy, guards installed, and the SPA rendering real content. */
@@ -371,8 +375,8 @@ try {
       break;
     }
     case 'shot': {
-      const [url, out = 'screenshot.png'] = args;
-      console.log(await screenshot(url ?? WEB, out));
+      const [url, out = 'screenshot.png', width] = args;
+      console.log(await screenshot(url ?? WEB, out, width));
       break;
     }
     case 'eval': {
