@@ -1,6 +1,6 @@
 # KAFF-115 · The project team panel is built from assignment rows, not from the access check
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** Ready
+**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** Ready. **Proposed for sprint 2, second, and not yet locked by Nabil.** Depends on KAFF-105b, which defines the payload this panel reads. `AC-101b-D` lands with it. `AC-115-J` is a screen criterion, so this story already spans backend and frontend at 3 points, which `process/agile.md` estimation suggests is light; raised at refinement, not re-estimated here
 **Spec:** §9, §12 · **Decisions:** D-010, D-044 (rulings 2, 3), **D-051 (Q32)**
 **Depends on:** KAFF-113, KAFF-114, KAFF-105b *(which names the permission)*
 

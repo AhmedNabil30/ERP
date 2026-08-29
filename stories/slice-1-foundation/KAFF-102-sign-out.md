@@ -1,6 +1,6 @@
 # KAFF-102 · Sign out
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 2 · **Status:** **REJECTED 2026-08-26** on `V-26-C` — a cookie the global kill had already ended still wrote a permanent audit row. **Fixed `f807364` (D-089)**, by construction rather than per-route. **Not re-verified — not accepted.** Built `070d643` (D-085)
+**Slice:** 1 · **Epic:** Foundation · **Points:** 2 · **Status:** **ACCEPTED 2026-08-27 at `559ac45`, then the code moved underneath the verdict.** Sign-out resolves its caller through `LiveSession.ResolveAsync`, which calls `MayHoldStaffSession` — changed by `ca4db6c` (D-095). **Not re-verified at HEAD**
 **Spec:** §9 · **Decisions:** **D-049 (ruling 2)**, **D-050**, **D-051 (N5)**
 **Depends on:** KAFF-101a
 

@@ -1,6 +1,6 @@
 # KAFF-108 · Move a user between departments
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** ACCEPTED 2026-08-25 — 7 of 7 criteria satisfied
+**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** ACCEPTED 2026-08-26, carried with a named exposure. `ca4db6c` (D-095) added an `Enum.IsDefined` refusal to `User.ValidateDepartment`, which `User.MoveToDepartment` — this story's own path — calls. For the nine roles that exist the behaviour is unchanged and that equivalence is pinned by a test [Verified: 2026-08-30 @ `tests/Domain.Tests/UserTests.cs` -> `The_two_role_doors_admit_exactly_these`]
 **Spec:** §9, §8 · **Decisions:** D-044 (ruling 2), D-035
 **Depends on:** KAFF-106
 

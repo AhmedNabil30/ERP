@@ -1,6 +1,6 @@
 # KAFF-100 · Bootstrap the first Owner through a one-time setup screen
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** ACCEPTED 2026-08-26 — all 10 QA cases covered, `qa/slice-1/verification-2026-08-26.md` §6. Built `9c4a110` (D-083). Its own behaviour is unchanged since that verification. **Not yet accepted by Nabil** — no demo script has been run
+**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** ACCEPTED 2026-08-26, standing. No commit since has touched this story's own code. Qualified by the shared-mechanism note in `stories/backlog.md` — `ca4db6c` changed `PermissionEvaluator.Evaluate`'s role bar and `45a939d` changed the request pipeline, for every story alike
 **Spec:** §9 · **Decisions:** D-044 (ruling 1), D-049 (rulings 3, 4), **D-051 (Q31)**, **D-052 §3 (Q44)**
 **Depends on:** nothing. KAFF-101a, KAFF-103 and KAFF-106 name it as a dependency and it is now
 `Ready`, so the soft-dependency argument the backlog carried is retired.

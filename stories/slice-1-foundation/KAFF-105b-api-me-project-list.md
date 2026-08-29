@@ -1,6 +1,6 @@
 # KAFF-105b · `GET /api/auth/me` returns the projects I reach, and how I reach them
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** Ready
+**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** Ready. **Proposed for sprint 2 and not yet locked by Nabil.** All ten of its criteria are payload criteria; **none of them builds a screen**, so D-091's deferral of `AC-101b-A` (the staff shell) onto this story cannot be discharged by this story as written. Either it grows a frontend half and re-estimates — `process/agile.md` puts a story spanning backend and frontend at 8 — or the shell is a story the BA has not written yet. Not resolved here; see `meetings/2026-08-30-sprint-2-open.md``
 **Spec:** §9, §12 · **Decisions:** D-010, D-035, D-044 (rulings 2, 3, 5), **D-051 (Q32)**
 **Depends on:** KAFF-105a, KAFF-113, KAFF-114
 

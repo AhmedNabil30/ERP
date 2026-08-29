@@ -1,6 +1,6 @@
 # KAFF-118 · Every state change in slice 1 writes an audit record
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** **UNBUILT.** Nothing of this story was started. It depends on **KAFF-119**, deliberately deferred out of sprint 1, so its client-registration half cannot complete as written whatever else happens. **Cutting it from a locked sprint is Nabil's call and he has not ruled** — the standing proposal is to cut it as a story and keep rule 2 as an acceptance check, since the interceptor's own tests already assert that no handler constructs an audit record
+**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** **UNBUILT. Its cut from the locked sprint is Nabil's and he has not ruled.** It depends on KAFF-119, deliberately deferred out of sprint 1, so its client-registration half cannot complete as written whatever is ruled. The standing proposal — cut it as a story, keep rule 2 as an acceptance check — is not the Scrum Master's to take and has not been taken
 **Spec:** §7 · **Decisions:** D-041, D-043
 **Depends on:** KAFF-106, KAFF-109, KAFF-110, KAFF-111, KAFF-113 — **all `Ready` and all committed to
 sprint 1.**

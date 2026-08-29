@@ -1,6 +1,6 @@
 # KAFF-111 · Deactivating a user revokes their project assignments
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** ACCEPTED 2026-08-26 — verified on its own criteria for the first time and both QA cases pass. Built **inside KAFF-110's handler** (D-074 §2); it has no endpoint or handler folder of its own and must not be given one. `AC-109-K`'s sibling atomicity claim is now demonstrated under a real injected fault, not argued (`verification-2026-08-26.md` §4.1)
+**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** ACCEPTED 2026-08-26, standing. No commit since has touched this story's own code
 **Spec:** §9 · **Decisions:** **D-049 (ruling 5)**
 **Depends on:** KAFF-110, KAFF-113
 

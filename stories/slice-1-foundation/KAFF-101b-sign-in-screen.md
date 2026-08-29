@@ -1,6 +1,6 @@
 # KAFF-101b · The staff sign-in screen, and where each role lands after it
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** Ready
+**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** **BUILT, NOT VERIFIED.** The screen shipped `f2b995b` (D-091) and is the first thing in this project that ever rendered; it sets the conventions every later screen copies. `AC-101b-F` closed with KAFF-103's screen, `332c160` (D-092), and was observed end to end. **`AC-101b-A` (the staff shell) and `AC-101b-D` (HR lands on the team surface) are deferred to KAFF-105b and KAFF-115 and are not closed** — and neither story currently carries a criterion that builds a shell, which is a refinement question for the BA and a scope question for Nabil (`meetings/2026-08-30-sprint-2-open.md`). No independent session has looked at this commit
 **Spec:** §9, §12 · **Decisions:** D-035, D-049 (ruling 3), **D-050**, **D-051 (Q33)**
 **Depends on:** KAFF-101a, KAFF-105a
 

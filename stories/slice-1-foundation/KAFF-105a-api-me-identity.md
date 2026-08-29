@@ -1,6 +1,6 @@
 # KAFF-105a · `GET /api/auth/me` returns who I am and what I may do
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 2 · **Status:** **REJECTED 2026-08-26** on `V-26-B` — `GET /api/auth/me` answered `Role.Subcontractor` and `Role.Client` with a `200` and their name, against spec.md §9 *"record only, no login"*. **Fixed `f807364` (D-089).** **Not re-verified — not accepted.** `V-26-G` is still open and is QA's: `TC-1-042` still cites the retired `AC-105a-F`, and the fix makes it more wrong, not less. Built `e43e9ac` (D-087)
+**Slice:** 1 · **Epic:** Foundation · **Points:** 2 · **Status:** **ACCEPTED 2026-08-27 at `559ac45`, then the code moved underneath the verdict.** `c01959b` (D-094) rewrote `LiveSession.Marker` and added `LiveSession.IsApplied` — this story's gate — and `ca4db6c` (D-095) changed `MayHoldStaffSession` inside `ResolveAsync`. **Not re-verified at HEAD.** `AC-105a-H` remains honestly covered in substance and no longer honestly stated: its proof moved from the Api suite to the Domain suite as a side effect of the `V-26-B` fix (SM-32, close §2.2) and the story still does not say so — BA
 **Spec:** §9, §12 · **Decisions:** D-012, D-035, D-044, **D-050**, **D-051 (KAFF-105 split)**, **D-072 §2**
 **Depends on:** KAFF-101a
 

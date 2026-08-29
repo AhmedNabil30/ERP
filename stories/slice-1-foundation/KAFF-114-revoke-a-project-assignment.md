@@ -1,6 +1,6 @@
 # KAFF-114 · Revoke a project assignment without losing who could act when
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** ACCEPTED 2026-08-26 — 7 of 8 QA cases covered; **`TC-1-120` has no test** (revoking the last person on a project is allowed — the case exists to pin an absence, so nothing goes red the day somebody adds the rule). P2, recorded, owed to QA/Backend
+**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** ACCEPTED 2026-08-26, standing. No commit since has touched this story's own code. `TC-1-120` is still uncovered — QA → Backend, P2
 **Spec:** §9, §7 · **Decisions:** D-044 (ruling 3)
 **Depends on:** KAFF-113
 
