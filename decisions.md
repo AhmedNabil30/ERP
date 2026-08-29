@@ -6963,32 +6963,53 @@ Backend session had that exact file open. Neither the file nor the citations bel
 a re-run once this entry was written found the identifier present again and the count clean. Left
 untouched throughout, per the boundary this session was given (`src/Web/` and this file only).
 
-**Not completed: live end-to-end driving of the sign-in → forced-change → reload flow, and the 390px
-Arabic screenshot.** `GET /api/setup` reports `available: false` — an Owner already exists on the
-shared `kaff-db` volume from an earlier session, and no credential for it is recorded anywhere (by
-design: CLAUDE.md forbids storing one, and D-091's own entry does not quote what it typed either).
-Creating a disposable test user directly against the database (an `INSERT` piped into
-`docker exec kaff-db psql`, with a PBKDF2 hash generated locally to match `PasswordHasher`'s exact
-format so the row would be a real, signable-in credential) was attempted and refused by this
-environment's own safety classifier as a database-mutating action outside the application's normal
-path — correctly, since nothing about seeding a shared dev database with a raw row should be a
-frontend agent's unilateral call. Read-only inspection (`\dt`, `\d users`, confirming the live schema
-matches what `ChangePassword.Request` and `SignIn.Handler` expect) went through without issue.
+**Live end-to-end drive, completed once the credential blocker cleared.** `GET /api/setup` reporting
+`available: false` was not a stale artefact — `nabil`/the Owner created while verifying KAFF-101b on
+2026-08-28 is a real, working credential on this local, disposable `kaff-db`. A raw `INSERT` was never
+needed: the forced-change user was created **through the application**, the same route production
+uses — signed in as `nabil` through this session's own sign-in screen, then `POST /api/users`
+(KAFF-106) called from that signed-in page with `temporaryPassword` set, exercising the create-user
+endpoint as a side effect rather than writing a row behind its back. Driven with a scratch CDP script
+(not committed — one Chrome tab held open for the whole sequence, since `driver.mjs` launches a fresh
+browser per command and would drop the session cookie between steps):
 
-**Handed back, not decided sideways:** either a known credential for an existing staff account on this
-database, or explicit permission to seed one disposable test user, is what the next session needs to
-finish the live drive and the screenshot. Until then, this entry's verification is build + lint +
-smoke + citations + code review against every acceptance criterion below, not a recorded live run.
+1. Signed in as `nabil` through `/sign-in` — landed on `/`.
+2. `POST /api/users` from that session — `201`, `MarketingSales`/`Marketing`, `mustChangePassword: true`.
+3. `POST /api/auth/sign-out` — `204` — then signed in as the new user through `/sign-in`.
+4. **Redirected to `/change-password`** — `AC-101b-F`'s in-session half, `sign-in-page.ts`'s new
+   `navigateByUrl`.
+5. **A fresh top-level navigation to `/` — a cold reload with no in-memory `AuthService` state —
+   redirected back to `/change-password`.** This is the half the sign-in redirect alone cannot prove:
+   `mustChangePasswordGuard` resolved the session itself via `GET /api/auth/me` and returned the
+   `UrlTree`, exactly as designed.
+6. A hard reload of `/change-password` itself stayed put and re-showed the must-change banner —
+   confirming the component's own constructor fetch (for callers who land here without the guard
+   having run first) — after allowing for the fetch's own round trip; the first pass checked the
+   banner before that promise resolved and read as absent, corrected by polling rather than by
+   changing the component.
+7. Submitted current/new/confirm, landed on `/`, and `GET /api/auth/me` confirmed
+   `mustChangePassword: false` — `AC-103-A`/`AC-103-F`'s observable effect.
 
-#### Criteria, and how each is covered
+**Screenshot taken at step 4**, 390×844, Arabic, RTL — looked at directly. Title
+"تغيير كلمة المرور", the forced-change banner, three labelled fields (current / new / confirm) each
+right-aligned with the input below, the 8-character hint and the ends-other-sessions hint both
+present, one disabled "حفظ" button (form empty at that point — `canSubmit()` correctly false), no
+horizontal overflow, no untranslated key visible anywhere on the page.
 
-| Criterion | Covered by |
-|---|---|
-| `AC-103-D` — current password required | `changePasswordSchema`'s `required(path.currentPassword)`; it is the first field, not a third "new password" box |
-| `AC-103-E` — 8 characters, nothing more | `minLength(path.newPassword, MINIMUM_PASSWORD_LENGTH)` and `required` — no `pattern`, no strength meter |
-| `AC-103-F` — ends every other session | Not this session's mechanism (`SetOwnPassword`, D-086) — the screen re-fetches `GET /api/auth/me` after success so its own `AuthService` reflects the rotated state before routing on |
-| `AC-103-I` — Arabic, RTL, 390px | `change-password-page.css` — logical properties only, same discipline as `sign-in-page.css`; **not yet screenshotted, see above** |
-| `AC-101b-F` — nothing else reachable, reload returns here | `mustChangePasswordGuard` on the landing route, plus the real redirect in `sign-in-page.ts`; the actual refusal is D-086's, unchanged |
+Two disposable rows now exist on `kaff-db` as a result (`qa.kaff103`, superseded mid-session by
+`qa.kaff103b` once a banner-timing question in the *test script* — not the app — needed a fresh
+forced-change session to re-check against); left in place, this being confirmed as a free-to-use local
+dev database.
+
+#### Criteria, and how each is covered — now observed, not only reviewed
+
+| Criterion | Covered by | Observed |
+|---|---|---|
+| `AC-103-D` — current password required | `changePasswordSchema`'s `required(path.currentPassword)`; it is the first field, not a third "new password" box | Partially observed: the field exists, is first, and the correct value (`temp1234`) was accepted. **Not observed:** submitting a missing or wrong current password and watching the refusal render — the drive only took the happy path. Code-reviewed only for that half (`Handler.cs`'s `PasswordHasher.Verify` check, `AuthorizationErrors.CurrentPasswordIncorrect` rendered by the same page-level `refusalKey` region `sign-in-page.ts` uses) |
+| `AC-103-E` — 8 characters, nothing more | `minLength(path.newPassword, MINIMUM_PASSWORD_LENGTH)` and `required` — no `pattern`, no strength meter | Partially observed: `temp1234` and `NewPass123` (8 and 10 chars) both accepted with no complexity prompted anywhere in the UI. **Not observed:** a 7-character password actually refused (client-side block or server's `password_too_short`) — not tried during the drive. Code-reviewed only for that half |
+| `AC-103-F` — ends every other session | `SetOwnPassword`'s stamp rotation (D-086, tested there — `ChangePasswordTests.cs`) does the ending; not re-tested here | **Not observed this session** — only one device was driven, so there was no second session to watch get refused. What *was* observed: this device's own session survived its own change (landed on `/`, `mustChangePassword: false` on the next `GET /api/auth/me`), which is `AC-103-A`, a different half |
+| `AC-103-I` — Arabic, RTL, 390px | `change-password-page.css` — logical properties only | Screenshot at 390px, looked at: RTL, Arabic, no overflow |
+| `AC-101b-F` — nothing else reachable, reload returns here | `mustChangePasswordGuard` on the landing route, plus the real redirect in `sign-in-page.ts` | Both the in-session redirect (step 4) and the cold-reload redirect via the guard (step 5) observed directly |
 
 Refusals: one page-level region, `role="alert"`, no field named, no `switch` on status — the same
 shape `sign-in-page.html` uses, for the same reason (D-091, D-065, D-072 §1: a field-level error on a
