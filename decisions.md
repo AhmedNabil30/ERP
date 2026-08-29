@@ -7085,3 +7085,64 @@ it and the name-level gap was the one that was live.
 
 **Revisit if.** A slice adds check constraints — the count in (5) moves in the same commit, which is
 the intended friction.
+
+---
+
+### D-094 · `V-27-B` fixed — the marker is now unforgeable, and the test no longer explains how to forge it · 2026-08-29
+
+**Backend. `V-27-B`, closed at the compiler.** qa/slice-1/verification-2026-08-27.md §3.
+
+**What was wrong.** D-089 claims `RequireLiveSession()` applies the three checks *"by construction"*,
+because it stamps the route with `LiveSession.Marker` and *"nothing else adds that metadata."*
+`Marker` was `public` with an `internal static readonly Instance`, and **every feature slice compiles
+into `Kaff.Api`** — so `internal` named exactly the place endpoints are written. Writing
+`.WithMetadata(LiveSession.Marker.Instance)` in place of `.RequireLiveSession()` compiled, and the
+suite reported **215 / 215** against a route reachable by any authenticated caller, acting on the
+caller's own row, applying none of the three checks. **The guarantee was conventional, not
+structural.**
+
+**And the failing test was the instruction manual.** An author adding a self-only route saw a message
+saying `RequireLiveSession()` *"is the only thing that adds this metadata"*. That sentence was false,
+`Instance` was one dot away in the same assembly, and attaching it turned the red test green while
+applying nothing — D-046's green light inside the mechanism written to prevent it.
+
+**Decision. The type is private; the question is public.**
+
+* `Marker` is a **private nested type** of `LiveSession`. A private nested type cannot be named from
+  outside its containing class, so `RequireLiveSession` is now the only expression in the language
+  that can produce this metadata
+  [Verified: 2026-08-29 @ `src/Api/Authorization/LiveSession.cs` -> `RequireLiveSession`].
+* `LiveSession.IsApplied(Endpoint)` is the read half — a test can ask whether a route paid, and is
+  not handed the means to answer dishonestly
+  [Verified: 2026-08-29 @ `src/Api/Authorization/LiveSession.cs` -> `IsApplied`].
+* The two test call sites ask through it rather than through `GetMetadata<Marker>()`
+  [Verified: 2026-08-29 @ `tests/Api.Tests/EndpointPermissionCoverageTests.cs` -> `IsSelfOnlyListed`].
+* **The message is corrected**, and now says what is true: add `.RequireLiveSession()`, there is no
+  other way to satisfy this, the metadata is a private nested type
+  [Verified: 2026-08-29 @ `tests/Api.Tests/EndpointPermissionCoverageTests.cs` ->
+  `Every_self_only_member_is_mapped_and_requires_authentication_with_no_permission_of_its_own`].
+
+**Watched failing, twice, in the two different ways this can now break.**
+
+1. **`MUT-E` re-applied first**, to establish the defect rather than take the Verifier's word:
+   `src/Api/Features/Auth/VerifierProbe/` with `.WithMetadata(LiveSession.Marker.Instance)` and no
+   checks, named in `SelfOnlyEndpoints`. **Built clean, and `EndpointPermissionCoverageTests` reported
+   6 / 6.** With the fix applied and the same probe unchanged, the build fails:
+   `error CS0122: 'LiveSession.Marker' is inaccessible due to its protection level`. **The probe was
+   then deleted** — an unpaid exemption must not exist in this repository even as a fixture.
+2. **The accessibility itself is pinned.** A compiler error is evidence only while the accessibility
+   stands, and widening `private` to `internal` is a one-word edit. Done: the build stays clean and
+   `Nothing_outside_LiveSession_can_produce_the_metadata_that_proves_a_route_paid` fails with
+   `found at least one item {"Marker"}`
+   [Verified: 2026-08-29 @ `tests/Api.Tests/EndpointPermissionCoverageTests.cs` ->
+   `Nothing_outside_LiveSession_can_produce_the_metadata_that_proves_a_route_paid`]. Restored;
+   `218 / 218`.
+
+**What is still true and is not closed by this.** The Verifier's §3.1 gap stands unchanged: a handler
+can still resolve its caller through `ICurrentUser.UserId` rather than a claim type, and
+`POST /api/auth/sign-out` is `AllowAnonymous` and can carry no refusing filter, so one source grep
+remains the whole mechanical cover for that route. This entry narrows who can *claim* the exemption,
+not who can *hand-roll around* it.
+
+**Revisit if.** A second assembly ever needs to declare a self-only route. `private` would then be too
+narrow, and the answer is not `internal` — it is that `RequireLiveSession` moves with it.

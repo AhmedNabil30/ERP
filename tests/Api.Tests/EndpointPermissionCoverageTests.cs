@@ -225,12 +225,13 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
                 entry.Method,
                 entry.Route);
 
-            mapped.Endpoint.Metadata.GetMetadata<LiveSession.Marker>().Should().NotBeNull(
+            LiveSession.IsApplied(mapped.Endpoint).Should().BeTrue(
                 "{0} {1} is outside the permission gate, so nothing upstream re-reads IsActive, the "
-                + "security stamp, or whether the role may hold a staff session at all. It must "
-                + "declare RequireLiveSession(), which is the only thing that adds this metadata — "
-                + "the entry above records why the route is exempt, and this records that it paid "
-                + "what the exemption costs (V-26-B, decisions.md D-089)",
+                + "security stamp, or whether the role may hold a staff session at all. Add "
+                + ".RequireLiveSession() to the route. There is no other way to satisfy this — the "
+                + "metadata it stamps is a private nested type, so no expression outside LiveSession "
+                + "can produce it, and this assertion is a question rather than a value you can hand "
+                + "it (V-26-B, V-27-B, decisions.md D-089 and D-094)",
                 entry.Method,
                 entry.Route);
         }
@@ -282,6 +283,47 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
             + "also decides, alone, which of the gate's checks to re-apply — and three of them did, "
             + "each one item short (V-26-B, V-26-C). LiveSession.ResolveAsync is the one answer, and "
             + "it applies all three");
+    }
+
+    /// <summary>
+    /// <c>V-27-B</c>. The exemption marker cannot be obtained by anything but
+    /// <c>RequireLiveSession()</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>This is the assertion above's own precondition, and it used to be false.</b>
+    /// <c>LiveSession.Marker</c> was <c>public</c> with an <c>internal Instance</c>. Every feature
+    /// slice compiles into <c>Kaff.Api</c>, so <c>internal</c> meant "reachable from exactly the place
+    /// endpoints are written": <c>.WithMetadata(LiveSession.Marker.Instance)</c> in place of
+    /// <c>.RequireLiveSession()</c> compiled, and the suite reported <b>215/215</b> against a route
+    /// that applied none of the three checks and read the caller's own row
+    /// (qa/slice-1/verification-2026-08-27.md, <c>V-27-B</c>). The failing test's own message told the
+    /// author to do it, by claiming <c>RequireLiveSession()</c> was the only thing that added the
+    /// metadata.
+    /// </para>
+    /// <para>
+    /// <b>Why a reflection test and not a compiler error alone.</b> The compiler is the real
+    /// mechanism — a private nested type cannot be named from outside its containing class, so the
+    /// unpaid route is now <c>CS0122</c> rather than a green suite. But a compiler error is only
+    /// evidence while the accessibility stands, and re-widening it to <c>internal</c> for a
+    /// plausible-looking reason is a one-word edit that no test would otherwise notice. This is what
+    /// notices.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void Nothing_outside_LiveSession_can_produce_the_metadata_that_proves_a_route_paid()
+    {
+        List<string> reachable = [.. typeof(LiveSession)
+            .GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)
+            .Where(nested => !nested.IsNestedPrivate)
+            .Select(nested => nested.Name)];
+
+        reachable.Should().BeEmpty(
+            "LiveSession's metadata types must stay private nested types. Anything wider is reachable "
+            + "from every feature slice, because they all compile into Kaff.Api — and a route can then "
+            + "stamp itself with the proof that it applied the three checks instead of applying them, "
+            + "which is exactly what V-27-B demonstrated at 215/215 green. Ask through "
+            + "LiveSession.IsApplied instead of exposing the type");
     }
 
     /// <summary>The directory holding <c>KaffErp.sln</c>, walked up from the test binary.</summary>
@@ -417,10 +459,10 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
     /// Named on the self-only list <b>and</b> carrying the checks that exemption owes.
     /// </summary>
     /// <remarks>
-    /// <b>The second half is the point.</b> Being on the list is a claim; carrying
-    /// <see cref="LiveSession.Marker"/> is the claim being paid for, and only
-    /// <c>RequireLiveSession()</c> adds it. A route added to <see cref="SelfOnlyEndpoints"/> without it
-    /// is not exempt here — it falls through to
+    /// <b>The second half is the point.</b> Being on the list is a claim;
+    /// <see cref="LiveSession.IsApplied"/> is the claim being paid for, and calling
+    /// <c>RequireLiveSession()</c> is the only act that makes it answer true. A route added to
+    /// <see cref="SelfOnlyEndpoints"/> without it is not exempt here — it falls through to
     /// <see cref="Every_mapped_endpoint_carries_a_permission_requirement"/> as an ungated endpoint,
     /// which is what makes skipping the checks impossible to do quietly.
     /// </remarks>
@@ -428,7 +470,7 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
         SelfOnlyEndpoints.Any(entry =>
             string.Equals(entry.Method, mapped.Method, StringComparison.Ordinal)
             && string.Equals(entry.Route, mapped.Route, StringComparison.Ordinal))
-        && mapped.Endpoint.Metadata.GetMetadata<LiveSession.Marker>() is not null;
+        && LiveSession.IsApplied(mapped.Endpoint);
 
     private IEnumerable<MappedEndpoint> ShippedEndpoints()
     {

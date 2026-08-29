@@ -48,7 +48,7 @@ namespace Kaff.Api.Authorization;
 /// <b>What it does not cover.</b> A future handler could still load the caller's own row by hand from
 /// <c>ICurrentUser.UserId</c> and skip all three. Two tests narrow that:
 /// <c>EndpointPermissionCoverageTests.Every_self_only_member_is_mapped_and_requires_authentication_with_no_permission_of_its_own</c>
-/// fails when a self-only route does not carry <see cref="Marker"/>, and
+/// fails when <see cref="IsApplied"/> answers false for a self-only route, and
 /// <c>No_feature_handler_reads_the_callers_identity_from_the_token_itself</c> fails when any file under
 /// <c>src/Api/Features/</c> mentions <c>KaffClaimTypes</c> — the hand-roll all three defective handlers
 /// actually used.
@@ -62,13 +62,38 @@ public static class LiveSession
     /// Metadata proving a route applies these checks. Added by <see cref="RequireLiveSession"/> and by
     /// nothing else, so a route cannot claim the exemption without paying for it.
     /// </summary>
-    public sealed class Marker
-    {
-        internal static readonly Marker Instance = new();
+    /// <remarks>
+    /// <para>
+    /// <b>Private, and that is the whole mechanism.</b> This type used to be <c>public</c> with an
+    /// <c>internal</c> <c>Instance</c> — and every feature slice compiles into <c>Kaff.Api</c>, so
+    /// <c>internal</c> was the same assembly the endpoints live in. Writing
+    /// <c>.WithMetadata(LiveSession.Marker.Instance)</c> in place of <c>.RequireLiveSession()</c>
+    /// compiled, satisfied every assertion in <c>EndpointPermissionCoverageTests</c>, and applied none
+    /// of the three checks. The suite reported green against exactly such an endpoint
+    /// (qa/slice-1/verification-2026-08-27.md, <c>V-27-B</c>; decisions.md D-094).
+    /// </para>
+    /// <para>
+    /// A private nested type cannot be named or constructed from outside <see cref="LiveSession"/> at
+    /// all, so <see cref="RequireLiveSession"/> is now the only expression in the language that can
+    /// produce this metadata. <see cref="IsApplied"/> is how a test asks the question without being
+    /// handed the means to answer it dishonestly.
+    /// </para>
+    /// </remarks>
+    private sealed class Marker;
 
-        private Marker()
-        {
-        }
+    /// <summary>
+    /// Whether <paramref name="endpoint"/> actually carries <see cref="RequireLiveSession"/>.
+    /// </summary>
+    /// <remarks>
+    /// The read half of <see cref="Marker"/>, deliberately separated from the write half. A caller can
+    /// ask whether a route paid for its exemption; nothing outside this class can make a route claim
+    /// it did. <c>EndpointPermissionCoverageTests</c> is the caller.
+    /// </remarks>
+    public static bool IsApplied(Endpoint endpoint)
+    {
+        ArgumentNullException.ThrowIfNull(endpoint);
+
+        return endpoint.Metadata.GetMetadata<Marker>() is not null;
     }
 
     /// <summary>
@@ -156,7 +181,7 @@ public static class LiveSession
                     ? ResultExtensions.Problem(AuthorizationErrors.Forbidden)
                     : await next(context);
             })
-            .WithMetadata(Marker.Instance);
+            .WithMetadata(new Marker());
     }
 
     /// <summary>The row <see cref="RequireLiveSession"/> already checked. Never null behind that filter.</summary>
