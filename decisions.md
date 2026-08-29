@@ -7146,3 +7146,87 @@ not who can *hand-roll around* it.
 
 **Revisit if.** A second assembly ever needs to declare a self-only route. `private` would then be too
 narrow, and the answer is not `internal` — it is that `RequireLiveSession` moves with it.
+
+---
+
+### D-095 · `V-27-C` fixed — a role that is not a role, and two predicates that failed open · 2026-08-29
+
+**Backend. `V-27-C`.** qa/slice-1/verification-2026-08-27.md §6.
+
+**What was wrong, in two layers.** `PUT /api/users/{userId}/role` answered **`200`** to `-1`, `0` and
+`99` and persisted them — the Verifier read `role = '99'` back out of the users table. Reproduced here
+before anything was changed, as three theory cases, all three green against HEAD.
+
+**A C# enum is not a closed set at run time.** `(Role)99` is a legal cast, enums are stored as text
+(D-002) so the column takes whatever arrives, `JsonStringEnumConverter` accepts integers, and no
+check constraint refuses it: `ck_users_client_scope` and `ck_users_operations_sub_department` are both
+satisfied by a value that is neither `'Client'` nor `'Operations'`.
+
+**The second layer is the one that mattered.** Both role predicates were **deny-lists**, so they
+answered *permitted* for every value outside the nine:
+
+* `MayHoldStaffSession` was `role is not (Role.Client or Role.Subcontractor)` — so `(Role)99` **may
+  hold a staff session**, and `GET /api/auth/me` would answer it.
+* `PermissionEvaluator` barred `subject.Role == Role.Subcontractor` — same shape, so `(Role)99`
+  reached the catalogue.
+
+Neither is wrong for the nine roles that exist. Both are the wrong default for a predicate whose whole
+job is to refuse, and **an enum member added later would be admitted by silence.**
+
+**Decision.**
+
+1. **Validation in the domain, at the join both entry points already use.** `ValidateDepartment` is
+   called by `User.Create` **and** `User.ChangeRole`, so `!Enum.IsDefined(role)` sits there and covers
+   both — a validator in the `ChangeUserRole` slice would have left `CreateUser` open
+   [Verified: 2026-08-29 @ `src/Domain/Identity/User.cs` -> `ValidateDepartment`]. New error
+   `IdentityErrors.UnknownRole`, `errors.identity.unknown_role`, `400`
+   [Verified: 2026-08-29 @ `src/Domain/Identity/IdentityErrors.cs` -> `UnknownRole`].
+2. **Both predicates inverted to allow-lists**
+   [Verified: 2026-08-29 @ `src/Domain/Identity/Role.cs` -> `MayHoldStaffSession`;
+   @ `src/Domain/Identity/Role.cs` -> `MayHoldPermissions`], and the evaluator asks the second one
+   [Verified: 2026-08-29 @ `src/Domain/Authorization/PermissionEvaluator.cs` -> `Evaluate`].
+3. **Two lists, not one with an exception.** They differ by exactly `Role.Client`, who holds
+   `PortalRead` and `PortalApprove` on their own project (spec.md §12, D-035) and must therefore be
+   grantable by the evaluator while being refused by the staff door (D-062 §2). Folding them together
+   is the D-035 shape.
+4. **`Enum.IsDefined` is deliberately not the predicate.** It answers "is this a member", which admits
+   a tenth role by silence — exactly the failure being fixed. It is right for *validation* (1), where
+   a new member genuinely is a role, and wrong for a *door* (2).
+
+**Watched failing, three times.**
+
+| Mutation | Result |
+|---|---|
+| Nothing — the reproduction, before any fix | `A_role_outside_the_enum_is_refused_and_never_persisted` red for `-1`, `0` and `99`, each `found True` on `IsSuccessStatusCode` |
+| `MayHoldStaffSession` restored to the deny-list | `A_role_outside_the_enum_is_refused_at_every_door` red — *"Expected unknown.MayHoldStaffSession() to be False … but found True"* |
+| Both restored, after the fix | build clean, Domain `107/107`, Api `221/221` |
+
+**The §7 gap this also closes.** The Verifier observed that `MUT-H` — `MayHoldStaffSession` made to
+answer true for every role — left the **Domain** suite at 97/97, because the rule lives in `Domain/`
+and was covered entirely from the Api suite: *"the cheapest possible test of the predicate itself does
+not exist."* It does now, as a nine-row table
+[Verified: 2026-08-29 @ `tests/Domain.Tests/UserTests.cs` -> `The_two_role_doors_admit_exactly_these`].
+
+**One locale key added, and it is the error-catalogue contract, not frontend work.**
+`errors.identity.unknown_role` in `ar.json` and `en.json` — one line each, nothing else in
+`src/Web/` touched. `TranslationCatalogueTests` fails the build for a domain error whose key is absent
+from either catalogue, so the key is not optional.
+
+**🟡 Not decided here, and routed rather than assumed.**
+
+* **What counts as a valid role is spec.md §9's to say.** This refuses a value that names *no* role;
+  it does not add, remove or reinterpret one. If Karim adds a tenth, `MayHoldStaffSession` must be
+  edited to admit it — deliberately, which is the point.
+* **The existing `role = '99'` row on the Verifier's database is not migrated.** No data fix ships
+  here: this is a development database, the row was created by the sweep itself, and a migration that
+  rewrites a role is a business decision about what that account should become. **Architect / Nabil**
+  if any environment that matters turns out to hold one.
+* **`W-5` is untouched.** The refusal shape for a malformed body is still the Architect's open scope
+  question, which is why the new Api test asserts "not success" and the value never reaching the
+  table, rather than a specific status code.
+
+**Not renamed, deliberately.** `ValidateDepartment` now also checks that the role is a role, and the
+name was widened to `ValidateRoleAndDepartment` and then reverted: four historical records cite the
+old identifier under SM-31 and live in `meetings/`, `qa/`, `proposals/` and `stories/` — documents the
+agent doing the rename must not edit. The checker caught all four. Recorded in the method's own
+summary instead.

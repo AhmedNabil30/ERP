@@ -495,11 +495,34 @@ public sealed class User : Entity
         return Result.Success();
     }
 
+    /// <summary>
+    /// Every rule binding a role to the fields that qualify it. The one place both <see cref="Create"/>
+    /// and <see cref="ChangeRole"/> route through, which is why the role-is-a-role check lives here.
+    /// </summary>
+    /// <remarks>
+    /// The name says "department" and it now checks the role's existence too. Kept rather than renamed:
+    /// four historical records — <c>meetings/2026-08-21-sprint-1-refinement.md</c>,
+    /// <c>qa/slice-1/verification-2026-08-23.md</c>, <c>proposals/story-review-2026-08-22.md</c> and
+    /// <c>stories/slice-1-foundation/KAFF-106-owner-creates-a-user.md</c> — cite this identifier under
+    /// SM-31, and a rename breaks four citations in documents that must not be edited by whoever
+    /// renames it. The identifier is the contract; this summary is where the widening is stated.
+    /// </remarks>
     private static Result ValidateDepartment(
         Role role,
         Department? department,
         OperationsSubDepartment? subDepartment)
     {
+        // V-27-C. Asked first, because every rule below is written against the nine roles that exist
+        // and says nothing about a value outside them — which is how (Role)99 walked past all of them.
+        // An enum is not a closed set at run time: the cast is legal, the column is text (D-002), and
+        // JsonStringEnumConverter takes integers, so the wire could name a role that is not one.
+        // Refused here rather than in the ChangeUserRole slice because CreateUser reaches the same
+        // fields by the same route, and a guard in one endpoint leaves the sibling open.
+        if (!Enum.IsDefined(role))
+        {
+            return Result.Failure(IdentityErrors.UnknownRole);
+        }
+
         // Permission grants may be written against a department alone — HR owns the people records
         // (spec.md §2) and Operations / Administrative confirms site expenses (§8) — and such a grant
         // matches any role carrying that department. A portal client or a subcontractor with a

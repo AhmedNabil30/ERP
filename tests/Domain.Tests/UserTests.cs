@@ -1,3 +1,4 @@
+using Kaff.Domain.Authorization;
 using Kaff.Domain.Common;
 using Kaff.Domain.Identity;
 
@@ -358,6 +359,78 @@ public sealed class UserTests
         user.SecurityStamp.Should().NotBe(
             stampAfterTemporary,
             "rule 4 — the change must end every session the temporary credential could still open");
+    }
+
+    /// <summary>
+    /// <c>V-27-C</c>. A value outside the enum is refused at both doors and by both entry points.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The predicates were deny-lists, and a deny-list guarding a door fails open.</b>
+    /// <c>MayHoldStaffSession</c> read <c>role is not (Role.Client or Role.Subcontractor)</c> and
+    /// <c>PermissionEvaluator</c> barred <c>subject.Role == Role.Subcontractor</c> — so <c>(Role)99</c>
+    /// answered "may hold a staff session" and reached the catalogue, and
+    /// <c>PUT /api/users/{userId}/role</c> wrote <c>role = '99'</c> into the users table
+    /// (qa/slice-1/verification-2026-08-27.md §6).
+    /// </para>
+    /// <para>
+    /// <b>The Verifier's §7 observation is what this closes.</b> <c>MUT-H</c> made
+    /// <c>MayHoldStaffSession</c> answer true for every role and the <b>Domain</b> suite stayed
+    /// 97 / 97 — the rule lives in <c>Domain/</c> and was covered entirely from the Api suite. The
+    /// cheapest possible test of the predicate itself did not exist. It does now.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void A_role_outside_the_enum_is_refused_at_every_door()
+    {
+        const Role unknown = (Role)99;
+
+        unknown.MayHoldStaffSession().Should().BeFalse(
+            "an allow-list refuses what it does not name. As a deny-list this answered true, and "
+            + "GET /api/auth/me would have answered such an account with a profile");
+
+        unknown.MayHoldPermissions().Should().BeFalse(
+            "the evaluator must not reach the catalogue for a role that is not a role");
+
+        PermissionEvaluator.Evaluate(
+            new PermissionSubject(Guid.CreateVersion7(), unknown, null, null, null, "Nobody"),
+            Permission.UserManage,
+            projectId: null,
+            projectAccess: null)
+            .Should().Be(PermissionDecision.RoleCannotLogIn);
+
+        User.Create("ghost", "Ghost", PhoneNumber.Create("01000000000").Value, unknown, Now)
+            .Error.Should().Be(
+                IdentityErrors.UnknownRole,
+                "Create and ChangeRole route through the same validation, so the guard sits there "
+                + "rather than in one endpoint's validator");
+    }
+
+    /// <summary>
+    /// Which of the nine roles each door admits, stated as a table rather than as a predicate to
+    /// re-read.
+    /// </summary>
+    /// <remarks>
+    /// The two lists differ by exactly <see cref="Role.Client"/>: a portal client holds
+    /// <c>PortalRead</c> and <c>PortalApprove</c> on their own project (spec.md §12, decisions.md
+    /// D-035) so the evaluator must be able to grant them, while the staff door must refuse them
+    /// (decisions.md D-062 §2). <see cref="Role.Subcontractor"/> is refused by both — spec.md §9,
+    /// "record only, no login". Widening either list is now a visible edit that fails here.
+    /// </remarks>
+    [Theory]
+    [InlineData(Role.Owner, true, true)]
+    [InlineData(Role.Finance, true, true)]
+    [InlineData(Role.TechnicalOffice, true, true)]
+    [InlineData(Role.SiteEngineer, true, true)]
+    [InlineData(Role.HeadOfDesign, true, true)]
+    [InlineData(Role.MarketingSales, true, true)]
+    [InlineData(Role.Hr, true, true)]
+    [InlineData(Role.Client, false, true)]
+    [InlineData(Role.Subcontractor, false, false)]
+    public void The_two_role_doors_admit_exactly_these(Role role, bool staffSession, bool permissions)
+    {
+        role.MayHoldStaffSession().Should().Be(staffSession);
+        role.MayHoldPermissions().Should().Be(permissions);
     }
 
     private static DateTimeOffset Now => new(2026, 5, 1, 8, 0, 0, TimeSpan.Zero);

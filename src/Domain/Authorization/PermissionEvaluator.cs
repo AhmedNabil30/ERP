@@ -148,7 +148,12 @@ public static class PermissionEvaluator
 
         // spec.md §9 — a subcontractor is a record, never a login. Refused before the catalogue is
         // consulted, so a grant added to the catalogue by mistake still cannot let one in.
-        if (subject.Role == Role.Subcontractor)
+        //
+        // V-27-C: an allow-list, not "is not Subcontractor". That deny-list answered "permitted" for
+        // every value outside the nine, so (Role)99 reached the catalogue and a role added later would
+        // be admitted by silence. MayHoldPermissions is wider than MayHoldStaffSession by exactly
+        // Role.Client, who holds PortalRead and PortalApprove on their own project (D-035).
+        if (!subject.Role.MayHoldPermissions())
         {
             return PermissionDecision.RoleCannotLogIn;
         }
@@ -190,7 +195,7 @@ public static class PermissionEvaluator
             return PermissionDecision.NotAuthenticated;
         }
 
-        if (subject.Role == Role.Subcontractor)
+        if (!subject.Role.MayHoldPermissions())
         {
             return PermissionDecision.RoleCannotLogIn;
         }

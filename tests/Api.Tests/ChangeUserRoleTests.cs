@@ -404,6 +404,64 @@ public sealed class ChangeUserRoleTests : IAsyncLifetime
         (await MessageKeyAsync(response)).Should().Be("errors.identity.user_not_found");
     }
 
+    /// <summary>
+    /// <c>V-27-C</c>. A number that is not one of the nine roles is refused, and nothing is written.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>All three of these answered <c>200</c> and persisted.</b> The Verifier's 36-input sweep read
+    /// <c>role = '99'</c> back out of the users table: the enum is stored as text (D-002), so the
+    /// column takes whatever the wire sent. No validator exists in this slice, no check constraint
+    /// refuses it — <c>ck_users_client_scope</c> and <c>ck_users_operations_sub_department</c> are
+    /// both satisfied by a value that is neither <c>'Client'</c> nor <c>'Operations'</c> — and
+    /// <c>ChangeRole</c> re-applied the creation invariants without ever asking whether the role was a
+    /// role (qa/slice-1/verification-2026-08-27.md §6).
+    /// </para>
+    /// <para>
+    /// <b>Sent as a JSON number, which is how it gets in.</b> The wire convention is the member name
+    /// and <c>ChangeUserRole.Request</c> documents it as such, but <c>JsonStringEnumConverter</c>
+    /// accepts integers as well, and every integer is a candidate <c>Role</c> because the CLR does not
+    /// range-check an enum cast.
+    /// </para>
+    /// <para>
+    /// The status code is not asserted beyond "not success" on purpose: <c>W-5</c> is open with the
+    /// Architect over whether a framework-produced <c>400</c> should carry a <c>messageKey</c>, and
+    /// this test is about the value never reaching the table, not about which refusal shape wins that
+    /// question.
+    /// </para>
+    /// </remarks>
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(0)]
+    [InlineData(99)]
+    public async Task A_role_outside_the_enum_is_refused_and_never_persisted(int role)
+    {
+        using var request = new HttpRequestMessage(
+            HttpMethod.Put,
+            new Uri($"/api/users/{_supervisorEngineer}/role", UriKind.Relative))
+        {
+            Content = JsonContent.Create(new { role }),
+        };
+
+        request.Headers.Add(TestAuthHandler.UserIdHeader, _owner.ToString());
+        request.Headers.Add(TestAuthHandler.SecurityStampHeader, await StaleSession(_owner));
+        request.Headers.Add(TestAuthHandler.RoleHeader, nameof(Role.Owner));
+
+        HttpResponseMessage response = await _client.SendAsync(request, Ct);
+
+        response.IsSuccessStatusCode.Should().BeFalse(
+            "{0} is not one of the nine roles spec.md §9 names, and an account holding it is refused "
+            + "everything by PermissionEvaluator while still being admitted through every predicate "
+            + "written as a deny-list",
+            role);
+
+        (await ActorRoleAsync(_supervisorEngineer)).Should().Be(
+            Role.SiteEngineer,
+            "a refused change is not a change — and an audit row this account later authored would "
+            + "carry actor_role = '{0}' into an append-only table where it can never be corrected",
+            role);
+    }
+
     // ---- helpers -------------------------------------------------------------------------------------
 
     private async Task<string> StaleSession(Guid userId)

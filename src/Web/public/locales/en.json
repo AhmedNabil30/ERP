@@ -74,6 +74,7 @@
   "errors.identity.non_client_user_cannot_carry_client": "This user cannot be linked to a client.",
   "errors.identity.external_role_cannot_hold_department": "Clients and subcontractors are not staff and belong to no department.",
   "errors.identity.hr_role_requires_hr_department": "An HR user belongs to the HR department and no other.",
+  "errors.identity.unknown_role": "The role given is not one of the roles this system defines.",
   "errors.identity.username_taken": "That user name is already taken.",
   "errors.identity.username_reserved": "That user name is reserved and cannot be used.",
   "errors.identity.user_not_found": "No such user.",

@@ -73,7 +73,7 @@ public enum Role
 }
 
 /// <summary>
-/// The two roles that may never hold a staff session, in one place.
+/// Which roles may pass which door, in one place — as allow-lists, so an unnamed value is refused.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -92,16 +92,78 @@ public enum Role
 /// need the same thing, it moves to <c>Domain/</c>."
 /// </para>
 /// <para>
-/// <b>This is a narrower statement than <c>PermissionEvaluator</c>'s subcontractor bar and does not
-/// replace it.</b> The evaluator refuses <see cref="Role.Subcontractor"/> a permission and says
-/// nothing about <see cref="Role.Client"/>, because a client legitimately holds
-/// <c>Permission.PortalRead</c> and <c>Permission.PortalApprove</c> on their own project (spec.md §12,
-/// decisions.md D-035) — through the portal door, when it ships. This predicate is about the
-/// <b>staff</b> session only.
+/// <b>Two doors, two lists, and they differ by exactly <see cref="Role.Client"/>.</b>
+/// <see cref="StaffSessionRules.MayHoldStaffSession"/> is the staff session;
+/// <see cref="StaffSessionRules.MayHoldPermissions"/> is whether the evaluator may consider the role
+/// at all. A client legitimately holds <c>Permission.PortalRead</c> and <c>Permission.PortalApprove</c>
+/// on their own project (spec.md §12, decisions.md D-035) — through the portal door, when it ships —
+/// so the evaluator must be able to grant them while the staff door refuses them.
+/// </para>
+/// <para>
+/// <b>Both are allow-lists as of <c>V-27-C</c>, and that is a deliberate default.</b> Each was written
+/// as an exclusion — <c>is not (Client or Subcontractor)</c>, and <c>== Subcontractor</c> in the
+/// evaluator — which answers "permitted" for every value outside the nine, including
+/// <c>(Role)99</c> and including a tenth role added later. A predicate whose job is to refuse must
+/// fail closed.
 /// </para>
 /// </remarks>
 public static class StaffSessionRules
 {
-    /// <summary>False for the roles no staff session may ever be minted for, or honoured for.</summary>
-    public static bool MayHoldStaffSession(this Role role) => role is not (Role.Client or Role.Subcontractor);
+    /// <summary>
+    /// True for exactly the roles a staff session may be minted for, or honoured for.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>An allow-list, and it was a deny-list until <c>V-27-C</c>.</b> It read
+    /// <c>role is not (Role.Client or Role.Subcontractor)</c>, which is correct for the nine roles
+    /// that exist and answers <b>true</b> for every value outside them —
+    /// <c>(Role)99</c> included, so an account holding a role that is in neither
+    /// <see cref="Role"/> nor spec.md §9 could hold a staff session and be answered by
+    /// <c>GET /api/auth/me</c> (qa/slice-1/verification-2026-08-27.md §6).
+    /// </para>
+    /// <para>
+    /// <b>The wrong default for a predicate guarding a door is "permitted".</b> Written this way the
+    /// failure mode inverts: an unknown value is refused, and a <b>tenth role added later is refused
+    /// until somebody names it here</b> — a compile-clean omission becomes a visible refusal instead
+    /// of a silent admission. That is the property, not an oversight, and it is the whole reason this
+    /// is not <c>Enum.IsDefined</c> plus the old exclusion: a new enum member is exactly the case that
+    /// must not be admitted by silence.
+    /// </para>
+    /// </remarks>
+    public static bool MayHoldStaffSession(this Role role) => role is
+        Role.Owner
+        or Role.Finance
+        or Role.TechnicalOffice
+        or Role.SiteEngineer
+        or Role.HeadOfDesign
+        or Role.MarketingSales
+        or Role.Hr;
+
+    /// <summary>
+    /// True for exactly the roles a permission may be evaluated for at all.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Wider than <see cref="MayHoldStaffSession"/> by exactly one member, and the difference is
+    /// deliberate.</b> <see cref="Role.Client"/> holds <c>Permission.PortalRead</c> and
+    /// <c>Permission.PortalApprove</c> on their own project (spec.md §12, decisions.md D-035) — through
+    /// the portal door, when it ships — so the evaluator must be able to grant them, while the staff
+    /// door must not let them in. <see cref="Role.Subcontractor"/> is in neither: spec.md §9, "record
+    /// only, no login".
+    /// </para>
+    /// <para>
+    /// The two are separate lists rather than one list and an exception because they answer two
+    /// different questions, and folding them together is what would eventually let a portal client
+    /// through the staff door — the D-035 shape. Both are allow-lists for the reason given above.
+    /// </para>
+    /// </remarks>
+    public static bool MayHoldPermissions(this Role role) => role is
+        Role.Owner
+        or Role.Finance
+        or Role.TechnicalOffice
+        or Role.SiteEngineer
+        or Role.HeadOfDesign
+        or Role.MarketingSales
+        or Role.Hr
+        or Role.Client;
 }

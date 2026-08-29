@@ -26,6 +26,25 @@ public static class IdentityErrors
     public static readonly Error NonClientUserCannotCarryClient =
         Error.Validation("identity.non_client_user_cannot_carry_client", "errors.identity.non_client_user_cannot_carry_client");
 
+    /// <summary>
+    /// The value is not one of the nine roles spec.md §9 names. <c>V-27-C</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>A C# enum is not a closed set at run time.</b> <c>(Role)99</c> is a legal cast, enums are
+    /// stored as text (D-002), and <c>JsonStringEnumConverter</c> accepts integers — so
+    /// <c>PUT /api/users/{userId}/role</c> answered <c>200</c> to <c>-1</c>, <c>0</c> and <c>99</c>,
+    /// and the users table held <c>role = '99'</c>
+    /// (qa/slice-1/verification-2026-08-27.md §6).
+    /// </para>
+    /// <para>
+    /// <b>Validation, not a business rule.</b> This refuses a value that names no role at all; it does
+    /// not decide which roles exist, which is spec.md §9's to say and Karim's to change.
+    /// </para>
+    /// </remarks>
+    public static readonly Error UnknownRole =
+        Error.Validation("identity.unknown_role", "errors.identity.unknown_role");
+
     /// <summary>spec.md §12 — a portal client and a subcontractor are not staff and hold no department.</summary>
     public static readonly Error ExternalRoleCannotHoldDepartment =
         Error.Validation("identity.external_role_cannot_hold_department", "errors.identity.external_role_cannot_hold_department");
