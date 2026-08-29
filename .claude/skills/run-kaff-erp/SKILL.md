@@ -188,8 +188,21 @@ uses and still works; the *reason* recorded for it is stale. Flagged, not change
   suites report green against the previous build. Stop it first:
 
   ```powershell
-  Get-Process -Name Kaff.Api -ErrorAction SilentlyContinue | Stop-Process -Force
+  Get-CimInstance Win32_Process |
+      Where-Object { $_.CommandLine -match 'Kaff\.Api' } |
+      ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
   ```
+
+  > **⚠️ Corrected 2026-08-30 by the Scrum Master, after this cost two stalls in one day.** This
+  > block used to read `Get-Process -Name Kaff.Api`, **and that does not match the process this same
+  > file tells you to start.** §1 above starts the API with `dotnet run --project ...`, which
+  > executes the app through `dotnet.exe`; the process name is then `dotnet`, not `Kaff.Api`, and
+  > `Get-Process -Name Kaff.Api` throws *"Cannot find a process with the name"* while the DLLs are
+  > held open. It matches only when the app was launched through the apphost directly
+  > (`.\src\Api\bin\Release\net10.0\Kaff.Api.exe`, which does exist — verified 2026-08-30). **A check
+  > that reports "not running" for the very thing it is checking for is
+  > `meetings/2026-08-27-sprint-1-retrospective.md` §1's own pattern**: a passing check and an absent
+  > check producing identical output. Matching on the command line catches both launch forms.
 
 - **⚠️ And a leftover `Kaff.Api.Tests` host is worse, because the build *succeeds*.** The gotcha above
   fails loudly. This one does not. A stranded **`Kaff.Api.Tests`** process locks `Kaff.Api.dll` in the

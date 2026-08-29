@@ -70,6 +70,24 @@ Consensus among agents is the most confident possible way to be wrong.
 Backend and Frontend run concurrently only where file ownership is disjoint (`agents.md` principle
 3). Nobody starts a `BLOCKED` story.
 
+> **⚠️ Amended 2026-08-30 by the Scrum Master, after it cost two stalls in one day. Disjoint file
+> ownership is not sufficient. Run at most one agent on this machine at a time.**
+>
+> On 2026-08-29 Frontend and Backend ran concurrently with **genuinely disjoint file ownership** —
+> `src/Web/` against `src/Infrastructure/` and `tests/Api.Tests/` — and principle 3 was satisfied
+> throughout. They collided anyway, on the two things the rule does not name: **port 5080** (which
+> `src/Web/proxy.conf.json` hardcodes, so both agents need the same one) and **`Kaff.Domain.dll` /
+> `Kaff.Infrastructure.dll`**, which a running API holds open against the other agent's build. One
+> agent then killed the other's API host by PID. D-092 records working around it by starting from a
+> checked-in binary with `Kaff__ApplyMigrationsOnStartup=false`, and by stopping the API afterwards —
+> a workaround, not a fix.
+>
+> **The machine is the shared resource, not the files.** Principle 3 is about not overwriting each
+> other's work; this is about not being able to build or run at all. Both must hold, and the second
+> one is a hard serial constraint until the stack can be brought up twice on one box.
+
+
+
 ### 3. Verification — a fresh session, always
 
 The Verifier reads `spec.md` and the QA test cases. **It never reads the implementation**, and it
