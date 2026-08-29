@@ -122,20 +122,17 @@ export class SignInPage {
       this.auth.set(session);
 
       if (session.mustChangePassword) {
-        // ⚠️ **Deliberately not a redirect, because there is nowhere to redirect to.**
-        //
-        // Rule 8 sends this user straight to the change-password screen. That screen is KAFF-103's
-        // (`AC-103-I`) and is not built. Navigating to `/change-password` today would fall through
-        // `app.routes.ts`'s wildcard onto the landing page — a signed-in user reaching the
-        // application with a password the Owner set, which is the one outcome rule 8 exists to
-        // prevent, arrived at by code that looks correct.
-        //
-        // Holding them here with the server's own key is honest and safe: they cannot proceed, and
-        // nothing pretends the screen exists. The server is what actually stops them — D-086 put the
-        // check inside `PermissionEvaluator`, so every permission-gated route refuses this session by
-        // construction. `AC-101b-F` moves to KAFF-103 with the screen.
-        this.refusal.set('errors.auth.password_change_required');
-        this.model.update((current) => ({ ...current, password: '' }));
+        // Rule 8 sends this user straight to the change-password screen — KAFF-103's, `AC-103-I`,
+        // built alongside `AC-101b-F`. The hold this branch used to apply (`decisions.md` D-091)
+        // existed only because the screen did not: there was nowhere to redirect to, and navigating
+        // to `/change-password` would have fallen through `app.routes.ts`'s wildcard onto the landing
+        // page — a signed-in user with an Owner-set password reaching the application, the one
+        // outcome rule 8 exists to prevent, arrived at by code that looked correct. The screen now
+        // exists, so this is a real redirect rather than a message. The server is still what actually
+        // stops them if they navigate elsewhere by hand — D-086 put the check inside
+        // `PermissionEvaluator`, so every permission-gated route refuses this session by construction;
+        // this redirect and `mustChangePasswordGuard` are convenience, not the enforcement.
+        await this.router.navigateByUrl('/change-password');
         return undefined;
       }
 

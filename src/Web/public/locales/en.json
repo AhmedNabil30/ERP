@@ -10,6 +10,18 @@
   "auth.login.submit": "Sign in",
   "auth.login.submitting": "Signing in…",
 
+  "auth.password.title": "Change password",
+  "auth.password.must_change": "You must change your temporary password before continuing.",
+  "auth.field.current_password": "Current password",
+  "auth.field.new_password": "New password",
+  "auth.field.confirm_password": "Confirm new password",
+  "auth.password.rule_min_length": "At least 8 characters. No symbols or numbers required.",
+  "auth.password.hint.ends_other_sessions": "This will sign you out of your other devices.",
+  "auth.password.mismatch": "The passwords do not match.",
+  "auth.password.changed": "Password changed.",
+
+  "action.save": "Save",
+
   "status.title": "System status",
   "status.loading": "Loading…",
   "status.refresh": "Refresh",

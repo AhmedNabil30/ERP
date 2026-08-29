@@ -37,4 +37,19 @@ export class AuthApi {
   async me(): Promise<Session> {
     return await firstValueFrom(this.http.get<Session>('api/auth/me'));
   }
+
+  /**
+   * Replaces the caller's own password. KAFF-103.
+   *
+   * Resolves on `204`. `currentPassword` is required — `AC-103-D` — and there is no third field:
+   * `confirmPassword` is a client-side-only check (`change-password-page.ts`), the same shape
+   * `CreateOwner.Request` already documents for the setup screen's own confirm field. The response
+   * carries a fresh session cookie (decisions.md D-086), so the caller re-fetches {@link me} rather
+   * than assuming what it now holds.
+   */
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    await firstValueFrom(
+      this.http.post<void>('api/auth/change-password', { currentPassword, newPassword }),
+    );
+  }
 }

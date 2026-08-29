@@ -10,6 +10,18 @@
   "auth.login.submit": "دخول",
   "auth.login.submitting": "جارٍ تسجيل الدخول…",
 
+  "auth.password.title": "تغيير كلمة المرور",
+  "auth.password.must_change": "يجب تغيير كلمة المرور المؤقتة قبل المتابعة.",
+  "auth.field.current_password": "كلمة المرور الحالية",
+  "auth.field.new_password": "كلمة المرور الجديدة",
+  "auth.field.confirm_password": "تأكيد كلمة المرور الجديدة",
+  "auth.password.rule_min_length": "8 أحرف على الأقل، بلا رموز أو أرقام إلزامية.",
+  "auth.password.hint.ends_other_sessions": "سيؤدي هذا إلى تسجيل خروجك من أجهزتك الأخرى.",
+  "auth.password.mismatch": "كلمتا المرور غير متطابقتين.",
+  "auth.password.changed": "تم تغيير كلمة المرور.",
+
+  "action.save": "حفظ",
+
   "status.title": "حالة النظام",
   "status.loading": "جارٍ التحميل…",
   "status.refresh": "تحديث",

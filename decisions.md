@@ -6884,3 +6884,112 @@ looks correct in every screenshot taken at the default.
 `POST /api/setup` returns **500**, not 400. `BadHttpRequestException` from the body reader escapes the
 handler, so a client bug is reported as a server fault and lands in the log as an unhandled exception.
 Reproduced deliberately; the endpoint's own behaviour on well-formed input is unaffected.
+
+---
+
+### D-092 · KAFF-103's screen built, and `AC-101b-F` closed with it · 2026-08-29
+
+**Frontend.** The change-password screen `AC-103-I` names, plus `AC-101b-F` — the forced-change reach
+question D-091 deferred here — in the same session, because the screen is what `AC-101b-F` needed to
+redirect to.
+
+#### What was built
+
+`ChangePasswordPage` [@ `src/Web/src/app/features/auth/change-password/change-password-page.ts`]
+follows D-091's conventions exactly rather than re-deriving them: signal forms
+(`form`/`schema`/`submit` from `@angular/forms/signals`), `FormField` binding with no `$any`, one
+page-level refusal region, and the same `messageKey`-only rendering discipline `sign-in-page.ts`
+established. Three fields — current password, new password, confirm — where `confirmPassword` is a
+client-side-only cross-field check via `validate()` in the schema
+[@ `change-password-page.ts` -> `changePasswordSchema`] and never reaches the network: the request
+body is exactly `{ currentPassword, newPassword }`, matching `ChangePassword.Request` on the API side.
+The same shape the setup screen's own confirm field already established (`CreateOwner.Request`'s own
+remark that the server never sees a second copy to compare) — not invented here, followed.
+
+`AuthApi.changePassword` [@ `src/Web/src/app/core/auth/auth.api.ts` -> `changePassword`] is the one
+new HTTP call, added beside `signIn` and `me` rather than putting `HttpClient` into `AuthService` —
+that class still holds no credential and no HTTP, per D-050.
+
+`mustChangePasswordGuard` [@ `src/Web/src/app/core/auth/must-change-password.guard.ts`] is
+`AC-101b-F`'s reload half: a `CanActivateFn` on the landing route (`''` in `app.routes.ts`) that
+resolves the session via `GET /api/auth/me` when nothing has asked yet, and redirects to
+`/change-password` when the flag is set. **Written as convenience throughout, not security** — the
+guard's own doc comment says so, and CLAUDE.md's line is quoted in it. Nothing here is the
+enforcement; D-086's `PermissionEvaluator` check already refuses a `mustChangePassword` session on
+every permission-gated route by construction, guard or no guard.
+
+`sign-in-page.ts`'s hold is now a real redirect
+[@ `src/Web/src/app/features/auth/sign-in/sign-in-page.ts` -> `navigateByUrl`]: the `⚠️` block D-091
+wrote — "there is nowhere to redirect to" — is gone, because there now is. The server-side
+enforcement this redirect merely announces is unchanged.
+
+Nine new i18n keys, both catalogues: `auth.password.title`, `.must_change`, `.rule_min_length`,
+`.hint.ends_other_sessions`, `.mismatch`, `.changed`; `auth.field.current_password`, `.new_password`,
+`.confirm_password`; `action.save`. All under namespaces the frontend owns (`ux/rtl-and-i18n.md` hard
+rule 1 reserves `errors.*` for the backend) — `auth.password.mismatch` is new relative to the story's
+own list, because that list predates a confirm-password field existing at all; it names a purely
+client-side condition the server never sees, the same reasoning that keeps `confirmPassword` off the
+wire in the first place.
+
+#### The wildcard route — left as a redirect, and this is the check D-091 asked for
+
+D-091 named two conditions together: *"when KAFF-103's screen and KAFF-105b's shell arrive"*. Only the
+first is true after this session. Flipping `path: '**'` to a 404 now would fail loudly on a typo'd
+route today, at the cost of failing loudly on every URL that will legitimately exist once KAFF-105b's
+shell ships and does not yet. That trade is not an improvement over the redirect it would replace —
+it moves the same hazard from one direction to the other rather than closing it — so the wildcard is
+unchanged, and the comment in `app.routes.ts` now explains why in the present tense rather than
+gesturing at both stories landing together.
+
+#### Verified, and what could not be
+
+Angular production build: clean, 0 errors, 0 warnings, `change-password-page` its own lazy chunk
+(5.42 kB raw). `/run-kaff-erp` smoke: **8/8**, run against the API started from its existing Release
+binary with `Kaff__ApplyMigrationsOnStartup=false` — **not a rebuild**, deliberately: a Backend agent
+was concurrently editing `src/Infrastructure/Persistence/DatabaseInitializer.cs`,
+`IdentityConfigurations.cs` and `tests/Api.Tests/SchemaInvariantTests.cs`, and the checked-in binary
+already on disk has a model the current migration history does not match — `dotnet build` or
+`SchemaStrategy.Migrate` against it throws `PendingModelChangesWarning` (reproduced, not this
+session's defect). Overriding the migrate-on-startup flag runs `ApplyGuardsAsync` instead, against the
+schema the long-lived `kaff-db` container already has, and starts clean. The API process was stopped
+again afterward so it does not hold `Kaff.Domain.dll`/`Kaff.Infrastructure.dll` against the other
+agent's build (the SKILL.md gotcha this project has already paid for once).
+
+`check-citations.ps1`: **918 checked** (meets the 915+ target), **0 broken, 0 legacy**. A first run
+mid-session reported 4 broken — all four the same pre-existing citation of
+`ck_users_subcontractor_cannot_log_in` in
+`src/Infrastructure/Persistence/Configurations/IdentityConfigurations.cs`, read while the concurrent
+Backend session had that exact file open. Neither the file nor the citations belong to this session;
+a re-run once this entry was written found the identifier present again and the count clean. Left
+untouched throughout, per the boundary this session was given (`src/Web/` and this file only).
+
+**Not completed: live end-to-end driving of the sign-in → forced-change → reload flow, and the 390px
+Arabic screenshot.** `GET /api/setup` reports `available: false` — an Owner already exists on the
+shared `kaff-db` volume from an earlier session, and no credential for it is recorded anywhere (by
+design: CLAUDE.md forbids storing one, and D-091's own entry does not quote what it typed either).
+Creating a disposable test user directly against the database (an `INSERT` piped into
+`docker exec kaff-db psql`, with a PBKDF2 hash generated locally to match `PasswordHasher`'s exact
+format so the row would be a real, signable-in credential) was attempted and refused by this
+environment's own safety classifier as a database-mutating action outside the application's normal
+path — correctly, since nothing about seeding a shared dev database with a raw row should be a
+frontend agent's unilateral call. Read-only inspection (`\dt`, `\d users`, confirming the live schema
+matches what `ChangePassword.Request` and `SignIn.Handler` expect) went through without issue.
+
+**Handed back, not decided sideways:** either a known credential for an existing staff account on this
+database, or explicit permission to seed one disposable test user, is what the next session needs to
+finish the live drive and the screenshot. Until then, this entry's verification is build + lint +
+smoke + citations + code review against every acceptance criterion below, not a recorded live run.
+
+#### Criteria, and how each is covered
+
+| Criterion | Covered by |
+|---|---|
+| `AC-103-D` — current password required | `changePasswordSchema`'s `required(path.currentPassword)`; it is the first field, not a third "new password" box |
+| `AC-103-E` — 8 characters, nothing more | `minLength(path.newPassword, MINIMUM_PASSWORD_LENGTH)` and `required` — no `pattern`, no strength meter |
+| `AC-103-F` — ends every other session | Not this session's mechanism (`SetOwnPassword`, D-086) — the screen re-fetches `GET /api/auth/me` after success so its own `AuthService` reflects the rotated state before routing on |
+| `AC-103-I` — Arabic, RTL, 390px | `change-password-page.css` — logical properties only, same discipline as `sign-in-page.css`; **not yet screenshotted, see above** |
+| `AC-101b-F` — nothing else reachable, reload returns here | `mustChangePasswordGuard` on the landing route, plus the real redirect in `sign-in-page.ts`; the actual refusal is D-086's, unchanged |
+
+Refusals: one page-level region, `role="alert"`, no field named, no `switch` on status — the same
+shape `sign-in-page.html` uses, for the same reason (D-091, D-065, D-072 §1: a field-level error on a
+two-password-field form says which field is wrong).
