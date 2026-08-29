@@ -30,6 +30,24 @@ public sealed class ProbeEndpoint : IEndpoint
     public const string AnonymousRoute = "/probe/anonymous";
 
     /// <summary>
+    /// Throws <see cref="BadHttpRequestException"/> so the exception handler's status-code selector is
+    /// exercised by a route rather than asserted about.
+    /// </summary>
+    /// <remarks>
+    /// The exception carries <c>StatusCode = 400</c>; without the selector in <c>Program</c> this
+    /// answers <c>500</c>, which is the defect found against <c>POST /api/setup</c> on 2026-08-28.
+    /// Anonymous, because authorization runs before binding and a refused caller never reaches the
+    /// handler — which is the same reason <c>change-password</c> answered <c>401</c> rather than
+    /// <c>500</c> to a malformed body while every other endpoint answered <c>500</c>.
+    /// </remarks>
+    public const string BadRequestThrowRoute = "/probe/bad-request-throw";
+
+    /// <summary>
+    /// Binds a JSON body, so a malformed one exercises the real binding failure path.
+    /// </summary>
+    public const string BodyBindingRoute = "/probe/body";
+
+    /// <summary>
     /// Project-scoped, but reachable by HR without an assignment. The one route where global reach
     /// and a project scope meet, which is where Karim's 2026-08-20 HR ruling actually lands.
     /// </summary>
@@ -91,6 +109,12 @@ public sealed class ProbeEndpoint : IEndpoint
         ArgumentNullException.ThrowIfNull(app);
 
         app.MapGet(AnonymousRoute, () => Results.Ok("open"))
+            .AllowAnonymous();
+
+        app.MapGet(BadRequestThrowRoute, IResult () => throw new BadHttpRequestException("probe", 400))
+            .AllowAnonymous();
+
+        app.MapPost(BodyBindingRoute, (BodyProbe body) => Results.Ok(body.Value))
             .AllowAnonymous();
 
         app.MapGet(CompanyRoute, () => Results.Ok("company"))
@@ -161,4 +185,7 @@ public sealed class ProbeEndpoint : IEndpoint
 
         return Results.Ok(projectId);
     }
+
+    /// <summary>The body <see cref="BodyBindingRoute"/> binds. Its shape is irrelevant; being JSON is the point.</summary>
+    public sealed record BodyProbe(string Value);
 }

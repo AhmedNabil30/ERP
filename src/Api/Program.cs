@@ -186,6 +186,24 @@ builder.Services.AddOpenApi();
 // instance rather than the options object being shared.
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+// A malformed request body is the client's defect, and it is a 400 in every environment.
+//
+// ThrowOnBadRequest defaults to TRUE in Development and false everywhere else, so a body with
+// unquoted property names produced a BadHttpRequestException there, fell through to
+// UseExceptionHandler, and came back as 500 — while the same request against Staging answered 400.
+// Every endpoint that binds a JSON body, not POST /api/setup where it was found: sign-in answers the
+// same way, and change-password only escapes it because the fallback policy refuses the caller before
+// binding runs.
+//
+// Two things were wrong and this is the first. The environment-dependent default meant the shape a
+// developer saw was not the shape a client got, and a client's malformed JSON was logged as
+// "An unhandled exception has occurred while executing the request" — a genuine fault and a typo in a
+// request body are not the same event and must not read alike in the log.
+//
+// Set explicitly rather than left to the environment: uniform is the property being bought.
+builder.Services.Configure<RouteHandlerOptions>(options => options.ThrowOnBadRequest = false);
+
 builder.Services.AddKaffEndpoints(typeof(Program).Assembly);
 
 string[] allowedOrigins = builder.Configuration.GetSection("Kaff:AllowedOrigins").Get<string[]>() ?? [];
@@ -301,7 +319,21 @@ await using (AsyncServiceScope scope = app.Services.CreateAsyncScope())
 //  Pipeline
 // ---------------------------------------------------------------------------------------------
 
-app.UseExceptionHandler();
+// The second half. BadHttpRequestException carries the status code it means — 400 for a body that is
+// not JSON, 413 for one over the size limit, 400 for a malformed Content-Length — and it is thrown by
+// middleware this application does not control, so turning ThrowOnBadRequest off above does not stop
+// it arriving here. Without a selector UseExceptionHandler calls all of them 500.
+//
+// The refusal body is unaffected: CustomizeProblemDetails above still fills in the messageKey it
+// fills in for any other status, which for a framework-produced 400 is none — W-5, open with the
+// Architect, and deliberately not widened here.
+app.UseExceptionHandler(new ExceptionHandlerOptions
+{
+    StatusCodeSelector = exception => exception is BadHttpRequestException badRequest
+        ? badRequest.StatusCode
+        : StatusCodes.Status500InternalServerError,
+});
+
 app.UseStatusCodePages();
 
 if (app.Environment.IsDevelopment())
