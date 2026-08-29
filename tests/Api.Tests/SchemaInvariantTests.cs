@@ -3,6 +3,7 @@ using Kaff.Domain.Common;
 using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -221,6 +222,65 @@ public sealed class SchemaInvariantTests
         IReadOnlyList<string> after = await initializer.FindMissingGuardsAsync(Ct);
         after.Should().BeEmpty("the constraint was restored");
     }
+
+    /// <summary>
+    /// <c>V-27-A</c>. The written-out guard list and the EF model say the same thing, both ways round.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Neither list can catch a regression alone, which is why there are two.</b> D-064 derived the
+    /// required check constraints from the model, because a hand-written list is one somebody forgets
+    /// to extend. The Verifier then deleted <c>ck_users_subcontractor_cannot_log_in</c> from
+    /// <c>IdentityConfigurations</c> and watched 97/97 and 215/215 stay green,
+    /// <c>A_dropped_check_constraint_is_reported_as_a_missing_guard</c> included: a derived list
+    /// deletes its own expectation in the same edit, so the D-033 start-up refusal cannot fire and
+    /// <c>/api/health</c> goes on reporting <c>guardsInstalled</c>
+    /// (qa/slice-1/verification-2026-08-27.md, <c>V-27-A</c>).
+    /// </para>
+    /// <para>
+    /// <b>The two directions are two different defects.</b> A name in
+    /// <see cref="DatabaseInitializer.RequiredCheckConstraints"/> that the model no longer declares is
+    /// a rule that left the schema — and the host will already have refused to boot before this test
+    /// ran, because the fixture builds the database from the model and the constraint is therefore
+    /// absent from it. That is the trigger-class coverage the check constraints did not have. A name
+    /// in the model that is not written here is D-064's forget-to-extend, arriving as a new constraint
+    /// nobody added to the list.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void The_written_out_check_constraints_and_the_model_agree()
+    {
+        using KaffDbContext context = _database.CreateBareContext();
+
+        IReadOnlyList<string> model = DatabaseInitializer.ModelCheckConstraints(
+            context.GetService<IDesignTimeModel>().Model);
+
+        model.Except(DatabaseInitializer.RequiredCheckConstraints, StringComparer.Ordinal)
+            .Should().BeEmpty(
+                "a check constraint declared in Persistence/Configurations must also be written out in "
+                + "DatabaseInitializer.RequiredCheckConstraints, or nothing notices the day it is "
+                + "deleted from the model again — decisions.md D-064's own forget-to-extend risk");
+
+        DatabaseInitializer.RequiredCheckConstraints.Except(model, StringComparer.Ordinal)
+            .Should().BeEmpty(
+                "a constraint written out as required but no longer declared by the model has left the "
+                + "schema. If the removal is deliberate it is two edits and a decisions.md entry, not "
+                + "one edit and a green suite (V-27-A)");
+    }
+
+    /// <summary>
+    /// The count is stated, so a list that quietly halved is visible rather than merely consistent.
+    /// </summary>
+    /// <remarks>
+    /// Both assertions above compare the two lists to each other. Deleting a constraint from the model
+    /// <b>and</b> from the written list satisfies both — the two-file act is deliberate by design, and
+    /// this is the third statement that makes it loud. 30 on 2026-08-29, the number the Verifier
+    /// counted (qa/slice-1/verification-2026-08-27.md §5). Change it when a slice adds constraints, in
+    /// the same commit that adds them.
+    /// </remarks>
+    [Fact]
+    public void Thirty_check_constraints_are_required()
+        => DatabaseInitializer.RequiredCheckConstraints.Should().HaveCount(30);
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 }

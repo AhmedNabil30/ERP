@@ -7014,3 +7014,74 @@ dev database.
 Refusals: one page-level region, `role="alert"`, no field named, no `switch` on status — the same
 shape `sign-in-page.html` uses, for the same reason (D-091, D-065, D-072 §1: a field-level error on a
 two-password-field form says which field is wrong).
+
+---
+
+### D-093 · `V-27-A` fixed — a required list that cannot be edited by the edit it is guarding against · 2026-08-29
+
+**Backend. `V-27-A`, both halves.** qa/slice-1/verification-2026-08-27.md §2 and §5.
+
+**What was wrong, and it was not the constraint.** `ck_users_subcontractor_cannot_log_in` was covered
+by nothing — delete it from `IdentityConfigurations` and both suites stayed green. That is the first
+half and it is the smaller one. The second half is that **the mechanism built to notice exactly this
+could not**: `FindMissingGuardsAsync` derived its required check-constraint list from the EF model
+(D-064), so deleting `HasCheckConstraint` deleted the expectation in the same edit. `missingGuards`
+stayed `[]`, `/api/health` went on reporting `guardsInstalled`, `smoke` went on passing, and **D-033's
+refusal to start cannot fire for a guard the model no longer declares.**
+
+**D-064 was not wrong; it was one-directional.** Its reasoning — *"a hand-written list of 28 names is
+a list somebody forgets to extend"* — is true, and the derived list genuinely catches the case it was
+built for: a **database** that drifted from the model. What it cannot catch is a **model** that lost a
+rule. The triggers, which D-064 left as a hand-written list and whose comment worries about exactly
+that, are the half that works: `MUT-G4` showed removing one stops the host booting.
+
+**Decision. Both lists, and a test that they agree.**
+
+1. `DatabaseInitializer.RequiredCheckConstraints` — all **30** names, written out, grouped by the
+   configuration file that declares them
+   [Verified: 2026-08-29 @ `src/Infrastructure/Persistence/DatabaseInitializer.cs` ->
+   `RequiredCheckConstraints`].
+2. `FindMissingGuardsAsync` requires the **union** of that list and the model's, so a name in either
+   and absent from the database is a missing guard
+   [Verified: 2026-08-29 @ `src/Infrastructure/Persistence/DatabaseInitializer.cs` ->
+   `FindMissingGuardsAsync`].
+3. `ModelCheckConstraints` exposes the derived half so a test can compare the two
+   [Verified: 2026-08-29 @ `src/Infrastructure/Persistence/DatabaseInitializer.cs` ->
+   `ModelCheckConstraints`].
+4. `The_written_out_check_constraints_and_the_model_agree` fails in **both** directions — a constraint
+   in the model and not in the list is D-064's forget-to-extend; a constraint in the list and not in
+   the model is `V-27-A`
+   [Verified: 2026-08-29 @ `tests/Api.Tests/SchemaInvariantTests.cs` ->
+   `The_written_out_check_constraints_and_the_model_agree`].
+5. `Thirty_check_constraints_are_required` states the count, because deleting a rule from **both**
+   places satisfies (4) and the deliberate two-file act should still be loud
+   [Verified: 2026-08-29 @ `tests/Api.Tests/SchemaInvariantTests.cs` ->
+   `Thirty_check_constraints_are_required`].
+
+**Watched failing, and the reading is the point.** `MUT-A` re-applied — the four lines deleted from
+`IdentityConfigurations` exactly as the Verifier deleted them. Before: `97/97`, `215/215`, nothing
+red. After this change: **`180 of 217` failed**, and 178 of them fail with
+
+```
+System.InvalidOperationException : Refusing to start: database guards are missing —
+ck_users_subcontractor_cannot_log_in.
+```
+
+**The host does not boot.** That is the trigger-class coverage the check constraints did not have, and
+it is what `MUT-G4` produced for `trg_postings_append_only`. The other two are the new tests, failing
+on their own terms. Reverted; `git status` clean; `217/217` and `97/97` restored.
+
+**How many of the 30 are covered now: 30.** Not by 30 behavioural tests — by one mechanism that does
+not depend on which of them somebody happened to write a test for. The Verifier sampled four and found
+one covered, one covered by accident of hard-coded naming, two not at all; that distribution no longer
+decides anything. `ck_postings_amount_positive`, `ck_postings_distinct_accounts` and
+`ck_postings_not_self_reversing` — the slice-3 money rules §5 names — are three of the thirty.
+
+**What this does not do.** It does not verify the constraint's *expression*, only its name. A
+migration that keeps `ck_postings_amount_positive` and changes its predicate to `amount >= 0` passes
+every check here. That is a real gap and a different, larger mechanism (D-064's "Not done" paragraph
+already scopes the schema-wide comparison); recorded rather than built, because nothing has asked for
+it and the name-level gap was the one that was live.
+
+**Revisit if.** A slice adds check constraints — the count in (5) moves in the same commit, which is
+the intended friction.
