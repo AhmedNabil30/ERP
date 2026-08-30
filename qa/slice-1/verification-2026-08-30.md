@@ -32,9 +32,10 @@ Committed per increment, because ten agents have died in five days on this proje
 | `V-30-A` | **MEDIUM** | The exemption marker is **not** unforgeable. Reflection produces it, the suite reports **227/227** against a route applying none of the three checks — and the claim "the only expression in the language that can produce this metadata" is stated as fact in three places | Backend |
 | `V-30-B` | **LOW** | `IsApplied` proves *metadata*, not *behaviour*. A route can carry the marker and not the filter; nothing asserts a dead session is actually refused on a self-only route | Backend |
 | `V-30-C` | **LOW** | `45a939d` has no `decisions.md` entry, and it is the widest-reaching of the six commits | Backend |
-| `V-30-D` | **MEDIUM** | `Thirty_check_constraints_are_required` asserts the count of the **hand-written list against itself**, not against the database. Deleting a name from both `RequiredCheckConstraints` and its configuration leaves the count assertion the only tripwire, and the model half of `The_written_out_..._agree` cannot see a constraint the model never declared | Backend |
-| `V-30-E` | **LOW** | `AC-110-D` is discharged by a test that passes for the wrong reason — see §7 | QA |
+| `V-30-D` | **LOW** | D-093's *"30 of 30 covered"* is covered **by name only**, and I measured it: replacing a constraint's predicate with `1 = 1` leaves **227/227** green. D-093 records this gap in prose; the measurement is new, and it is the shape that matters for slice 3's money constraints | Backend / Architect |
+| `V-30-E` | **INFO** | Brief correction: the brief's citation for `45a939d` names `AddProblemDetails`, which that commit did not touch | Scrum Master |
 | `V-30-F` | **INFO** | Brief correction: the Scrum Master's `AllowList` hypothesis is **wrong**. The door is shut | Scrum Master |
+| `V-30-G` | **MEDIUM** | `45a939d`'s "every JSON-binding endpoint" is asserted only against **test-host probe routes**, in an environment where half the fix was already the default. No shipped endpoint, and no Development host, is exercised by any test | Backend |
 
 ---
 
@@ -212,3 +213,131 @@ open by construction, it is documented in both the decision and the code, and cl
 reviewer or a wider grep, not a filter — sign-out cannot carry one.**
 
 **All five mutations reverted. `git status` clean. Build 0/0, Api 227/227 restored** before §3 began.
+
+---
+
+## 3. `4885edf` / D-093 — the mechanism claim, tested at the mechanism
+
+D-093's claim is not "30 tests exist"; it is **"30 are covered by one mechanism."** The brief is right
+that testing the mechanism is cheaper than 30 mutations and is the load-bearing thing. Three
+mutations, applied to `ck_users_subcontractor_cannot_log_in` — the constraint `V-26-A` and `V-27-A`
+were both about.
+
+### `MUT-C1` — deleted from the model only. **The mechanism fires.**
+
+The four lines removed from `IdentityConfigurations` exactly as the 2026-08-27 pass removed them
+[Verified: 2026-08-30 @ `src/Infrastructure/Persistence/Configurations/IdentityConfigurations.cs` ->
+`UserConfiguration`]. Build clean, and then:
+
+```
+System.InvalidOperationException : Refusing to start: database guards are missing —
+ck_users_subcontractor_cannot_log_in. The append-only and non-negative-balance rules are not
+enforced on this database.
+```
+
+**190 of 227 failed. The host does not boot.** D-093 reported 180 of 217 on a smaller suite; the
+proportion is the same. The union in `FindMissingGuardsAsync` is what does it — the hand-written half
+still requires the name after the model half has forgotten it
+[Verified: 2026-08-30 @ `src/Infrastructure/Persistence/DatabaseInitializer.cs` ->
+`FindMissingGuardsAsync`]. **`V-27-A` is closed on evidence, and D-064's one-directional gap is
+genuinely shut.**
+
+### `MUT-C2` — deleted from **both** places. **Exactly one test catches it, and it is the right one.**
+
+Removed from `IdentityConfigurations` **and** from `RequiredCheckConstraints`
+[Verified: 2026-08-30 @ `src/Infrastructure/Persistence/DatabaseInitializer.cs` ->
+`RequiredCheckConstraints`]. Build clean; the host boots; **1 of 227 failed**:
+
+```
+failed SchemaInvariantTests.Thirty_check_constraints_are_required
+  Expected DatabaseInitializer.RequiredCheckConstraints to contain 30 item(s), but found 29
+```
+
+D-093 §5's stated purpose, met precisely: the two-list agreement test is satisfied by a consistent
+deletion, and the count is the third statement that makes it loud
+[Verified: 2026-08-30 @ `tests/Api.Tests/SchemaInvariantTests.cs` ->
+`Thirty_check_constraints_are_required`]. **Removing a constraint is now three edits across two
+files.** That is the friction D-093 designed, and it works.
+
+### `V-30-D` — the ceiling, measured rather than asserted
+
+D-093 names this gap itself: *"It does not verify the constraint's expression, only its name."*
+**Measured, because a recorded gap and a measured one are different things** — the retrospective's
+change 4 is precisely about arguments offered in place of demonstrations.
+
+**`MUT-C3`.** Name kept, predicate replaced:
+
+```csharp
+table.HasCheckConstraint("ck_users_subcontractor_cannot_log_in", "1 = 1");
+```
+
+**Build clean. Api suite 227/227. Domain suite unaffected.** The constraint is present in
+`pg_constraint` under the required name, so `FindMissingGuardsAsync` is satisfied; both
+`SchemaInvariantTests` assertions compare *names*; nothing anywhere reads the expression.
+
+**Why this is `LOW` and not higher, stated so nobody escalates it wrongly.** For *this* constraint the
+green is honest: `User.ChangeRole` refuses the conversion in the domain first, with
+`errors.identity.subcontractor_cannot_log_in` and a `409`, so the constraint is genuine defence in
+depth and no legitimate request reaches it
+[Verified: 2026-08-30 @ `tests/Api.Tests/ChangeUserRoleTests.cs` ->
+`Converting_an_account_that_holds_a_credential_into_a_subcontractor_is_refused`]. `V-26-A` closed the
+door that used to reach it.
+
+**Why it is worth recording anyway, and this is the part for slice 3.** D-093's own sentence:
+*"`ck_postings_amount_positive`, `ck_postings_distinct_accounts` and `ck_postings_not_self_reversing`
+— the slice-3 money rules §5 names — are three of the thirty."* Those three have **no domain guard in
+front of them today**, because the code that would post has not been written. When it is, the
+mechanism will report them covered on the strength of their names, and a migration that changes
+`amount > 0` to `amount >= 0` will pass every gate this repository has. CLAUDE.md puts the
+safe-never-negative rule in the database *specifically because* application code is the weaker place
+for it — a predicate nothing reads is the same exposure one level down.
+
+**Routed to Backend and the Architect together**, because whether to build the schema-wide expression
+comparison (D-064's "Not done" paragraph already scopes it) is an architecture call, not a bug fix.
+**I am not asking for it in slice 1.** I am asking that *"30 of 30 covered"* be read as *"30 of 30
+present by name"* wherever it is repeated, and that the money constraints get expression-level cover
+before slice 3 closes, not after.
+
+---
+
+## 4. `ca4db6c` / D-095 — the two allow-lists and the enum refusal
+
+Both predicates are allow-lists today, and each is used at exactly the doors D-095 names
+[Verified: 2026-08-30 @ `src/Domain/Identity/Role.cs` -> `MayHoldStaffSession`;
+@ `src/Domain/Identity/Role.cs` -> `MayHoldPermissions`]. `MayHoldStaffSession` is asked by
+`SignIn.Handler`, `StaffSessionMinter` and `LiveSession.ResolveAsync`; `MayHoldPermissions` is asked
+by `PermissionEvaluator.Evaluate`, at both overloads
+[Verified: 2026-08-30 @ `src/Domain/Authorization/PermissionEvaluator.cs` -> `Evaluate`].
+Seven roles at the staff door, eight at the evaluator, differing by exactly `Role.Client`.
+`Role.Subcontractor` is in neither.
+
+### `MUT-D1` — the mutation D-095's own evidence table does **not** contain
+
+D-095 watched three failures: the reproduction, `MayHoldStaffSession` restored to a deny-list, and
+both restored after the fix. **`MayHoldPermissions` alone was never mutated** — so the evaluator half,
+which is the half every permission-gated endpoint in the system runs through, was fixed on the
+strength of the other half's demonstration.
+
+Restored it to the pre-`ca4db6c` deny-list, `role is not Role.Subcontractor`. Build clean;
+**Domain 106/107**, `A_role_outside_the_enum_is_refused_at_every_door` red. **The gap in D-095's
+evidence is a gap in the record, not in the code** — the test does cover it. Reverted.
+
+### `MUT-D2` — the `Enum.IsDefined` refusal, removed
+
+Deleted from `User.ValidateDepartment`, the join `User.Create` and `User.ChangeRole` share
+[Verified: 2026-08-30 @ `src/Domain/Identity/User.cs` -> `ValidateDepartment`]. Build clean:
+
+| Suite | Result |
+|---|---|
+| Domain | **106 / 107** — `UserTests.A_role_outside_the_enum_is_refused_at_every_door` red |
+| Api | **224 / 227** — `ChangeUserRoleTests.A_role_outside_the_enum_is_refused_and_never_persisted` red at `-1`, `0` and `99`, all three parameters |
+
+D-095's claim that the guard sits at the shared join rather than in one slice's validator is
+**established**: the Domain test asserts `User.Create` refuses `(Role)99` too
+[Verified: 2026-08-30 @ `tests/Domain.Tests/UserTests.cs` ->
+`A_role_outside_the_enum_is_refused_at_every_door`], which is the half a `ChangeUserRole` validator
+would have left open. Reverted.
+
+**One thing D-095 routed and I am not resolving:** the `Role.Subcontractor` conversion question stands
+with Nabil, and the `role = '99'` rows D-095 declined to migrate are a data question for the Architect.
+Neither moved. Not mine to answer.
