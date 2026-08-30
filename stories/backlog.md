@@ -85,6 +85,109 @@ questions merged into it with their origin recorded (action **SM-4**).
 
 ---
 
+## Sprint 2 — open, 2026-08-30 · scope **not yet locked**
+
+**Full reasoning: `meetings/2026-08-30-sprint-2-open.md`.** This is the summary; that file is the
+record, and it carries what was *not* done as well as what was.
+
+**Sprint 2 had been executing for two days with no recorded scope.** Six product commits landed
+against a board describing the tree of three days earlier. What follows is the sprint as it actually
+stands, plus a **proposal** for the rest. **Nabil locks scope. Nothing below is a commitment.**
+
+### Already delivered, before the sprint was opened
+
+| Commit | What | Entry | Independently verified |
+|---|---|---|---|
+| `f2b995b` | **KAFF-101b** — the staff sign-in screen. The first thing that ever rendered here | D-091 | **No** |
+| `332c160` | **KAFF-103's screen**, and `AC-101b-F` closed with it | D-092 | **No** |
+| `4885edf` | **`V-27-A`** — the guard list a regression cannot edit into agreement | D-093 | **No** |
+| `c01959b` | **`V-27-B`** — *"the exemption marker is now unforgeable"* | D-094 | **No** |
+| `ca4db6c` | **`V-27-C`** — a role that is not a role, two predicates that failed open | D-095 | **No** |
+| `45a939d` | A malformed body is **400 in every environment**, not 500 in one | **none exists** | **No** |
+
+The four tech-debt tickets were pulled forward by Nabil from *"before slice 3"* on the grounds that
+**"we do not wait to fix foundational security flaws."** They are not stories and carry no estimate.
+**KAFF-101b is a 3-point story and its `AC-101b-A` and `AC-101b-D` are not closed.**
+
+### The proposal
+
+| # | Item | Pts | Why here |
+|---|---|---:|---|
+| 0 | **Verifier pass over the six commits** | — | **Running now.** Not a story; a gate on everything else |
+| 1 | **KAFF-105b**, API half as written | **3** | Defines the payload everything downstream reads |
+| 2 | **The staff shell** — *story unwritten* | **?** | Blocked on Nabil's reading below, and on the BA writing it |
+| 3 | **KAFF-115** | **3**, likely light | Depends on 1. `AC-101b-D` lands with it |
+| 4 | **`AC-106-H`, `AC-110-D`** | — | Deferrals now spent, never examined by any pass. Folded into item 0 |
+
+**Recommendation: lock 0, 1 and 3; hold the shell.** 105b + 115 as written is 6 points and that is not
+the real number — with the shell and two screens it is realistically 13–16, which `process/agile.md`
+calls *"too big — split it."* The shell is the one piece whose size nobody can state today.
+
+### ⚠️ KAFF-105b cannot discharge the criterion deferred onto it
+
+**All ten of KAFF-105b's criteria — `AC-105b-A` … `AC-105b-J` — are criteria about the
+`GET /api/auth/me` payload. Not one of them renders anything.** `AC-101b-A` requires *"they arrive at
+the staff shell, and the shell's contents come from `GET /api/auth/me`"*; KAFF-105b builds the second
+half of that sentence and none of the first. D-091's deferral was honestly reasoned and the arithmetic
+does not close.
+
+Three readings, **none picked here** — grow KAFF-105b to 8 (`process/agile.md` puts a story spanning
+backend and frontend there); write a shell story; or re-defer `AC-101b-A` to whichever story genuinely
+builds the shell. **This is a scope decision and it is Nabil's.** It decides what sprint 2 is.
+
+The same shape, smaller: `AC-115-J` is *"Arabic, RTL, at mobile width"*, so **KAFF-115 already spans
+both halves at 3 points.** Not re-estimated here; estimates move at refinement.
+
+### Sprint 1, final
+
+| Bucket | Stories | Pts |
+|---|---|---:|
+| **Accepted, standing** | 116, 108, 113, 100, 111, 112, 114 | **25** |
+| **Accepted 2026-08-27 at `559ac45`, then the code moved underneath the verdict** | 109, 105a, 102, 101a, 103 | **19** |
+| **Built and verified with a criterion still held — never accepted** | 106, 110 | **10** |
+| **Unbuilt** | 118 | **3** |
+| | **15** | **57** |
+
+**Nabil's lock stands: 15 stories / 57 points.** Nothing added, cut or re-estimated.
+
+**25 of 57 stand — exactly the figure the sprint-1 close recorded three days and six commits ago.**
+That is the finding, and it is worse than a drop would be. The 2026-08-27 Verifier pass recovered all
+19 of the disputed points; `c01959b` and `ca4db6c` lapsed all 19 again two days later. **The number
+did not move because verification and the fixes verification prompted cancelled each other out.**
+
+Arithmetic, since it has been got wrong before: 3+3+5+5+3+3+3 = 25 · 5+2+2+5+5 = 19 · 5+5 = 10 · 3.
+**25 + 19 + 10 + 3 = 57** across **7 + 5 + 2 + 1 = 15** stories.
+
+**Why the 19 lapsed.** `ca4db6c` turned `StaffSessionRules.MayHoldStaffSession` — KAFF-101a's **own**
+role bar, and called inside `LiveSession.ResolveAsync`, which 102, 103 and 105a all route through —
+from a deny-list into an allow-list; it added an `Enum.IsDefined` refusal to `User.ValidateDepartment`,
+which is KAFF-109's own path; and `c01959b` rewrote how `RequireLiveSession` produces its metadata.
+`meetings/2026-08-27-sprint-1-retrospective.md` §3 change 3: *"When a later commit touches that
+story's files, the acceptance lapses and must say so out loud."* **First time it has fired rather than
+been argued about. KAFF-101a and KAFF-103 have now had it happen twice.**
+
+**The shared-mechanism note, which qualifies every row above.** `ca4db6c` also changed
+`PermissionEvaluator.Evaluate` — the gate *every* permission-checked endpoint runs through — and
+`45a939d` changed the request pipeline for every JSON-binding endpoint. **A story lapses where a
+commit changed behaviour its own criteria assert; it is carried with the exposure named where a shared
+mechanism changed but its behaviour for that story is *pinned*, not asserted.** Here it is pinned
+[Verified: 2026-08-30 @ `tests/Domain.Tests/UserTests.cs` -> `The_two_role_doors_admit_exactly_these`].
+Carried on that basis: KAFF-106, KAFF-108, and every permission-gated story.
+
+**Gates at `601ac04`**, re-run this session through `/run-kaff-erp`: build **0 warnings / 0 errors**
+(`-c Release --no-incremental`), `dotnet format --verify-no-changes` exit **0**, Domain **107/107**,
+Api **227/227**, `scripts/check-citations.ps1` **942 checked, 0 broken, 0 legacy**. **Green is not
+accepted** — that is what `V-27-B` demonstrated at 215/215 against a route applying no checks at all.
+
+### What sprint 2 must not start until
+
+* **The Verifier reports.** Six commits, no independent pass on any. `qa/slice-1/verification-2026-08-30.md`.
+* **Nabil rules on `AC-101b-A`'s reading**, or item 2 stays unwritten.
+* **`KAFF-118`'s cut is still Nabil's** and he has not ruled. *"Move the board"* is not a ruling on
+  scope, the same way *"close sprint 1"* was not.
+
+---
+
 ## Sprint 1 — the committed scope and the build order
 
 **Locked by Nabil at 15 stories / 57 points.** Recorded here 2026-08-22 because until today **the only
@@ -94,7 +197,19 @@ keeps hitting. The backlog lists what exists; this section says what was *agreed
 **Deferred — 10 stories, 33 points:** KAFF-101b, 104, 105b, 115, 117, 119, 120, 121, 123, 124.
 **KAFF-107 folded** into KAFF-106 and KAFF-108 (16/59 → 15/57). **KAFF-122 superseded** by KAFF-416.
 
-### Sprint 1 — closed and recomputed, 2026-08-26 at `e9f3dcf`
+### ~~Sprint 1 — closed and recomputed, 2026-08-26 at `e9f3dcf`~~ — **SUPERSEDED 2026-08-30**
+
+> **⚠️ The five-bucket table below is the state at `e9f3dcf` and is no longer current. Read
+> *"Sprint 1, final"* in the Sprint 2 section above instead.** The 2026-08-27 Verifier pass accepted
+> all five of the *"rejected"* and *"moved-underneath"* stories at `559ac45`, collapsing the middle
+> two buckets into one; `c01959b` and `ca4db6c` then lapsed all five again
+> (`meetings/2026-08-30-sprint-2-open.md` §2.2).
+>
+> **Its arithmetic was right and stays right — 25 of 57 — and the current figure is the same 25.**
+> That is not the table surviving; it is two opposite movements of 19 points cancelling.
+>
+> Left in place rather than edited, per SM-29's own practice: what a document claimed and when is the
+> record. The correction is loud, not silent.
 
 **Supersedes every build order below.** Every story in the 2026-08-25 order is built except
 `KAFF-118`, so the order is spent; it is left in place because the reasoning that produced it is the

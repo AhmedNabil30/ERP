@@ -127,18 +127,34 @@ split cheap. **The reviewing step is not optional; it is the other half of the s
 
 | Bucket | Stories | Pts |
 |---|---|---:|
-| **Accepted, standing** | 116, 113, 100, 111, 112, 114 | **20** |
-| **Accepted 2026-08-27, then the code moved underneath the verdict** | 109, 105a, 102, 101a, 103 | **19** |
+| **Accepted, standing** | 116, 108, 113, 100, 111, 112, 114 | **25** |
+| **Accepted 2026-08-27 at `559ac45`, then the code moved underneath the verdict** | 109, 105a, 102, 101a, 103 | **19** |
 | **Built and verified with a criterion still held — never accepted** | 106, 110 | **10** |
 | **Unbuilt** | 118 | **3** |
 | | **15** | **57** |
 
 **Nabil's lock stands: 15 stories / 57 points.** Nothing was added, cut or re-estimated here.
+Arithmetic, because this table was got wrong once already in this session: 3+3+5+5+3+3+3 = 25 ·
+5+2+2+5+5 = 19 · 5+5 = 10 · 3. **25 + 19 + 10 + 3 = 57** across **7 + 5 + 2 + 1 = 15** stories.
 
-**20 of 57 points stand.** That is *fewer* than the 25 the close recorded, and the arithmetic is not a
-regression in the code — it is 106 and 110 being put back in the bucket they were always in, minus
-nothing, plus 19 points that were briefly recovered by the 2026-08-27 pass and lapsed three days
-later.
+**25 of 57 points stand — exactly the figure the close recorded three days and six commits ago.**
+
+**That is worse than a drop would be, and it is the sprint's finding.** A drop would mean something
+broke. This means the 2026-08-27 pass recovered all 19 disputed points and the fixes that pass
+prompted lapsed all 19 again two days later. **The number did not move because verification and the
+work verification produced cancelled each other out.** KAFF-106 and KAFF-110's 10 points were never in
+the standing 25 and are not a change here — the close had them in the right bucket all along; only
+their *story status lines* claimed otherwise (§2.4).
+
+> **⚠️ Corrected in this file before it was read by anyone.** The first version of this table dropped
+> **KAFF-108** from the accepted bucket and reported **20 of 57**, then built a paragraph on the
+> difference. KAFF-108 is 3 points, has never moved bucket, and 25 is right.
+>
+> **I caught it by re-deriving the arithmetic rather than by re-reading the prose**, which is the only
+> reason it is not in the repository. **It is the second wrong fact this session produced** — §2.4 is
+> the first — and both were mine, in a session whose entire subject is claims that age badly. Recorded
+> rather than quietly fixed, because a Scrum Master document that hides its own corrections is asking
+> to be trusted more than the stories it polices.
 
 **No story in this sprint has passed Nabil's acceptance gate.** `process/agile.md` §4 makes acceptance
 Nabil running the demo script. **Two screens now exist, so for the first time there is something to
@@ -476,8 +492,13 @@ that claim too.
 
 ## 9. The one thing Nabil should know
 
-**The board was three days behind the work, and moving it forward cost 19 points rather than
-recovering them.**
+**Three days, six commits, and the board's headline number is exactly where the close left it: 25 of
+57 points stand.**
+
+**A drop would have been better news, because a drop means something broke and can be fixed.** This
+is 19 points recovered by verification and the same 19 lost to the fixes that verification prompted —
+two opposite movements of the same size, which is why the number looks like nothing happened when in
+fact a great deal did.
 
 The 2026-08-27 Verifier pass did what the close asked — it reached all five stories and accepted all
 five, closing the sprint's central finding. **Two days later four commits moved the code underneath
