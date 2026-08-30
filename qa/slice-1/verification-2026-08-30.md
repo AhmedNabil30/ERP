@@ -36,6 +36,15 @@ Committed per increment, because ten agents have died in five days on this proje
 | `V-30-E` | **INFO** | Brief correction: the brief's citation for `45a939d` names `AddProblemDetails`, which that commit did not touch | Scrum Master |
 | `V-30-F` | **INFO** | Brief correction: the Scrum Master's `AllowList` hypothesis is **wrong**. The door is shut | Scrum Master |
 | `V-30-G` | **MEDIUM** | `45a939d`'s "every JSON-binding endpoint" is asserted only against **test-host probe routes**, in an environment where half the fix was already the default. No shipped endpoint, and no Development host, is exercised by any test | Backend |
+| `V-30-H` | **LOW** | `SKILL.md`'s Gotchas describe a `driver.mjs click` command that does not exist — the dispatch switch has `health`, `api`, `shot`, `eval`, `smoke`, `flow` and nothing else | Backend |
+| `V-30-I` | **INFO** | `AC-106-H` and `AC-105a-C` contradict each other in committed text about whether `GET /api/auth/me` is reachable while `mustChangePassword` is true. Both behaviours observed. **Routed, not resolved** — it is one of Nabil's four open questions | BA → Nabil |
+
+### Verdicts at a glance
+
+**Six commits: all ACCEPT, none rejected.** Five lapsed acceptances (KAFF-109, 105a, 102, 101a, 103):
+**all re-established at `aa8a9ca`**, each on a mutation I watched fail today or a live observation of
+my own — none on the author's evidence. `AC-106-H` and `AC-110-D`: **both discharged**; the stories
+that own them, KAFF-106 and KAFF-110, remain **not accepted**. Skipped: **14**, counted in §12.
 
 ---
 
@@ -341,3 +350,364 @@ would have left open. Reverted.
 **One thing D-095 routed and I am not resolving:** the `Role.Subcontractor` conversion question stands
 with Nabil, and the `role = '99'` rows D-095 declined to migrate are a data question for the Architect.
 Neither moved. Not mine to answer.
+
+---
+
+## 5. `45a939d` — the reach, driven rather than argued
+
+### `V-30-E` — brief correction, first
+
+The brief cites this commit as
+`[Verified: 2026-08-30 @ `src/Api/Program.cs` -> `AddProblemDetails`]`. **`45a939d` does not touch
+`AddProblemDetails`.** The identifier exists, so the citation checker passes it — which is SM-31's
+own blind spot: a citation that resolves to the wrong thing rather than to nothing. The commit's two
+edits are `Configure<RouteHandlerOptions>` and an `ExceptionHandlerOptions` with a
+`StatusCodeSelector` replacing a bare `app.UseExceptionHandler()`
+[Verified: 2026-08-30 — `git diff 45a939d~1 45a939d -- src/Api/Program.cs`]. `AddProblemDetails` and
+its `CustomizeProblemDetails` are untouched, which is the point the commit makes about the refusal
+body being unaffected. Routed to the Scrum Master.
+
+### The behaviour holds beyond the route its tests name — **driven in Development**
+
+The brief asks the right question and the tests do not answer it. **Every assertion in
+`MalformedRequestTests` runs against test-host probe routes** — `ProbeEndpoint.BodyBindingRoute` and
+`ProbeEndpoint.BadRequestThrowRoute`
+[Verified: 2026-08-30 @ `tests/Api.Tests/MalformedRequestTests.cs` ->
+`A_malformed_json_body_is_refused_as_a_client_error`] — in the `Testing` environment, where the
+file's own remarks admit *"`ThrowOnBadRequest` was already `false` here."* **No shipped endpoint and
+no Development host is exercised by any test in the suite.**
+
+So I drove it. API started through `/run-kaff-erp` §1 with `ASPNETCORE_ENVIRONMENT=Development` — the
+environment the defect lived in — and probed with `driver.mjs api`:
+
+| Route | `{value: "x"}` | `{"a":1}}}` | `[]` |
+|---|---|---|---|
+| `POST /api/setup` | **400** | **400** | **400** |
+| `POST /api/auth/sign-in` | **400** | **400** | **400** |
+| `POST /api/auth/change-password` | 401 | 401 | 401 |
+
+**Nine malformed requests, zero 500s, in the environment that used to give them.** Change-password
+answers `401 / errors.auth.not_authenticated` before binding runs, exactly as the commit's own
+comment predicts — the fallback policy, not this fix. **The reach claim is true.**
+
+**The second question — did anything that depended on the Development-only throw change?** Yes, one
+thing, and it is the intended direction: the API log carries **zero error-level entries** across
+those nine requests (`grep -c "^fail:"` gives `0`). Previously each was logged as *"An unhandled
+exception has occurred while executing the request."* A developer now loses the parse-error detail
+the throw used to surface; the response still carries a `traceId`. **That is a diagnostics trade,
+deliberate and stated in the commit, not a defect.** The 400 body carries no `messageKey` — `W-5`,
+open with the Architect, deliberately not widened. Confirmed, not resolved.
+
+### `V-30-G` — **MEDIUM** · the fix is global, the regression cover is not
+
+Nothing in the suite would notice if `Configure<RouteHandlerOptions>` were deleted **and** the
+environment reverted to deciding, because the suite only ever runs as `Testing`, where the framework
+default already matches the fix.
+`The_bad_request_behaviour_is_set_explicitly_rather_than_by_environment` reads the options value out
+of the built host [Verified: 2026-08-30 @ `tests/Api.Tests/MalformedRequestTests.cs` ->
+`The_bad_request_behaviour_is_set_explicitly_rather_than_by_environment`], which catches the line
+being removed — that is real cover and it is why this is `MEDIUM` and not higher. What it does not
+catch is a future change that reintroduces environment-dependence some other way, and **no assertion
+anywhere names a shipped JSON-binding route.** Routed to Backend: one case against
+`POST /api/auth/sign-in` would close it.
+
+### `V-30-C` — **LOW** · no `decisions.md` entry
+
+Confirmed: the commit touches three files, none of them `decisions.md`, and no `D-` entry describes
+it [Verified: 2026-08-30 — `git show --stat 45a939d`]. This is the widest-reaching of the six commits
+— it changes the refusal shape of every JSON-binding endpoint present and future — and CLAUDE.md's
+Definition of Done requires the entry when anything structural changes. **I agree with the Scrum
+Master's routing to Backend, and I have not written the entry**, which is not mine to write.
+
+---
+
+## 6. The five lapsed acceptances — the lapse is right, and the behaviour still holds
+
+**The lapse is correct as policy.** Retrospective change 3: an acceptance is a claim about a commit,
+and four commits have since moved code those five stories' criteria assert. `ca4db6c` rewrote
+`MayHoldStaffSession`, which is KAFF-101a's own role bar and is called inside
+`LiveSession.ResolveAsync` [Verified: 2026-08-30 @ `src/Api/Authorization/LiveSession.cs` ->
+`ResolveAsync`], the path 102, 103 and 105a all route through. The word `ACCEPTED` had to stop being
+true, and it did.
+
+**And the behaviour is unchanged, which is the separate question.** Both rewritten predicates admit
+**exactly the same nine roles** as the deny-lists they replaced:
+
+| Role | old staff bar | new `MayHoldStaffSession` | old evaluator bar | new `MayHoldPermissions` |
+|---|---|---|---|---|
+| Owner · Finance · TechnicalOffice · SiteEngineer · HeadOfDesign · MarketingSales · Hr | admitted | **admitted** | admitted | **admitted** |
+| Client | refused | **refused** | admitted | **admitted** |
+| Subcontractor | refused | **refused** | refused | **refused** |
+
+Pinned as a nine-row table rather than asserted
+[Verified: 2026-08-30 @ `tests/Domain.Tests/UserTests.cs` -> `The_two_role_doors_admit_exactly_these`].
+The only inputs whose answer changed are values outside the enum, which no legitimate request
+produces. `Enum.IsDefined` is true for all nine, so `User.Create` and `User.ChangeRole` are unchanged
+for every real role. `c01959b` changed the marker's **accessibility**, not what
+`RequireLiveSession`'s filter does.
+
+**Verdicts, re-established at `aa8a9ca` by execution, not by re-reading the 2026-08-27 report.**
+
+| Story | Verdict | Established today by |
+|---|---|---|
+| **KAFF-101a** — sign-in | **ACCEPT** | `MUT-F1` (the `IsActive` half dropped) turns `An_inactive_account_is_refused_like_a_stranger` and `A_deactivated_user_loses_the_open_session_and_cannot_sign_in_again` red; `MUT-D1` / `MUT-D2` cover the role bar and the enum; sign-in driven live end to end through the screen |
+| **KAFF-102** — sign-out | **ACCEPT** | `204` observed live twice in the drive; the route's `AllowAnonymous` exemption re-tested by `MUT-B3`, which proves `AllowList` membership is not free |
+| **KAFF-103** — change your own password | **ACCEPT** | `AC-103-D`, `AC-103-E` and `AC-103-F` all driven or mutated today — §7. `MUT-G` turns four tests red including `The_change_ends_every_other_session` |
+| **KAFF-105a** — `GET /api/auth/me` | **ACCEPT** | Driven live: `200` with `permissions: []` while `mustChangePassword: true`, which is `AC-105a-C` and D-072 §2 exactly; `MUT-F2` turns the forced-change gate red |
+| **KAFF-109** — change a user's role | **ACCEPT** | `MUT-D2` turns `A_role_outside_the_enum_is_refused_and_never_persisted` red at all three parameters |
+
+**None of these five is accepted on the author's evidence.** Each rests on a mutation I applied and
+watched fail today, or on a live observation I made myself.
+
+---
+
+## 7. The two screens — D-092's three half-driven criteria, now driven
+
+**D-092's honesty survives this pass and is worth restating**, because the record is the point: when
+asked to separate *observed* from *code-reviewed*, the Frontend agent downgraded three of its own
+claims rather than defend them. **I did not silently upgrade any of them.** I drove the halves it
+named as missing, and they now close on my evidence, not on its.
+
+Stack through `/run-kaff-erp`: API on 5080, SPA on 4200, `smoke` **8 of 8**, including
+`the Angular application mounted — kaff-root present=true` (the check a Chromium error page cannot
+satisfy). Driven against a **scratch database** created for this pass, so the existing dev rows were
+untouched; the forced-change user was created **through the application** — signed in as the
+bootstrapped Owner, then `POST /api/users` with `temporaryPassword` — never by a raw `INSERT`.
+
+| Criterion | D-092 said | Observed today |
+|---|---|---|
+| `AC-103-D` — a wrong current password refused | *"Not observed… code-reviewed only for that half"* | **Driven at both levels.** Screen: submitted a wrong current password, stayed on `/change-password`, **one** `[role="alert"]` reading `كلمة المرور الحالية غير صحيحة.`, no raw key visible. API: `400 / errors.auth.current_password_incorrect`. **Exactly one alert region — no field-level error**, which is D-091's ⚠️ discipline holding |
+| `AC-103-E` — 8 characters, nothing more | *"Not observed: a 7-character password actually refused"* | **Driven.** `Abcdef1` (7 chars) leaves the submit button **disabled** — the client blocks it; the server independently answers `400 / errors.auth.password_too_short`. `abcdefgh` — eight lower-case letters, no digit, no symbol — is **accepted** and lands on `/`. A mismatched confirm also disables submit, and `confirmPassword` never reaches the wire |
+| `AC-103-F` — ends every other session | *"Not observed this session — only one device was driven"* | **Established at the mechanism, which is stronger than a second browser.** `MUT-G` removed the stamp rotation from `User.StorePasswordHash` and **four tests went red**: `ChangePasswordTests.The_change_ends_every_other_session`, `SignInTests.A_password_change_kills_the_session_on_the_other_device` (which signs in twice and asserts *both* devices die), `MeTests.A_password_changed_on_another_device_ends_this_endpoints_answer_too`, and `PermissionMechanismTests.Rotating_the_security_stamp_kills_every_existing_session` |
+| `AC-101b-F` — reload returns here | already observed by D-092 | **Re-observed at HEAD.** Sign-in posted the credential, called `GET /api/auth/me`, then navigated to `/change-password` |
+| `AC-101b-C/G`, `AC-103-I` — Arabic, RTL, mobile | observed | **Re-observed and looked at.** Screenshot at **390px**: `shots/v30-sign-in-390.png` — brand `كف` top-right, language switch top-left, labels right-aligned above their inputs, `دخول` disabled on an empty form, no untranslated key. `dir=rtl`, `lang=ar`, `scrollWidth - clientWidth = 0` on both screens |
+
+**`AC-101b-A` and `AC-101b-D` are not closed and I did not touch them.** They are deferred to
+KAFF-105b and KAFF-115, neither of which carries a criterion that builds a shell. The brief is right
+that this is a Scrum Master / BA / Nabil matter and not a defect. Recorded, not resolved.
+
+### One thing about the tooling, found while driving
+
+**`driver.mjs` has no `click` command**, though `SKILL.md`'s Gotchas describe one — *"The driver's
+`click` matches trimmed `innerText` first and falls back to a CSS selector."* The dispatch switch has
+exactly `health`, `api`, `shot`, `eval`, `smoke` and `flow`
+[Verified: 2026-08-30 @ `.claude/skills/run-kaff-erp/driver.mjs` -> `main`]. The command table in
+`SKILL.md` is correct; the Gotchas paragraph describes a command that does not exist. I drove the
+forms through `eval` with synthetic `input` events instead. Routed to Backend as a documentation
+defect in the shared skill.
+
+---
+
+## 8. The mechanical prohibition sweep — re-run across all six commits
+
+`CLAUDE.md`'s never-break list, checked against the files today rather than against the last report.
+
+| Prohibition | Result |
+|---|---|
+| No `float` / `double` near money | **0 occurrences** anywhere under `src/`, excluding `obj/` |
+| Money is `decimal` with explicit EF precision | **171** `HasPrecision` calls in `src/Infrastructure/`; exactly **2** bare `decimal` properties in `src/Domain/`, both inside value objects — `Money.Amount` and `Percentage.Fraction` |
+| Never store a balance | `AccountBalance` is `HasNoKey()` + `ToView(...)` [Verified: 2026-08-30 @ `src/Infrastructure/Persistence/Configurations/TreasuryConfigurations.cs` -> `AccountBalanceConfiguration`]. `NormalBalance` is a debit/credit **direction** enum, not an amount. **No stored balance column** |
+| Never update or delete a posting | **No `MapDelete` anywhere in `src/Api/`.** The only two `MapPut`s are `ChangeUserRole` and `MoveUserDepartment`, neither touching postings. Every `Posting` property has a **private setter**, and `ReversesId` is present [Verified: 2026-08-30 @ `src/Domain/Treasury/Posting.cs` -> `ReversesId`] |
+| The hold only grows | Enforced in the domain: a posting *out of* a Hold ledger is refused unless it is `HoldRelease` or a reversal [Verified: 2026-08-30 @ `src/Domain/Treasury/Posting.cs` -> `Create`] |
+| Every endpoint checks role **and** assignment | `Every_mapped_endpoint_carries_a_permission_requirement` and `Every_permission_requirement_declares_the_scope_its_catalogue_row_names` both green; `ca4db6c` touched `PermissionEvaluator.Evaluate` and `MUT-D1` / `MUT-F2` both turn it red, so the gate is covered in the file the commit changed |
+
+**`ca4db6c` touched the gate every permission-checked endpoint runs through, and the gate is intact.**
+
+### Closing gates — re-run after every mutation was reverted
+
+| Gate | Result |
+|---|---|
+| `git status` | **clean** |
+| Build, `-c Release --no-incremental` | **0 warnings, 0 errors** |
+| `dotnet format --verify-no-changes` | **exit 0** |
+| Domain | **107 / 107** |
+| Api | **227 / 227** |
+| `scripts/check-citations.ps1` | **960 checked · 0 broken · 0 legacy** (935 at the brief's baseline; this report adds the rest) |
+| `/run-kaff-erp smoke` | **8 / 8** |
+
+---
+
+## 9. One false start of my own, recorded because the pattern is the project's
+
+Midway through the live drive I read a forced-change Owner successfully creating a user — a `201`
+where `403 / errors.auth.password_change_required` was owed — and began writing it up as a **HIGH**
+finding. **It was my own stale binary.** I had reverted `MUT-F2` (which deletes the
+`MustChangePassword` short-circuit from `PermissionEvaluator`) but restarted the API with
+`--no-build`, so the process was running the mutant.
+
+I caught it because the same run also showed `GET /api/auth/me` returning a **non-empty** permission
+list for a forced-change caller, which contradicts `WhoAmI/Handler.cs`'s own stated behaviour — two
+symptoms with one cause is a mutation, not a defect. Rebuilt, restarted, re-probed: `permissions: []`
+and `403 / errors.auth.password_change_required` on both `POST /api/users` and
+`PUT /api/users/{userId}/role`.
+
+**This is `SKILL.md`'s stale-binary gotcha arriving through the door it does not watch.** That gotcha
+is written about the *build* being stale; this was the *running process* being stale after a clean
+build, which reads identically from the outside. *"Read the build result before the test result"*
+does not help when the binary was built correctly and then the wrong one was launched. Recorded so
+the next session does not spend the same hour, and recorded rather than quietly deleted, because a
+verifier who hides a near-miss is asking to be trusted on the ones nobody saw.
+
+**And the corrected finding is the interesting one.** On the clean binary, a forced-change caller who
+**does not hold** `UserManage` gets `403 / errors.auth.password_change_required` — **byte-identical
+to the holder's answer**, on shipped routes. `V-26-F`'s property, which the 2026-08-27 pass could
+only establish against a test-host probe, **holds on the real surface**.
+
+---
+
+## 10. `AC-106-H` and `AC-110-D` — the two criteria no Verifier pass had examined
+
+### `AC-106-H` — **DISCHARGED**
+
+*"Given the Owner creates a user with a temporary password, when that user signs in and calls any
+endpoint other than the change-password endpoint, then it is refused with
+`errors.auth.password_change_required`."*
+
+Driven end to end on shipped surface, through the KAFF-106 creation path rather than a seeded row:
+
+1. Owner bootstrapped via `POST /api/setup` → `201`.
+2. `POST /api/users` with `temporaryPassword` → `201`, `mustChangePassword: true`.
+3. That user signs in → `204`.
+4. `POST /api/users` → **`403 / errors.auth.password_change_required`**.
+5. `PUT /api/users/{userId}/role` → **`403 / errors.auth.password_change_required`**.
+6. `PUT /api/users/{userId}/department` → **`403`**.
+
+And it fails when the rule is broken: `MUT-F2` deleted the `MustChangePassword` short-circuit from
+`PermissionEvaluator.Evaluate` and turned Domain to **104 / 107** and
+`ChangePasswordTests.Until_the_password_is_changed_every_other_endpoint_refuses_it_and_this_one_does_not`
+red.
+
+**🟡 One clause is answered by an open question, and I am not answering it.** The criterion says
+*"any endpoint other than the change-password endpoint"*, and `GET /api/auth/me` **deliberately
+answers 200** to a forced-change caller — observed today, with `permissions: []`. That is
+`AC-105a-C` and D-072 §2, built on purpose to close the dead-end loop. **Two committed criteria
+disagree with each other**, and the reconciliation is one of the four questions standing with Nabil —
+*the `mustChangePassword` reach beyond `/api/auth/me` and change-password*. **Recorded and routed to
+the BA. Not resolved here.** I mark `AC-106-H` discharged for every permission-gated endpoint, which
+is what the mechanism actually guarantees.
+
+### `AC-110-D` — **DISCHARGED**
+
+*"Given a deactivated user, when they attempt to sign in with their correct password, then it is
+refused, and the refusal does not reveal that the account was deactivated rather than never
+existing."*
+
+Covered twice, and **both halves fail when the rule is broken**. `MUT-F1` dropped the `IsActive` half
+of the sign-in door [Verified: 2026-08-30 @ `src/Api/Features/Auth/SignIn/Handler.cs` ->
+`HandleAsync`] and turned red:
+
+* `SignInTests.An_inactive_account_is_refused_like_a_stranger` — a deactivated account holding a
+  **correct** credential gets `401`, `errors.auth.invalid_credentials`, and **no `Set-Cookie`**: the
+  indistinguishability half.
+* `SignInTests.A_deactivated_user_loses_the_open_session_and_cannot_sign_in_again` — the open session
+  dies on the next request and the fresh sign-in is refused too.
+
+**🟡 Carried, not resolved:** the story's own i18n bullet names `errors.auth.account_inactive` and
+nothing reaches it; the generic `401` is what D-065's reasoning gives. That is recorded in D-084 as a
+question for Nabil and the test says so in its own remarks. **If he rules the other way, that test is
+what changes.** Not mine to decide.
+
+**Neither story is accepted.** `AC-106-J` (Arabic/RTL at mobile width) has no screen, and `AC-110-E`
+is deferred to KAFF-104, out of sprint 1. **KAFF-106 and KAFF-110 stay in "built and verified with a
+criterion still held."** Discharging a criterion is not accepting a story.
+
+---
+
+## 11. Verdicts — per commit
+
+| Commit | Verdict | Reason |
+|---|---|---|
+| `f2b995b` — KAFF-101b, the sign-in screen | **ACCEPT** | Driven live at HEAD: sign-in through the screen posts the right body, navigates, and holds the server's refusal in one page-level region with no raw key. 390px screenshot looked at — RTL, Arabic, no overflow |
+| `332c160` — KAFF-103's screen, `AC-101b-F` | **ACCEPT** | All three of D-092's self-downgraded halves driven today (§7); `AC-101b-F`'s in-session redirect re-observed at HEAD |
+| `4e688c5` — D-092 updated | **ACCEPT** | `decisions.md` only; its claims re-tested in §7 and they hold |
+| `4885edf` — `V-27-A` | **ACCEPT**, with `V-30-D` recorded | The mechanism fires: one-file deletion refuses the host boot (190/227 red); two-file deletion is caught by the count. Name-level only — measured, and honestly stated by D-093 itself |
+| `c01959b` — `V-27-B` | **ACCEPT**, with `V-30-A` recorded | The fix is real: the one-dot forge is now `CS0122` and the accessibility is pinned by a test that fails when widened. **The claim attached to it is false** and must be corrected — a prose defect, not a code defect |
+| `ca4db6c` — `V-27-C` | **ACCEPT** | Both predicates are allow-lists at every door; `MUT-D1` and `MUT-D2` both go red. Behaviour identical for all nine real roles, pinned as a table |
+| `45a939d` — the malformed body | **ACCEPT**, with `V-30-C` and `V-30-G` recorded | Reach established live in Development across two shipped endpoints and nine bodies. Missing its `decisions.md` entry and missing regression cover on shipped surface |
+
+**No commit is rejected.** The two `MEDIUM` findings are a false claim in prose (`V-30-A`) and a
+coverage gap (`V-30-G`); neither makes the code it accompanies wrong.
+
+---
+
+## 12. What this session did **not** do — as a count, not as prose
+
+Retrospective change 2: a checker that says *"N checked"* must also say *"M unparsed."* **Fourteen.**
+
+1. **`ck_users_subcontractor_cannot_log_in` is 1 of 30 check constraints mutated.** The other **29**
+   were not individually deleted. I tested the *mechanism* instead, which is D-093's actual claim —
+   but the distribution across the 29 is untested.
+2. **29 of 30 constraint predicates unverified.** `MUT-C3` proved name-level coverage on one. The
+   other 29 predicates could each be `1 = 1` and nothing here would notice.
+3. **The 8 required triggers and 3 required indexes were not mutated this pass.** D-093 cites an
+   earlier pass's `MUT-G4` on `trg_postings_append_only`; I did not re-run it.
+4. **`Result.Failure` sites: ~4 of ~103 individually mutated.** The 2026-08-27 pass named ~99 never
+   mutated; I reached `UnknownRole`, `CurrentPasswordIncorrect`, `PasswordTooShort` and
+   `SubcontractorCannotLogIn`. **~99 remain.**
+5. **The E2E Playwright suite was not run.** `KAFF_E2E_BASE_URL` was never set. 5 tests, unexecuted.
+6. **`driver.mjs flow`** — the language-switch direction flip — **not run.** I observed `dir=rtl` and
+   `lang=ar` statically and in a screenshot; I did not watch the direction *flip*.
+7. **The change-password screen was not screenshotted at 390px by me.** Its `dir`, `lang` and
+   `scrollWidth - clientWidth = 0` were read programmatically; D-092's own 390px shot is the only
+   looked-at image of that screen, and it is the author's evidence, not mine.
+8. **No second browser was driven.** `AC-103-F` rests on `MUT-G` and four red tests, not on watching
+   a second device get refused.
+9. **The reflection forge of `V-30-A` was not driven through HTTP.** I established the suite reports
+   227/227 against it; I did not send a request with a stale stamp to the forged route and watch it
+   answer `200`.
+10. **`MUT-B4`'s anonymous hand-roll was not driven through HTTP either** — same shape, same gap.
+11. **The other four `AllowList` members were not individually re-tested.** `MUT-B3` tested the
+    mechanism once; `/api/health`, `GET /api/setup`, `POST /api/setup` and `POST /api/auth/sign-in`
+    were not each re-probed for their `AllowAnonymous` metadata.
+12. **QA's `qa/slice-1/test-cases.md` was not executed case by case.** I worked from the stories'
+    criteria and the six commits' claims; `TC-` identifiers are not traced in this report.
+13. **KAFF-106 and KAFF-110 are not accepted as stories** — only `AC-106-H` and `AC-110-D` are
+    discharged. See §10.
+14. **No slice-3 money invariant was tested.** `agents.md` §7's first suite — the §15 worked example,
+    hold equals exactly 20%, advance reaches exactly zero, تشوينات nets to zero, no sequence produces
+    a negative safe — **has nothing to run against yet.** Zero of those assertions exist. Named here
+    so the total is never read as coverage of the thing this project is actually for.
+
+---
+
+## 13. The four business questions — touched, recorded, not answered
+
+None moved, and I answered none of them.
+
+| Question | Where this pass touched it |
+|---|---|
+| KAFF-118's cut | Not touched |
+| The `Role.Subcontractor` conversion | §4 — `ChangeUserRoleTests` refuses a credentialled conversion and permits a credentialless one; **which is right is D-088's open half** |
+| The `mustChangePassword` reach beyond `/api/auth/me` and change-password | §10 — **`AC-106-H` and `AC-105a-C` contradict each other in committed text**, and I observed both behaviours. Routed to the BA |
+| Q54 / N11's retention consequence | Not touched |
+
+**One data observation, routed rather than acted on.** D-095 left the `role = '99'` row unmigrated and
+routed it to Architect / Nabil. **No such row exists on `kaff-db` today** — three users, all with real
+roles [Verified: 2026-08-30 — `SELECT user_name, role FROM users`]. That does not close the question
+of what such an account should become; it records that there is no live instance to decide about on
+this machine.
+
+---
+
+## 14. The one thing Nabil should know
+
+**The suite reported 227/227 against a route that applied none of its checks — for the second
+consecutive pass, in the same file, against the same claim.**
+
+The fix in `c01959b` is genuine and that goes first: the forge that produced 215/215 four days ago is
+now a compiler error, and the accessibility that makes it one is pinned by a test that fails when
+somebody widens it. That is real engineering, and it raised the cost of the attack from *a plausible
+mistake* to *an unmistakable act*.
+
+But the sentence written beside it — *"the only expression in the language that can produce this
+metadata"* — is false, and it is false in the **failing test's own message**, which is precisely
+where D-094 found the previous false sentence and precisely why it rewrote it. The pattern the
+retrospective named is not *"we missed something."* It is that **a passing check and an absent check
+produce identical output** — and a claim stronger than its evidence is how a check comes to be
+believed without being examined. D-089's claim went four days unchallenged because it sounded
+structural.
+
+**The remedy is one paragraph of honest prose, not more code.** Say what `CS0122` proves — the type
+cannot be *named* — and say that reflection can still produce the value, so a route that does it is a
+forgery rather than an error. A reader who knows where the real boundary is can defend it. A reader
+who has been told there is no boundary to defend cannot.
