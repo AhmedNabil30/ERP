@@ -7230,3 +7230,115 @@ name was widened to `ValidateRoleAndDepartment` and then reverted: four historic
 old identifier under SM-31 and live in `meetings/`, `qa/`, `proposals/` and `stories/` — documents the
 agent doing the rename must not edit. The checker caught all four. Recorded in the method's own
 summary instead.
+
+---
+
+### D-096 · Scrum Master — what makes an acceptance lapse, and two process rules bought at a cost · 2026-08-30
+
+**Scrum Master, opening sprint 2.** `meetings/2026-08-30-sprint-2-open.md` is the reasoning; this is
+the part that is a decision rather than a report.
+
+#### 1. The lapse rule needs a scope, or it voids every sprint
+
+`meetings/2026-08-27-sprint-1-retrospective.md` §3 change 3: *"An acceptance is a claim about a
+commit. When a later commit touches that story's files, the acceptance lapses and must say so out
+loud."* **Today is the first time it has been applied rather than argued about, and applying it
+literally would have voided the entire sprint** — `ca4db6c` changed `PermissionEvaluator.Evaluate`,
+which every permission-checked endpoint runs through, and `45a939d` changed the request pipeline for
+every JSON-binding endpoint. A rule that lapses everything decides nothing.
+
+**Decision, and the line is behavioural, not file-based:**
+
+* **A story lapses** where a commit changed behaviour **that story's own acceptance criteria assert.**
+  Five did: KAFF-109 (`User.ValidateDepartment` gained an `Enum.IsDefined` refusal — its own path),
+  KAFF-101a (`MayHoldStaffSession`, its own role bar, deny-list → allow-list), and KAFF-105a, 102 and
+  103 through the gate they route through.
+* **A story is carried with the exposure named** where a commit changed a **shared mechanism** whose
+  behaviour *for that story* is unchanged — **and "unchanged" must be pinned by a test, not argued.**
+  Here it is [Verified: 2026-08-30 @ `tests/Domain.Tests/UserTests.cs` ->
+  `The_two_role_doors_admit_exactly_these`]: both predicates are allow-lists of exactly the roles that
+  exist, the deny-list restored goes red (D-095's `MUT-H` row), so for the nine roles the gate is
+  *measured* identical and the change is confined to inputs no criterion names.
+
+**This sits deliberately close to the argument change 4 forbids** — *"this cannot have changed,
+therefore no test is possible"* — **and it is on the right side of that line only because the
+equivalence was fault-injected by another session and re-run today.** Without that test the honest
+answer is that every story lapses. **The test is the whole of the licence**, and the next session that
+wants to carry a story past a shared-mechanism change must produce the equivalent or lapse it.
+
+**What this does not fix, and it is the larger thing.** KAFF-101a and KAFF-103 have now lapsed
+**twice** — `f807364`, then `ca4db6c`. Certifying five stories every time `LiveSession` or the role
+doors move is unsustainable at slice 1 and impossible at slice 5. **The thing worth verifying on a
+cadence is the mechanism, not the stories sitting behind it.** Flagged, not decided: it changes what
+`ACCEPTED` means, and that is not the Scrum Master's to redefine alone.
+
+#### 2. Disjoint file ownership is not sufficient — one agent per machine
+
+`process/agile.md` ceremony 2, amended. On 2026-08-29 Frontend and Backend ran concurrently with
+**genuinely disjoint** ownership — `src/Web/` against `src/Infrastructure/` and `tests/Api.Tests/` —
+satisfying `agents.md` principle 3 throughout, and collided anyway on **port 5080** (hardcoded in
+`src/Web/proxy.conf.json`, so both need the same one) and on `Kaff.Domain.dll` /
+`Kaff.Infrastructure.dll`, which a running API holds open against the other's build. One agent killed
+the other's API host by PID. **Two stalls.** D-092 records the workaround — start from a checked-in
+binary with `Kaff__ApplyMigrationsOnStartup=false`, stop the API afterwards — which is a workaround,
+not a fix.
+
+**The machine is the shared resource, not the files.** Principle 3 stops agents overwriting each
+other's work; this stops them being unable to build at all. Both must hold, and the second is a hard
+serial constraint until the stack can be brought up twice on one box.
+
+**Revisit if** the API's port becomes configurable end to end — `proxy.conf.json` is the binding
+constraint, not the API.
+
+#### 3. A check that could not detect what it checked for
+
+`.claude/skills/run-kaff-erp/SKILL.md`'s stop-the-API gotcha said to run
+`Get-Process -Name Kaff.Api`. **That does not match the process the same file's §1 tells you to
+start:** `dotnet run --project ...` executes the app through `dotnet.exe`, so the process name is
+`dotnet` and the check throws *"Cannot find a process with the name"* **while the DLLs are held
+open**. It matches only the apphost form, which does exist [Verified: 2026-08-30 — `Kaff.Api.exe` is
+present in `src/Api/bin/Release/net10.0/`] but is not what the skill instructs. Replaced with a
+`Win32_Process` command-line match, which catches both launch forms.
+
+**This is the retrospective's §1 pattern, three days after it was written**: a passing check and an
+absent check produced identical output. The check reported *"not running"* for the very thing it was
+checking for.
+
+#### 4. §M's split has a second half, and this session proved it by skipping it
+
+**§M is right and it held again**: the eighteen-file status sweep ran on a small model against a
+dictated table, and the judgement did not. **But a small model executing a dictated table has nothing
+to check the table against**, so a wrong fact in the brief is transcribed faithfully and arrives
+looking like work.
+
+It happened. The dictated table said `ACCEPTED` for **KAFF-106 and KAFF-110**, which have never been
+accepted — `meetings/2026-08-27-sprint-1-close.md` §1 puts both in *"built and verified with a
+criterion still held"*, and `AC-106-H` and `AC-110-D` have never been examined by any Verifier pass.
+The model transcribed it exactly. **The defect was the Scrum Master's**; caught on reading the sweep's
+diff, corrected in `aa8a9ca` with the correction written into both status lines.
+
+**A second one followed, in the Scrum Master's own hand:** the sprint-1 final table dropped KAFF-108
+from the accepted bucket and reported **20 of 57** with a paragraph built on the difference. The
+figure is **25 of 57**. Caught by re-deriving the arithmetic rather than re-reading the prose,
+corrected in `4fe4936`; the wrong figure survives in `601ac04`'s commit message and is corrected
+there loudly rather than rewritten.
+
+**Decision: reading the mechanical agent's diff is not review, it is the other half of the split, and
+a sweep is not finished until it is done.** `agents.md` principle 7 puts an invitation to correct the
+brief in every one, and it works — two wrong facts in briefs last sprint were both caught by the
+agents receiving them. **It cannot work here.** A small model given a dictated table has no standing
+to doubt it and no context to doubt it from, which is exactly what makes the split cheap. The saving
+is real; the review is what pays for it.
+
+**Three wrong facts in three sprints of Scrum Master briefs, and this is the first that reached a
+file.** The difference was not care — it was that the two earlier ones went to agents that could
+argue back.
+
+#### 5. Not decided here
+
+* **`AC-101b-A`'s reading.** KAFF-105b's ten criteria are all payload criteria; none renders anything,
+  so D-091's deferral of the staff shell onto it cannot be discharged by that story as written. Three
+  readings are costed in the sprint-2 opening §4.2 and **none is taken. Scope is Nabil's.**
+* **`KAFF-118`'s cut**, the **`Role.Subcontractor` conversion**, the **`mustChangePassword` reach**,
+  and **Q54/N11's retention consequence** — all four still stand with Nabil, none has moved, and none
+  may be answered by any agent.
