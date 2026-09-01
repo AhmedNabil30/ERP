@@ -403,6 +403,54 @@ fail: widening `ProjectManage` to `CompanyWide` — the smaller diff a future se
 **Added to the Definition of Ready above** as the catalogue-row case of the existing QA line, and to
 the Definition of Done below.
 
+### The Test Naming Law — SM-33
+
+**Scrum Master's ruling, 2026-09-01, at the sprint-2 refinement. `decisions.md` D-097 §2.**
+
+> **A test name that is merely *narrow* stays. A test name that the change makes *false* is renamed in
+> that same change, and its citations move with it in the same commit.**
+>
+> **And the cheaper half, which prevents the case arising: a test name must not encode a count that a
+> legitimate future change falsifies.** Put the property in the name and the arithmetic in the body,
+> where it fails loudly without lying.
+
+**What raised it.** KAFF-105b would add a `ProjectTeamRead` catalogue row granted to `Role.Hr`, making
+HR hold four permissions — which makes
+`Hr_holds_exactly_three_permissions_and_none_touches_money` false **in its own name**
+[Verified: 2026-09-01 @ `tests/Domain.Tests/CatalogueCompletenessTests.cs` ->
+`Hr_holds_exactly_three_permissions_and_none_touches_money`]. That name is cited in **five** files of
+record — `decisions.md`, this file, `qa/questions.md`,
+`stories/slice-1-foundation/KAFF-107-hr-role-is-bound-to-the-hr-department.md` and
+`proposals/N10-project-creation.md` — several of which the implementing agent must not edit.
+
+**Why this does not contradict D-095, which chose the opposite.** D-095 widened `ValidateDepartment` to
+also check that the role is a role, considered renaming it to `ValidateRoleAndDepartment`, and
+**reverted the rename** because four historical records cite the old identifier under SM-31 and live in
+`meetings/`, `qa/`, `proposals/` and `stories/`. **That was right, and the distinction is the whole of
+this rule:** `ValidateDepartment` still validates the department. It became **narrow**. It did not
+become **untrue**.
+
+`…exactly_three…` becomes untrue the moment the fourth grant lands. **A false test name is worse than a
+stale one, because the name is what a reader takes for the assertion** — which is SM-29's subject
+exactly, applied to the one artefact SM-29 was never pointed at.
+
+**Who moves the citations, since that is what made D-095 choose the other way.** The implementing agent
+moves the ones in files it owns — its own source, and its `decisions.md` entry. **The Scrum Master
+moves the ones in `meetings/`, `qa/` and `proposals/`**, which it may not edit, and does so in the same
+commit or the rename does not land. Historical records are corrected as **marked amendments, never
+silent edits** — SM-29's own practice.
+
+**It is not only about counts, and `V-30-A` is the proof.** `qa/slice-1/verification-2026-08-30.md`
+found `Nothing_outside_LiveSession_can_produce_the_metadata_that_proves_a_route_paid` to be false —
+reflection produces the metadata, and the suite reported **227/227** against a route applying none of
+its checks. That name asserts a safety the code does not have, to every reader of a failing run. **It
+falls under this rule for the same reason the count does.**
+
+**Why a rule rather than a case-by-case call.** Both instances were found in the same week, by two
+different agents, in two different files, and neither was noticed by the sessions that created them —
+because **a name is not read as a claim until somebody checks it.** SM-31 made citations checkable and
+left names alone. This closes the half it did not reach.
+
 ## Definition of Done
 
 `CLAUDE.md`'s list, unchanged, plus the two this process adds:
@@ -421,6 +469,7 @@ the Definition of Done below.
 - [ ] **Every permission catalogue row the change adds is named in a test that ships with it, and the test name the row's comment cites exists** — SM-30
 - [ ] **Every code citation the change adds or touches names a stable identifier, not a line number** — SM-31
 - [ ] **`scripts/check-citations.ps1` reports `broken (identifier absent)` = 0** — repo-wide, and this one is absolute: a citation pointing at something that does not exist is the defect SM-31 exists for
+- [ ] **No test name the change makes false survives the change, and its citations move in the same commit** — SM-33
 - [ ] **The change introduces no new legacy line-number citation** — measured against the count before the change, not against zero. **Scoped this way on 2026-08-24 (`decisions.md` D-068) because the unscoped version blocked acceptance of two finished stories on 97 pre-existing citations, 76 of them in one meeting file, none in any file the work touched.** A Definition of Done is about the change in front of you; the backlog of 97 is owed separately and is not forgiven by this
 
 ---

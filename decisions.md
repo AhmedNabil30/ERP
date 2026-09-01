@@ -7342,3 +7342,98 @@ argue back.
 * **`KAFF-118`'s cut**, the **`Role.Subcontractor` conversion**, the **`mustChangePassword` reach**,
   and **Q54/N11's retention consequence** — all four still stand with Nabil, none has moved, and none
   may be answered by any agent.
+
+---
+
+### D-097 · Scrum Master — the sprint-2 refinement: staging proven, SM-33, and a sprint refused in its proposed shape · 2026-09-01
+
+**Scrum Master.** `meetings/2026-09-01-sprint-2-refinement.md` is the reasoning and the record; this is
+the part that is a decision rather than a report. The ceremony `agents.md` principle 6 requires and the
+sprint-1 close recorded as owed — *"no agent was asked 'what do you not know?'"* — was run: six agents,
+read-only, no build, no stack.
+
+#### 1. Staging is tickable for the API and not for the screens, and the pipeline said so, not a message
+
+Nabil reported staging fixed. **The application running there and the CI smoke check reaching it are
+different claims**, and only the second is the Definition of Done line. It was measured rather than
+believed: the **same commit `dc76fe7`** ran `.github/workflows/deploy-staging.yml` -> `Smoke check`
+twice — attempt 1 **failed** after exhausting the full 30 × 10s retry loop, attempt 2 **passed in
+eleven seconds** — with nothing in the tree changed between them. The step ran rather than being gated
+away: attempt 1's failure could not have come from an unset `STAGING_URL`.
+
+**Decision: the line is ticked per story, by surface.** Because only the `web` service publishes a port
+in `deploy/docker-compose.staging.yml`, one external 200 carrying `guardsInstalled: true` proves both
+Oracle firewalls open, nginx serving, the API reaching PostgreSQL, and D-033's guards installed. **It
+proves nothing about a screen** — the check curls `/api/health` and never fetches the SPA. So *"runs on
+staging"* is **✅ for every API-surface story** and **⬜ for KAFF-101b's and KAFF-103's screens**.
+`meetings/2026-08-27-sprint-1-close.md` §4 said *"the pipeline cannot see it"*; that was true when
+written, is now false, and is corrected there in place with the date rather than left stale.
+
+#### 2. SM-33 — the Test Naming Law
+
+Ruled in full in `process/agile.md` -> `The Test Naming Law — SM-33`, and added to the Definition of
+Done.
+
+> **A name that is merely *narrow* stays. A name the change makes *false* is renamed in that same
+> change, and its citations move with it in the same commit. A test name must not encode a count that a
+> legitimate future change falsifies.**
+
+**It does not contradict D-095, it draws the line D-095 needed and did not have.** D-095 reverted
+`ValidateDepartment` → `ValidateRoleAndDepartment` because historical records cite the old name, and
+that was right: the name became **narrow**, not untrue. `Hr_holds_exactly_three_permissions_and_none_touches_money`
+becomes **untrue** the moment `ProjectTeamRead` lands, and
+`Nothing_outside_LiveSession_can_produce_the_metadata_that_proves_a_route_paid` is untrue **today**
+(`V-30-A`). **The Scrum Master moves the citations in `meetings/`, `qa/` and `proposals/`** — the files
+the implementing agent may not edit, which is precisely the constraint that made D-095 choose the other
+way.
+
+#### 3. Neither candidate story is Ready, and the shell hole is four screens rather than one story
+
+**KAFF-105b: `BLOCKED` on six Definition of Ready lines**, five of them repairable by the BA and QA
+without any ruling, and **one that is Karim's**: rule 6 and `AC-105b-C` assert HR receives a project's
+**code**, both citing D-051 (Q32), which grants *"the project name and the list of assigned engineers"*
+and says nothing about a code. That is **`Q43`, registered and open**. The story bakes an unasked answer
+into a criterion and a test.
+
+**KAFF-115: `BLOCKED`**, transitively and on its own account. **Re-estimated 3 → 8** — it births a
+permission row (5) and spans backend and frontend through `AC-115-J` (8); take the higher, not the sum.
+Frontend, asked independently, returned 8 with the same reasoning. **KAFF-105b re-estimated 3 → 5** for
+the permission row alone; as written it renders nothing and is not a frontend story.
+
+**And the shell.** `ux/navigation.md` -> `Landing summary` names a slice-1 landing for every role. **No
+story builds S-004, S-005, S-009a or S-011**, and the entire API exposes **three GET routes** —
+`/api/auth/me`, `/api/health`, `/api/setup` — so three of the four landings have no data to render.
+**Growing KAFF-105b to 8 does not produce a shell**; it produces a chrome that lands five of the nine
+roles on a blank page. **All three readings costed in `meetings/2026-08-30-sprint-2-open.md` §4.2
+understate it, and `AC-101b-D` fails the same arithmetic as `AC-101b-A`** — HR lands on **S-009a**, the
+project list, while KAFF-115 builds **S-009b**, one project's team panel. **Scope is Nabil's and no
+reading is taken here.**
+
+#### 4. The largest technical finding is not in the sprint, deliberately
+
+**`CLAUDE.md`'s flagship database rule — the safe balance that can never go negative — is verified by
+nobody, and it is not one of the thirty check constraints `V-30-D` measured.** It is a constraint
+trigger running a plpgsql function
+[Verified: 2026-09-01 @ `src/Infrastructure/Persistence/Sql/001_guards.sql` -> `kaff_check_non_negative_balance`],
+checked by `tgname` alone, and **which accounts are floored is data, not code** — the trigger reads
+`accounts.enforce_non_negative`, and no test asserts that flag on any row in a database. A database
+whose Safe row carries `false` passes every guard check and floors nothing.
+
+**Harmless today** — no `Posting`, no account set, no money. **Due before the first posting endpoint
+ships, not before slice 9.** Routed to the **Architect** as owner with **Backend**. Deliberately **not**
+proposed for sprint 2, where it would be rushed.
+
+#### 5. Not done
+
+* **No story file was edited.** KAFF-105b and KAFF-115 still carry every defect §3 of the meeting names.
+* **`Q54`'s register row is still `"Not settled by any agent"`.** The BA was told to close it against
+  D-072 §3 and correctly declined: **D-072 §3 ruled the mechanism and never gave a retention period**,
+  which the original question asked for in as many words. Answered as to mechanism, **open as to
+  period, and the period is Karim's.**
+* **Nothing was built, run, or measured on the machine.** Suite figures here are inherited from
+  `qa/slice-1/verification-2026-08-30.md`. Three questions that need the machine are named in the
+  meeting §2.3 and serialised.
+* **`V-30-A`, `V-30-C`, `V-30-D`, `V-30-G`, `V-30-H`, `W-2`, `W-5` and the citation checker's source
+  blind spot are all still open**, each with a named owner in the meeting §4.2.
+* **No sprint scope is locked.** A repair-and-unblock sprint is **proposed** in the meeting §5 and
+  carries no story points. **Seven questions stand with Nabil** and none was answered here.
