@@ -239,7 +239,7 @@ where it is believed.
 | Builds clean with warnings as errors | ✅ | `--no-incremental` Release, every project relinked — not the MSB3026 "succeeded and copied nothing" case. 0 warnings, 0 errors |
 | `spec.md` acceptance criteria for this slice pass | ⬜ | **25 of 57 points stand; 19 do not** (§1). Five stories' code moved after the session that judged it, two of them *after acceptance* |
 | Permission tests pass | ✅ | Domain 97/97, Api 215/215. Every endpoint's gate was watched failing before it was trusted, from KAFF-112 onward |
-| Runs on staging, not only locally | ⬜ | **The application runs there. The pipeline cannot see it.** Different claims — `deploy/README.md` §4, both Oracle firewalls, Nabil's to open |
+| Runs on staging, not only locally | ⬜ → **partly ✅, 2026-09-01** | **This read: "The application runs there. The pipeline cannot see it." That was true when written and is now false.** Nabil opened both Oracle firewalls; the CI smoke check passed on its own at `dc76fe7` on 2026-08-30 — the same commit's attempt 1 failed after the full retry loop and attempt 2 succeeded in 11 seconds with nothing in the tree changed. **Tickable now for every API-surface story. Still ⬜ for the two screens** (`f2b995b`, `332c160`): the check curls `/api/health` and never fetches the SPA, so deployed is not the same as rendering. `meetings/2026-09-01-sprint-2-refinement.md` §1 |
 | Arabic RTL correct at mobile width | ⬜ | No screen exists. `AC-106-J` and `AC-105a-I` are deferred to Frontend, explicitly and not as a pass |
 | Audit records written for every state change | ✅ | Through the one mechanism in `Domain/`; no handler constructs a record, and a handler may no longer read identity from the token |
 | No hardcoded strings | ✅ | Every domain error key carries its `en.json` and `ar.json` line; the Domain suite fails otherwise |
@@ -261,6 +261,15 @@ the fix is certified by the session that wrote it, which is the one thing `CLAUD
 Oracle's instance-level iptables REJECT sits behind the VCN security list and blocks inbound
 regardless of it. Until that check passes on its own, *"runs on staging"* is something this team
 remembers rather than something the pipeline proves — and the check exists precisely to close that gap.
+
+> **✅ CLOSED 2026-08-30, and the paragraph above is kept rather than rewritten because what a
+> document claimed and when is the record.** The firewall rule was opened and the check now passes on
+> its own — proven by the pipeline, not by a message: the same commit `dc76fe7` failed the smoke check
+> on attempt 1 after exhausting the full 30 × 10s retry loop and passed it on attempt 2 in eleven
+> seconds, with nothing in the tree changed between them. **What the check proves is the API**, end to
+> end from outside both firewalls, with the D-033 guards installed. **What it still does not prove is a
+> screen** — it curls `/api/health` and never fetches the SPA. Established 2026-09-01;
+> `meetings/2026-09-01-sprint-2-refinement.md` §1.
 
 ### What sprint 2 inherits
 
