@@ -132,6 +132,7 @@ unbuildable as written*~~ **F-27 is closed, D-055 §3, 2026-08-22.**
 | **F-32** | **`TC-1-254`'s *"expected to fail on first run"* note is stale** — the defect it predicted (F-28) has been fixed | **QA register defect** | **QA** | **`TC-1-254`** |
 | **F-33** | **`TC-1-255` quotes the `UserRead` catalogue comment in quotation marks and the words are not the ones in the file** | **QA register defect** | **QA** | **`TC-1-255`** |
 | **F-34** | **Four places in `qa/` say the money-touching list holds *eleven* permissions; it holds twelve** | **QA register defect** | **QA** | **`TC-1-215`, `TC-1-250`** |
+| **F-35** | **A staff login converting to `Role.Subcontractor` has no question anywhere in the register — Q41 covers only the `Role.Client` half of the same story rule** | **gap** | **BA → Nabil → Karim** | **`TC-1-079`** |
 
 | # | Question for Karim | Blocks |
 |---|---|---|
@@ -969,6 +970,39 @@ cannot tell whether a permission was dropped from the test or added to the catal
 **That is one permission's worth of doubt about the money boundary**, which is the thing this project
 tests first. All four are corrected in place with the reason and the date; **the test and the
 catalogue are unchanged and were not touched.**
+
+---
+
+### F-35 · A staff login becoming `Role.Subcontractor` has no question anywhere — **gap**
+
+**Owner: BA, to register the question; Nabil, to take it to Karim. Not QA's to answer.** Found
+2026-09-01, re-examining `TC-1-079`'s stale `PENDING Q27 (residual)` marker
+(`meetings/2026-08-27-sprint-1-close.md` §2.3, which had already flagged the marker as pointing at a
+closed question and routed the retarget to QA).
+
+`KAFF-109 rule 10` asks whether a role may be changed **to** `Role.Client` **or** `Role.Subcontractor`.
+The `Role.Client` half has a name — **Q41**
+[Verified: 2026-09-01 @ `stories/questions-for-karim.md` -> the `Q41` row]: *"If somebody who works for
+you stops working for you and becomes a client, should their staff login be turned into their client
+login — or should that be a new account?"* **The `Role.Subcontractor` half does not appear anywhere in
+`stories/questions-for-karim.md`** [Verified: 2026-09-01 — searched the file for `Subcontractor` in the
+context of a role-change/conversion question; none found].
+
+**The two halves are not the same question asked twice.** Q41's own reasoning is about audit
+continuity — *"the first keeps a staff person's whole audit history under a client-facing login"* — and
+that reasoning has nothing to carry across to `Role.Subcontractor`: spec.md §9 gives a subcontractor no
+login at all (*"record only, no login"*), so there is no client-facing *account* for a converted
+person's history to continue under. Folding the subcontractor half into Q41 would answer a question
+about logins with a rule about a role that has none.
+
+**Why this is a finding rather than a second `PENDING Qnn`.** There is no `Qnn` to point at. Writing
+`TC-1-079` as `PENDING Q<something>` for this half would be inventing a question number, which is the
+same failure `agents.md` names for inventing a rule — a plausible-looking placeholder that survives
+review. **The case stays BLOCKED, citing this finding, until the BA registers the question and Karim
+rules it.**
+
+**Blocks:** `TC-1-079`. Nothing else — `KAFF-109`'s built behaviour (revoking assignments on any role
+change, D-051 Q27) does not depend on the answer either way.
 
 ---
 

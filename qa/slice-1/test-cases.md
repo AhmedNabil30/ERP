@@ -13,16 +13,24 @@ permissions (D-055 §§1–3, D-056 §3).**
 
 | | |
 |---|---|
-| `TC-1-nnn` identifiers in this file | **259** |
+| `TC-1-nnn` identifiers in this file | **261** |
 | Of which `TC-1-000` | **not a case** — the format template in *How to read a case* below |
-| Real cases, `TC-1-001` … `TC-1-258` | **258**, **no gap and no duplicate** [Verified: 2026-08-26, every id in the range present exactly once as a heading] |
+| Real cases, `TC-1-001` … `TC-1-260` | **260**, **no gap and no duplicate** [Verified: 2026-09-01, every id in the range present exactly once as a heading, including the two added today] |
 | `RETIRED` | **5** — `TC-1-175` … `TC-1-179` |
-| **Live** | **253** |
+| **Live** | **255** |
 
 **`TC-1-258` added 2026-08-26** — `AC-101a-P` (D-072 §1, the locked-account exception) was ruled and
 built with no case in this file asserting it, found in the same sweep that corrected `TC-1-009`,
 `TC-1-011`, `TC-1-015`, `TC-1-016` and `TC-1-018`. Next unused id after `TC-1-257`; nothing renumbered,
 nothing retired.
+
+**`TC-1-259` and `TC-1-260` added 2026-09-01**, this session, closing `W-10` and `W-4`
+(`meetings/2026-08-27-sprint-1-close.md` §2.4). `TC-1-259` gives `AC-108-G` — ruled, built, and
+uncited in this file — its first case; `TC-1-260` specifies the untested half of the problem-details
+`TryAdd` mechanism (`W-4`). Next unused ids after `TC-1-258`; nothing renumbered, nothing retired.
+**`TC-1-261` was not used** — `W-2`'s helper is a design specification, not an executable case, and is
+recorded in prose in the new cross-cutting section rather than claiming a case number for something
+that cannot be run until the helper exists.
 
 **Where the wrong numbers came from, recorded so they are not re-derived.** The brief for this session
 said **241**; the header of this file said **243** and its own totals line agreed with itself; a sweep
@@ -139,11 +147,11 @@ reads a token out of a response body cannot be written any more, because there i
 | KAFF-102 sign out | Ready | TC-1-019…022, 232 | 0 |
 | KAFF-103 set first password | Ready | TC-1-023…029 | 0 |
 | KAFF-104 reset forgotten password | **Ready** — Q38 answered | TC-1-030…036, 233, 234 | 1 |
-| KAFF-105a `/api/auth/me` — identity | Ready | TC-1-042, 045, 046, 235, 236 | 0 |
+| KAFF-105a `/api/auth/me` — identity | Ready | TC-1-042, 045, 046, 235, 236 | 1 — `TC-1-042` BLOCKED `SM-32` |
 | KAFF-105b `/api/auth/me` — projects | **Ready** — Q32 answered | TC-1-037…041, 043, 044 | 0 |
 | KAFF-106 Owner creates a user | Ready | TC-1-047…059 | 0 |
 | KAFF-107 HR role bound to HR department | Ready | TC-1-060…066 | 0 |
-| KAFF-108 move a user between departments | Ready | TC-1-067…074 | 0 |
+| KAFF-108 move a user between departments | Ready | TC-1-067…074, 259 | 0 |
 | KAFF-109 change a user's role | **Ready** — Q27 answered | TC-1-075…080, 237…239 | 1 |
 | KAFF-110 deactivate a user | Ready | TC-1-081…090 | 0 |
 | KAFF-111 a deactivated user's assignments | **Ready** — D-049 §5 | TC-1-091…092 | 0 |
@@ -164,11 +172,17 @@ reads a token out of a response body cannot be written any more, because there i
 | — Arabic / RTL / i18n, cross-cutting | Ready | TC-1-195…201 | 0 |
 | — the permission matrix, executed | Ready — **the gate** | TC-1-202…215 | 0 |
 | — `ProjectCreate` / `ProjectFinancialsEdit` / `UserRead` | Ready — **new 2026-08-22** | TC-1-248…254 slice 1 · TC-1-255…257 slice 4 | 0 |
+| — cross-cutting mechanism (problem-details, audit) | Ready — **new 2026-09-01** | TC-1-260 | 0 |
 
-**Totals: 253 live cases · P1 196 · P2 50 · P3 8.**
-**4 PENDING** — one on Q33 (`TC-1-017`), one on Q27's residue (`TC-1-079`), one on the reset link's
-lifetime, which is the **story's** to settle and not Karim's (`TC-1-036`), and one on **Q35**
-(`TC-1-086`, the reason on a deactivation — `qa/questions.md` QA-3, still unasked).
+**Totals: 255 live cases · P1 197 · P2 51 · P3 8** (`+2` today: `TC-1-259` P1, `TC-1-260` P2 — the
+pre-existing 253/196/50/8 did not sum to 254 either; that discrepancy predates this session and is not
+re-derived here).
+**4 PENDING/BLOCKED** — one on Q33 (`TC-1-017`), one on **Q41** plus an unregistered subcontractor-half
+gap, **corrected 2026-09-01** from the stale "Q27's residue" marker — Q27 is closed (`TC-1-079`), one
+on the reset link's lifetime, which is the **story's** to settle and not Karim's (`TC-1-036`), and one
+on **Q35** (`TC-1-086`, the reason on a deactivation — `qa/questions.md` QA-3, still unasked).
+**Plus `TC-1-042`, BLOCKED on `SM-32` (a BA action, not a Karim question) — not counted in the four
+above because it blocks on neither Karim nor a numbered question, see its own entry.**
 ~~**3 NO STORY** — `TC-1-243`…`TC-1-245`, HR's team screen: Karim ruled it, nobody has written it.~~
 **Corrected 2026-08-22: the story arrived.** `KAFF-115` carries HR's surface as `AC-115-H` and
 `AC-115-I` and names the permission `ProjectTeamRead`. The three cases are relocked and are now
@@ -224,6 +238,46 @@ five tests go red.
 **A case that reports a fixed defect is worse than no case**, because the next session reads it as a
 live hole and either "fixes" it again or loses an hour proving it was never broken. The six cases keep
 their numbers and their `Fails if:` lines, and now name the mechanism they guard.
+
+### A defect class, recorded once — a given naming a signed-in `Role.Client` at a staff door
+
+**Recorded 2026-09-01, one class rather than three separate findings.** `src/Domain/Identity/Role.cs`
+-> `StaffSessionRules.MayHoldStaffSession`
+[Verified: 2026-09-01 @ `src/Domain/Identity/Role.cs` -> `StaffSessionRules.MayHoldStaffSession`]
+excludes `Role.Client` by name — D-062 §2, Nabil: *"strictly forbidden from a security standpoint for
+any user holding the `Role.Client` to sign in or authenticate through the staff portal."* Any case whose
+given is *"a signed-in `Role.Client`"*, evaluated at a route behind the staff door
+(`/api/auth/*` and everything gated on `RequireLiveSession`/`RequirePermission`), describes a caller who
+cannot exist — the door refuses the credential before any handler, any permission set, or any panel is
+ever reached. A case built on that given is unfalsifiable in the specific way `agents.md` §3c warns
+against: whatever the handler does, there is no request for it to do it to.
+
+**Four appearances of the same shape, found across three sessions:**
+
+| Case | Given | Status here |
+|---|---|---|
+| `TC-1-021` | *"Given a signed-in `Role.Client`, when they sign out"* — `AC-102-F` | Flagged **`V-26-E`** by the Verifier, 2026-08-26 [Verified: 2026-09-01 @ `meetings/2026-08-27-sprint-1-close.md` -> the `V-26-E` row]. Routed to QA and to Nabil the same day; **the given is unchanged today** [Verified: 2026-09-01 @ `qa/slice-1/test-cases.md` -> `TC-1-021`] — this session did not rewrite it, because doing so without Nabil's half of `V-26-E` (what an already-accepted `AC-102-F` is now proved against) would be exactly the silent-fix this note exists to prevent |
+| `TC-1-043` | *"Given client X has one project… when X's portal user calls the endpoint"* — `AC-105b-G`, same `/api/auth/me` route | Not previously flagged. The given is satisfiable only if "the endpoint" means a portal-side route that does not exist yet (D-051 Q33's still-unbuilt second host) — as written against the one endpoint that exists today, it is this shape |
+| `TC-1-126` | *"Given a `Role.Client` user… when A's team panel is requested"* — `AC-115-G` | Not previously flagged. The team panel is behind the same staff-session gate; the given cannot be constructed against a real session, only a hand-minted one bypassing sign-in entirely |
+| `TC-1-042` | *"Given I am `Role.Client`, When I call this endpoint"* — the story's own text for `AC-105a-H`, which this case would have to relock to | Flagged **`V-26-B`**/**`SM-32`**, and is this session's own `TC-1-042` entry above — the criterion the case would cite carries the same unsatisfiable given |
+
+**The rule for writing this case correctly, so it does not recur a fifth time:** do not give a
+`Role.Client` a **staff session** — evaluate the door's refusal instead (a 401/403 case, as
+`TC-1-016` already does correctly for the sign-in door itself), or, when what is
+actually being tested is *what a client is entitled to*, assert directly against
+`PermissionEvaluator`/`StaffSessionRules.MayHoldPermissions`
+[Verified: 2026-09-01 @ `src/Domain/Identity/Role.cs` -> `StaffSessionRules.MayHoldPermissions`] — the
+wider predicate that **does** admit `Role.Client`, because the evaluator has to be able to grant
+`PortalRead`/`PortalApprove` once the portal door exists, even though the staff door must never honour
+the same role. A Domain-level case built on `MayHoldPermissions` (the shape
+`A_client_holds_no_company_wide_permission` already takes
+[Verified: 2026-09-01 @ `tests/Domain.Tests/PermissionEvaluatorTests.cs` -> `A_client_holds_no_company_wide_permission`])
+is falsifiable and does not depend on a session that cannot be minted. **Not QA's to apply to `TC-1-021`,
+`TC-1-043` or `TC-1-126` this session** — each sits under a story criterion (`AC-102-F`, `AC-105b-G`,
+`AC-115-G`) whose own given carries the same shape, and rewriting the case without the criterion moving
+first would just relocate the drift `stories/ac-id-map.md`'s own rules warn against. **Routed: BA**, to
+decide per criterion whether the given is rewritten to the refusal or the criterion is split the way
+`AC-105a-F` → `AC-105a-H` already was.
 
 ---
 
@@ -820,6 +874,37 @@ Given a `User` with `Role.Subcontractor`, when a password set is attempted, then
 *Fails if:* the refusal lives only in the endpoint, so the next caller of `SetPasswordHash` creates a
 subcontractor login.
 
+**Split into its two halves, 2026-09-01 — the Domain half passes and the Api half has none**
+(`meetings/2026-08-27-sprint-1-close.md` §2.3, routed QA → Backend). The rule lives in
+`User.SetTemporaryPassword` / `User.SetOwnPassword`
+[Verified: 2026-09-01 @ `src/Domain/Identity/User.cs` -> `SetTemporaryPassword`], both refusing with
+`IdentityErrors.SubcontractorCannotLogIn`
+[Verified: 2026-09-01 @ `src/Domain/Identity/IdentityErrors.cs` -> `SubcontractorCannotLogIn`] — a
+`Conflict`, so **409**, not 403. The only wired caller is `POST /api/users` (KAFF-106): when
+`Request.TemporaryPassword` is non-blank, `Handler.HandleAsync` calls `SetTemporaryPassword` **before**
+the row is added to the `DbContext`, and returns the domain error unchanged on failure
+[Verified: 2026-09-01 @ `src/Api/Features/Users/CreateUser/Handler.cs` -> `HandleAsync`].
+
+**Domain half — already covered.** `tests/Domain.Tests/UserTests.cs` asserts
+`changed.Error.Should().Be(IdentityErrors.SubcontractorCannotLogIn)` on both `SetTemporaryPassword` and
+`SetOwnPassword` [Verified: 2026-09-01 @ `tests/Domain.Tests/UserTests.cs` -> `class UserTests`]. This
+half is not this row's gap.
+
+**Api half — the gap. Precise spec for Backend:**
+- **Test name:** `Creating_a_subcontractor_with_a_temporary_password_is_refused`
+- **File:** `tests/Api.Tests/CreateUserTests.cs`
+- **Given:** the Owner, `POST /api/users` with `Role: Subcontractor` and a non-blank
+  `TemporaryPassword` (every other field valid — a fresh `UniqueNames` username).
+- **Then:** the response is **409** and the body carries `code: "identity.subcontractor_cannot_log_in"`
+  and `messageKey: "errors.identity.subcontractor_cannot_log_in"`; and a follow-up query by that
+  username finds **no** `User` row at all — the handler returns before `database.Users.Add` runs, so a
+  row that exists at all (with or without a hash) is itself the defect.
+- **Fails if:** the endpoint creates the subcontractor row and merely leaves `PasswordHash` null, which
+  would pass a case that only checked the status code — the check on "no row exists" is what catches a
+  handler that starts persisting before validating the temporary password.
+- *(A `Role.Subcontractor` created with **no** `TemporaryPassword` at all is legal — spec.md §9,
+  "record only" — and is not this case; it is the ordinary create path.)*
+
 **TC-1-028 · redaction is present, not absent**
 `KAFF-103` audit section · P1 · Api · slice 0 `AuditRecord`, `KaffJson`
 Given a password is set, when the record's before and after JSON are read, then `PasswordHash` and
@@ -972,11 +1057,46 @@ optional while `User.Phone` is not, which is why Karim chose SMS or WhatsApp in 
 > **The route is `GET /api/auth/me`, not `/api/me`.** `AuthService` already names it, and a mismatch
 > would surface as a 404 in a browser rather than as a failing test.
 
-**TC-1-042 · a portal client is bounded to two permissions**
-`AC-105a-F` · P1 · Api · spec.md §12 · D-035
-Given a `Role.Client` user, when `GET /api/auth/me` is called, then exactly `PortalRead` and
-`PortalApprove` are returned and nothing else.
-*Fails if:* an internal permission is returned to a portal user, which is D-035 reopening.
+**TC-1-042 · BLOCKED — not a Karim question, a still-open BA action (SM-32)**
+~~`AC-105a-F`~~ · P1 · Api · spec.md §12 · D-035
+
+**Re-examined 2026-09-01, not resolved.** This case has now failed to relock twice.
+
+`AC-105a-F` is **retired**
+[Verified: 2026-09-01 @ `stories/ac-id-map.md` -> the `KAFF-105a AC6` row], replaced by `AC-105a-H`,
+whose assertion is the **inverse** and "cannot be carried across unrewritten" by the map's own
+instruction. `stories/README.md` rule: a case citing a retired ID asserts a withdrawn rule and must be
+retired, not relabelled quietly — so the old given/when/then above is struck rather than silently kept.
+
+**And relocking to `AC-105a-H` does not resolve it either, and this is `V-26-G` / `SM-32`, still open**
+[Verified: 2026-09-01 @ `meetings/2026-08-27-sprint-1-close.md` -> `SM-32`]. D-062 §2 makes
+`/api/auth/me` refuse `Role.Client` outright before any permission set is ever computed
+[Verified: 2026-09-01 @ `src/Domain/Identity/Role.cs` -> `StaffSessionRules.MayHoldStaffSession`], so
+the given `AC-105a-H` itself still carries — *"Given I am `Role.Client`, When I call this
+endpoint"* [Verified: 2026-09-01 @ `stories/slice-1-foundation/KAFF-105a-api-me-identity.md` ->
+`AC-105a-H`] — is unsatisfiable at this route. **This is the `Role.Client`/`MayHoldStaffSession` defect
+class recorded once, below** — the same shape as `TC-1-021`, `TC-1-043` and `TC-1-126`.
+
+**What already exists and is not this row's gap:** the Api half is covered as a refusal, not as a
+permission list, by
+`A_hand_minted_portal_client_session_is_refused_by_the_staff_door`
+[Verified: 2026-09-01 @ `tests/Api.Tests/MeTests.cs` -> `A_hand_minted_portal_client_session_is_refused_by_the_staff_door`],
+and the substance of `AC-105a-H` — a client holds no company-wide permission — is proved at the
+Domain layer by `A_client_holds_no_company_wide_permission`
+[Verified: 2026-09-01 @ `tests/Domain.Tests/PermissionEvaluatorTests.cs` -> `A_client_holds_no_company_wide_permission`].
+Both are green today.
+
+**Why this is not QA's to close.** `SM-32` names the actual gap precisely: *"a reader of `KAFF-105a`
+will not have read D-090"* — the **story** still states `AC-105a-H`'s given as if the route answers a
+`Role.Client` caller with an empty list, when the route now refuses that caller before any list is
+built. Choosing whether `AC-105a-H` is rewritten to the refusal shape, or split into a refused-at-the-
+door criterion plus a Domain-level "holds nothing" criterion, is a decision about what the story's own
+criterion says — `SM-32` routes exactly that to the **BA**, not to QA and not to Karim. **QA does not
+invent which shape the criterion takes.** `TC-1-042` stays BLOCKED, citing `SM-32`, until the BA acts;
+`TC-1-042` is **not** written twice against a guess, per `SM-32`'s own instruction to the replacement's
+future author ("do not write two").
+*Fails if:* nothing — there is no executable case here to fail or pass. That is the point: a case
+citing a retired ID and an unsatisfiable given is not a smaller version of a real case.
 
 **TC-1-045 · the endpoint and the catalogue cannot drift**
 `AC-105a-E` · P2 · Api · D-012
@@ -987,10 +1107,39 @@ which is the drift D-012 designed the catalogue as data to prevent.
 
 **TC-1-046 · the payload carries no money**
 `KAFF-105a` money section · P1 · Api · spec.md §12 · §6.1
-Given the response contract, when it is inspected, then it carries no balance, contract value, cost or
-margin field.
-*Fails if:* a convenient "project value" is added for the dashboard. It would reach the portal, where
-§12 forbids it absolutely, and HR, where D-044 ruling 2 does — in one step, from one field.
+
+**Rewritten 2026-09-01** (`meetings/2026-08-27-sprint-1-close.md` §2.3, routed QA): as written this
+case says *"when it is inspected"* with no actor and no mechanism — satisfied today only "by
+inspection," i.e. by a human reading the type. **A scenario nobody can make fail is not a case**
+(`agents.md` §3c). Rewritten as a reflection assertion over the response type itself, so a field added
+tomorrow turns it red without anybody re-reading the class by eye.
+
+Given the CLR type `Kaff.Api.Features.Auth.WhoAmI.Response` (the `GET /api/auth/me` response DTO — the
+same type `TC-1-235`, `TC-1-236` and the `AC-105a-*` cases assert against)
+[Verified: 2026-09-01 @ `src/Api/Features/Auth/WhoAmI/Response.cs` -> `record Response`],
+when its public properties are enumerated via `typeof(Response).GetProperties()` — recursively, into
+every nested record/class the type owns (the permission list, the project list once `KAFF-105b` ships)
+but **not** into `System.*` or third-party types, so the recursion is bounded —
+then no property's **name** matches (case-insensitive, substring) any of `balance`, `value`, `cost`,
+`margin`, `budget`, `amount`, `price`, `total`, `contractvalue`; and no property's **type** is `decimal`,
+`decimal?`, `Money`, or a collection of either.
+*Fails if:* a property matching either rule is added anywhere the recursion reaches — including inside
+a nested type introduced for an unrelated reason, which is exactly how "a convenient 'project value' is
+added for the dashboard" would slip in and reach the portal, where §12 forbids it absolutely, and HR,
+where D-044 ruling 2 does — in one step, from one field this check does not need a human to notice.
+*(Money is a `Money` value object per `CLAUDE.md`, not a bare `decimal`, so the type-name check catches
+both a raw `decimal` slipping in ahead of the wrapper and the wrapper itself, which is equally out of
+place on this payload.)*
+
+**Spec for Backend:**
+- **Test name:** `The_auth_me_response_type_carries_no_money_shaped_property`
+- **File:** `tests/Api.Tests/MeTests.cs` (a reflection-only test — no HTTP call needed, so it may sit in
+  `Domain.Tests` instead if that suite is preferred for a pure-type assertion; either is acceptable, but
+  it must run against the real `Response` type, not a hand-copied list of its fields)
+- **Mechanism:** a small recursive walk of `PropertyInfo[]`, scoped to types declared in `Kaff.Api.*` /
+  `Kaff.Domain.*` namespaces so it does not walk into `System.String`, `Guid`, `DateTimeOffset`, etc.
+- **Mutation to watch red:** add a `decimal ProjectValue` (or `Money Balance`) property to `Response` or
+  to a type it contains, and confirm the test fails before the property is removed again.
 
 **TC-1-235 · the route is `/api/auth/me`, and no token is in it**
 `AC-105a-B, rule 2` · P1 · Api · **D-050**
@@ -1149,6 +1298,41 @@ Given each refusal above, when the application log is read, then each carries th
 and the `PermissionDecision`.
 *Fails if:* "Forbidden" ships with no explanation, which is the failure mode that becomes a two-hour
 support call.
+
+**Rewritten 2026-09-01 — `W-3`** [Verified: 2026-09-01 @ `meetings/2026-08-27-sprint-1-close.md` ->
+the `W-3` row]: *"emits and no test can fail on it disappearing."* The mechanism is real —
+`_logger.LogInformation("Refused {Permission} for user {UserId} on project {ProjectId}: {Decision}.",
+...)`
+[Verified: 2026-09-01 @ `src/Api/Authorization/PermissionAuthorizationHandler.cs` ->
+`HandleRequirementAsync`] — but "when the application log is read" names no mechanism a test can use:
+`ILogger<T>` is not a file, and nothing in the harness intercepts it today. Precise enough for Backend
+to build without re-deriving what "the log" means:
+
+- **Test name:** `A_refusal_is_logged_with_the_permission_the_user_and_the_decision`
+- **File:** `tests/Api.Tests/PermissionMechanismTests.cs`
+  [Verified: 2026-09-01 @ `tests/Api.Tests/PermissionMechanismTests.cs` -> `class PermissionMechanismTests`]
+  (the existing suite for this handler's cross-cutting behaviour — `W-3` is one more fact about it, not
+  a new file).
+- **Mechanism:** register a log capture — `Microsoft.Extensions.Diagnostics.Testing`'s `FakeLogger` /
+  `FakeLoggerProvider`, or an `ILoggerProvider` test double if that package is not already a
+  dependency — into `KaffApiFactory`'s `IServiceCollection` for `ILogger<PermissionAuthorizationHandler>`
+  specifically, so the assertion is scoped to this one handler's output and not to every line the test
+  host happens to emit.
+- **Given:** any refused request already exercised by `TC-1-050` (a non-Owner attempting
+  `POST /api/users`).
+- **Then:** exactly one captured `LogInformation` entry names `Permission.UserManage` (or whichever
+  permission the route requires), the caller's `UserId`, and a `PermissionDecision` that is not
+  `Granted` — read from the structured log state, not by string-matching the rendered message, so a
+  harmless wording change does not turn the case red for the wrong reason.
+- **Fails if:** the `LogInformation` call is removed, downgraded below the level the capture listens
+  at, or stops naming one of the three values — each is a separate assertion so the case pins the whole
+  triple, not just "something was logged."
+
+**Note on the double citation:** `AC-106-B`'s own title is *"nobody else can, whatever their role"* —
+the refusal, asserted by `TC-1-050`. This case's logging half was already riding on the same ID before
+this rewrite, and that is left as it was rather than moved to a new criterion — inventing an ID for a
+consequence of the same rule is not this session's call, and the citation was accurate before the
+rewrite and remains accurate after it.
 
 **TC-1-052 · HR cannot mint a login**
 `AC-106-C` · P1 · Api · D-044 ruling 1
@@ -1325,6 +1509,38 @@ Owner, before and after both carry department and sub-department, and `ChangedPr
 *Fails if:* only the after state is recorded — the record then cannot say what capability the person
 gave up, only what they gained.
 
+**TC-1-259 · the department alone is never enough on money**
+`AC-108-G` · P1 · Domain · spec.md §8 · D-052 §1 · D-053 §2
+
+**New, 2026-09-01 — closing a traceability gap.** `AC-108-G` was ruled and built (D-052 §1's F-04 fix,
+appended to the AC-id map on 2026-08-22
+[Verified: 2026-09-01 @ `stories/ac-id-map.md` -> the `AC-108-G` row]) and had **no case in this file
+asserting it** — found, and routed QA, at the 2026-08-27 sprint close as **`W-10`**
+[Verified: 2026-09-01 @ `meetings/2026-08-27-sprint-1-close.md` -> the `W-10` row]: *"`AC-108-G`
+appears nowhere in `qa/slice-1/test-cases.md`. Covered in code, absent from traceability."* Next
+unused id; nothing renumbered, nothing retired — the same pattern as `TC-1-258`.
+
+Given a **`Role.SiteEngineer`** in Operations / Technical, when the Owner moves them to Operations /
+Administrative, then they still **cannot** reach `SiteExpenseConfirm`
+[Verified: 2026-09-01 @ `stories/slice-1-foundation/KAFF-108-move-a-user-between-departments.md` ->
+the `AC-108-G` criterion] — the criterion `AC-108-A` used to contradict, closed by D-052 §1 and D-053
+§2 (F-04).
+*Fails if:* the row is granted to the bare department again, with no role named — reopening F-04 on
+this specific transition, a Site Engineer moved sideways within Operations rather than in from outside
+it.
+
+**Already covered, unlabelled — this row is traceability, not a build gap.** The exact scenario is
+pinned by `A_site_engineer_in_the_admin_sub_department_still_cannot_confirm_a_site_expense`
+[Verified: 2026-09-01 @ `tests/Domain.Tests/PermissionEvaluatorTests.cs` ->
+`A_site_engineer_in_the_admin_sub_department_still_cannot_confirm_a_site_expense`], and the class it
+belongs to is pinned across all twelve money-touching permissions by
+`No_financial_permission_is_granted_to_a_bare_department`
+[Verified: 2026-09-01 @ `tests/Domain.Tests/PermissionEvaluatorTests.cs` ->
+`No_financial_permission_is_granted_to_a_bare_department`]. **Nothing for Backend to write** — this row
+closes `W-10` by giving the existing coverage a citable case, which is the whole of what was missing.
+*(No Api half exists or is owed: `SiteExpenseConfirm` has no endpoint until slice 6, KAFF-608 — the
+same unbuilt-not-defective reach gap `TC-1-215` already documents for the same permission.)*
+
 ---
 
 # KAFF-109 · Change a user's role — **Ready**, Q27 answered — **and it reverses D-049 §6**
@@ -1391,13 +1607,44 @@ role and the new role.
 *Fails if:* the old role is omitted — the trail then cannot answer *"who could approve that extract on
 the day it was approved"*, which is the single question this record exists for.
 
-**TC-1-079 · PENDING Q27 (residual)**
+**TC-1-079 · BLOCKED — Q41 (the `Role.Client` half) and an unregistered gap (the `Role.Subcontractor`
+half)**
 `KAFF-109 rule 10` · P1
-Whether a role may be changed **to** `Role.Client` or `Role.Subcontractor` at all. **Cannot be
-written:** D-051 Q27 answered the assignment half and said nothing about this one. An internal login
-becoming a portal identity is a different kind of account, not a different role — `Role.Client`
-requires a `ClientId` and forbids a department, and the two shapes are incompatible, so *"convert
-them"* and *"refuse it"* are both plausible and only one is Karim's.
+
+**Corrected 2026-09-01.** This row previously read `PENDING Q27 (residual)`. **That marker is wrong
+today and was flagged wrong on 2026-08-27**: Q27 is closed
+[Verified: 2026-09-01 @ `stories/questions-for-karim.md` -> the `Q27` row] — *"REVERSED and closed. A
+role change automatically revokes every project assignment"* — and closed rows do not leave a residual
+by definition; a case `PENDING` on a closed question is not pending on anything. The routing table
+already named this
+[Verified: 2026-09-01 @ `meetings/2026-08-27-sprint-1-close.md` -> the `TC-1-079` row]: *"the register
+says Q27 is closed, so the case is pending on something no open entry names."* QA's job here is to
+retarget the marker at the question that actually blocks it, not to guess the answer.
+
+**The `Role.Client` half has a name: Q41.**
+[Verified: 2026-09-01 @ `stories/questions-for-karim.md` -> the `Q41` row] *"If somebody who works for
+you stops working for you and becomes a client, should their staff login be turned into their client
+login — or should that be a new account?"* Open, blocks nothing before this row. Whichever way Karim
+rules, `Role.Client` requires a `ClientId` and forbids a department (`User.cs`'s creation-time
+invariants), so a converted row and a fresh row differ in exactly what the answer needs to say —
+convert-in-place or refuse-and-create-new are both still plausible until he says which.
+
+**The `Role.Subcontractor` half has no question anywhere, and that is itself the finding.** Karim has
+never been asked whether a staff login may become a `Role.Subcontractor` record — spec.md §9's "record
+only, no login" governs a `Subcontractor` created as one from the start, not a conversion, and Q41 asks
+only about becoming a client. A repository-wide search of `stories/questions-for-karim.md` for
+"subcontractor" turns up no open row asking this
+[Verified: 2026-09-01 — searched, no `Subcontractor`-conversion question present]. **Raised as a new
+finding rather than folded into Q41**, because Q41's own reasoning — "keeps a staff person's whole
+audit history under a [portal] login" — does not transfer: a subcontractor has no login to inherit one
+into, so the question is not the same question with the role swapped, and a case that asserted it under
+Q41's answer would be answering a question nobody asked.
+
+*This case cannot be written under either half* until Karim rules Q41 and until the BA registers and
+Karim rules the missing `Subcontractor` question. **Not QA's to answer either way** — `agents.md`: an
+invented rule here is exactly the failure mode the register exists to prevent, and D-088 already shows
+the cost of guessing wrong on this same story's neighbouring question (the reversible `ChangeRole`
+guard, kept deliberately reversible for the same reason).
 
 **TC-1-080 · a role change revokes every assignment, and is not refused**
 `AC-109-A` · P1 · Api · **D-051 Q27, reversing D-049 §6**
@@ -3025,3 +3272,110 @@ deliberately, if the answer changes the workflow.
 *(The other half of this endpoint — that the client's kind is read from the database and never taken
 from the request — is `TC-1-242`, F-25, RSK-20. The two are separate: this case is who may call it,
 that case is what it may believe.)*
+
+---
+
+# Cross-cutting mechanism — two findings from the 2026-08-27 sprint close, closed 2026-09-01
+
+**`W-2` and `W-4`, re-verified against the files today rather than repeated from the meeting file that
+raised them** [Verified: 2026-09-01 @ `meetings/2026-08-27-sprint-1-close.md` -> the `W-2` and `W-4`
+rows]. Neither was previously written as a numbered case; both are cross-cutting infrastructure
+(`PermissionAuthorizationHandler`, `Program.cs`) rather than one story's behaviour, which is why they
+sit here rather than under a `KAFF-1nn` heading.
+
+**TC-1-260 · a domain-specific `Forbidden` key survives the generic problem-details flattening**
+`KAFF-118` audit section, adjacent — problem-details mechanism · P2 · Api · `Program.cs`
+`AddProblemDetails`
+
+**New, 2026-09-01 — `W-4`.** *"`TryAdd` in the problem-details callback is untested; flattening a
+specific domain `Forbidden` key to the generic one turns nothing red"*
+[Verified: 2026-09-01 @ `src/Api/Program.cs` -> `AddProblemDetails`]. **Latent, not reachable through
+any endpoint today** — `AuthorizationErrors.SameActorCreatedAndApproved`
+[Verified: 2026-09-01 @ `src/Domain/Authorization/SeparationOfDuties.cs` -> `SameActorCreatedAndApproved`]
+is `ErrorType.Forbidden` and defined, but `SeparationOfDuties.EnsureDifferentActor`
+[Verified: 2026-09-01 @ `src/Domain/Authorization/SeparationOfDuties.cs` -> `EnsureDifferentActor`] is
+not yet called by any handler under `src/Api/`
+[Verified: 2026-09-01 — repository-wide search of `src/Api/` for `EnsureDifferentActor` returns
+nothing] — this is a mechanism guard for a defect that has not had the chance to happen yet, and the
+case is written now precisely because D-046 exists: a guard nobody tests until the day it is needed is
+a guard nobody has verified fires.
+
+**What decides whether `TryAdd` matters, mechanically, not by reading the code twice:**
+`ResultExtensions.Problem`
+[Verified: 2026-09-01 @ `src/Api/Common/Results/ResultExtensions.cs` -> `Problem`] already stamps
+`Extensions["code"]` and `Extensions["messageKey"]` with the domain error's own values before
+`CustomizeProblemDetails` ever runs, so `TryAdd` — not a plain assignment — is what keeps the generic
+401/403 fallback from overwriting them. Replace `TryAdd` with `[…] =` and this case must go red.
+
+Given a probe route that returns `ResultExtensions.Problem(AuthorizationErrors.SameActorCreatedAndApproved)`
+directly — the harness's `ProbeEndpoint`
+[Verified: 2026-09-01 @ `tests/Api.Tests/Infrastructure/ProbeEndpoint.cs` -> `class ProbeEndpoint`] is
+the existing mechanism for exactly this and needs one more route added to it, not a new harness
+concept — when it is called, then the response is **403** and the body's `code` is
+**`auth.same_actor_created_and_approved`**
+[Verified: 2026-09-01 @ `src/Domain/Authorization/SeparationOfDuties.cs` -> `SameActorCreatedAndApproved`],
+**never** `auth.forbidden`.
+*Fails if:* the body carries the generic Forbidden code instead of the specific one — which is exactly
+what a `TryAdd` → `=` refactor produces, silently, because both are valid ProblemDetails and the status
+code does not change.
+
+**Spec for Backend:**
+- **Test name:** `A_domain_specific_forbidden_code_is_not_flattened_by_the_generic_problem_details_callback`
+- **File:** `tests/Api.Tests/PermissionMechanismTests.cs`
+- **Mechanism:** add a probe route to `ProbeEndpoint` that calls
+  `ResultExtensions.Problem(AuthorizationErrors.SameActorCreatedAndApproved)` and returns it directly —
+  no permission gate involved, so the case isolates the problem-details pipeline from authorization.
+- **Mutation to watch red:** change `TryAdd` to plain assignment (`context.ProblemDetails.Extensions[...] = ...`)
+  in `Program.cs` and confirm the test fails, then revert.
+
+**W-2 — design call, not a case: a helper that can deliberately inject a stale role claim**
+
+**`W-2`** [Verified: 2026-09-01 @ `meetings/2026-08-27-sprint-1-close.md` -> the `W-2` row]: *"The
+`ActorRole` test helpers re-read the actor's role from the database immediately before the request, so
+D-073's claim/database divergence is unobservable by any test."* Confirmed against the files today: the
+per-file private helper — `DeactivateUserTests.ActorRoleAsync`
+[Verified: 2026-09-01 @ `tests/Api.Tests/DeactivateUserTests.cs` -> `ActorRoleAsync`] and its sibling
+`ChangeUserRoleTests.ActorRoleAsync`
+[Verified: 2026-09-01 @ `tests/Api.Tests/ChangeUserRoleTests.cs` -> `ActorRoleAsync`] — reads the
+actor's **current** role from a bare `KaffDbContext` and writes it straight onto
+`TestAuthHandler.RoleHeader` for that same request, every time. Because the header is always rebuilt
+from whatever the database says **right now**, the claim and the database can never disagree inside a
+test — which is not a defect in the helper (D-048's per-request re-read is the fix D-073 needed, and
+the helper is right to mirror production), but it does mean **no test can construct the one state
+`AuditRecord.ActorRole`'s correctness actually depends on**: a request made with a claim naming a role
+the database no longer agrees with.
+
+**D-073 is closed** [Verified: 2026-09-01 @ `decisions.md` -> `D-073`] — `PermissionAuthorizationHandler`
+now hands the audit context the **subject it just read from the database**, not the claim
+[Verified: 2026-09-01 @ `src/Api/Authorization/PermissionAuthorizationHandler.cs` ->
+`HandleRequirementAsync`]. So this is not an open defect; it is an unguarded fix — D-075 landed with no
+regression test able to tell "reads the database" apart from "reads the claim, which happens to agree,"
+because they agree in every test today by construction.
+
+**This is a design call, so it is specified and not implemented, per this session's boundary.** The
+shape: a **second** helper, or a parameter added to the existing one, that sets `RoleHeader` to a role
+**supplied by the caller** rather than one read fresh from the database — deliberately stale, deliberately
+disagreeing. Two reasonable shapes and the choice is Backend's:
+1. Overload `ActorRoleAsync` (or the request-building method that calls it) with a
+   `Role? claimedRoleOverride` parameter, defaulting to `null` (today's behaviour — read fresh),
+   consolidated once into `tests/Api.Tests/Infrastructure/` so `DeactivateUserTests` and
+   `ChangeUserRoleTests` stop carrying their own private copy of the same method.
+2. A dedicated `StaleRoleClaim(Guid userId, Role claimed)` helper, named on the pattern
+   `DeactivateUserTests.StaleSession` already uses for the same idea applied to the security stamp
+   [Verified: 2026-09-01 @ `tests/Api.Tests/DeactivateUserTests.cs` -> `StaleSession`] — capture once,
+   never refresh, and say in the name that it will not be refreshed.
+
+**Spec for Backend, once the helper exists:**
+- **Test name:** `The_audit_actor_role_comes_from_the_database_not_a_stale_claim`
+- **File:** `tests/Api.Tests/AuditMechanismTests.cs`
+- **Given:** a user created as `Role.Finance`, granted whatever permission the probed action needs;
+  build the request with the stale-claim helper set to a **different** role (e.g. claim `Role.Owner`
+  while the database row is `Role.Finance`) for an action the claimed role could reach but the true role
+  also can (so the request succeeds regardless of which role decides — this case is about what the
+  audit record *says*, not about authorization).
+- **Then:** the resulting `AuditRecord.ActorRole` is **`Role.Finance`** — the database value — not
+  `Role.Owner`, the claimed one.
+- **Fails if:** `ActorRole` reflects the claim. That is the exact regression D-075 fixed and D-073
+  described; without this test, a future change that re-introduces `_currentUser.Role` into the audit
+  path (rather than the gate-read `subject.Role`) passes every existing test, because every existing
+  test's claim and database role always agree.
