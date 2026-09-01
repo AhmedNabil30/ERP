@@ -7529,3 +7529,79 @@ door is worth closing — is untouched and stays with the Architect.**
 
 **Revisit if.** The Architect rules on `V-30-B` and a behavioural assertion is added; the prose above
 should then say a stronger thing is caught, not merely that a weaker thing is honestly described.
+
+---
+
+### D-099 · `V-30-C` — the missing entry for `45a939d`, and how far it actually reaches · 2026-09-01
+
+**Backend. `V-30-C`.** `qa/slice-1/verification-2026-08-30.md` §5; raised again at the sprint-2
+refinement, `meetings/2026-09-01-sprint-2-refinement.md` §4.2.
+
+**What changed, and it shipped with no entry.** `45a939d` touches exactly one file,
+`src/Api/Program.cs`, in two places [Verified: 2026-09-01 @ `src/Api/Program.cs` ->
+`ThrowOnBadRequest`; @ `src/Api/Program.cs` -> the `ExceptionHandlerOptions` block]:
+
+1. `builder.Services.Configure<RouteHandlerOptions>(options => options.ThrowOnBadRequest = false);` —
+   the framework default is `true` in Development and `false` everywhere else, so a malformed JSON body
+   produced a `BadHttpRequestException` in Development and a clean `400` in Staging. Set explicitly, so
+   every environment now agrees.
+2. `app.UseExceptionHandler(new ExceptionHandlerOptions { StatusCodeSelector = ... })` — without a
+   selector, `UseExceptionHandler` reports every exception, `BadHttpRequestException` included, as
+   `500`. The selector reads the exception's own status code (`400` for an unreadable body, `413` for
+   one over the size limit) instead of flattening all of them to a server fault.
+
+**Why it has no entry, corrected now.** It was written and merged as a bug fix for the defect found at
+`POST /api/setup`, and the commit's own comments say plainly that the fix is not scoped to that route —
+*"Every endpoint that binds a JSON body, not `POST /api/setup` where it was found"*
+[Verified: 2026-09-01 @ `src/Api/Program.cs` -> `ThrowOnBadRequest`]. A fix with that reach is
+structural under `CLAUDE.md`'s Definition of Done and should have carried an entry the day it merged.
+It did not, and this is that entry, written under D-057 §4's rule for outstanding work rather than
+waiting on `W-5` to close first.
+
+**Blast radius — this is not an `/api/setup` fix.** Both changes are registered once, globally, in
+`Program.cs`, ahead of every feature slice's endpoint mapping. **Every JSON-binding endpoint the API
+has today, and every one it will ever add, answers a malformed body with a plain client-error status in
+every environment**, not only the route the defect was noticed on. Driven live in Development by the
+Verifier across `POST /api/setup`, `POST /api/auth/sign-in` and `POST /api/auth/change-password` with
+nine malformed bodies: zero `500`s, and zero `fail:`-level log entries where each used to log an
+unhandled exception [Verified: 2026-09-01 — `qa/slice-1/verification-2026-08-30.md` §5].
+
+**What it rules out.** An environment-dependent status code for the same malformed request (Development
+`500`, Staging `400`) is no longer possible without deliberately reverting the `Configure<
+RouteHandlerOptions>` line — and `The_bad_request_behaviour_is_set_explicitly_rather_than_by_environment`
+fails the moment that line is removed
+[Verified: 2026-09-01 @ `tests/Api.Tests/MalformedRequestTests.cs` ->
+`The_bad_request_behaviour_is_set_explicitly_rather_than_by_environment`]. It also rules out a client's
+malformed body being logged as a genuine unhandled-exception fault — the two are different events and
+must not read alike in the log.
+
+**What `W-5` became, and this is the honest consequence rather than a decision about it.** Before this
+commit, a `messageKey`-less `400` was a Development-only artefact of the framework throwing on a body
+the client got wrong — an edge a developer saw and a client, in practice, did not, because Staging
+answered `400` without a body-shaped `ProblemDetails` extension either way. **After this commit, the
+`messageKey`-less `400` is what every JSON-binding endpoint returns, in every environment, for any
+malformed body** — `CustomizeProblemDetails` (D-079 / the block above it in `Program.cs`) only fills in
+`code` and `messageKey` for a bare `401` or `403`, and a framework-thrown `400` is neither. D-095 §7
+already declined to assert a specific status code in `A_role_outside_the_enum_is_refused_and_never_
+persisted` for exactly this reason. **No user-visible defect exists today** — the SPA's `toProblem`
+falls back to `errors.unknown`, which is a real Arabic key
+[Verified: 2026-09-01 @ `src/Web/src/app/core/api/problem-details.ts` -> `toProblem`] — but the shape
+is now load-bearing everywhere rather than nowhere, and whether that is the API's permanent refusal
+contract, and what a `413` should carry when a site engineer's photo upload trips the size limit
+(slice 6), is **the Architect's and UX's to rule**, not decided here.
+
+**Not done, and named so it is not mistaken for closed.**
+
+* **Regression cover is name-level, not surface-level.** `V-30-G` stands: every assertion in
+  `MalformedRequestTests` runs against test-host probe routes in the `Testing` environment, where the
+  framework default already matched half of this fix before it existed. No test in the suite exercises
+  a *shipped* route or a *Development* host; the Verifier established the reach by driving the running
+  API by hand, not by a test that fails on a regression. Closing it needs the machine and is Backend's,
+  separately, not folded into this entry.
+* **`W-5`'s refusal contract is not ruled here.** This entry records what changed and what it now
+  means for `W-5`; it does not decide whether a `messageKey`-less `400` is an acceptable permanent
+  shape, and it does not touch `413`.
+
+**Revisit if.** The Architect rules a `messageKey` is required on every refusal shape, including a
+framework-thrown `400`/`413` — `CustomizeProblemDetails`'s `switch` would then need a third arm, and
+`W-5` would close at the same time.
