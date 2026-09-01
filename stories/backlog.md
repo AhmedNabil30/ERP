@@ -415,12 +415,12 @@ criterion behind them. **KAFF-105a is untouched by D-065 — checked, not assume
 | KAFF-105b | `GET /api/auth/me` returns the projects I reach, and how | **3** | Ready | 105a, 113, 114 |
 | KAFF-106 | The Owner creates a user with a role and a department | 5 | BUILT, verified 2026-08-25 — 9 of 11 criteria satisfied. | 100 |
 | KAFF-107 | An HR user cannot be created or moved outside the HR department | 2 | Ready | 106 |
-| KAFF-108 | Move a user between departments | 3 | Ready | 106 |
+| KAFF-108 | Move a user between departments | 3 | **ACCEPTED** 2026-08-25 — 7 of 7, `qa/slice-1/verification-2026-08-25.md` §8. *(This row read `Ready` until 2026-09-01 — an unbuilt state — while the same file's build order and "Sprint 1, final" table both had it accepted. Found by Backend at refinement; corrected by the Scrum Master, who owns the board.)* | 106 |
 | KAFF-109 | Change a user's role — **rewritten, D-051 reverses D-049 ruling 6** | 5 | **REJECTED 2026-08-26** on `V-26-A` (a reachable `500` with no `messageKey`) and `V-26-B`. | 106, 113, 111 |
 | KAFF-110 | Deactivate a user, and their access ends on the next request | 5 | BUILT, verified 2026-08-25 — 8 of 10 satisfied. | 106 |
 | KAFF-111 | Deactivating a user revokes their project assignments | 3 | ACCEPTED 2026-08-26 — verified on its own criteria for the first time and both QA cases pass. | 110, 113 |
 | KAFF-112 | Reactivate a user, who comes back with nothing | 3 | ACCEPTED 2026-08-26 — 5 of 6 QA cases covered; **`TC-1-094` has no test** (the username stays reserved while the account is off — an index predicate a later migration removes without noticing). | 110, 111 |
-| KAFF-113 | Assign a user to a project, with seniority for site engineers | 5 | Ready | 106 |
+| KAFF-113 | Assign a user to a project, with seniority for site engineers | 5 | **ACCEPTED** 2026-08-25 — 9 of 9, same report. *(This row read `Ready` until 2026-09-01. **It is on KAFF-105b's dependency path**, so a reader taking it at face value would have judged KAFF-105b unstartable for the wrong reason. Found by Backend at refinement; corrected by the Scrum Master.)* | 106 |
 | KAFF-114 | Revoke a project assignment without losing who could act when | 3 | ACCEPTED 2026-08-26 — 7 of 8 QA cases covered; **`TC-1-120` has no test** (revoking the last person on a project is allowed — the case exists to pin an absence, so nothing goes red the day somebody adds the rule). | 113 |
 | KAFF-115 | The project team panel, and HR's separate Project Team screen | **3** | Ready | 113, 114, 105b |
 | KAFF-116 | Every audit record says how the actor reached the project | 3 | Ready | — |

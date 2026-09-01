@@ -381,3 +381,170 @@ Two things carried out of the sprint-2 opening are now closed, and closing them 
 
 **KAFF-106 and KAFF-110 remain *not accepted* as stories** — only those two criteria were discharged.
 That distinction is the verification report's own and it is kept.
+
+---
+
+## 4. Routing — every finding has an owner, and the QA session is dispatched rather than tabled
+
+`agents.md` §3b: *a defect recorded in a register and assigned to nobody is a defect nobody is fixing.*
+Nothing below is closed by being written here.
+
+### 4.1 The QA rows — the session, not a fourth table
+
+**These ten rows have now been routed three times** — the sprint-1 close §2, the sprint-2 opening §5.5,
+and again today — and moved on none of those occasions. My own close said why: *"they need a QA session,
+not another routing table."*
+
+**Asked what it did not know, QA answered the useful thing: for eight of the ten, nothing.** They need
+doing, not deciding. **So a QA session was dispatched in this ceremony** rather than a row being written
+about them for a fourth time.
+
+| Row | Verdict | Where it went |
+|---|---|---|
+| `TC-1-027` Api half, `TC-1-046`, `TC-1-120`, `TC-1-094`, `W-3`, `W-4`, `W-10` | **Needs a session** | **Dispatched today.** QA writes the cases and hands Backend a named list of tests |
+| `W-2` | **Needs a small design call, then a session** | The helpers re-read the actor's role from the database immediately before the request, so the divergence D-073 names cannot arise in any test. A helper that injects a **stale** claim deliberately is needed first — **Architect**, because it decides what the ledger records and §M forbids downgrading that |
+| `TC-1-042` | **Needs a decision** — not QA's | It cites the retired `AC-105a-F` and cannot be relocked to `AC-105a-H`, because `/api/auth/me` now refuses `Role.Client` outright and the behaviour it would assert no longer exists at that route |
+| `TC-1-079` | **Needs a decision** — Karim's | Its real question is **`Q41`** (open) plus a subcontractor half that **carries no `Q`-number anywhere in the register**. **BA numbers the second half** |
+
+### 4.2 The rest, with owners
+
+| Finding | State today, re-established against the files | Owner |
+|---|---|---|
+| **`V-30-A`** — the *"unforgeable"* claim | **Open, and worse than reported: at least six sentences plus a test name**, not three. **The mechanism is sound** — the one-dot forge is now `CS0122` and the accessibility is pinned. Only the prose is false | **Backend** |
+| **`V-30-A`, remedy** | **Backend does not need to invent the wording — it already exists four paragraphs away in the same file**, in the pinning test's own remarks: a private nested type cannot be **named** from outside its class. That is exactly what `CS0122` proves and exactly what the six sentences overstate. **Propagate it.** And the test's *name* is itself false, so **SM-33 applies**: rename it. Backend moves the two citations in `decisions.md`; **the Scrum Master moves the one in `qa/`**, which Backend may not edit | **Backend**, then me |
+| **`V-30-B`** — metadata is not behaviour | Open. An option, not a defect. Whether a behavioural sweep is worth building for two `SelfOnlyEndpoints` members, or is a rule for the next one, is scope | **Architect**, then Nabil |
+| **`V-30-C`** — `45a939d` has no entry | **Open, and writable this sprint.** Both edits re-verified today [Verified: 2026-09-01 @ `src/Api/Program.cs` -> `ThrowOnBadRequest`]. Its form is settled by D-057 §4: outstanding work goes under a *"Not done"* heading, so it does not have to wait for `W-5` | **Backend** |
+| **`V-30-D`** — name-only guard coverage | **Open, and much larger than measured** — §2.1. Due before the first posting endpoint, not before slice 9 | **Architect** (owner), **Backend** |
+| **`V-30-G`** — the fix is global, the cover is not | Open. **Needs the machine**; serialised | **Backend** |
+| **`V-30-H`** — `SKILL.md` describes a `driver.mjs click` command that does not exist | Open. Trivial, and it is the *"a check that could not detect what it checked for"* pattern D-096 §3 already paid for once | **Backend** |
+| **`V-30-I`** — `AC-106-H` and `AC-105a-C` contradict each other in committed text | Open. The code takes `AC-105a-C`'s side deliberately and says so [Verified: 2026-09-01 @ `src/Api/Features/Auth/WhoAmI/Handler.cs` -> `HandleAsync`]. **It is one of Nabil's four standing questions and is not resolved here** | **BA → Nabil** |
+| **`W-5`** — and it grew | Open. `ThrowOnBadRequest = false` is global, so the `messageKey`-less 400 is now what **every** JSON-binding endpoint returns in **every** environment. **No user-visible defect today** — the SPA falls back to `errors.unknown`. **But `413` is in scope and unexamined**, and it is reachable by a site engineer photographing a wall in slice 6 | **Architect + UX** |
+| **The citation checker's source blind spot** | Open, and **one line wider than `process/agile.md` records** — it walks `*.md` only, so a citation written *inside* `ar.json` is invisible in the direction SM-31's *"locale keys count"* paragraph does not name. Backend measured **65 `Verified:` markers in `*.cs`** in four incompatible shapes; a lax pattern cries wolf, a strict one demands ~65 rewrites | **Backend** |
+| **The staging frontend assertion** | New — §1. One workflow step closes *"runs on staging"* for every screen from here on | **Backend** |
+| **`Q54`'s register row** | **Still *"Not settled by any agent"*** [Verified: 2026-09-01 @ `stories/questions-for-karim.md` -> the `Q54` row] — routed to the BA on 2026-08-27 and still not done. **But the instruction it was given was wrong and must change**: see §4.3 | **BA** |
+| **The `N9` register row** | **Stale** — it reads *"nothing has been ruled about the endpoint"* while **D-062 §2 ruled exactly that** on 2026-08-22. Same staleness class as `Q54`, unswept | **BA** |
+| **`Q-UX-18`** | **Closable against D-072 §2** — the flag is a field, not a refusal. `ux/navigation.md` still describes the refusal reading, and **a shell story written against it would command a defect** | **UX + BA** |
+| **The board's own contradiction** | **Fixed in this run.** `stories/backlog.md`'s slice-1 inventory had KAFF-108 and KAFF-113 as `Ready` — an unbuilt state — while the same file's build order and *"Sprint 1, final"* table had both accepted. **KAFF-113 is on KAFF-105b's dependency path.** Found by Backend; the board is mine | **Scrum Master — done** |
+| **The `Role.Client` given, as a defect class** | Third sighting — `TC-1-021`, `TC-1-042`, and now `AC-105b-G` / `AC-115-G`. Recorded once, with the rule, rather than as four one-off fixes | **QA** (cases), **BA** (criteria) |
+
+### 4.3 `Q54` — the instruction it was given was wrong, and the BA found it
+
+**My brief, and the sprint-1 close before it, told the BA to mark `Q54` answered against D-072 §3.**
+Asked what it did not know, the BA re-read the row and the ruling and found that **doing so would
+overstate what was decided.**
+
+D-072 §3 records Nabil choosing the **mechanism** — partition by month, drop expired partitions. **It
+never states the retention period**, and the original `Q54` asked for one in as many words: *"If there
+is a time limit, say what it is."* No number appears anywhere in `decisions.md` or `spec.md`.
+
+**So the row is marked answered as to mechanism and open as to period**, with the period carried as
+**B3-2, Karim's**. Partitioning can be *built* without the number; it cannot *drop* anything without it.
+
+**This is the second time in this ceremony that an agent declined to do what it was told because the
+instruction rested on a wrong fact.** That is the behaviour §M says never to downgrade and principle 7
+exists to buy.
+
+---
+
+## 5. The proposed commitment — for Nabil to lock
+
+**Scope is Nabil's. Nothing here is a commitment, and I have not declared one.**
+
+### 5.1 The honest position
+
+**Every feature story in the candidate set is `BLOCKED`, and one of the blocks is Karim's.** By
+`process/agile.md` no `BLOCKED` story enters a sprint, and **refusing a sprint is a legitimate outcome
+of refinement** (`agents.md` §3b).
+
+**I am not refusing this one.** There is a full sprint of work that needs **no ruling from anybody**,
+and all of it removes a reason a story cannot start. What I am refusing is to pull KAFF-105b or
+KAFF-115 into a sprint in their current state, because **a story that commands a defect is worse than
+no story** and both currently command several.
+
+### 5.2 What I propose
+
+**A repair-and-unblock sprint. No new feature surface.**
+
+| # | Item | Owner | Needs a ruling? |
+|---|---|---|---|
+| 1 | **`V-30-A`** — propagate the true sentence to all six sites, rename the false test under SM-33 | Backend | **No** |
+| 2 | **`V-30-C`** — write `45a939d`'s missing `decisions.md` entry, exposure named under *"Not done"* | Backend | **No** |
+| 3 | **The QA session** — the eight rows that need doing | QA → Backend | **No.** In flight today |
+| 4 | **The story repairs** — five of KAFF-105b's six DoR failures and three of KAFF-115's are BA and QA work needing no ruling | BA, QA | **No** |
+| 5 | **`V-30-H`** and the **staging frontend assertion** | Backend | **No** |
+| 6 | **`Q54` / `N9` / `Q-UX-18`** register and document corrections, per §4.3 | BA, UX | **No** |
+
+**Item 4 is the one that matters most**, and it is why this is not a wasted sprint: doing it takes
+KAFF-105b from *six* Definition of Ready failures to **one** — Karim's. **The story then becomes Ready
+the day Q43 is answered**, instead of needing another refinement to discover the other five again.
+
+**Points: none.** Not one of these is a story, and I am not dressing them as points to make the sprint
+look conventional. Sprint 1 taught this project what a number that means nothing costs.
+
+### 5.3 The one lever Nabil holds that changes this
+
+**Answer `Q43`, or descope the project code.** It is the single highest-leverage decision available:
+
+- **If Karim rules HR may see the code**, KAFF-105b's rule 6 and `AC-105b-C` become cited, and with
+  item 4 done the story is **Ready at 5 points** and can be pulled.
+- **If the code comes off**, the same is true one field lighter — and it comes off *because he said so*,
+  which is the register's own words.
+- **If it stays unasked**, KAFF-105b stays `BLOCKED` however much repair work is done to it.
+
+**I am not answering it, and no agent in this room may.**
+
+### 5.4 What I am not proposing, and why
+
+- **The staff shell.** §3.1 — the hole is four screens and at least one endpoint that do not exist, and
+  nobody can size it today. Proposing it would be inventing scope.
+- **KAFF-105b or KAFF-115 as feature work.** Both `BLOCKED`.
+- **`V-30-D`'s guard-expression work.** It is the most important technical finding here and it belongs
+  **before slice 3**, not inside a repair sprint where it would be rushed.
+- **`KAFF-118`.** Its cut is Nabil's and he has still not ruled.
+
+---
+
+## 6. The questions standing with Nabil
+
+**None of these is answered here, and none may be answered by consensus or to close a sprint.** Four
+were standing before this ceremony; two are new, and one has split in half.
+
+| # | Question | State |
+|---|---|---|
+| 1 | **`KAFF-118`'s cut** from a locked sprint | Unchanged. Unbuilt, 3 points, depends on a story deferred out of the sprint |
+| 2 | **The `Role.Subcontractor` conversion** — refuse, or succeed and clear the credential? | Unchanged, **and now known to carry no `Q`-number in the register at all.** BA to number it |
+| 3 | **The `mustChangePassword` reach** beyond `/api/auth/me` and change-password | **Sharpened.** `V-30-I` found `AC-106-H` and `AC-105a-C` contradict each other in committed text and observed **both** behaviours |
+| 4 | **`Q54` / `N11` retention** | **Split.** The **mechanism** is answered (D-072 §3). The **period was never given** and is Karim's — B3-2 |
+| 5 | **Which reading closes `AC-101b-A`** | **Widened.** `AC-101b-D` fails the same arithmetic, and §3.1 shows all three costed readings understate the hole |
+| **6** | **`Q43` — may HR see a project's *code*, and its team size?** | **New to this list, though registered since 2026-08-21.** It stopped being *"a field, not a story"* the moment KAFF-105b was proposed for a sprint: it now blocks a rule and a criterion. **Karim's** |
+| **7** | **Does sprint 2 proceed as the repair sprint of §5.2**, or does an answer to `Q43` change the shape? | **New. Scope, so yours** |
+
+---
+
+## 7. What this ceremony did **not** do — as a count, not as prose
+
+`meetings/2026-08-27-sprint-1-retrospective.md` §3: a tool that says *"N checked"* must also say
+*"M skipped."* **Eleven.**
+
+1. **No agent built, ran, or started the stack.** Every claim here is from reading files, plus the
+   GitHub Actions API for §1. The suite figures (Domain 107/107, Api 227/227) are **inherited from
+   `qa/slice-1/verification-2026-08-30.md` and were not re-measured.**
+2. **Three questions that need the machine were left unanswered** — §2.3. Serialised, not dropped.
+3. **`V-30-D`'s deeper exposure was not measured.** The Architect established that the safe-balance
+   trigger and the `accounts.enforce_non_negative` flag are verified by name only; **nobody mutated a
+   trigger body or flipped that flag to watch what stays green.**
+4. **No story file was edited.** KAFF-105b and KAFF-115 still carry all the defects §3 names. The
+   ceremony diagnoses; the BA repairs.
+5. **The QA session's outcome is not in this document.** It was dispatched during the ceremony and its
+   result belongs to whoever reads it next.
+6. **Slices 2 and 9 were not refined.** `process/agile.md` says refine one sprint ahead and no further,
+   and slice 9's *"blocked by nothing"* still almost certainly means it has not been read closely enough.
+7. **`qa/slice-1/test-cases.md` was not executed case by case.** No `TC-` identifier was run.
+8. **No slice-3 money invariant was tested**, because none exists to test. Named again so the citation
+   and suite totals in this file are never read as coverage of the thing this project is for.
+9. **The five re-established acceptances were not re-checked.** I took `qa/slice-1/verification-2026-08-30.md`'s
+   verdicts as given; they are three days old and the tree has not moved since `dc76fe7`.
+10. **`ux/navigation.md` was not corrected** for the stale `mustChangePassword` refusal reading. Routed
+    to UX and BA, not done here.
+11. **I did not verify the staging *screens*.** §1 establishes the API is reachable and healthy. Nobody
+    fetched the SPA from staging, in this ceremony or any other.
