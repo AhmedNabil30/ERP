@@ -85,7 +85,26 @@ questions merged into it with their origin recorded (action **SM-4**).
 
 ---
 
-## Sprint 2 — open, 2026-08-30 · scope **not yet locked**
+## Sprint 2 — open · scope **not yet locked**
+
+> ### ⚠️ Refined 2026-09-01 — **neither proposed story is Ready.** `meetings/2026-09-01-sprint-2-refinement.md`
+>
+> The refinement ceremony was run and **it changes the proposal below rather than confirming it.**
+> Read the meeting file; this is the summary.
+>
+> | | Verdict |
+> |---|---|
+> | **KAFF-105b** | **`BLOCKED`** on six Definition of Ready lines. Five are BA/QA repairs needing no ruling; **the sixth is Karim's** — rule 6 and `AC-105b-C` assert HR sees a project's **code**, citing D-051 (Q32), which grants *"the project name and the list of assigned engineers"* and never mentions a code. That is **`Q43`, open**. **Re-estimated 3 → 5** |
+> | **KAFF-115** | **`BLOCKED`** — transitively on KAFF-105b, and on its own account. **Re-estimated 3 → 8** (permission model 5, spans backend and frontend 8; take the higher). Frontend returned 8 independently |
+> | **The staff shell** | **Still not a story, and the hole is bigger than the three costed readings.** `ux/navigation.md` -> `Landing summary` names a landing for every role; **no story builds S-004, S-005, S-009a or S-011**, and the whole API exposes three GET routes, so three of the four landings have no data to render. **`AC-101b-D` fails the same arithmetic as `AC-101b-A`** — HR lands on S-009a (the project *list*) and KAFF-115 builds S-009b (one project's team) |
+> | **Item 0 — the Verifier pass** | **DONE.** Six commits ACCEPT, five acceptances re-established |
+> | **Item 4 — `AC-106-H`, `AC-110-D`** | **Both DISCHARGED.** KAFF-106 and KAFF-110 remain **not accepted** as stories |
+> | **Staging** | **The CI smoke check passes at HEAD.** *"Runs on staging"* is now tickable for every API-surface story and **still not for the two screens** — the check curls `/api/health` and never fetches the SPA |
+>
+> **Proposed instead: a repair-and-unblock sprint, no new feature surface, no story points** — meeting
+> §5. **Scope is Nabil's and nothing is locked.**
+
+### The 2026-08-30 opening proposal, kept as the record
 
 **Full reasoning: `meetings/2026-08-30-sprint-2-open.md`.** This is the summary; that file is the
 record, and it carries what was *not* done as well as what was.
