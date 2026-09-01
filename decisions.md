@@ -7108,10 +7108,12 @@ applying nothing — D-046's green light inside the mechanism written to prevent
 
 **Decision. The type is private; the question is public.**
 
-* `Marker` is a **private nested type** of `LiveSession`. A private nested type cannot be named from
-  outside its containing class, so `RequireLiveSession` is now the only expression in the language
+* `Marker` is a **private nested type** of `LiveSession`. A private nested type cannot be **named**
+  from outside its containing class, so `RequireLiveSession` is now the only *ordinary* expression
   that can produce this metadata
   [Verified: 2026-08-29 @ `src/Api/Authorization/LiveSession.cs` -> `RequireLiveSession`].
+  **⚠️ Amended 2026-09-01, decisions.md D-098: this sentence overstated what `CS0122` proves.**
+  Reflection still constructs the type from outside the class — see D-098.
 * `LiveSession.IsApplied(Endpoint)` is the read half — a test can ask whether a route paid, and is
   not handed the means to answer dishonestly
   [Verified: 2026-08-29 @ `src/Api/Authorization/LiveSession.cs` -> `IsApplied`].
@@ -7132,10 +7134,11 @@ applying nothing — D-046's green light inside the mechanism written to prevent
    then deleted** — an unpaid exemption must not exist in this repository even as a fixture.
 2. **The accessibility itself is pinned.** A compiler error is evidence only while the accessibility
    stands, and widening `private` to `internal` is a one-word edit. Done: the build stays clean and
-   `Nothing_outside_LiveSession_can_produce_the_metadata_that_proves_a_route_paid` fails with
+   `LiveSession_exposes_no_metadata_type_wider_than_private` (renamed 2026-09-01, D-098 — it was
+   `Nothing_outside_LiveSession_can_produce_the_metadata_that_proves_a_route_paid`) fails with
    `found at least one item {"Marker"}`
    [Verified: 2026-08-29 @ `tests/Api.Tests/EndpointPermissionCoverageTests.cs` ->
-   `Nothing_outside_LiveSession_can_produce_the_metadata_that_proves_a_route_paid`]. Restored;
+   `LiveSession_exposes_no_metadata_type_wider_than_private`]. Restored;
    `218 / 218`.
 
 **What is still true and is not closed by this.** The Verifier's §3.1 gap stands unchanged: a handler
@@ -7437,3 +7440,92 @@ proposed for sprint 2, where it would be rushed.
   blind spot are all still open**, each with a named owner in the meeting §4.2.
 * **No sprint scope is locked.** A repair-and-unblock sprint is **proposed** in the meeting §5 and
   carries no story points. **Seven questions stand with Nabil** and none was answered here.
+
+---
+
+### D-098 · `V-30-A` fixed — the mechanism was already sound; the prose overstated it in six places and a test name · 2026-09-01
+
+**Backend. `V-30-A`.** `qa/slice-1/verification-2026-08-30.md` §2.
+
+**What was wrong, and what was not.** D-094 fixed the real defect — `Marker` went from `public` with
+an `internal Instance` to a `private` nested type, so the one-dot forge `.WithMetadata(LiveSession
+.Marker.Instance)` is now `CS0122` at compile time, and widening the accessibility back to `internal`
+turns a pinning test red. **That mechanism is unchanged by this entry and stays.**
+
+What D-094 got wrong was the *sentence* describing it: *"a private nested type cannot be named or
+constructed from outside its containing class, so `RequireLiveSession` is now the only expression in
+the language that can produce this metadata."* `CS0122` proves the type cannot be **named** from
+outside `LiveSession`. It does not prove the metadata cannot be **produced** —
+`Activator.CreateInstance(typeof(LiveSession).GetNestedType("Marker", BindingFlags.NonPublic)!,
+nonPublic: true)` is one expression, reachable from any feature slice because they all compile into
+`Kaff.Api`, and it constructs the value. The Verifier built exactly that into a probe route, listed it
+in `SelfOnlyEndpoints`, applied none of the three checks, and the suite reported **227/227**
+[Verified: 2026-09-01 @ `qa/slice-1/verification-2026-08-30.md` -> the `V-30-A` finding].
+
+**The false sentence was not written once. It was written six times, plus a test name that asserts it
+as its own claim** — found by re-reading every file the Verifier's finding touches rather than trusting
+the brief's earlier count of three:
+
+1. `src/Api/Authorization/LiveSession.cs` -> `Marker`'s `<summary>`: *"Added by `RequireLiveSession` and
+   by nothing else."*
+2. `src/Api/Authorization/LiveSession.cs` -> `Marker`'s `<remarks>`: *"so `RequireLiveSession` is now
+   the only expression in the language that can produce this metadata."*
+3. `src/Api/Authorization/LiveSession.cs` -> `IsApplied`'s `<remarks>`: *"nothing outside this class can
+   make a route claim it did."*
+4. `tests/Api.Tests/EndpointPermissionCoverageTests.cs` ->
+   `Every_self_only_member_is_mapped_and_requires_authentication_with_no_permission_of_its_own`'s
+   failure message: *"There is no other way to satisfy this ... no expression outside LiveSession can
+   produce it."*
+5. `tests/Api.Tests/EndpointPermissionCoverageTests.cs` -> the renamed test's `<summary>` (item 7 below):
+   *"The exemption marker cannot be obtained by anything but `RequireLiveSession()`."*
+6. `decisions.md` D-094 itself: *"so `RequireLiveSession` is now the only expression in the language
+   that can produce this metadata"* — amended in place above, at D-094, rather than silently rewritten.
+7. The test name **was the claim, restated as an identifier**:
+   `Nothing_outside_LiveSession_can_produce_the_metadata_that_proves_a_route_paid`. SM-33
+   (`process/agile.md`) rules exactly this shape: a name that is merely narrow stays, a name the change
+   makes false is renamed in the change that finds it false.
+
+**This is the second false sentence found in this file. D-094 replaced the first — the claim that
+`.WithMetadata(LiveSession.Marker.Instance)` was the only forge worth guarding against.** Two
+absolute claims about the same mechanism, each written by the session that had just made the
+mechanism stronger, each overstated in the same direction: from "this is the strongest attack I
+tested" to "this is the only attack that exists." **The shape recurs in this file specifically**,
+because every fix here narrates its own sufficiency, and a narrated sufficiency is exactly the sentence
+that outruns its evidence.
+
+**Decision.**
+
+1. **The six sentences are rewritten to say what `CS0122` actually establishes**, not what a stronger
+   claim would be convenient to write: the type cannot be *named* from outside `LiveSession`, which
+   closes the accidental forge; reflection can still *construct* it, which no test here catches, and a
+   route built that way cannot be mistaken for correct usage the way the old one-dot forge could — it
+   is a deliberate act, not a plausible mistake
+   [Verified: 2026-09-01 @ `src/Api/Authorization/LiveSession.cs` -> `Marker`;
+   @ `src/Api/Authorization/LiveSession.cs` -> `IsApplied`;
+   @ `tests/Api.Tests/EndpointPermissionCoverageTests.cs` ->
+   `Every_self_only_member_is_mapped_and_requires_authentication_with_no_permission_of_its_own`].
+2. **The test is renamed** from `Nothing_outside_LiveSession_can_produce_the_metadata_that_proves_a_
+   route_paid` to `LiveSession_exposes_no_metadata_type_wider_than_private`
+   [Verified: 2026-09-01 @ `tests/Api.Tests/EndpointPermissionCoverageTests.cs` ->
+   `LiveSession_exposes_no_metadata_type_wider_than_private`] — the property the test's own body checks
+   (`GetNestedTypes` filtered to non-private), not the impossibility its old name asserted. Per SM-33,
+   the two citations of the old name inside this file are moved in this same entry (D-094, above); the
+   one citation in `qa/slice-1/verification-2026-08-30.md` is the Scrum Master's to move, not Backend's
+   — that file is out of bounds for this agent this sprint.
+3. **The mechanism itself is not changed.** Whether to close the reflection door — asserting the
+   *behaviour* a stale session gets refused, rather than the *metadata* a route carries (`V-30-B`) — is
+   a cost judgement for the Architect and Nabil, not decided here.
+
+**Watched, not merely reasoned.** The build stays clean and `dotnet format --verify-no-changes` stays
+clean after the rewrite; the renamed test's own assertion is unchanged in substance
+(`reachable.Should().BeEmpty()`), so it still fails exactly when `Marker` — or any future nested type
+of `LiveSession` — is widened past `private`, which is the property it now honestly claims. The
+Verifier's reflection forge (`MUT-B2` in the verification report) is unaffected by this entry and
+remains open, by design: closing it is `V-30-B`'s question, not this one's.
+
+**What this does not do.** It does not make the reflection forge harder to write, and it does not add
+a test that fails against it. **`V-30-A` is closed as a documentation defect. `V-30-B` — whether the
+door is worth closing — is untouched and stays with the Architect.**
+
+**Revisit if.** The Architect rules on `V-30-B` and a behavioural assertion is added; the prose above
+should then say a stronger thing is caught, not merely that a weaker thing is honestly described.

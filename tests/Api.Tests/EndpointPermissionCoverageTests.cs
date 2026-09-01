@@ -228,10 +228,11 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
             LiveSession.IsApplied(mapped.Endpoint).Should().BeTrue(
                 "{0} {1} is outside the permission gate, so nothing upstream re-reads IsActive, the "
                 + "security stamp, or whether the role may hold a staff session at all. Add "
-                + ".RequireLiveSession() to the route. There is no other way to satisfy this — the "
-                + "metadata it stamps is a private nested type, so no expression outside LiveSession "
-                + "can produce it, and this assertion is a question rather than a value you can hand "
-                + "it (V-26-B, V-27-B, decisions.md D-089 and D-094)",
+                + ".RequireLiveSession() to the route. There is no ordinary way to satisfy this — the "
+                + "metadata it stamps is a private nested type, so no line outside LiveSession can "
+                + "name it. Reflection still can (V-30-A); a route built that way is a deliberate "
+                + "forgery, not an accident, and this assertion cannot tell the two apart "
+                + "(V-26-B, V-27-B, decisions.md D-089, D-094, D-098)",
                 entry.Method,
                 entry.Route);
         }
@@ -286,8 +287,10 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// <c>V-27-B</c>. The exemption marker cannot be obtained by anything but
-    /// <c>RequireLiveSession()</c>.
+    /// <c>V-27-B</c>. <c>LiveSession</c> exposes no metadata type wider than <c>private</c>, so no
+    /// ordinary expression outside it can even name one — the property this test actually holds. It
+    /// does not prove nothing else can <i>construct</i> one; reflection still can and is not caught
+    /// here (<c>V-30-A</c>, decisions.md D-098).
     /// </summary>
     /// <remarks>
     /// <para>
@@ -307,11 +310,13 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
     /// unpaid route is now <c>CS0122</c> rather than a green suite. But a compiler error is only
     /// evidence while the accessibility stands, and re-widening it to <c>internal</c> for a
     /// plausible-looking reason is a one-word edit that no test would otherwise notice. This is what
-    /// notices.
+    /// notices — accessibility, and only accessibility. It does not, and cannot, notice a route that
+    /// reaches the same private type through <c>Activator.CreateInstance</c> instead of a name;
+    /// that route is still <c>CS0122</c>-free and still 227/227 green (<c>V-30-A</c>).
     /// </para>
     /// </remarks>
     [Fact]
-    public void Nothing_outside_LiveSession_can_produce_the_metadata_that_proves_a_route_paid()
+    public void LiveSession_exposes_no_metadata_type_wider_than_private()
     {
         List<string> reachable = [.. typeof(LiveSession)
             .GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic)

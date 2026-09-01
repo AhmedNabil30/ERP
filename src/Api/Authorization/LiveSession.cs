@@ -59,12 +59,13 @@ public static class LiveSession
     private const string CallerKey = "Kaff.LiveSessionCaller";
 
     /// <summary>
-    /// Metadata proving a route applies these checks. Added by <see cref="RequireLiveSession"/> and by
-    /// nothing else, so a route cannot claim the exemption without paying for it.
+    /// Metadata proving a route applies these checks. <see cref="RequireLiveSession"/> is the only
+    /// ordinary expression that adds it — the type is a private nested class, so no other line of
+    /// code outside this file can even name it. Reflection can still forge it; see the remarks below.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Private, and that is the whole mechanism.</b> This type used to be <c>public</c> with an
+    /// <b>Private, and that is most of the mechanism.</b> This type used to be <c>public</c> with an
     /// <c>internal</c> <c>Instance</c> — and every feature slice compiles into <c>Kaff.Api</c>, so
     /// <c>internal</c> was the same assembly the endpoints live in. Writing
     /// <c>.WithMetadata(LiveSession.Marker.Instance)</c> in place of <c>.RequireLiveSession()</c>
@@ -73,10 +74,15 @@ public static class LiveSession
     /// (qa/slice-1/verification-2026-08-27.md, <c>V-27-B</c>; decisions.md D-094).
     /// </para>
     /// <para>
-    /// A private nested type cannot be named or constructed from outside <see cref="LiveSession"/> at
-    /// all, so <see cref="RequireLiveSession"/> is now the only expression in the language that can
-    /// produce this metadata. <see cref="IsApplied"/> is how a test asks the question without being
-    /// handed the means to answer it dishonestly.
+    /// <b>What this actually closes, and what it does not.</b> A private nested type cannot be
+    /// <i>named</i> from outside <see cref="LiveSession"/> — that is what turns the one-dot forge
+    /// above into <c>CS0122</c> at compile time, and it is a real, structural change: the previous
+    /// forge read as an author who had found the API, and this one no longer compiles. It is not true
+    /// that nothing else can <i>produce</i> the metadata: <c>Activator.CreateInstance</c>, reached
+    /// through <c>Type.GetNestedType(..., NonPublic)</c>, still constructs it from anywhere in this
+    /// assembly (qa/slice-1/verification-2026-08-30.md, <c>V-30-A</c>; decisions.md D-098). A route
+    /// built that way cannot be mistaken for correct usage the way the old forge could — but it is not
+    /// impossible, and <see cref="IsApplied"/> cannot tell the two apart.
     /// </para>
     /// </remarks>
     private sealed class Marker;
@@ -86,8 +92,9 @@ public static class LiveSession
     /// </summary>
     /// <remarks>
     /// The read half of <see cref="Marker"/>, deliberately separated from the write half. A caller can
-    /// ask whether a route paid for its exemption; nothing outside this class can make a route claim
-    /// it did. <c>EndpointPermissionCoverageTests</c> is the caller.
+    /// ask whether a route carries the metadata; it cannot ask whether the metadata was earned by
+    /// <see cref="RequireLiveSession"/> rather than forged by reflection — see <see cref="Marker"/>'s
+    /// remarks, <c>V-30-A</c>. <c>EndpointPermissionCoverageTests</c> is the caller.
     /// </remarks>
     public static bool IsApplied(Endpoint endpoint)
     {
