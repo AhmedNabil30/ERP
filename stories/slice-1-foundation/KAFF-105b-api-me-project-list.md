@@ -1,7 +1,7 @@
 # KAFF-105b · `GET /api/auth/me` returns the projects I reach, and how I reach them
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** Ready. **Proposed for sprint 2 and not yet locked by Nabil.** All ten of its criteria are payload criteria; **none of them builds a screen**, so D-091's deferral of `AC-101b-A` (the staff shell) onto this story cannot be discharged by this story as written. Either it grows a frontend half and re-estimates — `process/agile.md` puts a story spanning backend and frontend at 8 — or the shell is a story the BA has not written yet. Not resolved here; see `meetings/2026-08-30-sprint-2-open.md``
-**Spec:** §9, §12 · **Decisions:** D-010, D-035, D-044 (rulings 2, 3, 5), **D-051 (Q32)**
+**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** BLOCKED — one open question, **Q43** (see rule 6a and *Questions for Karim* below). **Repaired 2026-09-01** (`meetings/2026-09-01-sprint-2-refinement.md` §3.2): five of the six Definition of Ready failures found at refinement are fixed in this revision — rules 6/6a and the new SM-33 note on the permission row, and `AC-105b-C`, `AC-105b-E`, `AC-105b-F` and `AC-105b-G` below. **The sixth is not repairable by any agent:** rule 6 and `AC-105b-C` used to claim HR sees a project's *code*, cited to D-051 (Q32), which grants only *"the project name and the list of assigned engineers"* and never mentions a code. That is **`Q43`, open with Karim**. **Re-estimated 3 → 5**: the story births the `ProjectTeamRead` permission row, which `process/agile.md` estimation puts at 5 for touching the permission model. This story still cannot discharge `AC-101b-A` (the staff shell) or `AC-101b-D` (HR's landing) — unchanged since `meetings/2026-08-30-sprint-2-open.md`, and recorded in `KAFF-101b` and `KAFF-115` rather than repeated here
+**Spec:** §9, §12 · **Decisions:** D-010, D-035, D-044 (rulings 2, 3, 5), **D-051 (Q32)**, `process/agile.md` SM-33 (`decisions.md` D-097 §2)
 **Depends on:** KAFF-105a, KAFF-113, KAFF-114
 
 > **Split from KAFF-105** on 2026-08-21 (D-051). The identity half is **KAFF-105a**. This half was
@@ -32,7 +32,7 @@ narrow permission"* and leaves the naming to this story.
 | **Name** | `ProjectTeamRead` |
 | **Grants** | `Role.Owner`, `Role.Hr` |
 | **Scope** | `ProjectScoped`, with the same global reach `ProjectAssignmentManage` already has for both roles (D-044 rulings 3, 4) — HR staffs projects it was never assigned to, so it must be able to name them |
-| **Carries** | a project's name, its code, and the list of assigned people with their roles and levels. **Nothing else, ever** |
+| **Carries** | a project's name, and the list of assigned people with their roles and levels. **Nothing else, ever** — whether the code (and the team size) are added too is **`Q43`**, open. See rule 6a |
 | **Does not carry** | any value, cost, margin, balance, budget, status, date or client identity |
 
 It is one new row in `PermissionCatalogue` mirroring an existing row's grant and reach, not a new
@@ -54,6 +54,17 @@ as a proposal and never in `tests/`. **That citation has since been repointed** 
 Three rows shipped on 2026-08-22 named in no test at all (D-056 §3); do not make `ProjectTeamRead`
 the fourth.
 
+**SM-33 also binds this row, and it is new.** Adding `ProjectTeamRead` for `Role.Hr` makes HR hold
+four permissions, which makes the existing test's own name false the moment this row lands
+[Verified: 2026-09-01 @ `tests/Domain.Tests/CatalogueCompletenessTests.cs` ->
+`Hr_holds_exactly_three_permissions_and_none_touches_money`]. Per `process/agile.md` -> *The Test
+Naming Law — SM-33* (`decisions.md` D-097 §2), **the implementing agent renames it in the same commit
+that lands this row**, and moves the citations it owns (its own source, its `decisions.md` entry);
+**the Scrum Master moves the citations in `meetings/`, `qa/` and `proposals/`**, which the
+implementing agent may not edit. Name the property, not the count —
+`Hr_holds_no_permission_that_touches_money` cannot go false the day HR is granted a fifth
+non-financial row.
+
 **And the permission is not the whole control — the projection is.** The same warning D-055 §2 records
 for `UserRead` applies exactly: a response type that satisfies `ProjectTeamRead` and carries a
 financial field breaks rule 8 while passing every permission test. That is what AC-105b-F is for.
@@ -66,7 +77,8 @@ financial field breaks rule 8 while passing every permission test. That is what 
 | 3 | Each project says **how** the caller reaches it. *"Owner, globally"* and *"assigned on 3 June"* are different facts and the UI must not merge them. **Do not invent a vocabulary for this — the domain already has one.** `ProjectAccessPath` is the enum, and it carries **four** grant values, not three: `OwnerGlobal`, `HrGlobal`, `Assignment` and `PortalClient`, plus `None`, which is the only value a refusal may carry [Verified: 2026-08-22 @ `src/Domain/Authorization/PermissionEvaluator.cs` -> `enum ProjectAccessPath`]. `IProjectAccessPolicy` returns it on `ProjectAccess`, and `ProjectAccess.Granted` is **derived** from `Path` rather than stored beside it [Verified: 2026-08-22 @ `src/Domain/Authorization/PermissionEvaluator.cs` -> `record ProjectAccess`; @ `src/Infrastructure/Authorization/ProjectAccessPolicy.cs` -> `EvaluateAsync`] | D-010 · D-044 ruling 3 · D-055 §7 · KAFF-116 (the same distinction the audit trail records) |
 | 4 | Revoked assignments are not listed — the payload says who can act now, and history is the audit trail's job. `ProjectAssignment.IsActive` is a computed `RevokedAt is null`, not a stored column [Verified: 2026-08-22 @ `src/Domain/Identity/ProjectAssignment.cs` -> `IsActive`, `RevokedAt`] | slice 0 `ProjectAssignment.IsActive` |
 | 5 | The Owner reaches every project with no assignment row, so the Owner's project list is *"every project that exists"*. The policy grants the Owner `OwnerGlobal` at `AssignmentLevel.Supervisor` and HR `HrGlobal` at `Standard`, and the asymmetry is deliberate [Verified: 2026-08-22 @ `src/Infrastructure/Authorization/ProjectAccessPolicy.cs` -> `EvaluateAsync`, `GlobalReachAsync`] | D-010 · D-044 ruling 3 |
-| 6 | **An `Role.Hr` caller receives every project that exists, with its name and code and nothing else** — and every entry is flagged as reachable only through the Project Team surface, never the project dashboard | **D-051 (Q32)** · D-044 rulings 3, 4 |
+| 6 | **An `Role.Hr` caller receives every project that exists, with its name and nothing else** — and every entry is flagged as reachable only through the Project Team surface, never the project dashboard | **D-051 (Q32)** · D-044 rulings 3, 4 |
+| 6a | **Whether HR's entries also carry the project's code (and the team size) is not decided by any citation this story has.** D-051 (Q32) grants *"the project name and the list of assigned engineers"* and says nothing about a code. **Repaired 2026-09-01**: rule 6 and `AC-105b-C` no longer claim the code as if D-051 (Q32) granted it. **`Q43`, open with Karim**, is the question, and this is the one Definition of Ready failure this story cannot repair itself | **`Q43`** (open) |
 | 7 | **HR receives every project, including ones with nobody on them.** D-044 ruling 4 is explicit that requiring an assignment in order to create assignments is circular: *"on a new project nobody is assigned, so nobody could make the first one."* A list of only-staffed projects would make the first assignment on a new project impossible | D-044 ruling 4 |
 | 8 | **HR's entries carry no financial field, and no field that could become one.** Not value, not budget, not balance, not margin — and the response type HR receives is not the response type staff receive | **D-051 (Q32)** · D-044 ruling 2 · §12 (the portal precedent) |
 | 9 | HR is not granted `ProjectRead` and does not receive the project dashboard's payload under any circumstance | **D-051 (Q32)** · D-044 ruling 2 |
@@ -97,11 +109,12 @@ When I call `GET /api/auth/me`
 Then every project that exists is listed, and each is marked as reached by Owner-global rather than by assignment
 
 **AC-105b-C — HR gets names, and only names** *(fails if the rule is broken)*
-Given I am `Role.Hr`, and three projects exist with budgets, balances and contract values set
+Given I am `Role.Hr`, and three projects exist, each with a `ContractValue` set
 When I call `GET /api/auth/me`
-Then all three are listed with name and code
+Then all three are listed with their name
 And the payload is inspected field by field and contains **no** value, cost, margin, balance, budget, status or client field
 And `ProjectRead` appears nowhere in my permissions
+*(Repaired 2026-09-01 — the given used to name `Budget` and `Balance`. Neither is arrangeable: `Budget` is nowhere in `src/Domain/` [Verified: 2026-09-01 — searched `src/Domain/Projects/Project.cs`; only `ContractValue` exists, no `Budget` member] and is a slice-7 concept (KAFF-709), and a stored balance is forbidden outright by `CLAUDE.md`. And the Then used to add "and code" — rule 6a shows that is not cited; it is `Q43`, open.)*
 
 **AC-105b-D — HR sees a project nobody is on yet** *(fails if the rule is broken)*
 Given a project created this morning with zero assignments
@@ -110,19 +123,22 @@ Then that project is listed — otherwise nobody could ever make its first assig
 
 **AC-105b-E — HR is routed to the team surface, not the dashboard** *(fails if the rule is broken)*
 Given the HR payload from AC-105b-C
-When each project entry is read
-Then each is flagged as reachable through the Project Team surface only
-And an HR call to the project dashboard endpoint is refused with 403
+When each project entry is read, and the permission catalogue is asked whether `Role.Hr` holds `ProjectRead`
+Then each entry is flagged as reachable through the Project Team surface only
+And the catalogue holds no `ProjectRead` grant for `Role.Hr` — in the catalogue itself, and by no global-reach rule either
+*(Repaired 2026-09-01 — the previous Then asserted a `403` from "the project dashboard endpoint", and no such endpoint exists in this slice [Verified: 2026-09-01 — searched `src/Api/Features/*/Endpoint.cs`; the only `GET` routes are `WhoAmI`, `GetHealth` and `GetSetupAvailability`]. Restated against the permission catalogue — `Role.Hr` holds exactly three rows today, none of them `ProjectRead` [Verified: 2026-09-01 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Build`] — which is where the rule actually lives, is buildable today, and is what any future dashboard endpoint would inherit automatically. `meetings/2026-09-01-sprint-2-refinement.md` §3.1 names the missing endpoint; it is not invented here.)*
 
 **AC-105b-F — the surfaces are separate types, not one type filtered** *(fails if the rule is broken)*
-Given the response type HR receives and the response type a Technical Office user receives
-When the code is read
-Then they are different types, and a field added to the staff type cannot appear in HR's without somebody adding it there deliberately
+Given the response type HR's project entries serialize as, and the response type a Technical Office user's project entries serialize as
+When a test enumerates every public property of each type by reflection
+Then the two are distinct CLR types, HR's type carries no property outside {name, and per-member name, role and level} — no code, pending `Q43` — and the test fails the moment a financial field is added to either type or the two types are collapsed into one
+*(Repaired 2026-09-01 — the previous Then was "when the code is read, then they are different types", a manual-review instruction with no way to fail on its own — QA's own hard rule, `agents.md` §3c. Restated as a reflection assertion, the shape QA already used to close the identical defect [Verified: 2026-09-01 @ `qa/slice-1/test-cases.md` -> `TC-1-046`].)*
 
 **AC-105b-G — a portal client is bounded** *(fails if the rule is broken)*
 Given I am `Role.Client` for client X, which has one project, and client Y has another
 When I call this endpoint
-Then only X's project is named, and Y's project appears nowhere in the payload
+Then I am refused before any handler runs — `Role.Client` may never hold a staff session [Verified: 2026-09-01 @ `src/Domain/Identity/Role.cs` -> `MayHoldStaffSession`] — and neither X's project nor Y's appears anywhere in the response
+*(Repaired 2026-09-01 — the previous Then asserted a filtered `200` naming X's project; there is no such payload, because the staff door refuses `Role.Client` before a handler is reached. `meetings/2026-09-01-sprint-2-refinement.md` §3.2 names the same defect, still open, in `AC-115-G`, which currently passes for this same wrong reason.)*
 
 **AC-105b-H — a revoked assignment disappears**
 Given my assignment to project A was revoked this morning
@@ -145,4 +161,8 @@ gains the `ProjectTeamRead` route. Creating or revoking assignments (KAFF-113, K
 navigation shell's menu, which is convenience, not security.
 
 ## Questions for Karim
-None. **Q32 is closed by D-051.**
+**`Q43`** — does HR's project entry also carry the project's code (and the team size)? D-051 (Q32)
+grants the name and the list of assigned engineers only, and says nothing about a code. Rule 6a and
+`AC-105b-C` are held to the cited half; nothing in this story answers `Q43`, and the story is
+**BLOCKED** on it alone [Verified: 2026-09-01 @ `stories/questions-for-karim.md` -> the `Q43` row].
+**Q32 itself is closed by D-051** — this is the one field it never reached.
