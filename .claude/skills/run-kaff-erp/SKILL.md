@@ -248,8 +248,12 @@ uses and still works; the *reason* recorded for it is stale. Flagged, not change
   driver polls for `document.body.innerText` to be non-empty, up to 20s.
 - **Click by visible text, not by class or coordinates.** `CLAUDE.md` forbids hardcoded strings so
   labels come from i18n, and under RTL the visual and logical order of a row differ, which makes
-  coordinate clicking wrong rather than merely fragile. The driver's `click` matches trimmed
-  `innerText` first and falls back to a CSS selector.
+  coordinate clicking wrong rather than merely fragile. **`click` is not a top-level command** — there
+  is no `driver.mjs click`; the dispatch switch has exactly `health`, `api`, `shot`, `eval`, `smoke`
+  and `flow` [Verified: 2026-09-01 @ `.claude/skills/run-kaff-erp/driver.mjs` -> `main`]. `click` is an
+  internal helper `flow` uses to drive the language switch, and it matches trimmed `innerText` first
+  and falls back to a CSS selector. To click something outside `flow`, use `eval` with a synthetic
+  `dispatchEvent` — that is how the Verifier drove the change-password screen's forms on 2026-08-30.
 - **`guardsInstalled` in the health response is load-bearing.** Per D-033 the API refuses to start
   when the PostgreSQL guards are absent, because the append-only and non-negative-balance rules live
   in the database. A stack that is "up" without them reports a safety it does not have — `smoke`
