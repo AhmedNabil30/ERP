@@ -164,3 +164,34 @@ jobs:
             sleep 10
           done
           echo "Staging did not report healthy with guards installed."; exit 1
+
+      # The check above proves the API, not the screen: it stops at /api/health, so "runs on staging"
+      # had never been ticked for KAFF-101b's or KAFF-103's screens — sprint-1 close said "the pipeline
+      # cannot see it" and, for the SPA, that stayed literally true through the whole of sprint 2's
+      # refinement (decisions.md D-097 section 1; meetings/2026-09-01-sprint-2-refinement.md section 1).
+      #
+      # A bare 200 does not prove the application rendered. `.claude/skills/run-kaff-erp/SKILL.md`'s
+      # Gotchas record why: Chromium's own "This site can't be reached" error page is served in the
+      # browser's UI locale, so against a web server that is not up yet it is itself Arabic, RTL, and
+      # 176 characters of text - a check that only asked "is this Arabic and RTL" passed against a wrong
+      # page on 2026-08-25 (see also decisions.md, the commit that introduced `kaff-root` into the local
+      # smoke check for the same reason). `<kaff-root>` is our own custom element, present verbatim in
+      # the static index.html this application ships (src/Web/src/index.html) and absent from any error
+      # page nginx or a browser could substitute for it - it is the discriminator, not the status code.
+      #
+      # Same retry shape as the check above, same vars.STAGING_URL gate, deliberately not merged into
+      # one step: the API and the SPA are two different services in
+      # deploy/docker-compose.staging.yml (only `web` publishes a port) and can fail independently.
+      - name: SPA smoke check
+        if: vars.STAGING_URL != ''
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf "${{ vars.STAGING_URL }}/" | grep -q '<kaff-root>'; then
+              echo "Staging serves the Angular application - kaff-root is present, not merely a 200."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Staging did not serve the kaff-root shell. A 200 here can still be the wrong page - see"
+          echo "the run-kaff-erp SKILL.md Gotchas on Chromium's own error page passing an RTL/Arabic-only check."
+          exit 1
