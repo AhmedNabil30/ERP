@@ -431,7 +431,7 @@ criterion behind them. **KAFF-105a is untouched by D-065 — checked, not assume
 > only this table would have started a blocked story.** Found by the BA against a file it does not own
 > and fixed by the Scrum Master, who does. **When these two disagree the build order is authoritative**
 > — it is recomputed every time a blocker moves; this table is a backlog inventory.
-| KAFF-105b | `GET /api/auth/me` returns the projects I reach, and how | **3** | Ready | 105a, 113, 114 |
+| KAFF-105b | `GET /api/auth/me` returns the projects I reach, and how | **5** | BLOCKED — one question, `Q43`. Five of six Definition of Ready failures repaired 2026-09-01; re-estimated 3 → 5 (`meetings/2026-09-01-sprint-2-refinement.md` §3.2, §3.4). | 105a, 113, 114 |
 | KAFF-106 | The Owner creates a user with a role and a department | 5 | BUILT, verified 2026-08-25 — 9 of 11 criteria satisfied. | 100 |
 | KAFF-107 | An HR user cannot be created or moved outside the HR department | 2 | Ready | 106 |
 | KAFF-108 | Move a user between departments | 3 | **ACCEPTED** 2026-08-25 — 7 of 7, `qa/slice-1/verification-2026-08-25.md` §8. *(This row read `Ready` until 2026-09-01 — an unbuilt state — while the same file's build order and "Sprint 1, final" table both had it accepted. Found by Backend at refinement; corrected by the Scrum Master, who owns the board.)* | 106 |
@@ -441,7 +441,7 @@ criterion behind them. **KAFF-105a is untouched by D-065 — checked, not assume
 | KAFF-112 | Reactivate a user, who comes back with nothing | 3 | ACCEPTED 2026-08-26 — 5 of 6 QA cases covered; **`TC-1-094` has no test** (the username stays reserved while the account is off — an index predicate a later migration removes without noticing). | 110, 111 |
 | KAFF-113 | Assign a user to a project, with seniority for site engineers | 5 | **ACCEPTED** 2026-08-25 — 9 of 9, same report. *(This row read `Ready` until 2026-09-01. **It is on KAFF-105b's dependency path**, so a reader taking it at face value would have judged KAFF-105b unstartable for the wrong reason. Found by Backend at refinement; corrected by the Scrum Master.)* | 106 |
 | KAFF-114 | Revoke a project assignment without losing who could act when | 3 | ACCEPTED 2026-08-26 — 7 of 8 QA cases covered; **`TC-1-120` has no test** (revoking the last person on a project is allowed — the case exists to pin an absence, so nothing goes red the day somebody adds the rule). | 113 |
-| KAFF-115 | The project team panel, and HR's separate Project Team screen | **3** | Ready | 113, 114, 105b |
+| KAFF-115 | The project team panel, and HR's separate Project Team screen | **8** | BLOCKED — transitively on 105b, and on its own three Definition of Ready failures, unrepaired. Re-estimated 3 → 8 (`meetings/2026-09-01-sprint-2-refinement.md` §3.3). | 113, 114, 105b |
 | KAFF-116 | Every audit record says how the actor reached the project | 3 | Ready | — |
 | KAFF-117 | The Owner reads the audit trail, and nobody else does | 5 | Ready | 116, 118 |
 | KAFF-118 | Every state change in slice 1 writes an audit record | 3 | **UNBUILT.** Nothing of this story was started. | 106, 109, 110, 111, 113, 119 |
