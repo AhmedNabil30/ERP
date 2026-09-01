@@ -223,3 +223,161 @@ the correct behaviour and is recorded here so it is not mistaken for an answer:
 3. **Whether a no-truncate statement trigger survives on a partitioned parent** in PostgreSQL 16. **Architect.**
 
 **Serialised, not dropped.** Each needs one session with the machine to itself.
+
+---
+
+## 3. Definition of Ready — the candidate set, story by story
+
+`process/agile.md`: *a story that fails the Definition of Ready is marked `BLOCKED` and does not enter
+the sprint.* Checked out loud, per story, against the files today.
+
+**Verdict first, because it is not the comfortable one: neither candidate story is Ready.**
+
+| Story | Proposed | Verdict | Points |
+|---|---|---|---|
+| **KAFF-105b** | sprint 2, item 1 | **BLOCKED** — six DoR failures, one of them Karim's | **3 → 5** |
+| **KAFF-115** | sprint 2, item 3 | **BLOCKED** — transitively, and on its own account | **3 → 8** |
+| **The staff shell** | sprint 2, item 2 | **Not a story.** Cannot be Ready or BLOCKED; it does not exist | unknown, and §3.1 says why |
+| **KAFF-118** | carried | **BLOCKED**, unchanged — depends on KAFF-119, deferred out of the sprint. Its cut is Nabil's and he has not ruled | 3 |
+
+### 3.1 The staff shell — the hole is larger than the three readings on the table
+
+`meetings/2026-08-30-sprint-2-open.md` §4.2 costed three readings for `AC-101b-A`: grow KAFF-105b to 8,
+write a shell story, or re-defer the criterion. **All three understate it, and the ceremony found why.**
+
+`ux/navigation.md` -> `Landing summary` names a slice-1 landing for every role. Here is what each one
+needs, established today:
+
+| Role | Lands on | Story that builds it | Endpoint it reads |
+|---|---|---|---|
+| Owner | S-006 User list | **none** | **none — there is no list-users route** |
+| Finance, TechnicalOffice, SiteEngineer, HeadOfDesign | S-005 My profile | **none** | `/api/auth/me` ✅ |
+| MarketingSales | S-011 Client list | **none** — clients are KAFF-119…124, deferred out of sprint 1 entirely | **none** |
+| Hr | S-009a HR project list | **none** — KAFF-115 builds **S-009b**, one project's team | **none** |
+
+**No file under `stories/` builds S-004, S-005, S-009a or S-011** [Verified: 2026-09-01 — searched
+`stories/` for each screen id; only KAFF-110 so much as mentions S-006, and it does not build it].
+
+And the API cannot feed them. **The entire application exposes three GET routes** — `/api/auth/me`,
+`/api/health` and `/api/setup` [Verified: 2026-09-01 @ `src/Api/Features/Auth/WhoAmI/Endpoint.cs` ->
+`MapGet`; @ `src/Api/Features/Health/GetHealth/Endpoint.cs` -> `MapGet`; @
+`src/Api/Features/Setup/GetSetupAvailability/Endpoint.cs` -> `MapGet`]. There is no route that lists
+users, projects, clients or a project's team. **Three of the four landings have no data to render.**
+
+**So growing KAFF-105b to 8 does not produce a shell.** It produces a payload and a chrome that lands
+five of the nine roles on a blank page. That is the fourth reading, and nobody had costed it because
+nobody had checked what the landings needed.
+
+**And the same arithmetic failure applies to `AC-101b-D`, which every document so far has treated as
+safe.** `AC-101b-D` requires HR to land on *"the Project Team surface"*. UX makes HR's landing
+**S-009a, the project *list***; KAFF-115 builds **S-009b, one project's team panel** — every one of its
+criteria is per-project, and `AC-115-H` opens *"the Project Team screen **for project A**"*
+[Verified: 2026-09-01 @ `stories/slice-1-foundation/KAFF-115-project-team-panel.md` -> `AC-115-H`].
+**`AC-101b-D` is deferred onto a story that does not build the screen it lands on, exactly as
+`AC-101b-A` is.** The sprint-2 opening found that failure once. It happens twice, and the second one
+was invisible until this ceremony.
+
+**This is a scope decision and it is Nabil's.** I am not picking a reading, and I am not proposing the
+shell for this sprint — see §5.
+
+### 3.2 KAFF-105b — BLOCKED, on six lines
+
+| # | DoR line | Failure |
+|---|---|---|
+| 1 | **No rule in the story is uncited. An uncited rule is a question for Karim, not a story** · **Not `BLOCKED` on an open question** | **Rule 6 and `AC-105b-C` assert HR receives the project *code*.** Both cite **D-051 (Q32)**, which grants *"the project name and the list of assigned engineers"* and **says nothing about a code**. The citation does not support the rule. The question is **`Q43`, registered and open with Karim** [Verified: 2026-09-01 @ `stories/questions-for-karim.md` -> the `Q43` row]. **The story bakes an unasked answer into a criterion and a test.** This one cannot be fixed by any agent |
+| 2 | **QA has written at least one scenario that fails if the rule is broken** | **`AC-105b-F` cannot fail.** *"When the code is read, Then they are different types"* is a manual code-review instruction wearing Given/When/Then clothing. QA's own hard rule: a scenario that passes whether or not the rule is implemented is worse than none, because it reports safety that does not exist |
+| 3 | Money behaviour named explicitly | **`AC-105b-C`'s given cannot be constructed.** It names projects with *"budgets, balances and contract values set"*. **`Budget` exists nowhere in `src/Domain/`** — it is a slice-7 concept (KAFF-709). **A stored balance is forbidden outright** by `CLAUDE.md`. Only `ContractValue` is arrangeable [Verified: 2026-09-01 @ `src/Domain/Projects/Project.cs` -> `ContractValue`] |
+| 4 | Every claim about the state of the code carries a date and a stable identifier | **`AC-105b-E` asserts a 403 from *"the project dashboard endpoint"*, which does not exist** — see §3.1. And its given is *"the HR payload from `AC-105b-C`"*, so it inherits failure 3 as well. The criterion is joined by "And", so the whole of it is unexecutable |
+| 5 | Permissions named explicitly | **`AC-105b-G` asserts a response body the code cannot return.** Its Then is *"only X's project is named"* — a `200` payload — for a `Role.Client`, who is refused before the handler runs [Verified: 2026-09-01 @ `src/Domain/Identity/Role.cs` -> `MayHoldStaffSession`; @ `src/Api/Authorization/LiveSession.cs` -> `ResolveAsync`]. **The story's own rule 10 already says a client *"is not expected here at all"*, so the rule and the criterion disagree** |
+| 6 | **If the story adds a permission catalogue row, the test that names it is written before the row is** — SM-30 | See the ruling below. The row cannot land without falsifying an existing test's **name** |
+
+**On failure 5, the BA and QA disagreed and I settle it on the evidence rather than by consensus.** The
+BA is right that the *given* is constructible — `TestAuthHandler` mints a principal from headers and
+bypasses the staff door, so a defence-in-depth case is writable. **The BA is wrong about the *Then*.**
+`AC-105b-G` asserts a filtered payload, and there is no payload: the door refuses first. The criterion
+is correct in *intent* and wrong in *assertion*, and the fix is one line of the BA's — assert the
+refusal, not the filter. **Note the asymmetry with `AC-115-G`**, which asserts *"refused with 403"* and
+therefore **passes** — but passes **for the wrong reason**: it is refused at the staff door by
+`MayHoldStaffSession`, not because *"`PortalRead` is not `ProjectRead`"* as the criterion claims. A
+test that would stay green if the rule it names were deleted. **QA's, and it is the same defect class.**
+
+**QA named that class, and it is the third sighting:** any given naming a signed-in `Role.Client` at a
+staff-door endpoint is dead on arrival — `TC-1-021` (found as `V-26-E`), `TC-1-042` (found as `V-26-G`),
+and now `AC-105b-G` / `AC-115-G`. **Recorded as one class with one rule**, not as four one-off fixes:
+such a case is written against the evaluator (`MayHoldPermissions`, which does admit `Client`), never
+against a staff session that can never exist.
+
+#### Ruling SM-33 — a test name that states a count is a claim, and it is renamed in the change that falsifies it
+
+**B3-9. Scrum Master's ruling, 2026-09-01. This is process, not business, so it is mine to make.**
+
+Adding `ProjectTeamRead` for `Role.Hr` makes HR hold four permissions, which makes
+`Hr_holds_exactly_three_permissions_and_none_touches_money` **false in its own name**
+[Verified: 2026-09-01 @ `tests/Domain.Tests/CatalogueCompletenessTests.cs` ->
+`Hr_holds_exactly_three_permissions_and_none_touches_money`]. That name is cited in **five** files of
+record — `decisions.md`, `process/agile.md`, `qa/questions.md`,
+`stories/slice-1-foundation/KAFF-107-hr-role-is-bound-to-the-hr-department.md` and
+`proposals/N10-project-creation.md` [Verified: 2026-09-01 — searched each directory] — several of
+which the implementing agent must not edit. *(The Architect reported eight; five are documents and the
+remainder were compiled assemblies. Corrected here.)*
+
+**D-095 met this trap and escaped by not renaming.** That was right there and is wrong here, and the
+distinction is the ruling:
+
+> **A name that is merely *narrow* stays. A name that is *false* is renamed in the same change that
+> falsifies it.** `ValidateDepartment` still validates the department — narrow, and D-095 was right to
+> keep it. `…exactly_three…` becomes a lie the moment the fourth grant lands, and **a false test name
+> is worse than a stale one, because the name is what a reader takes for the assertion.**
+>
+> **The citations move in the same commit, and the Scrum Master moves the ones in `meetings/`, `qa/`
+> and `proposals/`** — the implementing agent may not edit those, and that constraint is what made
+> D-095 choose the other way. Historical records are corrected as marked amendments, never silently.
+>
+> **And the general rule, which is the cheaper half: a test name must not encode a count that a
+> legitimate future change falsifies.** Assert the property in the name, the arithmetic in the body.
+> `Hr_holds_no_permission_that_touches_money` cannot go false when HR is granted a fourth
+> non-financial permission; the count belongs inside the test, where it fails loudly without lying.
+
+### 3.3 KAFF-115 — BLOCKED, and re-estimated 3 → 8
+
+1. **Transitively blocked.** It depends on KAFF-105b, which is BLOCKED, and KAFF-105b is where
+   `ProjectTeamRead` is born. **F-21's warning applies exactly** — *"the risk is not that the sprint
+   stalls, it is that somebody unblocks it cheaply"* — and the cheap unblock here is granting HR
+   `ProjectRead`, which hands HR the project surface D-044 ruling 2 exists to remove.
+2. **`AC-115-H` carries the same two defects as `AC-105b-C` and `AC-105b-E`** — a given naming a budget
+   and a balance that cannot be set, and an assertion against a project dashboard endpoint that does
+   not exist.
+3. **`AC-115-I` cannot fail** — the same *"when the code is read"* shape as `AC-105b-F`.
+4. **`AC-115-G` passes for the wrong reason** — §3.2.
+5. **`AC-101b-D` is deferred onto it and it does not build S-009a** — §3.1.
+
+**Re-estimated 3 → 8**, which the brief asked for and which the story's own header has been asking for
+since 2026-08-30. `process/agile.md`'s table puts *"touches money or the permission model"* at **5** and
+*"touches both, or spans backend and frontend"* at **8**. KAFF-115 does both at once: it births a
+permission row, needs two distinct response types, an SM-30-bound test, a second route and component
+per D-051 (Q32), and `AC-115-J`'s Arabic-RTL-at-390px criterion. **Take the higher, not the sum — 8.**
+Frontend, asked independently and without being given a number, returned **8** with the same reasoning.
+Not 13: the criteria are concrete enough that this is not *"a story nobody understands yet."*
+
+### 3.4 KAFF-105b — re-estimated 3 → 5
+
+**As written** — ten payload criteria, no rendering — it is not a frontend story, so 8 is wrong. But it
+**births a permission row**, and `process/agile.md` puts *"touches the permission model"* at **5**.
+The 3 was set on 2026-08-21 before `ProjectTeamRead` had a name.
+
+**If Nabil takes the reading that grows it to carry the shell, the estimate is not 8 — the story should
+be split instead**, because §3.1 shows the shell is not one story's worth of work and
+`process/agile.md` calls a 13 *"too big — split it."*
+
+### 3.5 What is genuinely Ready, and it is not nothing
+
+Two things carried out of the sprint-2 opening are now closed, and closing them is real progress:
+
+- **Item 0, the Verifier pass over the six unverified commits: DONE.** `qa/slice-1/verification-2026-08-30.md`
+  — all six ACCEPT, none rejected, and the five lapsed acceptances re-established at `aa8a9ca`, each on
+  a mutation watched failing rather than on the author's evidence.
+- **Item 4, `AC-106-H` and `AC-110-D`: both DISCHARGED** by that same pass. They had been deferred to
+  stories that did not exist, and no pass had ever examined them.
+
+**KAFF-106 and KAFF-110 remain *not accepted* as stories** — only those two criteria were discharged.
+That distinction is the verification report's own and it is kept.
