@@ -535,8 +535,8 @@ were standing before this ceremony; two are new, and one has split in half.
    trigger body or flipped that flag to watch what stays green.**
 4. **No story file was edited.** KAFF-105b and KAFF-115 still carry all the defects §3 names. The
    ceremony diagnoses; the BA repairs.
-5. **The QA session's outcome is not in this document.** It was dispatched during the ceremony and its
-   result belongs to whoever reads it next.
+5. ~~**The QA session's outcome is not in this document.**~~ **It landed before this file closed — §8.**
+   Struck rather than deleted: it was true when written.
 6. **Slices 2 and 9 were not refined.** `process/agile.md` says refine one sprint ahead and no further,
    and slice 9's *"blocked by nothing"* still almost certainly means it has not been read closely enough.
 7. **`qa/slice-1/test-cases.md` was not executed case by case.** No `TC-` identifier was run.
@@ -548,3 +548,36 @@ were standing before this ceremony; two are new, and one has split in half.
     to UX and BA, not done here.
 11. **I did not verify the staging *screens*.** §1 establishes the API is reachable and healthy. Nobody
     fetched the SPA from staging, in this ceremony or any other.
+
+---
+
+## 8. The QA session landed — six rows closed, two blocked on named questions
+
+**Dispatched during this ceremony and finished before this file closed.** Committed at `95b050e`.
+Boundary honoured: `qa/slice-1/test-cases.md` and `qa/questions.md` only, nothing under `src/` or
+`tests/`, no build, no stack.
+
+| Row | Outcome |
+|---|---|
+| `TC-1-046` | **Closed properly.** It stops being *"when it is inspected"* — a human reading a type — and becomes a reflection assertion over `WhoAmI.Response`. **It now fails when a money-shaped field is *added*, not when somebody forgets to look** |
+| `TC-1-027` Api half | **Closed.** And sharpened: the case now requires that **no `User` row survives the refusal**, because a row with a null hash is exactly the defect a status-code-only check misses |
+| `W-3` | **Closed.** Names a mechanism instead of an intention — capture the logger, assert the structured state, not the rendered text |
+| `W-4` | **Closed** as `TC-1-260`, which goes red the day `TryAdd` becomes assignment |
+| `W-10` | **Closed** as `TC-1-259`. Pure traceability |
+| `TC-1-120`, `TC-1-094` | **Re-verified and correct as written — no edit needed.** The gap was always Backend's xUnit test, never the case. Worth recording: two of the ten rows never needed QA at all, and three routings had not established that |
+| `W-2` | **Specified, not implemented**, and correctly so. Every `ActorRoleAsync` helper re-reads the role from the database immediately before the request, so claim and database cannot disagree in any test. A stale-claim helper is designed and handed on — **what the trail should record when they diverge is unstated, and it decides what the ledger holds** |
+| `TC-1-042` | **Left BLOCKED** on `SM-32`, named |
+| `TC-1-079` | **Left BLOCKED**, and it corrected me. I briefed that its subcontractor half rides on `Q41`. **It does not** — `Q41` asks whether a departing staff member's login becomes a client login, and that reasoning does not transfer to a subcontractor, who has no login for history to continue under. **Raised as `F-35`** rather than folded into a question it does not belong to |
+
+**The `Role.Client` defect class is now documented once, with four instances** — `TC-1-021`,
+`TC-1-043`, `TC-1-126` and `TC-1-042`'s target criterion. One more than this ceremony had found. **The
+cases were deliberately left untouched**: each sits under a story criterion that has to move first, and
+the criteria are the BA's. That is the right call and not the convenient one.
+
+**Nought rulings invented.** `scripts/check-citations.ps1`: **1031 checked, 0 broken, 0 legacy** — the
+figure held across every commit of this ceremony, from 969.
+
+**What this changes about §4.1's verdict: nothing, and that is the point.** QA said eight rows needed
+doing rather than deciding; six are done, and the two it could not close were the two it had already
+identified as needing a decision. **The session was the right instrument, and three routing tables were
+not.**
