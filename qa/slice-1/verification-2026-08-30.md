@@ -101,6 +101,20 @@ D-094's central evidence is real and reproduces. The one-dot forge that produced
 Build stays clean; `Nothing_outside_LiveSession_can_produce_the_metadata_that_proves_a_route_paid`
 fails with *"found at least one item {\"Marker\"}"*. **That test earns its place.** Reverted.
 
+> **⚠️ Amended 2026-09-02 by the Scrum Master — the test named above has been renamed, and this is
+> the SM-33 citation move that the renaming commit could not make itself.** `V-30-A`, raised in §2
+> below, is the finding that the name was **false**: reflection does produce the metadata, and the
+> suite reported 227/227 against a route applying none of the three checks. Backend repaired it in
+> `93fa417` / `decisions.md` D-098 and renamed the test to
+> `LiveSession_exposes_no_metadata_type_wider_than_private` — the property its body actually asserts
+> [Verified: 2026-09-02 @ `tests/Api.Tests/EndpointPermissionCoverageTests.cs` ->
+> `LiveSession_exposes_no_metadata_type_wider_than_private`]. **The mutation and its result above are
+> unchanged and still true**; only the identifier moved. `process/agile.md` -> `The Test Naming Law —
+> SM-33` puts the citations in `meetings/`, `qa/` and `proposals/` with the Scrum Master, because the
+> implementing agent may not edit them — D-098 §2 names this file as the one it had to leave. The
+> sentence above is left standing rather than rewritten: what this report claimed, and when, is the
+> record.
+
 ### `V-30-A` — **MEDIUM** · the marker is not unforgeable, and the suite says 227/227
 
 **`MUT-B2`.** The same probe slice, forging the marker by reflection instead of by name — one

@@ -25,7 +25,7 @@ verdicts and no longer disagrees with an order that has nothing left to sequence
 
 | # | Epic | Gate (`agents.md`) | Stories | Points | Blocked |
 |---|---|---|---:|---:|---|
-| 1 | Foundation | permission tests pass | 27 | 92 | ~~Q42~~ **closed, D-055 §2** · Q43 |
+| 1 | Foundation | permission tests pass | **28** | **102** | ~~Q42~~ **closed, D-055 §2** · ~~Q43~~ **ANSWERED 2026-09-02, D-100.** **Slice 1 has no open Karim question** |
 | 2 | Masters | Excel import works | 13 | 48 | Q12, Q13, Q29 |
 | 3 | Treasury | **the worked example reconciles** | 20 | 120 | Q14, Q15, Q16, Q29 |
 | 4 | Spine | prices provably frozen | 17 | 84 | ~~N10~~ **approved and built, D-055 §3** · **Q-N10-1, Q-N10-2b, Q-N10-3** (Karim), Q18, Q19, Q20, Q30 |
@@ -34,7 +34,16 @@ verdicts and no longer disagrees with an order that has nothing left to sequence
 | 7 | Accounting | balance sheet balances | 12 | 61 | Q23, Q24, Q25, Q40 |
 | 8 | Closure, warranty, portal | portal leaks nothing | 15 | 65 | Q26 · **N7** (Architect, not Karim) |
 | 9 | Mobile and offline | offline cannot move money | 8 | 47 | none open yet |
-| | | | **140** | **659** | |
+| | | | **141** | **669** | |
+
+> **⚠️ Slice 1's row was re-derived on 2026-09-02 and the figure it replaces was three re-estimates
+> stale.** It read **27 / 92**, computed 2026-08-21. Since then KAFF-105b went 3 → 5 and KAFF-115 went
+> 3 → 8 at the 2026-09-01 refinement (`decisions.md` D-097 §3), and **KAFF-125 was cut today at 3**.
+> Re-derived by summing the slice-1 inventory table at the bottom of this file rather than by adding to
+> the old total — D-096 §4 is the record of what adding to a stale total costs here:
+> 5+5+3+2+5+5+2+5+5+2+3+5+5+3+3+5+3+8+3+5+3+5+2+3+2+2 = **99** across 26 rows, **plus KAFF-125 at 3 =
+> 102 across 27**; 28 rows counting `KAFF-122`, which is `Superseded` and carries no points. The grand
+> total moves 659 → 669 and 140 → 141 by the same 10 and the same one row.
 
 Questions are numbered in `questions-for-karim.md`, which is now the **one** register — UX and QA
 questions merged into it with their origin recorded (action **SM-4**).
@@ -62,8 +71,19 @@ questions merged into it with their origin recorded (action **SM-4**).
   satisfies the permission and breaks the ruling, because the row also carries usernames, departments
   and active state. Whoever builds it projects name and role and stops.
 
-  **Q43** is the same screen, one field down, and **still open**. It does not make a story `BLOCKED`;
-  it stops a field.
+  ~~**Q43** is the same screen, one field down, and **still open**. It does not make a story `BLOCKED`;
+  it stops a field.~~
+
+  > **⚠️ ANSWERED 2026-09-02 — D-100, and the second half of that struck sentence was wrong by the
+  > time it mattered.** Q43 stopped a field on 2026-08-21 and **blocked a story** from 2026-09-01, when
+  > KAFF-105b was proposed for a sprint and rule 6 and `AC-105b-C` were found asserting the code with a
+  > citation that does not grant it (`decisions.md` D-097 §3). **Nabil granted both halves:** the
+  > reference code is **mandatory** alongside the project name, rendered as `[RefCode] Project Name`
+  > because project names overlap in this industry and the code is the hard identifier that stops HR
+  > staffing the wrong site; and the **team size** — the current headcount — is required, because it is
+  > what lets HR spot an unstaffed site without drilling into it. **KAFF-105b is Ready.**
+
+
 - **One ruling reversed another.** **Q27 reverses D-049 ruling 6:** a role change no longer *refuses*
   while the user supervises a project — it **automatically revokes every assignment**, Supervisor and
   Junior alike. `spec.md` §9 carries both rulings, the first marked `⚠️ SUPERSEDED`, on purpose.
@@ -103,6 +123,22 @@ questions merged into it with their origin recorded (action **SM-4**).
 >
 > **Proposed instead: a repair-and-unblock sprint, no new feature surface, no story points** — meeting
 > §5. **Scope is Nabil's and nothing is locked.**
+
+> ### ✅ Superseded 2026-09-02 — **Nabil ruled on three of the seven questions.** `meetings/2026-09-02-sprint-2-locked.md`, `decisions.md` D-100
+>
+> **The table above was true when written and three of its rows are now false.** Corrected here loudly
+> rather than rewritten, per SM-29's own practice.
+>
+> | | Then | Now |
+> |---|---|---|
+> | **KAFF-105b** | `BLOCKED` on `Q43` | **Ready, 5.** `Q43` **ANSWERED** — the reference code is mandatory beside the name (`[RefCode] Project Name`) and the team size is required |
+> | **KAFF-115** | `BLOCKED`, three DoR failures unrepaired | **Ready, 8.** All three repaired 2026-09-02, including `AC-115-G`, which had been passing for the wrong reason |
+> | **The staff shell** | *"Still not a story"* | **`KAFF-125`, cut 2026-09-02 at 3 points**, carrying `AC-101b-A` and `AC-101b-D`. **Cut is not committed** — whether it is built in sprint 2 is the one scope question this run put back to Nabil |
+>
+> **Sprint 2 remains a repair sprint by Nabil's own ruling** — *"an answer to Q43 does not change its
+> shape. If we build new features on a porous foundation, the Zero-Trust posture collapses. Pay the
+> technical debt first."* Ready is not the same as pulled: KAFF-105b and KAFF-115 are Ready and are
+> **not** in sprint 2.
 
 ### The 2026-08-30 opening proposal, kept as the record
 
@@ -431,7 +467,7 @@ criterion behind them. **KAFF-105a is untouched by D-065 — checked, not assume
 > only this table would have started a blocked story.** Found by the BA against a file it does not own
 > and fixed by the Scrum Master, who does. **When these two disagree the build order is authoritative**
 > — it is recomputed every time a blocker moves; this table is a backlog inventory.
-| KAFF-105b | `GET /api/auth/me` returns the projects I reach, and how | **5** | BLOCKED — one question, `Q43`. Five of six Definition of Ready failures repaired 2026-09-01; re-estimated 3 → 5 (`meetings/2026-09-01-sprint-2-refinement.md` §3.2, §3.4). | 105a, 113, 114 |
+| KAFF-105b | `GET /api/auth/me` returns the projects I reach, and how | **5** | **READY 2026-09-02.** `Q43` — its sole remaining Definition of Ready failure — is **ANSWERED** (D-100): HR's entries carry the project name, its reference code and its team size. The other five failures were repaired 2026-09-01. It still discharges **neither** `AC-101b-A` nor `AC-101b-D`; both moved to **KAFF-125** on 2026-09-02. | 105a, 113, 114 |
 | KAFF-106 | The Owner creates a user with a role and a department | 5 | BUILT, verified 2026-08-25 — 9 of 11 criteria satisfied. | 100 |
 | KAFF-107 | An HR user cannot be created or moved outside the HR department | 2 | Ready | 106 |
 | KAFF-108 | Move a user between departments | 3 | **ACCEPTED** 2026-08-25 — 7 of 7, `qa/slice-1/verification-2026-08-25.md` §8. *(This row read `Ready` until 2026-09-01 — an unbuilt state — while the same file's build order and "Sprint 1, final" table both had it accepted. Found by Backend at refinement; corrected by the Scrum Master, who owns the board.)* | 106 |
@@ -441,7 +477,7 @@ criterion behind them. **KAFF-105a is untouched by D-065 — checked, not assume
 | KAFF-112 | Reactivate a user, who comes back with nothing | 3 | ACCEPTED 2026-08-26 — 5 of 6 QA cases covered; **`TC-1-094` has no test** (the username stays reserved while the account is off — an index predicate a later migration removes without noticing). | 110, 111 |
 | KAFF-113 | Assign a user to a project, with seniority for site engineers | 5 | **ACCEPTED** 2026-08-25 — 9 of 9, same report. *(This row read `Ready` until 2026-09-01. **It is on KAFF-105b's dependency path**, so a reader taking it at face value would have judged KAFF-105b unstartable for the wrong reason. Found by Backend at refinement; corrected by the Scrum Master.)* | 106 |
 | KAFF-114 | Revoke a project assignment without losing who could act when | 3 | ACCEPTED 2026-08-26 — 7 of 8 QA cases covered; **`TC-1-120` has no test** (revoking the last person on a project is allowed — the case exists to pin an absence, so nothing goes red the day somebody adds the rule). | 113 |
-| KAFF-115 | The project team panel, and HR's separate Project Team screen | **8** | BLOCKED — transitively on 105b, and on its own three Definition of Ready failures, unrepaired. Re-estimated 3 → 8 (`meetings/2026-09-01-sprint-2-refinement.md` §3.3). | 113, 114, 105b |
+| KAFF-115 | The project team panel, and HR's separate Project Team screen | **8** | **READY 2026-09-02.** Its transitive block cleared with KAFF-105b, and its own three Definition of Ready failures were repaired the same day — `AC-115-H`'s unbuildable budget/balance given and its assertion against a dashboard endpoint that does not exist, `AC-115-I`'s unfailable *"when the code is read"* shape, and **`AC-115-G`, which passed for the wrong reason** (refused at the staff door by `MayHoldStaffSession`, not because *"`PortalRead` is not `ProjectRead`"*). Re-estimated 3 → 8 on 2026-09-01. | 113, 114, 105b |
 | KAFF-116 | Every audit record says how the actor reached the project | 3 | Ready | — |
 | KAFF-117 | The Owner reads the audit trail, and nobody else does | 5 | Ready | 116, 118 |
 | KAFF-118 | Every state change in slice 1 writes an audit record | 3 | **UNBUILT.** Nothing of this story was started. | 106, 109, 110, 111, 113, 119 |
@@ -451,6 +487,7 @@ criterion behind them. **KAFF-105a is untouched by D-065 — checked, not assume
 | KAFF-122 | ~~Set a corporate client's withholding category~~ | — | **Superseded** → KAFF-416 | — |
 | KAFF-123 | Archive a client | 2 | Ready | 119 |
 | KAFF-124 | Find a client by name, code or phone | 2 | Ready | 119 |
+| **KAFF-125** | **The staff shell: session resolution, chrome, and role-based landing** | **3** | **CUT 2026-09-02**, on Nabil's ruling — *"a dedicated frontend ticket must be cut for the visual shell itself … you cannot discharge a UI rendering dependency with a JSON response."* **`AC-101b-A` and `AC-101b-D` move here** from KAFF-105b and KAFF-115, which cannot discharge them (D-097 §3). **Deliberately not marked Ready or BLOCKED against a sprint** — whether it is built in sprint 2 is a scope question standing with Nabil. Renders S-004, S-005's identity half and the shell chrome today; **S-006 and S-011 have no endpoint to feed them and S-009a's route is an open UX question**. | 101a, 101b, 105a |
 
 ### The committable scope, computed transitively
 
