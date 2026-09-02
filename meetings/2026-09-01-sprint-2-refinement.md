@@ -142,6 +142,28 @@ paying for itself for the third sprint running.
 
 ### 2.1 The finding that outranks everything else in this ceremony
 
+> **⚠️ Amended 2026-09-02 by the Scrum Master. Two sentences in this section are false, and the
+> Architect falsified them on the machine before acting on them** — `decisions.md` D-101, commits
+> `c7ae3d1` / `172eab0`. Corrected loudly rather than rewritten, per SM-29's own practice; the
+> section's central finding survives both corrections and is now fixed.
+>
+> | This section said | The truth, measured 2026-09-02 |
+> |---|---|
+> | *"verified by nobody"* | **False.** The rule is verified **behaviourally** by `tests/Api.Tests/TreasuryGuardTests.cs` -> `The_safe_balance_cannot_go_negative`, against a real PostgreSQL: it funds a Safe with 1,000, spends 5,000, and requires `KAFF_NEGATIVE_BALANCE`. Gutting `kaff_check_non_negative_balance`'s body while keeping its name turns **1 of 227 red** — that test alone. **The trigger body is not name-only cover.** No artefact in this project had noticed that test exists, which is why the ceremony did not find it: it was reasoned from `FindMissingGuardsAsync` rather than searched for in `tests/` |
+> | *"there is no `Posting`, no account set and no money"* | **False about the account set.** `src/Infrastructure/Persistence/Seeding/AccountTreeSeeder.cs` -> `MainSafeCode` inserts `SAFE-MAIN` on every start-up; **fourteen live account rows exist on the dev database today**. That sentence is the one that made this look deferrable, and it is the one that was wrong |
+>
+> **What survives, and it is the whole finding: the layer underneath is real and was exploitable.** A
+> Safe row inserted with `enforce_non_negative = false` took an overdraw to **−4,000.0000** while
+> `FindMissingGuardsAsync` returned `[]` and `/api/health` reported `guardsInstalled: true`. **Fixed
+> 2026-09-02**: `FindMissingGuardsAsync` now asserts the flag on the rows themselves, so the field
+> `deploy-staging.yml` greps proves the floor is real on every deploy.
+>
+> **And one thing this section did ask to be weighed came back inverted.**
+> `trg_accounts_configuration_immutable` closes the *flip* and not the *value*: it is `BEFORE UPDATE`,
+> so an `INSERT` never meets it — and on an already-wrong row it is the mechanism that makes the wrong
+> value **permanent**. It is the one guard in that file whose correctness makes a defect harder to
+> repair.
+
 **The rule `CLAUDE.md` puts in the database above all others — *"the safe balance can never go
 negative, enforced by a database constraint, not application code"* — is verified by nobody, and it is
 not one of the thirty things `V-30-D` measured.**
