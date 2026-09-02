@@ -7765,6 +7765,60 @@ runs after me. Measured on PostgreSQL 16:
    D-093's own two-file friction rather than a false positive. **It is not the formatting noise the
    question was about.**
 
+#### 6. `V-30-B` — the reflection door stays open, and here is the condition that reopens the question
+
+**Routed to me by `qa/slice-1/verification-2026-08-30.md` -> the `V-30-B` finding and by D-098's
+closing paragraphs, and decided by neither. It is a cost judgement, and the ruling is the deliverable.**
+
+**The mechanism, re-established rather than taken from the brief.** `RequireLiveSession` does two
+separable things — it adds an endpoint filter and it stamps a `Marker` — and `IsApplied` reads only the
+second
+[Verified: 2026-09-02 @ `src/Api/Authorization/LiveSession.cs` -> `RequireLiveSession`;
+@ `src/Api/Authorization/LiveSession.cs` -> `IsApplied`]. `SelfOnlyEndpoints` has exactly **two**
+members, `POST /api/auth/change-password` and `GET /api/auth/me`
+[Verified: 2026-09-02 @ `tests/Api.Tests/EndpointPermissionCoverageTests.cs` ->
+`Every_self_only_member_is_mapped_and_requires_authentication_with_no_permission_of_its_own`].
+
+**And the property a sweep would assert is already asserted, per member, established today rather than
+taken on the brief's word:**
+
+* `MeTests.A_password_changed_on_another_device_ends_this_endpoints_answer_too` signs in twice, changes
+  the password on one device and requires **`403`** on the other
+  [Verified: 2026-09-02 @ `tests/Api.Tests/MeTests.cs` -> `A_password_changed_on_another_device_ends_this_endpoints_answer_too`],
+  with `A_deactivated_accounts_token_is_refused_not_answered_with_a_profile` covering the `IsActive`
+  half and `A_subcontractor_session_is_refused_not_answered_with_a_profile` the role bar.
+* `ChangePasswordTests.The_change_ends_every_other_session` requires the other device to stop getting
+  `200`
+  [Verified: 2026-09-02 @ `tests/Api.Tests/ChangePasswordTests.cs` -> `The_change_ends_every_other_session`],
+  and `A_deactivated_account_cannot_change_its_own_password` requires **`403`**
+  [Verified: 2026-09-02 @ `tests/Api.Tests/ChangePasswordTests.cs` -> `A_deactivated_account_cannot_change_its_own_password`].
+
+**Ruling: not now.** A behavioural sweep over `SelfOnlyEndpoints` would today assert, generically and
+therefore more weakly, what two hand-written tests already assert concretely for the only two members
+that exist. Its whole value is over **members that do not exist yet** — and a sweep must construct a
+live session and a stale one for an arbitrary route it knows nothing about, which for a `POST` means
+inventing a body. **Buying that for two members, against a list that has grown by one in a month, is
+paying now for a property nothing currently lacks.**
+
+**The trigger condition, concrete enough that a future session can tell whether it has fired — and any
+one of the three is enough:**
+
+1. **`SelfOnlyEndpoints` reaches a third member.** Two hand-written tests per member is a pattern; three
+   is a hand-copy, and `LiveSession`'s own remarks say what a hand-copy is: *"one item short
+   eventually."*
+2. **A self-only route is added whose per-member tests do not cover all three checks** — `IsActive`,
+   the security stamp, `MayHoldStaffSession`. The two present members cover all three each; the day one
+   does not, the generic assertion is the cheaper way to get it than a third hand-copy.
+3. **A self-only route touches money or a posting.** Both current members act on the caller's own
+   credential. A self-only route that moves value changes the cost of being wrong, and §M's rule —
+   never downgrade anything deciding who may touch money — applies to the *test* strategy as much as to
+   the model.
+
+**What I am not ruling.** The reflection forge itself stays open and is unchanged by this — D-098 §3
+already says so, and closing it is the same work as the sweep, not a separate cheaper option. **The
+honest statement of today's position: the metadata proves a declaration, the behaviour is proved
+per member, and nothing proves the two agree for a member nobody has written yet.**
+
 #### 7. Not done
 
 * **No posting endpoint, no money, and no §15 assertion.** Nothing here tests the worked example, and
