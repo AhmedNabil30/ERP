@@ -7620,6 +7620,123 @@ framework-thrown `400`/`413` — `CustomizeProblemDetails`'s `switch` would then
 
 ---
 
+### D-100 · Scrum Master — Nabil's three rulings applied, `KAFF-125` cut, and the demo question put back to him · 2026-09-02
+
+**Scrum Master.** `meetings/2026-09-02-sprint-2-locked.md` is the reasoning and the record; this is the
+part that is a decision rather than a report. Nabil ruled on **three of the seven** questions standing
+after the 2026-09-01 refinement (D-097 §5, meeting §6). The other four are untouched and none was
+answered by any agent.
+
+#### 1. `Q43` is ANSWERED, both halves, and the format is part of the ruling
+
+> *"The Reference Code is mandatory alongside the project name (format: `[RefCode] Project Name`). In
+> construction/engineering ERPs, project names frequently overlap (e.g. 'Capital Site - Phase 1' vs
+> 'Phase 2'). The RefCode is the hard identifier that prevents HR from misallocating staff to the wrong
+> site."*
+>
+> *"Team Size: Yes, displaying the current headcount is required. It serves as the primary visual
+> indicator, allowing HR to spot unstaffed sites at a glance without drilling down."*
+
+**Decision, and the distinction is load-bearing: the payload carries three fields; `[RefCode] Project
+Name` is a display format and belongs to the rendering stories, never to the JSON.** A pre-formatted
+display string in an API response is a translation decision taken on the server, which
+`problem-details.ts` and the i18n rule both forbid. **Team size is the count of active
+`ProjectAssignment` rows** — the set KAFF-115 rules 1 and 4 already define — and it is derived on read,
+never stored, for the same reason a balance is never stored.
+
+Applied, and verified after it happened: the register row moved to the answered table
+[Verified: 2026-09-02 @ `stories/questions-for-karim.md` -> the `Q43` row]; KAFF-105b rules 6 and 6a,
+`AC-105b-C` and `AC-105b-F` carry the code and the team size
+[Verified: 2026-09-02 @ `stories/slice-1-foundation/KAFF-105b-api-me-project-list.md` -> `AC-105b-C`];
+KAFF-115 carries the format on its rendering criteria
+[Verified: 2026-09-02 @ `stories/slice-1-foundation/KAFF-115-project-team-panel.md` -> `AC-115-H`].
+
+**`Q43` was KAFF-105b's sole remaining Definition of Ready failure, so the story is Ready at 5.**
+KAFF-115's transitive block cleared with it, and its own three failures were repaired the same day —
+including **`AC-115-G`, which had been passing for the wrong reason**: a `Role.Client` is refused at the
+staff door by `MayHoldStaffSession` before any handler runs, so the criterion would have stayed green if
+the rule it names were deleted. It is Ready at 8.
+
+**One thing the brief that opened this run got wrong, and the BA reported it rather than working around
+it: KAFF-113 has no project picker.** Its criteria are backend and permission logic throughout; the only
+picker in that flow is a **user** picker on S-010, by which point the project is already chosen. The
+ruling was applied to the two stories that render a project and to no third one.
+
+#### 2. `AC-101b-A` and `AC-101b-D` cannot be discharged by a payload, and the ticket is cut
+
+> *"KAFF-105b (Backend) remains the API payload ticket. It technically satisfies the backend portion of
+> the ACs the moment it returns the correct role/permission data structure. A dedicated frontend ticket
+> must be cut for the visual shell itself — the layout, sidebar, header, and role-based routing.* **You
+> cannot discharge a UI rendering dependency with a JSON response.**"
+
+This settles the arithmetic failure D-097 §3 found twice — once for `AC-101b-A`, and once, invisibly
+until that ceremony, for `AC-101b-D`. **`KAFF-125` is cut at 3 points**, carrying both criteria
+[Verified: 2026-09-02 @ `stories/slice-1-foundation/KAFF-125-staff-shell.md` -> `AC-125-A`], and
+KAFF-101b's deferrals are re-pointed at it in a dated amendment rather than a silent edit.
+
+**Its criteria are bounded by what an endpoint can feed, and the story says so in a table rather than in
+prose.** The API exposes three `GET` routes. S-005's identity half renders today; **S-006 has no
+list-users route and S-011's clients are KAFF-119…124, deferred out of sprint 1**, so neither is
+asserted by any criterion — `agents.md` §3c's hard rule cuts both ways, and a criterion that cannot pass
+is as bad as one that cannot fail. **Where a ruled landing has nothing to render, the story raises a
+question and does not invent an interim one**; an invented landing is exactly the plausible fill
+`agents.md` calls this project's most expensive failure mode.
+
+**The estimate is 3 and it rests on evidence I want visible, because it is lower than I expected.**
+`AuthService`'s three session signals and `mustChangePasswordGuard` already exist
+[Verified: 2026-09-02 @ `src/Web/src/app/core/auth/auth.service.ts` -> `AuthService`], so the story is
+chrome, dispatch and per-role routes on top of a service that is built, not a second implementation of
+it. **Frontend has not confirmed the number independently**, which KAFF-115's 8 had and this does not.
+
+#### 3. Sprint 2 stays a repair sprint, and `Ready` is not the same as pulled
+
+> *"An answer to Q43 does not change its shape. If we build new features on a porous foundation, the
+> Zero-Trust posture collapses. Pay the technical debt first."*
+
+**Decision: KAFF-105b and KAFF-115 are Ready and are not in sprint 2.** Making a story Ready and pulling
+it are different acts, and this entry records them as different acts so a later session does not read
+`Ready` as committed.
+
+**And the repair list Nabil ruled against was itself four items stale — the correction is in the meeting
+§2 and it is the reason this sprint was short.** `POST /api/setup`'s `500` was fixed at `45a939d` and now
+has its entry (D-099); `V-27-A`, `V-27-B` and `V-27-C` were fixed and **independently accepted** — all six
+commits `ACCEPT` in `qa/slice-1/verification-2026-08-30.md` §11; `V-30-A`, `V-30-C` and `V-30-H` were
+repaired on 2026-09-01 at `93fa417`, `e93029b` and `f47416d`; the staging SPA assertion landed at
+`3d98fa1`; and the QA block was six of ten closed with two needing no QA at all, not eight looping items.
+**What actually remained is `V-30-D`, the safe-balance layer under it, `V-30-B` and `V-30-G`** — done in
+this sprint, D-101 and D-102 — **plus two QA rows blocked on named questions.**
+
+#### 4. What I did not decide, and one of them is Nabil's and was put back to him today
+
+* **Whether `KAFF-125` is built in sprint 2.** Nabil's closing words this run were *"we are still in
+  sign in page we want to move to have demo to client"*, and that pulls against his own ruling 3. **He
+  ordered the ticket cut; cutting is not building.** Scope is his lock and not the Scrum Master's, so it
+  is put to him as one question with the trade priced — meeting §5. **I did not widen the sprint to
+  accommodate it and I did not assume the demo overrides the ruling.**
+* **The four business questions**, all unchanged and none answerable by any agent: `KAFF-118`'s cut,
+  `Q56` (the `Role.Subcontractor` conversion), the `mustChangePassword` reach beyond `/api/auth/me`
+  (`V-30-I` — `AC-106-H` and `AC-105a-C` contradict each other in committed text and both behaviours have
+  been observed), and **`Q54`'s retention period, which is Karim's.**
+
+#### 5. Not done
+
+* **Nothing built today has been independently verified.** D-101 and D-102 both changed
+  `FindMissingGuardsAsync`, which decides whether the host starts; `agents.md` §7 and `CLAUDE.md` both
+  say the author does not certify its own work. **A Verifier pass is owed before this sprint closes.**
+* **`ux/navigation.md` is still stale** on `mustChangePassword` — it describes the refusal reading D-072
+  §2 replaced on 2026-08-24. Routed to UX at the 2026-09-01 refinement, routed again here, still not
+  done. **A shell story written against it would command a defect**, which is why KAFF-125 is written
+  against D-072 §2 and says so in its own text.
+* **`src/Web/src/app/app.routes.ts` still attributes the staff shell to *"KAFF-105b's shell"*** — the
+  exact confusion ruling 2 corrects. Found by the BA, left for Frontend, not fixed.
+* **`AC-101b-D` now sits on a story that cannot yet say where HR lands.** KAFF-125's open question 3 —
+  whether S-009a renders from the shared `/api/auth/me` or needs the dedicated HR API `ux/` describes —
+  is unanswered, and no reading was picked. It is UX's and Nabil's.
+* **The staging SPA smoke step at `3d98fa1` has not been observed passing by me.** It is committed and
+  pushed; whether the workflow has run green is unverified in this session.
+
+---
+
 ### D-101 · Architect — the safe floor is data, and the half of it nothing read · 2026-09-02
 
 **Architect, with the machine to itself.** Raised at the sprint-2 refinement,
