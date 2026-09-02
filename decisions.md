@@ -7426,6 +7426,18 @@ whose Safe row carries `false` passes every guard check and floors nothing.
 ships, not before slice 9.** Routed to the **Architect** as owner with **Backend**. Deliberately **not**
 proposed for sprint 2, where it would be rushed.
 
+> **⚠️ Amended 2026-09-02 by the Architect, decisions.md D-101 — two of the three sentences above are
+> false and were measured false the same week.** **(a)** *"verified by nobody"*:
+> `TreasuryGuardTests.The_safe_balance_cannot_go_negative` verifies the rule behaviourally against a
+> real PostgreSQL, and gutting the trigger's body while keeping its name turns it — and only it — red,
+> 1 of 227 [Verified: 2026-09-02 @ `tests/Api.Tests/TreasuryGuardTests.cs` ->
+> `The_safe_balance_cannot_go_negative`]. **(b)** *"no account set"*: `AccountTreeSeeder` inserts the
+> main safe and thirteen other company-level accounts on every start-up
+> [Verified: 2026-09-02 @ `src/Infrastructure/Persistence/Seeding/AccountTreeSeeder.cs` ->
+> `MainSafeCode`]. **What survives, and it is the sentence that mattered:** which accounts are floored
+> is data, no test could assert it on a row, and D-101 §3 closes that. The paragraph is left standing
+> rather than rewritten — what this entry claimed, and when, is the record.
+
 #### 5. Not done
 
 * **No story file was edited.** KAFF-105b and KAFF-115 still carry every defect §3 of the meeting names.
@@ -7605,3 +7617,177 @@ contract, and what a `413` should carry when a site engineer's photo upload trip
 **Revisit if.** The Architect rules a `messageKey` is required on every refusal shape, including a
 framework-thrown `400`/`413` — `CustomizeProblemDetails`'s `switch` would then need a third arm, and
 `W-5` would close at the same time.
+
+---
+
+### D-101 · Architect — the safe floor is data, and the half of it nothing read · 2026-09-02
+
+**Architect, with the machine to itself.** Raised at the sprint-2 refinement,
+`meetings/2026-09-01-sprint-2-refinement.md` §2.1, and routed to me by D-097 §4. **Measured before it
+was fixed**, per the retrospective's change 4 — *a self-sealing argument needs a demonstration*.
+
+#### 1. The finding as it was stated is half wrong, and the wrong half was the headline
+
+D-097 §4 and the refinement both say *"`CLAUDE.md`'s flagship database rule — the safe balance that
+can never go negative — **is verified by nobody**"*, and both say it is *"harmless today"* because
+there is *"no `Posting`, no account set and no money."* **Neither sentence survived the measurement.**
+
+**a. The rule's behaviour is verified, and it was verified before this entry.**
+`TreasuryGuardTests.The_safe_balance_cannot_go_negative` creates a real `Safe` account against a real
+PostgreSQL, funds it 1,000, spends 5,000 and requires `KAFF_NEGATIVE_BALANCE`
+[Verified: 2026-09-02 @ `tests/Api.Tests/TreasuryGuardTests.cs` -> `The_safe_balance_cannot_go_negative`].
+**`MUT-1`:** `kaff_check_non_negative_balance`'s body replaced with an immediate `RETURN NULL`, the
+name and the registration untouched. Build clean, **1 of 227 failed** — that test, and only that test,
+with *"the database must refuse this operation with KAFF_NEGATIVE_BALANCE."* Reverted.
+
+**So the trigger body is not name-only cover**, and the finding as routed would have bought a test
+that already exists. Recorded plainly because the brief that carried it invited its own correction and
+this is the third sprint running in which that has paid (`agents.md` principle 7).
+
+**b. There is an account set, seeded on every start-up, and `SAFE-MAIN` is in it.**
+`AccountTreeSeeder` inserts the main safe on every boot and never rewrites an existing row
+[Verified: 2026-09-02 @ `src/Infrastructure/Persistence/Seeding/AccountTreeSeeder.cs` -> `MainSafeCode`].
+Fourteen company-level accounts exist on this machine's database today. *"No account set"* was wrong,
+and it is the sentence that made this look deferrable.
+
+#### 2. What is real, and it is the layer underneath — measured
+
+**Which accounts are floored is data.** `kaff_check_non_negative_balance` loops over
+`accounts WHERE a.enforce_non_negative`, so the trigger can be present under its required name, fire
+on every insert, and floor nothing
+[Verified: 2026-09-02 @ `src/Infrastructure/Persistence/Sql/001_guards.sql` -> `kaff_check_non_negative_balance`].
+The guard file says so in its own words: *"a database seeded before 2026-08-20 therefore keeps the old
+floors."*
+
+**`MUT-2`.** A `Safe` row `INSERT`ed with `enforce_non_negative = false`, funded 1,000, then overdrawn
+by 5,000:
+
+| | Result |
+|---|---|
+| The overdrawing posting | **accepted**, 1 row |
+| The safe's signed balance afterwards | **-4,000.0000** |
+| `FindMissingGuardsAsync` | **`[]`** |
+| `/api/health` | `healthy`, `guardsInstalled: true` |
+
+**`MUT-2b` — and this is what makes it worse rather than better.**
+`UPDATE accounts SET enforce_non_negative = false` on a correctly-created row is refused:
+*"23001: KAFF_ACCOUNT_IMMUTABLE: account … configuration cannot be changed after creation"*
+[Verified: 2026-09-02 @ `src/Infrastructure/Persistence/Sql/001_guards.sql` -> `kaff_accounts_configuration_is_immutable`].
+The refinement asked me to weigh what that trigger closes. **It closes the flip and not the value.** It
+is `BEFORE UPDATE`, so an `INSERT` never meets it — and on a row that is already wrong it is the
+mechanism that makes the wrong value *permanent*. **An immutable wrong value is worse than a mutable
+one**, and this is the one guard in the file whose correctness makes a defect harder to repair.
+
+**Why no test could see any of it.** Every test in this repository builds its accounts through
+`Account.Create`, which copies the flag from `AccountTypes` — so the row always agrees with the
+catalogue by construction. `SchemaInvariantTests.Stored_account_metadata_matches_the_domain_catalogue`
+asserts it on an `Account` constructed from metadata
+[Verified: 2026-09-02 @ `tests/Api.Tests/SchemaInvariantTests.cs` -> `Stored_account_metadata_matches_the_domain_catalogue`]
+and `CatalogueCompletenessTests.Exactly_three_account_types_are_floored_at_zero` asserts it on the
+metadata itself
+[Verified: 2026-09-02 @ `tests/Domain.Tests/CatalogueCompletenessTests.cs` -> `Exactly_three_account_types_are_floored_at_zero`].
+**Both assert the code against the code.** The exposure is a row written by a *past* catalogue, and no
+test in this repository can produce one.
+
+#### 3. Decision — the check goes where D-033 already refuses to start, and it is one query
+
+`FindMissingGuardsAsync` now also compares every `accounts` row's `enforce_non_negative` against the
+floored set in `AccountTypes`, in both directions, and reports each disagreement as
+`accounts.enforce_non_negative on <code>`
+[Verified: 2026-09-02 @ `src/Infrastructure/Persistence/DatabaseInitializer.cs` -> `FindMissingGuardsAsync`].
+
+**Why here and not in a new mechanism.** This is already the one place that answers *"is this database
+enforcing what it must?"*, and it already feeds both the D-033 start-up refusal and `/api/health`'s
+`guardsInstalled` — which `.github/workflows/deploy-staging.yml` greps for. **One query therefore makes
+the staging pipeline assert the safe floor is real, on every deploy, with no second mechanism to keep
+alive.** It is the rung `CLAUDE.md`'s own *"enforced by a database constraint, not application code"*
+points at: the deployment is checked, not the caller.
+
+**Both directions, deliberately.** A floor missing lets an account overdraw (spec.md §6.1). A floor
+*added* refuses a legitimate posting with an opaque `KAFF_NEGATIVE_BALANCE` mid-extract — the second
+half of `Exactly_three_account_types_are_floored_at_zero`'s own comment, and the shape a database
+seeded before Karim's 2026-08-20 ruling actually carries, with `Hold`, `FirmAdvance` and
+`MaterialAdvance` still floored.
+
+**Watched failing at both levels, not merely written.**
+
+1. **The test.** `An_account_row_whose_floor_disagrees_with_the_catalogue_is_reported_as_a_missing_guard`
+   inserts an unfloored `Safe` row raw, requires it reported, and removes it
+   [Verified: 2026-09-02 @ `tests/Api.Tests/SchemaInvariantTests.cs` -> `An_account_row_whose_floor_disagrees_with_the_catalogue_is_reported_as_a_missing_guard`].
+   **`MUT-3`:** the new predicate neutered to `WHERE false AND …` — build clean, that test red,
+   *"Expected collection {empty} to contain …"*. Reverted.
+2. **The running stack.** An unfloored `Safe` row inserted into this machine's live `kaff` database:
+   `/api/health` went from `200 healthy … missingGuards: []` to
+   **`503 degraded … missingGuards: ["accounts.enforce_non_negative on PROBE-UNFLOORED"]`**. Row
+   deleted; `200 healthy` restored; the fourteen seeded rows all agree with the catalogue and
+   `SAFE-MAIN` carries `true`.
+
+#### 4. What this does not cover, stated at the level it actually holds
+
+**The brief asked for behaviour over data, and the honest answer is that the behaviour half already
+existed and the data half is what was missing.** The two together are the rule; neither alone is:
+
+* `The_safe_balance_cannot_go_negative` fails when the **trigger stops flooring what the flag marks** —
+  `MUT-1`, 1 of 227.
+* the new test fails when a **row stops carrying the flag** — `MUT-3`.
+
+**Neither is a test of a posting endpoint, because there is none**, and I did not invent one. What
+still has no cover is the composition: no test asserts that *the account a real payment flow reaches*
+is a floored one, because nothing reaches an account yet. That is slice 3's, and its gate — *"the
+worked example reconciles"* — is where it belongs.
+
+#### 5. The refinement's open question, answered with a measurement — §2.3 item 2
+
+**Whether comparing a checked-in expression against PostgreSQL's own re-printed definition is stable,
+or false-positives on formatting alone.** This decides the shape of `V-30-D`, which is Backend's and
+runs after me. Measured on PostgreSQL 16:
+
+| Authored, in a configuration file | `pg_get_constraintdef` |
+|---|---|
+| `amount > 0` [Verified: 2026-09-02 @ `src/Infrastructure/Persistence/Configurations/TreasuryConfigurations.cs` -> `ck_postings_amount_positive`] | `CHECK ((amount > (0)::numeric))` |
+| `role <> 'Subcontractor' OR password_hash IS NULL` [Verified: 2026-09-02 @ `src/Infrastructure/Persistence/Configurations/IdentityConfigurations.cs` -> `ck_users_subcontractor_cannot_log_in`] | `CHECK ((((role)::text <> 'Subcontractor'::text) OR (password_hash IS NULL)))` |
+
+**Answer, in three parts.**
+
+1. **Comparing the *authored* text to the re-print is not stable — it is not even close.** PostgreSQL
+   adds parentheses and explicit casts. Neither of the two above matches, and nothing suggests any of
+   the thirty would. **A checker built that way reports thirty failures on a correct database on the
+   day it ships**, and *a checker that cries wolf gets muted, which is D-046's green light by another
+   name.* **Do not build that one.**
+2. **The re-print is itself a stable normal form, and that is the shape to build.** Four constraints
+   created on the same server: `CHECK (amount > 0)` and `CHECK ((( amount   >   0 )))` re-print
+   **identically**; `CHECK (amount >= 0)` — exactly `V-30-D`'s mutation — re-prints **differently**.
+   So a checked-in snapshot of PostgreSQL's *own output*, compared against the live `pg_constraint`,
+   is blind to formatting and loud about the predicate. That is what `V-30-D` should compare.
+3. **One residual, named so Backend is not surprised by it.** `CHECK (0 < amount)` re-prints as
+   `CHECK (((0)::numeric < amount))` — a semantically identical rewrite that the comparison flags.
+   That is a deliberate edit to a money guard, and re-approving the snapshot in the same commit is
+   D-093's own two-file friction rather than a false positive. **It is not the formatting noise the
+   question was about.**
+
+#### 7. Not done
+
+* **No posting endpoint, no money, and no §15 assertion.** Nothing here tests the worked example, and
+  the suite totals in this entry must not be read as coverage of it.
+* **`V-30-D` itself is not built.** §5 answers the question that decides its *shape*; the
+  expression-level comparison is Backend's and is not in this change. The thirty predicates remain
+  verified by name only.
+* **The other 29 constraint predicates and the 7 other required triggers were not mutated.** `MUT-1`
+  covers `kaff_check_non_negative_balance` alone.
+* **No behavioural sweep over `SelfOnlyEndpoints` was written** — §6 rules it out for now, with the
+  condition that reopens it.
+* **The staging database was not inspected.** §3's live evidence is this machine's `kaff` database.
+  **If any deployed database carries a row seeded before 2026-08-20, this change will refuse that
+  host's start-up** outside Development — which is D-033 working as designed, and is the point. **The
+  repair is not an `UPDATE`:** `MUT-2b` shows the immutability guard refuses one. Such a row must be
+  closed and the account reopened, which is `kaff_accounts_configuration_is_immutable`'s own `HINT`.
+  Named here rather than discovered on a deploy.
+* **Two sentences in files I may not edit are now false** — `meetings/2026-09-01-sprint-2-refinement.md`
+  §2.1's *"verified by nobody"* and its *"no account set"*. **Reported to the Scrum Master, whose files
+  those are under SM-33.** D-097 §4 carries the same two and is amended in place above.
+
+**Revisit if.** A slice adds an account type, or Karim changes which accounts are floored. The floored
+set then moves in `AccountTypes`, `Exactly_three_account_types_are_floored_at_zero` moves with it — and
+**every already-seeded row keeps the old flag and cannot be updated**, so the check in §3 will report
+them. That is the intended alarm, not a bug in it, and the migration it demands is real work that must
+be planned rather than discovered.

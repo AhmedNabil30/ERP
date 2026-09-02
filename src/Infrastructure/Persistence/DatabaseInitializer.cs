@@ -1,4 +1,5 @@
 using System.Reflection;
+using Kaff.Domain.Treasury;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -180,6 +181,14 @@ public sealed class DatabaseInitializer
     /// whole point. The EF model says what the schema of today declares; <see cref="RequiredCheckConstraints"/>
     /// says what this repository has decided must exist. See decisions.md D-064 and D-093.
     /// </para>
+    /// <para>
+    /// <b>The last check is of data rather than of a name, and it is the only one that is.</b> Every
+    /// other guard here is verified by existence — a <c>tgname</c>, an <c>indexname</c>, a
+    /// <c>conname</c>. The safe floor cannot be, because which accounts are floored lives in
+    /// <c>accounts.enforce_non_negative</c> rather than in the trigger:
+    /// <c>trg_postings_non_negative_balance</c> can be present, correct and running, and floor nothing.
+    /// See decisions.md D-101.
+    /// </para>
     /// </remarks>
     public async Task<IReadOnlyList<string>> FindMissingGuardsAsync(CancellationToken cancellationToken = default)
     {
@@ -271,6 +280,43 @@ public sealed class DatabaseInitializer
             .ToListAsync(cancellationToken);
 
         missing.AddRange(requiredCheckConstraints.Except(presentCheckConstraints, StringComparer.Ordinal));
+
+        // The safe floor is DATA, not code, and every check above it is a check of a NAME.
+        //
+        // kaff_check_non_negative_balance reads accounts.enforce_non_negative and floors only the rows
+        // that carry it (001_guards.sql section 3). So trg_postings_non_negative_balance can be present
+        // under its required name, run on every insert, and floor nothing at all — measured on
+        // 2026-09-02: a Safe row INSERTed with the flag false took an overdraw to -4,000 while this
+        // method returned an empty list. Nothing in either suite could see it, because every test
+        // builds its accounts through Account.Create and therefore always from the current catalogue.
+        //
+        // The exposure is a real deployment, not a hypothetical: AccountTreeSeeder inserts SAFE-MAIN on
+        // every start-up and never rewrites it, and 001_guards.sql's own section 3 warns that "a
+        // database seeded before 2026-08-20 therefore keeps the old floors". trg_accounts_configuration
+        // _immutable does NOT close this — it is BEFORE UPDATE, so it refuses to repair a wrong row
+        // while permitting an INSERT to create one.
+        //
+        // Both directions are defects, which is why this compares rather than only looking for absence:
+        // a floor missing lets an account overdraw (spec.md §6.1), and a floor added refuses a
+        // legitimate posting with an opaque KAFF_NEGATIVE_BALANCE mid-extract. Domain.Tests
+        // CatalogueCompletenessTests pins the same set in the catalogue; this pins the rows against it.
+        string[] flooredTypes =
+        [
+            .. AccountTypes.All
+                .Where(meta => meta.EnforceNonNegative)
+                .Select(meta => meta.Type.ToString())
+        ];
+
+        List<string> misfloored = await _context.Database
+            .SqlQuery<string>(
+                $"""
+                 SELECT code::text AS "Value" FROM accounts
+                 WHERE enforce_non_negative <> (type = ANY({flooredTypes}))
+                 ORDER BY code
+                 """)
+            .ToListAsync(cancellationToken);
+
+        missing.AddRange(misfloored.Select(code => $"accounts.enforce_non_negative on {code}"));
 
         if (missing.Count > 0)
         {

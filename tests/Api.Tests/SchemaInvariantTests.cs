@@ -224,6 +224,74 @@ public sealed class SchemaInvariantTests
     }
 
     /// <summary>
+    /// An account row whose floor disagrees with the catalogue is reported as a missing guard.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The safe floor is the one guard that a name cannot verify.</b>
+    /// <c>kaff_check_non_negative_balance</c> floors only the accounts whose
+    /// <c>enforce_non_negative</c> is true, so <c>trg_postings_non_negative_balance</c> can be present
+    /// under its required name, fire on every insert, and floor nothing — measured 2026-09-02: a Safe
+    /// row inserted with the flag false took an overdraw to -4,000 with
+    /// <c>FindMissingGuardsAsync</c> returning an empty list.
+    /// </para>
+    /// <para>
+    /// <b>Why no test could see it before, and why this one inserts raw.</b> Every other test in this
+    /// repository builds its accounts through <c>Account.Create</c>, which copies the flag from
+    /// <c>AccountTypes</c> — so the row always agrees with the catalogue by construction, and the
+    /// assertion is the code against the code. The exposure is a row that a *past* catalogue wrote:
+    /// <c>AccountTreeSeeder</c> inserts <c>SAFE-MAIN</c> on every start-up and never rewrites one, and
+    /// 001_guards.sql section 3 says a database seeded before 2026-08-20 keeps the old floors. The row
+    /// is therefore written the way such a database would carry it.
+    /// </para>
+    /// <para>
+    /// <b>What this does not cover:</b> whether the trigger's own body still floors what the flag
+    /// marks. That is behaviour, and <c>TreasuryGuardTests.The_safe_balance_cannot_go_negative</c> is
+    /// what fails when the body is gutted — measured the same day, 1 of 227 red. The two together are
+    /// the rule; neither alone is. See decisions.md D-101.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task An_account_row_whose_floor_disagrees_with_the_catalogue_is_reported_as_a_missing_guard()
+    {
+        await using KaffDbContext context = _database.CreateBareContext();
+        var initializer = new DatabaseInitializer(context, NullLogger<DatabaseInitializer>.Instance);
+
+        (await initializer.FindMissingGuardsAsync(Ct)).Should().BeEmpty();
+
+        // Raw, because the domain cannot produce this row and the deployed database that carries it
+        // was not written by today's domain either. An INSERT, not an UPDATE: the immutability guard
+        // trg_accounts_configuration_immutable is BEFORE UPDATE, so it refuses to repair such a row
+        // while permitting one to be created.
+        await context.Database.ExecuteSqlAsync(
+            $"""
+             INSERT INTO accounts (id, code, name_ar, name_en, type, class, normal_balance,
+                 ledger_kind, is_postable, enforce_non_negative, currency, opened_on, is_active)
+             VALUES ({Guid.CreateVersion7()}, 'UNFLOORED-SAFE', 'خزنة', 'Safe', 'Safe', 'Asset',
+                 'Debit', NULL, true, false, 'EGP', {new DateOnly(2026, 1, 1)}, true)
+             """,
+            Ct);
+
+        try
+        {
+            IReadOnlyList<string> missing = await initializer.FindMissingGuardsAsync(Ct);
+
+            missing.Should().Contain(
+                "accounts.enforce_non_negative on UNFLOORED-SAFE",
+                "a Safe row that is not floored runs the non-negative trigger and is floored by nothing "
+                + "— CLAUDE.md's \"the safe balance can never go negative\" is then enforced by no layer");
+        }
+        finally
+        {
+            await context.Database.ExecuteSqlAsync(
+                $"DELETE FROM accounts WHERE code = 'UNFLOORED-SAFE'",
+                Ct);
+        }
+
+        (await initializer.FindMissingGuardsAsync(Ct)).Should().BeEmpty("the row was removed");
+    }
+
+    /// <summary>
     /// <c>V-27-A</c>. The written-out guard list and the EF model say the same thing, both ways round.
     /// </summary>
     /// <remarks>
