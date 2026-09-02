@@ -1,7 +1,7 @@
 # KAFF-115 · The project team panel is built from assignment rows, not from the access check
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 8 · **Status:** BLOCKED — transitively on KAFF-105b (BLOCKED on `Q43`), and on its own account. **Re-estimated 3 → 8, 2026-09-01** (`meetings/2026-09-01-sprint-2-refinement.md` §3.3): it births the `ProjectTeamRead` permission row (`process/agile.md` puts touching the permission model at 5) and spans backend and frontend through `AC-115-J` (8) — take the higher, not the sum. Frontend, asked independently at refinement, returned 8 with the same reasoning. Depends on KAFF-105b, which defines the payload this panel reads. `AC-101b-D` lands with it — **and does not discharge it.** ⚠️ **`AC-101b-D` fails the same arithmetic `AC-101b-A` does, found 2026-09-01, not before.** HR lands on **S-009a**, the project *list* (`ux/navigation.md` -> `Landing summary`); this story builds **S-009b**, one project's *team panel* — `AC-115-H` opens *"the Project Team screen **for project A**"*, which is per-project, not the list `AC-101b-D` requires HR to land on. **Neither story discharges `AC-101b-D` as written, and no reading is picked here** — the same note stands in `stories/slice-1-foundation/KAFF-101b-sign-in-screen.md`, and `meetings/2026-09-01-sprint-2-refinement.md` §3.1 explains why all three previously-costed readings of the shell question understate the hole. This story's own three other Definition of Ready failures — `AC-115-H` and `AC-115-G`'s money/dashboard-endpoint and wrong-reason defects, and `AC-115-I`'s unfailable "when the code is read" shape — are named in that same meeting §3.3 and are **not repaired in this revision**; carried forward so nobody assumes they are fixed
-**Spec:** §9, §12 · **Decisions:** D-010, D-044 (rulings 2, 3), **D-051 (Q32)**
+**Slice:** 1 · **Epic:** Foundation · **Points:** 8 · **Status:** **Ready, 2026-09-02.** ~~BLOCKED — transitively on KAFF-105b (BLOCKED on Q43), and on its own account~~ — struck rather than deleted, per SM-29. **`Q43` is answered (D-100) and KAFF-105b is Ready, so the transitive block is gone.** This story's own three Definition of Ready failures named at the 2026-09-01 refinement (`meetings/2026-09-01-sprint-2-refinement.md` §3.3) — `AC-115-H`'s money/dashboard-endpoint defect, `AC-115-G`'s wrong-reason refusal, and `AC-115-I`'s unfailable "when the code is read" shape — are **repaired in this revision**, the same way their KAFF-105b counterparts (`AC-105b-C`/`E`, `AC-105b-G`, `AC-105b-F`) were repaired on 2026-09-01. **`AC-115-H` also now carries the `[RefCode] Project Name` display format**, cited to `Q43` (answered 2026-09-02) · D-100, and new rules 8 and 9 say plainly that this screen does **not** render HR's team-size figure — that belongs to HR's project *list*, S-009a, which is **KAFF-125**, not this story. **Re-estimated 3 → 8, 2026-09-01** (`meetings/2026-09-01-sprint-2-refinement.md` §3.3): it births the `ProjectTeamRead` permission row (`process/agile.md` puts touching the permission model at 5) and spans backend and frontend through `AC-115-J` (8) — take the higher, not the sum. Frontend, asked independently at refinement, returned 8 with the same reasoning. **Points unchanged at 8 today** — `Q43`'s answer adds two fields to an existing payload and a display convention, not new scope. Depends on KAFF-105b, which defines the payload this panel reads. `AC-101b-D` was deferred here and **still does not discharge here**: HR lands on **S-009a**, the project *list* (`ux/navigation.md` -> `Landing summary`); this story builds **S-009b**, one project's *team panel* — `AC-115-H` opens *"the Project Team screen **for project A**"*, which is per-project, not the list `AC-101b-D` requires HR to land on. That finding stands (`meetings/2026-09-01-sprint-2-refinement.md` §3.1) — it is why `AC-101b-A` and `AC-101b-D` are re-pointed, in a dated amendment made in this same pass, at **KAFF-125** instead, rather than being discharged by either this story or KAFF-105b
+**Spec:** §9, §12 · **Decisions:** D-010, D-044 (rulings 2, 3), **D-051 (Q32)**, **D-100 (`Q43`)**
 **Depends on:** KAFF-113, KAFF-114, KAFF-105b *(which names the permission)*
 
 > **Re-estimated 2 → 3 on 2026-08-21.** Q32 is answered and the answer adds a second surface and a
@@ -30,6 +30,8 @@ from the access check, or Karim appears on every project team in the system"*
 | 5b | The separate surface is chosen for the reason `spec.md` §12 uses for the client portal: **a filtered view leaks the first time somebody adds a field.** Both surfaces read the same assignment rows; neither shares a response type with the project dashboard | **D-051 (Q32)** · §12 · D-035 |
 | 6 | A portal client never sees it. §12 lists what the client sees, and the team is not on the list | §12 |
 | 7 | A deactivated member is absent from the panel because deactivation revokes their assignments (D-049 ruling 5), not because the panel filters on the user's `IsActive`. One mechanism, and it lives in KAFF-111 | D-049 ruling 5 · KAFF-111 |
+| 8 | **This screen's name line is rendered `[RefCode] Project Name`**, not the bare name — the format `Q43` (D-100) rules for every HR-facing surface that names a project | **`Q43` (answered 2026-09-02) · D-100** |
+| 9 | **HR's team-size figure is not rendered on this panel.** This screen already lists every member of one project by name; a numeric headcount across *all* projects is HR's project **list**'s job — S-009a, which is **KAFF-125**, not this story. `Q43` (D-100) answers whether a team size is shown at all; it does not move it onto this screen | **`Q43` (answered 2026-09-02) · D-100** |
 
 ## Permissions, money, audit, i18n
 - **Permissions:** `ProjectRead`, `ProjectScoped`, for the in-project panel — assignment required for
@@ -82,19 +84,22 @@ Then it renders `team.empty` — never a blank area and never a phantom row
 **AC-115-G — a client cannot read it** *(fails if the rule is broken)*
 Given I am a `Role.Client` user whose client owns project A
 When I request project A's team panel
-Then I am refused with 403 — `PortalRead` is not `ProjectRead`
+Then I am refused before any handler runs — `Role.Client` may never hold a staff session [Verified: 2026-09-02 @ `src/Domain/Identity/Role.cs` -> `MayHoldStaffSession`]
+*(Repaired 2026-09-02 — the previous Then asserted "refused with 403 — `PortalRead` is not `ProjectRead`", which passed for the wrong reason: a `Role.Client` is refused at the staff door by `MayHoldStaffSession` before any handler or permission check runs, so the criterion stayed green even though the rule it named was never the one doing the refusing. `meetings/2026-09-01-sprint-2-refinement.md` §3.2 names this as a live defect and the same class as `TC-1-021` and `TC-1-042`. Repaired the way `AC-105b-G` was repaired on 2026-09-01: assert the refusal at the door, not a reason the code never reaches.)*
 
 **AC-115-H — HR reads the team, and reaches nothing else** *(fails if the rule is broken)*
-Given I am `Role.Hr` with no assignment row, and project A has a budget, a contract value and a balance
+Given I am `Role.Hr` with no assignment row, and project A has a `ContractValue` set and a reference code
 When I open the Project Team screen for project A
-Then I see its name, its code and its members with their roles and levels
+Then I see its name and code together as `[RefCode] Project Name`, and its members with their roles and levels
 And the payload contains no value, cost, margin, balance, budget, status or client field
-And a request to the project dashboard endpoint for project A is refused with 403
+And `Role.Hr` holds no `ProjectRead` grant in the permission catalogue — in the catalogue itself, and by no global-reach rule either
+*(Repaired 2026-09-01 in KAFF-105b at `AC-105b-C` and `AC-105b-E`, and here 2026-09-02: the given used to name "a budget, a contract value and a balance" — `Budget` is nowhere in `src/Domain/` [Verified: 2026-09-02 — searched `src/Domain/Projects/Project.cs`; only `ContractValue` exists, no `Budget` member] and a stored balance is forbidden outright by `CLAUDE.md`. And the last And used to assert a `403` from "the project dashboard endpoint", which does not exist — the entire API exposes three `GET` routes, `/api/auth/me`, `/api/health` and `/api/setup` [Verified: 2026-09-02 — searched `src/Api/Features/*/*/Endpoint.cs` for `MapGet`]. Restated against the permission catalogue, the same shape as `AC-105b-E`. And the display format is new 2026-09-02 — `Q43` / D-100: the code is no longer shown as a bare separate field, it is composed with the name as `[RefCode] Project Name`.)*
 
 **AC-115-I — the two surfaces are different types** *(fails if the rule is broken)*
 Given the response type the Project Team screen returns and the project dashboard's type
-When the code is read
-Then they are different types, and a money field added to the dashboard cannot appear on the team screen without somebody adding it there
+When a test enumerates every public property of each type by reflection
+Then the two are distinct CLR types, the team screen's type carries no property outside {name, code, and per-member name, role and level}, and the test fails the moment a financial field is added to either type or the two types are collapsed into one
+*(Repaired 2026-09-02 — the previous Then was "when the code is read, then they are different types", a manual-review instruction with no way to fail on its own — QA's own hard rule, `agents.md` §3c, and the same defect repaired in KAFF-105b's `AC-105b-F` on 2026-09-01. Restated as a reflection assertion, the shape QA already used to close the identical defect [Verified: 2026-09-02 @ `qa/slice-1/test-cases.md` -> `TC-1-046`].)*
 
 **AC-115-J — Arabic, RTL, at mobile width**
 Given the panel at 390px in Arabic
@@ -105,7 +110,9 @@ Then direction is RTL, names and Latin codes are bidi-isolated, and there is no 
 Adding or removing members (KAFF-113, KAFF-114). Showing who assigned whom and when — that is the
 audit trail, KAFF-117, which is now `Ready`: Karim ruled the trail is the Owner's alone (D-049
 ruling 1), so **nobody reading this panel can also read the history behind it unless they are the
-Owner.** Stated here because it is a surprising consequence, not a defect.
+Owner.** Stated here because it is a surprising consequence, not a defect. **HR's project list and its
+team-size figure** — S-009a — is not this screen either; it is **KAFF-125**.
 
 ## Questions for Karim
-None. **Q32 is closed by D-051**, and it is what rules 5, 5a and 5b are built on.
+None. **Q32 is closed by D-051**, and it is what rules 5, 5a and 5b are built on. **`Q43` is closed by
+D-100, 2026-09-02**, and it is what `AC-115-H`'s display format and rules 8 and 9 are built on.
