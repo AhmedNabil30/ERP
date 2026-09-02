@@ -18,9 +18,16 @@ namespace Kaff.Api.Tests.Infrastructure;
 /// Only two things are substituted: the connection string, and authentication. Authorization,
 /// the audit interceptor, the database guards and the endpoint conventions are the shipped ones.
 ///
-/// The environment is "Testing" rather than "Development" on purpose — that is what makes
+/// The environment defaults to "Testing" rather than "Development" on purpose — that is what makes
 /// <c>Program</c> refuse to start if the database guards are missing, so a broken guard fails the
-/// build here rather than in production.
+/// build here rather than in production. <see cref="Environment"/> exists to answer
+/// qa/slice-1/verification-2026-08-30.md <c>V-30-G</c> and
+/// meetings/2026-09-01-sprint-2-refinement.md §2.3 item 1: whether the host can run as
+/// <c>Development</c> at all without tripping <c>Program</c>'s start-up guard refusal. It can —
+/// <c>Program</c>'s refusal is gated on <c>!app.Environment.IsDevelopment()</c>, so Development never
+/// trips it regardless of guard state — and <c>MalformedRequestTests</c> uses this to prove the
+/// malformed-body fix holds there too, not only where the framework default happened to already
+/// agree with it.
 /// </remarks>
 public sealed class KaffApiFactory : WebApplicationFactory<Program>
 {
@@ -34,6 +41,7 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
     private readonly IPAddress _remoteAddress;
     private readonly bool _useRealAuthentication;
     private readonly TimeProvider? _clock;
+    private readonly string _environment;
 
     /// <param name="connectionString">The test database.</param>
     /// <param name="remoteAddress">
@@ -58,17 +66,24 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
     /// the sliding session are the two rules in this system defined in minutes rather than in
     /// states, and neither is observable without moving a clock.
     /// </param>
+    /// <param name="environment">
+    /// <c>ASPNETCORE_ENVIRONMENT</c> for this host. Defaults to <c>"Testing"</c> — see the class
+    /// remarks for why. Pass <c>"Development"</c> only to test what Development itself changes; every
+    /// other suite should take the default so a broken guard still fails the build.
+    /// </param>
     public KaffApiFactory(
         string connectionString,
         IPAddress? remoteAddress = null,
         string? trustedProxyNetwork = null,
         bool useRealAuthentication = false,
-        TimeProvider? clock = null)
+        TimeProvider? clock = null,
+        string environment = "Testing")
     {
         _connectionString = connectionString;
         _remoteAddress = remoteAddress ?? TestRemoteAddress;
         _useRealAuthentication = useRealAuthentication;
         _clock = clock;
+        _environment = environment;
 
         // Set as environment variables, not through ConfigureAppConfiguration.
         //
@@ -93,7 +108,7 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        builder.UseEnvironment("Testing");
+        builder.UseEnvironment(_environment);
 
         builder.ConfigureAppConfiguration((_, configuration) =>
             configuration.AddInMemoryCollection(new Dictionary<string, string?>(StringComparer.Ordinal)

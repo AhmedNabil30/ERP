@@ -135,5 +135,82 @@ public sealed class MalformedRequestTests : IAsyncLifetime
             + "not be logged as an unhandled exception");
     }
 
+    /// <summary>
+    /// A malformed body against a real, shipped endpoint — not only the test host's probe route — is a
+    /// client error.
+    /// </summary>
+    /// <remarks>
+    /// <b>Closes half of <c>V-30-G</c>.</b> Every assertion above runs against
+    /// <see cref="ProbeEndpoint.BodyBindingRoute"/>, which exists only in this test host. The Verifier
+    /// found nothing in the suite exercised a shipped route and closed the gap by hand, driving
+    /// <c>POST /api/auth/sign-in</c> live in Development: *"one case against
+    /// <c>POST /api/auth/sign-in</c> would close it."* This is that case, so a regression — the fix
+    /// deleted, or reintroduced some other way — fails a test instead of needing to be re-discovered by
+    /// hand. <c>/api/auth/sign-in</c> is <c>AllowAnonymous</c> (KAFF-101a), so the request reaches
+    /// binding before any authorization gate could intercept it, exactly like
+    /// <see cref="ProbeEndpoint.BodyBindingRoute"/> does.
+    /// </remarks>
+    [Theory]
+    [InlineData("{value: \"x\"}")]
+    [InlineData("{\"userName\":\"x\"}}}")]
+    [InlineData("[]")]
+    public async Task A_malformed_json_body_on_the_shipped_sign_in_route_is_refused_as_a_client_error(string body)
+    {
+        using var content = new StringContent(body, System.Text.Encoding.UTF8, "application/json");
+
+        HttpResponseMessage response = await _client.PostAsync(new Uri("/api/auth/sign-in", UriKind.Relative), content, Ct);
+
+        ((int)response.StatusCode).Should().BeInRange(
+            400,
+            499,
+            "the shipped sign-in route binds a JSON body exactly as the test-host probe does, and a "
+            + "malformed one must not depend on which route happened to be tested");
+    }
+
+    /// <summary>
+    /// The fix holds when the host itself runs as <c>Development</c> — not only in the <c>Testing</c>
+    /// environment every other assertion in this file uses.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Answers meetings/2026-09-01-sprint-2-refinement.md §2.3 item 1</b>, tried rather than reasoned
+    /// about: the Api test host <i>can</i> run as <c>Development</c> without tripping <c>Program</c>'s
+    /// start-up guard refusal, because that refusal is conditioned on
+    /// <c>!app.Environment.IsDevelopment()</c> — Development is the one environment the refusal never
+    /// fires in, regardless of guard state. Building this factory with
+    /// <c>environment: "Development"</c> and reaching this assertion is the proof; if the guard check
+    /// ever changed to also refuse in Development, a missing or misconfigured guard on this database
+    /// would throw during <see cref="InitializeAsync"/> instead.
+    /// </para>
+    /// <para>
+    /// <b>And it closes the other half of <c>V-30-G</c>.</b> Before <c>45a939d</c>,
+    /// <c>RouteHandlerOptions.ThrowOnBadRequest</c> defaulted to <c>true</c> in Development, which is
+    /// exactly where the original defect — a <c>500</c> where <c>Staging</c> answered <c>400</c> — was
+    /// found. Every other test in this file runs where the framework default already agreed with the
+    /// fix, so none of them would notice the fix being deleted <i>and</i> the environment reverting to
+    /// deciding. This one runs where the two used to disagree.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task A_malformed_json_body_is_refused_as_a_client_error_when_the_host_runs_as_development()
+    {
+        await using var factory = new KaffApiFactory(_database.ConnectionString, environment: "Development");
+        using HttpClient client = factory.CreateClient();
+
+        using var content = new StringContent("{value: \"x\"}", System.Text.Encoding.UTF8, "application/json");
+
+        HttpResponseMessage response = await client.PostAsync(
+            new Uri(ProbeEndpoint.BodyBindingRoute, UriKind.Relative),
+            content,
+            Ct);
+
+        ((int)response.StatusCode).Should().BeInRange(
+            400,
+            499,
+            "the Development host boots (proving the guard refusal is not tripped by this environment) "
+            + "and Configure<RouteHandlerOptions> applies regardless of environment, so a malformed "
+            + "body must not become a 500 here either");
+    }
+
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 }

@@ -7845,3 +7845,165 @@ set then moves in `AccountTypes`, `Exactly_three_account_types_are_floored_at_ze
 **every already-seeded row keeps the old flag and cannot be updated**, so the check in §3 will report
 them. That is the intended alarm, not a bug in it, and the migration it demands is real work that must
 be planned rather than discovered.
+
+---
+
+### D-102 · Backend — `V-30-D` closed at expression level, and `V-30-G`'s regression cover written · 2026-09-02
+
+**Backend, with the machine to itself.** Two items from the sprint-2 refinement brief, routed by
+`qa/slice-1/verification-2026-08-30.md` §3 (`V-30-D`) and §5 (`V-30-G`).
+
+#### §1 — `V-30-D`: check constraints are now verified by predicate, not only by name
+
+**What was wrong.** `RequiredCheckConstraints` (D-093) and the model-derived list both verify a check
+constraint exists under a required name. Neither reads what the name actually guards.
+`ck_users_subcontractor_cannot_log_in`, kept under its name with its predicate replaced by `1 = 1`
+(`MUT-C3`), passed every gate this repository had: build clean, Api suite 227/227, D-033's start-up
+refusal silent, `/api/health` reporting `guardsInstalled: true`. D-093's own words named the exposure
+that mattered: *"`ck_postings_amount_positive`, `ck_postings_distinct_accounts` and
+`ck_postings_not_self_reversing` — the slice-3 money rules — are three of the thirty. Those three have
+no domain guard in front of them today."*
+
+**The design question the Architect answered first, re-verified rather than taken on trust.**
+`meetings/2026-09-01-sprint-2-refinement.md` §2.3 item 2 asked whether comparing a checked-in
+expression against PostgreSQL's own re-print is stable. D-101 §5 measured it on PostgreSQL 16:
+comparing the *authored* SQL (`amount > 0`) against the live re-print (`CHECK ((amount > (0)::numeric))`)
+is not stable — PostgreSQL adds parentheses and casts to every predicate — but PostgreSQL's *own*
+re-print **is** a stable normal form: two constraints created with equivalent but differently
+formatted predicates re-print identically, and a genuinely different predicate re-prints differently.
+Re-derived independently today by querying every one of the 30 required constraints on the live `kaff`
+database rather than trusting the two worked examples in D-101 §5
+[Verified: 2026-09-02 — `docker exec kaff-db psql -U kaff -d kaff -c "SELECT conname, pg_get_constraintdef(oid) FROM pg_constraint WHERE contype='c'"`]; all 30 matched D-101's predicted shape.
+
+**Decision.** A checked-in snapshot of PostgreSQL's own re-print for all 30 required constraints,
+compared against the live database on every call to `FindMissingGuardsAsync` — the same method that
+already feeds D-033's start-up refusal and `/api/health`'s `guardsInstalled`, so the staging pipeline
+gets this for free on every deploy, exactly as D-101 §3 did for the account floor.
+
+1. `RequiredCheckConstraintDefinitions` — all 30 names mapped to PostgreSQL's re-printed definition,
+   hand-written in `DatabaseInitializer.cs`, not in `Persistence/Configurations`
+   [Verified: 2026-09-02 @ `src/Infrastructure/Persistence/DatabaseInitializer.cs` ->
+   `RequiredCheckConstraintDefinitions`]. **This has `RequiredCheckConstraints`'s own property, for the
+   same reason**: it lives in a different file from the configuration that declares the predicate, so
+   editing the predicate cannot also update its own snapshot in the same keystroke. A predicate change
+   — even under an unchanged name — is now a deliberate edit across two files, the same friction D-093
+   built for a constraint's existence, now built for its content.
+2. `FindMissingGuardsAsync` fetches each present constraint's `conname` **and**
+   `pg_get_constraintdef(oid)` in the one query that already ran, and reports a mismatch as
+   `"<name> predicate changed: expected …, found …"` for any constraint present under its required name
+   with a definition that disagrees with the snapshot
+   [Verified: 2026-09-02 @ `src/Infrastructure/Persistence/DatabaseInitializer.cs` ->
+   `FindMissingGuardsAsync`]. Compared only for constraints found present — an absent one is already
+   reported by the existing name check, and reporting it twice would obscure which defect occurred.
+3. `Every_required_check_constraint_has_a_recorded_definition` closes the same forget-to-extend risk
+   D-093 built `The_written_out_check_constraints_and_the_model_agree` for, one level down: a required
+   name with no recorded definition would have its predicate compared against nothing
+   [Verified: 2026-09-02 @ `tests/Api.Tests/SchemaInvariantTests.cs` ->
+   `Every_required_check_constraint_has_a_recorded_definition`].
+4. `A_check_constraints_predicate_changed_while_its_name_did_not_is_reported_as_a_missing_guard`
+   reproduces `MUT-C3` permanently, plus the money case Nabil named directly —
+   `ck_postings_amount_positive` widened from `amount > 0` to `amount >= 0`
+   [Verified: 2026-09-02 @ `tests/Api.Tests/SchemaInvariantTests.cs` ->
+   `A_check_constraints_predicate_changed_while_its_name_did_not_is_reported_as_a_missing_guard`].
+
+**Watched failing, not merely written — at the test level and live, both mutations from the brief.**
+
+| Mutation | Test suite | Live `/api/health`, API on 5080, Development, before the fix would have been silent |
+|---|---|---|
+| `MUT-C3` — `ck_users_subcontractor_cannot_log_in` kept, predicate → `1 = 1` | Red, exact message asserted | `503 degraded`, `missingGuards: ["ck_users_subcontractor_cannot_log_in predicate changed: expected \"CHECK ((((role)::text <> 'Subcontractor'::text) OR (password_hash IS NULL)))\", found \"CHECK ((1 = 1))\""]` |
+| The money case — `ck_postings_amount_positive` kept, predicate → `amount >= 0` | Red, exact message asserted | `503 degraded`, `missingGuards: ["ck_postings_amount_positive predicate changed: expected \"CHECK ((amount > (0)::numeric))\", found \"CHECK ((amount >= (0)::numeric))\""]` |
+
+Both driven against the live `kaff` database with the API running (`ASPNETCORE_ENVIRONMENT=Development`,
+port 5080), not only in the test suite: `docker exec kaff-db psql` dropped and re-added each
+constraint under its own name with the weakened predicate, `/api/health` answered `503` with the
+mismatch named, both restored, `/api/health` returned to `200 healthy … missingGuards: []`. `git status`
+confirmed no drift; the live database carries exactly the predicates it did before this entry.
+
+**What this does not do — the residual D-101 §5.3 already named, confirmed rather than newly found.**
+A semantically identical rewrite re-prints differently and is flagged as a mismatch — `0 < amount`
+would re-print as `CHECK (((0)::numeric < amount))`, not as this snapshot's `amount > 0` entry. That is
+D-093's two-file friction working as designed for a deliberate edit to a money guard: re-approve the
+snapshot in the same commit. It is not formatting noise to be normalised away, and no attempt was made
+to build a normaliser for it — D-101 §5.3 already ruled that out.
+
+**Not done.**
+
+* **The count did not move.** Thirty required constraints, unchanged — no `SM-33` rename applies to
+  `Thirty_check_constraints_are_required`, because this work adds a second dictionary alongside the
+  existing list rather than changing what either counts.
+* **Triggers and indexes are unchanged, per the brief's explicit instruction.** `V-30-D` and this entry
+  are check constraints only. The safe-floor trigger's *body* is D-101's, already covered by
+  `TreasuryGuardTests.The_safe_balance_cannot_go_negative`; nothing here widens into trigger bodies or
+  index definitions.
+* **The other 28 constraints' predicates were watched failing only through the permanent test and the
+  two live mutations above**, not individually re-derived by hand beyond the one `psql` query that
+  pulled all 30 at once. The dictionary values themselves were not hand-typed against memory — they are
+  copied verbatim from that query's output.
+
+**Revisit if.** A slice adds or changes a check constraint. `RequiredCheckConstraints`,
+`RequiredCheckConstraintDefinitions` and the migration all move in the same commit, or
+`Every_required_check_constraint_has_a_recorded_definition` (a missing definition) or
+`The_written_out_check_constraints_and_the_model_agree` (a missing name) catches the omission.
+
+#### §2 — `V-30-G`: the fix is global, and now the regression cover is too
+
+**What was wrong.** `45a939d`'s malformed-body fix (D-099) touches `Program.cs` globally, ahead of
+every endpoint. Every assertion in `MalformedRequestTests` ran against test-host probe routes —
+`ProbeEndpoint.BodyBindingRoute` and `ProbeEndpoint.BadRequestThrowRoute` — in the `Testing`
+environment, where `ThrowOnBadRequest` was already `false` by framework default even before the fix
+existed. No test named a shipped route, and none ran the host as `Development` — the one environment
+where the original defect (`500` instead of `400`) was actually found. The Verifier closed the gap by
+hand, driving nine malformed bodies against three shipped routes live; nothing in the suite would
+notice a regression.
+
+**The open question this needed the machine for, tried rather than reasoned about.**
+`meetings/2026-09-01-sprint-2-refinement.md` §2.3 item 1: can the Api test host run as `Development`
+without tripping `Program`'s start-up guard refusal? **Yes.** The refusal is conditioned on
+`missingGuards.Count > 0 && !app.Environment.IsDevelopment()`
+[Verified: 2026-09-02 @ `src/Api/Program.cs` -> `missingGuards`] — Development is the one environment
+the refusal never fires in, regardless of guard state. Confirmed empirically, not only read: a factory
+built with `environment: "Development"` against the shared test database boots and answers requests.
+
+**Decision.**
+
+1. `KaffApiFactory` gained an `environment` constructor parameter, defaulting to `"Testing"` — every
+   existing call site is unaffected, and the class remarks explaining *why* `Testing` is the default
+   (D-033's refusal must still fail the build here) stand unchanged
+   [Verified: 2026-09-02 @ `tests/Api.Tests/Infrastructure/KaffApiFactory.cs` -> `_environment`].
+2. `A_malformed_json_body_on_the_shipped_sign_in_route_is_refused_as_a_client_error` posts malformed
+   bodies to the shipped, `AllowAnonymous` `POST /api/auth/sign-in` — not a probe route — through the
+   existing `Testing`-environment factory, closing the Verifier's own suggested case
+   [Verified: 2026-09-02 @ `tests/Api.Tests/MalformedRequestTests.cs` ->
+   `A_malformed_json_body_on_the_shipped_sign_in_route_is_refused_as_a_client_error`].
+3. `A_malformed_json_body_is_refused_as_a_client_error_when_the_host_runs_as_development` builds a
+   second factory with `environment: "Development"` and repeats the malformed-body assertion there —
+   the one environment where `ThrowOnBadRequest`'s framework default used to disagree with the fix, so
+   this is the one test in the file that would notice the fix being deleted **and** the environment
+   reverting to deciding, together
+   [Verified: 2026-09-02 @ `tests/Api.Tests/MalformedRequestTests.cs` ->
+   `A_malformed_json_body_is_refused_as_a_client_error_when_the_host_runs_as_development`].
+
+**Watched passing on the machine, both halves.** Domain 107/107, Api 235/235 (228 at this session's
+baseline plus 7 new: 3 for the shipped-route case, 1 for the Development-host case, 3 for `V-30-D`
+above). `dotnet build -c Release --no-incremental`: 0 warnings, 0 errors.
+`dotnet format --verify-no-changes`: exit 0. `driver.mjs smoke`: 8/8.
+
+**Not done, and named so it is not mistaken for closed.**
+
+* **`W-5`'s refusal contract is untouched.** A framework-thrown `400` still carries no `messageKey`, in
+  every environment, exactly as D-099 left it. Not this entry's to rule.
+* **`413` is still unexamined.** D-099 and the sprint-2 refinement (`B3-7`) both named it as open with
+  the Architect and UX; this entry adds no coverage for it.
+* **The `KaffApiFactory` environment parameter is not exercised anywhere but this one new test.** Every
+  other suite still takes the `Testing` default deliberately, per the class remarks — a broken guard
+  must still fail the build in every suite that is not specifically testing what Development changes.
+
+**Revisit if.** A future fix to `Program.cs` is meant to behave differently across environments on
+purpose — the Development-host test above would need to move from asserting agreement to asserting the
+deliberate difference, and should say so in its own remarks when that happens.
+
+**Report anything in this brief that was wrong, applied to itself.** The brief's own citations were
+re-verified against the files today rather than repeated: D-101 §5's `pg_get_constraintdef` examples
+were re-derived independently (§1 above) rather than copied, and the `missingGuards.Count > 0 &&
+!app.Environment.IsDevelopment()` gate (§2 above) was read directly from `Program.cs` rather than taken
+from the meeting file's characterisation of it. Both held.
