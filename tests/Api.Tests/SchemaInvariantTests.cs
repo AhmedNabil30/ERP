@@ -350,5 +350,105 @@ public sealed class SchemaInvariantTests
     public void Thirty_check_constraints_are_required()
         => DatabaseInitializer.RequiredCheckConstraints.Should().HaveCount(30);
 
+    /// <summary>
+    /// Every name in <see cref="DatabaseInitializer.RequiredCheckConstraints"/> has a recorded
+    /// PostgreSQL re-print in <see cref="DatabaseInitializer.RequiredCheckConstraintDefinitions"/>.
+    /// </summary>
+    /// <remarks>
+    /// Without this, a slice that adds a new required constraint but forgets its definition snapshot
+    /// would have that constraint's predicate compared against nothing — <c>FindMissingGuardsAsync</c>
+    /// only compares names it has a snapshot for. This is the forget-to-extend risk D-064 named,
+    /// applied to the dictionary rather than to the list it sits beside.
+    /// </remarks>
+    [Fact]
+    public void Every_required_check_constraint_has_a_recorded_definition()
+    {
+        DatabaseInitializer.RequiredCheckConstraintDefinitions.Keys.Should().BeEquivalentTo(
+            DatabaseInitializer.RequiredCheckConstraints,
+            "a required check constraint with no recorded definition has its predicate compared "
+            + "against nothing, which is V-30-D's gap reopened for exactly that constraint");
+    }
+
+    /// <summary>
+    /// A check constraint kept under its required name with its predicate changed is reported as a
+    /// missing guard — not only a constraint dropped outright.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The first case is <c>V-30-D</c>'s own attack, reproduced.</b>
+    /// <c>MUT-C3</c> (qa/slice-1/verification-2026-08-30.md §3) kept
+    /// <c>ck_users_subcontractor_cannot_log_in</c>'s name and replaced its predicate with
+    /// <c>1 = 1</c>: build clean, Api suite 227/227, D-033's refusal silent — every check at the time
+    /// compared names only, and this constraint's own <c>LOW</c> rating rested on <c>User.ChangeRole</c>
+    /// refusing the conversion in the domain first, not on this layer.
+    /// </para>
+    /// <para>
+    /// <b>The second case is the one Nabil named directly.</b> D-093's own words:
+    /// <i>"<c>ck_postings_amount_positive</c>, <c>ck_postings_distinct_accounts</c> and
+    /// <c>ck_postings_not_self_reversing</c> — the slice-3 money rules — are three of the thirty"</i>
+    /// and have <i>"no domain guard in front of them today, because the code that would post has not
+    /// been written."</i> <c>ck_postings_amount_positive</c> kept under its name with its predicate
+    /// widened from <c>amount &gt; 0</c> to <c>amount &gt;= 0</c> is exactly the migration D-093
+    /// predicted would pass every gate this repository had.
+    /// </para>
+    /// </remarks>
+    [Theory]
+    [InlineData(
+        "users", "ck_users_subcontractor_cannot_log_in",
+        "role <> 'Subcontractor' OR password_hash IS NULL",
+        "1 = 1")]
+    [InlineData(
+        "postings", "ck_postings_amount_positive",
+        "amount > 0",
+        "amount >= 0")]
+    public async Task A_check_constraints_predicate_changed_while_its_name_did_not_is_reported_as_a_missing_guard(
+        string table, string constraintName, string originalPredicate, string weakenedPredicate)
+    {
+        await using KaffDbContext context = _database.CreateBareContext();
+        var initializer = new DatabaseInitializer(context, NullLogger<DatabaseInitializer>.Instance);
+
+        (await initializer.FindMissingGuardsAsync(Ct)).Should().BeEmpty();
+
+        await ReplacePredicateAsync(context, table, constraintName, weakenedPredicate);
+
+        try
+        {
+            IReadOnlyList<string> missing = await initializer.FindMissingGuardsAsync(Ct);
+
+            missing.Should().Contain(
+                item => item.StartsWith($"{constraintName} predicate changed", StringComparison.Ordinal),
+                "the constraint is present under its required name and satisfies every name-level "
+                + "check; only comparing PostgreSQL's own re-printed definition can tell the predicate "
+                + "itself was weakened — V-30-D");
+        }
+        finally
+        {
+            await ReplacePredicateAsync(context, table, constraintName, originalPredicate);
+        }
+
+        (await initializer.FindMissingGuardsAsync(Ct)).Should().BeEmpty("the predicate was restored");
+    }
+
+    /// <summary>
+    /// Drops and re-adds a check constraint under the same name with a different predicate.
+    /// </summary>
+    /// <remarks>
+    /// Raw and non-parameterised: the table, constraint name and predicate are all fixed literals from
+    /// <see cref="A_check_constraints_predicate_changed_while_its_name_did_not_is_reported_as_a_missing_guard"/>'s
+    /// own <c>InlineData</c>, identifiers cannot be parameterised in PostgreSQL DDL, and a CHECK
+    /// predicate is not a value ExecuteSql's interpolation can parameterise either.
+    /// </remarks>
+    private static async Task ReplacePredicateAsync(
+        KaffDbContext context, string table, string constraintName, string predicate)
+    {
+        string dropSql = $"ALTER TABLE {table} DROP CONSTRAINT {constraintName}";
+        string addSql = $"ALTER TABLE {table} ADD CONSTRAINT {constraintName} CHECK ({predicate})";
+
+#pragma warning disable EF1002 // Fixed, hardcoded test identifiers — not user input.
+        await context.Database.ExecuteSqlRawAsync(dropSql, Ct);
+        await context.Database.ExecuteSqlRawAsync(addSql, Ct);
+#pragma warning restore EF1002
+    }
+
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 }

@@ -129,6 +129,122 @@ public sealed class DatabaseInitializer
             .Order(StringComparer.Ordinal)];
     }
 
+    /// <summary>
+    /// PostgreSQL's own re-printed definition of every required check constraint — a snapshot taken
+    /// the day the predicate was last reviewed, not the C# string that authored it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>What this closes.</b> qa/slice-1/verification-2026-08-30.md's <c>V-30-D</c>: every check
+    /// above this one verifies a check constraint by <i>name</i>. <c>MUT-C3</c> kept
+    /// <c>ck_users_subcontractor_cannot_log_in</c>'s name and replaced its predicate with
+    /// <c>1 = 1</c> — build clean, Api suite 227/227, D-033's refusal silent, because nothing anywhere
+    /// read the expression. D-093 named this gap in its own prose: *"a migration that keeps
+    /// <c>ck_postings_amount_positive</c> and changes its predicate to <c>amount &gt;= 0</c> passes
+    /// every check here."* This dictionary is what makes that migration fail instead.
+    /// </para>
+    /// <para>
+    /// <b>Why PostgreSQL's re-print, and not the authored SQL in <c>Persistence/Configurations</c>.</b>
+    /// Measured on PostgreSQL 16 (decisions.md D-101 §5): the authored <c>amount &gt; 0</c> and the
+    /// live <c>pg_get_constraintdef</c> answer of <c>CHECK ((amount &gt; (0)::numeric))</c> never
+    /// match — PostgreSQL adds parentheses and explicit casts to every predicate it stores, so
+    /// comparing the authored text would report all thirty as failing on a correct database the day it
+    /// shipped. PostgreSQL's own re-print, though, <i>is</i> a stable normal form: two constraints
+    /// created with different but equivalent whitespace re-print identically, and a genuinely changed
+    /// predicate re-prints differently. This dictionary snapshots that re-print, and
+    /// <see cref="FindMissingGuardsAsync"/> compares the live re-print against it — never the C#
+    /// string above it.
+    /// </para>
+    /// <para>
+    /// <b>This has D-093's own property, for the same reason <see cref="RequiredCheckConstraints"/>
+    /// does.</b> It lives in this file, not in <c>Persistence/Configurations</c>, so editing a
+    /// predicate there cannot also update its own snapshot in the same keystroke. Changing a
+    /// constraint's predicate — even under its unchanged name — is now a deliberate edit in two files,
+    /// and <c>SchemaInvariantTests.Every_required_check_constraint_has_a_recorded_definition</c>
+    /// (tests/Api.Tests) is what makes forgetting the second one loud.
+    /// </para>
+    /// <para>
+    /// <b>One residual, named rather than solved (D-101 §5.3).</b> A semantically identical rewrite can
+    /// re-print differently — <c>0 &lt; amount</c> re-prints as <c>CHECK (((0)::numeric &lt; amount))</c>,
+    /// not as this dictionary's <c>amount &gt; 0</c> entry — and is flagged as a mismatch. That is
+    /// D-093's two-file friction working as designed for a deliberate edit to a money guard: re-approve
+    /// the snapshot in the same commit. It is not formatting noise to be normalised away.
+    /// </para>
+    /// </remarks>
+    public static readonly IReadOnlyDictionary<string, string> RequiredCheckConstraintDefinitions =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            // AuditConfiguration
+            ["ck_audit_records_actor_is_named_completely"] =
+                "CHECK (((actor_user_id IS NULL) = (actor_role IS NULL)))",
+            ["ck_audit_records_entity_change_has_subject"] =
+                "CHECK ((((action)::text = 'Occurred'::text) OR (entity_id IS NOT NULL)))",
+            ["ck_audit_records_event_shape"] =
+                "CHECK ((((action)::text = 'Occurred'::text) = (event_type IS NOT NULL)))",
+            ["ck_audit_records_grant_path"] =
+                "CHECK (((grant_path IS NULL) OR ((project_id IS NOT NULL) AND ((grant_path)::text <> 'None'::text))))",
+            ["ck_audit_records_has_state"] =
+                "CHECK (((event_type IS NOT NULL) OR (before_json IS NOT NULL) OR (after_json IS NOT NULL)))",
+
+            // IdentityConfigurations
+            ["ck_users_client_scope"] =
+                "CHECK (((((role)::text = 'Client'::text) AND (client_id IS NOT NULL)) OR (((role)::text <> 'Client'::text) AND (client_id IS NULL))))",
+            ["ck_users_operations_sub_department"] =
+                "CHECK (((((department)::text = 'Operations'::text) AND (operations_sub_department IS NOT NULL)) OR (((department)::text IS DISTINCT FROM 'Operations'::text) AND (operations_sub_department IS NULL))))",
+            ["ck_users_subcontractor_cannot_log_in"] =
+                "CHECK ((((role)::text <> 'Subcontractor'::text) OR (password_hash IS NULL)))",
+            ["ck_project_assignments_revocation_complete"] =
+                "CHECK ((((revoked_at IS NULL) AND (revoked_by_user_id IS NULL)) OR ((revoked_at IS NOT NULL) AND (revoked_by_user_id IS NOT NULL))))",
+
+            // MasterDataConfigurations
+            ["ck_babs_not_own_parent"] =
+                "CHECK (((parent_bab_id IS NULL) OR (parent_bab_id <> id)))",
+            ["ck_catalogue_items_cost_not_negative"] =
+                "CHECK ((cost_price >= (0)::numeric))",
+            ["ck_catalogue_items_rate_not_negative"] =
+                "CHECK ((base_sell_rate >= (0)::numeric))",
+            ["ck_employees_day_labour_has_trade"] =
+                "CHECK ((((kind)::text <> 'DayLabour'::text) OR (bab_id IS NOT NULL)))",
+
+            // ProjectConfigurations
+            ["ck_opportunities_closed_lost_reason"] =
+                "CHECK ((((status)::text <> 'ClosedLost'::text) OR (closed_lost_reason IS NOT NULL)))",
+            ["ck_projects_area_positive"] =
+                "CHECK (((area_square_metres IS NULL) OR (area_square_metres > (0)::numeric)))",
+            ["ck_projects_cost_plus_terms"] =
+                "CHECK ((((contract_type)::text = 'CostPlus'::text) OR (supervision_rate IS NULL)))",
+            ["ck_projects_design_terms"] =
+                "CHECK ((((contract_type)::text = 'Design'::text) OR ((area_square_metres IS NULL) AND (design_rate_per_square_metre IS NULL))))",
+            ["ck_projects_link_complete"] =
+                "CHECK ((((linked_project_id IS NULL) AND (link_type IS NULL)) OR ((linked_project_id IS NOT NULL) AND (link_type IS NOT NULL))))",
+            ["ck_projects_lump_sum_terms"] =
+                "CHECK ((((contract_type)::text = 'LumpSum'::text) OR ((advance_rate IS NULL) AND (hold_rate IS NULL) AND (advance_recovery_rate IS NULL) AND (material_advance_rate IS NULL))))",
+            ["ck_projects_not_linked_to_itself"] =
+                "CHECK (((linked_project_id IS NULL) OR (linked_project_id <> id)))",
+            ["ck_projects_stoppage_reason"] =
+                "CHECK (((stopped_on IS NULL) OR (stoppage_reason IS NOT NULL)))",
+            ["ck_projects_termination_reason"] =
+                "CHECK (((terminated_on IS NULL) OR (termination_reason IS NOT NULL)))",
+
+            // TreasuryConfigurations — the money rules of spec.md §6.1
+            ["ck_accounting_periods_month"] =
+                "CHECK (((month >= 1) AND (month <= 12)))",
+            ["ck_accounting_periods_range"] =
+                "CHECK ((ends_on >= starts_on))",
+            ["ck_accounts_closed_after_opened"] =
+                "CHECK (((closed_on IS NULL) OR (closed_on >= opened_on)))",
+            ["ck_accounts_ledger_is_postable"] =
+                "CHECK (((ledger_kind IS NULL) OR (is_postable = true)))",
+            ["ck_accounts_party_complete"] =
+                "CHECK ((((party_type IS NULL) AND (party_id IS NULL)) OR ((party_type IS NOT NULL) AND (party_id IS NOT NULL))))",
+            ["ck_postings_amount_positive"] =
+                "CHECK ((amount > (0)::numeric))",
+            ["ck_postings_distinct_accounts"] =
+                "CHECK ((from_account_id <> to_account_id))",
+            ["ck_postings_not_self_reversing"] =
+                "CHECK (((reverses_id IS NULL) OR (reverses_id <> id)))",
+        };
+
     public async Task InitialiseAsync(SchemaStrategy strategy, CancellationToken cancellationToken = default)
     {
         switch (strategy)
@@ -182,12 +298,15 @@ public sealed class DatabaseInitializer
     /// says what this repository has decided must exist. See decisions.md D-064 and D-093.
     /// </para>
     /// <para>
-    /// <b>The last check is of data rather than of a name, and it is the only one that is.</b> Every
-    /// other guard here is verified by existence — a <c>tgname</c>, an <c>indexname</c>, a
-    /// <c>conname</c>. The safe floor cannot be, because which accounts are floored lives in
-    /// <c>accounts.enforce_non_negative</c> rather than in the trigger:
-    /// <c>trg_postings_non_negative_balance</c> can be present, correct and running, and floor nothing.
-    /// See decisions.md D-101.
+    /// <b>Two checks here are of data rather than of a name; every other one is of existence only</b> —
+    /// a <c>tgname</c>, an <c>indexname</c>, a bare <c>conname</c>. The safe floor is one: which
+    /// accounts are floored lives in <c>accounts.enforce_non_negative</c> rather than in the trigger,
+    /// so <c>trg_postings_non_negative_balance</c> can be present, correct and running, and floor
+    /// nothing (decisions.md D-101). A check constraint's <i>predicate</i> is the other, added for the
+    /// same reason: <c>ck_postings_amount_positive</c> can be present under its required name with its
+    /// predicate weakened to <c>amount &gt;= 0</c>, and a name-only check cannot tell
+    /// (qa/slice-1/verification-2026-08-30.md <c>V-30-D</c>; see
+    /// <see cref="RequiredCheckConstraintDefinitions"/>).
     /// </para>
     /// </remarks>
     public async Task<IReadOnlyList<string>> FindMissingGuardsAsync(CancellationToken cancellationToken = default)
@@ -274,14 +393,39 @@ public sealed class DatabaseInitializer
             .Order(StringComparer.Ordinal);
 
         // One query for all of them rather than one each, unlike the loops above: there are dozens,
-        // and /api/health calls this method on every poll.
-        List<string> presentCheckConstraints = await _context.Database
-            .SqlQuery<string>($"SELECT conname::text AS \"Value\" FROM pg_constraint WHERE contype = 'c'")
+        // and /api/health calls this method on every poll. Both the name and PostgreSQL's own
+        // re-printed definition come back together, so the definition comparison below costs nothing
+        // beyond the name check that already had to run.
+        List<CheckConstraintRow> presentCheckConstraintRows = await _context.Database
+            .SqlQuery<CheckConstraintRow>(
+                $"""
+                 SELECT conname::text AS "Name", pg_get_constraintdef(oid) AS "Definition"
+                 FROM pg_constraint WHERE contype = 'c'
+                 """)
             .ToListAsync(cancellationToken);
 
-        missing.AddRange(requiredCheckConstraints.Except(presentCheckConstraints, StringComparer.Ordinal));
+        Dictionary<string, string> presentDefinitionsByName = presentCheckConstraintRows
+            .ToDictionary(row => row.Name, row => row.Definition, StringComparer.Ordinal);
 
-        // The safe floor is DATA, not code, and every check above it is a check of a NAME.
+        missing.AddRange(requiredCheckConstraints.Except(presentDefinitionsByName.Keys, StringComparer.Ordinal));
+
+        // V-30-D. A constraint present under its required name is not necessarily the constraint that
+        // name was given to — MUT-C3 kept ck_users_subcontractor_cannot_log_in's name and replaced its
+        // predicate with "1 = 1", and every check above this one is satisfied. Compared only for
+        // constraints found present: an absent one is already reported by the Except() above, and
+        // reporting it twice would obscure which defect actually occurred.
+        foreach ((string name, string expectedDefinition) in RequiredCheckConstraintDefinitions)
+        {
+            if (presentDefinitionsByName.TryGetValue(name, out string? actualDefinition)
+                && !string.Equals(actualDefinition, expectedDefinition, StringComparison.Ordinal))
+            {
+                missing.Add(
+                    $"{name} predicate changed: expected \"{expectedDefinition}\", found \"{actualDefinition}\"");
+            }
+        }
+
+        // The safe floor is DATA, not code, and every check above it except the predicate comparison
+        // just above is a check of a NAME.
         //
         // kaff_check_non_negative_balance reads accounts.enforce_non_negative and floors only the rows
         // that carry it (001_guards.sql section 3). So trg_postings_non_negative_balance can be present
@@ -325,4 +469,7 @@ public sealed class DatabaseInitializer
 
         return missing;
     }
+
+    /// <summary>One row of <c>pg_constraint</c>, projected for <see cref="FindMissingGuardsAsync"/>.</summary>
+    private sealed record CheckConstraintRow(string Name, string Definition);
 }
