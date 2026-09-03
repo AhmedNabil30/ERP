@@ -433,15 +433,13 @@ public sealed class MeTests : IAsyncLifetime
             ["Name", "Code", "TeamSize"],
             "HR's type carries no property outside name, code and team size");
 
-        string[] forbidden = ["Value", "Cost", "Margin", "Balance", "Budget", "Status", "Client"];
-
-        foreach (Type type in new[] { staffType, hrType })
-        {
-            type.GetProperties().Select(property => property.Name)
-                .Should().NotContain(
-                    name => forbidden.Any(word => name.Contains(word, StringComparison.OrdinalIgnoreCase)),
-                    $"{type.Name} must carry no financial field, and the test fails the instant one is added");
-        }
+        staffType.GetProperties().Select(property => property.Name).Should().BeEquivalentTo(
+            ["ProjectId", "Name", "Code", "AccessPath", "Level", "Permissions"],
+            "AC-105b-F - the staff type's whole allowed surface, pinned the same way HR's is. "
+                + "V-32-A: this was a blocklist of seven words, and Amount, Total, Price, Rate, "
+                + "Retention, Hold and Advance were on none of them - several of those being spec.md "
+                + "section 14's own mandated vocabulary. A decimal RetainedAmount reached the wire "
+                + "on /api/auth/me past a green 241/241");
     }
 
     /// <summary>AC-105b-H. A revoked assignment is not listed on the next call.</summary>

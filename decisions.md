@@ -8581,3 +8581,62 @@ on D-104's earlier word.
 above. Everything else in the brief — the E2E numbers, the KAFF-113/D-100 project-picker absence, the
 `kaff` outage, `kaff_verify`'s dirty state — was re-verified against the files and the running stack
 rather than taken on the brief's word, and held.
+
+---
+
+### D-106 · Scrum Master — `V-32-A` closed: the anti-leak guarantee on `/api/auth/me` is a whitelist on both types, not a blocklist on one · 2026-09-04
+
+**The defect, reproduced before it was fixed.** `AC-105b-F`'s guarantee is carried by one reflection
+test [Verified: 2026-09-04 @ `tests/Api.Tests/MeTests.cs` ->
+`Hr_and_staff_project_entries_are_distinct_types_with_no_financial_field`]. HR's half pinned an exact
+field set. The staff half was a blocklist of seven words — `Value`, `Cost`, `Margin`, `Balance`,
+`Budget`, `Status`, `Client`. `Amount`, `Total`, `Price`, `Rate`, `Retention`, `Hold` and `Advance`
+were on none of them, and **several of those are `spec.md` §14's own mandated vocabulary**, so the
+terminology `CLAUDE.md` requires everyone to use was disproportionately the terminology the guard
+could not see.
+
+**Watched failing, in the order that proves the fix rather than asserts it.**
+
+| Step | State of `ProjectEntry` | Api suite |
+|---|---|---|
+| 1 · reproduce | a `decimal RetainedAmount` property added, blocklist test unchanged | **241 / 241 green** — the defect, exactly as `V-32-A` describes it |
+| 2 · fix applied, mutation still present | whitelist | **240 / 241, 1 red** — and the failure message names `RetainedAmount` verbatim |
+| 3 · mutation reverted | the six shipped fields | **241 / 241 green** |
+
+Build was **0 warnings, 0 errors** at every step, `-warnaserror`, and `dotnet format
+--verify-no-changes` exits 0. Step 1 matters as much as step 2: the old test was watched *passing*
+over a money field, so the new one is known to be an improvement rather than merely different.
+
+**The fix is the shape that already existed ten lines above the defect** — `BeEquivalentTo` over the
+exact allowed surface, `["ProjectId", "Name", "Code", "AccessPath", "Level", "Permissions"]`
+[Verified: 2026-09-04 @ `src/Api/Features/Auth/WhoAmI/Response.cs` -> `ProjectEntry`]. Any added
+property fails the test, whatever it is called.
+
+**The blocklist was deleted rather than kept alongside.** Once both types are pinned to an exact set,
+a list of bad words can never fire. Keeping it would have left a second, weaker mechanism for a future
+session to trust — and its weakness is the whole of this finding.
+
+**Why now.** Slice 3 is Treasury. `ProjectEntry` has no money field to leak today, which is precisely
+why the hole stayed green across two sprints. The moment money fields exist, the most natural change
+in the world — adding a figure to the project a user is already looking at — ships past a green suite.
+This lands before the first Treasury field is written.
+
+**Two things deliberately not fixed, named so they are not assumed done.**
+
+* The raw-string sweep in [Verified: 2026-09-04 @ `tests/Api.Tests/MeTests.cs` ->
+  `Hr_gets_names_codes_and_team_sizes_including_an_unstaffed_project_and_nothing_financial`] carries
+  the same seven-word omission and runs only on HR's response, which by rule 9 always has an empty
+  `projects` array — it is structurally incapable of ever seeing a `ProjectEntry`. It is now redundant
+  defence rather than the guarantee, so it was left alone.
+* A second blocklist of the same shape exists at [Verified: 2026-09-04 @
+  `tests/Domain.Tests/CatalogueCompletenessTests.cs` ->
+  `There_is_no_posting_type_or_document_type_for_a_free_form_journal_entry`] — `Manual`, `Other`,
+  `JournalEntry`, `Misc` over `PostingType` and `SourceDocumentType`. Same failure shape: an escape
+  hatch named `Adjustment` or `General` slips past. Different subject, and not `V-32-A`. **Routed to
+  the Architect as an open question, not fixed here** — unlike a DTO's field set, an enum's allowed
+  membership is a domain judgement and a whitelist there would have to be maintained by whoever owns
+  the account tree.
+
+**Report anything in this brief that was wrong.** The brief called this fix "one line". It is one
+assertion replacing five, in one file — the count was the only thing about it that was off, and the
+diagnosis, the location and the remedy were all exactly right.
