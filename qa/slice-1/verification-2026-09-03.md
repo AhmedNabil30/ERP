@@ -24,6 +24,7 @@ Everything is `pending` until reached. Nothing is marked done on an author's evi
 | 7 | Claim 5 — the Architect's own claims, attacked | **done** — §7 |
 | 8 | Claim 6 — staging, as deployed rather than as intended | **done** — §8 |
 | 9 | Citations sweep, including what it does *not* check | **done** — §9 |
+| 9b | **`V-31-E`** — a second agent editing this machine mid-pass | **done** — §9b |
 | 10 | Verdicts per commit | **done** — §10 |
 | 11 | What I did not do, as a count | **done** — §11 |
 | 12 | Fit to show a client? | **done** — §12 |
@@ -37,6 +38,7 @@ Everything is `pending` until reached. Nothing is marked done on an author's evi
 | `V-31-B` | **LOW** | `RequiredCheckConstraintDefinitions` verifies a predicate is *unchanged*, never that it is *right*; the "two-file friction" is in practice a red suite with a mechanical copy-paste fix |
 | `V-31-C` | **LOW** | The scope handed to this pass omits `c7ae3d1`, the commit that performs the change claim 1 is about |
 | `V-31-D` | **LOW** | The citation sweep's "1088 / 0 broken" does not cover 65 file-only references; none is broken today, but the number is not the whole corpus |
+| `V-31-E` | **MEDIUM (process)** | A second agent began editing `src/` and `tests/` on this machine while this verification was still open, against `process/agile.md`'s one-agent-per-machine rule. My gates all closed before it started — but only by 6 minutes, and nothing warned me |
 
 ---
 
@@ -531,6 +533,73 @@ was run with the API still up and produced **38 `MSB3026` warnings and 4 errors*
 warning about a stranded host reporting `Build succeeded` applies to a bare `dotnet build`, not to the
 standard command — and the standard command is what protects you. Killed by PID from the message
 itself, per the same amendment, and rebuilt clean.
+
+---
+
+## 9b. `V-31-E` — **MEDIUM (process)** · a second agent started work on this machine mid-pass
+
+**Found by accident, in the last `git status` of the session**, which is the part that matters.
+
+The brief is explicit — *"one agent per machine — the machine is yours alone"*. At **15:00:59**, while
+this report was being written, nine files under `src/` and `tests/` began changing. They were still
+changing at **15:10:10**. I did not make these edits.
+
+```
+ M src/Api/Features/Auth/WhoAmI/Handler.cs            146 +++--
+ M src/Api/Features/Auth/WhoAmI/Response.cs            63 +++
+ M src/Domain/Authorization/Permission.cs              12 +
+ M src/Domain/Authorization/PermissionCatalogue.cs     35 ++-
+ M src/Domain/Authorization/PermissionEvaluator.cs     35 +++
+ M src/Infrastructure/Authorization/ProjectAccessPolicy.cs   10 +-
+ M tests/Api.Tests/MeTests.cs                         278 ++++++-
+ M tests/Domain.Tests/CatalogueCompletenessTests.cs    34 ++-
+ M tests/Domain.Tests/PermissionEvaluatorTests.cs      63 +++
+ 9 files changed, 647 insertions(+), 29 deletions(-)
+```
+
+By shape — `WhoAmI`, the permission catalogue, `ProjectAccessPolicy`, `MeTests` — this is
+**KAFF-105b**, which D-100 §3 ruled *Ready and **not** in sprint 2*. **I have not touched these files
+and will not.** They are someone's work in progress, and a Verifier that reverts or commits another
+agent's uncommitted tree destroys work and evidence at once.
+
+### This pass is unaffected, and here is the evidence rather than the assurance
+
+| Event | Time |
+|---|---|
+| Baseline build | 13:59:49 |
+| Api baseline 235/235 | 14:08:58 |
+| `MUT-2` suite run (196/235) | 14:18:29 |
+| **Closing gates — build 0/0, Api 235/235** | **14:25:29** |
+| Final citation gate 1097/0/0, increment 3 committed | 14:54:05 |
+| **First concurrent edit** | **15:00:59** |
+| Latest concurrent edit | 15:10:10 |
+
+**Every gate in §1 and §9a closed before the first foreign edit, by six minutes.** And my three
+commits contain **only** `qa/slice-1/verification-2026-09-03.md` — verified with `git show --stat` on
+each of `94ffcc1`, `0fff26d`, `26f685a`. Nothing of theirs was captured, and nothing of theirs was
+measured.
+
+### Why it is `MEDIUM` and not a footnote
+
+**Six minutes is the whole margin, and there was no alarm.** Had that agent started at 14:20 instead
+of 15:00, my closing *"build 0/0, Api 235/235, `git status` clean"* would have been measuring a tree
+containing 647 lines of someone else's uncommitted, half-written work — **and I would have reported it
+as this repository's verified state.** The only thing that caught it was a `git status` run for an
+unrelated reason after the report was already committed. A green build and a green suite look
+identical whether or not the tree is yours; that is `agents.md` §3c's rule — *a check that passes
+whether or not the thing is true* — arriving at the level of the whole session.
+
+**Two things follow, and neither is mine to decide.**
+
+1. **`git status` belongs in the Verifier's opening *and* closing gates as a named step**, with the
+   `HEAD` sha recorded at both ends, so a foreign edit is a caught condition rather than a lucky
+   observation. This pass ran it at the end by chance.
+2. **Whoever is running KAFF-105b should know it was started against `4bf81ce` while a verification
+   was open**, and that D-100 §3 did not put it in sprint 2. That is the Scrum Master's to route —
+   scope is Nabil's lock.
+
+**No conclusion in this report changes.** Recorded because the next pass should not depend on the same
+luck.
 
 ---
 
