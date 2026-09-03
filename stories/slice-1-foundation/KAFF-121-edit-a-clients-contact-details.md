@@ -12,9 +12,9 @@ that one file per client stays worth having.
 **Finding F-09 — the headline behaviour had no domain path, and it still has none.** `Client` exposes
 `SetContactDetails(alternatePhone, email, address, notes)`, `SetTaxRegistration` and `Archive`, and
 that is the whole of its mutation surface. There is **no setter for `Name` and no setter for the
-primary phone** [Verified: 2026-08-22 @ `src/Domain/MasterData/Client.cs` -> `SetContactDetails`, `SetTaxRegistration`, `Archive` — the three
-public mutators; `Name` (`:65`) and the `PhoneEntered`/`PhoneNormalised` pair (`:67-70`) have private
-setters and are written only by `Create` (`:108`)].
+primary phone** [Verified: 2026-09-04 @ `src/Domain/MasterData/Client.cs` -> `SetContactDetails`, `SetTaxRegistration`, `Archive` — the three
+public mutators; `Name` and the `PhoneEntered`/`PhoneNormalised` pair have private setters and are
+written only by `Create`].
 
 That is missing capability, not a missing rule (`meetings/2026-08-20-sprint-1-refinement.md`, action
 SM-3), so it is in-scope build work rather than a reason to block — but it is the *first* work in this

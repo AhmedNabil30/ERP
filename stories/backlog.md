@@ -105,7 +105,24 @@ questions merged into it with their origin recorded (action **SM-4**).
 
 ---
 
-## Sprint 3 — open 2026-09-04 · the Client master, and **every story in it is `BLOCKED` today**
+## Sprint 3 — open 2026-09-04 · the Client master · **14 points, all five `Ready`, none pulled**
+
+**Build order, in dependency order — `KAFF-119` first and alone; the other four all depend on it.**
+
+| # | Story | Pts | Model, per `agents.md` §M |
+|---|---|---:|---|
+| 1 | **KAFF-119** | 5 | **strongest** — it decides what the audit trail records for a duplicate, and it is the first generator of its kind in this database |
+| 2 | KAFF-121 | 3 | **strongest** for the missing `Name`/phone/`Kind` setters and rule 6's guard, which decide what a master record may become; **mid** for the rest |
+| 3 | KAFF-124 | 2 | **mid** — criteria are written |
+| 4 | KAFF-123 | 2 | **mid** |
+| 5 | KAFF-120 | 2 | **mid**, and re-estimate it first |
+
+**`Ready` is not the same as pulled. Scope is Nabil's** — that rule has held since 2026-09-02 and is
+not being quietly dropped because the stories finally passed the gate.
+
+---
+
+### ~~Sprint 3 — the Client master, and every story in it is `BLOCKED` today~~ — the opening verdict, kept as the record
 
 > **`meetings/2026-09-04-sprint-3-refinement.md` is the ceremony and the reasoning. This is the
 > summary.**
@@ -132,8 +149,43 @@ questions merged into it with their origin recorded (action **SM-4**).
 > **The repairs need no ruling from anybody** — QA writes four test cases, the BA repoints three
 > citations. **Hours, not a stalled sprint.** Saying so is not the same as waiving the gate.
 >
-> **Also blocking the build, and not a story defect:** **N6**, the client-code generator's mechanism,
-> is with the Architect, and the duplicate-warning API contract with it.
+> ### ✅ Repaired and re-audited the same day — **all five are `Ready`**
+>
+> **The `BLOCKED` verdict above stood for about four hours.** It is left in place rather than
+> rewritten, because what the board claimed and when is the record (SM-29's own practice), and because
+> the gate doing its job for one afternoon is the point of having it.
+>
+> | Repair | Evidence |
+> |---|---|
+> | **DoR 9** — `AC-119-J` (an enumerate-and-pin allow-list, **not** a blocklist), `AC-119-L` (the create form's RTL case, which the edit form and the list both had and it did not); `AC-119-K` and `AC-120-B` turned out to have a passing scenario already, uncited, so the **citation** was widened rather than a duplicate case written | All four criteria now carry test-case citations; re-counted by the Scrum Master, not taken on report |
+> | **DoR 11** — KAFF-120's three bare `:digits` hints replaced with dated identifier citations, **and three more found and fixed in KAFF-121** that nobody had counted | **Zero** bare line-number hints remain across all five stories |
+> | **Four blocklist-shaped absence cases rewritten** — `TC-1-156`, `TC-1-157`, `TC-1-173`, `TC-1-190` as allow-lists; `TC-1-183` to enumerate the routes the host actually mapped rather than grep source for the word "delete" | `V-32-A`'s shape, removed from the test cases before it could be implemented |
+> | **N6 and the API contract** — **ANSWERED, D-107** | Below |
+>
+> **One correction the repair returned, and it matters for the test that was just written:** the
+> allowed property set for `Client` is **fourteen** members, not the twelve the Scrum Master supplied —
+> the brief omitted `Id` (inherited from `Entity`) and `Phone` (a computed property). **A whitelist
+> that lists the wrong set fails on the first honest run**, which is exactly what a whitelist is for.
+>
+> **Flagged, out of scope, and not fixed:** `KAFF-122` carries the identical three broken hints and
+> `KAFF-107` two more. Neither is in this sprint's five; both are owed.
+>
+> ### D-107 — the Architect's three rulings, and the build is unblocked
+>
+> * **N6:** a **PostgreSQL sequence declared on the EF model** (not in migration SQL — the test harness
+>   builds its schema from the model, so a hand-written sequence would exist in production and not in
+>   the suite). `nextval` is drawn **last**, after every validation. **The cost is gaps**, and that is
+>   the whole cost.
+> * **The duplicate warning:** a side-effect-free `POST /api/clients/phone-check` (required, not
+>   optional — S-013 says the check fires **on blur**), plus an `acknowledgedDuplicatePhone` boolean on
+>   create and edit, re-matched server-side, with an unacknowledged match answering **`409`**. The
+>   **warning is never a `Problem`** — `toProblem` discards every field but three, so a `Problem` could
+>   not name the matched client.
+> * **`AC-119-E`:** **neither free text nor a new column** — `AuditEventKind.DuplicatePhoneAcknowledged`
+>   through the mechanism **D-061 already built**, whose entity id *is* the matched client's. **The
+>   unbackfillable part is already in the ground**, so KAFF-116's `GrantPath` argument does not apply.
+> * **`AC-119-B`'s "ignored or refused" is settled structurally** — the create request carries no
+>   `Code` member, so no path could store one. **The BA owes the criterion a one-line rewrite.**
 >
 > **One new question for Karim:** may the client-code sequence contain **gaps**? A PostgreSQL sequence
 > is non-transactional, so a rolled-back insert burns a number and `C-10002` never exists — and a code
@@ -549,12 +601,12 @@ criterion behind them. **KAFF-105a is untouched by D-065 — checked, not assume
 | KAFF-116 | Every audit record says how the actor reached the project | 3 | Ready | — |
 | KAFF-117 | The Owner reads the audit trail, and nobody else does | 5 | Ready | 116, 118 |
 | KAFF-118 | Every state change in slice 1 writes an audit record | 3 | **UNBUILT.** Nothing of this story was started. | 106, 109, 110, 111, 113, 119 |
-| KAFF-119 | Register a client, with a generated code and a duplicate-phone warning | 5 | ~~Ready~~ **`BLOCKED` 2026-09-04** — DoR line 9: `AC-119-J`, `AC-119-K`, `AC-119-L` have no test case. Also gated on **N6** (Architect). | 106 |
-| KAFF-120 | An individual's contract cannot carry a withholding rate — **defect, now wiring** | 2 | ~~Ready~~ **`BLOCKED` 2026-09-04** — DoR lines 9 and 11: `AC-120-B` uncovered, and three bare `:digits` citations wrong today. **Its 2 points are probably now wrong** — four of its eight criteria are already discharged by `tests/Domain.Tests/WithholdingTests.cs`. | 119 |
-| KAFF-121 | Edit a client's name and contact details | 3 | ~~Ready~~ **`BLOCKED` transitively on KAFF-119.** Passes all twelve DoR lines on its own account. | 119 |
-| KAFF-122 | ~~Set a corporate client's withholding category~~ | — | **Superseded** → KAFF-416. **Not to be built or re-created in slice 1** — re-confirmed 2026-09-04. | — |
-| KAFF-123 | Archive a client | 2 | ~~Ready~~ **`BLOCKED` transitively on KAFF-119.** Passes all twelve DoR lines on its own account. | 119 |
-| KAFF-124 | Find a client by name, code or phone | 2 | ~~Ready~~ **`BLOCKED` transitively on KAFF-119.** Passes all twelve DoR lines on its own account. | 119 |
+| KAFF-119 | Register a client, with a generated code and a duplicate-phone warning | 5 | ~~`BLOCKED` 2026-09-04 (DoR 9)~~ → **READY 2026-09-04**, repaired and re-audited the same day. **First in the build order** — the other four depend on it. N6 answered by **D-107**. One BA line owed on `AC-119-B`. | 106 |
+| KAFF-120 | An individual's contract cannot carry a withholding rate — **defect, now wiring** | 2 | ~~`BLOCKED` 2026-09-04 (DoR 9, 11)~~ → **READY 2026-09-04.** **Its 2 points are probably now wrong** — `AC-120-C/D/E/G` are already discharged by `tests/Domain.Tests/WithholdingTests.cs`, and what is left rides on KAFF-119's and KAFF-121's endpoints. Re-estimate at the next refinement, with the team. | 119 |
+| KAFF-121 | Edit a client's name and contact details | 3 | **READY.** Passed all twelve DoR lines on its own account throughout; blocked only transitively, now cleared. **`Client` still has no setter for `Name`, the primary phone or `Kind`** — that is this story's *first* work, not an assumption under it (D-107). | 119 |
+| KAFF-122 | ~~Set a corporate client's withholding category~~ | — | **Superseded** → KAFF-416. **Not to be built or re-created in slice 1** — re-confirmed 2026-09-04. Carries three broken `:digits` citations, flagged and not fixed. | — |
+| KAFF-123 | Archive a client | 2 | **READY.** Passed all twelve DoR lines on its own account throughout; blocked only transitively, now cleared. | 119 |
+| KAFF-124 | Find a client by name, code or phone | 2 | **READY.** Passed all twelve DoR lines on its own account throughout; blocked only transitively, now cleared. **`AC-124-C` works only because `Client.Create` upper-cases the code** (D-107). | 119 |
 | **KAFF-125** | **The staff shell: session resolution, chrome, and role-based landing** | **3** | **BUILT `7461332`, ACCEPTED as an implementation 2026-09-04.** Two exceptions, neither a code defect: **`AC-125-B` is verified by code review only** — `V-32-D` established that *nothing asserts it*, and deleting the `await` it rests on left E2E at 6/6, because `src/Web` has **zero `.spec.ts` files**. And **`AC-125-C` is NOT accepted as satisfied**: it is deliberately unmet, `ux/screen-inventory.md`'s S-005 and the criterion now require opposite things, and **it is Nabil's criterion and his call.** ~~**CUT 2026-09-02**, on Nabil's ruling~~ — *"a dedicated frontend ticket must be cut for the visual shell itself … you cannot discharge a UI rendering dependency with a JSON response."* **`AC-101b-A` and `AC-101b-D` move here** from KAFF-105b and KAFF-115, which cannot discharge them (D-097 §3). **Deliberately not marked Ready or BLOCKED against a sprint** — whether it is built in sprint 2 is a scope question standing with Nabil. Renders S-004, S-005's identity half and the shell chrome today; **S-006 and S-011 have no endpoint to feed them and S-009a's route is an open UX question**. | 101a, 101b, 105a |
 
 ### The committable scope, computed transitively

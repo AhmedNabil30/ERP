@@ -8640,3 +8640,182 @@ This lands before the first Treasury field is written.
 **Report anything in this brief that was wrong.** The brief called this fix "one line". It is one
 assertion replacing five, in one file — the count was the only thing about it that was off, and the
 diagnosis, the location and the remedy were all exactly right.
+
+---
+
+### D-107 · Architect — N6 answered, the duplicate-warning contract defined, and `AC-119-E` solved by a mechanism that already exists · 2026-09-04
+
+**Decided by the Architect on the strongest model** per `agents.md` §M — all three are unbackfillable
+or decide what the audit trail records. **Recorded here by the Scrum Master; making the decision was
+not mine, and none of the three business questions underneath them was answered by anybody.**
+
+#### 1. N6 — the client code is drawn from a PostgreSQL sequence declared on the EF model
+
+`HasSequence<long>("client_code_seq").StartsAt(10001)`, declared in `OnModelCreating`, read by the
+create handler immediately before `SaveChangesAsync` and after every validation has passed. Format
+`C-{value}`, no zero padding. The generator lives in the handler — **no `IClientCodeGenerator`**: one
+implementation, one caller, and `CLAUDE.md` forbids an interface that exists for a second caller
+nobody has.
+
+**Declaring it on the model rather than in hand-written migration SQL is the load-bearing part, and it
+is not obvious.** The Api migrates on boot while the test harness builds the schema from the model
+[Verified: 2026-09-04 @ `src/Infrastructure/Persistence/DatabaseInitializer.cs` -> `FindMissingGuardsAsync`
+is in the same initialiser that runs both paths]. **A sequence created by migration SQL would exist in
+production and not exist under the test harness**, and the entire Api suite would fail on the first
+client registration.
+
+**The counter row under `SELECT … FOR UPDATE` was rejected**: it costs a table, a seeded row, a lock
+held across the audit interceptor, and serialised registrations — to buy consecutiveness **nobody has
+stated a need for.** Read-max-and-retry was rejected on its failure mode: `ux_clients_code` is unique
+[Verified: 2026-09-04 @ `src/Infrastructure/Persistence/Configurations/MasterDataConfigurations.cs` ->
+`ux_clients_code`], so it loses the race as a failed insert, and a retry loop under load is a livelock.
+
+**The cost is gaps, and it is the whole cost.** A sequence is non-transactional, so a rolled-back
+insert burns a number and `C-10002` never exists. Drawing `nextval` **last** is the cheap half of the
+mitigation: every validation, domain and permission failure happens before a number is taken.
+
+**Reversible in the mechanism, irreversible in the history** — switching later is a migration and every
+code already issued stays valid, but **gaps already burned are permanent.** That asymmetry is why
+question ① below is worth asking now rather than at acceptance.
+
+**Two consequences that land on QA, not on Backend.** `AC-119-B`'s *"the last client carries `C-10001`
+… then it carries `C-10002`"* is **not assertable as literal values** against a shared, gappy test
+database — it must be tested as format plus strict successor inside one dedicated test. And **no
+fixture may seed a literal `C-1xxxx` code**, or it collides with the generator's range the moment the
+sequence reaches it, presenting as an unexplained 500 in an unrelated suite.
+
+#### 2. The duplicate-phone warning — two endpoints, and the warning is never a `Problem`
+
+**The Scrum Master's brief presented this as two open candidates and it was wrong: half was already
+foreclosed.** `ux/slice-1-flows.md` S-013 states *"the check still fires on blur of the phone field,
+which is why phone is still the first field."* **A check that fires on blur cannot be `POST /api/clients`**,
+so a side-effect-free lookup is required, not a candidate.
+
+* **`POST /api/clients/phone-check`** — side-effect-free, gated `ClientManage`, returns **all** matches
+  with `isArchived`. `POST` rather than `GET` so the phone stays out of URLs, logs and the audit
+  trail's request path, and so a stale warning cannot be cached. **It is not KAFF-124's search**: that
+  is a fuzzy search across name, code and phone with an archived filter; this is exact equality on the
+  normalised phone including archived. Conflating them means a later change to search ranking silently
+  changes what warns.
+* **`POST /api/clients`** gains `acknowledgedDuplicatePhone: bool`. The handler **re-runs the match
+  server-side** and: no match, the flag is ignored (never record a duplicate that was not there);
+  matched and acknowledged, `201`; matched and not acknowledged, **`409 Conflict`**, which
+  `ErrorType.Conflict` already maps to [Verified: 2026-09-04 @ `src/Api/Common/Results/ResultExtensions.cs`
+  -> `StatusFor`].
+* **The edit path carries the identical field, and its match query excludes the client being edited** —
+  otherwise resubmitting an unchanged phone warns the operator about themselves. Nothing in KAFF-121,
+  S-014 or `ux/components.md` §13 says this; it is engineering, recorded so it is not discovered by a
+  tester.
+
+**The `409` does not block the save — it asks, which is what the amendment says in the same breath.**
+It is retryable by the same actor with the same data plus one flag; a refusal is not. Without it, a
+caller that never checks creates a duplicate and **the trail is silent about it, permanently, in an
+append-only table.** This is the shape `CreateUser` already uses: the friendly pre-check is not the
+enforcement [Verified: 2026-09-04 @ `src/Api/Features/Users/CreateUser/Handler.cs` -> `HandleAsync`].
+
+**The warning cannot be delivered as a `Problem`**, because the client-side shape is
+`{ status, code, messageKey }` and everything else in the body is discarded
+[Verified: 2026-09-04 @ `src/Web/src/app/core/api/problem-details.ts` -> `toProblem`] — so a `Problem`
+could not name the matched client, and §13's own rule is that a count without a name cannot be
+rendered as ruled. The **warning** is a `200` body; the **`409`** is a genuine refusal of an
+under-specified request and carries no match data at all.
+
+**Multiple matches: a boolean, not an id.** *"I saw a warning about this number and chose to proceed"*
+is sufficient — the audit link is server-derived (§3 below), a single id cannot express N, and §13's
+dialog takes a **singular** match input and has no multi-match rendering. **Deliberate simplification,
+named:** a new client can appear on that number between the blur check and the save; the acknowledgement
+is about the number, not a set of ids, and the audit records what was actually there at save time.
+
+**The shared query and wire type live in `src/Api/Features/Clients/`, not `Domain/`** — Domain has no
+EF Core reference and a leak there is a project-file defect. `CLAUDE.md`'s "it moves to `Domain/`" is
+satisfied on its own terms: the only *domain* logic here is normalisation, and that is already shared
+and uncopied [Verified: 2026-09-04 @ `src/Domain/Common/PhoneNumber.cs` -> `Normalise`]. One static
+query returning data, called directly — **not a repository and not a service layer.**
+
+#### 3. `AC-119-E` — neither free text nor a new column
+
+**The Scrum Master put two options to the Architect and it took neither.** The answer is
+`IAuditContext.Record<Client>(AuditEventKind.DuplicatePhoneAcknowledged, matchedClientId)`, **one call
+per match** — the mechanism D-061 already built for exactly this class of fact, which neither candidate
+had used.
+
+The event row's entity id **is** the matched client's id and its entity type is `Client`
+[Verified: 2026-09-04 @ `src/Infrastructure/Auditing/AuditContext.cs` -> `Record`], so *"list every
+client created as an acknowledged duplicate"* is a join on keys, not prose parsed out of a text column.
+`Events` is a list, so N matches are native — the same 1+N shape `DeactivateUser` already writes in one
+save, under one correlation id.
+
+**And the unbackfillable part is already in the ground.** `IAuditContext`'s own doc comment says it:
+*"Adding a member is a one-line, backfill-free change — the column that stores it is
+`AuditRecord.EventType` and it lands with the mechanism, which is the part that cannot be added after
+the first consumer"* [Verified: 2026-09-04 @ `src/Domain/Auditing/IAuditContext.cs` -> `AuditEventKind`].
+The mechanism landed 2026-08-22. **KAFF-116's `GrantPath` argument does not apply here, because there is
+nothing left to add late** — which is the finding, and it is better than either option that was offered.
+
+**Free text was rejected** for putting a server-composed English string into a column whose only
+precedent is operator-typed prose, in a system where `CLAUDE.md` forbids the server sending
+user-facing strings. **A `MatchedClientId` column was rejected as the wrong shape**: a single `uuid`
+cannot hold the N matches D-049 ruling 8 made normal, so the honest column is an array or a child
+table — a change to the one audit mechanism in `Domain/`, for one feature.
+
+**What it costs if this is wrong:** one enum member. Today's `AuditEventKind` members are all
+authentication events and this is the first master-data one; if the stretch is wrong the cost is a
+member that confuses a reader, not a schema. **One residual risk, named:** the event's subject is the
+**matched** client, not the created one — the `SignInFailed` precedent exactly, and the enum member's
+doc comment must say so.
+
+#### 4. `AC-119-B` is settled structurally, not by a test
+
+*"Ignored or refused"* is two behaviours a test cannot both assert. **The answer is refused
+structurally:** `CreateClient`'s request type carries **no `Code` member at all**, so a supplied code is
+dropped by the JSON binder and no code path could store one. That matches S-012's *"the UI must never
+send the field at all"* and makes the criterion unbreakable rather than merely tested. **The BA owes
+`AC-119-B` a one-line rewrite** to say so; the ambiguity is resolved, the story text is not yet.
+
+#### Business questions that remain — named, unanswered, and not any agent's
+
+1. **May client codes have gaps?** For Karim, in his terms: *"A code is drawn the moment a registration
+   is saved. If a save fails at the last step that number is used up and never appears — the codes read
+   C-10001, C-10003, C-10004. Is a missing number acceptable, or must the sequence be unbroken?"* **The
+   mechanism is reversible; the gaps already burned are not.** If he says unbroken, the answer is a
+   counter row under lock and every registration serialises.
+2. **Must the operator type a reason when proceeding past a duplicate warning?** The amendment says the
+   system *asks* and rule 7 says it *records that it was taken* — neither asks for a *why*. **Batch it
+   with Q35**, which is the identical question about deactivating a user.
+3. **Does ruling 8 cover editing a phone, or only registering a client?** KAFF-121's F-19 already flags
+   this as the story's own inference. It is routed because **this decision hardens that inference into
+   one shared mechanism** across create and edit — if Karim says edit should refuse, that is a change to
+   the shared thing, not to one handler. Non-blocking; the story's reading is the reasonable one.
+
+**Not for Karim, and it needs an owner:** `ux/components.md` §13's match input is **singular** and no
+multi-match rendering is specified anywhere. The API returns the list regardless, but the dialog needs
+an answer before `AC-119-D`'s second-duplicate case can be demonstrated. **Routed to UX.**
+
+#### What Backend must not start without — four of six worth repeating here
+
+* **KAFF-121's headline capability does not exist.** There is still no setter for `Name`, for the
+  primary phone, or for `Kind` [Verified: 2026-09-04 @ `src/Domain/MasterData/Client.cs` ->
+  `SetContactDetails` — with `SetTaxRegistration` and `Archive` the only other public mutators]. That is
+  the **first** work in KAFF-121, not an assumption under it, and rule 6's Corporate→Individual guard
+  must live **with the kind setter**, not in a validator.
+* **A new i18n key no story lists** — the `409`'s message key, in **both** catalogues. And the harder
+  half: **Frontend must map that `409` to re-opening the dialog, not to an error banner.** A `409`
+  rendered as a red banner is a refusal wearing a status code, which is the exact thing ruling 8
+  reversed.
+* **`phone-check` returns client names and must be gated `ClientManage`.** A "check" endpoint reads as
+  innocuous and is precisely where `Role.Client` gets forgotten — `AC-119-G` and `spec.md` §12.
+* **`AC-124-C` works only because `Client.Create` upper-cases the code**, so the search term must be
+  upper-cased before comparison for `c-10001` to find `C-10001`.
+
+#### The one thing not observed, stated rather than implied
+
+**That `EnsureCreated` materialises a model-declared sequence was reasoned from EF's model differ, not
+watched.** It is the one line of this decision worth confirming under `/run-kaff-erp` before the build
+order goes out. Its failure mode is loud — `42P01` on the first registration — not silent, which is why
+it is acceptable to record it unverified and say so.
+
+**Report anything in this brief that was wrong.** Four corrections came back into it: the blur check
+already forecloses half of §2; `SetReason`'s precedent is operator-typed and **nothing in this
+repository composes that text itself**, so "already uses it exactly that way" overstated it; there is no
+sequence anywhere in this database, which is stronger than the brief claimed; and multi-match on create
+follows from `AC-119-D`, not `AC-119-C` as the brief cited. All four are absorbed above.

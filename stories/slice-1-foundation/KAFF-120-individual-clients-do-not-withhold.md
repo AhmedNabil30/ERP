@@ -117,12 +117,15 @@ by domain test here and wired to an endpoint in **KAFF-416**, slice 4. Anyone te
 endpoint to slice 1 to close this should read KAFF-113's "Not in this story" first.
 
 **The permission side is fully settled now, and this paragraph used to say otherwise.** Three rows,
-not one [all Verified: 2026-08-22 @ `src/Domain/Authorization/PermissionCatalogue.cs`]:
-**`ProjectCreate`** — `CompanyWide`, Owner and Technical Office, opening a project (`:213-215`);
-**`ProjectManage`** — `ProjectScoped`, Owner and Technical Office, editing it (`:200-202`);
+not one:
+**`ProjectCreate`** — `CompanyWide`, Owner and Technical Office, opening a project
+[Verified: 2026-09-04 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.ProjectCreate`];
+**`ProjectManage`** — `ProjectScoped`, Owner and Technical Office, editing it
+[Verified: 2026-09-04 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.ProjectManage`];
 **`ProjectFinancialsEdit`** — `ProjectScoped`, `TouchesMoney`, **Owner and Finance**, the contract's
-tax and financial settings alone (`:238-241`). **KAFF-416 is gated on `ProjectFinancialsEdit`, not on
-`ProjectManage`.**
+tax and financial settings alone
+[Verified: 2026-09-04 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.ProjectFinancialsEdit`].
+**KAFF-416 is gated on `ProjectFinancialsEdit`, not on `ProjectManage`.**
 
 > **Corrected 2026-08-22 under SM-29.** This paragraph said *"the endpoint is still not buildable,
 > because the row is `ProjectScoped` and a create request names no project (**N10**, Architect)"*,

@@ -300,5 +300,55 @@ for Nabil, ~78 MB in total:
 
 ---
 
-**Report anything in this record that was wrong.** Four corrections came back into it from four
-briefed agents today, two of which changed something I had already written down.
+---
+
+## 9. Closed the same day — the repairs landed and all five are `Ready`
+
+**Everything above stands as written.** The `BLOCKED` verdict held for about four hours and is not
+rewritten, because what a document claimed and when is the record, and because a gate that fires and
+then clears is a gate working rather than a gate waived.
+
+| Repair | Verified by me, not taken on report |
+|---|---|
+| DoR line 9 | All four criteria now carry test-case citations. `AC-119-J` is an **enumerate-and-pin allow-list**, and `AC-119-L` is the create form's RTL case the edit form and the list both already had. `AC-119-K` and `AC-120-B` turned out to have a passing scenario already, uncited — so the citation was widened rather than a duplicate case invented |
+| DoR line 11 | **Zero** bare `:digits` hints remain in the five stories. KAFF-120's three are dated identifier citations, and **three more were found in KAFF-121 that nobody had counted** |
+| The blocklist-shaped cases | `TC-1-156`, `TC-1-157`, `TC-1-173`, `TC-1-190` rewritten as allow-lists; `TC-1-183` rewritten to enumerate the routes the host actually mapped instead of grepping source for the word "delete". **`V-32-A`'s shape is out of the test cases before it could be implemented** |
+| N6 and the API contract | **ANSWERED — D-107** |
+
+### A fifth correction, and it is the best argument for the whole exercise
+
+**The allowed property set I handed QA for `AC-119-J`'s allow-list was wrong.** I gave twelve members;
+`Client` has **fourteen** — I omitted `Id`, inherited from `Entity`, and `Phone`, a computed property.
+QA read the files and corrected it.
+
+**A whitelist that lists the wrong set fails on its first honest run.** That is precisely what a
+whitelist is *for*, and it is why the shape matters more than the diligence of whoever writes it —
+which is the whole of `V-32-A`, arriving a second time from the other direction on the same day.
+
+### D-107, in one line each
+
+* **N6** — a PostgreSQL sequence **declared on the EF model**, because the test harness builds its
+  schema from the model and a migration-only sequence would exist in production and not in the suite.
+  `nextval` drawn last. **The cost is gaps, and that is the whole cost.**
+* **The warning** — a side-effect-free `phone-check` endpoint (**required**, not a candidate: S-013
+  says the check fires on blur, and a blur check cannot be the create call), plus an acknowledgement
+  boolean re-matched server-side, with `409` for an unacknowledged match. **The warning is never a
+  `Problem`** — `toProblem` discards every field but three, so it could not name the matched client.
+* **`AC-119-E`** — **neither** of the two options I put up. The mechanism D-061 already built carries a
+  structured link whose entity id *is* the matched client's, so **the unbackfillable part is already in
+  the ground** and KAFF-116's argument does not apply.
+* **`AC-119-B`** — settled structurally: the create request carries no `Code` member, so no path could
+  store one. **The BA owes the criterion a one-line rewrite.**
+
+**Three business questions came back named and unanswered**, which is the correct outcome: whether
+codes may have gaps (Karim, new); whether proceeding past a warning needs a typed reason (batch with
+Q35); and whether ruling 8 covers *editing* a phone or only registering — KAFF-121's own F-19 inference,
+now hardened into one shared mechanism, which is why it is worth asking.
+
+**Still `Ready` is not pulled. Scope is Nabil's.**
+
+---
+
+**Report anything in this record that was wrong.** Five corrections came back into it from five briefed
+agents today, three of which changed something I had already written down — including the property set
+I supplied for the very test this ceremony exists to get right.

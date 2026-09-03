@@ -13,11 +13,11 @@ permissions (D-055 §§1–3, D-056 §3).**
 
 | | |
 |---|---|
-| `TC-1-nnn` identifiers in this file | **261** |
+| `TC-1-nnn` identifiers in this file | **263** |
 | Of which `TC-1-000` | **not a case** — the format template in *How to read a case* below |
-| Real cases, `TC-1-001` … `TC-1-260` | **260**, **no gap and no duplicate** [Verified: 2026-09-01, every id in the range present exactly once as a heading, including the two added today] |
+| Real cases, `TC-1-001` … `TC-1-263`, less the reserved `TC-1-261` | **262**, **no gap beyond the documented `TC-1-261`, and no duplicate** [Verified: 2026-09-04, every id in the range present exactly once as a heading except the deliberately unused `TC-1-261`, including the two added today] |
 | `RETIRED` | **5** — `TC-1-175` … `TC-1-179` |
-| **Live** | **255** |
+| **Live** | **257** |
 
 **`TC-1-258` added 2026-08-26** — `AC-101a-P` (D-072 §1, the locked-account exception) was ruled and
 built with no case in this file asserting it, found in the same sweep that corrected `TC-1-009`,
@@ -31,6 +31,16 @@ uncited in this file — its first case; `TC-1-260` specifies the untested half 
 **`TC-1-261` was not used** — `W-2`'s helper is a design specification, not an executable case, and is
 recorded in prose in the new cross-cutting section rather than claiming a case number for something
 that cannot be run until the helper exists.
+
+**`TC-1-262` and `TC-1-263` added 2026-09-04**, this session, closing a Definition-of-Ready sweep that
+found `AC-119-J`, `AC-119-K`, `AC-119-L` and `AC-120-B` cited by no case in this file. Two of the four
+needed a genuinely new case: `TC-1-262` gives `AC-119-J` its first case, written as an allow-list per
+`agents.md` §3c rather than the blocklist shape V-32-A found unsafe; `TC-1-263` gives `AC-119-L` — the
+create form's RTL case — its first, matching the edit form's `TC-1-199` and the list's `TC-1-200`. The
+other two needed no new case: `TC-1-162` already ran `AC-119-K`'s exact scenario under `AC-120-A`'s
+citation alone, and `TC-1-166` already asserted `AC-120-B`'s rendering claim in its own second clause
+under `AC-120-H`'s citation alone. Both were widened rather than duplicated. Next unused ids after
+`TC-1-260`, skipping the already-reserved `TC-1-261`; nothing renumbered, nothing retired.
 
 **Where the wrong numbers came from, recorded so they are not re-derived.** The brief for this session
 said **241**; the header of this file said **243** and its own totals line agreed with itself; a sweep
@@ -162,7 +172,7 @@ reads a token out of a response body cannot be written any more, because there i
 | KAFF-116 how access was granted | Ready | TC-1-129…135 | 0 |
 | KAFF-117 read the audit trail | **Ready** — D-049 §1 | TC-1-136…142 | 0 |
 | KAFF-118 every change is audited | Ready | TC-1-143…150, 246, 247 | 0 |
-| KAFF-119 register a client | **Ready** — D-049 §7, §8 | TC-1-151…159, 240, 241 | 0 |
+| KAFF-119 register a client | **Ready** — D-049 §7, §8 | TC-1-151…159, 240, 241, 262, 263 | 0 |
 | KAFF-120 individuals do not withhold | Ready | TC-1-160…166, 242 | 0 |
 | KAFF-121 edit a client | Ready | TC-1-167…174 | 0 |
 | ~~KAFF-122 corporate withholding~~ | **Superseded → KAFF-416** | TC-1-175…179 retired | — |
@@ -174,9 +184,10 @@ reads a token out of a response body cannot be written any more, because there i
 | — `ProjectCreate` / `ProjectFinancialsEdit` / `UserRead` | Ready — **new 2026-08-22** | TC-1-248…254 slice 1 · TC-1-255…257 slice 4 | 0 |
 | — cross-cutting mechanism (problem-details, audit) | Ready — **new 2026-09-01** | TC-1-260 | 0 |
 
-**Totals: 255 live cases · P1 197 · P2 51 · P3 8** (`+2` today: `TC-1-259` P1, `TC-1-260` P2 — the
-pre-existing 253/196/50/8 did not sum to 254 either; that discrepancy predates this session and is not
-re-derived here).
+**Totals: 257 live cases · P1 199 · P2 50 · P3 9** (`+2` today: `TC-1-262` P1, `TC-1-263` P3 — plus
+`TC-1-166` moving P2 → P1 on its widened citation, which shifts the split without changing the live
+count. The pre-existing 255/197/51/8 did not sum to 255 either — 197+51+8 is 256 — the same one-off
+discrepancy noted at every prior revision; it predates this session and is not re-derived here).
 **4 PENDING/BLOCKED** — one on Q33 (`TC-1-017`), one on **Q41** plus an unregistered subcontractor-half
 gap, **corrected 2026-09-01** from the stale "Q27's residue" marker — Q27 is closed (`TC-1-079`), one
 on the reset link's lifetime, which is the **story's** to settle and not Karim's (`TC-1-036`), and one
@@ -2388,17 +2399,29 @@ client, then each is refused with 403.
 stops being true on the first master record.
 
 **TC-1-156 · the entity carries no money**
-`AC-119-I` · P1 · Domain · spec.md §6.1 · CLAUDE.md *"Never store a balance"*
-Given the `Client` entity, when its properties are enumerated, then none is a balance, a credit limit
-or any other money value.
-*Fails if:* a `Balance` or `CreditLimit` column is added — the stored balance CLAUDE.md forbids
-outright, arriving on the most innocent-looking form in the system.
+`AC-119-I` · P1 · Domain · spec.md §6.1 · CLAUDE.md *"Never store a balance"* · V-32-A
+Given the `Client` type's public properties, enumerated by reflection, when the set is compared with
+`BeEquivalentTo` against the fixed allow-list — `Id, Code, Name, PhoneEntered, PhoneNormalised,
+AlternatePhone, Email, Address, Kind, TaxRegistrationNumber, Notes, IsActive, CreatedAt, Phone` — then
+it matches **exactly**.
+*Fails if:* a `Balance`, `CreditLimit`, or any other unlisted property is added, under any name.
+**Rewritten 2026-09-04 — this case was a blocklist** (*"none is a balance, a credit limit or any other
+money value"*) **and the shape is the one V-32-A shows fails silently**: a blocklist of seven words
+missed a `RetainedAmount` field at 241/241 green, because nobody had written that name down. An
+allow-list has no such blind spot — a `Retention` or `Advance` field, both spec.md §14 vocabulary,
+would fail this the moment it appeared, which the old wording would not have caught.
 
 **TC-1-157 · and neither does the contract or the table**
-`AC-119-I` · P1 · Api · spec.md §6.1
-Given the client API response contract and the `clients` table, when each is inspected, then neither
-carries a money field.
-*Fails if:* the entity is clean and the read model is not.
+`AC-119-I` · P1 · Api, raw SQL · spec.md §6.1 · V-32-A
+Given the client API response contract type, enumerated by reflection, and the `clients` table's
+columns, read from `information_schema.columns`, when each set is compared against its own fixed
+allow-list, then both match **exactly** and neither carries a money-shaped property or column.
+*Fails if:* the entity is clean and the read model is not. **Rewritten 2026-09-04 — same reason as
+`TC-1-156`**: *"neither carries a money field"* is a search for a forbidden shape, not a pinned set,
+and a field named something other than an obvious money word would pass it. The `clients` table's
+allow-list today is `id, code, name, phone_entered, phone_normalised, alternate_phone, email, address,
+kind, tax_registration_number, notes, is_active, created_at`; the contract's is pinned the same way
+once it is built.
 
 **TC-1-158 · the code is generated, sequential, and cannot be typed**
 `AC-119-B` · P1 · Api · **D-049 ruling 7** · §2 amendment
@@ -2446,6 +2469,38 @@ as prose, which breaks the no-server-prose rule (`problem-details.ts`) and makes
 somebody's afterthought. Or if archived clients are excluded from the match: an archived client is
 still a client, and §3 requires a reopened opportunity to attach to the original.
 
+**TC-1-262 · the client's whole property surface is pinned, entity and table alike**
+`AC-119-J` · P1 · Domain + Api, raw SQL · CLAUDE.md *"Never store a balance"* · V-32-A
+Given the `Client` type's public properties, enumerated by reflection, and the `clients` table's
+columns, read from `information_schema.columns`, when each set is compared against a fixed allow-list
+— `Id, Code, Name, PhoneEntered, PhoneNormalised, AlternatePhone, Email, Address, Kind,
+TaxRegistrationNumber, Notes, IsActive, CreatedAt, Phone` for the type (`BeEquivalentTo`);
+`id, code, name, phone_entered, phone_normalised, alternate_phone, email, address, kind,
+tax_registration_number, notes, is_active, created_at` for the table — then both match **exactly**,
+with no `withholding_category` and no room for one under a different name in either set; and when the
+client API contract is built, its request and response types are pinned the same way before the first
+endpoint ships.
+*Fails if:* a `WithholdingCategory`, a `Rate`, or any other unlisted property or column is added under
+any name. **This must not be written as a blocklist searching for the word "withholding."** V-32-A
+shipped a decimal `RetainedAmount` field past a blocklist of seven forbidden words at 241/241 green,
+because nobody had written that name down in advance — `Amount`, `Total`, `Price`, `Rate`, `Retention`,
+`Hold` and `Advance` were on none of them, several being spec.md §14's own mandated vocabulary. An
+allow-list has no such blind spot: anything not on the list fails, whatever it is called.
+*(`TC-1-163` already asserts the table's column is absent, for KAFF-120's `AC-120-F` — correct as far
+as it goes, but a single absent name is still the shape a differently-named column would slip past.
+This case is `AC-119-J`'s own and states the whole allowed set, entity and table, rather than one
+forbidden name.)*
+
+**TC-1-263 · the create form and its duplicate warning**
+`AC-119-L` · P3 · E2E · CLAUDE.md RTL
+Given S-012 and S-013 at 390px in Arabic, when they render, then `dir` is RTL, the generated Latin
+code and a phone number typed in Latin digits are bidi-isolated inside their Arabic labels, and neither
+screen scrolls horizontally.
+*Fails if:* the generated code or the phone number reorders inside an Arabic label — invisible in
+English, wrong on every screen in Arabic. The sibling forms already carry this case — the edit form is
+`TC-1-199` and the list is `TC-1-200` — and the create form did not, even though it is the first
+screen an Arabic-speaking Marketing user ever sees a generated code or a duplicate warning on.
+
 ---
 
 # KAFF-120 · An individual's contract cannot carry a withholding rate — Ready
@@ -2485,13 +2540,17 @@ Given a project whose client is an `Individual`, when `None` is set, then it is 
 field unsettable and therefore makes an individual's contract unapprovable. Same slice-4 caveat.
 
 **TC-1-162 · a tax registration number on an individual is refused through the API**
-`AC-120-A` · P1 · Api · spec.md §6.7 amendment
+`AC-120-A, AC-119-K` · P1 · Api · spec.md §6.7 amendment
 Given a Marketing user and a client of kind `Individual`, when a tax registration number is set, then
 it is refused with `errors.master.individual_does_not_withhold` and the stored value is unchanged.
 *Fails if:* the guard lives in `Client.SetTaxRegistration` and the endpoint reaches the property by
 another route — a create-with-registration path, or a general-purpose update that binds the field.
 *(This case replaces the old `TC-1-162`, which asserted the update path on `Client.SetWithholding`.
 That method no longer exists.)*
+**Relock 2026-09-04.** `AC-119-K` — KAFF-119's own criterion for *"an individual cannot be given a tax
+registration number"* — had no case citing it anywhere in this file. It is the identical refusal
+through the identical domain method as `AC-120-A`; widening this case's citation is the fix, not a
+second case asserting the same Given/When/Then under a different story's ID.
 
 **TC-1-163 · the client record has no category to set, anywhere**
 `AC-120-F` · P1 · Api, **raw SQL** · **D-049 ruling 9** · migration
@@ -2535,8 +2594,8 @@ accepted and stored.
 *Fails if:* the fix over-reaches and refuses withholding entirely, which would break every corporate
 collection from slice 3 (KAFF-317). Slice-4 caveat as above.
 
-**TC-1-166 · one key, in both catalogues, and only one**
-`AC-120-H` · P2 · E2E · CLAUDE.md i18n · D-047
+**TC-1-166 · one key, in both catalogues, and only one — and it renders**
+`AC-120-H, AC-120-B` · P1 · E2E · CLAUDE.md i18n · D-047
 Given `ar.json` and `en.json`, when they are searched, then
 `errors.master.individual_does_not_withhold` is present in **both**, and
 `errors.master.individual_client_does_not_withhold` is present in **neither**; and when the refusal
@@ -2545,6 +2604,10 @@ surfaces on screen in Arabic, then it resolves rather than rendering as a raw ke
 2026-08-21 (`qa/questions.md` F-08) — the story has been corrected and the UX flow was already right,
 so what is left is a case that fails the moment somebody invents the synonym again. **This case is why
 F-08 is closed rather than forgotten.**
+**Relock 2026-09-04.** `AC-120-B` — *"the refusal reads as Arabic, not as a key"* — had no case citing
+it anywhere in this file, and this case's own second clause already asserts exactly that: it resolves
+from `ar.json` and the raw key appears nowhere on screen. Widened rather than duplicated, and promoted
+P2 → P1 to match `AC-120-B`'s own `(fails if the rule is broken)` marking in the story.
 
 **TC-1-242 · the client's kind comes from the database, never from the request**
 `AC-120-G` · P1 · Api · **D-049 ruling 9** (*"the client's kind is passed in rather than looked
@@ -2617,9 +2680,15 @@ client is archived, no contact field changes.
 field edit with no confirmation and no distinct audit action.
 
 **TC-1-173 · no edit can introduce a money field**
-`KAFF-121 rule 10` · P1 · Api · spec.md §6.1
-Given the edit request contract, when it is inspected, then it accepts no money value.
+`KAFF-121 rule 10` · P1 · Api · spec.md §6.1 · V-32-A
+Given the edit request contract type, when its properties are enumerated by reflection, then the set
+matches a fixed allow-list exactly — name, primary phone, alternate phone, email, address and notes,
+and nothing else.
 *Fails if:* a "credit limit" is accepted here even though it is absent from the create form.
+**Rewritten 2026-09-04 — this case was a search for money by name** (*"accepts no money value"*),
+**the shape V-32-A shows is not safe**: a field would only be caught if somebody had already thought
+to name it as forbidden. An allow-list catches a `CreditLimit` and a field called anything else with
+the same effect, because both are simply not on the list.
 
 **TC-1-174 · the name is editable, and the code is not**
 `AC-121-A, AC-121-E` · P1 · Domain + Api · spec.md §2 · **D-049 ruling 7**
@@ -2715,9 +2784,17 @@ Given an archived client, when they are archived again, then it is refused with
 
 **TC-1-183 · no delete exists**
 `AC-123-D` · P1 · Api · spec.md §2
-Given any client, when the API surface is enumerated, then no route deletes one.
+Given the routes the running host actually maps — read from `EndpointDataSource`, the way
+`EndpointPermissionCoverageTests` does it, never from a source-text search — when they are filtered to
+routes naming clients, then none carries the `DELETE` HTTP method.
 *Fails if:* a delete is added for "cleaning up test data" — the same temptation CLAUDE.md refuses for
-postings, arriving on a master record.
+postings, arriving on a master record. **Rewritten 2026-09-04 — "the API surface is enumerated" was
+ambiguous enough to be satisfied by grepping `Endpoint.cs` files for the word "delete."** The working
+precedent is [`tests/Api.Tests/EndpointPermissionCoverageTests.cs` ->
+`No_endpoint_deletes_a_project_assignment`]: it reads `Endpoint.Metadata` off the routes the host
+actually built, because a route mapped by any means still shows up there, and a grep over source text
+only sees what somebody wrote — which is precisely the artefact decisions.md D-067 showed is not
+trustworthy.
 
 **TC-1-184 · DEFERRED to slice 4 (rule 5)**
 `KAFF-123 rule 5` · P2
@@ -2763,10 +2840,14 @@ is refused with 403 and **no client name appears in the response body**.
 in Kaff.
 
 **TC-1-190 · no money in the payload**
-`AC-124-G` · P1 · Api · spec.md §6.1
-Given the list response contract, when it is inspected, then it carries no balance, contract value,
-total billed or any other money-shaped field.
-*Fails if:* a "total billed" column is added to the list for convenience.
+`AC-124-G` · P1 · Api · spec.md §6.1 · V-32-A
+Given the list response contract type, when its properties are enumerated by reflection, then the set
+matches a fixed allow-list exactly — code, name, phone (as displayed), kind and status, and nothing
+else.
+*Fails if:* a "total billed" column is added to the list for convenience. **Rewritten 2026-09-04 — this
+case named the forbidden shapes** (*"no balance, contract value, total billed"*) **rather than pinning
+the allowed ones**, which is the exact pattern V-32-A shows failing: a field named anything outside
+that short list would have passed unnoticed. An allow-list has no such gap.
 
 **TC-1-191 · an empty search says so**
 `AC-124-H` · P3 · E2E · spec.md §4.5 (same principle)
