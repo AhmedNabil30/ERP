@@ -8427,3 +8427,157 @@ reasoning D-103 flagged its own stray `503` on this shared database.
 * **A dropdown-style account menu.** The header shows the display name and a sign-out button inline
   rather than a popover menu — the substance of "account menu" (rule 1) without building interaction
   slice 1 has no second item to justify.
+
+---
+
+### D-105 · QA/Backend — the E2E suite repaired against what the app is now, and the demo's real ceiling found · 2026-09-03
+
+**QA/Backend, with the machine to itself, per `process/agile.md`.** Two jobs from the brief: repair
+`tests/E2E.Tests/SmokeTests.cs`, and build a repeatable client demo. Baseline first, both suites: build
+clean (0 warnings, 0 errors, `-warnaserror`), `dotnet format --verify-no-changes` exit 0, Domain
+**111/111**, Api **241/241** (against `kaff_verify` — `kaff` still will not boot, untouched per the
+brief), citations **1104 checked, 0 broken, 0 legacy** — all four unchanged from the brief's own
+baseline, confirmed rather than assumed.
+
+#### 1. The E2E suite: red 2/5, green after — the real figure, not rounded
+
+**Before, measured against a live stack, not inferred:** `Kaff.E2E.Tests.exe` reported **5 total, 2
+failed, 3 succeeded** — `The_status_page_reports_the_database_guards_are_installed` and
+`The_page_does_not_scroll_sideways_at_phone_width` both timed out waiting on `data-testid="status-guards"`
+and `"status-panel"`, exactly as the brief said, because KAFF-125 (D-104) replaced the status page at
+`/` with the role-based landing and nothing routes to the old component any more. **After: 6 total, 0
+failed, 6 succeeded** — one test added, not merely two repaired.
+
+**Both options in the brief were taken, not one.** The guards assertion now hits `GET /api/health`
+directly with a plain `HttpClient`, reading `status`, `guardsInstalled` and `missingGuards` off the JSON
+body — the same endpoint `driver.mjs smoke` already asserts, and the fact CLAUDE.md actually cares about
+(D-033's database-enforced safety) was never a screen's job to prove.
+`An_unauthenticated_visit_to_the_landing_route_is_sent_to_sign_in` is new: it asserts the landing
+route's own current surface — `sessionGuard` bouncing a signed-out visitor to `/sign-in`
+(`AC-125-B`) — which is what a smoke test should assert about `/` now that it dispatches by role
+instead of being a page of its own. The scroll-width test keeps its assertion and only its wait target
+changes, from the deleted `status-panel` to `app-title` — rendered in every session state
+[@ `src/Web/src/app/app.html`], so it is a wait target the next slice is unlikely to delete out from
+under this test the way KAFF-125 did the last one.
+
+**Every assertion can still fail** (agents.md §3c): a genuinely missing guard turns the health check
+red with the real missing-guard names in the message (not rounded to a boolean); a broken
+`sessionGuard` leaves the page on `/` or sends it somewhere else and the URL assertion misses; a
+deleted `app-title` or a reintroduced physical CSS property both still fail the tests that depend on
+them. None of the four repaired/added tests passes independent of the property it names.
+
+**One correction to the brief, applied rather than worked around.** It describes "five tests navigating
+to `/`" in `SmokeTests.cs`; the file has **four** methods, and five is the whole suite's total once
+`SuiteConfigurationTests.cs`'s one `[Fact]` is counted — [Verified: 2026-09-03 @
+`tests/E2E.Tests/SmokeTests.cs` -> `SmokeTests`; @ `tests/E2E.Tests/SuiteConfigurationTests.cs` ->
+`SuiteConfigurationTests`]. Read directly rather than assumed from the brief's count, per agents.md's
+evidence rule.
+
+`E2EEnvironment` gained `ApiBaseUrl`, reading `KAFF_API` with the same name and default
+(`http://localhost:5080`) driver.mjs already uses [@ `tests/E2E.Tests/E2EEnvironment.cs` -> `ApiBaseUrl`]
+— deliberately the same variable, so a health check pointed at a different host from the driver's own
+never becomes a second source of truth to disagree with the first.
+
+#### 2. The orphaned `features/status/status-page.*` — deleted, not routed
+
+**Decided: delete.** `status-page.ts`'s own template already referenced `status.*` i18n keys that were
+not in either catalogue any more [checked: `src/Web/public/locales/{ar,en}.json` have no `status`
+key], which means the component would have rendered raw untranslated keys the moment anything reached
+it — evidence it had already started rotting, not merely gone unrouted. Nothing else in `src/Web`
+imported it [Verified: 2026-09-03 — grep for `status-page`/`StatusPage` across `src/` found only the
+component's own three files]. Its entire reason to exist — proving the API/DB/guards chain is wired —
+is now `driver.mjs smoke`'s job and, inside the app, `GET /api/health`'s own consumer if one is ever
+built; giving it a route back would resurrect a screen nothing in `ux/` asks for, which is the
+plausible-invention failure mode CLAUDE.md and agents.md both name. Angular's production build is clean
+before and after (0 errors, 0 warnings both times) — nothing depended on the three deleted files.
+
+#### 3. Whether a project can be created through the API: no, and it is load-bearing for the demo
+
+**Checked directly, not assumed.** `src/Api/Features/` has exactly five feature folders —
+`Health`, `Setup`, `Auth`, `Users`, `Assignments` — no `Projects`, no `Clients`
+[Verified: 2026-09-03 — directory listing of `src/Api/Features/`]. `Kaff.Domain.Projects.Project` has a
+complete `Create` factory and state machine [@ `src/Domain/Projects/Project.cs` -> `Create`], and
+`POST /api/projects/{projectId}/assignments` (KAFF-113) exists to staff a project that must already
+exist [@ `src/Api/Features/Assignments/AssignUserToProject/Endpoint.cs` -> `Route`] — but nothing maps a
+route that creates the `Project` row the second endpoint's own route parameter names. `scripts/seed-demo.ps1`
+proves this live on every run, not only by reading source: its final step `POST`s to `/api/projects` and
+gets **404**, because the route is not mapped at all — confirmed against a running host, watched
+directly, not inferred.
+
+**Consequence, stated in `deploy/DEMO.md` §1 rather than worked around with SQL.** No project, no
+client, no team roster with a nonzero size, no unstaffed-site indicator — D-100's "primary visual
+indicator" requirement is unmeetable through real endpoints today, full stop. A raw-SQL project insert
+was considered and rejected: `Project.Create` requires a `ClientId` and there is no `Clients` endpoint
+either, so a fabricated project would need a fabricated client under it — compounding exactly the
+"SQL-inserted data proves nothing and can violate an invariant silently" problem the brief itself warns
+against. The demo instead shows the honest empty state each landing already produces on a project-less
+database: Hr's "لا توجد مشاريع بعد" and Finance's "لست مُسنداً إلى أي مشروع حتى الآن" are the system
+telling the truth, not a placeholder standing in for a feature.
+
+#### 4. The demo: a dedicated `kaff_demo` database, not `kaff_verify`
+
+**`kaff_verify` was ruled out, measured rather than assumed clean.** `GET /api/setup` against it returns
+`{"available":false}` — an Owner already exists there (D-104's `karim`/`sara_finance`/`hend_hr`, left
+with "a changed, non-temporary password" nobody recorded) — so `POST /api/setup` cannot run again and
+the "known credentials, works every time" requirement fails on the first step. The brief's own text
+offered the alternative ("`kaff_verify` … or provision your own"); this session provisioned
+`kaff_demo` — a plain `CREATE DATABASE … OWNER kaff` alongside the existing two, migrated and guarded
+by the API's own `Development` boot sequence, so it can be dropped and recreated from nothing before
+every demo. `kaff` and `kaff_verify` are both untouched by this entry.
+
+**Seeding went through `POST /api/setup` → `POST /api/auth/sign-in` → three `POST /api/users` calls,
+never through `DbContext` or raw SQL** — `scripts/seed-demo.ps1`, checked in and re-run verbatim during
+this session against a freshly recreated `kaff_demo` with the exact output recorded in
+`deploy/DEMO.md` §4. Four accounts, covering every landing kind `KAFF-125`'s shell renders today
+(Owner and MarketingSales both "not built yet"; Hr and Finance the two data-bearing landings) — credentials
+in `deploy/DEMO.md` §4.4, chosen rather than left to be guessed, with `mustChangePassword` on every
+account but the Owner (who sets their own password at setup, rule 7).
+
+**Two PowerShell 5.1 traps found and worked around, recorded in `deploy/DEMO.md` §4.3 so the next
+session does not rediscover them at cost.** `Invoke-WebRequest`'s own charset guessing corrupted the
+Arabic full names in transit — confirmed with `octet_length` vs `length` on the stored row in Postgres
+directly (43 bytes for a name whose correct UTF-8 encoding is far shorter), not merely a display
+artefact, and this is the same class of bug SKILL.md already documents for editing files with
+PowerShell string replacement (D-056 §5), now shown to reach HTTP bodies too. And the auth cookie is
+`Secure` [@ `src/Api/Identity/StaffSessionMinter.cs` -> `CookieAttributes`], which .NET's
+`CookieContainer` refuses to attach to a plain `http://` request even to `localhost` — a real browser
+exempts `localhost` from that rule, a scripted `HttpClient` does not, so the seed script forwards the
+`Set-Cookie` value by hand rather than relying on the framework's own cookie handling. **Neither trap
+touches the real demo path**: a person driving the app through an actual browser hits neither, and
+`scripts/screenshot-demo.mjs` — which drives Chromium exactly the way a person would, native
+value-setter plus a real `input` event, the technique D-104 already verified for this exact
+signal-forms stack — confirms it: all four accounts signed in, cleared their forced password change
+where present, and landed correctly.
+
+**Screenshots taken and looked at, not merely generated** — `deploy/DEMO.md` §5 records what is in each
+of the four, at 390×844, Arabic, RTL: Owner and MarketingSales each show the honest "لم يُبنَ هذا
+الجزء من النظام بعد" placeholder under their respective "not built yet" heading; Hr shows "لا توجد
+مشاريع بعد" under "المشاريع"; Finance shows a correctly-populated profile panel and "لست مُسنداً إلى
+أي مشروع حتى الآن" under "مشاريعي". No horizontal scroll at 390px on any of the four. `localStorage`
+and `sessionStorage` were read before sign-in and after landing on every run and were empty in both
+directions every time — D-050's rule holds under an actual browser, confirmed again rather than taken
+on D-104's earlier word.
+
+#### 5. Not done, named so nobody assumes it exists
+
+* **No project-creation endpoint was built.** Deciding whether to build one is an Architect/Nabil scope
+  question, not something to invent under a demo brief — the exact failure mode CLAUDE.md and
+  agents.md both name as the most expensive one in this project. Flagged in `deploy/DEMO.md` §1 with
+  the live 404 as evidence, for whoever picks it up next.
+* **Screenshots are not checked into the repository** — binary, and they go stale the moment a screen
+  changes. `deploy/DEMO.md` §5 records what was seen in prose; `scripts/screenshot-demo.mjs` regenerates
+  them on demand.
+* **`kaff_verify`'s existing state was not touched or cleaned up.** Its own leftover accounts (D-104)
+  are a separate concern from this entry's; this session's databases are `kaff_demo` (created) and
+  `kaff_verify` (read-only, for the Api.Tests baseline and the final E2E confirmation).
+* **The demo runbook was not run against staging** (`deploy/README.md`). `deploy/DEMO.md` §7 names the
+  parameter changes that would make `scripts/seed-demo.ps1` and `scripts/screenshot-demo.mjs` work
+  there, untested.
+* **Two pre-existing `decisions.md` citations of the pre-rename SM-33 test name** (D-056 §2, D-097 §2),
+  already flagged twice by D-103 and D-104, are still unmoved. Not this entry's file list either — named
+  a third time only because it was still true.
+
+**Report anything in this brief that was wrong.** The tests/E2E.Tests file count ("five tests") — §1
+above. Everything else in the brief — the E2E numbers, the KAFF-113/D-100 project-picker absence, the
+`kaff` outage, `kaff_verify`'s dirty state — was re-verified against the files and the running stack
+rather than taken on the brief's word, and held.
