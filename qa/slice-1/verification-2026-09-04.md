@@ -27,12 +27,12 @@ Everything is `pending` until reached. Nothing is marked done on an author's evi
 | 7 | The E2E repair — all six watched failing | **done** — §7 |
 | 8 | The demo seed — no raw SQL, and the `POST /api/projects` 404 | **done** — §8 |
 | 9 | The deleted status page — references and i18n keys | **done** — §9 |
-| 10 | Verdicts per commit | pending |
-| 11 | Closing gate — `git status`, `HEAD`, suites re-run | pending |
-| 12 | What I did not do, as a count | pending |
-| 13 | Fit to put in front of a client? | pending |
-| 14 | The one thing Nabil should know | pending |
-| 15 | For the cleanup that follows — a list, not a repair | pending |
+| 10 | Verdicts per commit | **done** - §10 |
+| 11 | Closing gate — `git status`, `HEAD`, suites re-run | **done** - §11 |
+| 12 | What I did not do, as a count | **done** - §12 |
+| 13 | Fit to put in front of a client? | **done** - §13 |
+| 14 | The one thing Nabil should know | **done** - §14 |
+| 15 | For the cleanup that follows — a list, not a repair | **done** - §15 |
 
 ### Findings index
 
@@ -85,19 +85,37 @@ Had I built without this step, `Kaff.Api.dll` was held open and the build would 
 | `dotnet format --verify-no-changes` | exit 0 | **exit 0** |
 | Domain suite | 111/111 | **111/111** |
 | Api suite | 241/241 | **241/241, 0 skipped** |
-| E2E suite | 6/6 | pending — §7 |
+| E2E suite | 6/6 | **6/6** — measured against the live stack in §7 |
 | Citations | 1104 / 0 / 0 | **1110 checked / 0 broken / 0 legacy** — see §1a |
 
 ---
 
 ## 1a. Corrections to the brief
 
-*(populated as reached)*
+Per `agents.md` principle 7. **Three corrections, one of which changes what Nabil should plan.**
 
-**The citation count.** The brief's `1104` is D-105's *opening* baseline, taken before D-105 wrote its
-own `decisions.md` entry. At `HEAD` the sweep reports **1110 / 0 broken / 0 legacy**. The
-load-bearing halves — `0 broken`, `0 legacy` — are exact; only the total moved, and it moved for the
+**1. The citation count — cosmetic.** The brief's `1104` is D-105's *opening* baseline, taken before
+D-105 wrote its own `decisions.md` entry. At `HEAD` the sweep reports **1110 / 0 broken / 0 legacy**.
+The load-bearing halves — `0 broken`, `0 legacy` — are exact; only the total moved, and for the
 expected reason.
+
+**2. "The largest claimed gap in the system" is two gaps, not one — and this is the one that matters.**
+The brief says the missing project-creation endpoint is *"the largest claimed gap in the system and
+Nabil is planning around it."* **There is no client-creation endpoint either**, and `Project.Create`
+requires a `ClientId`, so `POST /api/projects` on its own would unblock nothing. `Kaff.Domain.MasterData.Client`
+exists; `src/Api/Features/` has no `Clients` folder. **Anyone planning around a single endpoint is
+planning around half the work.** Full evidence in §8.
+
+**3. The stranded-host warning was not hypothetical.** The brief warns that a stranded `Kaff.Api.Tests`
+host emits `MSB3026` and still reports success. **Three stranded hosts were live on this machine when
+this session opened** — from the previous session, in both launch forms (§1). The specific trap named
+did not fire, because the project's `-warnaserror` standard promotes `MSB3026` to an error; but the
+opening gate the brief mandated is what found them, on its first use.
+
+**One framing I checked and found correct rather than wrong**, recorded because the brief invited its
+own correction and accuracy runs both ways: *"the code-reviewed ones are the unexamined half"* is
+exactly right, and `AC-125-B` — the one criterion KAFF-125 said it could not fully observe — is where
+the MEDIUM defect turned out to be (§5). The brief pointed at the right place.
 
 ---
 
@@ -308,8 +326,8 @@ do not use the backticked form at all. They use a bare form, and the `UserRead` 
    citation on a catalogue row naming a test that was renamed out from under it. This is the tenth
    instance of `V-32-B`, and the only one in source.
 2. Both `file:line` citations are the **legacy form SM-31 retired**, and both have already drifted:
-   `CatalogueCompletenessTests.cs:160` now lands on a doc-comment line and
-   `PermissionEvaluatorTests.cs:290` on a bare `[Fact]` attribute — the real declarations are at 169
+   the cited line 160 of `CatalogueCompletenessTests.cs` now lands on a doc-comment line, and line 290
+   of `PermissionEvaluatorTests.cs` on a bare `[Fact]` attribute — the real declarations are at 169
    and 291. SM-31's stated failure mode, observed rather than argued.
 3. The legacy pattern requires backticks around the path, so even in a `.md` file this bare form would
    slip through.
@@ -628,3 +646,231 @@ can never turn anything red. That is why 20 dangling entries sit inside a green 
 
 `LOW`: dead data, no runtime effect, and both catalogues stay structurally valid. Listed for the
 cleanup in §15, not for a fix here.
+
+---
+
+## 10. Verdicts — all four commits
+
+**A commit I could not verify is not accepted. I could verify all four**, and all four are accepted.
+Accepting a commit is not accepting every claim made about it, and the exceptions are named.
+
+| Commit | Verdict |
+|---|---|
+| `e56cd16` **KAFF-105b** | **ACCEPTED**, with `V-32-A` (HIGH) and `V-32-B` (MEDIUM) routed |
+| `7461332` **KAFF-125** | **ACCEPTED as an implementation** — `AC-125-B` verified by code only (`V-32-D`), and **`AC-125-C` is not accepted as satisfied**, because it is deliberately unmet and only Nabil can close it |
+| `ad92638` **E2E repair** | **ACCEPTED**, with `V-32-E` (LOW) |
+| `440e4bd` **Demo seed** | **ACCEPTED** — both load-bearing claims verified live |
+
+### `e56cd16` — KAFF-105b · **ACCEPTED**
+
+Everything the story promises about the payload is true at `HEAD` and I drove rather than read it:
+two distinct CLR types, HR carrying no `ProjectId`, team size a live count with nowhere in the schema
+to be stored, and the new catalogue row pinned in **four** independent directions. SM-30 is genuinely
+paid. **No leak exists in the shipped payload.**
+
+**Why it is still accepted despite a HIGH.** `V-32-A` is a defect in the *guarantee*, not in the
+*behaviour* — the six fields shipped are the six the story allows. `CLAUDE.md`'s prohibitions are not
+violated by this code; what is missing is the mechanism that would notice if a future commit violated
+them. That is a routing item with a deadline — **before any field is added to `ProjectEntry`, and
+certainly before slice 3** — not grounds to reject working, correct code.
+
+**One thing the Scrum Master must rule on rather than me.** SM-33 says a rename's citations move in the
+same commit *"or the rename does not land"*. Nine did not move. Read literally, this commit breached a
+process law. It also **declared** the breach honestly, by name, in its own "not done" list — and D-104
+and D-105 declared it again. I am not retroactively rejecting a commit for a rule whose unpaid half
+belongs to a different agent; I am recording that the rule as written was not satisfied and routing it.
+
+### `7461332` — KAFF-125 · **ACCEPTED as an implementation**
+
+The shell is well built and the conventions are clean, checked directly rather than assumed: **no
+NgModules, no `BehaviorSubject`, no Zone.js, no `*ngIf`/`*ngFor`, no constructor injection** anywhere
+under `src/Web/src` — the only textual hits are comments *forbidding* those things. **No physical CSS
+direction property exists in any stylesheet**, so `AC-125-F`'s RTL rule holds by construction. The
+wildcard 404, the role dispatch, and the honest "not built yet" landings are all as described, and the
+decision not to invent content for S-006 and S-011 is the right one.
+
+**Two exceptions, and neither is a code defect.**
+
+* **`AC-125-B` is verified by code review only.** It is correct as written; `V-32-D` establishes that
+  **nothing asserts it**, so it is one careless edit from silently regressing with a green suite.
+* **`AC-125-C` is not accepted as satisfied.** It is deliberately unmet (§6). The deviation is
+  defensible and was recorded in the open, but it contradicts a criterion QA marked
+  *(fails if the rule is broken)*, and **it is Nabil's criterion and his call.** I have not resolved it
+  and this verdict does not resolve it.
+
+### `ad92638` — E2E repair · **ACCEPTED**
+
+**All six tests were broken and watched go red under six separate mutations.** The repaired suite can
+fail, which is the thing that mattered. The health assertion is a genuine improvement on the screen
+assertion it replaced. The status-page deletion is complete — nothing references it. `V-32-E` records
+that its *stated reason* is false and that it left 20 dangling i18n entries; neither changes the
+verdict, and the deletion was the right call on its second, sufficient reason.
+
+### `440e4bd` — Demo seed · **ACCEPTED**
+
+Both claims the brief singled out are true, and both were driven rather than read: **no raw SQL
+anywhere** in `scripts/seed-demo.ps1`, every write through a real endpoint; and `POST /api/projects`
+returns **404 as an authenticated Owner** — a missing route, not a masked refusal. All four documented
+credentials sign in and land exactly as `deploy/DEMO.md` records. The script's self-invalidating warning
+if the 404 ever stops being a 404 is better practice than the brief asked for. The commit's honesty
+about what cannot be demonstrated is its main virtue.
+
+---
+
+## 11. Closing gate — `V-31-E`'s remedy at the other end
+
+Every mutation reverted through `git checkout` before this ran.
+
+| Gate | Result |
+|---|---|
+| **`git status --porcelain`** | **only `qa/slice-1/verification-2026-09-04.md`** |
+| **`git rev-parse HEAD`** | **`b02b30c`** — this session's own increment 3; parent chain to `440e4bd` unbroken |
+| Foreign edits to `src/` or `tests/` | **none** — no file outside `qa/` differs from `HEAD` |
+| Stranded hosts | killed before the rebuild; none at close |
+| Build, `-c Release --no-incremental` | **0 warnings, 0 errors**, `Kaff.Api.Tests.dll` written, **no `MSB3026`** |
+| `dotnet format --verify-no-changes` | **exit 0** |
+| Domain | **111 / 111** |
+| Api | **241 / 241**, 0 skipped |
+| E2E | **6 / 6** (measured before the stack was torn down) |
+| Citations | **1126 checked · 0 broken · 0 legacy**, exit 0 |
+
+**The gate caught one defect of my own, which is the point of running it.** The first closing sweep
+reported **2 legacy line-number citations** — both introduced by *this report*, in §4, where I quoted
+the `UserRead` row's drifted citations back in their own backticked `file:line` form. **Writing about
+SM-31's failure mode reproduced SM-31's failure mode.** Rewritten to name the line in prose instead;
+the gate now reports 0 and exits 0. Recorded rather than quietly fixed, because it is the third time
+this repository has caught that specific rule breaking inside its own enforcement.
+
+**Both gates ran, both are recorded, and the opening one was not ceremony** — it found three live API
+processes from the previous session holding `Kaff.Api.dll` open (§1).
+
+---
+
+## 12. What I did not do — **eleven items, counted**
+
+*Silence must never read as success.*
+
+1. **Did not drive `AC-125-B`'s user-visible regression** — signing a browser in, then deep-linking to
+   `/` and watching the bounce. The driver launches a fresh chromium per command and carries no cookie
+   between them. `MUT-D` establishes the claim I actually make (*the rule is unasserted*); the
+   regression's shape is read from source and labelled as such.
+2. **Did not run `scripts/seed-demo.ps1` end to end.** It requires an empty database and `kaff_demo`
+   already holds an Owner; recreating it is DDL this session was refused. I verified its *content*
+   (no SQL), its *route set*, and its *outcome* (all four credentials working) instead.
+3. **Did not run `scripts/screenshot-demo.mjs`** or take screenshots. D-105's prose record of the four
+   landings is unverified by me at the pixel level.
+4. **Did not verify staging.** No credentials in this session; the previous pass covered it for
+   `4bf81ce`, and none of these four commits has been checked against a staging run by me.
+5. **Did not re-drive `AC-125-A`, `AC-125-D` or `AC-125-E`** (boot surface, forced-password-change
+   routing, sign-out and storage emptiness). D-104 observed all three directly and I did not repeat
+   them — so those remain author-observed, not independently confirmed.
+6. **Did not attempt the two mutations the classifier refused**: weakening
+   `ck_postings_amount_positive` on `kaff_demo`, and booting a second API against `kaff`. Both refusals
+   were correct. The health test was watched failing against a stub returning the real degraded body
+   instead — which exercises the assertion but not the database path behind it.
+7. **Did not audit the remaining ~160 i18n keys for orphans.** I audited the `status.*` block because
+   `ad92638` touched it. Other dangling keys may exist; `audit.grant.*` duplicates the values of
+   `enum.ProjectAccessPath.*` and I did not chase it.
+8. **Did not drive the coordinated three-file schema mutation** that `V-31-B` names as its ceiling.
+   Unchanged from the previous pass, and out of this brief's scope.
+9. **Did not verify the content of the nine stale citations** — only that each names an identifier that
+   no longer exists. Whether each surrounding sentence is still *true* under the new name is unchecked.
+10. **Did not test `kaff`.** It will not boot per `V-31-A`, and the brief forbids repairing it. The
+    Api suite ran against a throwaway database created from `kaff_verify`.
+11. **Did not review `KAFF-115`, `S-009a`, or anything the four commits declare as not built.** Their
+    absence is recorded by their own entries and I took that at its word.
+
+---
+
+## 13. Is this fit to put in front of a client?
+
+**Yes — it is safe to show, and it will not embarrass anyone. But it is not a demo of sprint 2, and
+that is the part Nabil needs to decide about before the meeting, not during it.**
+
+**What is genuinely good.** Four known credentials that work every time. A real sign-in, a real forced
+password change, correct Arabic RTL at 390px with the drawer on the right, an honest "not built yet"
+where nothing is built, and honest empty states where there is no data. **Nothing on screen is
+fabricated, nothing leaks, and no number is invented.** For a system with real money in it, a demo that
+refuses to fake anything is worth more than a prettier one that does — and this one refuses.
+
+**What the client will actually see.** Four accounts, an empty projects list, and an empty team list.
+`kaff_demo` holds **0 projects, 0 clients, 0 assignments, 0 postings.** Everything these four commits
+built — the per-project payload, the access path, the assignment level, the per-project permission
+list, HR's team sizes and the unstaffed-site indicator — **renders as two empty-state sentences**,
+because there is no project for any of it to describe.
+
+**So the honest framing, which is a decision and not a defect:** this demos the *shell* of an ERP, not
+an ERP. If the audience is being shown foundations — sign-in, roles, security, Arabic, the shape of the
+thing — it is ready today and it is good. If they expect to see a project, a client, an extract or any
+money, **it will under-sell six weeks of real work**, and no amount of polish fixes that, because the
+blocker is two missing endpoints (§8), not presentation.
+
+**One thing to say out loud in the room if it is shown as-is:** the empty states are the system telling
+the truth about a database with nothing in it — not screens that failed to load. That sentence is the
+difference between "solid and honest" and "broken", and nothing on screen says it for you.
+
+---
+
+## 14. The one thing Nabil should know
+
+> **The rule that keeps money off `/api/auth/me` is a list of seven forbidden words, and the words that
+> matter most in this system are not on it. I added `retainedAmount` — a hold figure, per project — to
+> the staff payload; the build stayed clean and all 241 tests passed while it went out on the wire.**
+
+Nothing leaks today. But `Amount`, `Total`, `Price`, `Rate`, `Retention`, `Hold` and `Advance` all slip
+past that guard, and several of them are `spec.md` §14's own mandated vocabulary — **so the terminology
+`CLAUDE.md` requires everyone to use is disproportionately the terminology the guard cannot see.**
+
+**The timing is why this is the one thing.** Slice 3 is Treasury. Right now `ProjectEntry` has no money
+field to leak, which is exactly why the hole is invisible and why it has stayed green. The moment money
+fields exist, the most natural change in the world — adding a figure to the project a user is already
+looking at — will ship past a green suite. This is the same shape as `V-30-A`'s forged marker and
+`V-31-B`'s snapshot: **a check that reports safety it does not provide.**
+
+**The fix is small and it already exists ten lines above the defect.** HR's half of that same test pins
+an exact field set — `BeEquivalentTo(["Name", "Code", "TeamSize"])` — so *any* added property fails.
+The staff type needs the same treatment: a whitelist, not a blocklist. **One line, and it should land
+before the first Treasury field is written, not after.**
+
+---
+
+## 15. For the cleanup that follows — reported, not acted on
+
+Per the brief: a list, not a repair. **Nothing below was changed by me.**
+
+### Stale references and dead records
+
+| # | Item | Where |
+|---|---|---|
+| 1 | **Nine citations of the renamed test** `Hr_holds_exactly_three_permissions_and_none_touches_money` | `decisions.md` (2440, 3052), `process/agile.md` (383, 420), `meetings/2026-09-01-sprint-2-refinement.md` (338), `proposals/N10-project-creation.md` (289), `qa/questions.md` (755), `stories/…KAFF-105b…` (59), `stories/…KAFF-107…` (50) |
+| 2 | **A tenth, in source** — the `UserRead` row's SM-30 comment cites the same dead name | `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.UserRead` |
+| 3 | **Two drifted legacy `file:line` citations** on that same row; both now point at the wrong line | same comment block |
+| 4 | `ux/navigation.md`'s stale `mustChangePassword` refusal paragraph — **flagged by D-091, D-100 and D-104 and still unmoved** | `ux/navigation.md` |
+
+### Dead code and orphaned i18n
+
+| # | Item | Detail |
+|---|---|---|
+| 5 | **20 orphaned i18n entries** — 10 keys × 2 catalogues, consumer deleted by `ad92638` | `status.title`, `.loading`, `.refresh`, `.api`, `.database`, `.guards`, `.reachable`, `.unreachable`, `.guards.installed`, `.guards.missing` |
+| 6 | **Do NOT delete `status.kaff.*`** (5 keys × 2) — reserved by `ar.json`'s own `_note` and by `CLAUDE.md`'s verbatim status vocabulary. Pre-staged, not orphaned | لم تبدأ · جاري العمل · انتهت · متعثرة · تم تأجيلها |
+| 7 | `status.loading` duplicates the live `shell.boot.loading` exactly — only the orphan should go | both catalogues |
+| 8 | `audit.grant.*` (4 keys × 2) duplicate the *values* of `enum.ProjectAccessPath.*`. **Not verified as orphaned** — flagged for someone to check | both catalogues |
+
+### Leftover test data and environment
+
+| # | Item | Detail |
+|---|---|---|
+| 9 | **Eight abandoned `kaff_test_*` databases** on `kaff-db`. The fixture drops its own, so these are crashed runs | `kaff_test_01a03533…`, `01a05026…` (×2), `01a043cb…` (×2), `01a04ca5…` (×2), `01a03241…` |
+| 10 | **`kaff_v30` and `kaff_design_time`** — leftovers from earlier sessions, referenced by nothing | `kaff-db` |
+| 11 | **`kaff` still carries `V-31-A`'s `PROBE-UNFLOORED` account**, closed but present, with two postings. `/api/health` against `kaff` still reports `503 degraded` | unchanged; repair needs a ruling, not a cleanup |
+| 12 | **`kaff_verify`'s `ck_babs_not_own_parent` drift** (`CHECK (true)`), flagged by D-103 and still unrepaired | `kaff_verify` |
+| 13 | `kaff_verify`'s leftover accounts `karim` / `sara_finance` / `hend_hr`, passwords unrecorded (D-104) | `kaff_verify` |
+| 14 | **Twenty stale `.log` files at the repo root** from earlier sessions — `api-probe`, `api-run`, `api-v30a/b/c`, `api-verify`, `web-*`, several zero-byte. **Correction to my own first draft: these are *not* a repo-hygiene problem** — `.gitignore` covers `api*.log`, `web*.log`, `shots/`, `TestResults/` and `web-dist/`, and `git ls-files` confirms none is tracked. Local disk debris only, safe to delete, and nothing depends on them | repo root, untracked |
+
+### Testing gaps worth a backlog item rather than a cleanup
+
+| # | Item |
+|---|---|
+| 16 | **`src/Web` has zero `.spec.ts` files.** `sessionGuard`, `SessionResolver`, `landingFor` and `enum-keys.ts` are covered by nothing but six browser tests |
+| 17 | **No test runs key→consumer over the i18n catalogues**, so an orphaned key can never turn anything red |
+| 18 | **`scripts/check-citations.ps1` never opens a non-`.md` file**, and resolves an identifier by substring rather than by declaration — see `V-32-B` and `V-32-C` |
