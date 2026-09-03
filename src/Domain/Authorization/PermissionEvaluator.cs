@@ -290,6 +290,41 @@ public static class PermissionEvaluator
         ];
     }
 
+    /// <summary>
+    /// Every <see cref="PermissionScope.ProjectScoped"/> permission <paramref name="subject"/> holds
+    /// on one project, given how they reach it. KAFF-105b rule 2 — <c>GET /api/auth/me</c>'s per-project
+    /// permission list.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The project-scoped sibling of <see cref="CompanyWidePermissionsHeld"/>, built the same way and
+    /// for the same reason (<c>AC-105b-J</c>): it runs the ordinary <see cref="Evaluate(PermissionSubject?, Permission, Guid?, ProjectAccess?)"/>
+    /// once per <see cref="PermissionScope.ProjectScoped"/> catalogue row rather than re-matching
+    /// grants by hand, so a permission added to <see cref="PermissionCatalogue"/> with a grant this
+    /// subject satisfies on this project appears here with no change to this method.
+    /// </para>
+    /// <para>
+    /// <see cref="PermissionScope.CompanyWide"/> rows are excluded by construction, mirroring
+    /// <see cref="CompanyWidePermissionsHeld"/>'s own exclusion in the other direction.
+    /// </para>
+    /// </remarks>
+    public static IReadOnlyList<Permission> ProjectScopedPermissionsHeld(
+        PermissionSubject subject, Guid projectId, ProjectAccess projectAccess)
+    {
+        ArgumentNullException.ThrowIfNull(subject);
+        ArgumentNullException.ThrowIfNull(projectAccess);
+
+        return
+        [
+            .. PermissionCatalogue.All
+                .Where(definition => definition.Scope == PermissionScope.ProjectScoped)
+                .Where(definition => Evaluate(subject, definition.Permission, projectId, projectAccess)
+                    == PermissionDecision.Granted)
+                .Select(definition => definition.Permission)
+                .OrderBy(permission => permission),
+        ];
+    }
+
     private static bool Matches(AccessGrant grant, PermissionSubject subject)
     {
         if (grant.Role is not null && grant.Role != subject.Role)

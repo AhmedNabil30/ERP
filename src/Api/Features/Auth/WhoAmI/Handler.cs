@@ -1,13 +1,15 @@
 using Kaff.Api.Authorization;
 using Kaff.Domain.Authorization;
 using Kaff.Domain.Identity;
+using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kaff.Api.Features.Auth.WhoAmI;
 
 /// <summary>
-/// Reports the caller's own identity and the company-wide permissions their role and department hold
-/// today. KAFF-105a.
+/// Reports the caller's own identity, the company-wide permissions their role and department hold
+/// today, and every project they reach. KAFF-105a, KAFF-105b.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -35,12 +37,22 @@ namespace Kaff.Api.Features.Auth.WhoAmI;
 /// <b>Not gated by <c>MustChangePassword</c>, on purpose — <c>AC-105a-C</c>.</b> The endpoint carries no
 /// <c>RequirePermission</c>, so <c>PermissionEvaluator</c>'s <c>PasswordChangeRequired</c> short-circuit
 /// (D-086) never runs on this route at all; a caller who has not yet replaced a temporary credential
-/// still gets a <c>200</c> and this profile (decisions.md D-072 §2). The company-wide permission set
-/// such a caller sees is still empty, because <see cref="PermissionEvaluator.CompanyWidePermissionsHeld"/>
-/// runs the ordinary evaluator per permission and that evaluator refuses everything while the flag is
-/// set — an honest answer to "what can you do right now", not a second rule invented here.
+/// still gets a <c>200</c> and this profile (decisions.md D-072 §2). Both the company-wide and the
+/// per-project permission sets such a caller sees are still empty, because
+/// <see cref="PermissionEvaluator.CompanyWidePermissionsHeld"/> and
+/// <see cref="PermissionEvaluator.ProjectScopedPermissionsHeld"/> both run the ordinary evaluator per
+/// permission and that evaluator refuses everything while the flag is set — an honest answer to "what
+/// can you do right now", not a second rule invented here. The project list itself (which projects are
+/// reached) is unaffected — <c>MustChangePassword</c> governs capability, not reach.
 /// <see cref="LiveSession"/> does not consult the flag either, for the same reason: it applies the
 /// three session facts and nothing about what a session may reach.
+/// </para>
+/// <para>
+/// <b>KAFF-105b — HR gets a different type, not a filtered view.</b> <see cref="Role.Hr"/> never
+/// populates <see cref="Response.Projects"/> and every other role never populates
+/// <see cref="Response.TeamProjects"/> — decided by the role itself, not by which catalogue grants
+/// happen to match, because rule 9 ("HR … does not receive the project dashboard's payload under any
+/// circumstance") must hold even if a future grant were added to the catalogue by mistake.
 /// </para>
 /// <para>
 /// <b>No audit record.</b> A read changes nothing; CLAUDE.md requires a record on a state change, and
@@ -49,14 +61,8 @@ namespace Kaff.Api.Features.Auth.WhoAmI;
 /// </remarks>
 internal static class Handler
 {
-    /// <remarks>
-    /// Returns a completed <see cref="ValueTask{TResult}"/> rather than being <c>async</c>: the one
-    /// database read this endpoint needs has already happened in <c>RequireLiveSession</c>'s filter,
-    /// so nothing here awaits. <b>The name stays <c>HandleAsync</c> deliberately</b> — it is a cited
-    /// identifier (decisions.md D-087, qa/slice-1/verification-2026-08-26.md), and SM-31's whole
-    /// point is that a citation names something stable.
-    /// </remarks>
-    public static ValueTask<IResult> HandleAsync(HttpContext http)
+    public static async Task<IResult> HandleAsync(
+        HttpContext http, KaffDbContext database, CancellationToken cancellationToken)
     {
         User user = LiveSession.Caller(http);
 
@@ -71,13 +77,121 @@ internal static class Handler
 
         IReadOnlyList<Permission> permissions = PermissionEvaluator.CompanyWidePermissionsHeld(subject);
 
-        return ValueTask.FromResult<IResult>(Results.Ok(new Response(
+        IReadOnlyList<ProjectEntry> projects = [];
+        IReadOnlyList<TeamProjectEntry> teamProjects = [];
+
+        // Rule 9 — HR never receives the dashboard payload, and the dashboard's caller never receives
+        // HR's. Branched on the role directly rather than left to fall out of which catalogue grants
+        // happen to match, so the separation holds even if a future catalogue row blurred the two.
+        if (user.Role == Role.Hr)
+        {
+            teamProjects = await TeamProjectsAsync(database, cancellationToken);
+        }
+        else
+        {
+            projects = await ProjectsAsync(database, subject, cancellationToken);
+        }
+
+        return Results.Ok(new Response(
             user.Id,
             user.FullName,
             user.Role,
             user.Department,
             user.OperationsSubDepartment,
             user.MustChangePassword,
-            permissions)));
+            permissions,
+            projects,
+            teamProjects));
+    }
+
+    /// <summary>
+    /// Rules 1, 2, 3, 5, 11, 12 — every project a non-HR staff caller reaches, how they reach it, and
+    /// what <see cref="PermissionScope.ProjectScoped"/> permissions they hold there.
+    /// </summary>
+    /// <remarks>
+    /// Queried directly rather than one <see cref="IProjectAccessPolicy"/> call per project: that
+    /// policy answers "may this user reach this one project", the question a route with a project id
+    /// already asks, and calling it once per row here would be exactly the N+1 shape it exists to
+    /// avoid. The Owner's branch mirrors <c>ProjectAccessPolicy.GlobalReachAsync</c>'s own path and
+    /// level (<c>OwnerGlobal</c>, <c>AssignmentLevel.Supervisor</c> — rule 5); the assignment branch
+    /// mirrors <c>ProjectAccessPolicy.AssignedAccessAsync</c>'s own path and level (<c>Assignment</c>,
+    /// the row's own <see cref="AssignmentLevel"/> — rule 1). Revoked rows are excluded by the same
+    /// <c>RevokedAt == null</c> filter that policy uses (rule 4, <c>AC-105b-H</c>/<c>AC-105b-I</c>).
+    /// </remarks>
+    private static async Task<IReadOnlyList<ProjectEntry>> ProjectsAsync(
+        KaffDbContext database, PermissionSubject subject, CancellationToken cancellationToken)
+    {
+        if (subject.Role == Role.Owner)
+        {
+            var everyProject = await database.Projects
+                .Select(project => new { project.Id, project.Name, project.Code })
+                .ToListAsync(cancellationToken);
+
+            return
+            [
+                .. everyProject.Select(project => BuildEntry(
+                    subject, project.Id, project.Name, project.Code,
+                    ProjectAccessPath.OwnerGlobal, AssignmentLevel.Supervisor)),
+            ];
+        }
+
+        var assigned = await database.ProjectAssignments
+            .Where(assignment => assignment.UserId == subject.UserId && assignment.RevokedAt == null)
+            .Join(
+                database.Projects,
+                assignment => assignment.ProjectId,
+                project => project.Id,
+                (assignment, project) => new { project.Id, project.Name, project.Code, assignment.Level })
+            .ToListAsync(cancellationToken);
+
+        return
+        [
+            .. assigned.Select(row => BuildEntry(
+                subject, row.Id, row.Name, row.Code, ProjectAccessPath.Assignment, row.Level)),
+        ];
+    }
+
+    private static ProjectEntry BuildEntry(
+        PermissionSubject subject,
+        Guid projectId,
+        string name,
+        string code,
+        ProjectAccessPath path,
+        AssignmentLevel level)
+    {
+        var access = new ProjectAccess(path, level);
+
+        return new ProjectEntry(
+            projectId,
+            name,
+            code,
+            path,
+            level,
+            PermissionEvaluator.ProjectScopedPermissionsHeld(subject, projectId, access));
+    }
+
+    /// <summary>
+    /// Rules 6, 6a, 7 — every project that exists, HR's global reach needing no assignment row exactly
+    /// as the Owner's does, with its team size as a left-joined count rather than an inner one so a
+    /// project with nobody on it still appears, at zero (rule 7, <c>AC-105b-D</c>).
+    /// </summary>
+    private static async Task<IReadOnlyList<TeamProjectEntry>> TeamProjectsAsync(
+        KaffDbContext database, CancellationToken cancellationToken)
+    {
+        Dictionary<Guid, int> teamSizes = await database.ProjectAssignments
+            .Where(assignment => assignment.RevokedAt == null)
+            .GroupBy(assignment => assignment.ProjectId)
+            .Select(group => new { ProjectId = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(group => group.ProjectId, group => group.Count, cancellationToken);
+
+        var everyProject = await database.Projects
+            .Select(project => new { project.Id, project.Name, project.Code })
+            .ToListAsync(cancellationToken);
+
+        return
+        [
+            .. everyProject.Select(project => new TeamProjectEntry(
+                project.Name, project.Code, teamSizes.GetValueOrDefault(project.Id, 0))),
+        ];
     }
 }

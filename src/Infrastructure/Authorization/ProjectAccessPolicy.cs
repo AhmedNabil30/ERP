@@ -28,10 +28,12 @@ namespace Kaff.Infrastructure.Authorization;
 /// need to be assigned to a project first in order to staff it." Somebody has to make the first
 /// assignment on a new project, and requiring an assignment to create assignments is circular. Reach
 /// only, and the reason that is safe is that the grant set is small and touches no money — pinned by
-/// <c>Hr_holds_exactly_three_permissions_and_none_touches_money</c>, which asserts both halves, the
-/// exact set and that none of it touches money. This sentence enumerated the set until 2026-08-22 and
-/// was one row out of date within two days of being written; the test cannot be. See decisions.md
-/// D-044 and D-055 §2.</item>
+/// <c>Hr_holds_no_permission_that_touches_money</c> (renamed 2026-09-03, SM-33, from
+/// <c>Hr_holds_exactly_three_permissions_and_none_touches_money</c> — KAFF-105b's
+/// <see cref="Kaff.Domain.Authorization.Permission.ProjectTeamRead"/> made the old, count-shaped name
+/// false), which asserts both halves, the exact set and that none of it touches money. This sentence
+/// enumerated the set until 2026-08-22 and was one row out of date within two days of being written;
+/// the test cannot be. See decisions.md D-044 and D-055 §2.</item>
 /// <item><b>Staff</b> — an active <see cref="ProjectAssignment"/> row (spec.md §9).</item>
 /// <item><b>A portal client</b> — the project's client is their client (spec.md §12). Compared by
 /// identifier against the database, never against anything the request carried, because spec.md §12

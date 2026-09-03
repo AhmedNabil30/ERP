@@ -186,4 +186,16 @@ public enum Permission
 
     /// <summary>Read the audit trail. spec.md does not say who may.</summary>
     AuditRead = 60,
+
+    /// <summary>
+    /// Read a project's name, reference code, team size and staff roster — never its financial data.
+    /// </summary>
+    /// <remarks>
+    /// KAFF-105b, born to close D-051 (Q32): Karim ruled HR may see "the project name and the list of
+    /// assigned engineers" but must never hold <see cref="ProjectRead"/> (D-044 ruling 2 — HR is
+    /// "strictly administrative" with "zero financial visibility"). D-051 says the ruling "implies a
+    /// new narrow permission" and leaves the naming to the story; this is that permission. D-100 (Q43)
+    /// adds the reference code and the team size to what it carries. See decisions.md.
+    /// </remarks>
+    ProjectTeamRead = 61,
 }

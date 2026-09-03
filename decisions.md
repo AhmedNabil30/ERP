@@ -8124,3 +8124,184 @@ re-verified against the files today rather than repeated: D-101 §5's `pg_get_co
 were re-derived independently (§1 above) rather than copied, and the `missingGuards.Count > 0 &&
 !app.Environment.IsDevelopment()` gate (§2 above) was read directly from `Program.cs` rather than taken
 from the meeting file's characterisation of it. Both held.
+
+---
+
+### D-103 · Backend — KAFF-105b built: `ProjectTeamRead` born, and the per-project list added to `GET /api/auth/me` · 2026-09-03
+
+**Backend.** `stories/slice-1-foundation/KAFF-105b-api-me-project-list.md`, Ready at 5, sprint-2 demo
+scope alongside KAFF-125 (built after this, on the same machine, serialised per Nabil).
+
+#### The permission, born once, exactly where Q43 and D-051 said it would be
+
+`Permission.ProjectTeamRead` [@ `src/Domain/Authorization/Permission.cs`] is new — `PermissionCatalogue`
+had no such row before this session
+[Verified: 2026-09-03 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Build`, before this
+change — neither named it]. One row, `ProjectScoped`, granted to `Role.Owner` and `Role.Hr`
+[@ `src/Domain/Authorization/PermissionCatalogue.cs` -> the `Permission.ProjectTeamRead` row],
+`TouchesMoney: false`. No change to `IProjectAccessPolicy`: Owner and HR already receive global reach
+for *any* `ProjectScoped` permission through `EvaluateAsync`'s role switch
+[@ `src/Infrastructure/Authorization/ProjectAccessPolicy.cs` -> `EvaluateAsync`], so this row rides the
+same mechanism `ProjectAssignmentManage` already uses rather than adding a second one.
+
+**SM-30 paid**, not merely cited: `Owner_and_hr_alone_hold_ProjectTeamRead_and_it_touches_no_money`
+[@ `tests/Domain.Tests/CatalogueCompletenessTests.cs`] exists before the row's comment cites it, and
+`Hr_holds_no_permission_that_touches_money`'s expected set now includes it.
+
+#### SM-33 paid in the same commit, not merely acknowledged
+
+`Hr_holds_exactly_three_permissions_and_none_touches_money` is renamed to
+`Hr_holds_no_permission_that_touches_money`
+[@ `tests/Domain.Tests/CatalogueCompletenessTests.cs`], named for the property rather than the count —
+the story's own text supplied the replacement name. **This session's own citations moved**: the
+`PermissionCatalogue.cs` class remarks and `ProjectAccessPolicy.cs`'s remarks, both of which are this
+agent's source, and this entry uses the new name throughout. **What did not move, per the brief's own
+boundary and per SM-33 as the story states it**: the citations in `decisions.md` D-056 §2 (`:2438-2441`)
+and D-097 §2 (`:7386-7389`), and in `meetings/`, `qa/questions.md`,
+`stories/slice-1-foundation/KAFF-107-hr-role-is-bound-to-the-hr-department.md` and
+`proposals/N10-project-creation.md`, still name the old identifier. The story text names only
+`meetings/`, `qa/` and `proposals/` as the Scrum Master's to move; the two `decisions.md` entries above
+are older entries this session did not author and did not edit, on the same reasoning D-090 and D-101
+§5 use elsewhere in this file for a citation nobody currently maintaining the entry can silently correct
+— **flagged here rather than touched**, so the Scrum Master (or whoever owns a `decisions.md` citation
+sweep) knows two more remain.
+
+#### The payload: two CLR types, not one filtered, decided by role rather than by which grant matches
+
+`WhoAmI.Response` gained `Projects` (`IReadOnlyList<ProjectEntry>`) and `TeamProjects`
+(`IReadOnlyList<TeamProjectEntry>`) [@ `src/Api/Features/Auth/WhoAmI/Response.cs`]. `ProjectEntry`
+carries `ProjectId`, `Name`, `Code`, `AccessPath`, `Level` and the caller's
+`ProjectScoped` permissions on that project. `TeamProjectEntry` carries exactly `Name`, `Code` and
+`TeamSize` — **no `ProjectId`**, deliberately: `AC-105b-F` fixes HR's type's whole allowed surface to
+{name, code, team size, (per-member fields KAFF-115 owns)}, copied verbatim from D-051/D-100's own
+"carries" wording, and an internal row key is not in that set. **Flagged rather than assumed**: how
+KAFF-115's frontend routes from a project's row to its team screen without an id — by `Code`, which
+D-100 calls "the hard identifier" — is a question this story's payload does not answer and KAFF-115
+does not raise either. Somebody building that screen's routing needs to decide it.
+
+`Handler.HandleAsync` branches on `user.Role == Role.Hr` directly, not on which catalogue grant
+matches, so rule 9 ("HR … does not receive the project dashboard's payload under any circumstance")
+holds even if a future catalogue edit blurred the two [@ `src/Api/Features/Auth/WhoAmI/Handler.cs` ->
+`HandleAsync`]. **Watched red**: swapping the branch condition to `Role.Owner` (MUT-105b-1, this
+session) turned exactly `Hr_gets_names_codes_and_team_sizes_including_an_unstaffed_project_and_nothing_financial`
+and `The_owners_reach_needs_no_assignment_row` red — `projects` came back empty for the Owner and
+`teamProjects` leaked to HR — nothing else in either suite moved. Reverted.
+
+**The projection, not the permission, is what rule 8 leans on** — the same warning D-055 §2 records for
+`UserRead` and this story's own text repeats for `ProjectTeamRead`. Nothing in the catalogue stops a
+`ProjectEntry` from growing a financial field later; `HR_and_staff_project_entries_are_distinct_types_with_no_financial_field`
+[@ `tests/Api.Tests/MeTests.cs`] is the reflection test that would catch it, on either type, the day it
+happens — proved by construction, not exercised against a mutation, because there is no financial field
+in the source today to remove and re-add.
+
+#### The per-project permission list is the catalogue, run once more, not a second list
+
+`PermissionEvaluator.ProjectScopedPermissionsHeld(subject, projectId, projectAccess)`
+[@ `src/Domain/Authorization/PermissionEvaluator.cs`] is `CompanyWidePermissionsHeld`'s sibling: it runs
+`Evaluate` once per `ProjectScoped` catalogue row and reports what agrees, so `AC-105b-J` — a new
+`ProjectScoped` grant appears on a project with no change to this endpoint — holds by construction.
+Pinned the same way the company-wide method already was
+[@ `tests/Domain.Tests/PermissionEvaluatorTests.cs` ->
+`A_project_scoped_permission_the_catalogue_grants_agrees_with_evaluate_for_every_row`].
+
+#### The project list itself is queried directly, not through `IProjectAccessPolicy`, and that is deliberate
+
+`IProjectAccessPolicy.EvaluateAsync` answers "may this caller reach *this one* project" — the question a
+route with a project id already asks. This endpoint needs every project a caller reaches at once, and
+calling the policy once per project would be exactly the N+1 shape it exists to avoid. `Handler`'s
+`ProjectsAsync` and `TeamProjectsAsync` [@ `src/Api/Features/Auth/WhoAmI/Handler.cs`] query directly,
+mirroring the policy's own two branches — the Owner's `OwnerGlobal` / `Supervisor` pair and the
+assignment's own `Assignment` / stored `Level` pair — rather than reimplementing a third rule. `AC-105b-H`
+and `AC-105b-I` (a revoked or role-emptied assignment disappears) hold for free from the same
+`RevokedAt == null` filter the policy uses, and `AC-105b-I` specifically holds because KAFF-109's
+`ChangeUserRole` handler already revokes every active assignment on a role change
+[@ `src/Api/Features/Users/ChangeUserRole/Handler.cs` -> `HandleAsync`] — nothing new was built for it,
+and the test exercises the real endpoint rather than hand-simulating the revocation
+[@ `tests/Api.Tests/MeTests.cs` -> `A_role_change_to_technical_office_empties_the_project_list_on_the_next_call`].
+
+**Team size** is `COUNT` of active `ProjectAssignment` rows per project, grouped once and looked up by
+dictionary rather than N+1 counted — derived on every read, never stored, per D-100 and CLAUDE.md's
+never-store-a-balance rule extended to any derived count.
+
+#### `AC-105b-G` asserted against the reason it actually holds, not decorated further
+
+The story's own trap: `AC-105b-G` was passing for the wrong reason in a sibling story until 2026-09-01.
+This session added no new refusal mechanism — `RequireLiveSession()`'s existing `MayHoldStaffSession`
+bar (D-089, D-094) still refuses `Role.Client` before `Handler.HandleAsync` runs at all — and only
+extended `A_hand_minted_portal_client_session_is_refused_by_the_staff_door`'s existing assertions to
+check that none of this story's three project codes appear in the refusal body
+[@ `tests/Api.Tests/MeTests.cs`], rather than adding a second, differently-reasoned test.
+
+#### `EndpointPermissionCoverageTests` — unchanged, and correctly so
+
+`GET /api/auth/me` was already the second `SelfOnlyEndpoints` member (D-086, D-089, D-094); this story
+only widens what its handler returns on the same route, under the same `RequireLiveSession()` filter.
+No new endpoint, no new row in `SelfOnlyEndpoints` or `AllowList`, no change to `EndpointPermissionCoverageTests`.
+
+#### Watched passing
+
+Clean `--no-incremental` Release build, `-warnaserror`: 0 warnings, 0 errors. `dotnet format
+KaffErp.sln --verify-no-changes`: exit 0. Domain **111/111**, up from 107 (four new:
+`Owner_and_hr_alone_hold_ProjectTeamRead_and_it_touches_no_money`,
+`A_junior_engineers_project_scoped_set_does_not_carry_DraftSubmit_but_a_supervisors_does`,
+`A_project_scoped_permission_the_catalogue_grants_agrees_with_evaluate_for_every_row`,
+`A_caller_who_must_change_their_password_holds_no_project_scoped_permission_either`). Api **241/241**,
+up from 235 (six new, listed in `tests/Api.Tests/MeTests.cs` under the KAFF-105b heading, plus extended
+assertions on two existing tests). `scripts/check-citations.ps1`: **1097 checked, 0 broken, 0 legacy**
+(up from 1088, this entry's own citations included).
+
+**Watched red twice, against the two rules that matter most here**, both reverted after observing the
+expected failure and nothing else:
+
+| Mutation | Red | What it proves |
+|---|---|---|
+| `Handler`'s role branch swapped `Role.Hr` → `Role.Owner` | `Hr_gets_names_codes_and_team_sizes_including_an_unstaffed_project_and_nothing_financial` (`projects` empty, expected ≥3) and `The_owners_reach_needs_no_assignment_row` (`projects` empty, expected to contain three ids) | The HR/staff separation is enforced by the role check, not accidental, and both directions of the leak are covered |
+| `Permission.ProjectTeamRead`'s grants narrowed to `[owner]` | `Owner_and_hr_alone_hold_ProjectTeamRead_and_it_touches_no_money` and `Hr_holds_no_permission_that_touches_money` | SM-30's citation and the renamed SM-33 test both actually exercise the row, not merely name it |
+
+Ran against `kaff_verify` per this session's instructions; `kaff` was not touched. A stray, unrelated
+`503 degraded` was observed once against `kaff_verify` directly
+(`ck_babs_not_own_parent predicate changed … found "CHECK (true)"`) when this session probed
+`/api/health` outside the test suite — **not reproduced inside any of the 241 Api.Tests runs**, which
+each boot a fresh host against the same database and passed throughout, including the D-102 guard tests.
+Likely a live mutation from concurrent work on the shared `kaff_verify` instance, caught mid-flight;
+**not touched, not diagnosed further, and not this story's constraint** — flagged for whoever owns that
+database's state next, on the same "do not fix what you did not break" reasoning `CLAUDE.md` states for
+`kaff`.
+
+#### What Q43 answered that this build did not have to decide again
+
+Rule 6a fixes `[RefCode] Project Name` as a display format belonging to the rendering stories. Nothing
+here concatenates it — `TeamProjectEntry` carries `Name` and `Code` as separate fields, full stop.
+
+#### Not done, and named so nobody assumes it exists
+
+* **The two `decisions.md` citations of the old test name (D-056 §2, D-097 §2) were not edited** — see
+  the SM-33 section above. Routed, not fixed.
+* **`kaff_verify`'s `ck_babs_not_own_parent` drift was not investigated or repaired** — see the watched-
+  passing section above. Unrelated to this story's tables.
+* **No frontend work.** `src/Web/` was not touched; KAFF-125 (the staff shell) is the next story on this
+  machine and renders this payload.
+* **KAFF-115's own route (the per-project team roster — per-member name, role, level) was not built.**
+  This story's `TeamProjectEntry` carries no member list; that is KAFF-115's dedicated,
+  `ProjectTeamRead`-gated endpoint, named but not built here.
+* **No audit record.** `GET /api/auth/me` is a read; CLAUDE.md requires a record on a state change, and
+  none occurred.
+* **`AC-105b-E`'s wire-level reinforcement is additive, not a replacement.** The rule itself is proved
+  where D-055 §2's own reasoning says it must be — against the catalogue
+  (`Hr_cannot_reach_a_project_through_ProjectRead`, pre-existing) — and this session's HR test adds a
+  same-response check that `ProjectRead` is absent from HR's `permissions` array, not a new mechanism.
+
+#### Questions handed back
+
+None new. The routing-by-code-or-id question above is a flag for KAFF-115's frontend, not a business
+rule for Karim — `spec.md` and `decisions.md` are silent on it because it is an implementation detail of
+a screen this story does not build.
+
+**Report anything in this brief that was wrong, applied to itself.** The brief's claim that
+`ProjectAssignment.Create`'s per-row `AssignmentLevel` "is never flattened to one value" (rule 11,
+`AC-105b-A`) and the brief's account of KAFF-109's revocation-on-role-change behaviour were both
+re-verified against `src/Domain/Identity/ProjectAssignment.cs` and
+`src/Api/Features/Users/ChangeUserRole/Handler.cs` rather than taken on the brief's word, and both held
+exactly as stated — the second is what makes `AC-105b-I` true with no new code. The brief's framing of
+`AC-105b-F`'s allowed field set as excluding a `ProjectId` was checked against the story text itself
+(`AC-105b-F`, KAFF-105b) rather than assumed, and held: the set the story names has no id in it.

@@ -156,8 +156,17 @@ public sealed class CatalogueCompletenessTests
         leaked.Should().BeEmpty("a portal client may hold only PortalRead and PortalApprove");
     }
 
+    /// <summary>
+    /// Renamed 2026-09-03 under SM-33 (process/agile.md, decisions.md D-097 §2), in the same commit
+    /// that lands <see cref="Permission.ProjectTeamRead"/> for KAFF-105b. The old name —
+    /// <c>Hr_holds_exactly_three_permissions_and_none_touches_money</c> — asserted a COUNT, and this
+    /// row makes the count four. Named for the property that must never go false instead: HR touches
+    /// no money, which survives a fifth non-financial row landing tomorrow where a count would not.
+    /// This file and this test's own source are what the implementing agent owns under SM-33; the
+    /// citations in <c>meetings/</c>, <c>qa/</c> and <c>proposals/</c> are the Scrum Master's to move.
+    /// </summary>
     [Fact]
-    public void Hr_holds_exactly_three_permissions_and_none_touches_money()
+    public void Hr_holds_no_permission_that_touches_money()
     {
         // Karim, 2026-08-20: HR is "strictly administrative and must have zero financial visibility
         // (cannot see project costs, margins, or the safe)."
@@ -165,10 +174,14 @@ public sealed class CatalogueCompletenessTests
         // UserRead joined the set on 2026-08-22, answering Q42: HR held ProjectAssignmentManage and
         // could not name a single person to put on a project. Nabil: "granted strictly to HR and the
         // Owner … names and roles only". See decisions.md D-055 §2.
+        //
+        // ProjectTeamRead joined the set on 2026-09-02 (D-100, Q43) — KAFF-105b's endpoint payload for
+        // HR's project list, D-051 (Q32) applied.
         Permission[] expected =
         [
             Permission.EmployeeManage,
             Permission.ProjectAssignmentManage,
+            Permission.ProjectTeamRead,
             Permission.UserRead,
         ];
 
@@ -178,7 +191,9 @@ public sealed class CatalogueCompletenessTests
         ];
 
         held.Select(definition => definition.Permission)
-            .Should().BeEquivalentTo(expected, "HR staffs projects and owns people records, nothing else");
+            .Should().BeEquivalentTo(
+                expected,
+                "HR staffs projects, owns people records, and names the projects it staffs — nothing else");
 
         // The second half of this test's name, which until 2026-08-22 it did not actually assert —
         // the set was pinned and the money claim was decoration. Adding a financial permission to HR
@@ -186,6 +201,21 @@ public sealed class CatalogueCompletenessTests
         // the method name would believe the stronger guarantee. Now both halves are real.
         held.Where(definition => definition.TouchesMoney)
             .Should().BeEmpty("HR has zero financial visibility — Karim, D-044 ruling 2");
+    }
+
+    /// <summary>
+    /// SM-30 for <see cref="Permission.ProjectTeamRead"/> — the row's own catalogue comment cites this
+    /// name. KAFF-105b, D-051 (Q32), D-100 (Q43).
+    /// </summary>
+    [Fact]
+    public void Owner_and_hr_alone_hold_ProjectTeamRead_and_it_touches_no_money()
+    {
+        PermissionDefinition definition = PermissionCatalogue.Of(Permission.ProjectTeamRead);
+
+        definition.Scope.Should().Be(
+            PermissionScope.ProjectScoped, "the route must still name a project (rule 9's dashboard stays separate)");
+        definition.Grants.Select(grant => grant.Role).Should().BeEquivalentTo([Role.Owner, Role.Hr]);
+        definition.TouchesMoney.Should().BeFalse("a project's name, code and team size move no money");
     }
 
     [Fact]

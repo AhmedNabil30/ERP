@@ -5,13 +5,18 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Kaff.Api.Tests.Infrastructure;
+using Kaff.Domain.Authorization;
+using Kaff.Domain.Common;
+using Kaff.Domain.Contracts;
 using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
+using Kaff.Domain.Projects;
 using Kaff.Infrastructure.Identity;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using WhoAmI = Kaff.Api.Features.Auth.WhoAmI;
 
 namespace Kaff.Api.Tests;
 
@@ -43,6 +48,9 @@ public sealed class MeTests : IAsyncLifetime
     private string _inactiveName = null!;
     private string _portalName = null!;
     private string _subcontractorName = null!;
+    private string _ownerName = null!;
+    private string _hrName = null!;
+    private string _engineerName = null!;
 
     // The sign-in identifier (UniqueNames.Code-suffixed) and User.FullName are deliberately not the
     // same string — Create trims fullName but leaves it otherwise untouched — so displayName
@@ -56,6 +64,18 @@ public sealed class MeTests : IAsyncLifetime
     private Guid _inactive;
     private Guid _portalUser;
     private Guid _subcontractor;
+    private Guid _owner;
+    private Guid _hr;
+    private Guid _engineer;
+
+    // KAFF-105b's three projects. A: the engineer is Supervisor. B: the engineer is Junior. C: nobody
+    // is assigned — AC-105b-D needs a project HR still sees with nobody on it.
+    private Guid _projectA;
+    private Guid _projectB;
+    private Guid _projectC;
+    private string _projectACode = null!;
+    private string _projectBCode = null!;
+    private string _projectCCode = null!;
 
     public MeTests(PostgresDatabase database) => _database = database;
 
@@ -260,6 +280,12 @@ public sealed class MeTests : IAsyncLifetime
         raw.Should().NotContain(nameof(Role.Client), "a refusal names no role");
         raw.Should().NotContain("PortalRead");
         raw.Should().NotContain("PortalApprove");
+
+        // AC-105b-G — neither the client's own project nor any other client's appears anywhere in a
+        // response that never reaches a handler at all.
+        raw.Should().NotContain(_projectACode, "the staff door refuses before any project is read");
+        raw.Should().NotContain(_projectBCode);
+        raw.Should().NotContain(_projectCCode);
     }
 
     // ---- AC-105a-G · nothing secret leaks ------------------------------------------------------------
@@ -274,6 +300,213 @@ public sealed class MeTests : IAsyncLifetime
         body.Should().NotContain("passwordHash", "[AuditRedacted] governs the trail, not the API — rule 9");
         body.Should().NotContain("securityStamp");
         body.Should().NotContain("pbkdf2");
+    }
+
+    // ---- KAFF-105b — the project list ---------------------------------------------------------------
+
+    /// <summary>
+    /// AC-105b-A. Supervisor on A, Junior on B — both listed with their own level, and only the
+    /// supervised project's permission set carries <c>DraftSubmit</c> (spec.md §9: a junior may draft
+    /// but not submit). <c>teamProjects</c> stays empty — that list is HR's alone (rule 9).
+    /// </summary>
+    [Fact]
+    public async Task A_site_engineer_sees_each_projects_own_seniority()
+    {
+        string cookie = Cookie(await SignIn(_engineerName, Password));
+
+        using JsonDocument body = JsonDocument.Parse(
+            await (await GetWithCookie(cookie)).Content.ReadAsStringAsync(Ct));
+
+        List<JsonElement> projects = [.. body.RootElement.GetProperty("projects").EnumerateArray()];
+        projects.Should().HaveCount(2, "the engineer holds an active assignment on A and B only, not C");
+
+        JsonElement onA = projects.Single(p => p.GetProperty("projectId").GetGuid() == _projectA);
+        JsonElement onB = projects.Single(p => p.GetProperty("projectId").GetGuid() == _projectB);
+
+        onA.GetProperty("level").GetString().Should().Be(nameof(AssignmentLevel.Supervisor));
+        onB.GetProperty("level").GetString().Should().Be(nameof(AssignmentLevel.Junior));
+        onA.GetProperty("accessPath").GetString().Should().Be(nameof(ProjectAccessPath.Assignment));
+
+        List<string> permissionsOnA =
+            [.. onA.GetProperty("permissions").EnumerateArray().Select(p => p.GetString()!)];
+        List<string> permissionsOnB =
+            [.. onB.GetProperty("permissions").EnumerateArray().Select(p => p.GetString()!)];
+
+        permissionsOnA.Should().Contain(nameof(Permission.DraftSubmit), "the supervisor may submit");
+        permissionsOnB.Should().NotContain(
+            nameof(Permission.DraftSubmit), "a junior may draft but not submit — spec.md §9");
+
+        body.RootElement.GetProperty("teamProjects").GetArrayLength().Should().Be(
+            0, "teamProjects is Role.Hr's list alone — rule 9");
+    }
+
+    /// <summary>
+    /// AC-105b-B. The Owner holds no <c>ProjectAssignment</c> row at all — asserted, not assumed — and
+    /// every project that exists is listed, marked <c>OwnerGlobal</c> rather than an assignment.
+    /// </summary>
+    [Fact]
+    public async Task The_owners_reach_needs_no_assignment_row()
+    {
+        await using (KaffDbContext context = _database.CreateContext())
+        {
+            (await context.ProjectAssignments.AnyAsync(assignment => assignment.UserId == _owner, Ct))
+                .Should().BeFalse("AC-105b-B must not pass on a fixture that secretly assigned the Owner");
+        }
+
+        string cookie = Cookie(await SignIn(_ownerName, Password));
+
+        using JsonDocument body = JsonDocument.Parse(
+            await (await GetWithCookie(cookie)).Content.ReadAsStringAsync(Ct));
+
+        List<JsonElement> projects = [.. body.RootElement.GetProperty("projects").EnumerateArray()];
+
+        projects.Select(project => project.GetProperty("projectId").GetGuid())
+            .Should().Contain([_projectA, _projectB, _projectC], "rule 5 — every project that exists");
+
+        projects.Should().OnlyContain(
+            project => project.GetProperty("accessPath").GetString() == nameof(ProjectAccessPath.OwnerGlobal),
+            "the Owner's reach is Owner-global, never an assignment");
+    }
+
+    /// <summary>
+    /// AC-105b-C and AC-105b-D, in one test because AC-105b-D's zero-assignment project is one of the
+    /// same three. HR gets all three projects' name, code and team size and nothing financial;
+    /// <c>ProjectRead</c> appears nowhere in HR's permissions; and project C, which nobody is assigned
+    /// to, is listed anyway (rule 7) at a team size of zero rather than being omitted.
+    /// </summary>
+    [Fact]
+    public async Task Hr_gets_names_codes_and_team_sizes_including_an_unstaffed_project_and_nothing_financial()
+    {
+        string cookie = Cookie(await SignIn(_hrName, Password));
+
+        HttpResponseMessage response = await GetWithCookie(cookie);
+        string raw = await response.Content.ReadAsStringAsync(Ct);
+        using JsonDocument body = JsonDocument.Parse(raw);
+
+        // rule 5/6/7 — "every project that exists" is company-wide, so this shared test database
+        // carries whatever every other test class has seeded too; an exact count would assert a
+        // fact about the fixture rather than about this endpoint. What is provable here is that
+        // this test's own three projects — one per shape (staffed once, staffed once, unstaffed) —
+        // are all present among them.
+        List<JsonElement> teamProjects = [.. body.RootElement.GetProperty("teamProjects").EnumerateArray()];
+        teamProjects.Count.Should().BeGreaterOrEqualTo(
+            3, "HR receives every project that exists — rules 6 and 7 — this test's three included");
+
+        teamProjects.Single(project => project.GetProperty("code").GetString() == _projectACode)
+            .GetProperty("teamSize").GetInt32().Should().Be(1, "one active assignment on A");
+        teamProjects.Single(project => project.GetProperty("code").GetString() == _projectBCode)
+            .GetProperty("teamSize").GetInt32().Should().Be(1, "one active assignment on B");
+        teamProjects.Single(project => project.GetProperty("code").GetString() == _projectCCode)
+            .GetProperty("teamSize").GetInt32().Should().Be(
+                0, "AC-105b-D — nobody is assigned to C yet, and it is listed anyway");
+
+        body.RootElement.GetProperty("projects").GetArrayLength().Should().Be(
+            0, "rule 9 — HR never receives the dashboard payload");
+
+        List<string> permissions =
+            [.. body.RootElement.GetProperty("permissions").EnumerateArray().Select(p => p.GetString()!)];
+        permissions.Should().NotContain(
+            nameof(Permission.ProjectRead), "AC-105b-C — ProjectRead appears nowhere in HR's permissions");
+
+        // AC-105b-C: inspected field by field via the forbidden-word sweep below, plus the reflection
+        // assertion in HR_and_staff_project_entries_are_distinct_types_with_no_financial_field.
+        string lowered = raw.ToLowerInvariant();
+        foreach (string forbidden in new[] { "value", "cost", "margin", "balance", "budget", "clientid", "contractvalue" })
+        {
+            lowered.Should().NotContain(forbidden, $"AC-105b-C — no {forbidden} field anywhere in HR's payload");
+        }
+    }
+
+    /// <summary>
+    /// AC-105b-F. Two distinct CLR types, not one filtered — <see cref="WhoAmI.TeamProjectEntry"/>
+    /// carries no property outside name, code and team size, and neither type carries a financial one.
+    /// </summary>
+    [Fact]
+    public void Hr_and_staff_project_entries_are_distinct_types_with_no_financial_field()
+    {
+        Type staffType = typeof(WhoAmI.ProjectEntry);
+        Type hrType = typeof(WhoAmI.TeamProjectEntry);
+
+        staffType.Should().NotBe(hrType, "AC-105b-F — two surfaces, not one type filtered");
+
+        hrType.GetProperties().Select(property => property.Name).Should().BeEquivalentTo(
+            ["Name", "Code", "TeamSize"],
+            "HR's type carries no property outside name, code and team size");
+
+        string[] forbidden = ["Value", "Cost", "Margin", "Balance", "Budget", "Status", "Client"];
+
+        foreach (Type type in new[] { staffType, hrType })
+        {
+            type.GetProperties().Select(property => property.Name)
+                .Should().NotContain(
+                    name => forbidden.Any(word => name.Contains(word, StringComparison.OrdinalIgnoreCase)),
+                    $"{type.Name} must carry no financial field, and the test fails the instant one is added");
+        }
+    }
+
+    /// <summary>AC-105b-H. A revoked assignment is not listed on the next call.</summary>
+    [Fact]
+    public async Task A_revoked_assignment_disappears_from_the_next_call()
+    {
+        string cookie = Cookie(await SignIn(_engineerName, Password));
+
+        await using (KaffDbContext context = _database.CreateContext())
+        {
+            ProjectAssignment assignment = await context.ProjectAssignments
+                .SingleAsync(a => a.ProjectId == _projectA && a.UserId == _engineer, Ct);
+            assignment.Revoke(_owner, Now).IsSuccess.Should().BeTrue();
+            await context.SaveChangesAsync(Ct);
+        }
+
+        using JsonDocument body = JsonDocument.Parse(
+            await (await GetWithCookie(cookie)).Content.ReadAsStringAsync(Ct));
+
+        List<Guid> projectIds =
+        [
+            .. body.RootElement.GetProperty("projects").EnumerateArray()
+                .Select(project => project.GetProperty("projectId").GetGuid()),
+        ];
+
+        projectIds.Should().NotContain(_projectA, "AC-105b-H — a revoked assignment is not listed");
+        projectIds.Should().Contain(_projectB, "the still-active assignment on B is unaffected");
+    }
+
+    /// <summary>
+    /// AC-105b-I. KAFF-109's <c>ChangeUserRole</c> handler revokes every active assignment on a role
+    /// change (decisions.md D-051 Q27); <c>Role.TechnicalOffice</c> has no global reach the way Owner
+    /// and HR do, so the next call sees no project at all.
+    /// </summary>
+    [Fact]
+    public async Task A_role_change_to_technical_office_empties_the_project_list_on_the_next_call()
+    {
+        string engineerCookie = Cookie(await SignIn(_engineerName, Password));
+
+        using (JsonDocument before = JsonDocument.Parse(
+            await (await GetWithCookie(engineerCookie)).Content.ReadAsStringAsync(Ct)))
+        {
+            before.RootElement.GetProperty("projects").GetArrayLength().Should().Be(
+                2, "the fixture holds two active assignments before the role change");
+        }
+
+        string ownerCookie = Cookie(await SignIn(_ownerName, Password));
+
+        using var changeRole = new HttpRequestMessage(HttpMethod.Put, $"/api/users/{_engineer}/role")
+        {
+            Content = JsonContent.Create(new { role = nameof(Role.TechnicalOffice) }),
+        };
+        changeRole.Headers.Add("Cookie", ownerCookie);
+
+        (await _client.SendAsync(changeRole, Ct)).StatusCode.Should().Be(
+            HttpStatusCode.OK, "the Owner holds UserManage and the role change itself is legal");
+
+        using JsonDocument after = JsonDocument.Parse(
+            await (await GetWithCookie(engineerCookie)).Content.ReadAsStringAsync(Ct));
+
+        after.RootElement.GetProperty("role").GetString().Should().Be(nameof(Role.TechnicalOffice));
+        after.RootElement.GetProperty("projects").GetArrayLength().Should().Be(
+            0,
+            "AC-105b-I — every active assignment was revoked by the role change, and TechnicalOffice "
+            + "reaches nothing without one");
     }
 
     // ---- The trap named in the brief: the role must come from the row, not the token's claim -------
@@ -444,8 +677,44 @@ public sealed class MeTests : IAsyncLifetime
             UniqueNames.Code("me-portal"), "عميل البوابة", UniqueNames.Phone(), Role.Client, Now,
             clientId: client.Id).Value;
 
+        // KAFF-105b fixtures.
+        User owner = MakeUser("me-owner", Role.Owner);
+        owner.SetOwnPassword(PasswordHasher.Hash(Password)).IsSuccess.Should().BeTrue();
+
+        User hr = MakeUser("me-hr", Role.Hr, Department.Hr);
+        hr.SetOwnPassword(PasswordHasher.Hash(Password)).IsSuccess.Should().BeTrue();
+
+        User engineer = MakeUser("me-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+        engineer.SetOwnPassword(PasswordHasher.Hash(Password)).IsSuccess.Should().BeTrue();
+
+        // AC-105b-C: three projects, each with a ContractValue set and a distinct reference code —
+        // the given the story repaired away from Budget/Balance, neither of which exists.
+        Project projectA = Project.Create(UniqueNames.Code("ME-PA"), "مشروع أ", client.Id, ContractType.LumpSum, Now).Value;
+        Project projectB = Project.Create(UniqueNames.Code("ME-PB"), "مشروع ب", client.Id, ContractType.LumpSum, Now).Value;
+        Project projectC = Project.Create(UniqueNames.Code("ME-PC"), "مشروع ج", client.Id, ContractType.LumpSum, Now).Value;
+
+        foreach (Project project in new[] { projectA, projectB, projectC })
+        {
+            project.SetLumpSumTerms(
+                new Money(1_000_000m),
+                Percentage.FromPercent(25),
+                Percentage.FromPercent(20),
+                Percentage.FromPercent(100),
+                Percentage.FromPercent(75),
+                delayPenaltyEnabled: false).IsSuccess.Should().BeTrue();
+        }
+
         context.Clients.Add(client);
-        context.Users.AddRange(finance, forced, technicalOffice, inactive, portal, subcontractor);
+        context.Projects.AddRange(projectA, projectB, projectC);
+        context.Users.AddRange(
+            finance, forced, technicalOffice, inactive, portal, subcontractor, owner, hr, engineer);
+
+        await context.SaveChangesAsync(Ct);
+
+        // rule 1 / AC-105b-A: Supervisor on A, Junior on B, nothing on C.
+        context.ProjectAssignments.AddRange(
+            ProjectAssignment.Create(projectA.Id, engineer, AssignmentLevel.Supervisor, owner.Id, Now).Value,
+            ProjectAssignment.Create(projectB.Id, engineer, AssignmentLevel.Junior, owner.Id, Now).Value);
 
         await context.SaveChangesAsync(Ct);
 
@@ -455,6 +724,9 @@ public sealed class MeTests : IAsyncLifetime
         _inactive = inactive.Id;
         _portalUser = portal.Id;
         _subcontractor = subcontractor.Id;
+        _owner = owner.Id;
+        _hr = hr.Id;
+        _engineer = engineer.Id;
 
         _financeName = finance.UserName;
         _forcedName = forced.UserName;
@@ -462,9 +734,19 @@ public sealed class MeTests : IAsyncLifetime
         _inactiveName = inactive.UserName;
         _portalName = portal.UserName;
         _subcontractorName = subcontractor.UserName;
+        _ownerName = owner.UserName;
+        _hrName = hr.UserName;
+        _engineerName = engineer.UserName;
 
         _financeFullName = finance.FullName;
         _forcedFullName = forced.FullName;
+
+        _projectA = projectA.Id;
+        _projectB = projectB.Id;
+        _projectC = projectC.Id;
+        _projectACode = projectA.Code;
+        _projectBCode = projectB.Code;
+        _projectCCode = projectC.Code;
     }
 
     private static User MakeUser(string userName, Role role, Department? department = null, OperationsSubDepartment? subDepartment = null)

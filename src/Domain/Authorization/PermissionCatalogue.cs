@@ -102,14 +102,18 @@ public sealed record PermissionDefinition(
 /// to, or only design projects, is a phase-2 question nobody has asked.
 /// </para>
 /// <para>
-/// <b>Role.Hr holds exactly three rows: EmployeeManage, ProjectAssignmentManage and UserRead.</b>
-/// Karim, 2026-08-20 — HR is "strictly administrative" with "zero financial visibility (cannot see
-/// project costs, margins, or the safe)". HR is therefore absent from <c>ProjectRead</c>, from every
-/// treasury permission, and from every gate, and none of its three rows touches money.
+/// <b>Role.Hr holds four rows: EmployeeManage, ProjectAssignmentManage, ProjectTeamRead and
+/// UserRead.</b> Karim, 2026-08-20 — HR is "strictly administrative" with "zero financial visibility
+/// (cannot see project costs, margins, or the safe)". HR is therefore absent from <c>ProjectRead</c>,
+/// from every treasury permission, and from every gate, and none of its rows touches money.
 /// <c>UserRead</c> was added on 2026-08-22 (decisions.md D-055 §2) because HR could staff a project
 /// and could not see who existed to staff it with; it is names and roles, and it is company-wide, so
-/// it gives HR nothing on a project. The count above read "exactly two" until then. A test pins the
-/// set. See decisions.md D-044, D-055.
+/// it gives HR nothing on a project. <c>ProjectTeamRead</c> was added on 2026-09-02 (KAFF-105b,
+/// D-051 Q32, D-100 Q43) so HR can name the projects it staffs without ever holding
+/// <c>ProjectRead</c>. **The test that pins this set is named for the property, not the count** —
+/// SM-33, decisions.md D-097 §2 — because the count has already changed twice and a name that asserts
+/// a number is false the next time it does. See decisions.md D-044, D-055, and the entry for this
+/// story.
 /// </para>
 /// </remarks>
 public static class PermissionCatalogue
@@ -287,6 +291,25 @@ public static class PermissionCatalogue
             new(Permission.ProjectAssignmentManage, PermissionScope.ProjectScoped,
                 [owner, hr],
                 "§2, §9 — answered by Karim 2026-08-17 and 2026-08-20, see decisions.md D-012, D-044"),
+
+            // KAFF-105b, closing D-051 (Q32) / D-100 (Q43). Karim: HR may see "the project name and
+            // the list of assigned engineers" but must never hold ProjectRead (D-044 ruling 2). D-051
+            // says the ruling "implies a new narrow permission" and leaves the naming to this row.
+            //
+            // SAME GLOBAL REACH AS ProjectAssignmentManage, DELIBERATELY: HR staffs a project it was
+            // never assigned to (D-044 ruling 3), so it must be able to NAME that project before it can
+            // staff it — the same circularity ruling 4 already solved for staffing itself. ProjectScoped
+            // so the route still names a project and IProjectAccessPolicy's existing Owner/Hr global
+            // branch (Role.Owner / Role.Hr => GlobalReachAsync) covers this row with no policy change.
+            //
+            // NOT financial: TouchesMoney stays false, and the endpoint's own projection — not this
+            // row — is what keeps HR's payload to name, code and team size and nothing else
+            // (decisions.md D-055 §2's warning, applied here exactly the same way).
+            // SM-30: pinned by Owner_and_hr_alone_hold_ProjectTeamRead_and_it_touches_no_money
+            // [Verified: 2026-09-03 @ tests/Domain.Tests/CatalogueCompletenessTests.cs].
+            new(Permission.ProjectTeamRead, PermissionScope.ProjectScoped,
+                [owner, hr],
+                "§9 — D-051 (Q32), D-100 (Q43), see decisions.md"),
 
             // spec.md has no section on who creates users; Karim ruled it on 2026-08-20. Owner only,
             // and company-wide. Note this is the one permission whose absence blocked everything:

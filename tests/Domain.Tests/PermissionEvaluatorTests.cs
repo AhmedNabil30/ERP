@@ -659,4 +659,67 @@ public sealed class PermissionEvaluatorTests
         PermissionEvaluator.CompanyWidePermissionsHeld(Subject(Role.Owner, mustChangePassword: true))
             .Should().BeEmpty("PasswordChangeRequired refuses every permission, Owner included, until the change is made");
     }
+
+    // ---- KAFF-105b rule 2 — GET /api/auth/me's per-project permission list ---------------------
+
+    /// <summary>
+    /// AC-105b-A, at the pure-function level. A junior's set does not carry DraftSubmit; the same
+    /// engineer at Supervisor on the same permission set does.
+    /// </summary>
+    [Fact]
+    public void A_junior_engineers_project_scoped_set_does_not_carry_DraftSubmit_but_a_supervisors_does()
+    {
+        PermissionEvaluator.ProjectScopedPermissionsHeld(
+                Subject(Role.SiteEngineer),
+                ProjectId,
+                new ProjectAccess(ProjectAccessPath.Assignment, AssignmentLevel.Junior))
+            .Should().NotContain(Permission.DraftSubmit, "spec.md §9 — a junior may draft but not submit");
+
+        PermissionEvaluator.ProjectScopedPermissionsHeld(
+                Subject(Role.SiteEngineer),
+                ProjectId,
+                new ProjectAccess(ProjectAccessPath.Assignment, AssignmentLevel.Supervisor))
+            .Should().Contain(Permission.DraftSubmit);
+    }
+
+    /// <summary>
+    /// AC-105b-J. Nothing here names a permission by hand — the set comes from iterating
+    /// <see cref="PermissionCatalogue.All"/>, so a new <see cref="PermissionScope.ProjectScoped"/> grant
+    /// for a role appears with no change to
+    /// <see cref="PermissionEvaluator.ProjectScopedPermissionsHeld"/>. Proved the same way
+    /// <see cref="A_permission_the_test_adds_to_the_catalogue_would_appear_with_no_change_to_this_method"/>
+    /// proves the company-wide sibling: the method has no role-shaped branch of its own, so any row
+    /// <c>Evaluate</c> would grant, this method reports, and any row it would refuse, this method omits.
+    /// </summary>
+    [Fact]
+    public void A_project_scoped_permission_the_catalogue_grants_agrees_with_evaluate_for_every_row()
+    {
+        var access = new ProjectAccess(ProjectAccessPath.OwnerGlobal, AssignmentLevel.Supervisor);
+
+        foreach (PermissionDefinition definition in PermissionCatalogue.All.Where(
+            d => d.Scope == PermissionScope.ProjectScoped))
+        {
+            bool reported = PermissionEvaluator.ProjectScopedPermissionsHeld(Subject(Role.Owner), ProjectId, access)
+                .Contains(definition.Permission);
+            bool granted = PermissionEvaluator.Evaluate(Subject(Role.Owner), definition.Permission, ProjectId, access)
+                == PermissionDecision.Granted;
+
+            reported.Should().Be(granted, $"{definition.Permission} must agree with what Evaluate itself says");
+        }
+    }
+
+    /// <summary>
+    /// Mirrors <see cref="A_caller_who_must_change_their_password_holds_no_company_wide_permission_either"/>
+    /// for the project-scoped method — capability is refused, reach is a separate question this method
+    /// does not answer.
+    /// </summary>
+    [Fact]
+    public void A_caller_who_must_change_their_password_holds_no_project_scoped_permission_either()
+    {
+        PermissionEvaluator.ProjectScopedPermissionsHeld(
+                Subject(Role.Owner, mustChangePassword: true),
+                ProjectId,
+                new ProjectAccess(ProjectAccessPath.OwnerGlobal, AssignmentLevel.Supervisor))
+            .Should().BeEmpty("PasswordChangeRequired refuses every permission, Owner included, until the change is made");
+    }
 }
