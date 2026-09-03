@@ -1,20 +1,88 @@
 <header class="app-header">
+  @if (showStaffNav()) {
+    <button
+      type="button"
+      class="nav-toggle"
+      data-testid="nav-toggle"
+      [attr.aria-expanded]="isNavOpen()"
+      [attr.aria-label]="i18n.t('shell.nav.toggle')"
+      (click)="toggleNav()">
+      <span aria-hidden="true">☰</span>
+    </button>
+  }
+
   <h1 class="app-title" data-testid="app-title">{{ i18n.t('app.name') }}</h1>
 
-  <nav class="locale-switch" [attr.aria-label]="i18n.t('app.language')">
-    @for (option of locales; track option.code) {
-      <button
-        type="button"
-        class="locale-button"
-        [class.is-active]="i18n.locale() === option.code"
-        [attr.aria-pressed]="i18n.locale() === option.code"
-        (click)="switchLocale(option.code)">
-        {{ option.label }}
-      </button>
+  <div class="header-end">
+    <nav class="locale-switch" [attr.aria-label]="i18n.t('app.language')">
+      @for (option of locales; track option.code) {
+        <button
+          type="button"
+          class="locale-button"
+          [class.is-active]="i18n.locale() === option.code"
+          [attr.aria-pressed]="i18n.locale() === option.code"
+          (click)="switchLocale(option.code)">
+          {{ option.label }}
+        </button>
+      }
+    </nav>
+
+    <!--
+      Shown whenever a profile exists at all, even mid forced password-change — a session can always
+      end itself. The side nav below is the piece `AC-125-D` actually forbids ("no navigation item"),
+      not this.
+    -->
+    @if (session(); as session) {
+      <div class="account-menu" data-testid="account-menu" [attr.aria-label]="i18n.t('shell.account.menu')">
+        <span class="account-name" data-testid="account-name">{{ session.displayName }}</span>
+        <button type="button" class="sign-out" data-testid="sign-out" (click)="signOut()">
+          {{ i18n.t('shell.account.sign_out') }}
+        </button>
+      </div>
     }
-  </nav>
+  </div>
 </header>
 
-<main class="app-main">
-  <router-outlet />
-</main>
+@if (!resolved()) {
+  <!--
+    AC-125-A. Nothing else may render here — not the sign-in form, not the staff chrome, not an
+    empty shell. The header above already carries the app name and the locale switch this state
+    requires; this is only the progress indicator.
+  -->
+  <main class="boot" data-testid="boot-surface">
+    <p class="boot-message" role="status">{{ i18n.t('shell.boot.loading') }}</p>
+    <div class="boot-progress" role="progressbar" [attr.aria-label]="i18n.t('shell.boot.loading')"></div>
+  </main>
+} @else if (showStaffNav()) {
+  <div class="staff-body">
+    @if (isNavOpen()) {
+      <button
+        type="button"
+        class="nav-backdrop"
+        data-testid="nav-backdrop"
+        [attr.aria-label]="i18n.t('shell.nav.toggle')"
+        (click)="closeNav()">
+      </button>
+    }
+
+    <!--
+      rule 1: side navigation at inline-start on desktop, a drawer sliding in from the right (RTL's
+      inline-start) at 390px. `.side-nav`'s CSS does the actual positioning; this only supplies the
+      one entry that exists in slice 1 — `navLabelKeyFor` names the role's real ruled destination, and
+      there is exactly one because nothing else this role reaches is built yet.
+    -->
+    <nav class="side-nav" [class.is-open]="isNavOpen()" data-testid="side-nav">
+      @if (navLabelKey(); as labelKey) {
+        <a class="nav-item is-active" routerLink="/" (click)="closeNav()">{{ i18n.t(labelKey) }}</a>
+      }
+    </nav>
+
+    <main class="app-main">
+      <router-outlet />
+    </main>
+  </div>
+} @else {
+  <main class="app-main">
+    <router-outlet />
+  </main>
+}

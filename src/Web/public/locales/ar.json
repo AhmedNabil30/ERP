@@ -4,6 +4,65 @@
   "app.name": "كف",
   "app.language": "اللغة",
 
+  "shell.boot.loading": "جارٍ التحميل…",
+  "shell.nav.toggle": "القائمة",
+  "shell.account.menu": "قائمة الحساب",
+  "shell.account.sign_out": "تسجيل الخروج",
+
+  "nav.my_profile": "الملف الشخصي",
+  "nav.hr_projects": "المشاريع",
+  "nav.home": "الرئيسية",
+
+  "profile.title": "الملف الشخصي",
+  "profile.field.name": "الاسم",
+  "profile.field.role": "الصفة",
+  "profile.field.department": "القسم",
+  "profile.field.no_department": "—",
+  "profile.projects.title": "مشاريعي",
+  "profile.projects.empty": "لست مُسنداً إلى أي مشروع حتى الآن.",
+
+  "hr.projects.title": "المشاريع",
+  "hr.projects.team_size": "حجم الفريق: {count}",
+  "hr.projects.unstaffed": "غير مأهول",
+  "hr.projects.empty": "لا توجد مشاريع بعد.",
+
+  "landing.pending.owner.title": "قائمة المستخدمين",
+  "landing.pending.marketing_sales.title": "قائمة العملاء",
+  "landing.pending.body": "لم يُبنَ هذا الجزء من النظام بعد.",
+
+  "not_found.title": "الصفحة غير موجودة",
+  "not_found.body": "هذا العنوان لا يطابق أي صفحة في كف.",
+  "not_found.back": "العودة إلى البداية",
+
+  "enum.Role.Owner": "المالك",
+  "enum.Role.Finance": "المالية",
+  "enum.Role.TechnicalOffice": "المكتب الفني",
+  "enum.Role.SiteEngineer": "مهندس الموقع",
+  "enum.Role.HeadOfDesign": "رئيس التصميم",
+  "enum.Role.MarketingSales": "التسويق والمبيعات",
+  "enum.Role.Client": "عميل",
+  "enum.Role.Subcontractor": "مقاول باطن",
+  "enum.Role.Hr": "الموارد البشرية",
+
+  "enum.Department.Finance": "المالية",
+  "enum.Department.Hr": "الموارد البشرية",
+  "enum.Department.Marketing": "التسويق",
+  "enum.Department.Operations": "العمليات",
+
+  "enum.OperationsSubDepartment.Technical": "فني",
+  "enum.OperationsSubDepartment.Financial": "مالي",
+  "enum.OperationsSubDepartment.Administrative": "إداري",
+
+  "enum.AssignmentLevel.Standard": "عادي",
+  "enum.AssignmentLevel.Junior": "مبتدئ",
+  "enum.AssignmentLevel.Supervisor": "مشرف",
+
+  "enum.ProjectAccessPath.OwnerGlobal": "بصلاحية المالك العامة",
+  "enum.ProjectAccessPath.HrGlobal": "بصلاحية الموارد البشرية العامة",
+  "enum.ProjectAccessPath.Assignment": "بتكليف على المشروع",
+  "enum.ProjectAccessPath.PortalClient": "بصفته عميل المشروع",
+  "enum.ProjectAccessPath.None": "لا صلاحية",
+
   "auth.login.title": "تسجيل الدخول",
   "auth.login.username": "اسم المستخدم",
   "auth.login.password": "كلمة المرور",

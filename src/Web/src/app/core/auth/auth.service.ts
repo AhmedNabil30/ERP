@@ -12,6 +12,50 @@ export type Role =
   | 'Subcontractor'
   | 'Hr';
 
+/** spec.md §9: "Finance, HR, Marketing, Operations." Null for the Owner and every external role. */
+export type Department = 'Finance' | 'Hr' | 'Marketing' | 'Operations';
+
+/** Set only inside {@link Department.Operations} — spec.md §9's three-way split of that department. */
+export type OperationsSubDepartment = 'Technical' | 'Financial' | 'Administrative';
+
+/** Seniority on one project assignment, never on the person (D-044 §5). */
+export type AssignmentLevel = 'Standard' | 'Junior' | 'Supervisor';
+
+/**
+ * How a project was reached. `OwnerGlobal` and `Assignment` are the only two this endpoint's
+ * {@link ProjectEntry} ever carries (KAFF-105b, D-103) — `HrGlobal` belongs to {@link TeamProjectEntry}
+ * instead, and `PortalClient`/`None` never reach a staff session at all. All five are kept here so the
+ * type matches the server's own enum rather than a narrowed guess of what this one endpoint returns
+ * today.
+ */
+export type ProjectAccessPath = 'None' | 'OwnerGlobal' | 'HrGlobal' | 'Assignment' | 'PortalClient';
+
+/**
+ * One project a staff caller reaches through the ordinary project dashboard route. KAFF-105b.
+ *
+ * Empty for {@link Role.Hr} — HR's entries are {@link TeamProjectEntry} instead, a distinct CLR type
+ * on the server (D-103), not this one filtered.
+ */
+export interface ProjectEntry {
+  readonly projectId: string;
+  readonly name: string;
+  readonly code: string;
+  readonly accessPath: ProjectAccessPath;
+  readonly level: AssignmentLevel;
+  readonly permissions: readonly string[];
+}
+
+/**
+ * One project as {@link Role.Hr} sees it — KAFF-105b, D-100 (Q43). Carries exactly these three fields
+ * server-side, deliberately **no `projectId`** — see decisions.md D-103 on why routing from this row to
+ * a team screen is still an open question this type does not answer.
+ */
+export interface TeamProjectEntry {
+  readonly name: string;
+  readonly code: string;
+  readonly teamSize: number;
+}
+
 /**
  * Who the signed-in user is, as returned by `GET /api/auth/me`.
  *
@@ -22,8 +66,8 @@ export interface Session {
   readonly userId: string;
   readonly displayName: string;
   readonly role: Role;
-  readonly department: string | null;
-  readonly operationsSubDepartment: string | null;
+  readonly department: Department | null;
+  readonly operationsSubDepartment: OperationsSubDepartment | null;
   readonly mustChangePassword: boolean;
 
   /**
@@ -31,12 +75,22 @@ export interface Session {
    *
    * It is the effective set for *this* user, not the `PermissionCatalogue` — that shape describes how
    * every route in the system is gated and is deliberately not sent to a client. Project-scoped
-   * permissions are not here either; they arrive with KAFF-105b.
+   * permissions are not here either; they are per project, on {@link ProjectEntry.permissions}.
    *
    * **This decides what the UI shows and nothing else.** CLAUDE.md: "Never enforce permissions in the
    * frontend alone." Every request is authorised again on the server against role × assignment.
    */
   readonly permissions: readonly string[];
+
+  /**
+   * Every project the caller reaches through the staff dashboard route — KAFF-105b. **Empty for
+   * {@link Role.Hr}**, whose entries are {@link TeamProjects} instead (D-103, rule 9: a role check, not
+   * a filter).
+   */
+  readonly projects: readonly ProjectEntry[];
+
+  /** {@link Role.Hr}'s entries, and HR's alone — empty for every other role (KAFF-105b, D-103). */
+  readonly teamProjects: readonly TeamProjectEntry[];
 }
 
 /**
@@ -84,13 +138,27 @@ export class AuthService {
   }
 
   /**
-   * Forgets the local profile.
+   * Forgets the local profile and settles into `signed-out` — {@link resolved} stays `true`.
    *
    * This does **not** sign the user out: the cookie is `HttpOnly`, so only the server can clear it.
-   * Sign-out is a request to the API, and this is what the UI does once that request succeeds.
+   * Sign-out is a request to the API; this is the resting state a failed or absent `GET /api/auth/me`
+   * lands on, which {@link SessionResolver} calls after that request fails.
    */
   clear(): void {
     this.session.set(null);
     this.asked.set(true);
+  }
+
+  /**
+   * Forgets everything, **including whether anyone has asked** — {@link resolved} goes back to
+   * `false`, the `resolving` state. AC-125-E's own wording: sign-out "returns the shell to resolving,"
+   * not straight to `signed-out`. The distinction is deliberate: this class holds no cached fact of
+   * its own, not even "I was just told I am signed out" — {@link SessionResolver.signOut} calls this
+   * and then asks `GET /api/auth/me` again, exactly as a fresh page load would, rather than this
+   * service asserting a signed-out state for itself.
+   */
+  reset(): void {
+    this.session.set(null);
+    this.asked.set(false);
   }
 }

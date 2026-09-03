@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 
 import { AuthApi } from '../../../core/auth/auth.api';
 import { AuthService } from '../../../core/auth/auth.service';
+import { SessionResolver } from '../../../core/auth/session-resolver';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { toProblem } from '../../../core/api/problem-details';
 
@@ -73,6 +74,7 @@ const changePasswordSchema = schema<ChangePasswordFields>((path) => {
 export class ChangePasswordPage {
   private readonly api = inject(AuthApi);
   private readonly auth = inject(AuthService);
+  private readonly resolver = inject(SessionResolver);
   private readonly router = inject(Router);
 
   private readonly model = signal<ChangePasswordFields>({
@@ -128,15 +130,12 @@ export class ChangePasswordPage {
 
   constructor() {
     // A direct reload of this route (rather than arriving through the sign-in redirect, which
-    // already calls `AuthService.set`) starts with no session at all. Fetched here only for
-    // `mustChangePassword`'s banner text — a failure here changes nothing: the form still works, and
-    // a caller with no cookie at all finds out the honest way, from the change-password call itself.
-    if (!this.auth.resolved()) {
-      void this.api.me().then(
-        (session) => this.auth.set(session),
-        () => undefined,
-      );
-    }
+    // already calls `AuthService.set`) starts with no session at all. Resolved here only for
+    // `mustChangePassword`'s banner text, through the same `SessionResolver` every other entry point
+    // uses (KAFF-125) rather than a second hand-rolled fetch — a failure here changes nothing: the
+    // form still works, and a caller with no cookie at all finds out the honest way, from the
+    // change-password call itself.
+    void this.resolver.ensureResolved();
   }
 
   protected async onSubmit(): Promise<void> {

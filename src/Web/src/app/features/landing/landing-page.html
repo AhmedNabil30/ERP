@@ -1,0 +1,92 @@
+@if (session(); as session) {
+  @switch (landing().kind) {
+    @case ('profile') {
+      <!-- S-005. Own name, role and department. Projects rendered because KAFF-105b now carries them
+           (D-103) — the assignment half `AC-125-C` originally deferred, before this session, when
+           `GET /api/auth/me` carried neither field at all. -->
+      <section class="profile" data-testid="landing-profile">
+        <h1 class="title">{{ i18n.t('profile.title') }}</h1>
+
+        <dl class="facts">
+          <dt>{{ i18n.t('profile.field.name') }}</dt>
+          <dd data-testid="profile-name">{{ session.displayName }}</dd>
+
+          <dt>{{ i18n.t('profile.field.role') }}</dt>
+          <dd data-testid="profile-role">{{ i18n.t(roleKey(session.role)) }}</dd>
+
+          <dt>{{ i18n.t('profile.field.department') }}</dt>
+          <dd data-testid="profile-department">
+            @if (session.department; as department) {
+              {{ i18n.t(departmentKey(department)) }}
+              @if (session.operationsSubDepartment; as subDepartment) {
+                — {{ i18n.t(operationsSubDepartmentKey(subDepartment)) }}
+              }
+            } @else {
+              {{ i18n.t('profile.field.no_department') }}
+            }
+          </dd>
+        </dl>
+
+        <h2 class="subtitle">{{ i18n.t('profile.projects.title') }}</h2>
+
+        @if (session.projects.length > 0) {
+          <ul class="project-list" data-testid="profile-projects">
+            @for (project of session.projects; track trackProject($index, project)) {
+              <li class="project-row">
+                <span class="project-name">{{ refCodeAndName(project.code, project.name) }}</span>
+                <span class="project-level">{{ i18n.t(assignmentLevelKey(project.level)) }}</span>
+                <span class="project-path">{{ i18n.t(projectAccessPathKey(project.accessPath)) }}</span>
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="empty" data-testid="profile-projects-empty">{{ i18n.t('profile.projects.empty') }}</p>
+        }
+      </section>
+    }
+
+    @case ('hr-projects') {
+      <!-- S-009a's shape, as far as this story renders it: the data KAFF-105b's shared endpoint
+           carries today, in D-100's format. Not S-009a itself — the routing from a row to a team
+           screen is still open (decisions.md D-103); no row here is clickable. -->
+      <section class="hr-projects" data-testid="landing-hr-projects">
+        <h1 class="title">{{ i18n.t('hr.projects.title') }}</h1>
+
+        @if (session.teamProjects.length > 0) {
+          <ul class="team-list" data-testid="hr-team-projects">
+            @for (project of session.teamProjects; track trackTeamProject($index, project)) {
+              <li class="team-row">
+                <span class="project-name">{{ refCodeAndName(project.code, project.name) }}</span>
+                @if (project.teamSize === 0) {
+                  <span class="team-size team-size--unstaffed" data-testid="team-size-unstaffed">
+                    {{ i18n.t('hr.projects.unstaffed') }}
+                  </span>
+                } @else {
+                  <span class="team-size">{{ i18n.t('hr.projects.team_size', { count: project.teamSize }) }}</span>
+                }
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="empty" data-testid="hr-projects-empty">{{ i18n.t('hr.projects.empty') }}</p>
+        }
+      </section>
+    }
+
+    @case ('pending') {
+      <!-- Honest, not invented: `agents.md`'s rule cuts both ways — a criterion that cannot pass is as
+           bad as one that cannot fail, and nothing feeds S-006 or S-011 in this sprint. Naming the
+           real ruled destination is a fact (`ux/navigation.md`), not a promise of when it ships. -->
+      <section class="pending" data-testid="landing-pending">
+        <h1 class="title">{{ i18n.t(landingPendingTitle()) }}</h1>
+        <p class="body">{{ i18n.t('landing.pending.body') }}</p>
+      </section>
+    }
+
+    @case ('forbidden') {
+      <section class="forbidden" data-testid="landing-forbidden">
+        <p class="body" role="alert">{{ i18n.t('errors.auth.forbidden') }}</p>
+      </section>
+    }
+  }
+}

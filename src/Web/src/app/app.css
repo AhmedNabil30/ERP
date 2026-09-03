@@ -8,18 +8,28 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   padding-block: var(--space-3);
   padding-inline: var(--space-4);
   border-block-end: 1px solid var(--color-border);
   background: var(--color-surface);
+  position: relative;
+  z-index: 30;
 }
 
 .app-title {
   margin: 0;
   font-size: var(--text-lg);
   font-weight: 600;
+}
+
+.header-end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-inline-start: auto;
 }
 
 .locale-switch {
@@ -44,7 +54,160 @@
   color: var(--color-accent);
 }
 
+.nav-toggle {
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font-size: var(--text-lg);
+  cursor: pointer;
+}
+
+/* The hamburger is only furniture for the drawer, and the drawer only exists below the breakpoint
+   where the side nav stops being permanently visible. */
+@media (min-width: 641px) {
+  .nav-toggle {
+    display: none;
+  }
+}
+
+.account-menu {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.account-name {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  /* A name may be a Latin run inside an Arabic header. */
+  unicode-bidi: isolate;
+}
+
+.sign-out {
+  padding-block: var(--space-1);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  min-block-size: 2.75rem;
+}
+
+.boot {
+  min-height: 60dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-4);
+}
+
+.boot-message {
+  color: var(--color-muted);
+}
+
+.boot-progress {
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border-radius: 50%;
+  border: 3px solid var(--color-border);
+  border-block-start-color: var(--color-accent);
+  animation: boot-spin 0.8s linear infinite;
+}
+
+@keyframes boot-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.staff-body {
+  display: flex;
+  align-items: stretch;
+  min-height: calc(100dvh - 4rem);
+}
+
+.side-nav {
+  inline-size: 16rem;
+  flex: 0 0 auto;
+  padding: var(--space-4);
+  border-inline-end: 1px solid var(--color-border);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.nav-item {
+  display: block;
+  padding-block: var(--space-3);
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-sm);
+  color: inherit;
+  text-decoration: none;
+  font-weight: 600;
+  /* 44px of touch target. */
+  min-block-size: 2.75rem;
+}
+
+.nav-item.is-active {
+  background: var(--color-background);
+  color: var(--color-accent);
+}
+
 .app-main {
+  flex: 1 1 auto;
   padding-block: var(--space-4);
   padding-inline: var(--space-4);
+  min-inline-size: 0;
+}
+
+.nav-backdrop {
+  display: none;
+}
+
+/*
+  rule 1 / AC-125-F: below 641px the side nav becomes a drawer that slides in from the right — which
+  is `inline-start` under Arabic's RTL, the product's primary direction (CLAUDE.md). `inset-inline-*`
+  is used rather than `transform: translateX`, which is a physical property that does not flip with
+  `dir` — sliding it off-canvas by a physical `translateX` would slide in from the wrong side the day
+  this runs under `dir="ltr"`.
+*/
+@media (max-width: 640px) {
+  .staff-body {
+    display: block;
+  }
+
+  .side-nav {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: -17rem;
+    z-index: 40;
+    transition: inset-inline-start 0.2s ease;
+    box-shadow: 0 0 1rem rgb(0 0 0 / 20%);
+  }
+
+  .side-nav.is-open {
+    inset-inline-start: 0;
+  }
+
+  .nav-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 35;
+    border: none;
+    padding: 0;
+    background: rgb(0 0 0 / 35%);
+  }
+
+  .app-main {
+    padding-inline: var(--space-3);
+  }
 }

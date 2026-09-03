@@ -4,6 +4,65 @@
   "app.name": "Kaff",
   "app.language": "Language",
 
+  "shell.boot.loading": "Loading…",
+  "shell.nav.toggle": "Menu",
+  "shell.account.menu": "Account menu",
+  "shell.account.sign_out": "Sign out",
+
+  "nav.my_profile": "My profile",
+  "nav.hr_projects": "Projects",
+  "nav.home": "Home",
+
+  "profile.title": "My profile",
+  "profile.field.name": "Name",
+  "profile.field.role": "Role",
+  "profile.field.department": "Department",
+  "profile.field.no_department": "—",
+  "profile.projects.title": "My projects",
+  "profile.projects.empty": "You are not assigned to any project yet.",
+
+  "hr.projects.title": "Projects",
+  "hr.projects.team_size": "Team size: {count}",
+  "hr.projects.unstaffed": "Unstaffed",
+  "hr.projects.empty": "There are no projects yet.",
+
+  "landing.pending.owner.title": "User list",
+  "landing.pending.marketing_sales.title": "Client list",
+  "landing.pending.body": "This part of the system has not been built yet.",
+
+  "not_found.title": "Page not found",
+  "not_found.body": "That address does not match anything in Kaff.",
+  "not_found.back": "Back to the start",
+
+  "enum.Role.Owner": "Owner",
+  "enum.Role.Finance": "Finance",
+  "enum.Role.TechnicalOffice": "Technical Office",
+  "enum.Role.SiteEngineer": "Site Engineer",
+  "enum.Role.HeadOfDesign": "Head of Design",
+  "enum.Role.MarketingSales": "Marketing / Sales",
+  "enum.Role.Client": "Client",
+  "enum.Role.Subcontractor": "Subcontractor",
+  "enum.Role.Hr": "HR",
+
+  "enum.Department.Finance": "Finance",
+  "enum.Department.Hr": "HR",
+  "enum.Department.Marketing": "Marketing",
+  "enum.Department.Operations": "Operations",
+
+  "enum.OperationsSubDepartment.Technical": "Technical",
+  "enum.OperationsSubDepartment.Financial": "Financial",
+  "enum.OperationsSubDepartment.Administrative": "Administrative",
+
+  "enum.AssignmentLevel.Standard": "Standard",
+  "enum.AssignmentLevel.Junior": "Junior",
+  "enum.AssignmentLevel.Supervisor": "Supervisor",
+
+  "enum.ProjectAccessPath.OwnerGlobal": "Owner's global reach",
+  "enum.ProjectAccessPath.HrGlobal": "HR's global reach",
+  "enum.ProjectAccessPath.Assignment": "By assignment",
+  "enum.ProjectAccessPath.PortalClient": "As the project's client",
+  "enum.ProjectAccessPath.None": "No access",
+
   "auth.login.title": "Sign in",
   "auth.login.username": "User name",
   "auth.login.password": "Password",

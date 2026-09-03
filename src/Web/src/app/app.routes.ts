@@ -1,22 +1,24 @@
 import { Routes } from '@angular/router';
 
 import { mustChangePasswordGuard } from './core/auth/must-change-password.guard';
+import { sessionGuard } from './core/auth/session.guard';
 
 /**
  * Routes.
  *
- * Slice 0 ships one page, which reports whether the API and its database guards are healthy; slice 1
- * adds sign-in and the mandatory password-change screen. Feature routes arrive with their slices;
- * navigation is role-driven, which the UX agent owns.
+ * KAFF-125 replaces slice 0's status page at `''` with S-004's dispatch and the per-role landing —
+ * `App` (`app.ts`) decides the three session states around whatever renders here; this file only
+ * decides which route a URL resolves to. Feature routes arrive with their slices; navigation is
+ * role-driven, which the UX agent owns.
  */
 export const routes: Routes = [
   {
     path: '',
-    // AC-101b-F: a forced-change session lands here on a reload the same way it would land on any
-    // other protected route once one exists. Convenience, not security — see the guard's own comment
-    // and decisions.md D-086.
-    canActivate: [mustChangePasswordGuard],
-    loadComponent: () => import('./features/status/status-page').then((m) => m.StatusPage),
+    // `sessionGuard` first: it awaits resolution and sends a signed-out visitor to `/sign-in`
+    // (`AC-125-B`). `mustChangePasswordGuard` runs only once that has already decided "signed in" —
+    // AC-101b-F's redirect to the forced-change screen.
+    canActivate: [sessionGuard, mustChangePasswordGuard],
+    loadComponent: () => import('./features/landing/landing-page').then((m) => m.LandingPage),
   },
   {
     path: 'sign-in',
@@ -30,14 +32,13 @@ export const routes: Routes = [
       ),
   },
   {
-    // ⚠️ Still a redirect, not a 404 — checked, not left by default. `decisions.md` D-091 named two
-    // conditions together, "when KAFF-103's screen and KAFF-105b's shell arrive", and only the first
-    // is true here: this session built `/change-password`, but the staff shell (KAFF-105b) still does
-    // not exist, so a deep link into it would be exactly the hazard D-091 described — a missing route
-    // silently indistinguishable from the landing page — with no screen behind it either way this
-    // wildcard resolves. Flipping to a 404 now would fix that hazard for routes that exist today at
-    // the cost of it for routes that do not, which is not an improvement; it moves with the shell.
+    // A 404, not a redirect — decisions.md D-091 named the exact condition for this flip: "when
+    // KAFF-103's screen and KAFF-105b's shell arrive." (That second half was always the confusion
+    // Nabil's D-100 ruling later corrected in words: the shell is this story, KAFF-125, built on the
+    // payload KAFF-105b returns — not KAFF-105b itself. Noted by KAFF-125's own story text as a stale
+    // comment routed to Frontend "to fix when this story is built.") Both conditions are true now, so
+    // a missing route fails loudly instead of being silently indistinguishable from the landing page.
     path: '**',
-    redirectTo: '',
+    loadComponent: () => import('./features/not-found/not-found-page').then((m) => m.NotFoundPage),
   },
 ];

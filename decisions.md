@@ -8305,3 +8305,125 @@ re-verified against `src/Domain/Identity/ProjectAssignment.cs` and
 exactly as stated — the second is what makes `AC-105b-I` true with no new code. The brief's framing of
 `AC-105b-F`'s allowed field set as excluding a `ProjectId` was checked against the story text itself
 (`AC-105b-F`, KAFF-105b) rather than assumed, and held: the set the story names has no id in it.
+
+---
+
+### D-104 · Frontend — KAFF-125 built: the staff shell, S-004's dispatch, and D-103's payload rendered · 2026-09-03
+
+**Frontend.** `stories/slice-1-foundation/KAFF-125-staff-shell.md`, cut at 3 points and not pulled into
+a sprint by name, built on the same machine immediately after D-103 (KAFF-105b) per Nabil's demo
+option C. The story's own text is unchanged by this entry — it still reads "Cut… not marked Ready or
+BLOCKED" — this record is what actually shipped against it, one session later, once the payload it was
+waiting on existed.
+
+#### `AuthService.Session` grew the two fields KAFF-105b added, and nothing re-derives them
+
+`Session` now carries `projects: readonly ProjectEntry[]` and `teamProjects: readonly TeamProjectEntry[]`
+[@ `src/Web/src/app/core/auth/auth.service.ts`], typed against the exact CLR shapes D-103 recorded —
+`ProjectAccessPath`, `AssignmentLevel`, `Department`, `OperationsSubDepartment` all became real union
+types rather than the `string | null` the fields were typed as before this session, because rendering
+them as text (`ux/rtl-and-i18n.md`'s `enum.<Type>.<Member>` convention) needs a closed set to switch on
+exhaustively. `src/Web/src/app/core/i18n/enum-keys.ts` is one function per enum, each ending in an
+`assertNever` default — rtl-and-i18n.md hard rule 4, verbatim: "build the key in the component with an
+exhaustive switch so a new enum member is a compile error."
+
+#### S-004 split into a service and a guard, because the shell needed the same fetch from three places
+
+`SessionResolver` [@ `src/Web/src/app/core/auth/session-resolver.ts`] is the one place `GET
+/api/auth/me` is called from now. `App`'s constructor calls it once on boot (so a direct load of
+`/sign-in` or `/change-password` — routes with no guard of their own — still resolves); the new
+`sessionGuard` [@ `src/Web/src/app/core/auth/session.guard.ts`] calls it on the landing route before
+deciding whether to bounce to `/sign-in` (`AC-125-B`); `mustChangePasswordGuard` was rewritten to call
+it too instead of fetching a second time. All three share one in-flight promise. `AuthService` itself
+still holds no `HttpClient` — D-050's discipline, unchanged.
+
+**Sign-out is a new method on `AuthService`, `reset()`, not a second call to `clear()`.** `AC-125-E`'s
+own wording — sign-out "returns the shell to resolving" — is literal, not colloquial: `reset()` sets
+`asked` back to `false`, the same state a fresh page load starts in, rather than jumping straight to
+the `signed-out` resting state `clear()` produces (used only when a `GET /api/auth/me` call itself
+fails). `SessionResolver.signOut()` calls the sign-out endpoint, then `reset()`, then immediately
+re-resolves — observed directly: the boot spinner is not merely inferred from source, see below.
+
+#### The chrome lives in `App`, not a second wrapper component
+
+`app.ts`/`app.html`/`app.css` now render the three session states directly (`@if (!resolved())` → boot
+surface; else `@if (showStaffNav())` → side nav + `router-outlet`; else bare `router-outlet`) rather
+than adding a `StaffShellComponent` around a nested route outlet. Slice 1 has exactly one landing
+route, so a second router-outlet layer bought nothing yet — noted here so a later slice that adds a
+second staff route doesn't read the single-outlet shape as an oversight.
+
+**The side nav's one entry is computed from role through `core/navigation/landing.ts`, shared by `App`
+(which nav item) and `LandingPage` (which content).** One function, `landingFor`, decided by role —
+not a `switch (role)` menu of the kind rule 6 forbids, because the server itself decided `Projects` vs
+`TeamProjects` by role, not by catalogue grant (D-103's own reasoning, applied here rather than
+re-derived from a permission that would need to be `ProjectScoped` and therefore invisible at this
+company-wide layer anyway).
+
+#### `AC-125-C` is rendered against 2026-09-03's payload, not against the criterion's own 2026-09-02 text — flagged, not silently changed
+
+The criterion as written says a profile-only role sees "no project or assignment… because
+`/api/auth/me` carries neither today." That predicate is now false — KAFF-105b shipped `Projects`
+hours before this session started, and the brief that opened it said plainly "you render it." `S-005`
+(`ux/screen-inventory.md`) has always required "the projects I am assigned to with my level"; this
+session renders that field now that it exists, rather than holding to a criterion whose reasoning no
+longer applies. **This is a judgement call, not a rule follow, and it is recorded as one rather than
+folded into the story silently.** If Nabil or a later Verifier reads `AC-125-C` literally and expects
+an empty projects section on this landing, that is the discrepancy to reconcile — not a defect to
+silently patch back.
+
+#### Owner and MarketingSales render an honest "not built yet," never an invented dashboard
+
+Both title the real ruled destination (`ux/navigation.md`: S-006 "User list", S-011 "Client list") and
+say only that it has not been built — no invented tiles, no date, no placeholder table. The story's own
+open questions 1 and 2 (what either role lands on until their screen exists) are **not answered by
+this entry** — this is the "stated 'not built yet' message" option the story itself named as one of
+three, not a decision that this is the permanent answer. HR's landing renders `TeamProjects` in
+D-100's `[RefCode] Name` format with team size as a visually distinct badge (red border/text at zero,
+per D-100: "the primary visual indicator… at a glance") — this is **not** S-009a itself: no row is
+clickable, because D-103 flagged the row-to-team-screen routing as unresolved and this session does not
+invent an answer either.
+
+#### The wildcard route flips to a 404, and the comment naming KAFF-105b as "the shell" is corrected
+
+D-091 named the exact trigger — "when KAFF-103's screen and KAFF-105b's shell arrive" — and D-092 left
+it a redirect because only the first was true. Both are true now, so `path: '**'` loads a new
+`NotFoundPage` [@ `src/Web/src/app/features/not-found/`] instead of redirecting to `/`. Only the
+"not found" third of S-016 — "access denied" and "failed" are server refusals rendered where a request
+is actually made, not a routing concern.
+
+#### Watched, not just built
+
+Angular production build: 0 errors, 0 warnings, both before and after the wildcard change. Driven live
+against `kaff_verify` end to end, not reasoned about — see the report to Nabil for the full observed/
+code-reviewed breakdown per criterion; the short version: **`AC-125-A` was caught on screen** by
+throttling the network and screenshotting mid-resolution (`جارٍ التحميل…`, app name and locale switch,
+nothing else); a real Owner, a Finance user and an HR user were signed in through the actual sign-in
+form (native value-setter + `input` events, the same technique D-100/D-103's own Verifier used for
+change-password), forced through `/change-password` and landed on their real screens; `localStorage`
+and `sessionStorage` were read before and after every sign-in and every sign-out across the whole run
+and were empty every time; the side nav's drawer was confirmed by computed style to sit flush at the
+**right** edge under `dir="rtl"` (`left: 134px, right: 390px` in a 390px viewport) and flush at the
+**left** edge after switching to English (`left: 0, right: 256`) — logical properties actually flipping,
+not a mirror kept correct by luck.
+
+**Test users left on `kaff_verify` for a later session to find:** `karim` / Owner, `sara_finance` /
+Finance, `hend_hr` / Hr (all with a changed, non-temporary password by the end of the run). Not
+cleaned up — there is no user-delete endpoint and CLAUDE.md does not want one; flagged here on the same
+reasoning D-103 flagged its own stray `503` on this shared database.
+
+#### Not done, and named so nobody assumes it exists
+
+* **S-006 and S-011 themselves.** Nothing renders for them beyond the honest "not built" message —
+  no endpoint exists for either, and the story's own rule (`agents.md` §3c) forbids asserting a
+  criterion that cannot pass.
+* **S-009a's real screen and the row-to-team-screen routing question.** Rendered only as far as the
+  shared `/api/auth/me` payload goes; the dedicated-HR-API reading `ux/` describes was not picked, and
+  no row is clickable.
+* **`ux/navigation.md`'s stale `mustChangePassword` refusal paragraph.** Still not this agent's file to
+  fix (D-091, D-100 both already flagged it); flagged a third time so it does not keep being found and
+  dropped.
+* **The two stray `decisions.md` citations of the pre-rename SM-33 test name** (D-056 §2, D-097 §2),
+  named again in D-103, still not moved — outside this story's file list either.
+* **A dropdown-style account menu.** The header shows the display name and a sign-out button inline
+  rather than a popover menu — the substance of "account menu" (rule 1) without building interaction
+  slice 1 has no second item to justify.

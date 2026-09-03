@@ -1,8 +1,8 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
-import { AuthApi } from './auth.api';
 import { AuthService } from './auth.service';
+import { SessionResolver } from './session-resolver';
 
 /**
  * Sends a forced-change session to `/change-password` instead of whatever route it tried to reach.
@@ -15,26 +15,21 @@ import { AuthService } from './auth.service';
  * an honest 403; this guard exists only so a well-behaved client is *told*, and routed somewhere it
  * can act, instead of finding out one failed request at a time.
  *
- * **Resolves the session itself when nothing has asked yet.** A fresh page load — the reload half of
- * `AC-101b-F` — starts with {@link AuthService.resolved} false, and there is no other place in the
- * SPA today that calls `GET /api/auth/me` before a protected route renders. Failing to fetch here
- * would make a reload of the landing route look like a pass rather than actually proving the redirect.
- * A caller with no session at all (never signed in, or the fetch itself fails) is waved through
- * unchanged — this guard answers exactly one question, and an unauthenticated visitor is the route's
- * own business, not this one's.
+ * **Resolves the session through {@link SessionResolver}, not a second fetch of its own.** A fresh
+ * page load — the reload half of `AC-101b-F` — starts with {@link AuthService.resolved} false;
+ * KAFF-125's `sessionGuard` runs before this one on the landing route and already resolves it, and
+ * {@link SessionResolver.ensureResolved} is idempotent, so this line is a no-op there and the only
+ * fetch on a route that runs this guard alone (`/change-password` carries no guard at all, by
+ * contrast, and resolves itself the same way). A caller with no session at all (never signed in, or
+ * the fetch itself fails) is waved through unchanged — this guard answers exactly one question, and
+ * an unauthenticated visitor is the route's own business, not this one's.
  */
 export const mustChangePasswordGuard: CanActivateFn = async () => {
   const auth = inject(AuthService);
-  const api = inject(AuthApi);
+  const resolver = inject(SessionResolver);
   const router = inject(Router);
 
-  if (!auth.resolved()) {
-    try {
-      auth.set(await api.me());
-    } catch {
-      return true;
-    }
-  }
+  await resolver.ensureResolved();
 
   return auth.current()?.mustChangePassword ? router.parseUrl('/change-password') : true;
 };

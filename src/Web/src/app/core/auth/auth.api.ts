@@ -52,4 +52,14 @@ export class AuthApi {
       this.http.post<void>('api/auth/change-password', { currentPassword, newPassword }),
     );
   }
+
+  /**
+   * Ends this device's session. KAFF-102, KAFF-125 AC-125-E.
+   *
+   * Resolves on `204`. `AllowAnonymous` on the server (decisions.md D-085 rule 7): signing out with no
+   * session already holds is not refused, so this never throws for "there was nothing to sign out of."
+   */
+  async signOut(): Promise<void> {
+    await firstValueFrom(this.http.post<void>('api/auth/sign-out', {}));
+  }
 }
