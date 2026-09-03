@@ -163,12 +163,25 @@ Process exit code non-zero; no listener; nothing served. **D-033's guarantee is 
 account-floor check is inside it** — the floor is now one of the things that will stop a production
 host booting.
 
-**So D-102's `503 degraded` is a Development observation, not a description of the guarantee.** Both
-D-101 §3 and D-102 §1 report `503 degraded` as their live evidence, and both were driven in
-Development on port 5080. Neither entry states that the environment is why they saw a running host,
-and a reader could take *"health goes to 503 degraded"* as the whole of the behaviour. It is the
-weaker half of it. **Not a defect — a reporting imprecision in two entries**, worth one sentence in
-each.
+**The brief's suspicion was the right one to hold, and the entries turn out to survive it — I
+checked before writing this, having first drafted the opposite.** My initial note here said neither
+entry disclosed that its `503` was a Development observation. That was wrong, and correcting it is
+the point of the exercise:
+
+* **D-102 §1 names it twice** — its evidence table is headed *"Live `/api/health`, API on 5080,
+  **Development**"*, and the prose says *"with the API running (`ASPNETCORE_ENVIRONMENT=Development`,
+  port 5080)"*.
+* **D-102 §2 states the rule outright**: *"the refusal is conditioned on `missingGuards.Count > 0 &&
+  !app.Environment.IsDevelopment()` — Development is the one environment the refusal never fires
+  in."*
+* **D-101 §7 states the consequence**: *"this change will refuse that host's start-up **outside
+  Development** — which is D-033 working as designed, and is the point."*
+
+**So no finding here.** Reporting and refusing *are* different guarantees, the brief is right to
+separate them, and both entries already keep them separate. **The one residual is presentational:**
+D-101 §3's live-evidence bullet quotes `503 degraded` without naming the environment at that spot, and
+a reader who takes that bullet out of the entry gets the weaker half. Four sections later the entry
+says the right thing. Not worth an edit; worth knowing if the number is ever quoted alone.
 
 **One incidental finding, recorded because it will be met on a real deploy.** Outside `Development`
 there is no connection string in configuration — `appsettings.json` carries none — so a non-Development
@@ -192,7 +205,14 @@ under **its own required name**:
 | `ck_users_subcontractor_cannot_log_in` → `1 = 1` | `503 degraded` · `["ck_users_subcontractor_cannot_log_in predicate changed: expected \"CHECK ((((role)::text <> 'Subcontractor'::text) OR (password_hash IS NULL)))\", found \"CHECK ((1 = 1))\""]` |
 
 Both restored; `/api/health` returned to `200 healthy … missingGuards: []`. **D-102 §1's evidence
-table reproduces exactly.** The mechanism does what it claims: a constraint kept under its required
+table reproduces exactly.**
+
+**And that `200 healthy` is stronger evidence than it looks, so it is worth naming.**
+`FindMissingGuardsAsync` compares *every* one of the thirty snapshot entries against the live
+re-print on every call. A single healthy response therefore certifies **all thirty hand-written
+dictionary values are byte-accurate** against a real PostgreSQL 16 database — D-102's claim that they
+were *"copied verbatim from that query's output"* rather than typed from memory is confirmed as a
+whole, not sampled. The mechanism does what it claims: a constraint kept under its required
 name with a different predicate is now caught, where before it was invisible.
 
 ### `V-31-B` — **LOW** · the snapshot is hand-maintained, and the friction is a red suite with a mechanical fix
@@ -315,10 +335,26 @@ and D-101 §4 names the three types that carry them — `Hold`, `FirmAdvance`, `
 environment provisioned before Karim's 2026-08-20 ruling is in this state the moment it is redeployed
 with this build.
 
+**And the row it refuses to let go of is one that provably cannot do any further harm.** A closed
+account cannot take another posting — `kaff_postings_validate` refuses both sides:
+
+```
+IF NOT v_from.is_active OR NOT v_to.is_active THEN
+    RAISE EXCEPTION 'KAFF_ACCOUNT_INACTIVE: % or % is closed.', v_from.code, v_to.code
+```
+
+[Verified: 2026-09-03 @ `src/Infrastructure/Persistence/Sql/001_guards.sql` -> `kaff_postings_validate`],
+read from `pg_proc` on the live database. **So closing the account genuinely does neutralise the
+exposure** — the misfloored row can never again permit an overdraw, because it can never again
+be posted to at all. The check goes on reporting it anyway. That is the part that makes this a defect
+rather than a hard trade-off: the alarm is not protecting anything at that point, and the account
+lifecycle already has the concept the check is missing.
+
 **What I am not saying.** I am not saying the check should be removed or weakened, and I am not
-saying closed accounts should simply be excluded — an unfloored *closed* `Safe` with a negative
-balance is still a wrong number in the books, and silently ignoring it would be D-046's green light
-again. **This is a routing item, not a fix I should choose.** It needs a decision from the Architect
+prescribing the one-line `is_active` filter that suggests itself — an unfloored *closed* `Safe` that
+already carries a negative balance is still a wrong number in the books, and whether that should be
+reported *somewhere* (just not as a reason to refuse to boot) is a design call with a real argument
+on both sides. **This is a routing item, not a fix I should choose.** It needs a decision from the Architect
 about what "repaired" means for such a row, and `CLAUDE.md`'s own rule points at the shape: a
 correction is a **new reversing posting** and a new correctly-floored account, not an erasure. But
 the mechanism to *retire* the wrong row from the guard check does not exist, and until it does, the
@@ -405,7 +441,7 @@ turned on its own. Six checks, all against the files and the database today:
 | `trg_accounts_configuration_immutable` is `BEFORE UPDATE` and makes a wrong row permanent | **True** — `pg_get_triggerdef`, and `MUT-2b` (§6) |
 | Every test builds accounts through `Account.Create`, so no test can produce a misfloored row | **True** — and `Account.Create` is *stronger* than D-101 says; see below |
 | **D-101 §7: "such a row must be closed and the account reopened"** | **FALSE — `V-31-A`, §5.** Closing is permitted and does not clear the check |
-| D-102 §2: the Api test host can run as `Development` because the refusal is Development-exempt | **True** — driven in §3, both directions |
+| D-102 §2: the Api test host can run as `Development` because the refusal is Development-exempt | **True** — driven in §3, both directions. Confirmed a second way, accidentally: a snapshot mutation left the `Testing`-environment suite at **196 of 235 failed**, because `Testing` is *not* Development and the refusal fires inside the test host — which is `KaffApiFactory`'s stated intent working (§4) |
 | D-101 §5 / D-102 §1: PostgreSQL's re-print is a stable normal form and the authored SQL is not | **True** — the two live re-prints match the entries verbatim, and my own mutations re-printed exactly as predicted (§4) |
 
 **One place the Architect was harder on itself than it needed to be, recorded because accuracy runs
@@ -473,6 +509,28 @@ skips the rest silently.
 that does not exist, and it is `` @ `File.cs` `` — SM-31's own *format example* in prose, not a claim
 about anything. **So: no broken file-only reference exists today.** The sweep is honest; its headline
 just describes a subset, and the subset is the one SM-31 actually rules on.
+
+---
+
+## 9a. Closing gates — re-run after every mutation was reverted
+
+Every mutation this pass made was to the live `kaff_verify` database or to one string literal in
+`DatabaseInitializer.cs`. All reverted; `git status` clean apart from this report.
+
+| Gate | Result |
+|---|---|
+| `git status --short` | only `qa/slice-1/verification-2026-09-03.md` |
+| Build, `-c Release --no-incremental` | **0 warnings, 0 errors**, `Kaff.Api.Tests.dll` written |
+| Api suite | **235/235** — see the note below |
+| Citations, including this report | **1097 checked · 0 broken · 0 legacy** (1088 + 9 added here) |
+
+**One gotcha met live, recorded because the skill predicted it exactly.** The first closing rebuild
+was run with the API still up and produced **38 `MSB3026` warnings and 4 errors**, naming
+`Kaff.Api (9180)` as the holder. `/run-kaff-erp`'s 2026-08-25 amendment is right: under the project's
+`-warnaserror` standard this **fails loudly** rather than silently copying nothing. The brief's
+warning about a stranded host reporting `Build succeeded` applies to a bare `dotnet build`, not to the
+standard command — and the standard command is what protects you. Killed by PID from the message
+itself, per the same amendment, and rebuilt clean.
 
 ---
 
