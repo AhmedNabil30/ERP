@@ -1,4 +1,4 @@
-# Verification — 2026-09-04
+﻿# Verification — 2026-09-04
 
 **Verifier, fresh session, machine to itself.** `CLAUDE.md`: *"If you wrote the code, you do not
 certify it."* I wrote none of the four commits in scope.
@@ -22,11 +22,11 @@ Everything is `pending` until reached. Nothing is marked done on an author's evi
 | 2 | The projection — what `/api/auth/me` leaks, and whether team size is live | **done** — §2 |
 | 3 | `ProjectTeamRead`'s grants — mutated, watched red | **done** — §3 |
 | 4 | SM-33's rename — paid correctly and completely? | **done** — §4 |
-| 5 | KAFF-125's code-reviewed half, and `AC-125-B` attacked | pending |
-| 6 | `AC-125-C` — judging a deliberate deviation | pending |
-| 7 | The E2E repair — all six watched failing | pending |
-| 8 | The demo seed — no raw SQL, and the `POST /api/projects` 404 | pending |
-| 9 | The deleted status page — references and i18n keys | pending |
+| 5 | KAFF-125's code-reviewed half, and `AC-125-B` attacked | **done** — §5 |
+| 6 | `AC-125-C` — judging a deliberate deviation | **done** — §6 |
+| 7 | The E2E repair — all six watched failing | **done** — §7 |
+| 8 | The demo seed — no raw SQL, and the `POST /api/projects` 404 | **done** — §8 |
+| 9 | The deleted status page — references and i18n keys | **done** — §9 |
 | 10 | Verdicts per commit | pending |
 | 11 | Closing gate — `git status`, `HEAD`, suites re-run | pending |
 | 12 | What I did not do, as a count | pending |
@@ -41,6 +41,8 @@ Everything is `pending` until reached. Nothing is marked done on an author's evi
 | `V-32-A` | **HIGH** | A money field added to the staff `ProjectEntry` reaches the wire on `/api/auth/me` with the whole suite green — the anti-leak test is a seven-word blocklist, and `Amount`, `Total`, `Price`, `Rate`, `Hold`, `Retention` and `Advance` are not on it |
 | `V-32-B` | **MEDIUM** | SM-33's rename left **nine** records citing a test that does not exist, and the DoD gate written as *absolute* cannot see them: the checker resolves an identifier by plain substring, so the marked-amendment note SM-33 itself mandates keeps every stale citation green forever |
 | `V-32-C` | **LOW** | `scripts/check-citations.ps1` reads `*.md` only. SM-30's citations live in `.cs` comments in a bare, backtick-less form, so neither the broken nor the legacy pattern can ever match them — including two drifted `file:line` citations on the `UserRead` row |
+| `V-32-D` | **MEDIUM** | `AC-125-B`'s rule is unasserted: deleting the `await` the criterion rests on leaves the E2E suite **6/6**, because the only landing-route test drives a signed-out visitor, for whom the answer is the same either way. There are **zero** frontend unit tests |
+| `V-32-E` | **LOW** | `ad92638` orphaned **20** i18n entries (10 keys × 2 catalogues), and D-105's stated reason for the deletion — that the catalogues carried no `status` key — is false; both carry fifteen |
 
 ---
 
@@ -314,3 +316,315 @@ do not use the backticked form at all. They use a bare form, and the `UserRead` 
 
 `LOW` rather than `MEDIUM` only because the two named tests do both still exist under *some* name and
 still genuinely pin the `UserRead` row. The mechanism, not the row, is what is wrong.
+
+---
+
+## 5. `V-32-D`, **MEDIUM** · `AC-125-B` — the guard is right, and nothing whatever asserts it
+
+The brief's instinct is exactly right: KAFF-125's report separating **observed** from **code-reviewed**
+is good practice, and it makes the code-reviewed half the unexamined half. `AC-125-B` is the one it
+could not observe. So it is the one I attacked.
+
+### The code is correct
+
+`sessionGuard` awaits resolution before deciding [Verified: 2026-09-04 @
+`src/Web/src/app/core/auth/session.guard.ts` -> `sessionGuard`], and `SessionResolver.ensureResolved`
+shares one in-flight promise across `App`'s boot call and every guard
+[Verified: 2026-09-04 @ `src/Web/src/app/core/auth/session-resolver.ts` -> `ensureResolved`]. Read as
+source, `AC-125-B` holds and D-104's account of it is accurate.
+
+### `MUT-D` — and the assertion behind it does not exist
+
+I removed the single line the whole criterion rests on — `await resolver.ensureResolved();` — leaving
+the guard to decide against an unresolved session, which is precisely the race `AC-125-B` forbids.
+The dev server rebuilt (*"Changes detected. Rebuilding… Application bundle generation complete"*,
+confirmed in its log before the run, so this is not a stale-bundle result):
+
+```
+Test run summary: Passed!   total: 6   failed: 0   succeeded: 6
+```
+
+**Six of six, green, with the rule deleted.**
+
+**Why the new landing-route test cannot catch it, structurally.**
+`An_unauthenticated_visit_to_the_landing_route_is_sent_to_sign_in` drives a **signed-out** visitor.
+For a signed-out visitor the guard's answer is `/sign-in` **whether or not it awaits** — unresolved and
+resolved both yield "not authenticated". `AC-125-B` is a statement about a **signed-in** user with a
+deep link, and **the suite contains no signed-in browser test at all**. The one test added for the
+landing route asserts the single case that is invariant to the rule.
+
+That is `agents.md` §3c's own prohibition — *"a scenario that passes whether or not the rule is
+implemented"* — and D-105's claim that *"none of the four repaired/added tests passes independent of
+the property it names"* is **true for the property that test names (the redirect) and not true for
+`AC-125-B`**, which its own comment invokes by name. That conflation is the finding.
+
+### And the reason nothing else covers it: there are no frontend tests
+
+```
+find src/Web/src -name "*.spec.ts"   →   0 files
+```
+
+**The Angular application has no unit tests of any kind.** `sessionGuard`, `SessionResolver`,
+`landingFor`, `enum-keys.ts`'s `assertNever` exhaustiveness, `AuthService.reset()` versus `clear()` —
+none is covered by anything except what six Playwright tests happen to touch through a browser. This
+is not a KAFF-125 defect and I am not scoring it as one; it is the context that makes `V-32-D`
+unfixable-by-accident, and it is the single largest untested surface in the repository.
+
+**What I did not do:** I did not drive the user-visible regression itself — signing a browser in, then
+deep-linking to `/` and watching the bounce — because the driver launches a fresh chromium per command
+and does not carry a cookie between them. The finding is *"the rule is unasserted"*, which `MUT-D`
+establishes directly; the regression's user-visible shape is read from source, and I say so rather
+than implying I watched it. Counted in §12.
+
+---
+
+## 6. `AC-125-C` — the deviation is defensible, and it was not KAFF-125's to make
+
+**This is Nabil's criterion and Nabil's call. I am not resolving it, and nothing below should be read
+as resolved.** What follows is the evidence he needs to make it in one sitting.
+
+### D-104's factual claim is true — I checked the file rather than the entry
+
+D-104 justifies the deviation on `ux/screen-inventory.md`'s S-005. That row reads, verbatim:
+
+> **S-005 · My profile · all with a login ·** Own name, phone, role, department, **and the projects I
+> am assigned to with my level.** Read-only except password.
+
+[Verified: 2026-09-04 @ `ux/screen-inventory.md` -> S-005]. **So S-005 has always required the
+projects, and D-104's claim is accurate.** With KAFF-105b shipped, `ux/screen-inventory.md` and
+`AC-125-C` now require opposite things, and no implementation can satisfy both.
+
+### What actually renders
+
+The profile landing renders a `profile.projects.title` ("مشاريعي") section, listing `session.projects`
+or an empty-state line [Verified: 2026-09-04 @ `src/Web/src/app/features/landing/landing-page.html`].
+So `AC-125-C`'s *"no project or assignment is shown"* is not met — the **section** appears even when
+the list is empty.
+
+### The half of the criterion D-104 did not engage with, and it is the load-bearing half
+
+`AC-125-C`'s full text is:
+
+> And no project or assignment is shown, because `/api/auth/me` carries neither today — that is
+> KAFF-105b's field, not yet built, **and this criterion is not rewritten the day it ships**
+
+D-104 argues that the *reason* ("because … carries neither today") expired. **That is correct and it is
+not the whole sentence.** The clause after the dash is the author writing down, in advance, what should
+happen on exactly the day that arrived — and D-104's entry never quotes it, never weighs it, and
+answers only the half that supports its conclusion.
+
+**It genuinely reads two ways**, which is why it is not mine to settle:
+
+* **"do not edit this criterion's text when KAFF-105b lands"** — document hygiene. D-104 complied
+  exactly: the story text is untouched and the deviation is recorded in `decisions.md`.
+* **"this requirement stands after KAFF-105b lands"** — a substantive hold. D-104 breached it.
+
+### My judgement, as asked
+
+**On substance the deviation is probably right.** S-005 is the older and more durable statement of what
+the screen *is*; a criterion whose stated reason has expired is weak ground for shipping a screen that
+contradicts its own inventory row; and hiding a field the payload now carries would make S-005 wrong on
+the day it was finally satisfiable.
+
+**On process it was not KAFF-125's call.** `CLAUDE.md` is unambiguous — *"If `spec.md` doesn't answer a
+business question, stop and ask. Do not decide. … An invented rule is always plausible, which is why it
+survives review."* Two Nabil-owned documents in direct contradiction is precisely a stop-and-ask, and
+`AC-125-C` is marked *(fails if the rule is broken)* — a criterion QA deliberately made falsifiable is
+now deliberately unmet, and **no test asserts either reading**, so the disagreement leaves no trace in
+any suite.
+
+**What D-104 got right, and it is most of what matters.** It did not patch the criterion, did not
+silently comply, and recorded the deviation in the open with its reasoning and an explicit invitation to
+reconcile. That is the behaviour the process wants when an agent decides something it should have
+asked about. The residue is one message that was never sent.
+
+**One line closes this**, and only Nabil can write it: either `AC-125-C` is amended and S-005 stands, or
+the criterion holds and the projects section comes off the profile landing. **It should not close by a
+Verifier, and it should not stay open into slice 4** — S-005 is a screen with a real user.
+
+---
+
+## 7. The E2E repair — all six watched failing, and one limit worth knowing
+
+Baseline against the live stack (API on 5080 against `kaff_demo`, SPA on 4200): **6 total, 0 failed,
+6 succeeded.** D-105's headline figure reproduces exactly.
+
+**The brief asked that each of the six be broken and watched go red. All six were.**
+
+| Test | Mutation | Result |
+|---|---|---|
+| `The_application_opens_in_arabic_right_to_left` | `DIRECTION.ar` set to `'ltr'` | **RED** |
+| `The_shell_renders_its_arabic_title_from_the_translation_catalogue` | `app.name` changed in `ar.json` | **RED** |
+| `An_unauthenticated_visit_to_the_landing_route_is_sent_to_sign_in` | `sessionGuard` returns `true` unconditionally | **RED** |
+| `The_health_endpoint_reports_the_database_guards_are_installed` | `KAFF_API` pointed at a stub returning the real degraded body | **RED** — and the message names the missing guard verbatim |
+| `The_page_does_not_scroll_sideways_at_phone_width` | `.app-title { min-width: 1400px }` | **RED** |
+| `The_suite_is_configured_when_running_in_CI` | `CI=true`, `KAFF_E2E_BASE_URL` unset | **RED** — 5 skipped, this one failed |
+
+**None of the six is a scenario that cannot fail.** The repair is sound, and the health test in
+particular is better than the screen assertion it replaced: its failure message carries the real
+`missingGuards` array rather than a boolean, exactly as D-105 claims.
+
+**Two qualifications, neither of which changes the verdict.**
+
+**(a) The scroll test's reach is narrower than its own comment.** Its comment says a horizontal
+scrollbar *"is the usual symptom of a physical CSS property that should have been logical"*. I first
+mutated it that way — `.app-title { margin-left: 900px }`, a physical property under RTL — and the test
+**stayed green**; `.app-header` carries `flex-wrap: wrap`
+[Verified: 2026-09-04 @ `src/Web/src/app/app.css` -> `.app-header`], which absorbs the stray margin
+without growing `scrollWidth`. It took a forced `min-width` to turn it red. **The test detects overflow;
+it does not reliably detect the physical-property mistake its comment claims it catches.** Worth
+knowing before it is relied on as the RTL regression net.
+
+**(b) The RTL discipline itself is clean at `HEAD`, checked independently** — a sweep for
+`margin/padding/border-left|right` and bare `left:`/`right:` across every `.css` file under
+`src/Web/src` returns **nothing**. `AC-125-F`'s logical-property rule holds today by construction, not
+by the test.
+
+**And the deleted status page (§9) really was the right call for the reason D-105 gives second, not the
+reason it gives first** — see below.
+
+---
+
+## 8. The demo seed — both claims true, and the gap is larger than "no project endpoint"
+
+### Claim 1 — seeded through real endpoints, no raw SQL. **True.**
+
+`scripts/seed-demo.ps1` contains no `INSERT`, `UPDATE`, `DELETE`, `SELECT`, no `psql`, no `DbContext`
+and no `Npgsql` [Verified: 2026-09-04 @ `scripts/seed-demo.ps1` -> `Post-Json`]. Every write is an HTTP
+call: `POST /api/setup`, `POST /api/auth/sign-in`, three `POST /api/users`, then the
+`POST /api/projects` probe.
+
+**Better than claimed, and worth naming:** the script *fails loudly if its own premise expires* —
+
+> `Write-Warning 'POST /api/projects did not 404 — a project-creation endpoint may have shipped since
+> deploy/DEMO.md was written.'`
+
+A seed script that notices when the documentation around it has gone stale is the opposite of the
+failure mode this repository keeps finding.
+
+### Claim 2 — `POST /api/projects` returns 404. **True, and I drove it as the most privileged caller.**
+
+Signed in as `owner_demo` — the Owner, global reach, holding `ProjectCreate` — against the running API:
+
+| Request | Result |
+|---|---|
+| `POST /api/projects` | **404 Not Found** |
+| `GET /api/projects` | **404 Not Found** |
+| `PUT /api/projects` | **404 Not Found** |
+
+**404, not 403** — so this is a route that does not exist, not a permission refusal wearing a 404. The
+route table confirms it. Five feature folders (`Health`, `Setup`, `Auth`, `Users`, `Assignments`) and
+**thirteen routes in the entire API**:
+
+```
+GET  /api/health          POST /api/setup            POST /api/users
+POST /api/auth/sign-in    POST /api/auth/sign-out    GET  /api/auth/me
+POST /api/auth/change-password
+POST /api/users/{userId}/role · /department · /deactivate · /reactivate
+POST /api/projects/{projectId:guid}/assignments
+POST /api/projects/{projectId:guid}/assignments/{assignmentId:guid}/revoke
+```
+
+### The gap is bigger than the brief states, and this is the correction Nabil most needs
+
+The brief calls the missing project-creation endpoint *"the largest claimed gap in the system"*.
+**It is one of two, and the second is not mentioned anywhere in the brief.**
+
+**There is no client-creation endpoint either.** `Kaff.Domain.MasterData.Client` exists as a complete
+domain type; `src/Api/Features/` has **no `Clients` folder and no route mentioning a client**. And
+`Project.Create` requires a `ClientId`. So the dependency chain is:
+
+> **no client endpoint → no client row → no project row → no assignment, no team size, no
+> unstaffed-site indicator, no per-project permission list.**
+
+Building `POST /api/projects` alone would **not** unblock the demo. It needs `POST /api/clients` first.
+D-105 saw this — *"a fabricated project would need a fabricated client under it"* — but framed it as an
+argument against raw SQL rather than as the second missing endpoint, and the brief inherited the
+single-gap framing.
+
+**`agents.md`'s slice table names slice 1 as "Foundation: auth, roles, assignment, audit, **Client
+master**".** The Client master has no API surface. Sprint 2 is closing with a slice-1 deliverable
+unbuilt — that is a scope fact for Nabil, not a defect in any of these four commits.
+
+### The demo database, measured
+
+`kaff_demo`: **4 users, 0 projects, 0 clients, 0 assignments, 14 accounts, 0 postings.** The 14 are
+`AccountTreeSeeder`'s company accounts. **All four documented credentials work exactly as
+`deploy/DEMO.md` §4.4 records them**, driven through the real endpoints:
+
+| Account | Sign-in | `/api/auth/me` |
+|---|---|---|
+| `owner_demo` | **204** | `Owner`, `mustChangePassword: false`, 0 projects |
+| `hend_hr_demo` | **204** | `Hr`, `mustChangePassword: true`, 0 teamProjects |
+| `sara_finance_demo` | **204** | `Finance`, `mustChangePassword: true`, 0 projects |
+| `karim_sales_demo` | **204** | `MarketingSales`, `mustChangePassword: true`, 0 projects |
+
+**The consequence for the demo, stated plainly: every sprint-2 capability is invisible in it.**
+KAFF-105b's per-project payload — the projection, the access path, the level, the per-project
+permissions, HR's team sizes — renders as **two empty-state sentences**, because there is no project
+for any of it to describe. The demo faithfully shows the shell, the sign-in flow, the forced password
+change, the RTL layout and four honest empty states. It shows **none** of what these four commits
+actually built.
+
+---
+
+## 9. `V-32-E`, **LOW** · the deleted status page — nothing references it, twenty i18n entries are now dangling, and D-105's stated reason is false
+
+### References — clean
+
+Repo-wide, the only surviving mention of `status-page` / `StatusPage` / `status-panel` /
+`status-guards` is a historical comment in `SmokeTests.cs` explaining why they went
+[Verified: 2026-09-04 @ `tests/E2E.Tests/SmokeTests.cs` -> `SmokeTests`]. Nothing imports it, nothing
+routes to it. **The deletion is complete and correct.**
+
+### i18n — D-105's reason for deleting it is factually wrong
+
+D-105 §2 states, as its lead evidence:
+
+> *"`status-page.ts`'s own template already referenced `status.*` i18n keys that were **not in either
+> catalogue any more** [checked: `src/Web/public/locales/{ar,en}.json` have no `status` key]"*
+
+**Both catalogues carry a `status` block, and they always did.** Fifteen keys in each, 178 keys per
+catalogue, ar and en in exact agreement (0 keys on either side alone). And ten of the fifteen are
+precisely the deleted template's keys — I read them out of the deleted file to be sure:
+
+```
+status.title · status.loading · status.refresh · status.api · status.database
+status.guards · status.reachable · status.unreachable · status.guards.installed · status.guards.missing
+```
+
+So the component would **not** have rendered raw keys; it would have rendered correctly. **The evidence
+D-105 gives for "it had already started rotting" is false.**
+
+**The deletion is still right** — for the reason D-105 gives *second*, which needs no i18n claim at all:
+nothing routed to it, `ux/` asks for no such screen, and `driver.mjs smoke` plus `/api/health` already
+prove the chain it existed to prove. **Right call, wrong evidence** — which matters because that
+sentence is the one a future session will quote.
+
+### The dangling keys — the answer to the brief's question is *yes, twenty*
+
+`ad92638` deleted the only consumer of those ten keys, in both catalogues: **20 orphaned entries.**
+Verified by searching every `.ts` and `.html` under `src/Web/src` for each key — all ten are referenced
+nowhere.
+
+**Two of the fifteen groups must be treated differently, so the cleanup does not overreach:**
+
+* The five `status.kaff.*` keys — لم تبدأ · جاري العمل · انتهت · متعثرة · تم تأجيلها — are **not
+  orphans of this commit.** They were added in slice 0, have never had a consumer, and `ar.json`'s own
+  `_note` reserves them: *"Kaff's status vocabulary under `status.kaff.*` appears verbatim per
+  CLAUDE.md and must not be translated, paraphrased or substituted."* They are pre-staged for the
+  project screens. **Leave them.**
+* `status.loading` is an exact duplicate of the live `shell.boot.loading` ("جارٍ التحميل…"), which is
+  what the boot surface actually renders. Only the orphan should go.
+
+### Why no gate caught this
+
+`TranslationCatalogueTests` checks three things — every domain error key has both translations, the two
+catalogues describe the same key set, and no translation is empty
+[Verified: 2026-09-04 @ `tests/Domain.Tests/TranslationCatalogueTests.cs` ->
+`The_two_catalogues_describe_the_same_set_of_keys`]. **All three run key→translation. None runs
+key→consumer**, so a catalogue entry nobody renders is invisible to the suite, and deleting a component
+can never turn anything red. That is why 20 dangling entries sit inside a green 111/111.
+
+`LOW`: dead data, no runtime effect, and both catalogues stay structurally valid. Listed for the
+cleanup in §15, not for a fix here.
