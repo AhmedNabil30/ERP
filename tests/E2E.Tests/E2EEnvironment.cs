@@ -7,7 +7,16 @@ public static class E2EEnvironment
 {
     public const string BaseUrlVariable = "KAFF_E2E_BASE_URL";
 
+    /// <summary>Same variable name and default as <c>driver.mjs</c>'s <c>KAFF_API</c>, deliberately —
+    /// two health checks pointed at two different hosts would be worse than either alone.</summary>
+    public const string ApiBaseUrlVariable = "KAFF_API";
+
     public static string? BaseUrl => Environment.GetEnvironmentVariable(BaseUrlVariable);
+
+    public static string ApiBaseUrl =>
+        Environment.GetEnvironmentVariable(ApiBaseUrlVariable) is { Length: > 0 } value
+            ? value
+            : "http://localhost:5080";
 
     public static bool IsConfigured => !string.IsNullOrWhiteSpace(BaseUrl);
 
