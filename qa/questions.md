@@ -750,9 +750,9 @@ authorise a create.
 > `ProjectFinancialsEdit` cites `Finance_edits_a_contracts_tax_settings_but_not_its_engineering_scope`
 > [Verified: 2026-08-22 @ `PermissionEvaluatorTests.cs` -> `Finance_edits_a_contracts_tax_settings_but_not_its_engineering_scope`];
 > `UserRead` cites `Hr_may_read_the_user_list_and_still_reaches_nothing_financial` and
-> `Hr_holds_exactly_three_permissions_and_none_touches_money`
+> `Hr_holds_no_permission_that_touches_money`
 > [Verified: 2026-08-22 @ `PermissionEvaluatorTests.cs` -> `Hr_may_read_the_user_list_and_still_reaches_nothing_financial`,
-> @ `CatalogueCompletenessTests.cs` -> `Hr_holds_exactly_three_permissions_and_none_touches_money`].
+> @ `CatalogueCompletenessTests.cs` -> `Hr_holds_no_permission_that_touches_money`].
 >
 > **`TC-1-254` is not retired** — it asserts a standing property of the catalogue, not this one
 > defect. Its *"expected to fail on first run"* note is now stale and is withdrawn as **F-32**.

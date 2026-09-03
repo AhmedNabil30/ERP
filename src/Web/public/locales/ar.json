@@ -81,17 +81,6 @@
 
   "action.save": "حفظ",
 
-  "status.title": "حالة النظام",
-  "status.loading": "جارٍ التحميل…",
-  "status.refresh": "تحديث",
-  "status.api": "الواجهة البرمجية",
-  "status.database": "قاعدة البيانات",
-  "status.guards": "ضوابط قاعدة البيانات",
-  "status.reachable": "متصلة",
-  "status.unreachable": "غير متصلة",
-  "status.guards.installed": "مفعّلة",
-  "status.guards.missing": "غير مفعّلة",
-
   "status.kaff.not_started": "لم تبدأ",
   "status.kaff.in_progress": "جاري العمل",
   "status.kaff.finished": "انتهت",

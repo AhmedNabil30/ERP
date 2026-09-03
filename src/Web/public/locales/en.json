@@ -81,17 +81,6 @@
 
   "action.save": "Save",
 
-  "status.title": "System status",
-  "status.loading": "Loading…",
-  "status.refresh": "Refresh",
-  "status.api": "API",
-  "status.database": "Database",
-  "status.guards": "Database guards",
-  "status.reachable": "Reachable",
-  "status.unreachable": "Unreachable",
-  "status.guards.installed": "Installed",
-  "status.guards.missing": "Missing",
-
   "status.kaff.not_started": "لم تبدأ",
   "status.kaff.in_progress": "جاري العمل",
   "status.kaff.finished": "انتهت",

@@ -334,9 +334,9 @@ against a staff session that can never exist.
 **B3-9. Scrum Master's ruling, 2026-09-01. This is process, not business, so it is mine to make.**
 
 Adding `ProjectTeamRead` for `Role.Hr` makes HR hold four permissions, which makes
-`Hr_holds_exactly_three_permissions_and_none_touches_money` **false in its own name**
-[Verified: 2026-09-01 @ `tests/Domain.Tests/CatalogueCompletenessTests.cs` ->
-`Hr_holds_exactly_three_permissions_and_none_touches_money`]. That name is cited in **five** files of
+`Hr_holds_no_permission_that_touches_money` **false in its own name**
+[Verified: 2026-09-04 @ `tests/Domain.Tests/CatalogueCompletenessTests.cs` ->
+`Hr_holds_no_permission_that_touches_money`]. That name is cited in **five** files of
 record — `decisions.md`, `process/agile.md`, `qa/questions.md`,
 `stories/slice-1-foundation/KAFF-107-hr-role-is-bound-to-the-hr-department.md` and
 `proposals/N10-project-creation.md` [Verified: 2026-09-01 — searched each directory] — several of

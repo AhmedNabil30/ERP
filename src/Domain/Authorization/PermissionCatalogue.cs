@@ -275,9 +275,9 @@ public static class PermissionCatalogue
             // no money and govern no ledger, and D-044 ruling 2's "zero financial visibility" is what
             // keeps HR's set to this shape. See decisions.md D-055 §2.
             // SM-30: pinned by Hr_may_read_the_user_list_and_still_reaches_nothing_financial
-            // [Verified: 2026-08-22 @ tests/Domain.Tests/PermissionEvaluatorTests.cs:290] and by
-            // Hr_holds_exactly_three_permissions_and_none_touches_money
-            // [Verified: 2026-08-22 @ tests/Domain.Tests/CatalogueCompletenessTests.cs:160].
+            // [Verified: 2026-09-04 @ `PermissionEvaluatorTests.cs` -> `Hr_may_read_the_user_list_and_still_reaches_nothing_financial`] and by
+            // Hr_holds_no_permission_that_touches_money
+            // [Verified: 2026-09-04 @ `CatalogueCompletenessTests.cs` -> `Hr_holds_no_permission_that_touches_money`].
             // Neither can enforce the projection warned about above — only the endpoint can.
             new(Permission.UserRead, PermissionScope.CompanyWide,
                 [owner, hr],

@@ -56,8 +56,8 @@ the fourth.
 
 **SM-33 also binds this row, and it is new.** Adding `ProjectTeamRead` for `Role.Hr` makes HR hold
 four permissions, which makes the existing test's own name false the moment this row lands
-[Verified: 2026-09-01 @ `tests/Domain.Tests/CatalogueCompletenessTests.cs` ->
-`Hr_holds_exactly_three_permissions_and_none_touches_money`]. Per `process/agile.md` -> *The Test
+[Verified: 2026-09-04 @ `tests/Domain.Tests/CatalogueCompletenessTests.cs` ->
+`Hr_holds_no_permission_that_touches_money`]. Per `process/agile.md` -> *The Test
 Naming Law — SM-33* (`decisions.md` D-097 §2), **the implementing agent renames it in the same commit
 that lands this row**, and moves the citations it owns (its own source, its `decisions.md` entry);
 **the Scrum Master moves the citations in `meetings/`, `qa/` and `proposals/`**, which the

@@ -68,10 +68,11 @@ interface Me {
 }
 ```
 
-**A user still holding a temporary password does not get this payload at all** — the call is refused
-with `errors.auth.password_change_required` and the shell routes to the forced change screen (S-003).
+**A user still holding a temporary password does not get this payload at all** — ~~the call is refused
+with `errors.auth.password_change_required`~~ **the API authenticates the user, issues the session token, and includes a `mustChangePassword: true` flag inside the payload** (D-072 §2), and the shell routes to the forced change screen (S-003).
 *(KAFF-105 rule 3 describes it instead as a field on the response. The two readings conflict;
-`questions.md` Q-UX-18 raises it, and `slice-1-flows.md` S-004 is written against the refusal.)*
+`questions.md` Q-UX-18 raises it, and `slice-1-flows.md` S-004 is written against the refusal.)* 
+**[Amended 2026-09-04: D-072 §2 resolved the conflict in favour of the field-on-200 reading. The call succeeds at the API level; the frontend intercepts the flag and enforces the redirect to password change, not the server refusing the call.]**
 
 Project-scoped permissions are answered per project: hold the company-wide set globally, and ask the
 API for the project's own capability set when a project is opened. **Never infer a project-scoped

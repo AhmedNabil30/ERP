@@ -2436,8 +2436,8 @@ checked this morning and both are wrong**, in the two files the rule most direct
   day from `ProjectManage` to `ProjectCreate`.
 * **D-056 §2 itself** — the entry that proposes SM-30 — names
   `Hr_holds_exactly_two_permissions_and_neither_touches_money` twice. **That test no longer exists
-  under that name.** It is `Hr_holds_exactly_three_permissions_and_none_touches_money`
-  [Verified: 2026-08-22 @ `CatalogueCompletenessTests.cs` -> `Hr_holds_exactly_three_permissions_and_none_touches_money`], renamed **in the
+  under that name.** It is `Hr_holds_no_permission_that_touches_money`
+  [Verified: 2026-09-04 @ `CatalogueCompletenessTests.cs` -> `Hr_holds_no_permission_that_touches_money`], renamed **in the
   same run that wrote the entry**, because `UserRead` made the set three. D-056 §2's *substance* is
   correct and was verified: the money half of the name is now genuinely asserted (`:183-185`), and it
   was decoration before.
@@ -3048,8 +3048,8 @@ D-059 §6 ruled on this and nothing here changes it. Same shape, different domai
 is small and touches no money — so a reader auditing that argument against a two-item list would not
 notice the third item they had just been told did not exist.
 
-Fixed by citing `Hr_holds_exactly_three_permissions_and_none_touches_money`
-[Verified: 2026-08-22 @ `CatalogueCompletenessTests.cs` -> `Hr_holds_exactly_three_permissions_and_none_touches_money`]
+Fixed by citing `Hr_holds_no_permission_that_touches_money`
+[Verified: 2026-09-04 @ `CatalogueCompletenessTests.cs` -> `Hr_holds_no_permission_that_touches_money`]
 rather than by correcting the number. **One instance only. Not a rule.** See §7 for where it does not
 fit.
 

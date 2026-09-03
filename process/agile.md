@@ -379,8 +379,8 @@ SM-30 as proposed requires a comment to cite a test by name. Two such citations 
   [Verified: 2026-08-22 @ `PermissionEvaluatorTests.cs` -> `Only_the_owner_and_the_technical_office_may_open_a_project`].
 - **`decisions.md` D-056 §2 — the entry that proposed SM-30** — names
   `Hr_holds_exactly_two_permissions_and_neither_touches_money`, renamed to
-  `Hr_holds_exactly_three_permissions_and_none_touches_money` **in the same run that wrote the entry**
-  [Verified: 2026-08-22 @ `CatalogueCompletenessTests.cs` -> `Hr_holds_exactly_three_permissions_and_none_touches_money`].
+  `Hr_holds_no_permission_that_touches_money` **in the same run that wrote the entry**
+  [Verified: 2026-09-04 @ `CatalogueCompletenessTests.cs` -> `Hr_holds_no_permission_that_touches_money`].
 
 **The rule's own proposal contains an instance of the rule's own failure mode**, and both were written
 by careful agents in otherwise exemplary entries. **A citation nobody can check decays into the thing
@@ -416,9 +416,9 @@ the Definition of Done below.
 
 **What raised it.** KAFF-105b would add a `ProjectTeamRead` catalogue row granted to `Role.Hr`, making
 HR hold four permissions — which makes
-`Hr_holds_exactly_three_permissions_and_none_touches_money` false **in its own name**
-[Verified: 2026-09-01 @ `tests/Domain.Tests/CatalogueCompletenessTests.cs` ->
-`Hr_holds_exactly_three_permissions_and_none_touches_money`]. That name is cited in **five** files of
+`Hr_holds_no_permission_that_touches_money` false **in its own name**
+[Verified: 2026-09-04 @ `tests/Domain.Tests/CatalogueCompletenessTests.cs` ->
+`Hr_holds_no_permission_that_touches_money`]. That name is cited in **five** files of
 record — `decisions.md`, this file, `qa/questions.md`,
 `stories/slice-1-foundation/KAFF-107-hr-role-is-bound-to-the-hr-department.md` and
 `proposals/N10-project-creation.md` — several of which the implementing agent must not edit.
