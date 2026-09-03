@@ -105,7 +105,75 @@ questions merged into it with their origin recorded (action **SM-4**).
 
 ---
 
-## Sprint 2 — open · scope **not yet locked**
+## Sprint 3 — open 2026-09-04 · the Client master, and **every story in it is `BLOCKED` today**
+
+> **`meetings/2026-09-04-sprint-3-refinement.md` is the ceremony and the reasoning. This is the
+> summary.**
+>
+> **Why this sprint is the Client master, and not something else.** `agents.md`'s slice sequence
+> defines slice 1 as *"Foundation: auth, roles, assignment, audit, **Client master**"*. Sprint 1
+> deferred all five client stories and **they were never picked back up**; nine days then went into
+> verification and repair loops which found a real defect every run and **advanced no slice.** Nabil
+> named it on 2026-09-04 — *"we already had a roadmap, why are we not moving according to the plan?"*
+>
+> **Two framing corrections carried into this sprint.** **Projects are slice 4, not slice 1** — no
+> slice-1 story creates one, and the missing `POST /api/projects` is the plan working as written, not
+> a gap. **Nobody adds a project endpoint to slice 1 to make a demo look fuller.** And the Client
+> master **also gates slice 4**, because `Project.Create` requires a `ClientId`.
+>
+> ### Refinement verdict — all five `BLOCKED`, and three of them transitively
+>
+> | Story | Verdict |
+> |---|---|
+> | **KAFF-119** | **`BLOCKED`** — Definition of Ready line 9. `AC-119-J`, `AC-119-K` and `AC-119-L` have **zero** test cases; a criterion with no scenario that can fail is `agents.md` §3c's own prohibition |
+> | **KAFF-120** | **`BLOCKED`** — DoR lines 9 **and** 11. `AC-120-B` uncovered, **and three bare `:digits` citations that are all wrong today**, inside a story the board called `Ready`. `scripts/check-citations.ps1` is structurally blind to them: its legacy pattern needs a filename before the colon |
+> | **KAFF-121 · 123 · 124** | **`BLOCKED` transitively.** Each passes all twelve DoR lines **on its own account** and each declares `Depends on: KAFF-119`. **F-21** is this file's own record of getting that wrong once — *"six `Ready` stories depended on a `BLOCKED` one"* |
+>
+> **The repairs need no ruling from anybody** — QA writes four test cases, the BA repoints three
+> citations. **Hours, not a stalled sprint.** Saying so is not the same as waiving the gate.
+>
+> **Also blocking the build, and not a story defect:** **N6**, the client-code generator's mechanism,
+> is with the Architect, and the duplicate-warning API contract with it.
+>
+> **One new question for Karim:** may the client-code sequence contain **gaps**? A PostgreSQL sequence
+> is non-transactional, so a rolled-back insert burns a number and `C-10002` never exists — and a code
+> is a reference that appears on extracts and ledgers.
+>
+> **`KAFF-122` stays `Superseded` and is not re-created in slice 1.** **`KAFF-120` is *not* stale in
+> the same way** — that was checked, and `spec.md` §6.7's amendment says *"individual clients do not
+> withhold"* is unchanged. But six domain tests already discharge `AC-120-C/D/E/G`
+> [Verified: 2026-09-04 @ `tests/Domain.Tests/WithholdingTests.cs` -> `A_contract_for_an_individual_client_cannot_withhold`],
+> so **its remaining work rides on KAFF-119's and KAFF-121's endpoints and its 2 points are probably
+> now wrong.** Not re-estimated here: estimates move at refinement with the team.
+
+---
+
+## Sprint 2 — **CLOSED 2026-09-04** · ~~open · scope not yet locked~~
+
+> ### ⚠️ This heading read *"open · scope **not yet locked**"* until 2026-09-04, and recorded **none** of the thirteen commits since `4bf81ce`.
+>
+> **Corrected loudly rather than rewritten, per SM-29's own practice** — and named as what it is: the
+> same staleness this project keeps catching in every other artefact, sitting in the board itself.
+>
+> **Sprint 2 closed with `qa/slice-1/verification-2026-09-04.md`**, which verified four commits and
+> **accepted all four**. What landed since the board was last current:
+>
+> | Commit | What | Verdict |
+> |---|---|---|
+> | `e56cd16` | **KAFF-105b** — `/api/auth/me` returns each caller's projects | **ACCEPTED**, with `V-32-A` (HIGH) and `V-32-B` (MEDIUM) routed |
+> | `7461332` | **KAFF-125** — the staff shell | **ACCEPTED as an implementation.** `AC-125-B` verified by code only (`V-32-D`); **`AC-125-C` explicitly NOT accepted as satisfied** — Nabil's criterion, Nabil's call |
+> | `ad92638` | E2E suite repaired, orphaned status page deleted | **ACCEPTED**, with `V-32-E` (LOW) |
+> | `440e4bd` | A repeatable demo seed, through real endpoints only | **ACCEPTED** — and it found the API's client and project gap |
+> | `1c499d4` | **`V-32-A` fixed** — the staff payload guarantee is a whitelist, watched red first (**D-106**) | Not yet independently verified |
+> | `c153bd7` | Housekeeping — ten SM-33 citations, twenty orphaned i18n entries, one stale UX paragraph | Not yet independently verified |
+> | eight more | Verifier increments, 2026-09-03 and 2026-09-04 | — |
+>
+> **The demo's ceiling, and it is a scope fact rather than a defect:** `kaff_demo` holds **0 projects,
+> 0 clients, 0 assignments, 0 postings**. Everything sprint 2 built renders as two empty-state
+> sentences, because there is no project for any of it to describe. **The blocker is two missing
+> endpoints, not presentation** — and the client one is this sprint.
+
+### The 2026-09-01 refinement, kept as the record
 
 > ### ⚠️ Refined 2026-09-01 — **neither proposed story is Ready.** `meetings/2026-09-01-sprint-2-refinement.md`
 >
@@ -467,7 +535,7 @@ criterion behind them. **KAFF-105a is untouched by D-065 — checked, not assume
 > only this table would have started a blocked story.** Found by the BA against a file it does not own
 > and fixed by the Scrum Master, who does. **When these two disagree the build order is authoritative**
 > — it is recomputed every time a blocker moves; this table is a backlog inventory.
-| KAFF-105b | `GET /api/auth/me` returns the projects I reach, and how | **5** | **READY 2026-09-02.** `Q43` — its sole remaining Definition of Ready failure — is **ANSWERED** (D-100): HR's entries carry the project name, its reference code and its team size. The other five failures were repaired 2026-09-01. It still discharges **neither** `AC-101b-A` nor `AC-101b-D`; both moved to **KAFF-125** on 2026-09-02. | 105a, 113, 114 |
+| KAFF-105b | `GET /api/auth/me` returns the projects I reach, and how | **5** | **BUILT `e56cd16` and ACCEPTED 2026-09-04** by a session that did not write it, with `V-32-A` (HIGH, **fixed** — D-106) and `V-32-B` (MEDIUM) routed. ~~**READY 2026-09-02.**~~ `Q43` — its sole remaining Definition of Ready failure — is **ANSWERED** (D-100): HR's entries carry the project name, its reference code and its team size. The other five failures were repaired 2026-09-01. It still discharges **neither** `AC-101b-A` nor `AC-101b-D`; both moved to **KAFF-125** on 2026-09-02. | 105a, 113, 114 |
 | KAFF-106 | The Owner creates a user with a role and a department | 5 | BUILT, verified 2026-08-25 — 9 of 11 criteria satisfied. | 100 |
 | KAFF-107 | An HR user cannot be created or moved outside the HR department | 2 | Ready | 106 |
 | KAFF-108 | Move a user between departments | 3 | **ACCEPTED** 2026-08-25 — 7 of 7, `qa/slice-1/verification-2026-08-25.md` §8. *(This row read `Ready` until 2026-09-01 — an unbuilt state — while the same file's build order and "Sprint 1, final" table both had it accepted. Found by Backend at refinement; corrected by the Scrum Master, who owns the board.)* | 106 |
@@ -481,13 +549,13 @@ criterion behind them. **KAFF-105a is untouched by D-065 — checked, not assume
 | KAFF-116 | Every audit record says how the actor reached the project | 3 | Ready | — |
 | KAFF-117 | The Owner reads the audit trail, and nobody else does | 5 | Ready | 116, 118 |
 | KAFF-118 | Every state change in slice 1 writes an audit record | 3 | **UNBUILT.** Nothing of this story was started. | 106, 109, 110, 111, 113, 119 |
-| KAFF-119 | Register a client, with a generated code and a duplicate-phone warning | 5 | Ready | 106 |
-| KAFF-120 | An individual's contract cannot carry a withholding rate — **defect, now wiring** | 2 | Ready | 119 |
-| KAFF-121 | Edit a client's name and contact details | 3 | Ready | 119 |
-| KAFF-122 | ~~Set a corporate client's withholding category~~ | — | **Superseded** → KAFF-416 | — |
-| KAFF-123 | Archive a client | 2 | Ready | 119 |
-| KAFF-124 | Find a client by name, code or phone | 2 | Ready | 119 |
-| **KAFF-125** | **The staff shell: session resolution, chrome, and role-based landing** | **3** | **CUT 2026-09-02**, on Nabil's ruling — *"a dedicated frontend ticket must be cut for the visual shell itself … you cannot discharge a UI rendering dependency with a JSON response."* **`AC-101b-A` and `AC-101b-D` move here** from KAFF-105b and KAFF-115, which cannot discharge them (D-097 §3). **Deliberately not marked Ready or BLOCKED against a sprint** — whether it is built in sprint 2 is a scope question standing with Nabil. Renders S-004, S-005's identity half and the shell chrome today; **S-006 and S-011 have no endpoint to feed them and S-009a's route is an open UX question**. | 101a, 101b, 105a |
+| KAFF-119 | Register a client, with a generated code and a duplicate-phone warning | 5 | ~~Ready~~ **`BLOCKED` 2026-09-04** — DoR line 9: `AC-119-J`, `AC-119-K`, `AC-119-L` have no test case. Also gated on **N6** (Architect). | 106 |
+| KAFF-120 | An individual's contract cannot carry a withholding rate — **defect, now wiring** | 2 | ~~Ready~~ **`BLOCKED` 2026-09-04** — DoR lines 9 and 11: `AC-120-B` uncovered, and three bare `:digits` citations wrong today. **Its 2 points are probably now wrong** — four of its eight criteria are already discharged by `tests/Domain.Tests/WithholdingTests.cs`. | 119 |
+| KAFF-121 | Edit a client's name and contact details | 3 | ~~Ready~~ **`BLOCKED` transitively on KAFF-119.** Passes all twelve DoR lines on its own account. | 119 |
+| KAFF-122 | ~~Set a corporate client's withholding category~~ | — | **Superseded** → KAFF-416. **Not to be built or re-created in slice 1** — re-confirmed 2026-09-04. | — |
+| KAFF-123 | Archive a client | 2 | ~~Ready~~ **`BLOCKED` transitively on KAFF-119.** Passes all twelve DoR lines on its own account. | 119 |
+| KAFF-124 | Find a client by name, code or phone | 2 | ~~Ready~~ **`BLOCKED` transitively on KAFF-119.** Passes all twelve DoR lines on its own account. | 119 |
+| **KAFF-125** | **The staff shell: session resolution, chrome, and role-based landing** | **3** | **BUILT `7461332`, ACCEPTED as an implementation 2026-09-04.** Two exceptions, neither a code defect: **`AC-125-B` is verified by code review only** — `V-32-D` established that *nothing asserts it*, and deleting the `await` it rests on left E2E at 6/6, because `src/Web` has **zero `.spec.ts` files**. And **`AC-125-C` is NOT accepted as satisfied**: it is deliberately unmet, `ux/screen-inventory.md`'s S-005 and the criterion now require opposite things, and **it is Nabil's criterion and his call.** ~~**CUT 2026-09-02**, on Nabil's ruling~~ — *"a dedicated frontend ticket must be cut for the visual shell itself … you cannot discharge a UI rendering dependency with a JSON response."* **`AC-101b-A` and `AC-101b-D` move here** from KAFF-105b and KAFF-115, which cannot discharge them (D-097 §3). **Deliberately not marked Ready or BLOCKED against a sprint** — whether it is built in sprint 2 is a scope question standing with Nabil. Renders S-004, S-005's identity half and the shell chrome today; **S-006 and S-011 have no endpoint to feed them and S-009a's route is an open UX question**. | 101a, 101b, 105a |
 
 ### The committable scope, computed transitively
 
