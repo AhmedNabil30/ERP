@@ -588,9 +588,17 @@ ALTER TABLE postings ENABLE TRIGGER trg_postings_append_only;
 DELETE FROM accounts WHERE code = 'PROBE-UNFLOORED';
 ```
 
-The throwaway `kaff_verify` database created for this pass can be dropped; nothing depends on it.
+**Until that is run, `kaff_verify` is the only clean database on this machine**, and it is where §1's
+`8/8` smoke and §4's mutations were measured. It is a throwaway and can be dropped once `kaff` is
+repaired — but not before, or there is nothing on this machine the API will boot against outside
+`Development`. To use it meanwhile:
+
+```powershell
+$env:ConnectionStrings__KaffDatabase='Host=localhost;Port=5432;Database=kaff_verify;Username=kaff;Password=kaff'
+```
+
 `git status` is otherwise clean apart from this report — the `MUT-2` snapshot edit in
-`DatabaseInitializer.cs` is reverted (§12).
+`DatabaseInitializer.cs` is reverted, and the closing gates in §9a were run after the revert.
 
 ---
 
