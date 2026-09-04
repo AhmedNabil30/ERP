@@ -1,6 +1,6 @@
 # KAFF-106 · The Owner creates a user with a role and a department
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** **BUILT AND VERIFIED WITH A CRITERION STILL HELD — not accepted.** 9 of 11 satisfied, verified 2026-08-25. **HOLD on `AC-106-J`** (Arabic/RTL at mobile width — Frontend's; the sign-in and change-password screens now exist but this one does not, so it is still not a pass). **`AC-106-H` is no longer deferrable** — it was deferred to KAFF-101a and KAFF-103, both exist (D-084, D-086), and **no Verifier pass has examined it since**: the 2026-08-27 pass covered 109, 105a, 102, 101a and 103 only. Owed to the next Verifier pass. **And carried with a named exposure:** `ca4db6c` (D-095) added an `Enum.IsDefined` refusal to `User.ValidateDepartment`, which `User.Create` — this story's own path — calls; for the nine roles that exist the behaviour is unchanged and that equivalence is pinned by a test rather than asserted [Verified: 2026-08-30 @ `tests/Domain.Tests/UserTests.cs` -> `The_two_role_doors_admit_exactly_these`]. *(Corrected 2026-08-30: a Scrum Master brief wrongly dictated `ACCEPTED` here.)*
+**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** **BUILT AND VERIFIED WITH A CRITERION STILL HELD — not accepted.** 9 of 11 satisfied, verified 2026-08-25. ~~**HOLD on `AC-106-J`** (Arabic/RTL at mobile width — Frontend's; the sign-in and change-password screens now exist but this one does not, so it is still not a pass).~~ → **`AC-106-J` MOVED to `KAFF-127` as `AC-127-B` on 2026-09-05** (Scrum Master, at the sprint-3 close; §2a rule 5). **The hold stands and this story is still not accepted** — it is discharged where the screen is built, not here. ⚠️ **It was homeless for nineteen days** because *"deferred to Frontend"* names a role rather than a story, and a criterion deferred to a role is one nobody is holding. **`AC-106-H` is no longer deferrable** — it was deferred to KAFF-101a and KAFF-103, both exist (D-084, D-086), and **no Verifier pass has examined it since**: the 2026-08-27 pass covered 109, 105a, 102, 101a and 103 only. Owed to the next Verifier pass. **And carried with a named exposure:** `ca4db6c` (D-095) added an `Enum.IsDefined` refusal to `User.ValidateDepartment`, which `User.Create` — this story's own path — calls; for the nine roles that exist the behaviour is unchanged and that equivalence is pinned by a test rather than asserted [Verified: 2026-08-30 @ `tests/Domain.Tests/UserTests.cs` -> `The_two_role_doors_admit_exactly_these`]. *(Corrected 2026-08-30: a Scrum Master brief wrongly dictated `ACCEPTED` here.)*
 **Spec:** §9, §2 · **Decisions:** D-044 (rulings 1, 2), D-035, **D-049 (rulings 3, 4)**
 **Depends on:** KAFF-100 *(soft — the Api harness issues identities directly, so this endpoint can be
 built and tested before the bootstrap shape is decided; only the demo waits on it)*
@@ -107,10 +107,23 @@ Given the Owner creates a user with an 8-character all-lower-case temporary pass
 When the request is submitted
 Then it is accepted — no complexity rule refuses it (D-049 ruling 3)
 
-**AC-106-J — Arabic, RTL, at mobile width** *(deferred to Frontend)*
-Given the user form at 390px in Arabic
-When it renders
-Then direction is RTL, every label resolves from the catalogue, and there is no horizontal overflow
+~~**AC-106-J — Arabic, RTL, at mobile width** *(deferred to Frontend)*~~
+~~Given the user form at 390px in Arabic~~
+~~When it renders~~
+~~Then direction is RTL, every label resolves from the catalogue, and there is no horizontal overflow~~
+
+> **MOVED to `KAFF-127` as `AC-127-B` on 2026-09-05** — Scrum Master, at the sprint-3 close.
+> **Moved, not copied**, so there is exactly one place it is discharged.
+>
+> *"Deferred to Frontend"* named no story, and a criterion deferred to a role rather than to a story
+> is a criterion nobody is holding. It sat undischarged from **2026-08-25 to 2026-09-05 — nineteen
+> days**, which is longer than `AC-119-L`, `AC-121-I` and `AC-124-I` managed put together before
+> `KAFF-126` was cut for them. `process/agile.md` §2a rule 5 now names this exact shape as a defect in
+> the board: *"A UI criterion sitting on a delivered backend story is a defect in the board. Move it to
+> the Frontend story that will discharge it — moved, not copied."*
+>
+> **This story stays BUILT-AND-VERIFIED-WITH-A-CRITERION-HELD and does not re-open.** It is accepted
+> when `AC-127-B` is discharged, and not before.
 
 **AC-106-K — an HR user cannot be created outside the HR department** *(fails if the rule is broken)*
 Given I am signed in as the Owner
