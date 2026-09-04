@@ -175,6 +175,8 @@
   "errors.master.day_labour_requires_trade": "Day labour must be registered against a باب.",
   "errors.master.closed_lost_requires_reason": "Closing an opportunity as lost requires a reason.",
   "errors.master.individual_does_not_withhold": "An individual client does not withhold tax at source.",
+  "errors.master.client_kind_required": "Choose whether the client is an individual or a company.",
+  "errors.master.duplicate_phone_not_acknowledged": "This number is already on file. Review the client who holds it, then confirm to continue.",
 
   "errors.project.code_required": "A project code is required.",
   "errors.project.name_required": "A project name is required.",

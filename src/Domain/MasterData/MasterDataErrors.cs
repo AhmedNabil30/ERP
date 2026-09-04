@@ -48,4 +48,35 @@ public static class MasterDataErrors
     /// </summary>
     public static readonly Error IndividualDoesNotWithhold =
         Error.Validation("master.individual_does_not_withhold", "errors.master.individual_does_not_withhold");
+
+    /// <summary>spec.md §6.7 and KAFF-119 rule 8 — a client is either Individual or Corporate.</summary>
+    /// <remarks>
+    /// A shape rule, not a business one: an absent <c>kind</c> binds to the enum's zero, which is not
+    /// a member, and would be stored as the text <c>"0"</c> by the enum-as-string convention. The
+    /// entity cannot refuse it, because by the time it holds a <c>ClientKind</c> the value is already
+    /// whatever the binder produced.
+    /// </remarks>
+    public static readonly Error ClientKindRequired =
+        Error.Validation("master.client_kind_required", "errors.master.client_kind_required");
+
+    /// <summary>
+    /// The phone is already on file and the request did not say the operator had seen the warning.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>This does not block the save — it asks.</b> spec.md §2's amendment: <i>"A repeated number
+    /// shows the operator which client already holds it and asks whether to proceed. It does not
+    /// block the save."</i> The same request with <c>acknowledgedDuplicatePhone</c> succeeds, by the
+    /// same actor, with the same data — which is what makes this a question rather than a refusal.
+    /// </para>
+    /// <para>
+    /// It exists because without it a caller that never ran the check creates a duplicate and the
+    /// trail is silent about it, permanently, in an append-only table. The <b>warning</b> itself is
+    /// never this error: it is a 200 body from <c>POST /api/clients/phone-check</c> naming the
+    /// matched clients, because a ProblemDetails cannot carry them — the SPA keeps only status, code
+    /// and messageKey. See decisions.md D-107 §2.
+    /// </para>
+    /// </remarks>
+    public static readonly Error DuplicatePhoneNotAcknowledged =
+        Error.Conflict("master.duplicate_phone_not_acknowledged", "errors.master.duplicate_phone_not_acknowledged");
 }

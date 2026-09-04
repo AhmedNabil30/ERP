@@ -175,6 +175,8 @@
   "errors.master.day_labour_requires_trade": "عامل اليومية يجب تسجيله على باب.",
   "errors.master.closed_lost_requires_reason": "إغلاق الفرصة كخسارة يتطلب سبباً.",
   "errors.master.individual_does_not_withhold": "العميل الفرد لا يخصم ضريبة تحت الحساب.",
+  "errors.master.client_kind_required": "اختر نوع العميل: فرد أم شركة.",
+  "errors.master.duplicate_phone_not_acknowledged": "هذا الرقم مسجل بالفعل. راجع العميل الذي يحمله ثم أكد للمتابعة.",
 
   "errors.project.code_required": "كود المشروع مطلوب.",
   "errors.project.name_required": "اسم المشروع مطلوب.",

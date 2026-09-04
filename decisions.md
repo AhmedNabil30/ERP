@@ -8819,3 +8819,159 @@ already forecloses half of §2; `SetReason`'s precedent is operator-typed and **
 repository composes that text itself**, so "already uses it exactly that way" overstated it; there is no
 sequence anywhere in this database, which is stronger than the brief claimed; and multi-match on create
 follows from `AC-119-D`, not `AC-119-C` as the brief cited. All four are absorbed above.
+
+---
+
+### D-108 · Backend — KAFF-119 built: the sequence watched instead of reasoned, and D-107 implemented as written · 2026-09-04
+
+**Built first and alone on the strongest model, per `agents.md` §M**, because this story decides what
+the audit trail records for a duplicate — a row in an append-only table that no later change can add.
+**D-107 was the design and this entry is its execution;** three of its four sections are implemented
+verbatim and are not re-argued here.
+
+#### 1. The one thing D-107 recorded as unobserved is now observed
+
+D-107 §1 closed with: *"That `EnsureCreated` materialises a model-declared sequence was reasoned from
+EF's model differ, not watched … Its failure mode is loud — `42P01` on the first registration."*
+
+**It was watched, in the order that proves it.** The test was written before the sequence existed
+[Verified: 2026-09-04 @ `tests/Api.Tests/SchemaInvariantTests.cs` ->
+`The_client_code_sequence_is_materialised_by_a_schema_built_from_the_model`]:
+
+| Step | Model | That test |
+|---|---|---|
+| 1 · before | no `HasSequence` | **red — `Npgsql.PostgresException : 42P01: relation "client_code_seq" does not exist`**, exactly the predicted failure |
+| 2 · after | `HasSequence<long>("client_code_seq").StartsAt(10001)` in `OnModelCreating` | **green** |
+
+**The reasoning was right and the mechanism holds.** The test is kept, because the failure is loud but
+its *cause* is not: a reader who deletes the line sees a hundred unrelated client tests break, and
+this one names the reason.
+
+**The migration path was verified separately, and it is the half a model-only check cannot see.**
+`kaff_demo` carried nine migrations and no sequence; booting the Api against it in `Development`
+applied `20260904095316_ClientCodeSequence` and `pg_sequences` then reported
+`client_code_seq | start_value 10001 | last_value (null)`. **Both strategies of
+`DatabaseInitializer.InitialiseAsync` are therefore confirmed, not one and an inference.** The
+generated migration contained the sequence and nothing else, which also says the model had no other
+pending drift.
+
+#### 2. Demonstrated end to end on the live stack, not only in the suite
+
+Driven through `POST /api/auth/sign-in` and the two new endpoints against `kaff_demo` on port 5080
+(`kaff` is still down — `V-31-A`'s probe row — and was not touched):
+
+* `POST /api/clients` → **`201`, `"code":"C-10001"`** — the first client this system has ever had, and
+  the format spec.md §2's amendment names, drawn rather than typed.
+* `POST /api/clients/phone-check` with `+20 100 123 4567` and again with `0020 100 1234567` → **`200`,
+  each naming `شركة النور` / `C-10001`, `isArchived: false`.** The normalisation is load-bearing and
+  it works on the wire, not only in a unit.
+* The same registration repeated without the flag → **`409`,
+  `messageKey: errors.master.duplicate_phone_not_acknowledged`**.
+* The same request plus `acknowledgedDuplicatePhone` → **`201`, `C-10002`** — the successor, and the
+  warning did not block the save.
+* `audit_records` afterwards, three rows, exactly D-107 §3's shape:
+
+  | action | entity_id | event_type | correlation_id |
+  |---|---|---|---|
+  | `Created` | the **matched** client | — | A |
+  | `Occurred` | the **matched** client | `DuplicatePhoneAcknowledged` | B |
+  | `Created` | the **created** client | — | B |
+
+  *"Which clients were registered as an acknowledged duplicate of this one"* is a join on
+  `entity_id`, and *"which client did this registration acknowledge"* is a join on `correlation_id`.
+  **No prose, no text column, no new schema** — the enum member was the whole cost, as D-107
+  predicted.
+
+#### 3. Every criterion's test was watched failing, and one mutation had to be thrown away
+
+Mutations applied one group at a time, `Kaff.Api.Tests` filtered to `CreateClientTests` (13 tests):
+
+| Mutation | Went red | Criterion |
+|---|---|---|
+| `phone.Value.Normalised` → `.Entered` at the call site | `The_same_number_in_three_formats_warns_about_the_same_client` | AC-119-C |
+| the `409` guard → `if (false)` | `A_duplicate_phone_is_asked_about_once_and_then_saved` | AC-119-D |
+| the `audit.Record` loop body deleted | `The_acknowledgement_is_recorded_and_names_the_client_it_matched` | AC-119-E |
+| `!client.IsActive` → `false` in the projection | `An_archived_client_still_warns_and_is_marked_archived` | AC-119-F |
+| `.RequirePermission(ClientManage)` → `.AllowAnonymous()` on both routes | `A_portal_client_is_refused_by_both_client_endpoints`, `Only_marketing_and_the_owner_may_register_a_client`, **and `EndpointPermissionCoverageTests.Every_mapped_endpoint_carries_a_permission_requirement`** | AC-119-G, AC-119-H |
+| `decimal RetainedAmount` added to the create response | `The_client_carries_no_money_and_no_withholding_category_in_entity_contract_or_table` | AC-119-I |
+| `registered.IsFailure` → `false && …` | `An_individual_cannot_be_given_a_tax_registration_number` | AC-119-K |
+| the kind validator → `true` | `A_registration_that_names_no_kind_is_refused` | rule 8 |
+
+**One mutation was wrong and is worth recording, because it nearly bought a false confidence.** The
+first attempt at the normalisation mutation changed the *comparison column* —
+`client.PhoneNormalised == normalisedPhone` to `client.PhoneEntered == normalisedPhone` — and
+**AC-119-C's test stayed green.** It stayed green because a seeded client's entered text *is* its
+national form, so both sides were still normalised and the three formats still collapsed onto one
+value. **A mutation that leaves the invariant intact proves nothing about the test**, and reading only
+the summary would have recorded a watched failure that never happened. The defect the criterion
+actually names is comparing the *caller's* entered text, and against that mutation the test is red.
+
+**The permission mutation is the strongest result here and was not the one being aimed at.** Removing
+the gate did not merely turn two 403s into 200s: eleven of thirteen tests went red, because with no
+gate nothing calls `IAuditContext.ActorVerifiedAs`, the interceptor then writes a named actor with no
+role, and `ck_audit_records_actor_is_named_completely` refuses the row. **An ungated endpoint in this
+codebase cannot write an audit record at all** — D-075's arrangement, working as a second, unplanned
+enforcement of D-067.
+
+#### 4. What was built, in one line each
+
+* **`KaffDbContext.ClientCodeSequence`** — the sequence name as a constant, so the handler that reads
+  it and the model that declares it cannot drift apart.
+* **`src/Api/Features/Clients/PhoneMatches.cs`** — one static query and the `PhoneMatch` wire type,
+  shared by both slices. Not a repository, not a service layer, and not in `Domain/`, which has no EF
+  Core reference (D-107 §2).
+* **`POST /api/clients/phone-check`** and **`POST /api/clients`**, both gated `ClientManage`.
+* **`AuditEventKind.DuplicatePhoneAcknowledged`**, and two error keys in both `ar.json` and `en.json`.
+
+**No permission catalogue row was added.** `Permission.ClientManage` already existed with
+`CompanyWide` and the Owner/Marketing grants [Verified: 2026-09-04 @
+`src/Domain/Authorization/PermissionCatalogue.cs` -> the `Permission.ClientManage` row], so SM-30 has
+nothing to require here.
+
+#### 5. Deliberate omissions, named so nothing assumes they exist
+
+* **The edit path's `excluding` parameter is not on the shared query.** D-107 §2 records that
+  KAFF-121's match must exclude the client being edited. That is one parameter and one clause **added
+  by the story that needs it** — an unused parameter today is dead flexibility, and KAFF-121 is not in
+  this change.
+* **Nothing under `src/Web/` was touched except the two locale catalogues.** The create form, the
+  duplicate dialog, and the `409`-reopens-the-dialog mapping D-107 flagged as the harder half are the
+  Frontend Agent's. **`AC-119-L` (Arabic, RTL, 390px) is therefore not discharged by this entry.**
+* **No merge, no edit, no archive, no list.** KAFF-121, KAFF-123 and KAFF-124 remain unbuilt, and
+  `Client` still has no setter for `Name`, the primary phone or `Kind` — which D-107 named as
+  KAFF-121's *first* work, not an assumption under it.
+* **Nothing about withholding was added.** KAFF-122 is Superseded and the rate lives on the contract
+  (D-049 ruling 9); `Client.TaxRegistrationNumber` is identity and already existed.
+
+#### 6. Two residual gaps the sequence still burns, and they are Karim's question, not a defect
+
+D-107's mitigation is *"draw `nextval` last, so every validation, domain and permission failure
+happens before a number is taken."* **That is achieved for the phone, the duplicate, the permission
+gate and the validator, and it is not achieved for two domain rules** — a blank name
+(`Client.Create`) and a tax registration number on an individual (`Client.SetTaxRegistration`) both
+run *after* the draw, and each burns a number.
+
+**Closing them would mean restating two domain rules in the handler**, which is the copy that
+eventually disagrees with the entity every other caller goes through. So they are left, stated in the
+handler's own remarks [Verified: 2026-09-04 @
+`src/Api/Features/Clients/CreateClient/Handler.cs` -> `HandleAsync`], and they are the same class of
+cost D-107 already put to Karim:
+
+> **⚠️ OPEN — Karim, unanswered. May client codes have gaps?** *"A code is drawn the moment a
+> registration is saved. If a save fails at the last step that number is used up and never appears —
+> the codes read C-10001, C-10003, C-10004. Is a missing number acceptable, or must the sequence be
+> unbroken?"* **The mechanism is one expression in one handler and switching it is a migration; the
+> gaps already burned are permanent.** If the answer is "unbroken", it becomes a counter row under
+> lock and every registration serialises. **Nothing in this change forecloses either answer.**
+
+D-107's other two open questions — whether proceeding past a warning needs a typed *reason* (batch
+with Q35), and whether ruling 8 covers *editing* a phone — are unchanged and are still nobody's to
+decide here.
+
+#### 7. Gates
+
+Build **0 warnings / 0 errors** with `-warnaserror`; `dotnet format --verify-no-changes` exit **0**;
+Domain **111/111**; Api **255/255** (241 baseline + 13 `CreateClientTests` + 1 sequence invariant);
+E2E **6/6** against the live stack; `scripts/check-citations.ps1` **1145 / 0 broken / 0 legacy**. The
+stack was stopped afterwards — `Kaff.Api` and the dev server both — because three stranded hosts were
+found by a later session once already.

@@ -60,6 +60,29 @@ public enum AuditEventKind
     /// locked at 14:02 is the fact somebody will ask about."</i>
     /// </remarks>
     AccountLockedOut = 5,
+
+    /// <summary>
+    /// A client was registered even though its phone number was already on file, after the operator
+    /// was shown whose it was and chose to proceed. One record per match.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>The subject is the client that was MATCHED, not the client that was created.</b> That is
+    /// the <see cref="SignInFailed"/> precedent exactly — the event names the row it is about — and
+    /// it is what makes <c>AC-119-E</c> answerable as a join rather than as prose: <i>"list every
+    /// client registered as an acknowledged duplicate of this one"</i> is a query on
+    /// <c>entity_id</c>. The client that was created is named by its own <c>Created</c> record,
+    /// written by the interceptor in the same save under the same correlation id.
+    /// </para>
+    /// <para>
+    /// This is the first member that is not an authentication event. spec.md §2's amendment made a
+    /// repeated phone a warning rather than a refusal — <i>"a corporate client and its CEO might be
+    /// registered as two separate entities sharing the same contact number"</i> — and moved the
+    /// control from a unique index to a human reading a dialog. This record is the only durable
+    /// trace that the human made the call. See decisions.md D-049 ruling 8 and D-107 §3.
+    /// </para>
+    /// </remarks>
+    DuplicatePhoneAcknowledged = 6,
 }
 
 /// <summary>
