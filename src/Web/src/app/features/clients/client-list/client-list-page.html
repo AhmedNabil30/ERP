@@ -1,0 +1,95 @@
+<section class="clients" data-testid="client-list">
+  <h1 class="title">{{ i18n.t('clients.title') }}</h1>
+
+  <!--
+    A form, so Enter submits the search on a phone keyboard without a visible button competing with
+    the primary action. The query goes to the server exactly as typed — S-011 forbids normalising it
+    here.
+  -->
+  <form class="search" (submit)="$event.preventDefault(); onSubmitSearch()">
+    <label class="search-label" for="client-search">{{ i18n.t('clients.search.placeholder') }}</label>
+    <!--
+      [formField] binds value and events both ways. No [value], no (input) handler and no $any —
+      Nabil, 2026-08-28: signal forms are the precedent for the whole ERP, and $any is what leaves
+      strictTemplates nothing to check.
+    -->
+    <input
+      id="client-search"
+      class="search-input"
+      type="search"
+      dir="auto"
+      inputmode="search"
+      data-testid="client-search"
+      [formField]="searchForm.query"
+      [attr.aria-label]="i18n.t('clients.search.placeholder')"
+    />
+  </form>
+
+  <!--
+    Three chips, three server states. `aria-pressed` rather than a radio group: they are filters on a
+    list that is already on screen, not a choice being submitted.
+  -->
+  <div class="filters" role="group" [attr.aria-label]="i18n.t('clients.filter.all')">
+    @for (option of filters; track option) {
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="filter() === option"
+        [attr.aria-pressed]="filter() === option"
+        [attr.data-testid]="'client-filter-' + option"
+        (click)="onFilter(option)"
+      >
+        {{ i18n.t(filterKey(option)) }}
+      </button>
+    }
+  </div>
+
+  @if (failure(); as key) {
+    <p class="refusal" role="alert" data-testid="client-list-failure">{{ i18n.t(key) }}</p>
+  } @else if (loading()) {
+    <p class="loading" data-testid="client-list-loading">{{ i18n.t('clients.loading') }}</p>
+  } @else if (clients().length > 0) {
+    <ul class="rows" data-testid="client-rows">
+      @for (client of clients(); track trackClient($index, client)) {
+        <li class="row" [class.row--archived]="!client.isActive">
+          <a class="row-link" [routerLink]="['/clients', client.id]" [attr.data-testid]="'client-row-' + client.code">
+            <span class="row-name" dir="auto">{{ client.name }}</span>
+            <span class="row-meta">
+              <!--
+                <bdi> on the code and the phone. Both are Latin runs inside an Arabic line, and
+                without isolation the bidi algorithm reorders them against the surrounding text —
+                ux/rtl-and-i18n.md, and S-011 marks both of these fields specifically.
+              -->
+              <bdi class="row-code">{{ client.code }}</bdi>
+              <span class="row-sep" aria-hidden="true">·</span>
+              <span class="row-kind">{{ i18n.t(clientKindKey(client.kind)) }}</span>
+              @if (!client.isActive) {
+                <span class="row-sep" aria-hidden="true">·</span>
+                <span class="row-archived" data-testid="client-row-archived">
+                  {{ i18n.t('clients.status.archived') }}
+                </span>
+              }
+            </span>
+            <bdi class="row-phone">{{ client.phone }}</bdi>
+          </a>
+        </li>
+      }
+    </ul>
+  } @else if (searchWasApplied()) {
+    <!-- A search that matched nothing is a different fact from an empty client master, and telling an
+         operator "no clients" when they mistyped a number is how a duplicate gets created. -->
+    <div class="empty" data-testid="client-list-empty-filtered">
+      <p class="empty-title">{{ i18n.t('clients.empty.filtered.title') }}</p>
+      <p class="empty-body">{{ i18n.t('clients.empty.filtered.body') }}</p>
+    </div>
+  } @else {
+    <div class="empty" data-testid="client-list-empty">
+      <p class="empty-title">{{ i18n.t('clients.empty.title') }}</p>
+      <p class="empty-body">{{ i18n.t('clients.empty.body') }}</p>
+    </div>
+  }
+
+  <a class="create" routerLink="/clients/new" data-testid="client-create">
+    {{ i18n.t('clients.action.create') }}
+  </a>
+</section>

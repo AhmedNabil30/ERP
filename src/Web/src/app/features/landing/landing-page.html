@@ -83,6 +83,12 @@
       </section>
     }
 
+    @case ('clients') {
+      <!-- The redirect in the component is what actually navigates; this is the frame between the
+           session resolving and the router settling, so the surface is never blank. -->
+      <p class="body" data-testid="landing-clients-redirect">{{ i18n.t('clients.loading') }}</p>
+    }
+
     @case ('forbidden') {
       <section class="forbidden" data-testid="landing-forbidden">
         <p class="body" role="alert">{{ i18n.t('errors.auth.forbidden') }}</p>

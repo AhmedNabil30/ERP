@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
+import { Router } from '@angular/router';
 
 import { AuthService, ProjectEntry, Session, TeamProjectEntry } from '../../core/auth/auth.service';
 import {
@@ -27,6 +28,7 @@ function refCodeAndName(code: string, name: string): string {
 })
 export class LandingPage {
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
 
   protected readonly i18n = inject(I18nService);
 
@@ -36,6 +38,17 @@ export class LandingPage {
     const role = this.session()?.role;
     return role ? landingFor(role) : { kind: 'forbidden' };
   });
+
+  constructor() {
+    // MarketingSales lands on S-011, which is a route of its own rather than a branch of this page:
+    // it has its own URL, its own guard and its own back-stack behaviour, and a list rendered inside
+    // the landing could not be linked to. Redirect rather than duplicate.
+    effect(() => {
+      if (this.landing().kind === 'clients') {
+        void this.router.navigateByUrl('/clients');
+      }
+    });
+  }
 
   /**
    * Read out as its own signal, rather than accessed as `landing().titleKey` in the template, so the

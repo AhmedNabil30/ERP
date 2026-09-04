@@ -1,0 +1,198 @@
+<section class="client-form" data-testid="client-form">
+  <h1 class="title">{{ i18n.t(titleKey()) }}</h1>
+
+  @if (isLoading()) {
+    <p class="loading" data-testid="client-form-loading">{{ i18n.t('clients.loading') }}</p>
+  }
+
+  @if (existing(); as file) {
+    <!--
+      S-014: the code is read-only and rendered as isolated text, NEVER as a disabled input. A
+      disabled input says "this could be edited, just not by you"; the code cannot be edited by any
+      route through the API (D-049 ruling 7, KAFF-121 rule 5, and the request type carries no member
+      for one).
+    -->
+    <p class="code-line" data-testid="client-code">
+      <span class="code-label">{{ i18n.t('clients.field.code') }}</span>
+      <bdi class="code-value">{{ file.code }}</bdi>
+      <span class="code-note">{{ i18n.t('clients.field.code.not_editable') }}</span>
+    </p>
+
+    @if (archived()) {
+      <p class="archived-banner" data-testid="client-archived-banner">
+        {{ i18n.t('clients.status.archived') }}
+      </p>
+    }
+  }
+
+  <form class="fields" (submit)="$event.preventDefault(); onSubmit()">
+    <!--
+      The phone is the FIRST field. S-012: it is how clients are matched, so it is entered before a
+      name the operator may not need to type at all. dir="ltr" and inputmode="tel" because a phone
+      number is a Latin run regardless of the page's direction.
+    -->
+    <label class="field">
+      <span class="label">{{ i18n.t('clients.field.phone') }}</span>
+      <input
+        class="input"
+        type="tel"
+        dir="ltr"
+        inputmode="tel"
+        autocomplete="tel"
+        data-testid="client-phone"
+        [formField]="clientForm.phone"
+        (blur)="onPhoneBlur()"
+      />
+      <span class="hint">{{ i18n.t('clients.hint.phone_is_the_key') }}</span>
+    </label>
+
+    <!--
+      S-013. A warning, never a refusal: spec.md §2 amended, D-049 ruling 8 — a corporate client and
+      its CEO may legitimately share a number. The save stays available with this on screen.
+    -->
+    @if (duplicateMatches().length > 0) {
+      <div class="duplicate" role="status" data-testid="client-duplicate-warning">
+        <p class="duplicate-title">{{ i18n.t('clients.duplicate.title') }}</p>
+
+        <ul class="duplicate-list">
+          @for (match of duplicateMatches(); track trackMatch($index, match)) {
+            <li class="duplicate-row" [attr.data-testid]="'client-duplicate-' + match.code">
+              <span class="duplicate-name" dir="auto">{{ match.name }}</span>
+              <bdi class="duplicate-code">{{ match.code }}</bdi>
+              @if (match.isArchived) {
+                <span class="duplicate-archived" data-testid="client-duplicate-archived">
+                  {{ i18n.t('clients.status.archived') }}
+                </span>
+              }
+            </li>
+          }
+        </ul>
+
+        <label class="acknowledge">
+          <input
+            type="checkbox"
+            data-testid="client-duplicate-acknowledge"
+            (change)="onAcknowledgeChange($event)"
+          />
+          <span>{{ i18n.t('clients.duplicate.acknowledge') }}</span>
+        </label>
+      </div>
+    }
+
+    <label class="field">
+      <span class="label">{{ i18n.t('clients.field.name') }}</span>
+      <input class="input" type="text" dir="auto" data-testid="client-name" [formField]="clientForm.name" />
+    </label>
+
+    <fieldset class="field kind">
+      <legend class="label">{{ i18n.t('clients.field.kind') }}</legend>
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="!isIndividual()"
+        [attr.aria-pressed]="!isIndividual()"
+        data-testid="client-kind-corporate"
+        (click)="onKindChange('Corporate')"
+      >
+        {{ i18n.t('enum.ClientKind.Corporate') }}
+      </button>
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="isIndividual()"
+        [attr.aria-pressed]="isIndividual()"
+        data-testid="client-kind-individual"
+        (click)="onKindChange('Individual')"
+      >
+        {{ i18n.t('enum.ClientKind.Individual') }}
+      </button>
+    </fieldset>
+
+    <!--
+      Corporate only. spec.md §6.7: an individual does not withhold, so an individual carrying a
+      registration number is refused by the entity. Switching to Individual clears this field rather
+      than submitting a pair the server will reject (decisions.md D-109 §1).
+    -->
+    @if (!isIndividual()) {
+      <label class="field">
+        <span class="label">{{ i18n.t('clients.field.tax_registration') }}</span>
+        <input
+          class="input"
+          type="text"
+          dir="ltr"
+          data-testid="client-tax-registration"
+          [formField]="clientForm.taxRegistrationNumber"
+        />
+      </label>
+    }
+
+    <label class="field">
+      <span class="label">{{ i18n.t('clients.field.alternate_phone') }}</span>
+      <input
+        class="input"
+        type="tel"
+        dir="ltr"
+        inputmode="tel"
+        data-testid="client-alternate-phone"
+        [formField]="clientForm.alternatePhone"
+      />
+    </label>
+
+    <label class="field">
+      <span class="label">{{ i18n.t('clients.field.email') }}</span>
+      <input class="input" type="email" dir="ltr" data-testid="client-email" [formField]="clientForm.email" />
+    </label>
+
+    <label class="field">
+      <span class="label">{{ i18n.t('clients.field.address') }}</span>
+      <input class="input" type="text" dir="auto" data-testid="client-address" [formField]="clientForm.address" />
+    </label>
+
+    <label class="field">
+      <span class="label">{{ i18n.t('clients.field.notes') }}</span>
+      <textarea class="input notes" rows="3" dir="auto" data-testid="client-notes" [formField]="clientForm.notes"></textarea>
+      <!-- spec.md §12: the client MUST NEVER see internal notes. Labelled so the person typing knows. -->
+      <span class="hint">{{ i18n.t('clients.hint.notes_internal') }}</span>
+    </label>
+
+    @if (refusalKey(); as key) {
+      <p class="refusal" role="alert" data-testid="client-form-refusal">{{ i18n.t(key) }}</p>
+    }
+
+    <button class="submit" type="submit" data-testid="client-submit" [disabled]="!canSubmit()">
+      {{ i18n.t('clients.action.save') }}
+    </button>
+  </form>
+
+  @if (isEdit()) {
+    <!-- History is an empty state, not invented tiles: the projects and opportunities that make it up
+         do not exist until slice 4 (S-014, spec.md §2). -->
+    <section class="history">
+      <h2 class="subtitle">{{ i18n.t('clients.history.title') }}</h2>
+      <p class="empty" data-testid="client-history-empty">{{ i18n.t('clients.history.empty') }}</p>
+    </section>
+
+    @if (!archived()) {
+      <section class="danger">
+        <h2 class="subtitle">{{ i18n.t('clients.danger.title') }}</h2>
+
+        @if (confirmingArchive()) {
+          <p class="confirm-title">{{ i18n.t('clients.confirm.archive.title') }}</p>
+          <p class="confirm-body">{{ i18n.t('clients.confirm.archive.body') }}</p>
+          <div class="confirm-actions">
+            <button type="button" class="danger-button" data-testid="client-archive-confirm" (click)="onArchive()">
+              {{ i18n.t('clients.action.archive') }}
+            </button>
+            <button type="button" class="chip" data-testid="client-archive-cancel" (click)="onCancelArchive()">
+              {{ i18n.t('action.cancel') }}
+            </button>
+          </div>
+        } @else {
+          <button type="button" class="danger-button" data-testid="client-archive" (click)="onStartArchive()">
+            {{ i18n.t('clients.action.archive') }}
+          </button>
+        }
+      </section>
+    }
+  }
+</section>

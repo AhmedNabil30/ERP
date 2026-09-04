@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { clientManageGuard } from './core/auth/client-manage.guard';
 import { mustChangePasswordGuard } from './core/auth/must-change-password.guard';
 import { sessionGuard } from './core/auth/session.guard';
 
@@ -19,6 +20,32 @@ export const routes: Routes = [
     // AC-101b-F's redirect to the forced-change screen.
     canActivate: [sessionGuard, mustChangePasswordGuard],
     loadComponent: () => import('./features/landing/landing-page').then((m) => m.LandingPage),
+  },
+  {
+    // KAFF-126 — S-011, S-012, S-014. `sessionGuard` resolves the session first, then
+    // `clientManageGuard` keeps a role without the permission out of a screen the server would refuse
+    // anyway. Order matters: a guard that decides on a session that has not resolved decides on null.
+    path: 'clients',
+    canActivate: [sessionGuard, mustChangePasswordGuard, clientManageGuard],
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/clients/client-list/client-list-page').then((m) => m.ClientListPage),
+      },
+      {
+        path: 'new',
+        loadComponent: () =>
+          import('./features/clients/client-form/client-form-page').then((m) => m.ClientFormPage),
+      },
+      {
+        // `withComponentInputBinding` in app.config.ts binds `:clientId` to the component's
+        // `clientId` input signal, so the form loads by URL and a bookmarked client file works.
+        path: ':clientId',
+        loadComponent: () =>
+          import('./features/clients/client-form/client-form-page').then((m) => m.ClientFormPage),
+      },
+    ],
   },
   {
     path: 'sign-in',

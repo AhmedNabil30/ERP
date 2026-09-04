@@ -5,6 +5,7 @@ import {
   ProjectAccessPath,
   Role,
 } from '../auth/auth.service';
+import { ClientKind } from '../clients/clients.api';
 
 /**
  * `enum.<Type>.<Member>` — `ux/rtl-and-i18n.md` §6's naming convention for a server enum rendered as
@@ -102,5 +103,17 @@ export function projectAccessPathKey(path: ProjectAccessPath): string {
       return 'enum.ProjectAccessPath.None';
     default:
       return assertNever(path);
+  }
+}
+
+/** spec.md §6.7 — a client is a person or a company, and never neither. KAFF-126. */
+export function clientKindKey(kind: ClientKind): string {
+  switch (kind) {
+    case 'Individual':
+      return 'enum.ClientKind.Individual';
+    case 'Corporate':
+      return 'enum.ClientKind.Corporate';
+    default:
+      return assertNever(kind);
   }
 }

@@ -4,7 +4,7 @@ import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth/auth.service';
 import { SessionResolver } from './core/auth/session-resolver';
 import { I18nService, Locale } from './core/i18n/i18n.service';
-import { navLabelKeyFor } from './core/navigation/landing';
+import { navLabelKeyFor, navPathFor } from './core/navigation/landing';
 
 interface LocaleOption {
   readonly code: Locale;
@@ -71,6 +71,15 @@ export class App {
   });
 
   /** `null` only in the defensive fallback {@link showStaffNav} already excludes from the drawer. */
+  /**
+   * Where the one nav item points. It was `/` for every role until KAFF-126 added `/clients` — a nav
+   * item labelled "Clients" that navigates to the landing page is a label that lies.
+   */
+  protected readonly navPath = computed(() => {
+    const session = this.session();
+    return session ? navPathFor(session.role) : '/';
+  });
+
   protected readonly navLabelKey = computed(() => {
     const session = this.session();
     return session ? navLabelKeyFor(session.role) : null;

@@ -1,9 +1,15 @@
 # KAFF-126 · The client screens
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 8 (**proposed — estimates move at refinement, with the team**) · **Status:** Ready
+**Slice:** 1 · **Epic:** Foundation · **Points:** 8 (**proposed**) · **Status:** **BUILT 2026-09-04 — not accepted.** decisions.md **D-113**.
+`AC-126-A` … `AC-126-K` discharged, verified by driving Chromium at 390px in Arabic against a seeded stack — `dir=rtl`,
+**0px horizontal overflow** on all three screens, the three filter chips server-side, and the duplicate warning firing on
+blur naming both clients that share the number. **`AC-126-L` half-held** — the guard and the server's 403 are both in
+place and were checked; the *rendered* S-016 Forbidden surface for a role reaching `/clients` by URL was not driven.
+**⚠️ No E2E test was added** — everything above is evidence from this session, not a check that runs tomorrow. **Owed.**
+**Not independently verified.**
 **Spec:** §2 (**amended**), §3, §12 · **Decisions:** D-049 (rulings 7, 8, 9), **D-107**, **D-109**, **D-110**, **D-111**
 **UX:** `ux/slice-1-flows.md` -> `S-011 · Client list`, `S-012 · Create client, and S-013 · the duplicate-phone warning`, `S-014 · Client detail and edit`
-**Depends on:** KAFF-119, KAFF-121, KAFF-123, KAFF-124 (**all four APIs; three exist today**), KAFF-125 (the staff shell)
+**Depends on:** KAFF-119, KAFF-121, KAFF-123, KAFF-124 (~~three exist today~~ **all four merged 2026-09-04**), KAFF-125 (the staff shell)
 
 ## Why this story exists
 
@@ -55,10 +61,15 @@ is struck and points here, so there is exactly one place each is discharged.
 | S-012 create | `POST /api/clients` | KAFF-119, `01c7b3a` |
 | S-013 warning | `POST /api/clients/phone-check` | KAFF-119, `01c7b3a` |
 | S-014 edit | `PUT /api/clients/{clientId}` | KAFF-121, `1684cb9` |
-| S-014 archive | **KAFF-123 — not built yet** | — |
+| S-014 archive | `POST /api/clients/{clientId}/archive` | KAFF-123, `5a9d6d9` |
+| S-014 load | `GET /api/clients/{clientId}` | **Added by this story, D-113 §1** |
 
-**Everything except archive can start today.** The archive control is the one part of S-014 that has
-no endpoint behind it, and KAFF-123 is 2 points in the Backend lane ahead of this story (D-111).
+> ⚠️ **Both lines above were true when this story was cut and both changed the same day.** KAFF-123
+> landed, so the archive control had an endpoint by the time it was wired. And **the table was one
+> endpoint short**: `PUT /api/clients/{id}` takes nine members, the list row carries six, and S-014 is
+> reachable by URL — so nothing could load the record the edit saves. `GET /api/clients/{clientId}`
+> was added while building this story (decisions.md D-113 §1). **The pipeline is what surfaced it:
+> the gap was invisible until somebody wrote the screen.**
 
 ## Acceptance criteria
 

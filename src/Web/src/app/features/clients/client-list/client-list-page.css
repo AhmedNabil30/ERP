@@ -1,0 +1,160 @@
+/*
+ * Logical properties throughout — `margin-inline-start`, never `margin-left`. RTL is the primary
+ * direction and not a mirror (CLAUDE.md), so the layout is written once and reads correctly in both.
+ */
+
+.clients {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  max-inline-size: 60rem;
+  margin-inline: auto;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.search {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.search-label {
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.search-input {
+  inline-size: 100%;
+  box-sizing: border-box;
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+  border: 1px solid rgb(0 0 0 / 25%);
+  border-radius: 0.4rem;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  padding: 0.4rem 0.9rem;
+  font: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgb(0 0 0 / 25%);
+  border-radius: 999px;
+}
+
+.chip--on {
+  background: rgb(0 0 0 / 8%);
+  border-color: rgb(0 0 0 / 55%);
+  font-weight: 600;
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.row-link {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.75rem;
+  color: inherit;
+  text-decoration: none;
+  border: 1px solid rgb(0 0 0 / 12%);
+  border-radius: 0.5rem;
+}
+
+.row--archived .row-link {
+  opacity: 0.65;
+}
+
+.row-name {
+  font-weight: 600;
+}
+
+.row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+/* `unicode-bidi: isolate` is what <bdi> means; stated so a later reset cannot quietly remove it. */
+.row-code,
+.row-phone {
+  unicode-bidi: isolate;
+}
+
+.row-phone {
+  font-size: 0.9rem;
+}
+
+.row-archived {
+  font-weight: 600;
+}
+
+.empty {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  border: 1px dashed rgb(0 0 0 / 25%);
+  border-radius: 0.5rem;
+}
+
+.empty-title {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+}
+
+.empty-body {
+  margin: 0;
+  opacity: 0.8;
+}
+
+.loading,
+.refusal {
+  margin: 0;
+  padding: 0.75rem;
+}
+
+.refusal {
+  border: 1px solid rgb(180 0 0 / 45%);
+  border-radius: 0.5rem;
+}
+
+.create {
+  align-self: stretch;
+  padding: 0.75rem;
+  text-align: center;
+  font-weight: 600;
+  color: inherit;
+  text-decoration: none;
+  border: 1px solid rgb(0 0 0 / 55%);
+  border-radius: 0.5rem;
+}
+
+/* The daily log is designed mobile-first and so is this: 390px is the width that must work. */
+@media (width >= 48rem) {
+  .row-link {
+    grid-template-columns: 2fr 1fr 1fr;
+    align-items: center;
+  }
+
+  .create {
+    align-self: flex-start;
+    padding-inline: 2rem;
+  }
+}

@@ -143,11 +143,11 @@ exit **0** · `Domain.Tests` **124/124** (111 → 124) · `Api.Tests` **286/286*
 citations **1149 / 0 broken / 0 legacy**. **E2E has not been run since `01c7b3a`** — the last figure,
 **6/6**, belongs to the KAFF-119 build session, and no client story has a screen to drive.
 
-### Lane B — Frontend · **8 points, one story, `Ready` and startable today**
+### Lane B — Frontend · **8 of 8 points delivered**
 
 | # | Story | Pts | State |
 |---|---|---:|---|
-| 1 | **KAFF-126 — the client screens** (S-011, S-012, S-013, S-014) | **8** *(proposed)* | **`Ready`.** Cut 2026-09-04. Carries `AC-126-A`/`D`/`G` — the three moved criteria — and `AC-126-C`, `AC-124-H`'s render half. **All five endpoints are merged as of 2026-09-04** — nothing in this story waits on Lane A any more |
+| 1 | **KAFF-126 — the client screens** (S-011, S-012, S-013, S-014) | **8** | ✅ **DELIVERED** 2026-09-04, D-113. `AC-126-A`…`K` discharged and **verified by driving Chromium at 390px in Arabic** — `dir=rtl`, 0px horizontal overflow, three server-side filter chips, the duplicate warning firing on blur. `AC-126-L` half-held. **Writing it found a missing `GET /api/clients/{id}` and a guard that broke every bookmarked client URL.** ⚠️ **No E2E test — owed.** **Not independently verified** |
 
 > **The three criteria are MOVED, not copied.** `AC-119-L` → `AC-126-D`, `AC-121-I` → `AC-126-G`,
 > `AC-124-I` → `AC-126-A`. Each origin story now points here and each is struck in place, so there is

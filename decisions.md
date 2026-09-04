@@ -9281,3 +9281,83 @@ already-archived refusal.
 operator reading a warning** (KAFF-123 rule 2b, Karim's reduction, made knowingly). The archived
 client still warns, still names itself, and still says it is archived. That warning is the whole of
 the remaining control.
+---
+
+### D-113 · Frontend — KAFF-126 built: the client screens, and two things only a running browser could say · 2026-09-04
+
+**Decision.** S-011, S-012, S-013 and S-014 built as two routed components — `client-list-page` and
+`client-form-page`, the second serving create and edit — behind `/clients`, gated by a
+`clientManageGuard` that decides nothing the server has not already decided.
+
+**Standalone, signal forms, zoneless, `@if`/`@for`, `inject()`, `OnPush`, logical properties, no
+`$any` in any template.** The search box is a signal form too, for the reason Nabil gave on
+2026-08-28: the precedent is the whole ERP's, not one screen's.
+
+#### 1. Writing the screen found a missing endpoint
+
+**`PUT /api/clients/{id}` takes nine members and the list row carries six**, so nothing could load
+the record the edit saves — and S-014 is reachable by URL, so router state cannot stand in.
+**`GET /api/clients/{clientId}` was added** (5 tests, 286 → 291), returning the whole editable file
+including `Notes`.
+
+**It is the one payload in the slice carrying internal notes**, which spec.md §12 forbids a client
+ever seeing — so it is gated `ClientManage`, and D-110 §2's point applies at full force: **on a read
+there is no audit backstop**. An ungated version would hand every client's internal notes to anybody
+who asked and nothing else would notice. The list row is deliberately *not* widened to match: it
+renders every client Marketing can see, and the narrowest payload that serves the screen is the one
+that cannot leak.
+
+#### 2. ⚠️ A guard that worked in-app and broke every bookmarked URL
+
+`clientManageGuard` read `AuthService.current()` directly and was ordered after `sessionGuard` in the
+route's `canActivate` array. **In-app navigation worked. Every hard load of a deep client URL did
+not:** `/clients/new` typed, bookmarked or refreshed found a null session, bounced to `/`, and the
+landing then redirected to `/clients` — **so the operator asked for a form and silently got a list.**
+No error, no 404, nothing in a log.
+
+**Guards in one `canActivate` array must not assume the array's order settles anything.** The guard
+now awaits `SessionResolver.ensureResolved()` itself.
+
+**`session.guard.ts` already documented this exact failure, in its own words** — *"A guard that reads
+`AuthService.current()` before `GET /api/auth/me` has answered would find `null` for a signed-in user
+exactly as often as for one who never signed in"* — and the second guard was written anyway. **A rule
+recorded in the file next door is not a rule that gets applied.** Found by hard-loading the route in a
+real browser; a unit test of the guard would have passed, because the thing that was wrong was *when*
+it ran.
+
+#### 3. What was actually run, and what was not
+
+The stack was started against a freshly seeded `kaff_ui` and driven through Chromium at **390px, in
+Arabic**, signing in as `karim_sales_demo`:
+
+| Checked | Result |
+|---|---|
+| List: direction, overflow, rows | `dir=rtl`, **horizontal overflow 0px**, both seeded clients rendered, codes and phones `<bdi>`-isolated |
+| The three chips | `active` → 2, `archived` → 0, `all` → 2 — server-side, all three states |
+| Create form + S-013 | `dir=rtl`, overflow 0px, and **the warning fired on blur naming both `C-10001` and `C-10002`** — the two clients that really do share that number |
+| Edit form by URL | loads from `GET /api/clients/{id}`, name populated, notes labelled internal, overflow 0px |
+| Hard load of `/clients/new` | **broken, then fixed** — §2 |
+
+**The screenshot was looked at, not just taken.** It shows the phone first with `dir="ltr"`, the
+`clients.hint.phone_is_the_key` hint under it, the warning naming both matches with an acknowledge
+checkbox, and the save button correctly disabled with the name empty.
+
+**⚠️ No E2E test was added, and that is a gap rather than a decision.** Everything above was verified
+by a driven browser session in this session — it is evidence, and it is not a check that runs again
+tomorrow. `tests/E2E.Tests` is still the 6 it was. **Owed.**
+
+#### 4. Three criteria discharged that were homeless
+
+`AC-119-L`, `AC-121-I` and `AC-124-I` moved here on 2026-09-04 as `AC-126-D`, `AC-126-G` and
+`AC-126-A` (D-111 §2). **All three are now discharged**, along with `AC-124-H`'s render half as
+`AC-126-C` — two empty states, not one: `clients.empty.*` when there are no clients and
+`clients.empty.filtered.*` when a search matched none. Telling an operator "no clients" when they
+mistyped a phone number is how a duplicate gets created.
+
+**39 i18n keys added to both catalogues, none for a screen that does not exist.**
+
+#### 5. Gates
+
+Build **0/0** `-warnaserror`; `dotnet format` exit **0**; SPA production build (`strictTemplates`)
+**clean**; Domain **124/124**; Api **291/291** (286 + 5); citations **1150 / 0 broken / 0 legacy**.
+The stack was stopped afterwards.

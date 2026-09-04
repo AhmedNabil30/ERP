@@ -73,7 +73,7 @@
     -->
     <nav class="side-nav" [class.is-open]="isNavOpen()" data-testid="side-nav">
       @if (navLabelKey(); as labelKey) {
-        <a class="nav-item is-active" routerLink="/" (click)="closeNav()">{{ i18n.t(labelKey) }}</a>
+        <a class="nav-item is-active" [routerLink]="navPath()" (click)="closeNav()">{{ i18n.t(labelKey) }}</a>
       }
     </nav>
 

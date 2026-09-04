@@ -20,6 +20,7 @@ import { Role } from '../auth/auth.service';
  * expensive failure mode.
  */
 export type Landing =
+  | { readonly kind: 'clients' }
   | { readonly kind: 'profile' }
   | { readonly kind: 'hr-projects' }
   | { readonly kind: 'pending'; readonly titleKey: string }
@@ -37,7 +38,12 @@ export function landingFor(role: Role): Landing {
     case 'Owner':
       return { kind: 'pending', titleKey: 'landing.pending.owner.title' };
     case 'MarketingSales':
-      return { kind: 'pending', titleKey: 'landing.pending.marketing_sales.title' };
+      // âš ï¸ Was `pending` until 2026-09-04, and the paragraph above still explains why: S-011 was
+      // "KAFF-119â€¦124, deferred", so an honest "not built yet" was the only truthful thing to render.
+      // **All five of those stories are now built and S-011 exists** (KAFF-126), so the honest
+      // surface is the real one. `ux/navigation.md` -> `Landing summary`: "MarketingSales | S-011
+      // Client list".
+      return { kind: 'clients' };
     case 'Client':
     case 'Subcontractor':
       // Defensive only: `Role.Client` is refused before a staff session can exist at all
@@ -62,6 +68,8 @@ export function landingFor(role: Role): Landing {
  */
 export function navLabelKeyFor(role: Role): string | null {
   switch (landingFor(role).kind) {
+    case 'clients':
+      return 'nav.clients';
     case 'hr-projects':
       return 'nav.hr_projects';
     case 'profile':
@@ -71,4 +79,18 @@ export function navLabelKeyFor(role: Role): string | null {
     case 'forbidden':
       return null;
   }
+}
+
+/**
+ * Where the side nav's one entry points.
+ *
+ * It used to be `/` for every role, because `/` was the only route a staff user could reach. It is
+ * not any more: KAFF-126 added `/clients`, and a nav item labelled "Clients" that navigates to the
+ * landing page is a label that lies. **The Owner reaches the client list too** â€” `ClientManage` is
+ * granted to `Role.Owner` and `Role.MarketingSales` alike â€” but the Owner's *landing* is still S-006,
+ * which does not exist, so their item stays `nav.home` and points at the honest pending surface. One
+ * item per role, still, because one destination per role is still all that is ruled.
+ */
+export function navPathFor(role: Role): string {
+  return landingFor(role).kind === 'clients' ? '/clients' : '/';
 }
