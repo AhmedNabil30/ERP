@@ -9561,3 +9561,92 @@ correct on paper and the test is green locally; the box has not been touched, DN
 and no certificate has been issued. **The first deploy after this commit is the check** — and the
 thing to look at is not that the site loads, but that an audit row written by a signed-in user
 carries *that user's* address.
+
+---
+
+### D-116 — KAFF-118: the audit claim made checkable, and a positive control that caught the mutation the negative tests missed
+**2026-09-05 · Backend**
+
+KAFF-118 had been `UNBUILT` since 2026-08-21 with a real reason: `AC-118-B` needed clients, and
+KAFF-119 was deferred out of sprint 1. **119, 121 and 123 all landed on 2026-09-04, so the block
+lifted itself** and the standing proposal to cut the story is moot. Built without a ruling being
+needed, which is the outcome the deferral was designed to produce.
+
+#### 1. Seven of ten criteria were already discharged, and copying them here would have been worse
+
+`AC-118-A`, `C`, `D`, `E`, `F`, `G` and `J` are each asserted by the suite of the act they belong to —
+`DeactivateUserTests` already checks four records under one `CorrelationId`, `ChangeUserRoleTests` the
+same for a role change, `ChangePasswordTests` the visible `[redacted]` placeholder, and so on.
+**Re-asserting them in one file would have created two statements of one rule, and the copy is the one
+nobody updates.** `tests/Api.Tests/AuditCoverageTests.cs` carries a table naming where each criterion
+actually lives instead. That table is the deliverable the story asked for — *"proof, not a claim"* —
+and it costs nothing to keep true.
+
+`AC-118-B` needed no new test either: `CreateClientTests`, `EditClientTests` and `ArchiveClientTests`
+were each written with the record their act leaves. **The rule KAFF-118 left behind on 2026-08-21
+held** — the criterion travelled out with its dependency and came back with it, rather than being
+softened while the dependency was away.
+
+#### 2. The three that no feature suite can hold
+
+**`Every_entity_is_audited_unless_it_is_a_named_exemption`.** The interceptor is opt-*out*: it audits
+every tracked entity unless the entity implements `IAuditExempt`, so a `Posting` added in slice 3 is
+audited from its first commit without anybody remembering to ask. **What that design cannot defend
+against is somebody adding the interface** — one word on a class declaration, inside a diff about
+something else. The exempt set is now whitelisted at exactly one member, `AuditRecord`, for the reason
+D-106 gives: a whitelist fails on the member nobody predicted. **This is the only assertion in the
+suite that covers slice 3's money.**
+
+**`Ten_reads_write_no_audit_record`** and **`A_refused_write_writes_no_audit_record`** — rule 6 and
+`AC-118-I`. Neither belongs to a feature, because both are properties of *every* read and *every*
+refusal, and a criterion that belongs to everything ends up asserted by nothing.
+
+#### 3. ⚠️ The positive control, and what it caught
+
+Both negative tests end by performing one real write and asserting the counter moved.
+
+That is not decoration, and the mutation run proved it. Making `Client` implement `IAuditExempt` —
+the one-word change described above — turned **all three** tests red, and **two of them went red on
+the positive control, not on the assertion they are named for.** Without it, "twenty reads wrote
+nothing" and "two refusals wrote nothing" would both have stayed green while reporting a safety about
+an entity that had stopped writing anything at all, ever.
+
+```
+Expected (CountAsync()) to be greater than 3L because one real write moves the counter, but found 3L.
+```
+
+**"The count did not change" is satisfied by a counter that cannot change.** A broken query, a table
+read from the wrong schema, an interceptor that stopped running — every one of those makes such a test
+pass *louder* rather than fail. This is D-041 stated as a test: the danger was never a check that
+fails, it is a check that cannot, and that is the whole reason KAFF-118 exists — *"the build was
+clean, `dotnet format` was clean, and 51 tests passed against a component that could not execute
+once."*
+
+**Every absence test in this repository should be read against that sentence.** This one now carries
+its own control; `AC-123-D`'s no-delete absence was made to fail on purpose (D-112); `AC-120-H`'s was
+written as a whitelist rather than a search for one wrong string (D-114). Three different answers to
+the same question, and the question is worth asking every time.
+
+#### 4. ⚠️ Board drift found while picking the story: KAFF-116 was `Ready` and `ACCEPTED` at once
+
+`stories/backlog.md` carried **two rows for KAFF-116**, in one file, disagreeing: the sprint-1 status
+table said **ACCEPTED 2026-08-24 — D-070**, and the master story table said `Ready`. The master table
+is the one a session reads to pick work, **so the drift's cost was a session rebuilding an accepted
+story** — which is exactly what nearly happened here. `AuditRecord.GrantPath` is built and asserted
+[Verified: 2026-09-05 @ `tests/Api.Tests/AuditMechanismTests.cs` ->
+`A_grant_path_is_refused_without_a_project_and_may_never_be_None`], so ACCEPTED is the true row and
+the master table is corrected.
+
+This is the third row in that table found stale by a session that went to read it (KAFF-108 and
+KAFF-113 both read `Ready` until 2026-09-01 while the same file recorded them accepted). **The
+pattern is not that rows go stale — it is that they go stale in the table people act on, while the
+correct value sits in a table people only cite.** Worth a Scrum Master item; it is not something a
+story can fix.
+
+#### 5. Gates
+
+Build **0/0** `-warnaserror`; `dotnet format` exit **0**; **Api 295/295** (292 → 295); Domain
+125/125 unchanged — nothing in this change touches the domain.
+
+**Not done:** independent verification. Every slice-1 client and audit story is still built and
+self-reported by the agent that built it.

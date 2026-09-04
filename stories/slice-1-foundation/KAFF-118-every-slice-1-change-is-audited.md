@@ -1,7 +1,12 @@
 # KAFF-118 · Every state change in slice 1 writes an audit record
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** **UNBUILT. Its cut from the locked sprint is Nabil's and he has not ruled.** It depends on KAFF-119, deliberately deferred out of sprint 1, so its client-registration half cannot complete as written whatever is ruled. The standing proposal — cut it as a story, keep rule 2 as an acceptance check — is not the Scrum Master's to take and has not been taken
-**Spec:** §7 · **Decisions:** D-041, D-043
+**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** ~~UNBUILT~~ → **BUILT 2026-09-05 — not accepted.** decisions.md **D-116**.
+All ten criteria discharged. **`AC-118-B` became executable on 2026-09-04** when KAFF-119, 121 and 123
+landed — the block this story carried since 2026-08-21 is gone, and the standing proposal to cut it
+is moot. **Seven criteria were already discharged by the feature suites and were not re-asserted
+here**; `tests/Api.Tests/AuditCoverageTests.cs` names where each one lives and adds the three nothing
+else could hold. **Not independently verified.**
+**Spec:** §7 · **Decisions:** D-041, D-043, **D-116**
 **Depends on:** KAFF-106, KAFF-109, KAFF-110, KAFF-111, KAFF-113 — **all `Ready` and all committed to
 sprint 1.**
 KAFF-109 was removed from this list on 2026-08-21 while it was BLOCKED (finding **F-20**) and is back
@@ -51,7 +56,7 @@ Given a fresh database
 When a user is created, moved between departments, deactivated and reactivated; and an assignment is created and revoked
 Then each produces exactly one audit record, with the correct `AuditAction`, actor, timestamp and changed properties
 
-**AC-118-B — the same holds for a client, when clients arrive** *(moves with **KAFF-119**, deferred)*
+**AC-118-B — the same holds for a client, when clients arrive** *(~~moves with **KAFF-119**, deferred~~ — **executable and discharged 2026-09-04/05**: KAFF-119 `01c7b3a`, KAFF-121 `1684cb9`, KAFF-123 `5a9d6d9` all landed, and `CreateClientTests`, `EditClientTests` and `ArchiveClientTests` each assert the record their act leaves. **The rule this story left behind held**: the criterion travelled with its dependency and came back with it, rather than being softened while the dependency was away)*
 Given a fresh database
 When a client is created, edited and archived
 Then each produces exactly one audit record, with the correct `AuditAction`, actor, timestamp and changed properties
