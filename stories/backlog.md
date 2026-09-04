@@ -105,7 +105,7 @@ questions merged into it with their origin recorded (action **SM-4**).
 
 ---
 
-## Sprint 3 — open 2026-09-04 · the Client master · **8 of 14 points delivered on day one**
+## Sprint 3 — open 2026-09-04 · the Client master · **10 of 14 points delivered on day one**
 
 **Build order, in dependency order — `KAFF-119` first and alone; the other four all depend on it.**
 
@@ -113,21 +113,38 @@ questions merged into it with their origin recorded (action **SM-4**).
 |---|---|---:|---|---|
 | 1 | **KAFF-119** | 5 | ✅ **DELIVERED** `86cc8b0` + `01c7b3a`, 2026-09-04. **`AC-119-A`…`K` discharged, each watched failing under a mutation of its own mechanism. `AC-119-L` HELD** — Arabic/RTL at mobile width, and there is no client form; **Frontend's, and it is not a pass.** **Not independently verified** — built and self-reported | **strongest** — it decides what the audit trail records for a duplicate, and it is the first generator of its kind in this database |
 | 2 | **KAFF-121** | 3 | ✅ **DELIVERED** 2026-09-04, decisions.md **D-109**. `AC-121-A`…`H` discharged, each watched failing under a mutation of its own mechanism. **`AC-121-I` HELD** — Arabic/RTL at mobile width, and there is no client form; Frontend's. **Not independently verified.** `Client` gained `Rename`, `SetPrimaryPhone` and `SetClassification` (F-09's missing surface); `PhoneMatches` gained `excluding` (D-107 §2) | **strongest** for the missing `Name`/phone/`Kind` setters and rule 6's guard, which decide what a master record may become; **mid** for the rest |
-| 3 | KAFF-124 | 2 | `Ready`. **Proposed next** | **mid** — criteria are written |
-| 4 | KAFF-123 | 2 | `Ready` | **mid** |
-| 5 | KAFF-120 | 2 | `Ready`, **re-estimate first** | **mid** |
+| 3 | **KAFF-124** | 2 | ✅ **DELIVERED** 2026-09-04, decisions.md **D-110**. `GET /api/clients?search=&includeArchived=` — name, code and normalised phone. `AC-124-A`…`G` discharged, four of them watched. **`AC-124-H` half-held** (the empty `200` is pinned; the rendering needs a screen), **`AC-124-I` HELD**. **Not independently verified** | **mid** — criteria are written |
+| 4 | KAFF-123 | 2 | `Ready`. **Proposed next** | **mid** |
+| 5 | KAFF-120 | 2 | `Ready`, **re-estimate first**. Its remaining work rides on 119's and 121's endpoints, **both of which now exist** | **mid** |
 
 **Gates, run in the 2026-09-04 sessions:** build Release `-warnaserror` **0/0** · `dotnet format`
-exit **0** · `Domain.Tests` **124/124** (111 → 124) · `Api.Tests` **267/267** (241 → 255 → 267) ·
+exit **0** · `Domain.Tests` **124/124** (111 → 124) · `Api.Tests` **278/278** (241 → 255 → 267 → 278) ·
 citations **1149 / 0 broken / 0 legacy**. **E2E has not been run since `01c7b3a`** — the last figure,
-**6/6**, belongs to the KAFF-119 build session, and neither client story has a screen to drive.
+**6/6**, belongs to the KAFF-119 build session, and no client story has a screen to drive.
 
-> ### ⚠️ Two undischarged criteria belong to no story in the table above
+> ### ⚠️ Three undischarged criteria belong to no story in the table above
 >
-> **`AC-119-L` and `AC-121-I` are the same hole: there is no client form.** Both stories are
-> delivered; both criteria are Frontend's and neither is a pass. **One Angular client form serves
-> create and edit** — build it once, and build it before either story is put up for acceptance.
-> Named here so they do not go the way `AC-106-J` did.
+> **`AC-119-L`, `AC-121-I` and `AC-124-I` (plus half of `AC-124-H`) are one hole: there is no client
+> screen.** Three stories are delivered; all three criteria are Frontend's and none is a pass. **One
+> Angular client form serves create and edit, and one list serves search** — build them once, and
+> before any of the three is put up for acceptance. Named here so they do not go the way `AC-106-J`
+> did.
+
+> ### ⚠️ D-110 §2 corrects a reading of D-108 that would be dangerous to carry forward
+>
+> D-108 and D-109 recorded that removing `.RequirePermission` reddens most of a client suite, because
+> with no gate nothing calls `ActorVerifiedAs` and the audit constraint refuses the row. **That is a
+> property of write endpoints only.** On KAFF-124's read the same mutation reddens **two** tests —
+> the two that test the gate — and an ungated `GET /api/clients` happily returns every client in Kaff
+> to a `Role.Client` caller. **On a read, the permission test is the entire control.**
+
+> ### Found and routed, not fixed: `scripts/check-citations.ps1` checks citations in `.md` only
+>
+> Its identifier index is built from code, but the citations it *collects* come from markdown alone.
+> **80 `[Verified:` markers live in `.cs` and `.ts` files and the gate has never read one** — they are
+> also written in a different shape (`<c>…</c> -&gt; <c>…</c>`), so widening the file filter is not
+> enough. An ad-hoc pass reached 35 of the 80 and found **0 broken**; the other 45 are unaudited.
+> **Needs its own story** — D-110 §5.
 
 > **`KAFF-118`'s cut is withdrawn, not decided** (`meetings/2026-09-04-sprint-3-standup.md` §2). Both
 > premises of the routing expired: sprint 1 is closed, so there is **no locked sprint to cut from**,
@@ -624,7 +641,7 @@ criterion behind them. **KAFF-105a is untouched by D-065 — checked, not assume
 | KAFF-121 | Edit a client's name and contact details | 3 | ~~**READY**~~ → ✅ **BUILT 2026-09-04**, D-109. `AC-121-A`…`H` discharged and watched; **`AC-121-I` HELD** (Frontend — there is no client form). **Not independently verified.** ~~`Client` still has no setter for `Name`, the primary phone or `Kind`~~ — **built as `Rename`, `SetPrimaryPhone` and `SetClassification`**, the last taking the kind and the tax number together because spec.md §6.7 constrains the **pair** (D-109 §1). | 119 |
 | KAFF-122 | ~~Set a corporate client's withholding category~~ | — | **Superseded** → KAFF-416. **Not to be built or re-created in slice 1** — re-confirmed 2026-09-04. Carries three broken `:digits` citations, flagged and not fixed. | — |
 | KAFF-123 | Archive a client | 2 | **READY.** Passed all twelve DoR lines on its own account throughout; blocked only transitively, now cleared. | 119 |
-| KAFF-124 | Find a client by name, code or phone | 2 | **READY.** Passed all twelve DoR lines on its own account throughout; blocked only transitively, now cleared. **`AC-124-C` works only because `Client.Create` upper-cases the code** (D-107). | 119 |
+| KAFF-124 | Find a client by name, code or phone | 2 | ~~**READY**~~ → ✅ **BUILT 2026-09-04**, D-110. `AC-124-A`…`G` discharged; **`AC-124-H` half-held and `AC-124-I` HELD** (Frontend — there is no client list screen). **Not independently verified.** **`AC-124-C` works only because `Client.Create` upper-cases the code** (D-107) — the handler upper-cases the term to meet it, and the test says so. | 119 |
 | **KAFF-125** | **The staff shell: session resolution, chrome, and role-based landing** | **3** | **BUILT `7461332`, ACCEPTED as an implementation 2026-09-04.** Two exceptions, neither a code defect: **`AC-125-B` is verified by code review only** — `V-32-D` established that *nothing asserts it*, and deleting the `await` it rests on left E2E at 6/6, because `src/Web` has **zero `.spec.ts` files**. And **`AC-125-C` is NOT accepted as satisfied**: it is deliberately unmet, `ux/screen-inventory.md`'s S-005 and the criterion now require opposite things, and **it is Nabil's criterion and his call.** ~~**CUT 2026-09-02**, on Nabil's ruling~~ — *"a dedicated frontend ticket must be cut for the visual shell itself … you cannot discharge a UI rendering dependency with a JSON response."* **`AC-101b-A` and `AC-101b-D` move here** from KAFF-105b and KAFF-115, which cannot discharge them (D-097 §3). **Deliberately not marked Ready or BLOCKED against a sprint** — whether it is built in sprint 2 is a scope question standing with Nabil. Renders S-004, S-005's identity half and the shell chrome today; **S-006 and S-011 have no endpoint to feed them and S-009a's route is an open UX question**. | 101a, 101b, 105a |
 
 ### The committable scope, computed transitively

@@ -9061,3 +9061,90 @@ Build **0 warnings / 0 errors** with `-warnaserror`; `dotnet format --verify-no-
 Domain **124/124** (111 + 13); Api **267/267** (255 + 12); citations **1149 / 0 broken / 0 legacy**.
 **E2E was not run** — the edit path has no screen to drive, and the last figure, 6/6, belongs to the
 session that produced it.
+---
+
+### D-110 · Backend — KAFF-124 built: search is a GET after all, and a read endpoint has no audit backstop · 2026-09-04
+
+**Decision.** `GET /api/clients?search=&includeArchived=` — name, code and normalised phone, archived
+excluded by default, gated `ClientManage`.
+
+#### 1. GET, and the reason phone-check is a POST does not transfer
+
+`POST /api/clients/phone-check` justifies its verb partly like this: *"A phone number in a query
+string reaches the request path, which is written onto every audit record this request produces."*
+
+**That sentence is wrong as written, and it matters because a future reader would take it as a rule.**
+`AuditCorrelationMiddleware` records `context.Request.Path.Value`
+[Verified: 2026-09-04 @ `src/Api/Common/Middleware/AuditCorrelationMiddleware.cs` -> `InvokeAsync`],
+and `Request.Path` **excludes the query string** — that is what `Request.QueryString` is for, and
+nothing reads it. **No search term reaches `audit_records` by either verb.** The remark has been
+amended in place rather than deleted; phone-check's *other* two reasons stand and are why it is still
+a POST: its entire input is a phone number, so every call would put one into an access log, and a
+cached warning is a stale warning.
+
+**A search box is a name as often as a number**, and a list screen that cannot be linked, bookmarked
+or returned to is a worse screen. **Rejected: `POST /api/clients/search`** for symmetry with
+phone-check — symmetry with a reason that does not apply is cargo, and it would cost the screen its
+URL.
+
+#### 2. ⚠️ Removing the permission gate reddens **two** tests here, not nine — and that is the finding
+
+D-108 and D-109 both recorded that deleting `.RequirePermission` reddens most of a client suite,
+because with no gate nothing calls `ActorVerifiedAs` and
+`ck_audit_records_actor_is_named_completely` refuses the audit row. **That backstop does not exist on
+this endpoint.** KAFF-124 writes no audit record — it is a read — so an ungated `GET /api/clients`
+runs perfectly happily and returns **every client in Kaff** to anybody who asks, `Role.Client`
+included, which spec.md §12 forbids absolutely.
+
+**On a write, a missing gate fails loudly for a second, unrelated reason. On a read, the gate test is
+the entire control.** Anyone reading D-108's "eleven of thirteen" as a general property of this
+codebase would be reading it as the opposite of what it is.
+
+#### 3. The wildcard test was wrong before the code was
+
+`ILIKE` reads `%` and `_` as patterns, so the term is escaped (`Escape`, backslash first, or the
+escapes get escaped). The first version of the test asserted that searching `%` returns *nothing* of
+this fixture's — **and it failed, correctly**: one of the fixtures is named `… 100% للتنفيذ`, and a
+literal search for `%` should find exactly that. The test now asserts both halves — the client whose
+name really contains a per cent sign **is** returned, the one that does not **is not** — which is
+what makes the escaping *literal* rather than merely restrictive. **The failure was the test's, and
+it is recorded rather than quietly corrected**, because a test rewritten until it passes is how a
+weaker assertion gets in.
+
+#### 4. What is deliberately absent
+
+**No paging.** Slice 1 has no volume, and a page contract invented before a screen exists is one that
+will be wrong. The response is a wrapper object rather than a bare array, so a total and a page can be
+added without breaking the shape.
+
+**`AC-124-H` is half discharged and said so.** The criterion is about *rendering* `clients.list.empty`,
+and there is no client list screen. What is pinned here is the contract that empty state renders from:
+a `200` with an empty array, never a `404` and never a null. **`AC-124-I` is not discharged at all.**
+No i18n key was added for a screen that does not exist.
+
+#### 5. ⚠️ Found, not fixed: `scripts/check-citations.ps1` reads citations only from `.md`
+
+`$docs` is `Get-ChildItem -Filter *.md`. The identifier **index** is built from `.cs`, `.ts`, `.html`,
+`.sql`, `.ps1`, `.json` and `.md`, but the **citations it checks** come from markdown alone.
+**80 `[Verified:` markers live in `.cs` and `.ts` files and the gate has never looked at one of them**
+— including the two added by this change. They are also written in a different shape (`<c>path</c>
+-&gt; <c>member</c>`), so the existing regex would not match them even if the file filter were
+widened: this is a second pattern, not a one-line fix.
+
+An ad-hoc pass written for this entry parsed **35** of the 80 and found **0 broken**; the other 45 are
+in forms it did not reach and are genuinely unaudited. **Not fixed here** — widening the gate belongs
+in its own change, where whatever it finds can be looked at properly rather than landing inside a
+story about client search. **Routed to the Scrum Master.**
+
+*(This session's own two code citations were checked by hand. One was wrong on first write —
+`src/Api/Common/Auditing/` for a file that lives in `src/Api/Common/Middleware/` — and the gate would
+not have caught it.)*
+
+#### 6. Gates
+
+Build **0 warnings / 0 errors** with `-warnaserror`; `dotnet format --verify-no-changes` exit **0**;
+Domain **124/124**; Api **278/278** (267 + 11); citations **1149 / 0 broken / 0 legacy** — *from
+markdown only, see §5*. **E2E not run**: there is no client screen to drive.
+
+Each of `AC-124-A`, the escaping, `AC-124-E` and the permission gate was watched failing under a
+mutation of its own mechanism, and each reddened its own test and no other.

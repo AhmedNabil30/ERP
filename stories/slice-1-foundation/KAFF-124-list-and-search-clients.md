@@ -1,6 +1,11 @@
 # KAFF-124 · Find a client by name or phone
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 2 · **Status:** Ready
+**Slice:** 1 · **Epic:** Foundation · **Points:** 2 · **Status:** **BUILT 2026-09-04, two criteria held — not accepted.**
+`AC-124-A` … `AC-124-G` discharged, and `AC-124-A`, the wildcard escaping, `AC-124-E` and the permission gate were each
+watched failing under a mutation of their own mechanism (decisions.md **D-110**). **`AC-124-H` HALF-HELD** — the `200`
+with an empty array is pinned; *displaying* `clients.list.empty` needs a screen. **`AC-124-I` HELD** — Arabic/RTL at
+mobile width, and **there is no client list screen**: Frontend's, the same hole as `AC-119-L` and `AC-121-I`.
+**Not independently verified** — built and self-reported.
 **Spec:** §2 (**amended**), §3, §12 · **Decisions:** D-044 (ruling 4), D-035, **D-049 (rulings 7, 8)**
 **Depends on:** KAFF-119
 
