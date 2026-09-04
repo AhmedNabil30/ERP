@@ -9148,3 +9148,95 @@ markdown only, see §5*. **E2E not run**: there is no client screen to drive.
 
 Each of `AC-124-A`, the escaping, `AC-124-E` and the permission gate was watched failing under a
 mutation of its own mechanism, and each reddened its own test and no other.
+---
+
+### D-111 · Scrum Master — two lanes, one machine: the pipeline, and what it caught on its first read · 2026-09-04
+
+**Decision.** The board runs as two queues. The **Backend lane** builds API stories; the **Frontend
+lane** builds screens against APIs already on `main`. Backend leads by **one** story.
+`process/agile.md` §2a is the rule.
+
+**Nabil, 2026-09-04:** *"we want to move in parallel — backend on new stories and front on the ready
+one, so the backend is always ahead, so when front finishes it finds a new API to work with."*
+
+#### 1. It is pipelining, not simultaneity — and that distinction is load-bearing
+
+`process/agile.md` §2 already records, at the cost of two stalls in one day, that **at most one agent
+runs on this machine at a time**: `src/Web/proxy.conf.json` hardcodes port 5080, and a running API
+holds `Kaff.Domain.dll` open against the other agent's build. **Two lanes changes none of that.** The
+agents alternate on the box; what runs in parallel is the *backlog*.
+
+**Rejected: two agents at once, now that the lanes touch disjoint directories.** That is exactly the
+reasoning that failed on 2026-08-29 — file ownership *was* disjoint and they collided anyway, on the
+port and the DLLs. Principle 3 is about not overwriting work; the machine constraint is about being
+able to build at all, and only one of the two was ever fixed.
+
+**Rejected: Backend leads by a sprint rather than a story.** Four contracts ahead is four unverified
+designs and a Frontend agent meeting all four mistakes at once — a waterfall with a kanban board
+drawn on it. One story is a buffer.
+
+#### 2. The rule that was already broken before it was written
+
+**A story is DELIVERED when its lane is done and ACCEPTED only when both lanes are.** On 2026-09-04
+KAFF-119, KAFF-121 and KAFF-124 were all built and pushed, each carrying an undischarged *"Arabic,
+RTL, at mobile width"* criterion, and the board read **10 of 14 points**. It is **10 of 22**: no
+client story can be accepted until a screen exists.
+
+**A UI criterion left on a delivered backend story is a defect in the board**, because nobody opens a
+delivered story again. **KAFF-126 was cut** and the three criteria **moved into it, not copied** —
+`AC-119-L` → `AC-126-D`, `AC-121-I` → `AC-126-G`, `AC-124-I` → `AC-126-A`, plus `AC-124-H`'s render
+half as `AC-126-C`. Each origin criterion is struck in place and points at its new home, so there is
+exactly one place each is discharged.
+
+The precedent is Nabil's own, 2026-09-02, which produced KAFF-125 out of KAFF-105b:
+***"You cannot discharge a UI rendering dependency with a JSON response."*** **It has now happened
+three more times in one epic, which is why it is a process rule rather than a ruling to remember.**
+
+#### 3. ⚠️ What the lead bought on its first use, an hour after the API shipped
+
+Reading `ux/slice-1-flows.md` -> `S-011 · Client list` against KAFF-124's merged contract to write
+KAFF-126 found a mismatch **the story's own criteria could not have caught**:
+
+**S-011 draws three chips — `[ All ] [ Active ] [ Archived ]`. The API shipped `includeArchived: bool`,
+which expresses All and Active and cannot express Archived alone.**
+
+It satisfies KAFF-124 rule 2 exactly as written — *"the default list excludes archived clients; they
+remain findable through an explicit filter"* — and satisfies `AC-124-E`, which only ever tests two
+states. **The criterion and the screen disagreed and the test suite agreed with the criterion.**
+
+Changed to `?status=active|archived|all` rather than worked around, because **nothing consumes the
+endpoint yet**. A boolean left in place would have become a screen filtering the third state
+client-side — a list that lies as soon as there is more than one page of clients, and a second
+implementation of a filter the server already owns.
+
+**An unknown filter is refused, not defaulted** (`errors.master.client_list_filter_unknown`). A
+mistyped `?status=archvied` silently read as "active" returns active clients to somebody who asked
+for archived ones — **indistinguishable from an empty archive**, and the operator concludes there is
+nothing there. Watched failing: defaulting instead of refusing reddens its own test and no other.
+
+**This is the argument for the lead, and it is not the one Nabil gave.** He asked for it so Frontend
+never waits. It also means **the API is read against the UX spec before a screen is written**, and
+here that cost one enum instead of one screen.
+
+#### 4. What the lead does not buy
+
+**Verification.** A leading Backend lane accumulates *unverified* contracts — KAFF-119, 121 and 124
+are all built, pushed and certified by nobody, because `CLAUDE.md` says the author does not certify.
+A Frontend lane building on three unverified endpoints is **three times the exposure, not a third of
+it**. The Verifier still runs on its own schedule, and nothing about a moving queue makes that less
+true.
+
+#### 5. Board repairs found while doing this
+
+- **KAFF-119's story file still read `Status: Ready`** two commits after the story was built and
+  pushed. The backlog said `BUILT` the same day. One session updated the board and forgot the story
+  it came from — corrected loudly, SM-29.
+- **KAFF-125 had no row in the slice-1 inventory**, having been cut on 2026-09-02 and counted in the
+  epic's 102 points without ever being given a line in the table those points are summed from. Added.
+- Slice 1: **28 / 102 → 29 / 110**; grand total **141 / 669 → 142 / 677**, by KAFF-126 at 8.
+
+#### 6. Gates
+
+Build **0 warnings / 0 errors** with `-warnaserror`; `dotnet format --verify-no-changes` exit **0**;
+Domain **124/124**; Api **280/280** (278 + 2 for the third filter state and the unknown-filter
+refusal); citations checked at the end of the change. **E2E not run** — still no client screen.

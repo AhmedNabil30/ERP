@@ -88,4 +88,14 @@ public static class MasterDataErrors
     /// </remarks>
     public static readonly Error ClientNotFound =
         Error.NotFound("master.client_not_found", "errors.master.client_not_found");
+
+    /// <summary>The <c>status</c> filter on the client list named something that is not a filter. KAFF-124.</summary>
+    /// <remarks>
+    /// <b>Refused rather than defaulted.</b> Treating <c>?status=archvied</c> as "active" answers a
+    /// question nobody asked and is indistinguishable from an empty archive — the operator concludes
+    /// there is nothing there. An absent filter is a default; a wrong one is a mistake, and the two
+    /// must not produce the same list.
+    /// </remarks>
+    public static readonly Error ClientListFilterUnknown =
+        Error.Validation("master.client_list_filter_unknown", "errors.master.client_list_filter_unknown");
 }

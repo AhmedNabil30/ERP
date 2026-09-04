@@ -2,7 +2,7 @@
 
 **Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** **BUILT 2026-09-04, one criterion held — not accepted.**
 `AC-121-A` … `AC-121-H` discharged and each watched failing under a mutation of its own mechanism (decisions.md D-109).
-**HOLD on `AC-121-I`** — Arabic, RTL, at mobile width, and **there is no client form**: Frontend's, the same hole as
+**`AC-121-I` MOVED to `KAFF-126` (`AC-126-G`)** — Arabic, RTL, at mobile width, and **there is no client form**: Frontend's, the same hole as
 `AC-119-L`, and it is not a pass. **Not independently verified** — built and self-reported.
 **Spec:** §2 (**amended**), §3, §12 · **Decisions:** D-044 (ruling 4), **D-049 (ruling 8)**
 **Depends on:** KAFF-119
@@ -109,6 +109,7 @@ Given a client with notes
 When any endpoint reachable by `Role.Client` is called
 Then the notes appear in no response
 
+**~~AC-121-I~~ — MOVED to `KAFF-126` as `AC-126-G`, 2026-09-04.** A UI rendering criterion cannot be discharged by a JSON response (Nabil, 2026-09-02), and this story's API is delivered. **It is moved, not copied** — `KAFF-126` is the one place it is discharged, and this story is not accepted until it is. The original text is kept below for the record.
 **AC-121-I — Arabic, RTL, at mobile width**
 Given the edit form and the duplicate warning at 390px in Arabic
 When they render

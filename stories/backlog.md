@@ -25,7 +25,7 @@ verdicts and no longer disagrees with an order that has nothing left to sequence
 
 | # | Epic | Gate (`agents.md`) | Stories | Points | Blocked |
 |---|---|---|---:|---:|---|
-| 1 | Foundation | permission tests pass | **28** | **102** | ~~Q42~~ **closed, D-055 §2** · ~~Q43~~ **ANSWERED 2026-09-02, D-100.** **Slice 1 has no open Karim question** |
+| 1 | Foundation | permission tests pass | **29** | **110** | ~~Q42~~ **closed, D-055 §2** · ~~Q43~~ **ANSWERED 2026-09-02, D-100.** ⚠️ **`Q57` opened 2026-09-04** — may the client-code sequence contain gaps? It blocks nothing today and is the only unbackfillable row on the register |
 | 2 | Masters | Excel import works | 13 | 48 | Q12, Q13, Q29 |
 | 3 | Treasury | **the worked example reconciles** | 20 | 120 | Q14, Q15, Q16, Q29 |
 | 4 | Spine | prices provably frozen | 17 | 84 | ~~N10~~ **approved and built, D-055 §3** · **Q-N10-1, Q-N10-2b, Q-N10-3** (Karim), Q18, Q19, Q20, Q30 |
@@ -34,7 +34,14 @@ verdicts and no longer disagrees with an order that has nothing left to sequence
 | 7 | Accounting | balance sheet balances | 12 | 61 | Q23, Q24, Q25, Q40 |
 | 8 | Closure, warranty, portal | portal leaks nothing | 15 | 65 | Q26 · **N7** (Architect, not Karim) |
 | 9 | Mobile and offline | offline cannot move money | 8 | 47 | none open yet |
-| | | | **141** | **669** | |
+| | | | **142** | **677** | |
+
+> **Slice 1 moved 28 / 102 → 29 / 110 on 2026-09-04**, by **KAFF-126** at 8 — the Frontend lane's
+> first story, cut so that three delivered client stories have somewhere to discharge their screen
+> criteria (`process/agile.md` §2a rule 5). Grand total 141 / 669 → **142 / 677** by the same one row
+> and the same 8. Re-derived by adding one row to the slice-1 inventory, which was itself given the
+> **KAFF-125** line it had been missing since 2026-09-02 — counted in the 102 all along, absent from
+> the table it was counted into. **D-096 §4 is the record of what adding to a stale total costs here.**
 
 > **⚠️ Slice 1's row was re-derived on 2026-09-02 and the figure it replaces was three re-estimates
 > stale.** It read **27 / 92**, computed 2026-08-21. Since then KAFF-105b went 3 → 5 and KAFF-115 went
@@ -105,7 +112,21 @@ questions merged into it with their origin recorded (action **SM-4**).
 
 ---
 
-## Sprint 3 — open 2026-09-04 · the Client master · **10 of 14 points delivered on day one**
+## Sprint 3 — open 2026-09-04 · the Client master · **two lanes, adopted 2026-09-04**
+
+> ### The pipeline · Nabil, 2026-09-04
+>
+> *"we want to move in parallel — backend on new stories and front on the ready one, so the backend is
+> always ahead, so when front finishes it finds a new API to work with."*
+>
+> **`process/agile.md` §2a is the rule; this is the board.** Backend leads by **one** story. Frontend
+> never starts against an unmerged API. **It is pipelining, not simultaneity — §2's one-agent-per-machine
+> rule still holds.**
+>
+> **⚠️ DELIVERED is not ACCEPTED.** A backend story whose screen criterion is undischarged is not
+> accepted, and the arithmetic below must not read as though it is.
+
+### Lane A — Backend · **10 of 14 points delivered**
 
 **Build order, in dependency order — `KAFF-119` first and alone; the other four all depend on it.**
 
@@ -122,13 +143,22 @@ exit **0** · `Domain.Tests` **124/124** (111 → 124) · `Api.Tests` **278/278*
 citations **1149 / 0 broken / 0 legacy**. **E2E has not been run since `01c7b3a`** — the last figure,
 **6/6**, belongs to the KAFF-119 build session, and no client story has a screen to drive.
 
-> ### ⚠️ Three undischarged criteria belong to no story in the table above
+### Lane B — Frontend · **8 points, one story, `Ready` and startable today**
+
+| # | Story | Pts | State |
+|---|---|---:|---|
+| 1 | **KAFF-126 — the client screens** (S-011, S-012, S-013, S-014) | **8** *(proposed)* | **`Ready`.** Cut 2026-09-04. Carries `AC-126-A`/`D`/`G` — the three moved criteria — and `AC-126-C`, `AC-124-H`'s render half. **Four of its five endpoints are merged**; only the archive control waits on KAFF-123, which is ahead of it in Lane A |
+
+> **The three criteria are MOVED, not copied.** `AC-119-L` → `AC-126-D`, `AC-121-I` → `AC-126-G`,
+> `AC-124-I` → `AC-126-A`. Each origin story now points here and each is struck in place, so there is
+> exactly one place each is discharged. The precedent is Nabil's own, 2026-09-02: ***"You cannot
+> discharge a UI rendering dependency with a JSON response"*** — which produced `KAFF-125` out of
+> `KAFF-105b`, and has now happened three more times.
+
+> ### ⚠️ Sprint 3 is 10 of 22 points, not 10 of 14
 >
-> **`AC-119-L`, `AC-121-I` and `AC-124-I` (plus half of `AC-124-H`) are one hole: there is no client
-> screen.** Three stories are delivered; all three criteria are Frontend's and none is a pass. **One
-> Angular client form serves create and edit, and one list serves search** — build them once, and
-> before any of the three is put up for acceptance. Named here so they do not go the way `AC-106-J`
-> did.
+> The 14 was Lane A alone. **No client story can be accepted until Lane B lands**, so the honest total
+> is Lane A's 14 plus Lane B's 8. **Three stories are DELIVERED and none is ACCEPTED.**
 
 > ### ⚠️ D-110 §2 corrects a reading of D-108 that would be dangerous to carry forward
 >
@@ -641,6 +671,8 @@ criterion behind them. **KAFF-105a is untouched by D-065 — checked, not assume
 | KAFF-121 | Edit a client's name and contact details | 3 | ~~**READY**~~ → ✅ **BUILT 2026-09-04**, D-109. `AC-121-A`…`H` discharged and watched; **`AC-121-I` HELD** (Frontend — there is no client form). **Not independently verified.** ~~`Client` still has no setter for `Name`, the primary phone or `Kind`~~ — **built as `Rename`, `SetPrimaryPhone` and `SetClassification`**, the last taking the kind and the tax number together because spec.md §6.7 constrains the **pair** (D-109 §1). | 119 |
 | KAFF-122 | ~~Set a corporate client's withholding category~~ | — | **Superseded** → KAFF-416. **Not to be built or re-created in slice 1** — re-confirmed 2026-09-04. Carries three broken `:digits` citations, flagged and not fixed. | — |
 | KAFF-123 | Archive a client | 2 | **READY.** Passed all twelve DoR lines on its own account throughout; blocked only transitively, now cleared. | 119 |
+| KAFF-125 | The staff shell — landings, the session resolver and the route guard | 3 | **BUILT `7461332` and ACCEPTED as an implementation 2026-09-04**, with `V-32-D`; **`AC-125-C` explicitly NOT accepted as satisfied** — Nabil's criterion, Nabil's call, and it is settled by looking rather than by ruling (`meetings/2026-09-04-sprint-3-standup.md` §4.5). ⚠️ **This row did not exist until 2026-09-04** — the story was cut on 2026-09-02 and counted in this epic's 102 points, but never given a line in the inventory it was counted into. | 101b, 105a, 105b |
+| KAFF-126 | **The client screens — S-011, S-012, S-013, S-014** | **8** *(proposed)* | **`Ready` 2026-09-04, cut the same day.** The Frontend lane's first story (`process/agile.md` §2a). Carries `AC-119-L`, `AC-121-I` and `AC-124-I` — **moved, not copied** — plus `AC-124-H`'s render half. Four of its five endpoints are already merged; only the archive control waits on KAFF-123. | 119, 121, 123, 124, 125 |
 | KAFF-124 | Find a client by name, code or phone | 2 | ~~**READY**~~ → ✅ **BUILT 2026-09-04**, D-110. `AC-124-A`…`G` discharged; **`AC-124-H` half-held and `AC-124-I` HELD** (Frontend — there is no client list screen). **Not independently verified.** **`AC-124-C` works only because `Client.Create` upper-cases the code** (D-107) — the handler upper-cases the term to meet it, and the test says so. | 119 |
 | **KAFF-125** | **The staff shell: session resolution, chrome, and role-based landing** | **3** | **BUILT `7461332`, ACCEPTED as an implementation 2026-09-04.** Two exceptions, neither a code defect: **`AC-125-B` is verified by code review only** — `V-32-D` established that *nothing asserts it*, and deleting the `await` it rests on left E2E at 6/6, because `src/Web` has **zero `.spec.ts` files**. And **`AC-125-C` is NOT accepted as satisfied**: it is deliberately unmet, `ux/screen-inventory.md`'s S-005 and the criterion now require opposite things, and **it is Nabil's criterion and his call.** ~~**CUT 2026-09-02**, on Nabil's ruling~~ — *"a dedicated frontend ticket must be cut for the visual shell itself … you cannot discharge a UI rendering dependency with a JSON response."* **`AC-101b-A` and `AC-101b-D` move here** from KAFF-105b and KAFF-115, which cannot discharge them (D-097 §3). **Deliberately not marked Ready or BLOCKED against a sprint** — whether it is built in sprint 2 is a scope question standing with Nabil. Renders S-004, S-005's identity half and the shell chrome today; **S-006 and S-011 have no endpoint to feed them and S-009a's route is an open UX question**. | 101a, 101b, 105a |
 

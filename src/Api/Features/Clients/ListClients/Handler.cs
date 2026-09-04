@@ -1,3 +1,4 @@
+using Kaff.Api.Common.Results;
 using Kaff.Domain.Common;
 using Kaff.Domain.MasterData;
 using Kaff.Infrastructure.Persistence;
@@ -55,16 +56,23 @@ internal static class Handler
         KaffDbContext database,
         CancellationToken cancellationToken,
         string? search = null,
-        bool includeArchived = false)
+        string? status = null)
     {
         ArgumentNullException.ThrowIfNull(database);
 
+        if (!ClientListFilterParsing.TryParse(status, out ClientListFilter filter))
+        {
+            return ResultExtensions.Problem(MasterDataErrors.ClientListFilterUnknown);
+        }
+
         IQueryable<Client> query = database.Clients;
 
-        if (!includeArchived)
+        query = filter switch
         {
-            query = query.Where(client => client.IsActive);
-        }
+            ClientListFilter.Active => query.Where(client => client.IsActive),
+            ClientListFilter.Archived => query.Where(client => !client.IsActive),
+            _ => query,
+        };
 
         string? term = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
 

@@ -178,6 +178,7 @@
   "errors.master.client_kind_required": "اختر نوع العميل: فرد أم شركة.",
   "errors.master.duplicate_phone_not_acknowledged": "هذا الرقم مسجل بالفعل. راجع العميل الذي يحمله ثم أكد للمتابعة.",
   "errors.master.client_not_found": "لا يوجد عميل بهذا الرقم.",
+  "errors.master.client_list_filter_unknown": "فلتر غير معروف.",
 
   "errors.project.code_required": "كود المشروع مطلوب.",
   "errors.project.name_required": "اسم المشروع مطلوب.",

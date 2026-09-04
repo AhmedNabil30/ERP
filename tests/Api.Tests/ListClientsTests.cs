@@ -182,7 +182,7 @@ public sealed class ListClientsTests : IAsyncLifetime
             [active],
             "the default list excludes archived clients — KAFF-124 rule 2");
 
-        IReadOnlyList<ClientSummary> withArchived = await SearchAsync(nonce, includeArchived: true);
+        IReadOnlyList<ClientSummary> withArchived = await SearchAsync(nonce, status: "all");
 
         withArchived.Select(client => client.Code).Should().BeEquivalentTo(
             [active, archivedCode],
@@ -191,6 +191,43 @@ public sealed class ListClientsTests : IAsyncLifetime
 
         withArchived.Single(client => client.Code == archivedCode)
             .IsActive.Should().BeFalse("the row says which of the two it is");
+
+        (await SearchAsync(nonce, status: "archived")).Select(client => client.Code).Should().BeEquivalentTo(
+            [archivedCode],
+            "S-011 draws three chips — All, Active, Archived — and the third is archived ALONE, "
+            + "which a boolean includeArchived could never express (decisions.md D-111 §3)");
+    }
+
+    /// <summary>
+    /// An unknown filter is refused rather than quietly treated as the default.
+    /// </summary>
+    /// <remarks>
+    /// A mistyped <c>?status=archvied</c> defaulted to "active" returns a list of active clients to
+    /// somebody who asked for archived ones — <b>indistinguishable from an empty archive</b>, and the
+    /// operator concludes there is nothing there. Absent is a default; wrong is a mistake, and the two
+    /// must not produce the same list.
+    /// </remarks>
+    [Fact]
+    public async Task A_filter_this_list_does_not_know_is_refused_and_not_defaulted()
+    {
+        HttpResponseMessage response = await SendAsync(
+            _marketing, Role.MarketingSales, Department.Marketing, null, "archvied");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        using JsonDocument problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+
+        problem.RootElement.GetProperty("messageKey").GetString().Should().Be(
+            "errors.master.client_list_filter_unknown");
+    }
+
+    /// <summary>The three chips of <c>ux/slice-1-flows.md</c> -&gt; <c>S-011</c>, and nothing else.</summary>
+    [Fact]
+    public void The_filter_has_exactly_the_three_states_the_screen_draws()
+    {
+        Enum.GetNames<ClientListFilter>().Should().BeEquivalentTo(
+            ["Active", "Archived", "All"],
+            "a fourth state here is a chip nobody drew, and a missing one is a chip that cannot work");
     }
 
     // ---- AC-124-F · a portal client cannot list clients ---------------------------------------
@@ -201,11 +238,11 @@ public sealed class ListClientsTests : IAsyncLifetime
         string nonce = UniqueNames.Code("PRT");
         await RegisterAsync($"شركة {nonce} السرية");
 
-        foreach ((string? search, bool archived) in new (string?, bool)[]
-                 { (null, false), (nonce, false), (nonce, true) })
+        foreach ((string? search, string status) in new (string?, string)[]
+                 { (null, "active"), (nonce, "active"), (nonce, "all") })
         {
             HttpResponseMessage response = await SendAsync(
-                _portalClient, Role.Client, null, search, archived, actorClientId: _portalClientCompany);
+                _portalClient, Role.Client, null, search, status, actorClientId: _portalClientCompany);
 
             response.StatusCode.Should().Be(
                 HttpStatusCode.Forbidden,
@@ -261,7 +298,7 @@ public sealed class ListClientsTests : IAsyncLifetime
         await SetNotesAsync(code, "تأخر في السداد مرتين");
 
         HttpResponseMessage response = await SendAsync(
-            _marketing, Role.MarketingSales, Department.Marketing, nonce, includeArchived: false);
+            _marketing, Role.MarketingSales, Department.Marketing, nonce, "active");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -287,7 +324,7 @@ public sealed class ListClientsTests : IAsyncLifetime
     public async Task A_search_matching_nothing_is_an_empty_list_and_not_an_error()
     {
         HttpResponseMessage response = await SendAsync(
-            _marketing, Role.MarketingSales, Department.Marketing, UniqueNames.Code("NONE"), includeArchived: false);
+            _marketing, Role.MarketingSales, Department.Marketing, UniqueNames.Code("NONE"), "active");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK, "nothing found is not something gone wrong");
 
@@ -313,14 +350,14 @@ public sealed class ListClientsTests : IAsyncLifetime
 
         foreach ((Guid actor, Role role, Department? department, OperationsSubDepartment? sub) in refused)
         {
-            (await SendAsync(actor, role, department, null, false, actorSubDepartment: sub))
+            (await SendAsync(actor, role, department, null, "active", actorSubDepartment: sub))
                 .StatusCode.Should().Be(
                     HttpStatusCode.Forbidden,
                     "{0} does not hold ClientManage — spec.md §2, Client is owned by Marketing",
                     role);
         }
 
-        (await SendAsync(_owner, Role.Owner, null, null, false))
+        (await SendAsync(_owner, Role.Owner, null, null, "active"))
             .StatusCode.Should().Be(HttpStatusCode.OK, "the Owner holds every company-wide row");
     }
 
@@ -351,10 +388,10 @@ public sealed class ListClientsTests : IAsyncLifetime
         return body.RootElement.GetProperty("code").GetString()!;
     }
 
-    private async Task<IReadOnlyList<ClientSummary>> SearchAsync(string? search, bool includeArchived = false)
+    private async Task<IReadOnlyList<ClientSummary>> SearchAsync(string? search, string status = "active")
     {
         HttpResponseMessage response = await SendAsync(
-            _marketing, Role.MarketingSales, Department.Marketing, search, includeArchived);
+            _marketing, Role.MarketingSales, Department.Marketing, search, status);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -377,11 +414,11 @@ public sealed class ListClientsTests : IAsyncLifetime
         Role actorRole,
         Department? actorDepartment,
         string? search,
-        bool includeArchived,
+        string status,
         OperationsSubDepartment? actorSubDepartment = null,
         Guid? actorClientId = null)
     {
-        string route = "/api/clients?includeArchived=" + (includeArchived ? "true" : "false");
+        string route = "/api/clients?status=" + status;
 
         if (search is not null)
         {

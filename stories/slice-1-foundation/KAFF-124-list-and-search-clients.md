@@ -3,7 +3,7 @@
 **Slice:** 1 · **Epic:** Foundation · **Points:** 2 · **Status:** **BUILT 2026-09-04, two criteria held — not accepted.**
 `AC-124-A` … `AC-124-G` discharged, and `AC-124-A`, the wildcard escaping, `AC-124-E` and the permission gate were each
 watched failing under a mutation of their own mechanism (decisions.md **D-110**). **`AC-124-H` HALF-HELD** — the `200`
-with an empty array is pinned; *displaying* `clients.list.empty` needs a screen. **`AC-124-I` HELD** — Arabic/RTL at
+with an empty array is pinned; *displaying* `clients.list.empty` needs a screen. **`AC-124-I` MOVED to `KAFF-126` (`AC-126-A`)**, and `AC-124-H`'s render half with it (`AC-126-C`) — Arabic/RTL at
 mobile width, and **there is no client list screen**: Frontend's, the same hole as `AC-119-L` and `AC-121-I`.
 **Not independently verified** — built and self-reported.
 **Spec:** §2 (**amended**), §3, §12 · **Decisions:** D-044 (ruling 4), D-035, **D-049 (rulings 7, 8)**
@@ -72,6 +72,7 @@ Given a search matching nothing
 When the results render
 Then `clients.list.empty` is displayed
 
+**~~AC-124-I~~ — MOVED to `KAFF-126` as `AC-126-A`, 2026-09-04.** A UI rendering criterion cannot be discharged by a JSON response (Nabil, 2026-09-02), and this story's API is delivered. **It is moved, not copied** — `KAFF-126` is the one place it is discharged, and this story is not accepted until it is. The original text is kept below for the record.
 **AC-124-I — Arabic, RTL, at mobile width**
 Given the list at 390px in Arabic
 When it renders

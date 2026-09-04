@@ -86,6 +86,54 @@ Backend and Frontend run concurrently only where file ownership is disjoint (`ag
 > other's work; this is about not being able to build or run at all. Both must hold, and the second
 > one is a hard serial constraint until the stack can be brought up twice on one box.
 
+#### 2a. Two lanes, one machine — the pipeline · adopted 2026-09-04 at Nabil's direction
+
+**Nabil, 2026-09-04:** *"we want to move in parallel — backend on new stories and front on the ready
+one, so the backend is always ahead, so when front finishes it finds a new API to work with."*
+
+**The board runs as two queues.** The **Backend lane** builds API stories. The **Frontend lane**
+builds screens against APIs that are already merged. Backend stays **at least one story ahead**, so
+the Frontend lane never waits on a contract being designed.
+
+```
+Backend lane:   [ story N ] ──→ [ story N+1 ] ──→ [ story N+2 ] ──→
+                     │                 │
+                     ▼                 ▼
+Frontend lane:  ( waits )  ──→ [ screens for N ] ──→ [ screens for N+1 ] ──→
+```
+
+**Five rules, and the last three are the ones that will be tempting to drop.**
+
+1. **A Frontend story never starts against an unmerged API.** "Nearly done" is not a contract. The
+   endpoint is on `main`, or the screen waits.
+2. **Backend leads by one story, not by a sprint.** Running four stories ahead means four unverified
+   contracts and a Frontend agent discovering all four mistakes at once. One is a buffer; four is a
+   waterfall with extra steps.
+3. **⚠️ This is pipelining, not simultaneity. `§2`'s serial-machine rule still holds — run at most one
+   agent on this box at a time.** They alternate on the machine; what runs in parallel is the
+   *backlog*, not the processes. Nothing about two lanes makes it safe to start two agents, and the
+   two stalls of 2026-08-29 are what that costs.
+4. **⚠️ A story is DELIVERED when its lane is done and ACCEPTED only when both lanes are.** A backend
+   story whose screen criterion is undischarged is **not** accepted, and the board must not read as
+   though it is. This rule exists because it was already broken: on 2026-09-04 three client stories
+   were delivered carrying three undischarged *"Arabic, RTL, at mobile width"* criteria, and the
+   points read as complete.
+5. **A UI criterion sitting on a delivered backend story is a defect in the board.** Move it to the
+   Frontend story that will discharge it — moved, not copied — the way `AC-101b-A` and `AC-101b-D`
+   moved to `KAFF-125`, and `AC-119-L`, `AC-121-I` and `AC-124-I` moved to `KAFF-126`. Nabil,
+   2026-09-02: ***"You cannot discharge a UI rendering dependency with a JSON response."***
+
+**What the lead buys, beyond keeping Frontend busy: the API is read against the UX spec before a
+screen is written.** That is not a side effect, it is the point — see `decisions.md` D-111 §3, where
+reading `S-011` against a contract shipped an hour earlier found a filter the screen needs and the
+API could not express. Fixing that cost one enum. Finding it after the screen was built would have
+cost the screen.
+
+**What it does not buy: verification.** A leading Backend lane accumulates *unverified* contracts, and
+`CLAUDE.md`'s *"if you wrote the code, you do not certify it"* does not relax because a queue is
+moving. The Verifier still runs on its own, and a Frontend lane building against three unverified
+endpoints is three times the exposure, not one third of it.
+
 
 
 ### 3. Verification — a fresh session, always

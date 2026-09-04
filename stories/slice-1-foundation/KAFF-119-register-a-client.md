@@ -1,6 +1,13 @@
 # KAFF-119 · Register a client, with a generated code and a duplicate-phone warning
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** Ready
+**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** **BUILT 2026-09-04, one criterion moved — not accepted.**
+`86cc8b0` + `01c7b3a`, decisions.md **D-108**. `AC-119-A` … `AC-119-K` discharged, each watched failing under a mutation
+of its own mechanism. **`AC-119-L` MOVED to `KAFF-126` (`AC-126-D`)** — Arabic, RTL, at mobile width, and there is no
+client form; Frontend's. **Not independently verified** — built and self-reported.
+
+> ⚠️ **This line read `Ready` until 2026-09-04, two commits after the story was built and pushed.**
+> The backlog said `BUILT` the same day and this file did not. Corrected loudly rather than quietly,
+> under SM-29: the drift was one session updating the board and forgetting the story it came from.
 **Spec:** §2 (**amended**), §3, §6.7 · **Decisions:** D-040 (**closed**), **D-049 (rulings 7, 8)**
 **Depends on:** KAFF-106
 
@@ -128,6 +135,7 @@ Given kind `Individual`
 When a tax registration number is supplied
 Then it is refused with `errors.master.individual_does_not_withhold` (KAFF-120)
 
+**~~AC-119-L~~ — MOVED to `KAFF-126` as `AC-126-D`, 2026-09-04.** A UI rendering criterion cannot be discharged by a JSON response (Nabil, 2026-09-02), and this story's API is delivered. **It is moved, not copied** — `KAFF-126` is the one place it is discharged, and this story is not accepted until it is. The original text is kept below for the record.
 **AC-119-L — Arabic, RTL, at mobile width**
 Given the create form and the duplicate warning at 390px in Arabic
 When they render
