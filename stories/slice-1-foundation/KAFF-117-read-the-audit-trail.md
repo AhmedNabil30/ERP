@@ -1,8 +1,9 @@
 # KAFF-117 · The Owner reads the audit trail, and nobody else does
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** Ready
-**Spec:** §7, §9 · **Decisions:** D-012, D-043, **D-049 (ruling 1)**
-**Depends on:** KAFF-116, KAFF-118
+**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** ~~Ready~~ → **COMMITTED to sprint 4, Lane A, 2026-09-05.** Both dependencies cleared this week — KAFF-116 was accepted on 2026-08-24 (and the board said `Ready` until 2026-09-05, which is its own finding) and KAFF-118 was built 2026-09-05, D-116. **`AC-117-I` moved to `KAFF-128` before the pull**, under `process/agile.md` §2a rule 6
+**Spec:** §7, §9 · **Decisions:** D-012, D-043, **D-049 (ruling 1)**, **D-117**
+**Depends on:** KAFF-116, KAFF-118 — **both satisfied 2026-09-05**
+**Discharges its UI criterion in:** **KAFF-128** (§2a rule 6 — named before the pull, not after)
 
 ## Story
 As the Owner, I read the history of who changed what, so that a disagreement about an extract, an
@@ -93,10 +94,23 @@ Given any audit record
 When an update or delete is attempted through the API
 Then no such endpoint exists, and a direct database attempt is refused by the trigger
 
-**AC-117-I — Arabic, RTL, at mobile width**
-Given the trail at 390px in Arabic
-When it renders
-Then direction is RTL, Latin identifiers and timestamps inside Arabic rows are bidi-isolated, and there is no horizontal overflow
+~~**AC-117-I — Arabic, RTL, at mobile width**~~
+~~Given the trail at 390px in Arabic~~
+~~When it renders~~
+~~Then direction is RTL, Latin identifiers and timestamps inside Arabic rows are bidi-isolated, and there is no horizontal overflow~~
+
+> **MOVED to `KAFF-128` as `AC-128-A` on 2026-09-05, before this story was pulled** — Scrum Master,
+> `meetings/2026-09-05-sprint-4-locked.md`. **Moved, not copied.**
+>
+> **This is `process/agile.md` §2a rule 6's first application, and it is the point of the rule.**
+> Every previous UI criterion on a backend story moved *after* the story was delivered — `AC-106-J`
+> nineteen days after, `AC-119-L` one day after. This one moved before a line of the story was
+> written, because the rule now says a backend story carrying a UI criterion is not pullable until
+> the Frontend story that will discharge it **exists on the board**. `KAFF-128` exists. So this is
+> pullable.
+>
+> **The backend half of this story is unaffected** — `AC-117-A` … `AC-117-H` are all API and
+> permission criteria and all stay here.
 
 ## Not in this story
 Writing the records — that is the interceptor, already built (D-041), and KAFF-118 proves it for

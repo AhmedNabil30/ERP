@@ -9650,3 +9650,95 @@ Build **0/0** `-warnaserror`; `dotnet format` exit **0**; **Api 295/295** (292 �
 
 **Not done:** independent verification. Every slice-1 client and audit story is still built and
 self-reported by the agent that built it.
+
+---
+
+### D-117 — §2a rule 6: a UI criterion must have somewhere to go before its backend story is pulled
+**2026-09-05 · Process**
+
+Nabil, 2026-09-05: ***"Run before and scrum master decides."*** Verification runs before sprint 4, and
+sprint-4 scope is the Scrum Master's. Both taken. This entry records the structural half.
+
+#### 1. Rule 5 was a cure, and it kept being needed
+
+§2a rule 5 says a UI criterion sitting on a *delivered* backend story is a defect in the board, and to
+move it. It has been applied four times in twelve days:
+
+| Criterion | Homeless for | Caught because |
+|---|---|---|
+| `AC-101b-A`, `AC-101b-D` | — | Nabil ruled it directly, 2026-09-02 |
+| `AC-119-L`, `AC-121-I`, `AC-124-I` | one day each | the pipeline was being written that week and somebody was looking |
+| **`AC-106-J`** | **nineteen days** | **nothing. It surfaced when a Scrum Master went to read the board for an unrelated reason** |
+
+**A rule that only fires when somebody happens to look is not a rule, it is a habit.** `AC-106-J` was
+marked *"deferred to Frontend"* on 2026-08-25 — and **Frontend is a role, not a story**. A criterion
+deferred to a role is a criterion nobody is holding, and there is no board query that returns it.
+
+#### 2. The rule, and it is mechanical on purpose
+
+> **6. A backend story carrying a UI criterion is not pullable until the Frontend story that will
+> discharge it exists on the board.** Not "is scheduled" — **exists**, with an identifier.
+>
+> **The test: name the story identifier the criterion moves to. If you cannot, the backend story is
+> not `Ready`.**
+
+**Mechanical, because judgement is what failed.** Every previous instance was caught by someone
+noticing; the check has to be answerable without noticing anything. "Name the identifier" is a
+question with a wrong answer, which is what makes it a check rather than an intention.
+
+#### 3. Applied the same hour it was written
+
+`KAFF-117` carries `AC-117-I`. Pulling it into sprint 4 would have produced the eighth homeless
+criterion in this slice. Instead **`KAFF-128 — the audit trail screen` (3) was cut in the same act as
+KAFF-117 was pulled**, and `AC-117-I` moved into it as `AC-128-A` **before a line of KAFF-117 was
+written** — the first criterion in this project to move before its backend story rather than after it.
+
+**KAFF-128 is deliberately not in sprint 4.** Rule 1 forbids starting a screen against an unmerged
+API. Rule 6 requires the story to *exist*, not to be *in flight*, and those are different requirements
+— conflating them would have put a Frontend story in a sprint where its API does not exist yet, which
+is the failure rule 1 was written for.
+
+#### 4. ⚠️ The quieter half, which rule 5 structurally cannot see
+
+Rule 5 acts on a criterion that was written down. **Four of the five identity endpoints carry no UI
+criterion at all** — `PUT /api/users/{id}/department`, `PUT /api/users/{id}/role`,
+`POST /api/users/{id}/deactivate`, `POST /api/users/{id}/reactivate`. All merged, gated, tested, and
+reachable by nobody.
+
+**Only `AC-106-J` showed up as a defect, and it showed up because somebody had bothered to write the
+criterion.** The four stories that never wrote one look clean on the board and deliver less. *"The
+Owner creates a user"* is not a delivered capability while the only way to do it is a POST body.
+
+Rule 6 makes the question mandatory rather than the criterion: **ask what screen discharges this.**
+*"None, by design"* is a fine answer and gets written down; **no answer is a story that is not
+`Ready`.** Routed to the BA as a standing item, because it is a story-writing habit and not a fix.
+
+#### 5. The scope decision, and why 13 rather than 28
+
+Sprint 4 is **KAFF-117 (5) + KAFF-127 (8)**, gated on the verification pass reporting first.
+
+**KAFF-127 is in ahead of KAFF-115 because closing a delivered story beats opening a new one.** It
+converts KAFF-106 from unacceptable to acceptable; KAFF-115 opens a third unverified surface while
+seven stories are already delivered and uncertified.
+
+**KAFF-107 is out on a Definition of Ready failure** — broken `:digits` citations, flagged at the
+sprint-3 refinement and never fixed. It has been cosmetic for three days; it is now blocking sprint
+scope, which is what it took.
+
+**13, not the 28 that was proposed yesterday.** Sprint 3 delivered 22 points and none of it is
+accepted. **A velocity counted from delivered-but-uncertified work measures how fast code is written,
+not how much survives being checked**, and planning against it is planning against a number that
+flatters. 13 leaves room for the verification pass to return work — the likeliest single event in this
+sprint. If it returns nothing, KAFF-115 is pulled forward. **That is a better failure mode than the
+reverse.**
+
+#### 6. What the Scrum Master could not do, and said so
+
+**"Run before" settles the sequencing, not the who.** The Verifier must be a session that did not
+write this code, and the coordinating session wrote all seven stories *and* the brief. So the ruling
+was executed as far as it can be from here: **`meetings/BRIEF-2026-09-05-verifier.md`** is written and
+the sprint is gated on the pass, but **the pass itself needs a session this one cannot be.**
+
+The brief is written on the assumption that its reader distrusts it, and it names three claims worth
+disbelieving — including D-109 §3's three mutation-run false negatives, one of which was one step from
+banking *"the permission gate is not asserted."*

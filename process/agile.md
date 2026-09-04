@@ -122,6 +122,26 @@ Frontend lane:  ( waits )  ──→ [ screens for N ] ──→ [ screens for N
    Frontend story that will discharge it — moved, not copied — the way `AC-101b-A` and `AC-101b-D`
    moved to `KAFF-125`, and `AC-119-L`, `AC-121-I` and `AC-124-I` moved to `KAFF-126`. Nabil,
    2026-09-02: ***"You cannot discharge a UI rendering dependency with a JSON response."***
+6. **⚠️ A backend story carrying a UI criterion is not pullable until the Frontend story that will
+   discharge it exists on the board.** Not "is scheduled" — *exists*, with an identifier, so the
+   criterion has somewhere to move to on the day the backend story is pulled rather than on the day
+   somebody notices.
+
+   **Rule 5 is a cure and it kept being needed.** `AC-106-J` was marked *"deferred to Frontend"* on
+   2026-08-25 and was still homeless on 2026-09-05 — **nineteen days** — because *Frontend is a role,
+   not a story*, and a criterion deferred to a role is a criterion nobody is holding. `AC-119-L`,
+   `AC-121-I` and `AC-124-I` were caught in one day only because the pipeline was being written that
+   week and somebody happened to be looking.
+
+   **The test is mechanical: name the story identifier the criterion moves to. If you cannot, the
+   backend story is not `Ready`.** Applied for the first time on 2026-09-05, to `KAFF-117` — which
+   carries `AC-117-I` and was pulled into sprint 4 in the same breath as `KAFF-128` was cut for it, so
+   the criterion has never been homeless for a day. See `meetings/2026-09-05-sprint-4-locked.md`.
+
+   **This also stops the quieter half**, which rule 5 cannot see: a backend story that ships a
+   capability a human is meant to use and carries *no* UI criterion at all. Four of the five identity
+   endpoints are in that state. **Ask what screen discharges this** — an answer of "none, by design"
+   is fine and is written down; no answer is a story that is not `Ready`.
 
 **What the lead buys, beyond keeping Frontend busy: the API is read against the UX spec before a
 screen is written.** That is not a side effect, it is the point — see `decisions.md` D-111 §3, where

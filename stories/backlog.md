@@ -25,7 +25,7 @@ verdicts and no longer disagrees with an order that has nothing left to sequence
 
 | # | Epic | Gate (`agents.md`) | Stories | Points | Blocked |
 |---|---|---|---:|---:|---|
-| 1 | Foundation | permission tests pass | **30** | **118** | ~~Q42~~ **closed, D-055 §2** · ~~Q43~~ **ANSWERED 2026-09-02, D-100.** ⚠️ **`Q57` opened 2026-09-04** — may the client-code sequence contain gaps? It blocks nothing today and is the only unbackfillable row on the register |
+| 1 | Foundation | permission tests pass | **31** | **121** | ~~Q42~~ **closed, D-055 §2** · ~~Q43~~ **ANSWERED 2026-09-02, D-100.** ⚠️ **`Q57` opened 2026-09-04** — may the client-code sequence contain gaps? It blocks nothing today and is the only unbackfillable row on the register |
 | 2 | Masters | Excel import works | 13 | 48 | Q12, Q13, Q29 |
 | 3 | Treasury | **the worked example reconciles** | 20 | 120 | Q14, Q15, Q16, Q29 |
 | 4 | Spine | prices provably frozen | 17 | 84 | ~~N10~~ **approved and built, D-055 §3** · **Q-N10-1, Q-N10-2b, Q-N10-3** (Karim), Q18, Q19, Q20, Q30 |
@@ -34,7 +34,7 @@ verdicts and no longer disagrees with an order that has nothing left to sequence
 | 7 | Accounting | balance sheet balances | 12 | 61 | Q23, Q24, Q25, Q40 |
 | 8 | Closure, warranty, portal | portal leaks nothing | 15 | 65 | Q26 · **N7** (Architect, not Karim) |
 | 9 | Mobile and offline | offline cannot move money | 8 | 47 | none open yet |
-| | | | **143** | **685** | |
+| | | | **144** | **688** | |
 
 > **Slice 1 moved 28 / 102 → 29 / 110 on 2026-09-04**, by **KAFF-126** at 8 — the Frontend lane's
 > first story, cut so that three delivered client stories have somewhere to discharge their screen
@@ -47,6 +47,10 @@ verdicts and no longer disagrees with an order that has nothing left to sequence
 > for the same reason and the last time in this slice: `AC-106-J` had nowhere to be discharged. Grand
 > total 142 / 677 → **143 / 685** by that one row. **Derived by adding one row, not by re-counting** —
 > which is the only safe operation on this table, and the reason D-096 §4 exists.
+>
+> **Slice 1 moved 30 / 118 → 31 / 121 on 2026-09-05**, by **KAFF-128** at 3, cut in the same act as
+> KAFF-117 was pulled — §2a rule 6. Grand total 143 / 685 → **144 / 688**. Same operation: one row
+> added.
 
 > **⚠️ Slice 1's row was re-derived on 2026-09-02 and the figure it replaces was three re-estimates
 > stale.** It read **27 / 92**, computed 2026-08-21. Since then KAFF-105b went 3 → 5 and KAFF-115 went
@@ -117,41 +121,58 @@ questions merged into it with their origin recorded (action **SM-4**).
 
 ---
 
-## Sprint 4 — **proposed 2026-09-05, not locked** · the audit trail read, and the identity screens
+## Sprint 4 — **LOCKED 2026-09-05 · 13 points** · the audit trail, and the identity screens
 
-**Scope is Nabil's. Nothing below is committed.** `meetings/2026-09-05-sprint-3-close-and-standup.md`.
+**Nabil, 2026-09-05: *"Run before and scrum master decides."*** Two rulings in five words —
+verification runs **before** sprint 4, and **sprint-4 scope is the Scrum Master's**. This is that
+scope. `meetings/2026-09-05-sprint-4-locked.md` · decisions.md **D-117**.
 
-> ### ⛔ The board cannot honestly move past this line: **22 points are DELIVERED and 0 are ACCEPTED**
+> ### ⛔ Gate on the sprint starting at all: **verification runs first, and this session cannot be it**
 >
-> Six stories — KAFF-119, 120, 121, 123, 124, 126 — plus KAFF-118, all built and **all self-reported
-> by the agent that built them**. `CLAUDE.md`: *"If you wrote the code, you do not certify it."*
-> `process/agile.md` §3: *"Verification — a fresh session, always."*
+> Seven stories — KAFF-118, 119, 120, 121, 123, 124, 126 — built and **all self-reported by the agent
+> that built them**. `CLAUDE.md`: *"If you wrote the code, you do not certify it."* `process/agile.md`
+> §3: *"Verification — a fresh session, always."*
 >
-> **A Verifier session is the single highest-value item on this board**, ahead of every story below.
-> §2a rule's own warning already said so: *"A leading Backend lane accumulates unverified contracts …
-> a Frontend lane building against three unverified endpoints is three times the exposure, not one
-> third of it."* That is now six, and sprint 4 would make it more.
+> **Nabil ruled "run before". That settles the sequencing and it does not settle who** — the Verifier
+> must be a session that did not write this code, and the coordinating session did. The brief is
+> written and waiting: **`meetings/BRIEF-2026-09-05-verifier.md`**.
 >
-> **Recommendation: verification runs before sprint 4 starts, not alongside it.** It is not a story
-> and it takes no points; it takes a fresh session, which this one cannot be.
+> **No sprint-4 story starts until that pass reports.** If it returns defects, its findings are pulled
+> ahead of the two stories below — a fix to delivered work outranks new work, always.
 
-### Lane A — Backend · proposed 12 points
+### The scope, and the three things it deliberately leaves out
 
-| # | Story | Pts | Why here |
+| Lane | Story | Pts | Why it is in |
 |---|---|---:|---|
-| 1 | **KAFF-117** — the Owner reads the audit trail, and nobody else does | 5 | **Its two dependencies both cleared this week**: KAFF-116 (accepted 2026-08-24, and the board said `Ready` until today — see its row) and KAFF-118 (built 2026-09-05, D-116). Slice 1's Definition of Done is *permission tests pass*, and this is the story where the strictest permission in the system is written down: Nabil, verbatim — *"The Audit Trail is strictly limited to the Owner (Global) … completely hidden from all other roles, even for their own projects."* |
-| 2 | **KAFF-107** — an HR user cannot be created or moved outside the HR department | 2 | Small, and it closes the last unbuilt guard on the identity module. ⚠️ **Carries broken `:digits` citations** flagged at the sprint-3 refinement and never fixed — a DoR failure that must be repaired before it is pulled |
-| 3 | **KAFF-104** — reset a forgotten password with an Owner-generated link | 5 | The last unbuilt door in the identity module, and `AC-110-E` is deferred to it |
+| **A — Backend** | **KAFF-117** — the Owner reads the audit trail, and nobody else does | **5** | **Both dependencies cleared this week**: KAFF-116 (accepted 2026-08-24; the board said `Ready` until 2026-09-05) and KAFF-118 (built 2026-09-05, D-116). Slice 1's gate is *permission tests pass*, and this is the strictest permission in the system — Nabil, verbatim: *"strictly limited to the Owner (Global) … completely hidden from all other roles, **even for their own projects**."* That last clause is the one no other permission in this codebase has |
+| **B — Frontend** | **KAFF-127** — the user-management screens | **8** | It converts **KAFF-106 from unacceptable to acceptable**. §2a rule 4: a story whose screen criterion is undischarged is not accepted, and `AC-106-J` was homeless for nineteen days. Closing a delivered story beats opening a new one |
 
-### Lane B — Frontend · proposed 16 points
+**Not pulled, and each for a stated reason:**
 
-| # | Story | Pts | Why here |
-|---|---|---:|---|
-| 1 | **KAFF-115** — the project team panel, and HR's separate Project Team screen | 8 | `READY` since 2026-09-02, and **its API is merged**: `GET /api/auth/me` already returns both surfaces as two types, not one filtered (`WhoAmI.TeamProjectEntry`). Rule 1 is satisfied — the endpoint is on `main` |
-| 2 | **KAFF-127** — the user-management screens *(cut 2026-09-05, this meeting)* | 8 | §2a rule 5: **`AC-106-J` is a UI criterion sitting on a delivered backend story, which is a defect in the board.** It is the last one, and it has been homeless since 2026-08-25 — nineteen days longer than `AC-119-L` managed before KAFF-126 was cut for it. Five identity endpoints have shipped with no screen at all |
+| Story | Pts | Why not |
+|---|---:|---|
+| **KAFF-115** — the project team panel | 8 | `Ready`, API merged, nothing wrong with it. **It opens a new capability while KAFF-106 is still unacceptable**, and with verification pending, adding a third unverified surface is the exposure §2a already warned about. Sprint 5, Lane B, first |
+| **KAFF-107** — HR outside the HR department | 2 | ⚠️ **DoR failure**: broken `:digits` citations, flagged at the sprint-3 refinement and never fixed. **A story with a known DoR failure is not pullable**, and the repair is the BA's, not this sprint's |
+| **KAFF-104** — reset a forgotten password | 5 | No room at 13, and it is the least urgent of the three: the Owner can already issue a temporary password through KAFF-106 |
 
-**Backend leads by one story (§2a rule 2).** KAFF-117 is Lane A's first because Lane B's first,
-KAFF-115, needs nothing new from it — which is what a lead is for.
+**13, not 28.** Sprint 3 delivered 22 in a week and none of it is accepted — a velocity figure counted
+from delivered-but-uncertified work is a number that flatters. **13 is set to leave room for the
+verification pass to return work**, which is the likeliest single event in this sprint.
+
+### §2a rule 6 was written today and applied the same hour
+
+**`KAFF-117` carries `AC-117-I` — "Arabic, RTL, at mobile width".** Pulling it would have created the
+eighth homeless UI criterion in this slice.
+
+So it did not. **`KAFF-128 — the audit trail screen` was cut in the same act as KAFF-117 was pulled**,
+and `AC-117-I` moved into it as `AC-128-A` **before a line of KAFF-117 was written**. New rule, in
+`process/agile.md` §2a:
+
+> *"A backend story carrying a UI criterion is not pullable until the Frontend story that will
+> discharge it exists on the board. Not 'is scheduled' — **exists**, with an identifier."*
+
+**KAFF-128 is not in sprint 4** — rule 1 forbids starting a screen against an unmerged API, and
+KAFF-117 is being built in this sprint, not before it. It is sprint 5, Lane B, behind KAFF-115.
 
 ---
 
@@ -730,6 +751,7 @@ criterion behind them. **KAFF-105a is untouched by D-065 — checked, not assume
 | KAFF-125 | The staff shell — landings, the session resolver and the route guard | 3 | **BUILT `7461332` and ACCEPTED as an implementation 2026-09-04**, with `V-32-D`; **`AC-125-C` explicitly NOT accepted as satisfied** — Nabil's criterion, Nabil's call, and it is settled by looking rather than by ruling (`meetings/2026-09-04-sprint-3-standup.md` §4.5). ⚠️ **This row did not exist until 2026-09-04** — the story was cut on 2026-09-02 and counted in this epic's 102 points, but never given a line in the inventory it was counted into. | 101b, 105a, 105b |
 | KAFF-126 | **The client screens — S-011, S-012, S-013, S-014** | **8** *(proposed)* | **`Ready` 2026-09-04, cut the same day.** The Frontend lane's first story (`process/agile.md` §2a). Carries `AC-119-L`, `AC-121-I` and `AC-124-I` — **moved, not copied** — plus `AC-124-H`'s render half. **All five of its endpoints are merged.** | 119, 121, 123, 124, 125 |
 | **KAFF-127** | **The user-management screens** | **8** *(proposed)* | **`Ready` 2026-09-05, cut at the sprint-3 close.** Carries **`AC-106-J` — moved, not copied** (§2a rule 5). ⚠️ **That criterion was homeless for nineteen days** because *"deferred to Frontend"* names a role rather than a story, and nothing on the board was pointing at it. **And the hole is wider than the criterion:** five identity endpoints — create, move department, change role, deactivate, reactivate — are merged, gated and reachable by nobody, and **four of the five carry no UI criterion at all**, which is the quieter half of the same defect. Proposed for sprint 4 Lane B. **Not pulled: scope is Nabil's** | 106, 108, 109, 110, 112, 125 |
+| **KAFF-128** | **The audit trail screen** | **3** *(proposed)* | **`Ready` 2026-09-05, cut in the same act as KAFF-117 was pulled.** Carries **`AC-117-I` — moved, not copied, BEFORE a line of KAFF-117 was written.** That is `process/agile.md` §2a **rule 6**'s first application and the whole difference it buys: every previous UI criterion in this slice moved *after* its backend story was delivered, `AC-106-J` by nineteen days. **Sprint 5, Lane B — not sprint 4**, because rule 1 forbids starting a screen against an API that is still being built | **117 (must be merged)** |
 | KAFF-124 | Find a client by name, code or phone | 2 | ~~**READY**~~ → ✅ **BUILT 2026-09-04**, D-110. `AC-124-A`…`G` discharged; **`AC-124-H` half-held and `AC-124-I` HELD** (Frontend — there is no client list screen). **Not independently verified.** **`AC-124-C` works only because `Client.Create` upper-cases the code** (D-107) — the handler upper-cases the term to meet it, and the test says so. | 119 |
 | **KAFF-125** | **The staff shell: session resolution, chrome, and role-based landing** | **3** | **BUILT `7461332`, ACCEPTED as an implementation 2026-09-04.** Two exceptions, neither a code defect: **`AC-125-B` is verified by code review only** — `V-32-D` established that *nothing asserts it*, and deleting the `await` it rests on left E2E at 6/6, because `src/Web` has **zero `.spec.ts` files**. And **`AC-125-C` is NOT accepted as satisfied**: it is deliberately unmet, `ux/screen-inventory.md`'s S-005 and the criterion now require opposite things, and **it is Nabil's criterion and his call.** ~~**CUT 2026-09-02**, on Nabil's ruling~~ — *"a dedicated frontend ticket must be cut for the visual shell itself … you cannot discharge a UI rendering dependency with a JSON response."* **`AC-101b-A` and `AC-101b-D` move here** from KAFF-105b and KAFF-115, which cannot discharge them (D-097 §3). **Deliberately not marked Ready or BLOCKED against a sprint** — whether it is built in sprint 2 is a scope question standing with Nabil. Renders S-004, S-005's identity half and the shell chrome today; **S-006 and S-011 have no endpoint to feed them and S-009a's route is an open UX question**. | 101a, 101b, 105a |
 
