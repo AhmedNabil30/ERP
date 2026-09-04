@@ -92,6 +92,53 @@ public sealed class TranslationCatalogueTests
     }
 
     /// <summary>
+    /// KAFF-120, <c>AC-120-H</c> — §6.7's refusal has exactly one key, and finding F-08 stays closed.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Two documents carried two spellings of one refusal: the KAFF-120 story said
+    /// <c>errors.master.individual_client_does_not_withhold</c> and <c>ux/slice-1-flows.md</c> S-012
+    /// said <c>errors.master.individual_does_not_withhold</c>. Only the second exists. A second key
+    /// invented from the first document would pass
+    /// <see cref="The_two_catalogues_describe_the_same_set_of_keys"/> the moment somebody added it to
+    /// both files, and would render a refusal nobody had translated the day a handler used it.
+    /// </para>
+    /// <para>
+    /// <b>Written as a whitelist over everything that mentions withholding, not as "this one wrong
+    /// key is absent".</b> An absence test for a string nobody was going to type is a test that
+    /// cannot fail (D-106). This one fails on <i>any</i> new withholding key — including the right
+    /// one spelled a second way. <b>Slice 3 will legitimately add keys here</b> (KAFF-317, KAFF-318:
+    /// the withholding Kaff carries as a liability on subcontractor and supplier payments); adding
+    /// them to this list is the deliberate edit this test exists to force.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void The_withholding_refusal_has_exactly_one_key_in_the_code_and_in_both_catalogues()
+    {
+        const string TheKey = "errors.master.individual_does_not_withhold";
+
+        static bool MentionsWithholding(string key) =>
+            key.Contains("withhold", StringComparison.OrdinalIgnoreCase);
+
+        foreach (string path in new[] { ArabicCatalogue, EnglishCatalogue })
+        {
+            LoadCatalogue(path).Keys.Where(MentionsWithholding).Should().BeEquivalentTo(
+                [TheKey],
+                $"{path} — §6.7 has one refusal, and a second spelling of it is a message that will "
+                + "reach a screen untranslated");
+        }
+
+        DomainErrorKeys()
+            .Where(entry => MentionsWithholding(entry.Key))
+            .Select(entry => entry.Key)
+            .Distinct(StringComparer.Ordinal)
+            .Should().BeEquivalentTo(
+                [TheKey],
+                "the domain declares one withholding refusal; Client.SetClassification and "
+                + "Project.SetWithholding return the same Error because they refuse the same claim");
+    }
+
+    /// <summary>
     /// Every <see cref="Error"/> declared on a <c>*Errors</c> catalogue class, with the class it
     /// came from so a failure names the file to edit.
     /// </summary>

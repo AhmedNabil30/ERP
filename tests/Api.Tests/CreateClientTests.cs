@@ -412,6 +412,35 @@ public sealed class CreateClientTests : IAsyncLifetime
         typeof(PhoneMatch).GetProperties().Select(property => property.Name)
             .Should().BeEquivalentTo(["Id", "Code", "Name", "IsArchived"]);
 
+        // AC-120-F, "and no endpoint accepts one". Until 2026-09-04 the two request types were
+        // guarded only by blocklists — NotContain("Code") here, NotContain("IsActive") in
+        // EditClientTests — which is the shape D-106 already caught letting a decimal RetainedAmount
+        // onto the wire past a green suite. What a request accepts is the same kind of claim as what
+        // a response emits, so it is pinned the same way.
+        string[] writable =
+        [
+            "Name", "Phone", "Kind", "AlternatePhone", "Email", "Address",
+            "TaxRegistrationNumber", "AcknowledgedDuplicatePhone",
+        ];
+
+        typeof(Kaff.Api.Features.Clients.CreateClient.Request)
+            .GetProperties()
+            .Select(property => property.Name)
+            .Should().BeEquivalentTo(
+                writable,
+                "a withholding category, a rate, a balance or a credit limit added to the create "
+                + "request fails here, whatever it is named — D-049 ruling 9 put the category on the "
+                + "contract, and spec.md §6.7 gives the client no rate to carry");
+
+        typeof(Kaff.Api.Features.Clients.EditClient.Request)
+            .GetProperties()
+            .Select(property => property.Name)
+            .Should().BeEquivalentTo(
+                [.. writable, "Notes"],
+                "the edit request is the create request plus internal notes — KAFF-121 rule 8 — and "
+                + "nothing else; the code and IsActive absences are asserted with their own reasons "
+                + "in EditClientTests");
+
         await using KaffDbContext reader = _database.CreateBareContext();
 
         List<string> columns = await reader.Database

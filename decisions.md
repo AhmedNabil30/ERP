@@ -9361,3 +9361,104 @@ mistyped a phone number is how a duplicate gets created.
 Build **0/0** `-warnaserror`; `dotnet format` exit **0**; SPA production build (`strictTemplates`)
 **clean**; Domain **124/124**; Api **291/291** (286 + 5); citations **1150 / 0 broken / 0 legacy**.
 The stack was stopped afterwards.
+
+---
+
+### D-114 — KAFF-120 closed, the refusal made visible, and the E2E debt paid
+**2026-09-04 · Backend + Frontend**
+
+#### 1. KAFF-120 was two gaps, not two points of code
+
+The domain rules §6.7 needs have existed since D-049. What the story was actually still asking for
+was the wiring and the proof, and five of its eight criteria were already discharged
+(`AC-120-A` by `CreateClientTests` and `EditClientTests` through HTTP, `AC-120-C/D/E/G` by
+`tests/Domain.Tests/WithholdingTests.cs`). Two were not, and both were the same shape:
+
+**`AC-120-F` — "no endpoint accepts one" rested on a blocklist.** The entity, the four response
+types and the `clients` table were each pinned to an exact member set, but the two request types
+were guarded only by `NotContain("Code")` and `NotContain("IsActive")`. **That is the shape D-106
+already caught letting a `decimal RetainedAmount` onto the wire past a green 241/241** — a blocklist
+answers about the words on it and says nothing about the field nobody predicted. Both request types
+are now whitelisted. Watched failing: a `decimal WithholdingRate` added to
+`CreateClient.Request` reddens it.
+
+**`AC-120-H` — "one key, not two" had no test at all.** Finding F-08 was two documents carrying two
+spellings of one refusal, and nothing would have caught the wrong one being added: a phantom key
+present in *both* catalogues passes `The_two_catalogues_describe_the_same_set_of_keys` exactly as
+the real one does. Written as a whitelist over everything mentioning withholding rather than as
+"this one wrong string is absent" — **an absence test for a string nobody was going to type is a
+test that cannot fail.** Watched failing by adding
+`errors.master.individual_client_does_not_withhold` to both catalogues: **one test red, and only
+one** — the drift test passed, which is the point.
+
+Slice 3 will legitimately add withholding keys (KAFF-317, KAFF-318). Adding them to that list is the
+deliberate edit the test exists to force.
+
+#### 2. ⚠️ `AC-120-B` is vacuous on today's screens, and saying so is the answer
+
+The criterion asks that §6.7's refusal render as Arabic rather than as a raw key. **That refusal
+cannot be produced from the client form at all.** The tax field is hidden when the kind is
+Individual, `onKindChange` clears the number on the way in, and `payload()` sends
+`taxRegistrationNumber: null` for an individual regardless — three independent reasons, and all
+three are `AC-126-H` and D-109 §1 working as designed. Reporting `AC-120-B` as "held, verified in
+Arabic" would have been a claim about a screen state that cannot occur.
+
+What is real underneath it is the *mechanism*: a server refusal reaching `refusalKey()` and being
+resolved through the catalogue. That is now driven — `A_server_refusal_on_the_client_form_renders_as
+_arabic_and_not_as_a_key` opens a client id that names nobody and asserts the region carries Arabic
+and not `errors.master.client_not_found`. Watched failing by rendering `{{ key }}` instead of
+`{{ i18n.t(key) }}`.
+
+#### 3. ⚠️ The guard was refusing people by hiding the refusal
+
+`ux/navigation.md` says a refusal *"must not render as a crash, a blank page, **or a redirect that
+hides what happened**."* `clientManageGuard` shipped yesterday returning `router.parseUrl('/')` —
+**which is the third of those.** A Finance user who typed `/clients` arrived at their own landing
+page with nothing said, indistinguishable from having mistyped the address. `AC-126-L` asked for
+S-016's Forbidden surface and got a silent bounce, and D-113 recorded the criterion as half-held
+without noticing that the held half was wrong too.
+
+New `/forbidden` route and `ForbiddenPage`, reusing `errors.auth.forbidden` and `not_found.back` —
+**no new i18n keys**, because the sentence Finance needs to read already existed. The guard sends
+refusals there. It is still not the control: every client endpoint answers `403` to the same caller
+whether this screen exists or not. What changed is that the convenience stopped lying about its own
+reason.
+
+#### 4. The E2E debt D-113 §3 recorded as owed is paid — `tests/E2E.Tests` 6 → 11
+
+`tests/E2E.Tests/ClientScreenTests.cs`, run against a stack seeded by `scripts/seed-demo.ps1`:
+
+| Test | Watched failing by |
+|---|---|
+| A signed-out visitor asking for a client form is sent to sign-in | **not mutated** — same `sessionGuard` mechanism `SmokeTests` already exercises |
+| A bookmarked client form URL loads the form and not the list | the guard redirecting every client URL to `/clients` — the exact symptom of D-113 §2 |
+| The client list renders RTL and does not scroll sideways at 390px | — inherited from the smoke suite's own overflow assertion |
+| A role without `ClientManage` is refused visibly rather than sent to its landing | restoring `parseUrl('/')`: red at the `forbidden-page` wait |
+| A server refusal renders as Arabic and not as a key | `{{ key }}` in place of `{{ i18n.t(key) }}` |
+
+Finance's forced password change is cleared once through the API before the AC-126-L test signs in,
+because `mustChangePasswordGuard` runs *before* `clientManageGuard` and would otherwise make the
+refusal unobservable. Idempotent by trying the changed password first — the failure a driver script
+hit yesterday for exactly this reason.
+
+#### 5. ⚠️ The D-113 §2 mutation no longer reproduces, and that is worth knowing
+
+Removing `await resolver.ensureResolved()` from `clientManageGuard` — the defect itself — **left all
+eleven tests green.** `sessionGuard` and `mustChangePasswordGuard` both await resolution and both sit
+ahead of it in the same `canActivate` array, so by the time the third guard runs the session is
+resolved regardless of whether it asked.
+
+**So the `await` in that guard is, today, redundant — and it must stay.** Its own docstring is the
+reason: *"Guards in one `canActivate` array must not assume the array's order settles anything."*
+Reordering the array, or dropping `mustChangePasswordGuard` from this route, would bring the bug
+straight back with no test to catch it. **The E2E test pins the outcome, not the await**, and this
+paragraph exists so a future session does not read a green suite as permission to delete the line.
+
+#### 6. Gates
+
+Build **0/0** `-warnaserror`; `dotnet format` exit **0**; SPA production build (`strictTemplates`)
+**clean**; Domain **125/125**; Api **291/291**; **E2E 11/11** against a seeded `kaff_e2e`;
+citations **1150 / 0 broken / 0 legacy**.
+
+**Not done:** nothing in the Client master is independently verified — KAFF-119, 121, 123, 124, 126
+and 120 are all built and self-reported, and under `CLAUDE.md` the author does not certify them.

@@ -52,6 +52,15 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/sign-in/sign-in-page').then((m) => m.SignInPage),
   },
   {
+    // `AC-126-L`. A guard's refusal resolves here rather than bouncing to `/`, because
+    // `ux/navigation.md` forbids "a redirect that hides what happened" as firmly as it forbids a
+    // blank page. No guard on this route: it is what a refusal looks like, so refusing entry to it
+    // would be circular.
+    path: 'forbidden',
+    loadComponent: () =>
+      import('./features/forbidden/forbidden-page').then((m) => m.ForbiddenPage),
+  },
+  {
     path: 'change-password',
     loadComponent: () =>
       import('./features/auth/change-password/change-password-page').then(

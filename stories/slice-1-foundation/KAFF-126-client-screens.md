@@ -3,9 +3,12 @@
 **Slice:** 1 · **Epic:** Foundation · **Points:** 8 (**proposed**) · **Status:** **BUILT 2026-09-04 — not accepted.** decisions.md **D-113**.
 `AC-126-A` … `AC-126-K` discharged, verified by driving Chromium at 390px in Arabic against a seeded stack — `dir=rtl`,
 **0px horizontal overflow** on all three screens, the three filter chips server-side, and the duplicate warning firing on
-blur naming both clients that share the number. **`AC-126-L` half-held** — the guard and the server's 403 are both in
-place and were checked; the *rendered* S-016 Forbidden surface for a role reaching `/clients` by URL was not driven.
-**⚠️ No E2E test was added** — everything above is evidence from this session, not a check that runs tomorrow. **Owed.**
+blur naming both clients that share the number. **`AC-126-L` now fully held (2026-09-04, D-114 §3)** — and the half that had been called held was
+wrong: the guard returned `parseUrl('/')`, which `ux/navigation.md` names as forbidden in as many
+words — *"a redirect that hides what happened"*. There is a `/forbidden` route and a `ForbiddenPage`
+now, and Finance reaching `/clients` by URL is driven to it.
+**✅ The E2E debt is paid (D-114 §4)** — `tests/E2E.Tests/ClientScreenTests.cs`, **6 → 11 tests**,
+four of the five watched failing at their own mechanism.
 **Not independently verified.**
 **Spec:** §2 (**amended**), §3, §12 · **Decisions:** D-049 (rulings 7, 8, 9), **D-107**, **D-109**, **D-110**, **D-111**
 **UX:** `ux/slice-1-flows.md` -> `S-011 · Client list`, `S-012 · Create client, and S-013 · the duplicate-phone warning`, `S-014 · Client detail and edit`

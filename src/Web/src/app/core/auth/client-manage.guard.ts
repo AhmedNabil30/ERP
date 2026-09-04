@@ -35,6 +35,7 @@ export const clientManageGuard: CanActivateFn = async () => {
   const resolver = inject(SessionResolver);
   const router = inject(Router);
 
+
   await resolver.ensureResolved();
 
   const session = auth.current();
@@ -43,5 +44,9 @@ export const clientManageGuard: CanActivateFn = async () => {
     return true;
   }
 
-  return router.parseUrl('/');
+  // `/forbidden`, not `/`. `ux/navigation.md`: a refusal "must not render as a crash, a blank page,
+  // or a redirect that hides what happened" — and `parseUrl('/')`, which this returned when KAFF-126
+  // shipped, is the third of those. A Finance user who typed `/clients` landed on their own landing
+  // page with nothing said, which reads exactly like having mistyped the address (AC-126-L).
+  return router.parseUrl('/forbidden');
 };

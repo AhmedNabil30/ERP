@@ -126,7 +126,7 @@ questions merged into it with their origin recorded (action **SM-4**).
 > **⚠️ DELIVERED is not ACCEPTED.** A backend story whose screen criterion is undischarged is not
 > accepted, and the arithmetic below must not read as though it is.
 
-### Lane A — Backend · **12 of 14 points delivered** · only KAFF-120 left
+### Lane A — Backend · **14 of 14 points delivered** · complete
 
 **Build order, in dependency order — `KAFF-119` first and alone; the other four all depend on it.**
 
@@ -136,18 +136,18 @@ questions merged into it with their origin recorded (action **SM-4**).
 | 2 | **KAFF-121** | 3 | ✅ **DELIVERED** 2026-09-04, decisions.md **D-109**. `AC-121-A`…`H` discharged, each watched failing under a mutation of its own mechanism. **`AC-121-I` HELD** — Arabic/RTL at mobile width, and there is no client form; Frontend's. **Not independently verified.** `Client` gained `Rename`, `SetPrimaryPhone` and `SetClassification` (F-09's missing surface); `PhoneMatches` gained `excluding` (D-107 §2) | **strongest** for the missing `Name`/phone/`Kind` setters and rule 6's guard, which decide what a master record may become; **mid** for the rest |
 | 3 | **KAFF-124** | 2 | ✅ **DELIVERED** 2026-09-04, decisions.md **D-110**. `GET /api/clients?search=&includeArchived=` — name, code and normalised phone. `AC-124-A`…`G` discharged, four of them watched. **`AC-124-H` half-held** (the empty `200` is pinned; the rendering needs a screen), **`AC-124-I` HELD**. **Not independently verified** | **mid** — criteria are written |
 | 4 | **KAFF-123** | 2 | ✅ **DELIVERED** 2026-09-04, D-112. `POST /api/clients/{clientId}/archive`. All five criteria discharged — **including `AC-123-D`, the no-delete absence, which was made to fail on purpose**. Unblocks KAFF-126's archive control. **Not independently verified** | **mid** |
-| 5 | KAFF-120 | 2 | `Ready`, **re-estimate first**. Its remaining work rides on 119's and 121's endpoints, **both of which now exist** | **mid** |
+| 5 | **KAFF-120** | 2 | ✅ **DELIVERED** 2026-09-04, decisions.md **D-114**. Five criteria were already discharged when it was picked up; the two real gaps were **`AC-120-F`'s request side, which rested on a blocklist** (the D-106 shape) and **`AC-120-H`, which had no test at all**. Both now whitelists, both watched failing. **`AC-120-B` reported vacuous rather than held** — the illegal pair cannot be assembled on the form, so there is no refusal to render. **Not independently verified** | **mid** |
 
-**Gates, run in the 2026-09-04 sessions:** build Release `-warnaserror` **0/0** · `dotnet format`
-exit **0** · `Domain.Tests` **124/124** (111 → 124) · `Api.Tests` **286/286** (241 → 255 → 267 → 278 → 286) ·
-citations **1149 / 0 broken / 0 legacy**. **E2E has not been run since `01c7b3a`** — the last figure,
-**6/6**, belongs to the KAFF-119 build session, and no client story has a screen to drive.
+**Gates, run in the 2026-09-04 sessions:** build `-warnaserror` **0/0** · `dotnet format`
+exit **0** · SPA production build under `strictTemplates` **clean** · `Domain.Tests` **125/125**
+(111 → 124 → 125) · `Api.Tests` **291/291** (241 → 255 → 267 → 278 → 286 → 291) ·
+**`E2E.Tests` 11/11** (6 → 11) against a seeded `kaff_e2e` · citations **1150 / 0 broken / 0 legacy**.
 
 ### Lane B — Frontend · **8 of 8 points delivered**
 
 | # | Story | Pts | State |
 |---|---|---:|---|
-| 1 | **KAFF-126 — the client screens** (S-011, S-012, S-013, S-014) | **8** | ✅ **DELIVERED** 2026-09-04, D-113. `AC-126-A`…`K` discharged and **verified by driving Chromium at 390px in Arabic** — `dir=rtl`, 0px horizontal overflow, three server-side filter chips, the duplicate warning firing on blur. `AC-126-L` half-held. **Writing it found a missing `GET /api/clients/{id}` and a guard that broke every bookmarked client URL.** ⚠️ **No E2E test — owed.** **Not independently verified** |
+| 1 | **KAFF-126 — the client screens** (S-011, S-012, S-013, S-014) | **8** | ✅ **DELIVERED** 2026-09-04, D-113. `AC-126-A`…`K` discharged and **verified by driving Chromium at 390px in Arabic** — `dir=rtl`, 0px horizontal overflow, three server-side filter chips, the duplicate warning firing on blur. **`AC-126-L` now fully held (D-114 §3)** — and the half previously called held was wrong: the guard returned `parseUrl('/')`, which `ux/navigation.md` names as forbidden in as many words. There is a `/forbidden` route now. **Writing it found a missing `GET /api/clients/{id}` and a guard that broke every bookmarked client URL.** ✅ **The E2E debt is paid — `ClientScreenTests.cs`, 6 → 11.** **Not independently verified** |
 
 > **The three criteria are MOVED, not copied.** `AC-119-L` → `AC-126-D`, `AC-121-I` → `AC-126-G`,
 > `AC-124-I` → `AC-126-A`. Each origin story now points here and each is struck in place, so there is
@@ -155,10 +155,14 @@ citations **1149 / 0 broken / 0 legacy**. **E2E has not been run since `01c7b3a`
 > discharge a UI rendering dependency with a JSON response"*** — which produced `KAFF-125` out of
 > `KAFF-105b`, and has now happened three more times.
 
-> ### ⚠️ Sprint 3 is 10 of 22 points, not 10 of 14
+> ### ⚠️ Sprint 3 is 22 of 22 points DELIVERED and 0 ACCEPTED
 >
-> The 14 was Lane A alone. **No client story can be accepted until Lane B lands**, so the honest total
-> is Lane A's 14 plus Lane B's 8. **Three stories are DELIVERED and none is ACCEPTED.**
+> The 14 was Lane A alone. The honest total is Lane A's 14 plus Lane B's 8, and **as of 2026-09-04
+> both lanes are complete**. **Six stories are DELIVERED and none is ACCEPTED** — every one of them
+> was written and self-reported by the agent that built it, and `CLAUDE.md` is explicit that the
+> author does not certify. **The Verifier has not run against any of the Client master.** Until it
+> does, "22 of 22" describes work finished, not work accepted, and the two must not be added together
+> in any report.
 
 > ### ⚠️ D-110 §2 corrects a reading of D-108 that would be dangerous to carry forward
 >
@@ -667,7 +671,7 @@ criterion behind them. **KAFF-105a is untouched by D-065 — checked, not assume
 | KAFF-117 | The Owner reads the audit trail, and nobody else does | 5 | Ready | 116, 118 |
 | KAFF-118 | Every state change in slice 1 writes an audit record | 3 | **UNBUILT.** Nothing of this story was started. | 106, 109, 110, 111, 113, 119 |
 | KAFF-119 | Register a client, with a generated code and a duplicate-phone warning | 5 | ~~`BLOCKED` 2026-09-04 (DoR 9)~~ → ~~**READY 2026-09-04**~~ → ✅ **BUILT 2026-09-04**, `86cc8b0` + `01c7b3a`. `AC-119-A`…`K` discharged and each watched failing; **`AC-119-L` HELD** (Frontend — there is no client form). **Not independently verified.** N6 answered by **D-107**. One BA line still owed on `AC-119-B`. | 106 |
-| KAFF-120 | An individual's contract cannot carry a withholding rate — **defect, now wiring** | 2 | ~~`BLOCKED` 2026-09-04 (DoR 9, 11)~~ → **READY 2026-09-04.** **Its 2 points are probably now wrong** — `AC-120-C/D/E/G` are already discharged by `tests/Domain.Tests/WithholdingTests.cs`, and what is left rides on KAFF-119's and KAFF-121's endpoints. Re-estimate at the next refinement, with the team. | 119 |
+| KAFF-120 | An individual's contract cannot carry a withholding rate — **defect, now wiring** | 2 | ~~`BLOCKED` 2026-09-04 (DoR 9, 11)~~ → ~~`READY`~~ → ✅ **DELIVERED 2026-09-04, D-114.** **The re-estimate note was right and understated it**: five of eight criteria were already discharged before a line was written, and the two real gaps were both *tests that could not fail* rather than missing behaviour — `AC-120-F`'s request side was a blocklist, `AC-120-H` had nothing at all. **`AC-120-B` is vacuous on today's screens** (D-114 §2). **Not independently verified** | 119 |
 | KAFF-121 | Edit a client's name and contact details | 3 | ~~**READY**~~ → ✅ **BUILT 2026-09-04**, D-109. `AC-121-A`…`H` discharged and watched; **`AC-121-I` HELD** (Frontend — there is no client form). **Not independently verified.** ~~`Client` still has no setter for `Name`, the primary phone or `Kind`~~ — **built as `Rename`, `SetPrimaryPhone` and `SetClassification`**, the last taking the kind and the tax number together because spec.md §6.7 constrains the **pair** (D-109 §1). | 119 |
 | KAFF-122 | ~~Set a corporate client's withholding category~~ | — | **Superseded** → KAFF-416. **Not to be built or re-created in slice 1** — re-confirmed 2026-09-04. Carries three broken `:digits` citations, flagged and not fixed. | — |
 | KAFF-123 | Archive a client | 2 | ~~**READY**~~ → ✅ **BUILT 2026-09-04**, D-112. All five criteria discharged. `AC-123-D` now asserts the absence of a delete route **across the whole application**, against what the host mapped rather than against the word — so `CLAUDE.md`'s posting-delete prohibition has a test rather than a paragraph. **Not independently verified.** | 119 |

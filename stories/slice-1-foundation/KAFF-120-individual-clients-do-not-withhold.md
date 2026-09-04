@@ -1,7 +1,11 @@
 # KAFF-120 · An individual's contract cannot carry a withholding rate, and nor can the individual
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 2 · **Status:** Ready
-**Spec:** §6.7 (**amended**) · **Decisions:** D-040 (**closed**), D-045, **D-049 (rulings 9, 10)**
+**Slice:** 1 · **Epic:** Foundation · **Points:** 2 · **Status:** **BUILT 2026-09-04 — not accepted.** decisions.md **D-114**.
+`AC-120-A`, `AC-120-C`…`AC-120-H` discharged. **`AC-120-B` is vacuous on today's screens and was
+reported as such rather than as held** — the illegal pair cannot be assembled on the client form at
+all (D-114 §2), so there is no refusal to render; the mechanism underneath it is driven by an E2E
+test instead. **Not independently verified.**
+**Spec:** §6.7 (**amended**) · **Decisions:** D-040 (**closed**), D-045, **D-049 (rulings 9, 10)**, **D-114**
 **Depends on:** KAFF-119
 
 ## Story
@@ -79,6 +83,21 @@ Then it is refused with `errors.master.individual_does_not_withhold`, and the st
 Given the refusal of AC-120-A with the UI in Arabic
 When the message is rendered
 Then it resolves from `ar.json`, and the raw key appears nowhere on the screen
+
+> **⚠️ Vacuous as written, 2026-09-04 (D-114 §2).** AC-120-A's refusal **cannot be produced from the
+> client form**: the tax field is hidden when the kind is Individual
+> [Verified: 2026-09-04 @ `src/Web/src/app/features/clients/client-form/client-form-page.html` -> `isIndividual`],
+> `onKindChange` clears the number on the way in, and `payload()` sends `taxRegistrationNumber: null`
+> for an individual regardless
+> [Verified: 2026-09-04 @ `src/Web/src/app/features/clients/client-form/client-form-page.ts` -> `payload`].
+> All three are `AC-126-H` and D-109 §1 working. **There is no screen state to check**, and reporting
+> this as held in Arabic would have been a claim about a state that cannot occur.
+>
+> The mechanism the criterion is really about — a server refusal reaching `refusalKey()` and
+> resolving through the catalogue — **is** driven, by
+> `tests/E2E.Tests/ClientScreenTests.cs` -> `A_server_refusal_on_the_client_form_renders_as_arabic_and_not_as_a_key`.
+> That the key itself exists in both catalogues is `AC-120-H`'s test. **If slice 4's KAFF-416 builds
+> a screen that can set a rate, this criterion becomes reachable there and belongs to that story.**
 
 **AC-120-C — a rate on an individual's contract is refused** *(fails if the rule is broken)*
 Given a project whose client is an `Individual`
