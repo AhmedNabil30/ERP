@@ -6,14 +6,26 @@
     Creates one Owner (POST /api/setup), then three staff users (POST /api/users) covering the
     landing kinds KAFF-125's shell actually renders: Owner and MarketingSales both get the honest
     "not built yet" surface (S-006, S-011), Hr gets the project-team landing, and Finance gets the
-    profile/project-list landing. See deploy/DEMO.md for the runbook this is part of, the resulting
-    credentials, and - importantly - what this script could NOT do (create a project) and why.
+    profile/project-list landing.
+
+    Then it registers TWO CLIENTS (KAFF-119, added 2026-09-04) and walks the duplicate-phone warning
+    end to end: a corporate client on 01001234567, a phone-check on +20 100 123 4567 that finds it,
+    a second client on the same number in Arabic-Indic digits refused with 409, and the same request
+    acknowledged and accepted as C-10002. That last pair is the only part of this seed that shows a
+    business rule deciding something rather than a form saving a row.
+
+    See deploy/DEMO.md for the runbook this is part of, the resulting credentials, and - importantly -
+    what this script still could NOT do (create a project) and why.
 
     Run only against an EMPTY database where GET /api/setup answers {"available":true}. It is not
     idempotent: the Owner step can run exactly once per database, by design (KAFF-100).
 
 .PARAMETER Base
     The API's base URL. Defaults to http://localhost:5080, matching driver.mjs's own KAFF_API default.
+
+    For STAGING pass the site root and nothing else - `-Base http://<staging-ip>`. nginx proxies
+    /api/ to the API container, which is `expose`d and never published, so the site URL IS the API
+    base there. See deploy/DEMO.md section 7.
 
 .NOTES
     Two things learned the hard way while writing this, both explained in deploy/DEMO.md:
@@ -99,7 +111,32 @@ Show 'POST /api/users (Finance: sara_finance_demo / Demo#Fin123, mustChangePassw
 $r = Post-Json '/api/users' 'payload-marketing.json' -Authenticated
 Show 'POST /api/users (MarketingSales: karim_sales_demo / Demo#Sales123, mustChangePassword)' $r
 
-# 6. Project creation - expected to fail. Left in deliberately, not as a smoke check but as a live,
+# 6. Client A - corporate, and the first client code this database ever issues (C-10001).
+$r = Post-Json '/api/clients' 'payload-client-corporate.json' -Authenticated
+Show 'POST /api/clients (corporate, phone typed as 01001234567)' $r
+if ($r.StatusCode -ne 201) { throw 'Client registration failed - is this build older than KAFF-119 (86cc8b0)?' }
+
+# 7. The same number in international form. AC-119-C: three formats, one match.
+#    A 200 either way - the warning is not a refusal and never arrives as a Problem (D-107 section 2).
+$r = Post-Json '/api/clients/phone-check' 'payload-client-phone-check.json' -Authenticated
+Show 'POST /api/clients/phone-check (+20 100 123 4567 - expect ONE match, the corporate client above)' $r
+if ($r.StatusCode -ne 200) { throw 'phone-check did not answer 200.' }
+if ($r.Body -notmatch 'C-1') { Write-Warning 'phone-check found no match. Normalisation is not folding +20 100 123 4567 onto 01001234567 - the whole duplicate demo below is meaningless without it.' }
+
+# 8. The company's owner, on the company's line - the same number a third time, in Arabic-Indic
+#    digits, and NOT acknowledged. Expect 409: the save is held until somebody decides.
+$r = Post-Json '/api/clients' 'payload-client-duplicate-unacknowledged.json' -Authenticated
+Show 'POST /api/clients (individual, same number, acknowledged=false - expect 409)' $r
+if ($r.StatusCode -ne 409) { Write-Warning "Expected 409 and got $($r.StatusCode). The duplicate check is not holding the save - AC-119-D." }
+
+# 9. The same request with the acknowledgement. Expect 201 (C-10002) AND a
+#    DuplicatePhoneAcknowledged row in the audit trail, whose subject is the MATCHED client.
+#    AC-119-D and AC-119-E: the warning does not block the save, and the decision is in the trail.
+$r = Post-Json '/api/clients' 'payload-client-duplicate-acknowledged.json' -Authenticated
+Show 'POST /api/clients (same request, acknowledged=true - expect 201 and C-10002)' $r
+if ($r.StatusCode -ne 201) { throw 'The acknowledged duplicate was still refused - AC-119-D is broken.' }
+
+# 10. Project creation - expected to fail. Left in deliberately, not as a smoke check but as a live,
 #    re-runnable demonstration of deploy/DEMO.md's central finding: no endpoint in this codebase
 #    creates a project, so nothing above can be given a real project to be staffed on or to show.
 Write-Output '== Probing POST /api/projects (expected: 404, no such endpoint exists today) =='
