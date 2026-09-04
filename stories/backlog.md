@@ -105,17 +105,32 @@ questions merged into it with their origin recorded (action **SM-4**).
 
 ---
 
-## Sprint 3 — open 2026-09-04 · the Client master · **14 points, all five `Ready`, none pulled**
+## Sprint 3 — open 2026-09-04 · the Client master · **5 of 14 points delivered on day one**
 
 **Build order, in dependency order — `KAFF-119` first and alone; the other four all depend on it.**
 
-| # | Story | Pts | Model, per `agents.md` §M |
-|---|---|---:|---|
-| 1 | **KAFF-119** | 5 | **strongest** — it decides what the audit trail records for a duplicate, and it is the first generator of its kind in this database |
-| 2 | KAFF-121 | 3 | **strongest** for the missing `Name`/phone/`Kind` setters and rule 6's guard, which decide what a master record may become; **mid** for the rest |
-| 3 | KAFF-124 | 2 | **mid** — criteria are written |
-| 4 | KAFF-123 | 2 | **mid** |
-| 5 | KAFF-120 | 2 | **mid**, and re-estimate it first |
+| # | Story | Pts | State | Model, per `agents.md` §M |
+|---|---|---:|---|---|
+| 1 | **KAFF-119** | 5 | ✅ **DELIVERED** `86cc8b0` + `01c7b3a`, 2026-09-04. **`AC-119-A`…`K` discharged, each watched failing under a mutation of its own mechanism. `AC-119-L` HELD** — Arabic/RTL at mobile width, and there is no client form; **Frontend's, and it is not a pass.** **Not independently verified** — built and self-reported | **strongest** — it decides what the audit trail records for a duplicate, and it is the first generator of its kind in this database |
+| 2 | KAFF-121 | 3 | `Ready`. **Proposed next, alone.** Must add `excluding` to `PhoneMatches` (D-107 §2), deliberately not built in KAFF-119 | **strongest** for the missing `Name`/phone/`Kind` setters and rule 6's guard, which decide what a master record may become; **mid** for the rest |
+| 3 | KAFF-124 | 2 | `Ready` | **mid** — criteria are written |
+| 4 | KAFF-123 | 2 | `Ready` | **mid** |
+| 5 | KAFF-120 | 2 | `Ready`, **re-estimate first** | **mid** |
+
+**Gates at `01c7b3a`, run in the 2026-09-04 standup session:** build Release `-warnaserror` **0/0** ·
+`Domain.Tests` **111/111** · `Api.Tests` **255/255** (241 → 255, the fourteen KAFF-119 tests) ·
+citations **1148 / 0 broken / 0 legacy**. **E2E was not run** — last figure **6/6**, produced by the
+KAFF-119 build session at this same commit, and it is theirs rather than the board's.
+
+> **`AC-119-L` belongs to no story in the table above.** KAFF-119 is delivered and the criterion is
+> undischarged. **Schedule the form with KAFF-121** — one Angular client form serves create and edit,
+> and building it twice is the mistake. Named here so it does not go the way `AC-106-J` did.
+
+> **`KAFF-118`'s cut is withdrawn, not decided** (`meetings/2026-09-04-sprint-3-standup.md` §2). Both
+> premises of the routing expired: sprint 1 is closed, so there is **no locked sprint to cut from**,
+> and its blocking dependency **KAFF-119 landed today**, so all six of 106, 109, 110, 111, 113, 119
+> exist. **It is buildable for the first time and should be scheduled.** Not pulled here — the pull is
+> Nabil's.
 
 **`Ready` is not the same as pulled. Scope is Nabil's** — that rule has held since 2026-09-02 and is
 not being quietly dropped because the stories finally passed the gate.
@@ -601,7 +616,7 @@ criterion behind them. **KAFF-105a is untouched by D-065 — checked, not assume
 | KAFF-116 | Every audit record says how the actor reached the project | 3 | Ready | — |
 | KAFF-117 | The Owner reads the audit trail, and nobody else does | 5 | Ready | 116, 118 |
 | KAFF-118 | Every state change in slice 1 writes an audit record | 3 | **UNBUILT.** Nothing of this story was started. | 106, 109, 110, 111, 113, 119 |
-| KAFF-119 | Register a client, with a generated code and a duplicate-phone warning | 5 | ~~`BLOCKED` 2026-09-04 (DoR 9)~~ → **READY 2026-09-04**, repaired and re-audited the same day. **First in the build order** — the other four depend on it. N6 answered by **D-107**. One BA line owed on `AC-119-B`. | 106 |
+| KAFF-119 | Register a client, with a generated code and a duplicate-phone warning | 5 | ~~`BLOCKED` 2026-09-04 (DoR 9)~~ → ~~**READY 2026-09-04**~~ → ✅ **BUILT 2026-09-04**, `86cc8b0` + `01c7b3a`. `AC-119-A`…`K` discharged and each watched failing; **`AC-119-L` HELD** (Frontend — there is no client form). **Not independently verified.** N6 answered by **D-107**. One BA line still owed on `AC-119-B`. | 106 |
 | KAFF-120 | An individual's contract cannot carry a withholding rate — **defect, now wiring** | 2 | ~~`BLOCKED` 2026-09-04 (DoR 9, 11)~~ → **READY 2026-09-04.** **Its 2 points are probably now wrong** — `AC-120-C/D/E/G` are already discharged by `tests/Domain.Tests/WithholdingTests.cs`, and what is left rides on KAFF-119's and KAFF-121's endpoints. Re-estimate at the next refinement, with the team. | 119 |
 | KAFF-121 | Edit a client's name and contact details | 3 | **READY.** Passed all twelve DoR lines on its own account throughout; blocked only transitively, now cleared. **`Client` still has no setter for `Name`, the primary phone or `Kind`** — that is this story's *first* work, not an assumption under it (D-107). | 119 |
 | KAFF-122 | ~~Set a corporate client's withholding category~~ | — | **Superseded** → KAFF-416. **Not to be built or re-created in slice 1** — re-confirmed 2026-09-04. Carries three broken `:digits` citations, flagged and not fixed. | — |
