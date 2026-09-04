@@ -9240,3 +9240,44 @@ true.
 Build **0 warnings / 0 errors** with `-warnaserror`; `dotnet format --verify-no-changes` exit **0**;
 Domain **124/124**; Api **280/280** (278 + 2 for the third filter state and the unknown-filter
 refusal); citations checked at the end of the change. **E2E not run** — still no client screen.
+---
+
+### D-112 · Backend — KAFF-123 built: archive is a verb on a sub-resource, and the no-delete claim now bites · 2026-09-04
+
+**Decision.** `POST /api/clients/{clientId}/archive`, no body, `204`, gated `ClientManage`.
+
+**Not `DELETE /api/clients/{id}`.** A client is archived and never deleted — spec.md §2 requires full
+history and §3 attaches a reopened opportunity to the *same* client, both impossible if the row can
+disappear. A route spelled `DELETE` invites somebody to make it do what it says.
+
+**No body**: one act, no options, and a request carrying nothing cannot carry the wrong thing.
+Whether the operator meant it is `S-014`'s confirm dialog's job, not a flag.
+
+**The refusal is `Client.Archive`'s.** The handler returns what the entity says rather than checking
+`IsActive` itself — a second copy in a handler is the copy that drifts from the entity every other
+caller goes through. Watched: deleting the entity's guard reddens `AC-123-C` alone.
+
+#### `AC-123-D` is an absence, so it was made to fail on purpose
+
+*"No endpoint deletes one"* is the shape `V-32-A` was: an absence proved by grepping for the word
+"delete" is proved about the word. This enumerates every route **the host actually mapped** and
+asserts none answers `DELETE`. **Adding one throwaway `MapDelete` reddens it** — checked, not assumed,
+because an absence test that cannot fail is worth nothing and looks identical to one that works.
+
+It is also wider than this story: it covers the whole application, so a delete route added under any
+name in any feature folder fails here. `CLAUDE.md`'s *"any endpoint that edits or deletes a posting"*
+prohibition now has a test rather than a paragraph.
+
+#### Gates
+
+Build **0/0** `-warnaserror`; format exit **0**; Domain **124/124**; Api **286/286** (280 + 6);
+citations **1150 / 0 broken / 0 legacy**. Three mechanisms watched failing: the delete absence, the
+permission gate (**four** of six, because archiving is a write and the audit constraint refuses a row
+with no verified actor — the coupling D-110 §2 said does *not* exist on reads), and the
+already-archived refusal.
+
+**`AC-123-B` is discharged and is worth reading twice.** The unique index is gone, so spec.md §3's
+*"never create a duplicate client"* is no longer held by the database across time — **it is held by an
+operator reading a warning** (KAFF-123 rule 2b, Karim's reduction, made knowingly). The archived
+client still warns, still names itself, and still says it is archived. That warning is the whole of
+the remaining control.
