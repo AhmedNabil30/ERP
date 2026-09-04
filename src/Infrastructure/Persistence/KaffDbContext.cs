@@ -21,6 +21,12 @@ namespace Kaff.Infrastructure.Persistence;
 /// </summary>
 public sealed class KaffDbContext : DbContext
 {
+    /// <summary>
+    /// The PostgreSQL sequence client codes are drawn from. Named once, so the handler that reads it
+    /// and the model that declares it cannot drift apart. decisions.md D-107 §1.
+    /// </summary>
+    public const string ClientCodeSequence = "client_code_seq";
+
     public KaffDbContext(DbContextOptions<KaffDbContext> options)
         : base(options)
     {
@@ -95,6 +101,23 @@ public sealed class KaffDbContext : DbContext
         ArgumentNullException.ThrowIfNull(modelBuilder);
 
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+
+        // The client-code sequence of spec.md §2's amendment — "sequential, of the form C-10001,
+        // manual entry and later editing both forbidden" — drawn by CreateClient's handler
+        // immediately before it saves. decisions.md D-107 §1.
+        //
+        // Declared here rather than in hand-written migration SQL, and that is the load-bearing part.
+        // DatabaseInitializer runs two strategies: the Api migrates on boot, the test harness calls
+        // EnsureCreated, which builds the schema from this model and knows nothing about migrations.
+        // A sequence authored only in a migration would exist in production and not exist under the
+        // harness, and every registration in the Api suite would fail on 42P01 — observed, on
+        // 2026-09-04, by deleting this line. See SchemaInvariantTests
+        // .The_client_code_sequence_is_materialised_by_a_schema_built_from_the_model.
+        //
+        // A sequence is non-transactional, so a rolled-back save burns a number and that code never
+        // exists. Whether Kaff will accept gaps is Karim's, unanswered, and the mechanism is one
+        // expression in one handler either way — see decisions.md D-107's open question 1.
+        modelBuilder.HasSequence<long>(ClientCodeSequence).StartsAt(10_001);
 
         foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
         {

@@ -450,5 +450,41 @@ public sealed class SchemaInvariantTests
 #pragma warning restore EF1002
     }
 
+    /// <summary>
+    /// KAFF-119 / D-107 §1 — the client-code sequence exists on a schema built by
+    /// <c>EnsureCreated</c>, not only on one built by migrations.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>This is the one line of D-107 that was reasoned rather than watched</b>, and it decided the
+    /// mechanism: the sequence is declared with <c>HasSequence</c> in <c>OnModelCreating</c> precisely
+    /// because the Api migrates on boot while this harness builds the schema from the model
+    /// [Verified: 2026-09-04 @ <c>DatabaseInitializer.cs</c> -&gt; <c>InitialiseAsync</c>, whose two
+    /// strategies are <c>MigrateAsync</c> and <c>EnsureCreatedAsync</c>]. A sequence created by
+    /// hand-written migration SQL instead would exist in production and be absent here, and every
+    /// registration in this suite would fail on <c>42P01: relation "client_code_seq" does not
+    /// exist</c>.
+    /// </para>
+    /// <para>
+    /// Watched failing before it passed, on 2026-09-04: with the <c>HasSequence</c> line removed this
+    /// test reports exactly that <c>42P01</c>. It is kept because the failure mode is loud but its
+    /// cause is not — a reader deleting the line sees a hundred unrelated client tests break, and
+    /// this one names the reason.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task The_client_code_sequence_is_materialised_by_a_schema_built_from_the_model()
+    {
+        await using KaffDbContext context = _database.CreateBareContext();
+
+        long drawn = await context.Database
+            .SqlQuery<long>($"SELECT nextval('client_code_seq') AS \"Value\"")
+            .SingleAsync(Ct);
+
+        drawn.Should().BeGreaterThanOrEqualTo(
+            10001,
+            "D-107 §1 fixes the sequence at StartsAt(10001) so the first client is C-10001");
+    }
+
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 }
