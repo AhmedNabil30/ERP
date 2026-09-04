@@ -7,6 +7,14 @@ none of the seven stories in scope, and none of the eight commits.
 independently verified — plus `51a0c5a`, which moved `ForwardLimit` into configuration and therefore
 changed what the audit trail records as the caller's IP.
 
+> **⚠️ Appended by the author 2026-09-05, after this report was written — the verdicts below are the
+> Verifier's and are NOT edited.** `V-33-A` (HIGH) and `V-33-B` (MEDIUM) are **repaired**; see
+> decisions.md **D-118**, and the fix is tests only — **no file under `src/` changed**, because the
+> defect was missing coverage and not a wrong grant. Both repairs were watched failing under the
+> Verifier's own two mutations. **`V-33-C`, `D`, `E`, `F` and `G` are open** and routed in
+> `stories/backlog.md`. This note exists so a later reader does not act on a closed finding as though
+> it were live; **nothing else in this file has been touched.**
+
 **Brief:** `meetings/BRIEF-2026-09-05-verifier.md`. It says of itself that it was written by the
 session that wrote all the code it describes, and that every claim in it — including the gate
 figures — is a claim to check. It was right to say so: three of its statements needed correction and

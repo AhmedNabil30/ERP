@@ -9742,3 +9742,96 @@ the sprint is gated on the pass, but **the pass itself needs a session this one 
 The brief is written on the assumption that its reader distrusts it, and it names three claims worth
 disbelieving — including D-109 §3's three mutation-run false negatives, one of which was one step from
 banking *"the permission gate is not asserted."*
+
+---
+
+### D-118 — `V-33-A` and `V-33-B` repaired: a documented invariant given a machine, and a role nothing refused
+**2026-09-05 · Backend · repair of a Verifier finding**
+
+The Verifier ran on `c468e47` and returned **1 HIGH, 5 MEDIUM, 1 LOW**
+(`qa/slice-1/verification-2026-09-05.md`). Under the sprint-4 lock, findings are pulled ahead of the
+sprint's stories. The HIGH and the MEDIUM in the same class are repaired here; the rest are routed.
+
+**The pass justified itself on its first run.** It confirmed every gate figure the brief claimed,
+re-measured E2E at the current commit rather than accepting a stale one, proved §6.7's money guard and
+`AC-126-L`'s `/forbidden` fix genuinely sound, **corrected three of the brief's own statements**, and
+found a hole nothing in the repository could see.
+
+#### 1. `V-33-A` (HIGH) — `Role.HeadOfDesign` was asserted against no endpoint anywhere
+
+One `[InlineData]` row in `UserTests` about holding a session. Nothing else, on any feature, in any
+suite.
+
+The Verifier granted it `ClientManage` — **one term in one list**, the shape of a real mistake in a
+diff about something else — and watched **build 0/0, Domain 125/125 and Api 295/295 stay green** while
+a Head of Design gained create, read, edit, list and archive on every client Kaff has.
+`GET /api/clients/{clientId}` is the one payload in the slice carrying internal notes, which spec.md
+§12 says the client MUST NEVER see.
+
+**Slice 1's acceptance gate is stated as *permission tests pass*. The tests passed, and for one role
+in nine the gate was asserting nothing.**
+
+**The invariant was already written down — in prose.** `PermissionCatalogue.cs` says, in its own class
+comment, *"Role.HeadOfDesign holds exactly one row: ProjectRead"*
+[Verified: 2026-09-05 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `PermissionCatalogue`].
+**That is D-067's exact pattern** — prose a reviewer relies on to answer a safety question — and D-068
+already ruled that the answer to it is a machine rather than another rule. The rule existed; nothing
+executed it.
+
+**Repair: `A_head_of_design_holds_exactly_one_permission`**, catalogue-wide, in the same shape as
+`No_permission_is_granted_to_a_subcontractor` and `A_portal_client_holds_nothing_outside_the_portal`
+— which is precisely why those two roles were *not* the finding. A grant added to any permission, in
+any slice, fails it. Watched failing under the Verifier's own mutation: one test red, naming both
+permissions.
+
+#### 2. `V-33-B` (MEDIUM) — the same defect caught or missed depending on which door you use
+
+Granting `ClientManage` to `Role.TechnicalOffice` — a role that *is* tested somewhere — reddened
+**three of six** client endpoints. `GET /api/clients/{id}` asserted 2 of the 6 refused roles;
+`POST /api/clients/phone-check` asserted **1**.
+
+**The two thinnest were the two worst to be thin on.** The get-by-id route is the internal-notes
+payload. And phone-check returns client **names** — a route whose own test comment already said
+*"a route called 'check' reads as innocuous and is exactly where Role.Client gets forgotten."*
+**It was right about the shape of the mistake and covered only the one role it named.**
+
+**Repair:** both routes now loop every refused role. And because a hand-written list of roles is
+exactly what went stale, each site carries an assertion that the list **is** every signing-in role
+minus the two granted, derived from the `Role` enum — so a tenth role fails the coverage test rather
+than being quietly uncovered. `Role.Subcontractor` is excluded with its reason: spec.md §9,
+*"record only, no login"*, and it has its own catalogue-wide pin.
+
+#### 3. ⚠️ No file under `src/` changed, and that is the point
+
+Both findings are **missing coverage, not wrong behaviour**. The catalogue was correct throughout: a
+Head of Design never actually held `ClientManage`. What was missing was anything that would notice if
+they did.
+
+**That is the harder defect to see and the cheaper one to fix**, and it is the reason a Verifier pass
+that finds no broken behaviour is not a pass that found nothing.
+
+#### 4. Still open, and routed rather than repaired
+
+| | | Routed to |
+|---|---|---|
+| `V-33-C` | The guard's `await` pins nothing — deleting it leaves E2E 11/11. **Zero frontend unit tests**, so `V-32-D` is still open and now guards more | Frontend, with **KAFF-127** |
+| `V-33-D` | `AC-126-C`'s empty states and `AC-126-F`'s 409-reopens-the-warning path are implemented and **asserted by nothing** | Frontend, with **KAFF-127** |
+| `V-33-E` | `AC-126-L` is half-driven: no portal `Role.Client` user exists in `scripts/seed-demo.ps1` at all, so **the client-portal boundary of §12 has no UI-level evidence anywhere** | Frontend + the seed |
+| `V-33-F` | The `kaff` development database is permanently degraded and the documented E2E path does not run against it — **`V-31-A` realised**. Its cause is known; its operational cost is new | **Architect** — this is the repair story `V-31-A` has been owed since 2026-08-31 |
+| `V-33-G` | `run-kaff-erp/SKILL.md` overstates the start-up refusal: the API refuses only outside Development, and the Verifier watched it log and start | Whoever next edits that skill |
+
+**`V-33-F` is the one to read twice.** `V-31-A` has been open as a theoretical repair gap since
+2026-08-31. It is no longer theoretical — it has eaten the development database, and the guards
+correctly refuse both repairs. **The Architect owes a repair story, not another detector**, and this
+is the second time that sentence has been written down.
+
+#### 5. One disclosure from the pass itself
+
+The Verifier's `Q57` probe **advanced `kaff_demo`'s client-code sequence by one**, confirming
+empirically that `nextval` survives a `ROLLBACK`. It disclosed this rather than leaving it to be
+found. `Q57` is now confirmed behaviour rather than reasoning, and it remains **Karim's question**.
+
+#### 6. Gates after the repair
+
+Build **0/0** `-warnaserror`; `dotnet format` exit **0**; Domain **126/126** (125 → 126);
+**Api 297/297** (295 → 297); citations **1155 / 0 / 0**.

@@ -135,10 +135,33 @@ scope. `meetings/2026-09-05-sprint-4-locked.md` · decisions.md **D-117**.
 >
 > **Nabil ruled "run before". That settles the sequencing and it does not settle who** — the Verifier
 > must be a session that did not write this code, and the coordinating session did. The brief is
-> written and waiting: **`meetings/BRIEF-2026-09-05-verifier.md`**.
+> written: **`meetings/BRIEF-2026-09-05-verifier.md`**.
 >
-> **No sprint-4 story starts until that pass reports.** If it returns defects, its findings are pulled
-> ahead of the two stories below — a fix to delivered work outranks new work, always.
+> ### ✅ The pass ran on 2026-09-05 and reported: **1 HIGH · 5 MEDIUM · 1 LOW**
+>
+> `qa/slice-1/verification-2026-09-05.md`, commit `200e576`. **It confirmed every gate figure**,
+> re-measured E2E at the current commit rather than accepting a stale one, proved §6.7's money guard
+> and `AC-126-L`'s `/forbidden` fix sound, **corrected three statements in its own brief**, and found
+> a hole nothing in the repository could see.
+>
+> **`V-33-A` (HIGH) and `V-33-B` (MEDIUM) are repaired — decisions.md D-118. No file under `src/`
+> changed:** both were missing coverage, not wrong behaviour. Domain **126/126**, Api **297/297**.
+>
+> | | Finding | State |
+> |---|---|---|
+> | `V-33-A` | **HIGH** — `Role.HeadOfDesign` asserted against no endpoint anywhere; granting it `ClientManage` left the whole suite green | ✅ **repaired**, D-118 §1 |
+> | `V-33-B` | MEDIUM — `GET /api/clients/{id}` asserted 2 of 6 refused roles, `phone-check` **1 of 6** | ✅ **repaired**, D-118 §2 |
+> | `V-33-C` | MEDIUM — the guard's `await` pins nothing; **zero frontend unit tests** | **open** → KAFF-127 |
+> | `V-33-D` | MEDIUM — `AC-126-C` and `AC-126-F` implemented and asserted by nothing | **open** → KAFF-127 |
+> | `V-33-E` | MEDIUM — no portal `Role.Client` user in the seed, so **§12's portal boundary has no UI evidence anywhere** | **open** → KAFF-127 + the seed |
+> | `V-33-F` | MEDIUM — the `kaff` dev database is degraded and the documented E2E path does not run against it. **`V-31-A` realised** | **open** → **Architect** |
+> | `V-33-G` | LOW — `run-kaff-erp/SKILL.md` overstates the start-up refusal | **open** |
+>
+> **⚠️ `V-33-F` is `V-31-A` no longer theoretical.** It has eaten the development database and the
+> guards correctly refuse both repairs. **The Architect owes a repair story, not another detector** —
+> the second time that sentence has been written on this board.
+>
+> **The three MEDIUMs routed to KAFF-127 are now part of that story's scope**, not a separate queue.
 
 ### The scope, and the three things it deliberately leaves out
 

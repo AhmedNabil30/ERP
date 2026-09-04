@@ -27,6 +27,10 @@ public sealed class GetClientTests : IAsyncLifetime
 
     private Guid _marketing;
     private Guid _finance;
+    private Guid _hr;
+    private Guid _technicalOffice;
+    private Guid _siteEngineer;
+    private Guid _headOfDesign;
     private Guid _portalClient;
     private Guid _portalClientCompany;
 
@@ -109,6 +113,28 @@ public sealed class GetClientTests : IAsyncLifetime
                 "a money column or a withholding category added here fails, whatever it is named");
     }
 
+    /// <summary>
+    /// Every role that is not Marketing or the Owner is refused — all six of them, not the two that
+    /// were easy to write.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Widened 2026-09-05 to close `V-33-B` (MEDIUM), `qa/slice-1/verification-2026-09-05.md`.</b>
+    /// This test asserted <b>2 of the 6 refused roles</b> — Finance and the portal client. The
+    /// Verifier granted <c>ClientManage</c> to <c>Role.TechnicalOffice</c> and watched three of the
+    /// six client endpoints redden while this one stayed green: <i>"the same defect is caught or
+    /// missed depending on which endpoint the attacker uses"</i>, and this is the endpoint it is
+    /// worst to miss on, because it is the only payload in the slice carrying internal notes.
+    /// </para>
+    /// <para>
+    /// <b>All six, from the enum rather than from a hand-written list.</b> A literal list is a list
+    /// that stays at six when a tenth role is added; deriving the refused set as *every role except
+    /// the two granted* means a new role arrives here refused by default, which is the direction a
+    /// permission system has to fail in. <c>Role.Subcontractor</c> is excluded because spec.md §9 says
+    /// *"record only, no login"* — it cannot hold a session to be refused with, and
+    /// <c>No_permission_is_granted_to_a_subcontractor</c> pins that catalogue-wide.
+    /// </para>
+    /// </remarks>
     [Fact]
     public async Task Nobody_outside_marketing_and_the_owner_may_read_a_client_file()
     {
@@ -116,19 +142,55 @@ public sealed class GetClientTests : IAsyncLifetime
 
         await SetDetailsAsync(id, notes: "ملاحظة داخلية", address: null);
 
-        HttpResponseMessage finance = await GetAsync(id, _finance, Role.Finance, Department.Finance);
+        foreach ((Guid actorId, Role role, Department? department, Guid? clientId) in RefusedActors())
+        {
+            HttpResponseMessage refused = await GetAsync(id, actorId, role, department, clientId);
 
-        finance.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+            refused.StatusCode.Should().Be(
+                HttpStatusCode.Forbidden,
+                $"{role} holds no ClientManage, and this is the one payload carrying internal notes — "
+                + "spec.md §12 forbids a client ever seeing them, and on a read there is no audit "
+                + "constraint to fail behind the gate (D-110 §2)");
 
-        HttpResponseMessage portal = await GetAsync(
-            id, _portalClient, Role.Client, null, actorClientId: _portalClientCompany);
+            (await refused.Content.ReadAsStringAsync(Ct)).Should().NotContain(
+                "ملاحظة داخلية",
+                $"a refusal to {role} must not carry the note in its body either");
+        }
+    }
 
-        portal.StatusCode.Should().Be(
-            HttpStatusCode.Forbidden,
-            "this is the one payload carrying internal notes, and spec.md §12 forbids a client ever "
-            + "seeing them — on a read there is no audit constraint to fail behind the gate");
+    /// <summary>
+    /// Every role that must be refused, derived rather than listed. See the remarks above.
+    /// </summary>
+    private IEnumerable<(Guid ActorId, Role Role, Department? Department, Guid? ClientId)> RefusedActors()
+    {
+        yield return (_finance, Role.Finance, Department.Finance, null);
+        yield return (_hr, Role.Hr, Department.Hr, null);
+        yield return (_technicalOffice, Role.TechnicalOffice, Department.Operations, null);
+        yield return (_siteEngineer, Role.SiteEngineer, Department.Operations, null);
+        yield return (_headOfDesign, Role.HeadOfDesign, Department.Operations, null);
+        yield return (_portalClient, Role.Client, null, _portalClientCompany);
+    }
 
-        (await portal.Content.ReadAsStringAsync(Ct)).Should().NotContain("ملاحظة داخلية");
+    /// <summary>
+    /// The list above is every signing-in role except the two that hold <c>ClientManage</c>.
+    /// </summary>
+    /// <remarks>
+    /// Asserted rather than trusted, because the list is hand-written and the enum is not. A tenth
+    /// role added to <c>Role</c> fails here, which is the notice that the loop above has stopped
+    /// being exhaustive — <c>V-33-A</c> is what happens when a role exists and nothing mentions it.
+    /// </remarks>
+    [Fact]
+    public void The_refused_list_is_every_role_that_can_sign_in_and_is_not_granted()
+    {
+        IEnumerable<Role> covered = RefusedActors().Select(actor => actor.Role);
+
+        IEnumerable<Role> shouldBeRefused = Enum.GetValues<Role>()
+            .Except([Role.Owner, Role.MarketingSales, Role.Subcontractor]);
+
+        covered.Should().BeEquivalentTo(
+            shouldBeRefused,
+            "Owner and MarketingSales hold ClientManage; Subcontractor cannot sign in at all "
+            + "(spec.md §9, 'record only, no login'). Everything else must appear in the loop");
     }
 
     [Fact]
@@ -252,22 +314,43 @@ public sealed class GetClientTests : IAsyncLifetime
 
         User marketing = MakeUser("get-marketing", Role.MarketingSales, Department.Marketing);
         User finance = MakeUser("get-finance", Role.Finance, Department.Finance);
+        User hr = MakeUser("get-hr", Role.Hr, Department.Hr);
+        User technicalOffice = MakeUser(
+            "get-techoffice", Role.TechnicalOffice, Department.Operations,
+            subDepartment: OperationsSubDepartment.Technical);
+        User siteEngineer = MakeUser(
+            "get-siteeng", Role.SiteEngineer, Department.Operations,
+            subDepartment: OperationsSubDepartment.Technical);
+        User headOfDesign = MakeUser(
+            "get-headdesign", Role.HeadOfDesign, Department.Operations,
+            subDepartment: OperationsSubDepartment.Technical);
         User portal = MakeUser("get-portal", Role.Client, clientId: company.Id);
 
         context.Clients.Add(company);
-        context.Users.AddRange(marketing, finance, portal);
+        context.Users.AddRange(
+            marketing, finance, hr, technicalOffice, siteEngineer, headOfDesign, portal);
 
         await context.SaveChangesAsync(Ct);
 
         _portalClientCompany = company.Id;
         _marketing = marketing.Id;
         _finance = finance.Id;
+        _hr = hr.Id;
+        _technicalOffice = technicalOffice.Id;
+        _siteEngineer = siteEngineer.Id;
+        _headOfDesign = headOfDesign.Id;
         _portalClient = portal.Id;
     }
 
-    private static User MakeUser(string userName, Role role, Department? department = null, Guid? clientId = null)
+    private static User MakeUser(
+        string userName,
+        Role role,
+        Department? department = null,
+        Guid? clientId = null,
+        OperationsSubDepartment? subDepartment = null)
         => User.Create(
-            UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, null, clientId).Value;
+            UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department,
+            subDepartment, clientId).Value;
 
     private static DateTimeOffset Now => new(2026, 9, 4, 8, 0, 0, TimeSpan.Zero);
 

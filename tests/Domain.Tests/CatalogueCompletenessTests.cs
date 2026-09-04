@@ -139,6 +139,57 @@ public sealed class CatalogueCompletenessTests
         granted.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// `Role.HeadOfDesign` holds exactly one permission, and it is `ProjectRead`.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Written 2026-09-05 to close `V-33-A` (HIGH), `qa/slice-1/verification-2026-09-05.md`.</b>
+    /// The Verifier found that <c>Role.HeadOfDesign</c> was asserted against <b>no endpoint anywhere
+    /// in the repository</b> — one <c>[InlineData]</c> row in <c>UserTests</c> about holding a
+    /// session, and nothing else. It then added the role to the <c>ClientManage</c> row — one term in
+    /// one list, the shape of a real mistake in a diff about something else — and watched
+    /// <b>build 0/0, Domain 125/125 and Api 295/295 stay green</b> while a Head of Design gained
+    /// every client file in Kaff, internal notes included.
+    /// </para>
+    /// <para>
+    /// <b>The invariant was already written down. It was written down in prose.</b>
+    /// <c>PermissionCatalogue.cs</c> says, in its own class comment, *"Role.HeadOfDesign holds exactly
+    /// one row: ProjectRead"*
+    /// [Verified: 2026-09-05 @ <c>src/Domain/Authorization/PermissionCatalogue.cs</c> -&gt;
+    /// <c>PermissionCatalogue</c>]. That is decisions.md D-067's exact pattern — prose a reviewer
+    /// relies on to answer a safety question — and D-068 ruled that the answer to it is a machine
+    /// rather than a fifth rule. This is the machine.
+    /// </para>
+    /// <para>
+    /// <b>Catalogue-wide, not endpoint-by-endpoint</b>, which is the shape
+    /// <see cref="No_permission_is_granted_to_a_subcontractor"/> and
+    /// <see cref="A_portal_client_holds_nothing_outside_the_portal"/> already have and the reason they
+    /// were not the finding: a grant added to <i>any</i> permission, in <i>any</i> slice, fails here.
+    /// A per-endpoint refusal test would have to be remembered once per endpoint forever, and
+    /// <c>V-33-B</c> is the record of what that costs — three of six client endpoints caught a widened
+    /// grant and three did not.
+    /// </para>
+    /// <para>
+    /// <b>Adding a row here is a deliberate act.</b> spec.md §9 marks the role phase 2, so it does no
+    /// work yet; when it does, the grant and this list change together and somebody has to mean it.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void A_head_of_design_holds_exactly_one_permission()
+    {
+        IEnumerable<Permission> granted = PermissionCatalogue.All
+            .Where(definition => definition.Grants.Any(grant => grant.Role == Role.HeadOfDesign))
+            .Select(definition => definition.Permission);
+
+        granted.Should().BeEquivalentTo(
+            [Permission.ProjectRead],
+            "spec.md §9 marks Role.HeadOfDesign phase 2 and PermissionCatalogue's own comment says it "
+            + "holds exactly one row. Any other permission reaching this role — ClientManage above "
+            + "all, which reaches every client Kaff has including the internal notes §12 forbids the "
+            + "client seeing — is a widening nothing else in this repository would notice");
+    }
+
     [Fact]
     public void A_portal_client_holds_nothing_outside_the_portal()
     {

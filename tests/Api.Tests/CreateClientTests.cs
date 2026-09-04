@@ -43,6 +43,7 @@ public sealed class CreateClientTests : IAsyncLifetime
     private Guid _technicalOffice;
     private Guid _hr;
     private Guid _siteEngineer;
+    private Guid _headOfDesign;
     private Guid _portalClient;
     private Guid _portalClientCompany;
 
@@ -354,28 +355,79 @@ public sealed class CreateClientTests : IAsyncLifetime
 
     // ---- AC-119-H · nobody outside Marketing and the Owner may register one -------------------
 
+    /// <summary>
+    /// Every role that is not Marketing or the Owner is refused, on <b>both</b> write-side client
+    /// routes — registration and phone-check.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Widened 2026-09-05 to close `V-33-B` (MEDIUM), `qa/slice-1/verification-2026-09-05.md`.</b>
+    /// Two gaps, and the second was the worse one. The refused list was missing
+    /// <c>Role.HeadOfDesign</c> — the role `V-33-A` found is asserted nowhere at all — and
+    /// <b><c>POST /api/clients/phone-check</c> was asserted against exactly one refused role</b>, the
+    /// portal client, while <c>POST /api/clients</c> was asserted against four.
+    /// </para>
+    /// <para>
+    /// <b>That asymmetry is the finding, not the count.</b> The Verifier granted <c>ClientManage</c>
+    /// to <c>Role.TechnicalOffice</c> and three of the six client endpoints reddened while three
+    /// stayed silent: <i>"the same defect is caught or missed depending on which endpoint the attacker
+    /// uses"</i>. And phone-check is the worst place to be thin — the comment three tests above
+    /// already says why: <i>"phone-check returns client NAMES. A route called 'check' reads as
+    /// innocuous and is exactly where Role.Client gets forgotten."</i> It was right about the shape of
+    /// the mistake and covered only the one role it named.
+    /// </para>
+    /// </remarks>
     [Fact]
-    public async Task Only_marketing_and_the_owner_may_register_a_client()
+    public async Task Only_marketing_and_the_owner_may_register_a_client_or_check_a_phone()
     {
-        (Guid Actor, Role Role, Department? Department, OperationsSubDepartment? Sub)[] refused =
-        [
-            (_finance, Role.Finance, Department.Finance, null),
-            (_technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical),
-            (_hr, Role.Hr, Department.Hr, null),
-            (_siteEngineer, Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical),
-        ];
-
-        foreach ((Guid actor, Role role, Department? department, OperationsSubDepartment? sub) in refused)
+        foreach ((Guid actor, Role role, Department? department, OperationsSubDepartment? sub) in RefusedActors())
         {
             (await RegisterAsync(actor, role, department, Body($"محاولة {role}"), actorSubDepartment: sub))
                 .StatusCode.Should().Be(
                     HttpStatusCode.Forbidden,
                     "{0} does not hold ClientManage — spec.md §2, Client is owned by Marketing",
                     role);
+
+            (await CheckResponseAsync(actor, role, department, "01000000000", actorSubDepartment: sub))
+                .StatusCode.Should().Be(
+                    HttpStatusCode.Forbidden,
+                    "phone-check returns client NAMES, so {0} must be refused here for the same "
+                    + "reason it is refused above — a warning route is not a lesser route",
+                    role);
         }
 
         (await RegisterAsync(_owner, Role.Owner, null, Body("عميل سجله المالك")))
             .StatusCode.Should().Be(HttpStatusCode.Created, "the Owner holds every company-wide row");
+    }
+
+    /// <summary>Every role that must be refused, portal client included.</summary>
+    private IEnumerable<(Guid Actor, Role Role, Department? Department, OperationsSubDepartment? Sub)> RefusedActors()
+    {
+        yield return (_finance, Role.Finance, Department.Finance, null);
+        yield return (_hr, Role.Hr, Department.Hr, null);
+        yield return (_technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
+        yield return (_siteEngineer, Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+        yield return (_headOfDesign, Role.HeadOfDesign, Department.Operations, OperationsSubDepartment.Technical);
+    }
+
+    /// <summary>
+    /// The loop above covers every signing-in role that is not granted, apart from the portal client,
+    /// which needs a <c>clientId</c> and has its own test.
+    /// </summary>
+    /// <remarks>
+    /// Asserted rather than trusted: the list is hand-written and <c>Role</c> is not, so a tenth role
+    /// fails here rather than being quietly uncovered. <c>V-33-A</c> is what an uncovered role costs.
+    /// </remarks>
+    [Fact]
+    public void The_refused_list_is_every_signing_in_role_that_is_not_granted()
+    {
+        IEnumerable<Role> covered = [.. RefusedActors().Select(actor => actor.Role), Role.Client];
+
+        covered.Should().BeEquivalentTo(
+            Enum.GetValues<Role>().Except([Role.Owner, Role.MarketingSales, Role.Subcontractor]),
+            "Owner and MarketingSales hold ClientManage; Subcontractor cannot sign in at all "
+            + "(spec.md §9, 'record only, no login'). Role.Client is covered by "
+            + nameof(A_portal_client_is_refused_by_both_client_endpoints));
     }
 
     // ---- AC-119-I and AC-119-J · no money and no withholding category ------------------------
@@ -568,9 +620,11 @@ public sealed class CreateClientTests : IAsyncLifetime
         Role actorRole,
         Department? actorDepartment,
         string phone,
-        Guid? actorClientId = null)
+        Guid? actorClientId = null,
+        OperationsSubDepartment? actorSubDepartment = null)
         => SendAsync(
-            "/api/clients/phone-check", actorId, actorRole, actorDepartment, new { phone }, null, actorClientId);
+            "/api/clients/phone-check", actorId, actorRole, actorDepartment, new { phone },
+            actorSubDepartment, actorClientId);
 
     private async Task<HttpResponseMessage> SendAsync(
         string route,
@@ -673,10 +727,13 @@ public sealed class CreateClientTests : IAsyncLifetime
         User hr = MakeUser("cli-hr", Role.Hr, Department.Hr);
         User siteEngineer = MakeUser(
             "cli-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+        User headOfDesign = MakeUser(
+            "cli-design", Role.HeadOfDesign, Department.Operations, OperationsSubDepartment.Technical);
         User portal = MakeUser("cli-portal", Role.Client, clientId: company.Id);
 
         context.Clients.Add(company);
-        context.Users.AddRange(owner, marketing, finance, technicalOffice, hr, siteEngineer, portal);
+        context.Users.AddRange(
+            owner, marketing, finance, technicalOffice, hr, siteEngineer, headOfDesign, portal);
 
         await context.SaveChangesAsync(Ct);
 
@@ -687,6 +744,7 @@ public sealed class CreateClientTests : IAsyncLifetime
         _technicalOffice = technicalOffice.Id;
         _hr = hr.Id;
         _siteEngineer = siteEngineer.Id;
+        _headOfDesign = headOfDesign.Id;
         _portalClient = portal.Id;
     }
 
