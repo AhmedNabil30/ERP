@@ -637,6 +637,63 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// Two proxies deep — Caddy in front of nginx — the audited address is still the caller's.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Staging moved behind Caddy on 2026-09-04: it holds 80 and 443, terminates TLS, and forwards
+    /// to nginx, which is published on 8080 and forwards to the API
+    /// [Verified: 2026-09-04 @ <c>deploy/docker-compose.staging.yml</c> -&gt; the <c>web</c> service's
+    /// <c>ports</c>]. <b>That is a second hop, and it silently moves the caller one entry further
+    /// left in <c>X-Forwarded-For</c>.</b> With <c>ForwardLimit</c> left at 1 the middleware consumes
+    /// only nginx's peer and stops, so every audit row records the address Caddy reached nginx from —
+    /// which is one fixed address for every user in the world, including the failed sign-ins the
+    /// column exists for. That is decisions.md D-079's original defect reappearing through a door
+    /// D-079 did not watch.
+    /// </para>
+    /// <para>
+    /// <b>Raising the count does not widen trust, and this test says so in its assertions.</b> Both
+    /// proxy entries here are inside the one declared network; the forged entry on the far left is
+    /// not, and it is still never read. The allowlist remains the security control — the hop count
+    /// only decides how far along a chain of <i>already trusted</i> addresses the middleware walks.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task Two_proxies_deep_the_recorded_address_is_still_the_caller()
+    {
+        IPAddress nginx = IPAddress.Parse("192.0.2.10");
+        IPAddress caddy = IPAddress.Parse("192.0.2.11");
+        IPAddress caller = IPAddress.Parse("198.51.100.7");
+
+        await using var proxied = new KaffApiFactory(
+            _database.ConnectionString,
+            remoteAddress: nginx,
+            trustedProxyNetwork: "192.0.2.0/24",
+            forwardedProxyHops: 2);
+
+        using HttpClient client = proxied.CreateClient();
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, Write(_projectId));
+
+        // The real shape: the caller's forgery, then Caddy appending the caller, then nginx
+        // appending Caddy. The middleware reads right to left.
+        request.Headers.Add("X-Forwarded-For", $"198.51.100.9, {caller}, {caddy}");
+        await StampAsync(request, _financeAssigned, Role.Finance, Department.Finance);
+
+        (await client.SendAsync(request, Ct)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (AuditRecord change, _) = await TheWritesRecordsAsync();
+
+        change.IpAddress.Should().Be(caller);
+        change.IpAddress.Should().NotBe(caddy, "the second proxy is a hop, not a user");
+        change.IpAddress.Should().NotBe(nginx);
+        change.IpAddress.Should().NotBe(
+            IPAddress.Parse("198.51.100.9"),
+            "the forged entry is outside the trusted network and is never consumed, whatever the "
+            + "hop count is");
+    }
+
+    /// <summary>
     /// The two records one probe write leaves: the change to the project, and the company-level
     /// client created in the same save.
     /// </summary>

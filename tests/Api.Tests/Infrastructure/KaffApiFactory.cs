@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using Kaff.Api.Common.Endpoints;
 using Microsoft.AspNetCore.Authentication;
@@ -53,6 +54,11 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
     /// <c>Kaff:TrustedProxyNetworks:0</c>. <see langword="null"/> — the default — clears it, which is
     /// the shipped default and means <c>UseForwardedHeaders</c> is not registered at all.
     /// </param>
+    /// <param name="forwardedProxyHops">
+    /// <c>Kaff:ForwardedProxyHops</c> — how many proxies stand in front. <see langword="null"/>, the
+    /// default, leaves it unset and <c>Program.cs</c> falls back to 1. Staging passes 2 because Caddy
+    /// terminates TLS in front of nginx (deploy/docker-compose.staging.yml).
+    /// </param>
     /// <param name="useRealAuthentication">
     /// <see langword="false"/> — the default — substitutes <see cref="TestAuthHandler"/>, so a suite
     /// can issue an identity from request headers without a sign-in endpoint. <b>KAFF-101a's own
@@ -75,6 +81,7 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
         string connectionString,
         IPAddress? remoteAddress = null,
         string? trustedProxyNetwork = null,
+        int? forwardedProxyHops = null,
         bool useRealAuthentication = false,
         TimeProvider? clock = null,
         string environment = "Testing")
@@ -102,6 +109,13 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
         // next one built in the same process. Program.cs reads this before Build(), so — like the
         // values above — the in-memory configuration below arrives too late for it.
         Environment.SetEnvironmentVariable("Kaff__TrustedProxyNetworks__0", trustedProxyNetwork);
+
+        // Same reasoning, and the same "always set, including to null": a hop count left behind by a
+        // previous factory would make this one's audit addresses right or wrong for a reason nothing
+        // in the test names.
+        Environment.SetEnvironmentVariable(
+            "Kaff__ForwardedProxyHops",
+            forwardedProxyHops?.ToString(CultureInfo.InvariantCulture));
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

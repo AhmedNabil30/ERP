@@ -9462,3 +9462,102 @@ citations **1150 / 0 broken / 0 legacy**.
 
 **Not done:** nothing in the Client master is independently verified — KAFF-119, 121, 123, 124, 126
 and 120 are all built and self-reported, and under `CLAUDE.md` the author does not certify them.
+
+---
+
+### D-115 — Staging moves behind Caddy: HTTPS on 443, nginx off 80, and a second proxy the audit trail could not see
+**2026-09-04 · Infrastructure**
+
+Nabil: *"change the port 80 to 8080 as candy will use it so the stagging use https"*. Caddy takes 80
+and 443 on the host and terminates TLS; nginx moves to 8080. The port number is one line. **The two
+things that ride on it are not, and both are the kind that fail silently.**
+
+#### 1. The port, and the half a port number does not buy
+
+`deploy/docker-compose.staging.yml`'s `web` service published `${STAGING_HTTP_PORT:-80}:8080`. The
+variable already existed, so the flip is a default: **`8080`**.
+
+**Bound to `127.0.0.1` as well**, through a new `STAGING_HTTP_BIND` defaulting to loopback. Moving a
+port without binding it leaves the entire application served in the clear on 8080 beside the TLS one
+— a second front door with no lock, which is not what "staging uses HTTPS" means. The firewall is the
+other guard on the same mistake and the two are deliberately not one: `deploy/README.md` §4 now says
+to open 80 and 443 and to leave 8080 closed, and the bind means that forgetting is not sufficient to
+expose it.
+
+`STAGING_HTTP_BIND` exists because Caddy's location is a deployment fact this repository does not
+hold. Loopback is right for Caddy on the host, which is what §4b documents; a containerised Caddy
+should join this compose network rather than have the port opened for it.
+
+#### 2. ⚠️ Caddy is a second proxy, and `ForwardLimit` was 1
+
+This is the part nobody asked for and the part that mattered.
+
+D-079 made the audit trail's IP column read the caller's address rather than nginx's, by trusting
+`X-Forwarded-For` **only** from an allowlisted network and consuming exactly `ForwardLimit = 1` hop.
+That 1 was correct for one proxy. **Caddy makes two**, and each hop appends to the header, so the
+caller's address moves one entry further from the right:
+
+```
+client → Caddy      X-Forwarded-For: 203.0.113.5
+Caddy  → nginx      X-Forwarded-For: 203.0.113.5, <Caddy's peer address>
+nginx  → api        header unchanged; api's peer is nginx
+```
+
+With the limit at 1 the middleware consumes only the rightmost entry and stops. **Every audit row on
+staging would then record the one address Caddy reaches nginx from — the same value for every user in
+the world, including the failed sign-ins the column exists for.** That is D-079's original defect
+returning through a door D-079 did not watch, and *nothing about it is visible*: the column is
+populated, the value is a plausible IP address, and no test, log line or health check disagrees.
+
+`Program.cs` now reads `Kaff:ForwardedProxyHops`, defaulting to 1, and the staging compose declares
+**2** beside the network it trusts — the same reasoning that already keeps `Kaff__TrustedProxyNetworks__0`
+and the pinned subnet in one file. **The hop count is a property of the deployment, not of the code**,
+and it was the last piece of that decision still hardcoded.
+
+**Raising it does not widen trust, and the new test asserts that rather than assuming it.** The
+middleware still stops the moment the next address is outside the allowlist. `ForwardLimit` decides
+how far along a chain of *already trusted* addresses it walks; the allowlist decides which addresses
+those are. D-079 recorded that distinction after getting it wrong once — this change is the first
+time it has been load-bearing.
+
+#### 3. HTTPS is not a hardening pass here — it is the first time sign-in can work at all
+
+The auth cookie is `HttpOnly; Secure; SameSite=Strict` (D-050), unconditionally
+[Verified: 2026-09-04 @ `src/Api/Identity/StaffSessionMinter.cs` -> `CookieAttributes`]. **A browser
+discards a `Secure` cookie delivered over `http://<ip>`.** So staging over plain HTTP was not a
+degraded sign-in with a security caveat attached — signing in appeared to succeed and the next
+request came back `401`, on every browser, always.
+
+Nothing noticed, because nothing had reached for it: `scripts/seed-demo.ps1` turns automatic cookie
+handling off and replays `Set-Cookie` by hand (for a related but different reason — .NET's
+`CookieContainer` refuses the same attachment), and the CI smoke checks call `/api/health` and the
+SPA root, neither of which authenticates. **A hole exactly the shape of the checks that were run.**
+
+`STAGING_ORIGIN` and the `STAGING_URL` repository variable become `https://` and a **name** — Caddy
+cannot obtain a certificate for a bare IP.
+
+#### 4. Test
+
+`tests/Api.Tests/PermissionMechanismTests.cs` ->
+`Two_proxies_deep_the_recorded_address_is_still_the_caller`, with the real three-entry header shape
+(`forged, caller, caddy`) and `forwardedProxyHops: 2`. `KaffApiFactory` gained the parameter, set as
+an environment variable **always, including to null**, for the same reason the trusted network is —
+`Program.cs` reads it before `Build()` and one factory's setting must not survive into the next.
+
+**Watched failing**, by pinning `ForwardLimit` back to `1`:
+`Expected change.IpAddress to be 198.51.100.7, but found 192.0.2.11` — Caddy's address, which is the
+staging defect itself, reproduced.
+
+#### 5. What was not done
+
+**Caddy is not in `docker-compose.staging.yml`, and that is deliberate.** It holds the host's ports
+and must outlive any single `docker compose down`; in the same file, a stack restart could drop TLS.
+`deploy/README.md` §4b carries the two-line `Caddyfile` instead, and names the one property of it the
+compose file depends on: `reverse_proxy` sets `X-Forwarded-For` itself, which is what the hop count
+of 2 is counting.
+
+**⚠️ None of this has been run against staging.** The compose file, the runbook and the hop count are
+correct on paper and the test is green locally; the box has not been touched, DNS is not confirmed,
+and no certificate has been issued. **The first deploy after this commit is the check** — and the
+thing to look at is not that the site loads, but that an audit row written by a signed-in user
+carries *that user's* address.

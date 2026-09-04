@@ -288,17 +288,22 @@ present it, against the database that will be shown.
 containers, deployed by `.github/workflows/deploy-staging.yml` on every push to `main`.
 
 ```powershell
-.\scripts\seed-demo.ps1 -Base http://<staging-ip>
+.\scripts\seed-demo.ps1 -Base https://<the name Caddy serves>
 ```
 
 **Pass the site root and nothing else.** nginx proxies `/api/` to the API container, which is
 `expose`d and **never published to the host**, so there is no separate API port to aim at — the site
 URL *is* the API base. It is the same value as the `STAGING_URL` repository variable.
 
+> **⚠️ `https://` and the name, not `http://` and an IP — changed 2026-09-04 (D-115).** Caddy holds
+> 80 and 443 and terminates TLS; nginx moved to 8080 bound to `127.0.0.1`, so there is nothing on
+> port 80 to seed against and nothing reachable on 8080 from off the box. A bare IP has no
+> certificate.
+
 ### Check this first, or step 1 throws
 
 ```powershell
-Invoke-WebRequest http://<staging-ip>/api/setup -UseBasicParsing   # want {"available":true}
+Invoke-WebRequest https://<the name Caddy serves>/api/setup -UseBasicParsing   # want {"available":true}
 ```
 
 **`POST /api/setup` succeeds exactly once per database (KAFF-100).** If staging already has an Owner
@@ -313,10 +318,17 @@ Nabil's call, not a runbook step.** Nothing in this repository does it for you, 
 ### Two things that are different on staging, and one that is not
 
 - **The `Secure`-cookie workaround still applies and still works.** §4.3's note explains why the
-  script replays `Set-Cookie` by hand; that is unchanged over plain `http://` to a remote host.
-- **The demo passwords are weak and known** (`Demo#Owner1`, `Demo#Hr123`, …) and staging is a public
-  IP on port 80 with no TLS. Acceptable for a walkthrough; **not acceptable to leave sitting there
-  afterwards.** Seed it before the demo, and plan what happens to it after.
+  script replays `Set-Cookie` by hand — .NET's `CookieContainer` will not attach a `Secure` cookie
+  over plain `http://`. Over `https://` it would, but the script does not depend on which: it turns
+  automatic cookie handling off and replays the header either way.
+- **A real browser only started working on staging with TLS.** The same `Secure` attribute a scripted
+  client works around is one a browser enforces: on `http://<ip>` it discards the cookie, so sign-in
+  appeared to succeed and the next request was a `401`. **That is fixed by Caddy, not by anything in
+  this runbook.**
+- **The demo passwords are weak and known** (`Demo#Owner1`, `Demo#Hr123`, …) and staging is on the
+  public internet. TLS means nobody reads them off the wire; it does **not** mean nobody can use
+  them. Acceptable for a walkthrough; **not acceptable to leave sitting there afterwards.** Seed it
+  before the demo, and plan what happens to it after.
 - **The project probe still 404s there too.** §1 is a property of the codebase, not of the machine.
 
 ---
@@ -330,5 +342,7 @@ Nabil's call, not a runbook step.** Nothing in this repository does it for you, 
   runbook's; nothing here touches it.
 - **Did not check screenshots into the repository.** §5 explains why.
 - **Did not test this runbook against staging** (`deploy/README.md`). The same script works there —
-  point `-Base` at `$STAGING_URL` and `KAFF_WEB` at the staging origin — but staging has no TLS and no
-  backups today, so seeding demo accounts onto it is a separate decision from running this locally.
+  point `-Base` at `$STAGING_URL` and `KAFF_WEB` at the staging origin — but staging still has no
+  backups, so seeding demo accounts onto it is a separate decision from running this locally.
+  ⚠️ **And nothing in §7 has been run against staging since it moved behind Caddy on 2026-09-04**;
+  the URLs there are corrected on paper, not confirmed on the box.

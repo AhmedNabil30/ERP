@@ -261,19 +261,27 @@ if (trustedProxyNetworks.Length > 0)
             options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(network));
         }
 
-        // One hop, because there is one proxy. nginx sends `$proxy_add_x_forwarded_for`, which
-        // appends the peer's address to the *right* of whatever the caller supplied, and the
-        // middleware reads from the right — so a caller who forges an entry leaves it to the left
-        // of his real address, where it is never read.
+        // The true hop count, and it is a property of the deployment rather than of the code.
+        // nginx sends `$proxy_add_x_forwarded_for`, which appends the peer's address to the *right*
+        // of whatever the caller supplied, and the middleware reads from the right — so a caller who
+        // forges an entry leaves it to the left of his real address, where it is never read.
         //
         // ⚠️ What makes the forgery unreachable is the allowlist above, not this number. The
         // middleware stops the moment the address it would consume next is not a known proxy, and a
         // forged entry never is. Verified empirically on 2026-08-25: raising this to 2 left
         // Behind_a_trusted_proxy_the_recorded_address_is_the_caller_not_the_proxy green, which is
-        // the opposite of what the first draft of this comment asserted. It is 1 anyway, because
-        // that is the true hop count and a second proxy should have to be declared rather than
-        // tolerated — but do not read it as the security control.
-        options.ForwardLimit = 1;
+        // the opposite of what the first draft of this comment asserted. Do not read it as the
+        // security control.
+        //
+        // ⚠️ But it is exactly what makes the audit trail's IP column right or wrong. It defaults
+        // to 1 — nginx alone, which is what the staging file described until 2026-09-04. Staging now
+        // has Caddy terminating TLS in front of nginx, which is a SECOND hop: with the limit left at
+        // 1 the middleware consumes only nginx's peer and every audit row records the address Caddy
+        // reached nginx from, not the caller's. That is D-079's original defect arriving through a
+        // door D-079 did not watch, so the count is declared beside the proxies it counts
+        // (deploy/docker-compose.staging.yml -> Kaff__ForwardedProxyHops). Raising it does not widen
+        // trust: every address consumed must still be inside a network on the allowlist above.
+        options.ForwardLimit = builder.Configuration.GetValue("Kaff:ForwardedProxyHops", 1);
     });
 }
 
