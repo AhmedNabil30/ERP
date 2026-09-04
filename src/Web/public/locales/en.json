@@ -177,6 +177,7 @@
   "errors.master.individual_does_not_withhold": "An individual client does not withhold tax at source.",
   "errors.master.client_kind_required": "Choose whether the client is an individual or a company.",
   "errors.master.duplicate_phone_not_acknowledged": "This number is already on file. Review the client who holds it, then confirm to continue.",
+  "errors.master.client_not_found": "No client exists with that reference.",
 
   "errors.project.code_required": "A project code is required.",
   "errors.project.name_required": "A project name is required.",

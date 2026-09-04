@@ -79,4 +79,13 @@ public static class MasterDataErrors
     /// </remarks>
     public static readonly Error DuplicatePhoneNotAcknowledged =
         Error.Conflict("master.duplicate_phone_not_acknowledged", "errors.master.duplicate_phone_not_acknowledged");
+
+    /// <summary>The route named a client id that no client carries. KAFF-121.</summary>
+    /// <remarks>
+    /// The same shape as <c>IdentityErrors.UserNotFound</c>: an endpoint that addresses a row by an
+    /// id in its route has to say something translatable when the id names nobody, rather than a bare
+    /// 404 the SPA can only render as "something went wrong".
+    /// </remarks>
+    public static readonly Error ClientNotFound =
+        Error.NotFound("master.client_not_found", "errors.master.client_not_found");
 }

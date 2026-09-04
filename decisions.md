@@ -8975,3 +8975,89 @@ Domain **111/111**; Api **255/255** (241 baseline + 13 `CreateClientTests` + 1 s
 E2E **6/6** against the live stack; `scripts/check-citations.ps1` **1145 / 0 broken / 0 legacy**. The
 stack was stopped afterwards — `Kaff.Api` and the dev server both — because three stranded hosts were
 found by a later session once already.
+
+---
+
+### D-109 · Backend — KAFF-121 built: §6.7 is a constraint on a pair, and two mutation runs lied before they told the truth · 2026-09-04
+
+**Decision.** `Client` gained the mutation surface KAFF-121 finding **F-09** said it never had —
+`Rename`, `SetPrimaryPhone` and `SetClassification` — and `PUT /api/clients/{clientId}` was built on
+top of it, gated `ClientManage`. `PhoneMatches.FindAsync` gained the `excluding` parameter D-107 §2
+specified and KAFF-119 deliberately left unbuilt.
+
+#### 1. The one design decision worth a number: `SetClassification` takes the pair
+
+**spec.md §6.7 constrains the kind and the tax registration number together, not either one alone.**
+Two independent setters have to be called in some order, and **both orders are wrong for a request
+that is legal**:
+
+| Order | What it breaks |
+|---|---|
+| kind, then number | Promoting an **individual to a company that has a registration number** is refused — the number is set while the kind is still `Individual`. Ordinary and legal, and it would have been rejected |
+| number, then kind | An individual **carries a registration number** for as long as it takes to run the next line. The end state is legal; the intermediate one is the thing §6.7 denies |
+
+Validating the pair has no order to get wrong. `SetTaxRegistration` survives — the create path calls
+it — as `SetClassification(Kind, number)`, **one line, delegating rather than repeating the check**.
+Two copies of one rule is what KAFF-120 rule 5 exists to prevent, and
+`Setting_a_registration_number_on_an_individual_is_still_refused_and_the_kind_never_moves` is what
+makes the delegation load-bearing rather than cosmetic.
+
+**Rejected: a `ChangeKind` setter with the guard, plus handler code ordering the two calls by which
+direction the request goes.** That is §6.7 restated in a handler — the copy every other caller of the
+entity bypasses, which KAFF-121 rule 6 forbids in as many words.
+
+#### 2. `AC-121-F` is satisfied exactly as written, and one case it does not cover is named
+
+The criterion is *"kind changed to `Individual` **without clearing the number**"* → refused. That is
+what the pair check does. **The criterion says nothing about changing to `Individual` *while*
+clearing the number in the same request**, and the pair check permits it, because the end state is a
+legal one. Stated here rather than left for a reader to discover: if Kaff wants the number cleared as
+a separate deliberate act, that is a rule nobody has given and it is one line to add.
+
+#### 3. Two mutation runs reported a safety that was not there, and both were caught by checking
+
+**This is the D-108 §3 pattern again, twice in one session, and neither would have been visible in a
+summary.**
+
+- **A mutation that did not compile ran the previous mutation's binaries.** Replacing `Rename`'s
+  guard with `if (false)` produced two build errors — and the test executable, which is still on disk,
+  ran anyway and reported **the two failures from the mutation before it**. Banked as written, that is
+  a watched failure for a mechanism that was never mutated. **Every mutation run afterwards checks
+  `$LASTEXITCODE` from the build before it runs anything.** `.claude/skills/run-kaff-erp/SKILL.md`
+  documents this trap for a *running API* holding DLLs open; this is the same trap with no API
+  involved.
+- **Reverting by restoring a backup file left the binaries stale.** `Move-Item` restores the content
+  *and the backup's timestamp*, which is older than the compiled DLL, so the incremental build did
+  nothing and one test stayed red against source that was already correct. Found by reading the
+  source, not by trusting the run.
+- **A mutation that silently did not apply reported 12/12 green.** Removing `.RequirePermission` by
+  string replacement missed, because the file has LF endings and the pattern carried CRLF. **A green
+  suite was about to be recorded as "the permission gate is not asserted."** Re-run line-wise, it
+  reddens **nine of twelve** — the same coupling KAFF-119 found: with no gate nothing calls
+  `ActorVerifiedAs`, and `ck_audit_records_actor_is_named_completely` refuses the row. **An ungated
+  endpoint in this codebase cannot write an audit record at all.**
+
+#### 4. What was watched, and what it took
+
+`A_client_is_not_a_duplicate_of_itself` reddens alone when `excluding` is dropped — the D-107 §2
+parameter earning its existence. `An_individual_can_become_a_company_and_take_a_registration_number_in_one_act`
+reddens when the pair check guards the *current* kind instead of the new one, which is §1's whole
+argument in one assertion. The name-length guard reddens its own test and nothing else.
+
+#### 5. Scope held
+
+**`AC-121-I` — Arabic, RTL, at mobile width — is not discharged. There is no client form**, and it is
+the same hole as `AC-119-L`. Both are Frontend's and both are named on the board rather than counted.
+No i18n key was added for a screen that does not exist; the only new key is
+`errors.master.client_not_found`, in both catalogues, because the route addresses a row by id and has
+to say something translatable when the id names nobody.
+
+**Nothing was archived, no code was made editable, and no search was built** — KAFF-123 and KAFF-124
+are still unbuilt and this change does not reach into either.
+
+#### 6. Gates
+
+Build **0 warnings / 0 errors** with `-warnaserror`; `dotnet format --verify-no-changes` exit **0**;
+Domain **124/124** (111 + 13); Api **267/267** (255 + 12); citations **1149 / 0 broken / 0 legacy**.
+**E2E was not run** — the edit path has no screen to drive, and the last figure, 6/6, belongs to the
+session that produced it.

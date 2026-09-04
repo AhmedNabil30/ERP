@@ -51,6 +51,15 @@ internal static class PhoneMatches
     /// Every client whose normalised phone equals <paramref name="normalisedPhone"/>, archived
     /// included, ordered by code so the same request warns in the same order twice.
     /// </summary>
+    /// <param name="excluding">
+    /// A client that is not a match against itself. <b>KAFF-121's edit path is why this exists</b>
+    /// (decisions.md D-107 §2, deliberately left unbuilt by KAFF-119): a client saved with its phone
+    /// unchanged matches its own row, and without this the operator is asked to acknowledge a
+    /// duplicate of the record in front of them — every single time, on an edit that changed the
+    /// address. Worse, acknowledging it would write a <c>DuplicatePhoneAcknowledged</c> row pointing
+    /// at the client itself, into an append-only table. Null on the registration path, where there is
+    /// no self to exclude.
+    /// </param>
     /// <remarks>
     /// The comparison is against <c>PhoneNormalised</c> and never against the entered text, so
     /// <c>+20 100 123 4567</c>, <c>0020 100 1234567</c> and <c>01001234567</c> are one number
@@ -60,12 +69,14 @@ internal static class PhoneMatches
     public static async Task<List<PhoneMatch>> FindAsync(
         KaffDbContext database,
         string normalisedPhone,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Guid? excluding = null)
     {
         ArgumentNullException.ThrowIfNull(database);
 
         return await database.Clients
             .Where(client => client.PhoneNormalised == normalisedPhone)
+            .Where(client => excluding == null || client.Id != excluding)
             .OrderBy(client => client.Code)
             .Select(client => new PhoneMatch(client.Id, client.Code, client.Name, !client.IsActive))
             .ToListAsync(cancellationToken);

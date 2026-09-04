@@ -1,6 +1,9 @@
 # KAFF-121 · Edit a client's name and contact details
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** Ready
+**Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** **BUILT 2026-09-04, one criterion held — not accepted.**
+`AC-121-A` … `AC-121-H` discharged and each watched failing under a mutation of its own mechanism (decisions.md D-109).
+**HOLD on `AC-121-I`** — Arabic, RTL, at mobile width, and **there is no client form**: Frontend's, the same hole as
+`AC-119-L`, and it is not a pass. **Not independently verified** — built and self-reported.
 **Spec:** §2 (**amended**), §3, §12 · **Decisions:** D-044 (ruling 4), **D-049 (ruling 8)**
 **Depends on:** KAFF-119
 
@@ -9,7 +12,7 @@ As Marketing, I correct a client's name, primary phone, alternate phone, email, 
 that one file per client stays worth having.
 
 ## Two things this story had wrong, both now fixed
-**Finding F-09 — the headline behaviour had no domain path, and it still has none.** `Client` exposes
+**Finding F-09 — the headline behaviour had no domain path.** ⚠️ **It has one as of 2026-09-04:** `Client.Rename`, `Client.SetPrimaryPhone` and `Client.SetClassification` were built by this story, in that order of dependency, and the paragraph below is kept as the record of what was missing rather than rewritten. **The rest of it was true when written.** `Client` exposes
 `SetContactDetails(alternatePhone, email, address, notes)`, `SetTaxRegistration` and `Archive`, and
 that is the whole of its mutation surface. There is **no setter for `Name` and no setter for the
 primary phone** [Verified: 2026-09-04 @ `src/Domain/MasterData/Client.cs` -> `SetContactDetails`, `SetTaxRegistration`, `Archive` — the three

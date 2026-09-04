@@ -105,26 +105,29 @@ questions merged into it with their origin recorded (action **SM-4**).
 
 ---
 
-## Sprint 3 — open 2026-09-04 · the Client master · **5 of 14 points delivered on day one**
+## Sprint 3 — open 2026-09-04 · the Client master · **8 of 14 points delivered on day one**
 
 **Build order, in dependency order — `KAFF-119` first and alone; the other four all depend on it.**
 
 | # | Story | Pts | State | Model, per `agents.md` §M |
 |---|---|---:|---|---|
 | 1 | **KAFF-119** | 5 | ✅ **DELIVERED** `86cc8b0` + `01c7b3a`, 2026-09-04. **`AC-119-A`…`K` discharged, each watched failing under a mutation of its own mechanism. `AC-119-L` HELD** — Arabic/RTL at mobile width, and there is no client form; **Frontend's, and it is not a pass.** **Not independently verified** — built and self-reported | **strongest** — it decides what the audit trail records for a duplicate, and it is the first generator of its kind in this database |
-| 2 | KAFF-121 | 3 | `Ready`. **Proposed next, alone.** Must add `excluding` to `PhoneMatches` (D-107 §2), deliberately not built in KAFF-119 | **strongest** for the missing `Name`/phone/`Kind` setters and rule 6's guard, which decide what a master record may become; **mid** for the rest |
-| 3 | KAFF-124 | 2 | `Ready` | **mid** — criteria are written |
+| 2 | **KAFF-121** | 3 | ✅ **DELIVERED** 2026-09-04, decisions.md **D-109**. `AC-121-A`…`H` discharged, each watched failing under a mutation of its own mechanism. **`AC-121-I` HELD** — Arabic/RTL at mobile width, and there is no client form; Frontend's. **Not independently verified.** `Client` gained `Rename`, `SetPrimaryPhone` and `SetClassification` (F-09's missing surface); `PhoneMatches` gained `excluding` (D-107 §2) | **strongest** for the missing `Name`/phone/`Kind` setters and rule 6's guard, which decide what a master record may become; **mid** for the rest |
+| 3 | KAFF-124 | 2 | `Ready`. **Proposed next** | **mid** — criteria are written |
 | 4 | KAFF-123 | 2 | `Ready` | **mid** |
 | 5 | KAFF-120 | 2 | `Ready`, **re-estimate first** | **mid** |
 
-**Gates at `01c7b3a`, run in the 2026-09-04 standup session:** build Release `-warnaserror` **0/0** ·
-`Domain.Tests` **111/111** · `Api.Tests` **255/255** (241 → 255, the fourteen KAFF-119 tests) ·
-citations **1148 / 0 broken / 0 legacy**. **E2E was not run** — last figure **6/6**, produced by the
-KAFF-119 build session at this same commit, and it is theirs rather than the board's.
+**Gates, run in the 2026-09-04 sessions:** build Release `-warnaserror` **0/0** · `dotnet format`
+exit **0** · `Domain.Tests` **124/124** (111 → 124) · `Api.Tests` **267/267** (241 → 255 → 267) ·
+citations **1149 / 0 broken / 0 legacy**. **E2E has not been run since `01c7b3a`** — the last figure,
+**6/6**, belongs to the KAFF-119 build session, and neither client story has a screen to drive.
 
-> **`AC-119-L` belongs to no story in the table above.** KAFF-119 is delivered and the criterion is
-> undischarged. **Schedule the form with KAFF-121** — one Angular client form serves create and edit,
-> and building it twice is the mistake. Named here so it does not go the way `AC-106-J` did.
+> ### ⚠️ Two undischarged criteria belong to no story in the table above
+>
+> **`AC-119-L` and `AC-121-I` are the same hole: there is no client form.** Both stories are
+> delivered; both criteria are Frontend's and neither is a pass. **One Angular client form serves
+> create and edit** — build it once, and build it before either story is put up for acceptance.
+> Named here so they do not go the way `AC-106-J` did.
 
 > **`KAFF-118`'s cut is withdrawn, not decided** (`meetings/2026-09-04-sprint-3-standup.md` §2). Both
 > premises of the routing expired: sprint 1 is closed, so there is **no locked sprint to cut from**,
@@ -618,7 +621,7 @@ criterion behind them. **KAFF-105a is untouched by D-065 — checked, not assume
 | KAFF-118 | Every state change in slice 1 writes an audit record | 3 | **UNBUILT.** Nothing of this story was started. | 106, 109, 110, 111, 113, 119 |
 | KAFF-119 | Register a client, with a generated code and a duplicate-phone warning | 5 | ~~`BLOCKED` 2026-09-04 (DoR 9)~~ → ~~**READY 2026-09-04**~~ → ✅ **BUILT 2026-09-04**, `86cc8b0` + `01c7b3a`. `AC-119-A`…`K` discharged and each watched failing; **`AC-119-L` HELD** (Frontend — there is no client form). **Not independently verified.** N6 answered by **D-107**. One BA line still owed on `AC-119-B`. | 106 |
 | KAFF-120 | An individual's contract cannot carry a withholding rate — **defect, now wiring** | 2 | ~~`BLOCKED` 2026-09-04 (DoR 9, 11)~~ → **READY 2026-09-04.** **Its 2 points are probably now wrong** — `AC-120-C/D/E/G` are already discharged by `tests/Domain.Tests/WithholdingTests.cs`, and what is left rides on KAFF-119's and KAFF-121's endpoints. Re-estimate at the next refinement, with the team. | 119 |
-| KAFF-121 | Edit a client's name and contact details | 3 | **READY.** Passed all twelve DoR lines on its own account throughout; blocked only transitively, now cleared. **`Client` still has no setter for `Name`, the primary phone or `Kind`** — that is this story's *first* work, not an assumption under it (D-107). | 119 |
+| KAFF-121 | Edit a client's name and contact details | 3 | ~~**READY**~~ → ✅ **BUILT 2026-09-04**, D-109. `AC-121-A`…`H` discharged and watched; **`AC-121-I` HELD** (Frontend — there is no client form). **Not independently verified.** ~~`Client` still has no setter for `Name`, the primary phone or `Kind`~~ — **built as `Rename`, `SetPrimaryPhone` and `SetClassification`**, the last taking the kind and the tax number together because spec.md §6.7 constrains the **pair** (D-109 §1). | 119 |
 | KAFF-122 | ~~Set a corporate client's withholding category~~ | — | **Superseded** → KAFF-416. **Not to be built or re-created in slice 1** — re-confirmed 2026-09-04. Carries three broken `:digits` citations, flagged and not fixed. | — |
 | KAFF-123 | Archive a client | 2 | **READY.** Passed all twelve DoR lines on its own account throughout; blocked only transitively, now cleared. | 119 |
 | KAFF-124 | Find a client by name, code or phone | 2 | **READY.** Passed all twelve DoR lines on its own account throughout; blocked only transitively, now cleared. **`AC-124-C` works only because `Client.Create` upper-cases the code** (D-107). | 119 |

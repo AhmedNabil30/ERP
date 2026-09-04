@@ -140,26 +140,95 @@ public sealed class Client : Entity
     }
 
     /// <summary>
-    /// Records the client's tax registration number.
+    /// Corrects the client's name. KAFF-121 rule 2.
+    /// </summary>
+    /// <remarks>
+    /// The same two conditions <see cref="Create"/> applies, because a name that could not have been
+    /// registered must not be reachable by editing into it — a second, laxer path to the same column
+    /// is how an invariant stops being one. spec.md §2 requires a client file to hold "full history",
+    /// and until this existed a mistyped name was permanent (KAFF-121 finding F-09).
+    /// </remarks>
+    public Result Rename(string? name)
+    {
+        string? trimmed = Blank(name);
+
+        if (trimmed is null || trimmed.Length > MaxNameLength)
+        {
+            return Result.Failure(MasterDataErrors.NameRequired);
+        }
+
+        Name = trimmed;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Replaces the primary phone. KAFF-121 rule 3.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// No <c>Result</c>, because <see cref="PhoneNumber"/> cannot be constructed invalid — the
+    /// caller has already been through <see cref="PhoneNumber.Create"/> and there is nothing left for
+    /// this to refuse.
+    /// </para>
+    /// <para>
+    /// <b>And nothing here refuses a duplicate.</b> spec.md §2, amended: a repeated number warns and
+    /// does not block. The warning is the caller's, because naming the client that already holds the
+    /// number needs a query and this type has no database — KAFF-119 rule 4, D-049 ruling 8. Putting
+    /// a refusal here would contradict the ruling and would do it in the one place no handler could
+    /// override.
+    /// </para>
+    /// </remarks>
+    public void SetPrimaryPhone(PhoneNumber phone)
+    {
+        PhoneEntered = phone.Entered;
+        PhoneNormalised = phone.Normalised;
+    }
+
+    /// <summary>
+    /// Sets the kind and the tax registration number together, because spec.md §6.7 constrains the
+    /// <b>pair</b> and not either member on its own.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Why one method and not two setters.</b> §6.7's rule is "an individual does not withhold",
+    /// which is a statement about a client's kind and its registration number at the same instant.
+    /// Two independent setters have to be called in some order, and <i>either</i> order is wrong for
+    /// a legal request: kind-then-number refuses promoting an individual to a company that has a
+    /// registration number, and number-then-kind admits an individual carrying one for as long as it
+    /// takes to run the second line. Validating the pair has no order to get wrong.
+    /// </para>
+    /// <para>
+    /// This is KAFF-121 rule 6, and rule 6 says the guard lives with the setter rather than in a
+    /// validator — a validator is a second copy of the rule that every other caller of the entity
+    /// bypasses (KAFF-120 rule 5, D-040, D-049).
+    /// </para>
+    /// </remarks>
+    public Result SetClassification(ClientKind kind, string? taxRegistrationNumber)
+    {
+        string? trimmed = Blank(taxRegistrationNumber);
+
+        if (trimmed is not null && kind == ClientKind.Individual)
+        {
+            return Result.Failure(MasterDataErrors.IndividualDoesNotWithhold);
+        }
+
+        Kind = kind;
+        TaxRegistrationNumber = trimmed;
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Records the client's tax registration number, leaving the kind as it is.
     /// </summary>
     /// <remarks>
     /// This replaced <c>SetWithholding</c> on 2026-08-21. spec.md §6.7 says "individual clients do
     /// not withhold", so an individual carrying a registration number is asserting the thing §6.7
     /// denies — refused here rather than left to a validator, because the invariant belongs to the
-    /// entity (D-040, D-049).
+    /// entity (D-040, D-049). It is <see cref="SetClassification"/> with the kind unchanged, and it
+    /// delegates rather than repeating the check: two copies of one rule is the thing that drifts.
     /// </remarks>
-    public Result SetTaxRegistration(string? taxRegistrationNumber)
-    {
-        string? trimmed = Blank(taxRegistrationNumber);
-
-        if (trimmed is not null && Kind == ClientKind.Individual)
-        {
-            return Result.Failure(MasterDataErrors.IndividualDoesNotWithhold);
-        }
-
-        TaxRegistrationNumber = trimmed;
-        return Result.Success();
-    }
+    public Result SetTaxRegistration(string? taxRegistrationNumber) =>
+        SetClassification(Kind, taxRegistrationNumber);
 
     public Result Archive()
     {
