@@ -26,7 +26,7 @@ Everything is `pending` until reached. Nothing is marked done on an author's evi
 | 3 | Block 1 · KAFF-127 — `GET /api/users` (the API half) | **done** — §3 |
 | 4 | The role census — is there a second `V-33-A`? | **done** — §4, **yes** |
 | 5 | Block 2 · D-096 applied to the twelve lapsed stories | **done** — §5, **45 carry / 3 lapse** |
-| 6 | Block 3 · Which stories have no QA case | pending |
+| 6 | Block 3 · Which stories have no QA case | **done** — §6 |
 | 7 | The five places a defect would be invisible | pending |
 | 8 | Frontend units and the SPA build | pending |
 | 9 | E2E — run more than once | pending |
@@ -46,6 +46,7 @@ Everything is `pending` until reached. Nothing is marked done on an author's evi
 | `V-34-G` | **LOW** | **`AuditRead`'s holder set has no catalogue-level pin.** Granting it to `Role.TechnicalOffice` left **Domain 127/127 green**; only the Api suite caught it. `HeadOfDesign`, `Subcontractor`, HR and `ProjectTeamRead` all have `CatalogueCompletenessTests` pins. The strictest permission in the system — the one Karim ruled on personally, and the one that from slice 3 carries every movement of money — has none. §2 |
 | `V-34-H` | **MEDIUM** | **KAFF-125's verdict genuinely lapses — but on `e0fd5cf` / `b5c9e46` / `8ea9258`, not on the commit D-119 blamed.** `landingFor()` changed for two of nine roles after the 2026-09-04 verdict and the `pending` landing kind was deleted from the union; `client-manage.guard.ts` was rewritten to stop hiding refusals. Role-based landing and the route guard are KAFF-125's own criteria. **Bookkeeping, not a defect** — the new behaviour is correct. §5.6 |
 | `V-34-I` | **LOW** | **Double-encoded UTF-8 in a shipped source file.** `src/Web/src/app/core/navigation/landing.ts` line 51 carries `âš ï¸` where line 39 carries `⚠️` — verified at byte level, written by `e0fd5cf`. **I swept every `.ts`/`.cs`/`.json`/`.html`/`.css`/`.ps1` under `src`, `scripts` and `tests`: this is the only occurrence, and `ar.json` is clean.** Harmless today (it is a comment), but it is proof that the mangling path the process warns about has already been taken once in this repo |
+| `V-34-J` | **MEDIUM** | **No frontend story has ever had a QA case.** KAFF-125, 126, 127 and 128 have **zero** references in `test-cases.md`; every backend story has cases, **KAFF-117 included** (`TC-1-136…142`). The gap is categorical, not chronological — QA's process has never been applied to the Frontend lane, which is why every screen criterion in slice 1 has been discharged by a build session driving Chromium once. §6 |
 | `V-34-C` | **LOW** | **KAFF-125 has two rows in the master inventory** (backlog.md lines 823 and 828), with different text and different accompanying notes, and `KAFF-124` is filed after `KAFF-128`. KAFF-125 is one of the twelve stories in D-119's lapsed set, so a carry-or-lapse verdict written onto one row leaves the other saying something else |
 
 ---
@@ -408,9 +409,52 @@ what `landingFor()` does now. What lapsed is the *statement* that KAFF-125 was v
 KAFF-125 on the list for that wrong reason — while the three commits that genuinely lapsed it sat
 in the same sweep's own scope, unmentioned.
 
-## 6. Block 3 · QA case coverage
+## 6. Block 3 · Which stories have no QA case — and the brief is wrong about which
 
-pending
+**The brief says:** *"`qa/slice-1/test-cases.md` has no cases for anything built since 2026-09-04 —
+not the Client master, not KAFF-117, not KAFF-127."*
+
+**Two of those three are wrong.** I counted `KAFF-nnn` references and `TC-1-nnn` allocations across
+all 264 cases in the file:
+
+| Story | QA cases | |
+|---|---|---|
+| KAFF-117 read the audit trail | **`TC-1-136…142`** — seven | ✅ present, and written **before** the build |
+| KAFF-119 register a client | `TC-1-151…159, 240, 241, 262, 263` | ✅ present |
+| KAFF-120 · 121 · 122 · 123 | allocated | ✅ present |
+| KAFF-124 list and search clients | `TC-1-186…194` | ✅ present |
+| **KAFF-125** the staff shell | **none — zero references in the file** | ⛔ |
+| **KAFF-126** the client screens | **none — zero references** | ⛔ |
+| **KAFF-127** the user-management screens | **none — zero references** | ⛔ |
+| **KAFF-128** the audit trail screen | **none — zero references** | ⛔ |
+
+**The gap is not chronological, it is categorical — `V-34-J`.** Every **backend** story in slice 1
+has QA cases, KAFF-117 included. **No frontend story has ever had one.** All four screen stories —
+125, 126, 127, 128 — are absent from `test-cases.md` entirely, and they are the four stories whose
+criteria are about rendering, RTL, mobile width and route guards: exactly the criteria the automated
+suites are worst at and where `F-1` (§7.1) was found.
+
+That reframes the brief's own point. It is not that QA fell behind last Thursday; it is that **QA's
+process has never been applied to the Frontend lane at all**, which is why every screen criterion in
+this slice has been discharged by a build session driving Chromium once and taking a screenshot —
+the practice the brief's F-1 hint is itself a complaint about.
+
+### KAFF-117's QA cases, executed
+
+Since they exist, I executed them rather than working from story criteria — `agents.md` §175, which
+the last three passes could not follow.
+
+| Case | Verdict | Evidence |
+|---|---|---|
+| `TC-1-136` portal client refused, with and without a project id | **Pass** | `Role.Client` is in the enum-derived refused set; both query shapes |
+| `TC-1-137` subcontractor has no login to try with | **Pass** | refused at sign-in **and** with a forged role-stamped session |
+| `TC-1-138` redacted fields stay redacted on read back | **Pass** | whole-body search, both secrets, with presence + placeholder as positive control |
+| `TC-1-139` a rejection shows its reason | **Pass** | |
+| `TC-1-140` trail cannot be edited from the API | **Pass** | asserted against routes the **host mapped**, with `GET /api/audit` as positive control |
+| `TC-1-141` nor from a psql prompt | **Pass** | `DELETE` by `ReadAuditTrailTests`, `UPDATE` by `AuditMechanismTests.An_audit_record_cannot_be_changed_afterwards` — two tests, both halves |
+| `TC-1-142` an assigned user cannot read their own project's trail; fourteen refusals | **Pass — watched red** | `MUT-34-1`, §2 |
+
+**Seven of seven.**
 
 ## 7. The five invisible places
 
