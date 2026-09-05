@@ -10145,3 +10145,70 @@ proven**.
 
 **Not verified.** Every mutation in this entry was run by the session that wrote the code. KAFF-127 is
 DELIVERED, not accepted (D-119).
+
+---
+
+### Findings routed from the KAFF-127 build — 2026-09-05
+**Scrum Master · recorded so none of these is rediscovered rather than remembered**
+
+KAFF-127 is delivered (D-121). Its build surfaced five things that are **not** part of it, and each is
+recorded here with an owner rather than left in a report nobody re-reads.
+
+#### F-1 — ⚠️ `AC-126-A` is defective in shipped code, and the same screenshot proves it
+
+`client-list-page.css` carries **the identical `<bdi>` construction** the KAFF-127 agent found broken
+on its own list: a `<bdi>` is a grid item, so it stretches to the full column, and its own resolved
+direction is LTR — which is what isolation *means*. Its text therefore sits at the **left** of the
+box while the Arabic name above it sits at the right, and the card reads as two columns that do not
+line up.
+
+**Overflow measures 0px throughout. Every automated check passes.** The remedy is known and was
+verified on the user list: `justify-self: start`.
+
+**This is a defect in delivered work** — `AC-126-A` was reported discharged on 2026-09-04 by a session
+driving Chromium, which took a screenshot and did not see this. **Severity: LOW as damage, HIGH as a
+lesson** — *"look at the screenshot"* was followed and still missed it, because the eye checks for the
+thing it is looking for.
+
+**Not fixed here, deliberately.** A rendering repair claimed without driving it is the exact failure
+above wearing a different coat. **Owed: one line plus a driven browser.**
+
+#### F-2 — `Permission.UserRead` now visibly has no endpoint
+
+`GET /api/users` is gated **`UserManage`** (Owner alone), and that is correct: spec.md §9 via D-055 §3
+gives HR *"names and roles only"* and says explicitly it *"does not hand HR the Owner's user
+administration surface."* Gating the Owner's list on `UserRead` would do exactly that.
+
+**So HR still cannot name a person**, and the narrow list that would let them is a screen nobody has
+cut. ⚠️ **A later session must not "fix" this by re-gating the existing endpoint** — that is the
+one-term-in-one-list mistake `V-33-A` was about, arriving through a helpful door. **Whose story it is
+is Nabil's to say.**
+
+#### F-3 — `AC-127-F` and `ux/slice-1-flows.md` S-007 disagree about the temporary password
+
+The criterion says it *"is displayed once… when the response is rendered"*. S-007 says it *"never
+appears again anywhere: not in the success message."* **The server returns no password member at
+all**, so the build read "once" as the typing moment and echoes nothing afterwards.
+
+If a post-creation echo was meant, **it needs a server change**, not a screen change. **Karim/Nabil.**
+
+#### F-4 — `AC-127-E`'s "names the assignments" cannot be driven in slice 1
+
+The project names are sent from the server and asserted by `ListUsersTests`, but **no endpoint creates
+a project**, so a browser can only ever reach the zero-assignment branch. The criterion is discharged
+at the API and **undriven at the screen, and will stay that way until slice 4**. Named rather than
+counted as held.
+
+#### F-5 — one E2E flake, not smoothed over
+
+The first full run was **17/18** — the portal test timed out at 32s while the dev server rebuilt from
+a parallel `npm run build`. Five runs since were 18/18. **Believed environmental. Not proven.** If it
+recurs, it is a real finding and this paragraph is where it started.
+
+#### And one piece of work the agent removed rather than shipped
+
+It had put `role="dialog" aria-modal="true"` on the inline confirmations and **took it off again**,
+because claiming the role without focus trapping, Escape and focus return *"tells a screen-reader user
+they are in a modal they can tab straight out of."* **A `kaff-confirm-dialog` with real focus
+management is owed** — accessibility basics are not a corner this project cuts, and the honest
+half-measure was to remove the lie rather than keep it.
