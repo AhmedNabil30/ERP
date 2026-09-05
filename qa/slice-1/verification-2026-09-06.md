@@ -49,6 +49,26 @@ Everything is `pending` until reached. Nothing is marked done on an author's evi
 | `V-34-J` | **MEDIUM** | **No frontend story has ever had a QA case.** KAFF-125, 126, 127 and 128 have **zero** references in `test-cases.md`; every backend story has cases, **KAFF-117 included** (`TC-1-136…142`). The gap is categorical, not chronological — QA's process has never been applied to the Frontend lane, which is why every screen criterion in slice 1 has been discharged by a build session driving Chromium once. §6 |
 | `V-34-C` | **LOW** | **KAFF-125 has two rows in the master inventory** (backlog.md lines 823 and 828), with different text and different accompanying notes, and `KAFF-124` is filed after `KAFF-128`. KAFF-125 is one of the twelve stories in D-119's lapsed set, so a carry-or-lapse verdict written onto one row leaves the other saying something else |
 
+**By severity: no HIGH. Five MEDIUM** (`A`, `B`, `D`, `E`, `H`, `J` — six), **four LOW** (`C`, `F`,
+`G`, `I`). *Counted: six MEDIUM, four LOW, ten in total.*
+
+**⛔ No defective behaviour was found in shipped backend code.** Every business rule I attacked held,
+and the two I fault-injected went red for the right reason. **Six of the ten findings are about the
+project's records rather than its code** — `A`, `B`, `C`, `D`, `H`, `J` — which is the same
+distribution D-119 §6 reported and the reason §13 exists.
+
+**Three things I proved sound rather than reporting**, because a silent absence is not a result:
+`GET /api/audit`'s permission gate (§2), the substring-assertion shape (§7.2), and
+`clientManageGuard`/`userManageGuard`'s `await` (§7.3 — `V-33-C` may be closed).
+
+**Two known-open findings that this pass can close**, on evidence in §9:
+* **`V-33-E`** — `scripts/seed-demo.ps1` now creates the portal `Role.Client` account it said did not
+  exist.
+* **`V-33-F` / `V-31-A`** — narrowed, not closed: a **fresh** database reports
+  `guardsInstalled: true, missingGuards: []` and runs the full E2E path, so the degradation is in
+  that one database's **data**, not in the schema, the migrations or the guards. The Architect's
+  repair story is a data-repair story.
+
 ---
 
 ## 1. Opening gate
