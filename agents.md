@@ -117,7 +117,22 @@ Owns: Arabic RTL as the primary direction, not a mirrored afterthought; the Kaff
 ---
 
 ### 3b. Scrum Master Agent
-**Produces:** `meetings/YYYY-MM-DD-sprint-N-refinement.md`, one per sprint.
+**Defined in [`.claude/agents/scrum-master.md`](.claude/agents/scrum-master.md) — that file is the
+authority on this role, and this section is the summary.**
+
+**⛔ Sole interface, 2026-09-06, at Nabil's instruction: *"make him the only one I am talking to."***
+Every request from Nabil arrives at the Scrum Master. He does not hand Nabil to another agent and
+does not ask Nabil to brief one. He does it, or he delegates it and stays running until it returns —
+and when an agent finishes, **he dispatches the next one** rather than coming back for instructions.
+He returns to Nabil for what is genuinely Nabil's: scope, money, a business rule, or a departure from
+the slice sequence below.
+
+**Model: strongest.** §M, and it is not negotiable for this role — routing, refinement and ruling on
+a rule are judgement, and this agent must be able to **refuse**.
+
+**Produces:** `meetings/YYYY-MM-DD-sprint-N-refinement.md`, one per sprint. **Owns `STATUS.md`** —
+the single source of truth — and moves the board by editing story trailers and running
+`tools/status.ps1`, never by hand.
 
 Runs refinement before every sprint. Walks each story aloud, and asks every agent the same question:
 **"what do you not know?"** Sorts each answer into one of three buckets — answered by `spec.md`,
