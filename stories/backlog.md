@@ -1,5 +1,15 @@
 # Kaff ERP — product backlog
 
+> # ⚠️ THIS FILE'S STATE COLUMN IS DEAD — read [`STATUS.md`](../STATUS.md)
+>
+> **Demoted 2026-09-06.** The state column below drifted on KAFF-116, KAFF-108 and KAFF-113 inside
+> one week (`decisions.md` **D-119**), and a figure read off it was reported to Nabil and was wrong
+> (**D-122**). A board maintained by hand is a claim, not a fact.
+>
+> **This file remains the authority on:** the epics, the slice sequence, and the estimates.
+> **It is no longer the authority on:** what is built, verified, or owed. That is `STATUS.md`,
+> generated from the `<!-- kaff -->` trailer in each story file by `tools/status.ps1`.
+
 One epic per slice. The slice sequence is `agents.md`'s release plan and **does not change to suit a
 sprint boundary** (`process/agile.md`) — a slice too big for one sprint splits into `3a` / `3b` and
 both halves keep the slice's gate.

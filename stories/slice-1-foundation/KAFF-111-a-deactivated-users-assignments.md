@@ -1,5 +1,7 @@
 # KAFF-111 · Deactivating a user revokes their project assignments
 
+<!-- kaff id=KAFF-111 slice=1 points=3 state=VERIFIED verdict=PASS at=- on=2026-08-26 -->
+
 **Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** ACCEPTED 2026-08-26, standing. No commit since has touched this story's own code
 **Spec:** §9 · **Decisions:** **D-049 (ruling 5)**
 **Depends on:** KAFF-110, KAFF-113

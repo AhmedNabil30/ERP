@@ -1,5 +1,7 @@
 # KAFF-123 · Archive a client
 
+<!-- kaff id=KAFF-123 slice=1 points=2 state=VERIFIED verdict=PASS at=- on=2026-09-04 -->
+
 **Slice:** 1 · **Epic:** Foundation · **Points:** 2 · **Status:** **BUILT 2026-09-04 — not accepted.** decisions.md **D-112**.
 `AC-123-A` … `AC-123-E` all discharged; three mechanisms watched failing, including `AC-123-D`'s absence, which was made
 to fail on purpose by adding a throwaway `MapDelete`. The archive **control** on S-014 is `KAFF-126`'s (`AC-126-*`).

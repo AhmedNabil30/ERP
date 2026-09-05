@@ -1,5 +1,7 @@
 # KAFF-122 · Set a corporate client's withholding category and tax registration number
 
+<!-- kaff id=KAFF-122 slice=1 points=0 state=SUPERSEDED verdict=none at=- on=2026-08-21 -->
+
 > # ⛔ SUPERSEDED — 2026-08-21
 >
 > **Replaced by `KAFF-416` (slice 4), and partly absorbed by `KAFF-120` (slice 1).**

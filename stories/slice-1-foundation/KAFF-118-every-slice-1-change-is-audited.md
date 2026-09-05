@@ -1,5 +1,7 @@
 # KAFF-118 · Every state change in slice 1 writes an audit record
 
+<!-- kaff id=KAFF-118 slice=1 points=3 state=BUILT verdict=none at=- on=2026-09-05 -->
+
 **Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** ~~UNBUILT~~ → **BUILT 2026-09-05 — not accepted.** decisions.md **D-116**.
 All ten criteria discharged. **`AC-118-B` became executable on 2026-09-04** when KAFF-119, 121 and 123
 landed — the block this story carried since 2026-08-21 is gone, and the standing proposal to cut it

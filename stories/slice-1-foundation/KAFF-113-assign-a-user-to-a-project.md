@@ -1,5 +1,7 @@
 # KAFF-113 · Assign a user to a project, with seniority for site engineers
 
+<!-- kaff id=KAFF-113 slice=1 points=5 state=VERIFIED verdict=PASS at=- on=2026-08-26 -->
+
 **Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** ACCEPTED 2026-08-26, standing. No commit since has touched this story's own code
 **Spec:** §9, §8 · **Decisions:** D-010, D-012, D-044 (rulings 3, 5), D-035
 **Depends on:** KAFF-106

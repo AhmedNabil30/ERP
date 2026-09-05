@@ -1,5 +1,7 @@
 # KAFF-103 · Change the temporary password on first sign-in
 
+<!-- kaff id=KAFF-103 slice=1 points=5 state=VERIFIED verdict=PASS at=559ac45 on=2026-08-27 -->
+
 **Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** **ACCEPTED 2026-08-27 at `559ac45`, then the code moved underneath the verdict — for the second consecutive time.** `c01959b` (D-094) changed how `RequireLiveSession`, this story's gate, produces its metadata, and `ca4db6c` (D-095) changed `MayHoldStaffSession` inside `ResolveAsync`. **Not re-verified at HEAD.** Separately, `AC-103-I` — the screen — shipped `332c160` (D-092) and is also unverified; D-092 downgraded `AC-103-D`, `AC-103-E` and `AC-103-F` to half-observed, half-code-reviewed only, and that record must survive
 **Spec:** §9 · **Decisions:** **D-049 (rulings 3, 4)**, D-050
 **Depends on:** KAFF-100 *(soft)*, KAFF-101a, KAFF-106

@@ -1,5 +1,7 @@
 # KAFF-126 · The client screens
 
+<!-- kaff id=KAFF-126 slice=1 points=8 state=VERIFIED verdict=PASS at=- on=2026-09-04 -->
+
 **Slice:** 1 · **Epic:** Foundation · **Points:** 8 (**proposed**) · **Status:** **BUILT 2026-09-04 — not accepted.** decisions.md **D-113**.
 `AC-126-A` … `AC-126-K` discharged, verified by driving Chromium at 390px in Arabic against a seeded stack — `dir=rtl`,
 **0px horizontal overflow** on all three screens, the three filter chips server-side, and the duplicate warning firing on

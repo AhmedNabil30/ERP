@@ -9,9 +9,18 @@ Read this file completely before doing anything. You have no memory of previous 
 ## Before you start
 
 1. Read this file.
-2. Read `spec.md` — it is the business truth. If code and `spec.md` disagree, `spec.md` wins.
-3. Read the story file for your slice in `stories/`.
-4. Check `decisions.md` for why things are the way they are before proposing a change.
+2. **Read `STATUS.md` — it is the single source of truth for where the project stands.** Its map
+   section says which files are current and which are dated history. **No other file states the
+   present position**, and several still read as if they do.
+3. Read `spec.md` — it is the business truth. If code and `spec.md` disagree, `spec.md` wins.
+4. Read the story file for your slice in `stories/`.
+5. Check `decisions.md` for why things are the way they are before proposing a change.
+
+**A story's state lives in the `<!-- kaff ... -->` trailer on line 3 of its own file, and nowhere
+else.** Change it there, then run `pwsh -NoProfile -File tools/status.ps1`. `STATUS.md`'s generated
+block is a view; hand edits to it are overwritten. `stories/backlog.md`'s state column is **dead** —
+it drifted three times in one week (D-119) and a figure read off it was reported to Nabil and was
+wrong (D-122).
 
 **If `spec.md` doesn't answer a business question, stop and ask. Do not decide.** An invented rule is always plausible, which is why it survives review and surfaces months later during acceptance. Raising the question costs a message; guessing costs a rebuild.
 

@@ -1,5 +1,7 @@
 # KAFF-107 · An HR user cannot be created or moved outside the HR department
 
+<!-- kaff id=KAFF-107 slice=1 points=2 state=FOLDED verdict=none at=- on=2026-08-22 -->
+
 **Slice:** 1 · **Epic:** Foundation · **Points:** 2 · **Status:** FOLDED — not in sprint 1
 **Spec:** §9, §8 · **Decisions:** D-044 (ruling 2), D-035
 **Depends on:** KAFF-106

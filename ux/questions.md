@@ -1,5 +1,11 @@
 # Questions the design needs answered
 
+> # ⚠️ SUPERSEDED — the one question register is [`stories/questions-for-karim.md`](../stories/questions-for-karim.md)
+>
+> **Demoted 2026-09-06.** Merged under refinement action **SM-31**. Kept as the record of how each
+> question was originally raised. **Do not add a question here and do not read it for what is open.**
+
+
 **These are not decisions and they are not a backlog.** Each one is a place where the design needs a
 business rule that `spec.md` does not contain. `process/agile.md` puts them in bucket three: *answered
 by nobody*, which means the story is `BLOCKED` and does not enter the sprint.

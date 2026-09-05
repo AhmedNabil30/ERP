@@ -1,5 +1,11 @@
 # ac-id-map.md — old positional AC label → stable AC ID
 
+> # ⚠️ SNAPSHOT of 2026-08-24 — not current
+>
+> **Demoted 2026-09-06.** Acceptance criteria live in the story files under [`stories/slice-1-foundation/`](slice-1-foundation/).
+> Story state lives in the `<!-- kaff -->` trailer of each story file, surfaced by [`STATUS.md`](../STATUS.md).
+
+
 **Produced 2026-08-22, refinement action SM-23. Written by the BA, consumed by QA.**
 
 Every acceptance criterion in `slice-1-foundation/` now carries a permanent identifier,

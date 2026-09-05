@@ -1,5 +1,7 @@
 # KAFF-124 · Find a client by name or phone
 
+<!-- kaff id=KAFF-124 slice=1 points=2 state=VERIFIED verdict=PASS at=- on=2026-09-04 -->
+
 **Slice:** 1 · **Epic:** Foundation · **Points:** 2 · **Status:** **BUILT 2026-09-04, two criteria held — not accepted.**
 `AC-124-A` … `AC-124-G` discharged, and `AC-124-A`, the wildcard escaping, `AC-124-E` and the permission gate were each
 watched failing under a mutation of their own mechanism (decisions.md **D-110**). **`AC-124-H` HALF-HELD** — the `200`

@@ -1,5 +1,11 @@
 # qa/questions.md — findings, contradictions and questions
 
+> # ⚠️ SUPERSEDED — the one question register is [`stories/questions-for-karim.md`](../stories/questions-for-karim.md)
+>
+> **Demoted 2026-09-06.** Merged under refinement action **SM-31**. Kept as the record of how each
+> question was originally raised. **Do not add a question here and do not read it for what is open.**
+
+
 > ## ⚠️ Corrections applied 2026-08-21 — read before trusting a row below
 >
 > Parts of this file predate the fixes and rulings that closed them, and were re-reported as open

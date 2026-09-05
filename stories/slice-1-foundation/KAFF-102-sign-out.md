@@ -1,5 +1,7 @@
 # KAFF-102 · Sign out
 
+<!-- kaff id=KAFF-102 slice=1 points=2 state=VERIFIED verdict=PASS at=559ac45 on=2026-08-27 -->
+
 **Slice:** 1 · **Epic:** Foundation · **Points:** 2 · **Status:** **ACCEPTED 2026-08-27 at `559ac45`, then the code moved underneath the verdict.** Sign-out resolves its caller through `LiveSession.ResolveAsync`, which calls `MayHoldStaffSession` — changed by `ca4db6c` (D-095). **Not re-verified at HEAD**
 **Spec:** §9 · **Decisions:** **D-049 (ruling 2)**, **D-050**, **D-051 (N5)**
 **Depends on:** KAFF-101a

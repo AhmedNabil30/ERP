@@ -1,5 +1,7 @@
 # KAFF-125 · The staff shell: session resolution, chrome, and role-based landing
 
+<!-- kaff id=KAFF-125 slice=1 points=3 state=VERIFIED verdict=LAPSED at=8ea9258 on=2026-09-06 -->
+
 **Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** **Cut, 2026-09-02. Not in any sprint,
 and not marked Ready or BLOCKED against one — whether it is built in sprint 2 is a scope question
 standing with Nabil right now** (see *Open questions* below). Cutting this ticket is not committing to

@@ -1,5 +1,7 @@
 # KAFF-116 · Every audit record says how the actor reached the project
 
+<!-- kaff id=KAFF-116 slice=1 points=3 state=VERIFIED verdict=PASS at=- on=2026-08-26 -->
+
 **Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** ACCEPTED 2026-08-26, standing. No commit since has touched this story's own code
 **Spec:** §9 · **Decisions:** D-010, D-044 (ruling 3), D-048, **D-049 (ruling 1)**
 **Depends on:** **nothing.** *(This story previously declared a dependency on KAFF-105, which was

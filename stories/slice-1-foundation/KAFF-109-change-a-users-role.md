@@ -1,5 +1,7 @@
 # KAFF-109 · Change a user's role
 
+<!-- kaff id=KAFF-109 slice=1 points=5 state=VERIFIED verdict=CONDITIONAL at=559ac45 on=2026-08-27 -->
+
 **Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** **ACCEPTED 2026-08-27 at `559ac45`, then the code moved underneath the verdict.** `V-27-C` was recorded against this story — `PUT /api/users/{id}/role` accepted and persisted `role = '99'` — and `ca4db6c` (D-095) fixed it: `User.ValidateDepartment` now refuses a role outside the enum with `IdentityErrors.UnknownRole`, and both role predicates became allow-lists. **This story's own accepted behaviour changed. Not re-verified at HEAD.** The `Role.Subcontractor` conversion question remains open with Nabil
 **Spec:** §9 (2026-08-21 amendment, and the **⚠️ SUPERSEDED** block inside it) · **Decisions:** D-044 (rulings 1, 5), ~~D-049 (ruling 6)~~ **reversed by D-051 (Q27)**
 **Depends on:** KAFF-106, KAFF-113, KAFF-111 *(shares the revocation mechanism)*

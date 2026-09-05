@@ -1,5 +1,7 @@
 # KAFF-104 · Reset a forgotten password with an Owner-generated link
 
+<!-- kaff id=KAFF-104 slice=1 points=5 state=READY verdict=none at=- on=2026-08-22 -->
+
 **Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** Ready
 **Spec:** §9 · **Decisions:** D-044 (ruling 1), D-049 (rulings 2, 3, 4, 5), **D-051 (Q38)**, **D-051 (N5)**
 **Depends on:** KAFF-101a, KAFF-103, KAFF-106
