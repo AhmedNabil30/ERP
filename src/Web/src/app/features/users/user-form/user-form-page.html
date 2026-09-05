@@ -1,0 +1,421 @@
+<section class="user-form" data-testid="user-form">
+  <h1 class="title">{{ i18n.t(titleKey()) }}</h1>
+
+  @if (isLoading()) {
+    <p class="loading" data-testid="user-form-loading">{{ i18n.t('users.loading') }}</p>
+  }
+
+  @if (existing(); as user) {
+    <p class="identity-line" data-testid="user-username">
+      <span class="identity-label">{{ i18n.t('users.field.username') }}</span>
+      <!-- A username is a Latin run inside an Arabic line — ux/rtl-and-i18n.md §2 names it. -->
+      <bdi class="identity-value">{{ user.userName }}</bdi>
+      <span class="identity-note">{{ i18n.t('users.field.username.not_editable') }}</span>
+    </p>
+
+    @if (!user.isActive) {
+      <p class="inactive-banner" data-testid="user-inactive-banner">
+        {{ i18n.t('users.state.inactive') }}
+      </p>
+    }
+  }
+
+  <form class="fields" (submit)="$event.preventDefault(); onSubmitCreate()">
+    @if (!isEdit()) {
+      <label class="field">
+        <span class="label">{{ i18n.t('users.field.full_name') }}</span>
+        <input class="input" type="text" dir="auto" data-testid="user-full-name" [formField]="userForm.fullName" />
+      </label>
+
+      <label class="field">
+        <span class="label">{{ i18n.t('users.field.username') }}</span>
+        <input
+          class="input"
+          type="text"
+          dir="ltr"
+          spellcheck="false"
+          autocomplete="username"
+          data-testid="user-username-input"
+          [formField]="userForm.userName"
+        />
+      </label>
+
+      <label class="field">
+        <span class="label">{{ i18n.t('users.field.phone') }}</span>
+        <input
+          class="input"
+          type="tel"
+          dir="ltr"
+          inputmode="tel"
+          autocomplete="tel"
+          data-testid="user-phone"
+          [formField]="userForm.phone"
+        />
+      </label>
+
+      <label class="field">
+        <span class="label">{{ i18n.t('users.field.email') }}</span>
+        <input
+          class="input"
+          type="email"
+          dir="ltr"
+          inputmode="email"
+          autocomplete="email"
+          data-testid="user-email"
+          [formField]="userForm.email"
+        />
+      </label>
+    }
+
+    <!--
+      The role select. The chevron on a <select> is vertical, so it does not flip in RTL
+      (ux/rtl-and-i18n.md §5). The change is read in the component rather than through $any in the
+      template — Nabil, 2026-08-28.
+    -->
+    <label class="field">
+      <span class="label">{{ i18n.t('users.field.role') }}</span>
+      <select
+        class="input"
+        data-testid="user-role"
+        [value]="draft().role"
+        [disabled]="isEdit() && isSelf()"
+        (change)="onRoleSelect($event)"
+      >
+        @for (option of roles; track option) {
+          <option [value]="option" [selected]="option === draft().role">{{ i18n.t(roleKey(option)) }}</option>
+        }
+      </select>
+      @if (isEdit() && isSelf()) {
+        <!-- rule 9, spec.md §9: nobody edits their own role. Hiding it is not the enforcement. -->
+        <span class="hint" data-testid="user-role-self">{{ i18n.t('users.hint.no_self_role_change') }}</span>
+      }
+    </label>
+
+    <!--
+      rule 6 / AC-127-C. HR is pinned to the HR department and rendered as a FIXED value with a hint,
+      not as a select carrying one option — S-007 says so in as many words. An HR user placed in
+      Operations/Administrative would inherit SiteExpenseConfirm through a department-only grant,
+      which is the piggyback D-044 exists to prevent arriving from the other direction.
+    -->
+    @if (isHr()) {
+      <div class="field" data-testid="user-department-fixed">
+        <span class="label">{{ i18n.t('users.field.department') }}</span>
+        <p class="fixed-value">{{ i18n.t(departmentKey('Hr')) }}</p>
+        <span class="hint">{{ i18n.t('users.hint.hr_department_fixed') }}</span>
+      </div>
+    } @else if (!isExternal()) {
+      <label class="field">
+        <span class="label">{{ i18n.t('users.field.department') }}</span>
+        <select
+          class="input"
+          data-testid="user-department"
+          [value]="draft().department"
+          (change)="onDepartmentSelect($event)"
+        >
+          <option value="" [selected]="draft().department === ''">
+            {{ i18n.t('users.field.department.none') }}
+          </option>
+          @for (option of departments; track option) {
+            <option [value]="option" [selected]="option === draft().department">
+              {{ i18n.t(departmentKey(option)) }}
+            </option>
+          }
+        </select>
+        @if (departmentRefusalKey(); as key) {
+          <!-- AC-127-C's second half: if the server refuses the pair anyway, its key is shown HERE,
+               against the field the reader can act on, and not in a form-level banner. -->
+          <span class="field-refusal" role="alert" data-testid="user-department-refusal">
+            {{ i18n.t(key) }}
+          </span>
+        }
+      </label>
+
+      @if (needsSubDepartment()) {
+        <label class="field">
+          <span class="label">{{ i18n.t('users.field.sub_department') }}</span>
+          <select
+            class="input"
+            data-testid="user-sub-department"
+            [value]="draft().operationsSubDepartment"
+            (change)="onSubDepartmentSelect($event)"
+          >
+            @for (option of subDepartments; track option) {
+              <option [value]="option" [selected]="option === draft().operationsSubDepartment">
+                {{ i18n.t(operationsSubDepartmentKey(option)) }}
+              </option>
+            }
+          </select>
+        </label>
+      }
+    } @else {
+      <!-- D-035: Client and Subcontractor hold no department, because a department-only grant would
+           reach them and skip both the project check and the client check of spec.md §12. -->
+      <p class="hint" data-testid="user-external-no-department">
+        {{ i18n.t('users.hint.external_no_department') }}
+      </p>
+    }
+
+    @if (!isEdit() && isPortalClient()) {
+      <label class="field">
+        <span class="label">{{ i18n.t('users.field.client') }}</span>
+        <select
+          class="input"
+          data-testid="user-client"
+          [value]="draft().clientId"
+          (change)="onClientSelect($event)"
+        >
+          <option value="">{{ i18n.t('users.field.client.none') }}</option>
+          @for (client of clients(); track trackClient($index, client)) {
+            <option [value]="client.id" [selected]="client.id === draft().clientId">{{ client.name }}</option>
+          }
+        </select>
+        <span class="hint">{{ i18n.t('users.hint.portal_client_scope') }}</span>
+      </label>
+    }
+
+    @if (!isEdit()) {
+      @if (canHoldPassword()) {
+        <label class="field">
+          <span class="label">{{ i18n.t('users.field.temporary_password') }}</span>
+          <div class="password-row">
+            <!--
+              AC-127-F. This is the one moment the credential exists in the clear, and the reveal is
+              that moment — the Owner has to be able to read back what he is about to say out loud.
+              It is written to NOTHING: no localStorage, no sessionStorage (D-050 prohibits both for
+              the token and this is the credential that mints one), and the response carries no
+              password member to echo. autocomplete="new-password" keeps a password manager from
+              filling the Owner's own credential into somebody else's account.
+            -->
+            <input
+              class="input"
+              [type]="passwordRevealed() ? 'text' : 'password'"
+              dir="ltr"
+              autocomplete="new-password"
+              data-testid="user-temporary-password"
+              [formField]="userForm.temporaryPassword"
+            />
+            <button
+              type="button"
+              class="reveal"
+              data-testid="user-password-reveal"
+              [attr.aria-pressed]="passwordRevealed()"
+              [attr.aria-label]="i18n.t('a11y.reveal_password')"
+              (click)="onTogglePasswordReveal()"
+            >
+              {{ i18n.t(passwordRevealed() ? 'action.hide' : 'action.reveal') }}
+            </button>
+          </div>
+          <span class="hint">{{ i18n.t('users.hint.temporary_password') }}</span>
+          <span class="hint">{{ i18n.t('auth.password.rule_min_length') }}</span>
+        </label>
+
+        <label class="field">
+          <span class="label">{{ i18n.t('users.field.confirm_password') }}</span>
+          <input
+            class="input"
+            [type]="passwordRevealed() ? 'text' : 'password'"
+            dir="ltr"
+            autocomplete="new-password"
+            data-testid="user-confirm-password"
+            [formField]="userForm.confirmPassword"
+          />
+          @if (!passwordsMatch()) {
+            <span class="field-refusal" role="alert" data-testid="user-password-mismatch">
+              <!-- `auth.password.mismatch`, which S-003 already uses, and NOT S-007's
+                   `validation.passwords_do_not_match`: two keys for one refusal is finding F-08's
+                   shape, and D-114 §1 is the test that exists because of it. Reported. -->
+              {{ i18n.t('auth.password.mismatch') }}
+            </span>
+          }
+        </label>
+      } @else {
+        <!-- spec.md §9: "Subcontractor (record only, no login)." User.SetPasswordHash refuses one, so
+             the field is absent rather than disabled — a disabled field invites somebody to ask why. -->
+        <p class="hint" data-testid="user-subcontractor-no-login">
+          {{ i18n.t('users.hint.subcontractor_no_login') }}
+        </p>
+      }
+    }
+
+    @if (formRefusalKey(); as key) {
+      <p class="refusal" role="alert" data-testid="user-form-refusal">{{ i18n.t(key) }}</p>
+    }
+
+    @if (!isEdit()) {
+      <button class="submit" type="submit" data-testid="user-submit" [disabled]="!canSubmit()">
+        {{ i18n.t('users.action.create') }}
+      </button>
+    }
+  </form>
+
+  @if (existing(); as user) {
+    <section class="acts">
+      @if (!isExternal() && !isHr()) {
+        <button type="button" class="secondary" data-testid="user-move-department" (click)="onMoveDepartment()">
+          {{ i18n.t('users.action.move_department') }}
+        </button>
+      }
+
+      @if (!isSelf()) {
+        <!--
+          AC-127-E / rule 8. The confirmation names the assignments BEFORE the act, from the server's
+          own list. D-051 Q27 reversed D-049 ruling 6: a role change revokes every assignment,
+          Supervisor and Junior alike, and HR re-assigns afterwards if the person is still needed.
+        -->
+        @if (confirming() === 'role') {
+          <div class="confirm" role="dialog" aria-modal="true" data-testid="user-role-confirm">
+            <p class="confirm-title">{{ i18n.t('users.confirm.change_role.title') }}</p>
+            <p class="confirm-body">
+              {{ i18n.t('users.confirm.change_role.body', { name: user.fullName, from: i18n.t(roleKey(user.role)), to: i18n.t(roleKey(draft().role)) }) }}
+            </p>
+
+            @if (revokedProjects().length > 0) {
+              <p class="confirm-consequence" data-testid="user-role-revokes">
+                {{ i18n.t('users.confirm.change_role.revokes', { count: revokedProjects().length }) }}
+              </p>
+              <ul class="confirm-projects">
+                @for (project of revokedProjects(); track project) {
+                  <li class="confirm-project" dir="auto">{{ project }}</li>
+                }
+              </ul>
+              <p class="confirm-body">{{ i18n.t('users.confirm.change_role.reassign') }}</p>
+            }
+
+            <div class="confirm-actions">
+              <button type="button" class="danger-button" data-testid="user-role-confirm-yes" (click)="onConfirmRoleChange()">
+                {{ i18n.t('users.action.change_role') }}
+              </button>
+              <button type="button" class="secondary" data-testid="user-role-confirm-no" (click)="onCancelConfirm()">
+                {{ i18n.t('action.cancel') }}
+              </button>
+            </div>
+          </div>
+        } @else {
+          <button type="button" class="secondary" data-testid="user-change-role" (click)="onStartConfirm('role')">
+            {{ i18n.t('users.action.change_role') }}
+          </button>
+        }
+      }
+    </section>
+
+    @if (!isSelf()) {
+      <section class="danger">
+        <h2 class="subtitle">{{ i18n.t('users.danger.title') }}</h2>
+
+        @if (user.isActive) {
+          @if (confirming() === 'deactivate') {
+            <!--
+              AC-127-D. The consequence is named before the act and the count is the server's. rule 7:
+              the reason is REQUIRED here — AC-118-G asserts it lands on the audit record verbatim,
+              and a deactivation with no stated reason answers "who and when" but not "why".
+            -->
+            <div class="confirm" role="dialog" aria-modal="true" data-testid="user-deactivate-confirm">
+              <p class="confirm-title">{{ i18n.t('users.confirm.deactivate.title') }}</p>
+              <p class="confirm-body">
+                {{ i18n.t('users.confirm.deactivate.body', { name: user.fullName }) }}
+              </p>
+
+              @if (revokedProjects().length > 0) {
+                <p class="confirm-consequence" data-testid="user-deactivate-revokes">
+                  {{ i18n.t('users.confirm.deactivate.revokes', { count: revokedProjects().length }) }}
+                </p>
+                <ul class="confirm-projects">
+                  @for (project of revokedProjects(); track project) {
+                    <li class="confirm-project" dir="auto">{{ project }}</li>
+                  }
+                </ul>
+              }
+
+              <label class="field">
+                <span class="label">{{ i18n.t('users.field.reason') }}</span>
+                <textarea
+                  class="input"
+                  rows="2"
+                  dir="auto"
+                  data-testid="user-deactivate-reason"
+                  [value]="reason()"
+                  (input)="onReasonInput($event)"
+                ></textarea>
+                <span class="hint">{{ i18n.t('users.hint.reason_is_stored') }}</span>
+              </label>
+
+              <div class="confirm-actions">
+                <button
+                  type="button"
+                  class="danger-button"
+                  data-testid="user-deactivate-confirm-yes"
+                  [disabled]="reason().trim().length === 0"
+                  (click)="onConfirmDeactivate()"
+                >
+                  {{ i18n.t('users.action.deactivate') }}
+                </button>
+                <button type="button" class="secondary" data-testid="user-deactivate-confirm-no" (click)="onCancelConfirm()">
+                  {{ i18n.t('action.cancel') }}
+                </button>
+              </div>
+            </div>
+          } @else {
+            <button type="button" class="danger-button" data-testid="user-deactivate" (click)="onStartConfirm('deactivate')">
+              {{ i18n.t('users.action.deactivate') }}
+            </button>
+            <p class="danger-note">{{ i18n.t('users.danger.deactivate_explains') }}</p>
+          }
+        } @else if (confirming() === 'reactivate') {
+          <div class="confirm" role="dialog" aria-modal="true" data-testid="user-reactivate-confirm">
+            <p class="confirm-title">{{ i18n.t('users.confirm.reactivate.title') }}</p>
+            <!-- D-049 ruling 5: a returning employee comes back with ZERO assignments. Nothing is
+                 restored automatically, and the dialog says so before the act rather than after. -->
+            <p class="confirm-body">
+              {{ i18n.t('users.confirm.reactivate.body', { name: user.fullName }) }}
+            </p>
+
+            <label class="field">
+              <span class="label">{{ i18n.t('users.field.temporary_password') }}</span>
+              <input
+                class="input"
+                type="password"
+                dir="ltr"
+                autocomplete="new-password"
+                data-testid="user-reactivate-password"
+                [value]="reactivationPassword()"
+                (input)="onReactivationPasswordInput($event)"
+              />
+              <span class="hint">{{ i18n.t('users.hint.reactivate_password') }}</span>
+            </label>
+
+            <label class="field">
+              <span class="label">{{ i18n.t('users.field.reason') }}</span>
+              <textarea
+                class="input"
+                rows="2"
+                dir="auto"
+                data-testid="user-reactivate-reason"
+                [value]="reason()"
+                (input)="onReasonInput($event)"
+              ></textarea>
+            </label>
+
+            <div class="confirm-actions">
+              <button
+                type="button"
+                class="danger-button"
+                data-testid="user-reactivate-confirm-yes"
+                [disabled]="reason().trim().length === 0"
+                (click)="onConfirmReactivate()"
+              >
+                {{ i18n.t('users.action.reactivate') }}
+              </button>
+              <button type="button" class="secondary" data-testid="user-reactivate-confirm-no" (click)="onCancelConfirm()">
+                {{ i18n.t('action.cancel') }}
+              </button>
+            </div>
+          </div>
+        } @else {
+          <button type="button" class="danger-button" data-testid="user-reactivate" (click)="onStartConfirm('reactivate')">
+            {{ i18n.t('users.action.reactivate') }}
+          </button>
+        }
+      </section>
+    }
+  }
+</section>

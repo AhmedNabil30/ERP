@@ -169,6 +169,127 @@ public sealed class ClientScreenTests
         text.Should().MatchRegex("\\p{IsArabic}", "the product language is Arabic, not a fallback");
     }
 
+    /// <summary>
+    /// <c>V-33-D</c> · <c>AC-126-C</c>'s <b>two</b> empty states, which nothing asserted.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The Verifier's correction to the brief: both empty states are <i>implemented</i> — they are
+    /// rendered by <c>client-list-page.html</c> and both key pairs are in each catalogue — and both
+    /// were <i>"discharged by one session driving Chromium once"</i>. This is the check that runs
+    /// tomorrow.
+    /// </para>
+    /// <para>
+    /// <b>Two states, not one, and telling them apart is the point.</b> A search that matched nothing
+    /// is a different fact from an empty client master, and telling an operator "no clients" when they
+    /// mistyped a phone number is how a duplicate gets created. Both are driven against the same
+    /// seeded stack: the <c>archived</c> chip finds nothing with no search applied, and a nonce in the
+    /// search box finds nothing with one applied.
+    /// </para>
+    /// </remarks>
+    [E2EFact]
+    public async Task The_client_list_tells_an_empty_master_apart_from_a_search_that_matched_nothing()
+    {
+        IPage page = await _playwright.NewMobilePageAsync();
+
+        await SignInAsync(page, OwnerUser, OwnerPassword);
+
+        await page.GotoAsync("/clients");
+        await page.GetByTestId("client-list").WaitForAsync();
+
+        // No search applied, and nothing archived in the seeded database: the "no clients" state.
+        await page.GetByTestId("client-filter-archived").ClickAsync();
+        await page.GetByTestId("client-list-empty").WaitForAsync();
+
+        (await page.GetByTestId("client-list-empty-filtered").CountAsync()).Should().Be(
+            0,
+            "nothing was searched for, so the filtered empty state would be describing a request the "
+            + "operator never made");
+
+        // A search that matches nothing, back on the default filter: the other state entirely.
+        await page.GetByTestId("client-filter-active").ClickAsync();
+        await page.GetByTestId("client-search").FillAsync("لا-يوجد-عميل-بهذا-الاسم-قط");
+        await page.GetByTestId("client-search").PressAsync("Enter");
+
+        await page.GetByTestId("client-list-empty-filtered").WaitForAsync();
+
+        (await page.GetByTestId("client-list-empty").CountAsync()).Should().Be(
+            0,
+            "there ARE clients — saying there are none is what sends Marketing off to register a "
+            + "duplicate");
+
+        string body = (await page.GetByTestId("client-list-empty-filtered").TextContentAsync() ?? string.Empty)
+            .Trim();
+
+        body.Should().NotContain("clients.empty.", "the catalogue must resolve both halves of it");
+        body.Should().MatchRegex("\\p{IsArabic}");
+    }
+
+    /// <summary>
+    /// <c>V-33-D</c> · <c>AC-126-F</c> — a <c>409</c> is a question, and it reopens the warning.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// spec.md §2 as amended, and D-049 ruling 8: a repeated phone number <b>warns</b> and never
+    /// refuses, because a corporate client and its CEO legitimately share a line. If a client appears
+    /// on the number between the blur check and the save, the server answers <c>409</c> — and
+    /// <c>client-form-page.ts</c> treats that as the system <i>asking</i> rather than as something
+    /// having broken.
+    /// </para>
+    /// <para>
+    /// <b>The assertion that separates the two readings is the absence of the failure banner.</b> If
+    /// the 409 branch were deleted, <c>refusalKey()</c> would be set and
+    /// <c>client-form-refusal</c> would render
+    /// <c>errors.master.duplicate_phone_not_acknowledged</c> — S-016's "Failed" mode, telling the
+    /// operator something broke when what actually happened is that they were asked a question. The
+    /// warning being on screen is not enough on its own: the blur check puts it there too.
+    /// </para>
+    /// <para>
+    /// Nothing is created by this test. The save is refused, deliberately, so the suite leaves the
+    /// seeded database exactly as it found it.
+    /// </para>
+    /// </remarks>
+    [E2EFact]
+    public async Task An_unacknowledged_duplicate_reopens_the_warning_rather_than_reporting_a_failure()
+    {
+        IPage page = await _playwright.NewMobilePageAsync();
+
+        await SignInAsync(page, OwnerUser, OwnerPassword);
+
+        await page.GotoAsync("/clients/new");
+        await page.GetByTestId("client-form").WaitForAsync();
+
+        // The number both seeded clients already hold — scripts/seed-demo.ps1 steps 6 and 9.
+        await page.GetByTestId("client-phone").FillAsync(SeededDuplicatePhone);
+        await page.GetByTestId("client-name").FillAsync("عميل ثالث على نفس الرقم");
+
+        // Submitted WITHOUT ticking the acknowledgement, which is what makes the server answer 409.
+        await page.GetByTestId("client-submit").ClickAsync();
+
+        await page.GetByTestId("client-duplicate-warning").WaitForAsync();
+
+        page.Url.Should().EndWith("/clients/new", "a question is not a completed save");
+
+        (await page.GetByTestId("client-form-refusal").CountAsync()).Should().Be(
+            0,
+            "a 409 here is the system asking, not something breaking — rendering S-016's Failed mode "
+            + "would tell the operator a defect occurred when the answer is simply 'yes, proceed'");
+
+        // And the matches named are the real ones: both clients that hold the seeded number.
+        string warning = (await page.GetByTestId("client-duplicate-warning").TextContentAsync() ?? string.Empty)
+            .Trim();
+
+        warning.Should().Contain("C-1", "the warning names who already holds the number");
+        warning.Should().NotContain("clients.duplicate.", "the catalogue must resolve it");
+
+        // The acknowledgement was cleared with the reopened warning, so the operator answers the
+        // question that was actually asked rather than re-submitting a stale consent.
+        (await page.GetByTestId("client-duplicate-acknowledge").IsCheckedAsync()).Should().BeFalse();
+    }
+
+    /// <summary>The number both seeded clients hold — <c>scripts/seed-demo.ps1</c> steps 6 and 9.</summary>
+    private const string SeededDuplicatePhone = "01001234567";
+
     /// <summary>Signs in through the screen, and waits until the router has left it.</summary>
     /// <remarks>
     /// Located by <c>autocomplete</c> rather than by a test id, because the sign-in screen carries

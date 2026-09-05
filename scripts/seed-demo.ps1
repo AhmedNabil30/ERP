@@ -3,7 +3,8 @@
     Seeds a demo database through the real Kaff ERP API endpoints - no raw SQL.
 
 .DESCRIPTION
-    Creates one Owner (POST /api/setup), then three staff users (POST /api/users) covering the
+    Creates one Owner (POST /api/setup), then three staff users and ONE PORTAL CLIENT (POST /api/users)
+    covering the
     landing kinds KAFF-125's shell actually renders: Owner and MarketingSales both get the honest
     "not built yet" surface (S-006, S-011), Hr gets the project-team landing, and Finance gets the
     profile/project-list landing.
@@ -54,8 +55,23 @@ $handler.UseCookies = $false
 $client = New-Object System.Net.Http.HttpClient($handler)
 $script:cookie = $null
 
-function Post-Json([string]$Path, [string]$PayloadFile, [switch]$Authenticated) {
-    $bytes = [System.IO.File]::ReadAllBytes((Join-Path $payloadDir $PayloadFile))
+function Post-Json([string]$Path, [string]$PayloadFile, [switch]$Authenticated, [hashtable]$Substitutions) {
+    $file = Join-Path $payloadDir $PayloadFile
+
+    if ($Substitutions -and $Substitutions.Count -gt 0) {
+        # Read and re-encode through System.Text.Encoding.UTF8 EXPLICITLY, never through a PowerShell
+        # string operator that would apply the ANSI codepage - the same trap .NOTES 1 documents for
+        # Invoke-WebRequest. Only ASCII placeholders are substituted; the Arabic in these payloads is
+        # never rebuilt, only round-tripped.
+        $text = [System.IO.File]::ReadAllText($file, [System.Text.Encoding]::UTF8)
+        foreach ($key in $Substitutions.Keys) {
+            $text = $text.Replace($key, [string]$Substitutions[$key])
+        }
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($text)
+    } else {
+        $bytes = [System.IO.File]::ReadAllBytes($file)
+    }
+
     $content = New-Object System.Net.Http.ByteArrayContent(,$bytes)
     $content.Headers.ContentType = New-Object System.Net.Http.Headers.MediaTypeHeaderValue('application/json')
 
@@ -115,6 +131,20 @@ Show 'POST /api/users (MarketingSales: karim_sales_demo / Demo#Sales123, mustCha
 $r = Post-Json '/api/clients' 'payload-client-corporate.json' -Authenticated
 Show 'POST /api/clients (corporate, phone typed as 01001234567)' $r
 if ($r.StatusCode -ne 201) { throw 'Client registration failed - is this build older than KAFF-119 (86cc8b0)?' }
+$corporateClientId = ($r.Body | ConvertFrom-Json).id
+
+# 6b. The PORTAL user for that client - Role.Client, scoped to the client above (spec.md section 12).
+#
+#     V-33-E, 2026-09-05. Until now this script created NO Role.Client user at all, so the
+#     client-portal boundary had no UI-level evidence anywhere in the repository: AC-126-L's E2E test
+#     could drive Finance and could not drive the portal half, because the account did not exist.
+#     It exists to be REFUSED - a Role.Client cannot hold a staff session
+#     (StaffSessionRules.MayHoldStaffSession), so signing in with these correct credentials on the
+#     staff host is turned away with the same generic refusal a wrong password gets (D-065). That
+#     indistinguishability is the property, and it is now drivable.
+$r = Post-Json '/api/users' 'payload-portal-client.json' -Authenticated -Substitutions @{ '__CLIENT_ID__' = $corporateClientId }
+Show 'POST /api/users (Client portal: portal_client_demo / Demo#Portal1, scoped to the corporate client)' $r
+if ($r.StatusCode -ne 201) { Write-Warning "Portal client user was not created ($($r.StatusCode)). spec.md section 12's boundary has no UI-level evidence without it - V-33-E." }
 
 # 7. The same number in international form. AC-119-C: three formats, one match.
 #    A 200 either way - the warning is not a refusal and never arrives as a Problem (D-107 section 2).

@@ -139,6 +139,96 @@ public sealed class TranslationCatalogueTests
     }
 
     /// <summary>
+    /// KAFF-127, <c>AC-127-H</c> — <b>"no key is added that no template uses"</b>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The other half of <c>AC-127-H</c> is already covered:
+    /// <see cref="The_two_catalogues_describe_the_same_set_of_keys"/> says every key exists in both
+    /// files. That says nothing about whether anything <i>reads</i> them, and a catalogue accumulates
+    /// keys for screens that were redesigned or never built — <c>landing.pending.*</c> and
+    /// <c>nav.home</c> were three such entries on 2026-09-05, orphaned when the last role that
+    /// reached that surface got a real one.
+    /// </para>
+    /// <para>
+    /// <b>Scoped to the namespaces a screen owns</b>, not to the whole catalogue. <c>errors.*</c> keys
+    /// are the backend's and are resolved from a <c>ProblemDetails</c> at run time, so their names
+    /// appear in C# rather than in a template — a repository-wide version of this test would demand
+    /// every domain error be typed into a template, which is exactly the coupling
+    /// <c>Error.MessageKey</c> exists to avoid. <c>enum.*</c> keys are built by the exhaustive
+    /// switches in <c>enum-keys.ts</c> and never appear as literals either. What is left is the text a
+    /// screen writes down, and a screen is the only thing that can read it.
+    /// </para>
+    /// <para>
+    /// <b>The positive control is the prefix list itself</b> (D-116 §3): if the sources ever stop
+    /// being readable — a moved directory, an empty glob — <see cref="WebSourceText"/> asserts it
+    /// found real files with real content, so "every key is used" cannot pass by having searched
+    /// nothing.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void Every_screen_key_in_the_catalogues_is_read_by_a_template_or_a_component()
+    {
+        string[] screenPrefixes =
+        [
+            "users.",
+            "clients.",
+            "profile.",
+            "hr.",
+            "nav.",
+            "shell.",
+            "auth.",
+            "not_found.",
+            "landing.",
+            "a11y.",
+            "action.",
+            "validation.",
+        ];
+
+        string sources = WebSourceText();
+
+        IEnumerable<string> orphans = LoadCatalogue(ArabicCatalogue).Keys
+            .Where(key => screenPrefixes.Any(prefix => key.StartsWith(prefix, StringComparison.Ordinal)))
+            .Where(key => !sources.Contains($"'{key}'", StringComparison.Ordinal)
+                          && !sources.Contains($"\"{key}\"", StringComparison.Ordinal));
+
+        orphans.Should().BeEmpty(
+            "AC-127-H — a key no screen reads is a translation somebody maintains for nothing, and "
+            + "the next reader cannot tell it apart from one whose screen is merely not built yet");
+    }
+
+    /// <summary>
+    /// Every `.ts` and `.html` under <c>src/Web/src</c>, concatenated.
+    /// </summary>
+    /// <remarks>
+    /// Asserts it actually read something. An absence test over an empty haystack finds nothing wrong
+    /// with everything — D-116 §3, and the reason two of three tests there went red on their positive
+    /// control rather than on the assertion they were named for.
+    /// </remarks>
+    private static string WebSourceText()
+    {
+        string root = Path.Combine(RepositoryRoot(), "src", "Web", "src");
+
+        Directory.Exists(root).Should().BeTrue($"the web sources must be at {root}");
+
+        string[] files =
+        [
+            .. Directory.EnumerateFiles(root, "*.ts", SearchOption.AllDirectories),
+            .. Directory.EnumerateFiles(root, "*.html", SearchOption.AllDirectories),
+        ];
+
+        files.Length.Should().BeGreaterThan(
+            20, "the search must have found the application, not an empty directory");
+
+        string text = string.Concat(files.Select(File.ReadAllText));
+
+        text.Should().Contain(
+            "i18n.t(", "the concatenated sources must contain the call this test is searching for");
+
+        return text;
+    }
+
+    /// <summary>
     /// Every <see cref="Error"/> declared on a <c>*Errors</c> catalogue class, with the class it
     /// came from so a failure names the file to edit.
     /// </summary>

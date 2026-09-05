@@ -1,0 +1,240 @@
+/*
+ * Logical properties throughout — `margin-inline`, `inline-size`, `text-align: start`. RTL is the
+ * primary direction and not a mirror (CLAUDE.md, ux/rtl-and-i18n.md §1). There is no `left` and no
+ * `right` in this file, and adding one breaks Arabic silently rather than loudly.
+ */
+
+.user-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  max-inline-size: 45rem;
+  margin-inline: auto;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.subtitle {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.identity-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.identity-label {
+  opacity: 0.75;
+}
+
+/* A username is a Latin run inside an Arabic line. <bdi> already isolates it; this is belt and braces
+   against a later reset, the same note client-list-page.css carries for a code. */
+.identity-value {
+  unicode-bidi: isolate;
+  font-weight: 600;
+}
+
+.identity-note {
+  opacity: 0.7;
+}
+
+.inactive-banner {
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgb(0 0 0 / 35%);
+  border-radius: 0.4rem;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.input {
+  inline-size: 100%;
+  box-sizing: border-box;
+  min-block-size: 2.75rem;
+  padding-block: 0.6rem;
+  padding-inline: 0.75rem;
+  font: inherit;
+  border: 1px solid rgb(0 0 0 / 25%);
+  border-radius: 0.4rem;
+}
+
+.fixed-value {
+  margin: 0;
+  padding-block: 0.6rem;
+  padding-inline: 0.75rem;
+  font-weight: 600;
+  border: 1px dashed rgb(0 0 0 / 35%);
+  border-radius: 0.4rem;
+}
+
+.password-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.reveal {
+  flex: none;
+  min-block-size: 2.75rem;
+  padding-inline: 0.9rem;
+  font: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgb(0 0 0 / 35%);
+  border-radius: 0.4rem;
+}
+
+.hint {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.field-refusal {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgb(150 0 0);
+}
+
+.refusal {
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid rgb(180 0 0 / 45%);
+  border-radius: 0.5rem;
+}
+
+.loading {
+  margin: 0;
+  padding: 0.75rem;
+}
+
+.submit,
+.secondary,
+.danger-button {
+  min-block-size: 2.75rem;
+  padding-block: 0.75rem;
+  padding-inline: 1rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 0.5rem;
+}
+
+.submit {
+  background: transparent;
+  border: 1px solid rgb(0 0 0 / 55%);
+}
+
+.secondary {
+  background: transparent;
+  border: 1px solid rgb(0 0 0 / 30%);
+}
+
+.danger-button {
+  background: transparent;
+  border: 1px solid rgb(180 0 0 / 65%);
+  color: rgb(150 0 0);
+}
+
+.submit[disabled],
+.danger-button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.acts,
+.danger {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.9rem;
+  border: 1px solid rgb(0 0 0 / 15%);
+  border-radius: 0.5rem;
+}
+
+.danger {
+  border-color: rgb(180 0 0 / 35%);
+}
+
+.danger-note {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.9rem;
+  border: 1px solid rgb(0 0 0 / 35%);
+  border-radius: 0.5rem;
+}
+
+.confirm-title {
+  margin: 0;
+  font-weight: 700;
+}
+
+.confirm-body,
+.confirm-consequence {
+  margin: 0;
+}
+
+.confirm-consequence {
+  font-weight: 600;
+}
+
+.confirm-projects {
+  list-style: none;
+  margin: 0;
+  padding-inline-start: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.confirm-project {
+  padding-block: 0.35rem;
+  padding-inline: 0.6rem;
+  border: 1px solid rgb(0 0 0 / 15%);
+  border-radius: 0.35rem;
+}
+
+.confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* 390px is the width that must work; the wider layout is the enhancement. */
+@media (width >= 48rem) {
+  .submit {
+    align-self: flex-start;
+    padding-inline: 2rem;
+  }
+}

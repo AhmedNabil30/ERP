@@ -40,25 +40,19 @@ export class LandingPage {
   });
 
   constructor() {
-    // MarketingSales lands on S-011, which is a route of its own rather than a branch of this page:
-    // it has its own URL, its own guard and its own back-stack behaviour, and a list rendered inside
-    // the landing could not be linked to. Redirect rather than duplicate.
+    // MarketingSales lands on S-011 and the Owner on S-006, each a route of its own rather than a
+    // branch of this page: each has its own URL, its own guard and its own back-stack behaviour, and
+    // a list rendered inside the landing could not be linked to. Redirect rather than duplicate.
     effect(() => {
-      if (this.landing().kind === 'clients') {
+      const kind = this.landing().kind;
+
+      if (kind === 'clients') {
         void this.router.navigateByUrl('/clients');
+      } else if (kind === 'users') {
+        void this.router.navigateByUrl('/users');
       }
     });
   }
-
-  /**
-   * Read out as its own signal, rather than accessed as `landing().titleKey` in the template, so the
-   * `@case ('pending')` branch needs no narrowing the template type-checker cannot perform on a
-   * `@switch` the way `@if (x; as y)` narrows an `@if`.
-   */
-  protected readonly landingPendingTitle = computed(() => {
-    const current = this.landing();
-    return current.kind === 'pending' ? current.titleKey : '';
-  });
 
   protected readonly roleKey = roleKey;
   protected readonly departmentKey = departmentKey;

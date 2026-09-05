@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { clientManageGuard } from './core/auth/client-manage.guard';
 import { mustChangePasswordGuard } from './core/auth/must-change-password.guard';
 import { sessionGuard } from './core/auth/session.guard';
+import { userManageGuard } from './core/auth/user-manage.guard';
 
 /**
  * Routes.
@@ -44,6 +45,34 @@ export const routes: Routes = [
         path: ':clientId',
         loadComponent: () =>
           import('./features/clients/client-form/client-form-page').then((m) => m.ClientFormPage),
+      },
+    ],
+  },
+  {
+    // KAFF-127 — S-006, S-007, S-008. Same shape as `/clients` above and for the same reason:
+    // `sessionGuard` resolves the session first, then `userManageGuard` keeps a role without
+    // `UserManage` out of a screen the server would refuse anyway. **`userManageGuard` awaits
+    // resolution itself regardless** — `guards.spec.ts` runs it with nothing in front of it, which is
+    // the arrangement that makes the `await` load-bearing and the one V-33-C found unasserted.
+    path: 'users',
+    canActivate: [sessionGuard, mustChangePasswordGuard, userManageGuard],
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/users/user-list/user-list-page').then((m) => m.UserListPage),
+      },
+      {
+        path: 'new',
+        loadComponent: () =>
+          import('./features/users/user-form/user-form-page').then((m) => m.UserFormPage),
+      },
+      {
+        // `withComponentInputBinding` binds `:userId` to the component's `userId` input signal, so
+        // the record loads by URL and a bookmarked user file works (AC-127-I).
+        path: ':userId',
+        loadComponent: () =>
+          import('./features/users/user-form/user-form-page').then((m) => m.UserFormPage),
       },
     ],
   },

@@ -21,9 +21,9 @@ import { Role } from '../auth/auth.service';
  */
 export type Landing =
   | { readonly kind: 'clients' }
+  | { readonly kind: 'users' }
   | { readonly kind: 'profile' }
   | { readonly kind: 'hr-projects' }
-  | { readonly kind: 'pending'; readonly titleKey: string }
   | { readonly kind: 'forbidden' };
 
 export function landingFor(role: Role): Landing {
@@ -36,7 +36,17 @@ export function landingFor(role: Role): Landing {
     case 'HeadOfDesign':
       return { kind: 'profile' };
     case 'Owner':
-      return { kind: 'pending', titleKey: 'landing.pending.owner.title' };
+      // ⚠️ Was `pending` until 2026-09-05, and the paragraph above still explains why: S-006 was
+      // "no `GET` route exists at all", so an honest "not built yet" was the only truthful thing to
+      // render. **That route exists now and so does S-006** (KAFF-127), so the honest surface is the
+      // real one. `ux/screen-inventory.md` -> S-006: "Every user, their role, department, active
+      // state. Owner only."
+      //
+      // **`pending` is gone with it.** MarketingSales left it on 2026-09-04 and the Owner was the
+      // last role in it, so the branch, its three catalogue keys and the landing page's `@case` are
+      // deleted rather than kept warm for a role that might want one later. `agents.md`: a criterion
+      // that cannot pass is as bad as one that cannot fail, and a surface no role reaches is neither.
+      return { kind: 'users' };
     case 'MarketingSales':
       // âš ï¸ Was `pending` until 2026-09-04, and the paragraph above still explains why: S-011 was
       // "KAFF-119â€¦124, deferred", so an honest "not built yet" was the only truthful thing to render.
@@ -70,12 +80,12 @@ export function navLabelKeyFor(role: Role): string | null {
   switch (landingFor(role).kind) {
     case 'clients':
       return 'nav.clients';
+    case 'users':
+      return 'nav.users';
     case 'hr-projects':
       return 'nav.hr_projects';
     case 'profile':
       return 'nav.my_profile';
-    case 'pending':
-      return 'nav.home';
     case 'forbidden':
       return null;
   }
@@ -85,12 +95,22 @@ export function navLabelKeyFor(role: Role): string | null {
  * Where the side nav's one entry points.
  *
  * It used to be `/` for every role, because `/` was the only route a staff user could reach. It is
- * not any more: KAFF-126 added `/clients`, and a nav item labelled "Clients" that navigates to the
- * landing page is a label that lies. **The Owner reaches the client list too** â€” `ClientManage` is
- * granted to `Role.Owner` and `Role.MarketingSales` alike â€” but the Owner's *landing* is still S-006,
- * which does not exist, so their item stays `nav.home` and points at the honest pending surface. One
- * item per role, still, because one destination per role is still all that is ruled.
+ * not any more: KAFF-126 added `/clients` and KAFF-127 added `/users`, and a nav item labelled
+ * "Clients" or "Users" that navigates to the landing page is a label that lies.
+ *
+ * **Still one item per role**, because one destination per role is still all that is ruled — and the
+ * Owner reaches the client list too (`ClientManage` is granted to `Role.Owner` and
+ * `Role.MarketingSales` alike) without that being their *landing*. `ux/navigation.md` and CLAUDE.md
+ * both forbid navigation built "on the assumption it will need it"; a second Owner item belongs to
+ * whatever story rules the Owner's menu, not to this function.
  */
 export function navPathFor(role: Role): string {
-  return landingFor(role).kind === 'clients' ? '/clients' : '/';
+  switch (landingFor(role).kind) {
+    case 'clients':
+      return '/clients';
+    case 'users':
+      return '/users';
+    default:
+      return '/';
+  }
 }
