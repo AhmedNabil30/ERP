@@ -181,8 +181,8 @@ record and wrong behaviour for a status.
 ## How to keep this file honest
 
 ```powershell
-pwsh -NoProfile -File tools/status.ps1          # regenerate after editing any story trailer
-pwsh -NoProfile -File tools/status.ps1 -Check   # exit 1 if stale
+powershell -NoProfile -File tools/status.ps1          # regenerate after editing any story trailer
+powershell -NoProfile -File tools/status.ps1 -Check   # exit 1 if stale
 ```
 
 **The trailer is the fact; this file is a view of it.** To change a story's state, edit its

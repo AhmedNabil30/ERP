@@ -17,7 +17,7 @@ Read this file completely before doing anything. You have no memory of previous 
 5. Check `decisions.md` for why things are the way they are before proposing a change.
 
 **A story's state lives in the `<!-- kaff ... -->` trailer on line 3 of its own file, and nowhere
-else.** Change it there, then run `pwsh -NoProfile -File tools/status.ps1`. `STATUS.md`'s generated
+else.** Change it there, then run `powershell -NoProfile -File tools/status.ps1`. `STATUS.md`'s generated
 block is a view; hand edits to it are overwritten. `stories/backlog.md`'s state column is **dead** —
 it drifted three times in one week (D-119) and a figure read off it was reported to Nabil and was
 wrong (D-122).
