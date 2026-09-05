@@ -21,10 +21,10 @@ Everything is `pending` until reached. Nothing is marked done on an author's evi
 | # | Item | State |
 |---|---|---|
 | 1 | Opening gate — `HEAD`, `git status`, stranded hosts, baseline measured | **done** — §1 |
-| 1a | Corrections to the brief | pending |
-| 2 | Block 1 · KAFF-117 — `GET /api/audit`, Owner alone, *"even for their own projects"* | pending |
-| 3 | Block 1 · KAFF-127 — `GET /api/users` and the user-management screens | pending |
-| 4 | The role census — is there a second `V-33-A`? | pending |
+| 1a | Corrections to the brief | **done** — §1a |
+| 2 | Block 1 · KAFF-117 — `GET /api/audit`, Owner alone, *"even for their own projects"* | **done** — §2 |
+| 3 | Block 1 · KAFF-127 — `GET /api/users` (the API half) | **done** — §3 |
+| 4 | The role census — is there a second `V-33-A`? | **done** — §4, **yes** |
 | 5 | Block 2 · D-096 applied to the twelve lapsed stories | pending |
 | 6 | Block 3 · Which stories have no QA case | pending |
 | 7 | The five places a defect would be invisible | pending |
@@ -40,6 +40,10 @@ Everything is `pending` until reached. Nothing is marked done on an author's evi
 |---|---|---|
 | `V-34-A` | **MEDIUM** | **`GET /api/users` shipped against no acceptance criterion.** KAFF-127's criteria are `AC-127-A`…`I` and every one of them is a screen criterion; the story's business-rule table names no read endpoint either. The endpoint's permission, its payload and its refusals are asserted only by tests written in the same commit as the endpoint. `agents.md` §7 exists to stop exactly this: there is no statement of what *should* be true for a Verifier to execute against, only a statement of what *is* |
 | `V-34-B` | **MEDIUM** | **The board contradicts itself about both sprint-4 stories, in one file.** `stories/backlog.md`'s sprint-4 lane table (lines 219–220) says KAFF-117 and KAFF-127 are **DELIVERED**; the master story inventory in the same file says KAFF-117 is `Ready` (line 816) and KAFF-127 is *"Proposed for sprint 4 Lane B. **Not pulled: scope is Nabil's**"* (line 825). **KAFF-127's story file was never touched by any of its three commits** — its header still reads `Status: **Ready** … Not pulled`. This is the third instance of the identical drift the board itself recorded for KAFF-116, KAFF-108 and KAFF-113, and block 2's whole arithmetic is read off these rows |
+| `V-34-D` | **MEDIUM** | ⛔ **The stated basis for lapsing 48 points is factually wrong.** D-119 §3 and the brief both say *"`93fa417` changed the session gate on 2026-09-03."* The commit is dated **2026-09-01**, and **its entire `src/` diff is XML doc comments — zero executable lines.** It renamed one test and corrected six prose claims. Under D-096 §1 it cannot lapse anything, because it changed no behaviour any criterion could assert. §5 |
+| `V-34-E` | **MEDIUM** | **`V-33-A`'s shape recurs on the newest endpoint.** `GET /api/users` — written after the repair, by an agent whose test cites `V-33-A` by name — uses a hand-written refused-role array with no exhaustiveness assertion. **Proven:** removing `Role.HeadOfDesign` leaves `ListUsersTests` **6/6 green, exit 0**, while the same removal reddens `ReadAuditTrailTests` 2/12. The guard exists on **3 of 16** gated endpoints. §4 |
+| `V-34-F` | **LOW** | **`Permission.UserRead` is a grant that reaches nothing, and a Domain test's name says otherwise.** No endpoint declares `UserRead`; HR holds it; the Q42 problem it was created for on 2026-08-22 (*"HR could not name a single person to put on a project"*) is unsolved as slice 1 closes. `PermissionEvaluatorTests.Hr_may_read_the_user_list_and_still_reaches_nothing_financial` asserts a capability the shipped system refuses — the SM-33 / D-097 §2 shape. **The gating of `GET /api/users` itself is correct; do not open it to HR.** §3 |
+| `V-34-G` | **LOW** | **`AuditRead`'s holder set has no catalogue-level pin.** Granting it to `Role.TechnicalOffice` left **Domain 127/127 green**; only the Api suite caught it. `HeadOfDesign`, `Subcontractor`, HR and `ProjectTeamRead` all have `CatalogueCompletenessTests` pins. The strictest permission in the system — the one Karim ruled on personally, and the one that from slice 3 carries every movement of money — has none. §2 |
 | `V-34-C` | **LOW** | **KAFF-125 has two rows in the master inventory** (backlog.md lines 823 and 828), with different text and different accompanying notes, and `KAFF-124` is filed after `KAFF-128`. KAFF-125 is one of the twelve stories in D-119's lapsed set, so a carry-or-lapse verdict written onto one row leaves the other saying something else |
 
 ---
@@ -65,7 +69,7 @@ Every figure below is one I ran in this session. The brief's column is what it c
 | `dotnet build KaffErp.sln -c Release -warnaserror` | 0 / 0 | **0 Warning(s), 0 Error(s), exit 0** | ✅ |
 | `dotnet format --verify-no-changes` | 0 | **exit 0** | ✅ |
 | Domain suite | 127/127 | **127/127, 0 failed, 0 skipped, exit 0** | ✅ |
-| Api suite | 316/316 | *see below* | |
+| Api suite | 316/316 | **316/316, 0 failed, 0 skipped, exit 0** — 5m 12s | ✅ |
 | Citations | 1157 / 0 / 0 | **1157 checked / 0 broken / 0 legacy, exit 0** | ✅ |
 | Frontend units | 6/6 | *§8* | |
 | SPA build under `strictTemplates` | clean | *§8* | |
@@ -94,19 +98,173 @@ revert a mutation in an untracked file is correct and I worked around it (§2, �
    `V-34-A`. The brief's own defence of it (*"reported not slipped in"*, backlog.md line 220) answers
    the honesty question and not the verifiability one.
 
-3. **Api suite count.** *(recorded in §1 once measured — see §1.)*
+3. **Every backend gate figure the brief gave reproduces exactly**: build 0/0, format 0, Domain
+   127/127, **Api 316/316**, citations 1157/0/0. No correction needed. Frontend and E2E in §8/§9.
 
-## 2. Block 1 · KAFF-117
+4. ⛔ **The brief's — and D-119's — central factual claim about block 2 is wrong.** Both say
+   *"`93fa417` changed the session gate on 2026-09-03."* It did neither. See §5 and `V-34-D`:
+   `93fa417` is dated **2026-09-01**, and **its entire `src/` diff is XML documentation comments —
+   zero executable lines changed.**
 
-pending
+## 2. Block 1 · KAFF-117 — `GET /api/audit`
 
-## 3. Block 1 · KAFF-127
+**Attacked first, per the brief, because its agent hit a rate limit before running a single test.**
 
-pending
+### The strictest permission in the system, and it holds
 
-## 4. The role census
+`AC-117-B` is the unusual one: spec.md §9 is otherwise `role × assignment`, and D-049 ruling 1 makes
+this permission refuse an **assigned** Technical Office lead the trail of the project they run.
 
-pending
+**Mutation `MUT-34-1`, watched.** `PermissionCatalogue.cs` line 440,
+`new(Permission.AuditRead, PermissionScope.CompanyWide, [owner], …)` →
+`[owner, technicalOffice]`. Mutation confirmed present in the file by re-reading it and by
+`git diff --stat` before building; **build 0 warnings 0 errors exit 0**, so no stale binary ran.
+
+| Suite | Result |
+|---|---|
+| Domain | **127/127 green** — see `V-34-G` |
+| `ReadAuditTrailTests` | ⛔ **2 failed / 12**, exit 2 |
+
+Both failures are the right two and fail on the right assertion:
+
+```
+An_assigned_technical_office_user_is_refused_the_trail_of_their_own_project
+  Expected ... Forbidden {403} because D-049 ruling 1: the trail is 'completely hidden
+  from all other roles, EVEN FOR THEIR OWN PROJECTS' ... but found OK {200}.
+
+Nobody_but_the_owner_reaches_the_trail_with_or_without_a_project_id
+  Expected ... Forbidden {403} because TechnicalOffice holds no AuditRead ... but found OK {200}.
+```
+
+Reverted with `git checkout` (a **tracked** file — D-120 §3's trap does not apply here, and I
+checked), re-read to confirm the revert, rebuilt, re-ran: **12/12 green**.
+
+**Verdict: `AC-117-B` and `AC-117-C` are genuinely asserted.** *"Even for their own projects"* is not
+prose in this repository; it is a test that goes red when the grant moves, and I watched it.
+
+### What the suite does better than anything else in the repo
+
+`AC-117-C`'s refused set is **derived from `Enum.GetValues<Role>()`** and the hand-written loop is
+asserted equal to it (`The_refused_list_is_every_role_that_can_sign_in_and_is_not_granted`). It
+counts its own refusals and asserts **14**. `AC-117-B`, `AC-117-E` and `AC-117-H` each carry a
+**positive control** — a 403 against an empty trail proves nothing, and the author knew it. This is
+the shape every other permission suite in slice 1 should have; §4 is about the one written after it
+that does not.
+
+### Verdict per criterion
+
+| AC | Verdict | Basis |
+|---|---|---|
+| `AC-117-A` | **Pass** | company-wide read asserted across two projects **and** the null-`ProjectId` company rows, which a project-join reading would silently lose |
+| `AC-117-B` | **Pass — watched red** | `MUT-34-1` |
+| `AC-117-C` | **Pass — watched red**, and exhaustive by construction | `MUT-34-1`, `MUT-34-2` |
+| `AC-117-D` | **Pass** | the second door — a forged `Role.Subcontractor` session is refused at the gate, not only at sign-in |
+| `AC-117-E` | **Pass** | searched over the whole body in both directions, with the record's presence and the redaction placeholder as the positive control |
+| `AC-117-F` | **Pass** | `OwnerGlobal` legible in the Owner's own trail |
+| `AC-117-G` | **Pass** | stored reason read back |
+| `AC-117-H` | **Pass** | absence asserted against **routes the host actually mapped**, with `GET /api/audit`'s presence as the positive control, plus the database trigger |
+| `AC-117-I` | **N/A** | moved to `KAFF-128` as `AC-128-A` before the pull — rule 6, correctly applied |
+
+**KAFF-117: eight of eight backend criteria satisfied. No defect found.** The rate limit cost this
+story its author's test run; it did not cost it its tests.
+
+## 3. Block 1 · KAFF-127 — `GET /api/users` and the user-management screens
+
+### `GET /api/users` has no acceptance criterion — `V-34-A`
+
+KAFF-127's criteria are `AC-127-A` … `AC-127-I`. **Every one is a screen criterion.** The story's
+ten business rules name no read endpoint. `stories/backlog.md` line 220 defends the addition as
+*"reported not slipped in"*, which answers whether it was honest and not whether it is verifiable.
+
+**This is the exact arrangement `agents.md` §7 exists to prevent.** There is no statement of what
+`GET /api/users` *should* do for me to execute against — only `ListUsersTests`, written in the same
+commit as the endpoint. I can report that the tests are internally strong (`V-34-E` aside): the row's
+member set is pinned by a **whitelist**, not a blocklist, which is D-106's and D-114 §1's lesson
+correctly applied to the only payload in the system projected straight off `User`. What I cannot do
+is verify it, because verification is *"does it do what the story says"* and the story says nothing.
+
+### HR, `Permission.UserRead`, and a grant that reaches nothing — `V-34-F`
+
+**The brief's reasoning holds and I confirm it.** `GET /api/users` returns `UserName`, `Phone`,
+`Department`, `OperationsSubDepartment`, `IsActive` and `ActiveProjectNames` for every account — that
+is the Owner's administration surface, not D-055 §3's *"names and roles only"*, so gating it
+`UserManage` is right and HR's refusal is a ruling rather than an oversight. The author documented
+exactly this in the test's own `<remarks>`, unprompted. **Do not open this endpoint to HR.**
+
+**But the brief stops one step early.** `Permission.UserRead` is `CompanyWide`, granted to
+`[owner, hr]`, and **no endpoint in the application declares it** — I enumerated every
+`RequirePermission` in `src/Api/Features`: `AuditRead`, `ClientManage`, `ProjectAssignmentManage`,
+`UserManage`, and nothing else. So:
+
+* Nabil's Q42 ruling of 2026-08-22 created `UserRead` to solve a stated operational problem — *"HR
+  held `ProjectAssignmentManage` and could not name a single person to put on a project."* **Slice 1
+  is closing with that problem unsolved** and HR holding an inert grant.
+* `tests/Domain.Tests/PermissionEvaluatorTests.cs` →
+  **`Hr_may_read_the_user_list_and_still_reaches_nothing_financial`**. HR may not read the user list.
+  There is one user list and HR gets 403 from it. **The test's name asserts a capability the shipped
+  system does not provide** — which is precisely the SM-33 / D-097 §2 rule this project already
+  applies: *a false claim in a test's own name is renamed in the change that finds it false.*
+
+Severity **LOW**: no over-grant, nothing insecure, and the endpoint decision is correct. It is an
+under-delivery plus a false name, and neither is on the board.
+
+## 4. The role census — and yes, there is another one
+
+**The brief told me to assume there is a second `V-33-A`. There is, and it is on the newest
+endpoint in the repository.**
+
+`V-33-A` was not *"`HeadOfDesign` is uncovered."* It was *"a hand-written list of refused roles stays
+the length it was written at, so a role added to the enum is silently uncovered."* The repair
+(`b413b2b`, D-118) answered that properly in two places, by **deriving** the refused set from
+`Enum.GetValues<Role>()` and asserting the hand-written loop equals it. `5b13761` did the same for
+`GET /api/audit`. Three suites hold that guard:
+
+```
+CreateClientTests.cs:427      Enum.GetValues<Role>().Except([Owner, MarketingSales, Subcontractor])
+GetClientTests.cs:187         Enum.GetValues<Role>()...
+ReadAuditTrailTests.cs:230    Enum.GetValues<Role>()...
+```
+
+**`GET /api/users` — written after the repair, by an agent briefed on it — went back to the
+hand-written list.** `ListUsersTests.Every_role_but_the_owner_is_refused_and_no_username_reaches_the_body`
+enumerates seven roles as a literal array with no exhaustiveness assertion behind it. Its own
+`<remarks>` cites `V-33-A` by name as the reason `Role.HeadOfDesign` is in the array — the finding was
+read, and the *instance* was fixed rather than the *shape*.
+
+Counted across the application: **22 mapped endpoints, 16 of them permission-gated, and 3 carry the
+guard.** `V-34-E`.
+
+**Proven by mutation, not inferred — `MUT-34-2`, a paired mutation run in one build.** I removed the
+identical line, `Role.HeadOfDesign`, from both refusal lists at once, so one build and one binary
+answer both halves and neither result can be a stale-binary artefact. Both mutations were confirmed
+present by `git diff --stat` before building; **build 0/0, exit 0**.
+
+| Suite | After removing `Role.HeadOfDesign` | |
+|---|---|---|
+| `ReadAuditTrailTests` (guarded) | ⛔ **2 failed / 12**, exit 2 | the guard bites |
+| `ListUsersTests` (unguarded) | ✅ **6/6 passed, exit 0** | **nothing noticed** |
+
+The guarded suite names the missing role in its own failure text:
+
+```
+The_refused_list_is_every_role_that_can_sign_in_and_is_not_granted
+  Expected covered to be a collection with 7 item(s) ... but {Finance, Hr, TechnicalOffice,
+  SiteEngineer, MarketingSales, Client}
+Nobody_but_the_owner_reaches_the_trail_with_or_without_a_project_id
+  Expected refusals to be 14 ... but found 12 (difference of -2).
+```
+
+Reverted both (tracked files), re-read to confirm, **rebuilt**, re-ran: `ListUsersTests` 6/6,
+`ReadAuditTrailTests` 12/12, both exit 0.
+
+**Severity MEDIUM, not HIGH, and the distinction is honest:** the `ListUsers` array is complete
+against today's nine roles, so nothing is uncovered right now. What is missing is the machine that
+keeps it complete — which is the whole of what `V-33-A` cost and the whole of what D-118 bought.
+
+**Where the census comes out clean.** All nine `Role` members are now referenced in `tests/Api.Tests`;
+`Role.HeadOfDesign` is thinnest at 12 references across four files, and it is genuinely covered at
+`CreateClient`, `GetClient`, `ListUsers` and `ReadAuditTrail`. The 2026-09-05 pass's `V-33-A` is
+**repaired in substance**, and I confirm that.
 
 ## 5. Block 2 · the twelve lapsed stories
 
