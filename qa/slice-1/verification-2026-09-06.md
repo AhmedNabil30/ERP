@@ -25,7 +25,7 @@ Everything is `pending` until reached. Nothing is marked done on an author's evi
 | 2 | Block 1 · KAFF-117 — `GET /api/audit`, Owner alone, *"even for their own projects"* | **done** — §2 |
 | 3 | Block 1 · KAFF-127 — `GET /api/users` (the API half) | **done** — §3 |
 | 4 | The role census — is there a second `V-33-A`? | **done** — §4, **yes** |
-| 5 | Block 2 · D-096 applied to the twelve lapsed stories | pending |
+| 5 | Block 2 · D-096 applied to the twelve lapsed stories | **done** — §5, **45 carry / 3 lapse** |
 | 6 | Block 3 · Which stories have no QA case | pending |
 | 7 | The five places a defect would be invisible | pending |
 | 8 | Frontend units and the SPA build | pending |
@@ -44,6 +44,8 @@ Everything is `pending` until reached. Nothing is marked done on an author's evi
 | `V-34-E` | **MEDIUM** | **`V-33-A`'s shape recurs on the newest endpoint.** `GET /api/users` — written after the repair, by an agent whose test cites `V-33-A` by name — uses a hand-written refused-role array with no exhaustiveness assertion. **Proven:** removing `Role.HeadOfDesign` leaves `ListUsersTests` **6/6 green, exit 0**, while the same removal reddens `ReadAuditTrailTests` 2/12. The guard exists on **3 of 16** gated endpoints. §4 |
 | `V-34-F` | **LOW** | **`Permission.UserRead` is a grant that reaches nothing, and a Domain test's name says otherwise.** No endpoint declares `UserRead`; HR holds it; the Q42 problem it was created for on 2026-08-22 (*"HR could not name a single person to put on a project"*) is unsolved as slice 1 closes. `PermissionEvaluatorTests.Hr_may_read_the_user_list_and_still_reaches_nothing_financial` asserts a capability the shipped system refuses — the SM-33 / D-097 §2 shape. **The gating of `GET /api/users` itself is correct; do not open it to HR.** §3 |
 | `V-34-G` | **LOW** | **`AuditRead`'s holder set has no catalogue-level pin.** Granting it to `Role.TechnicalOffice` left **Domain 127/127 green**; only the Api suite caught it. `HeadOfDesign`, `Subcontractor`, HR and `ProjectTeamRead` all have `CatalogueCompletenessTests` pins. The strictest permission in the system — the one Karim ruled on personally, and the one that from slice 3 carries every movement of money — has none. §2 |
+| `V-34-H` | **MEDIUM** | **KAFF-125's verdict genuinely lapses — but on `e0fd5cf` / `b5c9e46` / `8ea9258`, not on the commit D-119 blamed.** `landingFor()` changed for two of nine roles after the 2026-09-04 verdict and the `pending` landing kind was deleted from the union; `client-manage.guard.ts` was rewritten to stop hiding refusals. Role-based landing and the route guard are KAFF-125's own criteria. **Bookkeeping, not a defect** — the new behaviour is correct. §5.6 |
+| `V-34-I` | **LOW** | **Double-encoded UTF-8 in a shipped source file.** `src/Web/src/app/core/navigation/landing.ts` line 51 carries `âš ï¸` where line 39 carries `⚠️` — verified at byte level, written by `e0fd5cf`. **I swept every `.ts`/`.cs`/`.json`/`.html`/`.css`/`.ps1` under `src`, `scripts` and `tests`: this is the only occurrence, and `ar.json` is clean.** Harmless today (it is a comment), but it is proof that the mangling path the process warns about has already been taken once in this repo |
 | `V-34-C` | **LOW** | **KAFF-125 has two rows in the master inventory** (backlog.md lines 823 and 828), with different text and different accompanying notes, and `KAFF-124` is filed after `KAFF-128`. KAFF-125 is one of the twelve stories in D-119's lapsed set, so a carry-or-lapse verdict written onto one row leaves the other saying something else |
 
 ---
@@ -266,9 +268,145 @@ keeps it complete — which is the whole of what `V-33-A` cost and the whole of 
 `CreateClient`, `GetClient`, `ListUsers` and `ReadAuditTrail`. The 2026-09-05 pass's `V-33-A` is
 **repaired in substance**, and I confirm that.
 
-## 5. Block 2 · the twelve lapsed stories
+## 5. Block 2 · D-096 applied to the twelve stories
 
-pending
+### 5.1 The commit D-119 blamed did not change any behaviour — `V-34-D`
+
+D-119 §3 and the brief both rest the whole 48-point lapse on one sentence:
+
+> *"`93fa417` changed the session gate on 2026-09-03."*
+
+**Both halves are wrong.**
+
+```
+> git show -s --format='%ci' 93fa417
+2026-09-01 20:34:51 +0300
+
+> git show 93fa417 -- src/   [all +/- lines, excluding /// comment lines]
+(nothing)
+```
+
+**`93fa417`'s entire `src/` diff is XML documentation comments.** It rewrote three `<summary>` /
+`<remarks>` blocks in `LiveSession.cs` to stop claiming the metadata was unforgeable — the claim
+`V-30-A` disproved — and it renamed one test to match what its body checks. Its own commit message
+says so plainly: *"The mechanism itself (D-094's compile-time pin) is unchanged."*
+
+**D-096 §1's rule is behavioural, deliberately and explicitly: *"the line is behavioural, not
+file-based."*** A commit that changes no behaviour cannot lapse a story, because there is no
+behaviour any criterion asserts that could have moved. **On its stated basis, D-119 lapsed 48 points
+for a documentation commit.**
+
+This is the same failure D-119 itself diagnoses in §5 — *"the board records a state, and the state is
+not derived from anything."* The sweep corrected the board by reading git, and then made a claim
+about git it had not read.
+
+### 5.2 So I ran the check D-096 actually asks for
+
+Naming the wrong commit is not the same as reaching the wrong conclusion, so I did not stop there. I
+enumerated **every commit touching `src/` between the 2026-08-30 pass (`dc76fe7`) and `HEAD`** — 21
+commits — and classified what each one did to the shared mechanisms and to each story's own surface.
+
+| Shared mechanism | Change since `dc76fe7` | Kind |
+|---|---|---|
+| `src/Api/Authorization/LiveSession.cs` | 25 lines | **comment-only** (verified: no non-`///` line in the diff) |
+| `src/Infrastructure/Authorization/ProjectAccessPolicy.cs` | 10 lines | **comment-only** (same check) |
+| `src/Domain/Authorization/PermissionEvaluator.cs` | +35 | **purely additive** — one new method, `ProjectScopedPermissionsHeld`. **`Evaluate` is untouched** |
+| `src/Domain/Authorization/PermissionCatalogue.cs`, `Permission.cs` | +41, +12 | **purely additive** — one new row, `ProjectTeamRead` → `[owner, hr]`. **No existing grant altered or removed** |
+| `src/Domain/Auditing/IAuditContext.cs` | +23 | **purely additive** — `DuplicatePhoneAcknowledged = 6`, no renumbering |
+| `src/Infrastructure/Persistence/DatabaseInitializer.cs` | +201 | **additive strengthening** — check constraints now pinned by **predicate** rather than by name (`V-30-D`) |
+| `src/Api/Program.cs` | ±24 | `ForwardLimit` moved to configuration (`51a0c5a`) — §7.4 |
+
+**⛔ The correction that matters most:** D-119 states that *"`LiveSession.cs`, `PermissionEvaluator.cs`
+and `ProjectAccessPolicy.cs` have all moved since."* Two of those three moved **by comment only**, and
+the third moved **only by addition, with `Evaluate` — the method every gated endpoint runs through —
+byte-identical.** Three files did change; **no gate behaviour did.**
+
+**And these files never appear in the changed set at all**, which settles nine of the twelve stories
+outright: `src/Domain/Identity/User.cs`, `StaffSessionRules`, `SignIn/`, `CreateUser/`,
+`MoveUserDepartment/`, `ChangeUserRole/`, `DeactivateUser/`, `ReactivateUser/`,
+`AssignUserToProject/`, `RevokeProjectAssignment/`, `src/Domain/Auditing/AuditRecord.cs`.
+
+### 5.3 Two of the twelve carry verdicts *newer* than the commit blamed for lapsing them
+
+D-119 §4 and the brief both describe the twelve as carrying verdicts *"on or before 2026-08-30."*
+The board says otherwise, in its own master inventory:
+
+* **KAFF-105b** — *"BUILT `e56cd16` and **ACCEPTED 2026-09-04**"* (backlog.md line 804)
+* **KAFF-125** — *"BUILT `7461332`, **ACCEPTED as an implementation 2026-09-04**"* (lines 823, 828)
+
+`93fa417` is dated **2026-09-01**. **A commit cannot lapse a verdict given three days after it.**
+Eight of the 48 points were on the list for a reason that cannot be true. `V-34-D`.
+
+### 5.4 The licence for the carries, named rather than argued
+
+D-096: a story may be carried past a shared-mechanism change **only where the equivalence is pinned
+by a test** — *"the test is the whole of the licence."* For nine of the twelve the clause is not even
+engaged, because the files their criteria assert did not change. For the shared permission machinery
+every one of them routes through, the licence is:
+
+* **The diff itself** — `Evaluate` unchanged, no catalogue row altered, additions only. This is a
+  fact, not an argument.
+* **Pinned by test**: `CatalogueCompletenessTests` → `The_set_of_unresolved_permissions_has_not_grown`,
+  `A_head_of_design_holds_exactly_one_permission`, `No_permission_is_granted_to_a_subcontractor`,
+  `Hr_holds_no_permission_that_touches_money`,
+  `No_grant_is_held_by_department_alone_for_a_role_that_has_no_department`, and
+  `Owner_and_hr_alone_hold_ProjectTeamRead_and_it_touches_no_money` for the one added row.
+* **Fault-injected today, by this session, not cited from a previous one.** `MUT-34-1` (§2) granted
+  a permission to a role in that catalogue and I watched the gate refuse to hold — 200 where 403 was
+  required. D-096's own precedent was licensed exactly this way: *"it is on the right side of that
+  line only because the equivalence was fault-injected by another session and re-run today."*
+* **Api 316/316 at `HEAD`**, measured in this session, exercising all sixteen gated endpoints.
+
+### 5.5 Verdict per story
+
+| Story | Pts | Verdict date (board) | Post-verdict change to behaviour **its own criteria assert** | **Verdict** |
+|---|---:|---|---|---|
+| KAFF-100 | 5 | 2026-08-26 | `DatabaseInitializer` strengthened its constraint check; the bootstrap gate (`!Users.AnyAsync()`, `ux_users_bootstrap_owner_once`) and `POST /api/setup` are unchanged | **CARRY** |
+| KAFF-101a | 5 | 2026-08-26 | none — `SignIn/`, `StaffSessionMinter`, `StaffSessionRules` are not in the changed set | **CARRY** |
+| KAFF-105b | 5 | **2026-09-04** | none — `WhoAmI/` unchanged since its own build commit `e56cd16`; **and the verdict postdates `93fa417`** | **CARRY** — never belonged on the list |
+| KAFF-106 | 5 | 2026-08-25 | none — `CreateUser/` unchanged | **CARRY** |
+| KAFF-108 | 3 | 2026-08-25 | none — `MoveUserDepartment/` unchanged | **CARRY** |
+| KAFF-110 | 5 | 2026-08-25 | none — `DeactivateUser/` unchanged | **CARRY** |
+| KAFF-111 | 3 | 2026-08-26 | none — revocation lives in KAFF-110's handler, unchanged | **CARRY** |
+| KAFF-112 | 3 | 2026-08-26 | none — `ReactivateUser/` unchanged | **CARRY** |
+| KAFF-113 | 5 | 2026-08-25 | none — `AssignUserToProject/` unchanged | **CARRY** |
+| KAFF-114 | 3 | 2026-08-26 | none — `RevokeProjectAssignment/` unchanged; and `No_endpoint_deletes_a_project_assignment` still pins `AC-114-F` against the routes the host maps | **CARRY** |
+| KAFF-116 | 3 | 2026-08-24 | none — `AuditRecord.cs` unchanged, `IAuditContext` additive only; `ck_audit_records_grant_path` is now pinned by predicate, which strengthens the criterion rather than moving it | **CARRY** |
+| **KAFF-125** | **3** | **2026-09-04** | ⛔ **yes — see below** | ⛔ **LAPSES** |
+
+**Result: 45 of the 48 points carry. 3 lapse. And the one that lapses is not lapsed by `93fa417`.**
+
+### 5.6 ⛔ KAFF-125 lapses, on `e0fd5cf` / `b5c9e46` / `8ea9258` — `V-34-H`
+
+KAFF-125 is *"the staff shell — landings, the session resolver and the route guard."* Its criteria
+assert **role-based landing**. `src/Web/src/app/core/navigation/landing.ts` → `landingFor()` is that
+behaviour, and it changed for two of the nine roles after the verdict:
+
+```
+-      return { kind: 'pending', titleKey: 'landing.pending.owner.title' };
++      return { kind: 'users' };
+-      return { kind: 'pending', titleKey: 'landing.pending.marketing_sales.title' };
++      return { kind: 'clients' };
+-  | { readonly kind: 'pending'; readonly titleKey: string }
+```
+
+**The `pending` landing kind was deleted from the union entirely**, along with its catalogue keys and
+the landing page's `@case`. `landing-page.ts` (+27/−8), `landing-page.html` (+18), `app.routes.ts`
+(+65) and `client-manage.guard.ts` all moved too — `b5c9e46` rewrote the guard specifically because
+it *"refused people by hiding the refusal"* (D-114 §3), which is KAFF-125's route-guard criterion.
+
+**This is D-096 §1's first limb exactly: a later commit changed behaviour this story's own criteria
+assert.** It is not a shared-mechanism carry and there is no equivalence to pin, because the
+behaviour is deliberately *not* equivalent — the changes are correct and intended. The verdict is
+simply older than the code.
+
+**Severity MEDIUM, and it is a bookkeeping verdict, not a defect claim.** I found nothing wrong with
+what `landingFor()` does now. What lapsed is the *statement* that KAFF-125 was verified, and
+`AC-125-B` was already *"verified by code review only"* (`V-32-D`) before any of this.
+
+**The irony worth recording:** D-119 lapsed twelve stories on a documentation commit and put
+KAFF-125 on the list for that wrong reason — while the three commits that genuinely lapsed it sat
+in the same sweep's own scope, unmentioned.
 
 ## 6. Block 3 · QA case coverage
 
