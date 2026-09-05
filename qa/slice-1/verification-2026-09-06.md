@@ -511,16 +511,16 @@ class of defect is closed by inspection rather than by another screenshot.
 ### 7.2 The substring assertion — swept, and it does not recur
 
 The KAFF-127 agent caught its own `body.Should().Contain("portal_client_demo")` surviving a rename,
-and fixed it to a parsed exact match (`UserScreenTests.cs:318` records this). I swept every positive
+and fixed it to a parsed exact match (`UserScreenTests.cs` records this). I swept every positive
 `Should().Contain(` on a response body across `tests/Api.Tests` and `tests/E2E.Tests` — 13 remaining
 sites. **None is the dangerous shape**, and I checked each rather than counting them:
 
 * **Eleven are error-key assertions** (`errors.auth.invalid_credentials`, `errors.auth.forbidden`,
   `errors.auth.password_change_required`, …) where the key *is* the claim, and every one is paired
   with a status-code assertion.
-* `MeTests.cs:231` — an error key, and it is paired with **two `NotContain` assertions** that are the
+* `MeTests.cs` — an error key, and it is paired with **two `NotContain` assertions** that are the
   real content of the test (D-080: no key that tells an attacker the account exists).
-* `ReadAuditTrailTests.cs:346` — asserts the **redaction placeholder** is present, but only over
+* `ReadAuditTrailTests.cs` — asserts the **redaction placeholder** is present, but only over
   records already filtered by an **exact** `changedProperties == nameof(User.PasswordHash)` match and
   guarded by `NotBeEmpty`. It is a positive control, not a whitelist.
 
@@ -561,13 +561,13 @@ KAFF-127's claim and the claim holds.
 
 `docker ps` shows **`kaff-db` only** — no Caddy, no nginx, no staging stack. The value lives in
 exactly one place (`deploy/docker-compose.staging.yml:68`), **nothing validates it at startup**, and
-`Program.cs:284` defaults to `1` for any deployment that does not use that compose file.
+`Program.cs` defaults to `1` for any deployment that does not use that compose file.
 
-`PermissionMechanismTests.cs:672` proves the mechanism at `forwardedProxyHops: 2`. Nothing in this
+`PermissionMechanismTests.cs` proves the mechanism at `forwardedProxyHops: 2`. Nothing in this
 repository can prove staging has two proxies.
 
 **The 2026-09-05 pass's conclusion stands unchanged and I re-confirm it rather than re-report it:**
-*"the mechanism is proved, the deployment is not."* `deploy/README.md:172` already documents the
+*"the mechanism is proved, the deployment is not."* `deploy/README.md` already documents the
 symptom. **Still not verifiable from this repository.** Carried to §12.
 
 ## 8. Frontend units and SPA build

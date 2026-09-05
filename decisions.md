@@ -10212,3 +10212,105 @@ because claiming the role without focus trapping, Escape and focus return *"tell
 they are in a modal they can tab straight out of."* **A `kaff-confirm-dialog` with real focus
 management is owed** — accessibility basics are not a corner this project cuts, and the honest
 half-measure was to remove the lie rather than keep it.
+
+---
+
+### D-122 — ⛔ D-119's lapse claim was wrong: 45 of the 48 points carry, and the error was the one D-096 was written to prevent
+**2026-09-06 · Scrum Master · a correction, and a repair**
+
+The 2026-09-06 Verifier pass returned **no HIGH, six MEDIUM, four LOW** — and its first MEDIUM
+overturns the headline of D-119, which the Scrum Master had reported to Nabil as the board's largest
+open risk.
+
+#### 1. ⛔ The correction, verified independently before accepting it
+
+D-119 §3 claimed 48 points had lapsed because **`93fa417`** — *"Repair V-30-A: the LiveSession
+'unforgeable' claim was false in six places"* — changed the session gate after those verdicts were
+given. `V-34-D` says that is wrong. **It is.** Checked here rather than taken on the report's word:
+
+| D-119 claimed | Actually |
+|---|---|
+| `93fa417` is dated 2026-09-03 | **2026-09-01** |
+| It changed the session gate | Its entire `src/` diff is **one file, 16 insertions / 9 deletions, and not one executable line** — XML doc comments |
+| `PermissionEvaluator.cs` "moved" | `Evaluate` is **untouched**; the file gained a *new* method, `ProjectScopedPermissionsHeld`, for KAFF-105b |
+| `ProjectAccessPolicy.cs` "moved" | **Zero** executable lines changed |
+
+**So nothing those twelve stories' criteria assert was changed by any of it.** 45 of the 48 points
+**carry**. Only **KAFF-125** genuinely lapses — three points — and **not on the commit that was
+blamed**: `landingFor()` changed for two of nine roles at `e0fd5cf` / `b5c9e46` / `8ea9258`, all after
+its verdict.
+
+#### 2. ⚠️ The error is not a slip. It is the exact error D-096 exists to prevent.
+
+D-096 §1, in its own words: *"the line is **behavioural, not file-based**"* — and it warned that
+applying the lapse rule literally *"would have voided the entire sprint … A rule that lapses everything
+decides nothing."*
+
+**D-119 ran `git log --name-only`, saw three shared files in the list, and declared 48 points
+unknown.** That is the file-based reading, refused by name in the decision it was citing.
+
+**And the shape is worse than the mistake.** D-119's own §5 said the board had been *"the one artefact
+exempt from its own rule"* — a state maintained by hand rather than derived. **The correction to it was
+also produced by hand, from a listing, without opening the diff.** The instrument used to expose an
+unverified claim produced an unverified claim.
+
+**What would have caught it in thirty seconds:** `git diff <commit>^ <commit> -- src/`. That is the
+whole check, and it is what a Verifier ran the next morning. **A file list is not a diff, and a
+citation is not a reading.**
+
+#### 3. What survives from D-119, and it is the half that mattered
+
+**"Nothing has ever been ACCEPTED" stands, untouched.** No record exists anywhere of `process/agile.md`
+§4's ceremony — Nabil running the demo script — having happened, for any story. The Verifier did not
+contest it and neither does this entry. **The board still uses `ACCEPTED` for a Verifier verdict**, and
+that is still the more serious of D-119's two claims.
+
+Corrected figures: **0 accepted · 45 of 48 carried · 3 lapsed (KAFF-125) · 38 verified at a live
+commit** (25 Client-master + 13 sprint 4) · 14 rejected-and-never-re-verified · 34 not built.
+
+#### 4. `V-34-E` (MEDIUM) — `V-33-A`'s shape returned on the newest endpoint, one day later
+
+`GET /api/users` named all seven refused roles — **and nothing made the list stay complete.** The
+Verifier deleted the `Role.HeadOfDesign` row: `ListUsersTests` stayed **6/6 green**, while the same
+deletion in `ReadAuditTrailTests` — which carries the derived-from-the-enum assertion — reddened **2 of
+12**.
+
+**Repaired here.** `RefusedActors()` plus
+`The_refused_list_is_every_role_that_can_sign_in_and_is_not_the_owner`, deriving the expected set from
+`Role`. **Watched failing** under the Verifier's own mutation: the deleted row now reddens it, naming
+the six that remain.
+
+**A hand-written list of roles is a claim; the enum is the fact.** The Verifier reports the derived
+assertion guards **3 of 16 gated endpoints** — the other thirteen are the same latent shape and are
+routed, not repaired here.
+
+#### 5. ⚠️ `git checkout` threw away the repair along with the mutation
+
+D-120 §3 recorded that `git checkout` cannot revert a mutation in an **untracked** file. The cousin bit
+today: reverting the mutation in a **tracked** file with an **uncommitted repair in it** reverted
+*both* — the file went back to `HEAD`, and the repair with it. It had to be written twice.
+
+**The rule is one line: `git checkout` reverts the file, not the mutation.** Commit the repair before
+mutating it, or expect to lose it.
+
+#### 6. What the pass could not reach, kept as findings rather than silences
+
+`Kaff:ForwardedProxyHops` against the real deployment (no staging access) · the E2E flake's actual
+condition — all three clean runs hit a **warm** dev server and the original needed a cold one, so it is
+**not recorded as resolved** · and **KAFF-127's rendering criteria `A`–`F` and `H`**, which the pass
+names *"the thinnest place in slice 1's acceptance"* — because **F-1 is a real shipped defect that
+survived exactly that class of evidence.**
+
+#### 7. Two known-open findings closed, one narrowed
+
+`V-33-C` — the guard's `await` is now pinned; `await` → `void` reddens both guards' unit tests.
+`V-33-E` — the seed creates the portal `Role.Client` user. **`V-33-F` narrows usefully**: a fresh
+database reports `guardsInstalled: true`, so the degradation is **data, not schema** — the Architect
+owes a **data** repair, which is a smaller thing than it looked.
+
+#### 8. And one disclosure from the pass, which is the right instinct
+
+The Verifier's teardown process match was too broad and **killed an unrelated editor process.** It said
+so. No repository state was affected. **The coordinating session made the identical mistake on
+2026-09-05** with the identical regex over `Win32_Process` — twice in two days is a tooling defect, not
+carelessness, and the runbook's teardown line should be narrowed to the two process names it means.

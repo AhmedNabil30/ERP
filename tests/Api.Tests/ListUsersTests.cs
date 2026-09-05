@@ -155,18 +155,7 @@ public sealed class ListUsersTests : IAsyncLifetime
     [Fact]
     public async Task Every_role_but_the_owner_is_refused_and_no_username_reaches_the_body()
     {
-        (Guid Actor, Role Role, Department? Department, OperationsSubDepartment? Sub, Guid? Client)[] refused =
-        [
-            (_finance, Role.Finance, Department.Finance, null, null),
-            (_technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical, null),
-            (_siteEngineer, Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical, null),
-            (_headOfDesign, Role.HeadOfDesign, null, null, null),
-            (_marketing, Role.MarketingSales, Department.Marketing, null, null),
-            (_hr, Role.Hr, Department.Hr, null, null),
-            (_portalClient, Role.Client, null, null, _portalClientCompany),
-        ];
-
-        foreach ((Guid actor, Role role, Department? department, OperationsSubDepartment? sub, Guid? client) in refused)
+        foreach ((Guid actor, Role role, Department? department, OperationsSubDepartment? sub, Guid? client) in RefusedActors())
         {
             HttpResponseMessage response = await SendAsync(actor, role, department, sub, client);
 
@@ -179,6 +168,52 @@ public sealed class ListUsersTests : IAsyncLifetime
                 _staffedEngineerName,
                 "a refusal that still names an account has refused nothing that matters");
         }
+    }
+
+    /// <summary>Every role that must be refused this endpoint.</summary>
+    private IEnumerable<(Guid Actor, Role Role, Department? Department, OperationsSubDepartment? Sub, Guid? Client)> RefusedActors()
+    {
+        yield return (_finance, Role.Finance, Department.Finance, null, null);
+        yield return (_technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical, null);
+        yield return (_siteEngineer, Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical, null);
+        yield return (_headOfDesign, Role.HeadOfDesign, null, null, null);
+        yield return (_marketing, Role.MarketingSales, Department.Marketing, null, null);
+        yield return (_hr, Role.Hr, Department.Hr, null, null);
+        yield return (_portalClient, Role.Client, null, null, _portalClientCompany);
+    }
+
+    /// <summary>
+    /// The list above is every role that can sign in and is not the Owner.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Written 2026-09-06 to close `V-34-E` (MEDIUM), `qa/slice-1/verification-2026-09-06.md`.</b>
+    /// The census above was complete — it named all seven — and <b>nothing made it stay complete</b>.
+    /// The Verifier proved the difference by deleting the <c>Role.HeadOfDesign</c> row: here the suite
+    /// stayed <b>6/6 green</b>, while the same deletion in <c>ReadAuditTrailTests</c> — which carries
+    /// this assertion — reddened <b>2 of 12</b>.
+    /// </para>
+    /// <para>
+    /// <b>That is `V-33-A`'s shape returning on the newest endpoint in the repository, one day
+    /// later.</b> A hand-written list of roles is a claim; the enum is the fact. Deriving the expected
+    /// set from <see cref="Role"/> means a tenth role, or a deleted row, fails here rather than going
+    /// quietly uncovered — and the whole of `V-33-A` was that an uncovered role looks exactly like a
+    /// covered one from the outside.
+    /// </para>
+    /// <para>
+    /// <c>Role.Subcontractor</c> is the one omission and it is spec.md §9's: <i>"record only, no
+    /// login"</i>. It cannot hold a session to be refused with, and
+    /// <c>No_permission_is_granted_to_a_subcontractor</c> pins that catalogue-wide.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void The_refused_list_is_every_role_that_can_sign_in_and_is_not_the_owner()
+    {
+        RefusedActors().Select(actor => actor.Role).Should().BeEquivalentTo(
+            Enum.GetValues<Role>().Except([Role.Owner, Role.Subcontractor]),
+            "UserManage is the Owner's alone (D-044 ruling 1), so every other signing-in role belongs "
+            + "in the loop above — including Hr, whose D-055 §3 grant is names and roles only and "
+            + "explicitly not the Owner's administration surface");
     }
 
     // ---- no credential, and no money, ever ----------------------------------------------------

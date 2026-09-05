@@ -37,7 +37,21 @@ different ceremonies with two different actors on purpose.
 
 **The board has been using the word for the wrong ceremony since sprint 1.**
 
-### 2. Most of the pre-2026-09-05 verdicts have **lapsed**, under this project's own rule
+### 2. ⛔ ~~Most of the pre-2026-09-05 verdicts have **lapsed**~~ — **WRONG, corrected 2026-09-06 by `V-34-D`. See decisions.md D-122.**
+
+**45 of the 48 points CARRY.** `93fa417` is dated **2026-09-01**, not 09-03, and its entire `src/` diff
+is **one file and not one executable line** — XML doc comments. `PermissionEvaluator.Evaluate` is
+untouched (the file gained a *new* method for KAFF-105b); `ProjectAccessPolicy` changed zero executable
+lines. **Only KAFF-125 lapses — 3 points — and not on the commit blamed for it.**
+
+**The error was the one D-096 exists to prevent.** D-096 §1 says *"the line is behavioural, not
+file-based"* and warns that a literal reading *"would have voided the entire sprint."* This board ran
+`git log --name-only`, saw three shared files, and declared 48 points unknown. **A file list is not a
+diff.** `git diff <commit>^ <commit> -- src/` was the whole check.
+
+**The section below is kept unedited as the record of the claim.** ⚠️ **It is wrong. Do not act on it.**
+
+### ~~2. Most of the pre-2026-09-05 verdicts have lapsed, under this project's own rule~~
 
 D-096 §1: *"A story lapses where a commit changed behaviour that story's own acceptance criteria
 assert"*, and a story may only be carried past a shared-mechanism change when the equivalence is
@@ -55,18 +69,23 @@ performed the check the rule requires.** The two passes since (2026-09-03, 2026-
 
 | State | Pts | Stories |
 |---|---:|---|
-| **Accepted by Nabil** | **0** | none, ever |
-| **Verified at a live commit** | **25** | the seven Client-master stories, 2026-09-05 — **17 Pass, 8 Conditional** (KAFF-126 carries `V-33-C`, `D`, `E`) |
-| **Verdict lapsed, not re-established** | **48** | 100, 101a, 105b, 106, 108, 110, 111, 112, 113, 114, 116, 125 |
+| **Accepted by Nabil** | **0** | none, ever — **this half of D-119 stands and is the more serious one** |
+| **Verified at a live commit** | **38** | 25 Client-master (2026-09-05) + 13 sprint 4 (2026-09-06) |
+| ~~Verdict lapsed~~ → **carried, re-checked 2026-09-06** | **45** | 100, 101a, 105b, 106, 108, 110, 111, 112, 113, 114, 116 — `V-34-D`, D-122 |
+| **Verdict lapsed** | **3** | **KAFF-125 only**, on `e0fd5cf`/`b5c9e46`/`8ea9258` — `landingFor()` changed for two of nine roles after its verdict |
 | **Rejected, fixed, never re-verified** | **14** | 102, 103, 105a, 109 |
 | **Not built** | **34** | 101b, 104, 107, 115, 117, 127, 128 |
 
-**Whole project: 25 of 688 points verified at a live commit — 3.6%. Accepted: 0.**
+**Whole project: 83 of 688 points verified or carried at a live commit — 12%. Accepted: 0.**
 
-> **⚠️ The 48 is the number to act on.** It is not "probably fine" and it is not "broken" — **it is
-> unknown**, which is the state D-096 was written to stop being invisible. Re-establishing it is one
-> Verifier pass against a rule that already exists, and it is cheaper today than after slice 2 adds
-> thirteen more stories on top of the same gate.
+> **⚠️ The number that is still true is the zero.** The pass that corrected the 48 also confirmed
+> every gate figure, found **no HIGH and no defective behaviour in shipped backend code**, and closed
+> `V-33-C` and `V-33-E`. **Six of its ten findings are about this project's records, not its code** —
+> which is the third week running that the bookkeeping has been in worse shape than the engineering.
+>
+> **The thinnest place in slice 1's acceptance is now KAFF-127's rendering criteria** (`A`–`F`, `H`),
+> undriven by the pass — and `F-1` is a real shipped defect that survived exactly that class of
+> evidence.
 
 ---
 
