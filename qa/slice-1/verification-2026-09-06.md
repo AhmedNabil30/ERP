@@ -27,8 +27,8 @@ Everything is `pending` until reached. Nothing is marked done on an author's evi
 | 4 | The role census — is there a second `V-33-A`? | **done** — §4, **yes** |
 | 5 | Block 2 · D-096 applied to the twelve lapsed stories | **done** — §5, **45 carry / 3 lapse** |
 | 6 | Block 3 · Which stories have no QA case | **done** — §6 |
-| 7 | The five places a defect would be invisible | pending |
-| 8 | Frontend units and the SPA build | pending |
+| 7 | The five places a defect would be invisible | **done** — §7 (4 of 5; the E2E flake is §9) |
+| 8 | Frontend units and the SPA build | **done** — §8 |
 | 9 | E2E — run more than once | pending |
 | 10 | Closing gate | pending |
 | 11 | Verdict per story | pending |
@@ -74,8 +74,8 @@ Every figure below is one I ran in this session. The brief's column is what it c
 | Domain suite | 127/127 | **127/127, 0 failed, 0 skipped, exit 0** | ✅ |
 | Api suite | 316/316 | **316/316, 0 failed, 0 skipped, exit 0** — 5m 12s | ✅ |
 | Citations | 1157 / 0 / 0 | **1157 checked / 0 broken / 0 legacy, exit 0** | ✅ |
-| Frontend units | 6/6 | *§8* | |
-| SPA build under `strictTemplates` | clean | *§8* | |
+| Frontend units | 6/6 | **6/6, exit 0** — §8 | ✅ |
+| SPA build under `strictTemplates` | clean | **clean, exit 0** — §8 | ✅ |
 | E2E | 18/18 (**the building agent's own figure**) | *§9* | |
 
 **The build result was read before every test result**, every time. The build was run with no
@@ -458,11 +458,107 @@ the last three passes could not follow.
 
 ## 7. The five invisible places
 
-pending
+### 7.1 `F-1` — confirmed, and then **bounded**
+
+**Confirmed.** The two list pages are built identically and only one carries the fix:
+
+| | container | `<bdi>` items | `justify-self` |
+|---|---|---|---|
+| `user-list-page.css` `.row-link` | `display: grid` | `.row-username`, `.row-phone` | **`start`, line 70**, with the comment *"load-bearing and was found by looking at the screenshot rather than at the overflow measurement"* |
+| `client-list-page.css` `.row-link` | `display: grid` | `.row-code`, `.row-phone` | ⛔ **absent** |
+
+`F-1` is real, is in shipped code, and is unfixed. It is already routed, so I do not re-report it.
+
+**The brief's harder question — *"what else did that screenshot not see?"* — has a definite answer,
+and it is: nothing else of this shape.** I enumerated every `<bdi>` in the application (nine, across
+four templates) and checked each one's containing block:
+
+| `<bdi>` | container | stretches? |
+|---|---|---|
+| `client-list` `.row-code`, `.row-phone` | **grid** | ⛔ **yes — `F-1`** |
+| `user-list` `.row-username`, `.row-phone` | **grid** | no — `justify-self: start` |
+| `client-form` `.code-value` (`.code-line`) | `display: flex` + `align-items: baseline` | **no** |
+| `client-form` `.duplicate-code` (`.duplicate-row`) | `display: flex` + `align-items: baseline` | **no** |
+| `user-form` `.identity-value` (`.identity-line`) | `display: flex` + `align-items: baseline` | **no** |
+
+**The mechanism needs a grid item.** `justify-self` has no effect on a flex item, and a flex item is
+content-sized along the main axis rather than stretched — so the three form-page `<bdi>`s cannot
+exhibit `F-1` however the text is aligned. **Two grid cases exist, one is fixed, one is not.**
+
+This turns *"assume there are more"* into a bounded result: **`F-1` is exactly one instance**, and the
+class of defect is closed by inspection rather than by another screenshot.
+
+### 7.2 The substring assertion — swept, and it does not recur
+
+The KAFF-127 agent caught its own `body.Should().Contain("portal_client_demo")` surviving a rename,
+and fixed it to a parsed exact match (`UserScreenTests.cs:318` records this). I swept every positive
+`Should().Contain(` on a response body across `tests/Api.Tests` and `tests/E2E.Tests` — 13 remaining
+sites. **None is the dangerous shape**, and I checked each rather than counting them:
+
+* **Eleven are error-key assertions** (`errors.auth.invalid_credentials`, `errors.auth.forbidden`,
+  `errors.auth.password_change_required`, …) where the key *is* the claim, and every one is paired
+  with a status-code assertion.
+* `MeTests.cs:231` — an error key, and it is paired with **two `NotContain` assertions** that are the
+  real content of the test (D-080: no key that tells an attacker the account exists).
+* `ReadAuditTrailTests.cs:346` — asserts the **redaction placeholder** is present, but only over
+  records already filtered by an **exact** `changedProperties == nameof(User.PasswordHash)` match and
+  guarded by `NotBeEmpty`. It is a positive control, not a whitelist.
+
+**Not a finding.** Reported because the brief asked for the sweep and a silent absence is not a result.
+
+### 7.3 The `await` that pins nothing — `V-33-C` is genuinely closed
+
+**Mutation `MUT-34-3`, watched, on both guards at once.** The brief warned that deleting
+`await resolver.ensureResolved()` outright fails `TS6133` and runs **no tests**, which reads as green.
+So I mutated to the shape that keeps the reference and removes only the wait:
+
+```
+- await resolver.ensureResolved();
++ void resolver.ensureResolved();
+```
+
+applied to **both** `user-manage.guard.ts` and `client-manage.guard.ts`, confirmed present by
+`git diff --stat` before running.
+
+```
+Test Files  1 failed (1)      Tests  2 failed | 4 passed (6)      exit 1
+
+× clientManageGuard waits for the session before deciding, with no guard in front of it
+× userManageGuard   waits for the session before deciding, with no guard in front of it
+AssertionError: expected '/forbidden' to be 'true'
+```
+
+**Red, for exactly the right reason**: the guard decided *before* the session resolved and refused a
+user who should have been admitted. The tests run each guard **with no other guard in front of it**,
+which is the only arrangement in which the line does any work — and it is what `V-32-D`'s and
+`V-33-C`'s E2E-only evidence could never have caught, because `sessionGuard` resolves first in the
+real array. Reverted, re-read, re-run: **6/6, exit 0**.
+
+**`V-33-C` may be closed.** I watched it fail. This is the one place the brief asked me to disbelieve
+KAFF-127's claim and the claim holds.
+
+### 7.4 `Kaff:ForwardedProxyHops` — still unreachable, and I confirm the previous pass
+
+`docker ps` shows **`kaff-db` only** — no Caddy, no nginx, no staging stack. The value lives in
+exactly one place (`deploy/docker-compose.staging.yml:68`), **nothing validates it at startup**, and
+`Program.cs:284` defaults to `1` for any deployment that does not use that compose file.
+
+`PermissionMechanismTests.cs:672` proves the mechanism at `forwardedProxyHops: 2`. Nothing in this
+repository can prove staging has two proxies.
+
+**The 2026-09-05 pass's conclusion stands unchanged and I re-confirm it rather than re-report it:**
+*"the mechanism is proved, the deployment is not."* `deploy/README.md:172` already documents the
+symptom. **Still not verifiable from this repository.** Carried to §12.
 
 ## 8. Frontend units and SPA build
 
-pending
+| Gate | Brief claimed | Measured | |
+|---|---|---|---|
+| `npm test` (vitest) | 6/6 | **6 passed / 6, 1 file, exit 0** | ✅ |
+| `npm run build` (`strictTemplates`) | clean | **Application bundle generation complete, exit 0** | ✅ |
+
+Both re-measured **after** reverting `MUT-34-3` and re-confirmed green, so no figure in this report
+was taken from a mutated tree.
 
 ## 9. E2E
 
