@@ -29,10 +29,10 @@ Everything is `pending` until reached. Nothing is marked done on an author's evi
 | 6 | Block 3 · Which stories have no QA case | **done** — §6 |
 | 7 | The five places a defect would be invisible | **done** — §7 (4 of 5; the E2E flake is §9) |
 | 8 | Frontend units and the SPA build | **done** — §8 |
-| 9 | E2E — run more than once | pending |
-| 10 | Closing gate | pending |
-| 11 | Verdict per story | pending |
-| 12 | What I did not reach | pending |
+| 9 | E2E — run more than once | **done** — §9, three runs |
+| 10 | Closing gate | **done** — §10 |
+| 11 | Verdict per story | **done** — §11 |
+| 12 | What I did not reach | **done** — §12 |
 
 ### Findings index
 
@@ -76,7 +76,7 @@ Every figure below is one I ran in this session. The brief's column is what it c
 | Citations | 1157 / 0 / 0 | **1157 checked / 0 broken / 0 legacy, exit 0** | ✅ |
 | Frontend units | 6/6 | **6/6, exit 0** — §8 | ✅ |
 | SPA build under `strictTemplates` | clean | **clean, exit 0** — §8 | ✅ |
-| E2E | 18/18 (**the building agent's own figure**) | *§9* | |
+| E2E | 18/18 (**the building agent's own figure**) | **18/18, 0 skipped, exit 0 — ×3** — §9 | ✅ independently measured |
 
 **The build result was read before every test result**, every time. The build was run with no
 `Kaff.Api` or `Kaff.Api.Tests` process alive — checked by command line, not by process name — so no
@@ -560,18 +560,160 @@ symptom. **Still not verifiable from this repository.** Carried to §12.
 Both re-measured **after** reverting `MUT-34-3` and re-confirmed green, so no figure in this report
 was taken from a mutated tree.
 
-## 9. E2E
+## 9. E2E — run three times, against a database I built myself
 
-pending
+**This was the brief's only gate figure that had never been independently measured** — *"E2E is the
+building agent's own figure."*
+
+### The stack, brought up from nothing
+
+Per `V-33-F` / `V-31-A` the `kaff` development database is degraded, so I did not use it:
+
+```
+docker exec kaff-db psql -U kaff -d postgres -c "CREATE DATABASE kaff_v6 OWNER kaff;"
+ConnectionStrings__KaffDatabase = ...Database=kaff_v6...
+```
+
+**A finding in its own right, and a reassuring one.** On a fresh database the API comes up clean:
+
+```
+GET /api/health → 200
+{"status":"healthy","databaseReachable":true,"guardsInstalled":true,"missingGuards":[]}
+```
+
+`V-33-F` is therefore confirmed as a property of **that one degraded database**, not of the schema,
+the migrations or the guards. A fresh `kaff_v6` installs every guard and reports healthy. The
+Architect's repair story is a data-repair story.
+
+`scripts/seed-demo.ps1` ran clean, and **it now creates the portal `Role.Client` account**
+(`portal_client_demo`, scoped to the corporate client) — **`V-33-E`'s stated gap is closed.** That
+finding said *"`scripts/seed-demo.ps1` creates no `Role.Client` user at all"*, and it now does.
+
+### Three consecutive runs
+
+`KAFF_E2E_BASE_URL='http://localhost:4200'` set — and **`skipped: 0` in every run is the proof it
+took**, since without the variable the suite skips rather than fails.
+
+| Run | total | failed | succeeded | skipped | exit |
+|---|---|---|---|---|---|
+| 1 | 18 | 0 | **18** | **0** | 0 |
+| 2 | 18 | 0 | **18** | **0** | 0 |
+| 3 | 18 | 0 | **18** | **0** | 0 |
+
+**The brief's E2E figure of 18/18 is confirmed, independently, three times.**
+
+### The unexplained flake
+
+The brief's fifth invisible place: the first KAFF-127 run was 17/18, the portal test timing out at
+32s while the dev server rebuilt; five runs since were 18/18; *"believed environmental, not proven."*
+
+**It did not reproduce in three more runs — eight consecutive green runs now.** The test in question,
+`UserScreenTests.A_portal_client_is_refused_the_staff_host_indistinguishably_from_a_wrong_password`,
+passed each time.
+
+**I did not prove it environmental and I am not recording it as closed.** Three passes cannot
+distinguish a fixed flake from a rare one, and the original failure mode — a timeout while the dev
+server rebuilds — is by construction only reachable on a *cold* dev server. My three runs all hit a
+warm one, so **I did not re-test the condition that produced it.** Carried to §12 as unreached, not
+reported as resolved.
 
 ## 10. Closing gate
 
-pending
+| Gate | Value |
+|---|---|
+| `git rev-parse HEAD` | `f881d17` — this report's own commits, **nothing else** |
+| `git status --porcelain` | **empty — tree clean** |
+| Files changed under `src/` | **none.** Every mutation reverted, re-read, rebuilt and re-run green |
+| Files changed under `tests/` | **none.** Same |
+| Pushed | **no**, as instructed |
+
+**Every mutation in this report followed the same cycle, without exception:** apply → **verify present
+in the file** (`git diff --stat` plus re-reading the line) → build and **read the build's exit code**
+→ run → watch red **and read the failure message** → revert → **verify reverted** → **rebuild** →
+re-run green. Every file I mutated was **tracked**, so D-120 §3's `git checkout` trap did not apply —
+and I checked that it was tracked rather than assuming.
+
+**Scratch database `kaff_v6` was left in place.** It is not the `kaff` development database and
+nothing in the repository points at it; drop it or keep it as a clean baseline.
+
+**One operational mistake of mine, recorded because a silent one is worse:** my teardown process
+match was too broad and terminated an unrelated editor process along with the API and dev server. No
+repository state was affected — the tree was clean before and after — but the lesson is D-096 §3's
+in the other direction: match narrowly enough as well as widely enough.
 
 ## 11. Verdict per story
 
-pending
+### Block 1 — sprint 4
+
+| Story | Verdict | Note |
+|---|---|---|
+| **KAFF-117** | ✅ **PASS — 8 of 8 backend criteria, and 7 of 7 QA cases** | The strictest permission in the system, watched red under `MUT-34-1`. The best-built permission suite in slice 1. Its rate limit cost it its author's test run, not its tests. `AC-117-I` correctly moved to KAFF-128 |
+| **KAFF-127** (screens) | ⚠️ **CONDITIONAL** | `AC-127-G`'s guard half is **proven** (`MUT-34-3`, §7.3) and `V-33-C` may be closed. `V-33-E` closed — the seed now creates the portal client. But **no QA case exists for this story or any screen story** (`V-34-J`), and its board rows still say `Ready` / *"not pulled"* (`V-34-B`) |
+| **KAFF-127** (`GET /api/users`) | ⛔ **NOT VERIFIABLE** | `V-34-A` — no acceptance criterion exists to verify against. The tests are strong but they were written in the endpoint's own commit. Plus `V-34-E`, its unguarded role list |
+
+### Block 2 — the 48 lapsed points: **45 carry, 3 lapse**
+
+| Story | Pts | Verdict |
+|---|---:|---|
+| KAFF-100, 101a, 105b, 106, 108, 110, 111, 112, 113, 114, 116 | **45** | ✅ **CARRY** — licence in §5.4, per-story reasons in §5.5 |
+| **KAFF-125** | **3** | ⛔ **LAPSE** — `V-34-H`, and on `e0fd5cf` / `b5c9e46` / `8ea9258`, **not** on the commit D-119 blamed |
+
+**None of the twelve lapses for the reason D-119 gave**, because that reason does not exist: `93fa417`
+changed no behaviour. One lapses for reasons D-119 did not look at.
 
 ## 12. What I did not reach
 
-pending
+**A section I could not reach is a finding, not a silence.** These are the things this pass did not
+settle, listed so the next reader does not mistake absence for a pass.
+
+1. **`Kaff:ForwardedProxyHops` against the real deployment.** Still unreachable — no staging stack
+   exists on this machine. §7.4. Unchanged from 2026-09-05; the mechanism is proved, the deployment
+   is not, and **no test in this repository can close it.**
+2. **The E2E flake's actual condition.** Three green runs do not distinguish a fixed flake from a
+   rare one, and all three hit a **warm** dev server, while the original failure needed a cold one.
+   **I did not re-test the condition that produced it.** §9.
+3. **`AC-125-C`** — Nabil's criterion, deliberately unmet, his call. Untouched, as it must be.
+4. **The 80 `[Verified:]` markers in `.cs`/`.ts`** that `check-citations.ps1` does not read. It
+   reported **1157 / 0 broken / 0 legacy** over `.md` only, which is the figure I quote in §1 and it
+   is not a figure about the code. Known-open, re-confirmed still open.
+5. **`N11`** — `audit_records` is still not partitioned, and slice 3 is next. Known-open,
+   re-confirmed. `GET /api/audit` now reads that table on every Owner request, so the cost of leaving
+   it grows from this sprint rather than from slice 3.
+6. **KAFF-127's screen criteria `AC-127-A`…`F`, `H`, `I` were not independently re-driven.** I
+   verified the guard (`AC-127-G`) by mutation and confirmed E2E 18/18 three times, which covers
+   `AC-127-I`. The RTL/width/consequence-dialog criteria rest on the author's browser session plus
+   those E2E assertions — **and there is no QA case for any of them** (`V-34-J`). Given `F-1` was
+   exactly this class of defect surviving exactly this class of evidence, **this is the thinnest
+   place in slice 1's acceptance and I am naming it rather than passing it.**
+7. **Whether `93fa417`'s renamed test still asserts what its old name claimed.** I established the
+   commit changed no behaviour, which is what block 2 turned on. I did not separately re-verify
+   `V-30-B` (the reflection door), which remains the Architect's open question.
+
+---
+
+## 13. The one thing Nabil should know
+
+**The code is in good shape. The record of it is not.**
+
+Nothing I attacked in the engineering broke. The strictest permission in the system refused every
+role I threw at it and went red the moment I moved the grant. The audit trail cannot be written to
+through any route the host maps. The guard that pinned nothing now pins something, and I watched it
+fail. Three independent E2E runs, a database I built myself, every backend gate figure reproduced.
+
+**What did not hold up is the bookkeeping — for the third week running.** D-119 was written to correct
+a board that "records a state not derived from anything," and it lapsed 48 points on a documentation
+commit, dated it two days wrong, and included two stories whose verdicts postdate that commit by
+three days. It was right that the numbers were not true. It was not right about why.
+
+**The pattern is now four weeks old and it has a shape:** every one of these errors was a claim about
+an artefact that the claimant did not open — the board about itself, D-119 about git, this brief
+about the board. **The engineering in this repository is disciplined precisely because it refuses
+that move**: `EndpointPermissionCoverageTests` reads the routes the host built rather than the
+`Endpoint.cs` files, because D-067 proved the source text lies. That discipline has never been
+applied to the project's own records.
+
+**And the one place the two meet is where slice 1 is weakest.** Every screen criterion in this slice
+has been discharged by a build session driving a browser once and looking at a screenshot — and
+`F-1` is a real defect in shipped code that survived exactly that. **No frontend story has ever had a
+QA case** (`V-34-J`). That is not a gap in someone's diligence; it is a gap in the process, and it is
+the one I would fix before slice 2 adds more screens.
