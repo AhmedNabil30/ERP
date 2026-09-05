@@ -1,6 +1,7 @@
 # KAFF-117 · The Owner reads the audit trail, and nobody else does
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** ~~Ready~~ → **COMMITTED to sprint 4, Lane A, 2026-09-05.** Both dependencies cleared this week — KAFF-116 was accepted on 2026-08-24 (and the board said `Ready` until 2026-09-05, which is its own finding) and KAFF-118 was built 2026-09-05, D-116. **`AC-117-I` moved to `KAFF-128` before the pull**, under `process/agile.md` §2a rule 6
+**Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** ~~Ready~~ → ~~COMMITTED~~ → ✅ **DELIVERED 2026-09-05, decisions.md D-120.** `GET /api/audit`, gated `AuditRead`, Owner alone. `AC-117-A`…`AC-117-H` discharged, **Api 297 → 310**. ⚠️ **Built by an agent that hit a rate limit before running a single test** — the suites and both mutations were run afterwards by the coordinating session, and D-120 §1 records which are whose. **Not verified.**
+~~**COMMITTED to sprint 4, Lane A, 2026-09-05.**~~ Both dependencies cleared this week — KAFF-116 was accepted on 2026-08-24 (and the board said `Ready` until 2026-09-05, which is its own finding) and KAFF-118 was built 2026-09-05, D-116. **`AC-117-I` moved to `KAFF-128` before the pull**, under `process/agile.md` §2a rule 6
 **Spec:** §7, §9 · **Decisions:** D-012, D-043, **D-049 (ruling 1)**, **D-117**
 **Depends on:** KAFF-116, KAFF-118 — **both satisfied 2026-09-05**
 **Discharges its UI criterion in:** **KAFF-128** (§2a rule 6 — named before the pull, not after)

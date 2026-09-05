@@ -179,6 +179,9 @@
   "errors.master.duplicate_phone_not_acknowledged": "This number is already on file. Review the client who holds it, then confirm to continue.",
   "errors.master.client_not_found": "No client exists with that reference.",
   "errors.master.client_list_filter_unknown": "That is not a filter this list knows.",
+
+  "errors.audit.date_range_inverted": "That date range ends before it starts.",
+
   "clients.title": "Clients",
   "clients.search.placeholder": "Search by name, code or phone",
   "clients.filter.all": "All",

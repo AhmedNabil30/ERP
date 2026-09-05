@@ -216,7 +216,7 @@ scope. `meetings/2026-09-05-sprint-4-locked.md` · decisions.md **D-117**.
 
 | Lane | Story | Pts | Why it is in |
 |---|---|---:|---|
-| **A — Backend** | **KAFF-117** — the Owner reads the audit trail, and nobody else does | **5** | **Both dependencies cleared this week**: KAFF-116 (accepted 2026-08-24; the board said `Ready` until 2026-09-05) and KAFF-118 (built 2026-09-05, D-116). Slice 1's gate is *permission tests pass*, and this is the strictest permission in the system — Nabil, verbatim: *"strictly limited to the Owner (Global) … completely hidden from all other roles, **even for their own projects**."* That last clause is the one no other permission in this codebase has |
+| **A — Backend** | ✅ **KAFF-117 — DELIVERED 2026-09-05**, D-120. `GET /api/audit`, Owner alone; Api 297 → 310. ⚠️ Its agent hit a rate limit before running any test — suites and both mutations run afterwards by the coordinating session. **Not verified** | **5** | **Both dependencies cleared this week**: KAFF-116 (accepted 2026-08-24; the board said `Ready` until 2026-09-05) and KAFF-118 (built 2026-09-05, D-116). Slice 1's gate is *permission tests pass*, and this is the strictest permission in the system — Nabil, verbatim: *"strictly limited to the Owner (Global) … completely hidden from all other roles, **even for their own projects**."* That last clause is the one no other permission in this codebase has |
 | **B — Frontend** | **KAFF-127** — the user-management screens | **8** | It converts **KAFF-106 from unacceptable to acceptable**. §2a rule 4: a story whose screen criterion is undischarged is not accepted, and `AC-106-J` was homeless for nineteen days. Closing a delivered story beats opening a new one |
 
 **Not pulled, and each for a stated reason:**

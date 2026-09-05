@@ -142,6 +142,10 @@ public sealed class AuditCoverageTests : IAsyncLifetime
         // Rule 6, and it is a property of every read rather than of any one screen. The criterion was
         // restated by SM-10 to name the reads the sprint actually had; the client list it could not
         // name then exists now (KAFF-124), so it is named here.
+        //
+        // The audit read (KAFF-117, story rule 10) joined the loop on 2026-09-05, and it is the one
+        // read where the rule is self-referential: an audit record per audit read would bury the
+        // records that matter under a record of somebody having looked for them.
         long before = await CountAsync();
 
         for (int i = 0; i < 10; i++)
@@ -151,11 +155,14 @@ public sealed class AuditCoverageTests : IAsyncLifetime
 
             (await GetAsync("/api/clients?status=all", _marketing, Role.MarketingSales, Department.Marketing))
                 .StatusCode.Should().Be(HttpStatusCode.OK);
+
+            (await GetAsync("/api/audit", _owner, Role.Owner, null))
+                .StatusCode.Should().Be(HttpStatusCode.OK);
         }
 
         (await CountAsync()).Should().Be(
             before,
-            "twenty reads wrote a record between them — reads write nothing, and a trail that grows "
+            "thirty reads wrote a record between them — reads write nothing, and a trail that grows "
             + "when nothing changed is a trail nobody can read a change out of");
 
         // The positive control, and it is not decoration. "The count did not change" is satisfied by

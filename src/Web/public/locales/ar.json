@@ -179,6 +179,9 @@
   "errors.master.duplicate_phone_not_acknowledged": "هذا الرقم مسجل بالفعل. راجع العميل الذي يحمله ثم أكد للمتابعة.",
   "errors.master.client_not_found": "لا يوجد عميل بهذا الرقم.",
   "errors.master.client_list_filter_unknown": "فلتر غير معروف.",
+
+  "errors.audit.date_range_inverted": "نهاية المدة قبل بدايتها.",
+
   "clients.title": "العملاء",
   "clients.search.placeholder": "ابحث بالاسم أو الكود أو رقم الهاتف",
   "clients.filter.all": "الكل",

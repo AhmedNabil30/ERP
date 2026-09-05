@@ -9922,3 +9922,83 @@ seven days.
 The engineering. Yesterday's pass attacked seven stories and found **no defective behaviour** — *"every
 business rule I attacked held"* — and its one HIGH was missing coverage, now repaired (D-118). **The
 code is in better shape than the bookkeeping.** This entry is about the bookkeeping.
+
+---
+
+### D-120 — KAFF-117 built, and a handoff that shows what a rate limit leaves behind
+**2026-09-05 · Backend**
+
+`GET /api/audit`, gated `AuditRead`, Owner alone. Api **297 → 310**, Domain 126/126 unchanged.
+
+#### 1. ⚠️ The agent stopped mid-story, and what it left was not nothing
+
+The Backend agent building KAFF-117 hit a session rate limit having said exactly this: *"Build clean.
+Now running the new tests."* **It had written the endpoint, the handler, the response, the error and
+thirteen tests, and had run none of them.** The tree was left with three untracked directories and
+four modified files, uncommitted.
+
+**This is worth recording because the failure mode is not obvious.** A rate limit does not roll
+anything back. The next session finds a clean build and a full-looking feature, and the only sign that
+nothing was verified is one sentence in a notification. **A story stopped there is exactly as
+dangerous as a story finished badly**, because it looks finished — D-041's shape again: *"the build
+was clean, `dotnet format` was clean, and 51 tests passed against a component that could not execute
+once."*
+
+**Nothing the agent claimed was banked.** The coordinating session ran the suites and the mutations
+itself, and this entry states which are whose.
+
+#### 2. What the agent got right, unprompted
+
+- **The `V-33-A` lesson applied to a brand-new endpoint on its first day.** `RefusedActors()` plus
+  `The_refused_list_is_every_role_that_can_sign_in_and_is_not_granted`, deriving the refused set from
+  the `Role` enum rather than a hand-written list — the pattern D-118 established six hours earlier.
+- **The clause that makes this permission unlike every other one has its own test.**
+  `An_assigned_technical_office_user_is_refused_the_trail_of_their_own_project` — Karim's *"even for
+  their own projects"*, which is the half a `role × assignment` system gets wrong by default.
+- **`?projectId=` is a filter, not a scope**, and the endpoint comment says why: a `ProjectScoped`
+  declaration would route through `ProjectAccessPolicy` and admit whoever that policy admits — *"the
+  read D-049 rejected"* — and would also fail
+  `Every_permission_requirement_declares_the_scope_its_catalogue_row_names`.
+- **An inverted date range is refused rather than answered with nothing**
+  (`AuditErrors.DateRangeInverted`), because an empty result and a quiet week must not look alike on
+  the one screen whose purpose is to settle whether something happened.
+- **No paging, with the ceiling named rather than hidden.** Following D-110 §4: a page contract
+  invented before a screen exists will be wrong. It notes the ceiling is worse here than on the client
+  list — a row per state change, and from slice 3 a row per posting — and that **a silent `Take` would
+  be the same defect as the defaulted date range: a truncated trail that looks complete.**
+
+#### 3. The two mutations, run by the coordinating session after the handoff
+
+| Mutation | Result |
+|---|---|
+| Delete `.RequirePermission(Permission.AuditRead)` | **4 red** — 3 in `ReadAuditTrailTests`, 1 in `EndpointPermissionCoverageTests` |
+| Grant `AuditRead` to `Role.TechnicalOffice` | **2 red**, the first being *"asked for a project this user is actively assigned to, and for their own changes on it"* |
+
+**The first count settles a correction the Verifier made yesterday.** The brief for that pass claimed
+that on a read *"the permission test is the entire control"*; the Verifier said it is not — there is
+also the structural `EndpointPermissionCoverageTests` backstop. **Here that is measured on a fresh
+endpoint: 3 behavioural plus 1 structural.** The Verifier was right and the number is now evidence
+rather than argument.
+
+**⚠️ And one thing the mutation exposed about the tooling.** Removing the gate line and then running
+`git checkout --` did **not** restore it: the file was **untracked**, so git had no copy to restore
+from. The line was re-inserted by hand. **A mutation on an uncommitted file has no undo** — on a
+tracked file `git checkout` is the revert, and on a new one it silently does nothing and leaves the
+mutation in place. Anyone mutating a new feature before its first commit must restore by hand and
+verify the restore, which is what happened here.
+
+#### 4. Scope held
+
+**`AC-117-I` was not built, and that is correct.** It moved to `KAFF-128` as `AC-128-A` before this
+story was pulled (§2a rule 6, D-117), and the agent's brief said so. **No Angular code was written.**
+This is the first story in the project where the UI criterion was never on the backend agent's desk at
+all.
+
+#### 5. Gates
+
+Build **0/0** `-warnaserror`; `dotnet format` exit **0**; Domain **126/126**; **Api 310/310**;
+citations **1157 / 0 / 0**.
+
+**Not verified.** The code was written by a dispatched agent and its mutations were run by the session
+that briefed it — closer to independent than usual, and **not a Verifier pass.** KAFF-117 is
+DELIVERED, not accepted, and nothing in this project has ever been accepted (D-119).

@@ -439,6 +439,52 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
             + "DELETE that removes the row");
     }
 
+    /// <summary>
+    /// KAFF-117 <c>AC-117-H</c> — the audit trail is readable through the API and writable through
+    /// nothing.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Same source of truth and same reasoning as <see cref="No_endpoint_deletes_a_project_assignment"/>:
+    /// "no such endpoint exists" is a claim about absence, and the only place it can be checked is the
+    /// routes the host actually built. A grep over <c>Endpoint.cs</c> files sees what somebody wrote,
+    /// which is the artefact D-067 showed is not trustworthy.
+    /// </para>
+    /// <para>
+    /// <b>Matched on the route rather than on one exact path</b>, so a <c>PUT</c>, <c>PATCH</c> or
+    /// <c>DELETE</c> added anywhere under <c>/api/audit</c> fails this whatever it is called.
+    /// <c>GET /api/audit</c> (KAFF-117) is the one legal shape. The database is the real guard —
+    /// records are append-only by trigger, asserted by <c>AuditMechanismTests</c> -&gt;
+    /// <c>An_audit_record_cannot_be_changed_afterwards</c> and <c>ReadAuditTrailTests</c> -&gt;
+    /// <c>A_record_cannot_be_deleted_from_the_database_either</c> — and this is the layer above it:
+    /// an edit path that 500s on a trigger is still an edit path somebody tried to build.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void No_endpoint_writes_to_the_audit_trail()
+    {
+        string[] writeVerbs = ["POST", "PUT", "PATCH", "DELETE"];
+
+        List<string> writeShaped = [.. ShippedEndpoints()
+            .Where(mapped =>
+                mapped.Route.Contains("audit", StringComparison.OrdinalIgnoreCase)
+                && writeVerbs.Any(verb => mapped.Method.Contains(verb, StringComparison.Ordinal)))
+            .Select(mapped => mapped.ToString())];
+
+        writeShaped.Should().BeEmpty(
+            "CLAUDE.md and spec.md §7: audit records are append-only evidence, and evidence that can "
+            + "be edited is not evidence. There is no update path and no delete path — not for the "
+            + "Owner, not for an admin, not for fixing test data");
+
+        ShippedEndpoints()
+            .Select(mapped => mapped.ToString())
+            .Should().Contain(
+                "GET /api/audit",
+                "an absence assertion over routes matching 'audit' is satisfied by there being no "
+                + "audit routes at all — this is the positive control that says the filter above is "
+                + "looking at something (decisions.md D-116 §3)");
+    }
+
     private static List<PermissionRequirement> DeclaredPermissions(MappedEndpoint mapped)
     {
         List<PermissionRequirement> requirements = [];
