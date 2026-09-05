@@ -10002,3 +10002,146 @@ citations **1157 / 0 / 0**.
 **Not verified.** The code was written by a dispatched agent and its mutations were run by the session
 that briefed it — closer to independent than usual, and **not a Verifier pass.** KAFF-117 is
 DELIVERED, not accepted, and nothing in this project has ever been accepted (D-119).
+
+---
+
+### D-121 · Frontend — KAFF-127 built: the user screens, `GET /api/users`, and the first frontend unit tests · 2026-09-05
+
+**Decision.** S-006, S-007 and S-008 built as two routed components — `user-list-page` and
+`user-form-page`, the second serving create and the record — behind `/users`, gated by a
+`userManageGuard` that decides nothing the server has not already decided. Standalone, signal forms,
+zoneless, `@if`/`@for`, `inject()`, `OnPush`, logical properties, **no `$any` in any template**, no
+NgModule, no Zone.js.
+
+#### 1. Writing the screen found a missing endpoint — the second time, and the same answer
+
+**`AC-127-A` asks for a user list and nothing could populate one.** Five identity endpoints were
+merged, gated and reachable by nobody, and there was **no read at all**. `GET /api/users` was added,
+with its own permission gate, its own whitelisted response type and its own six tests — the shape
+D-113 §1 set for `GET /api/clients/{clientId}`, and **reported rather than slipped in**.
+
+**It is gated `UserManage` — Owner alone — and NOT `UserRead`, and that choice is spec.md's rather
+than this session's.** `Permission.UserRead` exists and is held by `Role.Owner` and `Role.Hr`, but
+spec.md §9's 2026-08-22 amendment (D-055 §3) draws the line in as many words: HR's grant is *"names
+and roles only"* and it *"does not hand HR the Owner's user administration surface — usernames,
+departments and active state for every account"*. **This payload is exactly that surface.**
+
+**So `UserRead` still has no endpoint**, which is the state this story found and did not change. HR's
+narrow names-and-roles list is a screen nobody has cut. **A later session must not "fix" this by
+re-gating this endpoint** — that would hand HR the surface the amendment exists to withhold. Raised
+for Nabil as an open question, not answered here.
+
+The row carries `ActiveProjectNames` so `AC-127-D` and `AC-127-E` can state a consequence **before**
+the act rather than report it after — S-008: *"the count and the names come from the server."*
+
+#### 2. ⚠️ `V-33-C` needed a test runner, not a test — and `V-32-D` is closed with it
+
+The Verifier deleted `await resolver.ensureResolved()` from `clientManageGuard` and the E2E suite
+stayed **11/11 green**, because `app.routes.ts` runs `sessionGuard` first and makes the guard's own
+defence redundant *today*. **No E2E test can catch that line going**, in either guard: the defect it
+prevents only returns when somebody reorders the `canActivate` array, and by then every suite is
+still green.
+
+**So `src/Web` has a unit-test runner now** — `vitest` + `jsdom` behind `@angular/build:unit-test`,
+`ng test`, `tsconfig.spec.json`. Two new dependencies, per CLAUDE.md recorded here with the reason:
+nothing already installed can run a `CanActivateFn` against an unresolved session, and that is the
+only arrangement in which the `await` does any work.
+
+`core/auth/guards.spec.ts` runs **both** guards with **nothing in front of them**. `SessionResolver`
+and `AuthService` are real; what is faked is one level lower — `AuthApi.me()`, held open on a promise
+the test releases by hand — so "the session has not resolved yet" is a state that genuinely exists
+while the guard runs.
+
+**These are the first frontend tests in this repository.** `V-32-D` had been open across two
+verifications.
+
+#### 3. ⚠️ Three mutation traps hit in one session, all three already written down
+
+1. **`git checkout` cannot revert an untracked file** (D-120 §3). Hit on the three new
+   `ListUsers/*.cs` files. Restored by hand, restore verified by grep.
+2. **A mutation that does not compile runs the previous binaries** (D-109 §3). Deleting the
+   `await` line outright fails `TS6133: 'resolver' is declared but its value is never read` and runs
+   **no tests at all**. Reshaped to `await` → `void`, which compiles and reproduces the defect
+   exactly. Caught by reading the build's exit code, not by reading the test output.
+3. **`MSB3026`** — building the solution while the API was running. Only the E2E project was rebuilt
+   after that, and the assembly's `LastWriteTime` was compared against the source before the run.
+
+#### 4. ⚠️ And a fourth, which was this session's own test failing to fail
+
+`A_portal_client_is_refused_the_staff_host…` was given a positive control — ask the Owner's own
+`GET /api/users` whether `portal_client_demo` really exists — because the refusal it reads is
+**identical to the one an unknown username produces** (D-065), so without the control the test is
+satisfied by a deleted account. **The control was written as `body.Should().Contain("portal_client_demo")`,
+and renaming the account to `portal_client_demo_MUTATED` left the whole suite green** — the substring
+was still there. It is now a parsed exact match on `userName`, plus `role` and `isActive`. **D-116 §3
+arriving from inside the control itself**, and it was found only because the mutation chosen was a
+rename rather than a delete.
+
+#### 5. The Owner's landing stops being honest-because-empty, and `pending` is deleted
+
+`landingFor(Role.Owner)` returned `{ kind: 'pending' }` because S-006 *"has no `GET` route at all"*.
+It has one now, so the Owner redirects to `/users` the way MarketingSales started redirecting to
+`/clients` on 2026-09-04. **The Owner was the last role in `pending`**, so the branch, the landing
+page's `@case`, `nav.home` and the three `landing.pending.*` keys are **deleted** rather than kept
+warm for a role that might want one later.
+
+`AC-127-H`'s second half — *"no key is added that no template uses"* — had no test, and would not
+have caught those four orphans.
+`Every_screen_key_in_the_catalogues_is_read_by_a_template_or_a_component` does, scoped to the
+namespaces a screen owns (`errors.*` and `enum.*` are excluded on purpose: those names live in C# and
+in exhaustive switches, never as template literals).
+
+#### 6. Two deliberate divergences from `ux/`, both reported rather than silent
+
+**1. The password-mismatch key is `auth.password.mismatch`, not S-007's
+`validation.passwords_do_not_match`.** The first already exists and S-003 already uses it. Two keys
+for one refusal is finding F-08's shape and D-114 §1 is the test that exists because of it.
+
+**2. The confirmations are inline regions, not `role="dialog" aria-modal="true"`.** They carried
+those attributes and the attributes were removed: `ux/components.md` §11 requires a dialog to take
+focus, trap it, return it to the trigger and cancel on `Escape`, and these do none of those. Claiming
+the role without the behaviour tells a screen-reader user they are in a modal they can tab straight
+out of. The shared `kaff-confirm-dialog` that would do it properly **is not built** — this follows
+`client-form-page.html`'s shipped archive confirmation instead. **Owed.**
+
+#### 7. What the driven browser said, and the two things only the screenshot said
+
+Fresh scratch database `kaff_ui3` (`/api/health` **healthy**, unlike the degraded `kaff` of
+`V-33-F`), seeded, driven through Chromium at **390px in Arabic** as `owner_demo`:
+
+| Checked | Result |
+|---|---|
+| `/users`, hard load | `dir=rtl`, **horizontal overflow 0px**, all five seeded accounts, **zero unresolved keys on screen** |
+| `/users/new`, hard load | `dir=rtl`, overflow **0px**, every label and hint resolved |
+| `AC-127-C` | selecting `Role.Hr` removes the department select entirely (**count 0**) and renders the pinned value with its hint |
+| `AC-127-F` | password typed, revealed, submitted — `localStorage` **[]**, `sessionStorage` **[]**, not on screen, not in the DOM, after creation |
+| `AC-127-D` | confirm button **disabled** with no reason, **enabled** once one is typed |
+| `AC-127-E` | confirmation names the from-role and to-role, both bidi-isolated by `t()` |
+| A server refusal | `errors.identity.username_taken` rendered as **"اسم المستخدم محجوز بالفعل."**, not as a key |
+
+**The screenshot was looked at, not just taken, and it found two things no measurement did.**
+
+1. **The username and phone were left-aligned while the name above them was right-aligned**, so each
+   card read as two columns that did not line up. A `<bdi>` is a grid item here, stretches to the full
+   column, and its own resolved direction is LTR — which is what isolation *means* — so its text sits
+   at the box's left. `justify-self: start` shrinks the box to its content. The overflow measurement
+   was 0px throughout: nothing automated was ever going to see this.
+   **⚠️ `client-list-page.css` has the identical construction and the identical result.** It is not
+   changed here — that is KAFF-126's shipped `AC-126-A` — and is reported instead.
+2. **The submit button read `users.action.create`, which is the list's "+ New user" link.** On a
+   submit button that says "go somewhere" where the button means "do this". `action.create` added,
+   which is what S-007's own table names, along with the `action.cancel` S-007 draws beside it.
+
+#### 8. Gates
+
+Build **0/0** `-warnaserror`, Debug and Release; `dotnet format` exit **0**; SPA production build
+clean under `strictTemplates`; Domain **127/127**; Api **316/316**; **frontend units 6/6**;
+E2E **18/18**; citations **1157 / 0 broken / 0 legacy**. Stack stopped, no stranded hosts.
+
+**One E2E flake, reported rather than smoothed over.** The first full run was **17/18** — the portal
+test timed out at 32s while the dev server was rebuilding from a `npm run build` fired in parallel.
+Three consecutive full runs since were 18/18. The cause is believed environmental and is **not
+proven**.
+
+**Not verified.** Every mutation in this entry was run by the session that wrote the code. KAFF-127 is
+DELIVERED, not accepted (D-119).

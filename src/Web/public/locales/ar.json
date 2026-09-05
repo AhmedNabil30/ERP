@@ -215,6 +215,7 @@
   "enum.ClientKind.Individual": "فرد",
   "enum.ClientKind.Corporate": "شركة",
   "action.cancel": "إلغاء",
+  "action.create": "إنشاء",
   "nav.clients": "العملاء",
 
   "errors.project.code_required": "كود المشروع مطلوب.",

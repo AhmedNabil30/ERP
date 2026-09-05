@@ -206,6 +206,16 @@ what actually matters, not superstition.
 | Hr | `hend_hr_demo` | `Demo#Hr123` | **Yes** — sign-in redirects straight to `/change-password` |
 | Finance | `sara_finance_demo` | `Demo#Fin123` | **Yes** |
 | MarketingSales | `karim_sales_demo` | `Demo#Sales123` | **Yes** |
+| **Client (portal)** | `portal_client_demo` | `Demo#Portal1` | **Yes** — and it never gets that far; see below |
+
+**⚠️ The portal account exists to be REFUSED, and its password above is the correct one.** Added
+2026-09-05 for `V-33-E`: until then the seed created no `Role.Client` user at all, so spec.md §12's
+client-portal boundary had **no UI-level evidence anywhere in the repository**. A `Role.Client`
+cannot hold a staff session (`StaffSessionRules.MayHoldStaffSession`), so signing in with these
+credentials on the staff host is turned away with **exactly the message a wrong password produces** —
+D-065's ruling, because a message that said "this account cannot sign in here" would confirm to an
+attacker that the username exists. `UserScreenTests` drives it and asserts the two texts are equal.
+It is scoped to `C-10001`; there is no portal host to sign it in to yet.
 
 **`mustChangePassword: true` is a demo step, not a bug.** Signing in with any of the three staff
 accounts above lands on the forced-change screen first — walk through it live, or use

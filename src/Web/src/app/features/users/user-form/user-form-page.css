@@ -225,10 +225,17 @@
   border-radius: 0.35rem;
 }
 
-.confirm-actions {
+.confirm-actions,
+.form-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+/* The primary sits at the inline-start — the RIGHT in Arabic — which `flex-direction: row` already
+   does under `dir=rtl`. Nothing is mirrored by hand (ux/rtl-and-i18n.md §1). */
+.form-actions .submit {
+  flex: 1 1 8rem;
 }
 
 /* 390px is the width that must work; the wider layout is the enhancement. */

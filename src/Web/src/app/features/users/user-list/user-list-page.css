@@ -54,10 +54,20 @@
   opacity: 0.8;
 }
 
-/* `unicode-bidi: isolate` is what <bdi> means; stated so a later reset cannot quietly remove it. */
+/*
+ * `unicode-bidi: isolate` is what <bdi> means; stated so a later reset cannot quietly remove it.
+ *
+ * `justify-self: start` is load-bearing and was found by looking at the screenshot rather than at the
+ * overflow measurement. A <bdi> is a grid item here, so it stretches to the full column, and its own
+ * resolved direction is LTR (first-strong, which is what isolation means) — so the text inside a
+ * full-width box sits at the box's LEFT while the Arabic name above it sits at the right, and the
+ * card reads as two columns that do not line up. Shrinking the box to its content puts it back at the
+ * inline-start. The isolation is untouched: this moves the box, not the text inside it.
+ */
 .row-username,
 .row-phone {
   unicode-bidi: isolate;
+  justify-self: start;
   font-size: 0.9rem;
 }
 

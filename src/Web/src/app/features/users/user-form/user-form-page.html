@@ -242,9 +242,20 @@
     }
 
     @if (!isEdit()) {
-      <button class="submit" type="submit" data-testid="user-submit" [disabled]="!canSubmit()">
-        {{ i18n.t('users.action.create') }}
-      </button>
+      <!--
+        `action.create`, not `users.action.create`. The latter is the list's "+ New user" link and
+        reading it on a submit button says "go somewhere" where the button means "do this" — found by
+        looking at the screenshot, not by any measurement. S-007's own table names `action.create`
+        and `action.cancel` here.
+      -->
+      <div class="form-actions">
+        <button class="submit" type="submit" data-testid="user-submit" [disabled]="!canSubmit()">
+          {{ i18n.t('action.create') }}
+        </button>
+        <button type="button" class="secondary" data-testid="user-cancel" (click)="onCancel()">
+          {{ i18n.t('action.cancel') }}
+        </button>
+      </div>
     }
   </form>
 
@@ -263,7 +274,16 @@
           Supervisor and Junior alike, and HR re-assigns afterwards if the person is still needed.
         -->
         @if (confirming() === 'role') {
-          <div class="confirm" role="dialog" aria-modal="true" data-testid="user-role-confirm">
+          <!--
+            An inline confirmation region, not a modal. `role="dialog" aria-modal="true"` was here and
+            has been removed on purpose: `ux/components.md` §11 requires a dialog to take focus, trap
+            it, return it to the trigger and cancel on Escape, and this does none of those. Claiming
+            the role without the behaviour tells a screen-reader user they are in a modal they can
+            tab straight out of — worse than the honest region below. The shared
+            `kaff-confirm-dialog` that would do it properly is not built; this follows
+            `client-form-page.html`'s shipped archive confirmation instead. Owed.
+          -->
+          <div class="confirm" role="group" [attr.aria-label]="i18n.t('users.confirm.change_role.title')" data-testid="user-role-confirm">
             <p class="confirm-title">{{ i18n.t('users.confirm.change_role.title') }}</p>
             <p class="confirm-body">
               {{ i18n.t('users.confirm.change_role.body', { name: user.fullName, from: i18n.t(roleKey(user.role)), to: i18n.t(roleKey(draft().role)) }) }}
@@ -309,7 +329,7 @@
               the reason is REQUIRED here — AC-118-G asserts it lands on the audit record verbatim,
               and a deactivation with no stated reason answers "who and when" but not "why".
             -->
-            <div class="confirm" role="dialog" aria-modal="true" data-testid="user-deactivate-confirm">
+            <div class="confirm" role="group" [attr.aria-label]="i18n.t('users.confirm.deactivate.title')" data-testid="user-deactivate-confirm">
               <p class="confirm-title">{{ i18n.t('users.confirm.deactivate.title') }}</p>
               <p class="confirm-body">
                 {{ i18n.t('users.confirm.deactivate.body', { name: user.fullName }) }}
@@ -361,7 +381,7 @@
             <p class="danger-note">{{ i18n.t('users.danger.deactivate_explains') }}</p>
           }
         } @else if (confirming() === 'reactivate') {
-          <div class="confirm" role="dialog" aria-modal="true" data-testid="user-reactivate-confirm">
+          <div class="confirm" role="group" [attr.aria-label]="i18n.t('users.confirm.reactivate.title')" data-testid="user-reactivate-confirm">
             <p class="confirm-title">{{ i18n.t('users.confirm.reactivate.title') }}</p>
             <!-- D-049 ruling 5: a returning employee comes back with ZERO assignments. Nothing is
                  restored automatically, and the dialog says so before the act rather than after. -->

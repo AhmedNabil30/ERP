@@ -215,6 +215,7 @@
   "enum.ClientKind.Individual": "Individual",
   "enum.ClientKind.Corporate": "Company",
   "action.cancel": "Cancel",
+  "action.create": "Create",
   "nav.clients": "Clients",
 
   "errors.project.code_required": "A project code is required.",

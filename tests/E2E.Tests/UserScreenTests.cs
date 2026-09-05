@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.Playwright;
 
 namespace Kaff.E2E.Tests;
@@ -223,6 +224,13 @@ public sealed class UserScreenTests
     [E2EFact]
     public async Task A_portal_client_is_refused_the_staff_host_indistinguishably_from_a_wrong_password()
     {
+        // ⚠️ The positive control, and without it this test is satisfied by an account that does not
+        // exist — a username nobody holds is refused with exactly the same generic message, which is
+        // the whole point of D-065 and is therefore also this assertion's blind spot (D-116 §3). So
+        // the Owner is asked, through GET /api/users, whether the portal account is really there and
+        // really active BEFORE any conclusion is drawn from its refusal.
+        await AssertPortalAccountExistsAsync();
+
         IPage page = await _playwright.NewMobilePageAsync();
 
         string withCorrectPassword = await FailedSignInTextAsync(page, PortalUser, PortalPassword);
@@ -272,6 +280,66 @@ public sealed class UserScreenTests
             clientWidth,
             "a horizontal scrollbar at 390px is the usual symptom of a physical CSS property that "
             + "should have been logical");
+    }
+
+    /// <summary>
+    /// Asks the Owner's own <c>GET /api/users</c> whether the portal account exists and is active.
+    /// </summary>
+    /// <remarks>
+    /// The control for
+    /// <see cref="A_portal_client_is_refused_the_staff_host_indistinguishably_from_a_wrong_password"/>.
+    /// That test reads a refusal, and a refusal is what an unknown username produces too — so without
+    /// this, deleting <c>portal_client_demo</c> from the database would leave it green while proving
+    /// nothing at all about spec.md §12's boundary. This is the assertion that fails when the account
+    /// is missing, and it fails naming the seed script.
+    /// </remarks>
+    private static async Task AssertPortalAccountExistsAsync()
+    {
+        using HttpClientHandler handler = new() { UseCookies = false };
+        using HttpClient client = new(handler) { BaseAddress = new Uri(E2EEnvironment.ApiBaseUrl) };
+
+        using HttpResponseMessage signIn = await client.PostAsJsonAsync(
+            "/api/auth/sign-in",
+            new { userName = OwnerUser, password = OwnerPassword });
+
+        signIn.StatusCode.Should().Be(
+            HttpStatusCode.NoContent,
+            "the Owner must be able to sign in — is this stack seeded by scripts/seed-demo.ps1?");
+
+        string cookie = signIn.Headers.GetValues("Set-Cookie").First().Split(';')[0];
+
+        using HttpRequestMessage list = new(HttpMethod.Get, "/api/users");
+        list.Headers.TryAddWithoutValidation("Cookie", cookie);
+
+        using HttpResponseMessage response = await client.SendAsync(list);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+
+        // ⚠️ Parsed and matched EXACTLY, never `body.Should().Contain(PortalUser)`.
+        // That is what this assertion said first, and renaming the account to
+        // `portal_client_demo_MUTATED` left it green — the substring was still there. An absence
+        // control defeated by the mutation it exists to catch is D-116 §3 arriving from inside the
+        // control itself.
+        using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+        JsonElement portal = document.RootElement.GetProperty("users").EnumerateArray()
+            .SingleOrDefault(user =>
+                string.Equals(user.GetProperty("userName").GetString(), PortalUser, StringComparison.Ordinal));
+
+        portal.ValueKind.Should().Be(
+            JsonValueKind.Object,
+            $"the refusal below proves nothing unless {PortalUser} actually exists — a username nobody "
+            + "holds is turned away with exactly the same message (D-065), which is why V-33-E called "
+            + "the portal half UNDRIVABLE rather than merely untested. Reseed with the version of "
+            + "scripts/seed-demo.ps1 that creates it.");
+
+        portal.GetProperty("role").GetString().Should().Be(
+            "Client",
+            $"{PortalUser} must still hold Role.Client — a portal account promoted to a staff role "
+            + "would be refused for a different reason entirely, and this test would say nothing true");
+
+        portal.GetProperty("isActive").GetBoolean().Should().BeTrue(
+            "a deactivated account is refused for a reason that has nothing to do with spec.md §12");
     }
 
     /// <summary>Attempts a sign-in expected to fail, and returns the refusal the screen rendered.</summary>

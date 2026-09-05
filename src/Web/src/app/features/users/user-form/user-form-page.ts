@@ -352,6 +352,11 @@ export class UserFormPage {
     this.reactivationPassword.set(target instanceof HTMLInputElement ? target.value : '');
   }
 
+  /** S-007's close, at the inline-start of the header in the wireframe and beside Create here. */
+  protected async onCancel(): Promise<void> {
+    await this.router.navigateByUrl('/users');
+  }
+
   protected onStartConfirm(kind: 'role' | 'deactivate' | 'reactivate'): void {
     this.reason.set('');
     this.reactivationPassword.set('');
