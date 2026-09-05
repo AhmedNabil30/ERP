@@ -9835,3 +9835,90 @@ found. `Q57` is now confirmed behaviour rather than reasoning, and it remains **
 
 Build **0/0** `-warnaserror`; `dotnet format` exit **0**; Domain **126/126** (125 → 126);
 **Api 297/297** (295 → 297); citations **1155 / 0 / 0**.
+
+---
+
+### D-119 — The board was counting verification as acceptance, and 48 points of verdict have lapsed unnoticed
+**2026-09-05 · Scrum Master · a sweep, not a build**
+
+**Nabil: *"Those numbers are not true."*** He was right, and the way they were wrong matters more than
+the amount.
+
+#### 1. Where the wrong number came from
+
+The Scrum Master reported **38 of 688 points accepted** by parsing this board's own state column —
+**the same column found drifted three times in one week** (KAFF-116 `Ready` and `ACCEPTED` at once;
+KAFF-108 and KAFF-113 reading `Ready` until 2026-09-01 while the same file recorded them accepted).
+
+**A document was cited as evidence about itself, four days after that document was proven unreliable
+about exactly this field.** The sweep below is what should have been done the first time: read the
+process definition, the verification reports and git, and let the board be the thing that gets
+corrected rather than the thing that answers.
+
+#### 2. ⛔ Nothing has ever been accepted. Zero, not 38.
+
+`process/agile.md` §4 is unambiguous: *"**Acceptance — Nabil.** Nabil runs the demo script. The gate
+for each slice is in `agents.md`, and it is a specific observable thing, not a judgement."*
+
+**There is no record anywhere in this repository of that ceremony having run, for any story, ever.**
+No meeting records it. No verification report claims it — the reports are careful, and say *satisfied*
+/ *defect* / *not verifiable*, which is verification's vocabulary and not acceptance's.
+
+**Every `ACCEPTED` on this board is a Verifier verdict wearing the wrong word.** `agile.md` lists
+verification (§3) and acceptance (§4) as two ceremonies with two different actors, and the board has
+been collapsing them since sprint 1. That is not a labelling nicety: **the two answer different
+questions.** Verification asks *does it do what the story says*. Acceptance asks *does Kaff want it*,
+and it is the only one that is Nabil's.
+
+#### 3. And most of the older verdicts have lapsed, under this project's own rule
+
+D-096 §1: a story lapses where a later commit changed behaviour **that story's own criteria assert**,
+and may be carried past a *shared-mechanism* change only when the equivalence is pinned by a test —
+*"the test is the whole of the licence."*
+
+**`93fa417` changed the session gate on 2026-09-03:** *"Repair V-30-A: the LiveSession 'unforgeable'
+claim was false in six places plus a test name."* `LiveSession.cs`, `PermissionEvaluator.cs` and
+`ProjectAccessPolicy.cs` have all moved since the 2026-08-30 pass that last re-established those
+verdicts.
+
+**D-096 named this exact path in advance** — *"KAFF-105a, 102 and 103 through the gate they route
+through"* — and its own closing worry was that *"certifying five stories every time `LiveSession` or
+the role doors move is unsustainable at slice 1 and impossible at slice 5."* **`LiveSession` moved,
+and nobody certified anything.** The two passes since verified **commits**, not stories.
+
+**48 points sit in a state that is neither verified nor broken: unknown.** That is precisely the state
+D-096 exists to stop being invisible, and it went invisible anyway — because nothing on the board has
+a field for *"verified, then the ground moved."*
+
+#### 4. The corrected figures
+
+| State | Pts | |
+|---|---:|---|
+| Accepted by Nabil | **0** | the ceremony has never run |
+| Verified at a live commit | **25** | the seven Client-master stories, 2026-09-05 — 17 Pass, 8 Conditional |
+| Verdict lapsed, not re-established | **48** | 100, 101a, 105b, 106, 108, 110, 111, 112, 113, 114, 116, 125 |
+| Rejected, fixed, never re-verified | **14** | 102, 103, 105a, 109 |
+| Not built | **34** | 101b, 104, 107, 115, 117, 127, 128 |
+
+**Slice 1: 121 points. Project: 688. Verified at a live commit: 25 — 3.6%.**
+
+#### 5. ⚠️ What this says about the board as an instrument
+
+Three defects in one week, all the same shape: **the board records a state, and the state is not
+derived from anything.** KAFF-116 could be `Ready` and `ACCEPTED` simultaneously because two humans
+wrote two rows. 48 points could lapse silently because *lapsed* is not a state the board can hold.
+
+**A state column that is maintained by hand is a claim, and this project's whole discipline is that a
+claim needs a machine behind it** (D-067, D-068). The board has been the one artefact exempt from its
+own rule.
+
+**Routed to the next refinement, as the first item:** either the state column is derived — from
+verification reports and git — or it stops claiming to be authoritative and points at what is. It
+cannot keep doing what it has been doing, and this entry is the third piece of evidence for that in
+seven days.
+
+#### 6. What is NOT in doubt
+
+The engineering. Yesterday's pass attacked seven stories and found **no defective behaviour** — *"every
+business rule I attacked held"* — and its one HIGH was missing coverage, now repaired (D-118). **The
+code is in better shape than the bookkeeping.** This entry is about the bookkeeping.

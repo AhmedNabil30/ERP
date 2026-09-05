@@ -21,6 +21,55 @@ verdicts and no longer disagrees with an order that has nothing left to sequence
 
 ---
 
+## ⛔ Where the work ACTUALLY sits — swept 2026-09-05, and the previous answer was wrong
+
+**Nabil challenged the figures and was right to.** They were read off this file's own state column —
+the column found drifted on KAFF-116, KAFF-108 and KAFF-113 inside one week. decisions.md **D-119**.
+
+**Two corrections, and the first is not a rounding error.**
+
+### 1. **Nothing is ACCEPTED. Zero points, not 38.**
+
+`process/agile.md` §4: *"**Acceptance — Nabil.** Nabil runs the demo script."* **There is no record
+anywhere in this repository of that having happened, for any story, ever.** Every `ACCEPTED` label on
+this board is a **Verifier verdict**, and `agile.md` lists verification and acceptance as two
+different ceremonies with two different actors on purpose.
+
+**The board has been using the word for the wrong ceremony since sprint 1.**
+
+### 2. Most of the pre-2026-09-05 verdicts have **lapsed**, under this project's own rule
+
+D-096 §1: *"A story lapses where a commit changed behaviour that story's own acceptance criteria
+assert"*, and a story may only be carried past a shared-mechanism change when the equivalence is
+**pinned by a test** — *"the test is the whole of the licence."*
+
+**`93fa417` — "Repair V-30-A: the LiveSession 'unforgeable' claim was false in six places" — changed
+the session gate after those verdicts were given.** `PermissionEvaluator.cs`, `ProjectAccessPolicy.cs`
+and `LiveSession.cs` have all moved since 2026-08-30
+[Verified: 2026-09-05 @ `src/Api/Authorization/LiveSession.cs` -> `LiveSession`]. D-096 named exactly
+this path — *"KAFF-105a, 102 and 103 through the gate they route through"* — and **no session has
+performed the check the rule requires.** The two passes since (2026-09-03, 2026-09-04) verified
+**commits**, not those stories.
+
+### The corrected bar — slice 1, 121 points
+
+| State | Pts | Stories |
+|---|---:|---|
+| **Accepted by Nabil** | **0** | none, ever |
+| **Verified at a live commit** | **25** | the seven Client-master stories, 2026-09-05 — **17 Pass, 8 Conditional** (KAFF-126 carries `V-33-C`, `D`, `E`) |
+| **Verdict lapsed, not re-established** | **48** | 100, 101a, 105b, 106, 108, 110, 111, 112, 113, 114, 116, 125 |
+| **Rejected, fixed, never re-verified** | **14** | 102, 103, 105a, 109 |
+| **Not built** | **34** | 101b, 104, 107, 115, 117, 127, 128 |
+
+**Whole project: 25 of 688 points verified at a live commit — 3.6%. Accepted: 0.**
+
+> **⚠️ The 48 is the number to act on.** It is not "probably fine" and it is not "broken" — **it is
+> unknown**, which is the state D-096 was written to stop being invisible. Re-establishing it is one
+> Verifier pass against a rule that already exists, and it is cheaper today than after slice 2 adds
+> thirteen more stories on top of the same gate.
+
+---
+
 ## Where the work sits
 
 | # | Epic | Gate (`agents.md`) | Stories | Points | Blocked |
