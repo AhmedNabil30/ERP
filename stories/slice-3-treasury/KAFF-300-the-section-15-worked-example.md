@@ -35,7 +35,7 @@ building the fixture against a blank page would duplicate all of it:
 
 | Already built | Evidence |
 |---|---|
-| The five ledgers as account types, plus `MaterialAdvance` | [Verified: 2026-09-07 @ `src/Domain/Treasury/AccountType.cs` -> `AccountType.ClientAdvance`, `Hold`, `FirmAdvance`, `PettyCashAdvance`, `OwnerCurrentAccount`, `MaterialAdvance`] |
+| The five ledgers as account types, plus `MaterialAdvance` | [Verified: 2026-09-07 @ `src/Domain/Treasury/AccountType.cs` -> `ClientAdvance`, `Hold`, `FirmAdvance`, `PettyCashAdvance`, `OwnerCurrentAccount`, `MaterialAdvance`] |
 | `Posting`, `Account`, `AccountBalance`, `PostingTypes`, `TreasuryErrors`, `AccountingPeriod` | [Verified: 2026-09-07 @ `src/Domain/Treasury/` — the eleven files] |
 | The database guards: append-only, no-truncate, posting validity, the non-negative floor, hold-release-in-full, account-configuration immutability | [Verified: 2026-09-07 @ `src/Infrastructure/Persistence/DatabaseInitializer.cs` -> `FindMissingGuardsAsync` — the eight trigger names it requires] |
 | Two Treasury test files | [Verified: 2026-09-07 @ `tests/Domain.Tests/PostingRuleTests.cs`, `tests/Api.Tests/TreasuryGuardTests.cs`, `tests/Domain.Tests/TestAccounts.cs`] |
@@ -175,7 +175,7 @@ installed — correct?"* — *"One sentence, and **it confirms the D-034 fix**."
 **⚠️ Correction to how `Q14` has been described in briefs: it does not ask which ledger.** The ledger is
 decided. D-034 ruled تشوينات a **liability** — *"money received for work not yet done — structurally
 identical to `ClientAdvance`"* — and `AccountType.MaterialAdvance` exists in the catalogue today
-[Verified: 2026-09-07 @ `src/Domain/Treasury/AccountType.cs` -> `AccountType.MaterialAdvance`]. **`Q14`
+[Verified: 2026-09-07 @ `src/Domain/Treasury/AccountType.cs` -> `MaterialAdvance`]. **`Q14`
 is a confirmation of a mechanic that was inferred from §15's own arithmetic, not a choice between
 ledgers.** Nothing here decides it either way, and the confirmation is still owed.
 

@@ -118,8 +118,8 @@ And the same user with no active assignment sees an **explicit empty state** and
 > **Both halves of that predicate were already untrue when the criterion was given its verdict.**
 >
 > * `GET /api/auth/me` carries `Projects` and `TeamProjects`
->   [Verified: 2026-09-07 @ `src/Api/Features/Auth/WhoAmI/Response.cs` -> `Response.Projects`,
->   `Response.TeamProjects`] — added by KAFF-105b (D-103).
+>   [Verified: 2026-09-07 @ `src/Api/Features/Auth/WhoAmI/Response.cs` -> `Projects`,
+>   `TeamProjects`] — added by KAFF-105b (D-103).
 > * The landing page has rendered them **since KAFF-125's own build commit**, not since some later
 >   change: `git log --oneline -S "session.projects" -- src/Web/src/app/features/landing/landing-page.html`
 >   returns exactly one commit, **`7461332`** — *"KAFF-125: the staff shell — S-004's dispatch, chrome,
