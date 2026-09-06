@@ -141,7 +141,7 @@ public sealed class ListUsersTests : IAsyncLifetime
     /// <remarks>
     /// <para>
     /// <b><c>Role.Hr</c> is refused, and that is spec.md's ruling rather than an oversight.</b> HR
-    /// holds <c>Permission.UserRead</c> — but the 2026-08-22 amendment (D-055 §3) is explicit that the
+    /// holds <c>Permission.UserRead</c> — but the 2026-08-22 amendment (D-055 §2) is explicit that the
     /// grant is <i>"names and roles only"</i> and <i>"does not hand HR the Owner's user administration
     /// surface — usernames, departments and active state for every account"</i>. This payload is that
     /// surface. HR's narrow list is a screen nobody has cut, and <c>UserRead</c> still has no endpoint.
@@ -212,7 +212,7 @@ public sealed class ListUsersTests : IAsyncLifetime
         RefusedActors().Select(actor => actor.Role).Should().BeEquivalentTo(
             Enum.GetValues<Role>().Except([Role.Owner, Role.Subcontractor]),
             "UserManage is the Owner's alone (D-044 ruling 1), so every other signing-in role belongs "
-            + "in the loop above — including Hr, whose D-055 §3 grant is names and roles only and "
+            + "in the loop above — including Hr, whose D-055 §2 grant is names and roles only and "
             + "explicitly not the Owner's administration surface");
     }
 

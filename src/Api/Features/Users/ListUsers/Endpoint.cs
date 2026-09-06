@@ -20,7 +20,7 @@ namespace Kaff.Api.Features.Users.ListUsers;
 /// <para>
 /// <b><c>UserManage</c>, not <c>UserRead</c>, and the choice is spec.md's rather than this file's.</b>
 /// <c>Permission.UserRead</c> exists and is held by <c>Role.Owner</c> and <c>Role.Hr</c> — but
-/// spec.md §9's 2026-08-22 amendment (D-055 §3) draws the line in as many words: HR's grant is
+/// spec.md §9's 2026-08-22 amendment (D-055 §2) draws the line in as many words: HR's grant is
 /// <i>"names and roles only"</i> and it <i>"does not hand HR the Owner's user administration surface —
 /// usernames, departments and active state for every account"</i>. This payload is exactly that
 /// surface, so gating it <c>UserRead</c> would hand HR the screen that amendment exists to withhold.
