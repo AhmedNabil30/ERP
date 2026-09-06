@@ -13,11 +13,11 @@ permissions (D-055 §§1–3, D-056 §3).**
 
 | | |
 |---|---|
-| `TC-1-nnn` identifiers in this file | **263** |
+| `TC-1-nnn` identifiers in this file | **306** |
 | Of which `TC-1-000` | **not a case** — the format template in *How to read a case* below |
-| Real cases, `TC-1-001` … `TC-1-263`, less the reserved `TC-1-261` | **262**, **no gap beyond the documented `TC-1-261`, and no duplicate** [Verified: 2026-09-04, every id in the range present exactly once as a heading except the deliberately unused `TC-1-261`, including the two added today] |
+| Real cases, `TC-1-001` … `TC-1-306`, less the reserved `TC-1-261` | **305**, **no gap beyond the documented `TC-1-261`, and no duplicate** [Verified: 2026-09-07, every id in the range present exactly once as a heading except the deliberately unused `TC-1-261`, including the forty-three added today] |
 | `RETIRED` | **5** — `TC-1-175` … `TC-1-179` |
-| **Live** | **257** |
+| **Live** | **300** |
 
 **`TC-1-258` added 2026-08-26** — `AC-101a-P` (D-072 §1, the locked-account exception) was ruled and
 built with no case in this file asserting it, found in the same sweep that corrected `TC-1-009`,
@@ -41,6 +41,23 @@ other two needed no new case: `TC-1-162` already ran `AC-119-K`'s exact scenario
 citation alone, and `TC-1-166` already asserted `AC-120-B`'s rendering claim in its own second clause
 under `AC-120-H`'s citation alone. Both were widened rather than duplicated. Next unused ids after
 `TC-1-260`, skipping the already-reserved `TC-1-261`; nothing renumbered, nothing retired.
+
+**`TC-1-264` … `TC-1-306` added 2026-09-07 — forty-three cases, closing `V-34-J`.** Until today **no
+frontend story had a single case in this file**: KAFF-125, KAFF-126, KAFF-127 and KAFF-128 had zero
+references, while every backend story in the slice — KAFF-117 included — had cases written before its
+build (`qa/slice-1/verification-2026-09-06.md` -> `V-34-J`). The four new sections sit after KAFF-124,
+in `KAFF-1nn` order. Next unused ids after `TC-1-263`; **nothing renumbered, nothing retired, and no
+existing case's expected result changed.** Four existing cases had their **citations widened** rather
+than duplicated, on the `TC-1-162` / `TC-1-166` precedent, because the criteria they cite were *moved*
+to the frontend stories and not copied (`process/agile.md` §2a rule 5): `TC-1-197` → `AC-127-B`,
+`TC-1-199` → `AC-126-G`, `TC-1-200` → `AC-126-A`, `TC-1-263` → `AC-126-D`.
+**Two of the forty-three are the point of the batch.** `TC-1-271` is the case that would have caught
+`F-1` — a `<bdi>` stretched across a grid column, rendering left-aligned under a right-aligned Arabic
+name, **in shipped code, inside a criterion reported discharged**, with horizontal overflow measuring
+**0px** and every automated check green. `TC-1-272` is the sweep that closes the class.
+⚠️ **`KAFF-128` is `READY`, not built.** Its eight cases (`TC-1-299` … `TC-1-306`) cover behaviour that
+does not exist yet and are marked as such at the head of their section. **None may be reported as
+passing.**
 
 **Where the wrong numbers came from, recorded so they are not re-derived.** The brief for this session
 said **241**; the header of this file said **243** and its own totals line agreed with itself; a sweep
@@ -178,16 +195,21 @@ reads a token out of a response body cannot be written any more, because there i
 | ~~KAFF-122 corporate withholding~~ | **Superseded → KAFF-416** | TC-1-175…179 retired | — |
 | KAFF-123 archive a client | Ready | TC-1-180…185 | 1 deferred |
 | KAFF-124 list and search clients | Ready | TC-1-186…194 | 0 |
+| **KAFF-125 the staff shell** | **new 2026-09-07** — verdict LAPSED | TC-1-264…270 | 0 cases · **2 rules uncovered** (rules 6, 9 — no criterion) |
+| **KAFF-126 the client screens** | **new 2026-09-07** — `F-1` lives here | TC-1-271…283, and 199, 200, 263 widened | `AC-126-I` **half-covered**, portal half is slice 8 |
+| **KAFF-127 the user-management screens** | **new 2026-09-07** — verdict CONDITIONAL | TC-1-284…298, and 197 widened | `F-127-1` uncovered (unruled) · `F-127-3` → **Q59** |
+| **KAFF-128 the audit trail screen** | **new 2026-09-07** — ⚠️ **READY, NOT BUILT** | TC-1-299…306 | **2 `S-015` rules uncovered**, no criterion |
 | — HR's project team screen | **NO STORY** — D-051 Q32 | TC-1-243…245 | 3 |
 | — Arabic / RTL / i18n, cross-cutting | Ready | TC-1-195…201 | 0 |
 | — the permission matrix, executed | Ready — **the gate** | TC-1-202…215 | 0 |
 | — `ProjectCreate` / `ProjectFinancialsEdit` / `UserRead` | Ready — **new 2026-08-22** | TC-1-248…254 slice 1 · TC-1-255…257 slice 4 | 0 |
 | — cross-cutting mechanism (problem-details, audit) | Ready — **new 2026-09-01** | TC-1-260 | 0 |
 
-**Totals: 257 live cases · P1 199 · P2 50 · P3 9** (`+2` today: `TC-1-262` P1, `TC-1-263` P3 — plus
-`TC-1-166` moving P2 → P1 on its widened citation, which shifts the split without changing the live
-count. The pre-existing 255/197/51/8 did not sum to 255 either — 197+51+8 is 256 — the same one-off
-discrepancy noted at every prior revision; it predates this session and is not re-derived here).
+**Totals: 300 live cases · P1 224 · P2 63 · P3 14** (`+43` today, `TC-1-264`…`TC-1-306`: **P1 25 ·
+P2 13 · P3 5**, which sums to 43. The four widened citations change no priority and add no case.
+The split still runs **one** ahead of the live count — 224+63+14 is 301 — and that is the same
+one-off discrepancy noted at every prior revision, carried forward rather than re-derived: it was
+197+51+8 = 256 against 255 before today, and nothing was deleted or re-priced to reconcile it).
 **4 PENDING/BLOCKED** — one on Q33 (`TC-1-017`), one on **Q41** plus an unregistered subcontractor-half
 gap, **corrected 2026-09-01** from the stale "Q27's residue" marker — Q27 is closed (`TC-1-079`), one
 on the reset link's lifetime, which is the **story's** to settle and not Karim's (`TC-1-036`), and one
@@ -2492,7 +2514,7 @@ This case is `AC-119-J`'s own and states the whole allowed set, entity and table
 forbidden name.)*
 
 **TC-1-263 · the create form and its duplicate warning**
-`AC-119-L` · P3 · E2E · CLAUDE.md RTL
+`AC-126-D` (**inherits `AC-119-L`**) · P3 · E2E · CLAUDE.md RTL
 Given S-012 and S-013 at 390px in Arabic, when they render, then `dir` is RTL, the generated Latin
 code and a phone number typed in Latin digits are bidi-isolated inside their Arabic labels, and neither
 screen scrolls horizontally.
@@ -2500,6 +2522,8 @@ screen scrolls horizontally.
 English, wrong on every screen in Arabic. The sibling forms already carry this case — the edit form is
 `TC-1-199` and the list is `TC-1-200` — and the create form did not, even though it is the first
 screen an Arabic-speaking Marketing user ever sees a generated code or a duplicate warning on.
+**Citation widened 2026-09-07 (`V-34-J`), not duplicated** — `AC-119-L` moved to `KAFF-126` as
+`AC-126-D`. `AC-126-D`'s field-order, `inputmode` and hint clauses are `TC-1-275`.
 
 ---
 
@@ -2877,6 +2901,557 @@ then it matches.
 
 ---
 
+# The four frontend stories — `V-34-J`, written 2026-09-07
+
+**Until today no frontend story had a single case in this file.** `qa/slice-1/verification-2026-09-06.md`
+-> `V-34-J`: KAFF-125, 126, 127 and 128 had **zero** references, while every backend story in the
+slice — KAFF-117 included — had cases written before its build. That is not a backlog, it is a
+category: **QA's process had never been applied to the Frontend lane at all**, which is why every
+screen criterion in this slice has so far been discharged by a build session driving Chromium once
+and looking at the result.
+
+**`F-1` is what that costs.** A `<bdi>` renders left-aligned under a right-aligned Arabic name in
+`client-list-page.css`, inside `AC-126-A`, which was reported discharged by a session that drove
+Chromium and took a screenshot. **Horizontal overflow measures 0px and every automated check passes.**
+`TC-1-271` is the case that would have caught it and `TC-1-272` is the sweep that closes the class;
+they are the two most valuable cases in this batch and both are P1.
+
+**A layer these stories need and the slice did not have.** Four cases below are marked **`Web unit`**
+— the vitest suite. A comparison of two i18n catalogues against the keys a template uses needs no
+browser, and running it through Playwright would make the cheapest check in the slice the slowest.
+`Domain` · `Api` · `E2E` are unchanged and still mean what *How to read a case* says.
+
+**Two things these cases deliberately are not.** None was written by reading `src/Web` — `agents.md`
+§3c, and a case derived from a template asserts what the template does. Where a criterion could not be
+turned into a case without opening the implementation, that is recorded as a gap under the story, not
+resolved by going and looking.
+
+---
+
+# KAFF-125 · The staff shell — VERIFIED, verdict **LAPSED**
+
+> **Read `AC-125-C` in its current form.** Its last clause — *"and no project or assignment is
+> shown"* — was **corrected by a BA amendment on 2026-09-07** and the cases below are written against
+> the corrected text. The old clause was false on the day the story shipped: S-005 has always required
+> *"the projects I am assigned to with my level"* (`ux/screen-inventory.md` -> `S-005`), and D-104
+> records the Frontend session saying so at the time. **A case written against the withdrawn clause
+> would assert an empty projects section and would go red against correct code.**
+>
+> **`AC-125-D` is written against D-072 §2 — the flag — not against the refusal.**
+> `ux/navigation.md` still describes `/api/auth/me` refusing a user who holds a temporary password;
+> D-072 §2 replaced that reading on 2026-08-24 and the story's rule 7 is written against the ruling.
+> The staleness is the BA's and is flagged in KAFF-125 itself; **no case here asserts the refusal.**
+>
+> **The verdict is `LAPSED` (`V-34-H`, `landingFor()` moving for two of nine roles). Nothing below may
+> be reported as passing on the strength of the earlier verdict.**
+
+**TC-1-264 · the boot surface renders while `/api/auth/me` is still in flight**
+`AC-125-A` · P1 · E2E · `ux/navigation.md` -> `The shell has three session states, not two` · D-050
+Given a browser holding a valid session cookie and `GET /api/auth/me` held unanswered, when the
+application is loaded, then the only thing rendered is the boot surface — app name, locale switch,
+progress indicator — and **none of** the sign-in form's username field, the account menu or the side
+navigation is in the DOM at any point before the response arrives.
+*Fails if:* the shell treats "no session object yet" as `signed-out` and renders S-001 for a fraction
+of a second on every reload — the one practical cost of D-050, paid here once.
+**The response must be held open by the test, not raced.** A case that loads the page and looks
+afterwards passes whether or not the flash happened, because by then it is over. Holding the response
+is what makes this case able to fail.
+
+**TC-1-265 · a deep link survives resolution**
+`AC-125-B` · P1 · E2E · `ux/navigation.md` -> `Route guards await resolution` · D-050
+Given a signed-in user, when they **hard-load** a deep URL of a screen their role may reach — typed,
+bookmarked or refreshed — then after resolution the address bar holds the URL they asked for and that
+screen is what rendered.
+*Fails if:* the guard resolves against a null session, redirects to S-001 and loses the URL. Mutation:
+make the guard read the session signal without awaiting resolution; this case must go red.
+**Asserting only "the user is not on the sign-in screen" is not this case** — it stays green when the
+guard bounces to the role's landing instead, which is the same bug with a different destination.
+
+**TC-1-266 · the four profile-only roles land on S-005, and each project carries its own level**
+`AC-125-C` · P1 · E2E · `ux/slice-1-flows.md` -> `S-005` · `ux/navigation.md` -> `Landing summary` · D-044 §5
+Given a Finance, a TechnicalOffice, a SiteEngineer and a HeadOfDesign user in turn, each freshly
+signed in and each holding two active assignments — **Junior on one project and Supervisor on the
+other** — when the shell resolves, then each lands on S-005 showing display name, role and department,
+both projects are listed, and the level rendered against each project is that project's own.
+*Fails if:* the screen renders one seniority for the person, which is right for every user assigned at
+a single level and wrong for the first engineer who is Junior on one site and Supervisor on another
+(D-044 §5).
+**The fixture is what makes this case able to fail.** Two assignments at the *same* level stay green
+against a flattened render, and that is the seed a convenience fixture produces.
+
+**TC-1-267 · no assignment is an explicit empty state, not an absent section**
+`AC-125-C` (third clause) · P2 · E2E · `ux/components.md` §9 · `ux/slice-1-flows.md` -> `S-005`
+Given the same four roles with no active assignment, when S-005 renders, then the projects heading is
+present and `profile.projects.empty` is rendered beneath it, and no project row of any kind appears.
+*Fails if:* the section is omitted — which reads as a screen that forgot — or a placeholder row is
+drawn. `ux/components.md` §9: *"An empty state never renders sample or placeholder rows."*
+
+**TC-1-268 · a temporary password pre-empts every landing, not only the routes that have a guard**
+`AC-125-D` · P1 · E2E · **D-072 §2** · `ux/navigation.md` -> `Landing summary`
+Given `mustChangePassword: true` on the `/api/auth/me` response, when the user requests **every route
+the staff application maps, the set enumerated from the router configuration rather than written out
+here**, then every one of them ends on S-003 in forced mode and no navigation item is reachable.
+*Fails if:* a route ships later without the guard. **A case naming today's routes by hand is green the
+day the next one is added** — the shape D-122 §4 records, where deleting a role row left a suite 6/6
+green because the suite carried its own copy of the list.
+
+**TC-1-269 · sign-out empties the shell, and the browser stores are empty throughout**
+`AC-125-E` · P1 · E2E · D-050 · KAFF-102
+Given a signed-in user inside the staff shell, when the whole of `localStorage` and of
+`sessionStorage` is enumerated before sign-in, while signed in, and after sign-out, then **every
+enumeration is empty, asserted as a key count** — and after sign-out the shell holds no profile fact
+and has returned to `resolving`, then `signed-out`.
+*Fails if:* anything at all is written client-side. **An assertion that `localStorage` does not contain
+`token` is the blocklist shape `V-32-A` found unsafe**: it stays green when the key is called
+`session`, `me` or `kaff.profile`. The whole keyspace is the derived set, and it is two lines shorter
+than the blocklist.
+
+**TC-1-270 · the drawer opens from the right and the shell does not scroll sideways at 390px**
+`AC-125-F` · P3 · E2E · CLAUDE.md RTL · `ux/navigation.md` -> `Shell shapes` · `ux/rtl-and-i18n.md` §9
+Given the staff shell at 390px in Arabic, when the drawer is opened, then `dir` is `rtl`, the drawer
+enters from the **inline-start = right** edge, the body's scroll width does not exceed its client
+width, and no visible string is a raw key or an untranslated literal.
+*Fails if:* `transform: translateX(…)` is used un-negated — `ux/rtl-and-i18n.md` lists it among the
+properties with no logical form, and a drawer entering from the left is correct in English and wrong
+in Arabic.
+⚠️ **The overflow half of this case cannot catch `F-1`.** See `TC-1-271`.
+
+### Two of KAFF-125's rules carry no criterion, and no case is written for them
+
+**Rule 6** — *the navigation is built from the permission set, never from `switch (role)`* — and
+**rule 9** — *the shell enforces no permission; the route is reached and the server refuses* — are in
+the story's rule table and in `ux/navigation.md`, and **`AC-125-A`…`F` assert neither.**
+
+Rule 6 cannot be given a behavioural case today even so: in slice 1 no role holds a permission its
+role does not imply, so a shell built on `switch (role)` and one built on the permission set render
+**identically for all nine roles**. The rule becomes testable the first time a department or a
+per-project seniority changes what is shown — slice 4 at the earliest. **Written down as uncovered
+rather than written as a case that would pass either way** (`agents.md` §3c). Rule 9 is covered for the
+client and user routes by `TC-1-283` and `TC-1-296`; for the shell itself it is untested and would need
+a criterion. **Both routed to the BA as criterion gaps on a shipped story.**
+
+---
+
+# KAFF-126 · The client screens — VERIFIED, verdict PASS, **and `F-1` is inside it**
+
+> **`AC-126-A`, `AC-126-D` and `AC-126-G` are inherited criteria** — `AC-124-I`, `AC-119-L` and
+> `AC-121-I`, moved not copied when this story was cut. `TC-1-200`, `TC-1-263` and `TC-1-199` were
+> written against the origin criteria and already discharge the *direction, isolation and overflow*
+> half of each. **Their citations are widened today rather than duplicated**, on the precedent of
+> `TC-1-162` and `TC-1-166`; see the note on each. The cases below are what those three do not assert.
+
+**TC-1-271 · the client list's `<bdi>` sits under the name it belongs to — the `F-1` case**
+`AC-126-A` · **P1** · E2E · `ux/rtl-and-i18n.md` -> `Alignment and flow` · `ux/slice-1-flows.md` -> `S-011`
+Given the client list at 390px in Arabic with at least one client on file, when a row renders, then for
+each `<bdi>` in that row — the generated code and the phone — **its bounding box is no wider than the
+text inside it** (measured against a range over its own text node, ±1px) **and its inline-start edge
+is within 1px of the inline-start edge of the client name above it in the same row**.
+*Fails if:* the `<bdi>` is a grid item left to stretch, so its box spans the whole column and its Latin
+content renders hard against the physical **left** while the Arabic name above it is aligned right.
+**This is `F-1`, it is in shipped code, and `AC-126-A` was reported discharged with it present.**
+**Why every existing check passes with the defect in place, stated so the next reader does not
+re-derive it:** the row does not overflow — the measurement is **0px** — the `dir` attribute is right,
+the isolation is right, and the strings are right. `TC-1-200` asserts exactly those and is **green
+today against `F-1`**. Geometry is the only assertion that separates a stretched box from a
+shrink-wrapped one, because a stretched box has identical direction, identical isolation and identical
+overflow.
+**The positive control is the same measurement on the other list, and it belongs in the same run.**
+The user list is built the same way and carries the fix; the measurement must be green there and must
+go **red** when the single declaration that fixes it is deleted. A case that only measures the broken
+screen cannot tell *"the rule is enforced"* from *"the measurement never fired"* — D-046's whole
+subject.
+
+**TC-1-272 · every `<bdi>` in the application, swept**
+`AC-126-A` · `AC-127-A` · `AC-128-A` · **P1** · E2E · `ux/rtl-and-i18n.md` rule 1
+Given every slice-1 screen rendered at 390px in Arabic **with data on it**, when **every `<bdi>` in the
+document is enumerated from the DOM** — never from a list of selectors written down here — then each
+satisfies `TC-1-271`'s two measurements.
+*Fails if:* the next list screen is built by copying one that has the defect. `F-1` is exactly one
+instance today and it was found by eye; **a class of defect is only closed by a check that enumerates
+its own subjects.** A hand-written list of five `<bdi>`s is the shape that stayed green when a row was
+deleted (D-122 §4), and it is also the shape that cannot see the sixth.
+**Data on the screen is part of the case.** An empty list has no `<bdi>` and the sweep passes over
+nothing at all — the absence test that could not fail, in its most ordinary disguise.
+
+**TC-1-273 · the three chips are the server's filter, not a client-side hide**
+`AC-126-B` · P1 · E2E + Api · `ux/slice-1-flows.md` -> `S-011`
+Given one active client and one archived client, when All, Active and Archived are each selected, then
+the requests carry `status=all`, `status=active` and `status=archived`, and under Active the archived
+client is **absent from the response body**, not merely absent from the DOM.
+*Fails if:* the screen fetches `status=all` once and filters in TypeScript. Asserting the rendered rows
+alone passes in both designs, and the client-side one leaks the moment a field is added to the row.
+
+**TC-1-274 · two empty states, and neither is the other**
+`AC-126-C` · P2 · E2E · `ux/components.md` §9
+Given no clients at all, then clients on file with a search matching none, when each renders, then the
+first shows `clients.empty.title` / `.body` and the second `clients.empty.filtered.title` / `.body`,
+each with its own action — the create action, and `action.clear_filters` — and **no row element is
+present in either**.
+*Fails if:* one message serves both, which `ux/components.md` §9 names as the usual mistake, or a
+phantom placeholder row is drawn.
+
+**TC-1-275 · the phone is the first field and is typed as a phone**
+`AC-126-D` · P2 · E2E · `ux/slice-1-flows.md` -> `S-012` · KAFF-126 rule 5
+Given the create form at 390px in Arabic, when it renders, then the phone field is **first in DOM
+order**, carries `dir="ltr"` and `inputmode="tel"`, and `clients.hint.phone_is_the_key` is rendered
+beneath it.
+*Fails if:* the phone moves down the form in a redesign. It is the matching key, and a duplicate check
+that fires after the operator has typed everything else is a warning nobody acts on. `TC-1-263` covers
+this form's direction and isolation and asserts nothing about field order, `inputmode` or the hint.
+
+**TC-1-276 · the duplicate warning names the match, and the save stays available**
+`AC-126-E` · P1 · E2E · D-107 §2 · D-049 ruling 8 · `ux/components.md` §13
+Given a phone already on file, when the operator leaves the phone field, then `POST
+/api/clients/phone-check` is called and the warning renders the matched client's **name and code**,
+says so when the match is archived, and the save control is enabled throughout; proceeding sends
+`acknowledgedDuplicatePhone: true` and the client is created.
+*Fails if:* the warning renders as a refusal or the save is disabled — the shape D-049 ruling 8
+reversed on 2026-08-21, and therefore the shape a later session is most likely to "restore".
+**Assert the name and code as exact values against the fixture, never as a substring of the body.**
+`V-34-E`: `body.Should().Contain("portal_client_demo")` stayed **green** when the account was renamed
+`portal_client_demo_MUTATED`, because the substring survived.
+
+**TC-1-277 · a 409 between the check and the save is a question, not a failure**
+`AC-126-F` · P2 · E2E · `ux/slice-1-flows.md` -> `S-016`
+Given a client created on the same number after the check and before the save, when `POST /api/clients`
+answers `409 errors.master.duplicate_phone_not_acknowledged`, then the warning reopens carrying the
+current matches, the operator can proceed to a successful create, and **S-016's Failed mode is not
+rendered and `action.retry` is not offered**.
+*Fails if:* the 409 falls through the generic error path. Retrying a refusal is theatre (`S-016`), and
+a question rendered as a failure loses the record the operator was in the middle of creating.
+
+**TC-1-278 · the code is read-only text, and not a disabled input**
+`AC-126-G` · P2 · E2E · D-049 ruling 7 · `ux/slice-1-flows.md` -> `S-014`
+Given the edit form, when it renders, then the code appears inside a `<bdi>` as text carrying
+`clients.field.code.not_editable`, and **no `input`, `select` or `textarea` anywhere on the form holds
+the code as its value** — disabled or otherwise.
+*Fails if:* the field is rendered as a disabled input. **It is identical in a screenshot and it is a
+different promise:** a disabled input says *not now*, read-only text says *never*. Asserting the
+visible string passes for both, which is why the assertion is on the absence of a control holding the
+value.
+
+**TC-1-279 · kind and tax registration move as a pair**
+`AC-126-H` · P2 · E2E · D-109 §1 · D-049 rulings 9, 10
+Given a corporate client carrying a tax registration number, when the kind is changed to Individual,
+then the form clears the registration number and confirms before submitting; and when the pair is
+forced past the form, the server's `errors.master.individual_does_not_withhold` is rendered **against
+that field**, not as a page-level banner.
+*Fails if:* the form submits the combination and reports the refusal generically.
+**Both clauses are needed.** A form that guards the pair still has to be able to say what the server
+said — the server is the control (`CLAUDE.md`), and a screen that cannot render its refusal turns a
+correct 400 into an apparent crash.
+
+**TC-1-280 · notes are labelled internal, and nothing else in slice 1 renders them**
+`AC-126-I` · P2 · E2E · spec.md §12 · KAFF-126 rule 10
+Given a client whose notes hold a distinctive fixture string, when the edit form renders, then
+`clients.hint.notes_internal` is present against the field; and when every other slice-1 screen
+reachable by any role is rendered, **that string appears on none of them**.
+*Fails if:* the notes are added to the list row "so you can see them at a glance".
+⚠️ **Half-covered, and recorded as such rather than reported as discharged.** The criterion says *no
+client-facing surface*; the portal is slice 8 and does not exist, so no case in slice 1 can test it.
+This case proves the label and the absence **within slice 1**. The portal half belongs with slice 8's
+`KAFF-811`-shaped reflection test, and `AC-126-I` is **not fully covered until that exists**.
+
+**TC-1-281 · history is empty, not invented**
+`AC-126-J` · P3 · E2E · `ux/slice-1-flows.md` -> `S-014` · `ux/components.md` §9
+Given any client in slice 1, when the detail screen renders, then history shows
+`clients.history.empty` and contains no tile, row or count.
+*Fails if:* three plausible-looking tiles are drawn to fill the space. *"An empty dashboard with
+plausible-looking widgets is how invented requirements enter a product"* (`ux/navigation.md` ->
+`Landing summary`) — and history is the emptiest section in the slice.
+
+**TC-1-282 · the two catalogues hold exactly the keys the screens use**
+`AC-126-K` · P2 · **Web unit** · CLAUDE.md i18n
+Given these screens' templates, when the set of keys they reference is compared with `ar.json`'s key
+set and with `en.json`'s, then **the three sets are equal** — no key used and missing, none present in
+one catalogue and absent from the other, none added that no template uses.
+*Fails if:* the comparison runs one way only. *"Every key used exists"* passes with fifty orphans in
+the catalogue — which is exactly how four `audit.grant.*` keys have survived three slices
+(`KAFF-128` rule 8).
+
+**TC-1-283 · Finance and a portal client reach `/forbidden`, and the server refuses them anyway**
+`AC-126-L` · P1 · E2E + Api · `ux/navigation.md` -> `What hiding is and is not` · D-114 §3
+Given a Finance user and a portal `Role.Client` user, when each navigates to each client route by URL,
+then each lands on `/forbidden` with S-016's Forbidden surface in their own language and the shell
+chrome intact, and the Clients navigation item is absent; **and, independently of the browser,
+`GET /api/clients` called directly by each returns 403**.
+*Fails if:* the guard redirects to `/` — *"a redirect that hides what happened"*, the exact defect
+D-114 §3 fixed here once — or if the case stops at the guard. **The guard is convenience and the 403
+is the control**; a case that only drives the browser certifies the convenience and reports it as the
+control.
+
+---
+
+# KAFF-127 · The user-management screens — VERIFIED, verdict CONDITIONAL
+
+> **`AC-127-J` … `AC-127-N` were added to the story on 2026-09-07**, closing `V-34-A` — `GET
+> /api/users` had shipped against no criterion at all. They are derived from `spec.md` §9, D-055 §2,
+> D-044 §1 and `S-006`, and the story's own *Findings* table records the four places the shipped
+> endpoint and the rules do not line up, **unasserted**. **No case below is written against a
+> finding.** `F-127-1` (the search box and filter chips `S-006` draws and the endpoint does not have)
+> and `F-127-3` (the sort order, unruled) are uncovered by design; `F-127-3` is now **Q59**.
+>
+> **`AC-127-B` is `TC-1-197`**, which was written against `AC-106-J` before the criterion was moved
+> here. Its citation is widened today rather than a second case being written.
+
+**TC-1-284 · the user list at 390px, and every enum member has a label to resolve to**
+`AC-127-A` · P3 · E2E + **Web unit** · CLAUDE.md RTL, i18n · `ux/slice-1-flows.md` -> `S-006`
+Given the user list at 390px in Arabic, when it renders, then `dir` is `rtl` and the body's scroll
+width does not exceed its client width; **and for every member of `Role` and of `Department` —
+enumerated from the enums, not listed in this case — `enum.Role.<member>` and
+`enum.Department.<member>` exist in both catalogues**; and no row renders a bare C# member name.
+*Fails if:* a member is added to either enum and its two keys are not. Nine roles and four departments
+is thirteen chances to leave one out, and a case that seeds the members it knows about does not notice
+the tenth. **The `<bdi>` geometry on this screen is `TC-1-272`'s**, and this screen is that sweep's
+positive control.
+
+**TC-1-285 · the HR pair is not offered, and the server's refusal still renders**
+`AC-127-C` · P2 · E2E · KAFF-107 · D-109 §1
+Given the create form with `Role.Hr` selected, when the department options are enumerated, then no
+department other than HR can be submitted with that role; and when the pair is forced past the form,
+the server refuses with `errors.identity.hr_role_requires_hr_department` and the screen renders that
+key **against the department field**.
+*Fails if:* the form offers the combination and leans on the server for its message, **or** guards the
+pair in the UI and has no way to render the refusal. Both halves are the case: the form is convenience,
+the server is the control, and the screen still has to be able to say what the server said.
+
+**TC-1-286 · deactivation states its consequence and will not proceed without a reason**
+`AC-127-D` · P1 · E2E · KAFF-110 · `AC-118-G` · `ux/components.md` §11
+Given a user holding three active assignments, when the Owner opens the deactivate confirmation, then
+the dialog names **three** and names those three projects **before** the act; the confirm control is
+disabled while the reason field is empty and enabled once it is not; and focus is not on the
+destructive button.
+*Fails if:* `requiresReason` is decoration — `ux/components.md` §11 says it is not, in as many words —
+and the act completes with an empty reason. `AC-118-G` asserts the reason reaches the audit record
+verbatim; a screen that can submit without one makes that criterion unreachable from the UI while
+leaving its API test green.
+
+**TC-1-287 · the role change states the same consequence, and names the projects**
+`AC-127-E` · P2 · E2E · D-051 Q27 · `ux/slice-1-flows.md` -> `S-008`
+Given a Site Engineer holding three active assignments, when the Owner changes their role, then the
+confirmation renders `users.confirm.change_role.revokes` with the count, lists those three projects
+**by name**, and renders `users.confirm.change_role.reassign`.
+*Fails if:* the dialog names the consequence in the abstract. The names are the point — *"so the Owner
+can hand them over first"* — and a count without names tells him he is about to empty three sites
+without telling him which.
+
+**TC-1-288 · the number the confirmation states is the number the act revokes**
+`AC-127-M` · P1 · E2E + Api · `ux/slice-1-flows.md` -> `S-008` · `AC-118-C` · `AC-118-D`
+Given a user holding **three active assignments and one already revoked**, when the Owner reads the
+confirmation and then completes the deactivation, then the figure read three, the three names were the
+three active projects, exactly those three assignments are revoked, three assignment audit records are
+written, and the already-revoked row is neither counted, named nor written again.
+*Fails if:* the screen computes the figure from a list it fetched while the handler revokes from
+another set. The two agree by accident, and **a case that reads the dialog *or* counts the revocations,
+but not both in one run, cannot see them disagree.**
+**The fourth, already-revoked assignment is the fixture element that makes this able to fail.** With
+three active rows and nothing else, a count that includes revoked rows still reads three.
+
+**TC-1-289 · a user with no assignments gets no revocation line and no zero**
+`AC-127-M` (third clause) · P3 · E2E · `ux/slice-1-flows.md` -> `S-008`
+Given a user holding no assignment, when the deactivate confirmation opens, then neither the project
+list nor the revocation line is rendered — *"omitted rather than rendered as '0 projects'"*.
+*Fails if:* the template renders the line unconditionally with a count of zero.
+
+**TC-1-290 · the temporary password is shown once and written nowhere**
+`AC-127-F` · P1 · E2E · D-050 · KAFF-106 · KAFF-127 rule 10
+Given a newly created user, when the response renders, then the temporary password is visible on that
+screen; when the operator navigates away and returns, it is gone; and **`localStorage` and
+`sessionStorage` are empty by key count** at every point, before and after.
+*Fails if:* the value is parked in a service signal that survives a route change, or written to storage
+"so the Owner can copy it later". It is the one moment the password exists in the clear.
+**The whole keyspace, not a named key** — probing for `password` is the blocklist shape `V-32-A` found
+unsafe.
+
+**TC-1-291 · every role that is not the Owner is refused, and the set comes from the enum**
+`AC-127-J` · P1 · Api · spec.md §9 · D-044 §1 · `ux/screen-inventory.md` -> `S-006`
+Given a session for **every member of `Role` except `Owner`, the set taken from the enum at runtime**,
+when each calls `GET /api/users` directly — bypassing the SPA, because hiding a menu item is
+presentation and not security (`CLAUDE.md`) — then every one is refused, and the case reports how many
+subjects it exercised.
+*Fails if:* a role is added to the enum and nothing tests it. **`V-34-E` / D-122 §4: deleting the
+`Role.HeadOfDesign` row left `ListUsersTests` 6/6 green**, because the list was written by hand.
+**The Owner's own success belongs in this case as its positive control** — without it, a route that
+403s everybody, including the Owner, passes.
+
+**TC-1-292 · HR holds `UserRead`, still cannot reach this list, and no route projects it behind that permission**
+`AC-127-K` · P1 · Api · D-055 §2
+Given an HR user, who does hold `Permission.UserRead`, when they call `GET /api/users`, then they are
+refused on the same grounds as every other non-Owner role; **and when every route the host has mapped
+is enumerated, none of them requires `Permission.UserRead`**.
+*Fails if:* a later session reads `V-34-F` — *"the grant reaches nothing"* — as a gap and opens this
+endpoint to HR. D-055 §2 gives HR *"names and roles only"* and refuses HR the Owner's administration
+surface; **this payload is that surface**, and the remedy, if the business ever asks for one, is a
+different response type on a different route.
+**The enumeration must come from the host's mapped routes, not from a grep of the source** — the
+pattern `TC-1-140` already uses, and the reason it uses it.
+
+**TC-1-293 · a deactivated user is on the list, in a neutral treatment**
+`AC-127-L` · P2 · Api + E2E · D-049 ruling 5 · `ux/slice-1-flows.md` -> `S-006`
+Given a user who has been deactivated, when the Owner lists users, then that user is present in the
+response with their active state carried on it, and the row renders `users.state.inactive` as a chip
+that is **not** the error treatment.
+*Fails if:* the list is filtered to active accounts. `POST /api/users/{userId}/reactivate` (KAFF-112)
+then has no subject any screen can name, which is the defect this story was cut against — and leavers
+are deactivated, never deleted (D-049 ruling 5).
+
+**TC-1-294 · the payload is pinned to the response type, so a new column on `User` cannot reach the wire**
+`AC-127-N` · P1 · Api · D-055 §2 · the `AC-105b-F` precedent
+Given the response type of `GET /api/users`, when its members are enumerated **by reflection**, then
+the set is **equal** to the allowed set — the fields `S-006` names, plus what `AC-127-M` requires —
+stated in the case as an allow-list and compared for equality, never as a list of forbidden names.
+*Fails if:* a field is added to `User` and flows through a projection. **A blocklist is the shape that
+missed a field** (`V-32-A`; `TC-1-262` was rewritten for the same reason). Equality reddens on any
+addition, including the one nobody thought to forbid — a salary, a national id, a home address.
+
+**TC-1-295 · the guard awaits resolution itself, wherever it sits in the array**
+`AC-127-G` (second clause) · P1 · E2E · D-113 §2
+Given the user-management route **hard-loaded** — typed, bookmarked or refreshed — by the Owner, when
+the guard runs, then the screen renders; and given the same hard load by a Finance user, then
+`/forbidden` renders.
+*Fails if:* the guard relies on another guard earlier in `canActivate` having awaited resolution. It
+passes on every in-app navigation, where the session is already resolved, and fails on the hard load —
+**which is the only way a bookmark is ever used.** An in-app navigation cannot fail this case, so it is
+not this case.
+
+**TC-1-296 · Finance and a portal client see S-016, and the server refuses independently**
+`AC-127-G` (first clause) · P1 · E2E + Api · `ux/navigation.md` -> `What hiding is and is not`
+Given a Finance user, then a portal `Role.Client` user, when each navigates to each user-management
+route by URL, then each lands on `/forbidden` with the chrome intact and the text in their own
+language; and each, calling the endpoints directly, is refused.
+*Fails if:* the refusal renders as a blank page, a crash, or a redirect to `/`.
+
+**TC-1-297 · both catalogues, both directions**
+`AC-127-H` · P2 · **Web unit** · CLAUDE.md i18n
+`TC-1-282`'s assertion, for these screens: the key set the templates use, `ar.json`'s and `en.json`'s
+are **equal**.
+*Fails if:* the check runs one way only.
+
+**TC-1-298 · the E2E tests for these screens exist *and ran***
+`AC-127-I` · P1 · E2E · D-114 §4 · D-046 finding 3
+Given `tests/E2E.Tests` run in CI, when the suite reports, then a test loading a bookmarked deep URL, a
+test driving a role without the permission to `/forbidden`, and a test measuring the list at 390px have
+each **executed**, and the run **fails** rather than passing when the suite is unconfigured.
+*Fails if:* the tests skip themselves for want of `KAFF_E2E_BASE_URL` and the job exits 0 — D-046's
+third finding, verbatim, where the gate silently stopped being a gate while the job turned green.
+**This is why `AC-127-I` needed a case at all:** a criterion of the form *"a test exists"* is
+discharged by a file existing, and what has to be true is that it ran.
+
+---
+
+# KAFF-128 · The audit trail screen — ⚠️ **READY, NOT BUILT**
+
+> ### ⛔ Every case in this section covers behaviour that does not exist yet
+>
+> `KAFF-128` is `state=READY`, cut 2026-09-05, **sprint 5 Lane B, not pulled**, and it depends on
+> `KAFF-117` being merged (§2a rule 1). **No case below may be recorded as passing, and none may be
+> recorded as failing against shipped code either** — there is no screen to run them against. They are
+> in the *"cases expected to fail on first run"* class, which is the correct state for a case written
+> before its code, and they are written now for the same reason `TC-1-136`…`142` were written before
+> KAFF-117: a case written after the screen is a transcription of the screen.
+>
+> **Two cases below cite `ux/slice-1-flows.md` -> `S-015` rather than a criterion**, because
+> `AC-128-A`…`F` cover direction, the guard, immutability, i18n and the E2E test **and say nothing
+> about what the screen renders**. See the gap note at the end of this section.
+
+**TC-1-299 · the trail at 390px, with the densest Latin-in-Arabic content in the slice**
+`AC-128-A` · P3 · E2E · CLAUDE.md RTL · `ux/slice-1-flows.md` -> `S-015`
+Given the trail at 390px in Arabic with records on it, when it renders, then `dir` is `rtl`, the body
+does not scroll sideways, and every timestamp, entity id, correlation id and request path is
+bidi-isolated **and satisfies `TC-1-271`'s geometry**.
+*Fails if:* a timestamp reorders visually inside an Arabic row — `28/08/2026 14:32:07` is four Latin
+runs and three separators, and it is the single most reorderable string in slice 1.
+**Records on the screen are part of the case**, for `TC-1-272`'s reason: an empty trail asserts nothing.
+
+**TC-1-300 · a Technical Office lead *assigned to the project* is still refused**
+`AC-128-B` · P1 · E2E + Api · **D-049 ruling 1** · spec.md §9
+Given a Technical Office user **holding an active assignment on a project that has audit records**,
+then a Finance user, then a portal `Role.Client` user, when each navigates to the audit route by URL,
+then each lands on `/forbidden` with S-016's surface in their own language and the chrome intact; and
+each, calling `GET /api/audit` directly **with and without a project id**, is refused.
+*Fails if:* somebody scopes the trail by project so that the people working on a site can read their
+own. Karim rejected exactly that — *"completely hidden from all other roles, **even for their own
+projects**"* — because the trail carries financial movements.
+**The assigned Technical Office user is the only one of the three that can catch it.** An unassigned
+user is refused by the assignment check whatever the permission says, so a case seeded without the
+assignment stays green against a project-scoped trail. **Seed the assignment or the case proves
+nothing.**
+
+**TC-1-301 · the guard awaits resolution on a hard load**
+`AC-128-C` · P1 · E2E · D-113 §2
+`TC-1-295`'s assertion, for this route: the Owner hard-loading the audit URL — typed, bookmarked or
+refreshed — reaches the screen.
+*Fails if:* the guard depends on its position in `canActivate`. **A fresh page load, never an in-app
+navigation.**
+
+**TC-1-302 · nothing on the screen can change a record**
+`AC-128-D` · P1 · E2E · CLAUDE.md append-only · `AC-117-H` · KAFF-128 rule 7
+Given the trail rendered with records, when **every interactive element in the document is enumerated
+from the DOM** — buttons, links, inputs, forms, menu items — then the set reduces to navigation,
+filtering, paging and opening the detail panel, and none submits a mutation against an audit record.
+*Fails if:* a "correct this" affordance is added by somebody who has not read the rule. **A case
+listing the controls that must not exist cannot fail** — the one added next year is not on the list.
+Enumerating what is there and checking it against what is permitted can.
+The API half is `TC-1-140` and the database half is `TC-1-141`; this is the third door, and it is the
+one a user can see.
+
+**TC-1-303 · a redacted value reads as redacted, never as blank**
+`ux/slice-1-flows.md` -> `S-015` (rule, **not a criterion**) · P1 · E2E · `TC-1-138`
+Given a record whose changed fields include a redacted one, when the detail panel renders, then Before
+and After both show `audit.value.redacted`, and a genuinely absent value shows `audit.value.none` —
+neither renders as an empty cell.
+*Fails if:* the template renders the raw value and it happens to be null. **A blank cell reads as
+"nothing changed", which is the opposite of what happened** — the reason `AuditRedactedAttribute`
+exists at all. `TC-1-138` proves the value never leaves the API; this proves the screen does not
+present its redaction as nothing.
+
+**TC-1-304 · the role shown is the role at the time of the act**
+`ux/slice-1-flows.md` -> `S-015` (rule, **not a criterion**) · `AC-118-J` · P1 · E2E
+Given an act performed by a user who was Finance at the time, when that user's role is later changed
+and the trail is reopened, then the record still reads **Finance**; and given an actor since
+deactivated, the record still names them.
+*Fails if:* the screen joins to the user's current role instead of rendering `ActorRole`.
+**The case can only fail if the role changes between the act and the read.** A fixture where nothing
+changes is green against both designs — and that is the fixture convenience produces, which is why the
+change is written into the Given.
+
+**TC-1-305 · both catalogues, and the four orphans finally resolved**
+`AC-128-E` · P2 · **Web unit** · KAFF-128 rule 8 · CLAUDE.md i18n
+`TC-1-282`'s assertion for this screen, **plus**: the four `audit.grant.*` keys are either referenced
+by this screen's templates or absent from **both** catalogues.
+*Fails if:* they are left orphaned a third time. **Equality in both directions is what makes the orphan
+half able to fail**: a one-directional *"every key used exists"* check has passed over these four keys
+since slice 0, which is how they survived to be an item in this story's rule table.
+
+**TC-1-306 · the E2E tests for this screen exist *and ran***
+`AC-128-F` · P1 · E2E · D-114 §4 · D-046 finding 3
+`TC-1-298`'s assertion, for this screen: a non-Owner reaching the route lands on `/forbidden`, the
+trail does not scroll sideways at 390px, and the run **fails** rather than passing when the suite is
+unconfigured.
+*Fails if:* `[E2EFact]` skips itself and the job exits 0.
+
+### What `AC-128-A` … `AC-128-F` do not cover — a criterion gap, routed not invented
+
+The six criteria cover **direction, the guard, immutability, i18n and the existence of an E2E test.**
+They say nothing about **what the screen shows**, and `ux/slice-1-flows.md` -> `S-015` states four
+rules that no criterion carries:
+
+| Rule in `S-015` | Covered here by | Criterion |
+|---|---|---|
+| A redacted value renders as `audit.value.redacted`, never blank | `TC-1-303` | **none** |
+| `ActorRole` is the role at the time, not a join to the current one | `TC-1-304` | **none** — `AC-118-J` is the nearest and is KAFF-118's |
+| Paging is cursor-based, never an offset page number | **no case** | **none** |
+| Do not invent a column for how access was granted if the field does not land | **no case** | **none** |
+
+**The first two are written as cases against the rule**, which this file permits and does elsewhere
+(`KAFF-124 rule 1` is `TC-1-194`). **The last two are not**, and are recorded as uncovered: cursor
+paging is `KAFF-117`'s payload shape rather than this screen's, and *"do not invent a column"* is a
+prohibition whose test depends on a field whose existence is still open (`KAFF-116` / the kickoff §4
+item). **Routed to the BA as criterion gaps on a story that has not been built yet — which is the
+cheapest moment there will ever be to close them.**
+
+---
+
 # HR's project team screen — ~~**NO STORY**~~ **the story arrived**, D-051 Q32
 
 > **Corrected 2026-08-22 (SM-29).** These three cases carried **NO STORY** and cited `D-051 Q32`
@@ -2963,11 +3538,15 @@ Given S-003 at 390px in Arabic, when it renders, then RTL holds, no literals, no
 label with it. Engineers will do this on a phone.
 
 **TC-1-197 · the user form**
-`AC-106-J` · P3 · E2E · CLAUDE.md RTL, i18n
+`AC-127-B` (**inherits `AC-106-J`**) · P3 · E2E · CLAUDE.md RTL, i18n
 Given S-007 at 390px in Arabic, when it renders, then RTL holds, **every** role and department label
 resolves from the catalogue, and there is no overflow.
 *Fails if:* an enum member is rendered as its C# name — nine roles and four departments is thirteen
 chances to leave one out.
+**Citation widened 2026-09-07 (`V-34-J`), not duplicated.** `AC-106-J` was **moved** to `KAFF-127` as
+`AC-127-B` on 2026-09-05 — moved, not copied (`process/agile.md` §2a rule 5) — so this case citing the
+origin criterion alone left the story that now owns it at zero references. The enum-coverage half of
+`AC-127-A` is `TC-1-284`; this case is the form and stays as written.
 
 **TC-1-198 · the team panel**
 `AC-115-J` · P3 · E2E · CLAUDE.md RTL
@@ -2978,16 +3557,25 @@ its characters in the wrong order — a bug that is invisible in English and wro
 Arabic.
 
 **TC-1-199 · the client edit form**
-`AC-121-I` · P3 · E2E · CLAUDE.md RTL
+`AC-126-G` (**inherits `AC-121-I`**) · P3 · E2E · CLAUDE.md RTL
 Given S-014 at 390px in Arabic, when it renders, then RTL holds, phone numbers and emails inside Arabic
 labels are bidi-isolated, and there is no overflow.
 *Fails if:* `+20` migrates to the wrong end of a phone number.
+**Citation widened 2026-09-07 (`V-34-J`), not duplicated** — `AC-121-I` moved to `KAFF-126` as
+`AC-126-G` when that story was cut. `AC-126-G`'s other half — the code rendered as read-only text and
+**not** as a disabled input — is `TC-1-278`, which this case does not assert.
 
 **TC-1-200 · the client list**
-`AC-124-I` · P3 · E2E · CLAUDE.md RTL
+`AC-126-A` (**inherits `AC-124-I`**) · P3 · E2E · CLAUDE.md RTL
 Given S-011 at 390px in Arabic, when it renders, then RTL holds, Latin phone numbers inside Arabic rows
 are bidi-isolated, and there is no overflow.
 *Fails if:* the search field's `dir=auto` flips the whole row when the user types a digit.
+⚠️ **This case is green today against `F-1`, and that is not a defect in it.** It asserts direction,
+isolation and overflow, and `F-1` — the `<bdi>` stretched across the grid column, rendering
+left-aligned under a right-aligned Arabic name — changes none of the three. Overflow measures **0px**
+with the defect present. **`AC-126-A`'s geometric half is `TC-1-271`**, written 2026-09-07; citation
+widened here at the same time, because `AC-124-I` was moved to `KAFF-126` and this case was the whole
+of that criterion's coverage.
 
 **TC-1-201 · nothing is hardcoded, and no project status word appears**
 all stories · P2 · E2E · CLAUDE.md i18n · kickoff §7
