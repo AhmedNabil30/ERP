@@ -102,11 +102,67 @@ Given a signed-in user requests a deep link before `/api/auth/me` has resolved
 When the guard runs
 Then it awaits resolution before deciding, and the user reaches the URL they requested rather than being bounced to sign-in and losing it
 
-**AC-125-C — the four profile-only roles land on S-005** *(fails if the rule is broken)*
-Given an active user of Finance, TechnicalOffice, SiteEngineer or HeadOfDesign, freshly signed in
+**AC-125-C — the four profile-only roles land on S-005, and see the projects they are assigned to** *(fails if the rule is broken)* — **corrected 2026-09-07, see the amendment below**
+Given an active user of Finance, TechnicalOffice, SiteEngineer or HeadOfDesign, freshly signed in, holding two active project assignments at two different levels
 When the shell resolves
 Then they land on S-005, showing their display name, role and department from `GET /api/auth/me`
-And no project or assignment is shown, because `/api/auth/me` carries neither today — that is KAFF-105b's field, not yet built, and this criterion is not rewritten the day it ships
+And both projects are listed, each carrying **the caller's own level on that project** — `ux/screen-inventory.md` -> `S-005`: *"Own name, phone, role, department, and the projects I am assigned to with my level"*, and `AC-105b-A`, *"an engineer sees his own seniority, per project"* — never flattened to one level across projects
+And the same user with no active assignment sees an **explicit empty state** and not an absent section — `ux/components.md` §9, *"an empty state never renders sample or placeholder rows"*, and the *"Nothing here yet"* row of its three-way table
+
+> ### 📌 AMENDMENT — BA, 2026-09-07 · `AC-125-C`'s last line was **false on the day the story shipped**, and this is a criterion defect, not a lapse
+>
+> The criterion said: *"And no project or assignment is shown, because `/api/auth/me` carries neither
+> today — that is KAFF-105b's field, not yet built, and this criterion is not rewritten the day it
+> ships."*
+>
+> **Both halves of that predicate were already untrue when the criterion was given its verdict.**
+>
+> * `GET /api/auth/me` carries `Projects` and `TeamProjects`
+>   [Verified: 2026-09-07 @ `src/Api/Features/Auth/WhoAmI/Response.cs` -> `Response.Projects`,
+>   `Response.TeamProjects`] — added by KAFF-105b (D-103).
+> * The landing page has rendered them **since KAFF-125's own build commit**, not since some later
+>   change: `git log --oneline -S "session.projects" -- src/Web/src/app/features/landing/landing-page.html`
+>   returns exactly one commit, **`7461332`** — *"KAFF-125: the staff shell — S-004's dispatch, chrome,
+>   and role-based landing"* [Verified: 2026-09-07]. The projects list, its per-project level and its
+>   empty state are all in that one commit
+>   [Verified: 2026-09-07 @ `src/Web/src/app/features/landing/landing-page.html` ->
+>   `data-testid="profile-projects"`, `class="project-level"`, `data-testid="profile-projects-empty"`].
+>
+> **So nothing moved underneath the verdict. The criterion and the code disagreed at the moment the
+> verdict was given.** Under `decisions.md` **D-096 §1** a lapse requires *a commit that changed
+> behaviour that story's own criteria assert*; there is no such commit here, and reading one out of a
+> file listing is the error **D-122 §2** records by name (*"a file list is not a diff"*). **KAFF-125's
+> `LAPSED` verdict stands on its own grounds — `landingFor()` moving for two of nine roles at
+> `e0fd5cf` / `b5c9e46` / `8ea9258` (`V-34-H`) — and this correction adds no second lapse.**
+>
+> **The Frontend session that built it said so at the time** and was right to:
+> `decisions.md` **D-104** — *"That predicate is now false … `S-005` has always required 'the projects
+> I am assigned to with my level'; this session renders that field now that it exists … If Nabil or a
+> later Verifier reads `AC-125-C` literally and expects an empty projects section on this landing,
+> **that is the discrepancy to reconcile — not a defect to silently patch back**."* This amendment is
+> that reconciliation, three days late.
+>
+> **What the criterion now asserts is the business rule, not the code.** The source is
+> `ux/screen-inventory.md` -> `S-005`, which has required the assigned projects with their level since
+> before this story was cut, and `ux/components.md` §9 for the zero-assignment case. Neither was
+> derived from the handler.
+>
+> **⚠️ Two things this amendment deliberately does *not* do**, both routed rather than decided:
+>
+> 1. **`S-005` also requires the caller's own phone, and `GET /api/auth/me` does not carry it**
+>    [Verified: 2026-09-07 @ `src/Api/Features/Auth/WhoAmI/Response.cs` -> `Response` — the record has
+>    `DisplayName`, `Role`, `Department`, `OperationsSubDepartment`, `MustChangePassword`,
+>    `Permissions`, `Projects`, `TeamProjects`, and no phone field]. No criterion on this story or on
+>    KAFF-105a/105b has ever asked for it. Writing it in here would enlarge a shipped story and demand
+>    a payload change; leaving it unwritten keeps `S-005` half-discharged by a story that reads as
+>    finished. **Open question 5 below. Nabil's scope call, not this amendment's.**
+> 2. **The shipped screen also renders each project's *access path*** (`assigned` vs `Owner, globally`)
+>    [Verified: 2026-09-07 @ `src/Web/src/app/features/landing/landing-page.html` ->
+>    `class="project-path"`]. **No rule requires it on S-005.** It is defensible — KAFF-105b rule 3
+>    keeps the two facts distinct — but a criterion written to match it would be transcribed from the
+>    implementation and could never fail. **Recorded as a finding, not blessed.** Neither of the four
+>    profile-only roles can hold `OwnerGlobal`, so the field renders the same constant string for every
+>    caller this criterion covers.
 
 **AC-125-D — a forced password change pre-empts every landing** *(fails if the rule is broken)*
 Given `mustChangePassword: true` on the `/api/auth/me` response
@@ -138,6 +194,7 @@ themselves, which this story reads but does not build.
 | 2 | **MarketingSales's S-011 needs the client stories (KAFF-119…124), deferred out of sprint 1. What does MarketingSales land on until they ship?** Same shape as question 1, not answered the same way by default | **UX, then Nabil** |
 | 3 | **Does HR's S-009a render from the shared `GET /api/auth/me` (KAFF-105b's shape, rule 6 there), or does it need its own `/api/hr/projects` route with unshared response types, as `ux/screen-inventory.md` -> S-009a and `ux/navigation.md` -> "How HR reaches a project at all" both describe** *("on HR's own routes against its own API")*? **Neither is built today, and they are not the same shape** — KAFF-105b rides the endpoint every role calls; `ux/`'s description is a dedicated HR-only API. This is not decided here | **UX + BA, then Nabil** |
 | 4 | **B3-8, carried from the 2026-09-01 refinement, unresolved and named rather than answered here: who holds the `GET /api/auth/me` result inside this shell, and what invalidates it?** It decides whether a revoked assignment leaves the navigation wrong for one second or for the rest of the session, and `AC-105b-I` requires the list to be empty "on the next call" without saying what triggers that call from inside a running shell | **Architect** |
+| 5 | **`S-005` requires the caller's own phone and nothing carries it. Is S-005 discharged without it, or does `GET /api/auth/me` gain the field?** `ux/screen-inventory.md` -> `S-005` reads *"Own name, phone, role, department, and the projects I am assigned to with my level"*; the response record has no phone field [Verified: 2026-09-07 @ `src/Api/Features/Auth/WhoAmI/Response.cs` -> `Response`], and **no criterion on KAFF-125, KAFF-105a or KAFF-105b has ever asked for it** — so the gap has never been visible as a defect. It is a payload change (Backend, KAFF-105a's file) plus a line of chrome, or it is a correction to `ux/screen-inventory.md`. **Not decided here: which of the two it is, is a scope call.** Raised 2026-09-07 by the `AC-125-C` amendment above | **UX + Backend, then Nabil** |
 
 ## Questions for Karim
 None. Every open item above belongs to UX, the Architect or Nabil's scope call — none is a business
