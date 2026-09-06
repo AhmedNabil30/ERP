@@ -99,6 +99,30 @@
   unicode-bidi: isolate;
 }
 
+/*
+ * F-1 · `justify-self: start` is load-bearing, and it is written against the grid row rather than
+ * against a class list on purpose.
+ *
+ * A <bdi> that is a direct child of `.row-link` is a grid item, and `justify-self`'s initial value
+ * stretches it to the whole column. Its own resolved direction is LTR — first-strong, which is what
+ * isolation *means* for a phone number — so the run inside a full-width box sits at the box's physical
+ * LEFT while the Arabic name above it is aligned right, and the card reads as two columns that do not
+ * line up. Shrinking the box to its content puts it back at the inline-start. **The isolation is
+ * untouched: this moves the box, not the text inside it.**
+ *
+ * Everything automated was green with the defect in shipped code: direction right, isolation right,
+ * strings right, and horizontal overflow measured 0px. The stretched box and the shrink-wrapped one
+ * differ in exactly one thing — where the box ends — which is why `TC-1-271` measures geometry.
+ *
+ * `.row-code` is inside `.row-meta`, a flex container, so it was never stretched and is not the
+ * defect; the selector covers it anyway because the next <bdi> promoted to a grid item here must not
+ * have to be remembered. The sibling `user-list-page.css` states the same rule on its two classes —
+ * it already carried the fix and is `TC-1-271`'s positive control.
+ */
+.row-link > bdi {
+  justify-self: start;
+}
+
 .row-phone {
   font-size: 0.9rem;
 }
