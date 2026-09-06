@@ -10314,3 +10314,126 @@ The Verifier's teardown process match was too broad and **killed an unrelated ed
 so. No repository state was affected. **The coordinating session made the identical mistake on
 2026-09-05** with the identical regex over `Win32_Process` — twice in two days is a tooling defect, not
 carelessness, and the runbook's teardown line should be narrowed to the two process names it means.
+
+---
+
+### D-123 · BA — four board repairs, and three claims in the brief that were wrong · 2026-09-07
+
+**BA.** Four items from `STATUS.md`'s *"What is actually next"* and the 2026-09-06 verification. The
+stories and criteria are in `stories/`; this entry records only the parts that are decisions, the
+defects that were found in files nobody asked about, and the three places the Scrum Master's brief was
+factually wrong. `src/` and `tools/` were not touched.
+
+#### 1. `AC-125-C` was a criterion defect, not a lapse — and the distinction is D-122's whole lesson
+
+`AC-125-C` asserted *"no project or assignment is shown, because `/api/auth/me` carries neither
+today."* Both halves were untrue when the criterion was given its verdict:
+`Response.Projects` and `Response.TeamProjects` exist [Verified: 2026-09-07 @
+`src/Api/Features/Auth/WhoAmI/Response.cs` -> `Response`], and
+`git log --oneline -S "session.projects" -- src/Web/src/app/features/landing/landing-page.html`
+returns **exactly one commit, `7461332` — KAFF-125's own build.**
+
+**A previous agent reported this as "a second, distinct lapse." It is not one.** D-096 §1 makes a lapse
+behavioural: *a commit that changed behaviour that story's own criteria assert*. There is no such
+commit — the projects list, its per-project level and its empty state all arrived in the story's own
+build. **The criterion and the code disagreed at the moment of the verdict.** KAFF-125's `LAPSED`
+verdict stands on `V-34-H`'s grounds (`landingFor()` at `e0fd5cf` / `b5c9e46` / `8ea9258`) and its
+trailer is untouched.
+
+**D-104 called this exact reconciliation for and asked that it not be silently patched back**; it went
+unclaimed for three days because no board item pointed at it. The criterion now asserts
+`ux/screen-inventory.md` -> `S-005` (*"the projects I am assigned to with my level"*) and
+`ux/components.md` §9 — the business rule, not the handler.
+
+**Raised, not decided: `S-005` requires the caller's phone and nothing carries it.** No criterion on
+KAFF-125, KAFF-105a or KAFF-105b has ever asked for it, so the gap has never been visible. Payload
+change or a UX correction — **a scope call, and Nabil's.** KAFF-125 open question 5.
+
+#### 2. `V-34-A` closed, and `Permission.UserRead` reaching nothing is recorded as a decision
+
+`AC-127-J`…`AC-127-N`. The one worth carrying here is **`AC-127-K`**: HR holds `UserRead`
+[Verified: 2026-09-07 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.UserRead` —
+`CompanyWide, [owner, hr]`] and it reaches **no endpoint anywhere**
+[Verified: 2026-09-07 — no `RequirePermission(Permission.UserRead)` under `src/Api/`].
+
+**`V-34-F` reports that as a defect. It is right about the fact and wrong about the remedy.** D-055 §2
+gives HR *"names and roles only"* and refuses HR *"the Owner's user administration surface — usernames,
+departments and active state for every account."* `GET /api/users` **is** that surface, so gating it
+`UserRead` would hand HR the screen the amendment exists to withhold. **The absence is now a criterion,
+so the next session that reads `V-34-F` finds a rule instead of an invitation.** HR's narrow list, if
+the business ever asks for one, is a different response type on a different route.
+
+**A gap in the opposite direction, found while writing them (`F-127-1`):** `ux/slice-1-flows.md` ->
+`S-006` draws a search box and `[ All ] [ Active ] [ Inactive ]` chips. The endpoint has neither and
+**no criterion — old or new — asks for either.** Writing one would enlarge a story that already carries
+a verdict. **Nabil's scope call**, recorded on the story rather than taken.
+
+#### 3. `N11` and `KAFF-300` exist as stories, and neither answers the question it depends on
+
+**`KAFF-129`** (N11, 8 points) partitions `audit_records` by month per D-072 §3. **`AC-129-H` is
+written to fail if a future session ships a retention period** — no default, no placeholder, no
+scheduled drop. Q54 is Karim's, D-096 §5 says no agent may answer it, and a previous BA session
+correctly declined to close it against D-072 §3.
+
+**`AC-129-C` fails against the code as it stands, by construction, and that is the finding worth
+recording.** `FindMissingGuardsAsync` compares a **fixed list of eight trigger names**
+[Verified: 2026-09-07 @ `src/Infrastructure/Persistence/DatabaseInitializer.cs` ->
+`FindMissingGuardsAsync`]. A fixed list cannot name a partition created next year, **so the check as
+written would report `guardsInstalled: true` while an unguarded partition accepted deletes.** That is
+D-096 §3's shape — a missing check and a passing check producing identical output — on the guard that
+protects the audit trail.
+
+**`KAFF-300`** (5 points) is the §15 fixture D-034 mandated: *"failing or skipped, but present, so the
+gate is a build outcome."*
+
+#### 4. ⛔ Three claims in the Scrum Master's brief were wrong, corrected in writing
+
+1. **"`Q14` … which ledger."** **It does not ask that.** D-034 ruled تشوينات a **liability** —
+   *"money received for work not yet done — structurally identical to `ClientAdvance`"* — and
+   `AccountType.MaterialAdvance` is in the catalogue [Verified: 2026-09-07 @
+   `src/Domain/Treasury/AccountType.cs`]. Q14's own text is a **confirmation** of a mechanic inferred
+   from §15's arithmetic. Corrected on the Q14 row and on `STATUS.md`.
+2. **"before any Treasury code exists."** Slice 0 shipped the five ledgers as account types, `Posting`,
+   `Account`, `AccountBalance`, `AccountingPeriod`, eight database guards and two test files
+   [Verified: 2026-09-07 @ `src/Domain/Treasury/`, `DatabaseInitializer.FindMissingGuardsAsync`,
+   `tests/Domain.Tests/PostingRuleTests.cs`]. **What does not exist is the fixture.** §15 appears only
+   as comments beside single assertions. **The table has never been walked end to end by anything.**
+3. **"mark the story `BLOCKED` in its trailer."** `BLOCKED` is not one of `STATUS.md`'s nine states and
+   the generator has no branch for it. **More substantially, blocking `KAFF-300` on `Q14` would invert
+   D-034's own instruction** that the fixture exist *before* slice 3 opens, and `CLAUDE.md` makes
+   `spec.md` the business truth until Karim says otherwise. **The exposure is named on one criterion
+   (`AC-300-I`) instead of blocking the story.** Both new stories are `NOT-BUILT`, and the single
+   unticked Definition-of-Ready box on each is **QA's case, not a decision** — the board's precedent is
+   that a `READY` story has `TC-` cases (KAFF-104, KAFF-115) and `READY` is the Scrum Master's
+   declaration, not the BA's.
+
+#### 5. `Q58` — a column of §15 that no rule produces
+
+§15 recovers تشوينات at **45,000** then **30,000**. **Nothing in `spec.md` produces those numbers.** Not
+25% of period work value (that is the *advance* recovery, §16 assumption 2, a separate column in the
+same table); not proportional to work value (45,000 : 30,000 runs opposite to 300,000 : 400,000).
+*"Recovered as the material is installed"* names an event, not an arithmetic. Every other column in
+§15 — work, hold, advance recovery — has a stated rule; **this is the only one that does not.**
+
+**Registered as `Q58` rather than inferred**, and it is the register's own reason for existing: an
+invented recovery schedule reconciles §15 perfectly, **because §15's figures are what it would be
+fitted to**, and is then wrong on the first real project. It blocks nothing today — `KAFF-300`
+transcribes the three figures as given data (`AC-300-I`) — and slice 5's calculator cannot be written
+without it.
+
+#### 6. `tools/status.ps1` counts a slice-3 story in slice 1, and two other defects
+
+Adding the first story outside `stories/slice-1-foundation/` exposed three. The generator **parses the
+`slice=` field of every trailer and never uses it.**
+
+* **The total is wrong.** The block reads **132 in slice 1**; slice 1 is **127** and `KAFF-300`'s 5
+  points are slice 3's.
+* **`KAFF-300`'s link is dead** — the row's path is hardcoded `stories/slice-1-foundation/…`.
+* **`NOT-BUILT` is a documented state with no bucket row**, so 0 + 94 + 3 + 6 + 16 = 119 against a total
+  of 132. The missing 13 is the two new stories.
+
+**Fixing it is three lines and `tools/` is not the BA's**, so a dated warning was written into
+`STATUS.md`'s hand-maintained half instead and the defect is **routed to the Scrum Master**. The rows
+were still generated, deliberately: `STATUS.md`'s own rule is that *"a missing row reads as nothing to
+do."* **A visible row beside a named arithmetic defect beats an invisible story — and nobody should
+carry `132` to Nabil until the generator is fixed.**

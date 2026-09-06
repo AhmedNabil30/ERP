@@ -1,4 +1,4 @@
-# KAFF-129 · `audit_records` is partitioned by month from the start
+# KAFF-129 · Partition `audit_records` by month, from the start
 
 <!-- kaff id=KAFF-129 slice=1 points=8 state=NOT-BUILT verdict=none at=- on=2026-09-07 -->
 
