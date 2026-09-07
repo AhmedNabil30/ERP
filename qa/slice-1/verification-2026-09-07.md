@@ -23,27 +23,39 @@ Everything is `pending` until reached. Nothing is marked done on an author's evi
 
 | # | Item | State |
 |---|---|---|
-| 1 | Opening gate — `HEAD`, `git status`, stranded hosts, stack alive | pending |
-| 1a | Corrections to the brief | pending |
-| 2 | Gate figures re-measured by me | pending |
-| 3 | KAFF-128 — the audit trail screen, and the strictest permission in the system | pending |
-| 4 | KAFF-128 — `AC-128-B`'s Technical Office half: is the "cannot be built" claim true? | pending |
-| 5 | KAFF-128 — `TC-1-304`, `ActorRole` as at the time of the event | pending |
-| 6 | KAFF-125 — does `V-34-H`'s lapse stand? `git diff` on the three commits | pending |
-| 7 | KAFF-125 — is *"criterion defect, not a lapse"* the right ruling for `AC-125-C`? | pending |
-| 8 | KAFF-125 — rules 6 and 9 have no acceptance criterion | pending |
-| 9 | KAFF-118 — whitelist-shaped audit coverage, and its positive controls | pending |
-| 10 | KAFF-101b — the sign-in screen, never independently checked | pending |
-| 11 | `F-1` re-run, and what that class of evidence still cannot see | pending |
-| 12 | The first-strong exposure on the client and user lists | pending |
-| 13 | The 43 unobserved-red QA cases | pending |
-| 14 | Closing gate, and citations | pending |
-| 15 | Verdict per story | pending |
-| 16 | What I did not reach | pending |
+| 1 | Opening gate — `HEAD`, `git status`, stranded hosts, stack alive | **done** — §1 |
+| 2 | Gate figures re-measured by me | **done** — §2, and §2.1 is a finding |
+| 3 | KAFF-128 — the role census against `GET /api/audit` | **done** — §3 |
+| 4 | KAFF-128 — `AC-128-B`: is the "cannot be built" claim true? | **done** — §4, **half of it is false** |
+| 5 | KAFF-128 — `TC-1-304`, `ActorRole` as at the time of the event | **done** — §5, **PASS, driven** |
+| 6 | KAFF-125 — does `V-34-H`'s lapse stand? | **done** — §6, **confirmed on diffs** |
+| 7 | KAFF-125 — is *"criterion defect, not a lapse"* right? | **done** — §7, **right on D-096, wrong on authority** |
+| 8 | KAFF-125 — the rewritten `AC-125-C` | **done** — §8, **it cannot pass** |
+| 9 | KAFF-125 — rules 6 and 9 have no criterion | **done** — §9, **I disagree with QA on rule 6** |
+| 10 | The first-strong exposure on the client and user lists | **done** — §10, **it is a non-defect** |
+| 11 | Why the `dir="ltr"` fix really works | **done** — §11 |
+| 12 | `F-1` re-run with its positive control | **done** — §12 |
+| 13 | KAFF-101b — the sign-in screen, never independently checked | **done** — §13, **all eight criteria** |
+| 14 | KAFF-118 — the whitelist, and the claim driven end to end | **done** — §14 |
+| 15 | **E2E and CI** — added mid-pass by the coordinator | **done** — §15, **reproduced, `V-35-K`** |
+| 16 | Closing gate, and the state the machine is left in | **done** — §16 |
+| 17 | Verdict per story | **done** — §17 |
+| 18 | The four questions the brief asked directly | **done** — §18 |
+| 19 | What I did not reach | **done** — §19, **eight items** |
+| 20 | Findings index | **done** — §20 |
+| 21 | Corrections to the brief | **done** — §21, **five** |
+
+**Nothing in this pass is marked done on an author's evidence.** Every figure was re-measured and
+every claim re-driven.
 
 ### Findings index
 
-*(populated as findings are made)*
+**See §20** — it is at the end because it was written last, from findings made in order.
+**One HIGH (`V-35-K`), seven MEDIUM, one LOW, two INFO, one recorded PASS.**
+
+⛔ **The headline: no defective shipped behaviour was found in any of the four stories, and the
+worst finding is about a gate rather than about the code.** The E2E suite that covers every screen
+in slice 1 has never once run in CI against a database it could pass against.
 
 ---
 
@@ -916,5 +928,177 @@ constraint — but it means **after any E2E run this machine's `kaff_demo` no lo
 `deploy/DEMO.md` §4.4's password table.** Anyone reading that table after a suite run gets the
 wrong password for Finance and concludes the stack is broken. Worth one line in `DEMO.md`; it is not
 mine to add.
+
+---
+
+## 16. Closing gate, and the state I leave the machine in
+
+| | |
+|---|---|
+| `git status --porcelain` | clean but for this report and its commits |
+| `src/` changed | **none.** No file under `src/` was created, edited or deleted by me at any point |
+| API | up on 5080, `Development`, against **`kaff_demo` dropped, re-created and re-seeded by `scripts/seed-demo.ps1`** — `{"status":"healthy","guardsInstalled":true,"missingGuards":[]}` |
+| SPA | `ng serve` on **4200** — `200`. `ci/serve-e2e.mjs` also left on **4173** — `200` |
+| `kaff_e2e_v35` | the scratch database of §15.1 run 3, **dropped** |
+| `kaff` (dev) | **untouched.** `V-31-A`/`V-33-F` is the Architect's and I did not go near it |
+| `web-dist/` | refreshed from the production build for §15's CI-shaped runs. Gitignored, not a tracked change |
+
+⚠️ **`kaff_demo` is at `deploy/DEMO.md` §4.4's documented passwords right now** — I re-seeded after
+the last E2E run, so §15.5's password drift is *not* currently in effect. The next E2E run will
+reintroduce it.
+
+**Probe accounts from §4/§5/§13/§14 (`v35_techoffice`, `v35_bidi`, `v35_forced`, `v35_a####`) and
+the probe clients (`C-10003`, the edits and the archive) are all gone** with the database they lived
+in. Every observation in this report was recorded before it was dropped.
+
+---
+
+## 17. Verdicts
+
+**These are verdicts on the code as it stands at `0359b8d`. §4 acceptance is Nabil's and remains 0
+of 127.**
+
+### KAFF-128 — the audit trail screen · **CONDITIONAL**
+
+**Everything I could execute passed, and the one thing I could not execute is the criterion's whole
+point.**
+
+* `AC-128-A` **PASS** — 167 `<bdi>` swept at 390px, none stretched, no sideways scroll, direction
+  correct (§12), and the timestamps genuinely isolated for the right reason (§11).
+* `AC-128-B` ⚠️ **PARTIAL — the builder's own word, and it is the correct word.** Server and screen
+  both refuse TechnicalOffice, Finance, Hr, MarketingSales, the portal `Role.Client` and anonymous
+  (§3.1, §4.1). **The *"even for their own projects"* clause is unproven and unprovable today**, and
+  `TC-1-300` says in its own text that without the assignment it proves nothing. `V-35-B`.
+* `AC-128-C` **PASS** (§4.1) · `AC-128-D` **PASS**, by DOM enumeration (§4.1) · `AC-128-E`
+  **PASS**, orphans deleted from both catalogues (§14.4) · `AC-128-F` **PASS** — the tests exist and
+  ran, **but see `V-35-K`: they have never run in CI.**
+* `TC-1-303` **PASS** (§14.3) · `TC-1-304` **PASS**, driven (§5).
+
+**CONDITIONAL on:** `AC-128-B`'s assignment half being attached, as an acceptance criterion, to
+whatever story creates `POST /api/projects` — so the strictest permission in the system is not left
+with its distinguishing clause untested when the blocker clears.
+
+### KAFF-125 — the staff shell · **LAPSED — the lapse is confirmed, and re-verification is blocked on a criterion defect**
+
+* **`V-34-H` confirmed on diffs** (§6): `landingFor()` changed behaviour for two of nine roles and
+  lost a variant of its type after the verdict. **The `LAPSED` verdict is right and stands.**
+* **I cannot lift it**, and the reason is not the code — **the code is right**. `AC-125-C`, as
+  amended on 2026-09-07, **cannot be executed by anyone** until a `Project` can exist (`V-35-F`).
+  A criterion that cannot pass cannot be re-verified against.
+* `AC-125-A`, `AC-125-B`, `AC-125-D`, `AC-125-E`, `AC-125-F` and `AC-125-C`'s **empty-state clause**
+  all hold on evidence in §9.4 and §13.
+* Two rules still carry no criterion, and one of them the code **breaches on its face**
+  (`V-35-G`, rule 6).
+
+**To clear it:** split `AC-125-C` (§8), settle rule 6's reading with UX (§9.1), and re-verify. That
+is a short path and none of it is a code change.
+
+### KAFF-118 — every slice-1 change is audited · **PASS**
+
+Every mutating endpoint slice 1 has was driven individually and **every one wrote exactly one
+record**; every read and every refusal wrote **none**; the correlation-id, verbatim-reason and
+redaction criteria were all observed live rather than read (§14.2). The whitelist test's shape is
+sound and its negative tests carry real positive controls (§14.1).
+
+**One reservation, stated rather than buried:** I did not mutate `src/` to watch the whitelist go
+red, because this brief forbids it. The behavioural evidence in §14.2 is stronger than that mutation
+would have been, but it is not the same assertion.
+
+### KAFF-101b — the sign-in screen · **PASS**
+
+All eight criteria driven in a real browser against the live stack, **the first time any independent
+session has looked at it** (§13). Nothing failed. `AC-101b-G` holds on five causes rather than the
+three it names. `AC-101b-D`'s second clause is vacuous today (no project route exists anywhere) and
+is noted, not scored.
+
+---
+
+## 18. Answers to the four questions the brief asked me directly
+
+1. **Is the `AC-125-C` "criterion defect, not a lapse" ruling right?** **Right on D-096, wrong on
+   authority.** No commit changed the behaviour the old criterion asserted — I re-ran the evidence
+   and it holds — so a second lapse would have been wrong. But the 2026-09-04 Verifier reserved this
+   call to Nabil **in writing**, and the BA closed it three days later. Keep the text; ask Nabil to
+   ratify it. `V-35-E`, §7.
+2. **Is rule 6 unfalsifiable before slice 4?** **No.** Its *consequence* is; its *prohibition* is
+   checkable today and the code breaches it on its face — `navPathFor` and `navLabelKeyFor` derive
+   the nav item from `switch (role)`. `V-35-G`, §9.1.
+3. **Is the builder's "the Technical Office half cannot be built" true?** **Half of it.** The
+   account takes one request and `201`; the *assignment* genuinely cannot be made. `V-35-B`, §4.
+4. **`TC-1-304`?** **Passes, as a driven fact** — I changed the role and the old records held.
+   `V-35-C`, §5.
+
+---
+
+## 19. What I did not reach
+
+**Named, so the next session does not assume otherwise.**
+
+1. **`AC-128-B`'s assignment clause** — blocked, not skipped. §4.
+2. **The whitelist mutation** (`: IAuditExempt` on an entity) — forbidden by this brief. §14.1.
+3. **`AC-118-J`'s deactivated-actor half** — I drove the *role*-change half (§5) and deactivated an
+   account (§13), but did not then re-read the trail to confirm the deactivated actor is still
+   named. `ReactivateUserTests` asserts it; I did not observe it.
+4. **Whether the CI `e2e` job is a required check, and whether it has ever been green** — both need
+   data outside the repository. §15.4.
+5. **`Kaff:ForwardedProxyHops=2` against real staging** — unwitnessed, as it was before. Known-open.
+6. **Whether `tests/E2E.Tests` shares the readiness flaw of `V-35-J`** — I found the flaw in the
+   `driver.mjs` heuristic and my copy of it. The E2E suite uses Playwright's `WaitForURLAsync`, which
+   does *not* share it, but I did not audit every assertion in the suite for the pattern.
+7. **HeadOfDesign as a profile role** — no such account exists and I did not create one; two of the
+   four profile roles were driven. §9.4.
+8. **`ux/navigation.md`'s stale `mustChangePassword` paragraph** — KAFF-125's story flags it as
+   uncorrected since 2026-09-01. I confirmed the code matches **D-072 §2** and not that paragraph
+   (§13, `AC-101b-F`), but I did not sweep `ux/` for other staleness.
+
+---
+
+## 20. Findings index
+
+| ID | Severity | Subject |
+|---|---|---|
+| `V-35-K` | **HIGH** | **The E2E gate has never run in CI against a seeded database.** `ci.yml` has no seeding step and is untouched since 2026-08-25; the first seed-dependent screen test landed 2026-09-04. Reproduced locally: **8/25 on an empty database, identical to CI's 17 failed**. Every 25/25 ever reported, including my own, is a local figure against a hand-seeded database. **And one of the 8 survivors is green for the wrong reason** — `A_portal_client_holds_no_session_to_reach_the_trail_with` passes when the portal account does not exist, because a missing account is refused identically to a `Role.Client` (D-065). §15 |
+| `V-35-L` | **MEDIUM** | **The citation gate is RED at `HEAD` and both sources report it green.** Measured 1183 / **2 broken** / 0 legacy, exit 1. Caused by `5dc1ebf` deleting the four `audit.grant.*` orphans — which `AC-128-E` rule 8 correctly required — breaking two citations in `verification-2026-08-23.md`. Not caused by this report. §2.1 |
+| `V-35-B` | **MEDIUM** | **"The Technical Office half cannot be built" is half wrong.** `POST /api/users` creates a TechnicalOffice account and returns **`201`**; it signs in and is refused `GET /api/audit` with `403`. What genuinely cannot be built is the **assignment**, and that is the clause `AC-128-B` turns on — a real coverage hole on the strictest gate in the system. §4 |
+| `V-35-E` | **MEDIUM** | **The `AC-125-C` ruling is right on D-096 and wrong on authority.** The 2026-09-04 Verifier reserved the call to Nabil in writing — *"only Nabil can write it … It should not close by a Verifier"* — and the BA closed it on 2026-09-07 with no record that Nabil was asked. Keep the text, ask for ratification. §7 |
+| `V-35-F` | **MEDIUM** | **The rewritten `AC-125-C` cannot pass.** It requires *"two active project assignments at two different levels"* and no `Project` can exist (`POST /api/projects` → `404`). One `agents.md` §3c fault — a criterion that cannot fail — was swapped for the other. §8 |
+| `V-35-G` | **MEDIUM** | **KAFF-125 rule 6 is falsifiable today and the code breaches it on its face.** `landingFor` is `switch (role)`, and `navPathFor` / `navLabelKeyFor` — the navigation itself — derive from it. The builder's defence is recorded only in a doc comment inside the file the rule governs, and does not cover those two functions. §9.1 |
+| `V-35-H` | **MEDIUM** | **Sprint 6 item 4 is a non-defect and should not be built.** I registered a real `0100-123-4567` through `POST /api/users`: it renders **in order**, `computed=ltr`. Every `<bdi>` on both lists resolves LTR. `dir="auto"` falls back to **ltr**, not to the parent's RTL. §10 |
+| `V-35-I` | **MEDIUM** | **The `dir="ltr"` fix is right; its recorded reason is wrong.** Removing it at runtime *does* reorder the shipped timestamps — but because `Intl.DateTimeFormat('ar-EG')` injects `U+200F RLM`, a **strong** RTL character, not because "first-strong finds nothing." The wrong rule over-predicts (§10) and under-predicts the real hazard: *any string a locale formatter touched*. Written in three places including shipped source. §11 |
+| `V-35-J` | **LOW** | **A readiness heuristic in `driver.mjs` can observe a pre-guard frame.** `innerText.length > 0` is satisfied by the chrome before the lazy route and its guards resolve. It gave me a false **red** on `AC-101b-F`; the same shape gives a false **green**. D-114 §5's family. §13.1 |
+| `V-35-D` | **INFO** | `V-34-H` **confirmed on diffs, not a file list.** One correction: **`b5c9e46` did not touch `landingFor()`** — two of the three named commits did. The verdict is unaffected. §6 |
+| `V-35-A` | **INFO** | The `MSB3021` file-lock fires immediately and fixes this pass's order. **There is no `Kaff.sln`** — the solution is `KaffErp.sln`, and the brief and `STATUS.md` both name the wrong file. §1 |
+| `V-35-C` | **PASS** | `TC-1-304` decided by driving the role change rather than reading the component. Six records held their old role on the API and on the screen. §5 |
+
+**By severity: one HIGH, seven MEDIUM, one LOW, two INFO, one recorded PASS.**
+
+**No defective shipped behaviour was found in any of the four stories.** Every business rule I
+attacked held. **Nine of the twelve findings are about the project's records, its gates and its
+criteria rather than its code** — which is the same distribution the last three passes reported, and
+the reason the process sections of these reports keep growing.
+
+---
+
+## 21. Corrections to the brief
+
+The brief asked to be corrected in writing. Five places.
+
+1. ⛔ **"Citations 1183/0/0."** It is **1183 / 2 / 0, exit 1**, and was before I started. `V-35-L`.
+2. ⛔ **"`0100-123-4567` reorders."** It does not. Neither does `::1`, a route or a GUID inside a
+   bare `<bdi>`. The stated mechanism — first-strong falling back to the paragraph's RTL — is wrong;
+   the fallback is LTR. `V-35-H`, `V-35-I`.
+3. ⛔ **"`POST /api/projects` returns 404 so no assignment could be made *and* there is no such
+   seeded account"** — offered as one reason the TO half cannot be built. **The account half is
+   false**; it takes one request. `V-35-B`.
+4. ⚠️ **"Use `dotnet build Kaff.sln`"** (also in `STATUS.md`). **No such file.** `KaffErp.sln`.
+   `V-35-A`.
+5. ⚠️ **"E2E 25/25 … nobody has re-run them."** I re-ran them and got 25/25 — **and that figure is
+   worth less than it looks.** The same suite is 8/25 where it actually runs. `V-35-K`.
+
+**Where the brief was right, and it matters:** it was right that `TC-1-304` had to be decided rather
+than argued; right that `AC-128-B` had to be tested rather than accepted; right that the E2E suite
+skipping silently was a risk worth naming (it does not skip — it fails, correctly — but the risk it
+pointed at was real and larger); and right that a green-only case proves nothing, which §15.3 found
+a live instance of.
 
 
