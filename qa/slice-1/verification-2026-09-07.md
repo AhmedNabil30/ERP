@@ -606,4 +606,118 @@ poll to a stable path rather than read `location` once after "content appeared".
 whether `tests/E2E.Tests` uses Playwright's own auto-waiting (which does not share this flaw) — see
 §16.
 
+---
+
+## 14. KAFF-118 — the whitelist holds, and the claim is true when driven rather than read
+
+### 14.1 The whitelist test, assessed against D-116
+
+`tests/Api.Tests/AuditCoverageTests.cs` -> `Every_entity_is_audited_unless_it_is_a_named_exemption`.
+
+**The shape is sound, and better than the brief's warning implies:**
+
+* It is an **exact-set** assertion — `exempt.Select(t => t.Name).Should().BeEquivalentTo([nameof(AuditRecord)])`.
+  It is not *"these are not exempt"*; it is *"exactly this one is"*. **Any new `IAuditExempt`
+  fails it**, whatever it is named and whatever slice it lands in. That is the right direction.
+* It carries its **own anti-vacuity guard** — `…Where(IsAssignableTo(typeof(Entity))).Should()
+  .HaveCountGreaterThan(5, "if the model stops being enumerable this test passes by describing
+  nothing")`. The D-041 shape is explicitly defended against.
+* **Both negative tests have positive controls in the same method**, which is what D-116 asks for:
+  `Ten_reads_write_no_audit_record` ends by creating a real client and asserting the counter moved;
+  `A_refused_write_writes_no_audit_record` does the same after both refusals. **The comments state
+  why, correctly** — *"'the count did not change' is satisfied by a counter that cannot change."*
+
+**The one thing it cannot see, stated rather than implied:** the assertion reads the *model*, not the
+*interceptor*. If `AuditSaveChangesInterceptor` were unregistered from the `DbContext` options, the
+exempt set would still be `[AuditRecord]` and this test would stay **green**. It is the two negative
+tests' positive controls that would catch that — so the file as a whole is covered, but **not by the
+test whose name makes the coverage claim**. Worth knowing before anyone splits the file.
+
+⛔ **I did not mutate `src/` to prove the whitelist goes red.** My brief forbids changes under
+`src/`, and adding `IAuditExempt` to an entity is a `src/` change. **The mutation that would settle
+it is one word** — `: IAuditExempt` on `Client` — and it belongs to whoever next has a mandate to
+edit that tree. Recorded as unproven rather than assumed, and see §14.2 for the evidence I could
+gather without it.
+
+### 14.2 `AC-118-A` … `AC-118-J`, driven against the live stack
+
+Rather than read the suite, I drove **every mutating endpoint slice 1 has**, one at a time, and asked
+after each: *did the trail grow, and does the new record describe what just happened?* The trail was
+re-read between every step and compared by record `id`.
+
+| Act | HTTP | Records written | What the record says |
+|---|---|---|---|
+| `POST /api/users` | `201` | **+1** | `Created` `User` |
+| `PUT /api/users/{id}/department` | `204` | **+1** | `Modified` `User` `[Department]` |
+| `PUT /api/users/{id}/role` | `200` | **+1** | `Modified` `User` `[Role]` |
+| `POST /api/users/{id}/deactivate` | `204` | **+1** | `Modified` `User` `[DeactivatedAt, IsActive, SecurityStamp]`, **`reason` stored verbatim in Arabic** |
+| `POST /api/users/{id}/reactivate` | `204` | **+1** | `Modified` `User` `[DeactivatedAt, IsActive, MustChangePassword, PasswordHash, SecurityStamp]` |
+| `POST /api/clients` | `201` | **+1** | `Created` `Client` |
+| `PUT /api/clients/{id}` | `200` | **+1** | `Modified` `Client` `[Name]`, **`before`/`after` both populated** |
+| `POST /api/clients/{id}/archive` | `204` | **+1** | `Modified` `Client` `[IsActive]` |
+| `POST /api/auth/sign-in` (wrong password) | `401` | **+2** | `Modified` `User` `[FailedSignInAttempts]` **and** `Occurred/SignInFailed` — **sharing one `correlationId`** |
+| `POST /api/auth/sign-out` | `204` | **+1** | `Occurred/SignedOut` `User` |
+| `GET /api/clients?status=all` | `200` | **0** | — |
+| `GET /api/users` | `200` | **0** | — |
+| `POST /api/clients/phone-check` | `200` | **0** | — |
+| `POST /api/clients` blank name | `400` | **0** | — |
+
+**Nothing is missing and nothing is spurious.**
+
+* **`AC-118-A` and `AC-118-B` — PASS**, every identity and client act observed writing its own record.
+* **`AC-118-E` — PASS, live**: the failed sign-in wrote an entity change and an event **together,
+  under one `correlationId`** (`…bf0ee5`). That is the criterion, observed rather than asserted.
+* **`AC-118-G` — PASS**: `reason="سبب الاختبار من جلسة التحقق"` stored verbatim, Arabic intact, no
+  mojibake.
+* **`AC-118-H` — PASS**: three distinct reads, **zero** records. My positive control is the table
+  itself — the same session's writes moved the counter every time.
+* **`AC-118-I` — PASS**: a domain refusal (`400`) wrote nothing, and §3.1's permission refusals
+  (`403`) are visible nowhere in the trail either.
+* **`AC-118-F` — PASS, and checked harder than the criterion asks.** Seven records carry
+  `PasswordHash` / `SecurityStamp` in `changedProperties`; **every one renders `"[redacted]"` in both
+  `before` and `after`**. I searched the entire 200-record payload for a bcrypt/argon/pbkdf2-shaped
+  string: **none**. And `MustChangePassword: true → false` is visible *unredacted* alongside them,
+  which is right — it is a fact, not a secret.
+* **`AC-118-J`** — the *role* half is `V-35-C` (PASS). The *deactivated actor* half I did not drive
+  end to end; §16.
+
+### 14.3 `TC-1-303` — executed, and it **passes**
+
+I opened detail panels until I found a record carrying a redacted value (the `reactivate` record).
+The changes table renders:
+
+```
+الحقل              قبل                                    بعد
+DeactivatedAt      2026-09-07T20:42:16.082494+00:00       لا قيمة
+IsActive           false                                  true
+MustChangePassword true                                   false
+PasswordHash       [محجوب]                                [محجوب]
+SecurityStamp      [محجوب]                                [محجوب]
+```
+
+**Four `[محجوب]` (`audit.value.redacted`) and one `لا قيمة` (`audit.value.none`) in the same panel,
+and no empty cell.** That is exactly what `TC-1-303` asks for, and it is the strongest possible form
+of it: **a redacted value and a genuinely-absent value side by side in one table**, rendering
+differently. Neither reads as blank. `::1` renders in order beside them.
+
+### 14.4 `AC-128-E`'s orphans — resolved by deletion, verified
+
+KAFF-128 rule 8 said the four `audit.grant.*` keys must be *used or deleted, not left orphaned a
+third time*. **`audit.grant.` appears nowhere in `ar.json` or `en.json`.** The only surviving match
+on "grant" is `audit.field.grant` (`"الصلاحية"` / `"Authority"`), a different key, present in both
+catalogues. **Rule 8 discharged.**
+
+### 14.5 An observation the criteria do not cover: the changes table is in English
+
+`الحقل` / `قبل` / `بعد` are translated; **the field names inside the table are raw CLR property
+names** — `DeactivatedAt`, `IsActive`, `MustChangePassword`, `PasswordHash`, `SecurityStamp` — shown
+untranslated to an Arabic-reading Owner.
+
+**I am not scoring this against KAFF-128.** These arrive as data in `changedProperties`, so this is
+not a hardcoded string in a template and rule 5 is not breached; and **no criterion, and no line of
+`S-015` I can cite, says what that column should contain.** But `CLAUDE.md` says *"The UI is
+Arabic"*, and this is the one place in slice 1 where a screen shows the reader an English identifier
+from the domain model. **Routed to UX as a question, not reported as a defect** — it will only grow,
+because slice 3's records will name money fields.
+
 
