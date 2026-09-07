@@ -1,6 +1,6 @@
 # KAFF-129 · Partition `audit_records` by month, from the start
 
-<!-- kaff id=KAFF-129 slice=1 points=8 state=NOT-BUILT verdict=none at=- on=2026-09-07 -->
+<!-- kaff id=KAFF-129 slice=1 points=8 state=DEFERRED verdict=none at=- on=2026-09-07 -->
 
 **Slice:** 1 (schema; the deadline is **before slice 3**) · **Epic:** Foundation · **Points:** 8 · **Status:** **NOT-BUILT.** Cut 2026-09-07 by the BA against `STATUS.md`'s *"What is actually next"* item 1, which had no story file and therefore could not be pulled. **One Definition-of-Ready box is unticked and it is not the BA's to tick — see *Definition of Ready* below.**
 **Spec:** §9 (the audit obligation), `CLAUDE.md` → *Audit* · **Decisions:** **D-072 §3** (the mechanism), D-063 §2 (why the column exists), D-033 (the guards gate startup), D-096 §1

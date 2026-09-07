@@ -48,6 +48,7 @@ $buckets = @(
     @('🟡 BUILT — shipped, nobody independent has looked', { $_.state -in 'BUILT', 'DELIVERED' }),
     @('⚪ READY / COMMITTED — refined, not built', { $_.state -in 'READY', 'COMMITTED' }),
     @('⚫ NOT-BUILT — cut, and not yet Ready', { $_.state -eq 'NOT-BUILT' }),
+    @('🔻 DEFERRED — carried out of this slice, to a named place', { $_.state -eq 'DEFERRED' }),
     @('❓ UNKNOWN — story file carries no trailer', { $_.state -eq 'UNKNOWN' })
 )
 
@@ -79,7 +80,7 @@ $null = $b.AppendLine('|---|---:|---:|---|---|---|---|---|')
 foreach ($s in $stories) {
     $mark = switch ($s.state) {
         'ACCEPTED' { '✅' } 'VERIFIED' { if ($s.verdict -eq 'LAPSED') { '⛔' } elseif ($s.verdict -eq 'CONDITIONAL') { '🔶' } else { '🔵' } }
-        'BUILT' { '🟡' } 'DELIVERED' { '🟡' } 'NOT-BUILT' { '⚫' } 'UNKNOWN' { '❓' } default { '⚪' }
+        'BUILT' { '🟡' } 'DELIVERED' { '🟡' } 'NOT-BUILT' { '⚫' } 'DEFERRED' { '🔻' } 'UNKNOWN' { '❓' } default { '⚪' }
     }
     $null = $b.AppendLine("| [$($s.id)]($($s.path)) | $($s.slice) | $($s.points) | $mark $($s.state) | $($s.verdict) | ``$($s.at)`` | $($s.on) | $($s.title) |")
 }
