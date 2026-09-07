@@ -795,4 +795,126 @@ Arabic"*, and this is the one place in slice 1 where a screen shows the reader a
 from the domain model. **Routed to UX as a question, not reported as a defect** — it will only grow,
 because slice 3's records will name money fields.
 
+---
+
+## 15. `V-35-K` — ⛔ **the E2E gate has never run in CI against a seeded database, and 17/25 have been red there since 2026-09-04**
+
+**HIGH — the first HIGH of this pass. It is a gate the board reports as passing that does not pass
+where it is supposed to run.**
+
+Raised mid-pass by the coordinating session from a CI run Nabil surfaced. **I did not take it on
+report — I reproduced it on this machine, exactly, and then established which tests survive and
+why.**
+
+### 15.1 My own E2E figures, all three of them
+
+Run **CI-shaped**: the **production SPA build** served by `ci/serve-e2e.mjs` on **4173** proxying
+`/api` to the API on 5080 — not the `ng serve` dev server on 4200.
+
+| # | Stack | Result |
+|---|---|---|
+| 1 | Seeded `kaff_demo` **after my own §4/§5 probes** | **20 / 25** — 5 failed |
+| 2 | `kaff_demo` **dropped, re-created, re-seeded** by `scripts/seed-demo.ps1` | **25 / 25 — 0 failed** |
+| 3 | **Empty database**, migrations applied on start, no seed — **CI's exact condition** | ⛔ **8 / 25 — 17 failed** |
+
+**Run 1's five failures were mine**, and I say so plainly: §4 cleared `sara_finance_demo`'s forced
+password change to `Demo#Fin123New`, and the suite knows only the seed password `Demo#Fin123` and
+its own `Demo#Fin456`. Every failure read
+`sara_finance_demo answered neither password — is this stack seeded by scripts/seed-demo.ps1?`.
+**Not a defect — but it is the same illness as run 3, in miniature: one session touching one
+password in a shared database turned the gate red, and nothing but the gate noticed.**
+
+**Run 3 reproduces the CI figure exactly — 17 failed, 8 succeeded** — from the summary the
+coordinator relayed. Same numbers, same machine as everything else in this report.
+
+### 15.2 `.github/workflows/ci.yml` has no seeding step, and has not been touched since 2026-08-25
+
+Read, not assumed. The `e2e` job: creates `kaff_e2e`, builds the API and the suite, installs
+chromium, downloads `web-dist`, starts the API with `ASPNETCORE_ENVIRONMENT=Staging` and
+`Kaff__ApplyMigrationsOnStartup=true`, serves the SPA on 4173, runs the suite. **Migrations create
+the schema. Nothing creates `owner_demo`, `sara_finance_demo` or `portal_client_demo`.**
+
+```
+git log --format='%h %ad %s' --date=short -- .github/workflows/ci.yml
+  1923ae0  2026-08-25  CI: upload the browser subdirectory as the web artifact
+  8e5c962  2026-08-24  Kaff ERP: slice 0 complete, slice 1 in progress
+```
+
+**Untouched since 2026-08-25.** Against that, the suite it runs:
+
+| Suite | Landed | E2E facts | Needs seeded accounts |
+|---|---|---:|---|
+| `SmokeTests` | 2026-08-24 / repaired `ad92638` | 5 | **no** |
+| `SuiteConfigurationTests` | 2026-08-24 | 1 | **no** |
+| `ClientScreenTests` | **`b5c9e46`, 2026-09-04** | 7 | **6 of 7** |
+| `UserScreenTests` | **`8ea9258`/`a4496a8`, 2026-09-05** | 5 | **5 of 5** |
+| `BidiGeometryTests` | **`a1c93ce`, 2026-09-07** | 2 | **2 of 2** |
+| `AuditScreenTests` | **`5dc1ebf`, 2026-09-07** | 5 | **4 of 5** |
+
+⛔ **The E2E job has been red in CI since `b5c9e46` on 2026-09-04** — the first commit to add a
+screen test that needs an account — **and the board has reported "E2E 25/25" throughout.** Every
+25/25 ever recorded on this board, the Frontend agent's and **my own run 2**, is a *local* figure
+taken against a database somebody seeded by hand out of band.
+
+**`STATUS.md` marks the E2E row *"⚠️ Frontend agent's own figure"*. That warning is correct and
+insufficient** — the problem is not who measured it, it is that the measurement cannot be
+reproduced by the only thing that runs unattended.
+
+### 15.3 Which 8 pass, and **one of them is green for the wrong reason**
+
+Established by subtraction from the 17 named failures against each file's fact count — arithmetic,
+not inference:
+
+| Passing on an unseeded database | Why |
+|---|---|
+| `SmokeTests` ×5 | **honestly seed-independent** — health, guards installed, the app mounts, RTL, Arabic |
+| `SuiteConfigurationTests` ×1 | **honestly seed-independent** — it asserts the suite is configured and fails rather than skips |
+| `ClientScreenTests.A_signed_out_visitor_asking_for_a_client_form_is_sent_to_sign_in` | **honestly seed-independent** — anonymous, needs no account |
+| ⛔ `AuditScreenTests.A_portal_client_holds_no_session_to_reach_the_trail_with` | **green for the wrong reason** |
+
+**That last one is the finding inside the finding.** Its two assertions are:
+
+```csharp
+(await SignInToApiAsync(client, PortalClientUser, PortalClientSeedPassword))
+    .Should().BeNull("a Role.Client may not hold a staff session (spec.md §12, D-065)");
+(await client.GetAsync("/api/audit")).StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+```
+
+**A sign-in for an account that does not exist also returns null** — that is D-065's own ruling,
+which this project chose deliberately so an attacker cannot tell a bad password from a bad username.
+And an anonymous `GET /api/audit` is `401` on any stack at all. **Neither assertion can distinguish
+*"the portal boundary holds"* from *"there is no portal account."*** On an empty database it passes
+having tested nothing.
+
+**This is the canonical shape the brief names** — `body.Should().Contain("portal_client_demo")`
+staying green when the account was renamed — **recurring, on the same subject, in the file written
+to close it.** It is the exact instance `V-33-E` was raised about.
+
+**How it could fail honestly:** assert first that the account *exists* — the sibling
+`UserScreenTests.AssertPortalAccountExistsAsync` does exactly that, and **it is one of the 17 that
+correctly goes red**. The assertion this test needs is already written, twelve lines away, in
+another file.
+
+### 15.4 Two things I could not establish
+
+1. **Whether the `e2e` job is a required check or advisory.** That is branch-protection
+   configuration, which does not live in the repository and which I cannot read from here. **It
+   decides how bad this is:** if it is required, `main` should have been unmergeable since
+   2026-09-04 and was not, which would mean it is advisory in practice whatever it says.
+2. **Whether CI has *ever* been green on the E2E job.** The evidence is strongly one way — the job
+   has never had a seed step and the first seed-dependent test landed 2026-09-04 — but confirming
+   it needs the Actions run history, which I cannot reach.
+
+**I did not fix it and did not add a seed step**, as instructed.
+
+### 15.5 A related fragility, recorded while it is in view
+
+**The E2E suite mutates the seeded state it depends on.** `EnsureCanSignInAsync` moves
+`sara_finance_demo` to `Demo#Fin456` and `portal_client_demo` to `Demo#Portal2` on first run, then
+tries the changed password first so a second run survives. That is a sound design given the
+constraint — but it means **after any E2E run this machine's `kaff_demo` no longer matches
+`deploy/DEMO.md` §4.4's password table.** Anyone reading that table after a suite run gets the
+wrong password for Finance and concludes the stack is broken. Worth one line in `DEMO.md`; it is not
+mine to add.
+
 
