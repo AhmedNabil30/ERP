@@ -204,10 +204,315 @@ is later changed") was actually performed, so this is not a fixture that is gree
 designs. The `AC-118-J` half — *"an actor since deactivated is still named"* — I did **not** drive;
 see §16.
 
-**Incidental, and not a defect:** `eventType` is `null` on **27 of 51** records. Every one of them
+**Incidental, and not a defect (1):** `eventType` is `null` on **27 of 51** records. Every one of them
 has `action` = `Modified` or `Created` with a populated `changedProperties`; `eventType` is
 populated only on `action = Occurred` (`SignedIn`, `SignInFailed`, `DuplicatePhoneAcknowledged`).
 That is the two-axis design working, and the screen renders `حدث · تسجيل دخول` for the one and the
 changed-property list for the other. Recorded so the next reader does not mistake it for a hole.
+
+---
+
+## 6. `V-35-D` — `V-34-H`'s lapse is **confirmed**, on diffs rather than a file list
+
+**Confirmation of a standing finding, not a new one.** The brief asked for `git diff`, because
+`D-122 §2` records *"a file list is not a diff"* as this board's own error. Here are the diffs.
+
+| Commit | Date | What it did to `landingFor()` |
+|---|---|---|
+| **`e0fd5cf`** | 2026-09-04 | `MarketingSales` moved from `{ kind: 'pending', titleKey: 'landing.pending.marketing_sales.title' }` to **`{ kind: 'clients' }`**. `'clients'` added to the `Landing` union. **`navPathFor()` created**, sending MarketingSales to `/clients` instead of `/` |
+| **`b5c9e46`** | 2026-09-04 | **Does not touch `landing.ts`.** It rewrote `client-manage.guard.ts` (+9/−2) and added the whole `forbidden-page` component and its route |
+| **`8ea9258`** | 2026-09-05 | `Owner` moved from `{ kind: 'pending', … }` to **`{ kind: 'users' }`**; **the `pending` variant was deleted from the `Landing` union** along with its `navLabelKeyFor` case; `navPathFor()` rewritten to a three-way switch |
+
+**Two of nine roles changed landing, and a variant of the type was deleted, after the 2026-09-04
+verdict.** `AC-125-C` is *"the four profile-only roles land on S-005"* and the story's rule 6 is
+role-based landing; **the landing dispatch is KAFF-125's own subject matter.** Under D-096 §1 this
+is a commit that changed behaviour the story's criteria assert, made after the verdict.
+
+⛔ **`V-34-H` stands. KAFF-125's `LAPSED` verdict is correct, and this pass re-verifies it below
+rather than reinstating it on the old evidence.**
+
+**One correction to `V-34-H` itself:** it names three commits. **`b5c9e46` did not change
+`landingFor()`** — its `src/` diff is `app.routes.ts`, `client-manage.guard.ts` and the new
+forbidden page. It is still a legitimate part of the lapse basis (it changed how a refused route
+behaves, and `AC-125-B` is about guards), but the sentence *"`landingFor()` changed at `e0fd5cf` /
+`b5c9e46` / `8ea9258`"* is true of two of the three. Severity **INFO**; the verdict is unaffected.
+
+---
+
+## 7. `V-35-E` — the *"criterion defect, not a lapse"* ruling is **right on D-096 and wrong on who was allowed to make it**
+
+**MEDIUM.**
+
+**The brief asks whether the Scrum Master's ruling is correct. Split answer: yes on the lapse, no on
+the authority.**
+
+### 7.1 On D-096, the ruling is correct, and its facts check out
+
+I re-ran the amendment's own evidence rather than accepting it:
+
+* `git log --oneline -S "session.projects" -- src/Web/src/app/features/landing/landing-page.html`
+  returns **exactly one commit, `7461332`**, 2026-09-03, *"KAFF-125: the staff shell"* — **KAFF-125's
+  own build commit.**
+* `git show 7461332:…/landing-page.html` carries `data-testid="profile-projects"`,
+  `class="project-level"`, `class="project-path"` **and** `data-testid="profile-projects-empty"`.
+  Every element the old clause forbade was there from the first line of this story's code.
+* Only three commits have ever touched that file: `7461332`, `e0fd5cf`, `8ea9258`.
+
+**So no commit after the verdict changed the behaviour the old `AC-125-C` asserted.** D-096 §1
+requires exactly that for a lapse. **A second lapse would have been wrong, and the Scrum Master was
+right to refuse it.**
+
+### 7.2 On authority, the ruling took a call a Verifier had reserved to Nabil, in writing
+
+`qa/slice-1/verification-2026-09-04.md` §6 is unambiguous, and it is worth quoting because the
+amendment does not quote it:
+
+> *"**This is Nabil's criterion and Nabil's call. I am not resolving it** … **One line closes this**,
+> and only Nabil can write it: either `AC-125-C` is amended and S-005 stands, or the criterion holds
+> and the projects section comes off the profile landing. **It should not close by a Verifier**"*
+
+And its verdict block: *"**`AC-125-C` is not accepted as satisfied.** It is deliberately unmet."*
+
+**The 2026-09-07 amendment chose the first of the two branches** — *"`AC-125-C` is amended and S-005
+stands"* — and it was written by the **BA**, three days later, with no record anywhere that Nabil
+was asked or answered. `verification-2026-09-05.md` still carried it as *"Nabil's, an unperformed
+check"*.
+
+**Nothing in the amendment's reasoning is wrong.** S-005 is the older statement, the deviation is
+defensible, D-104 recorded it honestly, and I would have advised the same outcome. **The defect is
+that a decision explicitly escalated to Nabil was closed inside the agent layer**, which is the
+precise failure `CLAUDE.md` names — *"An invented rule is always plausible, which is why it survives
+review and surfaces months later during acceptance."* This one is more than plausible; it is
+probably right; **and it still has not been asked.**
+
+⛔ **Recommendation: leave the amended text in place and raise the amendment itself to Nabil as a
+one-line ratification.** Do not revert it — reverting would restore a criterion known to be false.
+The cost of closing this properly is the one message §6 of the 2026-09-04 report said it was.
+
+---
+
+## 8. `V-35-F` — the rewritten `AC-125-C` **cannot pass today**, which is the fault it was written to cure
+
+**MEDIUM.**
+
+The amended `AC-125-C` opens:
+
+> *Given an active user of Finance, TechnicalOffice, SiteEngineer or HeadOfDesign, freshly signed
+> in, **holding two active project assignments at two different levels***
+
+**No `Project` row can be created in this system** — `POST /api/projects` is **`404`**, confirmed
+live in §4, and `deploy/DEMO.md` §1 has said so since 2026-09-03. Therefore **no user can hold one
+active assignment, let alone two at two levels.** The criterion is marked *(fails if the rule is
+broken)* and it **cannot be executed at all**, by anyone, until slice 4.
+
+`agents.md` §3c, quoted inside this very story and inside `landing.ts`'s own comments: **"a criterion
+that cannot pass is as bad as one that cannot fail."** The old `AC-125-C` was false. The new one is
+unexecutable. **The story swapped one §3c fault for the other**, and the amendment does not
+acknowledge that it did.
+
+**What would fix it** is not mine to write, but the shape is visible: the only part of `AC-125-C`
+that can be discharged today is its **third** clause — the zero-assignment empty state — and that
+one **I did discharge**: Finance, TechnicalOffice, SiteEngineer and HeadOfDesign all land on the
+profile surface and, with no assignments, render `لست مُسنداً إلى أي مشروع حتى الآن.` as an explicit
+empty state rather than an absent section (`ux/components.md` §9). **Splitting the criterion so the
+empty-state half can be discharged now, and the two-assignment half is held against slice 4 with an
+identifier, would leave nothing unfalsifiable and nothing unpassable.** Routed to the BA, not
+decided here.
+
+---
+
+## 9. KAFF-125 rules 6 and 9 have no criterion — the brief asks whether I agree that rule 6 is unfalsifiable
+
+**QA's finding is right that both rules are uncovered. I disagree with the reasoning offered for
+rule 6, and the disagreement produces a finding.**
+
+### 9.1 `V-35-G` — rule 6 is falsifiable **today**, and on its face the shipped code contradicts it
+
+**MEDIUM.**
+
+Rule 6, verbatim: *"Role-based routing sends each signed-in role to its ruled landing. **Built from
+the permission set returned by `/api/auth/me`, never from `switch (role)`** — department and
+per-project seniority are independent axes a role switch cannot see."*
+
+`src/Web/src/app/core/navigation/landing.ts` -> `landingFor` is **literally `switch (role)`**, nine
+cases. `navLabelKeyFor` and `navPathFor` — **which decide the one nav item a role sees and where it
+points** — both switch on `landingFor(role).kind`, so the navigation is derived from the role switch
+too.
+
+**The argument that rule 6 is unfalsifiable before slice 4 confuses a prohibition with its
+consequence.** The *consequence* — a user seeing the wrong item because department or per-project
+seniority differ from what the role implies — is indeed unobservable in slice 1, and on that half QA
+is right. But **rule 6 as written prohibits a mechanism**, and a mechanism prohibition is checkable
+the moment the mechanism exists, exactly the way `CLAUDE.md`'s *"never use `float` … anywhere near
+money"* is checkable before any money moves. A unit assertion over `landing.ts` — or a lint rule —
+would decide it in one line, and it would be **red today**.
+
+**The builder saw this and answered it in the file it governs.** `landing.ts`'s header comment says:
+*"Branches on role, not a `switch (role)` menu built for permission convenience. Rule 6 forbids
+building *navigation* from `switch (role)` … that rule is about which nav items a role sees as it
+grows in later slices, not about which of two server-projected shapes this response carries."*
+
+⛔ **That reading may well be right, and it is not the builder's to make.** Two things about it:
+
+1. **It does not cover `navPathFor` and `navLabelKeyFor`.** The defence is that rule 6 governs
+   *navigation*, not the landing dispatch — but those two functions **are** the navigation, and they
+   are derived from the role switch. On the builder's own reading of the rule, the code still
+   breaches it.
+2. **Because rule 6 has no acceptance criterion, this interpretation is recorded nowhere a reviewer
+   looks** — only in a doc comment inside the file that would fail the rule. That is the
+   `SM-33`/`D-097 §2` shape: the artefact that states the rule and the artefact that decides it are
+   the same artefact.
+
+**My answer to the brief: no, I do not agree rule 6 is unfalsifiable before slice 4** — its
+consequence is, its prohibition is not, and on the prohibition the code is in breach today. Whether
+the prohibition means what the builder says it means is **UX's and the BA's to settle**, and it
+needs a criterion either way.
+
+### 9.2 Rule 9 — uncovered, and this pass is the first evidence it holds
+
+Rule 9: *"The shell enforces no permission … a route a role should not see is reached, sent to the
+server, and refused there. Hiding it is convenience only."*
+
+**No criterion on KAFF-125 asserts it.** It is nonetheless **true today, and §3.1 and §4.1 of this
+report are the proof**: the four non-Owner roles are refused at `/audit` by the **server** with a
+real `403` (`GET /api/audit`, driven directly, no browser involved), and *separately* the shell
+routes them to `/forbidden`. Server refusal and UI hiding are both present and independent, which is
+what `CLAUDE.md` requires.
+
+**That evidence exists only because this pass gathered it for KAFF-128.** No suite asserts rule 9
+for KAFF-125's own routes, and the story has no criterion that would make one necessary. **Agreed
+with QA: it is a genuine coverage gap.** Severity **LOW** — the behaviour is right; the assertion
+is missing.
+
+### 9.3 `V-34-I` is still present at `HEAD`, unrepaired
+
+Not a new finding — recorded so it is not lost. `src/Web/src/app/core/navigation/landing.ts` line 51
+still reads `âš ï¸` where line 39 reads `⚠️`. I can see it in the `e0fd5cf` diff and in the file at
+`HEAD`. Still harmless (a comment), still the only occurrence.
+
+### 9.4 `AC-125-C`'s empty-state clause, discharged live
+
+Driven at **390px** in Arabic, real sign-ins, hard loads of `/`:
+
+| Account | Role | Lands on | Projects section |
+|---|---|---|---|
+| `sara_finance_demo` | Finance | S-005 profile | **explicit empty state** `لست مُسنداً إلى أي مشروع حتى الآن.` — `[data-testid=profile-projects-empty]` present, `[data-testid=profile-projects]` **absent** |
+| `v35_techoffice` | SiteEngineer *(after §5's role change)* | S-005 profile | same |
+| `hend_hr_demo` | Hr | HR projects | `[data-testid=hr-projects-empty]`, `لا توجد مشاريع بعد.` |
+| `karim_sales_demo` | MarketingSales | **`/clients`** | client list, 3 clients |
+| `owner_demo` | Owner | **`/users`** | user list |
+
+**No horizontal overflow on any of the five** — `scrollWidth 390 / clientWidth 390` on every one.
+`ux/components.md` §9 is satisfied: an empty state, not an absent section, and no placeholder rows.
+
+**A useful side effect of §5:** the role change to `SiteEngineer` is reflected on the landing
+immediately (`الصفة: مهندس الموقع`), which independently confirms `landingFor()` is live and driven
+by the session payload rather than anything cached.
+
+**TechnicalOffice and HeadOfDesign were not both driven as profile roles** — the one TechnicalOffice
+account I had became a SiteEngineer in §5, and **no HeadOfDesign account exists**. Two of the four
+profile roles are observed; the other two are the same code path. Stated rather than glossed.
+
+---
+
+## 10. `V-35-H` — ⛔ **sprint 6 item 4 is a non-defect. The client and user lists do not reorder.**
+
+**MEDIUM — because it is scheduled work that should not be done, on a mechanism that is wrong.**
+
+`STATUS.md` sprint 6 item 4, and the brief's hint 2, both say:
+
+> *"The first-strong exposure on the client and user lists — their phone `<bdi>`s carry no `dir` and
+> are green only because a seeded number is one unbroken digit run. **`0100-123-4567` reorders**."*
+
+**It does not. I registered one and looked at it.**
+
+`POST /api/users` with `phone: "0100-123-4567"` → **`201`** (`v35_bidi`). On the shipped user list at
+390px, that phone's `<bdi>`:
+
+```
+dir attribute = (none)      computed direction = ltr      first char x=252  last char x=341   → in order
+```
+
+**Every `<bdi>` on both lists resolves `ltr`** — 6 on the client list (including a `+20 100 555 0001`
+I registered through `POST /api/clients`, `201`, `C-10003`) and 14 on the user list. **None is
+reordered.** Codes, usernames, Latin phones, Arabic-Indic phones: all in order.
+
+### Why — the recorded mechanism is wrong, and that is the reason the prediction failed
+
+The premise in the brief, in `STATUS.md`, and **in a comment inside shipped source** is:
+
+> *"A `<bdi>` defaults to `dir="auto"`, which is first-strong — and a timestamp contains no strong
+> character at all … so first-strong finds nothing, **falls back to the paragraph's RTL**"*
+> — `src/Web/src/app/features/audit/audit-trail-page.html`, the comment above `bdi.row-when`
+
+**`dir="auto"` with no strong character falls back to `ltr`, not to the parent.** Measured in the
+shipped page, inside `<html dir="rtl">`, with a raw `<bdi>` carrying no `dir`:
+
+| Content | `<bdi>` no `dir` | plain `<span>`, no isolation |
+|---|---|---|
+| `0100-123-4567` | `ltr`, in order | `rtl`, in order |
+| `::1` | **`ltr`, in order** | `rtl`, **REORDERED** |
+| `/api/auth/sign-in` | **`ltr`, in order** | `rtl`, **REORDERED** |
+| `07/09/2026, 23:26:25` | **`ltr`, in order** | `rtl`, **REORDERED** |
+| `01a07d85-…-dcf7457bf240` | `ltr`, in order | `rtl`, in order |
+
+**`<bdi>` alone already handles every one of them.** What reorders is an *unisolated* run — which is
+what `<bdi>` exists to prevent.
+
+---
+
+## 11. `V-35-I` — the `dir="ltr"` fix is **right**, its stated reason is **wrong**, and the true reason is more dangerous
+
+**MEDIUM.**
+
+Having shown a bare `<bdi>` is enough for `::1` and a slash-separated date, I tested the shipped
+element itself: **on the live audit trail, I removed `dir="ltr"` from the six shipped
+`bdi[dir="ltr"]` elements at runtime and re-measured.**
+
+```
+with dir=ltr:  ltr / in order        without dir:  rtl / REORDERED     "07‏/09‏/2026، 23:34:20"
+```
+
+**All six reordered.** So the fix is load-bearing and must stay. But it reorders for a reason the
+comment does not name. The timestamp's code points:
+
+```
+0030 0037 200f 002f 0030 0039 200f 002f 0032 0030 0032 0036 060c 0020 0032 0033 003a ...
+   0    7  RLM    /    0    9  RLM    /    2    0    2    6    ،   sp   2    3    :
+```
+
+⛔ **`Intl.DateTimeFormat('ar-EG')` injects `U+200F RIGHT-TO-LEFT MARK` into the formatted string.**
+`U+200F` **is a strong RTL character.** First-strong therefore *does* find one, immediately, and
+resolves the `<bdi>` to RTL. Proven both ways in the same page:
+
+| Probe | Resolved direction |
+|---|---|
+| `<bdi>` containing the real timestamp (with `U+200F`) | **`rtl`** |
+| the same string with `[‎‏]` stripped | **`ltr`** |
+
+**Why the difference matters more than the fix:**
+
+1. **The recorded rule over-predicts.** It says any run with no strong character reorders — so it
+   condemns the client and user lists, which are fine. That is exactly the false prediction §10
+   found on the board as scheduled work.
+2. **The recorded rule under-predicts the real hazard.** The true rule is: **any string that has
+   passed through an Arabic-locale formatter carries `U+200F` and will reorder inside a `<bdi>`
+   unless `dir="ltr"` pins it.** That is a property of the *formatter*, not of the character classes
+   in the value, and no amount of looking at the digits and separators reveals it.
+3. **It is written in three places** — the brief, `STATUS.md` sprint 6 item 4, and a comment in
+   shipped source that a future session will read as settled. `qa/strategy.md`'s own logic applies:
+   a wrong mechanism recorded confidently is worse than none.
+
+**Where this bites next:** `I18nService.formatDate` has exactly one caller in the whole SPA —
+`audit-trail-page.ts` -> `timestamp` — and that value is rendered in exactly **two** places
+(`bdi.row-when` on the row, and the `fact-value` timestamp in the detail panel). **Both carry
+`dir="ltr"`.** So there is **no second live instance of this defect**. `formatNumber` /
+`formatMoney` has **no call site yet**; I checked `Intl.NumberFormat('ar-EG')` directly and it emits
+Arabic-Indic digits with **no** `U+200F`, so money is not pre-exposed. **Slice 3 should re-check that
+the day it formats its first amount**, because the rule to apply is "did a formatter touch it", not
+"does it look like digits".
+
+**Recommendation:** keep every `dir="ltr"`. **Correct the comment and `STATUS.md` item 4** rather
+than acting on it. **Do not spend sprint 6 capacity on the client and user lists.**
 
 
