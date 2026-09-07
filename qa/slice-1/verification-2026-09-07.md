@@ -515,4 +515,95 @@ the day it formats its first amount**, because the rule to apply is "did a forma
 **Recommendation:** keep every `dir="ltr"`. **Correct the comment and `STATUS.md` item 4** rather
 than acting on it. **Do not spend sprint 6 capacity on the client and user lists.**
 
+---
+
+## 12. `F-1` re-run, with its own positive control — and what that class of evidence still cannot see
+
+**`F-1` is fixed. Independently reproduced, including the builder's exact numbers.**
+
+`TC-1-271` / `TC-1-272` executed as written — **enumerated from the DOM**, never from a list of
+selectors — at 390px in Arabic with data on every screen. For each `<bdi>`: box width vs a `Range`
+over its own text node.
+
+| Screen | `<bdi>` swept | As shipped | With `.row-link > bdi { justify-self: start }` neutralised |
+|---|---:|---|---|
+| Client list `/clients` | 6 | **0 stretched — PASS** | **3 stretched — RED** |
+| User list `/users` | 14 | **0 stretched — PASS** | **14 stretched — RED** |
+| Audit trail `/audit` | 167 | **0 stretched — PASS** | **69 stretched — RED** |
+
+**The control fires on all three**, and the first stretched client-list row measures
+`boxW 308.0 / textW 85.4` — **the builder's reported numbers to the decimal**, reproduced by a
+different session with a different harness. That is as good as a mutation gets on this board.
+
+**The positive control is a runtime style injection, not a file edit** — no `src/` change, and it
+sidesteps D-120 §3 entirely (`git checkout` reverts the file, not the mutation) because there is
+nothing to revert.
+
+### What this class of evidence still cannot see — the brief's question
+
+1. **Direction and visual order.** §10 and §11 are the proof: a reordered run occupies the **same
+   box**, so every geometry assertion above is green whether `07‏/09‏/2026` reads correctly or
+   backwards. The geometry sweep and the direction check are disjoint, and only one of them is
+   written down as a case.
+2. **A zero-width `<bdi>`.** My sweep skips `box.width === 0`, and so must any box-comparison check —
+   a zero box trivially satisfies *"no wider than its text"*. **An element that fails to render at
+   all passes `TC-1-271` and `TC-1-272` silently**, and it also passes the overflow check. That is a
+   real hole in the case's shape, not in the code: nothing today renders a zero-width `<bdi>`, but
+   nothing would notice if it did.
+3. **Correctness of the value.** Geometry cannot tell `01001234567` from `01001234576`. `TC-1-272`
+   is a shape check, and the board should not read it as coverage of what the rows say.
+4. **Vertical placement and overlap.** Both cases measure the inline axis only.
+
+---
+
+## 13. KAFF-101b — the sign-in screen, driven end to end for the first time
+
+**Every criterion that can be executed today was executed, in a real browser, against the live
+stack. Nothing failed.**
+
+| Criterion | Result | Evidence |
+|---|---|---|
+| **`AC-101b-A`** — a staff sign-in arrives at the staff shell | **PASS** *(via KAFF-125)* | §9.4 — Finance signs in and lands on S-005 with `displayName`, `role`, `department` from `GET /api/auth/me` |
+| **`AC-101b-B`** — a client never sees the staff shell | **PASS** | `portal_client_demo` / `Demo#Portal1` submitted at the staff form: stays on `/sign-in`, refusal message, **the shell never renders**, `localStorage`/`sessionStorage` both empty. The API half is `401 auth.invalid_credentials` (§3.1) |
+| **`AC-101b-C`** — the portal is not discoverable | **PASS** | Page **plus both JS bundles fetched and searched — 305,024 bytes**. `portal`, `client-portal`, `clientportal`, `عميل؟`, `are you a client`: **all absent** |
+| **`AC-101b-D`** — HR lands on the team surface | **PASS on its first clause; second clause vacuous** | §9.4 — `hend_hr_demo` lands on `المشاريع` / `[data-testid=hr-projects-empty]`. ⚠️ *"no project dashboard route is reachable … and requesting one directly is refused by the server"* — **there is no project route in the SPA and no `/api/projects` on the server** (`404`, §4). The clause cannot fail today. Noted, not scored against the story |
+| **`AC-101b-E`** — only what was ruled | **PASS** | `input[type=password]` carries `minlength=8` and `required` and **nothing else**; `meter`/`progress`/`[class*=strength]` — **none present**; `abcdefgh` leaves the submit button **enabled** and `validity.valid = true` |
+| **`AC-101b-F`** — a forced change cannot be walked around | **PASS** | A **freshly created** Finance user (`v35_forced`, `mustChangePassword: true`) hard-loaded `/`, `/clients`, `/users`, `/audit` and `/change-password`. **Every one lands on `/change-password`**, four repeat runs, each watched for 5s at 200ms intervals — `/change-password` was the **only** path observed in all 25 samples of every run |
+| **`AC-101b-G`** — one refusal for three causes | **PASS, on five causes** | wrong password ×2, unknown username, a **deactivated** account (`POST /api/users/{id}/deactivate` → `204`, then sign-in), and a `Role.Client` credential: **all five render the byte-identical string** `اسم المستخدم أو كلمة المرور غير صحيحة.` and all five stay on `/sign-in` |
+| **`AC-101b-H`** — Arabic, RTL, mobile width | **PASS** | `dir="rtl"`, `scrollWidth 390 / clientWidth 390` — no horizontal overflow at 390px, no literal observed |
+
+**`AC-101b-G` is the one I most expected to break** and it is solid: I added a *fourth* and *fifth*
+cause the criterion does not name (a deactivated account, and a portal credential with a wrong
+password) and the message did not vary.
+
+### 13.1 `V-35-J` — a readiness heuristic this project's own harness shares can observe a pre-guard frame
+
+**LOW — methodology, and it produced a false result in this very session before I caught it.**
+
+My first `AC-101b-F` run reported `asked /users -> landed /users`, which reads as a forced-password
+user walking around the guard. **It is not true.** Four repeat runs with a 5-second observation
+window show `/change-password` and nothing else, and `sara_finance_demo` (no forced change, no
+`UserManage`) correctly lands on `/forbidden`.
+
+**The cause is the readiness rule, and it is copied from `.claude/skills/run-kaff-erp/driver.mjs`:**
+
+```js
+// Angular is zoneless and the first route is lazy: wait for real content, not just load.
+while (Date.now() < deadline) { if (await evaluate('document.body.innerText.trim().length > 0')) break; … }
+```
+
+**The chrome renders before the lazy route chunk and its guards resolve**, so
+`innerText.length > 0` is satisfied by a frame that is *inside* the navigation, not after it. The
+body text I captured was ~50 characters — header and sign-out and nothing else.
+
+⚠️ **This cuts the dangerous way too.** It gave me a false **red**; the identical heuristic can give
+a false **green** — asserting that chrome exists, or that a page has no overflow, on a frame the
+guard is about to navigate away from. **This is the same family as D-114 §5 and the brief's hint 5**:
+the check ran, the run was green, and what it observed was not the state under test.
+
+**Recommendation, routed not applied:** any assertion about *which route a guard settled on* should
+poll to a stable path rather than read `location` once after "content appeared". I have not looked at
+whether `tests/E2E.Tests` uses Playwright's own auto-waiting (which does not share this flaw) — see
+§16.
+
 
