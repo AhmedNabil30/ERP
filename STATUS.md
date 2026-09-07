@@ -20,11 +20,16 @@ the code, and the board says so rather than rounding it up:
 
 | | pts | |
 |---|---:|---|
-| 🔵 **Verified** | **94** | a Verifier gave a verdict and it still stands |
-| ⛔ **Lapsed** | **3** | KAFF-125 — had a verdict, then `landingFor()` moved under it |
-| 🟡 **Built, nobody independent has looked** | **9** | KAFF-101b · KAFF-118 · KAFF-128 |
+| 🔵 **Verified** | **103** | a Verifier gave a verdict and it still stands |
+| ⛔ **Lapsed** | **3** | KAFF-125 — confirmed on real diffs 2026-09-07, **and it could not be lifted** |
+| 🟡 **Built, nobody independent has looked** | **0** | cleared 2026-09-07 by the `V-35` pass |
 | 🔻 **Deferred, never built** | **21** | KAFF-104 · KAFF-115 · KAFF-129 → **slice 1b** |
 | ✅ **ACCEPTED** | **0** | |
+
+**The `V-35` pass, 2026-09-07 — the first independent eye on any of it.** KAFF-118 **PASS** (every
+mutating endpoint driven individually; each wrote exactly one record, every read and refusal none) ·
+KAFF-101b **PASS** (all eight criteria driven for the first time) · KAFF-128 **CONDITIONAL** ·
+KAFF-125 **LAPSED stands**.
 
 **Nothing has ever been ACCEPTED.** `process/agile.md` §4 is *"Nabil runs the demo script"* and there
 is no record of it happening, for any story, ever. **Zero of 127.** Closing a slice does not accept
@@ -83,17 +88,31 @@ slice sequence and estimates, and on nothing else.)*
 the last item is the one that always gets cut* — and the cut item was that sprint's whole purpose.
 It goes first now, and it is budgeted first.
 
+**✅ Item 1 is done — the `V-35` pass ran first and reached every story.** What replaced it is worse
+than what it found.
+
 | # | Work | Owner |
 |---|---|---|
-| 1 | **Verify KAFF-101b · KAFF-118 · KAFF-128, and re-verify KAFF-125** — 12 points with no standing verdict. A **fresh session**, strongest model, reads only, **reports and does not fix** | Verifier |
-| 2 | **Refine slice 2** — story files, criteria, Definition of Ready | BA |
-| 3 | **Reconcile the two `V-34-A` passes** — a 701-line `proposals/` document and `AC-127-J`…`N` in the story, written independently, neither having read the other | BA |
-| 4 | **The first-strong exposure on the client and user lists** — their phone `<bdi>`s carry no `dir` and are green only because a seeded number is one unbroken digit run. `0100-123-4567` reorders | Frontend |
-| 5 | **`TC-1-304`** and **`AC-128-B`**'s Technical Office half — unbuildable today: no such seeded account, and `POST /api/projects` does not exist | Backend |
+| 1 | ⛔ **`V-35-K` HIGH — seed the E2E job in CI.** `.github/workflows/ci.yml` has **no seeding step** and has not changed since 2026-08-25; the first seed-dependent screen test landed 2026-09-04. Reproduced: seeded **25/25**, empty database **8/25** — identical to CI. **The job has been red for four days while this file reported 25/25** | Backend / CI |
+| 2 | ⛔ **One of the 8 CI survivors is green for the wrong reason.** `A_portal_client_holds_no_session_to_reach_the_trail_with` passes when the portal account **does not exist**, because D-065 makes a missing account indistinguishable from a refused one. **`V-33-E`'s shape, recurring inside the file written to close it** | QA |
+| 3 | **`V-35-F` — the rewritten `AC-125-C` cannot be executed by anyone.** This is why KAFF-125's lapse could not be lifted, and it is not the code's fault | BA |
+| 4 | **`V-35-G` — KAFF-125 rule 6 is breached on its face** | Frontend |
+| 5 | **`V-35-I` — a comment in shipped source states the bidi mechanism wrongly.** The `dir="ltr"` fix is right; its recorded reason is not, and the true reason is more dangerous | Frontend |
+| 6 | **Refine slice 2** — story files, criteria, Definition of Ready | BA |
+| 7 | **Reconcile the two `V-34-A` passes** — a 701-line `proposals/` document and `AC-127-J`…`N` in the story, written independently, neither having read the other | BA |
+| 8 | **`AC-128-B`'s assignment half.** `V-35-B`: the builder's *"cannot be built"* was **half wrong** — the Technical Office account **can** be created (`201`, one request). Only the **assignment** cannot, because `POST /api/projects` does not exist. Attach the *"even for their own projects"* clause to whatever story ships it | Backend |
 
-⚠️ **The SPA must be up on 4200 before the Verifier runs** (`npm start` in `src/Web`). It is down
-now, and the E2E suite **skips silently** rather than failing when nothing answers on 4200 — a green
-run that proves nothing.
+⛔ **Struck from this sprint: the first-strong exposure on the client and user lists.** `V-35-H`
+disproved it. A registered `0100-123-4567` **does not reorder** — every `<bdi>` on both lists resolves
+`ltr`. **`dir="auto"` with no strong character falls back to `ltr`, not to the parent**, so `<bdi>`
+alone already handles `::1`, `/api/auth/sign-in` and a slash-separated date. What reorders is an
+*unisolated* run, which is what `<bdi>` exists to prevent. **It was scheduled work that should not be
+done, on a mechanism that was wrong** — and the wrong mechanism is written into shipped source, which
+is item 5.
+
+⚠️ **The SPA must be up on 4200 and the database seeded before any E2E run**, and the suite
+**skips silently** when nothing answers — a green run that proves nothing. That is the local half of
+item 1.
 
 ---
 
@@ -121,6 +140,11 @@ Also open: **Q12**, **Q13**, **Q30**, **Q57**, `Q-N10-1`, `Q-N10-2b`, `Q-N10-3`.
 - **The slice-order decision.** Treasury's first two story files now exist and are pullable.
   **Starting slice 3 before slice 2 has not been decided**, and no agent may decide it.
 - **The seven questions above.** They travel through Nabil to Karim and come back as D-numbers.
+- **`AC-125-C` — ratify or reject the rewrite.** `V-35-E`: the ruling that it was a *criterion
+  defect, not a second lapse* is **right on D-096** — only `7461332`, KAFF-125's own build, ever added
+  that rendering, so no commit moved behaviour under the verdict. **But the 2026-09-04 Verifier had
+  reserved this call to Nabil in writing** — *"only Nabil can write it… It should not close by a
+  Verifier"* — and a BA closed it three days later. **Keep the text; it needs Nabil's ratification.**
 - **Acceptance.** §4. Zero of 127 points, and it moves when Nabil moves it.
 
 ---
@@ -135,10 +159,20 @@ At `a21892e`, 2026-09-07. **Re-measure rather than quote** — every one of thes
 | `dotnet format --verify-no-changes` | **clean** | Scrum Master |
 | Domain.Tests | **127 / 127** | Scrum Master |
 | Api.Tests | **317 / 317** | Scrum Master |
-| Citations | **1184 / 0 / 0** | Scrum Master |
-| SPA build, `strictTemplates` | clean | ⚠️ Frontend agent's own figure |
-| vitest | **8 / 8** | ⚠️ Frontend agent's own figure |
-| E2E (Playwright) | **25 / 25** | ⚠️ Frontend agent's own figure |
+| Citations | **1181 / 0 / 0, exit 0** | Scrum Master, after the `V-35-L` repair |
+| SPA production build | clean | Verifier |
+| vitest | **8 / 8** — ⚠️ in **exactly one file**, the route guards. **No component test anywhere** | Verifier |
+| E2E (Playwright) | **25 / 25 seeded · 8 / 25 unseeded** | Verifier |
+
+⛔ **Read the E2E row twice.** The suite is green only against a hand-seeded database. **CI seeds
+nothing**, so CI gets 8/25 — sprint 6 item 1.
+
+⚠️ **Always read the citation checker's EXIT CODE, never its summary line.** On 2026-09-07 the Scrum
+Master reported `1183 / 0 / 0` and pushed while the gate was **red with 2 broken, exiting 1** — the
+output was piped through `Select-Object`, which discarded the detail lines, and the exit code was
+never checked. `V-35-L` caught it, and it caught it on both sources at once: the Scrum Master's figure
+and the sprint-5 close note agreed with each other and were both wrong.
+`powershell -NoProfile -File scripts/check-citations.ps1; $LASTEXITCODE`
 | `Kaff:ForwardedProxyHops = 2` | ⚠️ **unwitnessed** against real staging | — |
 
 ⚠️ **A Release build reporting `MSB3021` / `MSB3027` is a file lock from a running `Kaff.Api`, not a
@@ -155,16 +189,15 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 <!-- BEGIN GENERATED - tools/status.ps1 - do not edit by hand -->
 *Generated by `tools/status.ps1` from the `<!-- kaff -->` trailers. **Edit a story file, then re-run** — hand edits here are overwritten.*
 
-**HEAD** `a21892e` · ⚠️ working tree DIRTY
+**HEAD** `7b613e6` · ⚠️ working tree DIRTY
 
 ## Points by slice
 
 | | slice 1 | slice 3 |
 |---|---:|---:|
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 0 | 0 |
-| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 94 | 0 |
+| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 103 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 9 | 0 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 |
 | **total** | **127** | **5** |
@@ -175,7 +208,7 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 |---|---:|---:|---|---|---|---|---|
 | [KAFF-100](stories/slice-1-foundation/KAFF-100-bootstrap-the-first-owner.md) | 1 | 5 | 🔵 VERIFIED | PASS | `559ac45` | 2026-08-26 | Bootstrap the first Owner through a one-time setup screen |
 | [KAFF-101a](stories/slice-1-foundation/KAFF-101a-sign-in-api.md) | 1 | 5 | 🔵 VERIFIED | PASS | `559ac45` | 2026-08-27 | Sign in, and the server sets an `HttpOnly` session cookie |
-| [KAFF-101b](stories/slice-1-foundation/KAFF-101b-sign-in-screen.md) | 1 | 3 | 🟡 BUILT | none | `f2b995b` | 2026-09-02 | The staff sign-in screen, and where each role lands after it |
+| [KAFF-101b](stories/slice-1-foundation/KAFF-101b-sign-in-screen.md) | 1 | 3 | 🔵 VERIFIED | PASS | `0359b8d` | 2026-09-07 | The staff sign-in screen, and where each role lands after it |
 | [KAFF-102](stories/slice-1-foundation/KAFF-102-sign-out.md) | 1 | 2 | 🔵 VERIFIED | PASS | `559ac45` | 2026-08-27 | Sign out |
 | [KAFF-103](stories/slice-1-foundation/KAFF-103-set-first-password.md) | 1 | 5 | 🔵 VERIFIED | PASS | `559ac45` | 2026-08-27 | Change the temporary password on first sign-in |
 | [KAFF-104](stories/slice-1-foundation/KAFF-104-reset-forgotten-password.md) | 1 | 5 | 🔻 DEFERRED | none | `-` | 2026-09-07 | Reset a forgotten password with an Owner-generated link |
@@ -193,7 +226,7 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-115](stories/slice-1-foundation/KAFF-115-project-team-panel.md) | 1 | 8 | 🔻 DEFERRED | none | `-` | 2026-09-07 | The project team panel is built from assignment rows, not from the access check |
 | [KAFF-116](stories/slice-1-foundation/KAFF-116-audit-records-how-access-was-granted.md) | 1 | 3 | 🔵 VERIFIED | PASS | `-` | 2026-08-26 | Every audit record says how the actor reached the project |
 | [KAFF-117](stories/slice-1-foundation/KAFF-117-read-the-audit-trail.md) | 1 | 5 | 🔵 VERIFIED | PASS | `5b13761` | 2026-09-06 | The Owner reads the audit trail, and nobody else does |
-| [KAFF-118](stories/slice-1-foundation/KAFF-118-every-slice-1-change-is-audited.md) | 1 | 3 | 🟡 BUILT | none | `-` | 2026-09-05 | Every state change in slice 1 writes an audit record |
+| [KAFF-118](stories/slice-1-foundation/KAFF-118-every-slice-1-change-is-audited.md) | 1 | 3 | 🔵 VERIFIED | PASS | `0359b8d` | 2026-09-07 | Every state change in slice 1 writes an audit record |
 | [KAFF-119](stories/slice-1-foundation/KAFF-119-register-a-client.md) | 1 | 5 | 🔵 VERIFIED | PASS | `86cc8b0` | 2026-09-04 | Register a client, with a generated code and a duplicate-phone warning |
 | [KAFF-120](stories/slice-1-foundation/KAFF-120-individual-clients-do-not-withhold.md) | 1 | 2 | 🔵 VERIFIED | PASS | `-` | 2026-09-04 | An individual's contract cannot carry a withholding rate, and nor can the individual |
 | [KAFF-121](stories/slice-1-foundation/KAFF-121-edit-a-clients-contact-details.md) | 1 | 3 | 🔵 VERIFIED | PASS | `-` | 2026-09-04 | Edit a client's name and contact details |
@@ -203,7 +236,7 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-125](stories/slice-1-foundation/KAFF-125-staff-shell.md) | 1 | 3 | ⛔ VERIFIED | LAPSED | `8ea9258` | 2026-09-06 | The staff shell: session resolution, chrome, and role-based landing |
 | [KAFF-126](stories/slice-1-foundation/KAFF-126-client-screens.md) | 1 | 8 | 🔵 VERIFIED | PASS | `-` | 2026-09-04 | The client screens |
 | [KAFF-127](stories/slice-1-foundation/KAFF-127-user-management-screens.md) | 1 | 8 | 🔶 VERIFIED | CONDITIONAL | `116c08a` | 2026-09-06 | The user-management screens |
-| [KAFF-128](stories/slice-1-foundation/KAFF-128-audit-trail-screen.md) | 1 | 3 | 🟡 BUILT | none | `caf9663` | 2026-09-07 | The audit trail screen |
+| [KAFF-128](stories/slice-1-foundation/KAFF-128-audit-trail-screen.md) | 1 | 3 | 🔶 VERIFIED | CONDITIONAL | `0359b8d` | 2026-09-07 | The audit trail screen |
 | [KAFF-129](stories/slice-1-foundation/KAFF-129-partition-audit-records-by-month.md) | 1 | 8 | 🔻 DEFERRED | none | `-` | 2026-09-07 | Partition `audit_records` by month, from the start |
 | [KAFF-300](stories/slice-3-treasury/KAFF-300-the-section-15-worked-example.md) | 3 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-07 | The §15 worked example as a fixture — present and failing before anything else is built |
 

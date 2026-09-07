@@ -117,13 +117,19 @@ the save.
 
 ### Built that no criterion asked for
 
-- The i18n keys. All four exist in **both** catalogues [@ `ar.json` -> `audit.grant.portal_client`;
-  @ `en.json` -> `audit.grant.portal_client`], matching the story's i18n bullet, and they cannot
+- The i18n keys. All four existed in **both** catalogues — `audit.grant.portal_client` and its three
+  siblings — matching the story's i18n bullet, and they cannot
   drift apart between catalogues [@ `TranslationCatalogueTests.cs` ->
   `The_two_catalogues_describe_the_same_set_of_keys`]. **However** — nothing pins a key to its enum
   member. The story claims they are *"named after the enum member so the pair cannot drift"*; rename
   `PortalClient` and no test goes red. Small, cheap to close, and it is the SM-30 shape of defect: an
   absence, invisible to a green suite.
+  > **Annotated 2026-09-08, not rewritten.** The four `audit.grant.*` keys were **deleted** by
+  > KAFF-128 on 2026-09-07 — correctly: they named four of the five `ProjectAccessPath` members in
+  > different words, and `GrantPath` now renders through the exhaustive `projectAccessPathKey`. The
+  > citations above were live when this report was written and became broken when the keys went, which
+  > is how `V-35-L` found the citation gate red. The finding stands as of its date; only the citation
+  > form changed.
 - Four probe write routes in the test host [@ `ProbeEndpoint.cs` -> `WriteAssignedRoute`]. Test
   infrastructure, not shipped surface. Correct and necessary — the story is only observable on a
   record the gate admitted, and the four existing probes wrote nothing.
