@@ -47,6 +47,81 @@ Everything is `pending` until reached. Nothing is marked done on an author's evi
 
 ---
 
+## 2. The gate figures, re-measured by me
+
+**Every figure below I ran in this session.** The brief's column is what it claimed. `STATUS.md`
+says *"Re-measure rather than quote — every one of these has been wrong once."*
+
+| Gate | Brief / `STATUS.md` claimed | **Measured by me** | |
+|---|---|---|---|
+| Build, **Release**, `-warnaserror` | 0 / 0 | **0 warnings, 0 errors** | ✔ *(only after stopping the API — `V-35-A`)* |
+| Build, **Debug**, `-warnaserror` | 0 / 0 | **0 warnings, 0 errors** | ✔ |
+| `dotnet format --verify-no-changes` | clean | **clean, exit 0** | ✔ |
+| Domain.Tests | 127 / 127 | **total 127 · failed 0 · succeeded 127 · skipped 0** | ✔ |
+| Api.Tests | 317 / 317 | *§2.1* | |
+| Citations | 1183 / 0 / 0 *(brief)* · 1184 *(`STATUS.md`)* | *§2.1* | ⚠️ the two sources disagree by one before I start |
+| SPA build, `strictTemplates` | clean *(Frontend's own figure)* | **clean** — production build, 12 lazy chunks emitted | ✔ **re-measured** |
+| Web unit tests | 8 / 8 *(Frontend's own figure)* | **8 passed, 8 total — in exactly 1 test file** | ✔ figure right, *§2.2* |
+| E2E | 25 / 25 *(Frontend's own figure)* | *§15* | ⛔ **and see `V-35-K`** |
+
+### 2.1 `V-35-L` — ⛔ **the citation gate is RED at `HEAD`, and both sources report it green**
+
+**MEDIUM. The brief names this gate as a deliverable condition — *"must stay at 0 broken and 0
+legacy"* — and it was already at 2 broken when I arrived.**
+
+```
+scripts/check-citations.ps1        exit code 1
+SM-31 identifier citations checked: 1183
+  broken (identifier absent):        2
+  legacy line-number citations:      0
+
+BROKEN - a cited identifier does not exist:
+  verification-2026-08-23.md:120  'audit.grant.portal_client' is absent from ar.json
+  verification-2026-08-23.md:121  'audit.grant.portal_client' is absent from en.json
+```
+
+| Source | Claim |
+|---|---|
+| The brief | citations **1183 / 0 / 0** |
+| `STATUS.md` "Gates, as last measured" | citations **1184 / 0 / 0** at `a21892e` |
+| **Measured, `HEAD` `0359b8d`** | **1183 / 2 / 0 — exit 1** |
+
+**It is not my doing, and I checked rather than assumed:** my report contains **zero** `Verified:`
+citations, and `git status` shows the working tree modified in exactly one file — this report.
+`verification-2026-08-23.md` is untouched by me.
+
+**The cause is traceable to one commit, and it is in this pass's own scope.**
+`git log -S 'audit.grant.portal_client' -- …/ar.json …/en.json` returns **`5dc1ebf`, 2026-09-07,
+*"KAFF-128 built"***. **KAFF-128 rule 8 required those four orphan keys to be used or deleted; the
+builder deleted them — correctly, §14.4 — and the deletion broke two citations in a historical QA
+report that had cited one of them as present.**
+
+**This is the D-096 problem in a new place: a record that was true on its date, invalidated by a
+later change, with a gate that notices.** The gate worked. Nobody ran it.
+
+⚠️ **`HEAD` is literally titled *"Citation gate back to 0 legacy: I wrote the retired form while
+describing it."*** That commit repaired the **legacy** count and the **broken** count stayed at 2
+through it — which is what a partial re-measurement looks like. **Three of the brief's own gate
+figures have now been checked; this is the one that was wrong.**
+
+**The fix is not mine and is one line of the 2026-08-23 report** — a dated record citing a key that
+has since been deliberately removed. `SM-29`'s strike-don't-delete convention and D-096's "history
+never claims a present tense" both bear on how, and it is the Scrum Master's file to touch, not
+mine.
+
+### 2.2 The web unit figure is right and much smaller than it sounds
+
+`8 / 8` is true. **It is 8 tests in one file** — `src/Web/src/app/core/auth/guards.spec.ts`, added
+2026-09-05 at `8ea9258`. `Test Files 1 passed (1)`.
+
+**No component in the SPA has a unit test**: not the sign-in screen, not the landing, not either
+list, not the audit trail. The whole frontend unit gate is the route guards. That is not a defect —
+`agents.md` puts screen behaviour in E2E — but *"vitest 8/8"* on the board reads as broader coverage
+than it is, and §15 is about to show that the suite which *does* cover the screens is not running
+where the board thinks it is.
+
+---
+
 ## 1. Opening gate
 
 **Recorded before anything was measured or mutated.**
