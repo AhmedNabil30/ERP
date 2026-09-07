@@ -73,7 +73,9 @@ the local BA wrote `AC-127-J`…`N` into the story itself. **Both stand and neit
 That is a genuine reconciliation job for sprint 6 — and a second opinion on the same question is worth
 more than either alone, so it is an asset, not a mess.
 
-⚠️ It also reintroduced one **legacy line-number citation** (`STATUS.md:79`), taking the gate to
+⚠️ It also reintroduced one **legacy line-number citation** — a bare line number against `STATUS.md`,
+written out here rather than quoted, because quoting the retired form trips the checker that retires
+it. Taking the gate to
 1184 / 0 / **1**. Retired to a bare filename here, claim unaltered, per the precedent set on the
 2026-09-06 Verifier report. **Back to 1184 / 0 / 0.**
 
