@@ -220,6 +220,10 @@ public sealed class BidiGeometryTests
     [
         ("/clients", "client-rows"),
         ("/users", "user-rows"),
+
+        // KAFF-128. `AC-128-A` names timestamps and identifiers specifically, and a timestamp is the
+        // densest Latin-in-Arabic run in the slice — four Latin runs and three separators.
+        ("/audit", "audit-rows"),
     ];
 
     private static async Task<IReadOnlyList<BdiMeasurement>> MeasureAsync(

@@ -1,0 +1,249 @@
+<section class="audit" data-testid="audit-trail">
+  <h1 class="title">{{ i18n.t('audit.title') }}</h1>
+
+  <!--
+    The date range, and the only bound this screen has. `GET /api/audit` takes `from` and `to` and
+    nothing else that S-015 draws — the action chips and the "Search actor or entity" box have no
+    server parameter behind them and are recorded as findings rather than filtered in the browser.
+
+    `<input type="date">` is the platform's own control: a picker written here would be a second
+    calendar to keep Gregorian, and S-015 pins `dir=ltr` and Gregorian for exactly this field.
+  -->
+  <form class="range" (submit)="$event.preventDefault(); onSubmitRange()">
+    <div class="range-field">
+      <label class="range-label" for="audit-from">{{ i18n.t('audit.field.from') }}</label>
+      <input
+        id="audit-from"
+        class="range-input"
+        type="date"
+        dir="ltr"
+        data-testid="audit-from"
+        [formField]="rangeForm.from"
+      />
+    </div>
+
+    <div class="range-field">
+      <label class="range-label" for="audit-to">{{ i18n.t('audit.field.to') }}</label>
+      <input
+        id="audit-to"
+        class="range-input"
+        type="date"
+        dir="ltr"
+        data-testid="audit-to"
+        [formField]="rangeForm.to"
+      />
+    </div>
+
+    <button type="submit" class="range-apply" data-testid="audit-apply">
+      {{ i18n.t('audit.action.apply') }}
+    </button>
+  </form>
+
+  @if (failure(); as key) {
+    <p class="refusal" role="alert" data-testid="audit-failure">{{ i18n.t(key) }}</p>
+  } @else if (loading()) {
+    <p class="loading" data-testid="audit-loading">{{ i18n.t('audit.loading') }}</p>
+  } @else if (entries().length > 0) {
+    <ul class="rows" data-testid="audit-rows">
+      @for (entry of entries(); track trackEntry($index, entry)) {
+        <li class="row">
+          <!--
+            A button, not a link: it opens a panel over this screen rather than navigating anywhere,
+            and there is no per-record route to bookmark. `AC-128-D` — nothing on this screen submits
+            a mutation, and `TC-1-302` enumerates every control here from the DOM to prove it.
+          -->
+          <button
+            type="button"
+            class="row-link"
+            [attr.data-testid]="'audit-row-' + entry.id"
+            (click)="open(entry)"
+          >
+            <!--
+              Every Latin run inside an Arabic row is isolated: the timestamp above all, which is four
+              digit runs and three separators and reorders visually without it.
+
+              ⚠️ `dir="ltr"` is not decoration and `<bdi>` alone is not enough. A <bdi> defaults to
+              `dir="auto"`, which is *first-strong* — and a timestamp contains no strong character at
+              all. Digits are weak and `/`, `:` and `،` are neutral, so first-strong finds nothing,
+              falls back to the paragraph's RTL, and lays the whole stamp out right-to-left: the date
+              group jumps to the right of the time. Found by looking at the rendered screen; the
+              geometry sweep is green either way, because the box is the same size in both. S-015 pins
+              `dir=ltr` on these fields for exactly this reason.
+            -->
+            <bdi class="row-when" dir="ltr">{{ timestamp(entry.occurredAt) }}</bdi>
+
+            <span class="row-who">
+              <bdi class="row-actor">{{ entry.actorDisplayName }}</bdi>
+              @if (entry.actorRole; as role) {
+                <span class="row-sep" aria-hidden="true">·</span>
+                <!-- The role at the time of the act, never a join to the user's current one. -->
+                <span class="row-role">{{ i18n.t(roleKey(role)) }}</span>
+              }
+            </span>
+
+            <span class="row-what">
+              <span class="row-action">{{ i18n.t(auditActionKey(entry.action)) }}</span>
+              <span class="row-sep" aria-hidden="true">·</span>
+              @if (entry.eventType; as eventType) {
+                <span class="row-event">{{ i18n.t(auditEventKindKey(eventType)) }}</span>
+              } @else {
+                <bdi class="row-entity">{{ entry.entityType }}</bdi>
+              }
+            </span>
+
+            <!--
+              Omitted rather than rendered as "0 fields changed" — S-008's rule for a revocation count
+              of zero, applied here for the same reason. An `Occurred` record changed no entity, so a
+              zero is not information about it, it is noise on every sign-in row in the trail.
+            -->
+            @if (changedCount(entry) > 0) {
+              <span class="row-fields">
+                {{ i18n.t('audit.row.fields_changed', { count: changedCount(entry) }) }}
+              </span>
+            }
+          </button>
+        </li>
+      }
+    </ul>
+  } @else {
+    <div class="empty" data-testid="audit-empty">
+      <p class="empty-title">{{ i18n.t('audit.empty.title') }}</p>
+      <p class="empty-body">{{ i18n.t('audit.empty.body') }}</p>
+    </div>
+  }
+</section>
+
+@if (selected(); as entry) {
+  <!--
+    Full screen at 390px, a panel entering from the inline-start edge — which is the RIGHT under RTL —
+    once there is room for one. The CSS says `inset-inline-start`, so the direction is the document's
+    and nothing is mirrored by hand.
+  -->
+  <button
+    type="button"
+    class="panel-backdrop"
+    data-testid="audit-panel-backdrop"
+    [attr.aria-label]="i18n.t('action.close')"
+    (click)="close()">
+  </button>
+
+  <section
+    class="panel"
+    role="dialog"
+    aria-modal="true"
+    data-testid="audit-panel"
+    [attr.aria-label]="i18n.t('audit.record.title')"
+  >
+    <header class="panel-header">
+      <h2 class="panel-title">{{ i18n.t('audit.record.title') }}</h2>
+      <button
+        type="button"
+        class="panel-close"
+        data-testid="audit-panel-close"
+        [attr.aria-label]="i18n.t('action.close')"
+        (click)="close()"
+      >
+        <span aria-hidden="true">×</span>
+      </button>
+    </header>
+
+    <dl class="facts">
+      <!--
+        `dir="ltr"` on every field whose content carries no strong directional character — the
+        timestamp, the ids, the route, the address. `<bdi>` isolates them from the Arabic around them;
+        it does not decide which way they read, and first-strong cannot decide it either when there is
+        no strong character to find. `::1` renders as `1::` without this.
+      -->
+      <dt class="fact-label">{{ i18n.t('audit.field.when') }}</dt>
+      <dd class="fact-value"><bdi dir="ltr">{{ timestamp(entry.occurredAt) }}</bdi></dd>
+
+      <dt class="fact-label">{{ i18n.t('audit.field.who') }}</dt>
+      <dd class="fact-value">
+        <bdi>{{ entry.actorDisplayName }}</bdi>
+        @if (entry.actorRole; as role) {
+          <span class="fact-role">{{ i18n.t(roleKey(role)) }}</span>
+        }
+      </dd>
+
+      <dt class="fact-label">{{ i18n.t('audit.field.what') }}</dt>
+      <dd class="fact-value">
+        <span>{{ i18n.t(auditActionKey(entry.action)) }}</span>
+        @if (entry.eventType; as eventType) {
+          <span class="fact-sep" aria-hidden="true">·</span>
+          <span>{{ i18n.t(auditEventKindKey(eventType)) }}</span>
+        }
+        @if (entry.entityId; as entityId) {
+          <span class="fact-sep" aria-hidden="true">·</span>
+          <bdi class="fact-id" dir="ltr">{{ entry.entityType }}</bdi>
+          <bdi class="fact-id" dir="ltr">{{ entityId }}</bdi>
+        }
+      </dd>
+
+      <!-- Omitted when null rather than rendered empty — S-015, and most records carry no reason. -->
+      @if (entry.reason; as reason) {
+        <dt class="fact-label">{{ i18n.t('audit.field.why') }}</dt>
+        <dd class="fact-value" dir="auto">{{ reason }}</dd>
+      }
+
+      @if (entry.requestPath; as requestPath) {
+        <dt class="fact-label">{{ i18n.t('audit.field.where') }}</dt>
+        <dd class="fact-value"><bdi class="fact-id" dir="ltr">{{ requestPath }}</bdi></dd>
+      }
+
+      <!--
+        The kickoff §4 field landed, so this column is real rather than invented. S-015: "if that field
+        lands, this screen shows it; if it does not, do not invent a column that implies it exists."
+      -->
+      @if (entry.grantPath; as grantPath) {
+        <dt class="fact-label">{{ i18n.t('audit.field.grant') }}</dt>
+        <dd class="fact-value">{{ i18n.t(projectAccessPathKey(grantPath)) }}</dd>
+      }
+
+      @if (entry.ipAddress; as ipAddress) {
+        <dt class="fact-label">{{ i18n.t('audit.field.ip') }}</dt>
+        <dd class="fact-value"><bdi class="fact-id" dir="ltr">{{ ipAddress }}</bdi></dd>
+      }
+
+      <dt class="fact-label">{{ i18n.t('audit.field.correlation') }}</dt>
+      <dd class="fact-value"><bdi class="fact-id" dir="ltr">{{ entry.correlationId }}</bdi></dd>
+    </dl>
+
+    @if (changes().length > 0) {
+      <h3 class="changes-title">{{ i18n.t('audit.changes.title') }}</h3>
+
+      <!-- Column order right → left under RTL: Field · Before · After. The table is written once. -->
+      <div class="changes-scroll">
+        <table class="changes" data-testid="audit-changes">
+          <thead>
+            <tr>
+              <th scope="col">{{ i18n.t('audit.changes.field') }}</th>
+              <th scope="col">{{ i18n.t('audit.changes.before') }}</th>
+              <th scope="col">{{ i18n.t('audit.changes.after') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (change of changes(); track change.field) {
+              <tr [attr.data-testid]="'audit-change-' + change.field">
+                <th scope="row"><bdi>{{ change.field }}</bdi></th>
+                <td>
+                  @if (change.before.key; as key) {
+                    <span class="value-absent">{{ i18n.t(key) }}</span>
+                  } @else {
+                    <bdi dir="auto">{{ change.before.text }}</bdi>
+                  }
+                </td>
+                <td>
+                  @if (change.after.key; as key) {
+                    <span class="value-absent">{{ i18n.t(key) }}</span>
+                  } @else {
+                    <bdi dir="auto">{{ change.after.text }}</bdi>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+}

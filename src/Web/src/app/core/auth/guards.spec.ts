@@ -9,6 +9,7 @@ import {
 } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 
+import { auditReadGuard } from './audit-read.guard';
 import { AuthApi } from './auth.api';
 import { Session } from './auth.service';
 import { clientManageGuard } from './client-manage.guard';
@@ -48,12 +49,24 @@ describe('the permission guards resolve the session themselves', () => {
     department: null,
     operationsSubDepartment: null,
     mustChangePassword: false,
-    permissions: [],
+    // The company-wide permissions `GET /api/auth/me` returns for the Owner, narrowed to the one
+    // `auditReadGuard` reads. It reads the session's own set rather than mirroring the catalogue by
+    // role, so an empty array here would refuse the Owner and the arrangement below would prove
+    // nothing about the `await`.
+    permissions: ['AuditRead'],
     projects: [],
     teamProjects: [],
   };
 
-  const finance: Session = { ...owner, role: 'Finance', department: 'Finance' };
+  // **Not `{ ...owner, role: 'Finance' }` alone.** Spreading would hand Finance the Owner's permission
+  // set, and the refusal assertions would then be passing for the wrong reason on one of the three
+  // guards — a fixture agreeing with the code by accident, which is the shape D-046 is about.
+  const finance: Session = {
+    ...owner,
+    role: 'Finance',
+    department: 'Finance',
+    permissions: [],
+  };
 
   /**
    * Boots an injector in which `GET /api/auth/me` has been asked for and has **not yet answered** —
@@ -109,6 +122,7 @@ describe('the permission guards resolve the session themselves', () => {
   const guards: readonly (readonly [string, CanActivateFn])[] = [
     ['clientManageGuard', clientManageGuard],
     ['userManageGuard', userManageGuard],
+    ['auditReadGuard', auditReadGuard],
   ];
 
   for (const [name, guard] of guards) {

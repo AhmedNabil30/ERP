@@ -1,3 +1,4 @@
+import { AuditAction, AuditEventKind } from '../audit/audit.api';
 import {
   AssignmentLevel,
   Department,
@@ -88,6 +89,13 @@ export function assignmentLevelKey(level: AssignmentLevel): string {
  * `HrGlobal`, `PortalClient` and `None` never reach {@link import('../auth/auth.service').ProjectEntry}
  * today (KAFF-105b, D-103) — handled anyway so the switch stays exhaustive against the server's own
  * five-member enum rather than a narrowed guess of what one endpoint returns.
+ *
+ * **S-015's grant column uses this and not a second vocabulary.** KAFF-128 rule 8 gave the four
+ * orphaned `audit.grant.*` keys a judgement — *"used by this screen or deleted from both catalogues,
+ * not left orphaned a third time"* — and the judgement is delete. They named four of these same five
+ * members in different words, so keeping them would have meant a second mapping function, incomplete
+ * by one member (`None`), for a value the server sends as a `ProjectAccessPath` and this file already
+ * translates exhaustively. One enum, one vocabulary.
  */
 export function projectAccessPathKey(path: ProjectAccessPath): string {
   switch (path) {
@@ -103,6 +111,49 @@ export function projectAccessPathKey(path: ProjectAccessPath): string {
       return 'enum.ProjectAccessPath.None';
     default:
       return assertNever(path);
+  }
+}
+
+/** S-015's action column. `Occurred` is the one that changed no entity — a sign-in, a sign-out. */
+export function auditActionKey(action: AuditAction): string {
+  switch (action) {
+    case 'Created':
+      return 'enum.AuditAction.Created';
+    case 'Modified':
+      return 'enum.AuditAction.Modified';
+    case 'Deleted':
+      return 'enum.AuditAction.Deleted';
+    case 'Occurred':
+      return 'enum.AuditAction.Occurred';
+    default:
+      return assertNever(action);
+  }
+}
+
+/**
+ * What an `Occurred` record was.
+ *
+ * `S-015`'s element table names `enum.AuditAction.*` and stops there, because it was drawn before
+ * `AuditEventKind` existed (D-061). A row whose action is `Occurred` says only "Occurred" without
+ * this, which for a failed sign-in against a real account is the one word that carries none of the
+ * information — so the six members are translated rather than the enum being rendered raw.
+ */
+export function auditEventKindKey(kind: AuditEventKind): string {
+  switch (kind) {
+    case 'SignedIn':
+      return 'enum.AuditEventKind.SignedIn';
+    case 'SignedOut':
+      return 'enum.AuditEventKind.SignedOut';
+    case 'SignInFailed':
+      return 'enum.AuditEventKind.SignInFailed';
+    case 'SignInFailedUnknownUser':
+      return 'enum.AuditEventKind.SignInFailedUnknownUser';
+    case 'AccountLockedOut':
+      return 'enum.AuditEventKind.AccountLockedOut';
+    case 'DuplicatePhoneAcknowledged':
+      return 'enum.AuditEventKind.DuplicatePhoneAcknowledged';
+    default:
+      return assertNever(kind);
   }
 }
 

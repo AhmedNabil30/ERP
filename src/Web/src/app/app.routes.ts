@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 
+import { auditReadGuard } from './core/auth/audit-read.guard';
 import { clientManageGuard } from './core/auth/client-manage.guard';
 import { mustChangePasswordGuard } from './core/auth/must-change-password.guard';
 import { sessionGuard } from './core/auth/session.guard';
@@ -75,6 +76,22 @@ export const routes: Routes = [
           import('./features/users/user-form/user-form-page').then((m) => m.UserFormPage),
       },
     ],
+  },
+  {
+    // KAFF-128 — S-015. Same shape as `/clients` and `/users` above, and the strictest gate in the
+    // system: `auditReadGuard` admits the holder of the company-wide `AuditRead` permission, which is
+    // the Owner alone (D-049 ruling 1). **There is deliberately no `:projectId` child and no project
+    // filter** — Karim refused a project-scoped trail to the people working on that project, "even for
+    // their own projects", so an assigned Technical Office lead is refused here exactly as an
+    // unassigned one is. A filtered trail for a non-Owner is a defect, not a partial success.
+    //
+    // No children: the record detail is a panel over this screen, not a route. There is nothing to
+    // bookmark and, more to the point, nothing to link *to* — a per-record URL is a surface the story
+    // does not rule.
+    path: 'audit',
+    canActivate: [sessionGuard, mustChangePasswordGuard, auditReadGuard],
+    loadComponent: () =>
+      import('./features/audit/audit-trail-page').then((m) => m.AuditTrailPage),
   },
   {
     path: 'sign-in',

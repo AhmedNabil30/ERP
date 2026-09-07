@@ -1,0 +1,271 @@
+/*
+ * Logical properties throughout — `margin-inline-start`, never `margin-left`; `inline-size`, never
+ * `width`. RTL is the primary direction and not a mirror (CLAUDE.md, ux/rtl-and-i18n.md §1), so the
+ * layout is written once and reads correctly in both.
+ */
+
+.audit {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  max-inline-size: 60rem;
+  margin-inline: auto;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.range {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.range-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.range-label {
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+.range-input {
+  box-sizing: border-box;
+  padding: 0.6rem 0.75rem;
+  font: inherit;
+  border: 1px solid rgb(0 0 0 / 25%);
+  border-radius: 0.4rem;
+}
+
+.range-apply {
+  padding: 0.6rem 1.2rem;
+  min-block-size: 2.75rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgb(0 0 0 / 55%);
+  border-radius: 0.4rem;
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/*
+ * A button rather than an anchor: opening the panel navigates nowhere and there is no per-record URL.
+ * The reset is what a button needs to stop looking like one — `text-align: start`, not `left`.
+ */
+.row-link {
+  display: grid;
+  gap: 0.15rem;
+  inline-size: 100%;
+  padding: 0.75rem;
+  min-block-size: 2.75rem;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  color: inherit;
+  background: transparent;
+  border: 1px solid rgb(0 0 0 / 12%);
+  border-radius: 0.5rem;
+}
+
+/*
+ * F-1's rule, stated here on the day the screen was written rather than after it shipped.
+ *
+ * A <bdi> that is a direct child of a grid container is a grid item, and `justify-self`'s initial
+ * value stretches it to the whole column. Its own resolved direction is LTR — first-strong, which is
+ * what isolation *means* for a timestamp — so the run inside a full-width box sits at the box's
+ * physical LEFT while the Arabic beside it is aligned right. `TC-1-272` sweeps every <bdi> in the
+ * application for exactly this, and `client-list-page.css` carries the same declaration for the same
+ * reason. The isolation is untouched: this moves the box, not the text inside it.
+ */
+.row-link > bdi {
+  justify-self: start;
+}
+
+.row-when {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.row-who,
+.row-what,
+.row-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.empty {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  border: 1px dashed rgb(0 0 0 / 25%);
+  border-radius: 0.5rem;
+}
+
+.empty-title {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+}
+
+.empty-body {
+  margin: 0;
+  opacity: 0.8;
+}
+
+.loading,
+.refusal {
+  margin: 0;
+  padding: 0.75rem;
+}
+
+.refusal {
+  border: 1px solid rgb(180 0 0 / 45%);
+  border-radius: 0.5rem;
+}
+
+/*
+ * The backdrop is a button so it is reachable and announced, following the shell's drawer.
+ *
+ * The two `z-index` values are load-bearing and were found by driving the screen, not by reading it:
+ * `app.css` puts the header at 30 and the drawer at 40, and a panel below either is a panel whose
+ * close button the header intercepts. `TC-1-302` opens the panel and clicks that button, so the layer
+ * is asserted rather than assumed.
+ */
+.panel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  padding: 0;
+  cursor: pointer;
+  background: rgb(0 0 0 / 35%);
+  border: 0;
+}
+
+/*
+ * Full screen at 390px. `inset-inline-start` is the RIGHT under RTL, which is the edge S-015 draws the
+ * desktop panel opening from — one declaration, both directions, nothing mirrored by hand.
+ */
+.panel {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  overflow-y: auto;
+  background: var(--color-background);
+  border-inline-end: 1px solid rgb(0 0 0 / 20%);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.panel-close {
+  min-inline-size: 2.75rem;
+  min-block-size: 2.75rem;
+  font: inherit;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgb(0 0 0 / 25%);
+  border-radius: 0.4rem;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 0.75rem;
+  margin: 0;
+}
+
+.fact-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.fact-value {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  overflow-wrap: anywhere;
+}
+
+.fact-id {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+}
+
+.changes-title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Wide content scrolls inside its own box; the page itself never scrolls sideways at 390px. */
+.changes-scroll {
+  overflow-x: auto;
+}
+
+.changes {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.changes th,
+.changes td {
+  padding: 0.4rem 0.5rem;
+  text-align: start;
+  vertical-align: top;
+  border: 1px solid rgb(0 0 0 / 12%);
+  overflow-wrap: anywhere;
+}
+
+/* `[redacted]` and "no value" are facts about the record, not values — so they do not read as one. */
+.value-absent {
+  opacity: 0.7;
+  font-style: italic;
+}
+
+/* 390px is the width that must work; the wider layout is the enhancement. */
+@media (width >= 48rem) {
+  .row-link {
+    grid-template-columns: auto 1fr auto auto;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .panel {
+    inset-inline-end: auto;
+    inline-size: min(34rem, 100%);
+  }
+}
