@@ -142,7 +142,72 @@ acceptance criterion of that story, so it cannot be forgotten when the blocker c
 **Data I added to `kaff_demo`, declared:** one user, `v35_techoffice`, created through the real
 endpoint (`201`), and forced-password-change cleared on it and on the three seeded staff accounts
 (their passwords are now the temporary one with `New` appended, per `deploy/DEMO.md` §4.4's own
-convention). **No `src/` change, no SQL, no `DbContext` write.** Re-run `scripts/seed-demo.ps1`
-against a dropped/recreated `kaff_demo` to restore the documented state.
+convention). Later, §5, its role was changed to `SiteEngineer`. **No `src/` change, no SQL, no
+`DbContext` write.** Re-run `scripts/seed-demo.ps1` against a dropped/recreated `kaff_demo` to
+restore the documented state.
+
+### 4.1 The UI half of `AC-128-B`, driven — and it holds
+
+Chromium, one browser per account, real sign-in through `POST /api/auth/sign-in`, then a **hard
+load** of `http://localhost:4200/audit` (`Page.navigate`, not an in-app `pushState` — that
+distinction is `TC-1-301`'s whole point).
+
+| Account | Role | `location.pathname` after the hard load | Surface |
+|---|---|---|---|
+| `v35_techoffice` | TechnicalOffice | **`/forbidden`** | `ليس لديك صلاحية لهذا الإجراء.` + chrome + sign-out + back-to-start |
+| `sara_finance_demo` | Finance | **`/forbidden`** | same |
+| `hend_hr_demo` | Hr | **`/forbidden`** | same |
+| `karim_sales_demo` | MarketingSales | **`/forbidden`** | same |
+| `owner_demo` | Owner | **`/audit`** | the trail renders, 51 records |
+
+`dir="rtl"` and `lang="ar"` on every one; `localStorage` and `sessionStorage` **empty in both
+directions on all five** (D-050 holds under a real browser, re-confirmed rather than quoted).
+
+**`AC-128-C` discharged** — the Owner reaches the screen on a hard load, not only on an in-app
+navigation, so the guard does not depend on its position in `canActivate`.
+
+**`AC-128-D` discharged, by enumeration rather than by a list of forbidden controls** — which is what
+`TC-1-302` demands. The complete interactive set on the rendered trail is: the chrome (hamburger,
+two locale buttons, sign-out, one nav link), **two `input[type=date]` filters, one apply button, and
+one button per row that opens the detail panel.** Nothing edits, deletes or corrects. **No `form`
+posts anything at an audit record.**
+
+⚠️ **What is still not discharged is `TC-1-300`'s own stated condition**, and the case says so in
+its own words: *"An unassigned user is refused by the assignment check whatever the permission says,
+so a case seeded without the assignment stays green against a project-scoped trail. **Seed the
+assignment or the case proves nothing.**"* I could not seed it — §4. **`TC-1-300` is therefore
+executed-but-inconclusive, not passed.** It is the only case in this pass with that status and it is
+the P1 on the strictest gate in the system.
+
+---
+
+## 5. `V-35-C` — `TC-1-304` decided by driving it, not by reading the component: **it passes**
+
+**Result: PASS. No finding against the code.** Recorded as a numbered item because the builder left
+it open and because the method is the point.
+
+The builder's argument was *"the component renders `entry.actorRole` and joins against nothing, so
+the case can only fail if a role changes between act and read"* — **an argument from the code, which
+is exactly what `agents.md` §7 says a verdict may not rest on.** So I made the role change.
+
+1. `v35_techoffice` acted six times as **`TechnicalOffice`** (five `SignedIn`, one `Modified` on
+   `/api/auth/change-password`). `GET /api/audit` showed all six with `actorRole: "TechnicalOffice"`.
+2. `PUT /api/users/{id}/role` with `{"role":"SiteEngineer"}` → **`200`**,
+   `{"role":"SiteEngineer","revokedProjectIds":[]}`. `GET /api/users` confirms the account is now
+   `SiteEngineer`.
+3. `GET /api/audit` again: **all six earlier records still read `actorRole: "TechnicalOffice"`.**
+4. The **screen** re-opened as the Owner after the change: **six rows render `· المكتب الفني`, and
+   zero rows anywhere on the trail render the site-engineer role.**
+
+**`TC-1-304` is green on evidence that could have been red** — the Given it names ("that user's role
+is later changed") was actually performed, so this is not a fixture that is green against both
+designs. The `AC-118-J` half — *"an actor since deactivated is still named"* — I did **not** drive;
+see §16.
+
+**Incidental, and not a defect:** `eventType` is `null` on **27 of 51** records. Every one of them
+has `action` = `Modified` or `Created` with a populated `changedProperties`; `eventType` is
+populated only on `action = Occurred` (`SignedIn`, `SignInFailed`, `DuplicatePhoneAcknowledged`).
+That is the two-axis design working, and the screen renders `حدث · تسجيل دخول` for the one and the
+changed-property list for the other. Recorded so the next reader does not mistake it for a hole.
 
 
