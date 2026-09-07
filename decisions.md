@@ -10437,3 +10437,143 @@ Adding the first story outside `stories/slice-1-foundation/` exposed three. The 
 were still generated, deliberately: `STATUS.md`'s own rule is that *"a missing row reads as nothing to
 do."* **A visible row beside a named arithmetic defect beats an invisible story — and nobody should
 carry `132` to Nabil until the generator is fixed.**
+
+---
+
+### D-124 · Frontend — `F-1` fixed with the case watched failing first, KAFF-128 built, and a direction defect that is `F-1`'s exact complement · 2026-09-07
+
+**Two pieces of work, and the second one found the mirror image of the first.**
+
+#### 1. `F-1` — a stretched grid item, and the assertion that actually caught it
+
+`.row-link` in `client-list-page.css` is `display: grid`. `<bdi class="row-phone">` is a **direct
+child** of it, so it is a grid item, and `justify-self`'s initial value is `stretch`. Its box spanned
+the whole column; its own resolved direction is LTR by first-strong — which is what isolation *means*
+for a phone number — so the run sat at the box's physical **left** under a right-aligned Arabic name.
+
+`.row-code` is inside `.row-meta`, a flex container, and was never stretched. **One element was wrong,
+not two.**
+
+The fix is written against the grid row rather than against a class list, so the next `<bdi>` promoted
+to a grid item there does not have to be remembered:
+
+```css
+.row-link > bdi { justify-self: start; }
+```
+
+**`TC-1-271` and `TC-1-272` were watched failing before the fix, on a seeded stack at `bce77f4`:**
+
+```
+on the client list, <bdi>01001234567</bdi>
+  box  308.0px starting at 349.0
+  text  85.4px starting at 126.4
+  name        starting at 349.0
+
+2 total / 2 failed / 0 succeeded
+```
+
+Then 2/2 passing with the one declaration added and nothing else changed.
+
+**⚠️ Which assertion caught it is the part worth keeping.** `TC-1-271` asserts two things — that the
+box is no wider than its own text, and that its inline-start edge is within 1px of the name's. **The
+second was green against `F-1`**: 349.0 against 349.0, because both boxes were stretched to the *same*
+column. Alignment alone cannot see this defect. The **width** is what separates a stretched box from a
+shrink-wrapped one.
+
+**The positive control was mutated, not assumed.** `user-list-page.css` already carried the fix and is
+`TC-1-271`'s control. Deleting its single `justify-self: start` turned the control red in the same
+shape (`<bdi>sara_finance_demo</bdi>`, box 308.0px around 120.4px of text) and it was restored. A
+control that has only ever been green cannot tell *"enforced"* from *"never fired"*.
+
+#### 2. KAFF-128 — S-015 built, and the defect a geometry sweep cannot see
+
+The audit trail renders `::1` as `1::`, and puts a timestamp's date group to the right of its time.
+
+**`<bdi>` defaults to `dir="auto"`, which is *first-strong*.** A timestamp, a GUID, a route and an IP
+address contain **no strong directional character at all** — digits are weak, `/`, `:` and `،` are
+neutral — so first-strong finds nothing to go on and inherits the paragraph's RTL. **Isolation says
+where a run ends. It does not say which way the run reads.** `S-015` specifies `dir=ltr` on exactly
+these fields and now they carry it.
+
+**This is `F-1`'s complement and neither check subsumes the other.** `F-1` was geometry that every
+direction check was green against. This is direction that the geometry sweep is green against, because
+a reordered run occupies exactly the same box as a correct one. `FirstStrongCannotDecideAsync` in
+`AuditScreenTests` enumerates the rule from the DOM: every `<bdi>` whose text matches no `\p{L}` and
+whose `dir` is `auto` is a defect.
+
+**⚠️ Routed, not fixed: the client and user lists have the same shape.** Their phone `<bdi>`s carry no
+`dir` and are green today only because a seeded phone number is one unbroken digit run with nothing in
+it to reorder. `0100-123-4567` or `+20 100 123 4567` would reorder there exactly as `::1` did here.
+That sits inside `KAFF-126` and `KAFF-127`'s criteria, so it is written down for QA rather than
+repaired from this story.
+
+#### Three decisions inside KAFF-128, each with its alternative named
+
+**`auditReadGuard` reads the session's permission set, not the role.** `Permission.AuditRead` is
+`CompanyWide` and `GET /api/auth/me` returns the company-wide rows this caller effectively holds
+(KAFF-105a rule 4, D-087), so the guard asks the server's own answer instead of restating "Owner alone"
+in TypeScript where it could drift from `PermissionCatalogue` with nothing going red. Its sibling
+guards mirror by role; this one does not, and the divergence is deliberate.
+
+**`AC-128-E`'s four orphans are deleted.** `audit.grant.*` named four of the five `ProjectAccessPath`
+members in different words. `GrantPath` is on every audit record, so the panel shows it — through
+`projectAccessPathKey`, which is exhaustive over all five. Keeping the orphans would have meant a
+second mapping function, incomplete by one member, for one server enum. **One enum, one vocabulary.**
+
+**Three of `S-015`'s controls are absent and recorded rather than invented.** The action chips and the
+"Search actor or entity" box have no parameter on `GET /api/audit` — `actorUserId` is a GUID, which is
+not a search — and `Load more` needs cursor paging the endpoint does not implement. Filtering an
+already-complete response in the browser is the list that lies which `client-list-page.ts` argues
+against for `?status=`. **The date range is the only bound this screen has, and the unbounded read is
+`KAFF-117`'s documented ceiling arriving on a screen.**
+
+#### Two things this story could not do, written down rather than worked around
+
+**`AC-128-B`'s fixture is half-buildable, and the missing half is the one the story says matters.**
+`TC-1-300` wants a Technical Office user *holding an active assignment on a project that has audit
+records*. `scripts/seed-demo.ps1` creates no Technical Office account, and no assignment could be made
+for one if it did: **`POST /api/projects` does not exist** — the seed script probes it and records the
+`404` — while `POST /api/projects/{projectId}/assignments` requires a project that does. Creating
+accounts from the suite is not the answer either: `ClientScreenTests` states the rule these files work
+to, that a run *"leaves the seeded database exactly as it found it."* Finance and the portal client are
+driven; **the Technical Office case is a fixture gap, routed.** What still holds without it is an
+argument from the code and not a driven fact: `GET /api/audit` declares no `ProjectScope` at all, so an
+assignment cannot change the answer by construction.
+
+**`TC-1-304` — `ActorRole` at the time of the act — has no automated case.** It can only fail if the
+role changes *between* the act and the read, and every idempotent way to build that fixture against a
+shared seeded database leaves an account behind. The screen renders `entry.actorRole` and injects no
+users API to join against, so the defect is unreachable by construction — which is again an argument
+from the code. **Routed to QA.**
+
+**No navigation item.** `ux/navigation.md` names `nav.audit` for the Owner in slice 1 and **no
+acceptance criterion on this story carries it.** `landing.ts` is deliberately one item per role and
+says in as many words that a second Owner item *"belongs to whatever story rules the Owner's menu"* —
+the Owner already reaches `/clients` with no item of their own. S-015 is reachable by URL. **Routed to
+the BA as a criterion gap rather than settled by restructuring KAFF-125's shell from inside a 3-point
+story.**
+
+#### The mutations run, because a green test is not evidence
+
+| Mutation | Case that went red |
+|---|---|
+| `justify-self: start` deleted from `user-list-page.css` | `TC-1-271`'s **positive control** |
+| `justify-self: start` → `stretch` in `audit-trail-page.css` | `TC-1-272`'s sweep, on `/audit` |
+| `dir="ltr"` removed from the panel's timestamp | `The_owner_hard_loads_the_trail_…` |
+| `await resolver.ensureResolved()` removed from `auditReadGuard` | `guards.spec.ts`, `true` became `/forbidden` |
+| a `correct this` button added to the panel | `TC-1-302`, the enumerated control set |
+| the redaction branch made blank | `TC-1-303`, the blank-cell assertion |
+
+Every one was reverted and the suite re-run green afterwards.
+
+#### Gates, measured on this tree rather than quoted
+
+Build **0 warnings / 0 errors** with `-warnaserror` · `dotnet format --verify-no-changes` **exit 0** ·
+Domain.Tests **127/127** · Api.Tests **317/317** · SPA build clean under `strictTemplates` · vitest
+**8/8** (was 6/6 — `auditReadGuard` joins the mechanism spec) · E2E **25/25** (18/18 at this session's
+baseline, 20/20 after `F-1`).
+
+⚠️ **The `kaff` dev database is still degraded** — `V-31-A` / `V-33-F`, `guardsInstalled` reports
+`accounts.enforce_non_negative on PROBE-UNFLOORED`. It is the Architect's and was not touched. This
+session ran against a freshly dropped and re-seeded `kaff_demo` per `deploy/DEMO.md` §3, which reports
+`guardsInstalled: true`.
