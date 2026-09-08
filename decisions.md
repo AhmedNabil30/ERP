@@ -11019,3 +11019,110 @@ archived باب's items stay findable, and whether a باب holding items can be
   each row owes the *"say why it is being asked"* half.
 * **It does not tick any Definition-of-Ready box.** `KAFF-204` and `KAFF-205` remain `NOT-BUILT`
   and both remain blocked on **`Q12`**.
+
+---
+
+### D-129 · Nabil — Q12 answered, and Q60–Q64 resolved by changing the question rather than waiting for it · 2026-09-09
+
+Six questions closed in one message. **Five of them by Nabil, not Karim**, which the register has
+precedent for (`Q42` → D-055 §2). What follows is what was ruled, and what each ruling costs.
+
+#### 1. `Q12` — the Owner holds every permission in the system
+
+Verbatim: *"the owner have all the prevliges on all the system."* Unambiguous, and it answers the
+question as asked. **The Owner keeps `CatalogueManage`, `BabManage`, `EmployeeManage`,
+`SubcontractorManage` and `OpportunityManage`** — the list D-045 #2 held open since it was raised
+by D-044 ruling 4. `stories/backlog.md` has said *"Blocked by Q12"* since slice 2 was estimated.
+**Slice 2 is unblocked on this axis.** QA's five matrix cells under `F-15` resolve to "may".
+
+⚠️ **This does not let the Owner create and approve the same movement, and must never be read that
+way.** `CLAUDE.md`: *"Nobody creates and approves the same movement."* That rule is a check on the
+**actor of a specific movement**, not a permission anybody holds or lacks — the Owner holding both
+`ExtractCreate` and `ExtractApprove` is exactly the situation the check exists for, not an exemption
+from it. **Holding every permission and being refused your own approval are not in tension.** Stated
+here because "the Owner has everything" is one careless inference away from a self-approval path,
+and money is on the other side of it.
+
+#### 2. `Q60` — a template answers the schema half. The data half is still Karim's
+
+Ruled: *"Instead of guessing arbitrary external spreadsheets, we will provide a standardized,
+downloadable template for the Technical Office."* This is the stronger move — it does not answer
+what Karim's sheet looks like, it **makes the question moot** by defining the shape we accept.
+`AC-200-A`'s *"in the agreed shape"* now has a referent, and `AC-200-I` can be written.
+
+⛔ **`Q60` had two halves and this closes one.** Its second half is *"whether that same file also
+carries the أبواب and their markups"* — and behind that, **what Kaff's real ~40 trades are and what
+each one's markup percentage is.** A template defines the columns; it cannot fill them. `KAFF-204`
+is the story that needs those values and **no template makes them up.**
+
+**This matters because `spec.md` §4.2's *concrete 15%* and *finishes 30%* are examples, not defaults
+to seed** — `KAFF-204` rule 7 says so. An agent building the باب tree against an empty answer will
+reach for those two numbers, and they will look like data. **`Q60`'s data half stays open and is
+re-registered as `Q70`**, narrowed to the one thing only Karim has: the trade list and its markups.
+
+#### 3. `Q61` — the import loads what it can and reports what it could not
+
+Ruled: *"a clear validation report that surfaces any row-level errors (e.g. missing prices or
+invalid codes), giving users actionable feedback rather than failing silently or causing total
+gridlock."*
+
+**This reverses what the board said.** `stories/backlog.md`'s title for `KAFF-200` is
+*"Import the catalogue from Excel at setup, **all-or-nothing**"*, and the story's rule 7 carries it.
+All-or-nothing is the behaviour *"total gridlock"* names. **`KAFF-200`'s title and rule 7 change**,
+and `AC-200-H` can now be written against partial load plus a row-level report.
+
+⚠️ **One reading was chosen and it should be confirmed in a word.** *"Actionable feedback rather
+than gridlock"* supports two designs: **load the good rows and list the bad**, or **refuse the file
+but name every bad row precisely**. The first is taken, because *"rather than causing total
+gridlock"* reads against refusing everything. The second is defensible and is what the board
+currently says. **If the intent was refuse-but-report, say so and rule 7 stands as written** — this
+is the only place in these six where the ruling admits two behaviours.
+
+#### 4. `Q62` — a second import is accepted, shown, and confirmed
+
+`Q62` asked what happens when a second spreadsheet arrives later: refuse it, add only new items, or
+update existing prices too. Under the same principle — do not gridlock, give actionable feedback —
+**the import is accepted, what it would change is shown, and the operator confirms.**
+`stories/backlog.md`'s own title for `KAFF-201`, *"a deliberate, reviewed act"*, describes exactly
+this gate, and §4.1's prohibition (*"Excel import is not an ongoing sync"*) is honoured: a human
+reviews and confirms every time, which is what makes it not a sync.
+
+**§4.4 protects signed BOQs under every reading** and is untouched — a signed BOQ holds copies with
+no foreign key to follow, so no import reaches one.
+
+#### 5. `Q63` — grouped by باب, then by code
+
+The price list orders **by باب, then by item code within each باب**. It follows from §2: the
+template defines the columns and the باب is one of them, so grouping by trade is the shape the data
+already arrives in and the way a price list is read. `AC-203-I` can be written.
+
+**The Arabic-collation caveat carried on `Q59` and `Q63` survives this** and is not answered here:
+whether ا / أ / إ sort together or apart is a `Postgres` collation question, not a business one, and
+it is the Architect's. Ordering by code sidesteps it for this list; `Q59`'s list still has it.
+
+#### 6. `Q64` — ⛔ **NOT closed by this message, and it must not be recorded as closed**
+
+*"Same for 62 63 64"* has content for `Q62` and `Q63`, which are both about how an import and a list
+behave. **`Q64` is not that kind of question.** It asks **what HR may see about every person in
+Kaff** — name, username, role, department, phone, active flag — and a pragmatism principle does not
+answer a data-exposure boundary.
+
+**Nothing is blocked by leaving it open.** `Q64`'s own row says it blocks *"nothing that is built"*,
+and its story half (`KAFF-115`) is DEFERRED. The unblocking answer already exists and is not new:
+**D-055 §2 ruled name and role, nothing else**, and `Q42`'s verbatim warning is *"Do not close it by
+handing HR the Owner's user list."* **HR's screen is built to name and role when it is built.**
+
+`Q64` stays open for one reason: it asks Karim whether, *having now seen the screen*, he wants that
+list changed. That is still worth asking and is not answered by anyone here.
+
+#### What this record does NOT do
+
+* **It does not edit a single story.** `KAFF-200`'s title and rule 7, `KAFF-201`'s rule, `KAFF-203`'s
+  `AC-203-I`, `KAFF-204`'s rule 7 and every Definition-of-Ready box are the **BA's**, with this
+  D-number as the citation. Nothing here ticks a box.
+* **It does not design the template.** What columns it carries is `KAFF-200`'s work and must match
+  `spec.md` §4.1's field list — `code · description · unit · bab · costPrice · baseSellRate ·
+  status` — not an invented superset.
+* **It does not answer `Q70`.** The trade list and its markups are Karim's and nobody else's.
+* **It does not touch `Q65`–`Q69`**, which are still cited by four slice-2 stories and still absent
+  from the register.
