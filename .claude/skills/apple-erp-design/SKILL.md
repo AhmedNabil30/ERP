@@ -82,11 +82,15 @@ this codebase, and adding one breaks Arabic silently rather than loudly.
 
 ---
 
-## §2 · The defect this skill exists to stop
+## §2 · The defect this skill exists to stop — ✅ **fixed 2026-09-09, `b9246b2`**
+
+> **This section described a live defect when the skill was written and no longer does.** All 45
+> literals were converted and the count is 0 across all eleven stylesheets. It is kept because the
+> *rule* it produced is permanent and the reasoning is why. **Do not re-open it as work.**
 
 `:root` in `styles.css` defines a **complete dark palette** under
 `@media (prefers-color-scheme: dark)`. Six of the ten feature stylesheets read **zero or one**
-token and hardcode `rgb(0 0 0 / 25%)` borders instead:
+token and hardcoded `rgb(0 0 0 / 25%)` borders instead:
 
 ```
                           colour literals   tokens
@@ -134,10 +138,9 @@ fitted once.
 - **Filters are a segmented control**, not three loose buttons: one bordered track, the active
   segment filled. Three states where the domain has three (Active / Archived / All) — the
   existing `.chip` markup with `aria-pressed` is correct and needs only the track around it.
-- **Every interactive element is at least 44px** (`--tap-target`, `ux/components.md` — the token
-  is specified there and is **not yet declared** in `styles.css`; declare it). That includes a
-  list row acting as a link, a filter chip, and a checkbox **label** — the label is the target,
-  not the 16px box.
+- **Every interactive element is at least 44px** — `var(--tap-target)`, specified in
+  `ux/components.md` and declared in `styles.css` since `b9246b2`. That includes a list row acting
+  as a link, a filter chip, and a checkbox **label** — the label is the target, not the 16px box.
 - **Inputs** get `--radius-md`, a `--color-border` hairline, and a `--color-accent` ring on
   `:focus-visible` — never a removed outline.
 - **Numeric fields carry the right keyboard.** A phone field is `type="tel"` with
