@@ -287,8 +287,27 @@ public sealed class PermissionEvaluatorTests
             .Should().Be(PermissionDecision.NotAssignedToProject);
     }
 
+    /// <summary>
+    /// Renamed 2026-09-08 under SM-33 (process/agile.md; decisions.md D-097 §2). The old name —
+    /// <c>Hr_may_read_the_user_list_and_still_reaches_nothing_financial</c> — asserted something the
+    /// system refuses. <b>HR cannot read the user list.</b> <c>GET /api/users</c> is gated
+    /// <c>Permission.UserManage</c>, the Owner's alone, deliberately: D-055 §2 gives HR <i>"names and
+    /// roles only"</i> without the Owner's administration surface, and gating that payload
+    /// <c>UserRead</c> would hand HR the screen the amendment exists to withhold
+    /// [Verified: 2026-09-08 @ <c>src/Api/Features/Users/ListUsers/Endpoint.cs</c> -&gt;
+    /// <c>Permission.UserManage</c>]. <c>UserRead</c> has no endpoint at all. Reported by
+    /// <c>V-34-F</c> on 2026-09-06.
+    /// </summary>
+    /// <remarks>
+    /// The old name is written out above so a citation of record still resolves to this file and
+    /// lands the reader on where the name went — the same treatment
+    /// <c>Hr_holds_no_permission_that_touches_money</c> carries in
+    /// <c>CatalogueCompletenessTests</c>. The citations in <c>meetings/</c>, <c>qa/</c>,
+    /// <c>proposals/</c>, <c>stories/</c> and <c>decisions.md</c> still name the old identifier and
+    /// are the Scrum Master's to move; this session may not edit them.
+    /// </remarks>
     [Fact]
-    public void Hr_may_read_the_user_list_and_still_reaches_nothing_financial()
+    public void Hr_holds_user_read_but_not_user_manage_and_reaches_nothing_financial()
     {
         // Nabil, 2026-08-22, answering Q42: HR held ProjectAssignmentManage and could not name a
         // single person to put on a project. "Granted strictly to HR and the Owner … names and roles

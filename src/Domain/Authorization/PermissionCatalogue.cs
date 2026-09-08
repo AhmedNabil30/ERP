@@ -274,8 +274,10 @@ public static class PermissionCatalogue
             // before anyone is assigned anywhere. TouchesMoney stays false — a name and a role move
             // no money and govern no ledger, and D-044 ruling 2's "zero financial visibility" is what
             // keeps HR's set to this shape. See decisions.md D-055 §2.
-            // SM-30: pinned by Hr_may_read_the_user_list_and_still_reaches_nothing_financial
-            // [Verified: 2026-09-04 @ `PermissionEvaluatorTests.cs` -> `Hr_may_read_the_user_list_and_still_reaches_nothing_financial`] and by
+            // SM-30: pinned by Hr_holds_user_read_but_not_user_manage_and_reaches_nothing_financial
+            // — renamed 2026-09-08 under SM-33 from Hr_may_read_the_user_list_and_still_reaches_nothing_financial,
+            // which was false: GET /api/users is gated UserManage and UserRead has no endpoint
+            // [Verified: 2026-09-08 @ `PermissionEvaluatorTests.cs` -> `Hr_holds_user_read_but_not_user_manage_and_reaches_nothing_financial`] and by
             // Hr_holds_no_permission_that_touches_money
             // [Verified: 2026-09-04 @ `CatalogueCompletenessTests.cs` -> `Hr_holds_no_permission_that_touches_money`].
             // Neither can enforce the projection warned about above — only the endpoint can.
