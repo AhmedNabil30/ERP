@@ -67,7 +67,7 @@ export class App {
     if (!session || session.mustChangePassword) {
       return false;
     }
-    return navLabelKeyFor(session.role) !== null;
+    return navLabelKeyFor(session) !== null;
   });
 
   /** `null` only in the defensive fallback {@link showStaffNav} already excludes from the drawer. */
@@ -77,12 +77,12 @@ export class App {
    */
   protected readonly navPath = computed(() => {
     const session = this.session();
-    return session ? navPathFor(session.role) : '/';
+    return session ? navPathFor(session) : '/';
   });
 
   protected readonly navLabelKey = computed(() => {
     const session = this.session();
-    return session ? navLabelKeyFor(session.role) : null;
+    return session ? navLabelKeyFor(session) : null;
   });
 
   constructor() {

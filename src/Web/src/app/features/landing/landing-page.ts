@@ -35,8 +35,8 @@ export class LandingPage {
   protected readonly session = computed<Session | null>(() => this.auth.current());
 
   protected readonly landing = computed<Landing>(() => {
-    const role = this.session()?.role;
-    return role ? landingFor(role) : { kind: 'forbidden' };
+    const session = this.session();
+    return session ? landingFor(session) : { kind: 'forbidden' };
   });
 
   constructor() {
