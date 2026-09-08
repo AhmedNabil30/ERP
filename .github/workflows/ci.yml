@@ -193,6 +193,26 @@ jobs:
           done
           echo "API did not become healthy."; cat api.log; exit 1
 
+      # ⛔ Without this step the suite runs against a database with no accounts in it.
+      #
+      # `Kaff__ApplyMigrationsOnStartup` above creates the SCHEMA and nothing else. Every screen test
+      # added from 2026-09-04 signs in as owner_demo, sara_finance_demo or portal_client_demo, and
+      # none of them existed here: the job scored 8/25 for four days while the board reported 25/25.
+      # V-35-K, reproduced locally on an empty database to the same 17 failures. This is the step
+      # that makes the gate measure what it claims to measure.
+      #
+      # It seeds through the running API's own endpoints — POST /api/setup, then /api/users and
+      # /api/clients — never through SQL, so it must come after the health check above and before the
+      # suite. It is not idempotent by design (KAFF-100: one Owner per database, ever), which is fine
+      # here because `kaff_e2e` is created fresh with the service container on every run.
+      #
+      # `pwsh`, not `powershell`: this runner is Linux. The script needs PowerShell 7 there, which is
+      # preinstalled on ubuntu-latest and which the Playwright step above already relies on. It sets
+      # `$ErrorActionPreference = 'Stop'` and throws on every status code it does not expect, so a
+      # seed that half-worked fails this step rather than turning into 17 confusing test failures.
+      - name: Seed the demo accounts
+        run: pwsh -NoProfile -File scripts/seed-demo.ps1 -Base http://localhost:5080
+
       # A static server for the built SPA, proxying /api to the running API — the same shape as the
       # nginx configuration used in the container image.
       - name: Serve the web build

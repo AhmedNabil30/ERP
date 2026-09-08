@@ -222,14 +222,27 @@ public sealed class AuditScreenTests
     /// <c>TC-1-300</c>'s third subject — the portal <c>Role.Client</c>, spec.md §12.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// A <c>Role.Client</c> never reaches a guard at all: <c>StaffSessionRules.MayHoldStaffSession</c>
     /// refuses the role at the door, so the account cannot hold a staff session to be refused with. The
     /// boundary is therefore asserted where it actually is — at sign-in, and at the endpoint with no
     /// session behind it.
+    /// </para>
+    /// <para>
+    /// <b>⚠️ Both assertions below are also true of a database with no portal account in it</b>, because
+    /// D-065 makes a missing username indistinguishable from a refused one and an anonymous
+    /// <c>GET /api/audit</c> is <c>401</c> on any stack at all. As first written this test therefore
+    /// passed on an empty database having tested nothing — <c>V-35-K</c> §15.3, which is
+    /// <c>V-33-E</c>'s shape recurring in the file written to close it.
+    /// <see cref="E2ESession.AssertPortalAccountExistsAsync"/> is the positive control that makes the
+    /// refusal mean something, and it runs first.
+    /// </para>
     /// </remarks>
     [E2EFact]
     public async Task A_portal_client_holds_no_session_to_reach_the_trail_with()
     {
+        await E2ESession.AssertPortalAccountExistsAsync();
+
         using HttpClientHandler handler = new() { UseCookies = false };
         using HttpClient client = new(handler) { BaseAddress = new Uri(E2EEnvironment.ApiBaseUrl) };
 
