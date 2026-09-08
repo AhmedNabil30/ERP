@@ -179,7 +179,118 @@ template can, and a restyle edits templates.**
 
 ---
 
-## §7 · Definition of done for a design change
+## §7 · Interface rules borrowed from the Web Interface Guidelines
+
+Taken from `vercel-labs/web-interface-guidelines` on 2026-09-09 and filtered to what applies to an
+Arabic-RTL Angular ERP. **The wrapper skill was not kept** — it fetched its ruleset from a URL at
+review time, and a rule that can change under you without a commit is not a rule this project can
+cite. What survived the filter is written out here instead. What was dropped, and why, is §7.8.
+
+### 7.1 Accessibility — the largest gap in the current screens
+
+- **Icon-only buttons need an `aria-label`.** Decorative icons need `aria-hidden="true"`.
+- **Semantic HTML before ARIA.** `<button>` for an action, `<a>`/`routerLink` for navigation. A
+  `<div>` with a click handler is a defect: it is not focusable, not keyboard-operable, and not
+  announced.
+- **Async updates need `aria-live="polite"`** — a loading state, a validation message, a saved
+  confirmation. A refusal that only appears visually is invisible to a screen reader. The existing
+  `role="alert"` on the refusal paragraphs is correct; the loading and empty states have nothing.
+- **Headings are hierarchical `<h1>`–`<h6>`**, and every screen has exactly one `<h1>`. Include a
+  skip link to main content.
+- **Every form control has a `<label>` or an `aria-label`.** A placeholder is not a label.
+
+### 7.2 Focus
+
+- **Never `outline: none` without a replacement.** The global `:focus-visible` rule in `styles.css`
+  is the replacement; do not override it away in a feature stylesheet.
+- Use `:focus-visible`, not `:focus` — a ring on mouse click is noise.
+- `:focus-within` for compound controls, so a group shows focus when a child holds it.
+- **A sticky header or bottom action bar must not cover the focused element.** The primary action is
+  bottom-anchored on narrow widths (§5); check that tabbing to a field behind it still scrolls it
+  into view.
+
+### 7.3 Forms
+
+- **Never block paste.** Not on the password field, not on a code field, not anywhere. Password
+  managers paste, and site engineers paste.
+- Inputs carry `autocomplete` and a meaningful `name`.
+- **Disable spellcheck on codes, usernames and identifiers** — `spellcheck="false"`. A red squiggle
+  under a client code is noise, and on an Arabic keyboard it is worse.
+- The label and its control share **one** hit target — no dead zone between a checkbox and its text.
+- **The submit button stays enabled until the request starts**, then shows a spinner. Disabling it
+  on invalid input hides *which* field is wrong.
+- **Errors appear inline, next to the field**, and submitting focuses the first error.
+- **Warn before navigating away from unsaved changes** — a half-typed extract lost to a stray back
+  gesture on a phone is a real loss on a building site.
+
+### 7.4 Content that does not fit
+
+- **Text containers must handle long content** — `text-overflow: ellipsis` with `overflow: hidden`,
+  or `overflow-wrap: break-word`. An Arabic company name is routinely longer than its English
+  equivalent.
+- ⚠️ **A flex or grid child needs `min-inline-size: 0` before it will truncate.** The initial
+  `min-width: auto` refuses to shrink below content, so the row overflows instead of ellipsing. This
+  is the single most common cause of the horizontal overflow §5 forbids.
+- Design against **short, average and very long** input, not the demo value.
+
+### 7.5 Long lists
+
+- **Over ~50 rows, do not render them all.** `content-visibility: auto` with
+  `contain-intrinsic-size` is the no-dependency option and is the one to reach for first. This is not
+  hypothetical: the price list in slice 2 is a 600-row screen.
+- **No layout reads during render** — `getBoundingClientRect`, `offsetHeight`, `scrollTop`. Batch
+  reads and writes; never interleave them.
+
+### 7.6 State belongs in the URL
+
+- **Filters, search text, pagination and expanded panels belong in query params.** Today the client
+  list's filter and search live only in signals: the state cannot be linked, bookmarked, or restored
+  by a refresh, and an operator who taps a row and comes back has lost their filter.
+- Navigation uses `<a>`/`routerLink`, never a click handler calling `router.navigate` — that breaks
+  Ctrl-click, middle-click, and "open in new tab".
+- **A destructive action needs a confirmation or an undo window, never immediate execution.** Note
+  what this does *not* mean: it is a UI affordance, not a delete path. Postings remain append-only;
+  a correction is a new reversing posting.
+
+### 7.7 Platform details that bite
+
+- **Native `<select>` needs an explicit `background-color` and `color`** or it renders unreadable in
+  Windows dark mode. Kaff runs on Windows.
+- **`<meta name="theme-color">` should match the page background**, per theme.
+- `overscroll-behavior: contain` on any modal, drawer or sheet, so scrolling it does not scroll the
+  page behind.
+- Full-bleed layouts need `env(safe-area-inset-*)` — the bottom-anchored primary action sits under
+  the home indicator on a notched phone without it.
+- `-webkit-tap-highlight-color` set deliberately rather than left to the browser's grey flash.
+- **`translate="no"` on codes, identifiers and brand names.** Auto-translation garbles a client code
+  the same way the bidi algorithm does, and this pairs with the `<bdi>` rule in §1 rather than
+  replacing it.
+
+### 7.8 Animation and small typography
+
+- **Honour `prefers-reduced-motion`** — provide a reduced variant or none.
+- Animate `transform` and `opacity` only. **Never `transition: all`** — list the properties.
+- Animations stay interruptible and respond to input mid-flight.
+- `…` (one character), never three dots. Loading states end with it.
+- `text-wrap: balance` on headings to prevent a one-word last line.
+
+### 7.9 What was deliberately dropped
+
+Named so the next session does not re-import it believing it was missed:
+
+- **Everything React and Next.js** — hydration safety, `suppressHydrationWarning`, `defaultValue`,
+  `htmlFor`, the `priority` prop, `nuqs`, `virtua`. This is Angular 22 with signals.
+- **Every Tailwind class name.** Translated to CSS per §0, or dropped.
+- **The English copy rules** — Title Case headings, Chicago style, active voice, second person,
+  "8 deployments" not "eight", `&` over "and". **The UI is Arabic.** Title case does not exist in
+  Arabic, and Kaff's status vocabulary is fixed verbatim by `CLAUDE.md` regardless.
+- **The whole Vercel deployment, React Native and view-transitions bundle** — 2.2 MB across roughly
+  300 files for a stack this project does not have. Kaff deploys from `deploy/`, and the mobile
+  stack is MAUI or Flutter, undecided.
+
+---
+
+## §8 · Definition of done for a design change
 
 - [ ] Zero colour literals in the stylesheets you touched; every colour is a token
 - [ ] Correct in **both** light and dark — actually rendered, not reasoned about
@@ -189,3 +300,5 @@ template can, and a restyle edits templates.**
 - [ ] No new string outside i18n; no new key missing from either catalogue
 - [ ] Build clean, `vitest` green, E2E green — run them through `/run-kaff-erp`, never hand-rolled
 - [ ] Any new token is declared in `:root` **and** in the dark block
+- [ ] §7.1 checked on any screen you touched: icon buttons labelled, live regions announced, one `<h1>`
+- [ ] No flex or grid child truncates without `min-inline-size: 0` (§7.4)
