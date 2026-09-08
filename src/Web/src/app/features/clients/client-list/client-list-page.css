@@ -32,49 +32,81 @@
   inline-size: 100%;
   box-sizing: border-box;
   padding: 0.6rem 0.75rem;
+  min-block-size: var(--tap-target);
   font: inherit;
-  border: 1px solid rgb(0 0 0 / 25%);
-  border-radius: 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 
+.search-input:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/*
+  A segmented control, not three loose buttons (apple-erp-design §4): one bordered track and the
+  active segment filled. `.chip` keeps its own `aria-pressed` markup — only the track around it is
+  new.
+*/
 .filters {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  inline-size: fit-content;
+  max-inline-size: 100%;
 }
 
 .chip {
-  padding: 0.4rem 0.9rem;
+  flex: 1 1 auto;
+  min-block-size: var(--tap-target);
+  padding-inline: var(--space-4);
   font: inherit;
+  color: var(--color-muted);
   cursor: pointer;
   background: transparent;
-  border: 1px solid rgb(0 0 0 / 25%);
+  border: none;
   border-radius: 999px;
 }
 
 .chip--on {
-  background: rgb(0 0 0 / 8%);
-  border-color: rgb(0 0 0 / 55%);
+  background: var(--color-background);
+  color: var(--color-text);
   font-weight: 600;
+  box-shadow: var(--elevation-1);
 }
 
+/*
+  The card is the list: one bordered, rounded surface with a subtle elevation, and rows separate by
+  a hairline rather than each drawing its own bordered box (apple-erp-design §3 — the defect that made
+  forty clients feel like forty documents).
+*/
 .rows {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--elevation-1);
+  overflow: hidden;
+}
+
+.row + .row {
+  border-block-start: 1px solid var(--color-border);
 }
 
 .row-link {
   display: grid;
   gap: 0.15rem;
-  padding: 0.75rem;
+  padding: var(--space-3) var(--space-4);
+  min-block-size: var(--tap-target);
   color: inherit;
   text-decoration: none;
-  border: 1px solid rgb(0 0 0 / 12%);
-  border-radius: 0.5rem;
 }
 
 .row--archived .row-link {
@@ -134,8 +166,8 @@
 .empty {
   padding: 1.5rem 1rem;
   text-align: center;
-  border: 1px dashed rgb(0 0 0 / 25%);
-  border-radius: 0.5rem;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
 .empty-title {
@@ -155,19 +187,20 @@
 }
 
 .refusal {
-  border: 1px solid rgb(180 0 0 / 45%);
-  border-radius: 0.5rem;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
 }
 
 .create {
   align-self: stretch;
   padding: 0.75rem;
+  min-block-size: var(--tap-target);
   text-align: center;
   font-weight: 600;
   color: inherit;
   text-decoration: none;
-  border: 1px solid rgb(0 0 0 / 55%);
-  border-radius: 0.5rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
 }
 
 /* The daily log is designed mobile-first and so is this: 390px is the width that must work. */

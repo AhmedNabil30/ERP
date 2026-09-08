@@ -47,8 +47,8 @@
   margin: 0;
   padding: 0.5rem 0.75rem;
   font-weight: 600;
-  border: 1px solid rgb(0 0 0 / 35%);
-  border-radius: 0.4rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
 }
 
 .fields {
@@ -75,9 +75,15 @@
   inline-size: 100%;
   box-sizing: border-box;
   padding: 0.6rem 0.75rem;
+  min-block-size: var(--tap-target);
   font: inherit;
-  border: 1px solid rgb(0 0 0 / 25%);
-  border-radius: 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .notes {
@@ -97,25 +103,29 @@
 }
 
 .chip {
-  padding: 0.4rem 0.9rem;
+  min-block-size: var(--tap-target);
+  padding-inline: 0.9rem;
   font: inherit;
   cursor: pointer;
+  color: var(--color-muted);
   background: transparent;
-  border: 1px solid rgb(0 0 0 / 25%);
+  border: 1px solid var(--color-border);
   border-radius: 999px;
 }
 
 .chip--on {
-  background: rgb(0 0 0 / 8%);
-  border-color: rgb(0 0 0 / 55%);
+  background: var(--color-background);
+  border-color: var(--color-accent);
+  color: var(--color-text);
   font-weight: 600;
+  box-shadow: var(--elevation-1);
 }
 
 /* S-013. A warning, not a refusal — it is not styled as an error and it does not disable the save. */
 .duplicate {
   padding: 0.75rem;
-  border: 1px solid rgb(190 130 0 / 60%);
-  border-radius: 0.5rem;
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-lg);
 }
 
 .duplicate-title {
@@ -159,18 +169,19 @@
 .refusal {
   margin: 0;
   padding: 0.75rem;
-  border: 1px solid rgb(180 0 0 / 45%);
-  border-radius: 0.5rem;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
 }
 
 .submit {
   padding: 0.75rem;
+  min-block-size: var(--tap-target);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
   background: transparent;
-  border: 1px solid rgb(0 0 0 / 55%);
-  border-radius: 0.5rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
 }
 
 .submit:disabled {
@@ -183,14 +194,14 @@
   padding: 1rem;
   text-align: center;
   opacity: 0.8;
-  border: 1px dashed rgb(0 0 0 / 25%);
-  border-radius: 0.5rem;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
 .danger {
   padding: 0.75rem;
-  border: 1px solid rgb(180 0 0 / 45%);
-  border-radius: 0.5rem;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
 }
 
 .confirm-title {
@@ -211,12 +222,14 @@
 
 .danger-button {
   padding: 0.6rem 1rem;
+  min-block-size: var(--tap-target);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  color: var(--color-danger);
   background: transparent;
-  border: 1px solid rgb(180 0 0 / 60%);
-  border-radius: 0.4rem;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
 }
 
 .loading {

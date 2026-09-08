@@ -190,7 +190,7 @@
     inset-inline-start: -17rem;
     z-index: 40;
     transition: inset-inline-start 0.2s ease;
-    box-shadow: 0 0 1rem rgb(0 0 0 / 20%);
+    box-shadow: var(--elevation-2);
   }
 
   .side-nav.is-open {
@@ -204,7 +204,7 @@
     z-index: 35;
     border: none;
     padding: 0;
-    background: rgb(0 0 0 / 35%);
+    background: var(--color-scrim);
   }
 
   .app-main {

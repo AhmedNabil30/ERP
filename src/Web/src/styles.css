@@ -28,14 +28,33 @@
 
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+
+  /* 44px — the tap target floor for every interactive element, list row and chip alike
+     (ux/components.md, CLAUDE.md Angular conventions). */
+  --tap-target: 2.75rem;
 
   --color-background: #ffffff;
   --color-surface: #f7f7f5;
   --color-text: #1a1a1a;
   --color-muted: #5c5c5c;
   --color-border: #d8d8d4;
+  --color-border-strong: #8f8f88;
   --color-accent: #1f6f5c;
   --color-danger: #a52121;
+  --color-warning: #9a6a00;
+
+  /* A modal/drawer scrim. Theme-neutral on purpose — it dims whatever is beneath it regardless of
+     which palette that content is drawn in. */
+  --color-scrim: rgb(0 0 0 / 35%);
+
+  /*
+    Depth comes from a 1px border and an ultra-subtle shadow, never a heavy drop shadow — two
+    elevations is the whole scale (apple-erp-design §3). `--elevation-1` is a resting card;
+    `--elevation-2` is something floating over the page (a menu, a dialog, an open drawer).
+  */
+  --elevation-1: 0 1px 2px rgb(0 0 0 / 8%);
+  --elevation-2: 0 8px 24px rgb(0 0 0 / 16%), 0 2px 8px rgb(0 0 0 / 8%);
 
   /*
     Arabic renders poorly in the default sans stack on Windows. The system Arabic faces come first
@@ -54,8 +73,19 @@
     --color-text: #ececec;
     --color-muted: #a5a5a5;
     --color-border: #34383c;
+    --color-border-strong: #52585d;
     --color-accent: #57b79c;
     --color-danger: #e07070;
+    --color-warning: #d9a441;
+
+    /*
+      A shadow tuned for a white ground is invisible on a dark one — the same alpha-black shadow
+      disappears against #16181a. Depth on dark surfaces comes from a stronger, larger shadow plus a
+      faint top highlight (an inset line of light) rather than from a bigger blur, which is what
+      would light up on a light ground instead.
+    */
+    --elevation-1: 0 1px 2px rgb(0 0 0 / 50%), inset 0 1px 0 rgb(255 255 255 / 4%);
+    --elevation-2: 0 12px 32px rgb(0 0 0 / 60%), inset 0 1px 0 rgb(255 255 255 / 6%);
   }
 }
 

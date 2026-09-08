@@ -51,8 +51,8 @@
   margin: 0;
   padding: 0.6rem 0.75rem;
   font-weight: 600;
-  border: 1px solid rgb(0 0 0 / 35%);
-  border-radius: 0.4rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
 }
 
 .fields {
@@ -75,12 +75,17 @@
 .input {
   inline-size: 100%;
   box-sizing: border-box;
-  min-block-size: 2.75rem;
+  min-block-size: var(--tap-target);
   padding-block: 0.6rem;
   padding-inline: 0.75rem;
   font: inherit;
-  border: 1px solid rgb(0 0 0 / 25%);
-  border-radius: 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .fixed-value {
@@ -88,8 +93,8 @@
   padding-block: 0.6rem;
   padding-inline: 0.75rem;
   font-weight: 600;
-  border: 1px dashed rgb(0 0 0 / 35%);
-  border-radius: 0.4rem;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
 }
 
 .password-row {
@@ -100,13 +105,13 @@
 
 .reveal {
   flex: none;
-  min-block-size: 2.75rem;
+  min-block-size: var(--tap-target);
   padding-inline: 0.9rem;
   font: inherit;
   cursor: pointer;
   background: transparent;
-  border: 1px solid rgb(0 0 0 / 35%);
-  border-radius: 0.4rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
 }
 
 .hint {
@@ -117,14 +122,14 @@
 .field-refusal {
   font-size: 0.85rem;
   font-weight: 600;
-  color: rgb(150 0 0);
+  color: var(--color-danger);
 }
 
 .refusal {
   margin: 0;
   padding: 0.75rem;
-  border: 1px solid rgb(180 0 0 / 45%);
-  border-radius: 0.5rem;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
 }
 
 .loading {
@@ -135,29 +140,29 @@
 .submit,
 .secondary,
 .danger-button {
-  min-block-size: 2.75rem;
+  min-block-size: var(--tap-target);
   padding-block: 0.75rem;
   padding-inline: 1rem;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-md);
 }
 
 .submit {
   background: transparent;
-  border: 1px solid rgb(0 0 0 / 55%);
+  border: 1px solid var(--color-border-strong);
 }
 
 .secondary {
   background: transparent;
-  border: 1px solid rgb(0 0 0 / 30%);
+  border: 1px solid var(--color-border);
 }
 
 .danger-button {
   background: transparent;
-  border: 1px solid rgb(180 0 0 / 65%);
-  color: rgb(150 0 0);
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
 }
 
 .submit[disabled],
@@ -172,12 +177,12 @@
   flex-direction: column;
   gap: 0.75rem;
   padding: 0.9rem;
-  border: 1px solid rgb(0 0 0 / 15%);
-  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
 .danger {
-  border-color: rgb(180 0 0 / 35%);
+  border-color: var(--color-danger);
 }
 
 .danger-note {
@@ -191,8 +196,8 @@
   flex-direction: column;
   gap: 0.6rem;
   padding: 0.9rem;
-  border: 1px solid rgb(0 0 0 / 35%);
-  border-radius: 0.5rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
 }
 
 .confirm-title {
@@ -221,8 +226,8 @@
 .confirm-project {
   padding-block: 0.35rem;
   padding-inline: 0.6rem;
-  border: 1px solid rgb(0 0 0 / 15%);
-  border-radius: 0.35rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
 }
 
 .confirm-actions,
