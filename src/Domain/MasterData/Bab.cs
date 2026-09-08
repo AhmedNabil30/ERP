@@ -78,15 +78,45 @@ public sealed class Bab : Entity
             sortOrder));
     }
 
-    public Result SetParent(Guid? parentBabId)
+    /// <summary>
+    /// Re-parents this باب, refusing any move that would make it its own ancestor at any depth.
+    /// </summary>
+    /// <param name="parentBabId">The new parent, or <c>null</c> to make this باب a root.</param>
+    /// <param name="parentByBabId">
+    /// Every باب's parent pointer — the one projection the walk needs, read by the caller in a single
+    /// query. <b>The tree is what a cycle is a property of, not the node</b>: an entity cannot see its
+    /// siblings, so a check confined to <c>this</c> catches depth one and nothing beyond it. That was
+    /// the guard here until 2026-09-08, and <c>A.SetParent(B)</c> then <c>B.SetParent(A)</c> passed it
+    /// completely, leaving neither باب reachable from a root (spec.md §2: the أبواب are a tree).
+    /// </param>
+    /// <remarks>
+    /// The walk is bounded by the size of the tree rather than by reaching a root, because rows
+    /// written before this guard existed may already hold a cycle this باب is not part of. A chain
+    /// longer than the tree has one, and the move is refused rather than walked forever.
+    /// </remarks>
+    public Result SetParent(Guid? parentBabId, IReadOnlyDictionary<Guid, Guid?> parentByBabId)
     {
-        if (parentBabId == Id)
+        ArgumentNullException.ThrowIfNull(parentByBabId);
+
+        Guid? ancestor = parentBabId;
+
+        for (int step = 0; step <= parentByBabId.Count; step++)
         {
-            return Result.Failure(MasterDataErrors.BabCannotBeItsOwnParent);
+            if (ancestor is null)
+            {
+                ParentBabId = parentBabId;
+                return Result.Success();
+            }
+
+            if (ancestor == Id)
+            {
+                return Result.Failure(MasterDataErrors.BabCannotBeItsOwnParent);
+            }
+
+            ancestor = parentByBabId.GetValueOrDefault(ancestor.Value);
         }
 
-        ParentBabId = parentBabId;
-        return Result.Success();
+        return Result.Failure(MasterDataErrors.BabCannotBeItsOwnParent);
     }
 
     public void SetDefaultMarkup(Percentage markup) => DefaultMarkup = markup;
