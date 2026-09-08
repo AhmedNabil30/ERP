@@ -136,8 +136,23 @@ public sealed class AuditCoverageTests : IAsyncLifetime
 
     // ---- AC-118-H · a read writes nothing -----------------------------------------------------
 
+    /// <summary>
+    /// Renamed 2026-09-08 under SM-33 (process/agile.md; decisions.md D-097 §2) from
+    /// <c>Ten_reads_write_no_audit_record</c>. <b>The old name encoded a count the loop had already
+    /// outgrown</b> — ten iterations over three routes is thirty reads, not ten — and adding
+    /// <c>GET /api/users</c> in the same change makes it forty. SM-33's cheaper half in as many
+    /// words: <i>"a test name must not encode a count that a legitimate future change falsifies. Put
+    /// the property in the name and the arithmetic in the body."</i> The property is that a read
+    /// writes nothing, and it holds for any number of them.
+    /// </summary>
+    /// <remarks>
+    /// The old name is written out above so a citation of record still resolves to this file and
+    /// lands the reader on where the name went. The citations in <c>meetings/</c>, <c>qa/</c>,
+    /// <c>proposals/</c>, <c>stories/</c> and <c>decisions.md</c> still name it and are the Scrum
+    /// Master's to move; this session may not edit them.
+    /// </remarks>
     [Fact]
-    public async Task Ten_reads_write_no_audit_record()
+    public async Task Reads_write_no_audit_record()
     {
         // Rule 6, and it is a property of every read rather than of any one screen. The criterion was
         // restated by SM-10 to name the reads the sprint actually had; the client list it could not
@@ -146,6 +161,14 @@ public sealed class AuditCoverageTests : IAsyncLifetime
         // The audit read (KAFF-117, story rule 10) joined the loop on 2026-09-05, and it is the one
         // read where the rule is self-referential: an audit record per audit read would bury the
         // records that matter under a record of somebody having looked for them.
+        //
+        // GET /api/users joined on 2026-09-08. It was reported absent by V-34-F on 2026-09-06 and is
+        // carried by AC-127-T: it is the Owner's user administration list, the one read in this loop
+        // that returns usernames, departments and active state, and it had been shipped and screened
+        // without ever being asserted to write nothing. It is read as the Owner because the route is
+        // gated Permission.UserManage [Verified: 2026-09-08 @
+        // `src/Api/Features/Users/ListUsers/Endpoint.cs` -> `Permission.UserManage`] — the OK
+        // assertion below is what stops a 403 turning this into a read that never happened.
         long before = await CountAsync();
 
         for (int i = 0; i < 10; i++)
@@ -158,11 +181,14 @@ public sealed class AuditCoverageTests : IAsyncLifetime
 
             (await GetAsync("/api/audit", _owner, Role.Owner, null))
                 .StatusCode.Should().Be(HttpStatusCode.OK);
+
+            (await GetAsync("/api/users", _owner, Role.Owner, null))
+                .StatusCode.Should().Be(HttpStatusCode.OK);
         }
 
         (await CountAsync()).Should().Be(
             before,
-            "thirty reads wrote a record between them — reads write nothing, and a trail that grows "
+            "forty reads wrote a record between them — reads write nothing, and a trail that grows "
             + "when nothing changed is a trail nobody can read a change out of");
 
         // The positive control, and it is not decoration. "The count did not change" is satisfied by

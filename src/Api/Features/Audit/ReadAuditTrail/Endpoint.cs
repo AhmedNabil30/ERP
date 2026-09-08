@@ -49,7 +49,7 @@ namespace Kaff.Api.Features.Audit.ReadAuditTrail;
 /// <para>
 /// <b>No audit record.</b> Reading writes nothing — story rule 10: an audit record per audit read
 /// would bury the records that matter. Asserted by <c>AuditCoverageTests</c> -&gt;
-/// <c>Ten_reads_write_no_audit_record</c>, which reads this route in its loop and carries a positive
+/// <c>Reads_write_no_audit_record</c>, which reads this route in its loop and carries a positive
 /// control so that "the count did not change" cannot be satisfied by a counter that cannot change
 /// (decisions.md D-116 §3).
 /// </para>
