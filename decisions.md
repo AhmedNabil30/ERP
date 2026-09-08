@@ -10963,3 +10963,59 @@ Debug `-warnaserror` **0/0, exit 0** · Release `-warnaserror` **0/0, exit 0** �
   renames leave citations of record naming the old identifiers; they resolve, and they are the Scrum
   Master's to move.
 * **No question was answered and none is Karim's.** The i18n key above is the BA's and the Frontend's.
+
+---
+
+### D-128 · Scrum Master — the باب refusal has one key in the namespace that ships, and archiving a باب is a story nobody owns · 2026-09-09
+
+Written to close a citation two story amendments already depend on. The BA that made those
+amendments was killed by a session limit before it could write this record, and left
+`KAFF-204` and `KAFF-205` on the tree citing a D-number that did not exist.
+
+#### 1. The key is `errors.master.bab_cannot_be_its_own_ancestor`, and there is exactly one of it
+
+`KAFF-204`'s i18n list and `KAFF-205`'s `AC-205-C` both said **`errors.bab.cycle`**, and
+`KAFF-204` additionally said `errors.bab.code_taken`. **No `errors.bab.*` key exists anywhere.**
+The namespace that ships is one per domain error-catalogue class, and master data's is
+`errors.master.*` — seventeen keys, all of them
+[Verified: 2026-09-09 @ `src/Domain/MasterData/MasterDataErrors.cs`], consumed under that
+namespace by the SPA [Verified: 2026-09-09 @ `src/Web/src/app/core/clients/clients.api.ts`].
+
+**The guard that ships is already named**, and its key is not the one either story asked for:
+`MasterDataErrors.BabCannotBeItsOwnParent` → `errors.master.bab_cannot_be_its_own_parent`
+[Verified: 2026-09-09 @ `src/Domain/MasterData/MasterDataErrors.cs`]. D-127 §1 widened that guard
+from self-parenting to an ancestor walk at any depth **without renaming the error**, so the
+identifier now says *parent* about a check that refuses an *ancestor*. The stories name
+`..._ancestor`; the code says `..._parent`. **The rename is owed and is Backend's** — it is the
+same class of defect D-127 §2 and §3 fixed by renaming two tests, and it is routed, not filed.
+
+**And `AC-204-E` and `AC-205-C` are two criteria over one guard, so they name one key.** Two
+spellings of a single refusal is `F-08`'s exact shape — the reason `TranslationCatalogueTests`
+carries a whitelist at all [Verified: 2026-09-09 @
+`tests/Domain.Tests/TranslationCatalogueTests.cs`]. Caught in refinement, before either key was
+written into a catalogue.
+
+#### 2. Archiving a باب goes in a new story, not into one that is already estimated
+
+`KAFF-204`'s open item 1 asked where the behaviour belongs. It belongs in **neither**
+`KAFF-206` (a different entity, and three points bought for one) **nor** `KAFF-204`/`205`
+(create-and-markup, and re-parent). **Recommendation: a new story at 3 points.** Cutting one is
+scope, and scope is Nabil's — the Scrum Master proposes and Nabil locks.
+
+The business half is not answerable here and is registered as **`Q67`** for Karim: whether an
+archived باب's items stay findable, and whether a باب holding items can be archived at all.
+
+#### What this record does NOT do
+
+* **It does not rename the error.** `BabCannotBeItsOwnParent` still ships under that name and
+  under `errors.master.bab_cannot_be_its_own_parent`. Until Backend renames it, the two stories
+  name a key the code does not emit, and `AC-204-E` is red for that reason and no other.
+* **It does not register `Q67`, nor `Q65`, `Q66`, `Q68`, `Q69`.** ⛔ **All five are cited by
+  slice-2 stories and none of them is in `stories/questions-for-karim.md`** [Verified: 2026-09-09
+  — the file's highest number is `Q64`]. They were raised inside `KAFF-204`, `206`, `207` and
+  `208` by a BA that did not reach the register. **A question that lives only in a story is a
+  question nobody is asking Karim**, which is principle 8's failure with a different noun.
+  Routed back to the BA as a registration sweep; it is judgement work, not bookkeeping, because
+  each row owes the *"say why it is being asked"* half.
+* **It does not tick any Definition-of-Ready box.** `KAFF-204` and `KAFF-205` remain `NOT-BUILT`
+  and both remain blocked on **`Q12`**.
