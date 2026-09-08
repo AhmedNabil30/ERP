@@ -118,11 +118,33 @@ scheduling one last again.
 | 1 | ✅ **DONE 2026-09-08 — `V-35-K` closed.** `ci.yml` now seeds between the API health check and the SPA server. Watched both ways in CI's own shape: empty database **7/25, exit 2**; seeded **25/25, exit 0**. The seed script runs unmodified on pwsh 7 / Linux, and `POST /api/setup` is **not** gated to `Development`, so Owner bootstrap works under `Staging`. **No test was weakened.** D-125 | Backend / CI |
 | 2 | ✅ **DONE 2026-09-08.** The survivor that was green for the wrong reason now carries a positive control. `E2ESession.AssertPortalAccountExistsAsync` was **private to `UserScreenTests`** — that is why the later suite went without it; **moved, not copied**. A/B on the same empty database: pre-repair **PASSED having tested nothing**; repaired **FAILED** in the control | Backend / CI |
 | 3 | **`V-35-F` — the rewritten `AC-125-C` cannot be executed by anyone.** This is why KAFF-125's lapse could not be lifted, and it is not the code's fault | BA |
-| 4 | **`V-35-G` — KAFF-125 rule 6 is breached on its face** | Frontend |
-| 5 | **`V-35-I` — a comment in shipped source states the bidi mechanism wrongly.** The `dir="ltr"` fix is right; its recorded reason is not, and the true reason is more dangerous | Frontend |
+| 4 | ✅ **DONE 2026-09-08 — `V-35-G` closed.** `landingFor` takes the `Session` and looks the landing up in a **permission → landing table**; `navLabelKeyFor`/`navPathFor` follow it. The nine-case `switch (role)` is gone. Mutation watched: swapping the table for the equivalent role switch reddens **3 of 7** — the tests pin the *mechanism*, using sessions the two designs answer differently, not the nine outputs | Frontend |
+| 5 | ✅ **DONE 2026-09-08 — `V-35-I` closed**, and it found a defect in `V-35-I` itself. See the money note below | Frontend |
+| 4a | ⛔ **HR's landing cannot be derived, and the gap is structural.** `ux/navigation.md` rules S-009a's permission as `ProjectTeamRead` and says *"the guard reads whatever `GET /api/auth/me` returns"* — **but the endpoint returns it to nobody.** It is `ProjectScoped`, so `CompanyWidePermissionsHeld` excludes it by construction (D-035); and HR's projects arrive as `TeamProjectEntry`, which carries **no `permissions` field at all** (D-103). **The file the ruling points the guard at is empty of the fact it is told to read.** HR's branch stays a named role check, with a test asserting the *gap* so it reddens the day somebody maps a permission onto it. **Two changes close it, neither the frontend's:** `TeamProjectEntry` carries the caller's project-scoped permissions (Backend, KAFF-105b), **or** the ruling is amended (UX/BA) | Backend **or** UX/BA |
 | 6 | **Refine slice 2** — story files, criteria, Definition of Ready | BA |
 | 7 | **Reconcile the two `V-34-A` passes** — a 701-line `proposals/` document and `AC-127-J`…`N` in the story, written independently, neither having read the other | BA |
 | 8 | **`AC-128-B`'s assignment half.** `V-35-B`: the builder's *"cannot be built"* was **half wrong** — the Technical Office account **can** be created (`201`, one request). Only the **assignment** cannot, because `POST /api/projects` does not exist. Attach the *"even for their own projects"* clause to whatever story ships it | Backend |
+| 9 | ⛔ **`V-31-A`/`V-33-F` diagnosed at last — and D-101 records a repair that never happened.** The `kaff` dev database still holds `PROBE-UNFLOORED`, D-101's own manual probe of 2026-09-02, which D-101 says was *"Row deleted; 200 healthy restored."* **It was not deleted.** Verified 2026-09-08: the account is present and carries **the only two postings in the entire database** — the −4,000 overdraw that proved the exposure. **It cannot be cleaned up:** postings are append-only and trigger-protected so the account cannot be deleted, and `trg_accounts_configuration_immutable` is `BEFORE UPDATE` so the flag cannot be repaired. **The database has to be recreated.** The API has refused to start against `kaff` since 2026-09-02; CI never sees it because CI builds fresh | Architect / Backend |
+| 10 | **Three small routed defects.** `Bab.SetParent` accepts A→B→A (`AC-205-C` red today) · `V-34-F`'s test name `Hr_may_read_the_user_list_and_still_reaches_nothing_financial` is false and still there · `/api/users` is still absent from `Ten_reads_write_no_audit_record`'s route loop, now carried by `AC-127-T` | Backend |
+
+### ⛔ Money is pre-exposed to bidi today, and `V-35-I` said it was not
+
+**Found 2026-09-08 by writing the check down rather than reading the report.** `V-35-I` concluded
+*"money is not pre-exposed"* from `Intl.NumberFormat('ar-EG')` — **a different call from the one this
+codebase ships.** `formatMoney` passes `style: 'currency'`, and **the currency style is what injects
+the marks.** Measured all four:
+
+| call | result | `U+200F` |
+|---|---|---|
+| `Intl.NumberFormat('ar-EG')` — what the report checked | `١٬٢٣٤٫٥` | no |
+| `formatNumber` (`ar-EG-u-nu-latn`, plain) | `1,234.5` | no |
+| **`formatMoney` (`ar-EG-u-nu-latn` + currency EGP)** | `‏1,234.50 ج.م.‏` | **yes** |
+| `ar-EG` + currency EGP | `‏١٬٢٣٤٫٥٠ ج.م.‏` | **yes** |
+
+**The mark lands on the leading character — the one first-strong reads.** Nothing shipped is wrong:
+`formatMoney` has no call site yet. ⛔ **But slice 3's first amount inside a `<bdi>` will need
+`dir="ltr"` for exactly the reason the audit timestamp does.** A Verifier finding was wrong, and the
+agent that found it said so instead of building on it.
 
 ⛔ **Struck from this sprint: the first-strong exposure on the client and user lists.** `V-35-H`
 disproved it. A registered `0100-123-4567` **does not reorder** — every `<bdi>` on both lists resolves
@@ -189,7 +211,7 @@ At `a21892e`, 2026-09-07. **Re-measure rather than quote** — every one of thes
 | Api.Tests | **317 / 317** | Scrum Master |
 | Citations | **1181 / 0 / 0, exit 0** | Scrum Master, after the `V-35-L` repair |
 | SPA production build | clean | Verifier |
-| vitest | **8 / 8** — ⚠️ in **exactly one file**, the route guards. **No component test anywhere** | Verifier |
+| vitest | **18 / 18, exit 0** — 8 baseline, +7 landing, +3 i18n. ⚠️ **Still no component test anywhere** | Frontend, 2026-09-08 |
 | E2E (Playwright) | **25 / 25 seeded, exit 0** · 7 / 25 unseeded, exit 2 | CI agent, 2026-09-08 |
 
 ✅ **The E2E row means something again.** `ci.yml` seeds as of 2026-09-08, so CI measures the same
