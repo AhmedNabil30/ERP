@@ -53,6 +53,16 @@ only against the one criterion that happened to be written down.
 | 8 | **A role change and a deactivation both revoke project assignments**, and the screen must say so **before** the act, not report it after. Four audit records, one act (D-049 ruling 5) | KAFF-109 · KAFF-111 · `AC-118-C`, `AC-118-D` |
 | 9 | **Nobody edits their own role and nobody deactivates themselves.** If the server refuses it, the screen must not offer it | spec.md §9 |
 | 10 | **No password is ever displayed after creation except the temporary one, once.** It is the one moment it exists in the clear, and `localStorage` is prohibited for it as for the token | D-050 · KAFF-106 |
+| 11 | **This story owns `GET /api/users`, the read the five screens above are built on.** Added 2026-09-08. `UserManage`, `CompanyWide`, **the Owner alone**; the payload is the Owner's user-administration surface and **no other role reaches it**, HR included. Its projection is bounded by `S-006`, not by the permission | spec.md §9 amendment 2026-08-22 · D-044 ruling 1 · **D-055 §2** · `ux/screen-inventory.md` -> `S-006` |
+
+> **⚠️ Rule 11 was missing until 2026-09-08, and its absence was a named, predicted defect.**
+> `proposals/V-34-A-user-list-acceptance-criteria.md` §6 set out the two homes these criteria could
+> take, and attached one condition to putting them here: *"KAFF-127's business-rule table needs the
+> read endpoint added to it — the story would then assert a rule it does not currently name, **which is
+> the gap `V-34-A` reports**."* The 2026-09-07 pass took that option and did not do that. Five criteria
+> were written against a rule the story's own table never stated, so the story asserted an endpoint's
+> behaviour while its rule table still described only screens. **Rule 11 closes it.** See
+> *Reconciliation* at the foot of this story.
 
 ## Acceptance criteria
 
@@ -156,6 +166,96 @@ When `GET /api/users` is called
 Then the response carries only the fields `S-006` names, plus what `AC-127-M` requires, and the new field does not appear
 And the check is a pin on the response type itself, not a reading of the projection
 *Rule:* `decisions.md` **D-055 §2** — *"A `UserRead` endpoint returning the full user row satisfies the permission and breaks the ruling. Whoever builds it projects name and role, and stops"* — the same argument one level up, applied to the Owner's surface: **the permission gate does not bound the payload, only the response type does.** The precedent is `AC-105b-F`, where *"a reflection test fails the instant that changes"*. This is the surface every future field on `User` — a salary, a national id, a home address — arrives on by default unless something refuses it.
+
+### 📌 `AC-127-O` … `AC-127-T` — added 2026-09-08, folding in what `proposals/V-34-A-user-list-acceptance-criteria.md` derived and the 2026-09-07 pass missed
+
+**`GET /api/users` was given acceptance criteria twice, independently, and neither author read the
+other.** The proposal wrote `AC-U-A` … `AC-U-L`, twelve criteria, on 2026-09-06; `AC-127-J` … `AC-127-N`
+were written here on 2026-09-07. **Four criteria agree almost word for word**, which is evidence rather
+than duplication — two BAs reading the same rulings a day apart, neither having seen the other, reached
+`AC-U-B`/`AC-127-J`, `AC-U-C`/`AC-127-K`, `AC-U-J`/`AC-127-L` and `AC-U-L`/`AC-127-M`. **Six of the
+proposal's twelve had no counterpart here at all.** They are folded in below, with the sources they came
+from rather than from the shipped endpoint. The full comparison is in *Reconciliation*.
+
+**AC-127-O — the Owner is served, and no assignment is required to serve him** *(fails if the rule is broken)*
+Given the Owner, holding **no** project assignment row anywhere in the system, and users existing across several departments
+When he calls `GET /api/users`, once with a project id supplied and once without
+Then he receives every user account in Kaff, both times, and the supplied project id neither grants nor withholds anything
+And a non-Owner assigned to every project in Kaff is still refused
+*Rule:* D-044 ruling 1 (`UserManage`, `CompanyWide`, the Owner alone) and `spec.md` §9's 2026-08-20 amendment — the Owner's global scope is *"reach, not capability"*. **The assignment axis `CLAUDE.md` requires is discharged by the permission's *scope*, not skipped**: a user list is not a project and cannot name one, the identical reasoning D-055 §3 used for `ProjectCreate`, and `PermissionEvaluator` returns `ProjectNotSpecified` for a `ProjectScoped` row with no project [Verified: 2026-09-08 @ `src/Domain/Authorization/PermissionEvaluator.cs` -> `ProjectNotSpecified`]. **This criterion pins the scope so a later session cannot quietly re-scope the row.** ⚠️ `AC-127-J` asserts only the refusals; **nothing on this story asserted the positive case until now**, and a gate that refuses everyone also passes a refusal-only suite.
+
+**AC-127-P — the row carries the eight things `S-006` draws, and each is traceable to it** *(fails if the rule is broken)*
+Given one row of the list
+When it is inspected
+Then it carries an addressable user identifier, the full name, the username, the role, the department, the Operations sub-department where one applies, the phone, and the active state — and nothing else except what `AC-127-M` requires
+*Rule:* `ux/slice-1-flows.md` -> `S-006`, verbatim: *"Desktop: the cards become a table — column order right to left is **Name · Username · Role · Department · Phone · State**"*; the mobile card draws the phone in a `<bdi>` and the search placeholder reads *"Search name or phone"*, which is why **`Phone` is on this list because S-006 draws it, not because it is on the entity**; the card is itself the link, which is the addressable identifier; and `spec.md` §9 subdivides Operations into Technical / Financial / Administrative, so `Department` alone under-describes an Operations user — the card draws *"Site Engineer · Operations"*. **This is the list `AC-127-N` was written without.** `AC-127-N` gives the mechanism — an exact-member whitelist — and names *"the fields `S-006` names"* without saying what they are; a whitelist with no list cannot be executed by a Verifier who has not independently re-derived it. **The two are halves of one criterion and are read together.**
+
+**AC-127-Q — no credential leaves the server, in any form** *(fails if the rule is broken)*
+Given the list response, for every user in it
+When it is inspected
+Then no password hash, no security stamp, no temporary-password value and no reset token appears, including inside a nested object
+*Rule:* `CLAUDE.md`; KAFF-117 rule 7 — `PasswordHash` and `SecurityStamp` are `[AuditRedacted]` and surface in no reading. **Structurally implied by `AC-127-N` + `AC-127-P` and written separately anyway**, because the whitelist is one assertion and one edit away from being widened, and this is the class of leak that cannot be walked back once it has been served.
+
+**AC-127-R — no money, and nothing joined to money** *(fails if the rule is broken)*
+Given the list response contract
+When it is inspected
+Then it carries no balance, no salary or pay figure, no cost, no margin and no other money-shaped field
+And no money-bearing entity is joined into the projection to produce one
+*Rule:* `CLAUDE.md`; `spec.md` §9's 2026-08-20 amendment point 3 — HR's *zero financial visibility* is why this class of leak matters on an identity surface; and the house precedent, `AC-124-G`, which says the same thing about the client list. **`User` has no money field today, which is exactly why it is worth writing down:** D-106 watched a `decimal RetainedAmount` ship past a green 241/241 because the payload had nothing to leak when the assertion was written. **Slice 2 adds the Employee register and `spec.md` §10 raises pay.**
+
+**AC-127-S — a dead session does not read the list** *(fails if the rule is broken)*
+Given an Owner whose account has since been deactivated, and separately an Owner whose password has since been changed on another device
+When either presents the session they still hold and calls `GET /api/users`
+Then each is refused, and no user data is returned to either
+*Rule:* `spec.md` §9's 2026-08-21 amendment point 2 (D-049 ruling 2) — *"a password change or a deactivation must invalidate every active session, everywhere, immediately"* — and the mechanism that makes it true, the security-stamp comparison of D-051 (N5) / D-053 §1. **Asserted today only against `/probe/users`, not against this route**, so the criterion says out loud that it leans on the shared gate.
+
+**AC-127-T — reading the list writes no audit record** *(fails if the rule is broken)*
+Given the audit trail before the request
+When the Owner reads the user list, any number of times
+Then no audit record is written, and the trail's contents are what they were
+*Rule:* `CLAUDE.md` — audit is for **state changes**; KAFF-117 rule 10, *"an audit record per audit read would bury the records that matter"*; `AC-118-H`.
+> ⛔ **This is the one criterion here that nothing in the suite asserts, and it is still true on 2026-09-08.** `AuditCoverageTests.Ten_reads_write_no_audit_record` names three routes — `/api/auth/me`, `/api/clients?status=all` and `/api/audit` — and **`/api/users` is not among them** [Verified: 2026-09-08 @ `tests/Api.Tests/AuditCoverageTests.cs` -> `Ten_reads_write_no_audit_record`]. The proposal found this on 2026-09-06 and it has not moved since. **The fix is one line in that loop; it is Backend's or QA's, not the BA's.** And the reason it was missed is `AC-118-H`'s shape: a hand-enumerated route list stays the length it was written at, which is precisely how a route that shipped later fell outside it. **That is KAFF-118's to fix, not this story's** — the durable form is a criterion over *every* mapped `MapGet`, the shape `EndpointPermissionCoverageTests` already uses for the permission gate.
+
+## Reconciliation of the two `V-34-A` passes — BA, 2026-09-08
+
+**Two independent answers to one question are an asset.** `proposals/V-34-A-user-list-acceptance-criteria.md`
+(cloud session, 2026-09-06, no SDK and no push) and `AC-127-J`…`N` (local, 2026-09-07) were written a
+day apart and neither author read the other. **Every claim below was re-checked against the files today
+rather than taken from either document.**
+
+### Where they agree — and the agreement is the evidence
+
+| Proposal | Story | |
+|---|---|---|
+| `AC-U-B` — refusal exhaustive over the `Role` enum, not a hand-written list | **`AC-127-J`** | **Independent agreement, including the enum-derivation clause.** Both reached it from D-044 ruling 1's *"the Owner alone"* being a statement about roles that do not exist yet |
+| `AC-U-C` — HR refused, and the refusal **is** the ruling | **`AC-127-K`** | **Independent agreement, including the identical warning**: do not discharge it by widening this endpoint. Both cite D-055 §2 and `Q42`'s verbatim *"Do not close it by handing HR the Owner's user list"* |
+| `AC-U-J` — every account whatever its state | **`AC-127-L`** | Independent agreement, both from `S-006`'s `Inactive` chip plus D-049 ruling 5 plus KAFF-112 needing a subject |
+| `AC-U-L` — the revocation names come from the server | **`AC-127-M`** | Agreement, and **the story's version is stronger**: `AC-U-L` asserts the response carries them; `AC-127-M` asserts the figure shown is the figure the act then revokes, with the audit records to match. Kept as it stands |
+| `AC-U-E` — the payload is an exact-member whitelist, never a blocklist | **`AC-127-N`** | Agreement on the mechanism. **They differ on the member list — see below** |
+
+### Where they diverge — and at least one of them is wrong
+
+| # | Divergence | Judgement |
+|---|---|---|
+| **1** | **Six of the proposal's twelve criteria have no counterpart in the story**: `AC-U-A` (the Owner is served), `AC-U-D` (the scope, and a project id changes nothing), `AC-U-F` (no money), `AC-U-G` (no credential), `AC-U-H` (a dead session), `AC-U-I` (a read writes nothing) | **The proposal is right and the story was thin.** All six are derivable from rulings that pre-date the endpoint, and one of them — `AC-U-I` — is the only criterion in either document that **nothing in the suite asserts at all**. Folded in as `AC-127-O` … `AC-127-T` |
+| **2** | **`AC-127-N` names *"the fields `S-006` names"* and does not say what they are. `AC-U-K` enumerates the eight with a verbatim citation** | **The proposal is right.** A whitelist criterion with no list is the `V-35-F` fault in a second story — a Verifier cannot execute it without re-deriving the list, and two Verifiers could derive two lists. Folded in as `AC-127-P`, which `AC-127-N` is now read with |
+| **3** | **The ninth response member.** `Response.cs` carries nine [Verified: 2026-09-08 @ `src/Api/Features/Users/ListUsers/Response.cs` -> `UserSummary`]; `S-006` draws eight. The proposal left `ActiveProjectNames` unresolved, as its `N12` ④ — *"either that placement is ratified, or a detail endpoint owns it"* | **The story is right, and this is the one place it clearly beat the proposal.** `AC-127-N`'s *"plus what `AC-127-M` requires"* ratifies the ninth member **through a criterion that needs it** — `AC-127-M` cannot be satisfied without those names, and `ux/slice-1-flows.md` -> `S-008` requires them *"in the same response that describes the user"* while no `GET /api/users/{userId}` exists. The proposal's own reasoning supports this; it simply did not close it |
+| **4** | **Where the criteria should live.** Proposal §6 recommends a **separate story** — one trailer cannot carry two verdicts (screens `CONDITIONAL`, endpoint `NOT VERIFIABLE`), and `101a`/`101b` and `105a`/`105b` are the established API/screen split. The 2026-09-07 pass put them on KAFF-127 | **The proposal's reasoning is sound and its conclusion is not an agent's to take** — §6 says so itself: *"This is a board and scope act and it is Nabil's."* **Both passes overstepped in opposite directions**: the proposal by recommending an id, the story by acting without the recommendation. ⚠️ **And the proposal's proposed id is now taken** — `KAFF-129` is *Partition `audit_records` by month*, cut 2026-09-07. **The criteria stay where they are** (moving them again costs more than it buys), **and the split, if Nabil wants one, is his.** What was in the story's power was rule 11, and that was the half it missed |
+| **5** | **`AC-U-B` says every refusal is a `403`. `AC-127-J` says only *"refused"*** | **The story is right to be vaguer, and the proposal is probably wrong on one row.** A portal `Role.Client` cannot present a staff cookie at all — the session cookie is `__Host-` prefixed with no `Domain` (D-050), and D-051 Q33 makes the portal a separate host — so what that caller gets is an unauthenticated refusal, not an authorisation one. Pinning `403` across the whole set would make the criterion fail on a correct system. **Left as *"refused"*** |
+| **6** | **The proposal's `Q58` and `N12` were never merged into the register, and one of the numbers has since been taken.** `Q58` is now *the تشوينات recovery schedule* (raised 2026-09-07 by `KAFF-300`); the proposal's `Q58` was HR's field list. `N12` was never allocated at all | **The proposal is right that both questions are real; the register is right that neither was ever asked.** §9 of the proposal says plainly that it could not edit the register — *"they are a proposal, not open questions"* — and nobody carried them across. **Merged 2026-09-08**: HR's field list is now **`Q64`** (the number `Q58` no longer available), and the list's shape is now **`N12`**, which was still free |
+
+### Claims from the proposal that are no longer true, re-checked today
+
+| Claim | Today |
+|---|---|
+| §7.3 — `Endpoint.cs` and `ListUsersTests.cs` cite **`D-055 §3`** where they mean **§2** | ⛔ **Repaired since.** Both now read `D-055 §2` [Verified: 2026-09-08 @ `src/Api/Features/Users/ListUsers/Endpoint.cs` -> `D-055 §2`; @ `tests/Api.Tests/ListUsersTests.cs` -> `D-055 §2`]. Every surviving `D-055 §3` in `src/` and `tests/` is about `ProjectCreate` / N10 and is correct [Verified: 2026-09-08 — six occurrences across the two trees, all N10] |
+| §7.1 / `V-34-F` — `PermissionEvaluatorTests` holds a test named `Hr_may_read_the_user_list_and_still_reaches_nothing_financial`, which asserts a capability the system refuses | ⚠️ **Still present, unrepaired** [Verified: 2026-09-08 @ `tests/Domain.Tests/PermissionEvaluatorTests.cs` -> `Hr_may_read_the_user_list_and_still_reaches_nothing_financial`]. **Both passes agree it must be renamed and both correctly declined to do it.** D-097 §2 / SM-33: the rename is Backend's or the Architect's, and moving its citations in `meetings/`, `qa/` and `proposals/` is the Scrum Master's, in the same commit. ⛔ **And the one thing not to do about it: do not make the name true by granting HR this endpoint** — `AC-127-K` holds that line |
+| §4.3 — `/api/users` is absent from `Ten_reads_write_no_audit_record`'s loop | ⚠️ **Still absent** [Verified: 2026-09-08 @ `tests/Api.Tests/AuditCoverageTests.cs` -> `Ten_reads_write_no_audit_record`]. Now carried by `AC-127-T` |
+
+**The proposal is `HISTORY` under `STATUS.md`'s map and stays where it is, marked superseded at its
+head.** It is not deleted: it is the only record of how these criteria were derived without the code
+open, and §1's ordering guarantee — §1–§3 committed before `ListUsers` was opened — is the reason its
+agreements with this story are worth anything.
 
 ## Not in this story
 The audit trail screen — **KAFF-117**, Owner-only, and it is Lane A's. The project team panel —

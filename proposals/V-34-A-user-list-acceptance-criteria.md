@@ -1,5 +1,41 @@
 # V-34-A — the missing acceptance criteria for `GET /api/users`
 
+> # ⛔ SUPERSEDED 2026-09-08 — reconciled into the story, and this file is now HISTORY
+>
+> **The criteria that count are in
+> [`stories/slice-1-foundation/KAFF-127-user-management-screens.md`](../stories/slice-1-foundation/KAFF-127-user-management-screens.md),
+> as `AC-127-J` … `AC-127-T`.** This file is a dated record and states no current position — read it
+> for *how* the criteria were derived, never for what they now say. `STATUS.md`'s map: `proposals/**`
+> is HISTORY.
+>
+> **What happened to this document.** `GET /api/users` was given acceptance criteria **twice,
+> independently, and neither author read the other** — `AC-U-A` … `AC-U-L` here on 2026-09-06, and
+> `AC-127-J` … `AC-127-N` in the story on 2026-09-07. They were reconciled on 2026-09-08 by a third
+> BA session, sprint-6 item 7, and **the comparison is at `KAFF-127` → *Reconciliation of the two
+> `V-34-A` passes***. In summary:
+>
+> * **Four criteria agreed almost word for word** — `AC-U-B`/`AC-127-J`, `AC-U-C`/`AC-127-K`,
+>   `AC-U-J`/`AC-127-L`, `AC-U-L`/`AC-127-M`. Two BAs reading the same rulings a day apart, neither
+>   having seen the other. **That agreement is the most useful thing this document produced.**
+> * **Six criteria here had no counterpart in the story and were right** — `AC-U-A`, `AC-U-D`,
+>   `AC-U-F`, `AC-U-G`, `AC-U-H`, `AC-U-I`. They are folded in as **`AC-127-O` … `AC-127-T`**.
+> * **`AC-U-K`'s eight-member list was the half `AC-127-N` was missing** and is folded in as
+>   `AC-127-P`.
+> * **§6's recommendation (a separate story) was not taken**, and its proposed id `KAFF-129` **has
+>   since been taken by another story** — *Partition `audit_records` by month*. The split, if there
+>   is one, is Nabil's; §6 says so itself.
+> * **§5's `Q58` and `N12` were never merged into the register** and `Q58`'s number has since been
+>   taken by a different question. They are now **`Q64`** and **`N12`** in
+>   `stories/questions-for-karim.md`.
+> * **§7.3's `D-055 §3` citation defect is REPAIRED** in `Endpoint.cs` and `ListUsersTests.cs`.
+>   **§7.1's false test name is NOT** — it is still there, and still Backend's.
+> * **One claim here is judged wrong**: `AC-U-B`'s blanket `403` over every refused role. A portal
+>   `Role.Client` cannot present a staff cookie at all (D-050's `__Host-` prefix, D-051 Q33's separate
+>   host), so that row is an unauthenticated refusal. `AC-127-J`'s vaguer *"refused"* is kept.
+>
+> **Nothing below this box has been edited.** It stands as it was written, including the two sections
+> its own author left duplicated at the foot of the file.
+
 **Author:** BA agent, dispatched by the unattended scheduled standup of **2026-09-06 11h UTC**. Nabil asleep.
 **Deliverable:** this file. It is written to be read on its own, without the repository open.
 
