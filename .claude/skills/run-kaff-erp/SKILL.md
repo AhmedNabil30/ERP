@@ -188,10 +188,19 @@ uses and still works; the *reason* recorded for it is stale. Flagged, not change
   suites report green against the previous build. Stop it first:
 
   ```powershell
-  Get-CimInstance Win32_Process |
-      Where-Object { $_.CommandLine -match 'Kaff\.Api' } |
-      ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+  Get-NetTCPConnection -LocalPort 5080 -State Listen -ErrorAction SilentlyContinue |
+      Select-Object -ExpandProperty OwningProcess -Unique |
+      ForEach-Object { Stop-Process -Id $_ -Force }
   ```
+
+  > **⚠️ Narrowed 2026-09-08 by the Backend/CI agent.** The command-line match this block used to
+  > carry (`Win32_Process` where `CommandLine -match 'Kaff\.Api'`) matches **any** process whose
+  > command line merely mentions the string, including an editor holding `Kaff.Api.csproj` open —
+  > and it killed an unrelated process twice on this board (`decisions.md` D-122 §8). Taking the
+  > **owning PID of the listener on 5080** identifies exactly the process that holds the DLLs, by
+  > the port it is serving on rather than by a string anyone can happen to contain. It still catches
+  > both launch forms, which is what the 2026-08-30 correction below was after; it stops nothing when
+  > nothing is listening, which is the correct answer rather than a silent miss.
 
   > **⚠️ Corrected 2026-08-30 by the Scrum Master, after this cost two stalls in one day.** This
   > block used to read `Get-Process -Name Kaff.Api`, **and that does not match the process this same

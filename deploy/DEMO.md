@@ -127,10 +127,17 @@ Stop any running `Kaff.Api` first (SKILL.md's gotcha — a stale one locks the D
 needs):
 
 ```powershell
-Get-CimInstance Win32_Process |
-    Where-Object { $_.CommandLine -match 'Kaff\.Api' } |
-    ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+Get-NetTCPConnection -LocalPort 5080 -State Listen -ErrorAction SilentlyContinue |
+    Select-Object -ExpandProperty OwningProcess -Unique |
+    ForEach-Object { Stop-Process -Id $_ -Force }
 ```
+
+> **⚠️ Narrowed 2026-09-08.** This block used to match `Win32_Process` on the **command line**
+> containing `Kaff.Api`, which is any process that merely *mentions* the string — an editor with
+> `Kaff.Api.csproj` open matches it, and that killed an unrelated process twice on this board
+> (`decisions.md` D-122 §8). The form above takes the **owning PID of the listener on 5080** and
+> nothing else, which is exactly the process holding the DLLs open, whichever way it was launched.
+> If nothing is listening it stops nothing and says nothing — that is correct, not a silent failure.
 
 Then start it pointed at the fresh database — `Development` so it auto-migrates and applies the
 guard scripts on boot:
