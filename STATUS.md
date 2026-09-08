@@ -125,7 +125,7 @@ scheduling one last again.
 | 7 | **Reconcile the two `V-34-A` passes** — a 701-line `proposals/` document and `AC-127-J`…`N` in the story, written independently, neither having read the other | BA |
 | 8 | **`AC-128-B`'s assignment half.** `V-35-B`: the builder's *"cannot be built"* was **half wrong** — the Technical Office account **can** be created (`201`, one request). Only the **assignment** cannot, because `POST /api/projects` does not exist. Attach the *"even for their own projects"* clause to whatever story ships it | Backend |
 | 9 | ⛔ **`V-31-A`/`V-33-F` diagnosed at last — and D-101 records a repair that never happened.** The `kaff` dev database still holds `PROBE-UNFLOORED`, D-101's own manual probe of 2026-09-02, which D-101 says was *"Row deleted; 200 healthy restored."* **It was not deleted.** Verified 2026-09-08: the account is present and carries **the only two postings in the entire database** — the −4,000 overdraw that proved the exposure. **It cannot be cleaned up:** postings are append-only and trigger-protected so the account cannot be deleted, and `trg_accounts_configuration_immutable` is `BEFORE UPDATE` so the flag cannot be repaired. **The database has to be recreated.** The API has refused to start against `kaff` since 2026-09-02; CI never sees it because CI builds fresh | Architect / Backend |
-| 10 | **Three small routed defects.** `Bab.SetParent` accepts A→B→A (`AC-205-C` red today) · `V-34-F`'s test name `Hr_may_read_the_user_list_and_still_reaches_nothing_financial` is false and still there · `/api/users` is still absent from `Ten_reads_write_no_audit_record`'s route loop, now carried by `AC-127-T` | Backend |
+| 10 | ✅ **DONE 2026-09-08 — all three.** `Bab.SetParent` now walks the candidate parent's ancestors and refuses a cycle **at any depth**, bounded by the size of the tree so a pre-existing cycle fails rather than hangs; watched red first at **3 of 5**. The false HR test name renamed under SM-33, citations moved. `/api/users` added to the audit-absence loop, and its name's count dropped — **the count was already false**: ten iterations over three routes is thirty reads. D-127 | Backend |
 
 ### ⛔ Money is pre-exposed to bidi today, and `V-35-I` said it was not
 
@@ -207,7 +207,7 @@ At `a21892e`, 2026-09-07. **Re-measure rather than quote** — every one of thes
 |---|---|---|
 | Build, Debug **and** Release, `-warnaserror` | **0 / 0** | Scrum Master |
 | `dotnet format --verify-no-changes` | **clean** | Scrum Master |
-| Domain.Tests | **127 / 127** | Scrum Master |
+| Domain.Tests | **132 / 132, exit 0** — 127 + 5 for the cycle guard | Backend, 2026-09-08 |
 | Api.Tests | **317 / 317** | Scrum Master |
 | Citations | **1181 / 0 / 0, exit 0** | Scrum Master, after the `V-35-L` repair |
 | SPA production build | clean | Verifier |

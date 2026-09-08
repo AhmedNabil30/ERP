@@ -48,8 +48,11 @@ from `ProjectManage` on 2026-08-22, which is the correction the paragraph above 
 `Finance_edits_a_contracts_tax_settings_but_not_its_engineering_scope` covers
 **`ProjectFinancialsEdit`**
 [Verified: 2026-08-22 @ `PermissionEvaluatorTests.cs` -> `Finance_edits_a_contracts_tax_settings_but_not_its_engineering_scope`];
-`Hr_may_read_the_user_list_and_still_reaches_nothing_financial` covers **`UserRead`**
-[Verified: 2026-08-22 @ `PermissionEvaluatorTests.cs` -> `Hr_may_read_the_user_list_and_still_reaches_nothing_financial`];
+`Hr_holds_user_read_but_not_user_manage_and_reaches_nothing_financial` covers **`UserRead`**
+— ⚠️ **renamed 2026-09-08 under SM-33** from `Hr_may_read_the_user_list_and_still_reaches_nothing_financial`,
+which asserted a reach the system refuses: `GET /api/users` is gated `UserManage`, the Owner's alone
+(D-055 §2), and `UserRead` has no endpoint at all
+[Verified: 2026-09-08 @ `PermissionEvaluatorTests.cs` -> `Hr_holds_user_read_but_not_user_manage_and_reaches_nothing_financial`];
 and `An_unassigned_holder_of_ProjectManage_cannot_edit_a_project` covers **`ProjectManage`**, the
 row that was **not** new
 [Verified: 2026-08-22 @ `PermissionEvaluatorTests.cs` -> `An_unassigned_holder_of_ProjectManage_cannot_edit_a_project`].
