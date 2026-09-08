@@ -10577,3 +10577,102 @@ baseline, 20/20 after `F-1`).
 `accounts.enforce_non_negative on PROBE-UNFLOORED`. It is the Architect's and was not touched. This
 session ran against a freshly dropped and re-seeded `kaff_demo` per `deploy/DEMO.md` §3, which reports
 `guardsInstalled: true`.
+
+---
+
+### D-125 · Backend/CI — `V-35-K` closed: CI seeds the E2E database, the portal case can fail again, and the teardown line stops one process · 2026-09-08
+
+Sprint 6 items 1 and 2, plus the runbook repair.
+
+#### 1. The `e2e` job now seeds, and the seed script needed no changes to do it
+
+`.github/workflows/ci.yml` gains one step between the API health check and the SPA server:
+
+```yaml
+- name: Seed the demo accounts
+  run: pwsh -NoProfile -File scripts/seed-demo.ps1 -Base http://localhost:5080
+```
+
+`Kaff__ApplyMigrationsOnStartup` creates the **schema**. Nothing created `owner_demo`,
+`sara_finance_demo` or `portal_client_demo`, so every screen test added from 2026-09-04 was red in
+CI while the board reported 25/25 — `V-35-K`.
+
+**Three things the brief told me to work out rather than assume, all three settled by measurement:**
+
+* **The script runs unmodified on PowerShell 7 for Linux.** Driven inside
+  `mcr.microsoft.com/powershell` against the Staging API on this machine: **exit 0**, every status
+  code as the script expects (`201`, `204`, `200`, `409`, `201`, and the deliberate `404` on
+  `POST /api/projects`), and the Arabic payloads intact — they are read as raw UTF-8 bytes from
+  `scripts/seed-demo/*.json` and never pass through a PowerShell string, which is the property that
+  makes it portable. **No rewrite, no node port, no change to the script at all.**
+* **`POST /api/setup` is not gated to `Development`.** `Features/Setup/CreateOwner/Endpoint.cs` is
+  `AllowAnonymous` with no environment check; the gate is the emptiness of `users` and
+  `ux_users_bootstrap_owner_once`. The bootstrap ran under `ASPNETCORE_ENVIRONMENT=Staging` here.
+* **It must run after the API is healthy**, because it seeds through the API's own endpoints and
+  never through SQL. Hence its position in the job.
+
+#### 2. `A_portal_client_holds_no_session_to_reach_the_trail_with` was green for the wrong reason, and now goes red
+
+Its two assertions — a null sign-in and an anonymous `401` — are **both true of a database with no
+portal account in it**, because D-065 makes a missing username indistinguishable from a refused one.
+`V-33-E`'s shape, recurring inside the file written to close it.
+
+`UserScreenTests.AssertPortalAccountExistsAsync` — the parsed, exact-match control written for
+precisely this — was **private to that file**, so the suite written later against the same account
+went without it. **It is now `E2ESession.AssertPortalAccountExistsAsync`, moved rather than copied**
+(CLAUDE.md: a thing two features need moves to where both reach it), and `AuditScreenTests` calls it
+first. **An absence control only one suite can reach is an absence control the next suite will not
+have** — that is the general lesson, and it is why this was a move and not a second copy.
+
+#### 3. `deploy/DEMO.md` §4.1 and `SKILL.md` stopped any process that merely mentioned `Kaff.Api`
+
+Both told the reader to kill by a `Win32_Process` **command-line** match on `Kaff\.Api`, which
+matches an editor with `Kaff.Api.csproj` open just as well as the API. It killed an unrelated process
+twice (D-122 §8). Both now take the **owning PID of the listener on 5080**:
+
+```powershell
+Get-NetTCPConnection -LocalPort 5080 -State Listen -ErrorAction SilentlyContinue |
+    Select-Object -ExpandProperty OwningProcess -Unique |
+    ForEach-Object { Stop-Process -Id $_ -Force }
+```
+
+Verified on this machine against a live `Kaff.Api.exe` — it named the right PID and stopped it, and
+it stops nothing when nothing is listening. It keeps what the 2026-08-30 correction was after (both
+launch forms) by identifying the process **by the port it serves** rather than by a string anyone can
+contain.
+
+#### The evidence — red turned green, watched both ways
+
+All CI-shaped: production SPA served by `ci/serve-e2e.mjs` on **4173**, API in **Staging** with
+`Kaff__ApplyMigrationsOnStartup=true`, `CI=true`.
+
+| Run | Database | Result |
+|---|---|---|
+| Full suite | **empty** `kaff_ci_pre` | ⛔ **7 / 25**, 18 failed, exit 2 |
+| Full suite | **seeded** by `scripts/seed-demo.ps1` under pwsh 7 on Linux | ✅ **25 / 25**, exit 0 |
+| The portal case alone, **pre-repair** code | **empty** | ⚠️ **1 / 1 passed, exit 0** — green having tested nothing |
+| The portal case alone, **repaired** code, same empty database | **empty** | ✅ **1 / 1 failed, exit 2**, in `AssertPortalAccountExistsAsync` |
+
+⚠️ **The 7 survivors are one fewer than `V-35-K` §15.3's 8, and the difference is the repaired
+test** — the arithmetic agrees exactly. A first unseeded run scored 6/25; the extra failure was
+`SmokeTests.An_unauthenticated_visit_to_the_landing_route_is_sent_to_sign_in` timing out at 30s, and
+**`SmokeTests` runs 5/5 alone against that same empty database**, so that one was contention and not
+a seed dependency. Recorded rather than averaged away.
+
+#### Gates, measured on this tree
+
+Build **Release exit 0** and **Debug exit 0**, `-warnaserror`, 0 warnings · `dotnet format
+--verify-no-changes` **exit 0** · Domain.Tests **127/127** · Api.Tests **317/317** · vitest **8/8** ·
+SPA production build **exit 0** · E2E **25/25 seeded · 7/25 empty** · citations **1181 / 0 / 0,
+exit 0** (read from `$LASTEXITCODE`, never piped through `Select-Object`).
+
+#### What this does not do
+
+* **Whether the `e2e` job is a required check is still unknown** — branch protection is not in the
+  repository, and `V-35-K` §15.4 could not read it either. **A seeded job that nothing blocks on is
+  still an advisory job.** Nabil's to check.
+* **The password drift of `V-35-K` §15.5 is untouched.** `EnsureCanSignInAsync` moves Finance and the
+  portal client off their seeded passwords on first run, so `deploy/DEMO.md` §4.4's table is wrong
+  after any E2E run. In CI this is harmless — the database is created fresh every time — and on a
+  developer's machine it is not. Left for whoever owns §4.4.
+* **No `spec.md` question was answered and none was raised**; nothing here touched a business rule.
