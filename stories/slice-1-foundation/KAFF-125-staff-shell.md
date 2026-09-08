@@ -102,12 +102,12 @@ Given a signed-in user requests a deep link before `/api/auth/me` has resolved
 When the guard runs
 Then it awaits resolution before deciding, and the user reaches the URL they requested rather than being bounced to sign-in and losing it
 
-**AC-125-C — the four profile-only roles land on S-005, and see the projects they are assigned to** *(fails if the rule is broken)* — **corrected 2026-09-07, see the amendment below**
-Given an active user of Finance, TechnicalOffice, SiteEngineer or HeadOfDesign, freshly signed in, holding two active project assignments at two different levels
+**AC-125-C — the four profile-only roles land on S-005, and a caller with no assignment sees an explicit empty state** *(fails if the rule is broken)* — **rewritten 2026-09-08, ⏳ awaiting Nabil's ratification; see both amendments below**
+Given an active user of Finance, TechnicalOffice, SiteEngineer or HeadOfDesign, freshly signed in, holding **no** active project assignment
 When the shell resolves
-Then they land on S-005, showing their display name, role and department from `GET /api/auth/me`
-And both projects are listed, each carrying **the caller's own level on that project** — `ux/screen-inventory.md` -> `S-005`: *"Own name, phone, role, department, and the projects I am assigned to with my level"*, and `AC-105b-A`, *"an engineer sees his own seniority, per project"* — never flattened to one level across projects
-And the same user with no active assignment sees an **explicit empty state** and not an absent section — `ux/components.md` §9, *"an empty state never renders sample or placeholder rows"*, and the *"Nothing here yet"* row of its three-way table
+Then they land on S-005, showing their display name, role and department from `GET /api/auth/me` — `ux/screen-inventory.md` -> `S-005`
+And the projects section renders an **explicit empty state**, not an absent section and not a placeholder or sample row — `ux/components.md` §9, *"An empty state never renders sample or placeholder rows"*, and the *"Nothing exists yet"* row of its three-way table
+And the empty state is the *"Nothing exists yet"* case, not the *"Nothing matches the filter"* case and not a refusal — S-005 is the caller's own profile, so there is no filter to clear and nothing is being withheld
 
 > ### 📌 AMENDMENT — BA, 2026-09-07 · `AC-125-C`'s last line was **false on the day the story shipped**, and this is a criterion defect, not a lapse
 >
@@ -164,6 +164,48 @@ And the same user with no active assignment sees an **explicit empty state** and
 >    profile-only roles can hold `OwnerGlobal`, so the field renders the same constant string for every
 >    caller this criterion covers.
 
+> ### 📌 AMENDMENT 2 — BA, 2026-09-08 · the 2026-09-07 rewrite **could not be executed by anyone**, and is split here. ⏳ **Neither rewrite is ratified.**
+>
+> `qa/slice-1/verification-2026-09-07.md` §8 — `V-35-F` — found that the rewritten criterion could not
+> be driven at all: it opened *"holding two active project assignments at two different levels"*, and
+> **no project can be created in this system**, so no user can hold one assignment, let alone two at
+> two levels.
+>
+> **Re-derived here rather than taken on trust, 2026-09-08:**
+>
+> * `src/Api/Features/` holds seven feature folders — `Assignments`, `Audit`, `Auth`, `Clients`,
+>   `Health`, `Setup`, `Users` — **and no `Projects` folder.** No endpoint anywhere in the API declares
+>   a project-creation route [Verified: 2026-09-08 — enumerated every `MapGet` / `MapPost` / `MapPut` /
+>   `MapDelete` across `src/Api/Features/*/*/Endpoint.cs`; twenty-two routes, none of them a project].
+> * The only two routes that mention a project **consume** an id they cannot mint:
+>   [Verified: 2026-09-08 @ `src/Api/Features/Assignments/AssignUserToProject/Endpoint.cs` -> `Route`]
+>   is `/api/projects/{projectId:guid}/assignments`, and the revoke route is the same shape. An
+>   assignment therefore presupposes a project that nothing in the product can bring into being.
+> * The seed script probes for the missing route on every run and expects a `404`
+>   [Verified: 2026-09-08 @ `scripts/seed-demo.ps1` -> `POST /api/projects`].
+>
+> `agents.md` §3c: **"a criterion that cannot pass is as bad as one that cannot fail."** The original
+> `AC-125-C` could not fail. The 2026-09-07 rewrite could not pass. **The story swapped one §3c fault
+> for the other**, and neither text has ever been put to Nabil.
+>
+> **The split is all this amendment does:**
+>
+> | Clause | Now lives in | Executable |
+> |---|---|---|
+> | Landing on S-005 with name, role and department | `AC-125-C` | **today** |
+> | The zero-assignment empty state | `AC-125-C` | **today** — driven live at 390px on four accounts, `V-35-F`'s report §9.4 |
+> | Two assignments, each at the caller's own level | **`AC-125-G`** — new, next unused letter | **not until a project can exist.** Held with an identifier so it cannot be lost |
+>
+> Nothing is weakened and nothing is dropped: the assignment half keeps its wording and its sources and
+> moves to its own id. That is the shape `V-35-F` described and did not itself write.
+>
+> ⛔ **This is a proposal. It must not be marked closed by an agent.**
+> `qa/slice-1/verification-2026-09-04.md` §6 reserved the `AC-125-C` call to Nabil in writing —
+> *"only Nabil can write it … It should not close by a Verifier"* — and `V-35-E` records that a BA
+> closed it three days later anyway. **That is the mistake this amendment exists not to repeat.**
+> **KAFF-125's verdict, its trailer and its state are untouched by this edit, and this edit
+> re-verifies nothing.** Ratification is open question 6 below, and it is Nabil's alone.
+
 **AC-125-D — a forced password change pre-empts every landing** *(fails if the rule is broken)*
 Given `mustChangePassword: true` on the `/api/auth/me` response
 When the shell resolves
@@ -180,6 +222,22 @@ Given the staff shell at 390px in Arabic
 When it renders
 Then direction is RTL, the drawer slides in from the right, no string is a literal, and there is no horizontal overflow
 
+**AC-125-G — each assigned project carries the caller's own level, never one level flattened across projects** *(fails if the rule is broken)* — ⏳ **held: not executable until a project can exist. Written 2026-09-08, awaiting Nabil's ratification with `AC-125-C`**
+Given an active user of Finance, TechnicalOffice, SiteEngineer or HeadOfDesign, freshly signed in, holding two active project assignments at two different levels
+When the shell resolves
+Then they land on S-005 and both projects are listed
+And each project carries **the caller's own level on that project** — `ux/screen-inventory.md` -> `S-005`: *"Own name, phone, role, department, and the projects I am assigned to with my level"*, and `AC-105b-A`, *"an engineer sees his own seniority, per project"* — never flattened to one level across projects
+
+> **Why this is held rather than dropped, and what un-holds it.** The Given cannot be established
+> today: nothing creates a `Project`, so nothing creates the assignment this criterion reads (see
+> AMENDMENT 2 above for the evidence). **This is not a defect in the shell** — `V-35-F`'s report §9.4
+> observed the same landing rendering the zero-assignment case correctly on four accounts.
+> **It becomes executable the day a project can be created and a user assigned to it** — slice 4,
+> `ux/screen-inventory.md` -> `S-051`. Until then it is neither passed nor failed, and a Verifier
+> should record it as *not reachable* rather than as a failure. **The rendering it describes is
+> already shipped**, which is precisely why it must keep an identifier: a criterion nobody can run is
+> a criterion nobody notices breaking.
+
 ## Not in this story
 S-006 (no endpoint feeds it), S-011 (KAFF-119…124, deferred), S-009a's actual rendering (open question,
 below). The site shell and the portal shell — different shells, different stories, later slices. Any
@@ -195,6 +253,7 @@ themselves, which this story reads but does not build.
 | 3 | **Does HR's S-009a render from the shared `GET /api/auth/me` (KAFF-105b's shape, rule 6 there), or does it need its own `/api/hr/projects` route with unshared response types, as `ux/screen-inventory.md` -> S-009a and `ux/navigation.md` -> "How HR reaches a project at all" both describe** *("on HR's own routes against its own API")*? **Neither is built today, and they are not the same shape** — KAFF-105b rides the endpoint every role calls; `ux/`'s description is a dedicated HR-only API. This is not decided here | **UX + BA, then Nabil** |
 | 4 | **B3-8, carried from the 2026-09-01 refinement, unresolved and named rather than answered here: who holds the `GET /api/auth/me` result inside this shell, and what invalidates it?** It decides whether a revoked assignment leaves the navigation wrong for one second or for the rest of the session, and `AC-105b-I` requires the list to be empty "on the next call" without saying what triggers that call from inside a running shell | **Architect** |
 | 5 | **`S-005` requires the caller's own phone and nothing carries it. Is S-005 discharged without it, or does `GET /api/auth/me` gain the field?** `ux/screen-inventory.md` -> `S-005` reads *"Own name, phone, role, department, and the projects I am assigned to with my level"*; the response record has no phone field [Verified: 2026-09-07 @ `src/Api/Features/Auth/WhoAmI/Response.cs` -> `Response`], and **no criterion on KAFF-125, KAFF-105a or KAFF-105b has ever asked for it** — so the gap has never been visible as a defect. It is a payload change (Backend, KAFF-105a's file) plus a line of chrome, or it is a correction to `ux/screen-inventory.md`. **Not decided here: which of the two it is, is a scope call.** Raised 2026-09-07 by the `AC-125-C` amendment above | **UX + Backend, then Nabil** |
+| 6 | ⏳ **`AC-125-C` — ratify or reject.** Two rewrites now stand unratified: the 2026-09-07 amendment that replaced the false *"no project or assignment is shown"* clause, and the 2026-09-08 split that made what replaced it executable. **Both are the BA's proposals and neither has been put to Nabil.** `qa/slice-1/verification-2026-09-04.md` §6: *"only Nabil can write it … It should not close by a Verifier"*, and `V-35-E` records that a BA closed it anyway. **One line closes this**, and it is the same line the 2026-09-04 report asked for. Until it is written, `AC-125-C` and `AC-125-G` are unratified text and KAFF-125's lapse cannot be lifted on them | **Nabil, and nobody else** |
 
 ## Questions for Karim
 None. Every open item above belongs to UX, the Architect or Nabil's scope call — none is a business
