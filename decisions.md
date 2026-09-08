@@ -10784,12 +10784,56 @@ true state, so the day it stops being true somebody finds out.
 struck-work note there repeats the mechanism `V-35-H` disproved and does not carry this correction.
 `STATUS.md` is not the frontend's file.
 
-#### 4. What I did not do
+#### 4. ⛔ The local `kaff` database cannot start the API, and the residue cannot be deleted
 
-* **No E2E run.** The two changes are a unit-level dispatch and a comment; the suite needs the stack up
-  and seeded, and running it would have proved nothing about either. The 25/25 figure in `STATUS.md` is
-  the CI agent's of 2026-09-08, not re-measured here.
-* **No `.NET` gate re-measured.** Nothing under `src/Api`, `src/Domain` or `src/Infrastructure` was
-  touched.
-* **No business question answered, and none raised** — nothing here is Karim's. The HR gap is UX/BA and
-  Backend; it is not a business rule.
+Found while bringing the stack up for the E2E gate, and it is not caused by anything in this session.
+
+`Kaff.Api` **refuses to start** against this machine's `kaff` database:
+
+```
+fail: Kaff.Infrastructure.Persistence.DatabaseInitializer[0]
+      Database guards are missing: accounts.enforce_non_negative on PROBE-UNFLOORED.
+```
+
+`PROBE-UNFLOORED` is a `Safe` account with `enforce_non_negative = false` — **D-101's own manual
+probe of 2026-09-02**, the one that record describes as *"an unfloored `Safe` row inserted into this
+machine's live `kaff` database … Row deleted; `200 healthy` restored."* **The row was not deleted.**
+It is still there on 2026-09-08, and it now carries **the only two postings in the database** — the
+overdraw to −4,000 that proved the exposure.
+
+⛔ **It cannot be cleaned up.** Postings are append-only and trigger-protected, so the account cannot
+be deleted, and `trg_accounts_configuration_immutable` is `BEFORE UPDATE` so the flag cannot be
+repaired either — the same property `SchemaInvariantTests` documents when it explains why its own
+version of this row is `INSERT`ed rather than `UPDATE`d (and that test's row is `UNFLOORED-SAFE`, and
+it **is** removed, in a `finally`). **The database has to be recreated; there is no repair.**
+
+**This means the documented local run path is broken**, and has been since 2026-09-02. It is not
+visible in CI, which builds a fresh database every time — so the 25/25 figure has been true there and
+unreachable here. Routed to Backend and to whoever owns `deploy/DEMO.md`; the frontend does not own
+`decisions.md` D-101's cleanup, the database, or the runbook.
+
+**What I did instead, non-destructively:** created `kaff_e2e` on the same container and started the
+API against it with `ConnectionStrings__KaffDatabase=…Database=kaff_e2e…`.
+`ApplyMigrationsOnStartup` built the schema, `/api/health` reported `guardsInstalled: true` and
+`missingGuards: []`, `scripts/seed-demo.ps1` seeded it (exit 0), and the E2E suite ran against it.
+**Nothing in `kaff` was altered or deleted.** `kaff_e2e` is left in place, because it is the only
+database this API can currently start against.
+
+#### 5. Gates, measured on this tree rather than quoted
+
+Build **Debug 0/0 exit 0** and **Release 0/0 exit 0**, `-warnaserror` · `dotnet format
+--verify-no-changes` **exit 0** · Domain.Tests **127/127 exit 0** · Api.Tests **317/317 exit 0** ·
+SPA production build clean under `strictTemplates`, **exit 0** · vitest **18/18 exit 0** (8 at the
+baseline; +7 `landing.spec.ts`, +3 `i18n.spec.ts`) · citations **1232 / 0 / 0, exit 0** · E2E
+**25/25, exit 0**, seeded, against a live SPA started from this tree.
+
+#### 6. What I did not do
+
+* **No `<!-- kaff -->` trailer touched, and nothing re-verified.** KAFF-125 is still `LAPSED` and
+  `AC-125-C` still awaits Nabil.
+* **No criterion written for rule 6.** It has none, and it is the BA's.
+* **`STATUS.md` not edited** — sprint 6 item 5's struck-work note still carries the mechanism `V-35-H`
+  disproved, and §3 above is a further correction to it. Not the frontend's file.
+* **`qa/slice-1/test-cases.md` not touched.** QA owns it.
+* **No business question answered, and none raised** — nothing here is Karim's. The HR gap is UX/BA
+  and Backend; it is not a business rule.
