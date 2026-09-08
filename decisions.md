@@ -10837,3 +10837,129 @@ baseline; +7 `landing.spec.ts`, +3 `i18n.spec.ts`) · citations **1232 / 0 / 0, 
 * **`qa/slice-1/test-cases.md` not touched.** QA owns it.
 * **No business question answered, and none raised** — nothing here is Karim's. The HR gap is UX/BA
   and Backend; it is not a business rule.
+
+---
+
+### D-127 · Backend — sprint 6 item 10: the باب cycle guard, and two test names that said more than they checked · 2026-09-08
+
+**Three routed defects, one commit each, each watched failing first.**
+
+#### 1. `Bab.SetParent` now refuses a cycle at any depth, and takes the tree to do it
+
+The guard was `parentBabId == Id` and nothing else, so `A.SetParent(B)` then `B.SetParent(A)` was
+accepted in full — and after it neither باب is reachable from a root, a tree walk does not terminate,
+and both vanish from `S-021`. `spec.md` §2 says the أبواب are a **tree**; `AC-205-C` is the criterion.
+Found by the BA at slice-2 refinement and routed as a defect, correctly: nothing needs asking of Karim
+to know a tree has no cycles, and **the fix did not need `Q12`**, which decides the *permission*, not
+the invariant.
+
+**The signature changed, and that is the structural part.** A cycle is a property of the tree, not of
+the node — an entity cannot see its siblings, so a check confined to `this` catches depth one and can
+never catch depth two. `SetParent` now takes `IReadOnlyDictionary<Guid, Guid?>`: every باب's parent
+pointer, which is the whole of what an ancestor walk needs and one projection for a handler to read.
+**There were no callers to break** — KAFF-205 is `NOT-BUILT` and no endpoint exists — so the cost of
+this shape was zero today and is one query when KAFF-205 is built.
+
+**The walk is bounded by the size of the tree, not by reaching a root.** Rows written before this
+guard exists may already hold a cycle this باب is not part of; a chain longer than the tree has one,
+and the move is refused rather than walked forever. `A_cycle_already_in_the_data_refuses_rather_than_walking_forever`
+[@ `tests/Domain.Tests/BabTreeTests.cs`] is that case, and without the bound it hangs the run instead
+of failing it.
+
+**Watched red first**, on the signature change alone with the old one-line guard still in place:
+3 of 5 failed — the two-step cycle, the depth-three `A → B → C` case re-parenting A under C, and the
+pre-existing-cycle case — each reporting the move had *succeeded*. Self-parenting and the legal move
+stayed green throughout, so the guard was not merely refusing everything. 5/5 after the walk landed.
+**The guard catches deeper cycles than A→B→A**: depth three is asserted directly, and the walk is
+depth-unbounded upward.
+
+⚠️ **No new error, and this is a routed constraint rather than a preference.** `AC-205-C` names
+`errors.bab.cannot_be_own_ancestor`, which exists nowhere and is in a namespace this codebase does not
+use — every shipped master-data key is `errors.master.*`. A new `Error` also needs an entry in **both**
+`src/Web/public/locales` catalogues or `TranslationCatalogueTests` goes red, and this session may not
+write to `src/Web`. So the refusal reuses `MasterDataErrors.BabCannotBeItsOwnParent`, whose English and
+Arabic text says *"cannot be its own parent"* — **true of the two-step case, narrow for the deeper
+one**. Whoever wants the accurate message owes two catalogue entries and one `Error`; the story's key
+name needs reconciling with the `errors.master.*` convention first. **Reported, not decided.**
+
+#### 2. `Hr_may_read_the_user_list_and_still_reaches_nothing_financial` asserted a refusal as a reach
+
+`V-34-F`, 2026-09-06, and still there. **HR cannot read the user list.** `GET /api/users` is gated
+`Permission.UserManage`, the Owner's alone
+[Verified: 2026-09-08 @ `src/Api/Features/Users/ListUsers/Endpoint.cs` -> `Permission.UserManage`],
+deliberately: D-055 §2 gives HR *"names and roles only"* without the Owner's administration surface,
+and gating that payload `UserRead` would hand HR the screen the amendment exists to withhold.
+**`UserRead` has no endpoint at all.** The name asserted a reach the system refuses — SM-33's *false*,
+not its *narrow*.
+
+Renamed to `Hr_holds_user_read_but_not_user_manage_and_reaches_nothing_financial`, which is what its
+three assertions actually check.
+
+**Citations moved: the SM-30 pin on the `UserRead` catalogue row** [@ `src/Domain/Authorization/PermissionCatalogue.cs`],
+this session's own source. **Six checkable citations of record remain** — `meetings/2026-08-21-sprint-1-refinement.md`
+(twice), `qa/questions.md`, `qa/slice-1/permission-matrix.md`, `qa/slice-1/test-cases.md` and
+`stories/slice-1-foundation/KAFF-127-user-management-screens.md` — plus this file at `D-096`'s
+neighbourhood, which is append-only to this session. They still resolve because **the old name is
+written out in the renamed test's `<summary>`**, the same breadcrumb `Hr_holds_no_permission_that_touches_money`
+carries in `CatalogueCompletenessTests` after its own SM-33 rename, and it lands a reader following an
+old citation on the file and on where the name went. `qa/slice-1/test-cases.md` is QA's and was not
+touched. **Flagged rather than edited**, on the reasoning D-113 used for the same situation.
+
+**Watched:** removing that breadcrumb takes `scripts/check-citations.ps1` from 1232/0/0 exit 0 to
+**6 broken, exit 1**, naming all six files. Reverted. That is also the measurement of exactly which
+records still carry the old name.
+
+#### 3. `/api/users` joins the reads-write-nothing loop, and the name drops its count
+
+Reported absent 2026-09-06, still absent, carried by `AC-127-T`. It is the Owner's user administration
+list — the one read in that loop returning usernames, departments and active state — shipped and
+screened without ever being asserted to write nothing. Read as the Owner, because of the gate above;
+the `OK` assertion is what stops a `403` turning it into a read that never happened.
+
+**SM-33's cheaper half applied:** `Ten_reads_write_no_audit_record` encoded a count the loop had
+**already** outgrown — ten iterations over three routes is thirty reads, not ten — and a fourth route
+makes it forty. Renamed to `Reads_write_no_audit_record`: the property, with the arithmetic in the
+body where it fails loudly instead of lying. Citation moved in
+`src/Api/Features/Audit/ReadAuditTrail/Endpoint.cs`; the rest resolve through the same breadcrumb.
+
+**Watched, as an A/B on one mutation** — `GET /api/users` made to write a real audit record
+(`RecordFailedSignIn` + `SaveChangesAsync` in `ListUsers.Handler`):
+
+| | |
+|---|---|
+| loop **without** the new route | **3/3 passed, exit 0** — the blindness, exactly as it stood |
+| loop **with** the new route | **failed, exit 2**, 13 records against 3, *"difference of 10"* — one per iteration |
+
+⚠️ **The first attempt at that mutation applied textually and was inert.** `RecordSuccessfulSignIn`
+sets `FailedSignInAttempts = 0` and `LockedOutUntil = null`, which the seeded users already were, so EF
+tracked no change, no record was written, and the suite reported **3/3 green on a mutation that did
+nothing**. Recorded because a green run under an inert mutation is precisely the reported-safety shape
+this board keeps paying for, and the run would have been written up as proof. **Two habits caught it:
+asserting the mutated text is present in the file, and asserting it is present exactly once.** The
+second mattered too — an earlier revert had not run, and a second mutation was layered onto the first.
+
+⚠️ **`tests/Api.Tests/AuditCoverageTests.cs` is LF-only.** A CRLF-shaped `.Replace` on it reports
+"target not found" if you check, and silently no-ops if you do not. D-120 §3's sibling, and the reason
+every mutation here was verified present before its run.
+
+**The positive control (D-116) is untouched and still downstream of the loop**: one real client
+creation must move the counter, so *"the count did not change"* cannot be satisfied by a counter that
+cannot change. Adding a route to the loop does not reach it, and does not weaken it.
+
+#### Gates, measured at this commit by exit code
+
+Debug `-warnaserror` **0/0, exit 0** · Release `-warnaserror` **0/0, exit 0** ·
+`dotnet format --verify-no-changes` **exit 0** · Domain.Tests **132/132, exit 0** (127 + the five
+`BabTreeTests`) · Api.Tests **317/317, exit 0** · `scripts/check-citations.ps1` **1232 / 0 / 0, exit 0**.
+
+#### Not done, so the next session does not assume it
+
+* **KAFF-205 is not built and its trailer is unchanged.** Only the domain invariant landed. No
+  endpoint, no handler, no `BabManage` gate, no audit record for a move, no item move, no screen —
+  and `Q12` still blocks the permission.
+* **No `Bab` persistence was touched.** No migration, no EF configuration, no database-level guard on
+  the tree. The invariant is enforced in the entity only, and only when a caller passes the tree.
+* **`qa/slice-1/test-cases.md`, `STATUS.md`, `src/Web` and the story files were not edited.** The two
+  renames leave citations of record naming the old identifiers; they resolve, and they are the Scrum
+  Master's to move.
+* **No question was answered and none is Karim's.** The i18n key above is the BA's and the Frontend's.
