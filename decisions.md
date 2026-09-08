@@ -10676,3 +10676,120 @@ exit 0** (read from `$LASTEXITCODE`, never piped through `Select-Object`).
   after any E2E run. In CI this is harmless — the database is created fresh every time — and on a
   developer's machine it is not. Left for whoever owns §4.4.
 * **No `spec.md` question was answered and none was raised**; nothing here touched a business rule.
+
+---
+
+### D-126 · Frontend — `V-35-G` repaired with the mechanism watched failing, `V-35-I`'s comment corrected, and `V-35-I`'s own money claim measured false · 2026-09-08
+
+Sprint 6 items 4 and 5. Nothing here re-verifies KAFF-125, no `<!-- kaff -->` trailer was touched, and
+`AC-125-C` is left exactly as the BA left it, awaiting Nabil.
+
+#### 1. `V-35-G` — the landing and the nav item are built from the permission set
+
+`landingFor` was a nine-case `switch (role)`, and `navLabelKeyFor` / `navPathFor` switched on its
+result, so the navigation was derived from the role switch too. KAFF-125 rule 6 forbids exactly that.
+
+It now takes the whole `Session` and looks the ruled destinations up in a permission → landing table:
+`UserManage` → S-006, `ClientManage` → S-011, in that order, then S-005 as the fallback. **The order
+is what reproduces `ux/navigation.md`'s Landing summary without naming a role** — the Owner holds both
+grants and is ruled to S-006, so the narrower one is listed first.
+
+**The consequence is unobservable in slice 1** — no role holds a company-wide permission its role does
+not imply — so the nine landings are identical under both designs, and a test comparing them would
+pass against the switch. `landing.spec.ts` therefore asserts the **mechanism**, on sessions the two
+designs answer differently and the server can really send: a caller whose set is empty although the
+role implies grants (what `MustChangePassword` produces for anyone, since
+`PermissionEvaluator.Evaluate` refuses every row with `PasswordChangeRequired`), and a caller whose
+set is richer than the role implies (rule 6's department axis).
+
+**Watched failing.** Restoring the role switch inside the same table lookup turned three of the seven
+red, each for its own reason: Finance holding `UserManage` fell to `profile`; SiteEngineer holding
+`ClientManage` fell to `profile`; an Owner holding nothing rose to `users`. Reverted, 18/18 green.
+
+⛔ **What this does NOT do, and it is a finding rather than a shortfall.** **HR's landing is still
+decided by the role, because the permission set cannot decide it.** `ux/navigation.md` → *"How HR
+reaches a project at all"* rules S-009a's permission as *"a **new narrow permission**, not
+`ProjectRead` … the guard reads whatever `GET /api/auth/me` returns."* That permission exists —
+`Permission.ProjectTeamRead` — **and the endpoint returns it to nobody**: it is
+`PermissionScope.ProjectScoped`, so `CompanyWidePermissionsHeld` excludes it from `Session.permissions`
+by construction (D-035), and HR's projects arrive as `TeamProjectEntry`, which unlike `ProjectEntry`
+carries no `permissions` field at all (D-103). **So the file `ux/navigation.md` points the guard at is
+empty of the fact it is told to read.**
+
+`EmployeeManage` and `UserRead` are HR's only company-wide grants, and they are the employee register
+and a name list — not S-009a. **Mapping either onto the HR project list would be a permission-shaped
+invention that reads as compliance and is not**, which is the one defect this board keeps paying for.
+A test asserts the gap instead: a non-HR caller holding HR's exact company-wide set lands on the
+profile, so the day somebody adds that mapping it goes red.
+
+**Two changes close it, neither of them the frontend's:** `TeamProjectEntry` carries the caller's
+project-scoped permissions (Backend, KAFF-105b's file), or `ux/navigation.md`'s ruling is amended
+(UX/BA). **Routed, not decided.**
+
+The `Client` / `Subcontractor` → `forbidden` case stays a role allow-list, deliberately: it is the
+staff-session bar (`StaffSessionRules.MayHoldStaffSession`), not a landing choice, and both roles hold
+zero company-wide permissions so no set could distinguish them from a Site Engineer. Allow-list rather
+than deny-list for `V-27-C`'s reason on the server side of the same bar.
+
+**Rule 6 still has no acceptance criterion** — QA found rules 6 and 9 uncovered, and the criterion is
+the BA's to write. This is the assertion, not the criterion.
+
+**A side effect worth recording:** `V-34-I`'s mojibake — `landing.ts` line 51 reading `âš ï¸` where
+line 39 read `⚠️` — is gone, because that comment's role branch no longer exists. It was never
+repaired; it was deleted along with the switch that carried it.
+
+#### 2. `V-35-I` — the comment corrected, and the true cause named
+
+Two comments in `audit-trail-page.html` stated the bidi mechanism wrongly, and one of them had already
+produced a false prediction that reached the board as scheduled work (`V-35-H`, struck). Both are
+rewritten to `V-35-I`'s measurements:
+
+* **`dir="auto"` with no strong character falls back to `ltr`, not to the parent.** A bare `<bdi>`
+  already renders `::1`, `/api/auth/sign-in`, a GUID and a slash-separated date in order. The claim
+  that *"`::1` renders as `1::` without this"* was measured false.
+* **The timestamp reorders because `Intl.DateTimeFormat` on an Arabic locale injects `U+200F`**, and
+  `U+200F` is a strong RTL character — so first-strong finds one immediately and resolves the isolate
+  to RTL. That is a property of the **formatter**, invisible in the characters, which is how the wrong
+  rule survived review.
+
+**Every `dir="ltr"` stays.** On the timestamp it is load-bearing (`V-35-I` removed it from the six
+shipped `bdi[dir="ltr"]` timestamps at runtime and all six reordered); on the ids, route and address
+the corrected comment says plainly that it is belt and braces.
+
+#### 3. ⛔ `V-35-I`'s forward-looking claim is wrong: **money is already exposed**
+
+Writing the mechanism down as a check is what found it. `core/i18n/i18n.spec.ts` was written to pin
+*"an Arabic-locale formatter injects the mark"*, and its third case — copied straight from the
+report's own conclusion — **failed on first run**.
+
+The report said: *"`formatNumber` / `formatMoney` has no call site yet; I checked
+`Intl.NumberFormat('ar-EG')` directly and it emits Arabic-Indic digits with **no** `U+200F`, so money
+is not pre-exposed."* **It checked a different call from the one this codebase ships.** Measured
+2026-09-08, all four:
+
+| call | result | `U+200F` |
+|---|---|---|
+| `Intl.NumberFormat('ar-EG')` — what the report checked | `١٬٢٣٤٫٥` | no |
+| `formatNumber`, i.e. `ar-EG-u-nu-latn` plain | `1,234.5` | no |
+| **`formatMoney`, i.e. `ar-EG-u-nu-latn` + `style: 'currency'`** | `<RLM>1,234.50 ج.م.<RLM>` | **yes** |
+| `ar-EG` + `style: 'currency'` | `<RLM>١٬٢٣٤٫٥٠ ج.م.<RLM>` | **yes** |
+
+**The currency style is what injects the marks** — it isolates the amount from the `ج.م.` symbol — and
+the leading one is the character first-strong reads. **So the first amount slice 3 renders inside a
+`<bdi>` will resolve RTL exactly as the audit timestamp does and will need `dir="ltr"` for the same
+reason.** Nothing shipped is wrong today: `formatMoney` has **no call site**. The test now asserts the
+true state, so the day it stops being true somebody finds out.
+
+**Routed to slice 3's first money screen, and to whoever corrects `STATUS.md` sprint 6 item 5** — the
+struck-work note there repeats the mechanism `V-35-H` disproved and does not carry this correction.
+`STATUS.md` is not the frontend's file.
+
+#### 4. What I did not do
+
+* **No E2E run.** The two changes are a unit-level dispatch and a comment; the suite needs the stack up
+  and seeded, and running it would have proved nothing about either. The 25/25 figure in `STATUS.md` is
+  the CI agent's of 2026-09-08, not re-measured here.
+* **No `.NET` gate re-measured.** Nothing under `src/Api`, `src/Domain` or `src/Infrastructure` was
+  touched.
+* **No business question answered, and none raised** — nothing here is Karim's. The HR gap is UX/BA and
+  Backend; it is not a business rule.

@@ -59,16 +59,35 @@
             (click)="open(entry)"
           >
             <!--
-              Every Latin run inside an Arabic row is isolated: the timestamp above all, which is four
-              digit runs and three separators and reorders visually without it.
+              Every Latin run inside an Arabic row is isolated, and `<bdi>` is what does that: an
+              *unisolated* run is what reorders against the Arabic around it.
 
-              ⚠️ `dir="ltr"` is not decoration and `<bdi>` alone is not enough. A <bdi> defaults to
-              `dir="auto"`, which is *first-strong* — and a timestamp contains no strong character at
-              all. Digits are weak and `/`, `:` and `،` are neutral, so first-strong finds nothing,
-              falls back to the paragraph's RTL, and lays the whole stamp out right-to-left: the date
-              group jumps to the right of the time. Found by looking at the rendered screen; the
-              geometry sweep is green either way, because the box is the same size in both. S-015 pins
-              `dir=ltr` on these fields for exactly this reason.
+              ⚠️ `dir="ltr"` is not decoration either, but it is here for a narrower reason than this
+              comment gave until 2026-09-08 — and that reason was wrong. `V-35-I` measured both, in
+              this page:
+
+              1. **`dir="auto"` with no strong character falls back to `ltr`, not to the parent.** So
+                 "a timestamp contains no strong character, first-strong finds nothing, and it falls
+                 back to the paragraph's RTL" was false. A bare `<bdi>` already renders `::1`,
+                 `/api/auth/sign-in`, a GUID and a slash-separated date in order. That wrong rule
+                 over-predicted: it condemned the client and user lists, which are fine, and the
+                 repair reached the board as scheduled work before `V-35-H` struck it.
+
+              2. **The timestamp reorders for the opposite reason.** `Intl.DateTimeFormat` on an
+                 Arabic locale injects `U+200F RIGHT-TO-LEFT MARK` into what it returns — the string
+                 is `07`,`U+200F`,`/`,`09`,`U+200F`,`/`,`2026`,`،`,` `,`23:34:20` — and `U+200F` **is
+                 a strong RTL character**. First-strong finds one immediately and resolves the `<bdi>`
+                 to RTL, so the date group jumps to the right of the time. Proven both ways in one
+                 page: the real string resolves `rtl`; the same string with the marks stripped
+                 resolves `ltr`. (`I18nService.formatDate` asks for `ar-EG-u-nu-latn`; the Latin
+                 numbering system changes the digits, not the marks.)
+
+              So this attribute is load-bearing and stays: removed at runtime from the six shipped
+              `bdi[dir="ltr"]` timestamps, all six reordered. **The rule to carry forward is "has an
+              Arabic-locale formatter touched this value", not "does it look like digits and
+              separators"** — a property of the formatter, invisible in the characters you can see.
+              `core/i18n/i18n.spec.ts` pins the injected mark so this explanation cannot drift from
+              the behaviour again. S-015 pins `dir=ltr` on these fields.
             -->
             <bdi class="row-when" dir="ltr">{{ timestamp(entry.occurredAt) }}</bdi>
 
@@ -149,10 +168,16 @@
 
     <dl class="facts">
       <!--
-        `dir="ltr"` on every field whose content carries no strong directional character — the
-        timestamp, the ids, the route, the address. `<bdi>` isolates them from the Arabic around them;
-        it does not decide which way they read, and first-strong cannot decide it either when there is
-        no strong character to find. `::1` renders as `1::` without this.
+        `<bdi>` isolates every Latin run from the Arabic around it, and on this panel that is the
+        whole fix for the ids, the route and the address: `dir="auto"` with no strong character
+        resolves to **`ltr`, not to the parent**, so a bare `<bdi>` renders `::1`, `/api/auth/sign-in`
+        and a GUID in order. This comment claimed `::1` renders as `1::` without `dir="ltr"`;
+        `V-35-I` measured that and it is false.
+
+        `dir="ltr"` stays on all of them, but it is **load-bearing only on the timestamp**, and for
+        the reason the row comment above now gives: `Intl.DateTimeFormat` on an Arabic locale injects
+        `U+200F`, which *is* a strong RTL character, so first-strong resolves the isolate to RTL. On
+        the rest it is belt and braces, kept because it costs nothing and states the intent.
       -->
       <dt class="fact-label">{{ i18n.t('audit.field.when') }}</dt>
       <dd class="fact-value"><bdi dir="ltr">{{ timestamp(entry.occurredAt) }}</bdi></dd>
