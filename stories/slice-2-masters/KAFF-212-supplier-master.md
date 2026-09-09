@@ -4,7 +4,7 @@
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **⚠️ Amended 2026-09-09 — `Q12` clears (D-129 §1). Two Definition-of-Ready boxes remain unticked.**
 **Spec:** **§2** (*"one account, serves many projects"*), **§6.3**, **§6.7**, §1 (out of scope) · **Decisions:** D-044 ruling 4, D-049 ruling 9 (**the client only**), **D-129 §1**
-**Register:** `stories/questions-for-karim.md` → **`Q29`** (blocking), **`Q13`** (open, named in the backlog as a slice-2 blocker), **`Q12`** (✅ answered, D-129 §1), **`Q70`** (⚠️ a **different** `Q70` — a repeated supplier phone — than the trade-markup `Q70`; the same register numbering collision noted in `KAFF-211`)
+**Register:** `stories/questions-for-karim.md` → **`Q29`** (blocking), **`Q13`** (open, named in the backlog as a slice-2 blocker), **`Q12`** (✅ answered, D-129 §1), **`Q70`** (a repeated supplier phone — the question `KAFF-209` raised, cited here for this population. ✅ **The collision is resolved:** the trade-markup question is now **`Q75`**)
 **Screens:** `ux/screen-inventory.md` → **`S-030`** (list and create / edit, one screen)
 **Owner:** Backend, then Frontend
 **Depends on:** nothing. `Supplier` shipped in slice 0.

@@ -4,7 +4,7 @@
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **⚠️ Amended 2026-09-09 — `Q12` clears (D-129 §1). Two Definition-of-Ready boxes remain unticked, and `stories/backlog.md` names this story as blocked before it was written.**
 **Spec:** **§2** (*"rates and BOQ; Finance only disburses"*), **§5.1** (5% retention, zeroable 🟡), **§6.7**, §9 (*"record only, no login"*) · **Decisions:** D-044 ruling 4, D-049 ruling 9 (the rate moved to the contract, **for the client only**), **D-129 §1**
-**Register:** `stories/questions-for-karim.md` → **`Q29`** (blocking, and named in the backlog since the slice was estimated), **`Q73`** (blocking), **`Q12`** (✅ answered, D-129 §1), **`Q70`** (⚠️ this is a **different** `Q70` — a repeated subcontractor phone — than the trade-markup `Q70` `KAFF-204` cites; a register numbering collision that is not this session's to resolve)
+**Register:** `stories/questions-for-karim.md` → **`Q29`** (blocking, and named in the backlog since the slice was estimated), **`Q73`** (blocking), **`Q12`** (✅ answered, D-129 §1), **`Q70`** (a repeated subcontractor phone — the question `KAFF-209` raised, cited here for this population. ✅ **The collision is resolved:** the trade-markup question is now **`Q75`**, so `Q70` means the phone question and nothing else)
 **Screens:** `ux/screen-inventory.md` → **`S-028`** (list), **`S-029`** (create / edit)
 **Owner:** Backend, then Frontend
 **Depends on:** KAFF-204 — a subcontractor's trade names a باب
