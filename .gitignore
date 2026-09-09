@@ -40,3 +40,15 @@ web*.log
 # The e2e job's staging directory: the Angular build, downloaded as an artifact in CI and copied
 # there by hand when reproducing that job locally. Always generated, never edited.
 web-dist/
+
+# graphify: the knowledge graph and the interpreter that builds it.
+#
+# Both are generated and neither is small - graph.json is 7 MB, graph.html 4.9 MB,
+# and the venv is 8,862 files. Together they showed up as a 9,250-file diff, which
+# is how a real change gets lost in the noise of a machine-made one.
+#
+# Rebuild with `/graphify` rather than restoring from git. GRAPH_REPORT.md is a
+# generated view like STATUS.md's block: regenerate it, do not edit it and do not
+# cite a figure off a stale copy of it.
+graphify-out/
+.graphify-venv/
