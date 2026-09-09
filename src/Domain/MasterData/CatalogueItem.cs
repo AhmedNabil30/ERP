@@ -131,6 +131,38 @@ public sealed class CatalogueItem : Entity
     }
 
     /// <summary>
+    /// Corrects the description. KAFF-202 rule 11 — an edit that names no change to make is not an edit.
+    /// </summary>
+    /// <remarks>
+    /// The same two conditions <see cref="Create"/> applies to <see cref="DescriptionAr"/>, reapplied
+    /// here for the reason <c>Client.Rename</c> states: a value that could not have been registered
+    /// must not be reachable by editing into it.
+    /// </remarks>
+    public Result SetDescription(string descriptionAr, string? descriptionEn)
+    {
+        if (string.IsNullOrWhiteSpace(descriptionAr) || descriptionAr.Length > MaxDescriptionLength)
+        {
+            return Result.Failure(MasterDataErrors.DescriptionRequired);
+        }
+
+        DescriptionAr = descriptionAr.Trim();
+        DescriptionEn = string.IsNullOrWhiteSpace(descriptionEn) ? null : descriptionEn.Trim();
+        return Result.Success();
+    }
+
+    /// <summary>Corrects the unit of measure. KAFF-202 rule 11.</summary>
+    public Result SetUnit(string unit)
+    {
+        if (string.IsNullOrWhiteSpace(unit) || unit.Length > MaxUnitLength)
+        {
+            return Result.Failure(MasterDataErrors.UnitRequired);
+        }
+
+        Unit = unit.Trim();
+        return Result.Success();
+    }
+
+    /// <summary>
     /// Repricing. Signed BOQs are unaffected — spec.md §4.4 makes them copies with no link to follow.
     /// Open estimates are re-priced only through the explicit review of spec.md §4.4.
     /// </summary>

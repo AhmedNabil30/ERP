@@ -42,7 +42,8 @@ public sealed class PermissionCoverageTests
     /// </summary>
     private static readonly Permission[] NamedInNoTestYet =
     [
-        Permission.CatalogueManage,     // slice 2 — masters
+        // Permission.CatalogueManage left this list on 2026-09-09 (KAFF-202):
+        // Api.Tests/CreateCatalogueItemTests.cs and Api.Tests/EditCatalogueItemTests.cs both name it.
         Permission.BabManage,           // slice 2
         Permission.SubcontractorManage, // slice 2
         // Permission.SupplierManage left this list on 2026-08-26 (KAFF-105a): it is one of

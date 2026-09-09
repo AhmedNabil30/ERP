@@ -98,4 +98,19 @@ public static class MasterDataErrors
     /// </remarks>
     public static readonly Error ClientListFilterUnknown =
         Error.Validation("master.client_list_filter_unknown", "errors.master.client_list_filter_unknown");
+
+    /// <summary>KAFF-202 rule 9: an item's باب is required and must exist.</summary>
+    public static readonly Error BabNotFound =
+        Error.NotFound("master.bab_not_found", "errors.master.bab_not_found");
+
+    /// <summary>The route named a catalogue item id that no item carries. KAFF-202.</summary>
+    public static readonly Error CatalogueItemNotFound =
+        Error.NotFound("master.catalogue_item_not_found", "errors.master.catalogue_item_not_found");
+
+    /// <summary>
+    /// spec.md §4.5 — a code that identifies two items identifies neither. Enforced by
+    /// <c>ux_catalogue_items_code</c>, not by a read-then-write in the handler (KAFF-202 rule 3).
+    /// </summary>
+    public static readonly Error CatalogueItemCodeTaken =
+        Error.Conflict("master.catalogue_item_code_taken", "errors.catalogue.code_taken");
 }
