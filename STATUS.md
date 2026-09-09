@@ -274,8 +274,8 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 |
 | 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 0 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 0 | 3 | 0 |
-| ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 48 | 5 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 6 | 0 |
+| ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 45 | 5 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 |
 | **total** | **127** | **51** | **5** |
 
@@ -318,7 +318,7 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-200](stories/slice-2-masters/KAFF-200-import-the-catalogue-from-excel.md) | 2 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-08 | Import the catalogue from Excel at setup, loading the good rows and reporting the rest |
 | [KAFF-201](stories/slice-2-masters/KAFF-201-re-importing-is-not-a-sync.md) | 2 | 2 | ⚫ NOT-BUILT | none | `-` | 2026-09-08 | Re-importing is not a sync — a second import is a deliberate, reviewed act |
 | [KAFF-202](stories/slice-2-masters/KAFF-202-create-and-edit-a-catalogue-item.md) | 2 | 3 | 🟡 BUILT | none | `586a7d0` | 2026-09-09 | Create and edit a catalogue item |
-| [KAFF-203](stories/slice-2-masters/KAFF-203-find-a-catalogue-item-by-code-or-description.md) | 2 | 3 | ⚫ NOT-BUILT | none | `-` | 2026-09-08 | Find a catalogue item by code or description |
+| [KAFF-203](stories/slice-2-masters/KAFF-203-find-a-catalogue-item-by-code-or-description.md) | 2 | 3 | 🟡 BUILT | none | `dd5f14c` | 2026-09-09 | Find a catalogue item by code or description |
 | [KAFF-204](stories/slice-2-masters/KAFF-204-the-bab-tree-with-default-markup.md) | 2 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-08 | The باب tree, carrying each trade's default markup |
 | [KAFF-205](stories/slice-2-masters/KAFF-205-reparent-a-bab-and-move-an-item.md) | 2 | 3 | ⚫ NOT-BUILT | none | `-` | 2026-09-08 | Re-parent a باب, and move an item between أبواب |
 | [KAFF-206](stories/slice-2-masters/KAFF-206-archive-a-catalogue-item.md) | 2 | 3 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Archive a catalogue item without breaking what already references it |
