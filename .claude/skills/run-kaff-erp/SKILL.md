@@ -164,6 +164,91 @@ $env:KAFF_E2E_BASE_URL='http://localhost:4200'
 Verified **5/5**. Without `KAFF_E2E_BASE_URL` the tests skip — except under `CI=true`, where an
 unconfigured suite fails on purpose.
 
+## ⛔ The gate order, and why it is an order
+
+Adopted 2026-09-09 after a 3-point story cost five hours, four wrong diagnoses and
+about 900k agent tokens. **Not one of them was a code defect.** Run these in this
+sequence and check each step before trusting the next.
+
+**1. Kill stranded hosts FIRST, before the build — not after.**
+
+```powershell
+Get-Process -Name Kaff.Api, Kaff.Api.Tests -ErrorAction SilentlyContinue |
+    ForEach-Object { Stop-Process -Id $_.Id -Force }
+```
+
+⛔ **Building before this is the mistake that cost the five hours.** A stranded host
+locks the DLLs, `dotnet build` fails with `MSB3021`, and it leaves the **previous**
+test executable on disk. Running that stale exe exits `-1` with a truncated log and
+no summary, which reads exactly like a crash. It was diagnosed as a process race, then
+a timeout, then a bad test file, before anyone read the build's exit code.
+
+**2. Build, and REFUSE to test if it is not clean.**
+
+```powershell
+dotnet build KaffErp.sln -c Release --nologo
+if ($LASTEXITCODE -ne 0) { "ABORT: build not clean"; exit 1 }
+```
+
+**A test result measured against a build you did not verify is not a result.** This
+guard is the whole fix.
+
+**3. Background the Api suite and read the log — do not foreground it.**
+
+It takes ~300s, which fits the tool cap, but a foreground run competes for the same
+window as everything else in the turn. Background it and wait for the completion
+notification. **Never poll in a loop.**
+
+**4. ⛔ A run without a `total:` line is NOT a result.**
+
+`API_EXIT=0` alone is not enough and neither is "no failing tests" — a truncated log
+has no failures in it because it has no results in it. **Assert the summary exists**
+before reporting any number:
+
+```powershell
+Select-String -Path $log -Pattern 'total:|failed:|succeeded:' | Select-Object -Last 3
+```
+
+If there is no `total:`, the run did not finish. Say that, do not report a number, and
+do not move a trailer. A green reported off a truncated log is the exact defect this
+board keeps finding in its own history.
+
+**5. Never pipe a gate through `Select-Object`** — it discards detail lines *and* the
+exit code. Redirect to a file and grep the file.
+
+## Only one actor measures the gate
+
+⛔ **Two agents must never run the Api suite at the same time.** Both will begin with
+the `Stop-Process` in step 1, and each will kill the other's host mid-run. Both then
+diagnose the wreckage, and both are wrong. If you are coordinating, take the gate
+yourself and tell the building agent to stand down explicitly — "stop, do not run, do
+not kill, do not commit" — before you start.
+
+## Running one test class
+
+```powershell
+.\tests\Api.Tests\bin\Release\net10.0\Kaff.Api.Tests.exe --filter-class Kaff.Api.Tests.ListCatalogueItemsTests
+```
+
+`--filter-class` takes the **fully-qualified** name. A glob like `--filter "*Foo*"`
+reports **"Zero tests ran"** with exit 8 rather than an error, which reads as "the
+class is missing" when it means "your filter syntax is wrong."
+
+## ⚠️ The suite leaks a database per run
+
+Each run creates a `kaff_test_<guid>` database and **nothing drops it**. 22 had
+accumulated by 2026-09-09. They are harmless individually; sweep them when they build
+up:
+
+```powershell
+docker exec kaff-db psql -U kaff -d postgres -t -A -c "select datname from pg_database where datname like 'kaff_test%%'" |
+    ForEach-Object { if ($_) { docker exec kaff-db psql -U kaff -d postgres -c "DROP DATABASE IF EXISTS ""$_"" WITH (FORCE)" } }
+```
+
+**This was NOT the cause of any failure above** — it was investigated and cleared. It
+is recorded so the next session does not re-investigate it, and because a fixture-level
+cleanup is owed.
+
 `dotnet test` also works and gives the same results:
 
 ```powershell
