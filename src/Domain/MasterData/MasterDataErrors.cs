@@ -113,4 +113,10 @@ public static class MasterDataErrors
     /// </summary>
     public static readonly Error CatalogueItemCodeTaken =
         Error.Conflict("master.catalogue_item_code_taken", "errors.master.catalogue_item_code_taken");
+
+    /// <summary>The catalogue list's <c>status</c> filter named something that is not a filter. KAFF-206 rule 7.</summary>
+    /// <remarks>Same shape and same reasoning as <see cref="ClientListFilterUnknown"/> — D-111 §3.</remarks>
+    public static readonly Error CatalogueItemListFilterUnknown =
+        Error.Validation(
+            "master.catalogue_item_list_filter_unknown", "errors.master.catalogue_item_list_filter_unknown");
 }

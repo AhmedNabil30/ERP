@@ -209,6 +209,12 @@
   "errors.master.bab_not_found": "لا يوجد باب بهذا المعرّف.",
   "errors.master.catalogue_item_not_found": "لا يوجد بند بهذا المعرّف في الكتالوج.",
   "errors.master.catalogue_item_code_taken": "هذا الكود مستخدم لبند آخر في الكتالوج.",
+  "errors.master.catalogue_item_list_filter_unknown": "فلتر غير معروف.",
+
+  "catalogue.item.archive_action": "أرشفة البند",
+  "catalogue.item.archive_confirm": "أرشفة هذا البند؟ يخرج من العمل الجديد، ولا يتأثر أي بند سابق استخدمه بالفعل.",
+  "catalogue.item.archived_badge": "مؤرشف",
+  "catalogue.filter.include_archived": "تضمين البنود المؤرشفة",
 
   "errors.audit.date_range_inverted": "نهاية المدة قبل بدايتها.",
 

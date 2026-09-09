@@ -199,6 +199,61 @@ public sealed class CatalogueItemEditingTests
             "nothing in spec.md forbids re-pricing into a loss either");
     }
 
+    // ---- AC-206-A / AC-206-E · Archive, and archiving twice is refused ---------------------------
+
+    [Fact]
+    public void An_active_item_is_archived_and_every_other_field_is_untouched()
+    {
+        CatalogueItem item = NewItem("CONC-113", cost: 100m, sell: 150m);
+
+        item.Archive().IsSuccess.Should().BeTrue();
+
+        item.Status.Should().Be(CatalogueItemStatus.Archived);
+        item.Code.Should().Be("CONC-113");
+        item.CostPrice.Amount.Should().Be(100m, "AC-206-A: archiving touches Status and nothing else");
+        item.BaseSellRate.Amount.Should().Be(150m);
+    }
+
+    [Fact]
+    public void Archiving_an_already_archived_item_is_refused_and_changes_nothing()
+    {
+        CatalogueItem item = NewItem("CONC-114");
+        item.Archive();
+
+        Result result = item.Archive();
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be(MasterDataErrors.AlreadyArchived);
+        item.Status.Should().Be(CatalogueItemStatus.Archived, "a refused second archive changes nothing");
+    }
+
+    // ---- Q66, D-130 §4 · Unarchive, the mirror of Archive -----------------------------------------
+
+    [Fact]
+    public void An_archived_item_is_unarchived_back_to_active()
+    {
+        CatalogueItem item = NewItem("CONC-115");
+        item.Archive();
+
+        item.Unarchive().IsSuccess.Should().BeTrue();
+
+        item.Status.Should().Be(CatalogueItemStatus.Active);
+    }
+
+    [Fact]
+    public void Unarchiving_an_item_that_is_not_archived_is_refused_and_changes_nothing()
+    {
+        CatalogueItem item = NewItem("CONC-116");
+
+        Result result = item.Unarchive();
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().Be(
+            MasterDataErrors.NotArchived,
+            "MasterDataErrors.NotArchived exists for exactly this shape — D-130 §4");
+        item.Status.Should().Be(CatalogueItemStatus.Active, "a refused unarchive changes nothing");
+    }
+
     // ---- helpers ------------------------------------------------------------------------------
 
     private static CatalogueItem NewItem(string code, decimal cost = 100m, decimal sell = 150m)

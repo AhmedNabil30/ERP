@@ -209,6 +209,12 @@
   "errors.master.bab_not_found": "No باب exists with that reference.",
   "errors.master.catalogue_item_not_found": "No catalogue item exists with that reference.",
   "errors.master.catalogue_item_code_taken": "That code is already used by another catalogue item.",
+  "errors.master.catalogue_item_list_filter_unknown": "That is not a filter this list knows.",
+
+  "catalogue.item.archive_action": "Archive item",
+  "catalogue.item.archive_confirm": "Archive this item? It leaves new work; lines that already used it are unaffected.",
+  "catalogue.item.archived_badge": "Archived",
+  "catalogue.filter.include_archived": "Include archived items",
 
   "errors.audit.date_range_inverted": "That date range ends before it starts.",
 

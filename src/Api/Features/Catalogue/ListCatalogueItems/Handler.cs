@@ -1,3 +1,4 @@
+using Kaff.Api.Common.Results;
 using Kaff.Domain.MasterData;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
@@ -24,9 +25,13 @@ namespace Kaff.Api.Features.Catalogue.ListCatalogueItems;
 /// D-129 §5 leaves it to the Architect.
 /// </para>
 /// <para>
-/// <b>Archiving is out of this story's scope</b> (KAFF-206) — nothing here filters by
-/// <see cref="CatalogueItemStatus"/>. Every item, active or archived, is a candidate; the status
-/// column is projected so the caller can tell which.
+/// <b>Archived items are excluded by default and reachable on request</b> — KAFF-206 rule 7,
+/// <c>AC-206-A</c>, <c>AC-206-F</c>. Three states, not a boolean, matching
+/// <c>ClientListFilterParsing</c>'s shape exactly: an unknown <c>status</c> value is refused with
+/// <c>errors.master.catalogue_item_list_filter_unknown</c> rather than silently defaulted, because a
+/// wrong filter and an empty archive must not look the same. This is also the search the BOQ builder's
+/// "add item" reaches later (slice 4) — its default excluding archived items is what keeps an archived
+/// item off new work (`Q65`, D-130 §3) without that caller having to know to ask.
 /// </para>
 /// <para>
 /// <b>No audit record and no money beyond the item's own two prices.</b> It is a read (rule 10), and
@@ -39,11 +44,24 @@ internal static class Handler
     public static async Task<IResult> HandleAsync(
         KaffDbContext database,
         CancellationToken cancellationToken,
-        string? search = null)
+        string? search = null,
+        string? status = null)
     {
         ArgumentNullException.ThrowIfNull(database);
 
+        if (!CatalogueItemListFilterParsing.TryParse(status, out CatalogueItemListFilter filter))
+        {
+            return ResultExtensions.Problem(MasterDataErrors.CatalogueItemListFilterUnknown);
+        }
+
         IQueryable<CatalogueItem> query = database.CatalogueItems;
+
+        query = filter switch
+        {
+            CatalogueItemListFilter.Active => query.Where(item => item.Status == CatalogueItemStatus.Active),
+            CatalogueItemListFilter.Archived => query.Where(item => item.Status == CatalogueItemStatus.Archived),
+            _ => query,
+        };
 
         string? term = string.IsNullOrWhiteSpace(search) ? null : search.Trim();
 

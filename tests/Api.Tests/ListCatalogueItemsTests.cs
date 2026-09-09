@@ -203,6 +203,63 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
             .Should().BeEquivalentTo(["Items"], "the wrapper carries the list and nothing else");
     }
 
+    // ---- AC-206-A / AC-206-F · archived items are hidden by default and findable on request -----
+
+    [Fact]
+    public async Task An_archived_item_is_hidden_by_default_and_returned_when_asked_for()
+    {
+        Guid bab = await CreateBabAsync();
+        string nonce = UniqueNames.Code("ARC");
+
+        string active = await CreateItemAsync(bab, code: UniqueNames.Code($"{nonce}-A"));
+        string archived = await CreateItemAsync(bab, code: UniqueNames.Code($"{nonce}-B"));
+
+        await ArchiveAsync(archived);
+
+        (await SearchAsyncAs(_owner, Role.Owner, null, nonce)).Select(item => item.Code).Should().BeEquivalentTo(
+            [active],
+            "KAFF-206 rule 7: the default search excludes archived items — this is also the search the "
+            + "BOQ builder's \"add item\" reaches later, so this default is what keeps an archived item "
+            + "off new work (`Q65`, D-130 §3) without the caller having to know to ask");
+
+        IReadOnlyList<CatalogueItemSummary> all = await SearchAsyncAs(_owner, Role.Owner, null, nonce, status: "all");
+
+        all.Select(item => item.Code).Should().BeEquivalentTo(
+            [active, archived], "§4.5 keeps the row findable — it is archived, never deleted");
+
+        all.Single(item => item.Code == archived).Status.Should().Be(CatalogueItemStatus.Archived);
+
+        (await SearchAsyncAs(_owner, Role.Owner, null, nonce, status: "archived"))
+            .Select(item => item.Code).Should().BeEquivalentTo(
+                [archived],
+                "three states, not a boolean — [ All ] [ Active ] [ Archived ] — D-111 §3 applied here "
+                + "exactly as KAFF-124 applied it to clients");
+    }
+
+    /// <summary>An unknown filter is refused rather than quietly treated as the default.</summary>
+    [Fact]
+    public async Task A_filter_this_list_does_not_know_is_refused_and_not_defaulted()
+    {
+        HttpResponseMessage response = await SendAsync(
+            _owner, Role.Owner, null, null, status: "archvied");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        using JsonDocument problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+
+        problem.RootElement.GetProperty("messageKey").GetString().Should().Be(
+            "errors.master.catalogue_item_list_filter_unknown",
+            "a silently-defaulted wrong filter is indistinguishable from an empty archive");
+    }
+
+    [Fact]
+    public void The_filter_has_exactly_the_three_states_the_screen_draws()
+    {
+        Enum.GetNames<CatalogueItemListFilter>().Should().BeEquivalentTo(
+            ["Active", "Archived", "All"],
+            "a fourth state here is a chip nobody drew, and a missing one is a chip that cannot work");
+    }
+
     // ---- AC-203-I · ordered by باب, then by code -------------------------------------------------
 
     [Fact]
@@ -284,13 +341,29 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
         return code;
     }
 
+    /// <summary>
+    /// Archives an item directly through the entity, bypassing the archive endpoint — this file owns
+    /// the list, not the archive act, which has its own coverage in <c>ArchiveCatalogueItemTests</c>.
+    /// Same shape as <c>ListClientsTests.ArchiveAsync</c>.
+    /// </summary>
+    private async Task ArchiveAsync(string code)
+    {
+        await using KaffDbContext context = _database.CreateContext();
+
+        CatalogueItem item = await context.CatalogueItems.SingleAsync(candidate => candidate.Code == code, Ct);
+
+        item.Archive().IsSuccess.Should().BeTrue();
+
+        await context.SaveChangesAsync(Ct);
+    }
+
     private async Task<IReadOnlyList<CatalogueItemSummary>> SearchAsync(string? search)
         => await SearchAsyncAs(_technicalOffice, Role.TechnicalOffice, Department.Operations, search);
 
     private async Task<IReadOnlyList<CatalogueItemSummary>> SearchAsyncAs(
-        Guid actorId, Role actorRole, Department? actorDepartment, string? search)
+        Guid actorId, Role actorRole, Department? actorDepartment, string? search, string? status = null)
     {
-        HttpResponseMessage response = await SendAsync(actorId, actorRole, actorDepartment, search);
+        HttpResponseMessage response = await SendAsync(actorId, actorRole, actorDepartment, search, status: status);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -316,13 +389,25 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
         Role actorRole,
         Department? actorDepartment,
         string? search,
-        Guid? actorClientId = null)
+        Guid? actorClientId = null,
+        string? status = null)
     {
         string route = "/api/catalogue-items";
+        List<string> queryParts = [];
 
         if (search is not null)
         {
-            route += "?search=" + Uri.EscapeDataString(search);
+            queryParts.Add("search=" + Uri.EscapeDataString(search));
+        }
+
+        if (status is not null)
+        {
+            queryParts.Add("status=" + Uri.EscapeDataString(status));
+        }
+
+        if (queryParts.Count > 0)
+        {
+            route += "?" + string.Join('&', queryParts);
         }
 
         using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(route, UriKind.Relative));

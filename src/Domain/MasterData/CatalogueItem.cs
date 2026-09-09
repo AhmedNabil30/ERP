@@ -193,4 +193,25 @@ public sealed class CatalogueItem : Entity
         Status = CatalogueItemStatus.Archived;
         return Result.Success();
     }
+
+    /// <summary>
+    /// Brings an archived item back into new work. KAFF-206, D-130 §4 (`Q66`).
+    /// </summary>
+    /// <remarks>
+    /// Codes are unique (spec.md §4.5), so without this a mis-archived item can only return under a
+    /// new code and the catalogue carries two codes for one real thing forever. The mirror of
+    /// <see cref="Archive"/>: refuses with <see cref="MasterDataErrors.NotArchived"/> rather than a
+    /// silent no-op on a row that is already active, for the same reason <see cref="Archive"/> refuses
+    /// a second archive instead of accepting it.
+    /// </remarks>
+    public Result Unarchive()
+    {
+        if (Status != CatalogueItemStatus.Archived)
+        {
+            return Result.Failure(MasterDataErrors.NotArchived);
+        }
+
+        Status = CatalogueItemStatus.Active;
+        return Result.Success();
+    }
 }
