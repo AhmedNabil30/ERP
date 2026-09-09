@@ -1,6 +1,6 @@
 # KAFF-119 · Register a client, with a generated code and a duplicate-phone warning
 
-<!-- kaff id=KAFF-119 slice=1 points=5 state=VERIFIED verdict=PASS at=86cc8b0 on=2026-09-04 -->
+<!-- kaff id=KAFF-119 slice=1 points=5 state=ACCEPTED verdict=PASS at=1d04bde on=2026-09-09 -->
 
 **Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** **BUILT 2026-09-04, one criterion moved — not accepted.**
 `86cc8b0` + `01c7b3a`, decisions.md **D-108**. `AC-119-A` … `AC-119-K` discharged, each watched failing under a mutation

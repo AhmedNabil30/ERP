@@ -1,6 +1,6 @@
 # KAFF-127 · The user-management screens
 
-<!-- kaff id=KAFF-127 slice=1 points=8 state=VERIFIED verdict=CONDITIONAL at=116c08a on=2026-09-06 -->
+<!-- kaff id=KAFF-127 slice=1 points=8 state=ACCEPTED verdict=CONDITIONAL at=1d04bde on=2026-09-09 -->
 
 **Slice:** 1 · **Epic:** Foundation · **Points:** 8 (**proposed**) · **Status:** **Ready** — cut 2026-09-05 by the Scrum Master at the sprint-3 close. **Not pulled: scope is Nabil's.**
 **Spec:** §9 · **Decisions:** D-051, D-055, **D-111** (the two lanes), D-113

@@ -1,6 +1,6 @@
 # KAFF-123 · Archive a client
 
-<!-- kaff id=KAFF-123 slice=1 points=2 state=VERIFIED verdict=PASS at=- on=2026-09-04 -->
+<!-- kaff id=KAFF-123 slice=1 points=2 state=ACCEPTED verdict=PASS at=1d04bde on=2026-09-09 -->
 
 **Slice:** 1 · **Epic:** Foundation · **Points:** 2 · **Status:** **BUILT 2026-09-04 — not accepted.** decisions.md **D-112**.
 `AC-123-A` … `AC-123-E` all discharged; three mechanisms watched failing, including `AC-123-D`'s absence, which was made

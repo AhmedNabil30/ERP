@@ -1,6 +1,6 @@
 # KAFF-128 · The audit trail screen
 
-<!-- kaff id=KAFF-128 slice=1 points=3 state=VERIFIED verdict=CONDITIONAL at=0359b8d on=2026-09-07 -->
+<!-- kaff id=KAFF-128 slice=1 points=3 state=ACCEPTED verdict=CONDITIONAL at=1d04bde on=2026-09-09 -->
 
 **Slice:** 1 · **Epic:** Foundation · **Points:** 3 (**proposed**) · **Status:** **Ready** — cut 2026-09-05 by the Scrum Master **in the same act as KAFF-117 was pulled**, under `process/agile.md` §2a rule 6. **Sprint 5, Lane B. Not pulled into sprint 4.**
 **Spec:** §7, §9 · **Decisions:** D-012, **D-049 (ruling 1)**, D-111, D-114, **D-117**

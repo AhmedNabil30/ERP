@@ -1,6 +1,6 @@
 # KAFF-121 · Edit a client's name and contact details
 
-<!-- kaff id=KAFF-121 slice=1 points=3 state=VERIFIED verdict=PASS at=- on=2026-09-04 -->
+<!-- kaff id=KAFF-121 slice=1 points=3 state=ACCEPTED verdict=PASS at=1d04bde on=2026-09-09 -->
 
 **Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** **BUILT 2026-09-04, one criterion held — not accepted.**
 `AC-121-A` … `AC-121-H` discharged and each watched failing under a mutation of its own mechanism (decisions.md D-109).

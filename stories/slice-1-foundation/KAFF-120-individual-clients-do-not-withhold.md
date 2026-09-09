@@ -1,6 +1,6 @@
 # KAFF-120 · An individual's contract cannot carry a withholding rate, and nor can the individual
 
-<!-- kaff id=KAFF-120 slice=1 points=2 state=VERIFIED verdict=PASS at=- on=2026-09-04 -->
+<!-- kaff id=KAFF-120 slice=1 points=2 state=ACCEPTED verdict=PASS at=1d04bde on=2026-09-09 -->
 
 **Slice:** 1 · **Epic:** Foundation · **Points:** 2 · **Status:** **BUILT 2026-09-04 — not accepted.** decisions.md **D-114**.
 `AC-120-A`, `AC-120-C`…`AC-120-H` discharged. **`AC-120-B` is vacuous on today's screens and was

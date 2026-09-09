@@ -11209,3 +11209,59 @@ The same line applies to the half of `Q68` not ruled in §6: **what Karim's pape
 * **It does not rule on `Q18`, `Q19`, `Q20`, `Q22`, `Q28`, `Q30`, `Q35`, `Q36`, `Q37`, `Q45`, `Q46`, `Q48`, `Q49`** or anything else beyond slice 2. Deliberately. See the opening.
 * **It does not register `Q65`–`Q69`.** They are ruled here and still absent from the register; the BA's sweep both registers them and marks them answered in one pass.
 * **It does not touch the `kaff` database.** `PROBE-UNFLOORED` was still present at 2026-09-09 02:5x — the earlier `DROP` did not take, most likely because the API held a connection and the statement lacked `WITH (FORCE)`. **The recreate is Nabil's; the harness classifier refuses it here.**
+
+---
+
+### D-131 · Nabil — the first acceptance: 84 points, and what was deliberately not accepted with them · 2026-09-09
+
+*"i recreated the db the deploy is accepted with ui enhancments."*
+
+**`process/agile.md` §4 has been satisfied for the first time in this project's life.** Every prior
+board carried `ACCEPTED: 0` against 127 points of verified work, and the gap between VERIFIED and
+ACCEPTED had become the largest untrue-looking number on the board — not because anything was wrong
+with the code, but because the one act no agent can perform had not been performed.
+
+#### 1. What moved
+
+**84 points across 21 stories**, exactly `deploy/DEMO.md` §9's *"demonstrable today"* table:
+`KAFF-100` `101a` `101b` `102` `103` `105a` `106` `108` `109` `110` `112` `117` `118` `119` `120`
+`121` `123` `124` `126` `127` `128`. Trailers moved to `state=ACCEPTED at=1d04bde on=2026-09-09`.
+
+The acceptance names the UI enhancements explicitly, which matters because they landed after the
+Verifier passes: `b9246b2` converted 45 colour literals to tokens across five screens, so dark mode
+works on the screens that ship rather than only being declared in `:root`.
+
+#### 2. ⛔ What did NOT move, and why each one stayed
+
+**Nothing was accepted by silence.** §9 was written so every one of slice 1's 127 points is named
+somewhere, and the two lists it holds back were held back here too.
+
+* **22 points cannot be demonstrated** — `KAFF-105b` `111` `113` `114` `116` need a project to exist
+  and `POST /api/projects` still returns 404 (`KAFF-407`, slice 4), and **`KAFF-125` is a separate
+  act**. Its shell works, but its verdict is `LAPSED` and `AC-125-C`'s rewrite is **still awaiting
+  Nabil's ratification**. Accepting a shell you watched work is not ratifying a criterion nobody can
+  execute, and conflating the two is how an unexecutable criterion becomes permanent.
+* **21 points are `DEFERRED`** — `KAFF-104` `115` `129`, carried to slice 1b, never built.
+
+**84 + 22 + 21 = 127.** The arithmetic is the point: a blanket *"accepted"* over a checklist with
+per-story rows is exactly where a story gets accepted that nobody looked at.
+
+#### 3. `V-31-A` is closed — the database was recreated
+
+`PROBE-UNFLOORED` is gone. Verified directly, not taken on report: `kaff` holds no tables at all
+[Verified: 2026-09-09 — `relation "accounts" does not exist`], so the row D-101 wrongly recorded as
+cleaned up on 2026-09-02 is finally gone with the database that held it.
+
+**This took three attempts and the first two failed silently**, which is the part worth keeping. A
+`DROP DATABASE` without `WITH (FORCE)` fails when anything holds a connection — the API did — and the
+following `CREATE` then reports *"already exists"*. Two red lines scroll past and the operator
+reasonably believes it worked. It was caught only because the row was checked for rather than assumed
+gone.
+
+#### What this record does NOT do
+
+* **It does not accept `KAFF-125`, and it does not ratify `AC-125-C`.** Both remain Nabil's, separately.
+* **It does not close slice 1.** Nabil closed it on 2026-09-07; this accepts what was built inside it.
+* **It does not move any slice-2 or slice-3 story.** All 51 and 5 points remain `NOT-BUILT`.
+* **It does not touch `F-127-1`** — `KAFF-127` is accepted with its known gap: the user list's search
+  box and filter chips render with no server behaviour, and §9 named that before the tick.

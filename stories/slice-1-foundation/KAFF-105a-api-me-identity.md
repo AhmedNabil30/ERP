@@ -1,6 +1,6 @@
 # KAFF-105a · `GET /api/auth/me` returns who I am and what I may do
 
-<!-- kaff id=KAFF-105a slice=1 points=2 state=VERIFIED verdict=PASS at=559ac45 on=2026-08-27 -->
+<!-- kaff id=KAFF-105a slice=1 points=2 state=ACCEPTED verdict=PASS at=1d04bde on=2026-09-09 -->
 
 **Slice:** 1 · **Epic:** Foundation · **Points:** 2 · **Status:** **ACCEPTED 2026-08-27 at `559ac45`, then the code moved underneath the verdict.** `c01959b` (D-094) rewrote `LiveSession.Marker` and added `LiveSession.IsApplied` — this story's gate — and `ca4db6c` (D-095) changed `MayHoldStaffSession` inside `ResolveAsync`. **Not re-verified at HEAD.** `AC-105a-H` remains honestly covered in substance and no longer honestly stated: its proof moved from the Api suite to the Domain suite as a side effect of the `V-26-B` fix (SM-32, close §2.2) and the story still does not say so — BA
 **Spec:** §9, §12 · **Decisions:** D-012, D-035, D-044, **D-050**, **D-051 (KAFF-105 split)**, **D-072 §2**

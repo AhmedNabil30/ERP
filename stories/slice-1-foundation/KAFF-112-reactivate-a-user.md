@@ -1,6 +1,6 @@
 # KAFF-112 · Reactivate a user, who comes back with nothing
 
-<!-- kaff id=KAFF-112 slice=1 points=3 state=VERIFIED verdict=PASS at=- on=2026-08-26 -->
+<!-- kaff id=KAFF-112 slice=1 points=3 state=ACCEPTED verdict=PASS at=1d04bde on=2026-09-09 -->
 
 **Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** ACCEPTED 2026-08-26, standing. No commit since has touched this story's own code. `TC-1-094` is still uncovered — QA → Backend, P2
 **Spec:** §9 · **Decisions:** D-044 (ruling 1), **D-049 (rulings 4, 5)**, **D-051 (N5)**

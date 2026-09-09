@@ -1,6 +1,6 @@
 # KAFF-101a · Sign in, and the server sets an `HttpOnly` session cookie
 
-<!-- kaff id=KAFF-101a slice=1 points=5 state=VERIFIED verdict=PASS at=559ac45 on=2026-08-27 -->
+<!-- kaff id=KAFF-101a slice=1 points=5 state=ACCEPTED verdict=PASS at=1d04bde on=2026-09-09 -->
 
 **Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** **ACCEPTED 2026-08-27 at `559ac45`, then the code moved underneath the verdict — for the second consecutive time.** `ca4db6c` (D-095) turned `StaffSessionRules.MayHoldStaffSession` — this story's own role bar — from a deny-list into an allow-list. **Not re-verified at HEAD, and therefore not accepted at HEAD.** `AC-101a-F` is still covered by no test; it turns on the open `mustChangePassword` reach question, which is Nabil's
 **Spec:** §9 · **Decisions:** D-011, D-035, D-044 (ruling 2), **D-049 (rulings 2, 3, 4)**, **D-050**, **D-051 (N5, Q33)**, **D-062 §1/§2/§3**, **D-063 §1/§2/§3**, **D-065**, **D-072 §1**

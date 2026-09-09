@@ -1,6 +1,6 @@
 # KAFF-110 · Deactivate a user, and their access ends on the next request
 
-<!-- kaff id=KAFF-110 slice=1 points=5 state=VERIFIED verdict=CONDITIONAL at=- on=2026-08-25 -->
+<!-- kaff id=KAFF-110 slice=1 points=5 state=ACCEPTED verdict=CONDITIONAL at=1d04bde on=2026-09-09 -->
 
 **Slice:** 1 · **Epic:** Foundation · **Points:** 5 · **Status:** **BUILT AND VERIFIED WITH A CRITERION STILL HELD — not accepted.** 8 of 10 satisfied, verified 2026-08-25. `AC-110-E` is deferred to KAFF-104, which is out of sprint 1. **`AC-110-D` is no longer deferrable** — it was deferred to KAFF-101a by Scrum Master ruling on 2026-08-25, KAFF-101a exists (D-084), and **no Verifier pass has examined it since**: the 2026-08-27 pass covered 109, 105a, 102, 101a and 103 only. W-9 is closed. Owed to the next Verifier pass. *(Corrected 2026-08-30: a Scrum Master brief wrongly dictated `ACCEPTED` here; this story has never been in the accepted bucket — `meetings/2026-08-27-sprint-1-close.md` §1 puts it in "built and verified with a criterion still held".)*
 **Spec:** §9 · **Decisions:** D-044 (ruling 1), D-048, **D-049 (rulings 2, 5)**

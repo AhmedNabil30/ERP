@@ -24,18 +24,20 @@ the code, and the board says so rather than rounding it up:
 | ⛔ **Lapsed** | **3** | KAFF-125 — confirmed on real diffs 2026-09-07, **and it could not be lifted** |
 | 🟡 **Built, nobody independent has looked** | **0** | cleared 2026-09-07 by the `V-35` pass |
 | 🔻 **Deferred, never built** | **21** | KAFF-104 · KAFF-115 · KAFF-129 → **slice 1b** |
-| ✅ **ACCEPTED** | **0** | |
+| ✅ **ACCEPTED** | **84** | **2026-09-09 — Nabil ran the demo script.** 21 stories, `deploy/DEMO.md` §9 |
 
 **The `V-35` pass, 2026-09-07 — the first independent eye on any of it.** KAFF-118 **PASS** (every
 mutating endpoint driven individually; each wrote exactly one record, every read and refusal none) ·
 KAFF-101b **PASS** (all eight criteria driven for the first time) · KAFF-128 **CONDITIONAL** ·
 KAFF-125 **LAPSED stands**.
 
-**Nothing has ever been ACCEPTED.** `process/agile.md` §4 is *"Nabil runs the demo script"* and there
-is no record of it happening, for any story, ever. **Zero of 127.** Closing a slice does not accept
-it, and no agent can perform §4.
+✅ **2026-09-09 — the first acceptance this project has had.** `process/agile.md` §4 is *"Nabil runs
+the demo script"*, and it happened: Nabil recreated the database, ran `deploy/DEMO.md`, and accepted
+**84 points across 21 stories**, explicitly including the UI enhancements. **Only §9's "demonstrable
+today" table moved.** Nothing was accepted by silence — the 22 points §9 lists as unreachable and the
+21 `DEFERRED` are untouched, and no agent performed §4.
 
-⚠️ **3 points still carry no standing verdict** — KAFF-125, and the `V-35` pass **could not lift it**:
+⚠️ **3 points still carry no standing verdict, and were NOT accepted on 2026-09-09** — KAFF-125, and the `V-35` pass **could not lift it**:
 the rewritten `AC-125-C` cannot be executed by anyone. That is sprint 6 item 3, and it is a criterion
 problem, not a code problem.
 
@@ -217,7 +219,7 @@ Also open: **Q12**, **Q13**, **Q30**, **Q57**, `Q-N10-1`, `Q-N10-2b`, `Q-N10-3`.
   that rendering, so no commit moved behaviour under the verdict. **But the 2026-09-04 Verifier had
   reserved this call to Nabil in writing** — *"only Nabil can write it… It should not close by a
   Verifier"* — and a BA closed it three days later. **Keep the text; it needs Nabil's ratification.**
-- **Acceptance.** §4. Zero of 127 points, and it moves when Nabil moves it.
+- **Acceptance.** §4. **84 of 127 points, 2026-09-09.** It moves when Nabil moves it, and it did.
 
 ---
 
@@ -269,8 +271,8 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 
 | | slice 1 | slice 2 | slice 3 |
 |---|---:|---:|---:|
-| ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 0 | 0 | 0 |
-| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 103 | 0 | 0 |
+| ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 |
+| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 0 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 51 | 5 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 |
@@ -280,37 +282,37 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 
 | Story | Slice | Pts | State | Verdict | At | On | |
 |---|---:|---:|---|---|---|---|---|
-| [KAFF-100](stories/slice-1-foundation/KAFF-100-bootstrap-the-first-owner.md) | 1 | 5 | 🔵 VERIFIED | PASS | `559ac45` | 2026-08-26 | Bootstrap the first Owner through a one-time setup screen |
-| [KAFF-101a](stories/slice-1-foundation/KAFF-101a-sign-in-api.md) | 1 | 5 | 🔵 VERIFIED | PASS | `559ac45` | 2026-08-27 | Sign in, and the server sets an `HttpOnly` session cookie |
-| [KAFF-101b](stories/slice-1-foundation/KAFF-101b-sign-in-screen.md) | 1 | 3 | 🔵 VERIFIED | PASS | `0359b8d` | 2026-09-07 | The staff sign-in screen, and where each role lands after it |
-| [KAFF-102](stories/slice-1-foundation/KAFF-102-sign-out.md) | 1 | 2 | 🔵 VERIFIED | PASS | `559ac45` | 2026-08-27 | Sign out |
-| [KAFF-103](stories/slice-1-foundation/KAFF-103-set-first-password.md) | 1 | 5 | 🔵 VERIFIED | PASS | `559ac45` | 2026-08-27 | Change the temporary password on first sign-in |
+| [KAFF-100](stories/slice-1-foundation/KAFF-100-bootstrap-the-first-owner.md) | 1 | 5 | ✅ ACCEPTED | PASS | `1d04bde` | 2026-09-09 | Bootstrap the first Owner through a one-time setup screen |
+| [KAFF-101a](stories/slice-1-foundation/KAFF-101a-sign-in-api.md) | 1 | 5 | ✅ ACCEPTED | PASS | `1d04bde` | 2026-09-09 | Sign in, and the server sets an `HttpOnly` session cookie |
+| [KAFF-101b](stories/slice-1-foundation/KAFF-101b-sign-in-screen.md) | 1 | 3 | ✅ ACCEPTED | PASS | `1d04bde` | 2026-09-09 | The staff sign-in screen, and where each role lands after it |
+| [KAFF-102](stories/slice-1-foundation/KAFF-102-sign-out.md) | 1 | 2 | ✅ ACCEPTED | PASS | `1d04bde` | 2026-09-09 | Sign out |
+| [KAFF-103](stories/slice-1-foundation/KAFF-103-set-first-password.md) | 1 | 5 | ✅ ACCEPTED | PASS | `1d04bde` | 2026-09-09 | Change the temporary password on first sign-in |
 | [KAFF-104](stories/slice-1-foundation/KAFF-104-reset-forgotten-password.md) | 1 | 5 | 🔻 DEFERRED | none | `-` | 2026-09-07 | Reset a forgotten password with an Owner-generated link |
-| [KAFF-105a](stories/slice-1-foundation/KAFF-105a-api-me-identity.md) | 1 | 2 | 🔵 VERIFIED | PASS | `559ac45` | 2026-08-27 | GET /api/auth/me` returns who I am and what I may do |
+| [KAFF-105a](stories/slice-1-foundation/KAFF-105a-api-me-identity.md) | 1 | 2 | ✅ ACCEPTED | PASS | `1d04bde` | 2026-09-09 | GET /api/auth/me` returns who I am and what I may do |
 | [KAFF-105b](stories/slice-1-foundation/KAFF-105b-api-me-project-list.md) | 1 | 5 | 🔵 VERIFIED | PASS | `-` | 2026-08-30 | GET /api/auth/me` returns the projects I reach, and how I reach them |
-| [KAFF-106](stories/slice-1-foundation/KAFF-106-owner-creates-a-user.md) | 1 | 5 | 🔶 VERIFIED | CONDITIONAL | `-` | 2026-08-25 | The Owner creates a user with a role and a department |
+| [KAFF-106](stories/slice-1-foundation/KAFF-106-owner-creates-a-user.md) | 1 | 5 | ✅ ACCEPTED | CONDITIONAL | `1d04bde` | 2026-09-09 | The Owner creates a user with a role and a department |
 | [KAFF-107](stories/slice-1-foundation/KAFF-107-hr-role-is-bound-to-the-hr-department.md) | 1 | 2 | ⚪ FOLDED | none | `-` | 2026-08-22 | An HR user cannot be created or moved outside the HR department |
-| [KAFF-108](stories/slice-1-foundation/KAFF-108-move-a-user-between-departments.md) | 1 | 3 | 🔵 VERIFIED | PASS | `-` | 2026-08-26 | Move a user between departments |
-| [KAFF-109](stories/slice-1-foundation/KAFF-109-change-a-users-role.md) | 1 | 5 | 🔶 VERIFIED | CONDITIONAL | `559ac45` | 2026-08-27 | Change a user's role |
-| [KAFF-110](stories/slice-1-foundation/KAFF-110-deactivate-a-user.md) | 1 | 5 | 🔶 VERIFIED | CONDITIONAL | `-` | 2026-08-25 | Deactivate a user, and their access ends on the next request |
+| [KAFF-108](stories/slice-1-foundation/KAFF-108-move-a-user-between-departments.md) | 1 | 3 | ✅ ACCEPTED | PASS | `1d04bde` | 2026-09-09 | Move a user between departments |
+| [KAFF-109](stories/slice-1-foundation/KAFF-109-change-a-users-role.md) | 1 | 5 | ✅ ACCEPTED | CONDITIONAL | `1d04bde` | 2026-09-09 | Change a user's role |
+| [KAFF-110](stories/slice-1-foundation/KAFF-110-deactivate-a-user.md) | 1 | 5 | ✅ ACCEPTED | CONDITIONAL | `1d04bde` | 2026-09-09 | Deactivate a user, and their access ends on the next request |
 | [KAFF-111](stories/slice-1-foundation/KAFF-111-a-deactivated-users-assignments.md) | 1 | 3 | 🔵 VERIFIED | PASS | `-` | 2026-08-26 | Deactivating a user revokes their project assignments |
-| [KAFF-112](stories/slice-1-foundation/KAFF-112-reactivate-a-user.md) | 1 | 3 | 🔵 VERIFIED | PASS | `-` | 2026-08-26 | Reactivate a user, who comes back with nothing |
+| [KAFF-112](stories/slice-1-foundation/KAFF-112-reactivate-a-user.md) | 1 | 3 | ✅ ACCEPTED | PASS | `1d04bde` | 2026-09-09 | Reactivate a user, who comes back with nothing |
 | [KAFF-113](stories/slice-1-foundation/KAFF-113-assign-a-user-to-a-project.md) | 1 | 5 | 🔵 VERIFIED | PASS | `-` | 2026-08-26 | Assign a user to a project, with seniority for site engineers |
 | [KAFF-114](stories/slice-1-foundation/KAFF-114-revoke-a-project-assignment.md) | 1 | 3 | 🔵 VERIFIED | PASS | `-` | 2026-08-26 | Revoke a project assignment without losing who could act when |
 | [KAFF-115](stories/slice-1-foundation/KAFF-115-project-team-panel.md) | 1 | 8 | 🔻 DEFERRED | none | `-` | 2026-09-07 | The project team panel is built from assignment rows, not from the access check |
 | [KAFF-116](stories/slice-1-foundation/KAFF-116-audit-records-how-access-was-granted.md) | 1 | 3 | 🔵 VERIFIED | PASS | `-` | 2026-08-26 | Every audit record says how the actor reached the project |
-| [KAFF-117](stories/slice-1-foundation/KAFF-117-read-the-audit-trail.md) | 1 | 5 | 🔵 VERIFIED | PASS | `5b13761` | 2026-09-06 | The Owner reads the audit trail, and nobody else does |
-| [KAFF-118](stories/slice-1-foundation/KAFF-118-every-slice-1-change-is-audited.md) | 1 | 3 | 🔵 VERIFIED | PASS | `0359b8d` | 2026-09-07 | Every state change in slice 1 writes an audit record |
-| [KAFF-119](stories/slice-1-foundation/KAFF-119-register-a-client.md) | 1 | 5 | 🔵 VERIFIED | PASS | `86cc8b0` | 2026-09-04 | Register a client, with a generated code and a duplicate-phone warning |
-| [KAFF-120](stories/slice-1-foundation/KAFF-120-individual-clients-do-not-withhold.md) | 1 | 2 | 🔵 VERIFIED | PASS | `-` | 2026-09-04 | An individual's contract cannot carry a withholding rate, and nor can the individual |
-| [KAFF-121](stories/slice-1-foundation/KAFF-121-edit-a-clients-contact-details.md) | 1 | 3 | 🔵 VERIFIED | PASS | `-` | 2026-09-04 | Edit a client's name and contact details |
+| [KAFF-117](stories/slice-1-foundation/KAFF-117-read-the-audit-trail.md) | 1 | 5 | ✅ ACCEPTED | PASS | `1d04bde` | 2026-09-09 | The Owner reads the audit trail, and nobody else does |
+| [KAFF-118](stories/slice-1-foundation/KAFF-118-every-slice-1-change-is-audited.md) | 1 | 3 | ✅ ACCEPTED | PASS | `1d04bde` | 2026-09-09 | Every state change in slice 1 writes an audit record |
+| [KAFF-119](stories/slice-1-foundation/KAFF-119-register-a-client.md) | 1 | 5 | ✅ ACCEPTED | PASS | `1d04bde` | 2026-09-09 | Register a client, with a generated code and a duplicate-phone warning |
+| [KAFF-120](stories/slice-1-foundation/KAFF-120-individual-clients-do-not-withhold.md) | 1 | 2 | ✅ ACCEPTED | PASS | `1d04bde` | 2026-09-09 | An individual's contract cannot carry a withholding rate, and nor can the individual |
+| [KAFF-121](stories/slice-1-foundation/KAFF-121-edit-a-clients-contact-details.md) | 1 | 3 | ✅ ACCEPTED | PASS | `1d04bde` | 2026-09-09 | Edit a client's name and contact details |
 | [KAFF-122](stories/slice-1-foundation/KAFF-122-corporate-client-withholding.md) | 1 | 0 | ⚪ SUPERSEDED | none | `-` | 2026-08-21 | Set a corporate client's withholding category and tax registration number |
-| [KAFF-123](stories/slice-1-foundation/KAFF-123-archive-a-client.md) | 1 | 2 | 🔵 VERIFIED | PASS | `-` | 2026-09-04 | Archive a client |
-| [KAFF-124](stories/slice-1-foundation/KAFF-124-list-and-search-clients.md) | 1 | 2 | 🔵 VERIFIED | PASS | `-` | 2026-09-04 | Find a client by name or phone |
+| [KAFF-123](stories/slice-1-foundation/KAFF-123-archive-a-client.md) | 1 | 2 | ✅ ACCEPTED | PASS | `1d04bde` | 2026-09-09 | Archive a client |
+| [KAFF-124](stories/slice-1-foundation/KAFF-124-list-and-search-clients.md) | 1 | 2 | ✅ ACCEPTED | PASS | `1d04bde` | 2026-09-09 | Find a client by name or phone |
 | [KAFF-125](stories/slice-1-foundation/KAFF-125-staff-shell.md) | 1 | 3 | ⛔ VERIFIED | LAPSED | `8ea9258` | 2026-09-06 | The staff shell: session resolution, chrome, and role-based landing |
-| [KAFF-126](stories/slice-1-foundation/KAFF-126-client-screens.md) | 1 | 8 | 🔵 VERIFIED | PASS | `-` | 2026-09-04 | The client screens |
-| [KAFF-127](stories/slice-1-foundation/KAFF-127-user-management-screens.md) | 1 | 8 | 🔶 VERIFIED | CONDITIONAL | `116c08a` | 2026-09-06 | The user-management screens |
-| [KAFF-128](stories/slice-1-foundation/KAFF-128-audit-trail-screen.md) | 1 | 3 | 🔶 VERIFIED | CONDITIONAL | `0359b8d` | 2026-09-07 | The audit trail screen |
+| [KAFF-126](stories/slice-1-foundation/KAFF-126-client-screens.md) | 1 | 8 | ✅ ACCEPTED | PASS | `1d04bde` | 2026-09-09 | The client screens |
+| [KAFF-127](stories/slice-1-foundation/KAFF-127-user-management-screens.md) | 1 | 8 | ✅ ACCEPTED | CONDITIONAL | `1d04bde` | 2026-09-09 | The user-management screens |
+| [KAFF-128](stories/slice-1-foundation/KAFF-128-audit-trail-screen.md) | 1 | 3 | ✅ ACCEPTED | CONDITIONAL | `1d04bde` | 2026-09-09 | The audit trail screen |
 | [KAFF-129](stories/slice-1-foundation/KAFF-129-partition-audit-records-by-month.md) | 1 | 8 | 🔻 DEFERRED | none | `-` | 2026-09-07 | Partition `audit_records` by month, from the start |
 | [KAFF-200](stories/slice-2-masters/KAFF-200-import-the-catalogue-from-excel.md) | 2 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-08 | Import the catalogue from Excel at setup, loading the good rows and reporting the rest |
 | [KAFF-201](stories/slice-2-masters/KAFF-201-re-importing-is-not-a-sync.md) | 2 | 2 | ⚫ NOT-BUILT | none | `-` | 2026-09-08 | Re-importing is not a sync — a second import is a deliberate, reviewed act |
