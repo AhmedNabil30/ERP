@@ -117,9 +117,9 @@ markup and the worker/subcontractor/supplier phone. The trade question moved to 
 count; `Q70` means the phone question and nothing else. Correcting it found `KAFF-209`'s header
 naming two stories on the wrong side of the collision it was warning about.
 
-⛔ **`Q70`–`Q73` are still absent from `stories/questions-for-karim.md`.** They are cited across five
-slice-2 stories and are invisible to anyone reading the register. `Q65`–`Q69` were the same failure
-one wave earlier. **Routed to the BA; nothing Ready depends on them.**
+✅ **`Q70`–`Q73` were registered 2026-09-09.** They had been cited across five slice-2 stories with no row
+here at all — `Q65`–`Q69` were the same failure one wave earlier. **They now block four stories
+visibly instead of invisibly**, which is the only thing registration changes.
 
 *(`stories/backlog.md` remains the authority on epics, the slice sequence and estimates, and on
 nothing else. Its state column is dead — D-119, D-122.)*
