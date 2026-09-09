@@ -11126,3 +11126,86 @@ list changed. That is still worth asking and is not answered by anyone here.
 * **It does not answer `Q70`.** The trade list and its markups are Karim's and nobody else's.
 * **It does not touch `Q65`–`Q69`**, which are still cited by four slice-2 stories and still absent
   from the register.
+
+---
+
+### D-130 · Scrum Master — the ball Karim passed back: seven rulings, one refusal, and the rest deliberately left alone · 2026-09-09
+
+Nabil's instruction: *"he gave me the ball in our field — have agents meeting and take actions, what best for Karim and suits us."*
+
+**The first decision of this meeting was about scope, and it is the one worth arguing with.** The register holds roughly thirty open questions. Six of the seven ruled below **block slice 2 today**. Every question that blocks slice 4, 5 or 6 was left open on purpose.
+
+**Why, when we have been handed the authority to close them.** A ruling made now on `Q18` (what متعثرة means), `Q22` (the عهدة ceiling) or `Q30` (whether a tax rate can move after an extract) would be made with no code to constrain it, no screen to test it against, and nobody in the room who has run a Kaff project. It would be plausible — that is the whole problem. `agents.md` names it: *"an agent that invents a business rule to fill a gap is the single most expensive failure mode in this project — the invention is always plausible, which is why it survives review."* **Having permission to invent does not make the invention correct.** Those questions get ruled when the slice that needs them opens and there is something real to be wrong against.
+
+**What was ruled is what blocks work this week, and every ruling below is derived from something already written — `spec.md`, an existing decision, or an invariant — rather than chosen.** Where a ruling could not be derived, it was refused; see §8.
+
+---
+
+#### 1. `Q61` — the fork Nabil left open closes as partial load
+
+D-129 §3 recorded two readings of *"actionable feedback rather than gridlock"* and asked for a word. Ruling: **the import loads the good rows and returns a row-level report naming every row it refused.**
+
+The deciding factor is `Q62`, already answered. A second import is **accepted, shown and confirmed** (D-129 §4), so a partial load is not a trap: whatever the first pass could not take is visible in the report and goes in on the next one, reviewed. Refuse-the-whole-file would mean a 600-row sheet with one bad row imports nothing, and the operator hand-edits Excel until a machine stops complaining — which is the gridlock the ruling names.
+
+**`KAFF-200`'s title and rule 7 change**, and this is the BA's to write with this citation.
+
+#### 2. `Q64` — HR sees name and role, and this is not a new ruling
+
+D-055 §2 already ruled it and `Q42`'s standing warning is *"do not close it by handing HR the Owner's user list."* **Nothing is changed here; the existing ruling is confirmed as buildable and HR's screen is built to it.** The row stays open in the register for the one thing it actually asks — whether Karim, having now seen the screen, wants that list changed. That is not blocking and never was.
+
+#### 3. `Q65` — an archived item cannot go on a **new** BOQ line
+
+**Derived, not chosen: this is what archiving means.** `KAFF-206`'s own title is *"archive a catalogue item **without breaking what already references it**"*, and §4.4 makes existing lines safe by construction — a signed BOQ holds **copies** with no foreign key to follow, so no archive can reach one. If an archived item could still be added to new work, archiving would do nothing at all and the status would be decoration.
+
+**Best for Karim:** he retires an obsolete item once and it stops appearing in new estimates, without touching a single historical document. **Suits us:** one status filter on the item picker, and `AC-206-F` can be written and driven.
+
+#### 4. `Q66` — archived records can be un-archived
+
+**The code already anticipated this.** `MasterDataErrors.NotArchived` exists and is returned by nothing [Verified: 2026-09-09 @ `src/Domain/MasterData/MasterDataErrors.cs` -> `NotArchived`] — an error that only makes sense as the refusal of an un-archive that nobody built.
+
+The alternative is worse in a way that does not undo. Codes are unique, so a wrongly-archived item can only come back as a **new code**, and the catalogue then carries two codes for one real thing forever. **An archive that cannot be reversed turns a misclick into permanent data.**
+
+**This answers `Q39` for clients in the same shape** and it is the same mechanism, built once in `Domain/` per `CLAUDE.md`. `Q39` is marked answered by this section.
+
+#### 5. `Q67` — archiving a باب is a new 3-point story, and it refuses when the باب still holds items
+
+D-128 §2 recommended the story and Nabil's ball closes the business half. **A باب holding active items cannot be archived** — the refusal names the count, and the operator moves or archives the items first, which is exactly what `KAFF-205` already builds. **An archived باب's items stay findable** for the reason in §3: existing references are copies.
+
+Cascading was rejected. Archiving forty items behind one click on a tree node is an action nobody can review and nobody can undo in one step.
+
+**New story, `KAFF-213`, 3 points, slice 2.** Slice 2 becomes **51 points across fourteen stories.**
+
+#### 6. `Q68` — the employee reference number is **generated**, and the field list is spec §10's
+
+Two halves, both answerable, and only one of them was in doubt.
+
+**The number is generated and not editable.** The precedent is decided and shipped: `spec.md` §2's amendment and `KAFF-119` — *"the code is generated; nobody typed it and nobody can edit it"* (`C-10001`). A typed reference number is a duplicate waiting to happen, and the client code was settled the same way for the same reason. **Consistency here is the answer, not a preference.**
+
+**The field list is §10's, and nothing is invented on top.** `KAFF-207` builds exactly the fields `spec.md` §10 names, and anything Karim's paper file carries beyond them is a later change to a built screen, not a guess now. **This is the cheap direction:** adding a field to an existing register is small; removing one that turned out to be wrong, after data is in it, is not.
+
+#### 7. `Q69` — a day labourer joining the payroll is **archive and re-register**, not a move
+
+The most interesting of the seven, and it is **forced by the invariant rather than chosen.** `spec.md` §10: *"Nobody appears in both"* populations.
+
+- **Moving the one record** makes that record a salaried employee *retroactively, over its whole history*. Every past day-labour engagement then hangs off a record that is not day labour, and the invariant is false at every point in the past. **This is the option to refuse.**
+- **Refusing outright** is not a rule, it is an absence of one — the man really did join the payroll and the system has to say something.
+- **Archive the day-labour record, register a new employee record.** The invariant holds at every point in time, and **the engagement history stays attached to the record that earned it**, which is what `KAFF-210` is for.
+
+The two records are not a duplicate person. They are **two employment relationships**, which is what Kaff actually had. `AC-208-*` can be written against this.
+
+#### 8. ⛔ What was refused, and it cannot be ruled by anybody in this room
+
+**`Q70` — Kaff's ~40 trades and each one's markup percentage — is not a decision. It is data.**
+
+No authority makes us know what Kaff's trades are or what each is worth. `spec.md` §4.2's *concrete 15%* and *finishes 30%* are examples and `KAFF-204` rule 7 says so; an agent building the tree against silence will use them and they will look like data. **`Q70` goes to Karim and stays there.**
+
+The same line applies to the half of `Q68` not ruled in §6: **what Karim's paper staff file carries** is a fact about his office, not a design choice. §6 unblocks the story by building §10's fields; it does not claim to know the answer.
+
+**`Q13`, `Q15`, `Q16` are the same shape** — which banks, which have overdrafts, whether bank accounts are records or ledger lines. All data, all Karim's, none of it blocking slice 2.
+
+#### What this record does NOT do
+
+* **It does not edit a story, a trailer, or `STATUS.md`.** Every title, rule and criterion this changes is the **BA's**, with D-130 as the citation. `KAFF-213` does not exist yet.
+* **It does not rule on `Q18`, `Q19`, `Q20`, `Q22`, `Q28`, `Q30`, `Q35`, `Q36`, `Q37`, `Q45`, `Q46`, `Q48`, `Q49`** or anything else beyond slice 2. Deliberately. See the opening.
+* **It does not register `Q65`–`Q69`.** They are ruled here and still absent from the register; the BA's sweep both registers them and marks them answered in one pass.
+* **It does not touch the `kaff` database.** `PROBE-UNFLOORED` was still present at 2026-09-09 02:5x — the earlier `DROP` did not take, most likely because the API held a connection and the statement lacked `WITH (FORCE)`. **The recreate is Nabil's; the harness classifier refuses it here.**
