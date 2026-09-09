@@ -57,7 +57,7 @@ parse, the all-or-nothing write and S-019.
   business question; **routed to the Architect** in *Open questions* below rather than chosen here.
 - **i18n:** `catalogue.import.title`, `catalogue.import.choose_file`, `catalogue.import.not_a_sync`
   (rule 2's sentence), `catalogue.import.confirm`, `catalogue.import.succeeded`,
-  `catalogue.import.rejected`, `catalogue.import.row_error`, `errors.catalogue.import_failed`.
+  `catalogue.import.rejected`, `catalogue.import.row_error`, **`errors.master.catalogue_import_failed`** ⚠️ *(was `errors.catalogue.import_failed` until 2026-09-09 — corrected under **D-128 §1** before it shipped. Catalogue errors live in `MasterDataErrors`, so the namespace is `errors.master.*`; `KAFF-202` shipped the same mistake and had to be renamed after the fact.)*.
 
 ## Acceptance criteria
 
