@@ -115,7 +115,7 @@ Then it reads **يومية** and the salaried term verbatim from the catalogue, 
 | Money behaviour named explicitly | ✅ — moves none, stores none, computes none; and the paragraph says why a money-free story is in the money section |
 | Arabic UI strings as i18n keys | ✅ — three keys plus one existing, and §14's term is pinned |
 | The audit record it writes is stated | ✅ — rule 7: a refusal writes none, and the new create-and-archive pair each write their own (creation, archiving) |
-| **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated [Verified: 2026-09-09 — `qa/` holds `slice-1`, `questions.md`, `README.md`, `risk-register.md` and `strategy.md`]. Six criteria are marked *(fails if the rule is broken)*, and **`AC-208-C` is red against the code as it stands** — there is no edit endpoint to refuse, and the error it names is returned by nothing. **QA's to write** |
+| **QA has written at least one scenario that fails if the rule is broken** | ✅ **Met 2026-09-09** — `qa/slice-2/test-cases.md`, `TC-2-001`…`TC-2-098`. ⚠️ **`AC-208-C`'s case is written and HELD, not passing** — no employee-edit endpoint exists to send the request to, which is `AC-125-C`'s exact shape. Held rather than dropped, so the test is waiting the day the endpoint ships. |
 | Story-currency citations dated with a stable identifier | ✅ |
 | Not `BLOCKED` on an open question | ✅ — `Q69` (D-130 §7) and `Q12` (D-129 §1) are both answered. `Q70` still reaches `AC-208-B`'s mechanism through `KAFF-209` and is unrelated to this box |
 

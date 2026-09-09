@@ -115,7 +115,7 @@ Then direction is RTL, the archived badge and the filter are readable, no string
 | Money behaviour named explicitly | ✅ — moves none, changes no price, writes no `Posting` |
 | Arabic UI strings as i18n keys | ✅ — four new keys plus one existing |
 | The audit record it writes is stated | ✅ — rule 9, `AC-206-H` |
-| **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated [Verified: 2026-09-09 — `qa/` holds `slice-1`, `questions.md`, `README.md`, `risk-register.md` and `strategy.md`]. Five criteria are marked *(fails if the rule is broken)*. **QA's to write** |
+| **QA has written at least one scenario that fails if the rule is broken** | ✅ **Met 2026-09-09** — `qa/slice-2/test-cases.md`, `TC-2-001`…`TC-2-098`. |
 | Story-currency citations dated with a stable identifier | ✅ |
 | Not `BLOCKED` on an open question | ✅ — `Q65` (D-130 §3), `Q66` (D-130 §4) and `Q12` (D-129 §1) are all answered |
 

@@ -123,7 +123,7 @@ And the template is available for download from S-019 before a file is ever chos
 | Money behaviour named explicitly | ✅ — rules 4, 5, `AC-200-B`, `AC-200-D` |
 | Arabic UI strings as i18n keys | ✅ — eight keys, rule 10 |
 | The audit record it writes is stated | ✅ — rule 9, `AC-200-G`. Its granularity is an Architect question, not a missing statement |
-| **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated. Seven criteria are marked *(fails if the rule is broken)*; **the case is QA's to write, not the BA's.** Routed to QA |
+| **QA has written at least one scenario that fails if the rule is broken** | ✅ **Met 2026-09-09** — `qa/slice-2/test-cases.md`, `TC-2-001`…`TC-2-098`. ⚠️ **One criterion is NOT cased: `AC-200-B`** — its *"more than four decimals"* clause names two legal behaviours and no rule choosing between them. **A ruling is owed (BA or Nabil, not Karim — it is a storage/parse policy, not a business fact), and until it lands this story is not Ready.** |
 | Story-currency citations dated with a stable identifier | ✅ |
 | Not `BLOCKED` on an open question | ✅ — `Q60`'s schema half, `Q61` and `Q12` are all answered. `Q60`'s data half (`Q75`) is not this story's data and does not block it |
 

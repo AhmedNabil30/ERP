@@ -119,7 +119,7 @@ Then direction is RTL, the archived badge and the refusal's item count are reada
 | Money behaviour named explicitly | ✅ — carries none, moves none |
 | Arabic UI strings as i18n keys | ✅ — four new keys plus one existing |
 | The audit record it writes is stated | ✅ — rule 11, `AC-213-I` |
-| **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated. Seven criteria are marked *(fails if the rule is broken)*. **QA's to write** |
+| **QA has written at least one scenario that fails if the rule is broken** | ✅ **Met 2026-09-09** — `qa/slice-2/test-cases.md`, `TC-2-001`…`TC-2-098`. |
 | Story-currency citations dated with a stable identifier | ✅ |
 | Not `BLOCKED` on an open question | ✅ — `Q67` (D-130 §5) and `Q12` (D-129 §1) are both answered |
 

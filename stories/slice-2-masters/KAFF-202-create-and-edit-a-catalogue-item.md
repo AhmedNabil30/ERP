@@ -126,7 +126,7 @@ Then direction is RTL, prices and codes are bidi-isolated inside Arabic text, no
 | Money behaviour named explicitly | ✅ — rules 6, 7, 8; `AC-202-C`, `AC-202-D`, `AC-202-G`. Moves none |
 | Arabic UI strings as i18n keys | ✅ — ten keys, rule 12 |
 | The audit record it writes is stated | ✅ — rule 11, `AC-202-I` |
-| **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated. Seven criteria are marked *(fails if the rule is broken)*; **the case is QA's to write, not the BA's.** Routed to QA |
+| **QA has written at least one scenario that fails if the rule is broken** | ✅ **Met 2026-09-09** — `qa/slice-2/test-cases.md`, `TC-2-001`…`TC-2-098`. |
 | Story-currency citations dated with a stable identifier | ✅ |
 | Not `BLOCKED` on an open question | ✅ — `Q12` is answered (D-129 §1) |
 

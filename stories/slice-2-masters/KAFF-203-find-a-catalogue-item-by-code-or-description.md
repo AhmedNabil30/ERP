@@ -114,7 +114,7 @@ And the Arabic collation that decides where ا / أ / إ fall relative to one an
 | Money behaviour named explicitly | ✅ — rules 5, 8; `AC-203-G`. Moves none |
 | Arabic UI strings as i18n keys | ✅ — thirteen keys |
 | The audit record it writes is stated | ✅ — **none**, rule 10, stated rather than omitted |
-| **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated. **QA's to write.** |
+| **QA has written at least one scenario that fails if the rule is broken** | ✅ **Met 2026-09-09** — `qa/slice-2/test-cases.md`, `TC-2-001`…`TC-2-098`. |
 | Story-currency citations dated with a stable identifier | ✅ |
 | Not `BLOCKED` on an open question | ✅ — `Q63` (D-129 §5) and `Q12` (D-129 §1) are both answered |
 

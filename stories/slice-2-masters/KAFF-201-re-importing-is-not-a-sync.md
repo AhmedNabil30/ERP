@@ -106,7 +106,7 @@ And every one of the five changes is named in the confirmation shown **before** 
 | Money behaviour named explicitly | ✅ |
 | Arabic UI strings as i18n keys | ✅ — six keys |
 | The audit record it writes is stated | ✅ — rule 5, `AC-201-E` |
-| **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist; no `TC-` range. **QA's to write** |
+| **QA has written at least one scenario that fails if the rule is broken** | ✅ **Met 2026-09-09** — `qa/slice-2/test-cases.md`, `TC-2-001`…`TC-2-098`. |
 | Story-currency citations dated with a stable identifier | ✅ |
 | Not `BLOCKED` on an open question | ✅ — `Q62` (D-129 §4) and `Q12` (D-129 §1) are both answered |
 

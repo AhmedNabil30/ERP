@@ -168,7 +168,7 @@ Then direction is RTL, the tree indents from the inline-start, no string is a li
 | Money behaviour named explicitly | ✅ — moves none; rules 5 and 6 say precisely what a move does **not** reach |
 | Arabic UI strings as i18n keys | ✅ — eight keys |
 | The audit record it writes is stated | ✅ — rule 7, `AC-205-I` |
-| **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated. Six criteria are marked *(fails if the rule is broken)*. ⚠️ **This row said `AC-205-C` was red against the code — that was true on 2026-09-08 and is no longer.** The guard landed the same day (D-127 §1) and five domain tests hold it [Verified: 2026-09-09 @ `tests/Domain.Tests/BabTreeTests.cs` -> `BabTreeTests`]. **What is red today is the key it names**, and the repair is routed above, not asked. **QA's cases are still to write** |
+| **QA has written at least one scenario that fails if the rule is broken** | ✅ **Met 2026-09-09** — `qa/slice-2/test-cases.md`, `TC-2-001`…`TC-2-098`. |
 | Story-currency citations dated with a stable identifier | ✅ |
 | Not `BLOCKED` on an open question | ✅ — `Q12` is answered (D-129 §1), and no question of this story's own was ever open — the cycle finding is a defect, not a question, and was routed to Backend |
 

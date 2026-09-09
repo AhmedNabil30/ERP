@@ -136,7 +136,7 @@ Then direction is RTL, names and phone numbers are bidi-isolated inside Arabic t
 | Money behaviour named explicitly | ✅ — rules 6 and 7, `AC-207-E`. **Stores none, moves none, derives the one average §10 asks for** |
 | Arabic UI strings as i18n keys | ✅ — twelve keys, rule 12 |
 | The audit record it writes is stated | ✅ — rule 11, `AC-207-I` |
-| **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated [Verified: 2026-09-09 — `qa/` holds `slice-1`, `questions.md`, `README.md`, `risk-register.md` and `strategy.md`]. Seven criteria are marked *(fails if the rule is broken)*. **QA's to write** |
+| **QA has written at least one scenario that fails if the rule is broken** | ✅ **Met 2026-09-09** — `qa/slice-2/test-cases.md`, `TC-2-001`…`TC-2-098`. |
 | Story-currency citations dated with a stable identifier | ✅ |
 | Not `BLOCKED` on an open question | ✅ — `Q68`'s reference-number half (D-130 §6) and `Q12` (D-129 §1) are both answered. **`Q68`'s field-list half is refused, not open** (D-130 §8) — this story renders exactly what the entity already holds and does not wait on it. `Q70` reaches `AC-207-D`'s mechanism through `KAFF-209` and is unrelated to this box |
 
