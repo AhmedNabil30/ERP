@@ -66,7 +66,7 @@ suppliers.
 both mine:**
 
 **1. Slice 2 is thirteen stories and 48 points — `KAFF-200`…`KAFF-212`.** This file listed six and
-called it the slice. It was a **prefix**, taken from a partial read of `stories/backlog.md`.
+called it the slice. It was a **prefix**, taken from a partial read of `stories/backlog.md`. *(Superseded 2026-09-09: **fourteen stories, 51 points** — `KAFF-213` was cut by D-128 §2. The 48 stands as what was true on 2026-09-08 and is kept so the correction reads in order; **do not quote it as the current figure** — the generated block below is.)*
 
 **2. ⛔ "Slice 2 needs none of Karim's questions" was FALSE.** `stories/backlog.md` has said
 *"Blocked by: `Q12` and `Q13` — due before this slice opens"* since the slice was first estimated,
@@ -75,30 +75,52 @@ only this file's own seven-row question table and reported the absence as a fact
 **Slice 2 was opened on a claim that was not true**, and the BA raised it rather than working around
 it.
 
-### Refined 2026-09-08 — six of thirteen, and **every one is `NOT-BUILT`**
+### Refined in full 2026-09-09 — **fourteen stories, 51 points, every one `NOT-BUILT`**
 
-`READY` is a claim that the Definition of Ready is met, not a default. **None of the six meets it.**
+`READY` is a claim that the Definition of Ready is met, not a default. **None of the fourteen meets
+it, and they all fail on the same box.**
 
-| ID | Pts | Fails the Definition of Ready on |
-|---|---:|---|
-| **KAFF-200** import the catalogue from Excel, all-or-nothing | 5 | rule cites a **backlog title**, not a spec or D-number (`Q61`) · blocked (`Q60`, `Q61`) · no QA `TC-` |
-| **KAFF-201** a re-import is a deliberate, reviewed act | 2 | blocked on `Q62`, **at the story's centre** · no QA `TC-` |
-| **KAFF-202** create and edit a catalogue item | 3 | blocked (`Q12` only) · no QA `TC-` — **closest to Ready; raises no question of its own** |
-| **KAFF-203** find an item by code or description | 3 | blocked (`Q12`) · no QA `TC-` |
-| **KAFF-204** the `Bab` tree and its default markup | 5 | blocked (`Q12`) · no QA `TC-` |
-| **KAFF-205** re-parent a `Bab`, move an item between أبواب | 3 | blocked (`Q12`) · no QA `TC-` |
+**`qa/slice-2/` does not exist and no `TC-` range is allocated**, so *"QA has written a failing
+scenario"* is unmet everywhere. That is QA's box and it is the only thing standing between nine of
+these stories and Ready.
 
-**Not refined — `KAFF-206`…`KAFF-212`, 27 points:** archive an item, employees, the two populations,
-workers, engagement history, subcontractors, suppliers. `KAFF-211`/`212` are **additionally blocked on
-`Q29`**, and the backlog's carry-note warns the worker phone dedup must **not** inherit D-049 ruling
-8 — *"Do not extend the ruling; ask."*
+| | Stories | Pts | What is left |
+|---|---|---:|---|
+| **Waiting only on QA** | `KAFF-200` `201` `202` `203` `205` `206` `207` `208` `213` | 27 | Every business question answered. Write the `TC-` cases and they are Ready |
+| **Buildable, not seedable** | `KAFF-204` | 5 | Behaviour fully specified. **Its data is `Q75`** — Kaff's real trades and their markups, which nobody here can invent |
+| **Still blocked on Karim** | `KAFF-209` `210` `211` `212` | 16 | `Q70` `Q71` `Q72` `Q73`, plus `Q29` on `211`/`212`. `KAFF-209` additionally has **no role that reaches its endpoint** |
+| **New** | `KAFF-213` archive a باب | 3 | Cut by D-128 §2, ruled by D-130 §5 |
 
-⛔ **A defect found during refinement, routed to Backend, not a question:** **`Bab.SetParent` has no
-cycle check.** It refuses self-parenting only, so **A→B→A is accepted** and neither node is reachable
-from a root, while `spec.md` §2 says *tree*. `AC-205-C` is the criterion and **it is red today**.
+**What changed on 2026-09-09.** Nabil answered `Q12` — the Owner holds every permission (D-129 §1) —
+and passed Karim's ball back to the team, which produced D-130's seven rulings. Between them they
+closed **`Q12` `Q39` `Q60` `Q61` `Q62` `Q63` `Q65` `Q66` `Q67` `Q68` `Q69`**. `Q64` was explicitly
+**not** closed: it is a data-exposure boundary, D-055 §2 already rules name-and-role, and nothing is
+blocked by leaving it open.
+
+⚠️ **`KAFF-200`'s title changed and the board's did with it.** It said *"all-or-nothing"*; `Q61` is
+now ruled the other way — the import **loads the good rows and returns a row-level report**. The old
+title described the behaviour the ruling calls gridlock.
+
+⛔ **`Q75` is refused, not pending.** It is Kaff's ~40 trades and each one's markup, and it is **data,
+not a decision** — no authority makes anyone here know it. `spec.md` §4.2's *concrete 15%* and
+*finishes 30%* are examples, and an agent building the tree against silence will use them and they
+will look like data. It goes to Karim with `Q70`–`Q73` and `Q29`.
+
+✅ **The `Bab` cycle defect is repaired.** This file described it as live until 2026-09-09.
+`SetParent` now walks the candidate parent's ancestors and refuses at any depth, bounded by the tree
+so a pre-existing cycle fails rather than hangs (D-127 §1). `AC-205-C` is green.
+
+✅ **The `Q70` numbering collision is resolved.** Two live questions shared one number — the trade
+markup and the worker/subcontractor/supplier phone. The trade question moved to **`Q75`** on citation
+count; `Q70` means the phone question and nothing else. Correcting it found `KAFF-209`'s header
+naming two stories on the wrong side of the collision it was warning about.
+
+⛔ **`Q70`–`Q73` are still absent from `stories/questions-for-karim.md`.** They are cited across five
+slice-2 stories and are invisible to anyone reading the register. `Q65`–`Q69` were the same failure
+one wave earlier. **Routed to the BA; nothing Ready depends on them.**
 
 *(`stories/backlog.md` remains the authority on epics, the slice sequence and estimates, and on
-nothing else.)*
+nothing else. Its state column is dead — D-119, D-122.)*
 
 ---
 
