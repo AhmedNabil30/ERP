@@ -2,9 +2,9 @@
 
 <!-- kaff id=KAFF-205 slice=2 points=3 state=NOT-BUILT verdict=none at=- on=2026-09-08 -->
 
-**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-08 by the BA; **amended 2026-09-09** — the cycle defect it carried is **repaired** (D-127 §1) and its refusal key is **settled** (D-128). **Two Definition-of-Ready boxes are unticked.**
-**Spec:** **§2** (*"tree"*), **§4.2**, **§4.4**, §4.5 · **Decisions:** D-044 ruling 4
-**Register:** `stories/questions-for-karim.md` → **`Q12`** (open, slice-2-wide)
+**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-08 by the BA; **amended 2026-09-09** — the cycle defect it carried is **repaired** (D-127 §1), its refusal key is **settled** (D-128), and **`Q12` clears** (D-129 §1). **One Definition-of-Ready box is still unticked — QA's cases.**
+**Spec:** **§2** (*"tree"*), **§4.2**, **§4.4**, §4.5 · **Decisions:** D-044 ruling 4, **D-129 §1**
+**Register:** `stories/questions-for-karim.md` → **`Q12`** (✅ answered, D-129 §1)
 **Screens:** `ux/screen-inventory.md` → **`S-021`**, **`S-022`**, **`S-018`**
 **Owner:** Backend, then Frontend
 **Depends on:** KAFF-204 (the tree), KAFF-202 (the item)
@@ -44,7 +44,7 @@ right; the sentence it returns is not.
 | 5 | **Moving an item changes what a *future* BOQ line defaults to, and moves no existing line.** §4.2's markup *"defaults from the item's باب"* at the moment a line is created; §4.4 makes a signed BOQ a set of copies with no foreign key to follow, and re-prices an open estimate only through the explicit human review of `S-049`, slice 4. **The correct implementation of this rule is to add nothing** — no cascade, no recalculation, no notification | **§4.4** · §4.2 |
 | 6 | **Moving a باب changes no markup.** The markup belongs to the باب that moved, travels with it, and is not replaced by the new parent's — there is no inheritance (`KAFF-204` rule 2) | §4.2 |
 | 7 | Both moves are state changes and **each writes an audit record**: who, when, and the before and after of the parent or the باب. **This is the audit record somebody will actually need**, because a moved item silently changes what every future line under it starts at | **CLAUDE.md** |
-| 8 | `BabManage` for the باب move; `CatalogueManage` for the item move. Both `CompanyWide`, **no assignment**. Technical Office settled by §2; the Owner grants stand on **`Q12`** | §2 · D-044 ruling 4 · **`Q12`** |
+| 8 | `BabManage` for the باب move; `CatalogueManage` for the item move. Both `CompanyWide`, **no assignment**. Technical Office settled by §2; **the Owner keeps both too** | §2 · D-044 ruling 4 · **D-129 §1** |
 | 9 | Every string is an i18n key; Arabic RTL at 390px, indentation by logical property | CLAUDE.md · `ux/rtl-and-i18n.md` |
 
 ## Permissions, money, audit, i18n
@@ -164,15 +164,15 @@ Then direction is RTL, the tree indents from the inline-start, no string is a li
 | Stable `AC-205-<LETTER>` ids | ✅ |
 | Every business rule cites a `spec.md` section or a D-number | ✅ — rules 1–9 |
 | No uncited rule | ✅ |
-| Permissions named explicitly | ✅ — two permissions, both CompanyWide, no assignment; the Owner halves flagged to `Q12` |
+| Permissions named explicitly | ✅ — two permissions, both CompanyWide, no assignment; the Owner grants confirmed by **D-129 §1** |
 | Money behaviour named explicitly | ✅ — moves none; rules 5 and 6 say precisely what a move does **not** reach |
 | Arabic UI strings as i18n keys | ✅ — eight keys |
 | The audit record it writes is stated | ✅ — rule 7, `AC-205-I` |
 | **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated. Six criteria are marked *(fails if the rule is broken)*. ⚠️ **This row said `AC-205-C` was red against the code — that was true on 2026-09-08 and is no longer.** The guard landed the same day (D-127 §1) and five domain tests hold it [Verified: 2026-09-09 @ `tests/Domain.Tests/BabTreeTests.cs` -> `BabTreeTests`]. **What is red today is the key it names**, and the repair is routed above, not asked. **QA's cases are still to write** |
 | Story-currency citations dated with a stable identifier | ✅ |
-| Not `BLOCKED` on an open question | ⛔ **Not met — `Q12`**, the slice-wide grant. **No question of this story's own is open** — the cycle finding is a defect, not a question, and is routed to Backend |
+| Not `BLOCKED` on an open question | ✅ — `Q12` is answered (D-129 §1), and no question of this story's own was ever open — the cycle finding is a defect, not a question, and was routed to Backend |
 
-**Flip the trailer to `READY` when `Q12` is ruled and QA's cases land.**
+**Flip the trailer to `READY` when QA's cases land.**
 
 ## Not in this story
 - **Creating a باب or an item.** `KAFF-204` and `KAFF-202`.
@@ -187,6 +187,6 @@ Then direction is RTL, the tree indents from the inline-start, no string is a li
 
 | # | Question | Owner |
 |---|---|---|
-| **`Q12`** | Open, slice-2-wide. Whether the Owner keeps `BabManage` and `CatalogueManage` | **Karim** |
+| **`Q12`** | ✅ **ANSWERED — D-129 §1.** The Owner keeps `BabManage` and `CatalogueManage` | **Closed** |
 | 1 | ~~**The missing ancestor check is a defect, not a question**~~ — ✅ **CLOSED 2026-09-08, D-127 §1.** Routed as a defect and repaired the same day, at any depth, bounded so a pre-existing cycle fails rather than hangs [Verified: 2026-09-09 @ `src/Domain/MasterData/Bab.cs` -> `SetParent`]. **Kept struck rather than deleted** — what the board claimed and when is the record | ~~Backend~~ **done** |
 | 2 | **The refusal key is settled, 2026-09-09, and it is the BA's own call rather than Karim's** — `errors.master.bab_cannot_be_its_own_ancestor`, by rename. See *The refusal key* above and `decisions.md` **D-128**. **What remains is implementation and it is routed with the exact name**, so nobody chooses one | **Backend**, then **Frontend** for the two catalogue entries |

@@ -2,9 +2,9 @@
 
 <!-- kaff id=KAFF-212 slice=2 points=3 state=NOT-BUILT verdict=none at=- on=2026-09-09 -->
 
-**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **Two Definition-of-Ready boxes are unticked.**
-**Spec:** **§2** (*"one account, serves many projects"*), **§6.3**, **§6.7**, §1 (out of scope) · **Decisions:** D-044 ruling 4, D-049 ruling 9 (**the client only**)
-**Register:** `stories/questions-for-karim.md` → **`Q29`** (blocking), **`Q13`** (open, named in the backlog as a slice-2 blocker), **`Q12`**, **`Q70`**
+**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **⚠️ Amended 2026-09-09 — `Q12` clears (D-129 §1). Two Definition-of-Ready boxes remain unticked.**
+**Spec:** **§2** (*"one account, serves many projects"*), **§6.3**, **§6.7**, §1 (out of scope) · **Decisions:** D-044 ruling 4, D-049 ruling 9 (**the client only**), **D-129 §1**
+**Register:** `stories/questions-for-karim.md` → **`Q29`** (blocking), **`Q13`** (open, named in the backlog as a slice-2 blocker), **`Q12`** (✅ answered, D-129 §1), **`Q70`** (⚠️ a **different** `Q70` — a repeated supplier phone — than the trade-markup `Q70`; the same register numbering collision noted in `KAFF-211`)
 **Screens:** `ux/screen-inventory.md` → **`S-030`** (list and create / edit, one screen)
 **Owner:** Backend, then Frontend
 **Depends on:** nothing. `Supplier` shipped in slice 0.
@@ -39,7 +39,7 @@ supplier whose total exposure nobody in Kaff can see.
 | 6 | **The tax registration number identifies the legal entity and does not vary by job**, so it stays on the record whatever `Q29` decides about the rate — D-049's own reasoning about the field it kept on the client | **§6.7 amendment** |
 | 7 | ⛔ **The supplier's phone is unique today — a refusal** [Verified: 2026-09-09 @ `src/Infrastructure/Persistence/Configurations/MasterDataConfigurations.cs` -> `ux_suppliers_phone`] — **and D-049 ruling 8 is not extended here.** `Q70`'s third half | **`Q70`** |
 | 8 | Archiving replaces deletion; there is no delete path and this story adds none [Verified: 2026-09-09 @ `src/Domain/MasterData/Supplier.cs` -> `Archive`]. ⚠️ **A supplier with postings against him must never be removable**, and in slice 3 that is enforced by the postings being append-only rather than by anything here | CLAUDE.md · KAFF-123's precedent |
-| 9 | `SupplierManage`, `CompanyWide`, **no assignment** — a supplier belongs to no project, which is the same fact as rule 2 seen from the permission side. Finance settled by §2; the Owner grant stands on **`Q12`** [Verified: 2026-09-09 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.SupplierManage`] | §2 · D-044 ruling 4 · **`Q12`** |
+| 9 | `SupplierManage`, `CompanyWide`, **no assignment** — a supplier belongs to no project, which is the same fact as rule 2 seen from the permission side. Finance settled by §2; **the Owner keeps it too** [Verified: 2026-09-09 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.SupplierManage`] | §2 · D-044 ruling 4 · **D-129 §1** |
 | 10 | Create, edit and archive are state changes and **each writes an audit record**, before and after — the tax details included | **CLAUDE.md** |
 | 11 | Every string is an i18n key; Arabic RTL at 390px, names and numbers bidi-isolated | CLAUDE.md · `ux/rtl-and-i18n.md` |
 | 12 | ⛔ **Bidding, RFQ and quote comparison are out of scope by name**, and the entity says so itself [Verified: 2026-09-09 @ `src/Domain/MasterData/Supplier.cs` -> `Supplier`]. **This is the screen where somebody will want to add "compare two quotes", and the answer is no** | **§1** · CLAUDE.md |
@@ -133,15 +133,15 @@ Then direction is RTL, names, numbers and the tax registration number are bidi-i
 | Stable `AC-212-<LETTER>` ids, appended never inserted | ✅ |
 | Every business rule cites a `spec.md` section or a D-number | ✅ — rules 1–13; rules 4 and 7 cite `Q29` / `Q70` and are marked as questions rather than sourced |
 | No uncited rule | ✅ — ⛔ **and D-049 ruling 9 is cited only as the ruling that is NOT being extended** |
-| Permissions named explicitly | ✅ — `SupplierManage`, CompanyWide, no assignment; the Technical Office's exclusion stated; the Owner half flagged to `Q12` |
+| Permissions named explicitly | ✅ — `SupplierManage`, CompanyWide, no assignment; the Technical Office's exclusion stated; the Owner grant confirmed by **D-129 §1** |
 | Money behaviour named explicitly | ✅ — rules 2, 3, 5; `AC-212-B`, `AC-212-C`, `AC-212-E`. **Stores no balance, opens no account, writes no posting, nets nothing** |
 | Arabic UI strings as i18n keys | ✅ — ten keys, rule 11 |
 | The audit record it writes is stated | ✅ — rule 10, `AC-212-J` |
 | **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated [Verified: 2026-09-09 — `qa/` holds `slice-1`, `questions.md`, `README.md`, `risk-register.md` and `strategy.md`]. Nine criteria are marked *(fails if the rule is broken)*. **QA's to write** |
 | Story-currency citations dated with a stable identifier | ✅ |
-| Not `BLOCKED` on an open question | ⛔ **Not met — `Q29`**, named in `stories/backlog.md` as a slice-2 blocker, plus **`Q12`** and **`Q70`**. **`Q13` blocks no criterion here** and is named in rule 13 so that nobody models a bank as a supplier while it is open |
+| Not `BLOCKED` on an open question | ⛔ **Not met — `Q29`**, named in `stories/backlog.md` as a slice-2 blocker, plus **`Q70`**. **`Q13` blocks no criterion here** and is named in rule 13 so that nobody models a bank as a supplier while it is open. **`Q12` is answered (D-129 §1)** |
 
-**Flip the trailer to `READY` when `Q29` and `Q12` are ruled and QA's cases land.**
+**Flip the trailer to `READY` when `Q29` and `Q70` are ruled and QA's cases land.**
 
 ## Not in this story
 - **The subcontractor.** `KAFF-211` — a different §2 row with a different owner. ⛔ **Not a synonym,
@@ -162,4 +162,4 @@ Then direction is RTL, names, numbers and the tax registration number are bidi-i
 | **`Q29`** | Already open, **and named in `stories/backlog.md` as a slice-2 blocker since the slice was estimated.** Is a supplier's withholding rate a property of the job or of the firm? | **Karim** |
 | **`Q13`** | Already open, **and the backlog's other slice-2 blocker**: are Kaff's banks records in their own right, or only accounts in the ledger? It blocks no criterion here; **it blocks the shortcut of modelling a bank as a supplier**, which this story forbids in rule 13 | **Karim** |
 | **`Q70`** | Raised by `KAFF-209`, third half. Is a repeated supplier phone a refusal or a warning? | **Karim** |
-| **`Q12`** | Open, slice-2-wide. Whether the Owner keeps `SupplierManage` — and **the Owner's own example list in D-044 ruling 4 named suppliers explicitly**, so of the five permissions `Q12` covers, this is the one most likely to survive it | **Karim** |
+| **`Q12`** | ✅ **ANSWERED — D-129 §1.** The Owner keeps `SupplierManage`, as D-044 ruling 4's own example list had already named suppliers explicitly | **Closed** |

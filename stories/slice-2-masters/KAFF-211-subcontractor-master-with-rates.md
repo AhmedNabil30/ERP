@@ -2,9 +2,9 @@
 
 <!-- kaff id=KAFF-211 slice=2 points=5 state=NOT-BUILT verdict=none at=- on=2026-09-09 -->
 
-**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **Two Definition-of-Ready boxes are unticked, and `stories/backlog.md` names this story as blocked before it was written.**
-**Spec:** **§2** (*"rates and BOQ; Finance only disburses"*), **§5.1** (5% retention, zeroable 🟡), **§6.7**, §9 (*"record only, no login"*) · **Decisions:** D-044 ruling 4, D-049 ruling 9 (the rate moved to the contract, **for the client only**)
-**Register:** `stories/questions-for-karim.md` → **`Q29`** (blocking, and named in the backlog since the slice was estimated), **`Q73`** (blocking), **`Q12`**, **`Q70`**
+**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **⚠️ Amended 2026-09-09 — `Q12` clears (D-129 §1). Two Definition-of-Ready boxes remain unticked, and `stories/backlog.md` names this story as blocked before it was written.**
+**Spec:** **§2** (*"rates and BOQ; Finance only disburses"*), **§5.1** (5% retention, zeroable 🟡), **§6.7**, §9 (*"record only, no login"*) · **Decisions:** D-044 ruling 4, D-049 ruling 9 (the rate moved to the contract, **for the client only**), **D-129 §1**
+**Register:** `stories/questions-for-karim.md` → **`Q29`** (blocking, and named in the backlog since the slice was estimated), **`Q73`** (blocking), **`Q12`** (✅ answered, D-129 §1), **`Q70`** (⚠️ this is a **different** `Q70` — a repeated subcontractor phone — than the trade-markup `Q70` `KAFF-204` cites; a register numbering collision that is not this session's to resolve)
 **Screens:** `ux/screen-inventory.md` → **`S-028`** (list), **`S-029`** (create / edit)
 **Owner:** Backend, then Frontend
 **Depends on:** KAFF-204 — a subcontractor's trade names a باب
@@ -62,7 +62,7 @@ this board's own precedent for refusing to read a story title as an answer.
 | 8 | **The tax registration number identifies the legal entity and does not vary by job**, so it stays on the record whatever `Q29` decides about the rate — that is D-049's own reasoning, applied to the field it explicitly kept on the client | **§6.7 amendment** — the client precedent, on the field it kept rather than the one it moved |
 | 9 | ⛔ **The subcontractor's phone is unique today — a refusal** [Verified: 2026-09-09 @ `src/Infrastructure/Persistence/Configurations/MasterDataConfigurations.cs` -> `ux_subcontractors_phone`] — **and D-049 ruling 8 is not extended here either.** A firm sharing a number with its owner is Karim's own example from the client ruling, which makes it the population where the answer is most likely to be *warn* and **least defensible to assume**. `Q70`'s second half | **`Q70`** |
 | 10 | Archiving replaces deletion; there is no delete path and this story adds none [Verified: 2026-09-09 @ `src/Domain/MasterData/Subcontractor.cs` -> `Archive`] | CLAUDE.md · KAFF-123's precedent |
-| 11 | `SubcontractorManage`, `CompanyWide`, **no assignment** — a firm belongs to no project. Technical Office settled by §2; the Owner grant stands on **`Q12`** [Verified: 2026-09-09 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.SubcontractorManage`] | §2 · D-044 ruling 4 · **`Q12`** |
+| 11 | `SubcontractorManage`, `CompanyWide`, **no assignment** — a firm belongs to no project. Technical Office settled by §2; **the Owner keeps it too** [Verified: 2026-09-09 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.SubcontractorManage`] | §2 · D-044 ruling 4 · **D-129 §1** |
 | 12 | Create, edit, retention change and archive are state changes and **each writes an audit record**, before and after. **The retention rate is the one somebody will later ask who changed**, because it decides how much of a firm's money Kaff keeps | **CLAUDE.md** |
 | 13 | Every string is an i18n key. **مقاول باطن is the term in the UI and `Subcontractor` is the identifier** — never *vendor*, *contractor* or *supplier*, and never interchangeable with `Supplier`, which is a different §2 row with a different owner | CLAUDE.md · **§14** |
 | 14 | ⛔ **Bidding, RFQ and quote comparison are out of scope by name** and must not appear on this screen in any form | **§1** · CLAUDE.md |
@@ -160,16 +160,15 @@ Then direction is RTL, the term reads **مقاول باطن**, percentages and p
 | Stable `AC-211-<LETTER>` ids, appended never inserted | ✅ |
 | Every business rule cites a `spec.md` section or a D-number | ✅ — rules 1–14; rules 5, 6 and 9 cite `Q29` / `Q73` / `Q70` and are marked as questions rather than sourced |
 | No uncited rule | ✅ — ⛔ **and D-049 ruling 9 is cited only as the ruling that is NOT being extended** |
-| Permissions named explicitly | ✅ — `SubcontractorManage`, CompanyWide, no assignment; **Finance's absence stated as deliberate**; the Owner half flagged to `Q12` |
+| Permissions named explicitly | ✅ — `SubcontractorManage`, CompanyWide, no assignment; **Finance's absence stated as deliberate**; the Owner grant confirmed by **D-129 §1** |
 | Money behaviour named explicitly | ✅ — rules 4, 7; `AC-211-E`, `AC-211-F`. **Holds rates, stores no amount, writes no posting, nets nothing** |
 | Arabic UI strings as i18n keys | ✅ — eleven keys, rule 13, and §14's term pinned |
 | The audit record it writes is stated | ✅ — rule 12, `AC-211-K` |
 | **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated [Verified: 2026-09-09 — `qa/` holds `slice-1`, `questions.md`, `README.md`, `risk-register.md` and `strategy.md`]. Eight criteria are marked *(fails if the rule is broken)*. **QA's to write** |
 | Story-currency citations dated with a stable identifier | ✅ |
-| Not `BLOCKED` on an open question | ⛔ **Not met — `Q29`**, which `stories/backlog.md` named before this story existed, **`Q73`**, which decides what the title means, plus **`Q12`** and **`Q70`** |
+| Not `BLOCKED` on an open question | ⛔ **Not met — `Q29`**, which `stories/backlog.md` named before this story existed, **`Q73`**, which decides what the title means, plus **`Q70`**. **`Q12` is answered (D-129 §1)** |
 
-**Flip the trailer to `READY` when `Q29`, `Q73` and `Q12` are ruled and QA's cases land.** `Q70`
-shapes `AC-211-I` alone.
+**Flip the trailer to `READY` when `Q29`, `Q73` and `Q70` are ruled and QA's cases land.**
 
 ## Not in this story
 - **The supplier.** `KAFF-212` — a different §2 row, a different owner (Finance), and **not a synonym**.
@@ -189,5 +188,5 @@ shapes `AC-211-I` alone.
 | **`Q29`** | Already open, **and named in `stories/backlog.md` as a slice-2 blocker since the slice was estimated.** Is a subcontractor's or supplier's withholding rate a property of the job or of the firm? §6.7's amendment flags it 🟡 itself | **Karim** |
 | **`Q73`** | **New, raised here and blocking.** Does a subcontractor's record carry agreed rates, or do rates live only on each job's sub-BOQ? *"Rates and BOQ"* in §2 may be naming what the Technical Office **owns** rather than a field on this screen | **Karim** |
 | **`Q70`** | Raised by `KAFF-209`, second half. Is a repeated subcontractor phone a refusal or a warning? **This is the population where Karim's own client example — a firm and its owner sharing a number — applies most directly, which is why it is asked rather than assumed** | **Karim** |
-| **`Q12`** | Open, slice-2-wide. Whether the Owner keeps `SubcontractorManage` | **Karim** |
+| **`Q12`** | ✅ **ANSWERED — D-129 §1.** The Owner keeps `SubcontractorManage` | **Closed** |
 | **`Q26`** | Already open, slice 8: *"you keep 5% from every subcontractor … is that right for all of them, or do some have nothing held?"* **It does not block this story** — the rate is zeroable per firm today, which satisfies either answer | **Karim** |

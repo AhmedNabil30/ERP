@@ -2,9 +2,9 @@
 
 <!-- kaff id=KAFF-209 slice=2 points=5 state=NOT-BUILT verdict=none at=- on=2026-09-09 -->
 
-**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **Two Definition-of-Ready boxes are unticked, and this story carries the one carry-note `stories/backlog.md` writes as an instruction.**
+**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **⚠️ Amended 2026-09-09 — `Q12` clears (D-129 §1). Two Definition-of-Ready boxes remain unticked, and this story carries the one carry-note `stories/backlog.md` writes as an instruction.**
 **Spec:** **§10** (*"engineers register workers from site … Deduplicated by phone"*), **§2** · **Decisions:** D-044 ruling 4, **D-049 ruling 8 — ⛔ NOT extended here**
-**Register:** `stories/questions-for-karim.md` → **`Q70`** (blocking, and the reason this story is not Ready), **`Q71`** (blocking), **`Q12`** (open, slice-2-wide)
+**Register:** `stories/questions-for-karim.md` → **`Q70`** (blocking, and the reason this story is not Ready — ⚠️ this is this story's own worker-phone question, a **different** question from the trade-markup `Q70` that `KAFF-204`/`KAFF-211`/`KAFF-212` cite; the register has two open questions sharing one number and it is not this session's to renumber), **`Q71`** (blocking), **`Q12`** (✅ answered, D-129 §1)
 **Screens:** `ux/screen-inventory.md` → **`S-026`** (register from site, **`M1`**, one hand at 390px), **`S-025`** (the pool)
 **Owner:** Backend, then Frontend
 **Depends on:** KAFF-204 (a worker's trade must name a باب that exists), KAFF-207 (the register)
@@ -138,7 +138,7 @@ Then his average day rate, frequency and rating each read as an explicit empty s
 | The audit record it writes is stated | ✅ — rule 9, `AC-209-H`, including the acknowledgement branch |
 | **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated [Verified: 2026-09-09 — `qa/` holds `slice-1`, `questions.md`, `README.md`, `risk-register.md` and `strategy.md`]. Six criteria are marked *(fails if the rule is broken)*. **QA's to write** |
 | Story-currency citations dated with a stable identifier | ✅ |
-| Not `BLOCKED` on an open question | ⛔ **Not met, twice over, and both are at the centre.** **`Q70`** decides the story's title — *"deduplicated by phone"* — and **`Q71`** decides whether its main actor exists. `Q12` is the slice-wide grant on top |
+| Not `BLOCKED` on an open question | ⛔ **Not met, twice over, and both are at the centre.** **`Q70`** decides the story's title — *"deduplicated by phone"* — and **`Q71`** decides whether its main actor exists. **`Q12` is answered (D-129 §1)** |
 
 ⛔ **This is the least Ready of the seven.** Two of its questions do not shape an edge; they shape the
 story. **Flip the trailer to `READY` when `Q70` and `Q71` are ruled and QA's cases land.**
@@ -160,5 +160,5 @@ story. **Flip the trailer to `READY` when `Q70` and `Q71` are ruled and QA's cas
 |---|---|---|
 | **`Q70`** | **New, raised here and blocking. The backlog's own carry-note is the instruction to ask it.** Is a repeated worker phone a refusal or a warning? Asked with the two neighbouring populations named separately — **subcontractors and suppliers also carry unique phone indexes today** [Verified: 2026-09-09 @ `src/Infrastructure/Persistence/Configurations/MasterDataConfigurations.cs` -> `ux_subcontractors_phone`, `ux_suppliers_phone`] — **and the answer may legitimately differ for each**, which is why they are named apart rather than rolled into one rule | **Karim** |
 | **`Q71`** | **New, raised here and blocking.** §10 says engineers register workers from site and no engineer holds a permission that reaches it. Who may, and is it scoped to a project he is assigned to? ⛔ **Not answerable by granting `EmployeeManage` to the site engineer** — that hands him the salaried register, which is `Q42`'s warning in a second place | **Karim** |
-| **`Q12`** | Open, slice-2-wide. Whether the Owner keeps `EmployeeManage` | **Karim** |
+| **`Q12`** | ✅ **ANSWERED — D-129 §1.** The Owner keeps `EmployeeManage` | **Closed** |
 | **`Q36`** | Already open, and adjacent: *"can two people who use the system share a phone number?"* — the `User` half of the same shape. **It is not this question and does not answer it**: a `User` is a login, a worker is a costed person | **Karim** |

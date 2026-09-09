@@ -250,9 +250,9 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 0 | 0 | 0 |
 | 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 103 | 0 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 |
-| ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 48 | 5 |
+| ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 51 | 5 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 |
-| **total** | **127** | **48** | **5** |
+| **total** | **127** | **51** | **5** |
 
 ## Every story
 
@@ -290,7 +290,7 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-127](stories/slice-1-foundation/KAFF-127-user-management-screens.md) | 1 | 8 | 🔶 VERIFIED | CONDITIONAL | `116c08a` | 2026-09-06 | The user-management screens |
 | [KAFF-128](stories/slice-1-foundation/KAFF-128-audit-trail-screen.md) | 1 | 3 | 🔶 VERIFIED | CONDITIONAL | `0359b8d` | 2026-09-07 | The audit trail screen |
 | [KAFF-129](stories/slice-1-foundation/KAFF-129-partition-audit-records-by-month.md) | 1 | 8 | 🔻 DEFERRED | none | `-` | 2026-09-07 | Partition `audit_records` by month, from the start |
-| [KAFF-200](stories/slice-2-masters/KAFF-200-import-the-catalogue-from-excel.md) | 2 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-08 | Import the catalogue from Excel at setup, all-or-nothing |
+| [KAFF-200](stories/slice-2-masters/KAFF-200-import-the-catalogue-from-excel.md) | 2 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-08 | Import the catalogue from Excel at setup, loading the good rows and reporting the rest |
 | [KAFF-201](stories/slice-2-masters/KAFF-201-re-importing-is-not-a-sync.md) | 2 | 2 | ⚫ NOT-BUILT | none | `-` | 2026-09-08 | Re-importing is not a sync — a second import is a deliberate, reviewed act |
 | [KAFF-202](stories/slice-2-masters/KAFF-202-create-and-edit-a-catalogue-item.md) | 2 | 3 | ⚫ NOT-BUILT | none | `-` | 2026-09-08 | Create and edit a catalogue item |
 | [KAFF-203](stories/slice-2-masters/KAFF-203-find-a-catalogue-item-by-code-or-description.md) | 2 | 3 | ⚫ NOT-BUILT | none | `-` | 2026-09-08 | Find a catalogue item by code or description |
@@ -303,6 +303,7 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-210](stories/slice-2-masters/KAFF-210-worker-engagement-history.md) | 2 | 3 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Worker engagement history, day rate, frequency and rating |
 | [KAFF-211](stories/slice-2-masters/KAFF-211-subcontractor-master-with-rates.md) | 2 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Subcontractor master with rates |
 | [KAFF-212](stories/slice-2-masters/KAFF-212-supplier-master.md) | 2 | 3 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Supplier master — one account serving many projects |
+| [KAFF-213](stories/slice-2-masters/KAFF-213-archive-a-bab.md) | 2 | 3 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Archive a باب |
 | [KAFF-300](stories/slice-3-treasury/KAFF-300-the-section-15-worked-example.md) | 3 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-07 | The §15 worked example as a fixture — present and failing before anything else is built |
 
 <!-- END GENERATED -->

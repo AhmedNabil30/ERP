@@ -2,9 +2,9 @@
 
 <!-- kaff id=KAFF-207 slice=2 points=5 state=NOT-BUILT verdict=none at=- on=2026-09-09 -->
 
-**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **Two Definition-of-Ready boxes are unticked, and the field list this story stores is not in `spec.md`.**
-**Spec:** **§2** (*"every costed person, exactly one record"*), **§10** · **Decisions:** D-044 ruling 4, D-055 §2 (HR sees names and roles, no salary), D-016 (Worker vs Employee, 🟡)
-**Register:** `stories/questions-for-karim.md` → **`Q12`** (open, slice-2-wide), **`Q68`** (blocking)
+**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **⚠️ Amended 2026-09-09 — `Q68` is answered in part (D-130 §6): the reference number's origin is ruled, the field list beyond §10's four is refused (D-130 §8) and stays open. `Q12` clears (D-129 §1). One Definition-of-Ready box is still unticked — QA's cases.**
+**Spec:** **§2** (*"every costed person, exactly one record"*), **§10** · **Decisions:** D-044 ruling 4, D-055 §2 (HR sees names and roles, no salary), D-016 (Worker vs Employee, 🟡), **D-130 §§6, 8, D-129 §1**
+**Register:** `stories/questions-for-karim.md` → **`Q12`** (✅ answered, D-129 §1), **`Q68`** (✅ answered in part — D-130 §6/§8: reference number ruled, field list refused and still open)
 **Screens:** `ux/screen-inventory.md` → **`S-023`** (list), **`S-024`** (create / edit)
 **Owner:** Backend, then Frontend
 **Depends on:** KAFF-204 — day labour must name a باب that exists
@@ -32,18 +32,23 @@ and rebuilds none of it:
 **What does not exist is any endpoint or screen** [Verified: 2026-09-09 — `src/Api/Features/` holds
 `Assignments`, `Audit`, `Auth`, `Clients`, `Health`, `Setup` and `Users`, and no HR folder].
 
+⛔ **One thing owed, now that `Q68`'s reference-number half is ruled (D-130 §6).** `Employee.Create`
+takes a code from its caller today [Verified: 2026-09-09 @ `src/Domain/MasterData/Employee.cs` -> `Create`],
+i.e. typed. **It must generate one instead**, the same shape as `KAFF-119`'s client-code sequence —
+this is **Backend's**, not the BA's; nothing under `src/` was changed by this session.
+
 ## Business rules
 | # | Rule | Source |
 |---|---|---|
 | 1 | **One record per costed person, and HR is the single source.** Not one per employment, not one per project, not one per department | **§2** · **§10** |
 | 2 | **One entity, two populations, distinguished by a `Kind`.** Salaried staff and day labour are the same table with the same identity rules, which is what makes *"nobody appears in both"* enforceable at all [Verified: 2026-09-09 @ `src/Domain/MasterData/Employee.cs` -> `EmployeeKind`]. 🟡 D-016 records that whether Kaff wants two visibly separate registers is a `spec.md` clarification and not a schema preference; **the screens are already two (`S-023`, `S-025`) over one store** | §2 · §10 · D-016 |
 | 3 | **Day labour must carry a باب**, enforced by a database check constraint and by the entity [Verified: 2026-09-09 @ `src/Domain/MasterData/Employee.cs` -> `DayLabourRequiresTrade`]. Salaried staff need not | **§10** — *"name, phone, trade/باب, specialty"* |
-| 4 | ⛔ **What a salaried staff record carries is `Q68`, and `spec.md` does not answer it.** §10 lists the fields for a **worker** and lists none for salaried staff. `NationalId`, `JobTitle` and `HiredOn` exist in the entity today and are traceable to no §, no ruling and no D-number [Verified: 2026-09-09 @ `src/Domain/MasterData/Employee.cs` -> `SetStaffDetails`]. **This story renders and stores the fields that are already there and adds none**, and the criterion that would assert the list is held | **`Q68`** — uncited, therefore asked |
-| 5 | ⛔ **Where an employee's code comes from is `Q68`'s second half.** A client code is **generated** and manual entry is forbidden (D-049 ruling 7); a catalogue code is **typed**, because it comes from Kaff's own spreadsheet (§4.1). `Employee.Create` takes a code from its caller, so today it is typed [Verified: 2026-09-09 @ `src/Domain/MasterData/Employee.cs` -> `Create`] — and **nothing says it should be.** Two precedents pointing opposite ways is not a ruling | **`Q68`** · contrast D-049 ruling 7 with §4.1 |
+| 4 | ⛔ **What a salaried staff record carries beyond §10's four worker fields is refused, not ruled — D-130 §8.** §10 lists the fields for a **worker** and lists none for salaried staff. `NationalId`, `JobTitle` and `HiredOn` exist in the entity today and are traceable to no §, no ruling and no D-number [Verified: 2026-09-09 @ `src/Domain/MasterData/Employee.cs` -> `SetStaffDetails`]. *"What Karim's paper staff file carries is a fact about his office, not a design choice."* **This story renders and stores exactly §10's fields and adds none**; a field beyond them is a later change to a built screen, not a guess now | **§10 · D-130 §8** |
+| 5 | ✅ **Where an employee's code comes from is ruled — D-130 §6.** **Generated, not typed.** The precedent is decided and shipped: `spec.md` §2's amendment and `KAFF-119`'s client code, *"the code is generated; nobody typed it and nobody can edit it"* (`C-10001`). Consistency here is the answer, not a preference — `Employee.Create` moves from a typed code to a generated one | **D-130 §6** |
 | 6 | ⛔ **This story stores no pay figure of any kind.** The entity carries no salary and no day rate today [Verified: 2026-09-09 @ `src/Domain/MasterData/Employee.cs` -> `Employee`], D-055 §2 rules HR's user list carries *"no visibility into salary if one is ever added"*, and §10 makes payroll **a treasury event** rather than a field on a person. **A rate on a master record is the shape that turns a register into a ledger**, and this story does not take it | **§10** · D-055 §2 · CLAUDE.md |
 | 7 | **The searchable pool's average day rate is derived, never stored.** §10 asks for *"average day rate, frequency and rating"* — all three are computed by summing and counting engagements, and none is a column. **A stored average is a stored balance under a different name** | **CLAUDE.md** — *"Never store a balance"* · §10 · **`KAFF-210`** owns the engagements |
 | 8 | Archiving replaces deletion. A leaver is deactivated, never deleted, and stays on historical project teams — the same ruling that governs a user [Verified: 2026-09-09 @ `src/Domain/MasterData/Employee.cs` -> `Archive`] | **D-049 ruling 5** |
-| 9 | `EmployeeManage`, `CompanyWide`, **no assignment** — a person belongs to no project. HR settled by §2 and §10; the Owner grant stands on **`Q12`** [Verified: 2026-09-09 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.EmployeeManage`] | §2, §10 · D-044 ruling 4 · **`Q12`** |
+| 9 | `EmployeeManage`, `CompanyWide`, **no assignment** — a person belongs to no project. HR settled by §2 and §10; **the Owner keeps it too** [Verified: 2026-09-09 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.EmployeeManage`] | §2, §10 · D-044 ruling 4 · **D-129 §1** |
 | 10 | ⛔ **A user account and an employee record are two different things and this story joins them by nothing.** `User` is the login (slice 1); `Employee` is the costed person. **No foreign key between them is added here**, because nothing in `spec.md` says every employee has a login or every user is an employee — `Q55` is open on exactly that shape, and a join written now would answer it silently | **§9** · §10 · **`Q55`** |
 | 11 | Creating, editing and archiving are state changes and **each writes an audit record**: who, when, what changed before and after | **CLAUDE.md** |
 | 12 | Every string is an i18n key; Arabic RTL at 390px. **Personal names and phone numbers are bidi-isolated**, for the reason the audit timestamp is | CLAUDE.md · `ux/rtl-and-i18n.md` |
@@ -97,10 +102,11 @@ When they are archived
 Then the row still exists with every field intact, it is excluded from the default list and findable through the explicit filter
 And no mapped route on the API deletes an employee, under any verb — enumerated as an allow-list of the routes the host registered
 
-**AC-207-G — HELD on `Q68`: the field list, and where the code comes from**
+**AC-207-G — the code is generated, and no field is added beyond what the entity already holds**
 Given the create form
-When it renders
-Then — **held.** `Q68` decides which fields a staff record carries beyond §10's four, and whether the code is typed or generated. **No field is added and no generator is written until it is ruled**; the story renders what the entity already holds
+When a salaried employee is created
+Then its reference number is generated by the system, never typed and never editable — the same shape as a client code (`KAFF-119`, D-049 ruling 7)
+And the form renders exactly the fields `Employee` already carries — §10's four worker fields, plus the staff fields already built (`NationalId`, `JobTitle`, `HiredOn`) — and no field is added on top of them, because D-130 §8 refuses to guess what Karim's paper file carries beyond what is already there
 
 **AC-207-H — a role without `EmployeeManage` reaches nothing** *(fails if the rule is broken)*
 Given a signed-in user of each role that does not hold `EmployeeManage` — including the Site Engineer and the Technical Office
@@ -122,19 +128,20 @@ Then direction is RTL, names and phone numbers are bidi-isolated inside Arabic t
 
 | DoR item | |
 |---|---|
-| Every criterion is Given / When / Then | ✅ — `AC-207-A` … `AC-207-J`. **`AC-207-G` is written and held** |
+| Every criterion is Given / When / Then | ✅ — `AC-207-A` … `AC-207-J` |
 | Stable `AC-207-<LETTER>` ids, appended never inserted | ✅ |
-| Every business rule cites a `spec.md` section or a D-number | ✅ — rules 1–12; rules 4 and 5 cite `Q68` and are marked as questions rather than sourced |
-| No uncited rule | ✅ — the field list and the code's origin are registered as `Q68` instead of being written |
-| Permissions named explicitly | ✅ — `EmployeeManage`, CompanyWide, no assignment; the Owner half flagged to `Q12` |
+| Every business rule cites a `spec.md` section or a D-number | ✅ — rules 1–12; rule 5 is re-cited to `D-130 §6`, rule 4 to `D-130 §8`'s refusal |
+| No uncited rule | ✅ |
+| Permissions named explicitly | ✅ — `EmployeeManage`, CompanyWide, no assignment; the Owner grant confirmed by **D-129 §1** |
 | Money behaviour named explicitly | ✅ — rules 6 and 7, `AC-207-E`. **Stores none, moves none, derives the one average §10 asks for** |
 | Arabic UI strings as i18n keys | ✅ — twelve keys, rule 12 |
 | The audit record it writes is stated | ✅ — rule 11, `AC-207-I` |
 | **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated [Verified: 2026-09-09 — `qa/` holds `slice-1`, `questions.md`, `README.md`, `risk-register.md` and `strategy.md`]. Seven criteria are marked *(fails if the rule is broken)*. **QA's to write** |
 | Story-currency citations dated with a stable identifier | ✅ |
-| Not `BLOCKED` on an open question | ⛔ **Not met — `Q68`**, which decides what the record carries, and **`Q12`**, the slice-wide grant. `Q70` reaches `AC-207-D`'s mechanism through `KAFF-209` |
+| Not `BLOCKED` on an open question | ✅ — `Q68`'s reference-number half (D-130 §6) and `Q12` (D-129 §1) are both answered. **`Q68`'s field-list half is refused, not open** (D-130 §8) — this story renders exactly what the entity already holds and does not wait on it. `Q70` reaches `AC-207-D`'s mechanism through `KAFF-209` and is unrelated to this box |
 
-**Flip the trailer to `READY` when `Q68` and `Q12` are ruled and QA's cases land.**
+**Flip the trailer to `READY` when QA's cases land.** Backend still owes the switch from a typed to a
+generated employee code (see above) before `AC-207-G` is true of the running system.
 
 ## Not in this story
 - **The two-populations invariant.** `KAFF-208` — *"nobody appears in both"* is its own story and its
@@ -151,7 +158,7 @@ Then direction is RTL, names and phone numbers are bidi-isolated inside Arabic t
 
 | # | Question | Owner |
 |---|---|---|
-| **`Q68`** | **New, raised here and blocking.** What a staff file carries beyond §10's four worker fields, and whether an employee's reference number is typed by HR or generated by the system. Asked as one — *"can we see the staff file you keep now?"* — because it is one look at one document | **Karim** |
-| **`Q12`** | Open, slice-2-wide. Whether the Owner keeps `EmployeeManage` | **Karim** |
+| **`Q68`** | ✅ **ANSWERED IN PART — D-130 §6, and refused in the other half by D-130 §8.** The reference number is **generated**, not typed (`AC-207-G`). **What a staff file carries beyond §10's four worker fields is NOT ruled** — it is a fact about Kaff's office, not a design choice, and stays open for whenever Karim can show the file | **Closed** — reference number; **open** — field list |
+| **`Q12`** | ✅ **ANSWERED — D-129 §1.** The Owner keeps `EmployeeManage` | **Closed** |
 | **`Q70`** | Raised by `KAFF-209`. The unique phone index is this story's *"exactly one record"* mechanism too, so a ruling that softens it reaches `AC-207-D` | **Karim** |
 | 1 | **D-016's 🟡 is still 🟡.** Whether Kaff wants Worker and Employee as visibly separate registers is recorded in the entity as an open question and has never been asked [Verified: 2026-09-09 @ `src/Domain/MasterData/Employee.cs` -> `Employee`]. **It does not block this story** — the screen inventory already answers it at the surface (`S-023` staff, `S-025` the worker pool, one store beneath), which is a UX shape rather than a business ruling | **Karim**, when `Q68` is asked — the same conversation |

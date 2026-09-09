@@ -2,9 +2,9 @@
 
 <!-- kaff id=KAFF-203 slice=2 points=3 state=NOT-BUILT verdict=none at=- on=2026-09-08 -->
 
-**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-08 by the BA. **Two Definition-of-Ready boxes are unticked, and one open question blocks a QA case rather than the story.**
-**Spec:** **§4.5** (*"searches the catalogue by code or description"*), §4.1, §4.2, §12 · **Decisions:** D-035, D-044 ruling 4
-**Register:** `stories/questions-for-karim.md` → **`Q63`** (new, and it blocks a test case, not this story), **`Q12`**
+**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-08 by the BA. **⚠️ Amended 2026-09-09 — `Q63` and `Q12` are both answered (D-129 §5, D-129 §1) and `AC-203-I` is written. One Definition-of-Ready box is still unticked — see *Definition of Ready* below.**
+**Spec:** **§4.5** (*"searches the catalogue by code or description"*), §4.1, §4.2, §12 · **Decisions:** D-035, D-044 ruling 4, **D-129 §5, D-129 §1**
+**Register:** `stories/questions-for-karim.md` → **`Q63`** (✅ answered, D-129 §5), **`Q12`** (✅ answered, D-129 §1)
 **Screens:** `ux/screen-inventory.md` → **`S-017`** (catalogue list) · `ux/components.md` §12 (`kaff-search-input`), §9 (`kaff-empty-state`), §8 (`kaff-table`)
 **Owner:** Backend, then Frontend
 **Depends on:** KAFF-200 or KAFF-202 — something must put items in the catalogue first
@@ -36,9 +36,10 @@ thing the engineer remembers, and that failure appears two slices later in someo
 | 6 | **A `Role.Client` user cannot reach this endpoint under any circumstances.** It carries cost prices for every item Kaff sells; §12 is absolute and D-035's portal boundary means this endpoint is not on the portal surface at all | **§12** · D-035 |
 | 7 | An empty result renders an **explicit empty state**, never a blank area and never a phantom row — and the *"nothing matches the filter"* empty state, not the *"nothing exists yet"* one, which are different messages with different actions | §4.5 (*"Empty BOQ shows an explicit empty state. Never phantom pre-filled rows"*) · `ux/components.md` §9 |
 | 8 | The list carries no money beyond the item's own two prices — no BOQ total, no project value, no margin. There is none on the entity to project [Verified: 2026-09-08 @ `src/Domain/MasterData/CatalogueItem.cs` -> `CatalogueItem`], so the rule is about what the projection must not **join** in | §6.1 · CLAUDE.md |
-| 9 | `CatalogueManage`, `CompanyWide`, no assignment. Technical Office settled by §2; the Owner grant stands on **`Q12`** | §2 · D-044 ruling 4 · **`Q12`** |
+| 9 | `CatalogueManage`, `CompanyWide`, no assignment. Technical Office settled by §2; **the Owner keeps it too** | §2 · D-044 ruling 4 · **D-129 §1** |
 | 10 | This is a read. **It writes no audit record**, and the audit trail is not a search log | CLAUDE.md — audit is on *state changes* |
 | 11 | Every string is an i18n key; Arabic RTL, correct and scrollable at 390px. Codes and prices inside Arabic rows are bidi-isolated with `<bdi>`, and the table scrolls inside its own container rather than the page body | CLAUDE.md · `ux/components.md` §8 |
+| 12 | **The list is ordered by باب, then by item code within each باب.** It follows from `Q60`'s template (D-129 §2): the باب is one of the file's own columns, so grouping by trade is the shape the data already arrives in and the way a price list is read | **D-129 §5** |
 
 ## Permissions, money, audit, i18n
 - **Permissions:** `CatalogueManage`, `CompanyWide`, no assignment required. `Role.Client` refused
@@ -95,27 +96,30 @@ Given S-017 at 390px in Arabic
 When it renders
 Then direction is RTL, the identity column is at the inline-start, codes and figures are bidi-isolated, the table scrolls inside its own container and the page body does not scroll horizontally
 
-**AC-203-I — ⏳ HELD on `Q63`: the order the results come back in**
-**Not written.** Nothing in `spec.md` or in `ux/` states an order for the catalogue list — by code, by باب then code, by description, or by relevance to the search term. This is the same gap `Q59` records for the user and client lists, one list across. **It blocks a test case, not the story**: the search works in any order, and a wrong order for Kaff would simply never be noticed. `Q63`.
+**AC-203-I — ordered by باب, then by code**
+Given a search or an unfiltered list spanning several أبواب
+When the results render
+Then items are grouped by باب, and within each باب ordered by item code
+And the Arabic collation that decides where ا / أ / إ fall relative to one another is **not** ruled by this criterion — that half is `Q63`'s standing caveat and is the Architect's, not Karim's (D-129 §5)
 
 ## Definition of Ready — where this story stands
 
 | DoR item | |
 |---|---|
-| Every criterion is Given / When / Then | ✅ — `AC-203-A` … `AC-203-H` |
-| Stable `AC-203-<LETTER>` ids | ✅ — `I` allocated and held; the next takes `J` |
-| Every business rule cites a `spec.md` section or a D-number | ✅ — rules 1–11 |
+| Every criterion is Given / When / Then | ✅ — `AC-203-A` … `AC-203-I` |
+| Stable `AC-203-<LETTER>` ids | ✅ — `I` is now written; the next takes `J` |
+| Every business rule cites a `spec.md` section or a D-number | ✅ — rules 1–12 |
 | No uncited rule | ✅ |
-| Permissions named explicitly | ✅ — `CatalogueManage`, CompanyWide, no assignment; `Role.Client` absolutely refused; the Owner half flagged to `Q12` |
+| Permissions named explicitly | ✅ — `CatalogueManage`, CompanyWide, no assignment; `Role.Client` absolutely refused; the Owner grant confirmed by **D-129 §1** |
 | Money behaviour named explicitly | ✅ — rules 5, 8; `AC-203-G`. Moves none |
 | Arabic UI strings as i18n keys | ✅ — thirteen keys |
 | The audit record it writes is stated | ✅ — **none**, rule 10, stated rather than omitted |
-| **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated. **QA's to write.** ⚠️ **And `Q63` means QA cannot write an ordering case even once the range exists** — the same shape `Q59` produced for `AC-127-A` and `AC-126-A` |
+| **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated. **QA's to write.** |
 | Story-currency citations dated with a stable identifier | ✅ |
-| Not `BLOCKED` on an open question | ⛔ **Not met — `Q12`**, the slice-wide grant. **`Q63` does not block it**: the story is buildable and demonstrable in any order, which is exactly why the order would go unchecked |
+| Not `BLOCKED` on an open question | ✅ — `Q63` (D-129 §5) and `Q12` (D-129 §1) are both answered |
 
-**Flip the trailer to `READY` when `Q12` is ruled and QA's cases land.** `Q63` is answered later or
-not at all; if it is answered, `AC-203-I` is written then.
+**Flip the trailer to `READY` when QA's cases land.** Everything else is ruled. The Arabic-collation
+caveat is not this story's to close — it is the Architect's, per D-129 §5.
 
 ## Not in this story
 - **Creating or editing an item.** `KAFF-202`, reached from this list.
@@ -129,5 +133,5 @@ not at all; if it is answered, `AC-203-I` is written then.
 
 | # | Question, as Nabil should ask it | Owner |
 |---|---|---|
-| **`Q63`** | **"When you open the price list, what order do you want the items in — by their code, grouped by باب, alphabetically by description, or something else?"** Say why it is being asked: **nothing in `spec.md` or in the screen designs states an order for this list**, and the same Arabic-collation caveat `Q59` carries applies here too. **Ask it in the same breath as `Q59`** — it is the same question about a third list, and asking them together is what makes the pattern visible. **New, raised by this story. Blocks a QA case, not the story** | **Karim** |
-| **`Q12`** | Open, slice-2-wide. Whether the Owner keeps `CatalogueManage` | **Karim** |
+| **`Q63`** | ✅ **ANSWERED — D-129 §5.** Ordered by باب, then by item code. `AC-203-I` is written. The Arabic-collation caveat (ا / أ / إ) is **not** answered and is the Architect's | **Closed** for the ordering; Architect for collation |
+| **`Q12`** | ✅ **ANSWERED — D-129 §1.** The Owner keeps `CatalogueManage` | **Closed** |

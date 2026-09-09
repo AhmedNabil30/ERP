@@ -2,9 +2,9 @@
 
 <!-- kaff id=KAFF-202 slice=2 points=3 state=NOT-BUILT verdict=none at=- on=2026-09-08 -->
 
-**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-08 by the BA. **Two Definition-of-Ready boxes are unticked — and neither is a business question this story raises.**
-**Spec:** **§4.1**, **§4.2**, **§4.4**, §2 · **Decisions:** D-018 (the `status` values, 🟡), D-044 ruling 4
-**Register:** `stories/questions-for-karim.md` → **`Q12`** (open, slice-2-wide)
+**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-08 by the BA; **amended 2026-09-09** — **`Q12` clears** (D-129 §1). **One Definition-of-Ready box is still unticked — QA's cases, not a business question.**
+**Spec:** **§4.1**, **§4.2**, **§4.4**, §2 · **Decisions:** D-018 (the `status` values, 🟡), D-044 ruling 4, **D-129 §1**
+**Register:** `stories/questions-for-karim.md` → **`Q12`** (✅ answered, D-129 §1)
 **Screens:** `ux/screen-inventory.md` → **`S-018`** (create / edit), reached from **`S-017`** (list)
 **Owner:** Backend, then Frontend
 **Depends on:** KAFF-204 — an item must name a باب that exists
@@ -44,7 +44,7 @@ screen and rebuilds none of it:
 | 7 | The screen shows cost and sell **as two figures**. It shows no single blended margin number; §4.2 forbids that on the margin surfaces and Kaff's owner *"found it unreadable"*. If this screen shows a margin at all it shows cost, sell and profit % separately | §4.2 |
 | 8 | Neither price may be negative [Verified: 2026-09-08 @ `src/Domain/MasterData/CatalogueItem.cs` -> `Create`]. **A sell rate below the cost price is not refused** — nothing in `spec.md` forbids selling at a loss, and refusing it would be inventing a rule | §4.1 · §4.2 |
 | 9 | An item's باب is required and must exist [Verified: 2026-09-08 @ `src/Domain/MasterData/CatalogueItem.cs` -> `BabId`]. **Moving an item to a different باب is `KAFF-205`, not this story** | §2 · §4.1 |
-| 10 | `CatalogueManage`, `CompanyWide`, **no assignment** — the catalogue belongs to no project. Technical Office settled by §2; the Owner grant stands on **`Q12`** | §2, §4.1 · D-044 ruling 4 · **`Q12`** |
+| 10 | `CatalogueManage`, `CompanyWide`, **no assignment** — the catalogue belongs to no project. Technical Office settled by §2; **the Owner keeps it too** | §2, §4.1 · D-044 ruling 4 · **D-129 §1** |
 | 11 | Create and edit are state changes and **each writes an audit record**: who, when, and what changed before and after — including both prices when either moves | **CLAUDE.md** — *"Every state change writes an audit record"* |
 | 12 | Every string is an i18n key. Arabic, RTL, correct and scrollable at 390px — S-018 is `M3`, desktop-primary, which is a design priority and not an exemption from the Definition of Done | CLAUDE.md · `ux/screen-inventory.md` -> `S-018` |
 
@@ -122,15 +122,15 @@ Then direction is RTL, prices and codes are bidi-isolated inside Arabic text, no
 | Stable `AC-202-<LETTER>` ids, appended never inserted | ✅ |
 | Every business rule cites a `spec.md` section or a D-number | ✅ — rules 1–12 |
 | No uncited rule | ✅ |
-| Permissions named explicitly | ✅ — `CatalogueManage`, CompanyWide, **no assignment**; the Owner half flagged to `Q12` rather than assumed |
+| Permissions named explicitly | ✅ — `CatalogueManage`, CompanyWide, **no assignment**; the Owner grant confirmed by **D-129 §1** |
 | Money behaviour named explicitly | ✅ — rules 6, 7, 8; `AC-202-C`, `AC-202-D`, `AC-202-G`. Moves none |
 | Arabic UI strings as i18n keys | ✅ — ten keys, rule 12 |
 | The audit record it writes is stated | ✅ — rule 11, `AC-202-I` |
 | **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated. Seven criteria are marked *(fails if the rule is broken)*; **the case is QA's to write, not the BA's.** Routed to QA |
 | Story-currency citations dated with a stable identifier | ✅ |
-| Not `BLOCKED` on an open question | ⛔ **Not met — `Q12`**, and it is the slice-wide one rather than this story's own. `stories/backlog.md` lists slice 2 as *"Blocked by: Q12 and Q13"*, due **before** the slice opens. It removes or keeps one permission grant; it does not reshape a single criterion above |
+| Not `BLOCKED` on an open question | ✅ — `Q12` is answered (D-129 §1) |
 
-**This is the closest of the six to Ready.** Flip the trailer when `Q12` is ruled and QA's cases land.
+**This is the closest of the fourteen to Ready.** Flip the trailer when QA's cases land.
 **Nothing else is outstanding**, and no question this story raises is unanswered — because it raises
 none.
 
@@ -149,5 +149,5 @@ none.
 
 | # | Question | Owner |
 |---|---|---|
-| **`Q12`** | Open, slice-2-wide. Whether the Owner keeps `CatalogueManage`, or comes off it because his *"all master data"* was the literal list of three. **Not raised here — it is already in the register and already named as slice 2's blocker** | **Karim** |
+| **`Q12`** | ✅ **ANSWERED — D-129 §1.** *"The owner have all the prevliges on all the system."* The Owner keeps `CatalogueManage` | **Closed** |
 | 1 | **What `status` values an item may hold.** §4.1 lists `status` and never enumerates it; the code carries `Active` and `Archived` as *"the minimum the freeze rule needs"* and flags itself 🟡 [Verified: 2026-09-08 @ `src/Domain/MasterData/CatalogueItem.cs` -> `CatalogueItemStatus`]. **This story creates items `Active` and offers no control that sets any other value**, so it does not turn on the answer. `KAFF-206` does | **Nabil** · D-018 |

@@ -2,9 +2,9 @@
 
 <!-- kaff id=KAFF-204 slice=2 points=5 state=NOT-BUILT verdict=none at=- on=2026-09-08 -->
 
-**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-08 by the BA; **amended 2026-09-09** — rule 5's defect is **repaired** (D-127 §1) and both `errors.bab.*` keys are **renamed to the namespace that ships** (D-128). **Two Definition-of-Ready boxes are unticked.**
-**Spec:** **§2** (*"~40 trades, tree, carries default markup %"*), **§4.2**, §4.5 · **Decisions:** D-044 ruling 4, D-044 ruling 6 (four decimals stored, two displayed)
-**Register:** `stories/questions-for-karim.md` → **`Q12`** (open, slice-2-wide), **`Q60`** (the tree's own data, raised by `KAFF-200`)
+**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-08 by the BA; **amended 2026-09-09** — rule 5's defect is **repaired** (D-127 §1), both `errors.bab.*` keys are **renamed to the namespace that ships** (D-128), and **`Q12` clears** (D-129 §1). **One Definition-of-Ready box is still unticked, and it is `Q70`'s — the story's data, not its behaviour.**
+**Spec:** **§2** (*"~40 trades, tree, carries default markup %"*), **§4.2**, §4.5 · **Decisions:** D-044 ruling 4, D-044 ruling 6 (four decimals stored, two displayed), **D-129 §1**
+**Register:** `stories/questions-for-karim.md` → **`Q12`** (✅ answered, D-129 §1), **`Q60`** (the tree's data half — `Q70` — still open, raised by `KAFF-200`)
 **Screens:** `ux/screen-inventory.md` → **`S-021`** (the tree) and **`S-022`** (create / edit)
 **Owner:** Backend, then Frontend
 **Depends on:** nothing. `Bab` shipped in slice 0.
@@ -41,7 +41,7 @@ until 2026-09-09 and was stale — corrected under SM-29.** The check landed on 
 | 6 | The tree carries roughly **40** trades — a size, not a limit. No rule caps the depth or the breadth, and none is invented here | §2 |
 | 7 | `spec.md`'s own examples of a markup are **concrete 15%** and **finishes 30%** — examples, not defaults to seed. **What Kaff's real trades and rates are is `Q60`'s data half** and is not guessed here | §4.2 · **`Q60`** |
 | 8 | Markup is **stored at four decimals of a percent and displayed at two** — D-044 ruling 6 sets storage at 4 and display at 2, and `Percentage` stores the *fraction* at six decimal places so that 0.01% survives [Verified: 2026-09-08 @ `src/Domain/Common/Percentage.cs` -> `Scale`] | D-044 ruling 6 |
-| 9 | `BabManage`, `CompanyWide`, **no assignment** — أبواب belong to no project. Technical Office settled by §2; the Owner grant stands on **`Q12`** | §2 · D-044 ruling 4 · **`Q12`** |
+| 9 | `BabManage`, `CompanyWide`, **no assignment** — أبواب belong to no project. Technical Office settled by §2; **the Owner keeps it too** | §2 · D-044 ruling 4 · **D-129 §1** |
 | 10 | Creating a باب and changing its markup are state changes and **each writes an audit record**: who, when, before and after. A markup change is the one most worth reading later, because it silently changes what every future BOQ line starts at | **CLAUDE.md** |
 | 11 | The Arabic name is the product name. **`باب` is the term in the UI and `Bab` is the identifier in code** — never `Section`, `Trade`, `Chapter` or `Category` | **CLAUDE.md** · `spec.md` §14 |
 | 12 | Every string is an i18n key; Arabic RTL at 390px, and **the tree's indentation is a logical property** — a child indents from the inline-start, which is the right in RTL, never from the left | CLAUDE.md · `ux/rtl-and-i18n.md` |
@@ -130,21 +130,22 @@ Then `bab.tree.empty` is displayed as an explicit empty state with the create ac
 | Stable `AC-204-<LETTER>` ids | ✅ |
 | Every business rule cites a `spec.md` section or a D-number | ✅ — rules 1–12 |
 | No uncited rule | ✅ |
-| Permissions named explicitly | ✅ — `BabManage`, CompanyWide, no assignment; the Owner half flagged to `Q12` |
+| Permissions named explicitly | ✅ — `BabManage`, CompanyWide, no assignment; the Owner grant confirmed by **D-129 §1** |
 | Money behaviour named explicitly | ✅ — carries none, moves none; the markup is a `Percentage` and rule 8 states its precision |
 | Arabic UI strings as i18n keys | ✅ — twelve keys, rule 12 |
 | The audit record it writes is stated | ✅ — rule 10, `AC-204-H` |
 | **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated. Six criteria are marked *(fails if the rule is broken)*; **QA's to write** |
 | Story-currency citations dated with a stable identifier | ✅ |
-| Not `BLOCKED` on an open question | ⛔ **Not met — `Q12`**, the slice-wide grant. ⚠️ **`Q60` does not block the story, only its data**: the tree can be built, demonstrated and tested with any أبواب; **it cannot be *seeded* with Kaff's real trades and rates until `Q60` is answered**, and a demo seeded with invented trades at invented markups is the kind of plausible fiction that gets mistaken for a decision |
+| Not `BLOCKED` on an open question | ✅ — `Q12` is answered (D-129 §1). ⚠️ **`Q70`** (`Q60`'s data half) **still blocks the story's data, not its behaviour**: the tree can be built, demonstrated and tested with any أبواب; **it cannot be *seeded* with Kaff's real trades and rates until `Q70` is answered**, and a demo seeded with invented trades at invented markups — including `spec.md` §4.2's own *concrete 15%* and *finishes 30%* examples — is the kind of plausible fiction that gets mistaken for a decision. Rule 7 stays as written |
 
-**Flip the trailer to `READY` when `Q12` is ruled and QA's cases land.**
+**Flip the trailer to `READY` when QA's cases land.** `Q12` is answered; `Q70` blocks the real
+trade-and-markup data used to seed a demo, not the story's own criteria.
 
 ## Not in this story
 - **Re-parenting an existing باب, and moving an item between أبواب.** `KAFF-205` — rule 5's cycle
   check is stated here because this story must not create a cycle either, but the re-parent path is
   that story's.
-- **Archiving a باب.** `Bab.Archive` exists [Verified: 2026-09-08 @ `src/Domain/MasterData/Bab.cs` -> `Archive`]; **no story in slice 2 covers it** — see *Questions*, and `KAFF-206` covers the item, not the باب.
+- **Archiving a باب.** `Bab.Archive` exists [Verified: 2026-09-08 @ `src/Domain/MasterData/Bab.cs` -> `Archive`]; **`KAFF-213`, 3 points, slice 2, now owns it** (D-130 §5) — `KAFF-206` covers the item, not the باب.
 - **Seeding Kaff's real 40 trades.** `Q60`.
 - **The BOQ section a باب creates.** §4.5's *"selecting an item auto-creates its باب section if absent"*
   is `S-054`, slice 4.
@@ -154,7 +155,7 @@ Then `bab.tree.empty` is displayed as an explicit empty state with the create ac
 
 | # | Question | Owner |
 |---|---|---|
-| **`Q12`** | Open, slice-2-wide. Whether the Owner keeps `BabManage` | **Karim** |
-| **`Q60`** | Raised by `KAFF-200`. Whether the أبواب and their markups arrive in the setup spreadsheet with the items, or are set up first through this story. **It decides this story's data, not its behaviour** | **Karim** |
-| 1 | **Archiving a باب is unassigned.** The behaviour exists in the entity and **no slice-2 story owns it** — `stories/backlog.md`'s slice-2 table has `KAFF-206` for the catalogue item and nothing for the باب. Whether an archived باب's items are still findable, and whether a باب holding items can be archived at all, is the same *"without breaking what already references it"* problem `KAFF-206` is named for. **Named rather than absorbed: a story that quietly grows to cover an unlisted one is how an estimate stops meaning anything** | **Scrum Master**, then Nabil |
-| 1a | ✅ **Answered as far as the BA may answer it, 2026-09-09 — `decisions.md` D-128 §2.** It goes in **neither** `KAFF-206` (a different entity, and 3 points bought for one) **nor** `KAFF-204`/`205` (create-and-markup, and re-parent). **The recommendation is a new story at 3 points**, and cutting one is scope: the Scrum Master proposes, Nabil locks. **The business half is registered as `Q67`** and is Karim's — it was not answered here | **Scrum Master** → **Nabil**; `Q67` → **Karim** |
+| **`Q12`** | ✅ **ANSWERED — D-129 §1.** The Owner keeps `BabManage` | **Closed** |
+| **`Q60`** | ✅ **Schema half answered — D-129 §2.** The data half — Kaff's real trades and markups — stays open, re-registered as **`Q70`**. **It decides this story's data, not its behaviour, and `Q70` is refused a plausible answer on purpose** (D-130 §8) | **Karim** — `Q70` |
+| 1 | ~~**Archiving a باب is unassigned.**~~ ✅ **RESOLVED, 2026-09-09.** `decisions.md` D-128 §2 recommended a new 3-point story; D-130 §5 closed the business half and the story is cut: **`KAFF-213`**, slice 2. Slice 2 is now fourteen stories, 51 points | **done** |
+| 1a | ✅ **Answered in full, 2026-09-09 — `decisions.md` D-128 §2 + D-130 §5.** The story is `KAFF-213`, 3 points: **a باب holding active items cannot be archived**, the refusal names the count, and the operator moves or archives the items first. No cascade | **Closed** |

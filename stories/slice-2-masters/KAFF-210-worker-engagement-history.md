@@ -2,9 +2,9 @@
 
 <!-- kaff id=KAFF-210 slice=2 points=3 state=NOT-BUILT verdict=none at=- on=2026-09-09 -->
 
-**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **Two Definition-of-Ready boxes are unticked, and the unit this story counts is not defined anywhere.**
-**Spec:** **§10** (*"Carries engagement history and per-engagement ratings, producing a searchable pool with average day rate, frequency and rating"*), §2 · **Decisions:** D-044 ruling 4, D-044 ruling 6 (four decimals stored, two displayed)
-**Register:** `stories/questions-for-karim.md` → **`Q72`** (blocking), **`Q12`** (open, slice-2-wide)
+**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **⚠️ Amended 2026-09-09 — `Q12` clears (D-129 §1). Two Definition-of-Ready boxes remain unticked, and the unit this story counts is not defined anywhere.**
+**Spec:** **§10** (*"Carries engagement history and per-engagement ratings, producing a searchable pool with average day rate, frequency and rating"*), §2 · **Decisions:** D-044 ruling 4, D-044 ruling 6 (four decimals stored, two displayed), **D-129 §1**
+**Register:** `stories/questions-for-karim.md` → **`Q72`** (blocking), **`Q12`** (✅ answered, D-129 §1)
 **Screens:** `ux/screen-inventory.md` → **`S-027`** (history and rating), **`S-025`** (the pool it feeds)
 **Owner:** Backend, then Frontend
 **Depends on:** KAFF-209 (the worker), KAFF-204 (his باب)
@@ -53,7 +53,7 @@ sentence**, which is the same move `KAFF-209` refuses on D-049 ruling 8.
 | 6 | **An engagement is an append-only record of something that happened.** It is not edited into a different past: a wrong rating is corrected by recording a correction, the shape the treasury uses for a posting. ⚠️ **This is a consistency argument, not a ruling** — `spec.md` makes no such demand of an engagement, and it is written as rule 6 rather than as a criterion for that reason. If Kaff wants a rating editable, that is a legitimate answer to `Q72`'s neighbourhood | CLAUDE.md's posting rule, **applied by analogy and marked as such** |
 | 7 | **Who rates a worker is the site engineer who engaged him**, and `ux/screen-inventory.md` gives `S-027` to `HR, O, SE`. ⚠️ **Whether a site engineer may rate a worker he did not engage is not stated** anywhere and is not decided here; it rides with `Q71`, which is already asking who reaches a worker record at all | `ux/screen-inventory.md` -> `S-027` · **`Q71`** |
 | 8 | **A worker with no engagements shows three explicit empty states**, never a zero. A rate of `0` and an unrated man are different facts and must not render the same | §10 · `spec.md` §4.5's own *"never phantom pre-filled rows"* applied to the same class of surface |
-| 9 | `EmployeeManage`, `CompanyWide`, no assignment, for HR and the Owner today [Verified: 2026-09-09 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.EmployeeManage`]; **the site engineer's reach is `Q71`.** The Owner grant stands on **`Q12`** | §2, §10 · D-044 ruling 4 · **`Q12`**, **`Q71`** |
+| 9 | `EmployeeManage`, `CompanyWide`, no assignment, for HR and the Owner today [Verified: 2026-09-09 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.EmployeeManage`]; **the site engineer's reach is `Q71`.** **The Owner keeps it too** | §2, §10 · D-044 ruling 4 · **D-129 §1**, **`Q71`** |
 | 10 | Recording an engagement and recording a rating are state changes and **each writes an audit record**: who, when, and what was written. A rating is a judgement about a person that decides whether he is hired again, and it is the one field here somebody will later ask who entered | **CLAUDE.md** |
 | 11 | Every string is an i18n key; Arabic RTL at 390px. **The rate is bidi-isolated** — `formatMoney` injects `U+200F` on the leading character, so an amount inside a `<bdi>` in Arabic text needs `dir="ltr"` for the reason the audit timestamp does | CLAUDE.md · `STATUS.md`'s money/bidi note, 2026-09-08 |
 
@@ -132,15 +132,15 @@ Then direction is RTL, the day rate is bidi-isolated with an explicit direction 
 | Stable `AC-210-<LETTER>` ids, appended never inserted | ✅ |
 | Every business rule cites a `spec.md` section or a D-number | ✅ — rules 1–11. **Rule 6 is marked as an analogy rather than sourced**, which is the honest label for it |
 | No uncited rule | ✅ — the unit and the scale are registered as `Q72` instead of being written, and the one rule reasoned by analogy says so in its own source column |
-| Permissions named explicitly | ✅ — `EmployeeManage`, CompanyWide, no assignment; the site engineer's reach flagged to `Q71`, the Owner's to `Q12` |
+| Permissions named explicitly | ✅ — `EmployeeManage`, CompanyWide, no assignment; the site engineer's reach flagged to `Q71`, the Owner's confirmed by **D-129 §1** |
 | Money behaviour named explicitly | ✅ — rules 2, 3, 4; `AC-210-B`, `AC-210-C`, `AC-210-E`. **Stores a rate, derives every summary, writes no posting** |
 | Arabic UI strings as i18n keys | ✅ — nine keys, rule 11 |
 | The audit record it writes is stated | ✅ — rule 10, `AC-210-I` |
 | **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated [Verified: 2026-09-09 — `qa/` holds `slice-1`, `questions.md`, `README.md`, `risk-register.md` and `strategy.md`]. Seven criteria are marked *(fails if the rule is broken)*. **QA's to write** |
 | Story-currency citations dated with a stable identifier | ✅ |
-| Not `BLOCKED` on an open question | ⛔ **Not met — `Q72`**, which defines the unit this story counts and the scale it rates on, plus **`Q12`** and **`Q71`** |
+| Not `BLOCKED` on an open question | ⛔ **Not met — `Q72`**, which defines the unit this story counts and the scale it rates on, plus **`Q71`**. **`Q12` is answered (D-129 §1)** |
 
-**Flip the trailer to `READY` when `Q72` and `Q12` are ruled and QA's cases land.** `Q71` shapes who
+**Flip the trailer to `READY` when `Q72` is ruled and QA's cases land.** `Q71` shapes who
 may write, not what is written.
 
 ## Not in this story
@@ -162,6 +162,6 @@ may write, not what is written.
 | # | Question | Owner |
 |---|---|---|
 | **`Q72`** | **New, raised here and blocking.** What counts as one engagement — a day, a stretch of work, or a whole project — and what is a worker rated out of? Asked as one, because the same conversation answers both and because *"frequency"* is meaningless until the first half is settled | **Karim** |
-| **`Q12`** | Open, slice-2-wide. Whether the Owner keeps `EmployeeManage` | **Karim** |
+| **`Q12`** | ✅ **ANSWERED — D-129 §1.** The Owner keeps `EmployeeManage` | **Closed** |
 | **`Q71`** | Raised by `KAFF-209`. Whether the site engineer who engages a worker can record and rate the engagement, and whether that is scoped to his project | **Karim** |
 | 1 | **Nothing in this slice produces an engagement automatically**, and §10 says day labour is costed from the daily log. **Not a question for Karim** — it is a sequencing fact between slice 2 and slice 6, recorded so that the slice-6 story that raises engagements from the log finds this note rather than a second, parallel history | **Scrum Master**, at slice-6 refinement |

@@ -910,7 +910,7 @@ Not the BA's call, but four things are worth putting in front of the Scrum Maste
 
 | ID | Title | Pts |
 |---|---|---:|
-| KAFF-200 | Import the catalogue from Excel at setup, all-or-nothing | 5 |
+| KAFF-200 | Import the catalogue from Excel at setup, loading the good rows and reporting the rest | 5 |
 | KAFF-201 | Re-importing is not a sync — a second import is a deliberate, reviewed act | 2 |
 | KAFF-202 | Create and edit a catalogue item | 3 |
 | KAFF-203 | Find a catalogue item by code or description | 3 |
@@ -923,12 +923,18 @@ Not the BA's call, but four things are worth putting in front of the Scrum Maste
 | KAFF-210 | Worker engagement history, day rate, frequency and rating | 3 |
 | KAFF-211 | Subcontractor master with rates | 5 |
 | KAFF-212 | Supplier master — one account serving many projects | 3 |
-| | | **48** |
+| KAFF-213 | Archive a باب | 3 |
+| | | **51** |
 
-**Blocked by:** Q12 and Q13 (both D-045, both raised by Karim's own ruling and both due **before** this
-slice opens rather than during it), and now **Q29** — whether the withholding rate on a subcontractor
-or supplier follows ruling 9 onto the job, or stays on the party record where it is today. KAFF-211 and
-KAFF-212 build those records.
+**Blocked by:** ~~Q12 and~~ Q13 (D-045; Q12 **answered 2026-09-09, D-129 §1** — the Owner keeps every
+slice-2 grant) and **Q29** — whether the withholding rate on a subcontractor or supplier follows
+ruling 9 onto the job, or stays on the party record where it is today. KAFF-211 and KAFF-212 build
+those records.
+
+**KAFF-213, cut 2026-09-09** (`decisions.md` D-128 §2, ruled D-130 §5): archiving a باب is a separate
+3-point story from `KAFF-206`'s catalogue-item archive — a different entity, a different question
+(`Q67`), and a story that quietly grew to cover an unlisted one is how an estimate stops meaning
+anything.
 
 **Carry into KAFF-209 from D-049 ruling 8:** the worker master is *"deduplicated by phone"* in exactly
 the words §2 uses for the client, and Karim's ruling softened that to a warning **for the client**. It
