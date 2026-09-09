@@ -552,11 +552,19 @@ Given a signed BOQ line carrying an item's values at signature time, when that i
 every value on the signed line is unchanged and the line still renders.
 *Fails if:* any value on the signed line changes, or the line fails to render.
 
+⛔ **Unexecutable as written, today — a finding, the `AC-125-C` shape.** There is **no `Boq`, `SignedBoq`, `BoqLine` or `Estimate` entity anywhere in this codebase** [Verified: 2026-09-09 — no such class under `src/`], so there is no signed line and no open estimate to leave untouched. **Held, not dropped**, so the day slice 4 ships those entities this case is already written and waiting for them.
+
+⚠️ **Passing it today would prove nothing**, which is why it is marked rather than run: `KAFF-206` rule 3's correct implementation is *to add nothing*, and a case that cannot fail cannot witness that.
+
 **TC-2-060 · archiving does not touch an open estimate and raises no alert**
 `AC-206-D` · P2 · Api · §4.4
 Given open, unsigned estimate lines carrying the item, when the item is archived, then no estimate
 line changes and no alert is raised.
 *Fails if:* an estimate line changes, or an alert is raised.
+
+⛔ **Unexecutable as written, today — a finding, the `AC-125-C` shape.** There is **no `Boq`, `SignedBoq`, `BoqLine` or `Estimate` entity anywhere in this codebase** [Verified: 2026-09-09 — no such class under `src/`], so there is no signed line and no open estimate to leave untouched. **Held, not dropped**, so the day slice 4 ships those entities this case is already written and waiting for them.
+
+⚠️ **Passing it today would prove nothing**, which is why it is marked rather than run: `KAFF-206` rule 3's correct implementation is *to add nothing*, and a case that cannot fail cannot witness that.
 
 **TC-2-061 · archiving twice is refused**
 `AC-206-E` · P1 · Api, real PostgreSQL · slice 0
