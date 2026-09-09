@@ -208,7 +208,7 @@
   "errors.master.client_list_filter_unknown": "That is not a filter this list knows.",
   "errors.master.bab_not_found": "No باب exists with that reference.",
   "errors.master.catalogue_item_not_found": "No catalogue item exists with that reference.",
-  "errors.catalogue.code_taken": "That code is already used by another catalogue item.",
+  "errors.master.catalogue_item_code_taken": "That code is already used by another catalogue item.",
 
   "errors.audit.date_range_inverted": "That date range ends before it starts.",
 

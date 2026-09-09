@@ -208,7 +208,7 @@
   "errors.master.client_list_filter_unknown": "فلتر غير معروف.",
   "errors.master.bab_not_found": "لا يوجد باب بهذا المعرّف.",
   "errors.master.catalogue_item_not_found": "لا يوجد بند بهذا المعرّف في الكتالوج.",
-  "errors.catalogue.code_taken": "هذا الكود مستخدم لبند آخر في الكتالوج.",
+  "errors.master.catalogue_item_code_taken": "هذا الكود مستخدم لبند آخر في الكتالوج.",
 
   "errors.audit.date_range_inverted": "نهاية المدة قبل بدايتها.",
 

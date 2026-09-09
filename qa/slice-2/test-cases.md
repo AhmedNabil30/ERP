@@ -239,7 +239,7 @@ between the request body and the database.
 **TC-2-020 · a negative price is refused**
 `AC-202-D` · P1 · Domain · §4.1
 Given a cost price of `-1`, when it is submitted, then it is refused with
-`errors.master.cost_price_must_not_be_negative` (`CostPriceMustNotBeNegative`).
+`errors.master.cost_price_negative` (`CostPriceMustNotBeNegative`).
 *Fails if:* the negative value is accepted.
 
 **TC-2-021 · a loss-making sell rate is accepted** *(positive control for TC-2-020)*

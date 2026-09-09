@@ -112,5 +112,5 @@ public static class MasterDataErrors
     /// <c>ux_catalogue_items_code</c>, not by a read-then-write in the handler (KAFF-202 rule 3).
     /// </summary>
     public static readonly Error CatalogueItemCodeTaken =
-        Error.Conflict("master.catalogue_item_code_taken", "errors.catalogue.code_taken");
+        Error.Conflict("master.catalogue_item_code_taken", "errors.master.catalogue_item_code_taken");
 }
