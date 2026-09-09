@@ -2,9 +2,9 @@
 
 <!-- kaff id=KAFF-204 slice=2 points=5 state=NOT-BUILT verdict=none at=- on=2026-09-08 -->
 
-**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-08 by the BA; **amended 2026-09-09** — rule 5's defect is **repaired** (D-127 §1), both `errors.bab.*` keys are **renamed to the namespace that ships** (D-128), and **`Q12` clears** (D-129 §1). **One Definition-of-Ready box is still unticked, and it is `Q70`'s — the story's data, not its behaviour.**
+**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-08 by the BA; **amended 2026-09-09** — rule 5's defect is **repaired** (D-127 §1), both `errors.bab.*` keys are **renamed to the namespace that ships** (D-128), and **`Q12` clears** (D-129 §1). **One Definition-of-Ready box is still unticked, and it is `Q75`'s — the story's data, not its behaviour.**
 **Spec:** **§2** (*"~40 trades, tree, carries default markup %"*), **§4.2**, §4.5 · **Decisions:** D-044 ruling 4, D-044 ruling 6 (four decimals stored, two displayed), **D-129 §1**
-**Register:** `stories/questions-for-karim.md` → **`Q12`** (✅ answered, D-129 §1), **`Q60`** (the tree's data half — `Q70` — still open, raised by `KAFF-200`)
+**Register:** `stories/questions-for-karim.md` → **`Q12`** (✅ answered, D-129 §1), **`Q60`** (the tree's data half — `Q75` — still open, raised by `KAFF-200`)
 **Screens:** `ux/screen-inventory.md` → **`S-021`** (the tree) and **`S-022`** (create / edit)
 **Owner:** Backend, then Frontend
 **Depends on:** nothing. `Bab` shipped in slice 0.
@@ -136,9 +136,9 @@ Then `bab.tree.empty` is displayed as an explicit empty state with the create ac
 | The audit record it writes is stated | ✅ — rule 10, `AC-204-H` |
 | **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated. Six criteria are marked *(fails if the rule is broken)*; **QA's to write** |
 | Story-currency citations dated with a stable identifier | ✅ |
-| Not `BLOCKED` on an open question | ✅ — `Q12` is answered (D-129 §1). ⚠️ **`Q70`** (`Q60`'s data half) **still blocks the story's data, not its behaviour**: the tree can be built, demonstrated and tested with any أبواب; **it cannot be *seeded* with Kaff's real trades and rates until `Q70` is answered**, and a demo seeded with invented trades at invented markups — including `spec.md` §4.2's own *concrete 15%* and *finishes 30%* examples — is the kind of plausible fiction that gets mistaken for a decision. Rule 7 stays as written |
+| Not `BLOCKED` on an open question | ✅ — `Q12` is answered (D-129 §1). ⚠️ **`Q75`** (`Q60`'s data half) **still blocks the story's data, not its behaviour**: the tree can be built, demonstrated and tested with any أبواب; **it cannot be *seeded* with Kaff's real trades and rates until `Q75` is answered**, and a demo seeded with invented trades at invented markups — including `spec.md` §4.2's own *concrete 15%* and *finishes 30%* examples — is the kind of plausible fiction that gets mistaken for a decision. Rule 7 stays as written |
 
-**Flip the trailer to `READY` when QA's cases land.** `Q12` is answered; `Q70` blocks the real
+**Flip the trailer to `READY` when QA's cases land.** `Q12` is answered; `Q75` blocks the real
 trade-and-markup data used to seed a demo, not the story's own criteria.
 
 ## Not in this story
@@ -156,6 +156,6 @@ trade-and-markup data used to seed a demo, not the story's own criteria.
 | # | Question | Owner |
 |---|---|---|
 | **`Q12`** | ✅ **ANSWERED — D-129 §1.** The Owner keeps `BabManage` | **Closed** |
-| **`Q60`** | ✅ **Schema half answered — D-129 §2.** The data half — Kaff's real trades and markups — stays open, re-registered as **`Q70`**. **It decides this story's data, not its behaviour, and `Q70` is refused a plausible answer on purpose** (D-130 §8) | **Karim** — `Q70` |
+| **`Q60`** | ✅ **Schema half answered — D-129 §2.** The data half — Kaff's real trades and markups — stays open, re-registered as **`Q75`**. **It decides this story's data, not its behaviour, and `Q75` is refused a plausible answer on purpose** (D-130 §8) | **Karim** — `Q75` |
 | 1 | ~~**Archiving a باب is unassigned.**~~ ✅ **RESOLVED, 2026-09-09.** `decisions.md` D-128 §2 recommended a new 3-point story; D-130 §5 closed the business half and the story is cut: **`KAFF-213`**, slice 2. Slice 2 is now fourteen stories, 51 points | **done** |
 | 1a | ✅ **Answered in full, 2026-09-09 — `decisions.md` D-128 §2 + D-130 §5.** The story is `KAFF-213`, 3 points: **a باب holding active items cannot be archived**, the refusal names the count, and the operator moves or archives the items first. No cascade | **Closed** |

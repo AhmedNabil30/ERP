@@ -4,7 +4,7 @@
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-08 by the BA against `STATUS.md`'s sprint-6 item 6. **⚠️ Amended 2026-09-09 — `Q60`'s schema half, `Q61` and `Q12` are all answered (D-129 §2, D-129 §3 / D-130 §1, D-129 §1), rule 7 is rewritten off the "all-or-nothing" title it used to cite, and `AC-200-H`/`AC-200-I` are written. One Definition-of-Ready box is still unticked — see *Definition of Ready* below.**
 **Spec:** **§4.1** (the whole of it), §4.2, §4.4, §2 · **Decisions:** D-018 (the `status` values, 🟡), D-044 ruling 4, **D-129 §§1–2, D-129 §3 / D-130 §1**
-**Register:** `stories/questions-for-karim.md` → **`Q60`** (schema half ✅ answered, D-129 §2; the data half — Kaff's real trades and markups — stays open as **`Q70`**), **`Q61`** (✅ answered, D-129 §3 / D-130 §1), and **`Q12`** (✅ answered, D-129 §1)
+**Register:** `stories/questions-for-karim.md` → **`Q60`** (schema half ✅ answered, D-129 §2; the data half — Kaff's real trades and markups — stays open as **`Q75`**), **`Q61`** (✅ answered, D-129 §3 / D-130 §1), and **`Q12`** (✅ answered, D-129 §1)
 **Screens:** `ux/screen-inventory.md` → **`S-019`**
 **Owner:** Backend, then Frontend
 **Depends on:** KAFF-204 — an item names a باب, and `CatalogueItem.BabId` is not nullable [Verified: 2026-09-08 @ `src/Domain/MasterData/CatalogueItem.cs` -> `BabId`]. **The أبواب are set up first, through KAFF-204** — D-129 §2 rules the template carries exactly §4.1's item fields and no column that would create a باب, so an import row can only reference one that already exists.
@@ -125,7 +125,7 @@ And the template is available for download from S-019 before a file is ever chos
 | The audit record it writes is stated | ✅ — rule 9, `AC-200-G`. Its granularity is an Architect question, not a missing statement |
 | **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated. Seven criteria are marked *(fails if the rule is broken)*; **the case is QA's to write, not the BA's.** Routed to QA |
 | Story-currency citations dated with a stable identifier | ✅ |
-| Not `BLOCKED` on an open question | ✅ — `Q60`'s schema half, `Q61` and `Q12` are all answered. `Q60`'s data half (`Q70`) is not this story's data and does not block it |
+| Not `BLOCKED` on an open question | ✅ — `Q60`'s schema half, `Q61` and `Q12` are all answered. `Q60`'s data half (`Q75`) is not this story's data and does not block it |
 
 **Flip the trailer to `READY` when QA's cases land.** Everything else this story was waiting on is
 ruled: `Q60`'s schema half (D-129 §2), `Q61` (D-129 §3 / D-130 §1) and `Q12` (D-129 §1).
@@ -144,7 +144,7 @@ ruled: `Q60`'s schema half (D-129 §2), `Q61` (D-129 §3 / D-130 §1) and `Q12` 
 
 | # | Question | Owner |
 |---|---|---|
-| **`Q60`** | ✅ **Schema half ANSWERED — D-129 §2.** A standardized downloadable template defines the columns; `AC-200-I` is written against it. **The data half — Kaff's real ~40 trades and their markups — is still open, re-registered as `Q70`**, and this story seeds none of it | **Karim** — `Q70` only |
+| **`Q60`** | ✅ **Schema half ANSWERED — D-129 §2.** A standardized downloadable template defines the columns; `AC-200-I` is written against it. **The data half — Kaff's real ~40 trades and their markups — is still open, re-registered as `Q75`**, and this story seeds none of it | **Karim** — `Q75` only |
 | **`Q61`** | ✅ **ANSWERED — D-129 §3 / D-130 §1.** The import loads the good rows and reports the bad ones; rule 7 and `AC-200-H` are rewritten against it | **Closed** |
 | **`Q12`** | ✅ **ANSWERED — D-129 §1.** The Owner keeps `CatalogueManage` | **Closed** |
 | 1 | **One audit record per import, or one per row?** A 600-row file writes 600 records under the second reading, and the audit table is append-only and partitioned monthly (D-072 §3). **Not a business question** — the record's *content* is stated in rule 9; its granularity is a design call | **Architect** |

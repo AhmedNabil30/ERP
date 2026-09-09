@@ -11058,7 +11058,7 @@ is the story that needs those values and **no template makes them up.**
 **This matters because `spec.md` §4.2's *concrete 15%* and *finishes 30%* are examples, not defaults
 to seed** — `KAFF-204` rule 7 says so. An agent building the باب tree against an empty answer will
 reach for those two numbers, and they will look like data. **`Q60`'s data half stays open and is
-re-registered as `Q70`**, narrowed to the one thing only Karim has: the trade list and its markups.
+re-registered as `Q75`**, narrowed to the one thing only Karim has: the trade list and its markups.
 
 #### 3. `Q61` — the import loads what it can and reports what it could not
 
@@ -11123,7 +11123,7 @@ list changed. That is still worth asking and is not answered by anyone here.
 * **It does not design the template.** What columns it carries is `KAFF-200`'s work and must match
   `spec.md` §4.1's field list — `code · description · unit · bab · costPrice · baseSellRate ·
   status` — not an invented superset.
-* **It does not answer `Q70`.** The trade list and its markups are Karim's and nobody else's.
+* **It does not answer `Q75`.** The trade list and its markups are Karim's and nobody else's.
 * **It does not touch `Q65`–`Q69`**, which are still cited by four slice-2 stories and still absent
   from the register.
 
@@ -11195,9 +11195,9 @@ The two records are not a duplicate person. They are **two employment relationsh
 
 #### 8. ⛔ What was refused, and it cannot be ruled by anybody in this room
 
-**`Q70` — Kaff's ~40 trades and each one's markup percentage — is not a decision. It is data.**
+**`Q75` — Kaff's ~40 trades and each one's markup percentage — is not a decision. It is data.**
 
-No authority makes us know what Kaff's trades are or what each is worth. `spec.md` §4.2's *concrete 15%* and *finishes 30%* are examples and `KAFF-204` rule 7 says so; an agent building the tree against silence will use them and they will look like data. **`Q70` goes to Karim and stays there.**
+No authority makes us know what Kaff's trades are or what each is worth. `spec.md` §4.2's *concrete 15%* and *finishes 30%* are examples and `KAFF-204` rule 7 says so; an agent building the tree against silence will use them and they will look like data. **`Q75` goes to Karim and stays there.**
 
 The same line applies to the half of `Q68` not ruled in §6: **what Karim's paper staff file carries** is a fact about his office, not a design choice. §6 unblocks the story by building §10's fields; it does not claim to know the answer.
 
