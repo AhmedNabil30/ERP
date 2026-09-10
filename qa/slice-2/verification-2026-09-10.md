@@ -275,9 +275,9 @@ this is not filed as a finding.
 `CreateCatalogueItem.Handler` does not pre-check the code. It inserts directly and only reacts to a
 constraint violation: `catch (DbUpdateException exception) when (IsCodeCollision(exception))`, where
 `IsCodeCollision` matches the Postgres unique-violation SQL state **and** the specific constraint name
-`ux_catalogue_items_code` [Verified @ `src/Api/Features/Catalogue/CreateCatalogueItem/Handler.cs:80-106`].
+`ux_catalogue_items_code` [Verified @ `src/Api/Features/Catalogue/CreateCatalogueItem/Handler.cs` -> `HandleAsync`].
 The index itself is confirmed on the code column
-[Verified @ `src/Infrastructure/Persistence/Configurations/MasterDataConfigurations.cs:102`,
+[Verified @ `src/Infrastructure/Persistence/Configurations/MasterDataConfigurations.cs` ->
 `CatalogueItemConfiguration` -> `ux_catalogue_items_code`].
 
 `Two_concurrent_requests_for_the_same_code_leave_exactly_one_item` drives this for real: two identical
@@ -344,8 +344,8 @@ agree with each other.**
 `Results_are_grouped_by_bab_then_ordered_by_code_within_each` creates `babZ` at `SortOrder: 20` and
 `babA` at `SortOrder: 10`, then items `{nonce}-Z-9`, `{nonce}-Z-1`, `{nonce}-A-9`, `{nonce}-A-1`, and
 asserts the result equals `[aLow, aHigh, zLow, zHigh]` [Verified @
-`tests/Api.Tests/ListCatalogueItemsTests.cs:265-286`]. The handler's query is
-`orderby bab.SortOrder, item.Code` [Verified @ `src/Api/Features/Catalogue/ListCatalogueItems/Handler.cs:80`].
+`tests/Api.Tests/ListCatalogueItemsTests.cs` -> `Results_are_grouped_by_bab_then_ordered_by_code_within_each`]. The handler's query is
+`orderby bab.SortOrder, item.Code` [Verified @ `src/Api/Features/Catalogue/ListCatalogueItems/Handler.cs` -> `HandleAsync`].
 
 **The confound:** babA's items are coded `{nonce}-A-*` and babZ's are coded `{nonce}-Z-*`. Ordinal
 string comparison puts `"A"` before `"Z"` — so **sorting by `item.Code` alone, with no reference to
@@ -414,7 +414,7 @@ Block 1.
   (five), with an exhaustiveness assertion (`The_refused_list_is_every_role_TC_2_025_names`) explaining
   that `Client` and `Subcontractor` are excluded because a portal session cannot reach a company-wide
   staff route and `Subcontractor` cannot sign in at all — spec.md §9: *"Subcontractor (record only, no
-  login)"*, confirmed [Verified @ `spec.md:367`]. **The Subcontractor half of that reasoning is solid.
+  login)"*, confirmed [Verified @ `spec.md` -> `Roles`]. **The Subcontractor half of that reasoning is solid.
   The Client half is asserted only in a comment, not executed** — unlike `ArchiveCatalogueItemTests`,
   which adds an explicit `ArchiveAsync(..., Role.Client, ...)` call and asserts `403` on the archive
   endpoint [Verified @ `tests/Api.Tests/ArchiveCatalogueItemTests.cs:224-227`], neither

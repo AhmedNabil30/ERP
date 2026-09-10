@@ -222,6 +222,17 @@ cite. What survived the filter is written out here instead. What was dropped, an
 - The label and its control share **one** hit target — no dead zone between a checkbox and its text.
 - **The submit button stays enabled until the request starts**, then shows a spinner. Disabling it
   on invalid input hides *which* field is wrong.
+  ⚠️ **This rule is currently violated by every form in the codebase, and that is not the screens'
+  fault — it is this skill's.** `client-form-page`, `user-form-page` and `catalogue-form-page` all
+  bind `[disabled]="!canSubmit()"` where `canSubmit = form().valid() && !form().submitting()`. The
+  first two shipped and were **accepted**; the third copied them because it was told to copy the
+  house style, which is the correct instinct. **So a brief that says both "copy `clients/`" and
+  "follow this skill" is asking for two different things**, and the agent cannot tell that one of
+  them is aspirational. Until this is resolved, **do not "fix" it on one screen** — a single
+  divergent form is worse than three consistent ones. Resolving it means either changing all three
+  together, or amending this rule to match what the project decided. **It is the Scrum Master's to
+  route, and it needs Nabil or the BA**, because "should an invalid form's submit button be
+  clickable" is a UX policy, not a defect. Raised 2026-09-10.
 - **Errors appear inline, next to the field**, and submitting focuses the first error.
 - **Warn before navigating away from unsaved changes** — a half-typed extract lost to a stray back
   gesture on a phone is a real loss on a building site.

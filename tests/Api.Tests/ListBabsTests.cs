@@ -91,22 +91,29 @@ public sealed class ListBabsTests : IAsyncLifetime
                 + "this exact defect was V-35-R in qa/slice-2/verification-2026-09-10.md");
     }
 
-    // ---- an empty database returns an empty list, not an error ------------------------------------
+    // ---- items is always a real array, never null or an error, whatever the row count -------------
 
     [Fact]
-    public async Task An_empty_database_returns_an_empty_list()
+    public async Task The_items_field_is_an_array_never_null_regardless_of_row_count()
     {
-        // A fresh Postgres fixture per test class (PostgresDatabase), and no باب is seeded by this
-        // class's SeedAsync — only users. CLAUDE.md: no أبواب are ever seeded by this story.
+        // NOT a claim that the database is empty: this class shares one Postgres database with every
+        // other class in DatabaseCollection (CreateCatalogueItemTests, EditCatalogueItemTests,
+        // ArchiveCatalogueItemTests, UnarchiveCatalogueItemTests, ListCatalogueItemsTests all seed
+        // أبواب of their own), so by the time this runs in the full suite there can be dozens of rows.
+        // This asserts only the API property that holds regardless: "items" is present, is a JSON
+        // array, and 200 — never null, never an error. The zero-أبواب data-policy guarantee (Q75 is
+        // still open with Karim; spec.md §4.2's 15% / 30% are examples, not defaults — KAFF-204 rule 7)
+        // cannot be witnessed on a database rows land in from every direction; it is asserted instead
+        // in DatabaseSeedingTests.A_freshly_initialised_database_seeds_no_babs, against its own private,
+        // untouched database.
         HttpResponseMessage response = await SendAsync(_owner, Role.Owner, null);
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK, "an empty list is not an error");
+        response.StatusCode.Should().Be(HttpStatusCode.OK, "a list, empty or not, is not an error");
 
         using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
 
         body.RootElement.TryGetProperty("items", out JsonElement items).Should().BeTrue();
         items.ValueKind.Should().Be(JsonValueKind.Array, "never null");
-        items.GetArrayLength().Should().Be(0, "this story seeds no أبواب — Q75 is still open");
     }
 
     // ---- shape: flat, carries ParentBabId, not a tree ----------------------------------------------
