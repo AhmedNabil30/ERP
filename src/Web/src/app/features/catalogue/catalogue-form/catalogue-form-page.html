@@ -1,0 +1,139 @@
+<section class="catalogue-form" data-testid="catalogue-form">
+  <h1 class="title">{{ i18n.t(titleKey()) }}</h1>
+
+  @if (loadFailed()) {
+    <!-- Honest degradation: this API has no GET /api/catalogue-items/{id}, so a bookmark or a hard
+         refresh of this URL has nothing to load the item from. Reported, not worked around. -->
+    <div class="no-source" data-testid="catalogue-form-no-source">
+      <p class="no-source-body" role="alert">{{ i18n.t('catalogue.item.open_from_list') }}</p>
+      <a class="back-link" routerLink="/catalogue" data-testid="catalogue-form-back">
+        {{ i18n.t('catalogue.action.back_to_list') }}
+      </a>
+    </div>
+  } @else {
+    @if (isEdit()) {
+      <!-- Read-only isolated text, NEVER a disabled input — the code cannot be edited by any route
+           through the API (no `code` member on EditCatalogueItem.Request). Same reasoning as
+           client-form-page.html's own code line. -->
+      <p class="code-line" data-testid="catalogue-code">
+        <span class="code-label">{{ i18n.t('catalogue.field.code') }}</span>
+        <bdi class="code-value" translate="no">{{ displayCode() }}</bdi>
+        <span class="code-note">{{ i18n.t('catalogue.field.code_not_editable') }}</span>
+      </p>
+    }
+
+    <form class="fields" (submit)="$event.preventDefault(); onSubmit()">
+      @if (!isEdit()) {
+        <label class="field">
+          <span class="label">{{ i18n.t('catalogue.field.code') }} *</span>
+          <input
+            class="input"
+            type="text"
+            dir="ltr"
+            spellcheck="false"
+            autocapitalize="characters"
+            data-testid="catalogue-field-code"
+            [formField]="itemForm.code"
+          />
+        </label>
+      }
+
+      <label class="field">
+        <span class="label">{{ i18n.t('catalogue.field.description') }} *</span>
+        <input
+          class="input"
+          type="text"
+          dir="auto"
+          data-testid="catalogue-field-description-ar"
+          [formField]="itemForm.descriptionAr"
+        />
+      </label>
+
+      <label class="field">
+        <span class="label">{{ i18n.t('catalogue.field.description_en') }}</span>
+        <input
+          class="input"
+          type="text"
+          dir="auto"
+          data-testid="catalogue-field-description-en"
+          [formField]="itemForm.descriptionEn"
+        />
+      </label>
+
+      <label class="field">
+        <span class="label">{{ i18n.t('catalogue.field.unit') }} *</span>
+        <input
+          class="input"
+          type="text"
+          dir="auto"
+          spellcheck="false"
+          data-testid="catalogue-field-unit"
+          [formField]="itemForm.unit"
+        />
+      </label>
+
+      @if (!isEdit()) {
+        <label class="field">
+          <span class="label">{{ i18n.t('catalogue.field.bab') }} *</span>
+          <select
+            class="input select"
+            data-testid="catalogue-field-bab"
+            [attr.aria-label]="i18n.t('catalogue.field.bab')"
+            (change)="onBabChange($event)"
+          >
+            <option value="" disabled selected>{{ i18n.t('catalogue.field.bab_placeholder') }}</option>
+            @for (bab of babs(); track trackBab($index, bab)) {
+              <option [value]="bab.id">
+                {{ i18n.locale() === 'en' ? bab.nameEn : bab.nameAr }}
+              </option>
+            }
+          </select>
+        </label>
+      }
+
+      <!-- Prices: dir=ltr, inputmode=decimal, bound as STRINGS. No client-side rounding and no "max 4
+           decimals" validator anywhere near these two fields — AC-200-B is still open with Nabil, and
+           the server is the single answer (money-wire.ts). A loss-making sell rate is legal, AC-202-D —
+           no warning is shown for one on purpose. -->
+      <label class="field">
+        <span class="label">{{ i18n.t('catalogue.field.cost_price') }} *</span>
+        <input
+          class="input"
+          type="text"
+          dir="ltr"
+          inputmode="decimal"
+          autocomplete="off"
+          data-testid="catalogue-field-cost-price"
+          [formField]="itemForm.costPrice"
+        />
+        <span class="hint">{{ i18n.t('catalogue.hint.cost_price_internal') }}</span>
+      </label>
+
+      <label class="field">
+        <span class="label">{{ i18n.t('catalogue.field.base_sell_rate') }} *</span>
+        <input
+          class="input"
+          type="text"
+          dir="ltr"
+          inputmode="decimal"
+          autocomplete="off"
+          data-testid="catalogue-field-base-sell-rate"
+          [formField]="itemForm.baseSellRate"
+        />
+      </label>
+
+      @if (refusal(); as key) {
+        <p class="refusal" role="alert" data-testid="catalogue-form-refusal">{{ i18n.t(key) }}</p>
+      }
+
+      <button
+        class="submit"
+        type="submit"
+        data-testid="catalogue-submit"
+        [disabled]="!canSubmit()"
+      >
+        {{ i18n.t('action.save') }}
+      </button>
+    </form>
+  }
+</section>

@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest';
 import { auditReadGuard } from './audit-read.guard';
 import { AuthApi } from './auth.api';
 import { Session } from './auth.service';
+import { catalogueManageGuard } from './catalogue-manage.guard';
 import { clientManageGuard } from './client-manage.guard';
 import { userManageGuard } from './user-manage.guard';
 
@@ -123,6 +124,7 @@ describe('the permission guards resolve the session themselves', () => {
     ['clientManageGuard', clientManageGuard],
     ['userManageGuard', userManageGuard],
     ['auditReadGuard', auditReadGuard],
+    ['catalogueManageGuard', catalogueManageGuard],
   ];
 
   for (const [name, guard] of guards) {

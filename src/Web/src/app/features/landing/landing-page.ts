@@ -50,6 +50,8 @@ export class LandingPage {
         void this.router.navigateByUrl('/clients');
       } else if (kind === 'users') {
         void this.router.navigateByUrl('/users');
+      } else if (kind === 'catalogue') {
+        void this.router.navigateByUrl('/catalogue');
       }
     });
   }

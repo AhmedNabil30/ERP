@@ -72,6 +72,20 @@ describe('the landing and the nav item are built from the permission set, not fr
   });
 
   /**
+   * The third ruled destination, added for KAFF-202/203/206. `ux/navigation.md` -> `Landing summary`:
+   * *"TechnicalOffice | S-005 My profile | S-017 Catalogue"* — slice 2 is what turns "eventual" into
+   * "now", so this is the assertion that the catalogue's arrival actually moved the landing rather than
+   * only adding an unreachable case to the switch.
+   */
+  it('the catalogue list follows CatalogueManage, not the TechnicalOffice role', () => {
+    const financeHoldingCatalogueManage = session('Finance', ['CatalogueManage']);
+
+    expect(landingFor(financeHoldingCatalogueManage)).toEqual({ kind: 'catalogue' });
+    expect(navPathFor(financeHoldingCatalogueManage)).toBe('/catalogue');
+    expect(navLabelKeyFor(financeHoldingCatalogueManage)).toBe('nav.catalogue');
+  });
+
+  /**
    * The converse, and the half a role switch fails hardest: the role is the Owner and the answer is
    * **not** the user list, because this caller holds nothing. A switch cannot see the difference.
    *
@@ -144,11 +158,13 @@ describe('the landing and the nav item are built from the permission set, not fr
    */
   it('the nine roles still land where the Landing summary rules them', () => {
     const ruled: readonly (readonly [Role, readonly string[], string])[] = [
-      ['Owner', ['UserManage', 'ClientManage'], 'users'],
+      ['Owner', ['UserManage', 'ClientManage', 'CatalogueManage'], 'users'],
       ['MarketingSales', ['ClientManage'], 'clients'],
       ['Hr', ['EmployeeManage', 'UserRead'], 'hr-projects'],
       ['Finance', [], 'profile'],
-      ['TechnicalOffice', [], 'profile'],
+      // KAFF-202/203/206: slice 2 turns TechnicalOffice's "eventual" landing into its real one —
+      // `ux/navigation.md` -> `Landing summary` names S-017 Catalogue, not My profile, from here on.
+      ['TechnicalOffice', ['CatalogueManage'], 'catalogue'],
       ['SiteEngineer', [], 'profile'],
       ['HeadOfDesign', [], 'profile'],
       ['Client', [], 'forbidden'],

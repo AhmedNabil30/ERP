@@ -1,0 +1,161 @@
+<section class="catalogue" data-testid="catalogue-list">
+  <h1 class="title">{{ i18n.t('catalogue.list.title') }}</h1>
+
+  <!-- Enter submits on a phone keyboard with no visible button competing with the primary action. The
+       query goes to the server exactly as typed, matching the client list's own rule. -->
+  <form class="search" (submit)="$event.preventDefault(); onSubmitSearch()">
+    <label class="search-label" for="catalogue-search">{{ i18n.t('catalogue.search.placeholder') }}</label>
+    <input
+      id="catalogue-search"
+      class="search-input"
+      type="search"
+      dir="auto"
+      inputmode="search"
+      data-testid="catalogue-search"
+      [formField]="searchForm.query"
+      [attr.aria-label]="i18n.t('catalogue.search.placeholder')"
+    />
+  </form>
+
+  <!-- A segmented control: one bordered track, the active segment filled (apple-erp-design §4) —
+       three server states, KAFF-206 rule 7. -->
+  <div class="filters" role="group" [attr.aria-label]="i18n.t('catalogue.search.placeholder')">
+    @for (option of filters; track option) {
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="statusFilter() === option"
+        [attr.aria-pressed]="statusFilter() === option"
+        [attr.data-testid]="'catalogue-filter-' + option"
+        (click)="onFilter(option)"
+      >
+        {{ i18n.t(filterKey(option)) }}
+      </button>
+    }
+  </div>
+
+  @if (failure(); as key) {
+    <p class="refusal" role="alert" data-testid="catalogue-list-failure">{{ i18n.t(key) }}</p>
+  } @else if (loading()) {
+    <p class="loading" role="status" aria-live="polite" data-testid="catalogue-list-loading">
+      {{ i18n.t('catalogue.loading') }}
+    </p>
+  } @else if (groups().length > 0) {
+    <div class="groups" data-testid="catalogue-groups">
+      @for (group of groups(); track trackGroup($index, group)) {
+        <section class="group">
+          <h2 class="group-title" [attr.data-testid]="'catalogue-group-' + group.babId">
+            {{ babLabel(group) }}
+          </h2>
+
+          <ul class="rows">
+            @for (item of group.items; track trackItem($index, item)) {
+              <li class="row" [class.row--archived]="item.status === 'Archived'">
+                <a
+                  class="row-link"
+                  [routerLink]="['/catalogue', item.id]"
+                  [state]="{ item: item }"
+                  [attr.data-testid]="'catalogue-row-' + item.code"
+                >
+                  <bdi class="row-code" translate="no">{{ item.code }}</bdi>
+                  <span class="row-desc" dir="auto">{{ item.descriptionAr }}</span>
+                  <span class="row-unit" dir="auto">{{ item.unit }}</span>
+
+                  <span class="row-price">
+                    <span class="sr-only">{{ i18n.t('catalogue.column.cost_price') }}</span>
+                    <bdi class="figure" dir="ltr">{{ i18n.formatMoney(item.costPrice) }}</bdi>
+                  </span>
+
+                  <span class="row-price">
+                    <span class="sr-only">{{ i18n.t('catalogue.column.base_sell_rate') }}</span>
+                    <bdi class="figure" dir="ltr">{{ i18n.formatMoney(item.baseSellRate) }}</bdi>
+                  </span>
+
+                  @if (item.status === 'Archived') {
+                    <span class="row-archived-badge" data-testid="catalogue-row-archived-badge">
+                      {{ i18n.t('catalogue.item.archived_badge') }}
+                    </span>
+                  }
+                </a>
+
+                <div class="row-actions">
+                  @if (rowFailure(); as failed) {
+                    @if (failed.id === item.id) {
+                      <p
+                        class="row-refusal"
+                        role="alert"
+                        [attr.data-testid]="'catalogue-row-refusal-' + item.code"
+                      >
+                        {{ i18n.t(failed.key) }}
+                      </p>
+                    }
+                  }
+
+                  @if (item.status === 'Active') {
+                    @if (confirmingArchiveId() === item.id) {
+                      <p class="row-confirm" [attr.data-testid]="'catalogue-archive-body-' + item.code">
+                        {{ i18n.t('catalogue.item.archive_confirm') }}
+                      </p>
+                      <button
+                        type="button"
+                        class="danger-button"
+                        [disabled]="isArchiving(item.id)"
+                        [attr.data-testid]="'catalogue-archive-confirm-' + item.code"
+                        (click)="onConfirmArchive(item.id)"
+                      >
+                        {{ i18n.t('catalogue.item.archive_action') }}
+                      </button>
+                      <button
+                        type="button"
+                        class="chip"
+                        [attr.data-testid]="'catalogue-archive-cancel-' + item.code"
+                        (click)="onCancelArchive()"
+                      >
+                        {{ i18n.t('action.cancel') }}
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="danger-button"
+                        [attr.data-testid]="'catalogue-archive-' + item.code"
+                        (click)="onStartArchive(item.id)"
+                      >
+                        {{ i18n.t('catalogue.item.archive_action') }}
+                      </button>
+                    }
+                  } @else {
+                    <button
+                      type="button"
+                      class="chip"
+                      [disabled]="isArchiving(item.id)"
+                      [attr.data-testid]="'catalogue-unarchive-' + item.code"
+                      (click)="onUnarchive(item.id)"
+                    >
+                      {{ i18n.t('catalogue.item.unarchive_action') }}
+                    </button>
+                  }
+                </div>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    </div>
+  } @else if (isFiltered()) {
+    <!-- AC-203-D: a search or filter that matched nothing is a different fact from an empty catalogue. -->
+    <div class="empty" role="status" aria-live="polite" data-testid="catalogue-list-empty-filtered">
+      <p class="empty-title">{{ i18n.t('catalogue.list.empty_filtered') }}</p>
+      <button type="button" class="chip" data-testid="catalogue-clear-filters" (click)="onClearFilters()">
+        {{ i18n.t('action.clear_filters') }}
+      </button>
+    </div>
+  } @else {
+    <div class="empty" role="status" aria-live="polite" data-testid="catalogue-list-empty">
+      <p class="empty-title">{{ i18n.t('catalogue.list.empty') }}</p>
+    </div>
+  }
+
+  <a class="create" routerLink="/catalogue/new" data-testid="catalogue-create">
+    {{ i18n.t('catalogue.action.create') }}
+  </a>
+</section>

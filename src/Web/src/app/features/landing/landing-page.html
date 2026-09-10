@@ -85,6 +85,12 @@
       <p class="body" data-testid="landing-clients-redirect">{{ i18n.t('clients.loading') }}</p>
     }
 
+    @case ('catalogue') {
+      <!-- Same shape as the 'clients' and 'users' cases above: the redirect in the component navigates,
+           this is only the frame between the session resolving and the router settling. -->
+      <p class="body" data-testid="landing-catalogue-redirect">{{ i18n.t('catalogue.loading') }}</p>
+    }
+
     @case ('forbidden') {
       <section class="forbidden" data-testid="landing-forbidden">
         <p class="body" role="alert">{{ i18n.t('errors.auth.forbidden') }}</p>

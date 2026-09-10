@@ -1,10 +1,12 @@
 import { Routes } from '@angular/router';
 
 import { auditReadGuard } from './core/auth/audit-read.guard';
+import { catalogueManageGuard } from './core/auth/catalogue-manage.guard';
 import { clientManageGuard } from './core/auth/client-manage.guard';
 import { mustChangePasswordGuard } from './core/auth/must-change-password.guard';
 import { sessionGuard } from './core/auth/session.guard';
 import { userManageGuard } from './core/auth/user-manage.guard';
+import { confirmUnsavedChangesGuard } from './core/navigation/unsaved-changes.guard';
 
 /**
  * Routes.
@@ -92,6 +94,42 @@ export const routes: Routes = [
     canActivate: [sessionGuard, mustChangePasswordGuard, auditReadGuard],
     loadComponent: () =>
       import('./features/audit/audit-trail-page').then((m) => m.AuditTrailPage),
+  },
+  {
+    // KAFF-202, KAFF-203, KAFF-206 — S-017, S-018. Same shape as `/clients` and `/users` above:
+    // `sessionGuard` resolves the session first, then `catalogueManageGuard` keeps a role without the
+    // permission out of a screen the server would refuse anyway.
+    path: 'catalogue',
+    canActivate: [sessionGuard, mustChangePasswordGuard, catalogueManageGuard],
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/catalogue/catalogue-list/catalogue-list-page').then(
+            (m) => m.CatalogueListPage,
+          ),
+      },
+      {
+        path: 'new',
+        canDeactivate: [confirmUnsavedChangesGuard],
+        loadComponent: () =>
+          import('./features/catalogue/catalogue-form/catalogue-form-page').then(
+            (m) => m.CatalogueFormPage,
+          ),
+      },
+      {
+        // `withComponentInputBinding` binds `:catalogueItemId` to the component's input signal. There
+        // is no `GET /api/catalogue-items/{id}` on this API (unlike `GetClient`), so a hard load of
+        // this URL cannot re-fetch the item — see `catalogue-form-page.ts` for how it copes and the
+        // gap this leaves, reported rather than worked around.
+        path: ':catalogueItemId',
+        canDeactivate: [confirmUnsavedChangesGuard],
+        loadComponent: () =>
+          import('./features/catalogue/catalogue-form/catalogue-form-page').then(
+            (m) => m.CatalogueFormPage,
+          ),
+      },
+    ],
   },
   {
     path: 'sign-in',

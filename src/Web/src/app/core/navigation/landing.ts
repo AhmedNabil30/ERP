@@ -29,6 +29,7 @@ import { Role, Session } from '../auth/auth.service';
 export type Landing =
   | { readonly kind: 'clients' }
   | { readonly kind: 'users' }
+  | { readonly kind: 'catalogue' }
   | { readonly kind: 'profile' }
   | { readonly kind: 'hr-projects' }
   | { readonly kind: 'forbidden' };
@@ -45,12 +46,20 @@ export type Landing =
  * Both are `PermissionScope.CompanyWide` in `PermissionCatalogue`, which is what puts them on this
  * payload at all: `PermissionEvaluator.CompanyWidePermissionsHeld` excludes project-scoped rows by
  * construction (D-035). See {@link landingFor} for the one landing that costs us.
+ *
+ * **`CatalogueManage` added for KAFF-202/203/206.** `ux/navigation.md` -> `Landing summary` rules it
+ * explicitly: *"TechnicalOffice | S-005 My profile | S-017 Catalogue, then the quantity gate queue"* —
+ * slice 2 is what turns "eventual" into "now". The Owner holds `CatalogueManage` too (D-129 §1) but
+ * matches `UserManage` first because row order is precedence and this entry is appended after it, so
+ * the Owner's landing does not move.
  */
 const RULED_LANDINGS: readonly (readonly [permission: string, landing: Landing])[] = [
   // S-006 the user list — `Permission.UserManage`, CompanyWide, `Role.Owner` alone today (D-044).
   ['UserManage', { kind: 'users' }],
   // S-011 the client list — `Permission.ClientManage`, CompanyWide, Owner and Marketing (spec.md §2).
   ['ClientManage', { kind: 'clients' }],
+  // S-017 the catalogue list — `Permission.CatalogueManage`, CompanyWide, Owner and TechnicalOffice.
+  ['CatalogueManage', { kind: 'catalogue' }],
 ];
 
 /**
@@ -130,6 +139,8 @@ export function navLabelKeyFor(session: Session): string | null {
       return 'nav.clients';
     case 'users':
       return 'nav.users';
+    case 'catalogue':
+      return 'nav.catalogue';
     case 'hr-projects':
       return 'nav.hr_projects';
     case 'profile':
@@ -158,6 +169,8 @@ export function navPathFor(session: Session): string {
       return '/clients';
     case 'users':
       return '/users';
+    case 'catalogue':
+      return '/catalogue';
     default:
       return '/';
   }
