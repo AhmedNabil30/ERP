@@ -35,6 +35,8 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
     private Guid _headOfDesign;
     private Guid _marketing;
     private Guid _babId;
+    private Guid _portalClient;
+    private Guid _portalClientCompany;
 
     public CreateCatalogueItemTests(PostgresDatabase database) => _database = database;
 
@@ -185,6 +187,18 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
                     role);
         }
 
+        string clientAttemptCode = UniqueNames.Code("CRT-CLIENT");
+
+        (await CreateAsync(
+                _portalClient, Role.Client, null, Body(clientAttemptCode), actorClientId: _portalClientCompany))
+            .StatusCode.Should().Be(
+                HttpStatusCode.Forbidden,
+                "spec.md §12 — a portal client reaches none of the internal catalogue surface — TC-2-025, V-35-T");
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        (await reader.CatalogueItems.AnyAsync(item => item.Code == clientAttemptCode, Ct)).Should().BeFalse(
+            "the refused Client call created nothing");
+
         (await CreateAsync(
                 _owner, Role.Owner, null, Body(UniqueNames.Code("CRT-OWNER"))))
             .StatusCode.Should().Be(HttpStatusCode.Created, "the Owner holds every company-wide row — D-129 §1");
@@ -266,11 +280,17 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
     }
 
     private Task<HttpResponseMessage> CreateAsync(
-        Guid actorId, Role actorRole, Department? actorDepartment, object body)
-        => SendAsync(HttpMethod.Post, "/api/catalogue-items", actorId, actorRole, actorDepartment, body);
+        Guid actorId, Role actorRole, Department? actorDepartment, object body, Guid? actorClientId = null)
+        => SendAsync(HttpMethod.Post, "/api/catalogue-items", actorId, actorRole, actorDepartment, body, actorClientId);
 
     private async Task<HttpResponseMessage> SendAsync(
-        HttpMethod method, string route, Guid actorId, Role actorRole, Department? actorDepartment, object body)
+        HttpMethod method,
+        string route,
+        Guid actorId,
+        Role actorRole,
+        Department? actorDepartment,
+        object body,
+        Guid? actorClientId = null)
     {
         using var request = new HttpRequestMessage(method, new Uri(route, UriKind.Relative))
         {
@@ -284,6 +304,11 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
         if (actorDepartment is not null)
         {
             request.Headers.Add(TestAuthHandler.DepartmentHeader, actorDepartment.Value.ToString());
+        }
+
+        if (actorClientId is not null)
+        {
+            request.Headers.Add(TestAuthHandler.ClientIdHeader, actorClientId.Value.ToString());
         }
 
         return await _client.SendAsync(request, Ct);
@@ -321,6 +346,9 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
 
         Bab bab = Bab.Create(UniqueNames.Code("CRT-BAB"), "باب", "Bab", Percentage.FromPercent(15m)).Value;
 
+        Client company = Client.Create(
+            UniqueNames.Code("CRT-C1"), "عميل بوابة الإنشاء", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
+
         User owner = MakeUser("crt-owner", Role.Owner);
         User technicalOffice = MakeUser(
             "crt-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
@@ -331,9 +359,12 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
         User headOfDesign = MakeUser(
             "crt-design", Role.HeadOfDesign, Department.Operations, OperationsSubDepartment.Technical);
         User marketing = MakeUser("crt-marketing", Role.MarketingSales, Department.Marketing);
+        User portal = MakeUser("crt-portal", Role.Client, clientId: company.Id);
 
         context.Babs.Add(bab);
-        context.Users.AddRange(owner, technicalOffice, finance, hr, siteEngineer, headOfDesign, marketing);
+        context.Clients.Add(company);
+        context.Users.AddRange(
+            owner, technicalOffice, finance, hr, siteEngineer, headOfDesign, marketing, portal);
 
         await context.SaveChangesAsync(Ct);
 
@@ -345,12 +376,19 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
         _siteEngineer = siteEngineer.Id;
         _headOfDesign = headOfDesign.Id;
         _marketing = marketing.Id;
+        _portalClientCompany = company.Id;
+        _portalClient = portal.Id;
     }
 
     private static User MakeUser(
-        string userName, Role role, Department? department = null, OperationsSubDepartment? subDepartment = null)
+        string userName,
+        Role role,
+        Department? department = null,
+        OperationsSubDepartment? subDepartment = null,
+        Guid? clientId = null)
         => User.Create(
-            UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment).Value;
+            UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment, clientId)
+            .Value;
 
     private static DateTimeOffset Now => new(2026, 9, 9, 8, 0, 0, TimeSpan.Zero);
 

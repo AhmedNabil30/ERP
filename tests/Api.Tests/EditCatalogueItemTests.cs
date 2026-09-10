@@ -25,13 +25,15 @@ namespace Kaff.Api.Tests;
 /// correction.
 /// </para>
 /// <para>
-/// <b><c>AC-202-E</c> and <c>AC-202-F</c>, as far as slice 2 can prove them.</b> Neither a signed BOQ
-/// line nor an open estimate exists in this codebase yet — both are slice 4. What is provable now, and
-/// what <see cref="Repricing_touches_no_row_but_the_items_own_and_writes_no_estimate_or_boq_row"/>
-/// proves, is the mechanism's whole reach: a reprice writes exactly one entity row (this item) and one
-/// audit row, and nothing else in the schema moves — the same "propagates to nothing" shape
-/// <c>qa/slice-2/test-cases.md</c> uses for <c>TC-2-040</c> and <c>TC-2-053</c>. The BOQ/estimate half
-/// of both criteria is re-driven when slice 4 ships those entities.
+/// <b>What <see cref="Repricing_touches_no_row_but_the_items_own_and_writes_no_estimate_or_boq_row"/>
+/// actually proves, and what it does not (<c>V-35-N</c>).</b> It proves the reprice mechanism's whole
+/// reach: a reprice writes exactly one entity row (this item) and one audit row, and nothing else in
+/// the schema moves — the same "propagates to nothing" shape <c>qa/slice-2/test-cases.md</c> uses for
+/// <c>TC-2-040</c> and <c>TC-2-053</c>. <b>It does not discharge <c>AC-202-E</c> or <c>AC-202-F</c></b>
+/// — neither a signed BOQ line nor an open estimate exists in this codebase yet, so its أبواب-row count
+/// could not move under any implementation of reprice and is not a witness for either criterion.
+/// <c>TC-2-022</c> and <c>TC-2-023</c> are held to slice 4, the same <c>TC-2-059</c>/<c>TC-2-060</c>
+/// shape.
 /// </para>
 /// </remarks>
 [Collection(DatabaseCollection.Name)]
@@ -49,6 +51,8 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
     private Guid _headOfDesign;
     private Guid _marketing;
     private Guid _babId;
+    private Guid _portalClient;
+    private Guid _portalClientCompany;
 
     public EditCatalogueItemTests(PostgresDatabase database) => _database = database;
 
@@ -146,7 +150,8 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
             .StatusCode.Should().Be(HttpStatusCode.OK, "nothing in spec.md forbids re-pricing into a loss");
     }
 
-    // ---- AC-202-E / AC-202-F, the slice-2 half — reprice moves nothing but its own row -----------
+    // ---- Reprice's whole reach: its own row and one audit record — AC-202-E/F held to slice 4,
+    // TC-2-022/TC-2-023 (V-35-N) ----------------------------------------------------------------
 
     [Fact]
     public async Task Repricing_touches_no_row_but_the_items_own_and_writes_no_estimate_or_boq_row()
@@ -170,8 +175,9 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
             itemCountBefore, "no item is created or removed by a reprice");
 
         (await after.Babs.LongCountAsync(Ct)).Should().Be(
-            babCountBefore, "AC-202-E/F: repricing reaches nothing beyond this item's own row — there "
-            + "is no BOQ or estimate table in this codebase yet for it to reach either");
+            babCountBefore, "repricing reaches nothing beyond this item's own row — the mechanism's "
+            + "whole reach, not a witness for AC-202-E/F, which are held to slice 4 as TC-2-022/"
+            + "TC-2-023 because no BOQ or estimate table exists in this codebase yet (V-35-N)");
 
         CatalogueItem stored = await after.CatalogueItems.SingleAsync(item => item.Id == id, Ct);
         stored.CostPrice.Amount.Should().Be(400m);
@@ -236,6 +242,16 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
                 .StatusCode.Should().Be(
                     HttpStatusCode.Forbidden, "{0} does not hold CatalogueManage — spec.md §2, §4.1", role);
         }
+
+        (await SendAsync(
+                HttpMethod.Put, $"/api/catalogue-items/{id}", _portalClient, Role.Client, null, Body(),
+                actorClientId: _portalClientCompany))
+            .StatusCode.Should().Be(
+                HttpStatusCode.Forbidden,
+                "spec.md §12 — a portal client reaches none of the internal catalogue surface — TC-2-025, V-35-T");
+
+        (await ReadAsync(id)).BaseSellRate.Amount.Should().Be(
+            150m, "not one of the six refused calls, including the Client's, changed anything");
 
         (await SendAsync(HttpMethod.Put, $"/api/catalogue-items/{id}", _owner, Role.Owner, null, Body()))
             .StatusCode.Should().Be(HttpStatusCode.OK, "the Owner holds every company-wide row — D-129 §1");
@@ -302,7 +318,13 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
         => SendAsync(HttpMethod.Put, $"/api/catalogue-items/{id}", _technicalOffice, Role.TechnicalOffice, Department.Operations, body);
 
     private async Task<HttpResponseMessage> SendAsync(
-        HttpMethod method, string route, Guid actorId, Role actorRole, Department? actorDepartment, object body)
+        HttpMethod method,
+        string route,
+        Guid actorId,
+        Role actorRole,
+        Department? actorDepartment,
+        object body,
+        Guid? actorClientId = null)
     {
         using var request = new HttpRequestMessage(method, new Uri(route, UriKind.Relative))
         {
@@ -318,7 +340,19 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
             request.Headers.Add(TestAuthHandler.DepartmentHeader, actorDepartment.Value.ToString());
         }
 
+        if (actorClientId is not null)
+        {
+            request.Headers.Add(TestAuthHandler.ClientIdHeader, actorClientId.Value.ToString());
+        }
+
         return await _client.SendAsync(request, Ct);
+    }
+
+    private async Task<CatalogueItem> ReadAsync(Guid id)
+    {
+        await using KaffDbContext reader = _database.CreateBareContext();
+
+        return await reader.CatalogueItems.SingleAsync(item => item.Id == id, Ct);
     }
 
     private async Task<string> CurrentStampAsync(Guid userId)
@@ -346,6 +380,9 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
 
         Bab bab = Bab.Create(UniqueNames.Code("EDT-BAB"), "باب", "Bab", Percentage.FromPercent(15m)).Value;
 
+        Client company = Client.Create(
+            UniqueNames.Code("EDT-C1"), "عميل بوابة التعديل", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
+
         User owner = MakeUser("edt-cat-owner", Role.Owner);
         User technicalOffice = MakeUser(
             "edt-cat-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
@@ -356,9 +393,12 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
         User headOfDesign = MakeUser(
             "edt-cat-design", Role.HeadOfDesign, Department.Operations, OperationsSubDepartment.Technical);
         User marketing = MakeUser("edt-cat-marketing", Role.MarketingSales, Department.Marketing);
+        User portal = MakeUser("edt-cat-portal", Role.Client, clientId: company.Id);
 
         context.Babs.Add(bab);
-        context.Users.AddRange(owner, technicalOffice, finance, hr, siteEngineer, headOfDesign, marketing);
+        context.Clients.Add(company);
+        context.Users.AddRange(
+            owner, technicalOffice, finance, hr, siteEngineer, headOfDesign, marketing, portal);
 
         await context.SaveChangesAsync(Ct);
 
@@ -370,12 +410,19 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
         _siteEngineer = siteEngineer.Id;
         _headOfDesign = headOfDesign.Id;
         _marketing = marketing.Id;
+        _portalClientCompany = company.Id;
+        _portalClient = portal.Id;
     }
 
     private static User MakeUser(
-        string userName, Role role, Department? department = null, OperationsSubDepartment? subDepartment = null)
+        string userName,
+        Role role,
+        Department? department = null,
+        OperationsSubDepartment? subDepartment = null,
+        Guid? clientId = null)
         => User.Create(
-            UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment).Value;
+            UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment, clientId)
+            .Value;
 
     private static DateTimeOffset Now => new(2026, 9, 9, 8, 0, 0, TimeSpan.Zero);
 

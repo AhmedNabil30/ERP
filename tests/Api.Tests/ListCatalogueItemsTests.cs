@@ -262,27 +262,38 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
 
     // ---- AC-203-I · ordered by باب, then by code -------------------------------------------------
 
+    /// <summary>
+    /// TC-2-036, rewritten 2026-09-10 (<c>V-35-R</c>). The prior fixture's باب <c>SortOrder</c> (10/20)
+    /// and its item codes' alphabetic order (<c>A</c>/<c>Z</c>) coincided, so "grouped by باب's own
+    /// order" and "sorted by item code alone, باب ignored" predicted the identical sequence — a
+    /// mutation deleting the باب ordering entirely would not have reddened this test. <c>SortOrder</c>
+    /// and code prefix are inverted here on purpose so the two hypotheses disagree: باب <c>Early</c>
+    /// sorts first (<c>SortOrder</c> 10) but its items are coded <c>Z-*</c>, which a code-only sort
+    /// would place last.
+    /// </summary>
     [Fact]
     public async Task Results_are_grouped_by_bab_then_ordered_by_code_within_each()
     {
         string nonce = UniqueNames.Code("FND-ORD");
 
-        // Two أبواب, created out of order, so a code-only sort would interleave them.
-        Guid babZ = await CreateBabAsync(sortOrder: 20, codePrefix: $"{nonce}-Z");
-        Guid babA = await CreateBabAsync(sortOrder: 10, codePrefix: $"{nonce}-A");
+        Guid babEarly = await CreateBabAsync(sortOrder: 10, codePrefix: $"{nonce}-Z");
+        Guid babLate = await CreateBabAsync(sortOrder: 20, codePrefix: $"{nonce}-A");
 
-        string zHigh = await CreateItemAsync(babZ, code: $"{nonce}-Z-9");
-        string zLow = await CreateItemAsync(babZ, code: $"{nonce}-Z-1");
-        string aHigh = await CreateItemAsync(babA, code: $"{nonce}-A-9");
-        string aLow = await CreateItemAsync(babA, code: $"{nonce}-A-1");
+        string zHigh = await CreateItemAsync(babEarly, code: $"{nonce}-Z-9");
+        string zLow = await CreateItemAsync(babEarly, code: $"{nonce}-Z-1");
+        string aHigh = await CreateItemAsync(babLate, code: $"{nonce}-A-9");
+        string aLow = await CreateItemAsync(babLate, code: $"{nonce}-A-1");
 
         IReadOnlyList<CatalogueItemSummary> found = await SearchAsyncAs(_owner, Role.Owner, null, nonce);
 
         found.Select(item => item.Code).Should().Equal(
-            [aLow, aHigh, zLow, zHigh],
-            "grouped by باب in the باب's own SortOrder (babA before babZ), and within each باب ordered "
-            + "by item code — D-129 §5, AC-203-I. The Arabic-collation tiebreak is not asserted here — "
-            + "it is the Architect's per Q63's standing caveat");
+            [zLow, zHigh, aLow, aHigh],
+            "grouped by باب in the باب's own SortOrder (Early, 10, before Late, 20), and within each "
+            + "باب ordered by item code — D-129 §5, AC-203-I. SortOrder and code prefix are inverted on "
+            + "purpose (TC-2-036, V-35-R): a code-only sort predicts [A-1, A-9, Z-1, Z-9], a different "
+            + "sequence, so this fixture — unlike its predecessor — actually discriminates the two "
+            + "hypotheses. The Arabic-collation tiebreak is not asserted here — it is the Architect's "
+            + "per Q63's standing caveat");
     }
 
     // ---- helpers ------------------------------------------------------------------------------

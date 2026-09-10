@@ -14,16 +14,15 @@ using Microsoft.EntityFrameworkCore;
 namespace Kaff.Api.Tests;
 
 /// <summary>
-/// KAFF-206, D-130 §4 (<c>Q66</c>) — <c>POST /api/catalogue-items/{catalogueItemId}/unarchive</c>.
+/// KAFF-214, D-130 §4 (<c>Q66</c>) — <c>POST /api/catalogue-items/{catalogueItemId}/unarchive</c>.
 /// </summary>
 /// <remarks>
 /// <para>
-/// No <c>AC-206-*</c> id and no <c>TC-2-*</c> id names this endpoint — <c>qa/slice-2/test-cases.md</c>
-/// records the ruling and explicitly writes no case for it (<c>"NO STORY"</c>), because placement was
-/// left to the Scrum Master and the endpoint did not exist when the file was written. It is built here
-/// per the brief that placed it in this story; these tests are this session's own coverage of it,
-/// against the shape the archive endpoint's own criteria already establish (audited, permission-gated,
-/// the entity's own refusal).
+/// <c>UnarchiveCatalogueItem</c> shipped inside <c>f675f1b</c>/<c>934bfb9</c>, attributed at the time to
+/// <c>KAFF-206</c>, with no <c>AC-</c> id and no <c>TC-2-</c> id (<c>V-35-U</c>). The Scrum Master cut
+/// <c>KAFF-214</c> as its own retrospective story (D-133 §1) to give the shipped code a criterion:
+/// <c>AC-214-A</c> … <c>AC-214-E</c>, cased as <c>TC-2-099</c> … <c>TC-2-103</c>
+/// (<c>qa/slice-2/test-cases.md</c>). These tests trace to those ids.
 /// </para>
 /// <para>
 /// The delete-route allow-list in <c>ArchiveCatalogueItemTests.No_route_under_catalogue_items_deletes_anything</c>
@@ -41,6 +40,12 @@ public sealed class UnarchiveCatalogueItemTests : IAsyncLifetime
     private Guid _owner;
     private Guid _technicalOffice;
     private Guid _finance;
+    private Guid _hr;
+    private Guid _siteEngineer;
+    private Guid _headOfDesign;
+    private Guid _marketing;
+    private Guid _portalClient;
+    private Guid _portalClientCompany;
 
     public UnarchiveCatalogueItemTests(PostgresDatabase database) => _database = database;
 
@@ -58,13 +63,21 @@ public sealed class UnarchiveCatalogueItemTests : IAsyncLifetime
         await _factory.DisposeAsync();
     }
 
-    // ---- an archived item is brought back, and the trail names the change -------------------------
+    // ---- AC-214-A / TC-2-099 · an archived item is brought back with every §4.1 field unchanged,
+    // and the trail names the change (AC-214-D / TC-2-102's positive half) ------------------------
 
     [Fact]
     public async Task An_archived_item_is_unarchived_and_reappears_in_the_default_search()
     {
         Guid bab = await CreateBabAsync();
         (Guid id, string code) = await CreateItemAsync(bab);
+
+        CatalogueItem original = await ReadAsync(id);
+        string descriptionAr = original.DescriptionAr;
+        string unit = original.Unit;
+        Guid babId = original.BabId;
+        decimal costPrice = original.CostPrice.Amount;
+        decimal baseSellRate = original.BaseSellRate.Amount;
 
         (await ArchiveAsync(id)).StatusCode.Should().Be(HttpStatusCode.NoContent);
 
@@ -73,7 +86,13 @@ public sealed class UnarchiveCatalogueItemTests : IAsyncLifetime
 
         CatalogueItem stored = await ReadAsync(id);
         stored.Status.Should().Be(CatalogueItemStatus.Active);
-        stored.Code.Should().Be(code, "unarchiving touches Status and nothing else — the same shape Archive holds");
+        stored.Code.Should().Be(code, "AC-214-A: unarchiving touches Status and nothing else — the same shape Archive holds");
+        stored.DescriptionAr.Should().Be(
+            descriptionAr, "AC-214-A/TC-2-099: every §4.1 field survives un-archiving, not only status and code");
+        stored.Unit.Should().Be(unit, "AC-214-A/TC-2-099");
+        stored.BabId.Should().Be(babId, "AC-214-A/TC-2-099");
+        stored.CostPrice.Amount.Should().Be(costPrice, "AC-214-A/TC-2-099");
+        stored.BaseSellRate.Amount.Should().Be(baseSellRate, "AC-214-A/TC-2-099");
 
         (await SearchAsync(code)).Select(item => item.Code).Should().Contain(
             code, "codes are unique — Q66's whole reason for existing is that a mis-archived item must "
@@ -86,7 +105,7 @@ public sealed class UnarchiveCatalogueItemTests : IAsyncLifetime
             .OrderByDescending(candidate => candidate.OccurredAt)
             .FirstAsync(Ct);
 
-        record.ActorUserId.Should().Be(_technicalOffice, "un-archiving is a state change and is audited too");
+        record.ActorUserId.Should().Be(_technicalOffice, "AC-214-D: un-archiving is a state change and is audited too");
         record.ChangedProperties.Should().Contain(nameof(CatalogueItem.Status));
 
         using JsonDocument before = JsonDocument.Parse(record.BeforeJson!);
@@ -98,7 +117,9 @@ public sealed class UnarchiveCatalogueItemTests : IAsyncLifetime
             nameof(CatalogueItemStatus.Active));
     }
 
-    // ---- unarchiving an item that is not archived is refused, and the refusal writes nothing ------
+    // ---- AC-214-B / TC-2-100 · unarchiving an item that is not archived is refused, and the
+    // refusal writes nothing, scoped to the item's own EntityId (AC-214-D's refusal half, TC-2-102,
+    // the D-116/TC-2-064 shape ArchiveCatalogueItemTests uses) --------------------------------------
 
     [Fact]
     public async Task Unarchiving_an_active_item_is_refused_and_writes_no_audit_record()
@@ -118,13 +139,16 @@ public sealed class UnarchiveCatalogueItemTests : IAsyncLifetime
 
         problem.RootElement.GetProperty("messageKey").GetString().Should().Be(
             "errors.master.not_archived",
-            "the refusal is CatalogueItem.Unarchive's — MasterDataErrors.NotArchived existed for "
-            + "exactly this and, before this endpoint, was returned by nothing");
+            "AC-214-B: the refusal is CatalogueItem.Unarchive's — MasterDataErrors.NotArchived existed "
+            + "for exactly this and, before this endpoint, was returned by nothing");
 
         (await ReadAsync(id)).Status.Should().Be(CatalogueItemStatus.Active, "a refused unarchive changes nothing");
 
         await using KaffDbContext after = _database.CreateBareContext();
-        (await after.AuditRecords.LongCountAsync(candidate => candidate.EntityId == id, Ct)).Should().Be(countBefore);
+        (await after.AuditRecords.LongCountAsync(candidate => candidate.EntityId == id, Ct)).Should().Be(
+            countBefore,
+            "AC-214-D/TC-2-102: scoped to this item's own EntityId, not an unscoped global count that "
+            + "could hide a stray write to a different row");
     }
 
     [Fact]
@@ -140,7 +164,8 @@ public sealed class UnarchiveCatalogueItemTests : IAsyncLifetime
         problem.RootElement.GetProperty("messageKey").GetString().Should().Be("errors.master.catalogue_item_not_found");
     }
 
-    // ---- permission: same gate as archive -----------------------------------------------------
+    // ---- AC-214-C / TC-2-101 · same gate as archive, executed for every refused role including a
+    // portal Client session, not asserted in a comment (the V-35-T shape KAFF-214's own story records) --
 
     [Fact]
     public async Task A_role_without_CatalogueManage_cannot_unarchive_an_item()
@@ -150,16 +175,48 @@ public sealed class UnarchiveCatalogueItemTests : IAsyncLifetime
 
         await ArchiveAsync(id);
 
-        (await UnarchiveAsync(id, _finance, Role.Finance, Department.Finance))
-            .StatusCode.Should().Be(HttpStatusCode.Forbidden, "Finance does not hold CatalogueManage — spec.md §2, D-129 §1");
+        foreach ((Guid actor, Role role, Department? department) in RefusedActors())
+        {
+            (await UnarchiveAsync(id, actor, role, department))
+                .StatusCode.Should().Be(
+                    HttpStatusCode.Forbidden, "{0} does not hold CatalogueManage — spec.md §2, D-129 §1", role);
+        }
 
-        (await ReadAsync(id)).Status.Should().Be(CatalogueItemStatus.Archived, "the refused call changed nothing");
+        (await UnarchiveAsync(id, _portalClient, Role.Client, null, actorClientId: _portalClientCompany))
+            .StatusCode.Should().Be(
+                HttpStatusCode.Forbidden,
+                "AC-214-C/TC-2-101: spec.md §12 — a portal client reaches none of the internal catalogue "
+                + "surface, executed as a real request rather than asserted in a comment");
+
+        (await ReadAsync(id)).Status.Should().Be(
+            CatalogueItemStatus.Archived, "not one of the six refused calls, including the Client's, changed anything");
 
         (await UnarchiveAsync(id, _owner, Role.Owner, null))
             .StatusCode.Should().Be(HttpStatusCode.NoContent, "the Owner holds every company-wide row — Q12, D-129 §1");
     }
 
+    /// <summary>Every role QA's TC-2-101 names that can structurally reach a company-wide staff route.</summary>
+    [Fact]
+    public void The_refused_list_is_every_reachable_role_TC_2_101_names()
+    {
+        RefusedActors().Select(actor => actor.Role).Should().BeEquivalentTo(
+            [Role.Finance, Role.SiteEngineer, Role.HeadOfDesign, Role.MarketingSales, Role.Hr],
+            "TC-2-101 names Finance, SiteEngineer, HeadOfDesign, MarketingSales, Client, Subcontractor "
+            + "and Hr; Client is covered separately (portal session, executed above) and Subcontractor "
+            + "cannot sign in at all (spec.md §9), so both are structurally refused rather than asserted "
+            + "here — the same split ArchiveCatalogueItemTests uses");
+    }
+
     // ---- helpers ------------------------------------------------------------------------------
+
+    private IEnumerable<(Guid Actor, Role Role, Department? Department)> RefusedActors()
+    {
+        yield return (_finance, Role.Finance, Department.Finance);
+        yield return (_hr, Role.Hr, Department.Hr);
+        yield return (_siteEngineer, Role.SiteEngineer, Department.Operations);
+        yield return (_headOfDesign, Role.HeadOfDesign, Department.Operations);
+        yield return (_marketing, Role.MarketingSales, Department.Marketing);
+    }
 
     private async Task<Guid> CreateBabAsync()
     {
@@ -213,12 +270,12 @@ public sealed class UnarchiveCatalogueItemTests : IAsyncLifetime
     }
 
     private async Task<HttpResponseMessage> UnarchiveAsync(
-        Guid itemId, Guid actorId, Role actorRole, Department? actorDepartment)
+        Guid itemId, Guid actorId, Role actorRole, Department? actorDepartment, Guid? actorClientId = null)
     {
         using var request = new HttpRequestMessage(
             HttpMethod.Post, new Uri($"/api/catalogue-items/{itemId}/unarchive", UriKind.Relative));
 
-        await StampAsync(request, actorId, actorRole, actorDepartment, null);
+        await StampAsync(request, actorId, actorRole, actorDepartment, actorClientId);
 
         return await _client.SendAsync(request, Ct);
     }
@@ -291,23 +348,46 @@ public sealed class UnarchiveCatalogueItemTests : IAsyncLifetime
     {
         await using KaffDbContext context = _database.CreateContext();
 
+        Client company = Client.Create(
+            UniqueNames.Code("UNAI-C1"), "عميل بوابة إلغاء الأرشفة", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
+
         User owner = MakeUser("unai-owner", Role.Owner);
         User technicalOffice = MakeUser(
             "unai-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
         User finance = MakeUser("unai-finance", Role.Finance, Department.Finance);
+        User hr = MakeUser("unai-hr", Role.Hr, Department.Hr);
+        User siteEngineer = MakeUser(
+            "unai-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+        User headOfDesign = MakeUser(
+            "unai-design", Role.HeadOfDesign, Department.Operations, OperationsSubDepartment.Technical);
+        User marketing = MakeUser("unai-marketing", Role.MarketingSales, Department.Marketing);
+        User portal = MakeUser("unai-portal", Role.Client, clientId: company.Id);
 
-        context.Users.AddRange(owner, technicalOffice, finance);
+        context.Clients.Add(company);
+        context.Users.AddRange(
+            owner, technicalOffice, finance, hr, siteEngineer, headOfDesign, marketing, portal);
 
         await context.SaveChangesAsync(Ct);
 
         _owner = owner.Id;
         _technicalOffice = technicalOffice.Id;
         _finance = finance.Id;
+        _hr = hr.Id;
+        _siteEngineer = siteEngineer.Id;
+        _headOfDesign = headOfDesign.Id;
+        _marketing = marketing.Id;
+        _portalClientCompany = company.Id;
+        _portalClient = portal.Id;
     }
 
     private static User MakeUser(
-        string userName, Role role, Department? department = null, OperationsSubDepartment? subDepartment = null)
-        => User.Create(UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment)
+        string userName,
+        Role role,
+        Department? department = null,
+        OperationsSubDepartment? subDepartment = null,
+        Guid? clientId = null)
+        => User.Create(
+            UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment, clientId)
             .Value;
 
     private static DateTimeOffset Now => new(2026, 9, 9, 8, 0, 0, TimeSpan.Zero);
