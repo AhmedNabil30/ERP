@@ -1,6 +1,6 @@
 # KAFF-206 · Archive a catalogue item without breaking what already references it
 
-<!-- kaff id=KAFF-206 slice=2 points=3 state=BUILT verdict=none at=f675f1b on=2026-09-09 -->
+<!-- kaff id=KAFF-206 slice=2 points=3 state=BUILT verdict=REJECTED at=f675f1b on=2026-09-10 -->
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **⚠️ Amended 2026-09-09 — `Q65`, `Q66` and `Q12` are all answered (D-130 §3, D-130 §4, D-129 §1) and `AC-206-F` is written. One Definition-of-Ready box is still unticked — QA's cases.**
 **Spec:** **§4.1** (`status`), **§4.4**, **§4.5**, §2 · **Decisions:** D-018 (the `status` values, 🟡), D-044 ruling 4, **D-130 §§3–4, D-129 §1**

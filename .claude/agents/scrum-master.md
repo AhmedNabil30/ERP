@@ -204,6 +204,10 @@ finding is *tracked*; it is not where a finding is *resolved*.
 2. **The skill.** Build and run through `/run-kaff-erp`. Never hand-rolled commands.
 3. **`/fast-execution`.** Apply the project's rules silently in code; no preambles.
 4. **The model, named out loud** — `agents.md` §M — so the choice is visible and arguable.
+   ⛔ **Amended 2026-09-10: every spawn passes `model` explicitly.** Omitting it does not pick a
+   sensible default — it **inherits yours, the strongest one**, which is how §M came to be policy on
+   paper and nothing in practice. Default `sonnet`; `haiku` for mechanical sweeps and lookups;
+   `opus` only against a named line of §M's never-downgrade list, with the line quoted in the brief.
 5. **Write-as-you-go.** A rate limit rolls nothing back. An agent that dies holding unwritten findings
    loses them, and the next reader cannot tell an unfinished pass from a finished one (D-120 §1).
 6. **The invitation to correct the brief**, as the last line. You wrote it; it is not evidence.

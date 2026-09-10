@@ -11265,3 +11265,93 @@ gone.
 * **It does not move any slice-2 or slice-3 story.** All 51 and 5 points remain `NOT-BUILT`.
 * **It does not touch `F-127-1`** — `KAFF-127` is accepted with its known gap: the user list's search
   box and filter chips render with no server behaviour, and §9 named that before the tick.
+
+---
+
+### D-132 · Verifier — the first REJECTED verdict, and a model default that had been overriding §M for sixteen days · 2026-09-10
+
+**Two things, recorded together because the second is why the first nearly did not happen.**
+
+#### 1. `KAFF-202`, `KAFF-203` and `KAFF-206` are `verdict=REJECTED`
+
+The slice-2 verification pass (`qa/slice-2/verification-2026-09-10.md`, findings `V-35-M` … `V-35-V`)
+returned **NOT VERIFIED AS BUILT for all three stories.** Nine points move from
+`🟡 BUILT / verdict=none` to `🔴 REJECTED`.
+
+**The backend is genuinely good.** `AC-202-G` (cost-price segregation) is a real whitelist, not a
+blocklist. `AC-202-B` is a real unique index with a real concurrent test, not a pre-check. The audit
+counts are scoped. The gate is green and was re-measured independently: build 0/0, format 0, Domain
+154/154, Api 358/358, citations 1327/0.
+
+**What failed is the record, and one whole layer:**
+
+* **`V-35-S`, HIGH — there is no catalogue frontend at all.** No `src/Web/src/app/features/catalogue`,
+  no catalogue E2E file. `AC-202-J`, `AC-203-H`, `AC-206-I` (*Arabic, RTL, at mobile width*) and half
+  of `AC-203-D` are **unbuilt, not merely untested** — under three trailers all reading `BUILT`.
+  ⛔ **This is the Scrum Master's error, not the Verifier's catch alone**: three trailers were moved to
+  `BUILT` on backend gates only. `CLAUDE.md`'s Definition of Done lists *Arabic RTL correct at mobile
+  width* as its own line, and Nabil has already ruled, verbatim: ***"You cannot discharge a UI
+  rendering dependency with a JSON response."*** It was discharged with green test counts instead.
+* **`V-35-N`, MEDIUM-HIGH** — `3601034` held `TC-2-059`/`TC-2-060` for `KAFF-206` and **did not carry
+  the same across to `KAFF-202`'s `TC-2-022`/`TC-2-023`**, which assert the same §4.4 rule about the
+  same absent BOQ. Worse, `AC-202-E`/`AC-202-F` stand **discharged** by a test whose third assertion
+  counts **أبواب** rows — the only other table there is. It cannot move under any implementation of
+  reprice. Unfalsifiable in the direction the criterion cares about. **The session that named the
+  asymmetry "the dangerous direction" left it standing one story over.**
+* **`V-35-O`, MEDIUM** — `AC-206-F` is discharged by a **default**, not a guarantee: the archived item
+  is omitted by default and handed over on `status=all`. Slice 4's BOQ picker must pin
+  `status=Active` rather than inherit it. Carried to the Architect.
+* **`V-35-Q`, MEDIUM** — `Money`'s constructor **already rounds away-from-zero** above four decimals,
+  system-wide. `AC-202-C` is proven only *at* four. ⚠️ **This pre-empts `AC-200-B`, which is Nabil's
+  open ruling** — one of its two legal behaviours is already shipped, by a constructor, unremarked.
+* **`V-35-R`, MEDIUM** — `AC-203-I`'s only test cannot distinguish باب-grouping from a plain code
+  sort: the fixture's `SortOrder` and code prefixes were chosen to agree.
+* **`V-35-U`, MEDIUM** — `UnarchiveCatalogueItem` shipped inside `f675f1b` with **no `AC-` id and no
+  QA case**. Nothing traces to it. `KAFF-206` is 3 points and the commit ships more than 3 points of
+  surface.
+* **`V-35-T`, LOW-MEDIUM** — `AC-202-H`'s Client-refusal is asserted in a **comment**; the sibling
+  `AC-206-G` test executes it.
+* **`V-35-V`, MEDIUM** — the `KAFF-206` mutation claim (*"3 of 22 Domain tests reddened"*) has **no
+  corroborating artifact in the repo**. Unverifiable without changing `src/`, which the Verifier is
+  forbidden to do. **A mutation nobody can re-run is a claim, not evidence** — the run needs to leave
+  something behind.
+
+**`REJECTED` is added to the board's verdict vocabulary in `tools/status.ps1`** as its own bucket. It
+was already in `STATUS.md`'s hand-written legend and had never been reachable — the `BUILT` bucket's
+label reads *"nobody independent has looked"*, which becomes false the moment a Verifier reports.
+
+#### 2. The model default had been overriding §M since it was written
+
+**§M was adopted 2026-08-25 and has been policy on paper only.** A spawn that names no `model`
+**inherits the parent's — the strongest one.** `general-purpose`, `Explore` and `claude` have no
+definition file to carry a `model:`, so every one of them has been running on the most expensive
+model in the system regardless of the task.
+
+*A check that reports a safety it does not have*, one more time, and this one was costing money for
+sixteen days.
+
+**Amended, at Nabil's direction:** the strongest model is now **opt-in, never inherited**. Every
+`Agent` call names `model` explicitly — a spawn without one is a defect. Default `sonnet`; `haiku` for
+mechanical sweeps and lookups; `opus` only against a **quoted line** of §M's never-downgrade list.
+`.claude/settings.json` sets `env.CLAUDE_CODE_SUBAGENT_MODEL: "sonnet"` as the floor.
+
+⚠️ **`CLAUDE_CODE_SUBAGENT_MODEL_FORCE` is deliberately NOT set.** Documented precedence puts the
+per-invocation parameter above the environment variable, but where `_FORCE` sits relative to that
+parameter could not be confirmed from the documentation. **A flag that might silently downgrade a
+Verifier or a money task is the exact failure this file keeps naming.**
+
+**And a real trade-off, recorded because it will recur.** This pass was correctly dispatched on the
+strongest model per the never-downgrade list, and **died on a session limit inside §3 of 21 sections.**
+It survived only because it was ordered to write findings to disk as it went. It was **resumed on
+`sonnet` and finished all 21** — `V-35-S`, the HIGH finding, was found by the downgraded half. The
+never-downgrade list is still right; **"strongest" is worth nothing if the pass does not finish.** A
+downgraded pass must record which model ran it, so the verdict carries its own caveat.
+
+#### What this does not do
+
+* **It does not fix anything.** No change under `src/` or `tests/`. Every finding is routed, not closed.
+* **It does not resolve `AC-200-B`.** `V-35-Q` reports which of its two behaviours already shipped;
+  the ruling is still Nabil's, and it is now more urgent, not less.
+* **It does not move `KAFF-202`/`203`/`206` out of slice 2**, and it does not reduce their points.
+* **It does not accept the Verifier's verdict as final on the backend.** The backend core passed on
+  its own terms; what failed is a missing layer and a record that overstates what was witnessed.

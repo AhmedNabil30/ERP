@@ -1,6 +1,6 @@
 # KAFF-203 · Find a catalogue item by code or description
 
-<!-- kaff id=KAFF-203 slice=2 points=3 state=BUILT verdict=none at=dd5f14c on=2026-09-09 -->
+<!-- kaff id=KAFF-203 slice=2 points=3 state=BUILT verdict=REJECTED at=dd5f14c on=2026-09-10 -->
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-08 by the BA. **⚠️ Amended 2026-09-09 — `Q63` and `Q12` are both answered (D-129 §5, D-129 §1) and `AC-203-I` is written. One Definition-of-Ready box is still unticked — see *Definition of Ready* below.**
 **Spec:** **§4.5** (*"searches the catalogue by code or description"*), §4.1, §4.2, §12 · **Decisions:** D-035, D-044 ruling 4, **D-129 §5, D-129 §1**

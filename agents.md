@@ -83,6 +83,49 @@ is honest is a judgement.
 **How.** The `model` parameter on the spawn selects it. Say which model a delegated task runs on when
 you brief it, so the choice is visible and can be argued with.
 
+### ⛔ The default is the defect — amended 2026-09-10, at Nabil's direction
+
+**A spawn with no `model` parameter inherits the parent's model, which is the strongest one.** So
+every agent dispatched without thinking about it has been running on the most expensive model in the
+system — including `general-purpose`, `Explore` and `claude`, none of which has a definition file to
+carry a `model:` of its own. **The table above has been the policy since 2026-08-25 and the default
+has been quietly overriding it that whole time.**
+
+This is the project's recurring shape once more: *a check that reports a safety it does not have.*
+§M read as if it governed the spend. It governed only the spawns somebody remembered to annotate.
+
+**The rule is now inverted. The strongest model is opt-in, never inherited:**
+
+1. **Every `Agent` call names `model` explicitly.** A spawn without one is a defect, the same way an
+   uncited rule in a story is. There is no "it's a quick one" exemption — quick ones are exactly what
+   the small model is for.
+2. **The default for anything not on the never-downgrade list is `sonnet`.** Mechanical work —
+   citation sweeps, status updates, register bookkeeping, key inventories, renames, a documentation
+   lookup — goes to `haiku`.
+3. **`opus` appears only against a line of the never-downgrade list**, and the brief says which line
+   and why. If you cannot name the line, it is not an `opus` task.
+4. **Split before you downgrade** (above). A brief that mixes a sweep with a ruling pays the ruling's
+   rate for the sweep.
+
+**The mechanism, and the half of it deliberately left off.** `.claude/settings.json` now sets
+`env.CLAUDE_CODE_SUBAGENT_MODEL: "sonnet"`, so a spawn that names no model gets `sonnet` rather than
+inheriting the strongest one. There is a companion `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` that makes that
+value override everything — **it is not set, on purpose.** Documented precedence puts the
+per-invocation `model` parameter above the environment variable, but **where `_FORCE` sits relative to
+that parameter could not be confirmed from the documentation**, and a flag that might silently
+downgrade a Verifier or a money task is the exact failure this file keeps naming. Rule 1 above — name
+the model on every spawn — is the load-bearing half. The setting is the floor under it, not the
+guarantee.
+
+**Weigh a starved strong pass against a completed cheaper one.** On 2026-09-10 the slice-2 Verifier —
+correctly dispatched on the strongest model, per the never-downgrade list — **died on a session limit
+partway through §3 of twenty-one sections.** It had re-measured all five gates and disposed of all
+five Block-1 criteria, because it was told to write findings to disk as it went; everything after that
+was lost. The never-downgrade list is still right. But **"strongest" is worth nothing if the pass does
+not finish**, and a Verifier that reaches §21 on `sonnet` beats one that reaches §3 on `opus`. When
+budget is the binding constraint, say so out loud, downgrade the pass, and **record in the report
+which model ran it** so the verdict carries its own caveat.
+
 **And split the task before downgrading it.** A brief that mixes a register sweep with a ruling has to
 run on the strongest model for the ruling's sake, and pays that rate for the sweep. Send the sweep
 separately. That is most of the saving.

@@ -45,7 +45,8 @@ $buckets = @(
     @('✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4)', { $_.state -eq 'ACCEPTED' }),
     @('🔵 VERIFIED — a Verifier gave a verdict, and it still stands', { $_.state -eq 'VERIFIED' -and $_.verdict -in 'PASS', 'CONDITIONAL' }),
     @('⛔ LAPSED — had a verdict; later code moved under it (D-096)', { $_.verdict -eq 'LAPSED' }),
-    @('🟡 BUILT — shipped, nobody independent has looked', { $_.state -in 'BUILT', 'DELIVERED' }),
+    @('🔴 REJECTED — a Verifier looked, and it did not pass', { $_.verdict -eq 'REJECTED' }),
+    @('🟡 BUILT — shipped, nobody independent has looked', { ($_.state -in 'BUILT', 'DELIVERED') -and ($_.verdict -ne 'REJECTED') }),
     @('⚪ READY / COMMITTED — refined, not built', { $_.state -in 'READY', 'COMMITTED' }),
     @('⚫ NOT-BUILT — cut, and not yet Ready', { $_.state -eq 'NOT-BUILT' }),
     @('🔻 DEFERRED — carried out of this slice, to a named place', { $_.state -eq 'DEFERRED' }),
@@ -81,7 +82,9 @@ $null = $b.AppendLine('|---|---:|---:|---|---|---|---|---|')
 foreach ($s in $stories) {
     $mark = switch ($s.state) {
         'ACCEPTED' { '✅' } 'VERIFIED' { if ($s.verdict -eq 'LAPSED') { '⛔' } elseif ($s.verdict -eq 'CONDITIONAL') { '🔶' } else { '🔵' } }
-        'BUILT' { '🟡' } 'DELIVERED' { '🟡' } 'NOT-BUILT' { '⚫' } 'DEFERRED' { '🔻' } 'UNKNOWN' { '❓' } default { '⚪' }
+        'BUILT' { if ($s.verdict -eq 'REJECTED') { '🔴' } else { '🟡' } }
+        'DELIVERED' { if ($s.verdict -eq 'REJECTED') { '🔴' } else { '🟡' } }
+        'NOT-BUILT' { '⚫' } 'DEFERRED' { '🔻' } 'UNKNOWN' { '❓' } default { '⚪' }
     }
     $null = $b.AppendLine("| [$($s.id)]($($s.path)) | $($s.slice) | $($s.points) | $mark $($s.state) | $($s.verdict) | ``$($s.at)`` | $($s.on) | $($s.title) |")
 }

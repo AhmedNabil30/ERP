@@ -1,6 +1,6 @@
 # KAFF-202 · Create and edit a catalogue item
 
-<!-- kaff id=KAFF-202 slice=2 points=3 state=BUILT verdict=none at=586a7d0 on=2026-09-09 -->
+<!-- kaff id=KAFF-202 slice=2 points=3 state=BUILT verdict=REJECTED at=586a7d0 on=2026-09-10 -->
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-08 by the BA; **amended 2026-09-09** — **`Q12` clears** (D-129 §1). **One Definition-of-Ready box is still unticked — QA's cases, not a business question.**
 **Spec:** **§4.1**, **§4.2**, **§4.4**, §2 · **Decisions:** D-018 (the `status` values, 🟡), D-044 ruling 4, **D-129 §1**
