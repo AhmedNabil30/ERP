@@ -44,7 +44,8 @@ public sealed class PermissionCoverageTests
     [
         // Permission.CatalogueManage left this list on 2026-09-09 (KAFF-202):
         // Api.Tests/CreateCatalogueItemTests.cs and Api.Tests/EditCatalogueItemTests.cs both name it.
-        Permission.BabManage,           // slice 2
+        // Permission.BabManage left this list on 2026-09-10 (GET /api/babs):
+        // Api.Tests/ListBabsTests.cs names it.
         Permission.SubcontractorManage, // slice 2
         // Permission.SupplierManage left this list on 2026-08-26 (KAFF-105a): it is one of
         // Finance's CompanyWide rows GET /api/auth/me reports, and Finance_holds_a_flat_set_of_its_company_wide_permissions
