@@ -8,6 +8,7 @@ using Kaff.Api.Identity;
 using Kaff.Api.Options;
 using Kaff.Domain.Authorization;
 using Kaff.Domain.Common;
+using Kaff.Domain.Common.Serialization;
 using Kaff.Domain.Identity;
 using Kaff.Infrastructure;
 using Kaff.Infrastructure.Persistence;
@@ -182,10 +183,17 @@ builder.Services.AddOpenApi();
 // readable without today's code, and the UI keys server enums as enum.<Type>.<Member>
 // (ux/rtl-and-i18n.md); a numeric wire form would be the one place the same value is a number.
 //
-// KaffJson.Options is frozen by MakeReadOnly, so the converter is added to the pipeline's own
-// instance rather than the options object being shared.
+// KaffJson.Options is frozen by MakeReadOnly, so every converter it carries — decisions.md D-135's
+// decimal/Money/Percentage converters among them — is copied onto the pipeline's own instance rather
+// than the options object being shared. Every decimal on the wire, in both directions, is therefore a
+// JSON string: "1234.5000", not 1234.5.
 builder.Services.ConfigureHttpJsonOptions(options =>
-    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+{
+    foreach (JsonConverter converter in KaffJson.Options.Converters)
+    {
+        options.SerializerOptions.Converters.Add(converter);
+    }
+});
 
 // A malformed request body is the client's defect, and it is a 400 in every environment.
 //

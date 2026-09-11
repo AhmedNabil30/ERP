@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -130,6 +131,14 @@ public sealed class ListBabsTests : IAsyncLifetime
 
     // ---- helpers ------------------------------------------------------------------------------
 
+    /// <summary>
+    /// A decimal off the wire, per decisions.md D-135: it travels as a JSON string in both
+    /// directions, but a pre-ruling audit snapshot may still hold a bare number, so both are read.
+    /// </summary>
+    private static decimal WireDecimal(JsonElement element) => element.ValueKind == JsonValueKind.String
+        ? decimal.Parse(element.GetString()!, CultureInfo.InvariantCulture)
+        : element.GetDecimal();
+
     private async Task<string> CreateBabAsync(int sortOrder = 0, string? codePrefix = null)
     {
         await using KaffDbContext context = _database.CreateContext();
@@ -163,7 +172,7 @@ public sealed class ListBabsTests : IAsyncLifetime
                 element.TryGetProperty("parentBabId", out JsonElement parent) && parent.ValueKind != JsonValueKind.Null
                     ? parent.GetGuid()
                     : null,
-                element.GetProperty("defaultMarkup").GetDecimal(),
+                WireDecimal(element.GetProperty("defaultMarkup")),
                 element.GetProperty("isActive").GetBoolean())),
         ];
     }

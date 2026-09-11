@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -84,7 +85,7 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
 
         using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
         body.RootElement.GetProperty("descriptionAr").GetString().Should().Be("خرسانة مسلحة معدلة");
-        body.RootElement.GetProperty("baseSellRate").GetDecimal().Should().Be(175m);
+        WireDecimal(body.RootElement.GetProperty("baseSellRate")).Should().Be(175m);
 
         await using KaffDbContext stored = _database.CreateBareContext();
         CatalogueItem persisted = await stored.CatalogueItems.SingleAsync(i => i.Id == id, Ct);
@@ -105,8 +106,13 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
         using JsonDocument before = JsonDocument.Parse(record.BeforeJson!);
         using JsonDocument after = JsonDocument.Parse(record.AfterJson!);
 
-        before.RootElement.GetProperty(nameof(CatalogueItem.BaseSellRate)).GetDecimal().Should().Be(150m);
-        after.RootElement.GetProperty(nameof(CatalogueItem.BaseSellRate)).GetDecimal().Should().Be(175m);
+        WireDecimal(before.RootElement.GetProperty(nameof(CatalogueItem.BaseSellRate))).Should().Be(150m);
+        WireDecimal(after.RootElement.GetProperty(nameof(CatalogueItem.BaseSellRate))).Should().Be(175m);
+
+        before.RootElement.GetProperty(nameof(CatalogueItem.DescriptionAr)).GetString().Should().Be(
+            "خرسانة عادية", "V-36-F: AC-202-I asserts old and new values for BOTH edited fields");
+        after.RootElement.GetProperty(nameof(CatalogueItem.DescriptionAr)).GetString().Should().Be(
+            "خرسانة مسلحة معدلة", "V-36-F: AC-202-I asserts old and new values for BOTH edited fields");
     }
 
     [Fact]
@@ -148,6 +154,43 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
 
         (await EditAsync(id, Body(cost: 200m, sell: 100m)))
             .StatusCode.Should().Be(HttpStatusCode.OK, "nothing in spec.md forbids re-pricing into a loss");
+    }
+
+    // ---- V-36-H · an omitted price on edit is refused, not defaulted to zero ---------------------
+
+    [Fact]
+    public async Task An_omitted_cost_price_is_refused_on_edit_not_defaulted_to_zero()
+    {
+        Guid id = await RegisterAsync(cost: 100m, sell: 150m);
+
+        HttpResponseMessage response = await EditAsync(
+            id, new { descriptionAr = "خرسانة عادية", descriptionEn = (string?)null, unit = "م٣", baseSellRate = 150m });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await MessageKeyAsync(response)).Should().Be("errors.master.cost_price_required");
+
+        (await ReadAsync(id)).CostPrice.Amount.Should().Be(100m, "a refused edit changes nothing");
+    }
+
+    [Fact]
+    public async Task An_omitted_sell_rate_is_refused_on_edit_not_defaulted_to_zero()
+    {
+        Guid id = await RegisterAsync(cost: 100m, sell: 150m);
+
+        HttpResponseMessage response = await EditAsync(
+            id, new { descriptionAr = "خرسانة عادية", descriptionEn = (string?)null, unit = "م٣", costPrice = 100m });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await MessageKeyAsync(response)).Should().Be("errors.master.sell_rate_required");
+    }
+
+    [Fact]
+    public async Task An_explicit_zero_price_is_accepted_on_edit()
+    {
+        Guid id = await RegisterAsync(cost: 100m, sell: 150m);
+
+        (await EditAsync(id, Body(cost: 0m, sell: 0m)))
+            .StatusCode.Should().Be(HttpStatusCode.OK, "AC-202-D refuses only negatives — an explicit zero is legal");
     }
 
     // ---- Reprice's whole reach: its own row and one audit record — AC-202-E/F held to slice 4,
@@ -364,6 +407,14 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
             .Select(user => user.SecurityStamp)
             .SingleAsync(Ct);
     }
+
+    /// <summary>
+    /// A decimal off the wire, per decisions.md D-135: it travels as a JSON string in both
+    /// directions, but a pre-ruling audit snapshot may still hold a bare number, so both are read.
+    /// </summary>
+    private static decimal WireDecimal(JsonElement element) => element.ValueKind == JsonValueKind.String
+        ? decimal.Parse(element.GetString()!, CultureInfo.InvariantCulture)
+        : element.GetDecimal();
 
     private static async Task<string?> MessageKeyAsync(HttpResponseMessage response)
     {

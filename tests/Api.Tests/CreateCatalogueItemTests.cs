@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -73,8 +74,8 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
         root.GetProperty("descriptionAr").GetString().Should().Be("خرسانة عادية");
         root.GetProperty("unit").GetString().Should().Be("م٣");
         root.GetProperty("babId").GetGuid().Should().Be(_babId);
-        root.GetProperty("costPrice").GetDecimal().Should().Be(100m);
-        root.GetProperty("baseSellRate").GetDecimal().Should().Be(150m);
+        WireDecimal(root.GetProperty("costPrice")).Should().Be(100m);
+        WireDecimal(root.GetProperty("baseSellRate")).Should().Be(150m);
         root.GetProperty("status").GetString().Should().Be(nameof(CatalogueItemStatus.Active));
 
         typeof(Kaff.Api.Features.Catalogue.CreateCatalogueItem.Response)
@@ -147,6 +148,125 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
 
         stored.CostPrice.Amount.Should().Be(987.6543m);
         stored.BaseSellRate.Amount.Should().Be(1234.5678m);
+    }
+
+    // ---- V-36-H · an omitted price is refused, not defaulted to zero ------------------------------
+
+    [Fact]
+    public async Task An_omitted_cost_price_is_refused_not_defaulted_to_zero()
+    {
+        string code = UniqueNames.Code("CRT-NOPRICE");
+
+        HttpResponseMessage response = await CreateAsync(
+            _technicalOffice,
+            Role.TechnicalOffice,
+            Department.Operations,
+            new
+            {
+                code,
+                descriptionAr = "خرسانة",
+                unit = "م٣",
+                babId = _babId,
+                baseSellRate = 150m,
+            });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await MessageKeyAsync(response)).Should().Be("errors.master.cost_price_required");
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        (await reader.CatalogueItems.AnyAsync(item => item.Code == code, Ct)).Should().BeFalse(
+            "a refused create must not leave a row priced 0.0000 by nobody's decision");
+    }
+
+    [Fact]
+    public async Task An_omitted_sell_rate_is_refused_not_defaulted_to_zero()
+    {
+        string code = UniqueNames.Code("CRT-NOSELL");
+
+        HttpResponseMessage response = await CreateAsync(
+            _technicalOffice,
+            Role.TechnicalOffice,
+            Department.Operations,
+            new
+            {
+                code,
+                descriptionAr = "خرسانة",
+                unit = "م٣",
+                babId = _babId,
+                costPrice = 100m,
+            });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await MessageKeyAsync(response)).Should().Be("errors.master.sell_rate_required");
+    }
+
+    [Fact]
+    public async Task An_explicit_zero_price_is_accepted()
+    {
+        string code = UniqueNames.Code("CRT-ZERO");
+
+        (await CreateAsync(_technicalOffice, Role.TechnicalOffice, Department.Operations, Body(code, cost: 0m, sell: 0m)))
+            .StatusCode.Should().Be(
+                HttpStatusCode.Created, "AC-202-D refuses only negatives — an explicit zero is legal");
+    }
+
+    // ---- D-135 · a price crosses the wire as a string, exactly, in both directions --------------
+
+    [Fact]
+    public async Task A_price_sent_as_a_wire_string_survives_create_and_the_list_read_back_exactly()
+    {
+        // decisions.md D-135's own regression: 12345678901234.5678 measured back as …4.5680 when it
+        // crossed a JavaScript double. Posting it as a JSON string and reading it back as a JSON
+        // string, end to end, is what proves the fix rather than only the converter unit.
+        string code = UniqueNames.Code("CRT-WIRE");
+        const string price = "12345678901234.5678";
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri("/api/catalogue-items", UriKind.Relative))
+        {
+            Content = JsonContent.Create(new
+            {
+                code,
+                descriptionAr = "خرسانة عادية",
+                unit = "م٣",
+                babId = _babId,
+                costPrice = price,
+                baseSellRate = price,
+            }),
+        };
+
+        request.Headers.Add(TestAuthHandler.UserIdHeader, _technicalOffice.ToString());
+        request.Headers.Add(TestAuthHandler.RoleHeader, Role.TechnicalOffice.ToString());
+        request.Headers.Add(TestAuthHandler.SecurityStampHeader, await CurrentStampAsync(_technicalOffice));
+        request.Headers.Add(TestAuthHandler.DepartmentHeader, Department.Operations.ToString());
+
+        HttpResponseMessage created = await _client.SendAsync(request, Ct);
+
+        created.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        using JsonDocument createdBody = JsonDocument.Parse(await created.Content.ReadAsStringAsync(Ct));
+
+        createdBody.RootElement.GetProperty("costPrice").ValueKind.Should().Be(
+            JsonValueKind.String, "D-135: every decimal the API writes is a JSON string");
+        createdBody.RootElement.GetProperty("costPrice").GetString().Should().Be(price);
+
+        using var listRequest = new HttpRequestMessage(
+            HttpMethod.Get, new Uri($"/api/catalogue-items?search={code}&status=all", UriKind.Relative));
+
+        listRequest.Headers.Add(TestAuthHandler.UserIdHeader, _technicalOffice.ToString());
+        listRequest.Headers.Add(TestAuthHandler.RoleHeader, Role.TechnicalOffice.ToString());
+        listRequest.Headers.Add(TestAuthHandler.SecurityStampHeader, await CurrentStampAsync(_technicalOffice));
+        listRequest.Headers.Add(TestAuthHandler.DepartmentHeader, Department.Operations.ToString());
+
+        HttpResponseMessage listed = await _client.SendAsync(listRequest, Ct);
+
+        using JsonDocument listedBody = JsonDocument.Parse(await listed.Content.ReadAsStringAsync(Ct));
+
+        JsonElement item = listedBody.RootElement.GetProperty("items").EnumerateArray()
+            .Single(candidate => candidate.GetProperty("code").GetString() == code);
+
+        item.GetProperty("costPrice").ValueKind.Should().Be(JsonValueKind.String);
+        item.GetProperty("costPrice").GetString().Should().Be(
+            price, "GET /api/catalogue-items reads back the exact string D-135's regression measured");
     }
 
     // ---- rule 9 · an unknown باب is refused, translatably --------------------------------------
@@ -240,8 +360,8 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
         using JsonDocument after = JsonDocument.Parse(record.AfterJson!);
 
         after.RootElement.GetProperty(nameof(CatalogueItem.Code)).GetString().Should().Be(code);
-        after.RootElement.GetProperty(nameof(CatalogueItem.CostPrice)).GetDecimal().Should().Be(10m);
-        after.RootElement.GetProperty(nameof(CatalogueItem.BaseSellRate)).GetDecimal().Should().Be(20m);
+        WireDecimal(after.RootElement.GetProperty(nameof(CatalogueItem.CostPrice))).Should().Be(10m);
+        WireDecimal(after.RootElement.GetProperty(nameof(CatalogueItem.BaseSellRate))).Should().Be(20m);
     }
 
     [Fact]
@@ -330,6 +450,14 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
 
         return body.RootElement.GetProperty("id").GetGuid();
     }
+
+    /// <summary>
+    /// A decimal off the wire, per decisions.md D-135: it travels as a JSON string in both
+    /// directions, but a pre-ruling audit snapshot may still hold a bare number, so both are read.
+    /// </summary>
+    private static decimal WireDecimal(JsonElement element) => element.ValueKind == JsonValueKind.String
+        ? decimal.Parse(element.GetString()!, CultureInfo.InvariantCulture)
+        : element.GetDecimal();
 
     private static async Task<string?> MessageKeyAsync(HttpResponseMessage response)
     {

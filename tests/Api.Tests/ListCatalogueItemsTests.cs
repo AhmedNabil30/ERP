@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -203,7 +204,7 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
             .Should().BeEquivalentTo(["Items"], "the wrapper carries the list and nothing else");
     }
 
-    // ---- AC-206-A / AC-206-F · archived items are hidden by default and findable on request -----
+    // ---- AC-206-A · archived items are hidden by default and findable on request -----------------
 
     [Fact]
     public async Task An_archived_item_is_hidden_by_default_and_returned_when_asked_for()
@@ -216,11 +217,11 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
 
         await ArchiveAsync(archived);
 
+        // V-36-G: this default's reach into the BOQ builder's "add item" search is AC-206-F, held to
+        // slice 4 per the KAFF-206 story — no such search exists in this codebase yet. What this case
+        // proves is only this endpoint's own default: excluded unless asked for.
         (await SearchAsyncAs(_owner, Role.Owner, null, nonce)).Select(item => item.Code).Should().BeEquivalentTo(
-            [active],
-            "KAFF-206 rule 7: the default search excludes archived items — this is also the search the "
-            + "BOQ builder's \"add item\" reaches later, so this default is what keeps an archived item "
-            + "off new work (`Q65`, D-130 §3) without the caller having to know to ask");
+            [active], "KAFF-206 rule 7: the default search excludes archived items");
 
         IReadOnlyList<CatalogueItemSummary> all = await SearchAsyncAs(_owner, Role.Owner, null, nonce, status: "all");
 
@@ -297,6 +298,14 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
     }
 
     // ---- helpers ------------------------------------------------------------------------------
+
+    /// <summary>
+    /// A decimal off the wire, per decisions.md D-135: it travels as a JSON string in both
+    /// directions, but a pre-ruling audit snapshot may still hold a bare number, so both are read.
+    /// </summary>
+    private static decimal WireDecimal(JsonElement element) => element.ValueKind == JsonValueKind.String
+        ? decimal.Parse(element.GetString()!, CultureInfo.InvariantCulture)
+        : element.GetDecimal();
 
     private IEnumerable<(Guid Actor, Role Role, Department? Department)> RefusedActors()
     {
@@ -389,8 +398,8 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
                 element.TryGetProperty("descriptionEn", out JsonElement en) ? en.GetString() : null,
                 element.GetProperty("unit").GetString()!,
                 element.GetProperty("babId").GetGuid(),
-                element.GetProperty("costPrice").GetDecimal(),
-                element.GetProperty("baseSellRate").GetDecimal(),
+                WireDecimal(element.GetProperty("costPrice")),
+                WireDecimal(element.GetProperty("baseSellRate")),
                 Enum.Parse<CatalogueItemStatus>(element.GetProperty("status").GetString()!))),
         ];
     }

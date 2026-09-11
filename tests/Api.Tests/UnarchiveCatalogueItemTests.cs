@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -303,11 +304,19 @@ public sealed class UnarchiveCatalogueItemTests : IAsyncLifetime
                 element.TryGetProperty("descriptionEn", out JsonElement en) ? en.GetString() : null,
                 element.GetProperty("unit").GetString()!,
                 element.GetProperty("babId").GetGuid(),
-                element.GetProperty("costPrice").GetDecimal(),
-                element.GetProperty("baseSellRate").GetDecimal(),
+                WireDecimal(element.GetProperty("costPrice")),
+                WireDecimal(element.GetProperty("baseSellRate")),
                 Enum.Parse<CatalogueItemStatus>(element.GetProperty("status").GetString()!))),
         ];
     }
+
+    /// <summary>
+    /// A decimal off the wire, per decisions.md D-135: it travels as a JSON string in both
+    /// directions, but a pre-ruling audit snapshot may still hold a bare number, so both are read.
+    /// </summary>
+    private static decimal WireDecimal(JsonElement element) => element.ValueKind == JsonValueKind.String
+        ? decimal.Parse(element.GetString()!, CultureInfo.InvariantCulture)
+        : element.GetDecimal();
 
     private async Task StampAsync(
         HttpRequestMessage request, Guid actorId, Role actorRole, Department? actorDepartment, Guid? actorClientId)

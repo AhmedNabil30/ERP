@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -66,12 +67,22 @@ public sealed class ArchiveCatalogueItemTests : IAsyncLifetime
         Guid bab = await CreateBabAsync();
         (Guid id, string code) = await CreateItemAsync(bab);
 
+        CatalogueItem beforeItem = await ReadAsync(id);
+
         (await ArchiveAsync(id, _technicalOffice, Role.TechnicalOffice, Department.Operations))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         CatalogueItem stored = await ReadAsync(id);
         stored.Status.Should().Be(CatalogueItemStatus.Archived);
-        stored.Code.Should().Be(code, "AC-206-A: archiving touches Status and nothing else");
+
+        // V-36-E: AC-206-A says "every one of its §4.1 fields unchanged", not the code alone.
+        stored.Code.Should().Be(beforeItem.Code, "AC-206-A: archiving touches Status and nothing else");
+        stored.DescriptionAr.Should().Be(beforeItem.DescriptionAr, "AC-206-A: every §4.1 field but Status is unchanged");
+        stored.DescriptionEn.Should().Be(beforeItem.DescriptionEn, "AC-206-A: every §4.1 field but Status is unchanged");
+        stored.Unit.Should().Be(beforeItem.Unit, "AC-206-A: every §4.1 field but Status is unchanged");
+        stored.BabId.Should().Be(beforeItem.BabId, "AC-206-A: every §4.1 field but Status is unchanged");
+        stored.CostPrice.Should().Be(beforeItem.CostPrice, "AC-206-A: every §4.1 field but Status is unchanged");
+        stored.BaseSellRate.Should().Be(beforeItem.BaseSellRate, "AC-206-A: every §4.1 field but Status is unchanged");
 
         (await SearchAsync(code)).Select(item => item.Code).Should().NotContain(
             code, "the default search excludes archived items — KAFF-206 rule 7");
@@ -331,8 +342,8 @@ public sealed class ArchiveCatalogueItemTests : IAsyncLifetime
                 element.TryGetProperty("descriptionEn", out JsonElement en) ? en.GetString() : null,
                 element.GetProperty("unit").GetString()!,
                 element.GetProperty("babId").GetGuid(),
-                element.GetProperty("costPrice").GetDecimal(),
-                element.GetProperty("baseSellRate").GetDecimal(),
+                WireDecimal(element.GetProperty("costPrice")),
+                WireDecimal(element.GetProperty("baseSellRate")),
                 Enum.Parse<CatalogueItemStatus>(element.GetProperty("status").GetString()!))),
         ];
     }
@@ -364,6 +375,14 @@ public sealed class ArchiveCatalogueItemTests : IAsyncLifetime
             .Select(user => user.SecurityStamp)
             .SingleAsync(Ct);
     }
+
+    /// <summary>
+    /// A decimal off the wire, per decisions.md D-135: it travels as a JSON string in both
+    /// directions, but a pre-ruling audit snapshot may still hold a bare number, so both are read.
+    /// </summary>
+    private static decimal WireDecimal(JsonElement element) => element.ValueKind == JsonValueKind.String
+        ? decimal.Parse(element.GetString()!, CultureInfo.InvariantCulture)
+        : element.GetDecimal();
 
     private async Task<CatalogueItem> ReadAsync(Guid id)
     {
