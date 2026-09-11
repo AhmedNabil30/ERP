@@ -2,9 +2,9 @@
 
 <!-- kaff id=KAFF-208 slice=2 points=3 state=BUILT verdict=REJECTED at=7117704 on=2026-09-11 -->
 
-**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **⚠️ Amended 2026-09-09 — `Q69` and `Q12` are both answered (D-130 §7, D-129 §1) and `AC-208-E` is written. One Definition-of-Ready box is still unticked — QA's cases.**
-**Spec:** **§10** (*"Two populations, one source each … Nobody appears in both"*), **§2** · **Decisions:** D-016 (🟡), D-044 ruling 4, **D-130 §7, D-129 §1**
-**Register:** `stories/questions-for-karim.md` → **`Q12`** (✅ answered, D-129 §1), **`Q69`** (✅ answered, D-130 §7)
+**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** state and verdict live only in this file's line-3 trailer — see line 3. Refined 2026-09-09 by the BA, amended 2026-09-12 against D-141, D-144 §1 (`AC-208-B`/`AC-208-E` restated, `V-37-F`).
+**Spec:** **§10** (*"Two populations, one source each … Nobody appears in both"*), **§2** · **Decisions:** D-016 (🟡), D-044 ruling 4, **D-130 §7, D-129 §1, D-141, D-144 §1**
+**Register:** `stories/questions-for-karim.md` → **`Q12`** (✅ answered, D-129 §1), **`Q69`** (✅ answered, D-130 §7), **`Q70`** (✅ answered — D-139 §1: warn for day labour, no longer this story's mechanism at all)
 **Screens:** `ux/screen-inventory.md` → **`S-024`** (*"costing type is immutable after creation"*), **`S-023`**, **`S-025`**
 **Owner:** Backend, then Frontend
 **Depends on:** KAFF-207 (the register)
@@ -25,12 +25,16 @@ it live in three different places and no single one of them is the rule:
 |---|---|---|
 | One table, one `Kind` per row | [Verified: 2026-09-09 @ `src/Domain/MasterData/Employee.cs` -> `EmployeeKind`] | Two rows in two tables for one person — structurally impossible, because there is one table |
 | `Kind` has **no setter and no behaviour that changes it** | [Verified: 2026-09-09 @ `src/Domain/MasterData/Employee.cs` -> `Kind`] | A silent edit from one population to the other |
-| The unique index on the normalised phone | [Verified: 2026-09-09 @ `src/Infrastructure/Persistence/Configurations/MasterDataConfigurations.cs` -> `ux_employees_phone`] | The **same person entered twice**, once in each population — which is the only way the sentence can actually be broken today |
+| ⚠️ **A partial unique index on the normalised phone, `WHERE kind = 'Salaried'`** (D-144 §1's amendment to D-141) | Backend's to build — the table-wide `ux_employees_phone` this row used to name is dropped by D-141 | **Two salaried records for one person.** It refuses nothing about a day labourer, and nothing about a day labourer's phone matching a salaried one — see below |
 
-⛔ **The third is the whole of the enforcement, and it is `Q70`.** If a repeated worker phone becomes a
-warning rather than a refusal, **the only mechanism that stops one person appearing in both populations
-disappears with it**, and this story needs another. That is a dependency between two stories'
-questions, and it is stated here rather than discovered during the build.
+⛔ **`Q70` is answered (D-139 §1, D-141, tightened by D-144 §1), and the enforcement changed shape rather than disappearing.** Salaried-to-salaried duplicate phones are **refused** by the partial unique
+index above. Day labour, subcontractor and supplier duplicates are **warn-and-acknowledge**, D-139 §1 —
+no index refuses them. **What is left genuinely open is the cross-population case**: a day labourer's
+phone matching a salaried record's, or the reverse (this is exactly `AC-208-E`'s shape — an archived
+day labourer re-registered as salaried on the same number). **D-144 §1 names this case and does not
+settle it** — *"Karim's answer names the salaried population, not the cross-population case. If the
+Architect cannot derive it from D-139/D-144, it is a question for Nabil."* It is carried here as an
+open question rather than decided, and `AC-208-B`/`AC-208-E` are marked **HELD** on it below.
 
 ⛔ **A defect finding, routed to Backend, not a question:** `MasterDataErrors.EmployeeKindIsImmutable`
 is declared, translated in both catalogues, and **returned by nothing anywhere in `src/`**
@@ -47,7 +51,7 @@ this story returns it (`AC-208-C`) or it is deleted; **it must not stay declared
 | 2 | **The costing source follows the population, not the person's title**: day labour from the daily log, salaried staff from timesheets. **Neither source is built in slice 2** — this story records which one applies and computes nothing | **§10** |
 | 3 | **A person's population is fixed at creation.** No edit path changes it today, and this story adds none [Verified: 2026-09-09 @ `src/Domain/MasterData/Employee.cs` -> `Kind`]. `ux/screen-inventory.md` says the same at `S-024`: *"costing type is immutable after creation"* | §10 · `ux/screen-inventory.md` -> `S-024` |
 | 4 | ✅ **What happens when a day labourer goes onto the payroll is ruled — D-130 §7, forced by the invariant rather than chosen.** **Archive the day-labour record, register a new employee record — never a move.** Moving the one record would make it salaried *retroactively, over its whole history*, falsifying §10's *"nobody appears in both"* at every point in the past; refusing outright is not a rule, only an absence of one, and the man really did join the payroll. Archiving and re-registering holds the invariant at every point in time, and **the engagement history stays attached to the record that earned it** — `KAFF-210`. The two records are not a duplicate person; they are **two employment relationships** | **§10 · D-130 §7** |
-| 5 | **The invariant is asserted, not merely implied.** A criterion that passes because no code path exists is a criterion that stops passing the day one does. `AC-208-A` and `AC-208-B` name the mechanism they rest on | **`process/agile.md`** — a scenario that fails if the rule is broken · D-106 |
+| 5 | **The invariant is asserted, not merely implied.** A criterion that passes because no code path exists is a criterion that stops passing the day one does. `AC-208-A` and `AC-208-B` name the mechanism they rest on. ⚠️ **What that mechanism is has changed**: within a population it is the phone index (refusal for salaried, D-144 §1; warning for day labour, D-139 §1); **across populations it is not yet ruled**, and `AC-208-B`/`AC-208-E` say so rather than asserting a behaviour Nabil has not given | **`process/agile.md`** — a scenario that fails if the rule is broken · D-106 · D-141 · D-144 §1 |
 | 6 | `EmployeeManage`, `CompanyWide`, **no assignment**. HR settled by §2 and §10; **the Owner keeps it too** [Verified: 2026-09-09 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.EmployeeManage`] | §2, §10 · D-044 ruling 4 · **D-129 §1** |
 | 7 | Any refusal this story adds is a **state change that did not happen**, so it writes no audit record — and any population change that is ever permitted **must** write one, before and after, because it changes how the person is paid | **CLAUDE.md** |
 | 8 | Every string is an i18n key. The two population names appear in Arabic in the UI — **يومية is the word §10 and §14 use** and `DayLabour` is the identifier; never *casual*, *temporary* or *labourer* | CLAUDE.md · **§14** |
@@ -70,11 +74,13 @@ Given the `Employee` store with records of both kinds
 When every record is read
 Then each carries exactly one `Kind`, that kind is a defined enum member — not the zero value and not a string the binder produced — and no record carries both or neither
 
-**AC-208-B — one person cannot be created into both populations** *(fails if the rule is broken)*
+**AC-208-B — HELD on the cross-population phone case (D-144 §1's open consequence)**
 Given a registered day labourer
-When the same person is submitted again as salaried staff
-Then the second create is refused
-And the test names the mechanism that refused it rather than asserting only the status code — today that is the unique index on the normalised phone, and `Q70` may replace it
+When the same person's phone is submitted on a salaried create
+Then — **held.** Whether this refuses or warns-and-acknowledges is not ruled: D-144 §1 rules the
+salaried-to-salaried case (refuse) and the day-labour/subcontractor/supplier case (warn, D-139 §1) but
+explicitly leaves this cross-population match to the Architect or, failing that, to Nabil. **Until it is
+ruled, nothing here asserts either behaviour as correct**
 
 **AC-208-C — a population cannot be edited from one to the other** *(fails if the rule is broken)*
 Given an existing employee of either kind
@@ -87,11 +93,12 @@ Given the `Employee` entity
 When its members are enumerated as an allow-list
 Then no public member sets `Kind` after construction, and the allow-list is written out by name so that adding one is a deliberate edit to this test rather than a silent widening
 
-**AC-208-E — a day labourer joining the payroll is archived and re-registered, never moved** *(fails if the rule is broken)*
+**AC-208-E — a day labourer joining the payroll is archived and re-registered, never moved** *(fails if the rule is broken, restated 2026-09-12 — `V-37-F`: the table-wide phone index that used to make this scenario refuse is gone, D-141)*
 Given a day labourer with an engagement history
-When HR records that he has gone onto the payroll as salaried staff
+When HR records that he has gone onto the payroll as salaried staff, on the same phone number
 Then his day-labour record is archived, unchanged and still carrying every engagement it earned, and a **new** employee record is created for him as salaried staff
 And no single record ever carries both `Kind`s, and no existing engagement's record is edited to point at the new record — `AC-208-C` still refuses a direct edit of `Kind`, because this is a create-and-archive, never a move (D-130 §7)
+And **whether the salaried create must refuse or warn-and-acknowledge on this cross-population phone match is HELD, exactly as `AC-208-B`** — D-144 §1 does not settle it
 
 **AC-208-F — a role without `EmployeeManage` cannot reach either population** *(fails if the rule is broken)*
 Given a signed-in user of each role that does not hold `EmployeeManage`
@@ -109,23 +116,22 @@ Then it reads **يومية** and the salaried term verbatim from the catalogue, 
 |---|---|
 | Every criterion is Given / When / Then | ✅ — `AC-208-A` … `AC-208-G` |
 | Stable `AC-208-<LETTER>` ids, appended never inserted | ✅ |
-| Every business rule cites a `spec.md` section or a D-number | ✅ — rules 1–8; rule 4 is re-cited to `D-130 §7` |
+| Every business rule cites a `spec.md` section or a D-number | ✅ — rules 1–8; rule 4 is re-cited to `D-130 §7`, rule 5 to `D-141`/`D-144 §1` |
 | No uncited rule | ✅ |
 | Permissions named explicitly | ✅ — `EmployeeManage`, CompanyWide, no assignment; the Owner grant confirmed by **D-129 §1** |
 | Money behaviour named explicitly | ✅ — moves none, stores none, computes none; and the paragraph says why a money-free story is in the money section |
 | Arabic UI strings as i18n keys | ✅ — three keys plus one existing, and §14's term is pinned |
 | The audit record it writes is stated | ✅ — rule 7: a refusal writes none, and the new create-and-archive pair each write their own (creation, archiving) |
-| **QA has written at least one scenario that fails if the rule is broken** | ✅ **Met 2026-09-09** — `qa/slice-2/test-cases.md`, `TC-2-001`…`TC-2-098`. ⚠️ **`AC-208-C`'s case is written and HELD, not passing** — no employee-edit endpoint exists to send the request to, which is `AC-125-C`'s exact shape. Held rather than dropped, so the test is waiting the day the endpoint ships. |
+| **QA has written at least one scenario that fails if the rule is broken** | ✅ **Met 2026-09-09** — `qa/slice-2/test-cases.md`, `TC-2-001`…`TC-2-098`. ⚠️ **`AC-208-C`'s case is written and HELD, not passing** — no employee-edit endpoint exists to send the request to, which is `AC-125-C`'s exact shape. Held rather than dropped, so the test is waiting the day the endpoint ships. **`AC-208-B` and `AC-208-E`'s cases need re-casing against the HELD wording (2026-09-12)** — `TC-2-...` that asserted a `409` on this scenario now asserts nothing until the cross-population case is ruled |
 | Story-currency citations dated with a stable identifier | ✅ |
-| Not `BLOCKED` on an open question | ✅ — `Q69` (D-130 §7) and `Q12` (D-129 §1) are both answered. `Q70` still reaches `AC-208-B`'s mechanism through `KAFF-209` and is unrelated to this box |
+| Not `BLOCKED` on an open question | ✅ — `Q69` (D-130 §7), `Q12` (D-129 §1) and `Q70` (D-139 §1 / D-141, for the within-population case) are all answered. ⚠️ **New hold, does not block the trailer**: the cross-population phone case (`AC-208-B`, `AC-208-E`) is open per D-144 §1, and marked HELD rather than blocking, because the invariant's within-population enforcement is otherwise sound |
 
-**Flip the trailer to `READY` when QA's cases land.** `Q70` need not be ruled first, but `AC-208-B`
-must be re-read the day it is.
+**Flip the trailer to `READY` when QA's cases land**, re-cased against the HELD wording above.
 
 ## Not in this story
 - **The register itself.** `KAFF-207`.
-- **The worker phone rule.** `KAFF-209` and `Q70` — this story consumes that decision and does not
-  take it.
+- **The worker phone rule.** `KAFF-209` — `Q70`'s within-population answer (D-139 §1, D-141) is
+  consumed here, not decided here.
 - **Costing anybody.** The daily log is slice 6, timesheets are slice 6, payroll is a treasury event.
   **Nothing here computes or stores a rate or a total.**
 - **Adding a `SetKind`.** ✅ **Settled by `Q69` (D-130 §7): never a move, so no `SetKind` is added.**
@@ -138,5 +144,6 @@ must be re-read the day it is.
 |---|---|---|
 | **`Q69`** | ✅ **ANSWERED — D-130 §7, forced by the invariant.** Archive the day-labour record, register a new employee record — never a move. `AC-208-E` is written | **Closed** |
 | **`Q12`** | ✅ **ANSWERED — D-129 §1.** The Owner keeps `EmployeeManage` | **Closed** |
-| **`Q70`** | Raised by `KAFF-209`. If the worker phone becomes a warning, **the last mechanism enforcing this story's invariant is gone** and this story needs another one | **Karim** |
+| **`Q70`** | ✅ **ANSWERED for its within-population half — D-139 §1, tightened by D-144 §1.** Salaried-to-salaried duplicates refuse; day labour, subcontractor and supplier duplicates warn-and-acknowledge. **The cross-population half is not answered** — see the new row below | **Closed** (within-population) |
+| **new** | **Raised by D-144 §1, unresolved.** A day labourer's phone matching a salaried record, or the reverse (`AC-208-B`, `AC-208-E`) — refuse, or warn-and-acknowledge? Karim's D-144 §1 answer names the salaried population alone and explicitly does not reach this case | **Architect first; Nabil if the Architect cannot derive it (D-144 §1)** |
 | 1 | **`EmployeeKindIsImmutable` is declared, translated, and returned by nothing** [Verified: 2026-09-09 @ `src/Domain/MasterData/MasterDataErrors.cs` -> `EmployeeKindIsImmutable`]. **A defect finding, not a question** — an unreachable error reads as an enforced rule. Routed to **Backend** through `AC-208-C`, and named here so it is not read as this story inventing one | **Backend** |
