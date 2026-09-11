@@ -46,6 +46,21 @@ UI repairs, `npm test` 35 passing (the Frontend's figures). **The `204`/`205`/`2
 catalogue E2E suite are not started**, so they go to a second Frontend session. `V-36-K` raised a UX
 question: `ux/rtl-and-i18n.md` does not say whether a price field accepts Arabic-Indic digits, so for
 now they are refused, not converted.
+⚠️ **The second Frontend session died on a session limit.** It left the `204`/`205` screens
+**uncommitted** (`features/babs/`, `bab-tree.ts`, `percent-wire.ts`, `bab-manage.guard.ts`, the move
+panel in the catalogue form). A Frontend finisher was dispatched to gate and commit that work, then
+finish `213` and the E2E suite. Trailers for `204`/`205`/`213` now read `COMMITTED`: backend on
+`main`, frontend not yet (D-133 §7).
+✅ **Finished.** `4f7f591` commits the باب screens for `204`/`205`/`213`, including 33 Arabic keys the
+dead session had left only in `en.json`. `npm test` is 50/50 (the Frontend's figure). **The trailers
+move to `BUILT`.** ⚠️ **The catalogue and باب E2E suite is still unwritten.**
+✅ **Backend `fe571d7`: `KAFF-207` + `208`**, four `/api/employees` endpoints. Api 427/427 is the
+Backend's figure. Both trailers read `COMMITTED`; the frontend (`S-023`/`S-024`) is dispatched
+next. ⛔ **Found: `AC-208-E` is blocked by `Q70`.** The phone index is unique across the whole table,
+so an archived day labourer cannot be re-registered as salaried under the same phone (D-130 §7).
+Whether phones must be unique only among active records is Karim's to answer (`Q70`). **Owed by
+BA and QA:** `AC-207-C`/`TC-2-068` describe typing a duplicate employee code, which D-130 §6 made
+impossible.
 
 | Finding | What | Owner | State |
 |---|---|---|---|
@@ -330,8 +345,9 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 5 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 |
 | 🔴 REJECTED — a Verifier looked, and it did not pass | 0 | 6 | 0 |
-| ⚪ READY / COMMITTED — refined, not built | 0 | 5 | 0 |
-| ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 37 | 5 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 11 | 0 |
+| ⚪ READY / COMMITTED — refined, not built | 0 | 8 | 0 |
+| ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 23 | 5 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 |
 | **total** | **127** | **53** | **5** |
 
@@ -375,16 +391,16 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-201](stories/slice-2-masters/KAFF-201-re-importing-is-not-a-sync.md) | 2 | 2 | ⚫ NOT-BUILT | none | `-` | 2026-09-08 | Re-importing is not a sync — a second import is a deliberate, reviewed act |
 | [KAFF-202](stories/slice-2-masters/KAFF-202-create-and-edit-a-catalogue-item.md) | 2 | 3 | 🔴 BUILT | REJECTED | `d5e6548` | 2026-09-10 | Create and edit a catalogue item |
 | [KAFF-203](stories/slice-2-masters/KAFF-203-find-a-catalogue-item-by-code-or-description.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `d5e6548` | 2026-09-10 | Find a catalogue item by code or description |
-| [KAFF-204](stories/slice-2-masters/KAFF-204-the-bab-tree-with-default-markup.md) | 2 | 5 | ⚪ READY | none | `-` | 2026-09-10 | The باب tree, carrying each trade's default markup |
-| [KAFF-205](stories/slice-2-masters/KAFF-205-reparent-a-bab-and-move-an-item.md) | 2 | 3 | ⚫ NOT-BUILT | none | `-` | 2026-09-08 | Re-parent a باب, and move an item between أبواب |
+| [KAFF-204](stories/slice-2-masters/KAFF-204-the-bab-tree-with-default-markup.md) | 2 | 5 | 🟡 BUILT | none | `4f7f591` | 2026-09-11 | The باب tree, carrying each trade's default markup |
+| [KAFF-205](stories/slice-2-masters/KAFF-205-reparent-a-bab-and-move-an-item.md) | 2 | 3 | 🟡 BUILT | none | `4f7f591` | 2026-09-11 | Re-parent a باب, and move an item between أبواب |
 | [KAFF-206](stories/slice-2-masters/KAFF-206-archive-a-catalogue-item.md) | 2 | 3 | 🔴 BUILT | REJECTED | `d5e6548` | 2026-09-10 | Archive a catalogue item without breaking what already references it |
-| [KAFF-207](stories/slice-2-masters/KAFF-207-employee-register.md) | 2 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Employee register — exactly one record per costed person |
-| [KAFF-208](stories/slice-2-masters/KAFF-208-nobody-appears-in-both-populations.md) | 2 | 3 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Nobody appears in both populations: day labour and salaried |
+| [KAFF-207](stories/slice-2-masters/KAFF-207-employee-register.md) | 2 | 5 | ⚪ COMMITTED | none | `fe571d7` | 2026-09-11 | Employee register — exactly one record per costed person |
+| [KAFF-208](stories/slice-2-masters/KAFF-208-nobody-appears-in-both-populations.md) | 2 | 3 | ⚪ COMMITTED | none | `fe571d7` | 2026-09-11 | Nobody appears in both populations: day labour and salaried |
 | [KAFF-209](stories/slice-2-masters/KAFF-209-register-a-worker-from-site.md) | 2 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Register a worker from site, deduplicated by phone |
 | [KAFF-210](stories/slice-2-masters/KAFF-210-worker-engagement-history.md) | 2 | 3 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Worker engagement history, day rate, frequency and rating |
 | [KAFF-211](stories/slice-2-masters/KAFF-211-subcontractor-master-with-rates.md) | 2 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Subcontractor master with rates |
 | [KAFF-212](stories/slice-2-masters/KAFF-212-supplier-master.md) | 2 | 3 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Supplier master — one account serving many projects |
-| [KAFF-213](stories/slice-2-masters/KAFF-213-archive-a-bab.md) | 2 | 3 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Archive a باب |
+| [KAFF-213](stories/slice-2-masters/KAFF-213-archive-a-bab.md) | 2 | 3 | 🟡 BUILT | none | `4f7f591` | 2026-09-11 | Archive a باب |
 | [KAFF-214](stories/slice-2-masters/KAFF-214-unarchive-a-catalogue-item.md) | 2 | 2 | 🔶 VERIFIED | CONDITIONAL | `d5e6548` | 2026-09-10 | Un-archive a catalogue item |
 | [KAFF-300](stories/slice-3-treasury/KAFF-300-the-section-15-worked-example.md) | 3 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-07 | The §15 worked example as a fixture — present and failing before anything else is built |
 

@@ -1,6 +1,6 @@
 # KAFF-213 · Archive a باب
 
-<!-- kaff id=KAFF-213 slice=2 points=3 state=NOT-BUILT verdict=none at=- on=2026-09-09 -->
+<!-- kaff id=KAFF-213 slice=2 points=3 state=BUILT verdict=none at=4f7f591 on=2026-09-11 -->
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Cut 2026-09-09 by the Scrum Master (`decisions.md` D-128 §2) and refined the same day by the BA against `decisions.md` D-130 §5, which rules the business half `KAFF-204`'s own refinement left open (`Q67`). **One Definition-of-Ready box is unticked — QA's cases.**
 **Spec:** **§2** (*"~40 trades, tree"*), §4.4 · **Decisions:** D-128 §2 (the story cut), **D-130 §5** (the ruling), D-044 ruling 4
