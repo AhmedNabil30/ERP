@@ -7,7 +7,7 @@
 state and verdict live only in this file's line-3 trailer and in `STATUS.md` — not restated here
 (`CLAUDE.md`, D-119). Cut 2026-09-10 by the BA, from `qa/slice-2/verification-2026-09-10.md`'s
 `V-35-U` — placement ruled by the Scrum Master.
-**Spec:** §4.5 (item codes are unique) · **Decisions:** **D-130 §4** (`Q66`), D-044 ruling 4, D-129 §1
+**Spec:** **Decisions:** **D-130 §4** (`Q66`), D-044 ruling 4, D-129 §1
 **Register:** `stories/questions-for-karim.md` → **`Q66`** (✅ answered, D-130 §4), **`Q39`** (✅
 answered in the same shape, D-130 §4)
 **Screens:** `ux/screen-inventory.md` → **`S-017`** (the list, and its per-row un-archive control)
@@ -55,7 +55,7 @@ in what already exists, found while writing this table and left for the owner na
 ## Business rules
 | # | Rule | Source |
 |---|---|---|
-| 1 | An archived item can be un-archived, returning it to `Active` with every other field unchanged. Codes are unique, so without this an archived-in-error item can only return under a new code and the catalogue then carries two codes for one real thing, permanently | **D-130 §4** (`Q66`) · §4.5 |
+| 1 | An archived item can be un-archived, returning it to `Active` with every other field unchanged. Codes are unique, so without this an archived-in-error item can only return under a new code and the catalogue then carries two codes for one real thing, permanently | **D-130 §4** (`Q66`) |
 | 2 | Un-archiving an item that is not archived is refused with `errors.master.not_archived`, not silently accepted — the mirror of `KAFF-206` rule 5's refusal of a second archive [Verified: 2026-09-10 @ `src/Domain/MasterData/CatalogueItem.cs` -> `Unarchive`] | **D-130 §4** · KAFF-206 rule 5 |
 | 3 | The mechanism is built once in `Domain/`, on the entity itself, not duplicated per master record. **This answers `Q39` for clients in the same shape** — the rule is one rule for archived records generally, this story exercises it for the catalogue | **CLAUDE.md** · **D-130 §4** |
 | 4 | `CatalogueManage`, `CompanyWide`, **no assignment** — same gate as every other catalogue endpoint. Technical Office settled by §2; the Owner keeps it too | §2 · D-044 ruling 4 · **D-129 §1** |
@@ -115,15 +115,11 @@ and the page body does not scroll horizontally
 | Money behaviour named explicitly | ✅ — moves none, writes no `Posting` |
 | Arabic UI strings as i18n keys | ✅ — one key, already shipped, plus the existing refusal key |
 | The audit record it writes is stated | ✅ — rule 5, `AC-214-D` |
-| **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** QA has not cased this story — it did not exist when `qa/slice-2/test-cases.md` was written, and that file says so explicitly under `KAFF-206`'s own section (`V-35-U`). **QA's to write** |
+| **QA has written at least one scenario that fails if the rule is broken** | ✅ Met, with [Verified: 2026-09-11 @ `qa/slice-2/test-cases.md` → `TC-2-099`]. `TC-2-103` (the E2E case for `AC-214-E`) held until a باب can exist on a seeded stack (D-133 §4). |
 | Story-currency citations dated with a stable identifier | ✅ — all dated 2026-09-10, re-read today |
 | Not `BLOCKED` on an open question | ✅ — `Q66` (D-130 §4) is answered; no new question is raised |
 
-**This story cannot flip to `READY` on the QA box alone** — it also carries `state=BUILT` in its
-trailer, which is not a normal Ready→Build progression. **Flip to `READY`'s formal sense is moot here;
-what has to happen is QA casing it**, so the two gaps noted in *What already exists* above (`Client`
-untested, the fuller field-unchanged assertion untested) get closed by a real case rather than by this
-story's prose alone.
+QA has now cased this story as `TC-2-099`…`TC-2-103` in `qa/slice-2/test-cases.md`, and its state lives in the line-3 trailer.
 
 ## Not in this story
 - **Archiving.** `KAFF-206`.

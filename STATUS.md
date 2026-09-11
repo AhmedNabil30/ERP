@@ -21,9 +21,14 @@ found **`V-36-A`…`K`**. The verdicts, now on the board: `KAFF-202` **REJECTED*
 blank price is stored as 0), `KAFF-206` **REJECTED** (`V-36-C`, badge contrast), `KAFF-203` and
 `KAFF-214` **CONDITIONAL** (D-133 §8).
 
-⛔ **2026-09-11 — Nabil: build slice 2 as one batch, then verify it once (D-134).** Order: Architect
-(`V-36-I` money on the wire, and `KAFF-200`'s Excel reader) → `KAFF-204` plus the `V-36` repairs →
-`205` → `213` → `200` → `201` → `207` → `208` → one fresh Verifier. `KAFF-209`–`212` wait on Karim.
+⛔ **2026-09-11 — Nabil: build slice 2 as one batch, then verify it once (D-134).** ✅ The Architect
+ruled `a169f62`: **D-135**, money crosses the wire as a JSON string, and **D-136**, `.xlsx` is read
+with `ZipArchive` + `XmlReader`, no package. ⛔ **`KAFF-200`/`201` wait for Nabil.** D-136 raised
+three questions that decide the template: one description column or two, whether a باب is named by
+code or by name, and what the `status` column does. D-008's rounding question comes with them.
+**Order now:** BA `V-36-D` → Backend: D-135 plus the `V-36` backend repairs → Backend: `204`, `205`,
+`213` → Frontend: D-135, the `V-36` repairs, the `204`/`205`/`213` screens and the catalogue E2E →
+Backend and then Frontend: `207`, `208` → one fresh Verifier. `KAFF-209`–`212` wait on Karim.
 
 | Finding | What | Owner | State |
 |---|---|---|---|
