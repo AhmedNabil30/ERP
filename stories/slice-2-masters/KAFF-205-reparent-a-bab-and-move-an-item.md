@@ -63,11 +63,11 @@ right; the sentence it returns is not.
 in `AC-205-C`. **Two things were wrong with it and Backend correctly declined to decide either**
 (D-127 §1, *"Reported, not decided"*):
 
-1. ⛔ **The key exists in neither catalogue** [Verified: 2026-09-09 @ `src/Web/public/locales/en.json` -> `errors.master.bab_cannot_be_its_own_parent`
+1. ⛔ **The key exists in neither catalogue** [Verified: 2026-09-11 @ `src/Web/public/locales/en.json` -> `errors.master.bab_cannot_be_its_own_ancestor`
    — that is the only باب refusal in the file, and there is no `errors.bab.` entry in either catalogue].
 2. ⛔ **`errors.bab.*` is a namespace this codebase does not use.** Every shipped master-data refusal
    is `errors.master.*`, one namespace per domain error catalogue class
-   [Verified: 2026-09-09 @ `src/Domain/MasterData/MasterDataErrors.cs` -> `BabCannotBeItsOwnParent`].
+   [Verified: 2026-09-11 @ `src/Domain/MasterData/MasterDataErrors.cs` -> `BabCannotBeItsOwnAncestor`].
 
 **This is a naming question and a criterion question, not a business one. It is the BA's, and it is
 settled here rather than sent to Karim.** `decisions.md` **D-128**.
@@ -131,10 +131,14 @@ When the item is moved to a باب at 30%, and separately when its old باب is
 Then every value on the signed BOQ line is unchanged, including its markup
 And no field on the line holds a foreign key to the catalogue row or to either باب
 
+⛔ **Held, outstanding to slice 4.** There is **no `Boq`, `BoqLine` or `Estimate` entity anywhere in this codebase** [Verified: 2026-09-11 — no such class under `src/`], so there is no signed BOQ line for this case to verify. Held, not dropped, the same `TC-2-022`/`TC-2-023` shape, so the day slice 4 ships those entities this case is already written and waiting for them.
+
 **AC-205-F — a move re-prices no open estimate and raises no alert** *(fails if the rule is broken)*
 Given open, unsigned estimate lines for the item
 When the item is moved to a باب with a different markup
 Then no estimate line changes, and this story raises no alert — §4.4's review is `S-049`, slice 4
+
+⛔ **Held, outstanding to slice 4.** There is **no `Boq`, `BoqLine` or `Estimate` entity anywhere in this codebase** [Verified: 2026-09-11 — no such class under `src/`], so there is no open estimate for this case to verify. Held, not dropped, the same `TC-2-022`/`TC-2-023` shape, so the day slice 4 ships those entities this case is already written and waiting for them.
 
 **AC-205-G — the new default reaches the next line only**
 Given an item moved from a باب at 15% to a باب at 30%

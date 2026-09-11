@@ -11558,9 +11558,10 @@ implementation: `KaffJson`'s converters, wired into the HTTP pipeline.
   server change."* That holds for requests only. **Responses are the other half, and they need the
   server.** `ListCatalogueItems` writes `CostPrice` as a JSON number
   [Verified: 2026-09-11 @ `src/Api/Features/Catalogue/ListCatalogueItems/Response.cs` -> `CostPrice`].
-  `HttpClient`'s `JSON.parse` makes it a double before any component sees it. The edit form then runs
-  [Verified: 2026-09-11 @ `src/Web/src/app/features/catalogue/catalogue-form/catalogue-form-page.ts`
-  -> `String(item.costPrice)`] on a value that was already rounded. So the "description-only edit
+  `HttpClient`'s `JSON.parse` makes it a double before any component sees it. The edit form then ran
+  `String(item.costPrice)` on a value that was already rounded (in `catalogue-form-page.ts` as of
+  `a169f62`; *historical — removed by `c5b2547` under this ruling, so it is no longer a live citation.
+  Converted by the Scrum Master 2026-09-11, the ruling unchanged*). So the "description-only edit
   re-prices the item" defect that `V-36-I` found starts in the response. `toWireDecimal` is not its
   source. Fixing only `toWireDecimal` would leave it standing.
 * **`KaffJson` was never wired into HTTP, and a string price is accepted today only by accident.**

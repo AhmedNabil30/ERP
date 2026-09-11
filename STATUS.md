@@ -30,6 +30,23 @@ code or by name, and what the `status` column does. D-008's rounding question co
 `213` → Frontend: D-135, the `V-36` repairs, the `204`/`205`/`213` screens and the catalogue E2E →
 Backend and then Frontend: `207`, `208` → one fresh Verifier. `KAFF-209`–`212` wait on Karim.
 
+⚠️ **2026-09-11, state after the first Backend session.** It wrote D-135's server half, the `V-36`
+backend repairs, and the `204`/`205`/`213` APIs (`CreateBab`, `EditBab`, `MoveBab`, `ArchiveBab`,
+`MoveCatalogueItem`, `DecimalText`), then **ended without committing any of it**, waiting on a
+background test run that never finished. Measured by the Scrum Master: build 0/0 and Domain.Tests
+178/178, both from that session's own logs. **No Api.Tests result exists, and no mutation was
+recorded.** A finisher Backend session was dispatched to run the gates and commit per item.
+✅ **Finished and committed**: `f501f32` (D-135 server) · `86f0188` (`V-36-H/E/F/G`) · `bb7b8c9`
+(`KAFF-204` API) · `8beaf5d` (`KAFF-205` API) · `a69de5d` (`KAFF-213` API). Reported by the
+finisher: build 0/0, Domain 186/186, **Api 405/405**, one recorded mutation per item. These are its
+figures; the batch Verifier re-measures them. `AC-205-E`/`F` were found to be `V-35-N`'s shape a
+third time and are now **held to slice 4**; `qa/slice-2` counts **93 live cases of 103**. **Backend
+lane still to build: `207`, `208`.** Frontend `c5b2547`: D-135's client half and the `V-36-A/B/C/H/J/K`
+UI repairs, `npm test` 35 passing (the Frontend's figures). **The `204`/`205`/`213` screens and the
+catalogue E2E suite are not started**, so they go to a second Frontend session. `V-36-K` raised a UX
+question: `ux/rtl-and-i18n.md` does not say whether a price field accepts Arabic-Indic digits, so for
+now they are refused, not converted.
+
 | Finding | What | Owner | State |
 |---|---|---|---|
 | `V-35-S` HIGH | No catalogue frontend | Frontend | Screens built in `934bfb9`, **unverified**. E2E `TC-2-027`/`035`/`065` **not written, and cannot be**: no endpoint creates a باب, so a seeded stack holds no catalogue row (D-133 §4). **Waits on `KAFF-204`** |

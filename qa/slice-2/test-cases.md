@@ -46,7 +46,7 @@ the scenario is stated, nothing is asserted, and it is not a passing case.
 | KAFF-202 create/edit an item | TC-2-017…027 | `TC-2-022`/`023` (`AC-202-E`/`F`) held to slice 4 — no BOQ/estimate entity exists (`V-35-N`, 2026-09-10) |
 | KAFF-203 find an item | TC-2-028…036 | `TC-2-036` rewritten 2026-09-10 so باب-order and code-order predict different sequences (`V-35-R`) — not held, just no longer confounded. `TC-2-035` (`AC-203-H`, E2E) cannot run on a seeded stack — no rows (D-133 §4) |
 | KAFF-204 باب tree + markup | TC-2-037…046 | data (Kaff's real trades/rates) — `Q75`. `TC-2-039`'s (`AC-204-C`) BOQ-line half also held to slice 4, the `TC-2-040` shape (`V-35-N`, 2026-09-10) |
-| KAFF-205 re-parent / move item | TC-2-047…056 | — |
+| KAFF-205 re-parent / move item | TC-2-047…056 | `TC-2-051`/`052` (`AC-205-E`/`F`) held to slice 4 — no BOQ/estimate entity exists (`V-35-N`, 2026-09-11) |
 | KAFF-206 archive an item | TC-2-057…065 | `TC-2-059`/`060` (`AC-206-C`/`D`) held to slice 4. `TC-2-062` re-scoped 2026-09-10 to `AC-206-A`; `AC-206-F`'s own guarantee held to slice 4, mechanism the Architect's (`V-35-O`). `TC-2-065` (`AC-206-I`, E2E) cannot run on a seeded stack — no rows (D-133 §4). Un-archive → **`KAFF-214`** |
 | KAFF-207 employee register | TC-2-066…075 | — |
 | KAFF-208 nobody in both populations | TC-2-076…082 | `AC-208-C` — no edit endpoint exists to call |
@@ -57,16 +57,16 @@ the scenario is stated, nothing is asserted, and it is not a passing case.
 | KAFF-211 subcontractor master | none | `Q29`, `Q73`, `Q70` |
 | KAFF-212 supplier master | none | `Q29`, `Q70` |
 
-**95 live cases, recounted 2026-09-10 — the prior "98" conflated total written with live.** `TC-2-001`
-… `TC-2-103` is **103** cases written. **8 cannot be run and are not live**, per this file's own
+**93 live cases, recounted 2026-09-11 — subtracting 2 newly held for KAFF-205.** `TC-2-001`
+… `TC-2-103` is **103** cases written. **10 cannot be run and are not live**, per this file's own
 header — *"it is not a passing case"*: `TC-2-059`, `TC-2-060` (`AC-206-C`/`D`, pre-existing, no
 BOQ/estimate entity), `TC-2-078` (`AC-208-C`, pre-existing, "Held, not deleted", no edit endpoint),
-`TC-2-022`, `TC-2-023` (`AC-202-E`/`F`, newly held today, no BOQ/estimate entity, `V-35-N`), and, newly
+`TC-2-022`, `TC-2-023` (`AC-202-E`/`F`, newly held 2026-09-10, no BOQ/estimate entity, `V-35-N`), `TC-2-051`, `TC-2-052` (`AC-205-E`/`F`, newly held today, no BOQ/estimate entity, `V-35-N`), and, newly
 dated today (D-133 §4, item 6) — **not `HELD Qnn`'s shape (no open business question), the same
 "cannot produce a value to assert against" shape as the BOQ-absence cases above** — `TC-2-035`
 (`AC-203-H`), `TC-2-065` (`AC-206-I`) and `TC-2-103` (`AC-214-E`), none of which can exercise its
 assertion against a seeded stack that holds no catalogue row, because no endpoint creates a باب and
-none is seeded. `103 − 8 = 95`. `TC-2-027` (`AC-202-J`) is **not** added to this list: it can render
+none is seeded. `103 − 10 = 93`. `TC-2-027` (`AC-202-J`) is **not** added to this list: it can render
 and drive `S-018`'s empty create form today, only its edit half is blocked, so it counts live with that
 caveat recorded inline. Roles cited throughout are the nine in `Role.cs`: `Owner`, `Finance`,
 `TechnicalOffice`, `SiteEngineer`, `HeadOfDesign`, `MarketingSales`, `Client`, `Subcontractor`, `Hr`
@@ -567,11 +567,15 @@ the signed line is unchanged, including its markup, and no field on the line hol
 catalogue row or to either باب.
 *Fails if:* the line's markup or any other value changes under either move.
 
+⛔ **Unexecutable as written, today — held, outstanding to slice 4 (`V-35-N`).** There is **no `Boq`, `BoqLine` or `Estimate` entity anywhere in this codebase** [Verified: 2026-09-11 — no such class under `src/`], so there is no signed BOQ line for this case to leave untouched. **Held, not dropped**, the same `TC-2-022`/`TC-2-023` shape, so the day slice 4 ships those entities this case is already written and waiting for them.
+
 **TC-2-052 · a move re-prices no open estimate and raises no alert**
 `AC-205-F` · P2 · Api · §4.4
 Given open, unsigned estimate lines for the item, when the item is moved to a باب with a different
 markup, then no estimate line changes and no alert is raised.
 *Fails if:* an estimate line changes, or an alert is raised.
+
+⛔ **Unexecutable as written, today — held, outstanding to slice 4 (`V-35-N`).** There is **no `Boq`, `BoqLine` or `Estimate` entity anywhere in this codebase** [Verified: 2026-09-11 — no such class under `src/`], so there is no open estimate for this case to leave untouched. **Held, not dropped**, the same `TC-2-022`/`TC-2-023` shape, so the day slice 4 ships those entities this case is already written and waiting for them.
 
 **TC-2-053 · the new default reaches only the next line**
 `AC-205-G` · P1 · Api, real PostgreSQL · §4.2
