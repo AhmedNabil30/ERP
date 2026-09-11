@@ -85,13 +85,15 @@ export class CatalogueListPage {
   );
 
   /**
-   * True when the current view is narrower than "everything" — a search term, or a filter other than
-   * the default `active`. Drives which of the two empty states renders (`AC-203-D`): "nothing matches"
-   * is a different fact from "the catalogue is empty", and conflating them is how an operator gets told
-   * there is nothing to find when they mistyped a code.
+   * True when the current view could be hiding rows that exist — `AC-203-D`, repaired per `V-36-A`.
+   * The true "nothing exists yet" state only applies to the one query that cannot be hiding anything:
+   * `status=all` with no search term. **`active`, the default, is itself a filter** — `KAFF-206` rule
+   * 7 says so, and archiving every item must not make the screen claim the catalogue is empty (which
+   * sent an operator to retype a code the server then refused as taken, against a row they could not
+   * see). So `active` and `archived` both count as filtered here, same as a search term does.
    */
   protected readonly isFiltered = computed(
-    () => this.searchTerm().trim().length > 0 || this.statusFilter() !== 'active',
+    () => this.searchTerm().trim().length > 0 || this.statusFilter() !== 'all',
   );
 
   constructor() {

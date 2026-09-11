@@ -107,6 +107,11 @@
           [formField]="itemForm.costPrice"
         />
         <span class="hint">{{ i18n.t('catalogue.hint.cost_price_internal') }}</span>
+        @if (costPriceErrorKey(); as key) {
+          <p class="field-error" role="alert" data-testid="catalogue-field-cost-price-error">
+            {{ i18n.t(key) }}
+          </p>
+        }
       </label>
 
       <label class="field">
@@ -120,6 +125,11 @@
           data-testid="catalogue-field-base-sell-rate"
           [formField]="itemForm.baseSellRate"
         />
+        @if (sellRateErrorKey(); as key) {
+          <p class="field-error" role="alert" data-testid="catalogue-field-sell-rate-error">
+            {{ i18n.t(key) }}
+          </p>
+        }
       </label>
 
       @if (refusal(); as key) {

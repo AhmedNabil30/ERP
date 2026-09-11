@@ -12,8 +12,11 @@ export interface Bab {
   readonly nameAr: string;
   readonly nameEn: string;
   readonly parentBabId: string | null;
-  /** A fraction — `0.15` means 15% (D-044 ruling 6). Format for display; never store the formatted value. */
-  readonly defaultMarkup: number;
+  /**
+   * A fraction as a wire string — D-135, D-044 ruling 6: `"0.15"` means 15%. Format for display
+   * through `I18nService`, never through `Number()`.
+   */
+  readonly defaultMarkup: string;
   readonly isActive: boolean;
 }
 

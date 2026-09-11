@@ -11,7 +11,7 @@ function bab(id: string, sortOrder: number): Bab {
     nameAr: `باب ${sortOrder}`,
     nameEn: `Bab ${sortOrder}`,
     parentBabId: null,
-    defaultMarkup: 0.15,
+    defaultMarkup: '0.15',
     isActive: true,
   };
 }
@@ -24,8 +24,8 @@ function item(id: string, code: string, babId: string): CatalogueItem {
     descriptionEn: null,
     unit: 'م٢',
     babId,
-    costPrice: 10,
-    baseSellRate: 15,
+    costPrice: '10',
+    baseSellRate: '15',
     status: 'Active',
   };
 }

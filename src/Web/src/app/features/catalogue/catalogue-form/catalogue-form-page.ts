@@ -8,7 +8,7 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { FormField, form, required, schema, submit } from '@angular/forms/signals';
+import { FormField, form, pattern, required, schema, submit } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
@@ -19,7 +19,7 @@ import {
   CatalogueItemCreate,
   CatalogueItemEdit,
 } from '../../../core/catalogue/catalogue.api';
-import { toWireDecimal } from '../../../core/catalogue/money-wire';
+import { WIRE_DECIMAL_PATTERN, toWireDecimal } from '../../../core/catalogue/money-wire';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { UnsavedChangesAware } from '../../../core/navigation/unsaved-changes.guard';
 
@@ -45,18 +45,30 @@ const BLANK_DRAFT: CatalogueItemDraft = {
 };
 
 /**
- * Two `required`s short of four, and nothing else. Every other rule — code shape, non-negative price —
- * belongs to `CatalogueItem.Create`/`Reprice` on the server; a second copy here is a copy that
- * eventually disagrees with the entity every other caller goes through (the same reasoning
- * `client-form-page.ts`'s own `draft` schema states for the client). `code` and `babId` are required
- * even though edit mode never lets either be typed: both arrive pre-filled from the loaded item, so the
- * check is a no-op there and a real one on create.
+ * `code`, `descriptionAr`, `unit` and `babId` required, and nothing else. Every other rule — code
+ * shape, non-negative price — belongs to `CatalogueItem.Create`/`Reprice` on the server; a second copy
+ * here is a copy that eventually disagrees with the entity every other caller goes through (the same
+ * reasoning `client-form-page.ts`'s own `draft` schema states for the client). `code` and `babId` are
+ * required even though edit mode never lets either be typed: both arrive pre-filled from the loaded
+ * item, so the check is a no-op there and a real one on create.
+ *
+ * **`costPrice` and `baseSellRate` are required too — `V-36-H`.** Before this, the schema required
+ * only four fields, both price labels carried a `*` nobody enforced, and an empty field went through
+ * `Number("")` as `0` — a money value invented by the system. `required` alone stops a blank submit;
+ * `pattern` against the exact wire grammar (`WIRE_DECIMAL_PATTERN`, D-135) additionally refuses hex,
+ * an exponent and Arabic-Indic digits (`V-36-K`) before either ever reaches `toWireDecimal` or the
+ * server. Each carries its own error kind so the template can show a price-specific message rather
+ * than the server's generic "unexpected error".
  */
 const draft = schema<CatalogueItemDraft>((path) => {
   required(path.code);
   required(path.descriptionAr);
   required(path.unit);
   required(path.babId);
+  required(path.costPrice, { error: { kind: 'cost_price_required' } });
+  required(path.baseSellRate, { error: { kind: 'sell_rate_required' } });
+  pattern(path.costPrice, WIRE_DECIMAL_PATTERN, { error: { kind: 'money_format_invalid' } });
+  pattern(path.baseSellRate, WIRE_DECIMAL_PATTERN, { error: { kind: 'money_format_invalid' } });
 });
 
 /** Blank means absent — matches `EditCatalogueItem.Request.DescriptionEn` being optional. */
@@ -128,6 +140,15 @@ export class CatalogueFormPage implements UnsavedChangesAware {
    * edit, and a disabled input would say "this could be edited, just not by you" when it cannot be
    * edited by any route through the API at all. */
   protected readonly displayCode = computed(() => this.model().code);
+
+  /**
+   * `V-36-K`, the message half: a price-specific key rather than the generic "unexpected error" — the
+   * cost/sell fields never reach the server invalid now that `draft` refuses them first (`V-36-H`'s
+   * `required`, plus `pattern` against `WIRE_DECIMAL_PATTERN`), but a touched, still-invalid field
+   * needs its own visible reason.
+   */
+  protected readonly costPriceErrorKey = computed(() => this.priceErrorKey(this.itemForm.costPrice()));
+  protected readonly sellRateErrorKey = computed(() => this.priceErrorKey(this.itemForm.baseSellRate()));
 
   constructor() {
     void this.loadBabs();
@@ -207,6 +228,11 @@ export class CatalogueFormPage implements UnsavedChangesAware {
           this.applyLoaded(saved);
         } else {
           const created = await this.api.create(this.payloadCreate());
+          // V-36-J: re-baseline before navigating, exactly as the edit branch does. Without this,
+          // `pristine` was still the blank draft when `confirmUnsavedChangesGuard` ran on the
+          // navigation below, so a successful create asked the operator to discard the changes they
+          // had just saved — the guard was comparing against a baseline this branch never updated.
+          this.applyLoaded(created);
           // The one navigation this page makes: from `/catalogue/new` to the item's own permanent URL,
           // carrying the created item as router state so the destination instance can render without a
           // `GET /api/catalogue-items/{id}` this API does not have.
@@ -231,8 +257,10 @@ export class CatalogueFormPage implements UnsavedChangesAware {
       descriptionEn: item.descriptionEn ?? '',
       unit: item.unit,
       babId: item.babId,
-      costPrice: String(item.costPrice),
-      baseSellRate: String(item.baseSellRate),
+      // D-135 / V-36-I: costPrice and baseSellRate already arrive as wire strings — String(...) here
+      // was reformatting a value the browser had already turned into a double on the way in.
+      costPrice: item.costPrice,
+      baseSellRate: item.baseSellRate,
     };
 
     this.model.set(loaded);
@@ -264,6 +292,27 @@ export class CatalogueFormPage implements UnsavedChangesAware {
       costPrice: toWireDecimal(value.costPrice),
       baseSellRate: toWireDecimal(value.baseSellRate),
     };
+  }
+
+  /** Maps a touched, invalid price field's own error kind to a message key — `V-36-H` / `V-36-K`. */
+  private priceErrorKey(field: {
+    readonly touched: () => boolean;
+    readonly valid: () => boolean;
+    readonly errors: () => readonly { readonly kind: string }[];
+  }): string | null {
+    if (!field.touched() || field.valid()) {
+      return null;
+    }
+
+    if (field.errors().some((error) => error.kind === 'cost_price_required')) {
+      return 'errors.master.cost_price_required';
+    }
+
+    if (field.errors().some((error) => error.kind === 'sell_rate_required')) {
+      return 'errors.master.sell_rate_required';
+    }
+
+    return 'catalogue.field.price_format_invalid';
   }
 
   private async loadBabs(): Promise<void> {

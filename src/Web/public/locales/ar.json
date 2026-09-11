@@ -361,5 +361,6 @@
   "catalogue.field.bab_placeholder": "اختر الباب",
   "catalogue.field.cost_price": "سعر التكلفة",
   "catalogue.field.base_sell_rate": "سعر البيع الأساسي",
-  "catalogue.hint.cost_price_internal": "داخلي — لا يظهر لأي عميل أو جهة خارجية."
+  "catalogue.hint.cost_price_internal": "داخلي — لا يظهر لأي عميل أو جهة خارجية.",
+  "catalogue.field.price_format_invalid": "أدخل رقمًا بالأرقام الإنجليزية (٠-٩ غير مقبولة)، بدون فواصل أو صيغة أسية."
 }

@@ -119,9 +119,22 @@ export class I18nService {
     });
   }
 
-  /** Locale-aware number formatting. Money is formatted to two decimals for display. */
-  formatNumber(value: number, options?: Intl.NumberFormatOptions): string {
-    return new Intl.NumberFormat(INTL_LOCALE[this.locale()], options).format(value);
+  /**
+   * Locale-aware number formatting. Money is formatted to two decimals for display.
+   *
+   * D-135: a string is passed straight to `Intl.NumberFormat.prototype.format`. Under
+   * Intl.NumberFormat v3 (ES2023, `ES2023.Intl` in `tsconfig.json`'s `lib`), a decimal string is
+   * treated as an exact decimal and never turned into a JS double — `Number(value)` here would
+   * reintroduce exactly the loss D-135 / `V-36-I` removed.
+   */
+  formatNumber(value: number | string, options?: Intl.NumberFormatOptions): string {
+    // `Intl.NumberFormat.format`'s string overload (ES2023.Intl) takes `StringNumericLiteral`, a
+    // template-literal type a widened `string` never structurally matches. This is a type-only
+    // assertion, not a runtime conversion — no `Number()`, no parsing, the exact string reaches
+    // `Intl` untouched. It is the cast D-135 says the added lib entry "confirms", not one it removes.
+    return new Intl.NumberFormat(INTL_LOCALE[this.locale()], options).format(
+      value as number | Intl.StringNumericLiteral,
+    );
   }
 
   /**
@@ -132,8 +145,10 @@ export class I18nService {
    * rounded to 2 decimal places." The backend stores decimal(18,4) and the rounding happens here, at
    * the last possible moment — rounding earlier would let display precision leak back into the
    * arithmetic, which is the mistake the 4/2 split exists to prevent. See decisions.md D-044.
+   *
+   * Takes the wire string directly — D-135. Never `Number()` the argument before calling this.
    */
-  formatMoney(value: number): string {
+  formatMoney(value: string): string {
     return this.formatNumber(value, {
       style: 'currency',
       currency: 'EGP',

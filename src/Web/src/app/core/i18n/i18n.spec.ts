@@ -115,7 +115,7 @@ describe('an Arabic-locale formatter injects the strong character that forces di
   it('formatMoney under ar already carries the mark — money IS pre-exposed', () => {
     i18n.locale.set('ar');
 
-    const money = i18n.formatMoney(1234.5);
+    const money = i18n.formatMoney('1234.5');
 
     expect(money.startsWith(RTL_MARK)).toBe(true);
 

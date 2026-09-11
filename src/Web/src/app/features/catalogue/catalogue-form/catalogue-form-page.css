@@ -117,6 +117,14 @@
   border-radius: var(--radius-md);
 }
 
+/* V-36-H / V-36-K: a price field's own refusal, shown next to the field rather than only after a
+   round trip to the server. */
+.field-error {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+}
+
 .submit {
   padding: var(--space-3);
   min-block-size: var(--tap-target);

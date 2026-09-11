@@ -361,5 +361,6 @@
   "catalogue.field.bab_placeholder": "Choose a باب",
   "catalogue.field.cost_price": "Cost price",
   "catalogue.field.base_sell_rate": "Base sell rate",
-  "catalogue.hint.cost_price_internal": "Internal — never shown to a client or any external party."
+  "catalogue.hint.cost_price_internal": "Internal — never shown to a client or any external party.",
+  "catalogue.field.price_format_invalid": "Enter a number in Western digits (0-9) — no separators, no exponent."
 }

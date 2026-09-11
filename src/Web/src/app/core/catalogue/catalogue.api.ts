@@ -23,8 +23,9 @@ export interface CatalogueItem {
   readonly descriptionEn: string | null;
   readonly unit: string;
   readonly babId: string;
-  readonly costPrice: number;
-  readonly baseSellRate: number;
+  /** D-135: every decimal crosses the wire as a JSON string. Never `Number()` this. */
+  readonly costPrice: string;
+  readonly baseSellRate: string;
   readonly status: CatalogueItemStatus;
 }
 
@@ -35,8 +36,8 @@ export interface CatalogueItemCreate {
   readonly descriptionEn: string | null;
   readonly unit: string;
   readonly babId: string;
-  readonly costPrice: number;
-  readonly baseSellRate: number;
+  readonly costPrice: string;
+  readonly baseSellRate: string;
 }
 
 /**
@@ -48,8 +49,8 @@ export interface CatalogueItemEdit {
   readonly descriptionAr: string;
   readonly descriptionEn: string | null;
   readonly unit: string;
-  readonly costPrice: number;
-  readonly baseSellRate: number;
+  readonly costPrice: string;
+  readonly baseSellRate: string;
 }
 
 /**

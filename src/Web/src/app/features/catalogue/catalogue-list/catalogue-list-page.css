@@ -157,11 +157,26 @@
   justify-self: start;
 }
 
+/* V-36-B: cost price and sell rate were carrying `.sr-only` labels, invisible at every width, with
+   nothing on screen to say which figure was which. Visible, but small enough not to compete with the
+   figure itself. */
+.row-price-label {
+  font-size: var(--text-xs, 0.75rem);
+  opacity: 0.75;
+}
+
+/* V-36-C: measured at 2.89:1 light / 3.59:1 dark against the project's own 4.5:1 floor
+   (`ux/components.md`). Cause: `--color-muted` composited under `.row--archived .row-link`'s
+   `opacity: 0.65` — a child's own `opacity` cannot cancel an ancestor's compositing opacity, so the
+   fix is a stronger *token*, not a fight over specificity. `--color-text` is already proven to clear
+   the floor through the same 0.65 fade — the archived row's code and figures use it and measure
+   5.25:1 / 6.55:1 in this same file's own numbers — so the badge takes the same token rather than the
+   muted one, in both palettes via that token's existing dark-mode value. */
 .row-archived-badge {
   justify-self: start;
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--color-muted);
+  color: var(--color-text);
 }
 
 .row-actions {
