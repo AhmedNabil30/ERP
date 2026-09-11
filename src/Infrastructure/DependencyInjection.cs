@@ -59,6 +59,7 @@ public static class DependencyInjection
 
         services.AddScoped<DatabaseInitializer>();
         services.AddScoped<AccountTreeSeeder>();
+        services.AddScoped<BabSeeder>();
 
         services.AddKaffContractTypes();
 

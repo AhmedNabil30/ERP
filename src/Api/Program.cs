@@ -314,6 +314,7 @@ await using (AsyncServiceScope scope = app.Services.CreateAsyncScope())
     {
         await initializer.InitialiseAsync(SchemaStrategy.Migrate);
         await scope.ServiceProvider.GetRequiredService<AccountTreeSeeder>().SeedAsync();
+        await scope.ServiceProvider.GetRequiredService<BabSeeder>().SeedAsync();
     }
     else
     {

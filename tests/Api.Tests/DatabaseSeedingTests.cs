@@ -1,6 +1,10 @@
 using Kaff.Api.Tests.Infrastructure;
+using Kaff.Domain.Common;
+using Kaff.Domain.MasterData;
 using Kaff.Infrastructure.Persistence;
+using Kaff.Infrastructure.Persistence.Seeding;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Kaff.Api.Tests;
 
@@ -32,28 +36,138 @@ public sealed class DatabaseSeedingTests : IClassFixture<PostgresDatabase>
     public DatabaseSeedingTests(PostgresDatabase database) => _database = database;
 
     [Fact]
-    public async Task A_freshly_initialised_database_seeds_no_babs()
+    public async Task Schema_creation_alone_seeds_no_babs()
     {
         // PostgresDatabase.InitializeAsync already ran DatabaseInitializer.InitialiseAsync
         // (SchemaStrategy.CreateFromModel) before this test method started, and nothing else has
-        // touched this database — no SeedAsync, no sibling test class.
-        //
-        // Which أبواب Kaff has and what each is worth is Q75, still open with Karim, and spec.md
-        // §4.2's concrete 15% (concrete) / 30% (finishes) are examples, not defaults (KAFF-204 rule 7).
-        // Neither DatabaseInitializer nor AccountTreeSeeder (the only two things that run against a
-        // database at start-up — src/Api/Program.cs) inserts a row into Babs; AccountTreeSeeder seeds
-        // only company-level Accounts. This pins that absence so it stays a deliberate fact rather than
-        // an accident of what nobody happened to add yet.
+        // touched this database — no SeedAsync, no sibling test class. Seeding أبواب is BabSeeder's
+        // job (decisions.md D-142); schema creation on its own must insert none.
         await using KaffDbContext context = _database.CreateBareContext();
 
         int count = await context.Babs.CountAsync(Ct);
 
         count.Should().Be(
-            0,
-            "which أبواب Kaff has is Q75, still open with Karim — CLAUDE.md forbids inventing trade "
-            + "names or markup percentages, and neither DatabaseInitializer nor AccountTreeSeeder may "
-            + "insert one");
+            0, "seeding is BabSeeder's job; schema creation must never insert a باب (D-142)");
     }
+
+    // ---- D-142 — the seeding mechanism itself, each on its OWN private database ---------------------
+    //
+    // Not _database: that is this class's shared fixture, pinned empty by Schema_creation_alone_seeds_
+    // no_babs above, and xUnit does not order test methods within a class. Each test below stands up
+    // its own PostgresDatabase so seeding it can never be read by, or race, the zero-count assertion.
+
+    [Fact]
+    public async Task The_bab_seeder_is_idempotent()
+    {
+        await using PostgresDatabase database = await PrivateDatabaseAsync();
+        await using KaffDbContext context = database.CreateBareContext();
+        var seeder = new BabSeeder(context, NullLogger<BabSeeder>.Instance);
+
+        IReadOnlyList<BabSeed> seeds = TestSeeds();
+
+        await seeder.SeedAsync(seeds, Ct);
+        await seeder.SeedAsync(seeds, Ct);
+
+        int count = await context.Babs.CountAsync(bab => seeds.Select(s => s.Code).Contains(bab.Code), Ct);
+
+        count.Should().Be(seeds.Count, "seeding twice must not double the rows");
+    }
+
+    [Fact]
+    public async Task The_bab_seeder_never_overwrites_an_edited_trade()
+    {
+        await using PostgresDatabase database = await PrivateDatabaseAsync();
+        await using KaffDbContext context = database.CreateBareContext();
+        var seeder = new BabSeeder(context, NullLogger<BabSeeder>.Instance);
+
+        IReadOnlyList<BabSeed> seeds = TestSeeds();
+
+        await seeder.SeedAsync(seeds, Ct);
+
+        Bab bab = await context.Babs.SingleAsync(b => b.Code == seeds[0].Code, Ct);
+        bab.Rename("اسم معدل", "Edited Name");
+        bab.SetDefaultMarkup(Percentage.FromFraction(0.99m));
+        bab.Archive();
+        await context.SaveChangesAsync(Ct);
+
+        await seeder.SeedAsync(seeds, Ct);
+
+        Bab reread = await context.Babs.SingleAsync(b => b.Code == seeds[0].Code, Ct);
+        reread.NameEn.Should().Be("Edited Name", "the seeder never overwrites an edit (D-142)");
+        reread.DefaultMarkup.Should().Be(Percentage.FromFraction(0.99m));
+        reread.IsActive.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task The_bab_seeder_skips_a_code_the_client_already_created()
+    {
+        await using PostgresDatabase database = await PrivateDatabaseAsync();
+        await using KaffDbContext context = database.CreateBareContext();
+        var seeder = new BabSeeder(context, NullLogger<BabSeeder>.Instance);
+
+        IReadOnlyList<BabSeed> seeds = TestSeeds();
+
+        Bab clientRow = Bab.Create(
+            seeds[0].Code, "اسم العميل", "Client Name", Percentage.FromFraction(0.05m)).Value;
+
+        context.Babs.Add(clientRow);
+        await context.SaveChangesAsync(Ct);
+
+        await seeder.SeedAsync(seeds, Ct);
+
+        List<Bab> matching = await context.Babs.Where(b => b.Code == seeds[0].Code).ToListAsync(Ct);
+
+        matching.Should().ContainSingle("the client's row is kept and no duplicate is added");
+        matching[0].NameEn.Should().Be("Client Name");
+    }
+
+    [Fact]
+    public async Task The_bab_seeder_inserts_exactly_the_trade_list()
+    {
+        await using PostgresDatabase database = await PrivateDatabaseAsync();
+        await using KaffDbContext context = database.CreateBareContext();
+        var seeder = new BabSeeder(context, NullLogger<BabSeeder>.Instance);
+
+        // decisions.md D-142 point 5's hold on BabSeeder.Trades is released by D-145 §1: the list now
+        // carries the eight trades asserted below, rather than being empty.
+        await seeder.SeedAsync(Ct);
+
+        List<Bab> seeded = await context.Babs
+            .Where(bab => BabSeeder.Trades.Select(s => s.Code).Contains(bab.Code))
+            .OrderBy(bab => bab.SortOrder)
+            .ToListAsync(Ct);
+
+        seeded.Should().HaveCount(BabSeeder.Trades.Count);
+
+        for (int i = 0; i < BabSeeder.Trades.Count; i++)
+        {
+            BabSeed expected = BabSeeder.Trades[i];
+            Bab actual = seeded[i];
+
+            actual.Code.Should().Be(expected.Code);
+            actual.NameAr.Should().Be(expected.NameAr);
+            actual.NameEn.Should().Be(expected.NameEn);
+            actual.DefaultMarkup.Should().Be(Percentage.FromFraction(expected.MarkupFraction));
+            actual.ParentBabId.Should().BeNull("D-145 §1: every seeded trade is top-level");
+        }
+
+        BabSeeder.Trades.Should().HaveCount(8);
+        BabSeeder.Trades.Select(s => s.MarkupFraction).Should().Equal(
+            0.15m, 0.15m, 0.20m, 0.20m, 0.20m, 0.30m, 0.25m, 0.25m);
+    }
+
+    private static async Task<PostgresDatabase> PrivateDatabaseAsync()
+    {
+        var database = new PostgresDatabase();
+        await database.InitializeAsync();
+        return database;
+    }
+
+    private static IReadOnlyList<BabSeed> TestSeeds() =>
+    [
+        new(UniqueNames.Code("DST-BAB"), "اختبار أول", "Test First", 0.10m, 0),
+        new(UniqueNames.Code("DST-BAB"), "اختبار ثاني", "Test Second", 0.20m, 1),
+    ];
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 }
