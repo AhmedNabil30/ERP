@@ -129,6 +129,7 @@ internal sealed class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.Property(employee => employee.Kind).IsRequired();
         builder.Property(employee => employee.Specialty).HasMaxLength(200);
         builder.Property(employee => employee.NationalId).HasMaxLength(32);
+        builder.Property(employee => employee.Department).HasMaxLength(128);
         builder.Property(employee => employee.JobTitle).HasMaxLength(128);
         builder.Property(employee => employee.IsActive).IsRequired();
         builder.Property(employee => employee.CreatedAt).IsRequired();

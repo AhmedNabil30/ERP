@@ -67,6 +67,50 @@ public sealed class CreateEmployeeTests : IAsyncLifetime
         root.GetProperty("isActive").GetBoolean().Should().BeTrue();
     }
 
+    // ---- D-139 §7 / D-144 §2 · the staff file carries Department, free text ------------------------
+
+    [Fact]
+    public async Task A_salaried_employee_is_created_with_a_department()
+    {
+        HttpResponseMessage response = await CreateAsync(new
+        {
+            fullName = "Ahmed Ali",
+            phone = UniqueNames.Phone().ToString(),
+            kind = nameof(EmployeeKind.Salaried),
+            department = "Finance",
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+
+        body.RootElement.GetProperty("department").GetString().Should().Be("Finance");
+    }
+
+    [Fact]
+    public async Task Day_labour_registration_carries_a_department_the_same_as_national_id_and_job_title()
+    {
+        // No rule refuses Department for day labour, the same as NationalId and JobTitle today —
+        // SetStaffDetails stores whatever the request carries, regardless of Kind.
+        Guid bab = await CreateBabAsync();
+
+        HttpResponseMessage response = await CreateAsync(new
+        {
+            fullName = "Worker",
+            phone = UniqueNames.Phone().ToString(),
+            kind = nameof(EmployeeKind.DayLabour),
+            babId = bab,
+            department = "Site A",
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+
+        body.RootElement.GetProperty("department").GetString().Should().Be(
+            "Site A", "Department follows the same unguarded pattern as NationalId and JobTitle");
+    }
+
     // ---- AC-207-G · the code is generated, never typed, never editable ----------------------------
 
     [Fact]

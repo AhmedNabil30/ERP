@@ -80,6 +80,7 @@ public sealed class EmployeeTests
             nameof(Employee.BabId),
             nameof(Employee.Specialty),
             nameof(Employee.NationalId),
+            nameof(Employee.Department),
             nameof(Employee.JobTitle),
             nameof(Employee.HiredOn),
             nameof(Employee.IsActive),

@@ -18,6 +18,7 @@ namespace Kaff.Api.Features.Employees.CreateEmployee;
 /// <param name="BabId">The trade/باب. Required when <paramref name="Kind"/> is <c>DayLabour</c> (spec.md §10).</param>
 /// <param name="Specialty">Optional free-text specialty within the trade (spec.md §10).</param>
 /// <param name="NationalId">Optional, staff-only field already carried by the entity.</param>
+/// <param name="Department">Optional, staff-only field. Free text — decisions.md D-139 §7, D-144 §2.</param>
 /// <param name="JobTitle">Optional, staff-only field already carried by the entity.</param>
 /// <param name="HiredOn">Optional, staff-only field already carried by the entity.</param>
 public sealed record Request(
@@ -27,5 +28,6 @@ public sealed record Request(
     Guid? BabId,
     string? Specialty,
     string? NationalId,
+    string? Department,
     string? JobTitle,
     DateOnly? HiredOn);

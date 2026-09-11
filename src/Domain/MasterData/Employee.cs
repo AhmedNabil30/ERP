@@ -85,6 +85,8 @@ public sealed class Employee : Entity
 
     public string? NationalId { get; private set; }
 
+    public string? Department { get; private set; }
+
     public string? JobTitle { get; private set; }
 
     public DateOnly? HiredOn { get; private set; }
@@ -131,9 +133,10 @@ public sealed class Employee : Entity
             createdAt));
     }
 
-    public void SetStaffDetails(string? nationalId, string? jobTitle, DateOnly? hiredOn)
+    public void SetStaffDetails(string? nationalId, string? department, string? jobTitle, DateOnly? hiredOn)
     {
         NationalId = string.IsNullOrWhiteSpace(nationalId) ? null : nationalId.Trim();
+        Department = string.IsNullOrWhiteSpace(department) ? null : department.Trim();
         JobTitle = string.IsNullOrWhiteSpace(jobTitle) ? null : jobTitle.Trim();
         HiredOn = hiredOn;
     }

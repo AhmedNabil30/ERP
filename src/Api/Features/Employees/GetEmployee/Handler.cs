@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kaff.Api.Features.Employees.GetEmployee;
 
-/// <summary>Reads one employee, including the three staff fields the list omits.</summary>
+/// <summary>Reads one employee, including the four staff fields the list omits.</summary>
 /// <remarks>
 /// <b>An archived employee is still readable by id</b> — same reasoning as <c>GetClient.Handler</c>: a
 /// screen reached by id was asked for that employee specifically. <b>No audit record.</b> It is a read.
@@ -32,6 +32,7 @@ internal static class Handler
                 candidate.BabId,
                 candidate.Specialty,
                 candidate.NationalId,
+                candidate.Department,
                 candidate.JobTitle,
                 candidate.HiredOn,
                 candidate.IsActive))

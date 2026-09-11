@@ -78,6 +78,72 @@ public sealed class EditEmployeeTests : IAsyncLifetime
         after.RootElement.GetProperty(nameof(Employee.Specialty)).GetString().Should().Be("New Specialty");
     }
 
+    // ---- D-139 §7 / D-144 §2 · Department round-trips and is audited before/after -----------------
+
+    [Fact]
+    public async Task Editing_department_is_audited_with_both_before_and_after_and_the_value_round_trips()
+    {
+        (Guid id, string phone) = await CreateStaffEmployeeWithDepartmentAsync("Finance");
+
+        HttpResponseMessage response = await SendAsync(
+            HttpMethod.Put, $"/api/employees/{id}", _hr, Role.Hr, Department.Hr,
+            new
+            {
+                fullName = "Original Name",
+                phone,
+                kind = nameof(EmployeeKind.Salaried),
+                babId = (Guid?)null,
+                specialty = (string?)null,
+                department = "Operations",
+            });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+        body.RootElement.GetProperty("department").GetString().Should().Be("Operations");
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+
+        AuditRecord record = await reader.AuditRecords
+            .Where(candidate => candidate.EntityId == id && candidate.Action == AuditAction.Modified)
+            .OrderByDescending(candidate => candidate.OccurredAt)
+            .FirstAsync(Ct);
+
+        record.ChangedProperties.Should().Contain(nameof(Employee.Department));
+
+        using JsonDocument before = JsonDocument.Parse(record.BeforeJson!);
+        using JsonDocument after = JsonDocument.Parse(record.AfterJson!);
+
+        before.RootElement.GetProperty(nameof(Employee.Department)).GetString().Should().Be("Finance");
+        after.RootElement.GetProperty(nameof(Employee.Department)).GetString().Should().Be("Operations");
+    }
+
+    private async Task<(Guid Id, string Phone)> CreateStaffEmployeeWithDepartmentAsync(string department)
+    {
+        string phone = UniqueNames.Phone().ToString();
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri("/api/employees", UriKind.Relative))
+        {
+            Content = JsonContent.Create(new
+            {
+                fullName = "Original Name",
+                phone,
+                kind = nameof(EmployeeKind.Salaried),
+                babId = (Guid?)null,
+                department,
+            }),
+        };
+
+        await StampAsync(request, _hr, Role.Hr, Department.Hr);
+
+        HttpResponseMessage response = await _client.SendAsync(request, Ct);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+
+        return (body.RootElement.GetProperty("id").GetGuid(), phone);
+    }
+
     // ---- AC-207-I (second half) · a refused edit writes no record and changes nothing -------------
 
     [Fact]

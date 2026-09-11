@@ -13,6 +13,7 @@ public sealed record Response(
     Guid? BabId,
     string? Specialty,
     string? NationalId,
+    string? Department,
     string? JobTitle,
     DateOnly? HiredOn,
     bool IsActive);

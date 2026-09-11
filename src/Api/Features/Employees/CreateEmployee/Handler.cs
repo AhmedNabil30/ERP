@@ -78,7 +78,7 @@ internal static class Handler
 
         Employee employee = created.Value;
 
-        employee.SetStaffDetails(request.NationalId, request.JobTitle, request.HiredOn);
+        employee.SetStaffDetails(request.NationalId, request.Department, request.JobTitle, request.HiredOn);
 
         database.Employees.Add(employee);
 
@@ -102,6 +102,7 @@ internal static class Handler
                 employee.BabId,
                 employee.Specialty,
                 employee.NationalId,
+                employee.Department,
                 employee.JobTitle,
                 employee.HiredOn,
                 employee.IsActive));

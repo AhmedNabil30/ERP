@@ -80,7 +80,7 @@ internal static class Handler
             return ResultExtensions.Problem(edited.Error);
         }
 
-        employee.SetStaffDetails(request.NationalId, request.JobTitle, request.HiredOn);
+        employee.SetStaffDetails(request.NationalId, request.Department, request.JobTitle, request.HiredOn);
 
         try
         {
@@ -101,6 +101,7 @@ internal static class Handler
                 employee.BabId,
                 employee.Specialty,
                 employee.NationalId,
+                employee.Department,
                 employee.JobTitle,
                 employee.HiredOn,
                 employee.IsActive));

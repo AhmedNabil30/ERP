@@ -57,7 +57,8 @@ public sealed class GetEmployeeTests : IAsyncLifetime
     public async Task A_put_that_only_changes_the_name_after_loading_the_get_leaves_the_staff_fields_unchanged()
     {
         (Guid id, string phone) = await CreateEmployeeWithStaffDetailsAsync(
-            nationalId: "29001011234567", jobTitle: "مهندس موقع", hiredOn: new DateOnly(2024, 3, 1));
+            nationalId: "29001011234567", department: "Finance", jobTitle: "مهندس موقع",
+            hiredOn: new DateOnly(2024, 3, 1));
 
         HttpResponseMessage getResponse = await GetAsync(id, _hr, Role.Hr, Department.Hr);
         getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -65,6 +66,7 @@ public sealed class GetEmployeeTests : IAsyncLifetime
         using JsonDocument loaded = JsonDocument.Parse(await getResponse.Content.ReadAsStringAsync(Ct));
 
         loaded.RootElement.GetProperty("nationalId").GetString().Should().Be("29001011234567");
+        loaded.RootElement.GetProperty("department").GetString().Should().Be("Finance");
         loaded.RootElement.GetProperty("jobTitle").GetString().Should().Be("مهندس موقع");
         loaded.RootElement.GetProperty("hiredOn").GetString().Should().Be("2024-03-01");
 
@@ -79,6 +81,7 @@ public sealed class GetEmployeeTests : IAsyncLifetime
                 babId = (Guid?)null,
                 specialty = (string?)null,
                 nationalId = "29001011234567",
+                department = "Finance",
                 jobTitle = "مهندس موقع",
                 hiredOn = "2024-03-01",
             });
@@ -90,7 +93,8 @@ public sealed class GetEmployeeTests : IAsyncLifetime
 
         stored.FullName.Should().Be("New Name");
         stored.NationalId.Should().Be(
-            "29001011234567", "the PUT round-tripped what the GET loaded — the three staff fields must survive");
+            "29001011234567", "the PUT round-tripped what the GET loaded — the staff fields must survive");
+        stored.Department.Should().Be("Finance");
         stored.JobTitle.Should().Be("مهندس موقع");
         stored.HiredOn.Should().Be(new DateOnly(2024, 3, 1));
     }
@@ -100,7 +104,7 @@ public sealed class GetEmployeeTests : IAsyncLifetime
     [Fact]
     public async Task Only_hr_and_the_owner_may_read_an_employee_by_id()
     {
-        (Guid id, _) = await CreateEmployeeWithStaffDetailsAsync(null, null, null);
+        (Guid id, _) = await CreateEmployeeWithStaffDetailsAsync(null, null, null, null);
 
         foreach ((Guid actorId, Role role, Department? department, Guid? clientId) in RefusedActors())
         {
@@ -143,7 +147,7 @@ public sealed class GetEmployeeTests : IAsyncLifetime
     [Fact]
     public async Task The_read_writes_no_audit_record()
     {
-        (Guid id, _) = await CreateEmployeeWithStaffDetailsAsync(null, null, null);
+        (Guid id, _) = await CreateEmployeeWithStaffDetailsAsync(null, null, null, null);
 
         await using KaffDbContext before = _database.CreateBareContext();
         long countBefore = await before.AuditRecords.LongCountAsync(candidate => candidate.EntityId == id, Ct);
@@ -160,7 +164,7 @@ public sealed class GetEmployeeTests : IAsyncLifetime
     // ---- helpers ------------------------------------------------------------------------------
 
     private async Task<(Guid Id, string Phone)> CreateEmployeeWithStaffDetailsAsync(
-        string? nationalId, string? jobTitle, DateOnly? hiredOn)
+        string? nationalId, string? department, string? jobTitle, DateOnly? hiredOn)
     {
         string phone = UniqueNames.Phone().ToString();
 
@@ -174,6 +178,7 @@ public sealed class GetEmployeeTests : IAsyncLifetime
                 babId = (Guid?)null,
                 specialty = (string?)null,
                 nationalId,
+                department,
                 jobTitle,
                 hiredOn,
             }),
