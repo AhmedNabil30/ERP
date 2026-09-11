@@ -138,6 +138,34 @@ public sealed class Employee : Entity
         HiredOn = hiredOn;
     }
 
+    /// <summary>
+    /// Corrects the full name, phone, باب and specialty. KAFF-207. <see cref="Kind"/> and
+    /// <see cref="Code"/> are never touched here — KAFF-208 rule 3/D-130 §7: a population is fixed at
+    /// creation, and the caller (<c>EditEmployee.Handler</c>) refuses a request naming a different
+    /// <see cref="Kind"/> before this method is ever called.
+    /// </summary>
+    public Result Edit(string fullName, PhoneNumber phone, Guid? babId, string? specialty)
+    {
+        if (string.IsNullOrWhiteSpace(fullName) || fullName.Length > MaxNameLength)
+        {
+            return Result.Failure(MasterDataErrors.NameRequired);
+        }
+
+        if (Kind == EmployeeKind.DayLabour && babId is null)
+        {
+            // spec.md §10: workers are registered with a trade / باب — the guard Create enforces
+            // applies to an edit exactly the same way.
+            return Result.Failure(MasterDataErrors.DayLabourRequiresTrade);
+        }
+
+        FullName = fullName.Trim();
+        PhoneEntered = phone.Entered;
+        PhoneNormalised = phone.Normalised;
+        BabId = babId;
+        Specialty = string.IsNullOrWhiteSpace(specialty) ? null : specialty.Trim();
+        return Result.Success();
+    }
+
     public Result Archive()
     {
         if (!IsActive)

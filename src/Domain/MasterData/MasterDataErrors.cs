@@ -70,6 +70,25 @@ public static class MasterDataErrors
     public static readonly Error DayLabourRequiresTrade =
         Error.Validation("master.day_labour_requires_trade", "errors.master.day_labour_requires_trade");
 
+    /// <summary>The route named an employee id that no employee carries. KAFF-207.</summary>
+    public static readonly Error EmployeeNotFound =
+        Error.NotFound("master.employee_not_found", "errors.master.employee_not_found");
+
+    /// <summary>
+    /// spec.md §2/§10 — "every costed person, exactly one record" — enforced by
+    /// <c>ux_employees_phone</c>, not by a read-then-write (AC-207-D, AC-208-B). Distinct from
+    /// <see cref="DuplicatePhoneNotAcknowledged"/>: Client's phone match is a warning a caller can
+    /// proceed past (D-049); an employee's is a hard refusal today, which is exactly what `Q70` may
+    /// revisit.
+    /// </summary>
+    public static readonly Error EmployeePhoneTaken =
+        Error.Conflict("master.employee_phone_taken", "errors.master.employee_phone_taken");
+
+    /// <summary>The employee list's <c>status</c> filter named something that is not a filter. KAFF-207.</summary>
+    /// <remarks>Same shape and reasoning as <see cref="CatalogueItemListFilterUnknown"/> — D-111 §3.</remarks>
+    public static readonly Error EmployeeListFilterUnknown =
+        Error.Validation("master.employee_list_filter_unknown", "errors.master.employee_list_filter_unknown");
+
     public static readonly Error ClosedLostRequiresReason =
         Error.Validation("master.closed_lost_requires_reason", "errors.master.closed_lost_requires_reason");
 

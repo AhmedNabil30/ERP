@@ -216,6 +216,9 @@
   "errors.master.catalogue_item_code_taken": "هذا الكود مستخدم لبند آخر في الكتالوج.",
   "errors.master.catalogue_item_list_filter_unknown": "فلتر غير معروف.",
   "errors.master.bab_list_filter_unknown": "فلتر غير معروف.",
+  "errors.master.employee_not_found": "لا يوجد موظف بهذا المعرّف.",
+  "errors.master.employee_phone_taken": "رقم الهاتف هذا مسجل بالفعل لموظف آخر.",
+  "errors.master.employee_list_filter_unknown": "فلتر غير معروف.",
 
   "catalogue.item.archive_action": "أرشفة البند",
   "catalogue.item.archive_confirm": "أرشفة هذا البند؟ يخرج من العمل الجديد، ولا يتأثر أي بند سابق استخدمه بالفعل.",
@@ -261,6 +264,8 @@
   "clients.confirm.archive.body": "سيخرج من القائمة الحالية ويبقى سجله كما هو.",
   "enum.ClientKind.Individual": "فرد",
   "enum.ClientKind.Corporate": "شركة",
+  "enum.EmployeeKind.Salaried": "موظف بالراتب",
+  "enum.EmployeeKind.DayLabour": "يومية",
   "action.cancel": "إلغاء",
   "action.create": "إنشاء",
   "nav.clients": "العملاء",

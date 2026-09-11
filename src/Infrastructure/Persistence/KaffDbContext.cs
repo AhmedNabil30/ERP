@@ -27,6 +27,13 @@ public sealed class KaffDbContext : DbContext
     /// </summary>
     public const string ClientCodeSequence = "client_code_seq";
 
+    /// <summary>
+    /// The PostgreSQL sequence employee codes are drawn from. Same shape as
+    /// <see cref="ClientCodeSequence"/> — decisions.md D-130 §6: "the code is generated; nobody typed
+    /// it and nobody can edit it", drawn last by <c>CreateEmployee</c>'s handler.
+    /// </summary>
+    public const string EmployeeCodeSequence = "employee_code_seq";
+
     public KaffDbContext(DbContextOptions<KaffDbContext> options)
         : base(options)
     {
@@ -118,6 +125,12 @@ public sealed class KaffDbContext : DbContext
         // exists. Whether Kaff will accept gaps is Karim's, unanswered, and the mechanism is one
         // expression in one handler either way — see decisions.md D-107's open question 1.
         modelBuilder.HasSequence<long>(ClientCodeSequence).StartsAt(10_001);
+
+        // The employee-code sequence — decisions.md D-130 §6, the same precedent and the same reason
+        // this must be declared on the model rather than in migration SQL alone (see the comment
+        // above ClientCodeSequence): the test harness builds its schema from this model and never
+        // runs a migration.
+        modelBuilder.HasSequence<long>(EmployeeCodeSequence).StartsAt(10_001);
 
         foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
         {
