@@ -21,6 +21,12 @@ namespace Kaff.Api.Features.Employees.CreateEmployee;
 /// <param name="Department">Optional, staff-only field. Free text — decisions.md D-139 §7, D-144 §2.</param>
 /// <param name="JobTitle">Optional, staff-only field already carried by the entity.</param>
 /// <param name="HiredOn">Optional, staff-only field already carried by the entity.</param>
+/// <param name="AcknowledgedDuplicatePhone">
+/// "I was shown who already holds this number and I am proceeding anyway." decisions.md D-141 §5 —
+/// same shape as <c>CreateClient.Request</c>'s member of the same name. It never lets a salaried phone
+/// past another salaried record: that refusal (<c>MasterDataErrors.EmployeePhoneTaken</c>) is checked
+/// first and ignores this flag entirely (D-146 point 3).
+/// </param>
 public sealed record Request(
     string? FullName,
     string? Phone,
@@ -30,4 +36,5 @@ public sealed record Request(
     string? NationalId,
     string? Department,
     string? JobTitle,
-    DateOnly? HiredOn);
+    DateOnly? HiredOn,
+    bool AcknowledgedDuplicatePhone);

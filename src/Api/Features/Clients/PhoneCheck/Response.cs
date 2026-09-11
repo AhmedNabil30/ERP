@@ -1,3 +1,5 @@
+using Kaff.Api.Common;
+
 namespace Kaff.Api.Features.Clients.PhoneCheck;
 
 /// <summary>

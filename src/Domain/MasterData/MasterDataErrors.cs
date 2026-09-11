@@ -75,11 +75,12 @@ public static class MasterDataErrors
         Error.NotFound("master.employee_not_found", "errors.master.employee_not_found");
 
     /// <summary>
-    /// spec.md §2/§10 — "every costed person, exactly one record" — enforced by
-    /// <c>ux_employees_phone</c>, not by a read-then-write (AC-207-D, AC-208-B). Distinct from
-    /// <see cref="DuplicatePhoneNotAcknowledged"/>: Client's phone match is a warning a caller can
-    /// proceed past (D-049); an employee's is a hard refusal today, which is exactly what `Q70` may
-    /// revisit.
+    /// A salaried record's phone matches another salaried record, active or archived. Enforced by
+    /// <c>ux_employees_salaried_phone</c>, a partial unique index scoped to <c>kind = 'Salaried'</c>,
+    /// not by a read-then-write (decisions.md D-144 §1, D-146 point 2-3). Day labour, subcontractors
+    /// and suppliers never raise this: their match is <see cref="DuplicatePhoneNotAcknowledged"/>'s
+    /// warn-and-acknowledge instead (D-139 §1, D-141). The salaried-only scope narrowed from "any
+    /// employee" when D-141 briefly withdrew this error (superseded); it stayed live throughout.
     /// </summary>
     public static readonly Error EmployeePhoneTaken =
         Error.Conflict("master.employee_phone_taken", "errors.master.employee_phone_taken");

@@ -136,8 +136,18 @@ internal sealed class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
 
         builder.HasIndex(employee => employee.Code).IsUnique().HasDatabaseName("ux_employees_code");
 
-        // spec.md §2: "every costed person, exactly one record". spec.md §10 deduplicates by phone.
-        builder.HasIndex(employee => employee.PhoneNormalised).IsUnique().HasDatabaseName("ux_employees_phone");
+        // decisions.md D-144 §1 / D-146: only SALARIED phones are unique — a day labourer sharing a
+        // phone with another day labourer, a subcontractor or a supplier is a warning, not a refusal
+        // (D-139 §1). The named HasIndex overload is required: calling the unnamed HasIndex twice on
+        // the same property returns the SAME index and the second call silently reconfigures the
+        // first (D-146 point 1).
+        builder.HasIndex(employee => employee.PhoneNormalised, "ux_employees_salaried_phone")
+            .IsUnique()
+            .HasFilter("kind = 'Salaried'");
+
+        // Non-unique lookup for the warn-and-acknowledge mechanism (D-141 §4) — every Kind, archived
+        // included, is a candidate match. ix_clients_phone is the precedent.
+        builder.HasIndex(employee => employee.PhoneNormalised, "ix_employees_phone");
 
         builder.HasOne<Bab>()
             .WithMany()
@@ -167,7 +177,9 @@ internal sealed class SubcontractorConfiguration : IEntityTypeConfiguration<Subc
         builder.Property(s => s.CreatedAt).IsRequired();
 
         builder.HasIndex(s => s.Code).IsUnique().HasDatabaseName("ux_subcontractors_code");
-        builder.HasIndex(s => s.PhoneNormalised).IsUnique().HasDatabaseName("ux_subcontractors_phone");
+
+        // NOT unique — decisions.md D-141 §1: warn-and-acknowledge, same as clients (D-139 §1).
+        builder.HasIndex(s => s.PhoneNormalised, "ix_subcontractors_phone");
 
         builder.HasOne<Bab>()
             .WithMany()
@@ -197,6 +209,8 @@ internal sealed class SupplierConfiguration : IEntityTypeConfiguration<Supplier>
         builder.Property(s => s.CreatedAt).IsRequired();
 
         builder.HasIndex(s => s.Code).IsUnique().HasDatabaseName("ux_suppliers_code");
-        builder.HasIndex(s => s.PhoneNormalised).IsUnique().HasDatabaseName("ux_suppliers_phone");
+
+        // NOT unique — decisions.md D-141 §1: warn-and-acknowledge, same as clients (D-139 §1).
+        builder.HasIndex(s => s.PhoneNormalised, "ix_suppliers_phone");
     }
 }

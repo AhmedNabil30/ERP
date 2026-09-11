@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Kaff.Api.Common;
 using Kaff.Api.Features.Clients.ListClients;
 using Kaff.Api.Tests.Infrastructure;
 using Kaff.Domain.Identity;
@@ -281,7 +282,7 @@ public sealed class ListClientsTests : IAsyncLifetime
         typeof(Kaff.Api.Features.Clients.EditClient.Response).GetProperties().Select(property => property.Name)
             .Should().BeEquivalentTo(expected);
 
-        typeof(Kaff.Api.Features.Clients.PhoneMatch).GetProperties().Select(property => property.Name)
+        typeof(PhoneMatch).GetProperties().Select(property => property.Name)
             .Should().BeEquivalentTo(["Id", "Code", "Name", "IsArchived"]);
 
         typeof(Response).GetProperties().Select(property => property.Name)

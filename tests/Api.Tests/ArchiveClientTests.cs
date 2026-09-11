@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Reflection;
 using System.Text.Json;
 using Kaff.Api.Authorization;
+using Kaff.Api.Common;
 using Kaff.Api.Features.Clients;
 using Kaff.Api.Features.Clients.ListClients;
 using Kaff.Api.Tests.Infrastructure;

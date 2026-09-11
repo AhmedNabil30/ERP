@@ -1,5 +1,7 @@
 using System.Globalization;
+using Kaff.Api.Common;
 using Kaff.Api.Common.Results;
+using Kaff.Domain.Auditing;
 using Kaff.Domain.Common;
 using Kaff.Domain.MasterData;
 using Kaff.Infrastructure.Persistence;
@@ -18,19 +20,23 @@ namespace Kaff.Api.Features.Employees.CreateEmployee;
 /// (decisions.md D-130 §6) — generated, never typed, never editable.
 /// </para>
 /// <para>
-/// <b>The phone's uniqueness is the database's</b> — <c>ux_employees_phone</c> — not a read-then-write
-/// here. This is spec.md §2/§10's "exactly one record" mechanism (AC-207-D) and, at the same time,
-/// KAFF-208's "nobody appears in both populations" mechanism (AC-208-B): one index does both jobs,
-/// because there is exactly one table for both populations.
+/// <b>Two phone rules, checked in order (decisions.md D-144 §1, D-146).</b> A salaried record whose
+/// phone matches another salaried record, active or archived, is refused outright —
+/// <c>MasterDataErrors.EmployeePhoneTaken</c>, enforced by the partial unique index
+/// <c>ux_employees_salaried_phone</c>, never bypassed by <see cref="Request.AcknowledgedDuplicatePhone"/>.
+/// Every other match (day labour, or a cross-population match against an archived record) is
+/// warn-and-acknowledge, the same mechanism <c>CreateClient</c> uses (D-141).
 /// </para>
 /// <para>
 /// <b>The باب's existence is the one thing the entity cannot see</b> — checked here the same way
 /// <c>CreateCatalogueItem.Handler</c> and <c>CreateBab.Handler</c> check a <c>BabId</c>.
 /// </para>
 /// <para>
-/// <b>No audit record is hand-written.</b> <c>AuditSaveChangesInterceptor</c> writes the
-/// <c>Created</c> record in the same transaction. <c>GrantPath</c> stays null — <c>EmployeeManage</c>
-/// is company-wide.
+/// <b>No audit record is hand-written for the create itself.</b> <c>AuditSaveChangesInterceptor</c>
+/// writes the <c>Created</c> record in the same transaction. The acknowledgement is the one fact the
+/// change tracker cannot see, so it is declared through <c>IAuditContext.Record</c>, one
+/// <c>DuplicatePhoneAcknowledged</c> event per match (D-141 §5). <c>GrantPath</c> stays null —
+/// <c>EmployeeManage</c> is company-wide.
 /// </para>
 /// </remarks>
 internal static class Handler
@@ -38,10 +44,12 @@ internal static class Handler
     public static async Task<IResult> HandleAsync(
         Request request,
         KaffDbContext database,
+        IAuditContext audit,
         TimeProvider clock,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(audit);
         ArgumentNullException.ThrowIfNull(clock);
 
         Result<PhoneNumber> phone = PhoneNumber.Create(request.Phone);
@@ -49,6 +57,31 @@ internal static class Handler
         if (phone.IsFailure)
         {
             return ResultExtensions.Problem(phone.Error);
+        }
+
+        if (request.Kind == EmployeeKind.Salaried)
+        {
+            // D-146 point 3. Checked first, whatever AcknowledgedDuplicatePhone says, and nothing is
+            // written when it fires. The index is the guarantee against a race; this query gives the
+            // clean 409 for the ordinary case.
+            bool salariedPhoneTaken = await database.Employees.AnyAsync(
+                employee => employee.PhoneNormalised == phone.Value.Normalised
+                            && employee.Kind == EmployeeKind.Salaried,
+                cancellationToken);
+
+            if (salariedPhoneTaken)
+            {
+                return ResultExtensions.Problem(MasterDataErrors.EmployeePhoneTaken);
+            }
+        }
+
+        List<PhoneMatch> matches =
+            await PhoneMatches.EmployeesAsync(database, phone.Value.Normalised, cancellationToken);
+
+        if (matches.Count > 0 && !request.AcknowledgedDuplicatePhone)
+        {
+            // 409, no match data — the names belong to the 200 from phone-check. D-141 §5.
+            return ResultExtensions.Problem(MasterDataErrors.DuplicatePhoneNotAcknowledged);
         }
 
         if (request.BabId is not null)
@@ -79,6 +112,14 @@ internal static class Handler
         Employee employee = created.Value;
 
         employee.SetStaffDetails(request.NationalId, request.Department, request.JobTitle, request.HiredOn);
+
+        // One event per match, subject is the record that was MATCHED — same shape as CreateClient
+        // (D-141 §4/§5). Empty when there was no match, which is how the flag is ignored rather than
+        // believed.
+        foreach (PhoneMatch match in matches)
+        {
+            audit.Record<Employee>(AuditEventKind.DuplicatePhoneAcknowledged, match.Id);
+        }
 
         database.Employees.Add(employee);
 
@@ -125,5 +166,5 @@ internal static class Handler
 
     private static bool IsPhoneCollision(DbUpdateException exception)
         => exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation } postgres
-           && string.Equals(postgres.ConstraintName, "ux_employees_phone", StringComparison.Ordinal);
+           && string.Equals(postgres.ConstraintName, "ux_employees_salaried_phone", StringComparison.Ordinal);
 }

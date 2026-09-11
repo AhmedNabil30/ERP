@@ -162,26 +162,43 @@ public sealed class CreateEmployeeTests : IAsyncLifetime
             .Which.SqlState.Should().Be(PostgresErrorCodes.CheckViolation);
     }
 
-    // ---- AC-207-D / AC-208-B · one person, one record — the unique phone index is the mechanism ----
+    // ---- AC-207-D / AC-208-B · one salaried person, one record — the partial unique index is the mechanism ----
 
     [Fact]
-    public async Task The_same_phone_cannot_be_registered_twice_and_the_refusal_is_the_unique_index()
+    public async Task A_salaried_phone_cannot_be_registered_twice_and_the_refusal_is_the_partial_unique_index()
     {
+        // decisions.md D-146 test 2. The second create enters the phone in a different form so the
+        // match is proven to be on the normalised value, and sends the acknowledgement flag to prove
+        // the salaried refusal never reads it.
         string phone = UniqueNames.Phone().ToString();
 
         (await CreateAsync(Body("First Person", phone, EmployeeKind.Salaried)))
             .StatusCode.Should().Be(HttpStatusCode.Created);
 
-        HttpResponseMessage second = await CreateAsync(Body("Second Person", phone, EmployeeKind.Salaried));
+        string differentForm = "0020" + phone.TrimStart('+', '0');
+
+        HttpResponseMessage second = await CreateAsync(new
+        {
+            fullName = "Second Person",
+            phone = differentForm,
+            kind = nameof(EmployeeKind.Salaried),
+            acknowledgedDuplicatePhone = true,
+        });
 
         second.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await MessageKeyAsync(second)).Should().Be(
             "errors.master.employee_phone_taken",
-            "AC-207-D and AC-208-B share this exact mechanism — ux_employees_phone — because there is "
-            + "one table for both populations");
+            "AC-207-D and AC-208-B: ux_employees_salaried_phone refuses a second salaried record on "
+            + "the same phone, and AcknowledgedDuplicatePhone never lets it through (D-146 point 3)");
+
+        string normalised = PhoneNumber.Create(phone).Value.Normalised;
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        (await reader.Employees.CountAsync(e => e.PhoneNormalised == normalised, Ct))
+            .Should().Be(1, "the refused create wrote no row");
     }
 
-    [Fact]
+    [Fact(Skip = "HELD on Q80 — decisions.md D-146 §4(b)")]
     public async Task A_day_labourer_cannot_be_registered_again_as_salaried_with_the_same_phone()
     {
         Guid bab = await CreateBabAsync();

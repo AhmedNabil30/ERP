@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Kaff.Api.Tests.Infrastructure;
+using Kaff.Domain.Auditing;
 using Kaff.Domain.Common;
 using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
@@ -91,45 +92,62 @@ public sealed class EmployeeKindInvariantTests : IAsyncLifetime
     /// <c>SetKind</c> anywhere for a "move" to even be expressed (<c>AC-208-D</c>).
     /// </summary>
     /// <remarks>
-    /// <b>What this test documents rather than hides:</b> <c>ux_employees_phone</c> is a full-table
-    /// unique index (KAFF-207/208's own "one mechanism, three places" table), not one scoped to active
-    /// rows — the same non-partial-index convention <c>ux_babs_code</c> and
-    /// <c>ux_catalogue_items_code</c> already use, where an archived row's identity stays reserved
-    /// forever. Registering the new salaried record for <i>the same real person</i> — the only way the
-    /// system can recognise it as the same person at all, since phone is the sole cross-reference — is
-    /// therefore refused today, by the very index that is this story's own enforcement of "nobody
-    /// appears in both". Loosening that index (a partial unique index scoped to <c>IsActive</c>, say)
-    /// is a phone-deduplication rule this session was told to stop on rather than invent: <c>Q70</c>
-    /// is open with Karim on exactly this axis. Reported in this commit rather than fixed silently.
+    /// <b>Ruled by decisions.md D-141/D-146, releasing this test's former "documented gap."</b> A
+    /// cross-population match against an ARCHIVED record of the other kind is warn-and-acknowledge in
+    /// both directions (D-146 point 4(a)) — the same real person keeps his phone when he moves from day
+    /// labour onto the payroll, and refusing the match would make D-130 §7's ruled flow impossible.
+    /// <c>ux_employees_salaried_phone</c> is scoped to <c>kind = 'Salaried'</c>, so it never sees a
+    /// day-labour row on either side of this match; the mechanism here is the acknowledgement, not the
+    /// index.
     /// </remarks>
     [Fact]
-    public async Task Re_registering_the_same_person_by_phone_after_archiving_is_currently_blocked_by_the_phone_index()
+    public async Task Re_registering_the_same_person_by_phone_after_archiving_warns_and_succeeds_once_acknowledged()
     {
         Guid bab = await CreateBabAsync();
         (Guid dayLabourId, string phone) = await CreateAsync("Field Worker", EmployeeKind.DayLabour, bab);
 
         (await ArchiveAsync(dayLabourId)).StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        HttpResponseMessage reregistered = await CreateRawAsync("Field Worker", EmployeeKind.Salaried, phone, null);
+        HttpResponseMessage checkResponse = await CheckAsync(phone);
+        checkResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        reregistered.StatusCode.Should().Be(
-            HttpStatusCode.Conflict,
-            "documented gap: ux_employees_phone has no exception for an archived original, so the same "
-            + "phone cannot be re-registered — see this test's remarks and the session report");
+        using JsonDocument checkBody = JsonDocument.Parse(await checkResponse.Content.ReadAsStringAsync(Ct));
+        JsonElement[] matches = checkBody.RootElement.GetProperty("matches").EnumerateArray().ToArray();
 
-        (await MessageKeyAsync(reregistered)).Should().Be("errors.master.employee_phone_taken");
+        matches.Should().ContainSingle(match => match.GetProperty("id").GetGuid() == dayLabourId);
+        JsonElement archivedMatch = matches.Single(match => match.GetProperty("id").GetGuid() == dayLabourId);
+        archivedMatch.GetProperty("isArchived").GetBoolean().Should().BeTrue();
+        archivedMatch.GetProperty("name").GetString().Should().Be("Field Worker");
 
-        // The mechanism works cleanly when the new record carries its own distinct phone — proving
-        // the archive-then-create shape itself, independent of the phone-index gap above.
-        HttpResponseMessage distinctPhone = await CreateRawAsync(
-            "Field Worker", EmployeeKind.Salaried, UniqueNames.Phone().ToString(), null);
+        HttpResponseMessage unacknowledged = await CreateRawAsync(
+            "Field Worker", EmployeeKind.Salaried, phone, null, acknowledgedDuplicatePhone: false);
 
-        distinctPhone.StatusCode.Should().Be(HttpStatusCode.Created);
+        unacknowledged.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await MessageKeyAsync(unacknowledged)).Should().Be("errors.master.duplicate_phone_not_acknowledged");
+
+        HttpResponseMessage reregistered = await CreateRawAsync(
+            "Field Worker", EmployeeKind.Salaried, phone, null, acknowledgedDuplicatePhone: true);
+
+        reregistered.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        using JsonDocument createdBody = JsonDocument.Parse(await reregistered.Content.ReadAsStringAsync(Ct));
+        Guid newSalariedId = createdBody.RootElement.GetProperty("id").GetGuid();
 
         await using KaffDbContext reader = _database.CreateBareContext();
+
         Employee original = await reader.Employees.SingleAsync(e => e.Id == dayLabourId, Ct);
         original.Kind.Should().Be(EmployeeKind.DayLabour, "the original record was never moved");
         original.IsActive.Should().BeFalse();
+
+        Employee newSalaried = await reader.Employees.SingleAsync(e => e.Id == newSalariedId, Ct);
+        newSalaried.Kind.Should().Be(EmployeeKind.Salaried);
+
+        AuditRecord auditRecord = await reader.AuditRecords.SingleAsync(
+            record => record.EventType == AuditEventKind.DuplicatePhoneAcknowledged
+                      && record.EntityId == dayLabourId,
+            Ct);
+
+        auditRecord.EntityType.Should().Be(nameof(Employee));
     }
 
     // ---- helpers ------------------------------------------------------------------------------
@@ -146,7 +164,8 @@ public sealed class EmployeeKindInvariantTests : IAsyncLifetime
         return (body.RootElement.GetProperty("id").GetGuid(), phone);
     }
 
-    private async Task<HttpResponseMessage> CreateRawAsync(string fullName, EmployeeKind kind, string phone, Guid? babId)
+    private async Task<HttpResponseMessage> CreateRawAsync(
+        string fullName, EmployeeKind kind, string phone, Guid? babId, bool acknowledgedDuplicatePhone = false)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, new Uri("/api/employees", UriKind.Relative))
         {
@@ -156,7 +175,21 @@ public sealed class EmployeeKindInvariantTests : IAsyncLifetime
                 phone,
                 kind = kind.ToString(),
                 babId,
+                acknowledgedDuplicatePhone,
             }),
+        };
+
+        await StampAsync(request);
+
+        return await _client.SendAsync(request, Ct);
+    }
+
+    private async Task<HttpResponseMessage> CheckAsync(string phone)
+    {
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post, new Uri("/api/employees/phone-check", UriKind.Relative))
+        {
+            Content = JsonContent.Create(new { phone }),
         };
 
         await StampAsync(request);

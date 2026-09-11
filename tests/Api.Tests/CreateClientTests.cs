@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Kaff.Api.Common;
 using Kaff.Api.Features.Clients;
 using Kaff.Api.Tests.Infrastructure;
 using Kaff.Domain.Auditing;

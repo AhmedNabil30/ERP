@@ -1,3 +1,4 @@
+using Kaff.Api.Common;
 using Kaff.Api.Common.Results;
 using Kaff.Domain.Auditing;
 using Kaff.Domain.Common;
@@ -82,7 +83,7 @@ internal static class Handler
             return ResultExtensions.Problem(phone.Error);
         }
 
-        List<PhoneMatch> matches = await PhoneMatches.FindAsync(
+        List<PhoneMatch> matches = await PhoneMatches.ClientsAsync(
             database, phone.Value.Normalised, cancellationToken, excluding: client.Id);
 
         if (matches.Count > 0 && !request.AcknowledgedDuplicatePhone)

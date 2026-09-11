@@ -486,5 +486,49 @@ public sealed class SchemaInvariantTests
             "D-107 §1 fixes the sequence at StartsAt(10001) so the first client is C-10001");
     }
 
+    /// <summary>
+    /// decisions.md D-146 test 1, replacing D-141's <c>The_phone_index_is_not_unique</c> — that test
+    /// was never built, because D-146 amended D-141 before it shipped.
+    /// </summary>
+    /// <remarks>
+    /// PostgreSQL re-prints a partial index's filter as
+    /// <c>WHERE ((kind)::text = 'Salaried'::text)</c>, so this asserts on the parts named in D-146
+    /// rather than the whole string.
+    /// </remarks>
+    [Fact]
+    public async Task The_phone_indexes_are_non_unique_except_the_salaried_partial_index()
+    {
+        await using KaffDbContext context = _database.CreateBareContext();
+
+        List<string> names = await context.Database
+            .SqlQuery<string>(
+                $"""
+                 SELECT indexname AS "Value" FROM pg_indexes
+                 WHERE tablename IN ('employees', 'subcontractors', 'suppliers') AND indexname LIKE '%phone%'
+                 """)
+            .ToListAsync(Ct);
+
+        names.Should().NotContain("ux_employees_phone");
+        names.Should().NotContain("ux_subcontractors_phone");
+        names.Should().NotContain("ux_suppliers_phone");
+
+        foreach (string nonUnique in new[] { "ix_employees_phone", "ix_subcontractors_phone", "ix_suppliers_phone" })
+        {
+            names.Should().Contain(nonUnique);
+            (await IndexDefinitionAsync(context, nonUnique)).Should().NotContain("UNIQUE");
+        }
+
+        names.Should().Contain("ux_employees_salaried_phone");
+        string salariedIndexDef = await IndexDefinitionAsync(context, "ux_employees_salaried_phone");
+        salariedIndexDef.Should().StartWith("CREATE UNIQUE INDEX");
+        salariedIndexDef.Should().Contain("WHERE");
+        salariedIndexDef.Should().Contain("'Salaried'");
+    }
+
+    private static async Task<string> IndexDefinitionAsync(KaffDbContext context, string indexName)
+        => await context.Database
+            .SqlQuery<string>($"SELECT indexdef AS \"Value\" FROM pg_indexes WHERE indexname = {indexName}")
+            .SingleAsync(Ct);
+
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 }

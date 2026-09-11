@@ -1,3 +1,4 @@
+using Kaff.Api.Common;
 using Kaff.Api.Common.Results;
 using Kaff.Domain.Common;
 using Kaff.Infrastructure.Persistence;
@@ -46,7 +47,7 @@ internal static class Handler
         }
 
         List<PhoneMatch> matches =
-            await PhoneMatches.FindAsync(database, phone.Value.Normalised, cancellationToken);
+            await PhoneMatches.ClientsAsync(database, phone.Value.Normalised, cancellationToken);
 
         return Microsoft.AspNetCore.Http.Results.Ok(new Response(matches));
     }

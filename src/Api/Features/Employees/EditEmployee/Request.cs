@@ -29,6 +29,11 @@ namespace Kaff.Api.Features.Employees.EditEmployee;
 /// <param name="Department">Optional, staff-only field. Free text — decisions.md D-139 §7, D-144 §2.</param>
 /// <param name="JobTitle">Optional, staff-only field already carried by the entity.</param>
 /// <param name="HiredOn">Optional, staff-only field already carried by the entity.</param>
+/// <param name="AcknowledgedDuplicatePhone">
+/// Same shape and reasoning as <c>CreateEmployee.Request</c>'s member of the same name — decisions.md
+/// D-141 §5, D-146 point 3. The salaried refusal never reads it. <c>excluding: id</c> on the server
+/// re-run means a record saved with its own phone unchanged never matches itself.
+/// </param>
 public sealed record Request(
     string? FullName,
     string? Phone,
@@ -38,4 +43,5 @@ public sealed record Request(
     string? NationalId,
     string? Department,
     string? JobTitle,
-    DateOnly? HiredOn);
+    DateOnly? HiredOn,
+    bool AcknowledgedDuplicatePhone);
