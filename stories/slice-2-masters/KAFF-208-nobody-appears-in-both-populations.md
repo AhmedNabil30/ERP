@@ -4,7 +4,7 @@
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** state and verdict live only in this file's line-3 trailer — see line 3. Refined 2026-09-09 by the BA, amended 2026-09-12 against D-141, D-144 §1 (`AC-208-B`/`AC-208-E` restated, `V-37-F`).
 **Spec:** **§10** (*"Two populations, one source each … Nobody appears in both"*), **§2** · **Decisions:** D-016 (🟡), D-044 ruling 4, **D-130 §7, D-129 §1, D-141, D-144 §1**
-**Register:** `stories/questions-for-karim.md` → **`Q12`** (✅ answered, D-129 §1), **`Q69`** (✅ answered, D-130 §7), **`Q70`** (✅ answered — D-139 §1: warn for day labour, no longer this story's mechanism at all)
+**Register:** `stories/questions-for-karim.md` → **`Q12`** (✅ answered, D-129 §1), **`Q69`** (✅ answered, D-130 §7), **`Q70`** (✅ answered — D-139 §1: warn for day labour, no longer this story's mechanism at all), **`Q80`** (⚠️ narrowed 2026-09-12, D-146 §4 — archived half derived and ruled, active half still open), **`Q83`** (new, cross-referenced — rehiring a salaried leaver on the same phone)
 **Screens:** `ux/screen-inventory.md` → **`S-024`** (*"costing type is immutable after creation"*), **`S-023`**, **`S-025`**
 **Owner:** Backend, then Frontend
 **Depends on:** KAFF-207 (the register)
@@ -74,13 +74,10 @@ Given the `Employee` store with records of both kinds
 When every record is read
 Then each carries exactly one `Kind`, that kind is a defined enum member — not the zero value and not a string the binder produced — and no record carries both or neither
 
-**AC-208-B — HELD on the cross-population phone case (D-144 §1's open consequence)**
-Given a registered day labourer
-When the same person's phone is submitted on a salaried create
-Then — **held.** Whether this refuses or warns-and-acknowledges is not ruled: D-144 §1 rules the
-salaried-to-salaried case (refuse) and the day-labour/subcontractor/supplier case (warn, D-139 §1) but
-explicitly leaves this cross-population match to the Architect or, failing that, to Nabil. **Until it is
-ruled, nothing here asserts either behaviour as correct**
+**AC-208-B — HELD on the ACTIVE cross-population phone case (narrowed 2026-09-12, D-146 §4(b) — `Q80`)**
+Given an **active** registered day labourer
+When the same person's phone is submitted on a salaried create, or the reverse — an active salaried record's phone on a new day-labour registration
+Then — **held.** D-146 §4(a) has since derived and ruled the **archived** half of this case (warn-and-acknowledge, `AC-208-E`); **only the active-to-active match stays open.** Whether an active match refuses or warns-and-acknowledges weighs two written rules against each other — §10's *"nobody appears in both"* and D-139 §1's *"a shared phone is evidence, not proof"* — which D-146 §4(b) calls a business choice no agent may make. **Until `Q80` (narrowed) is answered, nothing here asserts either behaviour as correct**
 
 **AC-208-C — a population cannot be edited from one to the other** *(fails if the rule is broken)*
 Given an existing employee of either kind
@@ -145,5 +142,7 @@ Then it reads **يومية** and the salaried term verbatim from the catalogue, 
 | **`Q69`** | ✅ **ANSWERED — D-130 §7, forced by the invariant.** Archive the day-labour record, register a new employee record — never a move. `AC-208-E` is written | **Closed** |
 | **`Q12`** | ✅ **ANSWERED — D-129 §1.** The Owner keeps `EmployeeManage` | **Closed** |
 | **`Q70`** | ✅ **ANSWERED for its within-population half — D-139 §1, tightened by D-144 §1.** Salaried-to-salaried duplicates refuse; day labour, subcontractor and supplier duplicates warn-and-acknowledge. **The cross-population half is not answered** — see the new row below | **Closed** (within-population) |
-| **`Q80`** | **Registered.** A day labourer's phone matching a salaried record, or the reverse (`AC-208-B`, `AC-208-E`) — refuse, or warn-and-acknowledge? Karim's D-144 §1 answer names the salaried population alone and explicitly does not reach this case | **Nabil** (the Architect could not derive it from D-139/D-144) |
+| **`Q80`** | ⚠️ **Narrowed 2026-09-12, D-146 §4.** The archived half is now derived and ruled (`AC-208-E` released, D-146 §4(a)). **What remains is the ACTIVE half only**: an active day labourer's phone matching an active salaried record, or the reverse (`AC-208-B`) — refuse, or warn-and-acknowledge? | **Nabil** (D-146 §4(b): a business choice, not the Architect's to make) |
+| **`Q83`** | **New, cross-referenced from the register.** Rehiring a salaried leaver on the same phone: `Employee` has no unarchive path, so D-146's archived-salaried filter refuses re-registration outright unless Nabil wants rehiring possible, and by which of D-146's two named mechanisms | **Nabil** — full text in `stories/questions-for-karim.md` |
+| **`Q84`** | **New, cross-referenced from `KAFF-211`.** Does D-147's *"Finance only"* reading (`[owner, finance]`) actually include the Owner, or did Nabil mean Finance alone? | **Nabil** — full text in `stories/questions-for-karim.md`, raised against `KAFF-211` |
 | 1 | **`EmployeeKindIsImmutable` is declared, translated, and returned by nothing** [Verified: 2026-09-09 @ `src/Domain/MasterData/MasterDataErrors.cs` -> `EmployeeKindIsImmutable`]. **A defect finding, not a question** — an unreachable error reads as an enforced rule. Routed to **Backend** through `AC-208-C`, and named here so it is not read as this story inventing one | **Backend** |

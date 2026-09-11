@@ -4,7 +4,7 @@
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **⚠️ Amended 2026-09-12 — `Q29`, `Q73` and `Q70` are all answered (D-139 §§4–5, D-141/D-144 §1). Retitled: this master carries no rate card and no rate card was ever built — "with rates" is no longer true and the file's own former title was never a ruling. The file name is left as-is; only the heading changes.**
 **Spec:** **§2** (*"rates and BOQ; Finance only disburses"*), **§5.1** (5% retention, zeroable 🟡), **§6.7**, §9 (*"record only, no login"*) · **Decisions:** D-044 ruling 4, D-049 ruling 9 (the rate moved to the contract, **for the client only**), **D-129 §1, D-139 §§4–5, D-141**
-**Register:** `stories/questions-for-karim.md` → **`Q29`** (✅ answered — D-139 §5: withholding is per contract/job, as for the client; the tax registration number is Finance's alone), **`Q73`** (✅ answered — D-139 §4: rates live on the sub-BOQ, slice 4/5, not on this record), **`Q12`** (✅ answered, D-129 §1), **`Q70`** (✅ answered — D-139 §1/D-141: warn-and-acknowledge for a subcontractor, same as day labour)
+**Register:** `stories/questions-for-karim.md` → **`Q29`** (✅ answered — D-139 §5: withholding is per contract/job, as for the client; the tax registration number is Finance's alone), **`Q73`** (✅ answered — D-139 §4: rates live on the sub-BOQ, slice 4/5, not on this record), **`Q12`** (✅ answered, D-129 §1), **`Q70`** (✅ answered — D-139 §1/D-141: warn-and-acknowledge for a subcontractor, same as day labour). **Mechanism question closed 2026-09-12 — D-147**: `SubcontractorTaxRegistrationEdit`, its own endpoints, `AC-211-K` restated, `AC-211-N` added. UX's `S`-number for Finance's screen is HELD, `AC-211-O`.
 **Screens:** `ux/screen-inventory.md` → **`S-028`** (list), **`S-029`** (create / edit)
 **Owner:** Backend, then Frontend
 **Depends on:** KAFF-204 — a subcontractor's trade names a باب
@@ -61,7 +61,7 @@ source, held per firm because it must be zeroable per firm.
 | 5 | ✅ **The withholding rate moves off this record — D-139 §5.** *"Withholding for subcontractors and suppliers is set per contract/job, as for clients. It is not a firm-level field."* `WithholdingCategory` is removed from `Subcontractor` [Verified: 2026-09-09 @ `src/Domain/MasterData/Subcontractor.cs` -> `WithholdingCategory`] and rebuilt on the contract/job — `KAFF-318`'s and slice 4's concern, not this story's | **D-139 §5** |
 | 6 | ✅ **The master carries no rate card — D-139 §4.** Subcontractor rates live on each project's sub-BOQ. **No rate-card field is added to this entity, ever, by this story** | **D-139 §4** |
 | 7 | **Withholding is a liability Kaff carries, never an asset.** §6.7: when Kaff pays subcontractors, **Kaff withholds and carries a liability to remit** — the opposite direction from a corporate client's collection, which is a recoverable **asset**. **The two must never net against each other.** This record does not hold the rate (rule 5); it must still never present the concept as a recoverable figure on any screen that shows it | **§6.7** — MUST · CLAUDE.md |
-| 8 | **The tax registration number identifies the legal entity and does not vary by job**, so it stays on this record even though the rate does not — D-049's reasoning about the field it kept on the client, applied here. ✅ **Who may set it is now ruled too — D-139 §5: entered and managed by Finance only.** `SubcontractorManage` is granted to the Technical Office and the Owner (rule 11); **whether the tax-registration field needs its own Finance-only permission, the way `ProjectFinancialsEdit` split from `ProjectManage` (D-055 §1), is a mechanism question for the Architect** — not decided here | **§6.7 amendment · D-139 §5** |
+| 8 | **The tax registration number identifies the legal entity and does not vary by job**, so it stays on this record even though the rate does not — D-049's reasoning about the field it kept on the client, applied here. ✅ **Who may set it, and how, is now ruled — D-139 §5 and D-147.** The number is split off `SubcontractorManage` into its own permission, `SubcontractorTaxRegistrationEdit` (`CompanyWide`, `[owner, finance]`), reached only through its own endpoint, `PUT /api/subcontractors/{id}/tax-registration`. **The Technical Office holds `SubcontractorManage` and does not hold `SubcontractorTaxRegistrationEdit`, so it can read the number on its own screen but has no route, at any layer, that lets it write one.** Finance has no `SubcontractorManage`, so it reaches the firm only through `GET /api/subcontractors/tax-registrations`, a projection of `Id, Code, Name, TaxRegistrationNumber, IsActive` and nothing else (D-055 §2's *"the projection is the control"*) | **§6.7 amendment · D-139 §5 · D-147** |
 | 9 | ✅ **A repeated subcontractor phone warns and is acknowledged, never refuses — D-139 §1, D-141.** `ux_subcontractors_phone` is dropped for a non-unique `ix_subcontractors_phone`, the client's own shape. Karim's own example for softening the client rule — *"a corporate client and its CEO might share a number"* — applies here just as directly, and Nabil ruled the same way | **D-139 §1 · D-141** |
 | 10 | Archiving replaces deletion; there is no delete path and this story adds none [Verified: 2026-09-09 @ `src/Domain/MasterData/Subcontractor.cs` -> `Archive`] | CLAUDE.md · KAFF-123's precedent |
 | 11 | `SubcontractorManage`, `CompanyWide`, **no assignment** — a firm belongs to no project. Technical Office settled by §2; **the Owner keeps it too** [Verified: 2026-09-09 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.SubcontractorManage`] | §2 · D-044 ruling 4 · **D-129 §1** |
@@ -71,9 +71,18 @@ source, held per firm because it must be zeroable per firm.
 
 ## Permissions, money, audit, i18n
 - **Permissions:** `SubcontractorManage`, `CompanyWide`, no assignment. Owner and Technical Office
-  today. **Finance is deliberately absent** — §2 gives Finance the disbursement, not the record, and
-  the D-055 §1 precedent is explicit that a grant written to reach one field hands over the whole
-  record.
+  today. **Finance is deliberately absent from `SubcontractorManage`** — §2 gives Finance the
+  disbursement, not the record, and the D-055 §1 precedent is explicit that a grant written to reach
+  one field hands over the whole record. ✅ **D-147 closes the mechanism question rule 8 raised**:
+  the tax registration number is reached instead through its own row, `SubcontractorTaxRegistrationEdit`
+  (`CompanyWide`, `[owner, finance]`, `TouchesMoney: false`), and its own endpoints —
+  `PUT /api/subcontractors/{id:guid}/tax-registration` (sets or clears the number) and
+  `GET /api/subcontractors/tax-registrations` (Finance's own list, projecting `Id, Code, Name,
+  TaxRegistrationNumber, IsActive` and nothing else, so no retention rate, trade or phone reaches
+  Finance through this route). `SubcontractorManage`'s create and edit requests carry no
+  `TaxRegistrationNumber` member at all — a member that does not exist cannot be sent — though the
+  Technical Office's read shape may still show the number **read-only**, since D-139 §5 restricts
+  entering and managing it, not reading it.
 - **Money:** ⛔ **This story writes no `Posting`, opens no account and stores no balance.** It holds one
   rate — retention, a `Percentage` — and one identifying field, the tax registration number; **the
   withholding rate is not held here** (rule 5, D-139 §5). What Kaff owes a subcontractor is derived by
@@ -142,10 +151,10 @@ Given a signed-in user of each role that does not hold it — **including Financ
 When each calls the create, edit, retention and archive endpoints directly, with no browser involved
 Then every call is refused `403`, and no record is created or changed by any of them
 
-**AC-211-K — every change is audited before and after** *(fails if the rule is broken)*
-Given a subcontractor whose retention rate and tax registration number are both edited
+**AC-211-K — every change is audited before and after, and the tax registration number is a separate audit record from the rest of the profile** *(fails if the rule is broken, restated 2026-09-12 — D-147: two roles, two endpoints)*
+Given a subcontractor whose retention rate is edited by the Technical Office through `SubcontractorManage`, and whose tax registration number is separately edited by Finance through `PUT /api/subcontractors/{id}/tax-registration`
 When the audit trail is read
-Then a record names the actor, the time, and both fields with their old and new values
+Then **two** records exist — one naming the Technical Office actor, the time, and the retention field's old and new values; the other naming the Finance actor, the time, and the tax registration number's old and new values — because D-147 makes these two requests on two endpoints, never one combined save, and a single audit record spanning both would misstate who did what
 
 **AC-211-L — nothing on this screen is a bid** *(fails if the rule is broken)*
 Given `S-028` and `S-029`
@@ -156,6 +165,17 @@ Then none of them is a bid, a quotation, an RFQ or a comparison of two firms' pr
 Given `S-028` and `S-029` at 390px in Arabic
 When they render
 Then direction is RTL, the term reads **مقاول باطن**, percentages and phone numbers are bidi-isolated, no string is a literal in either language, and the page body does not scroll horizontally
+
+**AC-211-N — the Technical Office cannot set the tax registration number by any route** *(fails if the rule is broken, new 2026-09-12 — D-147)*
+Given a Technical Office user holding `SubcontractorManage` but not `SubcontractorTaxRegistrationEdit`
+When every endpoint this story and `KAFF-211`'s mechanism map is enumerated as an allow-list, including create, edit and the tax-registration endpoint itself
+Then `SubcontractorManage`'s create and edit request shapes carry no `TaxRegistrationNumber` member to send, and a direct call to `PUT /api/subcontractors/{id}/tax-registration` by this user is refused `403`
+And this holds however the number is read on the Technical Office's own screen — reading it read-only is not the same permission as writing it
+
+**AC-211-O — HELD: Finance's tax-registration screen has no `S`-number** *(HELD 2026-09-12 — D-147)*
+Given `GET /api/subcontractors/tax-registrations` and `PUT /api/subcontractors/{id}/tax-registration`, both ruled by D-147
+When Frontend is asked to build the screen Finance uses to reach them
+Then — **held.** UX has not named an `S`-number for this screen, unlike `S-028`/`S-029` for the Technical Office's own. **No frontend criterion is written for it until UX does** — inventing a screen id here would be inventing UX's answer, not the BA's to give
 
 ## Definition of Ready — where this story stands
 
@@ -188,8 +208,9 @@ from `Subcontractor` before `AC-211-G` is true of the running system.
 - **Snags, debit notes and absorbing a sub's fault.** §11, slice 8. ⛔ **And nothing may debit Kaff's
   own hold** — a debit note against a subcontractor is not a movement on the `Hold` ledger.
 - **Bidding, RFQ, quote comparison.** §1, out of scope by name, `AC-211-L`.
-- **Splitting a Finance-only permission for the tax registration number.** Named as an open mechanism
-  question below; not invented or built here.
+- **Splitting a Finance-only permission for the tax registration number.** ✅ **Closed, D-147** —
+  `SubcontractorTaxRegistrationEdit`, its two endpoints, `AC-211-K` (restated) and `AC-211-N` (new).
+- **Naming an `S`-number for Finance's tax-registration screen.** UX's to give — `AC-211-O`, HELD.
 
 ## Questions
 
@@ -200,4 +221,5 @@ from `Subcontractor` before `AC-211-G` is true of the running system.
 | **`Q70`** | ✅ **ANSWERED — D-139 §1, D-141.** Warn-and-acknowledge, same as the client and as day labour | **Closed** |
 | **`Q12`** | ✅ **ANSWERED — D-129 §1.** The Owner keeps `SubcontractorManage` | **Closed** |
 | **`Q26`** | Already open, slice 8: *"you keep 5% from every subcontractor … is that right for all of them, or do some have nothing held?"* **It does not block this story** — the rate is zeroable per firm today, which satisfies either answer | **Karim** |
-| new | **Mechanism question, raised by D-139 §5.** Does the tax registration number need its own Finance-only permission, split from `SubcontractorManage` the way `ProjectFinancialsEdit` split from `ProjectManage` (D-055 §1)? Not a business question — **the Architect's** | **Architect** |
+| new | ✅ **ANSWERED — D-147.** The tax registration number gets its own permission, `SubcontractorTaxRegistrationEdit` (`CompanyWide`, `[owner, finance]`), and its own endpoints — `PUT /api/subcontractors/{id:guid}/tax-registration` and `GET /api/subcontractors/tax-registrations`. `AC-211-K` restated, `AC-211-N` added | **Closed** |
+| new | **UX owes an `S`-number for Finance's tax-registration screen.** Not named yet, unlike `S-028`/`S-029`. `AC-211-O` is HELD until it is | **UX** |
