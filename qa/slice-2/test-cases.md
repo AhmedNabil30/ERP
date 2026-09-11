@@ -542,10 +542,26 @@ Given no باب exists, when `S-021` renders, then `bab.tree.empty` is displayed
 state with the create action.
 *Fails if:* the screen renders a blank area or a placeholder row instead.
 
-**Held open — the tree's data, not its behaviour.** No case above seeds or asserts Kaff's real trades
-or their real markups, and none is written to. `Q75` (D-130 §8) is data only Karim holds; a demo or a
-seed script populated with `spec.md` §4.2's own 15%/30% examples would be exactly the "plausible
-fiction mistaken for a decision" D-130 §8 warns against, and this file does not produce one.
+✅ **`Q75` answered, D-145 §1 — the tree's data is now cased below**, replacing the held-open note this
+section used to carry: no case here used to seed or assert Kaff's real trades, because the trades and
+their markups were data only Karim held. They are named now.
+
+**TC-2-104 · the seed is exactly Karim's eight trades, top-level, insert-if-code-absent, and never overwrites an edit**
+`AC-204-K` · P1 · Api, real PostgreSQL · D-145 §1 · D-142
+Given a fresh database, when `BabSeeder` runs, then exactly these eight أبواب exist as **root** أبواب
+(no parent), one per row, no more and no fewer: `CON` أعمال خرسانة 15%, `MAS` أعمال مباني 15%, `PLU`
+أعمال صحية 20%, `ELE` أعمال كهرباء 20%, `HVA` أعمال تكييف وتهوية 20%, `FIN` أعمال تشطيبات 30%, `CAR`
+أعمال نجارة 25%, `MET` أعمال معدنية 25%.
+And given the seeder runs a second time, when it completes, then it inserts nothing new and changes
+nothing that already exists — insert-if-code-absent, never an overwrite.
+And given one of the eight is edited by hand — a renamed markup, a different Arabic name — before the
+seeder runs a third time, when it completes, then the hand-edited row is untouched.
+And given a client has already created أبواب of its own by hand before the seeder ever runs, when it
+runs, then the eight seeded أبواب are added beside them rather than the run being refused — `Q81`'s
+open question, unaffected by this case.
+*Fails if:* a ninth باب appears, any seeded code/name/markup differs from the table above, a second or
+third run changes any existing row (seeded or hand-edited), or the seeder refuses to run because
+أبواب already exist.
 
 ---
 
@@ -1047,50 +1063,446 @@ endpoint and a stack can be seeded with at least one archived catalogue item.**
 
 ---
 
-# Held open — not Ready, no case written
+Held open no longer applies to any of these four stories as a whole — `Q29`, `Q70`, `Q71`, `Q72` and
+`Q73` are all ruled (D-139, D-140, D-141, D-145 §1). They are cased in full below. One criterion inside
+`KAFF-208` (`AC-208-B`, above) and one inside `KAFF-211` (`AC-211-O`, below) still HELD on their own
+narrower, still-open questions — `Q80` and UX's `S`-number respectively — and are marked so in place,
+per the brief: a case driven against a question nobody has answered would report a coverage that does
+not exist.
 
-Per the brief: a case driven against a question nobody has answered would report a coverage that does
-not exist. Each story below gets the question that blocks it and nothing else.
+---
 
-**KAFF-209 · Register a worker from site.** Held on **`Q70`** (is a repeated worker phone a refusal or
-a warning) and **`Q71`** (which role, if any, may call the registration endpoint — today none does).
-`Q71` alone makes every permission case for this story unwritable: there is no actor to assert *can*
-reach the endpoint, and asserting only who *cannot* would certify a gap as a feature. The story's own
-`AC-209-D` and `AC-209-E` are already written and held for the same reason, inside the story; this file
-adds no case beyond them.
+# KAFF-209 · Register a worker from site — masters ready for QA (new, 2026-09-12 — `Q70`/`Q71` ruled)
 
-**KAFF-210 · Worker engagement history.** Held on **`Q72`** (what one engagement is — a day, a stretch
-of work, or a project — and what a rating is out of). Every figure this story renders (average day
-rate, frequency, rating) is defined in terms of "engagement," and no unit means no case can assert a
-specific number without inventing the unit. The story's own `AC-210-F` is already written and held for
-the same reason.
+**TC-2-105 · a site engineer registers a worker with §10's four fields, and the request cannot carry `Kind`**
+`AC-209-A` · P1 · Api, real PostgreSQL · §10 · D-140
+Given a site engineer assigned to project A, and separately the Owner, on `POST /api/projects/{A}/day-labour`,
+when a name, phone, باب and specialty are submitted, then the worker exists as an `Employee` with
+`Kind = DayLabour` carrying those values and appears in the pool on `GET …/day-labour`; and the request
+type is enumerated as an allow-list carrying no `Kind` member at all.
+*Fails if:* the worker is created with any kind other than `DayLabour`, or the request type has a `Kind`
+member that could be set to `Salaried` — D-140's own reasoning: leaving it out is stronger than
+validating it. **Named test:** `An_assigned_site_engineer_registers_a_day_labourer_from_site` (D-140
+SM-30 test 5).
 
-**KAFF-211 · Subcontractor master with rates.** Held on **`Q29`** (whether the withholding rate belongs
-to the firm or the job — named in `stories/backlog.md` as a slice-2 blocker before this story was
-written), **`Q73`** (whether the master carries a rate card at all, or rates live only on the job's
-sub-BOQ), and **`Q70`**'s third population (repeated subcontractor phone). `AC-211-G`, `AC-211-H` and
-`AC-211-I` are already written and held in the story for these three.
+**TC-2-106 · a worker without a باب is refused, in the handler and in the database**
+`AC-209-B` · P1 · Domain + Api, real PostgreSQL (raw SQL) · §10
+Given a registration with no trade, when it is submitted, then it is refused with
+`errors.master.day_labour_requires_trade`; and the same row inserted by raw SQL that bypasses the
+handler is refused by `ck_employees_day_labour_has_trade`.
+*Fails if:* either path accepts a day-labour row with no باب.
 
-**KAFF-212 · Supplier master.** Held on **`Q29`** and **`Q70`**'s fourth population (repeated supplier
-phone). `AC-212-F` and `AC-212-G` are already written and held in the story.
+**TC-2-107 · the phone is matched on its normalised form**
+`AC-209-C` · P1 · Domain + Api · §10 · D-141
+Given a worker registered as `+20 100 123 4567`, when the same number is submitted as `0100 123 4567`,
+as `0020 100 123 4567`, and with spaces and dashes in different places, then every one of them is
+recognised as the same number. **Named test:** `Employee_phone_match_is_on_the_normalised_form` (D-141).
+*Fails if:* any one form is not recognised as a match.
+
+**TC-2-108 · a repeated day-labour phone warns and is acknowledged, never refused**
+`AC-209-D` · P1 · Api, real PostgreSQL · D-139 §1 · D-141
+Given a worker already registered with a number, when a second worker is submitted with the same number
+and no acknowledgement, then the save is refused `409 errors.master.duplicate_phone_not_acknowledged`,
+naming the existing worker; and with `AcknowledgedDuplicatePhone: true` the save succeeds, both workers
+exist, and one `DuplicatePhoneAcknowledged` audit record is written against the first.
+*Fails if:* the unacknowledged save succeeds, the acknowledged save is refused, or no audit record is
+written. **Named test:** `An_unacknowledged_duplicate_employee_phone_is_refused_and_writes_nothing`
+(D-141), read for its day-labour form per D-146 test 8 (two day-labour records, not salaried).
+
+**TC-2-109 · an assigned site engineer reaches the route; an unassigned one does not**
+`AC-209-E` · P1 · Api · D-139 §2 · D-140
+Given a site engineer assigned to project A and a site engineer with no assignment to project A, when
+each calls `POST /api/projects/{A}/day-labour`, then the assigned one succeeds and the unassigned one is
+refused `403`, and no worker is created by the refused call.
+*Fails if:* the unassigned engineer's call succeeds. **Named tests:**
+`An_unassigned_site_engineer_is_refused_registration` and
+`An_unassigned_site_engineer_is_refused_DayLabourSiteManage` (D-140 SM-30 tests 3, 6).
+
+**TC-2-110 · a role holding neither `DayLabourSiteManage` nor `EmployeeManage` reaches nothing, HR included**
+`AC-209-F` · P1 · Api · D-139 §2 · D-140
+Given a signed-in user of each of Finance, TechnicalOffice, HeadOfDesign, MarketingSales, Client,
+Subcontractor and **Hr**, when each calls the registration endpoint directly, then every call is refused
+`403`, and no worker is created by any of them.
+*Fails if:* any of the seven succeeds — **HR included**, so a later grant to HR is caught, D-140's own
+reasoning. **Named tests:** `A_site_engineer_is_refused_every_EmployeeManage_route` and
+`Every_role_without_DayLabourSiteManage_is_refused` (D-140 SM-30 tests 8, 12).
+
+**TC-2-111 · no rate is captured at registration**
+`AC-209-G` · P1 · Domain · §10 · CLAUDE.md
+Given the registration request and its response, when their members are enumerated as an allow-list,
+then no day rate, wage, salary or money-typed member appears in either, under that name or any other.
+*Fails if:* any money-typed member is added to either contract.
+
+**TC-2-112 · registration is audited, and the acknowledgement is audited against the real id**
+`AC-209-H` · P1 · Api, real PostgreSQL · CLAUDE.md · D-140 point 6
+Given a worker registered from site, when the audit trail is read, then a record names the actor, the
+time, and the record created; and given an acknowledged duplicate, its own `DuplicatePhoneAcknowledged`
+record names the worker already holding the number.
+*Fails if:* either record is missing, or the acknowledgement record's subject is not the real matched
+id. **Named test:** `Registration_from_site_is_audited_with_its_project` (D-140 SM-30 test 13).
+
+**TC-2-113 · `S-026` works one-handed in Arabic at 390px**
+`AC-209-I` · P3 · E2E · CLAUDE.md
+Given the register-from-site screen at 390px in Arabic, when it renders, then direction is RTL, the
+phone field opens a numeric keypad, every control is reachable with one thumb, the name and the number
+are bidi-isolated, no string is a literal in either language, and the page body does not scroll
+horizontally.
+*Fails if:* the body scrolls horizontally, or the phone field does not open a numeric keypad.
+
+**TC-2-114 · the pool shows a never-engaged worker as having no figures, not zero**
+`AC-209-J` · P2 · Api · §10
+Given a worker registered today and never engaged, when `GET …/day-labour` renders him, then his
+average day rate, frequency and rating each read as an explicit empty state — never `0`, never a blank,
+and never a placeholder row.
+*Fails if:* any of the three figures renders as `0` or a blank rather than the named empty state.
+
+**TC-2-115 · a phone match against a salaried record is masked**
+`AC-209-K` · P1 · Api, real PostgreSQL · D-140 point 6
+Given a salaried employee registered with a number, when a site engineer's phone-check is run against
+that number, then the response is `{ restricted: true }` with no id, name or code; and if the site
+engineer proceeds and acknowledges, the save succeeds and the audit record names the real salaried id,
+never exposed to the response.
+*Fails if:* the response names the salaried record, or the audit record names anything other than the
+real id. **Named test:** `A_salaried_phone_match_is_restricted_for_a_site_engineer` (D-140 SM-30 test
+11).
+
+---
+
+# KAFF-210 · Worker engagement history, day rate, frequency and rating — masters ready for QA (new, 2026-09-12 — `Q72` ruled)
+
+⚠️ **Money-touching story, flagged per this pass's brief.** `AC-210-C` carries a day rate at
+`decimal(18,4)` through `Money`. It writes no `Posting` and derives every summary rather than storing
+it (`AC-210-B`), but the rate itself is money and its precision is asserted below.
+
+**TC-2-116 · an engagement is recorded against a worker**
+`AC-210-A` · P1 · Api, real PostgreSQL · §10
+Given a registered worker, when an engagement is recorded with its project, its dates and its agreed
+day rate, then it appears in his history and the pool figures change to account for it.
+*Fails if:* the engagement does not appear in the history, or the pool is unchanged by it.
+
+**TC-2-117 · the three pool figures are derived, never stored**
+`AC-210-B` · P1 · Domain, real PostgreSQL · CLAUDE.md · §10
+Given a worker with three engagements at different rates, when the stored columns of the worker and of
+the engagement are enumerated as an allow-list, then no average, no count, no total and no cached
+rating appears among them; and recomputing from the engagements alone, with nothing deleted, reproduces
+every figure the pool shows.
+*Fails if:* a stored average, count or rating column exists, under any name.
+
+**TC-2-118 · the day rate keeps four decimals and never passes through a float** *(money-touching)*
+`AC-210-C` · P1 · Domain + Api, real PostgreSQL · CLAUDE.md
+Given an agreed day rate of `487.6543`, when the engagement is saved and read back, then the value is
+exact to the fourth decimal, and it has not passed through a `float` or a `double` at any point between
+the request body and the database.
+*Fails if:* the value differs in the fourth decimal, or a `float`/`double` accessor is used in the
+parse or persistence path.
+
+**TC-2-119 · the average is the average of the rates actually paid, recomputed on every read**
+`AC-210-D` · P1 · Api, real PostgreSQL · §10
+Given engagements at `300`, `400` and `500`, when the pool renders his average day rate, then it is
+`400`, computed from those three rows at the moment of the read; and adding a fourth engagement changes
+it on the next read with nothing else written anywhere.
+*Fails if:* the average is wrong, or does not change after a fourth engagement is added with no other
+write.
+
+**TC-2-120 · this story writes no posting and creates no account**
+`AC-210-E` · P1 · Api, real PostgreSQL · CLAUDE.md · §10
+Given an engagement recorded at a day rate, when the treasury is inspected, then no `Posting` and no
+account was created by it, under any type; and the routes this story maps are enumerated as an
+allow-list, none of which reaches the treasury.
+*Fails if:* any `Posting` or account exists that this story's routes created.
+
+**TC-2-121 · an engagement is one continuous stretch on one project, and a rating is out of 5**
+`AC-210-F` · P1 · Domain + Api · D-139 §3
+Given the history and the pool, when frequency and rating render, then frequency counts
+**engagements**, not days and not projects, and a rating outside `1`–`5` is refused.
+*Fails if:* frequency counts days or projects instead of engagements, or a rating outside `1`–`5` is
+accepted. The rating's finer shape (whole number vs. decimal vs. weighted criteria, `Q78`) is **not**
+asserted here — this case validates only the range D-139 §3 gives.
+
+**TC-2-122 · a worker with no engagements reads as unengaged, not as zero**
+`AC-210-G` · P1 · Api · §10
+Given a worker registered and never engaged, when the pool and the history render him, then each of the
+three figures shows the explicit empty state — never `0`, never `0.0000`, never a blank cell and never
+a placeholder row.
+*Fails if:* any figure renders as `0`, `0.0000` or a blank rather than the named empty state.
+
+**TC-2-123 · a role without the permission reads and writes nothing, including the read**
+`AC-210-H` · P1 · Api · D-110 §2 · D-139 §2 · D-140
+Given a signed-in user of each role that does not hold `DayLabourSiteManage`, and an assigned site
+engineer with no assignment to the engagement's project, when each calls the engagement, rating and pool
+read endpoints directly, then every call is refused `403` — **including the read**, because on a read
+the permission test is the entire control.
+*Fails if:* any refused role's read succeeds.
+
+**TC-2-124 · the engagement and the rating are audited**
+`AC-210-I` · P1 · Api, real PostgreSQL · CLAUDE.md
+Given an engagement recorded and then rated, when the audit trail is read, then each has a record naming
+the actor, the time, and what was written.
+*Fails if:* either record is missing.
+
+**TC-2-125 · Arabic, RTL, at mobile width, the rate bidi-isolated**
+`AC-210-J` · P3 · E2E · CLAUDE.md
+Given the pool and the history at 390px in Arabic, when they render, then direction is RTL, the day
+rate is bidi-isolated with an explicit direction rather than left to first-strong, dates and ratings do
+not reorder, no string is a literal in either language, and the page body does not scroll horizontally.
+*Fails if:* the body scrolls horizontally, or the rate is left to first-strong rather than an explicit
+`dir`.
+
+**TC-2-126 · an engagement closes only by explicit manual close, and only within its own project**
+`AC-210-K` · P1 · Api, real PostgreSQL · D-139 §3 · D-140
+Given an open engagement on project A, when a site engineer assigned to A closes it, and separately an
+engineer assigned only to project B attempts to close it by pairing B's route with A's engagement id,
+then the assigned engineer's close succeeds and is audited, the mismatched close is refused `403`, and
+no automatic process ever closes an engagement on its own.
+*Fails if:* the mismatched close succeeds, or any process closes an engagement without an explicit
+call. **Named test:** `An_engagement_cannot_be_closed_through_another_projects_route` (D-140 SM-30 test
+14, rule 6a's own reason for existing).
+
+---
+
+# KAFF-211 · Subcontractor master, profile only — masters ready for QA (new, 2026-09-12 — `Q29`/`Q73`/`Q70` ruled)
+
+**TC-2-127 · a subcontractor is created with a trade and the default 5% retention**
+`AC-211-A` · P1 · Api · §5.1
+Given the Technical Office, and separately the Owner (`Q12`, D-129 §1), when a code, name, phone and
+trade باب are submitted with no retention given, then the firm exists carrying those values and a
+retention of **5%**, and it is active.
+*Fails if:* the default retention is anything other than 5%, or the firm is inactive on creation.
+
+**TC-2-128 · retention is zeroed for one firm and no other**
+`AC-211-B` · P1 · Api, real PostgreSQL · §5.1
+Given two subcontractors, both at the 5% default, when one is set to 0%, then that one is 0% and the
+other is still 5%, and no global or default value anywhere has changed.
+*Fails if:* the second firm's retention changes, or a global default changes.
+
+**TC-2-129 · the retention rate is a percentage and survives its round trip**
+`AC-211-C` · P1 · Domain · D-044 ruling 6
+Given a retention entered as `5`, meaning five percent, when it is stored and read back, then it is the
+fraction `0.05` — not `5` — and `2.5%` survives exactly at storage and display precision.
+*Fails if:* `5` is stored as the integer `5` rather than the fraction `0.05`, or `2.5%` loses precision.
+
+**TC-2-130 · no subcontractor can sign in**
+`AC-211-D` · P1 · Api · §9 · D-065
+Given a subcontractor record, when the endpoints this story maps are enumerated as an allow-list, then
+none of them creates a `User`, sets a credential or grants a role; and a sign-in attempt against a
+subcontractor answers the same generic `401` as an unknown username.
+*Fails if:* any endpoint creates a `User` or credential, or a sign-in attempt against a subcontractor's
+identity is distinguishable from an unknown username.
+
+**TC-2-131 · this story writes no posting and stores no balance**
+`AC-211-E` · P1 · Domain, real PostgreSQL · CLAUDE.md
+Given a subcontractor record, when its stored properties are enumerated as an allow-list and the
+treasury is inspected, then no balance, outstanding, total, amount-typed or withholding-rate member
+appears among them, and no `Posting` and no account was created.
+*Fails if:* any such member exists, or a `Posting`/account was created.
+
+**TC-2-132 · nothing here presents withholding as recoverable or nets it against the client side**
+`AC-211-F` · P1 · Api · §6.7 · D-139 §5
+Given a subcontractor record and every screen that shows it, when they are inspected, then none of them
+carries a withholding rate — it lives on the contract/job — and none presents the concept as
+recoverable, as an asset, or netted with a client's tax withheld at source.
+*Fails if:* a withholding rate or a recoverable/netted framing appears on any surface.
+
+**TC-2-133 · the withholding rate is not on this record**
+`AC-211-G` · P1 · Domain · D-139 §5
+Given a subcontractor working two jobs at two different rates, when the entity's stored properties are
+enumerated as an allow-list, then no withholding rate or category appears among them.
+*Fails if:* `WithholdingCategory` or an equivalent member still exists on `Subcontractor`.
+
+**TC-2-134 · the master carries no rate card**
+`AC-211-H` · P1 · Api · D-139 §4
+Given the create and edit screens, when they render, then neither carries a price, a rate or a
+rate-card field of any kind.
+*Fails if:* a rate-card field appears on either screen.
+
+**TC-2-135 · a repeated subcontractor phone warns and is acknowledged, never refused**
+`AC-211-I` · P1 · Api, real PostgreSQL · D-139 §1 · D-141
+Given a subcontractor already registered with a number, when a second firm is submitted with the same
+number and no acknowledgement, then the save is refused `409 errors.master.duplicate_phone_not_acknowledged`,
+naming the existing firm; and with `AcknowledgedDuplicatePhone: true` the save succeeds and one
+`DuplicatePhoneAcknowledged` audit record is written.
+*Fails if:* the unacknowledged save succeeds, or the acknowledged save is refused.
+
+**TC-2-136 · a role without `SubcontractorManage` reaches nothing, Finance included**
+`AC-211-J` · P1 · Api · §2 · D-129 §1
+Given a signed-in user of each role that does not hold `SubcontractorManage` — **including Finance**,
+which disburses but does not own the record — when each calls the create, edit, retention and archive
+endpoints directly, then every call is refused `403`, and no record is created or changed by any of
+them.
+*Fails if:* any refused role, Finance included, succeeds at any endpoint.
+
+**TC-2-137 · the retention edit and the tax-registration edit write two separate audit records, from two roles**
+`AC-211-K` · P1 · Api, real PostgreSQL · D-147
+Given a subcontractor whose retention rate is edited by the Technical Office through
+`SubcontractorManage`, and whose tax registration number is separately edited by Finance through
+`PUT /api/subcontractors/{id}/tax-registration`, when the audit trail is read, then **two** records
+exist — one naming the Technical Office actor, the time, and the retention field's old and new values;
+the other naming the Finance actor, the time, and the tax registration number's old and new values.
+*Fails if:* one combined record spans both fields, or either actor is misattributed. **Named tests:**
+`Finance_sets_a_subcontractors_tax_registration_and_it_is_audited_before_and_after` (D-147 test 3) for
+the tax-registration half.
+
+**TC-2-138 · nothing on this screen is a bid**
+`AC-211-L` · P1 · Api · §1
+Given `S-028` and `S-029`, when every field, control and route they carry is enumerated as an
+allow-list, then none of them is a bid, a quotation, an RFQ or a comparison of two firms' prices.
+*Fails if:* any such field, control or route exists.
+
+**TC-2-139 · Arabic, RTL, at mobile width**
+`AC-211-M` · P3 · E2E · CLAUDE.md
+Given `S-028` and `S-029` at 390px in Arabic, when they render, then direction is RTL, the term reads
+**مقاول باطن**, percentages and phone numbers are bidi-isolated, no string is a literal in either
+language, and the page body does not scroll horizontally.
+*Fails if:* the body scrolls horizontally, or the term is a synonym rather than the catalogue's own key.
+
+**TC-2-140 · the Technical Office cannot set the tax registration number by any route**
+`AC-211-N` · P1 · Domain + Api · D-147
+Given a Technical Office user holding `SubcontractorManage` but not `SubcontractorTaxRegistrationEdit`,
+when every endpoint is enumerated as an allow-list, including create, edit and the tax-registration
+endpoint itself, then `SubcontractorManage`'s create and edit request shapes carry no
+`TaxRegistrationNumber` member to send, and a direct call to
+`PUT /api/subcontractors/{id}/tax-registration` by this user is refused `403`.
+*Fails if:* the create/edit request type carries a `TaxRegistrationNumber` member, or the direct call
+succeeds. **Named test:** `The_technical_office_cannot_set_a_subcontractors_tax_registration_by_any_route`
+(D-147 test 4). **Also asserted:** `Only_the_owner_and_finance_hold_SubcontractorTaxRegistrationEdit_and_it_touches_no_money`
+and `Finance_edits_a_subcontractors_tax_registration_but_not_the_subcontractor_record` (D-147 tests 1,
+2), and `Every_role_without_SubcontractorTaxRegistrationEdit_is_refused_the_tax_registration_routes`
+(D-147 test 5) for the remaining roles.
+
+**TC-2-141 · HELD — Finance's tax-registration screen has no `S`-number**
+`AC-211-O` · — · — · D-147
+⛔ **HELD.** Given `GET /api/subcontractors/tax-registrations` and
+`PUT /api/subcontractors/{id}/tax-registration`, both ruled by D-147, when Frontend is asked to build
+the screen Finance uses to reach them, then — **held.** UX has not named an `S`-number for this screen.
+*Not a passing case.* **No frontend criterion is cased here until UX assigns one** — inventing a screen
+id would be inventing UX's answer. The endpoints' own backend behaviour is still cased above (`TC-2-137`,
+`TC-2-140`) and D-147 test 6, `The_finance_subcontractor_list_carries_only_the_tax_registration_fields`,
+covers the projection `GET` returns without needing a screen to exist.
+
+---
+
+# KAFF-212 · Supplier master — masters ready for QA (new, 2026-09-12 — `Q29`/`Q70`/`Q13` ruled)
+
+**TC-2-142 · a supplier is created once and is not per project**
+`AC-212-A` · P1 · Api · §2
+Given Finance, when a code, name, phone and address are submitted, then the supplier exists carrying
+those values, is active, and carries no project — the record has no project field to carry one.
+*Fails if:* a project field exists or is populated.
+
+**TC-2-143 · one supplier, one account, many projects**
+`AC-212-B` · P1 · Domain · §2 · §6.3
+Given a supplier delivering to three projects, when his record and the account type that will serve him
+are inspected, then there is exactly one supplier row and his account type is company-scoped, not
+project-scoped; and nothing in this story creates a second record, a per-project record, or an account
+at all.
+*Fails if:* a second or per-project record exists, or an account is created by this story.
+
+**TC-2-144 · no balance and no withholding rate is stored anywhere on this record**
+`AC-212-C` · P1 · Domain · CLAUDE.md · D-139 §5
+Given a supplier, when his stored properties are enumerated as a named allow-list, then no balance,
+outstanding, total, purchases-to-date, withholding rate or other amount-typed member appears among
+them, under that name or any other.
+*Fails if:* any such member exists.
+
+**TC-2-145 · two suppliers cannot share a code**
+`AC-212-D` · P1 · Api, real PostgreSQL · slice 0
+Given a supplier with code `S-100`, when a second is submitted with `S-100`, and again with `s-100`,
+then both are refused, and the refusal survives two requests arriving at the same instant — the
+guarantee is the unique index, not a read-then-write.
+*Fails if:* a concurrent pair both succeed.
+
+**TC-2-146 · nothing here presents withholding as recoverable or nets it against the client side**
+`AC-212-E` · P1 · Api · §6.7 · D-139 §5
+Given a supplier record and every screen showing it, when they are inspected, then none of them carries
+a withholding rate, and none presents the concept as recoverable, as an asset, or netted with a
+corporate client's tax withheld at source.
+*Fails if:* a withholding rate or a recoverable/netted framing appears on any surface.
+
+**TC-2-147 · the withholding rate is not on this record**
+`AC-212-F` · P1 · Domain · D-139 §5
+Given a supplier delivering materials on one job and a service on another, when the entity's stored
+properties are enumerated as an allow-list, then no withholding rate or category appears among them.
+*Fails if:* `WithholdingCategory` or an equivalent member still exists on `Supplier`.
+
+**TC-2-148 · a repeated supplier phone warns and is acknowledged, never refused**
+`AC-212-G` · P1 · Api, real PostgreSQL · D-139 §1 · D-141
+Given a supplier already registered with a number, when a second is submitted with the same number and
+no acknowledgement, then the save is refused `409 errors.master.duplicate_phone_not_acknowledged`,
+naming the existing supplier; and with `AcknowledgedDuplicatePhone: true` the save succeeds and one
+`DuplicatePhoneAcknowledged` audit record is written.
+*Fails if:* the unacknowledged save succeeds, or the acknowledged save is refused.
+
+**TC-2-149 · a role without `SupplierManage` reaches nothing, Technical Office included**
+`AC-212-H` · P1 · Api · §2 · D-129 §1
+Given a signed-in user of each role that does not hold `SupplierManage` — **including the Technical
+Office** — when each calls the create, edit and archive endpoints directly, then every call is refused
+`403`, and no record is created or changed by any of them.
+*Fails if:* any refused role, Technical Office included, succeeds at any endpoint.
+
+**TC-2-150 · a supplier is archived, not deleted**
+`AC-212-I` · P1 · Api · CLAUDE.md
+Given an active supplier, when he is archived, then the row still exists with every field intact and is
+findable through the explicit filter; and no mapped route on the API deletes a supplier, under any verb.
+*Fails if:* the row is removed, or a delete route exists.
+
+**TC-2-151 · every change is audited before and after**
+`AC-212-J` · P1 · Api, real PostgreSQL · CLAUDE.md
+Given a supplier whose address and tax registration number are both edited in one request, when the
+audit trail is read, then one record names the actor, the time, and both fields with their old and new
+values.
+*Fails if:* either field's old or new value is missing from the record.
+
+**TC-2-152 · nothing on this screen is a quote comparison**
+`AC-212-K` · P1 · Api · §1
+Given `S-030`, when every field, control and route it carries is enumerated as an allow-list, then none
+of them is a bid, an RFQ, a quotation or a comparison of two suppliers' prices.
+*Fails if:* any such field, control or route exists.
+
+**TC-2-153 · Arabic, RTL, at mobile width**
+`AC-212-L` · P3 · E2E · CLAUDE.md
+Given `S-030` at 390px in Arabic, when it renders, then direction is RTL, names, numbers and the tax
+registration number are bidi-isolated, no string is a literal in either language, and the page body
+does not scroll horizontally.
+*Fails if:* the body scrolls horizontally.
 
 ---
 
 # Findings, stated here rather than filed to `qa/questions.md`
 
 This QA session did not edit `qa/questions.md`, `decisions.md`, any story file or any trailer — ticking
-a Definition-of-Ready box is the Scrum Master's, after this file lands. Two things found while writing
-cases are recorded here for that handoff:
+a Definition-of-Ready box is the Scrum Master's, after this file lands.
 
-1. **`AC-200-B`'s "more than four decimals" clause names two legal behaviours and no rule choosing
-   between them.** See the note under `TC-2-002`. Not cased; needs a ruling (BA or Nabil, not Karim —
-   it is a storage/parse policy, not a business fact).
-2. **`AC-208-C` cannot be executed against the code as it stands, because no employee-edit endpoint
+**Closed since the last pass, no longer findings:**
+1. ~~`AC-200-B`'s "more than four decimals" ambiguity~~ — closed by D-144 §6, recased as `TC-2-002`.
+2. ~~`AC-207-C`/`TC-2-068` describing a typed code~~ — closed by `V-37-E`'s own routing and D-130 §6,
+   recased as `TC-2-068`.
+
+**Still open, carried forward:**
+1. **`AC-208-C` cannot be executed against the code as it stands, because no employee-edit endpoint
    exists to send the request to** — the same shape as `AC-125-C`. See the note under `TC-2-078`. The
-   case is written and held, not dropped, so the day an edit endpoint ships this file already has its
-   test.
+   case is written and held, not dropped.
+2. **`AC-207-G`'s generated-code switch and `Department` field are Backend's to ship** before
+   `TC-2-072` and `TC-2-105`'s field-list assertions are true of the running system — both cases are
+   written against the ruling, not the code as it stands.
 
-No contradiction was found between `D-129`/`D-130` and any of the ten stories cased here beyond what
-the stories themselves already flag (the `AC-200-B` ambiguity, `AC-207-G`'s expected-red state pending
-Backend's generated-code switch, and `AC-208-C`'s missing endpoint) — all three were found by the
-stories' own Definition-of-Ready sections and are confirmed here, not newly discovered.
+**New gaps for the BA, found while casing this pass — none invented an expected behaviour a criterion
+does not state:**
+3. **`AC-208-B` (`TC-2-077`) and `AC-211-O` (`TC-2-141`) are HELD**, on `Q80` (narrowed to an active
+   cross-population phone match, D-146 §4(b) — Nabil's) and on UX's still-unassigned `S`-number for
+   Finance's tax-registration screen (D-147) respectively. Neither is cased as passing; both are ready
+   to be un-held the day their answer lands, per the pattern D-146 test 9 already uses (kept skipped,
+   not deleted).
+4. **`Q79`** (is `Department` required on the staff file — `KAFF-207`), **`Q76`**/`Q77`**/`Q78`** (the
+   Site Engineer's day-rate visibility, closing another engineer's engagement, and the rating's finer
+   shape — `KAFF-210`), and **`Q83`**/`Q84`** (rehiring a salaried leaver on the same phone, and whether
+   D-147's "Finance only" includes the Owner — `KAFF-208`/`KAFF-211`) are all registered and none blocks
+   a criterion cased in this file — recorded here so the next QA session does not have to re-derive that
+   fact from five separate stories.
+5. **Money-touching flag, per this pass's instruction.** `KAFF-210` stores an agreed day rate as
+   `Money` at `decimal(18,4)` (`AC-210-C`, `TC-2-118`). It writes no `Posting`, opens no account and
+   derives every summary rather than storing it (`AC-210-B`), so it does not touch a ledger — but the
+   rate itself is money and is flagged here rather than silently passed over. No other criterion cased
+   in this pass stores or moves money.
+
+No contradiction was found between `D-129`/`D-130`/`D-139`–`D-147` and any of the thirteen stories cased
+here beyond what the stories themselves already flag.
