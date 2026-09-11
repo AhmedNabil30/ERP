@@ -15,10 +15,6 @@
         <bdi class="code-value" translate="no">{{ displayCode() }}</bdi>
         <span class="code-note">{{ i18n.t('hr.employee.field.code_not_editable') }}</span>
       </p>
-
-      <p class="notice" role="status" data-testid="employee-staff-fields-notice">
-        {{ i18n.t('hr.employee.staff_fields_not_returned_notice') }}
-      </p>
     }
 
     <form class="fields" (submit)="$event.preventDefault(); onSubmit()">

@@ -9,9 +9,22 @@ export type EmployeeListFilter = 'active' | 'archived' | 'all';
 export type EmployeeKind = 'Salaried' | 'DayLabour';
 
 /**
- * One employee row — `ListEmployees.Response`'s `EmployeeSummary`. **Narrower than the create/edit
- * response**: it carries no `nationalId`, `jobTitle` or `hiredOn` — see `EmployeeFile` and the gap
- * this leaves, reported in `employee-form-page.ts`.
+ * `GET /api/employees/babs`'s `BabOption` — D-137. No markup: this endpoint exists only so the
+ * employee form's picker has a name and an id, and §9 amendment 3 keeps margin out of HR's reach.
+ */
+export interface BabOption {
+  readonly id: string;
+  readonly code: string;
+  readonly nameAr: string;
+  readonly nameEn: string;
+  readonly parentBabId: string | null;
+  readonly isActive: boolean;
+}
+
+/**
+ * One employee row — `ListEmployees.Response`'s `EmployeeSummary`. **Narrower than the create/edit/
+ * `get` response**: it carries no `nationalId`, `jobTitle` or `hiredOn` — see `EmployeeFile`. The edit
+ * form loads through `get(id)` instead of this list, D-137.
  */
 export interface EmployeeSummary {
   readonly id: string;
@@ -55,15 +68,21 @@ export type EmployeeEdit = EmployeeCreate;
 
 /**
  * The employee register's calls. KAFF-207, KAFF-208.
- *
- * **There is no `get(id)`.** Unlike `ClientsApi`, this API ships no `GET /api/employees/{id}`, and
- * unlike `CatalogueApi`'s own missing-`get` gap, `ListEmployees.Response` does not even carry
- * `nationalId`/`jobTitle`/`hiredOn` to fall back on — see `employee-form-page.ts` for how the edit
- * screen copes and the gap this leaves, reported rather than worked around.
  */
 @Injectable({ providedIn: 'root' })
 export class EmployeesApi {
   private readonly http = inject(HttpClient);
+
+  /** `GET /api/employees/{id}` — the edit form's load, D-137. `404` carries `errors.master.employee_not_found`. */
+  async get(id: string): Promise<EmployeeFile> {
+    return await firstValueFrom(this.http.get<EmployeeFile>(`api/employees/${id}`));
+  }
+
+  /** `GET /api/employees/babs` — D-137's lookup, gated `EmployeeManage`, no markup on the wire. */
+  async listBabOptions(): Promise<readonly BabOption[]> {
+    const response = await firstValueFrom(this.http.get<{ items: BabOption[] }>('api/employees/babs'));
+    return response.items;
+  }
 
   /** `S-023`'s list. `kind` narrows to one population; omitted, both render together (KAFF-207 rule 2). */
   async list(filter: EmployeeListFilter = 'active', kind?: EmployeeKind): Promise<readonly EmployeeSummary[]> {

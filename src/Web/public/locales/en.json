@@ -40,7 +40,6 @@
   "hr.employee.field.job_title": "Job title",
   "hr.employee.field.hired_on": "Hired on",
   "hr.employee.kind_is_permanent": "The costing type is fixed and cannot change after registration.",
-  "hr.employee.staff_fields_not_returned_notice": "The server does not return this employee's current national ID, job title or hire date — retype them if you want to keep them, or they will be cleared on save.",
   "hr.employee.babs_unavailable": "The list of أبواب could not be loaded.",
   "hr.employee.filter.active": "Active",
   "hr.employee.filter.archived": "Archived",
