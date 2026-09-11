@@ -49,19 +49,37 @@ public static class ResultExtensions
             : onSuccess(result.Value);
     }
 
-    public static IResult Problem(Error error)
+    public static IResult Problem(Error error) => Problem(error, extraExtensions: null);
+
+    /// <summary>
+    /// Same as <see cref="Problem(Error)"/>, with room for a refusal that has to name something
+    /// beyond its code and message key — KAFF-213's <c>errors.master.bab_has_active_items</c> names
+    /// the count of active items still filed under the باب, so the operator sees what stands in the
+    /// way rather than only that the archive failed.
+    /// </summary>
+    public static IResult Problem(Error error, IReadOnlyDictionary<string, object?>? extraExtensions)
     {
         ArgumentNullException.ThrowIfNull(error);
+
+        var extensions = new Dictionary<string, object?>(StringComparer.Ordinal)
+        {
+            [CodeExtension] = error.Code,
+            [MessageKeyExtension] = error.MessageKey,
+        };
+
+        if (extraExtensions is not null)
+        {
+            foreach (KeyValuePair<string, object?> pair in extraExtensions)
+            {
+                extensions[pair.Key] = pair.Value;
+            }
+        }
 
         return Microsoft.AspNetCore.Http.Results.Problem(
             statusCode: StatusFor(error.Type),
             title: error.Code,
             type: $"https://kaff.local/errors/{error.Code}",
-            extensions: new Dictionary<string, object?>(StringComparer.Ordinal)
-            {
-                [CodeExtension] = error.Code,
-                [MessageKeyExtension] = error.MessageKey,
-            });
+            extensions: extensions);
     }
 
     public static int StatusFor(ErrorType type) => type switch
