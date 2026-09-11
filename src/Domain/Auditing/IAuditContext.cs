@@ -83,6 +83,17 @@ public enum AuditEventKind
     /// </para>
     /// </remarks>
     DuplicatePhoneAcknowledged = 6,
+
+    /// <summary>
+    /// KAFF-200: the catalogue was loaded from an Excel file. <c>AC-200-G</c> — the actor and the
+    /// time come from the record itself, and the file name plus the created count go into
+    /// <see cref="IAuditContext.Reason"/>, the only field this mechanism offers beyond an entity
+    /// diff (decisions.md D-136 question 1 — audit granularity was routed to the Architect and left
+    /// unruled; this uses the existing per-entity mechanism rather than a new one). Declared with no
+    /// subject: an import is not about one row. Each created <c>CatalogueItem</c> also gets its own
+    /// <c>Created</c> record from the interceptor in the same save, under the same correlation id.
+    /// </summary>
+    CatalogueImported = 7,
 }
 
 /// <summary>
