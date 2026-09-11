@@ -199,6 +199,22 @@ public sealed class CatalogueItemEditingTests
             "nothing in spec.md forbids re-pricing into a loss either");
     }
 
+    // ---- KAFF-205 · SetBab moves exactly one column ------------------------------------------------
+
+    [Fact]
+    public void SetBab_moves_the_item_to_a_different_bab_and_touches_nothing_else()
+    {
+        CatalogueItem item = NewItem("CONC-117", cost: 100m, sell: 150m);
+        Guid newBab = Guid.NewGuid();
+
+        item.SetBab(newBab);
+
+        item.BabId.Should().Be(newBab);
+        item.CostPrice.Amount.Should().Be(100m, "KAFF-205 rule 5: a move changes only BabId");
+        item.BaseSellRate.Amount.Should().Be(150m);
+        item.Status.Should().Be(CatalogueItemStatus.Active);
+    }
+
     // ---- AC-206-A / AC-206-E · Archive, and archiving twice is refused ---------------------------
 
     [Fact]

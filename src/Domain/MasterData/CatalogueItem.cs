@@ -183,6 +183,14 @@ public sealed class CatalogueItem : Entity
         return Result.Success();
     }
 
+    /// <summary>
+    /// Moves this item to a different باب. KAFF-205 rule 4 — the باب is required and not nullable, so
+    /// a move is a change of value, never a removal. KAFF-205 rule 5: this changes only what a
+    /// <b>future</b> BOQ line defaults to — no cascade, no re-price, no notification. The caller
+    /// verifies the new باب exists; this method has no database to ask.
+    /// </summary>
+    public void SetBab(Guid babId) => BabId = babId;
+
     public Result Archive()
     {
         if (Status == CatalogueItemStatus.Archived)

@@ -15,6 +15,13 @@ namespace Kaff.Domain.Tests;
 /// question: nothing needs asking to know that a tree has no cycles.
 /// </para>
 /// <para>
+/// SM-33 / decisions.md D-128: the error this guard returns was renamed from
+/// <c>MasterDataErrors.BabCannotBeItsOwnParent</c> to
+/// <see cref="MasterDataErrors.BabCannotBeItsOwnAncestor"/> — "cannot be its own parent" is false of
+/// the depth-two-or-more case this same guard also refuses (A becoming its own grandparent is not a
+/// parent relationship), and one guard returns one message rather than two spellings of one refusal.
+/// </para>
+/// <para>
 /// <b>A cycle is a property of the tree, not of the node</b>, which is why <c>SetParent</c> takes the
 /// parent pointers of every باب. An entity cannot see its siblings, and a check that only looks at
 /// the node can only ever catch depth one — which is exactly the guard that was there.
@@ -28,7 +35,7 @@ public sealed class BabTreeTests
         Bab bab = NewBab("B-01");
 
         bab.SetParent(bab.Id, Tree(bab)).Error
-            .Should().Be(MasterDataErrors.BabCannotBeItsOwnParent);
+            .Should().Be(MasterDataErrors.BabCannotBeItsOwnAncestor);
 
         bab.ParentBabId.Should().BeNull("a refused move moves nothing");
     }
@@ -44,7 +51,7 @@ public sealed class BabTreeTests
         a.SetParent(b.Id, Tree(a, b)).IsSuccess.Should().BeTrue("A under B is a legal move");
 
         b.SetParent(a.Id, Tree(a, b)).Error
-            .Should().Be(MasterDataErrors.BabCannotBeItsOwnParent, "B is already A's parent");
+            .Should().Be(MasterDataErrors.BabCannotBeItsOwnAncestor, "B is already A's parent");
 
         b.ParentBabId.Should().BeNull("the refused move left B a root");
     }
@@ -62,7 +69,7 @@ public sealed class BabTreeTests
         c.SetParent(b.Id, Tree(a, b, c)).IsSuccess.Should().BeTrue();
 
         a.SetParent(c.Id, Tree(a, b, c)).Error
-            .Should().Be(MasterDataErrors.BabCannotBeItsOwnParent, "C is A's grandchild");
+            .Should().Be(MasterDataErrors.BabCannotBeItsOwnAncestor, "C is A's grandchild");
 
         a.ParentBabId.Should().BeNull();
 
@@ -97,7 +104,7 @@ public sealed class BabTreeTests
 
         Dictionary<Guid, Guid?> corrupt = new() { [bab.Id] = null, [x] = y, [y] = x };
 
-        bab.SetParent(x, corrupt).Error.Should().Be(MasterDataErrors.BabCannotBeItsOwnParent);
+        bab.SetParent(x, corrupt).Error.Should().Be(MasterDataErrors.BabCannotBeItsOwnAncestor);
         bab.ParentBabId.Should().BeNull();
     }
 
