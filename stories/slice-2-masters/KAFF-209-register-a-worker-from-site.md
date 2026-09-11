@@ -169,4 +169,4 @@ And if the site engineer proceeds and acknowledges, the save succeeds and the au
 | **`Q71`** | ✅ **ANSWERED — D-139 §2, mechanism by D-140.** `Permission.DayLabourSiteManage`, `ProjectScoped`, Owner and any assigned Site Engineer; not `EmployeeManage` | **Closed** |
 | **`Q12`** | ✅ **ANSWERED — D-129 §1.** The Owner keeps `EmployeeManage` | **Closed** |
 | **`Q36`** | Already open, and adjacent: *"can two people who use the system share a phone number?"* — the `User` half of the same shape. **It is not this question and does not answer it**: a `User` is a login, a worker is a costed person | **Karim** |
-| new | Raised by `KAFF-210`: whether the Site Engineer sees or records the agreed day rate on this same route, and whether one Site Engineer may close another's engagement — **not ruled here, D-140's own "what this does not decide"** | **Nabil** |
+| **`Q76`**, **`Q77`** | Raised by `KAFF-210`: whether the Site Engineer sees or records the agreed day rate on this same route, and whether one Site Engineer may close another's engagement — **not ruled here, D-140's own "what this does not decide"** | **Nabil** |

@@ -184,7 +184,7 @@ Then the assigned engineer's close succeeds and is audited, the mismatched close
 | **`Q72`** | ✅ **ANSWERED — D-139 §3.** An engagement is one continuous stretch of work on one project; ratings are out of 5 | **Closed** |
 | **`Q12`** | ✅ **ANSWERED — D-129 §1.** The Owner keeps `EmployeeManage` | **Closed** |
 | **`Q71`** | ✅ **ANSWERED — D-139 §2, mechanism by D-140.** The Site Engineer opens, closes and rates under `DayLabourSiteManage`, scoped to his assigned project | **Closed** |
-| new | **Whether the Site Engineer sees or records the agreed day rate.** D-140 raises this and explicitly leaves it to Nabil — it is money, and D-139 §2 isolates payroll from the site register | **Nabil** |
-| new | **Whether a Site Engineer may close an engagement another engineer opened**, on the same project. The permission row permits it (both engineers are assigned) and D-140 does not refuse it — Nabil's call | **Nabil** |
-| new | **The rating's finer shape** — a whole number 1–5, a decimal, or several weighted criteria. D-139 §3 gives the range and not the shape | **Karim** |
+| **`Q76`** | **New, registered.** Whether the Site Engineer sees or records the agreed day rate. D-140 raises this and explicitly leaves it to Nabil — it is money, and D-139 §2 isolates payroll from the site register | **Nabil** |
+| **`Q77`** | **New, registered.** Whether a Site Engineer may close an engagement another engineer opened, on the same project. The permission row permits it (both engineers are assigned) and D-140 does not refuse it — Nabil's call | **Nabil** |
+| **`Q78`** | **New, registered.** The rating's finer shape — a whole number 1–5, a decimal, or several weighted criteria. D-139 §3 gives the range and not the shape | **Karim** |
 | 1 | **Nothing in this slice produces an engagement automatically**, and §10 says day labour is costed from the daily log. **Not a question for Karim** — it is a sequencing fact between slice 2 and slice 6, recorded so that the slice-6 story that raises engagements from the log finds this note rather than a second, parallel history | **Scrum Master**, at slice-6 refinement |
