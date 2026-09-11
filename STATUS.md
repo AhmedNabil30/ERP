@@ -81,6 +81,20 @@ stays open until he answers.** ⚠️ **`AC-207-C`/`TC-2-068` are still stale:**
 that was to mark them superseded by D-130 §6 died on a session limit and edited nothing. The
 Verifier is told this by name. **Owed by BA and QA.**
 
+✅ **Batch verdict `57f0d78` (D-138):** 202, 203, 204, 205, 206, 213 and 214 are **CONDITIONAL**,
+each capped by the unwritten E2E suite. **207 and 208 are REJECTED** on `V-37-D`, HIGH: the edit
+screen renders `enum.EmployeeKind.[object Object]`.
+⛔ **2026-09-11 — Nabil ruled Q70, Q71, Q72, Q73, Q29, Q13, Q68 and Q75 (D-139).** Next, in order:
+1. Architect: the `Q71` permission, the `Q70` warn mechanism, the `Q75` seed mechanism.
+2. BA: `207`, `209`–`212` and the register under D-139; cut the banks story; the `KAFF-318` impact;
+   `V-37-E`/`H`/`I`.
+3. QA: cases in one pass.
+4. Backend and Frontend, serially: `V-37-D` first, then the other `V-37` repairs, the `Q70`
+   migration, `207`'s fields, `209`–`212`, and the E2E suite.
+5. One fresh Verifier.
+**Waiting on Nabil:** the Arabic names and codes for the eight trades (the seed data waits, the
+mechanism does not); warn-only for salaried staff; `HiredOn`; D-136's template questions; D-008.
+
 | Finding | What | Owner | State |
 |---|---|---|---|
 | `V-35-S` HIGH | No catalogue frontend | Frontend | Screens built in `934bfb9`, **unverified**. E2E `TC-2-027`/`035`/`065` **not written, and cannot be**: no endpoint creates a باب, so a seeded stack holds no catalogue row (D-133 §4). **Waits on `KAFF-204`** |
@@ -361,10 +375,9 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | | slice 1 | slice 2 | slice 3 |
 |---|---:|---:|---:|
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 |
-| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 5 | 0 |
+| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 22 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 |
-| 🔴 REJECTED — a Verifier looked, and it did not pass | 0 | 6 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 0 | 19 | 0 |
+| 🔴 REJECTED — a Verifier looked, and it did not pass | 0 | 8 | 0 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 23 | 5 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 |
 | **total** | **127** | **53** | **5** |
@@ -407,19 +420,19 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-129](stories/slice-1-foundation/KAFF-129-partition-audit-records-by-month.md) | 1 | 8 | 🔻 DEFERRED | none | `-` | 2026-09-07 | Partition `audit_records` by month, from the start |
 | [KAFF-200](stories/slice-2-masters/KAFF-200-import-the-catalogue-from-excel.md) | 2 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-08 | Import the catalogue from Excel at setup, loading the good rows and reporting the rest |
 | [KAFF-201](stories/slice-2-masters/KAFF-201-re-importing-is-not-a-sync.md) | 2 | 2 | ⚫ NOT-BUILT | none | `-` | 2026-09-08 | Re-importing is not a sync — a second import is a deliberate, reviewed act |
-| [KAFF-202](stories/slice-2-masters/KAFF-202-create-and-edit-a-catalogue-item.md) | 2 | 3 | 🔴 BUILT | REJECTED | `d5e6548` | 2026-09-10 | Create and edit a catalogue item |
-| [KAFF-203](stories/slice-2-masters/KAFF-203-find-a-catalogue-item-by-code-or-description.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `d5e6548` | 2026-09-10 | Find a catalogue item by code or description |
-| [KAFF-204](stories/slice-2-masters/KAFF-204-the-bab-tree-with-default-markup.md) | 2 | 5 | 🟡 BUILT | none | `4f7f591` | 2026-09-11 | The باب tree, carrying each trade's default markup |
-| [KAFF-205](stories/slice-2-masters/KAFF-205-reparent-a-bab-and-move-an-item.md) | 2 | 3 | 🟡 BUILT | none | `4f7f591` | 2026-09-11 | Re-parent a باب, and move an item between أبواب |
-| [KAFF-206](stories/slice-2-masters/KAFF-206-archive-a-catalogue-item.md) | 2 | 3 | 🔴 BUILT | REJECTED | `d5e6548` | 2026-09-10 | Archive a catalogue item without breaking what already references it |
-| [KAFF-207](stories/slice-2-masters/KAFF-207-employee-register.md) | 2 | 5 | 🟡 BUILT | none | `79e01f4` | 2026-09-11 | Employee register — exactly one record per costed person |
-| [KAFF-208](stories/slice-2-masters/KAFF-208-nobody-appears-in-both-populations.md) | 2 | 3 | 🟡 BUILT | none | `79e01f4` | 2026-09-11 | Nobody appears in both populations: day labour and salaried |
+| [KAFF-202](stories/slice-2-masters/KAFF-202-create-and-edit-a-catalogue-item.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Create and edit a catalogue item |
+| [KAFF-203](stories/slice-2-masters/KAFF-203-find-a-catalogue-item-by-code-or-description.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Find a catalogue item by code or description |
+| [KAFF-204](stories/slice-2-masters/KAFF-204-the-bab-tree-with-default-markup.md) | 2 | 5 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | The باب tree, carrying each trade's default markup |
+| [KAFF-205](stories/slice-2-masters/KAFF-205-reparent-a-bab-and-move-an-item.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Re-parent a باب, and move an item between أبواب |
+| [KAFF-206](stories/slice-2-masters/KAFF-206-archive-a-catalogue-item.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Archive a catalogue item without breaking what already references it |
+| [KAFF-207](stories/slice-2-masters/KAFF-207-employee-register.md) | 2 | 5 | 🔴 BUILT | REJECTED | `7117704` | 2026-09-11 | Employee register — exactly one record per costed person |
+| [KAFF-208](stories/slice-2-masters/KAFF-208-nobody-appears-in-both-populations.md) | 2 | 3 | 🔴 BUILT | REJECTED | `7117704` | 2026-09-11 | Nobody appears in both populations: day labour and salaried |
 | [KAFF-209](stories/slice-2-masters/KAFF-209-register-a-worker-from-site.md) | 2 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Register a worker from site, deduplicated by phone |
 | [KAFF-210](stories/slice-2-masters/KAFF-210-worker-engagement-history.md) | 2 | 3 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Worker engagement history, day rate, frequency and rating |
 | [KAFF-211](stories/slice-2-masters/KAFF-211-subcontractor-master-with-rates.md) | 2 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Subcontractor master with rates |
 | [KAFF-212](stories/slice-2-masters/KAFF-212-supplier-master.md) | 2 | 3 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Supplier master — one account serving many projects |
-| [KAFF-213](stories/slice-2-masters/KAFF-213-archive-a-bab.md) | 2 | 3 | 🟡 BUILT | none | `4f7f591` | 2026-09-11 | Archive a باب |
-| [KAFF-214](stories/slice-2-masters/KAFF-214-unarchive-a-catalogue-item.md) | 2 | 2 | 🔶 VERIFIED | CONDITIONAL | `d5e6548` | 2026-09-10 | Un-archive a catalogue item |
+| [KAFF-213](stories/slice-2-masters/KAFF-213-archive-a-bab.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Archive a باب |
+| [KAFF-214](stories/slice-2-masters/KAFF-214-unarchive-a-catalogue-item.md) | 2 | 2 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Un-archive a catalogue item |
 | [KAFF-300](stories/slice-3-treasury/KAFF-300-the-section-15-worked-example.md) | 3 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-07 | The §15 worked example as a fixture — present and failing before anything else is built |
 
 <!-- END GENERATED -->

@@ -1,6 +1,6 @@
 # KAFF-204 · The باب tree, carrying each trade's default markup
 
-<!-- kaff id=KAFF-204 slice=2 points=5 state=BUILT verdict=none at=4f7f591 on=2026-09-11 -->
+<!-- kaff id=KAFF-204 slice=2 points=5 state=VERIFIED verdict=CONDITIONAL at=7117704 on=2026-09-11 -->
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** **state and verdict live only in this file's line-3 trailer and in `STATUS.md` — not restated here (`CLAUDE.md`, D-119).** Refined 2026-09-08 by the BA; **amended 2026-09-09** — rule 5's defect is **repaired** (D-127 §1), both `errors.bab.*` keys are **renamed to the namespace that ships** (D-128), and **`Q12` clears** (D-129 §1). **One Definition-of-Ready box is still unticked, and it is `Q75`'s — the story's data, not its behaviour.**
 **Spec:** **§2** (*"~40 trades, tree, carries default markup %"*), **§4.2**, §4.5 · **Decisions:** D-044 ruling 4, D-044 ruling 6 (four decimals stored, two displayed), **D-129 §1**

@@ -1,6 +1,6 @@
 # KAFF-207 · Employee register — exactly one record per costed person
 
-<!-- kaff id=KAFF-207 slice=2 points=5 state=BUILT verdict=none at=79e01f4 on=2026-09-11 -->
+<!-- kaff id=KAFF-207 slice=2 points=5 state=BUILT verdict=REJECTED at=7117704 on=2026-09-11 -->
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **⚠️ Amended 2026-09-09 — `Q68` is answered in part (D-130 §6): the reference number's origin is ruled, the field list beyond §10's four is refused (D-130 §8) and stays open. `Q12` clears (D-129 §1). One Definition-of-Ready box is still unticked — QA's cases.**
 **Spec:** **§2** (*"every costed person, exactly one record"*), **§10** · **Decisions:** D-044 ruling 4, D-055 §2 (HR sees names and roles, no salary), D-016 (Worker vs Employee, 🟡), **D-130 §§6, 8, D-129 §1**

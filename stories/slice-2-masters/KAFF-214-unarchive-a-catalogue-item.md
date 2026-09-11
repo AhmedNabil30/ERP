@@ -1,6 +1,6 @@
 # KAFF-214 · Un-archive a catalogue item
 
-<!-- kaff id=KAFF-214 slice=2 points=2 state=VERIFIED verdict=CONDITIONAL at=d5e6548 on=2026-09-10 -->
+<!-- kaff id=KAFF-214 slice=2 points=2 state=VERIFIED verdict=CONDITIONAL at=7117704 on=2026-09-11 -->
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 2 — the Scrum Master's retrospective estimate
 (`decisions.md`), not a pre-build estimate: the code shipped before this story existed. · **Status:**

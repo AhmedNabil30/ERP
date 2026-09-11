@@ -11977,3 +11977,104 @@ this ruling.**
   the story.
 - The picker is not disabled for the HR role. It is disabled when the request gets a `403`.
 - The markup question is not one the spec leaves open. §9's amendment 3 already covers it.
+
+---
+
+### D-138 · Verifier — the slice-2 batch verdict: seven CONDITIONAL, two REJECTED · 2026-09-11
+
+`qa/slice-2/verification-2026-09-11-batch.md` (`57f0d78`, `opus`, fresh session) is D-134's one
+batch pass, run at `7117704`. **Every gate was re-measured green by the Verifier:** build 0/0,
+format clean, Domain 197/197, **Api 435/435**, citations 1383/0/0, `npm run build`, and `npm test`
+59/59. D-135 holds end to end: a 17-digit price round-trips byte-identical.
+
+| Story | Verdict | Why |
+|---|---|---|
+| `KAFF-202` | CONDITIONAL | `V-36-H` fixed in API and form; E2E `TC-2-027` unwritten |
+| `KAFF-203` | CONDITIONAL | `V-36-A` fixed but unpinned (`V-37-J`); E2E `TC-2-035` unwritten |
+| `KAFF-204` | CONDITIONAL | no executed Client/Subcontractor test (`V-37-B`); E2E unwritten |
+| `KAFF-205` | CONDITIONAL | `V-37-B`; E2E unwritten |
+| `KAFF-206` | CONDITIONAL | `V-36-C` fixed (5.25 / 6.55:1); the rest of the archived row is still faded (`V-37-C`); E2E unwritten |
+| `KAFF-213` | CONDITIONAL | `AC-213-D`'s route half untested (`V-37-M`), plus `V-37-B`, `V-37-C` and missing E2E |
+| `KAFF-214` | CONDITIONAL | `V-36-D` only a third fixed (`V-37-I`); E2E `TC-2-103` unwritten |
+| `KAFF-207` | **REJECTED** | `V-37-D` HIGH: the edit screen renders `enum.EmployeeKind.[object Object]`. Also `AC-207-C` is untested and stale (`V-37-E`) |
+| `KAFF-208` | **REJECTED** | `V-37-D`; `AC-208-E` was blocked by `Q70` (now ruled, D-139 §1) |
+
+**The Verifier's ruling on the E2E gap is accepted as board policy.** The missing E2E suite caps
+every story at `CONDITIONAL` and rejects none on its own. That gap is the largest single item left
+in slice 2.
+
+**`V-37-D` was missed by every builder report and every gate.** A template concatenated a signal
+instead of its value. `npm test`, strict templates and the i18n catalogue test all passed. Only the
+rendered screen showed it. **This is why the fresh Verifier stays in D-134's batch design.**
+
+---
+
+### D-139 · Nabil — rulings on Q70, Q71, Q72, Q73, Q29, Q13, Q68, Q75 and the engagement close · 2026-09-11
+
+**Source: Nabil, 2026-09-11, relayed to the Scrum Master by the coordinator session in two messages.**
+Recorded as given. Where a ruling leaves a gap, the gap is named in *Not answered* below, not
+filled.
+
+1. **`Q70` — duplicate phones for workers, subcontractors and suppliers: WARN, DO NOT BLOCK.**
+   - The warning shows the existing record's name.
+   - Matching is on the **normalised** number, so `+20…`, `0020…` and `010…` match.
+   - Drop `ux_employees_phone`, `ux_subcontractors_phone` and `ux_suppliers_phone`. Replace them with a
+     non-unique index plus a warn-and-acknowledge flow, following **D-049 ruling 8**, the client pattern.
+   - This unblocks `AC-208-E` (`V-37-F`).
+2. **`Q71` — a Site Engineer registers workers, only on projects they are assigned to.**
+   **`EmployeeManage` is NOT granted.** The salaried register and payroll stay isolated from site
+   engineers. This needs its own project-scoped permission. **The Architect rules its shape.**
+3. **`Q72` — engagement and rating.**
+   - An **engagement is one continuous stretch of work on one project**: not a single day, and not a
+     whole career.
+   - **Ratings are out of 5.**
+   - **An engagement closes only by an explicit manual close** by the Site Engineer, when the worker
+     leaves the site or the work scope ends.
+   - **There is no automatic day-count timeout.** Nabil rejected one because weather halts, holidays
+     and stand-downs would cut active engagements by mistake.
+   - The close is an audited state change, checked on role and assignment, and uses the `Q71`
+     permission scoped to assigned projects.
+4. **`Q73` — subcontractor rates live on each project's sub-BOQ, not on the subcontractor's
+   profile.** `KAFF-211`'s *"with rates"* moves to the sub-BOQ, which is slice 4/5.
+5. **`Q29` — withholding for subcontractors and suppliers is set per contract/job, as for
+   clients.** It is not a firm-level field. **The tax registration number is entered and managed by
+   Finance only.** The rate moves off the party record, so the impact on slice 3's `KAFF-318` has to be
+   checked. That is the BA's.
+6. **`Q13` — banks are independent master records.** **No story exists for this.** The BA cuts one
+   and places it where it belongs, probably slice 3, Treasury. **It is not built inside `KAFF-212`.**
+7. **`Q68` — the staff file carries Name, Phone, National ID, Department and Job Title. Nothing
+   more.** If Department or Job Title is missing from the entity, `KAFF-207` adds it.
+8. **`Q75` — seed eight top-level trades.** Each is fully overridable through the admin screens and
+   the Excel import, with no hardcoded limits. The seed runs **once**, is **idempotent**, and **never
+   overwrites** a trade or markup the client has edited. Markups are stored as decimals and cross the
+   wire as strings (D-135).
+
+   | Trade | Markup |
+   |---|---|
+   | Earthworks & Foundations | 10% |
+   | Concrete Structures | 15% |
+   | Brickwork & Masonry | 15% |
+   | Plastering & Finishes | 30% |
+   | Flooring & Tiling | 25% |
+   | Painting | 30% |
+   | Electromechanical (MEP) | 20% |
+   | Aluminum, Carpentry & Metalwork | 25% |
+
+   **`DatabaseSeedingTests`' guarantee that no أبواب are seeded is superseded by this ruling.** Its
+   replacement asserts exactly these eight, idempotently.
+
+#### Not answered by these rulings — questions for Nabil, not filled in here
+
+* **`Q75`: the Arabic names and the codes of the eight trades.** A باب's `NameAr` is **data**
+  (a column), not UI text, so i18n cannot supply it. Its `Code` is unique and shown in the UI. The
+  ruling gives English names only, and Nabil said not to invent Arabic ones. **The seed mechanism can
+  be built; the seed data waits for the Arabic names and codes.**
+* **`Q70`: the salaried register.** Dropping `ux_employees_phone` makes **salaried** staff
+  warn-only on duplicate phones as well, not only day labour. `ux/screen-inventory.md`'s `S-024` says
+  *"deduplicated by phone"*. Is warn-only intended for salaried staff too?
+* **`Q68`: hire date.** *"Nothing more"* excludes `HiredOn`, which the entity already carries
+  (`ab224b6`). Is it removed, or kept outside the file Nabil listed?
+* **Still unanswered from before:** D-136's three `KAFF-200` template questions (one description
+  column or two, whether a باب is named by code or by name, what the `status` column does) and
+  **D-008** (rounding above four decimals). **`KAFF-200`/`201` remain unbuilt, and so does the slice
+  gate.**

@@ -1,6 +1,6 @@
 # KAFF-205 · Re-parent a باب, and move an item between أبواب
 
-<!-- kaff id=KAFF-205 slice=2 points=3 state=BUILT verdict=none at=4f7f591 on=2026-09-11 -->
+<!-- kaff id=KAFF-205 slice=2 points=3 state=VERIFIED verdict=CONDITIONAL at=7117704 on=2026-09-11 -->
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-08 by the BA; **amended 2026-09-09** — the cycle defect it carried is **repaired** (D-127 §1), its refusal key is **settled** (D-128), and **`Q12` clears** (D-129 §1). **One Definition-of-Ready box is still unticked — QA's cases.**
 **Spec:** **§2** (*"tree"*), **§4.2**, **§4.4**, §4.5 · **Decisions:** D-044 ruling 4, **D-129 §1**
