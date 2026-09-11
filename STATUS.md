@@ -108,6 +108,20 @@ New questions for Nabil from D-140 to D-142:
 
 **Step 2, the BA, dispatched next.**
 
+⛔ **2026-09-12 — Karim's rulings via Nabil recorded as D-144 (`d13ef4a`); caveman rule as D-143.**
+Salaried phones refuse, others warn; `HiredOn` kept; template: two description columns, باب by code,
+no status column; D-008 closed in part (per-line vs total rounding open for slice 4). **Trade list
+conflicts with D-139 §8 — asked of Nabil; seed mechanism built, rows held.**
+Run plan (serial): (1) Frontend `V-37-D` → (2) Backend+Frontend `207` fields → (3) BA `200`/`201`/
+`209`–`212`, then QA → (4) Architect amends D-141 for salaried-refuse, then Backend `Q70` + D-142
+mechanism → (5) build `200`, `201`, `209`–`212` → (6) one `opus` Verifier over `7117704..HEAD`.
+- Step 1 dispatched: Frontend (`sonnet`), `V-37-D`. ✅ `641b3cc`: `employeeForm.kind().value()`;
+  two component tests watched red then green; `npm test` 61/61 (the Frontend's figure). BUILT, unverified.
+- ⛔ **D-145 (Nabil):** the trade conflict is resolved — Karim's eight (`CON`…`MET`) with Arabic names
+  and markups replace D-139 §8; **seed rows released**. Extract rounding per line then sum (slice 4).
+  Slice 2 no longer waits on Nabil except D-140/D-142's three questions.
+- Step 2 dispatched: Backend (`sonnet`), `207` fields.
+
 | Finding | What | Owner | State |
 |---|---|---|---|
 | `V-35-S` HIGH | No catalogue frontend | Frontend | Screens built in `934bfb9`, **unverified**. E2E `TC-2-027`/`035`/`065` **not written, and cannot be**: no endpoint creates a باب, so a seeded stack holds no catalogue row (D-133 §4). **Waits on `KAFF-204`** |

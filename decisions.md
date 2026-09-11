@@ -178,8 +178,9 @@ at *display*: figures are stored at four decimals and shown at two. Which of the
 on an extract?
 
 **Closed in part by D-144 §6 (Karim via Nabil, 2026-09-12):** storage stays at four decimals; the
-displayed two-decimal figure is the contractual one on a client extract. Still open, for slice 4:
-per-line or on-total rounding to two decimals.
+displayed two-decimal figure is the contractual one on a client extract. **Extract rounding closed by
+D-145 §2:** per line, then sum; away-from-zero confirmed. Still open for slice 4: whether hold,
+advance recovery and withholding compute on the rounded total or per line.
 
 **Rejected.** `decimal` without a wrapper: CLAUDE.md forbids passing bare decimals for money.
 Carrying a currency inside `Money`: spec.md §1 puts conversion out of scope, and a currency-bearing
@@ -12543,3 +12544,48 @@ D-008 in part.
 is profile only, rates on the sub-BOQ (D-139 §4); `KAFF-212` has no bank records, and banks are a new
 slice-3 story (D-139 §6); `KAFF-210`'s engagement closes manually by the Site Engineer with no timeout,
 ratings out of 5 (D-139 §3).
+
+---
+
+### D-145 · Nabil — the eight trades are Karim's list (supersedes D-139 §8's table), and extract rounding is per line · 2026-09-12
+
+**Source: Nabil, 2026-09-12, relayed by the coordinator session in two messages.** Recorded as given.
+
+#### 1. Trades — D-144 §7's conflict resolved
+
+Karim's list **fully replaces** D-139 §8's table. Earthworks is merged into `CON`; Flooring and
+Painting are merged into `FIN`. D-142's seed-row hold is released. The seed is exactly these eight,
+top-level, idempotent, and never overwrites a client edit (D-142 unchanged):
+
+| Code | NameEn | NameAr | Markup |
+|---|---|---|---|
+| `CON` | Concrete Works | أعمال خرسانة | 15% |
+| `MAS` | Masonry Works | أعمال مباني | 15% |
+| `PLU` | Plumbing Works | أعمال صحية | 20% |
+| `ELE` | Electrical Works | أعمال كهرباء | 20% |
+| `HVA` | HVAC Works | أعمال تكييف وتهوية | 20% |
+| `FIN` | Finishing Works | أعمال تشطيبات | 30% |
+| `CAR` | Carpentry Works | أعمال نجارة | 25% |
+| `MET` | Metal Works | أعمال معدنية | 25% |
+
+Markups are stored as fractions through `Percentage` and cross the wire as strings (D-135). D-142's
+test 4 *waits* clause now asserts exactly these eight codes, names and markups (`0.15, 0.15, 0.20,
+0.20, 0.20, 0.30, 0.25, 0.25`), replacing the D-139 §8 figures it named. `Bab.Create` already takes
+`nameEn` (D-142 point 2), so no column is added.
+
+#### 2. Extract rounding — the rest of D-008 for extract lines (slice 4 rule; nothing built in slice 2)
+
+- **Each extract line rounds to two decimals first. The extract total is the sum of the rounded line
+  totals.** The visible lines always sum exactly to the bottom line.
+- The database keeps exact four-decimal unit prices and quantities.
+- The rounding mode stays D-008's `MidpointRounding.AwayFromZero`. This also answers D-144 §6's
+  *"not stated in the relay"* point.
+
+**Still open, for slice 4 refinement, not decided here:** are the hold, the advance recovery and the
+withholding computed on the rounded extract total, or per line? This goes into the questions
+register and the slice-4 story notes when slice 4 is refined.
+
+**Consequence.** With D-144 §1–§6 and this entry, **nothing in slice 2 waits on Nabil** except the
+questions D-140 and D-142 raised (a Site Engineer and the day rate; closing another engineer's
+engagement; seeding beside an existing trade tree) and D-144 §1's cross-population phone case, if
+the Architect cannot derive it.
