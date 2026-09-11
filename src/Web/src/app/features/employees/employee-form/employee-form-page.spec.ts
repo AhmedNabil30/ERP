@@ -1,10 +1,25 @@
 import { provideHttpClient } from '@angular/common/http';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { BabOption, EmployeeFile, EmployeesApi } from '../../../core/employees/employees.api';
+import { I18nService } from '../../../core/i18n/i18n.service';
 import { babRequiredButMissing, EmployeeFormPage } from './employee-form-page';
+
+/** `V-37-D`: only the two keys the kind display touches, so a wrong lookup can't hide behind an echo. */
+const KIND_LABELS: Readonly<Record<string, string>> = {
+  'enum.EmployeeKind.DayLabour': 'يومية',
+  'enum.EmployeeKind.Salaried': 'موظف بالراتب',
+};
+
+class FakeI18nService implements Pick<I18nService, 't' | 'locale'> {
+  readonly locale = signal<'ar' | 'en'>('ar');
+  t(key: string): string {
+    return KIND_LABELS[key] ?? key;
+  }
+}
 
 const BAB_OPTIONS: readonly BabOption[] = [
   { id: 'active-1', code: 'B1', nameAr: 'نجارة', nameEn: 'Carpentry', parentBabId: null, isActive: true },
@@ -25,10 +40,14 @@ const EMPLOYEE_FILE: EmployeeFile = {
   hiredOn: '2024-01-15',
 };
 
+const SALARIED_EMPLOYEE_FILE: EmployeeFile = { ...EMPLOYEE_FILE, id: 'emp-2', kind: 'Salaried', babId: null };
+
 /** A fake matching only what the form calls — D-137's two new methods. */
 class FakeEmployeesApi implements Pick<EmployeesApi, 'get' | 'listBabOptions'> {
+  constructor(private readonly file: EmployeeFile = EMPLOYEE_FILE) {}
+
   async get(_id: string): Promise<EmployeeFile> {
-    return EMPLOYEE_FILE;
+    return this.file;
   }
 
   async listBabOptions(): Promise<readonly BabOption[]> {
@@ -54,6 +73,27 @@ async function createPage(employeeId?: string): Promise<EmployeeFormPage> {
   fixture.detectChanges();
 
   return fixture.componentInstance;
+}
+
+async function createFixture(employeeId: string, employee: EmployeeFile) {
+  TestBed.resetTestingModule();
+  TestBed.configureTestingModule({
+    providers: [
+      provideHttpClient(),
+      provideRouter([]),
+      { provide: EmployeesApi, useValue: new FakeEmployeesApi(employee) },
+      { provide: I18nService, useClass: FakeI18nService },
+    ],
+  });
+
+  const fixture = TestBed.createComponent(EmployeeFormPage);
+  fixture.componentRef.setInput('employeeId', employeeId);
+  fixture.detectChanges();
+  await Promise.resolve();
+  await Promise.resolve();
+  fixture.detectChanges();
+
+  return fixture;
 }
 
 /**
@@ -93,6 +133,31 @@ describe('EmployeeFormPage · edit load', () => {
     expect(value.jobTitle).toBe(EMPLOYEE_FILE.jobTitle);
     expect(value.hiredOn).toBe(EMPLOYEE_FILE.hiredOn);
     expect(value.fullName).toBe(EMPLOYEE_FILE.fullName);
+  });
+});
+
+/** `V-37-D`: the edit screen's kind line must show translated text, never the field object echoed raw. */
+describe('EmployeeFormPage · kind display', () => {
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  it('shows the translated term for a DayLabour employee', async () => {
+    const fixture = await createFixture('emp-1', EMPLOYEE_FILE);
+
+    const text = fixture.nativeElement.querySelector('[data-testid="employee-kind-display"] .kind-value').textContent;
+    expect(text).toBe('يومية');
+    expect(text).not.toContain('enum.');
+    expect(text).not.toContain('[object Object]');
+  });
+
+  it('shows the translated term for a Salaried employee', async () => {
+    const fixture = await createFixture('emp-2', SALARIED_EMPLOYEE_FILE);
+
+    const text = fixture.nativeElement.querySelector('[data-testid="employee-kind-display"] .kind-value').textContent;
+    expect(text).toBe('موظف بالراتب');
+    expect(text).not.toContain('enum.');
+    expect(text).not.toContain('[object Object]');
   });
 });
 

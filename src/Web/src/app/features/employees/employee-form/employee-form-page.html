@@ -45,7 +45,7 @@
       @if (isEdit()) {
         <p class="field" data-testid="employee-kind-display">
           <span class="label">{{ i18n.t('hr.employee.field.kind') }}</span>
-          <bdi class="kind-value">{{ i18n.t('enum.EmployeeKind.' + employeeForm.kind()) }}</bdi>
+          <bdi class="kind-value">{{ i18n.t('enum.EmployeeKind.' + employeeForm.kind().value()) }}</bdi>
           <span class="code-note">{{ i18n.t('hr.employee.kind_is_permanent') }}</span>
         </p>
       } @else {
