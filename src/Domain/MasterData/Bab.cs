@@ -110,16 +110,29 @@ public sealed class Bab : Entity
 
             if (ancestor == Id)
             {
-                return Result.Failure(MasterDataErrors.BabCannotBeItsOwnParent);
+                return Result.Failure(MasterDataErrors.BabCannotBeItsOwnAncestor);
             }
 
             ancestor = parentByBabId.GetValueOrDefault(ancestor.Value);
         }
 
-        return Result.Failure(MasterDataErrors.BabCannotBeItsOwnParent);
+        return Result.Failure(MasterDataErrors.BabCannotBeItsOwnAncestor);
     }
 
     public void SetDefaultMarkup(Percentage markup) => DefaultMarkup = markup;
+
+    /// <summary>Corrects the Arabic and English names. KAFF-204 — the code and the tree position are edited elsewhere.</summary>
+    public Result Rename(string nameAr, string nameEn)
+    {
+        if (string.IsNullOrWhiteSpace(nameAr) || string.IsNullOrWhiteSpace(nameEn))
+        {
+            return Result.Failure(MasterDataErrors.NameRequired);
+        }
+
+        NameAr = nameAr.Trim();
+        NameEn = nameEn.Trim();
+        return Result.Success();
+    }
 
     public Result Archive()
     {
