@@ -126,6 +126,12 @@ export class CatalogueFormPage implements UnsavedChangesAware {
   protected readonly refusal = signal<string | null>(null);
   protected readonly loadFailed = signal(false);
 
+  /** `KAFF-205` — moving this item to a different باب. Edit-only: create already offers a باب picker. */
+  protected readonly movingBab = signal(false);
+  protected readonly moveTargetBabId = signal('');
+  protected readonly moveFailure = signal<string | null>(null);
+  protected readonly moveBusy = signal(false);
+
   protected readonly isEdit = computed(() => this.catalogueItemId() !== undefined);
 
   protected readonly titleKey = computed(() =>
@@ -248,6 +254,67 @@ export class CatalogueFormPage implements UnsavedChangesAware {
 
   protected trackBab(_index: number, bab: Bab): string {
     return bab.id;
+  }
+
+  /** Arabic name in Arabic, English name in English — never both, matching `catalogue-list-page.ts`. */
+  protected currentBabLabel(): string {
+    const bab = this.babs().find((candidate) => candidate.id === this.model().babId);
+
+    if (!bab) {
+      return this.i18n.t('catalogue.list.bab_unknown');
+    }
+
+    return this.i18n.locale() === 'en' ? bab.nameEn : bab.nameAr;
+  }
+
+  /** Every باب except the one the item is already in — moving it there would not be a move. */
+  protected moveCandidates(): readonly Bab[] {
+    return this.babs().filter((bab) => bab.id !== this.model().babId);
+  }
+
+  protected onStartMove(): void {
+    this.moveFailure.set(null);
+    this.moveTargetBabId.set('');
+    this.movingBab.set(true);
+  }
+
+  protected onCancelMove(): void {
+    this.movingBab.set(false);
+  }
+
+  protected onMoveTargetChange(event: Event): void {
+    const target = event.target;
+
+    if (target instanceof HTMLSelectElement) {
+      this.moveTargetBabId.set(target.value);
+    }
+  }
+
+  protected async onConfirmMove(): Promise<void> {
+    const id = this.catalogueItemId();
+    const targetBabId = this.moveTargetBabId();
+
+    if (id === undefined || targetBabId.length === 0) {
+      return;
+    }
+
+    this.moveFailure.set(null);
+    this.moveBusy.set(true);
+
+    try {
+      const moved = await this.api.moveToBab(id, targetBabId);
+      // `MoveCatalogueItem.Response` carries only `{ id, babId }` — patch the loaded draft and its
+      // baseline rather than re-fetching, since there is no `GET /api/catalogue-items/{id}` to re-fetch
+      // from (see this file's own class doc on that gap).
+      this.model.update((current) => ({ ...current, babId: moved.babId }));
+      this.pristine.update((current) => (current ? { ...current, babId: moved.babId } : current));
+      this.movingBab.set(false);
+    } catch (error) {
+      // AC-205-D/G surfaced, not swallowed.
+      this.moveFailure.set(toProblem(error).messageKey);
+    } finally {
+      this.moveBusy.set(false);
+    }
   }
 
   private applyLoaded(item: CatalogueItem): void {

@@ -1,0 +1,119 @@
+<section class="bab-form" data-testid="bab-form">
+  <h1 class="title">{{ i18n.t(titleKey()) }}</h1>
+
+  @if (loadFailed()) {
+    <div class="no-source" data-testid="bab-form-no-source">
+      <p class="no-source-body" role="alert">{{ i18n.t('bab.item_not_found') }}</p>
+      <a class="back-link" routerLink="/babs" data-testid="bab-form-back">
+        {{ i18n.t('bab.action.back_to_tree') }}
+      </a>
+    </div>
+  } @else {
+    @if (isEdit()) {
+      <p class="code-line" data-testid="bab-code">
+        <span class="code-label">{{ i18n.t('bab.field.code') }}</span>
+        <bdi class="code-value" translate="no">{{ displayCode() }}</bdi>
+        <span class="code-note">{{ i18n.t('bab.field.code_not_editable') }}</span>
+      </p>
+    }
+
+    <form class="fields" (submit)="$event.preventDefault(); onSubmit()">
+      @if (!isEdit()) {
+        <label class="field">
+          <span class="label">{{ i18n.t('bab.field.code') }} *</span>
+          <input
+            class="input"
+            type="text"
+            dir="ltr"
+            spellcheck="false"
+            autocapitalize="characters"
+            data-testid="bab-field-code"
+            [formField]="babForm.code"
+          />
+        </label>
+      }
+
+      <label class="field">
+        <span class="label">{{ i18n.t('bab.field.name_ar') }} *</span>
+        <input
+          class="input"
+          type="text"
+          dir="auto"
+          data-testid="bab-field-name-ar"
+          [formField]="babForm.nameAr"
+        />
+      </label>
+
+      <label class="field">
+        <span class="label">{{ i18n.t('bab.field.name_en') }} *</span>
+        <input
+          class="input"
+          type="text"
+          dir="auto"
+          data-testid="bab-field-name-en"
+          [formField]="babForm.nameEn"
+        />
+      </label>
+
+      @if (!isEdit()) {
+        <label class="field">
+          <span class="label">{{ i18n.t('bab.field.parent') }}</span>
+          <select
+            class="input select"
+            data-testid="bab-field-parent"
+            [attr.aria-label]="i18n.t('bab.field.parent')"
+            (change)="onParentChange($event)"
+          >
+            <option value="" selected>{{ i18n.t('bab.field.no_parent') }}</option>
+            @for (bab of parentCandidates(); track trackBab($index, bab)) {
+              <option [value]="bab.id">
+                {{ i18n.locale() === 'en' ? bab.nameEn : bab.nameAr }}
+              </option>
+            }
+          </select>
+        </label>
+
+        <label class="field">
+          <span class="label">{{ i18n.t('bab.field.sort_order') }}</span>
+          <input
+            class="input"
+            type="text"
+            dir="ltr"
+            inputmode="numeric"
+            data-testid="bab-field-sort-order"
+            [formField]="babForm.sortOrder"
+          />
+        </label>
+      }
+
+      <!-- The markup: typed and shown as a PERCENT, never a fraction — `percentToFraction` shifts the
+           decimal point only at submission (D-135, AC-204-B). No `Number()` anywhere near this field. -->
+      <label class="field">
+        <span class="label">{{ i18n.t('bab.field.default_markup') }} *</span>
+        <input
+          class="input"
+          type="text"
+          dir="ltr"
+          inputmode="decimal"
+          autocomplete="off"
+          data-testid="bab-field-default-markup"
+          [formField]="babForm.markupPercent"
+        />
+        <span class="hint">{{ i18n.t('bab.hint.markup_is_a_percent') }}</span>
+        @if (markupErrorKey(); as key) {
+          <p class="field-error" role="alert" data-testid="bab-field-default-markup-error">
+            {{ i18n.t(key) }}
+          </p>
+        }
+      </label>
+
+      @if (refusal(); as key) {
+        <p class="refusal" role="alert" data-testid="bab-form-refusal">{{ i18n.t(key) }}</p>
+      }
+
+      <button class="submit" type="submit" data-testid="bab-submit" [disabled]="!canSubmit()">
+        {{ i18n.t('action.save') }}
+      </button>
+    </form>
+  }
+</section>

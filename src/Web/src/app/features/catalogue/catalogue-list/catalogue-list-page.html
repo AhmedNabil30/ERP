@@ -1,5 +1,13 @@
 <section class="catalogue" data-testid="catalogue-list">
-  <h1 class="title">{{ i18n.t('catalogue.list.title') }}</h1>
+  <div class="header-row">
+    <h1 class="title">{{ i18n.t('catalogue.list.title') }}</h1>
+    <!-- KAFF-204/205/213: أبواب is its own permission (`BabManage`) and its own route, reached from
+         here rather than from a second landing entry — ux/navigation.md's Landing summary keeps
+         TechnicalOffice's landing on S-017 Catalogue. -->
+    <a class="babs-link" routerLink="/babs" data-testid="catalogue-manage-babs">
+      {{ i18n.t('nav.babs') }}
+    </a>
+  </div>
 
   <!-- Enter submits on a phone keyboard with no visible button competing with the primary action. The
        query goes to the server exactly as typed, matching the client list's own rule. -->

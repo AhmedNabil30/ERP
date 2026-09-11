@@ -103,4 +103,16 @@ export class CatalogueApi {
   async unarchive(id: string): Promise<void> {
     await firstValueFrom(this.http.post<void>(`api/catalogue-items/${id}/unarchive`, {}));
   }
+
+  /**
+   * `KAFF-205` — moves an item to a different باب. `200` carrying `MoveCatalogueItem.Response`
+   * (`{ id, babId }` — not the full `CatalogueItem`), or `errors.master.bab_not_found` when the target
+   * names no باب. Changes only `babId`: rule 5, no cascade, no re-price, no notification — a future BOQ
+   * line started from this item defaults to the new باب's markup, and nothing existing moves.
+   */
+  async moveToBab(id: string, babId: string): Promise<{ readonly id: string; readonly babId: string }> {
+    return await firstValueFrom(
+      this.http.put<{ id: string; babId: string }>(`api/catalogue-items/${id}/bab`, { babId }),
+    );
+  }
 }

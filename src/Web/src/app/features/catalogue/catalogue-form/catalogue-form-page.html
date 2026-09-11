@@ -20,6 +20,50 @@
         <bdi class="code-value" translate="no">{{ displayCode() }}</bdi>
         <span class="code-note">{{ i18n.t('catalogue.field.code_not_editable') }}</span>
       </p>
+
+      <!-- KAFF-205: moving an item to another باب. Create already offers a باب picker; edit does not
+           carry one in EditCatalogueItem.Request, so a move is this separate action. -->
+      <p class="code-line" data-testid="catalogue-current-bab">
+        <span class="code-label">{{ i18n.t('catalogue.item.current_bab') }}</span>
+        <span dir="auto">{{ currentBabLabel() }}</span>
+      </p>
+
+      @if (moveFailure(); as key) {
+        <p class="refusal" role="alert" data-testid="catalogue-move-refusal">{{ i18n.t(key) }}</p>
+      }
+
+      @if (movingBab()) {
+        <label class="field">
+          <span class="label">{{ i18n.t('catalogue.item.new_bab') }}</span>
+          <select
+            class="input select"
+            data-testid="catalogue-move-target"
+            [attr.aria-label]="i18n.t('catalogue.item.new_bab')"
+            (change)="onMoveTargetChange($event)"
+          >
+            <option value="" disabled selected>{{ i18n.t('catalogue.field.bab_placeholder') }}</option>
+            @for (bab of moveCandidates(); track trackBab($index, bab)) {
+              <option [value]="bab.id">{{ i18n.locale() === 'en' ? bab.nameEn : bab.nameAr }}</option>
+            }
+          </select>
+        </label>
+        <button
+          type="button"
+          class="submit"
+          [disabled]="moveBusy()"
+          data-testid="catalogue-move-confirm"
+          (click)="onConfirmMove()"
+        >
+          {{ i18n.t('catalogue.item.move_confirm') }}
+        </button>
+        <button type="button" class="back-link" data-testid="catalogue-move-cancel" (click)="onCancelMove()">
+          {{ i18n.t('action.cancel') }}
+        </button>
+      } @else {
+        <button type="button" class="back-link" data-testid="catalogue-move-start" (click)="onStartMove()">
+          {{ i18n.t('catalogue.item.move_title') }}
+        </button>
+      }
     }
 
     <form class="fields" (submit)="$event.preventDefault(); onSubmit()">

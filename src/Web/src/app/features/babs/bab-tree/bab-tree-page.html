@@ -1,0 +1,165 @@
+<section class="bab-tree" data-testid="bab-tree">
+  <h1 class="title">{{ i18n.t('bab.tree.title') }}</h1>
+
+  <!-- A segmented control, matching CatalogueListPage's own — KAFF-213 rule 9's three server states. -->
+  <div class="filters" role="group" [attr.aria-label]="i18n.t('bab.tree.title')">
+    @for (option of filters; track option) {
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="statusFilter() === option"
+        [attr.aria-pressed]="statusFilter() === option"
+        [attr.data-testid]="'bab-filter-' + option"
+        (click)="onFilter(option)"
+      >
+        {{ i18n.t('bab.filter.' + option) }}
+      </button>
+    }
+  </div>
+
+  @if (failure(); as key) {
+    <p class="refusal" role="alert" data-testid="bab-tree-failure">{{ i18n.t(key) }}</p>
+  } @else if (loading()) {
+    <p class="loading" role="status" aria-live="polite" data-testid="bab-tree-loading">
+      {{ i18n.t('bab.loading') }}
+    </p>
+  } @else if (rows().length > 0) {
+    <ul class="rows" data-testid="bab-tree-rows">
+      @for (row of rows(); track trackRow($index, row)) {
+        <li
+          class="tree-row"
+          [class.tree-row--archived]="!row.bab.isActive"
+          [style.--bab-depth]="row.depth"
+          [attr.data-testid]="'bab-row-' + row.bab.code"
+        >
+          <div class="row-main">
+            <bdi class="row-code" translate="no">{{ row.bab.code }}</bdi>
+            <span class="row-name" dir="auto">{{ babLabel(row.bab) }}</span>
+
+            <span class="row-markup">
+              <span class="row-markup-label">{{ i18n.t('bab.field.default_markup') }}</span>
+              <bdi class="figure" dir="ltr">{{ markupPercent(row.bab) }}%</bdi>
+            </span>
+
+            @if (!row.bab.isActive) {
+              <span class="row-archived-badge" data-testid="bab-row-archived-badge">
+                {{ i18n.t('bab.tree.archived_badge') }}
+              </span>
+            }
+          </div>
+
+          <div class="row-actions">
+            @if (moveFailure(); as failed) {
+              @if (failed.id === row.bab.id) {
+                <p class="row-refusal" role="alert" [attr.data-testid]="'bab-move-refusal-' + row.bab.code">
+                  {{ i18n.t(failed.key) }}
+                </p>
+              }
+            }
+
+            @if (archiveFailure(); as failed) {
+              @if (failed.id === row.bab.id) {
+                <p class="row-refusal" role="alert" [attr.data-testid]="'bab-archive-refusal-' + row.bab.code">
+                  {{ i18n.t(failed.key, failed.params) }}
+                </p>
+              }
+            }
+
+            <a class="chip" [routerLink]="['/babs', row.bab.id]" [attr.data-testid]="'bab-edit-' + row.bab.code">
+              {{ i18n.t('action.edit') }}
+            </a>
+
+            @if (confirmingMoveId() === row.bab.id) {
+              <label class="move-picker">
+                <span class="sr-only">{{ i18n.t('bab.move.new_parent') }}</span>
+                <select
+                  class="input select"
+                  [attr.data-testid]="'bab-move-target-' + row.bab.code"
+                  [attr.aria-label]="i18n.t('bab.move.new_parent')"
+                  (change)="onMoveTargetChange($event)"
+                >
+                  <option value="">{{ i18n.t('bab.field.no_parent') }}</option>
+                  @for (candidate of candidateParents(row.bab); track candidate.id) {
+                    <option [value]="candidate.id" [selected]="candidate.id === row.bab.parentBabId">
+                      {{ babLabel(candidate) }}
+                    </option>
+                  }
+                </select>
+              </label>
+              <button
+                type="button"
+                class="chip"
+                [disabled]="isMoving(row.bab.id)"
+                [attr.data-testid]="'bab-move-confirm-' + row.bab.code"
+                (click)="onConfirmMove(row.bab.id)"
+              >
+                {{ i18n.t('bab.move.confirm') }}
+              </button>
+              <button
+                type="button"
+                class="chip"
+                [attr.data-testid]="'bab-move-cancel-' + row.bab.code"
+                (click)="onCancelMove()"
+              >
+                {{ i18n.t('action.cancel') }}
+              </button>
+            } @else {
+              <button
+                type="button"
+                class="chip"
+                [attr.data-testid]="'bab-move-' + row.bab.code"
+                (click)="onStartMove(row.bab)"
+              >
+                {{ i18n.t('bab.move.title') }}
+              </button>
+            }
+
+            @if (row.bab.isActive) {
+              @if (confirmingArchiveId() === row.bab.id) {
+                <p class="row-confirm" [attr.data-testid]="'bab-archive-body-' + row.bab.code">
+                  {{ i18n.t('bab.tree.archive_confirm') }}
+                </p>
+                <button
+                  type="button"
+                  class="danger-button"
+                  [disabled]="isArchiving(row.bab.id)"
+                  [attr.data-testid]="'bab-archive-confirm-' + row.bab.code"
+                  (click)="onConfirmArchive(row.bab.id)"
+                >
+                  {{ i18n.t('bab.tree.archive_action') }}
+                </button>
+                <button
+                  type="button"
+                  class="chip"
+                  [attr.data-testid]="'bab-archive-cancel-' + row.bab.code"
+                  (click)="onCancelArchive()"
+                >
+                  {{ i18n.t('action.cancel') }}
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  class="danger-button"
+                  [attr.data-testid]="'bab-archive-' + row.bab.code"
+                  (click)="onStartArchive(row.bab.id)"
+                >
+                  {{ i18n.t('bab.tree.archive_action') }}
+                </button>
+              }
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  } @else {
+    <!-- AC-204-J: an explicit empty state with the create action, never a blank area. -->
+    <div class="empty" role="status" aria-live="polite" data-testid="bab-tree-empty">
+      <p class="empty-title">{{ i18n.t('bab.tree.empty') }}</p>
+      <a class="create" routerLink="/babs/new" data-testid="bab-create">{{ i18n.t('bab.action.create') }}</a>
+    </div>
+  }
+
+  @if (rows().length > 0) {
+    <a class="create" routerLink="/babs/new" data-testid="bab-create">{{ i18n.t('bab.action.create') }}</a>
+  }
+</section>
