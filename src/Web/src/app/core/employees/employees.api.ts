@@ -42,6 +42,7 @@ export interface EmployeeFile extends EmployeeSummary {
   /** `DateOnly?` on the wire as `"YYYY-MM-DD"`, or `null`. */
   readonly nationalId: string | null;
   readonly jobTitle: string | null;
+  readonly department: string | null;
   readonly hiredOn: string | null;
 }
 
@@ -56,6 +57,7 @@ export interface EmployeeCreate {
   readonly specialty: string | null;
   readonly nationalId: string | null;
   readonly jobTitle: string | null;
+  readonly department: string | null;
   readonly hiredOn: string | null;
 }
 

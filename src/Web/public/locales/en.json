@@ -38,6 +38,7 @@
   "hr.employee.field.specialty": "Specialty",
   "hr.employee.field.national_id": "National ID",
   "hr.employee.field.job_title": "Job title",
+  "hr.employee.field.department": "Department",
   "hr.employee.field.hired_on": "Hired on",
   "hr.employee.kind_is_permanent": "The costing type is fixed and cannot change after registration.",
   "hr.employee.babs_unavailable": "The list of أبواب could not be loaded.",

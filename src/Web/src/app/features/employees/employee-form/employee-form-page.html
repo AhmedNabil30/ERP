@@ -125,6 +125,17 @@
       </label>
 
       <label class="field">
+        <span class="label">{{ i18n.t('hr.employee.field.department') }}</span>
+        <input
+          class="input"
+          type="text"
+          dir="auto"
+          data-testid="employee-field-department"
+          [formField]="employeeForm.department"
+        />
+      </label>
+
+      <label class="field">
         <span class="label">{{ i18n.t('hr.employee.field.hired_on') }}</span>
         <input
           class="input"

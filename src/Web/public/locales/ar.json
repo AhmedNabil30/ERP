@@ -38,6 +38,7 @@
   "hr.employee.field.specialty": "التخصص",
   "hr.employee.field.national_id": "الرقم القومي",
   "hr.employee.field.job_title": "المسمى الوظيفي",
+  "hr.employee.field.department": "القسم",
   "hr.employee.field.hired_on": "تاريخ التعيين",
   "hr.employee.kind_is_permanent": "نوع التكلفة ثابت ولا يتغير بعد التسجيل.",
   "hr.employee.babs_unavailable": "تعذّر تحميل قائمة الأبواب.",

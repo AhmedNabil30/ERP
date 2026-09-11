@@ -12,6 +12,7 @@ import { babRequiredButMissing, EmployeeFormPage } from './employee-form-page';
 const KIND_LABELS: Readonly<Record<string, string>> = {
   'enum.EmployeeKind.DayLabour': 'يومية',
   'enum.EmployeeKind.Salaried': 'موظف بالراتب',
+  'hr.employee.field.department': 'القسم',
 };
 
 class FakeI18nService implements Pick<I18nService, 't' | 'locale'> {
@@ -37,6 +38,7 @@ const EMPLOYEE_FILE: EmployeeFile = {
   isActive: true,
   nationalId: '29001010100001',
   jobTitle: 'رئيس عمال',
+  department: 'الموارد البشرية',
   hiredOn: '2024-01-15',
 };
 
@@ -131,8 +133,25 @@ describe('EmployeeFormPage · edit load', () => {
     const value = page['employeeForm']().value();
     expect(value.nationalId).toBe(EMPLOYEE_FILE.nationalId);
     expect(value.jobTitle).toBe(EMPLOYEE_FILE.jobTitle);
+    expect(value.department).toBe(EMPLOYEE_FILE.department);
     expect(value.hiredOn).toBe(EMPLOYEE_FILE.hiredOn);
     expect(value.fullName).toBe(EMPLOYEE_FILE.fullName);
+  });
+});
+
+/** Department label must render translated text, never the raw i18n key. */
+describe('EmployeeFormPage · department field label', () => {
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  it('shows the Arabic label, not the raw key', async () => {
+    const fixture = await createFixture('emp-1', EMPLOYEE_FILE);
+
+    const label = fixture.nativeElement.querySelector('[data-testid="employee-field-department"]')
+      .closest('label').querySelector('.label').textContent;
+    expect(label).toBe('القسم');
+    expect(label).not.toContain('hr.employee.field.department');
   });
 });
 

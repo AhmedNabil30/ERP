@@ -15,6 +15,7 @@ interface EmployeeDraft {
   specialty: string;
   nationalId: string;
   jobTitle: string;
+  department: string;
   hiredOn: string;
 }
 
@@ -26,6 +27,7 @@ const BLANK_DRAFT: EmployeeDraft = {
   specialty: '',
   nationalId: '',
   jobTitle: '',
+  department: '',
   hiredOn: '',
 };
 
@@ -217,6 +219,7 @@ export class EmployeeFormPage implements UnsavedChangesAware {
       specialty: employee.specialty ?? '',
       nationalId: employee.nationalId ?? '',
       jobTitle: employee.jobTitle ?? '',
+      department: employee.department ?? '',
       hiredOn: employee.hiredOn ?? '',
     };
 
@@ -239,6 +242,7 @@ export class EmployeeFormPage implements UnsavedChangesAware {
       specialty: orNull(value.specialty),
       nationalId: orNull(value.nationalId),
       jobTitle: orNull(value.jobTitle),
+      department: orNull(value.department),
       hiredOn: value.hiredOn.length > 0 ? value.hiredOn : null,
     };
   }
