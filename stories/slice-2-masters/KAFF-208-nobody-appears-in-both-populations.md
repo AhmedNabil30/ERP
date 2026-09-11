@@ -98,7 +98,7 @@ Given a day labourer with an engagement history
 When HR records that he has gone onto the payroll as salaried staff, on the same phone number
 Then his day-labour record is archived, unchanged and still carrying every engagement it earned, and a **new** employee record is created for him as salaried staff
 And no single record ever carries both `Kind`s, and no existing engagement's record is edited to point at the new record — `AC-208-C` still refuses a direct edit of `Kind`, because this is a create-and-archive, never a move (D-130 §7)
-And **whether the salaried create must refuse or warn-and-acknowledge on this cross-population phone match is HELD, exactly as `AC-208-B`** — D-144 §1 does not settle it
+And ~~**whether the salaried create must refuse or warn-and-acknowledge on this cross-population phone match is HELD, exactly as `AC-208-B`**~~ **released 2026-09-12 by D-146 §4(a):** the match is against an **archived** record, so the salaried create warns, and succeeds once acknowledged with one `DuplicatePhoneAcknowledged` audit record (D-130 §7 rules out a refusal). `AC-208-B`, an **active** match, stays HELD on `Q80`
 
 **AC-208-F — a role without `EmployeeManage` cannot reach either population** *(fails if the rule is broken)*
 Given a signed-in user of each role that does not hold `EmployeeManage`
