@@ -61,6 +61,25 @@ so an archived day labourer cannot be re-registered as salaried under the same p
 Whether phones must be unique only among active records is Karim's to answer (`Q70`). **Owed by
 BA and QA:** `AC-207-C`/`TC-2-068` describe typing a duplicate employee code, which D-130 §6 made
 impossible.
+✅ **Frontend `31b049f`: `S-023`/`S-024`**, `npm test` 56/56 (the Frontend's figure). It found two
+API gaps and did not paper over them. **(1) A silent data loss.** `PUT /api/employees/{id}` nulls
+`NationalId`/`JobTitle`/`HiredOn` because no endpoint returns them. **(2) HR cannot read the باب
+list** the day-labour field needs. **D-137** (`8a4b81b`) rules (2): `GET /api/employees/babs` under
+`EmployeeManage`, carrying no markup. **Backend was dispatched for D-137 and for
+`GET /api/employees/{id}`, then Frontend to wire both.** Only after that does the batch go to the
+Verifier. ✅ Backend `1717a9e` (D-137, `GET /api/employees/babs`) and `ab224b6`
+(`GET /api/employees/{id}`, data-loss regression test watched red first). Api 435/435 is the
+Backend's figure. ✅ Frontend `79e01f4` wires both endpoints: `npm test` 59/59 and Domain 197/197
+are the Frontend's figures. **`207`/`208` move to `BUILT`.** **The batch build is complete.** Every
+buildable slice-2 story now has both lanes on `main`. **One fresh Verifier covers all of it next.**
+**Not built:** the E2E suite for catalogue, باب and employees, and `200`/`201`/`209`–`212`.
+⛔ **`200`/`201` were asked for again on 2026-09-11 and were refused.** The refusal is on the
+business questions, not on budget. D-136's three template questions (one description column or
+two, باب by code or name, what the `status` column does) and D-008's rounding question are
+**Nabil's**, and a builder would have to guess all four. **The slice gate, *"Excel import works"*,
+stays open until he answers.** ⚠️ **`AC-207-C`/`TC-2-068` are still stale:** the bookkeeping pass
+that was to mark them superseded by D-130 §6 died on a session limit and edited nothing. The
+Verifier is told this by name. **Owed by BA and QA.**
 
 | Finding | What | Owner | State |
 |---|---|---|---|
@@ -345,8 +364,7 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 5 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 |
 | 🔴 REJECTED — a Verifier looked, and it did not pass | 0 | 6 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 0 | 11 | 0 |
-| ⚪ READY / COMMITTED — refined, not built | 0 | 8 | 0 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 19 | 0 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 23 | 5 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 |
 | **total** | **127** | **53** | **5** |
@@ -394,8 +412,8 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-204](stories/slice-2-masters/KAFF-204-the-bab-tree-with-default-markup.md) | 2 | 5 | 🟡 BUILT | none | `4f7f591` | 2026-09-11 | The باب tree, carrying each trade's default markup |
 | [KAFF-205](stories/slice-2-masters/KAFF-205-reparent-a-bab-and-move-an-item.md) | 2 | 3 | 🟡 BUILT | none | `4f7f591` | 2026-09-11 | Re-parent a باب, and move an item between أبواب |
 | [KAFF-206](stories/slice-2-masters/KAFF-206-archive-a-catalogue-item.md) | 2 | 3 | 🔴 BUILT | REJECTED | `d5e6548` | 2026-09-10 | Archive a catalogue item without breaking what already references it |
-| [KAFF-207](stories/slice-2-masters/KAFF-207-employee-register.md) | 2 | 5 | ⚪ COMMITTED | none | `fe571d7` | 2026-09-11 | Employee register — exactly one record per costed person |
-| [KAFF-208](stories/slice-2-masters/KAFF-208-nobody-appears-in-both-populations.md) | 2 | 3 | ⚪ COMMITTED | none | `fe571d7` | 2026-09-11 | Nobody appears in both populations: day labour and salaried |
+| [KAFF-207](stories/slice-2-masters/KAFF-207-employee-register.md) | 2 | 5 | 🟡 BUILT | none | `79e01f4` | 2026-09-11 | Employee register — exactly one record per costed person |
+| [KAFF-208](stories/slice-2-masters/KAFF-208-nobody-appears-in-both-populations.md) | 2 | 3 | 🟡 BUILT | none | `79e01f4` | 2026-09-11 | Nobody appears in both populations: day labour and salaried |
 | [KAFF-209](stories/slice-2-masters/KAFF-209-register-a-worker-from-site.md) | 2 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Register a worker from site, deduplicated by phone |
 | [KAFF-210](stories/slice-2-masters/KAFF-210-worker-engagement-history.md) | 2 | 3 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Worker engagement history, day rate, frequency and rating |
 | [KAFF-211](stories/slice-2-masters/KAFF-211-subcontractor-master-with-rates.md) | 2 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Subcontractor master with rates |
