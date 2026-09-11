@@ -1,0 +1,150 @@
+<section class="employee-form" data-testid="employee-form">
+  <h1 class="title">{{ i18n.t(titleKey()) }}</h1>
+
+  @if (loadFailed()) {
+    <div class="no-source" data-testid="employee-form-no-source">
+      <p class="no-source-body" role="alert">{{ i18n.t('errors.master.employee_not_found') }}</p>
+      <a class="back-link" routerLink="/employees" data-testid="employee-form-back">
+        {{ i18n.t('action.back') }}
+      </a>
+    </div>
+  } @else {
+    @if (isEdit()) {
+      <p class="code-line" data-testid="employee-code">
+        <span class="code-label">{{ i18n.t('hr.employee.field.code') }}</span>
+        <bdi class="code-value" translate="no">{{ displayCode() }}</bdi>
+        <span class="code-note">{{ i18n.t('hr.employee.field.code_not_editable') }}</span>
+      </p>
+
+      <p class="notice" role="status" data-testid="employee-staff-fields-notice">
+        {{ i18n.t('hr.employee.staff_fields_not_returned_notice') }}
+      </p>
+    }
+
+    <form class="fields" (submit)="$event.preventDefault(); onSubmit()">
+      <label class="field">
+        <span class="label">{{ i18n.t('hr.employee.field.full_name') }} *</span>
+        <input
+          class="input"
+          type="text"
+          dir="auto"
+          data-testid="employee-field-full-name"
+          [formField]="employeeForm.fullName"
+        />
+      </label>
+
+      <label class="field">
+        <span class="label">{{ i18n.t('hr.employee.field.phone') }} *</span>
+        <input
+          class="input"
+          type="tel"
+          dir="ltr"
+          inputmode="tel"
+          autocomplete="tel"
+          data-testid="employee-field-phone"
+          [formField]="employeeForm.phone"
+        />
+      </label>
+
+      @if (isEdit()) {
+        <p class="field" data-testid="employee-kind-display">
+          <span class="label">{{ i18n.t('hr.employee.field.kind') }}</span>
+          <bdi class="kind-value">{{ i18n.t('enum.EmployeeKind.' + employeeForm.kind()) }}</bdi>
+          <span class="code-note">{{ i18n.t('hr.employee.kind_is_permanent') }}</span>
+        </p>
+      } @else {
+        <label class="field">
+          <span class="label">{{ i18n.t('hr.employee.field.kind') }} *</span>
+          <select
+            class="input select"
+            data-testid="employee-field-kind"
+            [attr.aria-label]="i18n.t('hr.employee.field.kind')"
+            (change)="onKindChange($event)"
+          >
+            <option value="Salaried" selected>{{ i18n.t('enum.EmployeeKind.Salaried') }}</option>
+            <option value="DayLabour">{{ i18n.t('enum.EmployeeKind.DayLabour') }}</option>
+          </select>
+        </label>
+      }
+
+      @if (isDayLabour()) {
+        <label class="field">
+          <span class="label">{{ i18n.t('hr.employee.field.bab') }} *</span>
+          <select
+            class="input select"
+            data-testid="employee-field-bab"
+            [disabled]="babsUnavailable()"
+            [attr.aria-label]="i18n.t('hr.employee.field.bab')"
+            (change)="onBabChange($event)"
+          >
+            <option value="">{{ i18n.t('hr.employee.field.no_bab') }}</option>
+            @for (bab of babs(); track trackBab($index, bab)) {
+              <option [value]="bab.id">{{ babLabel(bab) }}</option>
+            }
+          </select>
+          @if (babsUnavailable()) {
+            <p class="field-error" role="alert" data-testid="employee-babs-unavailable">
+              {{ i18n.t('hr.employee.babs_unavailable') }}
+            </p>
+          } @else if (babIdErrorKey(); as key) {
+            <p class="field-error" role="alert" data-testid="employee-field-bab-error">
+              {{ i18n.t(key) }}
+            </p>
+          }
+        </label>
+      }
+
+      <label class="field">
+        <span class="label">{{ i18n.t('hr.employee.field.specialty') }}</span>
+        <input
+          class="input"
+          type="text"
+          dir="auto"
+          data-testid="employee-field-specialty"
+          [formField]="employeeForm.specialty"
+        />
+      </label>
+
+      <label class="field">
+        <span class="label">{{ i18n.t('hr.employee.field.national_id') }}</span>
+        <input
+          class="input"
+          type="text"
+          dir="ltr"
+          inputmode="numeric"
+          data-testid="employee-field-national-id"
+          [formField]="employeeForm.nationalId"
+        />
+      </label>
+
+      <label class="field">
+        <span class="label">{{ i18n.t('hr.employee.field.job_title') }}</span>
+        <input
+          class="input"
+          type="text"
+          dir="auto"
+          data-testid="employee-field-job-title"
+          [formField]="employeeForm.jobTitle"
+        />
+      </label>
+
+      <label class="field">
+        <span class="label">{{ i18n.t('hr.employee.field.hired_on') }}</span>
+        <input
+          class="input"
+          type="date"
+          data-testid="employee-field-hired-on"
+          [formField]="employeeForm.hiredOn"
+        />
+      </label>
+
+      @if (refusal(); as key) {
+        <p class="refusal" role="alert" data-testid="employee-form-refusal">{{ i18n.t(key) }}</p>
+      }
+
+      <button class="submit" type="submit" data-testid="employee-submit" [disabled]="!canSubmit()">
+        {{ i18n.t('action.save') }}
+      </button>
+    </form>
+  }
+</section>

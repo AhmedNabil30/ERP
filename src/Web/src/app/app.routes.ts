@@ -4,6 +4,7 @@ import { auditReadGuard } from './core/auth/audit-read.guard';
 import { babManageGuard } from './core/auth/bab-manage.guard';
 import { catalogueManageGuard } from './core/auth/catalogue-manage.guard';
 import { clientManageGuard } from './core/auth/client-manage.guard';
+import { employeeManageGuard } from './core/auth/employee-manage.guard';
 import { mustChangePasswordGuard } from './core/auth/must-change-password.guard';
 import { sessionGuard } from './core/auth/session.guard';
 import { userManageGuard } from './core/auth/user-manage.guard';
@@ -161,6 +162,44 @@ export const routes: Routes = [
         canDeactivate: [confirmUnsavedChangesGuard],
         loadComponent: () =>
           import('./features/babs/bab-form/bab-form-page').then((m) => m.BabFormPage),
+      },
+    ],
+  },
+  {
+    // KAFF-207, KAFF-208 — S-023, S-024. Same shape as `/catalogue` and `/babs` above: `sessionGuard`
+    // resolves the session first, then `employeeManageGuard` keeps a role without the permission out
+    // of a screen the server would refuse anyway. Reached by URL today — `landing.ts`'s
+    // `RULED_LANDINGS` deliberately does not gain an `EmployeeManage` row: `landing.spec.ts` pins HR
+    // with `EmployeeManage` landing on `hr-projects`, and adding one here would move it out from under
+    // that ruling rather than build on top of it.
+    path: 'employees',
+    canActivate: [sessionGuard, mustChangePasswordGuard, employeeManageGuard],
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/employees/employee-list/employee-list-page').then(
+            (m) => m.EmployeeListPage,
+          ),
+      },
+      {
+        path: 'new',
+        canDeactivate: [confirmUnsavedChangesGuard],
+        loadComponent: () =>
+          import('./features/employees/employee-form/employee-form-page').then(
+            (m) => m.EmployeeFormPage,
+          ),
+      },
+      {
+        // `withComponentInputBinding` binds `:employeeId` to the component's input signal. There is no
+        // `GET /api/employees/{id}` on this API, so this loads the same way `bab-form-page.ts` does —
+        // see `employee-form-page.ts` for the gap that leaves.
+        path: ':employeeId',
+        canDeactivate: [confirmUnsavedChangesGuard],
+        loadComponent: () =>
+          import('./features/employees/employee-form/employee-form-page').then(
+            (m) => m.EmployeeFormPage,
+          ),
       },
     ],
   },

@@ -1,0 +1,120 @@
+<section class="employees" data-testid="employee-list">
+  <h1 class="title">{{ i18n.t('hr.employee.list_title') }}</h1>
+
+  <!-- A segmented control, matching CatalogueListPage's and BabTreePage's own — AC-207-F's three server states. -->
+  <div class="filters" role="group" [attr.aria-label]="i18n.t('hr.employee.list_title')">
+    @for (option of filters; track option) {
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="statusFilter() === option"
+        [attr.aria-pressed]="statusFilter() === option"
+        [attr.data-testid]="'employee-filter-' + option"
+        (click)="onFilter(option)"
+      >
+        {{ i18n.t(filterKey(option)) }}
+      </button>
+    }
+  </div>
+
+  @if (failure(); as key) {
+    <p class="refusal" role="alert" data-testid="employee-list-failure">{{ i18n.t(key) }}</p>
+  } @else if (loading()) {
+    <p class="loading" role="status" aria-live="polite" data-testid="employee-list-loading">
+      {{ i18n.t('hr.employee.loading') }}
+    </p>
+  } @else if (employees().length > 0) {
+    <ul class="rows" data-testid="employee-rows">
+      @for (employee of employees(); track trackRow($index, employee)) {
+        <li
+          class="row"
+          [class.row--archived]="!employee.isActive"
+          [attr.data-testid]="'employee-row-' + employee.code"
+        >
+          <a class="row-link" [routerLink]="['/employees', employee.id]" [state]="{ employee: employee }">
+            <bdi class="row-code" translate="no">{{ employee.code }}</bdi>
+            <span class="row-name" dir="auto">{{ employee.fullName }}</span>
+            <bdi class="row-phone" dir="ltr">{{ employee.phone }}</bdi>
+            <span class="row-kind chip">{{ i18n.t(kindKey(employee)) }}</span>
+
+            @if (employee.specialty; as specialty) {
+              <span class="row-specialty" dir="auto">{{ specialty }}</span>
+            }
+
+            @if (!employee.isActive) {
+              <span class="row-archived-badge" data-testid="employee-row-archived-badge">
+                {{ i18n.t('hr.employee.archived_badge') }}
+              </span>
+            }
+          </a>
+
+          <div class="row-actions">
+            @if (rowFailure(); as failed) {
+              @if (failed.id === employee.id) {
+                <p class="row-refusal" role="alert" [attr.data-testid]="'employee-row-refusal-' + employee.code">
+                  {{ i18n.t(failed.key) }}
+                </p>
+              }
+            }
+
+            <a class="chip" [routerLink]="['/employees', employee.id]" [attr.data-testid]="'employee-edit-' + employee.code">
+              {{ i18n.t('action.edit') }}
+            </a>
+
+            @if (employee.isActive) {
+              @if (confirmingArchiveId() === employee.id) {
+                <p class="row-confirm" [attr.data-testid]="'employee-archive-body-' + employee.code">
+                  {{ i18n.t('hr.employee.archive_confirm') }}
+                </p>
+                <button
+                  type="button"
+                  class="danger-button"
+                  [disabled]="isArchiving(employee.id)"
+                  [attr.data-testid]="'employee-archive-confirm-' + employee.code"
+                  (click)="onConfirmArchive(employee.id)"
+                >
+                  {{ i18n.t('hr.employee.archive_action') }}
+                </button>
+                <button
+                  type="button"
+                  class="chip"
+                  [attr.data-testid]="'employee-archive-cancel-' + employee.code"
+                  (click)="onCancelArchive()"
+                >
+                  {{ i18n.t('action.cancel') }}
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  class="danger-button"
+                  [attr.data-testid]="'employee-archive-' + employee.code"
+                  (click)="onStartArchive(employee.id)"
+                >
+                  {{ i18n.t('hr.employee.archive_action') }}
+                </button>
+              }
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  } @else if (statusFilter() !== 'active') {
+    <div class="empty" role="status" aria-live="polite" data-testid="employee-list-empty-filtered">
+      <p class="empty-title">{{ i18n.t('hr.employee.empty_filtered') }}</p>
+    </div>
+  } @else {
+    <!-- An explicit empty state with the create action, never a blank area (components.md §9). -->
+    <div class="empty" role="status" aria-live="polite" data-testid="employee-list-empty">
+      <p class="empty-title">{{ i18n.t('hr.employee.empty') }}</p>
+      <a class="create" routerLink="/employees/new" data-testid="employee-create">
+        {{ i18n.t('hr.employee.action.create') }}
+      </a>
+    </div>
+  }
+
+  @if (employees().length > 0) {
+    <a class="create" routerLink="/employees/new" data-testid="employee-create">
+      {{ i18n.t('hr.employee.action.create') }}
+    </a>
+  }
+</section>

@@ -14,6 +14,7 @@ import { AuthApi } from './auth.api';
 import { Session } from './auth.service';
 import { catalogueManageGuard } from './catalogue-manage.guard';
 import { clientManageGuard } from './client-manage.guard';
+import { employeeManageGuard } from './employee-manage.guard';
 import { userManageGuard } from './user-manage.guard';
 
 /**
@@ -125,6 +126,7 @@ describe('the permission guards resolve the session themselves', () => {
     ['userManageGuard', userManageGuard],
     ['auditReadGuard', auditReadGuard],
     ['catalogueManageGuard', catalogueManageGuard],
+    ['employeeManageGuard', employeeManageGuard],
   ];
 
   for (const [name, guard] of guards) {
