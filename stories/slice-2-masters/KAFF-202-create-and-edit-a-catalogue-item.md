@@ -1,8 +1,8 @@
 # KAFF-202 · Create and edit a catalogue item
 
-<!-- kaff id=KAFF-202 slice=2 points=3 state=BUILT verdict=REJECTED at=586a7d0 on=2026-09-10 -->
+<!-- kaff id=KAFF-202 slice=2 points=3 state=BUILT verdict=REJECTED at=d5e6548 on=2026-09-10 -->
 
-**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-08 by the BA; **amended 2026-09-09** — **`Q12` clears** (D-129 §1). **One Definition-of-Ready box is still unticked — QA's cases, not a business question.**
+**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **state and verdict live only in this file's line-3 trailer and in `STATUS.md` — not restated here (`CLAUDE.md`, D-119).** Refined 2026-09-08 by the BA; **amended 2026-09-09** — **`Q12` clears** (D-129 §1). **One Definition-of-Ready box is still unticked — QA's cases, not a business question.**
 **Spec:** **§4.1**, **§4.2**, **§4.4**, §2 · **Decisions:** D-018 (the `status` values, 🟡), D-044 ruling 4, **D-129 §1**
 **Register:** `stories/questions-for-karim.md` → **`Q12`** (✅ answered, D-129 §1)
 **Screens:** `ux/screen-inventory.md` → **`S-018`** (create / edit), reached from **`S-017`** (list)
@@ -92,6 +92,8 @@ And no field on the BOQ line holds a foreign key to the catalogue row, so there 
 Given open, unsigned estimates that reference the item
 When the item is re-priced
 Then nothing on any estimate changes, and this story raises no alert — §4.4's review is `S-049`, slice 4
+
+⛔ **`AC-202-E` and `AC-202-F`'s BOQ/estimate half is held, outstanding to slice 4 — the `TC-2-040` shape (`V-35-N`).** There is no `Boq`, `SignedBoq`, `BoqLine` or `Estimate` entity anywhere in this codebase [Verified: 2026-09-10 — no such class under `src/`], so neither criterion has a signed line or an open estimate to leave untouched yet. **Both are re-driven when `S-054` (the BOQ builder) and `S-049` (the open-estimate review) ship.** `tests/Api.Tests/EditCatalogueItemTests.cs` -> `Repricing_touches_no_row_but_the_items_own_and_writes_no_estimate_or_boq_row` [Verified: 2026-09-10] proves a different, real property — **repricing writes nothing beyond its own row and one audit record** — and does **not** discharge either criterion: its third assertion counts أبواب rows, an unrelated table that is the only other one there is, and that count could not move under any implementation of `Reprice`. Neither criterion's wording changes; only the record does.
 
 **AC-202-G — cost price never leaves the internal surface** *(fails if the rule is broken)*
 Given an item with a cost price

@@ -1,8 +1,8 @@
 # KAFF-204 · The باب tree, carrying each trade's default markup
 
-<!-- kaff id=KAFF-204 slice=2 points=5 state=NOT-BUILT verdict=none at=- on=2026-09-08 -->
+<!-- kaff id=KAFF-204 slice=2 points=5 state=READY verdict=none at=- on=2026-09-10 -->
 
-**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-08 by the BA; **amended 2026-09-09** — rule 5's defect is **repaired** (D-127 §1), both `errors.bab.*` keys are **renamed to the namespace that ships** (D-128), and **`Q12` clears** (D-129 §1). **One Definition-of-Ready box is still unticked, and it is `Q75`'s — the story's data, not its behaviour.**
+**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** **state and verdict live only in this file's line-3 trailer and in `STATUS.md` — not restated here (`CLAUDE.md`, D-119).** Refined 2026-09-08 by the BA; **amended 2026-09-09** — rule 5's defect is **repaired** (D-127 §1), both `errors.bab.*` keys are **renamed to the namespace that ships** (D-128), and **`Q12` clears** (D-129 §1). **One Definition-of-Ready box is still unticked, and it is `Q75`'s — the story's data, not its behaviour.**
 **Spec:** **§2** (*"~40 trades, tree, carries default markup %"*), **§4.2**, §4.5 · **Decisions:** D-044 ruling 4, D-044 ruling 6 (four decimals stored, two displayed), **D-129 §1**
 **Register:** `stories/questions-for-karim.md` → **`Q12`** (✅ answered, D-129 §1), **`Q60`** (the tree's data half — `Q75` — still open, raised by `KAFF-200`)
 **Screens:** `ux/screen-inventory.md` → **`S-021`** (the tree) and **`S-022`** (create / edit)
@@ -86,6 +86,22 @@ Given a parent باب at 15% and a child باب at 30%
 When an item in the child باب is used to start a new BOQ line
 Then the line's markup defaults to **30%**, the child's own — the parent's rate reaches nothing
 
+⛔ **`AC-204-C`'s own *When* has the `V-35-N` defect before a line of code exists.** *"An item in the
+child باب is used to start a new BOQ line"* names a BOQ line, and no `Boq`, `BoqLine` or `Estimate`
+entity exists anywhere in this codebase yet [Verified: 2026-09-10 — no such class under `src/`], the
+same absence `AC-204-D` names below and that `TC-2-040` already holds explicitly for `AC-204-D`.
+**`TC-2-039`, the case written for `AC-204-C`, carries no equivalent held note** — it reads as an
+ordinary runnable case today, which is the exact asymmetry `V-35-N` found between `KAFF-202` and
+`KAFF-206`. **What slice 2 can actually prove, and no more:** each باب holds its own `DefaultMarkup`,
+required, with no inheritance from a parent [Verified: 2026-09-10 @
+`src/Domain/MasterData/Bab.cs` -> `DefaultMarkup`] — nothing in this codebase reads a parent باب's
+markup for a child's item, because nothing reads a parent's markup for anything. No BOQ-line
+mechanism is invented here to make the criterion pass early; the criterion's wording does not change,
+and its BOQ-line half is outstanding to slice 4, re-driven when `S-054` ships, the same as
+`AC-204-D`'s. **My judgment: this does not make `AC-204-C` unready** — the rule it states is right and
+the DoR's Given/When/Then box is a format check, not a testability guarantee — but it is not fully
+witnessed today, and a reader of the story alone could not have known that before this note.
+
 **AC-204-D — a markup change does not move an existing line** *(fails if the rule is broken)*
 Given a signed BOQ line and an open estimate line, both created while a باب's markup was 15%
 When that باب's markup is changed to 30%
@@ -134,7 +150,7 @@ Then `bab.tree.empty` is displayed as an explicit empty state with the create ac
 | Money behaviour named explicitly | ✅ — carries none, moves none; the markup is a `Percentage` and rule 8 states its precision |
 | Arabic UI strings as i18n keys | ✅ — twelve keys, rule 12 |
 | The audit record it writes is stated | ✅ — rule 10, `AC-204-H` |
-| **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** `qa/slice-2/` does not exist and no `TC-` range is allocated. Six criteria are marked *(fails if the rule is broken)*; **QA's to write** |
+| **QA has written at least one scenario that fails if the rule is broken** | ✅ **Met — [Verified: 2026-09-10 @ `qa/slice-2/test-cases.md` -> `TC-2-037`].** This row was stale: `qa/slice-2/` exists and this story is cased in full as `TC-2-037`…`TC-2-046`, one case per `AC-204-A`…`J`. The tree's **data** — Kaff's real trades and markups — stays held on `Q75`; that is the story's data, not its behaviour, and is unaffected by this row. ⚠️ **`AC-204-C`'s own case, `TC-2-039`, carries no held note** the way `TC-2-040` carries one for `AC-204-D` — see the note beside `AC-204-C` below |
 | Story-currency citations dated with a stable identifier | ✅ |
 | Not `BLOCKED` on an open question | ✅ — `Q12` is answered (D-129 §1). ⚠️ **`Q75`** (`Q60`'s data half) **still blocks the story's data, not its behaviour**: the tree can be built, demonstrated and tested with any أبواب; **it cannot be *seeded* with Kaff's real trades and rates until `Q75` is answered**, and a demo seeded with invented trades at invented markups — including `spec.md` §4.2's own *concrete 15%* and *finishes 30%* examples — is the kind of plausible fiction that gets mistaken for a decision. Rule 7 stays as written |
 

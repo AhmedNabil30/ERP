@@ -11355,3 +11355,166 @@ downgraded pass must record which model ran it, so the verdict carries its own c
 * **It does not move `KAFF-202`/`203`/`206` out of slice 2**, and it does not reduce their points.
 * **It does not accept the Verifier's verdict as final on the backend.** The backend core passed on
   its own terms; what failed is a missing layer and a record that overstates what was witnessed.
+
+---
+
+### D-133 · Scrum Master — routing D-132's REJECTED verdict: a story cut after its code, one retraction, and a pull held one box short · 2026-09-10
+
+Nabil: *"the scrum master can you complete please."* **Read as: close D-132's ten findings at their
+owners and put `KAFF-202`/`203`/`206` in front of a fresh Verifier.** Not new build. The frontend
+layer `V-35-S` found missing was built in `934bfb9` before this session opened.
+
+#### 1. `V-35-U` is placed — `KAFF-214`, its own story, 2 points, retrospective
+
+`UnarchiveCatalogueItem` shipped in `f675f1b` and its row control in `934bfb9` with no criterion.
+**Cut to its own story, not folded into `KAFF-206`**, for two reasons. Folding would change the scope
+of a story that already carries a verdict, and it would re-estimate 3 points silently. The second is
+exactly why D-128 §2 / D-130 §5 cut `KAFF-213` instead of absorbing it.
+
+**The 2 points are a retrospective estimate, and they are labelled as one.** An estimate made after
+the work is a record of size, not a forecast. It must not be read as a sprint that hit its number.
+Trailer `state=BUILT verdict=none at=f675f1b`. **Slice 2 becomes fifteen stories and 53 points.**
+The BA wrote the story. `AC-214-A`…`E` come from D-130 §4.
+
+#### 2. `V-35-V` is retracted, and the claim was mine
+
+*"`Archive()`'s guard mutated, 3 of 22 Domain tests reddened"* was in the Scrum Master's brief
+(`meetings/BRIEF-2026-09-10-verifier.md`). It was repeated from a builder's report, and nothing in
+the repository records the run. **Retracted. It is not evidence and is not to be repeated.**
+
+**The rule from here:** a mutation claim enters a brief or a story only if a commit message or a
+D-entry records **what was mutated, which tests reddened and why, and that it was reverted**. A
+mutation nobody can re-run is a claim.
+
+#### 3. `KAFF-204` is **not** flipped to `READY`, one box short
+
+The BA corrected its stale DoR row: `KAFF-204` **is** cased, `TC-2-037`…`TC-2-046`. It also recorded
+`AC-204-C`'s BOQ-line half as outstanding to slice 4. **But `TC-2-039` still reads as a runnable case
+against a BOQ line that does not exist.** That is `V-35-N`'s exact shape, found before the code this
+time. Flipping it now would pull a story whose own case commands the defect D-132 just rejected.
+**`READY` the moment QA holds `TC-2-039`'s BOQ half the way `TC-2-040` holds `AC-204-D`'s.** The
+BA's judgement that the criterion itself stays valid is right, and is kept.
+
+#### 4. ⛔ The catalogue cannot be demonstrated on a real stack until `KAFF-204` ships
+
+**No endpoint creates a باب.** The only route mapped under `Features/Babs` is the list
+[Verified: 2026-09-10 @ `src/Api/Features/Babs/ListBabs/Endpoint.cs` -> `MapGet`]. **None is
+seeded**, because `Q75` is open
+[Verified: 2026-09-10 @ `tests/Api.Tests/DatabaseSeedingTests.cs` -> `A_freshly_initialised_database_seeds_no_babs`].
+Creating a catalogue item needs a `BabId`, so on a seeded stack the create form has nothing to
+offer. Two consequences:
+
+* **`TC-2-035` and `TC-2-065` cannot be written as E2E cases.** They need rows, and a seeded stack
+  can hold none. `TC-2-027` could render an empty form, and nothing more.
+* **`KAFF-202`/`203`/`206` cannot reach §4 acceptance.** Nabil cannot run a demo script that creates
+  an item. The API tests create أبواب through the `DbContext`, which is why this never showed.
+
+**So the next Backend pull in sequence is `KAFF-204`.** Whether it enters a sprint is sprint scope,
+and sprint scope is Nabil's.
+
+#### 5. Drift, named rather than left to look like progress
+
+**The slice-2 gate is *"Excel import works"* — `KAFF-200`, and it has not moved.** It is not Ready:
+`AC-200-B` is uncased because it needs a ruling on silent rounding (D-008, open for Nabil).
+`V-35-Q` shows that ruling is already pre-empted by `Money`'s constructor. 2026-09-10 went on
+verify → reject → repair on nine points of catalogue CRUD. The repairs are real, since `V-35-S` was
+a whole missing layer. But they are prerequisites to the gate, not the gate, and **the gate cannot
+move until Nabil rules `AC-200-B`.**
+
+#### 6. The BA pass died on a session limit, and lost nothing
+
+It wrote as it went, so every item reached disk. **No line-3 trailer was touched.** It never ran its
+gate. The Scrum Master ran it after: citations **1345 checked · 0 broken · 0 legacy, exit 0**.
+
+**One mis-citation, routed to the BA:** `KAFF-214`'s header and rule 1 cite `spec.md` §4.5 for
+*"item codes are unique."* §4.5 is the BOQ builder and says nothing of the kind. D-130 §4 says it.
+
+#### 7. After QA's pass — `KAFF-204` is `READY`, and what `BUILT` means for a two-lane story
+
+**QA held `TC-2-039`'s BOQ-line half, so `KAFF-204` flips to `READY`.** The Scrum Master re-read
+both rewritten cases rather than taking the report. `TC-2-036` now discriminates: the rule predicts
+`[Z-1, Z-9, A-1, A-9]` and a code-only sort predicts `[A-1, A-9, Z-1, Z-9]`. ⚠️ **One weakness
+carried to the Verifier.** Half of `TC-2-039` is a search of the codebase for an ancestor walk,
+which is an absence check. Its read-back half can fail; that search cannot. The DoR box is met on
+the story's other cases, not on that half. QA's recount — **95 live of 103 written** — is accepted:
+a case documented as unrunnable is not live.
+
+⛔ **The rule D-132's defect needed, now written down.** Slice-2 stories carry **both lanes in one
+file** (*"Owner: Backend, then Frontend"*), so `§2a` rule 6's *"the Frontend story exists"* is
+satisfied by the story itself. That is exactly how three trailers reached `BUILT` on backend gates
+alone. **A story whose criteria span both lanes moves to `BUILT` only when both lanes have shipped.**
+A backend-only commit leaves it at `COMMITTED`, however green the API suite is. `KAFF-204` is the
+first story this binds.
+
+#### What this does not do
+
+* **It lifts no verdict.** `KAFF-202`/`203`/`206` stay `REJECTED` until a fresh Verifier says
+  otherwise. **The Scrum Master briefed that pass and does not certify it.**
+* **It changes nothing under `src/` or `tests/`.**
+* **It does not rule `AC-200-B`/D-008, the submit-button conflict `0ed55cf` recorded, or `KAFF-204`'s
+  place in a sprint.** Nabil's, UX's and Nabil's respectively.
+
+#### 8. The re-pass verdicts (`1088889`, `opus`), recorded on the board
+
+`qa/slice-2/verification-2026-09-10-repass.md` re-ran all four stories at `d5e6548`. **Every
+repaired `V-35` finding held.** It found `V-36-A`…`K`. Trailers moved to its verdicts:
+
+| Story | Verdict | Cause |
+|---|---|---|
+| `KAFF-202` | **REJECTED** | `V-36-H`, HIGH: a blank or omitted price is stored as `0.0000`, from the form and from the API |
+| `KAFF-203` | **CONDITIONAL** | `V-36-A` (an all-archived list shows *"no items yet"*), and E2E `TC-2-035` unwritten |
+| `KAFF-206` | **REJECTED** | `V-36-C`: the archived badge is 2.89:1 / 3.59:1 against `ux/components.md`'s 4.5:1 |
+| `KAFF-214` | **CONDITIONAL** | `V-36-D` (the story file), and E2E `TC-2-103` unwritten |
+
+**The Verifier's correction to §4 is accepted.** *"Cannot be written as E2E"* was too strong. An E2E
+fixture can seed a labelled باب into its own disposable database, and the re-pass did exactly that.
+Once `KAFF-204` ships, the API itself creates أبواب.
+
+---
+
+### D-134 · Nabil — verification is batched per slice, not run per story · 2026-09-11
+
+Nabil: *"can we build the ready and the not built to be ready AND BUILT, THEN VERIFY ALL AT ONCE, as
+now I see most of the tokens are not for developing, they are for reading."*
+
+**This is Nabil's process decision, recorded, not ruled on.** The cost is real, and 2026-09-10 shows
+it. Three stories went verify → reject → repair → re-verify. Each pass was a cold start that re-read
+`CLAUDE.md`, `STATUS.md`, the stories, the QA file and the previous report before touching anything.
+Two agents died on session limits mid-pass.
+
+#### The rule
+
+1. **Slice 2 is built as one batch, then verified as one batch.** Builders take stories serially and
+   report `BUILT`. **No builder certifies anything.** One fresh Verifier session, which wrote none of
+   the code, then covers every story built or repaired in the batch.
+2. **Unchanged:** the serial-machine rule (one agent at a time, `process/agile.md` §2a rule 3). The
+   Verifier on the strongest model (§M never-downgrade). **DELIVERED ≠ VERIFIED ≠ ACCEPTED.** D-133 §7:
+   a two-lane story is `BUILT` only when both lanes have shipped.
+3. **Token discipline.** A builder brief names the exact files to read — `CLAUDE.md`, its own story,
+   the `spec.md` sections the story cites — and hands over inline what the builder would otherwise
+   rediscover. Builders do not read `STATUS.md` in full, `decisions.md` history, `qa/` archives or
+   prior verification reports.
+
+#### Scope of the slice-2 batch
+
+* **Build:** `KAFF-204` first (it unblocks the catalogue E2E, D-133 §4), then `205`, `213`, `200`,
+  `201`, `207`, `208`.
+* **Repair:** `KAFF-202`/`206`, then `203`/`214`'s conditions — `V-36-A`…`K`, routed per the re-pass
+  report.
+* **Not built:** `KAFF-209`–`212`, blocked on Karim — `Q29`, `Q70`, `Q71`, `Q72`, `Q73`.
+
+#### Two corrections to the brief that carried this decision
+
+* ⛔ **"QA has not cased 200, 201, 205, 207, 208, 213" was false.** All six were cased on 2026-09-09
+  (`TC-2-001`…`016`, `047`…`056`, `066`…`092`), and each story's DoR row says so. **The QA pass is
+  skipped**, which is the saving this decision is for. Two held criteria remain. `AC-208-C` needs an
+  employee-edit endpoint. **`AC-200-B`'s *"more than four decimals"* clause waits on Nabil's rounding
+  ruling (D-008).** `KAFF-200` builds with that clause visibly held, and the import adds **no rounding
+  or refusal rule of its own**; it passes through `Money`.
+* **One ruling was missing from the plan: `V-36-I`.** The SPA sends prices through `Number(raw)`
+  [Verified: 2026-09-11 @ `src/Web/src/app/core/catalogue/money-wire.ts` -> `toWireDecimal`], so
+  every price passes through a JS double. **That breaks `CLAUDE.md`'s *"never `float` or `double`
+  anywhere near money"*, and it is a defect even with every test green.** How money crosses the wire
+  is an architecture decision, and it binds every money form in the batch. **It goes to the
+  Architect, on the strongest model, before any Frontend money form is built.** So does `KAFF-200`'s
+  Excel reader: no package in any csproj reads `.xlsx`, and adding one is a `decisions.md` entry.

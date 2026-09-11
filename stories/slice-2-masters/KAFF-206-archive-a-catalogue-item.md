@@ -1,8 +1,8 @@
 # KAFF-206 · Archive a catalogue item without breaking what already references it
 
-<!-- kaff id=KAFF-206 slice=2 points=3 state=BUILT verdict=REJECTED at=f675f1b on=2026-09-10 -->
+<!-- kaff id=KAFF-206 slice=2 points=3 state=BUILT verdict=REJECTED at=d5e6548 on=2026-09-10 -->
 
-**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **⚠️ Amended 2026-09-09 — `Q65`, `Q66` and `Q12` are all answered (D-130 §3, D-130 §4, D-129 §1) and `AC-206-F` is written. One Definition-of-Ready box is still unticked — QA's cases.**
+**Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **state and verdict live only in this file's line-3 trailer and in `STATUS.md` — not restated here (`CLAUDE.md`, D-119).** Refined 2026-09-09 by the BA. **⚠️ Amended 2026-09-09 — `Q65`, `Q66` and `Q12` are all answered (D-130 §3, D-130 §4, D-129 §1) and `AC-206-F` is written. One Definition-of-Ready box is still unticked — QA's cases.**
 **Spec:** **§4.1** (`status`), **§4.4**, **§4.5**, §2 · **Decisions:** D-018 (the `status` values, 🟡), D-044 ruling 4, **D-130 §§3–4, D-129 §1**
 **Register:** `stories/questions-for-karim.md` → **`Q12`** (✅ answered, D-129 §1), **`Q65`** (✅ answered, D-130 §3), **`Q66`** (✅ answered, D-130 §4)
 **Screens:** `ux/screen-inventory.md` → **`S-017`** (the list, and its status filter), **`S-018`**
@@ -77,6 +77,14 @@ Given open, unsigned estimate lines carrying the item
 When the item is archived
 Then no estimate line changes and no alert is raised — §4.4's review is `S-049`, slice 4
 
+⛔ **`AC-206-C` and `AC-206-D` are held, correctly — outstanding to slice 4 (`V-35-M`).** No `Boq`,
+`SignedBoq`, `BoqLine` or `Estimate` entity exists anywhere in this codebase
+[Verified: 2026-09-10 — no such class under `src/`], so neither criterion has a signed line or an
+open estimate to leave untouched yet. `qa/slice-2/test-cases.md` -> `TC-2-059` and `TC-2-060` record
+this explicitly, dated, and hold both rather than running them — **nothing anywhere claims either is
+discharged**, and this note exists so that fact is visible from the story itself, not only from the
+QA file.
+
 **AC-206-E — archiving twice is refused**
 Given an already archived item
 When it is archived again
@@ -86,6 +94,17 @@ Then it is refused with `errors.master.already_archived`, and nothing is written
 Given an archived item
 When somebody searches the catalogue from the BOQ builder's "add item"
 Then it does not appear among the results, because `Q65` (D-130 §3) rules that archiving must actually keep an item off new work — offering it, with or without a warning, would make the archive decorative
+
+⛔ **Held — outstanding to slice 4 (`V-35-O`).** What is discharged today is `AC-206-A`'s own
+guarantee, that the list's default excludes archived items
+[Verified: 2026-09-10 @ `tests/Api.Tests/ListCatalogueItemsTests.cs` ->
+`An_archived_item_is_hidden_by_default_and_returned_when_asked_for`] — **not** `AC-206-F`'s own: an
+archived item cannot reach a **new BOQ line**, and no BOQ line exists yet for anything to be kept off
+of. The default is a convenience a caller can override with `status=all` without knowing it matters;
+a guarantee is not. **Carried forward for slice-4 refinement, in the words the Verifier left it in:**
+*the BOQ builder must not be able to put an archived item on a new line — enforced by the server, not
+by a picker that inherits a default a caller can override.* **Owner of the mechanism: the Architect**,
+at slice-4 refinement — this story does not choose it.
 
 **AC-206-G — a role without `CatalogueManage` archives nothing** *(fails if the rule is broken)*
 Given a signed-in user of each role that does not hold `CatalogueManage`
@@ -115,7 +134,7 @@ Then direction is RTL, the archived badge and the filter are readable, no string
 | Money behaviour named explicitly | ✅ — moves none, changes no price, writes no `Posting` |
 | Arabic UI strings as i18n keys | ✅ — four new keys plus one existing |
 | The audit record it writes is stated | ✅ — rule 9, `AC-206-H` |
-| **QA has written at least one scenario that fails if the rule is broken** | ✅ **Met 2026-09-09** — `qa/slice-2/test-cases.md`, `TC-2-001`…`TC-2-098`. |
+| **QA has written at least one scenario that fails if the rule is broken** | ✅ **Met 2026-09-09** — `qa/slice-2/test-cases.md`, `TC-2-001`…`TC-2-098`. ⛔ **`AC-206-C`/`AC-206-D` are held, correctly, not executable until slice 4** — `TC-2-059`, `TC-2-060` (`V-35-M`); see the note beside those criteria above. This row is not an unqualified ✅ |
 | Story-currency citations dated with a stable identifier | ✅ |
 | Not `BLOCKED` on an open question | ✅ — `Q65` (D-130 §3), `Q66` (D-130 §4) and `Q12` (D-129 §1) are all answered |
 
@@ -126,12 +145,13 @@ Then direction is RTL, the archived badge and the filter are readable, no string
   **`KAFF-213`, 3 points, slice 2, now owns it** (D-130 §5) — it is a different entity with a
   different question, and cutting a new story rather than absorbing it here is what kept this story's
   own estimate honest.
-- **Un-archiving.** ✅ **`Q66` is answered — D-130 §4: yes, an archived record can come back.** What is
-  **not** decided here is which story builds it: the mechanism belongs once in `Domain/` per
-  `CLAUDE.md`, but adding an endpoint and a criterion to this story would be re-estimating 3 points
-  silently, the exact thing the باب-archive question above was just kept out of. **Left for the Scrum
-  Master to place** — either folded into this story's own re-estimate, or its own small story — rather
-  than assumed here.
+- **Un-archiving.** ✅ **`Q66` is answered — D-130 §4: yes, an archived record can come back.** ✅
+  **Placed — `KAFF-214`, its own small story, 2 points (retrospective).** The mechanism belongs once
+  in `Domain/` per `CLAUDE.md` and is built there; adding an endpoint and a criterion to this story
+  would have been re-estimating 3 points silently, the exact thing the باب-archive question above was
+  kept out of. `KAFF-214` exists because the endpoint (`f675f1b`) and the row control (`934bfb9`)
+  shipped inside this story's own commits before any story owned them (`V-35-U`) — `KAFF-214` gives
+  that shipped code something to be verified against.
 - **Creating and editing an item.** `KAFF-202`. **Re-pricing.** `KAFF-202`.
 - **The list and its search.** `KAFF-203`, which owns the filter's default order (`Q63`).
 - **Moving an item between أبواب.** `KAFF-205`.

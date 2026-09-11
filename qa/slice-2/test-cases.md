@@ -10,10 +10,15 @@ existed returned nothing [Verified: 2026-09-09]. **The range is taken anyway, an
 brief asked for it named and because a second slice-2 QA session should not have to re-derive that the
 prefix itself is the collision guard.**
 
+⛔ **Extended 2026-09-10 to `TC-2-001` … `TC-2-103`, for `KAFF-214`.** `KAFF-214` did not exist when the
+range above was allocated — it is the retrospective story `D-133 §1` cut from `V-35-U`, after
+`UnarchiveCatalogueItem` shipped with no `AC-` id inside `f675f1b`/`934bfb9`. `099`…`103` were unused in
+this file and in `qa/slice-1/test-cases.md`'s own range, so no collision.
+
 Covers the nine stories named Ready-but-for-QA in this brief — `KAFF-200`, `201`, `202`, `203`, `205`,
-`206`, `207`, `208`, `213` — plus `KAFF-204`, whose *behaviour* is cased here and whose *data* is not.
-`KAFF-209`, `210`, `211`, `212` get a held-open note each, no `TC-` ids, per the brief: a case written
-against an unruled question would be worse than none.
+`206`, `207`, `208`, `213` — plus `KAFF-204`, whose *behaviour* is cased here and whose *data* is not —
+plus **`KAFF-214`**, added 2026-09-10. `KAFF-209`, `210`, `211`, `212` get a held-open note each, no
+`TC-` ids, per the brief: a case written against an unruled question would be worse than none.
 
 ## How to read a case
 
@@ -38,20 +43,32 @@ the scenario is stated, nothing is asserted, and it is not a passing case.
 |---|---|---|
 | KAFF-200 import from Excel | TC-2-001…010 | — |
 | KAFF-201 re-import is not a sync | TC-2-011…016 | — |
-| KAFF-202 create/edit an item | TC-2-017…027 | — |
-| KAFF-203 find an item | TC-2-028…036 | — |
-| KAFF-204 باب tree + markup | TC-2-037…046 | data (Kaff's real trades/rates) — `Q75` |
+| KAFF-202 create/edit an item | TC-2-017…027 | `TC-2-022`/`023` (`AC-202-E`/`F`) held to slice 4 — no BOQ/estimate entity exists (`V-35-N`, 2026-09-10) |
+| KAFF-203 find an item | TC-2-028…036 | `TC-2-036` rewritten 2026-09-10 so باب-order and code-order predict different sequences (`V-35-R`) — not held, just no longer confounded. `TC-2-035` (`AC-203-H`, E2E) cannot run on a seeded stack — no rows (D-133 §4) |
+| KAFF-204 باب tree + markup | TC-2-037…046 | data (Kaff's real trades/rates) — `Q75`. `TC-2-039`'s (`AC-204-C`) BOQ-line half also held to slice 4, the `TC-2-040` shape (`V-35-N`, 2026-09-10) |
 | KAFF-205 re-parent / move item | TC-2-047…056 | — |
-| KAFF-206 archive an item | TC-2-057…065 | un-archive endpoint — no story owns it yet |
+| KAFF-206 archive an item | TC-2-057…065 | `TC-2-059`/`060` (`AC-206-C`/`D`) held to slice 4. `TC-2-062` re-scoped 2026-09-10 to `AC-206-A`; `AC-206-F`'s own guarantee held to slice 4, mechanism the Architect's (`V-35-O`). `TC-2-065` (`AC-206-I`, E2E) cannot run on a seeded stack — no rows (D-133 §4). Un-archive → **`KAFF-214`** |
 | KAFF-207 employee register | TC-2-066…075 | — |
 | KAFF-208 nobody in both populations | TC-2-076…082 | `AC-208-C` — no edit endpoint exists to call |
 | KAFF-213 archive a باب | TC-2-083…092 | — |
+| **KAFF-214 unarchive an item** | **TC-2-099…103** | **new, 2026-09-10.** `TC-2-103` (`AC-214-E`, E2E) held — no seeded باب until `KAFF-204` ships (D-133 §4) |
 | KAFF-209 register a worker from site | none | `Q70`, `Q71` — no ruled actor, no ruled dedup rule |
 | KAFF-210 worker engagement history | none | `Q72` — the unit and scale are undefined |
 | KAFF-211 subcontractor master | none | `Q29`, `Q73`, `Q70` |
 | KAFF-212 supplier master | none | `Q29`, `Q70` |
 
-**98 live cases.** Roles cited throughout are the nine in `Role.cs`: `Owner`, `Finance`,
+**95 live cases, recounted 2026-09-10 — the prior "98" conflated total written with live.** `TC-2-001`
+… `TC-2-103` is **103** cases written. **8 cannot be run and are not live**, per this file's own
+header — *"it is not a passing case"*: `TC-2-059`, `TC-2-060` (`AC-206-C`/`D`, pre-existing, no
+BOQ/estimate entity), `TC-2-078` (`AC-208-C`, pre-existing, "Held, not deleted", no edit endpoint),
+`TC-2-022`, `TC-2-023` (`AC-202-E`/`F`, newly held today, no BOQ/estimate entity, `V-35-N`), and, newly
+dated today (D-133 §4, item 6) — **not `HELD Qnn`'s shape (no open business question), the same
+"cannot produce a value to assert against" shape as the BOQ-absence cases above** — `TC-2-035`
+(`AC-203-H`), `TC-2-065` (`AC-206-I`) and `TC-2-103` (`AC-214-E`), none of which can exercise its
+assertion against a seeded stack that holds no catalogue row, because no endpoint creates a باب and
+none is seeded. `103 − 8 = 95`. `TC-2-027` (`AC-202-J`) is **not** added to this list: it can render
+and drive `S-018`'s empty create form today, only its edit half is blocked, so it counts live with that
+caveat recorded inline. Roles cited throughout are the nine in `Role.cs`: `Owner`, `Finance`,
 `TechnicalOffice`, `SiteEngineer`, `HeadOfDesign`, `MarketingSales`, `Client`, `Subcontractor`, `Hr`
 [Verified: 2026-09-09 @ `src/Domain/Identity/Role.cs` -> `enum Role`]. Grants read from the catalogue
 before any negative case was written, not assumed from a story's prose
@@ -256,11 +273,29 @@ sell rate are both changed, then every value on the signed line is unchanged and
 holds a foreign key to the catalogue row.
 *Fails if:* any value on the signed line moves.
 
+⛔ **Unexecutable as written, today — held, outstanding to slice 4 (`V-35-N`).** There is **no `Boq`,
+`SignedBoq`, `BoqLine` or `Estimate` entity anywhere in this codebase**
+[Verified: 2026-09-10 — no such class under `src/`], so there is no signed line for this case to leave
+untouched. **Held, not dropped**, the same `TC-2-059`/`TC-2-060` shape, so the day slice 4 ships those
+entities this case is already written and waiting for them. **`tests/Api.Tests/EditCatalogueItemTests.cs`
+-> `Repricing_touches_no_row_but_the_items_own_and_writes_no_estimate_or_boq_row` is not a witness for
+this criterion** — its third assertion counts أبواب rows, an unrelated table that is the only other one
+there is, and that count could not move under any implementation of `Reprice`. It proves a real,
+different property (reprice touches nothing beyond its own row and one audit record); it does not prove
+`AC-202-E`.
+
 **TC-2-023 · re-pricing raises no alert and re-prices no estimate**
 `AC-202-F` · P2 · Api · §4.4
 Given open, unsigned estimates referencing the item, when the item is re-priced, then nothing on any
 estimate changes and no alert is raised.
 *Fails if:* an estimate line changes, or an alert is raised.
+
+⛔ **Unexecutable as written, today — held, outstanding to slice 4 (`V-35-N`).** There is **no `Boq`,
+`SignedBoq`, `BoqLine` or `Estimate` entity anywhere in this codebase**
+[Verified: 2026-09-10 — no such class under `src/`], so there is no open estimate for this case to leave
+untouched. **Held, not dropped**, the same `TC-2-059`/`TC-2-060` shape, so the day slice 4 ships those
+entities this case is already written and waiting for them. **The same `EditCatalogueItemTests` test
+named above is not a witness for this criterion either**, for the same reason.
 
 **TC-2-024 · cost price and margin never leave the internal surface — hand-edit path**
 `AC-202-G` · P1 · Api · §4.2
@@ -291,6 +326,15 @@ Given `S-018` at 390px in Arabic, when it renders, then direction is RTL, prices
 bidi-isolated inside Arabic text, no string is a literal in either language, and the page body does not
 scroll horizontally.
 *Fails if:* the body scrolls horizontally, or a price/code inside an Arabic label renders unisolated.
+
+⚠️ **Dated note, 2026-09-10 (D-133 §4) — what this case can and cannot prove on a seeded stack.** `S-018`
+is the create/edit **form**, not a row of catalogue data — creating an item needs a `BabId`, and no
+endpoint creates a باب and none is seeded [Verified: 2026-09-10 @
+`tests/Api.Tests/DatabaseSeedingTests.cs` -> `A_freshly_initialised_database_seeds_no_babs`]. **This
+case can render and drive the empty create form** — direction, i18n, no horizontal scroll — because
+none of that needs a باب to exist. **It cannot drive the edit half** (an existing item's fields
+populated and bidi-isolated), because a seeded stack holds no catalogue item to edit. Runnable in full
+once `KAFF-204` ships a باب create endpoint.
 
 ---
 
@@ -352,12 +396,29 @@ the inline-start, codes and figures are bidi-isolated, and the table scrolls ins
 rather than the page body.
 *Fails if:* the page body scrolls horizontally, or the table's own container does not.
 
-**TC-2-036 · ordered by باب, then by code**
+⛔ **Dated note, 2026-09-10 (D-133 §4) — cannot run on a seeded stack.** This case needs at least one
+catalogue row to render a populated table (the identity column, codes and figures, bidi-isolated). No
+endpoint creates a باب and none is seeded [Verified: 2026-09-10 @
+`tests/Api.Tests/DatabaseSeedingTests.cs` -> `A_freshly_initialised_database_seeds_no_babs`], and a
+catalogue item cannot be created without a `BabId`, so a seeded stack holds no catalogue item for this
+case to render. **Not written as an E2E test until `KAFF-204` ships a باب create endpoint.**
+`scripts/seed-demo.ps1` is not the fix — seeding an invented باب is refused as data (`Q75`, D-130 §8).
+
+**TC-2-036 · ordered by باب, then by code — rewritten 2026-09-10 so the rule and a plain code sort must disagree (`V-35-R`)**
 `AC-203-I` · P2 · Api · D-129 §5
-Given an unfiltered list spanning several أبواب, each containing items whose codes are not already in
-order, when the results render, then items are grouped by باب, and within each باب ordered by item
-code.
-*Fails if:* items are ordered by code alone across the whole list, ignoring باب grouping. The
+Given two أبواب whose `SortOrder` and item-code prefixes are **inverted on purpose**, so the two
+hypotheses this case exists to tell apart predict different results: باب `Early` at `SortOrder: 10`
+holding items coded `{nonce}-Z-1` and `{nonce}-Z-9`, and باب `Late` at `SortOrder: 20` holding items
+coded `{nonce}-A-1` and `{nonce}-A-9`.
+When the unfiltered list is requested
+Then the result is `[{nonce}-Z-1, {nonce}-Z-9, {nonce}-A-1, {nonce}-A-9]` — باب `Early`'s items first
+(its `SortOrder`, 10, precedes `Late`'s, 20), each باب's own items then ordered by code.
+*Fails if:* the result is `[{nonce}-A-1, {nonce}-A-9, {nonce}-Z-1, {nonce}-Z-9]` — **ordering by item
+code alone**, ignoring باب grouping entirely. That is the mutation this fixture is built to catch: with
+`SortOrder` and code prefix inverted between the two أبواب, "grouped by باب's own order, then by code"
+and "sorted by code alone across the whole list" now predict different sequences, unlike the prior
+fixture (`babA`/`babZ` with `SortOrder` 10/20 and codes `A-*`/`Z-*`, where the two orderings coincided
+and a mutation deleting `orderby bab.SortOrder,` entirely would not have reddened this case). The
 Arabic-collation question (ا/أ/إ ordering) is out of this case's scope — it is the Architect's per
 `Q63`'s standing caveat, not asserted here either way.
 
@@ -388,12 +449,27 @@ stored and read back, then the first is the fraction `0.10` and applying it to a
 *Fails if:* `10` is stored or applied as `10` rather than `0.10`, or `12.75%` loses precision on the
 round trip.
 
-**TC-2-039 · every باب carries its own markup, and no child inherits one**
-`AC-204-C` · P1 · Domain + Api · §4.2 · §2
-Given a parent باب at one arbitrary rate and a child باب at a different arbitrary rate, when an item in
-the child باب starts a new BOQ line, then the line's markup defaults to the child's own rate — the
-parent's rate reaches nothing.
-*Fails if:* the line defaults to the parent's rate, or to any value other than the child's own.
+**TC-2-039 · every باب carries its own required markup, and nothing reads a parent's — rewritten 2026-09-10, the `TC-2-040` shape (`V-35-N`)**
+`AC-204-C` · P1 · Domain · §4.2 · §2
+Given a parent باب created at one arbitrary rate and a child باب created under it at a different
+arbitrary rate, when each باب's own `DefaultMarkup` is read back, and separately when the codebase is
+searched for any query, handler or property that resolves a باب's markup by walking to an ancestor,
+then the child's `DefaultMarkup` is its own value, distinct from the parent's and not derived from it,
+`DefaultMarkup` is a required value on every باب (construction refuses a missing one), and no code path
+anywhere reads a parent باب's markup for a child's item.
+*Fails if:* the child's `DefaultMarkup` is ever absent, null, or equal to the parent's by inheritance
+rather than by coincidence of the fixture, or a باب can be constructed with no markup of its own.
+
+⛔ **`AC-204-C`'s own BOQ-line half is held, outstanding to slice 4 — the `TC-2-040` shape (`V-35-N`).**
+The criterion's own *When* — *"an item in the child باب starts a new BOQ line"* — names a BOQ line, and
+there is **no `Boq`, `BoqLine` or `Estimate` entity anywhere in this codebase**
+[Verified: 2026-09-10 — no such class under `src/`], the same absence `AC-204-D`/`TC-2-040` already
+holds explicitly. **This case proves what slice 2 can actually prove and no more:** each باب holds its
+own required `DefaultMarkup`, with no inheritance from a parent [Verified: 2026-09-10 @
+`src/Domain/MasterData/Bab.cs` -> `DefaultMarkup`] — nothing in this codebase reads a parent باب's
+markup for anything, because nothing reads a parent's markup at all. No BOQ-line mechanism is invented
+here to make the criterion pass early; the criterion's wording does not change, and the BOQ-line half
+is re-driven when `S-054` ships, the same as `AC-204-D`'s.
 
 **TC-2-040 · a markup change does not move any existing reference to it**
 `AC-204-D` · P1 · Api, real PostgreSQL · §4.4
@@ -572,14 +648,30 @@ Given an already-archived item, when it is archived again, then it is refused wi
 `errors.master.already_archived`, and no audit record is written for the refusal.
 *Fails if:* the second archive succeeds silently, or writes a record.
 
-**TC-2-062 · an archived item is absent from a new BOQ line's search**
-`AC-206-F` · P1 · Api · D-130 §3
-Given an archived item, when the catalogue search used by the BOQ builder's "add item" is called, then
-the archived item does not appear among the results.
-*Fails if:* the archived item still appears, with or without a warning badge.
+**TC-2-062 · the catalogue search's default excludes an archived item — re-scoped 2026-09-10 to what it actually proves (`V-35-O`)**
+`AC-206-A` (re-attributed from `AC-206-F` — see the held note below) · P1 · Api · D-130 §3
+Given an archived item, when the catalogue search is called with no explicit status filter, then the
+archived item does not appear among the results, and it does appear when `status=Archived` or
+`status=All` is passed explicitly.
+*Fails if:* the archived item appears in the unfiltered default result, or an unknown `status` value is
+silently defaulted rather than refused.
 **Positive control (D-116):** `TC-2-028`/`TC-2-036` show that same item, while active, **is** returned
-by the identical search — proving this case would notice an archived item that leaked through, rather
-than passing because the search never returns anything.
+by the identical search — proving this case would notice an archived item that leaked through the
+default, rather than passing because the search never returns anything.
+
+⛔ **`AC-206-F`'s own guarantee is held, outstanding to slice 4 (`V-35-O`).** What this case proves is
+`AC-206-A`'s guarantee — the list's **default** excludes archived items, and a caller who asks for
+`status=all` gets them back. That is not `AC-206-F`: *"an archived item is absent from a **new BOQ
+line's** search"* is a guarantee that the item cannot reach new work, and no BOQ line exists yet for
+anything to be kept off of, and no caller-identity distinguishes "the list screen wants the archive"
+from "a BOQ line wants to use an archived item." **A default the caller need not know to ask for is
+also a default the caller can override without knowing it matters** — that is the whole distance
+between resembling `AC-206-F` and discharging it. **Carried forward, in the words the Verifier left
+it in:** the BOQ builder must not be able to put an archived item on a new line — *enforced by the
+server, not by a picker default a caller can override with `status=all`* — and the mechanism is the
+Architect's, ruled at slice-4 refinement. No case is written here for `AC-206-F` itself; writing one
+against a search that cannot yet tell the two callers apart would be inventing the mechanism this file
+exists to avoid inventing.
 
 **TC-2-063 · a role without `CatalogueManage` archives nothing**
 `AC-206-G` · P1 · Api · §2 · D-129 §1
@@ -600,14 +692,20 @@ Given `S-017` and its archive control at 390px in Arabic, when they render, then
 archived badge and the filter are readable, and the page body does not scroll horizontally.
 *Fails if:* the body scrolls horizontally.
 
-**Coverage gap, not a hole in this file — un-archiving.** `Q66` (D-130 §4) rules that an archived
-catalogue item **can** be un-archived, and `MasterDataErrors.NotArchived` already exists as the shape
-of that refusal-when-not-archived [Verified: 2026-09-09 @
-`src/Domain/MasterData/MasterDataErrors.cs` -> `NotArchived`]. **No story owns building the endpoint** —
-`KAFF-206`'s own *Not in this story* section leaves the placement to the Scrum Master. No case is
-written here for un-archiving an item, because there is no story and no `AC-` to trace it to; writing
-one now would be inventing the criterion this file exists to avoid inventing. **NO STORY**, the
-`qa/slice-1` convention for "the ruling exists, the story does not."
+⛔ **Dated note, 2026-09-10 (D-133 §4) — cannot run on a seeded stack.** This case needs an existing,
+archived catalogue row to show the archived badge against. No endpoint creates a باب and none is
+seeded [Verified: 2026-09-10 @ `tests/Api.Tests/DatabaseSeedingTests.cs` ->
+`A_freshly_initialised_database_seeds_no_babs`], and a catalogue item cannot be created without a
+`BabId`, so a seeded stack holds no catalogue item to archive and no row for this case to render.
+**Not written as an E2E test until `KAFF-204` ships a باب create endpoint.** `scripts/seed-demo.ps1` is
+not the fix — seeding an invented باب is refused as data (`Q75`, D-130 §8).
+
+**Coverage gap closed 2026-09-10 — un-archiving.** `Q66` (D-130 §4) rules that an archived catalogue
+item **can** be un-archived. This section previously read "no story owns building the endpoint" and "no
+case is written here … because there is no story" — both true when `AC-206-F` above was written, and
+both stale now. **The endpoint shipped anyway** (`f675f1b`/`934bfb9`, `V-35-U`), the Scrum Master placed
+it as its own story (D-133 §1), and it is cased in full below, in its own section — `TC-2-099`…`TC-2-103`
+against `AC-214-A`…`AC-214-E`. See **`KAFF-214`**.
 
 ---
 
@@ -830,6 +928,67 @@ old and new status; and neither the refused archive of `TC-2-084` nor the refuse
 Given `S-021` and its archive control at 390px in Arabic, when they render, then direction is RTL, the
 archived badge and the refusal's item count are readable, and the count is bidi-isolated.
 *Fails if:* the numeral inside the Arabic refusal sentence renders unisolated or reordered.
+
+---
+
+# KAFF-214 · Un-archive a catalogue item — cased 2026-09-10, retrospective to shipped code (`V-35-U`)
+
+**Range extended.** This file's range was `TC-2-001` … `TC-2-098`; `KAFF-214` did not exist when that
+range was allocated (it is a retrospective story, cut from `V-35-U` after commits `f675f1b` and
+`934bfb9` shipped with no `AC-` id). **Extended today to `TC-2-001` … `TC-2-103`**, stated here and in
+the header above, per `qa/README.md`'s `TC-<slice>-<nnn>` scheme — no collision, since `099`…`103` were
+unused.
+
+**TC-2-099 · un-archiving returns every §4.1 field unchanged, not only status and code**
+`AC-214-A` · P1 · Api, real PostgreSQL · D-130 §4
+Given an archived catalogue item carrying a code, Arabic description, unit, باب, cost price and base
+sell rate, when it is un-archived, then its status is `Active`, and its code, description, unit, باب,
+cost price and base sell rate are each exactly what they were before archiving.
+*Fails if:* any one of those six §4.1 fields differs after un-archiving, or the assertion checks only
+`status` and `code` — the shipped test's own scope today, per `KAFF-214`'s own story: *"No test asserts
+the un-archived item's other §4.1 fields are unchanged — the existing round-trip test checks `Status`
+and `Code` only."*
+
+**TC-2-100 · un-archiving an item that is not archived is refused**
+`AC-214-B` · P1 · Api, real PostgreSQL · D-130 §4
+Given an active catalogue item, when it is un-archived, then it is refused with
+`errors.master.not_archived`, and its status does not change.
+*Fails if:* the refusal succeeds silently, or the item's status changes despite the refusal.
+
+**TC-2-101 · a role without `CatalogueManage` cannot unarchive, and neither can a portal client — executed, not asserted in a comment**
+`AC-214-C` · P1 · Api · §2 · D-129 §1 · D-130 §4
+Given an archived item, and a signed-in user of each role that does not hold `CatalogueManage`,
+**including a `Role.Client` portal session**, when each calls the un-archive endpoint directly, with no
+browser involved, then every call — the `Client` call **driven as an actual request against the
+endpoint**, not asserted in a code comment — is refused `403`, and the item's status does not change.
+*Fails if:* any of the refused roles succeeds, or the `Client` refusal is only asserted in a comment
+rather than executed — the `V-35-T` shape `KAFF-214`'s own story records: *"No test drives a portal
+`Role.Client` against this endpoint … exercises `Finance` only, not `Client`."*
+
+**TC-2-102 · un-archiving is audited before and after; a refusal writes nothing, scoped**
+`AC-214-D` · P1 · Api, real PostgreSQL · CLAUDE.md
+Given an archived item that is un-archived, when the audit trail is read, then a record names the
+actor, the time, and the old (`Archived`) and new (`Active`) status; and given the refused un-archive
+of `TC-2-100`, an `AuditRecords` count **scoped to that item's own `EntityId`**, taken before and after
+the refusal, is unchanged.
+*Fails if:* the refusal writes a record, the successful un-archive's record omits either status, or the
+refusal check is an unscoped global count that could hide a stray write to a different row — the
+`TC-2-064`/D-116 shape.
+
+**TC-2-103 · Arabic, RTL, at mobile width**
+`AC-214-E` · P3 · E2E · CLAUDE.md
+Given `S-017` and its un-archive control at 390px in Arabic, when it renders, then direction is RTL,
+the control's label is readable, no string is a literal in either language, and the page body does not
+scroll horizontally.
+*Fails if:* the body scrolls horizontally, or the control's label is a hardcoded literal.
+
+⛔ **Held, dated 2026-09-10 — cannot run on a seeded stack (D-133 §4).** The un-archive control renders
+only for a row whose status is not `Active`, and no endpoint creates a باب and none is seeded
+[Verified: 2026-09-10 @ `tests/Api.Tests/DatabaseSeedingTests.cs` ->
+`A_freshly_initialised_database_seeds_no_babs`], so a seeded stack holds no catalogue item — archived or
+otherwise — to carry the control this case renders. **Not run until `KAFF-204` ships a باب create
+endpoint and a stack can be seeded with at least one archived catalogue item.**
+`scripts/seed-demo.ps1` is not the fix — seeding an invented باب is refused as data (`Q75`, D-130 §8).
 
 ---
 
