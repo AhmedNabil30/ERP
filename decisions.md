@@ -11518,3 +11518,328 @@ Two agents died on session limits mid-pass.
   is an architecture decision, and it binds every money form in the batch. **It goes to the
   Architect, on the strongest model, before any Frontend money form is built.** So does `KAFF-200`'s
   Excel reader: no package in any csproj reads `.xlsx`, and adding one is a `decisions.md` entry.
+
+---
+
+### D-135 · Architect — money crosses the wire as a JSON string, in both directions, for every field · 2026-09-11
+
+Ruled on `V-36-I`, which D-134 routed here. **This record binds the API and the SPA. It does not
+change any rounding. D-008 is still open.**
+
+#### Decision
+
+**Every `decimal` the API sends or receives travels as a JSON string.** That covers `Money`,
+`Percentage` and any bare `decimal` member of a Request or Response: `"1234.5678"`, `"-12.5"`,
+`"0.150000"`. It applies to every feature, every direction and every response. There is one
+implementation: `KaffJson`'s converters, wired into the HTTP pipeline.
+
+* **What the server writes.** Always a string, `decimal.ToString(CultureInfo.InvariantCulture)`, with
+  the stored scale kept. A price read from `decimal(18,4)` goes out as `"1234.5000"`. Formatting for
+  display is the SPA's job.
+* **What the server reads.** It accepts a string that matches `^-?[0-9]+(\.[0-9]+)?$`, with at most
+  28 digits in all. It refuses whitespace, `+`, an exponent, hex, a thousands separator, `٫`, and any
+  digit outside ASCII. A refused value is a `400`. It also accepts a JSON number, read through
+  `Utf8JsonReader.GetDecimal`, which is exact from the token's text. There are two reasons to keep
+  accepting numbers. A .NET caller, the integration suite among them, serialises `decimal` exactly.
+  And audit snapshots written before today hold money as numbers. **The browser is held to strings by
+  its TypeScript types, not by the server.** The browser is the one client that has doubles.
+* **`Percentage` falls under the same rule, with no carve-out.** A باب's `defaultMarkup` is a
+  `decimal` on the wire today [Verified: 2026-09-11 @ `src/Api/Features/Babs/ListBabs/Response.cs` ->
+  `DefaultMarkup`]. It becomes a string like every other decimal. The 28-digit limit is the `decimal`
+  type's own precision. It is not a rounding policy.
+
+#### Why
+
+* **No setting makes a JSON number safe in a browser.** `JSON.parse` and `JSON.stringify` both go
+  through an IEEE-754 double. Text is the only lossless carrier between a .NET `decimal` and
+  JavaScript. The loss has been measured: `12345678901234.5678` was stored as `…4.5680`
+  (`VRF-FIXTURE-011`).
+* ⚠️ **Correction to `V-36-I`, and through it to the brief.** The re-pass wrote *"the fix needs no
+  server change."* That holds for requests only. **Responses are the other half, and they need the
+  server.** `ListCatalogueItems` writes `CostPrice` as a JSON number
+  [Verified: 2026-09-11 @ `src/Api/Features/Catalogue/ListCatalogueItems/Response.cs` -> `CostPrice`].
+  `HttpClient`'s `JSON.parse` makes it a double before any component sees it. The edit form then runs
+  [Verified: 2026-09-11 @ `src/Web/src/app/features/catalogue/catalogue-form/catalogue-form-page.ts`
+  -> `String(item.costPrice)`] on a value that was already rounded. So the "description-only edit
+  re-prices the item" defect that `V-36-I` found starts in the response. `toWireDecimal` is not its
+  source. Fixing only `toWireDecimal` would leave it standing.
+* **`KaffJson` was never wired into HTTP, and a string price is accepted today only by accident.**
+  `KaffJson` calls itself the single JSON configuration *"for audit before/after snapshots and for
+  API payloads"*. But the pipeline adds only `JsonStringEnumConverter` on top of the framework's Web
+  defaults [Verified: 2026-09-11 @ `src/Api/Program.cs` -> `ConfigureHttpJsonOptions`]. The Web
+  defaults allow reading numbers from strings, and that alone is why `"12.5"` was stored exactly
+  (`VRF-FIXTURE-010`). It is behaviour nobody chose, and it enforces no grammar.
+* **Rejected: a global `NumberHandling.WriteAsString`.** It would turn every integer into a string
+  too, including `teamSize` and ProblemDetails' `status`. That is a system-wide shape change for fields
+  nobody asked about.
+* **Rejected: `[JsonNumberHandling]` on each property.** The next money field would forget it. EF
+  precision had the same problem, and it was solved by a convention in `ConfigureConventions` rather
+  than by care. A converter per type is the same move here.
+* **Rejected: reading strings only.** It would churn every Api.Tests request body and refuse
+  replays of historical audit rows. TypeScript already closes the browser's path, so it adds nothing.
+
+#### Audit snapshots are wire too
+
+The interceptor serialises each changed value through `KaffJson`
+[Verified: 2026-09-11 @ `src/Infrastructure/Persistence/Interceptors/AuditSaveChangesInterceptor.cs`
+-> `KaffJson.Options`]. `MoneyJsonConverter` writes a JSON number
+[Verified: 2026-09-11 @ `src/Domain/Common/Serialization/KaffJson.cs` -> `MoneyJsonConverter`]. The
+audit endpoint returns before and after as parsed JSON
+[Verified: 2026-09-11 @ `src/Api/Features/Audit/ReadAuditTrail/Response.cs` -> `JsonNode`]. So today
+a catalogue price in the audit trail reaches the browser through a double as well. **Under this
+ruling, new audit rows store money as strings.** Rows already written are never rewritten, because
+audit is append-only. Their `jsonb` number is exact in the database, and only their rendering in the
+browser loses digits beyond about 15 significant. That limit is stated here and not fixed.
+
+#### Consequences for existing code
+
+* `src/Domain/Common/Serialization/KaffJson.cs`: `MoneyJsonConverter` and `PercentageJsonConverter`
+  write strings and read a string or a number. Add a `JsonConverter<decimal>` under the same rules and
+  register it there. System.Text.Json derives the nullable `decimal?` case on its own.
+* **One grammar, one function**, used by all three converters and by D-136's import:
+  `src/Domain/Common/DecimalText.cs`, with `TryParse(string, out decimal)`. It applies the regex above
+  and then `decimal.TryParse` with `NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint`
+  and the invariant culture.
+* `src/Api/Program.cs`, in the `ConfigureHttpJsonOptions` block: stop adding the lone
+  `JsonStringEnumConverter`. Add every converter in `KaffJson.Options.Converters` instead. **Copy the
+  converters, not the options object**, which is frozen. The enum converter is among them, so enum
+  behaviour is unchanged. `PhoneNumber` is also in the list, but no API DTO carries that type today,
+  so no phone field changes shape.
+* **Request and Response records do not change.** Bare `decimal` members keep compiling and become
+  strings on the wire. The doc comment
+  [Verified: 2026-09-11 @ `src/Api/Features/Catalogue/CreateCatalogueItem/Request.cs` -> `KaffJson.Options`]
+  says the pipeline has no Money converter. That becomes false and gets corrected.
+* **Six test files read money off a raw `JsonElement` with `GetDecimal()`.** `GetDecimal()` throws on
+  a string token. The files are `tests/Api.Tests/` `CreateCatalogueItemTests.cs`,
+  `EditCatalogueItemTests.cs`, `ListCatalogueItemsTests.cs`, `ArchiveCatalogueItemTests.cs`,
+  `UnarchiveCatalogueItemTests.cs` and `ListBabsTests.cs`. Each should read through
+  `decimal.Parse(e.GetString()!, CultureInfo.InvariantCulture)` or deserialise the Response record.
+  Request bodies that post numbers keep working. Any audit-snapshot test that asserts a numeric money
+  token will fail. Running the suite finds those, and they have not been grepped.
+* **Screens already shipped.** The client, user and audit screens carry **no money field of their
+  own**. Only the catalogue and باب Responses carry a `decimal` today. The audit screen renders
+  snapshot values it does not type, and Frontend checks that a quoted money value displays sensibly.
+  The catalogue list, the catalogue form and the باب API type change. They are listed below.
+
+#### What Backend builds
+
+1. `DecimalText.TryParse` in `src/Domain/Common/`. Its Domain.Tests cover the grammar's accepted and
+   refused inputs, and include `"12345678901234.5678"`, which must round-trip exactly.
+2. The three converters in `KaffJson.cs`, which write a string and read a string or a number.
+3. The one-block change in `Program.cs`.
+4. The six test files above, plus one Api.Tests test that posts
+   `{"costPrice":"12345678901234.5678", ...}` and reads the same string back from
+   `GET /api/catalogue-items`. That test is `V-36-I`'s regression, end to end.
+
+#### What Frontend builds
+
+1. `src/Web/src/app/core/catalogue/money-wire.ts`: `toWireDecimal(raw: string): string`. It trims the
+   input, checks it against the same regex (exported from that file), and returns the text unchanged
+   [Verified: 2026-09-11 @ `src/Web/src/app/core/catalogue/money-wire.ts` -> `toWireDecimal`]. The
+   form's validator uses that regex and refuses anything else under a price-specific message key, not
+   the generic *unexpected error*. **That also closes `V-36-K`'s hex and exponent half.**
+2. `src/Web/src/app/core/catalogue/catalogue.api.ts`: `costPrice` and `baseSellRate` become `string`
+   on `CatalogueItem`, `CatalogueItemCreate` and `CatalogueItemEdit`
+   [Verified: 2026-09-11 @ `src/Web/src/app/core/catalogue/catalogue.api.ts` -> `CatalogueItem`].
+   `src/Web/src/app/core/catalogue/babs.api.ts`: `defaultMarkup` becomes `string`
+   [Verified: 2026-09-11 @ `src/Web/src/app/core/catalogue/babs.api.ts` -> `defaultMarkup`]. **The
+   type is the guard**, because a `Number(...)` result cannot be assigned to a `string` field.
+3. `catalogue-form-page.ts`: the load path takes the string as it arrives. No `String(...)`.
+4. `src/Web/src/app/core/i18n/i18n.service.ts`: `formatMoney` takes a `string`, and `formatNumber`
+   takes `number | string`. Both pass the value straight to `Intl.NumberFormat.prototype.format`
+   [Verified: 2026-09-11 @ `src/Web/src/app/core/i18n/i18n.service.ts` -> `formatMoney`]. Under
+   Intl.NumberFormat v3 (ES2023), `format` treats a decimal string as an exact decimal and never makes
+   a double. `src/Web/tsconfig.json` has lib `ES2022`
+   [Verified: 2026-09-11 @ `src/Web/tsconfig.json` -> `"lib"`], so add the lib entry that types the
+   string overload (`ES2023.Intl`, or whatever TS 6 names it). The compiler confirms it. The two-decimal
+   display rule (D-044) is unchanged.
+5. **The SPA does no arithmetic on money.** No `Number()`, no `parseFloat`, no unary `+`, no sums. A
+   screen that needs a total gets it from the server.
+
+#### What this does not decide
+
+* ⛔ **Rounding above four decimals: D-008, `AC-200-B`, `V-35-Q`, open for Nabil.** `"1.23456"` now
+  reaches the server intact. What `Money`'s constructor then does with it is unchanged
+  [Verified: 2026-09-11 @ `src/Domain/Common/Money.cs` -> `Rounding`], and it is still Nabil's call.
+* **Which digit systems a price field accepts.** That is `V-36-K`'s second half, and it belongs to UX.
+  The wire grammar is ASCII. If UX rules that `٠`–`٩` and `٫` are accepted, the input converts them
+  text to text before validating, never through `Number`.
+* **Query-string and route decimals.** None exist today. When one appears it binds through
+  minimal-API `TryParse`, not JSON, and gets ruled then.
+* **The OpenAPI document**, which is Development-only, still describes `decimal` as `number`. That is
+  not fixed here. A schema transformer gets added if a generated client ever consumes it.
+
+---
+
+### D-136 · Architect — `KAFF-200` reads the template by hand through `System.IO.Compression` and `System.Xml`, with no new package · 2026-09-11
+
+D-134 routed this here. **No dependency is added, so no package entry is owed.**
+
+#### Decision
+
+**The `.xlsx` is read by hand.** `ZipArchive` opens it and a streaming `XmlReader` walks the first
+worksheet. **The API also produces the template, from the same column list it validates against.**
+The file we read back is therefore a file we wrote, which is the whole point of D-129 §2.
+
+**It is Excel, not CSV.** `KAFF-200`'s title and rule 1 say *"Excel"*, cite `spec.md` §4.1, and use
+*"loaded from Excel at setup"*. D-129 §2 says *"a standardized, downloadable template"* and leaves no
+opening for CSV. The brief made CSV conditional on one of those leaving it open, and neither does.
+
+#### Why no package
+
+* **D-129 §2 took away the problem xlsx libraries exist to solve.** *"Instead of guessing arbitrary
+  external spreadsheets, we will provide a standardized … template."* Arbitrary workbooks, styles,
+  dates, merged cells and formula evaluation are all out of scope by that ruling. What is left is one
+  sheet: a header row plus data rows of text and numbers.
+* **The main convenience a library offers is the accessor `KAFF-200` rule 4 forbids.** ClosedXML (MIT)
+  returns a numeric cell through `XLCellValue.GetNumber()`, and ExcelDataReader (MIT) returns it as a
+  boxed value. Both are `double`. ClosedXML's formatted-text accessor applies the cell's number format,
+  so a price column formatted to two decimals reads `1234.57`. Both paths fail `AC-200-B`. Using either
+  library safely means dropping to the cell's raw `<v>` text, which is what the hand-parse reads in
+  the first place.
+* **DocumentFormat.OpenXml** (MIT, Microsoft's Open XML SDK) gives typed parts but no cell-value
+  semantics. The shared-string lookup, the dispatch on cell type and the `double` trap would all
+  still be ours. It saves about thirty lines of zip and relationship plumbing, and costs a multi-MB
+  dependency. **EPPlus** is ruled out by its licence: Polyform Noncommercial since v5.
+* **`CLAUDE.md`: *"Do not add a package that duplicates something the framework already does."*** An
+  `.xlsx` file is a zip of XML, and the framework reads zip and XML. None of the three csproj files
+  references a spreadsheet package today, and none needs one.
+
+#### What the hand-parse costs, and exactly what it reads
+
+About 150–200 lines, plus tests. The parts it reads, in order:
+
+1. `xl/workbook.xml`: the first `<sheet>` and its relationship id.
+2. `xl/_rels/workbook.xml.rels`: that id's target, the worksheet's path.
+3. `xl/sharedStrings.xml`, if present: each `<si>` is the concatenation of all its `<t>` descendants.
+   That also covers rich-text runs (`<r><t>`).
+4. The worksheet itself: `<row r="…">`, then `<c r="…" t="…">` with `<v>` or `<is><t>`. The cell types
+   are `s` (a shared-string index), `inlineStr`, `str` (a formula's string), `n` or no `t` at all
+   (numeric), `b` (boolean) and `e` (error). **A formula cell's cached `<v>` is what gets read.** A
+   formula with no cached value counts as a missing cell.
+
+**Elements and attributes are matched by local name**, which lets a file saved as *"Strict Open XML"*
+(which uses another namespace) read the same way. **The worksheet is streamed, never loaded as a
+DOM.** If a cell has no `r` attribute, which the format allows and Excel never produces, its position
+is taken from its order.
+
+**How numbers are read, per `KAFF-200` rule 4 and D-135.**
+
+* **A numeric cell** is read from its `<v>` text with
+  `decimal.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture)`. `Float` is required
+  because Excel writes `1E-4` and `1.5E+15` there. No `double` is involved at any point.
+* **A text cell in a money column** goes through D-135's `DecimalText.TryParse`: the same grammar as
+  the wire, ASCII only, no exponent. If UX later accepts Arabic-Indic digits (`V-36-K`), it accepts
+  them here too, through the same function.
+
+#### Where it breaks
+
+These are **file-level refusals.** Each one is a single error, and nothing is written.
+
+* **`.xls`**, which is binary BIFF, and **`.xlsb`**. Either one is not a zip, or has no
+  `xl/workbook.xml`. The refusal says the file is not the template.
+* **A header row that differs from the template's**, with a column extra or missing. This is
+  `AC-200-I`, and the refusal names what the template requires and what the file carried.
+* **No data rows at all.**
+* **Above the technical ceilings:** a 10 MB upload, 100 MB of uncompressed parts read, or 10,000 data
+  rows. These are guards against a zip bomb, not business limits. Kaff's catalogue is several hundred
+  rows. Backend may move a ceiling if it states why.
+* **XML the reader cannot parse.** It is caught at the reader's boundary and returned as *"not the
+  template"*, never as a `500`. `XmlReader.Create` already prohibits DTDs by default, which closes XXE.
+  That default stays.
+
+**Excel's own `double` is outside any reader's reach.** Excel stores a typed number as a double, so
+a price beyond 15 significant digits was already lost when it was typed into the sheet, before we
+ever see the file. No parser recovers it. At Kaff's magnitudes it never arises.
+
+#### Failures reported per row, never thrown
+
+Every refused row is reported with **the sheet's own row number** (the `r` Excel shows the user, not
+an index), **the column's header**, and **a message key** in `errors.master.*`, following D-128 §1.
+A refused row stops no other row, under `KAFF-200` rule 7 and D-130 §1.
+
+| Failure | When |
+|---|---|
+| **Missing cell** | A required column is empty, or a formula has no cached value |
+| **Bad number** | A cost or sell cell that is text failing the grammar, a boolean, or an error cell (`#VALUE!`) |
+| **Unknown باب** | The row names no باب that exists. **No باب is created** (`AC-200-C`) |
+| **Code repeated in the file** | The later occurrences are refused and the first imports. This is derived from `AC-200-H`'s arithmetic, 200 rows with one repeat giving 199 items |
+| **Code already in the catalogue** | The row is refused with the existing `errors.master.catalogue_item_code_taken`. Updating an existing item belongs to `KAFF-201` |
+| **Anything the domain factory refuses** | Its own key. The entity's guards are not re-implemented in the slice |
+
+**A row with every template cell empty is skipped, not reported.** Excel keeps `<row>` elements for
+formatted blank rows, and none of those rows is one the user entered.
+
+#### Where it lives
+
+Under the vertical-slice rule, it all goes in
+`src/Api/Features/Catalogue/ImportCatalogue/`:
+
+* `Endpoint.cs` maps `POST /api/catalogue-items/import` (multipart, one file) and
+  `GET /api/catalogue-items/import-template`. The template is part of S-019's feature, not a separate
+  one. Both endpoints are `CatalogueManage`, `CompanyWide`.
+* `Handler.cs`, and `Response.cs`, which carries the created count and the row report.
+* `XlsxSheetReader.cs` is format plumbing only. It turns a stream into rows of `(rowNumber, column →
+  text + cell kind)` and holds no Kaff rule.
+* `CatalogueTemplate.cs` is **the one column list**. The header check (`AC-200-I`) reads it, and so
+  does `XlsxTemplateWriter`, which writes the downloadable file with `ZipArchive`, about sixty lines.
+  **A checked-in static `.xlsx` was rejected** because it would be a second copy of the column list,
+  and `AC-200-I` requires the two to agree.
+
+**`KAFF-201` is the second consumer.** When it is built, the reader and the column list move where
+`CLAUDE.md` sends shared code: the reader to `src/Api/Common/`, beside `Validation/`, and the column
+list to `src/Domain/MasterData/`. They move then, not before.
+
+⚠️ **Antiforgery.** A minimal-API endpoint that binds `IFormFile` gets antiforgery metadata, and the
+pipeline has no `UseAntiforgery` [Verified: 2026-09-11 @ `src/Api/Program.cs` -> `SameSite=Strict`].
+The import endpoint therefore calls `.DisableAntiforgery()`, with a comment citing D-050: the cookie is
+`SameSite=Strict`, and that is the CSRF control. This is framework behaviour and has not been
+verified in this repository. Backend's first upload test confirms it.
+
+#### Consequences for existing code
+
+**None.** No csproj changes. The only shared code this touches is D-135's `DecimalText`.
+
+#### What Backend builds
+
+The slice folder above. The reader has its own tests for each of the following:
+
+* a shared-string cell and an inline-string cell;
+* a numeric `<v>` in exponent form;
+* a formula cell with a cached value and one without;
+* a rich-text shared string;
+* a Strict-namespace file;
+* a `.xls` refused at file level;
+* a rows-above-the-ceiling refusal.
+
+Beyond the reader, it covers `AC-200-A` to `AC-200-I` as the story states them, and one fixture file
+per per-row failure in the table.
+
+#### What Frontend builds
+
+S-019: the download link, then the file picker, then the report. The report is a table of row number,
+column and translated reason, plus the created count. **Nothing parses the file in the browser.** The
+upload goes up as-is.
+
+#### What this does not decide, and the questions it raises
+
+* ⛔ **`AC-200-B` and D-008, the rounding above four decimals, stay open for Nabil, and this record
+  makes them more urgent.** Any sheet that computes a price with a formula (a sell rate as
+  `=cost*1.15`, say) stores the double's round-trip text, such as `1149.9999999999998`. **A
+  formula-derived price reaches the server with thirteen decimals in the ordinary case, not as an
+  edge case.** The import passes it through `Money` unchanged, as D-134 requires. The answer decides
+  whether that row imports as `1150.0000` or is refused.
+* **Question for Nabil (or the BA, via `spec.md`): one description column or two?** §4.1 names one
+  `description`. The entity and the wire carry `descriptionAr` and an optional `descriptionEn`
+  [Verified: 2026-09-11 @ `src/Web/src/app/core/catalogue/catalogue.api.ts` -> `descriptionEn`].
+  D-129 §2 forbids a superset of §4.1, so the template cannot add `descriptionEn` on its own authority.
+* **Question for Nabil: how does a row name its باب?** By the باب's code, or by its Arabic name?
+  Under a tree, two أبواب can share a name under different parents. Neither D-129 §2 nor `KAFF-200`
+  says, and the answer is a column in the template.
+* **Question for Nabil: what does the `status` column do?** `AC-200-I` requires it, and the story's
+  own question 2 says the import sets `Active` and never any other value. A row whose status reads
+  `Archived` could import as archived, be refused, or have the cell ignored. **Nothing here chooses.**
+* **The header labels' language and wording** are UX's, not a business question. They live only in
+  `CatalogueTemplate.cs`.
+* **Audit granularity, one record per import or one per row** (`KAFF-200` question 1), is also the
+  Architect's. It was not in this brief and is **not ruled here.**
