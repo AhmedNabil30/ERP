@@ -1,6 +1,9 @@
 # Slice 2 — test cases
 
-**Range allocated: `TC-2-001` … `TC-2-098`, plus `TC-2-000` as the non-case format template.**
+**Range allocated: `TC-2-001` … `TC-2-153`, plus `TC-2-000` as the non-case format template.**
+⛔ **Extended again, 2026-09-12 — `TC-2-104` … `TC-2-153`, for `AC-204-K` and for `KAFF-209`/`210`/`211`/`212`,
+whose blocking questions (`Q29`, `Q70`–`Q73`) are now ruled — D-139, D-140, D-141, D-145 §1, D-146,
+D-147. `093`…`098` stays an unused gap inside the old range, unrelated to this extension.**
 Checked against `qa/slice-1/test-cases.md` before writing a single case: slice 1's identifiers run
 `TC-1-000` … `TC-1-306` [Verified: 2026-09-09 @ `qa/slice-1/test-cases.md` -> `TC-1-306`, the highest
 id in that file]. `qa/README.md`'s own ID scheme is `TC-<slice>-<nnn>` — the slice number is part of
@@ -16,9 +19,10 @@ range above was allocated — it is the retrospective story `D-133 §1` cut from
 this file and in `qa/slice-1/test-cases.md`'s own range, so no collision.
 
 Covers the nine stories named Ready-but-for-QA in this brief — `KAFF-200`, `201`, `202`, `203`, `205`,
-`206`, `207`, `208`, `213` — plus `KAFF-204`, whose *behaviour* is cased here and whose *data* is not —
-plus **`KAFF-214`**, added 2026-09-10. `KAFF-209`, `210`, `211`, `212` get a held-open note each, no
-`TC-` ids, per the brief: a case written against an unruled question would be worse than none.
+`206`, `207`, `208`, `213` — plus `KAFF-204`, cased in full including its data (`AC-204-K`, D-145 §1) —
+plus **`KAFF-214`**, added 2026-09-10 — plus, added 2026-09-12 now that `Q29`/`Q70`–`Q73` are ruled,
+**`KAFF-209`, `210`, `211`, `212`** in full. Two criteria stay HELD with a `Q`-id rather than cased:
+`AC-208-B` (`Q80`, narrowed to active records) and `AC-211-O` (no `S`-number yet for Finance's screen).
 
 ## How to read a case
 
@@ -45,17 +49,29 @@ the scenario is stated, nothing is asserted, and it is not a passing case.
 | KAFF-201 re-import is not a sync | TC-2-011…016 | — |
 | KAFF-202 create/edit an item | TC-2-017…027 | `TC-2-022`/`023` (`AC-202-E`/`F`) held to slice 4 — no BOQ/estimate entity exists (`V-35-N`, 2026-09-10) |
 | KAFF-203 find an item | TC-2-028…036 | `TC-2-036` rewritten 2026-09-10 so باب-order and code-order predict different sequences (`V-35-R`) — not held, just no longer confounded. `TC-2-035` (`AC-203-H`, E2E) cannot run on a seeded stack — no rows (D-133 §4) |
-| KAFF-204 باب tree + markup | TC-2-037…046 | data (Kaff's real trades/rates) — `Q75`. `TC-2-039`'s (`AC-204-C`) BOQ-line half also held to slice 4, the `TC-2-040` shape (`V-35-N`, 2026-09-10) |
+| KAFF-204 باب tree + markup | TC-2-037…046, **104** | data (Kaff's real trades/rates) — was `Q75`, ✅ **now cased, `TC-2-104`, D-145 §1.** `TC-2-039`'s (`AC-204-C`) BOQ-line half also held to slice 4, the `TC-2-040` shape (`V-35-N`, 2026-09-10) |
 | KAFF-205 re-parent / move item | TC-2-047…056 | `TC-2-051`/`052` (`AC-205-E`/`F`) held to slice 4 — no BOQ/estimate entity exists (`V-35-N`, 2026-09-11) |
 | KAFF-206 archive an item | TC-2-057…065 | `TC-2-059`/`060` (`AC-206-C`/`D`) held to slice 4. `TC-2-062` re-scoped 2026-09-10 to `AC-206-A`; `AC-206-F`'s own guarantee held to slice 4, mechanism the Architect's (`V-35-O`). `TC-2-065` (`AC-206-I`, E2E) cannot run on a seeded stack — no rows (D-133 §4). Un-archive → **`KAFF-214`** |
-| KAFF-207 employee register | TC-2-066…075 | — |
-| KAFF-208 nobody in both populations | TC-2-076…082 | `AC-208-C` — no edit endpoint exists to call |
+| KAFF-207 employee register | TC-2-066…075 | `TC-2-068` **retired and rewritten 2026-09-12** (`V-37-E`): `CreateEmployee.Request` carries no `Code` member, so the old typed-duplicate scenario cannot execute — recast around the generated code's uniqueness |
+| KAFF-208 nobody in both populations | TC-2-076…082 | `AC-208-C` — no edit endpoint exists to call. `TC-2-077` (`AC-208-B`) **now HELD**, narrowed to an active-record cross-population match (`Q80`, D-146 §4(b)). `TC-2-080` (`AC-208-E`) **rewritten** — released by D-146 §4(a), warn-and-acknowledge |
 | KAFF-213 archive a باب | TC-2-083…092 | — |
 | **KAFF-214 unarchive an item** | **TC-2-099…103** | **new, 2026-09-10.** `TC-2-103` (`AC-214-E`, E2E) held — no seeded باب until `KAFF-204` ships (D-133 §4) |
-| KAFF-209 register a worker from site | none | `Q70`, `Q71` — no ruled actor, no ruled dedup rule |
-| KAFF-210 worker engagement history | none | `Q72` — the unit and scale are undefined |
-| KAFF-211 subcontractor master | none | `Q29`, `Q73`, `Q70` |
-| KAFF-212 supplier master | none | `Q29`, `Q70` |
+| **KAFF-209 register a worker from site** | **TC-2-105…115** | **new, 2026-09-12** — `Q70`/`Q71` ruled (D-139 §§1–2, D-140, D-141) |
+| **KAFF-210 worker engagement history** | **TC-2-116…126** | **new, 2026-09-12** — `Q72` ruled (D-139 §3, D-140). Rating's finer shape (`Q78`) and Site Engineer day-rate visibility (`Q76`) stay open but block no criterion here |
+| **KAFF-211 subcontractor master** | **TC-2-127…141** | **new, 2026-09-12** — `Q29`/`Q73`/`Q70` ruled (D-139 §§1, 4–5, D-141, D-147). `TC-2-141` (`AC-211-O`) **HELD** — UX owes an `S`-number for Finance's tax-registration screen |
+| **KAFF-212 supplier master** | **TC-2-142…153** | **new, 2026-09-12** — `Q29`/`Q70`/`Q13` ruled (D-139 §§1, 5–6, D-141) |
+
+**Recounted 2026-09-12, after this pass's additions.** Before this pass: 93 live, 10 not-live, 103
+written (2026-09-11 count, unchanged reasoning below). **This pass adds 51 new cases**, `TC-2-104`
+through `TC-2-153`: `TC-2-104` (live, `AC-204-K`) plus the full `KAFF-209`/`210`/`211`/`212` sets
+(`TC-2-105`…`153`, 50 cases). Of those 50, **49 are live** and **1 is not** — `TC-2-141` (`AC-211-O`),
+HELD because UX has not named an `S`-number for Finance's tax-registration screen. **This pass also
+moves one existing case from live to held**: `TC-2-077` (`AC-208-B`) is now explicitly HELD, narrowed
+to the active-record cross-population phone match (`Q80`, D-146 §4(b)) — it was counted live in the
+2026-09-11 recount below because the cross-population case had not yet been split into an archived
+half (ruled) and an active half (still open). **Running total: 154 cases written (`TC-2-001`…`153`,
+minus the pre-existing unused `093`…`098` gap = 148 defined), of which 93 − 1 + 50 = 142 are live and
+10 + 1 + 1 = 12 are not.**
 
 **93 live cases, recounted 2026-09-11 — subtracting 2 newly held for KAFF-205.** `TC-2-001`
 … `TC-2-103` is **103** cases written. **10 cannot be run and are not live**, per this file's own
@@ -81,6 +97,8 @@ before any negative case was written, not assumed from a story's prose
 | `CatalogueManage`, `BabManage`, `SubcontractorManage` | Owner, TechnicalOffice | Finance, SiteEngineer, HeadOfDesign, MarketingSales, Client, Subcontractor, Hr |
 | `EmployeeManage` | Owner, Hr | Finance, TechnicalOffice, SiteEngineer, HeadOfDesign, MarketingSales, Client, Subcontractor |
 | `SupplierManage` | Owner, Finance | TechnicalOffice, SiteEngineer, HeadOfDesign, MarketingSales, Client, Subcontractor, Hr |
+| `DayLabourSiteManage` (D-140), `ProjectScoped` | Owner, and any Site Engineer **assigned to the route's project** | Finance, TechnicalOffice, HeadOfDesign, MarketingSales, Client, Subcontractor, Hr, and an **unassigned** Site Engineer |
+| `SubcontractorTaxRegistrationEdit` (D-147), `CompanyWide` | Owner, Finance | TechnicalOffice (including a holder of `SubcontractorManage`), SiteEngineer, HeadOfDesign, MarketingSales, Client, Subcontractor, Hr |
 
 **`Q12` (D-129 §1) is why every "who may" case below reads Owner as a holder, not an exception.** The
 Owner cases assert access; every refusal case belongs to the other roles named in the table above.
@@ -89,29 +107,29 @@ Owner cases assert access; every refusal case belongs to the other roles named i
 
 # KAFF-200 · Import the catalogue from Excel — masters ready for QA
 
-**TC-2-001 · a clean file becomes a catalogue**
-`AC-200-A` · P1 · Api, real PostgreSQL · §4.1
-Given a spreadsheet of N valid rows in the template's shape, with every row's باب already present, and
-the caller in turn the Technical Office and separately the Owner (`Q12`, D-129 §1), when each imports
-it, then N catalogue items exist, each carrying the code, description, unit, باب, cost price and base
-sell rate its row named.
-*Fails if:* fewer or more than N items result, or a field is copied from the wrong column.
+**TC-2-001 · a clean file becomes a catalogue, both descriptions and Active — rewritten 2026-09-12 against D-136/D-144 §§3–5**
+`AC-200-A` · P1 · Api, real PostgreSQL · §4.1 · D-144 §§3–5
+Given a spreadsheet of N valid rows in the template's shape — columns `code, descriptionAr,
+descriptionEn, unit, bab (by Code), costPrice, baseSellRate`, no `status` column — with every row's باب
+already present by Code, and the caller in turn the Technical Office and separately the Owner (`Q12`,
+D-129 §1), when each imports it, then N catalogue items exist, each carrying the code, **Arabic
+description, English description**, unit, باب resolved by its Code, cost price and base sell rate, and
+each is `Active`.
+*Fails if:* fewer or more than N items result, either description is missing or copied into the wrong
+language field, the باب is resolved by name instead of Code, or any item's status is anything other
+than `Active`.
 
-**TC-2-002 · a rate keeps its fourth decimal on import**
-`AC-200-B` · P1 · Domain + Api, real PostgreSQL · CLAUDE.md · §4.1
+**TC-2-002 · a rate keeps its fourth decimal on import, and a longer one is stored through `Money`, not refused — rewritten 2026-09-12 against D-144 §6**
+`AC-200-B` · P1 · Domain + Api, real PostgreSQL · CLAUDE.md · §4.1 · D-144 §6
 Given a row whose base sell rate is `1234.5678` and whose cost price is `987.6543`, when the file is
 imported and the two values are read back, then they are exactly `1234.5678` and `987.6543`, and
 neither value has passed through a `float` or a `double` between the cell and the database.
-*Fails if:* either value differs in the fourth decimal, or the reader's double accessor is used at any
-point in the parse path.
-
-⚠️ **Finding — `AC-200-B`'s second sentence cannot be executed as written.** *"The same holds for a rate
-with more than four decimals … refused or rounded by a stated rule, never silently truncated"* names
-two legal behaviours and **no rule saying which**. Nothing in `spec.md`, `decisions.md`, or `KAFF-200`
-states whether a five-decimal cell is refused or rounded, or (if rounded) by what method. This case
-therefore asserts only the exact round-trip at four decimals; the "more than four decimals" half is
-**not cased** and is reported here as a criterion needing a ruling, the `AC-125-C` shape — not silently
-dropped, not guessed.
+And given a second row whose base sell rate carries five decimals in the sheet, when it is imported,
+then the import is **not refused** for that reason, and the stored value is the rate rounded to four
+decimals through `Money`, the same as any other caller — no import-specific refusal rule exists.
+*Fails if:* either four-decimal value differs in the fourth decimal, the reader's double accessor is
+used at any point in the parse path, or the five-decimal row is refused instead of stored at four
+decimals.
 
 **TC-2-003 · an unknown باب is not invented**
 `AC-200-C` · P1 · Api, real PostgreSQL · §2 · §4.1 · D-129 §2
@@ -159,15 +177,17 @@ reason it was refused, and the catalogue afterward holds exactly 199 items.
 *Fails if:* the whole file is refused because of the one bad row (all-or-nothing, the behaviour `Q61`
 overturned), or the bad row's item is created anyway, or the report is silent on which row failed.
 
-**TC-2-009 · the file's shape must be the template's shape**
-`AC-200-I` · P2 · Api · D-129 §2
-Given a file whose columns are `code, description, unit, bab, costPrice, baseSellRate, status` (the
-template) tried once as-is, once with an extra column, and once with a column missing, when each is
-imported, then the first is accepted and the other two are refused, each refusal naming what the
-template requires and what the file carried instead; and the template download is reachable from
-`S-019` before a file is ever chosen.
-*Fails if:* a file with an extra or a missing column is silently accepted, mapping columns by position
-rather than by name.
+**TC-2-009 · the file's shape must be the template's shape — rewritten 2026-09-12 against D-144 §§3–5, two description columns, no `status`**
+`AC-200-I` · P2 · Api · D-129 §2 · D-144 §§3–5
+Given a file whose columns are `code, descriptionAr, descriptionEn, unit, bab, costPrice, baseSellRate`
+(the template — **no `status` column, and two description columns, not one**) tried once as-is, once
+with an extra column, once with a column missing, and once with a single `description` column standing
+in for the two, when each is imported, then the first is accepted and the other three are refused, each
+refusal naming what the template requires and what the file carried instead; and the template download
+is reachable from `S-019` before a file is ever chosen.
+*Fails if:* a file with an extra or a missing column is silently accepted, a single-description file is
+accepted by guessing a language, a `status` column is accepted and its values honoured, or columns are
+mapped by position rather than by name.
 
 **TC-2-010 · a bad row's fix goes in on the next import** *(cross-story: KAFF-200 + KAFF-201)*
 `AC-200-H`, `AC-201-F` · P1 · Api, real PostgreSQL · D-129 §3, §4 · D-130 §1
@@ -730,11 +750,23 @@ raw SQL that bypasses the entity entirely, the database's check constraint refus
 *Fails if:* either path accepts a day-labour row with no باب — the entity guard alone is not this
 rule's enforcement; `spec.md`'s requirement is checked at the table, per `qa/strategy.md` §3.
 
-**TC-2-068 · two people cannot share an employee code**
-`AC-207-C` · P1 · Api, real PostgreSQL · slice 0
-Given an employee with code `E-100`, when a second is submitted with `E-100`, again with `e-100`, and
-again as two requests arriving simultaneously with `E-100`, then all three are refused.
-*Fails if:* a concurrent pair both succeed.
+**TC-2-068 · the employee code is generated, unique, and a submitted code is ignored — retired and rewritten 2026-09-12 against `V-37-E`**
+`AC-207-C` · P1 · Api, real PostgreSQL · D-130 §6
+⛔ **Retired.** The case as it stood — *"a second is submitted with `E-100`, again with `e-100`"* —
+described typing a duplicate code. `CreateEmployee.Request` carries no `Code` member
+[Verified: 2026-09-12 @ `src/Domain/MasterData/Employee.cs` -> `Create`], so a code cannot be submitted
+at all, and the old scenario cannot be executed. `V-37-E` found this stale during batch verification and
+confirmed a body carrying `"code":"E-100"` is answered `201` with a server-generated code, the submitted
+value ignored.
+Given two create requests sent at the same instant, when both are handled, then each employee is given
+a distinct, system-generated code — the same generated shape as `KAFF-119`'s client code (D-130 §6) —
+and the guarantee that the two never collide is the database's unique index on the generated value, not
+a read-then-write in the handler.
+And given a create request whose body carries a `code` property regardless, when it is submitted, then
+the property is ignored and the response's code is the one the server generated.
+*Fails if:* two concurrent creates receive the same code, or a submitted `code` property reaches the
+stored value. **Backend still owes one test that the index itself refuses a duplicate code inserted
+below the API** — `V-37-E`'s own finding — which this case's first paragraph does not substitute for.
 
 **TC-2-069 · one person, one record — the mechanism is named**
 `AC-207-D` · P1 · Api, real PostgreSQL · §2
@@ -803,14 +835,22 @@ carries exactly one `Kind`, that kind is a defined enum member — not the zero 
 binder produced — and no record carries both or neither.
 *Fails if:* any record's `Kind` is the enum's default/zero value rather than an explicitly set member.
 
-**TC-2-077 · one person cannot be created into both populations**
-`AC-208-B` · P1 · Api, real PostgreSQL · §10
-Given a registered day labourer, when the same person (same normalised phone) is submitted again as
-salaried staff, then the second create is refused, and the refusal is traced to the unique index on
-the normalised phone.
-*Fails if:* the second create succeeds. **Same `Q70` caveat as `TC-2-069`**: this mechanism may not
-survive `Q70`'s ruling, and `KAFF-208` itself records that a warning-reading of `Q70` removes this
-case's only enforcement, at which point this story needs a different one.
+**TC-2-077 · HELD on the ACTIVE cross-population phone case — rewritten 2026-09-12, narrowed by D-146 §4(b), `Q80`**
+`AC-208-B` · P1 · Api, real PostgreSQL · §10 · D-146 §4(b)
+⛔ **HELD `Q80`.** Given an **active** registered day labourer, when the same person's phone is
+submitted on a salaried create, or the reverse — an active salaried record's phone on a new day-labour
+registration — then **held**: D-146 §4(a) has since derived and ruled the **archived** half of this
+case as warn-and-acknowledge (`TC-2-080`, `AC-208-E`); only the active-to-active match stays open. D-146
+§4(b) names this a business choice — refuse, or warn-and-acknowledge — that weighs §10's *"nobody
+appears in both"* against D-139 §1's *"a shared phone is evidence, not proof"*, and rules that no agent
+may choose between them. **Nothing here asserts either behaviour as correct until Nabil answers `Q80`.**
+The skipped fact in the running code, `A_day_labourer_cannot_be_registered_again_as_salaried_with_the_same_phone`
+[Verified: 2026-09-12 @ `tests/Api.Tests/CreateEmployeeTests.cs`], is D-146 test 9 — kept skipped with
+its name and body, not deleted, until the ruling lands.
+*Not a passing case.* When `Q80` is answered: **refuse** → this case asserts a `409` with the new error
+key D-146 §4(b) names and the skipped test above is un-skipped; **warn** → this case asserts
+warn-and-acknowledge exactly as `TC-2-080` does for the archived half, and the skipped test is rewritten
+to that shape. Recased on `Q80`'s answer, not guessed now.
 
 **TC-2-078 · a population cannot be edited from one to the other**
 `AC-208-C` · P1 · Domain + Api · §10
@@ -833,18 +873,29 @@ public member sets `Kind` after construction.
 *Fails if:* a `SetKind` or equivalent public setter exists and is not on the allow-list — the
 allow-list is written out by name so that adding one is a deliberate edit to this test.
 
-**TC-2-080 · a day labourer joining the payroll is archived and re-registered, never moved**
-`AC-208-E` · P1 · Api, real PostgreSQL · D-130 §7
+**TC-2-080 · a day labourer joining the payroll is archived and re-registered, never moved, and the same-phone salaried create warns and succeeds once acknowledged — rewritten 2026-09-12, released by D-146 §4(a)**
+`AC-208-E` · P1 · Api, real PostgreSQL · D-130 §7 · D-146 §4(a)
 Given a day labourer with an engagement history, when HR records that he has gone onto the payroll as
-salaried staff, then his day-labour record is archived — unchanged, still carrying every engagement it
-earned — and a **new** employee record is created for him as salaried staff; and reading the full
-history of both records afterward shows no single record ever carried both `Kind`s at any point in
-time, and no existing engagement's owning record was edited.
-*Fails if:* the day-labour record's `Kind` is changed in place (a move), or its engagement history is
-migrated onto the new record rather than staying with the one that earned it — either would make the
-invariant false at some point in the past, which is exactly what D-130 §7 forced this shape to prevent.
-This is the case the brief calls for asserting the invariant **over history**, not only at the moment
-of the change.
+salaried staff **on the same phone number**, then his day-labour record is archived — unchanged, still
+carrying every engagement it earned — and a **new** employee record is created for him as salaried
+staff; and reading the full history of both records afterward shows no single record ever carried both
+`Kind`s at any point in time, and no existing engagement's owning record was edited — `AC-208-C` still
+refuses a direct edit of `Kind`, because this is a create-and-archive, never a move.
+And, on the phone match itself — **released 2026-09-12 by D-146 §4(a)**, no longer HELD: given the
+salaried create is submitted against the archived day labourer's phone with no acknowledgement, then it
+is refused `409 errors.master.duplicate_phone_not_acknowledged`, naming the archived record; and with
+`AcknowledgedDuplicatePhone: true` the save succeeds, and one `DuplicatePhoneAcknowledged` audit record
+is written naming the archived record's real id.
+And, the reverse direction of D-146 §4(a) — an archived salaried record, then a new day labourer on the
+same phone — also warns and succeeds once acknowledged, per D-146 test 6,
+`A_day_labourer_matching_an_archived_salaried_record_warns_and_succeeds_once_acknowledged`.
+*Fails if:* the day-labour record's `Kind` is changed in place (a move), its engagement history is
+migrated onto the new record rather than staying with the one that earned it, the salaried create
+refuses outright rather than warning on the archived match, or no acknowledgement audit record is
+written. This is the case the brief calls for asserting the invariant **over history**, not only at the
+moment of the change. **Named test for the forward direction** — D-141's renamed
+`Re_registering_the_same_person_by_phone_after_archiving_warns_and_succeeds_once_acknowledged`
+[Verified: 2026-09-12 @ `tests/Api.Tests/EmployeeKindInvariantTests.cs`].
 
 **TC-2-081 · a role without `EmployeeManage` cannot reach either population**
 `AC-208-F` · P1 · Api · §2 · §10 · D-129 §1
