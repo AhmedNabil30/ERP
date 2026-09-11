@@ -11844,3 +11844,136 @@ upload goes up as-is.
   `CatalogueTemplate.cs`.
 * **Audit granularity, one record per import or one per row** (`KAFF-200` question 1), is also the
   Architect's. It was not in this brief and is **not ruled here.**
+
+### D-137 · Architect — HR picks a day labourer's باب through a lookup inside the employees feature, gated `EmployeeManage`, with no markup on the wire · 2026-09-11
+
+`KAFF-207` rule 3 says day labour must carry a باب. The only way to list أبواب today is `GET /api/babs`,
+which is gated `BabManage` [Verified: 2026-09-11 @ `src/Api/Features/Babs/ListBabs/Endpoint.cs` -> `RequirePermission(Permission.BabManage)`].
+That permission is granted to the Owner and the Technical Office only, company-wide [Verified: 2026-09-11 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.BabManage`].
+HR owns the employee register (`spec.md` §2's table and §10), so it gets `403` on the one list the
+form needs. The frontend handles the `403` by disabling the picker [Verified: 2026-09-11 @ `src/Web/src/app/features/employees/employee-form/employee-form-page.ts` -> `babsUnavailable`],
+so today HR cannot create a day labourer at all.
+
+#### Decision
+
+1. **A new read endpoint inside the employees feature: `GET /api/employees/babs`, gated
+   `Permission.EmployeeManage`.** **No catalogue row is added, changed or widened.** HR's set of
+   permission rows stays the same.
+2. **The response has no markup.** Each item is `Id`, `Code`, `NameAr`, `NameEn`, `ParentBabId` and
+   `IsActive`, and nothing else. `DefaultMarkup` [Verified: 2026-09-11 @ `src/Api/Features/Babs/ListBabs/Response.cs` -> `DefaultMarkup`]
+   is not in it under that name or any other.
+3. **`GET /api/babs` stays as it is**: gated `BabManage`, markup included, Owner and Technical Office
+   only.
+
+#### Why
+
+**Picking a trade is part of managing an employee, so it uses the permission for managing
+employees.** `spec.md` §9's 2026-08-20 amendment 3 gives HR the capability of *"managing employee
+records (§2, §10)"*. §10 lists trade/باب as one of a worker's fields, and rule 3 makes it mandatory for
+day labour. A capability whose required field cannot be filled in is not a capability. The read belongs
+with the thing it serves. `EmployeeManage` already has the right holders (Owner and HR) and the right
+scope. It is `CompanyWide` with no assignment check [Verified: 2026-09-11 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.EmployeeManage`],
+and it already gates every other employees endpoint [Verified: 2026-09-11 @ `src/Api/Features/Employees/CreateEmployee/Endpoint.cs` -> `RequirePermission(Permission.EmployeeManage)`].
+
+**Why no assignment check.** `CLAUDE.md` requires every endpoint to check role and assignment. Here
+the assignment half does not apply, because أبواب belong to no project. `PermissionScope.CompanyWide`
+is the catalogue's existing answer for data that belongs to no project, and `ListBabs` makes the same
+argument. Declaring a project scope would refuse every caller, the Owner included.
+
+**Why no markup.** `spec.md` is not silent here. §9's amendment 3 says HR has *"zero financial
+visibility"* and *"cannot see project costs, margins, or the safe"*. A باب's default markup is the rate
+§4.2 prices lines with. Excluding it is the plain reading of that rule, not a new one. The ruling does
+not depend on that reading, though: the picker needs a name and an id, so the narrowest shape leaves
+the markup out whether or not a markup counts as a margin.
+
+**Why the other candidates lose:**
+
+- **Adding HR to `BabManage`.** This would give HR create, edit, move and archive over the trade tree,
+  and write access to every default markup. That is authority over pricing, the opposite of zero
+  financial visibility. Rejected outright.
+- **A new `BabRead` row granted to Owner, Technical Office and HR.** It would work, but two things are
+  wrong with it:
+  - It makes HR's permission set bigger for a read that is part of a capability HR already holds.
+    `UserRead` and `ProjectTeamRead` were new rows because they served staffing, which no existing HR
+    row covered. This read does not need one.
+  - A general "read أبواب" permission would eventually gate `GET /api/babs` itself, which carries the
+    markup. The catalogue's own `UserRead` comment says it: *"the permission is not the whole control
+    — the endpoint's projection is."* Once HR holds a general read, keeping it away from the markup
+    depends on every later session remembering. With a lookup that exists only for the employee form,
+    the shape is fixed by the endpoint that owns it.
+- **Gating `GET /api/babs` on `BabManage` or `EmployeeManage`, and choosing the shape by role.** One
+  route would return two shapes. A test on one role would not pin the other, and one careless edit to
+  the projection would expose the markup with no permission changing. Rejected.
+
+**SM-30 is not triggered, because no row is added.** The tests below are still required, because a
+projection with no test is only a promise.
+
+#### What Backend builds
+
+**One slice, `src/Api/Features/Employees/ListBabOptions/`**, laid out like the other employees
+slices:
+
+- **`Endpoint.cs`**: `app.MapGet("/api/employees/babs", Handler.HandleAsync).RequirePermission(Permission.EmployeeManage)`,
+  with no project scope. The literal `babs` does not collide with the sibling route, because that
+  route's id segment is guid-constrained [Verified: 2026-09-11 @ `src/Api/Features/Employees/EditEmployee/Endpoint.cs` -> `{employeeId:guid}`].
+- **`Response.cs`**: `public sealed record BabOption(Guid Id, string Code, string NameAr, string NameEn, Guid? ParentBabId, bool IsActive);`
+  and `public sealed record Response(IReadOnlyList<BabOption> Items);`.
+- **`Handler.cs`**:
+  - returns every باب, active and archived, so the edit form can name an employee's archived trade;
+  - uses `AsNoTracking`;
+  - orders by `SortOrder` and then `Code`, the same as `ListBabs`;
+  - projects straight into `BabOption` in the EF query, **so `DefaultMarkup` is never loaded from the
+    database at all.**
+
+  The two-key `OrderBy` is copied rather than moved into `Domain/`: it is one line, and nothing else
+  is shared.
+- **No audit record.** It is a read and changes no state.
+
+**Tests, in `tests/Api.Tests/`, hitting the endpoint directly:**
+
+1. **`Hr_lists_bab_options_and_no_option_carries_a_markup`**: an HR session gets `200`. The property
+   names of every item in the raw JSON must equal exactly
+   `{id, code, nameAr, nameEn, parentBabId, isActive}`. This is an allow-list, like `AC-207-E`, so a
+   markup added under any name fails it.
+2. **`Hr_is_still_refused_the_bab_manage_list`**: an HR session gets `403` from `GET /api/babs`. This
+   pins that the gap was closed without widening `BabManage`.
+3. **`A_role_without_EmployeeManage_is_refused_the_bab_options`**: Finance, Marketing/Sales, Site
+   Engineer and Technical Office sessions each get `403`. This extends `AC-207-H`. The Technical Office
+   is refused on purpose: it reads أبواب through `GET /api/babs`.
+4. **`The_owner_lists_bab_options`**: `200`, per D-129 §1.
+
+**Nothing in `tests/Domain.Tests/` changes.** `Hr_holds_no_permission_that_touches_money`
+[Verified: 2026-09-11 @ `tests/Domain.Tests/CatalogueCompletenessTests.cs` -> `Hr_holds_no_permission_that_touches_money`]
+and the rest of HR's catalogue tests must stay green without being edited. That is the evidence this
+change added no row. **If Backend finds itself editing `PermissionCatalogue.cs`, it has drifted from
+this ruling.**
+
+#### What Frontend changes
+
+- `src/Web/src/app/core/employees/employees.api.ts` gets a `BabOption` type and a
+  `listBabOptions()` method that calls `api/employees/babs`.
+- `EmployeeFormPage` drops the `BabsApi` injection and loads its picker from `EmployeesApi` instead.
+  It no longer calls `GET /api/babs`.
+- The picker offers active options for a new selection. On edit it still shows the stored archived باب
+  by name.
+- The load-failure path and `hr.employee.babs_unavailable` stay, because a network failure can still
+  happen. The doc comment that reports the `403` gap is replaced with a pointer to D-137.
+- No guard changes. `employee-manage.guard.ts` already matches the gate.
+
+#### What this does not decide
+
+- **The Site Engineer's picker for `KAFF-209`**, where workers are registered from site on `S-026`.
+  Site Engineers do not hold `EmployeeManage`, so this lookup refuses them. Whether they get a narrow
+  row of their own is `Q71`'s question, and this ruling does not answer it in advance.
+- **Whether a default markup counts as a "margin" under §9's amendment 3**, if some HR screen ever
+  wants the markup. Nothing asks for that today, and the narrow shape does not need the answer.
+- **The two gaps `EmployeeFormPage` reports about `GET /api/employees/{id}`**, where staff fields are
+  not returned and a `PUT` nulls them. That is a separate defect and not part of this brief.
+
+**Corrections to the brief.**
+
+- `KAFF-207` rule 3 does not name `GET /api/babs` or the `S-024` picker. It requires a باب, enforced by
+  the entity and a check constraint. The endpoint dependency comes from the frontend's comment, not
+  the story.
+- The picker is not disabled for the HR role. It is disabled when the request gets a `403`.
+- The markup question is not one the spec leaves open. §9's amendment 3 already covers it.
