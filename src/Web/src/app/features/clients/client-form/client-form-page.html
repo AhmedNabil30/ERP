@@ -48,35 +48,17 @@
 
     <!--
       S-013. A warning, never a refusal: spec.md §2 amended, D-049 ruling 8 — a corporate client and
-      its CEO may legitimately share a number. The save stays available with this on screen.
+      its CEO may legitimately share a number. The save stays available with this on screen. Shared
+      with `S-024`'s employee form (decisions.md D-141/D-146) — see `shared/duplicate-phone-warning`.
     -->
     @if (duplicateMatches().length > 0) {
-      <div class="duplicate" role="status" data-testid="client-duplicate-warning">
-        <p class="duplicate-title">{{ i18n.t('clients.duplicate.title') }}</p>
-
-        <ul class="duplicate-list">
-          @for (match of duplicateMatches(); track trackMatch($index, match)) {
-            <li class="duplicate-row" [attr.data-testid]="'client-duplicate-' + match.code">
-              <span class="duplicate-name" dir="auto">{{ match.name }}</span>
-              <bdi class="duplicate-code">{{ match.code }}</bdi>
-              @if (match.isArchived) {
-                <span class="duplicate-archived" data-testid="client-duplicate-archived">
-                  {{ i18n.t('clients.status.archived') }}
-                </span>
-              }
-            </li>
-          }
-        </ul>
-
-        <label class="acknowledge">
-          <input
-            type="checkbox"
-            data-testid="client-duplicate-acknowledge"
-            (change)="onAcknowledgeChange($event)"
-          />
-          <span>{{ i18n.t('clients.duplicate.acknowledge') }}</span>
-        </label>
-      </div>
+      <kaff-duplicate-phone-warning
+        [matches]="duplicateMatches()"
+        titleKey="clients.duplicate.title"
+        confirmKey="clients.duplicate.acknowledge"
+        testIdPrefix="client"
+        (acknowledgeChange)="onAcknowledgeChange($event)"
+      />
     }
 
     <label class="field">

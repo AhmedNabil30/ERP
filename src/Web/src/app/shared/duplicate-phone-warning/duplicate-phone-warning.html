@@ -1,0 +1,26 @@
+<div class="duplicate" role="status" [attr.data-testid]="testIdPrefix() + '-duplicate-warning'">
+  <p class="duplicate-title">{{ i18n.t(titleKey()) }}</p>
+
+  <ul class="duplicate-list">
+    @for (match of matches(); track trackMatch($index, match)) {
+      <li class="duplicate-row" [attr.data-testid]="testIdPrefix() + '-duplicate-' + match.code">
+        <span class="duplicate-name" dir="auto">{{ match.name }}</span>
+        <bdi class="duplicate-code">{{ match.code }}</bdi>
+        @if (match.isArchived) {
+          <span class="duplicate-archived" [attr.data-testid]="testIdPrefix() + '-duplicate-archived'">
+            {{ i18n.t('clients.status.archived') }}
+          </span>
+        }
+      </li>
+    }
+  </ul>
+
+  <label class="acknowledge">
+    <input
+      type="checkbox"
+      [attr.data-testid]="testIdPrefix() + '-duplicate-acknowledge'"
+      (change)="onChange($event)"
+    />
+    <span>{{ i18n.t(confirmKey()) }}</span>
+  </label>
+</div>

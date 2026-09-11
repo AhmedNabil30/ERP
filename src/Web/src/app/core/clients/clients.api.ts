@@ -2,6 +2,11 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
+import { PhoneMatch } from '../../shared/phone-match';
+
+/** Re-exported for existing callers — the shape now lives in `shared/phone-match.ts` (S-024). */
+export type { PhoneMatch };
+
 /** spec.md §6.7 — drives withholding, which lives on the contract and never on this record. */
 export type ClientKind = 'Individual' | 'Corporate';
 
@@ -26,14 +31,6 @@ export interface ClientSummary {
   readonly phone: string;
   readonly kind: ClientKind;
   readonly isActive: boolean;
-}
-
-/** Who already holds a phone number. Empty when nobody does. */
-export interface PhoneMatch {
-  readonly id: string;
-  readonly code: string;
-  readonly name: string;
-  readonly isArchived: boolean;
 }
 
 /**

@@ -6,6 +6,8 @@ import { toProblem } from '../../../core/api/problem-details';
 import { BabOption, EmployeeCreate, EmployeeFile, EmployeeKind, EmployeesApi } from '../../../core/employees/employees.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { UnsavedChangesAware } from '../../../core/navigation/unsaved-changes.guard';
+import { DuplicatePhoneWarning } from '../../../shared/duplicate-phone-warning/duplicate-phone-warning';
+import { PhoneMatch } from '../../../shared/phone-match';
 
 interface EmployeeDraft {
   fullName: string;
@@ -74,7 +76,7 @@ const draft = schema<EmployeeDraft>((path) => {
  */
 @Component({
   selector: 'kaff-employee-form-page',
-  imports: [FormField, RouterLink],
+  imports: [FormField, RouterLink, DuplicatePhoneWarning],
   templateUrl: './employee-form-page.html',
   styleUrl: './employee-form-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -92,6 +94,10 @@ export class EmployeeFormPage implements UnsavedChangesAware {
   private readonly pristine = signal<EmployeeDraft | null>(null);
   private readonly code = signal<string | null>(null);
   private readonly loadedKind = signal<EmployeeKind | null>(null);
+
+  private readonly matches = signal<readonly PhoneMatch[]>([]);
+  private readonly acknowledged = signal(false);
+  protected readonly duplicateMatches = this.matches.asReadonly();
 
   protected readonly employeeForm = form(this.model, draft);
 
@@ -160,6 +166,38 @@ export class EmployeeFormPage implements UnsavedChangesAware {
     }
   }
 
+  /**
+   * `S-024`'s warning. Fires on blur of the phone field, mirroring `S-013`'s client form
+   * (decisions.md D-141 §5).
+   */
+  protected async onPhoneBlur(): Promise<void> {
+    await this.refreshMatches();
+  }
+
+  /** The operator saying "I saw who holds this number and I am proceeding anyway." */
+  protected onAcknowledgeChange(acknowledged: boolean): void {
+    this.acknowledged.set(acknowledged);
+  }
+
+  private async refreshMatches(): Promise<void> {
+    const phone = this.model().phone.trim();
+
+    if (phone.length === 0) {
+      this.matches.set([]);
+      return;
+    }
+
+    try {
+      const found = await this.api.phoneCheck(phone);
+
+      // Editing an employee whose phone has not changed must not warn about itself.
+      this.matches.set(found.filter((match) => match.id !== this.employeeId()));
+    } catch {
+      // A failed check must not stop a save — the server re-runs the match anyway on submit.
+      this.matches.set([]);
+    }
+  }
+
   protected onKindChange(event: Event): void {
     const target = event.target;
     if (target instanceof HTMLSelectElement) {
@@ -191,7 +229,19 @@ export class EmployeeFormPage implements UnsavedChangesAware {
           await this.router.navigateByUrl(`/employees/${created.id}`);
         }
       } catch (error) {
-        this.refusal.set(toProblem(error).messageKey);
+        const problem = toProblem(error);
+
+        if (problem.code === 'master.duplicate_phone_not_acknowledged') {
+          // Not a failure — the server is asking. Re-run the check and show current matches rather
+          // than the stale ones the operator already dismissed (mirrors the client form, D-141 §5).
+          await this.refreshMatches();
+          this.acknowledged.set(false);
+          return undefined;
+        }
+
+        // Includes `errors.master.employee_phone_taken` — D-146 point 3's salaried-to-salaried
+        // refusal, never acknowledgeable, so it renders as a plain refusal with no confirm offered.
+        this.refusal.set(problem.messageKey);
       }
 
       return undefined;
@@ -244,6 +294,7 @@ export class EmployeeFormPage implements UnsavedChangesAware {
       jobTitle: orNull(value.jobTitle),
       department: orNull(value.department),
       hiredOn: value.hiredOn.length > 0 ? value.hiredOn : null,
+      acknowledgedDuplicatePhone: this.acknowledged(),
     };
   }
 

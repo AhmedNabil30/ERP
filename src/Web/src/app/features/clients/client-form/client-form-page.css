@@ -121,50 +121,7 @@
   box-shadow: var(--elevation-1);
 }
 
-/* S-013. A warning, not a refusal — it is not styled as an error and it does not disable the save. */
-.duplicate {
-  padding: 0.75rem;
-  border: 1px solid var(--color-warning);
-  border-radius: var(--radius-lg);
-}
-
-.duplicate-title {
-  margin: 0 0 0.5rem;
-  font-weight: 600;
-}
-
-.duplicate-list {
-  list-style: none;
-  margin: 0 0 0.5rem;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.duplicate-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: baseline;
-}
-
-.duplicate-code {
-  unicode-bidi: isolate;
-  font-family: ui-monospace, monospace;
-  font-size: 0.9rem;
-}
-
-.duplicate-archived {
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.acknowledge {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
+/* The duplicate-phone warning's own CSS moved to `shared/duplicate-phone-warning` (D-141/D-146). */
 
 .refusal {
   margin: 0;

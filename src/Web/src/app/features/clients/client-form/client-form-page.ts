@@ -11,14 +11,10 @@ import { FormField, form, required, schema, submit } from '@angular/forms/signal
 import { Router } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
-import {
-  ClientFile,
-  ClientKind,
-  ClientWrite,
-  ClientsApi,
-  PhoneMatch,
-} from '../../../core/clients/clients.api';
+import { ClientFile, ClientKind, ClientWrite, ClientsApi } from '../../../core/clients/clients.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { DuplicatePhoneWarning } from '../../../shared/duplicate-phone-warning/duplicate-phone-warning';
+import { PhoneMatch } from '../../../shared/phone-match';
 
 interface ClientDraft {
   phone: string;
@@ -78,7 +74,7 @@ function orNull(value: string): string | null {
  */
 @Component({
   selector: 'kaff-client-form-page',
-  imports: [FormField],
+  imports: [FormField, DuplicatePhoneWarning],
   templateUrl: './client-form-page.html',
   styleUrl: './client-form-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -232,12 +228,12 @@ export class ClientFormPage {
   /**
    * The operator saying "I saw who holds this number and I am proceeding anyway."
    *
-   * The event is read here rather than in the template, because `$any` in a template is exactly what
-   * leaves `strictTemplates` nothing to check (Nabil, 2026-08-28).
+   * The DOM event is read inside `DuplicatePhoneWarning` (shared, D-141/D-146) rather than here or in
+   * this template, because `$any` in a template is exactly what leaves `strictTemplates` nothing to
+   * check (Nabil, 2026-08-28).
    */
-  protected onAcknowledgeChange(event: Event): void {
-    const target = event.target;
-    this.acknowledged.set(target instanceof HTMLInputElement && target.checked);
+  protected onAcknowledgeChange(acknowledged: boolean): void {
+    this.acknowledged.set(acknowledged);
   }
 
   protected onStartArchive(): void {
@@ -270,10 +266,6 @@ export class ClientFormPage {
       this.refusal.set(toProblem(error).messageKey);
       this.confirmingArchive.set(false);
     }
-  }
-
-  protected trackMatch(_index: number, match: PhoneMatch): string {
-    return match.id;
   }
 
   private async refreshMatches(): Promise<void> {

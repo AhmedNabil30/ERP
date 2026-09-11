@@ -2,6 +2,10 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
+import { PhoneMatch } from '../../shared/phone-match';
+
+export type { PhoneMatch };
+
 /** `AC-207-F`'s three states, matching `EmployeeListFilter` on the server exactly (D-111 §3 shape). */
 export type EmployeeListFilter = 'active' | 'archived' | 'all';
 
@@ -48,6 +52,10 @@ export interface EmployeeFile extends EmployeeSummary {
 
 /**
  * `POST /api/employees`. **No `code` member** — D-130 §6: generated, never typed (`AC-207-G`).
+ *
+ * `acknowledgedDuplicatePhone` is `S-024`'s flag (decisions.md D-141 §5). It never overrides
+ * `errors.master.employee_phone_taken` — D-146 point 3: a salaried-to-salaried match is refused
+ * whatever this flag says.
  */
 export interface EmployeeCreate {
   readonly fullName: string;
@@ -59,6 +67,7 @@ export interface EmployeeCreate {
   readonly jobTitle: string | null;
   readonly department: string | null;
   readonly hiredOn: string | null;
+  readonly acknowledgedDuplicatePhone: boolean;
 }
 
 /**
@@ -102,12 +111,33 @@ export class EmployeesApi {
     return response.items;
   }
 
-  /** `S-024` create. `201`, or `409` on a repeated phone (`errors.master.employee_phone_taken`). */
+  /**
+   * `S-024`'s warning. Fires on blur of the phone field. `200` either way — an empty array means
+   * nobody holds this number, not an error to handle (decisions.md D-141/D-146).
+   */
+  async phoneCheck(phone: string): Promise<readonly PhoneMatch[]> {
+    const response = await firstValueFrom(
+      this.http.post<{ matches: PhoneMatch[] }>('api/employees/phone-check', { phone }),
+    );
+
+    return response.matches;
+  }
+
+  /**
+   * `S-024` create. `201`, or two different `409`s (decisions.md D-146 point 3):
+   * `errors.master.duplicate_phone_not_acknowledged` (warn — resend with the flag once the operator
+   * confirms) when the match is day-labour, or the salaried side of a mixed match; and
+   * `errors.master.employee_phone_taken` (refuse, not acknowledgeable) only when the new record is
+   * `Salaried` and the match is another salaried record, active or archived.
+   */
   async create(employee: EmployeeCreate): Promise<EmployeeFile> {
     return await firstValueFrom(this.http.post<EmployeeFile>('api/employees', employee));
   }
 
-  /** `S-024` edit. `200`, or `409` (`errors.master.employee_kind_immutable`) when `kind` was changed. */
+  /**
+   * `S-024` edit. `200`, or `409` (`errors.master.employee_kind_immutable`) when `kind` was changed,
+   * or either of `create`'s two duplicate-phone `409`s above.
+   */
   async edit(id: string, employee: EmployeeEdit): Promise<EmployeeFile> {
     return await firstValueFrom(this.http.put<EmployeeFile>(`api/employees/${id}`, employee));
   }

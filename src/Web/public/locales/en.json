@@ -40,6 +40,8 @@
   "hr.employee.field.job_title": "Job title",
   "hr.employee.field.department": "Department",
   "hr.employee.field.hired_on": "Hired on",
+  "hr.worker.duplicate_phone_warning": "This number is already on file:",
+  "hr.worker.duplicate_phone_confirm": "I have seen who holds it and want to continue.",
   "hr.employee.kind_is_permanent": "The costing type is fixed and cannot change after registration.",
   "hr.employee.babs_unavailable": "The list of أبواب could not be loaded.",
   "hr.employee.filter.active": "Active",

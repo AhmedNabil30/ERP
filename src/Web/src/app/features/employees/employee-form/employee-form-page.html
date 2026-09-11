@@ -39,8 +39,24 @@
           autocomplete="tel"
           data-testid="employee-field-phone"
           [formField]="employeeForm.phone"
+          (blur)="onPhoneBlur()"
         />
       </label>
+
+      <!--
+        S-024's warning, reusing S-013's client presentation (decisions.md D-141/D-146). A duplicate
+        salaried match refuses on submit instead — `errors.master.employee_phone_taken` — and never
+        shows this confirm.
+      -->
+      @if (duplicateMatches().length > 0) {
+        <kaff-duplicate-phone-warning
+          [matches]="duplicateMatches()"
+          titleKey="hr.worker.duplicate_phone_warning"
+          confirmKey="hr.worker.duplicate_phone_confirm"
+          testIdPrefix="employee"
+          (acknowledgeChange)="onAcknowledgeChange($event)"
+        />
+      }
 
       @if (isEdit()) {
         <p class="field" data-testid="employee-kind-display">

@@ -1,18 +1,22 @@
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { BabOption, EmployeeFile, EmployeesApi } from '../../../core/employees/employees.api';
+import { BabOption, EmployeeCreate, EmployeeEdit, EmployeeFile, EmployeesApi } from '../../../core/employees/employees.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { PhoneMatch } from '../../../shared/phone-match';
 import { babRequiredButMissing, EmployeeFormPage } from './employee-form-page';
 
-/** `V-37-D`: only the two keys the kind display touches, so a wrong lookup can't hide behind an echo. */
+/** `V-37-D`/S-024: only the keys these tests touch, so a wrong lookup can't hide behind an echo. */
 const KIND_LABELS: Readonly<Record<string, string>> = {
   'enum.EmployeeKind.DayLabour': 'يومية',
   'enum.EmployeeKind.Salaried': 'موظف بالراتب',
   'hr.employee.field.department': 'القسم',
+  'hr.worker.duplicate_phone_warning': 'هذا الرقم مسجل بالفعل:',
+  'hr.worker.duplicate_phone_confirm': 'رأيت من يحمل الرقم وأريد المتابعة.',
+  'errors.master.employee_phone_taken': 'رقم الهاتف هذا مسجل بالفعل لموظف آخر.',
 };
 
 class FakeI18nService implements Pick<I18nService, 't' | 'locale'> {
@@ -198,5 +202,191 @@ describe('EmployeeFormPage · باب picker', () => {
 
     const ids = page['babs']().map((bab: BabOption) => bab.id);
     expect(ids).toContain('archived-1');
+  });
+});
+
+/** `S-024`: the phone-check warning, reusing the client form's presentation (D-141/D-146). */
+
+const A_MATCH: PhoneMatch = { id: 'other-1', code: 'EMP-0002', name: 'سيد أحمد', isArchived: false };
+
+const NOT_ACKNOWLEDGED = new HttpErrorResponse({
+  status: 409,
+  error: {
+    code: 'master.duplicate_phone_not_acknowledged',
+    messageKey: 'errors.master.duplicate_phone_not_acknowledged',
+  },
+});
+
+const PHONE_TAKEN = new HttpErrorResponse({
+  status: 409,
+  error: { code: 'master.employee_phone_taken', messageKey: 'errors.master.employee_phone_taken' },
+});
+
+/** A fake matching only what the duplicate-phone flow calls. */
+class FakePhoneCheckApi implements Pick<EmployeesApi, 'get' | 'listBabOptions' | 'phoneCheck' | 'create' | 'edit'> {
+  createCalls: EmployeeCreate[] = [];
+
+  constructor(
+    private readonly matches: readonly PhoneMatch[],
+    private readonly failFirstCreateWith: HttpErrorResponse | null,
+  ) {}
+
+  async get(_id: string): Promise<EmployeeFile> {
+    throw new Error('not used in this fixture');
+  }
+
+  async listBabOptions(): Promise<readonly BabOption[]> {
+    return [];
+  }
+
+  async phoneCheck(_phone: string): Promise<readonly PhoneMatch[]> {
+    return this.matches;
+  }
+
+  async create(employee: EmployeeCreate): Promise<EmployeeFile> {
+    this.createCalls.push(employee);
+
+    if (this.createCalls.length === 1 && this.failFirstCreateWith) {
+      throw this.failFirstCreateWith;
+    }
+
+    return {
+      id: 'new-1',
+      code: 'EMP-0099',
+      fullName: employee.fullName,
+      phone: employee.phone,
+      kind: employee.kind,
+      babId: employee.babId,
+      specialty: employee.specialty,
+      isActive: true,
+      nationalId: employee.nationalId,
+      jobTitle: employee.jobTitle,
+      department: employee.department,
+      hiredOn: employee.hiredOn,
+    };
+  }
+
+  async edit(_id: string, _employee: EmployeeEdit): Promise<EmployeeFile> {
+    throw new Error('not used in this fixture');
+  }
+}
+
+async function createPageWithApi(api: FakePhoneCheckApi) {
+  TestBed.resetTestingModule();
+  TestBed.configureTestingModule({
+    providers: [
+      provideHttpClient(),
+      provideRouter([]),
+      { provide: EmployeesApi, useValue: api },
+      { provide: I18nService, useClass: FakeI18nService },
+    ],
+  });
+
+  const fixture = TestBed.createComponent(EmployeeFormPage);
+  fixture.detectChanges();
+  await Promise.resolve();
+  await Promise.resolve();
+  fixture.detectChanges();
+
+  return fixture;
+}
+
+function setPhoneAndBlur(fixture: ReturnType<typeof TestBed.createComponent<EmployeeFormPage>>, phone: string): void {
+  const input: HTMLInputElement = fixture.nativeElement.querySelector('[data-testid="employee-field-phone"]');
+  input.value = phone;
+  input.dispatchEvent(new Event('input'));
+  input.dispatchEvent(new Event('blur'));
+}
+
+describe('EmployeeFormPage · duplicate-phone warning (S-024)', () => {
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  it('shows the matched name and resends with the flag once confirmed', async () => {
+    const api = new FakePhoneCheckApi([A_MATCH], null);
+    const fixture = await createPageWithApi(api);
+
+    setPhoneAndBlur(fixture, '01000000001');
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    const warning = fixture.nativeElement.querySelector('[data-testid="employee-duplicate-warning"]');
+    expect(warning).toBeTruthy();
+    expect(warning.textContent).toContain(A_MATCH.name);
+    expect(warning.textContent).toContain('هذا الرقم مسجل بالفعل:');
+    // Never the raw key — this is the whole point of routing translation through I18nService.
+    expect(warning.textContent).not.toContain('hr.worker.duplicate_phone_warning');
+    expect(warning.textContent).not.toContain('hr.worker.duplicate_phone_confirm');
+
+    const checkbox: HTMLInputElement = fixture.nativeElement.querySelector(
+      '[data-testid="employee-duplicate-acknowledge"]',
+    );
+    checkbox.checked = true;
+    checkbox.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('[data-testid="employee-field-full-name"]').value = 'Test';
+    fixture.nativeElement
+      .querySelector('[data-testid="employee-field-full-name"]')
+      .dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit'));
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(api.createCalls).toHaveLength(1);
+    expect(api.createCalls[0].acknowledgedDuplicatePhone).toBe(true);
+  });
+
+  it('offers no confirm on the salaried refusal and shows the refusal text instead', async () => {
+    const api = new FakePhoneCheckApi([], PHONE_TAKEN);
+    const fixture = await createPageWithApi(api);
+
+    fixture.nativeElement.querySelector('[data-testid="employee-field-phone"]').value = '01000000002';
+    fixture.nativeElement.querySelector('[data-testid="employee-field-phone"]').dispatchEvent(new Event('input'));
+    fixture.nativeElement.querySelector('[data-testid="employee-field-full-name"]').value = 'Test';
+    fixture.nativeElement
+      .querySelector('[data-testid="employee-field-full-name"]')
+      .dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit'));
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="employee-duplicate-warning"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid="employee-duplicate-acknowledge"]')).toBeNull();
+
+    const refusal = fixture.nativeElement.querySelector('[data-testid="employee-form-refusal"]');
+    expect(refusal).toBeTruthy();
+    expect(refusal.textContent).toContain('رقم الهاتف هذا مسجل بالفعل لموظف آخر.');
+    expect(refusal.textContent).not.toContain('errors.master.employee_phone_taken');
+  });
+
+  it('re-runs the check and shows current matches on a 409 raised only at submit time', async () => {
+    const api = new FakePhoneCheckApi([A_MATCH], NOT_ACKNOWLEDGED);
+    const fixture = await createPageWithApi(api);
+
+    fixture.nativeElement.querySelector('[data-testid="employee-field-phone"]').value = '01000000003';
+    fixture.nativeElement.querySelector('[data-testid="employee-field-phone"]').dispatchEvent(new Event('input'));
+    fixture.nativeElement.querySelector('[data-testid="employee-field-full-name"]').value = 'Test';
+    fixture.nativeElement
+      .querySelector('[data-testid="employee-field-full-name"]')
+      .dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit'));
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="employee-duplicate-warning"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-testid="employee-form-refusal"]')).toBeNull();
   });
 });

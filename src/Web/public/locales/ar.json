@@ -40,6 +40,8 @@
   "hr.employee.field.job_title": "المسمى الوظيفي",
   "hr.employee.field.department": "القسم",
   "hr.employee.field.hired_on": "تاريخ التعيين",
+  "hr.worker.duplicate_phone_warning": "هذا الرقم مسجل بالفعل:",
+  "hr.worker.duplicate_phone_confirm": "رأيت من يحمل الرقم وأريد المتابعة.",
   "hr.employee.kind_is_permanent": "نوع التكلفة ثابت ولا يتغير بعد التسجيل.",
   "hr.employee.babs_unavailable": "تعذّر تحميل قائمة الأبواب.",
   "hr.employee.filter.active": "نشط",
