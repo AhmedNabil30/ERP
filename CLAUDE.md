@@ -6,6 +6,23 @@ Read this file completely before doing anything. You have no memory of previous 
 
 ---
 
+## Output style — caveman, every agent (Nabil, 2026-09-12)
+
+Every agent, including the Scrum Master, the coordinator session, and every subagent, invokes the
+`caveman:caveman` skill at `full` level at the start of its run and holds it for the whole run. Nabil
+asked for this because most of the budget went on reading and prose, not on building.
+
+- **Caveman applies to chat and agent-to-agent text.** That covers replies to Nabil, briefs, status
+  notes and reports back to the Scrum Master. Write them terse, with exact paths, identifiers, gate
+  numbers and error strings.
+- **Persisted text stays in normal English.** That covers code, comments, commit messages,
+  `decisions.md`, `STATUS.md`, stories, `qa/` cases and verification reports. Other people read
+  these later, and a Verifier needs them unambiguous.
+- **Read only what the task needs.** A brief names its files, and you read those files. Do not read
+  `STATUS.md` or `decisions.md` whole when one section answers the question.
+
+---
+
 ## Before you start
 
 1. Read this file.

@@ -177,6 +177,10 @@ be mistaken for the other convention.
 at *display*: figures are stored at four decimals and shown at two. Which of the two is contractual
 on an extract?
 
+**Closed in part by D-144 §6 (Karim via Nabil, 2026-09-12):** storage stays at four decimals; the
+displayed two-decimal figure is the contractual one on a client extract. Still open, for slice 4:
+per-line or on-total rounding to two decimals.
+
 **Rejected.** `decimal` without a wrapper: CLAUDE.md forbids passing bare decimals for money.
 Carrying a currency inside `Money`: spec.md §1 puts conversion out of scope, and a currency-bearing
 money type implies a conversion capability that must not exist. Currency lives on the account, and
@@ -12480,3 +12484,62 @@ Test-local seed rows use codes that exist only in the test project, and they nev
   is his decision and not this entry's. Question for Nabil.
 - **Production boot.** Outside Development, `ApplyMigrationsOnStartup` defaults to `false`, and then
   neither seeder runs. That is today's arrangement for the account tree, and it is not changed here.
+
+---
+
+### D-143 · Nabil — every agent writes caveman-terse in chat; persisted text stays normal English · 2026-09-12
+
+**Source: Nabil, 2026-09-12, relayed by the coordinator session.** Recorded, not ruled on.
+
+Every agent — the Scrum Master, the coordinator and every subagent — invokes `caveman:caveman` at
+`full` at the start of its run and holds it for the whole run. It applies to chat and agent-to-agent
+text: replies to Nabil, briefs, status notes and reports back. Persisted text stays in normal English:
+code, comments, commits, `decisions.md`, `STATUS.md`, stories, `qa/` cases and verification reports.
+Briefs name the exact files an agent reads.
+
+**Why.** Most of the budget went on reading and prose, not on building (the same diagnosis as D-134).
+
+**Where it lives.** `CLAUDE.md`, *Output style*, and `.claude/agents/scrum-master.md` brief item 7.
+
+---
+
+### D-144 · Karim via Nabil — salaried phones refuse, `HiredOn` stays, the catalogue template, rounding at display, and a trade list that conflicts with D-139 §8 · 2026-09-12
+
+**Source: Karim, relayed by Nabil to the coordinator session, 2026-09-12.** Recorded as given. Closes
+D-139's *Not answered* list except the trades, closes D-136's three template questions, and closes
+D-008 in part.
+
+1. **Salaried staff phones: duplicates are REFUSED.** Workers (day labour), subcontractors and
+   suppliers stay warn-and-acknowledge (D-139 §1). This answers D-141's *"What this does not
+   decide — Salaried staff"*. The Architect amends D-141: the employees index becomes a partial unique
+   index covering salaried staff only, plus the non-unique lookup index for the warning.
+   **Consequence the Architect must rule:** a day labourer whose phone matches a salaried record, and
+   a salaried record whose phone matches a day labourer (`AC-208-E`, re-registering an archived worker
+   as staff) — refuse or warn? Karim's answer names the salaried population, not the cross-population
+   case. If the Architect cannot derive it from D-139/D-144, it is a question for Nabil.
+2. **`HiredOn` is KEPT on the staff file.** It is needed later for HR and payroll. D-139 §7's
+   *"nothing more"* is read as Name, Phone, National ID, Department, Job Title **plus `HiredOn`**.
+3. **Catalogue template, descriptions: two columns, Arabic and English.** The UI shows the one that
+   matches the user's language. (D-136 question 1.)
+4. **Catalogue template, trade link: by باب `Code`, not by name.** (D-136 question 2.)
+5. **Catalogue template, status column: REMOVED.** Every imported item is `Active`. (D-136 question 3;
+   `AC-200-I`'s required header changes accordingly.)
+6. **D-008, rounding.** The database keeps four decimals. The contractual figure on a client extract
+   is the displayed two-decimal value, confirmed with Kaff's accountant. **D-008 is closed in part.**
+   - **OPEN, for slice 4, not slice 2:** does rounding to two decimals happen per line or on the
+     extract total? Asked when slice 4 is refined. Not decided here.
+   - **Not stated in the relay:** whether the accountant confirmed D-008's away-from-zero midpoint
+     convention. It stays as built until Nabil says otherwise.
+   - **Reading for `AC-200-B`:** a price above four decimals is stored at four through `Money`, as
+     D-134 already requires; the import adds no refusal rule. If Nabil meant refusal, he says so.
+7. **Trades — CONFLICT, not resolved.** Karim sent eight codes and English names: `CON` Concrete
+   Works, `MAS` Masonry Works, `PLU` Plumbing Works, `ELE` Electrical Works, `HVA` HVAC Works, `FIN`
+   Finishing Works, `CAR` Carpentry Works, `MET` Metal Works. This differs from D-139 §8: Earthworks
+   and Painting are gone, MEP is split into three, and the list carries no markups and no Arabic
+   names. `BabSeed` requires `NameAr` and a markup for every row (D-142). **The coordinator has asked
+   Nabil. The D-142 mechanism is built now with an empty list; the rows wait.**
+
+**Also carried as Nabil's scope rulings with this relay (from the coordinator's plan):** `KAFF-211`
+is profile only, rates on the sub-BOQ (D-139 §4); `KAFF-212` has no bank records, and banks are a new
+slice-3 story (D-139 §6); `KAFF-210`'s engagement closes manually by the Site Engineer with no timeout,
+ratings out of 5 (D-139 §3).

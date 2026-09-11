@@ -94,6 +94,19 @@ screen renders `enum.EmployeeKind.[object Object]`.
 5. One fresh Verifier.
 **Waiting on Nabil:** the Arabic names and codes for the eight trades (the seed data waits, the
 mechanism does not); warn-only for salaried staff; `HiredOn`; D-136's template questions; D-008.
+✅ **Step 1 done — Architect `bd371b8`:**
+- **D-140** — `DayLabourSiteManage`: project-scoped, for the Owner and assigned Site Engineers, on
+  routes under `/api/projects/{projectId}/day-labour`.
+- **D-141** — the three phone indexes become non-unique, and the client's D-049 warn-and-acknowledge
+  flow is reused.
+- **D-142** — a startup seeder keyed on trade code: insert-only, list empty until Nabil answers.
+
+New questions for Nabil from D-140 to D-142:
+- May a Site Engineer see or record a worker's day rate?
+- May they close an engagement another engineer opened?
+- Does the seed run beside trades the client already built?
+
+**Step 2, the BA, dispatched next.**
 
 | Finding | What | Owner | State |
 |---|---|---|---|

@@ -211,6 +211,9 @@ finding is *tracked*; it is not where a finding is *resolved*.
 5. **Write-as-you-go.** A rate limit rolls nothing back. An agent that dies holding unwritten findings
    loses them, and the next reader cannot tell an unfinished pass from a finished one (D-120 §1).
 6. **The invitation to correct the brief**, as the last line. You wrote it; it is not evidence.
+7. **Caveman** (`CLAUDE.md`, *Output style*). The brief is itself written caveman-terse. It orders
+   the agent to invoke `caveman:caveman` at `full` and to report back caveman-terse, while its commits
+   and records stay in normal English. The brief names the exact files to read.
 
 **Split the task before downgrading it** (§M). A brief mixing a register sweep with a ruling pays the
 strongest model's rate for the sweep. Send the sweep separately.

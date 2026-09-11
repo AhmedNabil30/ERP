@@ -17,7 +17,7 @@ code an `AC-` id and a QA case, per `V-35-U`
 
 ## Story
 As the Technical Office, I bring a mistakenly archived catalogue item back into active use, because a
-code is unique (§4.5) and an archive that cannot be reversed turns a misclick into permanent data — the
+code is unique (§4.1) and an archive that cannot be reversed turns a misclick into permanent data — the
 item can only return under a new code, and the catalogue then carries two codes for one real thing
 forever.
 
@@ -41,7 +41,7 @@ happens after.
 | The handler — defers entirely to the entity's own refusal, no `Status` pre-check of its own, one `SaveChangesAsync` | [Verified: 2026-09-10 @ `src/Api/Features/Catalogue/UnarchiveCatalogueItem/Handler.cs` -> `HandleAsync`] |
 | `CatalogueItem.Unarchive` — refuses a row that is not archived rather than a silent no-op, the mirror of `Archive` | [Verified: 2026-09-10 @ `src/Domain/MasterData/CatalogueItem.cs` -> `Unarchive`] |
 | The refusal — declared before this endpoint existed and returned by nothing until now | [Verified: 2026-09-10 @ `src/Domain/MasterData/MasterDataErrors.cs` -> `NotArchived`] |
-| A test file covering the round trip, the refusal, and one permission case | [Verified: 2026-09-10 @ `tests/Api.Tests/UnarchiveCatalogueItemTests.cs` -> `An_archived_item_is_unarchived_and_reappears_in_the_default_search`, `Unarchiving_an_active_item_is_refused_and_writes_no_audit_record`, `A_role_without_CatalogueManage_cannot_unarchive_an_item`] |
+| A test file covering the round trip, the refusal, and every role without `CatalogueManage` — including a portal `Role.Client` | [Verified: 2026-09-11 @ `tests/Api.Tests/UnarchiveCatalogueItemTests.cs` -> `An_archived_item_is_unarchived_and_reappears_in_the_default_search`, `Unarchiving_an_active_item_is_refused_and_writes_no_audit_record`, `A_role_without_CatalogueManage_cannot_unarchive_an_item`] |
 | The row control on `S-017` — a chip rendered only when `item.status !== 'Active'`, calling the API and reloading the list | [Verified: 2026-09-10 @ `src/Web/src/app/features/catalogue/catalogue-list/catalogue-list-page.html` -> the `catalogue-unarchive-` button; `src/Web/src/app/features/catalogue/catalogue-list/catalogue-list-page.ts` -> `onUnarchive`] |
 | The frontend API call | [Verified: 2026-09-10 @ `src/Web/src/app/core/catalogue/catalogue.api.ts` -> `unarchive`] |
 
