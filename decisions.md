@@ -12772,3 +12772,129 @@ So the filter is `kind = 'Salaried'`. A numeric filter (`kind = 1`) would match 
   not made here.
 
 ---
+
+### D-147 · Architect — D-139 §5: the subcontractor's tax registration number gets its own Finance row, `SubcontractorTaxRegistrationEdit`, and its own endpoint; the supplier needs no split · 2026-09-12
+
+D-139 §5 rules the business: *"The tax registration number is entered and managed by Finance only."*
+`KAFF-211` sends the mechanism to the Architect. `KAFF-212` claims no split is needed for suppliers. This
+entry rules the first and checks the second.
+
+**What exists today, confirmed before ruling:**
+
+- `SubcontractorManage` is `CompanyWide`, granted to `[owner, technicalOffice]`. **Finance does not hold it**
+  [Verified: 2026-09-12 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.SubcontractorManage`].
+- `SupplierManage` is `CompanyWide`, granted to `[owner, finance]`. The Technical Office does not hold it
+  [Verified: 2026-09-12 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.SupplierManage`].
+  **The BA's `KAFF-212` claim is confirmed:** Finance already owns the whole supplier record, so the tax
+  registration number is Finance's without any change.
+- **The precedent is `ProjectFinancialsEdit`**: a row split off `ProjectManage` so that Finance reaches its
+  own fields without reaching the record's other fields, granted to `[owner, finance]` (D-055 §1)
+  [Verified: 2026-09-12 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.ProjectFinancialsEdit`].
+  It has no endpoint yet, so its row sets the precedent but no endpoint does.
+- **Each endpoint makes one permission check, on its `RequirePermission` line, and nowhere else**
+  [Verified: 2026-09-12 @ `src/Api/Features/Clients/EditClient/Endpoint.cs` -> `RequirePermission`].
+  No handler evaluates a permission. A Grep of `src/Api` for `IPermissionEvaluator`, `EvaluateAsync(`
+  and `.Evaluate(` finds only the authorization pipeline
+  [Verified: 2026-09-12 @ `src/Api/Authorization/PermissionAuthorizationHandler.cs` -> `PermissionEvaluator.Evaluate`].
+- Both entities set the number together with the withholding category in one method
+  [Verified: 2026-09-12 @ `src/Domain/MasterData/Subcontractor.cs` -> `SetTaxDetails`],
+  [Verified: 2026-09-12 @ `src/Domain/MasterData/Supplier.cs` -> `SetTaxDetails`].
+- The highest number in the enum today is `ProjectTeamRead = 61`
+  [Verified: 2026-09-12 @ `src/Domain/Authorization/Permission.cs` -> `ProjectTeamRead`].
+  **`62` is reserved by D-140** (`DayLabourSiteManage`), which is not built yet.
+
+#### Decision
+
+1. **A separate row and a separate endpoint. A field-level check is rejected.** Checking a field inside a
+   handler would put a second permission check where the codebase has none. It would also give one route
+   two behaviours depending on the caller, which the allow-list tests cannot state. D-055 §1 solved the
+   same problem by splitting the row.
+   **`Permission.SubcontractorTaxRegistrationEdit = 63`**:
+   - `PermissionScope.CompanyWide`, because a firm belongs to no project, as with `SubcontractorManage`.
+   - Grants `[owner, finance]`. The Owner is included under §9's 2026-08-20 amendment 6 (the Owner may
+     create and edit all master data) and D-129 §1. *"Finance only"* is read as *"Finance, not the record's
+     owning department"*, the same reading that turned *"Finance sets it"* into `ProjectFinancialsEdit`'s
+     `[owner, finance]`.
+   - `TouchesMoney: false`. The number identifies a legal entity. It moves no money, authorises no
+     movement and governs no ledger, which is D-053's test for the flag. `ProjectFinancialsEdit` sets the
+     flag because a withholding **rate** governs the ledger; this field is not a rate.
+   - Spec reference: `"§6.7, §9 — D-139 §5 ruled by Nabil 2026-09-11, see decisions.md D-147"`.
+2. **Two endpoints, both gated `SubcontractorTaxRegistrationEdit`:**
+
+   | Route | Does | Shape |
+   |---|---|---|
+   | `PUT /api/subcontractors/{id:guid}/tax-registration` | sets or clears the number | body `{ taxRegistrationNumber: string \| null }`. Audited before and after through the existing interceptor. Whether an archived firm can be edited follows `KAFF-211`'s edit endpoint, and is not ruled here |
+   | `GET /api/subcontractors/tax-registrations` | lets Finance find the firm | `Id, Code, Name, TaxRegistrationNumber, IsActive`, and nothing else |
+
+   Finance needs the `GET` because it does not hold `SubcontractorManage` and so cannot list firms. As
+   D-055 §2 says, **the projection is the control**: no retention rate, trade or phone is returned.
+3. **`SubcontractorManage`'s create and edit requests have no `TaxRegistrationNumber` member.** A member
+   that does not exist cannot be sent, which is D-140's reasoning about `Kind`. The Technical Office's
+   read shape may carry the number **read-only**: D-139 §5 restricts entering and managing the number,
+   not reading it.
+4. **The entity:** once `WithholdingCategory` is removed (`KAFF-211` rule 5, `KAFF-212` rule 4),
+   `SetTaxDetails(category, number)` becomes `SetTaxRegistration(string?)` on both `Subcontractor` and
+   `Supplier`. It keeps today's trimming, and blank becomes null. **No format validation is added**,
+   because the spec gives none.
+5. **Suppliers: no new row and no new endpoint.** The number is set on the supplier's create and edit
+   under `SupplierManage`.
+
+#### Why
+
+- A split row is the catalogue's existing answer when one department owns a record and another owns one
+  of its fields (D-055 §1). A row with its own endpoint makes the permission check happen in the one
+  place this codebase does it.
+- One row, not a subcontractor row and a supplier row, because `SupplierManage` already has exactly the
+  grants D-139 §5 asks for. A supplier row would duplicate it, and the two would drift apart.
+
+#### What Backend builds
+
+- `Permission.SubcontractorTaxRegistrationEdit = 63`, plus the catalogue row in point 1 with an SM-30
+  comment that cites tests 1 and 2 by name.
+- `src/Api/Features/Subcontractors/SetTaxRegistration/` and `.../ListTaxRegistrations/`, built with
+  `KAFF-211`'s other slices and not ahead of them (D-141 §7).
+- `SetTaxRegistration(string?)` on both entities, replacing `SetTaxDetails`.
+- `Finance_holds_a_flat_set_of_its_company_wide_permissions`
+  [Verified: 2026-09-12 @ `tests/Domain.Tests/PermissionEvaluatorTests.cs` -> `Finance_holds_a_flat_set_of_its_company_wide_permissions`]
+  turns red, because Finance gains a `CompanyWide` row. Add the new row to its list in the same commit,
+  and name the change in the commit message.
+
+#### What Frontend builds
+
+- A Finance screen that lists subcontractors with an editable tax registration number, from the two
+  routes in point 2. UX assigns its `S-` number.
+- `S-029` shows the number read-only.
+
+#### Tests (SM-30 — the catalogue row must cite tests 1 and 2, and they must exist)
+
+`tests/Domain.Tests/`:
+1. `Only_the_owner_and_finance_hold_SubcontractorTaxRegistrationEdit_and_it_touches_no_money`: the exact
+   grant list, `CompanyWide`, and `TouchesMoney == false`.
+2. `Finance_edits_a_subcontractors_tax_registration_but_not_the_subcontractor_record`: Finance is granted
+   the new row and refused `SubcontractorManage`. The Technical Office is the other way round.
+
+`tests/Api.Tests/`, calling the endpoints directly:
+
+3. `Finance_sets_a_subcontractors_tax_registration_and_it_is_audited_before_and_after`.
+4. `The_technical_office_cannot_set_a_subcontractors_tax_registration_by_any_route`: the `PUT` returns
+   `403`. Create and edit bodies that carry `taxRegistrationNumber` leave the stored number unchanged.
+5. `Every_role_without_SubcontractorTaxRegistrationEdit_is_refused_the_tax_registration_routes`: the
+   Technical Office, HR, Marketing/Sales and the Site Engineer each get `403` on both routes.
+6. `The_finance_subcontractor_list_carries_only_the_tax_registration_fields`: the property names are an
+   allow-list equal to `{id, code, name, taxRegistrationNumber, isActive}`.
+
+No supplier test is added. `AC-212-J` already covers editing the number under `SupplierManage`.
+
+#### Consequences for the stories — the BA's to amend, not edited here
+
+- `KAFF-211`, the *"new"* row in Questions and rule 8: answered by this entry.
+- `AC-211-K` edits the retention rate and the tax number *"both"* and expects one audit record. After the
+  split, the two fields are changed by two requests from two roles, so there are two audit records. The
+  criterion must be restated.
+
+#### What this does not decide
+
+Nothing is sent to Nabil. If he meant *"Finance only"* to exclude the Owner as well, the change is one
+grant in point 1 and one line in test 1.
+
+---
