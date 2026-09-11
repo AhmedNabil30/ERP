@@ -12078,3 +12078,405 @@ filled.
   column or two, whether a باب is named by code or by name, what the `status` column does) and
   **D-008** (rounding above four decimals). **`KAFF-200`/`201` remain unbuilt, and so does the slice
   gate.**
+
+---
+
+### D-140 · Architect — `Q71`: one project-scoped row, `DayLabourSiteManage`, for the Site Engineer's worker register and engagement close · 2026-09-12
+
+D-139 §2 and §3 rule the business: a Site Engineer registers workers and opens and closes their
+engagements, **only on projects they are assigned to**, and **does not get `EmployeeManage`**. This entry
+rules the mechanism only. Today `EmployeeManage` is `CompanyWide` and held by the Owner and HR
+[Verified: 2026-09-12 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.EmployeeManage`].
+
+#### Decision
+
+1. **One new row: `Permission.DayLabourSiteManage = 62`**, `PermissionScope.ProjectScoped`, grants
+   `[owner, engineerJunior]`, `TouchesMoney: false`, spec reference `"§9, §10 — Q71 ruled by Nabil
+   2026-09-11, see decisions.md D-139 §2, D-140"`. The name uses `DayLabour` from `spec.md` §14.
+   *"Worker"* is not a code identifier. The row takes the next number after `ProjectTeamRead = 61`
+   [Verified: 2026-09-12 @ `src/Domain/Authorization/Permission.cs` -> `ProjectTeamRead`].
+   - **`engineerJunior`** means any assigned Site Engineer, Junior or Supervisor. That is the existing
+     grant used by `DraftCreate` and `DailyLogWrite`. Registering a worker is not a draft, so §9's
+     Junior/Supervisor split does not apply.
+   - **The Owner is on the row** under §9's 2026-08-20 amendment 6 (all master data) and has global
+     reach.
+   - **HR is deliberately not on the row.** HR already registers day labour through
+     `POST /api/employees` under `EmployeeManage`. Adding HR here would hand HR a second route into
+     projects: the access policy gives HR global reach by role, so the assignment check would never
+     apply to HR. HR's set of rows stays the same.
+2. **The project goes in the route, never in the body.** `ProjectScope` supports only the route and
+   the query string, and it excludes the body on purpose
+   [Verified: 2026-09-12 @ `src/Api/Authorization/ProjectScope.cs` -> `ProjectScopeSource`]. Every
+   endpoint below is under `/api/projects/{projectId:guid}/day-labour` with `ProjectScope.FromRoute()`.
+   This follows the assignment endpoints
+   [Verified: 2026-09-12 @ `src/Api/Features/Assignments/AssignUserToProject/Endpoint.cs` -> `ProjectScope.FromRoute()`].
+3. **The pool stays company-wide. The project is what authorises the act; it does not own the worker.**
+   A worker registered on project A can be engaged on project B by an engineer assigned to B (D-139 §1).
+   **No `RegisteredOnProjectId` column is added.** The project an act happened on is recorded in two
+   places:
+   - the audit record's grant path, which the project-scoped gate already writes;
+   - for an engagement, the engagement's own `ProjectId`, which is `KAFF-210`'s entity.
+4. **The Site Engineer's endpoints, all gated `DayLabourSiteManage` + `FromRoute()`:**
+
+   | Route | Does | Shape |
+   |---|---|---|
+   | `POST …/day-labour` | registers a worker | request: `FullName, Phone, BabId, Specialty, AcknowledgedDuplicatePhone`. **No `Kind` member.** The handler always passes `EmployeeKind.DayLabour` |
+   | `POST …/day-labour/phone-check` | warns before saving | D-141's shape, with the masking in point 6 |
+   | `GET …/day-labour` | the pool, for picking a worker | `Id, Code, FullName, Phone, BabId, Specialty, IsActive`. **`Kind == DayLabour` is filtered in the EF query** |
+   | `GET …/day-labour/babs` | trade picker | **the same `BabOption` shape as D-137**, with no markup |
+   | engagement open and close | `KAFF-210`'s routes, under the same prefix | ruled when `KAFF-210` is refined against D-139 §3 |
+
+   The Site Engineer **does not edit or archive** a worker. Neither act is in D-139, so both stay with
+   `EmployeeManage`.
+5. **What the Site Engineer reads is only the day-labour fields that §10 lists.** They never see:
+   - a salaried row;
+   - `NationalId`, `JobTitle` or `HiredOn`;
+   - any money member.
+
+   These are never projected in the query, so they are never loaded. They are not filtered out after
+   loading. When `KAFF-210` adds the three pool figures, the average day rate is money, and **whether
+   the Site Engineer sees it is a question for Nabil** (below). Until he answers, the Site Engineer's
+   shape carries no money member.
+6. **A phone match against a salaried record is shown to the Site Engineer without the salaried
+   person's details.** The match set covers every `Employee` row. That is correct, because §10's
+   *"nobody appears in both"* populations is exactly what a cross-population match protects. But a
+   salaried name is salaried-register data, and D-139 §2 isolates that register. The Site Engineer's
+   phone-check therefore returns:
+   - a **day-labour** match as the full `PhoneMatch` (`Id, Code, Name, IsArchived`);
+   - a **salaried** match as `{ restricted: true }`, with no id, code or name.
+
+   The save still requires the acknowledgement, and the server writes the audit row against the real
+   id. The operator learns that a match exists without learning whose it is.
+7. **The trade picker reuses D-137, not a copy of it.** The new slice's `Endpoint.cs` maps
+   `GET /api/projects/{projectId:guid}/day-labour/babs` to the existing
+   `ListBabOptions.Handler.HandleAsync`
+   [Verified: 2026-09-12 @ `src/Api/Features/Employees/ListBabOptions/Endpoint.cs` -> `ListBabOptions`]
+   under `DayLabourSiteManage`. The result is two routes with **one shape**. D-137 rejected the opposite
+   case, one route returning two shapes.
+
+#### Why
+
+- **Why a narrow row and not `EmployeeManage`:** D-139 §2 forbids it. The `UserRead` and
+  `ProjectTeamRead` precedents show how the catalogue handles this: a narrow row for a narrow act.
+- **Why one row and not three** (register, engage and close): all three are D-139's single grant,
+  *"uses the `Q71` permission"*. Splitting them would create three rows with identical grants, and
+  those drift apart the first time someone edits one.
+- **Why the pool is company-wide behind a project-scoped gate:** D-139 §1 makes the pool company-wide,
+  and §9 requires an assignment for every act. The gate is where §9 is enforced. The response
+  is the company-wide pool, limited to day labour. On this route the project is what makes the act
+  lawful. It does not filter which workers come back.
+- **Why the request has no `Kind` member:** leaving it out makes it impossible to send, which is
+  stronger than validating it. A Site Engineer therefore cannot create a salaried record by any body
+  they send.
+
+#### What Backend builds
+
+- `Permission.DayLabourSiteManage = 62`, plus the catalogue row in point 1 with an SM-30 comment
+  that cites the tests below by name.
+- A new slice folder, `src/Api/Features/DayLabour/`, holding four sub-slices: `RegisterFromSite/`,
+  `PhoneCheck/`, `ListPool/` and `BabOptions/` (endpoint only). Each is audited through the existing
+  interceptor. Registration writes `Created`, plus one `DuplicatePhoneAcknowledged` per match (D-141).
+- Registration reuses `Employee.Create` with no change to the entity.
+- **Engagement open and close** are built in `KAFF-210`, under this row. **Both handlers must check
+  `engagement.ProjectId == route projectId`.** Otherwise an engineer assigned to project A could close
+  an engagement on project B by pairing A's route with B's engagement id.
+
+#### What Frontend builds
+
+- `S-026`, the register-from-site screen: an `M1`, RTL form at 390px under `/projects/:projectId/day-labour/new`.
+  It loads its picker from `…/day-labour/babs` and runs the phone-check on blur, as the client form
+  does.
+- A `restricted` match shows the i18n key `hr.worker.duplicate_phone_restricted` with no name.
+- The pool picker reads `…/day-labour`.
+- A route guard for convenience only. The server decides.
+
+#### Tests (SM-30 — the catalogue row must cite these names, and they must exist)
+
+`tests/Domain.Tests/`:
+1. `Only_the_owner_and_assigned_site_engineers_hold_DayLabourSiteManage_and_it_touches_no_money`
+   asserts the exact grant list, `ProjectScoped`, and `TouchesMoney == false`.
+2. `A_site_engineer_holds_DayLabourSiteManage_but_not_EmployeeManage`.
+3. `An_unassigned_site_engineer_is_refused_DayLabourSiteManage`, with the evaluator called with a project
+   the engineer is not assigned to.
+4. HR's existing catalogue tests stay green **unedited**, which shows HR's set did not grow.
+
+`tests/Api.Tests/`, hitting endpoints directly:
+
+5. `An_assigned_site_engineer_registers_a_day_labourer_from_site`: `201`, and the stored `Kind` is
+   `DayLabour`.
+6. `An_unassigned_site_engineer_is_refused_registration`: `403`, and no row is written.
+7. `A_site_engineer_cannot_register_a_salaried_record_by_sending_kind`: the body carries
+   `"kind":"Salaried"` and the stored row is `DayLabour`.
+8. `A_site_engineer_is_refused_every_EmployeeManage_route`: `GET` and `POST /api/employees`,
+   `GET /api/employees/{salariedId}`, and `GET /api/employees/babs` each return `403`.
+9. `The_site_engineer_pool_returns_no_salaried_row_and_no_staff_field`: the property names are an
+   allow-list equal to `{id, code, fullName, phone, babId, specialty, isActive}`, and no salaried id
+   appears.
+10. `The_site_engineer_bab_options_carry_no_markup`: the allow-list from D-137 test 1, on the new route.
+11. `A_salaried_phone_match_is_restricted_for_a_site_engineer`: the match returns `restricted: true`
+    with no name, id or code, and the save with an acknowledgement writes the audit row against the
+    salaried id.
+12. `Every_role_without_DayLabourSiteManage_is_refused`: Finance, Marketing/Sales, Technical Office and
+    HR each get `403` on all four routes. **HR is included, so a later grant to HR is caught.**
+13. `Registration_from_site_is_audited_with_its_project`: the `Created` record names the actor, and
+    its grant path names the route project.
+14. For `KAFF-210`: `An_engagement_cannot_be_closed_through_another_projects_route`.
+
+#### What this does not decide
+
+- **Whether the Site Engineer sees or records the agreed day rate** (`KAFF-210`). It is money, and
+  D-139 §2 isolates payroll. That is a question for Nabil.
+- **Whether a Site Engineer may close an engagement another engineer opened** on the same project.
+  The row permits it, because both engineers are assigned. The handler does not refuse it.
+  Question for Nabil.
+- **Rating** (`KAFF-210`, out of 5, D-139 §3): its gate is this row, and its shape is not ruled here.
+- **Offline registration.** That is slice 9.
+
+---
+
+### D-141 · Architect — `Q70`: the three unique phone indexes become non-unique, and employees, subcontractors and suppliers reuse the client's warn-and-acknowledge mechanism · 2026-09-12
+
+D-139 §1 rules the business: **warn, do not block**. The warning names the existing record, and the
+match is made on the normalised number. This entry rules the mechanism. D-049 ruling 8 is the
+precedent, and D-139 says to follow it.
+
+**What exists today, confirmed before ruling:**
+
+| Table | Index | Unique | API slice |
+|---|---|---|---|
+| `employees` | `ux_employees_phone` | yes | yes. Create and edit catch the index violation as `EmployeePhoneTaken` [Verified: 2026-09-12 @ `src/Api/Features/Employees/CreateEmployee/Handler.cs` -> `IsPhoneCollision`] |
+| `subcontractors` | `ux_subcontractors_phone` | yes | **none**: no `src/Api/Features/Subcontractors/` exists |
+| `suppliers` | `ux_suppliers_phone` | yes | **none**: no `src/Api/Features/Suppliers/` exists |
+
+[Verified: 2026-09-12 @ `src/Infrastructure/Persistence/Configurations/MasterDataConfigurations.cs` -> `ux_employees_phone`],
+[Verified: 2026-09-12 @ `src/Infrastructure/Persistence/Configurations/MasterDataConfigurations.cs` -> `ux_subcontractors_phone`],
+[Verified: 2026-09-12 @ `src/Infrastructure/Persistence/Configurations/MasterDataConfigurations.cs` -> `ux_suppliers_phone`].
+**All three already store the normalised form** in a `PhoneNormalised` column. The client's non-unique
+index sits on exactly the same kind of column
+[Verified: 2026-09-12 @ `src/Infrastructure/Persistence/Configurations/MasterDataConfigurations.cs` -> `ix_clients_phone`].
+
+#### Decision
+
+1. **One migration, `Q70DuplicatePhonesWarnOnly`**, which drops the three `ux_*_phone` indexes and
+   creates `ix_employees_phone`, `ix_subcontractors_phone` and `ix_suppliers_phone`, all non-unique,
+   on `phone_normalised`. It is a configuration change: `.IsUnique()` is removed and the database
+   name changes. The migration is generated by EF, not written by hand.
+2. **No new column.** The normalised value is **already a stored column** on all three tables, written
+   by the entity from `PhoneNumber.Normalised`. That is the same design the client uses.
+3. **Existing data does not change.** The unique indexes guaranteed there are no duplicates today, so
+   no row conflicts, none needs a backfill, and none is merged. Dropping a uniqueness constraint only
+   loosens it and rewrites no rows.
+4. **One mechanism, not two.** `src/Api/Features/Clients/PhoneMatches.cs`
+   [Verified: 2026-09-12 @ `src/Api/Features/Clients/PhoneMatches.cs` -> `PhoneMatches`] **moves to
+   `src/Api/Common/PhoneMatches.cs`**, because four features now share it (CLAUDE.md: shared logic
+   is moved, not copied; `Domain/` has no EF, which is the file's own stated reason for living in the
+   API project). It keeps:
+   - its `PhoneMatch(Id, Code, Name, IsArchived)` record;
+   - its ordering by `Code`, and its `excluding` parameter for edits.
+
+   It gains one query method per table: `ClientsAsync`, `EmployeesAsync`, `SubcontractorsAsync` and
+   `SuppliersAsync`. Each is exact equality on `PhoneNormalised` with archived rows included.
+   `Employee.FullName` maps to `Name`. **The four entities do not get a shared interface for this.**
+   Four five-line queries are less code than an abstraction with four implementations.
+5. **The wire shape is the client's, exactly:**
+   - **Warning:** `POST /api/{employees|subcontractors|suppliers}/phone-check`, body `{ phone }`,
+     response `200 { matches: PhoneMatch[] }`, gated by that feature's `*Manage` permission. It changes
+     no state and writes no audit record, as `ClientPhoneCheck` does not
+     [Verified: 2026-09-12 @ `src/Api/Features/Clients/PhoneCheck/Handler.cs` -> `PhoneMatches.FindAsync`].
+     The name of the existing record is in `matches[].name`, as D-139 requires.
+   - **Acknowledgement:** a boolean `AcknowledgedDuplicatePhone` on the create and edit requests.
+     The handler **re-runs the match itself** and does not trust the flag.
+     - With a match and no flag, it returns `409` with
+       `MasterDataErrors.DuplicatePhoneNotAcknowledged` (`errors.master.duplicate_phone_not_acknowledged`)
+       [Verified: 2026-09-12 @ `src/Domain/MasterData/MasterDataErrors.cs` -> `DuplicatePhoneNotAcknowledged`].
+       This is the same error the client uses, not a new one.
+     - With a match and the flag, the save goes ahead and writes one
+       `audit.Record<T>(AuditEventKind.DuplicatePhoneAcknowledged, match.Id)` per match
+       [Verified: 2026-09-12 @ `src/Api/Features/Clients/CreateClient/Handler.cs` -> `DuplicatePhoneAcknowledged`].
+     - With no match, the flag is ignored.
+   - **Edit** passes `excluding: id` so a record never matches itself.
+   - D-140 point 6's masking for the Site Engineer is the one exception to this shape. It lives in the
+     Site Engineer's own phone-check handler and nowhere else.
+6. **`MasterDataErrors.EmployeePhoneTaken`, both `IsPhoneCollision` catches, and the
+   `errors.master.employee_phone_taken` keys in `ar.json` and `en.json` are deleted.** Once the unique
+   index is gone, that code can never run. Leaving it in place would suggest that a guarantee still
+   exists when it does not.
+7. **Subcontractors and suppliers:** this change ships the migration and the shared query methods. The
+   `phone-check` endpoint and the acknowledgement in create and edit are built **inside `KAFF-211` and
+   `KAFF-212`**, when those slices build their API, and follow point 5 exactly. No slice is created
+   ahead of its story.
+
+#### Why
+
+- **Why reuse instead of generalise:** the brief and D-139 both say *do not build a second one*. The
+  query is the only part that depends on the table. The request flag, the error, the audit kind and
+  the response record are all reused unchanged. As a result, the SPA's existing client warning
+  component can render all four features, because the `409` carries the same code.
+- **Why the match is re-run on the server:** D-107 §2's reasoning still holds. A caller that skips
+  the phone-check would otherwise create a duplicate with no record of it.
+- **Why keep an index at all:** the warning needs the lookup, and D-049 ruling 8 kept the client's
+  index for the same reason. A missed match is now a warning nobody sees, which makes matching
+  **more** important than before, not less.
+
+#### What Backend builds
+
+1. Move `PhoneMatches.cs` to `src/Api/Common/`, add the three query methods, and update the two client
+   callers. Behaviour stays the same and the client tests stay green unedited.
+2. Update the configuration and generate the migration.
+3. For employees:
+   - add `POST /api/employees/phone-check`;
+   - add `AcknowledgedDuplicatePhone` to the `CreateEmployee` and `EditEmployee` requests;
+   - move the match before `SaveChangesAsync`;
+   - delete the catch and the error.
+4. D-140's Site Engineer registration uses `EmployeesAsync`.
+
+#### What Frontend builds
+
+- The employee form (`S-024`) runs the phone-check on blur, shows the matched names, and resends with
+  `acknowledgedDuplicatePhone: true` once the operator confirms. It reuses the client form's
+  duplicate-warning presentation instead of building a second one.
+- The `hr.worker.duplicate_phone_warning` and `hr.worker.duplicate_phone_confirm` keys, held by
+  `KAFF-209` until `Q70` was ruled, are now written.
+- `employees.api.ts` has a doc comment naming `employee_phone_taken`, which Frontend corrects.
+- Subcontractor and supplier screens follow when `KAFF-211` and `KAFF-212` build them.
+
+#### Tests
+
+- **`AC-208-E` flips.** `Re_registering_the_same_person_by_phone_after_archiving_is_currently_blocked_by_the_phone_index`
+  [Verified: 2026-09-12 @ `tests/Api.Tests/EmployeeKindInvariantTests.cs` -> `Re_registering_the_same_person_by_phone_after_archiving_is_currently_blocked_by_the_phone_index`]
+  is **renamed** `Re_registering_the_same_person_by_phone_after_archiving_warns_and_succeeds_once_acknowledged`,
+  and asserts the following:
+  1. With no flag, the response is `409` with message key `errors.master.duplicate_phone_not_acknowledged`,
+     no longer `employee_phone_taken`.
+  2. The phone-check returns the archived day labourer, with `isArchived: true` and his name.
+  3. With the flag, the response is `201`, and the new record is `Salaried` while the archived one is
+     still `DayLabour`.
+  4. One `DuplicatePhoneAcknowledged` audit record exists, whose subject is the archived id.
+  Its remarks paragraph about a *"documented gap"* is replaced with a pointer to D-139 §1 and D-141.
+- `Employee_phone_match_is_on_the_normalised_form`: `+20 100 123 4567`, `0020 100 1234567` and
+  `01001234567` all warn against one another. This is `AC-209-C`.
+- `An_unacknowledged_duplicate_employee_phone_is_refused_and_writes_nothing`.
+- `Editing_an_employee_without_changing_the_phone_does_not_warn`, which exercises `excluding`.
+- `The_phone_index_is_not_unique`: after the migration, a check against `pg_indexes` finds that none
+  of `ux_employees_phone`, `ux_subcontractors_phone` or `ux_suppliers_phone` exists, and that each
+  `ix_*_phone` exists without `UNIQUE`. This test is the only thing that witnesses the schema half.
+- **Tests that currently assert a `409` on a repeated employee phone** must be found and moved to the
+  acknowledgement shape. The known cases are `AC-207-D` and `AC-208-B`, which the deleted error's own
+  doc cites. Backend runs Grep for `employee_phone_taken` in `tests/`, and it must return nothing
+  afterwards.
+
+#### What this does not decide
+
+- **Salaried staff.** D-139 §1 says to drop `ux_employees_phone`, and that index covers both
+  populations, so salaried staff also become warn-only. This is carried out as ruled. D-139's open
+  question about whether that was intended for salaried staff is **still Nabil's**. If he says no,
+  the fix is a partial unique index `WHERE kind = 'Salaried'`, a one-line change that needs no
+  mechanism change.
+- **What `KAFF-208`'s "nobody appears in both" now rests on.** The unique index was its enforcement.
+  Now the enforcement is a human reading a warning. `KAFF-208` must restate its invariant as
+  *"warned, acknowledged and audited"*. That is the BA's to amend, not this entry's.
+
+---
+
+### D-142 · Architect — `Q75`: the eight trades are seeded by a startup `BabSeeder` keyed on code, insert-if-absent, from one list that stays empty until Nabil gives the Arabic names and codes · 2026-09-12
+
+D-139 §8 rules the business. Eight top-level trades are seeded **once**, **idempotently**, and the seed
+**never overwrites** an edit. Markups are fractions. D-139's *Not answered* section records that the
+`NameAr` and `Code` of each trade are **not given**, and that they must not be invented. This entry rules
+the mechanism, and names what waits on that answer.
+
+#### Decision
+
+1. **The seed is a startup seeder, not migration data.** The repo's one seeding strategy is
+   `AccountTreeSeeder`: idempotent, additive, insert-if-code-absent, never edits
+   [Verified: 2026-09-12 @ `src/Infrastructure/Persistence/Seeding/AccountTreeSeeder.cs` -> `AddIfMissingAsync`],
+   and it runs at boot after the migrations
+   [Verified: 2026-09-12 @ `src/Api/Program.cs` -> `AccountTreeSeeder`].
+   **`HasData` is rejected** because EF owns `HasData` rows. If a later model change touches a seeded
+   value, the next migration emits an `UPDATE`, which overwrites the client's edit. That is the exact
+   thing D-139 forbids, done silently by a migration. `HasData` would also land the rows in every test
+   database through `CreateFromModel`.
+2. **`src/Infrastructure/Persistence/Seeding/BabSeeder.cs`**, with the same shape as
+   `AccountTreeSeeder`:
+   - `public static IReadOnlyList<BabSeed> Trades { get; } = [];`, the single list;
+   - `private sealed record BabSeed(string Code, string NameAr, string NameEn, decimal MarkupFraction, int SortOrder)`,
+     with every member **required and non-nullable**;
+   - `SeedAsync(CancellationToken)`, which calls `SeedAsync(Trades, ct)`, plus an `internal` overload
+     `SeedAsync(IReadOnlyList<BabSeed>, CancellationToken)` so tests can drive the mechanism with their
+     own rows;
+   - each row becomes `Bab.Create(code, nameAr, nameEn, Percentage.FromFraction(markup), parentBabId: null, sortOrder)`.
+     A failure throws, because *"seed data is code"*, as in `AccountTreeSeeder`.
+3. **"Never overwrite an edit" is guaranteed by keying on `Code` and inserting only when the code is
+   absent.** Nothing else is needed, because a باب's code cannot change after creation: `Code` has a
+   private setter and only `Create` writes it
+   [Verified: 2026-09-12 @ `src/Domain/MasterData/Bab.cs` -> `Create`], and no path removes a باب
+   (a Grep of `src/` for `Babs.Remove` finds nothing on 2026-09-12). This means:
+   - once a seeded code exists, the seeder never touches that row again;
+   - a rename, a markup change, a move or an archive all persist;
+   - "once" and "idempotent" are the same property.
+
+   **The seeder has no update path.** It does not compare values or "repair" a row. If it contains the
+   words `SetDefaultMarkup` or `Rename`, it is wrong.
+4. **It runs where `AccountTreeSeeder` runs:** inside the `applyMigrations` branch of `Program.cs`,
+   straight after it. The Api test host sets `Kaff:ApplyMigrationsOnStartup` to `false`
+   [Verified: 2026-09-12 @ `tests/Api.Tests/Infrastructure/KaffApiFactory.cs` -> `Kaff:ApplyMigrationsOnStartup`],
+   so test classes that count أبواب are unaffected. No test database is seeded unless a test asks for
+   it.
+5. **⛔ The list is empty in code until Nabil answers.** `BabSeed` has no nullable `Code` or `NameAr`,
+   so no incomplete row can be written, and a placeholder would not compile past review as a real
+   value. With an empty list the seeder does nothing, which is exactly today's behaviour. **When the
+   answer arrives, the change is eight lines in one list plus one test assertion**, and nothing else.
+   D-139 §8 already holds the English names and markups, so Backend copies those in at that point and
+   not before. Copying them now would mean writing rows that have no code.
+
+#### Why
+
+- A startup seeder that only inserts can only ever add. Migration data belongs to EF, and EF may
+  rewrite it. D-139's "never overwrite" is a promise that only the first of those can keep.
+- Keying on the code turns "was this edited?" into a question the seeder never needs to ask. It does
+  not track edits, hash values, or keep a `SeededAt` flag column, because it never updates anything.
+
+#### What Backend builds
+
+**Now:**
+- `BabSeeder` with the empty list, the `BabSeed` record, and the wiring in `Program.cs` and in
+  dependency injection beside `AccountTreeSeeder`.
+- The tests below, except the one marked *waits*.
+
+**Later, when Nabil answers:** the eight `Trades` rows, and test 4's final assertion.
+
+#### What Frontend builds
+
+Nothing. Seeded أبواب are ordinary rows, shown and edited on the existing screens.
+
+#### Tests — what replaces `DatabaseSeedingTests`' no-أبواب guarantee
+
+`A_freshly_initialised_database_seeds_no_babs`
+[Verified: 2026-09-12 @ `tests/Api.Tests/DatabaseSeedingTests.cs` -> `A_freshly_initialised_database_seeds_no_babs`]
+**stays, renamed `Schema_creation_alone_seeds_no_babs`.** It remains true and remains worth pinning,
+because it is what catches a `HasData` slipping in. Its assertion message changes from *"Q75, still
+open"* to *"seeding is BabSeeder's job; schema creation must never insert a باب (D-142)"*. Three more
+tests are added to the same class, each on a private database:
+
+1. `The_bab_seeder_is_idempotent`: run the seeder twice with a test-local list, and assert the row count
+   equals the list's length both times.
+2. `The_bab_seeder_never_overwrites_an_edited_trade`: seed, then rename, change the markup and archive
+   one row through the entity, then reseed. The edited values survive.
+3. `The_bab_seeder_skips_a_code_the_client_already_created`: create a باب with the test list's code
+   first, then seed. The client's row is unchanged and no duplicate is added.
+4. `The_bab_seeder_inserts_exactly_the_trade_list`: seed from `BabSeeder.Trades`, and the rows equal
+   the list field for field, as root nodes with each markup as a fraction. **This passes today with 0
+   rows.** ⛔ *Waits:* when the list is filled, add `BabSeeder.Trades.Should().HaveCount(8)` and assert
+   D-139 §8's English names and markups (`0.10, 0.15, 0.15, 0.30, 0.25, 0.30, 0.20, 0.25`).
+
+Test-local seed rows use codes that exist only in the test project, and they never ship.
+
+#### What this does not decide
+
+- **The eight Arabic names and codes.** They are Nabil's to give (D-139).
+- **Whether the seed runs on a database where the client has already built their own trade tree.**
+  As ruled, it adds its eight rows beside any existing أبواب whose codes differ. If Nabil means
+  "only on an empty tree", the change is one guard (`if (await Babs.AnyAsync()) return 0;`), but that
+  is his decision and not this entry's. Question for Nabil.
+- **Production boot.** Outside Development, `ApplyMigrationsOnStartup` defaults to `false`, and then
+  neither seeder runs. That is today's arrangement for the account tree, and it is not changed here.
