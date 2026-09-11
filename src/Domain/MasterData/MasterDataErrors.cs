@@ -175,4 +175,29 @@ public static class MasterDataErrors
     /// <remarks>Same shape and reasoning as <see cref="CatalogueItemListFilterUnknown"/> — D-111 §3.</remarks>
     public static readonly Error BabListFilterUnknown =
         Error.Validation("master.bab_list_filter_unknown", "errors.master.bab_list_filter_unknown");
+
+    /// <summary>
+    /// KAFF-200 — a file-level refusal: not a zip, missing a required OOXML part, an unreadable
+    /// header row, no data rows, or above one of decisions.md D-136's technical ceilings. One shared
+    /// key, per the story's own i18n list — the row-level report carries the granular reasons instead.
+    /// </summary>
+    public static readonly Error CatalogueImportFailed =
+        Error.Validation("master.catalogue_import_failed", "errors.master.catalogue_import_failed");
+
+    /// <summary>
+    /// KAFF-200, D-136's row table — a cost or sell cell that is text failing the wire grammar, a
+    /// boolean, or an error cell (<c>#VALUE!</c>). Distinct from <see cref="CostPriceRequired"/> /
+    /// <see cref="SellRateRequired"/>, which name an <b>absent</b> value rather than a malformed one.
+    /// </summary>
+    public static readonly Error CatalogueImportBadNumber =
+        Error.Validation("master.catalogue_import_bad_number", "errors.master.catalogue_import_bad_number");
+
+    /// <summary>
+    /// KAFF-200, D-136's row table — a code repeated within the same file. The first occurrence
+    /// imports; every later one is refused with this, distinct from <see cref="CatalogueItemCodeTaken"/>
+    /// which names a code already in the catalogue before the file was opened.
+    /// </summary>
+    public static readonly Error CatalogueItemCodeRepeatedInFile =
+        Error.Validation(
+            "master.catalogue_item_code_repeated_in_file", "errors.master.catalogue_item_code_repeated_in_file");
 }
