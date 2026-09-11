@@ -62,7 +62,18 @@ internal static class Handler
             return ResultExtensions.Problem(unitSet.Error);
         }
 
-        Result repriced = item.Reprice(Money.From(request.CostPrice), Money.From(request.BaseSellRate));
+        // V-36-H: an omitted price is refused, not defaulted to 0. An explicit 0 stays legal.
+        if (request.CostPrice is null)
+        {
+            return ResultExtensions.Problem(MasterDataErrors.CostPriceRequired);
+        }
+
+        if (request.BaseSellRate is null)
+        {
+            return ResultExtensions.Problem(MasterDataErrors.SellRateRequired);
+        }
+
+        Result repriced = item.Reprice(Money.From(request.CostPrice.Value), Money.From(request.BaseSellRate.Value));
 
         if (repriced.IsFailure)
         {

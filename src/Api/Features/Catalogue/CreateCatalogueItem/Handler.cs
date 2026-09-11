@@ -59,13 +59,26 @@ internal static class Handler
             return ResultExtensions.Problem(MasterDataErrors.BabNotFound);
         }
 
+        // V-36-H: an omitted price is refused, not defaulted to 0 — a money value nobody entered.
+        // An explicit 0 (request.CostPrice.Value == 0m) reaches CatalogueItem.Create unchanged and is
+        // legal; only the absence of a value is refused here.
+        if (request.CostPrice is null)
+        {
+            return ResultExtensions.Problem(MasterDataErrors.CostPriceRequired);
+        }
+
+        if (request.BaseSellRate is null)
+        {
+            return ResultExtensions.Problem(MasterDataErrors.SellRateRequired);
+        }
+
         Result<CatalogueItem> created = CatalogueItem.Create(
             request.Code ?? string.Empty,
             request.DescriptionAr ?? string.Empty,
             request.Unit ?? string.Empty,
             request.BabId,
-            Money.From(request.CostPrice),
-            Money.From(request.BaseSellRate),
+            Money.From(request.CostPrice.Value),
+            Money.From(request.BaseSellRate.Value),
             request.DescriptionEn);
 
         if (created.IsFailure)

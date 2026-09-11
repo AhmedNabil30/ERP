@@ -11,6 +11,10 @@ public static class MasterDataErrors
     public static readonly Error NameRequired =
         Error.Validation("master.name_required", "errors.master.name_required");
 
+    /// <summary>KAFF-204 rule 2 — every باب carries its own required markup; there is no null and no inheritance.</summary>
+    public static readonly Error DefaultMarkupRequired =
+        Error.Validation("master.default_markup_required", "errors.master.default_markup_required");
+
     public static readonly Error UnitRequired =
         Error.Validation("master.unit_required", "errors.master.unit_required");
 
@@ -23,14 +27,41 @@ public static class MasterDataErrors
     public static readonly Error SellRateMustNotBeNegative =
         Error.Validation("master.sell_rate_negative", "errors.master.sell_rate_negative");
 
+    /// <summary>
+    /// V-36-H: a blank or omitted price was silently stored as <c>0.0000</c> — a money value invented
+    /// by the system. An explicit <c>0</c> stays legal (AC-202-D refuses only negatives); this refuses
+    /// only the absence of a value.
+    /// </summary>
+    public static readonly Error CostPriceRequired =
+        Error.Validation("master.cost_price_required", "errors.master.cost_price_required");
+
+    /// <summary>V-36-H, the sell-rate half of <see cref="CostPriceRequired"/>.</summary>
+    public static readonly Error SellRateRequired =
+        Error.Validation("master.sell_rate_required", "errors.master.sell_rate_required");
+
     public static readonly Error AlreadyArchived =
         Error.Conflict("master.already_archived", "errors.master.already_archived");
 
     public static readonly Error NotArchived =
         Error.Conflict("master.not_archived", "errors.master.not_archived");
 
-    public static readonly Error BabCannotBeItsOwnParent =
-        Error.Validation("master.bab_cannot_be_its_own_parent", "errors.master.bab_cannot_be_its_own_parent");
+    /// <summary>
+    /// Renamed from <c>BabCannotBeItsOwnParent</c> — decisions.md D-128. "Cannot be its own parent" is
+    /// false of the depth-two-or-more refusal <c>Bab.SetParent</c> also returns this for (A being made
+    /// its own grandparent is not a parent relationship at all), so SM-33 requires the rename rather
+    /// than a second key beside the false one. One guard, one message, in every depth it refuses.
+    /// </summary>
+    public static readonly Error BabCannotBeItsOwnAncestor =
+        Error.Validation(
+            "master.bab_cannot_be_its_own_ancestor", "errors.master.bab_cannot_be_its_own_ancestor");
+
+    /// <summary>spec.md §4.5 — a code that identifies two أبواب identifies neither. KAFF-204 rule, `ux_babs_code`.</summary>
+    public static readonly Error BabCodeTaken =
+        Error.Conflict("master.bab_code_taken", "errors.master.bab_code_taken");
+
+    /// <summary>KAFF-213, D-130 §5 — a باب holding active items cannot be archived; the refusal names the count.</summary>
+    public static readonly Error BabHasActiveItems =
+        Error.Conflict("master.bab_has_active_items", "errors.master.bab_has_active_items");
 
     /// <summary>spec.md §10: "Nobody appears in both" — day labour and salaried staff are distinct populations.</summary>
     public static readonly Error EmployeeKindIsImmutable =
@@ -119,4 +150,9 @@ public static class MasterDataErrors
     public static readonly Error CatalogueItemListFilterUnknown =
         Error.Validation(
             "master.catalogue_item_list_filter_unknown", "errors.master.catalogue_item_list_filter_unknown");
+
+    /// <summary>The باب list's <c>status</c> filter named something that is not a filter. KAFF-213 rule 9.</summary>
+    /// <remarks>Same shape and reasoning as <see cref="CatalogueItemListFilterUnknown"/> — D-111 §3.</remarks>
+    public static readonly Error BabListFilterUnknown =
+        Error.Validation("master.bab_list_filter_unknown", "errors.master.bab_list_filter_unknown");
 }

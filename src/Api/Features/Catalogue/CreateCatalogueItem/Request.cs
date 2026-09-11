@@ -15,16 +15,18 @@ namespace Kaff.Api.Features.Catalogue.CreateCatalogueItem;
 /// <param name="BabId">Required and must name an existing باب — KAFF-202 rule 9.</param>
 /// <param name="CostPrice">
 /// Internal. §4.2 — MUST NOT appear in any client-facing output. Carried as a plain <c>decimal</c> on
-/// the wire (matching <c>decimal(18,4)</c> storage exactly) rather than as <c>Money</c>, because the
-/// HTTP JSON pipeline has no <c>Money</c> converter registered — only <c>KaffJson.Options</c>, used for
-/// audit snapshots, does.
+/// the wire (matching <c>decimal(18,4)</c> storage exactly) rather than as <c>Money</c> — the shape
+/// stays a bare decimal for this record's own reasons, but per decisions.md D-135 it now crosses the
+/// wire as a JSON string in both directions, through the same converter <c>KaffJson.Options</c> uses.
+/// <b>Nullable on purpose (V-36-H):</b> an omitted price must be refused, not silently read as
+/// <c>0</c> — a money value invented by the system. An explicit <c>0</c> stays legal.
 /// </param>
-/// <param name="BaseSellRate">Before conditions and line markup — spec.md §4.2.</param>
+/// <param name="BaseSellRate">Before conditions and line markup — spec.md §4.2. Nullable — see <see cref="CostPrice"/>.</param>
 public sealed record Request(
     string? Code,
     string? DescriptionAr,
     string? DescriptionEn,
     string? Unit,
     Guid BabId,
-    decimal CostPrice,
-    decimal BaseSellRate);
+    decimal? CostPrice,
+    decimal? BaseSellRate);

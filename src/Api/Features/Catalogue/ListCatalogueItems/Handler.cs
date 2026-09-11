@@ -26,12 +26,12 @@ namespace Kaff.Api.Features.Catalogue.ListCatalogueItems;
 /// </para>
 /// <para>
 /// <b>Archived items are excluded by default and reachable on request</b> — KAFF-206 rule 7,
-/// <c>AC-206-A</c>, <c>AC-206-F</c>. Three states, not a boolean, matching
-/// <c>ClientListFilterParsing</c>'s shape exactly: an unknown <c>status</c> value is refused with
+/// <c>AC-206-A</c>. Three states, not a boolean, matching <c>ClientListFilterParsing</c>'s shape
+/// exactly: an unknown <c>status</c> value is refused with
 /// <c>errors.master.catalogue_item_list_filter_unknown</c> rather than silently defaulted, because a
-/// wrong filter and an empty archive must not look the same. This is also the search the BOQ builder's
-/// "add item" reaches later (slice 4) — its default excluding archived items is what keeps an archived
-/// item off new work (`Q65`, D-130 §3) without that caller having to know to ask.
+/// wrong filter and an empty archive must not look the same. ⚠️ V-36-G: whether the BOQ builder's
+/// "add item" search reaches this same default is <c>AC-206-F</c>, held to slice 4 — no such search
+/// exists in this codebase yet, so this endpoint's own default is not a witness for it.
 /// </para>
 /// <para>
 /// <b>No audit record and no money beyond the item's own two prices.</b> It is a read (rule 10), and

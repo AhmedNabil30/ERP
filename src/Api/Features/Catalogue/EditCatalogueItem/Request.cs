@@ -20,11 +20,15 @@ namespace Kaff.Api.Features.Catalogue.EditCatalogueItem;
 /// <param name="DescriptionAr">Required — the same guard <c>Create</c> applies.</param>
 /// <param name="DescriptionEn">Optional.</param>
 /// <param name="Unit">Required.</param>
-/// <param name="CostPrice">Internal — §4.2. Not negative (rule 8); a loss-making sell rate is not refused.</param>
-/// <param name="BaseSellRate">Before conditions and line markup.</param>
+/// <param name="CostPrice">
+/// Internal — §4.2. Not negative (rule 8); a loss-making sell rate is not refused. Nullable on
+/// purpose (V-36-H): an omitted price must be refused, not silently read as <c>0</c>. An explicit
+/// <c>0</c> stays legal.
+/// </param>
+/// <param name="BaseSellRate">Before conditions and line markup. Nullable — see <see cref="CostPrice"/>.</param>
 public sealed record Request(
     string? DescriptionAr,
     string? DescriptionEn,
     string? Unit,
-    decimal CostPrice,
-    decimal BaseSellRate);
+    decimal? CostPrice,
+    decimal? BaseSellRate);

@@ -10,7 +10,10 @@ namespace Kaff.Api.Features.Catalogue.ListCatalogueItems;
 /// </remarks>
 public enum CatalogueItemListFilter
 {
-    /// <summary>The default. Archived items are excluded — KAFF-206 rule 7, AC-206-F.</summary>
+    /// <summary>
+    /// The default. Archived items are excluded — KAFF-206 rule 7, AC-206-A. (Not AC-206-F: V-36-G —
+    /// that criterion is the BOQ builder's own search and is held to slice 4.)
+    /// </summary>
     Active = 1,
 
     /// <summary>Archived items only.</summary>
