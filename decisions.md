@@ -12898,3 +12898,147 @@ Nothing is sent to Nabil. If he meant *"Finance only"* to exclude the Owner as w
 grant in point 1 and one line in test 1.
 
 ---
+
+### D-148 Â· Architect â€” corrects D-140 point 3: a project-scoped act records the project from the audit context, not off the entity; the gate records the pair Â· 2026-09-12
+
+**Backend raised this against KAFF-209 (commits `d6a438c`, `9c67d24`). The finding is true.** D-140
+point 3 states that the project an act happened on is recorded in *"the audit record's grant path,
+which the project-scoped gate already writes"*, and D-140's test 13 asserts it. Neither holds as
+shipped, and this entry is the correction. This is the project's recurring shape: a claim of a safety
+that does not exist, written confidently enough to survive review.
+
+#### 1. What is actually true today
+
+* The interceptor derives the project from the **entity being saved**, not from the request:
+  `Project` tags itself, everything else is asked for a `ProjectId` property
+  [Verified: 2026-09-12 @ `src/Infrastructure/Persistence/Interceptors/AuditSaveChangesInterceptor.cs`
+  -> `ExtractProjectId`].
+* `Employee` carries no `ProjectId` â€” D-140 point 3 forbids `RegisteredOnProjectId`, correctly, and the
+  handler's own remarks say so
+  [Verified: 2026-09-12 @ `src/Api/Features/DayLabour/RegisterFromSite/Handler.cs` -> `HandleAsync`].
+* The grant path is then paired with the *presence* of that entity project:
+  `projectId is null ? null : _auditContext.GrantPath`
+  [Verified: 2026-09-12 @ `AuditSaveChangesInterceptor.cs` -> `Describe`]. A null project nulls the
+  path with it.
+* The gate does write the path â€” but only the path. It resolves the route project into a local and
+  discards it, handing the audit context `access.Path` alone
+  [Verified: 2026-09-12 @ `src/Api/Authorization/PermissionAuthorizationHandler.cs` ->
+  `HandleRequirementAsync`, `ResolveProjectId`; @ `src/Domain/Auditing/IAuditContext.cs` ->
+  `GrantedThrough`].
+
+Consequence: registering a day labourer from site writes a `Created` record with `ProjectId` null and
+`GrantPath` null. The trail cannot say which project the engineer was acting on, and there is a live
+consumer of exactly that: `?projectId=` filters on `AuditRecord.ProjectId`
+[Verified: 2026-09-12 @ `src/Api/Features/Audit/ReadAuditTrail/Handler.cs` -> `HandleAsync`], which is
+`AC-117-F`'s read and the Owner's only per-project view of the trail (spec.md Â§9 â€” the audit trail is
+the Owner's alone). Backend's shipped test asserts the real null behaviour with the mechanism
+documented inline; that was the right call, and it is superseded here.
+
+#### 2. Ruling â€” the project MUST be recorded, and the entity is the wrong place to look for it
+
+**A state change made under a project-scoped grant records that project.** This is not a new business
+rule and is not Nabil's to answer: spec.md Â§9 already makes the project half of every authorisation
+(`role Ã— assignment`), D-070 built `project_id` and `grant_path` so the trail can say *which project*
+and *by what authority*, and KAFF-117 already ships the per-project filter that reads them. The defect
+is that the mechanism looks for the project in the one place a project-scoped act is not obliged to
+carry it. D-140 point 3's substance stands â€” the pool is company-wide, the project authorises the act
+and does not own the worker, and **no `RegisteredOnProjectId` column is added**. Only its claim about
+where the project is recorded is wrong.
+
+**The mechanism: the gate records the pair it already has.**
+
+1. `IAuditContext` gains `Guid? GrantProjectId`, set by the same call that records the path â€”
+   `GrantedThrough(ProjectAccessPath path)` becomes `ScopedTo(Guid projectId, ProjectAccessPath path)`,
+   called from the granted branch of `HandleRequirementAsync`, where `access is not null`. Same
+   single-source rule as D-070 Â§2: the gate states what the policy already decided, and nothing
+   re-derives it. Like the path, it is set once per request and is not discarded by `Clear()`.
+2. The interceptor falls back to it, and pairs the path with the project's *identity*:
+
+   ```csharp
+   Guid? projectId = ExtractProjectId(entry) ?? _auditContext.GrantProjectId;
+   ProjectAccessPath? grantPath =
+       projectId is not null && projectId == _auditContext.GrantProjectId ? _auditContext.GrantPath : null;
+   ```
+
+That is the whole change: three files, no new column, no migration, nothing on `Employee`, no
+per-feature audit code. The entity keeps priority, so an entity that names its own project is
+unaffected.
+
+**This closes V-D as a side effect.** D-069 Â§5 and D-070 Â§4 deferred the identity pairing to slice 4
+and predicted the fix verbatim â€” *"the gate would have to record the project it authorised alongside
+the path"*, with the guard `projectId == _auditContext.GrantProjectId ? _auditContext.GrantPath : null`.
+The same pair fixes both, so V-D is closed here rather than carried further.
+
+**What the columns mean afterwards, stated so nobody has to infer it.** `project_id` means *the
+project this act was about*: the entity's own project where it has one, otherwise the project whose
+grant admitted the request. For an entity with no project of its own, those are the same fact â€” the
+act exists only because that project authorised it. Company-wide acts are untouched: their permissions
+declare no scope, the gate resolves no project, `GrantProjectId` stays null, and both columns stay null
+exactly as D-070 Â§1 requires. `ck_audit_records_grant_path` continues to hold â€” a path is only ever
+written beside the project it was granted on, and `None` is never written, because the pair is recorded
+only on a grant.
+
+#### 3. The tests that witness it
+
+`Registration_from_site_is_audited_with_its_project` keeps its name â€” the name was right, the
+assertions were the defect â€” and its two assertions invert
+[today @ `tests/Api.Tests/RegisterDayLabourerFromSiteTests.cs` -> `Registration_from_site_is_audited_with_its_project`]:
+
+* `record.ProjectId.Should().Be(_projectA);`
+* `record.GrantPath.Should().Be(ProjectAccessPath.Assignment);` â€” the assigned Site Engineer's path.
+
+The inline comment recording the shipped null behaviour is deleted with it; it documents the defect
+and would otherwise outlive it.
+
+One mechanism test joins it, because the rule belongs to the interceptor and not to KAFF-209
+[@ `tests/Api.Tests/AuditMechanismTests.cs`]:
+
+* `A_project_scoped_act_on_an_entity_with_no_project_records_the_route_project` â€” asserts the fallback
+  and the identity pairing on the one mechanism, so a later slice that adds a project-scoped endpoint
+  over a company-wide entity inherits the guarantee instead of rediscovering this entry.
+
+D-140's test 13 is replaced by these two. Nothing else in D-140 changes.
+
+#### 4. Which endpoints are affected â€” the sweep
+
+Every endpoint declaring `ProjectScope.FromRoute()` or `FromQuery()` today
+[Verified: 2026-09-12, swept `src/Api/Features/**/Endpoint.cs`]:
+
+| Endpoint | Permission | Saves | Affected |
+|---|---|---|---|
+| `POST â€¦/day-labour` (`DayLabour/RegisterFromSite`) | `DayLabourSiteManage` | `Employee`, no `ProjectId` | **Yes â€” the only one** |
+| `POST â€¦/day-labour/phone-check` | `DayLabourSiteManage` | nothing | No |
+| `GET â€¦/day-labour`, `GET â€¦/day-labour/babs` | `DayLabourSiteManage` | nothing | No |
+| `POST â€¦/projects/{projectId}/assignments` (`Assignments/AssignUserToProject`) | `ProjectAssignmentManage` | `ProjectAssignment`, carries `ProjectId` | No |
+| `DELETE â€¦/projects/{projectId}/assignments/{id}` (`Assignments/RevokeProjectAssignment`) | `ProjectAssignmentManage` | `ProjectAssignment`, carries `ProjectId` | No |
+
+`ReadAuditTrail` is deliberately not project-scoped â€” `?projectId=` is a filter, not a scope â€” and is
+the consumer, not a casualty. `KAFF-210`'s engagement will carry its own `ProjectId` and needs nothing
+from this entry, which is what D-140 point 3's second bullet already said correctly.
+
+So **one endpoint is wrong today, and the fix is in the shared mechanism rather than in that
+endpoint** â€” which is the point. Patching `RegisterFromSite` alone would leave the next project-scoped
+endpoint over a company-wide entity silently broken in the same way.
+
+#### 5. What Backend builds
+
+1. `IAuditContext`: add `GrantProjectId`; `GrantedThrough` becomes
+   `ScopedTo(Guid projectId, ProjectAccessPath path)`, with the implementation in `AuditContext`.
+2. `PermissionAuthorizationHandler.HandleRequirementAsync`: call `ScopedTo(projectId!.Value, access.Path)`
+   in the granted branch, where the project id is already in hand.
+3. `AuditSaveChangesInterceptor.Describe`: the two lines in point 2.
+4. The two tests in point 3, and the deletion of the inline comment they replace.
+
+No migration, no column, no entity change, no handler change.
+
+#### What this does not decide
+
+Nothing is sent to Nabil, and nothing here needed him. Two notes for whoever reads the trail next:
+
+* Rows written **before** this change keep a null project for site registrations and cannot be
+  backfilled â€” `audit_records` is append-only by trigger. The gap is KAFF-209's staging rows only.
+* If the Owner should ever want *"everything done under project A's authority, including company-wide
+  rows it touched"* as a question distinct from *"everything belonging to project A"*, that is a
+  reporting question for the day a view needs it, not a second column now.
+
+---
