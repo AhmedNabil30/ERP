@@ -1,6 +1,6 @@
-# KAFF-209 · Register a worker from site, warned on a duplicate phone
+﻿# KAFF-209 · Register a worker from site, warned on a duplicate phone
 
-<!-- kaff id=KAFF-209 slice=2 points=5 state=NOT-BUILT verdict=none at=- on=2026-09-09 -->
+<!-- kaff id=KAFF-209 slice=2 points=5 state=BUILT verdict=none at=35b0550 on=2026-09-12 -->
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **⚠️ Amended 2026-09-12 — `Q70` and `Q71` are both answered (D-139 §1/D-141, D-139 §2/D-140). The permission is `DayLabourSiteManage`, project-scoped, under `/api/projects/{projectId}/day-labour`. A duplicate phone warns and is acknowledged, never refuses. Two Definition-of-Ready boxes remain unticked — QA's cases.**
 **Spec:** **§10** (*"engineers register workers from site … Deduplicated by phone"*), **§2**, §9 · **Decisions:** D-044 ruling 4, D-049 ruling 8 (the pattern this story now reuses, per D-141), **D-139 §§1–2, D-140, D-141**

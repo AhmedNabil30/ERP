@@ -1,6 +1,6 @@
-# KAFF-210 · Worker engagement history, day rate, frequency and rating
+﻿# KAFF-210 · Worker engagement history, day rate, frequency and rating
 
-<!-- kaff id=KAFF-210 slice=2 points=3 state=NOT-BUILT verdict=none at=- on=2026-09-09 -->
+<!-- kaff id=KAFF-210 slice=2 points=3 state=BUILT verdict=none at=35b0550 on=2026-09-12 -->
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **⚠️ Amended 2026-09-12 — `Q72` is answered (D-139 §3, mechanism by D-140): an engagement is one continuous stretch of work on one project, closed only by an explicit manual close, no timeout; ratings are out of 5. Rating's finer shape (whole number, decimal, criteria breakdown) is not ruled — see Questions. One Definition-of-Ready box remains unticked — QA's cases.**
 **Spec:** **§10** (*"Carries engagement history and per-engagement ratings, producing a searchable pool with average day rate, frequency and rating"*), §2 · **Decisions:** D-044 ruling 4, D-044 ruling 6 (four decimals stored, two displayed), **D-129 §1, D-139 §3, D-140**

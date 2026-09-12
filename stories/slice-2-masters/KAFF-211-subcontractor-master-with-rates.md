@@ -1,6 +1,6 @@
-# KAFF-211 · Subcontractor master — profile only, rates live on the sub-BOQ
+﻿# KAFF-211 · Subcontractor master — profile only, rates live on the sub-BOQ
 
-<!-- kaff id=KAFF-211 slice=2 points=5 state=NOT-BUILT verdict=none at=- on=2026-09-09 -->
+<!-- kaff id=KAFF-211 slice=2 points=5 state=BUILT verdict=none at=35b0550 on=2026-09-12 -->
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **⚠️ Amended 2026-09-12 — `Q29`, `Q73` and `Q70` are all answered (D-139 §§4–5, D-141/D-144 §1). Retitled: this master carries no rate card and no rate card was ever built — "with rates" is no longer true and the file's own former title was never a ruling. The file name is left as-is; only the heading changes.**
 **Spec:** **§2** (*"rates and BOQ; Finance only disburses"*), **§5.1** (5% retention, zeroable 🟡), **§6.7**, §9 (*"record only, no login"*) · **Decisions:** D-044 ruling 4, D-049 ruling 9 (the rate moved to the contract, **for the client only**), **D-129 §1, D-139 §§4–5, D-141**

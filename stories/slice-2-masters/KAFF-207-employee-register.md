@@ -1,6 +1,6 @@
-# KAFF-207 · Employee register — exactly one record per costed person
+﻿# KAFF-207 · Employee register — exactly one record per costed person
 
-<!-- kaff id=KAFF-207 slice=2 points=5 state=BUILT verdict=REJECTED at=7117704 on=2026-09-11 -->
+<!-- kaff id=KAFF-207 slice=2 points=5 state=BUILT verdict=none at=35b0550 on=2026-09-12 -->
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** state and verdict live only in this file's line-3 trailer (`V-37-H`) — see line 3. Refined 2026-09-09 by the BA, amended 2026-09-12 against D-139 §7 / D-144 §2 (`Q68` closes in full) and D-130 §6 (`AC-207-C` restated, `V-37-E`).
 **Spec:** **§2** (*"every costed person, exactly one record"*), **§10** · **Decisions:** D-044 ruling 4, D-055 §2 (HR sees names and roles, no salary), D-016 (Worker vs Employee, 🟡), **D-130 §6, D-129 §1, D-139 §7, D-144 §2**

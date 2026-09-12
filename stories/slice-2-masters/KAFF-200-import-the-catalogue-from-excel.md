@@ -1,6 +1,6 @@
-# KAFF-200 · Import the catalogue from Excel at setup, loading the good rows and reporting the rest
+﻿# KAFF-200 · Import the catalogue from Excel at setup, loading the good rows and reporting the rest
 
-<!-- kaff id=KAFF-200 slice=2 points=5 state=NOT-BUILT verdict=none at=- on=2026-09-08 -->
+<!-- kaff id=KAFF-200 slice=2 points=5 state=BUILT verdict=none at=35b0550 on=2026-09-12 -->
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 5 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-08 by the BA against `STATUS.md`'s sprint-6 item 6. **⚠️ Amended 2026-09-09 — `Q60`'s schema half, `Q61` and `Q12` are all answered (D-129 §2, D-129 §3 / D-130 §1, D-129 §1), rule 7 is rewritten off the "all-or-nothing" title it used to cite, and `AC-200-H`/`AC-200-I` are written. One Definition-of-Ready box is still unticked — see *Definition of Ready* below.**
 **Spec:** **§4.1** (the whole of it), §4.2, §4.4, §2 · **Decisions:** D-018 (the `status` values, 🟡, now superseded by D-144 §5 for imported rows), D-044 ruling 4, **D-129 §§1–2, D-129 §3 / D-130 §1, D-136, D-144 §§3–6**

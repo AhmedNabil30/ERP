@@ -173,6 +173,58 @@ mechanism → (5) build `200`, `201`, `209`–`212` → (6) one `opus` Verifier 
   strings through `i18n.formatMoney`; `npm test` 70/70 (the Frontend's figure). ⚠️ It did **not** watch
   its tests fail first — the Verifier is told.
 - Step 5e dispatched: Backend (`sonnet`), `KAFF-209` Site Engineer register (D-140).
+  ⚠️ **Impediment:** two `KAFF-209` spawns in a row ended right after invoking `caveman:caveman`,
+  having built nothing (3 tool calls each). The third brief states the caveman style inline instead
+  of ordering the skill invocation. ⚠️ The third spawn was killed by a spend limit mid-build; a
+  finisher picked its uncommitted work up. ✅ `d6a438c`, `9c67d24`: `DayLabourSiteManage = 62` and the
+  four `/api/projects/{projectId}/day-labour` routes. Domain 200/200, Api 497/497 (1 skip) — the
+  Backend's figures.
+  ⛔ **Finding, routed to the Architect:** D-140's test 13 says the `Created` record's grant path names
+  the route project. It does not. `AuditSaveChangesInterceptor.ExtractProjectId` reads `ProjectId` off
+  the saved entity and `Employee` has none (D-140 point 3), so both `ProjectId` and `GrantPath` are
+  null. **D-140 point 3's claim that the project is recorded is false as shipped.**
+  ✅ Architect (`opus`) `fd370cd` **D-148**: finding confirmed; the gate carries the route project into
+  the audit context (`ScopedTo(projectId, path)`), no column, no migration. Only
+  `DayLabour/RegisterFromSite` is affected. It also closes `V-D` (D-069 §5 / D-070 §4).
+- Step 5f dispatched: Backend (`sonnet`), D-148 mechanism then `KAFF-210`. ✅ `c371ed4` (D-148 built),
+  `660de2f` (`Engagement`, migration `EngagementHistory`, open/close/rate routes, three check
+  constraints). Domain 213/213, Api 509 (508 pass, 1 skip) — the Backend's figures. `Q76` held: no
+  money member on any Site Engineer route; the pool's derived figures unbuilt (`S-025`/`S-027`).
+  ⛔ **Second finding, routed to the Architect:** under D-148 a company-wide entity saved in the same
+  request as a project-scoped act now inherits that request's project on its audit row
+  (`PermissionMechanismTests.The_owners_reach_is_named_although_it_leaves_no_row`). D-148's sweep
+  missed it.
+- Step 5g dispatched: Architect (`opus`), the D-148 spill onto company-wide rows. ✅ `8990b88`
+  **D-149**: the spill is WRONG (it would put non-project rows in `KAFF-117`'s `?projectId=` trail).
+  Fix is a marker `IAuditScopedByGrant` on `Employee` only; `PermissionMechanismTests`' edited
+  assertions must be reverted. No shipped endpoint hits it yet — latent, plus the test probe.
+- Step 5h dispatched: Backend (`sonnet`), D-149 fix then `KAFF-211` (incl. D-147). D-149 shipped
+  `dadadd7`; the 211 half was killed by a session limit and finished by a second Backend session.
+  ✅ `e093f3d`: subcontractor slice, `SubcontractorTaxRegistrationEdit = 63`, both tax routes,
+  migration `SubcontractorCodeSequenceAndTaxRegistration`. Domain 222/222, Api 527 (526 pass, 1 skip)
+  — the Backend's figures. `AC-211-O` HELD (no UX S-number).
+- Step 5i dispatched: Backend (`sonnet`), `KAFF-212` supplier master. ✅ `2767972`: six routes under
+  `SupplierManage`, migration `SupplierCodeSequenceAndWithholdingRemoved`, no bank record, no
+  permission split (D-147 confirmed against the catalogue). Domain 229/229, Api 539 (538 pass, 1
+  skip) — the Backend's figures.
+- Step 5j dispatched: Frontend (`sonnet`), `KAFF-209` `S-026` and `KAFF-210`'s engagement screens.
+  ✅ `5a8df3d`: register-from-site, pool, engage/close/rate; no money anywhere (`Q76`); `npm test`
+  79/79 (the Frontend's figure), first run red on a real `NG0951`.
+  ⛔ **Gap in `KAFF-210`, for the Verifier and for Nabil:** no endpoint reads a worker's engagement
+  history, and the pool's derived figures (`AC-210-B`/`D`/`G`) are unbuilt on both sides because the
+  average day rate is money and `Q76` is unanswered. The screen knows only the engagement it opened
+  itself. **`KAFF-210` is not fully built and must not be trailed as if it were.**
+- Step 5k dispatched: Frontend (`sonnet`), `KAFF-211`/`212` screens. ✅ `ac87cc9`, `35b0550`:
+  `S-028`/`S-029`/`S-030` list, create, edit, archive, phone warn-ack; `npm test` 96/96 (the
+  Frontend's figure). `AC-211-O` still HELD (no UX S-number for Finance's tax screen).
+  ⛔ **Finding for the Verifier:** the subcontractor form sends the retention rate through
+  `Number()` on submit. D-139 §8 says markups cross the wire as strings under D-135, and `V-36-I`
+  called a price through `Number()` a defect. Whether a **rate** is covered by D-135 is the
+  Architect's to rule — it is not ruled today.
+- Trailers moved to `state=BUILT at=35b0550` for 200, 201, 207, 208, 209, 210, 211, 212, and
+  `tools/status.ps1` regenerated: **slice 2 = 53 points, 0 accepted; slice 3 = 5 points** (`KAFF-320`
+  is new and not Ready). `210` is trailed `BUILT` but is **not complete** — see the gap above.
+- Step 6 dispatched: one fresh Verifier (`opus`, §M never-downgrade) over `7117704..35b0550`.
 
 | Finding | What | Owner | State |
 |---|---|---|---|
@@ -456,8 +508,8 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 |
 | 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 22 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 |
-| 🔴 REJECTED — a Verifier looked, and it did not pass | 0 | 8 | 0 |
-| ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 23 | 5 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 31 | 0 |
+| ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 0 | 5 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 |
 | **total** | **127** | **53** | **5** |
 
@@ -497,22 +549,23 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-127](stories/slice-1-foundation/KAFF-127-user-management-screens.md) | 1 | 8 | ✅ ACCEPTED | CONDITIONAL | `1d04bde` | 2026-09-09 | The user-management screens |
 | [KAFF-128](stories/slice-1-foundation/KAFF-128-audit-trail-screen.md) | 1 | 3 | ✅ ACCEPTED | CONDITIONAL | `1d04bde` | 2026-09-09 | The audit trail screen |
 | [KAFF-129](stories/slice-1-foundation/KAFF-129-partition-audit-records-by-month.md) | 1 | 8 | 🔻 DEFERRED | none | `-` | 2026-09-07 | Partition `audit_records` by month, from the start |
-| [KAFF-200](stories/slice-2-masters/KAFF-200-import-the-catalogue-from-excel.md) | 2 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-08 | Import the catalogue from Excel at setup, loading the good rows and reporting the rest |
-| [KAFF-201](stories/slice-2-masters/KAFF-201-re-importing-is-not-a-sync.md) | 2 | 2 | ⚫ NOT-BUILT | none | `-` | 2026-09-08 | Re-importing is not a sync — a second import is a deliberate, reviewed act |
+| [KAFF-200](stories/slice-2-masters/KAFF-200-import-the-catalogue-from-excel.md) | 2 | 5 | 🟡 BUILT | none | `35b0550` | 2026-09-12 | Import the catalogue from Excel at setup, loading the good rows and reporting the rest |
+| [KAFF-201](stories/slice-2-masters/KAFF-201-re-importing-is-not-a-sync.md) | 2 | 2 | 🟡 BUILT | none | `35b0550` | 2026-09-12 | Re-importing is not a sync — a second import is a deliberate, reviewed act |
 | [KAFF-202](stories/slice-2-masters/KAFF-202-create-and-edit-a-catalogue-item.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Create and edit a catalogue item |
 | [KAFF-203](stories/slice-2-masters/KAFF-203-find-a-catalogue-item-by-code-or-description.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Find a catalogue item by code or description |
 | [KAFF-204](stories/slice-2-masters/KAFF-204-the-bab-tree-with-default-markup.md) | 2 | 5 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | The باب tree, carrying each trade's default markup |
 | [KAFF-205](stories/slice-2-masters/KAFF-205-reparent-a-bab-and-move-an-item.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Re-parent a باب, and move an item between أبواب |
 | [KAFF-206](stories/slice-2-masters/KAFF-206-archive-a-catalogue-item.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Archive a catalogue item without breaking what already references it |
-| [KAFF-207](stories/slice-2-masters/KAFF-207-employee-register.md) | 2 | 5 | 🔴 BUILT | REJECTED | `7117704` | 2026-09-11 | Employee register — exactly one record per costed person |
-| [KAFF-208](stories/slice-2-masters/KAFF-208-nobody-appears-in-both-populations.md) | 2 | 3 | 🔴 BUILT | REJECTED | `7117704` | 2026-09-11 | Nobody appears in both populations: day labour and salaried |
-| [KAFF-209](stories/slice-2-masters/KAFF-209-register-a-worker-from-site.md) | 2 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Register a worker from site, deduplicated by phone |
-| [KAFF-210](stories/slice-2-masters/KAFF-210-worker-engagement-history.md) | 2 | 3 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Worker engagement history, day rate, frequency and rating |
-| [KAFF-211](stories/slice-2-masters/KAFF-211-subcontractor-master-with-rates.md) | 2 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Subcontractor master with rates |
-| [KAFF-212](stories/slice-2-masters/KAFF-212-supplier-master.md) | 2 | 3 | ⚫ NOT-BUILT | none | `-` | 2026-09-09 | Supplier master — one account serving many projects |
+| [KAFF-207](stories/slice-2-masters/KAFF-207-employee-register.md) | 2 | 5 | 🟡 BUILT | none | `35b0550` | 2026-09-12 | Employee register — exactly one record per costed person |
+| [KAFF-208](stories/slice-2-masters/KAFF-208-nobody-appears-in-both-populations.md) | 2 | 3 | 🟡 BUILT | none | `35b0550` | 2026-09-12 | Nobody appears in both populations: day labour and salaried |
+| [KAFF-209](stories/slice-2-masters/KAFF-209-register-a-worker-from-site.md) | 2 | 5 | 🟡 BUILT | none | `35b0550` | 2026-09-12 | Register a worker from site, warned on a duplicate phone |
+| [KAFF-210](stories/slice-2-masters/KAFF-210-worker-engagement-history.md) | 2 | 3 | 🟡 BUILT | none | `35b0550` | 2026-09-12 | Worker engagement history, day rate, frequency and rating |
+| [KAFF-211](stories/slice-2-masters/KAFF-211-subcontractor-master-with-rates.md) | 2 | 5 | 🟡 BUILT | none | `35b0550` | 2026-09-12 | Subcontractor master — profile only, rates live on the sub-BOQ |
+| [KAFF-212](stories/slice-2-masters/KAFF-212-supplier-master.md) | 2 | 3 | 🟡 BUILT | none | `35b0550` | 2026-09-12 | Supplier master — one account serving many projects |
 | [KAFF-213](stories/slice-2-masters/KAFF-213-archive-a-bab.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Archive a باب |
 | [KAFF-214](stories/slice-2-masters/KAFF-214-unarchive-a-catalogue-item.md) | 2 | 2 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Un-archive a catalogue item |
 | [KAFF-300](stories/slice-3-treasury/KAFF-300-the-section-15-worked-example.md) | 3 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-07 | The §15 worked example as a fixture — present and failing before anything else is built |
+| [KAFF-320](stories/slice-3-treasury/KAFF-320-bank-as-an-independent-master-record.md) | 3 | 0 | ⚫ NOT-BUILT | none | `-` | 2026-09-12 | Bank — an independent master record, not folded into the ledger |
 
 <!-- END GENERATED -->
 

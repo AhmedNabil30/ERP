@@ -1,6 +1,6 @@
-# KAFF-201 · Re-importing is not a sync — a second import is a deliberate, reviewed act
+﻿# KAFF-201 · Re-importing is not a sync — a second import is a deliberate, reviewed act
 
-<!-- kaff id=KAFF-201 slice=2 points=2 state=NOT-BUILT verdict=none at=- on=2026-09-08 -->
+<!-- kaff id=KAFF-201 slice=2 points=2 state=BUILT verdict=none at=35b0550 on=2026-09-12 -->
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 2 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-08 by the BA. **⚠️ Amended 2026-09-09 — `Q62` and `Q12` are both answered (D-129 §4, D-129 §1) and `AC-201-F` is written. One Definition-of-Ready box is still unticked — see *Definition of Ready* below.**
 **Spec:** **§4.1** (*"Excel import is not an ongoing sync"*), §4.4 · **Decisions:** **D-129 §4, D-129 §1**
