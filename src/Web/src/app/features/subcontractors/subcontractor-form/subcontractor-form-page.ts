@@ -7,12 +7,16 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { FormField, form, required, schema, submit } from '@angular/forms/signals';
+import { FormField, form, pattern, required, schema, submit } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
 import { Bab, BabsApi } from '../../../core/catalogue/babs.api';
-import { fractionToPercent, PERCENT_INPUT_PATTERN } from '../../../core/catalogue/percent-wire';
+import {
+  fractionToPercent,
+  PERCENT_INPUT_PATTERN,
+  percentToFraction,
+} from '../../../core/catalogue/percent-wire';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import {
   SubcontractorFile,
@@ -41,11 +45,15 @@ const BLANK_DRAFT: SubcontractorDraft = {
 
 /**
  * `name` and `phone` required — `Subcontractor.Create`'s own guards. `retentionPercent` accepts the
- * same shape a markup percent does — no negative, no exponent (`Percentage` throws on either).
+ * same shape a markup percent does — no negative, no exponent (`Percentage` throws on either) — and
+ * is itself required, the same pair `bab-form-page.ts`'s `markupPercent` carries (D-151 §2: an
+ * omitted rate is refused `errors.master.retention_rate_required`, never silently zero).
  */
 const draft = schema<SubcontractorDraft>((path) => {
   required(path.name);
   required(path.phone);
+  required(path.retentionPercent, { error: { kind: 'retention_rate_required' } });
+  pattern(path.retentionPercent, PERCENT_INPUT_PATTERN, { error: { kind: 'retention_rate_format_invalid' } });
 });
 
 /**
@@ -120,9 +128,10 @@ export class SubcontractorFormPage {
     if (!field.touched() || field.valid()) {
       return null;
     }
-    return PERCENT_INPUT_PATTERN.test(field.value().trim())
-      ? null
-      : 'bab.field.markup_format_invalid';
+    if (field.errors().some((error) => error.kind === 'retention_rate_required')) {
+      return 'errors.master.retention_rate_required';
+    }
+    return 'bab.field.markup_format_invalid';
   });
 
   constructor() {
@@ -258,7 +267,7 @@ export class SubcontractorFormPage {
       name: file.name,
       phone: file.phone,
       tradeBabId: file.tradeBabId ?? '',
-      retentionPercent: fractionToPercent(String(file.retentionRate)),
+      retentionPercent: fractionToPercent(file.retentionRate),
     });
     this.loadFailed.set(false);
   }
@@ -270,7 +279,7 @@ export class SubcontractorFormPage {
       name: value.name.trim(),
       phone: value.phone.trim(),
       tradeBabId: value.tradeBabId.length > 0 ? value.tradeBabId : null,
-      retentionRate: Number(value.retentionPercent.trim() || DEFAULT_RETENTION_PERCENT),
+      retentionRate: percentToFraction(value.retentionPercent.trim() || DEFAULT_RETENTION_PERCENT),
       acknowledgedDuplicatePhone: this.acknowledged(),
     };
   }

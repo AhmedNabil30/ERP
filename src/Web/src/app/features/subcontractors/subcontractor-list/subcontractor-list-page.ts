@@ -97,9 +97,9 @@ export class SubcontractorListPage {
     return this.i18n.locale() === 'en' ? bab.nameEn : bab.nameAr;
   }
 
-  /** `0.05` -> `"5"` — a percent an operator reads, never the bare fraction (AC-211-C). */
+  /** `"0.050000"` -> `"5"` — a percent an operator reads, never the bare fraction (D-151). */
   protected retentionLabel(subcontractor: SubcontractorSummary): string {
-    return fractionToPercent(String(subcontractor.retentionRate));
+    return fractionToPercent(subcontractor.retentionRate);
   }
 
   protected trackRow(_index: number, subcontractor: SubcontractorSummary): string {

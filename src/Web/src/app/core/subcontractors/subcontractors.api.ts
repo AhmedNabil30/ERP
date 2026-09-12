@@ -21,8 +21,11 @@ export interface SubcontractorSummary {
   readonly name: string;
   readonly phone: string;
   readonly tradeBabId: string | null;
-  /** The fraction Kaff holds — `0.05` for 5% (spec.md §5.1). */
-  readonly retentionRate: number;
+  /**
+   * The fraction Kaff holds, as a wire string — D-135, D-151: `"0.050000"` is 5%. Format for display
+   * through `percentToFraction`/`fractionToPercent`, never through `Number()` (D-151 §2).
+   */
+  readonly retentionRate: string;
   readonly isActive: boolean;
 }
 
@@ -44,8 +47,13 @@ export interface SubcontractorWrite {
   readonly name: string;
   readonly phone: string;
   readonly tradeBabId: string | null;
-  /** A whole percent as entered, e.g. `5` for five percent — never the fraction (AC-211-C). */
-  readonly retentionRate: number;
+  /**
+   * The fraction, as a wire string — D-151: `"0.05"` is 5%. **Never a whole percent, never a
+   * `number`.** `percentToFraction` shifts the decimal point an operator's typed percent by string
+   * arithmetic, the same conversion `babs.api.ts`'s `BabCreate.defaultMarkup` already uses. An omitted
+   * value is refused `400 errors.master.retention_rate_required`.
+   */
+  readonly retentionRate: string;
   readonly acknowledgedDuplicatePhone: boolean;
 }
 

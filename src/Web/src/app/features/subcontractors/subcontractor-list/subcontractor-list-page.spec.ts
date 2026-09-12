@@ -37,7 +37,7 @@ const ACTIVE: SubcontractorSummary = {
   name: 'شركة البناء',
   phone: '01000000001',
   tradeBabId: null,
-  retentionRate: 0.05,
+  retentionRate: '0.050000',
   isActive: true,
 };
 
@@ -47,7 +47,7 @@ const ARCHIVED: SubcontractorSummary = {
   name: 'مقاولات النور',
   phone: '01000000002',
   tradeBabId: null,
-  retentionRate: 0,
+  retentionRate: '0.000000',
   isActive: false,
 };
 

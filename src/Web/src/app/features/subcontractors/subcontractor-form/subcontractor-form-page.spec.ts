@@ -80,7 +80,9 @@ class FakeSubcontractorsApi
       name: subcontractor.name,
       phone: subcontractor.phone,
       tradeBabId: subcontractor.tradeBabId,
-      retentionRate: subcontractor.retentionRate / 100,
+      // The wire shape is already the fraction (D-151) — the server echoes it back unchanged, it does
+      // not divide by 100. Dividing here is exactly `V-38-H`'s defect, reproduced in the test fixture.
+      retentionRate: subcontractor.retentionRate,
       isActive: true,
     };
   }
@@ -177,7 +179,7 @@ const LOADED_FILE: SubcontractorFile = {
   name: 'شركة البناء',
   phone: '01000000001',
   tradeBabId: null,
-  retentionRate: 0.05,
+  retentionRate: '0.050000',
   taxRegistrationNumber: null,
   isActive: true,
 };
@@ -207,6 +209,39 @@ describe('SubcontractorFormPage · archive', () => {
     const fixture = await createFixture(api, 'sub-1');
 
     const input: HTMLInputElement = fixture.nativeElement.querySelector('[data-testid="subcontractor-retention-rate"]');
+    expect(input.value).toBe('5');
+  });
+});
+
+describe('SubcontractorFormPage · retention rate crosses the wire as a fraction (V-38-H, D-151)', () => {
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  it('typing 5 sends the fraction string "0.05", never the percent 5 or the number 500', async () => {
+    const api = new FakeSubcontractorsApi();
+    const fixture = await createFixture(api);
+
+    fill(fixture, 'subcontractor-phone', '01000000004');
+    fill(fixture, 'subcontractor-name', 'شركة الأساسات');
+    fill(fixture, 'subcontractor-retention-rate', '5');
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    fixture.detectChanges();
+
+    expect(api.createCalls).toHaveLength(1);
+    expect(api.createCalls[0].retentionRate).toBe('0.05');
+  });
+
+  it('loading the wire fraction "0.050000" shows the percent 5 on screen', async () => {
+    const api = new FakeSubcontractorsApi([], null, LOADED_FILE);
+    const fixture = await createFixture(api, 'sub-1');
+
+    const input: HTMLInputElement = fixture.nativeElement.querySelector(
+      '[data-testid="subcontractor-retention-rate"]',
+    );
     expect(input.value).toBe('5');
   });
 });
