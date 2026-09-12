@@ -225,6 +225,30 @@ mechanism → (5) build `200`, `201`, `209`–`212` → (6) one `opus` Verifier 
   `tools/status.ps1` regenerated: **slice 2 = 53 points, 0 accepted; slice 3 = 5 points** (`KAFF-320`
   is new and not Ready). `210` is trailed `BUILT` but is **not complete** — see the gap above.
 - Step 6 dispatched: one fresh Verifier (`opus`, §M never-downgrade) over `7117704..35b0550`.
+  ✅ `qa/slice-2/verification-2026-09-12-batch.md` (`087c6bb`), recorded as **D-150**. Six
+  CONDITIONAL, **`KAFF-207` and `KAFF-210` REJECTED**. Trailers moved at `140973f`.
+  ⛔ **`V-38-H` HIGH, unrepaired:** the subcontractor retention rate is a whole percent on `PUT` and a
+  fraction on `GET`, so a read-and-write-back turns 5% into 0.05%. **The Architect rules first**
+  (is a rate covered by D-135?), then Backend.
+  ⛔ **`V-38-G`:** `KAFF-210` is about four criteria of eleven. It needs BA refinement before it is
+  rebuilt — `Q76` holds the day rate only, not frequency and not rating.
+- Step 7 dispatched: Frontend (`sonnet`), `V-38-C`/`A`/`D`. ✅ `3295c31`: the باب `<select>` bound
+  `[value]` before the options loaded — fixed with `[selected]` per option; nav rows added, which also
+  turned **Domain.Tests green again, 229/229**; `npm test` 100/100 (the Frontend's figures), three
+  reds watched first. **`KAFF-207`'s repair is unverified — the trailer stays `REJECTED`.**
+
+### What the next session picks up, in order
+
+1. **Architect (`opus`)** — `V-38-H`: is a rate covered by D-135? Rule the unit on the wire for the
+   retention rate and `Bab.defaultMarkup`, and the `101%` acceptance. Then Backend repairs it.
+2. **BA (`sonnet`)** — `V-38-G`: re-refine `KAFF-210` against what `Q76` actually holds; `V-38-I`,
+   `AC-212-D` is stale.
+3. **Backend (`sonnet`)** — `V-38-E` (the template refusal names nothing), `V-38-J` (the
+   `DuplicatePhoneAcknowledged` row carries no project).
+4. **Nabil** — `V-38-F`: the runtime already answers `Q80` (an active cross-population phone saves on
+   acknowledgement) while the suite holds it. His call, then the hold moves or the code does.
+5. **The E2E suite** (`V-38-L`) is still unwritten and still caps every slice-2 story at CONDITIONAL.
+6. **A fresh Verifier** for `KAFF-207`'s repair and everything in 1–3.
 
 | Finding | What | Owner | State |
 |---|---|---|---|
