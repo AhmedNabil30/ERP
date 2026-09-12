@@ -120,7 +120,59 @@ mechanism → (5) build `200`, `201`, `209`–`212` → (6) one `opus` Verifier 
 - ⛔ **D-145 (Nabil):** the trade conflict is resolved — Karim's eight (`CON`…`MET`) with Arabic names
   and markups replace D-139 §8; **seed rows released**. Extract rounding per line then sum (slice 4).
   Slice 2 no longer waits on Nabil except D-140/D-142's three questions.
-- Step 2 dispatched: Backend (`sonnet`), `207` fields.
+- Step 2 dispatched: Backend (`sonnet`), `207` fields. ⚠️ It ended waiting on a background test run
+  and **committed nothing**: `Department` on entity, create/edit/get, migration `EmployeeDepartment`,
+  tests — all uncommitted. A Backend finisher (`sonnet`) was dispatched to gate and commit.
+  ✅ `c5b3a24`: `department: string?`, optional, on create/edit/get. Api 438/438, Domain 197/197 (the
+  finisher's figures). Flag: required-vs-optional not ruled; built optional like `nationalId`/`jobTitle`.
+- Step 2b dispatched: Frontend (`sonnet`), `207` Department on `S-023`/`S-024`. ✅ `2723fd8`: form
+  field + ar/en keys; `npm test` 62/62 (the Frontend's figure). The asked-for edit round-trip test
+  may not exist (report names only a label test) — the Verifier checks.
+- Step 3 dispatched: BA (`sonnet`), stories `200`/`201`/`207`/`208`/`209`–`212`, banks story, register.
+  ✅ `279b24a`, `053ab38`, `e7ed371`, `4e9524d`, `abc1a36`. New `KAFF-320` (banks, slice 3, not
+  Ready). Register `Q76`–`Q82` added. `AC-208-B`/`E` HELD on cross-population phone (`Q80`).
+  `KAFF-318` has no story file; impact recorded in the register. `211`'s Finance-only tax number
+  needs an Architect mechanism.
+- Step 4a (moved ahead of QA, so QA cases the final rule): Architect (`opus`). ✅ `e640ea9` **D-146**:
+  `ux_employees_salaried_phone` partial unique + non-unique `ix_employees_phone`; `EmployeePhoneTaken`
+  kept for salaried-on-salaried; archived cross-population warns; `AC-208-E` unheld, `AC-208-B` held
+  (`Q80` narrowed to active records). ✅ `cd35dab` **D-147**: `SubcontractorTaxRegistrationEdit = 63`,
+  Owner + Finance, own endpoint; suppliers need no split.
+  New for Nabil: `Q80` (active cross-population: refuse or warn); rehiring a salaried leaver on the
+  same phone (index refuses, no unarchive); whether "Finance only" excludes the Owner.
+- Step 3b dispatched: BA (`sonnet`) follow-up — `211` `AC-211-K`, `Q80` narrowed, new register rows,
+  `204` note for D-145. ✅ `212e694`, `1455f9f`: `AC-211-K` restated, `AC-211-N` added, `AC-211-O`
+  HELD (no UX S-number); `AC-208-B` narrowed to active, HELD; `AC-204-K` (seed eight) added; `201`
+  no change. Register `Q83` (rehire salaried leaver), `Q84` (Owner in "Finance only").
+- Step 3c dispatched: QA (`sonnet`), cases for every changed criterion in one pass. ✅ `3742094`,
+  `df39b40`: `TC-2-104` (seed), `105`–`115` (209), `116`–`126` (210), `127`–`141` (211), `142`–`153`
+  (212); `068` rewritten (`V-37-E`), `001`/`002`/`009`/`080` rewritten, `077` HELD. **142 live / 12
+  held** (QA's count, not re-derived). QA flags `AC-210-C`'s agreed day rate as money; who records it
+  from site is `Q76`, so `210` builds that field HR-side only until Nabil answers.
+- Step 4 dispatched: Backend (`sonnet`), D-141+D-146 phone indexes and warn-ack, D-142 seeder with
+  D-145's eight rows. ✅ `63a57e7`: `Q70PhoneIndexes`, `POST /api/employees/phone-check`, salaried
+  refuse then warn-ack. ✅ `f746119`: `BabSeeder` with the eight trades. Api 450 (449 pass, 1 skipped
+  on `Q80`), Domain 197 — the Backend's figures.
+- Step 4b dispatched: Frontend (`sonnet`), employee form phone warn-ack (D-141 frontend half).
+  ✅ `3e9335d`: the client warning lifted to `shared/duplicate-phone-warning/` and reused; `npm test`
+  65/65 (the Frontend's figure). The salaried refusal shows at submit only (D-146 point 3 leaves a
+  `kind` on the match open).
+- Step 5 dispatched: Backend (`sonnet`), `KAFF-200` import API. ✅ `3867454`, `3e46ab5`: hand-read
+  xlsx per D-136, template from one column list (D-144 columns), both endpoints `CatalogueManage`.
+  Api 478 (477 pass, 1 skipped), Domain 197 — the Backend's figures. Flags: audit granularity still
+  unruled (built per-entity plus one `CatalogueImported` event; Architect's); a concurrent import on
+  one code fails the whole batch (no AC names it).
+- Step 5b dispatched: Frontend (`sonnet`), `KAFF-200` `S-019`. ✅ `bbaff0d`: `/catalogue/import`,
+  upload as-is, row report; `npm test` 67/67 (the Frontend's figure). Not rendered live at 390px.
+- Step 5c dispatched: Backend (`sonnet`), `KAFF-201`. ✅ `35ced3c`: stateless preview and confirm
+  (confirm re-parses); reader moved to `Api/Common/`, column list to `Domain/MasterData/` per D-136;
+  absence tests watched red with a dummy sync route and hosted service. `AC-201-C`/`D` untestable until
+  slice 4 (no BOQ/Estimate entity). Api 484 (483 pass, 1 skipped) — the Backend's figure.
+- Step 5d dispatched: Frontend (`sonnet`), `KAFF-201` confirm dialog on `S-019`. ✅ `d034ba1`:
+  re-import as its own action beside `200`'s (story silent on one flow or two — flagged); prices as
+  strings through `i18n.formatMoney`; `npm test` 70/70 (the Frontend's figure). ⚠️ It did **not** watch
+  its tests fail first — the Verifier is told.
+- Step 5e dispatched: Backend (`sonnet`), `KAFF-209` Site Engineer register (D-140).
 
 | Finding | What | Owner | State |
 |---|---|---|---|
