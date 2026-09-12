@@ -105,22 +105,41 @@ public sealed class EmployeePhoneMatchTests : IAsyncLifetime
             HttpStatusCode.OK, "a record saved with its own phone unchanged must never match itself (excluding)");
     }
 
-    // ---- D-146 test 3 · a salaried phone matching an archived salaried record is refused ------------
+    // ---- D-153 §3 (Q83), replacing D-146 test 3 · an archived leaver's phone is free -----------------
 
     [Fact]
-    public async Task A_salaried_phone_matching_an_archived_salaried_record_is_refused()
+    public async Task A_salaried_phone_belonging_to_an_archived_leaver_can_be_registered_again()
     {
+        // D-146 point 1's own predicate covered archived salaried rows too, and D-153 §3 (Q83)
+        // reverses that: the partial index is now filtered kind = 'Salaried' AND is_active, so an
+        // archived leaver's phone is free the moment they are archived, and re-registration on it
+        // is warn-and-acknowledge (D-130 §7), not a refusal — the opposite outcome D-146 test 3
+        // asserted on the same input.
         (Guid firstId, string phone) = await CreateAsync(
             "First Salaried", EmployeeKind.Salaried, UniqueNames.Phone().ToString(), null, acknowledgedDuplicatePhone: false);
 
         (await ArchiveAsync(firstId)).StatusCode.Should().Be(HttpStatusCode.NoContent);
 
+        HttpResponseMessage unacknowledged = await CreateRawAsync(
+            "Second Salaried", EmployeeKind.Salaried, phone, null, acknowledgedDuplicatePhone: false);
+
+        unacknowledged.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await MessageKeyAsync(unacknowledged)).Should().Be("errors.master.duplicate_phone_not_acknowledged");
+
         HttpResponseMessage second = await CreateRawAsync(
             "Second Salaried", EmployeeKind.Salaried, phone, null, acknowledgedDuplicatePhone: true);
 
         second.StatusCode.Should().Be(
-            HttpStatusCode.Conflict, "D-146 point 1: the partial index covers archived salaried rows too");
-        (await MessageKeyAsync(second)).Should().Be("errors.master.employee_phone_taken");
+            HttpStatusCode.Created, "D-153 §3 — an archived salaried record's phone is free, not reserved");
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+
+        AuditRecord acknowledgement = await reader.AuditRecords.SingleAsync(
+            record => record.EventType == AuditEventKind.DuplicatePhoneAcknowledged
+                      && record.EntityId == firstId,
+            Ct);
+
+        acknowledgement.EntityType.Should().Be(nameof(Employee));
     }
 
     // ---- D-146 test 4 · editing a salaried record onto another salaried phone is refused -------------

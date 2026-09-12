@@ -525,6 +525,10 @@ public sealed class SchemaInvariantTests
         salariedIndexDef.Should().StartWith("CREATE UNIQUE INDEX");
         salariedIndexDef.Should().Contain("WHERE");
         salariedIndexDef.Should().Contain("'Salaried'");
+
+        // decisions.md D-153 §3 (Q83) — the predicate gained the active-only half. PostgreSQL prints
+        // the predicate back expanded, so this asserts on the part, not the whole string.
+        salariedIndexDef.Should().Contain("is_active");
     }
 
     private static async Task<string> IndexDefinitionAsync(KaffDbContext context, string indexName)

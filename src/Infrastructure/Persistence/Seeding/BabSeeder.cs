@@ -18,15 +18,22 @@ public sealed record BabSeed(string Code, string NameAr, string NameEn, decimal 
 /// </summary>
 /// <remarks>
 /// <para>
-/// Idempotent and additive, the same shape as <see cref="AccountTreeSeeder"/>: it inserts a باب only if
-/// its <c>Code</c> is absent, and never edits or removes one. "Never overwrite an edit" is guaranteed by
-/// keying on <c>Code</c> alone — a باب's code cannot change after creation
-/// (<see cref="Bab.Create"/> is the only writer), so once a seeded code exists this seeder never
-/// touches that row again. A rename, a markup change, a move or an archive all persist.
+/// Runs once, on an empty table, and never again once any باب exists (decisions.md D-153 §5, Q81) — it
+/// never edits or removes one. "Never overwrite an edit" needs no comparison at all past the guard: a
+/// باب's code cannot change after creation (<see cref="Bab.Create"/> is the only writer), and the guard
+/// means this seeder never touches an existing row in the first place. A rename, a markup change, a
+/// move or an archive all persist.
 /// </para>
 /// <para>
 /// <b>The seeder has no update path.</b> It does not compare values or "repair" a row. Decisions.md
 /// D-142 point 3: if it contains the words <c>SetDefaultMarkup</c> or <c>Rename</c>, it is wrong.
+/// </para>
+/// <para>
+/// <b>decisions.md D-153 §5 (Q81): the seeder skips the whole run when ANY باب exists</b>, not merely
+/// the seeded codes it already knows. The guard is the first statement of the internal overload, where
+/// every caller — the public overload and every test — arrives, rather than at the startup call site
+/// alone, which a second caller could bypass. Past the guard the table is empty, so the old per-code
+/// skip (a query, a <c>HashSet</c>, a <c>Contains</c> branch) is dead code and is deleted with it.
 /// </para>
 /// </remarks>
 public sealed class BabSeeder
@@ -61,21 +68,18 @@ public sealed class BabSeeder
     /// <summary>Internal overload so tests can drive the mechanism with their own rows.</summary>
     internal async Task<int> SeedAsync(IReadOnlyList<BabSeed> seeds, CancellationToken cancellationToken)
     {
-        List<string> existingCodes = await _context.Babs
-            .Select(bab => bab.Code)
-            .ToListAsync(cancellationToken);
-
-        var existing = new HashSet<string>(existingCodes, StringComparer.Ordinal);
+        // D-153 §5 (Q81). Whole-run guard, not a per-code one: the moment any باب exists — seeded or
+        // client-created — the environment is no longer "empty" and the seeder makes no change at all.
+        if (await _context.Babs.AnyAsync(cancellationToken))
+        {
+            _logger.LogInformation("Trades (أبواب) already exist; the seeder made no change (D-152 §8).");
+            return 0;
+        }
 
         int inserted = 0;
 
         foreach (BabSeed seed in seeds)
         {
-            if (existing.Contains(seed.Code))
-            {
-                continue;
-            }
-
             Result<Bab> result = Bab.Create(
                 seed.Code,
                 seed.NameAr,

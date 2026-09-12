@@ -22,9 +22,10 @@ namespace Kaff.Api.Features.Employees.EditEmployee;
 /// never partially applied and then rolled back.
 /// </para>
 /// <para>
-/// <b>The salaried phone refusal, then the warn-and-acknowledge rule (decisions.md D-146 point 3).</b>
-/// Because <c>Kind</c> cannot change, an edit can never move a record into the other population — the
-/// salaried check below only ever runs for a record that was already salaried.
+/// <b>The salaried phone refusal, then the warn-and-acknowledge rule (decisions.md D-146 point 3,
+/// narrowed to another ACTIVE salaried record by D-153 §3/Q83).</b> Because <c>Kind</c> cannot change,
+/// an edit can never move a record into the other population — the salaried check below only ever runs
+/// for a record that was already salaried.
 /// </para>
 /// <para>
 /// <b>Every other guard is the entity's.</b> <c>Employee.Edit</c> refuses what <c>Create</c> would
@@ -74,11 +75,12 @@ internal static class Handler
 
         if (employee.Kind == EmployeeKind.Salaried)
         {
-            // D-146 point 3. Checked first, whatever AcknowledgedDuplicatePhone says, and nothing is
-            // written when it fires.
+            // D-146 point 3, narrowed by D-153 §3 (Q83) to another ACTIVE salaried record. Checked
+            // first, whatever AcknowledgedDuplicatePhone says, and nothing is written when it fires.
             bool salariedPhoneTaken = await database.Employees.AnyAsync(
                 candidate => candidate.PhoneNormalised == phone.Value.Normalised
                              && candidate.Kind == EmployeeKind.Salaried
+                             && candidate.IsActive
                              && candidate.Id != employeeId,
                 cancellationToken);
 

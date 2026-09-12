@@ -142,9 +142,13 @@ internal sealed class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         // (D-139 §1). The named HasIndex overload is required: calling the unnamed HasIndex twice on
         // the same property returns the SAME index and the second call silently reconfigures the
         // first (D-146 point 1).
+        //
+        // D-153 §3 (Q83) amends D-146 point 1: an ARCHIVED salaried row is now outside the predicate,
+        // so a leaver's phone is free the moment they are archived. Re-registration on that phone is
+        // warn-and-acknowledge (D-130 §7), not a refusal.
         builder.HasIndex(employee => employee.PhoneNormalised, "ux_employees_salaried_phone")
             .IsUnique()
-            .HasFilter("kind = 'Salaried'");
+            .HasFilter("kind = 'Salaried' AND is_active");
 
         // Non-unique lookup for the warn-and-acknowledge mechanism (D-141 §4) — every Kind, archived
         // included, is a candidate match. ix_clients_phone is the precedent.

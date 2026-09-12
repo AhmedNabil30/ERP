@@ -198,25 +198,74 @@ public sealed class CreateEmployeeTests : IAsyncLifetime
             .Should().Be(1, "the refused create wrote no row");
     }
 
-    [Fact(Skip = "HELD on Q80 — decisions.md D-146 §4(b)")]
-    public async Task A_day_labourer_cannot_be_registered_again_as_salaried_with_the_same_phone()
+    // ---- decisions.md D-153 §4 (Q80), replacing the HELD test — warn-and-acknowledge, not a refusal --
+
+    [Fact]
+    public async Task A_salaried_create_matching_an_active_day_labourer_warns_and_succeeds_once_acknowledged()
     {
+        // One phone entered in two different forms, so the match is proven to be on the normalised
+        // value — the same discipline D-146 test 2 uses.
         Guid bab = await CreateBabAsync();
         string phone = UniqueNames.Phone().ToString();
+        string differentForm = "0020" + phone.TrimStart('+', '0');
 
-        (await CreateAsync(new
+        HttpResponseMessage dayLabourer = await CreateAsync(new
         {
             fullName = "Worker",
             phone,
             kind = nameof(EmployeeKind.DayLabour),
             babId = bab,
-        })).StatusCode.Should().Be(HttpStatusCode.Created);
+        });
 
-        HttpResponseMessage secondPopulation = await CreateAsync(Body("Worker", phone, EmployeeKind.Salaried));
+        dayLabourer.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        secondPopulation.StatusCode.Should().Be(
-            HttpStatusCode.Conflict, "AC-208-B: one person cannot be created into both populations");
-        (await MessageKeyAsync(secondPopulation)).Should().Be("errors.master.employee_phone_taken");
+        using JsonDocument dayLabourerBody = JsonDocument.Parse(await dayLabourer.Content.ReadAsStringAsync(Ct));
+        Guid dayLabourerId = dayLabourerBody.RootElement.GetProperty("id").GetGuid();
+
+        await using KaffDbContext before = _database.CreateBareContext();
+        long countBefore = await before.Employees.LongCountAsync(Ct);
+        long auditBefore = await before.AuditRecords.LongCountAsync(Ct);
+
+        HttpResponseMessage unacknowledged = await CreateAsync(new
+        {
+            fullName = "Worker",
+            phone = differentForm,
+            kind = nameof(EmployeeKind.Salaried),
+        });
+
+        unacknowledged.StatusCode.Should().Be(
+            HttpStatusCode.Conflict, "a cross-population match still needs an acknowledgement");
+        (await MessageKeyAsync(unacknowledged)).Should().Be("errors.master.duplicate_phone_not_acknowledged");
+
+        await using KaffDbContext after = _database.CreateBareContext();
+        (await after.Employees.LongCountAsync(Ct)).Should().Be(countBefore, "the unacknowledged create wrote no row");
+        (await after.AuditRecords.LongCountAsync(Ct)).Should().Be(auditBefore, "and no audit record");
+
+        HttpResponseMessage acknowledged = await CreateAsync(new
+        {
+            fullName = "Worker",
+            phone = differentForm,
+            kind = nameof(EmployeeKind.Salaried),
+            acknowledgedDuplicatePhone = true,
+        });
+
+        acknowledged.StatusCode.Should().Be(
+            HttpStatusCode.Created, "D-153 §4 (Q80) — a cross-population phone match warns, it does not refuse");
+
+        using JsonDocument acknowledgedBody = JsonDocument.Parse(await acknowledged.Content.ReadAsStringAsync(Ct));
+        acknowledgedBody.RootElement.GetProperty("kind").GetString().Should().Be(nameof(EmployeeKind.Salaried));
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+
+        AuditRecord acknowledgement = await reader.AuditRecords.SingleAsync(
+            record => record.EventType == AuditEventKind.DuplicatePhoneAcknowledged
+                      && record.EntityId == dayLabourerId,
+            Ct);
+
+        acknowledgement.EntityType.Should().Be(nameof(Employee));
+
+        (await MessageKeyAsync(unacknowledged)).Should().NotBe("errors.master.employee_phone_taken");
+        (await MessageKeyAsync(acknowledged)).Should().NotBe("errors.master.employee_phone_taken");
     }
 
     // ---- AC-207-H · a role without EmployeeManage reaches nothing ----------------------------------

@@ -20,12 +20,13 @@ namespace Kaff.Api.Features.Employees.CreateEmployee;
 /// (decisions.md D-130 §6) — generated, never typed, never editable.
 /// </para>
 /// <para>
-/// <b>Two phone rules, checked in order (decisions.md D-144 §1, D-146).</b> A salaried record whose
-/// phone matches another salaried record, active or archived, is refused outright —
+/// <b>Two phone rules, checked in order (decisions.md D-144 §1, D-146, narrowed by D-153 §3/Q83).</b>
+/// A salaried record whose phone matches another ACTIVE salaried record is refused outright —
 /// <c>MasterDataErrors.EmployeePhoneTaken</c>, enforced by the partial unique index
-/// <c>ux_employees_salaried_phone</c>, never bypassed by <see cref="Request.AcknowledgedDuplicatePhone"/>.
-/// Every other match (day labour, or a cross-population match against an archived record) is
-/// warn-and-acknowledge, the same mechanism <c>CreateClient</c> uses (D-141).
+/// <c>ux_employees_salaried_phone</c> (now filtered <c>is_active</c> too), never bypassed by
+/// <see cref="Request.AcknowledgedDuplicatePhone"/>. Every other match — day labour, an archived
+/// salaried leaver's phone included — is warn-and-acknowledge, the same mechanism <c>CreateClient</c>
+/// uses (D-141).
 /// </para>
 /// <para>
 /// <b>The باب's existence is the one thing the entity cannot see</b> — checked here the same way
@@ -61,12 +62,14 @@ internal static class Handler
 
         if (request.Kind == EmployeeKind.Salaried)
         {
-            // D-146 point 3. Checked first, whatever AcknowledgedDuplicatePhone says, and nothing is
-            // written when it fires. The index is the guarantee against a race; this query gives the
-            // clean 409 for the ordinary case.
+            // D-146 point 3, narrowed by D-153 §3 (Q83) to another ACTIVE salaried record — an
+            // archived leaver's phone is free. Checked first, whatever AcknowledgedDuplicatePhone
+            // says, and nothing is written when it fires. The index is the guarantee against a race;
+            // this query gives the clean 409 for the ordinary case.
             bool salariedPhoneTaken = await database.Employees.AnyAsync(
                 employee => employee.PhoneNormalised == phone.Value.Normalised
-                            && employee.Kind == EmployeeKind.Salaried,
+                            && employee.Kind == EmployeeKind.Salaried
+                            && employee.IsActive,
                 cancellationToken);
 
             if (salariedPhoneTaken)

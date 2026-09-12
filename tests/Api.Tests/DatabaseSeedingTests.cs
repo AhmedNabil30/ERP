@@ -121,6 +121,51 @@ public sealed class DatabaseSeedingTests : IClassFixture<PostgresDatabase>
         matching[0].NameEn.Should().Be("Client Name");
     }
 
+    // ---- decisions.md D-153 §5 (Q81) — the seeder skips the whole run when ANY باب exists -----------
+
+    [Fact]
+    public async Task The_bab_seeder_seeds_an_empty_environment_and_skips_entirely_when_any_bab_exists()
+    {
+        IReadOnlyList<BabSeed> seeds = TestSeeds();
+
+        // Half one: empty.
+        await using PostgresDatabase emptyDatabase = await PrivateDatabaseAsync();
+        await using KaffDbContext emptyContext = emptyDatabase.CreateBareContext();
+        var emptySeeder = new BabSeeder(emptyContext, NullLogger<BabSeeder>.Instance);
+
+        int insertedIntoEmpty = await emptySeeder.SeedAsync(seeds, Ct);
+
+        insertedIntoEmpty.Should().Be(seeds.Count);
+
+        foreach (BabSeed seed in seeds)
+        {
+            (await emptyContext.Babs.AnyAsync(bab => bab.Code == seed.Code, Ct)).Should().BeTrue();
+        }
+
+        // Half two: not empty — one باب whose code is NOT in the seed list, so a code that seeds[]
+        // would also skip under the old per-code branch cannot make this half pass under both
+        // mechanisms. ZZZ is the whole point.
+        await using PostgresDatabase notEmptyDatabase = await PrivateDatabaseAsync();
+        await using KaffDbContext notEmptyContext = notEmptyDatabase.CreateBareContext();
+        var notEmptySeeder = new BabSeeder(notEmptyContext, NullLogger<BabSeeder>.Instance);
+
+        Bab unrelated = Bab.Create("ZZZ", "غير ذلك", "Unrelated", Percentage.FromFraction(0.10m)).Value;
+        notEmptyContext.Babs.Add(unrelated);
+        await notEmptyContext.SaveChangesAsync(Ct);
+
+        int insertedIntoNotEmpty = await notEmptySeeder.SeedAsync(seeds, Ct);
+
+        insertedIntoNotEmpty.Should().Be(0, "any existing باب — seeded or not — skips the whole run");
+
+        (await notEmptyContext.Babs.CountAsync(Ct)).Should().Be(1, "only the unrelated row is present");
+
+        foreach (BabSeed seed in seeds)
+        {
+            (await notEmptyContext.Babs.AnyAsync(bab => bab.Code == seed.Code, Ct)).Should().BeFalse(
+                "none of the seeded codes exist — the whole run was skipped, not merely this one code");
+        }
+    }
+
     [Fact]
     public async Task The_bab_seeder_inserts_exactly_the_trade_list()
     {
