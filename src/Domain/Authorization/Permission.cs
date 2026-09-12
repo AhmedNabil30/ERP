@@ -198,4 +198,16 @@ public enum Permission
     /// adds the reference code and the team size to what it carries. See decisions.md.
     /// </remarks>
     ProjectTeamRead = 61,
+
+    /// <summary>
+    /// A Site Engineer registers a day labourer from site, and reads the day-labour pool and بابs.
+    /// </summary>
+    /// <remarks>
+    /// spec.md §9, §10 — <c>Q71</c>, ruled by Nabil 2026-09-11 (decisions.md D-139 §2), mechanism by
+    /// the Architect (D-140). Project-scoped, granted to the Owner and any assigned Site Engineer
+    /// (Junior or Supervisor). Deliberately separate from <see cref="EmployeeManage"/>: D-139 §2 keeps
+    /// HR's payroll register isolated from the site, and HR's own route into the worker registry
+    /// (<c>POST /api/employees</c>) is untouched by this row.
+    /// </remarks>
+    DayLabourSiteManage = 62,
 }

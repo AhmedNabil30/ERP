@@ -383,6 +383,23 @@ public sealed class PermissionEvaluatorTests
             .Should().Be(PermissionDecision.AssignmentLevelTooLow);
     }
 
+    /// <summary>
+    /// SM-30 for <see cref="Permission.DayLabourSiteManage"/>, test 3. KAFF-209, D-139 §2, D-140.
+    /// </summary>
+    [Fact]
+    public void An_unassigned_site_engineer_is_refused_DayLabourSiteManage()
+    {
+        PermissionDecision decision = PermissionEvaluator.Evaluate(
+            Subject(Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical),
+            Permission.DayLabourSiteManage,
+            ProjectId,
+            ProjectAccess.Denied);
+
+        decision.Should().Be(
+            PermissionDecision.NotAssignedToProject,
+            "spec.md §9: role alone is insufficient — the row is held, the project is not reached");
+    }
+
     [Fact]
     public void A_supervising_engineer_submits()
     {

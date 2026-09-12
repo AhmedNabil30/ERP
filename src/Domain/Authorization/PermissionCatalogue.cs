@@ -343,6 +343,25 @@ public static class PermissionCatalogue
             new(Permission.DailyLogWrite, PermissionScope.ProjectScoped, [engineerJunior], "§8"),
             new(Permission.DraftCreate, PermissionScope.ProjectScoped, [engineerJunior], "§9"),
 
+            // KAFF-209/210, closing Q71. Nabil, D-139 §2: a Site Engineer registers workers from site
+            // and opens/closes their engagements, only on projects they are assigned to, and does not
+            // get EmployeeManage. Mechanism ruled by the Architect, D-140 point 1.
+            //
+            // engineerJunior means any assigned Site Engineer, Junior or Supervisor — the same grant
+            // DraftCreate and DailyLogWrite already use; registering a worker is not a draft, so §9's
+            // Junior/Supervisor split does not narrow it further. HR is deliberately absent: HR already
+            // registers day labour through POST /api/employees under EmployeeManage, and HR's global
+            // reach would make the assignment check on this row meaningless for HR (D-140 point 1).
+            // SM-30: pinned by
+            // Only_the_owner_and_assigned_site_engineers_hold_DayLabourSiteManage_and_it_touches_no_money,
+            // A_site_engineer_holds_DayLabourSiteManage_but_not_EmployeeManage
+            // [Verified: 2026-09-12 @ tests/Domain.Tests/CatalogueCompletenessTests.cs] and
+            // An_unassigned_site_engineer_is_refused_DayLabourSiteManage
+            // [Verified: 2026-09-12 @ tests/Domain.Tests/PermissionEvaluatorTests.cs].
+            new(Permission.DayLabourSiteManage, PermissionScope.ProjectScoped,
+                [owner, engineerJunior],
+                "§9, §10 — Q71 ruled by Nabil 2026-09-11, see decisions.md D-139 §2, D-140"),
+
             // spec.md §9: "a junior engineer raises requests as drafts; the supervisor submits them."
             new(Permission.DraftSubmit, PermissionScope.ProjectScoped, [engineerSupervisor], "§9"),
 

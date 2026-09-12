@@ -378,6 +378,41 @@ public sealed class CatalogueCompletenessTests
             .Should().BeEquivalentTo(expected);
     }
 
+    /// <summary>
+    /// SM-30 for <see cref="Permission.DayLabourSiteManage"/> — the row's own catalogue comment cites
+    /// this name. KAFF-209/210, D-139 §2, D-140 point 1.
+    /// </summary>
+    [Fact]
+    public void Only_the_owner_and_assigned_site_engineers_hold_DayLabourSiteManage_and_it_touches_no_money()
+    {
+        PermissionDefinition definition = PermissionCatalogue.Of(Permission.DayLabourSiteManage);
+
+        definition.Scope.Should().Be(
+            PermissionScope.ProjectScoped, "D-140 point 2: the project comes from the route, never the body");
+
+        definition.Grants.Should().HaveCount(2);
+        definition.Grants.Should().ContainSingle(grant => grant.Role == Role.Owner);
+        definition.Grants.Should().ContainSingle(
+            grant => grant.Role == Role.SiteEngineer && grant.MinimumAssignmentLevel == AssignmentLevel.Junior,
+            "D-140 point 1: any assigned Site Engineer, Junior or Supervisor, is Junior-or-above");
+
+        definition.TouchesMoney.Should().BeFalse("registering a worker moves no money — KAFF-209 rule 8");
+    }
+
+    /// <summary>KAFF-209 rule 6 / D-139 §2: EmployeeManage stays isolated from the site route.</summary>
+    [Fact]
+    public void A_site_engineer_holds_DayLabourSiteManage_but_not_EmployeeManage()
+    {
+        PermissionCatalogue.Of(Permission.DayLabourSiteManage).Grants
+            .Should().Contain(grant => grant.Role == Role.SiteEngineer);
+
+        PermissionCatalogue.Of(Permission.EmployeeManage).Grants
+            .Should().NotContain(
+                grant => grant.Role == Role.SiteEngineer,
+                "D-139 §2: a Site Engineer registers from site through DayLabourSiteManage alone, "
+                + "never through the salaried register's own permission");
+    }
+
     [Fact]
     public void Each_contract_type_has_exactly_one_calculator_and_one_progress_metric()
     {
