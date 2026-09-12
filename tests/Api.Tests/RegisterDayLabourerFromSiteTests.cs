@@ -190,8 +190,10 @@ public sealed class RegisterDayLabourerFromSiteTests : IAsyncLifetime
         foreach (JsonElement item in items)
         {
             item.EnumerateObject().Select(property => property.Name).Should().BeEquivalentTo(
-                ["id", "code", "fullName", "phone", "babId", "specialty", "isActive"],
-                "D-140 point 4's allow-list, exactly");
+                ["id", "code", "fullName", "phone", "babId", "specialty", "isActive", "frequency", "averageRating"],
+                "D-140 point 4's allow-list, plus the two non-money figures D-153 §1 point 5 adds — "
+                + "frequency and average rating stay available here; the average day rate stays "
+                + "gated behind DayLabourRateManage's own ListEngagements read");
         }
     }
 

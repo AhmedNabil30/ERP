@@ -18,6 +18,12 @@ namespace Kaff.Api.Features.DayLabour.ListPool;
 /// <b><c>Kind == DayLabour</c> is filtered in the EF query</b>, not after loading — D-140's own wording
 /// for this route.
 /// </para>
+/// <para>
+/// <b>Frequency and average rating, joined from <c>Engagements</c>, company-wide</b> — decisions.md
+/// D-153 §1 point 5's last bullet: not money, so they belong here rather than gated behind
+/// <c>DayLabourRateManage</c>. Derived at read time (KAFF-210 rule 2); a worker with none is
+/// <c>Frequency: 0</c> and <c>AverageRating: null</c>, never a fabricated average.
+/// </para>
 /// <para>No audit record. It is a read.</para>
 /// </remarks>
 internal static class Handler
@@ -26,18 +32,48 @@ internal static class Handler
     {
         ArgumentNullException.ThrowIfNull(database);
 
-        List<PoolWorker> items = await database.Employees
+        Dictionary<Guid, (int Frequency, int RatingSum, int RatingCount)> stats = await database.Engagements
+            .GroupBy(engagement => engagement.WorkerId)
+            .Select(group => new
+            {
+                WorkerId = group.Key,
+                Frequency = group.Count(),
+                RatingSum = group.Sum(engagement => engagement.Rating ?? 0),
+                RatingCount = group.Count(engagement => engagement.Rating != null),
+            })
+            .ToDictionaryAsync(
+                row => row.WorkerId, row => (row.Frequency, row.RatingSum, row.RatingCount), cancellationToken);
+
+        var employees = await database.Employees
             .Where(employee => employee.Kind == EmployeeKind.DayLabour)
             .OrderBy(employee => employee.Code)
-            .Select(employee => new PoolWorker(
+            .Select(employee => new
+            {
                 employee.Id,
                 employee.Code,
                 employee.FullName,
                 employee.PhoneEntered,
                 employee.BabId,
                 employee.Specialty,
-                employee.IsActive))
+                employee.IsActive,
+            })
             .ToListAsync(cancellationToken);
+
+        List<PoolWorker> items = [.. employees.Select(employee =>
+        {
+            (int frequency, int ratingSum, int ratingCount) = stats.GetValueOrDefault(employee.Id);
+
+            return new PoolWorker(
+                employee.Id,
+                employee.Code,
+                employee.FullName,
+                employee.PhoneEntered,
+                employee.BabId,
+                employee.Specialty,
+                employee.IsActive,
+                frequency,
+                ratingCount == 0 ? null : (decimal)ratingSum / ratingCount);
+        })];
 
         return Microsoft.AspNetCore.Http.Results.Ok(new Response(items));
     }
