@@ -13280,3 +13280,235 @@ Backend; `V-38-F` to Nabil (`Q80` is his, and the runtime already answers it); `
 `V-38-K` to QA; `V-38-B` and `V-38-L` (the unwritten E2E suite) stay the slice's largest open item.
 
 **No story is ACCEPTED. Nabil has still never run a demo script.**
+
+---
+### D-151 · Architect — `V-38-H`: a rate is covered by D-135, its unit is the fraction in both directions, and the unit is carried by the type `Percentage`, never by a bare `decimal` · 2026-09-12
+
+Rules `V-38-H` (HIGH), which D-150 routed here. **This record binds the API and the SPA. It rules the
+unit and the wire type only. It does not rule any ceiling on a rate — see *Refused and sent to Nabil*
+below.**
+
+#### The finding is confirmed, in full, against the repo today
+
+| Field | Request member | What the handler does | Response member |
+|---|---|---|---|
+| `Subcontractor.RetentionRate` | `decimal?` [Verified: 2026-09-12 @ `src/Api/Features/Subcontractors/CreateSubcontractor/Request.cs` -> `RetentionRate`], `decimal` [Verified: 2026-09-12 @ `src/Api/Features/Subcontractors/EditSubcontractor/Request.cs` -> `RetentionRate`] | **percent** — `Percentage.FromPercent(request.RetentionRate)` [Verified: 2026-09-12 @ `src/Api/Features/Subcontractors/EditSubcontractor/Handler.cs` -> `HandleAsync`; `src/Api/Features/Subcontractors/CreateSubcontractor/Handler.cs` -> `HandleAsync`] | **fraction** — `subcontractor.RetentionRate.Fraction` [Verified: 2026-09-12 @ `src/Api/Features/Subcontractors/GetSubcontractor/Handler.cs` -> `HandleAsync`; `.../ListSubcontractors/Handler.cs` -> `HandleAsync`] |
+| `Bab.DefaultMarkup` | `decimal?` [Verified: 2026-09-12 @ `src/Api/Features/Babs/CreateBab/Request.cs` -> `DefaultMarkup`; `.../EditBab/Request.cs` -> `DefaultMarkup`] | **fraction** — `Percentage.FromFraction(request.DefaultMarkup.Value)` [Verified: 2026-09-12 @ `src/Api/Features/Babs/CreateBab/Handler.cs` -> `HandleAsync`; `.../EditBab/Handler.cs` -> `HandleAsync`] | **fraction** — `bab.DefaultMarkup.Fraction` [Verified: 2026-09-12 @ `src/Api/Features/Babs/ListBabs/Handler.cs` -> `HandleAsync`] |
+
+So: read a subcontractor, write the response back unchanged, and 5% becomes 0.05% — a hundredfold
+silent loss through the public API. Two rate fields on the same API disagree about their unit, and
+neither request type says which it wants except in prose. The Verifier's measurement is right and the
+reasoning behind it is right.
+
+**Three things the Verifier did not name, found while checking it.**
+
+1. **The transport half is sound and needs nothing.** `PercentageJsonConverter` already reads
+   `Percentage.FromFraction(...)` and writes `value.Fraction` as an invariant-culture string
+   [Verified: 2026-09-12 @ `src/Domain/Common/Serialization/KaffJson.cs` -> `PercentageJsonConverter`],
+   and those converters are copied onto the HTTP pipeline
+   [Verified: 2026-09-12 @ `src/Api/Program.cs` -> `ConfigureHttpJsonOptions`]. **The fraction was
+   already the wire unit of the `Percentage` type. The defect is that no rate on the wire is typed
+   `Percentage`** — every one of them is a bare `decimal`, which routes through
+   `DecimalJsonConverter` and leaves the unit to whichever factory the handler happens to call.
+2. **The SPA breaks D-135 on this field.** `SubcontractorSummary.retentionRate` and
+   `SubcontractorWrite.retentionRate` are typed `number`
+   [Verified: 2026-09-12 @ `src/Web/src/app/core/subcontractors/subcontractors.api.ts` ->
+   `SubcontractorWrite`], and the form submits `Number(value.retentionPercent...)`
+   [Verified: 2026-09-12 @ `src/Web/src/app/features/subcontractors/subcontractor-form/subcontractor-form-page.ts`
+   -> `submit`]. D-135 holds the browser to strings **by its TypeScript types**; this file is the one
+   percentage surface that does not. `babs.api.ts` does it correctly — `defaultMarkup: string`, with
+   `percentToFraction` shifting the point by string arithmetic
+   [Verified: 2026-09-12 @ `src/Web/src/app/core/catalogue/babs.api.ts` -> `Bab`;
+   `src/Web/src/app/core/catalogue/percent-wire.ts` -> `percentToFraction`].
+3. **The Api suite performs the conversion itself, which is how this passed review.**
+   `EditBody` sends `subcontractor.RetentionRate.Fraction * 100m`
+   [Verified: 2026-09-12 @ `tests/Api.Tests/SubcontractorTests.cs` -> `EditBody`], and `EditAsync`
+   does the same [Verified: 2026-09-12 @ `tests/Api.Tests/SubcontractorTaxRegistrationTests.cs` ->
+   `EditAsync`]. A test that converts between the two units cannot notice that the two units differ.
+   The Angular form hides it on the screen; these two helpers hide it in the suite.
+
+#### Decision
+
+1. **Yes — a rate is covered by D-135, and always was.** D-135 says so in terms: *"`Percentage` falls
+   under the same rule, with no carve-out."* What D-135 settled was the **representation** (a JSON
+   string, both directions). It did not settle the **unit**, because on 2026-09-11 exactly one rate
+   crossed the wire and it crossed as a fraction. This entry settles the unit and nothing about
+   rounding; D-008 is still open.
+
+2. **One unit: the fraction. One representation: a JSON string.** `"0.05"` is 5%. `"0.1275"` is
+   12.75%. `"5"` is 500%. This holds in both directions, on every endpoint, for every request and
+   every response, with no field-level exception. **Percent is a display unit. It exists on the screen
+   and in `spec.md`, and nowhere on the wire.** Outbound the server writes
+   `Percentage.Fraction.ToString(CultureInfo.InvariantCulture)` at the stored scale — `decimal(18,6)`,
+   so a 5% rate reads back `"0.050000"`. Inbound the server accepts that grammar and, per D-135, a
+   JSON number as well, for a .NET caller.
+
+3. **The unit is carried by the type, not by a comment.** Every percentage member of a Request or
+   Response record is declared `Percentage` or `Percentage?`, **never `decimal`**. With that one
+   change `PercentageJsonConverter` becomes the only way a rate can cross in either direction, and it
+   is `FromFraction` on the way in and `.Fraction` on the way out — already written, already wired,
+   already symmetric. **No handler may call `Percentage.FromPercent` on a value that came off the
+   wire.** `FromPercent` stays for `spec.md`-shaped constants — `ContractDefaults`,
+   `Subcontractor.DefaultRetentionRate`, `Withholding` — and for tests.
+
+   **Why the type and not a validator, and not a naming convention.** A validator can only detect a
+   wrong unit where the wrong unit produces an impossible value, and it does not here: `5` is a
+   perfectly legal fraction meaning 500%, so nothing in a request body distinguishes "5 percent, sent
+   by a caller reading the XML doc" from "500 percent, sent by a caller reading the response". A
+   ceiling would catch `5` only by refusing 500%, which is a business rule this entry does not have
+   and must not invent. Renaming the member `retentionPercent` documents the unit but still leaves two
+   units on one API. The type removes the ambiguity rather than policing it: one conversion, in one
+   file, and a handler that wants the other unit has to write `FromPercent` where a reviewer can see
+   it. This is the narrowest change that makes a wrong unit **impossible to send**, which is what the
+   brief asked for over merely detecting one.
+
+4. **The endpoints that change.** Two features, and no others.
+
+   | Route | Member | Today | After | Wire bytes |
+   |---|---|---|---|---|
+   | `POST /api/subcontractors` | `CreateSubcontractor.Request.RetentionRate` | `decimal?`, **a percent** | `Percentage?`, a fraction | **BREAKING — `5` stops meaning 5%** |
+   | `POST /api/subcontractors` | `CreateSubcontractor.Response.RetentionRate` | `decimal` | `Percentage` | unchanged |
+   | `PUT /api/subcontractors/{id}` | `EditSubcontractor.Request.RetentionRate` | `decimal`, **a percent** | `Percentage?`, a fraction | **BREAKING** |
+   | `PUT /api/subcontractors/{id}` | `EditSubcontractor.Response.RetentionRate` | `decimal` | `Percentage` | unchanged |
+   | `GET /api/subcontractors/{id}` | `GetSubcontractor.Response.RetentionRate` | `decimal` | `Percentage` | unchanged |
+   | `GET /api/subcontractors` | `ListSubcontractors.Response.SubcontractorSummary.RetentionRate` | `decimal` | `Percentage` | unchanged |
+   | `POST /api/babs` · `PUT /api/babs/{id}` | `CreateBab.Request.DefaultMarkup`, `EditBab.Request.DefaultMarkup` | `decimal?`, a fraction | `Percentage?` | unchanged |
+   | `POST /api/babs` · `PUT /api/babs/{id}` · `GET /api/babs` | the three `DefaultMarkup` response members | `decimal` | `Percentage` | unchanged |
+
+   **The subcontractor rate is the only breaking change in the set, and it is the defect.** Every باب
+   route keeps its bytes exactly: `Bab` was already right, and it is retyped so that being right is
+   structural rather than a habit the next handler may not share. The handlers lose
+   `Percentage.FromPercent(...)`, `Percentage.FromFraction(...)` and `.Fraction` at every one of these
+   points — the fix is a net deletion.
+
+   **No other percentage crosses the wire today.** Swept `src/Api/Features/**` and
+   `src/Web/src/app/core/**` for percent, markup, retention and withholding. The catalogue's
+   `CostPrice` and `BaseSellRate` are `Money`, not rates, despite the name
+   [Verified: 2026-09-12 @ `src/Api/Features/Catalogue/EditCatalogueItem/Handler.cs` -> `HandleAsync`];
+   `Engagement.DayRate` is `Money?` and no route sets it (D-150 §4.1); no client, supplier, employee
+   or treasury payload carries a rate; withholding exists only in `Domain`
+   [Verified: 2026-09-12 @ `src/Domain/Treasury/Withholding.cs` -> `RateFor`] and has no endpoint at
+   all. **When D-139 §5's per-contract withholding rate gets one in slice 3, it lands as `Percentage`
+   under this rule, and there is nothing to migrate.**
+
+5. **The SPA half, which is D-135's and is not optional.** `subcontractors.api.ts` types
+   `retentionRate` as `string` on both `SubcontractorSummary` and `SubcontractorWrite`, matching
+   `babs.api.ts`. The form submits `percentToFraction(value.retentionPercent)` instead of `Number(...)`
+   and loads `fractionToPercent(file.retentionRate)` with the `String(...)` cast gone; the list page's
+   `String(...)` cast goes the same way. `percent-wire.ts` is reused as it stands — it is already the
+   one place in the SPA that shifts a decimal point, by string arithmetic, and it needs no change.
+
+6. **Two consequences ruled here rather than left to the builder, because each is a new defect the fix
+   would otherwise introduce.**
+
+   a. **`EditSubcontractor.Request.RetentionRate` is `Percentage?`, and a missing member is refused,
+      not treated as zero.** `Percentage` is a `readonly record struct`, so a non-nullable member
+      omitted from a body deserialises to `default` — 0% — and silently zeroes a firm's retention.
+      That is the same class of defect as `V-38-H` and it would have been shipped by the fix for it.
+      A missing rate on `PUT` answers `400` carrying a new
+      `MasterDataErrors.RetentionRateRequired` (`master.retention_rate_required` /
+      `errors.master.retention_rate_required`, both locales). On `POST` null keeps its present
+      meaning — `Subcontractor.DefaultRetentionRate`, 5%, `spec.md` §5.1. Same for
+      `DefaultMarkup`, which is already `decimal?` refused-when-null by KAFF-204 rule 2.
+
+   b. **A negative rate becomes a body-level `400`, and it keeps a translated key.**
+      `Percentage`'s constructor throws on a negative
+      [Verified: 2026-09-12 @ `src/Domain/Common/Percentage.cs` -> `Percentage(decimal)`], and inside
+      a converter that surfaces as a `JsonException` → `BadHttpRequestException` → a bare `400` with
+      **no `messageKey`**, because `CustomizeProblemDetails` stamps a key only for `401`, `403` and a
+      `SpecificRefusal` [Verified: 2026-09-12 @ `src/Api/Program.cs` -> `CustomizeProblemDetails`].
+      A bare refusal is a hardcoded-string problem by another route, so: **that callback gains one
+      arm, `Status400BadRequest => ApiErrors.MalformedBody`** (`wire.malformed_body` /
+      `errors.wire.malformed_body`, both locales). It is `TryAdd`, so every handler that already named
+      its own key keeps it, and it closes the same gap for every malformed body on every route, not
+      only this one. `MasterDataErrors.RetentionRateMustNotBeNegative` and its two `try`/`catch`
+      blocks are then deleted, along with the `errors.master.retention_rate_negative` pair — the
+      negative is refused earlier and by the type. `PERCENT_INPUT_PATTERN` already refuses a negative
+      on the screen before it can be sent.
+
+#### Refused and sent to Nabil — the bound, `101`
+
+**I am not ruling what a rate may be, and no bound is built until Nabil answers.** `101` is accepted
+today, stored `1.01`, rendered `101%`; after this entry it is still accepted, sent as `"1.01"`. That
+is deliberate.
+
+A ceiling is a business rule, not a property of the type, and the two rates on this API do not share
+one. A **markup** above 100% is ordinary trade practice — `spec.md` §4.2's markup is applied as
+`1 + rate`, and doubling a cost is a 100% markup, not an error. A **retention** above 100% would mean
+holding back more than the extract is worth, which looks wrong, but `spec.md` says only *"Kaff retains
+**5%** from every sub extract … zeroable per subcontractor"* (§5.1, and the §16 rule table row 19) and
+states **no maximum for any rate anywhere**. Inventing 100% would be exactly the plausible invented
+rule CLAUDE.md warns about: it would survive review and surface at acceptance.
+
+**`Q82`, for Nabil:** may a subcontractor's retention rate exceed 100%, and if not, what is its
+maximum? May a باب's default markup exceed 100%, and does it have a maximum? Is the maximum the same
+number for both?
+
+**What I do rule is where a bound goes when there is one**, so the answer needs no second ruling:
+
+* **Not in `Percentage`.** The type is shared by the hold (20%), the advance (25%), تشوينات (75%),
+  withholding (1/3/5%), design-stage weightings and markups. Any ceiling that suits retention would be
+  wrong for at least one of those, and `Percentage`'s job is the unit, which is universal, not the
+  policy, which is not. The one bound that **is** universal — no negative rate — stays in the
+  constructor where it already lives.
+* **Not a database constraint.** CLAUDE.md reserves those for invariants that must hold regardless of
+  code path — the safe balance, append-only postings. A rate ceiling is policy that Nabil may change;
+  it would need one `CHECK` per column, each restating a rule the migration cannot explain.
+* **In the handler's refusal path, per field**, returning a keyed `Result` the Arabic UI can render —
+  the same shape `RetentionRateRequired` takes in §6a. One line per field, per number, once Nabil has
+  given the number.
+
+#### The tests that witness this
+
+**The regression test, which must fail before the fix and pass after** —
+`tests/Api.Tests/SubcontractorTests.cs` -> `Retention_rate_survives_a_read_then_write_round_trip`:
+create a firm at the 5% default; `GET` it; take the `retentionRate` **string from that response
+verbatim**, with no arithmetic of any kind, and send it straight back on `PUT`; `GET` again and assert
+the string is byte-identical to the first. Today the second read is `"0.000500"`. The test's whole
+value is that it performs no conversion — that is the property the suite lost.
+
+New, alongside it:
+
+* `tests/Api.Tests/SubcontractorTests.cs` -> `Retention_rate_on_the_wire_is_the_fraction_in_both_directions`:
+  `POST` `retentionRate: "0.05"` stores `Fraction == 0.05m` and answers `"0.050000"`; `POST`
+  `retentionRate: "5"` stores `5m` — 500% — and is **not** silently read as 5%.
+* `tests/Api.Tests/SubcontractorTests.cs` -> `A_put_without_a_retention_rate_is_refused_not_zeroed`:
+  `400`, `errors.master.retention_rate_required`, and the stored rate unchanged (§6a).
+* `tests/Api.Tests/SubcontractorTests.cs` -> `A_negative_retention_rate_is_a_400_carrying_a_message_key`:
+  asserts the `messageKey` extension is present and is `errors.wire.malformed_body` (§6b).
+* `tests/Api.Tests/WireUnitTests.cs` (new) -> `Every_rate_on_the_wire_is_typed_Percentage`: reflect
+  over every `Request` and `Response` record under `Kaff.Api.Features.*` and assert that no member
+  whose name ends `Rate`, `Markup` or `Percentage` is a `decimal` or `decimal?`. **Two members are
+  `Money` and are named in the allow-list with their reason — `BaseSellRate` and `DayRate` are prices,
+  not rates.** This is the test that stops the next one of these; it must itself assert that it
+  enumerated a non-zero number of records, or it repeats `V-38-K`.
+* `tests/Domain.Tests/KaffJsonTests.cs` -> `Percentage_round_trips_as_a_fraction_string`: `0.1275`
+  writes `"0.1275"` and reads back equal; a string with a leading `+`, an exponent or an Arabic-Indic
+  digit is refused.
+* `src/Web/src/app/core/catalogue/percent-wire.spec.ts` -> add the retention cases: `'5'` →
+  `'0.05'` → `'5'`, and `'0.050000'` → `'5'`.
+
+**Existing tests that must change, and why each one currently hides the defect:**
+
+* `tests/Api.Tests/SubcontractorTests.cs` -> `EditBody` — drop `* 100m`; it sends the fraction.
+* `tests/Api.Tests/SubcontractorTaxRegistrationTests.cs` -> `EditAsync` — same, drop `* 100m`.
+* `tests/Api.Tests/SubcontractorTests.cs` — the create body's `retentionRate = 5m` becomes `"0.05"`.
+* `src/Web/src/app/features/subcontractors/subcontractor-form/subcontractor-form-page.spec.ts` — the
+  expectation `retentionRate: subcontractor.retentionRate / 100` is the defect written down as an
+  assertion; it becomes the submitted wire string `'0.05'`, and the `retentionRate: 0.05` fixtures
+  become `'0.050000'`.
+* `src/Web/src/app/features/subcontractors/subcontractor-list/subcontractor-list-page.spec.ts` — the
+  `retentionRate: 0.05` / `0` fixtures become strings.
+* `tests/Api.Tests/SubcontractorTests.cs`'s request-member enumeration does **not** change: the member
+  names are unchanged, only their types.
+* **No باب test changes.** `CreateBabTests`, `EditBabTests` and `ListBabsTests` read through
+  `WireDecimal` and the bytes are identical on both sides of this fix — which is the check that the
+  باب half of the retyping is behaviour-preserving.
+
+#### What this entry does not do
+
+It changes no file under `src/`. It does not rule D-008's rounding, any ceiling on any rate, or
+whether `KAFF-211` is re-verified as a whole — `V-38-L`, the unwritten E2E suite, still caps it. The
+`Q82` answer is Nabil's and the build of §4 and §5 is Backend's and Frontend's.
+
+---
