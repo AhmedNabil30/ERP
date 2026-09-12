@@ -34,8 +34,12 @@ public enum EmployeeKind
 ///
 /// Engagement history and per-engagement ratings (spec.md §10) are not modelled here; they belong to
 /// the HR slice.
+///
+/// Implements <see cref="IAuditScopedByGrant"/> — decisions.md D-149, D-140 point 3: the project
+/// authorises the Site Engineer's registration of a day labourer, and the row exists only because of
+/// it, so its audit record falls back to the grant's project when the entity itself names none.
 /// </remarks>
-public sealed class Employee : Entity
+public sealed class Employee : Entity, IAuditScopedByGrant
 {
     public const int MaxCodeLength = 32;
     public const int MaxNameLength = 200;

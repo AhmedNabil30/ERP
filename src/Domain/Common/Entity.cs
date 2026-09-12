@@ -47,3 +47,27 @@ public abstract class Entity : IEquatable<Entity>
 public interface IAuditExempt
 {
 }
+
+/// <summary>
+/// Marks an entity whose own row carries no project, but which exists <b>because</b> a project-scoped
+/// grant authorised the act that created it — so the audit record still falls back to
+/// <see cref="Auditing.IAuditContext.GrantProjectId"/> when the entity names none of its own.
+/// </summary>
+/// <remarks>
+/// decisions.md D-149, correcting D-148 §4: the fallback is per marked <b>type</b>, not unconditional.
+/// D-148 tagged every project-less entity in the save with the grant's project, which wrongly pulled a
+/// company-wide entity (e.g. <c>Client</c>) saved alongside a project-scoped one into that project's
+/// trail. Only an entity that opts in this way is eligible for the fallback — implemented by
+/// <see cref="Kaff.Domain.MasterData.Employee"/> and by nothing else: the row exists only because the
+/// Site Engineer's project authorised its registration (D-140 point 3), so the act and the entity are
+/// the same act. A company-wide entity that merely happens to be saved in the same request is not.
+/// <para>
+/// <b>The ceiling</b>: the marker is per type, not per act. A future endpoint that modifies an
+/// existing <see cref="Kaff.Domain.MasterData.Employee"/> for an unrelated, non-project reason would
+/// still take the fallback. That endpoint does not exist today; when it does, this is the marker that
+/// makes the choice deliberate rather than a silent inheritance.
+/// </para>
+/// </remarks>
+public interface IAuditScopedByGrant
+{
+}

@@ -490,18 +490,6 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
     /// The Owner is the whole reason the field exists: global reach means no assignment row exists
     /// to point at, so nothing else in the system can answer "by what authority".
     /// </para>
-    /// <para>
-    /// decisions.md D-148 changes what the second half of this test proves. Before D-148, the
-    /// interceptor tagged a project only off the entity's own <c>ProjectId</c>, so <c>Client</c> —
-    /// which carries none — was untouched by the request's grant regardless of what the request was
-    /// scoped to. D-148 makes <c>project_id</c> mean "the entity's own project, otherwise the project
-    /// whose grant admitted the request" — and this probe's request <b>is</b> project-scoped
-    /// (<c>FinancialMovementApprove</c> + <c>ProjectScope.FromRoute()</c>), so the company-level
-    /// <c>Client</c> created in the same save now inherits that project and path exactly as the
-    /// project change does. This is D-148's mechanism working as specified, not a relaxation of
-    /// AC-116-B/E: the Owner's path is still named, and it is still named consistently across every
-    /// record the request's grant produced in the same save.
-    /// </para>
     /// </remarks>
     [Fact]
     public async Task The_owners_reach_is_named_although_it_leaves_no_row()
@@ -513,11 +501,11 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
 
         change.GrantPath.Should().Be(ProjectAccessPath.OwnerGlobal, "not Assignment, and not null");
 
-        // D-148: companyWide carries no ProjectId of its own, so the interceptor falls back to the
-        // project this request's grant admitted — the same project and path as `change`, because both
-        // records were written by the same save under the same grant.
-        companyWide.ProjectId.Should().Be(_projectId);
-        companyWide.GrantPath.Should().Be(ProjectAccessPath.OwnerGlobal);
+        // decisions.md D-149, reverting the D-148 fallback for this case: companyWide is an unmarked,
+        // company-wide entity (Client) with no IAuditScopedByGrant, so it takes no project and no path
+        // from the grant it merely happened to be saved alongside.
+        companyWide.ProjectId.Should().BeNull();
+        companyWide.GrantPath.Should().BeNull("a company-wide act went through no access policy");
     }
 
     /// <summary>

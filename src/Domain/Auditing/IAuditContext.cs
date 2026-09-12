@@ -176,10 +176,14 @@ public interface IAuditContext
     /// The project the access policy granted this request against, or null when it named none.
     /// </summary>
     /// <remarks>
-    /// decisions.md D-148. The interceptor falls back to this when the entity being saved names no
-    /// project of its own — a project-scoped act on an entity with no <c>ProjectId</c> (e.g.
-    /// <c>Employee</c>) still records the project that authorised it. Set once per request by
-    /// <see cref="ScopedTo"/>, alongside <see cref="GrantPath"/>, and not discarded by
+    /// decisions.md D-149, amending D-148. The interceptor falls back to this only when the entity
+    /// being saved names no project of its own <b>and</b> declares
+    /// <see cref="Kaff.Domain.Common.IAuditScopedByGrant"/> — a project-scoped act on an entity with no
+    /// <c>ProjectId</c> that exists only because of that grant (e.g. <c>Employee</c>, D-140 point 3)
+    /// still records the project that authorised it. An entity that does not declare the marker takes
+    /// no project from here, even when it names none of its own — D-148's unconditional fallback
+    /// wrongly tagged a company-wide entity (e.g. <c>Client</c>) saved in the same request. Set once
+    /// per request by <see cref="ScopedTo"/>, alongside <see cref="GrantPath"/>, and not discarded by
     /// <see cref="Clear"/> for the same reason <see cref="GrantPath"/> is not.
     /// </remarks>
     Guid? GrantProjectId { get; }

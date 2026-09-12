@@ -476,6 +476,48 @@ public sealed class AuditMechanismTests
         record.GrantPath.Should().Be(ProjectAccessPath.Assignment);
     }
 
+    /// <summary>
+    /// decisions.md D-149, correcting D-148 §4. A company-wide entity with no project of its own
+    /// (<c>Client</c>) that happens to be saved under a project-scoped grant is not thereby "about"
+    /// that project — unlike <c>Employee</c>, it does not implement <see cref="IAuditScopedByGrant"/>,
+    /// so the fallback must not apply to it. This is the test that turns red if the marker check is
+    /// removed and D-148's unconditional fallback is restored.
+    /// </summary>
+    [Fact]
+    public async Task A_company_wide_entity_saved_under_a_project_grant_takes_no_project()
+    {
+        var actor = new StubCurrentUser();
+        var auditContext = new AuditContext();
+        auditContext.ActorVerifiedAs(new AuditActor(actor.UserId, actor.DisplayName, actor.Role));
+
+        Guid grantedProjectId = Guid.CreateVersion7();
+        auditContext.ScopedTo(grantedProjectId, ProjectAccessPath.Assignment);
+
+        // Client carries no ProjectId and does not implement IAuditScopedByGrant — D-070 §1's example
+        // of a company-level entity that "exists before the project, outlives it".
+        Domain.MasterData.Client client = Domain.MasterData.Client.Create(
+            UniqueNames.Code("C"),
+            "عميل بلا مشروع",
+            UniqueNames.Phone(),
+            Domain.MasterData.ClientKind.Individual,
+            Now).Value;
+
+        await using (KaffDbContext context = _database.CreateContext(actor, auditContext))
+        {
+            context.Clients.Add(client);
+            await context.SaveChangesAsync(Ct);
+        }
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+
+        AuditRecord record = await reader.AuditRecords
+            .SingleAsync(entry => entry.EntityId == client.Id, Ct);
+
+        record.ProjectId.Should().BeNull(
+            "Client does not implement IAuditScopedByGrant, so it is not about the grant's project");
+        record.GrantPath.Should().BeNull();
+    }
+
     private const string EmptyJsonObject = "{}";
 
     private static Task<int> InsertRawAuditRecordAsync(

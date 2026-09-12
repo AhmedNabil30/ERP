@@ -219,10 +219,14 @@ public sealed class AuditSaveChangesInterceptor : SaveChangesInterceptor
             return null;
         }
 
-        // decisions.md D-148. The entity's own project takes priority; when it names none (Employee,
-        // by design — D-140 point 3), the project that authorised the request is the only fact there
-        // is, and it comes from the gate via IAuditContext.GrantProjectId, never re-derived here.
-        Guid? projectId = ExtractProjectId(entry) ?? _auditContext.GrantProjectId;
+        // decisions.md D-149, amending D-148. The entity's own project takes priority. When it names
+        // none, the fallback to the grant's project applies only to an entity that opts in through
+        // IAuditScopedByGrant (Employee, by design — D-140 point 3: the row exists only because the
+        // project's grant authorised its registration). An unmarked entity with no project of its own
+        // (e.g. Client, saved alongside a project-scoped change in the same request) takes no project
+        // at all — D-148's unconditional fallback wrongly tagged it with a project it is not about.
+        Guid? projectId = ExtractProjectId(entry)
+            ?? (entry.Entity is IAuditScopedByGrant ? _auditContext.GrantProjectId : null);
 
         // The path is paired with the project by IDENTITY, not by mere presence: a request may save a
         // project-scoped change and a company-level one in the same save, and only the change whose
