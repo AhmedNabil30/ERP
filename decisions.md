@@ -13226,3 +13226,57 @@ Nothing is sent to Nabil, and nothing here needed him.
   only.
 
 ---
+
+---
+
+### D-150 · Verifier — the slice-2 second batch: six CONDITIONAL, two REJECTED, and a rate that loses its unit on every round trip · 2026-09-12
+
+`qa/slice-2/verification-2026-09-12-batch.md` (`087c6bb`, `opus`, fresh session) covers
+`7117704..35b0550`: `KAFF-200`, `201`, `207`, `208`, `209`, `210`, `211`, `212`.
+
+**Gates, re-measured by the Verifier, not quoted:** build 0 warnings / 0 errors, `dotnet format`
+clean, **Domain.Tests 229 total with 1 FAILED**, Api.Tests 539 total, 538 passed, 1 skipped (the
+`Q80` hold, visibly held), `npm run build` exit 0 with one CSS-budget warning, `npm test` 96/96.
+**The Domain suite is red at `HEAD`, and every builder figure in this batch reported it green.**
+
+| Story | Verdict | Why |
+|---|---|---|
+| `KAFF-200` | CONDITIONAL | `V-38-E`: a wrong template is refused with a bare `catalogue_import_failed` that names nothing (`AC-200-I` half unmet); E2E unwritten |
+| `KAFF-201` | CONDITIONAL | E2E unwritten; `AC-201-C`/`D` vacuous until slice 4 |
+| `KAFF-207` | **REJECTED** | `V-38-C` HIGH: the employee edit screen shows a day labourer's باب as «بدون باب» although the row holds `CON`, and saving returns `400 day_labour_requires_trade`. **HR cannot edit a day labourer at all** |
+| `KAFF-208` | CONDITIONAL | `V-38-F`: the `Q80` hold is visible in the suite but silently resolved at runtime — an active cross-population phone is `409` without the acknowledgement and `201` with it |
+| `KAFF-209` | CONDITIONAL | `V-38-J`: a `DuplicatePhoneAcknowledged` row on a project route carries no project while its sibling `Created` row does; E2E unwritten |
+| `KAFF-210` | **REJECTED** | `V-38-G` HIGH: about four of eleven criteria are built. No engagement-history endpoint, no `S-027` route, no derived pool figures on either side, none of the story's eight i18n keys. `Q76` holds the day rate only — not frequency, not rating. **The `BUILT` trailer was not honest** |
+| `KAFF-211` | CONDITIONAL | `V-38-H` HIGH (below); `AC-211-O` held on a UX S-number; E2E unwritten |
+| `KAFF-212` | CONDITIONAL | `V-38-I`: `AC-212-D` stale (the code is generated now); E2E unwritten |
+
+**`V-38-H`, the one that moves money.** `PUT /api/subcontractors/{id}` takes the retention rate as a
+**whole percent**; `GET` returns it as a **fraction**. Read a subcontractor and write it back
+unchanged and **5% becomes 0.05%**. The Angular form converts in both directions, so the UI hides it;
+anything else — a script, a test, a future screen, an import — loses two orders of magnitude silently.
+`Bab.defaultMarkup` takes a fraction on the same API, so the two disagree. `101` is also accepted as a
+retention rate. The transport half already follows D-135 (a string both ways); **the unit half is the
+defect.** Whether a *rate* is covered by D-135 at all is **the Architect's to rule and is not ruled
+today**.
+
+**What the Verifier could not do, recorded as a finding and not as a pass:** `driver.mjs shot` cannot
+authenticate, so **no screen was looked at**. Every visual claim in the report is geometry, text and
+colour read from the DOM. Crowding, overlap, truncation, focus order, touch targets and contrast are
+**unassessed**. No concurrency was raced. Projects were inserted by SQL because no projects endpoint
+exists, so project-state interaction is untested. The dark palette was forced by copying eleven custom
+properties, not by real dark mode.
+
+**Verified live, and worth recording because each was a claim before it was a measurement:** D-146's
+five phone paths (salaried refuses even with an acknowledgement; day labour, subcontractor, supplier
+and the site route warn; a salaried match is masked `{restricted: true}`); D-148 and D-149 both halves,
+proven from the audit table with the same entity type; D-142/D-145's seeder, driven by hand-editing
+`CON` and deleting `MET` and restarting — eight rows came back, `MET` reinserted, **the `CON` edit
+survived**; `KAFF-200`'s import path with no `double` and a 17-digit price surviving exact; and a
+permission matrix of 8 principals against 27 routes, re-run by the Verifier by direct request.
+
+**Routing of the findings** — `V-38-C` and `V-38-A` and `V-38-D` to Frontend; `V-38-G` to the BA and
+then Backend and Frontend; `V-38-H` to the Architect first, then Backend; `V-38-E` and `V-38-J` to
+Backend; `V-38-F` to Nabil (`Q80` is his, and the runtime already answers it); `V-38-I` to the BA;
+`V-38-K` to QA; `V-38-B` and `V-38-L` (the unwritten E2E suite) stay the slice's largest open item.
+
+**No story is ACCEPTED. Nabil has still never run a demo script.**

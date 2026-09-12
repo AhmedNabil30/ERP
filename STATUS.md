@@ -506,9 +506,9 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | | slice 1 | slice 2 | slice 3 |
 |---|---:|---:|---:|
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 |
-| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 22 | 0 |
+| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 45 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 0 | 31 | 0 |
+| 🔴 REJECTED — a Verifier looked, and it did not pass | 0 | 8 | 0 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 0 | 5 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 |
 | **total** | **127** | **53** | **5** |
@@ -549,19 +549,19 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-127](stories/slice-1-foundation/KAFF-127-user-management-screens.md) | 1 | 8 | ✅ ACCEPTED | CONDITIONAL | `1d04bde` | 2026-09-09 | The user-management screens |
 | [KAFF-128](stories/slice-1-foundation/KAFF-128-audit-trail-screen.md) | 1 | 3 | ✅ ACCEPTED | CONDITIONAL | `1d04bde` | 2026-09-09 | The audit trail screen |
 | [KAFF-129](stories/slice-1-foundation/KAFF-129-partition-audit-records-by-month.md) | 1 | 8 | 🔻 DEFERRED | none | `-` | 2026-09-07 | Partition `audit_records` by month, from the start |
-| [KAFF-200](stories/slice-2-masters/KAFF-200-import-the-catalogue-from-excel.md) | 2 | 5 | 🟡 BUILT | none | `35b0550` | 2026-09-12 | Import the catalogue from Excel at setup, loading the good rows and reporting the rest |
-| [KAFF-201](stories/slice-2-masters/KAFF-201-re-importing-is-not-a-sync.md) | 2 | 2 | 🟡 BUILT | none | `35b0550` | 2026-09-12 | Re-importing is not a sync — a second import is a deliberate, reviewed act |
+| [KAFF-200](stories/slice-2-masters/KAFF-200-import-the-catalogue-from-excel.md) | 2 | 5 | 🔶 VERIFIED | CONDITIONAL | `35b0550` | 2026-09-12 | Import the catalogue from Excel at setup, loading the good rows and reporting the rest |
+| [KAFF-201](stories/slice-2-masters/KAFF-201-re-importing-is-not-a-sync.md) | 2 | 2 | 🔶 VERIFIED | CONDITIONAL | `35b0550` | 2026-09-12 | Re-importing is not a sync — a second import is a deliberate, reviewed act |
 | [KAFF-202](stories/slice-2-masters/KAFF-202-create-and-edit-a-catalogue-item.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Create and edit a catalogue item |
 | [KAFF-203](stories/slice-2-masters/KAFF-203-find-a-catalogue-item-by-code-or-description.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Find a catalogue item by code or description |
 | [KAFF-204](stories/slice-2-masters/KAFF-204-the-bab-tree-with-default-markup.md) | 2 | 5 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | The باب tree, carrying each trade's default markup |
 | [KAFF-205](stories/slice-2-masters/KAFF-205-reparent-a-bab-and-move-an-item.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Re-parent a باب, and move an item between أبواب |
 | [KAFF-206](stories/slice-2-masters/KAFF-206-archive-a-catalogue-item.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Archive a catalogue item without breaking what already references it |
-| [KAFF-207](stories/slice-2-masters/KAFF-207-employee-register.md) | 2 | 5 | 🟡 BUILT | none | `35b0550` | 2026-09-12 | Employee register — exactly one record per costed person |
-| [KAFF-208](stories/slice-2-masters/KAFF-208-nobody-appears-in-both-populations.md) | 2 | 3 | 🟡 BUILT | none | `35b0550` | 2026-09-12 | Nobody appears in both populations: day labour and salaried |
-| [KAFF-209](stories/slice-2-masters/KAFF-209-register-a-worker-from-site.md) | 2 | 5 | 🟡 BUILT | none | `35b0550` | 2026-09-12 | Register a worker from site, warned on a duplicate phone |
-| [KAFF-210](stories/slice-2-masters/KAFF-210-worker-engagement-history.md) | 2 | 3 | 🟡 BUILT | none | `35b0550` | 2026-09-12 | Worker engagement history, day rate, frequency and rating |
-| [KAFF-211](stories/slice-2-masters/KAFF-211-subcontractor-master-with-rates.md) | 2 | 5 | 🟡 BUILT | none | `35b0550` | 2026-09-12 | Subcontractor master — profile only, rates live on the sub-BOQ |
-| [KAFF-212](stories/slice-2-masters/KAFF-212-supplier-master.md) | 2 | 3 | 🟡 BUILT | none | `35b0550` | 2026-09-12 | Supplier master — one account serving many projects |
+| [KAFF-207](stories/slice-2-masters/KAFF-207-employee-register.md) | 2 | 5 | 🔴 BUILT | REJECTED | `35b0550` | 2026-09-12 | Employee register — exactly one record per costed person |
+| [KAFF-208](stories/slice-2-masters/KAFF-208-nobody-appears-in-both-populations.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `35b0550` | 2026-09-12 | Nobody appears in both populations: day labour and salaried |
+| [KAFF-209](stories/slice-2-masters/KAFF-209-register-a-worker-from-site.md) | 2 | 5 | 🔶 VERIFIED | CONDITIONAL | `35b0550` | 2026-09-12 | Register a worker from site, warned on a duplicate phone |
+| [KAFF-210](stories/slice-2-masters/KAFF-210-worker-engagement-history.md) | 2 | 3 | 🔴 BUILT | REJECTED | `35b0550` | 2026-09-12 | Worker engagement history, day rate, frequency and rating |
+| [KAFF-211](stories/slice-2-masters/KAFF-211-subcontractor-master-with-rates.md) | 2 | 5 | 🔶 VERIFIED | CONDITIONAL | `35b0550` | 2026-09-12 | Subcontractor master — profile only, rates live on the sub-BOQ |
+| [KAFF-212](stories/slice-2-masters/KAFF-212-supplier-master.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `35b0550` | 2026-09-12 | Supplier master — one account serving many projects |
 | [KAFF-213](stories/slice-2-masters/KAFF-213-archive-a-bab.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Archive a باب |
 | [KAFF-214](stories/slice-2-masters/KAFF-214-unarchive-a-catalogue-item.md) | 2 | 2 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Un-archive a catalogue item |
 | [KAFF-300](stories/slice-3-treasury/KAFF-300-the-section-15-worked-example.md) | 3 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-07 | The §15 worked example as a fixture — present and failing before anything else is built |

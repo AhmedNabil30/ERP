@@ -1,6 +1,6 @@
 ﻿# KAFF-208 · Nobody appears in both populations: day labour and salaried
 
-<!-- kaff id=KAFF-208 slice=2 points=3 state=BUILT verdict=none at=35b0550 on=2026-09-12 -->
+<!-- kaff id=KAFF-208 slice=2 points=3 state=VERIFIED verdict=CONDITIONAL at=35b0550 on=2026-09-12 -->
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** state and verdict live only in this file's line-3 trailer — see line 3. Refined 2026-09-09 by the BA, amended 2026-09-12 against D-141, D-144 §1 (`AC-208-B`/`AC-208-E` restated, `V-37-F`).
 **Spec:** **§10** (*"Two populations, one source each … Nobody appears in both"*), **§2** · **Decisions:** D-016 (🟡), D-044 ruling 4, **D-130 §7, D-129 §1, D-141, D-144 §1**
