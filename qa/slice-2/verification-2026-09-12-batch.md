@@ -298,4 +298,200 @@ Seven of eleven criteria unbuilt or unreachable. See `V-38-G`.
 
 ---
 
-*(pass in progress — sections 4 onward not yet written)*
+## 4. The named checks
+
+### 4.1 `KAFF-210` is trailed `BUILT`. Is the trailer honest? — **No.**
+
+**The brief's reading is correct against the repo and I confirm it, with more missing than it names.**
+
+| What the story asks for | What exists |
+|---|---|
+| A read of a worker's engagement history | **No endpoint.** The complete `DayLabour` feature is `BabOptions`, `CloseEngagement`, `ListPool`, `OpenEngagement`, `PhoneCheck`, `RateEngagement`, `RegisterFromSite`. Nothing reads engagements |
+| `S-027`, the history screen | **No route.** `app.routes.ts`'s `projects/:projectId/day-labour` has exactly two children, `''` (the pool) and `new` (the register) |
+| The pool's three derived figures (`AC-210-B`/`D`/`G`) | **Neither side.** `ListPool`'s `PoolWorker` is `Id, Code, FullName, Phone, BabId, Specialty, IsActive` — measured live, those seven keys and no others. The rendered pool shows code, name, phone, specialty and an engage button |
+| The day rate (`AC-210-A`/`C`) | `Engagement.DayRate` exists on the entity as `Money?`, and **no route can set it** — `OpenEngagement.Request` is `(Guid? WorkerId)`. Correct under rule 9's `Q76` hold, but it means `AC-210-A` and `AC-210-C` cannot be satisfied |
+| The i18n keys the story lists | `hr.worker.history_title`, `hr.worker.engagement.project`, `hr.worker.engagement.dates`, `hr.worker.engagement.day_rate`, `hr.worker.pool.average_day_rate`, `hr.worker.pool.frequency`, `hr.worker.pool.rating`, `hr.worker.pool.never_engaged` — **not one of the eight is in either catalogue.** The surface was never built |
+| Tests for the derived figures | **None.** No test in the repository contains the string `average`, `frequency` or `never_engaged` |
+
+What **is** built is the engagement lifecycle: open, rate (range enforced), close, the project-mismatch
+refusal of rule 6a, and the audit on all three. That is real and it works. It is roughly four of
+eleven criteria.
+
+**`BUILT` is not an honest trailer for this story.** It is not a partial build of one criterion; it is
+a whole half of the story — §10's *"average day rate, frequency and rating"*, which is the reason
+`KAFF-210` exists — with no endpoint, no screen, no key and no test. `Q76` holds the **day rate**, not
+the frequency and not the rating count, so the hold does not cover the gap. Recorded as **`V-38-G`**.
+Moving the trailer is the Board's, not mine.
+
+### 4.2 The retention rate crosses as a number. Is a rate covered by D-135? — **flagged to the Architect**
+
+**What I measured**, against the live endpoints:
+
+| Field | Request type | What the server does with it | Response |
+|---|---|---|---|
+| `Subcontractor.retentionRate` | `decimal?` | **treats it as a percent** — `5` → `0.05`, `2.5` → `0.025`, `12.75` → `0.1275` | **a fraction, as a string**: `"0.050000"` |
+| `Bab.defaultMarkup` | `decimal?` | **treats it as a fraction** — `0.1275` → `0.1275` | a fraction, as a string: `"0.1275"` |
+
+Three separate things fall out, and I am flagging all three rather than ruling any of them:
+
+1. **The transport half of D-135 is already satisfied.** `KaffJson`'s decimal converter writes every
+   decimal as a JSON string, and the model binder accepts a JSON string on the way in — I sent
+   `retentionRate: "2.5"` and it stored `0.025` exactly as the number `2.5` did. So a rate does
+   already cross as a string outbound and may cross as one inbound. **Whether it must** — whether
+   D-135 and D-139 §8 reach a `Percentage` at all, or stop at `Money` — is the Architect's to say.
+   The live risk is the frontend, not the wire: `subcontractor-form-page.ts` calls `Number()` on
+   submit, which converts the operator's text to an IEEE-754 double before it is ever serialised.
+2. **Two rate fields, two unit conventions.** One takes a percent and one takes a fraction, on the
+   same API, with no distinguishing name. Nothing in either request type says which.
+3. **The subcontractor rate's read shape is not its write shape.** `GET` gives a fraction, `PUT`
+   consumes a percent. **Measured:** a firm stored at the 5% default, read back as `"0.050000"` and
+   written back unchanged, became **0.05%** — a hundredfold silent loss on a round trip through the
+   public API. The Angular form does not hit this because it converts both ways
+   (`fractionToPercent` on read, ×100 on submit); anything that is not that form does.
+
+Also measured, and separate: **`101` is accepted** and stored as `1.01`, rendering `101%` on the
+list. Retention above 100% has no refusal. `Bab.defaultMarkup` took `12.75` the same way — a 1275%
+markup. Recorded as **`V-38-H`**. The ruling is the Architect's; the round trip is a defect either
+way.
+
+### 4.3 D-146 live against the endpoints — **all four confirmed**
+
+| Case | No acknowledgement | With `AcknowledgedDuplicatePhone: true` |
+|---|---|---|
+| Salaried, active salaried match | `409 errors.master.employee_phone_taken` | **still `409`** — the refusal is D-146 §1's partial unique index `ux_employees_salaried_phone`, not an application check, and an acknowledgement cannot talk it round |
+| Day labour | `409 errors.master.duplicate_phone_not_acknowledged` | `201`, both records exist, one `DuplicatePhoneAcknowledged` audit row |
+| Subcontractor | `409 …duplicate_phone_not_acknowledged` | `201`, one acknowledgement row |
+| Supplier | `409 …duplicate_phone_not_acknowledged` | `201`, one acknowledgement row |
+| Site register (`KAFF-209`) | `409 …duplicate_phone_not_acknowledged` | `201`, one acknowledgement row |
+| Site phone-check against a **salaried** record | — | `{"matches":[{"restricted":true}]}` — no id, no name, no code. D-140 point 6 exactly |
+
+The schema backs it: `ux_employees_phone`, `ux_subcontractors_phone` and `ux_suppliers_phone` are
+gone, replaced by non-unique `ix_*`, and `ux_employees_salaried_phone` is a partial index carrying
+`WHERE … 'Salaried'` — `SchemaInvariantTests` asserts each of those by name.
+
+**One thing the ruling does not cover and the product decides anyway** — see **`V-38-F`**. `AC-208-B`
+holds the **active** cross-population case on `Q80`. Live, an active day labourer's phone submitted
+on a salaried create is refused without an acknowledgement and **accepted with one** — identical to
+the archived case D-146 §4(a) actually ruled. The hold is visibly held in the test suite (the one
+skipped Api test) and silently resolved in the running system.
+
+### 4.4 D-148 / D-149 — **both halves proven, from the audit table**
+
+| Act | Route | `grant_path` | `project_id` |
+|---|---|---|---|
+| Site Engineer registers a worker (`Employee`, project-scoped) | `/api/projects/{A}/day-labour` | `Assignment` | **`A`** ✅ |
+| HR creates an employee (`Employee`, company-wide) | `/api/employees` | *(none)* | **none** ✅ |
+| HR edits an employee | `/api/employees/{id}` | *(none)* | **none** ✅ |
+| Engagement open / rate / close | `/api/projects/{A}/day-labour/engagements…` | `Assignment` | **`A`** ✅ |
+| Technical Office creates or edits a subcontractor | `/api/subcontractors` | *(none)* | **none** ✅ |
+| Finance creates a supplier | `/api/suppliers` | *(none)* | **none** ✅ |
+
+The same entity type, `Employee`, records `A` on the project-scoped route and nothing on the
+company-wide one — which is D-148 §4 and D-149's opt-in working, and it is the strongest form of the
+proof because the difference cannot be the entity. D-149's narrowing is real in the code too:
+`Employee` is the **only** type implementing `IAuditScopedByGrant`, and
+`AuditSaveChangesInterceptor` falls back to `_auditContext.GrantProjectId` only for that marker.
+
+⚠️ **One inconsistency inside the proof — `V-38-J`.** On the project-scoped register route, the
+`Employee Created` row carries `grantPath: Assignment` and `projectId: A`, while the
+`DuplicatePhoneAcknowledged` row **written by the same request** carries neither. Two rows from one
+project-scoped act, disagreeing about which project it happened on.
+
+### 4.5 D-142 / D-145 — **eight أبواب, idempotent, never overwriting an edit. Proven live.**
+
+Seeded on a fresh database: `CON, MAS, PLU, ELE, HVA, FIN, CAR, MET` — **exactly eight, the codes
+D-145 §1 names, in that sort order**, with Karim's markups (`0.15, 0.15, 0.20, 0.20, 0.20, 0.30,
+0.25, 0.25`).
+
+Then the real test, run against the running stack:
+
+1. I renamed `CON` to `اسم معدّل من المدقق` and set its markup to `0.4242` **directly in the
+   database**, and **deleted `MET` outright**. Seven rows, one of them hand-edited.
+2. Restarted the API, which runs `BabSeeder` on startup.
+3. Read the table back: **eight rows.** `MET` was re-inserted at its own markup and sort order.
+   **`CON` still carries `اسم معدّل من المدقق` and `0.424200`** — untouched.
+
+Idempotent, additive, and it does not repair a row it did not write. The code says the same: it keys
+on `Code`, has no update path, and contains neither `SetDefaultMarkup` nor `Rename` — D-142 point 3's
+own test for whether it is wrong.
+
+### 4.6 `KAFF-200` — the three money and template questions
+
+**No `double` anywhere near a price in the import path.** Searched every file of
+`src/Api/Features/Catalogue`, `src/Api/Common/XlsxSheetReader.cs` and
+`src/Domain/MasterData/CatalogueTemplate.cs`: the tokens `double`, `float`, `ToDouble`, `GetDouble`
+and `Convert.To` appear **only inside documentation comments**, never in an expression. The one
+numeric path is `SheetCell.TryReadDecimal`, which is
+`decimal.TryParse(Text, NumberStyles.Float, InvariantCulture, out value)` over the cell's stored
+text. `NumberStyles.Float` there is a parse *style* (it admits Excel's `1E-4` exponent form), not a
+binary float — reading it as one would be the wrong alarm.
+
+**A 17-digit price survives.** Imported `1234567890123.4567` as both `costPrice` and `baseSellRate`;
+read back from the API **exactly**, and the audit `after` snapshot carries the same string. Alongside
+it, `987.6543` / `1234.5678` survived to the fourth decimal, and a five-decimal `1.00005` stored as
+`1.0001` — rounded through `Money`, not refused, which is D-144 §6.
+
+**The template columns and the header check come from one list.**
+`CatalogueTemplate.Columns` — `code, descriptionAr, descriptionEn, unit, bab, costPrice,
+baseSellRate`, no `status`. `XlsxTemplateWriter` writes the header with
+`foreach (string header in CatalogueTemplate.Columns)`; `CatalogueTemplate.TryMatch` checks the
+uploaded header against `Columns.Count` and then `foreach (string column in Columns)`. **One list,
+two readers, no second copy.** The downloaded template's own sheet XML carries exactly those seven
+headers, which I extracted and read.
+
+What that list does **not** do is carry into the refusal message — **`V-38-E`**.
+
+### 4.7 Permission tests hit endpoints directly, one per role, for every new route
+
+**Yes, and I re-ran the matrix myself** rather than trusting the suite. Eight signed-in principals
+(Owner, Finance, Technical Office, a Site Engineer assigned to project A, a Site Engineer assigned
+only to project B, Head of Design, Marketing/Sales, HR) × 27 routes, called with `fetch` and a
+session cookie, **no browser involved**. Every cell matched the story that owns the route:
+
+- Catalogue import and template: Owner + Technical Office. Six roles `403`.
+- Employees (list, get, babs, phone-check, create, edit, archive): Owner + HR. **Site Engineer and Technical Office `403`.**
+- Day labour under `/api/projects/{A}/…` (pool, babs, phone-check, register, engagements): Owner + the engineer **assigned to A**. **HR `403`** — D-140 point 1's own reason for keeping HR off the row. The engineer assigned only to B is `403` on all four of A's routes.
+- Subcontractors: Owner + Technical Office. **Finance `403`.**
+- Subcontractor tax registration (both routes): Owner + Finance. **Technical Office `403`.**
+- Suppliers: Owner + Finance. **Technical Office `403`.**
+
+The structural control is stronger than the per-route tests: `EndpointPermissionCoverageTests`
+requires **every** mapped endpoint to declare `RequirePermission(...)` or be a named member of an
+allow-list, and separately fails a dead allow-list entry. A new route cannot be added ungated without
+a deliberate edit to that test.
+
+### 4.8 The E2E suite — **still unwritten for this batch**
+
+`git log 7117704..HEAD -- tests/E2E.Tests` returns **nothing**. The suite that exists is slice 1's
+(`SmokeTests`, `ClientScreenTests`, `UserScreenTests`, `AuditScreenTests`, `BidiGeometryTests`), and
+no file in it mentions an employee, a worker, a subcontractor, a supplier or the catalogue import.
+
+**Under D-138's board policy this caps all eight stories at `CONDITIONAL`**, which is why no story
+above reads better than that regardless of its own evidence. Recorded as **`V-38-L`**.
+
+### 4.9 Tests that cannot fail
+
+I found **no** test in this batch that passes by having searched nothing, and the two shapes most at
+risk both carry controls:
+
+- `CatalogueImportHasNoSyncTests` asserts `suspectRoutes.Should().BeEmpty()` — an absence — and then
+  asserts `allRoutes.Should().Contain("/api/catalogue-items/import")` and the two re-import routes.
+  **That is the positive control**: the route table it searched is provably populated.
+- `SchemaInvariantTests` does it properly and repeatedly — it drops a constraint, asserts the guard
+  check **goes red** naming it, restores it, and asserts green again. A real red is watched, three
+  times over.
+- The bid/RFQ absence tests in `SupplierTests` and `SubcontractorTests` iterate a literal array of
+  route constants, so the collection cannot be empty and a moved constant fails the compile.
+
+**One weak one — `V-38-K`.** `EngagementLifecycleTests.No_money_member_appears_on_the_open_request_or_response`
+loops `type.GetProperties()` and asserts inside the loop. If either record ever had no properties the
+loop body would never run and the test would pass having checked nothing. It is a small hole — the
+records are in the same solution and a property-less record is a visible edit — but it is the one
+assertion here with no control that it enumerated anything.
+
+**The larger fact is not a weak test but an absent one:** nothing asserts `AC-210-B`, `AC-210-D` or
+`AC-210-G`, because there is nothing to assert against. See `V-38-G`.
+
+---
+
+*(pass in progress — sections 5 and 6 not yet written)*
