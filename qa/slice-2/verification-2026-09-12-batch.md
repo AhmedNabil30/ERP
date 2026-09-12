@@ -157,4 +157,145 @@ of `ux/navigation.md` would expect the rows to exist.
 
 ---
 
-*(pass in progress — sections 3 onward not yet written)*
+## 3. Acceptance criteria, per story
+
+Every row below was exercised against the running app on the scratch database, or read out of the
+code where the criterion is about a shape rather than a behaviour. **No verdict is `ACCEPTED`** —
+that word is not available to a Verifier.
+
+**A note that applies to all eight.** `git log 7117704..HEAD -- tests/E2E.Tests` is **empty**: not one
+end-to-end test was written for any story in this batch, and no E2E file mentions an employee, a
+worker, a subcontractor, a supplier or the catalogue import. **D-138's board policy caps every story
+in this batch at `CONDITIONAL` on that ground alone**, before anything else below is weighed.
+
+### `KAFF-200` — import the catalogue from Excel · **CONDITIONAL**
+
+| AC | Held? | Evidence measured here |
+|---|---|---|
+| `AC-200-A` | ✅ | A three-row file imported; every item carries its code, both descriptions, unit, باب resolved by `Code`, both prices, and **`Status: Active`** |
+| `AC-200-B` | ✅ | `costPrice 987.6543` / `baseSellRate 1234.5678` read back **exactly**. **A 17-digit price survives**: `1234567890123.4567` stored and read back unchanged. A five-decimal `1.00005` stored as `1.0001` — rounded at four through `Money`, **no refusal** (D-144 §6) |
+| `AC-200-C` | ✅ | Row naming باب `ZZZ` refused `errors.master.bab_not_found`, naming `rowNumber: 3`, `column: "bab"`, `value: "ZZZ"`. **No باب was created** — the table still held exactly eight |
+| `AC-200-D` | ⚠️ **not reachable** | There is no `/api/portal/*` route and no client-facing print or export on this API, so there is no surface on which `costPrice` could leak. The criterion is **vacuously true today** and will need re-running when a portal exists. Recorded, not claimed |
+| `AC-200-E` | ✅ | `S-019` renders the not-a-sync sentence **in the page body**, above the file chooser, not in a tooltip |
+| `AC-200-F` | ✅ | Only Owner and Technical Office reach `POST /api/catalogue-items/import`. Finance, both Site Engineers, Head of Design, Marketing/Sales and HR all `403` |
+| `AC-200-G` | ✅ | One `CatalogueImported` audit row per import, `reason` = `Imported good.xlsx: 3 item(s) created`, with actor and time. A refused import created nothing |
+| `AC-200-H` | ✅ | A five-row file with three bad rows imported the two good ones and returned a row-level report naming each failure's row number, column, message key and value |
+| `AC-200-I` | ⚠️ **half** | An extra `status` column is refused and a missing column is refused. **But see `V-38-E`** — the refusal is a bare `errors.master.catalogue_import_failed` and names neither what the template requires nor what the file carried |
+
+### `KAFF-201` — re-importing is not a sync · **CONDITIONAL**
+
+| AC | Held? | Evidence |
+|---|---|---|
+| `AC-201-A` | ✅ | **No `IHostedService`, `BackgroundService`, `AddHostedService`, `Timer`, `FileSystemWatcher`, Quartz or Hangfire anywhere under `src/`** — searched, zero hits. Nothing can read a spreadsheet on its own |
+| `AC-201-B` | ✅ | `POST …/import/preview` returned `willCreateCount: 1`, `willAffectCount: 1`, and per-item `oldCostPrice`/`oldBaseSellRate`/`newCostPrice`/`newBaseSellRate`. **The catalogue count was identical before and after the preview** |
+| `AC-201-C` | ⚠️ **not reachable** | No BOQ exists in the system yet. Structurally the freeze holds — nothing this story writes has a path to a BOQ line — but it cannot be exercised. Recorded, not claimed |
+| `AC-201-D` | ✅ | Nothing on the confirm path raises an alert; there is no estimate surface to raise one on |
+| `AC-201-E` | ✅ | A confirm that moved a price wrote `Modified` with `before {"CostPrice":"987.6543","BaseSellRate":"1234.5678"}` and `after {"CostPrice":"555.1111","BaseSellRate":"777.2222"}`, `reason` naming the file and both counts |
+| `AC-201-F` | ✅ | Confirm created the one new code and re-priced the one existing code, and every change appeared in the preview shown first |
+
+### `KAFF-207` — employee register · **REJECTED**
+
+| AC | Held? | Evidence |
+|---|---|---|
+| `AC-207-A` | ✅ | Salaried created, `E-10001`, active |
+| `AC-207-B` | ✅ | Day labour with no باب refused `errors.master.day_labour_requires_trade`; `ck_employees_day_labour_has_trade` is present in the schema |
+| `AC-207-C` | ✅ | `CreateEmployee.Request` has **no `Code` member**; codes came back `E-10001`…`E-10013` from the server |
+| `AC-207-D` | ✅ | A second active salaried record on the same phone is refused `409 errors.master.employee_phone_taken` — and **still refused with `AcknowledgedDuplicatePhone: true`**, which is D-146 §1's partial unique index doing the refusing |
+| `AC-207-E` | ✅ | No money-typed member on any employee request or response |
+| `AC-207-F` | ✅ | Archive returns `204`, the row survives, and `ArchiveEmployeeTests` enumerates the host's own route table for a `DELETE` |
+| `AC-207-G` | ❌ **broken** | The **create** form renders exactly D-139 §7 / D-144 §2's list and nothing more. The **edit** form does not render the record: **`V-38-C`** — a day labourer's stored باب shows as `بدون باب`, and the save the form would then submit is refused `400 errors.master.day_labour_requires_trade` (measured) |
+| `AC-207-H` | ✅ | Only Owner and HR reach create, edit and archive. Site Engineer and Technical Office both `403` |
+| `AC-207-I` | ✅ | One edit touching three fields wrote **one** record: `changedProperties ["Department","FullName","JobTitle"]` with both snapshots, actor `VERIFIER-FIXTURE Hr`, role `Hr`, its own time |
+| `AC-207-J` | ⚠️ **mechanism only** | RTL, `lang=ar`, no horizontal scroll at 390px, phone and national id `dir="ltr"`, Arabic fields `dir="auto"`. **Not looked at** — see §2's screenshot limitation |
+
+**Why REJECTED and not CONDITIONAL.** `V-38-C` is not a cosmetic gap. HR cannot save an edit to a
+day labourer at all through the screen this story ships, and the screen states in Arabic that a
+required stored field is empty when it is not. That is the register misreporting its own record,
+which is the one thing `§2`'s *"exactly one record per costed person"* exists to make reliable.
+
+### `KAFF-208` — nobody appears in both populations · **CONDITIONAL**
+
+| AC | Held? | Evidence |
+|---|---|---|
+| `AC-208-A` | ✅ | Every row carries exactly one defined `Kind`; the column is a string enum in the schema, not an int with a zero value |
+| `AC-208-B` | ⚠️ **held in the suite, answered in the product** | See `V-38-F`. The `Q80` hold is **visibly** held where a hold should be — the one skipped Api test. But the running system answers it: an active day labourer's phone on a salaried create is **accepted with an acknowledgement**, `201` |
+| `AC-208-C` | ✅ | An edit carrying a different `kind` is refused `409 errors.master.employee_kind_immutable` — the error is reachable, not a dead declaration |
+| `AC-208-D` | ✅ | No public member sets `Kind` after construction; `EmployeeKindInvariantTests` enumerates the allow-list by name |
+| `AC-208-E` | ✅ | Measured end to end: a day labourer archived, then a salaried create on the same phone **warned** (`409 duplicate_phone_not_acknowledged`) and **succeeded on acknowledgement** (`201`), writing one `DuplicatePhoneAcknowledged` audit row. Both records exist, neither carries two kinds |
+| `AC-208-F` | ✅ | Same matrix as `AC-207-H` |
+| `AC-208-G` | ✅ | The list and both forms render **يومية** and **موظف بالراتب** verbatim from the catalogue, RTL, no horizontal scroll |
+
+### `KAFF-209` — register a worker from site · **CONDITIONAL**
+
+| AC | Held? | Evidence |
+|---|---|---|
+| `AC-209-A` | ✅ | Registered under `/api/projects/{A}/day-labour` with §10's four fields; the request record carries **no `Kind` member** |
+| `AC-209-B` | ✅ | Refused `errors.master.day_labour_requires_trade`; the check constraint is in the schema |
+| `AC-209-C` | ✅ | A worker stored as `+20 100 123 4567` was matched by `0100 123 4567`, `0020 100 123 4567`, `+20-100-123-4567`, `01001234567` and `+201001234567` — **all five** |
+| `AC-209-D` | ✅ | `409 errors.master.duplicate_phone_not_acknowledged` naming the existing worker; `201` with the acknowledgement, one `DuplicatePhoneAcknowledged` audit row |
+| `AC-209-E` | ✅ | The engineer assigned to A succeeds on A; the engineer assigned only to B is `403` on A's register, pool, phone-check and engagements — **all four** |
+| `AC-209-F` | ✅ | Finance, Marketing/Sales, Technical Office, Head of Design and **HR** are all `403`. HR is refused, which is what D-140 point 1 asked to be caught |
+| `AC-209-G` | ✅ | No money-typed member in the register request or response |
+| `AC-209-H` | ✅ | `Employee Created` with `grantPath: Assignment` and `projectId: A`; the acknowledgement its own row |
+| `AC-209-I` | ⚠️ **mechanism only** | RTL at 390px, no horizontal scroll, phone `inputmode="tel" dir="ltr"`. **One-handed reach was not measured** — no screenshot, no hit-target geometry |
+| `AC-209-J` | ❌ **unbuilt** | The pool shows **no average day rate, no frequency and no rating at all**, so there is no empty state to be explicit. `GET /api/projects/{id}/day-labour` returns `id, code, fullName, phone, babId, specialty, isActive` and nothing else. See `V-38-G` |
+| `AC-209-K` | ✅ | A phone-check against a salaried record returns exactly `{"matches":[{"restricted":true}]}` — no id, no name, no code. Against a day labourer it returns the full match |
+
+### `KAFF-210` — worker engagement history · **REJECTED**
+
+| AC | Held? | Evidence |
+|---|---|---|
+| `AC-210-A` | ❌ | An engagement opens with a worker and a project. **Its dates cannot be given and its day rate cannot be given** — `OpenEngagement.Request` is `(Guid? WorkerId)` and nothing else. **There is no history screen**: `app.routes.ts`'s day-labour tree has exactly `''` and `new`; `S-027` does not exist |
+| `AC-210-B` | ❌ **unbuilt** | There are no pool figures to be derived or stored. Nothing to assert against — and **no test anywhere mentions `average`, `frequency` or `never_engaged`** |
+| `AC-210-C` | ❌ **unreachable** | `Engagement.DayRate` exists on the entity as `Money?`, but **no route can set it**, so no value travels between a request body and the database |
+| `AC-210-D` | ❌ | No average is computed anywhere |
+| `AC-210-E` | ✅ | No `Posting` and no account was created by any engagement act; the mapped routes reach no treasury surface |
+| `AC-210-F` | ⚠️ **half** | The rating range holds: `6` and `0` both refused `400 errors.master.engagement_rating_out_of_range`, `4` accepted. **Frequency is not rendered anywhere**, so the half about counting engagements rather than days is unbuilt |
+| `AC-210-G` | ❌ **unbuilt** | Neither `S-025` nor a non-existent `S-027` shows the three figures, so none of them shows an empty state |
+| `AC-210-H` | ✅ | Every role without `DayLabourSiteManage` is `403` on open, rate, close **and the pool read**; an engineer assigned elsewhere is `403` on all four |
+| `AC-210-I` | ✅ | `Engagement Created`, `Modified ["Rating"]` and `Modified ["ClosedAt","ClosedOn"]`, each with actor, time, `grantPath: Assignment` and `projectId: A` |
+| `AC-210-J` | ❌ | `S-027` does not exist. `S-025` renders RTL correctly but carries no rate to bidi-isolate |
+| `AC-210-K` | ✅ | Closing succeeded for the assigned engineer. Pairing project B's route with project A's engagement id was refused **`403 errors.master.engagement_project_mismatch`** — rule 6a's check is present and works. No automatic process closes anything (no hosted service exists) |
+
+Seven of eleven criteria unbuilt or unreachable. See `V-38-G`.
+
+### `KAFF-211` — subcontractor master · **CONDITIONAL**
+
+| AC | Held? | Evidence |
+|---|---|---|
+| `AC-211-A` | ✅ | Created with no retention given → stored `0.05`, active, code `SC-10001` generated |
+| `AC-211-B` | ✅ | One firm at `0.025`, another still at `0.05`; no global default moved |
+| `AC-211-C` | ⚠️ **half — see `V-38-H`** | Entering `5` stores the fraction `0.05` ✅ and `2.5` stores `0.025` ✅. **But the read shape is not the write shape**: `GET` returns `"0.050000"` (a fraction) while `PUT` consumes a percent, so echoing a read back divides the rate by 100 — measured, `5%` became `0.05%`. And **`101` is accepted**, stored `1.01`, displayed `101%` |
+| `AC-211-D` | ✅ | No mapped subcontractor route creates a `User`, sets a credential or grants a role |
+| `AC-211-E` | ✅ | No balance, outstanding, total or amount-typed member; no `Posting`, no account |
+| `AC-211-F` | ✅ | No withholding rate on the record or on either screen |
+| `AC-211-G` | ✅ | `WithholdingCategory` is gone from `Subcontractor` |
+| `AC-211-H` | ✅ | Neither screen carries a price, a rate card or any per-item rate |
+| `AC-211-I` | ✅ | `409 duplicate_phone_not_acknowledged` naming the existing firm; `201` on acknowledgement with one `DuplicatePhoneAcknowledged` audit row |
+| `AC-211-J` | ✅ | **Finance is `403`** on create, edit, archive, get and list. So are HR, both engineers, Head of Design and Marketing/Sales |
+| `AC-211-K` | ✅ | **Two** records: `Subcontractor Modified ["RetentionRate"]` by `VERIFIER-FIXTURE TechnicalOffice`, and `Subcontractor Modified ["TaxRegistrationNumber"]` by `VERIFIER-FIXTURE Finance`. Two endpoints, two actors, two rows |
+| `AC-211-L` | ✅ | No bid, quotation, RFQ or comparison on either screen or on any mapped route |
+| `AC-211-M` | ⚠️ **mechanism only** | RTL, **مقاول باطن** verbatim, no horizontal scroll, phones `dir="ltr"` inside `<bdi>`, percentages rendered `5%` / `12.75%`. Not looked at |
+| `AC-211-N` | ✅ | Measured three ways: the Technical Office is `403` on `PUT …/tax-registration` **and** `403` on `GET /api/subcontractors/tax-registrations`; an edit request carrying a `taxRegistrationNumber` member is **ignored** (the member does not exist on `EditSubcontractor.Request`) and the stored number was unchanged. Finance's projection is exactly `id, code, name, taxRegistrationNumber, isActive` — nothing else — and Finance is `403` on `GET /api/subcontractors/{id}` |
+| `AC-211-O` | ✅ **visibly held** | No Finance tax-registration screen exists and none was invented. The hold is real and observable |
+
+### `KAFF-212` — supplier master · **CONDITIONAL**
+
+| AC | Held? | Evidence |
+|---|---|---|
+| `AC-212-A` | ✅ | Created with code, name, phone, address; **no project member on the record** |
+| `AC-212-B` | ✅ | One row, one company-scoped `SupplierPayable` account type; this story creates no account |
+| `AC-212-C` | ✅ | No balance, outstanding, purchases or withholding member |
+| `AC-212-D` | ⚠️ **story is stale** | The supplier code is now **generated** (`S-10001`…`S-10005`), so two suppliers cannot share a typed code — a create carrying a `code` member is ignored and the server's own code is returned. The criterion as written describes a typed code that no longer exists. **`V-38-I`** — a story-currency note for the BA, not a defect |
+| `AC-212-E` | ✅ | No withholding rate on the record or the screen |
+| `AC-212-F` | ✅ | `WithholdingCategory` is gone from `Supplier` |
+| `AC-212-G` | ✅ | `409 duplicate_phone_not_acknowledged`; `201` on acknowledgement with one `DuplicatePhoneAcknowledged` audit row |
+| `AC-212-H` | ✅ | **The Technical Office is `403`** on every supplier route, as are HR, both engineers, Head of Design and Marketing/Sales |
+| `AC-212-I` | ✅ | Archive `204`, row intact, findable through the filter; the route-table enumeration finds no `DELETE` |
+| `AC-212-J` | ✅ | One record, both fields, before and after |
+| `AC-212-K` | ✅ | No bid, RFQ, quotation or comparison |
+| `AC-212-L` | ⚠️ **mechanism only** | RTL, no horizontal scroll, name/phone/tax number bidi-isolated or `dir="ltr"`. Not looked at |
+
+---
+
+*(pass in progress — sections 4 onward not yet written)*
