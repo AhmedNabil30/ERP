@@ -27,6 +27,17 @@
           </dd>
         </dl>
 
+        <!-- V-38-A/V-38-D: `nav.suppliers` was in both catalogues with no template reading it.
+             `SupplierManage` is Owner-and-Finance; Finance's own landing is this profile screen
+             (nothing Finance-specific exists yet in this slice — ux/navigation.md), so the link lives
+             here rather than as a second side-nav item, same shape as `nav.babs` on the catalogue
+             landing. Gated on the permission, not the role, per KAFF-125 rule 6. -->
+        @if (session.permissions.includes('SupplierManage')) {
+          <a class="suppliers-link" routerLink="/suppliers" data-testid="profile-manage-suppliers">
+            {{ i18n.t('nav.suppliers') }}
+          </a>
+        }
+
         <h2 class="subtitle">{{ i18n.t('profile.projects.title') }}</h2>
 
         @if (session.projects.length > 0) {

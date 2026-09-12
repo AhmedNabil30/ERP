@@ -89,9 +89,16 @@
             [attr.aria-label]="i18n.t('hr.employee.field.bab')"
             (change)="onBabChange($event)"
           >
-            <option value="">{{ i18n.t('hr.employee.field.no_bab') }}</option>
+            <!--
+              `V-38-C`: `[value]` on the `<select>` itself only ever wrote once, and it wrote before
+              `babs()` had loaded — a browser refuses to select a value with no matching `<option>`
+              yet, and Angular never re-wrote it once the options arrived because the bound string
+              (`currentBabId()`) had not changed. `[selected]` on each `<option>` instead re-evaluates
+              whenever this `@for` re-renders, which is exactly when the options (re)appear.
+            -->
+            <option value="" [selected]="currentBabId() === ''">{{ i18n.t('hr.employee.field.no_bab') }}</option>
             @for (bab of babs(); track trackBab($index, bab)) {
-              <option [value]="bab.id">{{ babLabel(bab) }}</option>
+              <option [value]="bab.id" [selected]="bab.id === currentBabId()">{{ babLabel(bab) }}</option>
             }
           </select>
           @if (babsUnavailable()) {

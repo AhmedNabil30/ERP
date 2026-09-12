@@ -203,6 +203,18 @@ describe('EmployeeFormPage · باب picker', () => {
     const ids = page['babs']().map((bab: BabOption) => bab.id);
     expect(ids).toContain('archived-1');
   });
+
+  /**
+   * `V-38-C`: the select rendered `""` ("بدون باب") for a day labourer whose stored باب was `archived-1`,
+   * because nothing ever bound the DOM select's value to the loaded record. Watched red against the
+   * pre-fix template (no `[value]` binding on the select) before `currentBabId()` was added.
+   */
+  it('shows the stored باب selected, not the blank default option', async () => {
+    const fixture = await createFixture('emp-1', EMPLOYEE_FILE);
+
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector('[data-testid="employee-field-bab"]');
+    expect(select.value).toBe('archived-1');
+  });
 });
 
 /** `S-024`: the phone-check warning, reusing the client form's presentation (D-141/D-146). */

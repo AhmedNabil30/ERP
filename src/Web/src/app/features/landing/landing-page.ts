@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { AuthService, ProjectEntry, Session, TeamProjectEntry } from '../../core/auth/auth.service';
 import {
@@ -22,6 +22,7 @@ function refCodeAndName(code: string, name: string): string {
 
 @Component({
   selector: 'kaff-landing-page',
+  imports: [RouterLink],
   templateUrl: './landing-page.html',
   styleUrl: './landing-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

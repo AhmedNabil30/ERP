@@ -122,6 +122,15 @@ export class EmployeeFormPage implements UnsavedChangesAware {
   protected readonly displayCode = computed(() => this.code());
   protected readonly isDayLabour = computed(() => this.model().kind === 'DayLabour');
 
+  /**
+   * `V-38-C`'s fix: the plain `<select>` below is not a `FormField` and has no `[value]` binding of
+   * its own, so on edit it always rendered the DOM's default — the first `<option>`, "بدون باب" —
+   * regardless of what `applyLoaded` had just written into `model`. The select only ever *read* from
+   * the DOM via `(change)`; nothing ever pushed the loaded value back into it. Bound in the template
+   * as `[value]="currentBabId()"` so a loaded record's باب is what the select actually shows.
+   */
+  protected readonly currentBabId = computed(() => this.model().babId);
+
   protected readonly babIdErrorKey = computed(() => {
     const field = this.employeeForm.babId();
     if (!field.touched() || field.valid()) {

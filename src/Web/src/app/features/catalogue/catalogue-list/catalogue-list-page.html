@@ -7,6 +7,12 @@
     <a class="babs-link" routerLink="/babs" data-testid="catalogue-manage-babs">
       {{ i18n.t('nav.babs') }}
     </a>
+    <!-- V-38-A/V-38-D: `nav.subcontractors` was in both catalogues with no template reading it —
+         `SubcontractorManage` is Owner-and-TechnicalOffice, same as `CatalogueManage`, so it follows
+         `nav.babs`'s own precedent immediately above rather than a second side-nav item. -->
+    <a class="babs-link" routerLink="/subcontractors" data-testid="catalogue-manage-subcontractors">
+      {{ i18n.t('nav.subcontractors') }}
+    </a>
     <a class="babs-link" routerLink="/catalogue/import" data-testid="catalogue-import-link">
       {{ i18n.t('catalogue.action.import') }}
     </a>
