@@ -1,0 +1,116 @@
+<section class="subcontractors" data-testid="subcontractor-list">
+  <h1 class="title">{{ i18n.t('subcontractor.list_title') }}</h1>
+
+  <!-- A segmented control, matching EmployeeListPage's own — AC-211-M's three server states. -->
+  <div class="filters" role="group" [attr.aria-label]="i18n.t('subcontractor.list_title')">
+    @for (option of filters; track option) {
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="statusFilter() === option"
+        [attr.aria-pressed]="statusFilter() === option"
+        [attr.data-testid]="'subcontractor-filter-' + option"
+        (click)="onFilter(option)"
+      >
+        {{ i18n.t(filterKey(option)) }}
+      </button>
+    }
+  </div>
+
+  @if (failure(); as key) {
+    <p class="refusal" role="alert" data-testid="subcontractor-list-failure">{{ i18n.t(key) }}</p>
+  } @else if (loading()) {
+    <p class="loading" role="status" aria-live="polite" data-testid="subcontractor-list-loading">
+      {{ i18n.t('subcontractor.loading') }}
+    </p>
+  } @else if (subcontractors().length > 0) {
+    <ul class="rows" data-testid="subcontractor-rows">
+      @for (subcontractor of subcontractors(); track trackRow($index, subcontractor)) {
+        <li
+          class="row"
+          [class.row--archived]="!subcontractor.isActive"
+          [attr.data-testid]="'subcontractor-row-' + subcontractor.code"
+        >
+          <a class="row-link" [routerLink]="['/subcontractors', subcontractor.id]">
+            <bdi class="row-code" translate="no">{{ subcontractor.code }}</bdi>
+            <span class="row-name" dir="auto">{{ subcontractor.name }}</span>
+            <bdi class="row-phone" dir="ltr">{{ subcontractor.phone }}</bdi>
+            <span class="row-trade" dir="auto">{{ tradeLabel(subcontractor) }}</span>
+            <bdi class="row-retention figure">{{ retentionLabel(subcontractor) }}%</bdi>
+
+            @if (!subcontractor.isActive) {
+              <span class="row-archived-badge" data-testid="subcontractor-row-archived-badge">
+                {{ i18n.t('subcontractor.archived_badge') }}
+              </span>
+            }
+          </a>
+
+          <div class="row-actions">
+            @if (rowFailure(); as failed) {
+              @if (failed.id === subcontractor.id) {
+                <p class="row-refusal" role="alert" [attr.data-testid]="'subcontractor-row-refusal-' + subcontractor.code">
+                  {{ i18n.t(failed.key) }}
+                </p>
+              }
+            }
+
+            <a class="chip" [routerLink]="['/subcontractors', subcontractor.id]" [attr.data-testid]="'subcontractor-edit-' + subcontractor.code">
+              {{ i18n.t('action.edit') }}
+            </a>
+
+            @if (subcontractor.isActive) {
+              @if (confirmingArchiveId() === subcontractor.id) {
+                <p class="row-confirm" [attr.data-testid]="'subcontractor-archive-body-' + subcontractor.code">
+                  {{ i18n.t('subcontractor.archive_confirm') }}
+                </p>
+                <button
+                  type="button"
+                  class="danger-button"
+                  [disabled]="isArchiving(subcontractor.id)"
+                  [attr.data-testid]="'subcontractor-archive-confirm-' + subcontractor.code"
+                  (click)="onConfirmArchive(subcontractor.id)"
+                >
+                  {{ i18n.t('subcontractor.archive_action') }}
+                </button>
+                <button
+                  type="button"
+                  class="chip"
+                  [attr.data-testid]="'subcontractor-archive-cancel-' + subcontractor.code"
+                  (click)="onCancelArchive()"
+                >
+                  {{ i18n.t('action.cancel') }}
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  class="danger-button"
+                  [attr.data-testid]="'subcontractor-archive-' + subcontractor.code"
+                  (click)="onStartArchive(subcontractor.id)"
+                >
+                  {{ i18n.t('subcontractor.archive_action') }}
+                </button>
+              }
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  } @else if (statusFilter() !== 'active') {
+    <div class="empty" role="status" aria-live="polite" data-testid="subcontractor-list-empty-filtered">
+      <p class="empty-title">{{ i18n.t('subcontractor.empty_filtered') }}</p>
+    </div>
+  } @else {
+    <div class="empty" role="status" aria-live="polite" data-testid="subcontractor-list-empty">
+      <p class="empty-title">{{ i18n.t('subcontractor.empty') }}</p>
+      <a class="create" routerLink="/subcontractors/new" data-testid="subcontractor-create">
+        {{ i18n.t('subcontractor.action.create') }}
+      </a>
+    </div>
+  }
+
+  @if (subcontractors().length > 0) {
+    <a class="create" routerLink="/subcontractors/new" data-testid="subcontractor-create">
+      {{ i18n.t('subcontractor.action.create') }}
+    </a>
+  }
+</section>
