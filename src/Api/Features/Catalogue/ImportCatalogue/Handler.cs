@@ -84,7 +84,20 @@ internal static class Handler
 
         if (!CatalogueTemplate.TryMatch(headerText, out IReadOnlyDictionary<string, int> columnIndex))
         {
-            return ResultExtensions.Problem(MasterDataErrors.CatalogueImportFailed);
+            // AC-200-I / V-38-E: a bad-template refusal names what the template requires and what the
+            // file carried, the same shape KAFF-213's bab_has_active_items uses to name a count beyond
+            // its code and message key — the messageKey itself stays the one shared file-level key
+            // (rule 7: the row-level report carries the granular reasons, this is a file-level refusal).
+            return ResultExtensions.Problem(
+                MasterDataErrors.CatalogueImportFailed,
+                new Dictionary<string, object?>(StringComparer.Ordinal)
+                {
+                    ["expectedColumns"] = CatalogueTemplate.Columns,
+                    ["actualColumns"] = headerText.Values
+                        .Where(text => !string.IsNullOrWhiteSpace(text))
+                        .Select(text => text!.Trim())
+                        .ToArray(),
+                });
         }
 
         List<SheetRow> dataRows = [.. read.Rows.Skip(1)];

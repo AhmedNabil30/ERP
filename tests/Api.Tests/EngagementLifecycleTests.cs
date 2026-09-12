@@ -92,7 +92,13 @@ public sealed class EngagementLifecycleTests : IAsyncLifetime
             typeof(Api.Features.DayLabour.OpenEngagement.Response),
         })
         {
-            foreach (System.Reflection.PropertyInfo property in type.GetProperties())
+            System.Reflection.PropertyInfo[] properties = type.GetProperties();
+
+            // V-38-K: a property-less record would pass this loop having checked nothing — this
+            // control fails first, and visibly, if that ever happens.
+            properties.Should().NotBeEmpty($"{type.Name} must have properties for this loop to check");
+
+            foreach (System.Reflection.PropertyInfo property in properties)
             {
                 string lowered = property.Name.ToLowerInvariant();
                 forbidden.Should().NotContain(term => lowered.Contains(term, StringComparison.Ordinal),

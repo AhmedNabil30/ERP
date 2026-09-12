@@ -323,7 +323,16 @@ public sealed class ImportCatalogueTests : IAsyncLifetime
             headers,
             [[UniqueNames.Code("IMP-I1"), "خرسانة", null, "م٣", _babCode, "10", "20", "?"]]);
 
-        (await ImportAsync(_technicalOffice, Role.TechnicalOffice, file)).StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        HttpResponseMessage response = await ImportAsync(_technicalOffice, Role.TechnicalOffice, file);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        // V-38-E / AC-200-I: the refusal names what the template requires and what the file carried,
+        // not a bare code.
+        using JsonDocument problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+        problem.RootElement.GetProperty("expectedColumns").EnumerateArray()
+            .Select(e => e.GetString()).Should().BeEquivalentTo(CatalogueTemplate.Columns);
+        problem.RootElement.GetProperty("actualColumns").EnumerateArray()
+            .Select(e => e.GetString()).Should().BeEquivalentTo(headers);
     }
 
     [Fact]
@@ -335,7 +344,15 @@ public sealed class ImportCatalogueTests : IAsyncLifetime
             headers,
             [[UniqueNames.Code("IMP-I2"), "خرسانة", null, "م٣", _babCode, "10"]]);
 
-        (await ImportAsync(_technicalOffice, Role.TechnicalOffice, file)).StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        HttpResponseMessage response = await ImportAsync(_technicalOffice, Role.TechnicalOffice, file);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        using JsonDocument problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+        problem.RootElement.GetProperty("expectedColumns").EnumerateArray()
+            .Select(e => e.GetString()).Should().BeEquivalentTo(CatalogueTemplate.Columns);
+        problem.RootElement.GetProperty("actualColumns").EnumerateArray()
+            .Select(e => e.GetString()).Should().BeEquivalentTo(headers,
+                "the refusal must name what the file actually carried, missing column and all");
     }
 
     [Fact]
