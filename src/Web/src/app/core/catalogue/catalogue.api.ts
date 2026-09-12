@@ -59,6 +59,45 @@ export interface CatalogueImportResult {
 }
 
 /**
+ * `KAFF-201` — one new code a re-import would add, named before anything changes (`AC-201-B`).
+ * D-135: money crosses the wire as a string. Never `Number()` these.
+ */
+export interface CataloguePlannedCreate {
+  readonly code: string;
+  readonly descriptionAr: string;
+  readonly descriptionEn: string | null;
+  readonly unit: string;
+  readonly babCode: string;
+  readonly costPrice: string;
+  readonly baseSellRate: string;
+}
+
+/** `KAFF-201` — one existing code a re-import would re-price, old and new named together (`AC-201-B`/`AC-201-F`). */
+export interface CataloguePlannedReprice {
+  readonly code: string;
+  readonly oldCostPrice: string;
+  readonly oldBaseSellRate: string;
+  readonly newCostPrice: string;
+  readonly newBaseSellRate: string;
+}
+
+/** `POST /api/catalogue-items/import/preview`'s `200` body. Nothing changes to produce this — `AC-201-B`. */
+export interface CatalogueReimportPreview {
+  readonly willCreateCount: number;
+  readonly willAffectCount: number;
+  readonly creates: readonly CataloguePlannedCreate[];
+  readonly reprices: readonly CataloguePlannedReprice[];
+  readonly failures: readonly CatalogueImportRowFailure[];
+}
+
+/** `POST /api/catalogue-items/import/confirm`'s `200` body — what the confirmed re-import actually did. */
+export interface CatalogueReimportResult {
+  readonly createdCount: number;
+  readonly repricedCount: number;
+  readonly failures: readonly CatalogueImportRowFailure[];
+}
+
+/**
  * `PUT /api/catalogue-items/{id}`. **No `code`, no `babId`** — the wire type mirrors
  * `EditCatalogueItem.Request` exactly: the code is immutable and moving a باب is `KAFF-205`, unbuilt.
  * Binding either member here would compile and then bind to nothing on the server.
@@ -145,6 +184,30 @@ export class CatalogueApi {
 
     return await firstValueFrom(
       this.http.post<CatalogueImportResult>('api/catalogue-items/import', body),
+    );
+  }
+
+  /**
+   * `KAFF-201` — previews a second import: what it would create and re-price, nothing changed yet
+   * (`AC-201-B`). The server is stateless (D-201 handler notes); it re-parses `file` on `confirmReimport`
+   * too, so the caller must keep the same `File` and resend it there rather than expect a token back.
+   */
+  async previewReimport(file: File): Promise<CatalogueReimportPreview> {
+    const body = new FormData();
+    body.set('file', file);
+
+    return await firstValueFrom(
+      this.http.post<CatalogueReimportPreview>('api/catalogue-items/import/preview', body),
+    );
+  }
+
+  /** `KAFF-201` — applies the plan `previewReimport` showed. Resend the same file; nothing is cached server-side. */
+  async confirmReimport(file: File): Promise<CatalogueReimportResult> {
+    const body = new FormData();
+    body.set('file', file);
+
+    return await firstValueFrom(
+      this.http.post<CatalogueReimportResult>('api/catalogue-items/import/confirm', body),
     );
   }
 }

@@ -95,4 +95,149 @@
       </div>
     }
   }
+
+  <!-- KAFF-201 — a second import is its own action, not KAFF-200's flow reused (AC-201-B). -->
+  <div class="reimport" data-testid="catalogue-reimport">
+    <h2 class="reimport-title">{{ i18n.t('catalogue.action.reimport') }}</h2>
+
+    <button
+      type="button"
+      class="submit-button"
+      [disabled]="!canReimport()"
+      data-testid="catalogue-reimport-preview-button"
+      (click)="onPreviewReimport()"
+    >
+      {{ previewing() ? i18n.t('catalogue.import.previewing') : i18n.t('catalogue.action.reimport') }}
+    </button>
+
+    @if (reimportRefusal(); as key) {
+      <p class="refusal" role="alert" data-testid="catalogue-reimport-refusal">{{ i18n.t(key) }}</p>
+    }
+
+    @if (reimportPreview(); as preview) {
+      <div class="confirm" role="group" [attr.aria-label]="i18n.t('catalogue.import.second_import_title')" data-testid="catalogue-reimport-confirm">
+        <p class="confirm-title">{{ i18n.t('catalogue.import.second_import_title') }}</p>
+        <p class="confirm-body">{{ i18n.t('catalogue.import.second_import_body') }}</p>
+        <p class="confirm-body" data-testid="catalogue-reimport-will-create">
+          {{ i18n.t('catalogue.import.will_create', { count: preview.willCreateCount }) }}
+        </p>
+        <p class="confirm-body" data-testid="catalogue-reimport-will-affect">
+          {{ i18n.t('catalogue.import.will_affect', { count: preview.willAffectCount }) }}
+        </p>
+
+        @if (preview.creates.length > 0) {
+          <div class="failures-scroll">
+            <table class="failures-table" data-testid="catalogue-reimport-creates-table">
+              <caption class="sr-only">{{ i18n.t('catalogue.import.will_create', { count: preview.willCreateCount }) }}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{{ i18n.t('catalogue.field.code') }}</th>
+                  <th scope="col">{{ i18n.t('catalogue.column.cost_price') }}</th>
+                  <th scope="col">{{ i18n.t('catalogue.column.base_sell_rate') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of preview.creates; track trackFailure($index)) {
+                  <tr [attr.data-testid]="'catalogue-reimport-create-' + item.code">
+                    <td><bdi translate="no">{{ item.code }}</bdi></td>
+                    <td><bdi dir="ltr">{{ i18n.formatMoney(item.costPrice) }}</bdi></td>
+                    <td><bdi dir="ltr">{{ i18n.formatMoney(item.baseSellRate) }}</bdi></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        @if (preview.reprices.length > 0) {
+          <div class="failures-scroll">
+            <table class="failures-table" data-testid="catalogue-reimport-reprices-table">
+              <caption class="sr-only">{{ i18n.t('catalogue.import.will_affect', { count: preview.willAffectCount }) }}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{{ i18n.t('catalogue.field.code') }}</th>
+                  <th scope="col">{{ i18n.t('catalogue.import.column.old_cost_price') }}</th>
+                  <th scope="col">{{ i18n.t('catalogue.import.column.new_cost_price') }}</th>
+                  <th scope="col">{{ i18n.t('catalogue.import.column.old_base_sell_rate') }}</th>
+                  <th scope="col">{{ i18n.t('catalogue.import.column.new_base_sell_rate') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of preview.reprices; track trackFailure($index)) {
+                  <tr [attr.data-testid]="'catalogue-reimport-reprice-' + item.code">
+                    <td><bdi translate="no">{{ item.code }}</bdi></td>
+                    <td><bdi dir="ltr">{{ i18n.formatMoney(item.oldCostPrice) }}</bdi></td>
+                    <td><bdi dir="ltr">{{ i18n.formatMoney(item.newCostPrice) }}</bdi></td>
+                    <td><bdi dir="ltr">{{ i18n.formatMoney(item.oldBaseSellRate) }}</bdi></td>
+                    <td><bdi dir="ltr">{{ i18n.formatMoney(item.newBaseSellRate) }}</bdi></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        <div class="confirm-actions">
+          <button
+            type="button"
+            class="submit-button"
+            [disabled]="confirming()"
+            data-testid="catalogue-reimport-confirm-button"
+            (click)="onConfirmReimport()"
+          >
+            {{ confirming() ? i18n.t('catalogue.import.uploading') : i18n.t('action.confirm') }}
+          </button>
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="confirming()"
+            data-testid="catalogue-reimport-cancel-button"
+            (click)="onCancelReimport()"
+          >
+            {{ i18n.t('action.cancel') }}
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (reimportResult(); as outcome) {
+      <p class="succeeded" role="status" aria-live="polite" data-testid="catalogue-reimport-succeeded">
+        {{ i18n.t('catalogue.import.reimport_succeeded', { created: outcome.createdCount, repriced: outcome.repricedCount }) }}
+      </p>
+
+      @if (outcome.failures.length > 0) {
+        <div class="failures" data-testid="catalogue-reimport-failures">
+          <h2 class="failures-title">{{ i18n.t('catalogue.import.rejected') }}</h2>
+
+          <div class="failures-scroll">
+            <table class="failures-table">
+              <caption class="sr-only">{{ i18n.t('catalogue.import.rejected') }}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{{ i18n.t('catalogue.import.column.row_number') }}</th>
+                  <th scope="col">{{ i18n.t('catalogue.import.column.field') }}</th>
+                  <th scope="col">{{ i18n.t('catalogue.import.column.reason') }}</th>
+                  <th scope="col">{{ i18n.t('catalogue.import.column.value') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (failure of outcome.failures; track trackFailure($index)) {
+                  <tr [attr.data-testid]="'catalogue-reimport-failure-row-' + failure.rowNumber">
+                    <td><bdi dir="ltr">{{ failure.rowNumber }}</bdi></td>
+                    <td>{{ fieldLabel(failure.column) }}</td>
+                    <td>{{ i18n.t(failure.messageKey) }}</td>
+                    <td>
+                      @if (failure.value !== null) {
+                        <bdi translate="no">{{ failure.value }}</bdi>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    }
+  </div>
 </section>

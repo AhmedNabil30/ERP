@@ -301,6 +301,7 @@
   "enum.EmployeeKind.Salaried": "موظف بالراتب",
   "enum.EmployeeKind.DayLabour": "يومية",
   "action.cancel": "إلغاء",
+  "action.confirm": "تأكيد",
   "action.create": "إنشاء",
   "nav.clients": "العملاء",
 
@@ -424,6 +425,18 @@
   "catalogue.import.column.field": "الحقل",
   "catalogue.import.column.reason": "السبب",
   "catalogue.import.column.value": "القيمة المُدخلة",
+
+  "catalogue.action.reimport": "إعادة استيراد",
+  "catalogue.import.previewing": "جارٍ التحقق…",
+  "catalogue.import.second_import_title": "استيراد ثانٍ فوق كتالوج قائم",
+  "catalogue.import.second_import_body": "لن يتغير شيء إلا بعد تأكيدك. هذا ما سيفعله هذا الملف بالضبط:",
+  "catalogue.import.will_create": "سيتم إنشاء {count} صنف جديد.",
+  "catalogue.import.will_affect": "سيتم تعديل سعر {count} صنف موجود.",
+  "catalogue.import.reimport_succeeded": "تم إنشاء {created} صنف وتعديل سعر {repriced} صنف.",
+  "catalogue.import.column.old_cost_price": "سعر التكلفة قبل",
+  "catalogue.import.column.new_cost_price": "سعر التكلفة بعد",
+  "catalogue.import.column.old_base_sell_rate": "سعر البيع الأساسي قبل",
+  "catalogue.import.column.new_base_sell_rate": "سعر البيع الأساسي بعد",
 
   "bab.tree.title": "أبواب",
   "bab.tree.empty": "لا توجد أبواب بعد.",

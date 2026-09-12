@@ -301,6 +301,7 @@
   "enum.EmployeeKind.Salaried": "Salaried staff",
   "enum.EmployeeKind.DayLabour": "يومية",
   "action.cancel": "Cancel",
+  "action.confirm": "Confirm",
   "action.create": "Create",
   "nav.clients": "Clients",
 
@@ -424,6 +425,18 @@
   "catalogue.import.column.field": "Field",
   "catalogue.import.column.reason": "Reason",
   "catalogue.import.column.value": "Value entered",
+
+  "catalogue.action.reimport": "Re-import",
+  "catalogue.import.previewing": "Checking…",
+  "catalogue.import.second_import_title": "Second import over an existing catalogue",
+  "catalogue.import.second_import_body": "Nothing changes until you confirm. This is exactly what this file will do:",
+  "catalogue.import.will_create": "{count} new item(s) will be created.",
+  "catalogue.import.will_affect": "{count} existing item(s) will be re-priced.",
+  "catalogue.import.reimport_succeeded": "{created} item(s) created, {repriced} item(s) re-priced.",
+  "catalogue.import.column.old_cost_price": "Cost price before",
+  "catalogue.import.column.new_cost_price": "Cost price after",
+  "catalogue.import.column.old_base_sell_rate": "Base sell rate before",
+  "catalogue.import.column.new_base_sell_rate": "Base sell rate after",
 
   "bab.tree.title": "أبواب",
   "bab.tree.empty": "No أبواب yet.",
