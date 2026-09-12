@@ -224,4 +224,16 @@ public enum Permission
     /// governs a withholding rate).
     /// </remarks>
     SubcontractorTaxRegistrationEdit = 63,
+
+    /// <summary>
+    /// Set or read a day labourer's agreed day rate, and the pool's average day rate figure for that
+    /// worker. spec.md §9, §10.
+    /// </summary>
+    /// <remarks>
+    /// decisions.md D-152 §2 (Q76), mechanism by the Architect, D-153 §1: "the Owner, Finance, and the
+    /// responsible Site Engineer. Nobody else." Split off <see cref="DayLabourSiteManage"/> the same
+    /// way <see cref="ProjectFinancialsEdit"/> split off <see cref="ProjectManage"/> — one route, one
+    /// gate, one shape. <see cref="DayLabourSiteManage"/> itself is untouched and stays money-free.
+    /// </remarks>
+    DayLabourRateManage = 64,
 }

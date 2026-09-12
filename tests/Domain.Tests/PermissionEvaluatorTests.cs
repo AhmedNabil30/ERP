@@ -150,6 +150,13 @@ public sealed class PermissionEvaluatorTests
             // 10). Both its grants name a role, so the evaluator discards nothing today — the flag is
             // there for the grant somebody writes next year. See decisions.md D-055 §1.
             Permission.ProjectFinancialsEdit,
+
+            // Added 2026-09-12 with the row itself: the rate is the multiplicand of every day-labour
+            // cost the daily log raises in slice 6, so it governs the amount of a later ledger entry
+            // exactly as the withholding rate does. Every grant names a role, so the evaluator
+            // discards nothing. See decisions.md D-152 §2 (Q76), D-153 §1 point 2.
+            Permission.DayLabourRateManage,
+
             Permission.SiteExpenseDraft,
             Permission.SiteExpenseConfirm,
             Permission.FinancialMovementPrepare,
@@ -392,6 +399,24 @@ public sealed class PermissionEvaluatorTests
         PermissionDecision decision = PermissionEvaluator.Evaluate(
             Subject(Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical),
             Permission.DayLabourSiteManage,
+            ProjectId,
+            ProjectAccess.Denied);
+
+        decision.Should().Be(
+            PermissionDecision.NotAssignedToProject,
+            "spec.md §9: role alone is insufficient — the row is held, the project is not reached");
+    }
+
+    /// <summary>
+    /// SM-30 for <see cref="Permission.DayLabourRateManage"/>, test 2. KAFF-210, decisions.md
+    /// D-152 §2 (Q76), D-153 §1.
+    /// </summary>
+    [Fact]
+    public void An_unassigned_site_engineer_is_refused_DayLabourRateManage()
+    {
+        PermissionDecision decision = PermissionEvaluator.Evaluate(
+            Subject(Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical),
+            Permission.DayLabourRateManage,
             ProjectId,
             ProjectAccess.Denied);
 

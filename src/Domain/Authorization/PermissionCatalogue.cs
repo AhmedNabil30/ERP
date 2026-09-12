@@ -349,6 +349,35 @@ public static class PermissionCatalogue
                 [owner, finance],
                 "§6.7, §9 — D-139 §5 ruled by Nabil 2026-09-11, see decisions.md D-147", TouchesMoney: false),
 
+            // KAFF-210, Q76 (D-152 §2). Karim via Nabil: the day rate is visible to the Owner, to
+            // Finance, and to the responsible Site Engineer, nobody else. Split off DayLabourSiteManage
+            // the same way ProjectFinancialsEdit split off ProjectManage (D-055 §1): one route, one
+            // gate, one shape. DayLabourSiteManage itself stays untouched and money-free — D-153 §1
+            // point 3, and that row's own SM-30 test is what proves it.
+            //
+            // engineerJunior means any assigned Site Engineer, Junior or Supervisor — the same grant
+            // DayLabourSiteManage itself uses. WHICH engineer sees a particular rate (the one who
+            // opened the engagement) is narrowed in the handler, not the catalogue — D-153 §1 point 4.
+            //
+            // TouchesMoney: true. The rate writes no Posting, but it is the multiplicand of every
+            // day-labour cost the daily log raises in slice 6, so it governs the amount of a later
+            // ledger entry exactly as the withholding rate does (D-049 ruling 10) — D-153 §1 point 2.
+            // Every grant names a role, so the evaluator's bare-department guard discards nothing.
+            //
+            // HR is deliberately absent: Karim's list is "the Owner, Finance, and the responsible Site
+            // Engineer. Nobody else" (D-152 §2), and D-044 ruling 2 gives HR zero financial visibility.
+            // SM-30: pinned by
+            // Only_the_owner_finance_and_assigned_site_engineers_hold_DayLabourRateManage_and_it_touches_money,
+            // An_unassigned_site_engineer_is_refused_DayLabourRateManage,
+            // Hr_holds_no_permission_that_touches_money (stays green unedited),
+            // Only_the_owner_and_assigned_site_engineers_hold_DayLabourSiteManage_and_it_touches_no_money
+            // (stays green unedited) [Verified: 2026-09-12 @ tests/Domain.Tests/CatalogueCompletenessTests.cs,
+            // tests/Domain.Tests/PermissionEvaluatorTests.cs].
+            new(Permission.DayLabourRateManage, PermissionScope.ProjectScoped,
+                [owner, finance, engineerJunior],
+                "§9, §10 — Q76 ruled by Karim via Nabil 2026-09-12, see decisions.md D-152 §2, D-153 §1",
+                TouchesMoney: true),
+
             new(Permission.SupplierManage, PermissionScope.CompanyWide, [owner, finance], "§2"),
             new(Permission.OpportunityManage, PermissionScope.CompanyWide, [owner, marketing], "§2, §3"),
 

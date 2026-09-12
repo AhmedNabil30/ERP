@@ -49,7 +49,8 @@ public sealed class Engagement : Entity
         Guid projectId,
         Money? dayRate,
         DateOnly openedOn,
-        DateTimeOffset openedAt)
+        DateTimeOffset openedAt,
+        Guid? openedByUserId)
         : base(id)
     {
         WorkerId = workerId;
@@ -57,6 +58,7 @@ public sealed class Engagement : Entity
         DayRate = dayRate;
         OpenedOn = openedOn;
         OpenedAt = openedAt;
+        OpenedByUserId = openedByUserId;
     }
 
     /// <summary>The <see cref="Employee"/> engaged. Company-wide pool — decisions.md D-140 point 3;
@@ -71,14 +73,25 @@ public sealed class Engagement : Entity
     public Guid ProjectId { get; private set; }
 
     /// <summary>
-    /// The agreed day rate, when one has been recorded. ⛔ Null on every engagement this slice's routes
-    /// open — decisions.md D-140, Q76, unruled. See the type's remarks.
+    /// The agreed day rate, when one has been recorded. Set only by <see cref="SetDayRate"/> —
+    /// decisions.md D-152 §2 (Q76), D-153 §1: the Owner, Finance, and the responsible Site Engineer.
+    /// <c>OpenEngagement</c> still opens every engagement with this null (D-153 §1 point 5: a money
+    /// member on a request behind the money-free <c>DayLabourSiteManage</c> route would be the same
+    /// untruth this file keeps finding after the fact).
     /// </summary>
     public Money? DayRate { get; private set; }
 
     public DateOnly OpenedOn { get; private set; }
 
     public DateTimeOffset OpenedAt { get; private set; }
+
+    /// <summary>
+    /// The user who opened this engagement — "the responsible Site Engineer" of decisions.md D-152 §2,
+    /// §3, §4. Nullable in the database, always written on new rows — D-153 §1 point 4: an engagement
+    /// created before this column existed (staging only) carries no invented opener, and a Site
+    /// Engineer is refused the rate and the rating on such a row while the Owner still reaches it.
+    /// </summary>
+    public Guid? OpenedByUserId { get; private set; }
 
     public DateOnly? ClosedOn { get; private set; }
 
@@ -98,7 +111,8 @@ public sealed class Engagement : Entity
         Guid projectId,
         DateOnly openedOn,
         DateTimeOffset openedAt,
-        Money? dayRate = null)
+        Money? dayRate = null,
+        Guid? openedByUserId = null)
     {
         if (dayRate is { IsPositive: false })
         {
@@ -108,7 +122,32 @@ public sealed class Engagement : Entity
             return Result.Failure<Engagement>(MasterDataErrors.EngagementDayRateMustBePositive);
         }
 
-        return Result.Success(new Engagement(NewId(), workerId, projectId, dayRate, openedOn, openedAt));
+        return Result.Success(
+            new Engagement(NewId(), workerId, projectId, dayRate, openedOn, openedAt, openedByUserId));
+    }
+
+    /// <summary>
+    /// Records the agreed day rate. decisions.md D-152 §2 (Q76), D-153 §1 point 6 — the handler is
+    /// what checks WHO may call this (the Owner or <see cref="OpenedByUserId"/>); this method enforces
+    /// only what the value and the engagement's own state require.
+    /// </summary>
+    public Result SetDayRate(Money rate)
+    {
+        if (!rate.IsPositive)
+        {
+            // Rule 4 (KAFF-210), same reasoning as Open: a day rate is what was agreed, never zero
+            // or negative.
+            return Result.Failure(MasterDataErrors.EngagementDayRateMustBePositive);
+        }
+
+        if (!IsOpen)
+        {
+            // D-153 §1 point 6: a closed engagement's terms are history — the stretch has ended.
+            return Result.Failure(MasterDataErrors.EngagementAlreadyClosed);
+        }
+
+        DayRate = rate;
+        return Result.Success();
     }
 
     /// <summary>

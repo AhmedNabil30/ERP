@@ -399,6 +399,30 @@ public sealed class CatalogueCompletenessTests
         definition.TouchesMoney.Should().BeFalse("registering a worker moves no money — KAFF-209 rule 8");
     }
 
+    /// <summary>
+    /// SM-30 for <see cref="Permission.DayLabourRateManage"/>. KAFF-210, decisions.md D-152 §2 (Q76),
+    /// D-153 §1 point 1.
+    /// </summary>
+    [Fact]
+    public void Only_the_owner_finance_and_assigned_site_engineers_hold_DayLabourRateManage_and_it_touches_money()
+    {
+        PermissionDefinition definition = PermissionCatalogue.Of(Permission.DayLabourRateManage);
+
+        definition.Scope.Should().Be(
+            PermissionScope.ProjectScoped, "D-153 §1 point 1: the engineer is scoped to their assigned project");
+
+        definition.Grants.Should().HaveCount(3);
+        definition.Grants.Should().ContainSingle(grant => grant.Role == Role.Owner);
+        definition.Grants.Should().ContainSingle(grant => grant.Role == Role.Finance);
+        definition.Grants.Should().ContainSingle(
+            grant => grant.Role == Role.SiteEngineer && grant.MinimumAssignmentLevel == AssignmentLevel.Junior,
+            "D-153 §1 point 1: any assigned Site Engineer, Junior or Supervisor, is Junior-or-above");
+
+        definition.TouchesMoney.Should().BeTrue(
+            "D-153 §1 point 2: the rate is the multiplicand of every day-labour cost the daily log "
+            + "raises in slice 6, the same reasoning ProjectFinancialsEdit's withholding rate carries");
+    }
+
     /// <summary>KAFF-209 rule 6 / D-139 §2: EmployeeManage stays isolated from the site route.</summary>
     [Fact]
     public void A_site_engineer_holds_DayLabourSiteManage_but_not_EmployeeManage()

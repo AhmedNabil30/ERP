@@ -186,8 +186,13 @@ internal sealed class EngagementConfiguration : IEntityTypeConfiguration<Engagem
         builder.Property(engagement => engagement.OpenedAt).IsRequired();
 
         // Precision from the Money convention in KaffDbContext.ConfigureConventions: decimal(18,4).
-        // Nullable — decisions.md D-140, Q76: no route this slice maps ever sets it.
+        // Nullable — decisions.md D-152 §2 (Q76), D-153 §1: only SetEngagementDayRate ever sets it.
         builder.Property(engagement => engagement.DayRate);
+
+        // decisions.md D-153 §1 point 4 — "responsible" means the engineer who opened the engagement.
+        // Nullable, no FK (same shape as ProjectAssignment.AssignedByUserId, Posting.CreatedByUserId):
+        // an engagement created before this column existed carries no invented opener.
+        builder.Property(engagement => engagement.OpenedByUserId);
 
         builder.HasIndex(engagement => new { engagement.ProjectId, engagement.OpenedAt })
             .HasDatabaseName("ix_engagements_project_opened");

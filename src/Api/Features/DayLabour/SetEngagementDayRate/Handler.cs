@@ -6,22 +6,29 @@ using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
-namespace Kaff.Api.Features.DayLabour.RateEngagement;
+namespace Kaff.Api.Features.DayLabour.SetEngagementDayRate;
 
 /// <summary>
-/// Records a rating out of 5 for an engagement. KAFF-210 rule 7, decisions.md D-139 §3.
+/// Records the agreed day rate on an engagement. KAFF-210, decisions.md D-152 §2 (Q76), D-153 §1.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Same rule 6a boundary as <c>CloseEngagement.Handler</c>: the route's project must be the
+/// <b>Rule 6a boundary</b>, same as every other engagement route: the route's project must be the
 /// engagement's own, because the permission gate only knows the route's project.
 /// </para>
 /// <para>
-/// <b>Only the responsible engineer rates</b> — decisions.md D-152 §4, D-153 §1 point 7: "Only the
-/// responsible Site Engineer rates." Same guard <c>SetEngagementDayRate.Handler</c> uses, written once
-/// — <see cref="Kaff.Api.Features.DayLabour.EngagementResponsibility"/>. Unlike
-/// <c>CloseEngagement.Handler</c>, which carries no such check (Q77, D-152 §3: any assigned engineer
-/// may close).
+/// <b>Write: refused unless the caller is the Owner or the engagement's opener.</b> D-153 §1 point 6 —
+/// Finance reaches <c>DayLabourRateManage</c> and reads a rate, but never writes one: Finance was not
+/// on site to agree anything. <see cref="Kaff.Api.Features.DayLabour.EngagementResponsibility"/> is the
+/// one guard this shares with <c>RateEngagement.Handler</c>.
+/// </para>
+/// <para>
+/// <b>Refused on a closed engagement</b> — <c>Engagement.SetDayRate</c>'s own guard: the stretch has
+/// ended and its terms are history (KAFF-210 rule 6b's analogy, D-153 §1 point 6).
+/// </para>
+/// <para>
+/// <b>Audited as a state change</b> by <c>AuditSaveChangesInterceptor</c>, before and after, with no
+/// hand-written record — the same mechanism every entity change in this codebase uses.
 /// </para>
 /// </remarks>
 internal static class Handler
@@ -45,6 +52,7 @@ internal static class Handler
             return ResultExtensions.Problem(MasterDataErrors.EngagementNotFound);
         }
 
+        // Rule 6a: the route's project must be this engagement's own project.
         if (engagement.ProjectId != projectId)
         {
             return ResultExtensions.Problem(MasterDataErrors.EngagementProjectMismatch);
@@ -56,20 +64,20 @@ internal static class Handler
             return ResultExtensions.Problem(MasterDataErrors.EngagementNotResponsibleEngineer);
         }
 
-        if (request.Rating is not { } rating)
+        if (request.DayRate is not { } dayRate)
         {
-            return ResultExtensions.Problem(MasterDataErrors.EngagementRatingOutOfRange);
+            return ResultExtensions.Problem(MasterDataErrors.EngagementDayRateRequired);
         }
 
-        Result rated = engagement.Rate(rating);
+        Result set = engagement.SetDayRate(dayRate);
 
-        if (rated.IsFailure)
+        if (set.IsFailure)
         {
-            return ResultExtensions.Problem(rated.Error);
+            return ResultExtensions.Problem(set.Error);
         }
 
         await database.SaveChangesAsync(cancellationToken);
 
-        return Microsoft.AspNetCore.Http.Results.Ok(new Response(engagement.Id, engagement.Rating!.Value));
+        return Microsoft.AspNetCore.Http.Results.Ok(new Response(engagement.Id, engagement.DayRate!.Value));
     }
 }

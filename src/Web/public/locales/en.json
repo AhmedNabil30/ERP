@@ -276,6 +276,8 @@
   "errors.master.engagement_rating_out_of_range": "A rating must be between 1 and 5.",
   "errors.master.engagement_not_found": "No engagement exists with that reference.",
   "errors.master.engagement_project_mismatch": "This engagement does not belong to that project.",
+  "errors.master.engagement_not_responsible_engineer": "Only the engineer who opened this engagement may do this.",
+  "errors.master.engagement_day_rate_required": "An agreed day rate is required.",
   "errors.master.subcontractor_not_found": "No subcontractor exists with that reference.",
   "errors.master.retention_rate_required": "A retention rate is required.",
   "errors.master.subcontractor_list_filter_unknown": "That is not a filter this list knows.",

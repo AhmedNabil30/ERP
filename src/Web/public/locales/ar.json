@@ -276,6 +276,8 @@
   "errors.master.engagement_rating_out_of_range": "يجب أن يكون التقييم بين 1 و5.",
   "errors.master.engagement_not_found": "لا يوجد تعاقد بهذا المعرّف.",
   "errors.master.engagement_project_mismatch": "هذا التعاقد لا ينتمي لهذا المشروع.",
+  "errors.master.engagement_not_responsible_engineer": "فقط المهندس الذي فتح هذا التعاقد يمكنه القيام بذلك.",
+  "errors.master.engagement_day_rate_required": "الأجر اليومي المتفق عليه مطلوب.",
   "errors.master.subcontractor_not_found": "لا يوجد مقاول باطن بهذا المعرّف.",
   "errors.master.retention_rate_required": "نسبة الاستقطاع مطلوبة.",
   "errors.master.subcontractor_list_filter_unknown": "فلتر غير معروف.",

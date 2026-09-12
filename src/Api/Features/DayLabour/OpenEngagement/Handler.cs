@@ -1,5 +1,6 @@
 using Kaff.Api.Common.Results;
 using Kaff.Domain.Common;
+using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
@@ -31,10 +32,12 @@ internal static class Handler
         Guid projectId,
         Request request,
         KaffDbContext database,
+        ICurrentUser currentUser,
         TimeProvider clock,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(currentUser);
         ArgumentNullException.ThrowIfNull(clock);
 
         if (request.WorkerId is not { } workerId)
@@ -52,7 +55,16 @@ internal static class Handler
 
         DateTimeOffset now = clock.GetUtcNow();
 
-        Result<Engagement> opened = Engagement.Open(workerId, projectId, DateOnly.FromDateTime(now.UtcDateTime), now);
+        Result<Engagement> opened = Engagement.Open(
+            workerId,
+            projectId,
+            DateOnly.FromDateTime(now.UtcDateTime),
+            now,
+
+            // D-153 §1 point 4 — "responsible" means the engineer who opened the engagement. The
+            // gate has already established this caller holds DayLabourSiteManage on this project, so
+            // the id is present by construction (same reasoning as AssignUserToProject.Handler).
+            openedByUserId: currentUser.UserId ?? Guid.Empty);
 
         if (opened.IsFailure)
         {

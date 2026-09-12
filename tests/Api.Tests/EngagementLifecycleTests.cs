@@ -262,11 +262,18 @@ public sealed class EngagementLifecycleTests : IAsyncLifetime
 
     /// <summary>Opens an engagement directly against the database, bypassing HTTP, for tests whose
     /// subject is the close/rate route rather than the open route.</summary>
-    private async Task<Guid> OpenEngagementDirectAsync(Guid projectId, Guid workerId)
+    /// <remarks>
+    /// Defaults <paramref name="openedByUserId"/> to <c>_assignedToA</c> — decisions.md D-152 §4,
+    /// D-153 §1 point 7: <c>RateEngagement</c> now refuses anyone but the opener, so a test that rates
+    /// through this helper needs the same actor recorded as the opener, the way the HTTP-opened path
+    /// always would.
+    /// </remarks>
+    private async Task<Guid> OpenEngagementDirectAsync(Guid projectId, Guid workerId, Guid? openedByUserId = null)
     {
         await using KaffDbContext context = _database.CreateContext();
 
-        Engagement engagement = Engagement.Open(workerId, projectId, Today, Now).Value;
+        Engagement engagement = Engagement.Open(
+            workerId, projectId, Today, Now, openedByUserId: openedByUserId ?? _assignedToA).Value;
         context.Engagements.Add(engagement);
         await context.SaveChangesAsync(Ct);
 

@@ -221,6 +221,23 @@ public static class MasterDataErrors
     public static readonly Error EngagementNotFound =
         Error.NotFound("master.engagement_not_found", "errors.master.engagement_not_found");
 
+    /// <summary>
+    /// decisions.md D-152 §3, §4 / D-153 §1 point 4/7 — only the Owner or the engineer who opened the
+    /// engagement may set its day rate or record its rating. Anyone else holding
+    /// <c>DayLabourRateManage</c> or <c>DayLabourSiteManage</c> on this project is refused this one
+    /// engagement, not the permission itself.
+    /// </summary>
+    public static readonly Error EngagementNotResponsibleEngineer = Error.Forbidden(
+        "master.engagement_not_responsible_engineer", "errors.master.engagement_not_responsible_engineer");
+
+    /// <summary>
+    /// <c>SetEngagementDayRate.Request.DayRate</c> is <c>Money?</c> so an omitted member is refused
+    /// rather than silently read as zero — the same shape D-151 §6a gives
+    /// <c>EditSubcontractor.Request.RetentionRate</c>.
+    /// </summary>
+    public static readonly Error EngagementDayRateRequired = Error.Validation(
+        "master.engagement_day_rate_required", "errors.master.engagement_day_rate_required");
+
     // ---- KAFF-211: subcontractor master ----
 
     /// <summary>The route named a subcontractor id that no subcontractor carries. KAFF-211.</summary>
