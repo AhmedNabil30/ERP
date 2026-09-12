@@ -1,0 +1,99 @@
+<section class="history" data-testid="worker-history">
+  <h1 class="title">{{ i18n.t('hr.worker.history_title') }}</h1>
+
+  @if (failure(); as key) {
+    <p class="refusal" role="alert" data-testid="worker-history-failure">{{ i18n.t(key) }}</p>
+  } @else if (loading()) {
+    <p class="loading" role="status" aria-live="polite" data-testid="worker-history-loading">
+      {{ i18n.t('hr.employee.loading') }}
+    </p>
+  } @else if (history(); as loaded) {
+    <dl class="figures" data-testid="worker-history-figures">
+      <div class="figure">
+        <dt>{{ i18n.t('hr.worker.pool.average_day_rate') }}</dt>
+        <dd><bdi dir="ltr" data-testid="worker-history-average-day-rate">{{ averageDayRateLabel() }}</bdi></dd>
+      </div>
+      <div class="figure">
+        <dt>{{ i18n.t('hr.worker.pool.frequency') }}</dt>
+        <dd><bdi dir="ltr" data-testid="worker-history-frequency">{{ frequencyLabel() }}</bdi></dd>
+      </div>
+      <div class="figure">
+        <dt>{{ i18n.t('hr.worker.pool.rating') }}</dt>
+        <dd><bdi dir="ltr" data-testid="worker-history-average-rating">{{ averageRatingLabel() }}</bdi></dd>
+      </div>
+    </dl>
+
+    @if (loaded.items.length > 0) {
+      <ul class="rows" data-testid="worker-history-rows">
+        @for (engagement of loaded.items; track trackEngagement($index, engagement)) {
+          <li class="row" [attr.data-testid]="'worker-history-row-' + engagement.id">
+            <div class="row-main">
+              <span class="row-field">
+                <span class="row-label">{{ i18n.t('hr.worker.engagement.project') }}</span>
+                <bdi dir="auto">{{ projectLabel(engagement) }}</bdi>
+              </span>
+
+              <span class="row-field">
+                <span class="row-label">{{ i18n.t('hr.worker.engagement.dates') }}</span>
+                @if (engagement.closedOn; as closedOn) {
+                  <bdi dir="ltr">{{ engagement.openedOn }} – {{ closedOn }}</bdi>
+                } @else {
+                  <bdi dir="ltr">{{ engagement.openedOn }}</bdi>
+                }
+              </span>
+
+              <span class="row-field">
+                <span class="row-label">{{ i18n.t('hr.worker.engagement.rating') }}</span>
+                <bdi dir="ltr">{{ engagement.rating !== null ? engagement.rating + '/5' : i18n.t('hr.worker.pool.never_engaged') }}</bdi>
+              </span>
+
+              <span class="row-field">
+                <span class="row-label">{{ i18n.t('hr.worker.engagement.day_rate') }}</span>
+                @if (engagement.dayRate !== null) {
+                  <bdi dir="ltr" [attr.data-testid]="'worker-history-day-rate-' + engagement.id">
+                    {{ i18n.formatMoney(engagement.dayRate) }}
+                  </bdi>
+                } @else if (canEditRate()) {
+                  <span class="rate-edit">
+                    <input
+                      class="rate-input"
+                      type="text"
+                      dir="ltr"
+                      inputmode="decimal"
+                      [value]="rateDraft(engagement.id)"
+                      [attr.data-testid]="'worker-history-rate-input-' + engagement.id"
+                      (input)="onRateInput(engagement.id, $event)"
+                    />
+                    <button
+                      type="button"
+                      class="chip"
+                      [disabled]="isBusy(engagement.id)"
+                      [attr.data-testid]="'worker-history-rate-save-' + engagement.id"
+                      (click)="onSetRate(engagement)"
+                    >
+                      {{ i18n.t('action.save') }}
+                    </button>
+                  </span>
+                } @else {
+                  <bdi dir="ltr">{{ i18n.t('hr.worker.pool.never_engaged') }}</bdi>
+                }
+              </span>
+            </div>
+
+            @if (rowFailure(); as failed) {
+              @if (failed.engagementId === engagement.id) {
+                <p class="row-refusal" role="alert" [attr.data-testid]="'worker-history-row-refusal-' + engagement.id">
+                  {{ i18n.t(failed.key) }}
+                </p>
+              }
+            }
+          </li>
+        }
+      </ul>
+    } @else {
+      <div class="empty" role="status" aria-live="polite" data-testid="worker-history-empty">
+        <p class="empty-title">{{ i18n.t('hr.worker.pool.never_engaged') }}</p>
+      </div>
+    }
+  }
+</section>

@@ -23,6 +23,8 @@ const WORKER: PoolWorker = {
   babId: 'bab-1',
   specialty: 'نجار',
   isActive: true,
+  frequency: 0,
+  averageRating: null,
 };
 
 /** A fake matching only what the pool screen calls, recording every open/close/rate call it makes. */
@@ -177,5 +179,33 @@ describe('WorkerPoolPage · engage, close, rate', () => {
     expect(
       fixture.nativeElement.querySelector('[data-testid="worker-rating-value-DL-0001"]').textContent,
     ).toContain('4/5');
+  });
+});
+
+describe('WorkerPoolPage · pool figures (KAFF-210, D-153 §1 point 5)', () => {
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  it('shows the never-engaged empty state for a worker with zero frequency and no rating, never a zero', async () => {
+    const api = new FakeDayLabourApi();
+    const fixture = await createPage(api);
+
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="worker-frequency-DL-0001"]').textContent,
+    ).toContain('hr.worker.pool.never_engaged');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="worker-rating-DL-0001"]').textContent,
+    ).toContain('hr.worker.pool.never_engaged');
+  });
+
+  it('carries no money member anywhere on the pool row', async () => {
+    const api = new FakeDayLabourApi();
+    const fixture = await createPage(api);
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).not.toContain('EGP');
+    expect(text).not.toContain('hr.worker.engagement.day_rate');
+    expect(text).not.toContain('hr.worker.pool.average_day_rate');
   });
 });

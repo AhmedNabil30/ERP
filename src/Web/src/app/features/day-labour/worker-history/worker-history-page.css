@@ -1,0 +1,130 @@
+/* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). Zero colour
+   literals — every colour is a token from styles.css. Same house style as worker-pool-page.css. */
+
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  overflow-x: hidden;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-xl);
+}
+
+.figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.figure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.figure dt {
+  font-size: var(--text-sm);
+  opacity: 0.75;
+}
+
+.figure dd {
+  margin: 0;
+  font-weight: 600;
+  unicode-bidi: isolate;
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.row-main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.row-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.row-label {
+  font-size: var(--text-sm);
+  opacity: 0.75;
+}
+
+.rate-edit {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.rate-input {
+  inline-size: 6rem;
+  box-sizing: border-box;
+  padding: var(--space-2);
+  min-block-size: var(--tap-target);
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.chip {
+  min-block-size: var(--tap-target);
+  padding-inline: var(--space-3);
+  font: inherit;
+  cursor: pointer;
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+}
+
+.chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.row-refusal,
+.refusal {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+}
+
+.empty {
+  padding: var(--space-4);
+  text-align: center;
+}
+
+.empty-title {
+  margin: 0;
+  opacity: 0.75;
+}

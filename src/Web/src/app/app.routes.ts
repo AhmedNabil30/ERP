@@ -4,6 +4,7 @@ import { auditReadGuard } from './core/auth/audit-read.guard';
 import { babManageGuard } from './core/auth/bab-manage.guard';
 import { catalogueManageGuard } from './core/auth/catalogue-manage.guard';
 import { clientManageGuard } from './core/auth/client-manage.guard';
+import { dayLabourRateManageGuard } from './core/auth/day-labour-rate-manage.guard';
 import { dayLabourSiteManageGuard } from './core/auth/day-labour-site-manage.guard';
 import { employeeManageGuard } from './core/auth/employee-manage.guard';
 import { mustChangePasswordGuard } from './core/auth/must-change-password.guard';
@@ -236,6 +237,18 @@ export const routes: Routes = [
           ),
       },
     ],
+  },
+  {
+    // KAFF-210 — S-027, a worker's engagement history with the day rate. **Not nested under
+    // `/day-labour` above** — that parent is gated `dayLabourSiteManageGuard`, and `DayLabourRateManage`
+    // reaches Finance, who holds no `DayLabourSiteManage` (D-153 §1). Nesting it there would lock
+    // Finance out of this screen before `dayLabourRateManageGuard` ever ran.
+    path: 'projects/:projectId/day-labour/workers/:workerId/history',
+    canActivate: [sessionGuard, mustChangePasswordGuard, dayLabourRateManageGuard],
+    loadComponent: () =>
+      import('./features/day-labour/worker-history/worker-history-page').then(
+        (m) => m.WorkerHistoryPage,
+      ),
   },
   {
     // KAFF-211 — S-028, S-029. Same shape as `/employees` above: `sessionGuard` resolves the session

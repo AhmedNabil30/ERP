@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { AuthService } from '../../../core/auth/auth.service';
 import { toProblem } from '../../../core/api/problem-details';
 import { DayLabourApi, PoolWorker } from '../../../core/day-labour/day-labour.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
@@ -30,10 +31,11 @@ export function ratingOutOfRange(rating: number): boolean {
  * `S-025` · the day-labour pool, and this slice's share of `S-027` · engagement open/close/rate —
  * `KAFF-209`, `KAFF-210`.
  *
- * **No day rate, frequency or rating figure is shown here.** `KAFF-210` derives those three from the
- * engagement history on every read (rule 2), and that read endpoint is not built (HELD, D-140/Q76) —
- * this screen only exposes the acts that exist: pick a worker, open an engagement, close it, rate it.
- * Adding a stored or client-computed average here would be exactly the mistake rule 2 forbids.
+ * **No day rate is shown here, and never will be — D-153 §1 point 5.** The average day rate is a
+ * money figure and stays on `WorkerHistoryPage`'s rate-gated read alone. Frequency and average rating
+ * are not money, so `ListPool` carries them and this screen renders them directly, both derived on
+ * every read and never stored (rule 2) — adding a client-computed figure here would be the same
+ * mistake with extra steps.
  */
 @Component({
   selector: 'kaff-worker-pool-page',
@@ -47,8 +49,27 @@ export class WorkerPoolPage {
   readonly projectId = input.required<string>();
 
   private readonly api = inject(DayLabourApi);
+  private readonly auth = inject(AuthService);
 
   protected readonly i18n = inject(I18nService);
+
+  /** `DayLabourRateManage` is `ProjectScoped` (D-153 §1) — read off this project's own entry. */
+  protected readonly canSeeRates = (): boolean => {
+    const project = this.auth.current()?.projects.find((entry) => entry.projectId === this.projectId());
+    return project?.permissions.includes('DayLabourRateManage') ?? false;
+  };
+
+  protected frequencyLabel(worker: PoolWorker): string {
+    return worker.frequency > 0
+      ? this.i18n.formatNumber(worker.frequency)
+      : this.i18n.t('hr.worker.pool.never_engaged');
+  }
+
+  protected averageRatingLabel(worker: PoolWorker): string {
+    return worker.averageRating === null
+      ? this.i18n.t('hr.worker.pool.never_engaged')
+      : this.i18n.formatNumber(worker.averageRating, { maximumFractionDigits: 2 });
+  }
 
   protected readonly workers = signal<readonly PoolWorker[]>([]);
   protected readonly loading = signal(true);

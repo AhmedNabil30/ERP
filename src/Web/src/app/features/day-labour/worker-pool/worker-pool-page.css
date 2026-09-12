@@ -62,6 +62,24 @@
   unicode-bidi: isolate;
 }
 
+.row-figure {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+}
+
+.row-figure-label {
+  opacity: 0.75;
+}
+
+.history-link {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
 .row-actions {
   display: flex;
   flex-wrap: wrap;

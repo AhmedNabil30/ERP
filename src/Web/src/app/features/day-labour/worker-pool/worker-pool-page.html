@@ -22,6 +22,25 @@
             @if (worker.specialty; as specialty) {
               <span class="row-specialty" dir="auto">{{ specialty }}</span>
             }
+
+            <span class="row-figure" [attr.data-testid]="'worker-frequency-' + worker.code">
+              <span class="row-figure-label">{{ i18n.t('hr.worker.pool.frequency') }}</span>
+              <bdi dir="ltr">{{ frequencyLabel(worker) }}</bdi>
+            </span>
+            <span class="row-figure" [attr.data-testid]="'worker-rating-' + worker.code">
+              <span class="row-figure-label">{{ i18n.t('hr.worker.pool.rating') }}</span>
+              <bdi dir="ltr">{{ averageRatingLabel(worker) }}</bdi>
+            </span>
+
+            @if (canSeeRates()) {
+              <a
+                class="history-link"
+                [routerLink]="['/projects', projectId(), 'day-labour', 'workers', worker.id, 'history']"
+                [attr.data-testid]="'worker-history-' + worker.code"
+              >
+                {{ i18n.t('hr.worker.history_title') }}
+              </a>
+            }
           </div>
 
           <div class="row-actions">

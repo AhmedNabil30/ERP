@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
@@ -42,8 +42,42 @@ export interface WorkerFile {
   readonly isActive: boolean;
 }
 
-/** `GET …/day-labour`'s pool row — D-140 point 4's allow-list, and nothing else. */
-export type PoolWorker = WorkerFile;
+/**
+ * `GET …/day-labour`'s pool row — D-140 point 4's allow-list, plus the two money-free figures
+ * D-153 §1 point 5 added. **No money member here** — the average day rate is a pool figure but stays
+ * on the rate-gated `ListEngagements` read alone (KAFF-210, D-153 §1).
+ */
+export interface PoolWorker extends WorkerFile {
+  /** A count of engagements (D-139 §3), not days and not projects. `0` renders as "never engaged". */
+  readonly frequency: number;
+  /** The average of the recorded ratings, as a wire decimal string, or `null` when none is rated. */
+  readonly averageRating: string | null;
+}
+
+/** One engagement in a worker's history, on the route's project. KAFF-210. */
+export interface EngagementEntry {
+  readonly id: string;
+  readonly projectId: string;
+  readonly openedOn: string;
+  readonly closedOn: string | null;
+  /** `Money`, a wire decimal string — never `float`/`double`/`Number()` — or `null` if not yet agreed. */
+  readonly dayRate: string | null;
+  readonly rating: number | null;
+}
+
+/**
+ * `GET …/engagements?workerId=` — one worker's engagement history on the route's project, and the
+ * pool's three figures for him, derived on every read and never stored (KAFF-210 rule 2). Gated
+ * `DayLabourRateManage` (D-153 §1) — the only read that carries a money member.
+ */
+export interface WorkerEngagementHistory {
+  readonly workerId: string;
+  readonly items: readonly EngagementEntry[];
+  /** A wire decimal string, or `null` when no engagement carries a rate. */
+  readonly averageDayRate: string | null;
+  readonly frequency: number;
+  readonly averageRating: string | null;
+}
 
 /** `POST …/day-labour/engagements`'s response. No money member — Q76 unruled. */
 export interface EngagementOpened {
@@ -64,9 +98,12 @@ export interface EngagementRated {
 }
 
 /**
- * The Site Engineer's day-labour routes, all under `/api/projects/{projectId}/day-labour` — KAFF-209,
- * KAFF-210. Every call here is gated `Permission.DayLabourSiteManage`, `ProjectScoped`, server-side;
- * this class enforces nothing, CLAUDE.md's own rule for the client half of any permission.
+ * The day-labour routes, all under `/api/projects/{projectId}/day-labour` — KAFF-209, KAFF-210.
+ * Every call is `ProjectScoped` server-side; this class enforces nothing, CLAUDE.md's own rule for
+ * the client half of any permission. Most of it is gated `Permission.DayLabourSiteManage` — the
+ * exceptions are {@link listEngagements} and {@link setEngagementDayRate}, gated
+ * `Permission.DayLabourRateManage` instead (D-153 §1), because that row also reaches Finance, who
+ * holds no `DayLabourSiteManage`.
  */
 @Injectable({ providedIn: 'root' })
 export class DayLabourApi {
@@ -123,6 +160,38 @@ export class DayLabourApi {
   async rateEngagement(projectId: string, engagementId: string, rating: number): Promise<EngagementRated> {
     return await firstValueFrom(
       this.http.post<EngagementRated>(`${this.base(projectId)}/engagements/${engagementId}/rate`, { rating }),
+    );
+  }
+
+  /**
+   * `GET …/engagements?workerId=` — `S-027`'s history load. Gated `DayLabourRateManage`, **not**
+   * `DayLabourSiteManage` (D-153 §1) — the class comment's own blanket claim does not cover this one
+   * call, which is why `WorkerHistoryPage` sits behind `dayLabourRateManageGuard` instead of this
+   * feature's usual parent route.
+   */
+  async listEngagements(projectId: string, workerId: string): Promise<WorkerEngagementHistory> {
+    const params = new HttpParams().set('workerId', workerId);
+    return await firstValueFrom(
+      this.http.get<WorkerEngagementHistory>(`${this.base(projectId)}/engagements`, { params }),
+    );
+  }
+
+  /**
+   * `PUT …/engagements/{id}/day-rate` — records the agreed day rate. `dayRate` is the wire decimal
+   * string (D-135) — never `Number()` it going in or reading the response. `404`/`403` on a mismatched
+   * project (rule 6a), `400 errors.master.engagement_day_rate_required` on an omitted rate,
+   * `400 errors.master.engagement_not_responsible_engineer` on a non-opener, non-Owner caller.
+   */
+  async setEngagementDayRate(
+    projectId: string,
+    engagementId: string,
+    dayRate: string,
+  ): Promise<{ readonly engagementId: string; readonly dayRate: string }> {
+    return await firstValueFrom(
+      this.http.put<{ engagementId: string; dayRate: string }>(
+        `${this.base(projectId)}/engagements/${engagementId}/day-rate`,
+        { dayRate },
+      ),
     );
   }
 }
