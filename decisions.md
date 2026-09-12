@@ -13548,3 +13548,420 @@ These close `Q76`, `Q77`, `Q78`, `Q79`, `Q80`, `Q81`, `Q83` and `Q84`.
 
 **Still open, slice 4 only:** the rounding basis for the hold, advance recovery and withholding
 (D-145 §2).
+
+---
+
+### D-153 · Architect — the five mechanisms D-152 left open: the day rate's own permission row, `Department` as an enum, the salaried phone index gains `is_active`, `Q80`'s test is rewritten as warn-and-acknowledge, and the seeder skips on any باب · 2026-09-12
+
+D-152 records Karim's answers and hands five mechanisms to the Architect. This entry rules all five,
+with the tests each one must carry. It also confirms `Q84`. Nothing here is a business ruling except
+where it is marked as refused and handed back.
+
+**What exists today, confirmed before ruling:**
+
+- `Permission.DayLabourSiteManage = 62`, `ProjectScoped`, `[owner, engineerJunior]`, `TouchesMoney`
+  absent and therefore `false`
+  [Verified: 2026-09-12 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.DayLabourSiteManage`].
+  `SubcontractorTaxRegistrationEdit = 63` is the highest number
+  [Verified: 2026-09-12 @ `src/Domain/Authorization/Permission.cs` -> `SubcontractorTaxRegistrationEdit`].
+- `Engagement.DayRate` exists, is `Money?`, and **no route sets it and no route returns it**: the open
+  request carries no money member
+  [Verified: 2026-09-12 @ `src/Api/Features/DayLabour/OpenEngagement/Request.cs` -> `Request`], the
+  handler always calls `Engagement.Open` without a rate
+  [Verified: 2026-09-12 @ `src/Api/Features/DayLabour/OpenEngagement/Handler.cs` -> `HandleAsync`], and
+  the pool's projection is D-140 point 5's money-free allow-list
+  [Verified: 2026-09-12 @ `src/Api/Features/DayLabour/ListPool/Response.cs` -> `PoolWorker`].
+  **There is no engagement read route at all** — the `DayLabour` feature folder holds
+  `RegisterFromSite`, `PhoneCheck`, `ListPool`, `BabOptions`, `OpenEngagement`, `CloseEngagement` and
+  `RateEngagement`, and nothing that lists or gets an engagement.
+- `Engagement` records no actor. `WorkerId`, `ProjectId`, `OpenedOn`, `OpenedAt`, `ClosedOn`,
+  `ClosedAt`, `Rating` and `DayRate` are the whole entity
+  [Verified: 2026-09-12 @ `src/Domain/MasterData/Engagement.cs` -> `Engagement`]. Who opened one is
+  recoverable only from the audit trail.
+- `Employee.Department` is `string?`, free text, `HasMaxLength(128)`
+  [Verified: 2026-09-12 @ `src/Domain/MasterData/Employee.cs` -> `SetStaffDetails`],
+  [Verified: 2026-09-12 @ `src/Infrastructure/Persistence/Configurations/MasterDataConfigurations.cs` -> `EmployeeConfiguration`].
+  A `Department` enum already exists for users — Finance, Hr, Marketing, Operations
+  [Verified: 2026-09-12 @ `src/Domain/Identity/Department.cs` -> `Department`].
+- The salaried phone index is `ux_employees_salaried_phone`, unique, filtered `kind = 'Salaried'` with
+  no active predicate
+  [Verified: 2026-09-12 @ `src/Infrastructure/Persistence/Configurations/MasterDataConfigurations.cs` -> `ux_employees_salaried_phone`],
+  and `Employee` still has no unarchive path — `Archive` is the only writer of `IsActive` after
+  creation [Verified: 2026-09-12 @ `src/Domain/MasterData/Employee.cs` -> `Archive`].
+- `BabSeeder` skips **per code**, not per environment: it reads the existing codes into a `HashSet` and
+  inserts each absent seed
+  [Verified: 2026-09-12 @ `src/Infrastructure/Persistence/Seeding/BabSeeder.cs` -> `SeedAsync`]. It is
+  called once at startup
+  [Verified: 2026-09-12 @ `src/Api/Program.cs` -> `BabSeeder`].
+
+---
+
+#### 1. `Q76` — the day rate gets its own row, `DayLabourRateManage`, and `DayLabourSiteManage` stays money-free
+
+**Decision.**
+
+1. **One new row: `Permission.DayLabourRateManage = 64`**, `PermissionScope.ProjectScoped`, grants
+   `[owner, finance, engineerJunior]`, **`TouchesMoney: true`**, spec reference
+   `"§9, §10 — Q76 ruled by Karim via Nabil 2026-09-12, see decisions.md D-152 §2, D-153"`. It takes the
+   next number after `SubcontractorTaxRegistrationEdit = 63`.
+   - `engineerJunior` is the existing grant meaning *any assigned Site Engineer, Junior or Supervisor*,
+     the same one `DayLabourSiteManage` uses. The assignment is enforced by the scope; **which**
+     engineer sees a particular rate is narrowed in the handler, point 4.
+   - `finance` is project-scoped like every other Finance row (`ProjectRead`, `TreasuryPostProject`,
+     `FinancialMovementPrepare`, `FinancialMovementDisburse`, `ProjectFinancialsEdit`). 🟡 Finance has
+     no global reach, so Finance sees a rate only on projects Finance is assigned to — the same
+     workflow gap D-055 §1 recorded as `Q-N10-2b`. It is a workflow question, not a permission
+     question, and it is not opened here.
+   - **HR is not on the row.** HR holds `EmployeeManage` and D-044 ruling 2 gives HR zero financial
+     visibility; a day rate is the money member D-055 §2 said HR must never acquire. Karim's list is
+     "the Owner, Finance, and the responsible Site Engineer. Nobody else" (D-152 §2), and HR is
+     nobody else's synonym.
+2. **`TouchesMoney: true`, and the reasoning, because the flag has been argued both ways in this
+   file.** D-053's test is *"moves money, authorises a movement, or governs the ledger"*. A day rate
+   writes no `Posting` (`KAFF-210` rule 4) — but it is the multiplicand of every day-labour cost the
+   daily log raises in slice 6, so it governs the amount of a later ledger entry exactly as the
+   withholding rate does (D-049 ruling 10, the reason `ProjectFinancialsEdit` is `true`). The contrast
+   is `SubcontractorTaxRegistrationEdit`, `false` because a registration number identifies a legal
+   entity and is not an amount (D-147). **An amount that a later posting is computed from is money.**
+   Every grant on the row names a role, so the evaluator's department-grant guard discards nothing.
+3. **`DayLabourSiteManage` is not touched: same grants, same scope, still `TouchesMoney: false`.** This
+   is the point of a second row. D-140 point 5 kept every money member off the Site Engineer's shapes
+   until `Q76` was answered; the answer is not "widen that row", because widening it would hand a money
+   member to the worker-registration and pool routes as well, and would make
+   `Only_the_owner_and_assigned_site_engineers_hold_DayLabourSiteManage_and_it_touches_no_money` a lie.
+   **That test stays green unedited**, and that is the evidence the narrow row worked — the same shape
+   D-140 point 4 used for HR's untouched set.
+4. **"Responsible" in code means the engineer who opened the engagement**, recorded on a new column
+   `Engagement.OpenedByUserId`, written at open from the calling user
+   (`LiveSession.Caller(http).Id`, the pattern `Auth.WhoAmI.Handler` already uses).
+   - **Nullable in the database, always written on new rows.** Engagements created before this column
+     exists (staging only) have no recorded opener and none is invented for them. A null opener is
+     nobody's responsibility: a Site Engineer is refused the rate on such a row and the Owner still
+     reaches it.
+   - **`Q77` does NOT extend to the rate or the rating, and the wording is the reason.** In one message
+     Karim wrote *"any engineer assigned to the same project may close"* (§3) and *"the responsible Site
+     Engineer"* (§2) and *"Only the responsible Site Engineer rates"* (§4). Reading "responsible" as
+     "any assigned" would make §2 a restatement of §3 and would delete the word "Only" from §4. His own
+     reason for §3 is administrative — an engagement must not dangle while somebody is away — and
+     closing is an administrative act. A rate is a term that one engineer agreed on site and a rating
+     is that engineer's judgement of a man; neither is an act a colleague can complete on his behalf.
+   - **If Kaff means "any assigned engineer" after all, it is a one-line reversal**: delete the opener
+     comparison in the two handlers. The column stays useful either way, because the audit trail is not
+     a place to enforce from.
+5. **Routes, and the direction each carries.**
+
+   | Route | Gate | Direction | Shape |
+   |---|---|---|---|
+   | `POST …/day-labour/engagements` | `DayLabourSiteManage` | — | **unchanged, money-free.** The request still carries no rate and the handler still opens with `DayRate: null`. It gains `OpenedByUserId` only |
+   | `PUT …/day-labour/engagements/{engagementId:guid}/day-rate` | **`DayLabourRateManage`** + `FromRoute()` | write | new sub-slice `SetEngagementDayRate/`. Body: the agreed rate. `Money`, `decimal(18,4)`, never `float`/`double` |
+   | `GET …/day-labour/engagements?workerId={guid}` | **`DayLabourRateManage`** + `FromRoute()` | read | new sub-slice `ListEngagements/`. One worker's engagements on the route's project, **with `DayRate`**, plus the three derived pool figures for that worker (`KAFF-210` rule 2 — derived on every read, never stored) |
+   | `GET …/day-labour` (`ListPool`) | `DayLabourSiteManage` | — | **unchanged.** D-140 point 5's allow-list, no money member, no average day rate |
+
+   - **Why the rate is not a member on the open request**, which would have been the shorter diff: the
+     open route is gated by `DayLabourSiteManage`, and a money member on a request behind a
+     `TouchesMoney: false` row is exactly the untruth this file keeps finding after the fact. The
+     alternative — flipping that row to `true` — would make worker registration a money-gated act. A
+     separate route keeps one route, one gate, one shape, and gives the rate a correction path without
+     a second mechanism.
+   - **Why the rate-bearing read is its own route rather than a conditional projection on the pool**:
+     Finance holds no `DayLabourSiteManage` and must not (that row registers workers and opens
+     engagements), so a rate on a `DayLabourSiteManage` route could not reach Finance at all, and
+     branching the projection inside a shared handler would put the control somewhere no permission
+     test can see it. One route per gate is what the catalogue can be read against.
+   - **The average day rate is a pool figure and therefore only on the rate-gated read.** Frequency and
+     average rating are not money and stay available to any assigned engineer through the pool.
+6. **Handler rules for the two new routes.**
+   - Both check `engagement.ProjectId == route projectId` before anything else (`KAFF-210` rule 6a,
+     D-140's SM-30 test 14, the check `CloseEngagement.Handler` and `RateEngagement.Handler` already
+     make).
+   - **Write:** refused unless the caller is the Owner or the engagement's `OpenedByUserId`. **Finance
+     reads a rate and never writes one** — Karim ruled visibility, and Finance was not on site to agree
+     anything. Refused on a closed engagement: the stretch has ended and its terms are history
+     (`KAFF-210` rule 6b's analogy; an Architect's choice, reversible, and marked as one).
+   - **Read:** a caller whose role is `SiteEngineer` sees only engagements they opened; the Owner and
+     Finance see every engagement on the route's project.
+   - Both are state changes or reads on the existing interceptor: the write is audited as `Updated`
+     with before and after, the read writes nothing.
+7. **`RateEngagement` gains the same opener check**, because D-152 §4 says *"Only the responsible Site
+   Engineer rates"*. It is the same guard, written once and called from both handlers rather than
+   copied. `CloseEngagement` gains **no** such check — D-152 §3 rules the opposite for the close, and
+   that is the difference point 4 explains.
+
+**What Backend builds**
+
+- `Permission.DayLabourRateManage = 64` and the catalogue row in point 1, with an SM-30 comment citing
+  the test names below.
+- `Engagement.OpenedByUserId` (`Guid?`), set in `Engagement.Open`; migration **`EngagementOpenedBy`** —
+  adds one nullable column, no backfill, no default, invents no actor for existing rows.
+- `Engagement.SetDayRate(Money rate)` on the entity, refusing a non-positive rate (the guard
+  `Engagement.Open` already carries) and refusing a closed engagement.
+- Two sub-slices: `src/Api/Features/DayLabour/SetEngagementDayRate/` and
+  `src/Api/Features/DayLabour/ListEngagements/`.
+- One shared guard for "is the caller the responsible engineer", used by `SetEngagementDayRate` and
+  `RateEngagement`.
+- **No change to** `OpenEngagement`, `CloseEngagement`, `ListPool`, `RegisterFromSite`, `PhoneCheck`,
+  `BabOptions`, or `Permission.DayLabourSiteManage`.
+
+**What Frontend builds**
+
+- `S-027` shows the rate only when the payload carries it; an absent rate is not rendered as zero
+  (`KAFF-210` rule 8, `hr.worker.pool.never_engaged`).
+- The rate is bidi-isolated through `formatMoney` with an explicit `dir="ltr"` (`KAFF-210` rule 11).
+- The rate field is hidden for a caller who does not hold the permission — convenience only, the server
+  decides.
+
+**Tests (SM-30 — the catalogue row must cite these names, and they must exist)**
+
+`tests/Domain.Tests/`:
+
+1. `Only_the_owner_finance_and_assigned_site_engineers_hold_DayLabourRateManage_and_it_touches_money`
+   — the exact grant list, `ProjectScoped`, and `TouchesMoney == true`.
+2. `An_unassigned_site_engineer_is_refused_DayLabourRateManage`.
+3. `Hr_holds_no_permission_that_touches_money` stays green **unedited** — the existing test is what
+   proves the new money row did not reach HR.
+4. `Only_the_owner_and_assigned_site_engineers_hold_DayLabourSiteManage_and_it_touches_no_money` stays
+   green **unedited**, for point 3.
+
+`tests/Api.Tests/`, hitting endpoints directly:
+
+5. `Only_the_engineer_who_opened_an_engagement_can_record_its_day_rate`: the opener gets `200`, a second
+   engineer assigned to the same project gets `403`, and no rate is written by the refused call.
+6. `Finance_reads_a_day_rate_and_cannot_record_one`: `200` on the read, `403` on the write.
+7. `A_site_engineer_reads_the_day_rate_only_on_engagements_he_opened`.
+8. `Every_role_without_DayLabourRateManage_is_refused_both_rate_routes`: HR, Technical Office and
+   Marketing/Sales each `403` on the read and on the write. **HR is included, so a later grant to HR is
+   caught** — D-140 test 12's shape.
+9. `The_day_labour_pool_carries_no_money_member`: `ListPool`'s property allow-list is unchanged.
+10. `A_day_rate_cannot_be_recorded_through_another_projects_route`: `403`, rule 6a.
+11. `A_day_rate_of_487_6543_is_stored_and_read_back_exactly`: `AC-210-C`.
+12. `Recording_a_day_rate_is_audited_with_its_project`: actor, before and after, and the grant path
+    naming the route project.
+13. `Any_assigned_engineer_closes_an_engagement_another_opened` — `Q77`, D-152 §3, the negative of
+    point 4.
+14. `Only_the_engineer_who_opened_an_engagement_can_rate_it` — `Q78`, D-152 §4, point 7.
+
+---
+
+#### 2. `Q79` — `Department` is an enum, mandatory on salaried rows only, enforced by a check constraint. **The member list is refused and goes back to Nabil.**
+
+**Decision.**
+
+1. **An enum, not a lookup table.** A lookup table buys editability nobody asked for: it needs a table,
+   a foreign key, a seeder, a management screen and a decision about what happens to staff on a
+   department someone archives. A department list is org structure, it changes on the scale of years,
+   and every other closed list of this kind in this codebase is an enum stored as its member name
+   (`Role`, `Department`, `EmployeeKind`, `AssignmentLevel`), which keeps the column readable in the
+   database [Verified: 2026-09-12 @ `src/Infrastructure/Persistence/KaffDbContext.cs` -> `ApplyEnumsAsStrings`].
+   Adding a member later is one line and no migration of shape. If Kaff ever wants HR to add
+   departments from a screen, that is a story, and it is cheaper to write then than to carry now.
+2. **Mandatory on salaried rows, absent on day labour.** Karim's words are *"MANDATORY on the staff
+   file"* (D-152 §5), and the staff file is the salaried record: spec.md §10's worker registry is
+   *"name, phone, trade/باب, specialty"*, and D-140 point 5 keeps every staff-only field off the day
+   labour shapes. **Day labour carries a باب, not a department.**
+3. **The mechanism is a database check constraint**, the mirror of the one that already makes a باب
+   mandatory for day labour
+   [Verified: 2026-09-12 @ `src/Infrastructure/Persistence/Configurations/MasterDataConfigurations.cs` -> `ck_employees_day_labour_has_trade`]:
+   `ck_employees_department_matches_kind` —
+   `(kind = 'Salaried' AND department IS NOT NULL) OR (kind <> 'Salaried' AND department IS NULL)`.
+   One constraint states both halves, so a day-labour row can never acquire a department either. The
+   column stays nullable; the constraint is what makes it mandatory where it is mandatory.
+4. **The migration is `Q79StaffDepartmentRequired`, and it does nothing to a NULL.** It adds the
+   constraint and converts nothing. Any existing salaried row with a NULL department, or with free text
+   that is not an enum member, makes `ADD CONSTRAINT` fail, loudly, with the constraint named in the
+   error. **That is the intended behaviour**: production-shaped data exists only on staging, and the fix
+   is one `UPDATE` written by a person who knows which department those people are in. The alternative —
+   a default — writes an invented fact onto a real person's staff file and is indistinguishable
+   afterwards from one HR entered.
+5. ⛔ **REFUSED, and handed to Nabil: what the members are.** D-152 §5's examples are *"Finance,
+   Technical Office, Operations, and so on"*. Two of those three are not in any written department
+   list: spec.md §9's departments are **Finance, HR, Marketing, Operations**, "Technical Office" is a
+   **role** there, and *"and so on"* says the list is not closed. Choosing the members is choosing who
+   the company is divided into, which is a business fact and not a mechanism.
+   **New question, `Q85`, for Nabil:** is the staff file's department list spec.md §9's four
+   (`Kaff.Domain.Identity.Department` as it stands), or a longer HR list — and if longer, the exact
+   members, in Arabic and English?
+   - **If it is §9's four, no new type is written at all**: `Employee.Department` becomes
+     `Kaff.Domain.Identity.Department`, and the reuse is the whole change.
+   - **If it is a longer list**, a `StaffDepartment` enum lives in `Domain/MasterData`, because a second
+     vocabulary must not be spelled with the first one's name.
+   - **Until `Q85` is answered, nothing is built for `Q79`.** `Department` stays optional free text —
+     which is what ships today — and nothing else in `KAFF-207` waits on it. A mandatory column needs a
+     value list before it can refuse anything, and the same reasoning kept `BabSeeder.Trades` empty
+     under D-142 point 5 until D-145 §1 gave the names.
+
+**Tests, once `Q85` lands**
+
+1. `A_salaried_employee_cannot_be_created_without_a_department` — `400`, and no row written.
+2. `A_day_labourer_cannot_carry_a_department` — the other half of the constraint.
+3. `The_department_column_holds_enum_member_names` — reads the stored value and asserts it is the member
+   name, not an integer, the same assertion D-146 test 1 makes about `kind`.
+
+---
+
+#### 3. `Q83` — the salaried unique phone index gains `AND is_active`; D-146 point 1 is amended
+
+**Decision.**
+
+1. **The index definition is exactly:**
+   `builder.HasIndex(employee => employee.PhoneNormalised, "ux_employees_salaried_phone").IsUnique().HasFilter("kind = 'Salaried' AND is_active")`.
+   The named overload stays, for the reason D-146 point 1 gives (the unnamed `HasIndex` called twice
+   returns the same index). `ix_employees_phone`, `ix_subcontractors_phone` and `ix_suppliers_phone` are
+   untouched — the warning lookup must still see archived rows (D-141 §4).
+2. **D-146 point 1's second bullet is amended.** It read *"archived salaried rows are inside the
+   predicate"*. They are now outside it. D-146's *What this does not decide* second bullet — rehiring a
+   salaried leaver — is **closed** by D-152 §6, and closed the first of the two ways D-146 offered:
+   the filter gains the predicate, and **no unarchive path is added by this entry**.
+3. **The handler queries gain the same predicate**, so the clean `409` agrees with the index instead of
+   being stricter than it: `CreateEmployee`'s salaried check becomes
+   `… && employee.Kind == EmployeeKind.Salaried && employee.IsActive`
+   [Verified: 2026-09-12 @ `src/Api/Features/Employees/CreateEmployee/Handler.cs` -> `HandleAsync`], and
+   `EditEmployee`'s adds it beside its existing `e.Id != id`. Both `IsPhoneCollision` catches keep the
+   constraint name `ux_employees_salaried_phone` and need no edit.
+4. **A leaver's phone is now free**, and a phone match against the archived leaver is
+   warn-and-acknowledge, not a refusal — which is what D-130 §7's ruled flow always needed.
+5. **Reactivating a leaver onto a phone an active salaried person now holds is refused**, and this is
+   derived rather than chosen: D-144 §1 refuses two **active** salaried records on one phone, and a
+   reactivation would create exactly that pair. The mechanism, for whoever builds it:
+   - **There is no employee reactivation path today** — `Archive` is the only writer of `IsActive` after
+     creation, and no route calls anything else. **This entry does not add one**; if Kaff needs
+     reactivation rather than re-registration, that is a story for the Scrum Master to schedule, not an
+     Architect's addition.
+   - When it is built, it runs the same active-salaried query **before** flipping `IsActive` and returns
+     `409 errors.master.employee_phone_taken`. **The index is the guarantee, not the query**: flipping
+     `is_active` to true makes the row enter the partial index, so a race raises the unique violation in
+     the same transaction and the existing `IsPhoneCollision` catch returns the same `409`. No new error
+     key.
+   - The person is not stranded: re-registration as a new record is D-130 §7's ruled flow, and the
+     phone match on it warns rather than refusing.
+
+**What Backend builds**
+
+- `EmployeeConfiguration`: the filter in point 1. Migration **`Q83ActiveSalariedPhoneIndex`**, generated
+  by EF — it drops and recreates the partial index. It needs no data change and cannot fail on existing
+  data: the new predicate is a subset of the old one, so a set with no duplicates under the old index
+  has none under the new one.
+- `CreateEmployee` and `EditEmployee`: the `IsActive` predicate in point 3.
+- The doc comments on `MasterDataErrors.EmployeePhoneTaken` and on both handlers narrow from "another
+  salaried record" to "another **active** salaried record".
+
+**Tests (all in `tests/Api.Tests/`)**
+
+1. `The_phone_indexes_are_non_unique_except_the_salaried_partial_index` — D-146 test 1, **amended**: the
+   `indexdef` of `ux_employees_salaried_phone` must now also contain `is_active`. PostgreSQL prints the
+   predicate back expanded, so the test asserts on the parts, not the whole string.
+2. `A_salaried_phone_belonging_to_an_archived_leaver_can_be_registered_again`: archive the first
+   salaried record, then create a second on the same phone with the acknowledgement — `201`, and the
+   `DuplicatePhoneAcknowledged` event names the archived row.
+3. `A_salaried_phone_matching_an_archived_salaried_record_is_refused` — D-146 test 3 — is **deleted and
+   replaced by test 2 above**, which asserts the opposite outcome on the same input. It asserted D-146
+   point 1's old predicate and D-152 §6 reverses it; leaving both would leave the suite asserting both
+   answers.
+4. `A_second_active_salaried_record_on_one_phone_is_still_refused` — D-146 test 2 under its existing
+   name, unchanged, so the narrowing did not open the case D-144 §1 closed.
+
+---
+
+#### 4. `Q80` — the held test is rewritten as warn-and-acknowledge
+
+**Decision.**
+
+1. **The skipped test is replaced, not unskipped.** It asserts a refusal
+   [Verified: 2026-09-12 @ `tests/Api.Tests/CreateEmployeeTests.cs` -> `A_day_labourer_cannot_be_registered_again_as_salaried_with_the_same_phone`]
+   and D-152 §1 rules the other answer, so its name is now false. **New name:**
+   `A_salaried_create_matching_an_active_day_labourer_warns_and_succeeds_once_acknowledged`.
+2. **Its assertions**, in order, on one phone entered in two different forms so the match is proven to be
+   on the normalised value:
+   - a day labourer is registered with a باب — `201`;
+   - a salaried create on the same phone **without** the acknowledgement — `409`
+     `errors.master.duplicate_phone_not_acknowledged`, and **no row and no audit record** are written
+     (D-141 §5, the path
+     [Verified: 2026-09-12 @ `src/Api/Features/Employees/CreateEmployee/Handler.cs` -> `DuplicatePhoneNotAcknowledged`]);
+   - the same create **with** `acknowledgedDuplicatePhone: true` — `201`, the stored `Kind` is
+     `Salaried`, and exactly one `DuplicatePhoneAcknowledged` audit event is written whose subject is
+     **the day labourer's id**, not the new row's;
+   - `errors.master.employee_phone_taken` appears nowhere in the exchange — the salaried refusal is
+     salaried-to-salaried only, and after §3 above, active-salaried-to-active-salaried.
+3. **The reverse direction is the sibling test**, and it already has a name in D-146 test 6's shape:
+   `A_day_labourer_matching_an_active_salaried_record_warns_and_succeeds_once_acknowledged`. On the Site
+   Engineer's route the same match is shown in D-140 point 6's restricted form — `restricted: true`, no
+   id, code or name — and the acknowledgement is still required. **D-140 point 6 is unaffected.**
+4. **`AC-208-B` is released as warn-and-acknowledge** and D-146 point 4(b)'s interim ("meanwhile the
+   handler warns … no test pins this as correct") ends: the behaviour the runtime already had is now
+   the ruled one and now has a test.
+5. ⚠️ **Recorded rather than reconciled silently.** D-152 §1's words describe *"a worker whose phone
+   matches an active subcontractor or supplier"*, while the test it unholds is the **employee
+   cross-population** case (day labour against salaried) that D-146 point 4(b) narrowed `Q80` to. The
+   instruction *"the Api test skipped under the `Q80` hold is unheld and now asserts
+   warn-and-acknowledge"* names that test unambiguously, and `V-38-F` found the runtime already behaving
+   that way, so it is applied as written. **If Karim meant to answer only the subcontractor/supplier
+   case and not the cross-population one, `Q80` is not closed and this point must be reopened** — a
+   sentence for Nabil to put in front of him, not a decision to take here.
+
+---
+
+#### 5. `Q81` — the seeder skips the whole run when any باب exists
+
+**Decision.**
+
+1. **The guard is the first statement of
+   `BabSeeder.SeedAsync(IReadOnlyList<BabSeed>, CancellationToken)`** — the internal overload, which is
+   where every caller arrives: the public `SeedAsync(CancellationToken)` delegates to it and the tests
+   call it directly. One guard where all callers route, rather than one at the startup call site that a
+   second caller would bypass:
+   ```csharp
+   if (await _context.Babs.AnyAsync(cancellationToken))
+   {
+       _logger.LogInformation("Trades (أبواب) already exist; the seeder made no change (D-152 §8).");
+       return 0;
+   }
+   ```
+2. **The per-code skip is deleted with it** — the `existingCodes` query, the `HashSet` and the
+   `existing.Contains(seed.Code)` branch. Past the guard the table is empty, so all three are dead code,
+   and dead code that looks like a rule is how the next session concludes the seeder still merges.
+   D-142 point 3's prohibition stands unchanged: there is still no update path, no `SetDefaultMarkup`
+   and no `Rename`.
+3. **The return value keeps its meaning** — rows inserted — and `0` now means either "nothing to do" or
+   "skipped entirely". The log line is what distinguishes them; nothing branches on the number.
+4. **Startup is unchanged** [Verified: 2026-09-12 @ `src/Api/Program.cs` -> `BabSeeder`], and so is
+   `AccountTreeSeeder`, which D-152 §8 does not mention.
+
+**The test that witnesses both branches** — `tests/Api.Tests/DatabaseSeedingTests.cs`:
+
+1. `The_bab_seeder_seeds_an_empty_environment_and_skips_entirely_when_any_bab_exists`, with two halves
+   on two private databases:
+   - **empty** — `SeedAsync` returns the seed count and every seeded code exists;
+   - **not empty** — one باب is inserted first whose code is **not in the seed list** (`ZZZ`), then
+     `SeedAsync` returns `0`, the باب count is still `1`, and **none** of the seeded codes exists.
+   **The unrelated code is the whole point of the second half**: a seeded code would be skipped by
+   D-142's old per-code branch as well, so a test that used one would pass under both mechanisms and
+   witness neither.
+2. The three existing tests stay green **unedited** and their assertions become stronger, not weaker —
+   `The_bab_seeder_is_idempotent`, `The_bab_seeder_never_overwrites_an_edited_trade` and
+   `The_bab_seeder_skips_a_code_the_client_already_created`
+   [Verified: 2026-09-12 @ `tests/Api.Tests/DatabaseSeedingTests.cs` -> `The_bab_seeder_is_idempotent`].
+   Each of them has a باب in the table by the time the second `SeedAsync` runs, so each now exercises
+   the new guard and still observes exactly what it asserted before.
+
+---
+
+#### 6. `Q84` — D-147's grant stands
+
+**Confirmed, no change.** `Permission.SubcontractorTaxRegistrationEdit = 63` stays `CompanyWide`,
+`[owner, finance]`, `TouchesMoney: false`
+[Verified: 2026-09-12 @ `src/Domain/Authorization/PermissionCatalogue.cs` -> `Permission.SubcontractorTaxRegistrationEdit`].
+D-152 §7 confirms the Owner's inclusion rather than narrowing it, which is what D-147 already built on
+§9's 2026-08-20 amendment 6. **No permission change, no migration, no test change** — and no widening
+either: the Owner's presence comes from the amendment, not from a new ruling, so no other row moves.
+
+#### What this does not decide — questions for Nabil
+
+- **`Q85`, new** (§2 point 5): the members of the staff department list. `Q79`'s mechanism is ruled and
+  unbuildable until this lands.
+- **`Q80`'s scope** (§4 point 5): whether Karim's answer was meant to cover the employee
+  cross-population case, or only subcontractors and suppliers.
+- **Whether an employee reactivation path should exist at all** (§3 point 5). D-130 §7's
+  re-registration flow covers the business need today; reactivation is a convenience nobody has asked
+  for, and it is a story, not a decision.
+- 🟡 **Finance's reach over a day rate** (§1 point 1): project-scoped, so Finance must be assigned to see
+  one. The same shape as `Q-N10-2b` (D-055 §1), and the same question — whether Finance is assigned to
+  the projects it does financial work on.
