@@ -494,4 +494,89 @@ assertion here with no control that it enumerated anything.
 
 ---
 
-*(pass in progress — sections 5 and 6 not yet written)*
+## 5. Findings
+
+`V-38-A` and `V-38-B` are section 1's, restated here for one list. Identifiers, never line numbers.
+
+| # | Sev | Where | What |
+|---|---|---|---|
+| `V-38-A` | MEDIUM | `tests/Domain.Tests/TranslationCatalogueTests.cs` -> `Every_screen_key_in_the_catalogues_is_read_by_a_template_or_a_component` | The Domain suite is **red at `HEAD`**: `nav.subcontractors` is in both catalogues and no screen reads it. `nav.suppliers` is a second orphan the failure message hides |
+| `V-38-B` | LOW | `src/Web/src/app/features/catalogue/catalogue-list/catalogue-list-page.css` | `npm run build` is not warning-free — the stylesheet is 305 bytes over its 4.00 kB budget. Out of this batch's scope; recorded so nobody reports "npm build clean" off this page |
+| `V-38-C` | **HIGH** | `src/Web/src/app/features/employees/employee-form/employee-form-page.ts` (+ `.html`) | **The employee edit screen shows a day labourer's stored باب as `بدون باب`.** The select's options contain the right باب by the exact id the record holds; the control is simply not set to it. The save that form then submits is refused `400 errors.master.day_labour_requires_trade` — measured — so HR cannot save an edit to a day labourer at all, and the screen misstates the record while refusing it |
+| `V-38-D` | LOW | `src/Web/public/locales/{ar,en}.json` -> `nav.subcontractors`, `nav.suppliers`; `ux/navigation.md` | No nav row was built for either master screen. Both are reachable **by URL only** in every role I signed in as. The rendered-surface half of `V-38-A` |
+| `V-38-E` | MEDIUM | `src/Api/Features/Catalogue/ImportCatalogue/Handler.cs` -> `ImportAsync`; `src/Domain/MasterData/MasterDataErrors.cs` -> `CatalogueImportFailed` | **`AC-200-I`'s second half is unmet.** A file with an extra `status` column and a file with a missing column are both refused — correctly — with a bare `errors.master.catalogue_import_failed` that names **neither what the template requires nor what the file carried**. The same key is returned for a non-zip, an empty sheet, a bad header and an oversized upload, so the operator cannot tell a wrong template from a corrupt file. `CatalogueTemplate.Columns` is right there and is not used in the refusal |
+| `V-38-F` | MEDIUM | `src/Api/Features/Employees/CreateEmployee/Handler.cs`; `stories/slice-2-masters/KAFF-208-nobody-appears-in-both-populations.md` -> `AC-208-B` | **A held criterion is answered by the running product.** `AC-208-B` holds the **active** cross-population phone case on `Q80` and says *"nothing here asserts either behaviour as correct"*. Live, that case behaves exactly like the archived case D-146 §4(a) ruled: `409 duplicate_phone_not_acknowledged` without an acknowledgement, **`201` with one**. The hold is visible in the suite (the single skipped Api test) while the deployed behaviour has already chosen warn-and-acknowledge. `Q80` is being answered by default rather than by Nabil |
+| `V-38-G` | **HIGH** | `src/Api/Features/DayLabour/ListPool/Response.cs` -> `PoolWorker`; `src/Api/Features/DayLabour/OpenEngagement/Request.cs`; `src/Web/src/app/app.routes.ts` -> the `projects/:projectId/day-labour` children; `stories/slice-2-masters/KAFF-210-worker-engagement-history.md` line-3 trailer | **`KAFF-210` is trailed `BUILT` and roughly seven of its eleven criteria are unbuilt.** No endpoint reads a worker's engagement history; `S-027` has no route; the pool carries none of §10's three figures on either side; no route can record a day rate; none of the story's eight `hr.worker.history*` / `hr.worker.pool.*` i18n keys exists; and no test in the repository names `average`, `frequency` or `never_engaged`. `Q76` holds the **day rate** and does not cover the frequency or the rating count |
+| `V-38-H` | **HIGH** | `src/Api/Features/Subcontractors/CreateSubcontractor/Request.cs` and `EditSubcontractor/Request.cs` -> `RetentionRate`; `src/Api/Features/Subcontractors/GetSubcontractor/Response.cs`; `src/Web/src/app/features/subcontractors/subcontractor-form/subcontractor-form-page.ts` -> `fractionToPercent` and the submit conversion | **The retention rate's read shape is not its write shape.** `GET` returns the fraction `"0.050000"`; `PUT` consumes a percent. Measured: a firm at the 5% default, read back and written back **unchanged**, became `0.05%` — a hundredfold silent loss on a round trip through the public API. The Angular form converts in both directions and so does not hit it; nothing else is protected. Two further halves: `Bab.defaultMarkup` takes a **fraction** on the same API with no name to distinguish it, and **`101` is accepted**, stored `1.01`, rendered `101%` — retention above 100% has no refusal. Whether D-135 / D-139 §8 reach a `Percentage` at all is **the Architect's**, flagged not answered; the round trip is a defect under any answer |
+| `V-38-I` | LOW | `stories/slice-2-masters/KAFF-212-supplier-master.md` -> `AC-212-D` | Story currency, not a defect. The criterion describes two suppliers submitting the same typed code; supplier codes are now **generated** (`S-10001`…) and a `code` member in the body is ignored. The criterion as written can no longer fail. For the BA to restate against the generated sequence |
+| `V-38-J` | LOW | `src/Infrastructure/Persistence/Interceptors/AuditSaveChangesInterceptor.cs`; `src/Api/Features/DayLabour/RegisterFromSite/Handler.cs` | One project-scoped request writes two audit rows that disagree about the project. `Employee Created` carries `grantPath: Assignment` and `projectId: A`; the `DuplicatePhoneAcknowledged` row from the **same** request carries neither. D-148 says a project-scoped act records the route's project — the acknowledgement is part of that act |
+| `V-38-K` | LOW | `tests/Api.Tests/EngagementLifecycleTests.cs` -> `No_money_member_appears_on_the_open_request_or_response` | The one assertion in this batch with no control that it enumerated anything: it loops `type.GetProperties()` and asserts inside the loop, so a property-less record would pass it having checked nothing. Small, because the records are in the same solution |
+| `V-38-L` | MEDIUM | `tests/E2E.Tests/` | **No end-to-end test was written for any story in this batch.** `git log 7117704..HEAD -- tests/E2E.Tests` is empty and no existing E2E file mentions an employee, a worker, a subcontractor, a supplier or the catalogue import. Under D-138 this caps all eight stories at `CONDITIONAL` on its own |
+
+**What I did about them: nothing.** No file under `src/`, no story, no trailer and no test was
+touched by this session. The only file this pass wrote is this one.
+
+### Verdicts
+
+| Story | Verdict |
+|---|---|
+| `KAFF-200` | **CONDITIONAL** — `V-38-E`, `V-38-L`; `AC-200-D` not reachable today |
+| `KAFF-201` | **CONDITIONAL** — `V-38-L`; `AC-201-C` not reachable today |
+| `KAFF-207` | **REJECTED** — `V-38-C` |
+| `KAFF-208` | **CONDITIONAL** — `V-38-F`, `V-38-L` |
+| `KAFF-209` | **CONDITIONAL** — `AC-209-J` unbuilt (`V-38-G`'s surface), `V-38-L` |
+| `KAFF-210` | **REJECTED** — `V-38-G` |
+| `KAFF-211` | **CONDITIONAL** — `V-38-H`, `V-38-L` |
+| `KAFF-212` | **CONDITIONAL** — `V-38-I`, `V-38-L` |
+
+---
+
+## 6. What this pass did not reach
+
+Each of these is a gap in the verification, not a pass.
+
+1. **Nothing was looked at.** No screenshot was taken of any screen, in either palette.
+   `driver.mjs shot` launches a fresh browser with no session, so it cannot photograph an
+   authenticated screen, and the driver is not this session's to change. Every visual claim in §2
+   rests on geometry (`scrollWidth`), rendered `innerText`, form control values, `dir` attributes and
+   computed colours. **Visual crowding, overlap that does not change `scrollWidth`, truncation,
+   focus order and touch-target size were not assessed on any screen.** `AC-207-J`, `AC-209-I`,
+   `AC-210-J`, `AC-211-M` and `AC-212-L` are therefore satisfied only in their mechanism.
+2. **Contrast was not computed** in either palette. The 2026-09-11 pass measured badge contrast
+   numerically (`V-37-C`); this one did not measure any.
+3. **`AC-209-I`'s one-handed reach** was not measured — no hit-target geometry, no thumb-zone check.
+4. **`AC-200-D`** — cost price on a client-facing surface — is **vacuously true**. There is no
+   `/api/portal/*` route and no client-facing print or export in the system, so there was nothing to
+   inspect. It must be re-run when a portal exists.
+5. **`AC-201-C`** — a signed BOQ untouched by an import — could not be exercised. No BOQ exists.
+   The structural argument holds (no foreign key, no query path) but nothing was run.
+6. **Concurrency was not tested.** `AC-207-C` and `AC-212-D` both speak of two requests *"at the same
+   instant"*; I sent every request serially. The unique-index argument is read from the schema, not
+   raced.
+7. **The Api and Domain suites were not re-run after section 1.** Section 1's figures stand:
+   Domain `229 / 1 failed`, Api `539 / 538 passed / 1 skipped`. Nothing under `src/` or `tests/`
+   changed under me, so re-running them would have measured the same binaries. **The Api suite's own
+   assertions were not audited line by line** — §4.9 spot-checked the shapes most at risk of passing
+   vacuously and the new `Api.Tests` files' assertions broadly, not every one of the ~100 new facts.
+8. **`KAFF-209`/`210`'s screens were driven on projects created with SQL.** There is no projects
+   endpoint on this API, so a project cannot be created through it. The two fixture projects are
+   minimal `LumpSum` / `NotStarted` rows. **Nothing about project state interacting with day labour
+   was exercised** — a closed, stopped or terminated project was not tried against the register or
+   the engagement routes, and no story in this batch rules what should happen.
+9. **The Finance tax-registration screen** (`AC-211-O`) was not rendered because it does not exist
+   and is correctly held. Its two endpoints were exercised; no UI was.
+10. **The dark palette was forced by copying custom properties, not by running the browser in dark
+    mode.** Eleven properties were applied. A rule that reacts to `prefers-color-scheme` in a way
+    other than through those eleven variables would not have been caught.
+11. **`STATUS.md` and `stories/backlog.md` were not reconciled** against these verdicts. That is the
+    Board's, and this pass deliberately moved no trailer.
+
+### Housekeeping
+
+The scratch database `kaff_verifier_v38` was used for every fixture and probe in this pass; `kaff`
+was never written to. It is left in place rather than dropped, so the Board can read the audit rows
+and the seeded أبواب behind §4.4 and §4.5 without re-running anything. **Drop it when this batch is
+closed:** `docker exec kaff-db psql -U kaff -d postgres -c 'DROP DATABASE kaff_verifier_v38 WITH (FORCE)'`.
+
+**Pass complete.** Sections 1 through 6 were all reached and written. The gaps named in §6 are gaps
+in coverage, stated as such, not sections that went unwritten.
