@@ -152,6 +152,8 @@ export function auditEventKindKey(kind: AuditEventKind): string {
       return 'enum.AuditEventKind.AccountLockedOut';
     case 'DuplicatePhoneAcknowledged':
       return 'enum.AuditEventKind.DuplicatePhoneAcknowledged';
+    case 'CatalogueImported':
+      return 'enum.AuditEventKind.CatalogueImported';
     default:
       return assertNever(kind);
   }

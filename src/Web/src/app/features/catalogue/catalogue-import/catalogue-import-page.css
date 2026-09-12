@@ -1,0 +1,180 @@
+/*
+ * Logical properties throughout — RTL is the primary direction, not a mirror (CLAUDE.md). Zero colour
+ * literals: every colour is a token from styles.css (apple-erp-design §2).
+ */
+
+.import {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  max-inline-size: 64rem;
+  margin-inline: auto;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-xl);
+}
+
+.header-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--tap-target);
+  padding-inline: var(--space-3);
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.not-a-sync {
+  margin: 0;
+  padding: var(--space-3);
+  font-size: var(--text-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.template-link {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  min-block-size: var(--tap-target);
+  padding-inline: var(--space-4);
+  font-weight: 600;
+  color: var(--color-accent);
+  text-decoration: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.upload {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--elevation-1);
+}
+
+.file-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.file-input {
+  min-block-size: var(--tap-target);
+  font: inherit;
+  color: var(--color-text);
+}
+
+.file-name {
+  margin: 0;
+  font-size: var(--text-sm);
+  overflow-wrap: break-word;
+}
+
+.submit-button {
+  align-self: flex-start;
+  min-block-size: var(--tap-target);
+  padding-inline: var(--space-5);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--color-background);
+  background: var(--color-accent);
+  border: none;
+  border-radius: var(--radius-md);
+}
+
+.submit-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.refusal,
+.succeeded {
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+}
+
+.refusal {
+  border: 1px solid var(--color-danger);
+  color: var(--color-danger);
+}
+
+.succeeded {
+  border: 1px solid var(--color-accent);
+  color: var(--color-text);
+}
+
+.failures {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.failures-title {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+/* A genuine ledger-shaped table scrolls inside its own container; the page body never does
+   (apple-erp-design §5). */
+.failures-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.failures-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.failures-table th,
+.failures-table td {
+  padding: var(--space-2) var(--space-3);
+  text-align: start;
+  min-inline-size: 6rem;
+  white-space: nowrap;
+}
+
+.failures-table td:nth-child(3) {
+  white-space: normal;
+  min-inline-size: 12rem;
+}
+
+.failures-table thead th {
+  font-weight: 600;
+  color: var(--color-muted);
+  background: var(--color-surface);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.failures-table tbody tr + tr {
+  border-block-start: 1px solid var(--color-border);
+}
+
+.sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

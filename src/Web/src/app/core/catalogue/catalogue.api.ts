@@ -40,6 +40,24 @@ export interface CatalogueItemCreate {
   readonly baseSellRate: string;
 }
 
+/** `GET /api/catalogue-items/import-template` — the standardized template, D-129 §2. */
+export const CATALOGUE_IMPORT_TEMPLATE_URL = 'api/catalogue-items/import-template';
+export const CATALOGUE_IMPORT_TEMPLATE_FILENAME = 'catalogue-import-template.xlsx';
+
+/** One row `POST /api/catalogue-items/import` refused, and why — `RowFailure` on the wire. KAFF-200 rule 7. */
+export interface CatalogueImportRowFailure {
+  readonly rowNumber: number;
+  readonly column: string;
+  readonly messageKey: string;
+  readonly value: string | null;
+}
+
+/** `POST /api/catalogue-items/import`'s `200` body. `AC-200-H`: every good row in, every bad one named. */
+export interface CatalogueImportResult {
+  readonly createdCount: number;
+  readonly failures: readonly CatalogueImportRowFailure[];
+}
+
 /**
  * `PUT /api/catalogue-items/{id}`. **No `code`, no `babId`** — the wire type mirrors
  * `EditCatalogueItem.Request` exactly: the code is immutable and moving a باب is `KAFF-205`, unbuilt.
@@ -113,6 +131,20 @@ export class CatalogueApi {
   async moveToBab(id: string, babId: string): Promise<{ readonly id: string; readonly babId: string }> {
     return await firstValueFrom(
       this.http.put<{ id: string; babId: string }>(`api/catalogue-items/${id}/bab`, { babId }),
+    );
+  }
+
+  /**
+   * `KAFF-200` — uploads the file exactly as chosen. **Nothing here parses it**; the sheet is read by
+   * the server (D-136), never in the browser. `200` with the row-level report, or a file-level `400`
+   * carrying `errors.master.catalogue_import_failed`.
+   */
+  async import(file: File): Promise<CatalogueImportResult> {
+    const body = new FormData();
+    body.set('file', file);
+
+    return await firstValueFrom(
+      this.http.post<CatalogueImportResult>('api/catalogue-items/import', body),
     );
   }
 }

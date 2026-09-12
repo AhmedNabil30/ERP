@@ -148,6 +148,7 @@
   "enum.AuditEventKind.SignInFailedUnknownUser": "Sign-in for an unknown username",
   "enum.AuditEventKind.AccountLockedOut": "Account locked out",
   "enum.AuditEventKind.DuplicatePhoneAcknowledged": "Duplicate phone acknowledged",
+  "enum.AuditEventKind.CatalogueImported": "Catalogue imported",
 
   "errors.unknown": "Something went wrong. Try again.",
 
@@ -408,6 +409,21 @@
   "catalogue.item.move_title": "Move to a different باب",
   "catalogue.item.move_confirm": "Move",
   "catalogue.item.new_bab": "New باب",
+
+  "catalogue.action.import": "Import from Excel",
+  "catalogue.import.title": "Import the catalogue from Excel",
+  "catalogue.import.not_a_sync": "This import runs once, at setup. It is not an ongoing sync — a later change is made by hand in the catalogue.",
+  "catalogue.import.download_template": "Download the template",
+  "catalogue.import.choose_file": "Choose the Excel file",
+  "catalogue.import.confirm": "Import the file",
+  "catalogue.import.uploading": "Importing…",
+  "catalogue.import.succeeded": "{count} item(s) created.",
+  "catalogue.import.rejected": "Rows rejected",
+  "catalogue.import.row_error": "This row was not imported",
+  "catalogue.import.column.row_number": "Row",
+  "catalogue.import.column.field": "Field",
+  "catalogue.import.column.reason": "Reason",
+  "catalogue.import.column.value": "Value entered",
 
   "bab.tree.title": "أبواب",
   "bab.tree.empty": "No أبواب yet.",

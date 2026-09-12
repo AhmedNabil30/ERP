@@ -148,6 +148,7 @@
   "enum.AuditEventKind.SignInFailedUnknownUser": "محاولة دخول باسم غير معروف",
   "enum.AuditEventKind.AccountLockedOut": "إيقاف الحساب مؤقتًا",
   "enum.AuditEventKind.DuplicatePhoneAcknowledged": "إقرار برقم هاتف مكرر",
+  "enum.AuditEventKind.CatalogueImported": "استيراد الكتالوج",
 
   "errors.unknown": "حدث خطأ غير متوقع. حاول مرة أخرى.",
 
@@ -408,6 +409,21 @@
   "catalogue.item.move_title": "نقل إلى باب آخر",
   "catalogue.item.move_confirm": "نقل",
   "catalogue.item.new_bab": "الباب الجديد",
+
+  "catalogue.action.import": "استيراد من إكسل",
+  "catalogue.import.title": "استيراد الكتالوج من إكسل",
+  "catalogue.import.not_a_sync": "هذا استيراد يتم مرة واحدة عند الإعداد، وليس مزامنة مستمرة. أي تعديل لاحق يتم يدويًا من الكتالوج.",
+  "catalogue.import.download_template": "تنزيل القالب",
+  "catalogue.import.choose_file": "اختر ملف الإكسل",
+  "catalogue.import.confirm": "استيراد الملف",
+  "catalogue.import.uploading": "جارٍ الاستيراد…",
+  "catalogue.import.succeeded": "تم إنشاء {count} صنف.",
+  "catalogue.import.rejected": "الصفوف المرفوضة",
+  "catalogue.import.row_error": "لم يتم استيراد هذا الصف",
+  "catalogue.import.column.row_number": "رقم الصف",
+  "catalogue.import.column.field": "الحقل",
+  "catalogue.import.column.reason": "السبب",
+  "catalogue.import.column.value": "القيمة المُدخلة",
 
   "bab.tree.title": "أبواب",
   "bab.tree.empty": "لا توجد أبواب بعد.",

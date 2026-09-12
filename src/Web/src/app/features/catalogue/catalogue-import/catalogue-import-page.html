@@ -1,0 +1,98 @@
+<section class="import" data-testid="catalogue-import">
+  <div class="header-row">
+    <h1 class="title">{{ i18n.t('catalogue.import.title') }}</h1>
+    <a routerLink="/catalogue" class="back-link" data-testid="catalogue-import-back">
+      {{ i18n.t('catalogue.action.back_to_list') }}
+    </a>
+  </div>
+
+  <!-- AC-200-E: rendered as part of the screen, before a file is ever chosen — not a tooltip. -->
+  <p class="not-a-sync" data-testid="catalogue-import-not-a-sync">
+    {{ i18n.t('catalogue.import.not_a_sync') }}
+  </p>
+
+  <!-- AC-200-I: the template is reachable from here before a file is ever chosen. -->
+  <a
+    [attr.href]="templateUrl"
+    [attr.download]="templateFilename"
+    class="template-link"
+    data-testid="catalogue-import-download-template"
+  >
+    {{ i18n.t('catalogue.import.download_template') }}
+  </a>
+
+  <form class="upload" (submit)="$event.preventDefault(); onSubmit()">
+    <label class="file-label" for="catalogue-import-file">
+      {{ i18n.t('catalogue.import.choose_file') }}
+    </label>
+    <input
+      id="catalogue-import-file"
+      type="file"
+      class="file-input"
+      accept=".xlsx"
+      data-testid="catalogue-import-file"
+      (change)="onFileChosen($event)"
+    />
+
+    @if (selectedFile(); as file) {
+      <p class="file-name" data-testid="catalogue-import-file-name">
+        <bdi translate="no">{{ file.name }}</bdi>
+      </p>
+    }
+
+    <button
+      type="submit"
+      class="submit-button"
+      [disabled]="!canSubmit()"
+      data-testid="catalogue-import-submit"
+    >
+      {{ uploading() ? i18n.t('catalogue.import.uploading') : i18n.t('catalogue.import.confirm') }}
+    </button>
+  </form>
+
+  @if (refusal(); as key) {
+    <p class="refusal" role="alert" data-testid="catalogue-import-refusal">{{ i18n.t(key) }}</p>
+  }
+
+  @if (result(); as outcome) {
+    <p class="succeeded" role="status" aria-live="polite" data-testid="catalogue-import-succeeded">
+      {{ i18n.t('catalogue.import.succeeded', { count: outcome.createdCount }) }}
+    </p>
+
+    @if (outcome.failures.length > 0) {
+      <div class="failures" data-testid="catalogue-import-failures">
+        <h2 class="failures-title">{{ i18n.t('catalogue.import.rejected') }}</h2>
+
+        <div class="failures-scroll">
+          <table class="failures-table">
+            <caption class="sr-only">{{ i18n.t('catalogue.import.rejected') }}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{{ i18n.t('catalogue.import.column.row_number') }}</th>
+                <th scope="col">{{ i18n.t('catalogue.import.column.field') }}</th>
+                <th scope="col">{{ i18n.t('catalogue.import.column.reason') }}</th>
+                <th scope="col">{{ i18n.t('catalogue.import.column.value') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (failure of outcome.failures; track trackFailure($index)) {
+                <tr [attr.data-testid]="'catalogue-import-failure-row-' + failure.rowNumber">
+                  <td>
+                    <bdi dir="ltr">{{ failure.rowNumber }}</bdi>
+                  </td>
+                  <td>{{ fieldLabel(failure.column) }}</td>
+                  <td>{{ i18n.t(failure.messageKey) }}</td>
+                  <td>
+                    @if (failure.value !== null) {
+                      <bdi translate="no">{{ failure.value }}</bdi>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+  }
+</section>

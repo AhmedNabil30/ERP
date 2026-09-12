@@ -14,7 +14,8 @@ export type AuditEventKind =
   | 'SignInFailed'
   | 'SignInFailedUnknownUser'
   | 'AccountLockedOut'
-  | 'DuplicatePhoneAcknowledged';
+  | 'DuplicatePhoneAcknowledged'
+  | 'CatalogueImported';
 
 /** One entity snapshot as the server stored it. `jsonb` on the way out, parsed JSON on the wire. */
 export type AuditSnapshot = Readonly<Record<string, unknown>>;

@@ -120,6 +120,15 @@ export const routes: Routes = [
           ),
       },
       {
+        // KAFF-200 — S-019. `catalogueManageGuard` on the parent route is what actually gates this;
+        // there is no separate guard here, matching the brief's "route guard convenience only".
+        path: 'import',
+        loadComponent: () =>
+          import('./features/catalogue/catalogue-import/catalogue-import-page').then(
+            (m) => m.CatalogueImportPage,
+          ),
+      },
+      {
         // `withComponentInputBinding` binds `:catalogueItemId` to the component's input signal. There
         // is no `GET /api/catalogue-items/{id}` on this API (unlike `GetClient`), so a hard load of
         // this URL cannot re-fetch the item — see `catalogue-form-page.ts` for how it copes and the
