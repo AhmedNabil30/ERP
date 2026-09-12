@@ -400,6 +400,56 @@ public sealed class PermissionEvaluatorTests
             "spec.md §9: role alone is insufficient — the row is held, the project is not reached");
     }
 
+    /// <summary>
+    /// SM-30 for <see cref="Permission.SubcontractorTaxRegistrationEdit"/>, test 1. decisions.md D-147.
+    /// </summary>
+    [Fact]
+    public void Only_the_owner_and_finance_hold_SubcontractorTaxRegistrationEdit_and_it_touches_no_money()
+    {
+        PermissionDefinition definition = PermissionCatalogue.Of(Permission.SubcontractorTaxRegistrationEdit);
+
+        definition.Scope.Should().Be(PermissionScope.CompanyWide, "a firm belongs to no project");
+
+        definition.Grants.Select(grant => grant.Role).Should().BeEquivalentTo(
+            [Role.Owner, Role.Finance],
+            "D-147: split off SubcontractorManage the same way ProjectFinancialsEdit split off "
+            + "ProjectManage — Finance owns this one field, the Owner keeps every company-wide row");
+
+        definition.TouchesMoney.Should().BeFalse(
+            "the number identifies a legal entity, moves nothing and governs no ledger — contrast "
+            + "ProjectFinancialsEdit, which governs a withholding rate");
+    }
+
+    /// <summary>
+    /// SM-30 for <see cref="Permission.SubcontractorTaxRegistrationEdit"/>, test 2. decisions.md D-147.
+    /// </summary>
+    [Fact]
+    public void Finance_edits_a_subcontractors_tax_registration_but_not_the_subcontractor_record()
+    {
+        PermissionSubject finance = Subject(Role.Finance, Department.Finance);
+        PermissionSubject technicalOffice =
+            Subject(Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
+
+        PermissionEvaluator.Evaluate(
+                finance, Permission.SubcontractorTaxRegistrationEdit, projectId: null, projectAccess: null)
+            .Should().Be(PermissionDecision.Granted);
+
+        PermissionEvaluator.Evaluate(finance, Permission.SubcontractorManage, projectId: null, projectAccess: null)
+            .Should().Be(
+                PermissionDecision.RoleNotGranted,
+                "Finance disburses (spec.md §2) and does not own the record — AC-211-J");
+
+        PermissionEvaluator.Evaluate(
+                technicalOffice, Permission.SubcontractorManage, projectId: null, projectAccess: null)
+            .Should().Be(PermissionDecision.Granted);
+
+        PermissionEvaluator.Evaluate(
+                technicalOffice, Permission.SubcontractorTaxRegistrationEdit, projectId: null, projectAccess: null)
+            .Should().Be(
+                PermissionDecision.RoleNotGranted,
+                "AC-211-N: holding SubcontractorManage does not carry the tax registration row");
+    }
+
     [Fact]
     public void A_supervising_engineer_submits()
     {
@@ -629,8 +679,11 @@ public sealed class PermissionEvaluatorTests
             Subject(Role.Finance, Department.Finance));
 
         permissions.Should().BeEquivalentTo(
-            [Permission.SupplierManage, Permission.TreasuryPostCompany, Permission.AccountManage, Permission.PeriodClose],
-            "these are Finance's only CompanyWide rows in the catalogue today");
+            [
+                Permission.SupplierManage, Permission.TreasuryPostCompany, Permission.AccountManage,
+                Permission.PeriodClose, Permission.SubcontractorTaxRegistrationEdit,
+            ],
+            "Finance gains SubcontractorTaxRegistrationEdit, decisions.md D-147");
 
         permissions.Should().NotContain(
             Permission.ProjectFinancialsEdit,

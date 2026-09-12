@@ -258,6 +258,9 @@
   "errors.master.engagement_rating_out_of_range": "يجب أن يكون التقييم بين 1 و5.",
   "errors.master.engagement_not_found": "لا يوجد تعاقد بهذا المعرّف.",
   "errors.master.engagement_project_mismatch": "هذا التعاقد لا ينتمي لهذا المشروع.",
+  "errors.master.subcontractor_not_found": "لا يوجد مقاول باطن بهذا المعرّف.",
+  "errors.master.retention_rate_negative": "لا يمكن أن تكون نسبة الاستقطاع سالبة.",
+  "errors.master.subcontractor_list_filter_unknown": "فلتر غير معروف.",
 
   "catalogue.item.archive_action": "أرشفة البند",
   "catalogue.item.archive_confirm": "أرشفة هذا البند؟ يخرج من العمل الجديد، ولا يتأثر أي بند سابق استخدمه بالفعل.",

@@ -334,6 +334,21 @@ public static class PermissionCatalogue
             new(Permission.BabManage, PermissionScope.CompanyWide, [owner, technicalOffice], "§2"),
             new(Permission.EmployeeManage, PermissionScope.CompanyWide, [owner, hr], "§2, §10"),
             new(Permission.SubcontractorManage, PermissionScope.CompanyWide, [owner, technicalOffice], "§2"),
+
+            // decisions.md D-147, KAFF-211's Q29/D-139 §5. The tax registration number is Finance's
+            // alone; the record otherwise stays the Technical Office's. Split off SubcontractorManage
+            // the same way ProjectFinancialsEdit split off ProjectManage (D-055 §1), so the Technical
+            // Office can read the number on its own screen (read-only) without holding a route that
+            // lets it write one. CompanyWide — a firm belongs to no project, same as SubcontractorManage
+            // itself. TouchesMoney is false: the number identifies a legal entity and governs no ledger.
+            // SM-30: pinned by
+            // Only_the_owner_and_finance_hold_SubcontractorTaxRegistrationEdit_and_it_touches_no_money,
+            // Finance_edits_a_subcontractors_tax_registration_but_not_the_subcontractor_record
+            // [Verified: 2026-09-12 @ tests/Domain.Tests/PermissionEvaluatorTests.cs].
+            new(Permission.SubcontractorTaxRegistrationEdit, PermissionScope.CompanyWide,
+                [owner, finance],
+                "§6.7, §9 — D-139 §5 ruled by Nabil 2026-09-11, see decisions.md D-147", TouchesMoney: false),
+
             new(Permission.SupplierManage, PermissionScope.CompanyWide, [owner, finance], "§2"),
             new(Permission.OpportunityManage, PermissionScope.CompanyWide, [owner, marketing], "§2, §3"),
 

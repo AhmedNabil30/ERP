@@ -33,7 +33,6 @@ public sealed class Subcontractor : Entity
         PhoneNumber phone,
         Guid? tradeBabId,
         Percentage retentionRate,
-        WithholdingCategory withholdingCategory,
         DateTimeOffset createdAt)
         : base(id)
     {
@@ -43,7 +42,6 @@ public sealed class Subcontractor : Entity
         PhoneNormalised = phone.Normalised;
         TradeBabId = tradeBabId;
         RetentionRate = retentionRate;
-        WithholdingCategory = withholdingCategory;
         CreatedAt = createdAt;
         IsActive = true;
     }
@@ -62,9 +60,6 @@ public sealed class Subcontractor : Entity
     /// <summary>Retention Kaff holds from each of this subcontractor's extracts (spec.md §5.1).</summary>
     public Percentage RetentionRate { get; private set; }
 
-    /// <summary>Kaff withholds tax when paying subcontractors and carries the liability (spec.md §6.7).</summary>
-    public WithholdingCategory WithholdingCategory { get; private set; }
-
     public string? TaxRegistrationNumber { get; private set; }
 
     public bool IsActive { get; private set; }
@@ -79,8 +74,7 @@ public sealed class Subcontractor : Entity
         PhoneNumber phone,
         DateTimeOffset createdAt,
         Guid? tradeBabId = null,
-        Percentage? retentionRate = null,
-        WithholdingCategory withholdingCategory = WithholdingCategory.ContractingAndSupplies)
+        Percentage? retentionRate = null)
     {
         if (string.IsNullOrWhiteSpace(code) || code.Length > MaxCodeLength)
         {
@@ -99,18 +93,41 @@ public sealed class Subcontractor : Entity
             phone,
             tradeBabId,
             retentionRate ?? DefaultRetentionRate,
-            withholdingCategory,
             createdAt));
     }
 
     /// <summary>spec.md §5.1 allows the retention to be zeroed per subcontractor 🟡.</summary>
     public void SetRetentionRate(Percentage rate) => RetentionRate = rate;
 
-    public void SetTaxDetails(WithholdingCategory category, string? taxRegistrationNumber)
+    /// <summary>
+    /// Corrects the name, phone and trade باب. KAFF-211. The retention rate is a separate call
+    /// (<see cref="SetRetentionRate"/>) so a caller that only means to change one need not restate the
+    /// other, and the tax registration number is never touched here — D-147 reaches it only through
+    /// <see cref="SetTaxRegistration"/>, gated separately.
+    /// </summary>
+    public Result Edit(string name, PhoneNumber phone, Guid? tradeBabId)
     {
-        WithholdingCategory = category;
-        TaxRegistrationNumber = string.IsNullOrWhiteSpace(taxRegistrationNumber) ? null : taxRegistrationNumber.Trim();
+        if (string.IsNullOrWhiteSpace(name) || name.Length > MaxNameLength)
+        {
+            return Result.Failure(MasterDataErrors.NameRequired);
+        }
+
+        Name = name.Trim();
+        PhoneEntered = phone.Entered;
+        PhoneNormalised = phone.Normalised;
+        TradeBabId = tradeBabId;
+        return Result.Success();
     }
+
+    /// <summary>
+    /// Sets or clears the tax registration number. decisions.md D-147 point 4 — renamed from
+    /// <c>SetTaxDetails</c> now that the withholding category has moved off this record (D-139 §5,
+    /// KAFF-211 rule 5); reached only through <c>PUT /api/subcontractors/{id}/tax-registration</c>,
+    /// gated <see cref="Authorization.Permission.SubcontractorTaxRegistrationEdit"/>, never through
+    /// <c>SubcontractorManage</c>'s create/edit requests.
+    /// </summary>
+    public void SetTaxRegistration(string? taxRegistrationNumber)
+        => TaxRegistrationNumber = string.IsNullOrWhiteSpace(taxRegistrationNumber) ? null : taxRegistrationNumber.Trim();
 
     public Result Archive()
     {

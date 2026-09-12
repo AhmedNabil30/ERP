@@ -219,6 +219,24 @@ public static class MasterDataErrors
     public static readonly Error EngagementNotFound =
         Error.NotFound("master.engagement_not_found", "errors.master.engagement_not_found");
 
+    // ---- KAFF-211: subcontractor master ----
+
+    /// <summary>The route named a subcontractor id that no subcontractor carries. KAFF-211.</summary>
+    public static readonly Error SubcontractorNotFound =
+        Error.NotFound("master.subcontractor_not_found", "errors.master.subcontractor_not_found");
+
+    /// <summary>
+    /// AC-211-C — an explicit negative retention. <c>Percentage</c>'s own constructor refuses it;
+    /// this is that refusal translated into a wire error, the same shape <c>CreateBab</c> uses for
+    /// <see cref="DefaultMarkupRequired"/>.
+    /// </summary>
+    public static readonly Error RetentionRateMustNotBeNegative =
+        Error.Validation("master.retention_rate_negative", "errors.master.retention_rate_negative");
+
+    /// <summary>The subcontractor list's <c>status</c> filter named something that is not a filter. KAFF-211.</summary>
+    public static readonly Error SubcontractorListFilterUnknown =
+        Error.Validation("master.subcontractor_list_filter_unknown", "errors.master.subcontractor_list_filter_unknown");
+
     /// <summary>
     /// Rule 6a, D-140's SM-30 test 14: the route's project does not match the engagement's own
     /// project. Forbidden rather than NotFound — an engineer assigned to the route's project is

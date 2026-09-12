@@ -34,6 +34,13 @@ public sealed class KaffDbContext : DbContext
     /// </summary>
     public const string EmployeeCodeSequence = "employee_code_seq";
 
+    /// <summary>
+    /// The PostgreSQL sequence subcontractor codes are drawn from. Same shape and reason as
+    /// <see cref="ClientCodeSequence"/> and <see cref="EmployeeCodeSequence"/> — KAFF-211: no
+    /// <c>Code</c> member on the create request, drawn last by <c>CreateSubcontractor</c>'s handler.
+    /// </summary>
+    public const string SubcontractorCodeSequence = "subcontractor_code_seq";
+
     public KaffDbContext(DbContextOptions<KaffDbContext> options)
         : base(options)
     {
@@ -133,6 +140,9 @@ public sealed class KaffDbContext : DbContext
         // above ClientCodeSequence): the test harness builds its schema from this model and never
         // runs a migration.
         modelBuilder.HasSequence<long>(EmployeeCodeSequence).StartsAt(10_001);
+
+        // KAFF-211, same precedent as the two sequences above.
+        modelBuilder.HasSequence<long>(SubcontractorCodeSequence).StartsAt(10_001);
 
         foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
         {

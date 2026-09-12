@@ -210,4 +210,18 @@ public enum Permission
     /// (<c>POST /api/employees</c>) is untouched by this row.
     /// </remarks>
     DayLabourSiteManage = 62,
+
+    /// <summary>
+    /// Set or clear a subcontractor's tax registration number, and read Finance's own projected list
+    /// of firms. spec.md §6.7, §9.
+    /// </summary>
+    /// <remarks>
+    /// decisions.md D-147, closing KAFF-211's Q29/D-139 §5 mechanism question. Split off
+    /// <see cref="SubcontractorManage"/> the same way <see cref="ProjectFinancialsEdit"/> split off
+    /// <see cref="ProjectManage"/> (D-055 §1): Finance owns this one field, not the record. Company-wide
+    /// — a firm belongs to no project — and it touches no money: the number identifies a legal entity,
+    /// it moves nothing and governs no ledger (contrast <see cref="ProjectFinancialsEdit"/>, which
+    /// governs a withholding rate).
+    /// </remarks>
+    SubcontractorTaxRegistrationEdit = 63,
 }

@@ -218,7 +218,6 @@ internal sealed class SubcontractorConfiguration : IEntityTypeConfiguration<Subc
         builder.Property(s => s.PhoneEntered).IsRequired().HasMaxLength(PhoneNumber.MaxLength);
         builder.Property(s => s.PhoneNormalised).IsRequired().HasMaxLength(PhoneNumber.MaxLength);
         builder.Property(s => s.RetentionRate).IsRequired();
-        builder.Property(s => s.WithholdingCategory).IsRequired();
         builder.Property(s => s.TaxRegistrationNumber).HasMaxLength(64);
         builder.Property(s => s.IsActive).IsRequired();
         builder.Property(s => s.CreatedAt).IsRequired();
