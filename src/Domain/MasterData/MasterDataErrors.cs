@@ -245,4 +245,14 @@ public static class MasterDataErrors
     /// </summary>
     public static readonly Error EngagementProjectMismatch =
         Error.Forbidden("master.engagement_project_mismatch", "errors.master.engagement_project_mismatch");
+
+    // ---- KAFF-212: supplier master ----
+
+    /// <summary>The route named a supplier id that no supplier carries. KAFF-212.</summary>
+    public static readonly Error SupplierNotFound =
+        Error.NotFound("master.supplier_not_found", "errors.master.supplier_not_found");
+
+    /// <summary>The supplier list's <c>status</c> filter named something that is not a filter. KAFF-212.</summary>
+    public static readonly Error SupplierListFilterUnknown =
+        Error.Validation("master.supplier_list_filter_unknown", "errors.master.supplier_list_filter_unknown");
 }

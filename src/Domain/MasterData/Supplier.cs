@@ -11,6 +11,9 @@ namespace Kaff.Domain.MasterData;
 /// project-scoped. Project attribution happens on the cost side of the posting, not on the supplier's
 /// sub-ledger.
 ///
+/// No withholding category on this record — decisions.md D-139 §5, KAFF-212 rule 4: the rate is set
+/// per contract/job, on KAFF-318's ground, not here.
+///
 /// Supplier bidding, RFQ and quote comparison are out of scope (spec.md §1) and must not be added here.
 /// </remarks>
 public sealed class Supplier : Entity
@@ -27,7 +30,6 @@ public sealed class Supplier : Entity
         string code,
         string name,
         PhoneNumber phone,
-        WithholdingCategory withholdingCategory,
         DateTimeOffset createdAt)
         : base(id)
     {
@@ -35,7 +37,6 @@ public sealed class Supplier : Entity
         Name = name;
         PhoneEntered = phone.Entered;
         PhoneNormalised = phone.Normalised;
-        WithholdingCategory = withholdingCategory;
         CreatedAt = createdAt;
         IsActive = true;
     }
@@ -48,9 +49,12 @@ public sealed class Supplier : Entity
 
     public string PhoneNormalised { get; private set; } = null!;
 
-    /// <summary>Kaff withholds tax when paying suppliers and carries the liability (spec.md §6.7).</summary>
-    public WithholdingCategory WithholdingCategory { get; private set; }
-
+    /// <summary>
+    /// Identifies the legal entity; does not vary by job (KAFF-212 rule 6). Entered and managed by
+    /// Finance only (D-139 §5) — but <c>SupplierManage</c> is already Finance-and-Owner-only, so unlike
+    /// the subcontractor (D-147) no separate permission row or endpoint is needed: this is set directly
+    /// on create/edit under <c>SupplierManage</c>.
+    /// </summary>
     public string? TaxRegistrationNumber { get; private set; }
 
     public string? Address { get; private set; }
@@ -66,7 +70,8 @@ public sealed class Supplier : Entity
         string name,
         PhoneNumber phone,
         DateTimeOffset createdAt,
-        WithholdingCategory withholdingCategory = WithholdingCategory.ContractingAndSupplies)
+        string? address = null,
+        string? taxRegistrationNumber = null)
     {
         if (string.IsNullOrWhiteSpace(code) || code.Length > MaxCodeLength)
         {
@@ -78,22 +83,40 @@ public sealed class Supplier : Entity
             return Result.Failure<Supplier>(MasterDataErrors.NameRequired);
         }
 
-        return Result.Success(new Supplier(
-            NewId(),
-            code.Trim().ToUpperInvariant(),
-            name.Trim(),
-            phone,
-            withholdingCategory,
-            createdAt));
+        var supplier = new Supplier(NewId(), code.Trim().ToUpperInvariant(), name.Trim(), phone, createdAt);
+        supplier.SetAddress(address);
+        supplier.SetTaxRegistration(taxRegistrationNumber);
+        return Result.Success(supplier);
     }
 
-    public void SetTaxDetails(WithholdingCategory category, string? taxRegistrationNumber)
+    /// <summary>
+    /// Corrects the name, phone, address and tax registration number in one call — KAFF-212. Unlike
+    /// the subcontractor (D-147), no split: Finance already owns the whole supplier record through
+    /// <c>SupplierManage</c>, so one edit, one audit record (AC-212-J).
+    /// </summary>
+    public Result Edit(string name, PhoneNumber phone, string? address, string? taxRegistrationNumber)
     {
-        WithholdingCategory = category;
-        TaxRegistrationNumber = string.IsNullOrWhiteSpace(taxRegistrationNumber) ? null : taxRegistrationNumber.Trim();
+        if (string.IsNullOrWhiteSpace(name) || name.Length > MaxNameLength)
+        {
+            return Result.Failure(MasterDataErrors.NameRequired);
+        }
+
+        Name = name.Trim();
+        PhoneEntered = phone.Entered;
+        PhoneNormalised = phone.Normalised;
+        SetAddress(address);
+        SetTaxRegistration(taxRegistrationNumber);
+        return Result.Success();
     }
 
     public void SetAddress(string? address) => Address = string.IsNullOrWhiteSpace(address) ? null : address.Trim();
+
+    /// <summary>
+    /// Sets or clears the tax registration number. Renamed from <c>SetTaxDetails</c> — decisions.md
+    /// D-139 §5, D-147 point 5 — now that the withholding category never lived here (KAFF-212 rule 4).
+    /// </summary>
+    public void SetTaxRegistration(string? taxRegistrationNumber)
+        => TaxRegistrationNumber = string.IsNullOrWhiteSpace(taxRegistrationNumber) ? null : taxRegistrationNumber.Trim();
 
     public Result Archive()
     {

@@ -41,6 +41,14 @@ public sealed class KaffDbContext : DbContext
     /// </summary>
     public const string SubcontractorCodeSequence = "subcontractor_code_seq";
 
+    /// <summary>
+    /// The PostgreSQL sequence supplier codes are drawn from. Same shape and reason as
+    /// <see cref="ClientCodeSequence"/>, <see cref="EmployeeCodeSequence"/> and
+    /// <see cref="SubcontractorCodeSequence"/> — KAFF-212: no <c>Code</c> member on the create request,
+    /// drawn last by <c>CreateSupplier</c>'s handler.
+    /// </summary>
+    public const string SupplierCodeSequence = "supplier_code_seq";
+
     public KaffDbContext(DbContextOptions<KaffDbContext> options)
         : base(options)
     {
@@ -143,6 +151,9 @@ public sealed class KaffDbContext : DbContext
 
         // KAFF-211, same precedent as the two sequences above.
         modelBuilder.HasSequence<long>(SubcontractorCodeSequence).StartsAt(10_001);
+
+        // KAFF-212, same precedent as the three sequences above.
+        modelBuilder.HasSequence<long>(SupplierCodeSequence).StartsAt(10_001);
 
         foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
         {

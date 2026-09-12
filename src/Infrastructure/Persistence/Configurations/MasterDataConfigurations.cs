@@ -248,7 +248,6 @@ internal sealed class SupplierConfiguration : IEntityTypeConfiguration<Supplier>
         builder.Property(s => s.Name).IsRequired().HasMaxLength(Supplier.MaxNameLength);
         builder.Property(s => s.PhoneEntered).IsRequired().HasMaxLength(PhoneNumber.MaxLength);
         builder.Property(s => s.PhoneNormalised).IsRequired().HasMaxLength(PhoneNumber.MaxLength);
-        builder.Property(s => s.WithholdingCategory).IsRequired();
         builder.Property(s => s.TaxRegistrationNumber).HasMaxLength(64);
         builder.Property(s => s.Address).HasMaxLength(DbLimits.LongTextLength);
         builder.Property(s => s.IsActive).IsRequired();
