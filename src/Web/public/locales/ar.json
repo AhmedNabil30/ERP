@@ -253,6 +253,11 @@
   "errors.master.employee_not_found": "لا يوجد موظف بهذا المعرّف.",
   "errors.master.employee_phone_taken": "رقم الهاتف هذا مسجل بالفعل لموظف آخر.",
   "errors.master.employee_list_filter_unknown": "فلتر غير معروف.",
+  "errors.master.engagement_day_rate_must_be_positive": "يجب أن يكون سعر اليومية المتفق عليه مبلغًا موجبًا.",
+  "errors.master.engagement_already_closed": "هذا التعاقد مُغلق بالفعل.",
+  "errors.master.engagement_rating_out_of_range": "يجب أن يكون التقييم بين 1 و5.",
+  "errors.master.engagement_not_found": "لا يوجد تعاقد بهذا المعرّف.",
+  "errors.master.engagement_project_mismatch": "هذا التعاقد لا ينتمي لهذا المشروع.",
 
   "catalogue.item.archive_action": "أرشفة البند",
   "catalogue.item.archive_confirm": "أرشفة هذا البند؟ يخرج من العمل الجديد، ولا يتأثر أي بند سابق استخدمه بالفعل.",

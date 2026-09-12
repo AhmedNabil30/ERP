@@ -253,6 +253,11 @@
   "errors.master.employee_not_found": "No employee exists with that reference.",
   "errors.master.employee_phone_taken": "This phone number already belongs to another employee record.",
   "errors.master.employee_list_filter_unknown": "That is not a filter this list knows.",
+  "errors.master.engagement_day_rate_must_be_positive": "The agreed day rate must be a positive amount.",
+  "errors.master.engagement_already_closed": "This engagement is already closed.",
+  "errors.master.engagement_rating_out_of_range": "A rating must be between 1 and 5.",
+  "errors.master.engagement_not_found": "No engagement exists with that reference.",
+  "errors.master.engagement_project_mismatch": "This engagement does not belong to that project.",
 
   "catalogue.item.archive_action": "Archive item",
   "catalogue.item.archive_confirm": "Archive this item? It leaves new work; lines that already used it are unaffected.",

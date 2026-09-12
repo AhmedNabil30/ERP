@@ -343,12 +343,14 @@ public sealed class SchemaInvariantTests
     /// Both assertions above compare the two lists to each other. Deleting a constraint from the model
     /// <b>and</b> from the written list satisfies both — the two-file act is deliberate by design, and
     /// this is the third statement that makes it loud. 30 on 2026-08-29, the number the Verifier
-    /// counted (qa/slice-1/verification-2026-08-27.md §5). Change it when a slice adds constraints, in
-    /// the same commit that adds them.
+    /// counted (qa/slice-1/verification-2026-08-27.md §5); 33 as of KAFF-210, which adds
+    /// <c>ck_engagements_closed_not_before_opened</c>, <c>ck_engagements_closed_shape</c> and
+    /// <c>ck_engagements_rating_range</c>. Change it when a slice adds constraints, in the same commit
+    /// that adds them.
     /// </remarks>
     [Fact]
-    public void Thirty_check_constraints_are_required()
-        => DatabaseInitializer.RequiredCheckConstraints.Should().HaveCount(30);
+    public void Thirty_three_check_constraints_are_required()
+        => DatabaseInitializer.RequiredCheckConstraints.Should().HaveCount(33);
 
     /// <summary>
     /// Every name in <see cref="DatabaseInitializer.RequiredCheckConstraints"/> has a recorded

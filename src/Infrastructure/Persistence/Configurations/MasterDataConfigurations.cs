@@ -1,5 +1,6 @@
 using Kaff.Domain.Common;
 using Kaff.Domain.MasterData;
+using Kaff.Domain.Projects;
 using Kaff.Infrastructure.Persistence.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -152,6 +153,52 @@ internal sealed class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.HasOne<Bab>()
             .WithMany()
             .HasForeignKey(employee => employee.BabId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class EngagementConfiguration : IEntityTypeConfiguration<Engagement>
+{
+    public void Configure(EntityTypeBuilder<Engagement> builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        builder.ToTable(DbTables.Engagements, table =>
+        {
+            // AC-210-F, D-139 §3 — a rating is refused outside 1-5 at the database as well as the
+            // handler; null (unrated) is untouched by the range check.
+            table.HasCheckConstraint("ck_engagements_rating_range", "rating IS NULL OR (rating >= 1 AND rating <= 5)");
+
+            // D-139 §3 — a closed engagement carries both dates or neither.
+            table.HasCheckConstraint(
+                "ck_engagements_closed_shape", "(closed_on IS NULL) = (closed_at IS NULL)");
+
+            table.HasCheckConstraint("ck_engagements_closed_not_before_opened", "closed_on IS NULL OR closed_on >= opened_on");
+        });
+
+        builder.HasKey(engagement => engagement.Id);
+
+        builder.Property(engagement => engagement.OpenedOn).IsRequired();
+        builder.Property(engagement => engagement.OpenedAt).IsRequired();
+
+        // Precision from the Money convention in KaffDbContext.ConfigureConventions: decimal(18,4).
+        // Nullable — decisions.md D-140, Q76: no route this slice maps ever sets it.
+        builder.Property(engagement => engagement.DayRate);
+
+        builder.HasIndex(engagement => new { engagement.ProjectId, engagement.OpenedAt })
+            .HasDatabaseName("ix_engagements_project_opened");
+
+        builder.HasIndex(engagement => new { engagement.WorkerId, engagement.OpenedAt })
+            .HasDatabaseName("ix_engagements_worker_opened");
+
+        builder.HasOne<Employee>()
+            .WithMany()
+            .HasForeignKey(engagement => engagement.WorkerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<Project>()
+            .WithMany()
+            .HasForeignKey(engagement => engagement.ProjectId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

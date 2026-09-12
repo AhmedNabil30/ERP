@@ -77,6 +77,8 @@ public sealed class KaffDbContext : DbContext
 
     public DbSet<Project> Projects => Set<Project>();
 
+    public DbSet<Engagement> Engagements => Set<Engagement>();
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         ArgumentNullException.ThrowIfNull(configurationBuilder);

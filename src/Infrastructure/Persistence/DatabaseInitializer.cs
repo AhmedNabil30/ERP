@@ -90,6 +90,9 @@ public sealed class DatabaseInitializer
         "ck_catalogue_items_cost_not_negative",
         "ck_catalogue_items_rate_not_negative",
         "ck_employees_day_labour_has_trade",
+        "ck_engagements_closed_not_before_opened",
+        "ck_engagements_closed_shape",
+        "ck_engagements_rating_range",
 
         // ProjectConfigurations
         "ck_opportunities_closed_lost_reason",
@@ -205,6 +208,12 @@ public sealed class DatabaseInitializer
                 "CHECK ((base_sell_rate >= (0)::numeric))",
             ["ck_employees_day_labour_has_trade"] =
                 "CHECK ((((kind)::text <> 'DayLabour'::text) OR (bab_id IS NOT NULL)))",
+            ["ck_engagements_closed_not_before_opened"] =
+                "CHECK (((closed_on IS NULL) OR (closed_on >= opened_on)))",
+            ["ck_engagements_closed_shape"] =
+                "CHECK (((closed_on IS NULL) = (closed_at IS NULL)))",
+            ["ck_engagements_rating_range"] =
+                "CHECK (((rating IS NULL) OR ((rating >= 1) AND (rating <= 5))))",
 
             // ProjectConfigurations
             ["ck_opportunities_closed_lost_reason"] =

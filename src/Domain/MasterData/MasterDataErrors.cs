@@ -200,4 +200,31 @@ public static class MasterDataErrors
     public static readonly Error CatalogueItemCodeRepeatedInFile =
         Error.Validation(
             "master.catalogue_item_code_repeated_in_file", "errors.master.catalogue_item_code_repeated_in_file");
+
+    // ---- KAFF-210: engagement history ----
+
+    /// <summary>Rule 4 — a day rate is what was agreed, never invented. An explicit non-positive value is refused.</summary>
+    public static readonly Error EngagementDayRateMustBePositive =
+        Error.Validation("master.engagement_day_rate_must_be_positive", "errors.master.engagement_day_rate_must_be_positive");
+
+    /// <summary>D-139 §3 — an engagement closes only once, by an explicit manual close.</summary>
+    public static readonly Error EngagementAlreadyClosed =
+        Error.Conflict("master.engagement_already_closed", "errors.master.engagement_already_closed");
+
+    /// <summary>AC-210-F, D-139 §3 — a rating is refused outside 1–5.</summary>
+    public static readonly Error EngagementRatingOutOfRange =
+        Error.Validation("master.engagement_rating_out_of_range", "errors.master.engagement_rating_out_of_range");
+
+    /// <summary>The route named an engagement id that no engagement carries. KAFF-210.</summary>
+    public static readonly Error EngagementNotFound =
+        Error.NotFound("master.engagement_not_found", "errors.master.engagement_not_found");
+
+    /// <summary>
+    /// Rule 6a, D-140's SM-30 test 14: the route's project does not match the engagement's own
+    /// project. Forbidden rather than NotFound — an engineer assigned to the route's project is
+    /// authorized to act on ITS engagements, and this refusal is about which engagement, not whether
+    /// the id exists at all.
+    /// </summary>
+    public static readonly Error EngagementProjectMismatch =
+        Error.Forbidden("master.engagement_project_mismatch", "errors.master.engagement_project_mismatch");
 }
