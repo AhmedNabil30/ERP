@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Kaff.Api.Common;
 using Kaff.Api.Features.Catalogue.ImportCatalogue;
 using Kaff.Api.Tests.Infrastructure;
 using Kaff.Domain.Auditing;
@@ -383,7 +384,9 @@ public sealed class ImportCatalogueTests : IAsyncLifetime
         XlsxReadResult read = XlsxSheetReader.Read(new MemoryStream(bytes));
 
         read.Success.Should().BeTrue();
-        CatalogueTemplate.TryMatch(read.Rows.Single().CellsByColumn, out _).Should().BeTrue(
+        Dictionary<int, string?> headerText = read.Rows.Single().CellsByColumn
+            .ToDictionary(pair => pair.Key, pair => pair.Value.Text);
+        CatalogueTemplate.TryMatch(headerText, out _).Should().BeTrue(
             "AC-200-I: the file this endpoint hands out must be a file it also accepts");
     }
 

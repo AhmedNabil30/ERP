@@ -4,7 +4,7 @@ using System.Text;
 using System.Xml;
 using Kaff.Domain.Common;
 
-namespace Kaff.Api.Features.Catalogue.ImportCatalogue;
+namespace Kaff.Api.Common;
 
 /// <summary>What kind of value a cell carries — decisions.md D-136.</summary>
 public enum CellKind

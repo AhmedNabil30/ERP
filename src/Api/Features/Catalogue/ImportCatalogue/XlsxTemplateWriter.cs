@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Text;
+using Kaff.Domain.MasterData;
 
 namespace Kaff.Api.Features.Catalogue.ImportCatalogue;
 

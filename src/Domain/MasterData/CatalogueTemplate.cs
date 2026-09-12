@@ -1,4 +1,4 @@
-namespace Kaff.Api.Features.Catalogue.ImportCatalogue;
+namespace Kaff.Domain.MasterData;
 
 /// <summary>
 /// The one column list <c>KAFF-200</c> reads and writes — decisions.md D-136, D-144 §§3–5.
@@ -38,22 +38,24 @@ public static class CatalogueTemplate
     /// <summary>
     /// Matches a header row against <see cref="Columns"/> by name, order-independent.
     /// </summary>
-    /// <param name="headerRow">The sheet's first row, column index → cell.</param>
+    /// <param name="headerRow">The sheet's first row, column index → cell text. This type has no
+    /// dependency on <c>Kaff.Api.Common.SheetCell</c> — Domain must not reference Api — so the caller
+    /// hands over each cell's already-read text rather than the cell itself.</param>
     /// <param name="columnIndexByName">
     /// On success, every template column name mapped to the file's column index for that name.
     /// </param>
     /// <returns><c>true</c> when the header row carries exactly the template's columns, no more and no fewer.</returns>
     public static bool TryMatch(
-        IReadOnlyDictionary<int, SheetCell> headerRow,
+        IReadOnlyDictionary<int, string?> headerRow,
         out IReadOnlyDictionary<string, int> columnIndexByName)
     {
         ArgumentNullException.ThrowIfNull(headerRow);
 
         var byName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-        foreach ((int index, SheetCell cell) in headerRow)
+        foreach ((int index, string? cellText) in headerRow)
         {
-            string? text = cell.Text?.Trim();
+            string? text = cellText?.Trim();
 
             if (string.IsNullOrEmpty(text))
             {

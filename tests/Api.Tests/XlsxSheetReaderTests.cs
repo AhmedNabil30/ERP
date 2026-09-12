@@ -1,4 +1,4 @@
-using Kaff.Api.Features.Catalogue.ImportCatalogue;
+using Kaff.Api.Common;
 using Kaff.Api.Tests.Infrastructure;
 
 namespace Kaff.Api.Tests;

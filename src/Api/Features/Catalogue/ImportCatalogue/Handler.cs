@@ -1,4 +1,5 @@
 using System.Globalization;
+using Kaff.Api.Common;
 using Kaff.Api.Common.Results;
 using Kaff.Domain.Auditing;
 using Kaff.Domain.Common;
@@ -78,7 +79,10 @@ internal static class Handler
 
         SheetRow headerRow = read.Rows[0];
 
-        if (!CatalogueTemplate.TryMatch(headerRow.CellsByColumn, out IReadOnlyDictionary<string, int> columnIndex))
+        Dictionary<int, string?> headerText = headerRow.CellsByColumn
+            .ToDictionary(pair => pair.Key, pair => pair.Value.Text);
+
+        if (!CatalogueTemplate.TryMatch(headerText, out IReadOnlyDictionary<string, int> columnIndex))
         {
             return ResultExtensions.Problem(MasterDataErrors.CatalogueImportFailed);
         }
