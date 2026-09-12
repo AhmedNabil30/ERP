@@ -167,24 +167,40 @@ public interface IAuditContext
 
     /// <summary>
     /// How the access policy admitted this request to the project it named, or null when it named
-    /// none. Written onto <see cref="AuditRecord.GrantPath"/> by the interceptor.
+    /// none. Written onto <see cref="AuditRecord.GrantPath"/> by the interceptor, paired with
+    /// <see cref="GrantProjectId"/> on identity rather than on mere presence — decisions.md D-148.
     /// </summary>
     ProjectAccessPath? GrantPath { get; }
 
     /// <summary>
-    /// Records the path the access policy granted.
+    /// The project the access policy granted this request against, or null when it named none.
     /// </summary>
     /// <remarks>
-    /// Called by the authorization gate and by nothing else — it states what the policy already
-    /// decided, so that the interceptor does not have to derive it a second time. KAFF-116 rule 6: a
-    /// second derivation is a second source of truth and would disagree eventually.
+    /// decisions.md D-148. The interceptor falls back to this when the entity being saved names no
+    /// project of its own — a project-scoped act on an entity with no <c>ProjectId</c> (e.g.
+    /// <c>Employee</c>) still records the project that authorised it. Set once per request by
+    /// <see cref="ScopedTo"/>, alongside <see cref="GrantPath"/>, and not discarded by
+    /// <see cref="Clear"/> for the same reason <see cref="GrantPath"/> is not.
+    /// </remarks>
+    Guid? GrantProjectId { get; }
+
+    /// <summary>
+    /// Records the project and the path the access policy granted, together.
+    /// </summary>
+    /// <remarks>
+    /// Called by the authorization gate and by nothing else, in the granted branch — it states what
+    /// the policy already decided, so that the interceptor does not have to derive it a second time.
+    /// KAFF-116 rule 6: a second derivation is a second source of truth and would disagree eventually.
+    /// decisions.md D-148 replaces the former <c>GrantedThrough(path)</c>, which recorded the path
+    /// alone and let the interceptor pair it with the entity's own project by presence rather than by
+    /// identity — the defect D-148 corrects.
     /// <para>
     /// Set once per request, alongside <see cref="CorrelationId"/> and <see cref="RequestPath"/>, and
     /// deliberately <b>not</b> discarded by <see cref="Clear"/>: how the caller reached the project is
     /// a fact about the request, not about one save within it.
     /// </para>
     /// </remarks>
-    void GrantedThrough(ProjectAccessPath path);
+    void ScopedTo(Guid projectId, ProjectAccessPath path);
 
     /// <summary>
     /// Who the authorization gate verified this caller to be, read from the users table, or null when
@@ -202,7 +218,7 @@ public interface IAuditContext
     /// <remarks>
     /// <para>
     /// Called by the authorization gate on a grant, and by nothing else — the same arrangement as
-    /// <see cref="GrantedThrough"/> and for the same reason (KAFF-116 rule 6): the gate has already
+    /// <see cref="ScopedTo"/> and for the same reason (KAFF-116 rule 6): the gate has already
     /// read the caller's row, so a second read here would be a second source of truth.
     /// </para>
     /// <para>

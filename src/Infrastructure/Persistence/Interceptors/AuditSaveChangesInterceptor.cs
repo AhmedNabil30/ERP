@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Kaff.Domain.Auditing;
+using Kaff.Domain.Authorization;
 using Kaff.Domain.Common;
 using Kaff.Domain.Common.Serialization;
 using Kaff.Domain.Identity;
@@ -218,7 +219,16 @@ public sealed class AuditSaveChangesInterceptor : SaveChangesInterceptor
             return null;
         }
 
-        Guid? projectId = ExtractProjectId(entry);
+        // decisions.md D-148. The entity's own project takes priority; when it names none (Employee,
+        // by design — D-140 point 3), the project that authorised the request is the only fact there
+        // is, and it comes from the gate via IAuditContext.GrantProjectId, never re-derived here.
+        Guid? projectId = ExtractProjectId(entry) ?? _auditContext.GrantProjectId;
+
+        // The path is paired with the project by IDENTITY, not by mere presence: a request may save a
+        // project-scoped change and a company-level one in the same save, and only the change whose
+        // project matches the grant was actually reached through that grant.
+        ProjectAccessPath? grantPath =
+            projectId is not null && projectId == _auditContext.GrantProjectId ? _auditContext.GrantPath : null;
 
         return AuditRecord.For(
             occurredAt,
@@ -232,11 +242,7 @@ public sealed class AuditSaveChangesInterceptor : SaveChangesInterceptor
             _auditContext.Reason,
             _auditContext.CorrelationId,
             projectId,
-
-            // Taken from the access policy, never re-derived here (KAFF-116 rule 6), and paired with
-            // the project rather than with the request: one request may save a project-scoped change
-            // and a company-level one, and only the first was reached by any grant path.
-            projectId is null ? null : _auditContext.GrantPath,
+            grantPath,
             _auditContext.RequestPath,
             _auditContext.IpAddress);
     }

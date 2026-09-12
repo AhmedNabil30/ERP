@@ -1,5 +1,6 @@
 using Kaff.Api.Tests.Infrastructure;
 using Kaff.Domain.Auditing;
+using Kaff.Domain.Authorization;
 using Kaff.Domain.Common;
 using Kaff.Domain.Identity;
 using Kaff.Infrastructure.Auditing;
@@ -432,6 +433,47 @@ public sealed class AuditMechanismTests
             () => InsertRawAuditRecordAsync(
                 reader, action: "Modified", eventType: null, actorRole: nameof(Role.Owner)),
             "ck_audit_records_actor_is_named_completely");
+    }
+
+    /// <summary>
+    /// decisions.md D-148. A project-scoped grant against an entity that names no project of its own
+    /// (<c>Employee</c> — D-140 point 3, no <c>RegisteredOnProjectId</c> column) still records the
+    /// project that authorised the act, taken from <see cref="IAuditContext.GrantProjectId"/> rather
+    /// than left null the way the pre-D-148 mechanism did.
+    /// </summary>
+    [Fact]
+    public async Task A_project_scoped_act_on_an_entity_with_no_project_records_the_route_project()
+    {
+        var actor = new StubCurrentUser();
+        var auditContext = new AuditContext();
+        auditContext.ActorVerifiedAs(new AuditActor(actor.UserId, actor.DisplayName, actor.Role));
+
+        Guid grantedProjectId = Guid.CreateVersion7();
+        auditContext.ScopedTo(grantedProjectId, ProjectAccessPath.Assignment);
+
+        // Employee carries no ProjectId under any Kind (D-140 point 3) — Salaried needs no باب either,
+        // which keeps this test's setup to one entity.
+        Domain.MasterData.Employee salariedEmployee = Domain.MasterData.Employee.Create(
+            UniqueNames.Code("E"),
+            "عامل بدون مشروع",
+            UniqueNames.Phone(),
+            Domain.MasterData.EmployeeKind.Salaried,
+            Now).Value;
+
+        await using (KaffDbContext context = _database.CreateContext(actor, auditContext))
+        {
+            context.Employees.Add(salariedEmployee);
+            await context.SaveChangesAsync(Ct);
+        }
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+
+        AuditRecord record = await reader.AuditRecords
+            .SingleAsync(entry => entry.EntityId == salariedEmployee.Id, Ct);
+
+        record.ProjectId.Should().Be(grantedProjectId,
+            "the entity names no project of its own, so the interceptor falls back to the grant");
+        record.GrantPath.Should().Be(ProjectAccessPath.Assignment);
     }
 
     private const string EmptyJsonObject = "{}";

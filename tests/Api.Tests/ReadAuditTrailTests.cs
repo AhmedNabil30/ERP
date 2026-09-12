@@ -777,7 +777,7 @@ public sealed class ReadAuditTrailTests : IAsyncLifetime
         var actor = new StubActor(_technicalOffice, Role.TechnicalOffice);
 
         AuditContext audit = Gated(actor);
-        audit.GrantedThrough(ProjectAccessPath.Assignment);
+        audit.ScopedTo(projectId, ProjectAccessPath.Assignment);
 
         await using (KaffDbContext context = _database.CreateContext(actor, audit))
         {

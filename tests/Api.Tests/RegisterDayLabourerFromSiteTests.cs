@@ -309,16 +309,12 @@ public sealed class RegisterDayLabourerFromSiteTests : IAsyncLifetime
         record.EntityType.Should().Be(nameof(Employee));
         record.ActorUserId.Should().Be(_assignedEngineer);
 
-        // Not ProjectId/GrantPath: AuditSaveChangesInterceptor.ExtractProjectId reads a "ProjectId"
-        // property off the entity being saved, and Employee deliberately carries none (D-140 point 3:
-        // no RegisteredOnProjectId column). GrantPath is then paired with that null and nulled too
-        // [Verified: 2026-09-12 @ AuditSaveChangesInterceptor.cs -> ExtractProjectId, the ternary
-        // pairing GrantPath with projectId]. D-140's own text elsewhere ("the audit record's grant
-        // path, which the project-scoped gate already writes") does not hold for this entity under the
-        // shipped mechanism — flagged in the report rather than silently patched, since fixing it means
-        // changing shared interceptor behaviour outside this slice.
-        record.ProjectId.Should().BeNull();
-        record.GrantPath.Should().BeNull();
+        // decisions.md D-148. Employee carries no ProjectId of its own (D-140 point 3: no
+        // RegisteredOnProjectId column), so AuditSaveChangesInterceptor falls back to the project the
+        // gate granted this request against — IAuditContext.GrantProjectId, set by ScopedTo in the
+        // granted branch of PermissionAuthorizationHandler — and pairs it with the path on identity.
+        record.ProjectId.Should().Be(_projectA);
+        record.GrantPath.Should().Be(ProjectAccessPath.Assignment);
     }
 
     // ---- AC-209-B · a worker without a باب is refused, handler and database -------------------------

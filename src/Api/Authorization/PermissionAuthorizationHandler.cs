@@ -110,10 +110,12 @@ public sealed class PermissionAuthorizationHandler : AuthorizationHandler<Permis
             // KAFF-116. The gate is the only place that knows by what authority this request reached
             // the project, and the Owner's authority leaves no row anywhere to reconstruct it from.
             // Handing the policy's own answer to the audit context — rather than letting the
-            // interceptor work it out again — keeps one source of truth for it.
+            // interceptor work it out again — keeps one source of truth for it. decisions.md D-148:
+            // the project travels with the path, not just the path alone, so the interceptor can
+            // record the project on an entity (like Employee) that names none of its own.
             if (access is not null)
             {
-                _auditContext.GrantedThrough(access.Path);
+                _auditContext.ScopedTo(projectId!.Value, access.Path);
             }
 
             context.Succeed(requirement);

@@ -19,6 +19,8 @@ public sealed class AuditContext : IAuditContext
 
     public ProjectAccessPath? GrantPath { get; private set; }
 
+    public Guid? GrantProjectId { get; private set; }
+
     public AuditActor? VerifiedActor { get; private set; }
 
     private readonly List<AuditEvent> _events = [];
@@ -33,7 +35,11 @@ public sealed class AuditContext : IAuditContext
         Reason = reason.Trim();
     }
 
-    public void GrantedThrough(ProjectAccessPath path) => GrantPath = path;
+    public void ScopedTo(Guid projectId, ProjectAccessPath path)
+    {
+        GrantProjectId = projectId;
+        GrantPath = path;
+    }
 
     public void ActorVerifiedAs(AuditActor actor) => VerifiedActor = FullyNamed(actor, "verified");
 
