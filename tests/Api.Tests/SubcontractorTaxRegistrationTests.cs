@@ -228,7 +228,7 @@ public sealed class SubcontractorTaxRegistrationTests : IAsyncLifetime
                 name = seed.Name,
                 phone = seed.PhoneEntered,
                 tradeBabId = seed.TradeBabId,
-                retentionRate = retentionRate ?? seed.RetentionRate.Fraction * 100m,
+                retentionRate = retentionRate ?? seed.RetentionRate.Fraction,
                 acknowledgedDuplicatePhone = false,
             }),
         };

@@ -1,3 +1,5 @@
+using Kaff.Domain.Common;
+
 namespace Kaff.Api.Features.Subcontractors.CreateSubcontractor;
 
 /// <summary>
@@ -13,8 +15,8 @@ namespace Kaff.Api.Features.Subcontractors.CreateSubcontractor;
 /// <param name="Phone">The entered form, not the normalised key.</param>
 /// <param name="TradeBabId">The باب this firm works in, or null.</param>
 /// <param name="RetentionRate">
-/// The fraction Kaff holds from this firm's extracts (spec.md §5.1) — <c>0.05</c> for 5%, never the
-/// bare integer (AC-211-C).
+/// The rate Kaff holds from this firm's extracts (spec.md §5.1) — carried as <see cref="Percentage"/>,
+/// which crosses the wire as the fraction, e.g. <c>"0.05"</c> for 5% (decisions.md D-151).
 /// </param>
 /// <param name="IsActive">True on creation.</param>
 public sealed record Response(
@@ -23,5 +25,5 @@ public sealed record Response(
     string Name,
     string Phone,
     Guid? TradeBabId,
-    decimal RetentionRate,
+    Percentage RetentionRate,
     bool IsActive);

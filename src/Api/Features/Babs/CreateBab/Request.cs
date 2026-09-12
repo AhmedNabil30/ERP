@@ -1,3 +1,5 @@
+using Kaff.Domain.Common;
+
 namespace Kaff.Api.Features.Babs.CreateBab;
 
 /// <summary>
@@ -8,10 +10,9 @@ namespace Kaff.Api.Features.Babs.CreateBab;
 /// <param name="NameEn">Required.</param>
 /// <param name="ParentBabId">Optional. When given, must name an existing باب — a root when omitted.</param>
 /// <param name="DefaultMarkup">
-/// Required (KAFF-204 rule 2 — no null markup, no inheritance). Per decisions.md D-135, carried as a
-/// bare <c>decimal</c> that crosses the wire as a JSON string — <b>the fraction</b>, matching
-/// <c>ListBabs</c>'s existing response shape (<c>DefaultMarkup.Fraction</c>): 15% is <c>"0.15"</c>,
-/// never <c>"15"</c>.
+/// Required (KAFF-204 rule 2 — no null markup, no inheritance). Carried as <see cref="Percentage"/>,
+/// which crosses the wire as the fraction (decisions.md D-135, D-151): 15% is <c>"0.15"</c>, never
+/// <c>"15"</c>.
 /// </param>
 /// <param name="SortOrder">Optional, defaults to 0.</param>
 public sealed record Request(
@@ -19,5 +20,5 @@ public sealed record Request(
     string? NameAr,
     string? NameEn,
     Guid? ParentBabId,
-    decimal? DefaultMarkup,
+    Percentage? DefaultMarkup,
     int SortOrder = 0);

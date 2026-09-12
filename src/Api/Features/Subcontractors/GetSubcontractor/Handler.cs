@@ -25,7 +25,7 @@ internal static class Handler
                 candidate.Name,
                 candidate.PhoneEntered,
                 candidate.TradeBabId,
-                candidate.RetentionRate.Fraction,
+                candidate.RetentionRate,
                 candidate.TaxRegistrationNumber,
                 candidate.IsActive))
             .FirstOrDefaultAsync(cancellationToken);

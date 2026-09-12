@@ -162,6 +162,7 @@ builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = 
     {
         StatusCodes.Status401Unauthorized => AuthorizationErrors.NotAuthenticated,
         StatusCodes.Status403Forbidden => AuthorizationErrors.Forbidden,
+        StatusCodes.Status400BadRequest => ApiErrors.MalformedBody,
         _ => null,
     };
 

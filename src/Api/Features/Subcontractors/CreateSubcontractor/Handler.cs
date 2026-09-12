@@ -76,27 +76,16 @@ internal static class Handler
             }
         }
 
-        Percentage? retentionRate = null;
-
-        if (request.RetentionRate is not null)
-        {
-            try
-            {
-                retentionRate = Percentage.FromPercent(request.RetentionRate.Value);
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-                return ResultExtensions.Problem(MasterDataErrors.RetentionRateMustNotBeNegative);
-            }
-        }
-
+        // D-151: RetentionRate is already Percentage — a negative value is refused by the type's own
+        // constructor during deserialisation (ApiErrors.MalformedBody), so there is nothing left to
+        // convert or catch here.
         Result<Subcontractor> created = Subcontractor.Create(
             await NextCodeAsync(database, cancellationToken),
             request.Name ?? string.Empty,
             phone.Value,
             clock.GetUtcNow(),
             request.TradeBabId,
-            retentionRate);
+            request.RetentionRate);
 
         if (created.IsFailure)
         {
@@ -124,7 +113,7 @@ internal static class Handler
                 subcontractor.Name,
                 subcontractor.PhoneEntered,
                 subcontractor.TradeBabId,
-                subcontractor.RetentionRate.Fraction,
+                subcontractor.RetentionRate,
                 subcontractor.IsActive));
     }
 

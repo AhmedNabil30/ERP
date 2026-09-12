@@ -168,6 +168,8 @@
 
   "errors.unknown": "حدث خطأ غير متوقع. حاول مرة أخرى.",
 
+  "errors.wire.malformed_body": "تعذّرت قراءة الطلب.",
+
   "errors.setup.already_completed": "تم إعداد هذا النظام بالفعل.",
 
   "errors.phone.required": "رقم الهاتف مطلوب.",
@@ -275,7 +277,7 @@
   "errors.master.engagement_not_found": "لا يوجد تعاقد بهذا المعرّف.",
   "errors.master.engagement_project_mismatch": "هذا التعاقد لا ينتمي لهذا المشروع.",
   "errors.master.subcontractor_not_found": "لا يوجد مقاول باطن بهذا المعرّف.",
-  "errors.master.retention_rate_negative": "لا يمكن أن تكون نسبة الاستقطاع سالبة.",
+  "errors.master.retention_rate_required": "نسبة الاستقطاع مطلوبة.",
   "errors.master.subcontractor_list_filter_unknown": "فلتر غير معروف.",
   "errors.master.supplier_not_found": "لا يوجد مورد بهذا المعرّف.",
   "errors.master.supplier_list_filter_unknown": "فلتر غير معروف.",

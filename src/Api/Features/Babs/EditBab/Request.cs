@@ -1,3 +1,5 @@
+using Kaff.Domain.Common;
+
 namespace Kaff.Api.Features.Babs.EditBab;
 
 /// <summary>
@@ -13,7 +15,7 @@ namespace Kaff.Api.Features.Babs.EditBab;
 /// <param name="NameAr">Required.</param>
 /// <param name="NameEn">Required.</param>
 /// <param name="DefaultMarkup">
-/// Required — KAFF-204 rule 2. Per decisions.md D-135, a bare <c>decimal</c> carried as a JSON string
-/// on the wire, and it is <b>the fraction</b>: 15% is <c>"0.15"</c>.
+/// Required — KAFF-204 rule 2. Carried as <see cref="Percentage"/> (decisions.md D-135, D-151), and it
+/// is <b>the fraction</b>: 15% is <c>"0.15"</c>.
 /// </param>
-public sealed record Request(string? NameAr, string? NameEn, decimal? DefaultMarkup);
+public sealed record Request(string? NameAr, string? NameEn, Percentage? DefaultMarkup);

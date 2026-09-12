@@ -53,7 +53,7 @@ internal static class Handler
                 bab.NameAr,
                 bab.NameEn,
                 bab.ParentBabId,
-                bab.DefaultMarkup.Fraction,
+                bab.DefaultMarkup,
                 bab.IsActive))
             .ToListAsync(cancellationToken);
 

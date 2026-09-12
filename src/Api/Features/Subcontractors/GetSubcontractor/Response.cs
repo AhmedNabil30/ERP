@@ -1,3 +1,5 @@
+using Kaff.Domain.Common;
+
 namespace Kaff.Api.Features.Subcontractors.GetSubcontractor;
 
 /// <summary>One subcontractor's whole file, for S-029's edit form. KAFF-211.</summary>
@@ -14,7 +16,7 @@ namespace Kaff.Api.Features.Subcontractors.GetSubcontractor;
 /// <param name="Name">As stored.</param>
 /// <param name="Phone">The entered form.</param>
 /// <param name="TradeBabId">The باب this firm works in, or null.</param>
-/// <param name="RetentionRate">The fraction Kaff holds — <c>0.05</c> for 5%.</param>
+/// <param name="RetentionRate">The rate Kaff holds — carried as <see cref="Percentage"/>, <c>"0.05"</c> for 5%.</param>
 /// <param name="TaxRegistrationNumber">Read-only. Finance's own route writes it.</param>
 /// <param name="IsActive">False for an archived firm.</param>
 public sealed record Response(
@@ -23,6 +25,6 @@ public sealed record Response(
     string Name,
     string Phone,
     Guid? TradeBabId,
-    decimal RetentionRate,
+    Percentage RetentionRate,
     string? TaxRegistrationNumber,
     bool IsActive);

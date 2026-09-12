@@ -168,6 +168,8 @@
 
   "errors.unknown": "Something went wrong. Try again.",
 
+  "errors.wire.malformed_body": "The request could not be read.",
+
   "errors.setup.already_completed": "Setup has already been completed on this system.",
 
   "errors.phone.required": "A phone number is required.",
@@ -275,7 +277,7 @@
   "errors.master.engagement_not_found": "No engagement exists with that reference.",
   "errors.master.engagement_project_mismatch": "This engagement does not belong to that project.",
   "errors.master.subcontractor_not_found": "No subcontractor exists with that reference.",
-  "errors.master.retention_rate_negative": "The retention rate must not be negative.",
+  "errors.master.retention_rate_required": "A retention rate is required.",
   "errors.master.subcontractor_list_filter_unknown": "That is not a filter this list knows.",
   "errors.master.supplier_not_found": "No supplier exists with that reference.",
   "errors.master.supplier_list_filter_unknown": "That is not a filter this list knows.",

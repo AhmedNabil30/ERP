@@ -172,7 +172,7 @@ public sealed class ListBabsTests : IAsyncLifetime
                 element.TryGetProperty("parentBabId", out JsonElement parent) && parent.ValueKind != JsonValueKind.Null
                     ? parent.GetGuid()
                     : null,
-                WireDecimal(element.GetProperty("defaultMarkup")),
+                Percentage.FromFraction(WireDecimal(element.GetProperty("defaultMarkup"))),
                 element.GetProperty("isActive").GetBoolean())),
         ];
     }

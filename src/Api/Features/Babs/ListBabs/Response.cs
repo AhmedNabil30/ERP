@@ -1,3 +1,5 @@
+using Kaff.Domain.Common;
+
 namespace Kaff.Api.Features.Babs.ListBabs;
 
 /// <summary>One باب, as a row in the flat list.</summary>
@@ -6,7 +8,7 @@ namespace Kaff.Api.Features.Babs.ListBabs;
 /// <param name="NameAr">As stored — trimmed.</param>
 /// <param name="NameEn">As stored — trimmed.</param>
 /// <param name="ParentBabId">The parent باب, or <c>null</c> for a root. The client nests the tree; this endpoint does not.</param>
-/// <param name="DefaultMarkup">The rate as a fraction — 15% is <c>0.15</c> (D-044 ruling 6).</param>
+/// <param name="DefaultMarkup">Carried as <see cref="Percentage"/> — 15% is <c>"0.15"</c> (D-044 ruling 6, D-151).</param>
 /// <param name="IsActive">Active or archived.</param>
 public sealed record BabSummary(
     Guid Id,
@@ -14,7 +16,7 @@ public sealed record BabSummary(
     string NameAr,
     string NameEn,
     Guid? ParentBabId,
-    decimal DefaultMarkup,
+    Percentage DefaultMarkup,
     bool IsActive);
 
 /// <summary>The أبواب, flat. Empty when none exist — never null.</summary>

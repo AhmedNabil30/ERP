@@ -97,7 +97,21 @@ internal sealed class MoneyJsonConverter : JsonConverter<Money>
 internal sealed class PercentageJsonConverter : JsonConverter<Percentage>
 {
     public override Percentage Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        => Percentage.FromFraction(DecimalJsonConverter.ReadDecimal(ref reader));
+    {
+        decimal fraction = DecimalJsonConverter.ReadDecimal(ref reader);
+
+        try
+        {
+            return Percentage.FromFraction(fraction);
+        }
+        catch (ArgumentOutOfRangeException exception)
+        {
+            // D-151 §6b: a negative rate is refused by the type itself, and that refusal must surface
+            // as a JsonException so the framework turns it into a 400 (ApiErrors.MalformedBody) rather
+            // than an unhandled ArgumentOutOfRangeException reaching UseExceptionHandler as a 500.
+            throw new JsonException("A rate must not be negative.", exception);
+        }
+    }
 
     public override void Write(Utf8JsonWriter writer, Percentage value, JsonSerializerOptions options)
     {

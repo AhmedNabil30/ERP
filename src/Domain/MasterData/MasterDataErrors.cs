@@ -75,12 +75,14 @@ public static class MasterDataErrors
         Error.NotFound("master.employee_not_found", "errors.master.employee_not_found");
 
     /// <summary>
-    /// A salaried record's phone matches another salaried record, active or archived. Enforced by
-    /// <c>ux_employees_salaried_phone</c>, a partial unique index scoped to <c>kind = 'Salaried'</c>,
-    /// not by a read-then-write (decisions.md D-144 §1, D-146 point 2-3). Day labour, subcontractors
-    /// and suppliers never raise this: their match is <see cref="DuplicatePhoneNotAcknowledged"/>'s
-    /// warn-and-acknowledge instead (D-139 §1, D-141). The salaried-only scope narrowed from "any
-    /// employee" when D-141 briefly withdrew this error (superseded); it stayed live throughout.
+    /// A salaried record's phone matches another <b>active</b> salaried record. Enforced by
+    /// <c>ux_employees_salaried_phone</c>, a partial unique index scoped to
+    /// <c>kind = 'Salaried' AND is_active</c>, not by a read-then-write (decisions.md D-144 §1, D-146
+    /// point 2-3, narrowed to active-only by D-153 §3, Q83). An archived salaried record's phone is
+    /// free — a match against one is <see cref="DuplicatePhoneNotAcknowledged"/>'s warn-and-acknowledge,
+    /// the same as day labour, subcontractors and suppliers (D-139 §1, D-141). The salaried-only scope
+    /// narrowed from "any employee" when D-141 briefly withdrew this error (superseded); it stayed live
+    /// throughout.
     /// </summary>
     public static readonly Error EmployeePhoneTaken =
         Error.Conflict("master.employee_phone_taken", "errors.master.employee_phone_taken");
@@ -226,12 +228,12 @@ public static class MasterDataErrors
         Error.NotFound("master.subcontractor_not_found", "errors.master.subcontractor_not_found");
 
     /// <summary>
-    /// AC-211-C — an explicit negative retention. <c>Percentage</c>'s own constructor refuses it;
-    /// this is that refusal translated into a wire error, the same shape <c>CreateBab</c> uses for
-    /// <see cref="DefaultMarkupRequired"/>.
+    /// D-151 §6a — <c>EditSubcontractor.Request.RetentionRate</c> is <c>Percentage?</c>; an omitted
+    /// member must not deserialise to zero and silently zero a firm's retention. A negative rate is
+    /// refused earlier, by the type itself, and surfaces as <see cref="ApiErrors.MalformedBody"/>.
     /// </summary>
-    public static readonly Error RetentionRateMustNotBeNegative =
-        Error.Validation("master.retention_rate_negative", "errors.master.retention_rate_negative");
+    public static readonly Error RetentionRateRequired =
+        Error.Validation("master.retention_rate_required", "errors.master.retention_rate_required");
 
     /// <summary>The subcontractor list's <c>status</c> filter named something that is not a filter. KAFF-211.</summary>
     public static readonly Error SubcontractorListFilterUnknown =

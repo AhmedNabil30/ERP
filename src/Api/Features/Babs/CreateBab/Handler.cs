@@ -63,22 +63,13 @@ internal static class Handler
             return ResultExtensions.Problem(MasterDataErrors.DefaultMarkupRequired);
         }
 
-        Percentage markup;
-
-        try
-        {
-            markup = Percentage.FromFraction(request.DefaultMarkup.Value);
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            return ResultExtensions.Problem(MasterDataErrors.DefaultMarkupRequired);
-        }
-
+        // D-151: DefaultMarkup is already Percentage — a negative value is refused by the type's own
+        // constructor during deserialisation (ApiErrors.MalformedBody).
         Result<Bab> created = Bab.Create(
             request.Code ?? string.Empty,
             request.NameAr ?? string.Empty,
             request.NameEn ?? string.Empty,
-            markup,
+            request.DefaultMarkup.Value,
             request.ParentBabId,
             request.SortOrder);
 
@@ -103,7 +94,7 @@ internal static class Handler
         return Microsoft.AspNetCore.Http.Results.Created(
             $"/api/babs/{bab.Id}",
             new Response(
-                bab.Id, bab.Code, bab.NameAr, bab.NameEn, bab.ParentBabId, bab.DefaultMarkup.Fraction,
+                bab.Id, bab.Code, bab.NameAr, bab.NameEn, bab.ParentBabId, bab.DefaultMarkup,
                 bab.SortOrder, bab.IsActive));
     }
 

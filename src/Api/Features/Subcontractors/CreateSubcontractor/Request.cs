@@ -1,3 +1,5 @@
+using Kaff.Domain.Common;
+
 namespace Kaff.Api.Features.Subcontractors.CreateSubcontractor;
 
 /// <summary>
@@ -21,8 +23,9 @@ namespace Kaff.Api.Features.Subcontractors.CreateSubcontractor;
 /// <param name="TradeBabId">Optional — the باب this firm works in.</param>
 /// <param name="RetentionRate">
 /// Optional. Omitted, it defaults to <see cref="Kaff.Domain.MasterData.Subcontractor.DefaultRetentionRate"/>
-/// (5%, spec.md §5.1). A whole percent as entered on the screen, e.g. <c>5</c> for five percent —
-/// converted through <c>Percentage.FromPercent</c>, never stored as the bare integer (AC-211-C).
+/// (5%, spec.md §5.1). Carried as <see cref="Percentage"/> — the fraction, e.g. <c>"0.05"</c> for five
+/// percent (decisions.md D-151). A negative value is refused by the type itself before this handler
+/// ever sees it.
 /// </param>
 /// <param name="AcknowledgedDuplicatePhone">
 /// "I was shown who already holds this number and I am proceeding anyway." decisions.md D-141 §5 —
@@ -33,5 +36,5 @@ public sealed record Request(
     string? Name,
     string? Phone,
     Guid? TradeBabId,
-    decimal? RetentionRate,
+    Percentage? RetentionRate,
     bool AcknowledgedDuplicatePhone);

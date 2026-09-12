@@ -1,3 +1,5 @@
+using Kaff.Domain.Common;
+
 namespace Kaff.Api.Features.Subcontractors.ListSubcontractors;
 
 /// <summary>
@@ -10,7 +12,7 @@ namespace Kaff.Api.Features.Subcontractors.ListSubcontractors;
 /// <param name="Name">Arabic, normally.</param>
 /// <param name="Phone">The entered form.</param>
 /// <param name="TradeBabId">The باب this firm works in, or null.</param>
-/// <param name="RetentionRate">The fraction Kaff holds — <c>0.05</c> for 5%.</param>
+/// <param name="RetentionRate">The rate Kaff holds — carried as <see cref="Percentage"/>, <c>"0.05"</c> for 5%.</param>
 /// <param name="IsActive">False for an archived firm, which the default filter excludes.</param>
 public sealed record SubcontractorSummary(
     Guid Id,
@@ -18,7 +20,7 @@ public sealed record SubcontractorSummary(
     string Name,
     string Phone,
     Guid? TradeBabId,
-    decimal RetentionRate,
+    Percentage RetentionRate,
     bool IsActive);
 
 /// <summary>The subcontractors that matched. KAFF-211.</summary>

@@ -57,22 +57,13 @@ internal static class Handler
             return ResultExtensions.Problem(MasterDataErrors.DefaultMarkupRequired);
         }
 
-        Percentage markup;
-
-        try
-        {
-            markup = Percentage.FromFraction(request.DefaultMarkup.Value);
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            return ResultExtensions.Problem(MasterDataErrors.DefaultMarkupRequired);
-        }
-
-        bab.SetDefaultMarkup(markup);
+        // D-151: DefaultMarkup is already Percentage — a negative value is refused by the type's own
+        // constructor during deserialisation (ApiErrors.MalformedBody).
+        bab.SetDefaultMarkup(request.DefaultMarkup.Value);
 
         await database.SaveChangesAsync(cancellationToken);
 
         return Microsoft.AspNetCore.Http.Results.Ok(
-            new Response(bab.Id, bab.Code, bab.NameAr, bab.NameEn, bab.ParentBabId, bab.DefaultMarkup.Fraction, bab.SortOrder, bab.IsActive));
+            new Response(bab.Id, bab.Code, bab.NameAr, bab.NameEn, bab.ParentBabId, bab.DefaultMarkup, bab.SortOrder, bab.IsActive));
     }
 }

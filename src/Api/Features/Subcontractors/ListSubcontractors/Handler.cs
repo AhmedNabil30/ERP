@@ -44,7 +44,7 @@ internal static class Handler
                 subcontractor.Name,
                 subcontractor.PhoneEntered,
                 subcontractor.TradeBabId,
-                subcontractor.RetentionRate.Fraction,
+                subcontractor.RetentionRate,
                 subcontractor.IsActive))
             .ToListAsync(cancellationToken);
 

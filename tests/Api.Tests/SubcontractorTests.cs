@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Kaff.Api.Tests.Infrastructure;
 using Kaff.Domain.Auditing;
 using Kaff.Domain.Common;
@@ -282,6 +283,92 @@ public sealed class SubcontractorTests : IAsyncLifetime
         }
     }
 
+    // ---- V-38-H / decisions.md D-151 — the rate is a fraction, typed Percentage, on the wire -----
+
+    [Fact]
+    public async Task Retention_rate_survives_a_read_then_write_round_trip()
+    {
+        Guid id = await IdOfAsync(await CreateRawAsync(
+            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            Body("شركة الجولة الكاملة")));
+
+        Subcontractor seed = await ReadAsync(id);
+
+        string firstRate = await RetentionRateStringAsync(await GetRawAsync(id));
+
+        HttpResponseMessage edited = await EditRawAsync(
+            id,
+            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            RawEditBody(seed, firstRate));
+
+        edited.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        string secondRate = await RetentionRateStringAsync(await GetRawAsync(id));
+
+        secondRate.Should().Be(
+            firstRate,
+            "D-151 — the wire unit is the fraction in both directions; echoing a read back must not " +
+            "divide it by 100 a second time");
+    }
+
+    [Fact]
+    public async Task Retention_rate_on_the_wire_is_the_fraction_in_both_directions()
+    {
+        Guid fivePercentId = await IdOfAsync(await CreateRawAsync(
+            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            RawCreateBody("شركة نص العشرة", "0.05")));
+
+        (await ReadAsync(fivePercentId)).RetentionRate.Fraction.Should().Be(0.05m);
+        (await RetentionRateStringAsync(await GetRawAsync(fivePercentId))).Should().Be("0.050000");
+
+        Guid fiveHundredPercentId = await IdOfAsync(await CreateRawAsync(
+            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            RawCreateBody("شركة الخمسة الكاملة", "5")));
+
+        (await ReadAsync(fiveHundredPercentId)).RetentionRate.Fraction.Should().Be(
+            5m, "'5' on the wire is the fraction 5 — 500% — and must never be silently read as 5%");
+    }
+
+    [Fact]
+    public async Task A_put_without_a_retention_rate_is_refused_not_zeroed()
+    {
+        Guid id = await IdOfAsync(await CreateRawAsync(
+            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            Body("شركة بلا نسبة استقطاع")));
+
+        Subcontractor seed = await ReadAsync(id);
+
+        var body = new JsonObject
+        {
+            ["name"] = seed.Name,
+            ["phone"] = seed.PhoneEntered,
+            ["tradeBabId"] = seed.TradeBabId,
+            ["acknowledgedDuplicatePhone"] = false,
+        };
+
+        HttpResponseMessage response = await EditRawAsync(
+            id,
+            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            body);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await MessageKeyAsync(response)).Should().Be("errors.master.retention_rate_required");
+
+        (await ReadAsync(id)).RetentionRate.Fraction.Should().Be(
+            0.05m, "an omitted rate must be refused, never treated as zero");
+    }
+
+    [Fact]
+    public async Task A_negative_retention_rate_is_a_400_carrying_a_message_key()
+    {
+        HttpResponseMessage response = await CreateRawAsync(
+            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            RawCreateBody("شركة نسبة سالبة", "-0.05"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await MessageKeyAsync(response)).Should().Be("errors.wire.malformed_body");
+    }
+
     // ---- not found ---------------------------------------------------------------------------
 
     [Fact]
@@ -330,7 +417,7 @@ public sealed class SubcontractorTests : IAsyncLifetime
         name = subcontractor.Name,
         phone = subcontractor.PhoneEntered,
         tradeBabId = subcontractor.TradeBabId,
-        retentionRate = retentionRate ?? subcontractor.RetentionRate.Fraction * 100m,
+        retentionRate = retentionRate ?? subcontractor.RetentionRate.Fraction,
         acknowledgedDuplicatePhone = false,
     };
 
@@ -341,6 +428,40 @@ public sealed class SubcontractorTests : IAsyncLifetime
     private Task<HttpResponseMessage> EditRawAsync(
         Guid id, Guid actorId, Role actorRole, Department? department, OperationsSubDepartment? sub, object body)
         => SendAsync(HttpMethod.Put, $"/api/subcontractors/{id}", actorId, actorRole, department, sub, body);
+
+    private Task<HttpResponseMessage> GetRawAsync(Guid id)
+        => SendAsync(
+            HttpMethod.Get, $"/api/subcontractors/{id}",
+            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical, null);
+
+    /// <summary>Reads <c>retentionRate</c> as a raw JSON string — no arithmetic, no reparse as decimal.</summary>
+    private static async Task<string> RetentionRateStringAsync(HttpResponseMessage response)
+    {
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+
+        return body.RootElement.GetProperty("retentionRate").GetString()!;
+    }
+
+    /// <summary>A create body carrying <paramref name="retentionRate"/> exactly as written — no unit conversion.</summary>
+    private static JsonObject RawCreateBody(string name, string retentionRate) => new()
+    {
+        ["name"] = name,
+        ["phone"] = UniqueNames.Phone().Entered,
+        ["retentionRate"] = retentionRate,
+        ["acknowledgedDuplicatePhone"] = false,
+    };
+
+    /// <summary>An edit body carrying <paramref name="retentionRate"/> exactly as written — no unit conversion.</summary>
+    private static JsonObject RawEditBody(Subcontractor subcontractor, string retentionRate) => new()
+    {
+        ["name"] = subcontractor.Name,
+        ["phone"] = subcontractor.PhoneEntered,
+        ["tradeBabId"] = subcontractor.TradeBabId,
+        ["retentionRate"] = retentionRate,
+        ["acknowledgedDuplicatePhone"] = false,
+    };
 
     private Task<HttpResponseMessage> ArchiveRawAsync(
         Guid id, Guid actorId, Role actorRole, Department? department, OperationsSubDepartment? sub)

@@ -77,15 +77,9 @@ internal static class Handler
             }
         }
 
-        Percentage retentionRate;
-
-        try
+        if (request.RetentionRate is null)
         {
-            retentionRate = Percentage.FromPercent(request.RetentionRate);
-        }
-        catch (ArgumentOutOfRangeException)
-        {
-            return ResultExtensions.Problem(MasterDataErrors.RetentionRateMustNotBeNegative);
+            return ResultExtensions.Problem(MasterDataErrors.RetentionRateRequired);
         }
 
         Result edited = subcontractor.Edit(request.Name ?? string.Empty, phone.Value, request.TradeBabId);
@@ -95,7 +89,7 @@ internal static class Handler
             return ResultExtensions.Problem(edited.Error);
         }
 
-        subcontractor.SetRetentionRate(retentionRate);
+        subcontractor.SetRetentionRate(request.RetentionRate.Value);
 
         foreach (PhoneMatch match in matches)
         {
@@ -111,7 +105,7 @@ internal static class Handler
                 subcontractor.Name,
                 subcontractor.PhoneEntered,
                 subcontractor.TradeBabId,
-                subcontractor.RetentionRate.Fraction,
+                subcontractor.RetentionRate,
                 subcontractor.IsActive));
     }
 }
