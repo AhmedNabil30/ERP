@@ -1,0 +1,115 @@
+/* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). Zero colour
+   literals — every colour is a token from styles.css (apple-erp-design §2). `S-026` is `M1`: the only
+   mobile-first, one-hand screen in this slice — no `max-inline-size` cap like the employee form's,
+   the layout is the full viewport at 390px and every control is full-width and reachable by thumb. */
+
+.worker-register {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  max-inline-size: 28rem;
+  margin-inline: auto;
+  overflow-x: hidden;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-xl);
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.input {
+  inline-size: 100%;
+  box-sizing: border-box;
+  padding: var(--space-3);
+  min-block-size: var(--tap-target);
+  font: inherit;
+  font-size: var(--text-lg);
+  color: var(--color-text);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* A native <select> needs an explicit background and colour or it renders unreadable in Windows dark
+   mode (apple-erp-design §7.7). */
+.select {
+  color-scheme: light dark;
+}
+
+.restricted {
+  margin: 0;
+  padding: var(--space-3);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-lg);
+}
+
+.acknowledge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-lg);
+}
+
+.field-error {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-danger);
+}
+
+.refusal {
+  margin: 0;
+  padding: var(--space-3);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+}
+
+/* Full-width, thumb-height — the one action this screen ends with, reachable without a reach. */
+.submit {
+  inline-size: 100%;
+  padding: var(--space-3);
+  min-block-size: var(--tap-target);
+  font: inherit;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--color-background);
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+}
+
+.submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

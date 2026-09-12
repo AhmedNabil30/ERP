@@ -1,0 +1,148 @@
+/* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). Zero colour
+   literals — every colour is a token from styles.css (apple-erp-design §2). Copied from
+   employee-list-page.css's own row shape deliberately — one house style. */
+
+.pool {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  overflow-x: hidden;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-xl);
+}
+
+.create {
+  align-self: flex-start;
+  min-block-size: var(--tap-target);
+  display: inline-flex;
+  align-items: center;
+  padding-inline: var(--space-4);
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--color-background);
+  background: var(--color-accent);
+  border-radius: var(--radius-md);
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.row-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.row-code {
+  font-family: ui-monospace, monospace;
+  unicode-bidi: isolate;
+}
+
+.row-phone {
+  unicode-bidi: isolate;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.chip {
+  min-block-size: var(--tap-target);
+  padding-inline: var(--space-3);
+  font: inherit;
+  cursor: pointer;
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+}
+
+.chip:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.engagement-status {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.closed-badge {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.rate-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.rate-input {
+  inline-size: 3.5rem;
+  box-sizing: border-box;
+  padding: var(--space-2);
+  min-block-size: var(--tap-target);
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.rating-value {
+  unicode-bidi: isolate;
+  font-weight: 600;
+}
+
+.row-refusal,
+.refusal {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+}
+
+.empty {
+  padding: var(--space-4);
+  text-align: center;
+}
+
+.empty-title {
+  margin: 0;
+  opacity: 0.75;
+}
+
+.visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}

@@ -1,0 +1,106 @@
+<section class="pool" data-testid="worker-pool">
+  <h1 class="title">{{ i18n.t('hr.worker.pool_title') }}</h1>
+
+  <a class="create" [routerLink]="['/projects', projectId(), 'day-labour', 'new']" data-testid="worker-create">
+    {{ i18n.t('hr.worker.action.register') }}
+  </a>
+
+  @if (failure(); as key) {
+    <p class="refusal" role="alert" data-testid="worker-pool-failure">{{ i18n.t(key) }}</p>
+  } @else if (loading()) {
+    <p class="loading" role="status" aria-live="polite" data-testid="worker-pool-loading">
+      {{ i18n.t('hr.employee.loading') }}
+    </p>
+  } @else if (workers().length > 0) {
+    <ul class="rows" data-testid="worker-rows">
+      @for (worker of workers(); track trackRow($index, worker)) {
+        <li class="row" [attr.data-testid]="'worker-row-' + worker.code">
+          <div class="row-main">
+            <bdi class="row-code" translate="no">{{ worker.code }}</bdi>
+            <span class="row-name" dir="auto">{{ worker.fullName }}</span>
+            <bdi class="row-phone" dir="ltr">{{ worker.phone }}</bdi>
+            @if (worker.specialty; as specialty) {
+              <span class="row-specialty" dir="auto">{{ specialty }}</span>
+            }
+          </div>
+
+          <div class="row-actions">
+            @if (rowFailure(); as failed) {
+              @if (failed.workerId === worker.id) {
+                <p class="row-refusal" role="alert" [attr.data-testid]="'worker-row-refusal-' + worker.code">
+                  {{ i18n.t(failed.key) }}
+                </p>
+              }
+            }
+
+            @if (engagementFor(worker.id); as engagement) {
+              <p class="engagement-status" [attr.data-testid]="'worker-engagement-' + worker.code">
+                {{ i18n.t('hr.worker.engagement.opened_on') }}
+                <bdi dir="ltr">{{ engagement.openedOn }}</bdi>
+              </p>
+
+              @if (engagement.closedOn === null) {
+                <button
+                  type="button"
+                  class="chip"
+                  [disabled]="isBusy(worker.id)"
+                  [attr.data-testid]="'worker-close-' + worker.code"
+                  (click)="onClose(worker)"
+                >
+                  {{ i18n.t('hr.worker.engagement.close_action') }}
+                </button>
+              } @else {
+                <span class="closed-badge" [attr.data-testid]="'worker-closed-' + worker.code">
+                  {{ i18n.t('hr.worker.engagement.closed_badge') }}
+                </span>
+              }
+
+              <label class="rate-field">
+                <span class="visually-hidden">{{ i18n.t('hr.worker.engagement.rating') }}</span>
+                <input
+                  class="rate-input"
+                  type="number"
+                  inputmode="numeric"
+                  min="1"
+                  max="5"
+                  [value]="ratingDraft(worker.id)"
+                  [attr.data-testid]="'worker-rating-input-' + worker.code"
+                  (input)="onRatingInput(worker.id, $event)"
+                />
+                <button
+                  type="button"
+                  class="chip"
+                  [disabled]="isBusy(worker.id)"
+                  [attr.data-testid]="'worker-rate-' + worker.code"
+                  (click)="onRate(worker)"
+                >
+                  {{ i18n.t('hr.worker.engagement.rate_action') }}
+                </button>
+              </label>
+
+              @if (engagement.rating !== null) {
+                <span class="rating-value" [attr.data-testid]="'worker-rating-value-' + worker.code">
+                  {{ engagement.rating }}/5
+                </span>
+              }
+            } @else {
+              <button
+                type="button"
+                class="chip"
+                [disabled]="isBusy(worker.id)"
+                [attr.data-testid]="'worker-engage-' + worker.code"
+                (click)="onEngage(worker)"
+              >
+                {{ i18n.t('hr.worker.engagement.engage_action') }}
+              </button>
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  } @else {
+    <div class="empty" role="status" aria-live="polite" data-testid="worker-pool-empty">
+      <p class="empty-title">{{ i18n.t('hr.worker.pool_empty') }}</p>
+    </div>
+  }
+</section>

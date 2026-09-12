@@ -4,6 +4,7 @@ import { auditReadGuard } from './core/auth/audit-read.guard';
 import { babManageGuard } from './core/auth/bab-manage.guard';
 import { catalogueManageGuard } from './core/auth/catalogue-manage.guard';
 import { clientManageGuard } from './core/auth/client-manage.guard';
+import { dayLabourSiteManageGuard } from './core/auth/day-labour-site-manage.guard';
 import { employeeManageGuard } from './core/auth/employee-manage.guard';
 import { mustChangePasswordGuard } from './core/auth/must-change-password.guard';
 import { sessionGuard } from './core/auth/session.guard';
@@ -208,6 +209,28 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/employees/employee-form/employee-form-page').then(
             (m) => m.EmployeeFormPage,
+          ),
+      },
+    ],
+  },
+  {
+    // KAFF-209, KAFF-210 — S-025, S-026, S-027. Same shape as `/employees` above, except the guard is
+    // project-scoped (`dayLabourSiteManageGuard`, D-140 point 1) rather than company-wide: a Site
+    // Engineer reaches this only on a project they are assigned to, and `:projectId` supplies which
+    // one — the same route parameter the server's `ProjectScope.FromRoute()` reads.
+    path: 'projects/:projectId/day-labour',
+    canActivate: [sessionGuard, mustChangePasswordGuard, dayLabourSiteManageGuard],
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/day-labour/worker-pool/worker-pool-page').then((m) => m.WorkerPoolPage),
+      },
+      {
+        path: 'new',
+        loadComponent: () =>
+          import('./features/day-labour/worker-register/worker-register-page').then(
+            (m) => m.WorkerRegisterPage,
           ),
       },
     ],

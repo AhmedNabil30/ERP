@@ -1,0 +1,95 @@
+<section class="worker-register" data-testid="worker-register-form">
+  <h1 class="title">{{ i18n.t('hr.worker.register_title') }}</h1>
+
+  <form class="fields" (submit)="$event.preventDefault(); onSubmit()">
+    <label class="field">
+      <span class="label">{{ i18n.t('hr.worker.field.name') }} *</span>
+      <input
+        class="input"
+        type="text"
+        dir="auto"
+        data-testid="worker-field-name"
+        [formField]="workerForm.fullName"
+      />
+    </label>
+
+    <label class="field">
+      <span class="label">{{ i18n.t('hr.worker.field.phone') }} *</span>
+      <input
+        class="input"
+        type="tel"
+        dir="ltr"
+        inputmode="tel"
+        autocomplete="tel"
+        data-testid="worker-field-phone"
+        [formField]="workerForm.phone"
+        (blur)="onPhoneBlur()"
+      />
+    </label>
+
+    @if (hasRestrictedMatch()) {
+      <p class="restricted" role="status" data-testid="worker-duplicate-restricted">
+        {{ i18n.t('hr.worker.duplicate_phone_restricted') }}
+      </p>
+    }
+
+    @if (namedMatches().length > 0) {
+      <kaff-duplicate-phone-warning
+        [matches]="namedMatches()"
+        titleKey="hr.worker.duplicate_phone_warning"
+        confirmKey="hr.worker.duplicate_phone_confirm"
+        testIdPrefix="worker"
+        (acknowledgeChange)="onAcknowledgeChange($event)"
+      />
+    } @else if (hasRestrictedMatch()) {
+      <label class="acknowledge" data-testid="worker-restricted-acknowledge">
+        <input
+          type="checkbox"
+          data-testid="worker-duplicate-acknowledge"
+          (change)="onRestrictedAcknowledgeChange($event)"
+        />
+        <span>{{ i18n.t('hr.worker.duplicate_phone_confirm') }}</span>
+      </label>
+    }
+
+    <label class="field">
+      <span class="label">{{ i18n.t('hr.worker.field.bab') }} *</span>
+      <select
+        class="input select"
+        data-testid="worker-field-bab"
+        [disabled]="babsUnavailable()"
+        [attr.aria-label]="i18n.t('hr.worker.field.bab')"
+        (change)="onBabChange($event)"
+      >
+        <option value="">{{ i18n.t('hr.employee.field.no_bab') }}</option>
+        @for (bab of babs(); track trackBab($index, bab)) {
+          <option [value]="bab.id">{{ babLabel(bab) }}</option>
+        }
+      </select>
+      @if (babsUnavailable()) {
+        <p class="field-error" role="alert" data-testid="worker-babs-unavailable">
+          {{ i18n.t('hr.employee.babs_unavailable') }}
+        </p>
+      }
+    </label>
+
+    <label class="field">
+      <span class="label">{{ i18n.t('hr.worker.field.specialty') }}</span>
+      <input
+        class="input"
+        type="text"
+        dir="auto"
+        data-testid="worker-field-specialty"
+        [formField]="workerForm.specialty"
+      />
+    </label>
+
+    @if (refusal(); as key) {
+      <p class="refusal" role="alert" data-testid="worker-form-refusal">{{ i18n.t(key) }}</p>
+    }
+
+    <button class="submit" type="submit" data-testid="worker-submit" [disabled]="!canSubmit()">
+      {{ i18n.t('action.save') }}
+    </button>
+  </form>
+</section>
