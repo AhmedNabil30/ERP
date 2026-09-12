@@ -13042,3 +13042,187 @@ Nothing is sent to Nabil, and nothing here needed him. Two notes for whoever rea
   reporting question for the day a view needs it, not a second column now.
 
 ---
+
+### D-149 · Architect — amends D-148 §4: the grant-project fallback applies to one marked entity, not to every entity that happens to be in the same save · 2026-09-12
+
+**Backend raised this against commit `c371ed4`, which built D-148. The finding is true and D-148 §4 is
+wrong.** D-148 §4's sweep asked which *endpoints* are project-scoped and what each one saves, and
+concluded "one endpoint is wrong today". It never asked the other question: whether a project-scoped
+request can save a **company-wide** entity alongside a project-scoped one in the same
+`SaveChangesAsync`. It can, and when it does D-148's fallback tags the company-wide row with the
+route's project. Backend hit exactly that and amended the assertions of
+`tests/Api.Tests/PermissionMechanismTests.cs -> The_owners_reach_is_named_although_it_leaves_no_row`
+to match. Those amended assertions are the defect made green, and this entry reverts them.
+
+This is the same shape as D-148 itself and as D-140 point 3 before it: a claim written confidently
+enough to survive review, whose sweep covered one axis of the problem and not the other.
+
+#### 1. What is true today, verified against the files
+
+* The fallback is unconditional on entity type — any entity with no `ProjectId` property inherits the
+  grant's project [Verified: 2026-09-12 @
+  `src/Infrastructure/Persistence/Interceptors/AuditSaveChangesInterceptor.cs` -> `Describe`, the line
+  `Guid? projectId = ExtractProjectId(entry) ?? _auditContext.GrantProjectId;`; @ the same file ->
+  `ExtractProjectId`].
+* The path is then paired by identity, which does **not** filter this case: the fallback has already
+  made the two projects equal, so the guard admits the path as well [Verified: 2026-09-12 @ the same
+  file -> `Describe`, the `grantPath` expression].
+* The gate sets the pair once per request, in the granted branch, and `Clear()` does not discard it
+  [Verified: 2026-09-12 @ `src/Api/Authorization/PermissionAuthorizationHandler.cs` ->
+  `HandleRequirementAsync`, calling `_auditContext.ScopedTo(projectId!.Value, access.Path)`; @
+  `src/Domain/Auditing/IAuditContext.cs` -> `ScopedTo`, `GrantProjectId`]. So every save in the
+  request sees it, not only the save the endpoint's own act belongs to.
+* The consumer reads `project_id` as an equality filter and nothing else [Verified: 2026-09-12 @
+  `src/Api/Features/Audit/ReadAuditTrail/Handler.cs` -> `HandleAsync`,
+  `query.Where(record => record.ProjectId == projectId)`]. There is no column that distinguishes
+  "belongs to" from "was authorised by", and the handler's own remarks state the criterion the other
+  way round: with no project named the Owner is shown company-level changes *and* project changes
+  together, "because half of what he is checking (a user created, a client edited) belongs to no
+  project at all" (`AC-117-A`).
+
+**The sweep of shipped handlers.** Every project-scoped endpoint today, and the entity each one saves
+[Verified: 2026-09-12, swept `src/Api/Features/**/Handler.cs` against every
+`ProjectScope.FromRoute()`/`FromQuery()` in `src/Api/Features/**/Endpoint.cs`]:
+
+| Endpoint | Saves | Entity's own `ProjectId` | Inherits the grant |
+|---|---|---|---|
+| `DayLabour/RegisterFromSite` | `Employee` | none, by design (D-140 point 3) | **Yes — intended** |
+| `DayLabour/OpenEngagement` | `Engagement` | yes [@ `OpenEngagement/Handler.cs` -> `Engagement.Open(workerId, projectId, …)`] | No |
+| `DayLabour/CloseEngagement`, `DayLabour/RateEngagement` | `Engagement` | yes, and the route's project is re-checked against it [@ `RateEngagement/Handler.cs` -> `EngagementProjectMismatch`] | No |
+| `DayLabour/PhoneCheck`, `ListPool`, `BabOptions` | nothing | — | — |
+| `Assignments/AssignUserToProject`, `Assignments/RevokeProjectAssignment` | `ProjectAssignment` | yes | No |
+
+**So no shipped endpoint is wrong today.** D-148 §4's table is nonetheless stale — it predates
+KAFF-210's three engagement endpoints, which are now shipped and which it lists as future work. The
+defect this entry corrects is live only in the test probe, and latent everywhere else: the next
+project-scoped endpoint that touches a `Client`, a `Bab`, a `CatalogueItem`, a `User` or a
+`Subcontractor` inherits a false project silently, into a table that is append-only by trigger and
+cannot be corrected afterwards (D-070 §3).
+
+#### 2. Ruling — WRONG, and this is not Nabil's question
+
+**`project_id` states what the row is about, and a company-wide entity saved during a project-scoped
+request is not about that project.** D-070 §1 already fixed the meaning of the null and named this
+exact entity: *"Null is not 'unknown'. It means the act had no project … creating a user, creating a
+client."* A `Client` is company-level; it exists before the project, outlives it, and will be touched
+again next week under project B's grant. Tagging its row with project A makes `?projectId=A` answer a
+question it was not asked, and `?projectId=B` list the same client under a different project — two
+rows making contradictory claims about one entity, neither correctable.
+
+**Why this is not the business question the brief allows for.** "What must the Owner's per-project
+trail contain" would be Nabil's. This is not that: the answer is already fixed by D-070 §1's stated
+meaning of the null and by `AC-117-A`'s stated criterion, both quoted above, and the ruling only
+restores them. D-148's own closing note — whether *"everything done under project A's authority"*
+should exist as a question distinct from *"everything belonging to project A"* — remains open,
+remains a reporting question, and remains not asked by anything shipped. It is not reopened here and
+nothing in this entry depends on its answer.
+
+**What D-148 got right and keeps.** The day labourer case is genuinely the entity's own project by
+another route: the `Employee` row exists *because* that project's Site Engineer registered it, the
+act and the entity are the same act, and no `RegisteredOnProjectId` column is added. D-148 §2's
+sentence — *"For an entity with no project of its own, those are the same fact"* — is true of
+`RegisterFromSite`'s `Employee` and false of a `Client` that was already there. D-148 generalised
+from the one to the other without checking, which is the whole of the error.
+
+#### 3. The fix — narrowest that removes the wrong rows and keeps the right one
+
+The interceptor cannot tell "the entity this endpoint exists to create" from "an entity that happened
+to be in the same save"; nothing in the change tracker carries that. So the entity declares it, the
+same way exemption is already declared:
+
+1. **A marker interface, `IAuditScopedByGrant`, beside `IAuditExempt`** [@ `src/Domain/Common/Entity.cs`
+   -> `IAuditExempt`, the existing precedent — opt-in by marker, no list in Infrastructure, no
+   per-feature audit code]. Implemented by **`Employee` and by nothing else**.
+2. `AuditSaveChangesInterceptor.Describe` consults it:
+
+   ```csharp
+   Guid? projectId = ExtractProjectId(entry)
+       ?? (entry.Entity is IAuditScopedByGrant ? _auditContext.GrantProjectId : null);
+   ```
+
+   The identity pairing on the next line is unchanged and now does what D-148 claimed for it: an
+   entity that took no fallback has a null or a different project, so no path is written beside it.
+
+Nothing else changes. No column, no migration, no gate change, no handler change, and
+`ck_audit_records_grant_path` continues to hold for the same reason D-148 gave.
+
+**The ceiling, stated rather than discovered later.** The marker is per *type*, not per *act*. The day
+the first project-scoped endpoint modifies an existing `Employee` for some unrelated reason, that
+row inherits the route's project wrongly and the marker will not catch it. That endpoint does not
+exist and this rule is what will make writing it a deliberate decision with an entry, instead of a
+silent inheritance — which is the only property being bought here.
+
+**Rejected: falling back only when the save contains no entity carrying its own project.** It is
+fewer characters and it would have made the probe green. It also makes a row's project depend on what
+else happened to be saved beside it, so the same act would be tagged differently depending on an
+unrelated second change — the kind of rule that is correct in every test written for it and wrong the
+first time somebody adds a line to a handler.
+
+#### 4. The tests that witness it — and the two that must be reverted
+
+`tests/Api.Tests/AuditMechanismTests.cs`:
+
+* `A_project_scoped_act_on_an_entity_with_no_project_records_the_route_project` — **keeps its
+  assertions unchanged** [today @ that file, line 445: `record.ProjectId.Should().Be(grantedProjectId)`
+  and `record.GrantPath.Should().Be(ProjectAccessPath.Assignment)`]. It saves an `Employee`, which is
+  the marked type, so it passes before and after. Its summary gains the reason the fallback applied:
+  `Employee` is marked, not merely projectless.
+* **New: `A_company_wide_entity_saved_under_a_project_grant_takes_no_project`.** Same fixture shape as
+  the test above — an `AuditContext` with `ScopedTo(projectId, path)` set — saving a `Client`, which is
+  the unmarked company-wide entity D-070 §1 names. Asserts `record.ProjectId` is null and
+  `record.GrantPath` is null. This is the test that turns red if somebody removes the marker check and
+  restores D-148's unconditional fallback, and it is the witness this ruling stands on.
+
+`tests/Api.Tests/PermissionMechanismTests.cs -> The_owners_reach_is_named_although_it_leaves_no_row`:
+
+* **The two amended assertions are reverted to their pre-`c371ed4` form**
+  [today @ that file, lines 519-520]:
+
+  ```csharp
+  companyWide.ProjectId.Should().BeNull();
+  companyWide.GrantPath.Should().BeNull("a company-wide act went through no access policy");
+  ```
+
+* The `<para>` added to that test's remarks by `c371ed4`, which explains the company-level `Client`
+  inheriting the request's grant "exactly as the project change does", is **deleted**. It documents
+  the defect and would otherwise outlive it — the same deletion D-148 §3 ordered for KAFF-209's inline
+  comment, for the same reason.
+* The test's own subject is untouched: `change.GrantPath.Should().Be(ProjectAccessPath.OwnerGlobal)`
+  stays. `AC-116-B`/`AC-116-E` were never in question here; Backend's amendment did not weaken them,
+  it weakened the second half of the probe, which is the half that was asserting D-070 §1.
+
+`tests/Api.Tests/RegisterDayLabourerFromSiteTests.cs -> Registration_from_site_is_audited_with_its_project`
+keeps the assertions `c371ed4` gave it — `Employee` is the marked type and the behaviour D-148 §3
+specified for it is the behaviour this entry preserves.
+
+#### 5. What Backend must change
+
+1. `src/Domain/Common/Entity.cs`: add `IAuditScopedByGrant`, documented as §2's rule and naming this
+   entry.
+2. `src/Domain/MasterData/Employee.cs`: implement it, with the one-line reason (D-140 point 3 — the
+   project authorises the registration and the row exists only because of it).
+3. `src/Infrastructure/Persistence/Interceptors/AuditSaveChangesInterceptor.cs -> Describe`: the
+   condition in §3 point 2, and the comment above it corrected — it currently states D-148's
+   unconditional rule.
+4. `src/Domain/Auditing/IAuditContext.cs -> GrantProjectId`: its remarks state the unconditional
+   fallback verbatim; amend to name the marker.
+5. The new test and the two reverts in §4.
+
+#### What this does not decide, and one thing checked and deliberately left alone
+
+Nothing is sent to Nabil, and nothing here needed him.
+
+* **Event records are unaffected and are already correct.** `AuditRecord.ForEvent` takes no project and
+  no path at all, so `RegisterFromSite`'s `DuplicatePhoneAcknowledged` events carry a null project even
+  though the request is project-scoped [Verified: 2026-09-12 @ `src/Domain/Auditing/AuditRecord.cs` ->
+  `ForEvent`; @ `AuditSaveChangesInterceptor.cs` -> `WriteAuditRecords`, the `_auditContext.Events`
+  loop; @ `src/Api/Features/DayLabour/RegisterFromSite/Handler.cs` -> `HandleAsync`]. That is the right
+  answer rather than an oversight: the subject of that event is the **matched** employee, a row that
+  pre-existed the request and belongs to no project. No change, and it is recorded here so the next
+  session does not re-derive it as a defect.
+* Rows written between `c371ed4` and this fix carry a project on any company-wide entity co-saved under
+  a project grant, and cannot be backfilled — `audit_records` is append-only by trigger (D-070 §3).
+  Per §1's sweep no shipped endpoint produces such a save, so the affected rows are the test suite's
+  only.
+
+---
