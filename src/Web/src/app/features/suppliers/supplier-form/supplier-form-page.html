@@ -1,0 +1,100 @@
+<section class="supplier-form" data-testid="supplier-form">
+  <h1 class="title">{{ i18n.t(titleKey()) }}</h1>
+
+  @if (loadFailed()) {
+    <div class="no-source" data-testid="supplier-form-no-source">
+      <p class="no-source-body" role="alert">{{ i18n.t('errors.master.supplier_not_found') }}</p>
+      <a class="back-link" routerLink="/suppliers" data-testid="supplier-form-back">
+        {{ i18n.t('supplier.action.back') }}
+      </a>
+    </div>
+  } @else {
+    @if (isEdit()) {
+      <p class="code-line" data-testid="supplier-code">
+        <span class="code-label">{{ i18n.t('supplier.field.code') }}</span>
+        <bdi class="code-value" translate="no">{{ displayCode() }}</bdi>
+        <span class="code-note">{{ i18n.t('supplier.field.code_not_editable') }}</span>
+      </p>
+    }
+
+    <form class="fields" (submit)="$event.preventDefault(); onSubmit()">
+      <label class="field">
+        <span class="label">{{ i18n.t('supplier.field.phone') }}</span>
+        <input
+          class="input"
+          type="tel"
+          dir="ltr"
+          inputmode="tel"
+          autocomplete="tel"
+          data-testid="supplier-phone"
+          [formField]="supplierForm.phone"
+          (blur)="onPhoneBlur()"
+        />
+        <span class="hint">{{ i18n.t('supplier.hint.phone_is_the_key') }}</span>
+      </label>
+
+      @if (duplicateMatches().length > 0) {
+        <kaff-duplicate-phone-warning
+          [matches]="duplicateMatches()"
+          titleKey="supplier.duplicate.title"
+          confirmKey="supplier.duplicate.acknowledge"
+          testIdPrefix="supplier"
+          (acknowledgeChange)="onAcknowledgeChange($event)"
+        />
+      }
+
+      <label class="field">
+        <span class="label">{{ i18n.t('supplier.field.name') }}</span>
+        <input class="input" type="text" dir="auto" data-testid="supplier-name" [formField]="supplierForm.name" />
+      </label>
+
+      <label class="field">
+        <span class="label">{{ i18n.t('supplier.field.address') }}</span>
+        <input class="input" type="text" dir="auto" data-testid="supplier-address" [formField]="supplierForm.address" />
+      </label>
+
+      <!-- KAFF-212 rule 6, D-139 §5: entered and managed by Finance only, on this same route. -->
+      <label class="field">
+        <span class="label">{{ i18n.t('supplier.field.tax_registration_number') }}</span>
+        <input
+          class="input"
+          type="text"
+          dir="ltr"
+          data-testid="supplier-tax-registration"
+          [formField]="supplierForm.taxRegistrationNumber"
+        />
+      </label>
+
+      @if (refusal(); as key) {
+        <p class="refusal" role="alert" data-testid="supplier-form-refusal">{{ i18n.t(key) }}</p>
+      }
+
+      <button class="submit" type="submit" data-testid="supplier-submit" [disabled]="!canSubmit()">
+        {{ i18n.t('action.save') }}
+      </button>
+    </form>
+
+    @if (isEdit()) {
+      <section class="danger">
+        <h2 class="subtitle">{{ i18n.t('supplier.danger.title') }}</h2>
+
+        @if (confirmingArchive()) {
+          <p class="confirm-title">{{ i18n.t('supplier.confirm.archive.title') }}</p>
+          <p class="confirm-body">{{ i18n.t('supplier.confirm.archive.body') }}</p>
+          <div class="confirm-actions">
+            <button type="button" class="danger-button" data-testid="supplier-archive-confirm" (click)="onArchive()">
+              {{ i18n.t('supplier.archive_action') }}
+            </button>
+            <button type="button" class="chip" data-testid="supplier-archive-cancel" (click)="onCancelArchive()">
+              {{ i18n.t('action.cancel') }}
+            </button>
+          </div>
+        } @else {
+          <button type="button" class="danger-button" data-testid="supplier-archive" (click)="onStartArchive()">
+            {{ i18n.t('supplier.archive_action') }}
+          </button>
+        }
+      </section>
+    }
+  }
+</section>

@@ -8,6 +8,8 @@ import { dayLabourSiteManageGuard } from './core/auth/day-labour-site-manage.gua
 import { employeeManageGuard } from './core/auth/employee-manage.guard';
 import { mustChangePasswordGuard } from './core/auth/must-change-password.guard';
 import { sessionGuard } from './core/auth/session.guard';
+import { subcontractorManageGuard } from './core/auth/subcontractor-manage.guard';
+import { supplierManageGuard } from './core/auth/supplier-manage.guard';
 import { userManageGuard } from './core/auth/user-manage.guard';
 import { confirmUnsavedChangesGuard } from './core/navigation/unsaved-changes.guard';
 
@@ -232,6 +234,62 @@ export const routes: Routes = [
           import('./features/day-labour/worker-register/worker-register-page').then(
             (m) => m.WorkerRegisterPage,
           ),
+      },
+    ],
+  },
+  {
+    // KAFF-211 — S-028, S-029. Same shape as `/employees` above: `sessionGuard` resolves the session
+    // first, then `subcontractorManageGuard` keeps a role without the permission out of a screen the
+    // server would refuse anyway — Finance included (AC-211-J), which owns disbursement, not the record.
+    path: 'subcontractors',
+    canActivate: [sessionGuard, mustChangePasswordGuard, subcontractorManageGuard],
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/subcontractors/subcontractor-list/subcontractor-list-page').then(
+            (m) => m.SubcontractorListPage,
+          ),
+      },
+      {
+        path: 'new',
+        loadComponent: () =>
+          import('./features/subcontractors/subcontractor-form/subcontractor-form-page').then(
+            (m) => m.SubcontractorFormPage,
+          ),
+      },
+      {
+        // `withComponentInputBinding` binds `:subcontractorId` to the component's input signal.
+        path: ':subcontractorId',
+        loadComponent: () =>
+          import('./features/subcontractors/subcontractor-form/subcontractor-form-page').then(
+            (m) => m.SubcontractorFormPage,
+          ),
+      },
+    ],
+  },
+  {
+    // KAFF-212 — S-030 (list and create/edit share the screen id; two routes, one component). Same
+    // shape as `/subcontractors` above: `supplierManageGuard` refuses the Technical Office, which owns
+    // the subcontractor and not this (rule 1).
+    path: 'suppliers',
+    canActivate: [sessionGuard, mustChangePasswordGuard, supplierManageGuard],
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/suppliers/supplier-list/supplier-list-page').then((m) => m.SupplierListPage),
+      },
+      {
+        path: 'new',
+        loadComponent: () =>
+          import('./features/suppliers/supplier-form/supplier-form-page').then((m) => m.SupplierFormPage),
+      },
+      {
+        // `withComponentInputBinding` binds `:supplierId` to the component's input signal.
+        path: ':supplierId',
+        loadComponent: () =>
+          import('./features/suppliers/supplier-form/supplier-form-page').then((m) => m.SupplierFormPage),
       },
     ],
   },

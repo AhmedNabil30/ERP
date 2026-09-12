@@ -1,0 +1,116 @@
+<section class="suppliers" data-testid="supplier-list">
+  <h1 class="title">{{ i18n.t('supplier.list_title') }}</h1>
+
+  <div class="filters" role="group" [attr.aria-label]="i18n.t('supplier.list_title')">
+    @for (option of filters; track option) {
+      <button
+        type="button"
+        class="chip"
+        [class.chip--on]="statusFilter() === option"
+        [attr.aria-pressed]="statusFilter() === option"
+        [attr.data-testid]="'supplier-filter-' + option"
+        (click)="onFilter(option)"
+      >
+        {{ i18n.t(filterKey(option)) }}
+      </button>
+    }
+  </div>
+
+  @if (failure(); as key) {
+    <p class="refusal" role="alert" data-testid="supplier-list-failure">{{ i18n.t(key) }}</p>
+  } @else if (loading()) {
+    <p class="loading" role="status" aria-live="polite" data-testid="supplier-list-loading">
+      {{ i18n.t('supplier.loading') }}
+    </p>
+  } @else if (suppliers().length > 0) {
+    <ul class="rows" data-testid="supplier-rows">
+      @for (supplier of suppliers(); track trackRow($index, supplier)) {
+        <li
+          class="row"
+          [class.row--archived]="!supplier.isActive"
+          [attr.data-testid]="'supplier-row-' + supplier.code"
+        >
+          <a class="row-link" [routerLink]="['/suppliers', supplier.id]">
+            <bdi class="row-code" translate="no">{{ supplier.code }}</bdi>
+            <span class="row-name" dir="auto">{{ supplier.name }}</span>
+            <bdi class="row-phone" dir="ltr">{{ supplier.phone }}</bdi>
+            @if (supplier.address; as address) {
+              <span class="row-address" dir="auto">{{ address }}</span>
+            }
+
+            @if (!supplier.isActive) {
+              <span class="row-archived-badge" data-testid="supplier-row-archived-badge">
+                {{ i18n.t('supplier.archived_badge') }}
+              </span>
+            }
+          </a>
+
+          <div class="row-actions">
+            @if (rowFailure(); as failed) {
+              @if (failed.id === supplier.id) {
+                <p class="row-refusal" role="alert" [attr.data-testid]="'supplier-row-refusal-' + supplier.code">
+                  {{ i18n.t(failed.key) }}
+                </p>
+              }
+            }
+
+            <a class="chip" [routerLink]="['/suppliers', supplier.id]" [attr.data-testid]="'supplier-edit-' + supplier.code">
+              {{ i18n.t('action.edit') }}
+            </a>
+
+            @if (supplier.isActive) {
+              @if (confirmingArchiveId() === supplier.id) {
+                <p class="row-confirm" [attr.data-testid]="'supplier-archive-body-' + supplier.code">
+                  {{ i18n.t('supplier.archive_confirm') }}
+                </p>
+                <button
+                  type="button"
+                  class="danger-button"
+                  [disabled]="isArchiving(supplier.id)"
+                  [attr.data-testid]="'supplier-archive-confirm-' + supplier.code"
+                  (click)="onConfirmArchive(supplier.id)"
+                >
+                  {{ i18n.t('supplier.archive_action') }}
+                </button>
+                <button
+                  type="button"
+                  class="chip"
+                  [attr.data-testid]="'supplier-archive-cancel-' + supplier.code"
+                  (click)="onCancelArchive()"
+                >
+                  {{ i18n.t('action.cancel') }}
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  class="danger-button"
+                  [attr.data-testid]="'supplier-archive-' + supplier.code"
+                  (click)="onStartArchive(supplier.id)"
+                >
+                  {{ i18n.t('supplier.archive_action') }}
+                </button>
+              }
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  } @else if (statusFilter() !== 'active') {
+    <div class="empty" role="status" aria-live="polite" data-testid="supplier-list-empty-filtered">
+      <p class="empty-title">{{ i18n.t('supplier.empty_filtered') }}</p>
+    </div>
+  } @else {
+    <div class="empty" role="status" aria-live="polite" data-testid="supplier-list-empty">
+      <p class="empty-title">{{ i18n.t('supplier.empty') }}</p>
+      <a class="create" routerLink="/suppliers/new" data-testid="supplier-create">
+        {{ i18n.t('supplier.action.create') }}
+      </a>
+    </div>
+  }
+
+  @if (suppliers().length > 0) {
+    <a class="create" routerLink="/suppliers/new" data-testid="supplier-create">
+      {{ i18n.t('supplier.action.create') }}
+    </a>
+  }
+</section>
