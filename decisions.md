@@ -13512,3 +13512,39 @@ whether `KAFF-211` is re-verified as a whole — `V-38-L`, the unwritten E2E sui
 `Q82` answer is Nabil's and the build of §4 and §5 is Backend's and Frontend's.
 
 ---
+
+---
+
+### D-152 · Karim via Nabil — the answers that unblock `KAFF-210`, narrow D-146, widen D-147 and guard the seed · 2026-09-12
+
+**Source: Karim, relayed by Nabil to the coordinator session, 2026-09-12.** Recorded as given.
+These close `Q76`, `Q77`, `Q78`, `Q79`, `Q80`, `Q81`, `Q83` and `Q84`.
+
+1. **`Q80` — a worker whose phone matches an active subcontractor or supplier: WARN and allow the
+   save**, exactly as for clients. One person may wear several hats. The Api test skipped under the
+   `Q80` hold is unheld and now asserts warn-and-acknowledge. This closes `V-38-F`, which found the
+   runtime already behaving this way while the suite held the question.
+2. **`Q76` — the day rate is visible to the Owner, to Finance, and to the responsible Site Engineer.
+   Nobody else.** The engineer is scoped to their assigned project. **The Architect rules the
+   permission shape.**
+3. **`Q77` — any engineer assigned to the same project may close an engagement another engineer
+   opened.** This stops engagements dangling when someone is away.
+4. **`Q78` — one overall rating out of 5 per engagement.** No per-skill breakdown. Only the
+   responsible Site Engineer rates.
+5. **`Q79` — `Department` is MANDATORY on the staff file.** Every employee carries one (Finance,
+   Technical Office, Operations, and so on). Existing rows need a migration. **The Architect rules
+   whether the value list is an enum or a lookup table.** This supersedes the optional `Department`
+   built at `c5b3a24`.
+6. **`Q83` — rehiring a salaried leaver on the same phone is ALLOWED.** A leaver is deactivated, not
+   deleted, and reactivation must not hit the unique phone index.
+   ⚠️ **This narrows D-146:** the salaried refusal applies to **active** salaried staff only, so the
+   partial unique index gains the active predicate. **The Architect amends D-146.**
+7. **`Q84` — the Owner sees and edits the tax registration number too.** Finance enters it; the Owner
+   holds global rights. **D-147's `[owner, finance]` grant is confirmed, not narrowed.**
+8. **`Q81` — the seed is SKIPPED ENTIRELY if any باب already exists.** It runs only on an empty
+   environment and overwrites nothing. This is the guard D-142 named and deliberately did not take.
+
+**`KAFF-210` is fully unblocked. Nothing in it is left unbuilt for want of an answer.**
+
+**Still open, slice 4 only:** the rounding basis for the hold, advance recovery and withholding
+(D-145 §2).
