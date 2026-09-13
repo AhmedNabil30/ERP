@@ -14058,3 +14058,71 @@ Scrum Master deciding a business-risk tradeoff that is his to decide, not mine.
 **Revisit if.** Nabil lifts the pause early, or a defect surfaces in production that per-story
 verification would plausibly have caught — in which case the risk accepted above stopped being
 theoretical and the tradeoff should be re-argued with that evidence in hand.
+
+### D-156 · Scrum Master — amendment to D-155: E2E joins the builder gates while the pause holds · 2026-09-14
+
+**Decision.** While D-155's Verifier pause holds, `BidiGeometryTests` (and any other E2E suite
+covering a story's changed screens) runs before that story's commit, as a builder-owned gate — not
+deferred to a Verifier pass that isn't running.
+
+**Why.** Nabil reviewed the running app and found the sidebar, tables and top bar do not match
+`Main.dc.html` even though every restyle story (`KAFF-900`–`921`) is `BUILT` and its own gates were
+green. The regression this amendment targets already happened once: a missing `justify-self: start`
+on a grid-child `<bdi>` broke bidi geometry and reached `main` because no E2E gate ran between commit
+and the (paused) Verifier. `BidiGeometryTests` exists precisely to catch that class of defect, and a
+gate that exists but isn't run is not a gate.
+
+**Scope.** This does not lift the Verifier pause or add scope beyond what D-155 already excluded from
+it (VERIFIED/ACCEPTED still require Nabil's pass and the eventual batch Verifier). It only moves one
+already-written, already-owned E2E suite from "the Verifier will catch it" to "the builder runs it
+before commit," for the KAFF-922–925 sidebar/topbar/table work and anything else committed while the
+pause holds.
+
+**Who asked.** Scrum Master, following Nabil's 2026-09-14 finding that the last wave shipped a layout
+mismatch nobody screenshotted. Recorded as an amendment, not a new business decision — it does not
+touch anything D-155 assigned to Nabil.
+
+### D-157 · Scrum Master — KAFF-922–925: layout gap closes the wave-3 restyle, mandatory render-and-look gate · 2026-09-14
+
+**Decision.** Four new stories opened under `design-system`: `KAFF-922` (sidebar rebuild — brand
+mark, grouped nav from `navRowsFor`'s data, icons, account block moved from header), `KAFF-923` (top
+bar rebuild and the `<h1>` ownership decision), `KAFF-924` (shared `kaff-table-header` + fixing
+`kaff-table-row`'s always-on mobile-stacked labels — the root cause, in the shared component, not per
+screen), `KAFF-925` (applying `KAFF-924`'s header to catalogue/babs/employees/clients/users/audit,
+gated on `KAFF-924` being `BUILT` first).
+
+**Why now.** Nabil looked at the running app: "the styles okay but the list and tables and the way we
+agreed on the sidebar not like the design." Correct. `KAFF-900`–`921` swapped colours and components
+onto the existing markup but never rebuilt the layout structure `Main.dc.html` actually specifies —
+confirmed by reading `app.html`/`app.css`/`catalogue-list-page.html` against the mockup directly
+(not re-derived from a prior report): the sidebar is a flat text-link list with no brand mark, no
+grouping, no icons, and the account block in the header instead of the sidebar; the top bar's `<h1>`
+is the app name, not the page title; `kaff-table-row.css` has no mobile breakpoint at all, so every
+row's per-column `<span class="row-*-label">` renders permanently — the mobile-stacked pattern left
+switched on at desktop.
+
+**Root-cause placement.** `KAFF-924` fixes the table-label bug once, in `kaff-table-row`'s shared CSS
+and a new `kaff-table-header` component, rather than in each of six screens separately — a per-screen
+patch would leave the same defect class latent in the next screen that reuses the component.
+
+**Mandatory gate, restated because the last wave skipped it.** Every screen touched by
+`KAFF-922`–`925` must be rendered and looked at — desktop and 390px, light and dark — before its
+trailer moves to `BUILT`. Wave 3 shipped 8 of 12 screens without a screenshot and that is the direct
+cause of this rework. A gate-green screen nobody rendered is not `BUILT`.
+
+**Dispatch.** Frontend and UX, `sonnet` (§M default — mechanical layout/CSS work, no ruling, no
+refusal decision, not on the never-downgrade list). Serial, one at a time (`agile.md` §2a rule 3):
+`KAFF-922` → `KAFF-923` → `KAFF-924` → `KAFF-925`, each on `main` before the next starts.
+
+**What this does not decide.** `KAFF-923`'s `<h1>`-ownership call is Frontend's to make and record in
+the story, not a business rule — no question for Nabil. Nothing here touches money, permissions, or
+any `spec.md` clause.
+
+**Amendment, 2026-09-14 — `KAFF-922` and `KAFF-924` run in parallel, not serially.** `agile.md` §2a
+rule 3 exists to stop two builders colliding on the same tree. Their file sets are disjoint —
+`KAFF-922` touches `app.html`, `app.css`, `nav-rows.ts`; `KAFF-924` touches `kaff-table-row.*` and a
+new `kaff-table-header` component, and explicitly excludes any feature screen template. Applying the
+serial rule where there is no shared file costs session budget for no safety gained, so both were
+dispatched together. `KAFF-923` still waits for `KAFF-922` (both touch `app.html`) and `KAFF-925`
+still waits for `KAFF-924` (true dependency, not just file overlap) — the rule holds wherever a
+collision or a real dependency exists, it's only lifted where neither does.

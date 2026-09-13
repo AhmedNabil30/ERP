@@ -589,9 +589,10 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 |
 | 🟡 BUILT — shipped, nobody independent has looked | 0 | 0 | 0 | 33 |
+| ⚪ READY / COMMITTED — refined, not built | 0 | 0 | 0 | 11 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 5 | 0 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 | 0 |
-| **total** | **127** | **58** | **5** | **33** |
+| **total** | **127** | **58** | **5** | **44** |
 
 ## Every story
 
@@ -661,6 +662,10 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-919](stories/design-system/KAFF-919-restyle-user-form.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: user form |
 | [KAFF-920](stories/design-system/KAFF-920-restyle-audit-trail.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: audit trail |
 | [KAFF-921](stories/design-system/KAFF-921-restyle-sign-in.md) | design-system | 1 | 🟡 BUILT | none | `-` | - | Restyle: sign-in |
+| [KAFF-922](stories/design-system/KAFF-922-sidebar-rebuild.md) | design-system | 3 | ⚪ READY | none | `-` | - | Sidebar rebuild to match Main.dc.html |
+| [KAFF-923](stories/design-system/KAFF-923-topbar-rebuild.md) | design-system | 2 | ⚪ READY | none | `-` | - | Top bar rebuild, and where the page `<h1>` lives |
+| [KAFF-924](stories/design-system/KAFF-924-table-header-row.md) | design-system | 3 | ⚪ READY | none | `-` | - | Table header row — the shared fix, not a per-screen patch |
+| [KAFF-925](stories/design-system/KAFF-925-apply-table-header-to-lists.md) | design-system | 3 | ⚪ READY | none | `-` | - | Apply the table header row to every converted list |
 
 <!-- END GENERATED -->
 
