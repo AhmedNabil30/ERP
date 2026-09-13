@@ -9,6 +9,11 @@
   border-block-end: 1px solid var(--color-border);
 }
 
+/* Isolated identifiers are grid children; shrink their boxes to the content they carry. */
+.row > bdi {
+  justify-self: start;
+}
+
 /* Archived: reduced opacity, not a second hue (apple-erp-design §3). The word "مؤرشف" still carries
    the state — colour/opacity is never the only signal. */
 .row--archived {

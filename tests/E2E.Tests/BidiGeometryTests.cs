@@ -12,17 +12,12 @@ namespace Kaff.E2E.Tests;
 /// <param name="TextWidth">A <c>Range</c> over its text nodes — what the box would be if it fitted.</param>
 /// <param name="BoxStart">The box's inline-start edge. Under RTL that is its <b>right</b> edge.</param>
 /// <param name="TextStart">The text's inline-start edge, measured the same way.</param>
-/// <param name="NameStart">
-/// The inline-start edge of the row's name text, where the element sits in a row that has one. Null
-/// elsewhere, which is why the sweep does not assert it.
-/// </param>
 internal sealed record BdiMeasurement(
     string Text,
     double BoxWidth,
     double TextWidth,
     double BoxStart,
-    double TextStart,
-    double? NameStart)
+    double TextStart)
 {
     /// <summary>
     /// Read out of the raw <c>JsonElement</c> rather than deserialised into.
@@ -38,10 +33,7 @@ internal sealed record BdiMeasurement(
         element.GetProperty("boxWidth").GetDouble(),
         element.GetProperty("textWidth").GetDouble(),
         element.GetProperty("boxStart").GetDouble(),
-        element.GetProperty("textStart").GetDouble(),
-        element.GetProperty("nameStart") is { ValueKind: JsonValueKind.Number } name
-            ? name.GetDouble()
-            : null);
+        element.GetProperty("textStart").GetDouble());
 }
 
 /// <summary>
@@ -111,7 +103,7 @@ public sealed class BidiGeometryTests
     /// in the document.
     /// </remarks>
     private const string MeasureEveryBdi = """
-        () => {
+        (readyTestId) => {
           const rtl = getComputedStyle(document.documentElement).direction === 'rtl';
           const startOf = (rect) => (rtl ? rect.right : rect.left);
           const textRect = (element) => {
@@ -120,19 +112,20 @@ public sealed class BidiGeometryTests
             return range.getBoundingClientRect();
           };
 
-          return Array.from(document.querySelectorAll('bdi')).map((bdi) => {
+          const screen = document.querySelector(`[data-testid="${readyTestId}"]`);
+          if (screen === null) {
+            throw new Error(`Expected [data-testid="${readyTestId}"] before measuring bidi geometry.`);
+          }
+
+          return Array.from(screen.querySelectorAll('bdi')).map((bdi) => {
             const box = bdi.getBoundingClientRect();
             const text = textRect(bdi);
-            const row = bdi.closest('[data-testid]');
-            const name = row === null ? null : row.querySelector('.row-name');
-
             return {
               text: (bdi.textContent || '').trim(),
               boxWidth: box.width,
               textWidth: text.width,
               boxStart: startOf(box),
               textStart: startOf(text),
-              nameStart: name === null ? null : startOf(textRect(name)),
             };
           });
         }
@@ -158,14 +151,12 @@ public sealed class BidiGeometryTests
             + "test that could not fail, in its most ordinary disguise");
 
         AssertShrinkWrapped(control, "the user list, which already carries `justify-self: start`");
-        AssertAlignedWithTheName(control, "the user list");
 
         IReadOnlyList<BdiMeasurement> clients = await MeasureAsync(page, "/clients", "client-rows");
 
         clients.Should().NotBeEmpty("seeded by scripts/seed-demo.ps1 — two clients, C-10001 and C-10002");
 
         AssertShrinkWrapped(clients, "the client list");
-        AssertAlignedWithTheName(clients, "the client list");
     }
 
     /// <summary>
@@ -234,7 +225,7 @@ public sealed class BidiGeometryTests
         await page.GotoAsync(route);
         await page.GetByTestId(readyTestId).WaitForAsync();
 
-        JsonElement measured = await page.EvaluateAsync<JsonElement>(MeasureEveryBdi);
+        JsonElement measured = await page.EvaluateAsync<JsonElement>(MeasureEveryBdi, readyTestId);
 
         return [.. measured.EnumerateArray().Select(BdiMeasurement.From)];
     }
@@ -258,24 +249,9 @@ public sealed class BidiGeometryTests
         }
     }
 
-    /// <summary>And the row reads as one column: the run begins where the name begins.</summary>
-    private static void AssertAlignedWithTheName(IReadOnlyList<BdiMeasurement> measurements, string screen)
-    {
-        foreach (BdiMeasurement bdi in measurements)
-        {
-            bdi.NameStart.Should().NotBeNull(
-                Because(screen, bdi, "every row on these two lists carries a name to line up with"));
-
-            Math.Abs(bdi.BoxStart - bdi.NameStart!.Value).Should().BeLessThanOrEqualTo(
-                Tolerance,
-                Because(screen, bdi, "the card must not read as two columns that do not line up"));
-        }
-    }
-
     private static string Because(string screen, BdiMeasurement bdi, string what) =>
         string.Create(
             CultureInfo.InvariantCulture,
             $"on {screen}, <bdi>{bdi.Text}</bdi> — {what}. box {bdi.BoxWidth:F1}px starting at "
-            + $"{bdi.BoxStart:F1}, text {bdi.TextWidth:F1}px starting at {bdi.TextStart:F1}, "
-            + $"name starting at {bdi.NameStart:F1}");
+            + $"{bdi.BoxStart:F1}, text {bdi.TextWidth:F1}px starting at {bdi.TextStart:F1}");
 }

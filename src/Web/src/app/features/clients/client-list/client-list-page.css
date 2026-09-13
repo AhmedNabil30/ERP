@@ -96,11 +96,11 @@
 .row-phone {
   unicode-bidi: isolate;
   min-inline-size: 0;
+  justify-self: start;
 }
 
 .row-code {
   font-weight: 600;
-  justify-self: start;
 }
 
 .row-phone {

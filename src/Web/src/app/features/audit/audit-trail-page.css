@@ -99,24 +99,12 @@
   min-inline-size: 0;
 }
 
-/*
- * F-1's rule, stated here on the day the screen was written rather than after it shipped.
- *
- * A <bdi> that is a direct child of a grid container is a grid item, and `justify-self`'s initial
- * value stretches it to the whole column. Its own resolved direction is LTR — first-strong, which is
- * what isolation *means* for a timestamp — so the run inside a full-width box sits at the box's
- * physical LEFT while the Arabic beside it is aligned right. `TC-1-272` sweeps every <bdi> in the
- * application for exactly this, and `client-list-page.css` carries the same declaration for the same
- * reason. The isolation is untouched: this moves the box, not the text inside it.
- */
-.row-link > kaff-table-row > bdi {
-  justify-self: start;
-}
-
 .row-when {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
   min-inline-size: 0;
+  justify-self: start;
+  inline-size: max-content;
 }
 
 .row-who,
