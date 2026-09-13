@@ -296,3 +296,111 @@ test of itself.
   all** (`frequency` and `averageRating` only), and Finance — who holds the rate row but not the site
   row — is refused `403` on the pool while reading the rate on the history route.
 
+---
+
+## 6. Rendered at 390px, in Arabic
+
+Driven with `run-kaff-erp`'s `driver.mjs eval`: the Owner signs in with `fetch('/api/auth/sign-in')`
+and each route loads in a same-origin `<iframe>` pinned at exactly **390px** wide, with a settle wait
+for the lazy chunk.
+
+| Screen | Route | `dir` / `lang` | `scrollWidth` | Raw i18n keys | `[object …]` / `undefined` / `NaN` |
+|---|---|---|---|---|---|
+| Subcontractor edit (`S-029`) | `/subcontractors/{id}` | `rtl` / `ar` | **386** | **none** | none |
+| Employee edit, day labour (`S-024`) | `/employees/{id}` | `rtl` / `ar` | **386** | **none** | none |
+| Worker pool (`S-025`) | `/projects/{p}/day-labour` | `rtl` / `ar` | **386** | **none** | none |
+| Worker history (`S-027`) | `…/workers/{id}/history` | `rtl` / `ar` | **386** | **none** | none |
+| Worker history, never engaged | `…/workers/{spare}/history` | `rtl` / `ar` | **386** | **none** | none |
+
+`scrollWidth` 386 at a 390px frame means **no horizontal body scroll** on any of them. The raw-key
+scan matched every whitespace-delimited token on the rendered `innerText` against
+`^[a-z][a-zA-Z0-9_]*(\.[a-zA-Z0-9_]+)+$` and against `[object`, `undefined`, `NaN` — **zero hits on
+five screens**.
+
+**What actually rendered**, in Arabic, with no key showing through:
+
+- Subcontractor edit: `نسبة الاستقطاع %` with the helper *"تُكتب كنسبة مئوية، مثال: 5 يعني 5%"*, the
+  field carrying **`5`** for a stored `0.050000`, `dir="ltr"` `inputmode` on the phone and the rate.
+- Worker pool: `عدد مرات التشغيل 2` · `متوسط التقييم 3` for the engaged man, and **`لم يُشغَّل من
+  قبل`** in both figures for the man who never was — never `0`.
+- Worker history: `متوسط الأجر اليومي ‏393.83 ج.م.‏` · `عدد مرات التشغيل 2` · `متوسط التقييم 3`, then
+  one card per engagement with `المشروع`, `الفترة`, `التقييم 4/5`, `الأجر اليومي ‏300.00 ج.م.‏`.
+- Worker history, never engaged: **all three** figures read `لم يُشغَّل من قبل` — `AC-210-G` on the
+  screen and not only in the JSON.
+
+**Bidi isolation is present where `KAFF-210` rule 11 asks for it.** Every money member is inside a
+`<bdi dir="ltr">` — an explicit direction, not first-strong — and so are the dates, the ratings and
+the counts; the project name sits in `<bdi dir="auto">`, which is right for Arabic free text. This is
+the `U+200F`-on-the-leading-character case `STATUS.md` recorded on 2026-09-08, and `f391f12` handled
+it rather than inheriting it.
+
+⚠️ **Nothing was screenshotted, and the reason is unchanged from the 2026-09-12 pass.**
+`driver.mjs shot` launches a fresh browser with no session, so an authenticated screen cannot be
+photographed by it, and the driver is not mine to change. **Geometry, rendered text, computed
+attributes and form values stand in for looking**, which is weaker for visual crowding and for
+overlap that does not change `scrollWidth`. Recorded in §8 as not reached, honestly rather than
+implied.
+
+---
+
+## 7. Findings
+
+| Id | Severity | Where | What |
+|---|---|---|---|
+| `V-39-A` | LOW | `src/Api/Features/Subcontractors/CreateSubcontractor/Response.cs`, `GetSubcontractor/Response.cs` | The same rate serialises as `"0.05"` from `POST` and `"0.050000"` from `GET`. Same number, and the D-151 round trip is byte-stable; it bites only a client that byte-compares a create response against a later read |
+| `V-39-B` | LOW | `src/Web/.../subcontractor-form/subcontractor-form-page.ts` -> `SubcontractorDraft.retentionPercent` | Doc comment still says the percent is *"the wire's own unit here … not a fraction"* — the pre-`d6e697f` behaviour, and the opposite of what the member now does |
+| `V-39-C` | **MEDIUM** | `src/Api/Features/DayLabour/OpenEngagement/Request.cs` -> `Request`; `KAFF-210` -> `AC-210-A` | `AC-210-A` records an engagement *"with its project, its dates and its agreed day rate"*; the request carries only the worker. Both dates come from the clock, so a stretch of work cannot be entered with the dates it actually had. The rate is the multiplicand of a slice-6 cost, and the day count is the multiplier |
+| `V-39-D` | LOW | `KAFF-210` -> `AC-210-B`, `AC-210-D`, rule 2 | Both name the **pool** as rendering the average day rate; D-153 §1 point 5 put it on the rate-gated history read instead, because the pool is money-free. Code follows the ruling, criterion follows the pre-ruling story |
+| `V-39-E` | LOW | `src/Domain/MasterData/Engagement.cs` -> `Engagement`; `src/Api/Features/DayLabour/OpenEngagement/Request.cs` | Three doc comments still say *"`Q76`, unanswered"* and *"no route in this slice sets it"*, in the same files where `SetDayRate` and `SetEngagementDayRate` now exist. D-152 §2 answered `Q76`. The prose contradicts the code beside it |
+| `V-39-F` | LOW | `STATUS.md` sprint-6 table, item 9 | It says the API *"has refused to start against `kaff` since 2026-09-02"* because of `PROBE-UNFLOORED`. **It starts.** I brought the API up against `kaff` at the beginning of this pass: migrations applied, guards installed, `GET /api/health` returned `healthy`. Either the database was recreated or the blocker lapsed; the board still carries it as live work for the Architect |
+
+**No HIGH finding, and no money defect.** `V-38-H`, the one HIGH D-150 left open, is closed and
+re-driven end to end.
+
+### Verdicts
+
+| Story | Verdict | Why |
+|---|---|---|
+| **`KAFF-207`** | **CONDITIONAL** | `V-38-C` is repaired in both halves, driven live: the باب loads into the select and saves `200`. Was `REJECTED`; the rejection no longer stands. Capped by `V-38-L`, the unwritten E2E suite |
+| **`KAFF-208`** | **CONDITIONAL** | Same screen, same repair; the employee create/edit path drives clean, the `Q80`/`Q83` phone behaviour is built and tested, `AC-208-B`'s hold is now answered by D-152 §4. Capped by `V-38-L` |
+| **`KAFF-210`** | **CONDITIONAL** | Ten of eleven criteria driven green, `A` met except its dates (`V-39-C`). Was `REJECTED` for being *"about four criteria of eleven"*; that is no longer true. Capped by `V-38-L`, and `V-39-C`/`V-39-D` are owed to the BA |
+| **`KAFF-211`** | **CONDITIONAL** | The retention rate crosses as a fraction in both directions, byte-stable, with D-151's two refusals carrying their message keys. `AC-211-O` (Finance's tax screen) is still HELD with no UX S-number. Capped by `V-38-L` |
+| **`KAFF-212`** | **CONDITIONAL** | Unchanged in this round except `f66d7ef`, which restated `AC-212-D` and left it **HELD** rather than blessing a carried-over pattern — the right call, and `Q86` is now Karim's. Capped by `V-38-L` |
+| **`KAFF-200`** | **CONDITIONAL** | Only `374f177` (`V-38-E`, the template refusal now names the mismatch) and `ad19b7b` fall in this scope; the import itself was verified on 2026-09-12 and nothing here disturbs it. Capped by `V-38-L` |
+| **`KAFF-209`** | **CONDITIONAL** | Its routes were re-driven as `KAFF-210`'s ground: register-from-site, the pool, and the permission surface all behave. Capped by `V-38-L` |
+
+**Nothing is `ACCEPTED`.** `ACCEPTED` is Nabil running the demo script (`process/agile.md` §4), and
+no E2E suite exists for catalogue, باب, employees or day labour — `V-38-L` stands and caps all seven.
+
+---
+
+## 8. What I did not reach
+
+1. **The E2E suite (`V-38-L`).** Still unwritten, still out of scope for this run, still the cap on
+   every verdict above. I did not write one and was not asked to.
+2. **Screenshots.** `driver.mjs shot` cannot carry a session, so no authenticated screen was
+   photographed. §6's evidence is geometry, text and computed attributes — weaker for visual
+   crowding and overlap that does not change `scrollWidth`.
+3. **`employee-form-page.spec.ts` case by case.** The Frontend flagged that `2723fd8`'s asked-for
+   `Department` **edit round-trip** test may not exist and only a label test does. I drove the
+   round trip live (it works) but did not audit which unit tests pin it.
+4. **`KAFF-201`'s tests being watched red first.** `STATUS.md` records that `d034ba1` did not watch
+   its tests fail. I did not re-derive that, and a test that was never seen red is not evidence.
+5. **English locale.** Every screen in §6 was measured in Arabic only.
+6. **Light palette.** The 2026-09-12 pass measured both palettes; I measured the browser's default
+   (dark) only.
+7. **The three questions D-140/D-142 raised and `Q82`, `Q85`, `Q86`.** Open, and not a Verifier's to
+   answer.
+8. **`AC-207-C` / `TC-2-068`'s staleness** and `AC-211-O`'s missing UX S-number. Both are BA/QA
+   bookkeeping and both were already known; I confirmed neither moved.
+
+---
+
+## What this pass was run on
+
+`54ff044`, working tree clean but for `STATUS.md`, which I did not touch. Scratch database
+`kaff_verifier_v39` in the `kaff-db` container — created, used and left behind; the dev database
+`kaff` was used only for the health check noted in `V-39-F`. **No story, no trailer, no `decisions.md`
+entry and nothing under `src/` was edited by this session.**
+
+
