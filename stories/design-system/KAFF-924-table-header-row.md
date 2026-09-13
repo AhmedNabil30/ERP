@@ -1,6 +1,6 @@
 # KAFF-924 · Table header row — the shared fix, not a per-screen patch
 
-<!-- kaff id=KAFF-924 slice=design-system points=3 state=READY -->
+<!-- kaff id=KAFF-924 slice=design-system points=3 state=BUILT -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 3.
 **Depends on:** `KAFF-901` (`kaff-table-row`, BUILT).

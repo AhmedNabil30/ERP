@@ -19,3 +19,20 @@
 .row--archived {
   opacity: 0.55;
 }
+
+/* KAFF-924: the per-cell mobile label a caller projects in (e.g. `.row-price-label` in
+   catalogue-list-page.html, "سعر التكلفة" stacked above its value). `kaff-table-header` names the
+   column at desktop width, so the label stays hidden there and only appears stacked below the value
+   under the mobile breakpoint every list page's own media query already uses (`width < 48rem`). This
+   was a per-screen convention with no hiding rule at all; it now lives once, here.
+   `::ng-deep` is required because projected content keeps the caller's style scope, not this
+   component's — plain `.row-price-label { }` here would never match it. */
+.row ::ng-deep .row-price-label {
+  display: none;
+}
+
+@media (width < 48rem) {
+  .row ::ng-deep .row-price-label {
+    display: block;
+  }
+}

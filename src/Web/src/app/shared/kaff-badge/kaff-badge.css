@@ -26,3 +26,15 @@
   color: var(--color-warning);
   background: color-mix(in srgb, var(--color-warning) 14%, var(--color-background));
 }
+
+/* The باب margin-percentage pill (`Main.dc.html` 148) — tinted from `--color-brand` the same way the
+   other tones tint from their own token (KAFF-924). */
+.tone-brand {
+  color: var(--color-interactive);
+  background: color-mix(in srgb, var(--color-brand) 14%, var(--color-background));
+}
+
+.badge--pill {
+  border-radius: 999px;
+  padding-inline: var(--space-3);
+}

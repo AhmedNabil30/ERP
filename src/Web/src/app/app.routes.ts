@@ -320,6 +320,16 @@ export const routes: Routes = [
       import('./features/forbidden/forbidden-page').then((m) => m.ForbiddenPage),
   },
   {
+    // KAFF-924 render proof — dev-only, unguarded so it needs no session. Delete when KAFF-925
+    // wires the real screens onto kaff-table-header/kaff-group-heading and this stops being the
+    // only place they render.
+    path: '_fixtures/kaff-924',
+    loadComponent: () =>
+      import('./features/dev-fixtures/table-header-fixture/table-header-fixture-page').then(
+        (m) => m.TableHeaderFixturePage,
+      ),
+  },
+  {
     path: 'change-password',
     loadComponent: () =>
       import('./features/auth/change-password/change-password-page').then(

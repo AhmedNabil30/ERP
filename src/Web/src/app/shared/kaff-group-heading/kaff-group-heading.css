@@ -1,0 +1,19 @@
+/* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). */
+
+.group-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4) var(--space-2);
+}
+
+.name {
+  margin: 0;
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+.count {
+  font-size: var(--text-xs, 0.75rem);
+  color: var(--color-muted);
+}

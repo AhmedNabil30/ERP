@@ -1,0 +1,49 @@
+/* KAFF-924 render proof only — not a product screen's styling. Logical properties only. */
+
+.fixture {
+  display: flex;
+  flex-direction: column;
+  max-inline-size: 56rem;
+  margin-inline: auto;
+  padding: var(--space-4);
+  background: var(--color-background);
+  color: var(--color-text);
+}
+
+.row-desc {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row-price {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-size: var(--text-sm);
+}
+
+@media (width >= 48rem) {
+  .row-price {
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: var(--space-2);
+  }
+}
+
+/* Same caller-owned override catalogue-list-page.css already carries for kaff-table-row (KAFF-910
+   gap comment there): the paired grid columns are a desktop-density layout, so below the mobile
+   breakpoint the caller collapses both the header and the rows to a single column. The header row
+   itself is then redundant with the per-row stacked labels kaff-table-row now shows at this width,
+   so it hides rather than stacking its own six labels on top of them. */
+@media (width < 48rem) {
+  kaff-table-row .row,
+  kaff-table-header .header {
+    grid-template-columns: 1fr !important;
+  }
+
+  kaff-table-header {
+    display: none;
+  }
+}

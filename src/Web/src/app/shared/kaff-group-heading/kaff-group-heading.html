@@ -1,0 +1,11 @@
+<div class="group-heading" [attr.data-testid]="testId()">
+  <h2 class="name" dir="auto">{{ name() }}</h2>
+
+  @if (marginText(); as margin) {
+    <kaff-badge tone="brand" [pill]="true">{{ margin }}</kaff-badge>
+  }
+
+  @if (countText(); as count) {
+    <span class="count" dir="auto">{{ count }}</span>
+  }
+</div>
