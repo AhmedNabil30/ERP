@@ -7,6 +7,8 @@ import { BabOption, EmployeeCreate, EmployeeFile, EmployeeKind, EmployeesApi } f
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { UnsavedChangesAware } from '../../../core/navigation/unsaved-changes.guard';
 import { DuplicatePhoneWarning } from '../../../shared/duplicate-phone-warning/duplicate-phone-warning';
+import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import { KaffField } from '../../../shared/kaff-field/kaff-field';
 import { PhoneMatch } from '../../../shared/phone-match';
 
 interface EmployeeDraft {
@@ -76,7 +78,7 @@ const draft = schema<EmployeeDraft>((path) => {
  */
 @Component({
   selector: 'kaff-employee-form-page',
-  imports: [FormField, RouterLink, DuplicatePhoneWarning],
+  imports: [FormField, RouterLink, DuplicatePhoneWarning, KaffField, KaffButton],
   templateUrl: './employee-form-page.html',
   styleUrl: './employee-form-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -140,6 +142,24 @@ export class EmployeeFormPage implements UnsavedChangesAware {
       ? 'errors.master.day_labour_requires_trade'
       : null;
   });
+
+  /**
+   * `kaff-field` takes one error slot. The باب field showed two mutually-exclusive messages before
+   * this conversion (`@if`/`@else if`) — a network failure or a validation error, never both — so one
+   * computed key/testid pair reproduces that, `babsUnavailable()` taking priority exactly as the
+   * original template order did.
+   */
+  protected readonly babFieldErrorKey = computed(() =>
+    this.babsUnavailable() ? 'hr.employee.babs_unavailable' : this.babIdErrorKey(),
+  );
+
+  protected readonly babFieldErrorTestId = computed(() =>
+    this.babsUnavailable()
+      ? 'employee-babs-unavailable'
+      : this.babIdErrorKey() !== null
+        ? 'employee-field-bab-error'
+        : null,
+  );
 
   constructor() {
     void this.loadBabs();

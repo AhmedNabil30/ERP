@@ -152,8 +152,10 @@ describe('EmployeeFormPage · department field label', () => {
   it('shows the Arabic label, not the raw key', async () => {
     const fixture = await createFixture('emp-1', EMPLOYEE_FILE);
 
-    const label = fixture.nativeElement.querySelector('[data-testid="employee-field-department"]')
-      .closest('label').querySelector('.label').textContent;
+    const label = fixture.nativeElement
+      .querySelector('[data-testid="employee-field-department"]')
+      .closest('kaff-field')
+      .querySelector('.field-label').textContent.trim();
     expect(label).toBe('القسم');
     expect(label).not.toContain('hr.employee.field.department');
   });

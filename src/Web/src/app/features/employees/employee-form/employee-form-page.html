@@ -18,20 +18,20 @@
     }
 
     <form class="fields" (submit)="$event.preventDefault(); onSubmit()">
-      <label class="field">
-        <span class="label">{{ i18n.t('hr.employee.field.full_name') }} *</span>
+      <kaff-field labelKey="hr.employee.field.full_name" controlId="employee-full-name-input" [required]="true">
         <input
+          id="employee-full-name-input"
           class="input"
           type="text"
           dir="auto"
           data-testid="employee-field-full-name"
           [formField]="employeeForm.fullName"
         />
-      </label>
+      </kaff-field>
 
-      <label class="field">
-        <span class="label">{{ i18n.t('hr.employee.field.phone') }} *</span>
+      <kaff-field labelKey="hr.employee.field.phone" controlId="employee-phone-input" [required]="true">
         <input
+          id="employee-phone-input"
           class="input"
           type="tel"
           dir="ltr"
@@ -41,7 +41,7 @@
           [formField]="employeeForm.phone"
           (blur)="onPhoneBlur()"
         />
-      </label>
+      </kaff-field>
 
       <!--
         S-024's warning, reusing S-013's client presentation (decisions.md D-141/D-146). A duplicate
@@ -65,9 +65,9 @@
           <span class="code-note">{{ i18n.t('hr.employee.kind_is_permanent') }}</span>
         </p>
       } @else {
-        <label class="field">
-          <span class="label">{{ i18n.t('hr.employee.field.kind') }} *</span>
+        <kaff-field labelKey="hr.employee.field.kind" controlId="employee-kind-input" [required]="true">
           <select
+            id="employee-kind-input"
             class="input select"
             data-testid="employee-field-kind"
             [attr.aria-label]="i18n.t('hr.employee.field.kind')"
@@ -76,13 +76,19 @@
             <option value="Salaried" selected>{{ i18n.t('enum.EmployeeKind.Salaried') }}</option>
             <option value="DayLabour">{{ i18n.t('enum.EmployeeKind.DayLabour') }}</option>
           </select>
-        </label>
+        </kaff-field>
       }
 
       @if (isDayLabour()) {
-        <label class="field">
-          <span class="label">{{ i18n.t('hr.employee.field.bab') }} *</span>
+        <kaff-field
+          labelKey="hr.employee.field.bab"
+          controlId="employee-bab-input"
+          [required]="true"
+          [errorKey]="babFieldErrorKey()"
+          [errorTestId]="babFieldErrorTestId()"
+        >
           <select
+            id="employee-bab-input"
             class="input select"
             data-testid="employee-field-bab"
             [disabled]="babsUnavailable()"
@@ -101,32 +107,23 @@
               <option [value]="bab.id" [selected]="bab.id === currentBabId()">{{ babLabel(bab) }}</option>
             }
           </select>
-          @if (babsUnavailable()) {
-            <p class="field-error" role="alert" data-testid="employee-babs-unavailable">
-              {{ i18n.t('hr.employee.babs_unavailable') }}
-            </p>
-          } @else if (babIdErrorKey(); as key) {
-            <p class="field-error" role="alert" data-testid="employee-field-bab-error">
-              {{ i18n.t(key) }}
-            </p>
-          }
-        </label>
+        </kaff-field>
       }
 
-      <label class="field">
-        <span class="label">{{ i18n.t('hr.employee.field.specialty') }}</span>
+      <kaff-field labelKey="hr.employee.field.specialty" controlId="employee-specialty-input">
         <input
+          id="employee-specialty-input"
           class="input"
           type="text"
           dir="auto"
           data-testid="employee-field-specialty"
           [formField]="employeeForm.specialty"
         />
-      </label>
+      </kaff-field>
 
-      <label class="field">
-        <span class="label">{{ i18n.t('hr.employee.field.national_id') }}</span>
+      <kaff-field labelKey="hr.employee.field.national_id" controlId="employee-national-id-input">
         <input
+          id="employee-national-id-input"
           class="input"
           type="text"
           dir="ltr"
@@ -134,47 +131,47 @@
           data-testid="employee-field-national-id"
           [formField]="employeeForm.nationalId"
         />
-      </label>
+      </kaff-field>
 
-      <label class="field">
-        <span class="label">{{ i18n.t('hr.employee.field.job_title') }}</span>
+      <kaff-field labelKey="hr.employee.field.job_title" controlId="employee-job-title-input">
         <input
+          id="employee-job-title-input"
           class="input"
           type="text"
           dir="auto"
           data-testid="employee-field-job-title"
           [formField]="employeeForm.jobTitle"
         />
-      </label>
+      </kaff-field>
 
-      <label class="field">
-        <span class="label">{{ i18n.t('hr.employee.field.department') }}</span>
+      <kaff-field labelKey="hr.employee.field.department" controlId="employee-department-input">
         <input
+          id="employee-department-input"
           class="input"
           type="text"
           dir="auto"
           data-testid="employee-field-department"
           [formField]="employeeForm.department"
         />
-      </label>
+      </kaff-field>
 
-      <label class="field">
-        <span class="label">{{ i18n.t('hr.employee.field.hired_on') }}</span>
+      <kaff-field labelKey="hr.employee.field.hired_on" controlId="employee-hired-on-input">
         <input
+          id="employee-hired-on-input"
           class="input"
           type="date"
           data-testid="employee-field-hired-on"
           [formField]="employeeForm.hiredOn"
         />
-      </label>
+      </kaff-field>
 
       @if (refusal(); as key) {
         <p class="refusal" role="alert" data-testid="employee-form-refusal">{{ i18n.t(key) }}</p>
       }
 
-      <button class="submit" type="submit" data-testid="employee-submit" [disabled]="!canSubmit()">
+      <kaff-button variant="primary" type="submit" testId="employee-submit" [disabled]="!canSubmit()">
         {{ i18n.t('action.save') }}
-      </button>
+      </kaff-button>
     </form>
   }
 </section>
