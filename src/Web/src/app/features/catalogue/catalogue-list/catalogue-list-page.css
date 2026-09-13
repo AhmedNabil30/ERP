@@ -9,20 +9,14 @@
 
 .babs-link,
 .search-input,
-.chip,
 .row-link,
-.danger-button,
 .create {
   min-block-size: var(--tap-target);
 }
 
 .babs-link,
-.chip--on,
-.group-title,
 .row-code,
-.row-archived-badge,
 .empty-title,
-.danger-button,
 .create {
   font-weight: 600;
 }
@@ -30,7 +24,6 @@
 .babs-link,
 .search-input,
 .row-refusal,
-.danger-button,
 .refusal,
 .create {
   border-radius: var(--radius-md);
@@ -64,7 +57,7 @@
   display: inline-flex;
   align-items: center;
   padding-inline: var(--space-3);
-  color: var(--color-accent);
+  color: var(--color-interactive);
   border: 1px solid var(--color-border);
 }
 
@@ -90,36 +83,8 @@
 }
 
 .search-input:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-interactive);
   outline-offset: 2px;
-}
-
-.filters {
-  display: flex;
-  gap: var(--space-1);
-  padding: var(--space-1);
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: var(--color-surface);
-  inline-size: fit-content;
-  max-inline-size: 100%;
-}
-
-.chip {
-  flex: 1 1 auto;
-  padding-inline: var(--space-4);
-  font: inherit;
-  color: var(--color-muted);
-  cursor: pointer;
-  background: transparent;
-  border: none;
-  border-radius: 999px;
-}
-
-.chip--on {
-  background: var(--color-background);
-  color: var(--color-text);
-  box-shadow: var(--elevation-1);
 }
 
 .groups {
@@ -147,34 +112,40 @@
   overflow: hidden;
 }
 
-.row {
+.rows-item {
   display: flex;
   flex-direction: column;
   content-visibility: auto;
   contain-intrinsic-size: 0 9rem;
 }
 
-.row + .row {
-  border-block-start: 1px solid var(--color-border);
+/* KAFF-910 gap: kaff-table-row (KAFF-901) takes one fixed `columns()` string with no responsive
+   variant of its own — nesting/columns are documented as "the caller's job". Overriding its inner
+   `.row` grid template here, from outside, is that caller's job at the one breakpoint the component
+   does not know about. */
+@media (width < 48rem) {
+  kaff-table-row .row {
+    grid-template-columns: 1fr !important;
+  }
 }
 
-.row-link {
-  display: grid;
-  gap: var(--space-1);
-  padding: var(--space-3) var(--space-4);
-}
-
-.row--archived .row-link {
-  opacity: 0.65;
+.row-link kaff-table-row {
+  display: block;
+  min-inline-size: 0;
 }
 
 .row-code {
   unicode-bidi: isolate;
   justify-self: start;
+  min-inline-size: 0;
 }
 
 .row-desc {
   font-size: var(--text-sm);
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .row-unit {
@@ -187,6 +158,7 @@
   flex-direction: column;
   gap: 0.1rem;
   font-size: var(--text-sm);
+  min-inline-size: 0;
 }
 
 .row-price > .figure {
@@ -198,20 +170,12 @@
   opacity: 0.75;
 }
 
-/* V-36-C: `--color-text` clears the 4.5:1 contrast floor through `.row--archived`'s 0.65 fade;
-   `--color-muted` does not (a child opacity cannot cancel an ancestor's compositing opacity). */
-.row-archived-badge {
-  justify-self: start;
-  font-size: var(--text-sm);
-  color: var(--color-text);
-}
-
 .row-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
-  padding: 0 var(--space-4) var(--space-3);
+  padding: var(--space-2) var(--space-4) var(--space-3);
 }
 
 .row-confirm {
@@ -228,20 +192,6 @@
   font-size: var(--text-sm);
   border: 1px solid var(--color-danger);
   color: var(--color-danger);
-}
-
-.danger-button {
-  padding-inline: var(--space-4);
-  font: inherit;
-  cursor: pointer;
-  color: var(--color-danger);
-  background: transparent;
-  border: 1px solid var(--color-danger);
-}
-
-.danger-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
 }
 
 .empty {
@@ -278,11 +228,6 @@
 }
 
 @media (width >= 48rem) {
-  .row-link {
-    grid-template-columns: auto minmax(14rem, 1fr) auto auto auto;
-    align-items: center;
-  }
-
   .row-price {
     flex-direction: row;
     justify-content: flex-end;

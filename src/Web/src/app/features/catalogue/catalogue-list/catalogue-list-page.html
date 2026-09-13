@@ -34,22 +34,14 @@
     />
   </form>
 
-  <!-- A segmented control: one bordered track, the active segment filled (apple-erp-design §4) —
-       three server states, KAFF-206 rule 7. -->
-  <div class="filters" role="group" [attr.aria-label]="i18n.t('catalogue.search.placeholder')">
-    @for (option of filters; track option) {
-      <button
-        type="button"
-        class="chip"
-        [class.chip--on]="statusFilter() === option"
-        [attr.aria-pressed]="statusFilter() === option"
-        [attr.data-testid]="'catalogue-filter-' + option"
-        (click)="onFilter(option)"
-      >
-        {{ i18n.t(filterKey(option)) }}
-      </button>
-    }
-  </div>
+  <!-- KAFF-910: KAFF-901's segmented filter — one bordered track, active segment filled. -->
+  <kaff-segmented-filter
+    [options]="segmentedOptions"
+    [value]="statusFilter()"
+    (valueChange)="onFilter($event)"
+    ariaLabelKey="catalogue.search.placeholder"
+    testIdPrefix="catalogue-filter"
+  />
 
   @if (failure(); as key) {
     <p class="refusal" role="alert" data-testid="catalogue-list-failure">{{ i18n.t(key) }}</p>
@@ -67,32 +59,34 @@
 
           <ul class="rows">
             @for (item of group.items; track trackItem($index, item)) {
-              <li class="row" [class.row--archived]="item.status === 'Archived'">
+              <li class="rows-item">
                 <a
                   class="row-link"
                   [routerLink]="['/catalogue', item.id]"
                   [state]="{ item: item }"
                   [attr.data-testid]="'catalogue-row-' + item.code"
                 >
-                  <bdi class="row-code" translate="no">{{ item.code }}</bdi>
-                  <span class="row-desc" dir="auto">{{ item.descriptionAr }}</span>
-                  <span class="row-unit" dir="auto">{{ item.unit }}</span>
+                  <kaff-table-row [columns]="rowColumns" [archived]="item.status === 'Archived'">
+                    <bdi class="row-code figure" dir="ltr" translate="no">{{ item.code }}</bdi>
+                    <span class="row-desc" dir="auto">{{ item.descriptionAr }}</span>
+                    <span class="row-unit" dir="auto">{{ item.unit }}</span>
 
-                  <span class="row-price">
-                    <span class="row-price-label">{{ i18n.t('catalogue.column.cost_price') }}</span>
-                    <bdi class="figure" dir="ltr">{{ i18n.formatMoney(item.costPrice) }}</bdi>
-                  </span>
-
-                  <span class="row-price">
-                    <span class="row-price-label">{{ i18n.t('catalogue.column.base_sell_rate') }}</span>
-                    <bdi class="figure" dir="ltr">{{ i18n.formatMoney(item.baseSellRate) }}</bdi>
-                  </span>
-
-                  @if (item.status === 'Archived') {
-                    <span class="row-archived-badge" data-testid="catalogue-row-archived-badge">
-                      {{ i18n.t('catalogue.item.archived_badge') }}
+                    <span class="row-price">
+                      <span class="row-price-label">{{ i18n.t('catalogue.column.cost_price') }}</span>
+                      <bdi class="figure" dir="ltr">{{ i18n.formatMoney(item.costPrice) }}</bdi>
                     </span>
-                  }
+
+                    <span class="row-price">
+                      <span class="row-price-label">{{ i18n.t('catalogue.column.base_sell_rate') }}</span>
+                      <bdi class="figure" dir="ltr">{{ i18n.formatMoney(item.baseSellRate) }}</bdi>
+                    </span>
+
+                    @if (item.status === 'Archived') {
+                      <kaff-badge tone="neutral" testId="catalogue-row-archived-badge">
+                        {{ i18n.t('catalogue.item.archived_badge') }}
+                      </kaff-badge>
+                    }
+                  </kaff-table-row>
                 </a>
 
                 <div class="row-actions">
@@ -113,43 +107,39 @@
                       <p class="row-confirm" [attr.data-testid]="'catalogue-archive-body-' + item.code">
                         {{ i18n.t('catalogue.item.archive_confirm') }}
                       </p>
-                      <button
-                        type="button"
-                        class="danger-button"
+                      <kaff-button
+                        variant="danger"
                         [disabled]="isArchiving(item.id)"
-                        [attr.data-testid]="'catalogue-archive-confirm-' + item.code"
-                        (click)="onConfirmArchive(item.id)"
+                        [testId]="'catalogue-archive-confirm-' + item.code"
+                        (clicked)="onConfirmArchive(item.id)"
                       >
                         {{ i18n.t('catalogue.item.archive_action') }}
-                      </button>
-                      <button
-                        type="button"
-                        class="chip"
-                        [attr.data-testid]="'catalogue-archive-cancel-' + item.code"
-                        (click)="onCancelArchive()"
+                      </kaff-button>
+                      <kaff-button
+                        variant="secondary"
+                        [testId]="'catalogue-archive-cancel-' + item.code"
+                        (clicked)="onCancelArchive()"
                       >
                         {{ i18n.t('action.cancel') }}
-                      </button>
+                      </kaff-button>
                     } @else {
-                      <button
-                        type="button"
-                        class="danger-button"
-                        [attr.data-testid]="'catalogue-archive-' + item.code"
-                        (click)="onStartArchive(item.id)"
+                      <kaff-button
+                        variant="danger"
+                        [testId]="'catalogue-archive-' + item.code"
+                        (clicked)="onStartArchive(item.id)"
                       >
                         {{ i18n.t('catalogue.item.archive_action') }}
-                      </button>
+                      </kaff-button>
                     }
                   } @else {
-                    <button
-                      type="button"
-                      class="chip"
+                    <kaff-button
+                      variant="secondary"
                       [disabled]="isArchiving(item.id)"
-                      [attr.data-testid]="'catalogue-unarchive-' + item.code"
-                      (click)="onUnarchive(item.id)"
+                      [testId]="'catalogue-unarchive-' + item.code"
+                      (clicked)="onUnarchive(item.id)"
                     >
                       {{ i18n.t('catalogue.item.unarchive_action') }}
-                    </button>
+                    </kaff-button>
                   }
                 </div>
               </li>
@@ -162,9 +152,9 @@
     <!-- AC-203-D: a search or filter that matched nothing is a different fact from an empty catalogue. -->
     <div class="empty" role="status" aria-live="polite" data-testid="catalogue-list-empty-filtered">
       <p class="empty-title">{{ i18n.t('catalogue.list.empty_filtered') }}</p>
-      <button type="button" class="chip" data-testid="catalogue-clear-filters" (click)="onClearFilters()">
+      <kaff-button variant="secondary" testId="catalogue-clear-filters" (clicked)="onClearFilters()">
         {{ i18n.t('action.clear_filters') }}
-      </button>
+      </kaff-button>
     </div>
   } @else {
     <div class="empty" role="status" aria-live="polite" data-testid="catalogue-list-empty">

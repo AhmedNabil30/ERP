@@ -11,6 +11,13 @@ import {
 } from '../../../core/catalogue/catalogue.api';
 import { CatalogueGroup, groupByBab } from '../../../core/catalogue/group-by-bab';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
+import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import {
+  KaffSegmentedFilter,
+  SegmentedFilterOption,
+} from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
+import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 
 /** The three chips `KAFF-206` rule 7 draws, in the order it draws them. */
 const FILTERS: readonly CatalogueItemListFilter[] = ['active', 'archived', 'all'];
@@ -36,7 +43,7 @@ const FILTERS: readonly CatalogueItemListFilter[] = ['active', 'archived', 'all'
  */
 @Component({
   selector: 'kaff-catalogue-list-page',
-  imports: [FormField, RouterLink],
+  imports: [FormField, RouterLink, KaffBadge, KaffButton, KaffSegmentedFilter, KaffTableRow],
   templateUrl: './catalogue-list-page.html',
   styleUrl: './catalogue-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -49,6 +56,12 @@ export class CatalogueListPage {
 
   protected readonly i18n = inject(I18nService);
   protected readonly filters = FILTERS;
+
+  /** Grid columns for `kaff-table-row`: code · description · unit · cost · sell · archived badge. */
+  protected readonly rowColumns = 'auto minmax(14rem, 1fr) auto auto auto auto';
+
+  protected readonly segmentedOptions: readonly SegmentedFilterOption<CatalogueItemListFilter>[] =
+    FILTERS.map((filter) => ({ value: filter, labelKey: this.filterKey(filter) }));
 
   /**
    * Bound by name from `?search=` / `?status=` — `withComponentInputBinding` in `app.config.ts`.
