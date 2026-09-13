@@ -119,12 +119,6 @@
   opacity: 0.8;
 }
 
-.field-refusal {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--color-danger);
-}
-
 .refusal {
   margin: 0;
   padding: 0.75rem;
@@ -135,40 +129,6 @@
 .loading {
   margin: 0;
   padding: 0.75rem;
-}
-
-.submit,
-.secondary,
-.danger-button {
-  min-block-size: var(--tap-target);
-  padding-block: 0.75rem;
-  padding-inline: 1rem;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-  border-radius: var(--radius-md);
-}
-
-.submit {
-  background: transparent;
-  border: 1px solid var(--color-border-strong);
-}
-
-.secondary {
-  background: transparent;
-  border: 1px solid var(--color-border);
-}
-
-.danger-button {
-  background: transparent;
-  border: 1px solid var(--color-danger);
-  color: var(--color-danger);
-}
-
-.submit[disabled],
-.danger-button[disabled] {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .acts,

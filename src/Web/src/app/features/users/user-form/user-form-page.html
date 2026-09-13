@@ -22,14 +22,13 @@
 
   <form class="fields" (submit)="$event.preventDefault(); onSubmitCreate()">
     @if (!isEdit()) {
-      <label class="field">
-        <span class="label">{{ i18n.t('users.field.full_name') }}</span>
-        <input class="input" type="text" dir="auto" data-testid="user-full-name" [formField]="userForm.fullName" />
-      </label>
+      <kaff-field labelKey="users.field.full_name" controlId="user-full-name" [required]="true">
+        <input id="user-full-name" class="input" type="text" dir="auto" data-testid="user-full-name" [formField]="userForm.fullName" />
+      </kaff-field>
 
-      <label class="field">
-        <span class="label">{{ i18n.t('users.field.username') }}</span>
+      <kaff-field labelKey="users.field.username" controlId="user-username-input" [required]="true">
         <input
+          id="user-username-input"
           class="input"
           type="text"
           dir="ltr"
@@ -38,11 +37,11 @@
           data-testid="user-username-input"
           [formField]="userForm.userName"
         />
-      </label>
+      </kaff-field>
 
-      <label class="field">
-        <span class="label">{{ i18n.t('users.field.phone') }}</span>
+      <kaff-field labelKey="users.field.phone" controlId="user-phone" [required]="true">
         <input
+          id="user-phone"
           class="input"
           type="tel"
           dir="ltr"
@@ -51,11 +50,11 @@
           data-testid="user-phone"
           [formField]="userForm.phone"
         />
-      </label>
+      </kaff-field>
 
-      <label class="field">
-        <span class="label">{{ i18n.t('users.field.email') }}</span>
+      <kaff-field labelKey="users.field.email" controlId="user-email">
         <input
+          id="user-email"
           class="input"
           type="email"
           dir="ltr"
@@ -64,7 +63,7 @@
           data-testid="user-email"
           [formField]="userForm.email"
         />
-      </label>
+      </kaff-field>
     }
 
     <!--
@@ -72,9 +71,9 @@
       (ux/rtl-and-i18n.md §5). The change is read in the component rather than through $any in the
       template — Nabil, 2026-08-28.
     -->
-    <label class="field">
-      <span class="label">{{ i18n.t('users.field.role') }}</span>
+    <kaff-field labelKey="users.field.role" controlId="user-role" [required]="true">
       <select
+        id="user-role"
         class="input"
         data-testid="user-role"
         [value]="draft().role"
@@ -86,10 +85,12 @@
         }
       </select>
       @if (isEdit() && isSelf()) {
-        <!-- rule 9, spec.md §9: nobody edits their own role. Hiding it is not the enforcement. -->
+        <!-- rule 9, spec.md §9: nobody edits their own role. Hiding it is not the enforcement. Kept as
+             a manual span (not kaff-field's hintKey) since kaff-field carries no hint testid — only
+             errorTestId — and this hint's testid is a contract. -->
         <span class="hint" data-testid="user-role-self">{{ i18n.t('users.hint.no_self_role_change') }}</span>
       }
-    </label>
+    </kaff-field>
 
     <!--
       rule 6 / AC-127-C. HR is pinned to the HR department and rendered as a FIXED value with a hint,
@@ -104,11 +105,21 @@
         <span class="hint">{{ i18n.t('users.hint.hr_department_fixed') }}</span>
       </div>
     } @else if (!isExternal()) {
-      <label class="field">
-        <span class="label">{{ i18n.t('users.field.department') }}</span>
+      <!--
+        AC-127-C's second half handled through kaff-field's own errorKey/errorTestId, so the message
+        keeps its data-testid contract without a second, hand-rolled message paragraph.
+      -->
+      <kaff-field
+        labelKey="users.field.department"
+        controlId="user-department"
+        [errorKey]="departmentRefusalKey()"
+        errorTestId="user-department-refusal"
+      >
         <select
+          id="user-department"
           class="input"
           data-testid="user-department"
+          [attr.aria-describedby]="departmentRefusalKey() ? 'user-department-desc' : null"
           [value]="draft().department"
           (change)="onDepartmentSelect($event)"
         >
@@ -121,19 +132,12 @@
             </option>
           }
         </select>
-        @if (departmentRefusalKey(); as key) {
-          <!-- AC-127-C's second half: if the server refuses the pair anyway, its key is shown HERE,
-               against the field the reader can act on, and not in a form-level banner. -->
-          <span class="field-refusal" role="alert" data-testid="user-department-refusal">
-            {{ i18n.t(key) }}
-          </span>
-        }
-      </label>
+      </kaff-field>
 
       @if (needsSubDepartment()) {
-        <label class="field">
-          <span class="label">{{ i18n.t('users.field.sub_department') }}</span>
+        <kaff-field labelKey="users.field.sub_department" controlId="user-sub-department" [required]="true">
           <select
+            id="user-sub-department"
             class="input"
             data-testid="user-sub-department"
             [value]="draft().operationsSubDepartment"
@@ -145,7 +149,7 @@
               </option>
             }
           </select>
-        </label>
+        </kaff-field>
       }
     } @else {
       <!-- D-035: Client and Subcontractor hold no department, because a department-only grant would
@@ -156,9 +160,9 @@
     }
 
     @if (!isEdit() && isPortalClient()) {
-      <label class="field">
-        <span class="label">{{ i18n.t('users.field.client') }}</span>
+      <kaff-field labelKey="users.field.client" controlId="user-client">
         <select
+          id="user-client"
           class="input"
           data-testid="user-client"
           [value]="draft().clientId"
@@ -170,13 +174,12 @@
           }
         </select>
         <span class="hint">{{ i18n.t('users.hint.portal_client_scope') }}</span>
-      </label>
+      </kaff-field>
     }
 
     @if (!isEdit()) {
       @if (canHoldPassword()) {
-        <label class="field">
-          <span class="label">{{ i18n.t('users.field.temporary_password') }}</span>
+        <kaff-field labelKey="users.field.temporary_password" controlId="user-temporary-password">
           <div class="password-row">
             <!--
               AC-127-F. This is the one moment the credential exists in the clear, and the reveal is
@@ -187,6 +190,7 @@
               filling the Owner's own credential into somebody else's account.
             -->
             <input
+              id="user-temporary-password"
               class="input"
               [type]="passwordRevealed() ? 'text' : 'password'"
               dir="ltr"
@@ -194,6 +198,10 @@
               data-testid="user-temporary-password"
               [formField]="userForm.temporaryPassword"
             />
+            <!--
+              A native <button>, not kaff-button — kaff-button has no aria-pressed input, and this is
+              a toggle whose pressed state is exactly what a screen reader needs. Reported below.
+            -->
             <button
               type="button"
               class="reveal"
@@ -207,27 +215,30 @@
           </div>
           <span class="hint">{{ i18n.t('users.hint.temporary_password') }}</span>
           <span class="hint">{{ i18n.t('auth.password.rule_min_length') }}</span>
-        </label>
+        </kaff-field>
 
-        <label class="field">
-          <span class="label">{{ i18n.t('users.field.confirm_password') }}</span>
+        <kaff-field
+          labelKey="users.field.confirm_password"
+          controlId="user-confirm-password"
+          [errorKey]="!passwordsMatch() ? 'auth.password.mismatch' : null"
+          errorTestId="user-password-mismatch"
+        >
+          <!--
+            `auth.password.mismatch`, which S-003 already uses, and NOT S-007's
+            `validation.passwords_do_not_match`: two keys for one refusal is finding F-08's shape,
+            and D-114 §1 is the test that exists because of it. Reported.
+          -->
           <input
+            id="user-confirm-password"
             class="input"
             [type]="passwordRevealed() ? 'text' : 'password'"
             dir="ltr"
             autocomplete="new-password"
             data-testid="user-confirm-password"
+            [attr.aria-describedby]="!passwordsMatch() ? 'user-confirm-password-desc' : null"
             [formField]="userForm.confirmPassword"
           />
-          @if (!passwordsMatch()) {
-            <span class="field-refusal" role="alert" data-testid="user-password-mismatch">
-              <!-- `auth.password.mismatch`, which S-003 already uses, and NOT S-007's
-                   `validation.passwords_do_not_match`: two keys for one refusal is finding F-08's
-                   shape, and D-114 §1 is the test that exists because of it. Reported. -->
-              {{ i18n.t('auth.password.mismatch') }}
-            </span>
-          }
-        </label>
+        </kaff-field>
       } @else {
         <!-- spec.md §9: "Subcontractor (record only, no login)." User.SetPasswordHash refuses one, so
              the field is absent rather than disabled — a disabled field invites somebody to ask why. -->
@@ -249,12 +260,12 @@
         and `action.cancel` here.
       -->
       <div class="form-actions">
-        <button class="submit" type="submit" data-testid="user-submit" [disabled]="!canSubmit()">
+        <kaff-button class="submit" variant="primary" type="submit" testId="user-submit" [disabled]="!canSubmit()">
           {{ i18n.t('action.create') }}
-        </button>
-        <button type="button" class="secondary" data-testid="user-cancel" (click)="onCancel()">
+        </kaff-button>
+        <kaff-button variant="secondary" testId="user-cancel" (clicked)="onCancel()">
           {{ i18n.t('action.cancel') }}
-        </button>
+        </kaff-button>
       </div>
     }
   </form>
@@ -262,9 +273,9 @@
   @if (existing(); as user) {
     <section class="acts">
       @if (!isExternal() && !isHr()) {
-        <button type="button" class="secondary" data-testid="user-move-department" (click)="onMoveDepartment()">
+        <kaff-button variant="secondary" testId="user-move-department" (clicked)="onMoveDepartment()">
           {{ i18n.t('users.action.move_department') }}
-        </button>
+        </kaff-button>
       }
 
       @if (!isSelf()) {
@@ -302,18 +313,18 @@
             }
 
             <div class="confirm-actions">
-              <button type="button" class="danger-button" data-testid="user-role-confirm-yes" (click)="onConfirmRoleChange()">
+              <kaff-button variant="danger" testId="user-role-confirm-yes" (clicked)="onConfirmRoleChange()">
                 {{ i18n.t('users.action.change_role') }}
-              </button>
-              <button type="button" class="secondary" data-testid="user-role-confirm-no" (click)="onCancelConfirm()">
+              </kaff-button>
+              <kaff-button variant="secondary" testId="user-role-confirm-no" (clicked)="onCancelConfirm()">
                 {{ i18n.t('action.cancel') }}
-              </button>
+              </kaff-button>
             </div>
           </div>
         } @else {
-          <button type="button" class="secondary" data-testid="user-change-role" (click)="onStartConfirm('role')">
+          <kaff-button variant="secondary" testId="user-change-role" (clicked)="onStartConfirm('role')">
             {{ i18n.t('users.action.change_role') }}
-          </button>
+          </kaff-button>
         }
       }
     </section>
@@ -346,9 +357,9 @@
                 </ul>
               }
 
-              <label class="field">
-                <span class="label">{{ i18n.t('users.field.reason') }}</span>
+              <kaff-field labelKey="users.field.reason" controlId="user-deactivate-reason" [required]="true">
                 <textarea
+                  id="user-deactivate-reason"
                   class="input"
                   rows="2"
                   dir="auto"
@@ -357,27 +368,26 @@
                   (input)="onReasonInput($event)"
                 ></textarea>
                 <span class="hint">{{ i18n.t('users.hint.reason_is_stored') }}</span>
-              </label>
+              </kaff-field>
 
               <div class="confirm-actions">
-                <button
-                  type="button"
-                  class="danger-button"
-                  data-testid="user-deactivate-confirm-yes"
+                <kaff-button
+                  variant="danger"
+                  testId="user-deactivate-confirm-yes"
                   [disabled]="reason().trim().length === 0"
-                  (click)="onConfirmDeactivate()"
+                  (clicked)="onConfirmDeactivate()"
                 >
                   {{ i18n.t('users.action.deactivate') }}
-                </button>
-                <button type="button" class="secondary" data-testid="user-deactivate-confirm-no" (click)="onCancelConfirm()">
+                </kaff-button>
+                <kaff-button variant="secondary" testId="user-deactivate-confirm-no" (clicked)="onCancelConfirm()">
                   {{ i18n.t('action.cancel') }}
-                </button>
+                </kaff-button>
               </div>
             </div>
           } @else {
-            <button type="button" class="danger-button" data-testid="user-deactivate" (click)="onStartConfirm('deactivate')">
+            <kaff-button variant="danger" testId="user-deactivate" (clicked)="onStartConfirm('deactivate')">
               {{ i18n.t('users.action.deactivate') }}
-            </button>
+            </kaff-button>
             <p class="danger-note">{{ i18n.t('users.danger.deactivate_explains') }}</p>
           }
         } @else if (confirming() === 'reactivate') {
@@ -389,9 +399,9 @@
               {{ i18n.t('users.confirm.reactivate.body', { name: user.fullName }) }}
             </p>
 
-            <label class="field">
-              <span class="label">{{ i18n.t('users.field.temporary_password') }}</span>
+            <kaff-field labelKey="users.field.temporary_password" controlId="user-reactivate-password">
               <input
+                id="user-reactivate-password"
                 class="input"
                 type="password"
                 dir="ltr"
@@ -401,11 +411,11 @@
                 (input)="onReactivationPasswordInput($event)"
               />
               <span class="hint">{{ i18n.t('users.hint.reactivate_password') }}</span>
-            </label>
+            </kaff-field>
 
-            <label class="field">
-              <span class="label">{{ i18n.t('users.field.reason') }}</span>
+            <kaff-field labelKey="users.field.reason" controlId="user-reactivate-reason" [required]="true">
               <textarea
+                id="user-reactivate-reason"
                 class="input"
                 rows="2"
                 dir="auto"
@@ -413,27 +423,26 @@
                 [value]="reason()"
                 (input)="onReasonInput($event)"
               ></textarea>
-            </label>
+            </kaff-field>
 
             <div class="confirm-actions">
-              <button
-                type="button"
-                class="danger-button"
-                data-testid="user-reactivate-confirm-yes"
+              <kaff-button
+                variant="danger"
+                testId="user-reactivate-confirm-yes"
                 [disabled]="reason().trim().length === 0"
-                (click)="onConfirmReactivate()"
+                (clicked)="onConfirmReactivate()"
               >
                 {{ i18n.t('users.action.reactivate') }}
-              </button>
-              <button type="button" class="secondary" data-testid="user-reactivate-confirm-no" (click)="onCancelConfirm()">
+              </kaff-button>
+              <kaff-button variant="secondary" testId="user-reactivate-confirm-no" (clicked)="onCancelConfirm()">
                 {{ i18n.t('action.cancel') }}
-              </button>
+              </kaff-button>
             </div>
           </div>
         } @else {
-          <button type="button" class="danger-button" data-testid="user-reactivate" (click)="onStartConfirm('reactivate')">
+          <kaff-button variant="danger" testId="user-reactivate" (clicked)="onStartConfirm('reactivate')">
             {{ i18n.t('users.action.reactivate') }}
-          </button>
+          </kaff-button>
         }
       </section>
     }

@@ -25,6 +25,8 @@ import {
 } from '../../../core/i18n/enum-keys';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { UserSummary, UsersApi } from '../../../core/users/users.api';
+import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import { KaffField } from '../../../shared/kaff-field/kaff-field';
 
 /** Every role the select offers, in `spec.md` §9's order with D-044's `Hr` where the ruling put it. */
 const ROLES: readonly Role[] = [
@@ -139,7 +141,7 @@ function orNull(value: string): string | null {
  */
 @Component({
   selector: 'kaff-user-form-page',
-  imports: [FormField],
+  imports: [FormField, KaffField, KaffButton],
   templateUrl: './user-form-page.html',
   styleUrl: './user-form-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
