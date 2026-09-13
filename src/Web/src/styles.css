@@ -84,6 +84,12 @@
   --line-height: 1.7;
 }
 
+/* Projected grid children do not receive a component's emulated style scope. */
+kaff-table-row .row > bdi {
+  justify-self: start;
+  inline-size: fit-content;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --color-background: #16181a;
