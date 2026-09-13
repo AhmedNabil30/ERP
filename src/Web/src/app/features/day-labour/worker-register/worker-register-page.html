@@ -2,20 +2,20 @@
   <h1 class="title">{{ i18n.t('hr.worker.register_title') }}</h1>
 
   <form class="fields" (submit)="$event.preventDefault(); onSubmit()">
-    <label class="field">
-      <span class="label">{{ i18n.t('hr.worker.field.name') }} *</span>
+    <kaff-field labelKey="hr.worker.field.name" controlId="worker-name-input" [required]="true">
       <input
+        id="worker-name-input"
         class="input"
         type="text"
         dir="auto"
         data-testid="worker-field-name"
         [formField]="workerForm.fullName"
       />
-    </label>
+    </kaff-field>
 
-    <label class="field">
-      <span class="label">{{ i18n.t('hr.worker.field.phone') }} *</span>
+    <kaff-field labelKey="hr.worker.field.phone" controlId="worker-phone-input" [required]="true">
       <input
+        id="worker-phone-input"
         class="input"
         type="tel"
         dir="ltr"
@@ -25,7 +25,7 @@
         [formField]="workerForm.phone"
         (blur)="onPhoneBlur()"
       />
-    </label>
+    </kaff-field>
 
     @if (hasRestrictedMatch()) {
       <p class="restricted" role="status" data-testid="worker-duplicate-restricted">
@@ -52,9 +52,15 @@
       </label>
     }
 
-    <label class="field">
-      <span class="label">{{ i18n.t('hr.worker.field.bab') }} *</span>
+    <kaff-field
+      labelKey="hr.worker.field.bab"
+      controlId="worker-bab-input"
+      [required]="true"
+      [errorKey]="babsUnavailable() ? 'hr.employee.babs_unavailable' : null"
+      errorTestId="worker-babs-unavailable"
+    >
       <select
+        id="worker-bab-input"
         class="input select"
         data-testid="worker-field-bab"
         [disabled]="babsUnavailable()"
@@ -66,30 +72,25 @@
           <option [value]="bab.id">{{ babLabel(bab) }}</option>
         }
       </select>
-      @if (babsUnavailable()) {
-        <p class="field-error" role="alert" data-testid="worker-babs-unavailable">
-          {{ i18n.t('hr.employee.babs_unavailable') }}
-        </p>
-      }
-    </label>
+    </kaff-field>
 
-    <label class="field">
-      <span class="label">{{ i18n.t('hr.worker.field.specialty') }}</span>
+    <kaff-field labelKey="hr.worker.field.specialty" controlId="worker-specialty-input">
       <input
+        id="worker-specialty-input"
         class="input"
         type="text"
         dir="auto"
         data-testid="worker-field-specialty"
         [formField]="workerForm.specialty"
       />
-    </label>
+    </kaff-field>
 
     @if (refusal(); as key) {
       <p class="refusal" role="alert" data-testid="worker-form-refusal">{{ i18n.t(key) }}</p>
     }
 
-    <button class="submit" type="submit" data-testid="worker-submit" [disabled]="!canSubmit()">
+    <kaff-button variant="primary" type="submit" testId="worker-submit" [disabled]="!canSubmit()">
       {{ i18n.t('action.save') }}
-    </button>
+    </kaff-button>
   </form>
 </section>

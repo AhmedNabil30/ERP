@@ -11,6 +11,8 @@ import {
 } from '../../../core/day-labour/day-labour.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { DuplicatePhoneWarning } from '../../../shared/duplicate-phone-warning/duplicate-phone-warning';
+import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import { KaffField } from '../../../shared/kaff-field/kaff-field';
 import { PhoneMatch } from '../../../shared/phone-match';
 
 interface WorkerDraft {
@@ -45,7 +47,7 @@ const draft = schema<WorkerDraft>((path) => {
  */
 @Component({
   selector: 'kaff-worker-register-page',
-  imports: [FormField, DuplicatePhoneWarning],
+  imports: [FormField, DuplicatePhoneWarning, KaffField, KaffButton],
   templateUrl: './worker-register-page.html',
   styleUrl: './worker-register-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
