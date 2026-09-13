@@ -34,9 +34,9 @@
       />
     </div>
 
-    <button type="submit" class="range-apply" data-testid="audit-apply">
+    <kaff-button variant="primary" type="submit" testId="audit-apply">
       {{ i18n.t('audit.action.apply') }}
-    </button>
+    </kaff-button>
   </form>
 
   @if (failure(); as key) {
@@ -58,6 +58,7 @@
             [attr.data-testid]="'audit-row-' + entry.id"
             (click)="open(entry)"
           >
+          <kaff-table-row [columns]="rowColumns">
             <!--
               Every Latin run inside an Arabic row is isolated, and `<bdi>` is what does that: an
               *unisolated* run is what reorders against the Arabic around it.
@@ -120,6 +121,7 @@
                 {{ i18n.t('audit.row.fields_changed', { count: changedCount(entry) }) }}
               </span>
             }
+          </kaff-table-row>
           </button>
         </li>
       }

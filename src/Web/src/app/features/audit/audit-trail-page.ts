@@ -10,6 +10,8 @@ import {
   roleKey,
 } from '../../core/i18n/enum-keys';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { KaffButton } from '../../shared/kaff-button/kaff-button';
+import { KaffTableRow } from '../../shared/kaff-table-row/kaff-table-row';
 
 /**
  * What the interceptor writes in place of a secret — `AuditRedactedAttribute.Placeholder`.
@@ -59,7 +61,7 @@ export interface AuditChange {
  */
 @Component({
   selector: 'kaff-audit-trail-page',
-  imports: [FormField],
+  imports: [FormField, KaffTableRow, KaffButton],
   templateUrl: './audit-trail-page.html',
   styleUrl: './audit-trail-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -90,6 +92,9 @@ export class AuditTrailPage {
   protected readonly loading = signal(true);
   protected readonly failure = signal<string | null>(null);
   protected readonly selected = signal<AuditEntry | null>(null);
+
+  /** Grid columns for `kaff-table-row`: when · who · what · fields-changed. */
+  protected readonly rowColumns = 'auto 1fr auto auto';
 
   /** The changes table for whichever record is open. Empty for a record that changed no entity. */
   protected readonly changes = computed<readonly AuditChange[]>(() => {
