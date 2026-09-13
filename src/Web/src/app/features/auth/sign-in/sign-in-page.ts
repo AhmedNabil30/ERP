@@ -6,6 +6,8 @@ import { AuthApi } from '../../../core/auth/auth.api';
 import { AuthService } from '../../../core/auth/auth.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { toProblem } from '../../../core/api/problem-details';
+import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import { KaffField } from '../../../shared/kaff-field/kaff-field';
 
 /** Karim, D-049 ruling 3. The only rule this form imposes. */
 const MINIMUM_PASSWORD_LENGTH = 8;
@@ -52,7 +54,7 @@ const credentials = schema<Credentials>((path) => {
  */
 @Component({
   selector: 'kaff-sign-in-page',
-  imports: [FormField],
+  imports: [FormField, KaffField, KaffButton],
   templateUrl: './sign-in-page.html',
   styleUrl: './sign-in-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
