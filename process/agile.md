@@ -163,6 +163,14 @@ never fixes anything. Failures go back to the author.
 
 `CLAUDE.md`: "If you wrote the code, you do not certify it."
 
+> ⛔ **PAUSED 2026-09-13, at Nabil's direction — `decisions.md` D-155. Read this before starting a
+> Verifier pass.** No Verifier pass runs until slice 4 is entirely `BUILT`. Builders still run their
+> own gates (build clean, `dotnet format`, Domain.Tests, Api.Tests, `npm run build` 0 warnings,
+> vitest) and stop at `BUILT` — nothing moves to `VERIFIED` while this stands. **Exit condition:**
+> slice 4 all `BUILT`, then one batch Verifier pass, fresh session, strongest model, as slice 2's
+> batch verification ran. Do not start a pass "out of habit" because a story looks ready — check
+> `STATUS.md` for whether the pause is still in force before dispatching a Verifier.
+
 ### 4. Acceptance — Nabil
 
 Nabil runs the demo script. The gate for each slice is in `agents.md`, and it is a specific

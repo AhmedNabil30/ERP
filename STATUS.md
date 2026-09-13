@@ -583,14 +583,15 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 
 ## Points by slice
 
-| | slice 1 | slice 2 | slice 3 |
-|---|---:|---:|---:|
-| ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 |
-| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 |
-| ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 |
-| ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 0 | 5 |
-| 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 |
-| **total** | **127** | **53** | **5** |
+| | slice 1 | slice 2 | slice 3 | slice design-system |
+|---|---:|---:|---:|---:|
+| ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 | 0 |
+| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 0 |
+| ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 0 | 0 | 10 |
+| ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 5 | 0 |
+| 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 | 0 |
+| **total** | **127** | **58** | **5** | **10** |
 
 ## Every story
 
@@ -643,8 +644,11 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-212](stories/slice-2-masters/KAFF-212-supplier-master.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `54ff044` | 2026-09-13 | Supplier master — one account serving many projects |
 | [KAFF-213](stories/slice-2-masters/KAFF-213-archive-a-bab.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Archive a باب |
 | [KAFF-214](stories/slice-2-masters/KAFF-214-unarchive-a-catalogue-item.md) | 2 | 2 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Un-archive a catalogue item |
+| [KAFF-215](stories/slice-2-masters/KAFF-215-a-sidebar-that-lists-every-destination.md) | 2 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-13 | A sidebar that lists every destination the session reaches |
 | [KAFF-300](stories/slice-3-treasury/KAFF-300-the-section-15-worked-example.md) | 3 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-07 | The §15 worked example as a fixture — present and failing before anything else is built |
 | [KAFF-320](stories/slice-3-treasury/KAFF-320-bank-as-an-independent-master-record.md) | 3 | 0 | ⚫ NOT-BUILT | none | `-` | 2026-09-12 | Bank — an independent master record, not folded into the ledger |
+| [KAFF-900](stories/design-system/KAFF-900-design-tokens-and-shell.md) | design-system | 5 | 🟡 BUILT | none | `-` | - | Design tokens and the app shell (sidebar, header, page frame) |
+| [KAFF-901](stories/design-system/KAFF-901-shared-restyled-components.md) | design-system | 5 | 🟡 BUILT | none | `-` | - | Shared restyled components: table row, segmented filter, form field, button, badge |
 
 <!-- END GENERATED -->
 

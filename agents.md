@@ -289,6 +289,10 @@ Joins at the offline layer, not before. Offline-first daily log, photo capture, 
 ### 7. Verifier Agent
 Runs after every slice, always in a fresh session, always reading `spec.md` rather than the implementation.
 
+> ⛔ **PAUSED 2026-09-13 — `decisions.md` D-155, `process/agile.md` §3.** No pass runs until slice 4
+> is all `BUILT`. Builders keep running their own gates and stop at `BUILT`. Check `STATUS.md` before
+> dispatching a Verifier out of habit.
+
 **Four suites, in priority order:**
 1. **Money** — the §15 worked example asserted end to end, plus the invariants: hold equals exactly 20%, advance reaches exactly zero, تشوينات nets to zero, total cash equals contract value, no sequence produces a negative safe.
 2. **Permissions** — one test per role asserting what it *cannot* reach, hitting endpoints directly rather than through the UI.

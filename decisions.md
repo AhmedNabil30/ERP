@@ -14016,3 +14016,45 @@ five screens, zero raw keys. Not reached: the E2E suite, the English locale, the
 `employee-form-page.spec.ts`, and `KAFF-201`'s red-first claim.
 
 **No story is ACCEPTED. Nabil has still never run a demo script.**
+
+---
+
+### D-155 · Nabil — the Verifier is paused until slice 4 ends · 2026-09-13
+
+**Decision.** No Verifier pass runs from now until slice 4 is complete. Builders still run their own
+gates on every story — build clean, `dotnet format` clean, Domain.Tests, Api.Tests, `npm run build`
+with 0 warnings, vitest. A story that clears its own gates reaches `BUILT` and **stops there**.
+Nothing is marked `VERIFIED` while the pause holds, and nothing is marked `ACCEPTED` — that already
+required Nabil running the demo script, per D-131 and `process/agile.md` §4, and still does.
+
+**Who asked.** Nabil, 2026-09-13, citing usage limits and wanting build speed over the current
+slice-by-slice verification cadence.
+
+**Why.** The Verifier is the most expensive pass in the process (§M, never-downgrade list) and runs
+on the strongest model every time. Pausing it while slice 4 builds trades verification latency for
+build throughput.
+
+**Risk accepted.** Unverified stories accumulate across slice 3's remainder and all of slice 4. One
+verification pass at the end of slice 4 will be large — comparable in size to, or larger than, the
+slice-2 batch verification (D-134, D-138, D-150, D-154), which itself needed four rounds to close.
+A large batch is where a real defect is more likely to hide among many findings, and repair rounds on
+a big batch cost more than repair rounds on a small one. This risk is accepted by Nabil, not decided
+by the Scrum Master.
+
+**Exit condition.** Slice 4 reaches all stories `BUILT`. Then one batch Verifier pass runs, in a
+fresh session, on the strongest model, exactly as slice 2's batch verification did.
+
+**What this does not change.** Refinement, the Definition of Ready, SM-29/SM-30/SM-31/SM-33, and
+every builder-owned gate stay exactly as written. Only the Verifier's cadence moves — from
+per-story/per-batch-within-a-slice to once, at the end of slice 4. Acceptance is unaffected: it was
+already never running per story.
+
+**What we rejected.** Skipping builder gates too, to go faster still — rejected, because builder gates
+are the compiler and the test suite, not judgement, and dropping them removes the only safety net
+left standing during the pause. A partial pause (verify only money-touching stories) — rejected as an
+invented rule; Nabil's instruction was a full pause, not a scoped one, and scoping it would be the
+Scrum Master deciding a business-risk tradeoff that is his to decide, not mine.
+
+**Revisit if.** Nabil lifts the pause early, or a defect surfaces in production that per-story
+verification would plausibly have caught — in which case the risk accepted above stopped being
+theoretical and the tradeoff should be re-argued with that evidence in hand.
