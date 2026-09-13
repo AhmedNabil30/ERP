@@ -165,7 +165,7 @@ class Cdp {
  * root. loadEventFired alone fires before the lazy route chunk has executed, so a screenshot taken
  * on it catches a blank page. See SKILL.md Gotchas.
  */
-async function withPage(url, body, { width = 1280, height = 900 } = {}) {
+async function withPage(url, body, { width = 1280, height = 900, colorScheme } = {}) {
   const { child, browserWs } = await launchChrome();
   const browser = await Cdp.connect(browserWs);
   try {
@@ -182,6 +182,13 @@ async function withPage(url, body, { width = 1280, height = 900 } = {}) {
       deviceScaleFactor: 1,
       mobile: false,
     });
+    if (colorScheme) {
+      // KAFF-922: this repo has no [data-theme] override, only @media (prefers-color-scheme) — a
+      // dark-theme screenshot needs the CDP media feature, not a page-side trick.
+      await call('Emulation.setEmulatedMedia', {
+        features: [{ name: 'prefers-color-scheme', value: colorScheme }],
+      });
+    }
 
     const loaded = browser.once('Page.loadEventFired');
     await call('Page.navigate', { url });
@@ -262,13 +269,86 @@ async function apiRequest(method, urlPath, body) {
 // is designed mobile-first", and RTL layouts break at narrow widths in ways a 1280px shot never
 // shows — a row that fits on a desktop and overflows on a phone looks correct in every screenshot
 // taken at the default.
-async function screenshot(url, out, width) {
+async function screenshot(url, out, width, colorScheme) {
   return withPage(url, async ({ call }) => {
     const { data } = await call('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true });
     mkdirSync(path.dirname(path.resolve(out)), { recursive: true });
     writeFileSync(out, Buffer.from(data, 'base64'));
     return path.resolve(out);
-  }, width ? { width: Number(width) } : undefined);
+  }, { ...(width ? { width: Number(width) } : {}), ...(colorScheme ? { colorScheme } : {}) });
+}
+
+/**
+ * Signs in through the on-screen form (autocomplete-located, same as the E2E suites), navigates to
+ * `path`, then screenshots. One chromium session throughout, so the sign-in cookie is still attached
+ * for the navigation and the shot — KAFF-922, for rendering staff-chrome screens that need a session.
+ */
+async function signedShot(userName, password, targetPath, out, width, colorScheme, openDrawer) {
+  return withPage(`${WEB}/sign-in`, async ({ evaluate, call, shoot }) => {
+    // The sign-in form is its own lazy chunk; withPage's readiness wait is satisfied by the boot
+    // spinner's text alone, same trap SKILL.md documents for a route's first paint.
+    const formDeadline = Date.now() + 15_000;
+    while (Date.now() < formDeadline) {
+      const formReady = await evaluate("document.querySelector(\"input[autocomplete='username']\") !== null");
+      if (formReady) break;
+      await new Promise((r) => setTimeout(r, 200));
+    }
+
+    // Input.insertText, not a raw `.value =` plus a synthetic 'input' event — this project's
+    // signal-forms `[formField]` binding only recomputed correctly off a real typed event in testing
+    // here. Input.insertText types into whatever is focused as the OS would, same as Playwright's fill.
+    const type = async (selector, text) => {
+      await evaluate(`document.querySelector(${JSON.stringify(selector)}).focus()`);
+      await call('Input.insertText', { text });
+    };
+
+    await type("input[autocomplete='username']", userName);
+    await type("input[autocomplete='current-password']", password);
+    await evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))');
+    const preClick = await evaluate(`JSON.stringify({
+      userVal: document.querySelector("input[autocomplete='username']")?.value,
+      pwLen: document.querySelector("input[autocomplete='current-password']")?.value?.length,
+      submitDisabled: document.querySelector("button[type='submit']")?.disabled,
+    })`);
+    if (process.env.KAFF_DEBUG_SIGNIN) console.error('preClick', preClick);
+    await evaluate("document.querySelector(\"button[type='submit']\").click()");
+
+    const deadline = Date.now() + 15_000;
+    let stillSignIn = true;
+    while (Date.now() < deadline) {
+      stillSignIn = await evaluate('location.pathname.includes("/sign-in")');
+      if (!stillSignIn) break;
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    if (stillSignIn) {
+      const diag = await evaluate(`JSON.stringify({
+        userVal: document.querySelector("input[autocomplete='username']")?.value,
+        pwLen: document.querySelector("input[autocomplete='current-password']")?.value?.length,
+        submitDisabled: document.querySelector("button[type='submit']")?.disabled,
+        bodyText: document.body.innerText.trim().slice(0, 300),
+      })`);
+      throw new Error(`sign-in did not leave /sign-in within 15s. diag=${diag}`);
+    }
+
+    await evaluate(`(() => { location.href = ${JSON.stringify(`${WEB}${targetPath}`)}; })()`);
+    const deadline2 = Date.now() + 15_000;
+    while (Date.now() < deadline2) {
+      const ready = await evaluate('document.body.innerText.trim().length > 0');
+      if (ready) break;
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    // One more frame so the sidebar's grouped rows/account block have painted before capture.
+    await evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))');
+
+    if (openDrawer) {
+      await evaluate("document.querySelector(\"[data-testid='nav-toggle']\").click()");
+      // The drawer's inset-inline-start transitions over 0.2s (app.css) — wait it out, or the shot
+      // catches it mid-slide.
+      await evaluate('new Promise((r) => setTimeout(r, 300))');
+    }
+
+    return shoot(out);
+  }, { ...(width ? { width: Number(width) } : {}), ...(colorScheme ? { colorScheme } : {}) });
 }
 
 /** The end-to-end check: API healthy, guards installed, and the SPA rendering real content. */
@@ -375,8 +455,16 @@ try {
       break;
     }
     case 'shot': {
-      const [url, out = 'screenshot.png', width] = args;
-      console.log(await screenshot(url ?? WEB, out, width));
+      const [url, out = 'screenshot.png', width, colorScheme] = args;
+      console.log(await screenshot(url ?? WEB, out, width, colorScheme));
+      break;
+    }
+    case 'signed-shot': {
+      const [userName, password, targetPath, out = 'screenshot.png', width, colorScheme, openDrawer] = args;
+      if (!userName || !password || !targetPath) {
+        throw new Error('usage: signed-shot <user> <password> <path> <out.png> [width] [colorScheme] [openDrawer]');
+      }
+      console.log(await signedShot(userName, password, targetPath, out, width, colorScheme, Boolean(openDrawer)));
       break;
     }
     case 'eval': {
