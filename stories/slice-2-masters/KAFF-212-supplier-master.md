@@ -1,6 +1,6 @@
 ﻿# KAFF-212 · Supplier master — one account serving many projects
 
-<!-- kaff id=KAFF-212 slice=2 points=3 state=VERIFIED verdict=CONDITIONAL at=35b0550 on=2026-09-12 -->
+<!-- kaff id=KAFF-212 slice=2 points=3 state=VERIFIED verdict=CONDITIONAL at=54ff044 on=2026-09-13 -->
 
 **Slice:** 2 (Masters) · **Epic:** Masters · **Points:** 3 (`stories/backlog.md`'s slice-2 table) · **Status:** **NOT-BUILT.** Refined 2026-09-09 by the BA. **⚠️ Amended 2026-09-12 — `Q29` and `Q70` are answered (D-139 §5, D-139 §1/D-141). `Q13` is answered too, but not for this story: banks are independent master records (D-139 §6), cut as a new slice-3 story, and NOT built inside this one. One Definition-of-Ready box remains unticked — QA's cases.**
 **Spec:** **§2** (*"one account, serves many projects"*), **§6.3**, **§6.7**, §1 (out of scope) · **Decisions:** D-044 ruling 4, D-049 ruling 9 (**the client only**), **D-129 §1, D-139 §§1, 5, 6, D-141**

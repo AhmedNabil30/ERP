@@ -237,7 +237,63 @@ mechanism → (5) build `200`, `201`, `209`–`212` → (6) one `opus` Verifier 
   turned **Domain.Tests green again, 229/229**; `npm test` 100/100 (the Frontend's figures), three
   reds watched first. **`KAFF-207`'s repair is unverified — the trailer stays `REJECTED`.**
 
-### What the next session picks up, in order
+### 2026-09-12/13 — Nabil: "do the fixes then push all"
+
+- **D-151** (`5ed3363`, Architect `opus`): a rate is covered by D-135; the unit is the fraction in both
+  directions, typed `Percentage` on every wire member. Refused to Nabil as `Q82`: may a retention rate
+  or a باب markup exceed 100%, and what is the maximum?
+- **D-152** (`5b3cdec`): Karim's answers to `Q76`–`Q81`, `Q83`, `Q84`. `KAFF-210` fully unblocked.
+- **D-153** (`98b3e5f`, Architect `opus`): `DayLabourRateManage = 64` (money, Owner + Finance +
+  the engineer who opened the engagement); the salaried phone index gains `is_active`; the `Q80` test
+  becomes warn-and-acknowledge; the seeder skips on any باب. **`Q79`'s `Department` refused as
+  `Q85`: the member list is not given** — nothing built for it.
+- ✅ Backend `350a210` (`V-38-H`, round-trip test watched red) and `427c8ad` (`Q83`, `Q80`, `Q81`):
+  migration `Q83ActiveSalariedPhoneIndex`. Domain 233/233, Api 545/545 — the Backend's figures.
+  ⛔ **Between this commit and the next Frontend dispatch the SPA's subcontractor form is wrong:** it
+  still sends a whole percent, and the API now reads a fraction, so 5 would be stored as 500%. **No
+  push until the Frontend repair lands and the gates are green.**
+- Dispatched: Backend (`sonnet`), D-153 §1 (the day rate) + the rest of `KAFF-210` + `V-38-E`/`J`/`K`.
+  ⚠️ It returned while waiting on a background Api run and **committed none of its three parts**. The
+  tree holds D-153 §1 (`DayLabourRateManage`, migration `EngagementOpenedBy`, `SetEngagementDayRate`,
+  `ListEngagements`, `EngagementResponsibility.cs`), `KAFF-210` pool changes, the `V-38-E` import
+  change, **and edits to `AuditRecord.cs` and `AuditSaveChangesInterceptor.cs`** — the `V-38-J` area,
+  where the brief said to change nothing if D-149 already rules it. A finisher was dispatched to gate,
+  check that, and commit.
+  ✅ `224cf8a` (D-153 §1: `DayLabourRateManage`, `EngagementOpenedBy`, day-rate write, engagement list
+  with derived figures), `6906ec3` (pool gains frequency and average rating, no money), `374f177`
+  (`V-38-E` names the mismatch; `V-38-K` controls its loop). Domain 240, Api 557, 0 skipped — the
+  finisher's figures.
+  **`V-38-J` closed by existing ruling, no code change.** The audit edits contradicted D-149 and D-153
+  ("`ForEvent` takes no project … the right answer, not an oversight") and were reverted. Two Architect
+  entries already rule it; the Verifier's LOW finding is answered by them.
+- Dispatched: Frontend (`sonnet`), the retention-rate unit, `KAFF-210`'s `S-025`/`S-027` and the day
+  rate, `V-38-B`. ✅ `d6e697f` (`V-38-H` SPA half: the rate is a fraction string both ways — **the
+  500% window is closed**), `f391f12` (`S-027` history, pool figures, the nine keys), `ad19b7b`
+  (`V-38-B`: `npm run build` now has 0 warnings). `npm test` 106/106 — the Frontend's figure. Its "red"
+  for Part 1 was a type error, not a runtime failure; the Verifier is told.
+- Dispatched: BA (`sonnet`), `V-38-I` (`AC-212-D` stale). ✅ `f66d7ef`: `AC-212-D` restated and left
+  **HELD** — no decision ever ruled that a *supplier's* code is generated (D-107 §1 is the client,
+  D-130 §6 the employee), so the BA refused to bless the carried-over pattern. New question for Karim,
+  renumbered by the Scrum Master at `54ff044` to **`Q86`** because D-153 §2 had already taken `Q85`
+  (the staff department list).
+- **Findings state:** `V-38-B` ✅ `ad19b7b` · `V-38-C` ✅ `3295c31` · `V-38-E` ✅ `374f177` ·
+  `V-38-G` ✅ `224cf8a`/`6906ec3`/`f391f12` · `V-38-H` ✅ `350a210`/`d6e697f` · `V-38-I` ✅ `f66d7ef`
+  (held, not blessed) · `V-38-J` closed by D-149/D-153, no code change · `V-38-K` ✅ `374f177` ·
+  `V-38-A` ✅ `3295c31` · **`V-38-L`, the E2E suite, is out of scope for this run and still caps every
+  slice-2 story at CONDITIONAL.**
+- Dispatched: the fresh Verifier (`opus`), scope `35b0550..HEAD`. ✅ **D-154**,
+  `qa/slice-2/verification-2026-09-13-repairs.md`. **All six gates green at `54ff044`, measured by the
+  Verifier:** build 0/0 · format clean · Domain 240/240 · Api 557/557, 0 skipped · `npm run build`
+  0 warnings · vitest 106/106. `KAFF-200`, `207`, `208`, `209`, `210`, `211`, `212` are all
+  **CONDITIONAL**; `207` and `210` are no longer REJECTED; `KAFF-210` is ten criteria of eleven.
+  New findings, none HIGH and none money: `V-39-C` (an engagement's dates cannot be entered — a day
+  count multiplies money in slice 6), `V-39-A`, `V-39-B`, `V-39-D`, `V-39-E`, and **`V-39-F`: item 9
+  of the sprint-6 table below is wrong — the API does start against `kaff` today.**
+- **Push:** authorised by Nabil on green gates only. Everything committed after `54ff044` is Markdown
+  (the report, `decisions.md`, trailers, this file), so the six measurements above still stand for the
+  pushed tree; no source file changed under them.
+
+### What the next session picks up, in order (written 2026-09-12, superseded by the block above)
 
 1. **Architect (`opus`)** — `V-38-H`: is a rate covered by D-135? Rule the unit on the wire for the
    retention rate and `Bab.defaultMarkup`, and the `101%` acceptance. Then Backend repairs it.
@@ -530,9 +586,8 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | | slice 1 | slice 2 | slice 3 |
 |---|---:|---:|---:|
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 |
-| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 45 | 0 |
+| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 |
-| 🔴 REJECTED — a Verifier looked, and it did not pass | 0 | 8 | 0 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 0 | 5 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 |
 | **total** | **127** | **53** | **5** |
@@ -573,19 +628,19 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-127](stories/slice-1-foundation/KAFF-127-user-management-screens.md) | 1 | 8 | ✅ ACCEPTED | CONDITIONAL | `1d04bde` | 2026-09-09 | The user-management screens |
 | [KAFF-128](stories/slice-1-foundation/KAFF-128-audit-trail-screen.md) | 1 | 3 | ✅ ACCEPTED | CONDITIONAL | `1d04bde` | 2026-09-09 | The audit trail screen |
 | [KAFF-129](stories/slice-1-foundation/KAFF-129-partition-audit-records-by-month.md) | 1 | 8 | 🔻 DEFERRED | none | `-` | 2026-09-07 | Partition `audit_records` by month, from the start |
-| [KAFF-200](stories/slice-2-masters/KAFF-200-import-the-catalogue-from-excel.md) | 2 | 5 | 🔶 VERIFIED | CONDITIONAL | `35b0550` | 2026-09-12 | Import the catalogue from Excel at setup, loading the good rows and reporting the rest |
+| [KAFF-200](stories/slice-2-masters/KAFF-200-import-the-catalogue-from-excel.md) | 2 | 5 | 🔶 VERIFIED | CONDITIONAL | `54ff044` | 2026-09-13 | Import the catalogue from Excel at setup, loading the good rows and reporting the rest |
 | [KAFF-201](stories/slice-2-masters/KAFF-201-re-importing-is-not-a-sync.md) | 2 | 2 | 🔶 VERIFIED | CONDITIONAL | `35b0550` | 2026-09-12 | Re-importing is not a sync — a second import is a deliberate, reviewed act |
 | [KAFF-202](stories/slice-2-masters/KAFF-202-create-and-edit-a-catalogue-item.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Create and edit a catalogue item |
 | [KAFF-203](stories/slice-2-masters/KAFF-203-find-a-catalogue-item-by-code-or-description.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Find a catalogue item by code or description |
 | [KAFF-204](stories/slice-2-masters/KAFF-204-the-bab-tree-with-default-markup.md) | 2 | 5 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | The باب tree, carrying each trade's default markup |
 | [KAFF-205](stories/slice-2-masters/KAFF-205-reparent-a-bab-and-move-an-item.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Re-parent a باب, and move an item between أبواب |
 | [KAFF-206](stories/slice-2-masters/KAFF-206-archive-a-catalogue-item.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Archive a catalogue item without breaking what already references it |
-| [KAFF-207](stories/slice-2-masters/KAFF-207-employee-register.md) | 2 | 5 | 🔴 BUILT | REJECTED | `35b0550` | 2026-09-12 | Employee register — exactly one record per costed person |
-| [KAFF-208](stories/slice-2-masters/KAFF-208-nobody-appears-in-both-populations.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `35b0550` | 2026-09-12 | Nobody appears in both populations: day labour and salaried |
-| [KAFF-209](stories/slice-2-masters/KAFF-209-register-a-worker-from-site.md) | 2 | 5 | 🔶 VERIFIED | CONDITIONAL | `35b0550` | 2026-09-12 | Register a worker from site, warned on a duplicate phone |
-| [KAFF-210](stories/slice-2-masters/KAFF-210-worker-engagement-history.md) | 2 | 3 | 🔴 BUILT | REJECTED | `35b0550` | 2026-09-12 | Worker engagement history, day rate, frequency and rating |
-| [KAFF-211](stories/slice-2-masters/KAFF-211-subcontractor-master-with-rates.md) | 2 | 5 | 🔶 VERIFIED | CONDITIONAL | `35b0550` | 2026-09-12 | Subcontractor master — profile only, rates live on the sub-BOQ |
-| [KAFF-212](stories/slice-2-masters/KAFF-212-supplier-master.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `35b0550` | 2026-09-12 | Supplier master — one account serving many projects |
+| [KAFF-207](stories/slice-2-masters/KAFF-207-employee-register.md) | 2 | 5 | 🔶 VERIFIED | CONDITIONAL | `54ff044` | 2026-09-13 | Employee register — exactly one record per costed person |
+| [KAFF-208](stories/slice-2-masters/KAFF-208-nobody-appears-in-both-populations.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `54ff044` | 2026-09-13 | Nobody appears in both populations: day labour and salaried |
+| [KAFF-209](stories/slice-2-masters/KAFF-209-register-a-worker-from-site.md) | 2 | 5 | 🔶 VERIFIED | CONDITIONAL | `54ff044` | 2026-09-13 | Register a worker from site, warned on a duplicate phone |
+| [KAFF-210](stories/slice-2-masters/KAFF-210-worker-engagement-history.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `54ff044` | 2026-09-13 | Worker engagement history, day rate, frequency and rating |
+| [KAFF-211](stories/slice-2-masters/KAFF-211-subcontractor-master-with-rates.md) | 2 | 5 | 🔶 VERIFIED | CONDITIONAL | `54ff044` | 2026-09-13 | Subcontractor master — profile only, rates live on the sub-BOQ |
+| [KAFF-212](stories/slice-2-masters/KAFF-212-supplier-master.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `54ff044` | 2026-09-13 | Supplier master — one account serving many projects |
 | [KAFF-213](stories/slice-2-masters/KAFF-213-archive-a-bab.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Archive a باب |
 | [KAFF-214](stories/slice-2-masters/KAFF-214-unarchive-a-catalogue-item.md) | 2 | 2 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Un-archive a catalogue item |
 | [KAFF-300](stories/slice-3-treasury/KAFF-300-the-section-15-worked-example.md) | 3 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-07 | The §15 worked example as a fixture — present and failing before anything else is built |

@@ -13965,3 +13965,54 @@ either: the Owner's presence comes from the amendment, not from a new ruling, so
 - 🟡 **Finance's reach over a day rate** (§1 point 1): project-scoped, so Finance must be assigned to see
   one. The same shape as `Q-N10-2b` (D-055 §1), and the same question — whether Finance is assigned to
   the projects it does financial work on.
+
+---
+
+### D-154 · Verifier — the repair round: `KAFF-207` and `KAFF-210` no longer stand REJECTED, and every gate is green · 2026-09-13
+
+`qa/slice-2/verification-2026-09-13-repairs.md` (`opus`, fresh session) covers `35b0550..54ff044`:
+the repairs to D-150's findings plus everything built under D-151, D-152 and D-153.
+
+**All six gates, re-measured by the Verifier at `54ff044`:** build 0 warnings / 0 errors · `dotnet
+format` clean · Domain.Tests **240/240** · Api.Tests **557/557, 0 skipped** · `npm run build` **0
+warnings** (`V-38-B` closed) · vitest **106/106**.
+
+| Story | Verdict |
+|---|---|
+| `KAFF-200`, `207`, `208`, `209`, `210`, `211`, `212` | **CONDITIONAL** — every one capped by the unwritten E2E suite (`V-38-L`, D-138 board policy) |
+
+**`KAFF-207` and `KAFF-210` are no longer REJECTED.** `V-38-C`: the باب now loads as «أعمال خرسانة»
+and saves. `KAFF-210`: **ten of eleven criteria met**, with the permission surface driven role by
+role — every role `403` when unassigned, HR `403` even when assigned, Finance reads a day rate and
+never writes one, a non-opener is refused the rate and the rating with
+`engagement_not_responsible_engineer`, and a second engineer **closed the first engineer's
+engagement, 200**, which is D-152 §3 exactly.
+
+**`V-38-H` is closed, and it was driven live, not read.** On a scratch database: 5% created as
+`"0.05"`, read back `"0.050000"`, the response `PUT` back verbatim, read again `"0.050000"` —
+byte-identical, and the stored column agrees. Never 0.05%, never 500%. An omitted rate is
+`400 errors.master.retention_rate_required`; a malformed body and a negative rate are
+`400 errors.wire.malformed_body`. The SPA was driven through its own submit button and sent
+`"retentionRate":"0.05"`. **No `Number()` or `parseFloat` touches a rate anywhere.**
+
+**D-152/D-153 checks, each driven:** the salaried index is unique `WHERE kind='Salaried' AND
+is_active` (`Q83`); the `Q80` test is a bare `[Fact]` asserting warn-and-acknowledge with no `Skip`
+left anywhere in `tests/` outside the E2E guard; `BabSeeder` was driven **both branches** — eight rows
+on an empty database, and on a database holding one باب it reported "already exist, no change" and the
+count stayed 1 (`Q81`'s whole-run guard, not the old per-code skip); `DayLabourRateManage = 64` is
+`TouchesMoney: true` while `DayLabourSiteManage`'s money-free test is green and **unedited**.
+
+**Findings, none HIGH and none money.** `V-39-C` MEDIUM: `OpenEngagement.Request` carries no dates —
+both come from the clock, so `AC-210-A`'s *"its dates"* cannot be entered, and in slice 6 a day count
+multiplies money. LOW: `V-39-A` the create echo is `"0.05"` where the read is `"0.050000"`; `V-39-B` a
+stale comment on the repaired member; `V-39-D` `AC-210-B`/`D` name the pool where D-153 put the
+average; `V-39-E` `Engagement.cs` still says *"Q76 unanswered"*; **`V-39-F`: `STATUS.md`'s sprint-6
+item 9 is wrong — the API does start against the `kaff` database today** (health 200, guards
+installed), so that paragraph is history, not the present.
+
+**What the Verifier could not do:** `driver.mjs shot` still cannot carry a session, so **no screen was
+photographed** — geometry, text and colour read from the DOM stood in for looking, at 390px in Arabic,
+five screens, zero raw keys. Not reached: the E2E suite, the English locale, the light palette,
+`employee-form-page.spec.ts`, and `KAFF-201`'s red-first claim.
+
+**No story is ACCEPTED. Nabil has still never run a demo script.**
