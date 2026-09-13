@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthService } from './core/auth/auth.service';
 import { SessionResolver } from './core/auth/session-resolver';
 import { I18nService, Locale } from './core/i18n/i18n.service';
-import { navLabelKeyFor, navPathFor } from './core/navigation/landing';
+import { navLabelKeyFor } from './core/navigation/landing';
+import { NavRow, navRowsFor } from './core/navigation/nav-rows';
 
 interface LocaleOption {
   readonly code: Locale;
@@ -32,7 +33,7 @@ interface LocaleOption {
  */
 @Component({
   selector: 'kaff-root',
-  imports: [RouterLink, RouterOutlet],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -70,19 +71,15 @@ export class App {
     return navLabelKeyFor(session) !== null;
   });
 
-  /** `null` only in the defensive fallback {@link showStaffNav} already excludes from the drawer. */
   /**
-   * Where the one nav item points. It was `/` for every role until KAFF-126 added `/clients` — a nav
-   * item labelled "Clients" that navigates to the landing page is a label that lies.
+   * KAFF-215: every row the session's permission set reaches, not the single post-login landing —
+   * `landing.ts`'s `landingFor`/`navPathFor`/`navLabelKeyFor` are untouched (rule 2, `AC-215-H`) and
+   * answer a different question ("where does this session land right after sign-in"). This is the
+   * separate, second list `app.html` iterates; the template names no path or permission of its own.
    */
-  protected readonly navPath = computed(() => {
+  protected readonly navRows = computed<readonly NavRow[]>(() => {
     const session = this.session();
-    return session ? navPathFor(session) : '/';
-  });
-
-  protected readonly navLabelKey = computed(() => {
-    const session = this.session();
-    return session ? navLabelKeyFor(session) : null;
+    return session ? navRowsFor(session) : [];
   });
 
   constructor() {

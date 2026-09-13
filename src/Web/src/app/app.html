@@ -67,13 +67,18 @@
 
     <!--
       rule 1: side navigation at inline-start on desktop, a drawer sliding in from the right (RTL's
-      inline-start) at 390px. `.side-nav`'s CSS does the actual positioning; this only supplies the
-      one entry that exists in slice 1 — `navLabelKeyFor` names the role's real ruled destination, and
-      there is exactly one because nothing else this role reaches is built yet.
+      inline-start) at 390px. `.side-nav`'s CSS does the actual positioning; `navRows()` (KAFF-215)
+      supplies every row the session's permission set reaches — `routerLinkActive` marks whichever row
+      the router is currently under, including a child route such as `/catalogue/new` (`AC-215-F`),
+      natively rather than by hand-tracking the URL.
     -->
     <nav class="side-nav" [class.is-open]="isNavOpen()" data-testid="side-nav">
-      @if (navLabelKey(); as labelKey) {
-        <a class="nav-item is-active" [routerLink]="navPath()" (click)="closeNav()">{{ i18n.t(labelKey) }}</a>
+      @for (row of navRows(); track row.path) {
+        <a
+          class="nav-item"
+          routerLinkActive="is-active"
+          [routerLink]="row.path"
+          (click)="closeNav()">{{ i18n.t(row.labelKey) }}</a>
       }
     </nav>
 
