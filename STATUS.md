@@ -588,10 +588,10 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 | 0 |
 | 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 0 | 0 | 0 | 10 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 0 | 0 | 33 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 5 | 0 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 | 0 |
-| **total** | **127** | **58** | **5** | **10** |
+| **total** | **127** | **58** | **5** | **33** |
 
 ## Every story
 
@@ -649,6 +649,18 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-320](stories/slice-3-treasury/KAFF-320-bank-as-an-independent-master-record.md) | 3 | 0 | ⚫ NOT-BUILT | none | `-` | 2026-09-12 | Bank — an independent master record, not folded into the ledger |
 | [KAFF-900](stories/design-system/KAFF-900-design-tokens-and-shell.md) | design-system | 5 | 🟡 BUILT | none | `-` | - | Design tokens and the app shell (sidebar, header, page frame) |
 | [KAFF-901](stories/design-system/KAFF-901-shared-restyled-components.md) | design-system | 5 | 🟡 BUILT | none | `-` | - | Shared restyled components: table row, segmented filter, form field, button, badge |
+| [KAFF-910](stories/design-system/KAFF-910-restyle-catalogue-list.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: catalogue list |
+| [KAFF-911](stories/design-system/KAFF-911-restyle-catalogue-form.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: catalogue form |
+| [KAFF-912](stories/design-system/KAFF-912-restyle-bab-tree.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: باب tree |
+| [KAFF-913](stories/design-system/KAFF-913-restyle-employee-list.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: employee list |
+| [KAFF-914](stories/design-system/KAFF-914-restyle-employee-form.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: employee form |
+| [KAFF-915](stories/design-system/KAFF-915-restyle-worker-registration.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: worker mobile registration |
+| [KAFF-916](stories/design-system/KAFF-916-restyle-client-list.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: client list |
+| [KAFF-917](stories/design-system/KAFF-917-restyle-client-form.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: client form |
+| [KAFF-918](stories/design-system/KAFF-918-restyle-user-list.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: user list |
+| [KAFF-919](stories/design-system/KAFF-919-restyle-user-form.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: user form |
+| [KAFF-920](stories/design-system/KAFF-920-restyle-audit-trail.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: audit trail |
+| [KAFF-921](stories/design-system/KAFF-921-restyle-sign-in.md) | design-system | 1 | 🟡 BUILT | none | `-` | - | Restyle: sign-in |
 
 <!-- END GENERATED -->
 
