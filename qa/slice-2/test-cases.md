@@ -1,4 +1,4 @@
-# Slice 2 — test cases
+﻿# Slice 2 — test cases
 
 **Range allocated: `TC-2-001` … `TC-2-153`, plus `TC-2-000` as the non-case format template.**
 ⛔ **Extended again, 2026-09-12 — `TC-2-104` … `TC-2-153`, for `AC-204-K` and for `KAFF-209`/`210`/`211`/`212`,
@@ -1405,7 +1405,7 @@ them, under that name or any other.
 *Fails if:* any such member exists.
 
 **TC-2-145 · two suppliers can never carry the same code**
-`AC-212-D` · P1 · Api, real PostgreSQL · slice 0 · HELD — `Q85`
+`AC-212-D` · P1 · Api, real PostgreSQL · slice 0 · HELD — `Q86`
 Restated 2026-09-13 (`V-38-I`): the code is generated (`SupplierCodeSequence`), never typed — `Request`
 carries no `Code` member, so a submitted `S-100`/`s-100` pair cannot collide by typing and the prior
 case asserted a shape the endpoint does not have.

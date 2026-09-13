@@ -88,7 +88,7 @@ and cannot collide by typing: `Request` carries no `Code` member and the handler
 **Neither ruling names the supplier, and no other decision does.** The prior wording asserted a typed
 `S-100` collision that this endpoint cannot produce; that half is corrected below. **Held, not
 blessed:** whether a generated supplier code was ever actually ruled, or only carried over by
-implication from the client and employee, is `Q85` — `stories/questions-for-karim.md`.
+implication from the client and employee, is `Q86` — `stories/questions-for-karim.md`.
 Given a supplier already carrying a generated code
 When a second supplier is created, concurrently with others
 Then no two suppliers ever carry the same code, guaranteed by the sequence and the unique index on
@@ -177,4 +177,4 @@ from `Supplier` before `AC-212-F` is true of the running system.
 | **`Q13`** | ✅ **ANSWERED — D-139 §6.** Banks are independent master records, cut as `KAFF-320` (slice 3). **Not built inside this story** | **Closed** |
 | **`Q70`** | ✅ **ANSWERED — D-139 §1, D-141.** Warn-and-acknowledge | **Closed** |
 | **`Q12`** | ✅ **ANSWERED — D-129 §1.** The Owner keeps `SupplierManage`, as D-044 ruling 4's own example list had already named suppliers explicitly | **Closed** |
-| **`Q85`** | ⛔ **OPEN — raised 2026-09-13, restating `AC-212-D` (`V-38-I`).** Was a generated supplier code ever ruled, or only carried over by implication from D-107 §1 (client) and D-130 §6 (employee)? | **Open — holds `AC-212-D`** |
+| **`Q86`** | ⛔ **OPEN — raised 2026-09-13, restating `AC-212-D` (`V-38-I`).** Was a generated supplier code ever ruled, or only carried over by implication from D-107 §1 (client) and D-130 §6 (employee)? | **Open — holds `AC-212-D`** |
