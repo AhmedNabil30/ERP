@@ -4,7 +4,7 @@ import arJson from '../../../../public/locales/ar.json';
 import enJson from '../../../../public/locales/en.json';
 import { Role, Session } from '../auth/auth.service';
 import { routes } from '../../app.routes';
-import { navRowsFor } from './nav-rows';
+import { navGroupsFor, navRowsFor } from './nav-rows';
 
 /**
  * KAFF-215 — the sidebar's row list, and the completeness check that is this story's whole point:
@@ -132,5 +132,50 @@ describe('AC-215-E — every row label exists in both locales', () => {
       expect(en[row.labelKey], `en is missing ${row.labelKey}`).toBeTruthy();
       expect(en[row.labelKey]).not.toBe(row.labelKey);
     }
+  });
+});
+
+/**
+ * KAFF-922, `AC-922-B` — grouping is data-driven off `row.group`, so a session with zero rows in a
+ * section gets no heading for it, not an empty one.
+ */
+describe('AC-922-B — a group with no row in it renders no heading', () => {
+  it('a role missing UserManage and AuditRead produces no admin group at all', () => {
+    const groups = navGroupsFor(
+      session('SiteEngineer', [
+        'CatalogueManage',
+        'BabManage',
+        'EmployeeManage',
+        'SubcontractorManage',
+        'SupplierManage',
+        'ClientManage',
+      ]),
+    );
+
+    expect(groups.map((group) => group.key)).toEqual(['core']);
+  });
+
+  it('a session with every permission gets both groups, mockup order, no empty group', () => {
+    const groups = navGroupsFor(
+      session('Owner', [
+        'ClientManage',
+        'UserManage',
+        'AuditRead',
+        'CatalogueManage',
+        'BabManage',
+        'EmployeeManage',
+        'SubcontractorManage',
+        'SupplierManage',
+      ]),
+    );
+
+    expect(groups.map((group) => group.key)).toEqual(['core', 'admin']);
+    for (const group of groups) {
+      expect(group.rows.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('a session with no permissions at all produces no groups', () => {
+    expect(navGroupsFor(session('SiteEngineer', []))).toEqual([]);
   });
 });

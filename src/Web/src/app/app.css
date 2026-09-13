@@ -87,19 +87,6 @@
   }
 }
 
-.account-menu {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.account-name {
-  font-size: var(--text-sm);
-  color: var(--color-muted);
-  /* A name may be a Latin run inside an Arabic header. */
-  unicode-bidi: isolate;
-}
-
 .sign-out {
   padding-block: var(--space-1);
   padding-inline: var(--space-3);
@@ -142,9 +129,10 @@
 }
 
 /*
-  The dark sidebar (Main.dc.html's #16181a column). It reads the --sidebar-* tokens, never
-  --color-background/--color-text — brand chrome, not page surface, so it stays dark under both
-  themes (apple-erp-design's dark-shell rule, KAFF-900 point 2).
+  The dark sidebar (Main.dc.html's #16181a column, lines 20-91). It reads the --sidebar-* tokens,
+  never --color-background/--color-text — brand chrome, not page surface, so it stays dark under both
+  themes (apple-erp-design's dark-shell rule, KAFF-900 point 2). KAFF-922 rebuilt its contents to match
+  the mockup: brand row, grouped nav, an icon per row, account block pinned to the bottom.
 */
 .side-nav {
   inline-size: 15.5rem;
@@ -155,21 +143,69 @@
   border-inline-end: 1px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--space-4);
 }
 
 .side-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   padding-inline: var(--space-2);
-  margin-block-end: var(--space-3);
+}
+
+.brand-mark {
+  inline-size: 2rem;
+  block-size: 2rem;
+  border-radius: var(--radius-sm);
+  background: var(--color-brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: var(--text-sm);
+  /* --color-brand measures below the 4.5:1 text floor (styles.css's own note on the token) — the
+     mark is one Latin letter on a small decorative tile, not body text, so it stays within the
+     decorative-use case that note carves out. */
+  color: var(--sidebar-background);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-word {
   font-weight: 600;
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   letter-spacing: 0.08em;
+  align-self: start;
   color: var(--sidebar-text);
+}
+
+.brand-tagline {
+  font-size: 0.75rem;
+  color: var(--sidebar-text-muted);
+}
+
+.nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.nav-group-label {
+  padding-inline-start: var(--space-3);
+  margin-block-end: var(--space-1);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--sidebar-text-muted);
 }
 
 .nav-item {
   display: flex;
   align-items: center;
+  gap: var(--space-2);
   padding-block: var(--space-3);
   padding-inline: var(--space-3);
   border-radius: var(--radius-md);
@@ -180,10 +216,73 @@
   min-block-size: 2.75rem;
 }
 
+.nav-icon {
+  flex: 0 0 auto;
+}
+
 .nav-item.is-active {
   background: var(--sidebar-active-bg);
   color: var(--sidebar-text);
   box-shadow: inset 2px 0 0 var(--color-brand);
+}
+
+.nav-item.is-active .nav-icon {
+  color: var(--color-brand);
+}
+
+/* Pinned to the bottom of the sidebar regardless of how much nav content sits above it — including
+   the forced password-change state, where nothing sits above it at all (KAFF-922, AC-125-D). */
+.side-nav-account {
+  margin-block-start: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-block-start: 1px solid var(--sidebar-border);
+  padding-block-start: var(--space-3);
+}
+
+.account-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.account-avatar {
+  inline-size: 2.125rem;
+  block-size: 2.125rem;
+  border-radius: 999px;
+  background: var(--sidebar-active-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--sidebar-text);
+  flex: 0 0 auto;
+}
+
+.account-details {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.side-nav-account .account-name {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--sidebar-text);
+  unicode-bidi: isolate;
+}
+
+.account-role {
+  font-size: 0.75rem;
+  color: var(--sidebar-text-muted);
+}
+
+.side-nav-account .sign-out {
+  inline-size: 100%;
+  border-color: var(--sidebar-border);
+  color: var(--sidebar-text-muted);
 }
 
 .app-main {
@@ -204,13 +303,18 @@
   is used rather than `transform: translateX`, which is a physical property that does not flip with
   `dir` — sliding it off-canvas by a physical `translateX` would slide in from the wrong side the day
   this runs under `dir="ltr"`.
+
+  KAFF-922: the drawer treatment is scoped to `.side-nav.is-drawer` — set only while `showStaffNav()`
+  holds (`app.html`) — rather than to bare `.side-nav`. During a forced password-change screen the
+  sidebar renders with the account block alone and no toggle button exists to open a drawer, so it
+  stays in normal flow and visible instead of sliding off-canvas with no way back (`AC-125-D`).
 */
 @media (max-width: 640px) {
   .shell {
     display: block;
   }
 
-  .side-nav {
+  .side-nav.is-drawer {
     position: fixed;
     inset-block: 0;
     inset-inline-start: -17rem;
@@ -219,7 +323,7 @@
     box-shadow: var(--elevation-2);
   }
 
-  .side-nav.is-open {
+  .side-nav.is-drawer.is-open {
     inset-inline-start: 0;
   }
 

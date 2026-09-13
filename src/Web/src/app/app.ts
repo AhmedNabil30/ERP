@@ -3,9 +3,10 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 
 import { AuthService } from './core/auth/auth.service';
 import { SessionResolver } from './core/auth/session-resolver';
+import { roleKey } from './core/i18n/enum-keys';
 import { I18nService, Locale } from './core/i18n/i18n.service';
 import { navLabelKeyFor } from './core/navigation/landing';
-import { NavRow, navRowsFor } from './core/navigation/nav-rows';
+import { NavRow, NavRowGroup, navGroupsFor, navRowsFor } from './core/navigation/nav-rows';
 
 interface LocaleOption {
   readonly code: Locale;
@@ -81,6 +82,33 @@ export class App {
     const session = this.session();
     return session ? navRowsFor(session) : [];
   });
+
+  /**
+   * KAFF-922: the mockup's two sections, built by {@link navGroupsFor} off `navRowsFor`'s own `group`
+   * field — never a template-hardcoded list of headings. A section with no row in it is dropped
+   * before the template ever sees it, which is what `AC-922-B` means by "renders no heading for it".
+   */
+  protected readonly navGroups = computed<readonly NavRowGroup[]>(() => {
+    const session = this.session();
+    return session ? navGroupsFor(session) : [];
+  });
+
+  /** Exposed for the template — `roleKey` builds the i18n key by an exhaustive switch, never by
+   *  keying on the raw role string (`enum-keys.ts` hard rule 4). */
+  protected readonly roleKey = roleKey;
+
+  /**
+   * Avatar initials — first letter of each of the first two words of the display name, Arabic-safe.
+   * `[...word]` spreads by code point rather than UTF-16 code unit, so it does not split a name whose
+   * first character is outside the BMP.
+   */
+  protected initialsFor(displayName: string): string {
+    const words = displayName.trim().split(/\s+/u).filter((word) => word.length > 0);
+    return words
+      .slice(0, 2)
+      .map((word) => [...word][0] ?? '')
+      .join('');
+  }
 
   constructor() {
     void this.resolver.ensureResolved();

@@ -14126,3 +14126,68 @@ serial rule where there is no shared file costs session budget for no safety gai
 dispatched together. `KAFF-923` still waits for `KAFF-922` (both touch `app.html`) and `KAFF-925`
 still waits for `KAFF-924` (true dependency, not just file overlap) — the rule holds wherever a
 collision or a real dependency exists, it's only lifted where neither does.
+
+---
+
+### D-158 · Frontend — `KAFF-922` built: sidebar rebuilt to `Main.dc.html` 20-91, and the account
+block's own gate kept independent of `showStaffNav()` so `AC-125-D` survives the move · 2026-09-14
+
+**What was built.** `nav-rows.ts` gained `group` (`'core' | 'admin'`) and `icon` (a string key, not
+inline SVG) on `NavRow`, plus `navGroupsFor(session)` — `navRowsFor`'s rows bucketed into the mockup's
+two sections, dropping an empty section before the template ever sees it (`AC-922-B`). `NAV_ROWS`'
+declaration order was reordered to the mockup's visual order (catalogue, babs, employees,
+subcontractors, suppliers, clients, users, audit) — a data-only change; `AC-215-B` sorts both sides
+before comparing and `AC-215-D` only asserts permutation-invariance, so neither test's assertion
+depends on the literal order. `app.html`'s `<nav class="side-nav">` now renders the brand row and
+grouped, iconed rows (icons: exact `<path>` data copied from `Main.dc.html`, switched on `row.icon`
+in the template, never invented) and the account block, moved out of the header. `app.css` added the
+brand/group/icon/account rules, all on `--sidebar-*`/`--color-*` tokens already in `:root` — no new
+token was needed.
+
+**The one real risk in this story, and how it was closed.** The old header account block's gate was
+`@if (session(); as session)`, independent of `showStaffNav()` — which is what let sign-out stay
+reachable during a forced password-change screen (`showStaffNav()` is false whenever
+`session.mustChangePassword` is true; `AC-125-D` requires sign-out to survive that). Moving the
+account block straight into the existing `@if (showStaffNav()) { <nav class="side-nav"> ... }` block,
+as a literal reading of "move the account block into the sidebar" suggests, would have nested it
+inside `showStaffNav()`'s gate and made sign-out unreachable during a forced password change — the
+exact defect this story exists to avoid reintroducing.
+
+**Fix, at the template and CSS level, not just the account block.** `app.html`'s outer gate on
+`<nav class="side-nav">` is now `@if (session(); as session)`; the brand row and nav groups are
+nested one level deeper under `@if (showStaffNav())`, and the account block sits beside them,
+un-nested, keeping its own condition exactly as the story required. `.side-nav`'s mobile drawer
+CSS (`position: fixed`, off-canvas by default, opened by `.is-open`) was rescoped from bare
+`.side-nav` to `.side-nav.is-drawer`, with `is-drawer` bound to `showStaffNav()` in the template.
+Without that, a forced-password-change session at 390px would render the account-only sidebar
+off-canvas by default with no toggle button to open it (the toggle is itself gated on
+`showStaffNav()`) — sign-out would exist in the DOM and still be unreachable. Verified by rendering,
+not reasoning: `shots-kaff922/forced-mobile-{light,dark}.png` show the account-only sidebar in normal
+document flow at 390px, sign-out visible, no drawer, no overflow.
+
+**Two files were mid-edit by another actor when this story started reading them** —
+`nav-rows.ts` gained `navGroupsFor`/`NavRowGroup` and `ar.json`/`en.json` gained the `nav.group.*`/
+`app.tagline` keys before this session's own edits landed, and `nav-rows.spec.ts` already carried
+`AC-922-B`'s three tests. The `nav-rows.ts` copy on disk had also been mangled by a PowerShell-based
+edit (em dashes decoded as `â€”` — the exact corruption `run-kaff-erp/SKILL.md`'s Gotchas section
+warns `Get-Content`/`Set-Content` cause on this repo's Arabic/UTF-8 files). Kept the added
+`navGroupsFor` mechanism — it is the same design this entry would otherwise have added — rewrote the
+file with the mojibake fixed, and pointed `app.ts`'s `navGroups` computed at `navGroupsFor` instead of
+carrying a second, duplicate grouping implementation.
+
+**Found, not invented:** `app.html`'s comment named `AC-125-D`'s test as living in `app.spec.ts`. No
+such file exists anywhere under `src/Web` — there is no dedicated spec for `App` at all, forced
+password-change reachability is not under an automated check in this repository today. The fix above
+was verified by direct rendering (owner and forced-password sessions, desktop and 390px, light and
+dark — `shots-kaff922/*.png`) rather than by a pre-existing test, because there was no such test to
+re-run. **Not built:** an `app.spec.ts` covering `AC-125-D` mechanically. This is a gap the story
+brief asked to have flagged rather than silently patched over; it is not `KAFF-922`'s file list and
+was left alone.
+
+**Gates.** `dotnet build KaffErp.sln -c Release`: 0 warnings, 0 errors. `ng build`: clean, one budget
+warning (`app.css` 4.75 kB against a 4 kB/8 kB warn/error budget — under the error threshold, not
+addressed). `ng test`: 22 files, 119 tests, all green, including `AC-922-B`'s three cases and
+`AC-215-B`/`D`/`E` unmodified in intent. Rendered and looked at: Owner session (full sidebar) at
+desktop and 390px, light and dark, plus the 390px drawer opened; forced-password-change session
+(account-only sidebar) at desktop and 390px, light and dark. Nine renders total, all under
+`shots-kaff922/`.

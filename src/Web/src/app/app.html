@@ -1,32 +1,120 @@
 <div class="shell">
-  @if (showStaffNav()) {
-    @if (isNavOpen()) {
-      <button
-        type="button"
-        class="nav-backdrop"
-        data-testid="nav-backdrop"
-        [attr.aria-label]="i18n.t('shell.nav.toggle')"
-        (click)="closeNav()">
-      </button>
-    }
+  @if (showStaffNav() && isNavOpen()) {
+    <button
+      type="button"
+      class="nav-backdrop"
+      data-testid="nav-backdrop"
+      [attr.aria-label]="i18n.t('shell.nav.toggle')"
+      (click)="closeNav()">
+    </button>
+  }
 
+  @if (session(); as session) {
     <!--
       rule 1: side navigation at inline-start on desktop, a drawer sliding in from the right (RTL's
-      inline-start) at 390px. `.side-nav`'s CSS does the actual positioning; `navRows()` (KAFF-215)
-      supplies every row the session's permission set reaches — `routerLinkActive` marks whichever row
-      the router is currently under, including a child route such as `/catalogue/new` (`AC-215-F`),
+      inline-start) at 390px. `.side-nav.is-drawer`'s CSS does the actual positioning — the drawer
+      treatment applies only while `showStaffNav()` holds, since that is the only state a toggle button
+      exists to open it from (KAFF-922). `navRows()`/`navGroups()` (KAFF-215, KAFF-922) supply every row
+      the session's permission set reaches, grouped by `row.group`; `routerLinkActive` marks whichever
+      row the router is currently under, including a child route such as `/catalogue/new` (`AC-215-F`),
       natively rather than by hand-tracking the URL.
-    -->
-    <nav class="side-nav" [class.is-open]="isNavOpen()" data-testid="side-nav">
-      <div class="side-nav-brand"><bdi dir="ltr" translate="no">KAAF</bdi></div>
 
-      @for (row of navRows(); track row.path) {
-        <a
-          class="nav-item"
-          routerLinkActive="is-active"
-          [routerLink]="row.path"
-          (click)="closeNav()">{{ i18n.t(row.labelKey) }}</a>
+      KAFF-922: this element's own gate is `session()`, not `showStaffNav()` — the account block
+      (`data-testid="account-menu"`, moved here from the header) must keep rendering during a forced
+      password-change screen, where `showStaffNav()` is false but `AC-125-D` still requires sign-out to
+      stay reachable. Only the brand row and the nav groups are conditioned on `showStaffNav()`; the
+      account block below is not.
+    -->
+    <nav class="side-nav" [class.is-drawer]="showStaffNav()" [class.is-open]="isNavOpen()" data-testid="side-nav">
+      @if (showStaffNav()) {
+        <div class="side-nav-brand">
+          <div class="brand-mark" aria-hidden="true"><bdi dir="ltr" translate="no">K</bdi></div>
+          <div class="brand-text">
+            <bdi dir="ltr" translate="no" class="brand-word">KAAF</bdi>
+            <span class="brand-tagline">{{ i18n.t('app.tagline') }}</span>
+          </div>
+        </div>
+
+        @for (group of navGroups(); track group.key) {
+          <div class="nav-group">
+            <span class="nav-group-label">{{ i18n.t(group.labelKey) }}</span>
+
+            @for (row of group.rows; track row.path) {
+              <a
+                class="nav-item"
+                routerLinkActive="is-active"
+                [routerLink]="row.path"
+                (click)="closeNav()">
+                <svg
+                  class="nav-icon"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true">
+                  @switch (row.icon) {
+                    @case ('catalogue') {
+                      <path d="M4 6h16M4 12h16M4 18h10" />
+                    }
+                    @case ('babs') {
+                      <path d="M12 4v16M6 9h12M8 15h8" />
+                    }
+                    @case ('employees') {
+                      <circle cx="12" cy="8" r="3.2" />
+                      <path d="M5.5 19a6.5 6.5 0 0 1 13 0" />
+                    }
+                    @case ('subcontractors') {
+                      <path d="M4 20V9l8-5 8 5v11" />
+                      <path d="M10 20v-6h4v6" />
+                    }
+                    @case ('suppliers') {
+                      <path d="M3 8h13v9H3z" />
+                      <path d="M16 11h3.5L21 14v3h-5" />
+                      <circle cx="7" cy="18" r="1.6" />
+                      <circle cx="17.5" cy="18" r="1.6" />
+                    }
+                    @case ('clients') {
+                      <path d="M5 4h10l4 4v12H5z" />
+                      <path d="M15 4v4h4" />
+                      <path d="M9 13h6M9 17h4" />
+                    }
+                    @case ('users') {
+                      <circle cx="9" cy="9" r="3" />
+                      <path d="M3 19a6 6 0 0 1 12 0" />
+                      <path d="M16 7h5M16 11h5M16 15h3" />
+                    }
+                    @case ('audit') {
+                      <path d="M12 3v4M12 21v-2" />
+                      <circle cx="12" cy="12" r="5" />
+                      <path d="M20 12h-2M6 12H4" />
+                    }
+                  }
+                </svg>
+                {{ i18n.t(row.labelKey) }}</a>
+            }
+          </div>
+        }
       }
+
+      <div
+        class="side-nav-account"
+        data-testid="account-menu"
+        [attr.aria-label]="i18n.t('shell.account.menu')">
+        <div class="account-summary">
+          <div class="account-avatar" aria-hidden="true">{{ initialsFor(session.displayName) }}</div>
+          <div class="account-details">
+            <span class="account-name" data-testid="account-name">{{ session.displayName }}</span>
+            <span class="account-role">{{ i18n.t(roleKey(session.role)) }}</span>
+          </div>
+        </div>
+        <button type="button" class="sign-out" data-testid="sign-out" (click)="signOut()">
+          {{ i18n.t('shell.account.sign_out') }}
+        </button>
+      </div>
     </nav>
   }
 
@@ -59,20 +147,6 @@
             </button>
           }
         </nav>
-
-        <!--
-          Shown whenever a profile exists at all, even mid forced password-change — a session can always
-          end itself. The side nav below is the piece `AC-125-D` actually forbids ("no navigation item"),
-          not this.
-        -->
-        @if (session(); as session) {
-          <div class="account-menu" data-testid="account-menu" [attr.aria-label]="i18n.t('shell.account.menu')">
-            <span class="account-name" data-testid="account-name">{{ session.displayName }}</span>
-            <button type="button" class="sign-out" data-testid="sign-out" (click)="signOut()">
-              {{ i18n.t('shell.account.sign_out') }}
-            </button>
-          </div>
-        }
       </div>
     </header>
 
