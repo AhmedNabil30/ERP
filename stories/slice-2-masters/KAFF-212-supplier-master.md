@@ -79,10 +79,20 @@ When his stored properties are enumerated as an allow-list
 Then no balance, outstanding, total, purchases-to-date, withholding rate or any other amount-typed member appears among them, under that name or any other
 And the allow-list is written out by name, so adding one is a deliberate edit to this test rather than a silent widening
 
-**AC-212-D — two suppliers cannot share a code** *(fails if the rule is broken)*
-Given a supplier with code `S-100`
-When a second is submitted with `S-100`, and again with `s-100`
-Then both are refused, and the refusal survives two requests arriving at the same instant — the guarantee is the unique index, not a read-then-write
+**AC-212-D — ⛔ HELD — two suppliers cannot share a code** *(fails if the rule is broken)*
+**Stale as written, restated 2026-09-13 against what runs today — `V-38-I`.** The code is not typed
+and cannot collide by typing: `Request` carries no `Code` member and the handler draws one from
+`KaffDbContext.SupplierCodeSequence` immediately before `SaveChangesAsync`, the same mechanism D-107
+§1 ruled for the client (`C-10001`) and D-130 §6 ruled for the employee reference number [Verified:
+2026-09-13 @ `src/Api/Features/Suppliers/CreateSupplier/Request.cs`; `Handler.cs` -> `NextCodeAsync`].
+**Neither ruling names the supplier, and no other decision does.** The prior wording asserted a typed
+`S-100` collision that this endpoint cannot produce; that half is corrected below. **Held, not
+blessed:** whether a generated supplier code was ever actually ruled, or only carried over by
+implication from the client and employee, is `Q85` — `stories/questions-for-karim.md`.
+Given a supplier already carrying a generated code
+When a second supplier is created, concurrently with others
+Then no two suppliers ever carry the same code, guaranteed by the sequence and the unique index on
+`Supplier.Code`, not a read-then-write
 
 **AC-212-E — nothing here presents withholding as recoverable or nets it against the client side** *(fails if the rule is broken)*
 Given a supplier record and every screen showing it
@@ -167,3 +177,4 @@ from `Supplier` before `AC-212-F` is true of the running system.
 | **`Q13`** | ✅ **ANSWERED — D-139 §6.** Banks are independent master records, cut as `KAFF-320` (slice 3). **Not built inside this story** | **Closed** |
 | **`Q70`** | ✅ **ANSWERED — D-139 §1, D-141.** Warn-and-acknowledge | **Closed** |
 | **`Q12`** | ✅ **ANSWERED — D-129 §1.** The Owner keeps `SupplierManage`, as D-044 ruling 4's own example list had already named suppliers explicitly | **Closed** |
+| **`Q85`** | ⛔ **OPEN — raised 2026-09-13, restating `AC-212-D` (`V-38-I`).** Was a generated supplier code ever ruled, or only carried over by implication from D-107 §1 (client) and D-130 §6 (employee)? | **Open — holds `AC-212-D`** |

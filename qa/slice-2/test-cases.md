@@ -1404,12 +1404,15 @@ outstanding, total, purchases-to-date, withholding rate or other amount-typed me
 them, under that name or any other.
 *Fails if:* any such member exists.
 
-**TC-2-145 · two suppliers cannot share a code**
-`AC-212-D` · P1 · Api, real PostgreSQL · slice 0
-Given a supplier with code `S-100`, when a second is submitted with `S-100`, and again with `s-100`,
-then both are refused, and the refusal survives two requests arriving at the same instant — the
-guarantee is the unique index, not a read-then-write.
-*Fails if:* a concurrent pair both succeed.
+**TC-2-145 · two suppliers can never carry the same code**
+`AC-212-D` · P1 · Api, real PostgreSQL · slice 0 · HELD — `Q85`
+Restated 2026-09-13 (`V-38-I`): the code is generated (`SupplierCodeSequence`), never typed — `Request`
+carries no `Code` member, so a submitted `S-100`/`s-100` pair cannot collide by typing and the prior
+case asserted a shape the endpoint does not have.
+Given many supplier-create requests arriving concurrently, when they all resolve, then every generated
+code is distinct, guaranteed by the sequence draw and the unique index on `Supplier.Code`, not a
+read-then-write.
+*Fails if:* two created suppliers ever carry the same code.
 
 **TC-2-146 · nothing here presents withholding as recoverable or nets it against the client side**
 `AC-212-E` · P1 · Api · §6.7 · D-139 §5
