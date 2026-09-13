@@ -4,6 +4,20 @@
   stylesheet correct in both.
 */
 
+.shell {
+  display: flex;
+  align-items: stretch;
+  min-height: 100dvh;
+  background: var(--color-background);
+}
+
+.shell-main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
 .app-header {
   display: flex;
   flex-wrap: wrap;
@@ -13,7 +27,7 @@
   padding-block: var(--space-3);
   padding-inline: var(--space-4);
   border-block-end: 1px solid var(--color-border);
-  background: var(--color-surface);
+  background: var(--color-background);
   position: relative;
   z-index: 30;
 }
@@ -127,29 +141,39 @@
   }
 }
 
-.staff-body {
-  display: flex;
-  align-items: stretch;
-  min-height: calc(100dvh - 4rem);
-}
-
+/*
+  The dark sidebar (Main.dc.html's #16181a column). It reads the --sidebar-* tokens, never
+  --color-background/--color-text — brand chrome, not page surface, so it stays dark under both
+  themes (apple-erp-design's dark-shell rule, KAFF-900 point 2).
+*/
 .side-nav {
-  inline-size: 16rem;
+  inline-size: 15.5rem;
   flex: 0 0 auto;
-  padding: var(--space-4);
-  border-inline-end: 1px solid var(--color-border);
-  background: var(--color-surface);
+  padding: var(--space-4) var(--space-3);
+  background: var(--sidebar-background);
+  color: var(--sidebar-text);
+  border-inline-end: 1px solid var(--sidebar-border);
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-1);
+}
+
+.side-nav-brand {
+  padding-inline: var(--space-2);
+  margin-block-end: var(--space-3);
+  font-weight: 600;
+  font-size: var(--text-md);
+  letter-spacing: 0.08em;
+  color: var(--sidebar-text);
 }
 
 .nav-item {
-  display: block;
+  display: flex;
+  align-items: center;
   padding-block: var(--space-3);
   padding-inline: var(--space-3);
-  border-radius: var(--radius-sm);
-  color: inherit;
+  border-radius: var(--radius-md);
+  color: var(--sidebar-text-muted);
   text-decoration: none;
   font-weight: 600;
   /* 44px of touch target. */
@@ -157,8 +181,9 @@
 }
 
 .nav-item.is-active {
-  background: var(--color-background);
-  color: var(--color-accent);
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-text);
+  box-shadow: inset 2px 0 0 var(--color-brand);
 }
 
 .app-main {
@@ -166,6 +191,7 @@
   padding-block: var(--space-4);
   padding-inline: var(--space-4);
   min-inline-size: 0;
+  background: var(--color-background);
 }
 
 .nav-backdrop {
@@ -180,7 +206,7 @@
   this runs under `dir="ltr"`.
 */
 @media (max-width: 640px) {
-  .staff-body {
+  .shell {
     display: block;
   }
 
