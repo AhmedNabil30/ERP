@@ -1,21 +1,15 @@
 <section class="employees" data-testid="employee-list">
   <h1 class="title">{{ i18n.t('hr.employee.list_title') }}</h1>
 
-  <!-- A segmented control, matching CatalogueListPage's and BabTreePage's own — AC-207-F's three server states. -->
-  <div class="filters" role="group" [attr.aria-label]="i18n.t('hr.employee.list_title')">
-    @for (option of filters; track option) {
-      <button
-        type="button"
-        class="chip"
-        [class.chip--on]="statusFilter() === option"
-        [attr.aria-pressed]="statusFilter() === option"
-        [attr.data-testid]="'employee-filter-' + option"
-        (click)="onFilter(option)"
-      >
-        {{ i18n.t(filterKey(option)) }}
-      </button>
-    }
-  </div>
+  <!-- KAFF-913: KAFF-901's segmented filter, matching CatalogueListPage's and BabTreePage's own —
+       AC-207-F's three server states. -->
+  <kaff-segmented-filter
+    [options]="segmentedOptions"
+    [value]="statusFilter()"
+    (valueChange)="onFilter($event)"
+    ariaLabelKey="hr.employee.list_title"
+    testIdPrefix="employee-filter"
+  />
 
   @if (failure(); as key) {
     <p class="refusal" role="alert" data-testid="employee-list-failure">{{ i18n.t(key) }}</p>
@@ -26,26 +20,24 @@
   } @else if (employees().length > 0) {
     <ul class="rows" data-testid="employee-rows">
       @for (employee of employees(); track trackRow($index, employee)) {
-        <li
-          class="row"
-          [class.row--archived]="!employee.isActive"
-          [attr.data-testid]="'employee-row-' + employee.code"
-        >
+        <li class="rows-item" [attr.data-testid]="'employee-row-' + employee.code">
           <a class="row-link" [routerLink]="['/employees', employee.id]" [state]="{ employee: employee }">
-            <bdi class="row-code" translate="no">{{ employee.code }}</bdi>
-            <span class="row-name" dir="auto">{{ employee.fullName }}</span>
-            <bdi class="row-phone" dir="ltr">{{ employee.phone }}</bdi>
-            <span class="row-kind chip">{{ i18n.t(kindKey(employee)) }}</span>
+            <kaff-table-row [columns]="rowColumns" [archived]="!employee.isActive">
+              <bdi class="row-code figure" dir="ltr" translate="no">{{ employee.code }}</bdi>
+              <span class="row-name" dir="auto">{{ employee.fullName }}</span>
+              <bdi class="row-phone" dir="ltr">{{ employee.phone }}</bdi>
+              <kaff-badge tone="accent">{{ i18n.t(kindKey(employee)) }}</kaff-badge>
 
-            @if (employee.specialty; as specialty) {
-              <span class="row-specialty" dir="auto">{{ specialty }}</span>
-            }
+              @if (employee.specialty; as specialty) {
+                <span class="row-specialty" dir="auto">{{ specialty }}</span>
+              }
 
-            @if (!employee.isActive) {
-              <span class="row-archived-badge" data-testid="employee-row-archived-badge">
-                {{ i18n.t('hr.employee.archived_badge') }}
-              </span>
-            }
+              @if (!employee.isActive) {
+                <kaff-badge tone="neutral" testId="employee-row-archived-badge">
+                  {{ i18n.t('hr.employee.archived_badge') }}
+                </kaff-badge>
+              }
+            </kaff-table-row>
           </a>
 
           <div class="row-actions">
@@ -66,32 +58,29 @@
                 <p class="row-confirm" [attr.data-testid]="'employee-archive-body-' + employee.code">
                   {{ i18n.t('hr.employee.archive_confirm') }}
                 </p>
-                <button
-                  type="button"
-                  class="danger-button"
+                <kaff-button
+                  variant="danger"
                   [disabled]="isArchiving(employee.id)"
-                  [attr.data-testid]="'employee-archive-confirm-' + employee.code"
-                  (click)="onConfirmArchive(employee.id)"
+                  [testId]="'employee-archive-confirm-' + employee.code"
+                  (clicked)="onConfirmArchive(employee.id)"
                 >
                   {{ i18n.t('hr.employee.archive_action') }}
-                </button>
-                <button
-                  type="button"
-                  class="chip"
-                  [attr.data-testid]="'employee-archive-cancel-' + employee.code"
-                  (click)="onCancelArchive()"
+                </kaff-button>
+                <kaff-button
+                  variant="secondary"
+                  [testId]="'employee-archive-cancel-' + employee.code"
+                  (clicked)="onCancelArchive()"
                 >
                   {{ i18n.t('action.cancel') }}
-                </button>
+                </kaff-button>
               } @else {
-                <button
-                  type="button"
-                  class="danger-button"
-                  [attr.data-testid]="'employee-archive-' + employee.code"
-                  (click)="onStartArchive(employee.id)"
+                <kaff-button
+                  variant="danger"
+                  [testId]="'employee-archive-' + employee.code"
+                  (clicked)="onStartArchive(employee.id)"
                 >
                   {{ i18n.t('hr.employee.archive_action') }}
-                </button>
+                </kaff-button>
               }
             }
           </div>

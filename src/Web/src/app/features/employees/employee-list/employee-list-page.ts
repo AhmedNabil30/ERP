@@ -4,6 +4,13 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toProblem } from '../../../core/api/problem-details';
 import { EmployeeListFilter, EmployeeSummary, EmployeesApi } from '../../../core/employees/employees.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
+import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import {
+  KaffSegmentedFilter,
+  SegmentedFilterOption,
+} from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
+import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 
 /** The three chips `AC-207-F` draws, matching `CatalogueListPage`'s and `BabTreePage`'s own. */
 const FILTERS: readonly EmployeeListFilter[] = ['active', 'archived', 'all'];
@@ -22,7 +29,7 @@ const FILTERS: readonly EmployeeListFilter[] = ['active', 'archived', 'all'];
  */
 @Component({
   selector: 'kaff-employee-list-page',
-  imports: [RouterLink],
+  imports: [RouterLink, KaffBadge, KaffButton, KaffSegmentedFilter, KaffTableRow],
   templateUrl: './employee-list-page.html',
   styleUrl: './employee-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -34,6 +41,12 @@ export class EmployeeListPage {
 
   protected readonly i18n = inject(I18nService);
   protected readonly filters = FILTERS;
+
+  /** Grid columns for `kaff-table-row`: code · name · phone · kind · specialty · archived badge. */
+  protected readonly rowColumns = 'auto minmax(10rem, 1fr) auto auto auto auto';
+
+  protected readonly segmentedOptions: readonly SegmentedFilterOption<EmployeeListFilter>[] =
+    FILTERS.map((filter) => ({ value: filter, labelKey: this.filterKey(filter) }));
 
   /** Bound by name from `?status=` — `withComponentInputBinding` in `app.config.ts`. */
   readonly status = input<EmployeeListFilter>('active');
