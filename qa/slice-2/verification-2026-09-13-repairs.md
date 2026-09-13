@@ -235,3 +235,64 @@ not by `CloseEngagement`.
 > D-153 it is met.** A criterion that only a decision outside the story can reconcile is the `V-35-N`
 > shape. **What I did:** named it for the BA. Changed nothing.
 
+---
+
+## 5. The D-152 / D-153 mechanisms
+
+### `Q83` — the salaried phone index is unique only among **active** salaried records
+
+Read out of the running database, not out of a migration file:
+
+```
+CREATE UNIQUE INDEX ux_employees_salaried_phone ON public.employees USING btree (phone_normalised)
+  WHERE (((kind)::text = 'Salaried'::text) AND is_active)
+```
+
+Both halves of D-153 §3's predicate are there. The other three phone indexes
+(`ix_employees_phone`, `ix_subcontractors_phone`, `ix_suppliers_phone`, and `ix_users_phone_normalised`)
+are **non-unique**, which is D-141. `tests/Api.Tests/EmployeePhoneMatchTests.cs` ->
+`A_salaried_phone_belonging_to_an_archived_leaver_can_be_registered_again` drives the consequence:
+archive the first salaried record, and the same phone is then a **warn-and-acknowledge**
+(`409 duplicate_phone_not_acknowledged`, then `201` on acknowledgement), not a refusal.
+
+### `Q80` — the test carries no `Skip` and asserts warn-and-acknowledge
+
+`tests/Api.Tests/CreateEmployeeTests.cs` ->
+`A_salaried_create_matching_an_active_day_labourer_warns_and_succeeds_once_acknowledged`. It is a bare
+`[Fact]`, and it asserts `201 Created` with the reason *"D-153 §4 (Q80) — a cross-population phone
+match warns, it does not refuse"*, having first asserted the unacknowledged attempt is refused.
+
+**There is no `Skip` anywhere in `tests/`** except `E2E.Tests/E2EEnvironment.cs`, which skips only
+when the application is not running — I grepped the whole tree for `Skip =` and `Skip(`. The Api run
+reports **`skipped: 0`**, which is the same fact measured from the other end.
+
+### `Q81` — the seeder skips the whole run when any باب exists. **Both branches driven.**
+
+| Branch | What I did | What happened |
+|---|---|---|
+| **Empty** | Started the API against a brand-new database | **Eight trades inserted** — `CON` 0.150000, `MAS` 0.150000, `PLU` 0.200000, `ELE` 0.200000, `HVA` 0.200000, `FIN` 0.300000, `CAR` 0.250000, `MET` 0.250000, exactly D-145 §1's table, markups stored as fractions |
+| **Not empty** | **Deleted seven of the eight** (left `CON` alone) and restarted the API | Log: *"Trades (أبواب) already exist; the seeder made no change (D-152 §8)."* — and `select count(*) from babs` still reads **1**. The seven missing seed codes were **not** re-inserted |
+
+The second branch is the one that matters: a **per-code** guard would have re-inserted the seven and
+quietly resurrected rows an operator had removed. The guard is the first statement of the internal
+overload in `src/Infrastructure/Persistence/Seeding/BabSeeder.cs` -> `SeedAsync`, so every caller
+passes through it, and the class contains no `SetDefaultMarkup` and no `Rename` — D-142 point 3's own
+test of itself.
+
+### `DayLabourRateManage = 64`, `TouchesMoney: true`, and the money-free row left alone
+
+- `src/Domain/Authorization/Permission.cs` -> `DayLabourRateManage = 64`; `DayLabourSiteManage = 62`
+  is untouched at its own number.
+- `src/Domain/Authorization/PermissionCatalogue.cs` -> the `DayLabourRateManage` row is
+  `ProjectScoped`, granted to **Owner, Finance and `engineerJunior`**, and carries
+  **`TouchesMoney: true`**.
+- `tests/Domain.Tests/CatalogueCompletenessTests.cs` ->
+  `Only_the_owner_and_assigned_site_engineers_hold_DayLabourSiteManage_and_it_touches_no_money` and
+  `Hr_holds_no_permission_that_touches_money` are **green and unedited**: `git show 224cf8a` on both
+  test files is **additions only** — the new `DayLabourRateManage` tests were added beside the old
+  ones, and not one existing assertion was changed to accommodate the new row. That is the difference
+  between a row that fits the mechanism and a row the mechanism was bent around.
+- Driven, not merely read: the pool read behind `DayLabourSiteManage` returns **no money member at
+  all** (`frequency` and `averageRating` only), and Finance — who holds the rate row but not the site
+  row — is refused `403` on the pool while reading the rate on the history route.
+
