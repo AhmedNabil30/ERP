@@ -31,9 +31,13 @@
       name the operator may not need to type at all. dir="ltr" and inputmode="tel" because a phone
       number is a Latin run regardless of the page's direction.
     -->
-    <label class="field">
-      <span class="label">{{ i18n.t('clients.field.phone') }}</span>
+    <kaff-field
+      labelKey="clients.field.phone"
+      controlId="client-phone-input"
+      hintKey="clients.hint.phone_is_the_key"
+    >
       <input
+        id="client-phone-input"
         class="input"
         type="tel"
         dir="ltr"
@@ -43,8 +47,7 @@
         [formField]="clientForm.phone"
         (blur)="onPhoneBlur()"
       />
-      <span class="hint">{{ i18n.t('clients.hint.phone_is_the_key') }}</span>
-    </label>
+    </kaff-field>
 
     <!--
       S-013. A warning, never a refusal: spec.md §2 amended, D-049 ruling 8 — a corporate client and
@@ -61,10 +64,16 @@
       />
     }
 
-    <label class="field">
-      <span class="label">{{ i18n.t('clients.field.name') }}</span>
-      <input class="input" type="text" dir="auto" data-testid="client-name" [formField]="clientForm.name" />
-    </label>
+    <kaff-field labelKey="clients.field.name" controlId="client-name-input">
+      <input
+        id="client-name-input"
+        class="input"
+        type="text"
+        dir="auto"
+        data-testid="client-name"
+        [formField]="clientForm.name"
+      />
+    </kaff-field>
 
     <fieldset class="field kind">
       <legend class="label">{{ i18n.t('clients.field.kind') }}</legend>
@@ -96,21 +105,21 @@
       than submitting a pair the server will reject (decisions.md D-109 §1).
     -->
     @if (!isIndividual()) {
-      <label class="field">
-        <span class="label">{{ i18n.t('clients.field.tax_registration') }}</span>
+      <kaff-field labelKey="clients.field.tax_registration" controlId="client-tax-registration-input">
         <input
+          id="client-tax-registration-input"
           class="input"
           type="text"
           dir="ltr"
           data-testid="client-tax-registration"
           [formField]="clientForm.taxRegistrationNumber"
         />
-      </label>
+      </kaff-field>
     }
 
-    <label class="field">
-      <span class="label">{{ i18n.t('clients.field.alternate_phone') }}</span>
+    <kaff-field labelKey="clients.field.alternate_phone" controlId="client-alternate-phone-input">
       <input
+        id="client-alternate-phone-input"
         class="input"
         type="tel"
         dir="ltr"
@@ -118,32 +127,53 @@
         data-testid="client-alternate-phone"
         [formField]="clientForm.alternatePhone"
       />
-    </label>
+    </kaff-field>
 
-    <label class="field">
-      <span class="label">{{ i18n.t('clients.field.email') }}</span>
-      <input class="input" type="email" dir="ltr" data-testid="client-email" [formField]="clientForm.email" />
-    </label>
+    <kaff-field labelKey="clients.field.email" controlId="client-email-input">
+      <input
+        id="client-email-input"
+        class="input"
+        type="email"
+        dir="ltr"
+        data-testid="client-email"
+        [formField]="clientForm.email"
+      />
+    </kaff-field>
 
-    <label class="field">
-      <span class="label">{{ i18n.t('clients.field.address') }}</span>
-      <input class="input" type="text" dir="auto" data-testid="client-address" [formField]="clientForm.address" />
-    </label>
+    <kaff-field labelKey="clients.field.address" controlId="client-address-input">
+      <input
+        id="client-address-input"
+        class="input"
+        type="text"
+        dir="auto"
+        data-testid="client-address"
+        [formField]="clientForm.address"
+      />
+    </kaff-field>
 
-    <label class="field">
-      <span class="label">{{ i18n.t('clients.field.notes') }}</span>
-      <textarea class="input notes" rows="3" dir="auto" data-testid="client-notes" [formField]="clientForm.notes"></textarea>
-      <!-- spec.md §12: the client MUST NEVER see internal notes. Labelled so the person typing knows. -->
-      <span class="hint">{{ i18n.t('clients.hint.notes_internal') }}</span>
-    </label>
+    <!-- spec.md §12: the client MUST NEVER see internal notes. The hint says so. -->
+    <kaff-field
+      labelKey="clients.field.notes"
+      controlId="client-notes-input"
+      hintKey="clients.hint.notes_internal"
+    >
+      <textarea
+        id="client-notes-input"
+        class="input notes"
+        rows="3"
+        dir="auto"
+        data-testid="client-notes"
+        [formField]="clientForm.notes"
+      ></textarea>
+    </kaff-field>
 
     @if (refusalKey(); as key) {
       <p class="refusal" role="alert" data-testid="client-form-refusal">{{ i18n.t(key) }}</p>
     }
 
-    <button class="submit" type="submit" data-testid="client-submit" [disabled]="!canSubmit()">
+    <kaff-button variant="primary" type="submit" testId="client-submit" [disabled]="!canSubmit()">
       {{ i18n.t('clients.action.save') }}
-    </button>
+    </kaff-button>
   </form>
 
   @if (isEdit()) {
@@ -162,17 +192,17 @@
           <p class="confirm-title">{{ i18n.t('clients.confirm.archive.title') }}</p>
           <p class="confirm-body">{{ i18n.t('clients.confirm.archive.body') }}</p>
           <div class="confirm-actions">
-            <button type="button" class="danger-button" data-testid="client-archive-confirm" (click)="onArchive()">
+            <kaff-button variant="danger" testId="client-archive-confirm" (clicked)="onArchive()">
               {{ i18n.t('clients.action.archive') }}
-            </button>
-            <button type="button" class="chip" data-testid="client-archive-cancel" (click)="onCancelArchive()">
+            </kaff-button>
+            <kaff-button variant="secondary" testId="client-archive-cancel" (clicked)="onCancelArchive()">
               {{ i18n.t('action.cancel') }}
-            </button>
+            </kaff-button>
           </div>
         } @else {
-          <button type="button" class="danger-button" data-testid="client-archive" (click)="onStartArchive()">
+          <kaff-button variant="danger" testId="client-archive" (clicked)="onStartArchive()">
             {{ i18n.t('clients.action.archive') }}
-          </button>
+          </kaff-button>
         }
       </section>
     }

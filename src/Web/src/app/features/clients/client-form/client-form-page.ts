@@ -14,6 +14,8 @@ import { toProblem } from '../../../core/api/problem-details';
 import { ClientFile, ClientKind, ClientWrite, ClientsApi } from '../../../core/clients/clients.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { DuplicatePhoneWarning } from '../../../shared/duplicate-phone-warning/duplicate-phone-warning';
+import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import { KaffField } from '../../../shared/kaff-field/kaff-field';
 import { PhoneMatch } from '../../../shared/phone-match';
 
 interface ClientDraft {
@@ -74,7 +76,7 @@ function orNull(value: string): string | null {
  */
 @Component({
   selector: 'kaff-client-form-page',
-  imports: [FormField, DuplicatePhoneWarning],
+  imports: [FormField, DuplicatePhoneWarning, KaffField, KaffButton],
   templateUrl: './client-form-page.html',
   styleUrl: './client-form-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
