@@ -407,6 +407,7 @@
   "users.confirm.reactivate.title": "Reactivate this account?",
   "users.confirm.reactivate.body": "{name} will be able to sign in again. They will not be put back on any project.",
   "a11y.reveal_password": "Show the password",
+  "a11y.required": "Required",
   "action.reveal": "Show",
   "action.hide": "Hide",
   "nav.users": "Users",

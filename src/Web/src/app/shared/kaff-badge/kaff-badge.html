@@ -1,0 +1,7 @@
+<span
+  class="badge"
+  [class.tone-neutral]="tone() === 'neutral'"
+  [class.tone-accent]="tone() === 'accent'"
+  [class.tone-warning]="tone() === 'warning'"
+  [attr.data-testid]="testId()"
+><ng-content></ng-content></span>

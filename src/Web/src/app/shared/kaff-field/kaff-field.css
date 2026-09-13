@@ -1,0 +1,37 @@
+/* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.field-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.required-marker {
+  color: var(--color-danger);
+  margin-inline-start: var(--space-1);
+}
+
+.sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.field-message {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.field-message--error {
+  color: var(--color-danger);
+}

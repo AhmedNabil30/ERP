@@ -1,0 +1,15 @@
+<button
+  [type]="type()"
+  class="kaff-button"
+  [class.variant-primary]="variant() === 'primary'"
+  [class.variant-secondary]="variant() === 'secondary'"
+  [class.variant-danger]="variant() === 'danger'"
+  [class.variant-ghost]="variant() === 'ghost'"
+  [disabled]="disabled() || busy()"
+  [attr.aria-busy]="busy() ? 'true' : null"
+  [attr.aria-label]="ariaLabelKey() ? i18n.t(ariaLabelKey()!) : null"
+  [attr.data-testid]="testId()"
+  (click)="onClick()"
+>
+  <ng-content></ng-content>
+</button>

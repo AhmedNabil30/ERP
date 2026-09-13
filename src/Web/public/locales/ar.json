@@ -407,6 +407,7 @@
   "users.confirm.reactivate.title": "إعادة تفعيل هذا الحساب؟",
   "users.confirm.reactivate.body": "سيستطيع {name} تسجيل الدخول من جديد. لن يُعاد إسناده إلى أي مشروع.",
   "a11y.reveal_password": "إظهار كلمة المرور",
+  "a11y.required": "مطلوب",
   "action.reveal": "إظهار",
   "action.hide": "إخفاء",
   "nav.users": "المستخدمون",

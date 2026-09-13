@@ -1,0 +1,8 @@
+<div
+  class="row"
+  [class.row--archived]="archived()"
+  [style.grid-template-columns]="columns()"
+  [attr.data-testid]="testId()"
+>
+  <ng-content></ng-content>
+</div>

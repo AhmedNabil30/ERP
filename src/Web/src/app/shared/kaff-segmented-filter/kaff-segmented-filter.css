@@ -1,0 +1,29 @@
+/* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). */
+
+.filter-track {
+  display: flex;
+  padding: var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  inline-size: fit-content;
+  max-inline-size: 100%;
+}
+
+.chip {
+  flex: 1 1 auto;
+  min-block-size: var(--tap-target);
+  padding-inline: var(--space-4);
+  font: inherit;
+  color: var(--color-muted);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 999px;
+}
+
+/* The active segment, filled with --color-interactive (apple-erp-design §4). */
+.chip--on {
+  background: var(--color-interactive);
+  color: var(--color-background);
+}

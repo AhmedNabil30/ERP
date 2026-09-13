@@ -1,0 +1,59 @@
+/* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). */
+
+.kaff-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-block-size: var(--tap-target);
+  padding-inline: var(--space-5);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.kaff-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* aria-busy keeps the label visible — no spinner replaces it, so the button does not change
+   width mid-tap (ux/components.md §7). */
+.kaff-button[aria-busy='true'] {
+  opacity: 0.75;
+}
+
+.variant-primary {
+  background: var(--color-interactive);
+  color: var(--color-background);
+}
+
+.variant-primary:not(:disabled):hover {
+  background: var(--color-interactive-hover);
+}
+
+.variant-secondary {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.variant-secondary:not(:disabled):hover {
+  border-color: var(--color-border-strong);
+}
+
+.variant-danger {
+  background: var(--color-danger);
+  color: var(--color-background);
+}
+
+.variant-ghost {
+  background: transparent;
+  color: var(--color-interactive);
+}
+
+.variant-ghost:not(:disabled):hover {
+  background: var(--color-surface);
+}
