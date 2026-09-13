@@ -8,33 +8,33 @@
   } @else if (users().length > 0) {
     <ul class="rows" data-testid="user-rows">
       @for (user of users(); track trackUser($index, user)) {
-        <li class="row" [class.row--inactive]="!user.isActive">
+        <li class="rows-item">
           <a class="row-link" [routerLink]="['/users', user.id]" [attr.data-testid]="'user-row-' + user.userName">
-            <span class="row-name" dir="auto">{{ user.fullName }}</span>
-            <span class="row-meta">
-              <span class="row-role">{{ i18n.t(roleKey(user.role)) }}</span>
-              @if (user.department; as department) {
-                <span class="row-sep" aria-hidden="true">·</span>
-                <span class="row-department">{{ i18n.t(departmentKey(department)) }}</span>
-                @if (user.operationsSubDepartment; as subDepartment) {
-                  <span class="row-sep" aria-hidden="true">·</span>
-                  <span class="row-department">{{ i18n.t(operationsSubDepartmentKey(subDepartment)) }}</span>
+            <kaff-table-row [columns]="rowColumns" [archived]="!user.isActive">
+              <span class="row-name" dir="auto">{{ user.fullName }}</span>
+              <span class="row-meta">
+                <kaff-badge tone="accent">{{ i18n.t(roleKey(user.role)) }}</kaff-badge>
+                @if (user.department; as department) {
+                  <span class="row-department">{{ i18n.t(departmentKey(department)) }}</span>
+                  @if (user.operationsSubDepartment; as subDepartment) {
+                    <span class="row-sep" aria-hidden="true">·</span>
+                    <span class="row-department">{{ i18n.t(operationsSubDepartmentKey(subDepartment)) }}</span>
+                  }
                 }
-              }
-              @if (!user.isActive) {
-                <span class="row-sep" aria-hidden="true">·</span>
-                <span class="row-inactive" data-testid="user-row-inactive">
-                  {{ i18n.t('users.state.inactive') }}
-                </span>
-              }
-            </span>
-            <!--
-              <bdi> on the username and the phone. Both are Latin runs inside an Arabic line, and
-              without isolation the bidi algorithm reorders them against the surrounding text —
-              ux/rtl-and-i18n.md §2, which lists a username and a phone number by name.
-            -->
-            <bdi class="row-username">{{ user.userName }}</bdi>
-            <bdi class="row-phone">{{ user.phone }}</bdi>
+                @if (!user.isActive) {
+                  <kaff-badge tone="neutral" testId="user-row-inactive">
+                    {{ i18n.t('users.state.inactive') }}
+                  </kaff-badge>
+                }
+              </span>
+              <!--
+                <bdi> on the username and the phone. Both are Latin runs inside an Arabic line, and
+                without isolation the bidi algorithm reorders them against the surrounding text —
+                ux/rtl-and-i18n.md §2, which lists a username and a phone number by name.
+              -->
+              <bdi class="row-username">{{ user.userName }}</bdi>
+              <bdi class="row-phone">{{ user.phone }}</bdi>
+            </kaff-table-row>
           </a>
         </li>
       }

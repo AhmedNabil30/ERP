@@ -9,6 +9,8 @@ import {
 } from '../../../core/i18n/enum-keys';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { UserSummary, UsersApi } from '../../../core/users/users.api';
+import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
+import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 
 /**
  * S-006 · the user list. The Owner's home, and the way into every identity act in the system.
@@ -30,7 +32,7 @@ import { UserSummary, UsersApi } from '../../../core/users/users.api';
  */
 @Component({
   selector: 'kaff-user-list-page',
-  imports: [RouterLink],
+  imports: [RouterLink, KaffTableRow, KaffBadge],
   templateUrl: './user-list-page.html',
   styleUrl: './user-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -42,6 +44,9 @@ export class UserListPage {
   protected readonly roleKey = roleKey;
   protected readonly departmentKey = departmentKey;
   protected readonly operationsSubDepartmentKey = operationsSubDepartmentKey;
+
+  /** Grid columns for `kaff-table-row`: name · role/department meta · username · phone. */
+  protected readonly rowColumns = '2fr 1.5fr 1fr 1fr';
 
   protected readonly users = signal<readonly UserSummary[]>([]);
   protected readonly loading = signal(true);
