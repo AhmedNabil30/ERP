@@ -160,3 +160,78 @@ it. ⚠️ The Frontend session flagged that its asked-for **edit round-trip tes
 a label test does; I did not audit `employee-form-page.spec.ts` case by case — recorded in §8 as not
 reached.
 
+---
+
+## 4. `KAFF-210` against its own acceptance criteria
+
+D-150 rejected it as *"about four criteria of eleven"*. D-152 answered `Q76`–`Q78` and D-153 §1 gave
+the mechanism, and `224cf8a` / `6906ec3` / `f391f12` built the rest. **I drove all eleven.** Fixtures:
+one day labourer with two engagements (rates `300.0000` and `487.6543`, ratings 4 and 2), one worker
+never engaged, one project, and five role users — HR, two Site Engineers, Finance, Technical Office —
+each signed in for himself.
+
+| AC | Met? | What I measured |
+|---|---|---|
+| **A** — an engagement is recorded against a worker | ⚠️ **substantially** | `POST …/day-labour/engagements` → `201`; it appears in the history read and moves the pool figures. **But the dates are not the operator's** — see `V-39-C` |
+| **B** — the three figures are derived, never stored | ✅ | `engagements` holds `id, worker_id, project_id, day_rate, opened_on, opened_at, closed_on, closed_at, rating, opened_by_user_id` — **no average, no count, no total, no cached rating**, on the engagement or on the employee. `ListPool` and `ListEngagements` both compute on every read |
+| **C** — four decimals, never through a float | ✅ | `487.6543` submitted, `"487.6543"` returned, `487.6543` in the column. `Money` throughout; no `float`/`double` on the path |
+| **D** — the average is the average of the rates paid | ✅ | Two engagements at `300.0000` and `487.6543` read back `averageDayRate "393.8272"`. A **third** engagement at `250.5000` moved it to `"346.0514"` on the next read **with nothing else written** |
+| **E** — no posting, no account | ✅ | `select count(*) from postings` = **0** after every act. The 14 accounts in the database were all written at Owner bootstrap (15:16:33), minutes before the first engagement (15:20:34) |
+| **F** — an engagement is a stretch, a rating is out of 5 | ✅ | `frequency` counts engagements. `rating: 7` and `rating: 0` both refused **`400 master.engagement_rating_out_of_range`**; 4, 2 and 5 accepted |
+| **G** — never engaged reads as unengaged, not as zero | ✅ | API returns `averageDayRate: null`, `frequency: 0`, `averageRating: null`; the pool and the history screen both render **لم يُشغَّل من قبل** in all three places, never `0` and never a blank |
+| **H** — a role without the permission reaches nothing | ✅ | See the table below |
+| **I** — the engagement and the rating are audited | ✅ | Seven `Engagement` audit rows for seven acts: `Created` ×2, `Modified ["DayRate"]` ×2, `Modified ["ClosedAt","ClosedOn"]`, `Modified ["Rating"]` ×2 — each with actor, role, **and the route project** (`project_id` + `grant_path`), which is D-148 working |
+| **J** — Arabic, RTL, 390px | ✅ | §6 |
+| **K** — manual close only, and only within its own project | ✅ | Closing engagement `e2` through **another project's** route is refused `403`; nothing closes an engagement on its own — there is no timer, no hosted service and no `openedOn`-based expiry anywhere in the slice |
+
+**Ten of eleven fully met, one (`A`) met except for the dates.**
+
+### The permission surface, driven role by role
+
+Every call below was made directly against the API with no browser, each role signed in as itself.
+
+| Caller | pool (`GET …/day-labour`) | history (`GET …/engagements`) | day rate (`PUT …/day-rate`) | rating (`POST …/rate`) |
+|---|---|---|---|---|
+| Site Engineer, **not assigned** | `403` | `403` | `403` | `403` |
+| Site Engineer 2, not assigned | `403` | `403` | `403` | `403` |
+| Finance, not assigned | `403` | `403` | `403` | `403` |
+| HR, not assigned | `403` | `403` | `403` | `403` |
+| Technical Office, not assigned | `403` | `403` | `403` | `403` |
+| Site Engineer, **assigned, not the opener** | `200` | `200` — **empty**, he opened none | `403 master.engagement_not_responsible_engineer` | `403 master.engagement_not_responsible_engineer` |
+| Site Engineer, **assigned, on his own engagement** | `200` | `200` — his one engagement only | **`200`** | **`200`** |
+| Finance, assigned | `403` (no `DayLabourSiteManage`) | `200` — all three engagements, `averageDayRate 346.0514` | `403` — Finance **reads** a rate, never writes one | `403 auth.forbidden` |
+| **HR, assigned** | `403` | `403` | `403` | `403` |
+
+This is exactly D-152 §2/§4 and D-153 §1: the rate is the Owner's, Finance's and **the responsible
+engineer's**, nobody else's; HR is deliberately absent even when assigned; and the read is refused
+for the same roles as the write (D-110 §2).
+
+**`CloseEngagement` carries no opener check, by design, and I proved it:** Site Engineer 2 closed an
+engagement **Site Engineer 1 had opened** and got **`200`**, while the same caller was refused
+`403 master.engagement_not_responsible_engineer` on that engagement's day rate and on its rating.
+That is D-152 §3 (an administrative act, so nothing dangles while somebody is away) set against
+D-153 §1 point 4 (a rate and a judgement belong to the engineer who made them), and the code
+expresses the difference in one shared guard — `src/Api/Features/DayLabour/EngagementResponsibility.cs`
+-> `IsResponsibleOrOwnerAsync`, called by `SetEngagementDayRate` and `RateEngagement` and deliberately
+not by `CloseEngagement`.
+
+> **`V-39-C` · MEDIUM** · `src/Api/Features/DayLabour/OpenEngagement/Request.cs` -> `Request`;
+> `stories/slice-2-masters/KAFF-210-worker-engagement-history.md` -> `AC-210-A`. **`AC-210-A` says an
+> engagement is recorded *"with its project, its dates and its agreed day rate"*, and the request
+> carries none of those but the worker.** `openedOn` comes from the clock, `closedOn` from the clock
+> at the close, and the rate from a second call. An engagement that started last Tuesday therefore
+> cannot be entered as having started last Tuesday, and a close entered on Monday for a man who left
+> on Friday dates itself Monday. **A day rate multiplied by the wrong number of days is money**, and
+> slice 6 is where the daily log will multiply it. I verified this is not merely the SPA's doing: no
+> member for either date exists on the request record. **What I did:** measured it, named it, changed
+> nothing. It is a BA question (was the clock intended?) before it is a code change.
+
+> **`V-39-D` · LOW** · `stories/slice-2-masters/KAFF-210-worker-engagement-history.md` -> `AC-210-B`,
+> `AC-210-D`, rule 2. Both criteria say *"the **pool** renders his average day rate"*. As shipped the
+> pool (`ListPool`, `S-025`) carries **no money member at all** and the average day rate is on the
+> rate-gated history read (`ListEngagements`, `S-027`) — which is **correct** under D-153 §1 point 5,
+> because the pool sits behind the money-free `DayLabourSiteManage`. The code follows the ruling and
+> the criterion follows the pre-ruling story. **Read literally, `AC-210-D` is unmet; read against
+> D-153 it is met.** A criterion that only a decision outside the story can reconcile is the `V-35-N`
+> shape. **What I did:** named it for the BA. Changed nothing.
+
