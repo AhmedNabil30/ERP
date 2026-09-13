@@ -25,24 +25,14 @@
     />
   </form>
 
-  <!--
-    Three chips, three server states. `aria-pressed` rather than a radio group: they are filters on a
-    list that is already on screen, not a choice being submitted.
-  -->
-  <div class="filters" role="group" [attr.aria-label]="i18n.t('clients.filter.all')">
-    @for (option of filters; track option) {
-      <button
-        type="button"
-        class="chip"
-        [class.chip--on]="filter() === option"
-        [attr.aria-pressed]="filter() === option"
-        [attr.data-testid]="'client-filter-' + option"
-        (click)="onFilter(option)"
-      >
-        {{ i18n.t(filterKey(option)) }}
-      </button>
-    }
-  </div>
+  <!-- KAFF-916: KAFF-901's segmented filter, matching EmployeeListPage's and CatalogueListPage's own. -->
+  <kaff-segmented-filter
+    [options]="segmentedOptions"
+    [value]="filter()"
+    (valueChange)="onFilter($event)"
+    ariaLabelKey="clients.filter.all"
+    testIdPrefix="client-filter"
+  />
 
   @if (failure(); as key) {
     <p class="refusal" role="alert" data-testid="client-list-failure">{{ i18n.t(key) }}</p>
@@ -51,26 +41,24 @@
   } @else if (clients().length > 0) {
     <ul class="rows" data-testid="client-rows">
       @for (client of clients(); track trackClient($index, client)) {
-        <li class="row" [class.row--archived]="!client.isActive">
+        <li class="rows-item">
           <a class="row-link" [routerLink]="['/clients', client.id]" [attr.data-testid]="'client-row-' + client.code">
-            <span class="row-name" dir="auto">{{ client.name }}</span>
-            <span class="row-meta">
+            <kaff-table-row [columns]="rowColumns" [archived]="!client.isActive">
               <!--
                 <bdi> on the code and the phone. Both are Latin runs inside an Arabic line, and
                 without isolation the bidi algorithm reorders them against the surrounding text —
                 ux/rtl-and-i18n.md, and S-011 marks both of these fields specifically.
               -->
-              <bdi class="row-code">{{ client.code }}</bdi>
-              <span class="row-sep" aria-hidden="true">·</span>
-              <span class="row-kind">{{ i18n.t(clientKindKey(client.kind)) }}</span>
+              <bdi class="row-code figure" dir="ltr" translate="no">{{ client.code }}</bdi>
+              <span class="row-name" dir="auto">{{ client.name }}</span>
+              <kaff-badge tone="accent">{{ i18n.t(clientKindKey(client.kind)) }}</kaff-badge>
+              <bdi class="row-phone" dir="ltr">{{ client.phone }}</bdi>
               @if (!client.isActive) {
-                <span class="row-sep" aria-hidden="true">·</span>
-                <span class="row-archived" data-testid="client-row-archived">
+                <kaff-badge tone="neutral" testId="client-row-archived">
                   {{ i18n.t('clients.status.archived') }}
-                </span>
+                </kaff-badge>
               }
-            </span>
-            <bdi class="row-phone">{{ client.phone }}</bdi>
+            </kaff-table-row>
           </a>
         </li>
       }

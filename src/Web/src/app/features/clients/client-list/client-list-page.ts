@@ -10,6 +10,9 @@ import {
 } from '../../../core/clients/clients.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { clientKindKey } from '../../../core/i18n/enum-keys';
+import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
+import { KaffSegmentedFilter, SegmentedFilterOption } from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
+import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 
 /** The three chips `S-011` draws, in the order it draws them. */
 const FILTERS: readonly ClientListFilter[] = ['all', 'active', 'archived'];
@@ -35,7 +38,7 @@ const FILTERS: readonly ClientListFilter[] = ['all', 'active', 'archived'];
  */
 @Component({
   selector: 'kaff-client-list-page',
-  imports: [FormField, RouterLink],
+  imports: [FormField, RouterLink, KaffSegmentedFilter, KaffTableRow, KaffBadge],
   templateUrl: './client-list-page.html',
   styleUrl: './client-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -46,6 +49,13 @@ export class ClientListPage {
   protected readonly i18n = inject(I18nService);
   protected readonly clientKindKey = clientKindKey;
   protected readonly filters = FILTERS;
+
+  /** Grid columns for `kaff-table-row`: code · name · kind · phone · archived badge. */
+  protected readonly rowColumns = 'auto minmax(10rem, 1fr) auto auto auto';
+
+  protected readonly segmentedOptions: readonly SegmentedFilterOption<ClientListFilter>[] = FILTERS.map(
+    (filter) => ({ value: filter, labelKey: this.filterKey(filter) }),
+  );
 
   private readonly searchModel = signal<{ query: string }>({ query: '' });
 
