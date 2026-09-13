@@ -14,6 +14,7 @@
       [id]="describedById()"
       class="field-message"
       [class.field-message--error]="errorKey() !== null"
+      [attr.data-testid]="errorTestId()"
     >
       {{ i18n.t(key) }}
     </p>

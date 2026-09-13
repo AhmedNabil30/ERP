@@ -139,6 +139,7 @@
         [required]="true"
         hintKey="catalogue.hint.cost_price_internal"
         [errorKey]="costPriceErrorKey()"
+        errorTestId="catalogue-field-cost-price-error"
         #costPriceField="kaffField"
       >
         <input
@@ -159,6 +160,7 @@
         controlId="catalogue-sell-rate-input"
         [required]="true"
         [errorKey]="sellRateErrorKey()"
+        errorTestId="catalogue-field-sell-rate-error"
         #sellRateField="kaffField"
       >
         <input

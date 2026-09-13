@@ -27,6 +27,7 @@ export class KaffField {
   readonly labelKey = input.required<string>();
   readonly hintKey = input<string | null>(null);
   readonly errorKey = input<string | null>(null);
+  readonly errorTestId = input<string | null>(null);
   readonly required = input(false);
   readonly controlId = input.required<string>();
 
