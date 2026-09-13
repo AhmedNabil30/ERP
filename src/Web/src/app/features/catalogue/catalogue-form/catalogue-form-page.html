@@ -33,9 +33,9 @@
       }
 
       @if (movingBab()) {
-        <label class="field">
-          <span class="label">{{ i18n.t('catalogue.item.new_bab') }}</span>
+        <kaff-field labelKey="catalogue.item.new_bab" controlId="catalogue-move-target-input">
           <select
+            id="catalogue-move-target-input"
             class="input select"
             data-testid="catalogue-move-target"
             [attr.aria-label]="i18n.t('catalogue.item.new_bab')"
@@ -46,31 +46,25 @@
               <option [value]="bab.id">{{ i18n.locale() === 'en' ? bab.nameEn : bab.nameAr }}</option>
             }
           </select>
-        </label>
-        <button
-          type="button"
-          class="submit"
-          [disabled]="moveBusy()"
-          data-testid="catalogue-move-confirm"
-          (click)="onConfirmMove()"
-        >
+        </kaff-field>
+        <kaff-button variant="primary" [disabled]="moveBusy()" testId="catalogue-move-confirm" (clicked)="onConfirmMove()">
           {{ i18n.t('catalogue.item.move_confirm') }}
-        </button>
-        <button type="button" class="back-link" data-testid="catalogue-move-cancel" (click)="onCancelMove()">
+        </kaff-button>
+        <kaff-button variant="secondary" testId="catalogue-move-cancel" (clicked)="onCancelMove()">
           {{ i18n.t('action.cancel') }}
-        </button>
+        </kaff-button>
       } @else {
-        <button type="button" class="back-link" data-testid="catalogue-move-start" (click)="onStartMove()">
+        <kaff-button variant="secondary" testId="catalogue-move-start" (clicked)="onStartMove()">
           {{ i18n.t('catalogue.item.move_title') }}
-        </button>
+        </kaff-button>
       }
     }
 
     <form class="fields" (submit)="$event.preventDefault(); onSubmit()">
       @if (!isEdit()) {
-        <label class="field">
-          <span class="label">{{ i18n.t('catalogue.field.code') }} *</span>
+        <kaff-field labelKey="catalogue.field.code" controlId="catalogue-code-input" [required]="true">
           <input
+            id="catalogue-code-input"
             class="input"
             type="text"
             dir="ltr"
@@ -79,34 +73,34 @@
             data-testid="catalogue-field-code"
             [formField]="itemForm.code"
           />
-        </label>
+        </kaff-field>
       }
 
-      <label class="field">
-        <span class="label">{{ i18n.t('catalogue.field.description') }} *</span>
+      <kaff-field labelKey="catalogue.field.description" controlId="catalogue-description-ar-input" [required]="true">
         <input
+          id="catalogue-description-ar-input"
           class="input"
           type="text"
           dir="auto"
           data-testid="catalogue-field-description-ar"
           [formField]="itemForm.descriptionAr"
         />
-      </label>
+      </kaff-field>
 
-      <label class="field">
-        <span class="label">{{ i18n.t('catalogue.field.description_en') }}</span>
+      <kaff-field labelKey="catalogue.field.description_en" controlId="catalogue-description-en-input">
         <input
+          id="catalogue-description-en-input"
           class="input"
           type="text"
           dir="auto"
           data-testid="catalogue-field-description-en"
           [formField]="itemForm.descriptionEn"
         />
-      </label>
+      </kaff-field>
 
-      <label class="field">
-        <span class="label">{{ i18n.t('catalogue.field.unit') }} *</span>
+      <kaff-field labelKey="catalogue.field.unit" controlId="catalogue-unit-input" [required]="true">
         <input
+          id="catalogue-unit-input"
           class="input"
           type="text"
           dir="auto"
@@ -114,12 +108,12 @@
           data-testid="catalogue-field-unit"
           [formField]="itemForm.unit"
         />
-      </label>
+      </kaff-field>
 
       @if (!isEdit()) {
-        <label class="field">
-          <span class="label">{{ i18n.t('catalogue.field.bab') }} *</span>
+        <kaff-field labelKey="catalogue.field.bab" controlId="catalogue-bab-input" [required]="true">
           <select
+            id="catalogue-bab-input"
             class="input select"
             data-testid="catalogue-field-bab"
             [attr.aria-label]="i18n.t('catalogue.field.bab')"
@@ -132,62 +126,66 @@
               </option>
             }
           </select>
-        </label>
+        </kaff-field>
       }
 
       <!-- Prices: dir=ltr, inputmode=decimal, bound as STRINGS. No client-side rounding and no "max 4
            decimals" validator anywhere near these two fields — AC-200-B is still open with Nabil, and
            the server is the single answer (money-wire.ts). A loss-making sell rate is legal, AC-202-D —
            no warning is shown for one on purpose. -->
-      <label class="field">
-        <span class="label">{{ i18n.t('catalogue.field.cost_price') }} *</span>
+      <kaff-field
+        labelKey="catalogue.field.cost_price"
+        controlId="catalogue-cost-price-input"
+        [required]="true"
+        hintKey="catalogue.hint.cost_price_internal"
+        [errorKey]="costPriceErrorKey()"
+        #costPriceField="kaffField"
+      >
         <input
+          id="catalogue-cost-price-input"
           class="input"
           type="text"
           dir="ltr"
           inputmode="decimal"
           autocomplete="off"
           data-testid="catalogue-field-cost-price"
+          [attr.aria-describedby]="costPriceField.describedById()"
           [formField]="itemForm.costPrice"
         />
-        <span class="hint">{{ i18n.t('catalogue.hint.cost_price_internal') }}</span>
-        @if (costPriceErrorKey(); as key) {
-          <p class="field-error" role="alert" data-testid="catalogue-field-cost-price-error">
-            {{ i18n.t(key) }}
-          </p>
-        }
-      </label>
+      </kaff-field>
 
-      <label class="field">
-        <span class="label">{{ i18n.t('catalogue.field.base_sell_rate') }} *</span>
+      <kaff-field
+        labelKey="catalogue.field.base_sell_rate"
+        controlId="catalogue-sell-rate-input"
+        [required]="true"
+        [errorKey]="sellRateErrorKey()"
+        #sellRateField="kaffField"
+      >
         <input
+          id="catalogue-sell-rate-input"
           class="input"
           type="text"
           dir="ltr"
           inputmode="decimal"
           autocomplete="off"
           data-testid="catalogue-field-base-sell-rate"
+          [attr.aria-describedby]="sellRateField.describedById()"
           [formField]="itemForm.baseSellRate"
         />
-        @if (sellRateErrorKey(); as key) {
-          <p class="field-error" role="alert" data-testid="catalogue-field-sell-rate-error">
-            {{ i18n.t(key) }}
-          </p>
-        }
-      </label>
+      </kaff-field>
 
       @if (refusal(); as key) {
         <p class="refusal" role="alert" data-testid="catalogue-form-refusal">{{ i18n.t(key) }}</p>
       }
 
-      <button
-        class="submit"
+      <kaff-button
+        variant="primary"
         type="submit"
-        data-testid="catalogue-submit"
+        testId="catalogue-submit"
         [disabled]="!canSubmit()"
       >
         {{ i18n.t('action.save') }}
-      </button>
+      </kaff-button>
     </form>
   }
 </section>

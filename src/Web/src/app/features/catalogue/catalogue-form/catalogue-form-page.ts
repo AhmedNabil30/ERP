@@ -22,6 +22,8 @@ import {
 import { WIRE_DECIMAL_PATTERN, toWireDecimal } from '../../../core/catalogue/money-wire';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { UnsavedChangesAware } from '../../../core/navigation/unsaved-changes.guard';
+import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import { KaffField } from '../../../shared/kaff-field/kaff-field';
 
 interface CatalogueItemDraft {
   code: string;
@@ -100,7 +102,7 @@ function orNull(value: string): string | null {
  */
 @Component({
   selector: 'kaff-catalogue-form-page',
-  imports: [FormField, RouterLink],
+  imports: [FormField, RouterLink, KaffButton, KaffField],
   templateUrl: './catalogue-form-page.html',
   styleUrl: './catalogue-form-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
