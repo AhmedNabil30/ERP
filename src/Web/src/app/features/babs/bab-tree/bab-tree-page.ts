@@ -6,6 +6,13 @@ import { Bab, BabListFilter, BabsApi } from '../../../core/catalogue/babs.api';
 import { flattenBabTree } from '../../../core/catalogue/bab-tree';
 import { fractionToPercent } from '../../../core/catalogue/percent-wire';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
+import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import {
+  KaffSegmentedFilter,
+  SegmentedFilterOption,
+} from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
+import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 
 /** The three chips `KAFF-213` rule 9 draws, in the order it draws them — matches `CatalogueListPage`. */
 const FILTERS: readonly BabListFilter[] = ['active', 'archived', 'all'];
@@ -21,7 +28,7 @@ const FILTERS: readonly BabListFilter[] = ['active', 'archived', 'all'];
  */
 @Component({
   selector: 'kaff-bab-tree-page',
-  imports: [RouterLink],
+  imports: [RouterLink, KaffBadge, KaffButton, KaffSegmentedFilter, KaffTableRow],
   templateUrl: './bab-tree-page.html',
   styleUrl: './bab-tree-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,6 +38,13 @@ export class BabTreePage {
 
   protected readonly i18n = inject(I18nService);
   protected readonly filters = FILTERS;
+
+  /** Grid columns for `kaff-table-row`: code · name · markup · archived badge. */
+  protected readonly rowColumns = 'auto minmax(10rem, 1fr) auto auto';
+
+  protected readonly segmentedOptions: readonly SegmentedFilterOption<BabListFilter>[] = FILTERS.map(
+    (filter) => ({ value: filter, labelKey: 'bab.filter.' + filter }),
+  );
 
   protected readonly statusFilter = signal<BabListFilter>('active');
   protected readonly babs = signal<readonly Bab[]>([]);

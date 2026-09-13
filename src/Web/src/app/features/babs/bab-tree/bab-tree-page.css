@@ -18,19 +18,7 @@
   font-size: var(--text-xl);
 }
 
-.filters {
-  display: flex;
-  gap: var(--space-1);
-  padding: var(--space-1);
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: var(--color-surface);
-  inline-size: fit-content;
-  max-inline-size: 100%;
-}
-
 .chip {
-  flex: 1 1 auto;
   min-block-size: var(--tap-target);
   padding-inline: var(--space-4);
   font: inherit;
@@ -42,13 +30,6 @@
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-}
-
-.chip--on {
-  background: var(--color-background);
-  color: var(--color-text);
-  font-weight: 600;
-  box-shadow: var(--elevation-1);
 }
 
 .rows {
@@ -68,36 +49,32 @@
  * AC-204-I: each level indents from the inline-start, by a logical property — never `margin-left`.
  * `--bab-depth` is set per row by the template; the failure this rule guards against is invisible in
  * LTR and only shows up once the direction flips (TC-2-045).
+ *
+ * KAFF-912 gap: `kaff-table-row` (KAFF-901) takes one fixed `columns()` string with no responsive
+ * variant of its own — nesting/columns are documented as "the caller's job". Overriding its inner
+ * `.row` grid template here, from outside, is that caller's job at the one breakpoint the component
+ * does not know about.
  */
-.tree-row {
-  display: flex;
-  flex-direction: column;
+.tree-row-item {
   margin-inline-start: calc(var(--bab-depth, 0) * 1.25rem);
-  padding: var(--space-3) var(--space-4);
+  padding-block-start: var(--space-1);
 }
 
-.tree-row + .tree-row {
-  border-block-start: 1px solid var(--color-border);
-}
-
-.tree-row--archived {
-  opacity: 0.65;
-}
-
-.row-main {
-  display: grid;
-  gap: var(--space-1);
-  min-block-size: var(--tap-target);
+@media (width < 48rem) {
+  kaff-table-row .row {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 .row-code {
-  font-weight: 600;
   unicode-bidi: isolate;
   justify-self: start;
+  min-inline-size: 0;
 }
 
 .row-name {
   font-size: var(--text-md);
+  min-inline-size: 0;
 }
 
 .row-markup {
@@ -105,6 +82,7 @@
   align-items: baseline;
   gap: var(--space-1);
   font-size: var(--text-sm);
+  min-inline-size: 0;
 }
 
 .row-markup .figure {
@@ -115,19 +93,12 @@
   opacity: 0.75;
 }
 
-.row-archived-badge {
-  justify-self: start;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--color-text);
-}
-
 .row-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
-  padding-block-start: var(--space-3);
+  padding: 0 var(--space-4) var(--space-3);
 }
 
 .row-confirm {
@@ -145,23 +116,6 @@
   border: 1px solid var(--color-danger);
   border-radius: var(--radius-md);
   color: var(--color-danger);
-}
-
-.danger-button {
-  min-block-size: var(--tap-target);
-  padding-inline: var(--space-4);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-  color: var(--color-danger);
-  background: transparent;
-  border: 1px solid var(--color-danger);
-  border-radius: var(--radius-md);
-}
-
-.danger-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
 }
 
 .move-picker {

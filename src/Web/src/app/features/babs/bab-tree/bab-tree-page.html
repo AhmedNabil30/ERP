@@ -1,21 +1,15 @@
 <section class="bab-tree" data-testid="bab-tree">
   <h1 class="title">{{ i18n.t('bab.tree.title') }}</h1>
 
-  <!-- A segmented control, matching CatalogueListPage's own — KAFF-213 rule 9's three server states. -->
-  <div class="filters" role="group" [attr.aria-label]="i18n.t('bab.tree.title')">
-    @for (option of filters; track option) {
-      <button
-        type="button"
-        class="chip"
-        [class.chip--on]="statusFilter() === option"
-        [attr.aria-pressed]="statusFilter() === option"
-        [attr.data-testid]="'bab-filter-' + option"
-        (click)="onFilter(option)"
-      >
-        {{ i18n.t('bab.filter.' + option) }}
-      </button>
-    }
-  </div>
+  <!-- KAFF-912: KAFF-901's segmented filter, matching CatalogueListPage's own — KAFF-213 rule 9's
+       three server states. -->
+  <kaff-segmented-filter
+    [options]="segmentedOptions"
+    [value]="statusFilter()"
+    (valueChange)="onFilter($event)"
+    ariaLabelKey="bab.tree.title"
+    testIdPrefix="bab-filter"
+  />
 
   @if (failure(); as key) {
     <p class="refusal" role="alert" data-testid="bab-tree-failure">{{ i18n.t(key) }}</p>
@@ -27,13 +21,12 @@
     <ul class="rows" data-testid="bab-tree-rows">
       @for (row of rows(); track trackRow($index, row)) {
         <li
-          class="tree-row"
-          [class.tree-row--archived]="!row.bab.isActive"
+          class="tree-row-item"
           [style.--bab-depth]="row.depth"
           [attr.data-testid]="'bab-row-' + row.bab.code"
         >
-          <div class="row-main">
-            <bdi class="row-code" translate="no">{{ row.bab.code }}</bdi>
+          <kaff-table-row [columns]="rowColumns" [archived]="!row.bab.isActive">
+            <bdi class="row-code figure" dir="ltr" translate="no">{{ row.bab.code }}</bdi>
             <span class="row-name" dir="auto">{{ babLabel(row.bab) }}</span>
 
             <span class="row-markup">
@@ -42,11 +35,11 @@
             </span>
 
             @if (!row.bab.isActive) {
-              <span class="row-archived-badge" data-testid="bab-row-archived-badge">
+              <kaff-badge tone="neutral" testId="bab-row-archived-badge">
                 {{ i18n.t('bab.tree.archived_badge') }}
-              </span>
+              </kaff-badge>
             }
-          </div>
+          </kaff-table-row>
 
           <div class="row-actions">
             @if (moveFailure(); as failed) {
@@ -86,32 +79,29 @@
                   }
                 </select>
               </label>
-              <button
-                type="button"
-                class="chip"
+              <kaff-button
+                variant="secondary"
                 [disabled]="isMoving(row.bab.id)"
-                [attr.data-testid]="'bab-move-confirm-' + row.bab.code"
-                (click)="onConfirmMove(row.bab.id)"
+                [testId]="'bab-move-confirm-' + row.bab.code"
+                (clicked)="onConfirmMove(row.bab.id)"
               >
                 {{ i18n.t('bab.move.confirm') }}
-              </button>
-              <button
-                type="button"
-                class="chip"
-                [attr.data-testid]="'bab-move-cancel-' + row.bab.code"
-                (click)="onCancelMove()"
+              </kaff-button>
+              <kaff-button
+                variant="secondary"
+                [testId]="'bab-move-cancel-' + row.bab.code"
+                (clicked)="onCancelMove()"
               >
                 {{ i18n.t('action.cancel') }}
-              </button>
+              </kaff-button>
             } @else {
-              <button
-                type="button"
-                class="chip"
-                [attr.data-testid]="'bab-move-' + row.bab.code"
-                (click)="onStartMove(row.bab)"
+              <kaff-button
+                variant="secondary"
+                [testId]="'bab-move-' + row.bab.code"
+                (clicked)="onStartMove(row.bab)"
               >
                 {{ i18n.t('bab.move.title') }}
-              </button>
+              </kaff-button>
             }
 
             @if (row.bab.isActive) {
@@ -119,32 +109,29 @@
                 <p class="row-confirm" [attr.data-testid]="'bab-archive-body-' + row.bab.code">
                   {{ i18n.t('bab.tree.archive_confirm') }}
                 </p>
-                <button
-                  type="button"
-                  class="danger-button"
+                <kaff-button
+                  variant="danger"
                   [disabled]="isArchiving(row.bab.id)"
-                  [attr.data-testid]="'bab-archive-confirm-' + row.bab.code"
-                  (click)="onConfirmArchive(row.bab.id)"
+                  [testId]="'bab-archive-confirm-' + row.bab.code"
+                  (clicked)="onConfirmArchive(row.bab.id)"
                 >
                   {{ i18n.t('bab.tree.archive_action') }}
-                </button>
-                <button
-                  type="button"
-                  class="chip"
-                  [attr.data-testid]="'bab-archive-cancel-' + row.bab.code"
-                  (click)="onCancelArchive()"
+                </kaff-button>
+                <kaff-button
+                  variant="secondary"
+                  [testId]="'bab-archive-cancel-' + row.bab.code"
+                  (clicked)="onCancelArchive()"
                 >
                   {{ i18n.t('action.cancel') }}
-                </button>
+                </kaff-button>
               } @else {
-                <button
-                  type="button"
-                  class="danger-button"
-                  [attr.data-testid]="'bab-archive-' + row.bab.code"
-                  (click)="onStartArchive(row.bab.id)"
+                <kaff-button
+                  variant="danger"
+                  [testId]="'bab-archive-' + row.bab.code"
+                  (clicked)="onStartArchive(row.bab.id)"
                 >
                   {{ i18n.t('bab.tree.archive_action') }}
-                </button>
+                </kaff-button>
               }
             }
           </div>
