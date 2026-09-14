@@ -307,11 +307,11 @@ public sealed class EngagementLifecycleTests : IAsyncLifetime
         request.Headers.Add(TestAuthHandler.RoleHeader, actorRole.ToString());
         request.Headers.Add(TestAuthHandler.SecurityStampHeader, await CurrentStampAsync(actorId));
 
-        Department? department = actorRole switch
+        Guid? department = actorRole switch
         {
-            Role.Hr => Department.Hr,
-            Role.Finance => Department.Finance,
-            Role.SiteEngineer => Department.Operations,
+            Role.Hr => WellKnownDepartments.HrId,
+            Role.Finance => WellKnownDepartments.FinanceId,
+            Role.SiteEngineer => WellKnownDepartments.OperationsId,
             _ => null,
         };
 
@@ -360,10 +360,10 @@ public sealed class EngagementLifecycleTests : IAsyncLifetime
             UniqueNames.Code("EN-S"), "موظف", UniqueNames.Phone(), EmployeeKind.Salaried, Now).Value;
 
         User owner = MakeUser("en-owner", Role.Owner);
-        User assignedToA = MakeUser("en-engineer-a", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
-        User assignedToB = MakeUser("en-engineer-b", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
-        User hr = MakeUser("en-hr", Role.Hr, Department.Hr);
-        User finance = MakeUser("en-finance", Role.Finance, Department.Finance);
+        User assignedToA = MakeUser("en-engineer-a", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User assignedToB = MakeUser("en-engineer-b", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User hr = MakeUser("en-hr", Role.Hr, WellKnownDepartments.HrId);
+        User finance = MakeUser("en-finance", Role.Finance, WellKnownDepartments.FinanceId);
 
         context.Clients.Add(client);
         context.Projects.AddRange(projectA, projectB);
@@ -391,7 +391,7 @@ public sealed class EngagementLifecycleTests : IAsyncLifetime
     }
 
     private static User MakeUser(
-        string userName, Role role, Department? department = null, OperationsSubDepartment? subDepartment = null)
+        string userName, Role role, Guid? department = null, OperationsSubDepartment? subDepartment = null)
         => User.Create(UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment).Value;
 
     private static readonly DateTimeOffset Now = new(2026, 9, 12, 8, 0, 0, TimeSpan.Zero);

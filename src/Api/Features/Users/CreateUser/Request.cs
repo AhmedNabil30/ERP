@@ -11,9 +11,9 @@ namespace Kaff.Api.Features.Users.CreateUser;
 /// <param name="Phone">Entered form; <c>PhoneNumber</c> normalises it.</param>
 /// <param name="Email">Optional.</param>
 /// <param name="Role">One of the nine. Sent as the member name, not a number.</param>
-/// <param name="Department">
+/// <param name="DepartmentId">
 /// Absent for <c>Role.Client</c> and <c>Role.Subcontractor</c>, and forced to
-/// <c>Department.Hr</c> for <c>Role.Hr</c> — the endpoint refuses anything else rather than
+/// <c>WellKnownDepartments.HrId</c> for <c>Role.Hr</c> — the endpoint refuses anything else rather than
 /// correcting it (<c>AC-106-K</c>).
 /// </param>
 /// <param name="OperationsSubDepartment">Required when, and only when, the department is Operations.</param>
@@ -32,7 +32,7 @@ public sealed record Request(
     string? Phone,
     string? Email,
     Role Role,
-    Department? Department,
+    Guid? DepartmentId,
     OperationsSubDepartment? OperationsSubDepartment,
     Guid? ClientId,
     string? TemporaryPassword);

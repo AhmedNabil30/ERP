@@ -115,7 +115,7 @@ public sealed class MoveBabTests : IAsyncLifetime
         Guid a = await CreateBabAsync();
         Guid d = await CreateBabAsync();
 
-        (await SendAsync(HttpMethod.Put, $"/api/babs/{a}/parent", _finance, Role.Finance, Department.Finance, new { parentBabId = d }))
+        (await SendAsync(HttpMethod.Put, $"/api/babs/{a}/parent", _finance, Role.Finance, WellKnownDepartments.FinanceId, new { parentBabId = d }))
             .StatusCode.Should().Be(HttpStatusCode.Forbidden, "Finance does not hold BabManage");
 
         (await SendAsync(HttpMethod.Put, $"/api/babs/{a}/parent", _owner, Role.Owner, null, new { parentBabId = d }))
@@ -152,7 +152,7 @@ public sealed class MoveBabTests : IAsyncLifetime
 
     private Task<HttpResponseMessage> MoveAsync(Guid babId, Guid? newParent)
         => SendAsync(
-            HttpMethod.Put, $"/api/babs/{babId}/parent", _technicalOffice, Role.TechnicalOffice, Department.Operations,
+            HttpMethod.Put, $"/api/babs/{babId}/parent", _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId,
             new { parentBabId = newParent });
 
     private async Task<Guid> CreateBabAsync(Guid? parent = null)
@@ -169,7 +169,7 @@ public sealed class MoveBabTests : IAsyncLifetime
     }
 
     private async Task<HttpResponseMessage> SendAsync(
-        HttpMethod method, string route, Guid actorId, Role actorRole, Department? actorDepartment, object body)
+        HttpMethod method, string route, Guid actorId, Role actorRole, Guid? actorDepartment, object body)
     {
         using var request = new HttpRequestMessage(method, new Uri(route, UriKind.Relative))
         {
@@ -207,8 +207,8 @@ public sealed class MoveBabTests : IAsyncLifetime
         await using KaffDbContext context = _database.CreateContext();
 
         User owner = MakeUser("mvb-owner", Role.Owner);
-        User technicalOffice = MakeUser("mvb-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
-        User finance = MakeUser("mvb-finance", Role.Finance, Department.Finance);
+        User technicalOffice = MakeUser("mvb-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User finance = MakeUser("mvb-finance", Role.Finance, WellKnownDepartments.FinanceId);
 
         context.Users.AddRange(owner, technicalOffice, finance);
         await context.SaveChangesAsync(Ct);
@@ -219,7 +219,7 @@ public sealed class MoveBabTests : IAsyncLifetime
     }
 
     private static User MakeUser(
-        string userName, Role role, Department? department = null, OperationsSubDepartment? subDepartment = null)
+        string userName, Role role, Guid? department = null, OperationsSubDepartment? subDepartment = null)
         => User.Create(UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment).Value;
 
     private static DateTimeOffset Now => new(2026, 9, 11, 8, 0, 0, TimeSpan.Zero);

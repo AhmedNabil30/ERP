@@ -123,7 +123,7 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
         await using KaffDbContext before = _database.CreateBareContext();
         long countBefore = await before.AuditRecords.LongCountAsync(Ct);
 
-        (await SendAsync(HttpMethod.Put, $"/api/catalogue-items/{id}", _finance, Role.Finance, Department.Finance, Body(sell: 999m)))
+        (await SendAsync(HttpMethod.Put, $"/api/catalogue-items/{id}", _finance, Role.Finance, WellKnownDepartments.FinanceId, Body(sell: 999m)))
             .StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
         await using KaffDbContext reader = _database.CreateBareContext();
@@ -279,7 +279,7 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
     {
         Guid id = await RegisterAsync();
 
-        foreach ((Guid actor, Role role, Department? department) in RefusedActors())
+        foreach ((Guid actor, Role role, Guid? department) in RefusedActors())
         {
             (await SendAsync(HttpMethod.Put, $"/api/catalogue-items/{id}", actor, role, department, Body()))
                 .StatusCode.Should().Be(
@@ -323,13 +323,13 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
             baseSellRate = sell,
         };
 
-    private IEnumerable<(Guid Actor, Role Role, Department? Department)> RefusedActors()
+    private IEnumerable<(Guid Actor, Role Role, Guid? Department)> RefusedActors()
     {
-        yield return (_finance, Role.Finance, Department.Finance);
-        yield return (_hr, Role.Hr, Department.Hr);
-        yield return (_siteEngineer, Role.SiteEngineer, Department.Operations);
-        yield return (_headOfDesign, Role.HeadOfDesign, Department.Operations);
-        yield return (_marketing, Role.MarketingSales, Department.Marketing);
+        yield return (_finance, Role.Finance, WellKnownDepartments.FinanceId);
+        yield return (_hr, Role.Hr, WellKnownDepartments.HrId);
+        yield return (_siteEngineer, Role.SiteEngineer, WellKnownDepartments.OperationsId);
+        yield return (_headOfDesign, Role.HeadOfDesign, WellKnownDepartments.OperationsId);
+        yield return (_marketing, Role.MarketingSales, null);
     }
 
     private async Task<Guid> RegisterAsync(decimal cost = 100m, decimal sell = 150m)
@@ -339,7 +339,7 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
             "/api/catalogue-items",
             _technicalOffice,
             Role.TechnicalOffice,
-            Department.Operations,
+            WellKnownDepartments.OperationsId,
             new
             {
                 code = UniqueNames.Code("EDT"),
@@ -358,14 +358,14 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
     }
 
     private Task<HttpResponseMessage> EditAsync(Guid id, object body)
-        => SendAsync(HttpMethod.Put, $"/api/catalogue-items/{id}", _technicalOffice, Role.TechnicalOffice, Department.Operations, body);
+        => SendAsync(HttpMethod.Put, $"/api/catalogue-items/{id}", _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, body);
 
     private async Task<HttpResponseMessage> SendAsync(
         HttpMethod method,
         string route,
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         object body,
         Guid? actorClientId = null)
     {
@@ -436,14 +436,14 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
 
         User owner = MakeUser("edt-cat-owner", Role.Owner);
         User technicalOffice = MakeUser(
-            "edt-cat-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
-        User finance = MakeUser("edt-cat-finance", Role.Finance, Department.Finance);
-        User hr = MakeUser("edt-cat-hr", Role.Hr, Department.Hr);
+            "edt-cat-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User finance = MakeUser("edt-cat-finance", Role.Finance, WellKnownDepartments.FinanceId);
+        User hr = MakeUser("edt-cat-hr", Role.Hr, WellKnownDepartments.HrId);
         User siteEngineer = MakeUser(
-            "edt-cat-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "edt-cat-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User headOfDesign = MakeUser(
-            "edt-cat-design", Role.HeadOfDesign, Department.Operations, OperationsSubDepartment.Technical);
-        User marketing = MakeUser("edt-cat-marketing", Role.MarketingSales, Department.Marketing);
+            "edt-cat-design", Role.HeadOfDesign, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User marketing = MakeUser("edt-cat-marketing", Role.MarketingSales, null);
         User portal = MakeUser("edt-cat-portal", Role.Client, clientId: company.Id);
 
         context.Babs.Add(bab);
@@ -468,7 +468,7 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null,
         Guid? clientId = null)
         => User.Create(

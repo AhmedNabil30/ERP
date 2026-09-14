@@ -57,7 +57,7 @@ public sealed class GetClientTests : IAsyncLifetime
 
         await SetDetailsAsync(id, notes: "تأخر في السداد مرتين", address: "التجمع الخامس");
 
-        HttpResponseMessage response = await GetAsync(id, _marketing, Role.MarketingSales, Department.Marketing);
+        HttpResponseMessage response = await GetAsync(id, _marketing, Role.MarketingSales, null);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -81,7 +81,7 @@ public sealed class GetClientTests : IAsyncLifetime
 
         await ArchiveAsync(id);
 
-        HttpResponseMessage response = await GetAsync(id, _marketing, Role.MarketingSales, Department.Marketing);
+        HttpResponseMessage response = await GetAsync(id, _marketing, Role.MarketingSales, null);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -142,7 +142,7 @@ public sealed class GetClientTests : IAsyncLifetime
 
         await SetDetailsAsync(id, notes: "ملاحظة داخلية", address: null);
 
-        foreach ((Guid actorId, Role role, Department? department, Guid? clientId) in RefusedActors())
+        foreach ((Guid actorId, Role role, Guid? department, Guid? clientId) in RefusedActors())
         {
             HttpResponseMessage refused = await GetAsync(id, actorId, role, department, clientId);
 
@@ -161,13 +161,13 @@ public sealed class GetClientTests : IAsyncLifetime
     /// <summary>
     /// Every role that must be refused, derived rather than listed. See the remarks above.
     /// </summary>
-    private IEnumerable<(Guid ActorId, Role Role, Department? Department, Guid? ClientId)> RefusedActors()
+    private IEnumerable<(Guid ActorId, Role Role, Guid? Department, Guid? ClientId)> RefusedActors()
     {
-        yield return (_finance, Role.Finance, Department.Finance, null);
-        yield return (_hr, Role.Hr, Department.Hr, null);
-        yield return (_technicalOffice, Role.TechnicalOffice, Department.Operations, null);
-        yield return (_siteEngineer, Role.SiteEngineer, Department.Operations, null);
-        yield return (_headOfDesign, Role.HeadOfDesign, Department.Operations, null);
+        yield return (_finance, Role.Finance, WellKnownDepartments.FinanceId, null);
+        yield return (_hr, Role.Hr, WellKnownDepartments.HrId, null);
+        yield return (_technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, null);
+        yield return (_siteEngineer, Role.SiteEngineer, WellKnownDepartments.OperationsId, null);
+        yield return (_headOfDesign, Role.HeadOfDesign, WellKnownDepartments.OperationsId, null);
         yield return (_portalClient, Role.Client, null, _portalClientCompany);
     }
 
@@ -197,7 +197,7 @@ public sealed class GetClientTests : IAsyncLifetime
     public async Task An_unknown_id_says_so_in_a_translatable_way()
     {
         HttpResponseMessage response = await GetAsync(
-            Guid.NewGuid(), _marketing, Role.MarketingSales, Department.Marketing);
+            Guid.NewGuid(), _marketing, Role.MarketingSales, null);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
@@ -221,7 +221,7 @@ public sealed class GetClientTests : IAsyncLifetime
             }),
         };
 
-        await StampAsync(request, _marketing, Role.MarketingSales, Department.Marketing, null);
+        await StampAsync(request, _marketing, Role.MarketingSales, null, null);
 
         HttpResponseMessage response = await _client.SendAsync(request, Ct);
 
@@ -236,7 +236,7 @@ public sealed class GetClientTests : IAsyncLifetime
         Guid clientId,
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         Guid? actorClientId = null)
     {
         using var request = new HttpRequestMessage(
@@ -251,7 +251,7 @@ public sealed class GetClientTests : IAsyncLifetime
         HttpRequestMessage request,
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         Guid? actorClientId)
     {
         request.Headers.Add(TestAuthHandler.UserIdHeader, actorId.ToString());
@@ -312,17 +312,17 @@ public sealed class GetClientTests : IAsyncLifetime
             ClientKind.Corporate,
             Now).Value;
 
-        User marketing = MakeUser("get-marketing", Role.MarketingSales, Department.Marketing);
-        User finance = MakeUser("get-finance", Role.Finance, Department.Finance);
-        User hr = MakeUser("get-hr", Role.Hr, Department.Hr);
+        User marketing = MakeUser("get-marketing", Role.MarketingSales, null);
+        User finance = MakeUser("get-finance", Role.Finance, WellKnownDepartments.FinanceId);
+        User hr = MakeUser("get-hr", Role.Hr, WellKnownDepartments.HrId);
         User technicalOffice = MakeUser(
-            "get-techoffice", Role.TechnicalOffice, Department.Operations,
+            "get-techoffice", Role.TechnicalOffice, WellKnownDepartments.OperationsId,
             subDepartment: OperationsSubDepartment.Technical);
         User siteEngineer = MakeUser(
-            "get-siteeng", Role.SiteEngineer, Department.Operations,
+            "get-siteeng", Role.SiteEngineer, WellKnownDepartments.OperationsId,
             subDepartment: OperationsSubDepartment.Technical);
         User headOfDesign = MakeUser(
-            "get-headdesign", Role.HeadOfDesign, Department.Operations,
+            "get-headdesign", Role.HeadOfDesign, WellKnownDepartments.OperationsId,
             subDepartment: OperationsSubDepartment.Technical);
         User portal = MakeUser("get-portal", Role.Client, clientId: company.Id);
 
@@ -345,7 +345,7 @@ public sealed class GetClientTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         Guid? clientId = null,
         OperationsSubDepartment? subDepartment = null)
         => User.Create(

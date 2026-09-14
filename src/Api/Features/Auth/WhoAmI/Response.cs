@@ -12,8 +12,8 @@ namespace Kaff.Api.Features.Auth.WhoAmI;
 /// current beyond mint time for anything but display (decisions.md D-075's discipline, applied here).
 /// </param>
 /// <param name="Role">The role the database holds now, not the role the token was minted with (KAFF-109).</param>
-/// <param name="Department">Null for the Owner and for every external role (spec.md §9).</param>
-/// <param name="OperationsSubDepartment">Set only inside <see cref="Identity.Department.Operations"/>.</param>
+/// <param name="DepartmentId">Null for the Owner and for every external role (spec.md §9).</param>
+/// <param name="OperationsSubDepartment">Set only inside <see cref="Identity.WellKnownDepartments.OperationsId"/>.</param>
 /// <param name="MustChangePassword">
 /// KAFF-105a rule 3 / <c>AC-105a-C</c>, decisions.md D-072 §2 — a field on a <c>200</c>, never a
 /// refusal. The SPA routes to the mandatory change screen on this flag; the server does not refuse the
@@ -45,7 +45,7 @@ public sealed record Response(
     Guid UserId,
     string DisplayName,
     Role Role,
-    Department? Department,
+    Guid? DepartmentId,
     OperationsSubDepartment? OperationsSubDepartment,
     bool MustChangePassword,
     IReadOnlyList<Permission> Permissions,

@@ -436,7 +436,7 @@ public sealed class SignOutTests : IAsyncLifetime
 
         User leaver = User.Create(
             UniqueNames.Code("sgo-leaver"), "sgo-leaver", UniqueNames.Phone(), Role.Finance, Now,
-            Department.Finance).Value;
+            WellKnownDepartments.FinanceId).Value;
         leaver.SetOwnPassword(PasswordHasher.Hash(Password)).IsSuccess.Should().BeTrue();
 
         User portal = User.Create(

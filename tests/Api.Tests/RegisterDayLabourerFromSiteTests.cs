@@ -476,12 +476,12 @@ public sealed class RegisterDayLabourerFromSiteTests : IAsyncLifetime
         request.Headers.Add(TestAuthHandler.RoleHeader, actorRole.ToString());
         request.Headers.Add(TestAuthHandler.SecurityStampHeader, await CurrentStampAsync(actorId));
 
-        Department? department = actorRole switch
+        Guid? department = actorRole switch
         {
-            Role.Hr => Department.Hr,
-            Role.Finance => Department.Finance,
-            Role.MarketingSales => Department.Marketing,
-            Role.TechnicalOffice or Role.SiteEngineer or Role.HeadOfDesign => Department.Operations,
+            Role.Hr => WellKnownDepartments.HrId,
+            Role.Finance => WellKnownDepartments.FinanceId,
+            Role.MarketingSales => null,
+            Role.TechnicalOffice or Role.SiteEngineer or Role.HeadOfDesign => WellKnownDepartments.OperationsId,
             _ => null,
         };
 
@@ -539,16 +539,16 @@ public sealed class RegisterDayLabourerFromSiteTests : IAsyncLifetime
 
         User owner = MakeUser("dl-owner", Role.Owner);
         User assignedEngineer = MakeUser(
-            "dl-engineer-a", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "dl-engineer-a", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User unassignedEngineer = MakeUser(
-            "dl-engineer-u", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
-        User hr = MakeUser("dl-hr", Role.Hr, Department.Hr);
-        User finance = MakeUser("dl-finance", Role.Finance, Department.Finance);
+            "dl-engineer-u", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User hr = MakeUser("dl-hr", Role.Hr, WellKnownDepartments.HrId);
+        User finance = MakeUser("dl-finance", Role.Finance, WellKnownDepartments.FinanceId);
         User technicalOffice = MakeUser(
-            "dl-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
+            "dl-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User headOfDesign = MakeUser(
-            "dl-design", Role.HeadOfDesign, Department.Operations, OperationsSubDepartment.Technical);
-        User marketing = MakeUser("dl-marketing", Role.MarketingSales, Department.Marketing);
+            "dl-design", Role.HeadOfDesign, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User marketing = MakeUser("dl-marketing", Role.MarketingSales, null);
 
         context.Clients.Add(client);
         context.Projects.Add(projectA);
@@ -576,7 +576,7 @@ public sealed class RegisterDayLabourerFromSiteTests : IAsyncLifetime
     }
 
     private static User MakeUser(
-        string userName, Role role, Department? department = null, OperationsSubDepartment? subDepartment = null)
+        string userName, Role role, Guid? department = null, OperationsSubDepartment? subDepartment = null)
         => User.Create(UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment).Value;
 
     private static DateTimeOffset Now => new(2026, 9, 12, 8, 0, 0, TimeSpan.Zero);

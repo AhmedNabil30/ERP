@@ -831,11 +831,11 @@ public sealed class SignInTests : IAsyncLifetime
             UniqueNames.Code("SGN-P1"), "مشروع الدخول", client.Id, ContractType.LumpSum, Now).Value;
 
         User engineer = MakeUser(
-            "sgn-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "sgn-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User owner = MakeUser("sgn-owner", Role.Owner);
-        User locked = MakeUser("sgn-locked", Role.Finance, Department.Finance);
-        User inactive = MakeUser("sgn-inactive", Role.Finance, Department.Finance);
-        User noCredential = MakeUser("sgn-nocred", Role.Finance, Department.Finance);
+        User locked = MakeUser("sgn-locked", Role.Finance, WellKnownDepartments.FinanceId);
+        User inactive = MakeUser("sgn-inactive", Role.Finance, WellKnownDepartments.FinanceId);
+        User noCredential = MakeUser("sgn-nocred", Role.Finance, WellKnownDepartments.FinanceId);
         User portal = User.Create(
             UniqueNames.Code("sgn-client"), "عميل البوابة", UniqueNames.Phone(), Role.Client, Now,
             clientId: client.Id).Value;
@@ -876,7 +876,7 @@ public sealed class SignInTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null)
         => User.Create(
             UniqueNames.Code(userName),

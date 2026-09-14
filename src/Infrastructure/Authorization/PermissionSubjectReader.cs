@@ -40,7 +40,7 @@ public sealed class PermissionSubjectReader : IPermissionSubjectReader
             .Select(user => new PermissionSubject(
                 user.Id,
                 user.Role,
-                user.Department,
+                user.DepartmentId,
                 user.OperationsSubDepartment,
                 user.ClientId,
 

@@ -1,6 +1,7 @@
 using Kaff.Api.Common.Results;
 using Kaff.Domain.Common;
 using Kaff.Domain.Identity;
+using Kaff.Domain.MasterData;
 using Kaff.Infrastructure.Identity;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
@@ -51,13 +52,34 @@ internal static class Handler
             return ResultExtensions.Problem(phone.Error);
         }
 
+        // KAFF-321, AC-321-E: an archived department cannot be assigned to new staff. The department's
+        // existence and activity are the one thing User.Create cannot see — checked here the same way
+        // CreateBab.Handler checks a ParentBabId.
+        if (request.DepartmentId is not null)
+        {
+            bool? departmentIsActive = await database.Departments
+                .Where(department => department.Id == request.DepartmentId)
+                .Select(department => (bool?)department.IsActive)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (departmentIsActive is null)
+            {
+                return ResultExtensions.Problem(MasterDataErrors.DepartmentNotFound);
+            }
+
+            if (departmentIsActive is false)
+            {
+                return ResultExtensions.Problem(MasterDataErrors.DepartmentIsArchived);
+            }
+        }
+
         Result<User> created = User.Create(
             request.UserName ?? string.Empty,
             request.FullName ?? string.Empty,
             phone.Value,
             request.Role,
             clock.GetUtcNow(),
-            request.Department,
+            request.DepartmentId,
             request.OperationsSubDepartment,
             request.ClientId,
             employeeId: null,
@@ -116,7 +138,7 @@ internal static class Handler
                 user.UserName,
                 user.FullName,
                 user.Role,
-                user.Department,
+                user.DepartmentId,
                 user.OperationsSubDepartment,
                 user.ClientId,
                 user.IsActive,

@@ -36,7 +36,7 @@ describe('the landing and the nav item are built from the permission set, not fr
       userId: '11111111-1111-1111-1111-111111111111',
       displayName: 'اختبار',
       role,
-      department: null,
+      departmentId: null,
       operationsSubDepartment: null,
       mustChangePassword: false,
       permissions,

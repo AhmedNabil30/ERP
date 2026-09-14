@@ -32,8 +32,8 @@
               <span class="row-name" dir="auto">{{ user.fullName }}</span>
               <span class="row-meta">
                 <span class="row-role">{{ i18n.t(roleKey(user.role)) }}</span>
-                @if (user.department; as department) {
-                  <span class="row-department">{{ i18n.t(departmentKey(department)) }}</span>
+                @if (user.departmentId && departmentLabel(user.departmentId); as label) {
+                  <span class="row-department" dir="auto">{{ label }}</span>
                   @if (user.operationsSubDepartment; as subDepartment) {
                     <span class="row-sep" aria-hidden="true">·</span>
                     <span class="row-department">{{ i18n.t(operationsSubDepartmentKey(subDepartment)) }}</span>

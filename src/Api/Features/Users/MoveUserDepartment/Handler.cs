@@ -1,6 +1,7 @@
 using Kaff.Api.Common.Results;
 using Kaff.Domain.Common;
 using Kaff.Domain.Identity;
+using Kaff.Domain.MasterData;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -70,7 +71,26 @@ internal static class Handler
             return ResultExtensions.Problem(IdentityErrors.UserNotFound);
         }
 
-        Result moved = user.MoveToDepartment(request.Department, request.OperationsSubDepartment);
+        // KAFF-321, AC-321-E: an archived department cannot be assigned to a user going forward.
+        if (request.DepartmentId is not null)
+        {
+            bool? departmentIsActive = await database.Departments
+                .Where(department => department.Id == request.DepartmentId)
+                .Select(department => (bool?)department.IsActive)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (departmentIsActive is null)
+            {
+                return ResultExtensions.Problem(MasterDataErrors.DepartmentNotFound);
+            }
+
+            if (departmentIsActive is false)
+            {
+                return ResultExtensions.Problem(MasterDataErrors.DepartmentIsArchived);
+            }
+        }
+
+        Result moved = user.MoveToDepartment(request.DepartmentId, request.OperationsSubDepartment);
 
         if (moved.IsFailure)
         {

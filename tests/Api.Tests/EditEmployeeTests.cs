@@ -86,7 +86,7 @@ public sealed class EditEmployeeTests : IAsyncLifetime
         (Guid id, string phone) = await CreateStaffEmployeeWithDepartmentAsync("Finance");
 
         HttpResponseMessage response = await SendAsync(
-            HttpMethod.Put, $"/api/employees/{id}", _hr, Role.Hr, Department.Hr,
+            HttpMethod.Put, $"/api/employees/{id}", _hr, Role.Hr, WellKnownDepartments.HrId,
             new
             {
                 fullName = "Original Name",
@@ -134,7 +134,7 @@ public sealed class EditEmployeeTests : IAsyncLifetime
             }),
         };
 
-        await StampAsync(request, _hr, Role.Hr, Department.Hr);
+        await StampAsync(request, _hr, Role.Hr, WellKnownDepartments.HrId);
 
         HttpResponseMessage response = await _client.SendAsync(request, Ct);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -160,7 +160,7 @@ public sealed class EditEmployeeTests : IAsyncLifetime
             $"/api/employees/{id}",
             _finance,
             Role.Finance,
-            Department.Finance,
+            WellKnownDepartments.FinanceId,
             EditBody("Attempted Name", phone, EmployeeKind.Salaried, null, null));
 
         refused.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -227,7 +227,7 @@ public sealed class EditEmployeeTests : IAsyncLifetime
         (Guid id, string phone) = await CreateEmployeeAsync(babId: null);
 
         (await SendAsync(
-            HttpMethod.Put, $"/api/employees/{id}", _finance, Role.Finance, Department.Finance,
+            HttpMethod.Put, $"/api/employees/{id}", _finance, Role.Finance, WellKnownDepartments.FinanceId,
             EditBody("Attempt", phone, EmployeeKind.Salaried, null, null)))
             .StatusCode.Should().Be(HttpStatusCode.Forbidden, "Finance does not hold EmployeeManage");
 
@@ -251,7 +251,7 @@ public sealed class EditEmployeeTests : IAsyncLifetime
     private Task<HttpResponseMessage> EditAsync(
         Guid id, string fullName, string phone, EmployeeKind kind, Guid? babId, string? specialty)
         => SendAsync(
-            HttpMethod.Put, $"/api/employees/{id}", _hr, Role.Hr, Department.Hr,
+            HttpMethod.Put, $"/api/employees/{id}", _hr, Role.Hr, WellKnownDepartments.HrId,
             EditBody(fullName, phone, kind, babId, specialty));
 
     private async Task<(Guid Id, string Phone)> CreateEmployeeAsync(Guid? babId)
@@ -269,7 +269,7 @@ public sealed class EditEmployeeTests : IAsyncLifetime
             }),
         };
 
-        await StampAsync(request, _hr, Role.Hr, Department.Hr);
+        await StampAsync(request, _hr, Role.Hr, WellKnownDepartments.HrId);
 
         HttpResponseMessage response = await _client.SendAsync(request, Ct);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -294,7 +294,7 @@ public sealed class EditEmployeeTests : IAsyncLifetime
             }),
         };
 
-        await StampAsync(request, _hr, Role.Hr, Department.Hr);
+        await StampAsync(request, _hr, Role.Hr, WellKnownDepartments.HrId);
 
         HttpResponseMessage response = await _client.SendAsync(request, Ct);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -317,7 +317,7 @@ public sealed class EditEmployeeTests : IAsyncLifetime
     }
 
     private async Task<HttpResponseMessage> SendAsync(
-        HttpMethod method, string route, Guid actorId, Role actorRole, Department? actorDepartment, object body)
+        HttpMethod method, string route, Guid actorId, Role actorRole, Guid? actorDepartment, object body)
     {
         using var request = new HttpRequestMessage(method, new Uri(route, UriKind.Relative))
         {
@@ -329,7 +329,7 @@ public sealed class EditEmployeeTests : IAsyncLifetime
         return await _client.SendAsync(request, Ct);
     }
 
-    private async Task StampAsync(HttpRequestMessage request, Guid actorId, Role actorRole, Department? actorDepartment)
+    private async Task StampAsync(HttpRequestMessage request, Guid actorId, Role actorRole, Guid? actorDepartment)
     {
         request.Headers.Add(TestAuthHandler.UserIdHeader, actorId.ToString());
         request.Headers.Add(TestAuthHandler.RoleHeader, actorRole.ToString());
@@ -363,8 +363,8 @@ public sealed class EditEmployeeTests : IAsyncLifetime
         await using KaffDbContext context = _database.CreateContext();
 
         User owner = MakeUser("ede-owner", Role.Owner);
-        User hr = MakeUser("ede-hr", Role.Hr, Department.Hr);
-        User finance = MakeUser("ede-finance", Role.Finance, Department.Finance);
+        User hr = MakeUser("ede-hr", Role.Hr, WellKnownDepartments.HrId);
+        User finance = MakeUser("ede-finance", Role.Finance, WellKnownDepartments.FinanceId);
 
         context.Users.AddRange(owner, hr, finance);
         await context.SaveChangesAsync(Ct);
@@ -375,7 +375,7 @@ public sealed class EditEmployeeTests : IAsyncLifetime
     }
 
     private static User MakeUser(
-        string userName, Role role, Department? department = null, OperationsSubDepartment? subDepartment = null)
+        string userName, Role role, Guid? department = null, OperationsSubDepartment? subDepartment = null)
         => User.Create(UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment).Value;
 
     private static DateTimeOffset Now => new(2026, 9, 11, 8, 0, 0, TimeSpan.Zero);

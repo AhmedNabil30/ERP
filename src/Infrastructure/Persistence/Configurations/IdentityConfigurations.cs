@@ -16,11 +16,16 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.ToTable(DbTables.Users, table =>
         {
-            // spec.md §9 — only Operations subdivides.
+            // spec.md §9 — only Operations subdivides. KAFF-321 replaced the enum-valued literal this
+            // constraint used to compare against ("department = 'Operations'") with the fixed row id
+            // WellKnownDepartments.OperationsId now names, since department became master data an
+            // admin may rename (decisions.md D-162) — the id is what stays stable, not the name. The
+            // literal below is a compile-time constant (WellKnownDepartments.OperationsId), not user
+            // input, so embedding it here is exactly as safe as the enum literal it replaces.
             table.HasCheckConstraint(
                 "ck_users_operations_sub_department",
-                "(department = 'Operations' AND operations_sub_department IS NOT NULL) "
-                + "OR (department IS DISTINCT FROM 'Operations' AND operations_sub_department IS NULL)");
+                $"(department_id = '{WellKnownDepartments.OperationsId}' AND operations_sub_department IS NOT NULL) "
+                + $"OR (department_id IS DISTINCT FROM '{WellKnownDepartments.OperationsId}' AND operations_sub_department IS NULL)");
 
             // spec.md §12 — a portal user is scoped to exactly one client; nobody else carries one.
             table.HasCheckConstraint(
@@ -84,6 +89,15 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasOne<Employee>()
             .WithMany()
             .HasForeignKey(user => user.EmployeeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // KAFF-321. Restrict, not cascade or set-null: there is no delete path for a Department at all
+        // (Nabil's ruling 2026-09-15, decisions.md — archive/unarchive only, same as every other master
+        // record), so this FK is a backstop against a delete ever being added back, not primary
+        // enforcement.
+        builder.HasOne<Department>()
+            .WithMany()
+            .HasForeignKey(user => user.DepartmentId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

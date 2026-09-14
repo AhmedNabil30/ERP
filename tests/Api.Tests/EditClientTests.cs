@@ -80,7 +80,7 @@ public sealed class EditClientTests : IAsyncLifetime
         Guid id = await RegisterAsync("شركة النور للمقاولت");
 
         HttpResponseMessage response = await EditAsync(
-            id, _marketing, Role.MarketingSales, Department.Marketing, Body("شركة النور للمقاولات"));
+            id, _marketing, Role.MarketingSales, null, Body("شركة النور للمقاولات"));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -118,7 +118,7 @@ public sealed class EditClientTests : IAsyncLifetime
                 id,
                 _marketing,
                 Role.MarketingSales,
-                Department.Marketing,
+                null,
                 Body("شركة العنوان", address: "التجمع الخامس، القاهرة الجديدة")))
             .StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -151,7 +151,7 @@ public sealed class EditClientTests : IAsyncLifetime
                 "a warning that does not say whose number it is was not what was ruled");
 
         HttpResponseMessage asked = await EditAsync(
-            a, _marketing, Role.MarketingSales, Department.Marketing, Body("العميل الذي يُعدَّل", phone: held));
+            a, _marketing, Role.MarketingSales, null, Body("العميل الذي يُعدَّل", phone: held));
 
         asked.StatusCode.Should().Be(
             HttpStatusCode.Conflict,
@@ -166,7 +166,7 @@ public sealed class EditClientTests : IAsyncLifetime
             a,
             _marketing,
             Role.MarketingSales,
-            Department.Marketing,
+            null,
             Body("العميل الذي يُعدَّل", phone: held, acknowledged: true));
 
         proceeded.StatusCode.Should().Be(HttpStatusCode.OK, "it does not block the save");
@@ -206,7 +206,7 @@ public sealed class EditClientTests : IAsyncLifetime
                 a,
                 _marketing,
                 Role.MarketingSales,
-                Department.Marketing,
+                null,
                 Body("العميل الذي يُعدَّل", phone: international)))
             .StatusCode.Should().Be(
                 HttpStatusCode.Conflict,
@@ -235,7 +235,7 @@ public sealed class EditClientTests : IAsyncLifetime
                 id,
                 _marketing,
                 Role.MarketingSales,
-                Department.Marketing,
+                null,
                 Body("عميل يعدل عنوانه", phone: phone, address: "عنوان جديد")))
             .StatusCode.Should().Be(
                 HttpStatusCode.OK,
@@ -282,7 +282,7 @@ public sealed class EditClientTests : IAsyncLifetime
             id,
             _marketing,
             Role.MarketingSales,
-            Department.Marketing,
+            null,
             new
             {
                 code = "C-99999",
@@ -314,7 +314,7 @@ public sealed class EditClientTests : IAsyncLifetime
             id,
             _marketing,
             Role.MarketingSales,
-            Department.Marketing,
+            null,
             new
             {
                 isActive = false,
@@ -340,7 +340,7 @@ public sealed class EditClientTests : IAsyncLifetime
             id,
             _marketing,
             Role.MarketingSales,
-            Department.Marketing,
+            null,
             Body("شركة لها رقم ضريبي", kind: ClientKind.Individual, taxRegistrationNumber: "123-456-789"));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -364,7 +364,7 @@ public sealed class EditClientTests : IAsyncLifetime
                 id,
                 _marketing,
                 Role.MarketingSales,
-                Department.Marketing,
+                null,
                 Body("أحمد محمود", kind: ClientKind.Individual, taxRegistrationNumber: null)))
             .StatusCode.Should().Be(
                 HttpStatusCode.OK,
@@ -382,15 +382,15 @@ public sealed class EditClientTests : IAsyncLifetime
     {
         Guid id = await RegisterAsync("عميل محمي");
 
-        (Guid Actor, Role Role, Department? Department, OperationsSubDepartment? Sub)[] refused =
+        (Guid Actor, Role Role, Guid? Department, OperationsSubDepartment? Sub)[] refused =
         [
-            (_finance, Role.Finance, Department.Finance, null),
-            (_technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical),
-            (_hr, Role.Hr, Department.Hr, null),
-            (_siteEngineer, Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical),
+            (_finance, Role.Finance, WellKnownDepartments.FinanceId, null),
+            (_technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical),
+            (_hr, Role.Hr, WellKnownDepartments.HrId, null),
+            (_siteEngineer, Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical),
         ];
 
-        foreach ((Guid actor, Role role, Department? department, OperationsSubDepartment? sub) in refused)
+        foreach ((Guid actor, Role role, Guid? department, OperationsSubDepartment? sub) in refused)
         {
             (await EditAsync(id, actor, role, department, Body($"محاولة {role}"), actorSubDepartment: sub))
                 .StatusCode.Should().Be(
@@ -432,7 +432,7 @@ public sealed class EditClientTests : IAsyncLifetime
             id,
             _marketing,
             Role.MarketingSales,
-            Department.Marketing,
+            null,
             Body("عميل له ملاحظات", notes: "تأخر في السداد مرتين"));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -463,7 +463,7 @@ public sealed class EditClientTests : IAsyncLifetime
     public async Task Editing_a_client_that_does_not_exist_says_so_in_a_translatable_way()
     {
         HttpResponseMessage response = await EditAsync(
-            Guid.NewGuid(), _marketing, Role.MarketingSales, Department.Marketing, Body("عميل غير موجود"));
+            Guid.NewGuid(), _marketing, Role.MarketingSales, null, Body("عميل غير موجود"));
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
@@ -506,7 +506,7 @@ public sealed class EditClientTests : IAsyncLifetime
             "/api/clients",
             _marketing,
             Role.MarketingSales,
-            Department.Marketing,
+            null,
             Body(name, phone, taxRegistrationNumber: taxRegistrationNumber, address: address),
             null,
             null);
@@ -522,7 +522,7 @@ public sealed class EditClientTests : IAsyncLifetime
         Guid clientId,
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         object body,
         OperationsSubDepartment? actorSubDepartment = null,
         Guid? actorClientId = null)
@@ -543,7 +543,7 @@ public sealed class EditClientTests : IAsyncLifetime
             "/api/clients/phone-check",
             _marketing,
             Role.MarketingSales,
-            Department.Marketing,
+            null,
             new { phone },
             null,
             null);
@@ -567,7 +567,7 @@ public sealed class EditClientTests : IAsyncLifetime
         string route,
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         object body,
         OperationsSubDepartment? actorSubDepartment,
         Guid? actorClientId)
@@ -647,13 +647,13 @@ public sealed class EditClientTests : IAsyncLifetime
             Now).Value;
 
         User owner = MakeUser("edt-owner", Role.Owner);
-        User marketing = MakeUser("edt-marketing", Role.MarketingSales, Department.Marketing);
-        User finance = MakeUser("edt-finance", Role.Finance, Department.Finance);
+        User marketing = MakeUser("edt-marketing", Role.MarketingSales, null);
+        User finance = MakeUser("edt-finance", Role.Finance, WellKnownDepartments.FinanceId);
         User technicalOffice = MakeUser(
-            "edt-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
-        User hr = MakeUser("edt-hr", Role.Hr, Department.Hr);
+            "edt-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User hr = MakeUser("edt-hr", Role.Hr, WellKnownDepartments.HrId);
         User siteEngineer = MakeUser(
-            "edt-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "edt-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User portal = MakeUser("edt-portal", Role.Client, clientId: company.Id);
 
         context.Clients.Add(company);
@@ -674,7 +674,7 @@ public sealed class EditClientTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null,
         Guid? clientId = null)
         => User.Create(

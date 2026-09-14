@@ -99,7 +99,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
         (await MessageKeyAsync(anonymous)).Should().Be("errors.auth.not_authenticated");
 
         HttpResponseMessage refused = await SendAsync(
-            Read(_projectId), _financeUnassigned, Role.Finance, Department.Finance);
+            Read(_projectId), _financeUnassigned, Role.Finance, WellKnownDepartments.FinanceId);
 
         refused.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         (await MessageKeyAsync(refused)).Should().Be("errors.auth.forbidden");
@@ -111,7 +111,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
         // spec.md §9: "A user MUST be assigned to a project to open it or act on it." Finance holds
         // the permission and is still refused on a project it is not assigned to.
         HttpResponseMessage response = await SendAsync(
-            Read(_projectId), _financeUnassigned, Role.Finance, Department.Finance);
+            Read(_projectId), _financeUnassigned, Role.Finance, WellKnownDepartments.FinanceId);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -120,7 +120,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
     public async Task The_right_role_with_an_assignment_is_allowed()
     {
         HttpResponseMessage response = await SendAsync(
-            Read(_projectId), _financeAssigned, Role.Finance, Department.Finance);
+            Read(_projectId), _financeAssigned, Role.Finance, WellKnownDepartments.FinanceId);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -129,7 +129,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
     public async Task An_assignment_to_one_project_does_not_open_another()
     {
         HttpResponseMessage response = await SendAsync(
-            Read(_otherProjectId), _financeAssigned, Role.Finance, Department.Finance);
+            Read(_otherProjectId), _financeAssigned, Role.Finance, WellKnownDepartments.FinanceId);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -185,13 +185,13 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
         // spec.md §9: "a junior engineer raises requests as drafts; the supervisor submits them."
         HttpResponseMessage junior = await SendAsync(
             Submit(_projectId), _juniorEngineer, Role.SiteEngineer,
-            Department.Operations, OperationsSubDepartment.Technical);
+            WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
 
         junior.StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
         HttpResponseMessage supervisor = await SendAsync(
             Submit(_projectId), _supervisingEngineer, Role.SiteEngineer,
-            Department.Operations, OperationsSubDepartment.Technical);
+            WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
 
         supervisor.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -202,7 +202,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
         // spec.md §9: "Site engineers approve nothing financial."
         HttpResponseMessage response = await SendAsync(
             Approve(_projectId), _supervisingEngineer, Role.SiteEngineer,
-            Department.Operations, OperationsSubDepartment.Technical);
+            WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -211,7 +211,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
     public async Task A_company_wide_permission_needs_no_assignment()
     {
         HttpResponseMessage response = await SendAsync(
-            new Uri(ProbeEndpoint.CompanyRoute, UriKind.Relative), _marketing, Role.MarketingSales, Department.Marketing);
+            new Uri(ProbeEndpoint.CompanyRoute, UriKind.Relative), _marketing, Role.MarketingSales, null);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -260,7 +260,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
         }
 
         HttpResponseMessage response = await SendAsync(
-            Read(_projectId), _financeAssigned, Role.Finance, Department.Finance);
+            Read(_projectId), _financeAssigned, Role.Finance, WellKnownDepartments.FinanceId);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -284,7 +284,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
 
         // ProbeEndpoint.CompanyRoute requires ClientManage: company-wide, no project, no assignment.
         HttpResponseMessage company = await SendAsync(
-            new Uri(ProbeEndpoint.CompanyRoute, UriKind.Relative), _marketing, Role.MarketingSales, Department.Marketing);
+            new Uri(ProbeEndpoint.CompanyRoute, UriKind.Relative), _marketing, Role.MarketingSales, null);
 
         company.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -318,7 +318,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
         string stampBefore = await CurrentStampAsync(_financeAssigned);
 
         // The token still works, which is what makes the next assertion mean something.
-        (await SendAsync(Read(_projectId), _financeAssigned, Role.Finance, Department.Finance,
+        (await SendAsync(Read(_projectId), _financeAssigned, Role.Finance, WellKnownDepartments.FinanceId,
                 securityStamp: stampBefore))
             .StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -335,12 +335,12 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
         stampAfter.Should().NotBe(stampBefore, "SetOwnPassword must rotate the stamp");
 
         // The device that was signed in before the change — a phone left on site, say.
-        (await SendAsync(Read(_projectId), _financeAssigned, Role.Finance, Department.Finance,
+        (await SendAsync(Read(_projectId), _financeAssigned, Role.Finance, WellKnownDepartments.FinanceId,
                 securityStamp: stampBefore))
             .StatusCode.Should().Be(HttpStatusCode.Forbidden, "the old session is dead everywhere");
 
         // Signing in again works, and the user is still active.
-        (await SendAsync(Read(_projectId), _financeAssigned, Role.Finance, Department.Finance,
+        (await SendAsync(Read(_projectId), _financeAssigned, Role.Finance, WellKnownDepartments.FinanceId,
                 securityStamp: stampAfter))
             .StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -354,7 +354,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
         using var request = new HttpRequestMessage(HttpMethod.Get, Read(_projectId));
         request.Headers.Add(TestAuthHandler.UserIdHeader, _financeAssigned.ToString());
         request.Headers.Add(TestAuthHandler.RoleHeader, Role.Finance.ToString());
-        request.Headers.Add(TestAuthHandler.DepartmentHeader, Department.Finance.ToString());
+        request.Headers.Add(TestAuthHandler.DepartmentHeader, WellKnownDepartments.FinanceId.ToString());
         // No stamp header.
 
         HttpResponseMessage response = await _client.SendAsync(request, Ct);
@@ -375,7 +375,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
             new Uri(ProbeEndpoint.CompanyRoute, UriKind.Relative),
             _financeAssigned,
             Role.MarketingSales,
-            Department.Marketing);
+            null);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden,
             "role and department come from the users table, not from the token");
@@ -403,7 +403,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
         // is circular: on a brand-new project nobody is assigned, so nobody could ever make the
         // first one. The seeded HR user holds no ProjectAssignment row at all.
         HttpResponseMessage response = await SendAsync(
-            Assign(_projectId), _hr, Role.Hr, Department.Hr);
+            Assign(_projectId), _hr, Role.Hr, WellKnownDepartments.HrId);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -417,16 +417,16 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
         // Global reach makes this the sharpest test in the file. The access policy waves HR through
         // on any project — so the ONLY thing standing between HR and every project's financial data
         // is the absence of a ProjectRead grant. Same user, same project, one line apart.
-        (await SendAsync(Assign(_projectId), _hr, Role.Hr, Department.Hr))
+        (await SendAsync(Assign(_projectId), _hr, Role.Hr, WellKnownDepartments.HrId))
             .StatusCode.Should().Be(HttpStatusCode.OK);
 
-        (await SendAsync(Read(_projectId), _hr, Role.Hr, Department.Hr))
+        (await SendAsync(Read(_projectId), _hr, Role.Hr, WellKnownDepartments.HrId))
             .StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
-        (await SendAsync(Read(_otherProjectId), _hr, Role.Hr, Department.Hr))
+        (await SendAsync(Read(_otherProjectId), _hr, Role.Hr, WellKnownDepartments.HrId))
             .StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
-        (await SendAsync(Approve(_projectId), _hr, Role.Hr, Department.Hr))
+        (await SendAsync(Approve(_projectId), _hr, Role.Hr, WellKnownDepartments.HrId))
             .StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
@@ -436,7 +436,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
         // Global reach is reach, not a bypass. It is bounded by the project existing, exactly as the
         // Owner's is — otherwise a typo'd identifier would be an authorization success.
         HttpResponseMessage response = await SendAsync(
-            Assign(Guid.CreateVersion7()), _hr, Role.Hr, Department.Hr);
+            Assign(Guid.CreateVersion7()), _hr, Role.Hr, WellKnownDepartments.HrId);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -452,13 +452,13 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
         // HR staffs projects with users that already exist. It does not mint them, and it does not
         // hand out roles — which is what would let HR grant itself the financial visibility the
         // ruling denies it.
-        (await SendAsync(UserAdmin, _hr, Role.Hr, Department.Hr))
+        (await SendAsync(UserAdmin, _hr, Role.Hr, WellKnownDepartments.HrId))
             .StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
-        (await SendAsync(UserAdmin, _financeAssigned, Role.Finance, Department.Finance))
+        (await SendAsync(UserAdmin, _financeAssigned, Role.Finance, WellKnownDepartments.FinanceId))
             .StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
-        (await SendAsync(UserAdmin, _marketing, Role.MarketingSales, Department.Marketing))
+        (await SendAsync(UserAdmin, _marketing, Role.MarketingSales, null))
             .StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
@@ -473,7 +473,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
     [Fact]
     public async Task An_assigned_actor_leaves_the_assignment_path_on_the_record()
     {
-        (await SendAsync(Write(_projectId), _financeAssigned, Role.Finance, Department.Finance))
+        (await SendAsync(Write(_projectId), _financeAssigned, Role.Finance, WellKnownDepartments.FinanceId))
             .StatusCode.Should().Be(HttpStatusCode.OK);
 
         (AuditRecord change, _) = await TheWritesRecordsAsync();
@@ -515,7 +515,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
     [Fact]
     public async Task Hrs_global_reach_is_distinguishable_from_an_assigned_actors()
     {
-        (await SendAsync(WriteAsHr(_projectId), _hr, Role.Hr, Department.Hr))
+        (await SendAsync(WriteAsHr(_projectId), _hr, Role.Hr, WellKnownDepartments.HrId))
             .StatusCode.Should().Be(HttpStatusCode.OK);
 
         (AuditRecord change, _) = await TheWritesRecordsAsync();
@@ -546,7 +546,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
     [Fact]
     public async Task A_write_through_a_real_request_records_the_connections_address()
     {
-        (await SendAsync(Write(_projectId), _financeAssigned, Role.Finance, Department.Finance))
+        (await SendAsync(Write(_projectId), _financeAssigned, Role.Finance, WellKnownDepartments.FinanceId))
             .StatusCode.Should().Be(HttpStatusCode.OK);
 
         (AuditRecord change, _) = await TheWritesRecordsAsync();
@@ -578,7 +578,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, Write(_projectId));
         request.Headers.Add("X-Forwarded-For", "198.51.100.7");
-        await StampAsync(request, _financeAssigned, Role.Finance, Department.Finance);
+        await StampAsync(request, _financeAssigned, Role.Finance, WellKnownDepartments.FinanceId);
 
         (await _client.SendAsync(request, Ct)).StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -629,7 +629,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
 
         using var request = new HttpRequestMessage(HttpMethod.Get, Write(_projectId));
         request.Headers.Add("X-Forwarded-For", $"198.51.100.9, {caller}");
-        await StampAsync(request, _financeAssigned, Role.Finance, Department.Finance);
+        await StampAsync(request, _financeAssigned, Role.Finance, WellKnownDepartments.FinanceId);
 
         (await client.SendAsync(request, Ct)).StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -681,7 +681,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
         // The real shape: the caller's forgery, then Caddy appending the caller, then nginx
         // appending Caddy. The middleware reads right to left.
         request.Headers.Add("X-Forwarded-For", $"198.51.100.9, {caller}, {caddy}");
-        await StampAsync(request, _financeAssigned, Role.Finance, Department.Finance);
+        await StampAsync(request, _financeAssigned, Role.Finance, WellKnownDepartments.FinanceId);
 
         (await client.SendAsync(request, Ct)).StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -761,7 +761,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
         Uri route,
         Guid userId,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null,
         Guid? clientId = null,
         string? securityStamp = null)
@@ -785,7 +785,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
         HttpRequestMessage request,
         Guid userId,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null,
         Guid? clientId = null,
         string? securityStamp = null)
@@ -838,17 +838,17 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
 
         User ownerAssigned = MakeUser("perm-owner-assigned", Role.Owner);
         User ownerUnassigned = MakeUser("perm-owner-unassigned", Role.Owner);
-        User financeAssigned = MakeUser("perm-finance-assigned", Role.Finance, Department.Finance);
-        User financeUnassigned = MakeUser("perm-finance-unassigned", Role.Finance, Department.Finance);
-        User junior = MakeUser("perm-junior", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
-        User supervisor = MakeUser("perm-supervisor", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
-        User marketing = MakeUser("perm-marketing", Role.MarketingSales, Department.Marketing);
+        User financeAssigned = MakeUser("perm-finance-assigned", Role.Finance, WellKnownDepartments.FinanceId);
+        User financeUnassigned = MakeUser("perm-finance-unassigned", Role.Finance, WellKnownDepartments.FinanceId);
+        User junior = MakeUser("perm-junior", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User supervisor = MakeUser("perm-supervisor", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User marketing = MakeUser("perm-marketing", Role.MarketingSales, null);
         User portal = MakeUser("perm-portal", Role.Client, clientId: client.Id);
 
         // Deliberately never assigned to any project. That is the whole point of the HR tests:
         // Karim, 2026-08-20 — "HR does not need to be assigned to a project first in order to
         // staff it." An assignment row here would make those tests pass for the wrong reason.
-        User hr = MakeUser("perm-hr", Role.Hr, Department.Hr);
+        User hr = MakeUser("perm-hr", Role.Hr, WellKnownDepartments.HrId);
 
         context.Clients.AddRange(client, otherClient);
         context.Projects.AddRange(project, otherProject);
@@ -906,7 +906,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null,
         Guid? clientId = null)
     {

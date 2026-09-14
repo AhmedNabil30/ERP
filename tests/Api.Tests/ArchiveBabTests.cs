@@ -224,7 +224,7 @@ public sealed class ArchiveBabTests : IAsyncLifetime
     {
         Guid bab = await CreateBabAsync();
 
-        (await SendAsync(HttpMethod.Post, $"/api/babs/{bab}/archive", _finance, Role.Finance, Department.Finance))
+        (await SendAsync(HttpMethod.Post, $"/api/babs/{bab}/archive", _finance, Role.Finance, WellKnownDepartments.FinanceId))
             .StatusCode.Should().Be(HttpStatusCode.Forbidden, "Finance does not hold BabManage");
 
         await using KaffDbContext reader = _database.CreateBareContext();
@@ -263,12 +263,12 @@ public sealed class ArchiveBabTests : IAsyncLifetime
     // ---- helpers ------------------------------------------------------------------------------
 
     private Task<HttpResponseMessage> ArchiveAsync(Guid babId)
-        => SendAsync(HttpMethod.Post, $"/api/babs/{babId}/archive", _technicalOffice, Role.TechnicalOffice, Department.Operations);
+        => SendAsync(HttpMethod.Post, $"/api/babs/{babId}/archive", _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId);
 
     private async Task ArchiveItemAsync(Guid itemId)
     {
         HttpResponseMessage response = await SendAsync(
-            HttpMethod.Post, $"/api/catalogue-items/{itemId}/archive", _technicalOffice, Role.TechnicalOffice, Department.Operations);
+            HttpMethod.Post, $"/api/catalogue-items/{itemId}/archive", _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId);
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
@@ -284,7 +284,7 @@ public sealed class ArchiveBabTests : IAsyncLifetime
         request.Headers.Add(TestAuthHandler.UserIdHeader, _technicalOffice.ToString());
         request.Headers.Add(TestAuthHandler.RoleHeader, Role.TechnicalOffice.ToString());
         request.Headers.Add(TestAuthHandler.SecurityStampHeader, await CurrentStampAsync(_technicalOffice));
-        request.Headers.Add(TestAuthHandler.DepartmentHeader, Department.Operations.ToString());
+        request.Headers.Add(TestAuthHandler.DepartmentHeader, WellKnownDepartments.OperationsId.ToString());
 
         HttpResponseMessage response = await _client.SendAsync(request, Ct);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -362,7 +362,7 @@ public sealed class ArchiveBabTests : IAsyncLifetime
     }
 
     private async Task<HttpResponseMessage> SendAsync(
-        HttpMethod method, string route, Guid actorId, Role actorRole, Department? actorDepartment)
+        HttpMethod method, string route, Guid actorId, Role actorRole, Guid? actorDepartment)
     {
         using var request = new HttpRequestMessage(method, new Uri(route, UriKind.Relative));
 
@@ -397,8 +397,8 @@ public sealed class ArchiveBabTests : IAsyncLifetime
         await using KaffDbContext context = _database.CreateContext();
 
         User owner = MakeUser("arb-owner", Role.Owner);
-        User technicalOffice = MakeUser("arb-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
-        User finance = MakeUser("arb-finance", Role.Finance, Department.Finance);
+        User technicalOffice = MakeUser("arb-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User finance = MakeUser("arb-finance", Role.Finance, WellKnownDepartments.FinanceId);
 
         context.Users.AddRange(owner, technicalOffice, finance);
         await context.SaveChangesAsync(Ct);
@@ -409,7 +409,7 @@ public sealed class ArchiveBabTests : IAsyncLifetime
     }
 
     private static User MakeUser(
-        string userName, Role role, Department? department = null, OperationsSubDepartment? subDepartment = null)
+        string userName, Role role, Guid? department = null, OperationsSubDepartment? subDepartment = null)
         => User.Create(UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment).Value;
 
     private static DateTimeOffset Now => new(2026, 9, 11, 8, 0, 0, TimeSpan.Zero);

@@ -26,7 +26,7 @@ const OWNER_SESSION: Session = {
   userId: 'owner-1',
   displayName: 'المالك',
   role: 'Owner',
-  department: null,
+  departmentId: null,
   operationsSubDepartment: null,
   mustChangePassword: false,
   permissions: [],

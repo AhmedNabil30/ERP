@@ -12,10 +12,14 @@ export type Role =
   | 'Subcontractor'
   | 'Hr';
 
-/** spec.md §9: "Finance, HR, Marketing, Operations." Null for the Owner and every external role. */
-export type Department = 'Finance' | 'Hr' | 'Marketing' | 'Operations';
+/**
+ * A department's id. KAFF-321 — departments are master data (decisions.md D-162), not a fixed set of
+ * names; the id is opaque here and resolved to a display name through {@link DepartmentsApi}. Null for
+ * the Owner and every external role.
+ */
+export type DepartmentId = string;
 
-/** Set only inside {@link Department.Operations} — spec.md §9's three-way split of that department. */
+/** Set only inside the Operations department — spec.md §9's three-way split of that department. */
 export type OperationsSubDepartment = 'Technical' | 'Financial' | 'Administrative';
 
 /** Seniority on one project assignment, never on the person (D-044 §5). */
@@ -66,7 +70,7 @@ export interface Session {
   readonly userId: string;
   readonly displayName: string;
   readonly role: Role;
-  readonly department: Department | null;
+  readonly departmentId: DepartmentId | null;
   readonly operationsSubDepartment: OperationsSubDepartment | null;
   readonly mustChangePassword: boolean;
 

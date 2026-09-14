@@ -11,18 +11,10 @@ import { FormField, form, required, schema, submit } from '@angular/forms/signal
 import { Router } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
-import {
-  AuthService,
-  Department,
-  OperationsSubDepartment,
-  Role,
-} from '../../../core/auth/auth.service';
+import { AuthService, OperationsSubDepartment, Role } from '../../../core/auth/auth.service';
 import { ClientSummary, ClientsApi } from '../../../core/clients/clients.api';
-import {
-  departmentKey,
-  operationsSubDepartmentKey,
-  roleKey,
-} from '../../../core/i18n/enum-keys';
+import { DepartmentSummary, DepartmentsApi } from '../../../core/departments/departments.api';
+import { operationsSubDepartmentKey, roleKey } from '../../../core/i18n/enum-keys';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { UserSummary, UsersApi } from '../../../core/users/users.api';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
@@ -41,9 +33,6 @@ const ROLES: readonly Role[] = [
   'Subcontractor',
 ];
 
-/** `spec.md` §9: "Finance, HR, Marketing, Operations." */
-const DEPARTMENTS: readonly Department[] = ['Finance', 'Hr', 'Marketing', 'Operations'];
-
 /** `spec.md` §9 — only Operations subdivides. */
 const SUB_DEPARTMENTS: readonly OperationsSubDepartment[] = [
   'Technical',
@@ -60,7 +49,7 @@ interface UserDraft {
   phone: string;
   email: string;
   role: Role;
-  department: Department | '';
+  departmentId: string;
   operationsSubDepartment: OperationsSubDepartment | '';
   clientId: string;
   temporaryPassword: string;
@@ -152,6 +141,7 @@ export class UserFormPage {
 
   private readonly api = inject(UsersApi);
   private readonly clientsApi = inject(ClientsApi);
+  private readonly departmentsApi = inject(DepartmentsApi);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
@@ -161,7 +151,7 @@ export class UserFormPage {
     phone: '',
     email: '',
     role: 'SiteEngineer',
-    department: 'Operations',
+    departmentId: '',
     operationsSubDepartment: 'Technical',
     clientId: '',
     temporaryPassword: '',
@@ -177,11 +167,45 @@ export class UserFormPage {
   protected readonly userForm = form(this.model, draft);
 
   protected readonly roles = ROLES;
-  protected readonly departments = DEPARTMENTS;
   protected readonly subDepartments = SUB_DEPARTMENTS;
   protected readonly roleKey = roleKey;
-  protected readonly departmentKey = departmentKey;
   protected readonly operationsSubDepartmentKey = operationsSubDepartmentKey;
+
+  /**
+   * Every department the picker knows, KAFF-321 — fetched once from `GET /api/departments?status=all`
+   * rather than a fixed enum. `selectableDepartments` is what the `<select>` actually offers.
+   */
+  private readonly allDepartments = signal<readonly DepartmentSummary[]>([]);
+
+  /**
+   * AC-321-E: an archived department stays valid on the record that already carries it, but does not
+   * appear as an option for a NEW assignment — so an archived row is offered only when the draft
+   * already names it (an existing assignment being viewed, not changed).
+   */
+  protected readonly selectableDepartments = computed(() =>
+    this.allDepartments().filter(
+      (department) => department.isActive || department.id === this.model().departmentId,
+    ),
+  );
+
+  /** The HR row, identified by name — KAFF-321 replaced the enum's `Department.Hr` with master data. */
+  private readonly hrDepartment = computed(() =>
+    this.allDepartments().find((department) => department.nameEn.toLowerCase() === 'hr'),
+  );
+
+  /** The Operations row, same reasoning as {@link hrDepartment}. */
+  private readonly operationsDepartment = computed(() =>
+    this.allDepartments().find((department) => department.nameEn.toLowerCase() === 'operations'),
+  );
+
+  protected departmentLabel(department: DepartmentSummary): string {
+    return this.i18n.locale() === 'en' ? department.nameEn : department.nameAr;
+  }
+
+  protected readonly hrDepartmentLabel = computed(() => {
+    const department = this.hrDepartment();
+    return department ? this.departmentLabel(department) : '';
+  });
 
   /**
    * The draft, for the three `<select>`s.
@@ -219,7 +243,9 @@ export class UserFormPage {
   /** `User.SetPasswordHash` refuses a subcontractor, so the field is not rendered rather than disabled. */
   protected readonly canHoldPassword = computed(() => this.model().role !== 'Subcontractor');
 
-  protected readonly needsSubDepartment = computed(() => this.model().department === 'Operations');
+  protected readonly needsSubDepartment = computed(
+    () => this.model().departmentId !== '' && this.model().departmentId === this.operationsDepartment()?.id,
+  );
 
   /** `AC-127-C` — the server's key, rendered against the department field rather than in a banner. */
   protected readonly departmentRefusalKey = computed(() =>
@@ -253,6 +279,8 @@ export class UserFormPage {
         void this.load(id);
       }
     });
+
+    void this.loadDepartments();
   }
 
   protected readonly titleKey = computed(() =>
@@ -277,7 +305,7 @@ export class UserFormPage {
   protected onDepartmentSelect(event: Event): void {
     const raw = readSelect(event);
 
-    this.onDepartmentChange(DEPARTMENTS.find((department) => department === raw) ?? '');
+    this.onDepartmentChange(this.selectableDepartments().find((department) => department.id === raw)?.id ?? '');
   }
 
   protected onSubDepartmentSelect(event: Event): void {
@@ -294,12 +322,15 @@ export class UserFormPage {
   }
 
   protected onRoleChange(role: Role): void {
+    const hrId = this.hrDepartment()?.id ?? '';
+
     this.model.update((current) => ({
       ...current,
       role,
       // rule 6 — HR is pinned to the HR department, because an HR user placed in
       // Operations/Administrative would inherit SiteExpenseConfirm through a department-only grant.
-      department: role === 'Hr' ? 'Hr' : role === 'Client' || role === 'Subcontractor' ? '' : current.department,
+      departmentId:
+        role === 'Hr' ? hrId : role === 'Client' || role === 'Subcontractor' ? '' : current.departmentId,
       operationsSubDepartment:
         role === 'Hr' || role === 'Client' || role === 'Subcontractor'
           ? ''
@@ -316,13 +347,17 @@ export class UserFormPage {
     }
   }
 
-  protected onDepartmentChange(department: Department | ''): void {
+  protected onDepartmentChange(departmentId: string): void {
+    const operationsId = this.operationsDepartment()?.id;
+
     this.model.update((current) => ({
       ...current,
-      department,
+      departmentId,
       // spec.md §9: only Operations subdivides, and it must.
       operationsSubDepartment:
-        department === 'Operations' ? current.operationsSubDepartment || 'Technical' : '',
+        departmentId !== '' && departmentId === operationsId
+          ? current.operationsSubDepartment || 'Technical'
+          : '',
     }));
 
     this.clearRefusal();
@@ -383,7 +418,7 @@ export class UserFormPage {
           phone: value.phone.trim(),
           email: orNull(value.email),
           role: value.role,
-          department: value.department === '' ? null : value.department,
+          departmentId: value.departmentId === '' ? null : value.departmentId,
           operationsSubDepartment:
             value.operationsSubDepartment === '' ? null : value.operationsSubDepartment,
           clientId: value.role === 'Client' ? orNull(value.clientId) : null,
@@ -437,7 +472,7 @@ export class UserFormPage {
     try {
       await this.api.moveDepartment(
         id,
-        value.department === '' ? null : value.department,
+        value.departmentId === '' ? null : value.departmentId,
         value.operationsSubDepartment === '' ? null : value.operationsSubDepartment,
       );
       await this.load(id);
@@ -506,7 +541,7 @@ export class UserFormPage {
           phone: user.phone,
           email: '',
           role: user.role,
-          department: user.department ?? '',
+          departmentId: user.departmentId ?? '',
           operationsSubDepartment: user.operationsSubDepartment ?? '',
           clientId: '',
           temporaryPassword: '',
@@ -520,6 +555,16 @@ export class UserFormPage {
       this.setRefusal(error);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  private async loadDepartments(): Promise<void> {
+    try {
+      this.allDepartments.set(await this.departmentsApi.list('all'));
+    } catch {
+      // The picker degrades to empty rather than blocking the rest of the form — a department is one
+      // field among many here, and the server refuses the create/move outright if one was required.
+      this.allDepartments.set([]);
     }
   }
 

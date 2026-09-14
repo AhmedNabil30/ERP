@@ -1,8 +1,28 @@
 # KAFF-321 · Department — dynamic master data, not a fixed enum
 
-<!-- kaff id=KAFF-321 slice=2 points=0 state=NOT-BUILT verdict=none at=- on=2026-09-14 -->
+<!-- kaff id=KAFF-321 slice=2 points=0 state=BUILT verdict=none at=- on=2026-09-15 -->
 
-**Slice:** 2 (Masters) · **Epic:** Master data · **Points:** not estimated — see *Definition of Ready*. **Status:** **NOT-BUILT.** Cut 2026-09-14 by the Scrum Master against `decisions.md` D-162, closing `Q85`.
+**Slice:** 2 (Masters) · **Epic:** Master data · **Points:** not estimated — see *Definition of Ready*. **Status:** **BUILT**, 2026-09-14 (backend + frontend), pending verification. Cut 2026-09-14 by the Scrum Master against `decisions.md` D-162, closing `Q85`.
+
+**Built this session** (`decisions.md` D-166 has the full account, including three implementation
+calls this story left to Backend):
+- `Department` master-data entity (`src/Domain/MasterData/Department.cs`), archive/unarchive only —
+  no delete path — EF configuration and seed of the five named rows, migration
+  `20260914181024_DepartmentMasterData`.
+- Full CRUD under `src/Api/Features/Departments/` — List, Create, Edit, Archive, Unarchive — gated a
+  new `Permission.DepartmentManage` row (Owner alone). A hard-delete endpoint shipped 2026-09-14 and
+  was removed 2026-09-15 by Nabil's ruling (decisions.md): archive, never delete, same shape as every
+  other master record.
+- `KAFF-107`/`108` migrated from the `D-153` §2 enum to the `Department` foreign key.
+  `KAFF-207`/`210`'s `Employee.Department` was **not** touched — it is a free-text field per D-139 §7/
+  D-144 §2, never the enum; this story's rule 5 line naming it was imprecise.
+- Settings screen at `/settings/departments`
+  (`src/Web/src/app/features/departments/department-settings/`), gated `departmentManageGuard`.
+- xUnit coverage: `tests/Domain.Tests/DepartmentTests.cs` (entity rules),
+  `tests/Api.Tests/DepartmentCrudTests.cs` (AC-321-A..F plus the permission refusal), revised
+  2026-09-15 to cover unarchive instead of hard delete.
+- `qa/slice-2/test-cases.md` carries `TC-2-154` (`AC-321-F` unarchive), rewritten 2026-09-15 from the
+  hard-delete case it originally named.
 **Spec:** no section names "department" as a fixed list; `spec.md` is silent on its shape. **Decisions:** D-162 (Karim via Nabil, `Q85`) rules the shape; D-153 §2 (superseded — modelled `Department` as an enum pending this answer)
 **Register:** `stories/questions-for-karim.md` → **`Q85`** (answered — D-162)
 **Owner:** Backend, then Frontend
@@ -27,7 +47,7 @@ without a deploy, which is the exact problem Karim's answer describes.
 |---|---|---|
 | 1 | Departments are master data: a table, seeded with five rows (Finance, Technical Office, Operations, Procurement, HR), editable by an admin from settings — not an enum | `decisions.md` D-162 (`Q85`) |
 | 2 | An admin can add and edit a department | D-162 |
-| 3 | A department with staff assigned to it cannot be hard-deleted — archive-not-delete, the same pattern as catalogue items (`KAFF-206`) and babs (`KAFF-213`) | D-162 — "the house pattern for that is archive-not-delete... follow it unless the story says otherwise" |
+| 3 | A department is archived, never deleted — the same pattern as catalogue items (`KAFF-206`) and babs (`KAFF-213`), for every department regardless of whether staff are assigned. No delete endpoint exists. | D-162 — "the house pattern for that is archive-not-delete... follow it unless the story says otherwise"; Nabil's ruling 2026-09-15 (decisions.md) closes the delete path an earlier build opened |
 | 4 | An archived department stays valid on historical records (existing staff assignments, audit history) but cannot be assigned to new staff going forward | Same archive-not-delete precedent as `KAFF-206`/`KAFF-213` |
 | 5 | Existing consumers (`KAFF-107`, `KAFF-108`, `KAFF-207`, `KAFF-210`) migrate from the `D-153` enum to a foreign key against this table; their own permission and assignment logic is unchanged by this story | Consistency requirement, not a new business rule |
 
@@ -62,10 +82,10 @@ When an admin edits its name
 Then the change is saved and audited
 *Rule: 2, audit.*
 
-**AC-321-D — a department with assigned staff cannot be hard-deleted**
+**AC-321-D — a department with assigned staff is archived, not deleted**
 Given a department with at least one staff member assigned
-When an admin attempts to delete it
-Then the delete is refused; the admin may archive it instead
+When an admin retires it
+Then it is archived — no delete endpoint exists to attempt
 *Rule: 3.*
 
 **AC-321-E — an archived department cannot be assigned to new staff, but its history is intact**
@@ -74,11 +94,11 @@ When staff assignment or history is read
 Then the archived department still displays correctly on historical records, and does not appear as an option for a new assignment
 *Rule: 4.*
 
-**AC-321-F — a department with no staff assigned can be hard-deleted**
-Given a department with zero staff assigned
-When an admin deletes it
-Then it is removed
-*Rule: 3 (archive-not-delete only applies where staff are assigned).*
+**AC-321-F — an archived department can be unarchived**
+Given an archived department
+When an admin unarchives it
+Then it becomes active again and is available for new assignment
+*Rule: 3, 4.*
 
 ## Definition of Ready
 

@@ -274,4 +274,22 @@ public static class MasterDataErrors
     /// <summary>The supplier list's <c>status</c> filter named something that is not a filter. KAFF-212.</summary>
     public static readonly Error SupplierListFilterUnknown =
         Error.Validation("master.supplier_list_filter_unknown", "errors.master.supplier_list_filter_unknown");
+
+    // ---- KAFF-321: department master data ----
+
+    /// <summary>The route named a department id that no department carries. KAFF-321.</summary>
+    public static readonly Error DepartmentNotFound =
+        Error.NotFound("master.department_not_found", "errors.master.department_not_found");
+
+    /// <summary>
+    /// AC-321-E — an archived department cannot be assigned to a user going forward, even though it
+    /// stays valid on the historical records that already carry it.
+    /// </summary>
+    public static readonly Error DepartmentIsArchived =
+        Error.Conflict("master.department_is_archived", "errors.master.department_is_archived");
+
+    /// <summary>The department list's <c>status</c> filter named something that is not a filter. KAFF-321.</summary>
+    /// <remarks>Same shape and reasoning as <see cref="BabListFilterUnknown"/> — D-111 §3.</remarks>
+    public static readonly Error DepartmentListFilterUnknown =
+        Error.Validation("master.department_list_filter_unknown", "errors.master.department_list_filter_unknown");
 }

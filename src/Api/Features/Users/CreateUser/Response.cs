@@ -14,7 +14,7 @@ namespace Kaff.Api.Features.Users.CreateUser;
 /// <param name="UserName">As stored — lower-cased and trimmed, which is what the uniqueness rule compares.</param>
 /// <param name="FullName">As stored.</param>
 /// <param name="Role">The role granted.</param>
-/// <param name="Department">Null for a role that holds none.</param>
+/// <param name="DepartmentId">Null for a role that holds none.</param>
 /// <param name="OperationsSubDepartment">Null unless the department is Operations.</param>
 /// <param name="ClientId">Set only for a portal user.</param>
 /// <param name="IsActive">Always true on creation — <c>User.Create</c> says so.</param>
@@ -27,7 +27,7 @@ public sealed record Response(
     string UserName,
     string FullName,
     Role Role,
-    Department? Department,
+    Guid? DepartmentId,
     OperationsSubDepartment? OperationsSubDepartment,
     Guid? ClientId,
     bool IsActive,

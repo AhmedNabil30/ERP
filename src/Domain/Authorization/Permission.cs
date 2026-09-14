@@ -236,4 +236,18 @@ public enum Permission
     /// gate, one shape. <see cref="DayLabourSiteManage"/> itself is untouched and stays money-free.
     /// </remarks>
     DayLabourRateManage = 64,
+
+    /// <summary>
+    /// Add, edit, archive and delete departments. decisions.md D-162 (<c>Q85</c>) — "give an admin the
+    /// ability to add, edit and delete departments from settings."
+    /// </summary>
+    /// <remarks>
+    /// Global, and the Owner's alone — mirrors <see cref="UserManage"/> rather than
+    /// <see cref="CatalogueManage"/>/<see cref="BabManage"/>'s Owner-plus-Technical-Office shape,
+    /// because a department is organisational structure that gates who may hold
+    /// <see cref="Identity.Role.Hr"/> and Operations sub-department membership
+    /// (<see cref="Identity.User.ValidateDepartment"/>), the same axis <see cref="UserManage"/> already
+    /// owns exclusively. D-162 names only "an admin"; Backend's call, recorded in decisions.md.
+    /// </remarks>
+    DepartmentManage = 70,
 }

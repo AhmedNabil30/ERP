@@ -29,7 +29,7 @@ public sealed record UserSummary(
     string FullName,
     string Phone,
     Role Role,
-    Department? Department,
+    Guid? DepartmentId,
     OperationsSubDepartment? OperationsSubDepartment,
     bool IsActive,
     IReadOnlyList<string> ActiveProjectNames);

@@ -1,0 +1,206 @@
+<section class="department-settings" data-testid="department-settings">
+  <h1 class="title">{{ i18n.t('department.settings.title') }}</h1>
+
+  <kaff-segmented-filter
+    [options]="segmentedOptions"
+    [value]="statusFilter()"
+    (valueChange)="onFilter($event)"
+    ariaLabelKey="department.settings.title"
+    testIdPrefix="department-filter"
+  />
+
+  @if (failure(); as key) {
+    <p class="refusal" role="alert" data-testid="department-settings-failure">{{ i18n.t(key) }}</p>
+  } @else if (loading()) {
+    <p class="loading" role="status" aria-live="polite" data-testid="department-settings-loading">
+      {{ i18n.t('department.loading') }}
+    </p>
+  } @else {
+    <kaff-table-header
+      [columns]="rowColumns"
+      [columnDefs]="headerColumns"
+      testId="department-settings-table-header"
+    />
+
+    @if (departments().length > 0) {
+      <ul class="rows" data-testid="department-settings-rows">
+        @for (department of departments(); track trackRow($index, department)) {
+          <li class="row-item" [attr.data-testid]="'department-row-' + department.id">
+            @if (editingId() === department.id) {
+              <kaff-table-row [columns]="rowColumns">
+                <kaff-field
+                  labelKey="department.field.name_ar"
+                  [controlId]="'department-edit-name-ar-' + department.id"
+                  [required]="true"
+                >
+                  <input
+                    class="input"
+                    dir="rtl"
+                    [id]="'department-edit-name-ar-' + department.id"
+                    [attr.data-testid]="'department-edit-name-ar-' + department.id"
+                    [value]="editDraft().nameAr"
+                    (input)="onEditNameArInput($event)"
+                  />
+                </kaff-field>
+                <kaff-field
+                  labelKey="department.field.name_en"
+                  [controlId]="'department-edit-name-en-' + department.id"
+                  [required]="true"
+                >
+                  <input
+                    class="input"
+                    dir="ltr"
+                    [id]="'department-edit-name-en-' + department.id"
+                    [attr.data-testid]="'department-edit-name-en-' + department.id"
+                    [value]="editDraft().nameEn"
+                    (input)="onEditNameEnInput($event)"
+                  />
+                </kaff-field>
+                <span class="row-actions">
+                  <kaff-button
+                    variant="primary"
+                    [busy]="savingEdit()"
+                    [testId]="'department-edit-save-' + department.id"
+                    (clicked)="onConfirmEdit(department.id)"
+                  >
+                    {{ i18n.t('action.save') }}
+                  </kaff-button>
+                  <kaff-button
+                    variant="secondary"
+                    [testId]="'department-edit-cancel-' + department.id"
+                    (clicked)="onCancelEdit()"
+                  >
+                    {{ i18n.t('action.cancel') }}
+                  </kaff-button>
+                </span>
+              </kaff-table-row>
+
+              @if (editFailure(); as key) {
+                <p class="row-refusal" role="alert" [attr.data-testid]="'department-edit-refusal-' + department.id">
+                  {{ i18n.t(key) }}
+                </p>
+              }
+            } @else {
+              <kaff-table-row [columns]="rowColumns" [archived]="!department.isActive">
+                <span class="row-name" dir="rtl">{{ department.nameAr }}</span>
+                <span class="row-name" dir="ltr" translate="no">{{ department.nameEn }}</span>
+
+                <span class="row-actions">
+                  @if (!department.isActive) {
+                    <kaff-badge tone="neutral" testId="department-row-archived-badge">
+                      {{ i18n.t('department.settings.archived_badge') }}
+                    </kaff-badge>
+                  }
+
+                  <kaff-button
+                    variant="secondary"
+                    [testId]="'department-edit-' + department.id"
+                    (clicked)="onStartEdit(department)"
+                  >
+                    {{ i18n.t('action.edit') }}
+                  </kaff-button>
+
+                  @if (department.isActive) {
+                    @if (confirmingArchiveId() === department.id) {
+                      <kaff-button
+                        variant="danger"
+                        [disabled]="isArchiving(department.id)"
+                        [testId]="'department-archive-confirm-' + department.id"
+                        (clicked)="onConfirmArchive(department.id)"
+                      >
+                        {{ i18n.t('department.settings.archive_action') }}
+                      </kaff-button>
+                      <kaff-button
+                        variant="secondary"
+                        [testId]="'department-archive-cancel-' + department.id"
+                        (clicked)="onCancelArchive()"
+                      >
+                        {{ i18n.t('action.cancel') }}
+                      </kaff-button>
+                    } @else {
+                      <kaff-button
+                        variant="danger"
+                        [testId]="'department-archive-' + department.id"
+                        (clicked)="onStartArchive(department.id)"
+                      >
+                        {{ i18n.t('department.settings.archive_action') }}
+                      </kaff-button>
+                    }
+                  } @else {
+                    <kaff-button
+                      variant="secondary"
+                      [disabled]="isArchiving(department.id)"
+                      [testId]="'department-unarchive-' + department.id"
+                      (clicked)="onUnarchive(department.id)"
+                    >
+                      {{ i18n.t('department.settings.unarchive_action') }}
+                    </kaff-button>
+                  }
+                </span>
+              </kaff-table-row>
+
+              @if (archiveFailure(); as failed) {
+                @if (failed.id === department.id) {
+                  <p class="row-refusal" role="alert" [attr.data-testid]="'department-archive-refusal-' + department.id">
+                    {{ i18n.t(failed.key) }}
+                  </p>
+                }
+              }
+            }
+          </li>
+        }
+      </ul>
+    } @else {
+      <div class="empty" role="status" aria-live="polite" data-testid="department-settings-empty">
+        <p class="empty-title">{{ i18n.t('department.settings.empty') }}</p>
+      </div>
+    }
+  }
+
+  @if (creating()) {
+    <div class="create-row" data-testid="department-create-row">
+      <kaff-field labelKey="department.field.name_ar" controlId="department-create-name-ar" [required]="true">
+        <input
+          class="input"
+          dir="rtl"
+          id="department-create-name-ar"
+          data-testid="department-create-name-ar"
+          [value]="createDraft().nameAr"
+          (input)="onCreateNameArInput($event)"
+        />
+      </kaff-field>
+      <kaff-field labelKey="department.field.name_en" controlId="department-create-name-en" [required]="true">
+        <input
+          class="input"
+          dir="ltr"
+          id="department-create-name-en"
+          data-testid="department-create-name-en"
+          [value]="createDraft().nameEn"
+          (input)="onCreateNameEnInput($event)"
+        />
+      </kaff-field>
+
+      @if (createFailure(); as key) {
+        <p class="row-refusal" role="alert" data-testid="department-create-refusal">{{ i18n.t(key) }}</p>
+      }
+
+      <div class="row-actions">
+        <kaff-button
+          variant="primary"
+          [busy]="savingCreate()"
+          testId="department-create-save"
+          (clicked)="onConfirmCreate()"
+        >
+          {{ i18n.t('action.save') }}
+        </kaff-button>
+        <kaff-button variant="secondary" testId="department-create-cancel" (clicked)="onCancelCreate()">
+          {{ i18n.t('action.cancel') }}
+        </kaff-button>
+      </div>
+    </div>
+  } @else {
+    <kaff-button variant="primary" testId="department-create" (clicked)="onStartCreate()">
+      {{ i18n.t('department.action.create') }}
+    </kaff-button>
+  }
+</section>

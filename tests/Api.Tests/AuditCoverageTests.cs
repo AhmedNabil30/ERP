@@ -173,10 +173,10 @@ public sealed class AuditCoverageTests : IAsyncLifetime
 
         for (int i = 0; i < 10; i++)
         {
-            (await GetAsync("/api/auth/me", _marketing, Role.MarketingSales, Department.Marketing))
+            (await GetAsync("/api/auth/me", _marketing, Role.MarketingSales, null))
                 .StatusCode.Should().Be(HttpStatusCode.OK);
 
-            (await GetAsync("/api/clients?status=all", _marketing, Role.MarketingSales, Department.Marketing))
+            (await GetAsync("/api/clients?status=all", _marketing, Role.MarketingSales, null))
                 .StatusCode.Should().Be(HttpStatusCode.OK);
 
             (await GetAsync("/api/audit", _owner, Role.Owner, null))
@@ -197,7 +197,7 @@ public sealed class AuditCoverageTests : IAsyncLifetime
         // rather than fail. One real write has to move it, in the same method, or the assertion above
         // is describing nothing. This is D-041's lesson stated as a test: the danger is not a check
         // that fails, it is a check that cannot.
-        (await PostClientAsync(_marketing, Role.MarketingSales, Department.Marketing, "شركة الفجر"))
+        (await PostClientAsync(_marketing, Role.MarketingSales, null, "شركة الفجر"))
             .StatusCode.Should().Be(HttpStatusCode.Created);
 
         (await CountAsync()).Should().BeGreaterThan(before, "one real write moves the counter");
@@ -224,7 +224,7 @@ public sealed class AuditCoverageTests : IAsyncLifetime
         HttpResponseMessage refusedByRule = await PostClientAsync(
             _marketing,
             Role.MarketingSales,
-            Department.Marketing,
+            null,
             name: "   ");
 
         refusedByRule.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -235,7 +235,7 @@ public sealed class AuditCoverageTests : IAsyncLifetime
         HttpResponseMessage refusedByGate = await PostClientAsync(
             _finance,
             Role.Finance,
-            Department.Finance,
+            WellKnownDepartments.FinanceId,
             name: "شركة لا يجوز لها أن توجد");
 
         refusedByGate.StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -248,7 +248,7 @@ public sealed class AuditCoverageTests : IAsyncLifetime
 
         // The same positive control, for the same reason: an unchanged count proves nothing unless
         // the accepted version of the very same request changes it.
-        (await PostClientAsync(_marketing, Role.MarketingSales, Department.Marketing, "شركة الفجر"))
+        (await PostClientAsync(_marketing, Role.MarketingSales, null, "شركة الفجر"))
             .StatusCode.Should().Be(HttpStatusCode.Created);
 
         (await CountAsync()).Should().BeGreaterThan(
@@ -270,7 +270,7 @@ public sealed class AuditCoverageTests : IAsyncLifetime
         string route,
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment)
+        Guid? actorDepartment)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, route);
         await StampAsync(request, actorId, actorRole, actorDepartment);
@@ -281,7 +281,7 @@ public sealed class AuditCoverageTests : IAsyncLifetime
     private async Task<HttpResponseMessage> PostClientAsync(
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         string name)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/clients")
@@ -304,7 +304,7 @@ public sealed class AuditCoverageTests : IAsyncLifetime
         HttpRequestMessage request,
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment)
+        Guid? actorDepartment)
     {
         request.Headers.Add(TestAuthHandler.UserIdHeader, actorId.ToString());
         request.Headers.Add(TestAuthHandler.RoleHeader, actorRole.ToString());
@@ -331,8 +331,8 @@ public sealed class AuditCoverageTests : IAsyncLifetime
         await using KaffDbContext context = _database.CreateContext();
 
         User owner = MakeUser("aud-owner", Role.Owner);
-        User marketing = MakeUser("aud-marketing", Role.MarketingSales, Department.Marketing);
-        User finance = MakeUser("aud-finance", Role.Finance, Department.Finance);
+        User marketing = MakeUser("aud-marketing", Role.MarketingSales, null);
+        User finance = MakeUser("aud-finance", Role.Finance, WellKnownDepartments.FinanceId);
 
         context.Users.AddRange(owner, marketing, finance);
 
@@ -343,7 +343,7 @@ public sealed class AuditCoverageTests : IAsyncLifetime
         _finance = finance.Id;
     }
 
-    private static User MakeUser(string userName, Role role, Department? department = null)
+    private static User MakeUser(string userName, Role role, Guid? department = null)
         => User.Create(
             UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, null, null).Value;
 

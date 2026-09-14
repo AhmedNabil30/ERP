@@ -65,14 +65,14 @@ public sealed class CreateUserTests : IAsyncLifetime
         string userName = UniqueNames.Code("ac106a");
 
         HttpResponseMessage response = await CreateAsync(
-            _owner, Role.Owner, null, Body(userName, "Finance", department: "Finance"));
+            _owner, Role.Owner, null, Body(userName, "Finance", department: WellKnownDepartments.FinanceId));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         User created = await ReadUserAsync(userName);
 
         created.Role.Should().Be(Role.Finance);
-        created.Department.Should().Be(Department.Finance);
+        created.DepartmentId.Should().Be(WellKnownDepartments.FinanceId);
         created.IsActive.Should().BeTrue("User.Create sets IsActive true");
     }
 
@@ -92,7 +92,7 @@ public sealed class CreateUserTests : IAsyncLifetime
         string userName = UniqueNames.Code("ac106a-pw");
         const string Password = "temporary-one";
 
-        (await CreateAsync(_owner, Role.Owner, null, Body(userName, "Finance", department: "Finance", password: Password)))
+        (await CreateAsync(_owner, Role.Owner, null, Body(userName, "Finance", department: WellKnownDepartments.FinanceId, password: Password)))
             .StatusCode.Should().Be(HttpStatusCode.Created);
 
         User created = await ReadUserAsync(userName);
@@ -112,7 +112,7 @@ public sealed class CreateUserTests : IAsyncLifetime
 
         (await CreateAsync(
                 _owner, Role.Owner, null,
-                Body(userName, "SiteEngineer", department: "Operations", subDepartment: "Technical", password: "temporary-one")))
+                Body(userName, "SiteEngineer", department: WellKnownDepartments.OperationsId, subDepartment: "Technical", password: "temporary-one")))
             .StatusCode.Should().Be(HttpStatusCode.Created);
 
         User created = await ReadUserAsync(userName);
@@ -138,7 +138,8 @@ public sealed class CreateUserTests : IAsyncLifetime
         // The snapshot's keys are the EF property names verbatim — the interceptor builds a
         // JsonObject keyed on property.Metadata.Name, and a naming policy does not touch those.
         after.RootElement.GetProperty(nameof(User.Role)).GetString().Should().Be(nameof(Role.SiteEngineer));
-        after.RootElement.GetProperty(nameof(User.Department)).GetString().Should().Be(nameof(Department.Operations));
+        after.RootElement.GetProperty(nameof(User.DepartmentId)).GetString()
+            .Should().Be(WellKnownDepartments.OperationsId.ToString());
 
         after.RootElement.GetProperty(nameof(User.PasswordHash)).GetString()
             .Should().Be(AuditRedactedAttribute.Placeholder, "a credential must never enter the trail");
@@ -161,22 +162,22 @@ public sealed class CreateUserTests : IAsyncLifetime
     [Fact]
     public async Task Nobody_but_the_owner_can_create_a_user()
     {
-        (Guid Actor, Role Role, Department? Department, OperationsSubDepartment? Sub, Guid? Client)[] callers =
+        (Guid Actor, Role Role, Guid? Department, OperationsSubDepartment? Sub, Guid? Client)[] callers =
         [
-            (_finance, Role.Finance, Department.Finance, null, null),
-            (_technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical, null),
-            (_siteEngineer, Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical, null),
-            (_marketing, Role.MarketingSales, Department.Marketing, null, null),
-            (_hr, Role.Hr, Department.Hr, null, null),
+            (_finance, Role.Finance, WellKnownDepartments.FinanceId, null, null),
+            (_technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical, null),
+            (_siteEngineer, Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical, null),
+            (_marketing, Role.MarketingSales, null, null, null),
+            (_hr, Role.Hr, WellKnownDepartments.HrId, null, null),
             (_portalClient, Role.Client, null, null, _clientId),
         ];
 
-        foreach ((Guid actor, Role role, Department? department, OperationsSubDepartment? sub, Guid? client) in callers)
+        foreach ((Guid actor, Role role, Guid? department, OperationsSubDepartment? sub, Guid? client) in callers)
         {
             string userName = UniqueNames.Code("ac106b");
 
             HttpResponseMessage response = await CreateAsync(
-                actor, role, department, Body(userName, "Finance", department: "Finance"), sub, client);
+                actor, role, department, Body(userName, "Finance", department: WellKnownDepartments.FinanceId), sub, client);
 
             response.StatusCode.Should().Be(HttpStatusCode.Forbidden, $"{role} may not mint logins");
 
@@ -215,15 +216,15 @@ public sealed class CreateUserTests : IAsyncLifetime
     [Fact]
     public async Task An_hr_user_cannot_be_created_outside_hr_at_the_endpoint()
     {
-        (string? Department, string? Sub)[] wrongPlacements =
+        (Guid? Department, string? Sub)[] wrongPlacements =
         [
-            ("Finance", null),
-            ("Marketing", null),
-            ("Operations", "Administrative"),
+            (WellKnownDepartments.FinanceId, null),
+            (WellKnownDepartments.ProcurementId, null),
+            (WellKnownDepartments.OperationsId, "Administrative"),
             (null, null),
         ];
 
-        foreach ((string? department, string? sub) in wrongPlacements)
+        foreach ((Guid? department, string? sub) in wrongPlacements)
         {
             string userName = UniqueNames.Code("ac106k");
 
@@ -234,7 +235,7 @@ public sealed class CreateUserTests : IAsyncLifetime
 
             (await MessageKeyAsync(response)).Should().Be(
                 "errors.identity.hr_role_requires_hr_department",
-                $"an HR user in {department ?? "no department"} inherits that department's grants");
+                $"an HR user in {(department?.ToString() ?? "no department")} inherits that department's grants");
 
             (await UserExistsAsync(userName)).Should().BeFalse("and no user is created");
         }
@@ -249,10 +250,10 @@ public sealed class CreateUserTests : IAsyncLifetime
     {
         string userName = UniqueNames.Code("ac106k-ok");
 
-        (await CreateAsync(_owner, Role.Owner, null, Body(userName, "Hr", department: "Hr")))
+        (await CreateAsync(_owner, Role.Owner, null, Body(userName, "Hr", department: WellKnownDepartments.HrId)))
             .StatusCode.Should().Be(HttpStatusCode.Created);
 
-        (await ReadUserAsync(userName)).Department.Should().Be(Department.Hr);
+        (await ReadUserAsync(userName)).DepartmentId.Should().Be(WellKnownDepartments.HrId);
     }
 
     // ---- AC-106-D, E, F · the department, external-role and client rules at the endpoint ------
@@ -263,7 +264,7 @@ public sealed class CreateUserTests : IAsyncLifetime
         string userName = UniqueNames.Code("ac106d");
 
         HttpResponseMessage response = await CreateAsync(
-            _owner, Role.Owner, null, Body(userName, "SiteEngineer", department: "Operations"));
+            _owner, Role.Owner, null, Body(userName, "SiteEngineer", department: WellKnownDepartments.OperationsId));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await MessageKeyAsync(response)).Should().Be("errors.identity.operations_requires_sub_department");
@@ -278,7 +279,7 @@ public sealed class CreateUserTests : IAsyncLifetime
 
         HttpResponseMessage response = await CreateAsync(
             _owner, Role.Owner, null,
-            Body(userName, "MarketingSales", department: "Marketing", subDepartment: "Administrative"));
+            Body(userName, "MarketingSales", department: null, subDepartment: "Administrative"));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await MessageKeyAsync(response)).Should().Be("errors.identity.sub_department_only_for_operations");
@@ -297,7 +298,7 @@ public sealed class CreateUserTests : IAsyncLifetime
 
             HttpResponseMessage response = await CreateAsync(
                 _owner, Role.Owner, null,
-                Body(userName, role, department: "Hr", clientId: role == "Client" ? _clientId : null));
+                Body(userName, role, department: WellKnownDepartments.HrId, clientId: role == "Client" ? _clientId : null));
 
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             (await MessageKeyAsync(response)).Should().Be("errors.identity.external_role_cannot_hold_department");
@@ -319,7 +320,7 @@ public sealed class CreateUserTests : IAsyncLifetime
         string staff = UniqueNames.Code("ac106f-staff");
 
         HttpResponseMessage staffWithClient = await CreateAsync(
-            _owner, Role.Owner, null, Body(staff, "Finance", department: "Finance", clientId: _clientId));
+            _owner, Role.Owner, null, Body(staff, "Finance", department: WellKnownDepartments.FinanceId, clientId: _clientId));
 
         staffWithClient.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await MessageKeyAsync(staffWithClient)).Should().Be("errors.identity.non_client_user_cannot_carry_client");
@@ -336,7 +337,7 @@ public sealed class CreateUserTests : IAsyncLifetime
     {
         string userName = UniqueNames.Code("nabil");
 
-        (await CreateAsync(_owner, Role.Owner, null, Body(userName, "Finance", department: "Finance")))
+        (await CreateAsync(_owner, Role.Owner, null, Body(userName, "Finance", department: WellKnownDepartments.FinanceId)))
             .StatusCode.Should().Be(HttpStatusCode.Created);
 
         Guid firstId = (await ReadUserAsync(userName)).Id;
@@ -345,7 +346,7 @@ public sealed class CreateUserTests : IAsyncLifetime
         // uniqueness rule compares against that. ToUpperInvariant would compare the wrong string.
         HttpResponseMessage collision = await CreateAsync(
             _owner, Role.Owner, null,
-            Body(userName.ToUpperInvariant(), "Finance", department: "Finance", fullName: "Someone Else"));
+            Body(userName.ToUpperInvariant(), "Finance", department: WellKnownDepartments.FinanceId, fullName: "Someone Else"));
 #pragma warning restore CA1308
 
         collision.StatusCode.Should().Be(HttpStatusCode.Conflict);
@@ -367,7 +368,7 @@ public sealed class CreateUserTests : IAsyncLifetime
 
         (await CreateAsync(
                 _owner, Role.Owner, null,
-                Body(userName, "Finance", department: "Finance", password: "abcdefgh")))
+                Body(userName, "Finance", department: WellKnownDepartments.FinanceId, password: "abcdefgh")))
             .StatusCode.Should().Be(HttpStatusCode.Created);
 
         (await ReadUserAsync(userName)).MustChangePassword.Should().BeTrue();
@@ -380,7 +381,7 @@ public sealed class CreateUserTests : IAsyncLifetime
 
         HttpResponseMessage response = await CreateAsync(
             _owner, Role.Owner, null,
-            Body(userName, "Finance", department: "Finance", password: "abcdefg"));
+            Body(userName, "Finance", department: WellKnownDepartments.FinanceId, password: "abcdefg"));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await MessageKeyAsync(response)).Should().Be("errors.auth.password_too_short");
@@ -400,7 +401,7 @@ public sealed class CreateUserTests : IAsyncLifetime
     private static object Body(
         string userName,
         string role,
-        string? department = null,
+        Guid? department = null,
         string? subDepartment = null,
         Guid? clientId = null,
         string? password = null,
@@ -411,7 +412,7 @@ public sealed class CreateUserTests : IAsyncLifetime
             phone = UniqueNames.Phone().Entered,
             email = (string?)null,
             role,
-            department,
+            departmentId = department,
             operationsSubDepartment = subDepartment,
             clientId,
             temporaryPassword = password,
@@ -420,7 +421,7 @@ public sealed class CreateUserTests : IAsyncLifetime
     private async Task<HttpResponseMessage> CreateAsync(
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         object body,
         OperationsSubDepartment? actorSubDepartment = null,
         Guid? actorClientId = null)
@@ -513,11 +514,11 @@ public sealed class CreateUserTests : IAsyncLifetime
             UniqueNames.Code("USR-C1"), "عميل إنشاء المستخدمين", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
 
         User owner = MakeUser("usr-owner", Role.Owner);
-        User finance = MakeUser("usr-finance", Role.Finance, Department.Finance);
-        User technicalOffice = MakeUser("usr-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
-        User siteEngineer = MakeUser("usr-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
-        User marketing = MakeUser("usr-marketing", Role.MarketingSales, Department.Marketing);
-        User hr = MakeUser("usr-hr", Role.Hr, Department.Hr);
+        User finance = MakeUser("usr-finance", Role.Finance, WellKnownDepartments.FinanceId);
+        User technicalOffice = MakeUser("usr-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User siteEngineer = MakeUser("usr-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User marketing = MakeUser("usr-marketing", Role.MarketingSales, null);
+        User hr = MakeUser("usr-hr", Role.Hr, WellKnownDepartments.HrId);
         User portal = MakeUser("usr-portal", Role.Client, clientId: client.Id);
 
         context.Clients.Add(client);
@@ -538,7 +539,7 @@ public sealed class CreateUserTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null,
         Guid? clientId = null)
         => User.Create(

@@ -154,7 +154,7 @@ public sealed class CreateBabTests : IAsyncLifetime
             Content = JsonContent.Create(new { parentBabId = b }),
         };
 
-        await StampAsync(moveRequest, _technicalOffice, Role.TechnicalOffice, Department.Operations);
+        await StampAsync(moveRequest, _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId);
 
         HttpResponseMessage moveResponse = await _client.SendAsync(moveRequest, Ct);
 
@@ -167,7 +167,7 @@ public sealed class CreateBabTests : IAsyncLifetime
     [Fact]
     public async Task Only_the_technical_office_and_the_owner_may_create_a_bab()
     {
-        foreach ((Guid actor, Role role, Department? department) in RefusedActors())
+        foreach ((Guid actor, Role role, Guid? department) in RefusedActors())
         {
             (await CreateAsync(Body(UniqueNames.Code($"BAB-{role}")), actor, role, department))
                 .StatusCode.Should().Be(
@@ -211,22 +211,22 @@ public sealed class CreateBabTests : IAsyncLifetime
         defaultMarkup = markup,
     };
 
-    private IEnumerable<(Guid Actor, Role Role, Department? Department)> RefusedActors()
+    private IEnumerable<(Guid Actor, Role Role, Guid? Department)> RefusedActors()
     {
-        yield return (_finance, Role.Finance, Department.Finance);
-        yield return (_hr, Role.Hr, Department.Hr);
-        yield return (_siteEngineer, Role.SiteEngineer, Department.Operations);
-        yield return (_headOfDesign, Role.HeadOfDesign, Department.Operations);
-        yield return (_marketing, Role.MarketingSales, Department.Marketing);
+        yield return (_finance, Role.Finance, WellKnownDepartments.FinanceId);
+        yield return (_hr, Role.Hr, WellKnownDepartments.HrId);
+        yield return (_siteEngineer, Role.SiteEngineer, WellKnownDepartments.OperationsId);
+        yield return (_headOfDesign, Role.HeadOfDesign, WellKnownDepartments.OperationsId);
+        yield return (_marketing, Role.MarketingSales, null);
     }
 
-    private Task<HttpResponseMessage> CreateAsync(object body, Guid? actorId = null, Role? actorRole = null, Department? actorDepartment = null)
+    private Task<HttpResponseMessage> CreateAsync(object body, Guid? actorId = null, Role? actorRole = null, Guid? actorDepartment = null)
         => SendAsync(
             HttpMethod.Post,
             "/api/babs",
             actorId ?? _technicalOffice,
             actorRole ?? Role.TechnicalOffice,
-            actorDepartment ?? Department.Operations,
+            actorDepartment ?? WellKnownDepartments.OperationsId,
             body);
 
     private async Task<Guid> CreateBabDirectlyAsync(decimal markup = 0.11m)
@@ -243,7 +243,7 @@ public sealed class CreateBabTests : IAsyncLifetime
     }
 
     private async Task<HttpResponseMessage> SendAsync(
-        HttpMethod method, string route, Guid actorId, Role actorRole, Department? actorDepartment, object body)
+        HttpMethod method, string route, Guid actorId, Role actorRole, Guid? actorDepartment, object body)
     {
         using var request = new HttpRequestMessage(method, new Uri(route, UriKind.Relative))
         {
@@ -255,7 +255,7 @@ public sealed class CreateBabTests : IAsyncLifetime
         return await _client.SendAsync(request, Ct);
     }
 
-    private async Task StampAsync(HttpRequestMessage request, Guid actorId, Role actorRole, Department? actorDepartment)
+    private async Task StampAsync(HttpRequestMessage request, Guid actorId, Role actorRole, Guid? actorDepartment)
     {
         request.Headers.Add(TestAuthHandler.UserIdHeader, actorId.ToString());
         request.Headers.Add(TestAuthHandler.RoleHeader, actorRole.ToString());
@@ -294,14 +294,14 @@ public sealed class CreateBabTests : IAsyncLifetime
 
         User owner = MakeUser("crb-owner", Role.Owner);
         User technicalOffice = MakeUser(
-            "crb-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
-        User finance = MakeUser("crb-finance", Role.Finance, Department.Finance);
-        User hr = MakeUser("crb-hr", Role.Hr, Department.Hr);
+            "crb-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User finance = MakeUser("crb-finance", Role.Finance, WellKnownDepartments.FinanceId);
+        User hr = MakeUser("crb-hr", Role.Hr, WellKnownDepartments.HrId);
         User siteEngineer = MakeUser(
-            "crb-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "crb-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User headOfDesign = MakeUser(
-            "crb-design", Role.HeadOfDesign, Department.Operations, OperationsSubDepartment.Technical);
-        User marketing = MakeUser("crb-marketing", Role.MarketingSales, Department.Marketing);
+            "crb-design", Role.HeadOfDesign, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User marketing = MakeUser("crb-marketing", Role.MarketingSales, null);
 
         context.Users.AddRange(owner, technicalOffice, finance, hr, siteEngineer, headOfDesign, marketing);
 
@@ -317,7 +317,7 @@ public sealed class CreateBabTests : IAsyncLifetime
     }
 
     private static User MakeUser(
-        string userName, Role role, Department? department = null, OperationsSubDepartment? subDepartment = null)
+        string userName, Role role, Guid? department = null, OperationsSubDepartment? subDepartment = null)
         => User.Create(UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment).Value;
 
     private static DateTimeOffset Now => new(2026, 9, 11, 8, 0, 0, TimeSpan.Zero);

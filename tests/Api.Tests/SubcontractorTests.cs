@@ -56,7 +56,7 @@ public sealed class SubcontractorTests : IAsyncLifetime
         Guid bab = await CreateBabAsync();
 
         HttpResponseMessage response = await CreateRawAsync(
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             Body("مقاول الحفر", tradeBabId: bab));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -81,18 +81,18 @@ public sealed class SubcontractorTests : IAsyncLifetime
     public async Task Retention_is_zeroed_for_one_firm_and_no_other()
     {
         Guid firstId = await IdOfAsync(await CreateRawAsync(
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             Body("الأول")));
 
         Guid secondId = await IdOfAsync(await CreateRawAsync(
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             Body("الثاني")));
 
         Subcontractor first = await ReadAsync(firstId);
 
         HttpResponseMessage edited = await EditRawAsync(
             firstId,
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             EditBody(first, retentionRate: 0m));
 
         edited.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -110,18 +110,18 @@ public sealed class SubcontractorTests : IAsyncLifetime
         string phone = UniqueNames.Phone().Entered;
 
         Guid firstId = await IdOfAsync(await CreateRawAsync(
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             Body("الشركة الأولى", phone: phone)));
 
         HttpResponseMessage refused = await CreateRawAsync(
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             Body("الشركة الثانية", phone: phone));
 
         refused.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await MessageKeyAsync(refused)).Should().Be("errors.master.duplicate_phone_not_acknowledged");
 
         HttpResponseMessage proceeded = await CreateRawAsync(
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             Body("الشركة الثانية", phone: phone, acknowledged: true));
 
         proceeded.StatusCode.Should().Be(HttpStatusCode.Created, "D-139 §1 — warn, never block");
@@ -143,7 +143,7 @@ public sealed class SubcontractorTests : IAsyncLifetime
         string phone = UniqueNames.Phone().Entered;
 
         await CreateRawAsync(
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             Body("الأصلي", phone: phone));
 
         await using KaffDbContext before = _database.CreateBareContext();
@@ -151,7 +151,7 @@ public sealed class SubcontractorTests : IAsyncLifetime
         long auditBefore = await before.AuditRecords.LongCountAsync(Ct);
 
         HttpResponseMessage refused = await CreateRawAsync(
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             Body("محاولة", phone: phone));
 
         refused.StatusCode.Should().Be(HttpStatusCode.Conflict);
@@ -165,14 +165,14 @@ public sealed class SubcontractorTests : IAsyncLifetime
     public async Task Editing_a_subcontractor_without_changing_the_phone_does_not_warn()
     {
         Guid id = await IdOfAsync(await CreateRawAsync(
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             Body("شركة")));
 
         Subcontractor subcontractor = await ReadAsync(id);
 
         HttpResponseMessage edited = await EditRawAsync(
             id,
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             EditBody(subcontractor));
 
         edited.StatusCode.Should().Be(
@@ -186,7 +186,7 @@ public sealed class SubcontractorTests : IAsyncLifetime
         string bare = national[1..];
 
         await CreateRawAsync(
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             Body("شركة الرقم", phone: national));
 
         HttpResponseMessage check = await PhoneCheckAsync("+20 " + bare);
@@ -205,20 +205,20 @@ public sealed class SubcontractorTests : IAsyncLifetime
     {
         Guid bab = await CreateBabAsync();
         Guid seedId = await IdOfAsync(await CreateRawAsync(
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             Body("شركة محمية")));
 
         Subcontractor seed = await ReadAsync(seedId);
 
-        (Guid Actor, Role Role, Department? Department, OperationsSubDepartment? Sub)[] refused =
+        (Guid Actor, Role Role, Guid? Department, OperationsSubDepartment? Sub)[] refused =
         [
-            (_finance, Role.Finance, Department.Finance, null),
-            (_hr, Role.Hr, Department.Hr, null),
-            (_marketing, Role.MarketingSales, Department.Marketing, null),
-            (_siteEngineer, Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical),
+            (_finance, Role.Finance, WellKnownDepartments.FinanceId, null),
+            (_hr, Role.Hr, WellKnownDepartments.HrId, null),
+            (_marketing, Role.MarketingSales, null, null),
+            (_siteEngineer, Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical),
         ];
 
-        foreach ((Guid actor, Role role, Department? department, OperationsSubDepartment? sub) in refused)
+        foreach ((Guid actor, Role role, Guid? department, OperationsSubDepartment? sub) in refused)
         {
             (await CreateRawAsync(actor, role, department, sub, Body($"محاولة {role}", tradeBabId: bab)))
                 .StatusCode.Should().Be(HttpStatusCode.Forbidden, "{0} does not hold SubcontractorManage", role);
@@ -289,7 +289,7 @@ public sealed class SubcontractorTests : IAsyncLifetime
     public async Task Retention_rate_survives_a_read_then_write_round_trip()
     {
         Guid id = await IdOfAsync(await CreateRawAsync(
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             Body("شركة الجولة الكاملة")));
 
         Subcontractor seed = await ReadAsync(id);
@@ -298,7 +298,7 @@ public sealed class SubcontractorTests : IAsyncLifetime
 
         HttpResponseMessage edited = await EditRawAsync(
             id,
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             RawEditBody(seed, firstRate));
 
         edited.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -315,14 +315,14 @@ public sealed class SubcontractorTests : IAsyncLifetime
     public async Task Retention_rate_on_the_wire_is_the_fraction_in_both_directions()
     {
         Guid fivePercentId = await IdOfAsync(await CreateRawAsync(
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             RawCreateBody("شركة نص العشرة", "0.05")));
 
         (await ReadAsync(fivePercentId)).RetentionRate.Fraction.Should().Be(0.05m);
         (await RetentionRateStringAsync(await GetRawAsync(fivePercentId))).Should().Be("0.050000");
 
         Guid fiveHundredPercentId = await IdOfAsync(await CreateRawAsync(
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             RawCreateBody("شركة الخمسة الكاملة", "5")));
 
         (await ReadAsync(fiveHundredPercentId)).RetentionRate.Fraction.Should().Be(
@@ -333,7 +333,7 @@ public sealed class SubcontractorTests : IAsyncLifetime
     public async Task A_put_without_a_retention_rate_is_refused_not_zeroed()
     {
         Guid id = await IdOfAsync(await CreateRawAsync(
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             Body("شركة بلا نسبة استقطاع")));
 
         Subcontractor seed = await ReadAsync(id);
@@ -348,7 +348,7 @@ public sealed class SubcontractorTests : IAsyncLifetime
 
         HttpResponseMessage response = await EditRawAsync(
             id,
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             body);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -362,7 +362,7 @@ public sealed class SubcontractorTests : IAsyncLifetime
     public async Task A_negative_retention_rate_is_a_400_carrying_a_message_key()
     {
         HttpResponseMessage response = await CreateRawAsync(
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             RawCreateBody("شركة نسبة سالبة", "-0.05"));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -376,7 +376,7 @@ public sealed class SubcontractorTests : IAsyncLifetime
     {
         HttpResponseMessage response = await EditRawAsync(
             Guid.NewGuid(),
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             new { name = "لا يوجد", phone = UniqueNames.Phone().Entered, retentionRate = 5m, acknowledgedDuplicatePhone = false });
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -387,17 +387,17 @@ public sealed class SubcontractorTests : IAsyncLifetime
     public async Task Archiving_replaces_deletion_and_an_already_archived_firm_is_refused()
     {
         Guid id = await IdOfAsync(await CreateRawAsync(
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             Body("شركة تُؤرشف")));
 
         (await ArchiveRawAsync(
-                id, _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical))
+                id, _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         (await ReadAsync(id)).IsActive.Should().BeFalse();
 
         (await ArchiveRawAsync(
-                id, _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical))
+                id, _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical))
             .StatusCode.Should().Be(HttpStatusCode.Conflict, "already archived");
     }
 
@@ -422,17 +422,17 @@ public sealed class SubcontractorTests : IAsyncLifetime
     };
 
     private Task<HttpResponseMessage> CreateRawAsync(
-        Guid actorId, Role actorRole, Department? department, OperationsSubDepartment? sub, object body)
+        Guid actorId, Role actorRole, Guid? department, OperationsSubDepartment? sub, object body)
         => SendAsync(HttpMethod.Post, "/api/subcontractors", actorId, actorRole, department, sub, body);
 
     private Task<HttpResponseMessage> EditRawAsync(
-        Guid id, Guid actorId, Role actorRole, Department? department, OperationsSubDepartment? sub, object body)
+        Guid id, Guid actorId, Role actorRole, Guid? department, OperationsSubDepartment? sub, object body)
         => SendAsync(HttpMethod.Put, $"/api/subcontractors/{id}", actorId, actorRole, department, sub, body);
 
     private Task<HttpResponseMessage> GetRawAsync(Guid id)
         => SendAsync(
             HttpMethod.Get, $"/api/subcontractors/{id}",
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical, null);
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical, null);
 
     /// <summary>Reads <c>retentionRate</c> as a raw JSON string — no arithmetic, no reparse as decimal.</summary>
     private static async Task<string> RetentionRateStringAsync(HttpResponseMessage response)
@@ -464,13 +464,13 @@ public sealed class SubcontractorTests : IAsyncLifetime
     };
 
     private Task<HttpResponseMessage> ArchiveRawAsync(
-        Guid id, Guid actorId, Role actorRole, Department? department, OperationsSubDepartment? sub)
+        Guid id, Guid actorId, Role actorRole, Guid? department, OperationsSubDepartment? sub)
         => SendAsync(HttpMethod.Post, $"/api/subcontractors/{id}/archive", actorId, actorRole, department, sub, null);
 
     private async Task<HttpResponseMessage> PhoneCheckAsync(string phone)
         => await SendAsync(
             HttpMethod.Post, "/api/subcontractors/phone-check",
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical,
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical,
             new { phone });
 
     private async Task<HttpResponseMessage> SendAsync(
@@ -478,7 +478,7 @@ public sealed class SubcontractorTests : IAsyncLifetime
         string route,
         Guid actorId,
         Role actorRole,
-        Department? department,
+        Guid? department,
         OperationsSubDepartment? sub,
         object? body)
     {
@@ -557,12 +557,12 @@ public sealed class SubcontractorTests : IAsyncLifetime
 
         User owner = MakeUser("sct-owner", Role.Owner);
         User technicalOffice = MakeUser(
-            "sct-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
-        User finance = MakeUser("sct-finance", Role.Finance, Department.Finance);
-        User hr = MakeUser("sct-hr", Role.Hr, Department.Hr);
+            "sct-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User finance = MakeUser("sct-finance", Role.Finance, WellKnownDepartments.FinanceId);
+        User hr = MakeUser("sct-hr", Role.Hr, WellKnownDepartments.HrId);
         User siteEngineer = MakeUser(
-            "sct-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
-        User marketing = MakeUser("sct-marketing", Role.MarketingSales, Department.Marketing);
+            "sct-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User marketing = MakeUser("sct-marketing", Role.MarketingSales, null);
 
         context.Users.AddRange(owner, technicalOffice, finance, hr, siteEngineer, marketing);
 
@@ -577,7 +577,7 @@ public sealed class SubcontractorTests : IAsyncLifetime
     }
 
     private static User MakeUser(
-        string userName, Role role, Department? department = null, OperationsSubDepartment? subDepartment = null)
+        string userName, Role role, Guid? department = null, OperationsSubDepartment? subDepartment = null)
         => User.Create(UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment).Value;
 
     private static DateTimeOffset Now => new(2026, 9, 12, 8, 0, 0, TimeSpan.Zero);

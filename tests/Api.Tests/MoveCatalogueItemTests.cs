@@ -75,7 +75,7 @@ public sealed class MoveCatalogueItemTests : IAsyncLifetime
     {
         Guid item = await CreateItemAsync(_babA);
 
-        (await SendAsync(HttpMethod.Put, $"/api/catalogue-items/{item}/bab", _finance, Role.Finance, Department.Finance, new { babId = _babB }))
+        (await SendAsync(HttpMethod.Put, $"/api/catalogue-items/{item}/bab", _finance, Role.Finance, WellKnownDepartments.FinanceId, new { babId = _babB }))
             .StatusCode.Should().Be(HttpStatusCode.Forbidden, "Finance does not hold CatalogueManage");
 
         (await SendAsync(HttpMethod.Put, $"/api/catalogue-items/{item}/bab", _owner, Role.Owner, null, new { babId = _babB }))
@@ -129,7 +129,7 @@ public sealed class MoveCatalogueItemTests : IAsyncLifetime
 
     private Task<HttpResponseMessage> MoveAsync(Guid itemId, Guid babId)
         => SendAsync(
-            HttpMethod.Put, $"/api/catalogue-items/{itemId}/bab", _technicalOffice, Role.TechnicalOffice, Department.Operations,
+            HttpMethod.Put, $"/api/catalogue-items/{itemId}/bab", _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId,
             new { babId });
 
     private async Task<Guid> CreateItemAsync(Guid babId)
@@ -146,7 +146,7 @@ public sealed class MoveCatalogueItemTests : IAsyncLifetime
     }
 
     private async Task<HttpResponseMessage> SendAsync(
-        HttpMethod method, string route, Guid actorId, Role actorRole, Department? actorDepartment, object body)
+        HttpMethod method, string route, Guid actorId, Role actorRole, Guid? actorDepartment, object body)
     {
         using var request = new HttpRequestMessage(method, new Uri(route, UriKind.Relative))
         {
@@ -187,8 +187,8 @@ public sealed class MoveCatalogueItemTests : IAsyncLifetime
         Bab babB = Bab.Create(UniqueNames.Code("MVI-BAB-B"), "باب ب", "Bab B", Percentage.FromPercent(37m)).Value;
 
         User owner = MakeUser("mvi-owner", Role.Owner);
-        User technicalOffice = MakeUser("mvi-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
-        User finance = MakeUser("mvi-finance", Role.Finance, Department.Finance);
+        User technicalOffice = MakeUser("mvi-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User finance = MakeUser("mvi-finance", Role.Finance, WellKnownDepartments.FinanceId);
 
         context.Babs.AddRange(babA, babB);
         context.Users.AddRange(owner, technicalOffice, finance);
@@ -202,7 +202,7 @@ public sealed class MoveCatalogueItemTests : IAsyncLifetime
     }
 
     private static User MakeUser(
-        string userName, Role role, Department? department = null, OperationsSubDepartment? subDepartment = null)
+        string userName, Role role, Guid? department = null, OperationsSubDepartment? subDepartment = null)
         => User.Create(UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment).Value;
 
     private static DateTimeOffset Now => new(2026, 9, 11, 8, 0, 0, TimeSpan.Zero);

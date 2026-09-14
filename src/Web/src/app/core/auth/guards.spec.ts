@@ -48,7 +48,7 @@ describe('the permission guards resolve the session themselves', () => {
     userId: '11111111-1111-1111-1111-111111111111',
     displayName: 'نبيل',
     role: 'Owner',
-    department: null,
+    departmentId: null,
     operationsSubDepartment: null,
     mustChangePassword: false,
     // The company-wide permissions `GET /api/auth/me` returns for the Owner, narrowed to the one
@@ -66,7 +66,7 @@ describe('the permission guards resolve the session themselves', () => {
   const finance: Session = {
     ...owner,
     role: 'Finance',
-    department: 'Finance',
+    departmentId: '22222222-2222-2222-2222-222222222222',
     permissions: [],
   };
 

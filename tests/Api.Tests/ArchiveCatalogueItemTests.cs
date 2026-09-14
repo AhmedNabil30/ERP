@@ -69,7 +69,7 @@ public sealed class ArchiveCatalogueItemTests : IAsyncLifetime
 
         CatalogueItem beforeItem = await ReadAsync(id);
 
-        (await ArchiveAsync(id, _technicalOffice, Role.TechnicalOffice, Department.Operations))
+        (await ArchiveAsync(id, _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         CatalogueItem stored = await ReadAsync(id);
@@ -119,14 +119,14 @@ public sealed class ArchiveCatalogueItemTests : IAsyncLifetime
         Guid bab = await CreateBabAsync();
         (Guid id, _) = await CreateItemAsync(bab);
 
-        (await ArchiveAsync(id, _technicalOffice, Role.TechnicalOffice, Department.Operations))
+        (await ArchiveAsync(id, _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         await using KaffDbContext before = _database.CreateBareContext();
         long countBefore = await before.AuditRecords.LongCountAsync(candidate => candidate.EntityId == id, Ct);
 
         HttpResponseMessage again = await ArchiveAsync(
-            id, _technicalOffice, Role.TechnicalOffice, Department.Operations);
+            id, _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId);
 
         again.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
@@ -146,7 +146,7 @@ public sealed class ArchiveCatalogueItemTests : IAsyncLifetime
     public async Task Archiving_an_item_that_does_not_exist_says_so_in_a_translatable_way()
     {
         HttpResponseMessage response = await ArchiveAsync(
-            Guid.NewGuid(), _technicalOffice, Role.TechnicalOffice, Department.Operations);
+            Guid.NewGuid(), _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
@@ -225,7 +225,7 @@ public sealed class ArchiveCatalogueItemTests : IAsyncLifetime
         Guid bab = await CreateBabAsync();
         (Guid id, _) = await CreateItemAsync(bab);
 
-        foreach ((Guid actor, Role role, Department? department) in RefusedActors())
+        foreach ((Guid actor, Role role, Guid? department) in RefusedActors())
         {
             (await ArchiveAsync(id, actor, role, department))
                 .StatusCode.Should().Be(
@@ -258,13 +258,13 @@ public sealed class ArchiveCatalogueItemTests : IAsyncLifetime
 
     // ---- helpers ------------------------------------------------------------------------------
 
-    private IEnumerable<(Guid Actor, Role Role, Department? Department)> RefusedActors()
+    private IEnumerable<(Guid Actor, Role Role, Guid? Department)> RefusedActors()
     {
-        yield return (_finance, Role.Finance, Department.Finance);
-        yield return (_hr, Role.Hr, Department.Hr);
-        yield return (_siteEngineer, Role.SiteEngineer, Department.Operations);
-        yield return (_headOfDesign, Role.HeadOfDesign, Department.Operations);
-        yield return (_marketing, Role.MarketingSales, Department.Marketing);
+        yield return (_finance, Role.Finance, WellKnownDepartments.FinanceId);
+        yield return (_hr, Role.Hr, WellKnownDepartments.HrId);
+        yield return (_siteEngineer, Role.SiteEngineer, WellKnownDepartments.OperationsId);
+        yield return (_headOfDesign, Role.HeadOfDesign, WellKnownDepartments.OperationsId);
+        yield return (_marketing, Role.MarketingSales, null);
     }
 
     private async Task<Guid> CreateBabAsync()
@@ -297,7 +297,7 @@ public sealed class ArchiveCatalogueItemTests : IAsyncLifetime
             }),
         };
 
-        await StampAsync(request, _technicalOffice, Role.TechnicalOffice, Department.Operations, null);
+        await StampAsync(request, _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, null);
 
         HttpResponseMessage response = await _client.SendAsync(request, Ct);
 
@@ -309,7 +309,7 @@ public sealed class ArchiveCatalogueItemTests : IAsyncLifetime
     }
 
     private async Task<HttpResponseMessage> ArchiveAsync(
-        Guid itemId, Guid actorId, Role actorRole, Department? actorDepartment, Guid? actorClientId = null)
+        Guid itemId, Guid actorId, Role actorRole, Guid? actorDepartment, Guid? actorClientId = null)
     {
         using var request = new HttpRequestMessage(
             HttpMethod.Post, new Uri($"/api/catalogue-items/{itemId}/archive", UriKind.Relative));
@@ -325,7 +325,7 @@ public sealed class ArchiveCatalogueItemTests : IAsyncLifetime
             HttpMethod.Get,
             new Uri($"/api/catalogue-items?status={status}&search={Uri.EscapeDataString(search)}", UriKind.Relative));
 
-        await StampAsync(request, _technicalOffice, Role.TechnicalOffice, Department.Operations, null);
+        await StampAsync(request, _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, null);
 
         HttpResponseMessage response = await _client.SendAsync(request, Ct);
 
@@ -349,7 +349,7 @@ public sealed class ArchiveCatalogueItemTests : IAsyncLifetime
     }
 
     private async Task StampAsync(
-        HttpRequestMessage request, Guid actorId, Role actorRole, Department? actorDepartment, Guid? actorClientId)
+        HttpRequestMessage request, Guid actorId, Role actorRole, Guid? actorDepartment, Guid? actorClientId)
     {
         request.Headers.Add(TestAuthHandler.UserIdHeader, actorId.ToString());
         request.Headers.Add(TestAuthHandler.RoleHeader, actorRole.ToString());
@@ -400,14 +400,14 @@ public sealed class ArchiveCatalogueItemTests : IAsyncLifetime
 
         User owner = MakeUser("arci-owner", Role.Owner);
         User technicalOffice = MakeUser(
-            "arci-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
-        User finance = MakeUser("arci-finance", Role.Finance, Department.Finance);
-        User hr = MakeUser("arci-hr", Role.Hr, Department.Hr);
+            "arci-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User finance = MakeUser("arci-finance", Role.Finance, WellKnownDepartments.FinanceId);
+        User hr = MakeUser("arci-hr", Role.Hr, WellKnownDepartments.HrId);
         User siteEngineer = MakeUser(
-            "arci-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "arci-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User headOfDesign = MakeUser(
-            "arci-design", Role.HeadOfDesign, Department.Operations, OperationsSubDepartment.Technical);
-        User marketing = MakeUser("arci-marketing", Role.MarketingSales, Department.Marketing);
+            "arci-design", Role.HeadOfDesign, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User marketing = MakeUser("arci-marketing", Role.MarketingSales, null);
         User portal = MakeUser("arci-portal", Role.Client, clientId: company.Id);
 
         context.Clients.Add(company);
@@ -430,7 +430,7 @@ public sealed class ArchiveCatalogueItemTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null,
         Guid? clientId = null)
         => User.Create(

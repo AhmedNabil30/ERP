@@ -192,8 +192,10 @@ public sealed class DatabaseInitializer
             // IdentityConfigurations
             ["ck_users_client_scope"] =
                 "CHECK (((((role)::text = 'Client'::text) AND (client_id IS NOT NULL)) OR (((role)::text <> 'Client'::text) AND (client_id IS NULL))))",
+            // KAFF-321: department became master data (decisions.md D-162); the literal is now the
+            // fixed row id WellKnownDepartments.OperationsId names, not an enum text value.
             ["ck_users_operations_sub_department"] =
-                "CHECK (((((department)::text = 'Operations'::text) AND (operations_sub_department IS NOT NULL)) OR (((department)::text IS DISTINCT FROM 'Operations'::text) AND (operations_sub_department IS NULL))))",
+                "CHECK ((((department_id = '00000000-0000-0000-0000-000000000203'::uuid) AND (operations_sub_department IS NOT NULL)) OR ((department_id IS DISTINCT FROM '00000000-0000-0000-0000-000000000203'::uuid) AND (operations_sub_department IS NULL))))",
             ["ck_users_subcontractor_cannot_log_in"] =
                 "CHECK ((((role)::text <> 'Subcontractor'::text) OR (password_hash IS NULL)))",
             ["ck_project_assignments_revocation_complete"] =

@@ -55,7 +55,7 @@ public sealed class ListBabsTests : IAsyncLifetime
     {
         string code = await CreateBabAsync(codePrefix: "LST-HLD");
 
-        (await ListAsync(_technicalOffice, Role.TechnicalOffice, Department.Operations))
+        (await ListAsync(_technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId))
             .Select(bab => bab.Code).Should().Contain(code);
     }
 
@@ -64,7 +64,7 @@ public sealed class ListBabsTests : IAsyncLifetime
     [Fact]
     public async Task A_role_without_bab_manage_is_refused()
     {
-        HttpResponseMessage response = await SendAsync(_finance, Role.Finance, Department.Finance);
+        HttpResponseMessage response = await SendAsync(_finance, Role.Finance, WellKnownDepartments.FinanceId);
 
         response.StatusCode.Should().Be(
             HttpStatusCode.Forbidden,
@@ -154,7 +154,7 @@ public sealed class ListBabsTests : IAsyncLifetime
         return code;
     }
 
-    private async Task<IReadOnlyList<BabSummary>> ListAsync(Guid actorId, Role actorRole, Department? actorDepartment)
+    private async Task<IReadOnlyList<BabSummary>> ListAsync(Guid actorId, Role actorRole, Guid? actorDepartment)
     {
         HttpResponseMessage response = await SendAsync(actorId, actorRole, actorDepartment);
 
@@ -177,7 +177,7 @@ public sealed class ListBabsTests : IAsyncLifetime
         ];
     }
 
-    private async Task<HttpResponseMessage> SendAsync(Guid actorId, Role actorRole, Department? actorDepartment)
+    private async Task<HttpResponseMessage> SendAsync(Guid actorId, Role actorRole, Guid? actorDepartment)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, new Uri("/api/babs", UriKind.Relative));
 
@@ -209,8 +209,8 @@ public sealed class ListBabsTests : IAsyncLifetime
 
         User owner = MakeUser("lst-owner", Role.Owner);
         User technicalOffice = MakeUser(
-            "lst-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
-        User finance = MakeUser("lst-finance", Role.Finance, Department.Finance);
+            "lst-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User finance = MakeUser("lst-finance", Role.Finance, WellKnownDepartments.FinanceId);
 
         context.Users.AddRange(owner, technicalOffice, finance);
 
@@ -224,7 +224,7 @@ public sealed class ListBabsTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null)
         => User.Create(
             UniqueNames.Code(userName),

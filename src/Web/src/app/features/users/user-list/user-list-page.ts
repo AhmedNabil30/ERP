@@ -13,11 +13,8 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
-import {
-  departmentKey,
-  operationsSubDepartmentKey,
-  roleKey,
-} from '../../../core/i18n/enum-keys';
+import { DepartmentSummary, DepartmentsApi } from '../../../core/departments/departments.api';
+import { operationsSubDepartmentKey, roleKey } from '../../../core/i18n/enum-keys';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { UserSummary, UsersApi } from '../../../core/users/users.api';
@@ -73,15 +70,28 @@ const FILTERS: readonly UserListFilter[] = ['active', 'archived', 'all'];
 })
 export class UserListPage {
   private readonly api = inject(UsersApi);
+  private readonly departmentsApi = inject(DepartmentsApi);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly headerActions = inject(HeaderActionsService);
 
   protected readonly i18n = inject(I18nService);
   protected readonly roleKey = roleKey;
-  protected readonly departmentKey = departmentKey;
   protected readonly operationsSubDepartmentKey = operationsSubDepartmentKey;
   protected readonly filters = FILTERS;
+
+  /** KAFF-321 — department names are master data now, fetched once rather than an exhaustive switch. */
+  private readonly departments = signal<readonly DepartmentSummary[]>([]);
+
+  protected departmentLabel(departmentId: string): string | null {
+    const department = this.departments().find((candidate) => candidate.id === departmentId);
+
+    if (department === undefined) {
+      return null;
+    }
+
+    return this.i18n.locale() === 'en' ? department.nameEn : department.nameAr;
+  }
 
   /**
    * Grid columns for `kaff-table-row`: name (flexes) · role/department meta · username · phone.
@@ -134,6 +144,7 @@ export class UserListPage {
 
   constructor() {
     void this.reload();
+    void this.loadDepartments();
 
     effect(() => this.headerActions.set(this.createAction() ?? null));
     inject(DestroyRef).onDestroy(() => this.headerActions.set(null));
@@ -163,6 +174,16 @@ export class UserListPage {
         return 'users.filter.archived';
       case 'all':
         return 'users.filter.all';
+    }
+  }
+
+  private async loadDepartments(): Promise<void> {
+    try {
+      // 'all' — a leaver's row may still name an archived department (AC-321-E), and this list shows
+      // leavers too (D-049 ruling 5).
+      this.departments.set(await this.departmentsApi.list('all'));
+    } catch {
+      this.departments.set([]);
     }
   }
 

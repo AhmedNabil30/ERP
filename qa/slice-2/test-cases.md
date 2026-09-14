@@ -1,6 +1,10 @@
 ﻿# Slice 2 — test cases
 
-**Range allocated: `TC-2-001` … `TC-2-153`, plus `TC-2-000` as the non-case format template.**
+**Range allocated: `TC-2-001` … `TC-2-154`, plus `TC-2-000` as the non-case format template.**
+⛔ **Extended again, 2026-09-15 — `TC-2-154`, for `KAFF-321` (`AC-321-F`).** The other five criteria
+(`AC-321-A..E`) are covered by `tests/Domain.Tests/DepartmentTests.cs` and
+`tests/Api.Tests/DepartmentCrudTests.cs` already, per that story's own build note (`decisions.md`
+D-166); this closes the one gap the story text flagged — no QA scenario existed yet for this story.
 ⛔ **Extended again, 2026-09-12 — `TC-2-104` … `TC-2-153`, for `AC-204-K` and for `KAFF-209`/`210`/`211`/`212`,
 whose blocking questions (`Q29`, `Q70`–`Q73`) are now ruled — D-139, D-140, D-141, D-145 §1, D-146,
 D-147. `093`…`098` stays an unused gap inside the old range, unrelated to this extension.**
@@ -1467,6 +1471,29 @@ Given `S-030` at 390px in Arabic, when it renders, then direction is RTL, names,
 registration number are bidi-isolated, no string is a literal in either language, and the page body
 does not scroll horizontally.
 *Fails if:* the body scrolls horizontally.
+
+---
+
+# KAFF-321 · Department master data — dynamic, not an enum
+
+**TC-2-154 · an archived department can be unarchived and returns to the active list**
+`AC-321-F`, `AC-321-D` · P1 · Api, real PostgreSQL · D-162, D-166, Nabil's ruling 2026-09-15 (archive,
+never delete, for departments — decisions.md)
+Given a department with at least one active staff member assigned, when an admin sends `POST
+/api/departments/{departmentId}/archive`, then it is archived — `GET ?status=active` no longer lists
+it, `GET ?status=archived` does, and the staff assignment on the historical record is untouched
+(`AC-321-D`).
+And given that archived department, when an admin sends `POST /api/departments/{departmentId}/unarchive`,
+then it becomes active again, appears in `GET ?status=active`, and is once more a legal choice for a new
+staff assignment (`AC-321-F`).
+And given a department that is already active, when the same unarchive is sent for it, then it is
+refused with `errors.master.not_archived` and nothing changes.
+There is no `DELETE` route for a department — `Kaff.Api.Features.Departments.DeleteDepartment` shipped
+2026-09-14 and was removed 2026-09-15; `ArchiveClientTests.No_endpoint_in_the_application_deletes_anything`
+asserts zero `DELETE` routes exist anywhere in the application, departments included.
+*Fails if:* the archive or unarchive fails to move `IsActive`, either writes no audit record for the
+actor, the time and what changed, or a `DELETE` route for a department exists anywhere in the mapped
+application.
 
 ---
 

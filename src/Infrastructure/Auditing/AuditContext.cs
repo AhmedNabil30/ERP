@@ -131,7 +131,7 @@ public sealed class SystemCurrentUser : ICurrentUser
 
     public Role? Role => null;
 
-    public Department? Department => null;
+    public Guid? DepartmentId => null;
 
     public OperationsSubDepartment? OperationsSubDepartment => null;
 

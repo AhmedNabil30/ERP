@@ -16,8 +16,8 @@
 
           <dt>{{ i18n.t('profile.field.department') }}</dt>
           <dd data-testid="profile-department">
-            @if (session.department; as department) {
-              {{ i18n.t(departmentKey(department)) }}
+            @if (departmentLabel(); as label) {
+              <span dir="auto">{{ label }}</span>
               @if (session.operationsSubDepartment; as subDepartment) {
                 — {{ i18n.t(operationsSubDepartmentKey(subDepartment)) }}
               }

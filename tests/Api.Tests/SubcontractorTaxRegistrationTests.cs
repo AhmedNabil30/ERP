@@ -208,7 +208,7 @@ public sealed class SubcontractorTaxRegistrationTests : IAsyncLifetime
             }),
         };
 
-        await StampAsync(request, _technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
+        await StampAsync(request, _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
 
         HttpResponseMessage response = await _client.SendAsync(request, Ct);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -233,7 +233,7 @@ public sealed class SubcontractorTaxRegistrationTests : IAsyncLifetime
             }),
         };
 
-        await StampAsync(request, actorId, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
+        await StampAsync(request, actorId, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
 
         return await _client.SendAsync(request, Ct);
     }
@@ -262,13 +262,13 @@ public sealed class SubcontractorTaxRegistrationTests : IAsyncLifetime
         return await _client.SendAsync(request, Ct);
     }
 
-    private static Department? DepartmentOf(Role role) => role switch
+    private static Guid? DepartmentOf(Role role) => role switch
     {
         Role.Owner => null,
-        Role.Finance => Department.Finance,
-        Role.TechnicalOffice or Role.SiteEngineer => Department.Operations,
-        Role.Hr => Department.Hr,
-        Role.MarketingSales => Department.Marketing,
+        Role.Finance => WellKnownDepartments.FinanceId,
+        Role.TechnicalOffice or Role.SiteEngineer => WellKnownDepartments.OperationsId,
+        Role.Hr => WellKnownDepartments.HrId,
+        Role.MarketingSales => null,
         _ => null,
     };
 
@@ -276,7 +276,7 @@ public sealed class SubcontractorTaxRegistrationTests : IAsyncLifetime
         role is Role.TechnicalOffice or Role.SiteEngineer ? OperationsSubDepartment.Technical : null;
 
     private async Task StampAsync(
-        HttpRequestMessage request, Guid actorId, Role actorRole, Department? department, OperationsSubDepartment? sub)
+        HttpRequestMessage request, Guid actorId, Role actorRole, Guid? department, OperationsSubDepartment? sub)
     {
         request.Headers.Add(TestAuthHandler.UserIdHeader, actorId.ToString());
         request.Headers.Add(TestAuthHandler.RoleHeader, actorRole.ToString());
@@ -316,12 +316,12 @@ public sealed class SubcontractorTaxRegistrationTests : IAsyncLifetime
 
         User owner = MakeUser("sctax-owner", Role.Owner);
         User technicalOffice = MakeUser(
-            "sctax-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
-        User finance = MakeUser("sctax-finance", Role.Finance, Department.Finance);
-        User hr = MakeUser("sctax-hr", Role.Hr, Department.Hr);
-        User marketing = MakeUser("sctax-marketing", Role.MarketingSales, Department.Marketing);
+            "sctax-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User finance = MakeUser("sctax-finance", Role.Finance, WellKnownDepartments.FinanceId);
+        User hr = MakeUser("sctax-hr", Role.Hr, WellKnownDepartments.HrId);
+        User marketing = MakeUser("sctax-marketing", Role.MarketingSales, null);
         User siteEngineer = MakeUser(
-            "sctax-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "sctax-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
 
         context.Users.AddRange(owner, technicalOffice, finance, hr, marketing, siteEngineer);
 
@@ -336,7 +336,7 @@ public sealed class SubcontractorTaxRegistrationTests : IAsyncLifetime
     }
 
     private static User MakeUser(
-        string userName, Role role, Department? department = null, OperationsSubDepartment? subDepartment = null)
+        string userName, Role role, Guid? department = null, OperationsSubDepartment? subDepartment = null)
         => User.Create(UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment).Value;
 
     private static DateTimeOffset Now => new(2026, 9, 12, 8, 0, 0, TimeSpan.Zero);

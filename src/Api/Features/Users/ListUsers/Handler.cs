@@ -25,7 +25,7 @@ internal static class Handler
                 user.FullName,
                 user.PhoneEntered,
                 user.Role,
-                user.Department,
+                user.DepartmentId,
                 user.OperationsSubDepartment,
                 user.IsActive,
                 // The names a role change or a deactivation would revoke, from the same predicate both

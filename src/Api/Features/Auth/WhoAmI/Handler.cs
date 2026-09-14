@@ -69,7 +69,7 @@ internal static class Handler
         var subject = new PermissionSubject(
             user.Id,
             user.Role,
-            user.Department,
+            user.DepartmentId,
             user.OperationsSubDepartment,
             user.ClientId,
             user.FullName,
@@ -96,7 +96,7 @@ internal static class Handler
             user.Id,
             user.FullName,
             user.Role,
-            user.Department,
+            user.DepartmentId,
             user.OperationsSubDepartment,
             user.MustChangePassword,
             permissions,

@@ -40,6 +40,7 @@ const NAV_ROWS: readonly NavRow[] = [
   { permission: 'SupplierManage', path: '/suppliers', labelKey: 'nav.suppliers', group: 'core', icon: 'suppliers' },
   { permission: 'ClientManage', path: '/clients', labelKey: 'nav.clients', group: 'core', icon: 'clients' },
   { permission: 'UserManage', path: '/users', labelKey: 'nav.users', group: 'admin', icon: 'users' },
+  { permission: 'DepartmentManage', path: '/settings/departments', labelKey: 'nav.departments', group: 'admin', icon: 'departments' },
   { permission: 'AuditRead', path: '/audit', labelKey: 'nav.audit', group: 'admin', icon: 'audit' },
 ];
 

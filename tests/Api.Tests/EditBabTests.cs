@@ -97,7 +97,7 @@ public sealed class EditBabTests : IAsyncLifetime
     {
         Guid id = await CreateBabAsync();
 
-        (await SendAsync(HttpMethod.Put, $"/api/babs/{id}", _finance, Role.Finance, Department.Finance, Body("باب", "Bab", 0.23m)))
+        (await SendAsync(HttpMethod.Put, $"/api/babs/{id}", _finance, Role.Finance, WellKnownDepartments.FinanceId, Body("باب", "Bab", 0.23m)))
             .StatusCode.Should().Be(HttpStatusCode.Forbidden, "Finance does not hold BabManage");
 
         (await SendAsync(HttpMethod.Put, $"/api/babs/{id}", _owner, Role.Owner, null, Body("باب", "Bab", 0.23m)))
@@ -109,7 +109,7 @@ public sealed class EditBabTests : IAsyncLifetime
     private static object Body(string nameAr, string nameEn, decimal markup) => new { nameAr, nameEn, defaultMarkup = markup };
 
     private Task<HttpResponseMessage> EditAsync(Guid id, string nameAr, string nameEn, decimal markup)
-        => SendAsync(HttpMethod.Put, $"/api/babs/{id}", _technicalOffice, Role.TechnicalOffice, Department.Operations, Body(nameAr, nameEn, markup));
+        => SendAsync(HttpMethod.Put, $"/api/babs/{id}", _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, Body(nameAr, nameEn, markup));
 
     private async Task<Guid> CreateBabAsync(decimal markup = 0.11m)
     {
@@ -124,7 +124,7 @@ public sealed class EditBabTests : IAsyncLifetime
     }
 
     private async Task<HttpResponseMessage> SendAsync(
-        HttpMethod method, string route, Guid actorId, Role actorRole, Department? actorDepartment, object body)
+        HttpMethod method, string route, Guid actorId, Role actorRole, Guid? actorDepartment, object body)
     {
         using var request = new HttpRequestMessage(method, new Uri(route, UriKind.Relative))
         {
@@ -159,8 +159,8 @@ public sealed class EditBabTests : IAsyncLifetime
         await using KaffDbContext context = _database.CreateContext();
 
         User owner = MakeUser("edb-owner", Role.Owner);
-        User technicalOffice = MakeUser("edb-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
-        User finance = MakeUser("edb-finance", Role.Finance, Department.Finance);
+        User technicalOffice = MakeUser("edb-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User finance = MakeUser("edb-finance", Role.Finance, WellKnownDepartments.FinanceId);
 
         context.Users.AddRange(owner, technicalOffice, finance);
         await context.SaveChangesAsync(Ct);
@@ -171,7 +171,7 @@ public sealed class EditBabTests : IAsyncLifetime
     }
 
     private static User MakeUser(
-        string userName, Role role, Department? department = null, OperationsSubDepartment? subDepartment = null)
+        string userName, Role role, Guid? department = null, OperationsSubDepartment? subDepartment = null)
         => User.Create(UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment).Value;
 
     private static DateTimeOffset Now => new(2026, 9, 11, 8, 0, 0, TimeSpan.Zero);

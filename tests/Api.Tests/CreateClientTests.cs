@@ -70,7 +70,7 @@ public sealed class CreateClientTests : IAsyncLifetime
     public async Task Marketing_registers_a_client_and_the_trail_names_the_operator()
     {
         HttpResponseMessage response = await RegisterAsync(
-            _marketing, Role.MarketingSales, Department.Marketing, Body("شركة النور للمقاولات"));
+            _marketing, Role.MarketingSales, null, Body("شركة النور للمقاولات"));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
@@ -121,10 +121,10 @@ public sealed class CreateClientTests : IAsyncLifetime
     public async Task The_next_client_registered_takes_the_next_code_in_the_sequence()
     {
         Client first = await ReadClientAsync(await IdOfAsync(
-            await RegisterAsync(_marketing, Role.MarketingSales, Department.Marketing, Body("عميل التسلسل الأول"))));
+            await RegisterAsync(_marketing, Role.MarketingSales, null, Body("عميل التسلسل الأول"))));
 
         Client second = await ReadClientAsync(await IdOfAsync(
-            await RegisterAsync(_marketing, Role.MarketingSales, Department.Marketing, Body("عميل التسلسل الثاني"))));
+            await RegisterAsync(_marketing, Role.MarketingSales, null, Body("عميل التسلسل الثاني"))));
 
         first.Code.Should().MatchRegex(CodeShape);
         second.Code.Should().MatchRegex(CodeShape);
@@ -158,7 +158,7 @@ public sealed class CreateClientTests : IAsyncLifetime
         HttpResponseMessage response = await RegisterAsync(
             _marketing,
             Role.MarketingSales,
-            Department.Marketing,
+            null,
             new
             {
                 code = "C-99999",
@@ -186,13 +186,13 @@ public sealed class CreateClientTests : IAsyncLifetime
         string bare = national[1..];
 
         (await RegisterAsync(
-                _marketing, Role.MarketingSales, Department.Marketing, Body(Name, phone: national)))
+                _marketing, Role.MarketingSales, null, Body(Name, phone: national)))
             .StatusCode.Should().Be(HttpStatusCode.Created);
 
         foreach (string typed in new[] { national, "+20 " + bare, "0020 " + bare })
         {
             IReadOnlyList<PhoneMatch> matches = await CheckAsync(
-                _marketing, Role.MarketingSales, Department.Marketing, typed);
+                _marketing, Role.MarketingSales, null, typed);
 
             matches.Should().ContainSingle(
                 "the match runs on the normalised phone, so +20 10…, 0020 10… and 010… are one "
@@ -209,10 +209,10 @@ public sealed class CreateClientTests : IAsyncLifetime
         string phone = UniqueNames.Phone().Entered;
 
         Guid firstId = await IdOfAsync(await RegisterAsync(
-            _marketing, Role.MarketingSales, Department.Marketing, Body("العميل الأصلي", phone: phone)));
+            _marketing, Role.MarketingSales, null, Body("العميل الأصلي", phone: phone)));
 
         HttpResponseMessage asked = await RegisterAsync(
-            _marketing, Role.MarketingSales, Department.Marketing, Body("المدير التنفيذي", phone: phone));
+            _marketing, Role.MarketingSales, null, Body("المدير التنفيذي", phone: phone));
 
         asked.StatusCode.Should().Be(
             HttpStatusCode.Conflict,
@@ -224,7 +224,7 @@ public sealed class CreateClientTests : IAsyncLifetime
         HttpResponseMessage proceeded = await RegisterAsync(
             _marketing,
             Role.MarketingSales,
-            Department.Marketing,
+            null,
             Body("المدير التنفيذي", phone: phone, acknowledged: true));
 
         proceeded.StatusCode.Should().Be(
@@ -249,12 +249,12 @@ public sealed class CreateClientTests : IAsyncLifetime
         string phone = UniqueNames.Phone().Entered;
 
         Guid matchedId = await IdOfAsync(await RegisterAsync(
-            _marketing, Role.MarketingSales, Department.Marketing, Body("العميل المطابق", phone: phone)));
+            _marketing, Role.MarketingSales, null, Body("العميل المطابق", phone: phone)));
 
         Guid createdId = await IdOfAsync(await RegisterAsync(
             _marketing,
             Role.MarketingSales,
-            Department.Marketing,
+            null,
             Body("العميل الثاني", phone: phone, acknowledged: true)));
 
         await using KaffDbContext reader = _database.CreateBareContext();
@@ -287,7 +287,7 @@ public sealed class CreateClientTests : IAsyncLifetime
         Guid id = await IdOfAsync(await RegisterAsync(
             _marketing,
             Role.MarketingSales,
-            Department.Marketing,
+            null,
             Body("عميل بلا تطابق", acknowledged: true)));
 
         await using KaffDbContext reader = _database.CreateBareContext();
@@ -315,12 +315,12 @@ public sealed class CreateClientTests : IAsyncLifetime
         string phone = UniqueNames.Phone().Entered;
 
         Guid archivedId = await IdOfAsync(await RegisterAsync(
-            _marketing, Role.MarketingSales, Department.Marketing, Body("عميل مؤرشف", phone: phone)));
+            _marketing, Role.MarketingSales, null, Body("عميل مؤرشف", phone: phone)));
 
         await ArchiveAsync(archivedId);
 
         IReadOnlyList<PhoneMatch> matches = await CheckAsync(
-            _marketing, Role.MarketingSales, Department.Marketing, phone);
+            _marketing, Role.MarketingSales, null, phone);
 
         matches.Should().ContainSingle(
             "an archived client is still a client, and spec.md §3 attaches a reopened opportunity to "
@@ -330,7 +330,7 @@ public sealed class CreateClientTests : IAsyncLifetime
         (await RegisterAsync(
                 _marketing,
                 Role.MarketingSales,
-                Department.Marketing,
+                null,
                 Body("عميل جديد بنفس الرقم", phone: phone, acknowledged: true)))
             .StatusCode.Should().Be(HttpStatusCode.Created, "the save is still permitted");
     }
@@ -381,7 +381,7 @@ public sealed class CreateClientTests : IAsyncLifetime
     [Fact]
     public async Task Only_marketing_and_the_owner_may_register_a_client_or_check_a_phone()
     {
-        foreach ((Guid actor, Role role, Department? department, OperationsSubDepartment? sub) in RefusedActors())
+        foreach ((Guid actor, Role role, Guid? department, OperationsSubDepartment? sub) in RefusedActors())
         {
             (await RegisterAsync(actor, role, department, Body($"محاولة {role}"), actorSubDepartment: sub))
                 .StatusCode.Should().Be(
@@ -402,13 +402,13 @@ public sealed class CreateClientTests : IAsyncLifetime
     }
 
     /// <summary>Every role that must be refused, portal client included.</summary>
-    private IEnumerable<(Guid Actor, Role Role, Department? Department, OperationsSubDepartment? Sub)> RefusedActors()
+    private IEnumerable<(Guid Actor, Role Role, Guid? Department, OperationsSubDepartment? Sub)> RefusedActors()
     {
-        yield return (_finance, Role.Finance, Department.Finance, null);
-        yield return (_hr, Role.Hr, Department.Hr, null);
-        yield return (_technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
-        yield return (_siteEngineer, Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
-        yield return (_headOfDesign, Role.HeadOfDesign, Department.Operations, OperationsSubDepartment.Technical);
+        yield return (_finance, Role.Finance, WellKnownDepartments.FinanceId, null);
+        yield return (_hr, Role.Hr, WellKnownDepartments.HrId, null);
+        yield return (_technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        yield return (_siteEngineer, Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        yield return (_headOfDesign, Role.HeadOfDesign, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
     }
 
     /// <summary>
@@ -522,7 +522,7 @@ public sealed class CreateClientTests : IAsyncLifetime
         HttpResponseMessage response = await RegisterAsync(
             _marketing,
             Role.MarketingSales,
-            Department.Marketing,
+            null,
             Body("عميل فرد", kind: ClientKind.Individual, taxRegistrationNumber: "123-456-789"));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -535,7 +535,7 @@ public sealed class CreateClientTests : IAsyncLifetime
         (await RegisterAsync(
                 _marketing,
                 Role.MarketingSales,
-                Department.Marketing,
+                null,
                 Body("عميل فرد بلا رقم ضريبي", kind: ClientKind.Individual)))
             .StatusCode.Should().Be(HttpStatusCode.Created, "an individual without one is ordinary");
     }
@@ -547,7 +547,7 @@ public sealed class CreateClientTests : IAsyncLifetime
         HttpResponseMessage response = await RegisterAsync(
             _marketing,
             Role.MarketingSales,
-            Department.Marketing,
+            null,
             new { name = "عميل بلا نوع", phone = UniqueNames.Phone().Entered });
 
         response.StatusCode.Should().Be(
@@ -586,7 +586,7 @@ public sealed class CreateClientTests : IAsyncLifetime
     private Task<HttpResponseMessage> RegisterAsync(
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         object body,
         OperationsSubDepartment? actorSubDepartment = null,
         Guid? actorClientId = null)
@@ -595,7 +595,7 @@ public sealed class CreateClientTests : IAsyncLifetime
     private async Task<IReadOnlyList<PhoneMatch>> CheckAsync(
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         string phone)
     {
         HttpResponseMessage response = await CheckResponseAsync(actorId, actorRole, actorDepartment, phone);
@@ -619,7 +619,7 @@ public sealed class CreateClientTests : IAsyncLifetime
     private Task<HttpResponseMessage> CheckResponseAsync(
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         string phone,
         Guid? actorClientId = null,
         OperationsSubDepartment? actorSubDepartment = null)
@@ -631,7 +631,7 @@ public sealed class CreateClientTests : IAsyncLifetime
         string route,
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         object body,
         OperationsSubDepartment? actorSubDepartment,
         Guid? actorClientId)
@@ -721,15 +721,15 @@ public sealed class CreateClientTests : IAsyncLifetime
             Now).Value;
 
         User owner = MakeUser("cli-owner", Role.Owner);
-        User marketing = MakeUser("cli-marketing", Role.MarketingSales, Department.Marketing);
-        User finance = MakeUser("cli-finance", Role.Finance, Department.Finance);
+        User marketing = MakeUser("cli-marketing", Role.MarketingSales, null);
+        User finance = MakeUser("cli-finance", Role.Finance, WellKnownDepartments.FinanceId);
         User technicalOffice = MakeUser(
-            "cli-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
-        User hr = MakeUser("cli-hr", Role.Hr, Department.Hr);
+            "cli-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User hr = MakeUser("cli-hr", Role.Hr, WellKnownDepartments.HrId);
         User siteEngineer = MakeUser(
-            "cli-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "cli-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User headOfDesign = MakeUser(
-            "cli-design", Role.HeadOfDesign, Department.Operations, OperationsSubDepartment.Technical);
+            "cli-design", Role.HeadOfDesign, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User portal = MakeUser("cli-portal", Role.Client, clientId: company.Id);
 
         context.Clients.Add(company);
@@ -752,7 +752,7 @@ public sealed class CreateClientTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null,
         Guid? clientId = null)
         => User.Create(

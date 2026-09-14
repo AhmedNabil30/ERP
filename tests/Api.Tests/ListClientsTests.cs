@@ -212,7 +212,7 @@ public sealed class ListClientsTests : IAsyncLifetime
     public async Task A_filter_this_list_does_not_know_is_refused_and_not_defaulted()
     {
         HttpResponseMessage response = await SendAsync(
-            _marketing, Role.MarketingSales, Department.Marketing, null, "archvied");
+            _marketing, Role.MarketingSales, null, null, "archvied");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
@@ -299,7 +299,7 @@ public sealed class ListClientsTests : IAsyncLifetime
         await SetNotesAsync(code, "تأخر في السداد مرتين");
 
         HttpResponseMessage response = await SendAsync(
-            _marketing, Role.MarketingSales, Department.Marketing, nonce, "active");
+            _marketing, Role.MarketingSales, null, nonce, "active");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -325,7 +325,7 @@ public sealed class ListClientsTests : IAsyncLifetime
     public async Task A_search_matching_nothing_is_an_empty_list_and_not_an_error()
     {
         HttpResponseMessage response = await SendAsync(
-            _marketing, Role.MarketingSales, Department.Marketing, UniqueNames.Code("NONE"), "active");
+            _marketing, Role.MarketingSales, null, UniqueNames.Code("NONE"), "active");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK, "nothing found is not something gone wrong");
 
@@ -341,15 +341,15 @@ public sealed class ListClientsTests : IAsyncLifetime
     [Fact]
     public async Task Only_marketing_and_the_owner_may_list_clients()
     {
-        (Guid Actor, Role Role, Department? Department, OperationsSubDepartment? Sub)[] refused =
+        (Guid Actor, Role Role, Guid? Department, OperationsSubDepartment? Sub)[] refused =
         [
-            (_finance, Role.Finance, Department.Finance, null),
-            (_technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical),
-            (_hr, Role.Hr, Department.Hr, null),
-            (_siteEngineer, Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical),
+            (_finance, Role.Finance, WellKnownDepartments.FinanceId, null),
+            (_technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical),
+            (_hr, Role.Hr, WellKnownDepartments.HrId, null),
+            (_siteEngineer, Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical),
         ];
 
-        foreach ((Guid actor, Role role, Department? department, OperationsSubDepartment? sub) in refused)
+        foreach ((Guid actor, Role role, Guid? department, OperationsSubDepartment? sub) in refused)
         {
             (await SendAsync(actor, role, department, null, "active", actorSubDepartment: sub))
                 .StatusCode.Should().Be(
@@ -378,7 +378,7 @@ public sealed class ListClientsTests : IAsyncLifetime
             }),
         };
 
-        await StampAsync(request, _marketing, Role.MarketingSales, Department.Marketing, null, null);
+        await StampAsync(request, _marketing, Role.MarketingSales, null, null, null);
 
         HttpResponseMessage response = await _client.SendAsync(request, Ct);
 
@@ -392,7 +392,7 @@ public sealed class ListClientsTests : IAsyncLifetime
     private async Task<IReadOnlyList<ClientSummary>> SearchAsync(string? search, string status = "active")
     {
         HttpResponseMessage response = await SendAsync(
-            _marketing, Role.MarketingSales, Department.Marketing, search, status);
+            _marketing, Role.MarketingSales, null, search, status);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -413,7 +413,7 @@ public sealed class ListClientsTests : IAsyncLifetime
     private async Task<HttpResponseMessage> SendAsync(
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         string? search,
         string status,
         OperationsSubDepartment? actorSubDepartment = null,
@@ -437,7 +437,7 @@ public sealed class ListClientsTests : IAsyncLifetime
         HttpRequestMessage request,
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         OperationsSubDepartment? actorSubDepartment,
         Guid? actorClientId)
     {
@@ -505,13 +505,13 @@ public sealed class ListClientsTests : IAsyncLifetime
             Now).Value;
 
         User owner = MakeUser("lst-owner", Role.Owner);
-        User marketing = MakeUser("lst-marketing", Role.MarketingSales, Department.Marketing);
-        User finance = MakeUser("lst-finance", Role.Finance, Department.Finance);
+        User marketing = MakeUser("lst-marketing", Role.MarketingSales, null);
+        User finance = MakeUser("lst-finance", Role.Finance, WellKnownDepartments.FinanceId);
         User technicalOffice = MakeUser(
-            "lst-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
-        User hr = MakeUser("lst-hr", Role.Hr, Department.Hr);
+            "lst-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User hr = MakeUser("lst-hr", Role.Hr, WellKnownDepartments.HrId);
         User siteEngineer = MakeUser(
-            "lst-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "lst-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User portal = MakeUser("lst-portal", Role.Client, clientId: company.Id);
 
         context.Clients.Add(company);
@@ -532,7 +532,7 @@ public sealed class ListClientsTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null,
         Guid? clientId = null)
         => User.Create(

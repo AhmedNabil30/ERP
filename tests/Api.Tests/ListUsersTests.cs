@@ -155,7 +155,7 @@ public sealed class ListUsersTests : IAsyncLifetime
     [Fact]
     public async Task Every_role_but_the_owner_is_refused_and_no_username_reaches_the_body()
     {
-        foreach ((Guid actor, Role role, Department? department, OperationsSubDepartment? sub, Guid? client) in RefusedActors())
+        foreach ((Guid actor, Role role, Guid? department, OperationsSubDepartment? sub, Guid? client) in RefusedActors())
         {
             HttpResponseMessage response = await SendAsync(actor, role, department, sub, client);
 
@@ -171,14 +171,14 @@ public sealed class ListUsersTests : IAsyncLifetime
     }
 
     /// <summary>Every role that must be refused this endpoint.</summary>
-    private IEnumerable<(Guid Actor, Role Role, Department? Department, OperationsSubDepartment? Sub, Guid? Client)> RefusedActors()
+    private IEnumerable<(Guid Actor, Role Role, Guid? Department, OperationsSubDepartment? Sub, Guid? Client)> RefusedActors()
     {
-        yield return (_finance, Role.Finance, Department.Finance, null, null);
-        yield return (_technicalOffice, Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical, null);
-        yield return (_siteEngineer, Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical, null);
+        yield return (_finance, Role.Finance, WellKnownDepartments.FinanceId, null, null);
+        yield return (_technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical, null);
+        yield return (_siteEngineer, Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical, null);
         yield return (_headOfDesign, Role.HeadOfDesign, null, null, null);
-        yield return (_marketing, Role.MarketingSales, Department.Marketing, null, null);
-        yield return (_hr, Role.Hr, Department.Hr, null, null);
+        yield return (_marketing, Role.MarketingSales, null, null, null);
+        yield return (_hr, Role.Hr, WellKnownDepartments.HrId, null, null);
         yield return (_portalClient, Role.Client, null, null, _portalClientCompany);
     }
 
@@ -239,7 +239,7 @@ public sealed class ListUsersTests : IAsyncLifetime
                     "FullName",
                     "Phone",
                     "Role",
-                    "Department",
+                    "DepartmentId",
                     "OperationsSubDepartment",
                     "IsActive",
                     "ActiveProjectNames",
@@ -307,7 +307,7 @@ public sealed class ListUsersTests : IAsyncLifetime
     private async Task<HttpResponseMessage> SendAsync(
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         OperationsSubDepartment? actorSubDepartment,
         Guid? actorClientId)
     {
@@ -368,18 +368,18 @@ public sealed class ListUsersTests : IAsyncLifetime
             UniqueNames.Code("LSU-PR"), _revokedProjectName, company.Id, ContractType.LumpSum, Now).Value;
 
         User owner = MakeUser("lsu-owner", Role.Owner);
-        User finance = MakeUser("lsu-finance", Role.Finance, Department.Finance);
+        User finance = MakeUser("lsu-finance", Role.Finance, WellKnownDepartments.FinanceId);
         User technicalOffice = MakeUser(
-            "lsu-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
+            "lsu-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User siteEngineer = MakeUser(
-            "lsu-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "lsu-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User headOfDesign = MakeUser("lsu-design", Role.HeadOfDesign);
-        User marketing = MakeUser("lsu-marketing", Role.MarketingSales, Department.Marketing);
-        User hr = MakeUser("lsu-hr", Role.Hr, Department.Hr);
+        User marketing = MakeUser("lsu-marketing", Role.MarketingSales, null);
+        User hr = MakeUser("lsu-hr", Role.Hr, WellKnownDepartments.HrId);
         User portal = MakeUser("lsu-portal", Role.Client, clientId: company.Id);
 
         User staffed = MakeUser(
-            "lsu-staffed", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "lsu-staffed", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
 
         // Every account the refusal test stamps needs a security stamp the handler will accept, and
         // the hash is what makes No_password_hash_or_security_stamp_reaches_the_wire non-vacuous.
@@ -418,7 +418,7 @@ public sealed class ListUsersTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null,
         Guid? clientId = null)
         => User.Create(

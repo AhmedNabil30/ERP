@@ -60,7 +60,7 @@ public sealed class GetEmployeeTests : IAsyncLifetime
             nationalId: "29001011234567", department: "Finance", jobTitle: "مهندس موقع",
             hiredOn: new DateOnly(2024, 3, 1));
 
-        HttpResponseMessage getResponse = await GetAsync(id, _hr, Role.Hr, Department.Hr);
+        HttpResponseMessage getResponse = await GetAsync(id, _hr, Role.Hr, WellKnownDepartments.HrId);
         getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         using JsonDocument loaded = JsonDocument.Parse(await getResponse.Content.ReadAsStringAsync(Ct));
@@ -72,7 +72,7 @@ public sealed class GetEmployeeTests : IAsyncLifetime
 
         // The edit form round-trips the loaded body, changing only the name.
         HttpResponseMessage putResponse = await SendAsync(
-            HttpMethod.Put, $"/api/employees/{id}", _hr, Role.Hr, Department.Hr,
+            HttpMethod.Put, $"/api/employees/{id}", _hr, Role.Hr, WellKnownDepartments.HrId,
             new
             {
                 fullName = "New Name",
@@ -106,7 +106,7 @@ public sealed class GetEmployeeTests : IAsyncLifetime
     {
         (Guid id, _) = await CreateEmployeeWithStaffDetailsAsync(null, null, null, null);
 
-        foreach ((Guid actorId, Role role, Department? department, Guid? clientId) in RefusedActors())
+        foreach ((Guid actorId, Role role, Guid? department, Guid? clientId) in RefusedActors())
         {
             HttpResponseMessage refused = await GetAsync(id, actorId, role, department, clientId);
 
@@ -118,13 +118,13 @@ public sealed class GetEmployeeTests : IAsyncLifetime
             HttpStatusCode.OK, "the Owner holds every company-wide row — decisions.md D-129 §1");
     }
 
-    private IEnumerable<(Guid ActorId, Role Role, Department? Department, Guid? ClientId)> RefusedActors()
+    private IEnumerable<(Guid ActorId, Role Role, Guid? Department, Guid? ClientId)> RefusedActors()
     {
-        yield return (_finance, Role.Finance, Department.Finance, null);
-        yield return (_marketing, Role.MarketingSales, Department.Marketing, null);
-        yield return (_siteEngineer, Role.SiteEngineer, Department.Operations, null);
-        yield return (_technicalOffice, Role.TechnicalOffice, Department.Operations, null);
-        yield return (_headOfDesign, Role.HeadOfDesign, Department.Operations, null);
+        yield return (_finance, Role.Finance, WellKnownDepartments.FinanceId, null);
+        yield return (_marketing, Role.MarketingSales, null, null);
+        yield return (_siteEngineer, Role.SiteEngineer, WellKnownDepartments.OperationsId, null);
+        yield return (_technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, null);
+        yield return (_headOfDesign, Role.HeadOfDesign, WellKnownDepartments.OperationsId, null);
         yield return (_portalClient, Role.Client, null, _portalClientCompany);
     }
 
@@ -133,7 +133,7 @@ public sealed class GetEmployeeTests : IAsyncLifetime
     [Fact]
     public async Task An_unknown_id_says_so_in_a_translatable_way()
     {
-        HttpResponseMessage response = await GetAsync(Guid.NewGuid(), _hr, Role.Hr, Department.Hr);
+        HttpResponseMessage response = await GetAsync(Guid.NewGuid(), _hr, Role.Hr, WellKnownDepartments.HrId);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
@@ -152,7 +152,7 @@ public sealed class GetEmployeeTests : IAsyncLifetime
         await using KaffDbContext before = _database.CreateBareContext();
         long countBefore = await before.AuditRecords.LongCountAsync(candidate => candidate.EntityId == id, Ct);
 
-        (await GetAsync(id, _hr, Role.Hr, Department.Hr)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await GetAsync(id, _hr, Role.Hr, WellKnownDepartments.HrId)).StatusCode.Should().Be(HttpStatusCode.OK);
 
         await using KaffDbContext after = _database.CreateBareContext();
         long countAfter = await after.AuditRecords.LongCountAsync(candidate => candidate.EntityId == id, Ct);
@@ -184,7 +184,7 @@ public sealed class GetEmployeeTests : IAsyncLifetime
             }),
         };
 
-        await StampAsync(request, _hr, Role.Hr, Department.Hr, null);
+        await StampAsync(request, _hr, Role.Hr, WellKnownDepartments.HrId, null);
 
         HttpResponseMessage response = await _client.SendAsync(request, Ct);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -195,7 +195,7 @@ public sealed class GetEmployeeTests : IAsyncLifetime
     }
 
     private async Task<HttpResponseMessage> GetAsync(
-        Guid employeeId, Guid actorId, Role actorRole, Department? actorDepartment, Guid? actorClientId = null)
+        Guid employeeId, Guid actorId, Role actorRole, Guid? actorDepartment, Guid? actorClientId = null)
     {
         using var request = new HttpRequestMessage(
             HttpMethod.Get, new Uri($"/api/employees/{employeeId}", UriKind.Relative));
@@ -206,7 +206,7 @@ public sealed class GetEmployeeTests : IAsyncLifetime
     }
 
     private async Task<HttpResponseMessage> SendAsync(
-        HttpMethod method, string route, Guid actorId, Role actorRole, Department? actorDepartment, object body)
+        HttpMethod method, string route, Guid actorId, Role actorRole, Guid? actorDepartment, object body)
     {
         using var request = new HttpRequestMessage(method, new Uri(route, UriKind.Relative))
         {
@@ -222,7 +222,7 @@ public sealed class GetEmployeeTests : IAsyncLifetime
         HttpRequestMessage request,
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         Guid? actorClientId)
     {
         request.Headers.Add(TestAuthHandler.UserIdHeader, actorId.ToString());
@@ -258,15 +258,15 @@ public sealed class GetEmployeeTests : IAsyncLifetime
             UniqueNames.Code("GE-C1"), "عميل بوابة الموظفين", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
 
         User owner = MakeUser("ge-owner", Role.Owner);
-        User hr = MakeUser("ge-hr", Role.Hr, Department.Hr);
-        User finance = MakeUser("ge-finance", Role.Finance, Department.Finance);
-        User marketing = MakeUser("ge-marketing", Role.MarketingSales, Department.Marketing);
+        User hr = MakeUser("ge-hr", Role.Hr, WellKnownDepartments.HrId);
+        User finance = MakeUser("ge-finance", Role.Finance, WellKnownDepartments.FinanceId);
+        User marketing = MakeUser("ge-marketing", Role.MarketingSales, null);
         User siteEngineer = MakeUser(
-            "ge-siteeng", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "ge-siteeng", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User technicalOffice = MakeUser(
-            "ge-techoffice", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
+            "ge-techoffice", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User headOfDesign = MakeUser(
-            "ge-headdesign", Role.HeadOfDesign, Department.Operations, OperationsSubDepartment.Technical);
+            "ge-headdesign", Role.HeadOfDesign, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User portal = MakeUser("ge-portal", Role.Client, clientId: company.Id);
 
         context.Clients.Add(company);
@@ -289,7 +289,7 @@ public sealed class GetEmployeeTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null,
         Guid? clientId = null)
         => User.Create(

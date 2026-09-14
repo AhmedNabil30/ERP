@@ -1,10 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService, ProjectEntry, Session, TeamProjectEntry } from '../../core/auth/auth.service';
+import { DepartmentSummary, DepartmentsApi } from '../../core/departments/departments.api';
 import {
   assignmentLevelKey,
-  departmentKey,
   operationsSubDepartmentKey,
   projectAccessPathKey,
   roleKey,
@@ -30,8 +30,22 @@ function refCodeAndName(code: string, name: string): string {
 export class LandingPage {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly departmentsApi = inject(DepartmentsApi);
 
   protected readonly i18n = inject(I18nService);
+
+  /** KAFF-321 — department names are master data now, fetched once rather than an exhaustive switch. */
+  private readonly departments = signal<readonly DepartmentSummary[]>([]);
+
+  protected readonly departmentLabel = computed<string | null>(() => {
+    const id = this.session()?.departmentId;
+    if (id === null || id === undefined) {
+      return null;
+    }
+
+    const department = this.departments().find((candidate) => candidate.id === id);
+    return department ? (this.i18n.locale() === 'en' ? department.nameEn : department.nameAr) : null;
+  });
 
   protected readonly session = computed<Session | null>(() => this.auth.current());
 
@@ -55,10 +69,11 @@ export class LandingPage {
         void this.router.navigateByUrl('/catalogue');
       }
     });
+
+    void this.loadDepartments();
   }
 
   protected readonly roleKey = roleKey;
-  protected readonly departmentKey = departmentKey;
   protected readonly operationsSubDepartmentKey = operationsSubDepartmentKey;
   protected readonly assignmentLevelKey = assignmentLevelKey;
   protected readonly projectAccessPathKey = projectAccessPathKey;
@@ -70,5 +85,13 @@ export class LandingPage {
 
   protected trackTeamProject(_index: number, project: TeamProjectEntry): string {
     return project.code;
+  }
+
+  private async loadDepartments(): Promise<void> {
+    try {
+      this.departments.set(await this.departmentsApi.list('all'));
+    } catch {
+      this.departments.set([]);
+    }
   }
 }

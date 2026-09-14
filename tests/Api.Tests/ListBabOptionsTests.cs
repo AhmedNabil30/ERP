@@ -50,7 +50,7 @@ public sealed class ListBabOptionsTests : IAsyncLifetime
     {
         await CreateBabAsync("LBO-HR");
 
-        HttpResponseMessage response = await SendAsync(_hr, Role.Hr, Department.Hr);
+        HttpResponseMessage response = await SendAsync(_hr, Role.Hr, WellKnownDepartments.HrId);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -73,7 +73,7 @@ public sealed class ListBabOptionsTests : IAsyncLifetime
     [Fact]
     public async Task Hr_is_still_refused_the_bab_manage_list()
     {
-        HttpResponseMessage response = await SendTo("/api/babs", _hr, Role.Hr, Department.Hr);
+        HttpResponseMessage response = await SendTo("/api/babs", _hr, Role.Hr, WellKnownDepartments.HrId);
 
         response.StatusCode.Should().Be(
             HttpStatusCode.Forbidden,
@@ -84,16 +84,16 @@ public sealed class ListBabOptionsTests : IAsyncLifetime
     [Fact]
     public async Task A_role_without_EmployeeManage_is_refused_the_bab_options()
     {
-        (await SendAsync(_finance, Role.Finance, Department.Finance)).StatusCode.Should().Be(
+        (await SendAsync(_finance, Role.Finance, WellKnownDepartments.FinanceId)).StatusCode.Should().Be(
             HttpStatusCode.Forbidden, "Finance does not hold EmployeeManage");
 
-        (await SendAsync(_marketing, Role.MarketingSales, Department.Marketing)).StatusCode.Should().Be(
+        (await SendAsync(_marketing, Role.MarketingSales, null)).StatusCode.Should().Be(
             HttpStatusCode.Forbidden, "Marketing/Sales does not hold EmployeeManage");
 
-        (await SendAsync(_siteEngineer, Role.SiteEngineer, Department.Operations)).StatusCode.Should().Be(
+        (await SendAsync(_siteEngineer, Role.SiteEngineer, WellKnownDepartments.OperationsId)).StatusCode.Should().Be(
             HttpStatusCode.Forbidden, "Site Engineer does not hold EmployeeManage");
 
-        (await SendAsync(_technicalOffice, Role.TechnicalOffice, Department.Operations)).StatusCode.Should().Be(
+        (await SendAsync(_technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId)).StatusCode.Should().Be(
             HttpStatusCode.Forbidden,
             "Technical Office is refused on purpose — it reads أبواب through GET /api/babs instead");
     }
@@ -123,11 +123,11 @@ public sealed class ListBabOptionsTests : IAsyncLifetime
         return code;
     }
 
-    private Task<HttpResponseMessage> SendAsync(Guid actorId, Role actorRole, Department? actorDepartment)
+    private Task<HttpResponseMessage> SendAsync(Guid actorId, Role actorRole, Guid? actorDepartment)
         => SendTo("/api/employees/babs", actorId, actorRole, actorDepartment);
 
     private async Task<HttpResponseMessage> SendTo(
-        string route, Guid actorId, Role actorRole, Department? actorDepartment)
+        string route, Guid actorId, Role actorRole, Guid? actorDepartment)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(route, UriKind.Relative));
 
@@ -158,13 +158,13 @@ public sealed class ListBabOptionsTests : IAsyncLifetime
         await using KaffDbContext context = _database.CreateContext();
 
         User owner = MakeUser("lbo-owner", Role.Owner);
-        User hr = MakeUser("lbo-hr", Role.Hr, Department.Hr);
-        User finance = MakeUser("lbo-finance", Role.Finance, Department.Finance);
-        User marketing = MakeUser("lbo-marketing", Role.MarketingSales, Department.Marketing);
+        User hr = MakeUser("lbo-hr", Role.Hr, WellKnownDepartments.HrId);
+        User finance = MakeUser("lbo-finance", Role.Finance, WellKnownDepartments.FinanceId);
+        User marketing = MakeUser("lbo-marketing", Role.MarketingSales, null);
         User siteEngineer = MakeUser(
-            "lbo-siteeng", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "lbo-siteeng", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User technicalOffice = MakeUser(
-            "lbo-techoffice", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
+            "lbo-techoffice", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
 
         context.Users.AddRange(owner, hr, finance, marketing, siteEngineer, technicalOffice);
 
@@ -181,7 +181,7 @@ public sealed class ListBabOptionsTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null)
         => User.Create(
             UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment).Value;

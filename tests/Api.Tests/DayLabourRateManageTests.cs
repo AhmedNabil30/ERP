@@ -355,12 +355,12 @@ public sealed class DayLabourRateManageTests : IAsyncLifetime
         request.Headers.Add(TestAuthHandler.RoleHeader, actorRole.ToString());
         request.Headers.Add(TestAuthHandler.SecurityStampHeader, await CurrentStampAsync(actorId));
 
-        Department? department = actorRole switch
+        Guid? department = actorRole switch
         {
-            Role.Hr => Department.Hr,
-            Role.Finance => Department.Finance,
-            Role.SiteEngineer => Department.Operations,
-            Role.MarketingSales => Department.Marketing,
+            Role.Hr => WellKnownDepartments.HrId,
+            Role.Finance => WellKnownDepartments.FinanceId,
+            Role.SiteEngineer => WellKnownDepartments.OperationsId,
+            Role.MarketingSales => null,
             _ => null,
         };
 
@@ -399,13 +399,13 @@ public sealed class DayLabourRateManageTests : IAsyncLifetime
             UniqueNames.Code("DR-W"), "عامل", UniqueNames.Phone(), EmployeeKind.DayLabour, Now, bab.Id).Value;
 
         User owner = MakeUser("dr-owner", Role.Owner);
-        User opener = MakeUser("dr-engineer-opener", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
-        User otherEngineerOnA = MakeUser("dr-engineer-other", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
-        User engineerOnB = MakeUser("dr-engineer-b", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
-        User finance = MakeUser("dr-finance", Role.Finance, Department.Finance);
-        User hr = MakeUser("dr-hr", Role.Hr, Department.Hr);
-        User technicalOffice = MakeUser("dr-tech-office", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
-        User marketing = MakeUser("dr-marketing", Role.MarketingSales, Department.Marketing);
+        User opener = MakeUser("dr-engineer-opener", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User otherEngineerOnA = MakeUser("dr-engineer-other", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User engineerOnB = MakeUser("dr-engineer-b", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User finance = MakeUser("dr-finance", Role.Finance, WellKnownDepartments.FinanceId);
+        User hr = MakeUser("dr-hr", Role.Hr, WellKnownDepartments.HrId);
+        User technicalOffice = MakeUser("dr-tech-office", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User marketing = MakeUser("dr-marketing", Role.MarketingSales, null);
 
         context.Clients.Add(client);
         context.Projects.AddRange(projectA, projectB);
@@ -439,7 +439,7 @@ public sealed class DayLabourRateManageTests : IAsyncLifetime
     }
 
     private static User MakeUser(
-        string userName, Role role, Department? department = null, OperationsSubDepartment? subDepartment = null)
+        string userName, Role role, Guid? department = null, OperationsSubDepartment? subDepartment = null)
         => User.Create(UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment).Value;
 
     private static readonly DateTimeOffset Now = new(2026, 9, 12, 9, 0, 0, TimeSpan.Zero);

@@ -112,7 +112,7 @@ public sealed class MeTests : IAsyncLifetime
         body.RootElement.GetProperty("userId").GetGuid().Should().Be(_finance);
         body.RootElement.GetProperty("displayName").GetString().Should().Be(_financeFullName);
         body.RootElement.GetProperty("role").GetString().Should().Be(nameof(Role.Finance));
-        body.RootElement.GetProperty("department").GetString().Should().Be(nameof(Department.Finance));
+        body.RootElement.GetProperty("departmentId").GetGuid().Should().Be(WellKnownDepartments.FinanceId);
         body.RootElement.GetProperty("mustChangePassword").GetBoolean().Should().BeFalse();
 
         List<string> permissions =
@@ -658,16 +658,16 @@ public sealed class MeTests : IAsyncLifetime
         Client client = Client.Create(
             UniqueNames.Code("ME-C1"), "عميل الملف الشخصي", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
 
-        User finance = MakeUser("me-finance", Role.Finance, Department.Finance);
+        User finance = MakeUser("me-finance", Role.Finance, WellKnownDepartments.FinanceId);
         finance.SetOwnPassword(PasswordHasher.Hash(Password)).IsSuccess.Should().BeTrue();
 
-        User forced = MakeUser("me-forced", Role.Finance, Department.Finance);
+        User forced = MakeUser("me-forced", Role.Finance, WellKnownDepartments.FinanceId);
         forced.SetTemporaryPassword(PasswordHasher.Hash(Password)).IsSuccess.Should().BeTrue();
 
-        User technicalOffice = MakeUser("me-tech-office", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
+        User technicalOffice = MakeUser("me-tech-office", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         technicalOffice.SetOwnPassword(PasswordHasher.Hash(Password)).IsSuccess.Should().BeTrue();
 
-        User inactive = MakeUser("me-inactive", Role.Finance, Department.Finance);
+        User inactive = MakeUser("me-inactive", Role.Finance, WellKnownDepartments.FinanceId);
         inactive.SetOwnPassword(PasswordHasher.Hash(Password)).IsSuccess.Should().BeTrue();
 
         // A subcontractor record: no department (ValidateDepartment refuses an external role one),
@@ -683,10 +683,10 @@ public sealed class MeTests : IAsyncLifetime
         User owner = MakeUser("me-owner", Role.Owner);
         owner.SetOwnPassword(PasswordHasher.Hash(Password)).IsSuccess.Should().BeTrue();
 
-        User hr = MakeUser("me-hr", Role.Hr, Department.Hr);
+        User hr = MakeUser("me-hr", Role.Hr, WellKnownDepartments.HrId);
         hr.SetOwnPassword(PasswordHasher.Hash(Password)).IsSuccess.Should().BeTrue();
 
-        User engineer = MakeUser("me-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+        User engineer = MakeUser("me-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         engineer.SetOwnPassword(PasswordHasher.Hash(Password)).IsSuccess.Should().BeTrue();
 
         // AC-105b-C: three projects, each with a ContractValue set and a distinct reference code —
@@ -751,7 +751,7 @@ public sealed class MeTests : IAsyncLifetime
         _projectCCode = projectC.Code;
     }
 
-    private static User MakeUser(string userName, Role role, Department? department = null, OperationsSubDepartment? subDepartment = null)
+    private static User MakeUser(string userName, Role role, Guid? department = null, OperationsSubDepartment? subDepartment = null)
         => User.Create(
             UniqueNames.Code(userName),
             userName,

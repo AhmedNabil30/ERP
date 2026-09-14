@@ -42,7 +42,7 @@ public sealed class User : Entity
         string fullName,
         PhoneNumber phone,
         Role role,
-        Department? department,
+        Guid? departmentId,
         OperationsSubDepartment? operationsSubDepartment,
         Guid? clientId,
         Guid? employeeId,
@@ -55,7 +55,7 @@ public sealed class User : Entity
         PhoneEntered = phone.Entered;
         PhoneNormalised = phone.Normalised;
         Role = role;
-        Department = department;
+        DepartmentId = departmentId;
         OperationsSubDepartment = operationsSubDepartment;
         ClientId = clientId;
         EmployeeId = employeeId;
@@ -79,7 +79,12 @@ public sealed class User : Entity
 
     public Role Role { get; private set; }
 
-    public Department? Department { get; private set; }
+    /// <summary>
+    /// KAFF-321 — a foreign key against the <see cref="MasterData.Department"/> master-data table,
+    /// replacing the <c>D-153</c> §2 enum. Still nullable for exactly the roles that hold none (Client,
+    /// Subcontractor) — see <see cref="ValidateDepartment"/>.
+    /// </summary>
+    public Guid? DepartmentId { get; private set; }
 
     public OperationsSubDepartment? OperationsSubDepartment { get; private set; }
 
@@ -167,7 +172,7 @@ public sealed class User : Entity
         PhoneNumber phone,
         Role role,
         DateTimeOffset createdAt,
-        Department? department = null,
+        Guid? departmentId = null,
         OperationsSubDepartment? operationsSubDepartment = null,
         Guid? clientId = null,
         Guid? employeeId = null,
@@ -183,7 +188,7 @@ public sealed class User : Entity
             return Result.Failure<User>(IdentityErrors.FullNameRequired);
         }
 
-        Result departmentCheck = ValidateDepartment(role, department, operationsSubDepartment);
+        Result departmentCheck = ValidateDepartment(role, departmentId, operationsSubDepartment);
         if (departmentCheck.IsFailure)
         {
             return Result.Failure<User>(departmentCheck.Error);
@@ -205,7 +210,7 @@ public sealed class User : Entity
             fullName.Trim(),
             phone,
             role,
-            department,
+            departmentId,
             operationsSubDepartment,
             clientId,
             employeeId,
@@ -416,15 +421,15 @@ public sealed class User : Entity
         return Result.Success();
     }
 
-    public Result MoveToDepartment(Department? department, OperationsSubDepartment? subDepartment)
+    public Result MoveToDepartment(Guid? departmentId, OperationsSubDepartment? subDepartment)
     {
-        Result check = ValidateDepartment(Role, department, subDepartment);
+        Result check = ValidateDepartment(Role, departmentId, subDepartment);
         if (check.IsFailure)
         {
             return check;
         }
 
-        Department = department;
+        DepartmentId = departmentId;
         OperationsSubDepartment = subDepartment;
         return Result.Success();
     }
@@ -437,7 +442,7 @@ public sealed class User : Entity
     /// Reapplies exactly the invariants <see cref="Create"/> applies at creation — department
     /// compatibility through <see cref="ValidateDepartment"/>, the client-id rule for
     /// <see cref="Identity.Role.Client"/>, and the no-department rule for external roles — against
-    /// the <b>new</b> role and the account's existing <see cref="Department"/>,
+    /// the <b>new</b> role and the account's existing <see cref="DepartmentId"/>,
     /// <see cref="OperationsSubDepartment"/> and <see cref="ClientId"/> (KAFF-109 rule 11). None of
     /// those three fields moves here: KAFF-108 owns the department move and this method does not
     /// repeat it.
@@ -457,7 +462,7 @@ public sealed class User : Entity
     /// </remarks>
     public Result ChangeRole(Role role)
     {
-        Result departmentCheck = ValidateDepartment(role, Department, OperationsSubDepartment);
+        Result departmentCheck = ValidateDepartment(role, DepartmentId, OperationsSubDepartment);
         if (departmentCheck.IsFailure)
         {
             return departmentCheck;
@@ -509,7 +514,7 @@ public sealed class User : Entity
     /// </remarks>
     private static Result ValidateDepartment(
         Role role,
-        Department? department,
+        Guid? departmentId,
         OperationsSubDepartment? subDepartment)
     {
         // V-27-C. Asked first, because every rule below is written against the nine roles that exist
@@ -529,7 +534,7 @@ public sealed class User : Entity
         // department would therefore inherit company-wide permissions that skip the project check and
         // the client check entirely, breaking spec.md §12. Neither role is Kaff staff, so neither has
         // a department. See decisions.md D-035.
-        if (role is Role.Client or Role.Subcontractor && department is not null)
+        if (role is Role.Client or Role.Subcontractor && departmentId is not null)
         {
             return Result.Failure(IdentityErrors.ExternalRoleCannotHoldDepartment);
         }
@@ -542,18 +547,18 @@ public sealed class User : Entity
         // but only because every Finance grant happens to be written against the role. Binding the
         // HR role to the HR department closes both, now and for grants not yet written.
         // See decisions.md D-044.
-        if (role == Role.Hr && department != Identity.Department.Hr)
+        if (role == Role.Hr && departmentId != WellKnownDepartments.HrId)
         {
             return Result.Failure(IdentityErrors.HrRoleRequiresHrDepartment);
         }
 
         // spec.md §9: only Operations subdivides.
-        if (department == Identity.Department.Operations && subDepartment is null)
+        if (departmentId == WellKnownDepartments.OperationsId && subDepartment is null)
         {
             return Result.Failure(IdentityErrors.OperationsRequiresSubDepartment);
         }
 
-        if (department != Identity.Department.Operations && subDepartment is not null)
+        if (departmentId != WellKnownDepartments.OperationsId && subDepartment is not null)
         {
             return Result.Failure(IdentityErrors.SubDepartmentOnlyForOperations);
         }

@@ -560,14 +560,14 @@ public sealed class ChangeUserRoleTests : IAsyncLifetime
             UniqueNames.Code("CRR-PC"), "مشروع ج", client.Id, ContractType.LumpSum, Now).Value;
 
         User owner = MakeUser("crr-owner", Role.Owner);
-        User hr = MakeUser("crr-hr", Role.Hr, Department.Hr);
-        User financeProbe = MakeUser("crr-finance", Role.Finance, Department.Finance);
+        User hr = MakeUser("crr-hr", Role.Hr, WellKnownDepartments.HrId);
+        User financeProbe = MakeUser("crr-finance", Role.Finance, WellKnownDepartments.FinanceId);
         User supervisorEngineer = MakeUser(
-            "crr-supervisor", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "crr-supervisor", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User juniorEngineer = MakeUser(
-            "crr-junior", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
-        User mirrorFinance = MakeUser("crr-mirror", Role.Finance, Department.Finance);
-        User marketingUser = MakeUser("crr-marketing", Role.MarketingSales, Department.Marketing);
+            "crr-junior", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User mirrorFinance = MakeUser("crr-mirror", Role.Finance, WellKnownDepartments.FinanceId);
+        User marketingUser = MakeUser("crr-marketing", Role.MarketingSales, null);
 
         // V-26-A's two targets. Both are departmentless Role.Owner accounts — the shape KAFF-100's
         // setup screen mints, and the one that reaches ck_users_subcontractor_cannot_log_in — and they
@@ -636,7 +636,7 @@ public sealed class ChangeUserRoleTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null,
         bool holdsCredential = true)
     {

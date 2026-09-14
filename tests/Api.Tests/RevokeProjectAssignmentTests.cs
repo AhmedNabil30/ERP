@@ -383,14 +383,14 @@ public sealed class RevokeProjectAssignmentTests : IAsyncLifetime
             UniqueNames.Code("RVK-PA"), "مشروع الإلغاء", client.Id, ContractType.LumpSum, Now).Value;
 
         User owner = MakeUser("rvk-owner", Role.Owner);
-        User hr = MakeUser("rvk-hr", Role.Hr, Department.Hr);
-        User finance = MakeUser("rvk-finance", Role.Finance, Department.Finance);
+        User hr = MakeUser("rvk-hr", Role.Hr, WellKnownDepartments.HrId);
+        User finance = MakeUser("rvk-finance", Role.Finance, WellKnownDepartments.FinanceId);
         User technicalOffice = MakeUser(
-            "rvk-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
+            "rvk-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User siteEngineer = MakeUser(
-            "rvk-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "rvk-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User supervisor = MakeUser(
-            "rvk-supervisor", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "rvk-supervisor", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
 
         context.Clients.Add(client);
         context.Projects.Add(projectA);
@@ -421,7 +421,7 @@ public sealed class RevokeProjectAssignmentTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null)
         => User.Create(
             UniqueNames.Code(userName),

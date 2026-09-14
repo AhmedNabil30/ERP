@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-import { Department, OperationsSubDepartment, Role } from '../auth/auth.service';
+import { DepartmentId, OperationsSubDepartment, Role } from '../auth/auth.service';
 
 /**
  * One row of the Owner's user administration list — `S-006`, and the record `S-008` edits.
@@ -23,7 +23,7 @@ export interface UserSummary {
   readonly fullName: string;
   readonly phone: string;
   readonly role: Role;
-  readonly department: Department | null;
+  readonly departmentId: DepartmentId | null;
   readonly operationsSubDepartment: OperationsSubDepartment | null;
   readonly isActive: boolean;
 
@@ -52,7 +52,7 @@ export interface UserWrite {
   readonly phone: string;
   readonly email: string | null;
   readonly role: Role;
-  readonly department: Department | null;
+  readonly departmentId: DepartmentId | null;
   readonly operationsSubDepartment: OperationsSubDepartment | null;
   readonly clientId: string | null;
   readonly temporaryPassword: string | null;
@@ -125,12 +125,12 @@ export class UsersApi {
   /** S-008. `204`. Refused for the HR pair (`errors.identity.hr_role_requires_hr_department`). */
   async moveDepartment(
     userId: string,
-    department: Department | null,
+    departmentId: DepartmentId | null,
     operationsSubDepartment: OperationsSubDepartment | null,
   ): Promise<void> {
     await firstValueFrom(
       this.http.put<void>(`api/users/${userId}/department`, {
-        department,
+        departmentId,
         operationsSubDepartment,
       }),
     );

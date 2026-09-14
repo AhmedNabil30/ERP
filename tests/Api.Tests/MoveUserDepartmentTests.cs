@@ -91,7 +91,7 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
                 HttpStatusCode.Forbidden,
                 "Operations / Technical is not the sub-department SiteExpenseConfirm names");
 
-        (await MoveAsync(_owner, _technicalOffice, "Operations", "Administrative"))
+        (await MoveAsync(_owner, _technicalOffice, WellKnownDepartments.OperationsId, "Administrative"))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         (await SendAsync(SiteExpense(_projectId), _technicalOffice, tokenIssuedBeforeTheMove))
@@ -109,7 +109,7 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
         (await SendAsync(SiteExpense(_projectId), _technicalOfficeAdmin, tokenIssuedBeforeTheMove))
             .StatusCode.Should().Be(HttpStatusCode.OK);
 
-        (await MoveAsync(_owner, _technicalOfficeAdmin, "Marketing", null))
+        (await MoveAsync(_owner, _technicalOfficeAdmin, WellKnownDepartments.ProcurementId, null))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         (await SendAsync(SiteExpense(_projectId), _technicalOfficeAdmin, tokenIssuedBeforeTheMove))
@@ -134,7 +134,7 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
     [Fact]
     public async Task A_site_engineer_gains_nothing_from_the_same_move()
     {
-        (await MoveAsync(_owner, _siteEngineer, "Operations", "Administrative"))
+        (await MoveAsync(_owner, _siteEngineer, WellKnownDepartments.OperationsId, "Administrative"))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         (await ReadUserAsync(_siteEngineer)).OperationsSubDepartment
@@ -151,18 +151,18 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
     [Fact]
     public async Task The_department_rules_are_re_applied_on_a_move()
     {
-        HttpResponseMessage withoutSub = await MoveAsync(_owner, _finance, "Operations", null);
+        HttpResponseMessage withoutSub = await MoveAsync(_owner, _finance, WellKnownDepartments.OperationsId, null);
 
         withoutSub.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await MessageKeyAsync(withoutSub)).Should().Be("errors.identity.operations_requires_sub_department");
 
-        HttpResponseMessage withSub = await MoveAsync(_owner, _finance, "Marketing", "Administrative");
+        HttpResponseMessage withSub = await MoveAsync(_owner, _finance, WellKnownDepartments.ProcurementId, "Administrative");
 
         withSub.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await MessageKeyAsync(withSub)).Should().Be("errors.identity.sub_department_only_for_operations");
 
-        (await ReadUserAsync(_finance)).Department.Should().Be(
-            Department.Finance, "neither refusal moved anybody");
+        (await ReadUserAsync(_finance)).DepartmentId.Should().Be(
+            WellKnownDepartments.FinanceId, "neither refusal moved anybody");
     }
 
     // ---- AC-108-D · HR stays in HR ------------------------------------------------------------
@@ -182,7 +182,7 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
     /// mutation on the create path; SM-21 made the KAFF-107 fold conditional on both halves existing.
     /// </para>
     /// <para>
-    /// All four destinations, because the guard is "must be <c>Department.Hr</c>" rather than "must
+    /// All four destinations, because the guard is "must be <c>WellKnownDepartments.HrId</c>" rather than "must
     /// not be Finance" — including <c>null</c>, which is the reading a narrower guard would let
     /// through.
     /// </para>
@@ -190,15 +190,15 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
     [Fact]
     public async Task An_hr_user_cannot_be_moved_out_of_hr_at_the_endpoint()
     {
-        (string? Department, string? Sub)[] wrongDestinations =
+        (Guid? Department, string? Sub)[] wrongDestinations =
         [
-            ("Finance", null),
-            ("Marketing", null),
-            ("Operations", "Administrative"),
+            (WellKnownDepartments.FinanceId, null),
+            (WellKnownDepartments.ProcurementId, null),
+            (WellKnownDepartments.OperationsId, "Administrative"),
             (null, null),
         ];
 
-        foreach ((string? department, string? sub) in wrongDestinations)
+        foreach ((Guid? department, string? sub) in wrongDestinations)
         {
             HttpResponseMessage response = await MoveAsync(_owner, _hr, department, sub);
 
@@ -206,11 +206,11 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
 
             (await MessageKeyAsync(response)).Should().Be(
                 "errors.identity.hr_role_requires_hr_department",
-                $"an HR user in {department ?? "no department"} inherits that department's grants");
+                $"an HR user in {(department?.ToString() ?? "no department")} inherits that department's grants");
 
             User unmoved = await ReadUserAsync(_hr);
 
-            unmoved.Department.Should().Be(Department.Hr, "and the department is unchanged");
+            unmoved.DepartmentId.Should().Be(WellKnownDepartments.HrId, "and the department is unchanged");
             unmoved.OperationsSubDepartment.Should().BeNull();
         }
     }
@@ -222,9 +222,9 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
     [Fact]
     public async Task An_hr_user_may_be_moved_within_hr()
     {
-        (await MoveAsync(_owner, _hr, "Hr", null)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await MoveAsync(_owner, _hr, WellKnownDepartments.HrId, null)).StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        (await ReadUserAsync(_hr)).Department.Should().Be(Department.Hr);
+        (await ReadUserAsync(_hr)).DepartmentId.Should().Be(WellKnownDepartments.HrId);
     }
 
     /// <summary>
@@ -239,11 +239,11 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
     [Fact]
     public async Task An_external_role_cannot_be_moved_into_a_department()
     {
-        HttpResponseMessage response = await MoveAsync(_owner, _portalClient, "Marketing", null);
+        HttpResponseMessage response = await MoveAsync(_owner, _portalClient, WellKnownDepartments.ProcurementId, null);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await MessageKeyAsync(response)).Should().Be("errors.identity.external_role_cannot_hold_department");
-        (await ReadUserAsync(_portalClient)).Department.Should().BeNull();
+        (await ReadUserAsync(_portalClient)).DepartmentId.Should().BeNull();
     }
 
     // ---- AC-108-E · nobody but the Owner can move anyone --------------------------------------
@@ -260,14 +260,14 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
 
         foreach (Guid caller in callers)
         {
-            HttpResponseMessage response = await MoveAsync(caller, _siteEngineer, "Marketing", null);
+            HttpResponseMessage response = await MoveAsync(caller, _siteEngineer, WellKnownDepartments.ProcurementId, null);
 
             response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         }
 
         User untouched = await ReadUserAsync(_siteEngineer);
 
-        untouched.Department.Should().Be(Department.Operations, "no refused attempt moved anybody");
+        untouched.DepartmentId.Should().Be(WellKnownDepartments.OperationsId, "no refused attempt moved anybody");
         untouched.OperationsSubDepartment.Should().Be(OperationsSubDepartment.Technical);
     }
 
@@ -276,7 +276,7 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
     [Fact]
     public async Task Assignments_survive_the_move()
     {
-        (await MoveAsync(_owner, _technicalOffice, "Marketing", null))
+        (await MoveAsync(_owner, _technicalOffice, WellKnownDepartments.ProcurementId, null))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         await using KaffDbContext reader = _database.CreateBareContext();
@@ -308,7 +308,7 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
         // Finance → Operations / Financial, because it changes BOTH columns. A move within
         // Operations changes one, and the interceptor correctly names only that one — which would
         // make this test assert less than the story's audit bullet describes.
-        (await MoveAsync(_owner, _finance, "Operations", "Financial"))
+        (await MoveAsync(_owner, _finance, WellKnownDepartments.OperationsId, "Financial"))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         await using KaffDbContext reader = _database.CreateBareContext();
@@ -325,19 +325,19 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
             "UserManage is company-wide: no project, no access policy, no path to name");
 
         record.ChangedProperties.Should().BeEquivalentTo(
-            new[] { nameof(User.Department), nameof(User.OperationsSubDepartment) });
+            new[] { nameof(User.DepartmentId), nameof(User.OperationsSubDepartment) });
 
         using JsonDocument before = JsonDocument.Parse(record.BeforeJson!);
         using JsonDocument after = JsonDocument.Parse(record.AfterJson!);
 
-        before.RootElement.GetProperty(nameof(User.Department)).GetString()
-            .Should().Be(nameof(Department.Finance));
+        before.RootElement.GetProperty(nameof(User.DepartmentId)).GetString()
+            .Should().Be(WellKnownDepartments.FinanceId.ToString());
 
         before.RootElement.GetProperty(nameof(User.OperationsSubDepartment)).ValueKind
             .Should().Be(JsonValueKind.Null);
 
-        after.RootElement.GetProperty(nameof(User.Department)).GetString()
-            .Should().Be(nameof(Department.Operations));
+        after.RootElement.GetProperty(nameof(User.DepartmentId)).GetString()
+            .Should().Be(WellKnownDepartments.OperationsId.ToString());
 
         after.RootElement.GetProperty(nameof(User.OperationsSubDepartment)).GetString()
             .Should().Be(nameof(OperationsSubDepartment.Financial));
@@ -363,7 +363,7 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
     [Fact]
     public async Task The_trail_records_the_role_the_database_holds_not_the_role_the_token_claims()
     {
-        (await MoveAsync(_owner, _finance, "Marketing", null, roleClaim: nameof(Role.SiteEngineer)))
+        (await MoveAsync(_owner, _finance, WellKnownDepartments.ProcurementId, null, roleClaim: nameof(Role.SiteEngineer)))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         AuditRecord record = await MoveRecordAsync(_finance);
@@ -387,7 +387,7 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
     [Fact]
     public async Task A_token_with_no_role_claim_still_writes_an_attributed_record()
     {
-        (await MoveAsync(_owner, _finance, "Marketing", null))
+        (await MoveAsync(_owner, _finance, WellKnownDepartments.ProcurementId, null))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         AuditRecord record = await MoveRecordAsync(_finance);
@@ -413,7 +413,7 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
     [Fact]
     public async Task Moving_a_user_who_does_not_exist_is_refused()
     {
-        HttpResponseMessage response = await MoveAsync(_owner, Guid.CreateVersion7(), "Marketing", null);
+        HttpResponseMessage response = await MoveAsync(_owner, Guid.CreateVersion7(), WellKnownDepartments.ProcurementId, null);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         (await MessageKeyAsync(response)).Should().Be("errors.identity.user_not_found");
@@ -441,7 +441,7 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
     private async Task<HttpResponseMessage> MoveAsync(
         Guid actorId,
         Guid targetUserId,
-        string? department,
+        Guid? department,
         string? subDepartment,
         string? roleClaim = null)
     {
@@ -451,7 +451,7 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
             HttpMethod.Put,
             new Uri($"/api/users/{targetUserId}/department", UriKind.Relative))
         {
-            Content = JsonContent.Create(new { department, operationsSubDepartment = subDepartment }),
+            Content = JsonContent.Create(new { departmentId = department, operationsSubDepartment = subDepartment }),
         };
 
         request.Headers.Add(TestAuthHandler.UserIdHeader, actorId.ToString());
@@ -462,9 +462,9 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
             request.Headers.Add(TestAuthHandler.RoleHeader, roleClaim);
         }
 
-        if (actor?.Department is not null)
+        if (actor?.DepartmentId is not null)
         {
-            request.Headers.Add(TestAuthHandler.DepartmentHeader, actor.Department.Value.ToString());
+            request.Headers.Add(TestAuthHandler.DepartmentHeader, actor.DepartmentId.Value.ToString());
         }
 
         if (actor?.OperationsSubDepartment is not null)
@@ -533,13 +533,13 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
 
         User owner = MakeUser("mov-owner", Role.Owner);
         User technicalOffice = MakeUser(
-            "mov-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
+            "mov-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User technicalOfficeAdmin = MakeUser(
-            "mov-tech-admin", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Administrative);
+            "mov-tech-admin", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Administrative);
         User siteEngineer = MakeUser(
-            "mov-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
-        User finance = MakeUser("mov-finance", Role.Finance, Department.Finance);
-        User hr = MakeUser("mov-hr", Role.Hr, Department.Hr);
+            "mov-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User finance = MakeUser("mov-finance", Role.Finance, WellKnownDepartments.FinanceId);
+        User hr = MakeUser("mov-hr", Role.Hr, WellKnownDepartments.HrId);
         User portal = MakeUser("mov-portal", Role.Client, clientId: client.Id);
 
         context.Clients.Add(client);
@@ -573,7 +573,7 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null,
         Guid? clientId = null)
         => User.Create(

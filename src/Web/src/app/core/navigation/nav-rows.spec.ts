@@ -17,7 +17,7 @@ function session(role: Role, permissions: readonly string[]): Session {
     userId: '11111111-1111-1111-1111-111111111111',
     displayName: 'اختبار',
     role,
-    department: null,
+    departmentId: null,
     operationsSubDepartment: null,
     mustChangePassword: false,
     permissions,
@@ -59,6 +59,7 @@ describe('AC-215-B — every guarded top-level route has a row, derived from app
     const ownerWithEverything = session('Owner', [
       'ClientManage',
       'UserManage',
+      'DepartmentManage',
       'AuditRead',
       'CatalogueManage',
       'BabManage',
@@ -117,6 +118,7 @@ describe('AC-215-E — every row label exists in both locales', () => {
       session('Owner', [
         'ClientManage',
         'UserManage',
+        'DepartmentManage',
         'AuditRead',
         'CatalogueManage',
         'BabManage',

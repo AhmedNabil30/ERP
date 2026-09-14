@@ -225,10 +225,9 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deactivated_at");
 
-                    b.Property<string>("Department")
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("department");
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("department_id");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -315,6 +314,8 @@ namespace Kaff.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ClientId");
 
+                    b.HasIndex("DepartmentId");
+
                     b.HasIndex("EmployeeId");
 
                     b.HasIndex("IsBootstrapOwner")
@@ -333,7 +334,7 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_users_client_scope", "(role = 'Client' AND client_id IS NOT NULL) OR (role <> 'Client' AND client_id IS NULL)");
 
-                            t.HasCheckConstraint("ck_users_operations_sub_department", "(department = 'Operations' AND operations_sub_department IS NOT NULL) OR (department IS DISTINCT FROM 'Operations' AND operations_sub_department IS NULL)");
+                            t.HasCheckConstraint("ck_users_operations_sub_department", "(department_id = '00000000-0000-0000-0000-000000000203' AND operations_sub_department IS NOT NULL) OR (department_id IS DISTINCT FROM '00000000-0000-0000-0000-000000000203' AND operations_sub_department IS NULL)");
 
                             t.HasCheckConstraint("ck_users_subcontractor_cannot_log_in", "role <> 'Subcontractor' OR password_hash IS NULL");
                         });
@@ -542,6 +543,71 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_clients_phone");
 
                     b.ToTable("clients", (string)null);
+                });
+
+            modelBuilder.Entity("Kaff.Domain.MasterData.Department", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name_ar");
+
+                    b.Property<string>("NameEn")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name_en");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Departments");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000201"),
+                            IsActive = true,
+                            NameAr = "المالية",
+                            NameEn = "Finance"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000202"),
+                            IsActive = true,
+                            NameAr = "المكتب الفني",
+                            NameEn = "Technical Office"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000203"),
+                            IsActive = true,
+                            NameAr = "العمليات",
+                            NameEn = "Operations"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000204"),
+                            IsActive = true,
+                            NameAr = "المشتريات",
+                            NameEn = "Procurement"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000205"),
+                            IsActive = true,
+                            NameAr = "الموارد البشرية",
+                            NameEn = "HR"
+                        });
                 });
 
             modelBuilder.Entity("Kaff.Domain.MasterData.Employee", b =>
@@ -1458,6 +1524,11 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                     b.HasOne("Kaff.Domain.MasterData.Client", null)
                         .WithMany()
                         .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kaff.Domain.MasterData.Department", null)
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Kaff.Domain.MasterData.Employee", null)

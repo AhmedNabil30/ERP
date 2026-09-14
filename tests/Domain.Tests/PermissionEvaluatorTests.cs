@@ -19,7 +19,7 @@ public sealed class PermissionEvaluatorTests
 
     private static PermissionSubject Subject(
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null,
         Guid? clientId = null,
         bool mustChangePassword = false)
@@ -40,7 +40,7 @@ public sealed class PermissionEvaluatorTests
         // spec.md §9: "A user MUST be assigned to a project to open it or act on it. Role alone is
         // insufficient." Finance holds the permission and is still refused without the assignment.
         PermissionDecision decision = PermissionEvaluator.Evaluate(
-            Subject(Role.Finance, Department.Finance),
+            Subject(Role.Finance, WellKnownDepartments.FinanceId),
             Permission.FinancialMovementPrepare,
             ProjectId,
             ProjectAccess.Denied);
@@ -79,14 +79,14 @@ public sealed class PermissionEvaluatorTests
         // Karim, 2026-08-17: the Owner and HR assign users to projects. 2026-08-20: HR is now a role
         // of its own, so the grant is a role grant.
         PermissionEvaluator.Evaluate(
-                Subject(Role.Hr, Department.Hr),
+                Subject(Role.Hr, WellKnownDepartments.HrId),
                 Permission.ProjectAssignmentManage,
                 ProjectId,
                 new ProjectAccess(ProjectAccessPath.Assignment, AssignmentLevel.Standard))
             .Should().Be(PermissionDecision.Granted);
 
         PermissionEvaluator.Evaluate(
-                Subject(Role.Finance, Department.Finance),
+                Subject(Role.Finance, WellKnownDepartments.FinanceId),
                 Permission.ProjectAssignmentManage,
                 ProjectId,
                 new ProjectAccess(ProjectAccessPath.Assignment, AssignmentLevel.Standard))
@@ -106,7 +106,7 @@ public sealed class PermissionEvaluatorTests
         ProjectAccess assigned = new(ProjectAccessPath.Assignment, AssignmentLevel.Junior);
 
         PermissionEvaluator.Evaluate(
-                Subject(Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Administrative),
+                Subject(Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Administrative),
                 Permission.SiteExpenseConfirm,
                 ProjectId,
                 assigned)
@@ -114,11 +114,11 @@ public sealed class PermissionEvaluatorTests
 
         // The two who may. Finance by role anywhere; the Technical Office only from Admin.
         PermissionEvaluator.Evaluate(
-                Subject(Role.Finance, Department.Finance), Permission.SiteExpenseConfirm, ProjectId, assigned)
+                Subject(Role.Finance, WellKnownDepartments.FinanceId), Permission.SiteExpenseConfirm, ProjectId, assigned)
             .Should().Be(PermissionDecision.Granted);
 
         PermissionEvaluator.Evaluate(
-                Subject(Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Administrative),
+                Subject(Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Administrative),
                 Permission.SiteExpenseConfirm,
                 ProjectId,
                 assigned)
@@ -126,7 +126,7 @@ public sealed class PermissionEvaluatorTests
 
         // Same role, wrong sub-department: the department half of the grant still has to match.
         PermissionEvaluator.Evaluate(
-                Subject(Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical),
+                Subject(Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical),
                 Permission.SiteExpenseConfirm,
                 ProjectId,
                 assigned)
@@ -197,12 +197,12 @@ public sealed class PermissionEvaluatorTests
         // the shipped catalogue deliberately no longer contains one to point at.
         AccessGrant bareDepartment = new()
         {
-            Department = Department.Operations,
+            DepartmentId = WellKnownDepartments.OperationsId,
             OperationsSubDepartment = OperationsSubDepartment.Administrative,
         };
 
         PermissionSubject engineerInAdmin =
-            Subject(Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Administrative);
+            Subject(Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Administrative);
 
         // The grant matches the subject on every criterion it names.
         PermissionDefinition financial = new(
@@ -238,14 +238,14 @@ public sealed class PermissionEvaluatorTests
 
         // projectId: null is the point, not an omission — this is what a create request looks like.
         PermissionEvaluator.Evaluate(
-                Subject(Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical),
+                Subject(Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical),
                 Permission.ProjectCreate,
                 projectId: null,
                 projectAccess: null)
             .Should().Be(PermissionDecision.Granted, "there is no project yet to be assigned to");
 
         PermissionEvaluator.Evaluate(
-                Subject(Role.MarketingSales, Department.Marketing),
+                Subject(Role.MarketingSales, null),
                 Permission.ProjectCreate,
                 projectId: null,
                 projectAccess: null)
@@ -266,7 +266,7 @@ public sealed class PermissionEvaluatorTests
             .Should().Be(PermissionScope.ProjectScoped);
 
         PermissionEvaluator.Evaluate(
-                Subject(Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical),
+                Subject(Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical),
                 Permission.ProjectManage,
                 ProjectId,
                 ProjectAccess.Denied)
@@ -281,7 +281,7 @@ public sealed class PermissionEvaluatorTests
         // rulings that collided here were both his — D-049 ruling 10 gave Finance the withholding
         // category, D-052 gave ProjectManage to Owner and Technical Office only. See D-055 §1.
         ProjectAccess assigned = new(ProjectAccessPath.Assignment, AssignmentLevel.Standard);
-        PermissionSubject finance = Subject(Role.Finance, Department.Finance);
+        PermissionSubject finance = Subject(Role.Finance, WellKnownDepartments.FinanceId);
 
         PermissionEvaluator.Evaluate(finance, Permission.ProjectFinancialsEdit, ProjectId, assigned)
             .Should().Be(PermissionDecision.Granted);
@@ -320,17 +320,17 @@ public sealed class PermissionEvaluatorTests
         // single person to put on a project. "Granted strictly to HR and the Owner … names and roles
         // only." Company-wide: a login list is not a project's data. See decisions.md D-055 §2.
         PermissionEvaluator.Evaluate(
-                Subject(Role.Hr, Department.Hr), Permission.UserRead, projectId: null, projectAccess: null)
+                Subject(Role.Hr, WellKnownDepartments.HrId), Permission.UserRead, projectId: null, projectAccess: null)
             .Should().Be(PermissionDecision.Granted);
 
         // The ruling's other half. UserManage is the Owner's alone (D-044 ruling 1) — reading the
         // list must not become editing it.
         PermissionEvaluator.Evaluate(
-                Subject(Role.Hr, Department.Hr), Permission.UserManage, projectId: null, projectAccess: null)
+                Subject(Role.Hr, WellKnownDepartments.HrId), Permission.UserManage, projectId: null, projectAccess: null)
             .Should().Be(PermissionDecision.RoleNotGranted, "HR reads names and roles, it does not mint logins");
 
         PermissionEvaluator.Evaluate(
-                Subject(Role.Hr, Department.Hr),
+                Subject(Role.Hr, WellKnownDepartments.HrId),
                 Permission.ProjectFinancialsEdit,
                 ProjectId,
                 new ProjectAccess(ProjectAccessPath.HrGlobal, AssignmentLevel.Standard))
@@ -342,7 +342,7 @@ public sealed class PermissionEvaluatorTests
     {
         // spec.md §9: "Finance prepares and disburses but does not approve change orders."
         PermissionDecision decision = PermissionEvaluator.Evaluate(
-            Subject(Role.Finance, Department.Finance),
+            Subject(Role.Finance, WellKnownDepartments.FinanceId),
             Permission.ChangeOrderApprove,
             ProjectId,
             new ProjectAccess(ProjectAccessPath.Assignment, AssignmentLevel.Standard));
@@ -355,7 +355,7 @@ public sealed class PermissionEvaluatorTests
     {
         // spec.md §9: "Technical Office gates quantities, never money."
         PermissionDecision decision = PermissionEvaluator.Evaluate(
-            Subject(Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical),
+            Subject(Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical),
             Permission.FinancialMovementApprove,
             ProjectId,
             new ProjectAccess(ProjectAccessPath.Assignment, AssignmentLevel.Standard));
@@ -368,7 +368,7 @@ public sealed class PermissionEvaluatorTests
     {
         // spec.md §9: "Site engineers approve nothing financial."
         PermissionDecision decision = PermissionEvaluator.Evaluate(
-            Subject(Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical),
+            Subject(Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical),
             Permission.FinancialMovementApprove,
             ProjectId,
             new ProjectAccess(ProjectAccessPath.Assignment, AssignmentLevel.Supervisor));
@@ -380,7 +380,7 @@ public sealed class PermissionEvaluatorTests
     public void A_junior_engineer_drafts_but_does_not_submit()
     {
         // spec.md §9: "a junior engineer raises requests as drafts; the supervisor submits them."
-        PermissionSubject junior = Subject(Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+        PermissionSubject junior = Subject(Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         var access = new ProjectAccess(ProjectAccessPath.Assignment, AssignmentLevel.Junior);
 
         PermissionEvaluator.Evaluate(junior, Permission.DraftCreate, ProjectId, access)
@@ -397,7 +397,7 @@ public sealed class PermissionEvaluatorTests
     public void An_unassigned_site_engineer_is_refused_DayLabourSiteManage()
     {
         PermissionDecision decision = PermissionEvaluator.Evaluate(
-            Subject(Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical),
+            Subject(Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical),
             Permission.DayLabourSiteManage,
             ProjectId,
             ProjectAccess.Denied);
@@ -415,7 +415,7 @@ public sealed class PermissionEvaluatorTests
     public void An_unassigned_site_engineer_is_refused_DayLabourRateManage()
     {
         PermissionDecision decision = PermissionEvaluator.Evaluate(
-            Subject(Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical),
+            Subject(Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical),
             Permission.DayLabourRateManage,
             ProjectId,
             ProjectAccess.Denied);
@@ -451,9 +451,9 @@ public sealed class PermissionEvaluatorTests
     [Fact]
     public void Finance_edits_a_subcontractors_tax_registration_but_not_the_subcontractor_record()
     {
-        PermissionSubject finance = Subject(Role.Finance, Department.Finance);
+        PermissionSubject finance = Subject(Role.Finance, WellKnownDepartments.FinanceId);
         PermissionSubject technicalOffice =
-            Subject(Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
+            Subject(Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
 
         PermissionEvaluator.Evaluate(
                 finance, Permission.SubcontractorTaxRegistrationEdit, projectId: null, projectAccess: null)
@@ -479,7 +479,7 @@ public sealed class PermissionEvaluatorTests
     public void A_supervising_engineer_submits()
     {
         PermissionDecision decision = PermissionEvaluator.Evaluate(
-            Subject(Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical),
+            Subject(Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical),
             Permission.DraftSubmit,
             ProjectId,
             new ProjectAccess(ProjectAccessPath.Assignment, AssignmentLevel.Supervisor));
@@ -560,13 +560,13 @@ public sealed class PermissionEvaluatorTests
             projectAccess: null);
 
         PermissionDecision nonHolder = PermissionEvaluator.Evaluate(
-            Subject(Role.Finance, Department.Finance, mustChangePassword: true),
+            Subject(Role.Finance, WellKnownDepartments.FinanceId, mustChangePassword: true),
             Permission.UserManage,
             projectId: null,
             projectAccess: null);
 
         PermissionEvaluator.Evaluate(
-                Subject(Role.Finance, Department.Finance),
+                Subject(Role.Finance, WellKnownDepartments.FinanceId),
                 Permission.UserManage,
                 projectId: null,
                 projectAccess: null)
@@ -642,16 +642,16 @@ public sealed class PermissionEvaluatorTests
         // department to be GRANTED. That is now the failure case, and it is the reason the ruling
         // was asked for. See decisions.md D-044.
         PermissionEvaluator.Evaluate(
-                Subject(Role.Hr, Department.Hr), Permission.EmployeeManage, null, null)
+                Subject(Role.Hr, WellKnownDepartments.HrId), Permission.EmployeeManage, null, null)
             .Should().Be(PermissionDecision.Granted);
 
         PermissionEvaluator.Evaluate(
-                Subject(Role.MarketingSales, Department.Hr), Permission.EmployeeManage, null, null)
+                Subject(Role.MarketingSales, WellKnownDepartments.HrId), Permission.EmployeeManage, null, null)
             .Should().Be(PermissionDecision.RoleNotGranted,
                 "sitting in the HR department is not the same as being HR");
 
         PermissionEvaluator.Evaluate(
-                Subject(Role.MarketingSales, Department.Marketing), Permission.EmployeeManage, null, null)
+                Subject(Role.MarketingSales, null), Permission.EmployeeManage, null, null)
             .Should().Be(PermissionDecision.RoleNotGranted);
     }
 
@@ -665,20 +665,20 @@ public sealed class PermissionEvaluatorTests
         ProjectAccess globalReach = new(ProjectAccessPath.HrGlobal, AssignmentLevel.Standard);
 
         PermissionEvaluator.Evaluate(
-                Subject(Role.Hr, Department.Hr), Permission.ProjectAssignmentManage, ProjectId, globalReach)
+                Subject(Role.Hr, WellKnownDepartments.HrId), Permission.ProjectAssignmentManage, ProjectId, globalReach)
             .Should().Be(PermissionDecision.Granted);
 
         // Same reach, same project, and still refused — because HR holds no grant on ProjectRead.
         PermissionEvaluator.Evaluate(
-                Subject(Role.Hr, Department.Hr), Permission.ProjectRead, ProjectId, globalReach)
+                Subject(Role.Hr, WellKnownDepartments.HrId), Permission.ProjectRead, ProjectId, globalReach)
             .Should().Be(PermissionDecision.RoleNotGranted, "HR has zero financial visibility");
 
         PermissionEvaluator.Evaluate(
-                Subject(Role.Hr, Department.Hr), Permission.TreasuryPostProject, ProjectId, globalReach)
+                Subject(Role.Hr, WellKnownDepartments.HrId), Permission.TreasuryPostProject, ProjectId, globalReach)
             .Should().Be(PermissionDecision.RoleNotGranted);
 
         PermissionEvaluator.Evaluate(
-                Subject(Role.Hr, Department.Hr), Permission.UserManage, null, null)
+                Subject(Role.Hr, WellKnownDepartments.HrId), Permission.UserManage, null, null)
             .Should().Be(PermissionDecision.RoleNotGranted, "only the Owner mints logins");
     }
 
@@ -701,7 +701,7 @@ public sealed class PermissionEvaluatorTests
     public void Finance_holds_a_flat_set_of_its_company_wide_permissions()
     {
         IReadOnlyList<Permission> permissions = PermissionEvaluator.CompanyWidePermissionsHeld(
-            Subject(Role.Finance, Department.Finance));
+            Subject(Role.Finance, WellKnownDepartments.FinanceId));
 
         permissions.Should().BeEquivalentTo(
             [

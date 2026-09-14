@@ -6,6 +6,7 @@ import { catalogueManageGuard } from './core/auth/catalogue-manage.guard';
 import { clientManageGuard } from './core/auth/client-manage.guard';
 import { dayLabourRateManageGuard } from './core/auth/day-labour-rate-manage.guard';
 import { dayLabourSiteManageGuard } from './core/auth/day-labour-site-manage.guard';
+import { departmentManageGuard } from './core/auth/department-manage.guard';
 import { employeeManageGuard } from './core/auth/employee-manage.guard';
 import { mustChangePasswordGuard } from './core/auth/must-change-password.guard';
 import { sessionGuard } from './core/auth/session.guard';
@@ -177,6 +178,17 @@ export const routes: Routes = [
           import('./features/babs/bab-form/bab-form-page').then((m) => m.BabFormPage),
       },
     ],
+  },
+  {
+    // KAFF-321 — the department settings screen. Same shape as `/babs` above: `sessionGuard` resolves
+    // the session first, then `departmentManageGuard` keeps a role without `DepartmentManage` out of a
+    // screen the server would refuse anyway (decisions.md D-162).
+    path: 'settings/departments',
+    canActivate: [sessionGuard, mustChangePasswordGuard, departmentManageGuard],
+    loadComponent: () =>
+      import('./features/departments/department-settings/department-settings-page').then(
+        (m) => m.DepartmentSettingsPage,
+      ),
   },
   {
     // KAFF-207, KAFF-208 — S-023, S-024. Same shape as `/catalogue` and `/babs` above: `sessionGuard`

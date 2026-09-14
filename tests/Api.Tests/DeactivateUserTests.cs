@@ -536,10 +536,10 @@ public sealed class DeactivateUserTests : IAsyncLifetime
 
         User owner = MakeUser("dct-owner", Role.Owner);
         User secondOwner = MakeUser("dct-owner-2", Role.Owner);
-        User hr = MakeUser("dct-hr", Role.Hr, Department.Hr);
-        User finance = MakeUser("dct-finance", Role.Finance, Department.Finance);
+        User hr = MakeUser("dct-hr", Role.Hr, WellKnownDepartments.HrId);
+        User finance = MakeUser("dct-finance", Role.Finance, WellKnownDepartments.FinanceId);
         User siteEngineer = MakeUser(
-            "dct-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "dct-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
 
         context.Clients.Add(client);
         context.Projects.AddRange(projectA, projectB, projectC);
@@ -571,7 +571,7 @@ public sealed class DeactivateUserTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null)
         => User.Create(
             UniqueNames.Code(userName),

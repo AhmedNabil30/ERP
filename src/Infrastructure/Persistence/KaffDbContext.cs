@@ -94,6 +94,9 @@ public sealed class KaffDbContext : DbContext
 
     public DbSet<Engagement> Engagements => Set<Engagement>();
 
+    /// <summary>KAFF-321 — staff departments, master data, superseding the D-153 §2 enum.</summary>
+    public DbSet<Department> Departments => Set<Department>();
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         ArgumentNullException.ThrowIfNull(configurationBuilder);

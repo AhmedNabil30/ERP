@@ -53,7 +53,7 @@ public sealed class ArchiveEmployeeTests : IAsyncLifetime
     {
         (Guid id, string phone) = await CreateEmployeeAsync();
 
-        (await ArchiveAsync(id, _hr, Role.Hr, Department.Hr)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await ArchiveAsync(id, _hr, Role.Hr, WellKnownDepartments.HrId)).StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         Employee stored = await ReadAsync(id);
         stored.IsActive.Should().BeFalse();
@@ -83,12 +83,12 @@ public sealed class ArchiveEmployeeTests : IAsyncLifetime
     {
         (Guid id, _) = await CreateEmployeeAsync();
 
-        (await ArchiveAsync(id, _hr, Role.Hr, Department.Hr)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await ArchiveAsync(id, _hr, Role.Hr, WellKnownDepartments.HrId)).StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         await using KaffDbContext before = _database.CreateBareContext();
         long countBefore = await before.AuditRecords.LongCountAsync(candidate => candidate.EntityId == id, Ct);
 
-        HttpResponseMessage again = await ArchiveAsync(id, _hr, Role.Hr, Department.Hr);
+        HttpResponseMessage again = await ArchiveAsync(id, _hr, Role.Hr, WellKnownDepartments.HrId);
 
         again.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
@@ -102,7 +102,7 @@ public sealed class ArchiveEmployeeTests : IAsyncLifetime
     [Fact]
     public async Task Archiving_an_employee_that_does_not_exist_says_so_in_a_translatable_way()
     {
-        HttpResponseMessage response = await ArchiveAsync(Guid.NewGuid(), _hr, Role.Hr, Department.Hr);
+        HttpResponseMessage response = await ArchiveAsync(Guid.NewGuid(), _hr, Role.Hr, WellKnownDepartments.HrId);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
@@ -168,7 +168,7 @@ public sealed class ArchiveEmployeeTests : IAsyncLifetime
     {
         (Guid id, _) = await CreateEmployeeAsync();
 
-        (await ArchiveAsync(id, _finance, Role.Finance, Department.Finance))
+        (await ArchiveAsync(id, _finance, Role.Finance, WellKnownDepartments.FinanceId))
             .StatusCode.Should().Be(HttpStatusCode.Forbidden, "Finance does not hold EmployeeManage");
 
         (await ReadAsync(id)).IsActive.Should().BeTrue("the refused call changed nothing");
@@ -195,7 +195,7 @@ public sealed class ArchiveEmployeeTests : IAsyncLifetime
             }),
         };
 
-        await StampAsync(request, _hr, Role.Hr, Department.Hr);
+        await StampAsync(request, _hr, Role.Hr, WellKnownDepartments.HrId);
 
         HttpResponseMessage response = await _client.SendAsync(request, Ct);
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -205,7 +205,7 @@ public sealed class ArchiveEmployeeTests : IAsyncLifetime
         return (body.RootElement.GetProperty("id").GetGuid(), phone);
     }
 
-    private async Task<HttpResponseMessage> ArchiveAsync(Guid id, Guid actorId, Role actorRole, Department? actorDepartment)
+    private async Task<HttpResponseMessage> ArchiveAsync(Guid id, Guid actorId, Role actorRole, Guid? actorDepartment)
     {
         using var request = new HttpRequestMessage(
             HttpMethod.Post, new Uri($"/api/employees/{id}/archive", UriKind.Relative));
@@ -220,7 +220,7 @@ public sealed class ArchiveEmployeeTests : IAsyncLifetime
         using var request = new HttpRequestMessage(
             HttpMethod.Get, new Uri($"/api/employees?status={status}", UriKind.Relative));
 
-        await StampAsync(request, _hr, Role.Hr, Department.Hr);
+        await StampAsync(request, _hr, Role.Hr, WellKnownDepartments.HrId);
 
         HttpResponseMessage response = await _client.SendAsync(request, Ct);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -237,7 +237,7 @@ public sealed class ArchiveEmployeeTests : IAsyncLifetime
         return await reader.Employees.SingleAsync(candidate => candidate.Id == id, Ct);
     }
 
-    private async Task StampAsync(HttpRequestMessage request, Guid actorId, Role actorRole, Department? actorDepartment)
+    private async Task StampAsync(HttpRequestMessage request, Guid actorId, Role actorRole, Guid? actorDepartment)
     {
         request.Headers.Add(TestAuthHandler.UserIdHeader, actorId.ToString());
         request.Headers.Add(TestAuthHandler.RoleHeader, actorRole.ToString());
@@ -264,8 +264,8 @@ public sealed class ArchiveEmployeeTests : IAsyncLifetime
         await using KaffDbContext context = _database.CreateContext();
 
         User owner = MakeUser("arce-owner", Role.Owner);
-        User hr = MakeUser("arce-hr", Role.Hr, Department.Hr);
-        User finance = MakeUser("arce-finance", Role.Finance, Department.Finance);
+        User hr = MakeUser("arce-hr", Role.Hr, WellKnownDepartments.HrId);
+        User finance = MakeUser("arce-finance", Role.Finance, WellKnownDepartments.FinanceId);
 
         context.Users.AddRange(owner, hr, finance);
         await context.SaveChangesAsync(Ct);
@@ -276,7 +276,7 @@ public sealed class ArchiveEmployeeTests : IAsyncLifetime
     }
 
     private static User MakeUser(
-        string userName, Role role, Department? department = null, OperationsSubDepartment? subDepartment = null)
+        string userName, Role role, Guid? department = null, OperationsSubDepartment? subDepartment = null)
         => User.Create(UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment).Value;
 
     private static DateTimeOffset Now => new(2026, 9, 11, 8, 0, 0, TimeSpan.Zero);

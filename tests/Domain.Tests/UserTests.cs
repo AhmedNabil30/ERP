@@ -71,7 +71,7 @@ public sealed class UserTests
             PhoneNumber.Create("01000000099").Value,
             Role.SiteEngineer,
             Now,
-            Department.Operations,
+            WellKnownDepartments.OperationsId,
             OperationsSubDepartment.Technical).Value;
 
     // ---- ChangeRole — KAFF-109, decisions.md D-051 (Q27) -------------------------------------------
@@ -90,7 +90,7 @@ public sealed class UserTests
             PhoneNumber.Create("01000000010").Value,
             Role.MarketingSales,
             Now,
-            Department.Marketing).Value;
+            null).Value;
 
         Result changed = user.ChangeRole(Role.Hr);
 
@@ -109,12 +109,12 @@ public sealed class UserTests
             PhoneNumber.Create("01000000011").Value,
             Role.Finance,
             Now,
-            Department.Finance).Value;
+            WellKnownDepartments.FinanceId).Value;
 
         Result changed = user.ChangeRole(Role.Client);
 
         changed.IsFailure.Should().BeTrue(
-            "Role.Client cannot hold a department, and this account still carries Department.Finance");
+            "Role.Client cannot hold a department, and this account still carries WellKnownDepartments.FinanceId");
         changed.Error.Should().Be(IdentityErrors.ExternalRoleCannotHoldDepartment);
         user.Role.Should().Be(Role.Finance);
     }
@@ -211,7 +211,7 @@ public sealed class UserTests
             PhoneNumber.Create("01000000012").Value,
             Role.SiteEngineer,
             Now,
-            Department.Operations,
+            WellKnownDepartments.OperationsId,
             OperationsSubDepartment.Technical).Value;
 
         Result changed = user.ChangeRole(Role.TechnicalOffice);
@@ -257,7 +257,7 @@ public sealed class UserTests
         User owner = created.Value;
 
         owner.Role.Should().Be(Role.Owner, "rule 2 — the account this screen mints is always the Owner");
-        owner.Department.Should().BeNull("rule 2 — the Owner is not one of §9's four departments");
+        owner.DepartmentId.Should().BeNull("rule 2 — the Owner is not one of §9's four departments");
         owner.IsBootstrapOwner.Should().BeTrue("rule 6 — the marker the unique index enforces");
         owner.MustChangePassword.Should().BeFalse(
             "rule 7/8 — SetOwnPassword, not SetTemporaryPassword: he typed it himself");
@@ -343,7 +343,7 @@ public sealed class UserTests
             PhoneNumber.Create("01000000097").Value,
             Role.SiteEngineer,
             Now,
-            Department.Operations,
+            WellKnownDepartments.OperationsId,
             OperationsSubDepartment.Technical).Value;
 
         user.SetTemporaryPassword("temporary-hash").IsSuccess.Should().BeTrue();

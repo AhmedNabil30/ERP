@@ -18,7 +18,7 @@ public interface ICurrentUser
 
     Role? Role { get; }
 
-    Department? Department { get; }
+    Guid? DepartmentId { get; }
 
     OperationsSubDepartment? OperationsSubDepartment { get; }
 

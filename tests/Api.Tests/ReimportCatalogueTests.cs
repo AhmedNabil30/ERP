@@ -261,7 +261,7 @@ public sealed class ReimportCatalogueTests : IAsyncLifetime
         request.Headers.Add(TestAuthHandler.UserIdHeader, _technicalOffice.ToString());
         request.Headers.Add(TestAuthHandler.RoleHeader, Role.TechnicalOffice.ToString());
         request.Headers.Add(TestAuthHandler.SecurityStampHeader, await CurrentStampAsync(_technicalOffice));
-        request.Headers.Add(TestAuthHandler.DepartmentHeader, Department.Operations.ToString());
+        request.Headers.Add(TestAuthHandler.DepartmentHeader, WellKnownDepartments.OperationsId.ToString());
     }
 
     private async Task<string> CurrentStampAsync(Guid userId)
@@ -305,7 +305,7 @@ public sealed class ReimportCatalogueTests : IAsyncLifetime
 
         User technicalOffice = User.Create(
             UniqueNames.Code("rei-tech"), "rei-tech", UniqueNames.Phone(), Role.TechnicalOffice, Now,
-            Department.Operations, OperationsSubDepartment.Technical, null).Value;
+            WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical, null).Value;
 
         context.Babs.Add(bab);
         context.Users.Add(technicalOffice);

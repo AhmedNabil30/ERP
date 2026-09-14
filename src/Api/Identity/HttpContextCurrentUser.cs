@@ -30,7 +30,7 @@ public sealed class HttpContextCurrentUser : ICurrentUser
 
     public Role? Role => ReadEnum<Role>(KaffClaimTypes.Role);
 
-    public Department? Department => ReadEnum<Department>(KaffClaimTypes.Department);
+    public Guid? DepartmentId => ReadGuid(KaffClaimTypes.Department);
 
     public OperationsSubDepartment? OperationsSubDepartment =>
         ReadEnum<OperationsSubDepartment>(KaffClaimTypes.OperationsSubDepartment);

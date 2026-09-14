@@ -224,7 +224,7 @@ public sealed class EmployeeKindInvariantTests : IAsyncLifetime
         request.Headers.Add(TestAuthHandler.UserIdHeader, _hr.ToString());
         request.Headers.Add(TestAuthHandler.RoleHeader, Role.Hr.ToString());
         request.Headers.Add(TestAuthHandler.SecurityStampHeader, await CurrentStampAsync(_hr));
-        request.Headers.Add(TestAuthHandler.DepartmentHeader, Department.Hr.ToString());
+        request.Headers.Add(TestAuthHandler.DepartmentHeader, WellKnownDepartments.HrId.ToString());
     }
 
     private async Task<string> CurrentStampAsync(Guid userId)
@@ -248,7 +248,7 @@ public sealed class EmployeeKindInvariantTests : IAsyncLifetime
     {
         await using KaffDbContext context = _database.CreateContext();
 
-        User hr = MakeUser("eki-hr", Role.Hr, Department.Hr);
+        User hr = MakeUser("eki-hr", Role.Hr, WellKnownDepartments.HrId);
 
         context.Users.Add(hr);
         await context.SaveChangesAsync(Ct);
@@ -257,7 +257,7 @@ public sealed class EmployeeKindInvariantTests : IAsyncLifetime
     }
 
     private static User MakeUser(
-        string userName, Role role, Department? department = null, OperationsSubDepartment? subDepartment = null)
+        string userName, Role role, Guid? department = null, OperationsSubDepartment? subDepartment = null)
         => User.Create(UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment).Value;
 
     private static DateTimeOffset Now => new(2026, 9, 11, 8, 0, 0, TimeSpan.Zero);

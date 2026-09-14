@@ -512,14 +512,14 @@ public sealed class ImportCatalogueTests : IAsyncLifetime
         request.Headers.Add(TestAuthHandler.RoleHeader, actorRole.ToString());
         request.Headers.Add(TestAuthHandler.SecurityStampHeader, await CurrentStampAsync(actorId));
 
-        Department? department = actorRole switch
+        Guid? department = actorRole switch
         {
-            Role.TechnicalOffice => Department.Operations,
-            Role.Finance => Department.Finance,
-            Role.Hr => Department.Hr,
-            Role.SiteEngineer => Department.Operations,
-            Role.HeadOfDesign => Department.Operations,
-            Role.MarketingSales => Department.Marketing,
+            Role.TechnicalOffice => WellKnownDepartments.OperationsId,
+            Role.Finance => WellKnownDepartments.FinanceId,
+            Role.Hr => WellKnownDepartments.HrId,
+            Role.SiteEngineer => WellKnownDepartments.OperationsId,
+            Role.HeadOfDesign => WellKnownDepartments.OperationsId,
+            Role.MarketingSales => null,
             _ => null,
         };
 
@@ -558,14 +558,14 @@ public sealed class ImportCatalogueTests : IAsyncLifetime
 
         User owner = MakeUser("imp-owner", Role.Owner);
         User technicalOffice = MakeUser(
-            "imp-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
-        User finance = MakeUser("imp-finance", Role.Finance, Department.Finance);
-        User hr = MakeUser("imp-hr", Role.Hr, Department.Hr);
+            "imp-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User finance = MakeUser("imp-finance", Role.Finance, WellKnownDepartments.FinanceId);
+        User hr = MakeUser("imp-hr", Role.Hr, WellKnownDepartments.HrId);
         User siteEngineer = MakeUser(
-            "imp-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "imp-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User headOfDesign = MakeUser(
-            "imp-design", Role.HeadOfDesign, Department.Operations, OperationsSubDepartment.Technical);
-        User marketing = MakeUser("imp-marketing", Role.MarketingSales, Department.Marketing);
+            "imp-design", Role.HeadOfDesign, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User marketing = MakeUser("imp-marketing", Role.MarketingSales, null);
 
         context.Babs.Add(bab);
         context.Users.AddRange(owner, technicalOffice, finance, hr, siteEngineer, headOfDesign, marketing);
@@ -585,7 +585,7 @@ public sealed class ImportCatalogueTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null)
         => User.Create(
             UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment, null)

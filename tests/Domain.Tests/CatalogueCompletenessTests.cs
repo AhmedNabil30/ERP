@@ -283,13 +283,13 @@ public sealed class CatalogueCompletenessTests
     [Fact]
     public void Hr_is_granted_by_role_and_never_by_department_alone()
     {
-        // Until 2026-08-20 the HR grants read `{ Department = Department.Hr }`, which matched ANY
+        // Until 2026-08-20 the HR grants read `{ Department = WellKnownDepartments.HrId }`, which matched ANY
         // role carrying that department — a Marketing user moved to HR held EmployeeManage. Karim
         // created Role.Hr specifically "rather than dangerously piggybacking", so a department-only
         // HR grant reintroduces exactly what the ruling removed.
         PermissionCatalogue.All
             .SelectMany(definition => definition.Grants)
-            .Where(grant => grant.Department == Department.Hr)
+            .Where(grant => grant.DepartmentId == WellKnownDepartments.HrId)
             .Should().BeEmpty("HR is a role now; a department-only grant is the piggyback D-044 removed");
     }
 
@@ -318,7 +318,7 @@ public sealed class CatalogueCompletenessTests
             PhoneNumber.Create("01000000001").Value,
             Role.Hr,
             DateTimeOffset.UnixEpoch,
-            Department.Operations,
+            WellKnownDepartments.OperationsId,
             OperationsSubDepartment.Administrative);
 
         hrInOperations.IsFailure.Should().BeTrue();
@@ -330,7 +330,7 @@ public sealed class CatalogueCompletenessTests
             PhoneNumber.Create("01000000002").Value,
             Role.Hr,
             DateTimeOffset.UnixEpoch,
-            Department.Hr).IsSuccess.Should().BeTrue();
+            WellKnownDepartments.HrId).IsSuccess.Should().BeTrue();
     }
 
     [Fact]
@@ -346,7 +346,7 @@ public sealed class CatalogueCompletenessTests
             PhoneNumber.Create("01000000000").Value,
             Role.Client,
             DateTimeOffset.UnixEpoch,
-            Department.Hr,
+            WellKnownDepartments.HrId,
             clientId: Guid.CreateVersion7());
 
         portalUserWithDepartment.IsFailure.Should().BeTrue(

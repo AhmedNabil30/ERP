@@ -30,8 +30,12 @@ public sealed record AccessGrant
     /// <summary>Required role, or null to accept any.</summary>
     public Role? Role { get; init; }
 
-    /// <summary>Required department, or null to accept any.</summary>
-    public Department? Department { get; init; }
+    /// <summary>
+    /// Required department id, or null to accept any. KAFF-321 — department became master data
+    /// (decisions.md D-162), so this compares against a row id rather than an enum member; the fixed
+    /// ids a grant may name live in <see cref="WellKnownDepartments"/>.
+    /// </summary>
+    public Guid? DepartmentId { get; init; }
 
     /// <summary>Required Operations sub-department, or null to accept any.</summary>
     public OperationsSubDepartment? OperationsSubDepartment { get; init; }
@@ -154,7 +158,7 @@ public static class PermissionCatalogue
         AccessGrant hr = new() { Role = Role.Hr };
         AccessGrant operationsAdmin = new()
         {
-            Department = Department.Operations,
+            DepartmentId = WellKnownDepartments.OperationsId,
             OperationsSubDepartment = OperationsSubDepartment.Administrative,
         };
         AccessGrant engineerJunior = new() { Role = Role.SiteEngineer, MinimumAssignmentLevel = AssignmentLevel.Junior };
@@ -319,6 +323,12 @@ public static class PermissionCatalogue
             new(Permission.UserManage, PermissionScope.CompanyWide, [owner],
                 "§9 — ruled by Karim 2026-08-20, see decisions.md D-044"),
 
+            // Owner only, same shape as UserManage above — a department gates Role.Hr and Operations
+            // sub-department membership (User.ValidateDepartment), the axis UserManage already owns
+            // exclusively. decisions.md D-162 (Q85).
+            new(Permission.DepartmentManage, PermissionScope.CompanyWide, [owner],
+                "no spec.md section — decisions.md D-162 (Q85)"),
+
             // ---- Master records: ownership table of spec.md §2 ----
             //
             // The Owner appears on every row below. Karim, 2026-08-20: "The Owner has Global Reach
@@ -427,7 +437,7 @@ public static class PermissionCatalogue
                     new AccessGrant
                     {
                         Role = Role.TechnicalOffice,
-                        Department = Department.Operations,
+                        DepartmentId = WellKnownDepartments.OperationsId,
                         OperationsSubDepartment = OperationsSubDepartment.Administrative,
                     },
                 ],

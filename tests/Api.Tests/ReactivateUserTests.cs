@@ -443,10 +443,10 @@ public sealed class ReactivateUserTests : IAsyncLifetime
             UniqueNames.Code("RCT-PC"), "مشروع ج", client.Id, ContractType.LumpSum, Now).Value;
 
         User owner = MakeUser("rct-owner", Role.Owner);
-        User hr = MakeUser("rct-hr", Role.Hr, Department.Hr);
-        User finance = MakeUser("rct-finance", Role.Finance, Department.Finance);
+        User hr = MakeUser("rct-hr", Role.Hr, WellKnownDepartments.HrId);
+        User finance = MakeUser("rct-finance", Role.Finance, WellKnownDepartments.FinanceId);
         User leaver = MakeUser(
-            "rct-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "rct-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
 
         // The leaver has a real credential before they leave, so AC-112-D has a hash to compare
         // against. Not exercised by any endpoint yet — set directly, the way KAFF-106's Owner-issued
@@ -478,7 +478,7 @@ public sealed class ReactivateUserTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null)
         => User.Create(
             UniqueNames.Code(userName),

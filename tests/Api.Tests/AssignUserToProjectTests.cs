@@ -171,7 +171,7 @@ public sealed class AssignUserToProjectTests : IAsyncLifetime
         var subject = new PermissionSubject(
             _siteEngineer,
             Role.SiteEngineer,
-            Department.Operations,
+            WellKnownDepartments.OperationsId,
             OperationsSubDepartment.Technical,
             null,
             "site-engineer");
@@ -541,17 +541,17 @@ public sealed class AssignUserToProjectTests : IAsyncLifetime
             UniqueNames.Code("ASG-PB"), "مشروع ب", client.Id, ContractType.LumpSum, Now).Value;
 
         User owner = MakeUser("asg-owner", Role.Owner);
-        User hr = MakeUser("asg-hr", Role.Hr, Department.Hr);
-        User finance = MakeUser("asg-finance", Role.Finance, Department.Finance);
+        User hr = MakeUser("asg-hr", Role.Hr, WellKnownDepartments.HrId);
+        User finance = MakeUser("asg-finance", Role.Finance, WellKnownDepartments.FinanceId);
         User technicalOffice = MakeUser(
-            "asg-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
+            "asg-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User siteEngineer = MakeUser(
-            "asg-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "asg-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User supervisor = MakeUser(
-            "asg-supervisor", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "asg-supervisor", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User portal = MakeUser("asg-portal", Role.Client, clientId: client.Id);
         User subcontractor = MakeUser("asg-sub", Role.Subcontractor);
-        User leaver = MakeUser("asg-leaver", Role.Finance, Department.Finance);
+        User leaver = MakeUser("asg-leaver", Role.Finance, WellKnownDepartments.FinanceId);
 
         leaver.Deactivate(Now).IsSuccess.Should().BeTrue();
 
@@ -586,7 +586,7 @@ public sealed class AssignUserToProjectTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null,
         Guid? clientId = null)
         => User.Create(

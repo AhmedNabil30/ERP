@@ -1,7 +1,6 @@
 import { AuditAction, AuditEventKind } from '../audit/audit.api';
 import {
   AssignmentLevel,
-  Department,
   OperationsSubDepartment,
   ProjectAccessPath,
   Role,
@@ -41,21 +40,6 @@ export function roleKey(role: Role): string {
       return 'enum.Role.Hr';
     default:
       return assertNever(role);
-  }
-}
-
-export function departmentKey(department: Department): string {
-  switch (department) {
-    case 'Finance':
-      return 'enum.Department.Finance';
-    case 'Hr':
-      return 'enum.Department.Hr';
-    case 'Marketing':
-      return 'enum.Department.Marketing';
-    case 'Operations':
-      return 'enum.Department.Operations';
-    default:
-      return assertNever(department);
   }
 }
 

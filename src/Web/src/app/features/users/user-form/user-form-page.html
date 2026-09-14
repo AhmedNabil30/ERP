@@ -101,7 +101,7 @@
     @if (isHr()) {
       <div class="field" data-testid="user-department-fixed">
         <span class="label">{{ i18n.t('users.field.department') }}</span>
-        <p class="fixed-value">{{ i18n.t(departmentKey('Hr')) }}</p>
+        <p class="fixed-value" dir="auto">{{ hrDepartmentLabel() }}</p>
         <span class="hint">{{ i18n.t('users.hint.hr_department_fixed') }}</span>
       </div>
     } @else if (!isExternal()) {
@@ -120,15 +120,15 @@
           class="input"
           data-testid="user-department"
           [attr.aria-describedby]="departmentRefusalKey() ? 'user-department-desc' : null"
-          [value]="draft().department"
+          [value]="draft().departmentId"
           (change)="onDepartmentSelect($event)"
         >
-          <option value="" [selected]="draft().department === ''">
+          <option value="" [selected]="draft().departmentId === ''">
             {{ i18n.t('users.field.department.none') }}
           </option>
-          @for (option of departments; track option) {
-            <option [value]="option" [selected]="option === draft().department">
-              {{ i18n.t(departmentKey(option)) }}
+          @for (option of selectableDepartments(); track option.id) {
+            <option [value]="option.id" [selected]="option.id === draft().departmentId">
+              {{ departmentLabel(option) }}
             </option>
           }
         </select>

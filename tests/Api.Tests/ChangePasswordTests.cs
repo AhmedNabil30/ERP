@@ -347,17 +347,17 @@ public sealed class ChangePasswordTests : IAsyncLifetime
     {
         await using KaffDbContext context = _database.CreateContext();
 
-        User forced = MakeUser("chg-forced", Role.MarketingSales, Department.Marketing);
+        User forced = MakeUser("chg-forced", Role.MarketingSales, null);
         forced.SetTemporaryPassword(PasswordHasher.Hash(TemporaryPassword)).IsSuccess.Should().BeTrue();
 
         // V-26-F. Same forced-change flag, a role the ClientManage catalogue row does not grant.
-        User forcedNonHolder = MakeUser("chg-forced-finance", Role.Finance, Department.Finance);
+        User forcedNonHolder = MakeUser("chg-forced-finance", Role.Finance, WellKnownDepartments.FinanceId);
         forcedNonHolder.SetTemporaryPassword(PasswordHasher.Hash(TemporaryPassword)).IsSuccess.Should().BeTrue();
 
-        User ordinary = MakeUser("chg-ordinary", Role.MarketingSales, Department.Marketing);
+        User ordinary = MakeUser("chg-ordinary", Role.MarketingSales, null);
         ordinary.SetOwnPassword(PasswordHasher.Hash(TemporaryPassword)).IsSuccess.Should().BeTrue();
 
-        User inactive = MakeUser("chg-inactive", Role.MarketingSales, Department.Marketing);
+        User inactive = MakeUser("chg-inactive", Role.MarketingSales, null);
         inactive.SetOwnPassword(PasswordHasher.Hash(TemporaryPassword)).IsSuccess.Should().BeTrue();
 
         context.Users.AddRange(forced, ordinary, inactive, forcedNonHolder);
@@ -373,7 +373,7 @@ public sealed class ChangePasswordTests : IAsyncLifetime
         _forcedNonHolderName = forcedNonHolder.UserName;
     }
 
-    private static User MakeUser(string userName, Role role, Department? department = null)
+    private static User MakeUser(string userName, Role role, Guid? department = null)
         => User.Create(
             UniqueNames.Code(userName),
             userName,

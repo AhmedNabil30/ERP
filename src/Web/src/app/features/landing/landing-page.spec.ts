@@ -20,7 +20,7 @@ function session(permissions: readonly string[]): Session {
     userId: '11111111-1111-1111-1111-111111111111',
     displayName: 'اختبار',
     role: 'Finance',
-    department: null,
+    departmentId: null,
     operationsSubDepartment: null,
     mustChangePassword: false,
     permissions,

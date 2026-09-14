@@ -148,7 +148,7 @@ public sealed class ReadAuditTrailTests : IAsyncLifetime
         foreach (string query in queries)
         {
             HttpResponseMessage refused = await GetAsync(
-                query, _technicalOffice, Role.TechnicalOffice, Department.Operations);
+                query, _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId);
 
             refused.StatusCode.Should().Be(
                 HttpStatusCode.Forbidden,
@@ -189,7 +189,7 @@ public sealed class ReadAuditTrailTests : IAsyncLifetime
     {
         int refusals = 0;
 
-        foreach ((Guid actorId, Role role, Department? department, Guid? clientId) in RefusedActors())
+        foreach ((Guid actorId, Role role, Guid? department, Guid? clientId) in RefusedActors())
         {
             foreach (string query in new[] { string.Empty, $"?projectId={_projectA}" })
             {
@@ -238,14 +238,14 @@ public sealed class ReadAuditTrailTests : IAsyncLifetime
     }
 
     /// <summary>Every role that must be refused, derived rather than listed. See the remarks above.</summary>
-    private IEnumerable<(Guid ActorId, Role Role, Department? Department, Guid? ClientId)> RefusedActors()
+    private IEnumerable<(Guid ActorId, Role Role, Guid? Department, Guid? ClientId)> RefusedActors()
     {
-        yield return (_finance, Role.Finance, Department.Finance, null);
-        yield return (_hr, Role.Hr, Department.Hr, null);
-        yield return (_technicalOffice, Role.TechnicalOffice, Department.Operations, null);
-        yield return (_siteEngineer, Role.SiteEngineer, Department.Operations, null);
-        yield return (_headOfDesign, Role.HeadOfDesign, Department.Operations, null);
-        yield return (_marketing, Role.MarketingSales, Department.Marketing, null);
+        yield return (_finance, Role.Finance, WellKnownDepartments.FinanceId, null);
+        yield return (_hr, Role.Hr, WellKnownDepartments.HrId, null);
+        yield return (_technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, null);
+        yield return (_siteEngineer, Role.SiteEngineer, WellKnownDepartments.OperationsId, null);
+        yield return (_headOfDesign, Role.HeadOfDesign, WellKnownDepartments.OperationsId, null);
+        yield return (_marketing, Role.MarketingSales, null, null);
         yield return (_portalClient, Role.Client, null, _portalClientCompany);
     }
 
@@ -572,7 +572,7 @@ public sealed class ReadAuditTrailTests : IAsyncLifetime
         string query,
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         Guid? actorClientId = null)
     {
         using var request = new HttpRequestMessage(
@@ -659,7 +659,7 @@ public sealed class ReadAuditTrailTests : IAsyncLifetime
         HttpRequestMessage request,
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         Guid? actorClientId)
     {
         request.Headers.Add(TestAuthHandler.UserIdHeader, actorId.ToString());
@@ -707,24 +707,24 @@ public sealed class ReadAuditTrailTests : IAsyncLifetime
             UniqueNames.Code("AUD-PB"), "مشروع ب", company.Id, ContractType.LumpSum, Now).Value;
 
         User owner = MakeUser("aud-owner", Role.Owner);
-        User finance = MakeUser("aud-finance", Role.Finance, Department.Finance);
-        User hr = MakeUser("aud-hr", Role.Hr, Department.Hr);
+        User finance = MakeUser("aud-finance", Role.Finance, WellKnownDepartments.FinanceId);
+        User hr = MakeUser("aud-hr", Role.Hr, WellKnownDepartments.HrId);
         User technicalOffice = MakeUser(
-            "aud-techoffice", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
+            "aud-techoffice", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User siteEngineer = MakeUser(
-            "aud-siteeng", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "aud-siteeng", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User headOfDesign = MakeUser(
-            "aud-headdesign", Role.HeadOfDesign, Department.Operations, OperationsSubDepartment.Technical);
-        User marketing = MakeUser("aud-marketing", Role.MarketingSales, Department.Marketing);
+            "aud-headdesign", Role.HeadOfDesign, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User marketing = MakeUser("aud-marketing", Role.MarketingSales, null);
         User subcontractor = MakeUser("aud-subcontractor", Role.Subcontractor);
         User portal = MakeUser("aud-portal", Role.Client, clientId: company.Id);
         // Not site engineers: spec.md §9 attaches Junior/Supervisor to that role alone, and
         // ProjectAssignment.Create refuses AssignmentLevel.Standard for one.
-        User staffedOnA = MakeUser("aud-staff-a", Role.Finance, Department.Finance);
-        User staffedOnB = MakeUser("aud-staff-b", Role.Finance, Department.Finance);
-        User staffedByTechnicalOffice = MakeUser("aud-staff-to", Role.Finance, Department.Finance);
-        User leaver = MakeUser("aud-leaver", Role.Finance, Department.Finance);
-        User credentialHolder = MakeUser("aud-credentials", Role.Finance, Department.Finance);
+        User staffedOnA = MakeUser("aud-staff-a", Role.Finance, WellKnownDepartments.FinanceId);
+        User staffedOnB = MakeUser("aud-staff-b", Role.Finance, WellKnownDepartments.FinanceId);
+        User staffedByTechnicalOffice = MakeUser("aud-staff-to", Role.Finance, WellKnownDepartments.FinanceId);
+        User leaver = MakeUser("aud-leaver", Role.Finance, WellKnownDepartments.FinanceId);
+        User credentialHolder = MakeUser("aud-credentials", Role.Finance, WellKnownDepartments.FinanceId);
 
         context.Clients.Add(company);
         context.Projects.AddRange(projectA, projectB);
@@ -798,7 +798,7 @@ public sealed class ReadAuditTrailTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null,
         Guid? clientId = null)
         => User.Create(
@@ -826,7 +826,7 @@ public sealed class ReadAuditTrailTests : IAsyncLifetime
 
         public Role? Role { get; }
 
-        public Department? Department => null;
+        public Guid? DepartmentId => null;
 
         public OperationsSubDepartment? OperationsSubDepartment => null;
 

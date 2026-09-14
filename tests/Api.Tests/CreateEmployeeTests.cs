@@ -273,7 +273,7 @@ public sealed class CreateEmployeeTests : IAsyncLifetime
     [Fact]
     public async Task Only_hr_and_the_owner_may_register_an_employee()
     {
-        foreach ((Guid actor, Role role, Department? department) in RefusedActors())
+        foreach ((Guid actor, Role role, Guid? department) in RefusedActors())
         {
             (await CreateAsync(
                 Body($"Refused {role}", UniqueNames.Phone().ToString(), EmployeeKind.Salaried), actor, role, department))
@@ -315,23 +315,23 @@ public sealed class CreateEmployeeTests : IAsyncLifetime
         kind = kind.ToString(),
     };
 
-    private IEnumerable<(Guid Actor, Role Role, Department? Department)> RefusedActors()
+    private IEnumerable<(Guid Actor, Role Role, Guid? Department)> RefusedActors()
     {
-        yield return (_finance, Role.Finance, Department.Finance);
-        yield return (_technicalOffice, Role.TechnicalOffice, Department.Operations);
-        yield return (_siteEngineer, Role.SiteEngineer, Department.Operations);
-        yield return (_headOfDesign, Role.HeadOfDesign, Department.Operations);
-        yield return (_marketing, Role.MarketingSales, Department.Marketing);
+        yield return (_finance, Role.Finance, WellKnownDepartments.FinanceId);
+        yield return (_technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId);
+        yield return (_siteEngineer, Role.SiteEngineer, WellKnownDepartments.OperationsId);
+        yield return (_headOfDesign, Role.HeadOfDesign, WellKnownDepartments.OperationsId);
+        yield return (_marketing, Role.MarketingSales, null);
     }
 
     private Task<HttpResponseMessage> CreateAsync(
-        object body, Guid? actorId = null, Role? actorRole = null, Department? actorDepartment = null)
+        object body, Guid? actorId = null, Role? actorRole = null, Guid? actorDepartment = null)
         => SendAsync(
             HttpMethod.Post,
             "/api/employees",
             actorId ?? _hr,
             actorRole ?? Role.Hr,
-            actorDepartment ?? Department.Hr,
+            actorDepartment ?? WellKnownDepartments.HrId,
             body);
 
     private async Task<Guid> CreateBabAsync()
@@ -348,7 +348,7 @@ public sealed class CreateEmployeeTests : IAsyncLifetime
     }
 
     private async Task<HttpResponseMessage> SendAsync(
-        HttpMethod method, string route, Guid actorId, Role actorRole, Department? actorDepartment, object body)
+        HttpMethod method, string route, Guid actorId, Role actorRole, Guid? actorDepartment, object body)
     {
         using var request = new HttpRequestMessage(method, new Uri(route, UriKind.Relative))
         {
@@ -360,7 +360,7 @@ public sealed class CreateEmployeeTests : IAsyncLifetime
         return await _client.SendAsync(request, Ct);
     }
 
-    private async Task StampAsync(HttpRequestMessage request, Guid actorId, Role actorRole, Department? actorDepartment)
+    private async Task StampAsync(HttpRequestMessage request, Guid actorId, Role actorRole, Guid? actorDepartment)
     {
         request.Headers.Add(TestAuthHandler.UserIdHeader, actorId.ToString());
         request.Headers.Add(TestAuthHandler.RoleHeader, actorRole.ToString());
@@ -394,15 +394,15 @@ public sealed class CreateEmployeeTests : IAsyncLifetime
         await using KaffDbContext context = _database.CreateContext();
 
         User owner = MakeUser("cre-owner", Role.Owner);
-        User hr = MakeUser("cre-hr", Role.Hr, Department.Hr);
-        User finance = MakeUser("cre-finance", Role.Finance, Department.Finance);
+        User hr = MakeUser("cre-hr", Role.Hr, WellKnownDepartments.HrId);
+        User finance = MakeUser("cre-finance", Role.Finance, WellKnownDepartments.FinanceId);
         User technicalOffice = MakeUser(
-            "cre-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
+            "cre-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User siteEngineer = MakeUser(
-            "cre-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "cre-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User headOfDesign = MakeUser(
-            "cre-design", Role.HeadOfDesign, Department.Operations, OperationsSubDepartment.Technical);
-        User marketing = MakeUser("cre-marketing", Role.MarketingSales, Department.Marketing);
+            "cre-design", Role.HeadOfDesign, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User marketing = MakeUser("cre-marketing", Role.MarketingSales, null);
 
         context.Users.AddRange(owner, hr, finance, technicalOffice, siteEngineer, headOfDesign, marketing);
 
@@ -418,7 +418,7 @@ public sealed class CreateEmployeeTests : IAsyncLifetime
     }
 
     private static User MakeUser(
-        string userName, Role role, Department? department = null, OperationsSubDepartment? subDepartment = null)
+        string userName, Role role, Guid? department = null, OperationsSubDepartment? subDepartment = null)
         => User.Create(UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment).Value;
 
     private static DateTimeOffset Now => new(2026, 9, 11, 8, 0, 0, TimeSpan.Zero);

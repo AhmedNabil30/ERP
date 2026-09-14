@@ -119,7 +119,7 @@ public sealed class AuditMechanismTests
             UniqueNames.Phone(),
             Role.Finance,
             Now,
-            Department.Finance).Value;
+            WellKnownDepartments.FinanceId).Value;
 
         await using (KaffDbContext context = _database.CreateContext(actor, Gated(actor)))
         {
@@ -579,7 +579,7 @@ public sealed class AuditMechanismTests
 
         public Role? Role => Domain.Identity.Role.Finance;
 
-        public Department? Department => Domain.Identity.Department.Finance;
+        public Guid? DepartmentId => Domain.Identity.WellKnownDepartments.FinanceId;
 
         public OperationsSubDepartment? OperationsSubDepartment => null;
 

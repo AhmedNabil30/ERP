@@ -18,7 +18,7 @@ namespace Kaff.Domain.Authorization;
 public sealed record PermissionSubject(
     Guid UserId,
     Role Role,
-    Department? Department,
+    Guid? DepartmentId,
     OperationsSubDepartment? OperationsSubDepartment,
     Guid? ClientId,
     string FullName,
@@ -332,7 +332,7 @@ public static class PermissionEvaluator
             return false;
         }
 
-        if (grant.Department is not null && grant.Department != subject.Department)
+        if (grant.DepartmentId is not null && grant.DepartmentId != subject.DepartmentId)
         {
             return false;
         }

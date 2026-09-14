@@ -62,7 +62,7 @@ public enum Role
     /// <list type="number">
     /// <item>HR holds no grant on <c>ProjectRead</c> or on any treasury, gate or movement
     /// permission.</item>
-    /// <item><c>User.Create</c> requires an HR user to carry <see cref="Department.Hr"/> and no
+    /// <item><c>User.Create</c> requires an HR user to carry <see cref="WellKnownDepartments.HrId"/> and no
     /// other department. Without that, an HR user placed in Operations / Administrative would
     /// inherit <c>SiteExpenseConfirm</c> through a department-only grant — the same piggyback the
     /// ruling exists to prevent, arriving from the other direction.</item>

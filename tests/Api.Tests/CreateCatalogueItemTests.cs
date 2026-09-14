@@ -63,7 +63,7 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
         string code = UniqueNames.Code("CRT-A");
 
         HttpResponseMessage response = await CreateAsync(
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, Body(code, cost: 100m, sell: 150m));
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, Body(code, cost: 100m, sell: 150m));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
@@ -93,14 +93,14 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
     {
         string code = UniqueNames.Code("CRT-B");
 
-        (await CreateAsync(_technicalOffice, Role.TechnicalOffice, Department.Operations, Body(code)))
+        (await CreateAsync(_technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, Body(code)))
             .StatusCode.Should().Be(HttpStatusCode.Created);
 
-        (await CreateAsync(_technicalOffice, Role.TechnicalOffice, Department.Operations, Body(code)))
+        (await CreateAsync(_technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, Body(code)))
             .StatusCode.Should().Be(HttpStatusCode.Conflict, "the exact code is already taken");
 
         (await CreateAsync(
-                _technicalOffice, Role.TechnicalOffice, Department.Operations, Body(code.ToLowerInvariant())))
+                _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, Body(code.ToLowerInvariant())))
             .StatusCode.Should().Be(
                 HttpStatusCode.Conflict,
                 "CatalogueItem.Create upper-invariants the code, so the lower-case form collides too");
@@ -112,8 +112,8 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
         string code = UniqueNames.Code("CRT-RACE");
 
         HttpResponseMessage[] results = await Task.WhenAll(
-            CreateAsync(_technicalOffice, Role.TechnicalOffice, Department.Operations, Body(code)),
-            CreateAsync(_technicalOffice, Role.TechnicalOffice, Department.Operations, Body(code)));
+            CreateAsync(_technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, Body(code)),
+            CreateAsync(_technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, Body(code)));
 
         results.Count(r => r.StatusCode == HttpStatusCode.Created).Should().Be(
             1, "the guarantee is ux_catalogue_items_code, not a read-then-write a race can defeat");
@@ -135,7 +135,7 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
         HttpResponseMessage response = await CreateAsync(
             _technicalOffice,
             Role.TechnicalOffice,
-            Department.Operations,
+            WellKnownDepartments.OperationsId,
             Body(code, cost: 987.6543m, sell: 1234.5678m));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -160,7 +160,7 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
         HttpResponseMessage response = await CreateAsync(
             _technicalOffice,
             Role.TechnicalOffice,
-            Department.Operations,
+            WellKnownDepartments.OperationsId,
             new
             {
                 code,
@@ -186,7 +186,7 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
         HttpResponseMessage response = await CreateAsync(
             _technicalOffice,
             Role.TechnicalOffice,
-            Department.Operations,
+            WellKnownDepartments.OperationsId,
             new
             {
                 code,
@@ -205,7 +205,7 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
     {
         string code = UniqueNames.Code("CRT-ZERO");
 
-        (await CreateAsync(_technicalOffice, Role.TechnicalOffice, Department.Operations, Body(code, cost: 0m, sell: 0m)))
+        (await CreateAsync(_technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, Body(code, cost: 0m, sell: 0m)))
             .StatusCode.Should().Be(
                 HttpStatusCode.Created, "AC-202-D refuses only negatives — an explicit zero is legal");
     }
@@ -237,7 +237,7 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
         request.Headers.Add(TestAuthHandler.UserIdHeader, _technicalOffice.ToString());
         request.Headers.Add(TestAuthHandler.RoleHeader, Role.TechnicalOffice.ToString());
         request.Headers.Add(TestAuthHandler.SecurityStampHeader, await CurrentStampAsync(_technicalOffice));
-        request.Headers.Add(TestAuthHandler.DepartmentHeader, Department.Operations.ToString());
+        request.Headers.Add(TestAuthHandler.DepartmentHeader, WellKnownDepartments.OperationsId.ToString());
 
         HttpResponseMessage created = await _client.SendAsync(request, Ct);
 
@@ -255,7 +255,7 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
         listRequest.Headers.Add(TestAuthHandler.UserIdHeader, _technicalOffice.ToString());
         listRequest.Headers.Add(TestAuthHandler.RoleHeader, Role.TechnicalOffice.ToString());
         listRequest.Headers.Add(TestAuthHandler.SecurityStampHeader, await CurrentStampAsync(_technicalOffice));
-        listRequest.Headers.Add(TestAuthHandler.DepartmentHeader, Department.Operations.ToString());
+        listRequest.Headers.Add(TestAuthHandler.DepartmentHeader, WellKnownDepartments.OperationsId.ToString());
 
         HttpResponseMessage listed = await _client.SendAsync(listRequest, Ct);
 
@@ -277,7 +277,7 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
         HttpResponseMessage response = await CreateAsync(
             _technicalOffice,
             Role.TechnicalOffice,
-            Department.Operations,
+            WellKnownDepartments.OperationsId,
             new
             {
                 code = UniqueNames.Code("CRT-BAB"),
@@ -298,7 +298,7 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
     [Fact]
     public async Task Only_technical_office_and_the_owner_may_create_a_catalogue_item()
     {
-        foreach ((Guid actor, Role role, Department? department) in RefusedActors())
+        foreach ((Guid actor, Role role, Guid? department) in RefusedActors())
         {
             (await CreateAsync(actor, role, department, Body(UniqueNames.Code($"CRT-{role}"))))
                 .StatusCode.Should().Be(
@@ -343,7 +343,7 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
         string code = UniqueNames.Code("CRT-AUD");
 
         HttpResponseMessage response = await CreateAsync(
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, Body(code, cost: 10m, sell: 20m));
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, Body(code, cost: 10m, sell: 20m));
 
         Guid id = await IdOfAsync(response);
 
@@ -370,7 +370,7 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
         await using KaffDbContext before = _database.CreateBareContext();
         long countBefore = await before.AuditRecords.LongCountAsync(Ct);
 
-        (await CreateAsync(_finance, Role.Finance, Department.Finance, Body(UniqueNames.Code("CRT-REF"))))
+        (await CreateAsync(_finance, Role.Finance, WellKnownDepartments.FinanceId, Body(UniqueNames.Code("CRT-REF"))))
             .StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
         await using KaffDbContext after = _database.CreateBareContext();
@@ -390,17 +390,17 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
         baseSellRate = sell,
     };
 
-    private IEnumerable<(Guid Actor, Role Role, Department? Department)> RefusedActors()
+    private IEnumerable<(Guid Actor, Role Role, Guid? Department)> RefusedActors()
     {
-        yield return (_finance, Role.Finance, Department.Finance);
-        yield return (_hr, Role.Hr, Department.Hr);
-        yield return (_siteEngineer, Role.SiteEngineer, Department.Operations);
-        yield return (_headOfDesign, Role.HeadOfDesign, Department.Operations);
-        yield return (_marketing, Role.MarketingSales, Department.Marketing);
+        yield return (_finance, Role.Finance, WellKnownDepartments.FinanceId);
+        yield return (_hr, Role.Hr, WellKnownDepartments.HrId);
+        yield return (_siteEngineer, Role.SiteEngineer, WellKnownDepartments.OperationsId);
+        yield return (_headOfDesign, Role.HeadOfDesign, WellKnownDepartments.OperationsId);
+        yield return (_marketing, Role.MarketingSales, null);
     }
 
     private Task<HttpResponseMessage> CreateAsync(
-        Guid actorId, Role actorRole, Department? actorDepartment, object body, Guid? actorClientId = null)
+        Guid actorId, Role actorRole, Guid? actorDepartment, object body, Guid? actorClientId = null)
         => SendAsync(HttpMethod.Post, "/api/catalogue-items", actorId, actorRole, actorDepartment, body, actorClientId);
 
     private async Task<HttpResponseMessage> SendAsync(
@@ -408,7 +408,7 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
         string route,
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         object body,
         Guid? actorClientId = null)
     {
@@ -479,14 +479,14 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
 
         User owner = MakeUser("crt-owner", Role.Owner);
         User technicalOffice = MakeUser(
-            "crt-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
-        User finance = MakeUser("crt-finance", Role.Finance, Department.Finance);
-        User hr = MakeUser("crt-hr", Role.Hr, Department.Hr);
+            "crt-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User finance = MakeUser("crt-finance", Role.Finance, WellKnownDepartments.FinanceId);
+        User hr = MakeUser("crt-hr", Role.Hr, WellKnownDepartments.HrId);
         User siteEngineer = MakeUser(
-            "crt-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "crt-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User headOfDesign = MakeUser(
-            "crt-design", Role.HeadOfDesign, Department.Operations, OperationsSubDepartment.Technical);
-        User marketing = MakeUser("crt-marketing", Role.MarketingSales, Department.Marketing);
+            "crt-design", Role.HeadOfDesign, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User marketing = MakeUser("crt-marketing", Role.MarketingSales, null);
         User portal = MakeUser("crt-portal", Role.Client, clientId: company.Id);
 
         context.Babs.Add(bab);
@@ -511,7 +511,7 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null,
         Guid? clientId = null)
         => User.Create(

@@ -103,7 +103,7 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
     public async Task A_search_matching_nothing_is_an_empty_list_and_not_an_error()
     {
         HttpResponseMessage response = await SendAsync(
-            _technicalOffice, Role.TechnicalOffice, Department.Operations, UniqueNames.Code("FND-NONE"));
+            _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, UniqueNames.Code("FND-NONE"));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK, "nothing found is not something gone wrong");
 
@@ -140,7 +140,7 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
     [Fact]
     public async Task Only_technical_office_and_the_owner_may_search_and_the_holder_sees_cost_price()
     {
-        foreach ((Guid actor, Role role, Department? department) in RefusedActors())
+        foreach ((Guid actor, Role role, Guid? department) in RefusedActors())
         {
             (await SendAsync(actor, role, department, null))
                 .StatusCode.Should().Be(
@@ -182,7 +182,7 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
         await using KaffDbContext before = _database.CreateBareContext();
         long countBefore = await before.AuditRecords.LongCountAsync(Ct);
 
-        (await SearchAsyncAs(_technicalOffice, Role.TechnicalOffice, Department.Operations, code))
+        (await SearchAsyncAs(_technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, code))
             .Should().ContainSingle();
 
         await using KaffDbContext after = _database.CreateBareContext();
@@ -307,13 +307,13 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
         ? decimal.Parse(element.GetString()!, CultureInfo.InvariantCulture)
         : element.GetDecimal();
 
-    private IEnumerable<(Guid Actor, Role Role, Department? Department)> RefusedActors()
+    private IEnumerable<(Guid Actor, Role Role, Guid? Department)> RefusedActors()
     {
-        yield return (_finance, Role.Finance, Department.Finance);
-        yield return (_hr, Role.Hr, Department.Hr);
-        yield return (_siteEngineer, Role.SiteEngineer, Department.Operations);
-        yield return (_headOfDesign, Role.HeadOfDesign, Department.Operations);
-        yield return (_marketing, Role.MarketingSales, Department.Marketing);
+        yield return (_finance, Role.Finance, WellKnownDepartments.FinanceId);
+        yield return (_hr, Role.Hr, WellKnownDepartments.HrId);
+        yield return (_siteEngineer, Role.SiteEngineer, WellKnownDepartments.OperationsId);
+        yield return (_headOfDesign, Role.HeadOfDesign, WellKnownDepartments.OperationsId);
+        yield return (_marketing, Role.MarketingSales, null);
     }
 
     private async Task<Guid> CreateBabAsync(int sortOrder = 0, string? codePrefix = null)
@@ -352,7 +352,7 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
         request.Headers.Add(TestAuthHandler.UserIdHeader, _technicalOffice.ToString());
         request.Headers.Add(TestAuthHandler.RoleHeader, Role.TechnicalOffice.ToString());
         request.Headers.Add(TestAuthHandler.SecurityStampHeader, await CurrentStampAsync(_technicalOffice));
-        request.Headers.Add(TestAuthHandler.DepartmentHeader, Department.Operations.ToString());
+        request.Headers.Add(TestAuthHandler.DepartmentHeader, WellKnownDepartments.OperationsId.ToString());
 
         HttpResponseMessage response = await _client.SendAsync(request, Ct);
 
@@ -378,10 +378,10 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
     }
 
     private async Task<IReadOnlyList<CatalogueItemSummary>> SearchAsync(string? search)
-        => await SearchAsyncAs(_technicalOffice, Role.TechnicalOffice, Department.Operations, search);
+        => await SearchAsyncAs(_technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, search);
 
     private async Task<IReadOnlyList<CatalogueItemSummary>> SearchAsyncAs(
-        Guid actorId, Role actorRole, Department? actorDepartment, string? search, string? status = null)
+        Guid actorId, Role actorRole, Guid? actorDepartment, string? search, string? status = null)
     {
         HttpResponseMessage response = await SendAsync(actorId, actorRole, actorDepartment, search, status: status);
 
@@ -407,7 +407,7 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
     private async Task<HttpResponseMessage> SendAsync(
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         string? search,
         Guid? actorClientId = null,
         string? status = null)
@@ -468,14 +468,14 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
 
         User owner = MakeUser("fnd-owner", Role.Owner);
         User technicalOffice = MakeUser(
-            "fnd-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
-        User finance = MakeUser("fnd-finance", Role.Finance, Department.Finance);
-        User hr = MakeUser("fnd-hr", Role.Hr, Department.Hr);
+            "fnd-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User finance = MakeUser("fnd-finance", Role.Finance, WellKnownDepartments.FinanceId);
+        User hr = MakeUser("fnd-hr", Role.Hr, WellKnownDepartments.HrId);
         User siteEngineer = MakeUser(
-            "fnd-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
+            "fnd-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User headOfDesign = MakeUser(
-            "fnd-design", Role.HeadOfDesign, Department.Operations, OperationsSubDepartment.Technical);
-        User marketing = MakeUser("fnd-marketing", Role.MarketingSales, Department.Marketing);
+            "fnd-design", Role.HeadOfDesign, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User marketing = MakeUser("fnd-marketing", Role.MarketingSales, null);
         User portal = MakeUser("fnd-portal", Role.Client, clientId: company.Id);
 
         context.Clients.Add(company);
@@ -498,7 +498,7 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
     private static User MakeUser(
         string userName,
         Role role,
-        Department? department = null,
+        Guid? department = null,
         OperationsSubDepartment? subDepartment = null,
         Guid? clientId = null)
         => User.Create(

@@ -322,7 +322,7 @@ public sealed class EmployeePhoneMatchTests : IAsyncLifetime
         request.Headers.Add(TestAuthHandler.UserIdHeader, _hr.ToString());
         request.Headers.Add(TestAuthHandler.RoleHeader, Role.Hr.ToString());
         request.Headers.Add(TestAuthHandler.SecurityStampHeader, await CurrentStampAsync(_hr));
-        request.Headers.Add(TestAuthHandler.DepartmentHeader, Department.Hr.ToString());
+        request.Headers.Add(TestAuthHandler.DepartmentHeader, WellKnownDepartments.HrId.ToString());
     }
 
     private async Task<string> CurrentStampAsync(Guid userId)
@@ -346,7 +346,7 @@ public sealed class EmployeePhoneMatchTests : IAsyncLifetime
     {
         await using KaffDbContext context = _database.CreateContext();
 
-        User hr = User.Create(UniqueNames.Code("epm-hr"), "epm-hr", UniqueNames.Phone(), Role.Hr, Now, Department.Hr).Value;
+        User hr = User.Create(UniqueNames.Code("epm-hr"), "epm-hr", UniqueNames.Phone(), Role.Hr, Now, WellKnownDepartments.HrId).Value;
 
         context.Users.Add(hr);
         await context.SaveChangesAsync(Ct);

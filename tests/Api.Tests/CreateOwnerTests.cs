@@ -116,7 +116,7 @@ public sealed class CreateOwnerTests : IClassFixture<CreateOwnerTests.Fixture>, 
         User owner = await ReadUserAsync(userName);
 
         owner.Role.Should().Be(Role.Owner);
-        owner.Department.Should().BeNull("rule 2 — the Owner is not one of §9's four departments");
+        owner.DepartmentId.Should().BeNull("rule 2 — the Owner is not one of §9's four departments");
         owner.IsActive.Should().BeTrue();
         owner.IsBootstrapOwner.Should().BeTrue();
 
@@ -204,7 +204,7 @@ public sealed class CreateOwnerTests : IClassFixture<CreateOwnerTests.Fixture>, 
                 UniqueNames.Phone(),
                 Role.Finance,
                 Now,
-                Department.Finance).Value;
+                WellKnownDepartments.FinanceId).Value;
 
             seed.Users.Add(someone);
             await seed.SaveChangesAsync(Ct);

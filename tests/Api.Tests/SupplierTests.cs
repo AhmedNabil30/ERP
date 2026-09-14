@@ -54,7 +54,7 @@ public sealed class SupplierTests : IAsyncLifetime
     public async Task A_supplier_is_created_once_and_carries_no_project_field()
     {
         HttpResponseMessage response = await CreateRawAsync(
-            _finance, Role.Finance, Department.Finance, Body("مورد الحديد", address: "القاهرة"));
+            _finance, Role.Finance, WellKnownDepartments.FinanceId, Body("مورد الحديد", address: "القاهرة"));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
@@ -83,16 +83,16 @@ public sealed class SupplierTests : IAsyncLifetime
         string phone = UniqueNames.Phone().Entered;
 
         Guid firstId = await IdOfAsync(await CreateRawAsync(
-            _finance, Role.Finance, Department.Finance, Body("المورد الأول", phone: phone)));
+            _finance, Role.Finance, WellKnownDepartments.FinanceId, Body("المورد الأول", phone: phone)));
 
         HttpResponseMessage refused = await CreateRawAsync(
-            _finance, Role.Finance, Department.Finance, Body("المورد الثاني", phone: phone));
+            _finance, Role.Finance, WellKnownDepartments.FinanceId, Body("المورد الثاني", phone: phone));
 
         refused.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await MessageKeyAsync(refused)).Should().Be("errors.master.duplicate_phone_not_acknowledged");
 
         HttpResponseMessage proceeded = await CreateRawAsync(
-            _finance, Role.Finance, Department.Finance, Body("المورد الثاني", phone: phone, acknowledged: true));
+            _finance, Role.Finance, WellKnownDepartments.FinanceId, Body("المورد الثاني", phone: phone, acknowledged: true));
 
         proceeded.StatusCode.Should().Be(HttpStatusCode.Created, "D-139 §1 — warn, never block");
 
@@ -112,14 +112,14 @@ public sealed class SupplierTests : IAsyncLifetime
     {
         string phone = UniqueNames.Phone().Entered;
 
-        await CreateRawAsync(_finance, Role.Finance, Department.Finance, Body("الأصلي", phone: phone));
+        await CreateRawAsync(_finance, Role.Finance, WellKnownDepartments.FinanceId, Body("الأصلي", phone: phone));
 
         await using KaffDbContext before = _database.CreateBareContext();
         long countBefore = await before.Suppliers.LongCountAsync(Ct);
         long auditBefore = await before.AuditRecords.LongCountAsync(Ct);
 
         HttpResponseMessage refused = await CreateRawAsync(
-            _finance, Role.Finance, Department.Finance, Body("محاولة", phone: phone));
+            _finance, Role.Finance, WellKnownDepartments.FinanceId, Body("محاولة", phone: phone));
 
         refused.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
@@ -131,12 +131,12 @@ public sealed class SupplierTests : IAsyncLifetime
     [Fact]
     public async Task Editing_a_supplier_without_changing_the_phone_does_not_warn()
     {
-        Guid id = await IdOfAsync(await CreateRawAsync(_finance, Role.Finance, Department.Finance, Body("مورد")));
+        Guid id = await IdOfAsync(await CreateRawAsync(_finance, Role.Finance, WellKnownDepartments.FinanceId, Body("مورد")));
 
         Supplier supplier = await ReadAsync(id);
 
         HttpResponseMessage edited = await EditRawAsync(
-            id, _finance, Role.Finance, Department.Finance, EditBody(supplier));
+            id, _finance, Role.Finance, WellKnownDepartments.FinanceId, EditBody(supplier));
 
         edited.StatusCode.Should().Be(
             HttpStatusCode.OK, "a record saved with its own phone unchanged must never match itself");
@@ -148,7 +148,7 @@ public sealed class SupplierTests : IAsyncLifetime
         string national = UniqueNames.Phone().Entered;
         string bare = national[1..];
 
-        await CreateRawAsync(_finance, Role.Finance, Department.Finance, Body("مورد الرقم", phone: national));
+        await CreateRawAsync(_finance, Role.Finance, WellKnownDepartments.FinanceId, Body("مورد الرقم", phone: national));
 
         HttpResponseMessage check = await PhoneCheckAsync("+20 " + bare);
         check.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -165,19 +165,19 @@ public sealed class SupplierTests : IAsyncLifetime
     public async Task A_role_without_SupplierManage_reaches_nothing_technical_office_included()
     {
         Guid seedId = await IdOfAsync(
-            await CreateRawAsync(_finance, Role.Finance, Department.Finance, Body("مورد محمي")));
+            await CreateRawAsync(_finance, Role.Finance, WellKnownDepartments.FinanceId, Body("مورد محمي")));
 
         Supplier seed = await ReadAsync(seedId);
 
-        (Guid Actor, Role Role, Department? Department)[] refused =
+        (Guid Actor, Role Role, Guid? Department)[] refused =
         [
-            (_technicalOffice, Role.TechnicalOffice, Department.Operations),
-            (_hr, Role.Hr, Department.Hr),
-            (_marketing, Role.MarketingSales, Department.Marketing),
-            (_siteEngineer, Role.SiteEngineer, Department.Operations),
+            (_technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId),
+            (_hr, Role.Hr, WellKnownDepartments.HrId),
+            (_marketing, Role.MarketingSales, null),
+            (_siteEngineer, Role.SiteEngineer, WellKnownDepartments.OperationsId),
         ];
 
-        foreach ((Guid actor, Role role, Department? department) in refused)
+        foreach ((Guid actor, Role role, Guid? department) in refused)
         {
             (await CreateRawAsync(actor, role, department, Body($"محاولة {role}")))
                 .StatusCode.Should().Be(HttpStatusCode.Forbidden, "{0} does not hold SupplierManage", role);
@@ -246,12 +246,12 @@ public sealed class SupplierTests : IAsyncLifetime
     public async Task Editing_address_and_tax_registration_together_writes_one_audit_record_with_both_fields()
     {
         Guid id = await IdOfAsync(await CreateRawAsync(
-            _finance, Role.Finance, Department.Finance, Body("مورد التدقيق", address: "القاهرة")));
+            _finance, Role.Finance, WellKnownDepartments.FinanceId, Body("مورد التدقيق", address: "القاهرة")));
 
         Supplier before = await ReadAsync(id);
 
         HttpResponseMessage edited = await EditRawAsync(
-            id, _finance, Role.Finance, Department.Finance,
+            id, _finance, Role.Finance, WellKnownDepartments.FinanceId,
             new
             {
                 name = before.Name,
@@ -280,7 +280,7 @@ public sealed class SupplierTests : IAsyncLifetime
     public async Task Editing_a_supplier_that_does_not_exist_says_so_in_a_translatable_way()
     {
         HttpResponseMessage response = await EditRawAsync(
-            Guid.NewGuid(), _finance, Role.Finance, Department.Finance,
+            Guid.NewGuid(), _finance, Role.Finance, WellKnownDepartments.FinanceId,
             new
             {
                 name = "لا يوجد",
@@ -298,14 +298,14 @@ public sealed class SupplierTests : IAsyncLifetime
     public async Task Archiving_replaces_deletion_and_an_already_archived_supplier_is_refused()
     {
         Guid id = await IdOfAsync(
-            await CreateRawAsync(_finance, Role.Finance, Department.Finance, Body("مورد يُؤرشف")));
+            await CreateRawAsync(_finance, Role.Finance, WellKnownDepartments.FinanceId, Body("مورد يُؤرشف")));
 
-        (await ArchiveRawAsync(id, _finance, Role.Finance, Department.Finance))
+        (await ArchiveRawAsync(id, _finance, Role.Finance, WellKnownDepartments.FinanceId))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         (await ReadAsync(id)).IsActive.Should().BeFalse();
 
-        (await ArchiveRawAsync(id, _finance, Role.Finance, Department.Finance))
+        (await ArchiveRawAsync(id, _finance, Role.Finance, WellKnownDepartments.FinanceId))
             .StatusCode.Should().Be(HttpStatusCode.Conflict, "already archived");
     }
 
@@ -330,22 +330,22 @@ public sealed class SupplierTests : IAsyncLifetime
     };
 
     private Task<HttpResponseMessage> CreateRawAsync(
-        Guid actorId, Role actorRole, Department? department, object body)
+        Guid actorId, Role actorRole, Guid? department, object body)
         => SendAsync(HttpMethod.Post, "/api/suppliers", actorId, actorRole, department, body);
 
     private Task<HttpResponseMessage> EditRawAsync(
-        Guid id, Guid actorId, Role actorRole, Department? department, object body)
+        Guid id, Guid actorId, Role actorRole, Guid? department, object body)
         => SendAsync(HttpMethod.Put, $"/api/suppliers/{id}", actorId, actorRole, department, body);
 
-    private Task<HttpResponseMessage> ArchiveRawAsync(Guid id, Guid actorId, Role actorRole, Department? department)
+    private Task<HttpResponseMessage> ArchiveRawAsync(Guid id, Guid actorId, Role actorRole, Guid? department)
         => SendAsync(HttpMethod.Post, $"/api/suppliers/{id}/archive", actorId, actorRole, department, null);
 
     private async Task<HttpResponseMessage> PhoneCheckAsync(string phone)
         => await SendAsync(
-            HttpMethod.Post, "/api/suppliers/phone-check", _finance, Role.Finance, Department.Finance, new { phone });
+            HttpMethod.Post, "/api/suppliers/phone-check", _finance, Role.Finance, WellKnownDepartments.FinanceId, new { phone });
 
     private async Task<HttpResponseMessage> SendAsync(
-        HttpMethod method, string route, Guid actorId, Role actorRole, Department? department, object? body)
+        HttpMethod method, string route, Guid actorId, Role actorRole, Guid? department, object? body)
     {
         using var request = new HttpRequestMessage(method, new Uri(route, UriKind.Relative));
 
@@ -405,12 +405,12 @@ public sealed class SupplierTests : IAsyncLifetime
 
         User owner = MakeUser("sup-owner", Role.Owner);
         User technicalOffice = MakeUser(
-            "sup-tech", Role.TechnicalOffice, Department.Operations, OperationsSubDepartment.Technical);
-        User finance = MakeUser("sup-finance", Role.Finance, Department.Finance);
-        User hr = MakeUser("sup-hr", Role.Hr, Department.Hr);
+            "sup-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User finance = MakeUser("sup-finance", Role.Finance, WellKnownDepartments.FinanceId);
+        User hr = MakeUser("sup-hr", Role.Hr, WellKnownDepartments.HrId);
         User siteEngineer = MakeUser(
-            "sup-engineer", Role.SiteEngineer, Department.Operations, OperationsSubDepartment.Technical);
-        User marketing = MakeUser("sup-marketing", Role.MarketingSales, Department.Marketing);
+            "sup-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User marketing = MakeUser("sup-marketing", Role.MarketingSales, null);
 
         context.Users.AddRange(owner, technicalOffice, finance, hr, siteEngineer, marketing);
 
@@ -425,7 +425,7 @@ public sealed class SupplierTests : IAsyncLifetime
     }
 
     private static User MakeUser(
-        string userName, Role role, Department? department = null, OperationsSubDepartment? subDepartment = null)
+        string userName, Role role, Guid? department = null, OperationsSubDepartment? subDepartment = null)
         => User.Create(UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, subDepartment).Value;
 
     private static DateTimeOffset Now => new(2026, 9, 12, 8, 0, 0, TimeSpan.Zero);

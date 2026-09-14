@@ -60,7 +60,7 @@ public sealed class ArchiveClientTests : IAsyncLifetime
         string nonce = UniqueNames.Code("ARV");
         (Guid id, string code) = await RegisterAsync($"شركة {nonce} للمقاولات");
 
-        (await ArchiveAsync(id, _marketing, Role.MarketingSales, Department.Marketing))
+        (await ArchiveAsync(id, _marketing, Role.MarketingSales, null))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         (await SearchAsync(nonce)).Select(client => client.Code).Should().NotContain(
@@ -113,7 +113,7 @@ public sealed class ArchiveClientTests : IAsyncLifetime
         string phone = UniqueNames.Phone().Entered;
         (Guid id, string code) = await RegisterAsync("العميل المؤرشف", phone: phone);
 
-        await ArchiveAsync(id, _marketing, Role.MarketingSales, Department.Marketing);
+        await ArchiveAsync(id, _marketing, Role.MarketingSales, null);
 
         IReadOnlyList<PhoneMatch> matches = await CheckAsync(phone);
 
@@ -135,10 +135,10 @@ public sealed class ArchiveClientTests : IAsyncLifetime
     {
         (Guid id, _) = await RegisterAsync("عميل يؤرشف مرتين");
 
-        (await ArchiveAsync(id, _marketing, Role.MarketingSales, Department.Marketing))
+        (await ArchiveAsync(id, _marketing, Role.MarketingSales, null))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        HttpResponseMessage again = await ArchiveAsync(id, _marketing, Role.MarketingSales, Department.Marketing);
+        HttpResponseMessage again = await ArchiveAsync(id, _marketing, Role.MarketingSales, null);
 
         again.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
@@ -154,7 +154,7 @@ public sealed class ArchiveClientTests : IAsyncLifetime
     public async Task Archiving_a_client_that_does_not_exist_says_so_in_a_translatable_way()
     {
         HttpResponseMessage response = await ArchiveAsync(
-            Guid.NewGuid(), _marketing, Role.MarketingSales, Department.Marketing);
+            Guid.NewGuid(), _marketing, Role.MarketingSales, null);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
@@ -171,9 +171,12 @@ public sealed class ArchiveClientTests : IAsyncLifetime
     /// <remarks>
     /// <b>An absence proved by grepping for the word "delete" is proved about the word.</b> That is
     /// <c>V-32-A</c>'s shape, and `TC-1-183` was rewritten away from it on 2026-09-04. This enumerates
-    /// every endpoint this assembly mapped and asserts none of them answers <c>DELETE</c> — so a
-    /// delete route added under any name, in any feature folder, fails here. spec.md §2 and §3 make
-    /// the client row permanent; KAFF-123 rule 1.
+    /// every endpoint this assembly mapped and asserts none of them answers <c>DELETE</c>, with no
+    /// exception. Departments once shipped a real hard-delete route
+    /// (<c>Kaff.Api.Features.Departments.DeleteDepartment</c>, decisions.md D-162/D-166) but Nabil's
+    /// ruling 2026-09-15 replaced it with archive/unarchive, the same shape every other master record
+    /// in this codebase uses — the exception this test once carried is gone along with the route. spec.md
+    /// §2 and §3 make the client row permanent; KAFF-123 rule 1.
     /// </remarks>
     [Fact]
     public void No_endpoint_in_the_application_deletes_anything()
@@ -208,9 +211,9 @@ public sealed class ArchiveClientTests : IAsyncLifetime
         }
 
         deleteRoutes.Should().BeEmpty(
-            "a client is archived and never deleted (spec.md §2, §3), postings are append-only "
-            + "(CLAUDE.md), and this asserts it against what the host mapped rather than against the "
-            + "word \"delete\" appearing in a file");
+            "every master record is archived and never deleted (spec.md §2, §3), postings are "
+            + "append-only (CLAUDE.md), and this asserts it against what the host mapped rather than "
+            + "against the word \"delete\" appearing in a file");
     }
 
     // ---- AC-123-E · nobody outside Marketing and the Owner may archive --------------------------
@@ -220,10 +223,10 @@ public sealed class ArchiveClientTests : IAsyncLifetime
     {
         (Guid id, _) = await RegisterAsync("عميل محمي من الأرشفة");
 
-        (await ArchiveAsync(id, _finance, Role.Finance, Department.Finance))
+        (await ArchiveAsync(id, _finance, Role.Finance, WellKnownDepartments.FinanceId))
             .StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
-        (await ArchiveAsync(id, _hr, Role.Hr, Department.Hr))
+        (await ArchiveAsync(id, _hr, Role.Hr, WellKnownDepartments.HrId))
             .StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
         (await ArchiveAsync(id, _portalClient, Role.Client, null, actorClientId: _portalClientCompany))
@@ -264,7 +267,7 @@ public sealed class ArchiveClientTests : IAsyncLifetime
             }),
         };
 
-        await StampAsync(request, _marketing, Role.MarketingSales, Department.Marketing, null);
+        await StampAsync(request, _marketing, Role.MarketingSales, null, null);
 
         return await _client.SendAsync(request, Ct);
     }
@@ -273,7 +276,7 @@ public sealed class ArchiveClientTests : IAsyncLifetime
         Guid clientId,
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         Guid? actorClientId = null)
     {
         using var request = new HttpRequestMessage(
@@ -290,7 +293,7 @@ public sealed class ArchiveClientTests : IAsyncLifetime
             HttpMethod.Get,
             new Uri($"/api/clients?status={status}&search={Uri.EscapeDataString(search)}", UriKind.Relative));
 
-        await StampAsync(request, _marketing, Role.MarketingSales, Department.Marketing, null);
+        await StampAsync(request, _marketing, Role.MarketingSales, null, null);
 
         HttpResponseMessage response = await _client.SendAsync(request, Ct);
 
@@ -318,7 +321,7 @@ public sealed class ArchiveClientTests : IAsyncLifetime
             Content = JsonContent.Create(new { phone }),
         };
 
-        await StampAsync(request, _marketing, Role.MarketingSales, Department.Marketing, null);
+        await StampAsync(request, _marketing, Role.MarketingSales, null, null);
 
         HttpResponseMessage response = await _client.SendAsync(request, Ct);
 
@@ -340,7 +343,7 @@ public sealed class ArchiveClientTests : IAsyncLifetime
         HttpRequestMessage request,
         Guid actorId,
         Role actorRole,
-        Department? actorDepartment,
+        Guid? actorDepartment,
         Guid? actorClientId)
     {
         request.Headers.Add(TestAuthHandler.UserIdHeader, actorId.ToString());
@@ -387,9 +390,9 @@ public sealed class ArchiveClientTests : IAsyncLifetime
             Now).Value;
 
         User owner = MakeUser("arv-owner", Role.Owner);
-        User marketing = MakeUser("arv-marketing", Role.MarketingSales, Department.Marketing);
-        User finance = MakeUser("arv-finance", Role.Finance, Department.Finance);
-        User hr = MakeUser("arv-hr", Role.Hr, Department.Hr);
+        User marketing = MakeUser("arv-marketing", Role.MarketingSales, null);
+        User finance = MakeUser("arv-finance", Role.Finance, WellKnownDepartments.FinanceId);
+        User hr = MakeUser("arv-hr", Role.Hr, WellKnownDepartments.HrId);
         User portal = MakeUser("arv-portal", Role.Client, clientId: company.Id);
 
         context.Clients.Add(company);
@@ -405,7 +408,7 @@ public sealed class ArchiveClientTests : IAsyncLifetime
         _portalClient = portal.Id;
     }
 
-    private static User MakeUser(string userName, Role role, Department? department = null, Guid? clientId = null)
+    private static User MakeUser(string userName, Role role, Guid? department = null, Guid? clientId = null)
         => User.Create(
             UniqueNames.Code(userName), userName, UniqueNames.Phone(), role, Now, department, null, clientId).Value;
 
