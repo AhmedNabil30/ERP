@@ -130,6 +130,36 @@ public sealed class TreasuryGuardTests
     }
 
     [Fact]
+    public async Task A_supplier_payment_into_the_hold_is_refused_by_the_database_even_bypassing_the_domain()
+    {
+        // AC-305-B: "if the domain check is somehow bypassed, the database refuses it too." Raw SQL
+        // goes round Kaff.Domain.Treasury.PostingAccountLegality entirely.
+        Guid projectId = await CreateProjectShellAsync();
+        Account hold = await AddAccountAsync(AccountType.Hold, projectId, PartyType.Client);
+        Account receivable = await AddAccountAsync(AccountType.ClientReceivable, projectId, PartyType.Client);
+
+        await using KaffDbContext context = _database.CreateBareContext();
+
+        await DatabaseGuard.RefusesAsync(
+            () => InsertRawPostingAsync(context, receivable.Id, hold.Id, 10_000m, nameof(PostingType.SupplierPayment), projectId),
+            DatabaseGuard.PostingTypeAccountMismatch);
+    }
+
+    [Fact]
+    public async Task Depreciation_into_the_safe_is_refused_by_the_database_even_bypassing_the_domain()
+    {
+        // AC-305-E, database half: a non-cash posting type must never touch Safe or Bank.
+        Account safe = await AddAccountAsync(AccountType.Safe);
+        Account depreciationExpense = await AddAccountAsync(AccountType.DepreciationExpense);
+
+        await using KaffDbContext context = _database.CreateBareContext();
+
+        await DatabaseGuard.RefusesAsync(
+            () => InsertRawPostingAsync(context, depreciationExpense.Id, safe.Id, 5_000m, nameof(PostingType.Depreciation), null),
+            DatabaseGuard.PostingTypeAccountMismatch);
+    }
+
+    [Fact]
     public async Task A_partial_hold_release_is_refused_by_the_database()
     {
         // spec.md §5.1 / CLAUDE.md: "the hold releases once, in full" — never a partial drain.

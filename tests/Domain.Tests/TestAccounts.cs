@@ -12,9 +12,29 @@ internal static class TestAccounts
     public static readonly Guid ClientId = Guid.Parse("0195c000-0000-7000-8000-000000000002");
     public static readonly Guid OtherProjectId = Guid.Parse("0195c000-0000-7000-8000-000000000003");
 
+    public static readonly Guid EmployeeId = Guid.Parse("0195c000-0000-7000-8000-000000000004");
+
     public static Account Safe() => Build(AccountType.Safe, "SAFE-MAIN");
 
+    public static Account Bank() => Build(AccountType.Bank, "BANK-QNB");
+
     public static Account CompanyExpense() => Build(AccountType.CompanyExpense, "EXP-COMPANY");
+
+    public static Account FirmAdvance(Guid? projectId = null) =>
+        Build(AccountType.FirmAdvance, "PRJ-FIRM-ADV", projectId ?? ProjectId, PartyType.Client, ClientId);
+
+    public static Account OwnerCurrentAccount() => Build(AccountType.OwnerCurrentAccount, "OWNER-CURRENT");
+
+    public static Account PettyCashAdvance(Guid? projectId = null) =>
+        Build(AccountType.PettyCashAdvance, "PRJ-PETTY", projectId ?? ProjectId, PartyType.Employee, EmployeeId);
+
+    public static readonly Guid SupplierId = Guid.Parse("0195c000-0000-7000-8000-000000000005");
+
+    public static Account SupplierPayable() => Build(AccountType.SupplierPayable, "SUP-001", partyType: PartyType.Supplier, partyId: SupplierId);
+
+    public static Account DepreciationExpense() => Build(AccountType.DepreciationExpense, "EXP-DEPR");
+
+    public static Account AccumulatedDepreciation() => Build(AccountType.AccumulatedDepreciation, "ACC-DEPR");
 
     public static Account ProjectControl(Guid? projectId = null) =>
         Build(AccountType.ProjectControl, "PRJ-CTRL", projectId ?? ProjectId);

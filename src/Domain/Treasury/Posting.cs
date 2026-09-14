@@ -235,6 +235,15 @@ public sealed class Posting : Entity
             return Result.Failure(TreasuryErrors.HoldOnlyGrows);
         }
 
+        // KAFF-305 — rules 2-8: which PostingType may run against which pair of AccountTypes. Checked
+        // for a reversal exactly as for a forward posting (rule 9): no exemption, the accounts are
+        // already swapped by the caller.
+        Result legalityCheck = PostingAccountLegality.Validate(from.Type, to.Type, type);
+        if (legalityCheck.IsFailure)
+        {
+            return legalityCheck;
+        }
+
         return ValidateProjectTag(from, to, projectId);
     }
 

@@ -1,6 +1,6 @@
 # KAFF-320 · Bank — an independent master record, not folded into the ledger
 
-<!-- kaff id=KAFF-320 slice=3 points=0 state=NOT-BUILT verdict=none at=- on=2026-09-12 -->
+<!-- kaff id=KAFF-320 slice=3 points=0 state=BLOCKED verdict=none at=- on=2026-09-15 -->
 
 **Slice:** 3 (Treasury) · **Epic:** Treasury · **Points:** not estimated — see *Definition of Ready*. **Status:** **NOT-BUILT.** Cut 2026-09-12 by the BA against D-139 §6, closing `Q13`.
 **Spec:** §6.3, §6.5 (client collections default to a bank account) · **Decisions:** **D-139 §6** (which mandates this story by name), D-045 #1 (the original `Q13`)
@@ -100,5 +100,5 @@ points, its criteria and its screens all wait on Karim's answers below.
 | **`Q13`** | ✅ **Shape answered — D-139 §6.** Banks are independent master records. **The content is not answered and stays open under `Q15`/`Q16` below** | **Closed** (shape only) |
 | **`Q15`** | Already open (Kickoff Q9): *"Which banks — QNB, CIB, الأهلي, others?"* This story cannot be estimated or cased without the list, because the field list a bank record needs may depend on what Kaff's actual banks require (an IBAN, a SWIFT code, a branch code) | **Karim** |
 | **`Q16`** | Already open (Kickoff Q10, half answered by D-044 ruling 8 for the ledgers): *"Do any of your bank accounts have an overdraft?"* Bears directly on whether a bank record carries a limit field | **Karim** |
-| new | Who owns a bank record — Finance alone, or Finance and the Owner as with every other master row this slice built — and is it company-wide? Not answerable from `spec.md` or any decision; §9's *"role alone is insufficient"* does not obviously apply to a record that touches no project | **Karim** |
+| new | Who owns a bank record — Finance alone, or Finance and the Owner as with every other master row this slice built — and is it company-wide? Not answerable from `spec.md` or any decision; §9's *"role alone is insufficient"* does not obviously apply to a record that touches no project | **Karim** — registered as **`Q94`**, `stories/questions-for-karim.md`, `decisions.md` D-170 |
 | new | Does a bank record reference the `AccountType` catalogue directly (one bank, one or more ledger accounts), or is the relationship built when `KAFF-316` needs it? A modelling question the Architect should take once the field list exists, not before | **Architect**, after `Q15`/`Q16` |

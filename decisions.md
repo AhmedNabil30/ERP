@@ -14381,3 +14381,213 @@ engineers entering workers after the fact, which a system-clock-only start date 
 **Open question for Karim** (`stories/questions-for-karim.md`): can a Site Engineer ever register an
 engagement with a **future** start date (e.g. a worker confirmed for tomorrow), or must every start
 date be today or earlier?
+
+---
+
+### D-166 · Backend — KAFF-321 built: `Department` master data, the enum migrated off, three implementation calls recorded · 2026-09-14
+
+**What was built.** `Department` (`src/Domain/MasterData/Department.cs`) replaces the D-153 §2 enum —
+archive-not-delete shape copied from `Bab`/`Employee`, EF configuration and `HasData` seed of the five
+named rows in `src/Infrastructure/Persistence/Configurations/DepartmentConfiguration.cs`, migration
+`20260914181024_DepartmentMasterData`. Full CRUD under `src/Api/Features/Departments/` (List, Create,
+Edit, Archive, Delete — Bab's pattern exactly). `KAFF-107`/`108`/`207`/`210` migrated per rule 5, with
+one correction below. Settings screen at `/settings/departments`
+(`src/Web/src/app/features/departments/department-settings/`).
+
+**Three calls this story made that D-162 did not spell out, recorded here rather than left implicit:**
+
+1. **`WellKnownDepartments` — fixed seed ids, not name comparison.** `User.ValidateDepartment` used to
+   compare against `Department.Hr` / `Department.Operations`, compile-time enum members. Once
+   `Department` is data an admin can rename, "the HR department" needs something stabler than its
+   current name. `src/Domain/Identity/Department.cs` now defines
+   `WellKnownDepartments.{FinanceId,TechnicalOfficeId,OperationsId,ProcurementId,HrId}` — fixed GUIDs
+   the seed rows carry and the domain rule compares against. **Known gap, not fixed here**: nothing
+   stops an admin hard-deleting the HR row once no staff remain in it (`DeleteDepartment` allows exactly
+   that), after which no user could ever be moved into `Role.Hr` again. D-162 does not address this;
+   flagged rather than guessed further.
+
+2. **`Permission.DepartmentManage` — Owner alone, mirroring `UserManage`, not `BabManage`.** D-162 says
+   only "give an admin the ability". `CatalogueManage`/`BabManage` are Owner + Technical Office;
+   `UserManage` is Owner alone because it decides who may hold what role and department — the same axis
+   a department itself gates (`Role.Hr` binding, Operations sub-department membership). Shaped after
+   `UserManage`, not the catalogue pair.
+
+3. **`Employee.Department` (KAFF-207/210) was NOT migrated — it was never the enum.** The story text
+   listed `KAFF-207`/`KAFF-210` among the consumers to migrate "from the D-153 enum". Checked against
+   the code: `Employee.Department` is a free-text `string?` field, deliberately so per D-139 §7 and
+   D-144 §2 — a different field entirely from the identity `Department` axis, never typed against the
+   enum. There was nothing to migrate; left untouched. The story's own rule 5 line is imprecise on this
+   point.
+
+**Migration data note.** The old enum had four members (`Finance`, `Hr`, `Marketing`, `Operations`);
+the new seed has five, and they are not the same set (`Marketing` dropped, `Technical Office` and
+`Procurement` added). The migration backfills `Finance`→`FinanceId`, `Operations`→`OperationsId`,
+`Hr`→`HrId` by name; a user row carrying the old `Marketing` value is left with `department_id NULL`
+rather than pointed at an invented row, since D-162 names no successor for it. No `Role.MarketingSales`
+rule depends on a specific department, so this drops a categorisation field, not an enforced one. No
+production data carries `Marketing` today; flagged here in case any does before this ships.
+
+**Not done in this pass.** Department-level permissions or reporting beyond plain CRUD (D-162's own
+"revisit if" clause) — not built, not asked for.
+
+**Finished 2026-09-15 by the Scrum Master, from where the previous session left off.** Code was
+already complete and building clean; three pre-existing xUnit tests still asserted the old enum shape
+and had never been updated, so `dotnet test tests/Api.Tests` failed at 3/612 despite a clean build —
+a green build next to a red suite is not done, it is unfinished:
+1. `ListUsersTests` — `UserSummary`'s whitelist test still named a property `"Department"`; the
+   shipped record calls it `DepartmentId`. Corrected to match.
+2. `MeTests` — asserted `GetProperty("department").GetString() == nameof(WellKnownDepartments.FinanceId)`,
+   i.e. the literal string `"FinanceId"`. The shipped wire shape is `departmentId` as a JSON GUID.
+   Corrected to `GetProperty("departmentId").GetGuid() == WellKnownDepartments.FinanceId`.
+3. `ArchiveClientTests.No_endpoint_in_the_application_deletes_anything` — a whole-assembly sweep
+   asserting **zero** HTTP `DELETE` routes exist anywhere in the app. `KAFF-321` rule 3/`AC-321-F`
+   deliberately adds the first one: a department with no staff assigned may be hard-deleted, per D-162.
+   The test now allow-lists exactly that one route (`/api/departments/{departmentId:guid}`) and still
+   fails on any other `DELETE` route appearing — the invariant survives everywhere else in the app,
+   and the one Karim-ruled exception is now named rather than silently broken.
+
+`dotnet build` 0/0, `dotnet test tests/Api.Tests` 623/623, `dotnet test tests/Domain.Tests` 293/293
+[Re-run by the Scrum Master, 2026-09-15, against the tree at commit time — not quoted from the
+builder]. `qa/slice-2/test-cases.md` gained `TC-2-154` (AC-321-D/F). **KAFF-321 trailer moves to
+`state=BUILT verdict=none` — verification is a fresh session's job (D-155), not this one's.**
+
+### D-167 · Backend — KAFF-319 built: the twelve database guard exceptions map to translated errors · 2026-09-15
+
+**What was built.** `src/Api/Common/Results/DatabaseGuardTranslation.cs` — walks a caught
+`PostgresException`'s inner exceptions, matches the `KAFF_*` prefix `001_guards.sql`'s guards raise,
+returns the corresponding `TreasuryErrors` member or `null`. Wired into `PostMovement/Handler.cs`'s
+insert path, same shape `CreateBab/Handler.cs`'s `IsCodeCollision` already established for a unique-
+index collision elsewhere. Two new `TreasuryErrors` members added: `ReversalOfReversal` (Conflict),
+`ReversalTargetNotFound` (NotFound) — the first of these unblocks `KAFF-303`'s `AC-303-C`, which was
+`HELD` for exactly this gap. Two new i18n keys in both locale files.
+
+**Count correction.** The story's own prose says "twelve" `KAFF_*` prefixes; the guard file actually
+raises **thirteen**. Recounted directly against `001_guards.sql` rather than trusted from the story
+text — an arithmetic slip in a story, caught by counting the source, not a business question.
+
+**Exhaustiveness test** (`tests/Api.Tests/Features/Treasury/DatabaseGuardTranslationTests.cs`)
+regex-parses `001_guards.sql` itself and diffs the result against `DatabaseGuardTranslation.Map`'s
+keys, excluding three prefixes that are out of this story's scope with the reason cited inline — the
+same discipline `PostingTypes.NatureOf` and `KAFF-305`'s `AC-305-F` use. An exception outside the
+mapped set still reaches the generic 500 handler (`AC-319-D`) — this story narrows what is caught, it
+does not swallow everything.
+
+[Verified: 2026-09-15 by the Scrum Master, re-run against the tree — `dotnet build` 0/0;
+`dotnet test tests/Api.Tests --filter "FullyQualifiedName~Treasury"` 64/64 at the time this story
+landed (68/68 once `KAFF-305` added its own four).]
+
+### D-168 · Backend — KAFF-303 built: the reversal endpoint · 2026-09-15
+
+**What was built.** `POST` under `src/Api/Features/Treasury/ReversePosting/`, calling the already-
+built `Posting.Reverse` domain method and persisting the mirror posting. Same permission gate as
+`KAFF-301` (`TreasuryPostProject`/`TreasuryPostCompany`, role and project-assignment both, server-side
+— `AC-303-F`). `AC-303-A` (mirror, accounts swapped, `ReversesId` set), `AC-303-B` (double-reversal
+refused), `AC-303-C` (reversal-of-a-reversal refused, now resolvable via D-167's `ReversalOfReversal`),
+`AC-303-D` (a reversal is exempt from hold-only-grows — proven by a test that it actually succeeds,
+not merely asserted), `AC-303-E` (closed period refused) all built and tested against real PostgreSQL.
+
+**Left open, deliberately: `Q89`** — whether the same user who created a posting may reverse it. Built
+with no extra restriction and no extra allowance beyond the base permission, exactly as the story
+instructs; not resolved here, not invented here.
+
+[Verified: 2026-09-15 by the Scrum Master, re-run — `dotnet build` 0/0;
+`dotnet test tests/Api.Tests --filter "FullyQualifiedName~Treasury"` 64/64.]
+
+### D-169 · Backend — KAFF-305 built: the posting-type × account-pair legality table, nine types held on `Q91` · 2026-09-15
+
+**What was built.** `src/Domain/Treasury/PostingAccountLegality.cs` — the legality table for every
+rule `spec.md`/`decisions.md` actually state (rules 2-8: Hold, تشوينات, client advance, firm advance,
+owner current account, عهدة, and the non-cash-never-touches-Safe/Bank rule). Wired into
+`Posting.Validate` with no reversal exemption (rule 9 — a reversal is checked with its own type
+against its swapped accounts, not given a second, looser check). Mirrored as a defense-in-depth check
+in `001_guards.sql` (`KAFF_POSTING_TYPE_ACCOUNT_MISMATCH`), wired into D-167's translation map. New
+`TreasuryErrors.PostingTypeAccountMismatch` and its i18n pair.
+
+**`AC-305-F`'s exhaustiveness test does not invent a pair for anything `spec.md` leaves unstated.**
+Nine `PostingType` members are pinned in a `PendingQ91` set and asserted unenforced rather than
+guessed — the five the story named at cut time (`SiteExpensePayment`, `AssetPurchase`, `LoanDrawdown`,
+`PeriodCloseTransfer`, `YearEndProfitTransfer`) plus four the sweep itself surfaced
+(`OpeningBalance`, `ChequeDeposit`, `ChequeClearance`, `ChequeBounce`). **The cheque three are a
+structural gap, not merely an unruled pair**: no member of the 34-row `AccountType` catalogue
+represents a cheque in hand or in transit at all. `Q91` in `stories/questions-for-karim.md` is updated
+with this concrete list, replacing its placeholder. Every other `PostingType` not named in rules 2-8
+and not in `PendingQ91` is deliberately left unrestricted by this story — it has a named `AccountType`
+already and no numbered rule constrains its pair, so no positive rule was invented for it either.
+
+[Verified: 2026-09-15 by the Scrum Master, re-run — `dotnet build` 0/0;
+`dotnet test tests/Domain.Tests` 293/293; `dotnet test tests/Api.Tests --filter "FullyQualifiedName~Treasury"` 68/68;
+`dotnet format --verify-no-changes` clean.]
+
+### D-170 · Scrum Master — KAFF-320 stays `BLOCKED`, not pulled · 2026-09-15
+
+**Not built, on purpose.** The story's own Definition of Ready already says it cannot reach `READY`:
+no field list, no permission, no screen, and three open questions (`Q15`, `Q16`, plus a new one on who
+owns the record — now `Q94`). Building a bank master record without a field list is the exact
+plausible-invention failure mode this project keeps finding in its own history. Trailer stays
+`state=BLOCKED`. `Q94` added to `stories/questions-for-karim.md`, batched for Nabil alongside the
+already-open `Q15`/`Q16`.
+
+### D-171 · Nabil — archive, never delete, for departments: the KAFF-321 hard-delete path is removed · 2026-09-15
+
+**Decision.** `Department` gets the same archive/unarchive shape as every other master record in this
+codebase — catalogue items (`KAFF-206`), babs (`KAFF-213`), clients (`Q66`/`Q39`) — and nothing else.
+`DELETE /api/departments/{departmentId}` (`Kaff.Api.Features.Departments.DeleteDepartment`), shipped
+2026-09-14 per D-162/D-166, is deleted outright, not guarded. `Department.Unarchive()` and
+`POST /api/departments/{departmentId}/unarchive` are added — the mirror of `Archive()`, same shape as
+`CatalogueItem.Unarchive`.
+
+Ruled directly by Nabil, this message, in the KAFF-321 rebuild brief: "Archive, never delete, for
+departments... Drop the hard-delete path entirely."
+
+**Why.** D-162 (`Q85`) said only "give an admin the ability to add, edit and delete departments from
+settings" — the earlier build read "delete" as a literal hard-delete endpoint, guarded by a
+zero-staff count. Nabil's ruling reads "delete" as "remove it from the pick list", which archiving
+already does, and rejects the literal reading for two structural reasons this codebase already
+commits to:
+1. **An audit trail that assumes rows never vanish cannot also delete rows.** CLAUDE.md's append-only
+   posting rule is the money-side instance of the same principle; a hard-deletable master row is the
+   identity-side violation of it.
+2. **The hard-delete path made the HR row deletable, and D-166 had already flagged that as a known
+   gap** — deleting the seed `HrId` row after every HR staff member moved out would make `Role.Hr`
+   unholdable forever, since `WellKnownDepartments.HrId` (`src/Domain/Identity/Department.cs`) has no
+   database to recreate itself from. This ruling closes that gap by removing the delete path, not by
+   adding a guard in front of it — one fewer thing to guard is the smaller fix.
+
+**Rejected.** Guarding the existing delete more tightly (e.g. also refusing to delete the five
+well-known seed rows by id): still leaves a real `DELETE` endpoint in an application whose one
+standing test (`ArchiveClientTests.No_endpoint_in_the_application_deletes_anything`) exists
+specifically to assert none exist; narrows the gap without closing it, and D-166's flagged risk was
+about the mechanism, not about which row it is pointed at today.
+
+**What changed.**
+- Deleted: `src/Api/Features/Departments/DeleteDepartment/` (`Endpoint.cs`, `Handler.cs`).
+- Added: `src/Api/Features/Departments/UnarchiveDepartment/` (`Endpoint.cs`, `Handler.cs`);
+  `Department.Unarchive()` in `src/Domain/MasterData/Department.cs`.
+- Removed: `MasterDataErrors.DepartmentHasStaffAssigned` (dead once the delete guard it served is
+  gone) and its i18n pair in `en.json`/`ar.json`.
+- `ArchiveClientTests.No_endpoint_in_the_application_deletes_anything` reverted to asserting **zero**
+  `DELETE` routes anywhere — the one-route allow-list D-166 added for this endpoint is gone along with
+  the route.
+- `tests/Api.Tests/DepartmentCrudTests.cs` — the two hard-delete facts (`AC-321-D`'s delete-refused
+  assertion, `AC-321-F`'s delete-succeeds assertion) replaced with archive and unarchive facts,
+  including a `not_archived` refusal test for unarchiving an already-active department.
+- Web: `DepartmentsApi.remove()` replaced with `DepartmentsApi.unarchive()`; the settings screen drops
+  its delete confirm/cancel row entirely and shows an "Un-archive" button on an archived row instead
+  (same shape `CatalogueListPage` uses for catalogue items — no confirm step, since unarchive is
+  reversible and non-destructive). `department.settings.delete_action` i18n key removed;
+  `department.settings.unarchive_action` added, both locales.
+- `stories/slice-2-masters/KAFF-321-department-master-data.md` — rule 3, `AC-321-D`, `AC-321-F` and the
+  built-this-session bullets rewritten to describe archive/unarchive; no more mention of a delete
+  endpoint.
+- `qa/slice-2/test-cases.md` `TC-2-154` rewritten from "hard-delete" to "archive then unarchive",
+  including the zero-`DELETE`-routes assertion as part of its own fail condition.
+
+**Revisit if.** A future business rule genuinely needs permanent removal of a master row (not this
+one, not yet asked for) — that is a new decision with its own reasoning, not a re-opening of this one.
+
+**Confirmed while making this change:** `src/Domain/Identity/Department.cs` defines only the
+`OperationsSubDepartment` enum and `WellKnownDepartments` (fixed seed `Guid`s) — there is no competing
+`Department` type there. The one `Department` entity lives at `src/Domain/MasterData/Department.cs`.
+The "two `Department` types" concern was a naming collision between a file name and a type name, not
+two classes of the same name in the same namespace; nothing was merged or renamed to resolve it because
+there was nothing to resolve.

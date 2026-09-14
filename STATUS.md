@@ -293,6 +293,66 @@ mechanism → (5) build `200`, `201`, `209`–`212` → (6) one `opus` Verifier 
   (the report, `decisions.md`, trailers, this file), so the six measurements above still stand for the
   pushed tree; no source file changed under them.
 
+### 2026-09-15 — slice 3 is in flight, and the working tree is RED and UNCOMMITTED
+
+**Built and committed so far in slice 3:** `KAFF-300` (`931a52d`, the §15 fixture), `KAFF-301`
+(`5605539`, `04147e0`), `KAFF-302` (`660541c`, D-161 answers `Q88`), `KAFF-304` **Domain half only**
+(`d722377` — the HTTP endpoint is deliberately unbuilt and the trailer deliberately stays `READY`,
+because `Q90`, *who may read a ledger balance*, is unanswered), `KAFF-322` (`896fa1c`).
+
+⛔ **The working tree carries three stories' worth of uncommitted work and two red gates.** Nothing
+here is pushed and nothing here has moved a trailer except `KAFF-321`'s, which is already `BUILT` in
+the tree while its own gates are red:
+
+| In the tree, uncommitted | Story |
+|---|---|
+| `src/Domain/MasterData/Department.cs`, `src/Api/Features/Departments/*` (List, Create, Edit, Archive, **Delete**), migration `20260914181024_DepartmentMasterData`, `src/Web/src/app/features/departments/*`, `core/departments/`, `department-manage.guard.ts`, `DepartmentCrudTests.cs`, `DepartmentTests.cs`, plus the `Department` enum migration across ~50 test files | `KAFF-321` (D-166) |
+| `src/Api/Features/Treasury/ReversePosting/*`, `tests/Api.Tests/Features/Treasury/ReversePostingTests.cs` | `KAFF-303` — trailer still `READY` |
+| `src/Api/Common/Results/DatabaseGuardTranslation.cs`, `tests/Api.Tests/Features/Treasury/DatabaseGuardTranslationTests.cs` | `KAFF-319` — trailer still `READY` |
+| `decisions.md` D-166, the `KAFF-321` trailer and this file's generated row | Scrum Master bookkeeping |
+
+**Gates, re-measured by the Scrum Master on the working tree, 2026-09-15:**
+
+| Gate | | |
+|---|---|---|
+| `dotnet build KaffErp.sln -c Release` | **0 errors / 0 warnings, exit 0** | ✅ |
+| `dotnet format --verify-no-changes` | **clean, exit 0** | ✅ |
+| Domain.Tests | **total 278 · failed 0 · succeeded 278**, exit 0 | ✅ |
+| Api.Tests | **total 619 · succeeded 616 · failed 3 · skipped 0**, exit 2 | ⛔ |
+| `ng build --configuration production` | **exit 0, no warning line** | ✅ |
+| `ng test` (vitest) | **does not compile**, exit 1 | ⛔ |
+
+**All five failures belong to `KAFF-321`, and one of them is not a test-repair job:**
+
+1. **`ArchiveClientTests.No_endpoint_in_the_application_deletes_anything` fails on
+   `/api/departments/{departmentId:guid}`.** `KAFF-321` shipped a hard `DELETE` route, and that test
+   is the standing absence check over what the host actually maps. **D-162's own text says
+   archive-not-delete** — *"a department with staff assigned to it cannot be hard-deleted, only
+   archived"* — while Karim's sentence in the same ruling says an admin may delete. D-166 flagged a
+   second edge of this itself: nothing stops an admin deleting the HR row, after which no user can
+   ever be moved into `Role.Hr` again. **This is an Architect ruling, and possibly Nabil's, not a
+   test edit.** Deleting the assertion to make the suite green would be this project's own recurring
+   defect — a check that reports a safety it does not have.
+2. `MeTests.An_active_finance_user_learns_who_they_are_and_what_they_hold`, `MeTests.cs:115` — reads
+   `body.RootElement.GetProperty("department")` while `WhoAmI/Response.cs` now emits `DepartmentId`,
+   and compares it to `nameof(WellKnownDepartments.FinanceId)`, which is the literal string
+   `"FinanceId"`. Half-migrated test.
+3. `ListUsersTests.The_user_row_carries_exactly_these_members_and_no_credential` — the expected
+   member list still names `Department`; `UserSummary` now carries `DepartmentId`.
+4. **vitest does not compile.** Four spec files set `operationsSubdepartmentId: null` on `Session`,
+   which has no such member — the field is `operationsSubDepartment`. Files:
+   `core/auth/guards.spec.ts:52`, `core/navigation/landing.spec.ts:40`,
+   `core/navigation/nav-rows.spec.ts:21`, `features/day-labour/worker-history/worker-history-page.spec.ts:30`,
+   `features/landing/landing-page.spec.ts:24`.
+
+⛔ **Nothing in this tree may be committed or pushed until item 1 is ruled and items 2–4 are
+repaired.** `KAFF-321`'s trailer reads `BUILT` in the tree ahead of its gates; it must not be
+committed in that state.
+
+**Open and blocking, not guessable here:** `Q90` (who may read a ledger balance — `KAFF-304`'s
+endpoint), `Q91` (the legality-table rows `spec.md` does not rule — part of `KAFF-305`), D-165's
+follow-up (may a Site Engineer future-date an engagement start), and D-162's delete question above.
+
 ### What the next session picks up, in order (written 2026-09-12, superseded by the block above)
 
 1. **Architect (`opus`)** — `V-38-H`: is a rate covered by D-135? Rule the unit on the wire for the
@@ -588,8 +648,8 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 | 0 |
 | 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 0 | 0 | 20 | 48 |
-| ⚪ READY / COMMITTED — refined, not built | 0 | 0 | 21 | 0 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 0 | 36 | 48 |
+| ⚪ READY / COMMITTED — refined, not built | 0 | 0 | 5 | 0 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 0 | 0 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 | 0 |
 | **total** | **127** | **58** | **41** | **48** |
@@ -649,12 +709,12 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-300](stories/slice-3-treasury/KAFF-300-the-section-15-worked-example.md) | 3 | 5 | 🟡 BUILT | none | `-` | 2026-09-07 | The §15 worked example as a fixture — present and failing before anything else is built |
 | [KAFF-301](stories/slice-3-treasury/KAFF-301-post-a-movement-between-two-accounts.md) | 3 | 8 | 🟡 BUILT | none | `-` | 2026-09-14 | Post a movement between two accounts, append-only |
 | [KAFF-302](stories/slice-3-treasury/KAFF-302-create-a-projects-account-set-on-creation.md) | 3 | 5 | 🟡 BUILT | none | `-` | 2026-09-14 | Create a project's account set when a project is created |
-| [KAFF-303](stories/slice-3-treasury/KAFF-303-correct-a-mistake-with-a-reversing-posting.md) | 3 | 5 | ⚪ READY | none | `-` | 2026-09-14 | Correct a mistake with a reversing posting, never an edit |
+| [KAFF-303](stories/slice-3-treasury/KAFF-303-correct-a-mistake-with-a-reversing-posting.md) | 3 | 5 | 🟡 BUILT | none | `-` | 2026-09-15 | Correct a mistake with a reversing posting, never an edit |
 | [KAFF-304](stories/slice-3-treasury/KAFF-304-every-balance-is-derived-by-summing-postings.md) | 3 | 5 | ⚪ READY | none | `-` | 2026-09-14 | Every balance is derived by summing postings |
-| [KAFF-305](stories/slice-3-treasury/KAFF-305-the-posting-type-account-pair-legality-table.md) | 3 | 8 | ⚪ READY | none | `-` | 2026-09-14 | The posting-type × account-pair legality table |
-| [KAFF-319](stories/slice-3-treasury/KAFF-319-a-refused-posting-reads-as-a-translated-message.md) | 3 | 3 | ⚪ READY | none | `-` | 2026-09-14 | A refused posting reads as a translated message, not a 500 |
-| [KAFF-320](stories/slice-3-treasury/KAFF-320-bank-as-an-independent-master-record.md) | 3 | 0 | ⚫ NOT-BUILT | none | `-` | 2026-09-12 | Bank — an independent master record, not folded into the ledger |
-| [KAFF-321](stories/slice-2-masters/KAFF-321-department-master-data.md) | 2 | 0 | ⚫ NOT-BUILT | none | `-` | 2026-09-14 | Department — dynamic master data, not a fixed enum |
+| [KAFF-305](stories/slice-3-treasury/KAFF-305-the-posting-type-account-pair-legality-table.md) | 3 | 8 | 🟡 BUILT | none | `-` | 2026-09-15 | The posting-type × account-pair legality table |
+| [KAFF-319](stories/slice-3-treasury/KAFF-319-a-refused-posting-reads-as-a-translated-message.md) | 3 | 3 | 🟡 BUILT | none | `-` | 2026-09-15 | A refused posting reads as a translated message, not a 500 |
+| [KAFF-320](stories/slice-3-treasury/KAFF-320-bank-as-an-independent-master-record.md) | 3 | 0 | ⚪ BLOCKED | none | `-` | 2026-09-15 | Bank — an independent master record, not folded into the ledger |
+| [KAFF-321](stories/slice-2-masters/KAFF-321-department-master-data.md) | 2 | 0 | 🟡 BUILT | none | `-` | 2026-09-15 | Department — dynamic master data, not a fixed enum |
 | [KAFF-322](stories/slice-3-treasury/KAFF-322-treasury-guard-tests-against-real-postgres.md) | 3 | 2 | 🟡 BUILT | none | `-` | 2026-09-14 | Treasury guard tests against real PostgreSQL |
 | [KAFF-900](stories/design-system/KAFF-900-design-tokens-and-shell.md) | design-system | 5 | 🟡 BUILT | none | `-` | - | Design tokens and the app shell (sidebar, header, page frame) |
 | [KAFF-901](stories/design-system/KAFF-901-shared-restyled-components.md) | design-system | 5 | 🟡 BUILT | none | `-` | - | Shared restyled components: table row, segmented filter, form field, button, badge |

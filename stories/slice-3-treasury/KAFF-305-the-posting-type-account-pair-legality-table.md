@@ -1,6 +1,6 @@
 # KAFF-305 · The posting-type × account-pair legality table
 
-<!-- kaff id=KAFF-305 slice=3 points=8 state=READY verdict=none at=- on=2026-09-14 -->
+<!-- kaff id=KAFF-305 slice=3 points=8 state=BUILT verdict=none at=- on=2026-09-15 -->
 
 **Slice:** 3 (Treasury) · **Epic:** Treasury · **Points:** 8 (`stories/backlog.md` slice-3 table) · **Status:** NOT-BUILT.
 **Spec:** §6.2 (posting types, cash and non-cash), §6.3 (account tree, "not an open-ended chart of accounts"), §6.4 (five ledgers) · **Decisions:** D-034 (تشوينات direction, the case study this rule exists to generalise)
