@@ -18,6 +18,8 @@
       {{ i18n.t('hr.employee.loading') }}
     </p>
   } @else if (employees().length > 0) {
+    <kaff-table-header [columns]="rowColumns" [columnDefs]="headerColumns" testId="employee-table-header" />
+
     <ul class="rows" data-testid="employee-rows">
       @for (employee of employees(); track trackRow($index, employee)) {
         <li class="rows-item" [attr.data-testid]="'employee-row-' + employee.code">

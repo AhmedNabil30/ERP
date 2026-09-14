@@ -1,6 +1,6 @@
 # KAFF-925 · Apply the table header row to every converted list
 
-<!-- kaff id=KAFF-925 slice=design-system points=3 state=READY -->
+<!-- kaff id=KAFF-925 slice=design-system points=3 state=BUILT -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 3 — six screens, mechanical
 once `KAFF-924` exists.

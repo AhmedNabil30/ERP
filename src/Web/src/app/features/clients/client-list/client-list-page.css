@@ -73,8 +73,12 @@
    template here, from outside, is that caller's job at the one breakpoint the component does not
    know about. The daily log is designed mobile-first and so is this: 390px is the width that must
    work. */
+/* `::ng-deep` is required — `.row` carries only `kaff-table-row`'s own `_ngcontent-*` attribute under
+   emulated view encapsulation, never the caller's, so a plain `kaff-table-row .row` selector never
+   matches (found by KAFF-926 at 390px). */
 @media (width < 48rem) {
-  kaff-table-row .row {
+  kaff-table-row ::ng-deep .row,
+  kaff-table-header ::ng-deep .header {
     grid-template-columns: 1fr !important;
   }
 }

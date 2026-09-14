@@ -93,12 +93,6 @@
   gap: var(--space-5);
 }
 
-.group-title {
-  margin: 0 0 var(--space-2);
-  font-size: var(--text-md);
-  color: var(--color-muted);
-}
-
 .rows {
   list-style: none;
   margin: 0;
@@ -123,8 +117,15 @@
    variant of its own — nesting/columns are documented as "the caller's job". Overriding its inner
    `.row` grid template here, from outside, is that caller's job at the one breakpoint the component
    does not know about. */
+/* `::ng-deep` is required — `.row`/`.header` carry only their own component's `_ngcontent-*`
+   attribute under emulated view encapsulation, never the caller's, so a plain `kaff-table-row .row`
+   selector never matches (found by KAFF-926 at 390px, the same defect `client-list-page.css`
+   carried). `kaff-table-header` (`KAFF-925`) takes the same fixed `columns()` string with the same
+   no-responsive-variant-of-its-own contract, so it needs the identical override or it overflows at
+   390px the moment a screen actually has enough columns to collapse. */
 @media (width < 48rem) {
-  kaff-table-row .row {
+  kaff-table-row ::ng-deep .row,
+  kaff-table-header ::ng-deep .header {
     grid-template-columns: 1fr !important;
   }
 }
@@ -153,21 +154,11 @@
   opacity: 0.75;
 }
 
+/* KAFF-925: the column header now names these — no per-row label duplicating it. */
 .row-price {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
   font-size: var(--text-sm);
   min-inline-size: 0;
-}
-
-.row-price > .figure {
-  justify-self: start;
-}
-
-.row-price-label {
-  font-size: var(--text-xs, 0.75rem);
-  opacity: 0.75;
+  justify-self: end;
 }
 
 .row-actions {
@@ -228,11 +219,6 @@
 }
 
 @media (width >= 48rem) {
-  .row-price {
-    flex-direction: row;
-    justify-content: flex-end;
-  }
-
   .create {
     align-self: flex-start;
     padding-inline: var(--space-6);

@@ -71,7 +71,8 @@
  * silently outside this story's file list.
  */
 @media (width < 48rem) {
-  kaff-table-row ::ng-deep .row {
+  kaff-table-row ::ng-deep .row,
+  kaff-table-header ::ng-deep .header {
     grid-template-columns: 1fr !important;
   }
 }

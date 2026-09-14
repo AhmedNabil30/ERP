@@ -4,7 +4,11 @@
   [style.grid-template-columns]="columns()"
   [attr.data-testid]="testId()"
 >
-  @for (col of columnDefs(); track col.labelKey) {
-    <span role="columnheader" [class.header-cell--end]="col.align === 'end'">{{ i18n.t(col.labelKey) }}</span>
+  @for (col of columnDefs(); track $index) {
+    <span role="columnheader" [class.header-cell--end]="col.align === 'end'">
+      @if (col.labelKey) {
+        {{ i18n.t(col.labelKey) }}
+      }
+    </span>
   }
 </div>

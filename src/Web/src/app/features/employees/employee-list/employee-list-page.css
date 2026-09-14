@@ -55,7 +55,8 @@
    `.row` grid template here, from outside, is that caller's job at the one breakpoint the component
    does not know about. */
 @media (width < 48rem) {
-  kaff-table-row .row {
+  kaff-table-row ::ng-deep .row,
+  kaff-table-header ::ng-deep .header {
     grid-template-columns: 1fr !important;
   }
 }

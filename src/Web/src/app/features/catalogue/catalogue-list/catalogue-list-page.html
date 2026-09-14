@@ -51,11 +51,16 @@
     </p>
   } @else if (groups().length > 0) {
     <div class="groups" data-testid="catalogue-groups">
+      <kaff-table-header [columns]="rowColumns" [columnDefs]="headerColumns" testId="catalogue-table-header" />
+
       @for (group of groups(); track trackGroup($index, group)) {
         <section class="group">
-          <h2 class="group-title" [attr.data-testid]="'catalogue-group-' + group.babId">
-            {{ babLabel(group) }}
-          </h2>
+          <kaff-group-heading
+            [name]="babLabel(group)"
+            [marginText]="groupMarginText(group)"
+            [countText]="groupCountText(group)"
+            [testId]="'catalogue-group-' + group.babId"
+          />
 
           <ul class="rows">
             @for (item of group.items; track trackItem($index, item)) {
@@ -71,15 +76,8 @@
                     <span class="row-desc" dir="auto">{{ item.descriptionAr }}</span>
                     <span class="row-unit" dir="auto">{{ item.unit }}</span>
 
-                    <span class="row-price">
-                      <span class="row-price-label">{{ i18n.t('catalogue.column.cost_price') }}</span>
-                      <bdi class="figure" dir="ltr">{{ i18n.formatMoney(item.costPrice) }}</bdi>
-                    </span>
-
-                    <span class="row-price">
-                      <span class="row-price-label">{{ i18n.t('catalogue.column.base_sell_rate') }}</span>
-                      <bdi class="figure" dir="ltr">{{ i18n.formatMoney(item.baseSellRate) }}</bdi>
-                    </span>
+                    <bdi class="row-price figure" dir="ltr">{{ i18n.formatMoney(item.costPrice) }}</bdi>
+                    <bdi class="row-price figure" dir="ltr">{{ i18n.formatMoney(item.baseSellRate) }}</bdi>
 
                     @if (item.status === 'Archived') {
                       <kaff-badge tone="neutral" testId="catalogue-row-archived-badge">

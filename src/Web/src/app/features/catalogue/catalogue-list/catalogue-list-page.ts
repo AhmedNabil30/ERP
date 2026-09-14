@@ -10,13 +10,16 @@ import {
   CatalogueItemListFilter,
 } from '../../../core/catalogue/catalogue.api';
 import { CatalogueGroup, groupByBab } from '../../../core/catalogue/group-by-bab';
+import { fractionToPercent } from '../../../core/catalogue/percent-wire';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import { KaffGroupHeading } from '../../../shared/kaff-group-heading/kaff-group-heading';
 import {
   KaffSegmentedFilter,
   SegmentedFilterOption,
 } from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
+import { KaffTableHeader, TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 
 /** The three chips `KAFF-206` rule 7 draws, in the order it draws them. */
@@ -43,7 +46,16 @@ const FILTERS: readonly CatalogueItemListFilter[] = ['active', 'archived', 'all'
  */
 @Component({
   selector: 'kaff-catalogue-list-page',
-  imports: [FormField, RouterLink, KaffBadge, KaffButton, KaffSegmentedFilter, KaffTableRow],
+  imports: [
+    FormField,
+    RouterLink,
+    KaffBadge,
+    KaffButton,
+    KaffGroupHeading,
+    KaffSegmentedFilter,
+    KaffTableHeader,
+    KaffTableRow,
+  ],
   templateUrl: './catalogue-list-page.html',
   styleUrl: './catalogue-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -57,8 +69,19 @@ export class CatalogueListPage {
   protected readonly i18n = inject(I18nService);
   protected readonly filters = FILTERS;
 
-  /** Grid columns for `kaff-table-row`: code · description · unit · cost · sell · archived badge. */
+  /** Grid columns for `kaff-table-row`/`kaff-table-header`: code · description · unit · cost · sell ·
+   *  archived badge. */
   protected readonly rowColumns = 'auto minmax(14rem, 1fr) auto auto auto auto';
+
+  /** `KAFF-925`: same column order the rows use, the shared header wires above the first group. */
+  protected readonly headerColumns: readonly TableColumnDef[] = [
+    { labelKey: 'catalogue.column.code' },
+    { labelKey: 'catalogue.column.description' },
+    { labelKey: 'catalogue.column.unit' },
+    { labelKey: 'catalogue.column.cost_price', align: 'end' },
+    { labelKey: 'catalogue.column.base_sell_rate', align: 'end' },
+    {},
+  ];
 
   protected readonly segmentedOptions: readonly SegmentedFilterOption<CatalogueItemListFilter>[] =
     FILTERS.map((filter) => ({ value: filter, labelKey: this.filterKey(filter) }));
@@ -161,6 +184,22 @@ export class CatalogueListPage {
       return this.i18n.t('catalogue.list.bab_unknown');
     }
     return this.i18n.locale() === 'en' ? group.bab.nameEn : group.bab.nameAr;
+  }
+
+  /** `KAFF-925`: null when the باب is unknown — no markup exists to show, so the pill is omitted
+   *  rather than showing a made-up figure. */
+  protected groupMarginText(group: CatalogueGroup): string | null {
+    if (group.bab === null) {
+      return null;
+    }
+    const percent = this.i18n.formatNumber(fractionToPercent(group.bab.defaultMarkup), {
+      maximumFractionDigits: 4,
+    });
+    return this.i18n.t('catalogue.list.group_margin', { percent });
+  }
+
+  protected groupCountText(group: CatalogueGroup): string {
+    return this.i18n.t('catalogue.list.group_count', { count: group.items.length });
   }
 
   protected isArchiving(id: string): boolean {

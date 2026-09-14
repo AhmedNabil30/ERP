@@ -44,6 +44,8 @@
   } @else if (loading()) {
     <p class="loading" data-testid="audit-loading">{{ i18n.t('audit.loading') }}</p>
   } @else if (entries().length > 0) {
+    <kaff-table-header [columns]="rowColumns" [columnDefs]="headerColumns" testId="audit-table-header" />
+
     <ul class="rows" data-testid="audit-rows">
       @for (entry of entries(); track trackEntry($index, entry)) {
         <li class="row">

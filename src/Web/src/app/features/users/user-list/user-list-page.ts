@@ -27,6 +27,7 @@ import {
   KaffSegmentedFilter,
   SegmentedFilterOption,
 } from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
+import { KaffTableHeader, TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 
 /**
@@ -65,7 +66,7 @@ const FILTERS: readonly UserListFilter[] = ['active', 'archived', 'all'];
  */
 @Component({
   selector: 'kaff-user-list-page',
-  imports: [RouterLink, KaffTableRow, KaffBadge, KaffButton, KaffSegmentedFilter],
+  imports: [RouterLink, KaffTableHeader, KaffTableRow, KaffBadge, KaffButton, KaffSegmentedFilter],
   templateUrl: './user-list-page.html',
   styleUrl: './user-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -91,6 +92,14 @@ export class UserListPage {
    * sub-department and the inactive badge, so it gets the widest fixed track and wraps.
    */
   protected readonly rowColumns = 'minmax(0, 1fr) 14rem 9rem 9rem';
+
+  /** `KAFF-925`: same column order the rows use — name · role/department meta · username · phone. */
+  protected readonly headerColumns: readonly TableColumnDef[] = [
+    { labelKey: 'users.field.full_name' },
+    { labelKey: 'users.field.role' },
+    { labelKey: 'users.field.username' },
+    { labelKey: 'users.field.phone' },
+  ];
 
   protected readonly segmentedOptions: readonly SegmentedFilterOption<UserListFilter>[] =
     FILTERS.map((filter) => ({ value: filter, labelKey: this.filterKey(filter) }));

@@ -27,6 +27,6 @@ export class TableHeaderFixturePage {
     { labelKey: 'catalogue.column.unit' },
     { labelKey: 'catalogue.column.cost_price', align: 'end' },
     { labelKey: 'catalogue.column.base_sell_rate', align: 'end' },
-    { labelKey: 'catalogue.column.actions_blank' },
+    {},
   ];
 }

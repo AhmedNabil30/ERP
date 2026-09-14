@@ -61,7 +61,8 @@
 }
 
 @media (width < 48rem) {
-  kaff-table-row .row {
+  kaff-table-row ::ng-deep .row,
+  kaff-table-header ::ng-deep .header {
     grid-template-columns: 1fr !important;
   }
 }
@@ -77,20 +78,11 @@
   min-inline-size: 0;
 }
 
+/* KAFF-925: the column header now names this — no per-row label duplicating it. */
 .row-markup {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-1);
   font-size: var(--text-sm);
   min-inline-size: 0;
-}
-
-.row-markup .figure {
-  justify-self: start;
-}
-
-.row-markup-label {
-  opacity: 0.75;
+  justify-self: end;
 }
 
 .row-actions {

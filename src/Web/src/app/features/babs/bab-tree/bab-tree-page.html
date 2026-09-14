@@ -18,6 +18,8 @@
       {{ i18n.t('bab.loading') }}
     </p>
   } @else if (rows().length > 0) {
+    <kaff-table-header [columns]="rowColumns" [columnDefs]="headerColumns" testId="bab-tree-table-header" />
+
     <ul class="rows" data-testid="bab-tree-rows">
       @for (row of rows(); track trackRow($index, row)) {
         <li
@@ -29,10 +31,7 @@
             <bdi class="row-code figure" dir="ltr" translate="no">{{ row.bab.code }}</bdi>
             <span class="row-name" dir="auto">{{ babLabel(row.bab) }}</span>
 
-            <span class="row-markup">
-              <span class="row-markup-label">{{ i18n.t('bab.field.default_markup') }}</span>
-              <bdi class="figure" dir="ltr">{{ markupPercent(row.bab) }}%</bdi>
-            </span>
+            <bdi class="row-markup figure" dir="ltr">{{ markupPercent(row.bab) }}%</bdi>
 
             @if (!row.bab.isActive) {
               <kaff-badge tone="neutral" testId="bab-row-archived-badge">

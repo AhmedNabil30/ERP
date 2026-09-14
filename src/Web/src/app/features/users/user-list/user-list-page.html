@@ -22,6 +22,8 @@
   } @else if (loading()) {
     <p class="loading" data-testid="user-list-loading">{{ i18n.t('users.loading') }}</p>
   } @else if (filteredUsers().length > 0) {
+    <kaff-table-header [columns]="rowColumns" [columnDefs]="headerColumns" testId="user-table-header" />
+
     <ul class="rows" data-testid="user-rows">
       @for (user of filteredUsers(); track trackUser($index, user)) {
         <li class="rows-item">

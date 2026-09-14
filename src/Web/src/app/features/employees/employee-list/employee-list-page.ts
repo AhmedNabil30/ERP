@@ -10,6 +10,7 @@ import {
   KaffSegmentedFilter,
   SegmentedFilterOption,
 } from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
+import { KaffTableHeader, TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 
 /** The three chips `AC-207-F` draws, matching `CatalogueListPage`'s and `BabTreePage`'s own. */
@@ -29,7 +30,7 @@ const FILTERS: readonly EmployeeListFilter[] = ['active', 'archived', 'all'];
  */
 @Component({
   selector: 'kaff-employee-list-page',
-  imports: [RouterLink, KaffBadge, KaffButton, KaffSegmentedFilter, KaffTableRow],
+  imports: [RouterLink, KaffBadge, KaffButton, KaffSegmentedFilter, KaffTableHeader, KaffTableRow],
   templateUrl: './employee-list-page.html',
   styleUrl: './employee-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -42,8 +43,19 @@ export class EmployeeListPage {
   protected readonly i18n = inject(I18nService);
   protected readonly filters = FILTERS;
 
-  /** Grid columns for `kaff-table-row`: code · name · phone · kind · specialty · archived badge. */
+  /** Grid columns for `kaff-table-row`/`kaff-table-header`: code · name · phone · kind · specialty ·
+   *  archived badge. */
   protected readonly rowColumns = 'auto minmax(10rem, 1fr) auto auto auto auto';
+
+  /** `KAFF-925`: same column order the rows use. No "margin" column — this list has none. */
+  protected readonly headerColumns: readonly TableColumnDef[] = [
+    { labelKey: 'hr.employee.field.code' },
+    { labelKey: 'hr.employee.field.full_name' },
+    { labelKey: 'hr.employee.field.phone' },
+    { labelKey: 'hr.employee.field.kind' },
+    { labelKey: 'hr.employee.field.specialty' },
+    {},
+  ];
 
   protected readonly segmentedOptions: readonly SegmentedFilterOption<EmployeeListFilter>[] =
     FILTERS.map((filter) => ({ value: filter, labelKey: this.filterKey(filter) }));

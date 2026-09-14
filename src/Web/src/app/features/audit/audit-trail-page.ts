@@ -11,6 +11,7 @@ import {
 } from '../../core/i18n/enum-keys';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { KaffButton } from '../../shared/kaff-button/kaff-button';
+import { KaffTableHeader, TableColumnDef } from '../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../shared/kaff-table-row/kaff-table-row';
 
 /**
@@ -61,7 +62,7 @@ export interface AuditChange {
  */
 @Component({
   selector: 'kaff-audit-trail-page',
-  imports: [FormField, KaffTableRow, KaffButton],
+  imports: [FormField, KaffTableHeader, KaffTableRow, KaffButton],
   templateUrl: './audit-trail-page.html',
   styleUrl: './audit-trail-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -93,8 +94,17 @@ export class AuditTrailPage {
   protected readonly failure = signal<string | null>(null);
   protected readonly selected = signal<AuditEntry | null>(null);
 
-  /** Grid columns for `kaff-table-row`: when · who · what · fields-changed. */
+  /** Grid columns for `kaff-table-row`/`kaff-table-header`: when · who · what · fields-changed. */
   protected readonly rowColumns = 'auto 1fr auto auto';
+
+  /** `KAFF-925`: same column order the rows use. Reuses the panel's own field labels — one word,
+   *  one meaning, never a second spelling of "when"/"who"/"what". */
+  protected readonly headerColumns: readonly TableColumnDef[] = [
+    { labelKey: 'audit.field.when' },
+    { labelKey: 'audit.field.who' },
+    { labelKey: 'audit.field.what' },
+    { labelKey: 'audit.changes.title', align: 'end' },
+  ];
 
   /** The changes table for whichever record is open. Empty for a record that changed no entity. */
   protected readonly changes = computed<readonly AuditChange[]>(() => {

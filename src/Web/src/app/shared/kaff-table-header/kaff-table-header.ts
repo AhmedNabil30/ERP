@@ -3,7 +3,10 @@ import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core
 import { I18nService } from '../../core/i18n/i18n.service';
 
 export interface TableColumnDef {
-  readonly labelKey: string;
+  /** Omit for a column with no header text — e.g. a trailing actions column — rather than adding a
+   *  blank string to the translation catalogue (`TranslationCatalogueTests.No_translation_is_left_empty`
+   *  bans that: a blank entry is worse than a missing key). */
+  readonly labelKey?: string;
   readonly align?: 'start' | 'end';
 }
 

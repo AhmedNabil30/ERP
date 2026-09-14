@@ -39,6 +39,8 @@
   } @else if (loading()) {
     <p class="loading" data-testid="client-list-loading">{{ i18n.t('clients.loading') }}</p>
   } @else if (clients().length > 0) {
+    <kaff-table-header [columns]="rowColumns" [columnDefs]="headerColumns" testId="client-table-header" />
+
     <ul class="rows" data-testid="client-rows">
       @for (client of clients(); track trackClient($index, client)) {
         <li class="rows-item">
