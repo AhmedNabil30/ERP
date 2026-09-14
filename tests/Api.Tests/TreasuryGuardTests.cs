@@ -130,6 +130,98 @@ public sealed class TreasuryGuardTests
     }
 
     [Fact]
+    public async Task A_partial_hold_release_is_refused_by_the_database()
+    {
+        // spec.md §5.1 / CLAUDE.md: "the hold releases once, in full" — never a partial drain.
+        // Same scenario numbers as Section15WorkedExampleTests: 60,000 + 60,000 + 80,000 = 200,000
+        // accrued across the three extracts (TC-3-015), then a release for less than that whole
+        // amount, which trg_postings_hold_release_in_full (001_guards.sql) must refuse. The
+        // companion Domain.Tests case (TC-3-017 part 2) could not prove this without a real
+        // PostgreSQL; this is that proof.
+        Guid projectId = await CreateProjectShellAsync();
+        Account hold = await AddAccountAsync(AccountType.Hold, projectId, PartyType.Client);
+        Account receivable = await AddAccountAsync(AccountType.ClientReceivable, projectId, PartyType.Client);
+
+        await using (KaffDbContext accrue = _database.CreateContext())
+        {
+            accrue.Postings.Add(Posting.Create(
+                receivable, hold, new Money(60_000m), PostingType.HoldAccrual,
+                Document(SourceDocumentType.Extract), Today, Actor, Now, projectId).Value);
+            accrue.Postings.Add(Posting.Create(
+                receivable, hold, new Money(60_000m), PostingType.HoldAccrual,
+                Document(SourceDocumentType.Extract), Today, Actor, Now, projectId).Value);
+            accrue.Postings.Add(Posting.Create(
+                receivable, hold, new Money(80_000m), PostingType.HoldAccrual,
+                Document(SourceDocumentType.Extract), Today, Actor, Now, projectId).Value);
+
+            await accrue.SaveChangesAsync(Ct);
+        }
+
+        await using KaffDbContext context = _database.CreateContext();
+
+        // Hold sits at 200,000. A release of 150,000 leaves 50,000 behind — a partial release.
+        context.Postings.Add(Posting.Create(
+            hold, receivable, new Money(150_000m), PostingType.HoldRelease,
+            Document(SourceDocumentType.Extract), Today, Actor, Now, projectId).Value);
+
+        await DatabaseGuard.RefusesAsync(
+            () => context.SaveChangesAsync(),
+            DatabaseGuard.HoldPartialRelease);
+    }
+
+    [Fact]
+    public async Task A_fourth_advance_recovery_past_zero_is_refused_by_the_database()
+    {
+        // spec.md §15 / D-044 §8: "Advance ledger reaches exactly zero, never negative." Same
+        // scenario numbers as Section15WorkedExampleTests: 250,000 advance at signing, recovered
+        // 75,000 + 75,000 + 100,000 across the three extracts (TC-3-018) to reach exactly zero.
+        // A fourth recovery of any amount would drive it negative, which
+        // kaff_check_non_negative_balance (001_guards.sql) must refuse. The companion Domain.Tests
+        // case (TC-3-019) could not prove this without a real PostgreSQL; this is that proof.
+        Guid projectId = await CreateProjectShellAsync();
+        Account clientAdvance = await AddAccountAsync(AccountType.ClientAdvance, projectId, PartyType.Client);
+        Account receivable = await AddAccountAsync(AccountType.ClientReceivable, projectId, PartyType.Client);
+        Account safe = await AddAccountAsync(AccountType.Safe);
+
+        await using (KaffDbContext signing = _database.CreateContext())
+        {
+            signing.Postings.Add(Posting.Create(
+                clientAdvance, safe, new Money(250_000m), PostingType.ClientAdvanceReceipt,
+                Document(SourceDocumentType.Collection), Today, Actor, Now, projectId).Value);
+
+            await signing.SaveChangesAsync(Ct);
+        }
+
+        await using (KaffDbContext recoveries = _database.CreateContext())
+        {
+            recoveries.Postings.Add(Posting.Create(
+                receivable, clientAdvance, new Money(75_000m), PostingType.ClientAdvanceRecovery,
+                Document(SourceDocumentType.Extract), Today, Actor, Now, projectId).Value);
+            recoveries.Postings.Add(Posting.Create(
+                receivable, clientAdvance, new Money(75_000m), PostingType.ClientAdvanceRecovery,
+                Document(SourceDocumentType.Extract), Today, Actor, Now, projectId).Value);
+            recoveries.Postings.Add(Posting.Create(
+                receivable, clientAdvance, new Money(100_000m), PostingType.ClientAdvanceRecovery,
+                Document(SourceDocumentType.Extract), Today, Actor, Now, projectId).Value);
+
+            await recoveries.SaveChangesAsync(Ct);
+        }
+
+        AccountBalance zeroed = await ReadBalanceAsync(clientAdvance.Id);
+        zeroed.SignedBalance.Should().Be(Money.Zero);
+
+        await using KaffDbContext context = _database.CreateContext();
+
+        context.Postings.Add(Posting.Create(
+            receivable, clientAdvance, new Money(10_000m), PostingType.ClientAdvanceRecovery,
+            Document(SourceDocumentType.Extract), Today, Actor, Now, projectId).Value);
+
+        await DatabaseGuard.RefusesAsync(
+            () => context.SaveChangesAsync(),
+            DatabaseGuard.NegativeBalance);
+    }
+
+    [Fact]
     public async Task The_hold_still_releases_at_handover()
     {
         Guid projectId = await CreateProjectShellAsync();

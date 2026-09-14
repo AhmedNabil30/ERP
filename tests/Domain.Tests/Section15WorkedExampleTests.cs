@@ -568,29 +568,11 @@ public sealed class Section15WorkedExampleTests
         attempt.Error.Should().Be(TreasuryErrors.HoldOnlyGrows);
     }
 
-    /// <summary>
-    /// TC-3-017 (part 2 of 2) — the part this fixture cannot prove, and does not fake.
-    /// </summary>
-    /// <remarks>
-    /// "Once, in full" for a <see cref="PostingType.HoldRelease"/> specifically is guarded by
-    /// <c>trg_postings_hold_release_in_full</c> (see KAFF-300's evidence table and
-    /// <c>src/Infrastructure/Persistence/DatabaseInitializer.cs</c> -&gt; <c>FindMissingGuardsAsync</c>).
-    /// <see cref="Posting.Validate"/> does not compare a <see cref="PostingType.HoldRelease"/>'s
-    /// amount against the account's balance — it cannot, since a single posting cannot see the whole
-    /// ledger — so a partial-amount release succeeds at the Domain layer today and is caught only by
-    /// the database trigger. Asserting a domain-level refusal here would be exactly the
-    /// "in-fixture pre-check" AC-300-G's own text warns against for the advance floor, applied to the
-    /// hold instead. This needs an <c>Kaff.Api.Tests</c> companion in the shape of
-    /// <c>TreasuryGuardTests.Nothing_comes_out_of_the_hold_before_handover_at_the_database</c> —
-    /// a case exercising a partial <see cref="PostingType.HoldRelease"/> against a real PostgreSQL
-    /// does not exist there yet either. Not built here: KAFF-300 does not touch the Api project.
-    /// </remarks>
-    [Fact(Skip = "Partial hold-release refusal is a database-trigger guard (trg_postings_hold_release_in_full); " +
-                 "not exercisable without a real PostgreSQL. Needs an Api.Tests/TreasuryGuardTests.cs case; " +
-                 "none exists yet for this specific trigger. Out of scope for KAFF-300 (Domain-only, no Api changes).")]
-    public void A_partial_hold_release_is_refused_by_the_database()
-    {
-    }
+    // TC-3-017 (part 2 of 2), formerly skipped here pending a real-PostgreSQL proof, is now
+    // Kaff.Api.Tests.TreasuryGuardTests.A_partial_hold_release_is_refused_by_the_database
+    // (KAFF-322). Domain.Tests cannot exercise trg_postings_hold_release_in_full — a single
+    // Posting.Create call cannot see the whole ledger — so the case was moved rather than kept as
+    // a permanent skip.
 
     // =============================================================================================
     //  AC-300-G — the advance floor and the Safe floor
@@ -617,29 +599,12 @@ public sealed class Section15WorkedExampleTests
             new Money(250_000m), new Money(175_000m), new Money(100_000m), Money.Zero);
     }
 
-    /// <summary>
-    /// TC-3-019 — not asserted here; the database enforces this, the domain does not.
-    /// </summary>
-    /// <remarks>
-    /// <see cref="Account.EnforceNonNegative"/> is true for <see cref="AccountType.ClientAdvance"/>
-    /// (spec.md §15's "reaches exactly zero, never negative"), but the floor is a database check on
-    /// the account's aggregate balance — a single <see cref="Posting.Create"/> call cannot see it,
-    /// by design (spec.md §6.1: "Enforce in the database, not only in application code"). Faking this
-    /// with an in-fixture "if the running total would go negative, refuse" would prove nothing about
-    /// the database constraint AC-300-G actually requires, and would still pass green if that
-    /// constraint were dropped — the exact failure mode this criterion exists to close off. This
-    /// needs an <c>Kaff.Api.Tests/TreasuryGuardTests.cs</c> case against a real PostgreSQL, following
-    /// <c>The_safe_balance_cannot_go_negative</c>'s pattern there but against
-    /// <see cref="AccountType.ClientAdvance"/>; no such case exists yet. Not built here: KAFF-300
-    /// does not touch the Api project.
-    /// </remarks>
-    [Fact(Skip = "A fourth advance recovery breaching zero is refused by a database non-negative-floor " +
-                 "constraint, not by application code (D-044 §8). Not exercisable without a real PostgreSQL. " +
-                 "Needs an Api.Tests/TreasuryGuardTests.cs case against AccountType.ClientAdvance; " +
-                 "none exists yet. Out of scope for KAFF-300 (Domain-only, no Api changes).")]
-    public void A_fourth_advance_recovery_is_refused_by_the_database()
-    {
-    }
+    // TC-3-019, formerly skipped here pending a real-PostgreSQL proof, is now
+    // Kaff.Api.Tests.TreasuryGuardTests.A_fourth_advance_recovery_past_zero_is_refused_by_the_database
+    // (KAFF-322). Account.EnforceNonNegative is true for AccountType.ClientAdvance, but the floor is
+    // a database check on the account's aggregate balance — a single Posting.Create call cannot see
+    // it (spec.md §6.1: "Enforce in the database, not only in application code"). Domain.Tests was
+    // moved rather than kept as a permanent skip.
 
     /// <summary>TC-3-020.</summary>
     [Fact]

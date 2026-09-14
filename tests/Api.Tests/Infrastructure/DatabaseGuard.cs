@@ -22,6 +22,7 @@ internal static class DatabaseGuard
     public const string NegativeBalance = "KAFF_NEGATIVE_BALANCE";
     public const string LedgerNetting = "KAFF_LEDGER_NETTING";
     public const string HoldDebit = "KAFF_HOLD_DEBIT";
+    public const string HoldPartialRelease = "KAFF_HOLD_PARTIAL_RELEASE";
     public const string ClosedPeriod = "KAFF_CLOSED_PERIOD";
     public const string ReversalMismatch = "KAFF_REVERSAL_MISMATCH";
     public const string ProjectTag = "KAFF_PROJECT_TAG";
