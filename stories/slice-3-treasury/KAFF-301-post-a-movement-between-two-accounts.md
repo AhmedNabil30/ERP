@@ -2,7 +2,7 @@
 
 <!-- kaff id=KAFF-301 slice=3 points=8 state=BUILT verdict=none at=- on=2026-09-14 -->
 
-**Slice:** 3 (Treasury) · **Epic:** Treasury · **Points:** 8 (`stories/backlog.md` slice-3 table) · **Status:** NOT-BUILT.
+**Slice:** 3 (Treasury) · **Epic:** Treasury · **Points:** 8 (`stories/backlog.md` slice-3 table) · **Status:** BUILT, 2026-09-14 (`5605539`, `04147e0`).
 **Spec:** §6.1 (posting model), §6.2 (non-cash from day one), §6.4 (five ledgers), §6.10 (project/company tag), §9 (permissions) · **Decisions:** D-033 (guarded database refuses to start), D-044 §6 (four-decimal precision) and §8 (which three accounts are floored)
 **Register:** `stories/questions-for-karim.md` — none of `Q14`/`Q15`/`Q16`/`Q29` gate this story. New: `Q87` (see *Questions for Karim* below)
 **Owner:** Backend
