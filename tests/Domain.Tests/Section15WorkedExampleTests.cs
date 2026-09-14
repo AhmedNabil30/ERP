@@ -700,7 +700,22 @@ public sealed class Section15WorkedExampleTests
         offendingLines.Should().BeEmpty();
     }
 
-    private static string ThisFilePath([CallerFilePath] string path = "") => path;
+    /// <summary>
+    /// A deterministic CI build rewrites <see cref="CallerFilePathAttribute"/> to the mapped source
+    /// root (<c>/_/tests/Domain.Tests/…</c>), which does not exist on the runner's disk — so the
+    /// compile-time path is used when it resolves, and the copy beside the test binary otherwise.
+    /// </summary>
+    private static string ThisFilePath([CallerFilePath] string path = "")
+    {
+        if (File.Exists(path))
+        {
+            return path;
+        }
+
+        // bin/<configuration>/<tfm>/ — three levels below the project directory holding this file.
+        return Path.GetFullPath(
+            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", Path.GetFileName(path)));
+    }
 
     // =============================================================================================
     //  AC-300-I — the تشوينات literals, transcribed, cited, never derived
