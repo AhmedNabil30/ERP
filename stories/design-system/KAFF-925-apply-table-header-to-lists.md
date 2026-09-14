@@ -42,6 +42,15 @@ screens. Do not skip it here.**
 **AC-925-G** `BidiGeometryTests` green before commit (D-155 amendment: E2E joins the builder gates
 while the Verifier is paused).
 
+## Found by `KAFF-926`, fix here while you're in these files
+`KAFF-926` (`037933f`) screenshotting the user list at 390px found `kaff-table-row .row { ... !important
+}`-style overrides in `catalogue-list-page.css` and `client-list-page.css` are **dead CSS** — under
+Angular's default emulated view encapsulation, a caller's stylesheet cannot reach `kaff-table-row`'s
+own template element (`.row`) by descendant selector; it needs `::ng-deep`, which `kaff-table-row.css`
+already uses for its own mobile-label rule (`KAFF-924`). Check both files for this before you touch
+them, fix it as part of wiring in `kaff-table-header`, and confirm by screenshot at 390px that the
+override actually takes effect (that's the check that catches it — reading the CSS won't).
+
 ## Not in this story
 Any screen not in the six named above. Any new column, any new data the API doesn't already return.
 
