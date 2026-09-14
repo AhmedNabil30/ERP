@@ -1,6 +1,6 @@
 # KAFF-300 · The §15 worked example as a fixture — present and failing before anything else is built
 
-<!-- kaff id=KAFF-300 slice=3 points=5 state=NOT-BUILT verdict=none at=- on=2026-09-07 -->
+<!-- kaff id=KAFF-300 slice=3 points=5 state=BUILT verdict=none at=- on=2026-09-07 -->
 
 **Slice:** 3 (Treasury) · **Epic:** Treasury · **Points:** 5 (`stories/backlog.md`'s slice-3 table) · **Status:** **NOT-BUILT.** Cut 2026-09-07 by the BA against `STATUS.md`'s *"What is actually next"* item 3, which had no story file. **One Definition-of-Ready box is unticked, and it is not `Q14` — see *Definition of Ready* below.**
 **Spec:** **§15** (the whole of it), §6.1, §6.4 · **Decisions:** **D-034** (which mandates this story by name), **D-044 §6** and **§8**, **D-033**, D-096 §1
@@ -210,7 +210,7 @@ The slice-5 calculator does.** Registered as `Q58` rather than inferred; **it is
 | Money behaviour named explicitly | ✅ — rules 6, 7, `AC-300-H` |
 | Arabic UI strings as i18n keys | ✅ — n/a |
 | The audit record it writes is stated | ✅ — none |
-| **QA has written at least one scenario that fails if the rule is broken** | ⛔ **Not met.** No `TC-` case exists; `qa/slice-3/` does not exist. Eight of the nine criteria are marked *(fails if the rule is broken)*, but the case is **QA's to write, not the BA's**. **Routed to QA.** |
+| **QA has written at least one scenario that fails if the rule is broken** | ✅ **Met, 2026-09-14.** `qa/slice-3/test-cases.md` `TC-3-001`…`022` case all nine criteria, `AC-300-A`–`AC-300-I`. |
 | Story-currency citations dated with a stable identifier | ✅ |
 | Not `BLOCKED` on an open question | ✅ — **`Q14` gates one criterion's figures, not the story**, for the reason set out above. `Q58` gates a slice-5 calculator this story does not build |
 
