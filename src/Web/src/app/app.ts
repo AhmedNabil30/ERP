@@ -1,10 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NgTemplateOutlet } from '@angular/common';
+import { filter, map } from 'rxjs';
 
 import { AuthService } from './core/auth/auth.service';
 import { SessionResolver } from './core/auth/session-resolver';
 import { roleKey } from './core/i18n/enum-keys';
 import { I18nService, Locale } from './core/i18n/i18n.service';
+import { HeaderActionsService } from './core/layout/header-actions.service';
 import { navLabelKeyFor } from './core/navigation/landing';
 import { NavRow, NavRowGroup, navGroupsFor, navRowsFor } from './core/navigation/nav-rows';
 
@@ -34,7 +38,7 @@ interface LocaleOption {
  */
 @Component({
   selector: 'kaff-root',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, NgTemplateOutlet],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -45,6 +49,7 @@ export class App {
   private readonly router = inject(Router);
 
   protected readonly i18n = inject(I18nService);
+  protected readonly headerActions = inject(HeaderActionsService);
 
   /** Held as a field, not an inline template literal, so the list is not rebuilt on every render. */
   protected readonly locales: readonly LocaleOption[] = [
@@ -91,6 +96,30 @@ export class App {
   protected readonly navGroups = computed<readonly NavRowGroup[]>(() => {
     const session = this.session();
     return session ? navGroupsFor(session) : [];
+  });
+
+  /** Reactive current URL — a plain `router.url` read is not itself a signal, so this exists only
+   *  to give {@link sectionLabelKey} something that changes on navigation. */
+  private readonly currentUrl = toSignal(
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      map((event) => event.urlAfterRedirects),
+    ),
+    { initialValue: this.router.url },
+  );
+
+  /**
+   * KAFF-923: the top bar's section label, replacing the old `app.name` `<h1>` — the shell no
+   * longer owns the page `<h1>` (see the story's ownership decision), each feature page keeps
+   * rendering its own. Derived from which {@link navGroups} row's path prefixes the current URL,
+   * never hardcoded per route.
+   */
+  protected readonly sectionLabelKey = computed<string | null>(() => {
+    const url = this.currentUrl();
+    const group = this.navGroups().find((candidate) =>
+      candidate.rows.some((row) => url === row.path || url.startsWith(row.path + '/')),
+    );
+    return group?.labelKey ?? null;
   });
 
   /** Exposed for the template — `roleKey` builds the i18n key by an exhaustive switch, never by

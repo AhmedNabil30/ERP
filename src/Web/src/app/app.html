@@ -132,9 +132,16 @@
         </button>
       }
 
-      <h1 class="app-title" data-testid="app-title">{{ i18n.t('app.name') }}</h1>
+      @if (sectionLabelKey(); as key) {
+        <span class="app-section-label" data-testid="app-section-label">{{ i18n.t(key) }}</span>
+      }
 
       <div class="header-end">
+        <!-- KAFF-923: the search/secondary/primary action slot (`Main.dc.html` 97-118). Empty until
+             a feature page sets `headerActions.template()` — wiring an actual screen's controls
+             into it is KAFF-924's job, not this one's. -->
+        <ng-container [ngTemplateOutlet]="headerActions.template()" />
+
         <nav class="locale-switch" [attr.aria-label]="i18n.t('app.language')">
           @for (option of locales; track option.code) {
             <button

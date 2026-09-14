@@ -32,10 +32,10 @@
   z-index: 30;
 }
 
-.app-title {
-  margin: 0;
-  font-size: var(--text-lg);
-  font-weight: 600;
+.app-section-label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-muted);
 }
 
 .header-end {
