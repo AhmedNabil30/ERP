@@ -1,10 +1,10 @@
 # KAFF-302 · Create a project's account set when a project is created
 
-<!-- kaff id=KAFF-302 slice=3 points=5 state=READY verdict=none at=- on=2026-09-14 -->
+<!-- kaff id=KAFF-302 slice=3 points=5 state=BUILT verdict=none at=- on=2026-09-14 -->
 
-**Slice:** 3 (Treasury) · **Epic:** Treasury · **Points:** 5 (`stories/backlog.md` slice-3 table) · **Status:** NOT-BUILT.
+**Slice:** 3 (Treasury) · **Epic:** Treasury · **Points:** 5 (`stories/backlog.md` slice-3 table) · **Status:** BUILT.
 **Spec:** §6.3 (account tree, project × party), §6.4 (the five ledgers), §5.1 (Lump Sum: hold, تشوينات), §5.2 (Cost Plus: "No hold. No تشوينات"), §5.3 (Design: "no hold, no تشوينات") · **Decisions:** D-034 (تشوينات is a liability)
-**Register:** none of `Q14`/`Q15`/`Q16`/`Q29` gate this story. New: `Q88`
+**Register:** none of `Q14`/`Q15`/`Q16`/`Q29` gate this story. `Q88` answered — Karim via Nabil, 2026-09-14, `decisions.md` D-161.
 **Owner:** Backend
 **Depends on:** `Account.Create` and `AccountTypes` metadata (built, `KAFF-300`'s evidence table). `AccountTreeSeeder` is the company-level precedent this story extends per-project — it explicitly does **not** seed project accounts, "because they are created with the project and the party they belong to" [Verified: 2026-09-14 @ `src/Infrastructure/Persistence/Seeding/AccountTreeSeeder.cs` header remark]. `Project.Create` exists in `src/Domain/Projects/Project.cs`.
 
@@ -24,7 +24,7 @@ yet, and (for the party-carrying types) a client id.
 | 2 | Lump Sum projects get a hold ledger and a تشوينات (`MaterialAdvance`) account | `spec.md` §5.1 — hold and تشوينات both named as part of Lump Sum billing |
 | 3 | Cost Plus projects get **no hold and no تشوينات** account | `spec.md` §5.2, verbatim: "No hold. No تشوينات." |
 | 4 | Design projects get **no hold and no تشوينات** account | `spec.md` §5.3, verbatim: "no hold, no تشوينات" |
-| 5 | Client advance and firm advance are not excluded for any contract type in §5.1–§5.3 | `spec.md` §5.1, §5.2, §5.3 (silence on exclusion, read against §6.4 naming them as general-purpose ledgers) |
+| 5 | Cost Plus opens "Project Operating Costs" and "Management/Supervision Revenues"; Design opens "Design Revenues" and "Consulting Costs" — both pairs reuse `ProjectCost`/`ContractRevenue`, named differently per contract type. Accounts can be adjusted from the chart of accounts later. | Karim via Nabil, 2026-09-14 — `decisions.md` D-161 (`Q88`) |
 | 6 | Every project account created follows the fixed metadata in `AccountTypes` — class, normal balance, floor — the factory does not let a caller override what the type dictates | [Verified: 2026-09-14 @ `src/Domain/Treasury/Account.cs` -> `Create`, `ValidateScope`, `ValidateParty`] |
 | 7 | تشوينات is a liability, not an asset, and carries no floor | D-034 · [Verified: 2026-09-14 @ `src/Domain/Treasury/AccountTypeMetadata.cs` -> `AccountType.MaterialAdvance` row] |
 | 8 | Seeding a set of accounts must be additive and idempotent — creating the set twice for the same project must not duplicate or edit an existing account | `CLAUDE.md` — "Never update or delete a posting" extends to "never re-derive an account row that already exists"; pattern already established in `AccountTreeSeeder.AddIfMissingAsync` |
@@ -52,17 +52,17 @@ When creation succeeds
 Then accounts of type `ClientAdvance`, `Hold`, `FirmAdvance`, `MaterialAdvance` and `ClientReceivable` exist, scoped to that project and that client, each carrying the class/normal-balance/floor `AccountTypes` dictates
 *Rule: 1, 2, 6, 7.*
 
-**AC-302-B — a Cost Plus project gets no hold and no تشوينات account**
+**AC-302-B — a Cost Plus project gets no hold and no تشوينات account, and gets a cost and a revenue account**
 Given a Cost Plus project is created
 When creation succeeds
-Then no `Hold` account and no `MaterialAdvance` account exist for that project
-*Rule: 3.*
+Then no `Hold` account and no `MaterialAdvance` account exist for that project, and a `ProjectCost` account named "Project Operating Costs" and a `ContractRevenue` account named "Management/Supervision Revenues" both exist
+*Rule: 3, 5.*
 
-**AC-302-C — a Design project gets no hold and no تشوينات account**
+**AC-302-C — a Design project gets no hold and no تشوينات account, and gets a cost and a revenue account**
 Given a Design project is created
 When creation succeeds
-Then no `Hold` account and no `MaterialAdvance` account exist for that project
-*Rule: 4.*
+Then no `Hold` account and no `MaterialAdvance` account exist for that project, and a `ProjectCost` account named "Consulting Costs" and a `ContractRevenue` account named "Design Revenues" both exist
+*Rule: 4, 5.*
 
 **AC-302-D — عهدة is not opened at project creation**
 Given any project of any contract type is created
@@ -117,6 +117,4 @@ Then scope, party and metadata validation all pass exactly as they would for a h
 
 ## Questions for Karim
 
-| # | |
-|---|---|
-| **`Q88`** | **"For a Cost Plus or a Design project — which neither hold nor تشوينات as spec.md rules — does the project still get a client advance account and a firm advance account, the way a Lump Sum project does, or are those two ledgers Lump-Sum-only as well?"** Say why it is being asked: `spec.md` §5.2 and §5.3 say "No hold. No تشوينات" by name and are silent on the other two of the five ledgers. Rule 5 above reads that silence as non-exclusion, which is the plainer reading but is still an inference, not a citation. **`AC-302-A`'s account list for Cost Plus and Design is therefore not written as a criterion here — only the hold/تشوينات exclusion (`AC-302-B`, `AC-302-C`) is asserted, because that much is stated verbatim.** |
+None open. `Q88` answered — Karim via Nabil, 2026-09-14, `decisions.md` D-161.
