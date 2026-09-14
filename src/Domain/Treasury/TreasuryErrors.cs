@@ -42,7 +42,16 @@ public static class TreasuryErrors
     public static readonly Error AccountNotClosed =
         Error.Conflict("treasury.account_not_closed", "errors.treasury.account_not_closed");
 
+    public static readonly Error AccountNotFound =
+        Error.NotFound("treasury.account_not_found", "errors.treasury.account_not_found");
+
     // ---- Posting ----
+
+    public static readonly Error PostingTypeRequired =
+        Error.Validation("treasury.posting_type_required", "errors.treasury.posting_type_required");
+
+    public static readonly Error SourceDocumentTypeRequired =
+        Error.Validation("treasury.source_document_type_required", "errors.treasury.source_document_type_required");
 
     public static readonly Error AmountMustBePositive =
         Error.Validation("treasury.amount_must_be_positive", "errors.treasury.amount_must_be_positive");

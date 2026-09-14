@@ -1,6 +1,6 @@
 # KAFF-301 · Post a movement between two accounts, append-only
 
-<!-- kaff id=KAFF-301 slice=3 points=8 state=READY verdict=none at=- on=2026-09-14 -->
+<!-- kaff id=KAFF-301 slice=3 points=8 state=BUILT verdict=none at=- on=2026-09-14 -->
 
 **Slice:** 3 (Treasury) · **Epic:** Treasury · **Points:** 8 (`stories/backlog.md` slice-3 table) · **Status:** NOT-BUILT.
 **Spec:** §6.1 (posting model), §6.2 (non-cash from day one), §6.4 (five ledgers), §6.10 (project/company tag), §9 (permissions) · **Decisions:** D-033 (guarded database refuses to start), D-044 §6 (four-decimal precision) and §8 (which three accounts are floored)
