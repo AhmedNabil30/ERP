@@ -3,6 +3,8 @@
 
   "app.name": "Kaff",
   "app.language": "Language",
+  "locale.ar": "العربية",
+  "locale.en": "English",
 
   "shell.boot.loading": "Loading…",
   "shell.nav.toggle": "Menu",

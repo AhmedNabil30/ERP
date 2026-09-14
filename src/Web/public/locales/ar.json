@@ -3,6 +3,8 @@
 
   "app.name": "كف",
   "app.language": "اللغة",
+  "locale.ar": "العربية",
+  "locale.en": "English",
 
   "shell.boot.loading": "جارٍ التحميل…",
   "shell.nav.toggle": "القائمة",

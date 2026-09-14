@@ -11,11 +11,10 @@ import { I18nService, Locale } from './core/i18n/i18n.service';
 import { HeaderActionsService } from './core/layout/header-actions.service';
 import { navLabelKeyFor } from './core/navigation/landing';
 import { NavRow, NavRowGroup, navGroupsFor, navRowsFor } from './core/navigation/nav-rows';
-
-interface LocaleOption {
-  readonly code: Locale;
-  readonly label: string;
-}
+import {
+  KaffSegmentedFilter,
+  SegmentedFilterOption,
+} from './shared/kaff-segmented-filter/kaff-segmented-filter';
 
 /**
  * The application shell. KAFF-125: S-004's dispatch made visible, and the staff chrome built on it.
@@ -38,7 +37,7 @@ interface LocaleOption {
  */
 @Component({
   selector: 'kaff-root',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, NgTemplateOutlet],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, NgTemplateOutlet, KaffSegmentedFilter],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -51,10 +50,14 @@ export class App {
   protected readonly i18n = inject(I18nService);
   protected readonly headerActions = inject(HeaderActionsService);
 
-  /** Held as a field, not an inline template literal, so the list is not rebuilt on every render. */
-  protected readonly locales: readonly LocaleOption[] = [
-    { code: 'ar', label: 'العربية' },
-    { code: 'en', label: 'English' },
+  /**
+   * KAFF-927: `kaff-segmented-filter`'s own option shape, reused rather than a second segmented
+   * control (`ux/components.md`'s "one of each" rule). Held as a field, not an inline template
+   * literal, so the list is not rebuilt on every render.
+   */
+  protected readonly localeOptions: readonly SegmentedFilterOption<Locale>[] = [
+    { value: 'ar', labelKey: 'locale.ar' },
+    { value: 'en', labelKey: 'locale.en' },
   ];
 
   private readonly navOpen = signal(false);

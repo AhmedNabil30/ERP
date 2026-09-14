@@ -1,6 +1,6 @@
 # KAFF-927 · Locale switch as one segmented control, not two buttons
 
-<!-- kaff id=KAFF-927 slice=design-system points=1 state=BLOCKED -->
+<!-- kaff id=KAFF-927 slice=design-system points=1 state=BUILT -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 1.
 **Depends on:** `KAFF-922` (BUILT, `e6487b1`) and `KAFF-923` (top bar rebuild — **not yet built as of

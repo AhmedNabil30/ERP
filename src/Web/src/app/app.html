@@ -142,18 +142,12 @@
              into it is KAFF-924's job, not this one's. -->
         <ng-container [ngTemplateOutlet]="headerActions.template()" />
 
-        <nav class="locale-switch" [attr.aria-label]="i18n.t('app.language')">
-          @for (option of locales; track option.code) {
-            <button
-              type="button"
-              class="locale-button"
-              [class.is-active]="i18n.locale() === option.code"
-              [attr.aria-pressed]="i18n.locale() === option.code"
-              (click)="switchLocale(option.code)">
-              {{ option.label }}
-            </button>
-          }
-        </nav>
+        <kaff-segmented-filter
+          [options]="localeOptions"
+          [value]="i18n.locale()"
+          (valueChange)="switchLocale($event)"
+          ariaLabelKey="app.language"
+          testIdPrefix="locale" />
       </div>
     </header>
 

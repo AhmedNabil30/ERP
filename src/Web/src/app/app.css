@@ -46,28 +46,6 @@
   margin-inline-start: auto;
 }
 
-.locale-switch {
-  display: flex;
-  gap: var(--space-2);
-}
-
-.locale-button {
-  padding-block: var(--space-1);
-  padding-inline: var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-  min-block-size: 2.75rem;
-}
-
-.locale-button.is-active {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-}
-
 .nav-toggle {
   inline-size: 2.75rem;
   block-size: 2.75rem;
