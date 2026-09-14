@@ -1,6 +1,6 @@
 # KAFF-319 · A refused posting reads as a translated message, not a 500
 
-<!-- kaff id=KAFF-319 slice=3 points=3 state=READY verdict=none at=- on=2026-09-14 -->
+<!-- kaff id=KAFF-319 slice=3 points=3 state=BUILT verdict=none at=- on=2026-09-15 -->
 
 **Slice:** 3 (Treasury) · **Epic:** Treasury · **Points:** 3 (`stories/backlog.md` slice-3 table) · **Status:** NOT-BUILT.
 **Spec:** §1 (no scope for a bare error page — implicit in "no hardcoded user-facing strings," `CLAUDE.md`) · **Decisions:** D-033 (guarded database refuses to start — the sibling problem: this story is about what happens when a *running*, guarded database's own guard fires)

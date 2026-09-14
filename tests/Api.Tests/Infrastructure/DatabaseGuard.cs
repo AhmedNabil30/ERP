@@ -26,6 +26,15 @@ internal static class DatabaseGuard
     public const string ClosedPeriod = "KAFF_CLOSED_PERIOD";
     public const string ReversalMismatch = "KAFF_REVERSAL_MISMATCH";
     public const string ProjectTag = "KAFF_PROJECT_TAG";
+    public const string AccountMissing = "KAFF_ACCOUNT_MISSING";
+    public const string AccountNotPostable = "KAFF_ACCOUNT_NOT_POSTABLE";
+    public const string AccountInactive = "KAFF_ACCOUNT_INACTIVE";
+    public const string CurrencyMismatch = "KAFF_CURRENCY_MISMATCH";
+    public const string CrossProject = "KAFF_CROSS_PROJECT";
+    public const string ReversalTargetMissing = "KAFF_REVERSAL_TARGET_MISSING";
+    public const string ReversalOfReversal = "KAFF_REVERSAL_OF_REVERSAL";
+    public const string AccountImmutable = "KAFF_ACCOUNT_IMMUTABLE";
+    public const string PostingTypeAccountMismatch = "KAFF_POSTING_TYPE_ACCOUNT_MISMATCH";
 
     public static async Task<PostgresException> RefusesAsync(Func<Task> operation, string marker)
     {

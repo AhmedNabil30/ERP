@@ -126,6 +126,60 @@ BEGIN
                   HINT = 'spec.md 5.1. The hold releases once, in full, at handover, as a HoldRelease posting.';
     END IF;
 
+    -- KAFF-305 rules 2-7: a handful of restricted ledgers may only be touched by the posting types
+    -- spec.md names for them, from either side. Domain is the authority for the translated message
+    -- (Kaff.Domain.Treasury.PostingAccountLegality); this is defense-in-depth if that check is ever
+    -- bypassed. Applies to a reversal exactly as to a forward posting — no exemption (rule 9).
+    IF (v_from.type = 'Hold' OR v_to.type = 'Hold')
+       AND NEW."type" NOT IN ('HoldAccrual', 'HoldRelease') THEN
+        RAISE EXCEPTION 'KAFF_POSTING_TYPE_ACCOUNT_MISMATCH: posting type % cannot touch a Hold account.', NEW."type"
+            USING ERRCODE = 'restrict_violation';
+    END IF;
+
+    IF (v_from.type = 'MaterialAdvance' OR v_to.type = 'MaterialAdvance')
+       AND NEW."type" NOT IN ('MaterialAdvanceIssue', 'MaterialAdvanceRecovery') THEN
+        RAISE EXCEPTION 'KAFF_POSTING_TYPE_ACCOUNT_MISMATCH: posting type % cannot touch a MaterialAdvance account.', NEW."type"
+            USING ERRCODE = 'restrict_violation';
+    END IF;
+
+    IF (v_from.type = 'ClientAdvance' OR v_to.type = 'ClientAdvance')
+       AND NEW."type" NOT IN ('ClientAdvanceReceipt', 'ClientAdvanceRecovery') THEN
+        RAISE EXCEPTION 'KAFF_POSTING_TYPE_ACCOUNT_MISMATCH: posting type % cannot touch a ClientAdvance account.', NEW."type"
+            USING ERRCODE = 'restrict_violation';
+    END IF;
+
+    IF (v_from.type = 'FirmAdvance' OR v_to.type = 'FirmAdvance')
+       AND NEW."type" NOT IN ('FirmAdvanceIssue', 'FirmAdvanceRecovery') THEN
+        RAISE EXCEPTION 'KAFF_POSTING_TYPE_ACCOUNT_MISMATCH: posting type % cannot touch a FirmAdvance account.', NEW."type"
+            USING ERRCODE = 'restrict_violation';
+    END IF;
+
+    IF (v_from.type = 'OwnerCurrentAccount' OR v_to.type = 'OwnerCurrentAccount')
+       AND NEW."type" NOT IN ('OwnerInjection', 'OwnerWithdrawal', 'OwnerRepayment', 'OwnerDrawing') THEN
+        RAISE EXCEPTION 'KAFF_POSTING_TYPE_ACCOUNT_MISMATCH: posting type % cannot touch an OwnerCurrentAccount account.', NEW."type"
+            USING ERRCODE = 'restrict_violation';
+    END IF;
+
+    IF (v_from.type = 'PettyCashAdvance' OR v_to.type = 'PettyCashAdvance')
+       AND NEW."type" NOT IN ('PettyCashIssue', 'PettyCashSettlement', 'PettyCashReturn') THEN
+        RAISE EXCEPTION 'KAFF_POSTING_TYPE_ACCOUNT_MISMATCH: posting type % cannot touch a PettyCashAdvance account.', NEW."type"
+            USING ERRCODE = 'restrict_violation';
+    END IF;
+
+    -- KAFF-305 rule 8: a non-cash posting type must never touch a cash instrument (spec.md 6.2). The
+    -- list mirrors Kaff.Domain.Treasury.PostingTypes.PostingNature.NonCash exactly; the two must be
+    -- edited together.
+    IF NEW."type" IN (
+        'RevenueRecognition', 'ExpenseAccrual', 'AccrualRelease', 'Prepayment', 'PrepaymentAmortisation',
+        'Depreciation', 'WipAdjustment', 'TaxWithheldAtSource', 'TaxWithholdingRetained',
+        'HoldAccrual', 'HoldRelease', 'MaterialAdvanceIssue', 'MaterialAdvanceRecovery',
+        'ClientAdvanceRecovery', 'SubcontractorRetentionAccrual', 'SubcontractorRetentionRelease',
+        'CreditNote', 'DebitNote', 'Adjustment', 'PeriodCloseTransfer', 'YearEndProfitTransfer'
+    ) AND (v_from.type IN ('Safe', 'Bank') OR v_to.type IN ('Safe', 'Bank')) THEN
+        RAISE EXCEPTION 'KAFF_POSTING_TYPE_ACCOUNT_MISMATCH: non-cash posting type % cannot touch a cash instrument.', NEW."type"
+            USING ERRCODE = 'restrict_violation';
+    END IF;
+
     -- spec.md 6.10: every movement is tagged project or company, never both, never neither.
     IF v_from.project_id IS NOT NULL
        AND v_to.project_id IS NOT NULL

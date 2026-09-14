@@ -5,7 +5,6 @@ using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace Kaff.Api.Features.Treasury.PostMovement;
 
@@ -144,28 +143,10 @@ internal static class Handler
     /// <see langword="null"/> if <paramref name="exception"/> is not one of them — in which case it
     /// is rethrown by the <c>when</c> clause at the call site rather than swallowed here.
     /// </summary>
-    private static Error? GuardViolation(Exception exception)
-    {
-        for (Exception? current = exception; current is not null; current = current.InnerException)
-        {
-            if (current is not PostgresException postgres)
-            {
-                continue;
-            }
-
-            if (postgres.MessageText.Contains("KAFF_CLOSED_PERIOD", StringComparison.Ordinal))
-            {
-                return TreasuryErrors.ClosedPeriod;
-            }
-
-            if (postgres.MessageText.Contains("KAFF_NEGATIVE_BALANCE", StringComparison.Ordinal))
-            {
-                return TreasuryErrors.NegativeBalance;
-            }
-
-            return null;
-        }
-
-        return null;
-    }
+    /// <remarks>
+    /// KAFF-319 generalised this from the two prefixes this handler used to know about
+    /// (<c>KAFF_CLOSED_PERIOD</c>, <c>KAFF_NEGATIVE_BALANCE</c>) to every named guard in
+    /// <c>001_guards.sql</c> — see <see cref="DatabaseGuardTranslation"/> for the full table.
+    /// </remarks>
+    private static Error? GuardViolation(Exception exception) => DatabaseGuardTranslation.Translate(exception);
 }

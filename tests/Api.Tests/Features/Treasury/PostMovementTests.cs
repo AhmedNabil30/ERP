@@ -466,13 +466,13 @@ public sealed class PostMovementTests : IAsyncLifetime
             UniqueNames.Code("PM-PB"), "مشروع ب", client.Id, ContractType.LumpSum, Now).Value;
 
         User financeOnProjectA = User.Create(
-            UniqueNames.Code("pm-fin-a"), "pm-fin-a", UniqueNames.Phone(), Role.Finance, Now, Department.Finance).Value;
+            UniqueNames.Code("pm-fin-a"), "pm-fin-a", UniqueNames.Phone(), Role.Finance, Now, WellKnownDepartments.FinanceId).Value;
 
         User financeCompanyWide = User.Create(
-            UniqueNames.Code("pm-fin-co"), "pm-fin-co", UniqueNames.Phone(), Role.Finance, Now, Department.Finance).Value;
+            UniqueNames.Code("pm-fin-co"), "pm-fin-co", UniqueNames.Phone(), Role.Finance, Now, WellKnownDepartments.FinanceId).Value;
 
         User financeUnassigned = User.Create(
-            UniqueNames.Code("pm-fin-un"), "pm-fin-un", UniqueNames.Phone(), Role.Finance, Now, Department.Finance).Value;
+            UniqueNames.Code("pm-fin-un"), "pm-fin-un", UniqueNames.Phone(), Role.Finance, Now, WellKnownDepartments.FinanceId).Value;
 
         context.Clients.Add(client);
         context.Projects.AddRange(projectA, projectB);

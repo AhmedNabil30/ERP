@@ -76,6 +76,13 @@ public static class TreasuryErrors
     public static readonly Error HoldOnlyGrows =
         Error.Conflict("treasury.hold_only_grows", "errors.treasury.hold_only_grows");
 
+    /// <summary>
+    /// KAFF-305 — a posting type may only run between the account pair spec.md names for it. See
+    /// <see cref="PostingAccountLegality"/>.
+    /// </summary>
+    public static readonly Error PostingTypeAccountMismatch =
+        Error.Conflict("treasury.posting_type_account_mismatch", "errors.treasury.posting_type_account_mismatch");
+
     /// <summary>spec.md §6.10 — a project cost posting must name its project.</summary>
     public static readonly Error ProjectTagRequired =
         Error.Validation("treasury.project_tag_required", "errors.treasury.project_tag_required");
@@ -103,6 +110,23 @@ public static class TreasuryErrors
 
     public static readonly Error PostingAlreadyReversed =
         Error.Conflict("treasury.posting_already_reversed", "errors.treasury.posting_already_reversed");
+
+    /// <summary>
+    /// spec.md §6.1 — a reversal cannot itself be reversed; one correction per posting. KAFF-319:
+    /// added for <c>KAFF_REVERSAL_OF_REVERSAL</c> (<c>001_guards.sql</c>), which had no domain
+    /// <see cref="Error"/> until this story. KAFF-303's <c>AC-303-C</c> is expected to add the
+    /// matching domain-level pre-check; this member is what it should return.
+    /// </summary>
+    public static readonly Error ReversalOfReversal =
+        Error.Conflict("treasury.reversal_of_reversal", "errors.treasury.reversal_of_reversal");
+
+    /// <summary>
+    /// spec.md §6.1 — <c>KAFF_REVERSAL_TARGET_MISSING</c> (<c>001_guards.sql</c>): the posting named
+    /// by <c>ReversesId</c> does not exist. KAFF-319 — no code path builds this today without going
+    /// round the domain, but the database guard can still fire it and it must translate.
+    /// </summary>
+    public static readonly Error ReversalTargetNotFound =
+        Error.NotFound("treasury.reversal_target_not_found", "errors.treasury.reversal_target_not_found");
 
     // ---- Period ----
 
