@@ -1,19 +1,35 @@
+<ng-template #createAction>
+  <kaff-button variant="primary" testId="user-create" (clicked)="onCreate()">
+    {{ i18n.t('users.action.create') }}
+  </kaff-button>
+</ng-template>
+
 <section class="users" data-testid="user-list">
   <h1 class="title">{{ i18n.t('users.title') }}</h1>
+
+  <!-- KAFF-926: KAFF-901's segmented filter, matching CatalogueListPage's/ClientListPage's own.
+       Client-side only — see UserListPage.filteredUsers's doc for why. -->
+  <kaff-segmented-filter
+    [options]="segmentedOptions"
+    [value]="statusFilter()"
+    (valueChange)="onFilter($event)"
+    ariaLabelKey="users.filter.all"
+    testIdPrefix="user-filter"
+  />
 
   @if (failure(); as key) {
     <p class="refusal" role="alert" data-testid="user-list-failure">{{ i18n.t(key) }}</p>
   } @else if (loading()) {
     <p class="loading" data-testid="user-list-loading">{{ i18n.t('users.loading') }}</p>
-  } @else if (users().length > 0) {
+  } @else if (filteredUsers().length > 0) {
     <ul class="rows" data-testid="user-rows">
-      @for (user of users(); track trackUser($index, user)) {
+      @for (user of filteredUsers(); track trackUser($index, user)) {
         <li class="rows-item">
           <a class="row-link" [routerLink]="['/users', user.id]" [attr.data-testid]="'user-row-' + user.userName">
             <kaff-table-row [columns]="rowColumns" [archived]="!user.isActive">
               <span class="row-name" dir="auto">{{ user.fullName }}</span>
               <span class="row-meta">
-                <kaff-badge tone="accent">{{ i18n.t(roleKey(user.role)) }}</kaff-badge>
+                <span class="row-role">{{ i18n.t(roleKey(user.role)) }}</span>
                 @if (user.department; as department) {
                   <span class="row-department">{{ i18n.t(departmentKey(department)) }}</span>
                   @if (user.operationsSubDepartment; as subDepartment) {
@@ -47,8 +63,4 @@
       <p class="empty-body">{{ i18n.t('users.empty.body') }}</p>
     </div>
   }
-
-  <a class="create" routerLink="/users/new" data-testid="user-create">
-    {{ i18n.t('users.action.create') }}
-  </a>
 </section>

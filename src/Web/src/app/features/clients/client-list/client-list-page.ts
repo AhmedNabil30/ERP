@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { FormField, form } from '@angular/forms/signals';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
 import {
@@ -45,6 +45,8 @@ const FILTERS: readonly ClientListFilter[] = ['all', 'active', 'archived'];
 })
 export class ClientListPage {
   private readonly api = inject(ClientsApi);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly i18n = inject(I18nService);
   protected readonly clientKindKey = clientKindKey;
@@ -60,7 +62,17 @@ export class ClientListPage {
   private readonly searchModel = signal<{ query: string }>({ query: '' });
 
   protected readonly searchForm = form(this.searchModel);
-  protected readonly filter = signal<ClientListFilter>('active');
+
+  /**
+   * KAFF-926 finding 7: bound by name from `?status=` — `withComponentInputBinding` (`app.config.ts`),
+   * the same mechanism `catalogue-list-page.ts`'s `status` input uses. This screen was found to hold
+   * the filter in a plain signal with no URL sync at all, unlike `catalogue-list-page.ts`; a reload or
+   * a shared link lost the filter. `onFilter` below writes the choice to the URL instead of to a
+   * signal directly, and `filter` reads it back.
+   */
+  readonly status = input<ClientListFilter>('active');
+  protected readonly filter = computed(() => this.status() ?? 'active');
+
   protected readonly clients = signal<readonly ClientSummary[]>([]);
   protected readonly loading = signal(true);
   protected readonly failure = signal<string | null>(null);
@@ -75,7 +87,13 @@ export class ClientListPage {
   protected readonly searchWasApplied = signal(false);
 
   constructor() {
-    void this.reload();
+    // Reacts to `filter` (URL-driven, so this also fires on back/forward and on a shared link) and
+    // runs once immediately, replacing the old unconditional `void this.reload()` — the same shape
+    // `catalogue-list-page.ts`'s constructor effect uses for its own URL-bound filter.
+    effect(() => {
+      void this.filter();
+      void this.reload();
+    });
   }
 
   protected async onSubmitSearch(): Promise<void> {
@@ -83,8 +101,11 @@ export class ClientListPage {
   }
 
   protected async onFilter(filter: ClientListFilter): Promise<void> {
-    this.filter.set(filter);
-    await this.reload();
+    await this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { status: filter },
+      queryParamsHandling: 'merge',
+    });
   }
 
   protected filterKey(filter: ClientListFilter): string {

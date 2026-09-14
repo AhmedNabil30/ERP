@@ -1,6 +1,6 @@
 # KAFF-926 · User list — beyond what KAFF-925 already gives it
 
-<!-- kaff id=KAFF-926 slice=design-system points=3 state=READY -->
+<!-- kaff id=KAFF-926 slice=design-system points=3 state=BUILT -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 3.
 **Depends on:** `KAFF-924` (BUILT, `3b25e40`) for `kaff-table-header`/`kaff-group-heading`. Independent
@@ -87,3 +87,39 @@ named explicitly above.
 
 ## Questions for Karim
 None — this is a UI consistency fix, no business rule involved.
+
+## Build notes (2026-09-14)
+
+All eight findings addressed in `features/users/user-list/*` plus `client-list-page.ts`'s query-param
+sync. Two corrections to the story's own premises, found while building rather than guessed around:
+
+- **Finding 4's stated reason for deleting the `!important` override was wrong, but the code it
+  named was too.** `kaff-table-row.css` (current, post-KAFF-924) does not give `kaff-table-row` a
+  responsive grid of its own — the paired grid template is still every caller's job — and the
+  `kaff-table-header` wiring finding 4 points to as the replacement has not landed in any product
+  screen (`table-header-fixture-page.ts` is still the dev-only render proof its own comment says it
+  is). But screenshotting this screen at 390px turned up a second, independent defect: the override
+  was dead CSS on every screen that carries it, `catalogue-list-page.css` and `client-list-page.css`
+  included — `.row` is `kaff-table-row`'s own template element, so under Angular's default emulated
+  view encapsulation a caller's `kaff-table-row .row` selector can never match it. Every list screen
+  with this override has been overflowing at mobile width, unnoticed, until this story's screenshot
+  gate caught it on `/clients`. Fixed here with `::ng-deep` (the same mechanism
+  `kaff-table-row.css`'s own `.row-price-label` rule already uses to cross the same boundary), scoped
+  to `user-list-page.css` only. `catalogue-list-page.css` and `client-list-page.css` still need the
+  identical one-line fix — flagged, not fixed, since both are outside this story's file list.
+- **Finding 3's claim that "catalogue runs full width" is incorrect.** `catalogue-list-page.css`
+  centres itself at `max-inline-size: 64rem` exactly like `client-list-page.css` (60rem) and the old
+  `user-list-page.css` (60rem, now removed). All three list screens still centre except this one;
+  named per the finding's own instruction, not fixed outside `features/users/user-list/*`.
+
+**Filter is client-side on the user list, not server-side.** `GET /api/users` has no filter
+parameter — confirmed by reading `UsersApi.list` and its own doc comment — unlike `catalogue`'s and
+`client`'s status filters, which are real round trips. The Active/Archived/All chips here filter the
+one already-fetched response; only the chosen value round-trips through `?status=`.
+
+**Create button now wires `HeaderActionsService` (KAFF-923)** — the first feature page to do so; no
+existing product screen had this pattern to copy, so the `viewChild(TemplateRef)` / `effect()` /
+`DestroyRef` shape here is new, not copied.
+
+**Not done:** `catalogue-list-page.css` / `client-list-page.css`'s dead mobile override and their own
+centred-width — both flagged above, both outside this story's file list.
