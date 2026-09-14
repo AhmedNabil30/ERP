@@ -14231,3 +14231,23 @@ overlap and is lifted only where they provably don't.
 
 **What this does not decide.** Both stories are UI consistency fixes; no business rule is involved,
 no question queued for Nabil or Karim.
+
+### D-160 · Scrum Master — anyComponentStyle budget raised for app.css · 2026-09-14
+
+**Decision.** `ng build --configuration production` warned that `src/Web/src/app/app.css`
+(7556 bytes on disk) exceeds the Angular CLI's `anyComponentStyle` budget by 473 bytes. The file
+carries the sidebar, top bar, drawer and boot-state CSS added across `KAFF-900/921/922/923/925/927`
+— legitimate shell growth from the design-overhaul slice, not stylesheet bloat, and none of it is
+dead weight to trim. Rather than cut working, load-bearing CSS to fit an arbitrary limit, the budget
+itself is raised in `src/Web/angular.json`: `anyComponentStyle` `maximumWarning` moves from `4kB` to
+`6kB` and `maximumError` from `8kB` to `10kB`.
+
+**Why.** The default Angular CLI budget was sized for a small single-purpose component stylesheet,
+not an app shell that now owns navigation, a drawer, and boot-state styling for the whole
+application. The alternative — splitting `app.css` into several files just to stay under 4kB, or
+deleting recently-shipped styling — would cost real engineering time to satisfy a threshold that was
+never a business or performance requirement in `spec.md`.
+
+**What this does not decide.** This does not license unbounded growth of `app.css`; if the file
+keeps growing, the shell should be reconsidered for a split into per-region component styles at that
+point, not before.
