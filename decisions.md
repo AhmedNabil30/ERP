@@ -14251,3 +14251,133 @@ never a business or performance requirement in `spec.md`.
 **What this does not decide.** This does not license unbounded growth of `app.css`; if the file
 keeps growing, the shell should be reconsidered for a split into per-region component styles at that
 point, not before.
+
+---
+
+### D-161 · Karim via Nabil — `Q88`: Cost Plus and Design account sets · 2026-09-14
+
+**Decision.** Cost Plus projects open with two default accounts: "Project Operating Costs" and
+"Management/Supervision Revenues". Design projects open with two default accounts: "Design Revenues"
+and "Consulting Costs". Accounts can be added or adjusted from the chart of accounts later.
+
+**Why.** `KAFF-302`'s factory left Cost Plus and Design with an empty account set pending this answer
+— spec.md §5.2/§5.3 state the hold/تشوينات exclusion verbatim but say nothing about the other ledgers
+for these two contract types, and the story refused to guess. This unblocks it.
+
+**What we rejected and why.** No new `AccountType` enum members. Both pairs reuse the existing generic
+`AccountType.ProjectCost` (expense) and `AccountType.ContractRevenue` (revenue) types already in
+`AccountTypes`, distinguished only by the display name per contract type — a fourth and fifth type
+that duplicate the same class/normal-balance shape would be the mistake `CLAUDE.md`'s "type dispatches,
+it does not fork" rule exists to prevent.
+
+**Built.** `src/Domain/Treasury/ProjectAccountSetFactory.cs` — `RequiredTypes` returns
+`[ContractRevenue, ProjectCost]` for both `CostPlus` and `Design`; `Code`/`NameAr`/`NameEn` key off
+`(type, contractType)` to produce the four distinct names and code suffixes (`-OPCOST`, `-MREV`,
+`-DREV`, `-CONSULT`). Covered by `TC_3_034`/`TC_3_035` in
+`tests/Api.Tests/Features/Treasury/ProjectAccountSetCreationTests.cs`.
+
+**Revisit if.** Karim later gives these accounts different names or wants them split further — the
+switch expressions are the only place to change.
+
+---
+
+### D-162 · Karim via Nabil — `Q85`: staff departments are dynamic master data, not an enum · 2026-09-14
+
+**Decision.** Departments are not a fixed list. Seed five: Finance, Technical Office, Operations,
+Procurement, HR. An admin can add, edit and delete departments from settings. `Department` becomes a
+master-data entity with its own CRUD screen and permissions, not a `DepartmentEnum` or a dropdown of
+constants.
+
+**Why.** Karim's answer is explicit: departments change over time and an enum can't be edited without
+a code deploy. `D-153` had modelled `Department` as an enum pending exactly this question — that
+model is now superseded.
+
+**What we rejected and why.** Leaving `Department` as the `D-153` enum: it would keep the field the
+Employee story already built pointed at nothing real, and every future department change would need a
+build. A free-text field: rejected for the same reason as every other master-data list in this
+codebase (catalogue items, babs) — it fragments spelling and can't be reported on.
+
+**Deletion rule.** Archive-not-delete, the same pattern as catalogue items and babs (`KAFF-214`-style):
+a department with staff assigned to it cannot be hard-deleted, only archived, so historical records
+keep their department reference. This is the house pattern per `spec.md`'s established precedent, not
+an invented one — flagged here so Backend builds against it and doesn't re-derive it per story.
+
+**New scope, new story.** This is not folded into an existing story. A `Department` master-data CRUD
+story is opened (`KAFF-321`, `stories/slice-2-masters/KAFF-321-department-master-data.md` — placed in
+slice 2, the masters slice, alongside catalogue and bab; not pulled into the current sprint since it
+blocks no slice-3 story) rather than smuggled into whatever story currently reads `Department`.
+
+**Revisit if.** Karim adds department-level permissions or reporting beyond assignment, which would ask
+more of the entity than plain CRUD.
+
+---
+
+### D-163 · Karim via Nabil — `Q86`: supplier codes are auto-generated, reusing the catalogue code generator · 2026-09-14
+
+**Decision.** Supplier codes are auto-generated, exactly like catalogue item codes, for one data
+format across the system. The existing catalogue code generator is reused rather than a second
+generator being written.
+
+**Why.** Karim asked for one format everywhere. A second hand-rolled generator for suppliers would be
+the same logic duplicated under a different name — the copy `CLAUDE.md`'s "it moves to `Domain/`, it
+does not get copied" rule exists to prevent.
+
+**What we rejected and why.** A supplier-specific sequence or prefix scheme: rejected, no business
+reason given for suppliers to differ from catalogue items, and it would be a second thing to keep in
+sync if the format ever changes.
+
+**Left to Backend.** If the current catalogue generator is not reusable as-is (e.g. it is scoped to
+the catalogue's own table or sequence), Backend states why in the story it's applied to, rather than
+silently forking it.
+
+---
+
+### D-164 · Karim via Nabil — `Q92`: a rate over 100% warns, it does not block · 2026-09-14
+
+**⚠️ Numbering note.** Nabil's meeting notes labelled this question `Q82`. `Q82` is already taken in
+`stories/questions-for-karim.md` (rounding basis for hold/advance/withholding on an extract — D-145
+§2's own open note, nothing to do with rates over 100%). Same failure shape as the `Q70` collision
+recorded in that file: two live questions, one number. This ruling is filed under the next free number,
+**`Q92`**, and the register is swept to say so rather than overwriting the existing `Q82` row.
+
+**Decision.** A markup or retention `Percentage` over 100% warns; the user acknowledges and the save
+proceeds. This reuses the D-141 warn-and-acknowledge mechanism (duplicate phone) rather than a second
+one.
+
+**Why.** Karim: unusual is not invalid. An over-100% rate is rare but not impossible in this business,
+so the system should flag it, not refuse it outright.
+
+**What must still hold.**
+1. The acknowledgement is written to the audit record — who accepted an unusual rate, and when.
+2. Warn-and-acknowledge is a UI affordance; the server still validates the value is a well-formed
+   `Percentage` (`D-151` — rates are fractions) and still refuses a negative or otherwise malformed
+   rate. Karim did not say accept malformed numbers, only that over-100% isn't blocked.
+
+**What we rejected and why.** A second warn-and-acknowledge widget or endpoint pattern for rates: the
+mechanism already exists for exactly this shape of problem (unusual-but-not-invalid input); building
+a second one would fork behaviour that should be one thing.
+
+**Left to whichever slice owns markup/retention entry.** If those stories sit in a later slice than
+the one currently building, this ruling is recorded here and the build waits for that slice.
+
+---
+
+### D-165 · `V-39-C` — Karim via Nabil — a Site Engineer can type and backdate an engagement start date · 2026-09-14
+
+**Decision.** Engagement start date is not restricted to the system clock. A Site Engineer may type a
+start date earlier than today, because workers are often registered days after work actually started.
+
+**What must still hold.**
+1. Two different facts are both stored: the real wall-clock moment the entry was made (audit record,
+   as always), and the backdated start date the engineer typed (the entity's own field). Neither
+   substitutes for the other.
+2. A **future-dated** start date is refused. Karim did not answer whether a future start is ever
+   legitimate — refusing it is the safe default, not an invented rule, and the question is queued
+   below rather than guessed.
+
+**Why.** Matches how site work is actually reported — the ticket that raised `V-39-C` observed
+engineers entering workers after the fact, which a system-clock-only start date would refuse.
+
+**Open question for Karim** (`stories/questions-for-karim.md`): can a Site Engineer ever register an
+engagement with a **future** start date (e.g. a worker confirmed for tomorrow), or must every start
+date be today or earlier?

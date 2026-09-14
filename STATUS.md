@@ -588,8 +588,8 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 | 0 |
 | 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 0 | 0 | 13 | 48 |
-| ⚪ READY / COMMITTED — refined, not built | 0 | 0 | 26 | 0 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 0 | 18 | 48 |
+| ⚪ READY / COMMITTED — refined, not built | 0 | 0 | 21 | 0 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 0 | 0 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 | 0 |
 | **total** | **127** | **58** | **39** | **48** |
@@ -648,12 +648,13 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-215](stories/slice-2-masters/KAFF-215-a-sidebar-that-lists-every-destination.md) | 2 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-13 | A sidebar that lists every destination the session reaches |
 | [KAFF-300](stories/slice-3-treasury/KAFF-300-the-section-15-worked-example.md) | 3 | 5 | 🟡 BUILT | none | `-` | 2026-09-07 | The §15 worked example as a fixture — present and failing before anything else is built |
 | [KAFF-301](stories/slice-3-treasury/KAFF-301-post-a-movement-between-two-accounts.md) | 3 | 8 | 🟡 BUILT | none | `-` | 2026-09-14 | Post a movement between two accounts, append-only |
-| [KAFF-302](stories/slice-3-treasury/KAFF-302-create-a-projects-account-set-on-creation.md) | 3 | 5 | ⚪ READY | none | `-` | 2026-09-14 | Create a project's account set when a project is created |
+| [KAFF-302](stories/slice-3-treasury/KAFF-302-create-a-projects-account-set-on-creation.md) | 3 | 5 | 🟡 BUILT | none | `-` | 2026-09-14 | Create a project's account set when a project is created |
 | [KAFF-303](stories/slice-3-treasury/KAFF-303-correct-a-mistake-with-a-reversing-posting.md) | 3 | 5 | ⚪ READY | none | `-` | 2026-09-14 | Correct a mistake with a reversing posting, never an edit |
 | [KAFF-304](stories/slice-3-treasury/KAFF-304-every-balance-is-derived-by-summing-postings.md) | 3 | 5 | ⚪ READY | none | `-` | 2026-09-14 | Every balance is derived by summing postings |
 | [KAFF-305](stories/slice-3-treasury/KAFF-305-the-posting-type-account-pair-legality-table.md) | 3 | 8 | ⚪ READY | none | `-` | 2026-09-14 | The posting-type × account-pair legality table |
 | [KAFF-319](stories/slice-3-treasury/KAFF-319-a-refused-posting-reads-as-a-translated-message.md) | 3 | 3 | ⚪ READY | none | `-` | 2026-09-14 | A refused posting reads as a translated message, not a 500 |
 | [KAFF-320](stories/slice-3-treasury/KAFF-320-bank-as-an-independent-master-record.md) | 3 | 0 | ⚫ NOT-BUILT | none | `-` | 2026-09-12 | Bank — an independent master record, not folded into the ledger |
+| [KAFF-321](stories/slice-2-masters/KAFF-321-department-master-data.md) | 2 | 0 | ⚫ NOT-BUILT | none | `-` | 2026-09-14 | Department — dynamic master data, not a fixed enum |
 | [KAFF-900](stories/design-system/KAFF-900-design-tokens-and-shell.md) | design-system | 5 | 🟡 BUILT | none | `-` | - | Design tokens and the app shell (sidebar, header, page frame) |
 | [KAFF-901](stories/design-system/KAFF-901-shared-restyled-components.md) | design-system | 5 | 🟡 BUILT | none | `-` | - | Shared restyled components: table row, segmented filter, form field, button, badge |
 | [KAFF-910](stories/design-system/KAFF-910-restyle-catalogue-list.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: catalogue list |
