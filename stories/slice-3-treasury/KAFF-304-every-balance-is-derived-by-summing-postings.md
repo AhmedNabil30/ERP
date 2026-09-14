@@ -111,6 +111,9 @@ Then `Inflow`, `Outflow`, `RawBalance` and `SignedBalance` are all zero
 
 ## Not in this story
 
+- **Domain-level query object built 2026-09-14** (`src/Domain/Treasury/BalanceQueries.cs`,
+  `tests/Domain.Tests/BalanceQueriesTests.cs`, AC-304-A/B/D/E). **The HTTP endpoint remains blocked
+  on `Q90`** and is not built.
 - **Any specific screen or report that displays a balance** — an extract's ledger summary, an owner
   dashboard, a عهدة balance check. Those are `KAFF-306`–`318` and later slices; this story is the one
   mechanism they all call.
