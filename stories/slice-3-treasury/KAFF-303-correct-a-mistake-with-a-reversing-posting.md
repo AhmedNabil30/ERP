@@ -1,6 +1,6 @@
 # KAFF-303 · Correct a mistake with a reversing posting, never an edit
 
-<!-- kaff id=KAFF-303 slice=3 points=5 state=READY verdict=none at=- on=2026-09-14 -->
+<!-- kaff id=KAFF-303 slice=3 points=5 state=BUILT verdict=none at=- on=2026-09-15 -->
 
 **Slice:** 3 (Treasury) · **Epic:** Treasury · **Points:** 5 (`stories/backlog.md` slice-3 table) · **Status:** NOT-BUILT.
 **Spec:** §6.1 ("Corrections are new reversing postings referencing the original") · **Decisions:** D-007 (cited by `Posting.Reverse`'s own remarks — partial reversals are a spec change, not a loosening)
