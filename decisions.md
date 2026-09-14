@@ -14065,6 +14065,15 @@ theoretical and the tradeoff should be re-argued with that evidence in hand.
 covering a story's changed screens) runs before that story's commit, as a builder-owned gate — not
 deferred to a Verifier pass that isn't running.
 
+**Amendment, 2026-09-14 (same day, CI-red finding).** "The E2E gate" means the whole
+`tests/E2E.Tests` suite — all 25 tests — not `BidiGeometryTests` alone, and not whichever suite most
+recently broke. This was found because a report treated "BidiGeometryTests 2/2 passing" as if it
+were the whole E2E gate, when `BidiGeometryTests` is 2 tests out of 25. A green `BidiGeometryTests`
+run says nothing about `SmokeTests`, `UserScreenTests`, `ClientScreenTests`, or `AuditScreenTests` —
+all four of which broke in the same commit (KAFF-923 deleted `app.html`'s `<h1 data-testid="app-title">`
+without replacing the testid anywhere) while `BidiGeometryTests` stayed green throughout. Any builder
+or report citing "the E2E gate passed" must cite the full suite's pass count, not one suite's.
+
 **Why.** Nabil reviewed the running app and found the sidebar, tables and top bar do not match
 `Main.dc.html` even though every restyle story (`KAFF-900`–`921`) is `BUILT` and its own gates were
 green. The regression this amendment targets already happened once: a missing `justify-self: start`

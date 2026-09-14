@@ -32,6 +32,7 @@
   z-index: 30;
 }
 
+.app-title,
 .app-section-label {
   font-size: var(--text-sm);
   font-weight: 500;
