@@ -14191,3 +14191,34 @@ addressed). `ng test`: 22 files, 119 tests, all green, including `AC-922-B`'s th
 desktop and 390px, light and dark, plus the 390px drawer opened; forced-password-change session
 (account-only sidebar) at desktop and 390px, light and dark. Nine renders total, all under
 `shots-kaff922/`.
+
+### D-159 · Scrum Master — KAFF-926/927: user list and locale switch, second finding pass · 2026-09-14
+
+**Decision.** Two more stories opened under `design-system`: `KAFF-926` (user list — fixed-width
+grid columns replacing drifting fractional tracks, `.row-name` overflow/ellipsis fix copied from
+`client-list-page.css`, full-width page shape instead of a centred `60rem` column, delete the
+`kaff-table-row .row { grid-template-columns: 1fr !important }` override now that `KAFF-924` rebuilt
+that component with a real responsive story, primary create action moved from a bottom outlined link
+to a top-bar `kaff-button`, the role `kaff-badge` removed from every row — a badge on 100% of rows
+carries no signal, `apple-erp-design` §3 — kept only for the inactive marker, an Active/Archived/All
+`kaff-segmented-filter` added with state synced to a URL query param the way `catalogue-list-page.ts`
+already does it, the same sync added to `client-list-page.ts` since it was found to have the filter
+component but no query-param sync at all, and spacing literals converted to `--space-*`) and
+`KAFF-927` (the locale switch rebuilt as one `kaff-segmented-filter` instance instead of two
+independent bordered buttons; `--color-accent`, the old semantic colour, replaced with
+`--color-interactive`).
+
+**Why.** Nabil looked again at the running app: "the user list table is the worst screen, and the
+Arabic/English switch needs work." Every finding above was confirmed by reading
+`user-list-page.ts`/`.html`/`.css`, `client-list-page.ts`, and `app.html`/`app.css` as they stand
+today — not re-derived from a prior report.
+
+**Sequencing.** `KAFF-926` touches only `features/users/user-list/*` and, for the named query-param
+gap, `features/clients/client-list/client-list-page.ts` — disjoint from the app-shell file set, so it
+runs alongside `KAFF-923`. `KAFF-927` touches `app.html`, the same file `KAFF-922` and `KAFF-923` both
+touch, and is held `BLOCKED` until `KAFF-923` lands — same collision logic as the `KAFF-922`/`924`
+parallel-run amendment above: the serial rule (`agile.md` §2a rule 3) holds wherever files actually
+overlap and is lifted only where they provably don't.
+
+**What this does not decide.** Both stories are UI consistency fixes; no business rule is involved,
+no question queued for Nabil or Karim.
