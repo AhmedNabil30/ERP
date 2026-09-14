@@ -109,13 +109,21 @@ internal static class Handler
         {
             await database.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException exception) when (IsClosedPeriodGuard(exception))
+        catch (Exception exception) when (GuardViolation(exception) is { } violation)
         {
-            // The pre-check above is not the enforcement: a period can close between the check and the
-            // insert. The loser of that race gets the same translated refusal as everyone else rather
-            // than a raw PostgresException surfacing as a 500 — KAFF-319 generalises this mapping for
-            // every guard; this is the one rule this story's own AC-301-H requires today.
-            return ResultExtensions.Problem(TreasuryErrors.ClosedPeriod);
+            // The period pre-check above is not the enforcement: a period can close between the check
+            // and the insert, and the safe floor (rule 8, AC-301-F) has no pre-check at all — the
+            // reusable balance query it would need is KAFF-304, not yet built. Either guard's loser
+            // gets the same translated refusal as everyone else rather than a raw PostgresException
+            // surfacing as a 500. KAFF-319 generalises this mapping for every remaining guard; these
+            // are the two rules this story's own AC-301-F and AC-301-H require today.
+            //
+            // Caught as a bare Exception, not DbUpdateException: a deferred constraint trigger — which
+            // is what the non-negative-balance guard is — fails at COMMIT, outside the command EF
+            // wraps, so it can reach here as a raw PostgresException instead (see
+            // tests/Api.Tests/Infrastructure/DatabaseGuard.cs). The `when` clause keeps this from
+            // swallowing anything that is not one of the two named guards.
+            return ResultExtensions.Problem(violation);
         }
 
         return Microsoft.AspNetCore.Http.Results.Created(
@@ -131,8 +139,33 @@ internal static class Handler
                 posting.IsReversal));
     }
 
-    /// <summary>The <c>KAFF_CLOSED_PERIOD</c> guard, raised by <c>kaff_postings_validate</c>, and nothing else.</summary>
-    private static bool IsClosedPeriodGuard(DbUpdateException exception)
-        => exception.InnerException is PostgresException postgres
-           && postgres.MessageText.Contains("KAFF_CLOSED_PERIOD", StringComparison.Ordinal);
+    /// <summary>
+    /// The <c>TreasuryErrors</c> this endpoint translates a database-guard failure into, or
+    /// <see langword="null"/> if <paramref name="exception"/> is not one of them — in which case it
+    /// is rethrown by the <c>when</c> clause at the call site rather than swallowed here.
+    /// </summary>
+    private static Error? GuardViolation(Exception exception)
+    {
+        for (Exception? current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is not PostgresException postgres)
+            {
+                continue;
+            }
+
+            if (postgres.MessageText.Contains("KAFF_CLOSED_PERIOD", StringComparison.Ordinal))
+            {
+                return TreasuryErrors.ClosedPeriod;
+            }
+
+            if (postgres.MessageText.Contains("KAFF_NEGATIVE_BALANCE", StringComparison.Ordinal))
+            {
+                return TreasuryErrors.NegativeBalance;
+            }
+
+            return null;
+        }
+
+        return null;
+    }
 }
