@@ -6,7 +6,11 @@
   justify-content: center;
   gap: var(--space-2);
   min-block-size: var(--tap-target);
-  padding-inline: var(--space-5);
+  /* KAFF-929 finding 6: a row-level caller (e.g. catalogue-list-page.css's `.row-trailing`) may set
+     `--kaff-button-padding-inline` on the host to bring a row action down to a quieter width — the
+     44px tap-target floor is untouched, this only narrows the horizontal padding. Every other caller
+     keeps the default. */
+  padding-inline: var(--kaff-button-padding-inline, var(--space-5));
   border-radius: var(--radius-md);
   font: inherit;
   font-weight: 600;

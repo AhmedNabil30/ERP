@@ -1,5 +1,6 @@
 <div
   class="filter-track"
+  [class.filter-track--quiet]="quiet()"
   role="group"
   [attr.aria-label]="ariaLabelKey() ? i18n.t(ariaLabelKey()!) : null"
 >

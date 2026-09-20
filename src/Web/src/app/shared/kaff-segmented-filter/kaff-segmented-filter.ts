@@ -26,6 +26,12 @@ export class KaffSegmentedFilter<T extends string = string> {
   readonly value = model.required<T>();
   readonly ariaLabelKey = input<string | null>(null);
   readonly testIdPrefix = input('filter');
+  /** KAFF-929 finding 3: the shell's locale switch is this same component, not a second one, but it
+   *  is a binary preference, not a filter an operator scans a list by — it must not compete with a
+   *  screen's own segmented filter or with the top bar's primary action for attention. `quiet` swaps
+   *  the filled active segment for a bordered one; everything else (track, tap target, chip text)
+   *  stays identical. */
+  readonly quiet = input(false);
 
   protected readonly i18n = inject(I18nService);
 }

@@ -158,6 +158,20 @@ export class I18nService {
   }
 
   /**
+   * KAFF-929 finding 5: the currency-free twin of {@link formatMoney}, for table cells only. Same two
+   * pinned decimals, same `ar-EG-u-nu-latn` digits, same wire-string input — the only difference is no
+   * `style: 'currency'`, so no `ج.م`/`EGP` mark rides along on every cell. `formatMoney` is unchanged
+   * and stays the one used in forms, detail screens and anywhere a figure appears outside a labelled
+   * money column; a table names the unit once, in the column header, instead.
+   */
+  formatAmount(value: string): string {
+    return this.formatNumber(value, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+
+  /**
    * Gregorian is pinned rather than assumed. `ar-EG` already defaults to it, and a contractual
    * document silently switching to Hijri after a browser or ICU update is not a risk worth carrying
    * for the sake of omitting one property.

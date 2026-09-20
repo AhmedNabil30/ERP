@@ -27,3 +27,13 @@
   background: var(--color-interactive);
   color: var(--color-background);
 }
+
+/* KAFF-929 finding 3: the shell's locale switch — a binary preference, not a scanned filter, and the
+   least important control on the screen must not render as the most important. The active segment
+   loses its fill and gets a quiet border instead, so the top bar's primary action stays the only
+   filled element up there. */
+.filter-track--quiet .chip--on {
+  background: transparent;
+  color: var(--color-interactive);
+  border: 1px solid var(--color-border-strong);
+}
