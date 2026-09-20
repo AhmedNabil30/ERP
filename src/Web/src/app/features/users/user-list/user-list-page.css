@@ -5,12 +5,10 @@
  */
 
 /*
- * KAFF-926 finding 3: full width, no centred column — one page shape for every list screen. The
- * mockup draws every list full-width; `client-list-page.css` and `catalogue-list-page.css` still
- * centre themselves at `max-inline-size: 60rem`/`64rem` and were found to do so while reading this
- * file's sibling for the overflow-fix pattern. That is a pre-existing inconsistency this story's
- * file list (`features/users/user-list/*` only) does not reach — named here rather than silently
- * left, per the finding's own instruction, and not fixed on those two screens.
+ * KAFF-926 finding 3: full width, no centred column — one page shape for every list screen. KAFF-926
+ * picked this shape for this screen alone and flagged `client-list-page.css`/`catalogue-list-page.css`
+ * as still centring themselves; KAFF-928 (finding 8) applies the same shape to every other list
+ * screen, so this is no longer this screen's shape alone.
  */
 .users {
   display: flex;
@@ -24,22 +22,14 @@
   font-size: var(--text-xl);
 }
 
-/*
-  The card is the list: one bordered, rounded surface with a subtle elevation, and rows separate by
-  a hairline rather than each drawing its own bordered box (apple-erp-design §3 — the same treatment
-  as the sibling `client-list-page.css`).
-*/
+/* KAFF-928: `kaff-table` is the card host now — its own border, radius, background and shadow
+   replace what `.rows` used to draw per screen. */
 .rows {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  box-shadow: var(--elevation-1);
-  overflow: hidden;
 }
 
 .rows-item {
@@ -48,44 +38,21 @@
 }
 
 /*
- * KAFF-926 finding 4 as written asked to delete this override outright, on the premise that KAFF-924
- * gave `kaff-table-row` its own responsive grid. Checked directly: it did not —
- * `kaff-table-row.css` (current, post-KAFF-924) only toggles a projected `.row-price-label`; the
- * paired grid template is still every caller's own job, by its own doc comment. The wiring finding 4
- * points to as the model to follow — `kaff-table-header` inside a real product screen — has not
- * landed anywhere yet either: `table-header-fixture-page.ts` is a dev-only render proof whose own
- * comment says it is "delete[d] when KAFF-925 lands the real wiring", and `KAFF-925` has not.
+ * KAFF-928: `kaff-table-row`'s own mobile collapse (`grid-template-columns: 1fr` under `48rem`) and
+ * `kaff-table-header`'s own hide-at-mobile rule now live once, in the shared stylesheets, and need no
+ * per-screen override. This screen's own `::ng-deep` override — added by KAFF-926 after the dead
+ * `!important` version above was found to never match anything under emulated view encapsulation — is
+ * gone along with it; `catalogue-list-page.css` and `client-list-page.css` carried the identical dead
+ * rule and are fixed the same way by this story.
  *
- * **Screenshotting this screen at 390px (`AC-926-J`) found a second, independent defect in the
- * override itself, on every screen that carries it — `catalogue-list-page.css` and
- * `client-list-page.css` included.** `.row` is `kaff-table-row`'s own template element, so under
- * Angular's default emulated view encapsulation it carries only `kaff-table-row`'s own
- * `_ngcontent-*` attribute, never the caller's. A caller's compiled selector `kaff-table-row .row`
- * gets the caller's `_ngcontent-*` appended to both compound selectors and can never match that div —
- * the override was dead CSS, on every screen that has it, and every one of them overflows at mobile
- * width today (verified: `/clients` at 390px clips `client-list-page.html`'s row content, unrelated to
- * anything this story touches). `kaff-table-row.css`'s own `.row ::ng-deep .row-price-label` rule is
- * the existing precedent for reaching across that boundary; `::ng-deep` here is the same fix applied
- * to the same problem, scoped to this file only — `catalogue-list-page.css` and
- * `client-list-page.css` still need it and are unchanged, flagged as a follow-up rather than fixed
- * silently outside this story's file list.
+ * KAFF-928 finding 6: the row is a click target via a "stretched link" absolutely-positioned grid
+ * child, not an `<a>` wrapping the whole row — see catalogue-list-page.css's identical rule for the
+ * full explanation.
  */
-@media (width < 48rem) {
-  kaff-table-row ::ng-deep .row,
-  kaff-table-header ::ng-deep .header {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-.row-link {
-  display: block;
-  color: inherit;
-  text-decoration: none;
-}
-
-.row-link kaff-table-row {
-  display: block;
-  min-inline-size: 0;
+.row-stretched-link {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
 }
 
 /* KAFF-926 finding 2: copied from `client-list-page.css`'s `.row-name` — same overflow, same fix. */

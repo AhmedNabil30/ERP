@@ -24,7 +24,8 @@ import {
   KaffSegmentedFilter,
   SegmentedFilterOption,
 } from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
-import { KaffTableHeader, TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
+import { KaffTable } from '../../../shared/kaff-table/kaff-table';
+import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 
 /**
@@ -63,7 +64,7 @@ const FILTERS: readonly UserListFilter[] = ['active', 'archived', 'all'];
  */
 @Component({
   selector: 'kaff-user-list-page',
-  imports: [RouterLink, KaffTableHeader, KaffTableRow, KaffBadge, KaffButton, KaffSegmentedFilter],
+  imports: [RouterLink, KaffTable, KaffTableRow, KaffBadge, KaffButton, KaffSegmentedFilter],
   templateUrl: './user-list-page.html',
   styleUrl: './user-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

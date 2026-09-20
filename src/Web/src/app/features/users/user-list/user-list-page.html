@@ -22,13 +22,19 @@
   } @else if (loading()) {
     <p class="loading" data-testid="user-list-loading">{{ i18n.t('users.loading') }}</p>
   } @else if (filteredUsers().length > 0) {
-    <kaff-table-header [columns]="rowColumns" [columnDefs]="headerColumns" testId="user-table-header" />
+    <kaff-table [columns]="rowColumns" [columnDefs]="headerColumns" testId="user-table-header" data-testid="user-table-shell">
+      <ul class="rows" data-testid="user-rows">
+        @for (user of filteredUsers(); track trackUser($index, user)) {
+          <li class="rows-item">
+            <kaff-table-row [archived]="!user.isActive">
+              <!-- KAFF-928 finding 6's stretched-link pattern — see catalogue-list-page.html's comment. -->
+              <a
+                class="row-stretched-link"
+                [routerLink]="['/users', user.id]"
+                [attr.aria-label]="user.fullName"
+                [attr.data-testid]="'user-row-' + user.userName"
+              ></a>
 
-    <ul class="rows" data-testid="user-rows">
-      @for (user of filteredUsers(); track trackUser($index, user)) {
-        <li class="rows-item">
-          <a class="row-link" [routerLink]="['/users', user.id]" [attr.data-testid]="'user-row-' + user.userName">
-            <kaff-table-row [columns]="rowColumns" [archived]="!user.isActive">
               <span class="row-name" dir="auto">{{ user.fullName }}</span>
               <span class="row-meta">
                 <span class="row-role">{{ i18n.t(roleKey(user.role)) }}</span>
@@ -53,10 +59,10 @@
               <bdi class="row-username">{{ user.userName }}</bdi>
               <bdi class="row-phone">{{ user.phone }}</bdi>
             </kaff-table-row>
-          </a>
-        </li>
-      }
-    </ul>
+          </li>
+        }
+      </ul>
+    </kaff-table>
   } @else {
     <!-- S-006: "should be unreachable once S-002 is settled" — the Owner reading this list is in it.
          Rendered anyway, because an empty area is the one thing spec.md §4.5's principle forbids. -->
