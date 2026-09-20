@@ -39,13 +39,19 @@
   } @else if (loading()) {
     <p class="loading" data-testid="client-list-loading">{{ i18n.t('clients.loading') }}</p>
   } @else if (clients().length > 0) {
-    <kaff-table-header [columns]="rowColumns" [columnDefs]="headerColumns" testId="client-table-header" />
+    <kaff-table [columns]="rowColumns" [columnDefs]="headerColumns" testId="client-table-header" data-testid="client-rows-shell">
+      <ul class="rows" data-testid="client-rows">
+        @for (client of clients(); track trackClient($index, client)) {
+          <li class="rows-item">
+            <kaff-table-row [archived]="!client.isActive">
+              <!-- KAFF-928 finding 6's stretched-link pattern — see catalogue-list-page.html's comment. -->
+              <a
+                class="row-stretched-link"
+                [routerLink]="['/clients', client.id]"
+                [attr.aria-label]="client.name"
+                [attr.data-testid]="'client-row-' + client.code"
+              ></a>
 
-    <ul class="rows" data-testid="client-rows">
-      @for (client of clients(); track trackClient($index, client)) {
-        <li class="rows-item">
-          <a class="row-link" [routerLink]="['/clients', client.id]" [attr.data-testid]="'client-row-' + client.code">
-            <kaff-table-row [columns]="rowColumns" [archived]="!client.isActive">
               <!--
                 <bdi> on the code and the phone. Both are Latin runs inside an Arabic line, and
                 without isolation the bidi algorithm reorders them against the surrounding text —
@@ -55,16 +61,21 @@
               <span class="row-name" dir="auto">{{ client.name }}</span>
               <kaff-badge tone="accent">{{ i18n.t(clientKindKey(client.kind)) }}</kaff-badge>
               <bdi class="row-phone" dir="ltr">{{ client.phone }}</bdi>
-              @if (!client.isActive) {
-                <kaff-badge tone="neutral" testId="client-row-archived">
-                  {{ i18n.t('clients.status.archived') }}
-                </kaff-badge>
-              }
+
+              <!-- KAFF-928 finding 7: an always-present wrapper, so an active and an archived row
+                   project the same number of grid children — only the badge inside is conditional. -->
+              <span class="row-archived-badge">
+                @if (!client.isActive) {
+                  <kaff-badge tone="neutral" testId="client-row-archived">
+                    {{ i18n.t('clients.status.archived') }}
+                  </kaff-badge>
+                }
+              </span>
             </kaff-table-row>
-          </a>
-        </li>
-      }
-    </ul>
+          </li>
+        }
+      </ul>
+    </kaff-table>
   } @else if (searchWasApplied()) {
     <!-- A search that matched nothing is a different fact from an empty client master, and telling an
          operator "no clients" when they mistyped a number is how a duplicate gets created. -->

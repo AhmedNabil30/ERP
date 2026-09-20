@@ -5,13 +5,13 @@
  * employee-list-page.css's shape deliberately — one house style, not a second one invented here.
  */
 
+/* KAFF-928 finding 8 / AC-928-I: full width, no centred column — matches `user-list-page.css`, the
+   page shape KAFF-926 already picked and this story applies everywhere else. */
 .clients {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-4);
-  max-inline-size: 60rem;
-  margin-inline: auto;
 }
 
 .title {
@@ -50,17 +50,14 @@
   a hairline rather than each drawing its own bordered box (apple-erp-design §3 — the defect that made
   forty clients feel like forty documents).
 */
+/* KAFF-928: `kaff-table` is the card host now — its own border, radius, background and shadow
+   replace what `.rows` used to draw per screen. */
 .rows {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  box-shadow: var(--elevation-1);
-  overflow: hidden;
 }
 
 .rows-item {
@@ -68,29 +65,13 @@
   flex-direction: column;
 }
 
-/* `kaff-table-row` (KAFF-901) takes one fixed `columns()` string with no responsive variant of its
-   own — nesting/columns are documented as "the caller's job". Overriding its inner `.row` grid
-   template here, from outside, is that caller's job at the one breakpoint the component does not
-   know about. The daily log is designed mobile-first and so is this: 390px is the width that must
-   work. */
-/* `::ng-deep` is required — `.row` carries only `kaff-table-row`'s own `_ngcontent-*` attribute under
-   emulated view encapsulation, never the caller's, so a plain `kaff-table-row .row` selector never
-   matches (found by KAFF-926 at 390px). */
-@media (width < 48rem) {
-  kaff-table-row ::ng-deep .row,
-  kaff-table-header ::ng-deep .header {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-.row-link {
-  color: inherit;
-  text-decoration: none;
-}
-
-.row-link kaff-table-row {
-  display: block;
-  min-inline-size: 0;
+/* KAFF-928 finding 6: takes the row out of grid flow entirely (an absolutely-positioned grid child
+   consumes no track), so the whole row is still a click target without nesting a `<button>`/`<a>`
+   inside another `<a>` — see catalogue-list-page.css's identical rule for the full explanation. */
+.row-stretched-link {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
 }
 
 /* `unicode-bidi: isolate` is what <bdi> means; stated so a later reset cannot quietly remove it.

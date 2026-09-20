@@ -12,7 +12,8 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { clientKindKey } from '../../../core/i18n/enum-keys';
 import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
 import { KaffSegmentedFilter, SegmentedFilterOption } from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
-import { KaffTableHeader, TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
+import { KaffTable } from '../../../shared/kaff-table/kaff-table';
+import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 
 /** The three chips `S-011` draws, in the order it draws them. */
@@ -39,7 +40,7 @@ const FILTERS: readonly ClientListFilter[] = ['all', 'active', 'archived'];
  */
 @Component({
   selector: 'kaff-client-list-page',
-  imports: [FormField, RouterLink, KaffSegmentedFilter, KaffTableHeader, KaffTableRow, KaffBadge],
+  imports: [FormField, RouterLink, KaffSegmentedFilter, KaffTable, KaffTableRow, KaffBadge],
   templateUrl: './client-list-page.html',
   styleUrl: './client-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -53,8 +54,11 @@ export class ClientListPage {
   protected readonly clientKindKey = clientKindKey;
   protected readonly filters = FILTERS;
 
-  /** Grid columns for `kaff-table-row`/`kaff-table-header`: code · name · kind · phone · archived badge. */
-  protected readonly rowColumns = 'auto minmax(10rem, 1fr) auto auto auto';
+  /** Grid columns for `kaff-table`: code · name · kind · phone · archived badge. `KAFF-928`: fixed
+   *  sizes plus one `minmax(_, 1fr)` for name, the one column whose content length varies. Code and
+   *  phone are fixed-width figures, kind is a short badge word, and the trailing column holds only
+   *  the archived badge. */
+  protected readonly rowColumns = '8rem minmax(10rem, 1fr) 7rem 9rem 7rem';
 
   /** `KAFF-925`: same column order the rows use. */
   protected readonly headerColumns: readonly TableColumnDef[] = [
