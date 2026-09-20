@@ -648,11 +648,11 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 | 0 |
 | 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 0 | 0 | 36 | 48 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 0 | 36 | 53 |
 | ⚪ READY / COMMITTED — refined, not built | 0 | 0 | 5 | 0 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 0 | 0 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 | 0 |
-| **total** | **127** | **58** | **41** | **48** |
+| **total** | **127** | **58** | **41** | **53** |
 
 ## Every story
 
@@ -736,6 +736,7 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-925](stories/design-system/KAFF-925-apply-table-header-to-lists.md) | design-system | 3 | 🟡 BUILT | none | `-` | - | Apply the table header row to every converted list |
 | [KAFF-926](stories/design-system/KAFF-926-user-list-cleanup.md) | design-system | 3 | 🟡 BUILT | none | `-` | - | User list — beyond what KAFF-925 already gives it |
 | [KAFF-927](stories/design-system/KAFF-927-locale-switch-segmented.md) | design-system | 1 | 🟡 BUILT | none | `-` | - | Locale switch as one segmented control, not two buttons |
+| [KAFF-928](stories/design-system/KAFF-928-one-table-shell.md) | design-system | 5 | 🟡 BUILT | none | `-` | - | One table shell — columns that actually line up, once, for every list |
 
 <!-- END GENERATED -->
 

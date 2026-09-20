@@ -1,0 +1,46 @@
+﻿
+> kaff-web@0.1.0 build
+> ng build
+
+> Building...
+√ Building...
+Initial chunk files | Names                    |  Raw size | Estimated transfer size
+chunk-CCi-Lay6.js   | -                        | 175.28 kB |                51.16 kB
+main-RDCTL53Y.js    | main                     | 123.60 kB |                30.72 kB
+styles-ETBFKXLB.css | styles                   |   2.03 kB |               769 bytes
+
+                    | Initial total            | 300.91 kB |                82.65 kB
+
+Lazy chunk files    | Names                    |  Raw size | Estimated transfer size
+chunk-DcuXETQH.js   | -                        |  60.27 kB |                14.97 kB
+chunk-DHuQL3nD.js   | user-form-page           |  27.55 kB |                 5.86 kB
+chunk-BVEZB5_t.js   | catalogue-import-page    |  16.99 kB |                 3.41 kB
+chunk-GYQwirR4.js   | catalogue-list-page      |  14.89 kB |                 3.96 kB
+chunk-zZmuG8Ch.js   | subcontractor-form-page  |  14.43 kB |                 3.72 kB
+chunk-VVZifR4G2.js  | audit-trail-page         |  14.07 kB |                 3.96 kB
+chunk-kJadltos2.js  | catalogue-form-page      |  13.98 kB |                 3.73 kB
+chunk-BeT7F4BL2.js  | employee-form-page       |  13.97 kB |                 3.82 kB
+chunk-DcuKZ5Yu.js   | department-settings-page |  13.89 kB |                 3.21 kB
+chunk-FtJbbodf.js   | client-form-page         |  12.98 kB |                 3.45 kB
+chunk-BOm6fhHs.js   | bab-tree-page            |  12.63 kB |                 3.49 kB
+chunk-DhhNv1T7.js   | subcontractor-list-page  |  11.64 kB |                 2.99 kB
+chunk-a-KgYa1u2.js  | worker-pool-page         |  11.23 kB |                 3.04 kB
+chunk-COa9KrEI.js   | supplier-form-page       |  11.15 kB |                 2.96 kB
+chunk-l3w8KwDc.js   | supplier-list-page       |  10.83 kB |                 2.79 kB
+...and 30 more lazy chunks files. Use "--verbose" to show all the files.
+
+Application bundle generation complete. [12.776 seconds] - 2026-09-20T20:56:23.245Z
+
+Output location: D:\ERP\src\Web\dist\kaff-web
+
+node.exe : npm notice
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm notice:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+npm notice New major version of npm available! 11.17.0 -> 12.0.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+npm notice To update run: npm install -g npm@12.0.2
+npm notice

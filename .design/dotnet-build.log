@@ -1,0 +1,14 @@
+﻿  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Kaff.Domain -> D:\ERP\src\Domain\bin\Release\net10.0\Kaff.Domain.dll
+  Kaff.E2E.Tests -> D:\ERP\tests\E2E.Tests\bin\Release\net10.0\Kaff.E2E.Tests.dll
+  Kaff.Domain.Tests -> D:\ERP\tests\Domain.Tests\bin\Release\net10.0\Kaff.Domain.Tests.dll
+  Kaff.Infrastructure -> D:\ERP\src\Infrastructure\bin\Release\net10.0\Kaff.Infrastructure.dll
+  Kaff.Api -> D:\ERP\src\Api\bin\Release\net10.0\Kaff.Api.dll
+  Kaff.Api.Tests -> D:\ERP\tests\Api.Tests\bin\Release\net10.0\Kaff.Api.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:38.52

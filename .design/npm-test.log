@@ -1,0 +1,17 @@
+﻿
+> kaff-web@0.1.0 test
+> ng test
+
+> Building...
+√ Building...
+Application bundle generation complete. [5.562 seconds] - 2026-09-20T20:56:46.071Z
+
+
+ RUN  v4.1.11 D:/ERP/src/Web
+
+
+ Test Files  24 passed (24)
+      Tests  127 passed (127)
+   Start at  23:56:50
+   Duration  31.30s (transform 5.26s, setup 11.42s, import 5.85s, tests 4.51s, environment 643.68s)
+
