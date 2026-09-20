@@ -54,33 +54,17 @@
  * A button rather than an anchor: opening the panel navigates nowhere and there is no per-record URL.
  * The reset is what a button needs to stop looking like one — `text-align: start`, not `left`.
  */
-/*
-  The card is the list: one bordered, rounded surface with a subtle elevation, and rows separate by
-  a hairline rather than each drawing its own bordered box (apple-erp-design §3, the same treatment as
-  `client-list-page.css` and `user-list-page.css`).
-*/
+/* KAFF-928: `kaff-table` is the card host now — its own border, radius, background and shadow
+   replace what `.rows` used to draw per screen. Its own mobile collapse rule and `kaff-table-header`'s
+   own hide-at-mobile rule live once, in the shared stylesheets — this screen's `::ng-deep` override,
+   the same dead-under-emulated-encapsulation rule `client-list-page.css` and `catalogue-list-page.css`
+   carried, is gone along with them. */
 .rows {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  box-shadow: var(--elevation-1);
-  overflow: hidden;
-}
-
-/* `kaff-table-row` (KAFF-901) takes one fixed `columns()` string with no responsive variant of its
-   own — nesting/columns are documented as "the caller's job". Overriding its inner `.row` grid
-   template here, from outside, is that caller's job at the one breakpoint the component does not
-   know about. 390px is the width that must work (apple-erp-design §5), mirroring client-list-page. */
-@media (width < 48rem) {
-  kaff-table-row ::ng-deep .row,
-  kaff-table-header ::ng-deep .header {
-    grid-template-columns: 1fr !important;
-  }
 }
 
 .row-link {

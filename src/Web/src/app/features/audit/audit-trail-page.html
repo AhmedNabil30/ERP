@@ -44,11 +44,10 @@
   } @else if (loading()) {
     <p class="loading" data-testid="audit-loading">{{ i18n.t('audit.loading') }}</p>
   } @else if (entries().length > 0) {
-    <kaff-table-header [columns]="rowColumns" [columnDefs]="headerColumns" testId="audit-table-header" />
-
-    <ul class="rows" data-testid="audit-rows">
-      @for (entry of entries(); track trackEntry($index, entry)) {
-        <li class="row">
+    <kaff-table [columns]="rowColumns" [columnDefs]="headerColumns" testId="audit-table-header" data-testid="audit-table-shell">
+      <ul class="rows" data-testid="audit-rows">
+        @for (entry of entries(); track trackEntry($index, entry)) {
+          <li class="row">
           <!--
             A button, not a link: it opens a panel over this screen rather than navigating anywhere,
             and there is no per-record route to bookmark. `AC-128-D` — nothing on this screen submits
@@ -60,7 +59,7 @@
             [attr.data-testid]="'audit-row-' + entry.id"
             (click)="open(entry)"
           >
-          <kaff-table-row [columns]="rowColumns">
+          <kaff-table-row>
             <!--
               Every Latin run inside an Arabic row is isolated, and `<bdi>` is what does that: an
               *unisolated* run is what reorders against the Arabic around it.
@@ -114,20 +113,23 @@
             </span>
 
             <!--
-              Omitted rather than rendered as "0 fields changed" — S-008's rule for a revocation count
-              of zero, applied here for the same reason. An `Occurred` record changed no entity, so a
-              zero is not information about it, it is noise on every sign-in row in the trail.
+              KAFF-928 finding 7 (extended for the identical pattern): an always-present wrapper, so a
+              record with changes and a record with none project the same number of grid children
+              (AC-928-H) — the text inside is omitted rather than rendered as "0 fields changed" for
+              S-008's own reason, an `Occurred` record changed no entity and a zero is noise, not
+              information, on every sign-in row in the trail.
             -->
-            @if (changedCount(entry) > 0) {
-              <span class="row-fields">
+            <span class="row-fields">
+              @if (changedCount(entry) > 0) {
                 {{ i18n.t('audit.row.fields_changed', { count: changedCount(entry) }) }}
-              </span>
-            }
+              }
+            </span>
           </kaff-table-row>
           </button>
-        </li>
-      }
-    </ul>
+          </li>
+        }
+      </ul>
+    </kaff-table>
   } @else {
     <div class="empty" data-testid="audit-empty">
       <p class="empty-title">{{ i18n.t('audit.empty.title') }}</p>
