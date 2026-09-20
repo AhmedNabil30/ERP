@@ -1,15 +1,31 @@
-<section class="employees" data-testid="employee-list">
-  <h1 class="title">{{ i18n.t('hr.employee.list_title') }}</h1>
+<ng-template #createAction>
+  <kaff-button variant="primary" testId="employee-create" (clicked)="onCreate()">
+    {{ i18n.t('hr.employee.action.create') }}
+  </kaff-button>
+</ng-template>
 
-  <!-- KAFF-913: KAFF-901's segmented filter, matching CatalogueListPage's and BabTreePage's own —
-       AC-207-F's three server states. -->
-  <kaff-segmented-filter
-    [options]="segmentedOptions"
-    [value]="statusFilter()"
-    (valueChange)="onFilter($event)"
-    ariaLabelKey="hr.employee.list_title"
-    testIdPrefix="employee-filter"
-  />
+<section class="employees" data-testid="employee-list">
+  <!-- KAFF-929 finding 4: one action bar. Primary action projects into the shell's top-bar slot
+       above (`#createAction`), matching `UserListPage`'s own wiring. -->
+  <div class="action-bar">
+    <h1 class="title">{{ i18n.t('hr.employee.list_title') }}</h1>
+  </div>
+
+  <!-- KAFF-929 finding 4: one filter strip. -->
+  <div class="filter-strip">
+    <!-- KAFF-913: KAFF-901's segmented filter, matching CatalogueListPage's and BabTreePage's own —
+         AC-207-F's three server states. -->
+    <kaff-segmented-filter
+      [options]="segmentedOptions"
+      [value]="statusFilter()"
+      (valueChange)="onFilter($event)"
+      ariaLabelKey="hr.employee.list_title"
+      testIdPrefix="employee-filter"
+    />
+    @if (employees().length > 0) {
+      <span class="count" data-testid="employee-list-count">{{ countText() }}</span>
+    }
+  </div>
 
   @if (failure(); as key) {
     <p class="refusal" role="alert" data-testid="employee-list-failure">{{ i18n.t(key) }}</p>
@@ -106,18 +122,10 @@
       <p class="empty-title">{{ i18n.t('hr.employee.empty_filtered') }}</p>
     </div>
   } @else {
-    <!-- An explicit empty state with the create action, never a blank area (components.md §9). -->
+    <!-- KAFF-929 finding 2: the create action is always in the top bar now (`#createAction` above),
+         so the empty state names the fact without repeating the action a second time on the page. -->
     <div class="empty" role="status" aria-live="polite" data-testid="employee-list-empty">
       <p class="empty-title">{{ i18n.t('hr.employee.empty') }}</p>
-      <a class="create" routerLink="/employees/new" data-testid="employee-create">
-        {{ i18n.t('hr.employee.action.create') }}
-      </a>
     </div>
-  }
-
-  @if (employees().length > 0) {
-    <a class="create" routerLink="/employees/new" data-testid="employee-create">
-      {{ i18n.t('hr.employee.action.create') }}
-    </a>
   }
 </section>

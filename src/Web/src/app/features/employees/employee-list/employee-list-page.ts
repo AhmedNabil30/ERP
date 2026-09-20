@@ -1,9 +1,21 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  TemplateRef,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
 import { EmployeeListFilter, EmployeeSummary, EmployeesApi } from '../../../core/employees/employees.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import {
@@ -76,11 +88,30 @@ export class EmployeeListPage {
   protected readonly confirmingArchiveId = signal<string | null>(null);
   protected readonly rowFailure = signal<{ readonly id: string; readonly key: string } | null>(null);
 
+  /**
+   * KAFF-929 finding 4: `ListEmployees` carries no separate total — the count of the current filter's
+   * view, read from the response already held in {@link employees} rather than a call added for it.
+   */
+  protected readonly countText = computed(() =>
+    this.i18n.t('hr.employee.list_count', { count: this.employees().length }),
+  );
+
+  /** KAFF-929 finding 2, matching KAFF-926's `UserListPage`. */
+  private readonly createAction = viewChild<TemplateRef<unknown>>('createAction');
+  private readonly headerActions = inject(HeaderActionsService);
+
   constructor() {
     effect(() => {
       void this.statusFilter();
       void this.reload();
     });
+
+    effect(() => this.headerActions.set(this.createAction() ?? null));
+    inject(DestroyRef).onDestroy(() => this.headerActions.set(null));
+  }
+
+  protected async onCreate(): Promise<void> {
+    await this.router.navigate(['/employees/new']);
   }
 
   /** Literal keys, not `'hr.employee.filter.' + filter` — `TranslationCatalogueTests` scans for the
