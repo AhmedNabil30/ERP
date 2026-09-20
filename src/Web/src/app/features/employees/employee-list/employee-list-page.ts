@@ -10,7 +10,8 @@ import {
   KaffSegmentedFilter,
   SegmentedFilterOption,
 } from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
-import { KaffTableHeader, TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
+import { KaffTable } from '../../../shared/kaff-table/kaff-table';
+import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 
 /** The three chips `AC-207-F` draws, matching `CatalogueListPage`'s and `BabTreePage`'s own. */
@@ -30,7 +31,7 @@ const FILTERS: readonly EmployeeListFilter[] = ['active', 'archived', 'all'];
  */
 @Component({
   selector: 'kaff-employee-list-page',
-  imports: [RouterLink, KaffBadge, KaffButton, KaffSegmentedFilter, KaffTableHeader, KaffTableRow],
+  imports: [RouterLink, KaffBadge, KaffButton, KaffSegmentedFilter, KaffTable, KaffTableRow],
   templateUrl: './employee-list-page.html',
   styleUrl: './employee-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,9 +44,12 @@ export class EmployeeListPage {
   protected readonly i18n = inject(I18nService);
   protected readonly filters = FILTERS;
 
-  /** Grid columns for `kaff-table-row`/`kaff-table-header`: code · name · phone · kind · specialty ·
+  /** Grid columns for `kaff-table`: code · name · phone · kind · specialty · archived badge.
+   *  `KAFF-928`: fixed sizes plus one `minmax(_, 1fr)` for name, the one column whose content length
+   *  varies. Code and phone are fixed-width figures, kind is a short badge word, specialty already
+   *  truncates with ellipsis so a fixed width suits it, and the trailing column holds only the
    *  archived badge. */
-  protected readonly rowColumns = 'auto minmax(10rem, 1fr) auto auto auto auto';
+  protected readonly rowColumns = '8rem minmax(10rem, 1fr) 9rem 7rem 9rem 7rem';
 
   /** `KAFF-925`: same column order the rows use. No "margin" column — this list has none. */
   protected readonly headerColumns: readonly TableColumnDef[] = [

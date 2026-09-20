@@ -18,13 +18,19 @@
       {{ i18n.t('hr.employee.loading') }}
     </p>
   } @else if (employees().length > 0) {
-    <kaff-table-header [columns]="rowColumns" [columnDefs]="headerColumns" testId="employee-table-header" />
+    <kaff-table [columns]="rowColumns" [columnDefs]="headerColumns" testId="employee-table-header" data-testid="employee-table-shell">
+      <ul class="rows" data-testid="employee-rows">
+        @for (employee of employees(); track trackRow($index, employee)) {
+          <li class="rows-item" [attr.data-testid]="'employee-row-' + employee.code">
+            <kaff-table-row [archived]="!employee.isActive">
+              <!-- KAFF-928 finding 6's stretched-link pattern — see catalogue-list-page.html's comment. -->
+              <a
+                class="row-stretched-link"
+                [routerLink]="['/employees', employee.id]"
+                [state]="{ employee: employee }"
+                [attr.aria-label]="employee.fullName"
+              ></a>
 
-    <ul class="rows" data-testid="employee-rows">
-      @for (employee of employees(); track trackRow($index, employee)) {
-        <li class="rows-item" [attr.data-testid]="'employee-row-' + employee.code">
-          <a class="row-link" [routerLink]="['/employees', employee.id]" [state]="{ employee: employee }">
-            <kaff-table-row [columns]="rowColumns" [archived]="!employee.isActive">
               <bdi class="row-code figure" dir="ltr" translate="no">{{ employee.code }}</bdi>
               <span class="row-name" dir="auto">{{ employee.fullName }}</span>
               <bdi class="row-phone" dir="ltr">{{ employee.phone }}</bdi>
@@ -32,63 +38,69 @@
 
               @if (employee.specialty; as specialty) {
                 <span class="row-specialty" dir="auto">{{ specialty }}</span>
-              }
-
-              @if (!employee.isActive) {
-                <kaff-badge tone="neutral" testId="employee-row-archived-badge">
-                  {{ i18n.t('hr.employee.archived_badge') }}
-                </kaff-badge>
-              }
-            </kaff-table-row>
-          </a>
-
-          <div class="row-actions">
-            @if (rowFailure(); as failed) {
-              @if (failed.id === employee.id) {
-                <p class="row-refusal" role="alert" [attr.data-testid]="'employee-row-refusal-' + employee.code">
-                  {{ i18n.t(failed.key) }}
-                </p>
-              }
-            }
-
-            <a class="chip" [routerLink]="['/employees', employee.id]" [attr.data-testid]="'employee-edit-' + employee.code">
-              {{ i18n.t('action.edit') }}
-            </a>
-
-            @if (employee.isActive) {
-              @if (confirmingArchiveId() === employee.id) {
-                <p class="row-confirm" [attr.data-testid]="'employee-archive-body-' + employee.code">
-                  {{ i18n.t('hr.employee.archive_confirm') }}
-                </p>
-                <kaff-button
-                  variant="danger"
-                  [disabled]="isArchiving(employee.id)"
-                  [testId]="'employee-archive-confirm-' + employee.code"
-                  (clicked)="onConfirmArchive(employee.id)"
-                >
-                  {{ i18n.t('hr.employee.archive_action') }}
-                </kaff-button>
-                <kaff-button
-                  variant="secondary"
-                  [testId]="'employee-archive-cancel-' + employee.code"
-                  (clicked)="onCancelArchive()"
-                >
-                  {{ i18n.t('action.cancel') }}
-                </kaff-button>
               } @else {
-                <kaff-button
-                  variant="danger"
-                  [testId]="'employee-archive-' + employee.code"
-                  (clicked)="onStartArchive(employee.id)"
-                >
-                  {{ i18n.t('hr.employee.archive_action') }}
-                </kaff-button>
+                <span class="row-specialty"></span>
               }
-            }
-          </div>
-        </li>
-      }
-    </ul>
+
+              <!-- KAFF-928 finding 7 (extended here for the identical pattern): an always-present
+                   wrapper, so an active and an archived row project the same number of grid children. -->
+              <span class="row-archived-badge">
+                @if (!employee.isActive) {
+                  <kaff-badge tone="neutral" testId="employee-row-archived-badge">
+                    {{ i18n.t('hr.employee.archived_badge') }}
+                  </kaff-badge>
+                }
+              </span>
+            </kaff-table-row>
+
+            <div class="row-actions">
+              @if (rowFailure(); as failed) {
+                @if (failed.id === employee.id) {
+                  <p class="row-refusal" role="alert" [attr.data-testid]="'employee-row-refusal-' + employee.code">
+                    {{ i18n.t(failed.key) }}
+                  </p>
+                }
+              }
+
+              <a class="chip" [routerLink]="['/employees', employee.id]" [attr.data-testid]="'employee-edit-' + employee.code">
+                {{ i18n.t('action.edit') }}
+              </a>
+
+              @if (employee.isActive) {
+                @if (confirmingArchiveId() === employee.id) {
+                  <p class="row-confirm" [attr.data-testid]="'employee-archive-body-' + employee.code">
+                    {{ i18n.t('hr.employee.archive_confirm') }}
+                  </p>
+                  <kaff-button
+                    variant="danger"
+                    [disabled]="isArchiving(employee.id)"
+                    [testId]="'employee-archive-confirm-' + employee.code"
+                    (clicked)="onConfirmArchive(employee.id)"
+                  >
+                    {{ i18n.t('hr.employee.archive_action') }}
+                  </kaff-button>
+                  <kaff-button
+                    variant="secondary"
+                    [testId]="'employee-archive-cancel-' + employee.code"
+                    (clicked)="onCancelArchive()"
+                  >
+                    {{ i18n.t('action.cancel') }}
+                  </kaff-button>
+                } @else {
+                  <kaff-button
+                    variant="danger"
+                    [testId]="'employee-archive-' + employee.code"
+                    (clicked)="onStartArchive(employee.id)"
+                  >
+                    {{ i18n.t('hr.employee.archive_action') }}
+                  </kaff-button>
+                }
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    </kaff-table>
   } @else if (statusFilter() !== 'active') {
     <div class="empty" role="status" aria-live="polite" data-testid="employee-list-empty-filtered">
       <p class="empty-title">{{ i18n.t('hr.employee.empty_filtered') }}</p>

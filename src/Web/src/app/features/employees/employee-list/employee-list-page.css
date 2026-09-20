@@ -4,13 +4,12 @@
  * and catalogue-list-page.css's shape deliberately — one house style, not a second one invented here.
  */
 
+/* KAFF-928 finding 8 / AC-928-I: full width, no centred column — matches `user-list-page.css`. */
 .employees {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-4);
-  max-inline-size: 64rem;
-  margin-inline: auto;
 }
 
 .title {
@@ -32,17 +31,14 @@
   align-items: center;
 }
 
+/* KAFF-928: `kaff-table` is the card host now — its own border, radius, background and shadow
+   replace what `.rows` used to draw per screen. */
 .rows {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  box-shadow: var(--elevation-1);
-  overflow: hidden;
 }
 
 .rows-item {
@@ -50,25 +46,13 @@
   flex-direction: column;
 }
 
-/* KAFF-913 gap: `kaff-table-row` (KAFF-901) takes one fixed `columns()` string with no responsive
-   variant of its own — nesting/columns are documented as "the caller's job". Overriding its inner
-   `.row` grid template here, from outside, is that caller's job at the one breakpoint the component
-   does not know about. */
-@media (width < 48rem) {
-  kaff-table-row ::ng-deep .row,
-  kaff-table-header ::ng-deep .header {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-.row-link {
-  color: inherit;
-  text-decoration: none;
-}
-
-.row-link kaff-table-row {
-  display: block;
-  min-inline-size: 0;
+/* KAFF-928 finding 6: takes the row out of grid flow entirely (an absolutely-positioned grid child
+   consumes no track), so the whole row is still a click target without nesting a `<button>`/`<a>`
+   inside another `<a>` — see catalogue-list-page.css's identical rule for the full explanation. */
+.row-stretched-link {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
 }
 
 .row-code {
