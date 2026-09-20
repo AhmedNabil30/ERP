@@ -4,13 +4,12 @@
  * shape deliberately — one house style, not a second one invented here.
  */
 
+/* KAFF-928 finding 8 / AC-928-I: full width, no centred column — matches `user-list-page.css`. */
 .department-settings {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-4);
-  max-inline-size: 64rem;
-  margin-inline: auto;
 }
 
 .title {
@@ -18,24 +17,14 @@
   font-size: var(--text-xl);
 }
 
+/* KAFF-928: `kaff-table` is the card host now — its own border, radius, background and shadow
+   replace what `.rows` used to draw per screen. */
 .rows {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  box-shadow: var(--elevation-1);
-  overflow: hidden;
-}
-
-@media (width < 48rem) {
-  kaff-table-row ::ng-deep .row,
-  kaff-table-header ::ng-deep .header {
-    grid-template-columns: 1fr !important;
-  }
 }
 
 .row-name {

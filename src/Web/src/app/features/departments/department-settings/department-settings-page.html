@@ -16,18 +16,18 @@
       {{ i18n.t('department.loading') }}
     </p>
   } @else {
-    <kaff-table-header
+    <kaff-table
       [columns]="rowColumns"
       [columnDefs]="headerColumns"
       testId="department-settings-table-header"
-    />
-
+      data-testid="department-settings-table-shell"
+    >
     @if (departments().length > 0) {
       <ul class="rows" data-testid="department-settings-rows">
         @for (department of departments(); track trackRow($index, department)) {
           <li class="row-item" [attr.data-testid]="'department-row-' + department.id">
             @if (editingId() === department.id) {
-              <kaff-table-row [columns]="rowColumns">
+              <kaff-table-row>
                 <kaff-field
                   labelKey="department.field.name_ar"
                   [controlId]="'department-edit-name-ar-' + department.id"
@@ -81,7 +81,7 @@
                 </p>
               }
             } @else {
-              <kaff-table-row [columns]="rowColumns" [archived]="!department.isActive">
+              <kaff-table-row [archived]="!department.isActive">
                 <span class="row-name" dir="rtl">{{ department.nameAr }}</span>
                 <span class="row-name" dir="ltr" translate="no">{{ department.nameEn }}</span>
 
@@ -155,6 +155,7 @@
         <p class="empty-title">{{ i18n.t('department.settings.empty') }}</p>
       </div>
     }
+    </kaff-table>
   }
 
   @if (creating()) {

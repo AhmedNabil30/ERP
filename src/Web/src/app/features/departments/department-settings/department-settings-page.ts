@@ -14,7 +14,8 @@ import {
   KaffSegmentedFilter,
   SegmentedFilterOption,
 } from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
-import { KaffTableHeader, TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
+import { KaffTable } from '../../../shared/kaff-table/kaff-table';
+import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 
 const FILTERS: readonly DepartmentListFilter[] = ['active', 'archived', 'all'];
@@ -36,7 +37,7 @@ const EMPTY_DRAFT: DepartmentDraft = { nameAr: '', nameEn: '' };
  */
 @Component({
   selector: 'kaff-department-settings-page',
-  imports: [KaffBadge, KaffButton, KaffField, KaffSegmentedFilter, KaffTableHeader, KaffTableRow],
+  imports: [KaffBadge, KaffButton, KaffField, KaffSegmentedFilter, KaffTable, KaffTableRow],
   templateUrl: './department-settings-page.html',
   styleUrl: './department-settings-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,7 +48,10 @@ export class DepartmentSettingsPage {
   protected readonly i18n = inject(I18nService);
   protected readonly filters = FILTERS;
 
-  protected readonly rowColumns = 'minmax(10rem, 1fr) minmax(10rem, 1fr) auto';
+  /** `KAFF-928`: the trailing `auto` track was the one flagged in this story — fixed at `18rem`,
+   *  wide enough for the edit button plus either the archive/unarchive button or the confirm/cancel
+   *  pair plus the inactive badge, the widest combination this column ever holds. */
+  protected readonly rowColumns = 'minmax(10rem, 1fr) minmax(10rem, 1fr) 18rem';
 
   protected readonly headerColumns: readonly TableColumnDef[] = [
     { labelKey: 'department.column.name_ar' },
