@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  TemplateRef,
+  computed,
+  effect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 
 import { toProblem } from '../../../core/api/problem-details';
 import {
@@ -7,6 +17,7 @@ import {
   DepartmentsApi,
 } from '../../../core/departments/departments.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { KaffField } from '../../../shared/kaff-field/kaff-field';
@@ -83,11 +94,29 @@ export class DepartmentSettingsPage {
   );
   protected readonly archivingId = signal<string | null>(null);
 
+  /**
+   * KAFF-929 finding 4: `ListDepartments` carries no separate total — the count of the current
+   * filter's view, read from the response already held in {@link departments} rather than a call
+   * added for it.
+   */
+  protected readonly countText = computed(() =>
+    this.i18n.t('department.settings.count', { count: this.departments().length }),
+  );
+
+  /** KAFF-929 finding 2, matching KAFF-926's `UserListPage`. The create action was already a filled
+   *  `kaff-button`, just placed at the bottom of the page — this moves it into the top-bar slot,
+   *  `onStartCreate` unchanged. */
+  private readonly createAction = viewChild<TemplateRef<unknown>>('createAction');
+  private readonly headerActions = inject(HeaderActionsService);
+
   constructor() {
     effect(() => {
       void this.statusFilter();
       void this.reload();
     });
+
+    effect(() => this.headerActions.set(this.createAction() ?? null));
+    inject(DestroyRef).onDestroy(() => this.headerActions.set(null));
   }
 
   protected onFilter(filter: DepartmentListFilter): void {

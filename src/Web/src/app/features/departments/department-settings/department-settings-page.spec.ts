@@ -123,7 +123,11 @@ describe('DepartmentSettingsPage', () => {
     const fixture = await render();
     const host = element(fixture);
 
-    host.querySelector<HTMLButtonElement>('[data-testid="department-create"]')!.click();
+    // KAFF-929 finding 2: the create button now projects into the shell's top-bar slot
+    // (`HeaderActionsService`), which this fixture does not mount — `app.html` is what renders it in
+    // the running app. Calling the handler directly exercises the same state transition the click used
+    // to trigger.
+    fixture.componentInstance['onStartCreate']();
     fixture.detectChanges();
 
     const nameAr = host.querySelector<HTMLInputElement>('[data-testid="department-create-name-ar"]')!;

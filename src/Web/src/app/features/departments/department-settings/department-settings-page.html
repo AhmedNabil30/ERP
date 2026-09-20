@@ -1,13 +1,30 @@
-<section class="department-settings" data-testid="department-settings">
-  <h1 class="title">{{ i18n.t('department.settings.title') }}</h1>
+<ng-template #createAction>
+  <kaff-button variant="primary" testId="department-create" (clicked)="onStartCreate()">
+    {{ i18n.t('department.action.create') }}
+  </kaff-button>
+</ng-template>
 
-  <kaff-segmented-filter
-    [options]="segmentedOptions"
-    [value]="statusFilter()"
-    (valueChange)="onFilter($event)"
-    ariaLabelKey="department.settings.title"
-    testIdPrefix="department-filter"
-  />
+<section class="department-settings" data-testid="department-settings">
+  <!-- KAFF-929 finding 4: one action bar (title only — this screen has no search). Primary action
+       projects into the shell's top-bar slot above (`#createAction`), matching `UserListPage`'s own
+       wiring. -->
+  <div class="action-bar">
+    <h1 class="title">{{ i18n.t('department.settings.title') }}</h1>
+  </div>
+
+  <!-- KAFF-929 finding 4: one filter strip. -->
+  <div class="filter-strip">
+    <kaff-segmented-filter
+      [options]="segmentedOptions"
+      [value]="statusFilter()"
+      (valueChange)="onFilter($event)"
+      ariaLabelKey="department.settings.title"
+      testIdPrefix="department-filter"
+    />
+    @if (departments().length > 0) {
+      <span class="count" data-testid="department-settings-count">{{ countText() }}</span>
+    }
+  </div>
 
   @if (failure(); as key) {
     <p class="refusal" role="alert" data-testid="department-settings-failure">{{ i18n.t(key) }}</p>
@@ -199,9 +216,5 @@
         </kaff-button>
       </div>
     </div>
-  } @else {
-    <kaff-button variant="primary" testId="department-create" (clicked)="onStartCreate()">
-      {{ i18n.t('department.action.create') }}
-    </kaff-button>
   }
 </section>
