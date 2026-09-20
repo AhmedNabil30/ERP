@@ -14591,3 +14591,78 @@ one, not yet asked for) — that is a new decision with its own reasoning, not a
 The "two `Department` types" concern was a naming collision between a file name and a type name, not
 two classes of the same name in the same namespace; nothing was merged or renamed to resolve it because
 there was nothing to resolve.
+
+---
+
+### D-172 · Frontend — KAFF-929 built: IBM Plex Sans Arabic self-hosted, and the top-bar/table restyle around it · 2026-09-21
+
+**Decision.** The app's rendering face is now IBM Plex Sans Arabic — self-hosted under
+`src/Web/public/fonts/`, six `woff2` files (400/500/600 weights × arabic/latin subsets, 189 KB total),
+never a CDN. `--font-body` in `src/Web/src/styles.css` becomes
+`"IBM Plex Sans Arabic", "Segoe UI", "Noto Sans Arabic", system-ui, sans-serif` — Tahoma is dropped
+entirely rather than kept as a fallback, per `apple-erp-design` §1 calling it "the Arial of Arabic,
+chosen by nobody."
+
+**Licence.** IBM Plex is OFL-1.1 (SIL Open Font License), redistribution permitted. The six files were
+already downloaded to `public/fonts/` before this story started (Nabil, 2026-09-21) and are unchanged
+by this entry — this records the decision to wire them in, not the acquisition.
+
+**Why self-hosted, not a CDN.** A production system with real money in it does not make a third-party
+request (`fonts.googleapis.com`/`fonts.gstatic.com`) on every page load, and a field phone offline
+renders the fallback stack anyway — the request would only ever cost, never help, on the connection
+that needs it least reliably. `apple-erp-design` §1 flags this explicitly as a decision this file must
+record before the font ships.
+
+**`unicode-range` per subset.** Each `@font-face` block carries the `unicode-range` Google's own `css2`
+endpoint serves for this family (fetched 2026-09-21 with a Chrome user agent — the default fetch UA
+returns no `unicode-range` at all, a trap worth naming so the next session does not invent a range by
+hand). Six blocks, one per weight × subset pair, so a Latin code point never pulls the Arabic file and
+an Arabic run never pulls the Latin one. `index.html` preloads only `400-arabic` and `600-arabic` — the
+two weights the first screen actually paints (body text and the primary action / headings) — since
+preloading all six costs more than it saves.
+
+**Verified, not assumed.** `document.fonts.check('16px "IBM Plex Sans Arabic"')` returns `true` on
+`/sign-in` (unauthenticated, so no signed-shot session needed), and `getComputedStyle(document.body)
+.fontFamily` resolves with `"IBM Plex Sans Arabic"` first. 5 of 6 registered `FontFace` entries show
+`status: "loaded"` after `document.fonts.ready`; the sixth (a weight/subset pair the sign-in screen's
+own glyphs never trigger) stays `"unloaded"` until a screen that needs it paints — this is
+`unicode-range` lazy-loading working as designed, not a defect.
+
+**The rest of KAFF-929 — one story, six screens, same shape everywhere.** `catalogue-list-page`,
+`client-list-page`, `employee-list-page`, `bab-tree-page`, `user-list-page` and
+`department-settings-page` all move their primary create action into the shell's `HeaderActionsService`
+top-bar slot (`KAFF-926`'s own wiring, now the pattern every list screen follows, not just the user
+list), and consolidate their own header markup into exactly two rows: an action bar (title, search
+where one exists, secondary actions as quiet links) and a filter strip (segmented filter, plus a record
+count computed client-side from the response already on hand — no endpoint carries a server-side total
+anywhere in this batch, so every count is "the current filter's view," not a whole-table figure).
+
+**Two shared components picked up new, additive capabilities, no breaking change to any existing
+caller:**
+- `kaff-button`: `padding-inline` now reads `var(--kaff-button-padding-inline, var(--space-5))`. Every
+  existing caller keeps the default; only `catalogue-list-page.css`'s `.row-trailing kaff-button` sets
+  the custom property, narrowing the row action to a quieter chip while the 44px tap-target floor
+  (`ux/components.md`) stays untouched.
+- `kaff-segmented-filter`: a new `quiet` input swaps the active segment's fill for a border. Used once,
+  on the shell's locale switch in `app.html` — every screen's own status filter stays filled, unchanged.
+
+**`I18nService.formatAmount`** is `formatMoney`'s currency-free twin — same two decimals, same pinned
+`ar-EG-u-nu-latn` digits, no `style: 'currency'`. Used only in `catalogue-list-page.html`'s table cells,
+the one screen in this batch with a money column; `formatMoney` is untouched everywhere else.
+
+**What was reopened and actually fixed:** `KAFF-928`'s report claimed `AC-928-F` (mobile stacked price
+cells carry a label) passed; `now-catalogue-mobile-light.png` showed it did not. The catalogue row
+template now wraps each money figure in `kaff-table-row.css`'s existing `.row-price-label` mechanism —
+the pattern was already proven in `table-header-fixture-page.html`, this story is the first real screen
+to use it. Proven again with a fresh 390px screenshot in the story's build notes, not claimed.
+
+**What this does not do.** No change to the palette, to phone digit normalisation, or to what any list
+fetches, filters or sorts — all explicitly out of scope. The employee list's row-level danger band
+(archive button, full-width `.row-actions`) is untouched, per the story's own carve-out. `catalogue-
+import-page.html` reuses `catalogue.column.cost_price`/`base_sell_rate` for its own preview table
+headers, which now also carry `(ج.م)`/`(EGP)` — a small, accepted redundancy on an out-of-scope screen
+whose cells still call `formatMoney` directly, not a regression this story was asked to fix.
+
+**Confirmed while making this change:** `department-settings-page`'s primary action was already a
+filled `kaff-button` (not a bare `.create` link like the other five screens) — only its *position*
+moved, from the bottom of the page into the top-bar slot; `onStartCreate` itself is unchanged.
