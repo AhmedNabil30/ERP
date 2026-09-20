@@ -1,15 +1,31 @@
-<section class="bab-tree" data-testid="bab-tree">
-  <h1 class="title">{{ i18n.t('bab.tree.title') }}</h1>
+<ng-template #createAction>
+  <kaff-button variant="primary" testId="bab-create" (clicked)="onCreate()">
+    {{ i18n.t('bab.action.create') }}
+  </kaff-button>
+</ng-template>
 
-  <!-- KAFF-912: KAFF-901's segmented filter, matching CatalogueListPage's own — KAFF-213 rule 9's
-       three server states. -->
-  <kaff-segmented-filter
-    [options]="segmentedOptions"
-    [value]="statusFilter()"
-    (valueChange)="onFilter($event)"
-    ariaLabelKey="bab.tree.title"
-    testIdPrefix="bab-filter"
-  />
+<section class="bab-tree" data-testid="bab-tree">
+  <!-- KAFF-929 finding 4: one action bar. Primary action projects into the shell's top-bar slot
+       above (`#createAction`), matching `UserListPage`'s own wiring. -->
+  <div class="action-bar">
+    <h1 class="title">{{ i18n.t('bab.tree.title') }}</h1>
+  </div>
+
+  <!-- KAFF-929 finding 4: one filter strip. -->
+  <div class="filter-strip">
+    <!-- KAFF-912: KAFF-901's segmented filter, matching CatalogueListPage's own — KAFF-213 rule 9's
+         three server states. -->
+    <kaff-segmented-filter
+      [options]="segmentedOptions"
+      [value]="statusFilter()"
+      (valueChange)="onFilter($event)"
+      ariaLabelKey="bab.tree.title"
+      testIdPrefix="bab-filter"
+    />
+    @if (babs().length > 0) {
+      <span class="count" data-testid="bab-tree-count">{{ countText() }}</span>
+    }
+  </div>
 
   @if (failure(); as key) {
     <p class="refusal" role="alert" data-testid="bab-tree-failure">{{ i18n.t(key) }}</p>
@@ -142,14 +158,10 @@
       </ul>
     </kaff-table>
   } @else {
-    <!-- AC-204-J: an explicit empty state with the create action, never a blank area. -->
+    <!-- AC-204-J: an explicit empty state. KAFF-929 finding 2: the create action is always in the
+         top bar now (`#createAction` above), so this names the fact without repeating the action. -->
     <div class="empty" role="status" aria-live="polite" data-testid="bab-tree-empty">
       <p class="empty-title">{{ i18n.t('bab.tree.empty') }}</p>
-      <a class="create" routerLink="/babs/new" data-testid="bab-create">{{ i18n.t('bab.action.create') }}</a>
     </div>
-  }
-
-  @if (rows().length > 0) {
-    <a class="create" routerLink="/babs/new" data-testid="bab-create">{{ i18n.t('bab.action.create') }}</a>
   }
 </section>

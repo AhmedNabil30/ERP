@@ -1,11 +1,22 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  TemplateRef,
+  computed,
+  effect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
 import { Bab, BabListFilter, BabsApi } from '../../../core/catalogue/babs.api';
 import { flattenBabTree } from '../../../core/catalogue/bab-tree';
 import { fractionToPercent } from '../../../core/catalogue/percent-wire';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import {
@@ -37,6 +48,7 @@ const FILTERS: readonly BabListFilter[] = ['active', 'archived', 'all'];
 })
 export class BabTreePage {
   private readonly api = inject(BabsApi);
+  private readonly router = inject(Router);
 
   protected readonly i18n = inject(I18nService);
   protected readonly filters = FILTERS;
@@ -77,11 +89,30 @@ export class BabTreePage {
     readonly params: Readonly<Record<string, string | number>>;
   } | null>(null);
 
+  /**
+   * KAFF-929 finding 4: `ListBabs` carries no separate total — the count of the current filter's
+   * view, read from the response already held in {@link babs} rather than a call added for it.
+   */
+  protected readonly countText = computed(() =>
+    this.i18n.t('bab.tree.count', { count: this.babs().length }),
+  );
+
+  /** KAFF-929 finding 2, matching KAFF-926's `UserListPage`. */
+  private readonly createAction = viewChild<TemplateRef<unknown>>('createAction');
+  private readonly headerActions = inject(HeaderActionsService);
+
   constructor() {
     effect(() => {
       void this.statusFilter();
       void this.reload();
     });
+
+    effect(() => this.headerActions.set(this.createAction() ?? null));
+    inject(DestroyRef).onDestroy(() => this.headerActions.set(null));
+  }
+
+  protected async onCreate(): Promise<void> {
+    await this.router.navigate(['/babs/new']);
   }
 
   protected async onFilter(filter: BabListFilter): Promise<void> {
