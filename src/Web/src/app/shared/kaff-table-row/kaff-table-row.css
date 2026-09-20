@@ -2,6 +2,11 @@
 
 .row {
   display: grid;
+  grid-template-columns: var(--kaff-columns);
+  /* Positioned so a caller may drop an absolutely-positioned "stretched link" cell in as a grid
+     child without it consuming a track — an absolutely-positioned grid child is not sized or placed
+     by the grid algorithm, only contained by it (catalogue-list-page.css's `.row-stretched-link`). */
+  position: relative;
   align-items: center;
   gap: var(--space-4);
   min-block-size: var(--tap-target);
@@ -31,7 +36,15 @@
   display: none;
 }
 
+/* KAFF-928 finding 4: the caller's own `1fr !important` override is gone — this is the only mobile
+   collapse rule left, lives once here, and needs no `!important`. This rule and the
+   `var(--kaff-columns)` rule above are on the same element in the same stylesheet, so source order
+   decides which wins; being declared after it is what makes it win under `48rem`. */
 @media (width < 48rem) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+
   .row ::ng-deep .row-price-label {
     display: block;
   }

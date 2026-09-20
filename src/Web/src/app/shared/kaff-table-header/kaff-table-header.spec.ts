@@ -12,7 +12,14 @@ class FakeI18nService implements Pick<I18nService, 't' | 'locale'> {
   }
 }
 
-/** AC-924-A: same `columns` grid-template contract as `kaff-table-row`, numeric columns end-aligned. */
+/**
+ * AC-924-A / AC-928-B: `kaff-table-header` no longer takes a `columns` input of its own — it reads
+ * `var(--kaff-columns)` from its stylesheet, set by whichever `kaff-table` host it renders inside.
+ * That is a CSS-only contract this jsdom-based spec cannot observe (no stylesheet is loaded), so this
+ * test asserts what the component itself controls: cell count, label text and end-alignment. The
+ * `--kaff-columns` wiring is asserted by `kaff-table.spec.ts` instead, and cross-screen alignment is
+ * proven by screenshot (AC-928-C), not by a unit test reading a string.
+ */
 describe('KaffTableHeader', () => {
   beforeEach(() => {
     TestBed.resetTestingModule();
@@ -21,9 +28,8 @@ describe('KaffTableHeader', () => {
     });
   });
 
-  it('renders one header row with the given columns string and end-aligned numeric cells', () => {
+  it('renders one header row with end-aligned numeric cells, and sets no inline grid-template-columns', () => {
     const fixture = TestBed.createComponent(KaffTableHeader);
-    fixture.componentRef.setInput('columns', '132px minmax(0, 1fr) 90px 140px');
     fixture.componentRef.setInput('columnDefs', [
       { labelKey: 'catalogue.column.code' },
       { labelKey: 'catalogue.column.description' },
@@ -33,7 +39,10 @@ describe('KaffTableHeader', () => {
     fixture.detectChanges();
 
     const header: HTMLElement = fixture.nativeElement.querySelector('.header');
-    expect(header.style.gridTemplateColumns).toBe('132px minmax(0, 1fr) 90px 140px');
+    // AC-928-B: no `columns` input exists on this component any more, so nothing binds an inline
+    // `grid-template-columns` here — the track sizes come only from the `--kaff-columns` stylesheet
+    // rule now.
+    expect(header.style.gridTemplateColumns).toBe('');
 
     const cells: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('[role="columnheader"]'));
     expect(cells).toHaveLength(4);

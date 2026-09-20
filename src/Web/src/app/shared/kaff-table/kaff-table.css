@@ -1,0 +1,13 @@
+/* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). */
+
+:host {
+  display: block;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--elevation-1);
+  /* `clip`, never `hidden` — `hidden` makes this host a scroll container, and the header's
+     `position: sticky` would then stick to a box that never scrolls instead of to the page. `clip`
+     still rounds the corners without that side effect (KAFF-928 finding 2). */
+  overflow: clip;
+}

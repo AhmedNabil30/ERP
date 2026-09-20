@@ -14,10 +14,14 @@ export interface TableColumnDef {
  * The table header row (KAFF-924) — `Main.dc.html` 137-144. Renders once, above every group's rows,
  * not once per group.
  *
- * Takes the exact same `columns` grid-template string `kaff-table-row` (KAFF-901) takes, so a
- * header built from this component and rows built from that one line up under one grid. Column
- * order/count still comes from the caller — this component does not know how many cells a screen
- * has, only how to lay out whatever it is given.
+ * **`KAFF-928`: reads its grid track sizes from the `--kaff-columns` custom property** rather than
+ * taking a `columns` input of its own. `kaff-table` sets that property once, on the shared card host,
+ * and it inherits down the DOM to this component and to every `kaff-table-row` regardless of
+ * Angular's emulated view encapsulation — the mechanism that used to let the header's grid and a
+ * row's grid disagree (two components, each taking the same string, each free to receive a different
+ * one) cannot happen once there is only one property to set. Column order/count still comes from the
+ * caller via `columnDefs` — this component does not know how many cells a screen has, only how to lay
+ * out whatever it is given.
  */
 @Component({
   selector: 'kaff-table-header',
@@ -26,8 +30,6 @@ export interface TableColumnDef {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class KaffTableHeader {
-  /** Same `grid-template-columns` string passed to the paired `kaff-table-row`s. */
-  readonly columns = input.required<string>();
   readonly columnDefs = input.required<readonly TableColumnDef[]>();
   readonly testId = input<string | null>(null);
 
