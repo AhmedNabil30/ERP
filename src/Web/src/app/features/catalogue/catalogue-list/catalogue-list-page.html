@@ -50,9 +50,13 @@
       {{ i18n.t('catalogue.loading') }}
     </p>
   } @else if (groups().length > 0) {
-    <div class="groups" data-testid="catalogue-groups">
-      <kaff-table-header [columns]="rowColumns" [columnDefs]="headerColumns" testId="catalogue-table-header" />
-
+    <kaff-table
+      class="groups"
+      [columns]="rowColumns"
+      [columnDefs]="headerColumns"
+      testId="catalogue-table-header"
+      data-testid="catalogue-groups"
+    >
       @for (group of groups(); track trackGroup($index, group)) {
         <section class="group">
           <kaff-group-heading
@@ -65,29 +69,70 @@
           <ul class="rows">
             @for (item of group.items; track trackItem($index, item)) {
               <li class="rows-item">
-                <a
-                  class="row-link"
-                  [routerLink]="['/catalogue', item.id]"
-                  [state]="{ item: item }"
-                  [attr.data-testid]="'catalogue-row-' + item.code"
-                >
-                  <kaff-table-row [columns]="rowColumns" [archived]="item.status === 'Archived'">
-                    <bdi class="row-code figure" dir="ltr" translate="no">{{ item.code }}</bdi>
-                    <span class="row-desc" dir="auto">{{ item.descriptionAr }}</span>
-                    <span class="row-unit" dir="auto">{{ item.unit }}</span>
+                <kaff-table-row [archived]="item.status === 'Archived'">
+                  <!--
+                    KAFF-928 finding 6: a "stretched link" cell rather than an `<a>` wrapping the whole
+                    row. `position: absolute; inset: 0` (catalogue-list-page.css) takes it out of grid
+                    flow entirely — CSS Grid does not size or place an absolutely-positioned child, so
+                    it consumes no track and the row still has exactly the same six grid children,
+                    archived or not (AC-928-H). That is what lets the trailing action button live as a
+                    real sibling `<kaff-button>`, not a control nested inside an `<a>`.
+                  -->
+                  <a
+                    class="row-stretched-link"
+                    [routerLink]="['/catalogue', item.id]"
+                    [state]="{ item: item }"
+                    [attr.aria-label]="item.descriptionAr"
+                    [attr.data-testid]="'catalogue-row-' + item.code"
+                  ></a>
 
-                    <bdi class="row-price figure" dir="ltr">{{ i18n.formatMoney(item.costPrice) }}</bdi>
-                    <bdi class="row-price figure" dir="ltr">{{ i18n.formatMoney(item.baseSellRate) }}</bdi>
+                  <bdi class="row-code figure" dir="ltr" translate="no">{{ item.code }}</bdi>
+                  <span class="row-desc" dir="auto">{{ item.descriptionAr }}</span>
+                  <span class="row-unit" dir="auto">{{ item.unit }}</span>
 
-                    @if (item.status === 'Archived') {
-                      <kaff-badge tone="neutral" testId="catalogue-row-archived-badge">
-                        {{ i18n.t('catalogue.item.archived_badge') }}
-                      </kaff-badge>
+                  <bdi class="row-price figure" dir="ltr">{{ i18n.formatMoney(item.costPrice) }}</bdi>
+                  <bdi class="row-price figure" dir="ltr">{{ i18n.formatMoney(item.baseSellRate) }}</bdi>
+
+                  <span class="row-trailing">
+                    <!--
+                      KAFF-928 finding 7: an always-present wrapper, so an active row and an archived
+                      row both project exactly this many grid children — only the badge inside is
+                      conditional.
+                    -->
+                    <span class="row-archived-badge">
+                      @if (item.status === 'Archived') {
+                        <kaff-badge tone="neutral" testId="catalogue-row-archived-badge">
+                          {{ i18n.t('catalogue.item.archived_badge') }}
+                        </kaff-badge>
+                      }
+                    </span>
+
+                    @if (confirmingArchiveId() !== item.id) {
+                      @if (item.status === 'Active') {
+                        <kaff-button
+                          variant="secondary"
+                          [testId]="'catalogue-archive-' + item.code"
+                          (clicked)="onStartArchive(item.id)"
+                        >
+                          {{ i18n.t('catalogue.item.archive_action') }}
+                        </kaff-button>
+                      } @else {
+                        <kaff-button
+                          variant="secondary"
+                          [disabled]="isArchiving(item.id)"
+                          [testId]="'catalogue-unarchive-' + item.code"
+                          (clicked)="onUnarchive(item.id)"
+                        >
+                          {{ i18n.t('catalogue.item.unarchive_action') }}
+                        </kaff-button>
+                      }
                     }
-                  </kaff-table-row>
-                </a>
+                  </span>
+                </kaff-table-row>
 
-                <div class="row-actions">
+                <!-- KAFF-928 finding 6: confirmation and refusal stay below the row — a confirmation
+                     is deliberately disruptive and a refusal must not be truncated into a column. -->
+                <div class="row-below">
                   @if (rowFailure(); as failed) {
                     @if (failed.id === item.id) {
                       <p
@@ -100,43 +145,24 @@
                     }
                   }
 
-                  @if (item.status === 'Active') {
-                    @if (confirmingArchiveId() === item.id) {
-                      <p class="row-confirm" [attr.data-testid]="'catalogue-archive-body-' + item.code">
-                        {{ i18n.t('catalogue.item.archive_confirm') }}
-                      </p>
-                      <kaff-button
-                        variant="danger"
-                        [disabled]="isArchiving(item.id)"
-                        [testId]="'catalogue-archive-confirm-' + item.code"
-                        (clicked)="onConfirmArchive(item.id)"
-                      >
-                        {{ i18n.t('catalogue.item.archive_action') }}
-                      </kaff-button>
-                      <kaff-button
-                        variant="secondary"
-                        [testId]="'catalogue-archive-cancel-' + item.code"
-                        (clicked)="onCancelArchive()"
-                      >
-                        {{ i18n.t('action.cancel') }}
-                      </kaff-button>
-                    } @else {
-                      <kaff-button
-                        variant="danger"
-                        [testId]="'catalogue-archive-' + item.code"
-                        (clicked)="onStartArchive(item.id)"
-                      >
-                        {{ i18n.t('catalogue.item.archive_action') }}
-                      </kaff-button>
-                    }
-                  } @else {
+                  @if (confirmingArchiveId() === item.id) {
+                    <p class="row-confirm" [attr.data-testid]="'catalogue-archive-body-' + item.code">
+                      {{ i18n.t('catalogue.item.archive_confirm') }}
+                    </p>
+                    <kaff-button
+                      variant="danger"
+                      [disabled]="isArchiving(item.id)"
+                      [testId]="'catalogue-archive-confirm-' + item.code"
+                      (clicked)="onConfirmArchive(item.id)"
+                    >
+                      {{ i18n.t('catalogue.item.archive_action') }}
+                    </kaff-button>
                     <kaff-button
                       variant="secondary"
-                      [disabled]="isArchiving(item.id)"
-                      [testId]="'catalogue-unarchive-' + item.code"
-                      (clicked)="onUnarchive(item.id)"
+                      [testId]="'catalogue-archive-cancel-' + item.code"
+                      (clicked)="onCancelArchive()"
                     >
-                      {{ i18n.t('catalogue.item.unarchive_action') }}
+                      {{ i18n.t('action.cancel') }}
                     </kaff-button>
                   }
                 </div>
@@ -145,7 +171,7 @@
           </ul>
         </section>
       }
-    </div>
+    </kaff-table>
   } @else if (isFiltered()) {
     <!-- AC-203-D: a search or filter that matched nothing is a different fact from an empty catalogue. -->
     <div class="empty" role="status" aria-live="polite" data-testid="catalogue-list-empty-filtered">

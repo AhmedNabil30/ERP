@@ -19,7 +19,8 @@ import {
   KaffSegmentedFilter,
   SegmentedFilterOption,
 } from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
-import { KaffTableHeader, TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
+import { KaffTable } from '../../../shared/kaff-table/kaff-table';
+import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 
 /** The three chips `KAFF-206` rule 7 draws, in the order it draws them. */
@@ -53,7 +54,7 @@ const FILTERS: readonly CatalogueItemListFilter[] = ['active', 'archived', 'all'
     KaffButton,
     KaffGroupHeading,
     KaffSegmentedFilter,
-    KaffTableHeader,
+    KaffTable,
     KaffTableRow,
   ],
   templateUrl: './catalogue-list-page.html',
@@ -69,9 +70,13 @@ export class CatalogueListPage {
   protected readonly i18n = inject(I18nService);
   protected readonly filters = FILTERS;
 
-  /** Grid columns for `kaff-table-row`/`kaff-table-header`: code · description · unit · cost · sell ·
-   *  archived badge. */
-  protected readonly rowColumns = 'auto minmax(14rem, 1fr) auto auto auto auto';
+  /** Grid columns for `kaff-table`: code · description · unit · cost · sell · trailing action/badge.
+   *  `KAFF-928`: fixed sizes plus one `minmax(_, 1fr)` for the one column that should flex — the
+   *  description. Code is a fixed-width figure (`CON-1014`), unit is one or two Arabic characters
+   *  (`م٣`/`طن`), cost/sell are formatted money, and the trailing column is the row's own quiet
+   *  action plus the archived badge, matching the fixture's own proven widths
+   *  (`table-header-fixture-page.ts`). */
+  protected readonly rowColumns = '8rem minmax(14rem, 1fr) 4rem 8rem 8rem 9rem';
 
   /** `KAFF-925`: same column order the rows use, the shared header wires above the first group. */
   protected readonly headerColumns: readonly TableColumnDef[] = [

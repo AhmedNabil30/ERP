@@ -1,15 +1,15 @@
+/* KAFF-928 finding 8 / AC-928-I: full width, no centred column — one page shape for every list
+   screen, matching `user-list-page.css` (the mockup draws every list full-width; this screen and
+   `client-list-page.css` were the two still centring themselves, per KAFF-926's own build notes). */
 .catalogue {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-4);
-  max-inline-size: 64rem;
-  margin-inline: auto;
 }
 
 .babs-link,
 .search-input,
-.row-link,
 .create {
   min-block-size: var(--tap-target);
 }
@@ -30,12 +30,10 @@
 }
 
 .babs-link,
-.row-link,
 .create {
   text-decoration: none;
 }
 
-.row-link,
 .create {
   color: inherit;
 }
@@ -87,6 +85,9 @@
   outline-offset: 2px;
 }
 
+/* KAFF-928: `kaff-table` is now the card host for the whole grouped list — its own border, radius,
+   background and shadow replace what `.groups`/`.rows` used to draw per screen. This class only
+   supplies the vertical rhythm between groups now. */
 .groups {
   display: flex;
   flex-direction: column;
@@ -99,11 +100,6 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  box-shadow: var(--elevation-1);
-  overflow: hidden;
 }
 
 .rows-item {
@@ -113,26 +109,13 @@
   contain-intrinsic-size: 0 9rem;
 }
 
-/* KAFF-910 gap: kaff-table-row (KAFF-901) takes one fixed `columns()` string with no responsive
-   variant of its own — nesting/columns are documented as "the caller's job". Overriding its inner
-   `.row` grid template here, from outside, is that caller's job at the one breakpoint the component
-   does not know about. */
-/* `::ng-deep` is required — `.row`/`.header` carry only their own component's `_ngcontent-*`
-   attribute under emulated view encapsulation, never the caller's, so a plain `kaff-table-row .row`
-   selector never matches (found by KAFF-926 at 390px, the same defect `client-list-page.css`
-   carried). `kaff-table-header` (`KAFF-925`) takes the same fixed `columns()` string with the same
-   no-responsive-variant-of-its-own contract, so it needs the identical override or it overflows at
-   390px the moment a screen actually has enough columns to collapse. */
-@media (width < 48rem) {
-  kaff-table-row ::ng-deep .row,
-  kaff-table-header ::ng-deep .header {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-.row-link kaff-table-row {
-  display: block;
-  min-inline-size: 0;
+/* KAFF-928 finding 6: takes the row out of grid flow entirely (an absolutely-positioned grid child
+   consumes no track — `kaff-table-row.css`'s own comment on `position: relative` is the other half of
+   this), so the whole row is still a click target without nesting a `<button>` inside an `<a>`. */
+.row-stretched-link {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
 }
 
 .row-code {
@@ -161,7 +144,21 @@
   justify-self: end;
 }
 
-.row-actions {
+/* KAFF-928 finding 6/7: the reserved trailing column — the archived badge and the row's single quiet
+   action. `position: relative` plus a `z-index` above the stretched link (0) is what lets its button
+   still receive clicks instead of the overlay link underneath it. */
+.row-trailing {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  justify-self: end;
+  min-inline-size: 0;
+}
+
+.row-below {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
