@@ -22,6 +22,29 @@
   font-size: var(--text-xl);
 }
 
+/* KAFF-929 finding 4: one action bar (title only — this screen has no search). */
+.action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* KAFF-929 finding 4: the filter strip — segmented filter at the inline-start, the count at the
+   inline-end, sitting directly above the table with no gap. */
+.filter-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.count {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
 /* KAFF-928: `kaff-table` is the card host now — its own border, radius, background and shadow
    replace what `.rows` used to draw per screen. */
 .rows {
@@ -64,12 +87,13 @@
   white-space: nowrap;
 }
 
+/* KAFF-929 finding 1: row metadata takes the scale step below the data. */
 .row-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   min-inline-size: 0;
 }
 
@@ -94,7 +118,7 @@
   unicode-bidi: isolate;
   justify-self: start;
   min-inline-size: 0;
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
 }
 
 .empty {

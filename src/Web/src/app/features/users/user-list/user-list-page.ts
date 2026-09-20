@@ -138,6 +138,15 @@ export class UserListPage {
     }
   });
 
+  /**
+   * KAFF-929 finding 4: `GET /api/users` carries no separate total — the count of the current
+   * filter's view, read from the response already held in {@link filteredUsers} rather than a call
+   * added for it.
+   */
+  protected readonly countText = computed(() =>
+    this.i18n.t('users.list.count', { count: this.filteredUsers().length }),
+  );
+
   /** KAFF-923's top-bar action slot — projects the create button there instead of the bottom link
    *  finding 5 replaces (`Main.dc.html` "بند جديد"). No other feature page wires this slot yet, so
    *  this is the first caller; cleared on destroy so the next page does not inherit it. */

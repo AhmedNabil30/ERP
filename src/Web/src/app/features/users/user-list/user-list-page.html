@@ -5,17 +5,26 @@
 </ng-template>
 
 <section class="users" data-testid="user-list">
-  <h1 class="title">{{ i18n.t('users.title') }}</h1>
+  <!-- KAFF-929 finding 4: one action bar (title only — this screen has no search). -->
+  <div class="action-bar">
+    <h1 class="title">{{ i18n.t('users.title') }}</h1>
+  </div>
 
-  <!-- KAFF-926: KAFF-901's segmented filter, matching CatalogueListPage's/ClientListPage's own.
-       Client-side only — see UserListPage.filteredUsers's doc for why. -->
-  <kaff-segmented-filter
-    [options]="segmentedOptions"
-    [value]="statusFilter()"
-    (valueChange)="onFilter($event)"
-    ariaLabelKey="users.filter.all"
-    testIdPrefix="user-filter"
-  />
+  <!-- KAFF-929 finding 4: one filter strip. -->
+  <div class="filter-strip">
+    <!-- KAFF-926: KAFF-901's segmented filter, matching CatalogueListPage's/ClientListPage's own.
+         Client-side only — see UserListPage.filteredUsers's doc for why. -->
+    <kaff-segmented-filter
+      [options]="segmentedOptions"
+      [value]="statusFilter()"
+      (valueChange)="onFilter($event)"
+      ariaLabelKey="users.filter.all"
+      testIdPrefix="user-filter"
+    />
+    @if (filteredUsers().length > 0) {
+      <span class="count" data-testid="user-list-count">{{ countText() }}</span>
+    }
+  </div>
 
   @if (failure(); as key) {
     <p class="refusal" role="alert" data-testid="user-list-failure">{{ i18n.t(key) }}</p>

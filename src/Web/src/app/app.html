@@ -154,7 +154,8 @@
           [value]="i18n.locale()"
           (valueChange)="switchLocale($event)"
           ariaLabelKey="app.language"
-          testIdPrefix="locale" />
+          testIdPrefix="locale"
+          [quiet]="true" />
       </div>
     </header>
 
