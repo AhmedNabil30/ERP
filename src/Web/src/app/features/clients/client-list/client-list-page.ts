@@ -1,4 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  TemplateRef,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormField, form } from '@angular/forms/signals';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
@@ -10,7 +21,9 @@ import {
 } from '../../../core/clients/clients.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { clientKindKey } from '../../../core/i18n/enum-keys';
+import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
+import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { KaffSegmentedFilter, SegmentedFilterOption } from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
 import { KaffTable } from '../../../shared/kaff-table/kaff-table';
 import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
@@ -40,7 +53,7 @@ const FILTERS: readonly ClientListFilter[] = ['all', 'active', 'archived'];
  */
 @Component({
   selector: 'kaff-client-list-page',
-  imports: [FormField, RouterLink, KaffSegmentedFilter, KaffTable, KaffTableRow, KaffBadge],
+  imports: [FormField, RouterLink, KaffButton, KaffSegmentedFilter, KaffTable, KaffTableRow, KaffBadge],
   templateUrl: './client-list-page.html',
   styleUrl: './client-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -100,6 +113,18 @@ export class ClientListPage {
    */
   protected readonly searchWasApplied = signal(false);
 
+  /**
+   * KAFF-929 finding 4: `ListClients` carries no separate total — the count of the current filter's
+   * view, read from the response already held in {@link clients} rather than a call added for it.
+   */
+  protected readonly countText = computed(() =>
+    this.i18n.t('clients.list.count', { count: this.clients().length }),
+  );
+
+  /** KAFF-929 finding 2, matching KAFF-926's `UserListPage`. */
+  private readonly createAction = viewChild<TemplateRef<unknown>>('createAction');
+  private readonly headerActions = inject(HeaderActionsService);
+
   constructor() {
     // Reacts to `filter` (URL-driven, so this also fires on back/forward and on a shared link) and
     // runs once immediately, replacing the old unconditional `void this.reload()` — the same shape
@@ -108,10 +133,17 @@ export class ClientListPage {
       void this.filter();
       void this.reload();
     });
+
+    effect(() => this.headerActions.set(this.createAction() ?? null));
+    inject(DestroyRef).onDestroy(() => this.headerActions.set(null));
   }
 
   protected async onSubmitSearch(): Promise<void> {
     await this.reload();
+  }
+
+  protected async onCreate(): Promise<void> {
+    await this.router.navigate(['/clients/new']);
   }
 
   protected async onFilter(filter: ClientListFilter): Promise<void> {

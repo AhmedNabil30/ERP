@@ -1,38 +1,54 @@
+<ng-template #createAction>
+  <kaff-button variant="primary" testId="client-create" (clicked)="onCreate()">
+    {{ i18n.t('clients.action.create') }}
+  </kaff-button>
+</ng-template>
+
 <section class="clients" data-testid="client-list">
-  <h1 class="title">{{ i18n.t('clients.title') }}</h1>
+  <!-- KAFF-929 finding 4: one action bar. Primary action projects into the shell's top-bar slot
+       above (`#createAction`), matching `UserListPage`'s own wiring. -->
+  <div class="action-bar">
+    <h1 class="title">{{ i18n.t('clients.title') }}</h1>
 
-  <!--
-    A form, so Enter submits the search on a phone keyboard without a visible button competing with
-    the primary action. The query goes to the server exactly as typed — S-011 forbids normalising it
-    here.
-  -->
-  <form class="search" (submit)="$event.preventDefault(); onSubmitSearch()">
-    <label class="search-label" for="client-search">{{ i18n.t('clients.search.placeholder') }}</label>
     <!--
-      [formField] binds value and events both ways. No [value], no (input) handler and no $any —
-      Nabil, 2026-08-28: signal forms are the precedent for the whole ERP, and $any is what leaves
-      strictTemplates nothing to check.
+      A form, so Enter submits the search on a phone keyboard without a visible button competing with
+      the primary action. The query goes to the server exactly as typed — S-011 forbids normalising it
+      here. Finding 4: placeholder only, no floating label above it.
     -->
-    <input
-      id="client-search"
-      class="search-input"
-      type="search"
-      dir="auto"
-      inputmode="search"
-      data-testid="client-search"
-      [formField]="searchForm.query"
-      [attr.aria-label]="i18n.t('clients.search.placeholder')"
-    />
-  </form>
+    <form class="search" (submit)="$event.preventDefault(); onSubmitSearch()">
+      <!--
+        [formField] binds value and events both ways. No [value], no (input) handler and no $any —
+        Nabil, 2026-08-28: signal forms are the precedent for the whole ERP, and $any is what leaves
+        strictTemplates nothing to check.
+      -->
+      <input
+        id="client-search"
+        class="search-input"
+        type="search"
+        dir="auto"
+        inputmode="search"
+        data-testid="client-search"
+        [formField]="searchForm.query"
+        [attr.placeholder]="i18n.t('clients.search.placeholder')"
+        [attr.aria-label]="i18n.t('clients.search.placeholder')"
+      />
+    </form>
+  </div>
 
-  <!-- KAFF-916: KAFF-901's segmented filter, matching EmployeeListPage's and CatalogueListPage's own. -->
-  <kaff-segmented-filter
-    [options]="segmentedOptions"
-    [value]="filter()"
-    (valueChange)="onFilter($event)"
-    ariaLabelKey="clients.filter.all"
-    testIdPrefix="client-filter"
-  />
+  <!-- KAFF-929 finding 4: one filter strip. -->
+  <div class="filter-strip">
+    <!-- KAFF-916: KAFF-901's segmented filter, matching EmployeeListPage's and CatalogueListPage's own. -->
+    <kaff-segmented-filter
+      [options]="segmentedOptions"
+      [value]="filter()"
+      (valueChange)="onFilter($event)"
+      ariaLabelKey="clients.filter.all"
+      testIdPrefix="client-filter"
+    />
+    @if (clients().length > 0) {
+      <span class="count" data-testid="client-list-count">{{ countText() }}</span>
+    }
+  </div>
 
   @if (failure(); as key) {
     <p class="refusal" role="alert" data-testid="client-list-failure">{{ i18n.t(key) }}</p>
@@ -89,8 +105,4 @@
       <p class="empty-body">{{ i18n.t('clients.empty.body') }}</p>
     </div>
   }
-
-  <a class="create" routerLink="/clients/new" data-testid="client-create">
-    {{ i18n.t('clients.action.create') }}
-  </a>
 </section>
