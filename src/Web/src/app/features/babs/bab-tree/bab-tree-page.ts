@@ -12,7 +12,8 @@ import {
   KaffSegmentedFilter,
   SegmentedFilterOption,
 } from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
-import { KaffTableHeader, TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
+import { KaffTable } from '../../../shared/kaff-table/kaff-table';
+import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 
 /** The three chips `KAFF-213` rule 9 draws, in the order it draws them — matches `CatalogueListPage`. */
@@ -29,7 +30,7 @@ const FILTERS: readonly BabListFilter[] = ['active', 'archived', 'all'];
  */
 @Component({
   selector: 'kaff-bab-tree-page',
-  imports: [RouterLink, KaffBadge, KaffButton, KaffSegmentedFilter, KaffTableHeader, KaffTableRow],
+  imports: [RouterLink, KaffBadge, KaffButton, KaffSegmentedFilter, KaffTable, KaffTableRow],
   templateUrl: './bab-tree-page.html',
   styleUrl: './bab-tree-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,8 +41,9 @@ export class BabTreePage {
   protected readonly i18n = inject(I18nService);
   protected readonly filters = FILTERS;
 
-  /** Grid columns for `kaff-table-row`/`kaff-table-header`: code · name · markup · archived badge. */
-  protected readonly rowColumns = 'auto minmax(10rem, 1fr) auto auto';
+  /** Grid columns for `kaff-table`: code · name · markup · archived badge. `KAFF-928`: fixed sizes
+   *  plus one `minmax(_, 1fr)` for name, the one column whose content length varies. */
+  protected readonly rowColumns = '8rem minmax(10rem, 1fr) 7rem 7rem';
 
   /** `KAFF-925`: same column order the rows use. */
   protected readonly headerColumns: readonly TableColumnDef[] = [

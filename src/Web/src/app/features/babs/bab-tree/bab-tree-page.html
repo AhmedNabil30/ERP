@@ -18,27 +18,30 @@
       {{ i18n.t('bab.loading') }}
     </p>
   } @else if (rows().length > 0) {
-    <kaff-table-header [columns]="rowColumns" [columnDefs]="headerColumns" testId="bab-tree-table-header" />
+    <kaff-table [columns]="rowColumns" [columnDefs]="headerColumns" testId="bab-tree-table-header" data-testid="bab-tree-table-shell">
+      <ul class="rows" data-testid="bab-tree-rows">
+        @for (row of rows(); track trackRow($index, row)) {
+          <li
+            class="tree-row-item"
+            [style.--bab-depth]="row.depth"
+            [attr.data-testid]="'bab-row-' + row.bab.code"
+          >
+            <kaff-table-row [archived]="!row.bab.isActive">
+              <bdi class="row-code figure" dir="ltr" translate="no">{{ row.bab.code }}</bdi>
+              <span class="row-name" dir="auto">{{ babLabel(row.bab) }}</span>
 
-    <ul class="rows" data-testid="bab-tree-rows">
-      @for (row of rows(); track trackRow($index, row)) {
-        <li
-          class="tree-row-item"
-          [style.--bab-depth]="row.depth"
-          [attr.data-testid]="'bab-row-' + row.bab.code"
-        >
-          <kaff-table-row [columns]="rowColumns" [archived]="!row.bab.isActive">
-            <bdi class="row-code figure" dir="ltr" translate="no">{{ row.bab.code }}</bdi>
-            <span class="row-name" dir="auto">{{ babLabel(row.bab) }}</span>
+              <bdi class="row-markup figure" dir="ltr">{{ markupPercent(row.bab) }}%</bdi>
 
-            <bdi class="row-markup figure" dir="ltr">{{ markupPercent(row.bab) }}%</bdi>
-
-            @if (!row.bab.isActive) {
-              <kaff-badge tone="neutral" testId="bab-row-archived-badge">
-                {{ i18n.t('bab.tree.archived_badge') }}
-              </kaff-badge>
-            }
-          </kaff-table-row>
+              <!-- KAFF-928 finding 7 (extended for the identical pattern): an always-present wrapper,
+                   so an active and an archived row project the same number of grid children. -->
+              <span class="row-archived-badge">
+                @if (!row.bab.isActive) {
+                  <kaff-badge tone="neutral" testId="bab-row-archived-badge">
+                    {{ i18n.t('bab.tree.archived_badge') }}
+                  </kaff-badge>
+                }
+              </span>
+            </kaff-table-row>
 
           <div class="row-actions">
             @if (moveFailure(); as failed) {
@@ -133,10 +136,11 @@
                 </kaff-button>
               }
             }
-          </div>
-        </li>
-      }
-    </ul>
+            </div>
+          </li>
+        }
+      </ul>
+    </kaff-table>
   } @else {
     <!-- AC-204-J: an explicit empty state with the create action, never a blank area. -->
     <div class="empty" role="status" aria-live="polite" data-testid="bab-tree-empty">

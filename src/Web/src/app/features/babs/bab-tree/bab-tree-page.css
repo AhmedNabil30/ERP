@@ -4,13 +4,12 @@
  * catalogue-list-page.css's shape deliberately — one house style, not a second one invented here.
  */
 
+/* KAFF-928 finding 8 / AC-928-I: full width, no centred column — matches `user-list-page.css`. */
 .bab-tree {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-4);
-  max-inline-size: 64rem;
-  margin-inline: auto;
 }
 
 .title {
@@ -32,39 +31,24 @@
   align-items: center;
 }
 
+/* KAFF-928: `kaff-table` is the card host now — its own border, radius, background and shadow
+   replace what `.rows` used to draw per screen. */
 .rows {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  box-shadow: var(--elevation-1);
-  overflow: hidden;
 }
 
 /*
  * AC-204-I: each level indents from the inline-start, by a logical property — never `margin-left`.
  * `--bab-depth` is set per row by the template; the failure this rule guards against is invisible in
  * LTR and only shows up once the direction flips (TC-2-045).
- *
- * KAFF-912 gap: `kaff-table-row` (KAFF-901) takes one fixed `columns()` string with no responsive
- * variant of its own — nesting/columns are documented as "the caller's job". Overriding its inner
- * `.row` grid template here, from outside, is that caller's job at the one breakpoint the component
- * does not know about.
  */
 .tree-row-item {
   margin-inline-start: calc(var(--bab-depth, 0) * 1.25rem);
   padding-block-start: var(--space-1);
-}
-
-@media (width < 48rem) {
-  kaff-table-row ::ng-deep .row,
-  kaff-table-header ::ng-deep .header {
-    grid-template-columns: 1fr !important;
-  }
 }
 
 .row-code {
