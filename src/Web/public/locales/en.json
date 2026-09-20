@@ -31,6 +31,7 @@
   "hr.projects.empty": "There are no projects yet.",
 
   "hr.employee.list_title": "Employee register",
+  "hr.employee.list_count": "{count} employees",
   "hr.employee.create_title": "Register employee",
   "hr.employee.edit_title": "Edit employee file",
   "hr.employee.field.code": "Reference number",
@@ -309,6 +310,7 @@
   "errors.audit.date_range_inverted": "That date range ends before it starts.",
 
   "clients.title": "Clients",
+  "clients.list.count": "{count} clients",
   "clients.search.placeholder": "Search by name, code or phone",
   "clients.filter.all": "All",
   "clients.filter.active": "Active",
@@ -371,6 +373,7 @@
   "errors.billing.calculator_not_implemented": "Billing for this contract type is not implemented yet.",
 
   "users.title": "Users",
+  "users.list.count": "{count} users",
   "users.loading": "Loading…",
   "users.empty.title": "No users yet.",
   "users.empty.body": "Start by creating the first account.",
@@ -443,10 +446,11 @@
   "catalogue.column.code": "Code",
   "catalogue.column.description": "Description",
   "catalogue.column.unit": "Unit",
-  "catalogue.column.cost_price": "Cost price",
-  "catalogue.column.base_sell_rate": "Base sell rate",
+  "catalogue.column.cost_price": "Cost price (EGP)",
+  "catalogue.column.base_sell_rate": "Base sell rate (EGP)",
   "catalogue.list.group_margin": "{percent}% margin",
   "catalogue.list.group_count": "{count} items",
+  "catalogue.list.count": "{count} items in {babCount} babs",
   "catalogue.item.unarchive_action": "Un-archive",
   "catalogue.action.create": "+ New item",
   "catalogue.action.back_to_list": "Back to the catalogue",
@@ -498,6 +502,7 @@
   "catalogue.import.column.new_base_sell_rate": "Base sell rate after",
 
   "bab.tree.title": "أبواب",
+  "bab.tree.count": "{count} أبواب",
   "bab.tree.empty": "No أبواب yet.",
   "bab.tree.archive_action": "Archive باب",
   "bab.tree.archive_confirm": "Archive this باب? It leaves new work; items already filed under it are unaffected.",
@@ -523,6 +528,7 @@
   "bab.field.markup_format_invalid": "Enter a percent in Western digits (0-9) — no separators, no exponent, no negative.",
   "bab.hint.markup_is_a_percent": "Entered as a percent, e.g. 15 for 15%.",
   "department.settings.title": "Departments",
+  "department.settings.count": "{count} departments",
   "department.settings.archived_badge": "Archived",
   "department.settings.archive_action": "Archive",
   "department.settings.unarchive_action": "Un-archive",

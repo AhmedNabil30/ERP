@@ -1,47 +1,65 @@
+<ng-template #createAction>
+  <kaff-button variant="primary" testId="catalogue-create" (clicked)="onCreate()">
+    {{ i18n.t('catalogue.action.create') }}
+  </kaff-button>
+</ng-template>
+
 <section class="catalogue" data-testid="catalogue-list">
-  <div class="header-row">
+  <!-- KAFF-929 finding 4: one action bar — title, search, secondary actions as quiet links. The
+       primary action projects into the shell's top-bar slot above (`#createAction`), matching
+       `UserListPage`'s own wiring, instead of living in this row. -->
+  <div class="action-bar">
     <h1 class="title">{{ i18n.t('catalogue.list.title') }}</h1>
+
+    <!-- Enter submits on a phone keyboard with no visible button competing with the primary action.
+         The query goes to the server exactly as typed, matching the client list's own rule. Finding
+         4: placeholder only, no floating label above it — the aria-label carries accessibility. -->
+    <form class="search" (submit)="$event.preventDefault(); onSubmitSearch()">
+      <input
+        id="catalogue-search"
+        class="search-input"
+        type="search"
+        dir="auto"
+        inputmode="search"
+        data-testid="catalogue-search"
+        [formField]="searchForm.query"
+        [attr.placeholder]="i18n.t('catalogue.search.placeholder')"
+        [attr.aria-label]="i18n.t('catalogue.search.placeholder')"
+      />
+    </form>
+
     <!-- KAFF-204/205/213: أبواب is its own permission (`BabManage`) and its own route, reached from
          here rather than from a second landing entry — ux/navigation.md's Landing summary keeps
          TechnicalOffice's landing on S-017 Catalogue. -->
-    <a class="babs-link" routerLink="/babs" data-testid="catalogue-manage-babs">
+    <a class="secondary-link" routerLink="/babs" data-testid="catalogue-manage-babs">
       {{ i18n.t('nav.babs') }}
     </a>
     <!-- V-38-A/V-38-D: `nav.subcontractors` was in both catalogues with no template reading it —
          `SubcontractorManage` is Owner-and-TechnicalOffice, same as `CatalogueManage`, so it follows
          `nav.babs`'s own precedent immediately above rather than a second side-nav item. -->
-    <a class="babs-link" routerLink="/subcontractors" data-testid="catalogue-manage-subcontractors">
+    <a class="secondary-link" routerLink="/subcontractors" data-testid="catalogue-manage-subcontractors">
       {{ i18n.t('nav.subcontractors') }}
     </a>
-    <a class="babs-link" routerLink="/catalogue/import" data-testid="catalogue-import-link">
+    <a class="secondary-link" routerLink="/catalogue/import" data-testid="catalogue-import-link">
       {{ i18n.t('catalogue.action.import') }}
     </a>
   </div>
 
-  <!-- Enter submits on a phone keyboard with no visible button competing with the primary action. The
-       query goes to the server exactly as typed, matching the client list's own rule. -->
-  <form class="search" (submit)="$event.preventDefault(); onSubmitSearch()">
-    <label class="search-label" for="catalogue-search">{{ i18n.t('catalogue.search.placeholder') }}</label>
-    <input
-      id="catalogue-search"
-      class="search-input"
-      type="search"
-      dir="auto"
-      inputmode="search"
-      data-testid="catalogue-search"
-      [formField]="searchForm.query"
-      [attr.aria-label]="i18n.t('catalogue.search.placeholder')"
+  <!-- KAFF-929 finding 4: one filter strip — the segmented filter at the inline-start, the record
+       count at the inline-end, sitting directly above the table. -->
+  <div class="filter-strip">
+    <!-- KAFF-910: KAFF-901's segmented filter — one bordered track, active segment filled. -->
+    <kaff-segmented-filter
+      [options]="segmentedOptions"
+      [value]="statusFilter()"
+      (valueChange)="onFilter($event)"
+      ariaLabelKey="catalogue.search.placeholder"
+      testIdPrefix="catalogue-filter"
     />
-  </form>
-
-  <!-- KAFF-910: KAFF-901's segmented filter — one bordered track, active segment filled. -->
-  <kaff-segmented-filter
-    [options]="segmentedOptions"
-    [value]="statusFilter()"
-    (valueChange)="onFilter($event)"
-    ariaLabelKey="catalogue.search.placeholder"
-    testIdPrefix="catalogue-filter"
-  />
+    @if (groups().length > 0) {
+      <span class="count" data-testid="catalogue-list-count">{{ countText() }}</span>
+    }
+  </div>
 
   @if (failure(); as key) {
     <p class="refusal" role="alert" data-testid="catalogue-list-failure">{{ i18n.t(key) }}</p>
@@ -90,8 +108,21 @@
                   <span class="row-desc" dir="auto">{{ item.descriptionAr }}</span>
                   <span class="row-unit" dir="auto">{{ item.unit }}</span>
 
-                  <bdi class="row-price figure" dir="ltr">{{ i18n.formatMoney(item.costPrice) }}</bdi>
-                  <bdi class="row-price figure" dir="ltr">{{ i18n.formatMoney(item.baseSellRate) }}</bdi>
+                  <!-- KAFF-929 finding 5: `formatAmount`, not `formatMoney` — the column header names
+                       the currency once, so the cell carries the figure alone. Finding 5/§3: one
+                       strong column per row, the sell price is the `600` weight, the cost price is
+                       muted. Finding 7 / AC-929-I, reopening AC-928-F: `.row-price-label` is
+                       `kaff-table-row.css`'s existing mechanism — hidden at desktop where the column
+                       header already names the figure, shown stacked above the value once the row
+                       collapses to one column at mobile width. -->
+                  <span class="row-price row-price--cost">
+                    <span class="row-price-label">{{ i18n.t('catalogue.column.cost_price') }}</span>
+                    <bdi class="figure" dir="ltr">{{ i18n.formatAmount(item.costPrice) }}</bdi>
+                  </span>
+                  <span class="row-price row-price--sell">
+                    <span class="row-price-label">{{ i18n.t('catalogue.column.base_sell_rate') }}</span>
+                    <bdi class="figure" dir="ltr">{{ i18n.formatAmount(item.baseSellRate) }}</bdi>
+                  </span>
 
                   <span class="row-trailing">
                     <!--
@@ -185,8 +216,4 @@
       <p class="empty-title">{{ i18n.t('catalogue.list.empty') }}</p>
     </div>
   }
-
-  <a class="create" routerLink="/catalogue/new" data-testid="catalogue-create">
-    {{ i18n.t('catalogue.action.create') }}
-  </a>
 </section>

@@ -8,66 +8,56 @@
   padding: var(--space-4);
 }
 
-.babs-link,
-.search-input,
-.create {
+.search-input {
   min-block-size: var(--tap-target);
 }
 
-.babs-link,
 .row-code,
-.empty-title,
-.create {
+.empty-title {
   font-weight: 600;
 }
 
-.babs-link,
 .search-input,
 .row-refusal,
-.refusal,
-.create {
+.refusal {
   border-radius: var(--radius-md);
-}
-
-.babs-link,
-.create {
-  text-decoration: none;
-}
-
-.create {
-  color: inherit;
 }
 
 .title {
   margin: 0;
+  margin-inline-end: auto;
   font-size: var(--text-xl);
 }
 
-.header-row {
+/* KAFF-929 finding 4: one action bar — title at the inline-start, search inline, secondary actions as
+   quiet links, wrapping at narrow widths rather than the three separate rows this used to be. */
+.action-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-}
-
-.babs-link {
-  display: inline-flex;
-  align-items: center;
-  padding-inline: var(--space-3);
-  color: var(--color-interactive);
-  border: 1px solid var(--color-border);
+  gap: var(--space-3);
 }
 
 .search {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  flex: 1 1 16rem;
+  min-inline-size: 0;
 }
 
-.search-label {
-  font-size: var(--text-sm);
-  opacity: 0.75;
+/* Finding 4: quiet links, not bordered outline buttons — the loudest thing in the bar is the primary
+   action projected into the shell's top-bar slot, not these. */
+.secondary-link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--tap-target);
+  padding-inline: var(--space-3);
+  color: var(--color-interactive);
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--radius-md);
+}
+
+.secondary-link:hover {
+  background: var(--color-surface);
 }
 
 .search-input {
@@ -83,6 +73,21 @@
 .search-input:focus-visible {
   outline: 2px solid var(--color-interactive);
   outline-offset: 2px;
+}
+
+/* KAFF-929 finding 4: the filter strip — segmented filter at the inline-start, the count at the
+   inline-end, sitting directly above the table with no gap. */
+.filter-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.count {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
 }
 
 /* KAFF-928: `kaff-table` is now the card host for the whole grouped list — its own border, radius,
@@ -132,21 +137,41 @@
   white-space: nowrap;
 }
 
+/* KAFF-929 finding 1: row metadata takes the scale step below the data, not --text-sm. */
 .row-unit {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   opacity: 0.75;
 }
 
-/* KAFF-925: the column header now names these — no per-row label duplicating it. */
+/* KAFF-925: the column header now names these — no per-row label duplicating it at desktop.
+   KAFF-929 finding 5 / §3: one strong column per row — the sell price is the row's `600` weight, the
+   cost price is muted. Finding 7: `.row-price-label` (kaff-table-row.css) stacks above the figure at
+   mobile width, where there is no column header to name it. */
 .row-price {
+  display: flex;
+  flex-direction: column;
   font-size: var(--text-sm);
   min-inline-size: 0;
   justify-self: end;
 }
 
+.row-price--cost {
+  color: var(--color-muted);
+}
+
+.row-price--sell {
+  font-weight: 600;
+}
+
 /* KAFF-928 finding 6/7: the reserved trailing column — the archived badge and the row's single quiet
    action. `position: relative` plus a `z-index` above the stretched link (0) is what lets its button
-   still receive clicks instead of the overlay link underneath it. */
+   still receive clicks instead of the overlay link underneath it. KAFF-929 finding 6: the tap-target
+   floor (components.md) stays at 44px; only the horizontal padding narrows, so the row action reads as
+   a quiet chip instead of a full bordered button. */
+.row-trailing kaff-button {
+  --kaff-button-padding-inline: var(--space-3);
+}
+
 .row-trailing {
   position: relative;
   z-index: 1;
@@ -164,6 +189,15 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-4) var(--space-3);
+}
+
+/* KAFF-929 finding 6: this wrapper renders unconditionally so archived and active rows project the
+   same grid shape, but most rows have nothing to show inside it — the always-present padding was most
+   of the gap between the measured ~88px row and the mockup's ~69px, and the same padding under the
+   last row read as a stray empty strip at the bottom of the card. Collapsing it when it truly has no
+   content removes both without touching the confirm/refusal markup itself. */
+.row-below:empty {
+  display: none;
 }
 
 .row-confirm {
@@ -206,18 +240,4 @@
 .refusal {
   border: 1px solid var(--color-danger);
   color: var(--color-danger);
-}
-
-.create {
-  align-self: stretch;
-  padding: var(--space-3);
-  text-align: center;
-  border: 1px solid var(--color-border-strong);
-}
-
-@media (width >= 48rem) {
-  .create {
-    align-self: flex-start;
-    padding-inline: var(--space-6);
-  }
 }

@@ -1,4 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  TemplateRef,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormField, form } from '@angular/forms/signals';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
@@ -12,6 +23,7 @@ import {
 import { CatalogueGroup, groupByBab } from '../../../core/catalogue/group-by-bab';
 import { fractionToPercent } from '../../../core/catalogue/percent-wire';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { KaffGroupHeading } from '../../../shared/kaff-group-heading/kaff-group-heading';
@@ -126,6 +138,19 @@ export class CatalogueListPage {
   );
 
   /**
+   * KAFF-929 finding 4: "the count is real information an operator uses and the app currently shows
+   * nowhere." `ListCatalogueItems` carries no separate total — this reads the response already held
+   * in {@link items}/{@link groups} rather than adding a call for one. It is the count of the current
+   * filter's view (whatever `statusFilter` selects), not a whole-catalogue total.
+   */
+  protected readonly countText = computed(() =>
+    this.i18n.t('catalogue.list.count', {
+      count: this.items().length,
+      babCount: this.groups().length,
+    }),
+  );
+
+  /**
    * True when the current view could be hiding rows that exist — `AC-203-D`, repaired per `V-36-A`.
    * The true "nothing exists yet" state only applies to the one query that cannot be hiding anything:
    * `status=all` with no search term. **`active`, the default, is itself a filter** — `KAFF-206` rule
@@ -137,8 +162,16 @@ export class CatalogueListPage {
     () => this.searchTerm().trim().length > 0 || this.statusFilter() !== 'all',
   );
 
+  /** KAFF-929 finding 2, matching KAFF-926's `UserListPage`: projects the primary action into the
+   *  shell's top-bar slot instead of the bottom `.create` link the finding reopens. */
+  private readonly createAction = viewChild<TemplateRef<unknown>>('createAction');
+  private readonly headerActions = inject(HeaderActionsService);
+
   constructor() {
     void this.loadBabs();
+
+    effect(() => this.headerActions.set(this.createAction() ?? null));
+    inject(DestroyRef).onDestroy(() => this.headerActions.set(null));
 
     // The draft box starts from whatever the URL already carries (a shared link, a bookmark) —
     // read once, here, rather than kept in sync by a reactive `effect()`. An `effect()` that calls
@@ -161,6 +194,10 @@ export class CatalogueListPage {
 
   protected async onSubmitSearch(): Promise<void> {
     await this.navigate({ search: this.searchModel().query.trim() || null });
+  }
+
+  protected async onCreate(): Promise<void> {
+    await this.router.navigate(['/catalogue/new']);
   }
 
   protected async onFilter(filter: CatalogueItemListFilter): Promise<void> {
