@@ -1,19 +1,20 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 import { KaffGroupHeading } from '../../../shared/kaff-group-heading/kaff-group-heading';
-import { KaffTableHeader, TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
+import { KaffTable } from '../../../shared/kaff-table/kaff-table';
+import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 
 /**
- * KAFF-924 render proof, not a product screen. Reproduces `Main.dc.html` 137-150 with the real
- * `kaff-table-header` / `kaff-group-heading` / `kaff-table-row` components (no product data,
- * literal Arabic text is fine here) so the components can be screenshotted before KAFF-925 wires
- * them into `catalogue-list-page.html`. Unguarded route, dev-only — delete when KAFF-925 lands the
- * real wiring and this stops being the only place these three render together.
+ * KAFF-924/928 render proof, not a product screen. Reproduces `Main.dc.html` 137-150 with the real
+ * `kaff-table` / `kaff-group-heading` / `kaff-table-row` components (no product data, literal Arabic
+ * text is fine here) so the components can be screenshotted before KAFF-925 wires them into
+ * `catalogue-list-page.html`. Unguarded route, dev-only — delete when this stops being the only place
+ * these three render together.
  */
 @Component({
   selector: 'app-table-header-fixture-page',
-  imports: [KaffGroupHeading, KaffTableHeader, KaffTableRow],
+  imports: [KaffGroupHeading, KaffTable, KaffTableRow],
   templateUrl: './table-header-fixture-page.html',
   styleUrl: './table-header-fixture-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

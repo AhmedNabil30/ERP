@@ -1,52 +1,52 @@
 <section class="fixture" data-testid="table-header-fixture">
-  <kaff-table-header [columns]="columns" [columnDefs]="columnDefs" testId="fixture-header" />
+  <kaff-table [columns]="columns" [columnDefs]="columnDefs" testId="fixture-header">
+    <kaff-group-heading name="أعمال خرسانة" marginText="هامش ١٥٪" countText="٨٤ بندًا" testId="fixture-group-1" />
 
-  <kaff-group-heading name="أعمال خرسانة" marginText="هامش ١٥٪" countText="٨٤ بندًا" testId="fixture-group-1" />
+    <kaff-table-row testId="fixture-row-1">
+      <bdi class="figure" dir="ltr" translate="no">CON-1014</bdi>
+      <span class="row-desc" dir="auto">خرسانة مسلحة للأعمدة، مقاومة ٣٠ نيوتن، شاملة الصب والهزاز</span>
+      <span dir="auto">م٣</span>
+      <span class="row-price">
+        <span class="row-price-label">سعر التكلفة</span>
+        <bdi class="figure" dir="ltr">1,850.00</bdi>
+      </span>
+      <span class="row-price">
+        <span class="row-price-label">سعر البيع</span>
+        <bdi class="figure" dir="ltr">2,127.50</bdi>
+      </span>
+      <span></span>
+    </kaff-table-row>
 
-  <kaff-table-row [columns]="columns" testId="fixture-row-1">
-    <bdi class="figure" dir="ltr" translate="no">CON-1014</bdi>
-    <span class="row-desc" dir="auto">خرسانة مسلحة للأعمدة، مقاومة ٣٠ نيوتن، شاملة الصب والهزاز</span>
-    <span dir="auto">م٣</span>
-    <span class="row-price">
-      <span class="row-price-label">سعر التكلفة</span>
-      <bdi class="figure" dir="ltr">1,850.00</bdi>
-    </span>
-    <span class="row-price">
-      <span class="row-price-label">سعر البيع</span>
-      <bdi class="figure" dir="ltr">2,127.50</bdi>
-    </span>
-    <span></span>
-  </kaff-table-row>
+    <kaff-table-row [archived]="true" testId="fixture-row-2">
+      <bdi class="figure" dir="ltr" translate="no">CON-1020</bdi>
+      <span class="row-desc" dir="auto">طوب أحمر مصمت للمباني الخارجية</span>
+      <span dir="auto">طن</span>
+      <span class="row-price">
+        <span class="row-price-label">سعر التكلفة</span>
+        <bdi class="figure" dir="ltr">950.00</bdi>
+      </span>
+      <span class="row-price">
+        <span class="row-price-label">سعر البيع</span>
+        <bdi class="figure" dir="ltr">1,092.50</bdi>
+      </span>
+      <span></span>
+    </kaff-table-row>
 
-  <kaff-table-row [columns]="columns" [archived]="true" testId="fixture-row-2">
-    <bdi class="figure" dir="ltr" translate="no">CON-1020</bdi>
-    <span class="row-desc" dir="auto">طوب أحمر مصمت للمباني الخارجية</span>
-    <span dir="auto">طن</span>
-    <span class="row-price">
-      <span class="row-price-label">سعر التكلفة</span>
-      <bdi class="figure" dir="ltr">950.00</bdi>
-    </span>
-    <span class="row-price">
-      <span class="row-price-label">سعر البيع</span>
-      <bdi class="figure" dir="ltr">1,092.50</bdi>
-    </span>
-    <span></span>
-  </kaff-table-row>
+    <kaff-group-heading name="أعمال تشطيبات" marginText="هامش ١٢٪" countText="٤١ بندًا" testId="fixture-group-2" />
 
-  <kaff-group-heading name="أعمال تشطيبات" marginText="هامش ١٢٪" countText="٤١ بندًا" testId="fixture-group-2" />
-
-  <kaff-table-row [columns]="columns" testId="fixture-row-3">
-    <bdi class="figure" dir="ltr" translate="no">FIN-2031</bdi>
-    <span class="row-desc" dir="auto">دهان بلاستيك فاخر، وجهين</span>
-    <span dir="auto">م٢</span>
-    <span class="row-price">
-      <span class="row-price-label">سعر التكلفة</span>
-      <bdi class="figure" dir="ltr">45.00</bdi>
-    </span>
-    <span class="row-price">
-      <span class="row-price-label">سعر البيع</span>
-      <bdi class="figure" dir="ltr">62.00</bdi>
-    </span>
-    <span></span>
-  </kaff-table-row>
+    <kaff-table-row testId="fixture-row-3">
+      <bdi class="figure" dir="ltr" translate="no">FIN-2031</bdi>
+      <span class="row-desc" dir="auto">دهان بلاستيك فاخر، وجهين</span>
+      <span dir="auto">م٢</span>
+      <span class="row-price">
+        <span class="row-price-label">سعر التكلفة</span>
+        <bdi class="figure" dir="ltr">45.00</bdi>
+      </span>
+      <span class="row-price">
+        <span class="row-price-label">سعر البيع</span>
+        <bdi class="figure" dir="ltr">62.00</bdi>
+      </span>
+      <span></span>
+    </kaff-table-row>
+  </kaff-table>
 </section>

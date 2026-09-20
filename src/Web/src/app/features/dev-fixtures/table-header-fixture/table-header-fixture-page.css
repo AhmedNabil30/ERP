@@ -32,18 +32,6 @@
   }
 }
 
-/* Same caller-owned override catalogue-list-page.css already carries for kaff-table-row (KAFF-910
-   gap comment there): the paired grid columns are a desktop-density layout, so below the mobile
-   breakpoint the caller collapses both the header and the rows to a single column. The header row
-   itself is then redundant with the per-row stacked labels kaff-table-row now shows at this width,
-   so it hides rather than stacking its own six labels on top of them. */
-@media (width < 48rem) {
-  kaff-table-row .row,
-  kaff-table-header .header {
-    grid-template-columns: 1fr !important;
-  }
-
-  kaff-table-header {
-    display: none;
-  }
-}
+/* KAFF-928: the mobile collapse (rows to one column) and the header's own disappearance at that width
+   are no longer this fixture's job — `kaff-table-row.css` and `kaff-table-header.css` carry both rules
+   once, for every caller, and need no override here. */
