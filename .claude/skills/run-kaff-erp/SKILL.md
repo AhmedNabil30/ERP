@@ -129,11 +129,14 @@ PASS  language switch flips direction
 
 ### 3. What the app actually is today
 
-**One endpoint — `GET /api/health`.** Slice 1's endpoints (sign-in, users, clients) are not built
-yet, so there is nothing to authenticate against and no login screen. `driver.mjs api …` is ready for
-them; it has nothing else to call today.
+**No longer one endpoint.** `src/Api/Features/` now holds 15 feature areas — Health, Setup, Auth,
+Users, Assignments, Clients, Catalogue, Babs, Employees, DayLabour, Departments, Subcontractors,
+Suppliers, Treasury, Audit — each a vertical slice with its own endpoints. `driver.mjs api …` has
+real endpoints to call beyond `/api/health`.
 
-**One page** — the status page at `/`, in Arabic RTL, with a language switch and a refresh button.
+**Sign-in exists.** The SPA has a sign-in screen (`src/Web/src/app/features/auth/sign-in/`), plus
+change-password and first-run owner setup. It is no longer a single status page — check
+`src/Web/src/app/app.routes.ts` for the current route list before assuming what screens exist.
 
 ---
 
