@@ -377,17 +377,16 @@ is the failure mode this file exists to prevent — arriving, this time, dressed
 
 **Blocks:** S-007's duplicate handling only.
 
-## Q-UX-12 · تم تأجيلها or متأجلة? — **STILL OPEN**
+## Q-UX-12 · تم تأجيلها or متأجلة? — **CLOSED · decisions.md, "Also corrected: two spellings of a word required to be verbatim"**
 
-`CLAUDE.md` writes **تم تأجيلها**. `agents.md` writes **متأجلة**. Two spellings of a word the rules
-require "verbatim" is a defect in the continuity files, tracked as action **A1b** and awaiting Karim's
-own word.
+`CLAUDE.md` wrote **تم تأجيلها**. `agents.md` wrote **متأجلة**. Two spellings of a word the rules
+require "verbatim" was a defect in the continuity files, tracked as action **A1b**.
+
+**Ruled: تم تأجيلها**, `CLAUDE.md`'s spelling, per Karim's own ruling of 2026-08-20. `agents.md` §3
+now carries تم تأجيلها in its vocabulary list, with the correction noted inline so a later session does
+not read it as a drafting slip and revert it.
 
 The catalogues carry تم تأجيلها, matching `CLAUDE.md`, which is authoritative for conventions.
-**Nobody changes it on their own initiative.**
-
-**Ask Karim:** *"Write the five words down exactly as you say them."* And `spec.md` should become their
-single home, with `CLAUDE.md` and `agents.md` pointing at it rather than repeating them.
 
 ## Q-UX-13 · Which way does a time axis run in an RTL chart? — **STILL OPEN, slice 7**
 
@@ -411,14 +410,17 @@ the Owner now holds `CatalogueManage`, `BabManage`, `EmployeeManage`, `Subcontra
 slice 2, or only Clients and Suppliers. Also unresolved in D-045: what `BankManage` is, given that
 `spec.md` has no Bank master record — a bank is an account of `AccountType.Bank` in the §6.3 tree.
 
-## Q-UX-15 · Does money cross the wire as a string or a number? — **STILL OPEN, slice 3**
+## Q-UX-15 · Does money cross the wire as a string or a number? — **CLOSED · D-135**
 
 Money crossing as a JSON number becomes a JavaScript `double`, and `decimal(18,4)` does not survive
 that round trip.
 
 **The minimum position was agreed at the kickoff and this design holds to it: the frontend performs no
-money arithmetic, ever.** Every total comes from the server. Whether money crosses as a string is a
-slice-3 decision for the Architect and Nabil, not Karim.
+money arithmetic, ever.** Every total comes from the server.
+
+**Ruled by D-135 (Architect, 2026-09-11): money crosses the wire as a JSON string, in both directions,
+for every field.** This record binds the API and the SPA. It does not change any rounding — D-008 is
+still open.
 
 **Blocks:** the money input's submit shape (`components.md` §2) and every figure rendered from slice 3
 onward. Not slice 1, which moves no money.
