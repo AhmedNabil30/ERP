@@ -37,6 +37,10 @@ shots/
 api*.log
 web*.log
 
+# Build/test logs dropped in .design during redesign work. Never the .dc.html
+# mockups or shots/*.png screenshots below - those are kept design evidence.
+.design/*.log
+
 # Stray build/format/crash logs builders leave at repo root
 /*.log
 /*.stackdump
