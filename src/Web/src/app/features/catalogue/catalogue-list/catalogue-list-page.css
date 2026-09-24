@@ -12,14 +12,12 @@
   min-block-size: var(--tap-target);
 }
 
-.row-code,
-.empty-title {
+.row-code {
   font-weight: 600;
 }
 
 .search-input,
-.row-refusal,
-.refusal {
+.row-refusal {
   border-radius: var(--radius-md);
 }
 
@@ -116,11 +114,19 @@
 
 /* KAFF-928 finding 6: takes the row out of grid flow entirely (an absolutely-positioned grid child
    consumes no track — `kaff-table-row.css`'s own comment on `position: relative` is the other half of
-   this), so the whole row is still a click target without nesting a `<button>` inside an `<a>`. */
+   this), so the whole row is still a click target. KAFF-931: now a `<button>` (opens the detail panel
+   rather than navigating) — its native chrome is reset so it stays invisible; the row's own background
+   and hover already come from `kaff-table-row.css`. */
 .row-stretched-link {
   position: absolute;
   inset: 0;
   z-index: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
 }
 
 .row-code {
@@ -216,28 +222,29 @@
   color: var(--color-danger);
 }
 
-.empty {
-  padding: var(--space-5) var(--space-4);
-  text-align: center;
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-lg);
+/* KAFF-931: loading/empty/refusal render through `kaff-state` now — its own stylesheet draws these,
+   this file no longer needs to. */
+
+.detail-body {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
-.empty-title {
+.detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
   margin: 0;
 }
 
-.loading,
-.refusal {
-  margin: 0;
-  padding: var(--space-3);
+.detail-label {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
 }
 
-.refusal {
-  border: 1px solid var(--color-danger);
-  color: var(--color-danger);
+.detail-note {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-muted);
 }

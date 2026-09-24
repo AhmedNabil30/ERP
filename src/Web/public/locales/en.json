@@ -451,6 +451,7 @@
   "catalogue.list.group_margin": "{percent}% margin",
   "catalogue.list.group_count": "{count} items",
   "catalogue.list.count": "{count} items in {babCount} babs",
+  "catalogue.detail.sell_rate_note": "Derived from the باب's default markup of {percent}%",
   "catalogue.item.unarchive_action": "Un-archive",
   "catalogue.action.create": "+ New item",
   "catalogue.action.back_to_list": "Back to the catalogue",

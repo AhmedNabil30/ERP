@@ -21,16 +21,21 @@ import {
   CatalogueItemListFilter,
 } from '../../../core/catalogue/catalogue.api';
 import { CatalogueGroup, groupByBab } from '../../../core/catalogue/group-by-bab';
+import { toWireDecimal } from '../../../core/catalogue/money-wire';
 import { fractionToPercent } from '../../../core/catalogue/percent-wire';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import { KaffDetailPanel } from '../../../shared/kaff-detail-panel/kaff-detail-panel';
 import { KaffGroupHeading } from '../../../shared/kaff-group-heading/kaff-group-heading';
+import { KaffInlineEdit } from '../../../shared/kaff-inline-edit/kaff-inline-edit';
+import { KaffRowMenu, RowMenuItem } from '../../../shared/kaff-row-menu/kaff-row-menu';
 import {
   KaffSegmentedFilter,
   SegmentedFilterOption,
 } from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
+import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { KaffTable } from '../../../shared/kaff-table/kaff-table';
 import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
@@ -56,6 +61,23 @@ const FILTERS: readonly CatalogueItemListFilter[] = ['active', 'archived', 'all'
  * **Archive and un-archive happen from the row**, per the brief — unlike the client screen, there is no
  * separate form-page danger zone for this feature. `AC-206-E`: archiving an already-archived item is
  * refused, and the refusal renders next to the row that produced it rather than being swallowed.
+ *
+ * **KAFF-931**: rebuilt on the KAFF-930 interaction kit. The row's two `variant="secondary"`
+ * archive/unarchive buttons collapse into one `kaff-row-menu` per row; the danger-toned item is text,
+ * never a filled red button (the one filled `variant="danger"` button left is the existing inline
+ * archive-confirmation's own confirm, kept byte-identical per the story's own instruction). The row no
+ * longer navigates straight to the full edit page — it opens a `kaff-detail-panel` instead (code,
+ * description, unit, cost price via `kaff-inline-edit`, and the derived-sell-price note), with the open
+ * item in `?item=<code>` so it is linkable and survives a refresh. A link inside the panel still reaches
+ * the full edit page (`/catalogue/:id`) for what the panel does not cover. Loading, empty(-filtered) and
+ * refusal render through `kaff-state`.
+ *
+ * **No recent-changes list in the panel.** The brief names one; there is no endpoint this screen can call
+ * for it — `AuditApi.list` is `Permission.AuditRead`, Owner-only (`audit.api.ts`), while this screen is
+ * `CatalogueManage` (Technical Office and Owner), so wiring the audit call here would 403 for the exact
+ * role the brief is building this panel for. Building one client-side by filtering the whole audit trail
+ * by `entityId` would also be a second source of truth for a permission this screen does not hold. Left
+ * out and flagged rather than faked — see this story's build notes.
  */
 @Component({
   selector: 'kaff-catalogue-list-page',
@@ -64,8 +86,12 @@ const FILTERS: readonly CatalogueItemListFilter[] = ['active', 'archived', 'all'
     RouterLink,
     KaffBadge,
     KaffButton,
+    KaffDetailPanel,
     KaffGroupHeading,
+    KaffInlineEdit,
+    KaffRowMenu,
     KaffSegmentedFilter,
+    KaffState,
     KaffTable,
     KaffTableRow,
   ],
@@ -117,9 +143,13 @@ export class CatalogueListPage {
    */
   readonly search = input<string>('');
   readonly status = input<CatalogueItemListFilter>('active');
+  /** Bound from `?item=` — the open panel's item code, matching the `?collapsed=`/`?status=` pattern
+   *  `bab-tree-page.ts` already uses for its own URL-held state. */
+  readonly item = input<string>('');
 
   protected readonly searchTerm = computed(() => this.search() ?? '');
   protected readonly statusFilter = computed(() => this.status() ?? 'active');
+  protected readonly openItemCode = computed(() => this.item() ?? '');
 
   private readonly searchModel = signal<{ query: string }>({ query: '' });
   protected readonly searchForm = form(this.searchModel);
@@ -133,9 +163,46 @@ export class CatalogueListPage {
   protected readonly confirmingArchiveId = signal<string | null>(null);
   protected readonly rowFailure = signal<{ readonly id: string; readonly key: string } | null>(null);
 
+  private readonly savingCostId = signal<string | null>(null);
+  protected readonly costFailure = signal<{ readonly id: string; readonly key: string } | null>(null);
+
   protected readonly groups = computed<readonly CatalogueGroup[]>(() =>
     groupByBab(this.items(), this.babs()),
   );
+
+  /** The panel's open item, resolved from `?item=<code>` against the loaded page — `null` when the URL
+   *  names no code or the code matches nothing in the current filter's view (a stale link, an archived
+   *  item under `?status=active`). */
+  protected readonly openItem = computed<CatalogueItem | null>(() => {
+    const code = this.openItemCode();
+    if (code.length === 0) {
+      return null;
+    }
+    return this.items().find((item) => item.code === code) ?? null;
+  });
+
+  /** The باب the open item belongs to — `null` while `babs` is still loading or the item names a باب
+   *  `loadBabs` could not resolve, same "no name rather than a made-up figure" rule `babLabel` uses. */
+  private readonly openItemBab = computed<Bab | null>(() => {
+    const item = this.openItem();
+    if (item === null) {
+      return null;
+    }
+    return this.babs().find((bab) => bab.id === item.babId) ?? null;
+  });
+
+  /** `catalogue.detail.sell_rate_note` — the line explaining the sell price comes from the باب's
+   *  markup, not a value this panel can set directly. `null` when the باب is unresolved. */
+  protected readonly sellRateNote = computed<string | null>(() => {
+    const bab = this.openItemBab();
+    if (bab === null) {
+      return null;
+    }
+    const percent = this.i18n.formatNumber(fractionToPercent(bab.defaultMarkup), {
+      maximumFractionDigits: 4,
+    });
+    return this.i18n.t('catalogue.detail.sell_rate_note', { percent });
+  });
 
   /**
    * KAFF-929 finding 4: "the count is real information an operator uses and the app currently shows
@@ -246,6 +313,83 @@ export class CatalogueListPage {
 
   protected isArchiving(id: string): boolean {
     return this.archivingId() === id;
+  }
+
+  /**
+   * One item per row: `archive` (danger, active items) or `unarchive` (archived items) — never both.
+   * `V-38`/bab-tree precedent: the kit computes a menu item's own test id as `{testId}-{action}`, not
+   * as a free-standing id a caller can choose, so the trigger's `testId` is `catalogue-row-menu-{code}`
+   * and the item ids follow from it (`-archive`/`-unarchive`) rather than reusing `catalogue-archive-`/
+   * `catalogue-unarchive-` verbatim — see this story's build notes for why, and the grep that found no
+   * test or QA reference to the old trigger ids before renaming them.
+   */
+  protected rowMenuItems(item: CatalogueItem): readonly RowMenuItem[] {
+    return item.status === 'Active'
+      ? [{ labelKey: 'catalogue.item.archive_action', action: 'archive', tone: 'danger' }]
+      : [
+          {
+            labelKey: 'catalogue.item.unarchive_action',
+            action: 'unarchive',
+            disabled: this.isArchiving(item.id),
+          },
+        ];
+  }
+
+  protected onRowMenuSelected(item: CatalogueItem, action: string): void {
+    if (action === 'archive') {
+      this.onStartArchive(item.id);
+    } else if (action === 'unarchive') {
+      void this.onUnarchive(item.id);
+    }
+  }
+
+  protected onOpenItem(item: CatalogueItem): Promise<void> {
+    return this.navigate({ item: item.code });
+  }
+
+  protected onClosePanel(): Promise<void> {
+    return this.navigate({ item: null });
+  }
+
+  protected isSavingCost(id: string): boolean {
+    return this.savingCostId() === id;
+  }
+
+  protected costRefusalKey(id: string): string | null {
+    const failed = this.costFailure();
+    return failed && failed.id === id ? failed.key : null;
+  }
+
+  /** `kaff-inline-edit`'s caller-driven rollback contract (`KAFF-930` build notes), same shape
+   *  `bab-tree-page.ts`'s `onMarkupCommitted` uses. `CatalogueItemEdit` has no partial-update shape, so
+   *  every other field — including `baseSellRate`, which this panel only ever shows derived, never
+   *  edits — travels back over the wire unchanged. */
+  protected async onCostCommitted(item: CatalogueItem, raw: string): Promise<void> {
+    this.costFailure.set(null);
+
+    let costPrice: string;
+    try {
+      costPrice = toWireDecimal(raw);
+    } catch {
+      this.costFailure.set({ id: item.id, key: 'catalogue.field.price_format_invalid' });
+      return;
+    }
+
+    this.savingCostId.set(item.id);
+    try {
+      await this.api.edit(item.id, {
+        descriptionAr: item.descriptionAr,
+        descriptionEn: item.descriptionEn,
+        unit: item.unit,
+        costPrice,
+        baseSellRate: item.baseSellRate,
+      });
+      await this.reload();
+    } catch (error) {
+      this.costFailure.set({ id: item.id, key: toProblem(error).messageKey });
+    } finally {
+      this.savingCostId.set(null);
+    }
   }
 
   protected onStartArchive(id: string): void {

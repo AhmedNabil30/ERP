@@ -451,6 +451,7 @@
   "catalogue.list.group_margin": "هامش {percent}٪",
   "catalogue.list.group_count": "{count} صنف",
   "catalogue.list.count": "{count} بندًا في {babCount} أبواب",
+  "catalogue.detail.sell_rate_note": "مُشتق من هامش الباب الافتراضي {percent}٪",
   "catalogue.item.unarchive_action": "إلغاء الأرشفة",
   "catalogue.action.create": "+ صنف جديد",
   "catalogue.action.back_to_list": "العودة إلى الكتالوج",

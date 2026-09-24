@@ -62,11 +62,9 @@
   </div>
 
   @if (failure(); as key) {
-    <p class="refusal" role="alert" data-testid="catalogue-list-failure">{{ i18n.t(key) }}</p>
+    <kaff-state mode="refusal" [bodyKey]="key" testId="catalogue-list-failure" />
   } @else if (loading()) {
-    <p class="loading" role="status" aria-live="polite" data-testid="catalogue-list-loading">
-      {{ i18n.t('catalogue.loading') }}
-    </p>
+    <kaff-state mode="loading" titleKey="catalogue.loading" testId="catalogue-list-loading" />
   } @else if (groups().length > 0) {
     <kaff-table
       class="groups"
@@ -96,13 +94,13 @@
                     archived or not (AC-928-H). That is what lets the trailing action button live as a
                     real sibling `<kaff-button>`, not a control nested inside an `<a>`.
                   -->
-                  <a
+                  <button
+                    type="button"
                     class="row-stretched-link"
-                    [routerLink]="['/catalogue', item.id]"
-                    [state]="{ item: item }"
                     [attr.aria-label]="item.descriptionAr"
                     [attr.data-testid]="'catalogue-row-' + item.code"
-                  ></a>
+                    (click)="onOpenItem(item)"
+                  ></button>
 
                   <bdi class="row-code figure" dir="ltr" translate="no">{{ item.code }}</bdi>
                   <span class="row-desc" dir="auto">{{ item.descriptionAr }}</span>
@@ -139,24 +137,12 @@
                     </span>
 
                     @if (confirmingArchiveId() !== item.id) {
-                      @if (item.status === 'Active') {
-                        <kaff-button
-                          variant="secondary"
-                          [testId]="'catalogue-archive-' + item.code"
-                          (clicked)="onStartArchive(item.id)"
-                        >
-                          {{ i18n.t('catalogue.item.archive_action') }}
-                        </kaff-button>
-                      } @else {
-                        <kaff-button
-                          variant="secondary"
-                          [disabled]="isArchiving(item.id)"
-                          [testId]="'catalogue-unarchive-' + item.code"
-                          (clicked)="onUnarchive(item.id)"
-                        >
-                          {{ i18n.t('catalogue.item.unarchive_action') }}
-                        </kaff-button>
-                      }
+                      <kaff-row-menu
+                        [items]="rowMenuItems(item)"
+                        triggerLabelKey="a11y.row_actions"
+                        [testId]="'catalogue-row-menu-' + item.code"
+                        (selected)="onRowMenuSelected(item, $event)"
+                      />
                     }
                   </span>
                 </kaff-table-row>
@@ -205,15 +191,61 @@
     </kaff-table>
   } @else if (isFiltered()) {
     <!-- AC-203-D: a search or filter that matched nothing is a different fact from an empty catalogue. -->
-    <div class="empty" role="status" aria-live="polite" data-testid="catalogue-list-empty-filtered">
-      <p class="empty-title">{{ i18n.t('catalogue.list.empty_filtered') }}</p>
-      <kaff-button variant="secondary" testId="catalogue-clear-filters" (clicked)="onClearFilters()">
+    <kaff-state mode="filtered-empty" titleKey="catalogue.list.empty_filtered" testId="catalogue-list-empty-filtered">
+      <kaff-button stateAction variant="secondary" testId="catalogue-clear-filters" (clicked)="onClearFilters()">
         {{ i18n.t('action.clear_filters') }}
       </kaff-button>
-    </div>
+    </kaff-state>
   } @else {
-    <div class="empty" role="status" aria-live="polite" data-testid="catalogue-list-empty">
-      <p class="empty-title">{{ i18n.t('catalogue.list.empty') }}</p>
-    </div>
+    <kaff-state mode="empty" titleKey="catalogue.list.empty" testId="catalogue-list-empty" />
   }
+
+  <kaff-detail-panel
+    [open]="openItem() !== null"
+    [title]="openItem()?.code ?? null"
+    testId="catalogue-detail-panel"
+    (closed)="onClosePanel()"
+  >
+    @if (openItem(); as item) {
+      <div panelBody class="detail-body">
+        <p class="detail-field">
+          <span class="detail-label">{{ i18n.t('catalogue.field.description') }}</span>
+          <span dir="auto">{{ item.descriptionAr }}</span>
+        </p>
+        <p class="detail-field">
+          <span class="detail-label">{{ i18n.t('catalogue.field.unit') }}</span>
+          <span dir="auto">{{ item.unit }}</span>
+        </p>
+        <p class="detail-field">
+          <span class="detail-label">{{ i18n.t('catalogue.field.cost_price') }}</span>
+          <kaff-inline-edit
+            [value]="item.costPrice"
+            type="decimal"
+            ariaLabelKey="catalogue.field.cost_price"
+            [refusalKey]="costRefusalKey(item.id)"
+            [attr.data-testid]="'catalogue-detail-cost-' + item.code"
+            (committed)="onCostCommitted(item, $event)"
+          />
+        </p>
+        <p class="detail-field">
+          <span class="detail-label">{{ i18n.t('catalogue.field.base_sell_rate') }}</span>
+          <bdi class="figure" dir="ltr">{{ i18n.formatAmount(item.baseSellRate) }}</bdi>
+        </p>
+        @if (sellRateNote(); as note) {
+          <p class="detail-note" data-testid="catalogue-detail-sell-note">{{ note }}</p>
+        }
+      </div>
+    }
+    @if (openItem(); as item) {
+      <a
+        panelFooter
+        class="secondary-link"
+        [routerLink]="['/catalogue', item.id]"
+        [state]="{ item: item }"
+        [attr.data-testid]="'catalogue-detail-edit-' + item.code"
+      >
+        {{ i18n.t('action.edit') }}
+      </a>
+    }
+  </kaff-detail-panel>
 </section>
