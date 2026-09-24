@@ -11,6 +11,7 @@ import {
 } from '../../core/i18n/enum-keys';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { KaffButton } from '../../shared/kaff-button/kaff-button';
+import { KaffState } from '../../shared/kaff-state/kaff-state';
 import { KaffTable } from '../../shared/kaff-table/kaff-table';
 import { TableColumnDef } from '../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../shared/kaff-table-row/kaff-table-row';
@@ -60,10 +61,15 @@ export interface AuditChange {
  * "Search actor or entity" box, which `GET /api/audit` has no parameters for, and `Load more`, which
  * needs the cursor paging the endpoint does not implement. See `audit.api.ts`, and the story summary:
  * these are findings against `KAFF-117`'s payload, not licence to filter a page in the browser.
+ *
+ * **KAFF-931**: loading/empty/refusal render through `kaff-state`. **No `kaff-row-menu` and no
+ * `kaff-detail-panel`** — `KAFF-931`'s own brief names this screen explicitly: an audit record is
+ * immutable, so there is no row action to collapse into a menu and no quick-edit for a panel to hold.
+ * The record panel this screen already opens on a row click is its own thing, kept as it was.
  */
 @Component({
   selector: 'kaff-audit-trail-page',
-  imports: [FormField, KaffTable, KaffTableRow, KaffButton],
+  imports: [FormField, KaffButton, KaffState, KaffTable, KaffTableRow],
   templateUrl: './audit-trail-page.html',
   styleUrl: './audit-trail-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

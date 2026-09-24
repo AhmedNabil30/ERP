@@ -40,9 +40,9 @@
   </form>
 
   @if (failure(); as key) {
-    <p class="refusal" role="alert" data-testid="audit-failure">{{ i18n.t(key) }}</p>
+    <kaff-state mode="refusal" [bodyKey]="key" testId="audit-failure" />
   } @else if (loading()) {
-    <p class="loading" data-testid="audit-loading">{{ i18n.t('audit.loading') }}</p>
+    <kaff-state mode="loading" titleKey="audit.loading" testId="audit-loading" />
   } @else if (entries().length > 0) {
     <kaff-table [columns]="rowColumns" [columnDefs]="headerColumns" testId="audit-table-header" data-testid="audit-table-shell">
       <ul class="rows" data-testid="audit-rows">
@@ -131,10 +131,7 @@
       </ul>
     </kaff-table>
   } @else {
-    <div class="empty" data-testid="audit-empty">
-      <p class="empty-title">{{ i18n.t('audit.empty.title') }}</p>
-      <p class="empty-body">{{ i18n.t('audit.empty.body') }}</p>
-    </div>
+    <kaff-state mode="empty" titleKey="audit.empty.title" bodyKey="audit.empty.body" testId="audit-empty" />
   }
 </section>
 
