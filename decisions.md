@@ -11587,6 +11587,39 @@ implementation: `KaffJson`'s converters, wired into the HTTP pipeline.
 #### Audit snapshots are wire too
 
 The interceptor serialises each changed value through `KaffJson`
+
+---
+
+### D-173 · Nabil — Q90 answered: who may read a treasury balance · 2026-09-25
+
+**The question, open and marked blocking since 2026-09-14**, raised by the BA cutting `KAFF-304`:
+once a project's ledger balances exist in the system, who is allowed to look at them — the Owner and
+Finance only, or does a Site Engineer see his own project's numbers too?
+
+**Nabil's ruling: the Owner, Finance, and the Site Engineer assigned to that project, for that
+project only.**
+
+- `TreasuryReadProject` — Owner, Finance, Site Engineer. **Project-scoped**, so a Site Engineer
+  reaches it only through an assignment row. `spec.md` §9's "permission = role × assignment" does the
+  work; role alone is insufficient, as everywhere else.
+- `TreasuryReadCompany` — Owner and Finance only. The safe and bank balances are company-wide and a
+  Site Engineer has no assignment that could scope them.
+- **HR is on neither list.** D-051 Q32 gives HR zero financial visibility and this does not reopen it.
+
+**Why a builder did not decide it.** `KAFF-306`'s session found Q90 still open, declined to guess a
+grant roster, and shipped both endpoints with `Unresolved: true` and an **empty** grant list — so the
+routes existed, wrote nothing, and were reachable by nobody, the Owner included, until a human ruled.
+That is what `CLAUDE.md` asks for: *"If `spec.md` doesn't answer a business question, stop and ask. Do
+not decide."* Recorded because the alternative — a plausible grant invented at build time — is the
+failure that survives review and surfaces at acceptance.
+
+**Also recorded: the story brief was wrong.** `KAFF-306`'s "Questions for Karim: None" was written by
+the Scrum Master without checking `questions-for-karim.md` against `KAFF-304`, the story it builds
+on. Cutting a story now includes checking the open-questions register of every story it depends on.
+
+⚠️ **Karim has not confirmed this himself.** It is his money, and Q90 was addressed to him. Nabil
+answered under demo pressure on 2026-09-25 and the build proceeds on that basis. If Karim rules
+otherwise, it is one grant list and one test to change.
 [Verified: 2026-09-11 @ `src/Infrastructure/Persistence/Interceptors/AuditSaveChangesInterceptor.cs`
 -> `KaffJson.Options`]. `MoneyJsonConverter` writes a JSON number
 [Verified: 2026-09-11 @ `src/Domain/Common/Serialization/KaffJson.cs` -> `MoneyJsonConverter`]. The
