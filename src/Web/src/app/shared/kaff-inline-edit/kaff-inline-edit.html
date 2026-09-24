@@ -1,0 +1,29 @@
+@if (editing()) {
+  <input
+    #control
+    class="control"
+    type="text"
+    [attr.inputmode]="type() === 'decimal' ? 'decimal' : null"
+    [attr.dir]="type() === 'decimal' ? 'ltr' : null"
+    [attr.translate]="type() === 'decimal' ? 'no' : null"
+    [class.figure]="type() === 'decimal'"
+    [attr.aria-label]="i18n.t(ariaLabelKey())"
+    [value]="draft()"
+    (input)="onInput($event)"
+    (keydown)="onKeydown($event)"
+    (blur)="onBlur()"
+  />
+} @else {
+  <button
+    type="button"
+    class="display"
+    [class.figure]="type() === 'decimal'"
+    [disabled]="disabled()"
+    [attr.aria-label]="i18n.t(ariaLabelKey())"
+    (click)="startEditing()"
+  >{{ displayValue() }}</button>
+}
+
+@if (refusalKey()) {
+  <p class="refusal" role="alert">{{ i18n.t(refusalKey()!) }}</p>
+}
