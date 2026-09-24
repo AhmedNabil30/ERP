@@ -607,5 +607,22 @@
   "supplier.duplicate.acknowledge": "رأيت من يحمل الرقم وأريد المتابعة.",
   "supplier.danger.title": "إجراءات حساسة",
   "supplier.confirm.archive.title": "أرشفة هذا المورد؟",
-  "supplier.confirm.archive.body": "سيخرج من القائمة الحالية ويبقى سجله كما هو."
+  "supplier.confirm.archive.body": "سيخرج من القائمة الحالية ويبقى سجله كما هو.",
+
+  "a11y.row_actions": "إجراءات الصف",
+  "devFixtures.kaff930.heading": "عدة التفاعل — نموذج للتطوير",
+  "devFixtures.kaff930.rowMenu.edit": "تعديل",
+  "devFixtures.kaff930.rowMenu.archive": "أرشفة",
+  "devFixtures.kaff930.detailPanel.title": "تفاصيل البند",
+  "devFixtures.kaff930.detailPanel.meta": "KF-DEMO-001",
+  "devFixtures.kaff930.detailPanel.body": "نص تجريبي معروض داخل اللوحة.",
+  "devFixtures.kaff930.detailPanel.save": "حفظ",
+  "devFixtures.kaff930.inlineEdit.label": "سعر الوحدة",
+  "devFixtures.kaff930.state.loading.title": "جارٍ التحميل",
+  "devFixtures.kaff930.state.empty.title": "لا يوجد شيء بعد",
+  "devFixtures.kaff930.state.empty.body": "أنشئ أول سجل ليظهر هنا.",
+  "devFixtures.kaff930.state.filteredEmpty.title": "لا يوجد ما يطابق هذا الفلتر",
+  "devFixtures.kaff930.state.filteredEmpty.body": "{count} صفوف مخفية بسبب الفلتر الحالي.",
+  "devFixtures.kaff930.state.refusal.title": "تم رفض الطلب",
+  "devFixtures.kaff930.state.refusal.body": "لا تملك صلاحية لتنفيذ هذا الإجراء."
 }

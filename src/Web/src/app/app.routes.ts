@@ -342,6 +342,16 @@ export const routes: Routes = [
       ),
   },
   {
+    // KAFF-930 render proof — dev-only, unguarded, same reasoning as `_fixtures/kaff-924` above.
+    // Delete when KAFF-931 wires the four interaction-kit components onto a product screen and this
+    // stops being the only place they render together.
+    path: '_fixtures/kaff-930',
+    loadComponent: () =>
+      import('./features/dev-fixtures/kaff-930-fixture/kaff-930-fixture-page').then(
+        (m) => m.Kaff930FixturePage,
+      ),
+  },
+  {
     path: 'change-password',
     loadComponent: () =>
       import('./features/auth/change-password/change-password-page').then(

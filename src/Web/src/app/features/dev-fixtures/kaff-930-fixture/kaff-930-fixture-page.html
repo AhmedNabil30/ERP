@@ -1,0 +1,48 @@
+<section class="fixture" data-testid="kaff-930-fixture">
+  <h1>{{ i18n.t('devFixtures.kaff930.heading') }}</h1>
+
+  <div class="row">
+    <span>KF-DEMO-001</span>
+    <kaff-row-menu
+      [items]="rowMenuItems"
+      triggerLabelKey="a11y.row_actions"
+      testId="fixture-row-menu"
+      (selected)="onRowMenuSelected($event)"
+    />
+  </div>
+
+  <div class="row">
+    <span>{{ i18n.t('devFixtures.kaff930.inlineEdit.label') }}</span>
+    <kaff-inline-edit
+      [value]="unitPrice()"
+      type="decimal"
+      ariaLabelKey="devFixtures.kaff930.inlineEdit.label"
+      (committed)="onInlineEditCommitted($event)"
+    />
+  </div>
+
+  <div class="states">
+    @for (state of stateModes; track state.mode) {
+      <kaff-state
+        [mode]="state.mode"
+        [titleKey]="state.titleKey"
+        [bodyKey]="state.bodyKey"
+        [hiddenCount]="state.hiddenCount"
+        [testId]="'fixture-state-' + state.mode"
+      />
+    }
+  </div>
+
+  <div class="panel-host">
+    <kaff-detail-panel
+      [open]="panelOpen()"
+      titleKey="devFixtures.kaff930.detailPanel.title"
+      testId="fixture-detail-panel"
+      (closed)="panelOpen.set(false)"
+    >
+      <bdi panelMeta dir="ltr" translate="no">{{ i18n.t('devFixtures.kaff930.detailPanel.meta') }}</bdi>
+      <p panelBody>{{ i18n.t('devFixtures.kaff930.detailPanel.body') }}</p>
+      <button panelFooter type="button">{{ i18n.t('devFixtures.kaff930.detailPanel.save') }}</button>
+    </kaff-detail-panel>
+  </div>
+</section>

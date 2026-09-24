@@ -607,5 +607,22 @@
   "supplier.duplicate.acknowledge": "I have seen who holds it and want to continue.",
   "supplier.danger.title": "Sensitive actions",
   "supplier.confirm.archive.title": "Archive this supplier?",
-  "supplier.confirm.archive.body": "They leave the working list and their record stays intact."
+  "supplier.confirm.archive.body": "They leave the working list and their record stays intact.",
+
+  "a11y.row_actions": "Row actions",
+  "devFixtures.kaff930.heading": "Interaction kit — dev fixture",
+  "devFixtures.kaff930.rowMenu.edit": "Edit",
+  "devFixtures.kaff930.rowMenu.archive": "Archive",
+  "devFixtures.kaff930.detailPanel.title": "Item detail",
+  "devFixtures.kaff930.detailPanel.meta": "KF-DEMO-001",
+  "devFixtures.kaff930.detailPanel.body": "Sample body content projected into the panel.",
+  "devFixtures.kaff930.detailPanel.save": "Save",
+  "devFixtures.kaff930.inlineEdit.label": "Unit price",
+  "devFixtures.kaff930.state.loading.title": "Loading",
+  "devFixtures.kaff930.state.empty.title": "Nothing here yet",
+  "devFixtures.kaff930.state.empty.body": "Create the first record to see it here.",
+  "devFixtures.kaff930.state.filteredEmpty.title": "Nothing matches this filter",
+  "devFixtures.kaff930.state.filteredEmpty.body": "{count} rows are hidden by the active filter.",
+  "devFixtures.kaff930.state.refusal.title": "Request refused",
+  "devFixtures.kaff930.state.refusal.body": "You do not have permission for this action."
 }
