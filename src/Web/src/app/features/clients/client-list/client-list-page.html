@@ -51,9 +51,9 @@
   </div>
 
   @if (failure(); as key) {
-    <p class="refusal" role="alert" data-testid="client-list-failure">{{ i18n.t(key) }}</p>
+    <kaff-state mode="refusal" [bodyKey]="key" testId="client-list-failure" />
   } @else if (loading()) {
-    <p class="loading" data-testid="client-list-loading">{{ i18n.t('clients.loading') }}</p>
+    <kaff-state mode="loading" titleKey="clients.loading" testId="client-list-loading" />
   } @else if (clients().length > 0) {
     <kaff-table [columns]="rowColumns" [columnDefs]="headerColumns" testId="client-table-header" data-testid="client-rows-shell">
       <ul class="rows" data-testid="client-rows">
@@ -95,14 +95,13 @@
   } @else if (searchWasApplied()) {
     <!-- A search that matched nothing is a different fact from an empty client master, and telling an
          operator "no clients" when they mistyped a number is how a duplicate gets created. -->
-    <div class="empty" data-testid="client-list-empty-filtered">
-      <p class="empty-title">{{ i18n.t('clients.empty.filtered.title') }}</p>
-      <p class="empty-body">{{ i18n.t('clients.empty.filtered.body') }}</p>
-    </div>
+    <kaff-state
+      mode="filtered-empty"
+      titleKey="clients.empty.filtered.title"
+      bodyKey="clients.empty.filtered.body"
+      testId="client-list-empty-filtered"
+    />
   } @else {
-    <div class="empty" data-testid="client-list-empty">
-      <p class="empty-title">{{ i18n.t('clients.empty.title') }}</p>
-      <p class="empty-body">{{ i18n.t('clients.empty.body') }}</p>
-    </div>
+    <kaff-state mode="empty" titleKey="clients.empty.title" bodyKey="clients.empty.body" testId="client-list-empty" />
   }
 </section>

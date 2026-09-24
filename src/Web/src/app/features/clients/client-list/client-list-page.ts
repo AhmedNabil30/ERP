@@ -25,6 +25,7 @@ import { HeaderActionsService } from '../../../core/layout/header-actions.servic
 import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { KaffSegmentedFilter, SegmentedFilterOption } from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
+import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { KaffTable } from '../../../shared/kaff-table/kaff-table';
 import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
@@ -53,7 +54,16 @@ const FILTERS: readonly ClientListFilter[] = ['all', 'active', 'archived'];
  */
 @Component({
   selector: 'kaff-client-list-page',
-  imports: [FormField, RouterLink, KaffButton, KaffSegmentedFilter, KaffTable, KaffTableRow, KaffBadge],
+  imports: [
+    FormField,
+    RouterLink,
+    KaffBadge,
+    KaffButton,
+    KaffSegmentedFilter,
+    KaffState,
+    KaffTable,
+    KaffTableRow,
+  ],
   templateUrl: './client-list-page.html',
   styleUrl: './client-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -100,6 +110,13 @@ export class ClientListPage {
   readonly status = input<ClientListFilter>('active');
   protected readonly filter = computed(() => this.status() ?? 'active');
 
+  /** KAFF-931: `?search=`, merged with `?status=` — the URL-held pattern `catalogue-list-page.ts`
+   *  already uses for both of its own filters. Read through `searchTerm()`, never directly: an absent
+   *  query param binds `undefined`, not the `input()` default (the same `catalogue-list-page.ts`
+   *  finding). */
+  readonly search = input<string>('');
+  protected readonly searchTerm = computed(() => this.search() ?? '');
+
   protected readonly clients = signal<readonly ClientSummary[]>([]);
   protected readonly loading = signal(true);
   protected readonly failure = signal<string | null>(null);
@@ -126,11 +143,18 @@ export class ClientListPage {
   private readonly headerActions = inject(HeaderActionsService);
 
   constructor() {
-    // Reacts to `filter` (URL-driven, so this also fires on back/forward and on a shared link) and
-    // runs once immediately, replacing the old unconditional `void this.reload()` — the same shape
-    // `catalogue-list-page.ts`'s constructor effect uses for its own URL-bound filter.
+    // The draft box starts from whatever the URL already carries — read once, here, rather than kept
+    // in sync by a reactive `effect()`. `catalogue-list-page.ts`'s constructor states the exact reason
+    // an `effect()` may not call `searchModel.set(...)`: it reassigns the signal `form()` wraps from
+    // outside the form system and corrupts `FormField`'s internal state mid-render.
+    this.searchModel.set({ query: this.searchTerm() });
+
+    // Reacts to `filter` and `searchTerm` (both URL-driven, so this also fires on back/forward and on
+    // a shared link) and runs once immediately — the same shape `catalogue-list-page.ts`'s constructor
+    // effect uses for its own URL-bound filter and search.
     effect(() => {
       void this.filter();
+      void this.searchTerm();
       void this.reload();
     });
 
@@ -139,7 +163,7 @@ export class ClientListPage {
   }
 
   protected async onSubmitSearch(): Promise<void> {
-    await this.reload();
+    await this.navigate({ search: this.searchModel().query.trim() || null });
   }
 
   protected async onCreate(): Promise<void> {
@@ -147,9 +171,13 @@ export class ClientListPage {
   }
 
   protected async onFilter(filter: ClientListFilter): Promise<void> {
+    await this.navigate({ status: filter });
+  }
+
+  private async navigate(patch: Readonly<Record<string, string | null>>): Promise<void> {
     await this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { status: filter },
+      queryParams: patch,
       queryParamsHandling: 'merge',
     });
   }
@@ -173,7 +201,7 @@ export class ClientListPage {
     this.loading.set(true);
     this.failure.set(null);
 
-    const applied = this.searchModel().query.trim();
+    const applied = this.searchTerm().trim();
 
     try {
       this.clients.set(await this.api.list(applied, this.filter()));
