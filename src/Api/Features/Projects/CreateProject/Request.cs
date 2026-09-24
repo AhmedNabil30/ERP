@@ -1,3 +1,4 @@
+using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
 using Kaff.Domain.Projects;
 
@@ -15,9 +16,12 @@ namespace Kaff.Api.Features.Projects.CreateProject;
 /// <c>Subcontractor</c>/<c>Supplier</c> use. See the handler's remarks.
 /// </para>
 /// <para>
-/// <b><c>HoldPercentage</c> and <c>ClientAdvance</c> are percent figures, not fractions</b> —
-/// <c>20</c> means 20%, matching how spec.md itself is written and how <c>Percentage.FromPercent</c>
-/// reads. <c>HoldPercentage</c> defaults to 20 when absent (spec.md §5.1, §15). <c>ClientAdvance</c> is
+/// <b><c>HoldPercentage</c> is carried as <see cref="Percentage"/> — the fraction, e.g. <c>"0.20"</c>
+/// for 20% (decisions.md D-151). A negative value is refused by the type itself before this handler
+/// ever sees it.</b> <c>ClientAdvance</c> stays a percent figure, not a fraction —
+/// <c>25</c> means 25% — because its own name does not end <c>Rate</c>/<c>Percentage</c>/<c>Markup</c>
+/// and D-151's wire sweep (<c>WireUnitTests</c>) does not flag it; it is out of KAFF-400's scope.
+/// <c>HoldPercentage</c> defaults to 20% when absent (spec.md §5.1, §15). <c>ClientAdvance</c> is
 /// read as the advance <b>rate</b> — <c>Project.AdvanceRate</c> — not an absolute cash amount: spec.md
 /// §16 assumption 1 pairs exactly these two figures, "Advance 25%, hold 20% as defaults,
 /// owner-adjustable per project", and <c>Project</c> has no column for an absolute advance amount to
@@ -40,7 +44,10 @@ namespace Kaff.Api.Features.Projects.CreateProject;
 /// Required and positive for Lump Sum. Left null for Cost Plus (spec.md §5.2: no fixed value) and for
 /// Design, whose value is computed later from area × rate (contract signature, not this story).
 /// </param>
-/// <param name="HoldPercentage">Lump Sum only. Percent units. Defaults to 20.</param>
+/// <param name="HoldPercentage">
+/// Lump Sum only. Carried as <see cref="Percentage"/> — the fraction (D-151). Defaults to 20% when
+/// omitted.
+/// </param>
 /// <param name="ClientAdvance">Lump Sum only. Percent units, read as the advance rate. Defaults to 25.</param>
 /// <param name="Status">
 /// Optional. <c>null</c> or <see cref="ProjectStatus.Setup"/> leaves the project at its default Setup
@@ -54,6 +61,6 @@ public sealed record Request(
     Guid ClientId,
     ContractType ContractType,
     decimal? ContractValue,
-    decimal? HoldPercentage,
+    Percentage? HoldPercentage,
     decimal? ClientAdvance,
     ProjectStatus? Status);

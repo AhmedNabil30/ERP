@@ -33,11 +33,10 @@ public sealed class Validator : IRequestValidator<Request>
             return ValueTask.FromResult(Result.Failure(ProjectErrors.ClientRequired));
         }
 
-        if (request.HoldPercentage is < 0m)
-        {
-            return ValueTask.FromResult(Result.Failure(ProjectErrors.RateMustNotBeNegative));
-        }
-
+        // D-151: HoldPercentage is already Percentage — a negative value is refused by the type's own
+        // constructor during deserialisation (ApiErrors.MalformedBody), so there is nothing left to
+        // check here. ClientAdvance stays a bare decimal (out of KAFF-400's scope, see Request's
+        // remarks) and still needs the manual guard.
         if (request.ClientAdvance is < 0m)
         {
             return ValueTask.FromResult(Result.Failure(ProjectErrors.RateMustNotBeNegative));

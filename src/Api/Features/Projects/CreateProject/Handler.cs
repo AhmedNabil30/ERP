@@ -81,7 +81,7 @@ internal static class Handler
             Result termsSet = project.SetLumpSumTerms(
                 new Money(request.ContractValue!.Value),
                 Percentage.FromPercent(request.ClientAdvance ?? 25m),
-                Percentage.FromPercent(request.HoldPercentage ?? 20m),
+                request.HoldPercentage ?? Percentage.FromPercent(20m),
                 Percentage.FromPercent(25m),
                 Percentage.FromPercent(75m),
                 delayPenaltyEnabled: false);

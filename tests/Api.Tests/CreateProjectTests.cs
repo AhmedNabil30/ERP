@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -82,7 +83,8 @@ public sealed class CreateProjectTests : IAsyncLifetime
         using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
 
         body.RootElement.GetProperty("holdRate").GetString().Should().Be(
-            "20.0000", "spec.md §5.1/§15: hold defaults to 20%, never the 5% subcontractor retention");
+            "0.2", "spec.md §5.1/§15: hold defaults to 20%, never the 5% subcontractor retention — "
+                + "D-151, the wire carries the fraction, not the percent figure");
 
         Guid id = body.RootElement.GetProperty("id").GetGuid();
 
@@ -192,7 +194,10 @@ public sealed class CreateProjectTests : IAsyncLifetime
                 clientId = _clientId,
                 contractType = nameof(ContractType.LumpSum),
                 contractValue = contractValue?.ToString("0.0000"),
-                holdPercentage = holdPercentage?.ToString("0.0000"),
+                // D-151: HoldPercentage is Percentage on the wire — the fraction, not the percent figure.
+                holdPercentage = holdPercentage.HasValue
+                    ? (holdPercentage.Value / 100m).ToString(CultureInfo.InvariantCulture)
+                    : null,
                 clientAdvance = "25.0000",
                 status = (string?)null,
             }),
