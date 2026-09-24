@@ -137,10 +137,16 @@ describe('SupplierListPage · archive', () => {
   });
 
   it('calls the archive route exactly once and reloads', async () => {
+    // KAFF-931: the archive trigger now lives inside `kaff-row-menu` — `supplier-row-menu-SUP-0001`
+    // opens it, `supplier-row-menu-SUP-0001-archive` is the item (the kit computes an item's own test
+    // id as `{testId}-{action}`).
     const api = new FakeSuppliersApi();
     const fixture = await createFixture(api);
 
-    fixture.nativeElement.querySelector('[data-testid="supplier-archive-SUP-0001"]').click();
+    fixture.nativeElement.querySelector('[data-testid="supplier-row-menu-SUP-0001"]').click();
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('[data-testid="supplier-row-menu-SUP-0001-archive"]').click();
     fixture.detectChanges();
 
     fixture.nativeElement.querySelector('[data-testid="supplier-archive-confirm-SUP-0001"]').click();

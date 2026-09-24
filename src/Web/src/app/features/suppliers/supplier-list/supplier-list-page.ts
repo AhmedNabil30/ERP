@@ -4,6 +4,8 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toProblem } from '../../../core/api/problem-details';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { SupplierListFilter, SupplierSummary, SuppliersApi } from '../../../core/suppliers/suppliers.api';
+import { KaffRowMenu, RowMenuItem } from '../../../shared/kaff-row-menu/kaff-row-menu';
+import { KaffState } from '../../../shared/kaff-state/kaff-state';
 
 /** `S-030`'s three server states, matching `EmployeeListPage`'s own shape. */
 const FILTERS: readonly SupplierListFilter[] = ['active', 'archived', 'all'];
@@ -17,10 +19,15 @@ const FILTERS: readonly SupplierListFilter[] = ['active', 'archived', 'all'];
  *
  * **Filter lives in the URL**, matching `EmployeeListPage`'s and `SubcontractorListPage`'s own shape
  * (apple-erp-design §7.6).
+ *
+ * **KAFF-931**: the row's edit chip and filled-red archive button collapse into one `kaff-row-menu`
+ * (danger is text, never a filled button). Loading/empty(-filtered)/refusal render through `kaff-state`.
+ * This screen predates `KAFF-928`'s `kaff-table` shell and stays on its own hand-rolled row markup —
+ * out of this story's scope, which applies the `KAFF-930` kit, not a table-shell migration.
  */
 @Component({
   selector: 'kaff-supplier-list-page',
-  imports: [RouterLink],
+  imports: [RouterLink, KaffRowMenu, KaffState],
   templateUrl: './supplier-list-page.html',
   styleUrl: './supplier-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -76,6 +83,25 @@ export class SupplierListPage {
 
   protected isArchiving(id: string): boolean {
     return this.archivingId() === id;
+  }
+
+  protected rowMenuItems(supplier: SupplierSummary): readonly RowMenuItem[] {
+    const items: RowMenuItem[] = [{ labelKey: 'action.edit', action: 'edit' }];
+    if (supplier.isActive) {
+      items.push({ labelKey: 'supplier.archive_action', action: 'archive', tone: 'danger' });
+    }
+    return items;
+  }
+
+  protected async onRowMenuSelected(supplier: SupplierSummary, action: string): Promise<void> {
+    switch (action) {
+      case 'edit':
+        await this.router.navigate(['/suppliers', supplier.id]);
+        break;
+      case 'archive':
+        this.onStartArchive(supplier.id);
+        break;
+    }
   }
 
   protected onStartArchive(id: string): void {

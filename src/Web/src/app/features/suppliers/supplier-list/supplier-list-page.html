@@ -17,11 +17,9 @@
   </div>
 
   @if (failure(); as key) {
-    <p class="refusal" role="alert" data-testid="supplier-list-failure">{{ i18n.t(key) }}</p>
+    <kaff-state mode="refusal" [bodyKey]="key" testId="supplier-list-failure" />
   } @else if (loading()) {
-    <p class="loading" role="status" aria-live="polite" data-testid="supplier-list-loading">
-      {{ i18n.t('supplier.loading') }}
-    </p>
+    <kaff-state mode="loading" titleKey="supplier.loading" testId="supplier-list-loading" />
   } @else if (suppliers().length > 0) {
     <ul class="rows" data-testid="supplier-rows">
       @for (supplier of suppliers(); track trackRow($index, supplier)) {
@@ -54,58 +52,47 @@
               }
             }
 
-            <a class="chip" [routerLink]="['/suppliers', supplier.id]" [attr.data-testid]="'supplier-edit-' + supplier.code">
-              {{ i18n.t('action.edit') }}
-            </a>
-
-            @if (supplier.isActive) {
-              @if (confirmingArchiveId() === supplier.id) {
-                <p class="row-confirm" [attr.data-testid]="'supplier-archive-body-' + supplier.code">
-                  {{ i18n.t('supplier.archive_confirm') }}
-                </p>
-                <button
-                  type="button"
-                  class="danger-button"
-                  [disabled]="isArchiving(supplier.id)"
-                  [attr.data-testid]="'supplier-archive-confirm-' + supplier.code"
-                  (click)="onConfirmArchive(supplier.id)"
-                >
-                  {{ i18n.t('supplier.archive_action') }}
-                </button>
-                <button
-                  type="button"
-                  class="chip"
-                  [attr.data-testid]="'supplier-archive-cancel-' + supplier.code"
-                  (click)="onCancelArchive()"
-                >
-                  {{ i18n.t('action.cancel') }}
-                </button>
-              } @else {
-                <button
-                  type="button"
-                  class="danger-button"
-                  [attr.data-testid]="'supplier-archive-' + supplier.code"
-                  (click)="onStartArchive(supplier.id)"
-                >
-                  {{ i18n.t('supplier.archive_action') }}
-                </button>
-              }
+            @if (confirmingArchiveId() === supplier.id) {
+              <p class="row-confirm" [attr.data-testid]="'supplier-archive-body-' + supplier.code">
+                {{ i18n.t('supplier.archive_confirm') }}
+              </p>
+              <button
+                type="button"
+                class="danger-button"
+                [disabled]="isArchiving(supplier.id)"
+                [attr.data-testid]="'supplier-archive-confirm-' + supplier.code"
+                (click)="onConfirmArchive(supplier.id)"
+              >
+                {{ i18n.t('supplier.archive_action') }}
+              </button>
+              <button
+                type="button"
+                class="chip"
+                [attr.data-testid]="'supplier-archive-cancel-' + supplier.code"
+                (click)="onCancelArchive()"
+              >
+                {{ i18n.t('action.cancel') }}
+              </button>
+            } @else {
+              <kaff-row-menu
+                [items]="rowMenuItems(supplier)"
+                triggerLabelKey="a11y.row_actions"
+                [testId]="'supplier-row-menu-' + supplier.code"
+                (selected)="onRowMenuSelected(supplier, $event)"
+              />
             }
           </div>
         </li>
       }
     </ul>
   } @else if (statusFilter() !== 'active') {
-    <div class="empty" role="status" aria-live="polite" data-testid="supplier-list-empty-filtered">
-      <p class="empty-title">{{ i18n.t('supplier.empty_filtered') }}</p>
-    </div>
+    <kaff-state mode="filtered-empty" titleKey="supplier.empty_filtered" testId="supplier-list-empty-filtered" />
   } @else {
-    <div class="empty" role="status" aria-live="polite" data-testid="supplier-list-empty">
-      <p class="empty-title">{{ i18n.t('supplier.empty') }}</p>
-      <a class="create" routerLink="/suppliers/new" data-testid="supplier-create">
+    <kaff-state mode="empty" titleKey="supplier.empty" testId="supplier-list-empty">
+      <a stateAction class="create" routerLink="/suppliers/new" data-testid="supplier-create">
         {{ i18n.t('supplier.action.create') }}
       </a>
-    </div>
+    </kaff-state>
   }
 
   @if (suppliers().length > 0) {
