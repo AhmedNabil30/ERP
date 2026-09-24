@@ -27,11 +27,9 @@
   </div>
 
   @if (failure(); as key) {
-    <p class="refusal" role="alert" data-testid="department-settings-failure">{{ i18n.t(key) }}</p>
+    <kaff-state mode="refusal" [bodyKey]="key" testId="department-settings-failure" />
   } @else if (loading()) {
-    <p class="loading" role="status" aria-live="polite" data-testid="department-settings-loading">
-      {{ i18n.t('department.loading') }}
-    </p>
+    <kaff-state mode="loading" titleKey="department.loading" testId="department-settings-loading" />
   } @else {
     <kaff-table
       [columns]="rowColumns"
@@ -109,49 +107,29 @@
                     </kaff-badge>
                   }
 
-                  <kaff-button
-                    variant="secondary"
-                    [testId]="'department-edit-' + department.id"
-                    (clicked)="onStartEdit(department)"
-                  >
-                    {{ i18n.t('action.edit') }}
-                  </kaff-button>
-
-                  @if (department.isActive) {
-                    @if (confirmingArchiveId() === department.id) {
-                      <kaff-button
-                        variant="danger"
-                        [disabled]="isArchiving(department.id)"
-                        [testId]="'department-archive-confirm-' + department.id"
-                        (clicked)="onConfirmArchive(department.id)"
-                      >
-                        {{ i18n.t('department.settings.archive_action') }}
-                      </kaff-button>
-                      <kaff-button
-                        variant="secondary"
-                        [testId]="'department-archive-cancel-' + department.id"
-                        (clicked)="onCancelArchive()"
-                      >
-                        {{ i18n.t('action.cancel') }}
-                      </kaff-button>
-                    } @else {
-                      <kaff-button
-                        variant="danger"
-                        [testId]="'department-archive-' + department.id"
-                        (clicked)="onStartArchive(department.id)"
-                      >
-                        {{ i18n.t('department.settings.archive_action') }}
-                      </kaff-button>
-                    }
-                  } @else {
+                  @if (department.isActive && confirmingArchiveId() === department.id) {
+                    <kaff-button
+                      variant="danger"
+                      [disabled]="isArchiving(department.id)"
+                      [testId]="'department-archive-confirm-' + department.id"
+                      (clicked)="onConfirmArchive(department.id)"
+                    >
+                      {{ i18n.t('department.settings.archive_action') }}
+                    </kaff-button>
                     <kaff-button
                       variant="secondary"
-                      [disabled]="isArchiving(department.id)"
-                      [testId]="'department-unarchive-' + department.id"
-                      (clicked)="onUnarchive(department.id)"
+                      [testId]="'department-archive-cancel-' + department.id"
+                      (clicked)="onCancelArchive()"
                     >
-                      {{ i18n.t('department.settings.unarchive_action') }}
+                      {{ i18n.t('action.cancel') }}
                     </kaff-button>
+                  } @else {
+                    <kaff-row-menu
+                      [items]="rowMenuItems(department)"
+                      triggerLabelKey="a11y.row_actions"
+                      [testId]="'department-row-menu-' + department.id"
+                      (selected)="onRowMenuSelected(department, $event)"
+                    />
                   }
                 </span>
               </kaff-table-row>
@@ -168,9 +146,7 @@
         }
       </ul>
     } @else {
-      <div class="empty" role="status" aria-live="polite" data-testid="department-settings-empty">
-        <p class="empty-title">{{ i18n.t('department.settings.empty') }}</p>
-      </div>
+      <kaff-state mode="empty" titleKey="department.settings.empty" testId="department-settings-empty" />
     }
     </kaff-table>
   }

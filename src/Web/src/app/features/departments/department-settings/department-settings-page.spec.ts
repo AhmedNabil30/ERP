@@ -148,10 +148,15 @@ describe('DepartmentSettingsPage', () => {
   });
 
   it('edits a department in place', async () => {
+    // KAFF-931: edit/archive/unarchive triggers now live inside `kaff-row-menu` —
+    // `department-row-menu-d-1` opens it, `department-row-menu-d-1-edit` is the item (the kit
+    // computes an item's own test id as `{testId}-{action}`).
     const fixture = await render();
     const host = element(fixture);
 
-    host.querySelector<HTMLButtonElement>('[data-testid="department-edit-d-1"]')!.click();
+    host.querySelector<HTMLButtonElement>('[data-testid="department-row-menu-d-1"]')!.click();
+    fixture.detectChanges();
+    host.querySelector<HTMLButtonElement>('[data-testid="department-row-menu-d-1-edit"]')!.click();
     fixture.detectChanges();
 
     const nameEn = host.querySelector<HTMLInputElement>('[data-testid="department-edit-name-en-d-1"]')!;
@@ -171,7 +176,9 @@ describe('DepartmentSettingsPage', () => {
     const fixture = await render();
     const host = element(fixture);
 
-    host.querySelector<HTMLButtonElement>('[data-testid="department-archive-d-1"]')!.click();
+    host.querySelector<HTMLButtonElement>('[data-testid="department-row-menu-d-1"]')!.click();
+    fixture.detectChanges();
+    host.querySelector<HTMLButtonElement>('[data-testid="department-row-menu-d-1-archive"]')!.click();
     fixture.detectChanges();
 
     host.querySelector<HTMLButtonElement>('[data-testid="department-archive-confirm-d-1"]')!.click();
@@ -192,7 +199,12 @@ describe('DepartmentSettingsPage', () => {
     await Promise.resolve();
     fixture.detectChanges();
 
-    const unarchiveButton = host.querySelector<HTMLButtonElement>('[data-testid="department-unarchive-d-2"]');
+    host.querySelector<HTMLButtonElement>('[data-testid="department-row-menu-d-2"]')!.click();
+    fixture.detectChanges();
+
+    const unarchiveButton = host.querySelector<HTMLButtonElement>(
+      '[data-testid="department-row-menu-d-2-unarchive"]',
+    );
     expect(unarchiveButton).toBeTruthy();
     unarchiveButton!.click();
     await Promise.resolve();

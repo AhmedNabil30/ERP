@@ -94,30 +94,5 @@
   color: var(--color-text);
 }
 
-.empty {
-  padding: var(--space-5) var(--space-4);
-  text-align: center;
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-lg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.empty-title {
-  margin: 0;
-  font-weight: 600;
-}
-
-.loading,
-.refusal {
-  margin: 0;
-  padding: var(--space-3);
-}
-
-.refusal {
-  border: 1px solid var(--color-danger);
-  border-radius: var(--radius-md);
-  color: var(--color-danger);
-}
+/* KAFF-931: loading/empty/refusal render through `kaff-state` now — its own stylesheet draws these,
+   this file no longer needs to. */

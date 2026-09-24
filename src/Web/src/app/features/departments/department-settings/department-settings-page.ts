@@ -21,10 +21,12 @@ import { HeaderActionsService } from '../../../core/layout/header-actions.servic
 import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { KaffField } from '../../../shared/kaff-field/kaff-field';
+import { KaffRowMenu, RowMenuItem } from '../../../shared/kaff-row-menu/kaff-row-menu';
 import {
   KaffSegmentedFilter,
   SegmentedFilterOption,
 } from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
+import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { KaffTable } from '../../../shared/kaff-table/kaff-table';
 import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
@@ -45,10 +47,25 @@ const EMPTY_DRAFT: DepartmentDraft = { nameAr: '', nameEn: '' };
  * uses for catalogue items, simplified because a department carries no code, no markup and no tree
  * (D-162 names only two fields: Arabic and English names). Archive is the only retirement act — no
  * delete exists (Nabil's ruling 2026-09-15, decisions.md); unarchive is its direct reverse (AC-321-F).
+ *
+ * **KAFF-931**: the row's `edit`/`archive`/`unarchive` buttons collapse into one `kaff-row-menu`
+ * (danger is text, never a filled button). Loading/empty/refusal render through `kaff-state`. No
+ * `kaff-detail-panel`: the row's own in-place two-field edit (`editingId`/`editDraft` below) already is
+ * this screen's quick-edit and does not fit `kaff-inline-edit` (one scalar, not two fields at once), so
+ * it is left as the row-level form it already was.
  */
 @Component({
   selector: 'kaff-department-settings-page',
-  imports: [KaffBadge, KaffButton, KaffField, KaffSegmentedFilter, KaffTable, KaffTableRow],
+  imports: [
+    KaffBadge,
+    KaffButton,
+    KaffField,
+    KaffRowMenu,
+    KaffSegmentedFilter,
+    KaffState,
+    KaffTable,
+    KaffTableRow,
+  ],
   templateUrl: './department-settings-page.html',
   styleUrl: './department-settings-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -60,8 +77,8 @@ export class DepartmentSettingsPage {
   protected readonly filters = FILTERS;
 
   /** `KAFF-928`: the trailing `auto` track was the one flagged in this story — fixed at `18rem`,
-   *  wide enough for the edit button plus either the archive/unarchive button or the confirm/cancel
-   *  pair plus the inactive badge, the widest combination this column ever holds. */
+   *  wide enough for the archive-confirm/cancel pair plus the inactive badge (the archive-confirm flow
+   *  stays inline; `kaff-row-menu` is narrower, `KAFF-931`), the widest combination this column holds. */
   protected readonly rowColumns = 'minmax(10rem, 1fr) minmax(10rem, 1fr) 18rem';
 
   protected readonly headerColumns: readonly TableColumnDef[] = [
@@ -211,6 +228,34 @@ export class DepartmentSettingsPage {
 
   protected isArchiving(id: string): boolean {
     return this.archivingId() === id;
+  }
+
+  protected rowMenuItems(department: DepartmentSummary): readonly RowMenuItem[] {
+    const items: RowMenuItem[] = [{ labelKey: 'action.edit', action: 'edit' }];
+    if (department.isActive) {
+      items.push({ labelKey: 'department.settings.archive_action', action: 'archive', tone: 'danger' });
+    } else {
+      items.push({
+        labelKey: 'department.settings.unarchive_action',
+        action: 'unarchive',
+        disabled: this.isArchiving(department.id),
+      });
+    }
+    return items;
+  }
+
+  protected onRowMenuSelected(department: DepartmentSummary, action: string): void {
+    switch (action) {
+      case 'edit':
+        this.onStartEdit(department);
+        break;
+      case 'archive':
+        this.onStartArchive(department.id);
+        break;
+      case 'unarchive':
+        void this.onUnarchive(department.id);
+        break;
+    }
   }
 
   protected onStartArchive(id: string): void {
