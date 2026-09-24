@@ -1,0 +1,25 @@
+<div class="kaff-state" [attr.data-mode]="mode()" [attr.data-testid]="testId()">
+  @switch (mode()) {
+    @case ('loading') {
+      <div class="skeleton" role="status" aria-live="polite" [attr.aria-label]="resolvedTitle()">
+        @for (row of skeletonRows; track row) {
+          <div class="skeleton-row"></div>
+        }
+      </div>
+    }
+    @case ('refusal') {
+      <div class="notice notice--refusal" role="alert">
+        @if (resolvedTitle()) { <p class="title">{{ resolvedTitle() }}</p> }
+        @if (resolvedBody()) { <p class="body">{{ resolvedBody() }}</p> }
+        <ng-content select="[stateAction]"></ng-content>
+      </div>
+    }
+    @default {
+      <div class="notice">
+        @if (resolvedTitle()) { <p class="title">{{ resolvedTitle() }}</p> }
+        @if (resolvedBody()) { <p class="body">{{ resolvedBody() }}</p> }
+        <ng-content select="[stateAction]"></ng-content>
+      </div>
+    }
+  }
+</div>
