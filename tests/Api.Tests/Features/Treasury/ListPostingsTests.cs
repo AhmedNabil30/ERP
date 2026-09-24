@@ -21,15 +21,13 @@ namespace Kaff.Api.Tests.Features.Treasury;
 /// <remarks>
 /// <b>Not run by this session — the Scrum Master runs Api.Tests.</b> Written and left for that gate.
 /// <para>
-/// <b>Scope note.</b> Both routes are gated on <see cref="Permission.TreasuryReadProject"/> /
-/// <see cref="Permission.TreasuryReadCompany"/>, which questions-for-karim.md Q90 leaves UNRESOLVED
-/// with an empty grant list (see <c>PermissionCatalogue.cs</c>). <c>PermissionEvaluator</c> refuses a
-/// permission with no matching grant to everyone, Owner included, so no role can reach either route
-/// today. The scenario tests this story's own AC-306-B/C/D require (running balance across a
-/// reversal, no netted field) are therefore proven at the Domain layer instead —
-/// <c>tests/Domain.Tests/PostingStatementQueriesTests.cs</c> — and only the permission-blocked
-/// behaviour and the wire-format rule are exercised here. Once Q90 is answered and a grant is added,
-/// this file is where the HTTP-level scenario cases belong (same shape as <c>PostMovementTests</c>).
+/// <b>Scope note.</b> Q90 is answered — decisions.md D-173 — and <c>PermissionCatalogue.cs</c> carries
+/// the grants for <see cref="Permission.TreasuryReadProject"/> and
+/// <see cref="Permission.TreasuryReadCompany"/>: Owner, Finance, and the assigned Site Engineer
+/// project-scoped; Owner and Finance company-wide. The scenario tests this story's own AC-306-B/C/D
+/// require (running balance across a reversal, no netted field) stay proven at the Domain layer —
+/// <c>tests/Domain.Tests/PostingStatementQueriesTests.cs</c> — this file covers AC-306-E's
+/// permission×assignment matrix over HTTP and the wire-format rule.
 /// </para>
 /// </remarks>
 [Collection(DatabaseCollection.Name)]
@@ -92,28 +90,25 @@ public sealed class ListPostingsTests : IAsyncLifetime
             .Should().OnlyContain(property => property.PropertyType == typeof(Kaff.Domain.Common.Money));
     }
 
-    // ---- Q90 — nobody may reach either route until it is answered ---------------------------------
+    // ---- AC-306-E — D-173 ---------------------------------------------------------------------------
 
     [Fact]
-    public async Task An_owner_is_refused_the_company_statement_because_TreasuryReadCompany_holds_no_grant_yet()
+    public async Task An_owner_reads_the_company_statement()
     {
         HttpResponseMessage response = await GetAsync(
             new Uri($"/api/treasury/postings?accountId={_accountId}", UriKind.Relative), _owner);
 
-        response.StatusCode.Should().Be(
-            HttpStatusCode.Forbidden,
-            "questions-for-karim.md Q90 is unanswered — TreasuryReadCompany's grant list is empty, so " +
-            "PermissionEvaluator refuses even the Owner (RoleNotGranted)");
+        response.StatusCode.Should().Be(HttpStatusCode.OK, "D-173: Owner holds TreasuryReadCompany");
     }
 
     [Fact]
-    public async Task A_finance_user_assigned_to_the_project_is_refused_the_project_statement_for_the_same_reason()
+    public async Task A_finance_user_assigned_to_the_project_reads_the_project_statement()
     {
         HttpResponseMessage response = await GetAsync(
             new Uri($"/api/projects/{_projectA}/treasury/postings?accountId={_accountId}", UriKind.Relative),
             _financeOnProjectA);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, "TreasuryReadProject's grant list is empty — Q90");
+        response.StatusCode.Should().Be(HttpStatusCode.OK, "D-173: Finance holds TreasuryReadProject");
     }
 
     [Fact]

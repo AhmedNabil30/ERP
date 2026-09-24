@@ -490,19 +490,20 @@ public static class PermissionCatalogue
                 "§6.6 — performing role UNRESOLVED, Finance assumed, see decisions.md D-012",
                 Unresolved: true, TouchesMoney: true),
 
-            // KAFF-306 — Q90 (questions-for-karim.md), raised cutting KAFF-304, is explicit that
-            // reading a treasury balance/statement over HTTP is BLOCKED outright until answered — not
-            // a case for a stated assumption the way PeriodClose above takes one. Grants therefore
-            // stay empty rather than guessing "Owner and Finance" or "plus the assigned Site
-            // Engineer" — either would be the invented-plausible-rule failure CLAUDE.md and this
-            // catalogue's own remarks warn about. The two routes exist (KAFF-306) and are reachable
-            // by nobody until this row gets a grant.
-            new(Permission.TreasuryReadProject, PermissionScope.ProjectScoped, [],
-                "§6 — WHO may read UNRESOLVED, see questions-for-karim.md Q90 (blocking)",
-                Unresolved: true, TouchesMoney: true),
-            new(Permission.TreasuryReadCompany, PermissionScope.CompanyWide, [],
-                "§6 — WHO may read UNRESOLVED, see questions-for-karim.md Q90 (blocking)",
-                Unresolved: true, TouchesMoney: true),
+            // KAFF-306 — Q90 ruled by Nabil, decisions.md D-173, 2026-09-25: the Owner, Finance, and
+            // the Site Engineer assigned to that project, for that project only. Project-scoped, so
+            // a Site Engineer reaches it only through an assignment row (spec.md §9, role ×
+            // assignment) — same grant shape as ProjectRead's own Site Engineer row above. HR is on
+            // neither row — D-051 Q32 gives HR zero financial visibility and this does not reopen it.
+            new(Permission.TreasuryReadProject, PermissionScope.ProjectScoped,
+                [owner, finance, new AccessGrant { Role = Role.SiteEngineer }],
+                "§6, §9 — Q90 ruled by Nabil 2026-09-25, see decisions.md D-173", TouchesMoney: true),
+
+            // Company-wide: the safe and bank balances are company-wide and a Site Engineer has no
+            // assignment that could scope them (D-173). Owner and Finance only.
+            new(Permission.TreasuryReadCompany, PermissionScope.CompanyWide,
+                [owner, finance],
+                "§6 — Q90 ruled by Nabil 2026-09-25, see decisions.md D-173", TouchesMoney: true),
 
             // ---- Portal ----
 

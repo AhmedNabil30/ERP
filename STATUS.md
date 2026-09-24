@@ -648,7 +648,7 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 | 0 | 0 |
 | 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 0 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 0 | 0 | 36 | 8 | 69 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 0 | 41 | 8 | 69 |
 | ⚪ READY / COMMITTED — refined, not built | 0 | 0 | 5 | 0 | 13 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 0 | 0 | 0 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 | 0 | 0 |
@@ -712,7 +712,7 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-303](stories/slice-3-treasury/KAFF-303-correct-a-mistake-with-a-reversing-posting.md) | 3 | 5 | 🟡 BUILT | none | `-` | 2026-09-15 | Correct a mistake with a reversing posting, never an edit |
 | [KAFF-304](stories/slice-3-treasury/KAFF-304-every-balance-is-derived-by-summing-postings.md) | 3 | 5 | ⚪ READY | none | `-` | 2026-09-14 | Every balance is derived by summing postings |
 | [KAFF-305](stories/slice-3-treasury/KAFF-305-the-posting-type-account-pair-legality-table.md) | 3 | 8 | 🟡 BUILT | none | `-` | 2026-09-15 | The posting-type × account-pair legality table |
-| [KAFF-306](stories/slice-3-treasury/KAFF-306-treasury-read-api.md) | 3 | 5 | ⚪ BLOCKED | none | `-` | 2026-09-25 | The Treasury can post and reverse, but nothing reads |
+| [KAFF-306](stories/slice-3-treasury/KAFF-306-treasury-read-api.md) | 3 | 5 | 🟡 BUILT | none | `-` | 2026-09-25 | The Treasury can post and reverse, but nothing reads |
 | [KAFF-319](stories/slice-3-treasury/KAFF-319-a-refused-posting-reads-as-a-translated-message.md) | 3 | 3 | 🟡 BUILT | none | `-` | 2026-09-15 | A refused posting reads as a translated message, not a 500 |
 | [KAFF-320](stories/slice-3-treasury/KAFF-320-bank-as-an-independent-master-record.md) | 3 | 0 | ⚪ BLOCKED | none | `-` | 2026-09-15 | Bank — an independent master record, not folded into the ledger |
 | [KAFF-321](stories/slice-2-masters/KAFF-321-department-master-data.md) | 2 | 0 | 🟡 BUILT | none | `-` | 2026-09-15 | Department — dynamic master data, not a fixed enum |

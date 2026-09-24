@@ -392,15 +392,13 @@ public sealed class CatalogueCompletenessTests
         // performs it, nor whether the Owner must approve it as a financial movement. Finance is
         // assumed, and a closed period is immutable — so the assumption is load-bearing.
         //
-        // TreasuryReadProject / TreasuryReadCompany added 2026-09-25, KAFF-306. Unlike PeriodClose,
-        // these carry NO stated assumption — questions-for-karim.md Q90 says plainly that reading a
-        // treasury balance/statement over HTTP is blocked outright until answered, so the grant list
-        // is empty rather than a guess. See PermissionCatalogue.cs's remarks on both rows.
+        // TreasuryReadProject / TreasuryReadCompany left the list 2026-09-25 (decisions.md D-173,
+        // answering questions-for-karim.md Q90): Owner, Finance and the assigned Site Engineer hold
+        // TreasuryReadProject; Owner and Finance hold TreasuryReadCompany. See PermissionCatalogue.cs's
+        // remarks on both rows.
         Permission[] expected =
         [
             Permission.PeriodClose,
-            Permission.TreasuryReadProject,
-            Permission.TreasuryReadCompany,
         ];
 
         PermissionCatalogue.Unresolved

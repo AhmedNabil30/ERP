@@ -18,12 +18,13 @@ namespace Kaff.Api.Tests.Features.Treasury;
 /// <c>GET /api/treasury/accounts/{accountId}/balance</c>.
 /// </summary>
 /// <remarks>
-/// <b>Not run by this session — the Scrum Master runs Api.Tests.</b> Same Q90 scope note as
-/// <c>ListPostingsTests</c>: both routes are gated on permissions with an empty grant list today, so
-/// nobody can reach them over HTTP. AC-306-C/D (derivation, no netted field) are proven directly
-/// against <c>Kaff.Domain.Treasury.BalanceQueries</c> already, by KAFF-304's own
-/// <c>BalanceQueriesTests</c> — not re-proven here. This file covers the permission-blocked state and
-/// the wire-format/no-Total shape rules only.
+/// <b>Not run by this session — the Scrum Master runs Api.Tests.</b> Q90 is answered — decisions.md
+/// D-173 — and <c>PermissionCatalogue.cs</c> carries the grants: <c>TreasuryReadProject</c> is Owner,
+/// Finance, Site Engineer (project-scoped, assignment required); <c>TreasuryReadCompany</c> is Owner
+/// and Finance only. AC-306-C/D (derivation, no netted field) are proven directly against
+/// <c>Kaff.Domain.Treasury.BalanceQueries</c> already, by KAFF-304's own <c>BalanceQueriesTests</c> —
+/// not re-proven here. This file covers AC-306-E — the permission×assignment matrix over HTTP — and
+/// the wire-format/no-Total shape rules.
 /// </remarks>
 [Collection(DatabaseCollection.Name)]
 public sealed class GetBalancesTests : IAsyncLifetime
@@ -34,6 +35,8 @@ public sealed class GetBalancesTests : IAsyncLifetime
 
     private Guid _projectA;
     private Guid _projectB;
+    private Guid _owner;
+    private Guid _financeOnProjectA;
     private Guid _siteEngineerOnProjectA;
     private Guid _hr;
     private Guid _accountId;
@@ -85,31 +88,88 @@ public sealed class GetBalancesTests : IAsyncLifetime
         }
     }
 
-    // ---- Q90 — nobody may reach either route until it is answered; AC-306-E's project-mismatch ----
-    // ---- half and the HR half both collapse into the same refusal meanwhile -----------------------
+    // ---- AC-306-E — D-173: Owner, Finance, assigned Site Engineer read TreasuryReadProject; ------
+    // ---- Owner and Finance only read TreasuryReadCompany; HR reaches neither -----------------------
 
     [Fact]
-    public async Task A_site_engineer_assigned_to_project_A_is_refused_project_Bs_balances()
+    public async Task A_site_engineer_assigned_to_project_A_reads_project_As_own_balances()
+    {
+        HttpResponseMessage response = await GetAsync(
+            new Uri($"/api/projects/{_projectA}/treasury/balances", UriKind.Relative), _siteEngineerOnProjectA);
+
+        response.StatusCode.Should().Be(
+            HttpStatusCode.OK, "D-173: an assigned Site Engineer holds TreasuryReadProject on their own project");
+    }
+
+    [Fact]
+    public async Task The_same_site_engineer_is_refused_project_Bs_balances()
     {
         HttpResponseMessage response = await GetAsync(
             new Uri($"/api/projects/{_projectB}/treasury/balances", UriKind.Relative), _siteEngineerOnProjectA);
 
         response.StatusCode.Should().Be(
             HttpStatusCode.Forbidden,
-            "not assigned to project B — and TreasuryReadProject's grant list is empty regardless (Q90)");
+            "D-173: TreasuryReadProject is project-scoped — role alone is insufficient without an assignment to project B");
     }
 
     [Fact]
-    public async Task A_site_engineer_assigned_to_project_A_is_refused_project_As_own_balances_too_pending_Q90()
+    public async Task The_owner_reads_both_projects_ledgers()
     {
-        // This is the half AC-306-E cannot yet demonstrate as a POSITIVE grant: with an empty grant
-        // list, project A is refused exactly like project B, because nobody holds the permission yet.
-        // Kept as its own case so the day Q90 is answered and a grant is added, this one flips to
-        // Forbidden/Ok and the change is visible in a single failing assertion rather than a silent gap.
-        HttpResponseMessage response = await GetAsync(
-            new Uri($"/api/projects/{_projectA}/treasury/balances", UriKind.Relative), _siteEngineerOnProjectA);
+        HttpResponseMessage responseA = await GetAsync(
+            new Uri($"/api/projects/{_projectA}/treasury/balances", UriKind.Relative), _owner);
+        HttpResponseMessage responseB = await GetAsync(
+            new Uri($"/api/projects/{_projectB}/treasury/balances", UriKind.Relative), _owner);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, "TreasuryReadProject holds no grant yet — Q90");
+        responseA.StatusCode.Should().Be(HttpStatusCode.OK, "D-173: Owner holds TreasuryReadProject, globally scoped");
+        responseB.StatusCode.Should().Be(HttpStatusCode.OK, "D-173: Owner holds TreasuryReadProject, globally scoped");
+    }
+
+    [Fact]
+    public async Task Finance_assigned_to_project_A_reads_project_As_ledgers_but_not_project_Bs()
+    {
+        HttpResponseMessage responseA = await GetAsync(
+            new Uri($"/api/projects/{_projectA}/treasury/balances", UriKind.Relative), _financeOnProjectA);
+        HttpResponseMessage responseB = await GetAsync(
+            new Uri($"/api/projects/{_projectB}/treasury/balances", UriKind.Relative), _financeOnProjectA);
+
+        responseA.StatusCode.Should().Be(HttpStatusCode.OK, "D-173: Finance holds TreasuryReadProject");
+        responseB.StatusCode.Should().Be(
+            HttpStatusCode.Forbidden, "Finance is project-scoped too — not assigned to project B");
+    }
+
+    [Fact]
+    public async Task Hr_is_refused_project_As_ledgers_with_no_financial_field_in_the_payload()
+    {
+        HttpResponseMessage response = await GetAsync(
+            new Uri($"/api/projects/{_projectA}/treasury/balances", UriKind.Relative), _hr);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, "D-051 Q32: HR is on neither treasury grant list");
+
+        string body = await response.Content.ReadAsStringAsync(Ct);
+        body.Should().NotContain("clientAdvance", "HR must never see a financial field, even refused");
+    }
+
+    [Fact]
+    public async Task The_owner_and_finance_read_the_company_account_balance()
+    {
+        HttpResponseMessage ownerResponse = await GetAsync(
+            new Uri($"/api/treasury/accounts/{_accountId}/balance", UriKind.Relative), _owner);
+        HttpResponseMessage financeResponse = await GetAsync(
+            new Uri($"/api/treasury/accounts/{_accountId}/balance", UriKind.Relative), _financeOnProjectA);
+
+        ownerResponse.StatusCode.Should().Be(HttpStatusCode.OK, "D-173: Owner holds TreasuryReadCompany");
+        financeResponse.StatusCode.Should().Be(
+            HttpStatusCode.OK, "D-173: Finance holds TreasuryReadCompany — company-wide, no assignment needed");
+    }
+
+    [Fact]
+    public async Task A_site_engineer_is_refused_the_company_account_balance()
+    {
+        HttpResponseMessage response = await GetAsync(
+            new Uri($"/api/treasury/accounts/{_accountId}/balance", UriKind.Relative), _siteEngineerOnProjectA);
+
+        response.StatusCode.Should().Be(
+            HttpStatusCode.Forbidden, "D-173: TreasuryReadCompany is Owner and Finance only, no Site Engineer row");
     }
 
     [Fact]
@@ -174,6 +234,12 @@ public sealed class GetBalancesTests : IAsyncLifetime
         Project projectB = Project.Create(
             UniqueNames.Code("GB-PB"), "مشروع ب", client.Id, ContractType.LumpSum, Now).Value;
 
+        User owner = User.Create(
+            UniqueNames.Code("gb-owner"), "gb-owner", UniqueNames.Phone(), Role.Owner, Now, WellKnownDepartments.FinanceId).Value;
+
+        User financeOnProjectA = User.Create(
+            UniqueNames.Code("gb-fin-a"), "gb-fin-a", UniqueNames.Phone(), Role.Finance, Now, WellKnownDepartments.FinanceId).Value;
+
         User siteEngineerOnProjectA = User.Create(
             UniqueNames.Code("gb-eng-a"), "gb-eng-a", UniqueNames.Phone(), Role.SiteEngineer, Now, WellKnownDepartments.OperationsId).Value;
 
@@ -185,11 +251,13 @@ public sealed class GetBalancesTests : IAsyncLifetime
 
         context.Clients.Add(client);
         context.Projects.AddRange(projectA, projectB);
-        context.Users.AddRange(siteEngineerOnProjectA, hr);
+        context.Users.AddRange(owner, financeOnProjectA, siteEngineerOnProjectA, hr);
         context.Accounts.Add(safe);
 
         await context.SaveChangesAsync(Ct);
 
+        context.ProjectAssignments.Add(ProjectAssignment.Create(
+            projectA.Id, financeOnProjectA, AssignmentLevel.Standard, Guid.CreateVersion7(), Now).Value);
         context.ProjectAssignments.Add(ProjectAssignment.Create(
             projectA.Id, siteEngineerOnProjectA, AssignmentLevel.Standard, Guid.CreateVersion7(), Now).Value);
 
@@ -197,6 +265,8 @@ public sealed class GetBalancesTests : IAsyncLifetime
 
         _projectA = projectA.Id;
         _projectB = projectB.Id;
+        _owner = owner.Id;
+        _financeOnProjectA = financeOnProjectA.Id;
         _siteEngineerOnProjectA = siteEngineerOnProjectA.Id;
         _hr = hr.Id;
         _accountId = safe.Id;

@@ -1,6 +1,6 @@
 # KAFF-306 · The Treasury can post and reverse, but nothing reads
 
-<!-- kaff id=KAFF-306 slice=3 points=5 state=BLOCKED verdict=none at=- on=2026-09-25 -->
+<!-- kaff id=KAFF-306 slice=3 points=5 state=BUILT verdict=none at=- on=2026-09-25 -->
 
 **Slice:** 3 — Treasury · **Points:** 5.
 **Why now:** `src/Api/Features/Treasury/` holds exactly `PostMovement` and `ReversePosting`.
@@ -172,3 +172,86 @@ roster and `TreasuryPostProject`/`TreasuryPostCompany`'s existing holders, the t
 likely (a) Owner + Finance only, or (b) Owner + Finance + the assigned Site Engineer, project-scoped
 — but naming either here would be exactly the guess this file's own rule forbids. Once ruled, the
 fix is one grant list in `PermissionCatalogue.cs`'s two new rows; nothing else in this story changes.
+
+## Build notes (2026-09-25, continued — Q90 released)
+
+**Q90 ruled — decisions.md D-173.** `TreasuryReadProject`: Owner, Finance, Site Engineer, project-scoped
+(assignment required). `TreasuryReadCompany`: Owner and Finance only, company-wide. HR holds neither
+(D-051 Q32 stands). `stories/questions-for-karim.md` Q90 row updated to ANSWERED, citing D-173, in the
+house style of the Q85/Q92 rows.
+
+**What changed, and nothing else:**
+
+- `src/Domain/Authorization/PermissionCatalogue.cs` — `TreasuryReadProject` and `TreasuryReadCompany`
+  rows given the grants above and `Unresolved: true` cleared. Same grant shapes the catalogue already
+  uses elsewhere: `owner`/`finance` reusable `AccessGrant`s, and a bare `new AccessGrant { Role =
+  Role.SiteEngineer }` for the Site Engineer row — the same shape `ProjectRead`'s own Site Engineer row
+  uses, since D-173 states no minimum seniority.
+- Two pinned Domain tests were now false by construction and updated as the direct, unavoidable
+  consequence of resolving the two rows — not scope creep:
+  - `tests/Domain.Tests/CatalogueCompletenessTests.cs` →
+    `The_set_of_unresolved_permissions_has_not_grown` — expected set shrinks to `[PeriodClose]` only.
+  - `tests/Domain.Tests/PermissionEvaluatorTests.cs` → `Finance_holds_a_flat_set_of_its_company_wide_permissions`
+    — `Permission.TreasuryReadCompany` added to Finance's expected company-wide set.
+- `tests/Api.Tests/Features/Treasury/ListPostingsTests.cs` — the two tests that previously asserted
+  "everyone is refused because the grant list is empty" now assert the positive case instead:
+  - `An_owner_reads_the_company_statement` — Owner, `GET /api/treasury/postings`, expects 200.
+  - `A_finance_user_assigned_to_the_project_reads_the_project_statement` — Finance assigned to project
+    A, `GET /api/projects/{A}/treasury/postings`, expects 200.
+  - `Hr_is_refused_the_company_statement_too_with_no_financial_field_in_any_payload` — unchanged, still
+    refused, still asserts no `runningBalance` in the 403 body.
+- `tests/Api.Tests/Features/Treasury/GetBalancesTests.cs` — rewritten to the full AC-306-E matrix, one
+  fact per cell:
+  - `A_site_engineer_assigned_to_project_A_reads_project_As_own_balances` — 200.
+  - `The_same_site_engineer_is_refused_project_Bs_balances` — 403, not assigned to B.
+  - `The_owner_reads_both_projects_ledgers` — 200/200, Owner's global reach.
+  - `Finance_assigned_to_project_A_reads_project_As_ledgers_but_not_project_Bs` — 200/403, Finance is
+    project-scoped too and needs its own assignment.
+  - `Hr_is_refused_project_As_ledgers_with_no_financial_field_in_the_payload` — 403, body excludes
+    `clientAdvance`.
+  - `The_owner_and_finance_read_the_company_account_balance` — 200/200, `TreasuryReadCompany` is
+    company-wide so Finance needs no assignment for this route.
+  - `A_site_engineer_is_refused_the_company_account_balance` — 403, no Site Engineer row on
+    `TreasuryReadCompany`.
+  - `Hr_is_refused_the_account_balance_with_no_financial_field_in_the_payload` — unchanged, 403, body
+    excludes `signedBalance`.
+  - Seeds extended with an Owner and a Finance user assigned to project A (`ProjectAssignment.Create`,
+    same helper shape already used for the Site Engineer).
+
+**Acceptance criteria, rescored:**
+
+- **AC-306-A** — met, unchanged. No write, no migration in this diff either.
+- **AC-306-B** — met at the Domain layer (`PostingStatementQueriesTests`), as before. Not re-proven
+  over HTTP here — not asked for by this dispatch, and the existing Domain-level proof already
+  satisfies the criterion as written (running balance correct across a reversal).
+- **AC-306-C** — met, unchanged.
+- **AC-306-D** — met, unchanged, still pinned by
+  `The_ledger_response_carries_no_field_whose_name_suggests_a_total`.
+- **AC-306-E** — **met.** A Site Engineer assigned to project A reads project A's balances and is
+  refused project B's; HR is refused both `ListPostings` and `GetBalances` routes with no financial
+  field in either payload; Owner and Finance read both. All eight new/changed HTTP tests listed above.
+- **AC-306-F** — met, unchanged.
+- **AC-306-G** — **build clean, warnings as errors; Domain.Tests green.** See Gates below for exactly
+  what ran and what could not.
+
+**Gates:**
+
+- `dotnet build KaffErp.sln -c Release --nologo` fails on file-copy only: `Kaff.Api.csproj` cannot
+  overwrite `src/Api/bin/Release/net10.0/Kaff.{Domain,Infrastructure}.dll` because a live `Kaff.Api`
+  process (pid 11964) on port 5080 holds them open — `MSB3027`/`MSB3021`, not a compiler error, and not
+  in this diff. Per this dispatch's own instruction, the process was left running and not killed.
+  Verified compilation is clean another way: `dotnet build tests\Api.Tests\Kaff.Api.Tests.csproj -c
+  Debug --nologo` — separate output folder, untouched by the lock — **0 warnings, 0 errors**, includes
+  every production and test file this story touches.
+- `Domain.Tests`: **298/298 green** (`dotnet build ... -c Release` then run the built
+  `Kaff.Domain.Tests.exe` directly — `dotnet test` reported "Zero tests ran" against this SDK/test
+  adapter combination for an unrelated reason, the exe run is the real result).
+- `Api.Tests` — **not run**, per this dispatch's explicit instruction not to run Api.Tests or touch
+  port 5080. Eight tests written across the two files (three unchanged/kept, five new or converted from
+  the empty-grant-list refusal shape to the positive AC-306-E case); the Scrum Master's own Api.Tests
+  gate is where they execute.
+
+**What was not done:** no HTTP-level test for AC-306-B's reversal scenario (see AC-306-B above — not
+asked for, and the Domain-level proof already covers the criterion). No change to `ListPostings`/
+`GetBalances` handlers, endpoints, or response shapes — this session touched only the catalogue and
+tests, as scoped.

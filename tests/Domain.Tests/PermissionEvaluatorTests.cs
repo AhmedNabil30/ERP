@@ -713,10 +713,10 @@ public sealed class PermissionEvaluatorTests
             [
                 Permission.SupplierManage, Permission.TreasuryPostCompany, Permission.AccountManage,
                 Permission.PeriodClose, Permission.SubcontractorTaxRegistrationEdit,
-                Permission.ProjectList,
+                Permission.ProjectList, Permission.TreasuryReadCompany,
             ],
             "Finance gains SubcontractorTaxRegistrationEdit, decisions.md D-147, "
-            + "and ProjectList, KAFF-400");
+            + "ProjectList, KAFF-400, and TreasuryReadCompany, decisions.md D-173");
 
         permissions.Should().NotContain(
             Permission.ProjectFinancialsEdit,
