@@ -174,6 +174,23 @@ public enum Permission
     /// <summary>spec.md §6.6 — month-end close. A closed period is immutable.</summary>
     PeriodClose = 43,
 
+    /// <summary>
+    /// Read the posting statement and derived balances for one project. KAFF-306.
+    /// </summary>
+    /// <remarks>
+    /// UNRESOLVED — questions-for-karim.md Q90, raised cutting KAFF-304: "Once a project's ledger
+    /// balances are held somewhere in the system, who is allowed to look at them — the Owner and
+    /// Finance only, or does a Site Engineer see his own project's numbers too?" Q90 is marked
+    /// blocking; KAFF-304 built only the Domain-level derivation query and left the HTTP surface
+    /// unbuilt for exactly this reason. This row's grant list is empty until Q90 is answered — see
+    /// <see cref="PermissionCatalogue"/>.
+    /// </remarks>
+    TreasuryReadProject = 44,
+
+    /// <summary>Read the posting statement and account balance for a company-level account. KAFF-306.</summary>
+    /// <remarks>Same open question as <see cref="TreasuryReadProject"/> — Q90.</remarks>
+    TreasuryReadCompany = 45,
+
     // ---- Portal ----
 
     /// <summary>spec.md §12 — the client sees his own project only.</summary>
@@ -250,4 +267,18 @@ public enum Permission
     /// owns exclusively. D-162 names only "an admin"; Backend's call, recorded in decisions.md.
     /// </remarks>
     DepartmentManage = 70,
+
+    /// <summary>
+    /// Browse every project the caller reaches. spec.md §9. KAFF-400.
+    /// </summary>
+    /// <remarks>
+    /// Company-wide, deliberately, and split off <see cref="ProjectRead"/> the same way
+    /// <see cref="ProjectCreate"/> split off <see cref="ProjectManage"/> (D-055 §3): a list request
+    /// cannot name the one project it is about, and <see cref="PermissionScope.ProjectScoped"/>
+    /// requires one. <see cref="ProjectRead"/> stays project-scoped for <c>GET /api/projects/{id}</c>.
+    /// Reach through this row is only "may call the endpoint" — the handler still filters the rows
+    /// returned to the projects the caller is actually assigned to (or every project, for the Owner),
+    /// mirroring <c>WhoAmI.Handler.ProjectsAsync</c>. See decisions.md, this story's entry.
+    /// </remarks>
+    ProjectList = 71,
 }

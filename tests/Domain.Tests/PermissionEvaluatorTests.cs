@@ -168,6 +168,12 @@ public sealed class PermissionEvaluatorTests
             Permission.TreasuryPostCompany,
             Permission.AccountManage,
             Permission.PeriodClose,
+
+            // Added 2026-09-25, KAFF-306. Both rows are Unresolved with empty grants (Q90), but
+            // TouchesMoney still applies — reading a ledger governs money exactly as writing one
+            // does, and an empty grant list is not an exemption from the flag.
+            Permission.TreasuryReadProject,
+            Permission.TreasuryReadCompany,
         ];
 
         // The list above is the expected set, written out rather than read from the flag — reading
@@ -707,8 +713,10 @@ public sealed class PermissionEvaluatorTests
             [
                 Permission.SupplierManage, Permission.TreasuryPostCompany, Permission.AccountManage,
                 Permission.PeriodClose, Permission.SubcontractorTaxRegistrationEdit,
+                Permission.ProjectList,
             ],
-            "Finance gains SubcontractorTaxRegistrationEdit, decisions.md D-147");
+            "Finance gains SubcontractorTaxRegistrationEdit, decisions.md D-147, "
+            + "and ProjectList, KAFF-400");
 
         permissions.Should().NotContain(
             Permission.ProjectFinancialsEdit,

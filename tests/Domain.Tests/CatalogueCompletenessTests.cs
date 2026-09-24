@@ -269,6 +269,29 @@ public sealed class CatalogueCompletenessTests
         definition.TouchesMoney.Should().BeFalse("a project's name, code and team size move no money");
     }
 
+    /// <summary>
+    /// SM-30 for <see cref="Permission.ProjectList"/>. KAFF-400, mirrors the ProjectCreate/ProjectManage
+    /// split (D-055 §3): a list request cannot name the one project it is about.
+    /// </summary>
+    [Fact]
+    public void ProjectList_is_company_wide_and_excludes_hr_and_head_of_design()
+    {
+        PermissionDefinition definition = PermissionCatalogue.Of(Permission.ProjectList);
+
+        definition.Scope.Should().Be(
+            PermissionScope.CompanyWide, "a list request cannot name the one project it is about");
+
+        definition.Grants.Select(grant => grant.Role).Should().BeEquivalentTo(
+            [Role.Owner, Role.Finance, Role.TechnicalOffice, Role.MarketingSales, Role.SiteEngineer],
+            "the same holders as ProjectRead, minus Role.HeadOfDesign — "
+            + "A_head_of_design_holds_exactly_one_permission pins that role to ProjectRead alone");
+
+        definition.Grants.Should().NotContain(
+            grant => grant.Role == Role.Hr,
+            "HR has zero financial visibility (D-044 ruling 2) and reaches its own project list "
+            + "through GET /api/auth/me's TeamProjectEntry (KAFF-105b, D-103), not this row");
+    }
+
     [Fact]
     public void Hr_cannot_reach_a_project_through_ProjectRead()
     {
@@ -368,9 +391,16 @@ public sealed class CatalogueCompletenessTests
         // PeriodClose is the last one. spec.md §6.6 requires a month-end close and does not say who
         // performs it, nor whether the Owner must approve it as a financial movement. Finance is
         // assumed, and a closed period is immutable — so the assumption is load-bearing.
+        //
+        // TreasuryReadProject / TreasuryReadCompany added 2026-09-25, KAFF-306. Unlike PeriodClose,
+        // these carry NO stated assumption — questions-for-karim.md Q90 says plainly that reading a
+        // treasury balance/statement over HTTP is blocked outright until answered, so the grant list
+        // is empty rather than a guess. See PermissionCatalogue.cs's remarks on both rows.
         Permission[] expected =
         [
             Permission.PeriodClose,
+            Permission.TreasuryReadProject,
+            Permission.TreasuryReadCompany,
         ];
 
         PermissionCatalogue.Unresolved

@@ -490,6 +490,20 @@ public static class PermissionCatalogue
                 "§6.6 — performing role UNRESOLVED, Finance assumed, see decisions.md D-012",
                 Unresolved: true, TouchesMoney: true),
 
+            // KAFF-306 — Q90 (questions-for-karim.md), raised cutting KAFF-304, is explicit that
+            // reading a treasury balance/statement over HTTP is BLOCKED outright until answered — not
+            // a case for a stated assumption the way PeriodClose above takes one. Grants therefore
+            // stay empty rather than guessing "Owner and Finance" or "plus the assigned Site
+            // Engineer" — either would be the invented-plausible-rule failure CLAUDE.md and this
+            // catalogue's own remarks warn about. The two routes exist (KAFF-306) and are reachable
+            // by nobody until this row gets a grant.
+            new(Permission.TreasuryReadProject, PermissionScope.ProjectScoped, [],
+                "§6 — WHO may read UNRESOLVED, see questions-for-karim.md Q90 (blocking)",
+                Unresolved: true, TouchesMoney: true),
+            new(Permission.TreasuryReadCompany, PermissionScope.CompanyWide, [],
+                "§6 — WHO may read UNRESOLVED, see questions-for-karim.md Q90 (blocking)",
+                Unresolved: true, TouchesMoney: true),
+
             // ---- Portal ----
 
             // spec.md §12: read and approve only, and never another client's data. The project access
@@ -514,6 +528,19 @@ public static class PermissionCatalogue
             // means nothing. See decisions.md D-049.
             new(Permission.AuditRead, PermissionScope.CompanyWide, [owner],
                 "§9 — ruled by Karim 2026-08-21, see decisions.md D-049"),
+
+            // KAFF-400. GET /api/projects cannot name the one project it is about, exactly the
+            // reasoning that split ProjectCreate off ProjectManage (D-055 §3) — so this row is
+            // CompanyWide and ProjectRead stays ProjectScoped for GET /api/projects/{id}. Same holder
+            // set ProjectRead grants minus Role.HeadOfDesign: CatalogueCompletenessTests pins
+            // HeadOfDesign to exactly one row (ProjectRead), spec.md §9 marking the role phase 2, and
+            // that pin must not move for this story. Reach through this row is "may call the
+            // endpoint" only — ListProjects.Handler still filters the rows returned to what the
+            // caller is actually assigned to (or every project, for the Owner), the same shape
+            // WhoAmI.Handler.ProjectsAsync already uses for KAFF-105b.
+            new(Permission.ProjectList, PermissionScope.CompanyWide,
+                [owner, finance, technicalOffice, marketing, new AccessGrant { Role = Role.SiteEngineer }],
+                "§9 — KAFF-400, mirrors the ProjectCreate/ProjectManage split, D-055 §3"),
         ];
 
         return rows.ToFrozenDictionary(row => row.Permission);
