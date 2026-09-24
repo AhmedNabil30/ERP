@@ -1,6 +1,6 @@
 # KAFF-930 · The interaction kit — row menu, detail panel, inline edit, states
 
-<!-- kaff id=KAFF-930 slice=design-system points=8 state=READY -->
+<!-- kaff id=KAFF-930 slice=design-system points=8 state=BUILT -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 8.
 **Depends on:** `KAFF-928` (`kaff-table` + `--kaff-columns`), `KAFF-929` (tokens, Plex, top bar).
@@ -131,3 +131,57 @@ selection. Anything under `src/Api/`.
 immediately with an 8-second undo. `ux/components.md` forbids the toast that would carry it and
 prefers the inline confirmation already shipped. This story builds the inline confirmation. Changing
 that is a UX policy decision, and it is yours.
+
+## Build notes (2026-09-24)
+
+Built all four components under `src/Web/src/app/shared/`: `kaff-row-menu`, `kaff-detail-panel`,
+`kaff-inline-edit`, `kaff-state`. No toast, no snackbar, no bulk-selection bar — none were built, per
+the story's own scope cut. No product screen changed; the only new file outside `shared/` is the
+dev-fixture route this story's own AC-930-J asks for.
+
+### The URL-state pattern, for `KAFF-931` to follow
+
+`catalogue-list-page.ts` already carries the pattern the brief's §4 describes, and it is worth
+naming explicitly rather than re-deriving per screen:
+
+- Filters, search text and the open record's id are bound as `input()`s via
+  `withComponentInputBinding` (`app.config.ts`), reading straight from `?search=`, `?status=`, etc.
+  Read them through a `computed()` that falls back to a default (`this.search() ?? ''`) — the router
+  sets a bound input to `undefined`, not to the `input()` default, when the query param is simply
+  absent from the URL, and treating `undefined` as the literal value crashes the first load on a
+  bookmarked URL with no query string at all.
+- Every write goes through one private `navigate()` helper:
+  `router.navigate([], { relativeTo: route, queryParams: patch, queryParamsHandling: 'merge' })`.
+  One helper, not one call site per filter — a second copy of `merge` semantics is how two screens
+  drift.
+- The screen's own local form state (a search draft box, a `kaff-detail-panel`'s open id before it
+  is committed to the URL) is seeded from the URL **once**, in the constructor, not kept in sync by a
+  reactive `effect()` that writes back to it. `catalogue-list-page.ts`'s own comment names the defect
+  this avoids: an `effect()` reassigning a signal `form(...)` already wraps corrupts signal-forms'
+  internal state on every URL change, mid-render, from outside the form system.
+- For `kaff-detail-panel` specifically: the caller keeps the open record's id in a query param (e.g.
+  `?open=<id>`), binds `[open]="openId() === row.id"`, and on `(closed)` calls `navigate({ open:
+  null })`. The panel component itself takes a plain `open: boolean` and knows nothing about the URL
+  — per the brief, ownership stays with the caller.
+
+### A premise in the brief that does not hold
+
+**AC-930-C reads as if the 390px sheet behaviour is provable by the same `.spec.ts` as the focus
+return.** It is not, for the same reason `kaff-table-row.spec.ts` already documents for its own
+mobile collapse rule: jsdom does not evaluate a `@media (width < 48rem)` query the way a real
+viewport does. The spec here (`kaff-detail-panel.spec.ts`) proves focus management — moves into the
+panel on open, returns to the opener on Escape — and the 390px sheet is proven instead by the
+AC-930-J screenshots (`.design/shots/kaff-930-mobile-*.png`), which show the panel as a full-viewport
+sheet covering the rest of the fixture at that width. This matches the existing house convention;
+flagging it so the next session does not read AC-930-C as asking for something jsdom cannot do.
+
+### What was not done
+
+- No product screen was touched. `KAFF-931` wires these onto `bab-tree-page` and the others.
+- The undo-vs-confirm policy question (this story's own "Questions for Nabil" section) was not
+  decided — still open, still Nabil's or the BA's call.
+- No permission logic — these are presentation components; the server-side checks these will
+  eventually front are unrelated to this story.
+- `kaff-row-menu`'s close-on-route-change takes `Router` as an **optional** injection
+  (`inject(Router, { optional: true })`) so a spec can render the component without providing a
+  router. This is a convenience, not a tested guarantee — no spec exercises the route-change path.

@@ -648,8 +648,8 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 | 0 |
 | 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 0 | 0 | 36 | 61 |
-| ⚪ READY / COMMITTED — refined, not built | 0 | 0 | 5 | 21 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 0 | 36 | 69 |
+| ⚪ READY / COMMITTED — refined, not built | 0 | 0 | 5 | 13 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 0 | 0 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 | 0 |
 | **total** | **127** | **58** | **41** | **82** |
@@ -738,7 +738,7 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-927](stories/design-system/KAFF-927-locale-switch-segmented.md) | design-system | 1 | 🟡 BUILT | none | `-` | - | Locale switch as one segmented control, not two buttons |
 | [KAFF-928](stories/design-system/KAFF-928-one-table-shell.md) | design-system | 5 | 🟡 BUILT | none | `-` | - | One table shell — columns that actually line up, once, for every list |
 | [KAFF-929](stories/design-system/KAFF-929-the-page-around-the-table.md) | design-system | 8 | 🟡 BUILT | none | `-` | - | The page around the table — top bar, type, and money density |
-| [KAFF-930](stories/design-system/KAFF-930-interaction-kit.md) | design-system | 8 | ⚪ READY | none | `-` | - | The interaction kit — row menu, detail panel, inline edit, states |
+| [KAFF-930](stories/design-system/KAFF-930-interaction-kit.md) | design-system | 8 | 🟡 BUILT | none | `-` | - | The interaction kit — row menu, detail panel, inline edit, states |
 | [KAFF-931](stories/design-system/KAFF-931-apply-the-kit-to-the-old-screens.md) | design-system | 13 | ⚪ READY | none | `-` | - | Put the kit on the screens that exist today |
 
 <!-- END GENERATED -->
