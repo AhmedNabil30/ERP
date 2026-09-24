@@ -1,0 +1,29 @@
+<button
+  #trigger
+  type="button"
+  class="trigger"
+  aria-haspopup="menu"
+  [attr.aria-expanded]="open()"
+  [attr.aria-label]="i18n.t(triggerLabelKey())"
+  [attr.data-testid]="testId()"
+  (click)="onTriggerClick()"
+  (keydown)="onTriggerKeydown($event)"
+>⋯</button>
+
+@if (open()) {
+  <div class="menu" role="menu" [attr.aria-label]="i18n.t(triggerLabelKey())">
+    @for (item of items(); track item.action; let i = $index) {
+      <button
+        #menuItemRef
+        type="button"
+        role="menuitem"
+        class="menu-item"
+        [class.menu-item--danger]="item.tone === 'danger'"
+        [disabled]="item.disabled ?? false"
+        [attr.data-testid]="testId() ? testId() + '-' + item.action : null"
+        (click)="onItemClick(item)"
+        (keydown)="onMenuKeydown($event, i)"
+      >{{ i18n.t(item.labelKey) }}</button>
+    }
+  </div>
+}

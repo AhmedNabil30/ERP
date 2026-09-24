@@ -1,0 +1,77 @@
+/* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). */
+
+:host {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Visible on hover and on :focus-visible, per KAFF-930. `opacity`, never `display: none` — a
+   `display: none` trigger drops out of the tab order and the accessibility tree, which is the trap
+   this rule exists to stop. The trigger stays hit-testable and focusable at rest. */
+.trigger {
+  min-inline-size: var(--tap-target);
+  min-block-size: var(--tap-target);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-md);
+  font-size: var(--text-lg);
+  line-height: 1;
+  color: var(--color-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+:host(:hover) .trigger,
+.trigger:focus-visible,
+.trigger[aria-expanded='true'] {
+  opacity: 1;
+}
+
+.trigger:hover {
+  background: var(--color-surface);
+}
+
+.menu {
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-1));
+  inset-inline-end: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 10rem;
+  padding: var(--space-1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elevation-2);
+}
+
+.menu-item {
+  min-block-size: var(--tap-target);
+  padding-inline: var(--space-3);
+  text-align: start;
+  font: inherit;
+  color: var(--color-text);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.menu-item:hover:not(:disabled) {
+  background: var(--color-background);
+}
+
+.menu-item:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* A danger item is text on the normal surface, never a filled red button (KAFF-930). */
+.menu-item--danger {
+  color: var(--color-danger);
+}
