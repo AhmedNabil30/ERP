@@ -41,20 +41,6 @@
   color: var(--color-muted);
 }
 
-.chip {
-  min-block-size: var(--tap-target);
-  padding-inline: var(--space-4);
-  font: inherit;
-  color: var(--color-muted);
-  cursor: pointer;
-  background: transparent;
-  border: none;
-  border-radius: 999px;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-}
-
 /* KAFF-928: `kaff-table` is the card host now — its own border, radius, background and shadow
    replace what `.rows` used to draw per screen. */
 .rows {
@@ -81,9 +67,43 @@
   min-inline-size: 0;
 }
 
+/* AC-931-A: the disclosure control sits directly before the name, in the same grid cell, so the
+   tree reads as one column — not a separate track that would misalign with `--bab-depth`'s indent. */
+.row-name-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.disclosure {
+  flex: 0 0 auto;
+  min-inline-size: var(--tap-target);
+  min-block-size: var(--tap-target);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.disclosure:hover {
+  background: var(--color-background);
+}
+
+.disclosure--spacer {
+  cursor: default;
+}
+
 .row-name {
   font-size: var(--text-md);
   min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* KAFF-925: the column header now names this — no per-row label duplicating it. */
@@ -130,34 +150,6 @@
   border-radius: var(--radius-md);
   background: var(--color-background);
   color: var(--color-text);
-}
-
-.empty {
-  padding: var(--space-5) var(--space-4);
-  text-align: center;
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-lg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.empty-title {
-  margin: 0;
-  font-weight: 600;
-}
-
-.loading,
-.refusal {
-  margin: 0;
-  padding: var(--space-3);
-}
-
-.refusal {
-  border: 1px solid var(--color-danger);
-  border-radius: var(--radius-md);
-  color: var(--color-danger);
 }
 
 /* Visually hidden, not display:none — screen readers still see it (apple-erp-design §7.1). */

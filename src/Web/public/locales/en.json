@@ -610,6 +610,8 @@
   "supplier.confirm.archive.body": "They leave the working list and their record stays intact.",
 
   "a11y.row_actions": "Row actions",
+  "a11y.expand_row": "Expand row",
+  "a11y.collapse_row": "Collapse row",
   "devFixtures.kaff930.heading": "Interaction kit — dev fixture",
   "devFixtures.kaff930.rowMenu.edit": "Edit",
   "devFixtures.kaff930.rowMenu.archive": "Archive",

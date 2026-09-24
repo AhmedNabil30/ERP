@@ -610,6 +610,8 @@
   "supplier.confirm.archive.body": "سيخرج من القائمة الحالية ويبقى سجله كما هو.",
 
   "a11y.row_actions": "إجراءات الصف",
+  "a11y.expand_row": "توسيع الصف",
+  "a11y.collapse_row": "طي الصف",
   "devFixtures.kaff930.heading": "عدة التفاعل — نموذج للتطوير",
   "devFixtures.kaff930.rowMenu.edit": "تعديل",
   "devFixtures.kaff930.rowMenu.archive": "أرشفة",
