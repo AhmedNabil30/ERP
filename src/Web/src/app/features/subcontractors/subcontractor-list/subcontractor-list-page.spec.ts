@@ -156,10 +156,16 @@ describe('SubcontractorListPage · archive', () => {
   });
 
   it('calls the archive route exactly once and reloads', async () => {
+    // KAFF-931: the archive trigger now lives inside `kaff-row-menu` —
+    // `subcontractor-row-menu-SUB-0001` opens it, `subcontractor-row-menu-SUB-0001-archive` is the
+    // item (the kit computes an item's own test id as `{testId}-{action}`).
     const api = new FakeSubcontractorsApi();
     const fixture = await createFixture(api);
 
-    fixture.nativeElement.querySelector('[data-testid="subcontractor-archive-SUB-0001"]').click();
+    fixture.nativeElement.querySelector('[data-testid="subcontractor-row-menu-SUB-0001"]').click();
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('[data-testid="subcontractor-row-menu-SUB-0001-archive"]').click();
     fixture.detectChanges();
 
     fixture.nativeElement.querySelector('[data-testid="subcontractor-archive-confirm-SUB-0001"]').click();

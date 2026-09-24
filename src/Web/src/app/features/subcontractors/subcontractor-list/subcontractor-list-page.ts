@@ -10,6 +10,8 @@ import {
   SubcontractorSummary,
   SubcontractorsApi,
 } from '../../../core/subcontractors/subcontractors.api';
+import { KaffRowMenu, RowMenuItem } from '../../../shared/kaff-row-menu/kaff-row-menu';
+import { KaffState } from '../../../shared/kaff-state/kaff-state';
 
 /** `S-028`'s three server states, matching `EmployeeListPage`'s own shape. */
 const FILTERS: readonly SubcontractorListFilter[] = ['active', 'archived', 'all'];
@@ -23,10 +25,15 @@ const FILTERS: readonly SubcontractorListFilter[] = ['active', 'archived', 'all'
  * **No rate, no price, no bid of any kind on this row** — AC-211-H, AC-211-L: only the retention
  * percentage, which is a different figure with a different source (§5.1) than the rate card §1 and
  * D-139 §4 keep off this record entirely.
+ *
+ * **KAFF-931**: the row's edit chip and filled-red archive button collapse into one `kaff-row-menu`
+ * (danger is text, never a filled button). Loading/empty(-filtered)/refusal render through `kaff-state`.
+ * This screen predates `KAFF-928`'s `kaff-table` shell and stays on its own hand-rolled row markup —
+ * out of this story's scope, which applies the `KAFF-930` kit, not a table-shell migration.
  */
 @Component({
   selector: 'kaff-subcontractor-list-page',
-  imports: [RouterLink],
+  imports: [RouterLink, KaffRowMenu, KaffState],
   templateUrl: './subcontractor-list-page.html',
   styleUrl: './subcontractor-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -108,6 +115,25 @@ export class SubcontractorListPage {
 
   protected isArchiving(id: string): boolean {
     return this.archivingId() === id;
+  }
+
+  protected rowMenuItems(subcontractor: SubcontractorSummary): readonly RowMenuItem[] {
+    const items: RowMenuItem[] = [{ labelKey: 'action.edit', action: 'edit' }];
+    if (subcontractor.isActive) {
+      items.push({ labelKey: 'subcontractor.archive_action', action: 'archive', tone: 'danger' });
+    }
+    return items;
+  }
+
+  protected async onRowMenuSelected(subcontractor: SubcontractorSummary, action: string): Promise<void> {
+    switch (action) {
+      case 'edit':
+        await this.router.navigate(['/subcontractors', subcontractor.id]);
+        break;
+      case 'archive':
+        this.onStartArchive(subcontractor.id);
+        break;
+    }
   }
 
   protected onStartArchive(id: string): void {

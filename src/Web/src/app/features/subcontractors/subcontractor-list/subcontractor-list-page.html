@@ -18,11 +18,9 @@
   </div>
 
   @if (failure(); as key) {
-    <p class="refusal" role="alert" data-testid="subcontractor-list-failure">{{ i18n.t(key) }}</p>
+    <kaff-state mode="refusal" [bodyKey]="key" testId="subcontractor-list-failure" />
   } @else if (loading()) {
-    <p class="loading" role="status" aria-live="polite" data-testid="subcontractor-list-loading">
-      {{ i18n.t('subcontractor.loading') }}
-    </p>
+    <kaff-state mode="loading" titleKey="subcontractor.loading" testId="subcontractor-list-loading" />
   } @else if (subcontractors().length > 0) {
     <ul class="rows" data-testid="subcontractor-rows">
       @for (subcontractor of subcontractors(); track trackRow($index, subcontractor)) {
@@ -54,58 +52,47 @@
               }
             }
 
-            <a class="chip" [routerLink]="['/subcontractors', subcontractor.id]" [attr.data-testid]="'subcontractor-edit-' + subcontractor.code">
-              {{ i18n.t('action.edit') }}
-            </a>
-
-            @if (subcontractor.isActive) {
-              @if (confirmingArchiveId() === subcontractor.id) {
-                <p class="row-confirm" [attr.data-testid]="'subcontractor-archive-body-' + subcontractor.code">
-                  {{ i18n.t('subcontractor.archive_confirm') }}
-                </p>
-                <button
-                  type="button"
-                  class="danger-button"
-                  [disabled]="isArchiving(subcontractor.id)"
-                  [attr.data-testid]="'subcontractor-archive-confirm-' + subcontractor.code"
-                  (click)="onConfirmArchive(subcontractor.id)"
-                >
-                  {{ i18n.t('subcontractor.archive_action') }}
-                </button>
-                <button
-                  type="button"
-                  class="chip"
-                  [attr.data-testid]="'subcontractor-archive-cancel-' + subcontractor.code"
-                  (click)="onCancelArchive()"
-                >
-                  {{ i18n.t('action.cancel') }}
-                </button>
-              } @else {
-                <button
-                  type="button"
-                  class="danger-button"
-                  [attr.data-testid]="'subcontractor-archive-' + subcontractor.code"
-                  (click)="onStartArchive(subcontractor.id)"
-                >
-                  {{ i18n.t('subcontractor.archive_action') }}
-                </button>
-              }
+            @if (confirmingArchiveId() === subcontractor.id) {
+              <p class="row-confirm" [attr.data-testid]="'subcontractor-archive-body-' + subcontractor.code">
+                {{ i18n.t('subcontractor.archive_confirm') }}
+              </p>
+              <button
+                type="button"
+                class="danger-button"
+                [disabled]="isArchiving(subcontractor.id)"
+                [attr.data-testid]="'subcontractor-archive-confirm-' + subcontractor.code"
+                (click)="onConfirmArchive(subcontractor.id)"
+              >
+                {{ i18n.t('subcontractor.archive_action') }}
+              </button>
+              <button
+                type="button"
+                class="chip"
+                [attr.data-testid]="'subcontractor-archive-cancel-' + subcontractor.code"
+                (click)="onCancelArchive()"
+              >
+                {{ i18n.t('action.cancel') }}
+              </button>
+            } @else {
+              <kaff-row-menu
+                [items]="rowMenuItems(subcontractor)"
+                triggerLabelKey="a11y.row_actions"
+                [testId]="'subcontractor-row-menu-' + subcontractor.code"
+                (selected)="onRowMenuSelected(subcontractor, $event)"
+              />
             }
           </div>
         </li>
       }
     </ul>
   } @else if (statusFilter() !== 'active') {
-    <div class="empty" role="status" aria-live="polite" data-testid="subcontractor-list-empty-filtered">
-      <p class="empty-title">{{ i18n.t('subcontractor.empty_filtered') }}</p>
-    </div>
+    <kaff-state mode="filtered-empty" titleKey="subcontractor.empty_filtered" testId="subcontractor-list-empty-filtered" />
   } @else {
-    <div class="empty" role="status" aria-live="polite" data-testid="subcontractor-list-empty">
-      <p class="empty-title">{{ i18n.t('subcontractor.empty') }}</p>
-      <a class="create" routerLink="/subcontractors/new" data-testid="subcontractor-create">
+    <kaff-state mode="empty" titleKey="subcontractor.empty" testId="subcontractor-list-empty">
+      <a stateAction class="create" routerLink="/subcontractors/new" data-testid="subcontractor-create">
         {{ i18n.t('subcontractor.action.create') }}
       </a>
-    </div>
+    </kaff-state>
   }
 
   @if (subcontractors().length > 0) {
