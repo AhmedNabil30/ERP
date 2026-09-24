@@ -159,3 +159,143 @@ other.
 `user-list`, `department-settings`, `worker-pool`, `audit-trail` — all nine remaining screens in the
 brief are untouched, still on their pre-`KAFF-930` markup. Next session should read this story from
 the top, not resume from a half-remembered state.
+
+## Build notes (2026-09-25) — all nine remaining screens
+
+**State left at `READY`, not `BUILT`.** All nine screens are code-complete, gated (`ng build` clean,
+`npm test` 28/28 files · 136/136 tests, `BidiGeometryTests` 2/2), and committed, one commit per
+screen. The reason this is not `BUILT`: **`worker-pool` has no screenshot**, and `AC-931-J` is explicit
+that a visible acceptance criterion without an image does not pass. That gap is explained below — it
+is not a defect in this session's work, but it is real, and the trailer says so rather than claiming
+a screenshot that does not exist.
+
+Commits, in order: `aba97aa` (catalogue-list), `86bbe8b` (client-list), `6f8d39d` (employee-list),
+`2b5815c` (user-list), `bd80cd5` (subcontractor-list), `87ada9b` (supplier-list), `b8412ff`
+(department-settings), `3de8216` (worker-pool), `9e2c21f` (audit-trail).
+
+### Backend was down for part of this session, not by this session's doing
+
+The stack was not running at start despite the dispatch note saying it was — `dotnet run --project
+src\Api` failed with `CS0246` in `src/Api/Features/Treasury/GetBalances/Handler.cs`, from the two
+backend agents' own untracked, in-progress work (`git status` showed `src/Api/Features/Treasury/
+GetBalances/`, `ListPostings/` as `??`, not staged by this session). Per the dispatch's own
+instruction, `src/Api` was not touched to fix it — the API was restarted once it built again (the
+other agents' own progress, not a repair made here) and every gate and screenshot below was taken
+against the real, running stack once it came up. `ng build`/`npm test` do not depend on the API and
+were run throughout regardless.
+
+### Per screen
+
+**`catalogue-list`** — row-menu (archive/unarchive, danger text), `kaff-detail-panel` (code,
+description, unit, cost price via `kaff-inline-edit`, derived-sell-price note; open item in
+`?item=<code>`), `kaff-state`. `variant="danger"`: 1 before, 1 after (the kept archive-confirm).
+`data-testid`: 15 before, 17 after — two triggers renamed (below), everything else added, nothing
+removed. **Got a panel** — it is the screen the brief names explicitly and the archive dialog + a
+genuine quick-edit (cost price) both already existed at the row.
+**No recent-changes list**: `AuditApi.list` is Owner-only (`Permission.AuditRead`); this screen is
+`CatalogueManage` (Technical Office + Owner). Wiring it in would 403 for Technical Office, the exact
+role the panel is for. Flagged, not built.
+
+**`client-list`** — `kaff-state`; search moved into `?search=`, merged with `?status=` (was signal-only
+before, the same `F-127-1` gap `catalogue-list-page.ts` already fixed for itself). `data-testid`: 11/11,
+unchanged. **No panel, no row-menu** — no per-row action exists on this screen today (archive lives on
+the client form's own danger zone) and no quick-edit for a panel to hold.
+
+**`employee-list`** — row-menu (edit + archive, danger text). `variant="danger"`: 2 before, 1 after.
+`data-testid`: 10/10. **No panel** — nothing here is a single-scalar quick-edit beyond what the full
+edit page already does.
+
+**`user-list`** — `kaff-state` only. No row-menu, no panel: no per-row action exists (no archive on
+this screen; the row navigates straight to the edit page as before).
+
+**`subcontractor-list`** and **`supplier-list`** — row-menu (edit + archive, danger text), `kaff-state`.
+Both screens predate `KAFF-928`'s `kaff-table` shell and stay on their own hand-rolled row markup —
+migrating to `kaff-table` is out of this story's scope (it applies the `KAFF-930` kit, not a
+table-shell migration). `data-testid`: 9/9 each. **Both had `.spec.ts` files that referenced the old
+archive-trigger id directly** (`subcontractor-archive-SUB-0001`, `supplier-archive-SUP-0001`) — the
+only two screens in this story where that grep came back non-empty. Both specs updated to open the
+row menu first, same behaviour under test, new id path. **No panel** on either — no quick-edit beyond
+the full edit page.
+
+**`department-settings`** — row-menu (edit/archive/unarchive). `variant="danger"`: 2 before, 1 after.
+`data-testid`: 16/16. **No panel** — the row's own in-place two-field edit (`nameAr`+`nameEn` together)
+is already this screen's quick-edit and does not fit `kaff-inline-edit` (one scalar, not two at once),
+so it stays the row-level form it already was. Its own `.spec.ts` referenced all three old trigger ids
+directly (`department-edit-d-1`, `department-archive-d-1`, `department-unarchive-d-2`) — updated to
+open the row menu first.
+
+**`worker-pool`** — `kaff-state` only, **by judgment call, not the brief's default**. At any moment a
+row carries exactly one primary action (`Engage` or `Close`), never a band of several, and neither is
+danger-toned — the "row full of buttons with a red one" shape `kaff-row-menu` exists to collapse is not
+present here. The rating control is a labelled number input plus its own submit button, which does not
+fit a menu item. `data-testid`: 6/6. **No panel** either.
+
+**`audit-trail`** — `kaff-state` only, per the brief's own instruction for this screen (an audit record
+is immutable — no row action, no quick-edit). The record panel this screen already opens on a row click
+is unrelated to `kaff-detail-panel` and was left exactly as it was. `data-testid`: 13/13.
+
+### Test ids renamed — the bab-tree precedent, applied five more times
+
+`KAFF-930`'s `kaff-row-menu` computes a menu item's own test id as `{testId}-{action}` — not a
+free-standing id a caller can choose. Every screen that had a bare `{feature}-archive-{code}` (or
+`-edit-`, `-unarchive-`) trigger button hit the same conflict bab-tree hit first: that id cannot both
+keep its exact old spelling **and** live inside the row menu `AC-931-C` requires. Resolved the same way
+each time — renamed to `{feature}-row-menu-{code}-{action}` — after grepping `tests\` and `qa\` for the
+old id first, every time, and reporting what turned up:
+
+- `catalogue-archive-{code}` / `catalogue-unarchive-{code}` → `catalogue-row-menu-{code}-archive` /
+  `-unarchive`. No hit in `tests\`/`qa\`.
+- `employee-edit-{code}` / `employee-archive-{code}` → `employee-row-menu-{code}-edit` / `-archive`.
+  No hit.
+- `subcontractor-edit-{code}` / `subcontractor-archive-{code}` → `subcontractor-row-menu-{code}-edit` /
+  `-archive`. **Hit**: `subcontractor-list-page.spec.ts` clicked `subcontractor-archive-SUB-0001`
+  directly — updated.
+- `supplier-edit-{code}` / `supplier-archive-{code}` → `supplier-row-menu-{code}-edit` / `-archive`.
+  **Hit**: `supplier-list-page.spec.ts` clicked `supplier-archive-SUP-0001` directly — updated.
+- `department-edit-{id}` / `department-archive-{id}` / `department-unarchive-{id}` →
+  `department-row-menu-{id}-edit` / `-archive` / `-unarchive`. **Hit**: all three referenced directly
+  in `department-settings-page.spec.ts` — updated.
+
+`qa\` does not exist as a directory in this repo; every grep above covered `tests\` and the story text
+itself (which is where the brief's own six catalogue-archive ids are cited from) and found nothing
+else.
+
+### Gates, as measured
+
+- `ng build`: clean, exit 0, every time it was run across this session (8 separate runs, one per
+  screen plus one before starting).
+- `npm test` (`ng test --watch=false`): **28/28 test files, 136/136 tests**, green on every run,
+  including the final one after all nine screens.
+- `BidiGeometryTests`: **2/2**, run directly against the already-built `Kaff.E2E.Tests.exe` with
+  `KAFF_E2E_BASE_URL=http://localhost:4200`, once the stack was up. `Api.Tests` was not run — the
+  Scrum Master holds that gate, per the dispatch note.
+- Screenshots: `.design/shots/kaff-931-{screen}-{desktop|390}-{light|dark}.png` for all eight reachable
+  screens (32 images), plus `kaff-931-catalogue-panel-open.png` (the detail panel open via
+  `?item=CON-1001`, proving the URL round-trip). Checked each for RTL correctness, dark-mode tokens,
+  and no horizontal overflow at 390px — none found.
+
+### `worker-pool` could not be screenshotted — a pre-existing gap, not new
+
+`worker-pool`'s route is `/projects/:projectId/day-labour`, and **there is no project in this system to
+put in that URL.** `POST /api/projects` does not exist (`scripts/seed-demo.ps1` probes it and expects a
+404, by design — this repo's own `CLAUDE.md` lists "the project workspace" among the screens with no
+API). Signing in as the seeded Owner (`owner_demo`) and loading the route with a made-up GUID renders
+`ليس لديك صلاحية لهذا الإجراء` (forbidden) — `DayLabourSiteManage` is project-scoped and Owner's global
+reach does not cover a project that does not exist to be assigned to. This was true before this
+session touched the screen and is true after; it is not something the `KAFF-930` kit work caused or
+could fix. Flagged rather than worked around with a raw SQL project insert, which would risk the
+account-tree/treasury seeding this repo's own money rules make explicit (`ProjectAccountSetCreator`,
+`AccountTreeSeeder`) — not a shortcut to take on a system with real money in it, and not something a
+design-system story should be improvising.
+
+**`worker-pool`'s code change (`kaff-state` swap) is done, built, and tested** — `ng build`/`npm test`
+both cover it — but its acceptance criteria that need an image (`AC-931-H`, `AC-931-J`) are **not
+proven**, and are reported as not proven rather than assumed passing.
+
+### What is left
+
+Nothing coded. The one open item is `worker-pool`'s screenshot, and it is blocked on a Projects API
+that is out of this story's scope to build. Once a project exists in this system (by any means — a
+future Projects slice, or a one-off seed the Projects module owns), the existing `kaff-state` swap on
+this screen should be screenshotted the same way the other eight were, and the trailer moved to
+`BUILT` at that point, not before.
