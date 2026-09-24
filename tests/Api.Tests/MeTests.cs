@@ -123,10 +123,10 @@ public sealed class MeTests : IAsyncLifetime
         permissions.Should().BeEquivalentTo(
             [
                 "SupplierManage", "TreasuryPostCompany", "AccountManage", "PeriodClose",
-                "SubcontractorTaxRegistrationEdit",
+                "SubcontractorTaxRegistrationEdit", "ProjectList",
             ],
             "these are Finance's only CompanyWide catalogue rows today (rule 4/5); "
-            + "decisions.md D-147 adds SubcontractorTaxRegistrationEdit");
+            + "decisions.md D-147 adds SubcontractorTaxRegistrationEdit, KAFF-400 adds ProjectList");
 
         permissions.Should().NotContain(
             "ProjectFinancialsEdit",
