@@ -27,9 +27,9 @@
   </div>
 
   @if (failure(); as key) {
-    <p class="refusal" role="alert" data-testid="user-list-failure">{{ i18n.t(key) }}</p>
+    <kaff-state mode="refusal" [bodyKey]="key" testId="user-list-failure" />
   } @else if (loading()) {
-    <p class="loading" data-testid="user-list-loading">{{ i18n.t('users.loading') }}</p>
+    <kaff-state mode="loading" titleKey="users.loading" testId="user-list-loading" />
   } @else if (filteredUsers().length > 0) {
     <kaff-table [columns]="rowColumns" [columnDefs]="headerColumns" testId="user-table-header" data-testid="user-table-shell">
       <ul class="rows" data-testid="user-rows">
@@ -75,9 +75,6 @@
   } @else {
     <!-- S-006: "should be unreachable once S-002 is settled" — the Owner reading this list is in it.
          Rendered anyway, because an empty area is the one thing spec.md §4.5's principle forbids. -->
-    <div class="empty" data-testid="user-list-empty">
-      <p class="empty-title">{{ i18n.t('users.empty.title') }}</p>
-      <p class="empty-body">{{ i18n.t('users.empty.body') }}</p>
-    </div>
+    <kaff-state mode="empty" titleKey="users.empty.title" bodyKey="users.empty.body" testId="user-list-empty" />
   }
 </section>

@@ -121,32 +121,5 @@
   font-size: var(--text-xs);
 }
 
-.empty {
-  padding: var(--space-5) var(--space-4);
-  text-align: center;
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-lg);
-}
-
-/* KAFF-926 finding 8: 0.35rem has no exact `--space-*` match. Nearest is `--space-1` (0.25rem,
-   0.10rem off) over `--space-2` (0.5rem, 0.15rem off). */
-.empty-title {
-  margin: 0 0 var(--space-1);
-  font-weight: 600;
-}
-
-.empty-body {
-  margin: 0;
-  opacity: 0.8;
-}
-
-.loading,
-.refusal {
-  margin: 0;
-  padding: var(--space-3);
-}
-
-.refusal {
-  border: 1px solid var(--color-danger);
-  border-radius: var(--radius-md);
-}
+/* KAFF-931: loading/empty/refusal render through `kaff-state` now — its own stylesheet draws these,
+   this file no longer needs to. */

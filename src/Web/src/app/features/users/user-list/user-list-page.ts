@@ -24,6 +24,7 @@ import {
   KaffSegmentedFilter,
   SegmentedFilterOption,
 } from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
+import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { KaffTable } from '../../../shared/kaff-table/kaff-table';
 import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
@@ -61,10 +62,23 @@ const FILTERS: readonly UserListFilter[] = ['active', 'archived', 'all'];
  * **The role and department resolve from the catalogue**, through the exhaustive `switch` of
  * `enum-keys.ts` rather than a key built by concatenation — `ux/rtl-and-i18n.md` §6 hard rule 4, so a
  * tenth role is a compile error under `strictTemplates` and not a raw key on screen.
+ *
+ * **KAFF-931**: loading/empty/refusal render through `kaff-state`. No `kaff-row-menu` and no detail
+ * panel on this screen — there is no per-row action here today (deactivate/reactivate lives on the
+ * user form's own danger zone) and no genuine quick-edit for a panel to hold; the row still opens the
+ * full edit page directly.
  */
 @Component({
   selector: 'kaff-user-list-page',
-  imports: [RouterLink, KaffTable, KaffTableRow, KaffBadge, KaffButton, KaffSegmentedFilter],
+  imports: [
+    RouterLink,
+    KaffBadge,
+    KaffButton,
+    KaffSegmentedFilter,
+    KaffState,
+    KaffTable,
+    KaffTableRow,
+  ],
   templateUrl: './user-list-page.html',
   styleUrl: './user-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
