@@ -42,6 +42,7 @@ public sealed class ListPostingsTests : IAsyncLifetime
     private Guid _financeOnProjectA;
     private Guid _hr;
     private Guid _accountId;
+    private Guid _projectAccountId;
 
     public ListPostingsTests(PostgresDatabase database) => _database = database;
 
@@ -105,7 +106,7 @@ public sealed class ListPostingsTests : IAsyncLifetime
     public async Task A_finance_user_assigned_to_the_project_reads_the_project_statement()
     {
         HttpResponseMessage response = await GetAsync(
-            new Uri($"/api/projects/{_projectA}/treasury/postings?accountId={_accountId}", UriKind.Relative),
+            new Uri($"/api/projects/{_projectA}/treasury/postings?accountId={_projectAccountId}", UriKind.Relative),
             _financeOnProjectA);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK, "D-173: Finance holds TreasuryReadProject");
@@ -183,10 +184,18 @@ public sealed class ListPostingsTests : IAsyncLifetime
         Account safe = Account.Create(
             AccountType.Safe, UniqueNames.Code("LP-SAFE"), "خزينة", "Safe", Currency.Egp, Today).Value;
 
+        // A project-scoped account, opened the same way KAFF-400's CreateProject handler opens one —
+        // the project route's own AccountNotFound guard refuses an account outside the route's project
+        // (Handler.cs's own remarks), so the project-route test needs an account that is actually
+        // project A's, not the company Safe.
+        IReadOnlyList<Account> projectAccounts = ProjectAccountSetFactory.Create(
+            projectA, existingTypes: new HashSet<AccountType>(), Today).Value;
+
         context.Clients.Add(client);
         context.Projects.Add(projectA);
         context.Users.AddRange(owner, financeOnProjectA, hr);
         context.Accounts.Add(safe);
+        context.Accounts.AddRange(projectAccounts);
 
         await context.SaveChangesAsync(Ct);
 
@@ -200,5 +209,6 @@ public sealed class ListPostingsTests : IAsyncLifetime
         _financeOnProjectA = financeOnProjectA.Id;
         _hr = hr.Id;
         _accountId = safe.Id;
+        _projectAccountId = projectAccounts[0].Id;
     }
 }
