@@ -241,7 +241,8 @@ public sealed class GetBalancesTests : IAsyncLifetime
             UniqueNames.Code("gb-fin-a"), "gb-fin-a", UniqueNames.Phone(), Role.Finance, Now, WellKnownDepartments.FinanceId).Value;
 
         User siteEngineerOnProjectA = User.Create(
-            UniqueNames.Code("gb-eng-a"), "gb-eng-a", UniqueNames.Phone(), Role.SiteEngineer, Now, WellKnownDepartments.OperationsId).Value;
+            UniqueNames.Code("gb-eng-a"), "gb-eng-a", UniqueNames.Phone(), Role.SiteEngineer, Now,
+            WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical).Value;
 
         User hr = User.Create(
             UniqueNames.Code("gb-hr"), "gb-hr", UniqueNames.Phone(), Role.Hr, Now, WellKnownDepartments.HrId).Value;
@@ -259,7 +260,7 @@ public sealed class GetBalancesTests : IAsyncLifetime
         context.ProjectAssignments.Add(ProjectAssignment.Create(
             projectA.Id, financeOnProjectA, AssignmentLevel.Standard, Guid.CreateVersion7(), Now).Value);
         context.ProjectAssignments.Add(ProjectAssignment.Create(
-            projectA.Id, siteEngineerOnProjectA, AssignmentLevel.Standard, Guid.CreateVersion7(), Now).Value);
+            projectA.Id, siteEngineerOnProjectA, AssignmentLevel.Junior, Guid.CreateVersion7(), Now).Value);
 
         await context.SaveChangesAsync(Ct);
 
