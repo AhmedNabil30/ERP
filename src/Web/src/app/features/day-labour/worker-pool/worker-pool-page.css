@@ -137,8 +137,7 @@
   font-weight: 600;
 }
 
-.row-refusal,
-.refusal {
+.row-refusal {
   margin: 0;
   padding: var(--space-2) var(--space-3);
   color: var(--color-danger);
@@ -146,15 +145,8 @@
   border-radius: var(--radius-md);
 }
 
-.empty {
-  padding: var(--space-4);
-  text-align: center;
-}
-
-.empty-title {
-  margin: 0;
-  opacity: 0.75;
-}
+/* KAFF-931: loading/empty/refusal render through `kaff-state` now — its own stylesheet draws these,
+   this file no longer needs to. */
 
 .visually-hidden {
   position: absolute;

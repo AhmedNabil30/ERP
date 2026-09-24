@@ -6,11 +6,9 @@
   </a>
 
   @if (failure(); as key) {
-    <p class="refusal" role="alert" data-testid="worker-pool-failure">{{ i18n.t(key) }}</p>
+    <kaff-state mode="refusal" [bodyKey]="key" testId="worker-pool-failure" />
   } @else if (loading()) {
-    <p class="loading" role="status" aria-live="polite" data-testid="worker-pool-loading">
-      {{ i18n.t('hr.employee.loading') }}
-    </p>
+    <kaff-state mode="loading" titleKey="hr.employee.loading" testId="worker-pool-loading" />
   } @else if (workers().length > 0) {
     <ul class="rows" data-testid="worker-rows">
       @for (worker of workers(); track trackRow($index, worker)) {
@@ -118,8 +116,6 @@
       }
     </ul>
   } @else {
-    <div class="empty" role="status" aria-live="polite" data-testid="worker-pool-empty">
-      <p class="empty-title">{{ i18n.t('hr.worker.pool_empty') }}</p>
-    </div>
+    <kaff-state mode="empty" titleKey="hr.worker.pool_empty" testId="worker-pool-empty" />
   }
 </section>

@@ -5,6 +5,7 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { toProblem } from '../../../core/api/problem-details';
 import { DayLabourApi, PoolWorker } from '../../../core/day-labour/day-labour.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { KaffState } from '../../../shared/kaff-state/kaff-state';
 
 /**
  * One worker's engagement, tracked locally from the moment this screen opens it. KAFF-210.
@@ -36,10 +37,18 @@ export function ratingOutOfRange(rating: number): boolean {
  * are not money, so `ListPool` carries them and this screen renders them directly, both derived on
  * every read and never stored (rule 2) — adding a client-computed figure here would be the same
  * mistake with extra steps.
+ *
+ * **KAFF-931**: loading/empty/refusal render through `kaff-state`. **No `kaff-row-menu` here, by
+ * judgment call, flagged rather than silently applied**: at any moment a row carries exactly one
+ * primary action (`Engage` or `Close`), never a band of several, and neither is danger-toned — the
+ * "second band with a red button" shape the kit's `kaff-row-menu` exists to collapse is not present on
+ * this screen. The rating control is a labeled number input plus its own submit, not a menu-selectable
+ * action, and does not fit a menu item either. No `kaff-detail-panel`: there is no single-scalar
+ * quick-edit here that a panel would add over what the row already does inline.
  */
 @Component({
   selector: 'kaff-worker-pool-page',
-  imports: [RouterLink],
+  imports: [RouterLink, KaffState],
   templateUrl: './worker-pool-page.html',
   styleUrl: './worker-pool-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
