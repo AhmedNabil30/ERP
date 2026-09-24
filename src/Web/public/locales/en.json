@@ -364,6 +364,10 @@
   "errors.project.already_signed": "The contract is already signed.",
   "errors.project.not_signed": "The contract is not signed.",
   "errors.project.cannot_link_to_itself": "A project cannot be linked to itself.",
+  "errors.project.not_found": "Project not found.",
+  "errors.project.client_required": "A client is required.",
+  "errors.project.rate_must_not_be_negative": "A rate must not be negative.",
+  "errors.project.initial_status_not_supported": "A project can only start at Setup or Active.",
 
   "errors.billing.contract_type_mismatch": "The contract type does not match the calculator.",
   "errors.billing.input_mismatch": "The billing evidence does not match the contract type.",

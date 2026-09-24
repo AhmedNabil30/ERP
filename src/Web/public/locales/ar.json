@@ -364,6 +364,10 @@
   "errors.project.already_signed": "تم توقيع التعاقد بالفعل.",
   "errors.project.not_signed": "التعاقد غير موقّع.",
   "errors.project.cannot_link_to_itself": "لا يمكن ربط المشروع بنفسه.",
+  "errors.project.not_found": "المشروع غير موجود.",
+  "errors.project.client_required": "العميل مطلوب.",
+  "errors.project.rate_must_not_be_negative": "يجب ألا تكون النسبة سالبة.",
+  "errors.project.initial_status_not_supported": "لا يمكن أن يبدأ المشروع إلا بحالة لم تبدأ أو جاري العمل.",
 
   "errors.billing.contract_type_mismatch": "نوع التعاقد لا يطابق آلة الحساب.",
   "errors.billing.input_mismatch": "بيانات الحساب لا تناسب نوع التعاقد.",
