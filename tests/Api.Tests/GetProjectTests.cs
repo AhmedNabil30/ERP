@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Text.Json;
 using Kaff.Api.Tests.Infrastructure;
 using Kaff.Domain.Authorization;
+using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
 using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
@@ -148,6 +149,17 @@ public sealed class GetProjectTests : IAsyncLifetime
 
         Project project = Project.Create(
             UniqueNames.Code("GTP-P"), "مشروع القراءة", client.Id, ContractType.LumpSum, Now).Value;
+
+        // AC-400-A: a Lump Sum project always carries a ContractValue (D-135, wire is a JSON string).
+        // Project.Create alone leaves it null; the terms are a separate step, the same one
+        // CreateProject.Handler takes.
+        project.SetLumpSumTerms(
+            new Money(1_000_000m),
+            Percentage.FromPercent(25m),
+            Percentage.FromPercent(20m),
+            Percentage.FromPercent(25m),
+            Percentage.FromPercent(75m),
+            delayPenaltyEnabled: false);
 
         User owner = MakeUser("gtp-owner", Role.Owner);
         User assignedEngineer = MakeUser(
