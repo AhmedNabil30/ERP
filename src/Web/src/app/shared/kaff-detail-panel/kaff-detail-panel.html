@@ -1,0 +1,27 @@
+@if (open()) {
+  <aside
+    #panel
+    class="detail-panel"
+    role="dialog"
+    [attr.aria-labelledby]="headingId"
+    tabindex="-1"
+    [attr.data-testid]="testId()"
+  >
+    <header class="panel-header">
+      <h2 [id]="headingId">{{ resolvedTitle() }}</h2>
+      <ng-content select="[panelMeta]"></ng-content>
+      <button
+        type="button"
+        class="close-btn"
+        [attr.aria-label]="i18n.t('action.close')"
+        (click)="onCloseClick()"
+      >×</button>
+    </header>
+    <div class="panel-body">
+      <ng-content select="[panelBody]"></ng-content>
+    </div>
+    <footer class="panel-footer">
+      <ng-content select="[panelFooter]"></ng-content>
+    </footer>
+  </aside>
+}

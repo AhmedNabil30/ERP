@@ -1,0 +1,78 @@
+/* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). */
+
+:host {
+  display: block;
+}
+
+.detail-panel {
+  display: flex;
+  flex-direction: column;
+  inline-size: 24rem;
+  max-inline-size: 100%;
+  block-size: 100%;
+  background: var(--color-surface);
+  border-inline-start: 1px solid var(--color-border);
+  box-shadow: var(--elevation-1);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.panel-header h2 {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  overflow-wrap: break-word;
+}
+
+.close-btn {
+  flex: 0 0 auto;
+  min-inline-size: var(--tap-target);
+  min-block-size: var(--tap-target);
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-md);
+  font-size: var(--text-lg);
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.close-btn:hover {
+  background: var(--color-background);
+}
+
+.panel-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--space-4);
+}
+
+.panel-footer {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.panel-footer:empty {
+  display: none;
+}
+
+/* At `width < 48rem` the panel is a full-height sheet, per KAFF-930. `overscroll-behavior: contain`
+   stops scrolling the sheet from also scrolling the list behind it (apple-erp-design §7.7). */
+@media (width < 48rem) {
+  .detail-panel {
+    position: fixed;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    overscroll-behavior: contain;
+    border-inline-start: none;
+  }
+}
