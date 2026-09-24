@@ -41,20 +41,6 @@
   color: var(--color-muted);
 }
 
-.chip {
-  min-block-size: var(--tap-target);
-  padding-inline: var(--space-4);
-  font: inherit;
-  color: var(--color-muted);
-  cursor: pointer;
-  background: transparent;
-  border: none;
-  border-radius: 999px;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-}
-
 /* KAFF-928: `kaff-table` is the card host now — its own border, radius, background and shadow
    replace what `.rows` used to draw per screen. */
 .rows {
@@ -133,30 +119,15 @@
   color: var(--color-danger);
 }
 
-.empty {
-  padding: var(--space-5) var(--space-4);
-  text-align: center;
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-lg);
+/* KAFF-931: loading/empty/refusal render through `kaff-state` now — its own stylesheet draws these,
+   this file no longer needs to. */
+
+/* The trailing grid cell: the archived badge and the row menu, stacked at the inline-end — same shape
+   `bab-tree-page.css`/`catalogue-list-page.css` use for their own trailing column. */
+.row-trailing {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: var(--space-3);
-}
-
-.empty-title {
-  margin: 0;
-  font-weight: 600;
-}
-
-.loading,
-.refusal {
-  margin: 0;
-  padding: var(--space-3);
-}
-
-.refusal {
-  border: 1px solid var(--color-danger);
-  border-radius: var(--radius-md);
-  color: var(--color-danger);
+  justify-content: flex-end;
+  gap: var(--space-2);
+  justify-self: end;
 }

@@ -28,11 +28,9 @@
   </div>
 
   @if (failure(); as key) {
-    <p class="refusal" role="alert" data-testid="employee-list-failure">{{ i18n.t(key) }}</p>
+    <kaff-state mode="refusal" [bodyKey]="key" testId="employee-list-failure" />
   } @else if (loading()) {
-    <p class="loading" role="status" aria-live="polite" data-testid="employee-list-loading">
-      {{ i18n.t('hr.employee.loading') }}
-    </p>
+    <kaff-state mode="loading" titleKey="hr.employee.loading" testId="employee-list-loading" />
   } @else if (employees().length > 0) {
     <kaff-table [columns]="rowColumns" [columnDefs]="headerColumns" testId="employee-table-header" data-testid="employee-table-shell">
       <ul class="rows" data-testid="employee-rows">
@@ -60,11 +58,21 @@
 
               <!-- KAFF-928 finding 7 (extended here for the identical pattern): an always-present
                    wrapper, so an active and an archived row project the same number of grid children. -->
-              <span class="row-archived-badge">
-                @if (!employee.isActive) {
-                  <kaff-badge tone="neutral" testId="employee-row-archived-badge">
-                    {{ i18n.t('hr.employee.archived_badge') }}
-                  </kaff-badge>
+              <span class="row-trailing">
+                <span class="row-archived-badge">
+                  @if (!employee.isActive) {
+                    <kaff-badge tone="neutral" testId="employee-row-archived-badge">
+                      {{ i18n.t('hr.employee.archived_badge') }}
+                    </kaff-badge>
+                  }
+                </span>
+                @if (confirmingArchiveId() !== employee.id) {
+                  <kaff-row-menu
+                    [items]="rowMenuItems(employee)"
+                    triggerLabelKey="a11y.row_actions"
+                    [testId]="'employee-row-menu-' + employee.code"
+                    (selected)="onRowMenuSelected(employee, $event)"
+                  />
                 }
               </span>
             </kaff-table-row>
@@ -78,39 +86,25 @@
                 }
               }
 
-              <a class="chip" [routerLink]="['/employees', employee.id]" [attr.data-testid]="'employee-edit-' + employee.code">
-                {{ i18n.t('action.edit') }}
-              </a>
-
-              @if (employee.isActive) {
-                @if (confirmingArchiveId() === employee.id) {
-                  <p class="row-confirm" [attr.data-testid]="'employee-archive-body-' + employee.code">
-                    {{ i18n.t('hr.employee.archive_confirm') }}
-                  </p>
-                  <kaff-button
-                    variant="danger"
-                    [disabled]="isArchiving(employee.id)"
-                    [testId]="'employee-archive-confirm-' + employee.code"
-                    (clicked)="onConfirmArchive(employee.id)"
-                  >
-                    {{ i18n.t('hr.employee.archive_action') }}
-                  </kaff-button>
-                  <kaff-button
-                    variant="secondary"
-                    [testId]="'employee-archive-cancel-' + employee.code"
-                    (clicked)="onCancelArchive()"
-                  >
-                    {{ i18n.t('action.cancel') }}
-                  </kaff-button>
-                } @else {
-                  <kaff-button
-                    variant="danger"
-                    [testId]="'employee-archive-' + employee.code"
-                    (clicked)="onStartArchive(employee.id)"
-                  >
-                    {{ i18n.t('hr.employee.archive_action') }}
-                  </kaff-button>
-                }
+              @if (employee.isActive && confirmingArchiveId() === employee.id) {
+                <p class="row-confirm" [attr.data-testid]="'employee-archive-body-' + employee.code">
+                  {{ i18n.t('hr.employee.archive_confirm') }}
+                </p>
+                <kaff-button
+                  variant="danger"
+                  [disabled]="isArchiving(employee.id)"
+                  [testId]="'employee-archive-confirm-' + employee.code"
+                  (clicked)="onConfirmArchive(employee.id)"
+                >
+                  {{ i18n.t('hr.employee.archive_action') }}
+                </kaff-button>
+                <kaff-button
+                  variant="secondary"
+                  [testId]="'employee-archive-cancel-' + employee.code"
+                  (clicked)="onCancelArchive()"
+                >
+                  {{ i18n.t('action.cancel') }}
+                </kaff-button>
               }
             </div>
           </li>
@@ -118,14 +112,10 @@
       </ul>
     </kaff-table>
   } @else if (statusFilter() !== 'active') {
-    <div class="empty" role="status" aria-live="polite" data-testid="employee-list-empty-filtered">
-      <p class="empty-title">{{ i18n.t('hr.employee.empty_filtered') }}</p>
-    </div>
+    <kaff-state mode="filtered-empty" titleKey="hr.employee.empty_filtered" testId="employee-list-empty-filtered" />
   } @else {
     <!-- KAFF-929 finding 2: the create action is always in the top bar now (`#createAction` above),
          so the empty state names the fact without repeating the action a second time on the page. -->
-    <div class="empty" role="status" aria-live="polite" data-testid="employee-list-empty">
-      <p class="empty-title">{{ i18n.t('hr.employee.empty') }}</p>
-    </div>
+    <kaff-state mode="empty" titleKey="hr.employee.empty" testId="employee-list-empty" />
   }
 </section>

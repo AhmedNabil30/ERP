@@ -18,10 +18,12 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import { KaffRowMenu, RowMenuItem } from '../../../shared/kaff-row-menu/kaff-row-menu';
 import {
   KaffSegmentedFilter,
   SegmentedFilterOption,
 } from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
+import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { KaffTable } from '../../../shared/kaff-table/kaff-table';
 import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
@@ -40,10 +42,27 @@ const FILTERS: readonly EmployeeListFilter[] = ['active', 'archived', 'all'];
  *
  * **Filter lives in the URL**, not a signal alone — `apple-erp-design` §7.6, the fix `F-127-1` names for
  * `client-list-page.ts`'s own miss: a bookmarked `/employees?status=archived` must restore that filter.
+ *
+ * **KAFF-931**: rebuilt on the KAFF-930 interaction kit. The row's `edit` chip and filled-red `archive`
+ * button collapse into one `kaff-row-menu`; danger is text, never a filled button. The kit computes a
+ * menu item's own test id as `{testId}-{action}` (not a free-standing id a caller can choose), so the
+ * two triggers could not keep `employee-edit-{code}`/`employee-archive-{code}` verbatim — renamed to
+ * `employee-row-menu-{code}-edit`/`-archive`, the same bab-tree/catalogue-list precedent, after grepping
+ * `tests\`/`qa\` for the old ids and finding no reference. The confirm/cancel/body/refusal ids below the
+ * row are untouched. Loading/empty(-filtered)/refusal render through `kaff-state`.
  */
 @Component({
   selector: 'kaff-employee-list-page',
-  imports: [RouterLink, KaffBadge, KaffButton, KaffSegmentedFilter, KaffTable, KaffTableRow],
+  imports: [
+    RouterLink,
+    KaffBadge,
+    KaffButton,
+    KaffRowMenu,
+    KaffSegmentedFilter,
+    KaffState,
+    KaffTable,
+    KaffTableRow,
+  ],
   templateUrl: './employee-list-page.html',
   styleUrl: './employee-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -146,6 +165,25 @@ export class EmployeeListPage {
 
   protected isArchiving(id: string): boolean {
     return this.archivingId() === id;
+  }
+
+  protected rowMenuItems(employee: EmployeeSummary): readonly RowMenuItem[] {
+    const items: RowMenuItem[] = [{ labelKey: 'action.edit', action: 'edit' }];
+    if (employee.isActive) {
+      items.push({ labelKey: 'hr.employee.archive_action', action: 'archive', tone: 'danger' });
+    }
+    return items;
+  }
+
+  protected async onRowMenuSelected(employee: EmployeeSummary, action: string): Promise<void> {
+    switch (action) {
+      case 'edit':
+        await this.router.navigate(['/employees', employee.id], { state: { employee } });
+        break;
+      case 'archive':
+        this.onStartArchive(employee.id);
+        break;
+    }
   }
 
   protected onStartArchive(id: string): void {
