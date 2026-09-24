@@ -1,6 +1,6 @@
 # KAFF-306 · The Treasury can post and reverse, but nothing reads
 
-<!-- kaff id=KAFF-306 slice=3 points=5 state=READY -->
+<!-- kaff id=KAFF-306 slice=3 points=5 state=BLOCKED verdict=none at=- on=2026-09-25 -->
 
 **Slice:** 3 — Treasury · **Points:** 5.
 **Why now:** `src/Api/Features/Treasury/` holds exactly `PostMovement` and `ReversePosting`.
@@ -72,3 +72,103 @@ touched. The account tree screen. Collections and cheques. Any frontend. Anythin
 
 None — every rule above is quoted from `CLAUDE.md` or `spec.md` §6. If a case is unanswered,
 **stop and ask**.
+
+## Build notes (2026-09-25)
+
+**The brief's "Questions for Karim: None" is wrong, and the story cannot ship past it without a
+ruling.** `questions-for-karim.md` already carries **Q90**, raised cutting `KAFF-304`: *"Once a
+project's ledger balances are held somewhere in the system, who is allowed to look at them — the
+Owner and Finance only, or does a Site Engineer see his own project's numbers too?"* It is marked
+**blocking**, and `KAFF-304`'s own build — `tests/Domain.Tests/BalanceQueriesTests.cs`'s file
+comment — says outright that it built only the Domain-level derivation query and left the HTTP
+surface unbuilt for exactly this reason: *"no `Permission.*Read` exists anywhere in the catalogue
+for a Treasury balance today, and the story's HTTP surface cannot be built without one."* Nothing
+between `KAFF-304` and this story answered it. Whoever cut `KAFF-306` did not check
+`questions-for-karim.md` against the story it depends on. Flagging this for the Scrum Master rather
+than silently building past it — `CLAUDE.md`: "If `spec.md` doesn't answer a business question, stop
+and ask. Do not decide."
+
+**What was built anyway, and why it is still worth having:**
+
+- `src/Domain/Treasury/PostingStatementQueries.cs` — a pure Domain-layer function that turns an
+  ordered run of `Posting`s against one account into a statement with a running balance, summed
+  fresh every call, in the same style as `BalanceQueries` (KAFF-304). Tested at
+  `tests/Domain.Tests/PostingStatementQueriesTests.cs`: a posting followed by its reversal returns
+  the running balance to its prior value with both rows present (AC-306-B), the balance accumulates
+  correctly across three postings in order, a credit-normal account's sign flips the same way
+  `account_balances.sql` and `BalanceQueriesTests` already assert, and an empty history returns an
+  empty statement rather than an error.
+- `src/Api/Features/Treasury/ListPostings/*` — `GET /api/treasury/postings` and
+  `GET /api/projects/{projectId}/treasury/postings`, the account statement (S-033). Filters: a
+  required `accountId`, optional `from`/`to`/`type`, and cursor-based paging (an opaque cursor that
+  is the last returned posting's id). Zero writes.
+- `src/Api/Features/Treasury/GetBalances/*` — `GET /api/projects/{projectId}/treasury/balances`
+  (the five ledgers, S-040, straight through `BalanceQueries.GetLedgerBalances`) and
+  `GET /api/treasury/accounts/{accountId}/balance` (one account, S-036, through
+  `BalanceQueries.GetAccountBalance`). Zero writes.
+- `Permission.TreasuryReadProject` / `Permission.TreasuryReadCompany` — added to the catalogue
+  **`Unresolved: true` with an empty grant list**, not a stated assumption the way `PeriodClose`
+  takes one. `PermissionEvaluator` refuses a permission with no matching grant to everyone, the
+  Owner included (`RoleNotGranted`), so both routes exist, are wired, write nothing, and are
+  reachable by **nobody** until Q90 is answered and a grant is added. This was a deliberate choice
+  over guessing "Owner and Finance" or "plus the assigned Site Engineer" — either would be the
+  invented-plausible-rule failure `CLAUDE.md` and `PermissionCatalogue.cs`'s own remarks warn about.
+
+**Acceptance criteria, honestly scored:**
+
+- **AC-306-A** (both endpoints exist, read-only, zero writes/migrations) — **met.** No `SaveChanges`,
+  `INSERT`, `UPDATE`, or `DELETE` in the diff; no migration added.
+- **AC-306-B** (running balance survives a reversal, both postings still listed) — **met at the
+  Domain layer**, `PostingStatementQueriesTests`. Not provable end-to-end over HTTP today because
+  nothing can call the endpoint (Q90).
+- **AC-306-C** (every balance derived by summing postings, no `Balance` column) — **met.** No stored
+  balance anywhere; `grep -r "Balance.*{ get; set; }"` and the model both come back empty of one.
+- **AC-306-D** (five ledgers side by side, nothing nets) — **met structurally.**
+  `LedgerBalancesResponse` has no `Total` field, mirroring `LedgerBalances`'s own remarks; pinned by
+  `GetBalancesTests.The_ledger_response_carries_no_field_whose_name_suggests_a_total` (written, not
+  run — see below).
+- **AC-306-E** (a Site Engineer assigned to A is refused B; HR is refused both, no financial field
+  anywhere) — **NOT met as written, and cannot be until Q90 is answered.** With an empty grant list,
+  the Site Engineer is refused **both** A and B — there is no positive case to contrast the negative
+  one against, because nobody holds the permission yet. The HR half and the "no financial field"
+  half both hold trivially (a 403 body carries no ledger data), and are asserted in
+  `ListPostingsTests`/`GetBalancesTests`. The story cannot claim this criterion until Karim rules
+  Q90 and a grant is written.
+- **AC-306-F** (money as a JSON string, no float/double) — **met**, reflection-tested in both
+  `Api.Tests` files against the `Response`/`PostingRow`/`LedgerBalancesResponse`/
+  `AccountBalanceResponse` types.
+- **AC-306-G** (`dotnet build` clean, Domain and Api suites green) — **partially evidenced; see
+  Gates below.**
+
+**What was not done:** no HTTP-level scenario test exercises a *successful* read (every role is
+refused today by construction), so the wire shape of a 200 response — the exact JSON a frontend
+would parse — is unverified beyond the reflection checks. That is the direct, unavoidable
+consequence of Q90 being open; once it is answered and a grant lands, `ListPostingsTests`/
+`GetBalancesTests` are where the scenario cases belong (flagged inline in both files).
+
+**Gates:**
+- `dotnet build KaffErp.sln -c Release --nologo` was clean (0 warnings, 0 errors) once, with every
+  production file in this story already in place. A second full-solution Release build later in the
+  session failed — not on anything in this diff, but because a live `Kaff.Api` process (pid 11964,
+  presumably serving the frontend agents on port 5080 per this session's own instructions not to
+  touch it) holds `src/Api/bin/Release/net10.0/*` open, and MSBuild cannot overwrite a locked
+  `.dll`/`.exe`. Verified this story's own source still compiles clean by building
+  `tests/Api.Tests/Kaff.Api.Tests.csproj` in the `Debug` configuration instead (separate output
+  folder, untouched by the lock): 0 warnings, 0 errors, all production and test code included.
+- `Domain.Tests`: **297/298 green.** The one failure,
+  `TranslationCatalogueTests.Every_domain_error_key_has_an_arabic_and_an_english_translation`
+  (`errors.project.not_found` missing from `ar.json`), is **not from this story** — `git status`
+  shows `src/Domain/Projects/ProjectErrors.cs` and the locale files modified by the concurrent
+  `KAFF-400` session, which this story's hard limits forbid touching. Left alone.
+- `Api.Tests` — written, **not run** per this story's own instruction. Four new tests in
+  `ListPostingsTests.cs`, four in `GetBalancesTests.cs`, listed above.
+
+**Commits:** see the branch log for KAFF-306 — one per endpoint plus the Domain/permission
+scaffolding and the story/status update, per the dispatch's own instruction.
+
+**For the Scrum Master:** route Q90 to Karim/Nabil before this story can move past `BLOCKED`. The
+question as filed is broad ("who is allowed to look at them"); given `ProjectRead`'s existing
+roster and `TreasuryPostProject`/`TreasuryPostCompany`'s existing holders, the two live options are
+likely (a) Owner + Finance only, or (b) Owner + Finance + the assigned Site Engineer, project-scoped
+— but naming either here would be exactly the guess this file's own rule forbids. Once ruled, the
+fix is one grant list in `PermissionCatalogue.cs`'s two new rows; nothing else in this story changes.
