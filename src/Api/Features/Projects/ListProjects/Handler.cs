@@ -61,9 +61,7 @@ internal static class Handler
             return ResultExtensions.Problem(AuthorizationErrors.Forbidden);
         }
 
-        IQueryable<ProjectSummary> query = database.Projects.Select(project => new ProjectSummary(
-            project.Id, project.Code, project.Name, project.ClientId,
-            project.ContractType, project.Status, project.ContractValue));
+        IQueryable<Project> query = database.Projects;
 
         if (subject.Role != Role.Owner)
         {
@@ -71,15 +69,17 @@ internal static class Handler
                 .Where(assignment => assignment.UserId == subject.UserId && assignment.RevokedAt == null)
                 .Select(assignment => assignment.ProjectId);
 
-            query = database.Projects
-                .Where(project => assignedProjectIds.Contains(project.Id))
-                .Select(project => new ProjectSummary(
-                    project.Id, project.Code, project.Name, project.ClientId,
-                    project.ContractType, project.Status, project.ContractValue));
+            query = query.Where(project => assignedProjectIds.Contains(project.Id));
         }
 
+        // Order the entity query by its own Code column before projecting — EF cannot translate an
+        // OrderBy over a member access on a freshly constructed ProjectSummary (it tries to rewrite
+        // OrderBy(x => new ProjectSummary(...).Code) and fails to simplify that back to the column).
         List<ProjectSummary> projects = await query
             .OrderBy(project => project.Code)
+            .Select(project => new ProjectSummary(
+                project.Id, project.Code, project.Name, project.ClientId,
+                project.ContractType, project.Status, project.ContractValue))
             .ToListAsync(cancellationToken);
 
         return Microsoft.AspNetCore.Http.Results.Ok(new Response(projects, projects.Count));
