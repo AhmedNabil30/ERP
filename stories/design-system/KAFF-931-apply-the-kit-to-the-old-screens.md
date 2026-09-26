@@ -1,6 +1,6 @@
 # KAFF-931 · Put the kit on the screens that exist today
 
-<!-- kaff id=KAFF-931 slice=design-system points=13 state=READY -->
+<!-- kaff id=KAFF-931 slice=design-system points=13 state=BUILT -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 13.
 **Depends on:** `KAFF-930` **BUILT and on `main`** — this story only consumes the kit, it does not
@@ -299,3 +299,42 @@ that is out of this story's scope to build. Once a project exists in this system
 future Projects slice, or a one-off seed the Projects module owns), the existing `kaff-state` swap on
 this screen should be screenshotted the same way the other eight were, and the trailer moved to
 `BUILT` at that point, not before.
+
+## Closed by the Scrum Master (2026-09-26)
+
+**Trailer moved READY to BUILT.** The one criterion the build session could not meet was
+`worker-pool`'s screenshot: the screen lives at `/projects/:projectId/day-labour` and no Projects
+API existed when it tried, so the route rendered the project-scoped permission refusal. That session
+refused to fake it with a raw SQL project insert, on the grounds that hand-writing a project row
+risks the treasury account-tree seeding. That was the right call and the story stayed open.
+
+`KAFF-400` landed the Projects API the same day. A project was then created **through the API**, the
+way the product does it — `POST /api/projects` as `owner_demo`, returning `PRJ-377EC1A2` with
+`holdRate "0.2"` and `advanceRate "0.25"` as JSON strings (D-135) — and the four screenshots were
+taken against it:
+
+- `.design/shots/kaff-931-worker-pool-desktop-light.png`
+- `.design/shots/kaff-931-worker-pool-desktop-dark.png`
+- `.design/shots/kaff-931-worker-pool-390-light.png`
+- `.design/shots/kaff-931-worker-pool-390-dark.png`
+
+**AC-931-J is met for all nine screens.** 36 images.
+
+Two observations from taking them, neither a defect in this story:
+
+1. **The first desktop capture caught `kaff-state`'s loading skeleton**, not the final render — the
+   driver waits for non-empty body text and the page title satisfies that before the list responds. A
+   second capture shows the empty state (`لا يوجد عمال مسجلون بعد`) correctly. Worth knowing for
+   anyone screenshotting a data-backed screen: take it twice and compare.
+2. **The primary action button was the only green one in the application** —
+   `worker-pool-page.css` painted it `var(--color-accent)` where every other screen uses
+   `var(--color-interactive)`. `styles.css` reserves `--color-accent` for active/succeeded.
+   Fixed separately; not an AC of this story.
+
+**Gate at close, measured by the Scrum Master with hosts killed first:**
+
+```
+dotnet build KaffErp.sln -c Release   exit 0   0 Warning(s)   0 Error(s)
+Kaff.Domain.Tests.exe                 total: 298   failed: 0
+Kaff.Api.Tests.exe                    total: 655   failed: 0   succeeded: 655
+```
