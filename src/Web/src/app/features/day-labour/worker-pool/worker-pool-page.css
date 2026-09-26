@@ -24,7 +24,7 @@
   font-weight: 600;
   text-decoration: none;
   color: var(--color-background);
-  background: var(--color-accent);
+  background: var(--color-interactive);
   border-radius: var(--radius-md);
 }
 
@@ -76,7 +76,7 @@
 .history-link {
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--color-accent);
+  color: var(--color-interactive);
   text-decoration: none;
 }
 
