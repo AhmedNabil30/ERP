@@ -9,7 +9,9 @@
   position: relative;
   align-items: center;
   gap: var(--space-4);
-  min-block-size: var(--tap-target);
+  /* --row-target, not --tap-target: a list row compacts to 32px on mouse-driven desktop and stays
+     at the 44px floor everywhere else (ux/research/density.md §4). */
+  min-block-size: var(--row-target);
   padding: var(--space-2) var(--space-4);
   border-block-end: 1px solid var(--color-border);
 }

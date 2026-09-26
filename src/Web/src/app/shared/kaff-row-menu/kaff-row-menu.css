@@ -9,8 +9,11 @@
    `display: none` trigger drops out of the tab order and the accessibility tree, which is the trap
    this rule exists to stop. The trigger stays hit-testable and focusable at rest. */
 .trigger {
-  min-inline-size: var(--tap-target);
-  min-block-size: var(--tap-target);
+  /* --row-target, not --tap-target: this trigger sits inside a list row, and a 44px trigger inside a
+     32px row makes the row height unachievable (ux/research/density.md §4). The menu items below
+     keep --tap-target — they are a floating menu, not row furniture. */
+  min-inline-size: var(--row-target);
+  min-block-size: var(--row-target);
   display: inline-flex;
   align-items: center;
   justify-content: center;

@@ -34,8 +34,19 @@
   --radius-lg: 1rem;
 
   /* 44px — the tap target floor for every interactive element, list row and chip alike
-     (ux/components.md, CLAUDE.md Angular conventions). */
+     (ux/components.md, CLAUDE.md Angular conventions).
+
+     NEVER override this token, at any viewport, under any pointer. It is a prohibition, not a
+     default (ux/research/density.md §4). Every standalone button, every form control and every M1
+     building-site screen rests on it, and a gloved thumb on scaffolding does not get smaller
+     because the browser window is wide. To make a desktop list row shorter, use --row-target. */
   --tap-target: 2.75rem;
+
+  /* The height of a list row and of the icon controls embedded in one. It resolves to the tap
+     target everywhere except mouse-driven desktop, where the block below takes it to 32px
+     (ux/research/density.md §4). Used in exactly two places: kaff-table-row and the kaff-row-menu
+     trigger — a 44px trigger inside a 32px row makes the row height unachievable. */
+  --row-target: var(--tap-target);
 
   --color-background: #ffffff;
   --color-surface: #f7f7f5;
@@ -87,6 +98,56 @@
 
   /* Arabic needs a little more line height than Latin at the same size. */
   --line-height: 1.7;
+
+  /* Single-line contexts only: table cells, nav rows, buttons, chips, column headers. There is no
+     second line for the leading to serve there, and --line-height on a single line puts 27px of box
+     around 16px of glyph (ux/research/density.md §4). Same value at both breakpoints. */
+  --line-height-tight: 1.35;
+}
+
+/*
+  Desktop density (ux/research/density.md, approved 2026-09-26).
+
+  Nabil, 2026-09-26: "the font is very big everything is very big". The diagnosis is not a styling
+  defect screen by screen — it is one missing breakpoint. Everything above is sized for a phone on a
+  building site and a 27-inch monitor inherited it. This block is the desktop column of
+  density.md §4: type and spacing shrink, --tap-target does not.
+
+  Gated on two axes, both required:
+
+  - `min-width: 64rem` — type and spacing scale with available width.
+  - `pointer: fine` — the 44px interactive floor scales with pointer accuracy, not width.
+
+  `pointer`, never `any-pointer`. `pointer` tests the *primary* pointing device, so a touch laptop
+  in landscape — wide, but touched — reports `coarse` and keeps the phone sizing. `any-pointer: fine`
+  matches when *any* attached device is fine, which would strip the floor from exactly the hybrid
+  device this test protects.
+
+  There is deliberately no density switch. Nabil asked for the right default, not a control
+  (density.md §5 keeps the switch cheap to add later: the same block behind
+  `:root[data-density="compact"]`).
+*/
+@media (min-width: 64rem) and (pointer: fine) {
+  :root {
+    --space-2: 0.375rem;
+    --space-3: 0.5rem;
+    --space-4: 0.75rem;
+    --space-5: 1rem;
+    --space-6: 1.5rem;
+
+    /* --text-xs holds at 0.75rem/12px: the lowest step either the UAE or the Dubai design system
+       ships, and the floor for Arabic (density.md §2). Do not add a step below it. */
+    --text-sm: 0.8125rem;
+    --text-md: 0.875rem;
+    --text-lg: 1.0625rem;
+    --text-xl: 1.25rem;
+
+    --line-height: 1.55;
+
+    /* Fiori compact and Fluent's data grid are both 2rem/32px. AA-conformant under WCAG SC 2.5.8
+       (24px); it gives up only AAA SC 2.5.5, and only for a mouse. */
+    --row-target: 2rem;
+  }
 }
 
 /*
