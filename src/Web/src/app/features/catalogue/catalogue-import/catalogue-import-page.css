@@ -57,15 +57,24 @@
   border-radius: var(--radius-md);
 }
 
+/* CatalogueForm.dc.html: one white card, 16px radius, 1px border, holding the whole screen — the
+   upload, the result and the re-import action read as one card, not three stacked bands. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elevation-1);
+}
+
 .upload {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  box-shadow: var(--elevation-1);
+  align-items: flex-start;
 }
 
 .file-label {
@@ -83,24 +92,6 @@
   margin: 0;
   font-size: var(--text-sm);
   overflow-wrap: break-word;
-}
-
-.submit-button {
-  align-self: flex-start;
-  min-block-size: var(--tap-target);
-  padding-inline: var(--space-5);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-  color: var(--color-background);
-  background: var(--color-accent);
-  border: none;
-  border-radius: var(--radius-md);
-}
-
-.submit-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
 }
 
 .refusal,
@@ -173,34 +164,16 @@
 .reimport {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-3);
-  padding: var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--color-border);
 }
 
 .reimport-title {
   margin: 0;
   font-size: var(--text-md);
   font-weight: 600;
-}
-
-.secondary {
-  align-self: flex-start;
-  min-block-size: var(--tap-target);
-  padding-inline: var(--space-5);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-}
-
-.secondary:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
 }
 
 .confirm {

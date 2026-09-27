@@ -11,6 +11,7 @@ import {
   CatalogueReimportResult,
 } from '../../../core/catalogue/catalogue.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 
 /** The template's own column names (`CatalogueTemplate.cs`) mapped to the labels the form already uses. */
 const FIELD_LABEL_KEYS: Readonly<Record<string, string>> = {
@@ -37,7 +38,7 @@ function fieldLabelKey(column: string): string | null {
  */
 @Component({
   selector: 'kaff-catalogue-import-page',
-  imports: [RouterLink],
+  imports: [RouterLink, KaffButton],
   templateUrl: './catalogue-import-page.html',
   styleUrl: './catalogue-import-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
