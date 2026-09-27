@@ -340,11 +340,33 @@ async function signedShot(userName, password, targetPath, out, width, colorSchem
     // One more frame so the sidebar's grouped rows/account block have painted before capture.
     await evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))');
 
-    if (openDrawer) {
+    if (openDrawer === true) {
       await evaluate("document.querySelector(\"[data-testid='nav-toggle']\").click()");
       // The drawer's inset-inline-start transitions over 0.2s (app.css) — wait it out, or the shot
       // catches it mid-slide.
       await evaluate('new Promise((r) => setTimeout(r, 300))');
+    } else if (typeof openDrawer === 'string' && openDrawer.startsWith('focus-blur:')) {
+      // KAFF-933: touch a field without submitting, so a required/pattern error renders for a
+      // screenshot — `[formField]` validates on blur, same as a real operator tabbing past it empty.
+      const selector = openDrawer.slice('focus-blur:'.length);
+      await evaluate(`document.querySelector(${JSON.stringify(selector)})?.focus()`);
+      await evaluate(`document.querySelector(${JSON.stringify(selector)})?.blur()`);
+      await evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))');
+    } else if (typeof openDrawer === 'string' && openDrawer.startsWith('click:')) {
+      // KAFF-933: click one or more elements in sequence, each by trimmed innerText (falls back to a
+      // CSS selector), separated by `||` — for reaching a screen this driver has no direct URL for
+      // (e.g. an edit row behind a row menu), same matching rule `click()` above uses inside `flow`.
+      const steps = openDrawer.slice('click:'.length).split('||');
+      for (const text of steps) {
+        await evaluate(`(() => {
+          const wanted = ${JSON.stringify(text)};
+          const all = Array.from(document.querySelectorAll('button, a, [role="button"]'));
+          const target = all.find((e) => e.innerText.trim() === wanted) ?? document.querySelector(wanted);
+          target?.click();
+        })()`);
+        await new Promise((r) => setTimeout(r, 400));
+        await evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))');
+      }
     }
 
     return shoot(out);
@@ -464,7 +486,17 @@ try {
       if (!userName || !password || !targetPath) {
         throw new Error('usage: signed-shot <user> <password> <path> <out.png> [width] [colorScheme] [openDrawer]');
       }
-      console.log(await signedShot(userName, password, targetPath, out, width, colorScheme, Boolean(openDrawer)));
+      console.log(
+        await signedShot(
+          userName,
+          password,
+          targetPath,
+          out,
+          width,
+          colorScheme,
+          openDrawer === 'true' ? true : openDrawer,
+        ),
+      );
       break;
     }
     case 'eval': {

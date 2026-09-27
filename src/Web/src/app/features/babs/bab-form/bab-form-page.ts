@@ -20,6 +20,8 @@ import {
 } from '../../../core/catalogue/percent-wire';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { UnsavedChangesAware } from '../../../core/navigation/unsaved-changes.guard';
+import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import { KaffField } from '../../../shared/kaff-field/kaff-field';
 
 interface BabDraft {
   code: string;
@@ -70,7 +72,7 @@ const draft = schema<BabDraft>((path) => {
  */
 @Component({
   selector: 'kaff-bab-form-page',
-  imports: [FormField, RouterLink],
+  imports: [FormField, RouterLink, KaffButton, KaffField],
   templateUrl: './bab-form-page.html',
   styleUrl: './bab-form-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

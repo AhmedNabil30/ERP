@@ -1,13 +1,14 @@
 /* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). Zero colour
-   literals — every colour is a token from styles.css (apple-erp-design §2). Copied from
-   catalogue-form-page.css deliberately — one house style, not a second one invented here. */
+   literals — every colour is a token from styles.css (apple-erp-design §2). Follows
+   catalogue-form-page.css's dialect: kaff-field/kaff-button own the field and button chrome, this
+   sheet only owns the page frame — the card, the footer row and the locked-code treatment. */
 
 .bab-form {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-4);
-  max-inline-size: 40rem;
+  max-inline-size: 55rem;
   margin-inline: auto;
 }
 
@@ -42,47 +43,19 @@
   border-radius: var(--radius-md);
 }
 
-.code-line {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-2);
-  margin: 0;
-}
-
-.code-label {
-  font-weight: 600;
-}
-
-.code-value {
-  unicode-bidi: isolate;
-  font-family: ui-monospace, monospace;
-}
-
-.code-note,
-.hint {
-  font-size: var(--text-sm);
-  opacity: 0.75;
+/* CatalogueForm.dc.html: one white card, 16px radius, 1px border, holding every field. */
+.card {
+  padding: var(--space-5);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elevation-1);
 }
 
 .fields {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.label {
-  font-size: var(--text-sm);
-  font-weight: 600;
 }
 
 .input {
@@ -102,6 +75,26 @@
   outline-offset: 2px;
 }
 
+/* The locked, generated code — a disabled-looking field, not an editable one. */
+.input-locked {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  color: var(--color-muted);
+  background: var(--color-surface);
+}
+
+.code-value {
+  unicode-bidi: isolate;
+  font-family: ui-monospace, monospace;
+}
+
+.lock-icon {
+  flex-shrink: 0;
+  color: var(--color-muted);
+}
+
 /* A native <select> needs an explicit background and colour or it renders unreadable in Windows dark
    mode (apple-erp-design §7.7) — Kaff runs on Windows. */
 .select {
@@ -116,25 +109,8 @@
   border-radius: var(--radius-md);
 }
 
-.field-error {
-  margin: 0;
-  font-size: var(--text-sm);
-  color: var(--color-danger);
-}
-
-.submit {
-  padding: var(--space-3);
-  min-block-size: var(--tap-target);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-  color: var(--color-text);
-  background: transparent;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-md);
-}
-
-.submit:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+.footer-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
