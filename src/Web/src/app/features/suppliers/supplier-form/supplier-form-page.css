@@ -1,24 +1,20 @@
 /* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). Zero colour
-   literals — every colour is a token from styles.css (apple-erp-design §2). Copied from
-   subcontractor-form-page.css deliberately — one house style, not a second one invented here. */
+   literals — every colour is a token from styles.css (apple-erp-design §2). Follows
+   subcontractor-form-page.css's dialect: kaff-field/kaff-button own the field and button chrome,
+   this sheet only owns the page frame — the card and the footer row. */
 
 .supplier-form {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-4);
-  max-inline-size: 40rem;
+  max-inline-size: 55rem;
   margin-inline: auto;
 }
 
 .title {
   margin: 0;
   font-size: var(--text-xl);
-}
-
-.subtitle {
-  margin: 0 0 var(--space-2);
-  font-size: var(--text-lg);
 }
 
 .no-source {
@@ -47,6 +43,18 @@
   border-radius: var(--radius-md);
 }
 
+/* CatalogueForm.dc.html: one white card, 16px radius, 1px border, holding every field. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elevation-1);
+}
+
 .code-line {
   display: flex;
   flex-wrap: wrap;
@@ -64,8 +72,7 @@
   font-family: ui-monospace, monospace;
 }
 
-.code-note,
-.hint {
+.code-note {
   font-size: var(--text-sm);
   opacity: 0.75;
 }
@@ -74,20 +81,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.label {
-  font-size: var(--text-sm);
-  font-weight: 600;
 }
 
 .input {
@@ -115,36 +108,22 @@
   border-radius: var(--radius-md);
 }
 
-.submit {
-  padding: var(--space-3);
-  min-block-size: var(--tap-target);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-  color: var(--color-text);
-  background: transparent;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-md);
-}
-
-.submit:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.danger {
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
   padding: var(--space-3);
   border: 1px solid var(--color-danger);
   border-radius: var(--radius-md);
 }
 
 .confirm-title {
-  margin: 0 0 var(--space-1);
+  margin: 0;
   font-weight: 600;
 }
 
 .confirm-body {
-  margin: 0 0 var(--space-3);
+  margin: 0 0 var(--space-2);
   opacity: 0.85;
 }
 
@@ -154,17 +133,8 @@
   gap: var(--space-2);
 }
 
-.chip {
-  min-block-size: var(--tap-target);
-  padding-inline: var(--space-4);
-  font: inherit;
-  cursor: pointer;
-  color: var(--color-muted);
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-}
-
+/* kaff-button has no bordered-danger variant (only a filled one) — flagged in this story's build
+   notes as a kit gap. Bordered danger text, matching CatalogueForm.dc.html's footer treatment. */
 .danger-button {
   padding-inline: var(--space-4);
   min-block-size: var(--tap-target);
@@ -175,4 +145,14 @@
   background: transparent;
   border: 1px solid var(--color-danger);
   border-radius: var(--radius-md);
+}
+
+.footer-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.footer-danger {
+  margin-inline-start: auto;
 }

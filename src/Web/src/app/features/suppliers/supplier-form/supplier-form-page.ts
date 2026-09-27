@@ -6,6 +6,8 @@ import { toProblem } from '../../../core/api/problem-details';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { SupplierFile, SupplierWrite, SuppliersApi } from '../../../core/suppliers/suppliers.api';
 import { DuplicatePhoneWarning } from '../../../shared/duplicate-phone-warning/duplicate-phone-warning';
+import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import { KaffField } from '../../../shared/kaff-field/kaff-field';
 import { PhoneMatch } from '../../../shared/phone-match';
 
 interface SupplierDraft {
@@ -49,7 +51,7 @@ function orNull(value: string): string | null {
  */
 @Component({
   selector: 'kaff-supplier-form-page',
-  imports: [FormField, RouterLink, DuplicatePhoneWarning],
+  imports: [FormField, RouterLink, DuplicatePhoneWarning, KaffButton, KaffField],
   templateUrl: './supplier-form-page.html',
   styleUrl: './supplier-form-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
