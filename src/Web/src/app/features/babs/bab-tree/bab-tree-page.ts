@@ -78,14 +78,17 @@ export class BabTreePage {
   protected readonly i18n = inject(I18nService);
   protected readonly filters = FILTERS;
 
-  /** Grid columns for `kaff-table`: code · name · markup · archived badge · menu. `KAFF-928`: fixed
-   *  sizes plus one `minmax(_, 1fr)` for name, the one column whose content length varies. One extra
-   *  fixed track for the row menu trigger, replacing the old per-row button band. */
-  protected readonly rowColumns = '8rem minmax(10rem, 1fr) 7rem 7rem 3rem';
+  /** Grid columns for `kaff-table`: identity (name, with the code beneath it) · markup · archived
+   *  badge · menu. One fixed track for the row menu trigger, replacing the old per-row button band.
+   *
+   *  `ux/components.md:259` rules the name first, so the code no longer owns a track — it renders as
+   *  muted secondary text inside the identity cell, under the trade name. The identity column is the
+   *  single flexing track, `minmax(0, 1fr)`; every other track is fixed. **No `auto` track**: `auto`
+   *  sizes each row against its own content, which is the defect this shell exists to fix. */
+  protected readonly rowColumns = 'minmax(0, 1fr) 7rem 7rem 3rem';
 
   /** `KAFF-925`: same column order the rows use. */
   protected readonly headerColumns: readonly TableColumnDef[] = [
-    { labelKey: 'bab.field.code' },
     { labelKey: 'bab.column.name' },
     { labelKey: 'bab.field.default_markup', align: 'end' },
     {},

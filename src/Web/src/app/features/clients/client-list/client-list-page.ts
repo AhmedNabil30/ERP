@@ -77,15 +77,17 @@ export class ClientListPage {
   protected readonly clientKindKey = clientKindKey;
   protected readonly filters = FILTERS;
 
-  /** Grid columns for `kaff-table`: code · name · kind · phone · archived badge. `KAFF-928`: fixed
-   *  sizes plus one `minmax(_, 1fr)` for name, the one column whose content length varies. Code and
-   *  phone are fixed-width figures, kind is a short badge word, and the trailing column holds only
-   *  the archived badge. */
-  protected readonly rowColumns = '8rem minmax(10rem, 1fr) 7rem 9rem 7rem';
+  /** Grid columns for `kaff-table`: identity (name, with the code beneath it) · kind · phone ·
+   *  archived badge.
+   *
+   *  `ux/components.md:259` rules the name first, so the code no longer owns a track — it renders as
+   *  secondary text inside the identity cell. The identity column is the single flexing track,
+   *  `minmax(0, 1fr)`; every other track is fixed. **No `auto` track**: `auto` sizes each row against
+   *  its own content, which is the defect this shell exists to fix. */
+  protected readonly rowColumns = 'minmax(0, 1fr) 7rem 9rem 7rem';
 
   /** `KAFF-925`: same column order the rows use. */
   protected readonly headerColumns: readonly TableColumnDef[] = [
-    { labelKey: 'clients.field.code' },
     { labelKey: 'clients.field.name' },
     { labelKey: 'clients.field.kind' },
     { labelKey: 'clients.field.phone' },

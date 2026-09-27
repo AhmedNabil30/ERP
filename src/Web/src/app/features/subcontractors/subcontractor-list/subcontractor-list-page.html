@@ -30,8 +30,13 @@
           [attr.data-testid]="'subcontractor-row-' + subcontractor.code"
         >
           <a class="row-link" [routerLink]="['/subcontractors', subcontractor.id]">
-            <bdi class="row-code" translate="no">{{ subcontractor.code }}</bdi>
-            <span class="row-name" dir="auto">{{ subcontractor.name }}</span>
+            <!-- ux/components.md:259 — identity first. The Technical Office knows a subcontractor by
+                 name; the generated code demotes to muted secondary text beneath it. This list is a
+                 flex card row, not a `kaff-table` grid, so there is no `--kaff-columns` to follow. -->
+            <span class="row-identity">
+              <span class="row-name" dir="auto">{{ subcontractor.name }}</span>
+              <bdi class="row-code" dir="ltr" translate="no">{{ subcontractor.code }}</bdi>
+            </span>
             <bdi class="row-phone" dir="ltr">{{ subcontractor.phone }}</bdi>
             <span class="row-trade" dir="auto">{{ tradeLabel(subcontractor) }}</span>
             <bdi class="row-retention figure">{{ retentionLabel(subcontractor) }}%</bdi>

@@ -111,6 +111,19 @@ describe('SubcontractorListPage · renders and filters by status', () => {
     expect(api.listCalls).toEqual(['active']);
   });
 
+  // ux/components.md:259 — identity first. The name leads the identity cell and the generated code is
+  // the demoted second line, never the first thing on the row.
+  it('puts the name before the code inside the identity cell', async () => {
+    const api = new FakeSubcontractorsApi();
+    const fixture = await createFixture(api);
+
+    const identity = fixture.nativeElement.querySelector('.row-link > .row-identity');
+    expect(identity).not.toBeNull();
+    expect(identity.firstElementChild.classList.contains('row-name')).toBe(true);
+    expect(identity.querySelector('bdi.row-code').textContent?.trim()).toBe('SUB-0001');
+    expect(fixture.nativeElement.querySelector('.row-link').firstElementChild).toBe(identity);
+  });
+
   it('sends the archived filter to the query params on a filter click', async () => {
     const api = new FakeSubcontractorsApi();
     const fixture = await createFixture(api);

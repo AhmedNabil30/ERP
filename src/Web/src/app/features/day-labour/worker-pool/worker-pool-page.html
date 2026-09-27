@@ -14,8 +14,17 @@
       @for (worker of workers(); track trackRow($index, worker)) {
         <li class="row" [attr.data-testid]="'worker-row-' + worker.code">
           <div class="row-main">
-            <bdi class="row-code" translate="no">{{ worker.code }}</bdi>
-            <span class="row-name" dir="auto">{{ worker.fullName }}</span>
+            <!-- ux/components.md:259 — identity first. A site engineer at 390px reads the man's name,
+                 not `E-10007`, so the code demotes to muted secondary text beneath it. This list is a
+                 flex card row, not a `kaff-table` grid, so there is no `--kaff-columns` to follow.
+
+                 F-2 (the باب column) is NOT rendered here: `DayLabour/ListPool/Response.cs:27` sends
+                 `Guid? BabId` and no bab name, and resolving an id to a trade name is a backend change.
+                 Reported rather than invented. -->
+            <span class="row-identity">
+              <span class="row-name" dir="auto">{{ worker.fullName }}</span>
+              <bdi class="row-code" dir="ltr" translate="no">{{ worker.code }}</bdi>
+            </span>
             <bdi class="row-phone" dir="ltr">{{ worker.phone }}</bdi>
             @if (worker.specialty; as specialty) {
               <span class="row-specialty" dir="auto">{{ specialty }}</span>

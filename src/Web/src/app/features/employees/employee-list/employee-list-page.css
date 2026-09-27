@@ -65,14 +65,25 @@
   z-index: 0;
 }
 
-.row-code {
-  font-weight: 600;
-  justify-self: start;
+/* ux/components.md:259 — the identity cell: the name leads, the generated code sits beneath it as
+   muted secondary text. One grid child, so the row still projects one child per column track. */
+.row-identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
   min-inline-size: 0;
+  justify-self: start;
+}
+
+.row-code {
+  unicode-bidi: isolate;
+  font-size: var(--text-xs);
+  color: var(--color-muted);
 }
 
 .row-name {
   font-size: var(--text-md);
+  font-weight: 600;
   min-inline-size: 0;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -108,17 +108,19 @@ export class CatalogueListPage {
   protected readonly i18n = inject(I18nService);
   protected readonly filters = FILTERS;
 
-  /** Grid columns for `kaff-table`: code · description · unit · cost · sell · trailing action/badge.
-   *  `KAFF-928`: fixed sizes plus one `minmax(_, 1fr)` for the one column that should flex — the
-   *  description. Code is a fixed-width figure (`CON-1014`), unit is one or two Arabic characters
-   *  (`م٣`/`طن`), cost/sell are formatted money, and the trailing column is the row's own quiet
-   *  action plus the archived badge, matching the fixture's own proven widths
-   *  (`table-header-fixture-page.ts`). */
-  protected readonly rowColumns = '8rem minmax(14rem, 1fr) 4rem 8rem 8rem 9rem';
+  /** Grid columns for `kaff-table`: identity (description, with the code beneath it) · unit · cost ·
+   *  sell · trailing action/badge.
+   *
+   *  `ux/components.md:259` rules the name first, so the code no longer owns a track of its own — it
+   *  renders as secondary text inside the identity cell. The identity column is the single flexing
+   *  track, `minmax(0, 1fr)`; every other track is fixed. **No `auto` track**: `auto` sizes each row
+   *  against its own content, which is the defect this shell exists to fix. Unit is one or two Arabic
+   *  characters (`م٣`/`طن`), cost/sell are formatted money, and the trailing column is the row's own
+   *  quiet action plus the archived badge. */
+  protected readonly rowColumns = 'minmax(0, 1fr) 4rem 8rem 8rem 9rem';
 
   /** `KAFF-925`: same column order the rows use, the shared header wires above the first group. */
   protected readonly headerColumns: readonly TableColumnDef[] = [
-    { labelKey: 'catalogue.column.code' },
     { labelKey: 'catalogue.column.description' },
     { labelKey: 'catalogue.column.unit' },
     { labelKey: 'catalogue.column.cost_price', align: 'end' },

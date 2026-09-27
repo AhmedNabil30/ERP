@@ -69,12 +69,18 @@
               ></a>
 
               <!--
+                ux/components.md:259 — identity first. Marketing recognises a client by name; the code
+                is a ledger reference (D-049), so it demotes to muted secondary text on the second line
+                of the same identity cell. One grid child, one column track.
+
                 <bdi> on the code and the phone. Both are Latin runs inside an Arabic line, and
                 without isolation the bidi algorithm reorders them against the surrounding text —
                 ux/rtl-and-i18n.md, and S-011 marks both of these fields specifically.
               -->
-              <bdi class="row-code figure" dir="ltr" translate="no">{{ client.code }}</bdi>
-              <span class="row-name" dir="auto">{{ client.name }}</span>
+              <span class="row-identity">
+                <span class="row-name" dir="auto">{{ client.name }}</span>
+                <bdi class="row-code" dir="ltr" translate="no">{{ client.code }}</bdi>
+              </span>
               <kaff-badge tone="accent">{{ i18n.t(clientKindKey(client.kind)) }}</kaff-badge>
               <bdi class="row-phone" dir="ltr">{{ client.phone }}</bdi>
 

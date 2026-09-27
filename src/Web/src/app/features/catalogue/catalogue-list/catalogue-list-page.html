@@ -102,8 +102,16 @@
                     (click)="onOpenItem(item)"
                   ></button>
 
-                  <bdi class="row-code figure" dir="ltr" translate="no">{{ item.code }}</bdi>
-                  <span class="row-desc" dir="auto">{{ item.descriptionAr }}</span>
+                  <!--
+                    ux/components.md:259 — identity first. The description is what a Technical Office
+                    operator recognises; the code stays visible (spec.md §4.5 searches by it) but as
+                    muted secondary text on the second line of the same identity cell, not as the
+                    first column. One grid child, so the row still projects one child per track.
+                  -->
+                  <span class="row-identity">
+                    <span class="row-desc" dir="auto">{{ item.descriptionAr }}</span>
+                    <bdi class="row-code" dir="ltr" translate="no">{{ item.code }}</bdi>
+                  </span>
                   <span class="row-unit" dir="auto">{{ item.unit }}</span>
 
                   <!-- KAFF-929 finding 5: `formatAmount`, not `formatMoney` — the column header names

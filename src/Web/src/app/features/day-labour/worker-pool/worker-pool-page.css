@@ -53,9 +53,24 @@
   gap: var(--space-2);
 }
 
+/* ux/components.md:259 — the identity cell: the name leads, the generated code sits beneath it as
+   muted secondary text. One flex child of `.row-main`. */
+.row-identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.row-name {
+  font-weight: 600;
+}
+
 .row-code {
   font-family: ui-monospace, monospace;
   unicode-bidi: isolate;
+  font-size: var(--text-xs);
+  color: var(--color-muted);
 }
 
 .row-phone {

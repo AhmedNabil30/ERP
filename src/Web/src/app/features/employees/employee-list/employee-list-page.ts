@@ -75,16 +75,17 @@ export class EmployeeListPage {
   protected readonly i18n = inject(I18nService);
   protected readonly filters = FILTERS;
 
-  /** Grid columns for `kaff-table`: code · name · phone · kind · specialty · archived badge.
-   *  `KAFF-928`: fixed sizes plus one `minmax(_, 1fr)` for name, the one column whose content length
-   *  varies. Code and phone are fixed-width figures, kind is a short badge word, specialty already
-   *  truncates with ellipsis so a fixed width suits it, and the trailing column holds only the
-   *  archived badge. */
-  protected readonly rowColumns = '8rem minmax(10rem, 1fr) 9rem 7rem 9rem 7rem';
+  /** Grid columns for `kaff-table`: identity (name, with the code beneath it) · phone · kind ·
+   *  specialty · archived badge.
+   *
+   *  `ux/components.md:259` rules the name first, so the code no longer owns a track — it renders as
+   *  secondary text inside the identity cell. The identity column is the single flexing track,
+   *  `minmax(0, 1fr)`; every other track is fixed. **No `auto` track**: `auto` sizes each row against
+   *  its own content, which is the defect this shell exists to fix. */
+  protected readonly rowColumns = 'minmax(0, 1fr) 9rem 7rem 9rem 7rem';
 
   /** `KAFF-925`: same column order the rows use. No "margin" column — this list has none. */
   protected readonly headerColumns: readonly TableColumnDef[] = [
-    { labelKey: 'hr.employee.field.code' },
     { labelKey: 'hr.employee.field.full_name' },
     { labelKey: 'hr.employee.field.phone' },
     { labelKey: 'hr.employee.field.kind' },

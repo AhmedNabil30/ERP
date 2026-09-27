@@ -41,8 +41,9 @@
             [attr.data-testid]="'bab-row-' + row.bab.code"
           >
             <kaff-table-row [archived]="!row.bab.isActive">
-              <bdi class="row-code figure" dir="ltr" translate="no">{{ row.bab.code }}</bdi>
-
+              <!-- ux/components.md:259 — identity first. The trade name leads; the باب code (needed by
+                   the import, D-144) demotes to muted secondary text under it. The disclosure control
+                   stays with the name, because it is the tree's own affordance on that name. -->
               <span class="row-name-cell">
                 @if (hasChildren(row.bab.id)) {
                   <button
@@ -56,7 +57,10 @@
                 } @else {
                   <span class="disclosure disclosure--spacer" aria-hidden="true"></span>
                 }
-                <span class="row-name" dir="auto">{{ babLabel(row.bab) }}</span>
+                <span class="row-identity">
+                  <span class="row-name" dir="auto">{{ babLabel(row.bab) }}</span>
+                  <bdi class="row-code" dir="ltr" translate="no">{{ row.bab.code }}</bdi>
+                </span>
               </span>
 
               <span class="row-markup">

@@ -45,8 +45,13 @@
                 [attr.aria-label]="employee.fullName"
               ></a>
 
-              <bdi class="row-code figure" dir="ltr" translate="no">{{ employee.code }}</bdi>
-              <span class="row-name" dir="auto">{{ employee.fullName }}</span>
+              <!-- ux/components.md:259 — identity first. HR scans a staff list by name; the generated
+                   code demotes to muted secondary text on the second line of the same identity cell.
+                   One grid child, one column track. -->
+              <span class="row-identity">
+                <span class="row-name" dir="auto">{{ employee.fullName }}</span>
+                <bdi class="row-code" dir="ltr" translate="no">{{ employee.code }}</bdi>
+              </span>
               <bdi class="row-phone" dir="ltr">{{ employee.phone }}</bdi>
               <kaff-badge tone="accent">{{ i18n.t(kindKey(employee)) }}</kaff-badge>
 

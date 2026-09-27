@@ -61,9 +61,19 @@
   padding-block-start: var(--space-1);
 }
 
+/* ux/components.md:259 — the identity cell: the trade name leads, the باب code sits beneath it as
+   muted secondary text. It stacks inside `.row-name-cell`, next to the disclosure control. */
+.row-identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
 .row-code {
   unicode-bidi: isolate;
-  justify-self: start;
+  font-size: var(--text-xs);
+  color: var(--color-muted);
   min-inline-size: 0;
 }
 
@@ -101,6 +111,7 @@
 
 .row-name {
   font-size: var(--text-md);
+  font-weight: 600;
   min-inline-size: 0;
   overflow: hidden;
   text-overflow: ellipsis;
