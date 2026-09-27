@@ -48,8 +48,8 @@
 }
 
 .nav-toggle {
-  inline-size: 2.75rem;
-  block-size: 2.75rem;
+  inline-size: var(--tap-target);
+  block-size: var(--tap-target);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: transparent;
@@ -75,7 +75,7 @@
   color: inherit;
   font: inherit;
   cursor: pointer;
-  min-block-size: 2.75rem;
+  min-block-size: var(--tap-target);
 }
 
 .boot {
@@ -114,7 +114,7 @@
   the mockup: brand row, grouped nav, an icon per row, account block pinned to the bottom.
 */
 .side-nav {
-  inline-size: 15.5rem;
+  inline-size: 13.5rem;
   flex: 0 0 auto;
   padding: var(--space-4) var(--space-3);
   background: var(--sidebar-background);
@@ -130,6 +130,43 @@
   align-items: center;
   gap: var(--space-2);
   padding-inline: var(--space-2);
+}
+
+/*
+  The rail toggle. `inline-size`/`block-size` only — the sidebar is a flex row item (`.shell`), so the
+  rail is purely a width and no rule here names a side. Never `transform: translateX`, which is
+  physical and would animate the wrong way under `dir="rtl"`.
+*/
+.nav-collapse {
+  margin-inline-start: auto;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  flex: 0 0 auto;
+  border: 1px solid var(--sidebar-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--sidebar-text-muted);
+  font: inherit;
+  line-height: var(--line-height-tight);
+  cursor: pointer;
+}
+
+.nav-collapse:hover {
+  color: var(--sidebar-text);
+}
+
+/* The chevron points at the edge the rail collapses toward, which flips with the writing direction. */
+.side-nav.is-collapsed .nav-collapse span {
+  display: inline-block;
+  transform: rotate(180deg);
+}
+
+/* Below 641px the drawer is the whole mechanism (see the media query at the foot of this file) and a
+   rail would fight it, so the toggle is desktop-only furniture. */
+@media (max-width: 640px) {
+  .nav-collapse {
+    display: none;
+  }
 }
 
 .brand-mark {
@@ -162,7 +199,7 @@
 }
 
 .brand-tagline {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--sidebar-text-muted);
 }
 
@@ -172,12 +209,17 @@
   gap: var(--space-1);
 }
 
+/*
+  `letter-spacing: 0.06em` was removed on 2026-09-26. This element renders Arabic, and
+  `ux/rtl-and-i18n.md` §8 prohibits letter-spacing on Arabic — it forces gaps into a cursive script and
+  breaks the joins between letters. `font-size` was an off-scale 0.6875rem (11px), below every floor in
+  `ux/research/density.md`; it is the `--text-xs` token now, which is the scale's own floor.
+*/
 .nav-group-label {
   padding-inline-start: var(--space-3);
   margin-block-end: var(--space-1);
-  font-size: 0.6875rem;
+  font-size: var(--text-xs);
   font-weight: 600;
-  letter-spacing: 0.06em;
   color: var(--sidebar-text-muted);
 }
 
@@ -187,12 +229,20 @@
   gap: var(--space-2);
   padding-block: var(--space-3);
   padding-inline: var(--space-3);
+  /* The active marker, held as a transparent border on every row so becoming active costs no layout
+     shift. `border-inline-start` replaces the `box-shadow: inset 2px 0 0` this rule carried until
+     2026-09-26: `inset 2px` is physical, so under Arabic — the primary direction — it drew the marker
+     down the wrong edge of the row. There is no logical form of `box-shadow`, hence the border. */
+  border-inline-start: 2px solid transparent;
   border-radius: var(--radius-md);
   color: var(--sidebar-text-muted);
   text-decoration: none;
   font-weight: 600;
-  /* 44px of touch target. */
-  min-block-size: 2.75rem;
+  /* Had no font-size at all until 2026-09-26, so it inherited 1rem at weight 600 — the single biggest
+     contributor to Nabil's "everything is very big", in the one component on screen all day. */
+  font-size: var(--text-sm);
+  line-height: var(--line-height-tight);
+  min-block-size: var(--tap-target);
 }
 
 .nav-icon {
@@ -202,11 +252,61 @@
 .nav-item.is-active {
   background: var(--sidebar-active-bg);
   color: var(--sidebar-text);
-  box-shadow: inset 2px 0 0 var(--color-brand);
+  border-inline-start-color: var(--color-brand);
 }
 
 .nav-item.is-active .nav-icon {
   color: var(--color-brand);
+}
+
+/*
+  The collapsed rail. Scoped inside the desktop breakpoint deliberately: below 641px the sidebar is a
+  fixed-position drawer, and a 56px rail there would sit permanently over the content with no way to
+  dismiss it. Collapsing on a monitor and then narrowing the window must land in the drawer, not in a
+  rail.
+
+  ⛔ **The labels are clipped, never `display: none`.** `app.html` marks every `.nav-icon` svg
+  `aria-hidden="true"`, so the label text is the entire accessible name of each nav link. Removing it
+  from the box tree — `display: none`, `visibility: hidden` — leaves every link in the sidebar nameless
+  to a screen reader. `clip-path` keeps the text rendered and named while taking it off screen, and the
+  `title` attribute `app.html` binds while collapsed gives a sighted user the same label on hover
+  without a popup component.
+*/
+@media (min-width: 641px) {
+  .side-nav.is-collapsed {
+    inline-size: var(--nav-rail-size);
+    padding-inline: var(--space-2);
+    overflow-x: clip;
+  }
+
+  .side-nav.is-collapsed .nav-label,
+  .side-nav.is-collapsed .brand-text,
+  .side-nav.is-collapsed .nav-group-label,
+  .side-nav.is-collapsed .account-details {
+    clip-path: inset(50%);
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: clip;
+    white-space: nowrap;
+  }
+
+  .side-nav.is-collapsed .nav-item,
+  .side-nav.is-collapsed .side-nav-brand,
+  .side-nav.is-collapsed .account-summary {
+    justify-content: center;
+    gap: 0;
+  }
+
+  .side-nav.is-collapsed .nav-collapse {
+    margin-inline: auto;
+  }
+
+  /* The sign-out button's own label would wrap to nothing useful in a 56px rail, so the rail keeps the
+     avatar as the account affordance and the label comes back with the sidebar. */
+  .side-nav.is-collapsed .sign-out {
+    display: none;
+  }
 }
 
 /* Pinned to the bottom of the sidebar regardless of how much nav content sits above it — including
@@ -254,7 +354,7 @@
 }
 
 .account-role {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--sidebar-text-muted);
 }
 
@@ -296,7 +396,8 @@
   .side-nav.is-drawer {
     position: fixed;
     inset-block: 0;
-    inset-inline-start: -17rem;
+    /* One rem clear of the sidebar's own 13.5rem, so the shadow is off-canvas too. */
+    inset-inline-start: -15rem;
     z-index: 40;
     transition: inset-inline-start 0.2s ease;
     box-shadow: var(--elevation-2);

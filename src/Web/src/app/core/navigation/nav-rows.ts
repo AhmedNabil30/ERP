@@ -26,13 +26,21 @@ export interface NavRow {
  * `session.permissions` to build the list — so the same session produces the same order every time,
  * independent of how the server happened to order the permissions it returned.
  *
- * **Day labour is deliberately absent.** `/projects/:projectId/day-labour` needs a `:projectId` a
- * company-wide row cannot supply; KAFF-215's open Question 1 leaves how it gets a row unanswered, and
- * this table does not guess. `nav-rows.spec.ts`'s completeness check enforces this by construction:
- * it derives "guarded top-level route" from `app.routes.ts` as *fixed-path, permission-guarded*, which
- * a route carrying `:projectId` never is.
+ * **Day labour is still deliberately absent, and now it is reachable anyway.**
+ * `/projects/:projectId/day-labour` needs a `:projectId` a company-wide row cannot supply, so it gets
+ * no row here — `nav-rows.spec.ts`'s completeness check enforces that by construction: it derives
+ * "guarded top-level route" from `app.routes.ts` as *fixed-path, permission-guarded*, which a route
+ * carrying `:projectId` never is. What KAFF-215's open Question 1 actually asked — how a project-scoped
+ * screen is ever reached — is answered by the `ProjectList` row below rather than by a row of its own:
+ * the project list carries the `:projectId` into the URL. Before that row existed, the whole day-labour
+ * feature shipped green and was reachable only by typing a GUID no screen rendered (Nabil, 2026-09-26).
  */
 const NAV_ROWS: readonly NavRow[] = [
+  // First row, because it is the only one that leads to project work; every row under it is company-wide
+  // master data. `Permission.ProjectList` is CompanyWide and granted to Owner, Finance, TechnicalOffice,
+  // MarketingSales and SiteEngineer (`PermissionCatalogue.cs:542-544`); `ListProjects.Handler` still
+  // filters the rows returned to what the caller is assigned to, so this row exposes no project.
+  { permission: 'ProjectList', path: '/projects', labelKey: 'nav.projects', group: 'core', icon: 'projects' },
   { permission: 'CatalogueManage', path: '/catalogue', labelKey: 'nav.catalogue', group: 'core', icon: 'catalogue' },
   { permission: 'BabManage', path: '/babs', labelKey: 'nav.babs', group: 'core', icon: 'babs' },
   { permission: 'EmployeeManage', path: '/employees', labelKey: 'nav.employees', group: 'core', icon: 'employees' },

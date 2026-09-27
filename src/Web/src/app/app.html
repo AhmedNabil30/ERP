@@ -25,7 +25,13 @@
       stay reachable. Only the brand row and the nav groups are conditioned on `showStaffNav()`; the
       account block below is not.
     -->
-    <nav class="side-nav" [class.is-drawer]="showStaffNav()" [class.is-open]="isNavOpen()" data-testid="side-nav">
+    <nav
+      id="side-nav"
+      class="side-nav"
+      [class.is-drawer]="showStaffNav()"
+      [class.is-open]="isNavOpen()"
+      [class.is-collapsed]="isNavCollapsed()"
+      data-testid="side-nav">
       @if (showStaffNav()) {
         <div class="side-nav-brand">
           <div class="brand-mark" aria-hidden="true"><bdi dir="ltr" translate="no">K</bdi></div>
@@ -33,6 +39,23 @@
             <bdi dir="ltr" translate="no" class="brand-word">KAAF</bdi>
             <span class="brand-tagline">{{ i18n.t('app.tagline') }}</span>
           </div>
+
+          <!--
+            The desktop rail toggle, and it lives here rather than in `.app-header` on purpose: the
+            header already carries the phone drawer's hamburger (`data-testid="nav-toggle"` below), and
+            two hamburgers on one screen get clicked for each other. CSS hides this one below 641px,
+            where the drawer is the only correct mechanism.
+          -->
+          <button
+            type="button"
+            class="nav-collapse"
+            data-testid="nav-collapse"
+            aria-controls="side-nav"
+            [attr.aria-expanded]="!isNavCollapsed()"
+            [attr.aria-label]="i18n.t(isNavCollapsed() ? 'shell.nav.expand' : 'shell.nav.collapse')"
+            (click)="toggleNavCollapsed()">
+            <span aria-hidden="true">«</span>
+          </button>
         </div>
 
         @for (group of navGroups(); track group.key) {
@@ -44,6 +67,7 @@
                 class="nav-item"
                 routerLinkActive="is-active"
                 [routerLink]="row.path"
+                [attr.title]="isNavCollapsed() ? i18n.t(row.labelKey) : null"
                 (click)="closeNav()">
                 <svg
                   class="nav-icon"
@@ -57,6 +81,11 @@
                   stroke-linejoin="round"
                   aria-hidden="true">
                   @switch (row.icon) {
+                    @case ('projects') {
+                      <path d="M4 20V8l6-4 6 4v12" />
+                      <path d="M16 20V11h4v9" />
+                      <path d="M8 20v-5h4v5" />
+                    }
                     @case ('catalogue') {
                       <path d="M4 6h16M4 12h16M4 18h10" />
                     }
@@ -99,7 +128,7 @@
                     }
                   }
                 </svg>
-                {{ i18n.t(row.labelKey) }}</a>
+                <span class="nav-label">{{ i18n.t(row.labelKey) }}</span></a>
             }
           </div>
         }

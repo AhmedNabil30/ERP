@@ -10,7 +10,7 @@ import {
   roleKey,
 } from '../../core/i18n/enum-keys';
 import { I18nService } from '../../core/i18n/i18n.service';
-import { Landing, landingFor } from '../../core/navigation/landing';
+import { Landing, landingFor, navPathFor } from '../../core/navigation/landing';
 
 /**
  * D-100's ruling, applied: `[RefCode] Project Name`. The payload deliberately does not concatenate
@@ -58,15 +58,24 @@ export class LandingPage {
     // MarketingSales lands on S-011 and the Owner on S-006, each a route of its own rather than a
     // branch of this page: each has its own URL, its own guard and its own back-stack behaviour, and
     // a list rendered inside the landing could not be linked to. Redirect rather than duplicate.
+    //
+    // The destination comes from `navPathFor`, not from a second hand-written map of kind to URL. It
+    // was a three-branch `if` chain until 2026-09-26 and adding the project list would have made it
+    // four, each duplicating a path `landing.ts` already owns — the same drift that put a nav item
+    // labelled "Clients" on a link to the landing page.
+    //
+    // `navPathFor` answers `/` for the kinds that render here rather than redirect (`profile`,
+    // `hr-projects`, `forbidden`); navigating to `/` from `/` is what this guard against `'/'` prevents,
+    // and without it this effect would re-enter itself.
     effect(() => {
-      const kind = this.landing().kind;
+      const session = this.session();
+      if (!session) {
+        return;
+      }
 
-      if (kind === 'clients') {
-        void this.router.navigateByUrl('/clients');
-      } else if (kind === 'users') {
-        void this.router.navigateByUrl('/users');
-      } else if (kind === 'catalogue') {
-        void this.router.navigateByUrl('/catalogue');
+      const path = navPathFor(session);
+      if (path !== '/') {
+        void this.router.navigateByUrl(path);
       }
     });
 

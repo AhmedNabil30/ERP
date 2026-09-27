@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { AuthApi } from '../../../core/auth/auth.api';
 import { AuthService } from '../../../core/auth/auth.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { navPathFor } from '../../../core/navigation/landing';
 import { toProblem } from '../../../core/api/problem-details';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { KaffField } from '../../../shared/kaff-field/kaff-field';
@@ -138,12 +139,15 @@ export class SignInPage {
         return undefined;
       }
 
-      // ⚠️ Rules 9 and 10's destinations do not exist either. `Role.Hr` is ruled to land on the
-      // Project Team surface rather than a project dashboard (D-051 Q32) — that is KAFF-115 — and the
-      // staff shell is KAFF-105b. Routing everyone to `/` is not a decision that HR and Finance share
-      // a landing page; it is the statement that there is one page. `AC-101b-A` and `AC-101b-D` move
-      // with those stories rather than being closed against screens nobody has built.
-      await this.router.navigateByUrl('/');
+      // The destinations exist now, so this goes straight to the one this session lands on instead of
+      // hopping through `/`. The landing page redirects the same way (`landing-page.ts`), which means
+      // every role used to pay a wasted frame on every sign-in — sign in, land on `/`, render the
+      // redirect frame, navigate again. `navPathFor` answers `/` for the roles whose landing the
+      // landing page actually renders (profile, HR's project list), so those are unaffected.
+      //
+      // Still convenience, never enforcement: every route this can reach is guarded, and the server
+      // re-authorises role × assignment on each request (D-048).
+      await this.router.navigateByUrl(navPathFor(session));
 
       return undefined;
     });

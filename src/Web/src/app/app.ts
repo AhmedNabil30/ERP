@@ -63,6 +63,41 @@ export class App {
   private readonly navOpen = signal(false);
   protected readonly isNavOpen = this.navOpen.asReadonly();
 
+  /**
+   * The desktop sidebar rail (Nabil, 2026-09-26: "the side menue should be collapsable").
+   *
+   * **A chrome preference, so it persists in `localStorage`** — the same mechanism
+   * `i18n.service.ts` uses for the chosen locale, and outside D-050's ban, which is on holding session
+   * or credential material there, not on remembering how wide a menu is. It is deliberately per-device
+   * rather than per-user: a site engineer on a phone and the same account on an office monitor want
+   * different answers, and there is no server preference to hang it on.
+   *
+   * Reads defensively. A private window, cleared site data or a blocked storage origin makes the
+   * accessor throw rather than return null, and the shell must still render.
+   */
+  private static readonly NAV_COLLAPSED_KEY = 'kaff.nav.collapsed';
+
+  private readonly navCollapsed = signal(App.readNavCollapsed());
+  protected readonly isNavCollapsed = this.navCollapsed.asReadonly();
+
+  private static readNavCollapsed(): boolean {
+    try {
+      return localStorage.getItem(App.NAV_COLLAPSED_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  }
+
+  protected toggleNavCollapsed(): void {
+    const collapsed = !this.navCollapsed();
+    this.navCollapsed.set(collapsed);
+    try {
+      localStorage.setItem(App.NAV_COLLAPSED_KEY, String(collapsed));
+    } catch {
+      // A browser that refuses the write still gets the collapse — it just forgets it on reload.
+    }
+  }
+
   protected readonly resolved = this.auth.resolved;
   protected readonly session = this.auth.current;
 

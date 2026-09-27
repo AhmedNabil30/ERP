@@ -30,6 +30,7 @@ export type Landing =
   | { readonly kind: 'clients' }
   | { readonly kind: 'users' }
   | { readonly kind: 'catalogue' }
+  | { readonly kind: 'projects' }
   | { readonly kind: 'profile' }
   | { readonly kind: 'hr-projects' }
   | { readonly kind: 'forbidden' };
@@ -60,6 +61,18 @@ const RULED_LANDINGS: readonly (readonly [permission: string, landing: Landing])
   ['ClientManage', { kind: 'clients' }],
   // S-017 the catalogue list — `Permission.CatalogueManage`, CompanyWide, Owner and TechnicalOffice.
   ['CatalogueManage', { kind: 'catalogue' }],
+  // S-050 the project list — `Permission.ProjectList`, CompanyWide, Owner, Finance, TechnicalOffice,
+  // MarketingSales and SiteEngineer (`PermissionCatalogue.cs:542-544`).
+  //
+  // **Appended last, because row order is precedence and no ruled landing above may move.** The Owner
+  // holds `ProjectList` as well as `UserManage` and stays on S-006; TechnicalOffice stays on the
+  // catalogue; MarketingSales stays on the client list. What this row changes is the two roles that
+  // reached this file's fall-through and landed on their own profile: **Finance**, whose only link was
+  // to suppliers while it holds `TreasuryReadCompany`, and the **SiteEngineer**, whose landing was a
+  // dead end — the whole day-labour feature was built, gate-green and reachable only by typing a URL
+  // containing a project GUID that no screen rendered. Nabil raised it as a UX complaint on
+  // 2026-09-26; the cause was navigation, not layout.
+  ['ProjectList', { kind: 'projects' }],
 ];
 
 /**
@@ -141,6 +154,8 @@ export function navLabelKeyFor(session: Session): string | null {
       return 'nav.users';
     case 'catalogue':
       return 'nav.catalogue';
+    case 'projects':
+      return 'nav.projects';
     case 'hr-projects':
       return 'nav.hr_projects';
     case 'profile':
@@ -171,6 +186,8 @@ export function navPathFor(session: Session): string {
       return '/users';
     case 'catalogue':
       return '/catalogue';
+    case 'projects':
+      return '/projects';
     default:
       return '/';
   }

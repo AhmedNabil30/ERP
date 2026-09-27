@@ -48,6 +48,10 @@
      trigger — a 44px trigger inside a 32px row makes the row height unachievable. */
   --row-target: var(--tap-target);
 
+  /* The collapsed sidebar rail: an 18px icon plus 19px either side. Material's 80dp rail is a touch
+     figure and this rail is desktop-only furniture (`app.css`), so it does not apply. */
+  --nav-rail-size: 3.5rem;
+
   --color-background: #ffffff;
   --color-surface: #f7f7f5;
   --color-text: #1a1a1a;

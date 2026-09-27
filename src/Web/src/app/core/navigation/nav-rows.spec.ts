@@ -57,6 +57,11 @@ function guardedTopLevelRoutePaths(): readonly string[] {
 describe('AC-215-B — every guarded top-level route has a row, derived from app.routes.ts', () => {
   it('the route list and the row table name exactly the same paths', () => {
     const ownerWithEverything = session('Owner', [
+      // KAFF-401. The Owner holds `ProjectList` in `PermissionCatalogue` (CompanyWide, owner among the
+      // grants), so it belongs in a fixture that claims to hold everything company-wide — the check is
+      // "every guarded top-level route has a row", and adding the permission is what lets the new
+      // `/projects` row answer it. The assertion itself is untouched.
+      'ProjectList',
       'ClientManage',
       'UserManage',
       'DepartmentManage',
