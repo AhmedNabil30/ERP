@@ -24,6 +24,8 @@ import {
   SubcontractorsApi,
 } from '../../../core/subcontractors/subcontractors.api';
 import { DuplicatePhoneWarning } from '../../../shared/duplicate-phone-warning/duplicate-phone-warning';
+import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import { KaffField } from '../../../shared/kaff-field/kaff-field';
 import { PhoneMatch } from '../../../shared/phone-match';
 
 interface SubcontractorDraft {
@@ -74,7 +76,7 @@ const draft = schema<SubcontractorDraft>((path) => {
  */
 @Component({
   selector: 'kaff-subcontractor-form-page',
-  imports: [FormField, RouterLink, DuplicatePhoneWarning],
+  imports: [FormField, RouterLink, DuplicatePhoneWarning, KaffButton, KaffField],
   templateUrl: './subcontractor-form-page.html',
   styleUrl: './subcontractor-form-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

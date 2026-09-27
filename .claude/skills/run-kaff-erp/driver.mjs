@@ -353,17 +353,29 @@ async function signedShot(userName, password, targetPath, out, width, colorSchem
       await evaluate(`document.querySelector(${JSON.stringify(selector)})?.blur()`);
       await evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))');
     } else if (typeof openDrawer === 'string' && openDrawer.startsWith('click:')) {
-      // KAFF-933: click one or more elements in sequence, each by trimmed innerText (falls back to a
-      // CSS selector), separated by `||` — for reaching a screen this driver has no direct URL for
-      // (e.g. an edit row behind a row menu), same matching rule `click()` above uses inside `flow`.
+      // KAFF-933: run one or more steps in sequence, separated by `||`, for reaching a screen this
+      // driver has no direct URL for (e.g. an edit row behind a row menu, or a just-created record).
+      // A step of the form `type:selector::value` types into that field (Input.insertText, same as
+      // the sign-in form's own `type` helper above) — `::` rather than `=`, since a CSS attribute
+      // selector like `[data-testid='x']` already contains `=`. Anything else clicks the first
+      // element whose trimmed innerText equals it, falling back to a CSS selector — the same
+      // matching rule `click()` uses inside `flow`.
       const steps = openDrawer.slice('click:'.length).split('||');
-      for (const text of steps) {
-        await evaluate(`(() => {
-          const wanted = ${JSON.stringify(text)};
-          const all = Array.from(document.querySelectorAll('button, a, [role="button"]'));
-          const target = all.find((e) => e.innerText.trim() === wanted) ?? document.querySelector(wanted);
-          target?.click();
-        })()`);
+      for (const step of steps) {
+        if (step.startsWith('type:')) {
+          const sep = step.indexOf('::');
+          const selector = step.slice('type:'.length, sep);
+          const value = step.slice(sep + 2);
+          await evaluate(`document.querySelector(${JSON.stringify(selector)})?.focus()`);
+          await call('Input.insertText', { text: value });
+        } else {
+          await evaluate(`(() => {
+            const wanted = ${JSON.stringify(step)};
+            const all = Array.from(document.querySelectorAll('button, a, [role="button"]'));
+            const target = all.find((e) => e.innerText.trim() === wanted) ?? document.querySelector(wanted);
+            target?.click();
+          })()`);
+        }
         await new Promise((r) => setTimeout(r, 400));
         await evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))');
       }
