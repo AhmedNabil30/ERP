@@ -1,0 +1,111 @@
+<section class="projects" data-testid="project-list">
+  <div class="action-bar">
+    <!-- One label for the sidebar row and the screen it opens: `nav.projects`, read here and by the
+         nav row another agent adds. Two keys for one word is how a sidebar and a title start
+         disagreeing. -->
+    <h1 class="title">{{ i18n.t('nav.projects') }}</h1>
+
+    @if (projects().length > 0) {
+      <span class="count" data-testid="project-list-count">{{ countText() }}</span>
+    }
+  </div>
+
+  @if (failure(); as key) {
+    <kaff-state mode="refusal" [bodyKey]="key" testId="project-list-failure" />
+  } @else if (loading()) {
+    <kaff-state mode="loading" titleKey="projects.loading" testId="project-list-loading" />
+  } @else if (projects().length > 0) {
+    @if (noneReachable()) {
+      <!--
+        Rows came back and not one of them opens anything for this session — a different fact from an
+        empty project master, and `kaff-state`'s fourth mode is where that difference is written down.
+
+        **It sits above the rows and does not replace them.** A Technical Office lead holds no
+        `DayLabourSiteManage` anywhere; replacing the table with this panel would hide every project
+        they legitimately read in order to explain that one link is missing.
+      -->
+      <kaff-state
+        mode="filtered-empty"
+        titleKey="projects.empty.unreachable.title"
+        bodyKey="projects.empty.unreachable.body"
+        [hiddenCount]="total()"
+        testId="project-list-none-reachable"
+      />
+    }
+
+    <kaff-table
+      [columns]="rowColumns()"
+      [columnDefs]="headerColumns()"
+      testId="project-table-header"
+      data-testid="project-rows-shell"
+    >
+      <ul class="rows" data-testid="project-rows">
+        @for (project of projects(); track trackProject($index, project)) {
+          <li class="rows-item">
+            <kaff-table-row>
+              <!--
+                The whole point of this screen. `/projects/:projectId/day-labour` was reachable only by
+                typing a GUID; the row is the link, gated on this project's own `DayLabourSiteManage`
+                exactly as `dayLabourSiteManageGuard` gates the route. UI hiding is convenience — the
+                server refuses regardless.
+
+                KAFF-928 finding 6's stretched-link pattern: absolutely positioned, so it consumes no
+                grid track and the row is one click target without nesting interactive elements.
+              -->
+              @if (canOpen(project)) {
+                <a
+                  class="row-stretched-link"
+                  [routerLink]="['/projects', project.id, 'day-labour']"
+                  [attr.aria-label]="i18n.t('projects.action.open_day_labour', { name: project.name })"
+                  [attr.data-testid]="'project-row-link-' + project.code"
+                ></a>
+              }
+
+              <!-- ux/components.md:259 — identity first. The name leads; the code is a ledger
+                   reference (D-049) and demotes to muted secondary text in the same cell. <bdi> on the
+                   code: a Latin run inside an Arabic line reorders without isolation. -->
+              <span class="row-identity">
+                <span class="row-name" dir="auto">{{ project.name }}</span>
+                <bdi class="row-code" dir="ltr" translate="no">{{ project.code }}</bdi>
+              </span>
+
+              @if (canReadClients()) {
+                <span class="row-client" dir="auto" [attr.data-testid]="'project-client-' + project.code">
+                  @if (clientName(project); as name) {
+                    {{ name }}
+                  }
+                </span>
+              }
+
+              <kaff-badge tone="accent">{{ i18n.t(contractTypeKey(project.contractType)) }}</kaff-badge>
+
+              <!--
+                Kaff's vocabulary verbatim where it is ruled, and a placeholder where it is not.
+                `projectStatusKey` returns null for the six states of spec.md §13 that Q18 has not
+                answered — see its own doc. A plausible label here would read as compliance.
+              -->
+              <span class="row-status" [attr.data-testid]="'project-status-' + project.code">
+                @if (projectStatusKey(project.status); as key) {
+                  {{ i18n.t(key) }}
+                } @else {
+                  <span class="row-status-unruled">{{ i18n.t('projects.status.unruled') }}</span>
+                }
+              </span>
+
+              <bdi class="figure row-value" dir="ltr" [attr.data-testid]="'project-value-' + project.code">
+                {{ contractValueText(project) }}
+              </bdi>
+            </kaff-table-row>
+          </li>
+        }
+      </ul>
+    </kaff-table>
+  } @else {
+    <kaff-state
+      mode="empty"
+      titleKey="projects.empty.title"
+      bodyKey="projects.empty.body"
+      testId="project-list-empty"
+    />
+  }
+</section>

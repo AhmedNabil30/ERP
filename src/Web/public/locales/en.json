@@ -8,6 +8,8 @@
 
   "shell.boot.loading": "Loading…",
   "shell.nav.toggle": "Menu",
+  "shell.nav.collapse": "Collapse the menu",
+  "shell.nav.expand": "Expand the menu",
   "shell.account.menu": "Account menu",
   "shell.account.sign_out": "Sign out",
   "app.tagline": "Construction and finishing",
@@ -631,5 +633,25 @@
   "devFixtures.kaff930.state.filteredEmpty.title": "Nothing matches this filter",
   "devFixtures.kaff930.state.filteredEmpty.body": "{count} rows are hidden by the active filter.",
   "devFixtures.kaff930.state.refusal.title": "Request refused",
-  "devFixtures.kaff930.state.refusal.body": "You do not have permission for this action."
+  "devFixtures.kaff930.state.refusal.body": "You do not have permission for this action.",
+
+  "nav.projects": "Projects",
+  "projects.loading": "Loading projects",
+  "projects.list.count": "{count} projects",
+  "projects.field.name": "Project",
+  "projects.field.client": "Client",
+  "projects.field.contract_type": "Contract type",
+  "projects.field.status": "Status",
+  "projects.field.contract_value": "Contract value",
+  "projects.status.unruled": "—",
+  "projects.value.not_applicable": "Not applicable",
+  "projects.action.open_day_labour": "Day labour — {name}",
+  "projects.empty.title": "No projects yet.",
+  "projects.empty.body": "A project appears here once it is created.",
+  "projects.empty.unreachable.title": "No project is open to you.",
+  "projects.empty.unreachable.body": "{count} projects are visible to you to read, and none of them carries work assigned to you.",
+
+  "enum.ContractType.LumpSum": "Lump Sum",
+  "enum.ContractType.CostPlus": "Cost Plus",
+  "enum.ContractType.Design": "Design"
 }

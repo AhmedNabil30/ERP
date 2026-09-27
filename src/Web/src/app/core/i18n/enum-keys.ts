@@ -6,6 +6,7 @@ import {
   Role,
 } from '../auth/auth.service';
 import { ClientKind } from '../clients/clients.api';
+import { ContractType, ProjectStatus } from '../projects/projects.api';
 
 /**
  * `enum.<Type>.<Member>` — `ux/rtl-and-i18n.md` §6's naming convention for a server enum rendered as
@@ -140,6 +141,55 @@ export function auditEventKindKey(kind: AuditEventKind): string {
       return 'enum.AuditEventKind.CatalogueImported';
     default:
       return assertNever(kind);
+  }
+}
+
+/** spec.md §5 — three contract types, one project entity. KAFF-401. */
+export function contractTypeKey(type: ContractType): string {
+  switch (type) {
+    case 'LumpSum':
+      return 'enum.ContractType.LumpSum';
+    case 'CostPlus':
+      return 'enum.ContractType.CostPlus';
+    case 'Design':
+      return 'enum.ContractType.Design';
+    default:
+      return assertNever(type);
+  }
+}
+
+/**
+ * Kaff's Arabic status vocabulary for a project status — **or `null` where nobody has ruled yet**.
+ *
+ * `spec.md` §13 gives the project eight states; CLAUDE.md requires five Arabic labels verbatim, two of
+ * which (متعثرة, تم تأجيلها) are health tags and not states at all (D-044 §7). That leaves three
+ * labels for eight states, and the mapping is **open**: `stories/questions-for-karim.md` Q18 asks in
+ * as many words whether انتهت means the site is finished or the file is closed and the money
+ * collected. D-014 rejected "a plausible mapping" for exactly this reason.
+ *
+ * Two of the eight are already fixed by shipped product text and are not a guess made here:
+ * `errors.project.initial_status_not_supported` reads *"لا يمكن أن يبدأ المشروع إلا بحالة لم تبدأ أو
+ * جاري العمل"* against `Status is not (null or Setup or Active)` (`CreateProject/Validator.cs`), so
+ * `Setup` is لم تبدأ and `Active` is جاري العمل in Kaff's own words.
+ *
+ * The other six return `null`, and the screen renders a placeholder rather than a label it invented.
+ * **Do not fill these in without an answer to Q18.**
+ */
+export function projectStatusKey(status: ProjectStatus): string | null {
+  switch (status) {
+    case 'Setup':
+      return 'status.kaff.not_started';
+    case 'Active':
+      return 'status.kaff.in_progress';
+    case 'HandoverPending':
+    case 'Handover':
+    case 'UnderWarranty':
+    case 'Closed':
+    case 'Stopped':
+    case 'Terminated':
+      return null;
+    default:
+      return assertNever(status);
   }
 }
 

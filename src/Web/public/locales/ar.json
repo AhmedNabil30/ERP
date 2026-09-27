@@ -8,6 +8,8 @@
 
   "shell.boot.loading": "جارٍ التحميل…",
   "shell.nav.toggle": "القائمة",
+  "shell.nav.collapse": "تصغير القائمة",
+  "shell.nav.expand": "توسيع القائمة",
   "shell.account.menu": "قائمة الحساب",
   "shell.account.sign_out": "تسجيل الخروج",
   "app.tagline": "مقاولات وتشطيبات",
@@ -631,5 +633,25 @@
   "devFixtures.kaff930.state.filteredEmpty.title": "لا يوجد ما يطابق هذا الفلتر",
   "devFixtures.kaff930.state.filteredEmpty.body": "{count} صفوف مخفية بسبب الفلتر الحالي.",
   "devFixtures.kaff930.state.refusal.title": "تم رفض الطلب",
-  "devFixtures.kaff930.state.refusal.body": "لا تملك صلاحية لتنفيذ هذا الإجراء."
+  "devFixtures.kaff930.state.refusal.body": "لا تملك صلاحية لتنفيذ هذا الإجراء.",
+
+  "nav.projects": "المشاريع",
+  "projects.loading": "جارٍ تحميل المشاريع",
+  "projects.list.count": "{count} مشروعاً",
+  "projects.field.name": "المشروع",
+  "projects.field.client": "العميل",
+  "projects.field.contract_type": "نوع التعاقد",
+  "projects.field.status": "الحالة",
+  "projects.field.contract_value": "قيمة التعاقد",
+  "projects.status.unruled": "—",
+  "projects.value.not_applicable": "لا ينطبق",
+  "projects.action.open_day_labour": "يومية العمالة — {name}",
+  "projects.empty.title": "لا توجد مشاريع بعد.",
+  "projects.empty.body": "سيظهر المشروع هنا بعد إنشائه.",
+  "projects.empty.unreachable.title": "لا يوجد مشروع مفتوح لك.",
+  "projects.empty.unreachable.body": "{count} مشروعاً ظاهر لك للقراءة فقط، ولا يوجد به عمل مسند إليك.",
+
+  "enum.ContractType.LumpSum": "مقاولة بالمقطوعية",
+  "enum.ContractType.CostPlus": "التكلفة زائد نسبة إشراف",
+  "enum.ContractType.Design": "تصميم"
 }

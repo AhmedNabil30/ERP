@@ -9,6 +9,7 @@ import { dayLabourSiteManageGuard } from './core/auth/day-labour-site-manage.gua
 import { departmentManageGuard } from './core/auth/department-manage.guard';
 import { employeeManageGuard } from './core/auth/employee-manage.guard';
 import { mustChangePasswordGuard } from './core/auth/must-change-password.guard';
+import { projectListGuard } from './core/auth/project-list.guard';
 import { sessionGuard } from './core/auth/session.guard';
 import { subcontractorManageGuard } from './core/auth/subcontractor-manage.guard';
 import { supplierManageGuard } from './core/auth/supplier-manage.guard';
@@ -227,6 +228,20 @@ export const routes: Routes = [
           ),
       },
     ],
+  },
+  {
+    // KAFF-401 — S-050, the project list. Same shape as the `/clients` route above: `sessionGuard`
+    // resolves the session first, then `projectListGuard` keeps a role without `ProjectList` out of a
+    // screen the server would refuse anyway (HR and the portal Client, per `ListProjects/Endpoint.cs`).
+    //
+    // **A leaf route, deliberately, and it does not own the `projects/:projectId/...` routes below.**
+    // This matches the single segment `/projects` only; day labour keeps its own top-level entries
+    // because their guards differ per route (`dayLabourSiteManageGuard` vs `dayLabourRateManageGuard`,
+    // D-153 §1) and nesting them here would put a company-wide gate in front of a project-scoped one.
+    path: 'projects',
+    canActivate: [sessionGuard, mustChangePasswordGuard, projectListGuard],
+    loadComponent: () =>
+      import('./features/projects/project-list/project-list-page').then((m) => m.ProjectListPage),
   },
   {
     // KAFF-209, KAFF-210 — S-025, S-026, S-027. Same shape as `/employees` above, except the guard is
