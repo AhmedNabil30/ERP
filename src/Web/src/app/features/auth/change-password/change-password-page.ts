@@ -7,6 +7,8 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { SessionResolver } from '../../../core/auth/session-resolver';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { toProblem } from '../../../core/api/problem-details';
+import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import { KaffField } from '../../../shared/kaff-field/kaff-field';
 
 /** D-049 ruling 3, restated exactly as the sign-in screen restates it — the whole rule. */
 const MINIMUM_PASSWORD_LENGTH = 8;
@@ -66,7 +68,7 @@ const changePasswordSchema = schema<ChangePasswordFields>((path) => {
  */
 @Component({
   selector: 'kaff-change-password-page',
-  imports: [FormField],
+  imports: [FormField, KaffButton, KaffField],
   templateUrl: './change-password-page.html',
   styleUrl: './change-password-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
