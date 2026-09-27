@@ -14699,3 +14699,23 @@ whose cells still call `formatMoney` directly, not a regression this story was a
 **Confirmed while making this change:** `department-settings-page`'s primary action was already a
 filled `kaff-button` (not a bare `.create` link like the other five screens) — only its *position*
 moved, from the bottom of the page into the top-bar slot; `onStartCreate` itself is unchanged.
+
+### D-174 · Scrum Master — a destructive trigger is bordered, a destructive confirm is filled · 2026-09-28
+
+`kaff-button` had four variants and none of them was a bordered danger button, so three dialects for
+one idea grew up across the application: `KAFF-933` left `subcontractor-form` and `supplier-form` on a
+plain `.danger-button` outside the kit rather than edit the kit, `client-form` and `user-form` use the
+filled `variant="danger"` the design direction forbids, and `KAFF-930`/`KAFF-931` had already ruled
+that a row's destructive action is danger text only.
+
+Ruled, as presentation with no business rule attached, so it went to neither Karim nor Nabil:
+
+- A destructive **trigger** — the button that opens a confirmation — is `variant="danger-outline"`:
+  danger text, danger border, transparent background. `.design/CatalogueForm.dc.html` draws it that way.
+- The **confirm** button inside an inline confirmation stays `variant="danger"`, filled. `KAFF-931`
+  already kept it filled on every list and that holds.
+- A destructive action inside a row stays a `kaff-row-menu` item with `tone="danger"`, text only.
+
+The trigger is reversible and must not dominate a form; the confirm is the irreversible act and must.
+Built as `KAFF-935`, which is the only story permitted to change a kit component, and the reason
+`KAFF-933` could not close at `READY`.

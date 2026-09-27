@@ -702,10 +702,10 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 0 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 | 0 |
 | 🟡 BUILT — shipped, nobody independent has looked | 0 | 0 | 41 | 8 | 82 |
-| ⚪ READY / COMMITTED — refined, not built | 0 | 0 | 0 | 0 | 21 |
+| ⚪ READY / COMMITTED — refined, not built | 0 | 0 | 0 | 0 | 24 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 0 | 0 | 0 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 | 0 | 0 |
-| **total** | **127** | **58** | **41** | **8** | **103** |
+| **total** | **127** | **58** | **41** | **8** | **106** |
 
 ## Every story
 
@@ -798,6 +798,7 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-932](stories/design-system/KAFF-932-two-lists-onto-the-table-shell.md) | design-system | 5 | ⚪ READY | none | `-` | - | Subcontractor and supplier lists onto the table shell |
 | [KAFF-933](stories/design-system/KAFF-933-the-forms-that-never-got-the-kit.md) | design-system | 8 | ⚪ READY | none | `-` | - | The forms that never got the kit |
 | [KAFF-934](stories/design-system/KAFF-934-the-field-screens-and-the-plain-pages.md) | design-system | 8 | ⚪ READY | none | `-` | - | The field screens, and the plain pages nobody restyled |
+| [KAFF-935](stories/design-system/KAFF-935-a-destructive-action-is-bordered-not-filled.md) | design-system | 3 | ⚪ READY | none | `-` | - | A destructive action is bordered, not filled |
 
 <!-- END GENERATED -->
 
