@@ -702,10 +702,10 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 0 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 | 0 |
 | 🟡 BUILT — shipped, nobody independent has looked | 0 | 0 | 41 | 8 | 82 |
-| ⚪ READY / COMMITTED — refined, not built | 0 | 0 | 5 | 0 | 21 |
+| ⚪ READY / COMMITTED — refined, not built | 0 | 0 | 0 | 0 | 21 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 0 | 0 | 0 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 | 0 | 0 |
-| **total** | **127** | **58** | **46** | **8** | **103** |
+| **total** | **127** | **58** | **41** | **8** | **103** |
 
 ## Every story
 
@@ -763,7 +763,7 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-301](stories/slice-3-treasury/KAFF-301-post-a-movement-between-two-accounts.md) | 3 | 8 | 🟡 BUILT | none | `-` | 2026-09-14 | Post a movement between two accounts, append-only |
 | [KAFF-302](stories/slice-3-treasury/KAFF-302-create-a-projects-account-set-on-creation.md) | 3 | 5 | 🟡 BUILT | none | `-` | 2026-09-14 | Create a project's account set when a project is created |
 | [KAFF-303](stories/slice-3-treasury/KAFF-303-correct-a-mistake-with-a-reversing-posting.md) | 3 | 5 | 🟡 BUILT | none | `-` | 2026-09-15 | Correct a mistake with a reversing posting, never an edit |
-| [KAFF-304](stories/slice-3-treasury/KAFF-304-every-balance-is-derived-by-summing-postings.md) | 3 | 5 | ⚪ READY | none | `-` | 2026-09-14 | Every balance is derived by summing postings |
+| [KAFF-304](stories/slice-3-treasury/KAFF-304-every-balance-is-derived-by-summing-postings.md) | 3 | 5 | ⚪ FOLDED | none | `-` | 2026-09-28 | Every balance is derived by summing postings |
 | [KAFF-305](stories/slice-3-treasury/KAFF-305-the-posting-type-account-pair-legality-table.md) | 3 | 8 | 🟡 BUILT | none | `-` | 2026-09-15 | The posting-type × account-pair legality table |
 | [KAFF-306](stories/slice-3-treasury/KAFF-306-treasury-read-api.md) | 3 | 5 | 🟡 BUILT | none | `-` | 2026-09-25 | The Treasury can post and reverse, but nothing reads |
 | [KAFF-319](stories/slice-3-treasury/KAFF-319-a-refused-posting-reads-as-a-translated-message.md) | 3 | 3 | 🟡 BUILT | none | `-` | 2026-09-15 | A refused posting reads as a translated message, not a 500 |

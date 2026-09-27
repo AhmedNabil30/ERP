@@ -1,6 +1,6 @@
 # KAFF-304 · Every balance is derived by summing postings
 
-<!-- kaff id=KAFF-304 slice=3 points=5 state=READY verdict=none at=- on=2026-09-14 -->
+<!-- kaff id=KAFF-304 slice=3 points=5 state=FOLDED verdict=none at=- on=2026-09-28 -->
 
 **Slice:** 3 (Treasury) · **Epic:** Treasury · **Points:** 5 (`stories/backlog.md` slice-3 table) · **Status:** NOT-BUILT.
 **Spec:** §6.1 ("Balances are always derived by summing postings and MUST NOT be stored"), §6.4 (the five ledgers reported separately, never netted)
@@ -125,4 +125,35 @@ Then `Inflow`, `Outflow`, `RawBalance` and `SignedBalance` are all zero
 
 | # | |
 |---|---|
-| **`Q90`** | **"Who is allowed to see a project's ledger balances — the client advance, the hold, the firm advance — day to day? Finance and the Owner, obviously. Does Technical Office or a Site Engineer assigned to the project see any of it, or is it Finance-and-Owner only?"** Say why it is being asked: `spec.md` §9 names roles and their financial *approval* powers in detail but never states who may *read* a ledger balance, and no `Permission` in the catalogue is named for it. D-035 and D-044 §2 rule out the Client and HR by name, which narrows the answer but does not give it. **Blocks `KAFF-304`'s endpoint shape — the query object itself does not need this answer, but nothing can be exposed over HTTP until it is.** |
+| **`Q90`** | **"Who is allowed to see a project's ledger balances — the client advance, the hold, the firm advance — day to day? Finance and the Owner, obviously. Does Technical Office or a Site Engineer assigned to the project see any of it, or is it Finance-and-Owner only?"** Say why it is being asked: `spec.md` §9 names roles and their financial *approval* powers in detail but never states who may *read* a ledger balance, and no `Permission` in the catalogue is named for it. D-035 and D-044 §2 rule out the Client and HR by name, which narrows the answer but does not give it. **Blocks `KAFF-304`'s endpoint shape — the query object itself does not need this answer, but nothing can be exposed over HTTP until it is.** `Q90` was ruled by Nabil 2026-09-25 (`decisions.md` D-173) — see build note below, this row is history. |
+
+## Build note — 2026-09-28, folded
+
+`Q90` is answered (D-173): `TreasuryReadProject` (Owner, Finance, Site Engineer, project-scoped,
+assignment row required) and `TreasuryReadCompany` (Owner, Finance, company-wide) are both live grants
+in `PermissionCatalogue.cs:498-506`, `Unresolved` no longer set. `KAFF-306` already built the HTTP
+surface on top of this story's `Domain` query object, and it covers every AC here:
+
+- **AC-304-A** (single account balance) — `src/Api/Features/Treasury/GetBalances/Handler.cs:32-54`
+  (`HandleAccount`) calls `BalanceQueries.GetAccountBalance` (`src/Domain/Treasury/BalanceQueries.cs:30-31`)
+  and returns `Inflow`/`Outflow`/`RawBalance`/`SignedBalance` verbatim.
+- **AC-304-B** (five ledgers, never one) — `GetBalances/Handler.cs:16-30` (`HandleLedgers`) calls
+  `BalanceQueries.GetLedgerBalances` (`BalanceQueries.cs:37-59`) and `GetBalances/Response.cs:14-21`
+  (`LedgerBalancesResponse`) carries the five named ledgers plus `MaterialAdvance`, no `Total` field.
+- **AC-304-C** (reusable, not duplicated) — both `GetBalances/Handler.cs` and
+  `ListPostings/Handler.cs:88-89` (via `PostingStatementQueries`) route through the same `Domain` layer
+  (`BalanceQueries` / `PostingStatementQueries`); no handler writes its own LINQ against
+  `AccountBalances`.
+- **AC-304-D** (single aggregate, no in-memory sum) — `BalanceQueries.cs:30-31` and `:37-59` read the
+  `account_balances` view once; no posting is materialised to compute a balance.
+- **AC-304-E** (zero, not error) — the view's own `COALESCE`, unchanged by this pass; `AccountBalance`
+  is never null for a real account (`BalanceQueries.cs:26-29` remarks).
+
+Permission enforcement is role AND assignment: `Endpoint.cs:37` (`RequirePermission(Permission.TreasuryReadProject,
+ProjectScope.FromRoute())`) and `:45` (`TreasuryReadCompany`, company-wide, no project scope to bypass).
+Grants at `PermissionCatalogue.cs:498-506`. Tests: `tests/Domain.Tests/BalanceQueriesTests.cs`,
+`tests/Api.Tests/TreasuryGuardTests.cs` already exist and were not touched.
+
+**Nothing built in this pass.** This story's Domain mechanism and KAFF-306's HTTP surface together
+already satisfy every AC; the gap was the trailer, not the code. State moves `READY` → `FOLDED`
+(KAFF-306 subsumes the remaining HTTP-facing work this story scoped).
