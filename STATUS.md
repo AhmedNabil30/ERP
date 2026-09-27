@@ -6,6 +6,59 @@ Everything above the generated block is maintained by hand and dated. Everything
 derived. If another file disagrees with this one, **this one is right and the other file is
 history** — see *The map* at the bottom for which is which.
 
+⚠️ **2026-09-27 · Read this section and the generated block at the foot. Everything between them
+stops at 2026-09-15 and is history.** Several of those paragraphs describe an uncommitted working
+tree, red gates and an open `Q90`. All three were resolved on 2026-09-25/26; the paragraphs were
+never rewritten. They are kept as the record of how the board got here, not as its position.
+
+**2026-09-27 · Where the board actually stands, one day after Nabil rejected the UI.**
+
+Nabil, 2026-09-26: *"i think the ux is a little bit complicated and the busniess fileds you are
+puting everywhere is not valid in real project … the font is very big everything is very big the
+side menue should be collapsable … i am very disapointed."* Three researchers were dispatched
+against that, read-only. Their reports are `ux/research/density.md`, `fields.md` and `flows.md`, and
+they are the input to the next sprint, not a record of finished work.
+
+**The finding that mattered was not layout.** The whole day-labour feature — worker pool, register,
+history, engagements — was built, gate-green and **reachable only by typing a URL containing a
+project GUID that no screen rendered**. `app.routes.ts` carried `projects/:projectId/day-labour` and
+no `projects` route at all; `landing.ts` dropped both Finance and the SiteEngineer onto their own
+profile page. `GET /api/projects` and its permission had shipped in KAFF-400; only the screen was
+missing. Shipped as `6649af7` (the project list), `d72308b` (the nav row, the landing dispatch, the
+collapsible rail) and `0a90ecb` (name leads the identity column on seven lists, and the worker pool
+renders the باب at last). Desktop density is `2643bff`.
+
+**Two builder sessions died on their API session limit mid-story**, leaving 25 modified files
+uncommitted and ungated — the fourth time a dead session has left work in the tree (D-119's shape).
+The Scrum Master gated and committed both. `nav-rows.spec.ts`'s completeness check went red exactly
+as designed when the route existed without a row; the fixture gained the permission the Owner really
+holds, and the assertion was not touched.
+
+**Gates, measured by the Scrum Master at `d72308b`, 2026-09-27:** `ng build --configuration
+production` exit 0, no warning line · vitest **149 / 149**, exit 0. **No .NET gate was re-run and
+none was needed — nothing under `src/Api`, `src/Domain` or `src/Infrastructure` changed.** The last
+measured .NET figures stand at `db91e64`: Release build 0/0, Domain 298/298, Api 655/655.
+
+**Verified by eye, not by self-report:** `/projects` at 1440 and `/clients` at 1440 (name leads, code
+demoted, active nav marker on the correct edge under RTL), and the day-labour pool at 390 reached
+through a project row. Shots under `.design/shots/2026-09-27/` (gitignored).
+
+⛔ **Not verified by eye: the collapsed rail.** The CSS, the `aria-expanded`/`aria-controls` wiring
+and the clip-path that keeps every nav link's accessible name were reviewed by reading, and the
+suite is green, but the headless driver has no command that clicks the desktop toggle, so **nobody
+has looked at a picture of the sidebar collapsed.** It is not certified. Photograph it before it is
+called done.
+
+⛔ **Open, and carried into the demo:** the Treasury screen is unbuilt and demos from the canvas.
+Every field cut in `ux/research/fields.md` except the باب column is unapplied and most need a ruling
+from Nabil or Karim. A client's phone renders Arabic-Indic digits in one row and Western in the next
+on `/clients` — visible on screen, and the normalisation question is still open. `spec.md` §6.7's
+withholding rates (1/3/5%) disagree with public 2025-26 guidance (0.5% supplies and contracting);
+`spec.md` wins and nothing was changed, but Karim must confirm which Kaff files on, because that one
+moves cash.
+
+---
+
 **2026-09-07 · Slice 1 is CLOSED. Slice 2 (Masters) opens.**
 
 **2026-09-10 · Slice 2's first three stories are `REJECTED` and being repaired finding by finding
