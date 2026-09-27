@@ -157,20 +157,6 @@
   gap: var(--space-2);
 }
 
-/* kaff-button has no bordered-danger variant (only a filled one) — flagged in this story's build
-   notes as a kit gap. Bordered danger text, matching CatalogueForm.dc.html's footer treatment. */
-.danger-button {
-  padding-inline: var(--space-4);
-  min-block-size: var(--tap-target);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-  color: var(--color-danger);
-  background: transparent;
-  border: 1px solid var(--color-danger);
-  border-radius: var(--radius-md);
-}
-
 .footer-row {
   display: flex;
   align-items: center;

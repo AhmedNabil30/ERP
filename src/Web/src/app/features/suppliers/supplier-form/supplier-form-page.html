@@ -76,9 +76,9 @@
             <p class="confirm-title">{{ i18n.t('supplier.confirm.archive.title') }}</p>
             <p class="confirm-body">{{ i18n.t('supplier.confirm.archive.body') }}</p>
             <div class="confirm-actions">
-              <button type="button" class="danger-button" data-testid="supplier-archive-confirm" (click)="onArchive()">
+              <kaff-button variant="danger" testId="supplier-archive-confirm" (clicked)="onArchive()">
                 {{ i18n.t('supplier.archive_action') }}
-              </button>
+              </kaff-button>
               <kaff-button variant="secondary" testId="supplier-archive-cancel" (clicked)="onCancelArchive()">
                 {{ i18n.t('action.cancel') }}
               </kaff-button>
@@ -86,19 +86,22 @@
           </div>
         }
 
-        <!-- CatalogueForm.dc.html's footer row: primary at the start, the destructive action pushed to
-             the far end as bordered danger text — never a filled red button (AC-933-B). kaff-button has
-             no bordered-danger variant, so the archive trigger stays a plain `.danger-button`; flagged
-             as a kit gap in the story build notes, the same as subcontractor-form's. -->
+        <!-- CatalogueForm.dc.html's footer row: primary at the start, the destructive trigger pushed to
+             the far end as bordered danger text — never a filled red button (D-174, KAFF-935). -->
         <div class="footer-row">
           <kaff-button variant="primary" type="submit" testId="supplier-submit" [disabled]="!canSubmit()">
             {{ i18n.t('action.save') }}
           </kaff-button>
 
           @if (isEdit() && !confirmingArchive()) {
-            <button type="button" class="danger-button footer-danger" data-testid="supplier-archive" (click)="onStartArchive()">
+            <kaff-button
+              variant="danger-outline"
+              testId="supplier-archive"
+              class="footer-danger"
+              (clicked)="onStartArchive()"
+            >
               {{ i18n.t('supplier.archive_action') }}
-            </button>
+            </kaff-button>
           }
         </div>
       </form>

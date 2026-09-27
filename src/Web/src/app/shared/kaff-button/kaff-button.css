@@ -53,6 +53,19 @@
   color: var(--color-background);
 }
 
+/* D-174: a destructive TRIGGER — reversible, must not dominate a form — is danger text over a
+   transparent background with a danger border. The filled `.variant-danger` stays for the
+   irreversible CONFIRM inside an inline confirmation. */
+.variant-danger-outline {
+  background: transparent;
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.variant-danger-outline:not(:disabled):hover {
+  background: var(--color-surface);
+}
+
 .variant-ghost {
   background: transparent;
   color: var(--color-interactive);

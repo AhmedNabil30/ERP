@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toProblem } from '../../../core/api/problem-details';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { SupplierListFilter, SupplierSummary, SuppliersApi } from '../../../core/suppliers/suppliers.api';
+import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { KaffRowMenu, RowMenuItem } from '../../../shared/kaff-row-menu/kaff-row-menu';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
 
@@ -27,7 +28,7 @@ const FILTERS: readonly SupplierListFilter[] = ['active', 'archived', 'all'];
  */
 @Component({
   selector: 'kaff-supplier-list-page',
-  imports: [RouterLink, KaffRowMenu, KaffState],
+  imports: [RouterLink, KaffButton, KaffRowMenu, KaffState],
   templateUrl: './supplier-list-page.html',
   styleUrl: './supplier-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

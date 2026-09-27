@@ -14,7 +14,9 @@ import { I18nService } from '../../core/i18n/i18n.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class KaffButton {
-  readonly variant = input<'primary' | 'secondary' | 'danger' | 'ghost'>('secondary');
+  readonly variant = input<'primary' | 'secondary' | 'danger' | 'danger-outline' | 'ghost'>(
+    'secondary',
+  );
   readonly busy = input(false);
   readonly disabled = input(false);
   readonly type = input<'button' | 'submit'>('button');

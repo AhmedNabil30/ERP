@@ -385,7 +385,7 @@
               </div>
             </div>
           } @else {
-            <kaff-button variant="danger" testId="user-deactivate" (clicked)="onStartConfirm('deactivate')">
+            <kaff-button variant="danger-outline" testId="user-deactivate" (clicked)="onStartConfirm('deactivate')">
               {{ i18n.t('users.action.deactivate') }}
             </kaff-button>
             <p class="danger-note">{{ i18n.t('users.danger.deactivate_explains') }}</p>
@@ -440,7 +440,7 @@
             </div>
           </div>
         } @else {
-          <kaff-button variant="danger" testId="user-reactivate" (clicked)="onStartConfirm('reactivate')">
+          <kaff-button variant="danger-outline" testId="user-reactivate" (clicked)="onStartConfirm('reactivate')">
             {{ i18n.t('users.action.reactivate') }}
           </kaff-button>
         }

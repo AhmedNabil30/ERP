@@ -10,6 +10,7 @@ import {
   SubcontractorSummary,
   SubcontractorsApi,
 } from '../../../core/subcontractors/subcontractors.api';
+import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { KaffRowMenu, RowMenuItem } from '../../../shared/kaff-row-menu/kaff-row-menu';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
 
@@ -33,7 +34,7 @@ const FILTERS: readonly SubcontractorListFilter[] = ['active', 'archived', 'all'
  */
 @Component({
   selector: 'kaff-subcontractor-list-page',
-  imports: [RouterLink, KaffRowMenu, KaffState],
+  imports: [RouterLink, KaffButton, KaffRowMenu, KaffState],
   templateUrl: './subcontractor-list-page.html',
   styleUrl: './subcontractor-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

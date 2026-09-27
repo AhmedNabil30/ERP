@@ -61,15 +61,14 @@
               <p class="row-confirm" [attr.data-testid]="'subcontractor-archive-body-' + subcontractor.code">
                 {{ i18n.t('subcontractor.archive_confirm') }}
               </p>
-              <button
-                type="button"
-                class="danger-button"
+              <kaff-button
+                variant="danger"
                 [disabled]="isArchiving(subcontractor.id)"
-                [attr.data-testid]="'subcontractor-archive-confirm-' + subcontractor.code"
-                (click)="onConfirmArchive(subcontractor.id)"
+                [testId]="'subcontractor-archive-confirm-' + subcontractor.code"
+                (clicked)="onConfirmArchive(subcontractor.id)"
               >
                 {{ i18n.t('subcontractor.archive_action') }}
-              </button>
+              </kaff-button>
               <button
                 type="button"
                 class="chip"

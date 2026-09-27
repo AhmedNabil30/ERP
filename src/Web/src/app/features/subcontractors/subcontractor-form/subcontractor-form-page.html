@@ -132,9 +132,9 @@
             <p class="confirm-title">{{ i18n.t('subcontractor.confirm.archive.title') }}</p>
             <p class="confirm-body">{{ i18n.t('subcontractor.confirm.archive.body') }}</p>
             <div class="confirm-actions">
-              <button type="button" class="danger-button" data-testid="subcontractor-archive-confirm" (click)="onArchive()">
+              <kaff-button variant="danger" testId="subcontractor-archive-confirm" (clicked)="onArchive()">
                 {{ i18n.t('subcontractor.archive_action') }}
-              </button>
+              </kaff-button>
               <kaff-button variant="secondary" testId="subcontractor-archive-cancel" (clicked)="onCancelArchive()">
                 {{ i18n.t('action.cancel') }}
               </kaff-button>
@@ -142,20 +142,22 @@
           </div>
         }
 
-        <!-- CatalogueForm.dc.html's footer row: primary at the start, the destructive action pushed to
-             the far end as bordered danger text — never a filled red button (AC-933-B). kaff-button has
-             no bordered-danger variant (only a filled one), so the archive trigger stays a plain
-             `.danger-button` rather than a filled `variant="danger"` kaff-button; flagged in the story's
-             build notes as a kit gap rather than guessed around. -->
+        <!-- CatalogueForm.dc.html's footer row: primary at the start, the destructive trigger pushed to
+             the far end as bordered danger text — never a filled red button (D-174, KAFF-935). -->
         <div class="footer-row">
           <kaff-button variant="primary" type="submit" testId="subcontractor-submit" [disabled]="!canSubmit()">
             {{ i18n.t('action.save') }}
           </kaff-button>
 
           @if (isEdit() && !confirmingArchive()) {
-            <button type="button" class="danger-button footer-danger" data-testid="subcontractor-archive" (click)="onStartArchive()">
+            <kaff-button
+              variant="danger-outline"
+              testId="subcontractor-archive"
+              class="footer-danger"
+              (clicked)="onStartArchive()"
+            >
               {{ i18n.t('subcontractor.archive_action') }}
-            </button>
+            </kaff-button>
           }
         </div>
       </form>
