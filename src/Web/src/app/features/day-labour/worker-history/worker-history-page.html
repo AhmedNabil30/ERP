@@ -2,11 +2,9 @@
   <h1 class="title">{{ i18n.t('hr.worker.history_title') }}</h1>
 
   @if (failure(); as key) {
-    <p class="refusal" role="alert" data-testid="worker-history-failure">{{ i18n.t(key) }}</p>
+    <kaff-state mode="refusal" [bodyKey]="key" testId="worker-history-failure" />
   } @else if (loading()) {
-    <p class="loading" role="status" aria-live="polite" data-testid="worker-history-loading">
-      {{ i18n.t('hr.employee.loading') }}
-    </p>
+    <kaff-state mode="loading" titleKey="hr.employee.loading" testId="worker-history-loading" />
   } @else if (history(); as loaded) {
     <dl class="figures" data-testid="worker-history-figures">
       <div class="figure">
@@ -24,76 +22,81 @@
     </dl>
 
     @if (loaded.items.length > 0) {
-      <ul class="rows" data-testid="worker-history-rows">
-        @for (engagement of loaded.items; track trackEngagement($index, engagement)) {
-          <li class="row" [attr.data-testid]="'worker-history-row-' + engagement.id">
-            <div class="row-main">
-              <span class="row-field">
-                <span class="row-label">{{ i18n.t('hr.worker.engagement.project') }}</span>
-                <bdi dir="auto">{{ projectLabel(engagement) }}</bdi>
-              </span>
+      <kaff-table [columns]="rowColumns" [columnDefs]="headerColumns" testId="worker-history-table-header" data-testid="worker-history-table-shell">
+        <ul class="rows" data-testid="worker-history-rows">
+          @for (engagement of loaded.items; track trackEngagement($index, engagement)) {
+            <li class="rows-item" [attr.data-testid]="'worker-history-row-' + engagement.id">
+              <!-- `kaff-table-header` hides under 48rem (KAFF-928 finding 4), so each cell carries its
+                   own label rather than depending on the header alone at mobile width — same pattern
+                   `worker-pool-page.html`'s figures use. -->
+              <kaff-table-row>
+                <span class="field">
+                  <span class="field-label">{{ i18n.t('hr.worker.engagement.project') }}</span>
+                  <bdi dir="auto">{{ projectLabel(engagement) }}</bdi>
+                </span>
 
-              <span class="row-field">
-                <span class="row-label">{{ i18n.t('hr.worker.engagement.dates') }}</span>
-                @if (engagement.closedOn; as closedOn) {
-                  <bdi dir="ltr">{{ engagement.openedOn }} – {{ closedOn }}</bdi>
-                } @else {
-                  <bdi dir="ltr">{{ engagement.openedOn }}</bdi>
-                }
-              </span>
+                <span class="field">
+                  <span class="field-label">{{ i18n.t('hr.worker.engagement.dates') }}</span>
+                  @if (engagement.closedOn; as closedOn) {
+                    <bdi dir="ltr">{{ engagement.openedOn }} – {{ closedOn }}</bdi>
+                  } @else {
+                    <bdi dir="ltr">{{ engagement.openedOn }}</bdi>
+                  }
+                </span>
 
-              <span class="row-field">
-                <span class="row-label">{{ i18n.t('hr.worker.engagement.rating') }}</span>
-                <bdi dir="ltr">{{ engagement.rating !== null ? engagement.rating + '/5' : i18n.t('hr.worker.pool.never_engaged') }}</bdi>
-              </span>
-
-              <span class="row-field">
-                <span class="row-label">{{ i18n.t('hr.worker.engagement.day_rate') }}</span>
-                @if (engagement.dayRate !== null) {
-                  <bdi dir="ltr" [attr.data-testid]="'worker-history-day-rate-' + engagement.id">
-                    {{ i18n.formatMoney(engagement.dayRate) }}
+                <span class="field figure-cell">
+                  <span class="field-label">{{ i18n.t('hr.worker.engagement.rating') }}</span>
+                  <bdi dir="ltr">
+                    {{ engagement.rating !== null ? engagement.rating + '/5' : i18n.t('hr.worker.pool.never_engaged') }}
                   </bdi>
-                } @else if (canEditRate()) {
-                  <span class="rate-edit">
-                    <input
-                      class="rate-input"
-                      type="text"
-                      dir="ltr"
-                      inputmode="decimal"
-                      [value]="rateDraft(engagement.id)"
-                      [attr.data-testid]="'worker-history-rate-input-' + engagement.id"
-                      (input)="onRateInput(engagement.id, $event)"
-                    />
-                    <button
-                      type="button"
-                      class="chip"
-                      [disabled]="isBusy(engagement.id)"
-                      [attr.data-testid]="'worker-history-rate-save-' + engagement.id"
-                      (click)="onSetRate(engagement)"
-                    >
-                      {{ i18n.t('action.save') }}
-                    </button>
-                  </span>
-                } @else {
-                  <bdi dir="ltr">{{ i18n.t('hr.worker.pool.never_engaged') }}</bdi>
-                }
-              </span>
-            </div>
+                </span>
 
-            @if (rowFailure(); as failed) {
-              @if (failed.engagementId === engagement.id) {
-                <p class="row-refusal" role="alert" [attr.data-testid]="'worker-history-row-refusal-' + engagement.id">
-                  {{ i18n.t(failed.key) }}
-                </p>
+                <span class="field rate-cell">
+                  <span class="field-label">{{ i18n.t('hr.worker.engagement.day_rate') }}</span>
+                  @if (engagement.dayRate !== null) {
+                    <bdi dir="ltr" [attr.data-testid]="'worker-history-day-rate-' + engagement.id">
+                      {{ i18n.formatMoney(engagement.dayRate) }}
+                    </bdi>
+                  } @else if (canEditRate()) {
+                    <span class="rate-edit">
+                      <input
+                        class="rate-input"
+                        type="text"
+                        dir="ltr"
+                        inputmode="decimal"
+                        [value]="rateDraft(engagement.id)"
+                        [attr.data-testid]="'worker-history-rate-input-' + engagement.id"
+                        (input)="onRateInput(engagement.id, $event)"
+                      />
+                      <button
+                        type="button"
+                        class="chip"
+                        [disabled]="isBusy(engagement.id)"
+                        [attr.data-testid]="'worker-history-rate-save-' + engagement.id"
+                        (click)="onSetRate(engagement)"
+                      >
+                        {{ i18n.t('action.save') }}
+                      </button>
+                    </span>
+                  } @else {
+                    <bdi dir="ltr">{{ i18n.t('hr.worker.pool.never_engaged') }}</bdi>
+                  }
+                </span>
+              </kaff-table-row>
+
+              @if (rowFailure(); as failed) {
+                @if (failed.engagementId === engagement.id) {
+                  <p class="row-refusal" role="alert" [attr.data-testid]="'worker-history-row-refusal-' + engagement.id">
+                    {{ i18n.t(failed.key) }}
+                  </p>
+                }
               }
-            }
-          </li>
-        }
-      </ul>
+            </li>
+          }
+        </ul>
+      </kaff-table>
     } @else {
-      <div class="empty" role="status" aria-live="polite" data-testid="worker-history-empty">
-        <p class="empty-title">{{ i18n.t('hr.worker.pool.never_engaged') }}</p>
-      </div>
+      <kaff-state mode="empty" titleKey="hr.worker.pool.never_engaged" testId="worker-history-empty" />
     }
   }
 </section>

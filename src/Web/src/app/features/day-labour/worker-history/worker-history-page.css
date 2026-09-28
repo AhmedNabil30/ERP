@@ -1,5 +1,7 @@
 /* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). Zero colour
-   literals — every colour is a token from styles.css. Same house style as worker-pool-page.css. */
+   literals — every colour is a token from styles.css. KAFF-934: onto `kaff-table`/`kaff-table-row` —
+   the card surface, header and row geometry live in the shell now; this stylesheet no longer draws a
+   row's box, grid or border. */
 
 .history {
   display: flex;
@@ -47,33 +49,29 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
 }
 
-.row {
+.rows-item {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
 }
 
-.row-main {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-4);
-}
-
-.row-field {
+.field {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  min-inline-size: 0;
 }
 
-.row-label {
-  font-size: var(--text-sm);
-  opacity: 0.75;
+.field-label {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
+.figure-cell,
+.rate-cell {
+  justify-self: end;
+  text-align: end;
 }
 
 .rate-edit {
@@ -110,21 +108,10 @@
   opacity: 0.5;
 }
 
-.row-refusal,
-.refusal {
-  margin: 0;
+.row-refusal {
+  margin: 0 var(--space-4) var(--space-3);
   padding: var(--space-2) var(--space-3);
   color: var(--color-danger);
   border: 1px solid var(--color-danger);
   border-radius: var(--radius-md);
-}
-
-.empty {
-  padding: var(--space-4);
-  text-align: center;
-}
-
-.empty-title {
-  margin: 0;
-  opacity: 0.75;
 }

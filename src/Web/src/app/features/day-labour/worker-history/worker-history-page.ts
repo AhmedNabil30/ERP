@@ -9,6 +9,10 @@ import {
 } from '../../../core/day-labour/day-labour.api';
 import { WIRE_DECIMAL_PATTERN, toWireDecimal } from '../../../core/catalogue/money-wire';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { KaffState } from '../../../shared/kaff-state/kaff-state';
+import { KaffTable } from '../../../shared/kaff-table/kaff-table';
+import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
+import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 
 /**
  * `S-027` · a worker's engagement history, with the day rate and the pool's three derived figures —
@@ -20,9 +24,15 @@ import { I18nService } from '../../../core/i18n/i18n.service';
  * `AC-210-G`'s three empty states are explicit `hr.worker.pool.never_engaged` text, never a `0` and
  * never a blank cell — a worker with no engagements has three `null`/`0` figures from the server and
  * this component renders every one of them as the same translated string.
+ *
+ * **KAFF-934**: onto `kaff-table`/`kaff-table-row` for the engagement list, `kaff-state` for the
+ * loading/refusal/empty states. The rate-edit control stays — it is an inline field write, not a
+ * `kaff-row-menu`-style row action, so "no row actions" in the KAFF-934 story reads as no per-row
+ * navigation or archive-style trigger, which this read-only history never had.
  */
 @Component({
   selector: 'kaff-worker-history-page',
+  imports: [KaffState, KaffTable, KaffTableRow],
   templateUrl: './worker-history-page.html',
   styleUrl: './worker-history-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,6 +46,17 @@ export class WorkerHistoryPage {
   private readonly auth = inject(AuthService);
 
   protected readonly i18n = inject(I18nService);
+
+  /** Grid columns for `kaff-table`: project · dates · rating · day rate. No identity/code column —
+   *  this is one worker's own history, not a list of workers. */
+  protected readonly rowColumns = 'minmax(0, 1fr) 10rem 6rem 10rem';
+
+  protected readonly headerColumns: readonly TableColumnDef[] = [
+    { labelKey: 'hr.worker.engagement.project' },
+    { labelKey: 'hr.worker.engagement.dates' },
+    { labelKey: 'hr.worker.engagement.rating', align: 'end' },
+    { labelKey: 'hr.worker.engagement.day_rate', align: 'end' },
+  ];
 
   protected readonly history = signal<WorkerEngagementHistory | null>(null);
   protected readonly loading = signal(true);
