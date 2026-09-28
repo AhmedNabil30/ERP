@@ -61,6 +61,9 @@
   --color-accent: #1f6f5c;
   --color-danger: #a52121;
   --color-warning: #9a6a00;
+  /* KAFF-934: the amber block behind a duplicate-phone warning and other inline cautions —
+     `WorkerMobile.dc.html`'s `#fdf6e8` fill, tokenised rather than inlined (apple-erp-design §0). */
+  --color-warning-surface: #fdf6e8;
 
   /* Brand mark colour. Decorative only — the logo mark and an accent bar/badge dot. Measured
      ≈3.0:1 on white, below the 4.5:1 text floor (apple-erp-design Baseline requirements), so it
@@ -254,6 +257,7 @@ kaff-table-row .row > bdi {
     --color-accent: #57b79c;
     --color-danger: #e07070;
     --color-warning: #d9a441;
+    --color-warning-surface: rgb(217 164 65 / 12%);
 
     /* Re-tuned for the dark --color-background (#16181a): #b4551f/#8f3f19 measure below 4.5:1
        there. Measured 6.3:1 and 4.8:1 respectively. */

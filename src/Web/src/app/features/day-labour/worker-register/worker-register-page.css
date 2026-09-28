@@ -1,36 +1,82 @@
 /* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). Zero colour
    literals — every colour is a token from styles.css (apple-erp-design §2). `S-026` is `M1`: the only
-   mobile-first, one-hand screen in this slice — no `max-inline-size` cap like the employee form's,
-   the layout is the full viewport at 390px and every control is full-width and reachable by thumb. */
+   mobile-first, one-hand screen in this slice — no `max-inline-size` cap like the employee form's, the
+   layout is the full viewport at 390px and every control is full-width and reachable by thumb.
+
+   `WorkerMobile.dc.html`: sticky header, 48px fields at 16px type (this screen's own floor, above the
+   kit's 44px `--tap-target`, because it is read outdoors on a phone), and a footer pinned to the
+   bottom of the viewport rather than following the last field. */
 
 .worker-register {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  padding: var(--space-4);
-  max-inline-size: 28rem;
-  margin-inline: auto;
+  min-block-size: 100dvh;
   overflow-x: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-background);
+  border-block-end: 1px solid var(--color-border);
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 1;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--tap-target);
+  block-size: var(--tap-target);
+  flex-shrink: 0;
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+}
+
+.back:hover {
+  background: var(--color-surface);
+}
+
+.header-titles {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
 }
 
 .title {
   margin: 0;
-  font-size: var(--text-xl);
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.header-project {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .fields {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  padding: var(--space-4);
+  flex-grow: 1;
 }
 
 .input {
   inline-size: 100%;
   box-sizing: border-box;
-  padding: var(--space-3);
-  min-block-size: var(--tap-target);
+  padding-inline: var(--space-4);
+  /* 48px, this screen's own floor per `WorkerMobile.dc.html` — above the kit's 44px `--tap-target`. */
+  min-block-size: 3rem;
   font: inherit;
-  font-size: var(--text-lg);
+  font-size: 1rem;
   color: var(--color-text);
   background: var(--color-background);
   border: 1px solid var(--color-border);
@@ -52,7 +98,7 @@
   margin: 0;
   padding: var(--space-3);
   color: var(--color-text);
-  background: var(--color-surface);
+  background: var(--color-warning-surface);
   border: 1px solid var(--color-warning);
   border-radius: var(--radius-lg);
 }
@@ -61,7 +107,9 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  min-block-size: var(--tap-target);
   padding: var(--space-3);
+  background: var(--color-warning-surface);
   border: 1px solid var(--color-warning);
   border-radius: var(--radius-lg);
 }
@@ -72,4 +120,32 @@
   color: var(--color-danger);
   border: 1px solid var(--color-danger);
   border-radius: var(--radius-md);
+}
+
+/* `WorkerMobile.dc.html`: the footer is pinned to the bottom of the viewport, not the end of the last
+   field, so the primary action is always one thumb-reach away regardless of form length. */
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom));
+  background: var(--color-background);
+  border-block-start: 1px solid var(--color-border);
+  position: sticky;
+  inset-block-end: 0;
+}
+
+.footer kaff-button {
+  align-self: stretch;
+}
+
+.cancel {
+  align-self: center;
+  min-block-size: var(--tap-target);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  text-decoration: none;
 }

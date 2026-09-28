@@ -56,6 +56,7 @@
   "hr.worker.field.phone": "رقم الهاتف",
   "hr.worker.field.bab": "الباب",
   "hr.worker.field.specialty": "التخصص",
+  "hr.worker.action.back_to_pool": "العودة إلى عمالة اليومية",
   "hr.worker.pool_title": "عمالة اليومية",
   "hr.worker.pool_empty": "لا يوجد عمال مسجلون بعد.",
   "hr.worker.action.register": "تسجيل عامل",
@@ -87,6 +88,7 @@
   "hr.employee.archive_confirm": "سيتم استبعاد هذا الموظف من السجل النشط. هذا الإجراء لا يحذف بياناته.",
   "hr.employee.action.create": "تسجيل موظف",
 
+  "forbidden.title": "غير مصرح بالدخول",
   "not_found.title": "الصفحة غير موجودة",
   "not_found.body": "هذا العنوان لا يطابق أي صفحة في كف.",
   "not_found.back": "العودة إلى البداية",

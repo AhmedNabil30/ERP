@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { FormField, form, required, schema, submit } from '@angular/forms/signals';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
+import { AuthService } from '../../../core/auth/auth.service';
 import { toProblem } from '../../../core/api/problem-details';
 import {
   BabOption,
@@ -47,7 +48,7 @@ const draft = schema<WorkerDraft>((path) => {
  */
 @Component({
   selector: 'kaff-worker-register-page',
-  imports: [FormField, DuplicatePhoneWarning, KaffField, KaffButton],
+  imports: [FormField, DuplicatePhoneWarning, KaffField, KaffButton, RouterLink],
   templateUrl: './worker-register-page.html',
   styleUrl: './worker-register-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -58,8 +59,18 @@ export class WorkerRegisterPage {
 
   private readonly api = inject(DayLabourApi);
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
 
   protected readonly i18n = inject(I18nService);
+
+  /** `WorkerMobile.dc.html`'s sticky-header subtitle — the project's own name, read off the session's
+   *  assignment list the same way `worker-history-page.ts`'s `projectLabel` does. `null` while the
+   *  session has not resolved yet or carries no matching assignment; the header omits the line rather
+   *  than showing the raw id. */
+  protected readonly projectName = computed<string | null>(() => {
+    const project = this.auth.current()?.projects.find((entry) => entry.projectId === this.projectId());
+    return project?.name ?? null;
+  });
 
   private readonly model = signal<WorkerDraft>({ ...BLANK_DRAFT });
   protected readonly workerForm = form(this.model, draft);

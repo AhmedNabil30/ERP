@@ -1,5 +1,25 @@
 <section class="worker-register" data-testid="worker-register-form">
-  <h1 class="title">{{ i18n.t('hr.worker.register_title') }}</h1>
+  <!-- `WorkerMobile.dc.html`: a sticky header carrying a back arrow, the screen title and the project
+       name beneath it. -->
+  <header class="header">
+    <a
+      class="back"
+      [routerLink]="['/projects', projectId(), 'day-labour']"
+      [attr.aria-label]="i18n.t('hr.worker.action.back_to_pool')"
+      data-testid="worker-register-back"
+    >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="m14 6 6 6-6 6" />
+        <path d="M20 12H4" />
+      </svg>
+    </a>
+    <span class="header-titles">
+      <h1 class="title">{{ i18n.t('hr.worker.register_title') }}</h1>
+      @if (projectName(); as name) {
+        <span class="header-project" dir="auto">{{ name }}</span>
+      }
+    </span>
+  </header>
 
   <form class="fields" (submit)="$event.preventDefault(); onSubmit()">
     <kaff-field labelKey="hr.worker.field.name" controlId="worker-name-input" [required]="true">
@@ -75,6 +95,11 @@
     </kaff-field>
 
     <kaff-field labelKey="hr.worker.field.specialty" controlId="worker-specialty-input">
+      <!-- `WorkerMobile.dc.html` draws this as a wrapped row of 44px pills over a fixed trade list.
+           `DayLabourApi` carries `specialty` as free text with no options endpoint behind it — turning
+           it into a fixed-choice control would be inventing that list, a business decision `spec.md`
+           does not answer (CLAUDE.md: "stop and ask, do not decide"). Left as the text field it is
+           today; reported rather than guessed — see the KAFF-934 build notes. -->
       <input
         id="worker-specialty-input"
         class="input"
@@ -89,8 +114,15 @@
       <p class="refusal" role="alert" data-testid="worker-form-refusal">{{ i18n.t(key) }}</p>
     }
 
-    <kaff-button variant="primary" type="submit" testId="worker-submit" [disabled]="!canSubmit()">
-      {{ i18n.t('action.save') }}
-    </kaff-button>
+    <!-- `WorkerMobile.dc.html`: a bottom-anchored footer, 52px primary action, cancel as plain text
+         below it. -->
+    <div class="footer">
+      <kaff-button variant="primary" type="submit" testId="worker-submit" [disabled]="!canSubmit()">
+        {{ i18n.t('action.save') }}
+      </kaff-button>
+      <a class="cancel" [routerLink]="['/projects', projectId(), 'day-labour']" data-testid="worker-register-cancel">
+        {{ i18n.t('action.cancel') }}
+      </a>
+    </div>
   </form>
 </section>

@@ -56,6 +56,7 @@
   "hr.worker.field.phone": "Phone",
   "hr.worker.field.bab": "Trade",
   "hr.worker.field.specialty": "Specialty",
+  "hr.worker.action.back_to_pool": "Back to day-labour pool",
   "hr.worker.pool_title": "Day-labour pool",
   "hr.worker.pool_empty": "No workers registered yet.",
   "hr.worker.action.register": "Register a worker",
@@ -87,6 +88,7 @@
   "hr.employee.archive_confirm": "This employee will be excluded from the active register. This does not delete their record.",
   "hr.employee.action.create": "Register employee",
 
+  "forbidden.title": "Access denied",
   "not_found.title": "Page not found",
   "not_found.body": "That address does not match anything in Kaff.",
   "not_found.back": "Back to the start",
