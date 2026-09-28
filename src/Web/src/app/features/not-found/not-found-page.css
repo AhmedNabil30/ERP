@@ -22,7 +22,23 @@
   margin: 0;
 }
 
+/* Same visual as a secondary `kaff-button` — an `<a>`, not the component, because this is a
+   navigation, not a click handler (apple-erp-design §7.6: `<a>`/`routerLink`, never
+   `router.navigate` from a `(click)`, so Ctrl-click and "open in new tab" keep working). */
 .link {
-  color: var(--color-accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: var(--tap-target);
+  padding-inline: var(--space-5);
   font-weight: 600;
+  color: var(--color-text);
+  text-decoration: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.link:hover {
+  border-color: var(--color-border-strong);
 }
