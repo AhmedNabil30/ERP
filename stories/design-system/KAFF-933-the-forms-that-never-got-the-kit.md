@@ -1,6 +1,6 @@
 # KAFF-933 · The forms that never got the kit
 
-<!-- kaff id=KAFF-933 slice=design-system points=8 state=READY -->
+<!-- kaff id=KAFF-933 slice=design-system points=8 state=BUILT -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 8.
 **Depends on:** `KAFF-901` (`kaff-field`, `kaff-button`) and `KAFF-930`, both on `main`. This story
@@ -235,3 +235,36 @@ exactly as before.
 - Duplicate-phone warning and the retention-percent format error were not re-driven live on
   subcontractor-form/supplier-form this session (unchanged code path, not re-verified by screenshot).
 - `.NET` gates were not re-run (nothing under `src/Api`/`src/Domain`/`src/Infrastructure` changed).
+
+## Closed by the Scrum Master (2026-09-28)
+
+**Trailer moved READY to BUILT.** The one criterion the build session could not meet was `AC-933-B`:
+`kaff-button` had no bordered-danger variant, so the archive trigger and its confirm on
+`subcontractor-form` and `supplier-form` stayed a plain `.danger-button` outside the kit. That session
+refused to edit a kit component it had been told not to touch, which was the right call, and the story
+stayed open rather than claiming a criterion it had not met.
+
+`KAFF-935` then landed the variant (`a18376f`) under `D-174`, and with it `AC-933-B` is met: `grep -rn
+"\.danger-button" src/Web/src` returns zero across the application, every button on all five of this
+story's screens renders through `kaff-button`, and the destructive triggers are bordered while the
+confirms are filled. Verified by the Scrum Master independently of the build session's own report —
+zero `.danger-button` hits, `variant="danger-outline"` present in `kaff-button.ts`'s union type and
+twice in `kaff-button.css`.
+
+Also verified independently at close: zero colour literals and zero hand-rolled `class="label"` across
+all five templates and stylesheets.
+
+**Gate at close, as measured by the build session:** `ng build --configuration production` exit 0 with
+no warning line, on all five commits; `npm test` `Test Files 29 passed (29)` · `Tests 149 passed (149)`.
+No .NET gate was run and none was needed — nothing under `src/Api`, `src/Domain` or
+`src/Infrastructure` changed.
+
+**Two items carried out of this story, neither a defect in it:**
+
+1. **`bab-form` has no cancel button.** `CatalogueForm.dc.html` shows one; the screen never had one.
+   The build session declined to add navigation behaviour on its own, correctly. Whether every form
+   footer gets a cancel action is Nabil's call and is not decided here.
+2. **`.claude/skills/run-kaff-erp/driver.mjs` gained two additive hooks** (`focus-blur:<selector>` and
+   a `click:` step form) so a headless driver can reach an edit screen and an error state. Backward
+   compatible, shared dev tooling rather than application code, and declared by the session that wrote
+   it rather than slipped in.
