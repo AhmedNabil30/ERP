@@ -6,6 +6,9 @@ import { toProblem } from '../../../core/api/problem-details';
 import { DayLabourApi, PoolWorker } from '../../../core/day-labour/day-labour.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
+import { KaffTable } from '../../../shared/kaff-table/kaff-table';
+import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
+import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 
 /**
  * One worker's engagement, tracked locally from the moment this screen opens it. KAFF-210.
@@ -45,10 +48,17 @@ export function ratingOutOfRange(rating: number): boolean {
  * this screen. The rating control is a labeled number input plus its own submit, not a menu-selectable
  * action, and does not fit a menu item either. No `kaff-detail-panel`: there is no single-scalar
  * quick-edit here that a panel would add over what the row already does inline.
+ *
+ * **KAFF-934**: onto `kaff-table`/`kaff-table-row` for its rows, matching `EmployeeListPage`'s shell.
+ * The trailing column carries exactly one primary action per state (Engage, then Close, then the
+ * closed badge) — never a row menu, `KAFF-931`'s ruling held rather than revisited. Everything a
+ * `kaff-table-row`'s single grid row cannot hold (the opened-on date, the rating input, a row's own
+ * refusal) renders in a `.row-detail` block below it, the same "expanded panel under the row" shape
+ * `EmployeeListPage`'s own archive-confirm uses.
  */
 @Component({
   selector: 'kaff-worker-pool-page',
-  imports: [RouterLink, KaffState],
+  imports: [RouterLink, KaffState, KaffTable, KaffTableRow],
   templateUrl: './worker-pool-page.html',
   styleUrl: './worker-pool-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -61,6 +71,22 @@ export class WorkerPoolPage {
   private readonly auth = inject(AuthService);
 
   protected readonly i18n = inject(I18nService);
+
+  /** Grid columns for `kaff-table`: identity (name, with the code beneath it) · phone · specialty ·
+   *  frequency · rating · history link · trailing action. The identity column is the single flexing
+   *  track, every other track fixed — no `auto` track (`ux/components.md`, `EmployeeListPage`'s own
+   *  comment on why). */
+  protected readonly rowColumns = 'minmax(0, 1fr) 8rem 7rem 6rem 5rem 6rem 7rem';
+
+  protected readonly headerColumns: readonly TableColumnDef[] = [
+    { labelKey: 'hr.worker.field.name' },
+    { labelKey: 'hr.worker.field.phone' },
+    { labelKey: 'hr.worker.field.specialty' },
+    { labelKey: 'hr.worker.pool.frequency', align: 'end' },
+    { labelKey: 'hr.worker.pool.rating', align: 'end' },
+    {},
+    {},
+  ];
 
   /** `DayLabourRateManage` is `ProjectScoped` (D-153 §1) — read off this project's own entry. */
   protected readonly canSeeRates = (): boolean => {

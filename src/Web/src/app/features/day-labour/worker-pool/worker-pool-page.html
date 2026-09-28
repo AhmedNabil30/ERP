@@ -10,47 +10,121 @@
   } @else if (loading()) {
     <kaff-state mode="loading" titleKey="hr.employee.loading" testId="worker-pool-loading" />
   } @else if (workers().length > 0) {
-    <ul class="rows" data-testid="worker-rows">
-      @for (worker of workers(); track trackRow($index, worker)) {
-        <li class="row" [attr.data-testid]="'worker-row-' + worker.code">
-          <div class="row-main">
-            <!-- ux/components.md:259 — identity first. A site engineer at 390px reads the man's name,
-                 not `E-10007`, so the code demotes to muted secondary text beneath it. This list is a
-                 flex card row, not a `kaff-table` grid, so there is no `--kaff-columns` to follow.
+    <kaff-table [columns]="rowColumns" [columnDefs]="headerColumns" testId="worker-table-header" data-testid="worker-table-shell">
+      <ul class="rows" data-testid="worker-rows">
+        @for (worker of workers(); track trackRow($index, worker)) {
+          <li class="rows-item" [attr.data-testid]="'worker-row-' + worker.code">
+            <kaff-table-row>
+              <!-- ux/components.md:259 — identity first. A site engineer at 390px reads the man's name,
+                   not `E-10007`, so the code demotes to muted secondary text beneath it.
 
-                 F-2 (the باب column) is NOT rendered here: `DayLabour/ListPool/Response.cs:27` sends
-                 `Guid? BabId` and no bab name, and resolving an id to a trade name is a backend change.
-                 Reported rather than invented. -->
-            <span class="row-identity">
-              <span class="row-name" dir="auto">{{ worker.fullName }}</span>
-              <bdi class="row-code" dir="ltr" translate="no">{{ worker.code }}</bdi>
-            </span>
-            <bdi class="row-phone" dir="ltr">{{ worker.phone }}</bdi>
-            @if (worker.specialty; as specialty) {
-              <span class="row-specialty" dir="auto">{{ specialty }}</span>
+                   F-2 (the باب column) is NOT rendered here: `DayLabour/ListPool/Response.cs:27` sends
+                   `Guid? BabId` and no bab name, and resolving an id to a trade name is a backend change.
+                   Reported rather than invented. -->
+              <span class="row-identity">
+                <span class="row-name" dir="auto">{{ worker.fullName }}</span>
+                <bdi class="row-code" dir="ltr" translate="no">{{ worker.code }}</bdi>
+              </span>
+              <bdi class="row-phone" dir="ltr">{{ worker.phone }}</bdi>
+              <span class="row-specialty" dir="auto">{{ worker.specialty ?? '' }}</span>
+
+              <!-- `kaff-table-header` hides under 48rem (KAFF-928 finding 4), so each figure carries
+                   its own label rather than depending on the header alone at mobile width. -->
+              <span class="figure" [attr.data-testid]="'worker-frequency-' + worker.code">
+                <span class="figure-label">{{ i18n.t('hr.worker.pool.frequency') }}</span>
+                <bdi dir="ltr">{{ frequencyLabel(worker) }}</bdi>
+              </span>
+              <span class="figure" [attr.data-testid]="'worker-rating-' + worker.code">
+                <span class="figure-label">{{ i18n.t('hr.worker.pool.rating') }}</span>
+                <bdi dir="ltr">{{ averageRatingLabel(worker) }}</bdi>
+              </span>
+
+              <span class="row-history">
+                @if (canSeeRates()) {
+                  <a
+                    class="history-link"
+                    [routerLink]="['/projects', projectId(), 'day-labour', 'workers', worker.id, 'history']"
+                    [attr.data-testid]="'worker-history-' + worker.code"
+                  >
+                    {{ i18n.t('hr.worker.history_title') }}
+                  </a>
+                }
+              </span>
+
+              <!-- Single primary action per row, always a button — never a `kaff-row-menu` (`KAFF-931`
+                   held). Exactly one of the three states below is present at a time. -->
+              <span class="row-trailing">
+                @if (engagementFor(worker.id); as engagement) {
+                  @if (engagement.closedOn === null) {
+                    <button
+                      type="button"
+                      class="chip"
+                      [disabled]="isBusy(worker.id)"
+                      [attr.data-testid]="'worker-close-' + worker.code"
+                      (click)="onClose(worker)"
+                    >
+                      {{ i18n.t('hr.worker.engagement.close_action') }}
+                    </button>
+                  } @else {
+                    <span class="closed-badge" [attr.data-testid]="'worker-closed-' + worker.code">
+                      {{ i18n.t('hr.worker.engagement.closed_badge') }}
+                    </span>
+                  }
+                } @else {
+                  <button
+                    type="button"
+                    class="chip"
+                    [disabled]="isBusy(worker.id)"
+                    [attr.data-testid]="'worker-engage-' + worker.code"
+                    (click)="onEngage(worker)"
+                  >
+                    {{ i18n.t('hr.worker.engagement.engage_action') }}
+                  </button>
+                }
+              </span>
+            </kaff-table-row>
+
+            <!-- What a single grid row cannot hold: the opened-on date, the rating input once closed,
+                 a rated value, and this row's own refusal. Same "expanded panel below the row" shape
+                 `EmployeeListPage`'s archive-confirm uses. -->
+            @if (engagementFor(worker.id); as engagement) {
+              <div class="row-detail" [attr.data-testid]="'worker-detail-' + worker.code">
+                <p class="engagement-status" [attr.data-testid]="'worker-engagement-' + worker.code">
+                  {{ i18n.t('hr.worker.engagement.opened_on') }}
+                  <bdi dir="ltr">{{ engagement.openedOn }}</bdi>
+                </p>
+
+                <label class="rate-field">
+                  <span class="visually-hidden">{{ i18n.t('hr.worker.engagement.rating') }}</span>
+                  <input
+                    class="rate-input"
+                    type="number"
+                    inputmode="numeric"
+                    min="1"
+                    max="5"
+                    [value]="ratingDraft(worker.id)"
+                    [attr.data-testid]="'worker-rating-input-' + worker.code"
+                    (input)="onRatingInput(worker.id, $event)"
+                  />
+                  <button
+                    type="button"
+                    class="chip"
+                    [disabled]="isBusy(worker.id)"
+                    [attr.data-testid]="'worker-rate-' + worker.code"
+                    (click)="onRate(worker)"
+                  >
+                    {{ i18n.t('hr.worker.engagement.rate_action') }}
+                  </button>
+                </label>
+
+                @if (engagement.rating !== null) {
+                  <span class="rating-value" [attr.data-testid]="'worker-rating-value-' + worker.code">
+                    {{ engagement.rating }}/5
+                  </span>
+                }
+              </div>
             }
 
-            <span class="row-figure" [attr.data-testid]="'worker-frequency-' + worker.code">
-              <span class="row-figure-label">{{ i18n.t('hr.worker.pool.frequency') }}</span>
-              <bdi dir="ltr">{{ frequencyLabel(worker) }}</bdi>
-            </span>
-            <span class="row-figure" [attr.data-testid]="'worker-rating-' + worker.code">
-              <span class="row-figure-label">{{ i18n.t('hr.worker.pool.rating') }}</span>
-              <bdi dir="ltr">{{ averageRatingLabel(worker) }}</bdi>
-            </span>
-
-            @if (canSeeRates()) {
-              <a
-                class="history-link"
-                [routerLink]="['/projects', projectId(), 'day-labour', 'workers', worker.id, 'history']"
-                [attr.data-testid]="'worker-history-' + worker.code"
-              >
-                {{ i18n.t('hr.worker.history_title') }}
-              </a>
-            }
-          </div>
-
-          <div class="row-actions">
             @if (rowFailure(); as failed) {
               @if (failed.workerId === worker.id) {
                 <p class="row-refusal" role="alert" [attr.data-testid]="'worker-row-refusal-' + worker.code">
@@ -58,72 +132,10 @@
                 </p>
               }
             }
-
-            @if (engagementFor(worker.id); as engagement) {
-              <p class="engagement-status" [attr.data-testid]="'worker-engagement-' + worker.code">
-                {{ i18n.t('hr.worker.engagement.opened_on') }}
-                <bdi dir="ltr">{{ engagement.openedOn }}</bdi>
-              </p>
-
-              @if (engagement.closedOn === null) {
-                <button
-                  type="button"
-                  class="chip"
-                  [disabled]="isBusy(worker.id)"
-                  [attr.data-testid]="'worker-close-' + worker.code"
-                  (click)="onClose(worker)"
-                >
-                  {{ i18n.t('hr.worker.engagement.close_action') }}
-                </button>
-              } @else {
-                <span class="closed-badge" [attr.data-testid]="'worker-closed-' + worker.code">
-                  {{ i18n.t('hr.worker.engagement.closed_badge') }}
-                </span>
-              }
-
-              <label class="rate-field">
-                <span class="visually-hidden">{{ i18n.t('hr.worker.engagement.rating') }}</span>
-                <input
-                  class="rate-input"
-                  type="number"
-                  inputmode="numeric"
-                  min="1"
-                  max="5"
-                  [value]="ratingDraft(worker.id)"
-                  [attr.data-testid]="'worker-rating-input-' + worker.code"
-                  (input)="onRatingInput(worker.id, $event)"
-                />
-                <button
-                  type="button"
-                  class="chip"
-                  [disabled]="isBusy(worker.id)"
-                  [attr.data-testid]="'worker-rate-' + worker.code"
-                  (click)="onRate(worker)"
-                >
-                  {{ i18n.t('hr.worker.engagement.rate_action') }}
-                </button>
-              </label>
-
-              @if (engagement.rating !== null) {
-                <span class="rating-value" [attr.data-testid]="'worker-rating-value-' + worker.code">
-                  {{ engagement.rating }}/5
-                </span>
-              }
-            } @else {
-              <button
-                type="button"
-                class="chip"
-                [disabled]="isBusy(worker.id)"
-                [attr.data-testid]="'worker-engage-' + worker.code"
-                (click)="onEngage(worker)"
-              >
-                {{ i18n.t('hr.worker.engagement.engage_action') }}
-              </button>
-            }
-          </div>
-        </li>
-      }
-    </ul>
+          </li>
+        }
+      </ul>
+    </kaff-table>
   } @else {
     <kaff-state mode="empty" titleKey="hr.worker.pool_empty" testId="worker-pool-empty" />
   }

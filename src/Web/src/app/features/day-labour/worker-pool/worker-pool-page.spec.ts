@@ -201,15 +201,19 @@ describe('WorkerPoolPage · pool figures (KAFF-210, D-153 §1 point 5)', () => {
 
   // ux/components.md:259 — identity first. A site engineer reads the man's name, not `DL-0001`, so the
   // name leads the identity cell and the code is the demoted second line.
+  // KAFF-934: onto `kaff-table-row` — the identity cell is the row's first projected grid child now,
+  // not a `.row-main` wrapper this screen used to own itself.
   it('puts the name before the code inside the identity cell', async () => {
     const api = new FakeDayLabourApi();
     const fixture = await createPage(api);
 
-    const identity = fixture.nativeElement.querySelector('.row-main > .row-identity');
+    const identity = fixture.nativeElement.querySelector('kaff-table-row .row-identity');
     expect(identity).not.toBeNull();
     expect(identity.firstElementChild.classList.contains('row-name')).toBe(true);
     expect(identity.querySelector('bdi.row-code').textContent?.trim()).toBe('DL-0001');
-    expect(fixture.nativeElement.querySelector('.row-main').firstElementChild).toBe(identity);
+
+    const row = fixture.nativeElement.querySelector('kaff-table-row .row');
+    expect(row.firstElementChild).toBe(identity);
   });
 
   it('carries no money member anywhere on the pool row', async () => {
