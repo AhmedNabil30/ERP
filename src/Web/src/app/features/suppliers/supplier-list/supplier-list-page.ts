@@ -7,6 +7,9 @@ import { SupplierListFilter, SupplierSummary, SuppliersApi } from '../../../core
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { KaffRowMenu, RowMenuItem } from '../../../shared/kaff-row-menu/kaff-row-menu';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
+import { KaffTable } from '../../../shared/kaff-table/kaff-table';
+import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
+import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 
 /** `S-030`'s three server states, matching `EmployeeListPage`'s own shape. */
 const FILTERS: readonly SupplierListFilter[] = ['active', 'archived', 'all'];
@@ -23,12 +26,13 @@ const FILTERS: readonly SupplierListFilter[] = ['active', 'archived', 'all'];
  *
  * **KAFF-931**: the row's edit chip and filled-red archive button collapse into one `kaff-row-menu`
  * (danger is text, never a filled button). Loading/empty(-filtered)/refusal render through `kaff-state`.
- * This screen predates `KAFF-928`'s `kaff-table` shell and stays on its own hand-rolled row markup —
- * out of this story's scope, which applies the `KAFF-930` kit, not a table-shell migration.
+ *
+ * **KAFF-932**: moved onto the `kaff-table` / `kaff-table-header` / `kaff-table-row` shell, same shape
+ * as `EmployeeListPage` — column geometry lives in the shell now, not in this stylesheet.
  */
 @Component({
   selector: 'kaff-supplier-list-page',
-  imports: [RouterLink, KaffButton, KaffRowMenu, KaffState],
+  imports: [RouterLink, KaffButton, KaffRowMenu, KaffState, KaffTable, KaffTableRow],
   templateUrl: './supplier-list-page.html',
   styleUrl: './supplier-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,6 +44,18 @@ export class SupplierListPage {
 
   protected readonly i18n = inject(I18nService);
   protected readonly filters = FILTERS;
+
+  /** Grid columns for `kaff-table`: identity (name, with the code beneath it) · phone · address ·
+   *  trailing. */
+  protected readonly rowColumns = 'minmax(0, 1fr) 9rem minmax(10rem, 16rem) 7rem';
+
+  /** `KAFF-925`: same column order the rows use. No label on the trailing actions column. */
+  protected readonly headerColumns: readonly TableColumnDef[] = [
+    { labelKey: 'supplier.field.name' },
+    { labelKey: 'supplier.field.phone' },
+    { labelKey: 'supplier.field.address' },
+    {},
+  ];
 
   readonly status = input<SupplierListFilter>('active');
   protected readonly statusFilter = computed(() => this.status() ?? 'active');

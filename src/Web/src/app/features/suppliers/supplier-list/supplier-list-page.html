@@ -21,74 +21,88 @@
   } @else if (loading()) {
     <kaff-state mode="loading" titleKey="supplier.loading" testId="supplier-list-loading" />
   } @else if (suppliers().length > 0) {
-    <ul class="rows" data-testid="supplier-rows">
-      @for (supplier of suppliers(); track trackRow($index, supplier)) {
-        <li
-          class="row"
-          [class.row--archived]="!supplier.isActive"
-          [attr.data-testid]="'supplier-row-' + supplier.code"
-        >
-          <a class="row-link" [routerLink]="['/suppliers', supplier.id]">
-            <!-- ux/components.md:259 — identity first. Finance knows a supplier by name; the generated
-                 code demotes to muted secondary text beneath it. This list is a flex card row, not a
-                 `kaff-table` grid, so there is no `--kaff-columns` to follow. -->
-            <span class="row-identity">
-              <span class="row-name" dir="auto">{{ supplier.name }}</span>
-              <bdi class="row-code" dir="ltr" translate="no">{{ supplier.code }}</bdi>
-            </span>
-            <bdi class="row-phone" dir="ltr">{{ supplier.phone }}</bdi>
-            @if (supplier.address; as address) {
-              <span class="row-address" dir="auto">{{ address }}</span>
-            }
+    <kaff-table
+      [columns]="rowColumns"
+      [columnDefs]="headerColumns"
+      testId="supplier-table-header"
+      data-testid="supplier-table-shell"
+    >
+      <ul class="rows" data-testid="supplier-rows">
+        @for (supplier of suppliers(); track trackRow($index, supplier)) {
+          <li class="rows-item" [attr.data-testid]="'supplier-row-' + supplier.code">
+            <kaff-table-row [archived]="!supplier.isActive">
+              <!-- KAFF-928 finding 6's stretched-link pattern — see employee-list-page.html's comment. -->
+              <a
+                class="row-stretched-link"
+                [routerLink]="['/suppliers', supplier.id]"
+                [attr.aria-label]="supplier.name"
+              ></a>
 
-            @if (!supplier.isActive) {
-              <span class="row-archived-badge" data-testid="supplier-row-archived-badge">
-                {{ i18n.t('supplier.archived_badge') }}
+              <!-- ux/components.md:259 — identity first. Finance knows a supplier by name; the generated
+                   code demotes to muted secondary text beneath it. -->
+              <span class="row-identity">
+                <span class="row-name" dir="auto">{{ supplier.name }}</span>
+                <bdi class="row-code" dir="ltr" translate="no">{{ supplier.code }}</bdi>
               </span>
-            }
-          </a>
+              <bdi class="row-phone" dir="ltr">{{ supplier.phone }}</bdi>
+              <span class="row-address" dir="auto">{{ supplier.address ?? '' }}</span>
 
-          <div class="row-actions">
-            @if (rowFailure(); as failed) {
-              @if (failed.id === supplier.id) {
-                <p class="row-refusal" role="alert" [attr.data-testid]="'supplier-row-refusal-' + supplier.code">
-                  {{ i18n.t(failed.key) }}
-                </p>
+              <!-- KAFF-928 finding 7: an always-present wrapper, so an active and an archived row
+                   project the same number of grid children. -->
+              <span class="row-trailing">
+                <span class="row-archived-badge">
+                  @if (!supplier.isActive) {
+                    <span data-testid="supplier-row-archived-badge">
+                      {{ i18n.t('supplier.archived_badge') }}
+                    </span>
+                  }
+                </span>
+                @if (confirmingArchiveId() !== supplier.id) {
+                  <kaff-row-menu
+                    [items]="rowMenuItems(supplier)"
+                    triggerLabelKey="a11y.row_actions"
+                    [testId]="'supplier-row-menu-' + supplier.code"
+                    (selected)="onRowMenuSelected(supplier, $event)"
+                  />
+                }
+              </span>
+            </kaff-table-row>
+
+            <div class="row-actions">
+              @if (rowFailure(); as failed) {
+                @if (failed.id === supplier.id) {
+                  <p class="row-refusal" role="alert" [attr.data-testid]="'supplier-row-refusal-' + supplier.code">
+                    {{ i18n.t(failed.key) }}
+                  </p>
+                }
               }
-            }
 
-            @if (confirmingArchiveId() === supplier.id) {
-              <p class="row-confirm" [attr.data-testid]="'supplier-archive-body-' + supplier.code">
-                {{ i18n.t('supplier.archive_confirm') }}
-              </p>
-              <kaff-button
-                variant="danger"
-                [disabled]="isArchiving(supplier.id)"
-                [testId]="'supplier-archive-confirm-' + supplier.code"
-                (clicked)="onConfirmArchive(supplier.id)"
-              >
-                {{ i18n.t('supplier.archive_action') }}
-              </kaff-button>
-              <button
-                type="button"
-                class="chip"
-                [attr.data-testid]="'supplier-archive-cancel-' + supplier.code"
-                (click)="onCancelArchive()"
-              >
-                {{ i18n.t('action.cancel') }}
-              </button>
-            } @else {
-              <kaff-row-menu
-                [items]="rowMenuItems(supplier)"
-                triggerLabelKey="a11y.row_actions"
-                [testId]="'supplier-row-menu-' + supplier.code"
-                (selected)="onRowMenuSelected(supplier, $event)"
-              />
-            }
-          </div>
-        </li>
-      }
-    </ul>
+              @if (confirmingArchiveId() === supplier.id) {
+                <p class="row-confirm" [attr.data-testid]="'supplier-archive-body-' + supplier.code">
+                  {{ i18n.t('supplier.archive_confirm') }}
+                </p>
+                <kaff-button
+                  variant="danger"
+                  [disabled]="isArchiving(supplier.id)"
+                  [testId]="'supplier-archive-confirm-' + supplier.code"
+                  (clicked)="onConfirmArchive(supplier.id)"
+                >
+                  {{ i18n.t('supplier.archive_action') }}
+                </kaff-button>
+                <button
+                  type="button"
+                  class="chip"
+                  [attr.data-testid]="'supplier-archive-cancel-' + supplier.code"
+                  (click)="onCancelArchive()"
+                >
+                  {{ i18n.t('action.cancel') }}
+                </button>
+              }
+            </div>
+          </li>
+        }
+      </ul>
+    </kaff-table>
   } @else if (statusFilter() !== 'active') {
     <kaff-state mode="filtered-empty" titleKey="supplier.empty_filtered" testId="supplier-list-empty-filtered" />
   } @else {

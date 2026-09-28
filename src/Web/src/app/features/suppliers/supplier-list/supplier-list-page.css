@@ -1,16 +1,17 @@
 /*
  * Logical properties throughout — RTL is the primary direction, not a mirror (CLAUDE.md). Zero colour
  * literals: every colour is a token from styles.css (apple-erp-design §2). Mirrors
- * subcontractor-list-page.css's and employee-list-page.css's shape deliberately.
+ * employee-list-page.css's and subcontractor-list-page.css's shape deliberately.
  */
 
+/* KAFF-928 finding 8 / AC-928-I, KAFF-932: full width, no centred column — matches
+   employee-list-page.css/user-list-page.css. Column edges align with those screens because the frame
+   does too. */
 .suppliers {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-4);
-  max-inline-size: 64rem;
-  margin-inline: auto;
 }
 
 .title {
@@ -51,55 +52,39 @@
   box-shadow: var(--elevation-1);
 }
 
+/* KAFF-932: `kaff-table` is the card host now — its own border, radius, background and shadow replace
+   what `.rows` used to draw per screen. No `display: grid`/`grid-template-columns` here any more; the
+   shell owns the track via `--kaff-columns`. */
 .rows {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  box-shadow: var(--elevation-1);
-  overflow: hidden;
 }
 
-.row {
+.rows-item {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
 }
 
-.row + .row {
-  border-block-start: 1px solid var(--color-border);
-}
-
-.row--archived {
-  opacity: 0.65;
-}
-
-.row-link {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-1) var(--space-3);
-  min-block-size: var(--tap-target);
-  color: inherit;
-  text-decoration: none;
-}
-
-.row-link > * {
-  min-inline-size: 0;
+/* KAFF-928 finding 6: takes the row out of grid flow entirely (an absolutely-positioned grid child
+   consumes no track), so the whole row is still a click target without nesting a `<button>`/`<a>`
+   inside another `<a>` — see employee-list-page.css's identical rule for the full explanation. */
+.row-stretched-link {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
 }
 
 /* ux/components.md:259 — the identity cell: the name leads, the generated code sits beneath it as
-   muted secondary text. One flex child of `.row-link`. */
+   muted secondary text. One grid child, so the row still projects one child per column track. */
 .row-identity {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
   min-inline-size: 0;
+  justify-self: start;
 }
 
 .row-code {
@@ -109,30 +94,26 @@
 }
 
 .row-name {
-  font-weight: 600;
   font-size: var(--text-md);
+  font-weight: 600;
+  min-inline-size: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .row-phone {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   color: var(--color-muted);
 }
 
 .row-address {
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   color: var(--color-muted);
+  min-inline-size: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.row-archived-badge {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--color-text);
 }
 
 .row-actions {
@@ -140,6 +121,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
+  padding: var(--space-2) var(--space-4) var(--space-3);
 }
 
 .row-confirm {
@@ -161,6 +143,22 @@
 
 /* KAFF-931: loading/empty/refusal render through `kaff-state` now — its own stylesheet draws these,
    this file no longer needs to. */
+
+/* The trailing grid cell: the archived badge and the row menu, stacked at the inline-end — same shape
+   `employee-list-page.css` uses for its own trailing column. */
+.row-trailing {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  justify-self: end;
+}
+
+.row-archived-badge {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
 
 .create {
   align-self: stretch;

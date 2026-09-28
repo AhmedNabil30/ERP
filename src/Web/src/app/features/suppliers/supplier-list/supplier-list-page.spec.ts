@@ -97,15 +97,24 @@ describe('SupplierListPage · renders and filters by status', () => {
 
   // ux/components.md:259 — identity first. The name leads the identity cell and the generated code is
   // the demoted second line, never the first thing on the row.
+  //
+  // KAFF-932: the row is now `kaff-table-row`'s `.row` grid — identity is its first real grid child,
+  // the stretched link ahead of it is taken out of grid flow (`position: absolute`) rather than
+  // consuming a track, so it is excluded here the same way it is excluded from layout.
   it('puts the name before the code inside the identity cell', async () => {
     const api = new FakeSuppliersApi();
     const fixture = await createFixture(api);
 
-    const identity = fixture.nativeElement.querySelector('.row-link > .row-identity');
+    const row = fixture.nativeElement.querySelector('[data-testid="supplier-rows"] .row');
+    const identity = row.querySelector('.row-identity');
     expect(identity).not.toBeNull();
     expect(identity.firstElementChild.classList.contains('row-name')).toBe(true);
     expect(identity.querySelector('bdi.row-code').textContent?.trim()).toBe('SUP-0001');
-    expect(fixture.nativeElement.querySelector('.row-link').firstElementChild).toBe(identity);
+
+    const firstRealChild = Array.from(row.children as HTMLElement[]).find(
+      (el) => !el.classList.contains('row-stretched-link'),
+    );
+    expect(firstRealChild).toBe(identity);
   });
 
   it('sends the archived filter to the query params on a filter click', async () => {
