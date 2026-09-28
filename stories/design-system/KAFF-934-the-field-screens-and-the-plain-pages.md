@@ -1,6 +1,6 @@
 # KAFF-934 · The field screens, and the plain pages nobody restyled
 
-<!-- kaff id=KAFF-934 slice=design-system points=8 state=READY -->
+<!-- kaff id=KAFF-934 slice=design-system points=8 state=BUILT -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 8.
 **Depends on:** `KAFF-901`, `KAFF-928`, `KAFF-930`, all on `main`. This story consumes the kit and
@@ -258,3 +258,61 @@ not change in behaviour) for no criterion this story names. `landing.spec.ts` (8
 **Trailer stays `state=READY`, not `BUILT`.** `AC-934-A` is not fully met (no pill row), which this
 file's own instruction treats as a blocking condition: "Set trailer state=BUILT only if every AC is
 met with evidence." Every other lettered criterion (`B` through `J`) is met with the evidence above.
+
+## Closed by the Scrum Master (2026-09-28)
+
+**Trailer moved READY to BUILT, with one criterion clause HELD and named.** The build session left it
+`READY` because `AC-934-A` was only partly met. It was right to stop, and the reason it could not
+finish that criterion is a defect in this story's own brief, not in its work.
+
+**`AC-934-A`'s pill-row clause is HELD on `Q95`.** The brief told the session to render the
+specialisation as a wrapped row of fixed trade pills, because `WorkerMobile.dc.html` draws four
+(بنّاء / مساعد / نقاش / حداد). `DayLabourApi`'s `specialty` is free text with no options endpoint
+behind it, so building pills would have meant inventing the trade list — a business decision
+`spec.md` does not answer. The session refused and kept the text input, restyled. Registered as
+**`Q95`** in `stories/questions-for-karim.md`. The rest of `AC-934-A` — sticky header, back arrow,
+project name, bottom-anchored footer — is met and photographed.
+
+**The day-rate line in this story's own per-screen brief was wrong.** It told the session to keep a
+day-rate field and its visibility hint on `worker-register`. That screen carries no day rate by
+design: `worker-register-page.ts` cites rule 8 / `AC-209-G`, *"No day rate anywhere ... the request
+and response carry no money member and this form adds no field for one"*, and the rate already lives
+on `worker-history` behind `canEditRate()` per `KAFF-210`. The brief repeated the artboard instead of
+checking the story it contradicted. The session refused to add the field and flagged the conflict.
+Registered as **`Q96`**, which decides whether the artboard needs redrawing or `AC-209-G` needs
+revisiting. No trailer is held on it — the screen is correct as it stands.
+
+**One further gap the session named rather than worked around:** the artboard's 52px primary action.
+`kaff-button` exposes no height hook and this story was not permitted to change a kit component, so
+the primary action stays the kit's 44px. That still clears `AC-934-B`. No story is opened for it; if
+the 52px matters on a phone, it is a `kaff-button` change and needs its own story the way `KAFF-935`
+did.
+
+**A real defect found and fixed while measuring, not by reading:** `worker-pool`'s `.history-link`
+measured 21px on its block axis at 390px — no `min-block-size`. Fixed to `var(--tap-target)` and
+re-measured. This is exactly what `AC-934-B`'s "measured" wording exists to catch, and eyeballing a
+screenshot would not have caught it.
+
+**Gates, as measured by the build session:** `ng build --configuration production` exit 0 with no
+warning line, twice; `npm test` `Test Files 29 passed (29)` · `Tests 149 passed (149)`, twice. 44px
+targets measured live through `getBoundingClientRect` — 21 targets on `worker-register`, 17 on
+`worker-pool`, 16 on `worker-history`, zero under 44 anywhere after the fix. `scrollWidth ===
+clientWidth === 390` on all five screens. No .NET gate was run and none was needed — nothing under
+`src/Api`, `src/Domain` or `src/Infrastructure` changed.
+
+**Verified by the Scrum Master independently of the report:** `AC-209-G`'s rule present at
+`worker-register-page.ts:41`, `specialty` typed `string | null` in `day-labour.api.ts` with no options
+endpoint, `--color-warning-surface` defined twice in `styles.css` (light and dark), and the five
+commits on `main`: `fdb194b`, `139bbfb`, `a0daa19`, `ccbb511`, `51e331c`.
+
+**`landing` was not changed**, and that is reported as a finding rather than as work: it already had
+zero colour literals, was already fully i18n, and its one button-like element was already an `<a>`
+for the same reason `forbidden` and `not-found` now use one. `landing.spec.ts` and
+`landing-page.spec.ts` are inside the green run, so `AC-934-F` holds by the specs, not by assertion.
+
+**Cosmetic, not an application defect:** the seeded worker's Arabic name renders as mojibake in the
+`worker-pool` and `worker-history` screenshots. The session's own throwaway Node seed script was
+re-saved through PowerShell `Set-Content` and took the ANSI-to-UTF-8 round trip this repository's
+`STATUS.md` and `run-kaff-erp`'s own skill file both warn about. It corrupted seed data in a local
+database, touched no file this story owns, and the screenshots are still valid for the layout they
+were taken to prove.
