@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>كف — شاشة الدخول</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
+<style>
+  :root {
+    color-scheme: light dark;
+    --green: #09221e;
+    --green-2: #0f2e29;
+    --cream: #e6d9d1;
+    --cream-2: #f4eee9;
+    --bg: var(--cream-2);
+    --ink: var(--green);
+    --muted: #4b5f59;
+    --line: #d3c4ba;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #061815; --ink: var(--cream); --muted: #9fb3ad; --line: #17403a; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans Arabic", "Segoe UI", system-ui, sans-serif;
+    line-height: 1.7;
+  }
+  .wrap { max-inline-size: 70ch; margin-inline: auto; padding: 40px 24px 64px; }
+  h1 {
+    font-family: "Noto Kufi Arabic", "IBM Plex Sans Arabic", sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    margin: 0 0 8px;
+  }
+  p { margin: 0 0 20px; color: var(--muted); }
+  .card {
+    background: var(--green);
+    border-radius: 14px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .card img { inline-size: 160px; height: auto; }
+  .card p { color: var(--cream); margin: 0; }
+  a.btn {
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    padding-inline: 20px;
+    border-radius: 8px;
+    background: var(--cream);
+    color: var(--green);
+    text-decoration: none;
+    font-weight: 600;
+    font-family: "Noto Kufi Arabic", sans-serif;
+  }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 24px 0 0; font-size: 14px; }
+  dt { color: var(--muted); }
+  dd { margin: 0; }
+  code { font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>شاشة الدخول — الاتجاه المعتمد</h1>
+  <p>ملف واحد يعمل على المقاسين. اضغط الأزرار في الشريط العلوي داخل الصفحة لرؤية الحالات الثلاث، وبدّل بين العربية والإنجليزية وبين الفاتح والداكن. صغّر نافذة المتصفح إلى عرض الموبايل لرؤية تخطيط «شريط الإبهام».</p>
+
+  <div class="card">
+    <img src="brand/kaaf-wordmark-alpha.png" alt="KAAF" width="519" height="155">
+    <p>شاشة مقسومة على الشاشات الكبيرة · شريط إبهام على الموبايل</p>
+    <a class="btn" href="team-a/direction-1.html">افتح الشاشة</a>
+  </div>
+
+  <dl>
+    <dt>الأخضر</dt><dd><code>#09221e</code></dd>
+    <dt>الكريمي</dt><dd><code>#e6d9d1</code></dd>
+    <dt>خط العناوين</dt><dd>Noto Kufi Arabic</dd>
+    <dt>خط النصوص</dt><dd>IBM Plex Sans Arabic</dd>
+    <dt>نقطة التحول</dt><dd><code>820px</code></dd>
+    <dt>التفاصيل</dt><dd><a href="team-a/README.md">team-a/README.md</a></dd>
+  </dl>
+
+</div>
+</body>
+</html>

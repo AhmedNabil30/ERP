@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>كف - مجموعة المكوّنات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* KAAF component kit. A working sheet: every component in the states it really has.
+   Forced states use .is-hover / .is-focus so a screenshot can show them; the real :hover / :focus-visible rules sit beside them. */
+:root{
+  --g900:#09221e; --g800:#0f2e29; --g300:#9fb3ad; --c100:#f4eee9; --c200:#e6d9d1;
+  --bg:var(--c100); --surface:#fbf8f5; --head:#ebe0d8; --ink:var(--g900); --dim:#4b5f59; --line:rgba(9,34,30,.16); --hover:rgba(9,34,30,.055);
+  --btn:var(--g900); --btn-h:#25544b; --dh:#8a2211; --btn-ink:var(--c200); --field:#fbf8f5; --fieldline:var(--g900); --focus:var(--g900);
+  --err-bg:#f9e4dd; --err-ink:#7a1a0e; --err-bar:#c2321c; --danger:#a42a16; --danger-ink:#ffffff;
+  --st-run-bg:#d3e3db; --st-run-ink:#0b3b32; --st-done-bg:var(--g900); --st-done-ink:var(--c200);
+  --st-stuck-bg:#f9e4dd; --st-stuck-ink:#7a1a0e; --st-post-bg:#e6d9d1; --st-post-ink:#43392f; --st-none-ink:#4b5f59;
+  --note-bg:#ebe0d8; --ok-bg:#d3e3db; --ok-ink:#0b3b32;
+  --radius:6px; /* the one corner radius: fields, buttons, pills, badges, popups, dialogs, panels, banners, sheets, cards */
+  --scrim:rgba(3,13,11,.55); --strip:var(--c200); --shadow:0 12px 36px rgba(9,34,30,.22);
+  --display:'Noto Kufi Arabic','IBM Plex Sans Arabic',system-ui,sans-serif;
+  --body:'IBM Plex Sans Arabic',system-ui,'Segoe UI',Tahoma,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#061815; --surface:#0a1f1b; --head:#0f2e29; --ink:var(--c200); --dim:var(--g300); --line:rgba(230,217,209,.18); --hover:rgba(230,217,209,.06);
+  --btn:var(--c200); --btn-h:#fbf6f2; --dh:#ffb9ab; --btn-ink:var(--g900); --field:#0f2e29; --fieldline:#7f9a92; --focus:var(--c200);
+  --err-bg:#3b1612; --err-ink:#ffd0c6; --err-bar:#ff7b63; --danger:#ff9d8a; --danger-ink:#2a0d08;
+  --st-run-bg:#17403a; --st-run-ink:#e6d9d1; --st-done-bg:var(--c200); --st-done-ink:var(--g900);
+  --st-stuck-bg:#3b1612; --st-stuck-ink:#ffd0c6; --st-post-bg:#1d2b27; --st-post-ink:#c9bfb7; --st-none-ink:#9fb3ad;
+  --note-bg:#0f2e29; --ok-bg:#17403a; --ok-ink:#e6d9d1; --strip:#030d0b; --shadow:0 12px 36px rgba(0,0,0,.6);}}
+:root[data-theme="dark"]{
+  --bg:#061815; --surface:#0a1f1b; --head:#0f2e29; --ink:var(--c200); --dim:var(--g300); --line:rgba(230,217,209,.18); --hover:rgba(230,217,209,.06);
+  --btn:var(--c200); --btn-h:#fbf6f2; --dh:#ffb9ab; --btn-ink:var(--g900); --field:#0f2e29; --fieldline:#7f9a92; --focus:var(--c200);
+  --err-bg:#3b1612; --err-ink:#ffd0c6; --err-bar:#ff7b63; --danger:#ff9d8a; --danger-ink:#2a0d08;
+  --st-run-bg:#17403a; --st-run-ink:#e6d9d1; --st-done-bg:var(--c200); --st-done-ink:var(--g900);
+  --st-stuck-bg:#3b1612; --st-stuck-ink:#ffd0c6; --st-post-bg:#1d2b27; --st-post-ink:#c9bfb7; --st-none-ink:#9fb3ad;
+  --note-bg:#0f2e29; --ok-bg:#17403a; --ok-ink:#e6d9d1; --strip:#030d0b; --shadow:0 12px 36px rgba(0,0,0,.6);}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 1rem/1.6 var(--body)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+svg.i{inline-size:22px;block-size:22px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+svg.i.s{inline-size:18px;block-size:18px}
+.vh{position:absolute;inline-size:1px;block-size:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus-visible,.is-focus{outline:3px solid var(--focus);outline-offset:3px}
+bdi,.ltr{unicode-bidi:isolate}
+.money{font-variant-numeric:tabular-nums;font-weight:500;direction:ltr;unicode-bidi:isolate}
+
+/* ================= the sheet itself (not a component) ================= */
+.strip{position:sticky;inset-block-start:0;z-index:60;background:var(--strip);padding:8px 16px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;font-size:.8125rem}
+.strip nav{display:flex;flex-wrap:wrap;gap:4px 14px}
+.strip a{color:inherit;text-underline-offset:3px;min-block-size:28px;display:inline-flex;align-items:center}
+.strip button{min-block-size:36px;padding:0 12px;border:1px solid currentColor;background:transparent;border-radius:var(--radius)}
+.wrap{max-inline-size:1260px;margin:auto;padding:8px 24px 80px}
+.sec[hidden]{display:none}
+.sec{padding-block:40px 8px;border-block-end:1px solid var(--line)}
+.sec>h2{font:700 1.75rem/1.35 var(--display);margin:0}
+.sec>.spec{margin:6px 0 20px;color:var(--dim);max-inline-size:100ch;font-size:.9375rem}
+.sec h3{font:600 1.0625rem/1.4 var(--display);margin:28px 0 10px}
+.grid{display:grid;gap:20px 24px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g5{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media (max-width:1000px){.g4,.g5{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:1fr 1fr}}
+@media (max-width:700px){.g2,.g3,.g4,.g5{grid-template-columns:1fr}.wrap{padding-inline:16px}}
+.cell{min-inline-size:0}
+.cap{display:block;margin-block-start:8px;font-size:.8125rem;color:var(--dim)}
+.rule{padding:14px 18px;border:1.5px dashed var(--line);border-radius:var(--radius);color:var(--dim);font-size:.9375rem;max-inline-size:100ch}
+.rule b{color:var(--ink)}
+.stage{position:relative;background:var(--scrim);border-radius:var(--radius);padding:24px;display:flex;justify-content:center;align-items:center;min-block-size:200px;overflow:hidden}
+.stage.end{justify-content:flex-end;align-items:stretch;padding:0}
+.stage.start-b{align-items:flex-end;padding:0}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.8125rem;color:var(--dim);margin-block-start:10px}
+
+/* ================= BUTTONS ================= */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-block-size:48px;padding:0 22px;border:2px solid transparent;border-radius:var(--radius);background:var(--btn);color:var(--btn-ink);font:700 1rem/1 var(--display);white-space:nowrap;text-decoration:none}
+.btn.sm{min-block-size:44px;padding:0 16px;font-size:.9375rem}
+.btn.lg{min-block-size:60px;padding:0 26px;font-size:1.0625rem;border-radius:var(--radius)}
+.btn:hover,.btn.is-hover{background:var(--btn-h)}
+.btn.dconf:hover,.btn.dconf.is-hover{background:var(--dh)}
+.btn:active{transform:translateY(1px)}
+.btn[disabled],.btn.is-disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn.sec2{background:transparent;color:var(--ink);border-color:var(--fieldline)}
+.btn.sec2:hover,.btn.sec2.is-hover{background:var(--hover)}
+.btn.quiet{background:transparent;color:var(--ink);border-color:transparent}
+.btn.quiet:hover,.btn.quiet.is-hover{background:var(--hover)}
+.btn.dtrig{background:transparent;color:var(--err-ink);border-color:var(--err-ink)}
+.btn.dtrig:hover,.btn.dtrig.is-hover{background:var(--err-bg)}
+.btn.dconf{background:var(--danger);color:var(--danger-ink);border-color:var(--danger)}
+.btn.is-busy{cursor:progress;opacity:.9}
+.btn .spin{display:none;inline-size:18px;block-size:18px;border:3px solid color-mix(in srgb,currentColor 30%,transparent);border-top-color:currentColor;border-radius:50%;animation:r .8s linear infinite}
+.btn.is-busy .spin{display:block}
+@keyframes r{to{transform:rotate(360deg)}}
+.ib{inline-size:44px;block-size:44px;display:inline-grid;place-items:center;border:2px solid transparent;background:transparent;color:var(--ink);border-radius:var(--radius);padding:0}
+.ib.bd{border-color:var(--fieldline)}
+.ib:hover,.ib.is-hover{background:var(--hover)}
+.ib[disabled]{opacity:.45;cursor:not-allowed}
+.lnk{color:var(--ink);text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:4px;font-weight:500;background:none;border:0;padding:0}
+.lnk:hover,.lnk.is-hover{text-decoration-thickness:3px}
+.back{display:inline-flex;align-items:center;gap:6px;min-block-size:44px;color:var(--ink);text-decoration:none;font-weight:600}
+.back svg{transition:none}
+[dir="rtl"] .back svg{transform:scaleX(-1)}
+.back:hover,.back.is-hover{text-decoration:underline;text-underline-offset:4px}
+.badge{display:inline-flex;align-items:center;justify-content:center;min-inline-size:24px;block-size:24px;padding:0 8px;border-radius:var(--radius);border:1.5px solid var(--fieldline);font:600 .8125rem/1 var(--body);font-variant-numeric:tabular-nums}
+.badge.fill{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.av{display:inline-grid;place-items:center;border-radius:50%;background:var(--ink);color:var(--bg);font:700 1rem/1 var(--display);inline-size:40px;block-size:40px}
+.av.s{inline-size:32px;block-size:32px;font-size:.875rem}.av.l{inline-size:56px;block-size:56px;font-size:1.25rem}
+.av.cream{background:var(--c200);color:var(--g900)}
+.row-inline{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+
+/* ================= FORM FIELDS ================= */
+.field{display:grid;gap:6px;min-inline-size:0}
+.field>label,.field>.lab{display:flex;gap:6px;align-items:baseline;font:600 1rem/1.4 var(--body)}
+.req{color:var(--ink);font-weight:700}
+.ctl{display:flex;align-items:stretch;min-inline-size:0;block-size:48px;border:2px solid var(--fieldline);border-radius:var(--radius);background:var(--field);position:relative}
+.ctl input,.ctl select,.ctl .val{flex:1;min-inline-size:0;border:0;background:transparent;padding:0 14px;font-size:1.0625rem;outline:none;block-size:100%;display:flex;align-items:center}
+.ctl input::placeholder{color:var(--dim);opacity:1}
+.ctl:hover,.ctl.is-hover{border-color:var(--ink)}
+.ctl:focus-within,.ctl.is-focus{outline:3px solid var(--focus);outline-offset:3px}
+.ctl .aff{display:flex;align-items:center;padding:0 14px;border-inline-start:2px solid var(--line);color:var(--dim);font-weight:600;white-space:nowrap}
+.ctl .tail{display:grid;place-items:center;inline-size:44px;color:var(--dim)}
+.ctl.num input,.ctl.money input{text-align:end;direction:ltr;font-variant-numeric:tabular-nums}
+.ctl input[dir="ltr"]{text-align:start}
+.ctl.num input,.ctl.money input{text-align:end}
+.foot{min-block-size:24px;display:flex;align-items:flex-start;gap:6px;font-size:.875rem;line-height:1.5;color:var(--dim)}
+.foot svg{inline-size:18px;block-size:18px;margin-block-start:2px;flex:none}
+.field.err .ctl{border-color:var(--err-bar);box-shadow:inset 0 0 0 1px var(--err-bar)}
+.field.err .foot{color:var(--err-ink);font-weight:500}
+.field.dis .ctl{opacity:.5;cursor:not-allowed;background:transparent;border-style:dashed}
+.field.dis>label{opacity:.6}
+.ctl.ro{background:var(--head);border-color:var(--line);border-style:solid}
+.ctl.ro .val{color:var(--ink);font-weight:500}
+.ctl.busy .tail .spin{inline-size:18px;block-size:18px;border:3px solid var(--line);border-top-color:var(--ink);border-radius:50%;animation:r .8s linear infinite}
+.ta{block-size:auto;min-block-size:112px}
+.ta textarea{resize:vertical;min-block-size:104px;padding:12px 14px;border:0;background:transparent;font-size:1.0625rem;flex:1;outline:none;line-height:1.6}
+/* toggle */
+.tg{display:flex;align-items:center;justify-content:space-between;gap:16px;min-block-size:56px;padding:0 4px}
+.tg .lb{font-weight:600}
+.tg .st{display:block;font-weight:400;font-size:.875rem;color:var(--dim)}
+.sw{position:relative;inline-size:56px;block-size:32px;border-radius:16px;/* kept fully round: a switch whose track is not round cannot show a thumb travelling */border:2px solid var(--fieldline);background:transparent;padding:0;flex:none}
+.sw::after{content:"";position:absolute;inset-block-start:3px;inset-inline-start:3px;inline-size:22px;block-size:22px;border-radius:50%;background:var(--fieldline)}
+.sw[aria-checked="true"]{background:var(--ink)}
+.sw[aria-checked="true"]::after{inset-inline-start:calc(100% - 25px);background:var(--bg)}
+.sw svg{position:absolute;inset-block-start:5px;inset-inline-start:calc(100% - 23px);inline-size:18px;block-size:18px;stroke:var(--ink);stroke-width:2.6;display:none}
+.sw[aria-checked="true"] svg{display:block}
+.sw:hover,.sw.is-hover{box-shadow:0 0 0 3px var(--hover)}
+.sw[disabled]{opacity:.45;cursor:not-allowed}
+@media (prefers-reduced-motion:no-preference){.sw::after{transition:inset-inline-start .15s}}
+
+/* popup (select, menu, calendar) */
+.pop{background:var(--surface);border:1.5px solid var(--fieldline);border-radius:var(--radius);box-shadow:var(--shadow);padding:6px;min-inline-size:200px}
+.opt{display:flex;align-items:center;gap:12px;min-block-size:44px;padding:0 12px;border-radius:var(--radius);font-size:1rem;color:var(--ink);background:none;border:0;inline-size:100%;text-align:start}
+.opt:hover,.opt.is-hover{background:var(--hover)}
+.opt.is-focus{outline:3px solid var(--focus);outline-offset:-3px}
+.opt[aria-selected="true"]{font-weight:700;background:var(--head)}
+.opt[aria-selected="true"]::after{content:"";margin-inline-start:auto;inline-size:18px;block-size:18px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/contain no-repeat}
+.opt[disabled]{opacity:.45;cursor:not-allowed}
+.opt.dang{color:var(--err-ink);font-weight:600}
+.sepr{block-size:1px;background:var(--line);margin:6px 4px}
+.cal{inline-size:296px;padding:12px}
+.cal .hd{display:flex;align-items:center;justify-content:space-between;font:600 1rem/1 var(--display);margin-block-end:6px}
+.cal table{inline-size:100%;border-collapse:collapse;text-align:center}
+.cal th{font:500 .75rem/1 var(--body);color:var(--dim);block-size:28px}
+.cal td{padding:0;border:0}
+.cal td span{display:grid;place-items:center;inline-size:38px;block-size:38px;margin:auto;border-radius:var(--radius);font-variant-numeric:tabular-nums;font-size:.9375rem}
+.cal td .sel{background:var(--ink);color:var(--bg);font-weight:700}
+.cal td .tod{box-shadow:inset 0 0 0 2px var(--ink)}
+.cal td .dim{color:var(--dim);opacity:.55}
+
+/* form footer */
+.ff{display:flex;align-items:center;gap:12px;padding:16px 0 0;border-block-start:1px solid var(--line);flex-wrap:wrap}
+.ff .spacer{flex:1}
+.fcard{padding:20px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);display:grid;gap:16px}
+
+/* ================= STATUS PILL ================= */
+.pill{display:inline-flex;align-items:center;gap:7px;block-size:28px;padding-inline:10px 12px;border-radius:var(--radius);font:600 .8125rem/1 var(--body);white-space:nowrap;box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 30%,transparent)}
+.pill svg{inline-size:13px;block-size:13px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.s-run{background:var(--st-run-bg);color:var(--st-run-ink)}
+.s-done{background:var(--st-done-bg);color:var(--st-done-ink)}
+.s-stuck{background:var(--st-stuck-bg);color:var(--st-stuck-ink)}
+.s-post{background:var(--st-post-bg);color:var(--st-post-ink)}
+.s-none{background:transparent;color:var(--st-none-ink);box-shadow:inset 0 0 0 1.5px currentColor}
+
+/* ================= TABLES ================= */
+.tools{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;justify-content:space-between;margin-block-end:12px}
+.seg{display:inline-flex;border:2px solid var(--fieldline);border-radius:var(--radius);overflow:hidden;background:var(--field)}
+.seg button{min-block-size:44px;padding:0 18px;border:0;background:transparent;font:600 .9375rem/1 var(--body);display:inline-flex;align-items:center;gap:8px}
+.seg button+button{border-inline-start:2px solid var(--fieldline)}
+.seg button:hover,.seg button.is-hover{background:var(--hover)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);font-weight:700}
+.seg button:focus-visible,.seg button.is-focus{outline:3px solid var(--focus);outline-offset:-5px}
+.search{position:relative;inline-size:300px;max-inline-size:100%}
+.search>svg{position:absolute;inset-inline-start:14px;inset-block-start:50%;transform:translateY(-50%);color:var(--dim);inline-size:20px;block-size:20px;pointer-events:none}
+.search input{inline-size:100%;block-size:48px;padding-inline:44px 48px;border:2px solid var(--fieldline);border-radius:var(--radius);background:var(--field);font-size:1rem;outline:none}
+.search input:hover{border-color:var(--ink)}
+.search input:focus,.search.is-focus input{outline:3px solid var(--focus);outline-offset:3px}
+.search .x{position:absolute;inset-inline-end:2px;inset-block-start:2px}
+.search .busy{position:absolute;inset-inline-end:15px;inset-block-start:15px;inline-size:18px;block-size:18px;border:3px solid var(--line);border-top-color:var(--ink);border-radius:50%;animation:r .8s linear infinite}
+.count{color:var(--dim);font-size:.9375rem;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.tw{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow-x:auto;position:relative}
+.tbl{inline-size:100%;border-collapse:separate;border-spacing:0;font-size:.9375rem;min-inline-size:880px}
+.tbl th{background:var(--head);text-align:start;font:600 .8125rem/1.3 var(--body);color:var(--dim);padding:0 16px;block-size:44px;white-space:nowrap;position:sticky;inset-block-start:0}
+.tbl td{padding:0 16px;block-size:48px;border-block-start:1px solid var(--line);white-space:nowrap;background:var(--surface)}
+.tbl tbody tr:hover td,.tbl tr.is-hover td{background:color-mix(in srgb,var(--ink) 5.5%,var(--surface))}
+.tbl th.n,.tbl td.n{text-align:end}
+/* sticky identity column: stays at the START edge while the rest scrolls under it */
+.tbl .id{position:sticky;inset-inline-start:0;z-index:2;min-inline-size:260px;max-inline-size:340px;box-shadow:inset -1px 0 0 var(--line)}
+[dir="ltr"] .tbl .id{box-shadow:inset 1px 0 0 var(--line)}
+.tbl th.id{z-index:3;background:var(--head)}
+.idc{display:flex;align-items:baseline;gap:10px;min-inline-size:0}
+.idc .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.idc .cd{color:var(--dim);font-size:.8125rem;font-variant-numeric:tabular-nums;flex:none}
+.tbl tr.grp td{background:var(--head);block-size:44px;font:600 .9375rem/1 var(--display);border-block-start:1px solid var(--line)}
+.tbl tr.grp td .badge{margin-inline-start:10px;vertical-align:middle}
+.tbl tfoot td{background:var(--head);font-weight:600;block-size:52px;border-block-start:2px solid var(--fieldline)}
+.tbl td.act{text-align:end;inline-size:64px;padding-inline:8px}
+.pager{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 4px 0;color:var(--dim);font-size:.9375rem;flex-wrap:wrap}
+.pager .pg{display:flex;gap:8px}
+.pager .pg button{min-inline-size:44px;block-size:44px;border:2px solid var(--fieldline);background:transparent;border-radius:var(--radius);font-weight:600;padding:0 10px}
+.pager .pg button[aria-current="page"]{background:var(--ink);color:var(--bg);font-weight:700}
+.pager .pg button[disabled]{opacity:.4;cursor:not-allowed}
+.pgn{display:none;align-self:center;font-weight:600;color:var(--ink);padding:0 6px}
+@media (max-width:820px){.pager .pg .pn{display:none}.pgn{display:inline}.pager .pg{inline-size:100%;justify-content:space-between}}
+.pager .pg button:hover:not([disabled]):not([aria-current]){background:var(--hover)}
+.sk{display:inline-block;block-size:14px;border-radius:4px;background:linear-gradient(90deg,var(--line),var(--hover),var(--line));background-size:200% 100%;animation:sh 1.4s linear infinite;vertical-align:middle}
+@keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
+.sk.p{block-size:28px;border-radius:var(--radius)}
+@media (prefers-reduced-motion:reduce){.sk,.btn .spin,.search .busy{animation-duration:3s}.sk{animation:none}}
+/* list states */
+.state{border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:28px 24px;text-align:center;display:grid;justify-items:center;gap:10px;min-block-size:240px;align-content:center}
+.state .ico{inline-size:56px;block-size:56px;border-radius:var(--radius);display:grid;place-items:center;background:var(--head);color:var(--ink)}
+.state .ico svg{inline-size:28px;block-size:28px}
+.state h4{font:700 1.125rem/1.4 var(--display);margin:4px 0 0}
+.state p{margin:0;color:var(--dim);max-inline-size:34ch;font-size:.9375rem}
+.state.perm{border-style:dashed;border-color:var(--fieldline)}
+.state.perm .ico{background:transparent;border:2px solid var(--fieldline)}
+.state.nores{background:transparent}
+/* phone row */
+.mlist{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden}
+.li{display:grid;grid-template-columns:minmax(0,1fr) auto 44px;gap:2px 8px;align-items:center;padding:8px 8px 8px 16px;padding-inline:16px 4px;min-block-size:80px;border-block-end:1px solid var(--line)}
+.li:last-child{border-block-end:0}
+.li .t{grid-column:1;grid-row:1;font-weight:600;line-height:1.4}
+.li .sub{grid-column:1;grid-row:2;color:var(--dim);font-size:.875rem;display:flex;gap:8px}
+.li .pill{grid-column:2;grid-row:1;justify-self:end}
+.li .money{grid-column:2;grid-row:2;justify-self:end;font-size:.9375rem}
+.li .ib{grid-column:3;grid-row:1/3}
+.mtot{display:flex;justify-content:space-between;padding:14px 16px;background:var(--head);font-weight:600}
+.frame-sm{max-inline-size:680px}
+/* mockup-only: CSS scroll-snap holds the demo frame scrolled past the first columns so screenshots (which reset scrollLeft) still show the pinned identity column over scrolled content */
+#stw{scroll-snap-type:x mandatory;scroll-padding-inline-start:262px}
+#stw .tbl tr>:nth-child(3),#stw .tbl tr>:nth-child(4){scroll-snap-align:start}
+.deskno{display:none;padding:12px 14px;border:1.5px dashed var(--line);border-radius:var(--radius);color:var(--dim);font-size:.9375rem}
+@media (max-width:820px){.tw.desk,.desk+.legend,.frame-sm>.cap{display:none}.deskno{display:block}.li .sub{flex-wrap:wrap}.li .sub bdi{white-space:nowrap}}
+
+/* inline confirmation in a row */
+.tbl tr.conf td{background:var(--err-bg);block-size:64px;border-block-start:1px solid var(--err-bar)}
+.confrow{display:flex;align-items:center;gap:12px;inline-size:100%;color:var(--err-ink);font-weight:500;white-space:normal;position:sticky;inset-inline-start:0}
+.confrow .msg{flex:1;min-inline-size:0;line-height:1.4}
+.confrow .msg b{font-weight:700}
+.conf-card{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px;border-radius:var(--radius);background:var(--err-bg);border:1px solid var(--err-bar);color:var(--err-ink)}
+.conf-card .msg{flex:1;min-inline-size:200px}
+.menuwrap{position:relative;display:inline-block}
+.menuwrap .pop{position:fixed;z-index:70;inline-size:240px;display:none}
+.menuwrap.open .pop{display:block}
+
+/* ================= OVERLAYS ================= */
+.dlg{background:var(--surface);color:var(--ink);border-radius:var(--radius);box-shadow:var(--shadow);inline-size:520px;max-inline-size:100%;display:flex;flex-direction:column;border:1px solid var(--line)}
+.dlg.sm{inline-size:420px}
+.dlg .hd{display:flex;align-items:center;gap:12px;padding:16px 20px 12px 8px;padding-inline:20px 8px;border-block-end:1px solid var(--line)}
+.dlg .hd h4{margin:0;font:700 1.25rem/1.4 var(--display);flex:1}
+.dlg .bd{padding:20px;display:grid;gap:16px}
+.dlg .ft{display:flex;gap:12px;padding:14px 20px 20px;flex-wrap:wrap}
+.dlg .ft .spacer{flex:1}
+.dlg .conf-ico{inline-size:48px;block-size:48px;border-radius:var(--radius);background:var(--err-bg);color:var(--err-ink);display:grid;place-items:center;flex:none}
+.dlg.sm .bd{display:flex;gap:16px;align-items:flex-start}
+.dlg.sm h4{font:700 1.125rem/1.4 var(--display);margin:0 0 4px}
+.dlg.sm p{margin:0;color:var(--dim)}
+.panel{inline-size:440px;max-inline-size:100%;background:var(--surface);border-inline-start:1px solid var(--line);box-shadow:var(--shadow);display:flex;flex-direction:column;min-block-size:520px}
+.panel .hd{display:flex;align-items:center;gap:12px;padding:16px 20px;border-block-end:1px solid var(--line)}
+.panel .hd .t{flex:1;min-inline-size:0}
+.panel .hd h4{margin:0;font:700 1.25rem/1.4 var(--display)}
+.panel .bd{padding:20px;flex:1;overflow:auto}
+.panel .ft{padding:14px 20px 20px;border-block-start:1px solid var(--line);display:flex;gap:12px;flex-wrap:wrap}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:0 16px;margin:0}
+.kv dt{color:var(--dim);font-size:.875rem;padding:12px 0;border-block-end:1px solid var(--line)}
+.kv dd{margin:0;padding:10px 0;border-block-end:1px solid var(--line);min-block-size:48px;display:flex;align-items:center}
+.phone{inline-size:390px;max-inline-size:100%;block-size:640px;border:1px solid var(--line);border-radius:24px;overflow:hidden;position:relative;background:var(--bg);margin:auto}
+.phone .bgc{padding:16px;display:grid;gap:12px;opacity:.9}
+.phone .scr{position:absolute;inset:0;background:var(--scrim)}
+.sheet{position:absolute;inset-inline:0;inset-block-end:0;background:var(--bg);border---radius:var(--radius);border---radius:var(--radius);max-block-size:92%;display:flex;flex-direction:column;box-shadow:0 -12px 40px rgba(0,0,0,.35)}
+.sheet .grab{inline-size:44px;block-size:4px;border-radius:2px;background:var(--line);margin:10px auto 0}
+.sheet .hd{display:flex;align-items:center;gap:8px;padding:8px 16px 8px;padding-inline:20px 8px}
+.sheet .hd h4{margin:0;font:700 1.25rem/1.4 var(--display);flex:1}
+.sheet .bd{padding:4px 16px 12px;overflow:auto;display:grid;gap:14px}
+.sheet .ft{display:flex;gap:12px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-block-start:1px solid var(--line);background:var(--surface)}
+.sheet .ft .btn{min-block-size:56px}
+.layers{display:grid;gap:8px;max-inline-size:520px}
+.layers div{padding:10px 14px;border:2px solid var(--fieldline);border-radius:var(--radius);font-weight:600;display:flex;justify-content:space-between;gap:12px}
+.layers div small{font-weight:400;color:var(--dim)}
+.layers div:nth-child(1){margin-inline:36px}.layers div:nth-child(2){margin-inline:24px}.layers div:nth-child(3){margin-inline:12px}
+
+
+/* ================= CHOICE: checkbox, radio, tabs ================= */
+.ck{display:flex;align-items:center;gap:12px;min-block-size:44px;cursor:pointer;font-size:1rem;position:relative}
+.ck.is-focus{outline:none}
+.ck input{position:absolute;opacity:0;inline-size:1px;block-size:1px}
+.ck .bx{inline-size:24px;block-size:24px;flex:none;border:2px solid var(--fieldline);background:var(--field);display:grid;place-items:center;border-radius:var(--radius)}
+.ck .bx svg{inline-size:16px;block-size:16px;stroke:var(--bg);stroke-width:3.2;fill:none;stroke-linecap:round;stroke-linejoin:round;display:none}
+.ck.rd .bx{border-radius:50%}
+.ck input:checked+.bx,.ck.on .bx,.ck.ind .bx{background:var(--ink);border-color:var(--ink)}
+.ck.rd input:checked+.bx,.ck.rd.on .bx{background:var(--ink);box-shadow:inset 0 0 0 4px var(--field)}
+.ck input:checked+.bx svg.ck-c,.ck.on .bx svg.ck-c,.ck.ind .bx svg.ck-i{display:block}
+.ck.rd .bx svg{display:none!important}
+.ck:hover .bx,.ck.is-hover .bx{border-color:var(--ink);outline:4px solid var(--hover)}
+.ck input:focus-visible+.bx,.ck.is-focus .bx{outline:3px solid var(--focus);outline-offset:3px}
+.ck.dis{opacity:.45;cursor:not-allowed}
+.ck.err .bx{border-color:var(--err-bar);box-shadow:inset 0 0 0 1px var(--err-bar)}
+.ck .lb small{display:block;color:var(--dim);font-size:.875rem;line-height:1.4}
+.tabs{display:flex;border-block-end:2px solid var(--line);overflow-x:auto;gap:4px}
+.tab{position:relative;min-block-size:48px;padding:0 18px;border:0;background:transparent;font:600 1rem/1 var(--display);color:var(--dim);display:inline-flex;align-items:center;gap:8px;white-space:nowrap;border-radius:var(--radius) var(--radius) 0 0}
+.tab::after{content:"";position:absolute;inset-inline:12px;inset-block-end:-2px;block-size:4px;background:transparent;border-radius:2px 2px 0 0}
+.tab:hover,.tab.is-hover{background:var(--hover);color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--ink);font-weight:700}
+.tab[aria-selected="true"]::after{background:var(--ink)}
+.tab:focus-visible,.tab.is-focus{outline:3px solid var(--focus);outline-offset:-3px}
+.tab[disabled]{opacity:.45;cursor:not-allowed}
+@media (max-width:820px){.tab{min-block-size:56px}}
+
+/* ================= FEEDBACK ================= */
+.ban{display:flex;gap:12px;align-items:flex-start;padding:12px 16px;border-radius:var(--radius);border-inline-start:6px solid var(--err-bar);background:var(--err-bg);color:var(--err-ink);font-weight:500;line-height:1.55}
+.ban svg{margin-block-start:2px}
+.ban.note{background:var(--note-bg);color:var(--ink);border-inline-start-color:var(--fieldline);font-weight:400}
+.ban.ok{background:var(--ok-bg);color:var(--ok-ink);border-inline-start-color:var(--ok-ink)}
+.ban .act{margin-inline-start:auto;flex:none}
+.ban b{font-weight:700}
+</style>
+</head>
+<body>
+
+<div class="strip">
+  <nav aria-label="الأقسام">
+    <a href="#s-buttons">الأزرار</a><a href="#s-fields">الحقول</a><a href="#s-choice">الاختيار والتبويب</a><a href="#s-lists">الجداول</a><a href="#s-states">حالات القائمة</a><a href="#s-actions">إجراءات الصف</a><a href="#s-filters">التصفية</a><a href="#s-overlays">النوافذ</a><a href="#s-feedback">التنبيهات</a>
+  </nav>
+  <div style="display:flex;gap:8px">
+    <button type="button" id="dirbtn" aria-pressed="false">اختبار الاتجاه: يقلب التخطيط فقط</button>
+    <button type="button" id="themebtn">فاتح / داكن</button>
+  </div>
+</div>
+
+<main class="wrap">
+
+<!-- ============ BUTTONS ============ -->
+<section class="sec" id="s-buttons">
+  <h2>الأزرار والأجزاء الصغيرة</h2>
+  <p class="spec">الأحجام: عادي 48 بكسل ارتفاعاً، مضغوط 44 (أصغر هدف لمس مسموح)، كبير 60 (شريط الجوال السفلي). زر الأيقونة 44 × 44. الخط: نوتو كوفي 700 بحجم 1rem. نصف القطر 8 (10 للكبير). الزر الواحد الأساسي في كل شاشة. زر الحذف المُشغِّل هادئ بإطار، وزر التأكيد داخل التأكيد هو الصاخب.</p>
+  <div id="btngrid"></div>
+  <h3>أزرار الأيقونة والروابط والأجزاء الصغيرة</h3>
+  <div class="grid g4" id="smallgrid"></div>
+</section>
+
+<!-- ============ FIELDS ============ -->
+<section class="sec" id="s-fields">
+  <h2>الحقول والنماذج</h2>
+  <p class="spec">غلاف الحقل يملك التسمية والتلميح والخطأ. الخطأ يحل محل التلميح في نفس الموضع (ارتفاع محجوز 24 بكسل) فلا يتحرك شيء. الحقل 48 بكسل على الحاسوب و56 على الجوال، بإطار 2 بكسل ونصف قطر 8. علامة المطلوب نجمة مع نص مخفي «مطلوب»، لا لوناً. المبالغ والأرقام تُحاذى إلى الطرف النهائي وتبقى أرقاماً غربية.</p>
+  <h3>الحقل النصي في كل حالاته</h3>
+  <div class="grid g4" id="textstates"></div>
+  <h3>الأنواع</h3>
+  <div class="grid g3" id="types"></div>
+  <h3>تذييل النموذج والحذف داخل النموذج</h3>
+  <div class="grid g2" id="forms"></div>
+</section>
+
+<!-- ============ CHOICE + TABS ============ -->
+<section class="sec" id="s-choice">
+  <h2>الاختيار والتبويب</h2>
+  <p class="spec">خانة الاختيار لاختيارات متعددة (الصلاحيات، تحديد صفوف). زر الراديو لاختيار واحد من قائمة قصيرة. التبويب للتنقل بين أقسام سجل واحد (بنود، مستخلصات). هدف اللمس 44 على الأقل في الثلاثة: المربع 24 داخل صف كامل قابل للنقر. الحالة تُحمل بالشكل لا باللون: علامة صح، شرطة، نقطة، وخط سفلي سميك.</p>
+  <h3>خانة الاختيار</h3>
+  <div class="grid g5" id="cbgrid"></div>
+  <h3>زر الراديو</h3>
+  <div class="grid g3" id="rdgrid"></div>
+  <h3>التبويب</h3>
+  <div class="grid g2" id="tabgrid"></div>
+</section>
+
+<!-- ============ LISTS ============ -->
+<section class="sec" id="s-lists">
+  <h2>القوائم والجداول</h2>
+  <p class="spec">العمود الأول هو خلية الهوية: الاسم يتصدر والرمز بجانبه خافتاً (لا العكس)، وهو ثابت عند الطرف الأول أثناء التمرير الأفقي. الرأس 44، الصف 48، صف المجموع 52، صف عنوان الباب 44. المبلغ في <code>bdi</code> بأرقام غربية متجانسة العرض، والعملة تُذكر مرة واحدة في رأس العمود. الحالة بكلمات كاف حرفياً مع شكل. خلية الإجراءات زر أيقونة 44 في آخر الصف.</p>
+  <h3>الجدول الكامل: رأس، صفوف، عنوان باب، صف إجمالي، ترقيم الصفحات</h3>
+  <div id="tblfull"></div>
+  <h3>الأعمدة الثابتة: جدول أضيق من محتواه (محاكاة شاشة 1000 بكسل)</h3>
+  <p class="spec" style="margin-block-start:0">عمود الهوية يبقى ظاهراً عند الطرف الأول بينما تمر بقية الأعمدة تحته. حدّ بسيط بعرض 1 بكسل يفصله، ولا ظل متحرك. تحت 820 بكسل يتحول الجدول كله إلى صفوف مكدّسة.</p>
+  <div class="frame-sm" id="stickydemo"></div>
+  <h3>شكل الصف على الجوال: مكدّس لا جدول يتمرر جانبياً</h3>
+  <div class="grid g2"><div id="mrow"></div><div class="rule" style="align-self:start"><b>القواعد:</b> الاسم أولاً ثم الرمز تحته خافتاً. الحالة والمبلغ في عمود النهاية. الصف كله هدف لمس بارتفاع 80 بكسل على الأقل. زر الإجراءات 44 × 44 على الطرف النهائي. لا بطاقات ولا ظلال، فاصل رفيع فقط. المبلغ يُحاذى إلى الطرف النهائي في كل الصفوف.</div></div>
+</section>
+
+<!-- ============ LIST STATES ============ -->
+<section class="sec" id="s-states">
+  <h2>حالات القائمة الأربع</h2>
+  <p class="spec">أربع حالات مختلفة يجب أن تُقرأ مختلفة: التحميل (هيكل بنفس ارتفاع الصفوف)، الفارغة (لا سجلات أصلاً: أيقونة مجلد وزر الإضافة)، لا نتائج بعد التصفية (أيقونة بحث وزر «مسح التصفية»)، والمرفوضة بالصلاحية (قفل وإطار متقطع وبلا زر يغيّر الأمر، مع رابط عودة). المرفوضة ليست خطأً ولا حمراء.</p>
+  <div class="grid g2" id="fourstates"></div>
+</section>
+
+<!-- ============ ROW ACTIONS ============ -->
+<section class="sec" id="s-actions">
+  <h2>إجراءات الصف والتأكيد المضمّن</h2>
+  <p class="spec">قائمة الصف: مرتكزة على زر الأيقونة، عرض 240، العناصر 44. الإجراء المدمّر آخر القائمة بعد فاصل، بلون الخطأ وأيقونة سلة. اختياره لا يحذف: يستبدل الصف بتأكيد مضمّن في مكانه (ارتفاع 64) بزر تأكيد صاخب وزر إلغاء. لا توجد إشعارات منبثقة في المنتج: كل تأكيد يحدث في المكان. على الجوال تصبح القائمة ورقة سفلية بعناصر 56.</p>
+  <div class="grid g2">
+    <div class="cell"><h3 style="margin-top:0">القائمة (حيّة: اضغط الزر)</h3><div id="menudemo"></div><span class="cap">تمرير، تركيز لوحة المفاتيح، معطّل، والمدمّر</span></div>
+    <div class="cell"><h3 style="margin-top:0">التأكيد المضمّن في الصف</h3><div id="confstates" class="grid" style="gap:14px"></div></div>
+  </div>
+  <h3>جدول حيّ: اختر «حذف» من قائمة الصف الثاني</h3>
+  <div id="livetbl"></div>
+</section>
+
+<!-- ============ FILTERS ============ -->
+<section class="sec" id="s-filters">
+  <h2>التصفية والبحث</h2>
+  <p class="spec">المرشّح المقسّم: ثلاثة أقسام بارتفاع 44، القسم المحدد مملوء بالكامل وخطه عريض (الشكل والامتلاء لا اللون وحده) و<code>aria-pressed</code>. البحث 48 بارتفاع، مع زر مسح 44 يظهر عند وجود نص وحالة انشغال. سطر العدد يقول ما يُعرض فعلاً، وعند وجود تصفية يظهر معه رابط «مسح التصفية».</p>
+  <div class="grid g2" id="filtgrid"></div>
+</section>
+
+<!-- ============ OVERLAYS ============ -->
+<section class="sec" id="s-overlays">
+  <h2>النوافذ والطبقات</h2>
+  <p class="spec">أربعة أنواع: نافذة حوار (520)، نافذة تأكيد (420)، لوحة تفاصيل جانبية على الحاسوب (440 من الطرف النهائي) وتصبح ورقة سفلية على الجوال، وقائمة منسدلة للاختيار. الحجب 55% من الأخضر الداكن. إغلاق: زر الإغلاق 44، النقر على الحجب، مفتاح Escape. التركيز ينتقل إلى النافذة ويعود إلى مُطلقها عند الإغلاق.</p>
+  <h3>قواعد التراص</h3>
+  <div class="grid g2"><div class="layers" id="layers"><div>قائمة منسدلة أو تقويم<small>الطبقة 3: أعلى طبقة، تُغلق أولاً</small></div><div>نافذة تأكيد<small>الطبقة 2: واحدة فقط</small></div><div>نافذة حوار أو لوحة جانبية أو ورقة سفلية<small>الطبقة 1: واحدة فقط</small></div><div>الصفحة والهيكل<small>الطبقة 0</small></div></div>
+  <div class="rule"><b>مسموح:</b> تأكيد فوق نافذة حوار أو لوحة جانبية أو ورقة سفلية (لحذف أو تجاهل تعديلات). قائمة منسدلة أو تقويم أو قائمة صف داخل أي طبقة. <br><b>ممنوع:</b> نافذة حوار فوق نافذة حوار، لوحة جانبية فوق لوحة أو فوق نافذة، أي نافذة فوق نافذة تأكيد، تأكيد فوق تأكيد. من يحتاج خطوة ثانية يستبدل محتوى الطبقة نفسها. العمق الأقصى ثلاث طبقات فوق الصفحة.</div></div>
+  <div class="grid g2" style="margin-block-start:24px">
+    <div class="cell"><h3 style="margin-top:0">نافذة الحوار</h3><div class="stage" id="dlgstage"></div></div>
+    <div class="cell"><h3 style="margin-top:0">نافذة التأكيد (التركيز الابتدائي على «إلغاء»)</h3><div class="stage" id="cfdstage"></div></div>
+    <div class="cell"><h3 style="margin-top:0">اللوحة الجانبية (الحاسوب)</h3><div class="stage end" id="panelstage" style="min-block-size:560px"></div></div>
+    <div class="cell"><h3 style="margin-top:0">الورقة السفلية (الجوال، نفس المحتوى)</h3><div id="phonesheet"></div></div>
+    <div class="cell"><h3 style="margin-top:0">القائمة المنسدلة للاختيار</h3><div class="grid g2" id="selpop" style="align-items:start"></div><span class="cap">على الجوال يُستبدل بمنتقي النظام الأصلي بدل هذه القائمة (هدف لمس أكبر ولوحة نظام مألوفة)</span></div>
+    <div class="cell"><h3 style="margin-top:0">منتقي التاريخ</h3><div id="datepop"></div></div>
+  </div>
+</section>
+
+<!-- ============ FEEDBACK ============ -->
+<section class="sec" id="s-feedback" style="border-block-end:0">
+  <h2>التنبيهات المضمّنة</h2>
+  <p class="spec">لا إشعارات منبثقة. شريط التنبيه المضمّن بنفس شكل شاشة الدخول: خط بعرض 6 بكسل عند الطرف الأول وأيقونة ونص، لا لون وحده. أنواعه: رفض (أحمر)، ملاحظة (محايد)، تم (أخضر مع علامة صح). يوضع في الموضع الذي يخص الإجراء، لا في أعلى الصفحة. الحالة المرفوضة بالصلاحية للصفحة كلها موضحة في حالات القائمة، وخطأ الحقل في قسم الحقول.</p>
+  <div class="grid g2" id="banners"></div>
+</section>
+
+</main>
+
+<script>
+const IC={
+ chev:'M6 9l6 6 6-6',left:'M15 6l-6 6 6 6',check:'M5 12.5l4.5 4.5L19 7.5',x:'M6 6l12 12M18 6L6 18',dots:'M12 5.5v.01M12 12v.01M12 18.5v.01',
+ trash:'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',pen:'M4 20h4L19 9l-4-4L4 16v4z',arch:'M3 5h18v4H3zM5 9v10h14V9M10 13h4',
+ eye:'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 15a3 3 0 100-6 3 3 0 000 6z',lock:'M6 11h12v9H6zM8 11V8a4 4 0 018 0v3',
+ cal:'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',search:'M11 18a7 7 0 100-14 7 7 0 000 14zM21 21l-4.5-4.5',plus:'M12 5v14M5 12h14',
+ alert:'M12 9v4M12 17v.5M10.3 4l-8 14a2 2 0 001.7 3h16a2 2 0 001.7-3l-8-14a2 2 0 00-3.4 0z',info:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 8v.01',
+ folder:'M3 7h6l2 2h10v10H3z',err:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7.5v5.5M12 16.5v.01',save:'M5 4h12l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6'};
+const i=(n,c='')=>`<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[n]}"/></svg>`;
+const ST={run:{t:'جاري العمل',c:'s-run',p:'M12 12m-3 0a3 3 0 106 0 3 3 0 10-6 0'},done:{t:'انتهت',c:'s-done',p:'M5 12.5l4.5 4.5L19 7.5'},stuck:{t:'متعثرة',c:'s-stuck',p:'M12 4l9 16H3zM12 10v4M12 17.5v.5'},post:{t:'تم تأجيلها',c:'s-post',p:'M9 5v14M15 5v14'},none:{t:'لم تبدأ',c:'s-none',p:'M12 12m-3.5 0a3.5 3.5 0 107 0 3.5 3.5 0 10-7 0'}};
+const pill=k=>`<span class="pill ${ST[k].c}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${ST[k].p}"/></svg>${ST[k].t}</span>`;
+const fmt=n=>n.toLocaleString('en-US');
+const $=s=>document.querySelector(s),H=document.documentElement;
+const cap=(t,h)=>`<div class="cell">${h}<span class="cap">${t}</span></div>`;
+
+/* ---- buttons ---- */
+const VAR=[['primary','أساسي','btn',i('plus','s')+'حفظ'],['sec','ثانوي','btn sec2','إلغاء'],['quiet','هادئ','btn quiet','تخطّي'],['dtrig','مُشغِّل الحذف (هادئ بإطار)','btn dtrig',i('trash','s')+'حذف المشروع'],['dconf','تأكيد الحذف (الصاخب، داخل التأكيد فقط)','btn dconf','تأكيد الحذف']];
+const STS=[['الافتراضي',''],['تمرير','is-hover'],['تركيز لوحة المفاتيح','is-focus'],['معطّل','is-disabled'],['قيد التنفيذ','is-busy']];
+$('#btngrid').innerHTML=`<div class="grid g5" style="margin-block-end:8px">${STS.map(s=>`<b style="font-size:.875rem">${s[0]}</b>`).join('')}</div>`+VAR.map(v=>`<div style="margin-block-end:18px"><div class="cap" style="margin:0 0 8px">${v[1]}</div><div class="grid g5">${STS.map(s=>`<div><button type="button" class="${v[2]} ${s[1]}"${s[1]==='is-disabled'?' disabled':''}><span class="spin"></span>${s[1]==='is-busy'?'جارٍ التنفيذ…':v[3]}</button></div>`).join('')}</div></div>`).join('')+
+ `<div class="grid g3"><div><div class="cap" style="margin:0 0 8px">مضغوط 44 (أدوات الجداول)</div><button class="btn sm">إضافة بند</button></div><div><div class="cap" style="margin:0 0 8px">عادي 48 (الصفحة والنماذج)</div><button class="btn">مشروع جديد</button></div><div><div class="cap" style="margin:0 0 8px">كبير 60 (شريط الجوال السفلي)</div><button class="btn lg">${i('plus')}مشروع جديد</button></div></div>`;
+$('#smallgrid').innerHTML=
+ cap('زر أيقونة 44 × 44: افتراضي، تمرير، تركيز، معطّل. يحمل دائماً اسماً لقارئ الشاشة',`<div class="row-inline"><button class="ib" aria-label="المزيد">${i('dots')}</button><button class="ib is-hover" aria-label="تعديل">${i('pen')}</button><button class="ib is-focus" aria-label="عرض">${i('eye')}</button><button class="ib" disabled aria-label="حذف">${i('trash')}</button><button class="ib bd" aria-label="إغلاق">${i('x')}</button></div>`)+
+ cap('رابط: افتراضي وتمرير (الخط أسمك). مسطّر دائماً فلا يعتمد على اللون',`<div class="row-inline"><a href="#" class="lnk">سجل التدقيق</a><a href="#" class="lnk is-hover">سجل التدقيق</a></div>`)+
+ cap('رابط العودة 44 ارتفاعاً: السهم يشير إلى الطرف الأول ويقلب مع الاتجاه',`<div class="row-inline"><a href="#" class="back">${i('left','s')}المشاريع</a><a href="#" class="back is-hover">${i('left','s')}المشاريع</a></div>`)+
+ cap('الشارة 24: عدّاد أو تسمية محايدة (أبداً حالة). مفرغة أو مملوءة',`<div class="row-inline"><span class="badge">12</span><span class="badge fill">3</span><span class="badge">جديد</span></div>`)+
+ cap('الصورة الرمزية: الحرف الأول. 32 و40 و56. على الشريط الأخضر تُعكس الألوان',`<div class="row-inline"><span class="av s">م</span><span class="av">أ</span><span class="av l">س</span><span class="av cream" style="outline:6px solid #09221e">ك</span></div>`)+
+ cap('شارات الحالة: كلمات كاف حرفياً مع شكل. 28 ارتفاعاً',`<div class="row-inline">${['none','run','done','stuck','post'].map(pill).join('')}</div>`);
+
+/* ---- fields ---- */
+const fld=(o)=>`<div class="field ${o.cls||''}"><label for="${o.id}">${o.label}${o.req?'<span class="req" aria-hidden="true">*</span><span class="vh">مطلوب</span>':''}</label>${o.ctl}<div class="foot" id="${o.id}-f">${o.foot||''}</div></div>`;
+const tin=(id,v,ph,extra='')=>`<div class="ctl ${extra}"><input id="${id}" value="${v}" placeholder="${ph}"></div>`;
+$('#textstates').innerHTML=
+ cap('الافتراضي مع تلميح',fld({id:'t1',label:'اسم المشروع',req:1,ctl:tin('t1','','مثال: فيلا التجمع'),foot:'يظهر في كل القوائم والمستخلصات.'}))+
+ cap('تمرير',fld({id:'t2',label:'اسم المشروع',req:1,ctl:tin('t2','','مثال: فيلا التجمع','is-hover'),foot:'يظهر في كل القوائم والمستخلصات.'}))+
+ cap('تركيز لوحة المفاتيح',fld({id:'t3',label:'اسم المشروع',req:1,ctl:tin('t3','فيلا التجمع','','is-focus'),foot:'يظهر في كل القوائم والمستخلصات.'}))+
+ cap('معطّل',fld({id:'t4',label:'اسم المشروع',cls:'dis',ctl:'<div class="ctl"><input id="t4" value="فيلا التجمع" disabled></div>',foot:'لا يمكن تعديله بعد التوقيع.'}))+
+ cap('خطأ: الرسالة تحل محل التلميح في نفس الموضع، مع أيقونة',fld({id:'t5',label:'اسم المشروع',req:1,cls:'err',ctl:`<div class="ctl"><input id="t5" value="" aria-invalid="true" aria-describedby="t5-f"></div>`,foot:i('err')+'<span>اسم المشروع مطلوب.</span>'}))+
+ cap('قيد التحقق (مؤشر انشغال في الطرف)',fld({id:'t6',label:'اسم المستخدم',ctl:'<div class="ctl busy"><input id="t6" value="m.hassan" dir="ltr"><span class="tail"><span class="spin"></span></span></div>',foot:'جارٍ التحقق من توفر الاسم…'}))+
+ cap('للقراءة فقط ومولَّد تلقائياً: رمز المشروع. قابل للتركيز والنسخ، ليس معطّلاً',fld({id:'t7',label:'رمز المشروع',ctl:`<div class="ctl ro"><span class="val ltr" tabindex="0" id="t7">KF-2411</span><span class="tail">${i('lock','s')}</span></div>`,foot:'يُولَّد تلقائياً عند الحفظ.'}))+
+ cap('خطأ في حقل اختياري بعد تحقق خادم (نص أطول يبقى في السطر الواحد المحجوز ويلتف عند الحاجة)',fld({id:'t8',label:'العميل',req:1,cls:'err',ctl:`<div class="ctl"><input id="t8" value="شركة النيل" aria-invalid="true"></div>`,foot:i('err')+'<span>يوجد عميل بهذا الاسم. اختره من القائمة بدل إنشاء جديد.</span>'}));
+
+const opts=['نشط','مؤرشف','الكل'];
+$('#types').innerHTML=
+ cap('رقم: يُحاذى إلى الطرف النهائي، أرقام غربية متجانسة. وحدة اختيارية في الطرف',fld({id:'n1',label:'الكمية',req:1,ctl:'<div class="ctl num"><input id="n1" inputmode="decimal" value="1,250.50" dir="ltr"><span class="aff">م³</span></div>',foot:'حتى منزلتين عشريتين.'}))+
+ cap('مبلغ: العملة لاحقة في الطرف النهائي داخل الحقل، والرقم بجانبها. ليس عشرياً عائماً: حاذِ المنازل دائماً',fld({id:'m1',label:'قيمة العقد',req:1,ctl:'<div class="ctl money"><input id="m1" inputmode="decimal" value="4,850,000.00" dir="ltr"><span class="aff">ج.م</span></div>',foot:'قبل الضريبة.'}))+
+ cap('اختيار: الإغلاق مغلق، والقائمة في قسم النوافذ',fld({id:'s1',label:'حالة المشروع',req:1,ctl:`<div class="ctl"><button type="button" class="val" style="border:0;background:none;text-align:start;cursor:pointer" aria-haspopup="listbox"><span style="flex:1">جاري العمل</span></button><span class="tail">${i('chev','s')}</span></div>`,foot:''}))+
+ cap('نص متعدد الأسطر: 112 كحد أدنى، يتمدد رأسياً',fld({id:'a1',label:'ملاحظات',ctl:'<div class="ctl ta"><textarea id="a1" placeholder="أي تفاصيل تفيد الموقع"></textarea></div>',foot:''}))+
+ cap('تاريخ: DD/MM/YYYY بأرقام غربية. أيقونة التقويم زر 44 يفتح المنتقي. لا حقل تاريخ أصلي لأن شكل أرقامه يتبع إعدادات الجهاز',fld({id:'d1',label:'تاريخ التسليم',ctl:`<div class="ctl"><input id="d1" value="15/03/2027" dir="ltr" inputmode="numeric"><button type="button" class="ib" style="border-radius:var(--radius)" aria-label="فتح التقويم">${i('cal','s')}</button></div>`,foot:''}))+
+ cap('مفتاح تبديل: التسمية والحالة نصاً، والمقبض يتحرك وتظهر علامة صح عند التشغيل. أيقونة + نص + موضع',`<div class="tg"><div class="lb">يظهر للعملاء<span class="st" data-st>مفعّل</span></div><button type="button" class="sw" role="switch" aria-checked="true" aria-label="يظهر للعملاء">${i('check')}</button></div><div class="tg"><div class="lb">أرشفة تلقائية<span class="st" data-st>متوقف</span></div><button type="button" class="sw" role="switch" aria-checked="false" aria-label="أرشفة تلقائية">${i('check')}</button></div><div class="tg"><div class="lb">معطّل<span class="st">متوقف</span></div><button type="button" class="sw" disabled role="switch" aria-checked="false">${i('check')}</button></div>`);
+
+$('#forms').innerHTML=
+ `<div class="cell"><div class="fcard"><div class="field"><label>اسم المشروع <span class="req" aria-hidden="true">*</span></label><div class="ctl"><input value="فيلا التجمع الخامس"></div><div class="foot"></div></div>
+ <div class="ff"><button class="btn" type="button">حفظ</button><button class="btn sec2" type="button">إلغاء</button><span class="spacer"></span><button class="btn dtrig" type="button">${i('trash','s')}حذف المشروع</button></div></div><span class="cap">صف الإجراءات: الأساسي عند الطرف الأول، ثم الإلغاء، والإجراء المدمّر بعيداً في الطرف المقابل ومنفصلاً (هادئ بإطار)</span></div>`+
+ `<div class="cell"><div class="fcard"><div class="field"><label>اسم المشروع <span class="req" aria-hidden="true">*</span></label><div class="ctl"><input value="فيلا التجمع الخامس"></div><div class="foot"></div></div>
+ <div class="ff" style="display:block"><div class="conf-card"><span class="msg">حذف «فيلا التجمع الخامس» نهائياً؟ لا يمكن التراجع.</span><button class="btn dconf sm" type="button">تأكيد الحذف</button><button class="btn sec2 sm" type="button">إلغاء</button></div></div></div><span class="cap">بعد الضغط على مُشغِّل الحذف: يستبدل التأكيد المضمّن صف الإجراءات في مكانه. التأكيد الصاخب هنا وحده</span></div>`+
+ `<div class="cell"><div class="fcard"><div class="field"><label>اسم المشروع <span class="req" aria-hidden="true">*</span></label><div class="ctl"><input value="فيلا التجمع الخامس"></div><div class="foot"></div></div>
+ <div class="ff"><button class="btn is-busy" type="button"><span class="spin"></span>جارٍ الحفظ…</button><button class="btn sec2" type="button" disabled>إلغاء</button></div></div><span class="cap">حفظ قيد التنفيذ: الزر بنفس حجمه، وزر الإلغاء معطّل</span></div>`+
+ `<div class="cell"><div class="fcard"><div class="field"><label>اسم المشروع <span class="req" aria-hidden="true">*</span></label><div class="ctl"><input value="فيلا التجمع الخامس"></div><div class="foot"></div></div>
+ <div class="ff"><div class="ban ok" style="flex:1;margin:0">${i('check')}<span>تم حفظ التغييرات.</span></div></div></div><span class="cap">بعد الحفظ: تأكيد مضمّن مكان صف الإجراءات (ليس إشعاراً منبثقاً)، ثم يعود الصف بعد ثلاث ثوان</span></div>`;
+
+/* ---- tables ---- */
+const P=[
+ ['KF-2401','فيلا التجمع الخامس','أحمد منصور','run',4850000,'باب'],
+ ['KF-2402','مجمع سكني الشيخ زايد','شركة النيل للتطوير','run',38200000],
+ ['KF-2403','مقر شركة العاصمة الإدارية','مجموعة الأفق','run',12750000],
+ ['KF-2398','عمارة سكنية مدينة نصر','محمود السيد','done',9400000],
+ ['KF-2404','فندق الغردقة','شركة البحر الأحمر للسياحة','stuck',56000000],
+ ['KF-2405','مصنع العاشر من رمضان','مصانع الدلتا','none',21300000],
+ ['KF-2406','مدرسة 6 أكتوبر','مؤسسة التعليم الحديث','post',17800000]];
+const menuBtn=(n)=>`<div class="menuwrap"><button type="button" class="ib" aria-haspopup="menu" aria-label="إجراءات ${n}" data-menu>${i('dots')}</button></div>`;
+const idcell=(r)=>`<div class="idc"><span class="nm">${r[1]}</span><bdi class="cd" dir="ltr">${r[0]}</bdi></div>`;
+const bodyRows=(rows,opt={})=>rows.map((r,k)=>`<tr${opt.hover===k?' class="is-hover"':''}><td class="id">${idcell(r)}</td><td>${r[2]}</td><td>${pill(r[3])}</td><td class="n"><bdi class="money" dir="ltr">${fmt(r[4])}</bdi></td><td class="act">${opt.menu?menuBtn(r[1]):`<button type="button" class="ib" aria-label="إجراءات ${r[1]}">${i('dots')}</button>`}</td></tr>`).join('');
+const thead=`<thead><tr><th class="id">المشروع</th><th>العميل</th><th>الحالة</th><th class="n">قيمة العقد (ج.م)</th><th class="act"><span class="vh">إجراءات</span></th></tr></thead>`;
+const tot=P.reduce((a,r)=>a+r[4],0);
+$('#tblfull').innerHTML=`<div class="deskno">على الجوال (820 بكسل فأقل) لا يظهر هذا الجدول: يتحول كل صف إلى الصف المكدّس الموضّح في قسم «شكل الصف على الجوال» أدناه.</div>`+`<div class="tw desk"><table class="tbl">${thead}<tbody>
+ <tr class="grp"><td colspan="5">المشاريع الجارية<span class="badge">4</span></td></tr>${bodyRows(P.slice(0,3),{hover:1})}
+ <tr class="grp"><td colspan="5">المسلَّمة والمتعثرة والمؤجلة<span class="badge">4</span></td></tr>${bodyRows(P.slice(3))}
+ </tbody><tfoot><tr><td class="id">الإجمالي (7 مشاريع)</td><td></td><td></td><td class="n"><bdi class="money" dir="ltr">${fmt(tot)}</bdi></td><td></td></tr></tfoot></table></div>
+ <div class="pager"><span>يعرض 7 من 48 مشروعاً</span><div class="pg"><button disabled>السابق</button><button class="pn" aria-current="page">1</button><button class="pn">2</button><button class="pn">3</button><span class="pgn">صفحة 1 من 4</span><button>التالي</button></div></div>
+ <div class="legend"><span>الصف الثاني يُظهر التمرير</span><span>الصفوف تحت عناوين الأبواب</span><span>صف الإجمالي بخط علوي مضاعف</span></div>`;
+$('#stickydemo').innerHTML=`<div class="deskno">لا أعمدة ثابتة على الجوال: الصفوف مكدّسة.</div>`+`<div class="tw desk" id="stw"><table class="tbl" style="min-inline-size:960px">${thead}<tbody>${bodyRows(P.slice(0,6))}</tbody></table></div><span class="cap">الإطار 680 بكسل. التمرير جاهز: انظر أن الهوية ما زالت عند الطرف الأول</span>`;
+$('#mrow').innerHTML=`<div class="mlist">${P.slice(0,5).map(r=>`<div class="li"><span class="t">${r[1]}</span><span class="sub"><bdi dir="ltr">${r[0]}</bdi><span>${r[2]}</span></span>${pill(r[3])}<bdi class="money" dir="ltr">${fmt(r[4])}</bdi><button type="button" class="ib" aria-label="إجراءات ${r[1]}">${i('dots')}</button></div>`).join('')}<div class="mtot"><span>إجمالي الصفحة</span><bdi class="money" dir="ltr">${fmt(P.slice(0,5).reduce((a,r)=>a+r[4],0))}</bdi></div></div>`;
+
+/* list states */
+const sk=n=>Array.from({length:n}).map(()=>`<div style="display:grid;grid-template-columns:1.6fr 1fr 90px 90px;gap:16px;align-items:center;padding:0 16px;block-size:48px;border-block-start:1px solid var(--line)"><span class="sk" style="inline-size:70%"></span><span class="sk" style="inline-size:60%"></span><span class="sk p" style="inline-size:90px"></span><span class="sk" style="inline-size:80px;justify-self:end"></span></div>`).join('');
+$('#fourstates').innerHTML=
+ cap('التحميل: الهيكل بنفس ارتفاع الصفوف (48)، والرأس الحقيقي ظاهر. لا دوّارة تغطي الصفحة',`<div class="tw" role="status" aria-busy="true"><div class="vh">جارٍ التحميل</div><div style="background:var(--head);block-size:44px"></div>${sk(4)}</div>`)+
+ cap('فارغة: لا سجلات أصلاً. دعوة للبدء بزر أساسي واحد',`<div class="state"><div class="ico">${i('folder')}</div><h4>لا توجد مشاريع بعد</h4><p>ابدأ بإضافة أول مشروع ليظهر هنا.</p><button class="btn" type="button">${i('plus','s')}مشروع جديد</button></div>`)+
+ cap('لا نتائج بعد التصفية: توجد سجلات لكن لا تطابق. تقول ما الذي لم يطابق وتعرض مخرج المسح',`<div class="state nores"><div class="ico">${i('search')}</div><h4>لا نتائج مطابقة</h4><p>لا يوجد مشروع يطابق «فيلا» في المؤرشف.</p><button class="btn sec2" type="button">مسح التصفية</button></div>`)+
+ cap('مرفوضة بالصلاحية: قفل وإطار متقطع وبلا زر يغيّر الأمر. تقول ما ينقص ومن يملكه، وتعرض الرجوع',`<div class="state perm"><div class="ico">${i('lock')}</div><h4>هذه الشاشة خارج صلاحياتك</h4><p>لا تملك صلاحية عرض الموظفين. إن احتجتها فاطلبها من المالك.</p><a href="#" class="back">${i('left','s')}العودة إلى المشاريع</a></div>`);
+
+/* row actions */
+const menuHtml=(forced)=>`<div class="pop" role="menu" style="inline-size:240px"><button class="opt" role="menuitem">${i('eye','s')}عرض التفاصيل</button><button class="opt ${forced?'is-hover':''}" role="menuitem">${i('pen','s')}تعديل</button><button class="opt ${forced?'is-focus':''}" role="menuitem">${i('arch','s')}أرشفة</button><button class="opt" role="menuitem" disabled>${i('save','s')}نقل إلى باب آخر</button><div class="sepr"></div><button class="opt dang" role="menuitem">${i('trash','s')}حذف…</button></div>`;
+$('#menudemo').innerHTML=`<div style="min-block-size:480px;position:relative"><div class="row-inline" style="margin-block-end:8px"><div class="menuwrap" id="menu1"><button type="button" class="ib bd" aria-haspopup="menu" aria-label="إجراءات" data-menu>${i('dots')}</button><div class="pop" role="menu"><button class="opt" role="menuitem">${i('eye','s')}عرض التفاصيل</button><button class="opt" role="menuitem">${i('pen','s')}تعديل</button><button class="opt" role="menuitem">${i('arch','s')}أرشفة</button><div class="sepr"></div><button class="opt dang" role="menuitem">${i('trash','s')}حذف…</button></div></div><span class="cap" style="margin:0">اضغط الزر لفتحها</span></div><div style="max-inline-size:260px;margin-block-start:230px">${menuHtml(true)}</div></div>`;
+const crow=(msg,btns)=>`<div class="conf-card"><span class="msg">${msg}</span>${btns}</div>`;
+$('#confstates').innerHTML=
+ cap('التأكيد: الإلغاء يعيد الصف. الزر الصاخب وحده يحذف',crow('حذف <b>«فيلا التجمع الخامس»</b>؟ لا يمكن التراجع.','<button class="btn dconf sm" type="button">تأكيد الحذف</button><button class="btn sec2 sm" type="button">إلغاء</button>'))+
+ cap('قيد التنفيذ: الزر ثابت الحجم، الإلغاء معطّل',crow('حذف <b>«فيلا التجمع الخامس»</b>؟ لا يمكن التراجع.','<button class="btn dconf sm is-busy" type="button"><span class="spin"></span>جارٍ الحذف…</button><button class="btn sec2 sm" type="button" disabled>إلغاء</button>'))+
+ cap('رفض الخادم: الرسالة في المكان ذاته مع السبب، والصف يبقى. «إغلاق» لا «حاول مجدداً» حين يكون السبب قاعدة عمل',`<div class="conf-card" style="border-inline-start:6px solid var(--err-bar)">${i('err')}<span class="msg"><b>تعذّر الحذف.</b> المشروع مرتبط بمستخلصات معتمدة، فيمكن أرشفته فقط.</span><button class="btn sec2 sm" type="button">أرشفة بدلاً من الحذف</button><button class="btn quiet sm" type="button">إغلاق</button></div>`);
+const lrows=P.slice(0,4);
+$('#livetbl').innerHTML=`<div class="deskno">على الجوال يظهر التأكيد المضمّن نفسه داخل الصف المكدّس (بطاقة التأكيد أعلاه).</div>`+`<div class="tw desk"><table class="tbl" style="min-inline-size:760px">${thead}<tbody id="ltb">${bodyRows(lrows,{menu:1})}</tbody></table></div>`;
+/* popups are fixed-position so a scrolling table frame can never clip them; flips upward when there is no room below */
+function placePop(w,b){const p=w.querySelector('.pop'),r=b.getBoundingClientRect(),h=p.offsetHeight||230;p.style.left=Math.max(8,r.left+240<=innerWidth-8?r.left:r.right-240)+'px';p.style.top=(r.bottom+h+8>innerHeight?r.top-h-4:r.bottom+4)+'px'}
+function bindMenus(root){root.querySelectorAll('[data-menu]').forEach(b=>{const w=b.closest('.menuwrap');if(!w.querySelector('.pop'))w.insertAdjacentHTML('beforeend',`<div class="pop" role="menu"><button class="opt" role="menuitem">${i('eye','s')}عرض التفاصيل</button><button class="opt" role="menuitem">${i('pen','s')}تعديل</button><button class="opt" role="menuitem">${i('arch','s')}أرشفة</button><div class="sepr"></div><button class="opt dang" role="menuitem" data-del>${i('trash','s')}حذف…</button></div>`)})}
+bindMenus(document);
+document.addEventListener('click',e=>{
+  const mb=e.target.closest('[data-menu]');
+  document.querySelectorAll('.menuwrap.open').forEach(w=>{if(!mb||w!==mb.closest('.menuwrap'))w.classList.remove('open')});
+  if(mb){const w=mb.closest('.menuwrap');w.classList.toggle('open');if(w.classList.contains('open'))placePop(w,mb);return}
+  const del=e.target.closest('[data-del]');
+  if(del){const tr=del.closest('tr');const name=tr.querySelector('.nm').textContent;tr._orig=tr.innerHTML;tr.classList.add('conf');tr.innerHTML=`<td colspan="5"><div class="confrow"><span class="msg">حذف <b>«${name}»</b>؟ لا يمكن التراجع.</span><button class="btn dconf sm" type="button" data-yes>تأكيد الحذف</button><button class="btn sec2 sm" type="button" data-no>إلغاء</button></div></td>`;return}
+  const no=e.target.closest('[data-no]');if(no){const tr=no.closest('tr');tr.classList.remove('conf');tr.innerHTML=tr._orig;bindMenus(tr);return}
+  const yes=e.target.closest('[data-yes]');
+  if(yes){const tr=yes.closest('tr');yes.classList.add('is-busy');yes.innerHTML='<span class="spin"></span>جارٍ الحذف…';tr.querySelector('[data-no]').disabled=true;
+    setTimeout(()=>{tr.querySelector('.confrow').innerHTML=`${i('err')}<span class="msg"><b>تعذّر الحذف.</b> المشروع مرتبط بمستخلصات معتمدة، فيمكن أرشفته فقط.</span><button class="btn sec2 sm" type="button" data-no>أرشفة بدلاً من الحذف</button><button class="btn quiet sm" type="button" data-no>إغلاق</button>`},1200);return}
+  const sw=e.target.closest('.sw');if(sw&&!sw.disabled){const on=sw.getAttribute('aria-checked')!=='true';sw.setAttribute('aria-checked',on);const st=sw.closest('.tg').querySelector('[data-st]');if(st)st.textContent=on?'مفعّل':'متوقف'}
+  const sg=e.target.closest('.seg button');if(sg&&sg.closest('.seg').dataset.live!==undefined){sg.closest('.seg').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b===sg))}
+});
+document.addEventListener('scroll',()=>document.querySelectorAll('.menuwrap.open').forEach(w=>w.classList.remove('open')),true);
+addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.menuwrap.open').forEach(w=>w.classList.remove('open'))});
+
+/* filters */
+const seg=(on,live)=>`<div class="seg" role="group" aria-label="التصفية"${live?' data-live':''}>${opts.map(o=>`<button type="button" aria-pressed="${o===on}">${o}</button>`).join('')}</div>`;
+$('#filtgrid').innerHTML=
+ cap('التصفية الافتراضية «نشط» (مطفأة): بلا رابط مسح، السطر يصف القائمة كلها',`<div class="tools">${seg('نشط')}<div class="search"><label class="vh" for="q1">ابحث</label>${i('search')}<input id="q1" placeholder="ابحث عن مشروع أو عميل"></div></div><div class="count">يعرض 12 من 48 مشروعاً نشطاً</div>`)+
+ cap('التصفية مفعّلة «مؤرشف» مع نص بحث: السطر يصف النتيجة ويظهر رابط المسح',`<div class="tools">${seg('مؤرشف')}<div class="search"><label class="vh" for="q2">ابحث</label>${i('search')}<input id="q2" value="فيلا"><button type="button" class="ib x" aria-label="مسح البحث">${i('x','s')}</button></div></div><div class="count">3 نتائج لـ «فيلا» في المشاريع المؤرشفة <a href="#" class="lnk">مسح التصفية</a></div>`)+
+ cap('حيّ: اضغط على الأقسام (المحدد مملوء وخطه عريض، لا اللون وحده)',`<div class="tools">${seg('الكل',1)}</div>`)+
+ cap('حالات البحث: تركيز لوحة المفاتيح، وانشغال (يبحث)',`<div class="grid" style="gap:14px"><div class="search is-focus"><label class="vh" for="q3">ابحث</label>${i('search')}<input id="q3" value="مجمع" class="is-focus"></div><div class="search"><label class="vh" for="q4">ابحث</label>${i('search')}<input id="q4" value="مجمع"><span class="busy"></span></div></div>`)+
+ cap('تمرير وتركيز لوحة المفاتيح لأقسام المرشح',`<div class="seg"><button aria-pressed="false" class="is-hover">نشط</button><button aria-pressed="false" class="is-focus">مؤرشف</button><button aria-pressed="true">الكل</button></div>`);
+
+/* overlays */
+$('#dlgstage').innerHTML=`<div class="dlg" role="dialog" aria-modal="true" aria-label="مشروع جديد"><div class="hd"><h4>مشروع جديد</h4><button class="ib" aria-label="إغلاق">${i('x')}</button></div><div class="bd">${fld({id:'dn',label:'اسم المشروع',req:1,ctl:tin('dn','','مثال: فيلا التجمع'),foot:''})}${fld({id:'dc',label:'العميل',req:1,ctl:`<div class="ctl"><button type="button" class="val" style="border:0;background:none;text-align:start"><span style="flex:1;color:var(--dim)">اختر العميل</span></button><span class="tail">${i('chev','s')}</span></div>`,foot:''})}</div><div class="ft"><button class="btn" type="button">إنشاء</button><button class="btn sec2" type="button">إلغاء</button></div></div>`;
+$('#cfdstage').innerHTML=`<div class="dlg sm" role="alertdialog" aria-modal="true" aria-label="تأكيد الحذف"><div class="bd"><span class="conf-ico">${i('trash')}</span><div><h4>حذف «فيلا التجمع الخامس»؟</h4><p>سيُحذف المشروع وبنوده نهائياً ولا يمكن التراجع.</p></div></div><div class="ft"><button class="btn dconf" type="button">تأكيد الحذف</button><button class="btn sec2 is-focus" type="button">إلغاء</button></div></div>`;
+const detail=`<dl class="kv"><dt>الرمز</dt><dd><bdi class="money" dir="ltr">KF-2401</bdi></dd><dt>العميل</dt><dd>أحمد منصور</dd><dt>الحالة</dt><dd>${pill('run')}</dd><dt>قيمة العقد (ج.م)</dt><dd><bdi class="money" dir="ltr">4,850,000</bdi></dd><dt>المستخلصات المعتمدة (ج.م)</dt><dd><bdi class="money" dir="ltr">2,910,000</bdi></dd></dl>`;
+$('#panelstage').innerHTML=`<div style="flex:1;padding:20px;color:#fff;opacity:.7"><div class="sk" style="inline-size:50%"></div></div><aside class="panel" role="dialog" aria-label="تفاصيل المشروع"><div class="hd"><div class="t"><h4>فيلا التجمع الخامس</h4></div><button class="ib" aria-label="إغلاق">${i('x')}</button></div><div class="bd">${detail}</div><div class="ft"><button class="btn" type="button">${i('pen','s')}تعديل</button><span style="flex:1"></span><button class="btn dtrig" type="button">${i('trash','s')}حذف</button></div></aside>`;
+$('#phonesheet').innerHTML=`<div class="phone"><div class="bgc"><div class="sk" style="inline-size:60%"></div><div class="sk" style="inline-size:90%"></div><div class="sk" style="inline-size:75%"></div></div><div class="scr"></div><div class="sheet" role="dialog" aria-label="تفاصيل المشروع"><div class="grab"></div><div class="hd"><h4>فيلا التجمع الخامس</h4><button class="ib" aria-label="إغلاق">${i('x')}</button></div><div class="bd">${detail}</div><div class="ft"><button class="btn lg" style="flex:1" type="button">تعديل</button><button class="btn dtrig" style="min-block-size:56px" type="button" aria-label="حذف">${i('trash')}</button></div></div></div>`;
+const optl=(sel,foc,dis)=>`<div class="pop" role="listbox"><button class="opt" role="option" aria-selected="false">لم تبدأ</button><button class="opt ${foc?'is-hover':''}" role="option" aria-selected="false">جاري العمل</button><button class="opt" role="option" aria-selected="true">انتهت</button><button class="opt ${foc?'is-focus':''}" role="option" aria-selected="false">متعثرة</button><button class="opt" role="option" aria-selected="false" disabled>تم تأجيلها (غير متاح لهذا النوع)</button></div>`;
+$('#selpop').innerHTML=`<div>${optl(0,1)}</div><div class="rule" style="font-size:.875rem"><b>الحالات:</b> عنصر محدد (علامة صح وخط أعرض وخلفية)، تمرير، تركيز بأسهم لوحة المفاتيح (إطار داخلي)، ومعطّل مع سبب. العناصر 44. تتجه القائمة إلى أسفل الحقل وتنقلب إلى أعلاه إن لم تتسع. الحقل يبقى مفتوحاً بسهم متجه للأعلى.</div>`;
+$('#datepop').innerHTML=`<div class="pop cal" role="dialog" aria-label="اختيار التاريخ"><div class="hd"><button class="ib" aria-label="الشهر السابق">${i('left','s')}</button><span>آذار 2027</span><button class="ib" aria-label="الشهر التالي" style="transform:scaleX(-1)">${i('left','s')}</button></div><table><thead><tr>${['س','ح','ن','ث','ر','خ','ج'].map(d=>`<th>${d}</th>`).join('')}</tr></thead><tbody>${[[27,28,1,2,3,4,5],[6,7,8,9,10,11,12],[13,14,15,16,17,18,19],[20,21,22,23,24,25,26],[27,28,29,30,31,1,2]].map((w,r)=>`<tr>${w.map((d,c)=>`<td><span class="${(r===0&&c<2)||(r===4&&c>4)?'dim':''} ${r===2&&c===2?'sel':''} ${r===1&&c===3?'tod':''}">${d}</span></td>`).join('')}</tr>`).join('')}</tbody></table></div><span class="cap">المحدد مملوء، واليوم بإطار. الأيام خارج الشهر خافتة وغير مختارة</span>`;
+
+
+/* ---- choice ---- */
+const CHK='<svg class="ck-c" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><svg class="ck-i" viewBox="0 0 24 24"><path d="M6 12h12"/></svg>';
+const ckb=(cls,label,sub,type)=>`<label class="ck ${cls}"><input type="${type||'checkbox'}" ${/\bon\b/.test(cls)?'checked':''} ${/dis/.test(cls)?'disabled':''}><span class="bx">${CHK}</span><span class="lb">${label}${sub?`<small>${sub}</small>`:''}</span></label>`;
+$('#cbgrid').innerHTML=
+ cap('الافتراضي',ckb('','عرض المشاريع'))+cap('تمرير',ckb('is-hover','عرض المشاريع'))+cap('تركيز لوحة المفاتيح',ckb('is-focus','عرض المشاريع'))+
+ cap('محدد: مملوء بعلامة صح',ckb('on','عرض المشاريع'))+cap('جزئي: مملوء بشرطة (عنوان عمود أو مجموعة)',ckb('ind','كل الصلاحيات'))+
+ cap('معطّل',ckb('dis','عرض الموظفين'))+cap('معطّل ومحدد',ckb('dis on','سجل التدقيق'))+
+ cap('خطأ (اختيار مطلوب): الرسالة تحت الصف بأيقونة',`<div class="field err"><div>${ckb('err','أوافق على الشروط')}</div><div class="foot">${i('err')}<span>يجب الموافقة للمتابعة.</span></div></div>`)+
+ cap('مع وصف: السطر الثاني ضمن الصف نفسه',ckb('on','حذف السجلات','للمالك فقط'))+
+ cap('مجموعة صلاحيات: الأصل جزئي والأبناء ظاهرة',`<div>${ckb('ind','المشاريع')}<div style="padding-inline-start:36px">${ckb('on','عرض')}${ckb('','تعديل')}</div></div>`);
+const rd=(cls,label,sub)=>`<label class="ck rd ${cls}"><input type="radio" name="pay" ${/\bon\b/.test(cls)?'checked':''} ${/dis/.test(cls)?'disabled':''}><span class="bx"></span><span class="lb">${label}${sub?`<small>${sub}</small>`:''}</span></label>`;
+$('#rdgrid').innerHTML=
+ cap('المجموعة بحالاتها: المحدد (حلقة مع مركز مملوء)، الافتراضي، تمرير، تركيز، معطّل',`<div role="radiogroup" aria-label="طريقة الدفع">${rd('on','نقداً')}${rd('','تحويل بنكي','يظهر في كشف الحساب')}${rd('is-hover','شيك')}${rd('is-focus','محفظة إلكترونية')}${rd('dis','بطاقة (غير متاحة)')}</div>`)+
+ cap('الاستخدام',`<div class="rule" style="font-size:.875rem"><b>اختيار واحد من 2 إلى 5 خيارات.</b> أكثر من ذلك أو قائمة تتغير: حقل اختيار. خيار واحد فقط: مفتاح تبديل لا راديو. التمييز بالشكل: المحدد مملوء بحلقة داخلية. الراديو يبقى دائرياً (استثناء من نصف القطر 6 مع المفتاح وصورة الحرف).</div>`)+
+ cap('مجموعة بخطأ',`<div class="field err" role="radiogroup" aria-label="طريقة الدفع">${rd('','نقداً')}${rd('','تحويل بنكي')}<div class="foot">${i('err')}<span>اختر طريقة الدفع.</span></div></div>`);
+const tabs=(sel,forced)=>`<div role="tablist" class="tabs" aria-label="أقسام المشروع">${['البنود','المستخلصات','المصروفات','الملفات'].map((t,k)=>`<button type="button" class="tab ${forced&&k===2?'is-hover':''} ${forced&&k===1?'is-focus':''}" role="tab" aria-selected="${k===sel}"${k===3&&forced?' disabled':''}>${t}${k===1?'<span class="badge">3</span>':''}</button>`).join('')}</div>`;
+$('#tabgrid').innerHTML=
+ cap('المحدد بخط سفلي سميك (4) وخط أعرض، لا باللون وحده',tabs(0))+
+ cap('تمرير (المصروفات)، تركيز (المستخلصات)، معطّل (الملفات)، مع شارة عدّاد',tabs(0,1))+
+ cap('على الجوال: ارتفاع 56، والشريط يتمرر أفقياً عند ضيق العرض. أكثر من 5 تبويبات: قائمة منسدلة بدلاً منها',`<div style="max-inline-size:390px">${tabs(1)}</div>`)+
+ cap('القواعد',`<div class="rule" style="font-size:.875rem">تبويب واحد محدد دائماً ويُظهر محتواه. التبويبات أقسام نفس السجل لا شاشات من الهيكل، وحالتها في العنوان (رابط قابل للمشاركة). <b>لا يُستخدم</b> لتصفية قائمة (المرشح المقسّم) ولا لخطوات متسلسلة (صفحات منفصلة).</div>`);
+
+/* feedback */
+$('#banners').innerHTML=
+ cap('رفض: نفس شكل شاشة الدخول',`<div class="ban" role="alert">${i('err')}<span>لم يتم الدخول. تأكد من اسم المستخدم وكلمة المرور، أو تواصل مع المالك.</span></div>`)+
+ cap('رفض عملية لها مخرج: زر داخل الشريط',`<div class="ban" role="alert">${i('err')}<span><b>تعذّر الاعتماد.</b> رصيد الخزنة لا يكفي لهذا الصرف.</span><button class="btn sec2 sm act" type="button">طلب إيداع</button></div>`)+
+ cap('ملاحظة: معلومة محايدة تخص ما حولها',`<div class="ban note">${i('info')}<span>هذه الفترة مقفلة. يمكنك العرض فقط.</span></div>`)+
+ cap('تم: تأكيد مضمّن مكان الإجراء، لا إشعار منبثق',`<div class="ban ok" role="status">${i('check')}<span>تم الحفظ.</span></div>`);
+
+/* controls */
+$('#themebtn').onclick=()=>{const d=H.dataset.theme?H.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;H.dataset.theme=d?'light':'dark'};
+$('#dirbtn').onclick=e=>{const l=H.dir==='rtl';H.dir=l?'ltr':'rtl';H.lang=l?'en':'ar';e.currentTarget.setAttribute('aria-pressed',l);scrollSticky()};
+const q=new URLSearchParams(location.search);
+if(q.get('theme'))H.dataset.theme=q.get('theme');
+if(q.get('dir')==='ltr'){H.dir='ltr';H.lang='en'}
+function scrollSticky(){const w=$('#stw');if(w)w.scrollLeft=(H.dir==='rtl'?-1:1)*180}
+scrollSticky();addEventListener("resize",scrollSticky);addEventListener("load",()=>{scrollSticky();setTimeout(scrollSticky,150)});
+requestAnimationFrame(()=>{scrollSticky();if(q.get('del')){const b=document.querySelectorAll('#ltb [data-menu]')[1];}});
+if(q.get('del')==='1'){const tr=document.querySelectorAll('#ltb tr')[1];const name=tr.querySelector('.nm').textContent;tr._orig=tr.innerHTML;tr.classList.add('conf');tr.innerHTML=`<td colspan="5"><div class="confrow"><span class="msg">حذف <b>«${name}»</b>؟ لا يمكن التراجع.</span><button class="btn dconf sm" type="button" data-yes>تأكيد الحذف</button><button class="btn sec2 sm" type="button" data-no>إلغاء</button></div></td>`}
+if(q.get('only'))document.querySelectorAll('.sec').forEach(x=>x.hidden=x.id!==q.get('only'));
+if(q.get('menu')==='1'){{$('#menu1').classList.add('open');placePop($('#menu1'),$('#menu1 [data-menu]'))}}
+if(location.hash)setTimeout(()=>document.querySelector(location.hash)?.scrollIntoView(),50);
+</script>
+</body>
+</html>

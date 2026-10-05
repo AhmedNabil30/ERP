@@ -1,0 +1,435 @@
+# KAAF sign-in: design handoff
+
+The single source for the sign-in screen is `direction-1.html` in this folder. It is a static mockup: open it directly or over the existing static server. Everything below is read from that file. Where this README and the file disagree, the file is the truth, and this README should be fixed.
+
+Screenshots of every state are in `shots/` (`d1-{desktop,mobile}-{light,dark}-{idle,refusal,busy}.png`, plus `-en-refusal` for English). The coloured strip at the top of the mockup (state buttons and a light/dark toggle) is preview chrome. Do not build it.
+
+## Brand assets (`../brand/`)
+
+| File | Use it on | Notes |
+|---|---|---|
+| `kaaf-wordmark.png` | Any surface that is exactly `#09221e` (the green panel and the mobile header) | 519 x 155. Its background is the exact green, so it is seamless with no cutout. Always set `width="519" height="155"` so nothing reflows while it loads. |
+| `kaaf-wordmark-alpha.png` | Any other background (cream, dark-mode surfaces that are not `#09221e`, email, print) | Transparent, mark flattened to `#e6d9d1`. |
+| `kaaf-logo.jpg` | Nowhere in the UI | 1280 x 1280 with the wordmark in the middle 16 percent and baked padding. Source file only. |
+
+Do not redraw, recolour or restyle the wordmark. Do not use a كف letterform anywhere. Keep the aspect ratio 519:155.
+
+## Colour tokens
+
+Only two colours come from the logo: green `#09221e` and cream `#e6d9d1`. Everything else is a step derived from them. There is no yellow and no accent colour. The only other hue is the semantic red.
+
+Green steps:
+
+| Token | Value | Used for |
+|---|---|---|
+| `--g900` | `#09221e` | Brand green. Brand panel and mobile header background (must stay exactly this so the wordmark is seamless). Light mode: text, field borders, primary button background. Dark mode: brand panel only. |
+| `--g800` | `#0f2e29` | Dark mode only: input field fill. |
+| `--g300` | `#9fb3ad` | Dark mode only: secondary text (subtitle, owner-reset note). 7.57:1 on `#09221e`. |
+| dark page | `#061815` | Dark mode form side and mobile page background. A shade darker than the brand panel, so the green panel still reads as a surface. |
+| dark border | `#7f9a92` | Dark mode input borders (needs to be visible against `#0f2e29`). |
+
+Cream steps:
+
+| Token | Value | Used for |
+|---|---|---|
+| `--c200` | `#e6d9d1` | The logo cream. Text on green (tagline, header controls). Dark mode: body text and the primary button background. |
+| `--c100` | `#f4eee9` | Light mode page background (form side, mobile page). |
+| field | `#fbf8f5` | Light mode input fill. |
+| dim text | `#4b5f59` | Light mode secondary text. 4.95:1 on `#e6d9d1`, so at least that on the lighter page. |
+
+Contrast, computed from WCAG luminance: cream `#e6d9d1` on green `#09221e` is 12.08:1, and the same ratio holds for green on cream, which is the primary button in both schemes. I did not separately measure the red pairs below or the dark border against the dark field fill.
+
+Semantic red (the only non-brand hue, used only by the refusal message):
+
+| | Light | Dark |
+|---|---|---|
+| fill | `#f9e4dd` | `#3b1612` |
+| text | `#7a1a0e` | `#ffd0c6` |
+| left bar | `#c2321c` | `#ff7b63` |
+
+Light and dark are both required. Follow `prefers-color-scheme`, and provide a user-visible override in the product (the mockup's toggle only demonstrates the two palettes). Focus ring: 3px, `#09221e` in light, `#e6d9d1` in dark, offset 3px, on every input and button.
+
+## Type
+
+Two faces, nothing else.
+
+| Face | Role |
+|---|---|
+| Noto Kufi Arabic (500/600/700) | Display: the heading, the tagline and the button. |
+| IBM Plex Sans Arabic (400/500/600) | Body: subtitle, owner-reset note, refusal message, input text, labels, and the Latin fallback for English strings. |
+
+Reem Kufi was dropped completely. The client chose Noto Kufi because Reem Kufi stretches the Arabic letter joins (`الدـخول`). The KAAF lockup is an image, so no Latin display face is needed and none is loaded. Noto Kufi Arabic has no Latin glyphs, so English strings fall through to Plex (this is visible in the English shots).
+
+Ramp as built:
+
+| Role | Face / weight | Desktop | Mobile (up to 820px) | Line-height |
+|---|---|---|---|---|
+| Heading (`تسجيل الدخول`) | Noto Kufi 700 | `clamp(1.75rem, 2.6vw, 2.25rem)` | 3.5rem Arabic, stacked one word per line (3rem English, one line); hidden when keyboard-up | 1.4 desktop, 1.3 phone |
+| Tagline | Noto Kufi 600 | `clamp(1.25rem, 1.9vw, 1.7rem)` on the green panel | not shown (client decision) | 1.7 |
+| Primary button | Noto Kufi 700 | 1.15rem | 1.25rem | 1 |
+| Subtitle | Plex 400 | 1rem | 1rem | 1.6 |
+| Field label | Plex 600 | 1rem | 1.0625rem | 1.6 |
+| Input text | Plex 400 | 1.0625rem | 1.125rem | n/a |
+| Owner-reset note | Plex 400 | .9rem | .9rem | 1.6 |
+| Refusal message | Plex 500 | .96875rem | .96875rem | 1.5 |
+
+On phone the Arabic heading is stacked (`تسجيل` over `الدخول`) with `inline-size: min-content`, so it wraps at the space; the widest word is about 170px in a 358px column, so there is real margin at 360px. The English heading overrides this to one line (`:lang(en)`), because stacking `Sign / in` looks wrong.
+
+## Layouts and breakpoint
+
+One component, one DOM, two layouts. The breakpoint is `max-width: 820px`; at 821px and up it is the desktop split.
+
+Desktop split (default): two columns, 1.1fr brand panel and 1fr form. In RTL the brand panel is on the right (reading start) and the form on the left. Brand panel: exact `#09221e`, the wordmark centred at 440px wide (shrinks only to the panel width), and the tagline at the bottom, start-aligned. Form side: the AR/EN switch at the top end corner, the form block vertically centred, 384px max width. Dark mode keeps the panel at `#09221e` and darkens only the form side.
+
+Phone (up to 820px): a stack, no panel. Two groups on one cream page, under one slim header.
+1. Green header, 72px tall: the wordmark (96px wide, `kaaf-wordmark.png`) at the start edge and the AR/EN switch at the end edge, both vertically centred on ONE line, 16px side margin. The header is always 72px; it never grows or shrinks. The switch is the same single element as on desktop, restyled cream-on-green. Do not add a second language button.
+2. The tagline is not shown on a phone (client decision). The header carries the brand.
+3. Top group, the statement: the heading (3.5rem, stacked) and the subtitle, starting 24 to 40px under the header (`clamp(24px, 4.5vh, 40px)`).
+4. Bottom group, the action, packed to the bottom edge for one-handed reach: label and 60px user name field, label and 60px password field, the refusal slot, then the sign-in bar. The split between the two groups is a single rule, `margin-block-end: auto` on the subtitle.
+5. The sign-in bar is full width with no radius: `72px + env(safe-area-inset-bottom)` tall, flush to the bottom edge. Horizontal padding of the form is 16px, and the bar uses `margin-inline: -16px; width: calc(100% + 32px)` to run edge to edge.
+
+Positions as built, on a 900px-tall viewport, measured from the bottom edge: bar 0 to 72px; password field about 158 to 218px; user name field about 270 to 330px. The empty band between the subtitle and the first label is about 200px at that height. It shrinks on shorter screens (about 100px at a 744px visible height) because the groups themselves do not scale.
+
+Why the empty band is accepted: it is the deliberate negative space between the statement and the action. Moving the fields up would trade away the thumb reach the client chose this layout for. Filling the space with the tagline, a taller green header, or a repeated logo was tried and rejected (a void in cream, a void in green, a changed approved header). The band is made quieter by scaling the heading up into one big typographic moment, so the top group has weight and the space reads as a pause between two things instead of a hole. If a later design needs that band for something real (a notice, for example), it is the place for it.
+
+Control heights: inputs 56px on desktop and 60px on phone (2px border, 6px radius), desktop button 58px (6px radius), phone bar 72px, language switch 44px minimum height. Do not shrink touch targets below these.
+
+Implementation hint from the mockup: on phone the form side uses `display: contents` so the switch and the form sit directly in the stage grid. Rows are `72px minmax(0,1fr)`. The green header is a grid pseudo-element in row 1, holding the logo and the switch; the form is in row 2 as a flex column. In Angular a plain two-row grid on the host does the same.
+
+## The refusal slot
+
+The contract: ONE refusal message region, between the last field and the submit button, never beneath an individual input. Wrong password, unknown user name and locked account all show the identical text, so the screen never reveals whether an account exists.
+
+Mechanism:
+- A fixed-height region (min-height 4.25rem, about two lines of message plus padding) sits between the password field and the button. Its height never changes, so the page does not shift when a refusal appears or goes away: no layout shift at all.
+- The same grid cell holds two stacked children: the owner-reset note ("forgot your password? ask the owner") and the refusal box. Idle and busy show the note, which makes the reserved space read as intentional instead of as an empty gap. A refusal hides the note (`visibility: hidden`) and shows the message in the same cell.
+- Only the refusal element carries `role="alert"` and `aria-live="assertive"`. The note is outside the live region, so it is never announced.
+- The refusal text, identical for every failure case: Arabic `لم يتم الدخول. تأكد من اسم المستخدم وكلمة المرور، أو تواصل مع المالك.` and English `Sign-in failed. Check your user name and password, or contact the owner.` Do not vary it by failure reason, and do not add field-level errors.
+- Style: 6px left bar in the red (logical start), icon, red-tinted fill. Colour is never the only signal (the icon and the text carry it too).
+
+Spacing: 0 below the last field, then .5rem above and .75rem below the slot (.4rem and .75rem on phone).
+
+## Sign-in contract (what the screen does and does not have)
+
+- Exactly two fields: user name (text, `autocomplete="username"`, autocapitalize off, spellcheck off) and password (`autocomplete="current-password"`, `minlength="8"`). Both are `dir="ltr"` and start-aligned, so Latin credentials read correctly inside the RTL page. Paste must work.
+- No password strength meter, no pattern hint, no requirements checklist, no remember-me, no social login, no sign-up link, no email field. Accounts are created by the owner.
+- One primary button. Busy state: spinner (20px, 3px ring, reduced-motion slows it) plus `جارٍ التحقق…` / `Checking…`, button disabled with `aria-busy="true"`, opacity .88. The button stays the same size.
+- A user landing on a temporary password is sent onward to a change-password screen. This screen is not that one, but both layouts leave room: a second form of the same shape fits in the same stack and bottom bar.
+- Language switch: Arabic and English. Switching sets `lang` and `dir` on the document (`rtl` for Arabic, `ltr` for English); the layout uses logical properties so it mirrors correctly. Arabic is the default.
+
+Colour of primary button: green with cream text in light mode, cream with green text in dark mode (both 12.08:1).
+
+## Keyboard-up rule (phone)
+
+When the on-screen keyboard shrinks the visible area (`max-width: 820px` and `max-height: 620px`):
+- hide the heading and the subtitle (the statement group), so nothing but the action remains;
+- the form block keeps the 72px header above it and stays packed to the bottom;
+- input height drops from 60px to 56px, the field gap to .75rem, the slot to 3.9rem.
+
+The header, both fields, the refusal slot and the full-width bar all stay on screen. The viewport meta in the production page should keep `interactive-widget=resizes-content` so the bar rides on top of the keyboard instead of sitting under it. This rule was checked in a simulated viewport only. Test it on a real iOS and Android device before you call it done; the mockup was not tested with a real keyboard.
+
+## What the mockup does not specify
+
+- Real validation behaviour (the demo only plays idle, then busy for 1.5 s, then refusal).
+- Motion beyond the spinner and the 2px press translate on the button.
+- The wordmark size on the desktop panel at narrow desktop widths (821 to 1000px); it is `min(440px, 100%)`.
+- Anything about the change-password screen.
+
+---
+
+# The application shell (`layout.html`)
+
+The shell is the frame every other screen lives inside. The mockup is `layout.html`; screenshots are `shots/layout-*.png`. It inherits everything above (colours, faces, the 820px breakpoint, 44px minimum targets). Below are only the shell's own decisions. The strip at the top of the mockup (preview toggles) is not part of the design. Every corner in the shell is `--radius` (6px), the same token the sign-in screen and the kit use; the only round shape is the user avatar disc.
+
+## What the shell holds
+
+Ten destinations in two groups, in this order, labels verbatim:
+
+- `البيانات الأساسية`: المشاريع, كتالوج الأسعار, الأبواب, الموظفون, مقاولو الباطن, الموردون, العملاء.
+- `الإدارة`: المستخدمون, الأقسام, سجل التدقيق.
+
+Rules the design is built around:
+- Every row is permission-gated. A user without the permission does not see the row at all (not greyed, not locked).
+- A group with no visible rows disappears with its heading. Check both: the first group alone (`layout-*-5rows-core-only`) and the second group alone (`layout-*-3rows-admin-only`).
+- The sidebar is short for most people and long only for the Owner. It was designed and shot at 10 rows, 5 rows, 3 rows and 2 rows. Nothing depends on the list being long: there are no fixed gaps that only work at ten rows, and the user block is pinned to the bottom of the sidebar, not to the end of the list.
+- The signed-in user's name and role, the language switch and the theme control live in the shell on every screen.
+- Which role sees which row is a business decision that is not made here. The role names and row counts in the mockup's preview strip are samples only.
+
+## Desktop (821px and wider)
+
+Two parts: a green sidebar and the content frame. There is no top bar. A top bar would spend 56 to 64px of height on a screen that is a dense table 90 percent of the time, and it would have nothing to hold: identity and controls live in the sidebar footer, the title and actions live in the page header.
+
+Sidebar:
+- 256px wide, always exactly `#09221e` (so `kaaf-wordmark.png` is seamless), cream text, in both light and dark.
+- Fixed to the viewport height, with the navigation scrolling inside it if there are more rows than fit. Header block 72px (wordmark 104px wide at the start edge, 44px collapse button at the end edge). Footer pinned to the bottom: avatar (40px, cream disc with the first letter of the name), name, role, then two 44px buttons side by side (language, theme).
+- Navigation rows: 44px tall, 12px side padding, 22px icon, 14px gap, Plex 500 .96875rem. Group headings: Noto Kufi 600 .8125rem in `#9fb3ad`, with a hairline rule above the second group. No uppercase, no numbering.
+- Icons are one stroke family (24px grid, 1.8px stroke, round caps). Each destination has one fixed icon. They are inline paths in the file and may be redrawn as long as the one-family rule holds.
+- Collapsed rail: 76px wide. Labels, group headings, name and role hide; icons stay centred; a divider replaces the group gap; the footer buttons stack vertically (the language button shows `EN` or `ع`). The sidebar collapses automatically at 1100px and narrower (between 821 and 1100px), and by hand with the collapse button at any width. The button's chevron points at the edge the sidebar collapses into and reverses when it is a rail. A tooltip for each icon is required in the build. The mockup only sets a native `title`, because a CSS tooltip would be clipped by the scrolling navigation area. Build it as a non-clipped overlay.
+
+Row states (sidebar):
+- Default: transparent.
+- Hover: `rgba(230,217,209,.09)` fill. It must not look like the active row.
+- Active: `rgba(230,217,209,.15)` fill, weight 600, `aria-current="page"`, and a 5px cream marker bar on the inline-start edge of the sidebar (the right edge in Arabic, the left edge in English). The marker is placed with `inset-inline-start`, so it flips with the document direction. It sits flush with the sidebar edge, not inside the row.
+- Keyboard focus: 3px cream outline drawn inside the row (`outline-offset:-3px`), so it is never clipped by the sidebar edge.
+
+Content frame:
+- Page header: 28px top, 32px sides, 20px bottom. The page title sits at the start edge: Noto Kufi 700, 2rem, line-height 1.3, with an optional count line (Plex, .9375rem, dim colour) under it. A back link or breadcrumb for deeper screens goes above the title; this slot is reserved but not drawn.
+- Page actions sit at the end edge of the same header: search first (290px wide, 48px tall, same field styling as the sign-in screen), then the one primary action (48px tall button, green with cream text, cream with green text in dark mode). At most one primary action per screen.
+- Below it, the content frame has 32px side padding and 32px bottom padding. The table has no card shadow: a 1px border, `--radius`, `--surface` fill.
+
+The table (the shell's real content):
+- Header row 44px, `--head` fill, Plex 600 .8125rem in the dim colour. Body rows 48px with a hairline between them. Total row 52px, `--head` fill, weight 600.
+- Twelve rows plus header, total row and pager fit on a 900px-tall screen without scrolling the page.
+- Money: a `bdi` element with `dir="ltr"`, `font-variant-numeric: tabular-nums`, Western digits, thousands separators. The currency is stated once in the column header (`(ج.م)`), not repeated on every figure. Money columns align to the end edge. The same applies to percentages. Codes (`KF-2401`) are `bdi` too.
+- Status uses Kaff's words verbatim (لم تبدأ, جاري العمل, انتهت, متعثرة, تم تأجيلها) inside a pill that also carries a shape, so status never relies on colour alone: hollow dot (not started), dot (in progress), check (finished), triangle (stalled), pause bars (postponed). The stalled pill is the only red on the screen. Pills are 28px tall.
+- Below 1100px the table scrolls horizontally inside its frame instead of squeezing. For the build, make the first two columns (code and name) sticky at the start edge so a row stays readable while scrolled. The mockup does not do this.
+
+## Phone (820px and narrower)
+
+Same system, composed for a thumb. The whole app is exactly one screen tall: the header and the action bar stay put and only the page scrolls between them.
+
+- Header: 56px, `#09221e`, the 88px wordmark at the start edge and the language switch (44px minimum) at the end edge, on one line, as on the sign-in screen. The user and the theme control are not here; they are in the destinations sheet.
+- Page: title (Noto Kufi 700, 1.875rem), count, a full-width 52px search field, then the list. A table does not fit on a phone, so each record is a row of 76px minimum with a hairline, no cards: name and status pill on the first line, client and contract value on the second. The whole row is the tap target.
+- Action bar at the bottom edge: 80px tall plus the safe-area inset (10px padding, 60px controls), `--surface` fill, hairline above. Two controls: the menu button (116px minimum width, outlined, icon and label `القائمة`) at the start edge, and the screen's one primary action filling the rest (`مشروع جديد`). A screen with no primary action shows the menu button alone. Both are in the lower part of the screen, reachable by one thumb.
+- Navigation is a bottom sheet, not a side drawer and not a tab bar. Reason: ten destinations cannot be tabs (five is the ceiling), and the list is a different length for every person, so a bar that changes shape by role would be unpredictable. The sheet works the same for two rows and ten. The menu button opens it; the dimmed area, the close button or Escape closes it; choosing a row closes it and goes there.
+- The sheet: grab bar, then a top row (avatar, name, role, 48px theme button, 48px close button), then the two groups with their headings, then nothing else. Rows are 52px (larger than desktop), 1.0625rem, same icons, same marker on the inline-start edge. Maximum height 90 percent of the screen, scrolling inside if needed (the ten-row sheet is about 710px). The destinations are packed toward the bottom of the screen where the thumb is; the user block at the top is the rarely used part.
+- A short sidebar (two rows) is a short sheet. It does not fill with empty space.
+- Keyboard up (`max-height: 620px`): the count line is hidden, the title shrinks to 1.5rem, and the action-bar controls drop from 60px to 52px, so a search being typed keeps its results visible. The sheet is not used while typing.
+
+## States the shell owns
+
+- Loading: the shell does not change. Sidebar, title, search and the primary action stay visible; only the content area goes to skeleton rows (12 on desktop, 8 on phone) with a 3px indeterminate line along the top of the content frame. The count line becomes a skeleton bar. The content frame has `aria-busy="true"` and a visually hidden "جارٍ التحميل" status. Skeleton rows are the same height as real rows, so nothing jumps when data arrives. Reduced motion stops the shimmer and makes the line static.
+- Empty or not-yet-designed screen: the shell keeps the title and shows a dashed box with a short sentence. The mockup uses this for screens that are not designed yet.
+- Language: switching sets `lang` and `dir` on the document. The sidebar moves to the other side because the layout is a grid in logical order, and the active marker follows. Figures stay Western digits in both languages.
+- Theme: light and dark. The sidebar is `#09221e` in both; only the page, the table surface and the controls change. Shell tokens: light page `#f4eee9`, surface `#fbf8f5`, table head `#ebe0d8`, hairline `rgba(9,34,30,.16)`, row hover `rgba(9,34,30,.055)`; dark page `#061815`, surface `#0a1f1b`, table head `#0f2e29`, hairline `rgba(230,217,209,.18)`, row hover `rgba(230,217,209,.06)`.
+- Status pill colours (light / dark): in progress `#d3e3db` on `#0b3b32` / `#17403a` on `#e6d9d1`; finished `#09221e` on `#e6d9d1` / `#e6d9d1` on `#09221e`; stalled `#f9e4dd` on `#7a1a0e` / `#3b1612` on `#ffd0c6`; postponed `#e6d9d1` on `#43392f` / `#1d2b27` on `#c9bfb7`; not started: transparent with a 1.5px outline in `#4b5f59` / `#9fb3ad`. The contrast of these pairs was not measured.
+
+## Not decided here (business questions)
+
+- Which roles see which destinations. The mockup shows 10, 5, 3 and 2 rows as samples, with role names attached for display only.
+- Whether a role may see a destination read-only or must not see it at all (the shell assumes "not at all", as the brief states).
+- What each destination's primary action is called, and whether a screen may have none.
+- Whether the list is paged (12 per page with page numbers, as drawn) or loads more.
+- The project columns shown (code, name, client, status, contract value, approved extracts, progress). They are sample data for a realistic table, not a decided column set.
+- Role names beyond the six in the brief, and how a long name or role wraps in the sidebar footer. Test it with real data.
+
+## What the mockup does not do
+
+- It does not implement the sidebar tooltips, sticky first columns on the narrow table, swipe-to-close on the sheet, or the back/breadcrumb slot.
+- It was not tested on a real phone with an on-screen keyboard.
+- The hover and focus states in `layout-*-hover-and-focus-rows.png` are forced with classes for the screenshots. Real `:hover` and `:focus-visible` rules are in the CSS.
+
+---
+
+# The component kit (`components.html`)
+
+Every screen in the ERP is built from these parts and from nothing else. The mockup is `components.html`; screenshots are `shots/kit-*.png` (each section at 1440 and 390, light and dark, plus the English/LTR checks, the narrow-desktop check and the open-menu and inline-confirmation states). A part that a screen needs and the kit does not have is added to the kit first, then used. A screen never styles its own version of a kit part.
+
+The strip at the top of the kit page (links, a theme button, and a direction-test button) is not part of the design. The direction-test button flips the page to left-to-right so the layout of each part can be checked; it does not translate the Arabic copy.
+
+## Rules that apply to every part
+
+- Arabic RTL is the primary direction. All spacing and positions use logical properties (`inline-start`, `inline-end`, `padding-inline`, `inset-inline-*`). Never `left` or `right`, with two narrow exceptions already in the sidebar and the popup placement code. In English every part mirrors: the start edge becomes the left edge. Each component below says what flips.
+- Touch targets are never smaller than 44 by 44 px. The kit has no 36 or 40 px controls. On a phone, the controls in the bottom bar and in a bottom sheet are 56 to 60 px.
+- Colour is never the only carrier of meaning. Every colour distinction is paired with a shape, an icon, a weight or a word (status pills have a shape, errors have an icon and text, a selected segment is filled and bold, a toggle moves and shows a check and says its state in words).
+- Money is a `<bdi dir="ltr">` with `font-variant-numeric: tabular-nums`, Western digits, thousands separators, aligned to the end edge of its column, and the currency named once in the column header or the field affix, never repeated per row or per figure. The same applies to codes (`KF-2401`) and percentages.
+- No toasts, no snackbars, no popups that disappear on their own. A confirmation happens in place, where the action was taken (see "Feedback"). Nothing in the product is announced by a notification that leaves the screen.
+- Focus: every interactive part shows a 3px outline (`--focus`) with 3px offset on keyboard focus, drawn inside the part (offset `-3px`) when it sits against an edge that would clip it (sidebar rows, menu items, segmented-filter buttons use a negative offset). Never remove it.
+- Disabled: 45 percent opacity and `cursor: not-allowed`. A disabled control that the user may need an explanation for must carry the reason as text next to it (in the hint, or in the menu item), because opacity alone explains nothing.
+- Busy: the part keeps its exact size. A 18px spinner appears inside the control, the label changes to the progressive form ("جارٍ الحفظ…"), `aria-busy="true"`, and clicks are ignored. Reduced motion slows the spinner but does not remove it.
+- Motion: none except the spinner, the skeleton shimmer, the toggle thumb (150ms) and the sidebar chevron. All stop or shorten under `prefers-reduced-motion`.
+
+## Tokens added by the kit
+
+Everything in the login and shell sections still applies. The kit adds only these:
+
+| Token | Light | Dark | Used for |
+|---|---|---|---|
+| `--btn-h` | `#25544b` | `#fbf6f2` | primary button hover fill |
+| `--danger` / `--danger-ink` | `#a42a16` / `#ffffff` | `#ff9d8a` / `#2a0d08` | the loud destructive confirm button only (7.19:1 light, 9.01:1 dark) |
+| `--dh` | `#8a2211` | `#ffb9ab` | destructive confirm hover fill |
+| `--err-ink` | `#7a1a0e` | `#ffd0c6` | destructive trigger text and border, error text, destructive menu item |
+| `--err-bar` | `#c2321c` | `#ff7b63` | the 6px start bar of refusal banners, error field border |
+| `--note-bg` | `#ebe0d8` | `#0f2e29` | neutral notice banner |
+| `--ok-bg` / `--ok-ink` | `#d3e3db` / `#0b3b32` | `#17403a` / `#e6d9d1` | saved-in-place banner (same pair as the in-progress status pill) |
+| `--radius` | `6px` | `6px` | every corner of every surface (see "Corner radius" below); the same in light, dark and both directions |
+| `--scrim` | `rgba(3,13,11,.55)` | same | dimming behind dialogs, panels and sheets |
+| `--shadow` | `0 12px 36px rgba(9,34,30,.22)` | `0 12px 36px rgba(0,0,0,.6)` | overlays and popups only; nothing else has a shadow |
+
+Corner radius: ONE token, `--radius: 6px`, defined once and used for every surface that has a corner: fields, buttons (including the large bottom-bar button), the icon button, the segmented filter, the search field, badges, status pills, popups and menus, dialogs, side panels, bottom sheets (top corners), banners, cards, table frames, list frames, the choice boxes (checkbox) and the tab tops. The sign-in, layout and kit screens all use it (the sign-in screen already did; layout and kit were 8 to 22px and were moved to 6px by client decision). The build reads this one value. Do not invent a second radius.
+
+Kept different on purpose (there are only these): (1) fully round (`50%`): the avatar disc, spinners, the toggle thumb and the radio button, because a circle is the shape that carries their meaning (a radio that is not round stops reading as a radio); (2) the switch track is fully round (16px on a 32px track) because a switch whose track is square cannot show a thumb travelling along it; (3) small structural slivers that are not surfaces: the 4px selected-tab bar and the 3px active-row marker use 2 to 3px so their ends do not look chewed; (4) skeleton placeholder bars use 4px; (5) the 24px frame drawn around the phone mockups in the kit sheet is a picture of a device, not part of the product UI.
+
+## Buttons
+
+Sizes: compact 44px high (table toolbars, dialog actions on a phone are 56), default 48px (pages and forms), large 60px (the phone bottom action bar). Padding 22px (16px compact, 26px large). Font: Noto Kufi Arabic 700, 1rem (.9375rem compact, 1.0625rem large). Border 2px always (transparent where there is no visible border) so a variant swap never shifts layout. A button's width follows its label; a phone-bar button may fill.
+
+Variants and when to use each:
+- Primary: solid green with cream text (cream with green in dark). One per screen section; the answer to "what do I do next here".
+- Secondary: transparent, 2px field-colour border. Cancel, the alternative path.
+- Quiet: transparent with no border. A third-level choice, such as skip or close in a banner.
+- Destructive trigger: transparent with a 2px border and text in `--err-ink`, with a trash icon. The first click of a delete. It must stay quiet.
+- Destructive confirm: solid `--danger`. Appears only inside a confirmation (inline confirmation, confirmation dialog, form confirmation) and never anywhere a user could press it without having seen the question. It is the only loud red in the product.
+- Icon button: 44 by 44, `--radius`, no border (a 2px border variant exists for a lone button that needs to look pressable, like the row menu in the kit demo). It always has an accessible name.
+
+States for every variant: default, hover (fill step, not an opacity change), keyboard focus, disabled, busy. Hover is never the only affordance (touch has none).
+
+RTL: icons sit at the start of the label inside the button and flip sides with the direction. Do not mirror the icon glyphs themselves, except directional ones (back arrows, chevrons).
+
+Never use: a primary and a destructive confirm in the same row at rest; a destructive trigger styled loud; a button for navigation (that is a link); a disabled primary with no reason shown.
+
+## Links, back link, badge, avatar
+
+- Link: ink colour, always underlined (1.5px, offset 4px; 3px on hover). Colour is not the cue.
+- Back link: 44px high, chevron plus label, the chevron points to the start edge in RTL (toward the previous screen) and flips in English. It sits above the page title and is the only way back that is not the browser's.
+- Badge: 24px high, `--radius`, 1.5px border, tabular figures. A count or a neutral tag (`جديد`). Outlined or filled for emphasis. A badge is never a status; status always uses the status pill.
+- Avatar: a disc with the first letter of the name, in Noto Kufi 700: 32, 40 or 56px. Ink disc with page-colour letter on the page; cream disc with green letter on the green sidebar and header.
+
+## Status pill
+
+Kaff's five words, verbatim and never abbreviated: لم تبدأ, جاري العمل, انتهت, متعثرة, تم تأجيلها. 28px high, `--radius` corners (not fully round), 13px icon at the start of the label, Plex 600 .8125rem, a 1px inner ring at 30 percent of the text colour. The shape is part of the meaning:
+
+| Status | Shape | Light (text on fill) | Dark (text on fill) |
+|---|---|---|---|
+| لم تبدأ | hollow circle, 1.5px outline, no fill | `#4b5f59` on `#fbf8f5`: 6.44:1 | `#9fb3ad` on `#0a1f1b`: 7.78:1 |
+| جاري العمل | solid dot | `#0b3b32` on `#d3e3db`: 9.36:1 | `#e6d9d1` on `#17403a`: 8.31:1 |
+| انتهت | check mark | `#e6d9d1` on `#09221e`: 12.08:1 | `#09221e` on `#e6d9d1`: 12.08:1 |
+| متعثرة | warning triangle | `#7a1a0e` on `#f9e4dd`: 8.66:1 | `#ffd0c6` on `#3b1612`: 11.52:1 |
+| تم تأجيلها | pause bars | `#43392f` on `#e6d9d1`: 8.16:1 | `#c9bfb7` on `#1d2b27`: 8.14:1 |
+
+All ten text pairs are above 4.5:1 (the lowest is 6.44:1). The pill's fill against the table surface is low (1.07 to 1.5:1 for the tinted ones), so the fill alone does not carry the meaning: the word and the shape do, and the ring keeps the edge visible. A pill is a label, not a control, so the 3:1 boundary rule for controls does not apply. Never put a status in a pill that is not one of the five words. Never colour a row by status.
+
+RTL: the icon is at the start edge of the pill, the label follows. In English, same order, mirrored.
+
+## Form fields
+
+The field wrapper owns the label, the control and one footer line. Layout: label (Plex 600, 1rem), control, footer slot. The footer slot has a reserved height of 24px (one line) and holds either the hint or the error, never both: the error replaces the hint in the same place with an alert icon and the error text, so the form never reflows when validation runs. A longer error wraps inside the slot and is allowed to push content down by the extra lines only (this is the one permitted shift).
+
+- Required: a `*` after the label, plus a visually hidden word "مطلوب". Optional fields carry no marker. The asterisk is a shape, so colour is not involved.
+- Control height 48px on desktop and 56px on a phone, 2px border in the field colour, `--radius`, text 1.0625rem. Hover darkens the border to ink. Keyboard focus draws the 3px outline outside the border.
+- Disabled: dashed border, 45 percent opacity, the hint says why. Read-only is not disabled.
+- Error: a 2px border in `--err-bar` plus an inner 1px ring, `aria-invalid="true"`, the footer text in `--err-ink` with the alert icon, `aria-describedby` pointing at the footer.
+- Validating: an 18px spinner in the trailing slot, the footer says what is being checked.
+- Read-only and generated (the project code): filled with the table-head tone, 2px border in the hairline colour, a lock icon at the end, text in ink at weight 500, focusable and selectable. It must look settled, not greyed, and it carries a hint ("يُولَّد تلقائياً عند الحفظ"). Never use disabled for a value the user is meant to read and copy.
+- Number: text aligned to the end edge, tabular figures, `dir="ltr"` and `inputmode="decimal"`, an optional unit affix (such as م³) in the trailing slot, separated by a 2px rule.
+- Money: same as number, with the currency (`ج.م`) as the trailing affix inside the field. The figure sits next to the currency. One currency affix per field; the table never repeats it. Money is typed and stored as a decimal; the design allows exactly the number of decimals the business defines and always shows them.
+- Text with leading Latin (user names, codes, e-mails): `dir="ltr"`, aligned to the start edge.
+- Select: the closed control looks like a field with a down chevron at the trailing end, and the option list is a popup (below). On a phone use the platform's native select.
+- Textarea: 112px minimum height, vertical resize, 12px padding, 1.6 line height.
+- Date: a text field in `DD/MM/YYYY` with Western digits (`dir="ltr"`, `inputmode="numeric"`), and a 44px calendar button at the trailing end that opens the date popup. The browser's own date input is not used, because its digits and format follow the device locale.
+- Toggle: a 56 by 32px switch inside a 56px-high row. The label is at the start, the switch at the end. The state is carried by position (the thumb moves to the end edge when on), by a check mark in the thumb, by the track being filled, and by a text line under the label (`مفعّل` or `متوقف`). A toggle applies immediately only when its label says so; otherwise it is part of a form that has a save button.
+
+Form footer (action row): a hairline above, then primary, secondary and, separated by free space, the destructive trigger at the far end. On a phone the row sits at the bottom of the form: primary fills the available width, secondary beside it, and the destructive trigger is placed as its own full-width row above the bar, outside it.
+- Saving: the primary becomes its busy form, same size; the secondary is disabled.
+- Saved: the action row is replaced in place by a "تم حفظ التغييرات" banner with a check (green pair), then returns to the buttons after about three seconds. There is no toast.
+- Destructive in a form: the trigger stays in the row. Pressing it replaces the action row with an inline confirmation (the question, the loud confirm, cancel). It never opens a dialog unless the form is already inside a dialog or panel (then a confirmation dialog is allowed, see "Overlays").
+
+RTL: label and hint align to the start edge; inputs with Latin content align start; number and money figures align to the end edge; the affix is at the end edge; a trailing icon (calendar, lock, chevron) is at the end edge.
+
+Never use: placeholder as a label; an error under the field and a hint above it at the same time; red as the only error cue; a field narrower than 160px; two required markers styles.
+
+## Lists and tables
+
+Anatomy of the desktop table (frame: 1px hairline border, `--radius`, surface fill):
+- Header row: 44px, table-head fill, Plex 600 .8125rem in the dim colour, text aligned to the start edge (numeric columns to the end edge).
+- Body row: 48px, 1px hairline between rows, hover fills with a 5.5 percent ink tint across all cells (including the pinned cell).
+- Group row: 44px, table-head fill, the section name (a باب in the catalogue) in Noto Kufi 600 .9375rem and a count badge. The group row spans all columns. It is not collapsible in this version.
+- Identity cell (always the first column): the NAME leads, bold (Plex 600), and the code follows it, demoted: dim, .8125rem, tabular, in a `bdi dir="ltr"`. In the DOM the name comes first so that reading order, copy and screen readers all lead with the name. Never lead with the code and never show the code as the primary text. The name truncates with an ellipsis, the code never truncates.
+- Money cell: aligned to the end edge, `bdi dir="ltr"`, tabular numerals, 500 weight, Western digits, no currency symbol (the column header says `(ج.م)`).
+- Status cell: the status pill.
+- Actions cell: the last column, 64px wide, end-aligned, a 44px icon button that opens the row menu. The header cell is empty (with a hidden "إجراءات" label).
+- Totals row: 52px, table-head fill, weight 600, a 2px field-colour rule above it, labels in the identity column and totals in the money columns, aligned to the same edge as the figures above.
+- Pagination: below the table, outside the frame: the count line ("يعرض 7 من 48 مشروعاً") at the start edge, the pager at the end edge. Buttons are 44px, 2px border. The current page is filled and bold with `aria-current="page"`, the disabled end is 40 percent opacity. On a phone the numbered buttons collapse to "السابق | صفحة 1 من 4 | التالي" with the two buttons at the opposite ends.
+
+The sticky first column (solution for narrow laptops): the identity column is `position: sticky` at the start edge (`inset-inline-start: 0`), 260 to 340px wide, with a solid surface fill (so the scrolling columns pass under it without showing through), a 1px hairline on its inline-end side as the divider, and no moving shadow. The header cell for it is sticky too and sits above (higher z-index). The table has a minimum width, around 880 to 960 px, and its frame scrolls horizontally when the available width is smaller. The identity column is the only pinned column: the name must always be readable, everything else may scroll. When a row hover or an inline confirmation is shown the pinned cell takes the same fill. The inline confirmation text is itself pinned at the start edge so the question is readable whatever the scroll position. At 1000px the pinned column stays on screen and the money column is reached by scrolling; this is why the identity column is capped at 340px. In English the pin moves to the left and the hairline to its right side. Both directions were checked scrolled (`shots/kit-desktop-light-s-lists.png` for Arabic, `kit-desktop-light-s-lists-english-ltr.png` for English): in both, the name column stays at the start edge while the status pills pass under it. In the mockup the scrolled position is held with CSS scroll-snap so a screenshot can show it; that snapping is for the demo only and must not be built (real scrolling is free).
+
+Phone row (820px and narrower): the table is not used. Each record is a stacked row of at least 80px with a hairline below and no card around it: line one is the name (bold) at the start and the status pill at the end; line two is the code (dim) and the client (dim) at the start and the money figure at the end; a 44px actions button at the very end spans both lines. The whole row is the tap target. A group heading becomes a full-width band. The total is a band at the bottom of the list, ("إجمالي الصفحة"). Money aligns to the end edge in every row.
+
+The four list states (they must read differently):
+1. Loading: skeleton rows at exactly the real row height (48px) and the real header. No spinner, no overlay. Status: `role="status"`, `aria-busy="true"`, hidden text "جارٍ التحميل".
+2. Empty (no records exist): a 56px round icon (open folder), a title ("لا توجد مشاريع بعد"), one sentence, and the primary action. The box is solid.
+3. No results after a filter or search (records exist, none match): a search icon, the title "لا نتائج مطابقة", a sentence that names what was searched or filtered, and a secondary button "مسح التصفية". The box has no fill, so it reads as part of the list.
+4. Refused by permission: a lock icon in an outlined disc, a title ("هذه الشاشة خارج صلاحياتك"), a sentence that says what is missing and who can grant it, a back link, and no action that tries again. The box has a dashed border. It is not an error and not red.
+
+Never use: a spinner over a table; "no data" without a next step; a table on a phone; horizontal scroll as the phone solution; colouring rows by status; more than one pinned column.
+
+## Filters and search
+
+- Segmented filter: 2px border, `--radius`, segments at least 44px high with 18px side padding and 2px dividers. The selected segment is filled with ink and bold (`aria-pressed="true"`); the others are transparent. Hover tints; keyboard focus draws an inset outline. It filters one dimension with three or fewer options (such as نشط · مؤرشف · الكل). More options mean a select. The default selection is the unfiltered, common case (نشط), and it counts as the "off" state: the clear link does not appear.
+- Search field: 48px high, 2px border, a search icon at the start (20px), a 44px clear button at the end that appears only when there is text, and a busy spinner at the end while a search is running. Width 300px on desktop and full width on a phone. Search is by name and code, and it never changes the segmented filter.
+- Result count line, under the toolbar: says what is shown, not what exists ("يعرض 12 من 48 مشروعاً نشطاً"). With a filter or search on, it describes the result and shows an underlined link "مسح التصفية" ("3 نتائج لـ «فيلا» في المشاريع المؤرشفة").
+
+RTL: the segmented filter order reads right to left (the first option is at the start edge); the search icon is at the start edge and the clear button at the end edge.
+
+## Row actions and confirmation
+
+- Row menu: opens from the actions icon button, 240px wide, 44px items, `--radius`, popup shadow. Items have an icon at the start and a label. A disabled item stays visible and its reason is given elsewhere (a tooltip is not enough on a phone). The destructive item is last, after a hairline, in `--err-ink` with a trash icon and an ellipsis ("حذف…", the ellipsis says there will be a question). The menu is placed with fixed positioning at the button, aligned to the button's edge on the side where there is room, and flips above the button when there is no room below. It closes on Escape, on outside click and on scroll. It must never be clipped by a scrolling table frame: render it in a layer above the page, not inside the table. On a phone the same actions appear as a bottom sheet with 56px rows.
+- Inline confirmation (delete): choosing the destructive item does not delete. The row is replaced in place by a 64px row tinted with the error fill, with a 1px error line above it, saying "حذف «اسم» ؟ لا يمكن التراجع." with the loud confirm ("تأكيد الحذف") and a secondary cancel. The row grows from 48 to 64px; this is the one allowed shift and it is user-initiated. Cancel restores the row. Confirm goes busy ("جارٍ الحذف…", cancel disabled). If the server refuses, the same place shows the reason with an alert icon ("تعذّر الحذف. المشروع مرتبط بمستخلصات معتمدة، فيمكن أرشفته فقط.") and offers the next best action ("أرشفة بدلاً من الحذف") and "إغلاق". When the reason is a business rule do not offer "حاول مجدداً". Only one inline confirmation is open at a time.
+- The destructive treatment, as a rule: the trigger is quiet and bordered, the confirm is loud and appears only after the question has been read. A destructive button is never the default-focused button of a dialog; the focus starts on cancel.
+
+## Overlays
+
+Four kinds:
+- Dialog: 520px wide, maximum width the screen minus the gutters, `--radius`. Header (title in Noto Kufi 700 1.25rem, a 44px close button at the end edge), body, footer with the primary first (start edge), then secondary. Used for a short form or a decision that needs the user's full attention (create a record).
+- Confirmation dialog: 420px wide. A 48px round icon in the error tint, a title that repeats what will be affected, one sentence of consequence, then the loud confirm and "إلغاء". Initial focus on "إلغاء". Escape and the scrim cancel.
+- Side panel (desktop): 440px wide, from the end edge of the screen (the left edge in Arabic, the right edge in English), full height, hairline on its inline-start side, popup shadow. Header (title, close), a scrolling body, a footer with the edit action at the start and the destructive trigger at the end. Used to read a record's detail without leaving the list. The body uses the key-value list: label column 130px in dim, value in ink, 48px rows with hairlines, money and codes as `bdi`.
+- Bottom sheet (phone): the same content as the side panel. It rises from the bottom edge, `--radius` on the top corners, a grab bar, a header, a scrolling body, and a footer pinned at the bottom with a 56px primary and a 56px destructive icon button. Maximum height 92 percent of the screen. It replaces the side panel at 820px and narrower. The navigation sheet from the shell is the same component.
+- Popup: the select list and the date picker. 6px padding, `--radius`, 1.5px field-colour border, the popup shadow. Select options are 44px; the selected option has a check, a bold label and a filled row; a disabled option stays visible with its reason in the label. The popup opens below the control and flips above when there is no room. Date picker: 296px wide, a month header with 44px previous and next buttons, a 7-column grid of 38px days with Western digits, the selected day filled, today outlined, days outside the month dimmed and not selectable. Week starts on Saturday.
+
+Closing and focus: every overlay closes with its close button, the scrim and Escape. Focus moves into the overlay on open and returns to the control that opened it on close. Focus is trapped inside while it is open. The page behind does not scroll. The scrim is 55 percent of the deep green in both themes.
+
+Stacking rules:
+- Allowed: one confirmation dialog on top of a dialog, a side panel or a bottom sheet (to confirm a delete or to discard edits). A popup (select, date picker, row menu) inside any overlay or on the page. Maximum depth: page, one surface (dialog, panel or sheet), one confirmation, one popup.
+- Not allowed: a dialog over a dialog, a panel over a panel, a panel over a dialog or a dialog over a panel, any surface over a confirmation, a confirmation over a confirmation, two popups open at once. If a flow needs a second step, replace the content of the open surface (with a back link in its header) instead of stacking.
+- A confirmation closes before anything behind it changes; a popup always closes first on Escape (the topmost layer closes first).
+
+## Feedback
+
+- Refusal banner: the shape of the sign-in screen's refusal. 6px bar on the start edge in `--err-bar`, an alert icon, the text in `--err-ink` on the error fill, 6px radius, padding 12 by 16px, text weight 500. It sits where the refused action is, between the thing that was done and its button, not at the top of the page. It may hold one secondary action at the end edge (for example "طلب إيداع"). It says what failed and what to do, never apologises, and a refusal that must not reveal information (sign-in) keeps the same text in all cases.
+- Notice banner: neutral fill, a dark 6px start bar, an info icon. For facts about the surrounding content (a locked period, read-only mode). It does not ask for action.
+- Saved banner (in place): the green pair with a check, replaces the action row for about three seconds. Not an alert; announced politely (`role="status"`).
+- Permission-refused page: the fourth list state above, used for a whole screen too.
+- Field-level error: see the form field section.
+
+RTL: the bar is on the start edge in both directions, the icon next to it, the action at the end edge.
+
+## Checkbox, radio and tabs
+
+The kit includes all three because this product will need them and a screen must not invent them: the user and permission screens assign many roles and projects at once (checkbox lists with a select-all parent), choices like a payment method are single choice from a short list (radio), and a project's detail has several sections of one record (tabs). Where the real screen needs them is decided by the business; the parts are fixed here.
+
+Checkbox:
+- A 24px box with a 2px border inside a row that is at least 44px high; the whole row (box and label) is the target. Radius `--radius`.
+- Selected: filled with ink and a check mark. Partly selected (a parent whose children are mixed, or a select-all header): filled with a dash. Unselected: empty field fill. Colour is never the cue: the check and the dash are shapes.
+- States: default, hover (a 4px halo and a darker border), keyboard focus (3px outline around the box, not the row), checked, partly, disabled (45 percent, and the reason belongs in the label or a hint), error (a red border plus a message under the group with an alert icon).
+- Optional second line under the label in the dim colour for what it grants. Children of a group are indented 36px at the start edge.
+- RTL: the box is at the start edge and the label follows; in English the box is at the left. Never put the box at the end.
+- Use for: multiple choice and for selecting table rows. Do not use for a setting that takes effect immediately (use the toggle), and not for a single yes/no that is a consequence of the form (use a toggle or a radio pair).
+
+Radio:
+- A 24px circle, 2px border, a filled ring with a centre when selected (the ring and centre are the shape cue), a row of at least 44px, label and optional description. States as for the checkbox. One option is always preselected unless "no choice yet" is a valid state, in which case a required error appears under the group.
+- Use for 2 to 5 mutually exclusive options that the user should see at a glance. For more options or a list that changes, use the select. For one option on or off, use the toggle, never a radio.
+- Keyboard: arrow keys move the selection within the group; tab leaves the group.
+
+Tabs:
+- A strip of tabs with a 2px hairline under it. Each tab is 48px high on desktop and 56px on a phone, 18px side padding, Noto Kufi 600 (700 when selected), `--radius` on the top corners.
+- Selected: bold, ink text, and a 4px bar along the bottom edge. Others: dim text. The bar and the weight are the cues, not the colour.
+- States: default, hover (a tint), keyboard focus (an inset 3px outline), selected, disabled (45 percent), and a count badge inside a tab when the count matters.
+- Use for sections of one record (items, extracts, expenses, files). Exactly one is selected at all times and shows its content. The selected tab is part of the page address so it can be shared. Not for filtering a list (use the segmented filter), not for steps in sequence (separate pages), not for navigation between screens (the sidebar does that).
+- Phone: the strip scrolls horizontally if it does not fit and keeps the selected tab in view. With more than five tabs on any width, replace the strip with a select.
+- RTL: the first tab is at the start edge (right in Arabic); in English the first tab is at the left.
+
+## What the kit deliberately does not contain
+
+- Toasts, snackbars, banners that disappear on their own, tooltips that carry required information (a tooltip may repeat a label, never replace one), and carousels.
+- Cards as a general container. A group of fields in a form may sit in a bordered surface; lists, tables and detail views do not use cards.
+- Gradients, decorative shadows and illustration. The only shadows are on overlays and popups.
+
+## Beyond the inventory (and why)
+
+- Saved-in-place banner and the "saving" form state: there are no toasts, so a save needs a place to say it succeeded.
+- Notice banner: a neutral variant, so a refusal is never used for information that is not a failure.
+- Server-refused state of the inline confirmation, with a better next action: a business rule that blocks a delete (approved extracts exist) needs a way forward, and the user must see it in place.
+- A date picker popup and the key-value list: the detail panel and the date field need them.
+- Validating state of a field: usernames and codes are checked by the server.
+- The reason on a disabled menu item.
+- Not built, flagged: a native select on phones is recommended in place of the custom popup, and the popup's keyboard behaviour (arrow keys, type-ahead) is specified here but not scripted in the mockup.
