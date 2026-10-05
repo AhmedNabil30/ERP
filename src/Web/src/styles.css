@@ -1,5 +1,7 @@
 /*
-  Global tokens and reset.
+  Global tokens, fonts and base styles — the KAAF design language (client-approved, `.design/v2/team-a/`:
+  README.md, layout.html, components.html). Values here are copied from that README; if this file and the
+  README disagree, the README wins.
 
   Two rules govern everything here:
 
@@ -7,13 +9,90 @@
      `padding-inline`, `margin-block-start`, `inset-inline-end`. There is no `left` or `right` in this
      codebase, and adding one breaks Arabic silently rather than loudly.
 
-  2. Mobile first. The daily log is designed for a phone on a building site; every other screen
-     inherits that baseline. Tap targets are at least 44px.
+  2. No colour literal outside this file. Every other stylesheet reads a token. Light and dark are one
+     definition per token via `light-dark()`: the theme is `color-scheme`, which follows the system
+     preference until the shell's theme control sets `data-theme="light" | "dark"` on `<html>`.
+
+  Only two colours come from the logo — green #09221e and cream #e6d9d1. Everything else is a step
+  derived from them. There is no accent colour; the only other hue is the semantic red.
 */
 
 :root {
   color-scheme: light dark;
 
+  /* ---- Brand ramp (README "Colour tokens") ---- */
+  --g900: #09221e; /* brand green: sidebar, phone header, primary button (light), text (light) */
+  --g800: #0f2e29;
+  --g300: #9fb3ad;
+  --c100: #f4eee9;
+  --c200: #e6d9d1; /* the logo cream */
+
+  /* ---- Surfaces and ink ---- */
+  --bg: light-dark(#f4eee9, #061815);
+  --surface: light-dark(#fbf8f5, #0a1f1b);
+  --head: light-dark(#ebe0d8, #0f2e29); /* table head, group row, read-only field fill */
+  --ink: light-dark(#09221e, #e6d9d1);
+  --dim: light-dark(#4b5f59, #9fb3ad);
+  --line: light-dark(rgb(9 34 30 / 16%), rgb(230 217 209 / 18%));
+  --hover: light-dark(rgb(9 34 30 / 5.5%), rgb(230 217 209 / 6%));
+
+  /* ---- Controls ---- */
+  --btn: light-dark(#09221e, #e6d9d1);
+  --btn-h: light-dark(#25544b, #fbf6f2);
+  --btn-ink: light-dark(#e6d9d1, #09221e);
+  --field: light-dark(#fbf8f5, #0f2e29);
+  --fieldline: light-dark(#09221e, #7f9a92);
+  --focus: light-dark(#09221e, #e6d9d1);
+
+  /* ---- Semantic red: refusals, errors, the destructive confirm. The only non-brand hue. ---- */
+  --err-bg: light-dark(#f9e4dd, #3b1612);
+  --err-ink: light-dark(#7a1a0e, #ffd0c6);
+  --err-bar: light-dark(#c2321c, #ff7b63);
+  --danger: light-dark(#a42a16, #ff9d8a);
+  --danger-ink: light-dark(#ffffff, #2a0d08);
+  --dh: light-dark(#8a2211, #ffb9ab);
+
+  /* ---- Banners ---- */
+  --note-bg: light-dark(#ebe0d8, #0f2e29);
+  --ok-bg: light-dark(#d3e3db, #17403a);
+  --ok-ink: light-dark(#0b3b32, #e6d9d1);
+
+  /* ---- Status pill (the five Kaff words; README "Status pill") ---- */
+  --st-run-bg: light-dark(#d3e3db, #17403a);
+  --st-run-ink: light-dark(#0b3b32, #e6d9d1);
+  --st-done-bg: light-dark(#09221e, #e6d9d1);
+  --st-done-ink: light-dark(#e6d9d1, #09221e);
+  --st-stuck-bg: light-dark(#f9e4dd, #3b1612);
+  --st-stuck-ink: light-dark(#7a1a0e, #ffd0c6);
+  --st-post-bg: light-dark(#e6d9d1, #1d2b27);
+  --st-post-ink: light-dark(#43392f, #c9bfb7);
+  --st-none-ink: light-dark(#4b5f59, #9fb3ad);
+
+  /* ---- Overlays: the only things with a shadow ---- */
+  --scrim: rgb(3 13 11 / 55%);
+  --shadow: light-dark(0 12px 36px rgb(9 34 30 / 22%), 0 12px 36px rgb(0 0 0 / 60%));
+
+  /* ---- Shape ---- */
+  /* ONE corner radius for every surface that has a corner. The only exceptions are listed in the
+     README ("Kept different on purpose"): the avatar disc, spinners, the toggle thumb and track,
+     the radio, and 2-4px structural slivers. Do not add a second radius token. */
+  --radius: 6px;
+
+  /* ---- Type ---- */
+  --display: "Noto Kufi Arabic", "IBM Plex Sans Arabic", system-ui, sans-serif;
+  --body: "IBM Plex Sans Arabic", system-ui, "Segoe UI", sans-serif;
+  --line-height: 1.6;
+  --line-height-tight: 1.35;
+
+  /* Type ramp. xs is the table head / pill / badge size, sm the table body, md body and field label,
+     lg a dialog title, xl the page title (2rem desktop, 1.875rem phone — see the media query below). */
+  --text-xs: 0.8125rem;
+  --text-sm: 0.9375rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 2rem;
+
+  /* ---- Spacing ---- */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -21,140 +100,61 @@
   --space-5: 1.5rem;
   --space-6: 2rem;
 
-  /* KAFF-929 finding 1: column headers and row metadata were borrowing --text-sm and competing with
-     the data. This is the scale step below it. */
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-md: 1rem;
-  --text-lg: 1.25rem;
-  --text-xl: 1.5rem;
-
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 1rem;
-
-  /* 44px — the tap target floor for every interactive element, list row and chip alike
-     (ux/components.md, CLAUDE.md Angular conventions).
-
-     NEVER override this token, at any viewport, under any pointer. It is a prohibition, not a
-     default (ux/research/density.md §4). Every standalone button, every form control and every M1
-     building-site screen rests on it, and a gloved thumb on scaffolding does not get smaller
-     because the browser window is wide. To make a desktop list row shorter, use --row-target. */
+  /* 44px: the touch-target floor for every interactive element, at every viewport, under every
+     pointer. NEVER override it (README "Rules that apply to every part": the kit has no 36 or 40px
+     controls). */
   --tap-target: 2.75rem;
+  /* A list row is 48px (README "Lists and tables"); the row's own icon button is 44px inside it. */
+  --row-target: 3rem;
 
-  /* The height of a list row and of the icon controls embedded in one. It resolves to the tap
-     target everywhere except mouse-driven desktop, where the block below takes it to 32px
-     (ux/research/density.md §4). Used in exactly two places: kaff-table-row and the kaff-row-menu
-     trigger — a 44px trigger inside a 32px row makes the row height unachievable. */
-  --row-target: var(--tap-target);
+  /* The shell's sidebar. 256px expanded, 76px as a rail. */
+  --side: 256px;
+}
 
-  /* The collapsed sidebar rail: an 18px icon plus 19px either side. Material's 80dp rail is a touch
-     figure and this rail is desktop-only furniture (`app.css`), so it does not apply. */
-  --nav-rail-size: 3.5rem;
+:root[data-theme="light"] {
+  color-scheme: light;
+}
 
-  --color-background: #ffffff;
-  --color-surface: #f7f7f5;
-  --color-text: #1a1a1a;
-  --color-muted: #5c5c5c;
-  --color-border: #d8d8d4;
-  --color-border-strong: #8f8f88;
-  --color-accent: #1f6f5c;
-  --color-danger: #a52121;
-  --color-warning: #9a6a00;
-  /* KAFF-934: the amber block behind a duplicate-phone warning and other inline cautions —
-     `WorkerMobile.dc.html`'s `#fdf6e8` fill, tokenised rather than inlined (apple-erp-design §0). */
-  --color-warning-surface: #fdf6e8;
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
 
-  /* Brand mark colour. Decorative only — the logo mark and an accent bar/badge dot. Measured
-     ≈3.0:1 on white, below the 4.5:1 text floor (apple-erp-design Baseline requirements), so it
-     never appears on text or an interactive control. */
-  --color-brand: #d76833;
-  /* Buttons, links and active nav rows. Replaces --color-accent's role for those cases only —
-     --color-accent stays, it still means focus/selected elsewhere (e.g. the global focus ring). */
-  --color-interactive: #b4551f;
-  --color-interactive-hover: #8f3f19;
-
-  /* The dark sidebar surface (Main.dc.html's #16181a side-nav column). It is brand chrome, not
-     page surface, so it stays dark under both themes and does not read
-     --color-background/--color-text. */
-  --sidebar-background: #16181a;
-  --sidebar-text: #ececec;
-  --sidebar-text-muted: #8b9490;
-  --sidebar-border: #34383c;
-  --sidebar-active-bg: rgb(215 104 51 / 16%);
-
-  /* A modal/drawer scrim. Theme-neutral on purpose — it dims whatever is beneath it regardless of
-     which palette that content is drawn in. */
-  --color-scrim: rgb(0 0 0 / 35%);
-
-  /*
-    Depth comes from a 1px border and an ultra-subtle shadow, never a heavy drop shadow — two
-    elevations is the whole scale (apple-erp-design §3). `--elevation-1` is a resting card;
-    `--elevation-2` is something floating over the page (a menu, a dialog, an open drawer).
-  */
-  --elevation-1: 0 1px 2px rgb(0 0 0 / 8%);
-  --elevation-2: 0 8px 24px rgb(0 0 0 / 16%), 0 2px 8px rgb(0 0 0 / 8%);
-
-  /*
-    KAFF-929 finding 1 / D-172: IBM Plex Sans Arabic, self-hosted, resolves first. Segoe UI/Noto Sans
-    Arabic/system-ui stay as fallbacks for an offline first paint before the woff2 lands, and Tahoma —
-    "the Arial of Arabic, chosen by nobody" (apple-erp-design §1) — is dropped rather than kept as a
-    fallback.
-  */
-  --font-body: "IBM Plex Sans Arabic", "Segoe UI", "Noto Sans Arabic", system-ui, sans-serif;
-
-  /* Arabic needs a little more line height than Latin at the same size. */
-  --line-height: 1.7;
-
-  /* Single-line contexts only: table cells, nav rows, buttons, chips, column headers. There is no
-     second line for the leading to serve there, and --line-height on a single line puts 27px of box
-     around 16px of glyph (ux/research/density.md §4). Same value at both breakpoints. */
-  --line-height-tight: 1.35;
+@media (width <= 820px) {
+  :root {
+    --text-xl: 1.875rem;
+  }
 }
 
 /*
-  Desktop density (ux/research/density.md, approved 2026-09-26).
+  LEGACY ALIASES — delete each one when the last screen that reads it is converted.
 
-  Nabil, 2026-09-26: "the font is very big everything is very big". The diagnosis is not a styling
-  defect screen by screen — it is one missing breakpoint. Everything above is sized for a phone on a
-  building site and a 27-inch monitor inherited it. This block is the desktop column of
-  density.md §4: type and spacing shrink, --tap-target does not.
-
-  Gated on two axes, both required:
-
-  - `min-width: 64rem` — type and spacing scale with available width.
-  - `pointer: fine` — the 44px interactive floor scales with pointer accuracy, not width.
-
-  `pointer`, never `any-pointer`. `pointer` tests the *primary* pointing device, so a touch laptop
-  in landscape — wide, but touched — reports `coarse` and keeps the phone sizing. `any-pointer: fine`
-  matches when *any* attached device is fine, which would strip the floor from exactly the hybrid
-  device this test protects.
-
-  There is deliberately no density switch. Nabil asked for the right default, not a control
-  (density.md §5 keeps the switch cheap to add later: the same block behind
-  `:root[data-density="compact"]`).
+  The 25 feature screens still carry their own pre-redesign CSS and read the old token names. These
+  map every old name onto the new language so they inherit the new palette, radius and (absent)
+  shadows without a per-screen edit. They are NOT part of the design language: new code reads the
+  tokens above. `grep -r "var(--color-" src/Web/src/app` lists what is left to convert.
 */
-@media (min-width: 64rem) and (pointer: fine) {
-  :root {
-    --space-2: 0.375rem;
-    --space-3: 0.5rem;
-    --space-4: 0.75rem;
-    --space-5: 1rem;
-    --space-6: 1.5rem;
-
-    /* --text-xs holds at 0.75rem/12px: the lowest step either the UAE or the Dubai design system
-       ships, and the floor for Arabic (density.md §2). Do not add a step below it. */
-    --text-sm: 0.8125rem;
-    --text-md: 0.875rem;
-    --text-lg: 1.0625rem;
-    --text-xl: 1.25rem;
-
-    --line-height: 1.55;
-
-    /* Fiori compact and Fluent's data grid are both 2rem/32px. AA-conformant under WCAG SC 2.5.8
-       (24px); it gives up only AAA SC 2.5.5, and only for a mouse. */
-    --row-target: 2rem;
-  }
+:root {
+  --color-background: var(--bg);
+  --color-surface: var(--surface);
+  --color-text: var(--ink);
+  --color-muted: var(--dim);
+  --color-border: var(--line);
+  --color-border-strong: var(--fieldline);
+  --color-accent: var(--focus);
+  --color-danger: var(--err-ink);
+  --color-interactive: var(--btn);
+  --color-interactive-hover: var(--btn-h);
+  /* The new language has no amber. A caution is a neutral notice, never a second hue. */
+  --color-warning: var(--ink);
+  --color-warning-surface: var(--note-bg);
+  --color-scrim: var(--scrim);
+  /* One radius. */
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius);
+  /* Nothing but overlays has a shadow. */
+  --elevation-1: none;
+  --elevation-2: var(--shadow);
 }
 
 /*
@@ -240,39 +240,34 @@
     U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
+
+/*
+  Noto Kufi Arabic — the display face (headings, the button label, the tagline). Self-hosted the same
+  way as Plex (D-172, and D-175 for this file): `public/fonts/`, never a CDN. Google serves it as ONE
+  variable woff2 for 500, 600 and 700, so there is one file and a weight range rather than three
+  blocks. Arabic subset only: the face's Latin glyphs are not wanted (README "Type": English strings
+  fall through to Plex), so no Latin file is shipped. `unicode-range` is Google's own for this family,
+  fetched 2026-10-06 with a Chrome user agent.
+*/
+@font-face {
+  font-family: "Noto Kufi Arabic";
+  font-style: normal;
+  font-weight: 500 700;
+  font-display: swap;
+  src: url("/fonts/noto-kufi-arabic-arabic.woff2") format("woff2");
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF,
+    U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC, U+102E0-102FB,
+    U+10E60-10E7E, U+10EC2-10EC4, U+10EFC-10EFF, U+1EE00-1EE03, U+1EE05-1EE1F, U+1EE21-1EE22, U+1EE24,
+    U+1EE27, U+1EE29-1EE32, U+1EE34-1EE37, U+1EE39, U+1EE3B, U+1EE42, U+1EE47, U+1EE49, U+1EE4B,
+    U+1EE4D-1EE4F, U+1EE51-1EE52, U+1EE54, U+1EE57, U+1EE59, U+1EE5B, U+1EE5D, U+1EE5F, U+1EE61-1EE62,
+    U+1EE64, U+1EE67-1EE6A, U+1EE6C-1EE72, U+1EE74-1EE77, U+1EE79-1EE7C, U+1EE7E, U+1EE80-1EE89,
+    U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1;
+}
+
 /* Projected grid children do not receive a component's emulated style scope. */
 kaff-table-row .row > bdi {
   justify-self: start;
   inline-size: fit-content;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background: #16181a;
-    --color-surface: #1e2124;
-    --color-text: #ececec;
-    --color-muted: #a5a5a5;
-    --color-border: #34383c;
-    --color-border-strong: #52585d;
-    --color-accent: #57b79c;
-    --color-danger: #e07070;
-    --color-warning: #d9a441;
-    --color-warning-surface: rgb(217 164 65 / 12%);
-
-    /* Re-tuned for the dark --color-background (#16181a): #b4551f/#8f3f19 measure below 4.5:1
-       there. Measured 6.3:1 and 4.8:1 respectively. */
-    --color-interactive: #e0824a;
-    --color-interactive-hover: #c96b3a;
-
-    /*
-      A shadow tuned for a white ground is invisible on a dark one — the same alpha-black shadow
-      disappears against #16181a. Depth on dark surfaces comes from a stronger, larger shadow plus a
-      faint top highlight (an inset line of light) rather than from a bigger blur, which is what
-      would light up on a light ground instead.
-    */
-    --elevation-1: 0 1px 2px rgb(0 0 0 / 50%), inset 0 1px 0 rgb(255 255 255 / 4%);
-    --elevation-2: 0 12px 32px rgb(0 0 0 / 60%), inset 0 1px 0 rgb(255 255 255 / 6%);
-  }
 }
 
 *,
@@ -287,11 +282,9 @@ html {
 
 body {
   margin: 0;
-  background: var(--color-background);
-  color: var(--color-text);
-  font-family: var(--font-body);
-  font-size: var(--text-md);
-  line-height: var(--line-height);
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 var(--text-md) / var(--line-height) var(--body);
 }
 
 h1,
@@ -304,27 +297,105 @@ ul {
   margin-block: 0;
 }
 
+/* Headings are the display face. Weight and size stay with the component or screen. */
+h1,
+h2,
+h3 {
+  font-family: var(--display);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
 button {
   touch-action: manipulation;
 }
 
+/* Keyboard focus: 3px, 3px offset, on every interactive part. Never removed. Parts that sit against
+   an edge that would clip it (sidebar rows, menu items, segmented buttons) draw it inside with a
+   negative offset in their own stylesheet. */
 :focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* Visually hidden, still announced. */
+.sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/*
+  Form controls inside `kaff-field` (README "Form fields"): 48px high, 2px border in the field colour,
+  `--radius`, 1.0625rem text, hover darkens the border to ink, focus draws the 3px outline outside.
+  `kaff-field` projects the control, so its own stylesheet cannot reach it; this global rule is the
+  kit's only handle on it. Specificity is deliberately low (0,0,2): a screen's own scoped input rule
+  still wins until that screen is converted. `aria-invalid` is the error state (2px err-bar border plus
+  an inner 1px ring).
+*/
+kaff-field input:not([type="checkbox"], [type="radio"], [type="file"]),
+kaff-field select,
+kaff-field textarea {
+  inline-size: 100%;
+  min-block-size: 3rem;
+  padding-inline: 14px;
+  border: 2px solid var(--fieldline);
+  border-radius: var(--radius);
+  background: var(--field);
+  font-size: 1.0625rem;
+}
+
+kaff-field textarea {
+  min-block-size: 7rem;
+  padding-block: 12px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+kaff-field input:hover,
+kaff-field select:hover,
+kaff-field textarea:hover {
+  border-color: var(--ink);
+}
+
+kaff-field [aria-invalid="true"] {
+  border-color: var(--err-bar);
+  box-shadow: inset 0 0 0 1px var(--err-bar);
+}
+
+kaff-field input:disabled,
+kaff-field select:disabled,
+kaff-field textarea:disabled {
+  border-style: dashed;
+  background: transparent;
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (width <= 820px) {
+  kaff-field input:not([type="checkbox"], [type="radio"], [type="file"]),
+  kaff-field select {
+    min-block-size: 3.5rem;
+  }
 }
 
 /*
   Numerals are NOT set here.
 
   Which digits appear is decided by the numbering system `Intl` is given, not by CSS — see
-  `INTL_LOCALE` in i18n.service.ts, where the locale is pinned to `ar-EG-u-nu-latn`. An earlier
-  version of this file claimed to force Western digits with `font-variant-numeric: lining-nums`,
-  which only picks a glyph style for digits that are already Latin and did nothing at all. See
+  `INTL_LOCALE` in i18n.service.ts, where the locale is pinned to `ar-EG-u-nu-latn`. See
   decisions.md D-036.
-
-  `font-feature-settings: "ss01"` was also removed: a stylistic set means something different in
-  every font, and applying an unnamed one to all Arabic text in a production system is a gamble on
-  whichever family happens to resolve.
 */
 
 /* Figures in tables and money cells. Tabular digits are what make decimal points line up down a
@@ -334,4 +405,13 @@ button {
   unicode-bidi: isolate;
   white-space: nowrap;
   text-align: end;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 3s !important;
+    transition-duration: 0.01ms !important;
+  }
 }
