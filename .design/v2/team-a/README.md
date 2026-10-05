@@ -268,8 +268,8 @@ Variants and when to use each:
 - Primary: solid green with cream text (cream with green in dark). One per screen section; the answer to "what do I do next here".
 - Secondary: transparent, 2px field-colour border. Cancel, the alternative path.
 - Quiet: transparent with no border. A third-level choice, such as skip or close in a banner.
-- Destructive trigger: transparent with a 2px border and text in `--err-ink`, with a trash icon. The first click of a delete. It must stay quiet.
-- Destructive confirm: solid `--danger`. Appears only inside a confirmation (inline confirmation, confirmation dialog, form confirmation) and never anywhere a user could press it without having seen the question. It is the only loud red in the product.
+- Destructive trigger (IRREVERSIBLE actions only): transparent with a 2px border and text in `--err-ink`, with a trash icon. The first click of a permanent delete. It stays quiet; the loudness belongs to the confirm. For a recoverable action (archive, deactivate) do not use it: use the secondary button with the action's own icon (see "Two confirmations").
+- Destructive confirm (IRREVERSIBLE actions only): solid `--danger`. Appears only inside the red confirmation of a permanent action, never anywhere a user could press it without having seen the question. It is the only loud red in the product. A recoverable action never uses it; its confirm is the ordinary primary button.
 - Icon button: 44 by 44, `--radius`, no border (a 2px border variant exists for a lone button that needs to look pressable, like the row menu in the kit demo). It always has an accessible name.
 
 States for every variant: default, hover (fill step, not an opacity change), keyboard focus, disabled, busy. Hover is never the only affordance (touch has none).
@@ -367,6 +367,25 @@ RTL: the segmented filter order reads right to left (the first option is at the 
 - Inline confirmation (delete): choosing the destructive item does not delete. The row is replaced in place by a 64px row tinted with the error fill, with a 1px error line above it, saying "حذف «اسم» ؟ لا يمكن التراجع." with the loud confirm ("تأكيد الحذف") and a secondary cancel. The row grows from 48 to 64px; this is the one allowed shift and it is user-initiated. Cancel restores the row. Confirm goes busy ("جارٍ الحذف…", cancel disabled). If the server refuses, the same place shows the reason with an alert icon ("تعذّر الحذف. المشروع مرتبط بمستخلصات معتمدة، فيمكن أرشفته فقط.") and offers the next best action ("أرشفة بدلاً من الحذف") and "إغلاق". When the reason is a business rule do not offer "حاول مجدداً". Only one inline confirmation is open at a time.
 - The destructive treatment, as a rule: the trigger is quiet and bordered, the confirm is loud and appears only after the question has been read. A destructive button is never the default-focused button of a dialog; the focus starts on cancel.
 
+### Two confirmations: recoverable and irreversible
+
+The kit has two destructive confirmations and they must look different at a glance. The rule for choosing is one sentence: **if the user can get it back, it is the quiet one.** Red is reserved for what nothing can bring back. When in doubt ask "is there a restore button somewhere?" If yes, quiet.
+
+| | Recoverable (the default for anything reversible) | Irreversible |
+|---|---|---|
+| Examples | archive, deactivate, hide, revoke access that can be granted again | permanent delete of a draft, a purge, anything with no way back |
+| Trigger | secondary button (2px ink border) with the action's icon (for archive: the archive box), labelled with the verb ("أرشفة") | destructive trigger: red 2px border and text, trash icon, label says permanence ("حذف نهائي") |
+| Menu item | ink colour, the verb plus an ellipsis ("أرشفة…") | `--err-ink`, trash icon, "حذف نهائي…" |
+| Inline confirmation | neutral note fill (`--note-bg`), 1px ink line above, ink text, the action icon at the start; the message says it can be undone and where ("يختفي من القائمة النشطة، ويمكنك استرجاعه من «مؤرشف» في أي وقت.") | red error fill, red line above, red text, trash icon; the message says "لا يمكن التراجع" |
+| Confirm button | the ordinary primary button, labelled with the verb ("أرشفة") | loud `--danger` button, labelled "تأكيد الحذف" |
+| Confirmation dialog | neutral icon tile, the primary button, initial focus on the confirm (it can be undone) | red icon tile, red button, initial focus on "إلغاء" |
+| Busy / refused | same busy state (the confirm keeps its size, cancel disabled); a refusal appears in place with the reason | same |
+
+Everything else about the confirmation is shared: it happens in place, never a toast, one open at a time, cancel restores. The recoverable one must also provide the way back: an "إلغاء الأرشفة" item on the archived item's menu, which needs no confirmation and answers in place with the restore band.
+
+Existing kit usages and what changed: (1) the destructive trigger and confirm are now defined for irreversible actions only, and the red examples in the kit sheet (delete a project, delete a draft extract) remain red because they are permanent; (2) nothing in the kit sheet that was an archive was red before, so no archive example changed colour in the kit; (3) the catalogue was the first screen with a recoverable action and moved to the quiet pattern: its row-menu item, the inline confirmation, the phone confirmation and the panel's footer trigger. A builder adding a new destructive action must classify it with the rule above before choosing a component.
+
+
 ## Overlays
 
 Four kinds:
@@ -433,3 +452,83 @@ Tabs:
 - Validating state of a field: usernames and codes are checked by the server.
 - The reason on a disabled menu item.
 - Not built, flagged: a native select on phones is recommended in place of the custom popup, and the popup's keyboard behaviour (arrow keys, type-ahead) is specified here but not scripted in the mockup.
+
+---
+
+# The catalogue list (`catalogue.html`)
+
+Screen: كتالوج الأسعار, the price book. It is composed from the kit inside the approved shell. Screenshots: `shots/cat-*.png` (desktop 1440, phone 390, one 1000px check, light and dark; states: list, no results, archive confirmation, detail panel on a derived item, detail panel on an overridden item, panel with an unsaved cost edit, archived view, restore in place, loading; plus English/LTR). The preview strip in the mockup switches states; `?view=list|empty|archive|panel|override|edit|archived|unarch|loading` opens one directly.
+
+## What it is made of (unchanged from the kit)
+
+Page header and actions, the primary button, the secondary button, the segmented filter (نشط · مؤرشف · الكل), the search field, the result count line, the table frame with its pinned identity column, the row menu (fixed-position), the inline confirmation (quiet trigger, loud confirm, no toast), the empty-result list state, the side panel (desktop) and bottom sheet (phone), form fields (text, money with the currency affix, read-only generated field with a lock), the neutral notice banner, the checkbox, the skeleton loading rows, the badge and the avatar. Counts, money and codes follow the kit rules: `bdi`, tabular numerals, Western digits, the currency named once in the column header.
+
+## Page structure
+
+- Title "كتالوج الأسعار" with the count of everything ("612 بنداً في 8 أبواب"). Actions at the end edge: search (by code or description), "استيراد من Excel" (secondary, upload icon, the entry point to the import flow, which is not designed here), and the one primary action "بند جديد".
+- Toolbar: segmented filter (نشط is the default and counts as "off"), a باب select ("كل الأبواب", narrows the list to one باب), a "سعر بيع مخصّص فقط" checkbox. Under it the result count line says what is shown ("يعرض 598 بنداً نشطاً"), and with any filter or search on it describes the result and shows "مسح التصفية".
+- The list is grouped under 8 أبواب. Items are never shown ungrouped, including search results (matching items stay under their باب, and a باب with no match disappears).
+
+## Designing for 612 items
+
+Nothing here paginates by page. A page boundary would cut a باب in two. Instead:
+- Each باب is a collapsible group. A fresh visit shows the groups the user left open last time (the mockup shows two open and six collapsed), so eight groups are at worst eight rows. A search, the override checkbox, a باب choice, or the archived view opens every group that has matches.
+- An open group shows its first items and ends with a "عرض 111 بنداً أخرى في هذا الباب" row. This keeps one long باب from burying the others, and the build may virtualise rows behind it.
+- The group heading is sticky: while a باب's items scroll, its name, count and markup stay at the top of the table.
+
+## Kit additions (the kit was missing these; each is now part of it)
+
+1. Collapsible, sticky group row. A 52px button (the kit's static 44px group row was not interactive), chevron at the start, the باب name in Noto Kufi 600, a count badge ("118 بنداً"), and the باب's default markup as a quiet tag with a percent glyph ("هامش الباب 15%"). `aria-expanded` is on the button. The chevron points to the end edge when closed (left in Arabic) and down when open, and flips with the direction. Rule: the group row is a button only when the group can collapse; otherwise it stays the static kit row.
+2. In-group "load more" row. A quiet 48px button spanning the group at the end of its visible items. Never use it for page-level paging (the kit's pager remains for tables with no groups).
+3. Price-origin marker. See the next section.
+4. Internal-column marker. The cost column carries a faint tint in the header and cells (3.5 percent ink), an eye-off icon and a "داخلي" badge in its header, and the same badge and icon on the cost field label in the panel, plus the hint "داخلي: لا يظهر في أي مستند يراه العميل." Use it for any figure that must never reach a client. The tint plus icon plus word is the cue, not colour alone.
+5. Derivation line. A bordered card with a head (the label and the origin tag) and ruled lines, ending in a bold result line and a short sentence saying where the number comes from. Used in the panel for the sell price. Never a tooltip: the explanation must be readable on a phone.
+6. Archived-row marker. A dashed 22px tag "مؤرشف" with an archive icon beside the code, and the row text drops to the dim colour. Never strikes the text through, because the item is not wrong, only retired.
+7. Restore in place. The archive's opposite needs no confirmation: choosing "إلغاء الأرشفة" turns the row into a one-line "تمت استعادة «…» إلى القائمة النشطة." band in the green pair for about 2.5 seconds, then the row returns in its new place. No toast.
+8. Dirty field. A field whose value differs from the saved one gets the ink border at 2px plus an inner ring, and the panel shows a notice banner at the top ("تعديل غير محفوظ في التكلفة...") and enables Save. Save stays disabled while nothing has changed.
+9. Phone filter disclosure. The segmented filter is full width with 52px segments. The باب select and the override checkbox sit behind a "تصفية أخرى" button (with a count badge of how many are active) that expands them inline in a bordered group. The import entry sits beside it as an equal-width secondary button. Never put more than three controls in a phone toolbar row.
+10. Recoverable confirmation. The quiet destructive confirmation (neutral fill, ordinary primary confirm, "you can undo this and here is where"), specified side by side with the irreversible one in "Two confirmations" and shown in the kit sheet (actions section). The catalogue's archive uses it.
+
+## Derived versus overridden sell price
+
+The sell price is normally cost plus the باب's markup; an item may carry its own price. Both states always show a marker, so a person never has to guess which one they are looking at:
+- Derived: the figure at normal weight with a small percent glyph (`%`) beside it, with the accessible name "محسوب من هامش الباب". Quiet, because it is the usual case.
+- Overridden: the figure in bold, with a "مخصّص" tag with a pin icon beside it. The tag is a 24px amber-tinted tag (`#4a3410` on `#f3e4c9`, 9.36:1; dark `#f1dcae` on `#3d3017`, 9.54:1) with a 1px ring, a different shape from every other tag in the kit. The word, the pin, the bold weight and the tint all say it. The figures stay aligned to the same end edge in both states (the marker is on the start side of the figure).
+- Filter: the "سعر بيع مخصّص فقط" checkbox shows every overridden item.
+- Panel, derived: "سعر البيع" card with a "محسوب" badge and three lines: التكلفة, هامش الباب (shown as percent and amount), سعر البيع; then the sentence "السعر الحالي في الكتالوج: التكلفة زائد هامش الباب. أي تغيير في التكلفة أو الهامش يسري على البنود الجديدة فقط. العروض والتقديرات القائمة لا تُعاد تسعيرها تلقائياً؛ المفتوحة منها تتلقى تنبيه مراجعة يدوية." This is what the screen is built on (see "Rulings"): the catalogue price moves with cost and markup, but nothing already priced moves. An earlier sentence said the price follows a cost change; that was wrong and is removed. The Owner also gets a quiet button "تحديد سعر بيع مخصّص"; the Technical Office does not.
+- Panel, overridden: the card has an amber head with the "مخصّص" tag and lines: المحسوب من الباب (struck through, dim), الفارق عن المحسوب (amount and percent, so the size of the human decision is visible), سعر البيع المعتمد (bold); the sentence says it was set by a person instead of the calculation, that a cost change does not change it, and who changed it and when (from the audit trail; only the Owner can set it). Below it the override price is an editable money field, and "العودة إلى السعر المحسوب" is a quiet button that removes the override.
+- Phone row: the sell figure on the first line with the tag beside it, and the cost, in the dim colour with the eye-off icon and the word "تكلفة", on the second line, so cost is never mistaken for sell.
+
+## Row, detail and actions
+
+- Row (1440): identity cell leads with the Arabic description (bold) and demotes the code beside it (dim, small, tabular, `bdi`); then the English description (dim, left-to-right text, truncated), the unit (م³ and م² are written with superscript digits), the cost, the sell price with its origin marker, and the 44px actions button. Rows are 48px.
+- Below 1100px the shell collapses to the rail and the English description column drops out of the table (it is in the panel), so cost and sell are visible at 1000px; the identity column stays pinned. Below 820px the table becomes the stacked row.
+- Phone row (at least 84px, no card): Arabic description at the start and the sell price with its marker at the end; code, unit and the archived tag at the start of the second line and the internal cost at the end; the 44px actions button spans both lines. A باب is a sticky 56px band with a chevron, name, count and markup.
+- Row menu: عرض التفاصيل, تعديل, then after a hairline "أرشفة…" for an active item (ink colour with the archive icon, not red, because archive is recoverable; the ellipsis says a question follows), or "إلغاء الأرشفة" for an archived one. Opening a row (a click anywhere on it) opens the detail panel.
+- Archive confirmation, the RECOVERABLE pattern (inline, in place of the row, 64px): neutral note fill with an ink line above, the archive icon at the start, "أرشفة «اسم البند»؟" and, under it, "يختفي من القائمة النشطة، ويمكنك استرجاعه من «مؤرشف» في أي وقت." The confirm is the ordinary primary button "أرشفة" (not red); cancel is secondary. Busy state is the kit's. On a phone it is a full-width neutral block with two 52px buttons. Archive has no red anywhere on this screen.
+- Detail panel (440px from the end edge; bottom sheet on a phone). Order, and why: the prices come first (it is why most people open an item), then the item's data. Header: the Arabic description as the title, the code demoted beside the باب name. It has TWO SHAPES by role (below). Footer: Save (disabled until something changes), Close, and at the far end "أرشفة" as a secondary button with the archive icon (recoverable, so not the red trigger); it opens the recoverable confirmation as a confirmation dialog because the panel is already an overlay (kit stacking rule).
+- Loading: the shell stays, the toolbar stays, and the table becomes 10 skeleton rows at real height.
+- Empty states: no matches after search or filter uses the kit's no-results state (and the clear link); an empty archived view says "لا توجد بنود مؤرشفة" with an archive icon.
+
+## The two shapes of the detail panel
+
+Cost and the sell-price override belong to the Owner alone. The Technical Office keeps the rest of the catalogue (the descriptions, the unit, archive and restore, search, import entry) but is read-only on cost and the override, enforced by the server. The panel therefore has two shapes, built from the same parts.
+
+- Owner: the cost price is an editable money field; the derivation card follows it live; below it the override field (when overridden) with "العودة إلى السعر المحسوب", or the quiet "تحديد سعر بيع مخصّص" (when derived). A change turns the field's border dark, shows the unsaved-edit notice, and enables Save.
+- Technical Office (read-only shape): the price section keeps its place and its numbers. The heading "الأسعار" carries a quiet "للاطلاع فقط" badge with a lock, and one plain line under it says who changes these: "يعدّل المالك وحده سعر التكلفة وسعر البيع المخصّص. بقية بيانات البند تعدّلها أنت." The cost is the kit's read-only field (the settled head-tone fill, the lock at the end, the text in full ink and selectable, NOT greyed out or dashed, so it never looks disabled or failed). The derivation card is shown unchanged, including the struck-through calculated price and the difference when overridden, because understanding where a price came from is read access. The override field and its buttons are simply absent (no disabled buttons to explain). No red, no error banner, no tooltip: it is a normal state, explained once in words.
+- Both shapes keep the "داخلي" marker on cost. The rest of the panel (the item's data, Save, archive) is identical.
+- Rule for the kit: a field a user may see but not edit is a read-only field with a lock and a one-line reason placed where the user looks, never a disabled field and never a hidden one if the value is needed to understand something else.
+
+## Rulings this screen is built on
+
+These came from the client and `spec.md` (§4.1, KAFF-411), not from the design:
+- No silent re-pricing. A cost or markup change does NOT re-price items that were already priced. Signed BOQs stay frozen by copy (they hold values, not a link). Open estimates raise a manual review alert and a human decides per offer. A new price applies to future lines only. (The client first said the opposite and ruled for the spec after the contradiction was raised.)
+- Markup is shown here and edited on the project: the باب's default markup appears on the group row as a quiet tag; `lineMarkup` defaults from the باب and can be overridden per BOQ line on the project (spec §4.1). This screen never edits markup.
+- Cost and the override are the Owner's alone; the Technical Office is read-only on both (server-enforced). See the panel shapes above.
+- Left to the builder's discretion: rounding of derived prices (the mockup shows two decimals, nearest 0.01), moving an item between أبواب (the panel shows the باب and offers no move), and whether archiving an item in use shows a warning.
+- The Excel import warns on an existing code and updates it on confirm. That is the import screen, designed later; this screen only has its entry button.
+
+## Still open
+
+- The reason for an override, if one is ever required, would be one more field in the Owner's override block; none was asked for.
+- The 8 أبواب, the item names and the figures in the mockup are samples.
