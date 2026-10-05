@@ -175,20 +175,26 @@
     </aside>
   }
 
-  <!-- The phone's slim green header; on desktop it shows only when there is no sidebar (signed out,
-       or the session is still resolving). -->
-  <header class="mh">
-    <img class="wordmark" src="/brand/kaaf-wordmark.png" width="519" height="155" alt="KAAF" />
-    <button
-      type="button"
-      class="lang"
-      data-testid="locale-switch-mobile"
-      [attr.lang]="otherLocale()"
-      [attr.dir]="otherLocale() === 'ar' ? 'rtl' : 'ltr'"
-      (click)="switchLocale()">
-      {{ i18n.t(otherLocale() === 'ar' ? 'locale.ar' : 'locale.en') }}
-    </button>
-  </header>
+  <!--
+    The phone's slim green header, for a signed-in session only. A signed-out route carries its own
+    brand: the sign-in screen draws its own panel and header, so the shell must not add a second one.
+    This used to render unconditionally and rely on CSS to hide it on desktop; signed out, nothing
+    hid it.
+  -->
+  @if (session()) {
+    <header class="mh">
+      <img class="wordmark" src="/brand/kaaf-wordmark.png" width="519" height="155" alt="KAAF" />
+      <button
+        type="button"
+        class="lang"
+        data-testid="locale-switch-mobile"
+        [attr.lang]="otherLocale()"
+        [attr.dir]="otherLocale() === 'ar' ? 'rtl' : 'ltr'"
+        (click)="switchLocale()">
+        {{ i18n.t(otherLocale() === 'ar' ? 'locale.ar' : 'locale.en') }}
+      </button>
+    </header>
+  }
 
   <main class="main">
     @if (!resolved()) {

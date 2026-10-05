@@ -125,8 +125,12 @@
   "auth.login.title": "تسجيل الدخول",
   "auth.login.username": "اسم المستخدم",
   "auth.login.password": "كلمة المرور",
+  "auth.login.tagline": "كل جنيه مسجَّل. كل موقع مُتابَع.",
+  "auth.login.subtitle": "أدخل بيانات الحساب الذي أنشأه لك المالك.",
+  "auth.login.help": "نسيت كلمة المرور؟ اطلب من المالك إعادة تعيينها.",
+  "auth.login.refused": "لم يتم الدخول. تأكد من اسم المستخدم وكلمة المرور، أو تواصل مع المالك.",
   "auth.login.submit": "دخول",
-  "auth.login.submitting": "جارٍ تسجيل الدخول…",
+  "auth.login.submitting": "جارٍ التحقق…",
 
   "auth.password.title": "تغيير كلمة المرور",
   "auth.password.must_change": "يجب تغيير كلمة المرور المؤقتة قبل المتابعة.",

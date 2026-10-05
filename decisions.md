@@ -14825,3 +14825,34 @@ what any screen fetches or validates, `src/Api`, `src/Domain`, `src/Infrastructu
 screens inherit the new tokens and kit but keep old per-screen layout, so some look half-converted (page
 title above a search above a filter above a table, with the primary action in a strip above all of it).
 That is the expected state until each is redesigned and approved.
+### D-176 · Frontend — sign-in rebuilt to the approved KAAF screen; a signed-out route no longer wears the shell · 2026-10-06
+
+**Built.** `features/auth/sign-in/*` now matches `.design/v2/team-a/direction-1.html`: the desktop split
+(green panel with the wordmark and tagline, form side), and at 820px and narrower a 72px green header
+with the mark and the language switch, the statement above, the action packed to the bottom, and a
+full-bleed bar. The keyboard-up rule (`max-width: 820px` and `max-height: 620px`) is implemented as a
+media query. The form logic (signal forms, schema, submit path, navigation) is unchanged. The page no
+longer uses `kaff-field` and `kaff-button`; the design's control sizes differ from the kit's, and the
+README gives them for this screen specifically.
+
+**The shell-on-signed-out bug.** `app.html` rendered `<header class="mh">` unconditionally. It was
+written when a signed-out route was meant to wear "the slim brand header", and only CSS hid it, and
+only on desktop when a session existed (`.app:not(.is-bare) .mh`). Signed out, nothing hid it. Fixed at
+the source: the header is now inside `@if (session())`, and `.is-bare` has no header row and no page
+padding, so a signed-out route owns the window. The sign-in screen draws its own brand.
+
+**One refusal sentence, now including a locked account.** The contract (and the README) says wrong
+password, unknown user and locked account read identically. The server still sends `401` and `423`
+with different keys; the screen maps both to `auth.login.refused`. Any other failure (network, 500)
+keeps the server's key, since "check your user name" would be wrong then. An empty or too-short form
+shows the same sentence and sends no request, so the submit button is no longer disabled while the form
+is invalid (a disabled bar would also not match the mockup's idle state).
+
+**Moved test ids.** None removed. New: `sign-in-locale-switch` (the one switch on the screen, in the
+header on a phone). `locale-switch-mobile` now exists only for a signed-in session.
+
+**Strings.** New keys in both catalogues: `auth.login.tagline`, `.subtitle`, `.help`, `.refused`.
+`auth.login.submitting` changed to the mockup's `جارٍ التحقق…` / `Checking…`.
+
+**Not verified.** The keyboard-up rule was checked only at a 390x560 emulated viewport, not on a
+real iOS or Android keyboard (the README says the same).

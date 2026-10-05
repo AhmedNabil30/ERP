@@ -125,8 +125,12 @@
   "auth.login.title": "Sign in",
   "auth.login.username": "User name",
   "auth.login.password": "Password",
+  "auth.login.tagline": "Every pound recorded. Every site tracked.",
+  "auth.login.subtitle": "Use the account the owner created for you.",
+  "auth.login.help": "Forgot your password? Ask the owner to reset it.",
+  "auth.login.refused": "Sign-in failed. Check your user name and password, or contact the owner.",
   "auth.login.submit": "Sign in",
-  "auth.login.submitting": "Signing in…",
+  "auth.login.submitting": "Checking…",
 
   "auth.password.title": "Change password",
   "auth.password.must_change": "You must change your temporary password before continuing.",

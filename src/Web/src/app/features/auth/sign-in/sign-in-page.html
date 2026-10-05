@@ -1,45 +1,95 @@
-<main class="sign-in">
-  <form class="card" (submit)="$event.preventDefault(); onSubmit()">
-    <h1 class="title">{{ i18n.t('auth.login.title') }}</h1>
+<!--
+  The approved sign-in (`.design/v2/team-a/direction-1.html`, README "Layouts and breakpoint").
+  One DOM, two layouts: the 820px breakpoint lives in the CSS. The language switch is the one element
+  that sits on the form side on desktop and in the green header on a phone.
+-->
+<main class="stage" [class.is-en]="i18n.locale() === 'en'">
+  <section class="brand">
+    <img class="logo" src="/brand/kaaf-wordmark.png" width="519" height="155" alt="KAAF" />
+    <p class="claim">{{ i18n.t('auth.login.tagline') }}</p>
+  </section>
 
-    <kaff-field labelKey="auth.login.username" controlId="sign-in-username" [required]="true">
-      <!--
-        [formField] binds value and events both ways. There is no [value] and no (input) handler here
-        on purpose — signal forms own the control, which is what keeps $any out of the template and
-        leaves strictTemplates something it can actually check.
-      -->
-      <input id="sign-in-username" class="input" type="text" autocomplete="username" [formField]="loginForm.userName" />
-    </kaff-field>
+  <section class="side">
+    <!-- Names the language it switches TO, in that language. -->
+    <button
+      type="button"
+      class="lang"
+      data-testid="sign-in-locale-switch"
+      [attr.lang]="otherLocale()"
+      [attr.dir]="otherLocale() === 'ar' ? 'rtl' : 'ltr'"
+      (click)="switchLocale()">
+      {{ i18n.t(otherLocale() === 'ar' ? 'locale.ar' : 'locale.en') }}
+    </button>
 
-    <kaff-field labelKey="auth.login.password" controlId="sign-in-password" [required]="true">
-      <!--
-        The schema carries the only rule: eight characters. No pattern attribute, no strength meter —
-        D-049 ruling 3, and AC-101b-E fails if either appears. Paste stays enabled — never blocked,
-        apple-erp-design §7.3.
-      -->
-      <input
-        id="sign-in-password"
-        class="input"
-        type="password"
-        autocomplete="current-password"
-        [formField]="loginForm.password"
-      />
-    </kaff-field>
+    <div class="formwrap">
+      <form (submit)="$event.preventDefault(); onSubmit()" novalidate>
+        <h1>{{ i18n.t('auth.login.title') }}</h1>
+        <p class="sub">{{ i18n.t('auth.login.subtitle') }}</p>
 
-    <!--
-      One region for every refusal, and it sits between the fields and the button rather than under
-      either input. Placement is itself an answer: a message under the password box says the user name
-      was found, which is the distinction D-065 refuses to make. AC-101b-G checks that a wrong
-      password, an unknown user name and a locked account read identically.
+        <div class="f">
+          <label for="sign-in-username">{{ i18n.t('auth.login.username') }}</label>
+          <!--
+            [formField] binds value and events both ways. There is no [value] and no (input) handler
+            here on purpose — signal forms own the control, which is what keeps $any out of the
+            template and leaves strictTemplates something it can actually check.
+          -->
+          <input
+            id="sign-in-username"
+            type="text"
+            dir="ltr"
+            autocomplete="username"
+            autocapitalize="none"
+            autocorrect="off"
+            spellcheck="false"
+            [formField]="loginForm.userName" />
+        </div>
 
-      role="alert" so a screen reader announces it rather than leaving it to be discovered.
-    -->
-    @if (refusalKey(); as key) {
-      <p class="refusal" role="alert">{{ i18n.t(key) }}</p>
-    }
+        <div class="f">
+          <label for="sign-in-password">{{ i18n.t('auth.login.password') }}</label>
+          <!--
+            The schema carries the only rule: eight characters. No pattern attribute, no strength
+            meter — D-049 ruling 3, and AC-101b-E fails if either appears. Paste stays enabled.
+          -->
+          <input
+            id="sign-in-password"
+            type="password"
+            dir="ltr"
+            autocomplete="current-password"
+            [formField]="loginForm.password" />
+        </div>
 
-    <kaff-button variant="primary" type="submit" [disabled]="!canSubmit()" [busy]="isSubmitting()">
-      {{ i18n.t(isSubmitting() ? 'auth.login.submitting' : 'auth.login.submit') }}
-    </kaff-button>
-  </form>
+        <!--
+          ONE region for every refusal, between the fields and the button, never under an input:
+          placement is itself an answer (D-065). A fixed-height cell, so nothing shifts when a
+          refusal appears. Idle, the same cell holds the owner-reset note; a refusal hides the note
+          and shows the message. Only the refusal is a live region.
+        -->
+        <div class="slot">
+          <p class="note" [class.is-hidden]="refusalKey() !== null">{{ i18n.t('auth.login.help') }}</p>
+          @if (refusalKey(); as key) {
+            <div class="refusal" role="alert" aria-live="assertive">
+              <div class="msg">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 7v6M12 16.5v.5" />
+                </svg>
+                <span>{{ i18n.t(key) }}</span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <button
+          class="go"
+          type="submit"
+          [disabled]="isSubmitting()"
+          [attr.aria-busy]="isSubmitting() ? 'true' : null">
+          @if (isSubmitting()) {
+            <span class="spin" aria-hidden="true"></span>
+          }
+          <span>{{ i18n.t(isSubmitting() ? 'auth.login.submitting' : 'auth.login.submit') }}</span>
+        </button>
+      </form>
+    </div>
+  </section>
 </main>

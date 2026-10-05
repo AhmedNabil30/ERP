@@ -4,11 +4,9 @@ import { Router } from '@angular/router';
 
 import { AuthApi } from '../../../core/auth/auth.api';
 import { AuthService } from '../../../core/auth/auth.service';
-import { I18nService } from '../../../core/i18n/i18n.service';
+import { I18nService, Locale } from '../../../core/i18n/i18n.service';
 import { navPathFor } from '../../../core/navigation/landing';
-import { toProblem } from '../../../core/api/problem-details';
-import { KaffButton } from '../../../shared/kaff-button/kaff-button';
-import { KaffField } from '../../../shared/kaff-field/kaff-field';
+import { KaffProblem, toProblem } from '../../../core/api/problem-details';
 
 /** Karim, D-049 ruling 3. The only rule this form imposes. */
 const MINIMUM_PASSWORD_LENGTH = 8;
@@ -26,6 +24,19 @@ interface Credentials {
  * strength meter is a policy statement wearing a progress bar, and this screen imposes nothing the
  * server does not.
  */
+/**
+ * The one sentence every sign-in refusal reads as. The approved design and its contract: a wrong
+ * password, an unknown user name and a locked account are indistinguishable on screen. The server's
+ * `401` and `423` carry different keys (D-065, D-072 §1); this screen deliberately does not show
+ * them. Anything else (a network failure, a 500) keeps the server's own key, because telling someone
+ * to "check your user name" when the server is down would be a lie.
+ */
+const REFUSED_KEY = 'auth.login.refused';
+
+function refusalKeyFor(problem: KaffProblem): string {
+  return problem.status === 401 || problem.status === 423 ? REFUSED_KEY : problem.messageKey;
+}
+
 const credentials = schema<Credentials>((path) => {
   required(path.userName);
   required(path.password);
@@ -37,13 +48,13 @@ const credentials = schema<Credentials>((path) => {
  *
  * **Every refusal reads the same.** A wrong password, a user name nobody holds, a `Role.Client`
  * credential at this origin and a subcontractor's all come back `401` with one `messageKey`
- * (decisions.md D-065, D-072 §1). This component renders the key the server sent and derives nothing
- * from the status code beyond it. Nabil's reason, on the subcontractor case: returning a specific
+ * (decisions.md D-065, D-072 §1). Nabil's reason, on the subcontractor case: returning a specific
  * `errors.auth.role_cannot_log_in` "is explicitly telling the attacker: this account exists and
  * belongs to a subcontractor. That is a security breach." A friendlier message here re-opens the
- * account enumeration the whole API design closes — so there is no `switch` on `status` in this file
- * and none may be added. `423` is the one other shape, and only when the submitted password was
- * correct, so it names no account that a correct password did not already name.
+ * account enumeration the whole API design closes. The approved design goes one step further and
+ * shows the locked account (`423`) with the same sentence too, so `refusalKeyFor` maps both `401` and
+ * `423` to one local key and renders the server's own key only for failures that are not a refusal
+ * (a network error, a 500).
  *
  * **Nothing here mentions the client portal.** Karim ruled it "a completely isolated interface"
  * (D-051 Q33): a client signs in at a different host and never learns this address exists. There is
@@ -55,7 +66,7 @@ const credentials = schema<Credentials>((path) => {
  */
 @Component({
   selector: 'kaff-sign-in-page',
-  imports: [FormField, KaffField, KaffButton],
+  imports: [FormField],
   templateUrl: './sign-in-page.html',
   styleUrl: './sign-in-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -85,12 +96,22 @@ export class SignInPage {
 
   protected readonly isSubmitting = computed(() => this.loginForm().submitting());
 
-  protected readonly canSubmit = computed(
-    () => this.loginForm().valid() && !this.loginForm().submitting(),
-  );
+  /** The language button names the language it switches TO, in that language. */
+  protected readonly otherLocale = computed<Locale>(() => (this.i18n.locale() === 'ar' ? 'en' : 'ar'));
+
+  protected async switchLocale(): Promise<void> {
+    await this.i18n.use(this.otherLocale());
+  }
 
   protected async onSubmit(): Promise<void> {
     this.refusal.set(null);
+
+    // Too short or empty: no request goes out, and the same one refusal answers it, so the screen
+    // never grows a second message (the design's contract) and never hides a dead button.
+    if (!this.loginForm().valid()) {
+      this.refusal.set(REFUSED_KEY);
+      return;
+    }
 
     await submit(this.loginForm, async (field) => {
       const { userName, password } = field().value();
@@ -98,8 +119,8 @@ export class SignInPage {
       try {
         await this.api.signIn(userName.trim(), password);
       } catch (error) {
-        // One branch for every refusal. The key comes from the server; this file does not choose it.
-        this.refusal.set(toProblem(error).messageKey);
+        // One branch for every refusal.
+        this.refusal.set(refusalKeyFor(toProblem(error)));
         this.model.update((current) => ({ ...current, password: '' }));
         return undefined;
       }

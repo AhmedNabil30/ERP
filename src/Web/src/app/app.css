@@ -121,6 +121,12 @@
   padding: 20px 16px;
 }
 
+/* A signed-out route (sign-in) owns the whole frame: no page padding, and it fills the height. */
+.is-bare .page {
+  display: flex;
+  padding: 0;
+}
+
 /* KAFF-923's slot, until each screen builds its own page header. */
 .page-actions {
   display: flex;
@@ -404,13 +410,13 @@
     --side: 76px;
   }
 
-  /* Signed out or still resolving: no sidebar, so the slim brand header sits above the content. */
+  /* Signed out or still resolving: no sidebar and no header. The routed screen owns the whole
+     window (the sign-in screen draws its own brand panel). */
   .app.is-bare {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr);
   }
 
-  .app:not(.is-bare) .mh,
+  .mh,
   .abar,
   .scrim,
   .sheet {
@@ -425,11 +431,14 @@
 
   .is-bare .main {
     grid-column: 1;
-    grid-row: 2;
   }
 
   .page {
     padding: 28px 32px 32px;
+  }
+
+  .is-bare .page {
+    padding: 0;
   }
 
   .page-actions {
