@@ -12,7 +12,12 @@
   "shell.nav.expand": "توسيع القائمة",
   "shell.account.menu": "قائمة الحساب",
   "shell.account.sign_out": "تسجيل الخروج",
-  "app.tagline": "مقاولات وتشطيبات",
+  "shell.nav.main": "التنقل الرئيسي",
+  "shell.nav.sheet": "الشاشات",
+  "shell.theme.toggle": "الوضع الفاتح أو الداكن",
+  "shell.theme.label": "الوضع",
+  "locale.short.ar": "ع",
+  "locale.short.en": "EN",
   "nav.group.core": "البيانات الأساسية",
   "nav.group.admin": "الإدارة",
 

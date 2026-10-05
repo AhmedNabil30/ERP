@@ -12,7 +12,12 @@
   "shell.nav.expand": "Expand the menu",
   "shell.account.menu": "Account menu",
   "shell.account.sign_out": "Sign out",
-  "app.tagline": "Construction and finishing",
+  "shell.nav.main": "Main navigation",
+  "shell.nav.sheet": "Screens",
+  "shell.theme.toggle": "Light or dark mode",
+  "shell.theme.label": "Theme",
+  "locale.short.ar": "ع",
+  "locale.short.en": "EN",
   "nav.group.core": "Core data",
   "nav.group.admin": "Administration",
 

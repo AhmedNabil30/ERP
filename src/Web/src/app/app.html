@@ -1,207 +1,284 @@
-<div class="shell">
-  @if (showStaffNav() && isNavOpen()) {
-    <button
-      type="button"
-      class="nav-backdrop"
-      data-testid="nav-backdrop"
-      [attr.aria-label]="i18n.t('shell.nav.toggle')"
-      (click)="closeNav()">
-    </button>
+<!--
+  One stroke family for every destination (24px grid, 1.8px stroke, round caps — `layout.html`'s
+  `svg.i`). Each destination has one fixed icon, chosen by the `icon` identifier `nav-rows.ts` carries.
+-->
+<ng-template #icon let-name>
+  <svg class="i" viewBox="0 0 24 24" aria-hidden="true">
+    @switch (name) {
+      @case ('projects') {
+        <path d="M4 21V7l8-4 8 4v14M9 21v-6h6v6M8 10h.01M12 10h.01M16 10h.01" />
+      }
+      @case ('catalogue') {
+        <path d="M3 11V4h7l11 11-7 7L3 11zM7.5 7.5h.01" />
+      }
+      @case ('babs') {
+        <path d="M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5" />
+      }
+      @case ('employees') {
+        <path
+          d="M16 20v-1.5a3.5 3.5 0 00-3.5-3.5h-5A3.5 3.5 0 004 18.5V20M10 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM20 20v-1.5a3.5 3.5 0 00-2.6-3.4M15.5 4.2a3.5 3.5 0 010 6.6" />
+      }
+      @case ('subcontractors') {
+        <path
+          d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.8-3.8a6 6 0 01-7.9 7.9l-6.9 6.9a2.1 2.1 0 01-3-3l6.9-6.9a6 6 0 017.9-7.9l-3.8 3.8z" />
+      }
+      @case ('suppliers') {
+        <path d="M3 6h11v10H3zM14 9h4l3 3v4h-7zM7 19a2 2 0 100-4 2 2 0 000 4zM17 19a2 2 0 100-4 2 2 0 000 4z" />
+      }
+      @case ('clients') {
+        <path d="M3 8h18v12H3zM8 8V5h8v3M3 13h18" />
+      }
+      @case ('users') {
+        <path
+          d="M12 3l8 3v6c0 4.5-3.2 7.6-8 9-4.8-1.4-8-4.5-8-9V6l8-3zM12 11a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM7.5 17c.8-2 2.4-3 4.5-3s3.7 1 4.5 3" />
+      }
+      @case ('departments') {
+        <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" />
+      }
+      @case ('audit') {
+        <path
+          d="M9 4h6v3H9zM6 5h-.5A1.5 1.5 0 004 6.5v13A1.5 1.5 0 005.5 21h13a1.5 1.5 0 001.5-1.5v-13A1.5 1.5 0 0018.5 5H18M8 12h8M8 16h5" />
+      }
+      @case ('moon') {
+        <path d="M21 13.5A8.5 8.5 0 1110.5 3a7 7 0 0010.5 10.5z" />
+      }
+      @case ('sun') {
+        <path d="M12 16a4 4 0 100-8 4 4 0 000 8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+      }
+      @case ('menu') {
+        <path d="M4 7h16M4 12h16M4 17h16" />
+      }
+      @case ('close') {
+        <path d="M6 6l12 12M18 6L6 18" />
+      }
+      @case ('signout') {
+        <path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9" />
+      }
+      @case ('chevron') {
+        <path d="M15 6l-6 6 6 6" />
+      }
+    }
+  </svg>
+</ng-template>
+
+<!--
+  The destination rows, grouped. Rendered twice from one template: in the desktop sidebar, and in the
+  phone's bottom sheet. `navGroups()` is `navGroupsFor`'s output, already permission-filtered, so a row
+  the session cannot reach is not in the DOM at all (`AC-215-C`) and an empty group has no heading
+  (`AC-922-B`). The template names no path or permission of its own.
+-->
+<ng-template #rows>
+  @for (group of navGroups(); track group.key) {
+    <div class="grp">
+      <span class="grp-h">{{ i18n.t(group.labelKey) }}</span>
+      @for (row of group.rows; track row.path) {
+        <a
+          class="row"
+          [routerLink]="row.path"
+          routerLinkActive="is-active"
+          ariaCurrentWhenActive="page"
+          (click)="closeNav()"
+          (mouseenter)="showTip($event, row.labelKey)"
+          (mouseleave)="hideTip()"
+          (focus)="showTip($event, row.labelKey)"
+          (blur)="hideTip()">
+          <ng-container [ngTemplateOutlet]="icon" [ngTemplateOutletContext]="{ $implicit: row.icon }" />
+          <span class="lbl">{{ i18n.t(row.labelKey) }}</span>
+        </a>
+      }
+    </div>
   }
+</ng-template>
+
+<div
+  class="app"
+  [class.is-rail]="isRail()"
+  [class.is-bare]="!session()"
+  [attr.data-sheet]="isNavOpen() ? '1' : null">
+  <!--
+    The application name, always present and always announced, in every session state. There is no top
+    bar to carry it any more (the sidebar and the phone header both show the wordmark image), and
+    `data-testid="app-title"` is what the E2E smoke tests wait on.
+  -->
+  <span class="sr-only" data-testid="app-title">{{ i18n.t('app.name') }}</span>
 
   @if (session(); as session) {
-    <!--
-      rule 1: side navigation at inline-start on desktop, a drawer sliding in from the right (RTL's
-      inline-start) at 390px. `.side-nav.is-drawer`'s CSS does the actual positioning — the drawer
-      treatment applies only while `showStaffNav()` holds, since that is the only state a toggle button
-      exists to open it from (KAFF-922). `navRows()`/`navGroups()` (KAFF-215, KAFF-922) supply every row
-      the session's permission set reaches, grouped by `row.group`; `routerLinkActive` marks whichever
-      row the router is currently under, including a child route such as `/catalogue/new` (`AC-215-F`),
-      natively rather than by hand-tracking the URL.
+    <aside class="side" id="side-nav" data-testid="side-nav" [attr.aria-label]="i18n.t('shell.nav.main')">
+      <div class="side-top">
+        <img class="wordmark" src="/brand/kaaf-wordmark.png" width="519" height="155" alt="KAAF" />
 
-      KAFF-922: this element's own gate is `session()`, not `showStaffNav()` — the account block
-      (`data-testid="account-menu"`, moved here from the header) must keep rendering during a forced
-      password-change screen, where `showStaffNav()` is false but `AC-125-D` still requires sign-out to
-      stay reachable. Only the brand row and the nav groups are conditioned on `showStaffNav()`; the
-      account block below is not.
-    -->
-    <nav
-      id="side-nav"
-      class="side-nav"
-      [class.is-drawer]="showStaffNav()"
-      [class.is-open]="isNavOpen()"
-      [class.is-collapsed]="isNavCollapsed()"
-      data-testid="side-nav">
-      @if (showStaffNav()) {
-        <div class="side-nav-brand">
-          <div class="brand-mark" aria-hidden="true"><bdi dir="ltr" translate="no">K</bdi></div>
-          <div class="brand-text">
-            <bdi dir="ltr" translate="no" class="brand-word">KAAF</bdi>
-            <span class="brand-tagline">{{ i18n.t('app.tagline') }}</span>
-          </div>
-
-          <!--
-            The desktop rail toggle, and it lives here rather than in `.app-header` on purpose: the
-            header already carries the phone drawer's hamburger (`data-testid="nav-toggle"` below), and
-            two hamburgers on one screen get clicked for each other. CSS hides this one below 641px,
-            where the drawer is the only correct mechanism.
-          -->
+        @if (showStaffNav()) {
+          <!-- The rail toggle. The chevron points at the edge the sidebar collapses into and reverses
+               when it is a rail (`app.css`). -->
           <button
             type="button"
-            class="nav-collapse"
+            class="coll"
             data-testid="nav-collapse"
             aria-controls="side-nav"
-            [attr.aria-expanded]="!isNavCollapsed()"
-            [attr.aria-label]="i18n.t(isNavCollapsed() ? 'shell.nav.expand' : 'shell.nav.collapse')"
+            [attr.aria-expanded]="!isRail()"
+            [attr.aria-label]="i18n.t(isRail() ? 'shell.nav.expand' : 'shell.nav.collapse')"
             (click)="toggleNavCollapsed()">
-            <span aria-hidden="true">«</span>
+            <svg class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+          </button>
+        }
+      </div>
+
+      @if (showStaffNav()) {
+        <nav class="nav" [attr.aria-label]="i18n.t('shell.nav.sheet')" (scroll)="hideTip()">
+          <ng-container [ngTemplateOutlet]="rows" />
+        </nav>
+      } @else {
+        <div class="nav"></div>
+      }
+
+      <div class="side-foot" role="group" data-testid="account-menu" [attr.aria-label]="i18n.t('shell.account.menu')">
+        <div class="who">
+          <div class="av" aria-hidden="true">{{ initialFor(session.displayName) }}</div>
+          <div class="who-text">
+            <b data-testid="account-name">{{ session.displayName }}</b>
+            <span>{{ i18n.t(roleKey(session.role)) }}</span>
+          </div>
+        </div>
+
+        <div class="ctl">
+          <!-- Names the language it switches TO, in that language; the rail shows the short form. -->
+          <button
+            type="button"
+            data-testid="locale-switch"
+            [attr.lang]="otherLocale()"
+            [attr.dir]="otherLocale() === 'ar' ? 'rtl' : 'ltr'"
+            (click)="switchLocale()">
+            <span class="t">{{ i18n.t(otherLocale() === 'ar' ? 'locale.ar' : 'locale.en') }}</span>
+            <span class="short" aria-hidden="true">{{
+              i18n.t(otherLocale() === 'ar' ? 'locale.short.ar' : 'locale.short.en')
+            }}</span>
+          </button>
+
+          <button
+            type="button"
+            data-testid="theme-toggle"
+            [attr.aria-pressed]="theme.isDark()"
+            [attr.aria-label]="i18n.t('shell.theme.toggle')"
+            (click)="theme.toggle()">
+            <ng-container [ngTemplateOutlet]="icon" [ngTemplateOutletContext]="{ $implicit: theme.isDark() ? 'sun' : 'moon' }" />
+            <span class="t">{{ i18n.t('shell.theme.label') }}</span>
           </button>
         </div>
 
-        @for (group of navGroups(); track group.key) {
-          <div class="nav-group">
-            <span class="nav-group-label">{{ i18n.t(group.labelKey) }}</span>
-
-            @for (row of group.rows; track row.path) {
-              <a
-                class="nav-item"
-                routerLinkActive="is-active"
-                [routerLink]="row.path"
-                [attr.title]="isNavCollapsed() ? i18n.t(row.labelKey) : null"
-                (click)="closeNav()">
-                <svg
-                  class="nav-icon"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.6"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true">
-                  @switch (row.icon) {
-                    @case ('projects') {
-                      <path d="M4 20V8l6-4 6 4v12" />
-                      <path d="M16 20V11h4v9" />
-                      <path d="M8 20v-5h4v5" />
-                    }
-                    @case ('catalogue') {
-                      <path d="M4 6h16M4 12h16M4 18h10" />
-                    }
-                    @case ('babs') {
-                      <path d="M12 4v16M6 9h12M8 15h8" />
-                    }
-                    @case ('employees') {
-                      <circle cx="12" cy="8" r="3.2" />
-                      <path d="M5.5 19a6.5 6.5 0 0 1 13 0" />
-                    }
-                    @case ('subcontractors') {
-                      <path d="M4 20V9l8-5 8 5v11" />
-                      <path d="M10 20v-6h4v6" />
-                    }
-                    @case ('suppliers') {
-                      <path d="M3 8h13v9H3z" />
-                      <path d="M16 11h3.5L21 14v3h-5" />
-                      <circle cx="7" cy="18" r="1.6" />
-                      <circle cx="17.5" cy="18" r="1.6" />
-                    }
-                    @case ('clients') {
-                      <path d="M5 4h10l4 4v12H5z" />
-                      <path d="M15 4v4h4" />
-                      <path d="M9 13h6M9 17h4" />
-                    }
-                    @case ('users') {
-                      <circle cx="9" cy="9" r="3" />
-                      <path d="M3 19a6 6 0 0 1 12 0" />
-                      <path d="M16 7h5M16 11h5M16 15h3" />
-                    }
-                    @case ('departments') {
-                      <path d="M4 21V7l8-4 8 4v14" />
-                      <path d="M9 21v-6h6v6" />
-                      <path d="M9 11h.01M15 11h.01M9 15h.01M15 15h.01" />
-                    }
-                    @case ('audit') {
-                      <path d="M12 3v4M12 21v-2" />
-                      <circle cx="12" cy="12" r="5" />
-                      <path d="M20 12h-2M6 12H4" />
-                    }
-                  }
-                </svg>
-                <span class="nav-label">{{ i18n.t(row.labelKey) }}</span></a>
-            }
-          </div>
-        }
-      }
-
-      <div
-        class="side-nav-account"
-        data-testid="account-menu"
-        [attr.aria-label]="i18n.t('shell.account.menu')">
-        <div class="account-summary">
-          <div class="account-avatar" aria-hidden="true">{{ initialsFor(session.displayName) }}</div>
-          <div class="account-details">
-            <span class="account-name" data-testid="account-name">{{ session.displayName }}</span>
-            <span class="account-role">{{ i18n.t(roleKey(session.role)) }}</span>
-          </div>
-        </div>
-        <button type="button" class="sign-out" data-testid="sign-out" (click)="signOut()">
-          {{ i18n.t('shell.account.sign_out') }}
+        <!-- The README's sidebar footer names language and theme only. Sign-out is a product
+             requirement (AC-125-D, AC-125-E), so it sits under them as a quiet full-width button. -->
+        <button type="button" class="out" data-testid="sign-out" (click)="signOut()">
+          <ng-container [ngTemplateOutlet]="icon" [ngTemplateOutletContext]="{ $implicit: 'signout' }" />
+          <span class="t">{{ i18n.t('shell.account.sign_out') }}</span>
         </button>
       </div>
-    </nav>
+    </aside>
   }
 
-  <div class="shell-main">
-    <header class="app-header">
-      @if (showStaffNav()) {
-        <button
-          type="button"
-          class="nav-toggle"
-          data-testid="nav-toggle"
-          [attr.aria-expanded]="isNavOpen()"
-          [attr.aria-label]="i18n.t('shell.nav.toggle')"
-          (click)="toggleNav()">
-          <span aria-hidden="true">☰</span>
-        </button>
-      }
+  <!-- The phone's slim green header; on desktop it shows only when there is no sidebar (signed out,
+       or the session is still resolving). -->
+  <header class="mh">
+    <img class="wordmark" src="/brand/kaaf-wordmark.png" width="519" height="155" alt="KAAF" />
+    <button
+      type="button"
+      class="lang"
+      data-testid="locale-switch-mobile"
+      [attr.lang]="otherLocale()"
+      [attr.dir]="otherLocale() === 'ar' ? 'rtl' : 'ltr'"
+      (click)="switchLocale()">
+      {{ i18n.t(otherLocale() === 'ar' ? 'locale.ar' : 'locale.en') }}
+    </button>
+  </header>
 
-      <span class="app-title" data-testid="app-title">{{ i18n.t('app.name') }}</span>
-
-      @if (sectionLabelKey(); as key) {
-        <span class="app-section-label" data-testid="app-section-label">{{ i18n.t(key) }}</span>
-      }
-
-      <div class="header-end">
-        <!-- KAFF-923: the search/secondary/primary action slot (`Main.dc.html` 97-118). Empty until
-             a feature page sets `headerActions.template()` — wiring an actual screen's controls
-             into it is KAFF-924's job, not this one's. -->
-        <ng-container [ngTemplateOutlet]="headerActions.template()" />
-
-        <kaff-segmented-filter
-          [options]="localeOptions"
-          [value]="i18n.locale()"
-          (valueChange)="switchLocale($event)"
-          ariaLabelKey="app.language"
-          testIdPrefix="locale"
-          [quiet]="true" />
-      </div>
-    </header>
-
+  <main class="main">
     @if (!resolved()) {
       <!--
         AC-125-A. Nothing else may render here — not the sign-in form, not the staff chrome, not an
-        empty shell. The header above already carries the app name and the locale switch this state
-        requires; this is only the progress indicator.
+        empty shell. The brand header already carries the name and the language switch; this is only
+        the progress indicator.
       -->
-      <main class="boot" data-testid="boot-surface">
+      <div class="boot" data-testid="boot-surface">
         <p class="boot-message" role="status">{{ i18n.t('shell.boot.loading') }}</p>
         <div class="boot-progress" role="progressbar" [attr.aria-label]="i18n.t('shell.boot.loading')"></div>
-      </main>
+      </div>
     } @else {
-      <main class="app-main">
+      <!--
+        KAFF-923: the slot six list screens project their search and primary action into
+        (`HeaderActionsService`). The new shell has no top bar to host it, so it renders as a strip at
+        the top of the content frame until each screen builds its own page header; then the service
+        can go.
+      -->
+      @if (headerActions.template(); as actions) {
+        <div class="page-actions">
+          <ng-container [ngTemplateOutlet]="actions" />
+        </div>
+      }
+      <div class="page">
         <router-outlet />
-      </main>
+      </div>
     }
-  </div>
+  </main>
+
+  @if (session()) {
+    <!-- Phone action bar: the menu button at the start edge. A screen's own primary action joins it
+         here when that screen is redesigned. -->
+    <div class="abar">
+      <button
+        #menuButton
+        type="button"
+        class="menu"
+        data-testid="nav-toggle"
+        aria-haspopup="dialog"
+        [attr.aria-expanded]="isNavOpen()"
+        (click)="openNav()">
+        <ng-container [ngTemplateOutlet]="icon" [ngTemplateOutletContext]="{ $implicit: 'menu' }" />
+        <span>{{ i18n.t('shell.nav.toggle') }}</span>
+      </button>
+    </div>
+  }
+
+  @if (isNavOpen() && session(); as session) {
+    <div class="scrim" data-testid="nav-backdrop" aria-hidden="true" (click)="closeNav()"></div>
+    <div
+      class="sheet"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="i18n.t('shell.nav.sheet')"
+      (keydown)="trapTab($event)">
+      <div class="grab" aria-hidden="true"></div>
+      <div class="sh-top">
+        <div class="who">
+          <div class="av" aria-hidden="true">{{ initialFor(session.displayName) }}</div>
+          <div class="who-text">
+            <b>{{ session.displayName }}</b>
+            <span>{{ i18n.t(roleKey(session.role)) }}</span>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="sh-btn"
+          [attr.aria-pressed]="theme.isDark()"
+          [attr.aria-label]="i18n.t('shell.theme.toggle')"
+          (click)="theme.toggle()">
+          <ng-container [ngTemplateOutlet]="icon" [ngTemplateOutletContext]="{ $implicit: theme.isDark() ? 'sun' : 'moon' }" />
+        </button>
+        <button #sheetClose type="button" class="sh-btn" [attr.aria-label]="i18n.t('action.close')" (click)="closeNav()">
+          <ng-container [ngTemplateOutlet]="icon" [ngTemplateOutletContext]="{ $implicit: 'close' }" />
+        </button>
+      </div>
+      <nav class="sh-nav" [attr.aria-label]="i18n.t('shell.nav.sheet')">
+        @if (showStaffNav()) {
+          <ng-container [ngTemplateOutlet]="rows" />
+        }
+        <button type="button" class="out" (click)="signOut()">
+          <ng-container [ngTemplateOutlet]="icon" [ngTemplateOutletContext]="{ $implicit: 'signout' }" />
+          <span>{{ i18n.t('shell.account.sign_out') }}</span>
+        </button>
+      </nav>
+    </div>
+  }
+
+  @if (tip(); as tip) {
+    <div class="tip" role="presentation" [style.inset-block-start.px]="tip.top">{{ i18n.t(tip.labelKey) }}</div>
+  }
 </div>
