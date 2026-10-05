@@ -1,40 +1,49 @@
-/* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). */
+/*
+  Badge (README "Links, back link, badge, avatar"): 24px high, `--radius`, a 1.5px border, tabular
+  figures. A count or a neutral tag; outlined or filled for emphasis. A badge is NEVER a status — status
+  always uses the status pill.
+
+  Tone map (the new language has no accent hue, so emphasis is outlined vs filled, never colour):
+  neutral = outlined, accent = filled, brand = outlined on the head tone, warning = a dashed outline on
+  the notice tone (the shape, not a hue, is what says "caution").
+*/
 
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 1px var(--space-2);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  font-weight: 600;
+  justify-content: center;
+  min-inline-size: 24px;
+  block-size: 24px;
+  padding-inline: var(--space-2);
+  border: 1.5px solid var(--fieldline);
+  border-radius: var(--radius);
+  font: 600 var(--text-xs) / 1 var(--body);
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
 .tone-neutral {
-  color: var(--color-muted);
-  border: 1px solid var(--color-border-strong);
+  color: var(--ink);
 }
 
-/* Tinted from the interactive token via color-mix, not a literal — apple-erp-design §8's zero
-   colour literal rule applies to a function of tokens the same as to a bare value. */
 .tone-accent {
-  color: var(--color-interactive);
-  background: color-mix(in srgb, var(--color-interactive) 14%, var(--color-background));
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+
+.tone-brand {
+  background: var(--head);
+  color: var(--ink);
 }
 
 .tone-warning {
-  color: var(--color-warning);
-  background: color-mix(in srgb, var(--color-warning) 14%, var(--color-background));
+  background: var(--note-bg);
+  color: var(--ink);
+  border-style: dashed;
 }
 
-/* The باب margin-percentage pill (`Main.dc.html` 148) — tinted from `--color-brand` the same way the
-   other tones tint from their own token (KAFF-924). */
-.tone-brand {
-  color: var(--color-interactive);
-  background: color-mix(in srgb, var(--color-brand) 14%, var(--color-background));
-}
-
+/* `pill` only widens the padding: the language has one radius, so nothing is fully round. */
 .badge--pill {
-  border-radius: 999px;
   padding-inline: var(--space-3);
 }

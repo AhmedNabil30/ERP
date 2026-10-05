@@ -11,7 +11,14 @@
 >⋯</button>
 
 @if (open()) {
-  <div class="menu" role="menu" [attr.aria-label]="i18n.t(triggerLabelKey())">
+  <div
+    class="menu"
+    role="menu"
+    [attr.aria-label]="i18n.t(triggerLabelKey())"
+    [style.inset-inline-end.px]="placement().end"
+    [style.inset-block-start.px]="placement().top"
+    [style.inset-block-end.px]="placement().bottom"
+  >
     @for (item of items(); track item.action; let i = $index) {
       <button
         #menuItemRef

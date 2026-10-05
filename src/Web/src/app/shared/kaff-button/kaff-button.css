@@ -1,76 +1,112 @@
-/* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). */
+/*
+  Buttons (README "Buttons"). Logical properties only; RTL is the primary direction.
+
+  Default 48px high, Noto Kufi Arabic 700 1rem, 22px side padding, a 2px border ALWAYS (transparent where
+  there is no visible border) so swapping variants never shifts layout. A caller may set
+  `--kaff-button-size` on an ancestor to bring every button under it to the 44px compact size (the
+  global rule in `styles.css` does this inside a table row), and `--kaff-button-padding-inline` to
+  narrow the horizontal padding. The 44px touch floor is never undercut.
+
+  Variant map: primary = Primary, secondary = Secondary, ghost = Quiet, danger-outline = Destructive
+  trigger, danger = Destructive confirm (the only loud red in the product, only ever inside a
+  confirmation).
+*/
 
 .kaff-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
-  min-block-size: var(--tap-target);
-  /* KAFF-929 finding 6: a row-level caller (e.g. catalogue-list-page.css's `.row-trailing`) may set
-     `--kaff-button-padding-inline` on the host to bring a row action down to a quieter width — the
-     44px tap-target floor is untouched, this only narrows the horizontal padding. Every other caller
-     keeps the default. */
-  padding-inline: var(--kaff-button-padding-inline, var(--space-5));
-  border-radius: var(--radius-md);
-  font: inherit;
-  font-weight: 600;
+  gap: 10px;
+  min-block-size: var(--kaff-button-size, 3rem);
+  padding-inline: var(--kaff-button-padding-inline, 22px);
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  background: var(--btn);
+  color: var(--btn-ink);
+  font: 700 var(--text-md) / 1 var(--display);
+  white-space: nowrap;
   cursor: pointer;
-  border: 1px solid transparent;
 }
 
+.kaff-button:hover:not(:disabled) {
+  background: var(--btn-h);
+}
+
+.kaff-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Disabled: 45 percent and not-allowed. A disabled control the user may need explained carries its
+   reason as text next to it, because opacity explains nothing. */
 .kaff-button:disabled {
+  opacity: 0.45;
   cursor: not-allowed;
-  opacity: 0.55;
 }
 
-/* aria-busy keeps the label visible — no spinner replaces it, so the button does not change
-   width mid-tap (ux/components.md §7). */
+/* Busy: the same size, an 18px spinner in the control, the label as the caller wrote it (the
+   progressive form), clicks ignored by `[disabled]`. Reduced motion slows the spinner, never removes it. */
 .kaff-button[aria-busy='true'] {
-  opacity: 0.75;
+  cursor: progress;
+  opacity: 0.9;
+}
+
+.kaff-button[aria-busy='true']::before {
+  content: '';
+  inline-size: 18px;
+  block-size: 18px;
+  border: 3px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-block-start-color: currentColor;
+  border-radius: 50%;
+  animation: kaff-button-spin 0.8s linear infinite;
+}
+
+@keyframes kaff-button-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .variant-primary {
-  background: var(--color-interactive);
-  color: var(--color-background);
-}
-
-.variant-primary:not(:disabled):hover {
-  background: var(--color-interactive-hover);
+  background: var(--btn);
+  color: var(--btn-ink);
 }
 
 .variant-secondary {
-  background: var(--color-surface);
-  color: var(--color-text);
-  border-color: var(--color-border);
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--fieldline);
 }
 
-.variant-secondary:not(:disabled):hover {
-  border-color: var(--color-border-strong);
+.variant-secondary:hover:not(:disabled),
+.variant-ghost:hover:not(:disabled) {
+  background: var(--hover);
 }
 
-.variant-danger {
-  background: var(--color-danger);
-  color: var(--color-background);
+/* Quiet: a third-level choice, no border. */
+.variant-ghost {
+  background: transparent;
+  color: var(--ink);
 }
 
-/* D-174: a destructive TRIGGER — reversible, must not dominate a form — is danger text over a
-   transparent background with a danger border. The filled `.variant-danger` stays for the
+/* D-174: a destructive TRIGGER — reversible, must not dominate a form — is err-ink text over a
+   transparent background with a 2px err-ink border. The filled `.variant-danger` stays for the
    irreversible CONFIRM inside an inline confirmation. */
 .variant-danger-outline {
   background: transparent;
-  color: var(--color-danger);
-  border-color: var(--color-danger);
+  color: var(--err-ink);
+  border-color: var(--err-ink);
 }
 
-.variant-danger-outline:not(:disabled):hover {
-  background: var(--color-surface);
+.kaff-button.variant-danger-outline:hover:not(:disabled) {
+  background: var(--err-bg);
 }
 
-.variant-ghost {
-  background: transparent;
-  color: var(--color-interactive);
+.variant-danger {
+  background: var(--danger);
+  color: var(--danger-ink);
+  border-color: var(--danger);
 }
 
-.variant-ghost:not(:disabled):hover {
-  background: var(--color-surface);
+.kaff-button.variant-danger:hover:not(:disabled) {
+  background: var(--dh);
 }

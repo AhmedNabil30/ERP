@@ -1,38 +1,45 @@
-/* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). */
+/*
+  The list states (README "Lists and tables" — "the four list states"). They must read differently:
+
+  - loading: skeleton rows at exactly the real row height, no spinner and no overlay;
+  - empty / filtered-empty: a title, one sentence and the caller's projected action. The empty box is
+    solid; the filtered-empty box has no fill, so it reads as part of the list;
+  - refusal: the refusal banner (a 6px start bar in the error colour, error fill, error text).
+*/
 
 .kaff-state {
   display: flex;
   flex-direction: column;
-  padding: var(--space-6);
+  padding: var(--space-5) var(--space-4);
 }
 
 .skeleton {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 1px;
 }
 
 .skeleton-row {
-  block-size: var(--tap-target);
-  border-radius: var(--radius-sm);
-  background: var(--color-border);
-  animation: kaff-state-pulse 1.4s ease-in-out infinite;
+  block-size: var(--row-target);
+  border-radius: 4px; /* skeleton bars are a structural sliver, not a surface (README) */
+  background: linear-gradient(90deg, var(--line), var(--hover), var(--line));
+  background-size: 200% 100%;
+  animation: kaff-state-shimmer 1.4s linear infinite;
 }
 
-@keyframes kaff-state-pulse {
-  0%,
-  100% {
-    opacity: 0.4;
+@keyframes kaff-state-shimmer {
+  from {
+    background-position: 200% 0;
   }
-  50% {
-    opacity: 0.8;
+
+  to {
+    background-position: -200% 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .skeleton-row {
     animation: none;
-    opacity: 0.6;
   }
 }
 
@@ -41,21 +48,45 @@
   flex-direction: column;
   align-items: center;
   gap: var(--space-2);
+  padding: var(--space-5) var(--space-4);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
   text-align: center;
-  color: var(--color-muted);
+  color: var(--dim);
+}
+
+/* No results after a filter or search: no fill, so it reads as part of the list. */
+.kaff-state[data-mode='filtered-empty'] .notice {
+  background: transparent;
 }
 
 .notice .title {
   margin: 0;
-  font-weight: 600;
-  color: var(--color-text);
+  font: 700 1.125rem / 1.4 var(--display);
+  color: var(--ink);
 }
 
 .notice .body {
   margin: 0;
+  max-inline-size: 34ch;
+  font-size: var(--text-sm);
+}
+
+/* The refusal banner: a bar on the start edge, an error fill, error text. It says what failed and what
+   to do; it never apologises. */
+.notice--refusal {
+  align-items: flex-start;
+  border: 0;
+  border-inline-start: 6px solid var(--err-bar);
+  background: var(--err-bg);
+  color: var(--err-ink);
+  text-align: start;
+  font-weight: 500;
 }
 
 .notice--refusal .title,
-.notice--refusal {
-  color: var(--color-danger);
+.notice--refusal .body {
+  color: var(--err-ink);
+  max-inline-size: none;
 }

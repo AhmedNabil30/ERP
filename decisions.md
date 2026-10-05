@@ -14719,3 +14719,109 @@ Ruled, as presentation with no business rule attached, so it went to neither Kar
 The trigger is reversible and must not dominate a form; the confirm is the irreversible act and must.
 Built as `KAFF-935`, which is the only story permitted to change a kit component, and the reason
 `KAFF-933` could not close at `READY`.
+
+### D-175 · Frontend — the KAAF design language: foundation, shell and kit rebuilt; per-screen CSS deliberately left old · 2026-10-06
+
+The client rejected the previous UI. A new language was designed and approved screen by screen
+(`.design/v2/team-a/README.md`, `layout.html`, `components.html`; committed as `3130260`). This pass
+installs it as three layers and touches no feature screen. **The README is the source of truth; where
+this file and the README disagree, the README wins.** The `apple-erp-design` skill encodes the rejected
+direction and is not to be followed for new work.
+
+**1. Foundation (`src/Web/src/styles.css`).**
+- Tokens use the README names (`--g900 --g800 --g300 --c100 --c200 --bg --surface --head --ink --dim
+  --line --hover --btn --btn-h --btn-ink --field --fieldline --focus --err-* --danger* --dh --note-bg
+  --ok-* --st-* --scrim --shadow --radius --display --body`). Light and dark are ONE definition per token
+  through `light-dark()`; the theme is `color-scheme`, which follows the system until the user toggles
+  (see 2). No stylesheet outside `styles.css` may hold a colour literal.
+- One radius, `--radius: 6px`. Only overlays have a shadow (`--shadow`). Focus is 3px with 3px offset.
+- **Legacy aliases.** The 25 feature screens still read `--color-*`, `--radius-sm/md/lg` and
+  `--elevation-1/2`. They stay as a clearly marked alias block mapped onto the new tokens, so every screen
+  inherits the new palette, one radius and no card shadows without a per-screen edit. `--color-warning`
+  maps to a neutral notice (the language has no amber). **Each alias is deleted when the last screen that
+  reads it is converted** (`grep -r "var(--color-" src/Web/src/app`).
+- **Deleted, not aliased:** `--color-brand` (the orange), the five `--sidebar-*` tokens, `--nav-rail-size`,
+  `--font-body` (now `--body`/`--display`), the desktop-density media block, and the `--row-target: 32px`
+  desktop value. **This reverses `ux/research/density.md`'s compact desktop (2026-09-26):** the README
+  fixes controls at 44/48px and rows at 48px at every width, so that research is now stale for sizes.
+- Type ramp: `--text-xs .8125rem` (table head, pill, badge), `--text-sm .9375rem` (table body), `--text-md
+  1rem`, `--text-lg 1.25rem` (dialog title), `--text-xl 2rem`, `1.875rem` at 820px and narrower (page
+  title). The README has no spacing scale; `--space-1..6` keep their phone values (4/8/12/16/24/32px).
+- **Fonts.** IBM Plex Sans Arabic stays as D-172 left it. Noto Kufi Arabic (Arabic display face) is
+  self-hosted the same way, in `public/fonts/`, never a CDN: Google serves it as ONE variable woff2 for
+  500/600/700, so there is one file (`noto-kufi-arabic-arabic.woff2`, 124 KB, OFL-1.1) and one
+  `@font-face` with `font-weight: 500 700`. Arabic subset only; the face's Latin glyphs are not wanted
+  (README "Type"), so English strings fall through to Plex. `unicode-range` is Google's, fetched
+  2026-10-06 with a Chrome user agent. Preloaded in `index.html`.
+- The viewport meta gains `interactive-widget=resizes-content` (README "Keyboard-up rule").
+
+**2. Shell (`app.ts/html/css`, `core/theme/theme.service.ts`).** 256px green sidebar at the start edge,
+no top bar; 76px rail from 821 to 1100px (automatic) and by hand at any width, with a fixed-position
+tooltip so the scrolling nav cannot clip it; on a phone a 56px green header, an action bar and a bottom
+sheet for the destinations (focus moves in, is trapped, Escape and the scrim close it, focus returns to
+the menu button). `core/navigation/` is consumed unchanged. `ThemeService` writes `data-theme` on
+`<html>` only after the user toggles; with no stored choice the system preference decides. Per-device in
+`localStorage`, same reasoning as the locale and the rail (D-050 bans session material there, not chrome
+preferences). New i18n keys in both catalogues: `shell.nav.main`, `shell.nav.sheet`, `shell.theme.toggle`,
+`shell.theme.label`, `locale.short.ar`, `locale.short.en`. Removed: `app.tagline` (no longer rendered).
+- **`data-testid="app-title"` is kept** as a visually hidden element rendered in every session state. The
+  E2E smoke tests wait on it (`SmokeTests.cs`), and the new shell has no top bar to carry it.
+- **`HeaderActionsService` is kept.** Six list screens project their search and primary action into it.
+  With no top bar to host the slot it renders as a strip at the top of the content frame. Each screen's
+  own page header (title at the start edge, actions at the end edge) replaces it as that screen is
+  converted; when the last one does, delete the service.
+- **Sign-out is added to the sidebar footer and the phone sheet.** README names only avatar, name, role,
+  language and theme, but sign-out is a product requirement (`AC-125-D`, `AC-125-E`). It sits under the
+  two buttons as a quiet full-width control (icon only on the rail).
+- Signed out or resolving, the shell shows only the slim green brand header (wordmark and a language
+  button) above the route. The sign-in screen has its own layout in the design and will replace this.
+- The component-style budget warning (`angular.json`) moves from 6 kB to 8 kB. The shell is one
+  component with two layouts, the sidebar, the rail, the phone header, the action bar and the sheet;
+  Angular's emulated encapsulation adds an attribute to every selector. The 10 kB error limit is
+  unchanged. (The rows, user block and footer buttons are already one shared rule set for sidebar and
+  sheet through four custom properties.)
+
+**3. Kit (`src/Web/src/app/shared/`).** Restyled to the README; selectors, inputs, outputs and
+`data-testid` spellings are unchanged. Mapping where the old API and the new vocabulary differ:
+`kaff-button` primary/secondary/ghost/danger-outline/danger = Primary/Secondary/Quiet/Destructive
+trigger/Destructive confirm; `kaff-badge` tones become outlined (neutral), filled (accent), head tone
+(brand), dashed on the notice tone (warning), and `pill` only widens padding because the language has one
+radius; `kaff-segmented-filter` `quiet` is kept but no screen uses it any more.
+Behavioural changes that are not pure CSS (all inside the component, none visible to a caller):
+- `kaff-field` reserves a one-line (24px) footer so validation never reflows the form, and renders an
+  alert icon inside an error message. Its projected controls are styled by global `kaff-field input`
+  rules in `styles.css` at specificity (0,0,2), so a screen's own scoped input rule still wins until that
+  screen is converted.
+- `kaff-row-menu` trigger is always visible (README: hover is never the only affordance), and its popup
+  is `position: fixed`, placed next to the trigger in TypeScript (end-aligned, kept on screen, flipped
+  above when there is no room below, closed on scroll), so a scrolling table frame can no longer clip it.
+- `kaff-detail-panel` is a 440px side panel on desktop and a bottom sheet at 820px and narrower.
+- `kaff-button` inside a `kaff-table-row` is the compact 44px size (`--kaff-button-size`), so a 48px row
+  holds one.
+- `kaff-state`'s four modes now read differently (skeleton at the real row height, solid empty box,
+  fill-less filtered-empty box, refusal banner).
+- Not built, by instruction: checkbox, radio and tabs. `duplicate-phone-warning` keeps its native
+  checkbox. Also not built because no component exists for it yet: the status pill, link, back link,
+  avatar (the shell has its own), dialog, confirmation dialog, popup/select, date picker, toggle, inline
+  confirmation and banners as shared components. They are in the README and are built when a screen first
+  needs one.
+
+**Where the README was silent or contradicted itself, and what was done.**
+- Silent: sign-out (above); the shell's behaviour for a session with no staff nav (a forced password
+  change) — the sidebar shows wordmark and footer only; a spacing scale (kept the existing one).
+- Contradiction: the sheet's maximum height is 90 percent in the shell section and 92 percent in the kit
+  section. Built 90 for the destinations sheet and 92 for the detail sheet, each as specified for its own
+  component.
+- Contradiction: the kit lists "the 3px active-row marker" among 2 to 3px slivers, `layout.html` draws a
+  5px-wide bar. Built the 5px bar with 3px end radii, as the shell section says.
+- Mockup defect: `layout.html` and `components.html` write the sheet's top corners as
+  `border---radius:` (an invalid property, so the sheets render square). The README says top corners;
+  built `border-start-start-radius` and `border-start-end-radius`.
+- The README says the rail collapses at "1100px and narrower" and "between 821 and 1100px". Built as
+  821 to 1100px; at 820px and narrower the sidebar is the phone layout, never a rail.
+
+**Out of scope here, and left as it was.** Every feature screen's own CSS and markup, the sign-in screen,
+what any screen fetches or validates, `src/Api`, `src/Domain`, `src/Infrastructure`. After this pass the
+screens inherit the new tokens and kit but keep old per-screen layout, so some look half-converted (page
+title above a search above a filter above a table, with the primary action in a strip above all of it).
+That is the expected state until each is redesigned and approved.

@@ -1,11 +1,13 @@
-/* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). */
+/*
+  The table frame (README "Lists and tables"): a 1px hairline border, `--radius`, the surface fill, and
+  no card shadow. Logical properties only.
+*/
 
 :host {
   display: block;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  box-shadow: var(--elevation-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
   /* `clip`, never `hidden` — `hidden` makes this host a scroll container, and the header's
      `position: sticky` would then stick to a box that never scrolls instead of to the page. `clip`
      still rounds the corners without that side effect (KAFF-928 finding 2). */

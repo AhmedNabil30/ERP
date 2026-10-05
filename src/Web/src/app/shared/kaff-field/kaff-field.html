@@ -9,14 +9,22 @@
 
   <ng-content></ng-content>
 
-  @if (messageKey(); as key) {
-    <p
-      [id]="describedById()"
-      class="field-message"
-      [class.field-message--error]="errorKey() !== null"
-      [attr.data-testid]="errorTestId()"
-    >
-      {{ i18n.t(key) }}
-    </p>
-  }
+  <!-- The reserved one-line footer. The hint or the error renders inside it, never both. -->
+  <div class="field-foot">
+    @if (messageKey(); as key) {
+      <p
+        [id]="describedById()"
+        class="field-message"
+        [class.field-message--error]="errorKey() !== null"
+        [attr.data-testid]="errorTestId()"
+      >
+        @if (errorKey() !== null) {
+          <svg class="alert-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 4l9 16H3zM12 10v4M12 17.5v.5" />
+          </svg>
+        }
+        <span>{{ i18n.t(key) }}</span>
+      </p>
+    }
+  </div>
 </div>

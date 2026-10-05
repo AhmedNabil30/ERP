@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  effect,
   inject,
   input,
   output,
@@ -28,8 +29,8 @@ export interface RowMenuItem {
  *
  * **The trigger is never `display: none`.** A `display: none` control drops out of both the tab
  * order and the accessibility tree, which is exactly the trap that makes an icon-only menu
- * unreachable by keyboard. `kaff-row-menu.css` reveals it with `opacity`/`:focus-visible` instead —
- * see that file for the rule this enforces.
+ * unreachable by keyboard. The trigger is always visible now (README: hover is never the only
+ * affordance, because touch has none), and `kaff-row-menu.css` states the rule.
  *
  * Keyboard follows the WAI-ARIA menu-button pattern: `Enter`/`Space`/`ArrowDown` on the trigger opens
  * the menu and moves focus to the first item; `ArrowUp`/`ArrowDown` move between items; `Home`/`End`
@@ -58,11 +59,29 @@ export class KaffRowMenu {
   protected readonly i18n = inject(I18nService);
   protected readonly open = signal(false);
 
+  /** Where the fixed-position popup sits, in px from the viewport edges (set when it opens). */
+  protected readonly placement = signal<{ end: number; top: number | null; bottom: number | null }>({
+    end: 0,
+    top: 0,
+    bottom: null,
+  });
+
   private readonly hostRef = inject(ElementRef<HTMLElement>);
   private readonly trigger = viewChild<ElementRef<HTMLButtonElement>>('trigger');
   private readonly menuItemRefs = viewChildren<ElementRef<HTMLButtonElement>>('menuItemRef');
 
   constructor() {
+    // The popup is fixed to the viewport, so a scroll would leave it floating away from its row:
+    // close it on any scroll, including a nested scroll container's (capture phase).
+    effect((onCleanup) => {
+      if (!this.open()) {
+        return;
+      }
+      const close = (): void => this.open.set(false);
+      window.addEventListener('scroll', close, { capture: true, passive: true });
+      onCleanup(() => window.removeEventListener('scroll', close, { capture: true }));
+    });
+
     // Router is optional: a spec rendering this component alone provides no router, and closing on
     // navigation is a convenience, not a correctness requirement this component can test itself.
     const router = inject(Router, { optional: true });
@@ -130,7 +149,34 @@ export class KaffRowMenu {
     }
   }
 
+  /**
+   * Aligns the popup to the trigger's end edge and flips it above when there is no room below. The end
+   * edge is the left edge under RTL, so the inline offset is measured from whichever side `dir` says.
+   */
+  private place(): void {
+    const rect = this.trigger()?.nativeElement.getBoundingClientRect();
+    if (!rect) {
+      return;
+    }
+    const rtl = getComputedStyle(this.hostRef.nativeElement).direction === 'rtl';
+    const viewport = document.documentElement.clientWidth;
+    const edge = rtl ? rect.left : viewport - rect.right;
+    // Keep the whole popup on screen: where the trigger's end edge leaves no room for it, slide it
+    // back toward the start edge ("aligned to the button's edge on the side where there is room").
+    const end = Math.max(8, Math.min(edge, viewport - Math.min(240, viewport - 16) - 8));
+    const needed = this.items().length * 44 + 20;
+    const below = window.innerHeight - rect.bottom;
+    this.placement.set(
+      below >= needed || below >= rect.top
+        ? { end, top: rect.bottom + 4, bottom: null }
+        : { end, top: null, bottom: window.innerHeight - rect.top + 4 },
+    );
+  }
+
   private setOpen(value: boolean): void {
+    if (value) {
+      this.place();
+    }
     this.open.set(value);
     if (value) {
       queueMicrotask(() => this.focusItem(0));

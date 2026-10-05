@@ -1,24 +1,24 @@
 /* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). Zero colour
-   literals — every colour is a token from styles.css (apple-erp-design §2). */
+   literals — every colour is a token from styles.css. */
 
-/* S-013. A warning, not a refusal — it is not styled as an error and it does not disable the save.
-   KAFF-934: the amber block `WorkerMobile.dc.html` draws, CSS restyle only — the template, its two
-   actions (the match list and the acknowledge checkbox) and every test id are unchanged. */
+/* S-013. A warning, not a refusal: it does not block the save, so it is the NOTICE banner (README
+   "Feedback") — a neutral fill with a 6px dark bar on the start edge — never the red refusal banner,
+   because "a refusal is never used for information that is not a failure". The template, its two actions
+   (the match list and the acknowledge checkbox) and every test id are unchanged. */
 .duplicate {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-3);
-  background: var(--color-warning-surface);
-  border: 1px solid var(--color-warning);
-  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  background: var(--note-bg);
+  border-inline-start: 6px solid var(--fieldline);
+  border-radius: var(--radius);
+  color: var(--ink);
 }
 
 .duplicate-title {
   margin: 0;
-  font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--color-warning);
 }
 
 .duplicate-list {
@@ -38,11 +38,12 @@
   font-size: var(--text-sm);
 }
 
+/* A code is a bdi: dim, small, tabular, never truncated (README "Identity cell"). */
 .duplicate-code {
   unicode-bidi: isolate;
-  font-family: ui-monospace, monospace;
   font-size: var(--text-xs);
-  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+  color: var(--dim);
 }
 
 .duplicate-archived {
@@ -50,9 +51,11 @@
   font-weight: 600;
 }
 
+/* The native checkbox stays until the kit's checkbox is built (the first screen that needs one). */
 .acknowledge {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   min-block-size: var(--tap-target);
+  accent-color: var(--ink);
 }

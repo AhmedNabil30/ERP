@@ -264,6 +264,12 @@
     U+1EE8B-1EE9B, U+1EEA1-1EEA3, U+1EEA5-1EEA9, U+1EEAB-1EEBB, U+1EEF0-1EEF1;
 }
 
+/* Buttons inside a table row are the compact 44px size (README "Buttons": compact is for table
+   toolbars and rows), so a 48px row holds one without growing. `kaff-button` reads this variable. */
+kaff-table-row {
+  --kaff-button-size: var(--tap-target);
+}
+
 /* Projected grid children do not receive a component's emulated style scope. */
 kaff-table-row .row > bdi {
   justify-self: start;

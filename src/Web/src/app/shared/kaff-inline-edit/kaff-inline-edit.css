@@ -1,4 +1,6 @@
-/* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). */
+/* Inline edit: a value that becomes a field in place. The field follows the kit (README "Form fields"):
+   2px border in the field colour, `--radius`, the 3px focus outline; the display state is a quiet
+   button with a dashed outline on hover. Logical properties only. */
 
 :host {
   display: inline-flex;
@@ -10,17 +12,16 @@
 .control {
   min-block-size: var(--tap-target);
   min-inline-size: 6rem;
-  padding-inline: var(--space-2);
+  padding-inline: var(--space-3);
   font: inherit;
-  color: var(--color-text);
-  background: var(--color-background);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
+  color: var(--ink);
+  background: var(--field);
+  border: 2px solid var(--fieldline);
+  border-radius: var(--radius);
 }
 
-.control:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+.control:hover {
+  border-color: var(--ink);
 }
 
 .display {
@@ -28,25 +29,26 @@
   padding-inline: var(--space-2);
   font: inherit;
   text-align: start;
-  color: var(--color-text);
+  color: var(--ink);
   background: transparent;
-  border: 1px dashed transparent;
-  border-radius: var(--radius-sm);
+  border: 2px dashed transparent;
+  border-radius: var(--radius);
   cursor: pointer;
 }
 
 .display:hover:not(:disabled) {
-  border-color: var(--color-border);
+  border-color: var(--line);
 }
 
 .display:disabled {
-  color: var(--color-muted);
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 .refusal {
   flex-basis: 100%;
   margin: 0;
-  color: var(--color-danger);
+  color: var(--err-ink);
   font-size: var(--text-sm);
+  font-weight: 500;
 }

@@ -1,20 +1,29 @@
-/* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). */
+/*
+  Form field wrapper (README "Form fields"): label, the projected control, and ONE footer line that
+  holds either the hint or the error, never both. The footer slot reserves one line (24px) so the form
+  does not reflow when validation runs; a longer error wraps inside it and may push content down by the
+  extra lines only. The control itself is styled by the global `kaff-field input` rules in `styles.css`.
+*/
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: 6px;
+  min-inline-size: 0;
 }
 
 .field-label {
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--color-text);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font: 600 var(--text-md) / 1.4 var(--body);
+  color: var(--ink);
 }
 
+/* The asterisk is a shape, so colour is not involved: ink, bold. */
 .required-marker {
-  color: var(--color-danger);
-  margin-inline-start: var(--space-1);
+  color: var(--ink);
+  font-weight: 700;
 }
 
 .sr-only {
@@ -26,12 +35,33 @@
   white-space: nowrap;
 }
 
+.field-foot {
+  min-block-size: 1.5rem;
+}
+
 .field-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
   margin: 0;
-  font-size: var(--text-sm);
-  color: var(--color-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--dim);
 }
 
 .field-message--error {
-  color: var(--color-danger);
+  color: var(--err-ink);
+  font-weight: 500;
+}
+
+.alert-icon {
+  inline-size: 18px;
+  block-size: 18px;
+  flex: none;
+  margin-block-start: 2px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }

@@ -1,4 +1,5 @@
-/* Logical properties only. RTL is the primary direction, not a mirror (CLAUDE.md). */
+/* Body row (README "Lists and tables"): 48px, a 1px hairline between rows, hover fills with a 5.5
+   percent ink tint (`--hover`). Logical properties only. */
 
 .row {
   display: grid;
@@ -9,11 +10,15 @@
   position: relative;
   align-items: center;
   gap: var(--space-4);
-  /* --row-target, not --tap-target: a list row compacts to 32px on mouse-driven desktop and stays
-     at the 44px floor everywhere else (ux/research/density.md §4). */
+  /* 48px: the row's own icon button is 44px inside it, so there is no vertical padding at desktop
+     width (the stacked phone layout below restores it). */
   min-block-size: var(--row-target);
-  padding: var(--space-2) var(--space-4);
-  border-block-end: 1px solid var(--color-border);
+  padding-inline: var(--space-4);
+  border-block-end: 1px solid var(--line);
+}
+
+.row:hover {
+  background: var(--hover);
 }
 
 /* Isolated identifiers are grid children; shrink their boxes to the content they carry. */
@@ -21,8 +26,8 @@
   justify-self: start;
 }
 
-/* Archived: reduced opacity, not a second hue (apple-erp-design §3). The word "مؤرشف" still carries
-   the state — colour/opacity is never the only signal. */
+/* Archived: reduced opacity, not a second hue. The word "مؤرشف" still carries the state — colour and
+   opacity are never the only signal. */
 .row--archived {
   opacity: 0.55;
 }
@@ -30,21 +35,19 @@
 /* KAFF-924: the per-cell mobile label a caller projects in (e.g. `.row-price-label` in
    catalogue-list-page.html, "سعر التكلفة" stacked above its value). `kaff-table-header` names the
    column at desktop width, so the label stays hidden there and only appears stacked below the value
-   under the mobile breakpoint every list page's own media query already uses (`width < 48rem`). This
-   was a per-screen convention with no hiding rule at all; it now lives once, here.
+   under the mobile breakpoint every list page's own media query already uses (`width < 48rem`).
    `::ng-deep` is required because projected content keeps the caller's style scope, not this
    component's — plain `.row-price-label { }` here would never match it. */
 .row ::ng-deep .row-price-label {
   display: none;
 }
 
-/* KAFF-928 finding 4: the caller's own `1fr !important` override is gone — this is the only mobile
-   collapse rule left, lives once here, and needs no `!important`. This rule and the
-   `var(--kaff-columns)` rule above are on the same element in the same stylesheet, so source order
-   decides which wins; being declared after it is what makes it win under `48rem`. */
+/* KAFF-928 finding 4: the only mobile collapse rule, and it needs no `!important`: it sits after the
+   `var(--kaff-columns)` rule on the same element, so source order decides which wins under `48rem`. */
 @media (width < 48rem) {
   .row {
     grid-template-columns: 1fr;
+    padding-block: var(--space-2);
   }
 
   .row ::ng-deep .row-price-label {
