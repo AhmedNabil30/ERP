@@ -14856,3 +14856,38 @@ header on a phone). `locale-switch-mobile` now exists only for a signed-in sessi
 
 **Not verified.** The keyboard-up rule was checked only at a 390x560 emulated viewport, not on a
 real iOS or Android keyboard (the README says the same).
+
+### D-177 · Nabil — catalogue pricing, overrides and who may edit cost · 2026-10-06
+
+Eight questions were raised by the catalogue screen design and answered by Nabil. The three that
+change behaviour are recorded here; the rest were developer's discretion.
+
+**1. No silent re-pricing. `spec.md` §4.1 stands.** Nabil first said a cost or markup change
+re-prices derived items. That contradicted `spec.md` §4.1 line 131 ("Open (unsigned) estimates
+re-price only through an explicit review") and `KAFF-411` ("never re-priced silently"), and the
+contradiction was put back to him rather than built. He ruled for the spec: signed BOQs stay frozen
+by copy, open estimates raise a manual review alert and a human decides per offer, and a new price
+applies only to future lines. Three different things had been conflated — frozen contracts, open
+estimates and future lines — and only the third follows the catalogue automatically.
+
+**2. A باب's markup is shown on the catalogue and edited on the project.** This is not new: `spec.md`
+§4.1 line 117 already has `lineMarkup` defaulting from the item's باب and overridable per BOQ line.
+The catalogue screen therefore displays the default markup and offers no way to change it.
+
+**3. Cost and the sell-price override belong to the Owner alone.** Today `Permission.CatalogueManage`
+is `CompanyWide` and granted to Owner **and** Technical Office, so the Technical Office can edit a
+cost. Nabil's ruling splits that: the Owner edits cost and sets or clears a sell-price override, and
+the Technical Office is read-only on both while keeping the rest of the catalogue. Enforced
+server-side by permission, not by hiding a control.
+
+**What was deliberately NOT built from this ruling.** Nabil also said that anyone other than the
+Owner must submit a request for his approval to change a cost or an override. No request-and-approve
+mechanism exists anywhere in this system — it needs a request entity, a queue, an approval screen,
+audit and notification. Rather than improvise it inside a screen, the catalogue ships with the
+ruling's end state (Owner edits, Technical Office reads) and the workflow is scoped as its own story.
+Nabil approved that split explicitly.
+
+**Also approved:** a recoverable-destructive pattern in the shared kit. Archiving is reversible, so it
+gets a quiet confirmation that says the item can be restored at any time. The loud red confirmation is
+reserved for actions that cannot be undone. The design agent raised this against its own brief rather
+than applying the loud pattern it had been told to use.
