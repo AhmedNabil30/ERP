@@ -14891,3 +14891,16 @@ Nabil approved that split explicitly.
 gets a quiet confirmation that says the item can be restored at any time. The loud red confirmation is
 reserved for actions that cannot be undone. The design agent raised this against its own brief rather
 than applying the loud pattern it had been told to use.
+
+### D-178 · Backend — how KAFF-940 splits cost and sell rate off CatalogueManage · 2026-10-06
+
+Implements `D-177` §3. A new company-wide permission `CataloguePriceEdit` is granted to the Owner only,
+split off `CatalogueManage` the way `D-147` split `SubcontractorTaxRegistrationEdit` off
+`SubcontractorManage`. The route is not split: `PUT /api/catalogue-items/{id}` keeps its whole-record body,
+and the handler refuses a price that differs from the stored one unless the caller holds the new
+permission (`IAuthorizationService`, the same evaluator an endpoint declaration uses, through
+`PermissionEndpointExtensions.HoldsAsync`). Splitting the route would have made the client call two
+endpoints and left a TO save of an unchanged price needing the Owner. The re-import confirm
+(`KAFF-201`) re-prices existing items, so it carries the same check. Create is unchanged: the Technical
+Office still enters initial prices when it adds an item. Open question for Nabil: the spec and entity have
+no separate "sell-price override" field, so `baseSellRate` is treated as the guarded sell price.

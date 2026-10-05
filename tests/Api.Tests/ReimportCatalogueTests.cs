@@ -35,6 +35,8 @@ public sealed class ReimportCatalogueTests : IAsyncLifetime
     private HttpClient _client = null!;
 
     private Guid _technicalOffice;
+    private Guid _owner;
+    private bool _actAsOwner;
     private string _babCode = null!;
 
     public ReimportCatalogueTests(PostgresDatabase database) => _database = database;
@@ -113,6 +115,7 @@ public sealed class ReimportCatalogueTests : IAsyncLifetime
     [Fact]
     public async Task Confirm_creates_new_codes_and_reprices_existing_ones_and_leaves_every_other_item_untouched()
     {
+        _actAsOwner = true; // KAFF-940: re-pricing existing items is the Owner's alone
         string untouchedCode = UniqueNames.Code("REI-F-UNTOUCHED");
         await SeedItemAsync(untouchedCode, cost: 5m, sell: 9m);
 
@@ -169,6 +172,7 @@ public sealed class ReimportCatalogueTests : IAsyncLifetime
     [Fact]
     public async Task Confirm_writes_a_before_and_after_audit_record_for_every_repriced_item()
     {
+        _actAsOwner = true; // KAFF-940: re-pricing existing items is the Owner's alone
         string code = UniqueNames.Code("REI-E");
         await SeedItemAsync(code, cost: 7m, sell: 8m);
 
@@ -185,7 +189,7 @@ public sealed class ReimportCatalogueTests : IAsyncLifetime
             r => r.EntityType == nameof(CatalogueItem) && r.EntityId == item.Id && r.Action == AuditAction.Modified,
             Ct);
 
-        priceChange.ActorUserId.Should().Be(_technicalOffice);
+        priceChange.ActorUserId.Should().Be(_owner);
         priceChange.BeforeJson.Should().NotBeNull().And.Contain("7");
         priceChange.AfterJson.Should().NotBeNull().And.Contain("70");
         priceChange.ChangedProperties.Should().Contain(nameof(CatalogueItem.CostPrice))
@@ -195,8 +199,53 @@ public sealed class ReimportCatalogueTests : IAsyncLifetime
             r => r.EventType == AuditEventKind.CatalogueImported && r.Reason != null && r.Reason.Contains(fileName),
             Ct);
 
-        importEvent.ActorUserId.Should().Be(_technicalOffice);
+        importEvent.ActorUserId.Should().Be(_owner);
         importEvent.Reason.Should().Contain("0 item(s) created").And.Contain("1 item(s) re-priced");
+    }
+
+    // ---- KAFF-940 · the Technical Office re-imports without re-pricing -------------------------------
+
+    [Fact]
+    public async Task Confirm_refuses_the_technical_office_when_it_would_change_a_price_and_changes_nothing()
+    {
+        string code = UniqueNames.Code("REI-940");
+        string newCode = UniqueNames.Code("REI-940-NEW");
+        await SeedItemAsync(code, cost: 10m, sell: 20m);
+
+        byte[] file = BuildFile(
+            [
+                Row(newCode, "جديد", null, "م٣", _babCode, "1", "2"),
+                Row(code, "وصف", null, "م٣", _babCode, "99", "20"),
+            ]);
+
+        HttpResponseMessage response = await PostFileAsync(ConfirmRoute, file);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await response.Content.ReadAsStringAsync(Ct)).Should().Contain("errors.master.catalogue_price_owner_only");
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        (await reader.CatalogueItems.SingleAsync(i => i.Code == code, Ct)).CostPrice.Amount.Should().Be(10m);
+        (await reader.CatalogueItems.AnyAsync(i => i.Code == newCode, Ct)).Should().BeFalse(
+            "a refused confirm is all-or-nothing");
+    }
+
+    [Fact]
+    public async Task Confirm_lets_the_technical_office_create_items_and_restate_an_unchanged_price()
+    {
+        string code = UniqueNames.Code("REI-940-SAME");
+        string newCode = UniqueNames.Code("REI-940-NEW2");
+        await SeedItemAsync(code, cost: 10m, sell: 20m);
+
+        byte[] file = BuildFile(
+            [
+                Row(newCode, "جديد", null, "م٣", _babCode, "1", "2"),
+                Row(code, "وصف", null, "م٣", _babCode, "10", "20"),
+            ]);
+
+        (await PostFileAsync(ConfirmRoute, file)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        (await reader.CatalogueItems.AnyAsync(i => i.Code == newCode, Ct)).Should().BeTrue();
     }
 
     // ---- helpers ---------------------------------------------------------------------------------
@@ -258,10 +307,14 @@ public sealed class ReimportCatalogueTests : IAsyncLifetime
 
     private async Task StampAsync(HttpRequestMessage request)
     {
-        request.Headers.Add(TestAuthHandler.UserIdHeader, _technicalOffice.ToString());
-        request.Headers.Add(TestAuthHandler.RoleHeader, Role.TechnicalOffice.ToString());
-        request.Headers.Add(TestAuthHandler.SecurityStampHeader, await CurrentStampAsync(_technicalOffice));
-        request.Headers.Add(TestAuthHandler.DepartmentHeader, WellKnownDepartments.OperationsId.ToString());
+        Guid actor = _actAsOwner ? _owner : _technicalOffice;
+        request.Headers.Add(TestAuthHandler.UserIdHeader, actor.ToString());
+        request.Headers.Add(TestAuthHandler.RoleHeader, (_actAsOwner ? Role.Owner : Role.TechnicalOffice).ToString());
+        request.Headers.Add(TestAuthHandler.SecurityStampHeader, await CurrentStampAsync(actor));
+        if (!_actAsOwner)
+        {
+            request.Headers.Add(TestAuthHandler.DepartmentHeader, WellKnownDepartments.OperationsId.ToString());
+        }
     }
 
     private async Task<string> CurrentStampAsync(Guid userId)
@@ -308,11 +361,14 @@ public sealed class ReimportCatalogueTests : IAsyncLifetime
             WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical, null).Value;
 
         context.Babs.Add(bab);
-        context.Users.Add(technicalOffice);
+        User owner = User.Create(UniqueNames.Code("rei-owner"), "rei-owner", UniqueNames.Phone(), Role.Owner, Now).Value;
+
+        context.Users.AddRange(technicalOffice, owner);
 
         await context.SaveChangesAsync(Ct);
 
         _technicalOffice = technicalOffice.Id;
+        _owner = owner.Id;
     }
 
     private static DateTimeOffset Now => new(2026, 9, 12, 8, 0, 0, TimeSpan.Zero);

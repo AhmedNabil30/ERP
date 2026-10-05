@@ -156,6 +156,13 @@ public static class MasterDataErrors
     public static readonly Error BabNotFound =
         Error.NotFound("master.bab_not_found", "errors.master.bab_not_found");
 
+    /// <summary>
+    /// A caller without <c>CataloguePriceEdit</c> tried to change an item's cost or sell rate.
+    /// KAFF-940, D-177 §3 — both are the Owner's alone.
+    /// </summary>
+    public static readonly Error CataloguePriceOwnerOnly =
+        Error.Forbidden("master.catalogue_price_owner_only", "errors.master.catalogue_price_owner_only");
+
     /// <summary>The route named a catalogue item id that no item carries. KAFF-202.</summary>
     public static readonly Error CatalogueItemNotFound =
         Error.NotFound("master.catalogue_item_not_found", "errors.master.catalogue_item_not_found");

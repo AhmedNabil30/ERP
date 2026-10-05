@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Kaff.Domain.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -71,4 +72,21 @@ public static class PermissionEndpointExtensions
     public static TBuilder RequirePermission<TBuilder>(this TBuilder builder, Permission permission, ProjectScope scope)
         where TBuilder : IEndpointConventionBuilder
         => builder.RequireAuthorization(PermissionRequirement.ToPolicyName(permission, scope));
+
+    /// <summary>
+    /// Whether the caller holds a company-wide permission, asked from inside a handler. For the case
+    /// where one route is gated by a permission and a sub-part of its body by a narrower one, so that
+    /// splitting the route would only make the client call two. Runs the same handler an endpoint
+    /// declaration would, so the answer is the evaluator's, never a role check of its own.
+    /// </summary>
+    public static async Task<bool> HoldsAsync(
+        this IAuthorizationService authorization, ClaimsPrincipal user, Permission permission)
+    {
+        ArgumentNullException.ThrowIfNull(authorization);
+
+        AuthorizationResult result = await authorization.AuthorizeAsync(
+            user, resource: null, PermissionRequirement.ToPolicyName(permission, ProjectScope.None));
+
+        return result.Succeeded;
+    }
 }

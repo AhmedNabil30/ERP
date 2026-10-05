@@ -1,6 +1,6 @@
 # KAFF-940 · Cost and the sell-price override belong to the Owner alone
 
-<!-- kaff id=KAFF-940 slice=2 points=5 state=READY -->
+<!-- kaff id=KAFF-940 slice=2 points=5 state=BUILT -->
 
 **Slice:** 2 (Masters) · **Epic:** Catalogue · **Points:** 5.
 **Owner:** Backend, then Frontend.
@@ -83,3 +83,29 @@ Then the cost field and the override control are visibly read-only, and the serv
 ## Questions for Karim
 
 None — Nabil ruled this himself as the Owner of the business process (`D-177`).
+
+
+## Build note — Backend, 2026-10-06
+
+**State: BUILT for the backend criteria AC-940-A to AC-940-E. AC-940-F is the frontend's and is not built here.**
+
+- **Permission.** New `Permission.CataloguePriceEdit = 72`, `CompanyWide`, granted to the Owner only, not
+  `TouchesMoney`. It follows `SubcontractorTaxRegistrationEdit` (`D-147`): one record, two owners.
+  `CatalogueManage` is unchanged and still granted to the Owner and the Technical Office.
+- **Enforcement point.** `EditCatalogueItem` keeps its single `PUT` route, because the screen sends the whole
+  record. The handler refuses with `master.catalogue_price_owner_only` (403, translated in `ar.json` and
+  `en.json`) when `costPrice` or `baseSellRate` differs from the stored value and the caller does not hold
+  `CataloguePriceEdit`. An unchanged price passes, so the Technical Office can still edit descriptions and
+  unit with the whole record. `ConfirmCatalogueReimport` had the same hole (it re-prices existing codes), so
+  it refuses the whole confirm, creating nothing, when any existing item's price would move and the caller
+  lacks the permission. Preview stays open, since it changes nothing.
+- **Audit.** No new path. The Owner's edits are written by `AuditSaveChangesInterceptor` as before.
+- **Existing tests.** Tests that re-priced as the Technical Office now act as the Owner.
+  `A_negative_cost_price_is_refused_on_edit` also moved to the Owner, because a Technical Office price change
+  is now refused before price validation runs.
+- **Not done / open question.** `spec.md` §4.1 and the entity have no separate "sell-price override" field,
+  only `baseSellRate`. This story guards `baseSellRate` as the sell price. "Clear an override" (AC-940-B,
+  "set or clear") has no meaning until an override field exists, so only changes in both directions are
+  tested. Whether Nabil meant a new nullable override field is a question for him. Creating an item still
+  lets the Technical Office type the initial prices (AC-940-D keeps create). Frontend permission mirror and
+  the `KAFF-941` request workflow are not touched.

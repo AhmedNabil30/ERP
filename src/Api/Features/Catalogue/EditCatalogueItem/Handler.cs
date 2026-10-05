@@ -1,7 +1,11 @@
+using System.Security.Claims;
+using Kaff.Api.Authorization;
 using Kaff.Api.Common.Results;
+using Kaff.Domain.Authorization;
 using Kaff.Domain.Common;
 using Kaff.Domain.MasterData;
 using Kaff.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,6 +40,8 @@ internal static class Handler
         Guid catalogueItemId,
         Request request,
         KaffDbContext database,
+        IAuthorizationService authorization,
+        ClaimsPrincipal user,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -46,6 +52,18 @@ internal static class Handler
         if (item is null)
         {
             return ResultExtensions.Problem(MasterDataErrors.CatalogueItemNotFound);
+        }
+
+        // KAFF-940, D-177 §3: the Technical Office keeps this route for descriptions and unit, but a
+        // price that differs from the stored one is the Owner's alone. An unchanged price passes, so the
+        // screen can keep sending the whole record. Nothing is mutated before this refusal.
+        bool priceChanges = request.CostPrice is not null
+            && request.BaseSellRate is not null
+            && (request.CostPrice.Value != item.CostPrice.Amount || request.BaseSellRate.Value != item.BaseSellRate.Amount);
+
+        if (priceChanges && !await authorization.HoldsAsync(user, Permission.CataloguePriceEdit))
+        {
+            return ResultExtensions.Problem(MasterDataErrors.CataloguePriceOwnerOnly);
         }
 
         Result described = item.SetDescription(request.DescriptionAr ?? string.Empty, request.DescriptionEn);

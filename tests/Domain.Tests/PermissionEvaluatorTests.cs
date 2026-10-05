@@ -481,6 +481,36 @@ public sealed class PermissionEvaluatorTests
                 "AC-211-N: holding SubcontractorManage does not carry the tax registration row");
     }
 
+    /// <summary>
+    /// SM-30 for <see cref="Permission.CataloguePriceEdit"/>. decisions.md D-177 §3, KAFF-940.
+    /// </summary>
+    [Fact]
+    public void Only_the_owner_holds_CataloguePriceEdit_and_it_touches_no_money()
+    {
+        PermissionDefinition definition = PermissionCatalogue.Of(Permission.CataloguePriceEdit);
+
+        definition.Scope.Should().Be(PermissionScope.CompanyWide, "a catalogue belongs to no project");
+
+        definition.Grants.Select(grant => grant.Role).Should().BeEquivalentTo(
+            [Role.Owner],
+            "D-177 §3: cost and the sell rate belong to the Owner alone");
+
+        definition.TouchesMoney.Should().BeFalse("a price list moves no money and governs no ledger");
+
+        PermissionSubject technicalOffice =
+            Subject(Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+
+        PermissionEvaluator.Evaluate(
+                technicalOffice, Permission.CatalogueManage, projectId: null, projectAccess: null)
+            .Should().Be(PermissionDecision.Granted, "the Technical Office keeps the rest of the catalogue");
+
+        PermissionEvaluator.Evaluate(
+                technicalOffice, Permission.CataloguePriceEdit, projectId: null, projectAccess: null)
+            .Should().Be(
+                PermissionDecision.RoleNotGranted,
+                "holding CatalogueManage does not carry the price row");
+    }
+
     [Fact]
     public void A_supervising_engineer_submits()
     {

@@ -272,6 +272,7 @@
   "errors.master.unit_required": "الوحدة مطلوبة.",
   "errors.master.description_required": "الوصف مطلوب.",
   "errors.master.cost_price_negative": "سعر التكلفة لا يكون بالسالب.",
+  "errors.master.catalogue_price_owner_only": "تغيير سعر التكلفة أو سعر البيع للبند من صلاحية المالك وحده.",
   "errors.master.sell_rate_negative": "سعر البيع لا يكون بالسالب.",
   "errors.master.already_archived": "السجل مؤرشف بالفعل.",
   "errors.master.not_archived": "السجل غير مؤرشف.",

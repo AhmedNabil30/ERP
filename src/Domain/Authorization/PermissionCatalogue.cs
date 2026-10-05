@@ -341,7 +341,15 @@ public static class PermissionCatalogue
 
             new(Permission.ClientManage, PermissionScope.CompanyWide, [owner, marketing], "§2"),
             new(Permission.CatalogueManage, PermissionScope.CompanyWide, [owner, technicalOffice], "§2, §4.1"),
-            new(Permission.BabManage, PermissionScope.CompanyWide, [owner, technicalOffice], "§2"),
+            // decisions.md D-177 §3, KAFF-940. Nabil: cost and the sell price are the Owner's alone; the
+            // Technical Office keeps the rest of the catalogue and still READS both figures. Split off
+            // CatalogueManage the way SubcontractorTaxRegistrationEdit split off SubcontractorManage
+            // (D-147): one record, two owners. CompanyWide, same as CatalogueManage. Not TouchesMoney:
+            // a price list moves no money and governs no ledger. Enforced where the write lands, in
+            // EditCatalogueItem and ConfirmCatalogueReimport, not by hiding a field.
+            // SM-30: pinned by Only_the_owner_holds_CataloguePriceEdit_and_it_touches_no_money.
+            new(Permission.CataloguePriceEdit, PermissionScope.CompanyWide, [owner], "§2, §4.1 — D-177 §3"),
+            new(Permission.BabManage,PermissionScope.CompanyWide, [owner, technicalOffice], "§2"),
             new(Permission.EmployeeManage, PermissionScope.CompanyWide, [owner, hr], "§2, §10"),
             new(Permission.SubcontractorManage, PermissionScope.CompanyWide, [owner, technicalOffice], "§2"),
 

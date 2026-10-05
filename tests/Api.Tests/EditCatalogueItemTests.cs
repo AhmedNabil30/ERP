@@ -78,7 +78,7 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
     {
         Guid id = await RegisterAsync(cost: 100m, sell: 150m);
 
-        HttpResponseMessage response = await EditAsync(
+        HttpResponseMessage response = await EditAsOwnerAsync(
             id, Body(descriptionAr: "خرسانة مسلحة معدلة", unit: "م٣", cost: 100m, sell: 175m));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -99,7 +99,7 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
             .OrderByDescending(record => record.OccurredAt)
             .FirstAsync(Ct);
 
-        record.ActorUserId.Should().Be(_technicalOffice);
+        record.ActorUserId.Should().Be(_owner);
         record.ChangedProperties.Should().Contain(nameof(CatalogueItem.DescriptionAr));
         record.ChangedProperties.Should().Contain(nameof(CatalogueItem.BaseSellRate));
 
@@ -141,7 +141,7 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
     {
         Guid id = await RegisterAsync();
 
-        HttpResponseMessage response = await EditAsync(id, Body(cost: -1m));
+        HttpResponseMessage response = await EditAsOwnerAsync(id, Body(cost: -1m));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await MessageKeyAsync(response)).Should().Be("errors.master.cost_price_negative");
@@ -152,7 +152,7 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
     {
         Guid id = await RegisterAsync(cost: 200m, sell: 300m);
 
-        (await EditAsync(id, Body(cost: 200m, sell: 100m)))
+        (await EditAsOwnerAsync(id, Body(cost: 200m, sell: 100m)))
             .StatusCode.Should().Be(HttpStatusCode.OK, "nothing in spec.md forbids re-pricing into a loss");
     }
 
@@ -189,7 +189,7 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
     {
         Guid id = await RegisterAsync(cost: 100m, sell: 150m);
 
-        (await EditAsync(id, Body(cost: 0m, sell: 0m)))
+        (await EditAsOwnerAsync(id, Body(cost: 0m, sell: 0m)))
             .StatusCode.Should().Be(HttpStatusCode.OK, "AC-202-D refuses only negatives — an explicit zero is legal");
     }
 
@@ -206,7 +206,7 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
         long itemCountBefore = await before.CatalogueItems.LongCountAsync(Ct);
         long babCountBefore = await before.Babs.LongCountAsync(Ct);
 
-        (await EditAsync(id, Body(cost: 400m, sell: 600m)))
+        (await EditAsOwnerAsync(id, Body(cost: 400m, sell: 600m)))
             .StatusCode.Should().Be(HttpStatusCode.OK);
 
         await using KaffDbContext after = _database.CreateBareContext();
@@ -300,6 +300,136 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
             .StatusCode.Should().Be(HttpStatusCode.OK, "the Owner holds every company-wide row — D-129 §1");
     }
 
+    // ---- KAFF-940 · cost and the sell rate belong to the Owner alone (D-177 §3) ---------------------
+
+    /// <summary>AC-940-A.</summary>
+    [Fact]
+    public async Task The_technical_office_cannot_change_a_cost_price()
+    {
+        Guid id = await RegisterAsync(cost: 100m, sell: 150m);
+
+        await using KaffDbContext before = _database.CreateBareContext();
+        long auditBefore = await before.AuditRecords.LongCountAsync(Ct);
+
+        HttpResponseMessage response = await EditAsync(id, Body(cost: 120m, sell: 150m));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden, "a 403 with a message key, never a 500");
+        (await MessageKeyAsync(response)).Should().Be("errors.master.catalogue_price_owner_only");
+        (await ReadAsync(id)).CostPrice.Amount.Should().Be(100m, "the stored cost is unchanged");
+
+        await using KaffDbContext after = _database.CreateBareContext();
+        (await after.AuditRecords.LongCountAsync(Ct)).Should().Be(auditBefore, "a refusal writes no change record");
+    }
+
+    /// <summary>AC-940-B — both directions, and a refusal also keeps the description edit out.</summary>
+    [Fact]
+    public async Task The_technical_office_cannot_raise_or_lower_a_sell_rate()
+    {
+        Guid id = await RegisterAsync(cost: 100m, sell: 150m);
+
+        foreach (decimal sell in new[] { 160m, 140m })
+        {
+            HttpResponseMessage response = await EditAsync(id, Body(descriptionAr: "وصف جديد", cost: 100m, sell: sell));
+
+            response.StatusCode.Should().Be(HttpStatusCode.Forbidden, "a sell rate of {0} differs from the stored one", sell);
+            (await MessageKeyAsync(response)).Should().Be("errors.master.catalogue_price_owner_only");
+        }
+
+        CatalogueItem stored = await ReadAsync(id);
+        stored.BaseSellRate.Amount.Should().Be(150m);
+        stored.DescriptionAr.Should().Be("خرسانة عادية", "a refused edit is all-or-nothing");
+    }
+
+    /// <summary>AC-940-C.</summary>
+    [Fact]
+    public async Task The_owner_changes_a_cost_and_a_sell_rate_and_each_change_is_audited_with_before_and_after()
+    {
+        Guid id = await RegisterAsync(cost: 100m, sell: 150m);
+
+        (await EditAsOwnerAsync(id, Body(cost: 110m, sell: 150m))).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await EditAsOwnerAsync(id, Body(cost: 110m, sell: 180m))).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await EditAsOwnerAsync(id, Body(cost: 110m, sell: 150m))).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+
+        List<AuditRecord> records = await reader.AuditRecords
+            .Where(record => record.EntityId == id && record.Action == AuditAction.Modified)
+            .OrderBy(record => record.OccurredAt)
+            .ToListAsync(Ct);
+
+        records.Should().HaveCount(3);
+        records.Should().OnlyContain(record => record.ActorUserId == _owner);
+
+        records[0].ChangedProperties.Should().Contain(nameof(CatalogueItem.CostPrice));
+        WireDecimal(JsonDocument.Parse(records[0].BeforeJson!).RootElement.GetProperty(nameof(CatalogueItem.CostPrice)))
+            .Should().Be(100m);
+        WireDecimal(JsonDocument.Parse(records[0].AfterJson!).RootElement.GetProperty(nameof(CatalogueItem.CostPrice)))
+            .Should().Be(110m);
+
+        records[1].ChangedProperties.Should().Contain(nameof(CatalogueItem.BaseSellRate));
+        WireDecimal(JsonDocument.Parse(records[1].AfterJson!).RootElement.GetProperty(nameof(CatalogueItem.BaseSellRate)))
+            .Should().Be(180m);
+        WireDecimal(JsonDocument.Parse(records[2].BeforeJson!).RootElement.GetProperty(nameof(CatalogueItem.BaseSellRate)))
+            .Should().Be(180m);
+    }
+
+    /// <summary>AC-940-D — every capability the Technical Office had that is not a price.</summary>
+    [Fact]
+    public async Task The_technical_office_keeps_create_describe_unit_move_archive_and_unarchive()
+    {
+        Guid id = await RegisterAsync(cost: 100m, sell: 150m);
+
+        // The screen sends the whole record, so the unchanged prices go with the new words.
+        (await EditAsync(id, Body(descriptionAr: "وصف معدل", unit: "م٢", cost: 100m, sell: 150m)))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+
+        Guid otherBab;
+        await using (KaffDbContext context = _database.CreateContext())
+        {
+            Bab bab = Bab.Create(UniqueNames.Code("EDT-BAB2"), "باب آخر", "Other", Percentage.FromPercent(10m)).Value;
+            context.Babs.Add(bab);
+            await context.SaveChangesAsync(Ct);
+            otherBab = bab.Id;
+        }
+
+        (await SendAsync(HttpMethod.Put, $"/api/catalogue-items/{id}/bab", _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, new { babId = otherBab }))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, $"/api/catalogue-items/{id}/archive", _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, new { }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await SendAsync(HttpMethod.Post, $"/api/catalogue-items/{id}/unarchive", _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, new { }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        CatalogueItem stored = await ReadAsync(id);
+        stored.DescriptionAr.Should().Be("وصف معدل");
+        stored.Unit.Should().Be("م٢");
+        stored.BabId.Should().Be(otherBab);
+        stored.Status.Should().Be(CatalogueItemStatus.Active);
+    }
+
+    /// <summary>AC-940-E — the Technical Office still reads both figures.</summary>
+    [Fact]
+    public async Task The_technical_office_still_reads_cost_and_sell_rate()
+    {
+        Guid id = await RegisterAsync(cost: 100m, sell: 150m);
+
+        using HttpRequestMessage request = new(HttpMethod.Get, new Uri("/api/catalogue-items", UriKind.Relative));
+        request.Headers.Add(TestAuthHandler.UserIdHeader, _technicalOffice.ToString());
+        request.Headers.Add(TestAuthHandler.RoleHeader, nameof(Role.TechnicalOffice));
+        request.Headers.Add(TestAuthHandler.SecurityStampHeader, await CurrentStampAsync(_technicalOffice));
+        request.Headers.Add(TestAuthHandler.DepartmentHeader, WellKnownDepartments.OperationsId.ToString());
+
+        HttpResponseMessage response = await _client.SendAsync(request, Ct);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+        JsonElement item = body.RootElement.GetProperty("items").EnumerateArray()
+            .Single(element => element.GetProperty("id").GetGuid() == id);
+
+        WireDecimal(item.GetProperty("costPrice")).Should().Be(100m);
+        WireDecimal(item.GetProperty("baseSellRate")).Should().Be(150m);
+    }
+
     // ---- the route addresses a row by id, so it has to answer when the id names nobody -----------
 
     [Fact]
@@ -356,6 +486,9 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
 
         return body.RootElement.GetProperty("id").GetGuid();
     }
+
+    private Task<HttpResponseMessage> EditAsOwnerAsync(Guid id, object body)
+        => SendAsync(HttpMethod.Put, $"/api/catalogue-items/{id}", _owner, Role.Owner, null, body);
 
     private Task<HttpResponseMessage> EditAsync(Guid id, object body)
         => SendAsync(HttpMethod.Put, $"/api/catalogue-items/{id}", _technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, body);

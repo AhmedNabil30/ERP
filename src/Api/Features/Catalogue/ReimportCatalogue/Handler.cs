@@ -1,11 +1,15 @@
 using System.Globalization;
+using System.Security.Claims;
+using Kaff.Api.Authorization;
 using Kaff.Api.Common;
 using Kaff.Api.Common.Results;
 using Kaff.Api.Features.Catalogue.ImportCatalogue;
 using Kaff.Domain.Auditing;
+using Kaff.Domain.Authorization;
 using Kaff.Domain.Common;
 using Kaff.Domain.MasterData;
 using Kaff.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -74,7 +78,12 @@ internal static class Handler
     }
 
     public static async Task<IResult> ConfirmAsync(
-        IFormFile file, KaffDbContext database, IAuditContext audit, CancellationToken cancellationToken)
+        IFormFile file,
+        KaffDbContext database,
+        IAuditContext audit,
+        IAuthorizationService authorization,
+        ClaimsPrincipal user,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(file);
         ArgumentNullException.ThrowIfNull(database);
@@ -88,6 +97,18 @@ internal static class Handler
         }
 
         Plan built = plan!;
+
+        // KAFF-940, D-177 §3: a re-import may create items for the Technical Office, but moving an
+        // existing item's cost or sell rate is the Owner's alone. A row that restates the stored prices
+        // changes nothing and is not refused. Nothing has been saved at this point.
+        bool changesAPrice = built.Repriced.Any(outcome =>
+            outcome.OldCostPrice.Amount != outcome.Item.CostPrice.Amount
+            || outcome.OldBaseSellRate.Amount != outcome.Item.BaseSellRate.Amount);
+
+        if (changesAPrice && !await authorization.HoldsAsync(user, Permission.CataloguePriceEdit))
+        {
+            return ResultExtensions.Problem(MasterDataErrors.CataloguePriceOwnerOnly);
+        }
 
         if (built.Created.Count > 0)
         {

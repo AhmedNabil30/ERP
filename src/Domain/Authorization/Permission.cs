@@ -281,4 +281,17 @@ public enum Permission
     /// mirroring <c>WhoAmI.Handler.ProjectsAsync</c>. See decisions.md, this story's entry.
     /// </remarks>
     ProjectList = 71,
+
+    /// <summary>
+    /// Change what a catalogue item costs Kaff and what it sells for: <c>CostPrice</c> and
+    /// <c>BaseSellRate</c> on an item that already exists. decisions.md D-177 §3, KAFF-940.
+    /// </summary>
+    /// <remarks>
+    /// Split off <see cref="CatalogueManage"/> the same way <see cref="SubcontractorTaxRegistrationEdit"/>
+    /// split off <see cref="SubcontractorManage"/> (D-147): the Technical Office keeps the record
+    /// (create, descriptions, unit, move, archive) and reads both prices, but does not write them.
+    /// Company-wide, because a catalogue belongs to no project. Held by the Owner alone. It touches no
+    /// ledger, so it is not <c>TouchesMoney</c>: a price list is not a posting (spec.md §4.1).
+    /// </remarks>
+    CataloguePriceEdit = 72,
 }

@@ -272,6 +272,7 @@
   "errors.master.unit_required": "A unit is required.",
   "errors.master.description_required": "A description is required.",
   "errors.master.cost_price_negative": "A cost price cannot be negative.",
+  "errors.master.catalogue_price_owner_only": "Only the Owner can change an item's cost or sell rate.",
   "errors.master.sell_rate_negative": "A sell rate cannot be negative.",
   "errors.master.already_archived": "That record is already archived.",
   "errors.master.not_archived": "That record is not archived.",
