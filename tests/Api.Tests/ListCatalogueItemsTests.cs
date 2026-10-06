@@ -297,6 +297,75 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
             + "per Q63's standing caveat");
     }
 
+    // ---- KAFF-942 · filter by باب on the server --------------------------------------------------
+
+    [Fact]
+    public async Task AC_942_A_a_bab_filter_returns_only_that_babs_items()
+    {
+        string nonce = UniqueNames.Code("B942A");
+        Guid babOne = await CreateBabAsync();
+        Guid babTwo = await CreateBabAsync();
+        string one = await CreateItemAsync(babOne, code: $"{nonce}-1");
+        await CreateItemAsync(babTwo, code: $"{nonce}-2");
+
+        IReadOnlyList<CatalogueItemSummary> found = await SearchAsyncAs(
+            _owner, Role.Owner, null, nonce, bab: babOne.ToString());
+
+        found.Select(item => item.Code).Should().Equal([one]);
+        found.Should().OnlyContain(item => item.BabId == babOne);
+    }
+
+    [Fact]
+    public async Task AC_942_B_the_bab_filter_composes_with_status_and_search()
+    {
+        string nonce = UniqueNames.Code("B942B");
+        Guid bab = await CreateBabAsync();
+        Guid other = await CreateBabAsync();
+        string wanted = await CreateItemAsync(bab, code: $"{nonce}-W", descriptionAr: "حديد تسليح مطلوب");
+        string wrongText = await CreateItemAsync(bab, code: $"{nonce}-T", descriptionAr: "دهان");
+        await CreateItemAsync(bab, code: $"{nonce}-A", descriptionAr: "حديد تسليح نشط");
+        string otherBab = await CreateItemAsync(other, code: $"{nonce}-O", descriptionAr: "حديد تسليح مطلوب");
+        await ArchiveAsync(wanted);
+        await ArchiveAsync(wrongText);
+        await ArchiveAsync(otherBab);
+
+        IReadOnlyList<CatalogueItemSummary> found = await SearchAsyncAs(
+            _owner, Role.Owner, null, "حديد", status: "archived", bab: bab.ToString());
+
+        found.Select(item => item.Code).Where(code => code.StartsWith(nonce, StringComparison.Ordinal))
+            .Should().Equal([wanted]);
+    }
+
+    [Fact]
+    public async Task AC_942_C_omitting_the_bab_returns_every_bab()
+    {
+        string nonce = UniqueNames.Code("B942C");
+        Guid babOne = await CreateBabAsync();
+        Guid babTwo = await CreateBabAsync();
+        string one = await CreateItemAsync(babOne, code: $"{nonce}-1");
+        string two = await CreateItemAsync(babTwo, code: $"{nonce}-2");
+
+        (await SearchAsyncAs(_owner, Role.Owner, null, nonce)).Select(item => item.Code)
+            .Should().BeEquivalentTo([one, two]);
+    }
+
+    [Theory]
+    [InlineData("unknown-guid")]
+    [InlineData("not-a-guid")]
+    public async Task AC_942_D_an_unknown_bab_is_refused_not_answered_with_an_empty_list(string kind)
+    {
+        string bab = kind == "unknown-guid" ? Guid.NewGuid().ToString() : "not-a-guid";
+
+        HttpResponseMessage response = await SendAsync(_owner, Role.Owner, null, null, bab: bab);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        using JsonDocument problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+
+        problem.RootElement.GetProperty("messageKey").GetString().Should().Be(
+            "errors.master.catalogue_item_list_bab_unknown");
+    }
+
     // ---- helpers ------------------------------------------------------------------------------
 
     /// <summary>
@@ -381,9 +450,9 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
         => await SearchAsyncAs(_technicalOffice, Role.TechnicalOffice, WellKnownDepartments.OperationsId, search);
 
     private async Task<IReadOnlyList<CatalogueItemSummary>> SearchAsyncAs(
-        Guid actorId, Role actorRole, Guid? actorDepartment, string? search, string? status = null)
+        Guid actorId, Role actorRole, Guid? actorDepartment, string? search, string? status = null, string? bab = null)
     {
-        HttpResponseMessage response = await SendAsync(actorId, actorRole, actorDepartment, search, status: status);
+        HttpResponseMessage response = await SendAsync(actorId, actorRole, actorDepartment, search, status: status, bab: bab);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -410,7 +479,8 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
         Guid? actorDepartment,
         string? search,
         Guid? actorClientId = null,
-        string? status = null)
+        string? status = null,
+        string? bab = null)
     {
         string route = "/api/catalogue-items";
         List<string> queryParts = [];
@@ -423,6 +493,11 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
         if (status is not null)
         {
             queryParts.Add("status=" + Uri.EscapeDataString(status));
+        }
+
+        if (bab is not null)
+        {
+            queryParts.Add("bab=" + Uri.EscapeDataString(bab));
         }
 
         if (queryParts.Count > 0)

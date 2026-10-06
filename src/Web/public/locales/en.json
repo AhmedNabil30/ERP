@@ -296,6 +296,7 @@
   "errors.master.catalogue_import_failed": "This file could not be read as the catalogue import template.",
   "errors.master.catalogue_import_bad_number": "This value is not a valid amount.",
   "errors.master.catalogue_item_list_filter_unknown": "That is not a filter this list knows.",
+  "errors.master.catalogue_item_list_bab_unknown": "That is not a trade this catalogue knows.",
   "errors.master.bab_list_filter_unknown": "That is not a filter this list knows.",
   "errors.master.employee_not_found": "No employee exists with that reference.",
   "errors.master.employee_phone_taken": "This phone number already belongs to another employee record.",

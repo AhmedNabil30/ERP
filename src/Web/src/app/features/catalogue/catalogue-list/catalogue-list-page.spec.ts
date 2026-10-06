@@ -46,7 +46,15 @@ class FakeCatalogueApi implements Pick<CatalogueApi, 'list' | 'archive' | 'unarc
   readonly archived: string[] = [];
   readonly unarchived: string[] = [];
 
-  async list(_search: string, filter: 'active' | 'archived' | 'all'): Promise<readonly CatalogueItem[]> {
+  /** Every list request the screen made, so a test can say what the request carried. */
+  readonly requests: { search: string; filter: string; babId: string }[] = [];
+
+  async list(
+    search: string,
+    filter: 'active' | 'archived' | 'all',
+    babId = '',
+  ): Promise<readonly CatalogueItem[]> {
+    this.requests.push({ search, filter, babId });
     if (this.failWith) {
       throw this.failWith;
     }
@@ -205,6 +213,25 @@ describe('CatalogueListPage · groups', () => {
     expect(header?.querySelectorAll('kaff-badge').length).toBe(1);
     expect(header?.textContent).toContain('catalogue.badge.internal');
     expect(header?.textContent).toContain('catalogue.column.sell_price');
+  });
+});
+
+describe('CatalogueListPage · AC-942-E the باب filter belongs to the server', () => {
+  it('sends the chosen باب with the request and filters nothing itself', async () => {
+    // The fake answers every request with both babs' rows, as a server that ignored the filter would.
+    // A screen that narrowed in memory would hide b2; a screen that trusts the server shows both.
+    const { api, root } = await render([item('C-1', 'b1'), item('F-1', 'b2')], { bab: 'b1' });
+
+    expect(api.requests.some((r) => r.babId === 'b1')).toBe(true);
+    expect(root.querySelectorAll('.item-row').length).toBe(2);
+  });
+
+  it('sends an empty باب when none is chosen', async () => {
+    const { api } = await render([item('C-1', 'b1')]);
+
+    expect(api.requests.filter((r) => r.search === '' && r.filter !== 'all').every((r) => r.babId === '')).toBe(
+      true,
+    );
   });
 });
 

@@ -34,6 +34,11 @@ namespace Kaff.Api.Features.Catalogue.ListCatalogueItems;
 /// exists in this codebase yet, so this endpoint's own default is not a witness for it.
 /// </para>
 /// <para>
+/// <b>An optional <c>bab</c> narrows to one باب</b> — KAFF-942. It composes with <c>status</c> and
+/// <c>search</c>, and is refused with <c>errors.master.catalogue_item_list_bab_unknown</c> when it names
+/// no باب, for the same reason as an unknown <c>status</c>: an empty list would say the trade has no items.
+/// </para>
+/// <para>
 /// <b>No audit record and no money beyond the item's own two prices.</b> It is a read (rule 10), and
 /// there is no balance on the entity to project (rule 8) — asserted against the response type rather
 /// than left to good intentions.
@@ -45,7 +50,8 @@ internal static class Handler
         KaffDbContext database,
         CancellationToken cancellationToken,
         string? search = null,
-        string? status = null)
+        string? status = null,
+        string? bab = null)
     {
         ArgumentNullException.ThrowIfNull(database);
 
@@ -54,7 +60,27 @@ internal static class Handler
             return ResultExtensions.Problem(MasterDataErrors.CatalogueItemListFilterUnknown);
         }
 
+        // KAFF-942 rule 4: an unknown باب is refused, never answered with an empty list. A value that is
+        // not a GUID is unknown by definition, so it takes the same refusal as one that names no باب.
+        Guid? babId = null;
+
+        if (!string.IsNullOrWhiteSpace(bab))
+        {
+            if (!Guid.TryParse(bab.Trim(), out Guid parsed)
+                || !await database.Babs.AnyAsync(candidate => candidate.Id == parsed, cancellationToken))
+            {
+                return ResultExtensions.Problem(MasterDataErrors.CatalogueItemListBabUnknown);
+            }
+
+            babId = parsed;
+        }
+
         IQueryable<CatalogueItem> query = database.CatalogueItems;
+
+        if (babId is not null)
+        {
+            query = query.Where(item => item.BabId == babId);
+        }
 
         query = filter switch
         {
@@ -76,8 +102,8 @@ internal static class Handler
 
         List<CatalogueItemSummary> items = await (
             from item in query
-            join bab in database.Babs on item.BabId equals bab.Id
-            orderby bab.SortOrder, item.Code
+            join trade in database.Babs on item.BabId equals trade.Id
+            orderby trade.SortOrder, item.Code
             select new CatalogueItemSummary(
                 item.Id,
                 item.Code,

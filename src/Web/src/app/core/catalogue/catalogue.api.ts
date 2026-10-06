@@ -126,12 +126,20 @@ export class CatalogueApi {
   private readonly http = inject(HttpClient);
 
   /** S-017's list and search. `search` is sent exactly as typed — the server matches code and description. */
-  async list(search: string, filter: CatalogueItemListFilter): Promise<readonly CatalogueItem[]> {
+  async list(
+    search: string,
+    filter: CatalogueItemListFilter,
+    babId = '',
+  ): Promise<readonly CatalogueItem[]> {
     const statusParam = filter === 'active' ? 'Active' : filter === 'archived' ? 'Archived' : 'All';
     let params = new HttpParams().set('status', statusParam);
 
     if (search.trim().length > 0) {
       params = params.set('search', search.trim());
+    }
+
+    if (babId.length > 0) {
+      params = params.set('bab', babId);
     }
 
     const response = await firstValueFrom(

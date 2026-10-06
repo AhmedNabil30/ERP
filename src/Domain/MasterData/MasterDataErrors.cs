@@ -180,6 +180,12 @@ public static class MasterDataErrors
         Error.Validation(
             "master.catalogue_item_list_filter_unknown", "errors.master.catalogue_item_list_filter_unknown");
 
+    /// <summary>The catalogue list's <c>bab</c> filter named no باب. KAFF-942 rule 4.</summary>
+    /// <remarks>Same shape and reasoning as <see cref="CatalogueItemListFilterUnknown"/>: an empty list would read as "this trade has no items".</remarks>
+    public static readonly Error CatalogueItemListBabUnknown =
+        Error.Validation(
+            "master.catalogue_item_list_bab_unknown", "errors.master.catalogue_item_list_bab_unknown");
+
     /// <summary>The باب list's <c>status</c> filter named something that is not a filter. KAFF-213 rule 9.</summary>
     /// <remarks>Same shape and reasoning as <see cref="CatalogueItemListFilterUnknown"/> — D-111 §3.</remarks>
     public static readonly Error BabListFilterUnknown =

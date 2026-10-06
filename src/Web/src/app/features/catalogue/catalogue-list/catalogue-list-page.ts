@@ -197,14 +197,8 @@ export class CatalogueListPage {
       .map((bab) => ({ value: bab.id, label: this.babNameById().get(bab.id) ?? bab.nameAr })),
   ]);
 
-  /** The list as the باب filter leaves it. The API filters by status and search; the باب is narrowed here. */
-  private readonly visibleItems = computed(() => {
-    const bab = this.babFilter();
-    return bab.length === 0 ? this.items() : this.items().filter((item) => item.babId === bab);
-  });
-
   protected readonly groups = computed<readonly CatalogueGroup[]>(() =>
-    groupByBab(this.visibleItems(), this.babs()),
+    groupByBab(this.items(), this.babs()),
   );
 
   protected readonly openItem = computed<CatalogueItem | null>(() => {
@@ -248,7 +242,7 @@ export class CatalogueListPage {
 
   /** What is shown, not what exists (README "Result count line"). */
   protected readonly countText = computed(() => {
-    const count = this.visibleItems().length;
+    const count = this.items().length;
     const query = this.searchTerm().trim();
     if (query.length > 0) {
       return this.i18n.t('catalogue.count.search', { count, query, scope: this.scopeText() });
@@ -283,8 +277,9 @@ export class CatalogueListPage {
     }
 
     effect(() => {
-      // Search and status go to the server; the باب is narrowed in memory. Reading both re-runs this.
+      // Search, status and باب all go to the server. Reading them re-runs this.
       void this.searchTerm();
+      void this.babFilter();
       void this.statusFilter();
       this.expandedGroups.set(new Set());
       void this.reload();
@@ -582,7 +577,7 @@ export class CatalogueListPage {
     this.loading.set(true);
     this.failure.set(null);
     try {
-      this.items.set(await this.api.list(this.searchTerm(), this.statusFilter()));
+      this.items.set(await this.api.list(this.searchTerm(), this.statusFilter(), this.babFilter()));
     } catch (error) {
       const problem = toProblem(error);
       this.failure.set({ key: problem.messageKey, status: problem.status });
