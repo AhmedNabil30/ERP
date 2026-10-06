@@ -9,13 +9,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 /* KAAF catalogue list. Composed from the kit (components.html) inside the approved shell (layout.html).
-   Parts that are new to the kit are marked KIT+ and are documented in README.md. */
+   Parts new to the kit are documented in README.md. Prices are stored figures (costPrice, baseSellRate); nothing on this screen is calculated. */
 :root{
-  --g900:#09221e; --g800:#0f2e29; --g300:#9fb3ad; --c100:#f4eee9; --c200:#e6d9d1; --radius:6px;
+  --g900:#09221e; --g300:#9fb3ad; --c100:#f4eee9; --c200:#e6d9d1; --radius:6px;
   --bg:var(--c100); --surface:#fbf8f5; --head:#ebe0d8; --ink:var(--g900); --dim:#4b5f59; --line:rgba(9,34,30,.16); --hover:rgba(9,34,30,.055);
-  --btn:var(--g900); --btn-h:#25544b; --dh:#8a2211; --btn-ink:var(--c200); --field:#fbf8f5; --fieldline:var(--g900); --focus:var(--g900);
-  --err-bg:#f9e4dd; --err-ink:#7a1a0e; --err-bar:#c2321c; --danger:#a42a16; --danger-ink:#ffffff;
-  --note-bg:#ebe0d8; --ok-bg:#d3e3db; --ok-ink:#0b3b32; --costcol:rgba(9,34,30,.035); --ovr-bg:#f3e4c9; --ovr-ink:#4a3410;
+  --btn:var(--g900); --btn-h:#25544b;  --btn-ink:var(--c200); --field:#fbf8f5; --fieldline:var(--g900); --focus:var(--g900);
+  --note-bg:#ebe0d8; --ok-bg:#d3e3db; --ok-ink:#0b3b32;  
   --scrim:rgba(3,13,11,.55); --strip:var(--c200); --shadow:0 12px 36px rgba(9,34,30,.22);
   --display:'Noto Kufi Arabic','IBM Plex Sans Arabic',system-ui,sans-serif;
   --body:'IBM Plex Sans Arabic',system-ui,'Segoe UI',Tahoma,sans-serif;
@@ -23,14 +22,12 @@
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#061815; --surface:#0a1f1b; --head:#0f2e29; --ink:var(--c200); --dim:var(--g300); --line:rgba(230,217,209,.18); --hover:rgba(230,217,209,.06);
-  --btn:var(--c200); --btn-h:#fbf6f2; --dh:#ffb9ab; --btn-ink:var(--g900); --field:#0f2e29; --fieldline:#7f9a92; --focus:var(--c200);
-  --err-bg:#3b1612; --err-ink:#ffd0c6; --err-bar:#ff7b63; --danger:#ff9d8a; --danger-ink:#2a0d08;
-  --note-bg:#0f2e29; --ok-bg:#17403a; --ok-ink:#e6d9d1; --costcol:rgba(230,217,209,.04); --ovr-bg:#3d3017; --ovr-ink:#f1dcae; --strip:#030d0b; --shadow:0 12px 36px rgba(0,0,0,.6);}}
+  --btn:var(--c200); --btn-h:#fbf6f2;  --btn-ink:var(--g900); --field:#0f2e29; --fieldline:#7f9a92; --focus:var(--c200);
+  --note-bg:#0f2e29; --ok-bg:#17403a; --ok-ink:#e6d9d1;  --strip:#030d0b; --shadow:0 12px 36px rgba(0,0,0,.6);}}
 :root[data-theme="dark"]{
   --bg:#061815; --surface:#0a1f1b; --head:#0f2e29; --ink:var(--c200); --dim:var(--g300); --line:rgba(230,217,209,.18); --hover:rgba(230,217,209,.06);
-  --btn:var(--c200); --btn-h:#fbf6f2; --dh:#ffb9ab; --btn-ink:var(--g900); --field:#0f2e29; --fieldline:#7f9a92; --focus:var(--c200);
-  --err-bg:#3b1612; --err-ink:#ffd0c6; --err-bar:#ff7b63; --danger:#ff9d8a; --danger-ink:#2a0d08;
-  --note-bg:#0f2e29; --ok-bg:#17403a; --ok-ink:#e6d9d1; --costcol:rgba(230,217,209,.04); --ovr-bg:#3d3017; --ovr-ink:#f1dcae; --strip:#030d0b; --shadow:0 12px 36px rgba(0,0,0,.6);}
+  --btn:var(--c200); --btn-h:#fbf6f2;  --btn-ink:var(--g900); --field:#0f2e29; --fieldline:#7f9a92; --focus:var(--c200);
+  --note-bg:#0f2e29; --ok-bg:#17403a; --ok-ink:#e6d9d1;  --strip:#030d0b; --shadow:0 12px 36px rgba(0,0,0,.6);}
 
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -97,17 +94,12 @@ bdi{unicode-bidi:isolate}
 /* ===== kit parts ===== */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-block-size:48px;padding:0 22px;border:2px solid transparent;border-radius:var(--radius);background:var(--btn);color:var(--btn-ink);font:700 1rem/1 var(--display);white-space:nowrap;text-decoration:none}
 .btn.sm{min-block-size:44px;padding:0 16px;font-size:.9375rem}
-.btn.lg{min-block-size:60px;padding:0 26px;font-size:1.0625rem}
 .btn:hover{background:var(--btn-h)}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
 .btn.sec2{background:transparent;color:var(--ink);border-color:var(--fieldline)}
 .btn.sec2:hover{background:var(--hover)}
 .btn.quiet{background:transparent;color:var(--ink)}
 .btn.quiet:hover{background:var(--hover)}
-.btn.dtrig{background:transparent;color:var(--err-ink);border-color:var(--err-ink)}
-.btn.dtrig:hover{background:var(--err-bg)}
-.btn.dconf{background:var(--danger);color:var(--danger-ink);border-color:var(--danger)}
-.btn.dconf:hover{background:var(--dh)}
 .btn.is-busy{cursor:progress;opacity:.9}
 .spin{display:none;inline-size:18px;block-size:18px;border:3px solid color-mix(in srgb,currentColor 30%,transparent);border-top-color:currentColor;border-radius:50%;animation:r .8s linear infinite}
 .is-busy .spin{display:block}
@@ -130,22 +122,12 @@ bdi{unicode-bidi:isolate}
 .search input::placeholder{color:var(--dim);opacity:1}
 .search input:focus{outline:3px solid var(--focus);outline-offset:3px}
 .search .x{position:absolute;inset-inline-end:2px;inset-block-start:2px}
-.ck{display:flex;align-items:center;gap:12px;min-block-size:44px;cursor:pointer;position:relative}
-.ck input{position:absolute;opacity:0;inline-size:1px;block-size:1px}
-.ck .bx{inline-size:24px;block-size:24px;flex:none;border:2px solid var(--fieldline);background:var(--field);display:grid;place-items:center;border-radius:var(--radius)}
-.ck .bx svg{inline-size:16px;block-size:16px;stroke:var(--bg);stroke-width:3.2;fill:none;stroke-linecap:round;stroke-linejoin:round;display:none}
-.ck input:checked+.bx{background:var(--ink);border-color:var(--ink)}
-.ck input:checked+.bx svg{display:block}
-.ck input:focus-visible+.bx{outline:3px solid var(--focus);outline-offset:3px}
-.ck:hover .bx{border-color:var(--ink)}
 .count{color:var(--dim);font-size:.9375rem;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .lnk{color:var(--ink);text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:4px;font-weight:500;background:none;border:0;padding:0}
 .mtools{padding:0 16px;display:grid;gap:10px;margin-block-end:8px}
 .seg.full{display:flex}.seg.full button{flex:1;justify-content:center;min-block-size:52px}
 .mrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mrow .btn{min-block-size:52px;padding:0 12px;font-size:.9375rem}
-.mrow #advb .i{transition:none}.mrow #advb[aria-expanded="true"] .i{transform:rotate(180deg)}
-.adv{display:grid;gap:8px;padding:12px;border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface)}
-.adv .sel select{inline-size:100%;block-size:52px}
+.mrow .sel select{inline-size:100%;min-inline-size:0;block-size:52px}
 .tools{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;margin-block-end:10px}
 .sel{position:relative}
 .sel select{appearance:none;-webkit-appearance:none;block-size:48px;min-inline-size:200px;padding-inline:14px 40px;border:2px solid var(--fieldline);border-radius:var(--radius);background:var(--field);font-size:1rem;font-weight:500}
@@ -176,23 +158,16 @@ bdi{unicode-bidi:isolate}
 .tbl tr.grp td{background:var(--head);block-size:52px;border-block-start:1px solid var(--line);padding:0;position:sticky;inset-block-start:44px;z-index:3}
 .gbtn{display:flex;align-items:center;gap:12px;inline-size:100%;block-size:52px;padding:0 16px;border:0;background:transparent;text-align:start;position:sticky;inset-inline-start:0;min-inline-size:min(100%,780px)}
 .gbtn:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
-.gbtn .gn{font:600 1rem/1 var(--display)}
+.gbtn .gn{font:600 1rem/1 var(--display);flex:1}
+.gc{color:var(--dim);font-size:.875rem;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
 .gbtn .chev{transition:none}
 [dir="rtl"] .gbtn .chev{transform:scaleX(-1) rotate(90deg)}
 .gbtn .chev{transform:rotate(-90deg)}
 [dir="rtl"] .gbtn .chev{transform:rotate(90deg)}
 .gbtn[aria-expanded="true"] .chev{transform:rotate(0)}
-.mk{display:inline-flex;align-items:center;gap:6px;color:var(--dim);font-size:.875rem;font-weight:500}
-.mk svg{inline-size:15px;block-size:15px}
 .tbl tr.grp.col td{position:static}
 /* KIT+ price origin */
-.sellc{display:inline-flex;align-items:center;gap:10px;justify-content:flex-end}
-.ovr{display:inline-flex;align-items:center;gap:5px;block-size:24px;padding:0 8px;border-radius:var(--radius);background:var(--ovr-bg);color:var(--ovr-ink);font:700 .75rem/1 var(--body);box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 40%,transparent);white-space:nowrap}
-.ovr svg{inline-size:13px;block-size:13px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.drv{display:inline-grid;place-items:center;color:var(--dim)}
-.drv svg{inline-size:15px;block-size:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .sellv{font-weight:500}
-.is-ovr .sellv{font-weight:700}
 /* archived rows */
 .tbl tr.arch td{color:var(--dim)}
 .tbl tr.arch .nm{font-weight:500;text-decoration:none}
@@ -216,8 +191,7 @@ bdi{unicode-bidi:isolate}
 /* menu */
 .pop{background:var(--surface);border:1.5px solid var(--fieldline);border-radius:var(--radius);box-shadow:var(--shadow);padding:6px;min-inline-size:200px}
 .opt{display:flex;align-items:center;gap:12px;min-block-size:44px;padding:0 12px;border-radius:var(--radius);font-size:1rem;color:var(--ink);background:none;border:0;inline-size:100%;text-align:start}
-.opt:hover,.opt.is-hover{background:var(--hover)}
-.opt.dang{color:var(--err-ink);font-weight:600}
+.opt:hover{background:var(--hover)}
 .sepr{block-size:1px;background:var(--line);margin:6px 4px}
 .menuwrap .pop{position:fixed;z-index:90;inline-size:240px;display:none}
 .menuwrap.open .pop{display:block}
@@ -233,7 +207,7 @@ bdi{unicode-bidi:isolate}
 
 /* fields (kit) */
 .field{display:grid;gap:6px;min-inline-size:0}
-.field>label,.field>.lab{display:flex;gap:8px;align-items:center;font:600 1rem/1.4 var(--body)}
+.field>label{display:flex;gap:8px;align-items:center;font:600 1rem/1.4 var(--body)}
 .req{font-weight:700}
 .ctl{display:flex;align-items:stretch;min-inline-size:0;block-size:48px;border:2px solid var(--fieldline);border-radius:var(--radius);background:var(--field)}
 .ctl input,.ctl .val{flex:1;min-inline-size:0;border:0;background:transparent;padding:0 14px;font-size:1.0625rem;outline:none;block-size:100%;display:flex;align-items:center}
@@ -247,20 +221,6 @@ bdi{unicode-bidi:isolate}
 .ctl.dirty{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
 .foot{min-block-size:24px;display:flex;align-items:flex-start;gap:6px;font-size:.875rem;line-height:1.5;color:var(--dim)}
 .foot svg{inline-size:18px;block-size:18px;margin-block-start:2px;flex:none}
-/* KIT+ derivation line */
-.calc{border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden}
-.calc .hd{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:var(--head);font:600 .9375rem/1.3 var(--display)}
-.calc dl{margin:0}
-.calc .ln{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 14px;border-block-start:1px solid var(--line);font-size:.9375rem}
-.calc .ln dt{color:var(--dim)}
-.calc .ln dd{margin:0}
-.calc .ln.res{font-weight:700;font-size:1.0625rem;background:color-mix(in srgb,var(--ink) 4%,var(--surface))}
-.calc .ln.res dt{color:var(--ink)}
-.calc .ln s{color:var(--dim);font-weight:400}
-.calc .why{padding:10px 14px;border-block-start:1px solid var(--line);font-size:.875rem;color:var(--dim);display:flex;gap:8px;align-items:flex-start}
-.calc .why svg{inline-size:18px;block-size:18px;flex:none;margin-block-start:1px}
-.calc.o{border-color:var(--ovr-ink)}
-.calc.o .hd{background:var(--ovr-bg);color:var(--ovr-ink)}
 .ban{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:var(--radius);border-inline-start:6px solid var(--fieldline);background:var(--note-bg);font-size:.9375rem;line-height:1.55}
 
 /* detail panel (kit side panel / sheet) */
@@ -360,9 +320,8 @@ bdi{unicode-bidi:isolate}
       <button type="button" data-view="list" aria-pressed="true">القائمة</button>
       <button type="button" data-view="empty" aria-pressed="false">لا نتائج</button>
       <button type="button" data-view="archive" aria-pressed="false">تأكيد الأرشفة</button>
-      <button type="button" data-view="panel" aria-pressed="false">لوحة: سعر محسوب</button>
-      <button type="button" data-view="override" aria-pressed="false">لوحة: سعر مخصّص</button>
-      <button type="button" data-view="edit" aria-pressed="false">لوحة: تعديل التكلفة</button><button type="button" data-view="panel-ro" aria-pressed="false">لوحة للقراءة: محسوب (مكتب فني)</button><button type="button" data-view="override-ro" aria-pressed="false">لوحة للقراءة: مخصّص (مكتب فني)</button>
+      <button type="button" data-view="panel" aria-pressed="false">لوحة: المالك</button>
+      <button type="button" data-view="edit" aria-pressed="false">لوحة: تعديل التكلفة</button><button type="button" data-view="panel-ro" aria-pressed="false">لوحة للقراءة (مكتب فني)</button>
       <button type="button" data-view="archived" aria-pressed="false">المؤرشف</button><button type="button" data-view="unarch" aria-pressed="false">استعادة</button>
       <button type="button" data-view="loading" aria-pressed="false">تحميل</button>
     </div>
@@ -399,52 +358,49 @@ bdi{unicode-bidi:isolate}
 
 <script>
 const IC={chev:'M6 9l6 6 6-6',projects:'M4 21V7l8-4 8 4v14M9 21v-6h6v6M8 10h.01M12 10h.01M16 10h.01',catalog:'M3 11V4h7l11 11-7 7L3 11zM7.5 7.5h.01',bab:'M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5',employees:'M16 20v-1.5a3.5 3.5 0 00-3.5-3.5h-5A3.5 3.5 0 004 18.5V20M10 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM20 20v-1.5a3.5 3.5 0 00-2.6-3.4M15.5 4.2a3.5 3.5 0 010 6.6',subs:'M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.8-3.8a6 6 0 01-7.9 7.9l-6.9 6.9a2.1 2.1 0 01-3-3l6.9-6.9a6 6 0 017.9-7.9l-3.8 3.8z',suppliers:'M3 6h11v10H3zM14 9h4l3 3v4h-7zM7 19a2 2 0 100-4 2 2 0 000 4zM17 19a2 2 0 100-4 2 2 0 000 4z',clients:'M3 8h18v12H3zM8 8V5h8v3M3 13h18',users:'M12 3l8 3v6c0 4.5-3.2 7.6-8 9-4.8-1.4-8-4.5-8-9V6l8-3zM12 11a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM7.5 17c.8-2 2.4-3 4.5-3s3.7 1 4.5 3',depts:'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',audit:'M9 4h6v3H9zM6 5h-.5A1.5 1.5 0 004 6.5v13A1.5 1.5 0 005.5 21h13a1.5 1.5 0 001.5-1.5v-13A1.5 1.5 0 0018.5 5H18M8 12h8M8 16h5',
- dots:'M12 5.5v.01M12 12v.01M12 18.5v.01',x:'M6 6l12 12M18 6L6 18',eye:'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 15a3 3 0 100-6 3 3 0 000 6z',eyeoff:'M3 3l18 18M10.6 5.1A9.7 9.7 0 0112 5c6 0 10 7 10 7a17 17 0 01-3.2 3.9M6.6 6.6C3.7 8.4 2 12 2 12s4 7 10 7c1.7 0 3.2-.5 4.5-1.2M9.9 9.9a3 3 0 004.2 4.2',arch:'M3 5h18v4H3zM5 9v10h14V9M10 13h4',unarch:'M3 5h18v4H3zM5 9v10h14V9M12 17v-5M9.5 14.5L12 12l2.5 2.5',pen:'M4 20h4L19 9l-4-4L4 16v4z',pct:'M19 5L5 19M7 9a2 2 0 100-4 2 2 0 000 4zM17 19a2 2 0 100-4 2 2 0 000 4z',pin:'M12 17v5M9 3h6l-1 6 3 3v2H7v-2l3-3z',lock:'M6 11h12v9H6zM8 11V8a4 4 0 018 0v3',search:'M11 18a7 7 0 100-14 7 7 0 000 14zM21 21l-4.5-4.5',check:'M5 12.5l4.5 4.5L19 7.5',info:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 8v.01',err:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7.5v5.5M12 16.5v.01',up:'M12 15V4M8 8l4-4 4 4M5 14v6h14v-6',undo:'M4 9h11a5 5 0 010 10H8M4 9l4-4M4 9l4 4'};
+ dots:'M12 5.5v.01M12 12v.01M12 18.5v.01',x:'M6 6l12 12M18 6L6 18',eye:'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 15a3 3 0 100-6 3 3 0 000 6z',eyeoff:'M3 3l18 18M10.6 5.1A9.7 9.7 0 0112 5c6 0 10 7 10 7a17 17 0 01-3.2 3.9M6.6 6.6C3.7 8.4 2 12 2 12s4 7 10 7c1.7 0 3.2-.5 4.5-1.2M9.9 9.9a3 3 0 004.2 4.2',arch:'M3 5h18v4H3zM5 9v10h14V9M10 13h4',unarch:'M3 5h18v4H3zM5 9v10h14V9M12 17v-5M9.5 14.5L12 12l2.5 2.5',pen:'M4 20h4L19 9l-4-4L4 16v4z',lock:'M6 11h12v9H6zM8 11V8a4 4 0 018 0v3',search:'M11 18a7 7 0 100-14 7 7 0 000 14zM21 21l-4.5-4.5',check:'M5 12.5l4.5 4.5L19 7.5',info:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 8v.01',up:'M12 15V4M8 8l4-4 4 4M5 14v6h14v-6',};
 const i=(n,c='')=>`<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[n]}"/></svg>`;
 const NAV=[{id:'projects',g:'core',ar:'المشاريع',en:'Projects'},{id:'catalog',g:'core',ar:'كتالوج الأسعار',en:'Price catalogue'},{id:'bab',g:'core',ar:'الأبواب',en:'Chapters (Bab)'},{id:'employees',g:'core',ar:'الموظفون',en:'Employees'},{id:'subs',g:'core',ar:'مقاولو الباطن',en:'Subcontractors'},{id:'suppliers',g:'core',ar:'الموردون',en:'Suppliers'},{id:'clients',g:'core',ar:'العملاء',en:'Clients'},{id:'users',g:'admin',ar:'المستخدمون',en:'Users'},{id:'depts',g:'admin',ar:'الأقسام',en:'Departments'},{id:'audit',g:'admin',ar:'سجل التدقيق',en:'Audit log'}];
 const GROUPS={core:'البيانات الأساسية',admin:'الإدارة'};
 /* sample user only: Technical Office sees the catalogue; which rows each role sees is not decided here */
 const _sp=new URLSearchParams(location.search);
 const RO=(_sp.get('role')||((_sp.get('view')||'').endsWith('-ro')?'to':'owner'))==='to';
-/* RO = Technical Office: keeps the catalogue but is read-only on cost and the sell override (enforced server-side). Owner edits both. */
+/* RO = Technical Office: keeps the catalogue but is read-only on costPrice and baseSellRate (Permission.CataloguePriceEdit, Owner only, enforced server-side). Owner edits both. */
 const USER=RO?{n:'سارة عادل',r:'المكتب الفني'}:{n:'أحمد نبيل',r:'المالك'};const IDS=RO?['projects','catalog','bab','employees','clients']:NAV.map(n=>n.id);
 
-/* ---- data: 8 أبواب, 612 items. A handful of items are real; the rest of each باب is counted, not drawn. ---- */
+/* ---- data: 8 أبواب, 612 items. Item = [bab, code, ar, en, unit, costPrice, baseSellRate, archived]. Both prices are STORED figures; neither is computed from the other. ---- */
 const BABS=[
- {id:'exc',n:'أعمال الحفر والردم',m:12,c:62},{id:'con',n:'أعمال خرسانة',m:15,c:118},{id:'msn',n:'أعمال بناء',m:14,c:74},{id:'ins',n:'أعمال عزل',m:18,c:41},
- {id:'elc',n:'أعمال كهرباء',m:16,c:96},{id:'plm',n:'أعمال سباكة',m:16,c:83},{id:'fin',n:'أعمال تشطيبات',m:22,c:97},{id:'alu',n:'أعمال نجارة وألومنيوم',m:20,c:41}];
+ {id:'exc',n:'أعمال الحفر والردم',c:62},{id:'con',n:'أعمال خرسانة',c:118},{id:'msn',n:'أعمال بناء',c:74},{id:'ins',n:'أعمال عزل',c:41},
+ {id:'elc',n:'أعمال كهرباء',c:96},{id:'plm',n:'أعمال سباكة',c:83},{id:'fin',n:'أعمال تشطيبات',c:97},{id:'alu',n:'أعمال نجارة وألومنيوم',c:41}];
 const ITEMS=[
- ['con','CON-1012','خرسانة نظافة تحت القواعد','Blinding concrete under footings','م³',980,null,0],
- ['con','CON-1014','خرسانة عادية للقواعد','Plain concrete for footings','م³',1100,null,0],
+ ['con','CON-1012','خرسانة نظافة تحت القواعد','Blinding concrete under footings','م³',980,1130,0],
+ ['con','CON-1014','خرسانة عادية للقواعد','Plain concrete for footings','م³',1100,1270,0],
  ['con','CON-1015','خرسانة مسلحة للقواعد','Reinforced concrete for footings','م³',3150,3720,0],
- ['con','CON-1016','خرسانة مسلحة للأعمدة','Reinforced concrete for columns','م³',3400,null,0],
- ['con','CON-1018','خرسانة مسلحة للأسقف','Reinforced concrete for slabs','م³',3300,null,0],
+ ['con','CON-1016','خرسانة مسلحة للأعمدة','Reinforced concrete for columns','م³',3400,3910,0],
+ ['con','CON-1018','خرسانة مسلحة للأسقف','Reinforced concrete for slabs','م³',3300,3800,0],
  ['con','CON-1021','حديد تسليح عالي المقاومة','High tensile reinforcement steel','طن',38500,46000,0],
- ['con','CON-1024','شدة خشبية للأسقف','Timber formwork for slabs','م²',210,null,0],
- ['con','CON-1027','معالجة وإنهاء الأسطح الخرسانية','Concrete surface curing and finishing','م²',18,null,1],
- ['fin','TIL-2001','بلاط سيراميك أرضيات 60×60','Ceramic floor tiles 60x60','م²',285,null,0],
+ ['con','CON-1024','شدة خشبية للأسقف','Timber formwork for slabs','م²',210,245,0],
+ ['con','CON-1027','معالجة وإنهاء الأسطح الخرسانية','Concrete surface curing and finishing','م²',18,21,1],
+ ['fin','TIL-2001','بلاط سيراميك أرضيات 60×60','Ceramic floor tiles 60x60','م²',285,350,0],
  ['fin','TIL-2004','بورسلين أرضيات 80×80','Porcelain floor tiles 80x80','م²',460,590,0],
- ['fin','PNT-2110','دهان بلاستيك للحوائط الداخلية','Interior emulsion paint','م²',62,null,0],
- ['fin','GYP-2205','أسقف جبس بورد مع الإنهاء','Gypsum board ceilings, finished','م²',340,null,0],
- ['fin','DOR-2310','باب خشب داخلي كامل التركيب','Interior timber door, fitted','عدد',4200,null,0],
- ['fin','SKT-2402','وزرة رخام ارتفاع 10 سم','Marble skirting 10 cm','م.ط',95,null,1],
- ['elc','ELC-3101','نقطة إنارة كاملة','Lighting point, complete','عدد',320,null,0],
- ['plm','PLM-4108','نقطة صرف أرضية','Floor drain point','عدد',410,null,0]];
+ ['fin','PNT-2110','دهان بلاستيك للحوائط الداخلية','Interior emulsion paint','م²',62,76,0],
+ ['fin','GYP-2205','أسقف جبس بورد مع الإنهاء','Gypsum board ceilings, finished','م²',340,415,0],
+ ['fin','DOR-2310','باب خشب داخلي كامل التركيب','Interior timber door, fitted','عدد',4200,5125,0],
+ ['fin','SKT-2402','وزرة رخام ارتفاع 10 سم','Marble skirting 10 cm','م.ط',95,116,1],
+ ['elc','ELC-3101','نقطة إنارة كاملة','Lighting point, complete','عدد',320,370,0],
+ ['plm','PLM-4108','نقطة صرف أرضية','Floor drain point','عدد',410,475,0]];
 const unit=u=>u.replace('³','<sup>3</sup>').replace('²','<sup>2</sup>');
 const money=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const bab=id=>BABS.find(b=>b.id===id);
-const sellOf=it=>it[6]!=null?it[6]:Math.round(it[5]*(1+bab(it[0]).m/100)*100)/100;
-const derived=it=>Math.round(it[5]*(1+bab(it[0]).m/100)*100)/100;
 
 const $=s=>document.querySelector(s),H=document.documentElement,A=$('#app');
 const q0=new URLSearchParams(location.search);
-let advOpen=q0.get('adv')==='1',view=q0.get('view')||'list',lang='ar',filter='active',query='',open={con:true,fin:true},confirmCode=null,doneCode=null,panelCode=null,sheet=false,costEdit=null,onlyOvr=false,babSel='';
+let view=q0.get('view')||'list',lang='ar',filter='active',query='',open={con:true,fin:true},confirmCode=null,doneCode=null,panelCode=null,sheet=false,costEdit=null,babSel='';
 const ARCH=new Set(ITEMS.filter(x=>x[7]).map(x=>x[1]));
 if(view==='empty'){query='سباكة 99';}
 if(view==='archive'){confirmCode='CON-1016';}
-if(view==='panel'||view==='panel-ro'){panelCode='CON-1014';}
-if(view==='override'||view==='override-ro'){panelCode='CON-1015';}
-if(view==='edit'){panelCode='CON-1014';costEdit=1250;}
+if(view==='panel'||view==='panel-ro'){panelCode='CON-1015';}
+if(view==='edit'){panelCode='CON-1015';costEdit=3300;}
 if(view==='archived'){filter='archived';open={con:true,fin:true};}
 if(view==='unarch'){filter='archived';doneCode='CON-1027';ARCH.add('CON-1027');}
 if(q0.get('sheet')==='1')sheet=true;
@@ -459,11 +415,10 @@ function visible(){
   return ITEMS.filter(it=>{
     const isA=ARCH.has(it[1]);
     if(filter==='active'&&isA)return false;if(filter==='archived'&&!isA)return false;
-    if(onlyOvr&&it[6]==null)return false;if(babSel&&it[0]!==babSel)return false;
+    if(babSel&&it[0]!==babSel)return false;
     if(!t)return true;return (it[1]+it[2]+it[3]).toLowerCase().includes(t)});
 }
-function sellCell(it){const ov=it[6]!=null;return `<span class="sellc ${ov?'is-ovr':''}">${ov?`<span class="ovr" title="سعر بيع مخصّص بدل المحسوب">${i('pin','')}مخصّص</span>`:`<span class="drv" title="محسوب من هامش الباب" aria-label="محسوب من هامش الباب"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${IC.pct}"/></svg></span>`}<bdi class="money sellv" dir="ltr">${money(sellOf(it))}</bdi></span>`}
-function ovrTag(){return `<span class="ovr"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${IC.pin}"/></svg>مخصّص</span>`}
+function sellCell(it){return `<bdi class="money sellv" dir="ltr">${money(it[6])}</bdi>`}
 function rowHtml(it){
   const code=it[1],isA=ARCH.has(code);
   if(confirmCode===code)return `<tr class="conf"><td colspan="6"><div class="confrow"><span class="ico">${i('arch')}</span><span class="msg">أرشفة <b>«${it[2]}»</b>؟<small>يختفي من القائمة النشطة، ويمكنك استرجاعه من «مؤرشف» في أي وقت.</small></span><button class="btn sm" type="button" data-yes="${code}"><span class="spin"></span>أرشفة</button><button class="btn sec2 sm" type="button" data-no>إلغاء</button></div></td></tr>`;
@@ -471,9 +426,9 @@ function rowHtml(it){
   return `<tr class="it ${isA?'arch':''}" data-code="${code}"><td class="id"><div class="idc"><span class="nm">${it[2]}</span>${isA?`<span class="atag">${i('arch','s')}مؤرشف</span>`:''}<bdi class="cd" dir="ltr">${code}</bdi></div></td><td class="en">${it[3]}</td><td class="un">${unit(it[4])}</td><td class="n cost"><bdi class="money" dir="ltr">${money(it[5])}</bdi></td><td class="n">${sellCell(it)}</td><td class="act"><div class="menuwrap"><button type="button" class="ib" data-menu="${code}" aria-haspopup="menu" aria-label="إجراءات ${it[2]}">${i('dots')}</button></div></td></tr>`;
 }
 function groupHtml(b,items){
-  const o=open[b.id]||query.trim()||onlyOvr||babSel||filter==='archived';
-  const shown=items.length, total=(query.trim()||onlyOvr||filter==='archived')?shown:b.c;
-  const head=`<tr class="grp ${o?'':'col'}"><td colspan="6"><button type="button" class="gbtn" data-g="${b.id}" aria-expanded="${!!o}">${i('chev','s chev')}<span class="gn">${b.n}</span><span class="badge">${total} بنداً</span><span class="mk">${i('pct','s')}هامش الباب <bdi class="money" dir="ltr">${b.m}%</bdi></span></button></td></tr>`;
+  const o=open[b.id]||query.trim()||babSel||filter==='archived';
+  const shown=items.length, total=(query.trim()||filter==='archived')?shown:b.c;
+  const head=`<tr class="grp ${o?'':'col'}"><td colspan="6"><button type="button" class="gbtn" data-g="${b.id}" aria-expanded="${!!o}">${i('chev','s chev')}<span class="gn">${b.n}</span><span class="gc">${total} بنداً</span></button></td></tr>`;
   if(!o)return head;
   const rows=items.map(rowHtml).join('');
   const rest=total-shown;
@@ -488,19 +443,16 @@ function countText(){
   if(view==='loading')return '<span class="sk" style="inline-size:200px"></span>';
   const n=visible().length,qs=query.trim(),sc=filter==='archived'?'في المؤرشف':filter==='all'?'في الكتالوج كله':'في البنود النشطة';
   if(qs)return `${n} نتيجة لـ «${qs}» ${sc}`;
-  if(onlyOvr||babSel)return `${n} بنداً يطابق التصفية ${sc}`;
+  if(babSel)return `${n} بنداً في هذا الباب ${sc}`;
   return filter==='archived'?`يعرض ${ARCHN} بنداً مؤرشفاً`:(filter==='all'?'يعرض كل البنود: 612':`يعرض ${612-ARCHN} بنداً نشطاً`);
 }
 function toolsHtml(){
   const seg=`<div class="seg" role="group" aria-label="التصفية">${[['active','نشط'],['archived','مؤرشف'],['all','الكل']].map(a=>`<button type="button" data-f="${a[0]}" aria-pressed="${filter===a[0]}">${a[1]}</button>`).join('')}</div>`;
   const sel=`<div class="sel"><label class="vh" for="bs">الباب</label><select id="bs"><option value="">كل الأبواب</option>${BABS.map(b=>`<option value="${b.id}" ${babSel===b.id?'selected':''}>${b.n}</option>`).join('')}</select>${i('chev','s')}</div>`;
-  const ck=`<label class="ck"><input type="checkbox" id="ovo" ${onlyOvr?'checked':''}><span class="bx"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>سعر بيع مخصّص فقط</label>`;
-  const nAdv=(babSel?1:0)+(onlyOvr?1:0);
-  const clr=(query.trim()||onlyOvr||babSel)?`<button type="button" class="lnk" id="clr">مسح التصفية</button>`:'';
-  return `<div class="tools d-only">${seg}${sel}${ck}</div>
+  const clr=(query.trim()||babSel)?`<button type="button" class="lnk" id="clr">مسح التصفية</button>`:'';
+  return `<div class="tools d-only">${seg}${sel}</div>
   <div class="mtools m-only"><div class="seg full" role="group" aria-label="التصفية">${[['active','نشط'],['archived','مؤرشف'],['all','الكل']].map(a=>`<button type="button" data-f="${a[0]}" aria-pressed="${filter===a[0]}">${a[1]}</button>`).join('')}</div>
-   <div class="mrow"><button type="button" class="btn sec2" id="advb" aria-expanded="${advOpen}">${i('chev','s')}تصفية أخرى${nAdv?` <span class="badge fill">${nAdv}</span>`:''}</button><button type="button" class="btn sec2 imp2">${i('up','s')}استيراد Excel</button></div>
-   ${advOpen?`<div class="adv">${sel}${ck}</div>`:''}</div>
+   <div class="mrow">${sel}<button type="button" class="btn sec2 imp2">${i('up','s')}استيراد Excel</button></div></div>
   <div class="count"><span>${countText()}</span>${clr}</div>`;
 }
 function draw(){
@@ -510,15 +462,15 @@ function draw(){
     const w=[120,90,50,70,80];
     body=`<div class="tw d-only" role="status" aria-busy="true"><span class="vh">جارٍ التحميل</span><table class="tbl"><thead><tr><th class="id">الوصف</th><th class="en">English</th><th>الوحدة</th><th class="n cost">سعر التكلفة</th><th class="n">سعر البيع</th><th></th></tr></thead><tbody>${Array.from({length:10}).map(()=>`<tr class="it"><td class="id"><span class="sk" style="inline-size:200px"></span></td><td><span class="sk" style="inline-size:150px"></span></td><td><span class="sk" style="inline-size:36px"></span></td><td class="n cost"><span class="sk" style="inline-size:70px"></span></td><td class="n"><span class="sk" style="inline-size:80px"></span></td><td></td></tr>`).join('')}</tbody></table></div><div class="mlist m-only">${Array.from({length:7}).map(()=>`<div class="li"><span class="t"><span class="sk" style="inline-size:70%"></span></span><span class="sell"><span class="sk" style="inline-size:80px"></span></span><span class="sub"><span class="sk" style="inline-size:50%"></span></span></div>`).join('')}</div>`;
   }else if(!vis.length){
-    const hasQ=query.trim()||onlyOvr||babSel;
+    const hasQ=query.trim()||babSel;
     body=`<div class="state">${hasQ?`<div class="ico">${i('search')}</div><h4>لا نتائج مطابقة</h4><p>لا يوجد بند يطابق «${query.trim()||'التصفية الحالية'}» ${filter==='archived'?'في المؤرشف':filter==='all'?'في الكتالوج':'في البنود النشطة'}. تحقق من الرمز أو جرّب كلمة من الوصف.</p><button class="btn sec2" type="button" id="clr2">مسح التصفية</button>`:`<div class="ico">${i('arch')}</div><h4>لا توجد بنود مؤرشفة</h4><p>البنود التي تُؤرشف تظهر هنا ويمكن استرجاعها.</p>`}</div>`;
   }else{
-    const groups=BABS.filter(b=>vis.some(x=>x[0]===b.id)||(!query.trim()&&!onlyOvr&&!babSel&&filter!=='archived'));
+    const groups=BABS.filter(b=>vis.some(x=>x[0]===b.id)||(!query.trim()&&!babSel&&filter!=='archived'));
     const table=`<div class="tw d-only"><table class="tbl"><thead><tr><th class="id">الوصف</th><th class="en">English description</th><th>الوحدة</th><th class="n cost"><span class="int">${i('eyeoff','s')}سعر التكلفة (ج.م) <span class="badge q">داخلي</span></span></th><th class="n">سعر البيع (ج.م)</th><th class="act"><span class="vh">إجراءات</span></th></tr></thead><tbody>${groups.map(b=>groupHtml(b,vis.filter(x=>x[0]===b.id))).join('')}</tbody></table></div>`;
-    const mob=`<div class="mlist m-only">${groups.map(b=>{const items=vis.filter(x=>x[0]===b.id);const o=open[b.id]||query.trim()||onlyOvr||babSel||filter==='archived';const total=(query.trim()||onlyOvr||filter==='archived')?items.length:b.c;
-      return `<button type="button" class="mg" data-g="${b.id}" aria-expanded="${!!o}">${i('chev','s chev')}<span class="gn">${b.n}</span><span class="badge">${total}</span><span class="mk">${i('pct','s')}<bdi class="money" dir="ltr">${b.m}%</bdi></span></button>`+(o?items.map(it=>{const code=it[1],isA=ARCH.has(code);
+    const mob=`<div class="mlist m-only">${groups.map(b=>{const items=vis.filter(x=>x[0]===b.id);const o=open[b.id]||query.trim()||babSel||filter==='archived';const total=(query.trim()||filter==='archived')?items.length:b.c;
+      return `<button type="button" class="mg" data-g="${b.id}" aria-expanded="${!!o}">${i('chev','s chev')}<span class="gn">${b.n}</span><span class="gc">${total} بنداً</span></button>`+(o?items.map(it=>{const code=it[1],isA=ARCH.has(code);
         if(confirmCode===code)return `<div class="li conf"><div class="msg">${i('arch','s')} أرشفة <b>«${it[2]}»</b>؟ يختفي من القائمة النشطة، ويمكنك استرجاعه من «مؤرشف» في أي وقت.</div><div class="bt"><button class="btn" type="button" data-yes="${code}"><span class="spin"></span>أرشفة</button><button class="btn sec2" type="button" data-no>إلغاء</button></div></div>`;
-        return `<div class="li ${isA?'arch':''}" data-code="${code}"><span class="t">${it[2]}</span><span class="sell">${it[6]!=null?ovrTag():''}<bdi class="money" dir="ltr" style="font-weight:${it[6]!=null?700:500}">${money(sellOf(it))}</bdi></span><span class="sub"><bdi dir="ltr">${code}</bdi><span>${unit(it[4])}</span>${isA?`<span class="atag">${i('arch','s')}مؤرشف</span>`:''}</span><span class="costl">${i('eyeoff','s')}تكلفة <bdi class="money" dir="ltr">${money(it[5])}</bdi></span><button type="button" class="ib" data-menu="${code}" aria-label="إجراءات ${it[2]}">${i('dots')}</button></div>`}).join('')+((b.c-items.length>0&&!query.trim()&&!onlyOvr&&filter!=='archived')?`<div class="mmore"><button type="button" class="btn quiet">عرض ${b.c-items.length} بنداً أخرى</button></div>`:''):'')}).join('')}</div>`;
+        return `<div class="li ${isA?'arch':''}" data-code="${code}"><span class="t">${it[2]}</span><span class="sell"><bdi class="money" dir="ltr">${money(it[6])}</bdi></span><span class="sub"><bdi dir="ltr">${code}</bdi><span>${unit(it[4])}</span>${isA?`<span class="atag">${i('arch','s')}مؤرشف</span>`:''}</span><span class="costl">${i('eyeoff','s')}تكلفة <bdi class="money" dir="ltr">${money(it[5])}</bdi></span><button type="button" class="ib" data-menu="${code}" aria-label="إجراءات ${it[2]}">${i('dots')}</button></div>`}).join('')+((b.c-items.length>0&&!query.trim()&&filter!=='archived')?`<div class="mmore"><button type="button" class="btn quiet">عرض ${b.c-items.length} بنداً أخرى</button></div>`:''):'')}).join('')}</div>`;
     body=table+mob;
   }
   $('#frame').innerHTML=toolsHtml()+body;
@@ -532,27 +484,24 @@ function drawPanel(){
   const it=ITEMS.find(x=>x[1]===panelCode);
   A.dataset.panel=it?'1':'0';
   if(!it){$('#panel').innerHTML='';return}
-  const b=bab(it[0]),ov=it[6]!=null,cost=(!RO&&costEdit!=null)?costEdit:it[5];
-  const dv=Math.round(cost*(1+b.m/100)*100)/100, sell=ov?it[6]:dv;
+  const b=bab(it[0]),cost=(!RO&&costEdit!=null)?costEdit:it[5];
   const dirty=!RO&&costEdit!=null;
-  const calc=ov?`<div class="calc o"><div class="hd"><span>سعر البيع</span>${ovrTag()}</div><dl><div class="ln"><dt>المحسوب من الباب</dt><dd><s><bdi class="money" dir="ltr">${money(dv)}</bdi></s></dd></div><div class="ln"><dt>الفارق عن المحسوب</dt><dd><bdi class="money" dir="ltr">+${money(sell-dv)} (+${((sell-dv)/dv*100).toFixed(1)}%)</bdi></dd></div><div class="ln res"><dt>سعر البيع المعتمد</dt><dd><bdi class="money" dir="ltr">${money(sell)}</bdi></dd></div></dl><div class="why">${i('info','s')}<span>حدّده المالك بدل الحساب من هامش الباب، ولا يتغير بتغيّر التكلفة. آخر تعديل: أحمد نبيل، 12/09/2026.</span></div></div>`
-   :`<div class="calc"><div class="hd"><span>سعر البيع</span><span class="badge q">${i('pct','s')}محسوب</span></div><dl><div class="ln"><dt>التكلفة</dt><dd><bdi class="money" dir="ltr">${money(cost)}</bdi></dd></div><div class="ln"><dt>هامش ${b.n}</dt><dd><bdi class="money" dir="ltr">+${b.m}% (+${money(Math.round(cost*b.m)/100)})</bdi></dd></div><div class="ln res"><dt>سعر البيع</dt><dd><bdi class="money" dir="ltr">${money(sell)}</bdi></dd></div></dl><div class="why">${i('info','s')}<span>السعر الحالي في الكتالوج: التكلفة زائد هامش الباب. أي تغيير في التكلفة أو الهامش يسري على البنود الجديدة فقط. العروض والتقديرات القائمة لا تُعاد تسعيرها تلقائياً؛ المفتوحة منها تتلقى تنبيه مراجعة يدوية.</span></div></div>`;
-  const ovrAct=RO?'':(ov?`<div class="field"><label for="po">سعر البيع المخصّص</label><div class="ctl money"><input id="po" value="${money(it[6])}" dir="ltr" inputmode="decimal"><span class="aff">ج.م</span></div><div class="foot"></div></div><button type="button" class="btn quiet sm" style="justify-self:start">${i('undo','s')}العودة إلى السعر المحسوب</button>`:`<button type="button" class="btn quiet sm" style="justify-self:start">${i('pin','s')}تحديد سعر بيع مخصّص</button>`);
-  const costField=RO?`<div class="field"><label>${i('eyeoff','s')}سعر التكلفة <span class="badge q">داخلي</span></label><div class="ctl money ro"><span class="val money" dir="ltr" tabindex="0">${money(cost)}</span><span class="aff">ج.م</span><span class="tail">${i('lock','s')}</span></div><div class="foot">${i('eyeoff','s')}<span>داخلي: لا يظهر في أي مستند يراه العميل.</span></div></div>`
-   :`<div class="field"><label for="pc"><span style="display:inline-flex;gap:6px;align-items:center">${i('eyeoff','s')}سعر التكلفة</span> <span class="badge q">داخلي</span> <span class="req" aria-hidden="true">*</span></label><div class="ctl money ${dirty?'dirty is-focus':''}"><input id="pc" value="${money(cost)}" dir="ltr" inputmode="decimal"><span class="aff">ج.م</span></div><div class="foot">${i('eyeoff','s')}<span>داخلي: لا يظهر في أي مستند يراه العميل.</span></div></div>`;
-  const prHead=RO?`<div class="sec-h">الأسعار <span class="badge q">${i('lock','s')}للاطلاع فقط</span></div><div class="foot" style="margin-block-start:2px">يعدّل المالك وحده سعر التكلفة وسعر البيع المخصّص. بقية بيانات البند تعدّلها أنت.</div>`:`<div class="sec-h">الأسعار</div>`;
+  const mf=(id,label,val,foot,internal,dirtyf)=>RO
+    ?`<div class="field"><label>${internal?i('eyeoff','s'):''}${label}${internal?' <span class="badge q">داخلي</span>':''}</label><div class="ctl money ro"><span class="val money" dir="ltr" tabindex="0">${money(val)}</span><span class="aff">ج.م</span><span class="tail">${i('lock','s')}</span></div><div class="foot">${internal?i('eyeoff','s'):''}<span>${foot}</span></div></div>`
+    :`<div class="field"><label for="${id}"><span style="display:inline-flex;gap:6px;align-items:center">${internal?i('eyeoff','s'):''}${label}</span>${internal?' <span class="badge q">داخلي</span>':''} <span class="req" aria-hidden="true">*</span></label><div class="ctl money ${dirtyf?'dirty is-focus':''}"><input id="${id}" value="${money(val)}" dir="ltr" inputmode="decimal"><span class="aff">ج.م</span></div><div class="foot">${internal?i('eyeoff','s'):''}<span>${foot}</span></div></div>`;
+  const prHead=RO?`<div class="sec-h">الأسعار <span class="badge q">${i('lock','s')}للاطلاع فقط</span></div><div class="foot" style="margin-block-start:2px">يعدّل المالك وحده سعر التكلفة وسعر البيع. بقية بيانات البند تعدّلها أنت.</div>`:`<div class="sec-h">الأسعار</div>`;
   $('#panel').innerHTML=`<div class="grabp"></div><div class="hd"><div class="t"><h4>${it[2]}</h4><div class="sub"><bdi dir="ltr">${it[1]}</bdi><span>${b.n}</span></div></div><button class="ib" type="button" id="pclose" aria-label="إغلاق">${i('x')}</button></div>
   <div class="bd">
-   ${dirty?`<div class="ban" role="status">${i('info','s')}<span>تعديل غير محفوظ في التكلفة. سيتغيّر سعر البيع المحسوب في الكتالوج للبنود الجديدة فقط، والعروض القائمة لا تُعاد تسعيرها تلقائياً.</span></div>`:''}
+   ${dirty?`<div class="ban" role="status">${i('info','s')}<span>تعديل غير محفوظ في سعر التكلفة.</span></div>`:''}
    ${prHead}
-   ${costField}
-   ${calc}${ovrAct}
+   ${mf('pc','سعر التكلفة',cost,'داخلي: لا يظهر في أي مستند يراه العميل.',true,dirty)}
+   ${mf('ps','سعر البيع',it[6],'سعر البيع المسجّل لهذا البند في الكتالوج.',false,false)}
    <div class="sec-h">بيانات البند</div>
    <div class="field"><label for="d1">الوصف بالعربية <span class="req" aria-hidden="true">*</span></label><div class="ctl"><input id="d1" value="${it[2]}"></div></div>
    <div class="field"><label for="d2">الوصف بالإنجليزية</label><div class="ctl"><input id="d2" value="${it[3]}" dir="ltr"></div></div>
    <div class="g2c"><div class="field"><label for="d3">الوحدة <span class="req" aria-hidden="true">*</span></label><div class="ctl"><span class="val">${unit(it[4])}</span><span class="tail">${i('chev','s')}</span></div></div>
    <div class="field"><label>رمز البند</label><div class="ctl ro"><span class="val" dir="ltr" tabindex="0">${it[1]}</span><span class="tail">${i('lock','s')}</span></div></div></div>
-   <div class="meta">${ov?'أُنشئ في 03/02/2026. آخر تعديل: أحمد نبيل، 12/09/2026.':'أُنشئ في 03/02/2026. آخر تعديل: سارة عادل، 28/08/2026.'}</div>
+   <div class="meta">أُنشئ في 03/02/2026. آخر تعديل: ${RO?'أحمد نبيل':'سارة عادل'}، 28/08/2026.</div>
   </div>
   <div class="ft"><button class="btn prim" type="button" ${dirty?'':'disabled'}>حفظ</button><button class="btn sec2" type="button" id="pclose2">إغلاق</button><span class="spacer"></span><button class="btn sec2" type="button">${i('arch','s')}أرشفة</button></div>`;
   $('#pclose').onclick=$('#pclose2').onclick=()=>{panelCode=null;costEdit=null;drawPanel()};
@@ -566,7 +515,6 @@ document.addEventListener('click',e=>{
   if(mb){const w=mb.closest('.menuwrap')||mb.parentElement;let mw=w;if(!w.classList.contains('menuwrap')){mb.insertAdjacentHTML('beforebegin','<span class="menuwrap"></span>');mw=mb.previousElementSibling;mw.appendChild(mb)}
     if(!mw.querySelector('.pop'))mw.insertAdjacentHTML('beforeend',menuFor(mb.dataset.menu));mw.classList.toggle('open');if(mw.classList.contains('open'))placePop(mw,mb);return}
   const g=e.target.closest('[data-g]');if(g){const id=g.dataset.g;open[id]=!(open[id]||query.trim());draw();return}
-  if(e.target.closest('#advb')){advOpen=!advOpen;draw();return}
   const f=e.target.closest('[data-f]');if(f){filter=f.dataset.f;draw();return}
   const o=e.target.closest('[data-open]');if(o){panelCode=o.dataset.open;costEdit=null;draw();return}
   const ar=e.target.closest('[data-arch]');if(ar){confirmCode=ar.dataset.arch;draw();return}
@@ -574,9 +522,9 @@ document.addEventListener('click',e=>{
   if(e.target.closest('[data-no]')){confirmCode=null;draw();return}
   const yes=e.target.closest('[data-yes]');if(yes){yes.classList.add('is-busy');setTimeout(()=>{ARCH.add(yes.dataset.yes);confirmCode=null;draw()},900);return}
   const row=e.target.closest('tr.it,.li');if(row&&row.dataset.code&&!e.target.closest('.ib,.menuwrap')){panelCode=row.dataset.code;costEdit=null;draw();return}
-  if(e.target.closest('#clr,#clr2')){query='';onlyOvr=false;babSel='';draw();return}
+  if(e.target.closest('#clr,#clr2')){query='';babSel='';draw();return}
 });
-document.addEventListener('change',e=>{if(e.target.id==='ovo'){onlyOvr=e.target.checked;draw()}if(e.target.id==='bs'){babSel=e.target.value;draw()}});
+document.addEventListener('change',e=>{if(e.target.id==='bs'){babSel=e.target.value;draw()}});
 $('#q').addEventListener('input',e=>{query=e.target.value;draw();$('#q').focus()});
 $('#qx').onclick=()=>{query='';draw()};
 $('#scrim').onclick=()=>{if(sheet){sheet=false;A.dataset.sheet='0'}else{panelCode=null;costEdit=null;drawPanel()}};

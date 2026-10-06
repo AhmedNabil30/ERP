@@ -14904,3 +14904,37 @@ endpoints and left a TO save of an unchanged price needing the Owner. The re-imp
 (`KAFF-201`) re-prices existing items, so it carries the same check. Create is unchanged: the Technical
 Office still enters initial prices when it adds an item. Open question for Nabil: the spec and entity have
 no separate "sell-price override" field, so `baseSellRate` is treated as the guarded sell price.
+
+### D-179 · Nabil — the catalogue has no derived sell price; `spec.md` §4.1 stands · 2026-10-06
+
+The catalogue screen was designed around a sell price derived from the باب's markup, with a per-item
+override marked in the list and explained by a derivation card in the detail panel. **No such concept
+exists.** `spec.md` §4.1 defines a catalogue item as `code · description · unit · bab · costPrice ·
+baseSellRate · status`: the sell rate is stored per item. The markup is `lineMarkup` in §4.2 and it
+applies per BOQ line on a project, not to the catalogue.
+
+**The rule was invented in the Scrum Master's own brief to the design agent** — "the sell price is
+normally derived from the باب's markup, but an item may carry its own overriding sell price" — and
+the designer drew it faithfully, the client approved the picture, and it reached a build brief before
+anyone checked it against the spec. The backend agent building `KAFF-940` found it, because its
+acceptance criterion asked it to guard an override field that does not exist in the domain.
+
+Nabil ruled: follow the spec. The screen shows two independent money columns. `costPrice` stays
+internal and marked. `baseSellRate` is a stored figure, edited like any other money field. Neither
+explains the other. The price-origin markers, the derivation card, the "custom price only" filter and
+the "return to the calculated price" action are all removed.
+
+**This is `CLAUDE.md`'s own warning arriving exactly as written** — *"An invented rule is always
+plausible, which is why it survives review and surfaces months later during acceptance."* It survived
+a design pass, a client approval and a story, and was caught only because a builder tried to enforce
+it against the real domain. The lesson recorded for later sessions: a business fact handed to a design
+agent gets a `spec.md` citation attached to it, or it is a question, not a fact.
+
+**Permission, as built by `KAFF-940`:** `Permission.CataloguePriceEdit`, `CompanyWide`, granted to the
+Owner alone, guarding `costPrice` and `baseSellRate` on edit and on the re-import confirm path.
+`CatalogueManage` is unchanged and still gives the Technical Office create, descriptions, unit, moves
+between أبواب, archive and unarchive.
+
+**Left as it is, pending a ruling nobody has asked for yet:** the Technical Office can still type
+initial prices when creating a new item; only later changes are guarded. `AC-940-D` requires create to
+keep working, and locking creation as well would be a separate ruling.
