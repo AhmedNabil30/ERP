@@ -332,6 +332,34 @@ button {
   outline-offset: 3px;
 }
 
+/* A skeleton bar (README "The four list states": loading is skeleton rows, never a spinner over a table).
+   Reduced motion stops the shimmer. */
+.sk {
+  display: inline-block;
+  block-size: 14px;
+  border-radius: 4px; /* a structural sliver, not a surface (README) */
+  background: linear-gradient(90deg, var(--line), var(--hover), var(--line));
+  background-size: 200% 100%;
+  vertical-align: middle;
+  animation: kaff-shimmer 1.4s linear infinite;
+}
+
+@keyframes kaff-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sk {
+    animation: none;
+  }
+}
+
 /* Visually hidden, still announced. */
 .sr-only {
   position: absolute;

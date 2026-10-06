@@ -8,7 +8,7 @@
   [attr.data-testid]="testId()"
   (click)="onTriggerClick()"
   (keydown)="onTriggerKeydown($event)"
->⋯</button>
+><kaff-icon [name]="'dots'" /></button>
 
 @if (open()) {
   <div
@@ -26,11 +26,17 @@
         role="menuitem"
         class="menu-item"
         [class.menu-item--danger]="item.tone === 'danger'"
+        [class.menu-item--sep]="item.separatorBefore ?? false"
         [disabled]="item.disabled ?? false"
         [attr.data-testid]="testId() ? testId() + '-' + item.action : null"
         (click)="onItemClick(item)"
         (keydown)="onMenuKeydown($event, i)"
-      >{{ i18n.t(item.labelKey) }}</button>
+      >
+        @if (item.icon; as icon) {
+          <kaff-icon [name]="icon" [small]="true" />
+        }
+        <span>{{ i18n.t(item.labelKey) }}</span>
+      </button>
     }
   </div>
 }

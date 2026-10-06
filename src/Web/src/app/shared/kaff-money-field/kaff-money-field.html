@@ -1,0 +1,66 @@
+<div class="field">
+  <label class="label" [attr.for]="readOnly() ? null : controlId()" [id]="controlId() + '-label'">
+    @if (internal()) {
+      <kaff-icon [name]="'eyeoff'" [small]="true" />
+    }
+    <span>{{ i18n.t(labelKey()) }}</span>
+    @if (internal()) {
+      <kaff-badge tone="quiet">{{ i18n.t('catalogue.badge.internal') }}</kaff-badge>
+    }
+    @if (required() && !readOnly()) {
+      <span class="required" aria-hidden="true">*</span>
+    }
+  </label>
+
+  <div class="ctl" [class.ctl--ro]="readOnly()" [class.ctl--dirty]="dirty()" [class.ctl--invalid]="errorKey() !== null">
+    @if (readOnly()) {
+      <span
+        class="val figure"
+        dir="ltr"
+        tabindex="0"
+        role="textbox"
+        aria-readonly="true"
+        [attr.aria-labelledby]="controlId() + '-label'"
+        [attr.aria-describedby]="describedBy()"
+        [attr.data-testid]="testId()"
+        >{{ displayValue() }}</span
+      >
+    } @else {
+      <input
+        class="val input"
+        type="text"
+        inputmode="decimal"
+        dir="ltr"
+        autocomplete="off"
+        [id]="controlId()"
+        [value]="value()"
+        [attr.aria-invalid]="errorKey() !== null ? 'true' : null"
+        [attr.aria-describedby]="describedBy()"
+        [attr.data-testid]="testId()"
+        (input)="onInput($event)"
+      />
+    }
+    <span class="aff">{{ i18n.t(affixKey()) }}</span>
+    @if (readOnly()) {
+      <span class="tail"><kaff-icon [name]="'lock'" [small]="true" /></span>
+    }
+  </div>
+
+  <div class="foot">
+    @if (messageKey(); as key) {
+      <p
+        class="message"
+        [class.message--error]="errorKey() !== null"
+        [id]="describedBy()"
+        [attr.data-testid]="hintTestId()"
+      >
+        @if (errorKey() !== null) {
+          <kaff-icon [name]="'alert'" [small]="true" />
+        } @else if (internal()) {
+          <kaff-icon [name]="'eyeoff'" [small]="true" />
+        }
+        <span>{{ i18n.t(key) }}</span>
+      </p>
+    }
+  </div>
+</div>

@@ -26,10 +26,10 @@
   justify-self: start;
 }
 
-/* Archived: reduced opacity, not a second hue. The word "مؤرشف" still carries the state — colour and
-   opacity are never the only signal. */
+/* Archived (README "Kit additions" 4): the row text drops to the dim colour. Never struck through, because the
+   item is not wrong, only retired. The word on the row's own tag carries the state, not the dimming. */
 .row--archived {
-  opacity: 0.55;
+  color: var(--dim);
 }
 
 /* KAFF-924: the per-cell mobile label a caller projects in (e.g. `.row-price-label` in
@@ -44,7 +44,7 @@
 
 /* KAFF-928 finding 4: the only mobile collapse rule, and it needs no `!important`: it sits after the
    `var(--kaff-columns)` rule on the same element, so source order decides which wins under `48rem`. */
-@media (width < 48rem) {
+@media (width <= 820px) {
   .row {
     grid-template-columns: 1fr;
     padding-block: var(--space-2);
@@ -52,5 +52,87 @@
 
   .row ::ng-deep .row-price-label {
     display: block;
+  }
+}
+
+/*
+  The pinned identity cell (README "Lists and tables", "The sticky first column"). A caller marks ONE
+  cell `.cell-pinned`; it sticks at the start edge with a solid fill so scrolling columns pass under it,
+  and a hairline on its inline-end side as the divider (no moving shadow). The negative margin and the
+  matching padding make it cover the row's own 16px start padding, so nothing shows through that strip.
+  On hover and on an archived row it takes the same fill as the row. `::ng-deep`, because projected
+  content keeps the caller's style scope.
+*/
+.row ::ng-deep .cell-pinned {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 2;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  min-inline-size: 0;
+  margin-inline-start: calc(var(--space-4) * -1);
+  padding-inline: var(--space-4);
+  background: var(--surface);
+  border-inline-end: 1px solid var(--line);
+}
+
+.row:hover ::ng-deep .cell-pinned {
+  background: color-mix(in srgb, var(--ink) 5.5%, var(--surface));
+}
+
+/*
+  The stacked phone row (README "Lists and tables", "Phone row"): at least 84px, a hairline below, no
+  card. Line one is the title at the start and the primary figure at the end; line two is the secondary
+  text at the start and the secondary figure at the end; the 44px action spans both lines. A caller opts
+  in with `stacked` and names its cells `.cell-title`, `.cell-primary`, `.cell-sub`, `.cell-secondary`
+  and `.cell-act`; any cell with `.cell-wide` is a desktop-only column and is hidden here.
+*/
+@media (width <= 820px) {
+  .row--stacked {
+    grid-template-columns: minmax(0, 1fr) auto var(--tap-target);
+    grid-template-areas:
+      'title primary act'
+      'sub secondary act';
+    column-gap: var(--space-2);
+    row-gap: 2px;
+    min-block-size: 84px;
+    padding-block: var(--space-2);
+    padding-inline: var(--space-4) var(--space-1);
+  }
+
+  .row--stacked ::ng-deep .cell-title {
+    grid-area: title;
+  }
+
+  .row--stacked ::ng-deep .cell-primary {
+    grid-area: primary;
+    justify-self: end;
+  }
+
+  .row--stacked ::ng-deep .cell-sub {
+    grid-area: sub;
+  }
+
+  .row--stacked ::ng-deep .cell-secondary {
+    grid-area: secondary;
+    justify-self: end;
+  }
+
+  .row--stacked ::ng-deep .cell-act {
+    grid-area: act;
+  }
+
+  .row--stacked ::ng-deep .cell-wide {
+    display: none;
+  }
+
+  /* On a phone nothing is pinned: the row is one stacked block. */
+  .row--stacked ::ng-deep .cell-pinned {
+    position: static;
+    margin-inline-start: 0;
+    padding-inline: 0;
+    border-inline-end: 0;
+    background: transparent;
   }
 }

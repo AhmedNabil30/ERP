@@ -14938,3 +14938,53 @@ between أبواب, archive and unarchive.
 **Left as it is, pending a ruling nobody has asked for yet:** the Technical Office can still type
 initial prices when creating a new item; only later changes are guarded. `AC-940-D` requires create to
 keep working, and locking creation as well would be a separate ruling.
+### D-180 · Frontend — the catalogue list built to the approved design; the kit grows nine parts and one repair · 2026-10-06
+
+`KAFF-940` AC-940-F and the catalogue list screen (`.design/v2/team-a/catalogue.html`, rulings D-177 and
+D-179). The screen shows two independent stored money columns and no markup. `costPrice` keeps its tint,
+eye-off icon and «داخلي» badge; `baseSellRate` is a plain figure.
+
+**Permission.** The panel draws the Owner's shape when `session.permissions` contains
+`CataloguePriceEdit`, and the read-only shape otherwise. That mirror is presentation. A non-Owner's save
+sends both stored prices back exactly as the server returned them, so the whole-record `PUT` (D-178) is
+valid for the Technical Office, and a changed price from anyone else is refused by the server with
+`errors.master.catalogue_price_owner_only`, which the panel shows in place. A read-only value is the
+kit's read-only field (lock, settled fill, full ink, selectable), never a disabled control.
+
+**The kit gained these parts, because a screen never styles its own version of one:** `kaff-icon`,
+`kaff-banner` (refusal, note, ok, flat), `kaff-inline-confirm` and `kaff-confirm-dialog` (the recoverable
+and irreversible confirmations, one component each, a `tone` input between them), `kaff-search-field`,
+`kaff-select`, `kaff-money-field` (editable, read-only, internal, dirty, error), `kaff-readonly-field`,
+and a skeleton bar (`.sk`) in `styles.css`. Existing parts changed additively: `kaff-group-heading`
+collapses and sticks (`expanded`), `kaff-row-menu` items take an icon and a separator, `kaff-table`
+takes an optional `columns` plus `minInline` and only becomes a horizontal scroll container while it
+truly overflows (a scroll container kills `position: sticky` against the page), `kaff-table-row` gains
+`stacked` (the README phone row) and a `.cell-pinned` cell, `kaff-table-header` gains a pinned column
+and an internal-column marker, `kaff-badge` gains `quiet` and `tag`, `kaff-detail-panel` is now the
+README's overlay (fixed, scrim, 440px, bottom sheet at 820px), `kaff-state` gains `icon`, `bodyText` and
+the `forbidden` mode.
+
+**A repair worth knowing about.** `kaff-state` rendered `<ng-content select="[stateAction]">` in two
+`@switch` branches, and Angular projects a repeated selector into only one place, so the action button
+(clear filters, create) did not render on the empty states at all. It now has one projection slot outside
+any branch. That fixes every list screen that passes a `stateAction`, not only this one.
+
+**Decisions made on the way, all inside the design's discretion:**
+- *612 items, no paging.* The list API returns every row for a filter, so groups slice client-side: 20
+  rows, then a row that reveals the rest of that باب. Open groups persist per viewer in `localStorage`
+  (`kaff.catalogue.open-groups`); a search, a باب choice or the archived view opens every group.
+- *The باب filter narrows in memory.* The API takes `status` and `search` only. The title count
+  ("612 بنداً في 8 أبواب") is its own `status=all` read, refreshed after any mutation.
+- *Phone and desktop rows are separate templates behind one `matchMedia` signal*, not duplicated hidden
+  DOM, so a test id exists exactly once.
+- *The row opens the panel from a real `<button>` on the name* (keyboard) plus a click on the row (mouse).
+  The old stretched-link overlay is gone because the sticky pinned cell paints above it.
+- *Price inputs show the wire decimal trimmed to two places* (`3150.00`), never a thousands-separated
+  string, so no parse step can round a figure. Dirty is a string comparison (`sameDecimal`), never `Number`.
+- *The shell's table breakpoint moved from 48rem to 820px* (`kaff-table-row`, `kaff-table-header`), the
+  README's number. Other list screens collapse 52px earlier than they did.
+
+**Not built and not decided:** the panel's "created on / last edited by" line (the list API carries no
+audit metadata and the audit read is Owner-only); a `GET` for one item; moving an item between أبواب from
+the panel (the design offers no control); the primary action in the phone's bottom bar (the shell's `abar`
+has no slot, so the button sits under the search on a phone); and the import screen itself.

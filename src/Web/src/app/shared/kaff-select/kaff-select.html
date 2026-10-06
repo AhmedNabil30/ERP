@@ -1,0 +1,12 @@
+<div class="sel">
+  <select
+    [attr.aria-label]="i18n.t(ariaLabelKey())"
+    [attr.data-testid]="testId()"
+    (change)="onChange($event)"
+  >
+    @for (option of options(); track option.value) {
+      <option [value]="option.value" [selected]="option.value === value()">{{ option.label }}</option>
+    }
+  </select>
+  <kaff-icon class="chev" [name]="'chev'" [small]="true" />
+</div>

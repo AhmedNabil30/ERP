@@ -1,0 +1,203 @@
+<!-- Each projected slot is ONE unconditional element, with the `@if` inside it: a control-flow block with
+     several root nodes is not projected by `select`, it falls into no slot and is dropped. -->
+<kaff-detail-panel
+  [open]="item() !== null"
+  [title]="item()?.descriptionAr ?? null"
+  testId="catalogue-detail-panel"
+  (closed)="closed.emit()"
+>
+  <span panelMeta class="meta">
+    @if (item(); as item) {
+      <bdi dir="ltr" translate="no">{{ item.code }}</bdi>
+      @if (babName(); as bab) {
+        <span dir="auto">{{ bab }}</span>
+      }
+    }
+  </span>
+
+  <div panelBody class="body">
+    @if (item(); as item) {
+      @if (dirty()) {
+        <kaff-banner tone="note" icon="info" testId="catalogue-detail-unsaved">{{
+          i18n.t('catalogue.panel.unsaved')
+        }}</kaff-banner>
+      }
+
+      <div class="sec-h">
+        <h3>{{ i18n.t('catalogue.panel.prices') }}</h3>
+        @if (!canEditPrices()) {
+          <kaff-badge tone="quiet" testId="catalogue-detail-read-only-badge">
+            <kaff-icon [name]="'lock'" [small]="true" />
+            {{ i18n.t('catalogue.panel.read_only_badge') }}
+          </kaff-badge>
+        }
+      </div>
+      @if (!canEditPrices()) {
+        <p class="reason" data-testid="catalogue-detail-read-only-reason">
+          {{ i18n.t('catalogue.panel.read_only_reason') }}
+        </p>
+      }
+
+      <!-- Two independent stored figures. Neither is calculated from the other, and neither explains the
+           other. The cost keeps its internal marker in both shapes. -->
+      <kaff-money-field
+        labelKey="catalogue.field.cost_price"
+        controlId="catalogue-detail-cost"
+        [internal]="true"
+        [readOnly]="!canEditPrices()"
+        [required]="true"
+        [dirty]="costDirty()"
+        [value]="draft().costPrice"
+        [displayValue]="i18n.formatAmount(item.costPrice)"
+        hintKey="catalogue.panel.cost_hint"
+        [errorKey]="costError()"
+        [testId]="'catalogue-detail-cost-' + item.code"
+        (valueChange)="patch({ costPrice: $event })"
+      />
+      <kaff-money-field
+        labelKey="catalogue.panel.sell_price"
+        controlId="catalogue-detail-sell"
+        [readOnly]="!canEditPrices()"
+        [required]="true"
+        [dirty]="sellDirty()"
+        [value]="draft().baseSellRate"
+        [displayValue]="i18n.formatAmount(item.baseSellRate)"
+        hintKey="catalogue.panel.sell_hint"
+        hintTestId="catalogue-detail-sell-note"
+        [errorKey]="sellError()"
+        [testId]="'catalogue-detail-sell-' + item.code"
+        (valueChange)="patch({ baseSellRate: $event })"
+      />
+
+      <div class="sec-h">
+        <h3>{{ i18n.t('catalogue.panel.item_data') }}</h3>
+      </div>
+
+      <kaff-field
+        #arField="kaffField"
+        labelKey="catalogue.field.description"
+        controlId="catalogue-detail-description-ar"
+        [required]="true"
+        [errorKey]="descriptionError()"
+      >
+        <input
+          id="catalogue-detail-description-ar"
+          type="text"
+          dir="auto"
+          data-testid="catalogue-detail-description-ar"
+          [value]="draft().descriptionAr"
+          [attr.aria-invalid]="descriptionError() !== null ? 'true' : null"
+          [attr.aria-describedby]="arField.describedById()"
+          (input)="onInput('descriptionAr', $event)"
+        />
+      </kaff-field>
+
+      <kaff-field labelKey="catalogue.field.description_en" controlId="catalogue-detail-description-en">
+        <input
+          id="catalogue-detail-description-en"
+          type="text"
+          dir="ltr"
+          data-testid="catalogue-detail-description-en"
+          [value]="draft().descriptionEn"
+          (input)="onInput('descriptionEn', $event)"
+        />
+      </kaff-field>
+
+      <div class="pair">
+        <kaff-field
+          #unitField="kaffField"
+          labelKey="catalogue.field.unit"
+          controlId="catalogue-detail-unit"
+          [required]="true"
+          [errorKey]="unitError()"
+        >
+          <input
+            id="catalogue-detail-unit"
+            type="text"
+            dir="auto"
+            spellcheck="false"
+            data-testid="catalogue-detail-unit"
+            [value]="draft().unit"
+            [attr.aria-invalid]="unitError() !== null ? 'true' : null"
+            [attr.aria-describedby]="unitField.describedById()"
+            (input)="onInput('unit', $event)"
+          />
+        </kaff-field>
+
+        <kaff-readonly-field
+          labelKey="catalogue.panel.code"
+          controlId="catalogue-detail-code"
+          [value]="item.code"
+          [ltr]="true"
+          testId="catalogue-detail-code"
+        />
+      </div>
+    }
+  </div>
+
+  <div panelFooter class="actions">
+    @if (item(); as item) {
+      @if (refusalKey(); as key) {
+        <kaff-banner class="banner" tone="refusal" testId="catalogue-detail-refusal">{{
+          i18n.t(key)
+        }}</kaff-banner>
+      } @else if (saved()) {
+        <kaff-banner class="banner" tone="ok" testId="catalogue-detail-saved">{{
+          i18n.t('catalogue.panel.saved')
+        }}</kaff-banner>
+      }
+      <kaff-button
+        class="save"
+        variant="primary"
+        [disabled]="!dirty()"
+        [busy]="saving()"
+        testId="catalogue-detail-save"
+        (clicked)="onSave()"
+      >
+        {{ saving() ? i18n.t('catalogue.panel.saving') : i18n.t('action.save') }}
+      </kaff-button>
+      <kaff-button variant="secondary" testId="catalogue-detail-close" (clicked)="closed.emit()">
+        {{ i18n.t('action.close') }}
+      </kaff-button>
+      @if (item.status === 'Active') {
+        <kaff-button
+          class="trailing"
+          variant="secondary"
+          testId="catalogue-detail-archive"
+          (clicked)="openArchiveConfirm()"
+        >
+          <kaff-icon [name]="'arch'" [small]="true" />
+          {{ i18n.t('catalogue.item.archive_action') }}
+        </kaff-button>
+      } @else {
+        <kaff-button
+          class="trailing"
+          variant="secondary"
+          [busy]="archiving()"
+          testId="catalogue-detail-unarchive"
+          (clicked)="unarchiveRequested.emit()"
+        >
+          <kaff-icon [name]="'unarch'" [small]="true" />
+          {{ i18n.t('catalogue.item.unarchive_action') }}
+        </kaff-button>
+      }
+
+      <!-- The panel is already an overlay, so the recoverable confirmation is a dialog (kit stacking rule). -->
+      <kaff-confirm-dialog
+        tone="recoverable"
+        icon="arch"
+        [open]="archiveConfirmOpen() && refusalKey() === null"
+        [title]="i18n.t('catalogue.archive.question', { name: item.descriptionAr })"
+        [body]="i18n.t('catalogue.archive.dialog_body')"
+        [confirmLabel]="archiving() ? i18n.t('catalogue.panel.archiving') : i18n.t('catalogue.item.archive_action')"
+        [cancelLabel]="i18n.t('action.cancel')"
+        [busy]="archiving()"
+        testId="catalogue-detail-archive-dialog"
+        confirmTestId="catalogue-detail-archive-confirm"
+        cancelTestId="catalogue-detail-archive-cancel"
+        (confirmed)="onArchiveConfirmed()"
+        (cancelled)="closeArchiveConfirm()"
+      />
+    }
+  </div>
+</kaff-detail-panel>

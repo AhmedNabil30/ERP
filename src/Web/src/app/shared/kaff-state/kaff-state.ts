@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 
 import { I18nService } from '../../core/i18n/i18n.service';
+import { KaffIcon, KaffIconName } from '../kaff-icon/kaff-icon';
 
-export type KaffStateMode = 'loading' | 'empty' | 'filtered-empty' | 'refusal';
+export type KaffStateMode = 'loading' | 'empty' | 'filtered-empty' | 'refusal' | 'forbidden';
 
 /**
  * The state component (KAFF-930). One component, four modes, replacing the per-screen loading /
@@ -18,6 +19,7 @@ export type KaffStateMode = 'loading' | 'empty' | 'filtered-empty' | 'refusal';
  */
 @Component({
   selector: 'kaff-state',
+  imports: [KaffIcon],
   templateUrl: './kaff-state.html',
   styleUrl: './kaff-state.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -26,8 +28,12 @@ export class KaffState {
   readonly mode = input.required<KaffStateMode>();
   readonly titleKey = input<string | null>(null);
   readonly bodyKey = input<string | null>(null);
+  /** An already-resolved sentence, for a body that names what was searched; wins over `bodyKey`. */
+  readonly bodyText = input<string | null>(null);
   /** `filtered-empty` only — how many rows the active filter is hiding. */
   readonly hiddenCount = input<number | null>(null);
+  /** The 56px icon tile above the title (README "The four list states"). Omitted: no tile. */
+  readonly icon = input<KaffIconName | null>(null);
   readonly testId = input<string | null>(null);
 
   protected readonly i18n = inject(I18nService);
@@ -39,6 +45,10 @@ export class KaffState {
   });
 
   protected readonly resolvedBody = computed(() => {
+    const text = this.bodyText();
+    if (text) {
+      return text;
+    }
     const key = this.bodyKey();
     if (!key) {
       return null;

@@ -13,3 +13,26 @@
      still rounds the corners without that side effect (KAFF-928 finding 2). */
   overflow: clip;
 }
+
+.inner {
+  min-inline-size: var(--kaff-table-min, 0);
+}
+
+/* Only while the frame is narrower than its minimum: scroll sideways, with the height bounded so the
+   sticky header and group rows keep working inside the frame. */
+:host(.is-scrolling) .scroll {
+  overflow: auto;
+  max-block-size: 75dvh;
+}
+
+/* A phone shows stacked rows, never a table, and never a sideways scroll. */
+@media (width <= 820px) {
+  .inner {
+    min-inline-size: 0;
+  }
+
+  :host(.is-scrolling) .scroll {
+    overflow: visible;
+    max-block-size: none;
+  }
+}

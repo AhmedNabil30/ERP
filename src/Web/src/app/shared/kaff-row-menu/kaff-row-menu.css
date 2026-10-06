@@ -89,3 +89,25 @@
   block-size: 1px;
   background: var(--line);
 }
+
+/* Items carry an icon at the start and a label (README "Row actions and confirmation"). */
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* A hairline above the group that follows (the archive action, after the read and edit actions). The
+   danger item draws the same line itself, so the two never double up. */
+.menu-item--sep:not(.menu-item--danger) {
+  margin-block-start: 7px;
+}
+
+.menu-item--sep:not(.menu-item--danger)::before {
+  content: '';
+  position: absolute;
+  inset-inline: 4px;
+  inset-block-start: -4px;
+  block-size: 1px;
+  background: var(--line);
+}

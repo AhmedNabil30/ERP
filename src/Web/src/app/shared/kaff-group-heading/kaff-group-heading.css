@@ -1,5 +1,16 @@
 /* The group row (README "Lists and tables"): 44px, the table-head fill, the section name in Noto Kufi
-   600 .9375rem and a count badge. Not collapsible in this version. */
+   600 .9375rem and a count. When the group can collapse (README "Kit additions" 1) it is a 52px button
+   (56px on a phone) that sticks under the table header while the group's rows scroll. */
+
+:host {
+  display: block;
+}
+
+:host(.is-collapsible) {
+  position: sticky;
+  inset-block-start: var(--kaff-group-top, 44px);
+  z-index: 3;
+}
 
 .group-heading {
   display: flex;
@@ -19,4 +30,72 @@
 .count {
   font-size: var(--text-xs);
   color: var(--dim);
+}
+
+.group-heading:has(.toggle) {
+  padding-inline: 0;
+}
+
+.name--toggle {
+  flex: 1;
+  min-inline-size: 0;
+  font-size: var(--text-md);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  inline-size: 100%;
+  min-block-size: 52px;
+  padding-inline: var(--space-4);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.toggle:hover {
+  background: var(--hover);
+}
+
+.toggle:focus-visible {
+  outline-offset: -3px;
+}
+
+.label {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.toggle .count {
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The chevron points at the end edge when closed and down when open, and flips with the direction. */
+.chev {
+  rotate: -90deg;
+}
+
+:host-context([dir='rtl']) .chev {
+  rotate: 90deg;
+}
+
+.toggle[aria-expanded='true'] .chev {
+  rotate: 0deg;
+}
+
+@media (width <= 820px) {
+  :host(.is-collapsible) {
+    inset-block-start: 0;
+  }
+
+  .toggle {
+    min-block-size: 56px;
+  }
 }

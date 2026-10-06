@@ -1,2 +1,6 @@
-<kaff-table-header [columnDefs]="columnDefs()" [testId]="testId()" />
-<ng-content></ng-content>
+<div class="scroll">
+  <div class="inner">
+    <kaff-table-header [columnDefs]="columnDefs()" [testId]="testId()" />
+    <ng-content></ng-content>
+  </div>
+</div>

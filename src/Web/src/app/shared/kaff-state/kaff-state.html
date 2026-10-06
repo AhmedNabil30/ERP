@@ -1,25 +1,24 @@
 <div class="kaff-state" [attr.data-mode]="mode()" [attr.data-testid]="testId()">
-  @switch (mode()) {
-    @case ('loading') {
-      <div class="skeleton" role="status" aria-live="polite" [attr.aria-label]="resolvedTitle()">
-        @for (row of skeletonRows; track row) {
-          <div class="skeleton-row"></div>
-        }
-      </div>
-    }
-    @case ('refusal') {
-      <div class="notice notice--refusal" role="alert">
-        @if (resolvedTitle()) { <p class="title">{{ resolvedTitle() }}</p> }
-        @if (resolvedBody()) { <p class="body">{{ resolvedBody() }}</p> }
-        <ng-content select="[stateAction]"></ng-content>
-      </div>
-    }
-    @default {
-      <div class="notice">
-        @if (resolvedTitle()) { <p class="title">{{ resolvedTitle() }}</p> }
-        @if (resolvedBody()) { <p class="body">{{ resolvedBody() }}</p> }
-        <ng-content select="[stateAction]"></ng-content>
-      </div>
-    }
+  @if (mode() === 'loading') {
+    <div class="skeleton" role="status" aria-live="polite" [attr.aria-label]="resolvedTitle()">
+      @for (row of skeletonRows; track row) {
+        <div class="skeleton-row"></div>
+      }
+    </div>
+  } @else {
+    <!-- One projection slot, outside any branch: an `ng-content` repeated per branch projects into only
+         one of them, which silently dropped the action on every mode but the one that won. -->
+    <div
+      class="notice"
+      [class.notice--refusal]="mode() === 'refusal'"
+      [attr.role]="mode() === 'refusal' ? 'alert' : 'status'"
+    >
+      @if (icon(); as name) {
+        <span class="tile"><kaff-icon [name]="name" /></span>
+      }
+      @if (resolvedTitle()) { <p class="title">{{ resolvedTitle() }}</p> }
+      @if (resolvedBody()) { <p class="body">{{ resolvedBody() }}</p> }
+      <ng-content select="[stateAction]"></ng-content>
+    </div>
   }
 </div>

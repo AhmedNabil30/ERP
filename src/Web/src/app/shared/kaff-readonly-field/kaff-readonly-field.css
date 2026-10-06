@@ -1,0 +1,56 @@
+:host {
+  display: block;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  min-inline-size: 0;
+}
+
+.label {
+  font: 600 var(--text-md) / 1.4 var(--body);
+}
+
+/* The settled head-tone fill, a quiet border, the value in full ink. Not greyed, not dashed. */
+.ctl {
+  display: flex;
+  align-items: stretch;
+  block-size: 3rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--head);
+}
+
+.val {
+  flex: 1;
+  min-inline-size: 0;
+  display: flex;
+  align-items: center;
+  padding-inline: 14px;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  color: var(--ink);
+  user-select: text;
+  cursor: text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.val:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+
+.tail {
+  display: grid;
+  place-items: center;
+  inline-size: 44px;
+  color: var(--dim);
+}
+
+@media (width <= 820px) {
+  .ctl {
+    block-size: 3.5rem;
+  }
+}

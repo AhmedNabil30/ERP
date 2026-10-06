@@ -1,0 +1,97 @@
+/* The catalogue item panel: layout only. Every part inside it is the kit's (field, money field, read-only
+   field, banner, badge, button, confirmation dialog); this file arranges them. */
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-block-start: 2px;
+  color: var(--dim);
+  font-size: 0.875rem;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.body > * {
+  flex: none;
+}
+
+.sec-h {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-block-end: -6px;
+  padding-block-start: 6px;
+}
+
+.sec-h h3 {
+  font: 700 var(--text-md) / 1.4 var(--display);
+}
+
+/* The one line that says who changes the prices: plain text where the user looks, not a tooltip. */
+.reason {
+  margin: 0;
+  color: var(--dim);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.actions {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.banner {
+  flex: 1 1 100%;
+}
+
+.trailing {
+  margin-inline-start: auto;
+}
+
+@media (width <= 820px) {
+  .pair {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    flex-wrap: nowrap;
+  }
+
+  .banner {
+    flex-basis: 100%;
+  }
+
+  .save {
+    flex: 1;
+  }
+
+  /* A phone's footer buttons are the 56px size (README "Overlays"). */
+  .actions {
+    --kaff-button-size: 3.5rem;
+  }
+
+  .save ::ng-deep .kaff-button {
+    inline-size: 100%;
+  }
+}
+
+/* The kit's field reserves a one-line footer so a form does not reflow when validation runs. This panel
+   has no hint under its text fields, so an empty footer would only add dead space between them. */
+kaff-field ::ng-deep .field-foot:not(:has(*)) {
+  min-block-size: 0;
+}

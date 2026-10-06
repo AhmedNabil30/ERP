@@ -23,5 +23,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 export class KaffTableRow {
   /** Archived rows dim, per `apple-erp-design` §3 — a reduced-opacity row, not a second hue. */
   readonly archived = input(false);
+  /** Opts the row into the README "Phone row" layout at 820px and narrower (see the stylesheet). */
+  readonly stacked = input(false);
   readonly testId = input<string | null>(null);
 }

@@ -19,14 +19,39 @@
   z-index: 1;
 }
 
+.header [role="columnheader"] {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-inline-size: 0;
+  white-space: nowrap;
+}
+
 .header-cell--end {
+  justify-content: flex-end;
   text-align: end;
 }
 
 /* KAFF-928 finding 4: a stacked row has no columns for a column header to name, so the header is
    absent at mobile width rather than collapsing its own labels into a stacked column of their own. */
-@media (width < 48rem) {
+@media (width <= 820px) {
   .header {
     display: none;
   }
+}
+
+/* The pinned identity column's header cell (README "The sticky first column"): sticky at the start edge,
+   above the scrolling header cells, with the same solid head fill and the same inline-end hairline as
+   the row cells beneath it. */
+.header-cell--pinned {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 2;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  margin-inline-start: calc(var(--space-4) * -1);
+  padding-inline: var(--space-4);
+  background: var(--head);
+  border-inline-end: 1px solid var(--line);
 }

@@ -1,21 +1,27 @@
 @if (open()) {
+  <!-- The scrim dims the page behind the panel. A click on it closes the panel, like Escape and the close
+       button (README "Overlays": every overlay closes with its close button, the scrim and Escape). -->
+  <div class="scrim" aria-hidden="true" (click)="onCloseClick()"></div>
   <aside
     #panel
     class="detail-panel"
     role="dialog"
+    aria-modal="true"
     [attr.aria-labelledby]="headingId"
     tabindex="-1"
     [attr.data-testid]="testId()"
   >
     <header class="panel-header">
-      <h2 [id]="headingId">{{ resolvedTitle() }}</h2>
-      <ng-content select="[panelMeta]"></ng-content>
+      <div class="head-text">
+        <h2 [id]="headingId">{{ resolvedTitle() }}</h2>
+        <ng-content select="[panelMeta]"></ng-content>
+      </div>
       <button
         type="button"
         class="close-btn"
         [attr.aria-label]="i18n.t('action.close')"
         (click)="onCloseClick()"
-      >×</button>
+      ><kaff-icon [name]="'x'" /></button>
     </header>
     <div class="panel-body">
       <ng-content select="[panelBody]"></ng-content>

@@ -15,7 +15,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class KaffBadge {
-  readonly tone = input<'neutral' | 'accent' | 'warning' | 'brand'>('neutral');
+  readonly tone = input<'neutral' | 'accent' | 'warning' | 'brand' | 'quiet' | 'tag'>('neutral');
   /** `999px` pill shape (KAFF-924's group-heading margin badge) instead of the default `--radius-sm`. */
   readonly pill = input(false);
   readonly testId = input<string | null>(null);

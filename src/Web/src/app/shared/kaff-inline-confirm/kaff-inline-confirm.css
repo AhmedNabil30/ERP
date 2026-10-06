@@ -1,0 +1,95 @@
+/*
+  Inline confirmation (README "Row actions and confirmation"). 64px at desktop: the one allowed shift,
+  because the user asked for it. Recoverable: neutral note fill and an ink line above, ink text.
+  Irreversible: the error fill and line, error text. Phone: a full-width block, the message above two
+  52px buttons.
+*/
+
+:host {
+  display: block;
+  --kaff-button-size: var(--tap-target);
+}
+
+.confirm {
+  min-block-size: 64px;
+  padding-inline: var(--space-4);
+  border-block-start: 1px solid var(--fieldline);
+  background: var(--note-bg);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+}
+
+.confirm--irreversible {
+  border-block-start-color: var(--err-bar);
+  background: var(--err-bg);
+  color: var(--err-ink);
+}
+
+/* Pinned at the start edge of a horizontally scrolling table: the question never scrolls away. */
+.pinned {
+  position: sticky;
+  inset-inline-start: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  inline-size: min(100%, 800px);
+  min-inline-size: 0;
+  padding-block: var(--space-2);
+}
+
+.message {
+  flex: 1;
+  min-inline-size: 0;
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.message b {
+  font-weight: 700;
+}
+
+.message small {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 400;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+@media (width <= 820px) {
+  :host {
+    --kaff-button-size: 3.25rem;
+  }
+
+  .confirm {
+    display: block;
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .pinned {
+    position: static;
+    flex-wrap: wrap;
+    inline-size: auto;
+  }
+
+  .message {
+    flex-basis: calc(100% - 40px);
+  }
+
+  .actions {
+    flex-basis: 100%;
+  }
+
+  .actions kaff-button {
+    flex: 1;
+  }
+
+  .actions ::ng-deep .kaff-button {
+    inline-size: 100%;
+  }
+}

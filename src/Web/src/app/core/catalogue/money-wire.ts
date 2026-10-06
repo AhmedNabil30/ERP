@@ -25,3 +25,24 @@ export function toWireDecimal(raw: string): string {
 
   return trimmed;
 }
+
+/**
+ * The text an edit field starts from: the wire decimal with its padding zeros trimmed, but never below
+ * two decimals ("3150.0000" becomes "3150.00"). A string-to-string rewrite — the figure is never parsed
+ * into a number, so nothing is rounded and nothing is lost (D-135).
+ */
+export function toEditValue(wire: string): string {
+  const trimmed = wire.trim();
+  const dot = trimmed.indexOf('.');
+  if (dot < 0) {
+    return `${trimmed}.00`;
+  }
+  const whole = trimmed.slice(0, dot);
+  const fraction = trimmed.slice(dot + 1).replace(/0+$/, '').padEnd(2, '0');
+  return `${whole}.${fraction}`;
+}
+
+/** True when two wire decimals name the same figure ("980.0000" and "980.00" do). Strings only, no `Number`. */
+export function sameDecimal(a: string, b: string): boolean {
+  return toEditValue(a) === toEditValue(b);
+}

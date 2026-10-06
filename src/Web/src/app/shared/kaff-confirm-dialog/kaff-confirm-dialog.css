@@ -1,0 +1,56 @@
+/* Confirmation dialog (README "Overlays"): 420px, `--radius`, the popup shadow, the scrim behind it. */
+
+.dlg {
+  inline-size: 420px;
+  max-inline-size: calc(100vw - 32px);
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+
+.dlg::backdrop {
+  background: var(--scrim);
+}
+
+.body {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+
+.tile {
+  flex: none;
+  display: grid;
+  place-items: center;
+  inline-size: 48px;
+  block-size: 48px;
+  border-radius: var(--radius);
+  background: var(--head);
+  color: var(--ink);
+}
+
+.tile--irreversible {
+  background: var(--err-bg);
+  color: var(--err-ink);
+}
+
+h2 {
+  margin: 0 0 var(--space-1);
+  font: 700 1.125rem / 1.4 var(--display);
+}
+
+p {
+  margin: 0;
+  color: var(--dim);
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: 0 var(--space-5) var(--space-5);
+}

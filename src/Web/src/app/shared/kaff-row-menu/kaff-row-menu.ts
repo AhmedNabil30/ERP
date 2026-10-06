@@ -15,12 +15,17 @@ import { NavigationStart, Router } from '@angular/router';
 import { filter } from 'rxjs';
 
 import { I18nService } from '../../core/i18n/i18n.service';
+import { KaffIcon, KaffIconName } from '../kaff-icon/kaff-icon';
 
 export interface RowMenuItem {
   readonly labelKey: string;
   readonly action: string;
   readonly tone?: 'default' | 'danger';
   readonly disabled?: boolean;
+  /** A glyph at the start of the item (README "Row actions": items have an icon and a label). */
+  readonly icon?: KaffIconName;
+  /** A hairline above this item, separating the group of actions that follows (the danger tone has one already). */
+  readonly separatorBefore?: boolean;
 }
 
 /**
@@ -41,6 +46,7 @@ export interface RowMenuItem {
  */
 @Component({
   selector: 'kaff-row-menu',
+  imports: [KaffIcon],
   templateUrl: './kaff-row-menu.html',
   styleUrl: './kaff-row-menu.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

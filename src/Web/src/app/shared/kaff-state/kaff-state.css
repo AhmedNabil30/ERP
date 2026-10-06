@@ -90,3 +90,32 @@
   color: var(--err-ink);
   max-inline-size: none;
 }
+
+/* The 56px icon tile (README "The four list states"). */
+.tile {
+  display: grid;
+  place-items: center;
+  inline-size: 56px;
+  block-size: 56px;
+  border-radius: var(--radius);
+  background: var(--head);
+  color: var(--ink);
+}
+
+.tile kaff-icon {
+  scale: 1.25;
+}
+
+/* Refused by permission: an outlined disc with a lock, a dashed border. It is not an error and not red,
+   because the user did nothing wrong. No action that tries again: the projected action is a way out. */
+.kaff-state[data-mode='forbidden'] .notice {
+  border-style: dashed;
+  border-color: var(--fieldline);
+  background: transparent;
+}
+
+.kaff-state[data-mode='forbidden'] .tile {
+  border: 2px solid var(--fieldline);
+  border-radius: 50%;
+  background: transparent;
+}

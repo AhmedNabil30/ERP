@@ -1,259 +1,331 @@
-<ng-template #createAction>
-  <kaff-button variant="primary" testId="catalogue-create" (clicked)="onCreate()">
-    {{ i18n.t('catalogue.action.create') }}
-  </kaff-button>
-</ng-template>
-
 <section class="catalogue" data-testid="catalogue-list">
-  <!-- KAFF-929 finding 4: one action bar — title, search, secondary actions as quiet links. The
-       primary action projects into the shell's top-bar slot above (`#createAction`), matching
-       `UserListPage`'s own wiring, instead of living in this row. -->
-  <div class="action-bar">
-    <h1 class="title">{{ i18n.t('catalogue.list.title') }}</h1>
+  <header class="ph">
+    <div class="titles">
+      <h1 class="title">{{ i18n.t('catalogue.list.title') }}</h1>
+      <p class="meta">
+        @if (metaText(); as meta) {
+          <span>{{ meta }}</span>
+        } @else {
+          <span class="sk" aria-hidden="true"></span>
+        }
+        <!-- أبواب and the subcontractors list are their own permissions and routes. The shell's sidebar
+             reaches both for anyone who holds them; these stay as quiet links for the Technical Office's
+             landing, which is this screen. -->
+        <a class="lnk" routerLink="/babs" data-testid="catalogue-manage-babs">{{ i18n.t('nav.babs') }}</a>
+        <a class="lnk" routerLink="/subcontractors" data-testid="catalogue-manage-subcontractors">{{
+          i18n.t('nav.subcontractors')
+        }}</a>
+      </p>
+    </div>
 
-    <!-- Enter submits on a phone keyboard with no visible button competing with the primary action.
-         The query goes to the server exactly as typed, matching the client list's own rule. Finding
-         4: placeholder only, no floating label above it — the aria-label carries accessibility. -->
-    <form class="search" (submit)="$event.preventDefault(); onSubmitSearch()">
-      <input
-        id="catalogue-search"
-        class="search-input"
-        type="search"
-        dir="auto"
-        inputmode="search"
-        data-testid="catalogue-search"
-        [formField]="searchForm.query"
-        [attr.placeholder]="i18n.t('catalogue.search.placeholder')"
-        [attr.aria-label]="i18n.t('catalogue.search.placeholder')"
+    <div class="acts">
+      <kaff-search-field
+        [value]="searchTerm()"
+        placeholderKey="catalogue.search.placeholder"
+        clearLabelKey="catalogue.search.clear"
+        [busy]="loading() && items().length > 0"
+        testId="catalogue-search"
+        clearTestId="catalogue-search-clear"
+        (committed)="onSearch($event)"
       />
-    </form>
+      @if (!isPhone()) {
+        <kaff-button variant="secondary" testId="catalogue-import-link" (clicked)="onImport()">
+          <kaff-icon [name]="'upload'" [small]="true" />
+          {{ i18n.t('catalogue.action.import') }}
+        </kaff-button>
+      }
+      <kaff-button variant="primary" testId="catalogue-create" (clicked)="onCreate()">
+        <kaff-icon [name]="'plus'" [small]="true" />
+        {{ i18n.t('catalogue.action.create') }}
+      </kaff-button>
+    </div>
+  </header>
 
-    <!-- KAFF-204/205/213: أبواب is its own permission (`BabManage`) and its own route, reached from
-         here rather than from a second landing entry — ux/navigation.md's Landing summary keeps
-         TechnicalOffice's landing on S-017 Catalogue. -->
-    <a class="secondary-link" routerLink="/babs" data-testid="catalogue-manage-babs">
-      {{ i18n.t('nav.babs') }}
-    </a>
-    <!-- V-38-A/V-38-D: `nav.subcontractors` was in both catalogues with no template reading it —
-         `SubcontractorManage` is Owner-and-TechnicalOffice, same as `CatalogueManage`, so it follows
-         `nav.babs`'s own precedent immediately above rather than a second side-nav item. -->
-    <a class="secondary-link" routerLink="/subcontractors" data-testid="catalogue-manage-subcontractors">
-      {{ i18n.t('nav.subcontractors') }}
-    </a>
-    <a class="secondary-link" routerLink="/catalogue/import" data-testid="catalogue-import-link">
-      {{ i18n.t('catalogue.action.import') }}
-    </a>
-  </div>
-
-  <!-- KAFF-929 finding 4: one filter strip — the segmented filter at the inline-start, the record
-       count at the inline-end, sitting directly above the table. -->
-  <div class="filter-strip">
-    <!-- KAFF-910: KAFF-901's segmented filter — one bordered track, active segment filled. -->
+  <div class="tools">
     <kaff-segmented-filter
       [options]="segmentedOptions"
       [value]="statusFilter()"
       (valueChange)="onFilter($event)"
-      ariaLabelKey="catalogue.search.placeholder"
+      ariaLabelKey="catalogue.filter.group"
       testIdPrefix="catalogue-filter"
     />
-    @if (groups().length > 0) {
-      <span class="count" data-testid="catalogue-list-count">{{ countText() }}</span>
+    <div class="bab-row">
+      <kaff-select
+        [options]="babOptions()"
+        [value]="babFilter()"
+        ariaLabelKey="catalogue.filter.bab"
+        testId="catalogue-bab-filter"
+        (valueChange)="onBab($event)"
+      />
+      @if (isPhone()) {
+        <kaff-button variant="secondary" testId="catalogue-import-link" (clicked)="onImport()">
+          <kaff-icon [name]="'upload'" [small]="true" />
+          {{ i18n.t('catalogue.action.import') }}
+        </kaff-button>
+      }
+    </div>
+  </div>
+
+  @if (!failure() && !loading() && groups().length > 0) {
+    <p class="count">
+      <span data-testid="catalogue-list-count">{{ countText() }}</span>
+      @if (hasNarrowing()) {
+        <button type="button" class="lnk" data-testid="catalogue-clear-filters" (click)="onClearFilters()">
+          {{ i18n.t('catalogue.filter.clear') }}
+        </button>
+      }
+    </p>
+  }
+
+  <!-- The container the table's track string and its pinned column read their width from. -->
+  <div class="frame">
+    @if (failure(); as failed) {
+      @if (failed.status === 403) {
+        <kaff-state
+          mode="forbidden"
+          icon="lock"
+          titleKey="catalogue.list.forbidden_title"
+          bodyKey="catalogue.list.forbidden_body"
+          testId="catalogue-list-failure"
+        >
+          <a stateAction class="lnk" routerLink="/">{{ i18n.t('catalogue.list.forbidden_back') }}</a>
+        </kaff-state>
+      } @else {
+        <kaff-state mode="refusal" [bodyKey]="failed.key" testId="catalogue-list-failure" />
+      }
+    } @else if (loading() && items().length === 0) {
+      <!-- Loading: the header stays, and the body is skeleton rows at the real row height. No spinner, no
+           overlay (README "The four list states"). -->
+      <kaff-table [columnDefs]="headerColumns" [minInline]="800" testId="catalogue-table-header">
+        <div
+          class="skeleton"
+          role="status"
+          aria-busy="true"
+          data-testid="catalogue-list-loading"
+          [attr.aria-label]="i18n.t('catalogue.loading')"
+        >
+          @for (row of skeletonRows; track row) {
+            <kaff-table-row [stacked]="true">
+              <span class="cell-pinned cell-title"><span class="sk sk-name"></span></span>
+              <span class="cell-wide cell-en"><span class="sk sk-en"></span></span>
+              <span class="cell-wide"><span class="sk sk-unit"></span></span>
+              <span class="cell-secondary cell-internal"><span class="sk sk-fig"></span></span>
+              <span class="cell-primary"><span class="sk sk-fig"></span></span>
+              <span class="cell-act"></span>
+            </kaff-table-row>
+          }
+        </div>
+      </kaff-table>
+    } @else if (groups().length > 0) {
+      <kaff-table
+        [columnDefs]="headerColumns"
+        [minInline]="800"
+        testId="catalogue-table-header"
+        data-testid="catalogue-groups"
+        [attr.aria-busy]="loading()"
+      >
+        @for (group of groups(); track trackGroup($index, group); let gi = $index) {
+          <section class="group">
+            <kaff-group-heading
+              [name]="babLabel(group)"
+              [countText]="groupCountText(group)"
+              [expanded]="isOpen(group, gi)"
+              [testId]="'catalogue-group-' + group.babId"
+              (toggled)="onToggleGroup(group, gi)"
+            />
+
+            @if (isOpen(group, gi)) {
+              <ul class="rows">
+                @for (item of visibleRows(group); track trackItem($index, item)) {
+                  <li class="rows-item">
+                    @if (isRestored(item)) {
+                      <kaff-banner tone="ok" [flat]="true" testId="catalogue-row-restored">{{
+                        restoredText()
+                      }}</kaff-banner>
+                    } @else if (confirmingArchiveId() === item.id) {
+                      <!-- Archive is recoverable, so this is the quiet confirmation: it says where the
+                           item comes back from, and its confirm is the ordinary primary button. -->
+                      <kaff-inline-confirm
+                        tone="recoverable"
+                        icon="arch"
+                        [question]="archiveQuestion(item)"
+                        [detail]="i18n.t('catalogue.archive.detail')"
+                        [confirmLabel]="
+                          archivingId() === item.id
+                            ? i18n.t('catalogue.panel.archiving')
+                            : i18n.t('catalogue.item.archive_action')
+                        "
+                        [cancelLabel]="i18n.t('action.cancel')"
+                        [busy]="archivingId() === item.id"
+                        [messageTestId]="'catalogue-archive-body-' + item.code"
+                        [confirmTestId]="'catalogue-archive-confirm-' + item.code"
+                        [cancelTestId]="'catalogue-archive-cancel-' + item.code"
+                        (confirmed)="onConfirmArchive(item.id)"
+                        (cancelled)="onCancelArchive()"
+                      />
+                    } @else {
+                      <kaff-table-row
+                        class="item-row"
+                        [archived]="item.status === 'Archived'"
+                        [stacked]="true"
+                        (click)="onRowClick(item, $event)"
+                      >
+                        <span class="cell-pinned cell-title">
+                          <span class="identity" [class.is-archived]="item.status === 'Archived'">
+                            <button
+                              type="button"
+                              class="name"
+                              dir="auto"
+                              [attr.data-testid]="'catalogue-row-' + item.code"
+                              (click)="onOpenItem(item)"
+                            >
+                              {{ item.descriptionAr }}
+                            </button>
+                            @if (!isPhone()) {
+                              @if (item.status === 'Archived') {
+                                <kaff-badge tone="tag" testId="catalogue-row-archived-badge">
+                                  <kaff-icon [name]="'arch'" [small]="true" />
+                                  {{ i18n.t('catalogue.item.archived_badge') }}
+                                </kaff-badge>
+                              }
+                              <bdi class="code" dir="ltr" translate="no">{{ item.code }}</bdi>
+                            }
+                          </span>
+                        </span>
+
+                        @if (isPhone()) {
+                          <!-- Phone row: line two is the code, the unit and the archived tag at the start,
+                               and the internal cost at the end with its word, so it can never be read as the
+                               sell price. -->
+                          <span class="cell-sub sub">
+                            <bdi class="code" dir="ltr" translate="no">{{ item.code }}</bdi>
+                            <span class="unit">{{ unitParts(item.unit).base
+                              }}@if (unitParts(item.unit).sup; as sup) {<sup>{{ sup }}</sup>}</span>
+                            @if (item.status === 'Archived') {
+                              <kaff-badge tone="tag" testId="catalogue-row-archived-badge">
+                                <kaff-icon [name]="'arch'" [small]="true" />
+                                {{ i18n.t('catalogue.item.archived_badge') }}
+                              </kaff-badge>
+                            }
+                          </span>
+                          <span class="cell-secondary cost-line">
+                            <kaff-icon [name]="'eyeoff'" [small]="true" />
+                            {{ i18n.t('catalogue.row.cost_label') }}
+                            <bdi class="figure" dir="ltr">{{ i18n.formatAmount(item.costPrice) }}</bdi>
+                          </span>
+                          <span class="cell-primary sell">
+                            <bdi class="figure" dir="ltr">{{ i18n.formatAmount(item.baseSellRate) }}</bdi>
+                          </span>
+                        } @else {
+                          <span class="cell-wide cell-en en" dir="ltr">{{ item.descriptionEn }}</span>
+                          <span class="cell-wide unit"
+                            >{{ unitParts(item.unit).base
+                            }}@if (unitParts(item.unit).sup; as sup) {<sup>{{ sup }}</sup>}</span
+                          >
+                          <span class="cell-internal money">
+                            <bdi class="figure" dir="ltr">{{ i18n.formatAmount(item.costPrice) }}</bdi>
+                          </span>
+                          <span class="money">
+                            <bdi class="figure" dir="ltr">{{ i18n.formatAmount(item.baseSellRate) }}</bdi>
+                          </span>
+                        }
+
+                        <span class="cell-act act">
+                          <kaff-row-menu
+                            [items]="rowMenuItems(item)"
+                            triggerLabelKey="a11y.row_actions"
+                            [testId]="'catalogue-row-menu-' + item.code"
+                            (selected)="onRowMenuSelected(item, $event)"
+                          />
+                        </span>
+                      </kaff-table-row>
+                    }
+
+                    @if (rowFailure(); as failed) {
+                      @if (failed.id === item.id) {
+                        <kaff-banner
+                          tone="refusal"
+                          [flat]="true"
+                          [testId]="'catalogue-row-refusal-' + item.code"
+                          >{{ i18n.t(failed.key) }}</kaff-banner
+                        >
+                      }
+                    }
+                  </li>
+                }
+
+                @if (hiddenCount(group) > 0) {
+                  <li class="more">
+                    <kaff-button
+                      variant="ghost"
+                      [testId]="'catalogue-group-more-' + group.babId"
+                      (clicked)="onLoadMore(group)"
+                    >
+                      {{ moreText(group) }}
+                    </kaff-button>
+                  </li>
+                }
+              </ul>
+            }
+          </section>
+        }
+      </kaff-table>
+    } @else if (isFiltered()) {
+      <!-- AC-203-D: a search or filter that matched nothing is a different fact from an empty catalogue. -->
+      @if (archivedEmpty()) {
+        <kaff-state
+          mode="filtered-empty"
+          icon="arch"
+          titleKey="catalogue.list.empty_archived"
+          bodyKey="catalogue.list.empty_archived_body"
+          testId="catalogue-list-empty-filtered"
+        >
+          <kaff-button stateAction variant="secondary" testId="catalogue-clear-filters" (clicked)="onClearFilters()">
+            {{ i18n.t('catalogue.filter.clear') }}
+          </kaff-button>
+        </kaff-state>
+      } @else {
+        <kaff-state
+          mode="filtered-empty"
+          icon="search"
+          titleKey="catalogue.list.empty_filtered"
+          [bodyText]="emptyFilteredBody()"
+          testId="catalogue-list-empty-filtered"
+        >
+          <kaff-button stateAction variant="secondary" testId="catalogue-clear-filters" (clicked)="onClearFilters()">
+            {{ i18n.t('catalogue.filter.clear') }}
+          </kaff-button>
+        </kaff-state>
+      }
+    } @else {
+      <kaff-state
+        mode="empty"
+        icon="folder"
+        titleKey="catalogue.list.empty"
+        bodyKey="catalogue.list.empty_body"
+        testId="catalogue-list-empty"
+      >
+        <kaff-button stateAction variant="primary" testId="catalogue-empty-create" (clicked)="onCreate()">
+          <kaff-icon [name]="'plus'" [small]="true" />
+          {{ i18n.t('catalogue.action.create') }}
+        </kaff-button>
+      </kaff-state>
     }
   </div>
 
-  @if (failure(); as key) {
-    <kaff-state mode="refusal" [bodyKey]="key" testId="catalogue-list-failure" />
-  } @else if (loading()) {
-    <kaff-state mode="loading" titleKey="catalogue.loading" testId="catalogue-list-loading" />
-  } @else if (groups().length > 0) {
-    <kaff-table
-      class="groups"
-      [columns]="rowColumns"
-      [columnDefs]="headerColumns"
-      testId="catalogue-table-header"
-      data-testid="catalogue-groups"
-    >
-      @for (group of groups(); track trackGroup($index, group)) {
-        <section class="group">
-          <kaff-group-heading
-            [name]="babLabel(group)"
-            [marginText]="groupMarginText(group)"
-            [countText]="groupCountText(group)"
-            [testId]="'catalogue-group-' + group.babId"
-          />
-
-          <ul class="rows">
-            @for (item of group.items; track trackItem($index, item)) {
-              <li class="rows-item">
-                <kaff-table-row [archived]="item.status === 'Archived'">
-                  <!--
-                    KAFF-928 finding 6: a "stretched link" cell rather than an `<a>` wrapping the whole
-                    row. `position: absolute; inset: 0` (catalogue-list-page.css) takes it out of grid
-                    flow entirely — CSS Grid does not size or place an absolutely-positioned child, so
-                    it consumes no track and the row still has exactly the same six grid children,
-                    archived or not (AC-928-H). That is what lets the trailing action button live as a
-                    real sibling `<kaff-button>`, not a control nested inside an `<a>`.
-                  -->
-                  <button
-                    type="button"
-                    class="row-stretched-link"
-                    [attr.aria-label]="item.descriptionAr"
-                    [attr.data-testid]="'catalogue-row-' + item.code"
-                    (click)="onOpenItem(item)"
-                  ></button>
-
-                  <!--
-                    ux/components.md:259 — identity first. The description is what a Technical Office
-                    operator recognises; the code stays visible (spec.md §4.5 searches by it) but as
-                    muted secondary text on the second line of the same identity cell, not as the
-                    first column. One grid child, so the row still projects one child per track.
-                  -->
-                  <span class="row-identity">
-                    <span class="row-desc" dir="auto">{{ item.descriptionAr }}</span>
-                    <bdi class="row-code" dir="ltr" translate="no">{{ item.code }}</bdi>
-                  </span>
-                  <span class="row-unit" dir="auto">{{ item.unit }}</span>
-
-                  <!-- KAFF-929 finding 5: `formatAmount`, not `formatMoney` — the column header names
-                       the currency once, so the cell carries the figure alone. Finding 5/§3: one
-                       strong column per row, the sell price is the `600` weight, the cost price is
-                       muted. Finding 7 / AC-929-I, reopening AC-928-F: `.row-price-label` is
-                       `kaff-table-row.css`'s existing mechanism — hidden at desktop where the column
-                       header already names the figure, shown stacked above the value once the row
-                       collapses to one column at mobile width. -->
-                  <span class="row-price row-price--cost">
-                    <span class="row-price-label">{{ i18n.t('catalogue.column.cost_price') }}</span>
-                    <bdi class="figure" dir="ltr">{{ i18n.formatAmount(item.costPrice) }}</bdi>
-                  </span>
-                  <span class="row-price row-price--sell">
-                    <span class="row-price-label">{{ i18n.t('catalogue.column.base_sell_rate') }}</span>
-                    <bdi class="figure" dir="ltr">{{ i18n.formatAmount(item.baseSellRate) }}</bdi>
-                  </span>
-
-                  <span class="row-trailing">
-                    <!--
-                      KAFF-928 finding 7: an always-present wrapper, so an active row and an archived
-                      row both project exactly this many grid children — only the badge inside is
-                      conditional.
-                    -->
-                    <span class="row-archived-badge">
-                      @if (item.status === 'Archived') {
-                        <kaff-badge tone="neutral" testId="catalogue-row-archived-badge">
-                          {{ i18n.t('catalogue.item.archived_badge') }}
-                        </kaff-badge>
-                      }
-                    </span>
-
-                    @if (confirmingArchiveId() !== item.id) {
-                      <kaff-row-menu
-                        [items]="rowMenuItems(item)"
-                        triggerLabelKey="a11y.row_actions"
-                        [testId]="'catalogue-row-menu-' + item.code"
-                        (selected)="onRowMenuSelected(item, $event)"
-                      />
-                    }
-                  </span>
-                </kaff-table-row>
-
-                <!-- KAFF-928 finding 6: confirmation and refusal stay below the row — a confirmation
-                     is deliberately disruptive and a refusal must not be truncated into a column. -->
-                <div class="row-below">
-                  @if (rowFailure(); as failed) {
-                    @if (failed.id === item.id) {
-                      <p
-                        class="row-refusal"
-                        role="alert"
-                        [attr.data-testid]="'catalogue-row-refusal-' + item.code"
-                      >
-                        {{ i18n.t(failed.key) }}
-                      </p>
-                    }
-                  }
-
-                  @if (confirmingArchiveId() === item.id) {
-                    <p class="row-confirm" [attr.data-testid]="'catalogue-archive-body-' + item.code">
-                      {{ i18n.t('catalogue.item.archive_confirm') }}
-                    </p>
-                    <kaff-button
-                      variant="danger"
-                      [disabled]="isArchiving(item.id)"
-                      [testId]="'catalogue-archive-confirm-' + item.code"
-                      (clicked)="onConfirmArchive(item.id)"
-                    >
-                      {{ i18n.t('catalogue.item.archive_action') }}
-                    </kaff-button>
-                    <kaff-button
-                      variant="secondary"
-                      [testId]="'catalogue-archive-cancel-' + item.code"
-                      (clicked)="onCancelArchive()"
-                    >
-                      {{ i18n.t('action.cancel') }}
-                    </kaff-button>
-                  }
-                </div>
-              </li>
-            }
-          </ul>
-        </section>
-      }
-    </kaff-table>
-  } @else if (isFiltered()) {
-    <!-- AC-203-D: a search or filter that matched nothing is a different fact from an empty catalogue. -->
-    <kaff-state mode="filtered-empty" titleKey="catalogue.list.empty_filtered" testId="catalogue-list-empty-filtered">
-      <kaff-button stateAction variant="secondary" testId="catalogue-clear-filters" (clicked)="onClearFilters()">
-        {{ i18n.t('action.clear_filters') }}
-      </kaff-button>
-    </kaff-state>
-  } @else {
-    <kaff-state mode="empty" titleKey="catalogue.list.empty" testId="catalogue-list-empty" />
-  }
-
-  <kaff-detail-panel
-    [open]="openItem() !== null"
-    [title]="openItem()?.code ?? null"
-    testId="catalogue-detail-panel"
+  <!-- Always mounted, shown while `?item=` names an item in the current view: closing it returns focus to
+       the row that opened it. The Owner's shape edits cost and sell; everyone else reads both. -->
+  <kaff-catalogue-item-panel
+    [item]="openItem()"
+    [babName]="openItemBabName()"
+    [canEditPrices]="canEditPrices()"
+    [saving]="panelSaving()"
+    [archiving]="panelArchiving()"
+    [saved]="panelSaved()"
+    [refusalKey]="panelRefusal()"
+    (saveRequested)="openItem() && onPanelSave(openItem()!, $event)"
+    (archiveConfirmed)="openItem() && onPanelArchive(openItem()!)"
+    (unarchiveRequested)="openItem() && onPanelUnarchive(openItem()!)"
     (closed)="onClosePanel()"
-  >
-    @if (openItem(); as item) {
-      <div panelBody class="detail-body">
-        <p class="detail-field">
-          <span class="detail-label">{{ i18n.t('catalogue.field.description') }}</span>
-          <span dir="auto">{{ item.descriptionAr }}</span>
-        </p>
-        <p class="detail-field">
-          <span class="detail-label">{{ i18n.t('catalogue.field.unit') }}</span>
-          <span dir="auto">{{ item.unit }}</span>
-        </p>
-        <p class="detail-field">
-          <span class="detail-label">{{ i18n.t('catalogue.field.cost_price') }}</span>
-          <kaff-inline-edit
-            [value]="item.costPrice"
-            type="decimal"
-            ariaLabelKey="catalogue.field.cost_price"
-            [refusalKey]="costRefusalKey(item.id)"
-            [attr.data-testid]="'catalogue-detail-cost-' + item.code"
-            (committed)="onCostCommitted(item, $event)"
-          />
-        </p>
-        <p class="detail-field">
-          <span class="detail-label">{{ i18n.t('catalogue.field.base_sell_rate') }}</span>
-          <bdi class="figure" dir="ltr">{{ i18n.formatAmount(item.baseSellRate) }}</bdi>
-        </p>
-        @if (sellRateNote(); as note) {
-          <p class="detail-note" data-testid="catalogue-detail-sell-note">{{ note }}</p>
-        }
-      </div>
-    }
-    @if (openItem(); as item) {
-      <a
-        panelFooter
-        class="secondary-link"
-        [routerLink]="['/catalogue', item.id]"
-        [state]="{ item: item }"
-        [attr.data-testid]="'catalogue-detail-edit-' + item.code"
-      >
-        {{ i18n.t('action.edit') }}
-      </a>
-    }
-  </kaff-detail-panel>
+  />
 </section>

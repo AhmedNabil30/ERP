@@ -1,0 +1,29 @@
+<div class="confirm" [class.confirm--irreversible]="tone() === 'irreversible'" role="group">
+  <div class="pinned">
+    <kaff-icon class="icon" [name]="icon()" />
+    <p class="message" [attr.data-testid]="messageTestId()">
+      <b>{{ question() }}</b>
+      @if (detail(); as text) {
+        <small>{{ text }}</small>
+      }
+    </p>
+    <div class="actions">
+      <kaff-button
+        [variant]="tone() === 'irreversible' ? 'danger' : 'primary'"
+        [busy]="busy()"
+        [testId]="confirmTestId()"
+        (clicked)="confirmed.emit()"
+      >
+        {{ confirmLabel() }}
+      </kaff-button>
+      <kaff-button
+        variant="secondary"
+        [disabled]="busy()"
+        [testId]="cancelTestId()"
+        (clicked)="cancelled.emit()"
+      >
+        {{ cancelLabel() }}
+      </kaff-button>
+    </div>
+  </div>
+</div>

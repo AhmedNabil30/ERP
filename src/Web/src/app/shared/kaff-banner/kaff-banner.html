@@ -1,0 +1,12 @@
+<div
+  class="banner"
+  [class.banner--refusal]="tone() === 'refusal'"
+  [class.banner--note]="tone() === 'note'"
+  [class.banner--ok]="tone() === 'ok'"
+  [class.banner--flat]="flat()"
+  [attr.role]="tone() === 'refusal' ? 'alert' : 'status'"
+  [attr.data-testid]="testId()"
+>
+  <kaff-icon [name]="icon() ?? (tone() === 'refusal' ? 'alert' : tone() === 'ok' ? 'check' : 'info')" [small]="true" />
+  <span class="text"><ng-content></ng-content></span>
+</div>

@@ -1,0 +1,39 @@
+<dialog
+  #dialog
+  class="dlg"
+  aria-labelledby="kaff-dlg-title"
+  [attr.data-testid]="testId()"
+  (cancel)="onNativeCancel($event)"
+>
+  <div class="body">
+    <span class="tile" [class.tile--irreversible]="tone() === 'irreversible'">
+      <kaff-icon [name]="icon()" />
+    </span>
+    <div>
+      <h2 id="kaff-dlg-title">{{ title() }}</h2>
+      @if (body(); as text) {
+        <p>{{ text }}</p>
+      }
+    </div>
+  </div>
+  <div class="foot">
+    <kaff-button
+      data-role="confirm"
+      [variant]="tone() === 'irreversible' ? 'danger' : 'primary'"
+      [busy]="busy()"
+      [testId]="confirmTestId()"
+      (clicked)="confirmed.emit()"
+    >
+      {{ confirmLabel() }}
+    </kaff-button>
+    <kaff-button
+      data-role="cancel"
+      variant="secondary"
+      [disabled]="busy()"
+      [testId]="cancelTestId()"
+      (clicked)="cancelled.emit()"
+    >
+      {{ cancelLabel() }}
+    </kaff-button>
+  </div>
+</dialog>

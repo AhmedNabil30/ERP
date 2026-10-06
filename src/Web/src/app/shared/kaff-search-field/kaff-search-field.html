@@ -1,0 +1,28 @@
+<form class="search" role="search" (submit)="onEnter($event)">
+  <kaff-icon class="lead" [name]="'search'" />
+  <input
+    class="input"
+    type="search"
+    dir="auto"
+    inputmode="search"
+    autocomplete="off"
+    [value]="value()"
+    [attr.placeholder]="i18n.t(placeholderKey())"
+    [attr.aria-label]="i18n.t(placeholderKey())"
+    [attr.data-testid]="testId()"
+    (input)="onInput($event)"
+  />
+  @if (busy()) {
+    <span class="spinner" role="status" [attr.aria-label]="i18n.t('catalogue.loading')"></span>
+  } @else if (value().length > 0) {
+    <button
+      type="button"
+      class="clear"
+      [attr.aria-label]="i18n.t(clearLabelKey())"
+      [attr.data-testid]="clearTestId()"
+      (click)="onClear()"
+    >
+      <kaff-icon [name]="'x'" [small]="true" />
+    </button>
+  }
+</form>

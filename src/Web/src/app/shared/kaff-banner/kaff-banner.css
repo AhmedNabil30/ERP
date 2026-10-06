@@ -1,0 +1,52 @@
+/* Refusal, note and saved banners (README "Feedback"): 6px start bar, 12 by 14px padding, `--radius`. */
+
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border-inline-start: 6px solid var(--fieldline);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+
+.banner kaff-icon {
+  margin-block-start: 2px;
+}
+
+.text {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.banner--refusal {
+  border-inline-start-color: var(--err-bar);
+  background: var(--err-bg);
+  color: var(--err-ink);
+  font-weight: 500;
+}
+
+.banner--note {
+  background: var(--note-bg);
+}
+
+.banner--ok {
+  border-inline-start-color: var(--ok-ink);
+  background: var(--ok-bg);
+  color: var(--ok-ink);
+  font-weight: 500;
+}
+
+/* flat: a band inside a list, such as the restore band that replaces a row for a moment. */
+.banner--flat {
+  align-items: center;
+  min-block-size: 48px;
+  padding-inline: var(--space-4);
+  border-inline-start: 0;
+  border-radius: 0;
+}
+
+.banner--flat kaff-icon {
+  margin-block-start: 0;
+}

@@ -1,11 +1,31 @@
 <div class="group-heading" [attr.data-testid]="testId()">
-  <h2 class="name" dir="auto">{{ name() }}</h2>
+  @if (expanded() !== null) {
+    <!-- The group can collapse, so the whole row is the button (README "Kit additions" 1). The heading
+         wraps the button rather than sitting inside it, because a button may only hold phrasing content. -->
+    <h2 class="name name--toggle" dir="auto">
+      <button
+        type="button"
+        class="toggle"
+        [attr.aria-expanded]="expanded()"
+        [attr.data-testid]="testId() ? testId() + '-toggle' : null"
+        (click)="toggled.emit()"
+      >
+        <kaff-icon class="chev" [name]="'chev'" [small]="true" />
+        <span class="label">{{ name() }}</span>
+        @if (countText(); as count) {
+          <span class="count">{{ count }}</span>
+        }
+      </button>
+    </h2>
+  } @else {
+    <h2 class="name" dir="auto">{{ name() }}</h2>
 
-  @if (marginText(); as margin) {
-    <kaff-badge tone="brand" [pill]="true">{{ margin }}</kaff-badge>
-  }
+    @if (marginText(); as margin) {
+      <kaff-badge tone="brand" [pill]="true">{{ margin }}</kaff-badge>
+    }
 
-  @if (countText(); as count) {
-    <span class="count" dir="auto">{{ count }}</span>
+    @if (countText(); as count) {
+      <span class="count" dir="auto">{{ count }}</span>
+    }
   }
 </div>

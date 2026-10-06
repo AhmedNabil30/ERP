@@ -43,6 +43,24 @@
   border-style: dashed;
 }
 
+/* quiet: a hairline border and dim text, for a marker that labels without competing (the «داخلي» mark
+   on an internal figure). */
+.tone-quiet {
+  border-color: var(--line);
+  color: var(--dim);
+}
+
+/* tag: the dashed 22px archived tag (README "Kit additions" 4). The dashed outline is the cue, the text
+   carries the word, and the row text drops to dim rather than being struck through. */
+.tone-tag {
+  block-size: 22px;
+  gap: 5px;
+  padding-inline: 7px;
+  border-style: dashed;
+  color: var(--ink);
+  font-size: 0.75rem;
+}
+
 /* `pill` only widens the padding: the language has one radius, so nothing is fully round. */
 .badge--pill {
   padding-inline: var(--space-3);

@@ -1,0 +1,16 @@
+<div class="field">
+  <span class="label" [id]="controlId() + '-label'">{{ i18n.t(labelKey()) }}</span>
+  <div class="ctl">
+    <span
+      class="val"
+      role="textbox"
+      aria-readonly="true"
+      tabindex="0"
+      [attr.dir]="ltr() ? 'ltr' : 'auto'"
+      [attr.aria-labelledby]="controlId() + '-label'"
+      [attr.data-testid]="testId()"
+      >{{ value() }}</span
+    >
+    <span class="tail"><kaff-icon [name]="'lock'" [small]="true" /></span>
+  </div>
+</div>

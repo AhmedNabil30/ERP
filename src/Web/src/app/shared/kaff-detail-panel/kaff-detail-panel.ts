@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 
 import { I18nService } from '../../core/i18n/i18n.service';
+import { KaffIcon } from '../kaff-icon/kaff-icon';
 
 let nextId = 0;
 
@@ -28,6 +29,7 @@ let nextId = 0;
  */
 @Component({
   selector: 'kaff-detail-panel',
+  imports: [KaffIcon],
   templateUrl: './kaff-detail-panel.html',
   styleUrl: './kaff-detail-panel.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

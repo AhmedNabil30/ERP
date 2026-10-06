@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 
 import { I18nService } from '../../core/i18n/i18n.service';
+import { KaffBadge } from '../kaff-badge/kaff-badge';
+import { KaffIcon, KaffIconName } from '../kaff-icon/kaff-icon';
 
 export interface TableColumnDef {
   /** Omit for a column with no header text — e.g. a trailing actions column — rather than adding a
@@ -8,6 +10,13 @@ export interface TableColumnDef {
    *  bans that: a blank entry is worse than a missing key). */
   readonly labelKey?: string;
   readonly align?: 'start' | 'end';
+  /** The identity column: it sticks at the start edge, as the row's `.cell-pinned` cell does. */
+  readonly pinned?: boolean;
+  /** A desktop-only column: hidden where the layout stacks, and under a container that drops it. */
+  readonly cssClass?: string;
+  /** An internal-figure marker (README "Kit additions" 3): an icon before the label and a badge after it. */
+  readonly markerIcon?: KaffIconName;
+  readonly markerKey?: string;
 }
 
 /**
@@ -25,6 +34,7 @@ export interface TableColumnDef {
  */
 @Component({
   selector: 'kaff-table-header',
+  imports: [KaffBadge, KaffIcon],
   templateUrl: './kaff-table-header.html',
   styleUrl: './kaff-table-header.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

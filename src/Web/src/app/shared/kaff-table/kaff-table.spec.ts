@@ -49,12 +49,30 @@ describe('KaffTable', () => {
     const host: HTMLElement = fixture.nativeElement.querySelector('kaff-table');
     expect(host.style.getPropertyValue('--kaff-columns')).toBe('132px minmax(0, 1fr) 90px');
 
-    const header = host.querySelector(':scope > kaff-table-header .header');
+    const header = host.querySelector('.scroll > .inner > kaff-table-header .header');
     expect(header).toBeTruthy();
     expect(header?.getAttribute('data-testid')).toBe('host-table');
 
-    // The projected rows render after the header, inside the same host.
-    const rows = host.querySelector(':scope > ul.rows');
+    // The projected rows render after the header, inside the same scroll frame.
+    const rows = host.querySelector('.scroll > .inner > ul.rows');
     expect(rows).toBeTruthy();
+  });
+});
+
+/** The frame scrolls sideways only while it is narrower than `minInline` (README "Lists and tables"). */
+describe('KaffTable minInline', () => {
+  it('writes the minimum width as a custom property and leaves the columns to the caller when unset', () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [{ provide: I18nService, useClass: FakeI18nService }],
+    });
+    const fixture = TestBed.createComponent(KaffTable);
+    fixture.componentRef.setInput('columnDefs', []);
+    fixture.componentRef.setInput('minInline', 800);
+    fixture.detectChanges();
+
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.style.getPropertyValue('--kaff-table-min')).toBe('800px');
+    expect(host.style.getPropertyValue('--kaff-columns')).toBe('');
   });
 });

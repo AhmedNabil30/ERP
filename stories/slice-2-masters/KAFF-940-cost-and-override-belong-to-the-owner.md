@@ -109,3 +109,29 @@ None — Nabil ruled this himself as the Owner of the business process (`D-177`)
   tested. Whether Nabil meant a new nullable override field is a question for him. Creating an item still
   lets the Technical Office type the initial prices (AC-940-D keeps create). Frontend permission mirror and
   the `KAFF-941` request workflow are not touched.
+
+
+## Build note — Frontend, 2026-10-06
+
+**AC-940-F is built. State is left as BUILT: the Verifier moves it, not the builder.**
+
+- **The rule the UI reflects.** `CatalogueListPage.canEditPrices` reads `session.permissions` for
+  `CataloguePriceEdit` (the company-wide list `/api/auth/me` already returns). The detail panel
+  (`catalogue-item-panel.ts`) has two shapes. Owner: cost and sell are editable money fields. Everyone
+  else: both are the kit's read-only field (lock, settled fill, full ink, selectable) under the badge
+  «للاطلاع فقط» and the line «يعدّل المالك وحده سعر التكلفة وسعر البيع…». There is no disabled control, no
+  red and no tooltip in the read-only shape.
+- **The server is still the control.** A non-Owner's save never types a price: the whole-record `PUT`
+  carries `costPrice` and `baseSellRate` exactly as the list returned them, so a Technical Office edit of a
+  description or unit is accepted (D-178). Proven against the real API as the Technical Office user:
+  changed cost returns `403 errors.master.catalogue_price_owner_only`, changed sell rate returns the same,
+  and a description-only edit returns `200`. A stale mirror (the session claims the permission, the server
+  disagrees) renders the refusal in the panel, in place above the actions; pinned by a spec.
+- **Tests added.** `catalogue-item-panel.spec.ts` (both shapes, dirty, malformed price, unchanged prices on
+  a Technical Office save, no derived-price text) and `catalogue-list-page.spec.ts` (groups, load more,
+  the recoverable archive chain, restore in place, the four table states, the refusal).
+- **`catalogue-detail-sell-note`** now labels the one-line hint under the sell field, «سعر البيع المسجّل لهذا
+  البند في الكتالوج»: a statement that the figure is stored. It used to label the derived-from-markup
+  explanation, which D-179 removed.
+- **Not done here.** The `KAFF-941` request-and-approve workflow, and the open question in the backend note
+  (no separate "sell-price override" field exists).

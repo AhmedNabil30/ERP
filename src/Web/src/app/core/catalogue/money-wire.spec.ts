@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { WIRE_DECIMAL_PATTERN, toWireDecimal } from './money-wire';
+import { WIRE_DECIMAL_PATTERN, sameDecimal, toEditValue, toWireDecimal } from './money-wire';
 
 /**
  * D-135 / `V-36-I` / `V-36-K`. The client must never round a price, never carry one through a JS
@@ -49,5 +49,24 @@ describe('WIRE_DECIMAL_PATTERN', () => {
 
   it('rejects a thousands separator', () => {
     expect(WIRE_DECIMAL_PATTERN.test('1,234.5')).toBe(false);
+  });
+});
+
+/** The panel's dirty check compares figures as strings, never through a double — D-135. */
+describe('toEditValue and sameDecimal', () => {
+  it('trims padding zeros but keeps two decimals', () => {
+    expect(toEditValue('3150.0000')).toBe('3150.00');
+    expect(toEditValue('980')).toBe('980.00');
+    expect(toEditValue('12.5000')).toBe('12.50');
+  });
+
+  it('keeps every significant decimal and never rounds', () => {
+    expect(toEditValue('987.6543')).toBe('987.6543');
+    expect(toEditValue('12345678901234.5678')).toBe('12345678901234.5678');
+  });
+
+  it('treats the same figure written two ways as unchanged, and a different figure as changed', () => {
+    expect(sameDecimal('980.0000', '980.00')).toBe(true);
+    expect(sameDecimal('980.0001', '980.00')).toBe(false);
   });
 });

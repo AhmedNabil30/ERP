@@ -1,0 +1,41 @@
+:host {
+  display: block;
+}
+
+.sel {
+  position: relative;
+}
+
+select {
+  appearance: none;
+  inline-size: 100%;
+  min-inline-size: 200px;
+  block-size: 3rem;
+  padding-inline: 14px 40px;
+  border: 2px solid var(--fieldline);
+  border-radius: var(--radius);
+  background: var(--field);
+  font-size: var(--text-md);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+select:hover {
+  border-color: var(--ink);
+}
+
+.chev {
+  position: absolute;
+  inset-inline-end: 12px;
+  inset-block-start: 50%;
+  translate: 0 -50%;
+  color: var(--dim);
+  pointer-events: none;
+}
+
+@media (width <= 820px) {
+  select {
+    block-size: 3.25rem;
+    min-inline-size: 0;
+  }
+}

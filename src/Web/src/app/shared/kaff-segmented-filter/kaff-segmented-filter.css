@@ -53,3 +53,15 @@
   background: var(--head);
   color: var(--ink);
 }
+
+/* Phone: the track spans the width and its segments are 52px (README "Phone toolbar"). */
+@media (width <= 820px) {
+  .filter-track {
+    display: flex;
+    inline-size: 100%;
+  }
+
+  .chip {
+    min-block-size: 3.25rem;
+  }
+}

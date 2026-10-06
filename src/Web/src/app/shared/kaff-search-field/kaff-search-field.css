@@ -1,0 +1,99 @@
+/* Search field (README "Filters and search"). The native search cancel glyph is removed: the kit's own
+   44px clear button replaces it. Logical properties only. */
+
+:host {
+  display: block;
+  inline-size: 300px;
+  max-inline-size: 100%;
+}
+
+.search {
+  position: relative;
+}
+
+.lead {
+  position: absolute;
+  inset-inline-start: 14px;
+  inset-block-start: 50%;
+  translate: 0 -50%;
+  color: var(--dim);
+  pointer-events: none;
+}
+
+.input {
+  inline-size: 100%;
+  block-size: 3rem;
+  padding-inline: 44px 48px;
+  border: 2px solid var(--fieldline);
+  border-radius: var(--radius);
+  background: var(--field);
+  font-size: var(--text-md);
+  appearance: none;
+}
+
+.input::placeholder {
+  color: var(--dim);
+  opacity: 1;
+}
+
+.input::-webkit-search-cancel-button {
+  appearance: none;
+  display: none;
+}
+
+.input:hover {
+  border-color: var(--ink);
+}
+
+.input:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.clear {
+  position: absolute;
+  inset-inline-end: 2px;
+  inset-block-start: 2px;
+  inline-size: var(--tap-target);
+  block-size: var(--tap-target);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.clear:hover {
+  background: var(--hover);
+}
+
+.spinner {
+  position: absolute;
+  inset-inline-end: 15px;
+  inset-block-start: 15px;
+  inline-size: 18px;
+  block-size: 18px;
+  border: 3px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-block-start-color: currentColor;
+  border-radius: 50%;
+  animation: kaff-search-spin 0.8s linear infinite;
+}
+
+@keyframes kaff-search-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@media (width <= 820px) {
+  :host {
+    inline-size: 100%;
+  }
+
+  .input {
+    block-size: 3.25rem;
+  }
+}

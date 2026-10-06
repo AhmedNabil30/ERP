@@ -4,9 +4,20 @@
   [attr.data-testid]="testId()"
 >
   @for (col of columnDefs(); track $index) {
-    <span role="columnheader" [class.header-cell--end]="col.align === 'end'">
+    <span
+      role="columnheader"
+      [class]="col.cssClass ?? ''"
+      [class.header-cell--end]="col.align === 'end'"
+      [class.header-cell--pinned]="col.pinned === true"
+    >
+      @if (col.markerIcon; as icon) {
+        <kaff-icon [name]="icon" [small]="true" />
+      }
       @if (col.labelKey) {
         {{ i18n.t(col.labelKey) }}
+      }
+      @if (col.markerKey; as key) {
+        <kaff-badge tone="quiet">{{ i18n.t(key) }}</kaff-badge>
       }
     </span>
   }
