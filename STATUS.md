@@ -701,8 +701,7 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 | 0 | 0 |
 | 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 0 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 0 | 7 | 41 | 8 | 106 |
-| ⚪ READY / COMMITTED — refined, not built | 0 | 2 | 0 | 0 | 0 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 9 | 41 | 8 | 106 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 0 | 0 | 0 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 | 0 | 0 |
 | **total** | **127** | **67** | **41** | **8** | **106** |
@@ -802,7 +801,7 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-940](stories/slice-2-masters/KAFF-940-cost-and-override-belong-to-the-owner.md) | 2 | 5 | 🟡 BUILT | none | `-` | - | Cost and the sell-price override belong to the Owner alone |
 | [KAFF-941](stories/slice-2-masters/KAFF-941-a-request-the-owner-approves.md) | 2 | 0 | ⚫ NOT-BUILT | none | `-` | - | A change request the Owner approves |
 | [KAFF-942](stories/slice-2-masters/KAFF-942-filter-the-catalogue-by-bab-on-the-server.md) | 2 | 2 | 🟡 BUILT | none | `-` | - | Filter the catalogue by باب on the server |
-| [KAFF-943](stories/slice-2-masters/KAFF-943-unarchive-a-bab.md) | 2 | 2 | ⚪ READY | none | `-` | - | Unarchive a باب |
+| [KAFF-943](stories/slice-2-masters/KAFF-943-unarchive-a-bab.md) | 2 | 2 | 🟡 BUILT | none | `-` | - | Unarchive a باب |
 
 <!-- END GENERATED -->
 

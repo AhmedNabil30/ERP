@@ -1,6 +1,6 @@
 # KAFF-943 · Unarchive a باب
 
-<!-- kaff id=KAFF-943 slice=2 points=2 state=READY -->
+<!-- kaff id=KAFF-943 slice=2 points=2 state=BUILT -->
 
 **Slice:** 2 (Masters) · **Epic:** أبواب · **Points:** 2.
 **Owner:** Backend, then Frontend.
@@ -75,3 +75,19 @@ listed in the باب module's open questions. Cascading in either direction, whi
 
 None — `D-130` §4 already ruled that archived records come back. This story only supplies the endpoint
 the ruling implies.
+
+## Build note (Backend, 2026-10-07)
+
+Built `POST /api/babs/{babId}/unarchive`, gated `Permission.BabManage` (`src/Api/Features/Babs/UnarchiveBab/`),
+with `Bab.Unarchive()` in the domain. Followed the `UnarchiveCatalogueItem` / `UnarchiveDepartment`
+shape: the refusal belongs to the entity, which returns the existing `errors.master.not_archived`
+(409, already translated in ar and en), so no new locale key was needed. The handler loads and writes
+the one `Bab` row only, so there is no cascade to items or child أبواب. The audit record comes from
+`AuditSaveChangesInterceptor`, with no hand-written path; a refused call writes none.
+
+Evidence (`tests/Api.Tests/UnarchiveBabTests.cs`, one test per criterion A to E): run before the
+endpoint existed, all 5 failed (total 5, failed 5). After the build, all 5 pass. Release build 0
+warnings, 0 errors. Domain.Tests total 299, failed 0. Api.Tests total 672, failed 0.
+
+Not done: AC-943-F (frontend). The open question of an active child under an archived parent is
+untouched and unruled.

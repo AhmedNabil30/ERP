@@ -144,4 +144,23 @@ public sealed class Bab : Entity
         IsActive = false;
         return Result.Success();
     }
+
+    /// <summary>
+    /// Brings an archived باب back into new work. KAFF-943, D-130 §4 (Q66).
+    /// </summary>
+    /// <remarks>
+    /// Same shape as <see cref="Department.Unarchive"/>: refuses an active باب with
+    /// <see cref="MasterDataErrors.NotArchived"/> rather than a silent no-op. Changes this row only —
+    /// restoring never cascades, as archiving never did (D-130 §5).
+    /// </remarks>
+    public Result Unarchive()
+    {
+        if (IsActive)
+        {
+            return Result.Failure(MasterDataErrors.NotArchived);
+        }
+
+        IsActive = true;
+        return Result.Success();
+    }
 }
