@@ -9,4 +9,5 @@
 >
   <kaff-icon [name]="icon() ?? (tone() === 'refusal' ? 'alert' : tone() === 'ok' ? 'check' : 'info')" [small]="true" />
   <span class="text"><ng-content></ng-content></span>
+  <span class="actions"><ng-content select="[bannerActions]"></ng-content></span>
 </div>

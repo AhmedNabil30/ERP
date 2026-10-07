@@ -149,11 +149,12 @@ export const routes: Routes = [
     ],
   },
   {
-    // KAFF-204, KAFF-205, KAFF-213 — S-021, S-022. Same shape as `/catalogue` above:
+    // KAFF-204, KAFF-205, KAFF-213, KAFF-943 — S-021, S-022. Same shape as `/catalogue` above:
     // `sessionGuard` resolves the session first, then `babManageGuard` keeps a role without the
     // permission out of a screen the server would refuse anyway. Reached from the catalogue list
     // (`ux/navigation.md`'s `nav.babs` is a future sidebar entry, not this slice's landing — the
     // Landing summary keeps TechnicalOffice on S-017 Catalogue) rather than from its own nav item.
+    // Create and edit are a panel over the tree (`?bab=CODE` opens one), so there is one route, not three.
     path: 'babs',
     canActivate: [sessionGuard, mustChangePasswordGuard, babManageGuard],
     children: [
@@ -161,22 +162,6 @@ export const routes: Routes = [
         path: '',
         loadComponent: () =>
           import('./features/babs/bab-tree/bab-tree-page').then((m) => m.BabTreePage),
-      },
-      {
-        path: 'new',
-        canDeactivate: [confirmUnsavedChangesGuard],
-        loadComponent: () =>
-          import('./features/babs/bab-form/bab-form-page').then((m) => m.BabFormPage),
-      },
-      {
-        // `withComponentInputBinding` binds `:babId` to the component's input signal. Unlike the
-        // catalogue item form, `GET /api/babs` returns every row, so a hard load of this URL can
-        // find the record in the full list rather than depending on router `state` — see
-        // `bab-form-page.ts`.
-        path: ':babId',
-        canDeactivate: [confirmUnsavedChangesGuard],
-        loadComponent: () =>
-          import('./features/babs/bab-form/bab-form-page').then((m) => m.BabFormPage),
       },
     ],
   },

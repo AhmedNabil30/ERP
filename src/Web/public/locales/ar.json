@@ -517,32 +517,269 @@
   "catalogue.import.column.old_base_sell_rate": "سعر البيع الأساسي قبل",
   "catalogue.import.column.new_base_sell_rate": "سعر البيع الأساسي بعد",
 
-  "bab.tree.title": "أبواب",
-  "bab.tree.count": "{count} بابًا",
-  "bab.tree.empty": "لا توجد أبواب بعد.",
-  "bab.tree.archive_action": "أرشفة الباب",
-  "bab.tree.archive_confirm": "أرشفة هذا الباب؟ لن يستقبل عملاً جديدًا؛ الأصناف المسجلة عليه بالفعل لن تتأثر.",
+  "bab.tree.title": "الأبواب",
+
+  "bab.tree.count": "{count} باباً",
+
+  "bab.tree.count_none": "0 أبواب",
+
+  "bab.tree.empty": "ابدأ بأول باب",
+
   "bab.tree.archived_badge": "مؤرشف",
-  "bab.filter.active": "الحالية",
-  "bab.filter.archived": "المؤرشفة",
+
+  "bab.tree.expand_all": "فتح الكل",
+
+  "bab.tree.collapse_all": "طيّ الكل",
+
+  "bab.tree.expand_label": "فتح فروع {name}",
+
+  "bab.tree.collapse_label": "طيّ فروع {name}",
+
+  "bab.filter.active": "نشط",
+
+  "bab.filter.archived": "مؤرشف",
+
   "bab.filter.all": "الكل",
-  "bab.action.create": "+ باب جديد",
-  "bab.action.back_to_tree": "العودة إلى الشجرة",
+
+  "bab.filter.group": "التصفية",
+
+  "bab.action.create": "باب جديد",
+
+  "bab.search.placeholder": "ابحث بالاسم أو الرمز",
+
+  "bab.search.clear": "مسح البحث",
+
   "bab.loading": "جارٍ التحميل…",
+
+  "bab.count.active": "يعرض {count} باباً نشطاً",
+
+  "bab.count.archived": "يعرض {count} باباً مؤرشفاً",
+
+  "bab.count.all": "يعرض كل الأبواب: {count}",
+
+  "bab.count.search": "{count} نتيجة لـ «{query}»",
+
+  "bab.scope.active": "في الأبواب النشطة",
+
+  "bab.scope.archived": "في المؤرشف",
+
+  "bab.scope.all": "في الأبواب",
+
+  "bab.count.items": "{count} بنداً",
+
+  "bab.count.children": "{count} فروع",
+
+  "bab.count.child_one": "فرع واحد",
+
+  "bab.count.child_two": "فرعان",
+
+  "bab.count.with_children": "({count} مع الفروع)",
+
+  "bab.column.name": "الباب",
+
+  "bab.column.name_en": "English name",
+
+  "bab.column.items": "البنود",
+
+  "bab.column.default_markup": "الهامش الافتراضي (%)",
+
+  "bab.row.within": "ضمن: {path}",
+
+  "bab.row.edit_markup": "تعديل الهامش الافتراضي لـ {name}",
+
+  "bab.menu.details": "تفاصيل الباب",
+
+  "bab.menu.edit_markup": "تعديل الهامش",
+
+  "bab.menu.add_child": "إضافة باب فرعي",
+
+  "bab.menu.move": "نقل إلى…",
+
+  "bab.menu.archive": "أرشفة…",
+
+  "bab.menu.unarchive": "إلغاء الأرشفة",
+
+  "bab.affix.percent": "%",
+
+  "bab.markup.title": "الهامش الافتراضي لـ «{name}»",
+
+  "bab.markup.current": "الحالي {value}",
+
+  "bab.markup.explanation": "يبدأ به كل بند جدول كميات جديد في المشاريع، ويمكن تغييره لكل بند هناك. تغييره هنا لا يعيد تسعير أي بند قائم.",
+
+  "bab.markup.save": "حفظ الهامش",
+
+  "bab.markup.saving": "جارٍ الحفظ…",
+
+  "bab.markup.saved": "تم حفظ الهامش الافتراضي لـ «{name}»: من {from} إلى {to}. يبدأ به كل بند جدول كميات جديد في المشاريع، ولم يتغيّر أي سعر قائم.",
+
+  "bab.archive.question": "أرشفة «{name}»؟",
+
+  "bab.archive.detail": "لا بنود نشطة فيه. يمكنك استرجاعه من «مؤرشف» في أي وقت.",
+
+  "bab.archive.detail_children": "لا بنود نشطة فيه، ولا تتأثر أبوابه الفرعية ({children}). يمكنك استرجاعه من «مؤرشف» في أي وقت.",
+
+  "bab.archive.confirm": "أرشفة",
+
+  "bab.archive.archiving": "جارٍ الأرشفة…",
+
+  "bab.archive.refused_title": "تعذّرت أرشفة «{name}».",
+
+  "bab.archive.refused_body": "فيه {count} بنداً نشطاً. انقل هذه البنود إلى باب آخر أو أرشفها أولاً، ثم أعد المحاولة.",
+
+  "bab.archive.view_items": "عرض البنود ({count})",
+
+  "bab.restored": "تمت استعادة «{name}» إلى القائمة النشطة.",
+
+  "bab.created.text": "تم إنشاء «{name}». رمزه {code}. لا بنود فيه بعد: أضف بنوده من",
+
+  "bab.created.link": "كتالوج الأسعار",
+
+  "bab.move.title": "نقل «{name}» إلى…",
+
+  "bab.move.confirm": "نقل",
+
+  "bab.move.new_parent": "الأب الجديد",
+
+  "bab.move.current": "الحالي",
+
+  "bab.move.reason_self": "هذا الباب",
+
+  "bab.move.reason_descendant": "من فروعه",
+
+  "bab.move.hint": "اختر الباب الجديد. لا يمكن النقل إلى الباب نفسه أو إلى أحد فروعه.",
+
+  "bab.move.summary_root": "سيصبح «{name}» باباً رئيسياً، وتنتقل معه بنوده وفروعه.",
+
+  "bab.move.summary_child": "سيصبح «{name}» فرعاً من «{parent}»، وتنتقل معه بنوده وفروعه.",
+
   "bab.create_title": "باب جديد",
-  "bab.edit_title": "بيانات الباب",
-  "bab.item_not_found": "هذا الباب لم يعد موجودًا.",
-  "bab.field.code": "الكود",
-  "bab.field.code_not_editable": "يُكتب مرة واحدة عند الإنشاء ولا يمكن تعديله.",
+
+  "bab.panel.create_child_title": "باب فرعي جديد",
+
+  "bab.panel.create_meta": "يظهر في الشجرة حيث تختار",
+
+  "bab.panel.create_child_meta": "ضمن: {parent}",
+
+  "bab.panel.create": "إنشاء الباب",
+
+  "bab.panel.creating": "جارٍ الإنشاء…",
+
+  "bab.panel.back": "رجوع إلى الباب الجديد",
+
+  "bab.panel.pick_parent": "اختيار الأب",
+
+  "bab.panel.pick_done": "تم",
+
+  "bab.panel.pick_summary_root": "سيكون الباب الجديد باباً رئيسياً.",
+
+  "bab.panel.pick_summary_child": "سيكون الباب الجديد فرعاً من «{parent}».",
+
+  "bab.panel.create_failed": "لم يُنشأ الباب. صحّح الحقول المعلَّمة.",
+
+  "bab.panel.save_failed": "تعذّر الحفظ. صحّح الحقول المعلَّمة.",
+
+  "bab.panel.unsaved": "تعديل غير محفوظ.",
+
+  "bab.panel.saved": "تم حفظ التعديل.",
+
+  "bab.panel.saving": "جارٍ الحفظ…",
+
+  "bab.panel.archive": "أرشفة",
+
+  "bab.panel.edit_markup": "تعديل الهامش",
+
+  "bab.field.code": "رمز الباب",
+
+  "bab.field.code_not_editable": "لا يُغيَّر بعد الإنشاء.",
+
   "bab.field.name_ar": "الاسم بالعربية",
+
   "bab.field.name_en": "الاسم بالإنجليزية",
-  "bab.field.parent": "الباب الأب",
-  "bab.field.no_parent": "بلا أب (جذر)",
-  "bab.field.default_markup": "نسبة الربح الافتراضية %",
-  "bab.field.sort_order": "ترتيب العرض",
-  "bab.column.name": "الاسم",
+
+  "bab.field.parent": "يتبع",
+
+  "bab.field.no_parent": "بلا أب (باب رئيسي)",
+
+  "bab.field.default_markup": "الهامش الافتراضي",
+
+  "bab.field.sort_order": "الترتيب",
+
+  "bab.hint.code": "حروف لاتينية كبيرة. فريد في النظام كله، ولا يمكن تغييره بعد الإنشاء.",
+
+  "bab.hint.parent": "اتركه «بلا أب» لباب رئيسي، أو اختر باباً ليصبح هذا فرعاً منه.",
+
+  "bab.hint.sort_order": "رقم يحدّد موضع الباب في القائمة.",
+
+  "bab.hint.markup": "يبدأ به كل بند جدول كميات جديد.",
+
+  "bab.hint.markup_row_editor": "يبدأ به كل بند جدول كميات جديد في المشاريع. يُعدَّل من الجدول بخطوة منفصلة.",
+
+  "bab.placeholder.name_ar": "مثال: أعمال سقالات",
+
+  "bab.placeholder.name_en": "Scaffolding",
+
+  "bab.placeholder.code": "SCF",
+
+  "bab.placeholder.sort_order": "مثال: 90",
+
+  "bab.placeholder.markup": "مثال: 15",
+
+  "bab.error.name_ar_required": "اسم الباب بالعربية مطلوب.",
+
+  "bab.error.name_en_required": "اسم الباب بالإنجليزية مطلوب.",
+
+  "bab.error.code_required": "رمز الباب مطلوب.",
+
+  "bab.error.code_letters": "حروف لاتينية فقط.",
+
+  "bab.error.code_taken": "الرمز {code} مستخدم لباب آخر. الرموز فريدة في النظام كله.",
+
+  "bab.error.sort_integer": "أدخل رقماً صحيحاً، مثل 90.",
+
+  "bab.error.markup_required": "الهامش الافتراضي مطلوب.",
+
+  "bab.error.markup_number": "أدخل رقماً، مثل 15.",
+
+  "bab.empty.no_match": "لا نتائج مطابقة",
+
+  "bab.empty.no_match_body": "لا يوجد باب يطابق «{what}» {scope}. تحقق من الاسم أو الرمز.",
+
+  "bab.empty.archived": "لا توجد أبواب مؤرشفة",
+
+  "bab.empty.archived_body": "الأبواب التي تُؤرشف تظهر هنا ويمكن استرجاعها.",
+
+  "bab.empty.no_active": "لا توجد أبواب نشطة",
+
+  "bab.empty.no_active_body": "كل الأبواب مؤرشفة. استرجع باباً من «مؤرشف» أو أنشئ باباً جديداً.",
+
+  "bab.forbidden_title": "هذه الشاشة خارج صلاحياتك",
+
+  "bab.forbidden_body": "الأبواب متاحة للمالك وللمكتب الفني. اطلب من المالك أن يمنحك الصلاحية.",
+
+  "bab.forbidden_back": "العودة إلى الصفحة الرئيسية",
+
+  "bab.first_run.body": "الباب هو قسم العمل الذي يُصنَّف تحته كل بند سعر، مثل أعمال خرسانة أو أعمال كهرباء. لا يمكن إضافة بنود إلى كتالوج الأسعار قبل وجود باب واحد على الأقل.",
+
+  "bab.first_run.step_1": "أنشئ الأبواب هنا، ويمكن أن يتفرع الباب إلى أبواب فرعية.",
+
+  "bab.first_run.step_2": "أضف البنود وأسعارها في كتالوج الأسعار، كل بند تحت باب واحد.",
+
+  "bab.first_run.step_3": "يبدأ كل بند في جدول كميات المشروع بالهامش الافتراضي للباب الذي ينتمي إليه.",
+
+  "bab.first_run.example_title": "شكل الشجرة",
+
+  "bab.first_run.example_tag": "مثال، وليس بيانات",
+
+  "bab.first_run.example_concrete": "أعمال خرسانة",
+
+  "bab.first_run.example_reinforced": "خرسانة مسلحة",
+
+  "bab.first_run.example_plain": "خرسانة عادية",
+
+  "bab.first_run.example_electrical": "أعمال كهرباء",
+
   "bab.field.markup_format_invalid": "أدخل نسبة بالأرقام الإنجليزية (٠-٩ غير مقبولة)، بدون فواصل أو صيغة أسية أو قيمة سالبة.",
-  "bab.hint.markup_is_a_percent": "تُكتب كنسبة مئوية، مثال: 15 يعني 15%.",
   "department.settings.title": "الأقسام",
   "department.settings.count": "{count} قسمًا",
   "department.settings.archived_badge": "مؤرشف",
@@ -559,9 +796,6 @@
   "department.field.name_en": "الاسم بالإنجليزية",
   "department.action.create": "+ قسم جديد",
 
-  "bab.move.title": "نقل إلى أب آخر",
-  "bab.move.confirm": "نقل",
-  "bab.move.new_parent": "الأب الجديد",
 
   "nav.subcontractors": "مقاولو الباطن",
   "subcontractor.list_title": "سجل مقاولي الباطن",
@@ -626,8 +860,6 @@
   "supplier.confirm.archive.body": "سيخرج من القائمة الحالية ويبقى سجله كما هو.",
 
   "a11y.row_actions": "إجراءات الصف",
-  "a11y.expand_row": "توسيع الصف",
-  "a11y.collapse_row": "طي الصف",
   "devFixtures.kaff930.heading": "عدة التفاعل — نموذج للتطوير",
   "devFixtures.kaff930.rowMenu.edit": "تعديل",
   "devFixtures.kaff930.rowMenu.archive": "أرشفة",

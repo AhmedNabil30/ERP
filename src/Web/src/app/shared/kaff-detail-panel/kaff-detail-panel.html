@@ -13,6 +13,7 @@
   >
     <header class="panel-header">
       <div class="head-text">
+        <ng-content select="[panelBack]"></ng-content>
         <h2 [id]="headingId">{{ resolvedTitle() }}</h2>
         <ng-content select="[panelMeta]"></ng-content>
       </div>

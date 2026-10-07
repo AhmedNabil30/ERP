@@ -449,3 +449,25 @@ kaff-field textarea:disabled {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* The kit's quiet link (README "Links"): ink, underlined, 1.5px, offset 4px. A text-weight button that
+   reads as a link (clear the search, expand all) wears the same rule. */
+.lnk {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: inherit;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+/* A placeholder is dim example text, never a default value (README "Form fields"). */
+kaff-field input::placeholder {
+  color: var(--dim);
+  opacity: 1;
+}

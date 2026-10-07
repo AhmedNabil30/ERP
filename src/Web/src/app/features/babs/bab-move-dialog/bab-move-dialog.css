@@ -1,0 +1,105 @@
+/* The move dialog: layout only. The list is the kit's tree picker; the buttons and the banner are the kit's. */
+
+.dlg {
+  inline-size: 520px;
+  max-inline-size: calc(100vw - 32px);
+  max-block-size: calc(100dvh - 64px);
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+
+.dlg[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.dlg::backdrop {
+  background: var(--scrim);
+}
+
+.hd {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-2) var(--space-3) var(--space-5);
+  padding-inline: var(--space-5) var(--space-2);
+  border-block-end: 1px solid var(--line);
+}
+
+.hd h2 {
+  flex: 1;
+  font: 700 var(--text-lg) / 1.4 var(--display);
+}
+
+.x {
+  display: grid;
+  place-items: center;
+  inline-size: var(--tap-target);
+  block-size: var(--tap-target);
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.x:hover {
+  background: var(--hover);
+}
+
+.bd {
+  flex: 1;
+  min-block-size: 0;
+  padding: 10px 12px;
+  overflow: auto;
+}
+
+.ft {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border-block-start: 1px solid var(--line);
+}
+
+.refusal,
+.sum {
+  flex-basis: 100%;
+}
+
+.sum {
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--text-sm);
+}
+
+/* A phone: a bottom sheet, 56px buttons that share the row. */
+@media (width <= 820px) {
+  .dlg {
+    inline-size: 100%;
+    max-inline-size: none;
+    max-block-size: 90dvh;
+    margin: auto 0 0;
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+  }
+
+  .ft {
+    --kaff-button-size: 3.5rem;
+    padding-block-end: calc(var(--space-4) + env(safe-area-inset-bottom));
+  }
+
+  .ft kaff-button {
+    flex: 1;
+  }
+
+  .ft ::ng-deep .kaff-button {
+    inline-size: 100%;
+  }
+}

@@ -23,7 +23,7 @@
             <path d="M12 4l9 16H3zM12 10v4M12 17.5v.5" />
           </svg>
         }
-        <span>{{ i18n.t(key) }}</span>
+        <span>{{ errorKey() !== null ? i18n.t(key, errorParams()) : i18n.t(key) }}</span>
       </p>
     }
   </div>

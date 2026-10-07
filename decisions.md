@@ -14988,3 +14988,75 @@ any branch. That fixes every list screen that passes a `stateAction`, not only t
 audit metadata and the audit read is Owner-only); a `GET` for one item; moving an item between أبواب from
 the panel (the design offers no control); the primary action in the phone's bottom bar (the shell's `abar`
 has no slot, so the button sits under the search on a phone); and the import screen itself.
+
+
+### D-181 · Frontend — the أبواب module built to the approved design; the kit grows five parts · 2026-10-07
+
+`KAFF-204` (create, edit, markup), `KAFF-205` (move), `KAFF-213` (archive) and `KAFF-943` AC-943-F
+(restore), against `.design/v2/team-a/babs.html`. One route, `/babs`: create and edit are a panel over the
+tree (`?bab=CODE` opens a باب), so `/babs/new`, `/babs/:babId` and the old `bab-form-page` are gone.
+
+**Archive is two different answers, and the screen knows which one it has.** The server refuses to
+archive a باب that holds its OWN active items (`D-130` §5, `KAFF-213`). The tree reads each باب's own
+active-item count from one catalogue read. A باب with own items shows the refusal in place of its row at
+once, naming that count, with "view the items" (the catalogue filtered to the باب) and "close", and no
+confirmation step. A باب with none shows the quiet recoverable confirmation, which says its child أبواب
+are not touched. Active child أبواب never block anything and nothing cascades, archiving or restoring.
+If the count cannot be read (a role without `CatalogueManage`) or is stale, the confirmation is shown and
+the server's refusal, which carries the authoritative count, turns it into the refusal. The count is never
+the subtree's; "(118 مع الفروع)" beside the count is information only.
+
+**Restore.** `POST /api/babs/{id}/unarchive` (`KAFF-943`) from the row menu and the panel footer. The row
+becomes a one-line "restored" band for 2.5 s, then returns; `errors.master.not_archived` shows in place.
+
+**Kit additions** (a screen never styles its own version of a kit part): `kaff-tree-picker` (radio tree,
+current marker, disabled-with-reason), `kaff-value-editor` (the deliberate editor: consequence text,
+before-to-after, Save disabled until changed), `kaff-picker-button` (the field-shaped button that opens a
+picker); additive inputs and slots on `kaff-banner` (`[bannerActions]`), `kaff-detail-panel`
+(`[panelBack]`, the two-step panel's back link), `kaff-field` (`errorParams`) and `kaff-money-field`
+(`placeholderKey`, used for the percent field); four icons (`back`, `move`, `child`, `layers`); a global
+`.lnk` quiet link in `styles.css`.
+
+**`role="treegrid"` did not fight the kit.** `kaff-table` takes `role="treegrid"` on its host; its header
+row already carries `role="row"` and `columnheader`. Each body item is `li[role=presentation]` holding a
+`div[role=row]` with `aria-level`, `aria-posinset`, `aria-setsize` and, for a parent, `aria-expanded`; the
+cells are `role="gridcell"`; the list is `role="rowgroup"`. The kit's generic wrappers sit between them,
+which ARIA allows. Not built: arrow-key navigation between rows (the controls inside the rows are all
+ordinary tab stops, which is usable but is not the full treegrid keyboard pattern).
+
+**Where the build and the approved design disagree, and what was done.**
+- *The English name is required.* The design draws it optional ("اختياري."). `Bab.Create` and
+  `Bab.Rename` both refuse an empty one (`errors.master.name_required`), so an optional field would be a
+  guaranteed server refusal. It is marked required. The design should change, or the domain should.
+- *The sort order and the item counts are not on the list.* `GET /api/babs` returns no `sortOrder` and no
+  counts. The الترتيب column and the locked sort-order field on edit are therefore not drawn (a locked
+  field with no value says nothing); the tree is already in sort order. The item counts come from one
+  `GET /api/catalogue-items?status=Active` read, grouped client-side. `BabSummary` should carry
+  `SortOrder` (and an own-active-item count would remove the second read).
+- *The code is letters only on the client.* The README's "حروف لاتينية فقط." is enforced as `^[A-Za-z]+$`
+  and the field is capped at 32 (`Bab.MaxCodeLength`). The domain itself accepts any non-empty string up
+  to 32, so a digit is refused here and not by the server; that is the design's rule, flagged.
+- *No load-more row.* The list returns every باب (about 40) and a tree cannot be paged without cutting a
+  parent from its children.
+
+**The four open questions, built as they exist and not decided.**
+1. *An active child under an archived parent.* The active view promotes it to the top level (what
+   `flattenBabTree` always did to an orphan); the full view nests it under its dimmed parent; "add a
+   child" is not offered on an archived row; the parent pickers list active أبواب only.
+2. *Owner-only markup.* Every `BabManage` holder gets the editor. The permission gate is the server's.
+3. *Name uniqueness.* None. Two أبواب may share an Arabic name and there is no duplicate-name error.
+4. *Sort order per parent or global.* Typed on create (optional, defaults to 0), not shown after.
+
+**Not built.** The row's "created on / last edited by" line (no audit metadata on the list and the audit
+read is Owner-only); drag to re-parent (the design forbids it); the catalogue's "create a باب first"
+pointer when no باب exists (a change to the catalogue screen); the treegrid arrow-key pattern.
+
+**Test ids.** Kept: every id on the old tree. Moved: `bab-form` is `bab-panel`; `bab-move-target-{code}`
+(a select) is `bab-move-option-{code}` (a radio) inside `bab-move-dialog`; `bab-markup-{code}` was the
+inline edit and is now the pencil (desktop) or the chip (phone). Removed with the page: `bab-form-no-source`,
+`bab-form-back`. `bab-row-{code}` stays on the row's `li`; the name button is `bab-row-name-{code}`.
+
+**Gates, measured 2026-10-07.** `ng build --configuration production`: exit 0, no warning line.
+`npm test`: `Test Files  32 passed (32)`, `Tests  214 passed (214)` (the page, panel flow and move dialog
+add 38 cases over the previous 176). Screenshots of the running screen, light and dark at 1440 and 390,
+were taken against an isolated stack (own API and database, since dropped) and looked at one by one.

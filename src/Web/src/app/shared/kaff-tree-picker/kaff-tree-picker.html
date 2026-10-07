@@ -1,0 +1,46 @@
+<div class="picker" role="radiogroup" [attr.aria-label]="groupLabel()">
+  <label class="pk" [class.pk--cur]="rootCurrent()">
+    <input
+      type="radio"
+      [name]="name"
+      value=""
+      [checked]="value() === ''"
+      [attr.data-testid]="testIdPrefix() + 'root'"
+      (change)="onChoose('')"
+    />
+    <span class="rb"></span>
+    <span class="pn">{{ rootLabel() }}</span>
+    @if (rootCurrent()) {
+      <span class="why">{{ currentLabel() }}</span>
+    }
+  </label>
+
+  @for (node of nodes(); track node.id) {
+    <label
+      class="pk"
+      [class.pk--dis]="!!node.disabledReason"
+      [class.pk--cur]="node.current && !node.disabledReason"
+      [style.padding-inline-start.px]="(node.depth + 1) * 24"
+    >
+      <input
+        type="radio"
+        [name]="name"
+        [value]="node.id"
+        [checked]="value() === node.id"
+        [disabled]="!!node.disabledReason"
+        [attr.data-testid]="testIdPrefix() + (node.code ?? node.id)"
+        (change)="onChoose(node.id)"
+      />
+      <span class="rb"></span>
+      <span class="pn" dir="auto">{{ node.label }}</span>
+      @if (node.code) {
+        <bdi class="pc" dir="ltr" translate="no">{{ node.code }}</bdi>
+      }
+      @if (node.disabledReason; as reason) {
+        <span class="why">{{ reason }}</span>
+      } @else if (node.current) {
+        <span class="why">{{ currentLabel() }}</span>
+      }
+    </label>
+  }
+</div>

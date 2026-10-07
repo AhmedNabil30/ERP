@@ -50,3 +50,30 @@
 .banner--flat kaff-icon {
   margin-block-start: 0;
 }
+
+/* Optional actions at the end edge (the archive refusal's way forward and its close). Empty, it takes no
+   room; on a phone the actions drop under the message as full-width buttons (README "Archive"). */
+.actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.actions:empty {
+  display: none;
+}
+
+@media (width <= 820px) {
+  .banner:has(.actions > *) {
+    flex-wrap: wrap;
+  }
+
+  .banner:has(.actions > *) .actions {
+    flex: 1 1 100%;
+  }
+
+  .actions > * {
+    flex: 1;
+  }
+}

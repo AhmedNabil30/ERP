@@ -91,3 +91,22 @@ warnings, 0 errors. Domain.Tests total 299, failed 0. Api.Tests total 672, faile
 
 Not done: AC-943-F (frontend). The open question of an active child under an archived parent is
 untouched and unruled.
+
+## Build note (Frontend, 2026-10-07) — AC-943-F
+
+Built `BabsApi.unarchive` (`POST api/babs/{id}/unarchive`) and the two entry points that call it: the
+row menu's "إلغاء الأرشفة" on an archived row, and the same button in the details panel's footer. The row
+restores in place, the way the catalogue item's does: it becomes a one-line "تمت استعادة «…» إلى القائمة
+النشطة." band for 2.5 s, then the list reloads and the row returns to the active tree. There is no
+confirmation (the pattern for a recoverable action) and no toast. A refusal, including
+`errors.master.not_archived` for a باب that is already active, renders as a banner under that row, and
+the list reloads so the row shows its true state. The call touches the one باب and nothing else: the
+screen does not restore children or items (rule 4).
+
+Evidence: `bab-tree-page.spec.ts` ("restore (AC-943-F)") asserts the call is `unarchive` with the باب's
+id, that the restored band shows, that the translated refusal shows, and that an archived row offers no
+"add a child". Run against the real API (build of 2026-10-07, isolated database): restoring `OLD` from
+the archived view returned it to the active tree. Full suite: see D-181 for the figures.
+
+Not done: the verifier's pass. The open question of an active child under an archived parent is
+untouched; the screen offers no "add a child" on an archived row and does not decide anything else.

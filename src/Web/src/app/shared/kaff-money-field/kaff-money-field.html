@@ -32,6 +32,7 @@
         inputmode="decimal"
         dir="ltr"
         autocomplete="off"
+        [placeholder]="placeholderKey() ? i18n.t(placeholderKey()!) : ''"
         [id]="controlId()"
         [value]="value()"
         [attr.aria-invalid]="errorKey() !== null ? 'true' : null"

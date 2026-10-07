@@ -25,6 +25,10 @@ const PATHS = {
   alert: 'M12 4l9 16H3zM12 10v4M12 17.5v.5',
   upload: 'M12 15V4M8 8l4-4 4 4M5 14v6h14v-6',
   plus: 'M12 5v14M5 12h14',
+  back: 'M15 6l-6 6 6 6',
+  move: 'M3 7h6l2 2h10v10H3zM12 14h6M16 12l2 2-2 2',
+  child: 'M5 4v10a3 3 0 003 3h8M13 13l3 4-3 4M5 4h5',
+  layers: 'M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5',
   folder: 'M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z',
 } as const;
 

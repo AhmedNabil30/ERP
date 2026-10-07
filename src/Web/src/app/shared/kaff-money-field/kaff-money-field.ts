@@ -40,6 +40,8 @@ export class KaffMoneyField {
   readonly hintKey = input<string | null>(null);
   readonly errorKey = input<string | null>(null);
   readonly affixKey = input('catalogue.currency.affix');
+  /** Dim example text ("e.g. 15"), never a default value. */
+  readonly placeholderKey = input<string | null>(null);
   readonly testId = input<string | null>(null);
   readonly hintTestId = input<string | null>(null);
 

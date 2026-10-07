@@ -1,174 +1,498 @@
 /*
- * Logical properties throughout — RTL is the primary direction, not a mirror (CLAUDE.md). Zero colour
- * literals: every colour is a token from styles.css (apple-erp-design §2). Mirrors
- * catalogue-list-page.css's shape deliberately — one house style, not a second one invented here.
- */
+  The أبواب tree: layout and the few cells that are this screen's own. Every part is the kit's (search
+  field, segmented filter, table, row, row menu, value editor, inline confirmation, banner, badge, state,
+  button, detail panel, tree picker). The page header, the toolbar and the count line follow
+  `.design/v2/team-a/babs.html`, which is the catalogue's own.
+*/
 
-/* KAFF-928 finding 8 / AC-928-I: full width, no centred column — matches `user-list-page.css`. */
-.bab-tree {
+.babs {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  padding: var(--space-4);
+  gap: var(--space-3);
+}
+
+/* ---- page header ---- */
+
+.ph {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding-block-end: var(--space-2);
 }
 
 .title {
-  margin: 0;
   font-size: var(--text-xl);
 }
 
-/* KAFF-929 finding 4: one action bar (title only — this screen has no search). Primary action
-   projects into the shell's top-bar slot instead of living in this row. */
-.action-bar {
+.meta {
+  margin: 2px 0 0;
+  color: var(--dim);
+  font-size: var(--text-sm);
+}
+
+.acts {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
 }
 
-/* KAFF-929 finding 4: the filter strip — segmented filter at the inline-start, the count at the
-   inline-end, sitting directly above the table with no gap. */
-.filter-strip {
+.tools {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
+  gap: var(--space-3) var(--space-5);
 }
 
 .count {
-  font-size: var(--text-xs);
-  color: var(--color-muted);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--text-sm);
 }
 
-/* KAFF-928: `kaff-table` is the card host now — its own border, radius, background and shadow
-   replace what `.rows` used to draw per screen. */
+/* "Open all" and "close all" sit at the end of the count line, as quiet buttons. */
+.tree-controls {
+  display: flex;
+  gap: var(--space-1);
+  margin-inline-start: auto;
+}
+
+/* ---- the table: tracks, pinned identity ---- */
+
+.frame {
+  container: babs / inline-size;
+}
+
+.frame kaff-table {
+  --kaff-columns: minmax(300px, 1.5fr) minmax(120px, 1fr) 150px 140px 64px;
+}
+
+/* Below 1060px the English name drops out (it is in the panel) so the markup stays on screen and the
+   identity column stays pinned. */
+@container babs (max-width: 1059px) {
+  .frame kaff-table {
+    --kaff-columns: minmax(280px, 1fr) 150px 140px 64px;
+  }
+
+  .frame ::ng-deep .cell-en,
+  .frame ::ng-deep .header .cell-en {
+    display: none;
+  }
+}
+
 .rows {
-  list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
+  list-style: none;
 }
 
-/*
- * AC-204-I: each level indents from the inline-start, by a logical property — never `margin-left`.
- * `--bab-depth` is set per row by the template; the failure this rule guards against is invisible in
- * LTR and only shows up once the direction flips (TC-2-045).
- */
-.tree-row-item {
-  margin-inline-start: calc(var(--bab-depth, 0) * 1.25rem);
-  padding-block-start: var(--space-1);
+.tree-row {
+  display: block;
+  cursor: pointer;
 }
 
-/* ux/components.md:259 — the identity cell: the trade name leads, the باب code sits beneath it as
-   muted secondary text. It stacks inside `.row-name-cell`, next to the disclosure control. */
-.row-identity {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  min-inline-size: 0;
+.name-cell {
+  gap: 0;
 }
 
-.row-code {
-  unicode-bidi: isolate;
-  font-size: var(--text-xs);
-  color: var(--color-muted);
-  min-inline-size: 0;
+/* One 24px step per level, each with a 1px guide under the parent's disclosure button, so a parent and
+   its children read as a group. Logical, so it indents from the start edge and flips in English. */
+.g {
+  position: relative;
+  flex: none;
+  align-self: stretch;
+  inline-size: 24px;
 }
 
-/* AC-931-A: the disclosure control sits directly before the name, in the same grid cell, so the
-   tree reads as one column — not a separate track that would misalign with `--bab-depth`'s indent. */
-.row-name-cell {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-inline-size: 0;
+.g::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 22px;
+  inline-size: 1px;
+  background: var(--line);
 }
 
+/* The 44px disclosure; a leaf keeps a spacer of the same width so names stay aligned. The chevron points
+   to the end edge when closed and down when open, and flips with the direction. */
 .disclosure {
-  flex: 0 0 auto;
-  min-inline-size: var(--tap-target);
-  min-block-size: var(--tap-target);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--text-sm);
-  color: var(--color-muted);
+  flex: none;
+  display: grid;
+  place-items: center;
+  inline-size: var(--tap-target);
+  block-size: var(--tap-target);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
   background: transparent;
-  border: none;
-  border-radius: var(--radius-sm);
+  color: var(--ink);
   cursor: pointer;
 }
 
 .disclosure:hover {
-  background: var(--color-background);
+  background: var(--hover);
 }
 
 .disclosure--spacer {
+  pointer-events: none;
   cursor: default;
 }
 
-.row-name {
-  font-size: var(--text-md);
-  font-weight: 600;
+.disclosure .chev {
+  rotate: -90deg;
+}
+
+:host-context([dir='rtl']) .disclosure .chev {
+  rotate: 90deg;
+}
+
+.disclosure[aria-expanded='true'] .chev {
+  rotate: 0deg;
+}
+
+.identity {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
   min-inline-size: 0;
+}
+
+/* The name is a real button (the keyboard's way into a row) that reads as text. */
+.name {
+  min-inline-size: 0;
+  min-block-size: var(--tap-target);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: 600 var(--text-sm) / 1.3 var(--body);
+  text-align: start;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  cursor: pointer;
 }
 
-/* KAFF-925: the column header now names this — no per-row label duplicating it. */
-.row-markup {
-  font-size: var(--text-sm);
-  min-inline-size: 0;
-  justify-self: end;
+.is-archived .name {
+  font-weight: 500;
 }
 
-.row-actions {
+.code,
+.kids,
+.path {
+  flex: none;
+  color: var(--dim);
+  font-size: var(--text-xs);
+}
+
+.code {
+  font-variant-numeric: tabular-nums;
+}
+
+.en {
+  overflow: hidden;
+  color: var(--dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.count {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.with-kids,
+.dim {
+  color: var(--dim);
+  font-size: var(--text-xs);
+}
+
+.markup {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.markup-figure {
+  min-inline-size: 44px;
+  font-weight: 700;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  inline-size: var(--tap-target);
+  block-size: var(--tap-target);
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  background: var(--hover);
+}
+
+.act {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* A row that appeared because it was just created takes the saved-band tint. */
+.is-new .tree-row ::ng-deep .row,
+.is-new .tree-row ::ng-deep .cell-pinned {
+  background: color-mix(in srgb, var(--ok-bg) 45%, var(--surface));
+}
+
+/* The rows that belong to a row: its editor, and the bands under it. */
+.band-row,
+.edit-row {
+  border-block-end: 1px solid var(--line);
+}
+
+.edit-row {
+  padding: 10px var(--space-4);
+  border-block-start: 1px solid var(--fieldline);
+  background: var(--surface);
+}
+
+/* ---- loading: skeleton rows at the real row height ---- */
+
+.skeleton-name {
+  gap: 0;
+}
+
+.sk-en {
+  inline-size: 130px;
+}
+
+.sk-fig {
+  inline-size: 44px;
+}
+
+/* ---- first run: an empty tree that teaches ---- */
+
+.firstrun {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+  padding: var(--space-6);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.fr-main {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+.fr-icon {
+  display: grid;
+  place-items: center;
+  inline-size: 56px;
+  block-size: 56px;
+  border-radius: var(--radius);
+  background: var(--head);
+}
+
+.fr-main h2 {
+  margin: 4px 0 0;
+  font: 700 1.375rem / 1.4 var(--display);
+}
+
+.fr-main p {
+  max-inline-size: 52ch;
+  margin: 0;
+  color: var(--dim);
+}
+
+/* This one really is a sequence, so the numbers are the structure and not decoration. */
+.fr-steps {
+  display: grid;
+  gap: 10px;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.fr-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  line-height: 1.5;
+  counter-increment: step;
+}
+
+.fr-steps li::before {
+  content: counter(step);
+  flex: none;
+  display: grid;
+  place-items: center;
+  inline-size: 28px;
+  block-size: 28px;
+  border: 2px solid var(--fieldline);
+  border-radius: 50%;
+  font: 700 0.875rem / 1 var(--body);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The example is visibly not data: a dashed box with its own tag. */
+.fr-ex {
+  padding: 14px var(--space-4);
+  border: 1.5px dashed var(--fieldline);
+  border-radius: var(--radius);
+}
+
+.cap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-end: var(--space-2);
+  font-weight: 600;
+}
+
+.tag {
+  padding: 2px var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--dim);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.ex {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-block-size: 40px;
+}
+
+.ex.d1 {
+  padding-inline-start: 28px;
+}
+
+.ex .cd {
+  color: var(--dim);
+  font-size: var(--text-xs);
+}
+
+.ex .n2 {
+  margin-inline-start: auto;
+  color: var(--dim);
+  font-size: var(--text-xs);
+}
+
+/* ---- phone ---- */
+
+.sub {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
-  padding: 0 var(--space-4) var(--space-3);
+  color: var(--dim);
+  font-size: 0.875rem;
 }
 
-.row-confirm {
-  flex-basis: 100%;
-  margin: 0;
-  font-size: var(--text-sm);
-  color: var(--color-muted);
-}
-
-.row-refusal {
-  flex-basis: 100%;
-  margin: 0;
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--text-sm);
-  border: 1px solid var(--color-danger);
-  border-radius: var(--radius-md);
-  color: var(--color-danger);
-}
-
-.move-picker {
+.chip {
   display: inline-flex;
-}
-
-.input.select {
+  align-items: center;
+  gap: 6px;
   min-block-size: var(--tap-target);
-  padding-inline: var(--space-3);
-  font: inherit;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-background);
-  color: var(--color-text);
+  padding: 0 10px;
+  border: 1.5px solid var(--fieldline);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  font: 700 var(--text-sm) / 1 var(--body);
+  cursor: pointer;
 }
 
-/* Visually hidden, not display:none — screen readers still see it (apple-erp-design §7.1). */
-.sr-only {
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
+@media (width <= 820px) {
+  .ph {
+    display: block;
+    padding-block-end: 0;
+  }
+
+  .acts {
+    flex-direction: column;
+    align-items: stretch;
+    margin-block-start: var(--space-3);
+  }
+
+  .tools {
+    display: block;
+  }
+
+  .tree-controls {
+    margin-inline-start: 0;
+  }
+
+  /* The list runs edge to edge on a phone, with no frame around it. */
+  .frame {
+    margin-inline: calc(var(--space-4) * -1);
+  }
+
+  .frame kaff-table {
+    border-inline: 0;
+    border-radius: 0;
+  }
+
+  .g {
+    inline-size: 20px;
+  }
+
+  .g::before {
+    inset-inline-start: 20px;
+  }
+
+  .name {
+    min-block-size: 0;
+    white-space: normal;
+    line-height: 1.4;
+  }
+
+  .identity {
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .acts ::ng-deep .kaff-button {
+    inline-size: 100%;
+    min-block-size: 3.25rem;
+    padding-inline: var(--space-3);
+    font-size: var(--text-sm);
+  }
+
+  .edit-row {
+    padding: 0;
+    border-block-start: 0;
+  }
+
+  .firstrun {
+    grid-template-columns: 1fr;
+    padding: 20px var(--space-4);
+  }
+
+  .fr-main kaff-button {
+    inline-size: 100%;
+  }
+
+  .fr-main ::ng-deep .kaff-button {
+    inline-size: 100%;
+    min-block-size: 3.5rem;
+  }
 }

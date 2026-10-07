@@ -1,0 +1,59 @@
+<dialog
+  #dialog
+  class="dlg"
+  aria-labelledby="bab-move-title"
+  data-testid="bab-move-dialog"
+  (cancel)="onNativeCancel($event)"
+>
+  @if (bab(); as moving) {
+    <header class="hd">
+      <h2 id="bab-move-title">{{ i18n.t('bab.move.title', { name: name() }) }}</h2>
+      <button
+        type="button"
+        class="x"
+        [attr.aria-label]="i18n.t('action.close')"
+        [disabled]="busy()"
+        (click)="cancelled.emit()"
+      >
+        <kaff-icon [name]="'x'" />
+      </button>
+    </header>
+
+    <div class="bd">
+      <kaff-tree-picker
+        [nodes]="nodes()"
+        [rootLabel]="i18n.t('bab.field.no_parent')"
+        [currentLabel]="i18n.t('bab.move.current')"
+        [rootCurrent]="rootCurrent()"
+        [groupLabel]="i18n.t('bab.move.new_parent')"
+        testIdPrefix="bab-move-option-"
+        [value]="choice()"
+        (valueChange)="choice.set($event)"
+      />
+    </div>
+
+    <footer class="ft">
+      @if (refusalKey(); as key) {
+        <kaff-banner class="refusal" tone="refusal" testId="bab-move-refusal">{{ i18n.t(key) }}</kaff-banner>
+      }
+      <p class="sum" data-testid="bab-move-summary">{{ summary() }}</p>
+      <kaff-button
+        variant="primary"
+        [disabled]="!changed()"
+        [busy]="busy()"
+        [testId]="'bab-move-confirm-' + moving.code"
+        (clicked)="onConfirm()"
+      >
+        {{ i18n.t('bab.move.confirm') }}
+      </kaff-button>
+      <kaff-button
+        variant="secondary"
+        [disabled]="busy()"
+        [testId]="'bab-move-cancel-' + moving.code"
+        (clicked)="cancelled.emit()"
+      >
+        {{ i18n.t('action.cancel') }}
+      </kaff-button>
+    </footer>
+  }
+</dialog>

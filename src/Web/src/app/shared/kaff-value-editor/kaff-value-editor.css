@@ -1,0 +1,165 @@
+/*
+  The deliberate value editor (README "The markup percentage: a deliberate edit, without ceremony"): a 2px
+  ink border, no modal, the title across the top, the field and its before-to-after line at the start, the
+  consequence text beside it and the buttons at the end. Phone: one column, 56px field, 52px buttons.
+*/
+
+:host {
+  display: block;
+}
+
+.edb {
+  position: sticky;
+  inset-inline-start: 0;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px 20px;
+  align-items: start;
+  inline-size: min(100%, 860px);
+  padding: 14px 16px;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.title {
+  grid-column: 1 / -1;
+  font: 700 var(--text-md) / 1.4 var(--display);
+}
+
+.fld {
+  display: grid;
+  gap: 6px;
+  min-inline-size: 0;
+}
+
+.label {
+  font-weight: 600;
+}
+
+.ctl {
+  display: flex;
+  align-items: stretch;
+  inline-size: 150px;
+  block-size: 3rem;
+  border: 2px solid var(--fieldline);
+  border-radius: var(--radius);
+  background: var(--field);
+}
+
+.ctl:focus-within {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.ctl--dirty {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.ctl--invalid {
+  border-color: var(--err-bar);
+  box-shadow: inset 0 0 0 1px var(--err-bar);
+}
+
+.input {
+  flex: 1 1 0;
+  inline-size: 0;
+  min-inline-size: 0;
+  padding-inline: 14px;
+  border: 0;
+  background: transparent;
+  font-size: 1.0625rem;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+  outline: none;
+}
+
+.aff {
+  display: flex;
+  align-items: center;
+  padding-inline: 14px;
+  border-inline-start: 2px solid var(--line);
+  color: var(--dim);
+  font-weight: 600;
+}
+
+.msg {
+  min-block-size: 1.5rem;
+  font-size: var(--text-sm);
+}
+
+.delta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.arrow {
+  rotate: 90deg;
+}
+
+:host-context([dir='ltr']) .arrow {
+  rotate: -90deg;
+}
+
+.current {
+  color: var(--dim);
+}
+
+.msg-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--err-ink);
+  font-weight: 500;
+}
+
+.why {
+  max-inline-size: 60ch;
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+
+.btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-self: end;
+}
+
+.refusal {
+  grid-column: 1 / -1;
+}
+
+@media (width <= 820px) {
+  .edb {
+    position: static;
+    grid-template-columns: 1fr;
+    inline-size: auto;
+    border-inline-width: 0;
+    border-radius: 0;
+  }
+
+  .ctl {
+    inline-size: 100%;
+    block-size: 3.5rem;
+  }
+
+  .btns {
+    --kaff-button-size: 3.25rem;
+    inline-size: 100%;
+  }
+
+  .btns kaff-button {
+    flex: 1;
+  }
+
+  .btns ::ng-deep .kaff-button {
+    inline-size: 100%;
+  }
+}

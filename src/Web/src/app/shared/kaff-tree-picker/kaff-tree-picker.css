@@ -1,0 +1,82 @@
+/* The kit's tree picker: a radio list, indented on the start edge, 48px rows (56px on a phone). */
+
+:host {
+  display: block;
+}
+
+.pk {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-block-size: 48px;
+  padding-inline-end: var(--space-3);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.pk:hover {
+  background: var(--hover);
+}
+
+.pk input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+}
+
+.rb {
+  flex: none;
+  inline-size: 24px;
+  block-size: 24px;
+  margin-inline-start: var(--space-3);
+  border: 2px solid var(--fieldline);
+  border-radius: 50%;
+  background: var(--field);
+}
+
+input:checked + .rb {
+  border-color: var(--ink);
+  background: var(--ink);
+  box-shadow: inset 0 0 0 4px var(--field);
+}
+
+input:focus-visible + .rb {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.pn {
+  font-weight: 500;
+}
+
+.pc {
+  color: var(--dim);
+  font-size: var(--text-xs);
+}
+
+.why {
+  margin-inline-start: auto;
+  color: var(--dim);
+  font-size: var(--text-xs);
+}
+
+.pk--cur .pn {
+  font-weight: 700;
+}
+
+.pk--dis {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pk--dis:hover {
+  background: none;
+}
+
+@media (width <= 820px) {
+  .pk {
+    min-block-size: 56px;
+  }
+}

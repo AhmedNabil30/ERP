@@ -518,31 +518,268 @@
   "catalogue.import.column.new_base_sell_rate": "Base sell rate after",
 
   "bab.tree.title": "أبواب",
+
   "bab.tree.count": "{count} أبواب",
-  "bab.tree.empty": "No أبواب yet.",
-  "bab.tree.archive_action": "Archive باب",
-  "bab.tree.archive_confirm": "Archive this باب? It leaves new work; items already filed under it are unaffected.",
+
+  "bab.tree.count_none": "No أبواب",
+
+  "bab.tree.empty": "Start with the first باب",
+
   "bab.tree.archived_badge": "Archived",
+
+  "bab.tree.expand_all": "Open all",
+
+  "bab.tree.collapse_all": "Close all",
+
+  "bab.tree.expand_label": "Open the children of {name}",
+
+  "bab.tree.collapse_label": "Close the children of {name}",
+
   "bab.filter.active": "Active",
+
   "bab.filter.archived": "Archived",
+
   "bab.filter.all": "All",
-  "bab.action.create": "+ New باب",
-  "bab.action.back_to_tree": "Back to the tree",
+
+  "bab.filter.group": "Filter",
+
+  "bab.action.create": "New باب",
+
+  "bab.search.placeholder": "Search by name or code",
+
+  "bab.search.clear": "Clear search",
+
   "bab.loading": "Loading…",
+
+  "bab.count.active": "Showing {count} active أبواب",
+
+  "bab.count.archived": "Showing {count} archived أبواب",
+
+  "bab.count.all": "Showing all أبواب: {count}",
+
+  "bab.count.search": "{count} results for «{query}»",
+
+  "bab.scope.active": "in the active أبواب",
+
+  "bab.scope.archived": "in the archived أبواب",
+
+  "bab.scope.all": "in all أبواب",
+
+  "bab.count.items": "{count} items",
+
+  "bab.count.children": "{count} children",
+
+  "bab.count.child_one": "1 child",
+
+  "bab.count.child_two": "2 children",
+
+  "bab.count.with_children": "({count} with children)",
+
+  "bab.column.name": "باب",
+
+  "bab.column.name_en": "English name",
+
+  "bab.column.items": "Items",
+
+  "bab.column.default_markup": "Default markup (%)",
+
+  "bab.row.within": "Within: {path}",
+
+  "bab.row.edit_markup": "Edit the default markup of {name}",
+
+  "bab.menu.details": "باب details",
+
+  "bab.menu.edit_markup": "Edit markup",
+
+  "bab.menu.add_child": "Add a child باب",
+
+  "bab.menu.move": "Move to…",
+
+  "bab.menu.archive": "Archive…",
+
+  "bab.menu.unarchive": "Unarchive",
+
+  "bab.affix.percent": "%",
+
+  "bab.markup.title": "Default markup of «{name}»",
+
+  "bab.markup.current": "Current {value}",
+
+  "bab.markup.explanation": "Every new BOQ line in a project starts from this, and it can be changed per line there. Changing it here does not re-price any existing line.",
+
+  "bab.markup.save": "Save markup",
+
+  "bab.markup.saving": "Saving…",
+
+  "bab.markup.saved": "Default markup of «{name}» saved: from {from} to {to}. Every new BOQ line in a project starts from it, and no existing price changed.",
+
+  "bab.archive.question": "Archive «{name}»?",
+
+  "bab.archive.detail": "It holds no active items. You can restore it from Archived at any time.",
+
+  "bab.archive.detail_children": "It holds no active items, and its child أبواب ({children}) are not affected. You can restore it from Archived at any time.",
+
+  "bab.archive.confirm": "Archive",
+
+  "bab.archive.archiving": "Archiving…",
+
+  "bab.archive.refused_title": "«{name}» could not be archived.",
+
+  "bab.archive.refused_body": "It holds {count} active items. Move those items to another باب or archive them first, then try again.",
+
+  "bab.archive.view_items": "View the items ({count})",
+
+  "bab.restored": "«{name}» was restored to the active list.",
+
+  "bab.created.text": "«{name}» was created. Its code is {code}. It holds no items yet: add them from the",
+
+  "bab.created.link": "price catalogue",
+
+  "bab.move.title": "Move «{name}» to…",
+
+  "bab.move.confirm": "Move",
+
+  "bab.move.new_parent": "New parent",
+
+  "bab.move.current": "Current",
+
+  "bab.move.reason_self": "This باب",
+
+  "bab.move.reason_descendant": "One of its children",
+
+  "bab.move.hint": "Choose the new parent. A باب cannot move under itself or under one of its children.",
+
+  "bab.move.summary_root": "«{name}» will become a top-level باب, and its items and children move with it.",
+
+  "bab.move.summary_child": "«{name}» will become a child of «{parent}», and its items and children move with it.",
+
   "bab.create_title": "New باب",
-  "bab.edit_title": "باب",
-  "bab.item_not_found": "That باب no longer exists.",
+
+  "bab.panel.create_child_title": "New child باب",
+
+  "bab.panel.create_meta": "It appears in the tree where you choose",
+
+  "bab.panel.create_child_meta": "Within: {parent}",
+
+  "bab.panel.create": "Create the باب",
+
+  "bab.panel.creating": "Creating…",
+
+  "bab.panel.back": "Back to the new باب",
+
+  "bab.panel.pick_parent": "Choose the parent",
+
+  "bab.panel.pick_done": "Done",
+
+  "bab.panel.pick_summary_root": "The new باب will be a top-level باب.",
+
+  "bab.panel.pick_summary_child": "The new باب will be a child of «{parent}».",
+
+  "bab.panel.create_failed": "The باب was not created. Correct the marked fields.",
+
+  "bab.panel.save_failed": "Could not save. Correct the marked fields.",
+
+  "bab.panel.unsaved": "Unsaved changes.",
+
+  "bab.panel.saved": "Changes saved.",
+
+  "bab.panel.saving": "Saving…",
+
+  "bab.panel.archive": "Archive",
+
+  "bab.panel.edit_markup": "Edit markup",
+
   "bab.field.code": "Code",
-  "bab.field.code_not_editable": "Set once at creation and cannot be changed.",
+
+  "bab.field.code_not_editable": "Cannot be changed after creation.",
+
   "bab.field.name_ar": "Arabic name",
+
   "bab.field.name_en": "English name",
-  "bab.field.parent": "Parent باب",
-  "bab.field.no_parent": "No parent (root)",
-  "bab.field.default_markup": "Default markup %",
+
+  "bab.field.parent": "Belongs to",
+
+  "bab.field.no_parent": "No parent (top-level باب)",
+
+  "bab.field.default_markup": "Default markup",
+
   "bab.field.sort_order": "Sort order",
-  "bab.column.name": "Name",
+
+  "bab.hint.code": "Latin capital letters. Unique across the whole system, and cannot be changed after creation.",
+
+  "bab.hint.parent": "Leave it as No parent for a top-level باب, or choose a باب for this one to sit under.",
+
+  "bab.hint.sort_order": "A number that sets where the باب sits in the list.",
+
+  "bab.hint.markup": "Every new BOQ line starts from this.",
+
+  "bab.hint.markup_row_editor": "Every new BOQ line in a project starts from this. It is edited from the table, as a separate step.",
+
+  "bab.placeholder.name_ar": "e.g. أعمال سقالات",
+
+  "bab.placeholder.name_en": "Scaffolding",
+
+  "bab.placeholder.code": "SCF",
+
+  "bab.placeholder.sort_order": "e.g. 90",
+
+  "bab.placeholder.markup": "e.g. 15",
+
+  "bab.error.name_ar_required": "The Arabic name is required.",
+
+  "bab.error.name_en_required": "The English name is required.",
+
+  "bab.error.code_required": "The code is required.",
+
+  "bab.error.code_letters": "Latin letters only.",
+
+  "bab.error.code_taken": "The code {code} belongs to another باب. Codes are unique across the whole system.",
+
+  "bab.error.sort_integer": "Enter a whole number, for example 90.",
+
+  "bab.error.markup_required": "The default markup is required.",
+
+  "bab.error.markup_number": "Enter a number, for example 15.",
+
+  "bab.empty.no_match": "No matching results",
+
+  "bab.empty.no_match_body": "No باب matches «{what}» {scope}. Check the name or the code.",
+
+  "bab.empty.archived": "No archived أبواب",
+
+  "bab.empty.archived_body": "أبواب you archive appear here and can be restored.",
+
+  "bab.empty.no_active": "No active أبواب",
+
+  "bab.empty.no_active_body": "Every باب is archived. Restore one from Archived, or create a new باب.",
+
+  "bab.forbidden_title": "This screen is outside your permissions",
+
+  "bab.forbidden_body": "أبواب are for the Owner and the Technical Office. Ask the Owner to grant you access.",
+
+  "bab.forbidden_back": "Back to the home page",
+
+  "bab.first_run.body": "A باب is the section of work every price item is filed under, such as concrete works or electrical works. Items cannot be added to the price catalogue until at least one باب exists.",
+
+  "bab.first_run.step_1": "Create the أبواب here. A باب can branch into child أبواب.",
+
+  "bab.first_run.step_2": "Add the items and their prices in the price catalogue, each item under one باب.",
+
+  "bab.first_run.step_3": "Each line in a project BOQ starts from the default markup of the باب it belongs to.",
+
+  "bab.first_run.example_title": "What the tree looks like",
+
+  "bab.first_run.example_tag": "An example, not data",
+
+  "bab.first_run.example_concrete": "Concrete works",
+
+  "bab.first_run.example_reinforced": "Reinforced concrete",
+
+  "bab.first_run.example_plain": "Plain concrete",
+
+  "bab.first_run.example_electrical": "Electrical works",
+
   "bab.field.markup_format_invalid": "Enter a percent in Western digits (0-9) — no separators, no exponent, no negative.",
-  "bab.hint.markup_is_a_percent": "Entered as a percent, e.g. 15 for 15%.",
   "department.settings.title": "Departments",
   "department.settings.count": "{count} departments",
   "department.settings.archived_badge": "Archived",
@@ -559,9 +796,6 @@
   "department.field.name_en": "English name",
   "department.action.create": "+ New department",
 
-  "bab.move.title": "Move to a different parent",
-  "bab.move.confirm": "Move",
-  "bab.move.new_parent": "New parent باب",
 
   "nav.subcontractors": "Subcontractors",
   "subcontractor.list_title": "Subcontractor register",
@@ -626,8 +860,6 @@
   "supplier.confirm.archive.body": "They leave the working list and their record stays intact.",
 
   "a11y.row_actions": "Row actions",
-  "a11y.expand_row": "Expand row",
-  "a11y.collapse_row": "Collapse row",
   "devFixtures.kaff930.heading": "Interaction kit — dev fixture",
   "devFixtures.kaff930.rowMenu.edit": "Edit",
   "devFixtures.kaff930.rowMenu.archive": "Archive",

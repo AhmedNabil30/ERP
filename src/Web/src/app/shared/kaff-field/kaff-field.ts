@@ -28,6 +28,8 @@ export class KaffField {
   readonly hintKey = input<string | null>(null);
   readonly errorKey = input<string | null>(null);
   readonly errorTestId = input<string | null>(null);
+  /** Placeholders for the error message, e.g. the code a repeated-code refusal names. */
+  readonly errorParams = input<Readonly<Record<string, string | number>> | undefined>(undefined);
   readonly required = input(false);
   readonly controlId = input.required<string>();
 

@@ -1,0 +1,66 @@
+<div class="edb" role="group" [attr.aria-labelledby]="'kve-title-' + uid" [attr.data-testid]="testId()">
+  <h3 class="title" [id]="'kve-title-' + uid">{{ title() }}</h3>
+
+  <div class="fld">
+    <label class="label" [for]="'kve-input-' + uid">{{ fieldLabel() }}</label>
+    <div class="ctl" [class.ctl--dirty]="dirty()" [class.ctl--invalid]="error() !== null">
+      <input
+        #control
+        class="input"
+        type="text"
+        inputmode="decimal"
+        dir="ltr"
+        autocomplete="off"
+        [id]="'kve-input-' + uid"
+        [value]="value()"
+        [attr.aria-invalid]="error() !== null ? 'true' : null"
+        [attr.aria-describedby]="'kve-msg-' + uid"
+        [attr.data-testid]="testId() ? testId() + '-input' : null"
+        (input)="onInput($event)"
+        (keydown)="onKeydown($event)"
+      />
+      @if (affix(); as text) {
+        <span class="aff">{{ text }}</span>
+      }
+    </div>
+    <div class="msg" [id]="'kve-msg-' + uid" aria-live="polite">
+      @if (error(); as text) {
+        <span class="msg-error"><kaff-icon [name]="'alert'" [small]="true" />{{ text }}</span>
+      } @else if (dirty()) {
+        <span class="delta" [attr.data-testid]="testId() ? testId() + '-delta' : null">
+          <bdi dir="ltr">{{ beforeText() }}</bdi>
+          <kaff-icon class="arrow" [name]="'chev'" [small]="true" />
+          <bdi dir="ltr">{{ afterText() }}</bdi>
+        </span>
+      } @else {
+        <span class="current">{{ currentText() }}</span>
+      }
+    </div>
+  </div>
+
+  <p class="why">{{ explanation() }}</p>
+
+  <div class="btns">
+    <kaff-button
+      variant="primary"
+      [disabled]="!canSave()"
+      [busy]="busy()"
+      [testId]="testId() ? testId() + '-save' : null"
+      (clicked)="saved.emit()"
+    >
+      {{ saveLabel() }}
+    </kaff-button>
+    <kaff-button
+      variant="secondary"
+      [disabled]="busy()"
+      [testId]="testId() ? testId() + '-cancel' : null"
+      (clicked)="cancelled.emit()"
+    >
+      {{ cancelLabel() }}
+    </kaff-button>
+  </div>
+
+  @if (refusal(); as text) {
+    <kaff-banner class="refusal" tone="refusal" [testId]="testId() ? testId() + '-refusal' : null">{{ text }}</kaff-banner>
+  }
+</div>

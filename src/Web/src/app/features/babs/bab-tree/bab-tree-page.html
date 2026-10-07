@@ -1,176 +1,485 @@
-<ng-template #createAction>
-  <kaff-button variant="primary" testId="bab-create" (clicked)="onCreate()">
-    {{ i18n.t('bab.action.create') }}
-  </kaff-button>
-</ng-template>
+<section class="babs" data-testid="bab-tree">
+  <header class="ph">
+    <div class="titles">
+      <h1 class="title">{{ i18n.t('bab.tree.title') }}</h1>
+      <p class="meta" data-testid="bab-tree-meta">
+        @if (metaText(); as meta) {
+          <span>{{ meta }}</span>
+        } @else {
+          <span class="sk" aria-hidden="true"></span>
+        }
+      </p>
+    </div>
 
-<section class="bab-tree" data-testid="bab-tree">
-  <!-- KAFF-929 finding 4: one action bar. Primary action projects into the shell's top-bar slot
-       above (`#createAction`), matching `UserListPage`'s own wiring. -->
-  <div class="action-bar">
-    <h1 class="title">{{ i18n.t('bab.tree.title') }}</h1>
-  </div>
+    @if (!isFirstRun()) {
+      <div class="acts">
+        <kaff-search-field
+          [value]="searchTerm()"
+          placeholderKey="bab.search.placeholder"
+          clearLabelKey="bab.search.clear"
+          [busy]="loading() && hasAnyBab()"
+          testId="bab-search"
+          clearTestId="bab-search-clear"
+          (committed)="onSearch($event)"
+        />
+        <kaff-button variant="primary" testId="bab-create" (clicked)="onCreate()">
+          <kaff-icon [name]="'plus'" [small]="true" />
+          {{ i18n.t('bab.action.create') }}
+        </kaff-button>
+      </div>
+    }
+  </header>
 
-  <!-- KAFF-929 finding 4: one filter strip. -->
-  <div class="filter-strip">
-    <!-- KAFF-912: KAFF-901's segmented filter, matching CatalogueListPage's own — KAFF-213 rule 9's
-         three server states. -->
-    <kaff-segmented-filter
-      [options]="segmentedOptions"
-      [value]="statusFilter()"
-      (valueChange)="onFilter($event)"
-      ariaLabelKey="bab.tree.title"
-      testIdPrefix="bab-filter"
-    />
-    @if (babs().length > 0) {
-      <span class="count" data-testid="bab-tree-count">{{ countText() }}</span>
+  @if (!isFirstRun()) {
+    <div class="tools">
+      <kaff-segmented-filter
+        [options]="segmentedOptions"
+        [value]="statusFilter()"
+        (valueChange)="onFilter($event)"
+        ariaLabelKey="bab.filter.group"
+        testIdPrefix="bab-filter"
+      />
+    </div>
+  }
+
+  @if (!failure() && !loading() && !isFirstRun() && rows().length > 0) {
+    <p class="count">
+      <span data-testid="bab-tree-count">{{ countText() }}</span>
+      @if (searchTerm().length > 0) {
+        <button type="button" class="lnk" data-testid="bab-clear-search" (click)="onClearSearch()">
+          {{ i18n.t('bab.search.clear') }}
+        </button>
+      } @else if (!isFlat() && hasParents()) {
+        <span class="tree-controls">
+          <kaff-button variant="ghost" testId="bab-expand-all" (clicked)="onExpandAll()">
+            {{ i18n.t('bab.tree.expand_all') }}
+          </kaff-button>
+          <kaff-button variant="ghost" testId="bab-collapse-all" (clicked)="onCollapseAll()">
+            {{ i18n.t('bab.tree.collapse_all') }}
+          </kaff-button>
+        </span>
+      }
+    </p>
+  }
+
+  <div class="frame">
+    @if (failure(); as failed) {
+      @if (failed.status === 403) {
+        <kaff-state
+          mode="forbidden"
+          icon="lock"
+          titleKey="bab.forbidden_title"
+          bodyKey="bab.forbidden_body"
+          testId="bab-tree-failure"
+        >
+          <a stateAction class="lnk" routerLink="/">{{ i18n.t('bab.forbidden_back') }}</a>
+        </kaff-state>
+      } @else {
+        <kaff-state mode="refusal" [bodyKey]="failed.key" testId="bab-tree-failure" />
+      }
+    } @else if (loading() && !hasAnyBab()) {
+      <!-- Loading: the header stays and the body is skeleton rows at the real row height (README "The
+           four list states"). No spinner, no overlay. -->
+      <kaff-table [columnDefs]="headerColumns" [minInline]="760" testId="bab-tree-table-header">
+        <div
+          class="skeleton"
+          role="status"
+          aria-busy="true"
+          data-testid="bab-tree-loading"
+          [attr.aria-label]="i18n.t('bab.loading')"
+        >
+          @for (row of skeletonRows; track row) {
+            <kaff-table-row [stacked]="true">
+              <span class="cell-pinned cell-title skeleton-name">
+                @for (g of guides(skeletonIndent[row]); track g) {
+                  <span class="g"></span>
+                }
+                <span class="sk" [style.inline-size.px]="170 - skeletonIndent[row] * 30"></span>
+              </span>
+              <span class="cell-wide cell-en"><span class="sk sk-en"></span></span>
+              <span class="cell-wide"><span class="sk sk-fig"></span></span>
+              <span class="cell-primary"><span class="sk sk-fig"></span></span>
+              <span class="cell-act"></span>
+            </kaff-table-row>
+          }
+        </div>
+      </kaff-table>
+    } @else if (isFirstRun()) {
+      <!-- First run: an empty tree that teaches (README "First run"). One primary only: the page
+           header's is hidden while this shows. -->
+      <div class="firstrun" data-testid="bab-tree-empty">
+        <div class="fr-main">
+          <span class="fr-icon"><kaff-icon [name]="'layers'" /></span>
+          <h2>{{ i18n.t('bab.tree.empty') }}</h2>
+          <p>{{ i18n.t('bab.first_run.body') }}</p>
+          <kaff-button variant="primary" testId="bab-create" (clicked)="onCreate()">
+            <kaff-icon [name]="'plus'" [small]="true" />
+            {{ i18n.t('bab.action.create') }}
+          </kaff-button>
+          <ol class="fr-steps">
+            <li><span>{{ i18n.t('bab.first_run.step_1') }}</span></li>
+            <li><span>{{ i18n.t('bab.first_run.step_2') }}</span></li>
+            <li><span>{{ i18n.t('bab.first_run.step_3') }}</span></li>
+          </ol>
+        </div>
+        <div class="fr-ex" data-testid="bab-first-run-example">
+          <div class="cap">
+            <span>{{ i18n.t('bab.first_run.example_title') }}</span>
+            <span class="tag">{{ i18n.t('bab.first_run.example_tag') }}</span>
+          </div>
+          <div class="ex">
+            <kaff-icon [name]="'layers'" [small]="true" />
+            <span>{{ i18n.t('bab.first_run.example_concrete') }}</span>
+            <bdi class="cd" dir="ltr">CON</bdi>
+            <span class="n2">{{ childrenText(2) }}</span>
+          </div>
+          <div class="ex d1">
+            <span>{{ i18n.t('bab.first_run.example_reinforced') }}</span>
+            <bdi class="cd" dir="ltr">CNR</bdi>
+          </div>
+          <div class="ex d1">
+            <span>{{ i18n.t('bab.first_run.example_plain') }}</span>
+            <bdi class="cd" dir="ltr">CNP</bdi>
+          </div>
+          <div class="ex">
+            <kaff-icon [name]="'layers'" [small]="true" />
+            <span>{{ i18n.t('bab.first_run.example_electrical') }}</span>
+            <bdi class="cd" dir="ltr">ELE</bdi>
+          </div>
+        </div>
+      </div>
+    } @else if (rows().length > 0) {
+      <kaff-table
+        role="treegrid"
+        [attr.aria-label]="i18n.t('bab.tree.title')"
+        [columnDefs]="headerColumns"
+        [minInline]="760"
+        testId="bab-tree-table-header"
+        data-testid="bab-tree-table-shell"
+        [attr.aria-busy]="loading()"
+      >
+        <ul class="rows" role="rowgroup" data-testid="bab-tree-rows">
+          @for (row of rows(); track trackRow($index, row)) {
+            <li
+              class="tree-item"
+              role="presentation"
+              [class.is-new]="isCreatedBand(row.bab)"
+              [attr.data-testid]="'bab-row-' + row.bab.code"
+            >
+              @if (isRestored(row.bab)) {
+                <div role="row" class="band-row">
+                  <div role="gridcell" aria-colspan="5">
+                    <kaff-banner tone="ok" [flat]="true" testId="bab-row-restored">{{ restoredText() }}</kaff-banner>
+                  </div>
+                </div>
+              } @else if (archiveFlowFor(row.bab); as flow) {
+                <div role="row" class="band-row">
+                  <div role="gridcell" aria-colspan="5">
+                    @if (flow.kind === 'refusal' && flow.count !== null) {
+                      <!-- The refusal: this باب holds its OWN active items, so the server will not archive it.
+                           The answer is known, so there is no confirmation step; the way forward is the
+                           catalogue filtered to this باب. -->
+                      <kaff-banner
+                        tone="refusal"
+                        [flat]="true"
+                        [testId]="'bab-archive-refusal-' + row.bab.code"
+                      >
+                        <b>{{ refusalTitle(row.bab) }}</b> {{ refusalBody(flow.count) }}
+                        <span bannerActions>
+                          <kaff-button
+                            variant="secondary"
+                            [testId]="'bab-archive-items-' + row.bab.code"
+                            (clicked)="onViewItems(row.bab)"
+                          >
+                            {{ i18n.t('bab.archive.view_items', { count: flow.count }) }}
+                          </kaff-button>
+                          <kaff-button
+                            variant="ghost"
+                            [testId]="'bab-archive-close-' + row.bab.code"
+                            (clicked)="onCloseArchive()"
+                          >
+                            {{ i18n.t('action.close') }}
+                          </kaff-button>
+                        </span>
+                      </kaff-banner>
+                    } @else {
+                      <!-- Nothing in it, so archiving is quiet and recoverable. Its child أبواب are not touched. -->
+                      <kaff-inline-confirm
+                        tone="recoverable"
+                        icon="arch"
+                        [question]="archiveQuestion(row.bab)"
+                        [detail]="archiveDetail(row)"
+                        [confirmLabel]="
+                          archivingId() === row.bab.id
+                            ? i18n.t('bab.archive.archiving')
+                            : i18n.t('bab.archive.confirm')
+                        "
+                        [cancelLabel]="i18n.t('action.cancel')"
+                        [busy]="archivingId() === row.bab.id"
+                        [messageTestId]="'bab-archive-body-' + row.bab.code"
+                        [confirmTestId]="'bab-archive-confirm-' + row.bab.code"
+                        [cancelTestId]="'bab-archive-cancel-' + row.bab.code"
+                        (confirmed)="onConfirmArchive(row.bab)"
+                        (cancelled)="onCloseArchive()"
+                      />
+                    }
+                  </div>
+                </div>
+              } @else {
+                <div
+                  role="row"
+                  class="tree-row-wrap"
+                  [attr.aria-level]="row.depth + 1"
+                  [attr.aria-posinset]="row.pos"
+                  [attr.aria-setsize]="row.setSize"
+                  [attr.aria-expanded]="row.kidCount > 0 && !row.flat ? row.open : null"
+                >
+                  <kaff-table-row
+                    class="tree-row"
+                    [archived]="!row.bab.isActive"
+                    [stacked]="true"
+                    (click)="onRowClick(row.bab, $event)"
+                  >
+                    <span role="gridcell" class="cell-pinned cell-title name-cell">
+                      @if (!row.flat) {
+                        @for (g of guides(row.depth); track g) {
+                          <span class="g" aria-hidden="true"></span>
+                        }
+                        @if (row.kidCount > 0) {
+                          <button
+                            type="button"
+                            class="disclosure"
+                            [attr.aria-expanded]="row.open"
+                            [attr.aria-label]="toggleLabel(row)"
+                            [attr.data-testid]="'bab-toggle-' + row.bab.code"
+                            (click)="onToggle(row)"
+                          >
+                            <kaff-icon class="chev" [name]="'chev'" [small]="true" />
+                          </button>
+                        } @else {
+                          <span class="disclosure disclosure--spacer" aria-hidden="true"></span>
+                        }
+                      }
+                      <span class="identity" [class.is-archived]="!row.bab.isActive">
+                        <button
+                          type="button"
+                          class="name"
+                          dir="auto"
+                          [attr.data-testid]="'bab-row-name-' + row.bab.code"
+                          (click)="onOpenPanel(row.bab)"
+                        >
+                          {{ babLabel(row.bab) }}
+                        </button>
+                        @if (!row.bab.isActive) {
+                          <kaff-badge tone="tag" testId="bab-row-archived-badge">
+                            <kaff-icon [name]="'arch'" [small]="true" />
+                            {{ i18n.t('bab.tree.archived_badge') }}
+                          </kaff-badge>
+                        }
+                        @if (!isPhone()) {
+                          <bdi class="code" dir="ltr" translate="no">{{ row.bab.code }}</bdi>
+                          @if (row.kidCount > 0 && !row.flat) {
+                            <span class="kids">{{ childrenText(row.kidCount) }}</span>
+                          }
+                          @if (pathText(row); as path) {
+                            <span class="path">{{ path }}</span>
+                          }
+                        }
+                      </span>
+                    </span>
+
+                    @if (isPhone()) {
+                      <!-- Phone row: line two is the code, the item count and the children, indented under the
+                           name; the markup is a labelled chip button. Nothing hides behind a hover. -->
+                      <span
+                        role="gridcell"
+                        class="cell-sub sub"
+                        [style.padding-inline-start.px]="row.flat ? 0 : row.depth * 20 + 44"
+                      >
+                        <bdi class="code" dir="ltr" translate="no">{{ row.bab.code }}</bdi>
+                        <span>{{ phoneSub(row) }}</span>
+                        @if (pathText(row); as path) {
+                          <span class="path">{{ path }}</span>
+                        }
+                      </span>
+                      <span role="gridcell" class="cell-primary">
+                        <button
+                          type="button"
+                          class="chip"
+                          [attr.aria-label]="markupEditLabel(row.bab)"
+                          [attr.data-testid]="'bab-markup-' + row.bab.code"
+                          (click)="onStartMarkup(row.bab)"
+                        >
+                          <bdi class="figure" dir="ltr">{{ markupPercent(row.bab) }}</bdi>
+                          <kaff-icon [name]="'pen'" [small]="true" />
+                        </button>
+                      </span>
+                    } @else {
+                      <span role="gridcell" class="cell-wide cell-en en"><bdi dir="ltr">{{ row.bab.nameEn }}</bdi></span>
+                      <span role="gridcell" class="cell-wide count">
+                        @if (itemCountOf(row.bab); as items) {
+                          <bdi class="figure" dir="ltr">{{ figure(items) }}</bdi>
+                        } @else if (itemCountOf(row.bab) === 0) {
+                          <bdi class="figure" dir="ltr">0</bdi>
+                        } @else {
+                          <span class="dim" aria-hidden="true">—</span>
+                        }
+                        @if (row.kidCount > 0 && !row.flat && subtreeCountOf(row.bab) !== null) {
+                          <small class="with-kids">{{
+                            i18n.t('bab.count.with_children', { count: subtreeCountOf(row.bab)! })
+                          }}</small>
+                        }
+                      </span>
+                      <span role="gridcell" class="markup">
+                        <bdi class="figure markup-figure" dir="ltr">{{ markupPercent(row.bab) }}</bdi>
+                        <button
+                          type="button"
+                          class="icon-btn"
+                          [attr.aria-label]="markupEditLabel(row.bab)"
+                          [attr.data-testid]="'bab-markup-' + row.bab.code"
+                          (click)="onStartMarkup(row.bab)"
+                        >
+                          <kaff-icon [name]="'pen'" [small]="true" />
+                        </button>
+                      </span>
+                    }
+
+                    <span role="gridcell" class="cell-act act">
+                      <kaff-row-menu
+                        [items]="rowMenuItems(row.bab)"
+                        triggerLabelKey="a11y.row_actions"
+                        [testId]="'bab-row-menu-' + row.bab.code"
+                        (selected)="onRowMenuSelected(row.bab, $event)"
+                      />
+                    </span>
+                  </kaff-table-row>
+                </div>
+
+                @if (editingBab(); as editing) {
+                  @if (editing.id === row.bab.id) {
+                    <div role="row" class="edit-row">
+                      <div role="gridcell" aria-colspan="5">
+                        <kaff-value-editor
+                          [title]="markupTitle(row.bab)"
+                          [fieldLabel]="i18n.t('bab.field.default_markup')"
+                          [affix]="i18n.t('bab.affix.percent')"
+                          [explanation]="i18n.t('bab.markup.explanation')"
+                          [currentText]="markupCurrent(row.bab)"
+                          [beforeText]="markupPercent(row.bab)"
+                          [afterText]="markupAfter()"
+                          [saveLabel]="markupBusy() ? i18n.t('bab.markup.saving') : i18n.t('bab.markup.save')"
+                          [cancelLabel]="i18n.t('action.cancel')"
+                          [dirty]="markupDirty()"
+                          [error]="markupError()"
+                          [refusal]="markupRefusal()"
+                          [busy]="markupBusy()"
+                          [testId]="'bab-markup-editor-' + row.bab.code"
+                          [value]="markupDraft()"
+                          (valueChange)="markupDraft.set($event)"
+                          (saved)="onSaveMarkup()"
+                          (cancelled)="onCancelMarkup()"
+                        />
+                      </div>
+                    </div>
+                  }
+                }
+
+                @if (isSavedBand(row.bab)) {
+                  <div role="row" class="band-row">
+                    <div role="gridcell" aria-colspan="5">
+                      <kaff-banner tone="ok" [flat]="true" testId="bab-markup-saved">{{ savedMarkupText() }}</kaff-banner>
+                    </div>
+                  </div>
+                }
+
+                @if (isCreatedBand(row.bab)) {
+                  <div role="row" class="band-row">
+                    <div role="gridcell" aria-colspan="5">
+                      <kaff-banner tone="ok" [flat]="true" testId="bab-created">
+                        {{ i18n.t('bab.created.text', { name: babLabel(row.bab), code: row.bab.code }) }}
+                        <a class="lnk" routerLink="/catalogue" [queryParams]="catalogueQuery(row.bab)">{{
+                          i18n.t('bab.created.link')
+                        }}</a>
+                      </kaff-banner>
+                    </div>
+                  </div>
+                }
+
+                @if (rowFailureKey(row.bab); as key) {
+                  <div role="row" class="band-row">
+                    <div role="gridcell" aria-colspan="5">
+                      <kaff-banner
+                        tone="refusal"
+                        [flat]="true"
+                        [testId]="'bab-row-refusal-' + row.bab.code"
+                        >{{ i18n.t(key) }}</kaff-banner
+                      >
+                    </div>
+                  </div>
+                }
+              }
+            </li>
+          }
+        </ul>
+      </kaff-table>
+    } @else if (searchTerm().length > 0) {
+      <!-- A search that matched nothing is a different fact from an empty tree. -->
+      <kaff-state
+        mode="filtered-empty"
+        icon="search"
+        titleKey="bab.empty.no_match"
+        [bodyText]="emptyFilteredBody()"
+        testId="bab-tree-empty-filtered"
+      >
+        <kaff-button stateAction variant="secondary" testId="bab-clear-search" (clicked)="onClearSearch()">
+          {{ i18n.t('bab.search.clear') }}
+        </kaff-button>
+      </kaff-state>
+    } @else if (archivedEmpty()) {
+      <kaff-state
+        mode="filtered-empty"
+        icon="arch"
+        titleKey="bab.empty.archived"
+        bodyKey="bab.empty.archived_body"
+        testId="bab-tree-empty-filtered"
+      />
+    } @else {
+      <kaff-state
+        mode="filtered-empty"
+        icon="layers"
+        titleKey="bab.empty.no_active"
+        bodyKey="bab.empty.no_active_body"
+        testId="bab-tree-empty-filtered"
+      />
     }
   </div>
 
-  @if (failure(); as key) {
-    <kaff-state mode="refusal" [bodyKey]="key" testId="bab-tree-failure" />
-  } @else if (loading()) {
-    <kaff-state mode="loading" titleKey="bab.loading" testId="bab-tree-loading" />
-  } @else if (rows().length > 0) {
-    <kaff-table [columns]="rowColumns" [columnDefs]="headerColumns" testId="bab-tree-table-header" data-testid="bab-tree-table-shell">
-      <ul class="rows" data-testid="bab-tree-rows">
-        @for (row of rows(); track trackRow($index, row)) {
-          <li
-            class="tree-row-item"
-            [style.--bab-depth]="row.depth"
-            [attr.data-testid]="'bab-row-' + row.bab.code"
-          >
-            <kaff-table-row [archived]="!row.bab.isActive">
-              <!-- ux/components.md:259 — identity first. The trade name leads; the باب code (needed by
-                   the import, D-144) demotes to muted secondary text under it. The disclosure control
-                   stays with the name, because it is the tree's own affordance on that name. -->
-              <span class="row-name-cell">
-                @if (hasChildren(row.bab.id)) {
-                  <button
-                    type="button"
-                    class="disclosure"
-                    [attr.aria-expanded]="!isCollapsed(row.bab.id)"
-                    [attr.aria-label]="i18n.t(isCollapsed(row.bab.id) ? 'a11y.expand_row' : 'a11y.collapse_row')"
-                    [attr.data-testid]="'bab-toggle-' + row.bab.code"
-                    (click)="onToggleCollapse(row.bab.id)"
-                  >{{ isCollapsed(row.bab.id) ? '▸' : '▾' }}</button>
-                } @else {
-                  <span class="disclosure disclosure--spacer" aria-hidden="true"></span>
-                }
-                <span class="row-identity">
-                  <span class="row-name" dir="auto">{{ babLabel(row.bab) }}</span>
-                  <bdi class="row-code" dir="ltr" translate="no">{{ row.bab.code }}</bdi>
-                </span>
-              </span>
+  <!-- Always mounted; shown while it has something to show. Create and edit are one surface. -->
+  <kaff-bab-panel
+    [bab]="panelBab()"
+    [creating]="creating() !== null"
+    [presetParentId]="creating()?.parentId ?? null"
+    [babs]="babs()"
+    [ownItems]="panelOwnItems()"
+    [childCount]="panelChildCount()"
+    [saving]="panelBusy()"
+    [saved]="panelSaved()"
+    [refusalKey]="panelRefusal()"
+    (createRequested)="onPanelCreate($event)"
+    (saveRequested)="onPanelSave($event)"
+    (moveRequested)="onPanelMove()"
+    (markupRequested)="onPanelMarkup()"
+    (archiveRequested)="onPanelArchive()"
+    (unarchiveRequested)="onPanelUnarchive()"
+    (closed)="onClosePanel()"
+  />
 
-              <span class="row-markup">
-                <kaff-inline-edit
-                  [value]="markupPercent(row.bab)"
-                  type="decimal"
-                  ariaLabelKey="bab.field.default_markup"
-                  [refusalKey]="markupRefusalKey(row.bab.id)"
-                  [attr.data-testid]="'bab-markup-' + row.bab.code"
-                  (committed)="onMarkupCommitted(row.bab, $event)"
-                />
-              </span>
-
-              <!-- KAFF-928 finding 7 (extended for the identical pattern): an always-present wrapper,
-                   so an active and an archived row project the same number of grid children. -->
-              <span class="row-archived-badge">
-                @if (!row.bab.isActive) {
-                  <kaff-badge tone="neutral" testId="bab-row-archived-badge">
-                    {{ i18n.t('bab.tree.archived_badge') }}
-                  </kaff-badge>
-                }
-              </span>
-
-              <kaff-row-menu
-                [items]="rowMenuItems(row.bab)"
-                triggerLabelKey="a11y.row_actions"
-                [testId]="'bab-row-menu-' + row.bab.code"
-                (selected)="onRowMenuSelected(row.bab, $event)"
-              />
-            </kaff-table-row>
-
-          <div class="row-actions">
-            @if (moveFailure(); as failed) {
-              @if (failed.id === row.bab.id) {
-                <p class="row-refusal" role="alert" [attr.data-testid]="'bab-move-refusal-' + row.bab.code">
-                  {{ i18n.t(failed.key) }}
-                </p>
-              }
-            }
-
-            @if (archiveFailure(); as failed) {
-              @if (failed.id === row.bab.id) {
-                <p class="row-refusal" role="alert" [attr.data-testid]="'bab-archive-refusal-' + row.bab.code">
-                  {{ i18n.t(failed.key, failed.params) }}
-                </p>
-              }
-            }
-
-            @if (confirmingMoveId() === row.bab.id) {
-              <label class="move-picker">
-                <span class="sr-only">{{ i18n.t('bab.move.new_parent') }}</span>
-                <select
-                  class="input select"
-                  [attr.data-testid]="'bab-move-target-' + row.bab.code"
-                  [attr.aria-label]="i18n.t('bab.move.new_parent')"
-                  (change)="onMoveTargetChange($event)"
-                >
-                  <option value="">{{ i18n.t('bab.field.no_parent') }}</option>
-                  @for (candidate of candidateParents(row.bab); track candidate.id) {
-                    <option [value]="candidate.id" [selected]="candidate.id === row.bab.parentBabId">
-                      {{ babLabel(candidate) }}
-                    </option>
-                  }
-                </select>
-              </label>
-              <kaff-button
-                variant="secondary"
-                [disabled]="isMoving(row.bab.id)"
-                [testId]="'bab-move-confirm-' + row.bab.code"
-                (clicked)="onConfirmMove(row.bab.id)"
-              >
-                {{ i18n.t('bab.move.confirm') }}
-              </kaff-button>
-              <kaff-button
-                variant="secondary"
-                [testId]="'bab-move-cancel-' + row.bab.code"
-                (clicked)="onCancelMove()"
-              >
-                {{ i18n.t('action.cancel') }}
-              </kaff-button>
-            }
-
-            @if (confirmingArchiveId() === row.bab.id) {
-              <p class="row-confirm" [attr.data-testid]="'bab-archive-body-' + row.bab.code">
-                {{ i18n.t('bab.tree.archive_confirm') }}
-              </p>
-              <kaff-button
-                variant="danger"
-                [disabled]="isArchiving(row.bab.id)"
-                [testId]="'bab-archive-confirm-' + row.bab.code"
-                (clicked)="onConfirmArchive(row.bab.id)"
-              >
-                {{ i18n.t('bab.tree.archive_action') }}
-              </kaff-button>
-              <kaff-button
-                variant="secondary"
-                [testId]="'bab-archive-cancel-' + row.bab.code"
-                (clicked)="onCancelArchive()"
-              >
-                {{ i18n.t('action.cancel') }}
-              </kaff-button>
-            }
-            </div>
-          </li>
-        }
-      </ul>
-    </kaff-table>
-  } @else {
-    <!-- AC-204-J: an explicit empty state. KAFF-929 finding 2: the create action is always in the
-         top bar now (`#createAction` above), so this names the fact without repeating the action. -->
-    <kaff-state mode="empty" titleKey="bab.tree.empty" testId="bab-tree-empty" />
-  }
+  <kaff-bab-move-dialog
+    [bab]="movingBab()"
+    [babs]="babs()"
+    [busy]="moveBusy()"
+    [refusalKey]="moveRefusal()"
+    (confirmed)="onConfirmMove($event)"
+    (cancelled)="onCancelMove()"
+  />
 </section>

@@ -1,0 +1,274 @@
+<!-- Each projected slot is ONE unconditional element, with the `@if` inside it: a control-flow block with
+     several root nodes is not projected by `select`, it falls into no slot and is dropped. -->
+<kaff-detail-panel [open]="open()" [title]="title()" testId="bab-panel" (closed)="onPanelClosed()">
+  <span panelBack>
+    @if (step() === 'parent') {
+      <button type="button" class="bk" data-testid="bab-panel-back" (click)="onBack()">
+        <kaff-icon [name]="'back'" [small]="true" />
+        {{ i18n.t('bab.panel.back') }}
+      </button>
+    }
+  </span>
+
+  <span panelMeta class="meta">
+    @if (step() === 'form') {
+      @if (isEdit()) {
+        @if (bab(); as b) {
+          <bdi dir="ltr" translate="no">{{ b.code }}</bdi>
+          @if (!b.isActive) {
+            <kaff-badge tone="tag" testId="bab-panel-archived-badge">
+              <kaff-icon [name]="'arch'" [small]="true" />
+              {{ i18n.t('bab.tree.archived_badge') }}
+            </kaff-badge>
+          }
+        }
+      }
+      <span>{{ meta() }}</span>
+    }
+  </span>
+
+  <div panelBody class="body">
+    @if (step() === 'parent') {
+      <kaff-tree-picker
+        [nodes]="pickNodes()"
+        [rootLabel]="i18n.t('bab.field.no_parent')"
+        [currentLabel]="i18n.t('bab.move.current')"
+        [groupLabel]="i18n.t('bab.panel.pick_parent')"
+        testIdPrefix="bab-pick-option-"
+        [value]="pick()"
+        (valueChange)="pick.set($event)"
+      />
+    } @else if (open()) {
+      @if (hasFieldErrors() && attempted()) {
+        <kaff-banner tone="refusal" icon="alert" testId="bab-panel-errors">{{
+          i18n.t(creating() ? 'bab.panel.create_failed' : 'bab.panel.save_failed')
+        }}</kaff-banner>
+      } @else if (bannerRefusal(); as key) {
+        <kaff-banner tone="refusal" testId="bab-form-refusal">{{ i18n.t(key) }}</kaff-banner>
+      } @else if (isEdit() && dirty()) {
+        <kaff-banner tone="note" icon="info" testId="bab-panel-unsaved">{{ i18n.t('bab.panel.unsaved') }}</kaff-banner>
+      }
+
+      <kaff-field
+        #arField="kaffField"
+        labelKey="bab.field.name_ar"
+        controlId="bab-field-name-ar"
+        [required]="true"
+        [errorKey]="nameArError()"
+      >
+        <input
+          id="bab-field-name-ar"
+          type="text"
+          dir="auto"
+          autocomplete="off"
+          [placeholder]="creating() ? i18n.t('bab.placeholder.name_ar') : ''"
+          data-testid="bab-field-name-ar"
+          [value]="draft().nameAr"
+          [attr.aria-invalid]="nameArError() !== null ? 'true' : null"
+          [attr.aria-describedby]="arField.describedById()"
+          (input)="onInput('nameAr', $event)"
+        />
+      </kaff-field>
+
+      <kaff-field
+        #enField="kaffField"
+        labelKey="bab.field.name_en"
+        controlId="bab-field-name-en"
+        [required]="true"
+        [errorKey]="nameEnError()"
+      >
+        <input
+          id="bab-field-name-en"
+          type="text"
+          dir="ltr"
+          autocomplete="off"
+          [placeholder]="creating() ? i18n.t('bab.placeholder.name_en') : ''"
+          data-testid="bab-field-name-en"
+          [value]="draft().nameEn"
+          [attr.aria-invalid]="nameEnError() !== null ? 'true' : null"
+          [attr.aria-describedby]="enField.describedById()"
+          (input)="onInput('nameEn', $event)"
+        />
+      </kaff-field>
+
+      @if (creating()) {
+        <kaff-field
+          #codeField="kaffField"
+          labelKey="bab.field.code"
+          controlId="bab-field-code"
+          [required]="true"
+          hintKey="bab.hint.code"
+          [errorKey]="codeError()"
+          [errorParams]="codeErrorParams()"
+          errorTestId="bab-field-code-error"
+        >
+          <input
+            id="bab-field-code"
+            class="code-input"
+            type="text"
+            dir="ltr"
+            spellcheck="false"
+            autocomplete="off"
+            autocapitalize="characters"
+            [maxLength]="codeMaxLength"
+            [placeholder]="i18n.t('bab.placeholder.code')"
+            data-testid="bab-field-code"
+            [value]="draft().code"
+            [attr.aria-invalid]="codeError() !== null ? 'true' : null"
+            [attr.aria-describedby]="codeField.describedById()"
+            (input)="onInput('code', $event)"
+          />
+        </kaff-field>
+
+        <kaff-field
+          labelKey="bab.field.parent"
+          controlId="bab-field-parent"
+          [hintKey]="isChild() ? null : 'bab.hint.parent'"
+        >
+          <kaff-picker-button
+            controlId="bab-field-parent"
+            [valueText]="parentName()"
+            testId="bab-field-parent"
+            (opened)="onOpenParentStep()"
+          />
+        </kaff-field>
+
+        <div class="pair">
+          <kaff-field
+            #sortField="kaffField"
+            labelKey="bab.field.sort_order"
+            controlId="bab-field-sort-order"
+            hintKey="bab.hint.sort_order"
+            [errorKey]="sortError()"
+          >
+            <input
+              id="bab-field-sort-order"
+              type="text"
+              dir="ltr"
+              inputmode="numeric"
+              autocomplete="off"
+              [placeholder]="i18n.t('bab.placeholder.sort_order')"
+              data-testid="bab-field-sort-order"
+              [value]="draft().sortOrder"
+              [attr.aria-invalid]="sortError() !== null ? 'true' : null"
+              [attr.aria-describedby]="sortField.describedById()"
+              (input)="onInput('sortOrder', $event)"
+            />
+          </kaff-field>
+
+          <kaff-money-field
+            labelKey="bab.field.default_markup"
+            controlId="bab-field-default-markup"
+            affixKey="bab.affix.percent"
+            [required]="true"
+            [dirty]="false"
+            [value]="draft().markup"
+            hintKey="bab.hint.markup"
+            placeholderKey="bab.placeholder.markup"
+            [errorKey]="markupError()"
+            [hintTestId]="markupError() !== null ? 'bab-field-default-markup-error' : null"
+            testId="bab-field-default-markup"
+            (valueChange)="patch({ markup: $event })"
+          />
+        </div>
+      } @else {
+        <!-- Edit: the code, the parent and the markup are shown and not editable here. -->
+        <div class="group group--tight">
+          <kaff-readonly-field
+            labelKey="bab.field.code"
+            controlId="bab-code-input"
+            [value]="bab()?.code ?? ''"
+            [ltr]="true"
+            testId="bab-code"
+          />
+          <p class="reason">{{ i18n.t('bab.field.code_not_editable') }}</p>
+        </div>
+
+        <div class="group">
+          <kaff-readonly-field
+            labelKey="bab.field.parent"
+            controlId="bab-parent-readonly"
+            [value]="parentPath()"
+            testId="bab-parent-path"
+          />
+          <div>
+            <kaff-button variant="secondary" testId="bab-panel-move" (clicked)="moveRequested.emit()">
+              <kaff-icon [name]="'move'" [small]="true" />
+              {{ i18n.t('bab.menu.move') }}
+            </kaff-button>
+          </div>
+        </div>
+
+        <div class="group">
+          <kaff-readonly-field
+            labelKey="bab.field.default_markup"
+            controlId="bab-markup-readonly"
+            [value]="markupDisplay()"
+            [ltr]="true"
+            testId="bab-markup-readonly"
+          />
+          <p class="reason">{{ i18n.t('bab.hint.markup_row_editor') }}</p>
+          <div>
+            <kaff-button variant="ghost" testId="bab-panel-edit-markup" (clicked)="markupRequested.emit()">
+              <kaff-icon [name]="'pen'" [small]="true" />
+              {{ i18n.t('bab.panel.edit_markup') }}
+            </kaff-button>
+          </div>
+        </div>
+      }
+    }
+  </div>
+
+  <div panelFooter class="actions">
+    @if (step() === 'parent') {
+      <p class="sum" data-testid="bab-pick-summary">{{ pickSummary() }}</p>
+      <kaff-button variant="primary" testId="bab-pick-done" (clicked)="onParentStepDone()">
+        {{ i18n.t('bab.panel.pick_done') }}
+      </kaff-button>
+      <kaff-button variant="secondary" testId="bab-pick-cancel" (clicked)="onBack()">
+        {{ i18n.t('action.cancel') }}
+      </kaff-button>
+    } @else if (creating()) {
+      <kaff-button
+        class="save"
+        variant="primary"
+        [busy]="saving()"
+        testId="bab-submit"
+        (clicked)="onCreate()"
+      >
+        {{ saving() ? i18n.t('bab.panel.creating') : i18n.t('bab.panel.create') }}
+      </kaff-button>
+      <kaff-button variant="secondary" [disabled]="saving()" testId="bab-panel-cancel" (clicked)="closed.emit()">
+        {{ i18n.t('action.cancel') }}
+      </kaff-button>
+    } @else if (bab(); as b) {
+      @if (saved()) {
+        <kaff-banner class="banner" tone="ok" testId="bab-panel-saved">{{ i18n.t('bab.panel.saved') }}</kaff-banner>
+      }
+      <kaff-button
+        class="save"
+        variant="primary"
+        [disabled]="!dirty()"
+        [busy]="saving()"
+        testId="bab-submit"
+        (clicked)="onSave()"
+      >
+        {{ saving() ? i18n.t('bab.panel.saving') : i18n.t('action.save') }}
+      </kaff-button>
+      <kaff-button variant="secondary" testId="bab-panel-close" (clicked)="closed.emit()">
+        {{ i18n.t('action.close') }}
+      </kaff-button>
+      @if (b.isActive) {
+        <kaff-button class="trailing" variant="secondary" testId="bab-panel-archive" (clicked)="archiveRequested.emit()">
+          <kaff-icon [name]="'arch'" [small]="true" />
+          {{ i18n.t('bab.panel.archive') }}
+        </kaff-button>
+      } @else {
+        <kaff-button class="trailing" variant="secondary" testId="bab-panel-unarchive" (clicked)="unarchiveRequested.emit()">
+          <kaff-icon [name]="'unarch'" [small]="true" />
+          {{ i18n.t('bab.menu.unarchive') }}
+        </kaff-button>
+      }
+    }
+  </div>
+</kaff-detail-panel>

@@ -1,0 +1,48 @@
+:host {
+  display: block;
+}
+
+.pbtn {
+  display: flex;
+  align-items: stretch;
+  inline-size: 100%;
+  min-block-size: 3rem;
+  padding: 0;
+  border: 2px solid var(--fieldline);
+  border-radius: var(--radius);
+  background: var(--field);
+  color: var(--ink);
+  text-align: start;
+  cursor: pointer;
+}
+
+.pbtn:hover {
+  border-color: var(--ink);
+}
+
+.pbtn:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.val {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-inline-size: 0;
+  padding-inline: 14px;
+  font-size: 1.0625rem;
+}
+
+.tail {
+  display: grid;
+  place-items: center;
+  inline-size: 44px;
+  color: var(--dim);
+}
+
+@media (width <= 820px) {
+  .pbtn {
+    min-block-size: 3.5rem;
+  }
+}

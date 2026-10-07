@@ -95,4 +95,13 @@ export class BabsApi {
   async archive(id: string): Promise<void> {
     await firstValueFrom(this.http.post<void>(`api/babs/${id}/archive`, {}));
   }
+
+  /**
+   * `KAFF-943` unarchive. `204`, or a refusal carrying `errors.master.not_archived` (409) for a باب that is
+   * already active — surfaced, not swallowed. It touches this باب only: its items and its child أبواب keep
+   * the status they have, exactly as archiving never cascaded (`D-130` §5, `KAFF-943` rule 4).
+   */
+  async unarchive(id: string): Promise<void> {
+    await firstValueFrom(this.http.post<void>(`api/babs/${id}/unarchive`, {}));
+  }
 }
