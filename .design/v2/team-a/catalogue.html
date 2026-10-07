@@ -326,8 +326,6 @@ bdi{unicode-bidi:isolate}
 [dir="rtl"] .bk svg{transform:scaleX(-1)}
 .popin{position:absolute;inset-inline:0;z-index:6;margin-block-start:4px;inset-block-start:100%}
 .popin .opt[aria-selected="true"]{background:var(--head);font-weight:700}
-.np{color:var(--dim);font-weight:500}
-.nptag{display:inline-flex;align-items:center;gap:5px;block-size:24px;padding:0 8px;border-radius:var(--radius);border:1.5px dashed var(--fieldline);font:600 .75rem/1 var(--body);white-space:nowrap}
 .pk{display:flex;align-items:center;gap:12px;min-block-size:48px;border-radius:var(--radius);cursor:pointer;position:relative;padding-inline-end:12px}
 .pk:hover{background:var(--hover)}
 .pk input{position:absolute;opacity:0;inline-size:1px;block-size:1px}
@@ -337,7 +335,6 @@ bdi{unicode-bidi:isolate}
 .pk .pc{color:var(--dim);font-size:.8125rem}
 tr.hl td{background:color-mix(in srgb,var(--ok-bg) 45%,var(--surface))}
 .li.hl{background:color-mix(in srgb,var(--ok-bg) 45%,var(--surface))}
-.unp{display:inline-flex;gap:8px;align-items:center}
 .firstrun{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start;border:1.5px solid var(--line);border-radius:var(--radius);padding:32px}
 .firstrun .fr-main{display:grid;gap:12px;justify-items:start}
 .firstrun .ico{inline-size:56px;block-size:56px;border-radius:var(--radius);display:grid;place-items:center;background:var(--head)}
@@ -376,11 +373,8 @@ tr.hl td{background:color-mix(in srgb,var(--ok-bg) 45%,var(--surface))}
       <button type="button" data-view="createbab" aria-pressed="false">اختيار الباب</button>
       <button type="button" data-view="createsave" aria-pressed="false">جارٍ الإنشاء</button>
       <button type="button" data-view="created" aria-pressed="false">بعد الإنشاء (مالك)</button>
-      <button type="button" data-view="create-ro" aria-pressed="false">إنشاء (مكتب فني)</button>
-      <button type="button" data-view="created-ro" aria-pressed="false">بعد الإنشاء (مكتب فني)</button>
-      <button type="button" data-view="unpriced" aria-pressed="false">بنود بلا سعر</button>
-      <button type="button" data-view="panel-unpriced" aria-pressed="false">لوحة بلا سعر (مالك)</button>
-      <button type="button" data-view="panel-unpriced-ro" aria-pressed="false">لوحة بلا سعر (مكتب فني)</button>
+      <button type="button" data-view="create-ro" aria-pressed="false">إنشاء (مكتب فني: نفس النموذج)</button>
+      <button type="button" data-view="created-ro" aria-pressed="false">بعد الإنشاء (مكتب فني: نفس النموذج)</button>
       <button type="button" data-view="nobabs" aria-pressed="false">بلا أبواب</button>
       <button type="button" data-view="noitems" aria-pressed="false">بلا بنود</button>
       <button type="button" data-view="loading" aria-pressed="false">تحميل</button>
@@ -450,30 +444,27 @@ const ITEMS=[
  ['fin','SKT-2402','وزرة رخام ارتفاع 10 سم','Marble skirting 10 cm','م.ط',95,116,1],
  ['elc','ELC-3101','نقطة إنارة كاملة','Lighting point, complete','عدد',320,370,0],
  ['plm','PLM-4108','نقطة صرف أرضية','Floor drain point','عدد',410,475,0],
- ['con','CON-1030','حاجز خرساني جاهز','Precast concrete barrier','عدد',null,null,0],
- ['plm','PLM-4112','خزان مياه علوي 2 م³','Overhead water tank 2 m3','عدد',null,null,0]];
-const UNP=2; /* items with no price yet, of 612 */
+ ['con','CON-1030','حاجز خرساني جاهز','Precast concrete barrier','عدد',1850,2300,0],
+ ['plm','PLM-4112','خزان مياه علوي 2 م³','Overhead water tank 2 m3','عدد',6200,7400,0]];
 const UNITS=['م³','م²','م.ط','عدد','طن','كجم','مقطوعية'];
 const unit=u=>u.replace('³','<sup>3</sup>').replace('²','<sup>2</sup>');
-const money=n=>n==null?'\u2014':n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const money=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const bab=id=>BABS.find(b=>b.id===id);
 
 const $=s=>document.querySelector(s),H=document.documentElement,A=$('#app');
 const q0=new URLSearchParams(location.search);
-let cr=null,createdCode=null,unpOnly=false,view=q0.get('view')||'list',lang='ar',filter='active',query='',open={con:true,fin:true},confirmCode=null,doneCode=null,panelCode=null,sheet=false,costEdit=null,babSel='';
+let cr=null,createdCode=null,view=q0.get('view')||'list',lang='ar',filter='active',query='',open={con:true,fin:true},confirmCode=null,doneCode=null,panelCode=null,sheet=false,costEdit=null,babSel='';
 const ARCH=new Set(ITEMS.filter(x=>x[7]).map(x=>x[1]));
 if(view==='empty'){query='سباكة 99';}
 if(view==='archive'){confirmCode='CON-1016';}
 if(view==='panel'||view==='panel-ro'){panelCode='CON-1015';}
-if(view==='panel-unpriced'||view==='panel-unpriced-ro'){panelCode='CON-1030';}
-const _mk=()=>({ar:'',en:'',bab:null,unit:null,cost:'',sell:'',err:{},step:'form',unitOpen:false});
+const _mk=()=>({ar:'',en:'',code:'',bab:null,unit:null,cost:'',sell:'',err:{},step:'form',unitOpen:false});
 if(view==='create'||view==='create-ro'){cr=_mk()}
-if(view==='createerr'){cr={..._mk(),ar:'',en:'Precast concrete barrier',bab:'con',unit:null,cost:'abc',sell:'',err:{ar:'وصف البند بالعربية مطلوب.',unit:'اختر الوحدة.',cost:'أدخل رقماً، مثل 3150.50.',sell:'سعر البيع مطلوب.'}}}
-if(view==='createunit'){cr={..._mk(),ar:'حاجز خرساني جاهز',en:'Precast concrete barrier',bab:'con',unit:'عدد',unitOpen:true}}
+if(view==='createerr'||view==='createerr-ro'){cr={..._mk(),ar:'',en:'Precast concrete barrier',code:'CON-1014',bab:'con',unit:null,cost:'abc',sell:'',err:{ar:'وصف البند بالعربية مطلوب.',code:'الرمز CON-1014 مستخدم لبند آخر. الرموز فريدة في النظام كله.',unit:'اختر الوحدة.',cost:'أدخل رقماً، مثل 3150.50.',sell:'سعر البيع مطلوب.'}}}
+if(view==='createunit'){cr={..._mk(),ar:'حاجز خرساني جاهز',en:'Precast concrete barrier',code:'CON-1030',bab:'con',unit:'عدد',unitOpen:true}}
 if(view==='createbab'){cr={..._mk(),ar:'حاجز خرساني جاهز',step:'bab',sel:'con'}}
-if(view==='createsave'||view==='createsave-ro'){cr={..._mk(),ar:'حاجز خرساني جاهز',en:'Precast concrete barrier',bab:'con',unit:'عدد',cost:'1,850.00',sell:'2,300.00',busy:true}}
+if(view==='createsave'||view==='createsave-ro'){cr={..._mk(),ar:'حاجز خرساني جاهز',en:'Precast concrete barrier',code:'CON-1030',bab:'con',unit:'عدد',cost:'1,850.00',sell:'2,300.00',busy:true}}
 if(view==='created'||view==='created-ro'){createdCode='CON-1030';open={con:true,fin:true}}
-if(view==='unpriced'){unpOnly=true;open={con:true,fin:true,plm:true}}
 if(view==='nobabs'||view==='noitems'){}
 if(view==='edit'){panelCode='CON-1015';costEdit=3300;}
 if(view==='archived'){filter='archived';open={con:true,fin:true};}
@@ -491,20 +482,19 @@ function visible(){
     const isA=ARCH.has(it[1]);
     if(filter==='active'&&isA)return false;if(filter==='archived'&&!isA)return false;
     if(babSel&&it[0]!==babSel)return false;
-    if(unpOnly&&it[5]!=null)return false;
     if(!t)return true;return (it[1]+it[2]+it[3]).toLowerCase().includes(t)});
 }
-function sellCell(it){return it[6]==null?`<span class="nptag">${i('lock','s')}بلا سعر</span>`:`<bdi class="money sellv" dir="ltr">${money(it[6])}</bdi>`}
+function sellCell(it){return `<bdi class="money sellv" dir="ltr">${money(it[6])}</bdi>`}
 function rowHtml(it){
   const code=it[1],isA=ARCH.has(code);
   if(confirmCode===code)return `<tr class="conf"><td colspan="6"><div class="confrow"><span class="ico">${i('arch')}</span><span class="msg">أرشفة <b>«${it[2]}»</b>؟<small>يختفي من القائمة النشطة، ويمكنك استرجاعه من «مؤرشف» في أي وقت.</small></span><button class="btn sm" type="button" data-yes="${code}"><span class="spin"></span>أرشفة</button><button class="btn sec2 sm" type="button" data-no>إلغاء</button></div></td></tr>`;
   if(doneCode===code)return `<tr class="done"><td colspan="6"><span style="display:inline-flex;gap:10px;align-items:center">${i('check','s')}تمت استعادة «${it[2]}» إلى القائمة النشطة.</span></td></tr>`;
-  const cb=createdCode===code?`<tr class="done sv"><td colspan="6"><div class="dn">${i('check','s')}<span>تم إنشاء «${it[2]}». رمزه المولَّد <bdi dir="ltr">${code}</bdi>.${it[5]==null?' بلا سعر: يحدّد المالك سعر التكلفة وسعر البيع.':''}</span></div></td></tr>`:'';
+  const cb=createdCode===code?`<tr class="done sv"><td colspan="6"><div class="dn">${i('check','s')}<span>تم إنشاء «${it[2]}». رمزه <bdi dir="ltr">${code}</bdi>.</span></div></td></tr>`:'';
   return `<tr class="it ${isA?'arch':''} ${createdCode===code?'hl':''}" data-code="${code}"><td class="id"><div class="idc"><span class="nm">${it[2]}</span>${isA?`<span class="atag">${i('arch','s')}مؤرشف</span>`:''}<bdi class="cd" dir="ltr">${code}</bdi></div></td><td class="en">${it[3]}</td><td class="un">${unit(it[4])}</td><td class="n cost"><bdi class="money" dir="ltr">${money(it[5])}</bdi></td><td class="n">${sellCell(it)}</td><td class="act"><div class="menuwrap"><button type="button" class="ib" data-menu="${code}" aria-haspopup="menu" aria-label="إجراءات ${it[2]}">${i('dots')}</button></div></td></tr>`+cb;
 }
 function groupHtml(b,items){
-  const o=open[b.id]||query.trim()||babSel||unpOnly||filter==='archived';
-  const shown=items.length, total=(query.trim()||unpOnly||filter==='archived')?shown:b.c;
+  const o=open[b.id]||query.trim()||babSel||filter==='archived';
+  const shown=items.length, total=(query.trim()||filter==='archived')?shown:b.c;
   const head=`<tr class="grp ${o?'':'col'}"><td colspan="6"><button type="button" class="gbtn" data-g="${b.id}" aria-expanded="${!!o}">${i('chev','s chev')}<span class="gn">${b.n}</span><span class="gc">${total} بنداً</span></button></td></tr>`;
   if(!o)return head;
   const rows=items.map(rowHtml).join('');
@@ -520,19 +510,17 @@ function countText(){
   if(view==='loading')return '<span class="sk" style="inline-size:200px"></span>';
   const n=visible().length,qs=query.trim(),sc=filter==='archived'?'في المؤرشف':filter==='all'?'في الكتالوج كله':'في البنود النشطة';
   if(qs)return `${n} نتيجة لـ «${qs}» ${sc}`;
-  if(unpOnly)return `${n} بنود بلا سعر`;
   if(babSel)return `${n} بنداً في هذا الباب ${sc}`;
   return filter==='archived'?`يعرض ${ARCHN} بنداً مؤرشفاً`:(filter==='all'?'يعرض كل البنود: 612':`يعرض ${612-ARCHN} بنداً نشطاً`);
 }
 function toolsHtml(){
   const seg=`<div class="seg" role="group" aria-label="التصفية">${[['active','نشط'],['archived','مؤرشف'],['all','الكل']].map(a=>`<button type="button" data-f="${a[0]}" aria-pressed="${filter===a[0]}">${a[1]}</button>`).join('')}</div>`;
   const sel=`<div class="sel"><label class="vh" for="bs">الباب</label><select id="bs"><option value="">كل الأبواب</option>${BABS.map(b=>`<option value="${b.id}" ${babSel===b.id?'selected':''}>${b.n}</option>`).join('')}</select>${i('chev','s')}</div>`;
-  const clr=(query.trim()||babSel||unpOnly)?`<button type="button" class="lnk" id="clr">مسح التصفية</button>`:'';
-  const unl=(!RO&&!unpOnly&&!query.trim())?`<button type="button" class="lnk" data-unp>${UNP} بنود بلا سعر: عرضها</button>`:'';
+  const clr=(query.trim()||babSel)?`<button type="button" class="lnk" id="clr">مسح التصفية</button>`:'';
   return `<div class="tools d-only">${seg}${sel}</div>
   <div class="mtools m-only"><div class="seg full" role="group" aria-label="التصفية">${[['active','نشط'],['archived','مؤرشف'],['all','الكل']].map(a=>`<button type="button" data-f="${a[0]}" aria-pressed="${filter===a[0]}">${a[1]}</button>`).join('')}</div>
    <div class="mrow">${sel}<button type="button" class="btn sec2 imp2" data-import>${i('up','s')}استيراد Excel</button></div></div>
-  <div class="count"><span>${countText()}</span>${clr}${unl}</div>`;
+  <div class="count"><span>${countText()}</span>${clr}</div>`;
 }
 function draw(){
   A.dataset.empty=(view==='nobabs'||view==='noitems')?'1':'0';
@@ -554,12 +542,12 @@ function draw(){
     const hasQ=query.trim()||babSel;
     body=`<div class="state">${hasQ?`<div class="ico">${i('search')}</div><h4>لا نتائج مطابقة</h4><p>لا يوجد بند يطابق «${query.trim()||'التصفية الحالية'}» ${filter==='archived'?'في المؤرشف':filter==='all'?'في الكتالوج':'في البنود النشطة'}. تحقق من الرمز أو جرّب كلمة من الوصف.</p><button class="btn sec2" type="button" id="clr2">مسح التصفية</button>`:`<div class="ico">${i('arch')}</div><h4>لا توجد بنود مؤرشفة</h4><p>البنود التي تُؤرشف تظهر هنا ويمكن استرجاعها.</p>`}</div>`;
   }else{
-    const groups=BABS.filter(b=>vis.some(x=>x[0]===b.id)||(!query.trim()&&!babSel&&!unpOnly&&filter!=='archived'));
+    const groups=BABS.filter(b=>vis.some(x=>x[0]===b.id)||(!query.trim()&&!babSel&&filter!=='archived'));
     const table=`<div class="tw d-only"><table class="tbl"><thead><tr><th class="id">الوصف</th><th class="en">English description</th><th>الوحدة</th><th class="n cost"><span class="int">${i('eyeoff','s')}سعر التكلفة (ج.م) <span class="badge q">داخلي</span></span></th><th class="n">سعر البيع (ج.م)</th><th class="act"><span class="vh">إجراءات</span></th></tr></thead><tbody>${groups.map(b=>groupHtml(b,vis.filter(x=>x[0]===b.id))).join('')}</tbody></table></div>`;
-    const mob=`<div class="mlist m-only">${groups.map(b=>{const items=vis.filter(x=>x[0]===b.id);const o=open[b.id]||query.trim()||babSel||unpOnly||filter==='archived';const total=(query.trim()||filter==='archived')?items.length:b.c;
+    const mob=`<div class="mlist m-only">${groups.map(b=>{const items=vis.filter(x=>x[0]===b.id);const o=open[b.id]||query.trim()||babSel||filter==='archived';const total=(query.trim()||filter==='archived')?items.length:b.c;
       return `<button type="button" class="mg" data-g="${b.id}" aria-expanded="${!!o}">${i('chev','s chev')}<span class="gn">${b.n}</span><span class="gc">${total} بنداً</span></button>`+(o?items.map(it=>{const code=it[1],isA=ARCH.has(code);
         if(confirmCode===code)return `<div class="li conf"><div class="msg">${i('arch','s')} أرشفة <b>«${it[2]}»</b>؟ يختفي من القائمة النشطة، ويمكنك استرجاعه من «مؤرشف» في أي وقت.</div><div class="bt"><button class="btn" type="button" data-yes="${code}"><span class="spin"></span>أرشفة</button><button class="btn sec2" type="button" data-no>إلغاء</button></div></div>`;
-        return `<div class="li ${isA?'arch':''} ${createdCode===code?'hl':''}" data-code="${code}"><span class="t">${it[2]}</span><span class="sell">${it[6]==null?`<span class="nptag">بلا سعر</span>`:`<bdi class="money" dir="ltr">${money(it[6])}</bdi>`}</span><span class="sub"><bdi dir="ltr">${code}</bdi><span>${unit(it[4])}</span>${isA?`<span class="atag">${i('arch','s')}مؤرشف</span>`:''}</span><span class="costl">${i('eyeoff','s')}تكلفة <bdi class="money" dir="ltr">${money(it[5])}</bdi></span><button type="button" class="ib" data-menu="${code}" aria-label="إجراءات ${it[2]}">${i('dots')}</button></div>`+(createdCode===code?`<div class="pd" style="padding:12px 16px;background:var(--ok-bg);color:var(--ok-ink)">${i('check','s')} تم إنشاء «${it[2]}». رمزه المولَّد <bdi dir="ltr">${code}</bdi>.${it[5]==null?' بلا سعر: يحدّد المالك السعرين.':''}</div>`:'')}).join('')+((b.c-items.length>0&&!query.trim()&&filter!=='archived')?`<div class="mmore"><button type="button" class="btn quiet">عرض ${b.c-items.length} بنداً أخرى</button></div>`:''):'')}).join('')}</div>`;
+        return `<div class="li ${isA?'arch':''} ${createdCode===code?'hl':''}" data-code="${code}"><span class="t">${it[2]}</span><span class="sell"><bdi class="money" dir="ltr">${money(it[6])}</bdi></span><span class="sub"><bdi dir="ltr">${code}</bdi><span>${unit(it[4])}</span>${isA?`<span class="atag">${i('arch','s')}مؤرشف</span>`:''}</span><span class="costl">${i('eyeoff','s')}تكلفة <bdi class="money" dir="ltr">${money(it[5])}</bdi></span><button type="button" class="ib" data-menu="${code}" aria-label="إجراءات ${it[2]}">${i('dots')}</button></div>`+(createdCode===code?`<div class="pd" style="padding:12px 16px;background:var(--ok-bg);color:var(--ok-ink)">${i('check','s')} تم إنشاء «${it[2]}». رمزه <bdi dir="ltr">${code}</bdi>.</div>`:'')}).join('')+((b.c-items.length>0&&!query.trim()&&filter!=='archived')?`<div class="mmore"><button type="button" class="btn quiet">عرض ${b.c-items.length} بنداً أخرى</button></div>`:''):'')}).join('')}</div>`;
     body=table+mob;
   }
   $('#frame').innerHTML=(view==='nobabs'||view==='noitems')?body:toolsHtml()+body;
@@ -577,12 +565,11 @@ function drawPanel(){
   const b=bab(it[0]),cost=(!RO&&costEdit!=null)?costEdit:it[5];
   const dirty=!RO&&costEdit!=null;
   const mf=(id,label,val,foot,internal,dirtyf)=>RO
-    ?`<div class="field"><label>${internal?i('eyeoff','s'):''}${label}${internal?' <span class="badge q">داخلي</span>':''}</label><div class="ctl money ro"><span class="val money ${val==null?'np':''}" dir="ltr" tabindex="0">${val==null?'غير محدد':money(val)}</span><span class="aff">ج.م</span><span class="tail">${i('lock','s')}</span></div><div class="foot">${internal?i('eyeoff','s'):''}<span>${foot}</span></div></div>`
-    :`<div class="field"><label for="${id}"><span style="display:inline-flex;gap:6px;align-items:center">${internal?i('eyeoff','s'):''}${label}</span>${internal?' <span class="badge q">داخلي</span>':''} <span class="req" aria-hidden="true">*</span></label><div class="ctl money ${dirtyf?'dirty is-focus':''}"><input id="${id}" value="${val==null?'':money(val)}" ${val==null?'placeholder="غير محدد"':''} dir="ltr" inputmode="decimal"><span class="aff">ج.م</span></div><div class="foot">${internal?i('eyeoff','s'):''}<span>${foot}</span></div></div>`;
+    ?`<div class="field"><label>${internal?i('eyeoff','s'):''}${label}${internal?' <span class="badge q">داخلي</span>':''}</label><div class="ctl money ro"><span class="val money" dir="ltr" tabindex="0">${money(val)}</span><span class="aff">ج.م</span><span class="tail">${i('lock','s')}</span></div><div class="foot">${internal?i('eyeoff','s'):''}<span>${foot}</span></div></div>`
+    :`<div class="field"><label for="${id}"><span style="display:inline-flex;gap:6px;align-items:center">${internal?i('eyeoff','s'):''}${label}</span>${internal?' <span class="badge q">داخلي</span>':''} <span class="req" aria-hidden="true">*</span></label><div class="ctl money ${dirtyf?'dirty is-focus':''}"><input id="${id}" value="${money(val)}" dir="ltr" inputmode="decimal"><span class="aff">ج.م</span></div><div class="foot">${internal?i('eyeoff','s'):''}<span>${foot}</span></div></div>`;
   const prHead=RO?`<div class="sec-h">الأسعار <span class="badge q">${i('lock','s')}للاطلاع فقط</span></div><div class="foot" style="margin-block-start:2px">يعدّل المالك وحده سعر التكلفة وسعر البيع. بقية بيانات البند تعدّلها أنت.</div>`:`<div class="sec-h">الأسعار</div>`;
   $('#panel').innerHTML=`<div class="grabp"></div><div class="hd"><div class="t"><h4>${it[2]}</h4><div class="sub"><bdi dir="ltr">${it[1]}</bdi><span>${b.n}</span></div></div><button class="ib" type="button" id="pclose" aria-label="إغلاق">${i('x')}</button></div>
   <div class="bd">
-   ${it[5]==null?`<div class="ban" role="status">${i('info','s')}<span>${RO?'هذا البند بلا سعر. يحدّد المالك سعر التكلفة وسعر البيع.':'هذا البند بلا سعر بعد. حدّد سعر التكلفة وسعر البيع.'}</span></div>`:''}
    ${dirty?`<div class="ban" role="status">${i('info','s')}<span>تعديل غير محفوظ في سعر التكلفة.</span></div>`:''}
    ${prHead}
    ${mf('pc','سعر التكلفة',cost,'داخلي: لا يظهر في أي مستند يراه العميل.',true,dirty)}
@@ -594,7 +581,7 @@ function drawPanel(){
    <div class="field"><label>رمز البند</label><div class="ctl ro"><span class="val" dir="ltr" tabindex="0">${it[1]}</span><span class="tail">${i('lock','s')}</span></div></div></div>
    <div class="meta">أُنشئ في 03/02/2026. آخر تعديل: ${RO?'أحمد نبيل':'سارة عادل'}، 28/08/2026.</div>
   </div>
-  <div class="ft"><button class="btn prim" type="button" ${dirty||(!RO&&it[5]==null)?'':'disabled'}>حفظ</button><button class="btn sec2" type="button" id="pclose2">إغلاق</button><span class="spacer"></span><button class="btn sec2" type="button">${i('arch','s')}أرشفة</button></div>`;
+  <div class="ft"><button class="btn prim" type="button" ${dirty?'':'disabled'}>حفظ</button><button class="btn sec2" type="button" id="pclose2">إغلاق</button><span class="spacer"></span><button class="btn sec2" type="button">${i('arch','s')}أرشفة</button></div>`;
   $('#pclose').onclick=$('#pclose2').onclick=()=>{panelCode=null;costEdit=null;drawPanel()};
 }
 
@@ -602,7 +589,7 @@ function drawPanel(){
 function fld(id,label,req,val,o={}){
   const err=o.err;
   const lab=`${o.internal?`<span style="display:inline-flex;gap:6px;align-items:center">${i('eyeoff','s')}${label}</span> <span class="badge q">داخلي</span>`:label}${req?' <span class="req" aria-hidden="true">*</span><span class="vh">مطلوب</span>':''}`;
-  return `<div class="field ${err?'err':''}"><label for="${id}">${lab}</label><div class="ctl ${o.money?'money':''}"><input id="${id}" value="${val==null?'':val}" ${o.dir?`dir="${o.dir}"`:''} ${o.ph?`placeholder="${o.ph}"`:''} ${o.money?'inputmode="decimal" style="text-align:end;direction:ltr"':''} ${err?`aria-invalid="true" aria-describedby="${id}-f"`:''}>${o.aff?`<span class="aff">${o.aff}</span>`:''}</div><div class="foot" id="${id}-f">${err?i('err','s')+'<span>'+err+'</span>':(o.hint||'')}</div></div>`}
+  return `<div class="field ${err?'err':''}"><label for="${id}">${lab}</label><div class="ctl ${o.money?'money':''}"><input id="${id}" value="${val==null?'':val}" ${o.dir?`dir="${o.dir}"`:''} ${o.upper?'style="text-transform:uppercase;text-align:start;direction:ltr" autocapitalize="characters" spellcheck="false"':''} ${o.ph?`placeholder="${o.ph}"`:''} ${o.money?'inputmode="decimal" style="text-align:end;direction:ltr"':''} ${err?`aria-invalid="true" aria-describedby="${id}-f"`:''}>${o.aff?`<span class="aff">${o.aff}</span>`:''}</div><div class="foot" id="${id}-f">${err?i('err','s')+'<span>'+err+'</span>':(o.hint||'')}</div></div>`}
 function pbtn(id,label,req,valTxt,ph,o={}){const err=o.err;
   return `<div class="field ${err?'err':''}"><label for="${id}">${label}${req?' <span class="req" aria-hidden="true">*</span><span class="vh">مطلوب</span>':''}</label><button type="button" class="ctl pbtn" id="${id}" ${o.attr||''} aria-haspopup="listbox" ${err?'aria-invalid="true"':''}><span class="val ${valTxt?'':'ph'}">${valTxt||ph}</span><span class="tail">${i('chev','s')}</span></button>${o.pop||''}<div class="foot">${err?i('err','s')+'<span>'+err+'</span>':(o.hint||'')}</div></div>`}
 function drawCreate(){
@@ -616,9 +603,7 @@ function drawCreate(){
   }
   const nerr=Object.keys(e).length;
   const unitPop=c.unitOpen?`<div class="pop popin" role="listbox">${UNITS.map(u=>`<button class="opt" role="option" data-unit="${u}" aria-selected="${c.unit===u}">${unit(u)}</button>`).join('')}</div>`:'';
-  const prices=RO?`<div class="sec-h">الأسعار <span class="badge q">${i('lock','s')}يحدّدها المالك</span></div>
-    <div class="ban" role="note">${i('info','s')}<span>سيُحفظ البند بلا سعر، ويظهر في الكتالوج بعلامة «بلا سعر» حتى يحدّد المالك سعر التكلفة وسعر البيع.</span></div>`
-   :`<div class="sec-h">الأسعار</div>
+  const prices=`<div class="sec-h">الأسعار</div>
     ${fld('cr_cost','سعر التكلفة',true,c.cost,{money:true,aff:'ج.م',internal:true,err:e.cost,ph:'0.00',hint:'داخلي: لا يظهر في أي مستند يراه العميل.'})}
     ${fld('cr_sell','سعر البيع',true,c.sell,{money:true,aff:'ج.م',err:e.sell,ph:'0.00',hint:'سعر البيع المسجّل لهذا البند في الكتالوج.'})}`;
   $('#panel').innerHTML=`<div class="grabp"></div><div class="hd"><div class="t"><h4>بند جديد</h4><div class="sub"><span>${c.bab?'ضمن: '+bab(c.bab).n:'يُضاف إلى الكتالوج تحت الباب الذي تختاره'}</span></div></div><button class="ib" type="button" id="pclose" aria-label="إغلاق">${i('x')}</button></div>
@@ -626,12 +611,12 @@ function drawCreate(){
    ${nerr?`<div class="ban" style="border-inline-start-color:var(--err-bar);background:var(--err-bg);color:var(--err-ink)" role="alert">${i('err','s')}<span>لم يُنشأ البند. صحّح الحقول المعلَّمة.</span></div>`:''}
    ${fld('cr_ar','الوصف بالعربية',true,c.ar,{err:e.ar,ph:'مثال: خرسانة عادية للقواعد'})}
    ${fld('cr_en','الوصف بالإنجليزية',false,c.en,{dir:'ltr',hint:'اختياري.'})}
+   ${fld('cr_code','رمز البند',true,c.code,{dir:'ltr',upper:true,ph:'CON-1030',err:e.code,hint:'فريد في النظام كله، ولا يمكن تغييره بعد الإنشاء.'})}
    ${pbtn('cr_bab','الباب',true,c.bab?bab(c.bab).n:'','اختر الباب',{attr:'data-pickbab',err:e.bab})}
    ${pbtn('cr_unit','الوحدة',true,c.unit?unit(c.unit):'','اختر الوحدة',{attr:'data-pickunit',err:e.unit,pop:unitPop})}
    ${prices}
-   <div class="field"><label>رمز البند</label><div class="ctl ro"><span class="val" tabindex="0">يُولَّد عند الحفظ</span><span class="tail">${i('lock','s')}</span></div><div class="foot"><span>لاتيني، ولا يتغير بعد إنشائه.</span></div></div>
   </div>
-  <div class="ft"><button class="btn prim ${c.busy?'is-busy':''}" type="button" data-crsave ${c.busy?'disabled aria-busy="true"':''}><span class="spin"></span>${c.busy?'جارٍ الإنشاء…':(RO?'إنشاء بند بلا سعر':'إنشاء البند')}</button><button class="btn sec2" type="button" id="pclose2" ${c.busy?'disabled':''}>إلغاء</button></div>`;
+  <div class="ft"><button class="btn prim ${c.busy?'is-busy':''}" type="button" data-crsave ${c.busy?'disabled aria-busy="true"':''}><span class="spin"></span>${c.busy?'جارٍ الإنشاء…':'إنشاء البند'}</button><button class="btn sec2" type="button" id="pclose2" ${c.busy?'disabled':''}>إلغاء</button></div>`;
   $('#pclose').onclick=$('#pclose2').onclick=()=>{cr=null;draw()};
 }
 /* ---- menu + actions ---- */
@@ -644,7 +629,6 @@ document.addEventListener('click',e=>{
     if(!mw.querySelector('.pop'))mw.insertAdjacentHTML('beforeend',menuFor(mb.dataset.menu));mw.classList.toggle('open');if(mw.classList.contains('open'))placePop(mw,mb);return}
   if(e.target.closest('[data-newitem]')){cr=_mk();panelCode=null;draw();return}
   if(e.target.closest('[data-import]')){location.href='catalogue-import.html'+(RO?'?role=to':'');return}
-  if(e.target.closest('[data-unp]')){unpOnly=true;draw();return}
   if(e.target.closest('[data-pickbab]')){cr.step='bab';cr.sel=undefined;draw();return}
   if(e.target.closest('[data-pickunit]')){cr.unitOpen=!cr.unitOpen;draw();return}
   const un=e.target.closest('[data-unit]');if(un){cr.unit=un.dataset.unit;cr.unitOpen=false;cr.err.unit=undefined;draw();return}
@@ -652,11 +636,14 @@ document.addEventListener('click',e=>{
   if(e.target.closest('[data-crpick]')){if(cr.sel!==undefined)cr.bab=cr.sel;cr.step='form';draw();return}
   if(e.target.closest('[data-crsave]')){const c=cr;c.err={};
     if(!c.ar.trim())c.err.ar='وصف البند بالعربية مطلوب.';
+    const cd=String(c.code||'').trim().toUpperCase();
+    if(!cd)c.err.code='رمز البند مطلوب.';
+    else if(ITEMS.some(x=>x[1].toUpperCase()===cd))c.err.code='الرمز '+cd+' مستخدم لبند آخر. الرموز فريدة في النظام كله.';
     if(!c.bab)c.err.bab='اختر الباب.';
     if(!c.unit)c.err.unit='اختر الوحدة.';
-    if(!RO){['cost','sell'].forEach(k=>{if(String(c[k]).trim()==='')c.err[k]=(k==='cost'?'سعر التكلفة':'سعر البيع')+' مطلوب.';else if(isNaN(parseFloat(String(c[k]).replace(/,/g,''))))c.err[k]='أدخل رقماً، مثل 3150.50.'})}
+    ['cost','sell'].forEach(k=>{if(String(c[k]).trim()==='')c.err[k]=(k==='cost'?'سعر التكلفة':'سعر البيع')+' مطلوب.';else if(isNaN(parseFloat(String(c[k]).replace(/,/g,''))))c.err[k]='أدخل رقماً، مثل 3150.50.'});
     if(Object.keys(c.err).length){draw();return}
-    c.busy=true;draw();setTimeout(()=>{const n=RO?null:parseFloat(String(c.cost).replace(/,/g,''));ITEMS.push([c.bab,'NEW-1','',c.en,c.unit,n,RO?null:parseFloat(String(c.sell).replace(/,/g,'')),0]);cr=null;draw()},900);return}
+    c.busy=true;draw();setTimeout(()=>{ITEMS.push([c.bab,String(c.code).trim().toUpperCase(),c.ar.trim(),c.en,c.unit,parseFloat(String(c.cost).replace(/,/g,'')),parseFloat(String(c.sell).replace(/,/g,'')),0]);cr=null;draw()},900);return}
   const g=e.target.closest('[data-g]');if(g){const id=g.dataset.g;open[id]=!(open[id]||query.trim());draw();return}
   const f=e.target.closest('[data-f]');if(f){filter=f.dataset.f;draw();return}
   const o=e.target.closest('[data-open]');if(o){panelCode=o.dataset.open;costEdit=null;draw();return}
@@ -665,10 +652,10 @@ document.addEventListener('click',e=>{
   if(e.target.closest('[data-no]')){confirmCode=null;draw();return}
   const yes=e.target.closest('[data-yes]');if(yes){yes.classList.add('is-busy');setTimeout(()=>{ARCH.add(yes.dataset.yes);confirmCode=null;draw()},900);return}
   const row=e.target.closest('tr.it,.li');if(row&&row.dataset.code&&!e.target.closest('.ib,.menuwrap')){panelCode=row.dataset.code;costEdit=null;draw();return}
-  if(e.target.closest('#clr,#clr2')){query='';babSel='';unpOnly=false;draw();return}
+  if(e.target.closest('#clr,#clr2')){query='';babSel='';draw();return}
 });
 document.addEventListener('change',e=>{if(e.target.name==='crb'){cr.sel=e.target.value;drawCreate()}if(e.target.id==='bs'){babSel=e.target.value;draw()}});
-document.addEventListener('input',e=>{const m={cr_ar:'ar',cr_en:'en',cr_cost:'cost',cr_sell:'sell'};if(cr&&m[e.target.id])cr[m[e.target.id]]=e.target.value});
+document.addEventListener('input',e=>{const m={cr_ar:'ar',cr_en:'en',cr_code:'code',cr_cost:'cost',cr_sell:'sell'};if(cr&&m[e.target.id])cr[m[e.target.id]]=e.target.value});
 $('#q').addEventListener('input',e=>{query=e.target.value;draw();$('#q').focus()});
 $('#qx').onclick=()=>{query='';draw()};
 $('#scrim').onclick=()=>{if(sheet){sheet=false;A.dataset.sheet='0'}else{panelCode=null;cr=null;costEdit=null;draw()}};

@@ -326,8 +326,6 @@ bdi{unicode-bidi:isolate}
 [dir="rtl"] .bk svg{transform:scaleX(-1)}
 .popin{position:absolute;inset-inline:0;z-index:6;margin-block-start:4px;inset-block-start:100%}
 .popin .opt[aria-selected="true"]{background:var(--head);font-weight:700}
-.np{color:var(--dim);font-weight:500}
-.nptag{display:inline-flex;align-items:center;gap:5px;block-size:24px;padding:0 8px;border-radius:var(--radius);border:1.5px dashed var(--fieldline);font:600 .75rem/1 var(--body);white-space:nowrap}
 .pk{display:flex;align-items:center;gap:12px;min-block-size:48px;border-radius:var(--radius);cursor:pointer;position:relative;padding-inline-end:12px}
 .pk:hover{background:var(--hover)}
 .pk input{position:absolute;opacity:0;inline-size:1px;block-size:1px}
@@ -337,7 +335,6 @@ bdi{unicode-bidi:isolate}
 .pk .pc{color:var(--dim);font-size:.8125rem}
 tr.hl td{background:color-mix(in srgb,var(--ok-bg) 45%,var(--surface))}
 .li.hl{background:color-mix(in srgb,var(--ok-bg) 45%,var(--surface))}
-.unp{display:inline-flex;gap:8px;align-items:center}
 .firstrun{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start;border:1.5px solid var(--line);border-radius:var(--radius);padding:32px}
 .firstrun .fr-main{display:grid;gap:12px;justify-items:start}
 .firstrun .ico{inline-size:56px;block-size:56px;border-radius:var(--radius);display:grid;place-items:center;background:var(--head)}
@@ -577,13 +574,13 @@ function applyBar(){
   if(RO)return `<div class="apply pad2" style="border-color:var(--err-bar)"><div class="what"><span style="color:var(--err-ink)">لا يمكنك تطبيق هذا الملف</span><small>${SUM.up} صفاً يغيّر سعراً قائماً، وتغيير الأسعار للمالك وحده.</small></div><button class="btn sec2" type="button">${i('swap','s')}اختيار ملف آخر</button><button class="btn quiet" type="button">${i('dl','s')}تنزيل قائمة الصفوف المرفوضة</button></div>`;
   return `<div class="apply"><div class="what">سيُطبَّق: إضافة ${SUM.n}، وتحديث ${SUM.u} (${SUM.up} بتغيير سعر)<small>تُتخطّى ${SUM.e} صفوف بها أخطاء. لا يمكن التراجع عن الاستيراد بعد تطبيقه.</small></div><button class="btn sec2" type="button">${i('swap','s')}اختيار ملف آخر</button><button class="btn" type="button" data-apply>${i('up','s')}تطبيق الاستيراد</button></div>`;
 }
-const roBan=()=>`<div class="ban er pad2" style="margin-block-end:14px" role="alert">${i('err')}<span><b>هذا الاستيراد مرفوض لحسابك.</b> ${SUM.up} صفاً يغيّر سعراً قائماً، وتغيير الأسعار للمالك وحده، والخادم يرفض الملف كله إن وُجد فيه تغيير سعر. أزل التغييرات السعرية من الملف ثم ارفعه من جديد، أو اطلب من المالك تطبيقه. الصفوف المعلَّمة بقفل هي التي تغيّر السعر. البنود الجديدة تُستورد بلا سعر.</span></div>`;
+const roBan=()=>`<div class="ban er pad2" style="margin-block-end:14px" role="alert">${i('err')}<span><b>هذا الاستيراد مرفوض لحسابك.</b> ${SUM.up} صفاً يغيّر سعراً قائماً، وتغيير الأسعار للمالك وحده، والخادم يرفض الملف كله إن وُجد فيه تغيير سعر. أزل التغييرات السعرية من الملف ثم ارفعه من جديد، أو اطلب من المالك تطبيقه. الصفوف المعلَّمة بقفل هي التي تغيّر السعر.</span></div>`;
 const upBan=()=>`<div class="ban pad2" style="margin-block-end:14px">${i('warn')}<span><b>${SUM.u} بنداً موجوداً سيُستبدل ببيانات الملف.</b> الاستيراد دفعة واحدة وليس مزامنة: الملف لا يبقى مرتبطاً بالكتالوج بعد التطبيق. راجع الصفوف المعلَّمة «تحديث» قبل المتابعة.</span></div>`;
 
 function body(){
   if(view==='choose'||view==='choose-ro'||view==='filebad'){
     const bad=view==='filebad'?`<div class="ban er pad2" style="margin-block-end:14px" role="alert">${i('err')}<span><b>تعذّرت قراءة الملف «prices-2026-10.xls».</b> الصيغة غير مدعومة، استخدم ملف Excel بصيغة xlsx. ينقص الملف أيضاً عمودَي «الباب» و«الوحدة».</span></div>`:'';
-    const ro=RO?`<div class="ban pad2" style="margin-block-end:14px">${i('lock')}<span><b>لا يمكنك تغيير الأسعار القائمة بالاستيراد.</b> يمكنك إضافة بنود جديدة وتحديث الأوصاف، وتُستورد البنود الجديدة بلا سعر. إن غيّر الملف سعراً قائماً رُفض كله.</span></div>`:'';
+    const ro=RO?`<div class="ban pad2" style="margin-block-end:14px">${i('lock')}<span><b>لا يمكنك تغيير الأسعار القائمة بالاستيراد.</b> يمكنك إضافة بنود جديدة بأسعارها وتحديث الأوصاف. إن غيّر الملف سعراً قائماً رُفض كله.</span></div>`:'';
     return steps(0)+bad+ro+`<div class="pad"><div class="two"><div class="card"><div class="drop"><div class="ico">${i('up')}</div><h4>اختر ملف Excel</h4><p>ملف بصيغة xlsx، ويُقرأ أول ورقة فيه.</p><button class="btn" type="button" data-choose>${i('file','s')}اختيار ملف</button><p style="font-size:.875rem">أو اسحب الملف وأفلته هنا</p></div></div>
      <div class="card how"><h5>ما الذي سيحدث</h5><ul><li>${i('plus','s')}<span>صف بلا رمز: بند جديد، ورمزه يُولَّد.</span></li><li>${i('swap','s')}<span>صف برمز موجود: يُحدَّث ذلك البند. تحذّرك المعاينة قبل أي تغيير.</span></li><li>${i('info','s')}<span>دفعة واحدة وليس مزامنة مستمرة: لا شيء يتغير بعد التطبيق إن عدّلت الملف.</span></li></ul>
       <h5>الأعمدة المطلوبة</h5><div class="cols"><span>الرمز</span><span>الوصف بالعربية</span><span>الوصف بالإنجليزية</span><span>الوحدة</span><span>الباب</span><span>سعر التكلفة (داخلي)</span><span>سعر البيع</span></div><a href="#" class="lnk" style="justify-self:start">${i('dl','s')}تنزيل ملف نموذج</a></div></div></div>`;
