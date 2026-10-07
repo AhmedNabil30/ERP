@@ -533,3 +533,233 @@ These came from the client and `spec.md`, not from the design:
 ## Still open
 
 - The 8 أبواب, the item names and the figures in the mockup are samples.
+
+
+---
+
+# The أبواب screen (`babs.html`)
+
+Screen: الأبواب, the trade tree. It is the sibling of the catalogue and is composed from the same kit inside the same shell, so the two read as one product. Screenshots: `shots/bab-*.png` (desktop 1440 and phone 390, light and dark; states: the tree with one parent open and one closed, the margin editor open, after saving a margin, the move-to picker, the archive confirmation, the detail panel, the archived view, restore in place, no search results, empty, loading; plus one 1000px check and English/LTR). `?view=list|markup|saved|move|archive|panel|archived|unarch|nores|empty|loading` opens one state directly.
+
+## What it holds
+
+A باب is a trade section. About 40 of them, forming a tree. Each has a typed Latin uppercase code (`CON`, globally unique, immutable after create), an Arabic name, an English name, a sort order, a default markup percentage, and a count of the items it holds. This screen is the home of the default markup and the only place that edits it: a BOQ line on a project inherits it as its starting `lineMarkup` and the project may override it per line (`spec.md` §4.2). A باب is archived, never deleted, and can be restored. It can be moved to a different parent.
+
+## Reused from the catalogue, unchanged
+
+Page header and actions (search, one primary "باب جديد"), the segmented filter (نشط · مؤرشف · الكل) and the result count line, the table frame with its pinned identity column and the 1100px rail behaviour, the load-more row ("عرض 26 باباً أخرى"), the row menu (fixed-position), the recoverable archive confirmation with its "restore in place" counterpart, the archived-row marker, the no-results, empty and loading states, the side panel and bottom sheet, read-only generated code field with a lock, the neutral notice and the saved-in-place band. The identity cell leads with the Arabic name and demotes the code, exactly as in the catalogue.
+
+## The tree
+
+- Desktop rows are 48px. Each row has a 44px disclosure button at the start edge (a spacer of the same width for a leaf, so names stay aligned), then the Arabic name (bold), the code (dim, tabular) and, for a parent, "3 فروع" in dim text.
+- Each depth indents 24px on the start edge, a logical offset that flips in English, and carries a 1px vertical guide that sits under the parent's disclosure button, so a parent and its children read as a group. The chevron points to the end edge (left in Arabic) when closed and down when open, and flips with the direction.
+- Parents show their own item count and, dim beside it, the count with their children ("17 (118 مع الفروع)"). Leaves show one count.
+- Columns: الباب (identity), English name, الترتيب, البنود, الهامش الافتراضي (%), and the 44px actions button. Below 1100px the shell collapses to the rail and the table keeps the identity column pinned. Under 820px the table is replaced by tree rows (below).
+- "فتح الكل" and "طيّ الكل" are quiet buttons on the count line (hidden while searching, in the archived view and while loading). A search or the archived view flattens the tree into a result list and each row carries a quiet "ضمن: أعمال خرسانة" parent path, because a flattened row has lost its place in the tree. Archived children of an active parent also appear in the full "الكل" tree dimmed with the archive tag.
+- Depth limit: the design is drawn for three levels. Beyond three, the indent stays 24px on desktop and 20px on a phone and the name wraps, but no new treatment is invented; ask before allowing deeper trees.
+
+## The tree at 390
+
+A tree is not shrunk. A row is a flex line of at least 72px: indent guides (20px per level), a 44px disclosure button, the name (bold, wrapping) with a second line "CON · 17 بنداً · 3 فروع" in dim text, then the markup as a labelled chip button ("12%" with a pencil, 44px high, 1.5px border) and the 44px actions button. Nothing is hidden behind a hover. The disclosure, the chip and the menu are three separate 44px targets; the rest of the row opens the details sheet. English name and sort order are in the sheet, not in the row. The toolbar is the full-width search, the full-width segmented filter, and the count line with "فتح الكل / طيّ الكل". The primary "باب جديد" is in the bottom action bar as everywhere. An open parent's children are plain rows below it, not a drill-down, because the real depth is two levels; if deeper trees ever become normal, a drill-down with a back link is the fallback to design.
+
+## The markup percentage: a deliberate edit, without ceremony
+
+The percentage is the only editable number here and it has consequences downstream, so it is treated as a deliberate act that stays cheap:
+
+1. In the row it is a figure (tabular, Western digits, bold) with an explicit pencil button ("تعديل الهامش الافتراضي لـ …"), never a field that can be changed by accident, never an always-on input. On a phone the figure is itself a labelled chip button. The pencil is also in the row menu and in the details panel.
+2. Choosing it opens the row into a bordered editor in place (2px ink border, no modal): the title "الهامش الافتراضي لـ «أعمال خرسانة»", the number field with a "%" affix, the current value, the explanation "يبدأ به كل بند جدول كميات جديد في المشاريع، ويمكن تغييره لكل بند هناك. تغييره هنا لا يعيد تسعير أي بند قائم.", and the buttons. While the value is unchanged Save ("حفظ الهامش") is disabled; once it differs the field's border darkens and a before-to-after line appears ("15% ‹ 18%" in reading order). There is no second confirmation, because the editor already states the consequence and shows both numbers.
+3. Saving turns the editor into a green in-place band: "تم حفظ الهامش الافتراضي لـ «أعمال خرسانة»: من 15% إلى 18%. يبدأ به كل بند جدول كميات جديد في المشاريع، ولم يتغيّر أي سعر قائم." Cancel restores the row. Only one editor is open at a time.
+4. The relationship is stated where the person is deciding, in plain words, not in a permanent banner and not in a tooltip: the percentage is a starting point for future BOQ lines, it is not a price and it re-prices nothing. The column header says only "الهامش الافتراضي (%)".
+5. The audit trail records who changed it and the before and after (the kit's rule for every state change); the panel footer shows who last changed the باب and when.
+
+## Move to…
+
+Not dragging: the row menu and the details panel offer "نقل إلى…", which opens a picker. Desktop: a 520px dialog (kit stacking rules apply: it may be opened from the panel, and a confirmation may not stack on it). Phone: a bottom sheet with 56px rows. The picker is the tree as a radio list (indented, codes dim): at the top "بلا أب (باب رئيسي)", then every active باب. The current parent is marked "الحالي"; the باب itself and all of its descendants are disabled with the reason ("هذا الباب" / "من فروعه") so a cycle cannot be built, and the footer says so in a sentence. Choosing a target shows a plain consequence line ("سيصبح «خرسانة مسلحة» فرعاً من «أعمال تشطيبات»، وتنتقل معه بنوده وفروعه.") and enables "نقل". The move happens in place and the new parent opens to show the result.
+
+## Archive (see the corrected section "Archive: a refusal when the باب holds items..." below)
+
+The first version of this section said the confirmation names the subtree count and proceeds. That was wrong and is superseded by the corrected section further down: own active items refuse, no own items confirm quietly.
+
+## The details panel
+
+Side panel (440px) or bottom sheet. Header: Arabic name, code demoted, "17 بنداً و3 فروع". Fields: Arabic name, English name, sort order (number field), code (read-only, lock), "يتبع" (read-only path, with a secondary "نقل إلى…" button), and the default margin shown as a read-only field with a lock and a line saying it is edited from the table in a separate step, plus a quiet "تعديل الهامش" button that closes the panel and opens the row editor. Footer: Save (disabled until something changes), Close, and at the far end "أرشفة" (secondary, recoverable). The markup has exactly one edit path (the row editor), so there are not two ways to change it.
+
+## Kit additions (the kit was missing these; each is in the kit sheet, section "إضافات من شاشة الكتالوج")
+
+1. Tree row: indentation on the start edge, per-level guides, a 44px disclosure button with a same-width spacer for leaves, expand-all and collapse-all as quiet buttons, and the flattened parent-path line for result lists. Rules: indent with logical properties; never rely on indentation alone to carry the hierarchy for assistive technology (use `role="treegrid"` or `aria-level` and `aria-expanded` in the build).
+2. Deliberate value editor: the row opens into a bordered editor with the explanation of consequence, a before-to-after line, a disabled-until-changed Save, and an in-place saved band. Use it for any single number whose change has downstream meaning. Do not use it for ordinary text fields.
+3. Tree picker: a radio list with indentation, the current choice marked, and the item itself plus its descendants disabled with a reason; used for "move to…" and any "choose a parent" decision. No drag and drop anywhere in the product for this.
+4. The before-to-after saved band is a variant of the in-place band.
+
+## Not decided here (business questions)
+
+- Who may edit the default markup. The mockup shows the Owner shape; if other roles can read but not edit, the margin follows the kit's read-only rule (a lock and a one-line reason where the editor would be) and the pencil disappears. The permission name is not given here.
+- What archiving a parent does to its children and to its items (the confirmation currently states the counts and says it can be restored; it does not claim the children are archived with it), and whether a child can be restored while its parent is archived.
+- Whether a child inherits its parent's default markup when created, or starts from its own.
+- Whether the parent's item count rolls up the children (shown as "مع الفروع" for information, not as a rule).
+- Maximum tree depth, whether sort order is per parent (the sample uses per-parent numbering for children), and whether codes of children carry the parent's code.
+- Whether the markup has limits (a range, decimals); the field accepts a plain number.
+- The 41 أبواب, their names and figures in the mockup are samples.
+
+
+---
+
+## The أبواب module, finished (`babs.html`, extended: create, edit and first run)
+
+The module stays one file. The tree, the margin editor, move, archive, create, edit and the first-run state are one flow around one tree, and the user needs the tree in view while doing any of them, so a second file would only duplicate the shell. `?view=create|createerr|createchild|createpick|createsave|created|editdirty|editerr|empty` opens each new state.
+
+### Create is a panel over the tree, not a page
+
+A user creating أعمال كهرباء is looking at where it belongs: the siblings, the sort numbers, the parent. A full page would remove that context and add a route, a back button and a lost scroll position for a form of five fields. So creating uses the kit's side panel (desktop) and bottom sheet (phone), the same surface the edit uses, which makes create and edit one component with two headings. The tree stays visible behind the scrim. After saving, the new row appears in place, highlighted in the saved-band tint, scrolled into view, with its parent opened if it is a child.
+
+Entry points: the page's primary "باب جديد" (and the phone bar's primary), and "إضافة باب فرعي" in a row's menu, which opens the same panel titled "باب فرعي جديد", with "ضمن: أعمال خرسانة" in the subtitle and the parent filled in.
+
+### The create form
+
+Fields in order (the code input sits after the English name), all in the kit's field wrapper (label, control, one footer line where the error REPLACES the hint, so nothing reflows):
+1. الاسم بالعربية (required).
+2. الاسم بالإنجليزية (optional, hint "اختياري.").
+3. يتبع: a field-shaped button showing "بلا أب (باب رئيسي)" or the parent's name. It opens a SECOND STEP inside the same panel (not a dialog on top, which the stacking rules forbid): the header becomes a back link "رجوع إلى الباب الجديد" plus the title "اختيار الأب", the body is the tree picker (the kit's radio tree, "بلا أب" first), and the footer says in a sentence what will happen ("سيكون الباب الجديد فرعاً من «أعمال بناء».") with "تم" and "إلغاء". Choosing returns to the form with the parent set and the sort order re-suggested.
+4. الترتيب: a number, NOT prefilled (a suggested "next free" number would presuppose per-parent numbering, which is not ruled), placeholder "مثال: 90", hint "رقم يحدّد موضع الباب في القائمة." It exists on create only.
+5. الهامش الافتراضي: a number with a "%" affix, REQUIRED, empty, with the placeholder "مثال: 15" and the hint "يبدأ به كل بند جدول كميات جديد." It is a value the user types. There is no inherited or suggested value, because whether a child inherits its parent's margin is not ruled. The placeholder is dim example text, not a default.
+6. رمز الباب: a typed, required, unique code (see below); it sits right after the English name in the form.
+
+Footer: "إنشاء الباب" (primary) and "إلغاء". Busy: the primary keeps its size, shows the spinner and "جارٍ الإنشاء…", cancel is disabled.
+
+### The code is TYPED on create, immutable afterwards (corrected)
+
+An earlier version of this design showed the باب code as generated ("يُولَّد عند الحفظ"). That was wrong: `CreateBab` takes a `Code` the user supplies and `KAFF-204` has `bab.field.code` as an input. So on create the code is a real input: label "رمز الباب" with the required marker, Latin and uppercase (`text-transform: uppercase`, `dir="ltr"`, no autocapitalize guessing), placeholder "SCF", hint "حروف لاتينية كبيرة. فريد في النظام كله، ولا يمكن تغييره بعد الإنشاء." Its error replaces the hint: "رمز الباب مطلوب.", "حروف لاتينية فقط.", and on collision "الرمز CON مستخدم لباب آخر. الرموز فريدة في النظام كله." (the only uniqueness rule in the system is the code, globally and case-insensitively, `ux_babs_code`). On EDIT the code is shown read-only with a lock and "لا يُغيَّر بعد الإنشاء." because that is true there. The mockup uses the seeded codes (`D-145 §1`): CON, MAS, PLU, ELE, HVA, FIN, CAR, MET. The child codes (CNR, CNP, CNS, TIL, PNT, GYP) and OLD are sample data only. (The catalogue ITEM code is still shown as generated; verify that against `CreateItem` the way this one was verified, see the catalogue section.)
+
+### Validation, shown
+
+- Required: "اسم الباب بالعربية مطلوب." and the code errors above. The error sits in the footer slot in place of the hint, with an alert icon and a red border plus inner ring. There is NO duplicate-name error: no rule, ruling or constraint says two أبواب cannot share an Arabic name (an earlier version invented one; this is the same mistake as D-179, a plausible rule born inside a design). Whether names must be unique, and at what scope, is open (see "Still open").
+- Margin: "الهامش الافتراضي مطلوب." when empty and "أدخل رقماً، مثل 15." when not a number. No range is stated, because none is ruled.
+- A failed save also shows one banner at the top of the form ("لم يُنشأ الباب. صحّح الحقول المعلَّمة." or "تعذّر الحفظ...") in the refusal shape; the field errors stay next to their fields. On a phone the first error should be scrolled into view.
+- Errors appear on save, not while typing.
+
+### Edit (corrected)
+
+The details panel is the edit form and `EditBab` takes only `(NameAr, NameEn, DefaultMarkup)`: so the panel edits the Arabic name and the English name, and nothing else. The sort order is shown READ-ONLY with a lock and "لا يُغيَّر بعد الإنشاء." (not removed: the user needs to see why the tree is ordered the way it is, and a locked field says that it cannot be changed, while an absent one would suggest it is changeable somewhere else). The code is read-only for the same reason. The parent is a read-only path with "نقل إلى…" (move has its own endpoint and picker). The margin is read-only here with a pointer to the row editor, which is its one edit path. Save is disabled until something changes; an unsaved-change notice appears; errors replace hints. Only the name error exists (no sort error).
+
+### First run: an empty tree that teaches
+
+A fresh install has no أبواب and the catalogue cannot take items without one. The empty state is a bordered panel, not an icon and "no data": the title "ابدأ بأول باب", two sentences saying what a باب is and that the catalogue needs at least one, the single primary "باب جديد" (the page header's and the bar's primaries are hidden in this state so there is only one), then three numbered steps (this one really is a sequence): create أبواب here, add items and prices in the price catalogue, and each BOQ line then starts from its باب's default margin. Beside it, a dashed "شكل الشجرة" box with the tag "مثال، وليس بيانات" shows a two-level example (أعمال خرسانة with two children, أعمال كهرباء) so a person sees the shape before making one. On a phone the example stacks below. The count line says "لا توجد أبواب".
+
+### Archive: a refusal when the باب holds items, a quiet confirmation when it does not (corrected)
+
+`D-130 §5` and `KAFF-213` rules 3 to 5: a باب holding ACTIVE ITEMS cannot be archived, the refusal names the count, and cascading was rejected. The count is the باب's OWN active items, not its subtree. Active CHILD أبواب do not block archiving, and archiving does not touch them. The earlier design drew a confirm-and-go for every باب with a subtree count; that flow would be rejected by the server. Now:
+- Choosing "أرشفة…" on a باب with own active items shows a REFUSAL in place of the row (no confirmation step, because the answer is already known): the kit's refusal shape (red fill, red bar, alert icon): "تعذّرت أرشفة «أعمال خرسانة». فيه 17 بنداً نشطاً. انقل هذه البنود إلى باب آخر أو أرشفها أولاً، ثم أعد المحاولة." with a way forward ("عرض البنود (17)", a link to the catalogue) and "إغلاق". On a phone it is a full-width block under the row with two 52px buttons. The mockup shows the own count (17), not the subtree total; the row still shows "(118 مع الفروع)" as information only.
+- Choosing it on a باب with NO own active items shows the quiet recoverable confirmation: "أرشفة «أعمال تشطيبات»؟ لا بنود نشطة فيه، ولا تتأثر أبوابه الفرعية (3). يمكنك استرجاعه من «مؤرشف» في أي وقت." The sentence about the children states what the code does (nothing happens to them); it does not say what an active child under an archived parent MEANS (open).
+- The menu item stays enabled and leads to the refusal; it is not disabled, because a disabled item explains nothing on a phone. The details panel's "أرشفة" behaves the same.
+- No new kit part: the refusal reuses the kit's server-refusal-with-a-next-step shape. Rule added: when the precondition is already known on the client, show the refusal immediately instead of an unneeded confirmation.
+
+### Unarchive is designed ahead of the backend
+
+"إلغاء الأرشفة" for a باب (the row menu item and the in-place restore band) is designed, but no unarchive endpoint exists for a باب: only `ArchiveBab` exists. `D-130 §4` rules that archived records can be un-archived in general, and a backend story is being cut. Do not build the button against an API that is not there; build it when the endpoint ships. (Items already have unarchive.)
+
+### Child inheritance: confirmed none
+
+`KAFF-204` rule 2: every باب carries its own default markup. There is no inheritance and no null. The create form asks for the margin outright, which was right. (This was confirmed, no longer pending.)
+
+### Holes found in the module (neither of us had named them)
+
+1. The catalogue's own first run: with no أبواب, the catalogue's "بند جديد" has nothing to attach to. The catalogue should show a pointer ("أنشئ باباً أولاً" with a link here) instead of a form that cannot be saved. Not drawn yet; it is a change to the catalogue screen.
+2. Items and أبواب are coupled in three ways (move, archive, rename), which is why the list always shows the item count; this is why the count is on the archive message.
+3. Duplicate names: no rule exists (removed from the design). It is an open question below.
+4. Deleting does not exist (archive only), so a باب created by mistake lives in the archive. The recoverable pattern makes this cheap, but a "created by mistake" cleanup is a business question.
+5. The sort order is typed. If the real need is only "put this before that", a move up and move down control would be kinder; not designed, because the screen is touched rarely.
+6. Permissions: who creates, edits and archives أبواب is not stated. The panel has one shape (editable) in the mockup; if a role may only read, the kit's read-only rule applies (lock plus one reason line).
+
+### Kit additions from the module
+
+- Two-step panel: a back link replaces the heading and the body is replaced; no stacking. Shown in the kit sheet.
+- The field-shaped button that opens a picker. (A "generated field with no value yet" was part of an earlier version of this list and is withdrawn: the باب code is typed.)
+- First-run state pattern: title, two sentences, one primary, the sequence as numbered steps (only when it truly is a sequence), and a labelled example that is visibly not data. One primary only: hide the page-level primary while the first-run state is shown.
+- Created-row highlight: the new row takes the saved-band tint and the band follows it, scrolled into view.
+
+
+### Still open for the أبواب module (the BA pass refused to guess, and so does the design)
+
+1. What an ACTIVE child under an ARCHIVED parent means. Nothing checks it today: a child can be created, or an item filed, under an archived باب. The mockup avoids drawing the case (the archived sample has no children), and the tree code that hides archived roots also hides their children only because there is nothing else to show; this is not a decision. Needs a ruling before the tree shows such a pair.
+2. Whether changing a باب's default markup is Owner-only like catalogue cost (`D-177 §3`) or stays with the Technical Office as it is today. The mockup shows the editor to the user in the frame; if Owner-only, the kit's read-only shape applies (lock and one reason line, pencil removed).
+3. Whether two أبواب may share an Arabic name, and if not, tree-wide or per parent.
+4. Whether sort order is per parent or global, and what two siblings with the same number do (today a silent tie-break by code, which is behaviour, not a decision). The sample numbers (10, 20... for roots and 1, 2, 3 for children) are not a rule.
+
+
+---
+
+## The catalogue module, finished (`catalogue.html` extended; `catalogue-import.html` new)
+
+The module is two files. Create, edit and the first-run states are one flow around the list and live in `catalogue.html` (same panel, same page). The import is a task of its own (a file, a preview of hundreds of rows, a decision, a result) that needs the full page width and its own back link, so it is a separate page, `catalogue-import.html`, reached from the list's "استيراد من Excel" button (and from the "no items" first-run state). `?view=...` opens each state in both files.
+
+### Create a catalogue item (a panel over the list, like the باب)
+
+The same reasoning as the أبواب: the list is the context, the form is five fields and a price section. It is the existing detail panel / bottom sheet, titled "بند جديد". Fields: الوصف بالعربية (required), الوصف بالإنجليزية (optional), الباب (required; a field-shaped button that opens a second step in the same panel with the أبواب as a radio list, back link on top), الوحدة (required; a field-shaped button that opens the kit's select popup with م³ م² م.ط عدد طن كجم مقطوعية, which is a sample list), then the prices, then the code. Errors replace hints. The create form shows only errors that are real rules: required fields and "not a number" on a price; there is no duplicate-description rule (this screen first showed one and it was removed for being invented, the same mistake as D-179).
+
+The code: the item code is shown as the kit's read-only generated field ("يُولَّد عند الحفظ", lock). Flagged: the باب code turned out to be typed, not generated, so verify the ITEM code the same way against `CreateItem` before building; if it is typed, it becomes an input exactly as on the باب form.
+
+### The two shapes of create
+
+- Owner: two required money fields, "سعر التكلفة" (marked داخلي) and "سعر البيع".
+- Technical Office (cannot set prices): the price section has no fields at all, only the heading "الأسعار" with a lock badge "يحدّدها المالك" and one plain sentence: "سيُحفظ البند بلا سعر، ويظهر في الكتالوج بعلامة «بلا سعر» حتى يحدّد المالك سعر التكلفة وسعر البيع." The primary button says what it will do: "إنشاء بند بلا سعر". A create by the Technical Office therefore means: a real, saved item with no price yet, visible to everyone who can see the catalogue, waiting for the Owner. Reason: a disabled or zero-filled price field would either look broken or, worse, store 0.00 as if it were a price; saying plainly that the item will be unpriced is honest and lets the person keep working.
+
+### Unpriced items (a new state of the list, found while designing this)
+
+An item without a price shows "—" in the cost cell and a dashed tag "بلا سعر" with a lock in the sell cell (phone: the tag in place of the figure, "تكلفة —" under it). It is never shown as 0.00. The Owner sees a count line link "2 بنود بلا سعر: عرضها" that filters to them (the Technical Office does not get it, since they cannot act on it). The Owner's details panel for such an item opens with a notice "هذا البند بلا سعر بعد. حدّد سعر التكلفة وسعر البيع." and empty price fields with the placeholder "غير محدد", Save enabled. The Technical Office's panel shows the read-only shape with "غير محدد" and the notice "هذا البند بلا سعر. يحدّد المالك سعر التكلفة وسعر البيع.". After a Technical Office create the list highlights the new row and shows the band "تم إنشاء «…». رمزه المولَّد CON-1030. بلا سعر: يحدّد المالك سعر التكلفة وسعر البيع."
+
+Business questions this raises, NOT decided here: whether an item may exist without a price at all (the domain may require non-null prices); whether an unpriced item can be used on a BOQ line; whether the Technical Office is meant to create items. The design answers "what does a Technical Office create mean" in the only way that does not invent a price, and flags these.
+
+### Edit
+
+The existing details panel covers editing completely: Arabic and English description, unit, the code (read-only), cost and sell (Owner edits, others read), archive. Nothing new is designed and there is no second edit path. One gap, named and not built: moving an item to another باب. If wanted, reuse the create form's second step (the باب radio list) behind a "نقل إلى باب…" button in the panel; it is a CatalogueManage action.
+
+### The catalogue's first run (a change to the screen already built)
+
+Two empty states, drawn as changes to the list screen. They hide the page's other primaries so there is one:
+- No أبواب (`nobabs`): the list is replaced by "أنشئ الأبواب أولاً": two sentences saying every item belongs to a باب and none exists yet, one primary "الانتقال إلى الأبواب" (a link to the أبواب screen), two numbered steps (create the أبواب there, then come back to add items or import), and a labelled example ("مثال، وليس بيانات") of how an item sits under a باب. "بند جديد", the import button and the search are hidden. Who may create أبواب is not stated, so the Technical Office text would need "اطلب من المالك" if they cannot; drawn for the Owner.
+- أبواب exist, no items (`noitems`): "لا توجد بنود في الكتالوج", two paths side by side: the primary "بند جديد" for a few items and the secondary "استيراد من Excel" for a batch, with a one-line explanation of each (the import is a single batch with a preview, not a sync).
+
+### Import from Excel (`catalogue-import.html`)
+
+Ruled and not changed by the design: a bulk load, not a sync (`spec.md` §4.1); an existing code warns first and updates on confirm (Nabil, 2026-10-06); the Technical Office cannot move a price through an import, and the server refuses the WHOLE confirm if any existing price would move without `CataloguePriceEdit` (D-177).
+
+The page is a sequence, so it has a numbered stepper (the one place numbering is true): 1 اختيار الملف، 2 المعاينة، 3 النتيجة. Back link "كتالوج الأسعار" above the title.
+
+1. Choose the file. A dashed drop zone with "اختيار ملف" and a card "ما الذي سيحدث" that states the three rules in plain words (a row without a code is a new item and its code is generated; a row with an existing code updates that item after the preview warns; it is a single batch, not a sync), the required columns as chips (الرمز، الوصف بالعربية، الوصف بالإنجليزية، الوحدة، الباب، سعر التكلفة (داخلي)، سعر البيع) and a link to a template file. For the Technical Office the page says up front, before they pick a file, that they cannot change existing prices by import and that new items come in unpriced. An unreadable file gives an error banner naming the file and the problem (wrong format, missing columns); nothing changes. Parsing shows the file chip, a spinner, "لم يتغير شيء في الكتالوج بعد".
+2. Preview (the important screen). A file chip (name, size, row count) with "اختيار ملف آخر". Three summary blocks that already separate the kinds of row by word, shape and border: جديدة 150 (plus icon, green pair), ستُحدَّث 62 with "48 منها تتغير أسعارها" (swap icon, ink outline), أخطاء 3 (warning triangle, red border, "لن تُطبَّق"). Under them a notice that states what will be overwritten ("62 بنداً موجوداً سيُستبدل ببيانات الملف... دفعة واحدة وليس مزامنة"). A segmented filter (الكل / جديدة / ستُحدَّث / أخطاء with counts) and the table. Every row has a status pill with a shape, the file's row number, the identity cell (description leads, code dim, or "الرمز يُولَّد" for new), باب, unit, cost (internal marker kept) and sell, and a last column "ما يتغير" (names the fields that change) or "سبب الخطأ". Rows that UPDATE show the new value bold with the old value struck beneath it, only on the cells that change, and a description change shows "كان: …" under the name. New rows show their figures plainly; error rows are tinted and say why ("الرمز CON-9999 غير موجود. الرموز تُولَّد ولا تُدخل: اترك الخلية فارغة لإضافة بند جديد."، "الباب «أعمال حديد» غير موجود"، "سعر التكلفة ليس رقماً"). On a phone each row is a stacked block with the same pill, the same struck-through before and after, and the same reasons.
+3. The apply bar (sticky on desktop; the primary in the bottom action bar on a phone): "سيُطبَّق: إضافة 150، وتحديث 62 (48 بتغيير سعر)" and "تُتخطّى 3 صفوف بها أخطاء. لا يمكن التراجع عن الاستيراد بعد تطبيقه.", with the primary "تطبيق الاستيراد" and "اختيار ملف آخر".
+4. The confirmation, the LOUD one. An import that rewrites 62 items and 48 prices cannot be undone, so it uses the irreversible pattern: a dialog (a bottom sheet on a phone) with the red-tint icon tile, "تطبيق الاستيراد؟", the numbers again ("سيُضاف 150 بنداً ويُحدَّث 62 بنداً موجوداً، منها 48 تتغير أسعارها"), the skipped count, "لا يمكن التراجع عن الاستيراد. تُسجَّل التغييرات في سجل التدقيق، ولا يوجد زر استرجاع.", the red "تأكيد الاستيراد", and "إلغاء" with initial focus. No type-to-confirm ceremony: the numbers in the dialog are the check. Busy: the button keeps its size, "جارٍ التطبيق…", cancel disabled.
+5. The result. All three steps checked. A green in-place banner "تم الاستيراد. أُضيف 150 بنداً، وحُدِّث 62 (48 منها بتغيير سعر)، وتُخطّي 3 صفوف. كل التغييرات مسجّلة في سجل التدقيق.", three count blocks, "عرض الكتالوج" (primary), "تنزيل تقرير الاستيراد", a link to the audit log, and the skipped rows with their reasons below so the person can fix the file.
+
+### The refusal path (Technical Office)
+
+The refusal is shown BEFORE the confirm, because the rule is knowable from the preview: the server rejects the whole confirm if any existing price would move without `CataloguePriceEdit`, so offering "apply" would be offering something that must fail.
+- In the preview, rows that would move a price are tinted and carry a lock pill "سعر لا تملك تغييره" instead of "تحديث"; the old and new figures stay visible.
+- A refusal banner in the page's red refusal shape heads the preview: "هذا الاستيراد مرفوض لحسابك. 48 صفاً يغيّر سعراً قائماً، وتغيير الأسعار للمالك وحده، والخادم يرفض الملف كله إن وُجد فيه تغيير سعر. أزل التغييرات السعرية من الملف ثم ارفعه من جديد، أو اطلب من المالك تطبيقه. الصفوف المعلَّمة بقفل هي التي تغيّر السعر. البنود الجديدة تُستورد بلا سعر."
+- The apply bar has no apply button at all (not a disabled one): it says "لا يمكنك تطبيق هذا الملف" with the reason, "اختيار ملف آخر", and "تنزيل قائمة الصفوف المرفوضة". There is no "apply the rest" option, because the server refuses the whole confirm.
+- If the server still refuses at confirm (the file changed or the role changed after the preview): a separate state, "رُفض التطبيق ولم يتغيّر أي شيء في الكتالوج", naming the cause and the count, confirming that nothing was added or updated, with "اختيار ملف آخر" and a way back.
+
+### Assumptions in the import that are NOT in the spec (flagged, adjust if wrong)
+
+1. A row with no code is a new item; a row with a code that does not exist is an error (codes are generated, not typed). If the real rule creates an item with the typed code, the error row becomes a new row.
+2. Rows with errors are skipped and the rest is applied; the alternative is to block the whole file on any error. The apply bar says how many are skipped, and the dialog repeats it.
+3. For the Technical Office, new rows in the file are imported without a price (the prices in the file are ignored for them). The spec only rules the refusal for moving existing prices.
+4. Whether unchanged rows (same data) appear in the preview at all; the mockup lists only rows that do something.
+5. The file layout (one sheet, the seven columns) and the template file are placeholders.
+
+### Holes found in the module
+
+1. A price-less item is a state the domain may not allow (see above); it is the cleanest design answer to "Technical Office creates" but needs a ruling.
+2. An import that rewrites prices is, on the Owner's side, a pricing decision: nothing shows the Owner the total effect before applying (for example the average change). The preview shows each row; a one-line aggregate ("48 أسعاراً تتغير، أكبر زيادة …") was not drawn because it is a business calculation.
+3. The result is the only place the skipped rows live; the report download is the lasting record. Whether the audit log records an import as one entry or one per item was not stated; the design only says "كل التغييرات مسجّلة".
+4. Moving an item between أبواب has no designed screen (named under Edit).
+5. Archiving an item that is used in an open BOQ was left to the builder earlier and still has no design.
+6. A very large file (thousands of rows): the preview shows a sample ("يعرض 9 من 215 صفاً") and a load-more; real paging and filtering of the preview is implied by the segmented filter, not drawn.
+
+### Kit additions from the catalogue module
+
+- Unpriced marker: "—" plus a dashed lock tag "بلا سعر" in place of a figure; never 0.00.
+- Role-shaped create form: the section a role may not fill is replaced by its heading, a "who decides" badge and one sentence, not by disabled fields; the primary button names the consequence.
+- Import diff cell: new value bold, old value struck beneath, only on cells that change; status pills for new, update and error with shapes.
+- Stepper for a true sequence, summary count blocks, a sticky apply bar that carries what will happen and "can't undo", and the irreversible confirmation used for a bulk action.
+- First-run and no-items states (the same pattern as the أبواب first run).

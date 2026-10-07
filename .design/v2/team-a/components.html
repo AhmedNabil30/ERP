@@ -358,6 +358,32 @@ bdi,.ltr{unicode-bidi:isolate}
 .twoc{display:grid;gap:14px}
 .twoc .tag{display:inline-flex;align-items:center;gap:6px;font:700 .8125rem/1 var(--body);margin-block-end:2px}
 
+
+/* ===== KIT+ (from the أبواب screen): tree row, deliberate value editor, tree picker ===== */
+.g{inline-size:24px;flex:none;position:relative}
+.g::before{content:"";position:absolute;inset-block:0;inset-inline-start:22px;inline-size:1px;background:var(--line)}
+.tg{inline-size:44px;block-size:44px;flex:none;display:grid;place-items:center;border:0;background:transparent;color:var(--ink);border-radius:var(--radius)}
+.tg:hover,.tg.is-hover{background:var(--hover)}
+.tg svg{inline-size:18px;block-size:18px;transform:rotate(90deg)}
+[dir="ltr"] .tg svg{transform:rotate(-90deg)}
+.tg[aria-expanded="true"] svg{transform:none}
+.tg.sp{visibility:hidden}
+.trw{display:flex;align-items:stretch;min-block-size:48px;border-block-end:1px solid var(--line);background:var(--surface)}
+.trw .nmw{display:flex;align-items:baseline;gap:10px;align-self:center}
+.trw .nmw .nm{font-weight:600}.trw .nmw .cd{color:var(--dim);font-size:.8125rem}.trw .nmw .kc{color:var(--dim);font-size:.8125rem}
+.trw .tg{align-self:center}
+.edb{border:2px solid var(--ink);border-radius:var(--radius);padding:14px 16px;display:grid;gap:10px;background:var(--surface)}
+.edb h5{margin:0;font:700 1rem/1.4 var(--display)}
+.edb .why{color:var(--dim);font-size:.9375rem;line-height:1.55}
+.edb .delta{display:flex;align-items:center;gap:8px;font-weight:600;font-size:.9375rem}
+.edb .btns{display:flex;gap:10px;flex-wrap:wrap}
+.pk{display:flex;align-items:center;gap:12px;min-block-size:48px;padding-inline-end:12px;border-radius:var(--radius);cursor:pointer;position:relative}
+.pk:hover{background:var(--hover)}
+.pk .rb{inline-size:24px;block-size:24px;border-radius:50%;border:2px solid var(--fieldline);background:var(--field);flex:none;margin-inline-start:12px}
+.pk.on .rb{background:var(--ink);box-shadow:inset 0 0 0 4px var(--field)}
+.pk .pn{font-weight:500}.pk .pc{color:var(--dim);font-size:.8125rem}
+.pk.dis{opacity:.5}.pk .why{color:var(--dim);font-size:.8125rem;margin-inline-start:auto}
+
 /* ================= FEEDBACK ================= */
 .ban{display:flex;gap:12px;align-items:flex-start;padding:12px 16px;border-radius:var(--radius);border-inline-start:6px solid var(--err-bar);background:var(--err-bg);color:var(--err-ink);font-weight:500;line-height:1.55}
 .ban svg{margin-block-start:2px}
@@ -476,7 +502,7 @@ bdi,.ltr{unicode-bidi:isolate}
 <!-- ============ KIT+ ============ -->
 <section class="sec" id="s-kitplus">
   <h2>إضافات من شاشة الكتالوج</h2>
-  <p class="spec">أجزاء لم تكن في المجموعة وأضافتها شاشة كتالوج الأسعار: صف مجموعة قابل للطي، صف «عرض المزيد»، علامة الحقل الداخلي، علامة الصف المؤرشف، الاستعادة في المكان، والحقل المعدَّل غير المحفوظ. (التأكيد الهادئ في قسم إجراءات الصف.) التفاصيل والمواصفات في ملف README قسم «الكتالوج».</p>
+  <p class="spec">أجزاء لم تكن في المجموعة وأضافتها شاشة كتالوج الأسعار: صف مجموعة قابل للطي، صف «عرض المزيد»، علامة الحقل الداخلي، علامة الصف المؤرشف، الاستعادة في المكان، والحقل المعدَّل غير المحفوظ، وصف الشجرة، ومحرِّر القيمة المتعمَّد، ومنتقي الشجرة (شاشة الأبواب). (التأكيد الهادئ في قسم إجراءات الصف.) التفاصيل والمواصفات في ملف README قسم «الكتالوج».</p>
   <div class="grid g2" id="kpgrid"></div>
 </section>
 
@@ -681,6 +707,19 @@ const col=(rec)=>{
   ${cap(rec?'نافذة تأكيد: أيقونة محايدة، زر أساسي عادي، والتركيز الابتدائي على «أرشفة» لأنه قابل للتراجع':'نافذة تأكيد: أيقونة حمراء، زر أحمر، والتركيز الابتدائي على «إلغاء»',dlg)}</div>`;
 };
 $('#twoconf').innerHTML=col(true)+col(false);
+
+
+/* ---- kit+ tree ---- */
+const trr=(d,name,code,kids,open)=>`<div class="trw">${Array.from({length:d}).map(()=>'<span class="g"></span>').join('')}${kids?`<button type="button" class="tg" aria-expanded="${open}" aria-label="فروع">${i('chev','s')}</button>`:'<span class="tg sp"></span>'}<div class="nmw"><span class="nm">${name}</span><bdi class="cd" dir="ltr">${code}</bdi>${kids?`<span class="kc">${kids} فروع</span>`:''}</div></div>`;
+$('#kpgrid').insertAdjacentHTML('beforeend',
+ cap('صف الشجرة: الاسم أولاً والرمز خافتاً بجانبه. زر الفتح 44 × 44 عند الطرف الأول، ويُترك فراغ بنفس العرض للورقة ليبقى الاسم محاذياً. كل مستوى يزيح 24 بكسل على الطرف الأول (يقلب مع الاتجاه) وخط رأسي رفيع تحت زر الأب',`<div style="border:1px solid var(--line);border-radius:var(--radius);overflow:hidden">${trr(0,'أعمال خرسانة','CON',3,true)}${trr(1,'خرسانة مسلحة','CNR',0)}${trr(1,'خرسانة عادية','CNP',0)}${trr(0,'أعمال تشطيبات','FIN',3,false)}${trr(0,'أعمال بناء','MSN',0)}</div>`)+
+ cap('محرِّر القيمة المتعمَّد: تتحول القيمة إلى صف محرِّر محاط بإطار داكن في مكانها، يشرح علاقتها بما يتبعها، ويُظهر القيمة من/إلى قبل الحفظ. زر الحفظ معطّل حتى يتغير الرقم. لا نافذة ولا تأكيد ثانٍ',`<div class="edb"><h5>الهامش الافتراضي لـ «أعمال خرسانة»</h5><div class="field"><label>الهامش الافتراضي (%)</label><div class="ctl num dirty" style="inline-size:150px"><input value="18" dir="ltr" style="text-align:end"><span class="aff">%</span></div></div><div class="delta"><bdi class="money" dir="ltr">18%</bdi>${i('chev','s').replace('<svg','<svg style="transform:rotate(90deg)"')}<bdi class="money" dir="ltr">15%</bdi></div><div class="why">يبدأ به كل بند جدول كميات جديد في المشاريع، ويمكن تغييره لكل بند هناك. تغييره هنا لا يعيد تسعير أي بند قائم.</div><div class="btns"><button class="btn sm" type="button">حفظ الهامش</button><button class="btn sec2 sm" type="button">إلغاء</button></div></div>`)+
+ cap('منتقي الشجرة (للنقل إلى أب): راديو بمسافات بادئة، الخيار الحالي معلَّم، والباب نفسه وفروعه معطّلة مع السبب، وأعلاها «بلا أب». لا سحب وإفلات',`<div style="border:1px solid var(--line);border-radius:var(--radius);padding:8px;background:var(--surface)"><div class="pk"><span class="rb"></span><span class="pn">بلا أب (باب رئيسي)</span></div><div class="pk"><span class="rb"></span><span class="pn">أعمال خرسانة</span><bdi class="pc" dir="ltr">CON</bdi><span class="why">الحالي</span></div><div class="pk dis" style="padding-inline-start:24px"><span class="rb"></span><span class="pn">خرسانة مسلحة</span><bdi class="pc" dir="ltr">CNR</bdi><span class="why">هذا الباب</span></div><div class="pk on"><span class="rb"></span><span class="pn">أعمال تشطيبات</span><bdi class="pc" dir="ltr">FIN</bdi></div></div>`)+
+ cap('بعد حفظ قيمة معتمدة: شريط أخضر في المكان يذكر من/إلى ما الذي لم يتغير',`<div class="doneb" role="status">${i('check','s')}<span>تم حفظ الهامش الافتراضي: من <bdi class="money" dir="ltr">15%</bdi> إلى <bdi class="money" dir="ltr">18%</bdi>. لم يتغيّر أي سعر قائم.</span></div>`));
+
+$('#kpgrid').insertAdjacentHTML('beforeend',
+ cap('الخطوة الثانية داخل لوحة: يُستبدل محتوى اللوحة نفسها برأس فيه رابط «رجوع» (لا نافذة فوق نافذة). مثال: اختيار الأب أثناء إنشاء باب',`<div style="border:1px solid var(--line);border-radius:var(--radius);padding:12px 16px"><a href="#" class="back" style="min-block-size:44px">${i('left','s')}رجوع إلى الباب الجديد</a><div style="font:700 1.25rem/1.4 var(--display)">اختيار الأب</div></div>`)+
+ cap('حقل اختيار يفتح الخطوة الثانية: يبدو كحقل مع سهم في الطرف، ويعرض القيمة الحالية',`<div class="field"><label>يتبع</label><div class="ctl" style="cursor:pointer"><span class="val">بلا أب (باب رئيسي)</span><span class="tail">${i('chev','s')}</span></div></div>`));
 
 /* feedback */
 $('#banners').innerHTML=
