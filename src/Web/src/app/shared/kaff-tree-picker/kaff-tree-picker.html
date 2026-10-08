@@ -1,26 +1,28 @@
 <div class="picker" role="radiogroup" [attr.aria-label]="groupLabel()">
-  <label class="pk" [class.pk--cur]="rootCurrent()">
-    <input
-      type="radio"
-      [name]="name"
-      value=""
-      [checked]="value() === ''"
-      [attr.data-testid]="testIdPrefix() + 'root'"
-      (change)="onChoose('')"
-    />
-    <span class="rb"></span>
-    <span class="pn">{{ rootLabel() }}</span>
-    @if (rootCurrent()) {
-      <span class="why">{{ currentLabel() }}</span>
-    }
-  </label>
+  @if (showRoot()) {
+    <label class="pk" [class.pk--cur]="rootCurrent()">
+      <input
+        type="radio"
+        [name]="name"
+        value=""
+        [checked]="value() === ''"
+        [attr.data-testid]="testIdPrefix() + 'root'"
+        (change)="onChoose('')"
+      />
+      <span class="rb"></span>
+      <span class="pn">{{ rootLabel() }}</span>
+      @if (rootCurrent()) {
+        <span class="why">{{ currentLabel() }}</span>
+      }
+    </label>
+  }
 
   @for (node of nodes(); track node.id) {
     <label
       class="pk"
       [class.pk--dis]="!!node.disabledReason"
       [class.pk--cur]="node.current && !node.disabledReason"
-      [style.padding-inline-start.px]="(node.depth + 1) * 24"
+      [style.padding-inline-start.px]="(node.depth + (showRoot() ? 1 : 0)) * 24"
     >
       <input
         type="radio"

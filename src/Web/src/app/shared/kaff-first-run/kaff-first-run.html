@@ -1,0 +1,22 @@
+<div class="firstrun" [attr.data-testid]="testId()">
+  <div class="fr-main">
+    <span class="fr-icon"><kaff-icon [name]="icon()" /></span>
+    <h2>{{ title() }}</h2>
+    <p>{{ body() }}</p>
+    <div class="fr-actions"><ng-content select="[frActions]" /></div>
+    @if (steps().length > 0) {
+      <ol class="fr-steps">
+        @for (step of steps(); track $index) {
+          <li><span>{{ step }}</span></li>
+        }
+      </ol>
+    }
+  </div>
+  <div class="fr-ex" [attr.data-testid]="exampleTestId()">
+    <div class="cap">
+      <span>{{ exampleTitle() }}</span>
+      <span class="tag">{{ exampleTag() }}</span>
+    </div>
+    <ng-content select="[frExample]" />
+  </div>
+</div>

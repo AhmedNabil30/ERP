@@ -1,0 +1,88 @@
+/* The catalogue create panel: layout only. Every part inside it is the kit's (detail panel, field, money
+   field, picker button, select, tree picker, banner, button); this file arranges them. */
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-block-start: 2px;
+  color: var(--dim);
+  font-size: 0.875rem;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.body > * {
+  flex: none;
+}
+
+.sec-h {
+  padding-block-start: 6px;
+  margin-block-end: -6px;
+}
+
+.sec-h h3 {
+  font: 700 var(--text-md) / 1.4 var(--display);
+}
+
+/* The code is typed in capitals; what is stored is uppercase either way. */
+.code-input {
+  text-transform: uppercase;
+}
+
+/* The back link above the second step's title (the README's two-step panel). */
+.bk {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: var(--tap-target);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: 600 var(--text-sm) / 1.3 var(--body);
+  cursor: pointer;
+}
+
+.bk:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+:host-context([dir='rtl']) .bk kaff-icon {
+  transform: scaleX(-1);
+}
+
+.actions {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.sum {
+  flex: 1 1 100%;
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--text-sm);
+}
+
+@media (width <= 820px) {
+  .actions {
+    --kaff-button-size: 3.5rem;
+  }
+
+  .save {
+    flex: 1;
+  }
+
+  .save ::ng-deep .kaff-button {
+    inline-size: 100%;
+  }
+}

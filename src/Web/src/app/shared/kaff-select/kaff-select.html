@@ -1,6 +1,9 @@
 <div class="sel">
   <select
+    [id]="controlId()"
     [attr.aria-label]="i18n.t(ariaLabelKey())"
+    [attr.aria-describedby]="describedBy()"
+    [attr.aria-invalid]="invalid() ? 'true' : null"
     [attr.data-testid]="testId()"
     (change)="onChange($event)"
   >

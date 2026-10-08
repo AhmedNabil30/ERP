@@ -24,6 +24,11 @@ select:hover {
   border-color: var(--ink);
 }
 
+select[aria-invalid="true"] {
+  border-color: var(--err-bar);
+  box-shadow: inset 0 0 0 1px var(--err-bar);
+}
+
 .chev {
   position: absolute;
   inset-inline-end: 12px;

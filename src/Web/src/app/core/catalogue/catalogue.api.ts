@@ -52,12 +52,6 @@ export interface CatalogueImportRowFailure {
   readonly value: string | null;
 }
 
-/** `POST /api/catalogue-items/import`'s `200` body. `AC-200-H`: every good row in, every bad one named. */
-export interface CatalogueImportResult {
-  readonly createdCount: number;
-  readonly failures: readonly CatalogueImportRowFailure[];
-}
-
 /**
  * `KAFF-201` — one new code a re-import would add, named before anything changes (`AC-201-B`).
  * D-135: money crosses the wire as a string. Never `Number()` these.
@@ -118,8 +112,7 @@ export interface CatalogueItemEdit {
  * Nabil. A second rounding rule here would answer his question in a file nobody will read.
  *
  * **There is no `get(id)`.** Unlike `ClientsApi`, the API this feature was built against ships no
- * `GET /api/catalogue-items/{id}` — see `catalogue-form-page.ts` for how the edit screen copes and
- * the gap this leaves.
+ * `GET /api/catalogue-items/{id}`, so the item panel opens an item from the list already loaded.
  */
 @Injectable({ providedIn: 'root' })
 export class CatalogueApi {
@@ -178,20 +171,6 @@ export class CatalogueApi {
   async moveToBab(id: string, babId: string): Promise<{ readonly id: string; readonly babId: string }> {
     return await firstValueFrom(
       this.http.put<{ id: string; babId: string }>(`api/catalogue-items/${id}/bab`, { babId }),
-    );
-  }
-
-  /**
-   * `KAFF-200` — uploads the file exactly as chosen. **Nothing here parses it**; the sheet is read by
-   * the server (D-136), never in the browser. `200` with the row-level report, or a file-level `400`
-   * carrying `errors.master.catalogue_import_failed`.
-   */
-  async import(file: File): Promise<CatalogueImportResult> {
-    const body = new FormData();
-    body.set('file', file);
-
-    return await firstValueFrom(
-      this.http.post<CatalogueImportResult>('api/catalogue-items/import', body),
     );
   }
 

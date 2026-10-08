@@ -1,248 +1,538 @@
 <section class="import" data-testid="catalogue-import">
-  <div class="header-row">
-    <h1 class="title">{{ i18n.t('catalogue.import.title') }}</h1>
-    <a routerLink="/catalogue" class="back-link" data-testid="catalogue-import-back">
-      {{ i18n.t('catalogue.action.back_to_list') }}
-    </a>
-  </div>
+  <a class="back" routerLink="/catalogue" data-testid="catalogue-import-back">
+    <kaff-icon [name]="'back'" [small]="true" />
+    {{ i18n.t('catalogue.list.title') }}
+  </a>
+  <h1 class="title">{{ i18n.t('catalogue.import.title') }}</h1>
 
-  <!-- One card, not three stacked bands — apple-erp-design §3. The file picker and the result report
-       are not form fields and stay structurally as they are (story KAFF-933); only the frame, the
-       buttons and the message list convert. -->
-  <div class="card">
-    <!-- AC-200-E: rendered as part of the screen, before a file is ever chosen — not a tooltip. -->
-    <p class="not-a-sync" data-testid="catalogue-import-not-a-sync">
-      {{ i18n.t('catalogue.import.not_a_sync') }}
-    </p>
+  <kaff-stepper
+    [steps]="stepLabels()"
+    [current]="stepIndex()"
+    [allDone]="step() === 'result'"
+    [ariaLabel]="i18n.t('catalogue.import.steps_label')"
+    testId="catalogue-import-steps"
+  />
 
-    <!-- AC-200-I: the template is reachable from here before a file is ever chosen. -->
-    <a
-      [attr.href]="templateUrl"
-      [attr.download]="templateFilename"
-      class="template-link"
-      data-testid="catalogue-import-download-template"
-    >
-      {{ i18n.t('catalogue.import.download_template') }}
-    </a>
-
-    <form class="upload" (submit)="$event.preventDefault(); onSubmit()">
-      <label class="file-label" for="catalogue-import-file">
-        {{ i18n.t('catalogue.import.choose_file') }}
-      </label>
-      <input
-        id="catalogue-import-file"
-        type="file"
-        class="file-input"
-        accept=".xlsx"
-        data-testid="catalogue-import-file"
-        (change)="onFileChosen($event)"
-      />
-
-      @if (selectedFile(); as file) {
-        <p class="file-name" data-testid="catalogue-import-file-name">
-          <bdi translate="no">{{ file.name }}</bdi>
-        </p>
-      }
-
-      <kaff-button
-        variant="primary"
-        type="submit"
-        [disabled]="!canSubmit()"
-        [busy]="uploading()"
-        testId="catalogue-import-submit"
-      >
-        {{ uploading() ? i18n.t('catalogue.import.uploading') : i18n.t('catalogue.import.confirm') }}
-      </kaff-button>
-    </form>
-
-    @if (refusal(); as key) {
-      <p class="refusal" role="alert" data-testid="catalogue-import-refusal">{{ i18n.t(key) }}</p>
+  <!-- ===== step 1: choose the file ===== -->
+  @if (step() === 'choose') {
+    @if (fileRefusal(); as bad) {
+      <kaff-banner tone="refusal" icon="error" testId="catalogue-import-refusal">
+        <b>{{ i18n.t('catalogue.import.file_bad_title', { name: bad.fileName }) }}</b>
+        {{ i18n.t(bad.key) }}
+        {{ i18n.t('catalogue.import.file_bad_hint', { limit: fileLimitMb }) }}
+      </kaff-banner>
     }
 
-    @if (result(); as outcome) {
-      <p class="succeeded" role="status" aria-live="polite" data-testid="catalogue-import-succeeded">
-        {{ i18n.t('catalogue.import.succeeded', { count: outcome.createdCount }) }}
-      </p>
+    @if (!canEditPrices()) {
+      <kaff-banner tone="note" icon="lock" testId="catalogue-import-owner-only">
+        <b>{{ i18n.t('catalogue.import.to_notice_title') }}</b>
+        {{ i18n.t('catalogue.import.to_notice_body') }}
+      </kaff-banner>
+    }
 
-      @if (outcome.failures.length > 0) {
-        <div class="failures" data-testid="catalogue-import-failures">
-          <h2 class="failures-title">{{ i18n.t('catalogue.import.rejected') }}</h2>
+    @if (parsing()) {
+      <div class="chiprow">
+        <span class="chip" data-testid="catalogue-import-file-name">
+          <kaff-icon [name]="'file'" [small]="true" />
+          <bdi dir="ltr">{{ file()?.name }}</bdi>
+          <span class="sz"><bdi dir="ltr">{{ fileSizeText() }}</bdi></span>
+        </span>
+      </div>
+      <div class="card parsing" role="status" aria-busy="true" data-testid="catalogue-import-parsing">
+        <h2>{{ i18n.t('catalogue.import.parsing_title') }}</h2>
+        <p>{{ i18n.t('catalogue.import.parsing_hint') }}</p>
+        <div class="prog" aria-hidden="true"><i></i></div>
+      </div>
+    } @else {
+      <div class="two">
+        <div class="card">
+          <div
+            class="drop"
+            [class.drop--over]="dragging()"
+            data-testid="catalogue-import-drop"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave()"
+            (drop)="onDrop($event)"
+          >
+            <span class="ico"><kaff-icon [name]="'upload'" /></span>
+            <h2>{{ i18n.t('catalogue.import.drop_title') }}</h2>
+            <p>{{ i18n.t('catalogue.import.drop_hint') }}</p>
+            <input
+              #picker
+              type="file"
+              hidden
+              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              data-testid="catalogue-import-file"
+              (change)="onFileChosen($event)"
+            />
+            <kaff-button variant="primary" testId="catalogue-import-choose" (clicked)="picker.value = ''; picker.click()">
+              <kaff-icon [name]="'file'" [small]="true" />
+              {{ i18n.t('catalogue.import.drop_action') }}
+            </kaff-button>
+            <p class="small">{{ i18n.t('catalogue.import.drop_or') }}</p>
+          </div>
+        </div>
 
-          <div class="failures-scroll">
-            <table class="failures-table">
-              <caption class="sr-only">{{ i18n.t('catalogue.import.rejected') }}</caption>
-              <thead>
-                <tr>
-                  <th scope="col">{{ i18n.t('catalogue.import.column.row_number') }}</th>
-                  <th scope="col">{{ i18n.t('catalogue.import.column.field') }}</th>
-                  <th scope="col">{{ i18n.t('catalogue.import.column.reason') }}</th>
-                  <th scope="col">{{ i18n.t('catalogue.import.column.value') }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (failure of outcome.failures; track trackFailure($index)) {
-                  <tr [attr.data-testid]="'catalogue-import-failure-row-' + failure.rowNumber">
-                    <td>
-                      <bdi dir="ltr">{{ failure.rowNumber }}</bdi>
-                    </td>
-                    <td>{{ fieldLabel(failure.column) }}</td>
-                    <td>{{ i18n.t(failure.messageKey) }}</td>
-                    <td>
-                      @if (failure.value !== null) {
-                        <bdi translate="no">{{ failure.value }}</bdi>
-                      }
-                    </td>
-                  </tr>
+        <div class="card how">
+          <h2>{{ i18n.t('catalogue.import.how_title') }}</h2>
+          <ul>
+            <li>
+              <kaff-icon [name]="'plus'" [small]="true" />
+              <span>{{ i18n.t('catalogue.import.how_new') }}</span>
+            </li>
+            <li>
+              <kaff-icon [name]="'swap'" [small]="true" />
+              <span>{{ i18n.t('catalogue.import.how_existing') }}</span>
+            </li>
+            <li>
+              <kaff-icon [name]="'alert'" [small]="true" />
+              <span>{{ i18n.t('catalogue.import.how_blank') }}</span>
+            </li>
+            <li>
+              <kaff-icon [name]="'info'" [small]="true" />
+              <span data-testid="catalogue-import-not-a-sync">{{ i18n.t('catalogue.import.how_batch') }}</span>
+            </li>
+          </ul>
+
+          <h2>{{ i18n.t('catalogue.import.columns_title') }}</h2>
+          <p class="note">{{ i18n.t('catalogue.import.columns_note') }}</p>
+          <div class="cols" data-testid="catalogue-import-columns">
+            @for (column of templateColumns; track column.name) {
+              <span>
+                <bdi dir="ltr" translate="no">{{ column.name }}</bdi>
+                <small>{{ i18n.t(column.labelKey) }}</small>
+                @if (column.internal) {
+                  <kaff-badge tone="quiet">{{ i18n.t('catalogue.badge.internal') }}</kaff-badge>
                 }
-              </tbody>
-            </table>
+              </span>
+            }
           </div>
+          <a
+            class="lnk"
+            [attr.href]="templateUrl"
+            [attr.download]="templateFilename"
+            data-testid="catalogue-import-download-template"
+          >
+            <kaff-icon [name]="'download'" [small]="true" />
+            {{ i18n.t('catalogue.import.download_template') }}
+          </a>
         </div>
-      }
+      </div>
     }
+  }
 
-    <!-- KAFF-201 — a second import is its own action, not KAFF-200's flow reused (AC-201-B). -->
-    <div class="reimport" data-testid="catalogue-reimport">
-      <h2 class="reimport-title">{{ i18n.t('catalogue.action.reimport') }}</h2>
-
-      <kaff-button
-        variant="secondary"
-        [disabled]="!canReimport()"
-        [busy]="previewing()"
-        testId="catalogue-reimport-preview-button"
-        (clicked)="onPreviewReimport()"
-      >
-        {{ previewing() ? i18n.t('catalogue.import.previewing') : i18n.t('catalogue.action.reimport') }}
+  <!-- ===== step 2: the preview ===== -->
+  @if (step() === 'preview') {
+    <div class="chiprow">
+      <span class="chip" data-testid="catalogue-import-file-name">
+        <kaff-icon [name]="'file'" [small]="true" />
+        <bdi dir="ltr">{{ file()?.name }}</bdi>
+        <span class="sz"><bdi dir="ltr">{{ fileSizeText() }}</bdi></span>
+      </span>
+      <kaff-button variant="ghost" testId="catalogue-import-choose-another" (clicked)="onChooseAnother()">
+        <kaff-icon [name]="'swap'" [small]="true" />
+        {{ i18n.t('catalogue.import.choose_another') }}
       </kaff-button>
+    </div>
 
-      @if (reimportRefusal(); as key) {
-        <p class="refusal" role="alert" data-testid="catalogue-reimport-refusal">{{ i18n.t(key) }}</p>
+    @if (refusalReason(); as reason) {
+      <!-- The server refused the confirm: its own state, with the way out. -->
+      <kaff-banner tone="refusal" icon="error" testId="catalogue-reimport-refusal">
+        <b>{{ i18n.t(reason.title) }}</b>
+        {{ i18n.t(reason.key) }}
+        @if (reason.nothingChanged) {
+          {{ i18n.t('catalogue.import.refused_nothing_changed') }}
+        }
+      </kaff-banner>
+      <div class="actions">
+        <kaff-button variant="secondary" testId="catalogue-import-refused-another" (clicked)="onChooseAnother()">
+          <kaff-icon [name]="'swap'" [small]="true" />
+          {{ i18n.t('catalogue.import.choose_another') }}
+        </kaff-button>
+        <a class="lnk" routerLink="/catalogue" data-testid="catalogue-import-refused-back">{{
+          i18n.t('catalogue.action.back_to_list')
+        }}</a>
+      </div>
+    } @else {
+      <div class="sum">
+        <kaff-stat [value]="i18n.formatNumber(newCount())" [caption]="i18n.t('catalogue.import.stat_new_caption')" testId="catalogue-reimport-will-create">
+          <kaff-status-pill tone="new" icon="plus">{{ i18n.t('catalogue.import.stat_new') }}</kaff-status-pill>
+        </kaff-stat>
+        <kaff-stat
+          [value]="i18n.formatNumber(priceCount())"
+          [caption]="priceCaption()"
+          outline="ink"
+          testId="catalogue-reimport-will-affect"
+        >
+          <kaff-status-pill tone="overwrite" icon="swap">{{ i18n.t('catalogue.import.stat_price') }}</kaff-status-pill>
+        </kaff-stat>
+        <kaff-stat
+          [value]="i18n.formatNumber(errorCount())"
+          [caption]="i18n.t('catalogue.import.stat_error_caption')"
+          outline="error"
+          testId="catalogue-reimport-errors"
+        >
+          <kaff-status-pill tone="error" icon="alert">{{ i18n.t('catalogue.import.stat_error') }}</kaff-status-pill>
+        </kaff-stat>
+      </div>
+
+      @if (refused()) {
+        <kaff-banner tone="refusal" icon="error" testId="catalogue-import-refused-banner">
+          <b>{{ i18n.t('catalogue.import.refusal_title') }}</b>
+          {{ i18n.t('catalogue.import.refusal_body', { count: priceCount() }) }}
+        </kaff-banner>
+      } @else if (priceCount() > 0) {
+        <kaff-banner tone="note" icon="alert" testId="catalogue-import-overwrite-notice">
+          <b>{{ i18n.t('catalogue.import.overwrite_title', { count: priceCount() }) }}</b>
+          {{ i18n.t('catalogue.import.overwrite_body') }}
+        </kaff-banner>
       }
 
-      @if (reimportPreview(); as preview) {
-        <div class="confirm" role="group" [attr.aria-label]="i18n.t('catalogue.import.second_import_title')" data-testid="catalogue-reimport-confirm">
-          <p class="confirm-title">{{ i18n.t('catalogue.import.second_import_title') }}</p>
-          <p class="confirm-body">{{ i18n.t('catalogue.import.second_import_body') }}</p>
-          <p class="confirm-body" data-testid="catalogue-reimport-will-create">
-            {{ i18n.t('catalogue.import.will_create', { count: preview.willCreateCount }) }}
-          </p>
-          <p class="confirm-body" data-testid="catalogue-reimport-will-affect">
-            {{ i18n.t('catalogue.import.will_affect', { count: preview.willAffectCount }) }}
-          </p>
-
-          @if (preview.creates.length > 0) {
-            <div class="failures-scroll">
-              <table class="failures-table" data-testid="catalogue-reimport-creates-table">
-                <caption class="sr-only">{{ i18n.t('catalogue.import.will_create', { count: preview.willCreateCount }) }}</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">{{ i18n.t('catalogue.field.code') }}</th>
-                    <th scope="col">{{ i18n.t('catalogue.column.cost_price') }}</th>
-                    <th scope="col">{{ i18n.t('catalogue.column.base_sell_rate') }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (item of preview.creates; track trackFailure($index)) {
-                    <tr [attr.data-testid]="'catalogue-reimport-create-' + item.code">
-                      <td><bdi translate="no">{{ item.code }}</bdi></td>
-                      <td><bdi dir="ltr">{{ i18n.formatMoney(item.costPrice) }}</bdi></td>
-                      <td><bdi dir="ltr">{{ i18n.formatMoney(item.baseSellRate) }}</bdi></td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          }
-
-          @if (preview.reprices.length > 0) {
-            <div class="failures-scroll">
-              <table class="failures-table" data-testid="catalogue-reimport-reprices-table">
-                <caption class="sr-only">{{ i18n.t('catalogue.import.will_affect', { count: preview.willAffectCount }) }}</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">{{ i18n.t('catalogue.field.code') }}</th>
-                    <th scope="col">{{ i18n.t('catalogue.import.column.old_cost_price') }}</th>
-                    <th scope="col">{{ i18n.t('catalogue.import.column.new_cost_price') }}</th>
-                    <th scope="col">{{ i18n.t('catalogue.import.column.old_base_sell_rate') }}</th>
-                    <th scope="col">{{ i18n.t('catalogue.import.column.new_base_sell_rate') }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (item of preview.reprices; track trackFailure($index)) {
-                    <tr [attr.data-testid]="'catalogue-reimport-reprice-' + item.code">
-                      <td><bdi translate="no">{{ item.code }}</bdi></td>
-                      <td><bdi dir="ltr">{{ i18n.formatMoney(item.oldCostPrice) }}</bdi></td>
-                      <td><bdi dir="ltr">{{ i18n.formatMoney(item.newCostPrice) }}</bdi></td>
-                      <td><bdi dir="ltr">{{ i18n.formatMoney(item.oldBaseSellRate) }}</bdi></td>
-                      <td><bdi dir="ltr">{{ i18n.formatMoney(item.newBaseSellRate) }}</bdi></td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          }
-
-          <div class="confirm-actions">
-            <kaff-button
-              variant="primary"
-              [disabled]="confirming()"
-              [busy]="confirming()"
-              testId="catalogue-reimport-confirm-button"
-              (clicked)="onConfirmReimport()"
-            >
-              {{ confirming() ? i18n.t('catalogue.import.uploading') : i18n.t('action.confirm') }}
-            </kaff-button>
-            <kaff-button
-              variant="secondary"
-              [disabled]="confirming()"
-              testId="catalogue-reimport-cancel-button"
-              (clicked)="onCancelReimport()"
-            >
-              {{ i18n.t('action.cancel') }}
-            </kaff-button>
-          </div>
+      @if (rows().length > 0) {
+        <div class="tools">
+          <kaff-segmented-filter
+            [options]="tabOptions()"
+            [value]="tab()"
+            (valueChange)="onTab($event)"
+            ariaLabelKey="catalogue.import.filter_group"
+            testIdPrefix="catalogue-import-filter"
+          />
+          <span class="dim">{{ showingText() }}</span>
         </div>
-      }
 
-      @if (reimportResult(); as outcome) {
-        <p class="succeeded" role="status" aria-live="polite" data-testid="catalogue-reimport-succeeded">
-          {{ i18n.t('catalogue.import.reimport_succeeded', { created: outcome.createdCount, repriced: outcome.repricedCount }) }}
-        </p>
-
-        @if (outcome.failures.length > 0) {
-          <div class="failures" data-testid="catalogue-reimport-failures">
-            <h2 class="failures-title">{{ i18n.t('catalogue.import.rejected') }}</h2>
-
-            <div class="failures-scroll">
-              <table class="failures-table">
-                <caption class="sr-only">{{ i18n.t('catalogue.import.rejected') }}</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">{{ i18n.t('catalogue.import.column.row_number') }}</th>
-                    <th scope="col">{{ i18n.t('catalogue.import.column.field') }}</th>
-                    <th scope="col">{{ i18n.t('catalogue.import.column.reason') }}</th>
-                    <th scope="col">{{ i18n.t('catalogue.import.column.value') }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (failure of outcome.failures; track trackFailure($index)) {
-                    <tr [attr.data-testid]="'catalogue-reimport-failure-row-' + failure.rowNumber">
-                      <td><bdi dir="ltr">{{ failure.rowNumber }}</bdi></td>
-                      <td>{{ fieldLabel(failure.column) }}</td>
-                      <td>{{ i18n.t(failure.messageKey) }}</td>
-                      <td>
-                        @if (failure.value !== null) {
-                          <bdi translate="no">{{ failure.value }}</bdi>
+        @if (!isPhone()) {
+          <kaff-table [columnDefs]="columnDefs" [minInline]="1112" testId="catalogue-import-table-header" data-testid="catalogue-import-table">
+            <ul class="rows">
+              @for (row of visibleRows(); track trackRow($index, row)) {
+                <li class="rows-item" [attr.data-testid]="'catalogue-import-row-' + row.key">
+                  <kaff-table-row
+                    class="imp-row"
+                    [class.is-error]="row.kind === 'error'"
+                    [class.is-locked]="row.locked"
+                    [class.is-same]="row.kind === 'same'"
+                  >
+                    <span class="cell-status">
+                      @switch (row.kind) {
+                        @case ('new') {
+                          <kaff-status-pill tone="new" icon="plus">{{ i18n.t('catalogue.import.pill_new') }}</kaff-status-pill>
                         }
-                      </td>
-                    </tr>
+                        @case ('price') {
+                          @if (row.locked) {
+                            <kaff-status-pill tone="locked" icon="lock">{{ i18n.t('catalogue.import.pill_locked') }}</kaff-status-pill>
+                          } @else {
+                            <kaff-status-pill tone="overwrite" icon="swap">{{ i18n.t('catalogue.import.pill_price') }}</kaff-status-pill>
+                          }
+                        }
+                        @case ('same') {
+                          <kaff-status-pill tone="same" icon="check">{{ i18n.t('catalogue.import.pill_same') }}</kaff-status-pill>
+                        }
+                        @default {
+                          <kaff-status-pill tone="error" icon="alert">{{ i18n.t('catalogue.import.pill_error') }}</kaff-status-pill>
+                        }
+                      }
+                    </span>
+
+                    <span class="identity">
+                      @if (row.kind === 'error') {
+                        <span class="name">{{ i18n.t('catalogue.import.row_n', { row: row.rowNumber ?? 0 }) }}</span>
+                      } @else {
+                        @if (row.name; as name) {
+                          <span class="name" dir="auto">{{ name }}</span>
+                        }
+                        <bdi class="code" dir="ltr" translate="no">{{ row.code }}</bdi>
+                      }
+                    </span>
+
+                    <span class="muted" dir="auto">{{ row.babName }}</span>
+                    <span class="muted">
+                      @if (row.unit; as unit) {
+                        {{ unitParts(unit).base }}@if (unitParts(unit).sup; as sup) {<sup>{{ sup }}</sup>}
+                      }
+                    </span>
+
+                    <span class="cell-end money">
+                      @if (row.cost; as cost) {
+                        @if (cost.previous !== null) {
+                          <kaff-diff [next]="amount(cost.next)" [previous]="amount(cost.previous)" />
+                        } @else {
+                          <bdi class="figure" dir="ltr">{{ amount(cost.next) }}</bdi>
+                        }
+                      }
+                    </span>
+                    <span class="cell-end money">
+                      @if (row.sell; as sell) {
+                        @if (sell.previous !== null) {
+                          <kaff-diff [next]="amount(sell.next)" [previous]="amount(sell.previous)" />
+                        } @else {
+                          <bdi class="figure" dir="ltr">{{ amount(sell.next) }}</bdi>
+                        }
+                      }
+                    </span>
+
+                    <span class="detail" [class.detail--error]="row.kind === 'error'">
+                      @switch (row.kind) {
+                        @case ('new') {
+                          {{ i18n.t('catalogue.import.detail_new') }}
+                        }
+                        @case ('price') {
+                          {{ changesText(row) }}
+                        }
+                        @case ('same') {
+                          {{ i18n.t('catalogue.import.detail_same') }}
+                        }
+                        @default {
+                          {{ i18n.t(row.failure!.messageKey) }}
+                          @if (fieldLabel(row.failure!.column); as field) {
+                            <small>
+                              {{ field }}
+                              @if (row.failure!.value; as value) {
+                                · {{ i18n.t('catalogue.import.detail_value') }} <bdi dir="ltr">{{ value }}</bdi>
+                              }
+                            </small>
+                          }
+                        }
+                      }
+                    </span>
+                  </kaff-table-row>
+                </li>
+              }
+            </ul>
+          </kaff-table>
+        } @else {
+          <div class="phone-rows" data-testid="catalogue-import-phone-rows">
+            @for (row of visibleRows(); track trackRow($index, row)) {
+              <div
+                class="ir"
+                [class.is-error]="row.kind === 'error'"
+                [class.is-locked]="row.locked"
+                [class.is-same]="row.kind === 'same'"
+                [attr.data-testid]="'catalogue-import-row-' + row.key"
+              >
+                <div class="l1">
+                  <b dir="auto">
+                    @if (row.kind === 'error') {
+                      {{ i18n.t('catalogue.import.row_n', { row: row.rowNumber ?? 0 }) }}
+                    } @else {
+                      {{ row.name ?? row.code }}
+                    }
+                  </b>
+                  @switch (row.kind) {
+                    @case ('new') {
+                      <kaff-status-pill tone="new" icon="plus">{{ i18n.t('catalogue.import.pill_new') }}</kaff-status-pill>
+                    }
+                    @case ('price') {
+                      @if (row.locked) {
+                        <kaff-status-pill tone="locked" icon="lock">{{ i18n.t('catalogue.import.pill_locked') }}</kaff-status-pill>
+                      } @else {
+                        <kaff-status-pill tone="overwrite" icon="swap">{{ i18n.t('catalogue.import.pill_price') }}</kaff-status-pill>
+                      }
+                    }
+                    @case ('same') {
+                      <kaff-status-pill tone="same" icon="check">{{ i18n.t('catalogue.import.pill_same') }}</kaff-status-pill>
+                    }
+                    @default {
+                      <kaff-status-pill tone="error" icon="alert">{{ i18n.t('catalogue.import.pill_error') }}</kaff-status-pill>
+                    }
                   }
-                </tbody>
-              </table>
-            </div>
+                </div>
+                @if (row.kind !== 'error') {
+                  <div class="l2">
+                    <bdi dir="ltr" translate="no">{{ row.code }}</bdi>
+                    @if (row.babName; as bab) {
+                      <span dir="auto">{{ bab }}</span>
+                    }
+                    @if (row.unit; as unit) {
+                      <span>{{ unitParts(unit).base }}@if (unitParts(unit).sup; as sup) {<sup>{{ sup }}</sup>}</span>
+                    }
+                  </div>
+                  <div class="df">
+                    @if (row.cost; as cost) {
+                      <span>{{ i18n.t('catalogue.field.cost_price') }}</span>
+                      <span>
+                        @if (cost.previous !== null) {
+                          <kaff-diff [next]="amount(cost.next)" [previous]="amount(cost.previous)" />
+                        } @else {
+                          <bdi class="figure" dir="ltr">{{ amount(cost.next) }}</bdi>
+                        }
+                      </span>
+                    }
+                    @if (row.sell; as sell) {
+                      <span>{{ i18n.t('catalogue.panel.sell_price') }}</span>
+                      <span>
+                        @if (sell.previous !== null) {
+                          <kaff-diff [next]="amount(sell.next)" [previous]="amount(sell.previous)" />
+                        } @else {
+                          <bdi class="figure" dir="ltr">{{ amount(sell.next) }}</bdi>
+                        }
+                      </span>
+                    }
+                  </div>
+                } @else {
+                  <div class="m">
+                    {{ i18n.t(row.failure!.messageKey) }}
+                    @if (fieldLabel(row.failure!.column); as field) {
+                      <small>
+                        {{ field }}
+                        @if (row.failure!.value; as value) {
+                          · {{ i18n.t('catalogue.import.detail_value') }} <bdi dir="ltr">{{ value }}</bdi>
+                        }
+                      </small>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        @if (hiddenCount() > 0) {
+          <div class="more">
+            <kaff-button variant="ghost" testId="catalogue-import-more" (clicked)="onShowMore()">
+              {{ i18n.t('catalogue.import.more', { count: hiddenCount() }) }}
+            </kaff-button>
           </div>
         }
       }
-    </div>
-  </div>
+
+      <!-- The apply bar. Where the file cannot be applied by this person there is NO apply button at all
+           (not a disabled one) and no "apply the rest": the server refuses the whole confirm. -->
+      <kaff-apply-bar [refusal]="refused()" testId="catalogue-import-apply-bar">
+        <span barWhat>
+          @if (refused()) {
+            <span class="lead" data-testid="catalogue-import-refused-lead">{{ i18n.t('catalogue.import.refused_lead') }}</span>
+            <small>{{ i18n.t('catalogue.import.refusal_body_short', { count: priceCount() }) }}</small>
+          } @else if (nothingToApply()) {
+            <span data-testid="catalogue-import-nothing">{{ i18n.t('catalogue.import.nothing_title') }}</span>
+            <small>
+              {{ i18n.t('catalogue.import.nothing_body') }}
+              @if (errorCount() > 0) {
+                {{ i18n.t('catalogue.import.apply_skipped', { count: errorCount() }) }}
+              }
+            </small>
+          } @else {
+            <span data-testid="catalogue-import-apply-summary">{{ applySummary() }}</span>
+            <small>
+              @if (errorCount() > 0) {
+                {{ i18n.t('catalogue.import.apply_skipped', { count: errorCount() }) }}
+              }
+              @if (priceCount() > 0) {
+                {{ i18n.t('catalogue.import.apply_undo') }}
+              }
+            </small>
+          }
+        </span>
+        <span barActions>
+          @if (!refused() && !nothingToApply()) {
+            <kaff-button variant="primary" testId="catalogue-reimport-confirm-button" (clicked)="onAskApply()">
+              <kaff-icon [name]="'upload'" [small]="true" />
+              {{ i18n.t('catalogue.import.apply') }}
+            </kaff-button>
+          }
+          <kaff-button variant="secondary" testId="catalogue-import-another" (clicked)="onChooseAnother()">
+            <kaff-icon [name]="'swap'" [small]="true" />
+            {{ i18n.t('catalogue.import.choose_another') }}
+          </kaff-button>
+        </span>
+      </kaff-apply-bar>
+
+      <!-- The LOUD confirmation. Overwriting a price cannot be undone, so this is the irreversible pattern: a
+           red tile, the numbers again, "cannot be undone", and initial focus on cancel. An import that only adds
+           items can be undone by archiving them, so it takes the recoverable one. -->
+      <kaff-confirm-dialog
+        [tone]="priceCount() > 0 ? 'irreversible' : 'recoverable'"
+        [icon]="'swap'"
+        [open]="confirmOpen()"
+        [sheetOnPhone]="true"
+        [title]="i18n.t('catalogue.import.dlg_title')"
+        [body]="dialogBody()"
+        [confirmLabel]="applying() ? i18n.t('catalogue.import.dlg_applying') : i18n.t('catalogue.import.dlg_confirm')"
+        [cancelLabel]="i18n.t('action.cancel')"
+        [busy]="applying()"
+        testId="catalogue-import-confirm-dialog"
+        confirmTestId="catalogue-import-confirm-apply"
+        cancelTestId="catalogue-import-confirm-cancel"
+        (confirmed)="onConfirmApply()"
+        (cancelled)="onCancelApply()"
+      >
+        <ul dialogExtra class="dlg-list">
+          @if (errorCount() > 0) {
+            <li>{{ i18n.t('catalogue.import.apply_skipped', { count: errorCount() }) }}</li>
+          }
+          <li data-testid="catalogue-import-dialog-undo">
+            <b>{{ i18n.t(priceCount() > 0 ? 'catalogue.import.dlg_irreversible' : 'catalogue.import.dlg_recoverable') }}</b>
+          </li>
+        </ul>
+      </kaff-confirm-dialog>
+    }
+  }
+
+  <!-- ===== step 3: the result ===== -->
+  @if (step() === 'result') {
+    @if (result(); as done) {
+      <kaff-banner tone="ok" icon="check" testId="catalogue-reimport-succeeded">
+        <b>{{ i18n.t('catalogue.import.result_done') }}</b>
+        {{
+          i18n.t('catalogue.import.result_summary', {
+            created: done.createdCount,
+            repriced: done.repricedCount,
+            changed: priceCount(),
+            skipped: done.failures.length
+          })
+        }}
+      </kaff-banner>
+
+      <div class="sum">
+        <kaff-stat [value]="i18n.formatNumber(done.createdCount)" testId="catalogue-result-created">
+          <kaff-status-pill tone="new" icon="plus">{{ i18n.t('catalogue.import.stat_added') }}</kaff-status-pill>
+        </kaff-stat>
+        <kaff-stat
+          [value]="i18n.formatNumber(done.repricedCount)"
+          [caption]="i18n.t('catalogue.import.stat_repriced_caption', { count: priceCount() })"
+          outline="ink"
+          testId="catalogue-result-repriced"
+        >
+          <kaff-status-pill tone="overwrite" icon="swap">{{ i18n.t('catalogue.import.stat_repriced') }}</kaff-status-pill>
+        </kaff-stat>
+        <kaff-stat
+          [value]="i18n.formatNumber(done.failures.length)"
+          [caption]="i18n.t('catalogue.import.stat_skipped_caption')"
+          outline="error"
+          testId="catalogue-result-skipped"
+        >
+          <kaff-status-pill tone="error" icon="alert">{{ i18n.t('catalogue.import.stat_skipped') }}</kaff-status-pill>
+        </kaff-stat>
+      </div>
+
+      <div class="actions">
+        <kaff-button variant="primary" testId="catalogue-import-view-catalogue" (clicked)="onViewCatalogue()">
+          {{ i18n.t('catalogue.import.view_catalogue') }}
+        </kaff-button>
+        <kaff-button variant="secondary" testId="catalogue-import-again" (clicked)="onChooseAnother()">
+          <kaff-icon [name]="'upload'" [small]="true" />
+          {{ i18n.t('catalogue.import.import_another') }}
+        </kaff-button>
+        @if (canReadAudit()) {
+          <a class="lnk" routerLink="/audit" data-testid="catalogue-import-audit-link">{{ i18n.t('nav.audit') }}</a>
+        }
+      </div>
+
+      @if (skipped().length > 0) {
+        <h2 class="sub-title">{{ i18n.t('catalogue.import.skipped_title', { count: skipped().length }) }}</h2>
+        <kaff-table [columnDefs]="resultColumnDefs" [minInline]="640" testId="catalogue-import-failures-header" data-testid="catalogue-import-failures">
+          <ul class="rows skipped">
+            @for (failure of skipped(); track trackFailure($index)) {
+              <li class="rows-item">
+                <kaff-table-row class="imp-row is-error">
+                  <bdi class="figure" dir="ltr">{{ failure.rowNumber }}</bdi>
+                  <span>{{ fieldLabel(failure.column) }}</span>
+                  <bdi dir="ltr">{{ failure.value }}</bdi>
+                  <span class="detail detail--error">{{ i18n.t(failure.messageKey) }}</span>
+                </kaff-table-row>
+              </li>
+            }
+          </ul>
+        </kaff-table>
+      }
+    }
+  }
 </section>

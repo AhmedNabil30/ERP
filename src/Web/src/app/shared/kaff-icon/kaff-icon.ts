@@ -29,6 +29,11 @@ const PATHS = {
   move: 'M3 7h6l2 2h10v10H3zM12 14h6M16 12l2 2-2 2',
   child: 'M5 4v10a3 3 0 003 3h8M13 13l3 4-3 4M5 4h5',
   layers: 'M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5',
+  swap: 'M4 8h13l-3-3M20 16H7l3 3',
+  file: 'M6 3h9l4 4v14H6zM14 3v5h5',
+  download: 'M12 4v11M8 11l4 4 4-4M5 20h14',
+  catalog: 'M3 11V4h7l11 11-7 7L3 11zM7.5 7.5h.01',
+  error: 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7.5v5.5M12 16.5v.01',
   folder: 'M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z',
 } as const;
 

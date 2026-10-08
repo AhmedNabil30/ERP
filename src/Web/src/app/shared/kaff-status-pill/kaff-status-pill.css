@@ -1,0 +1,39 @@
+:host {
+  display: inline-flex;
+}
+
+.pl {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  block-size: 28px;
+  padding-inline: 10px 12px;
+  border-radius: var(--radius);
+  font: 600 var(--text-xs) / 1 var(--body);
+  white-space: nowrap;
+}
+
+.pl--new {
+  background: var(--ok-bg);
+  color: var(--ok-ink);
+}
+
+.pl--overwrite {
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+}
+
+.pl--error {
+  background: var(--err-bg);
+  color: var(--err-ink);
+}
+
+.pl--locked {
+  color: var(--err-ink);
+  box-shadow: inset 0 0 0 1.5px var(--err-bar);
+}
+
+.pl--same {
+  color: var(--dim);
+  box-shadow: inset 0 0 0 1px var(--line);
+}

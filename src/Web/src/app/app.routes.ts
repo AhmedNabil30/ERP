@@ -1,4 +1,5 @@
-import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router, Routes } from '@angular/router';
 
 import { auditReadGuard } from './core/auth/audit-read.guard';
 import { babManageGuard } from './core/auth/bab-manage.guard';
@@ -118,12 +119,10 @@ export const routes: Routes = [
           ),
       },
       {
+        // Create is a panel over the list now (the query parameter `create=1` opens it); the old address
+        // still lands there. Edit has been the item panel (`?item=CODE`) since D-180.
         path: 'new',
-        canDeactivate: [confirmUnsavedChangesGuard],
-        loadComponent: () =>
-          import('./features/catalogue/catalogue-form/catalogue-form-page').then(
-            (m) => m.CatalogueFormPage,
-          ),
+        redirectTo: () => inject(Router).createUrlTree(['/catalogue'], { queryParams: { create: '1' } }),
       },
       {
         // KAFF-200 — S-019. `catalogueManageGuard` on the parent route is what actually gates this;
@@ -132,18 +131,6 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/catalogue/catalogue-import/catalogue-import-page').then(
             (m) => m.CatalogueImportPage,
-          ),
-      },
-      {
-        // `withComponentInputBinding` binds `:catalogueItemId` to the component's input signal. There
-        // is no `GET /api/catalogue-items/{id}` on this API (unlike `GetClient`), so a hard load of
-        // this URL cannot re-fetch the item — see `catalogue-form-page.ts` for how it copes and the
-        // gap this leaves, reported rather than worked around.
-        path: ':catalogueItemId',
-        canDeactivate: [confirmUnsavedChangesGuard],
-        loadComponent: () =>
-          import('./features/catalogue/catalogue-form/catalogue-form-page').then(
-            (m) => m.CatalogueFormPage,
           ),
       },
     ],

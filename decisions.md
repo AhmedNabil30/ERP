@@ -15097,3 +15097,86 @@ header.
 
 **Not changed:** the two day-labour lists (worker pool and history) put a label inside each cell for the
 phone and align their figures themselves; they were not measured here.
+
+### D-183 · Frontend — the catalogue's create panel, first runs and import built; the import design meets the real API · 2026-10-08
+
+Built to `.design/v2/team-a/catalogue.html` (create, the two first runs) and `catalogue-import.html` (the
+whole import), inside D-177, D-179 and D-180.
+
+**Create** is a panel over the list (a bottom sheet on a phone), opened by `?create=1` so the back button
+closes it and a refresh restores it. `/catalogue/new` redirects there. One form for every role that holds
+`CatalogueManage`: the code is TYPED (Latin capitals, digits and hyphens, at most 40, globally unique, with its
+collision error shown on the field, from the codes already loaded and again from the server's 409); the باب is a
+second step with a back link; the unit is the kit select; **both prices are required for everyone** and an
+explicit `0` is legal (V-36-H, `CreateCatalogueItem/Handler.cs:65-72`). A created item opens its باب, scrolls into
+view, tints and carries a band for four seconds. The old `catalogue-form` page, its `/catalogue/:id` route and
+`CatalogueApi.import` are deleted: the page was reachable only by typing a URL with router state, the item panel
+has been the edit surface since D-180, and the page's create mode is now the panel.
+**The old page also held the item "move to another باب" action (KAFF-205), which was already unreachable from the
+list. It is not rebuilt here (the design offers no control); the code is in history at `f9be842`, and
+`CatalogueApi.moveToBab` is still there.**
+
+**First runs** are drawn as changes to the list, with the header's search, create and import hidden so there is
+one set of actions. With no active باب the screen points at the أبواب module; with أبواب and no items it offers
+create and import side by side. They describe the WHOLE catalogue (an all-status read of zero items), never the
+current filter, and never show until both reads have settled.
+
+**Import** is the design's three steps. It uses the preview and confirm endpoints only, for a first load as well
+as a second one: `POST import` creates immediately with no preview, so it has no place in a flow whose point is
+the preview. `KAFF-200`'s endpoint stays on the server and is unused by the client.
+
+**Where the design and the API disagree, and what was built (the API wins):**
+1. *Codes are typed, never generated.* The design: a blank code is a new item whose code is generated, an
+   unknown code is an error. The API: an unknown code is a NEW item with that code, an existing code re-prices,
+   a blank code is a row failure (`code_required`). The copy "الرمز يُولَّد" and "الرموز تُولَّد ولا تُدخل" is gone.
+2. *An existing code is re-priced only* (`CatalogueItem.Reprice`). The file's description, unit and باب are ignored
+   for it, so there is no "description changed" row and no "كان: …" line. The summary says "price change".
+3. *The preview names an overwrite by code and four prices*, with no description, باب, unit or file row number.
+   The screen reads the existing item from the catalogue list for those, and shows the code alone if that read
+   fails. A new row carries its fields but no row number; a refused row has only its row number, column, value
+   and reason, so the design's refused row (description, باب, prices) cannot be drawn. The table has no row-number
+   column; "Row N" leads the item cell of a refused row and the skipped list.
+4. *The server counts every existing code the file mentions as "affected"*, including one that restates the stored
+   price (`willAffectCount`). Those change nothing and are never refused, so the screen counts a price change only
+   where old and new differ, shows the others as "no change", and offers no apply for a file that has only those.
+5. *The permission is not in the preview.* The refusal is decided from the session's `CataloguePriceEdit` (the
+   same mirror the item panel uses) and the preview's old and new prices. It is presentation: the server still
+   refuses the whole confirm, and that refusal has its own state ("nothing changed").
+6. *No report download exists*, so "تنزيل تقرير الاستيراد" and "تنزيل قائمة الصفوف المرفوضة" are not offered. The
+   skipped rows with reasons are on the result screen and nowhere else.
+7. *The bad-template detail is not available.* Only `POST import` returns the expected and actual columns; the
+   preview's refusal is the bare `catalogue_import_failed`, so the screen cannot name the missing columns. It
+   names the file, says what a readable file is (seven headings, one data row, under 10 MB) and that nothing
+   changed.
+8. *The file's headings are the template's Latin names* (`code`, `descriptionAr`, `costPrice`…), matched by name,
+   not the Arabic labels the design's chips show. The chips show the real heading with its Arabic label.
+9. *Technical Office text* no longer says it may "update descriptions" by import; it cannot, for anyone.
+
+**The refusal path** is the design's: where a row moves a price the signed-in person may not move, the rows are
+locked, a refusal banner heads the preview, and the apply bar has no apply button at all (not a disabled one) and
+no "apply the rest". A confirmation that only adds items takes the recoverable pattern (archiving takes them
+back); one that overwrites a price takes the loud irreversible one, with initial focus on cancel and a bottom
+sheet on a phone.
+
+**Kit additions:** `kaff-stepper`, `kaff-status-pill`, `kaff-stat`, `kaff-diff`, `kaff-apply-bar`,
+`kaff-first-run`; additive inputs on `kaff-select` (`controlId`, `describedBy`, `invalid`), `kaff-tree-picker`
+(`showRoot`), `kaff-confirm-dialog` (a `[dialogExtra]` slot and `sheetOnPhone`), `kaff-segmented-filter`
+(`labelText`); six icons. أبواب's own first run still carries its own copy of the same CSS; it can adopt
+`kaff-first-run` when that module is next touched.
+
+**Not decided, and why.** The unit list: the design offers seven (م³ م² م.ط عدد طن كجم مقطوعية), `spec.md` is
+silent and the server takes any text, the item panel's edit keeps a free-text unit, and imports bring any unit,
+so the catalogue can hold a unit the create select does not offer. A question for Nabil. The item-code character
+set is the design's example (`CON-1030`), enforced on the client only. The Technical Office's ability to set a
+price at birth but not change it is still the open question D-179 left; create is drawn identical for every role.
+
+**Test ids.** Kept: `catalogue-create`, `catalogue-empty-create`, `catalogue-list-empty` (now the no-items first
+run), `catalogue-import`, `-import-back`, `-import-download-template`, `-import-file`, `-import-file-name`,
+`-import-not-a-sync`, `-import-refusal` (file-level), `-import-failures` (the skipped list),
+`catalogue-reimport-will-create`, `-will-affect` (now counts only real price changes),
+`-confirm-button` (the apply bar's), `-succeeded`, `-refusal` (the server refused). Removed: `catalogue-import-submit`,
+`-import-succeeded`, `-import-failure-row-N`, `catalogue-reimport`, `-reimport-confirm`, `-creates-table`,
+`-reprices-table`, `-reimport-failures`, `-preview-button`, `-cancel-button`, and every id of the deleted form page
+(`catalogue-form`, `-form-back`, `-form-refusal`, `-form-no-source`, `catalogue-field-*`, `catalogue-submit`,
+`catalogue-code`, `catalogue-current-bab`, `catalogue-move-*`). New ids carry the `catalogue-create-*`,
+`catalogue-first-run-*` and `catalogue-import-*` prefixes.

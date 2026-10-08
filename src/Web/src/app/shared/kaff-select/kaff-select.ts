@@ -27,6 +27,12 @@ export class KaffSelect {
   readonly value = model('');
   readonly ariaLabelKey = input.required<string>();
   readonly testId = input<string | null>(null);
+  /** The select's own id, so a `kaff-field` label can name it. */
+  readonly controlId = input<string | null>(null);
+  /** The id of the field's hint or error (`KaffField.describedById()`). */
+  readonly describedBy = input<string | null>(null);
+  /** Draws the error border and sets `aria-invalid`. */
+  readonly invalid = input(false);
 
   protected readonly i18n = inject(I18nService);
 

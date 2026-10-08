@@ -16,6 +16,7 @@ import { Bab, BabsApi } from '../../../core/catalogue/babs.api';
 import {
   CatalogueApi,
   CatalogueItem,
+  CatalogueItemCreate,
   CatalogueItemEdit,
   CatalogueItemListFilter,
 } from '../../../core/catalogue/catalogue.api';
@@ -24,6 +25,7 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import { KaffFirstRun } from '../../../shared/kaff-first-run/kaff-first-run';
 import { KaffGroupHeading } from '../../../shared/kaff-group-heading/kaff-group-heading';
 import { KaffIcon } from '../../../shared/kaff-icon/kaff-icon';
 import { KaffInlineConfirm } from '../../../shared/kaff-inline-confirm/kaff-inline-confirm';
@@ -38,6 +40,7 @@ import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { KaffTable } from '../../../shared/kaff-table/kaff-table';
 import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
+import { CatalogueCreatePanel } from './catalogue-create-panel';
 import { CatalogueItemPanel } from './catalogue-item-panel';
 
 /** The three segments `KAFF-206` rule 7 draws, in the order it draws them. */
@@ -52,6 +55,8 @@ const OPEN_GROUPS_KEY = 'kaff.catalogue.open-groups';
 /** How long the "restored" band replaces an un-archived row before the row returns in its new place. */
 const RESTORED_BAND_MS = 2500;
 const SAVED_BANNER_MS = 3000;
+/** How long the "created" band stays under the new row. */
+const CREATED_BAND_MS = 4000;
 
 const PHONE_QUERY = '(max-width: 820px)';
 
@@ -97,6 +102,7 @@ interface Totals {
     KaffBadge,
     KaffBanner,
     KaffButton,
+    KaffFirstRun,
     KaffGroupHeading,
     KaffIcon,
     KaffInlineConfirm,
@@ -107,6 +113,7 @@ interface Totals {
     KaffState,
     KaffTable,
     KaffTableRow,
+    CatalogueCreatePanel,
     CatalogueItemPanel,
   ],
   templateUrl: './catalogue-list-page.html',
@@ -150,16 +157,25 @@ export class CatalogueListPage {
   readonly status = input<CatalogueItemListFilter>('active');
   readonly bab = input<string>('');
   readonly item = input<string>('');
+  /** `?create=1` opens the create panel over the list. */
+  readonly create = input<string>('');
 
   protected readonly searchTerm = computed(() => this.search() ?? '');
   protected readonly statusFilter = computed(() => this.status() ?? 'active');
   protected readonly babFilter = computed(() => this.bab() ?? '');
   protected readonly openItemCode = computed(() => this.item() ?? '');
+  protected readonly createOpen = computed(() => (this.create() ?? '') === '1');
 
   protected readonly items = signal<readonly CatalogueItem[]>([]);
   protected readonly babs = signal<readonly Bab[]>([]);
   protected readonly totals = signal<Totals | null>(null);
   protected readonly loading = signal(true);
+  /** False until the first read of the whole catalogue has settled, so a first-run state never flashes. */
+  protected readonly totalsReady = signal(false);
+  /** True once the باب read succeeded: an unread باب list is not evidence that none exists. */
+  protected readonly babsLoaded = signal(false);
+  /** Every code in the catalogue, archived included: codes are unique across all of them. */
+  protected readonly takenCodes = signal<ReadonlySet<string>>(new Set());
   protected readonly failure = signal<{ readonly key: string; readonly status: number } | null>(null);
 
   protected readonly isPhone = signal(typeof matchMedia === 'function' && matchMedia(PHONE_QUERY).matches);
@@ -169,6 +185,13 @@ export class CatalogueListPage {
   protected readonly archivingId = signal<string | null>(null);
   protected readonly rowFailure = signal<{ readonly id: string; readonly key: string } | null>(null);
   protected readonly restored = signal<{ readonly id: string; readonly name: string } | null>(null);
+
+  /** Create panel state. */
+  protected readonly createSaving = signal(false);
+  protected readonly createRefusal = signal<string | null>(null);
+  protected readonly created = signal<{ readonly id: string; readonly code: string; readonly name: string } | null>(
+    null,
+  );
 
   /** Panel state. */
   protected readonly panelSaving = signal(false);
@@ -261,6 +284,25 @@ export class CatalogueListPage {
   );
 
   /** The archived view with nothing narrowing it has its own words (README "Empty states"). */
+  private readonly activeBabCount = computed(() => this.babs().filter((bab) => bab.isActive).length);
+
+  /**
+   * The two first runs (README "The catalogue's first run"). They are about the WHOLE catalogue, not the
+   * current filter: with no active باب an item has nothing to attach to, so the screen points at the أبواب
+   * module; with أبواب and no items at all it offers create and import side by side.
+   */
+  protected readonly isFirstRunNoBabs = computed(
+    () => this.isCatalogueEmpty() && this.babsLoaded() && this.activeBabCount() === 0,
+  );
+  protected readonly isFirstRunNoItems = computed(
+    () => this.isCatalogueEmpty() && this.babsLoaded() && this.activeBabCount() > 0,
+  );
+  protected readonly isFirstRun = computed(() => this.isFirstRunNoBabs() || this.isFirstRunNoItems());
+
+  private readonly isCatalogueEmpty = computed(
+    () => this.totalsReady() && this.totals()?.count === 0 && this.failure() === null,
+  );
+
   protected readonly archivedEmpty = computed(
     () => this.statusFilter() === 'archived' && !this.hasNarrowing(),
   );
@@ -306,8 +348,18 @@ export class CatalogueListPage {
     return this.navigate({ search: null, status: null, bab: null });
   }
 
-  protected onCreate(): Promise<boolean> {
-    return this.router.navigate(['/catalogue/new']);
+  protected onCreate(): Promise<void> {
+    this.createRefusal.set(null);
+    return this.navigate({ create: '1', item: null });
+  }
+
+  protected onCloseCreate(): Promise<void> {
+    this.createRefusal.set(null);
+    return this.navigate({ create: null });
+  }
+
+  protected onGoToBabs(): Promise<boolean> {
+    return this.router.navigate(['/babs']);
   }
 
   protected onImport(): Promise<boolean> {
@@ -486,6 +538,62 @@ export class CatalogueListPage {
     }
   }
 
+  // ---- create ------------------------------------------------------------------------------------
+
+  protected async onCreateRequested(request: CatalogueItemCreate): Promise<void> {
+    this.createRefusal.set(null);
+    this.createSaving.set(true);
+    try {
+      const made = await this.api.create(request);
+      // A new item must be where the person can see it: a filter that would hide it is cleared.
+      const hidden =
+        this.statusFilter() === 'archived' || this.hasNarrowing();
+      await this.navigate(
+        hidden ? { create: null, search: null, status: null, bab: null } : { create: null },
+      );
+      await this.refresh();
+      this.revealCreated(made);
+    } catch (error) {
+      // The server is the control: a taken code, a negative price, a missing باب all arrive as a key and
+      // render in the panel, next to the field when there is one.
+      this.createRefusal.set(toProblem(error).messageKey);
+    } finally {
+      this.createSaving.set(false);
+    }
+  }
+
+  protected isJustCreated(item: CatalogueItem): boolean {
+    return this.created()?.id === item.id;
+  }
+
+  protected createdText(): string {
+    const made = this.created();
+    return made === null ? '' : this.i18n.t('catalogue.created', { name: made.name, code: made.code });
+  }
+
+  /** Opens the باب the new item sits in, shows it past the 'load more' row, and says so in place. */
+  private revealCreated(made: CatalogueItem): void {
+    const open = new Set(
+      this.openGroups() ?? this.groups().filter((g, i) => this.isOpen(g, i)).map((g) => g.babId),
+    );
+    open.add(made.babId);
+    this.openGroups.set(open);
+    this.expandedGroups.update((set) => new Set(set).add(made.babId));
+    this.created.set({ id: made.id, code: made.code, name: made.descriptionAr });
+    if (this.createdTimer !== null) {
+      clearTimeout(this.createdTimer);
+    }
+    this.createdTimer = setTimeout(() => this.created.set(null), CREATED_BAND_MS);
+    // After the rows have rendered, bring the new one into view.
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        document
+          .querySelector<HTMLElement>('[data-testid="catalogue-row-created"]')
+          ?.scrollIntoView({ block: 'center' }),
+      ),
+    );
+  }
+
   // ---- panel -------------------------------------------------------------------------------------
 
   protected onClosePanel(): Promise<void> {
@@ -551,9 +659,10 @@ export class CatalogueListPage {
 
   private restoredTimer: ReturnType<typeof setTimeout> | null = null;
   private savedTimer: ReturnType<typeof setTimeout> | null = null;
+  private createdTimer: ReturnType<typeof setTimeout> | null = null;
 
   private clearTimers(): void {
-    for (const timer of [this.restoredTimer, this.savedTimer]) {
+    for (const timer of [this.restoredTimer, this.savedTimer, this.createdTimer]) {
       if (timer !== null) {
         clearTimeout(timer);
       }
@@ -592,8 +701,11 @@ export class CatalogueListPage {
     try {
       const all = await this.api.list('', 'all');
       this.totals.set({ count: all.length, babCount: new Set(all.map((item) => item.babId)).size });
+      this.takenCodes.set(new Set(all.map((item) => item.code.toUpperCase())));
     } catch {
       this.totals.set(null);
+    } finally {
+      this.totalsReady.set(true);
     }
   }
 
@@ -602,6 +714,7 @@ export class CatalogueListPage {
       // `GET /api/babs` is its own permission (`BabManage`); both roles that hold `CatalogueManage` hold it
       // today, but a caller with one and not the other still sees every item, with unnamed groups.
       this.babs.set(await this.babsApi.list('all'));
+      this.babsLoaded.set(true);
     } catch {
       this.babs.set([]);
     }

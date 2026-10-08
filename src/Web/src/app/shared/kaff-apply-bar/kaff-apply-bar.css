@@ -1,0 +1,73 @@
+:host {
+  display: block;
+  position: sticky;
+  inset-block-end: 0;
+  z-index: 8;
+  margin-block-start: var(--space-4);
+}
+
+.apply {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: 12px 16px;
+  border: 1.5px solid var(--fieldline);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.apply--refusal {
+  border-color: var(--err-bar);
+}
+
+.what {
+  flex: 1;
+  min-inline-size: 240px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.what ::ng-deep small {
+  display: block;
+  color: var(--dim);
+  font-weight: 400;
+}
+
+.apply--refusal .what ::ng-deep .lead {
+  color: var(--err-ink);
+}
+
+.acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+@media (width <= 820px) {
+  :host {
+    position: static;
+  }
+
+  .apply {
+    padding-inline: 0;
+    border: 0;
+    border-block-start: 1px solid var(--line);
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .acts {
+    inline-size: 100%;
+    --kaff-button-size: 3.5rem;
+  }
+
+  .acts ::ng-deep kaff-button {
+    flex: 1 1 100%;
+  }
+
+  .acts ::ng-deep .kaff-button {
+    inline-size: 100%;
+  }
+}

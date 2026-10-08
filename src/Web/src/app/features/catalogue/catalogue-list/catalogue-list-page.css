@@ -189,6 +189,12 @@ kaff-table-row:hover .cell-internal {
   background: color-mix(in srgb, var(--ink) 8%, var(--surface));
 }
 
+/* A row that was just created takes the saved-band tint. */
+.is-new ::ng-deep .row,
+.is-new ::ng-deep .cell-pinned {
+  background: color-mix(in srgb, var(--ok-bg) 45%, var(--surface));
+}
+
 .more {
   display: block;
   min-block-size: 48px;

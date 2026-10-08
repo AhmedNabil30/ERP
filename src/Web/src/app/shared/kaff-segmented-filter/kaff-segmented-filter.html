@@ -13,7 +13,7 @@
       [attr.data-testid]="testIdPrefix() + '-' + option.value"
       (click)="value.set(option.value)"
     >
-      {{ i18n.t(option.labelKey) }}
+      {{ option.labelText ?? i18n.t(option.labelKey) }}
     </button>
   }
 </div>

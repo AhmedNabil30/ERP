@@ -1,0 +1,18 @@
+<ol class="stp" [attr.aria-label]="ariaLabel()" [attr.data-testid]="testId()">
+  @for (label of steps(); track $index) {
+    <li
+      [class.done]="stateOf($index) === 'done'"
+      [class.cur]="stateOf($index) === 'cur'"
+      [attr.aria-current]="stateOf($index) === 'cur' ? 'step' : null"
+    >
+      <span class="n">
+        @if (stateOf($index) === 'done') {
+          <kaff-icon [name]="'check'" [small]="true" />
+        } @else {
+          {{ $index + 1 }}
+        }
+      </span>
+      <span class="t">{{ label }}</span>
+    </li>
+  }
+</ol>

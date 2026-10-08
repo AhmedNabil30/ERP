@@ -30,6 +30,8 @@ let nextGroup = 0;
 })
 export class KaffTreePicker {
   readonly nodes = input.required<readonly TreePickerNode[]>();
+  /** Omit the "no parent" row for a pick that must name a node (the catalogue's باب). */
+  readonly showRoot = input(true);
   readonly rootLabel = input.required<string>();
   /** The words on the row the thing sits under today. */
   readonly currentLabel = input.required<string>();

@@ -1,0 +1,199 @@
+<!-- Each projected slot is ONE unconditional element, with the `@if` inside it: a control-flow block with
+     several root nodes is not projected by `select`, it falls into no slot and is dropped. -->
+<kaff-detail-panel [open]="open()" [title]="title()" testId="catalogue-create-panel" (closed)="onPanelClosed()">
+  <span panelBack>
+    @if (step() === 'bab') {
+      <button type="button" class="bk" data-testid="catalogue-create-back" (click)="onBack()">
+        <kaff-icon [name]="'back'" [small]="true" />
+        {{ i18n.t('catalogue.create.back') }}
+      </button>
+    }
+  </span>
+
+  <span panelMeta class="meta">
+    @if (step() === 'form') {
+      <span dir="auto">{{ meta() }}</span>
+    }
+  </span>
+
+  <div panelBody class="body">
+    @if (step() === 'bab') {
+      <kaff-tree-picker
+        [nodes]="pickNodes()"
+        [showRoot]="false"
+        [rootLabel]="''"
+        [currentLabel]="''"
+        [groupLabel]="i18n.t('catalogue.create.pick_bab')"
+        testIdPrefix="catalogue-create-bab-option-"
+        [value]="pick()"
+        (valueChange)="pick.set($event)"
+      />
+    } @else if (open()) {
+      @if (hasFieldErrors() && attempted()) {
+        <kaff-banner tone="refusal" icon="alert" testId="catalogue-create-errors">{{
+          i18n.t('catalogue.create.failed')
+        }}</kaff-banner>
+      } @else if (bannerRefusal(); as key) {
+        <kaff-banner tone="refusal" icon="alert" testId="catalogue-create-refusal">{{ i18n.t(key) }}</kaff-banner>
+      }
+
+      <kaff-field
+        #arField="kaffField"
+        labelKey="catalogue.field.description"
+        controlId="catalogue-create-description-ar"
+        [required]="true"
+        [errorKey]="descriptionError()"
+      >
+        <input
+          id="catalogue-create-description-ar"
+          type="text"
+          dir="auto"
+          autocomplete="off"
+          [placeholder]="i18n.t('catalogue.create.placeholder_ar')"
+          data-testid="catalogue-create-description-ar"
+          [value]="draft().descriptionAr"
+          [attr.aria-invalid]="descriptionError() !== null ? 'true' : null"
+          [attr.aria-describedby]="arField.describedById()"
+          (input)="onInput('descriptionAr', $event)"
+        />
+      </kaff-field>
+
+      <kaff-field
+        labelKey="catalogue.field.description_en"
+        controlId="catalogue-create-description-en"
+        hintKey="catalogue.create.optional"
+      >
+        <input
+          id="catalogue-create-description-en"
+          type="text"
+          dir="ltr"
+          autocomplete="off"
+          data-testid="catalogue-create-description-en"
+          [value]="draft().descriptionEn"
+          (input)="onInput('descriptionEn', $event)"
+        />
+      </kaff-field>
+
+      <kaff-field
+        #codeField="kaffField"
+        labelKey="catalogue.field.code"
+        controlId="catalogue-create-code"
+        [required]="true"
+        hintKey="catalogue.create.code_hint"
+        [errorKey]="codeError()"
+        [errorParams]="codeErrorParams()"
+        errorTestId="catalogue-create-code-error"
+      >
+        <input
+          id="catalogue-create-code"
+          class="code-input"
+          type="text"
+          dir="ltr"
+          spellcheck="false"
+          autocomplete="off"
+          autocapitalize="characters"
+          [maxLength]="codeMaxLength"
+          [placeholder]="i18n.t('catalogue.create.placeholder_code')"
+          data-testid="catalogue-create-code"
+          [value]="draft().code"
+          [attr.aria-invalid]="codeError() !== null ? 'true' : null"
+          [attr.aria-describedby]="codeField.describedById()"
+          (input)="onInput('code', $event)"
+        />
+      </kaff-field>
+
+      <kaff-field
+        #babField="kaffField"
+        labelKey="catalogue.field.bab"
+        controlId="catalogue-create-bab"
+        [required]="true"
+        [errorKey]="babError()"
+      >
+        <kaff-picker-button
+          controlId="catalogue-create-bab"
+          [valueText]="babText() || i18n.t('catalogue.field.bab_placeholder')"
+          [describedBy]="babField.describedById()"
+          testId="catalogue-create-bab"
+          (opened)="onOpenBabStep()"
+        />
+      </kaff-field>
+
+      <kaff-field
+        #unitField="kaffField"
+        labelKey="catalogue.field.unit"
+        controlId="catalogue-create-unit"
+        [required]="true"
+        [errorKey]="unitError()"
+      >
+        <kaff-select
+          controlId="catalogue-create-unit"
+          ariaLabelKey="catalogue.field.unit"
+          [options]="unitOptions()"
+          [value]="draft().unit"
+          [describedBy]="unitField.describedById()"
+          [invalid]="unitError() !== null"
+          testId="catalogue-create-unit"
+          (valueChange)="onUnit($event)"
+        />
+      </kaff-field>
+
+      <div class="sec-h">
+        <h3>{{ i18n.t('catalogue.panel.prices') }}</h3>
+      </div>
+
+      <kaff-money-field
+        labelKey="catalogue.field.cost_price"
+        controlId="catalogue-create-cost"
+        [internal]="true"
+        [required]="true"
+        [value]="draft().costPrice"
+        hintKey="catalogue.panel.cost_hint"
+        placeholderKey="catalogue.create.price_placeholder"
+        [errorKey]="costError()"
+        testId="catalogue-create-cost"
+        (valueChange)="patch({ costPrice: $event })"
+      />
+      <kaff-money-field
+        labelKey="catalogue.panel.sell_price"
+        controlId="catalogue-create-sell"
+        [required]="true"
+        [value]="draft().baseSellRate"
+        hintKey="catalogue.panel.sell_hint"
+        placeholderKey="catalogue.create.price_placeholder"
+        [errorKey]="sellError()"
+        testId="catalogue-create-sell"
+        (valueChange)="patch({ baseSellRate: $event })"
+      />
+    }
+  </div>
+
+  <div panelFooter class="actions">
+    @if (step() === 'bab') {
+      <p class="sum" data-testid="catalogue-create-pick-summary">{{ pickSummary() }}</p>
+      <kaff-button variant="primary" testId="catalogue-create-pick-done" (clicked)="onBabStepDone()">
+        {{ i18n.t('catalogue.create.pick_done') }}
+      </kaff-button>
+      <kaff-button variant="secondary" testId="catalogue-create-pick-cancel" (clicked)="onBack()">
+        {{ i18n.t('action.cancel') }}
+      </kaff-button>
+    } @else {
+      <kaff-button
+        class="save"
+        variant="primary"
+        [busy]="saving()"
+        testId="catalogue-create-submit"
+        (clicked)="onCreate()"
+      >
+        {{ saving() ? i18n.t('catalogue.create.submitting') : i18n.t('catalogue.create.submit') }}
+      </kaff-button>
+      <kaff-button
+        variant="secondary"
+        [disabled]="saving()"
+        testId="catalogue-create-cancel"
+        (clicked)="closed.emit()"
+      >
+        {{ i18n.t('action.cancel') }}
+      </kaff-button>
+    }
+  </div>
+</kaff-detail-panel>

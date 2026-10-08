@@ -18,6 +18,7 @@
       </p>
     </div>
 
+    @if (!isFirstRun()) {
     <div class="acts">
       <kaff-search-field
         [value]="searchTerm()"
@@ -39,8 +40,10 @@
         {{ i18n.t('catalogue.action.create') }}
       </kaff-button>
     </div>
+    }
   </header>
 
+  @if (!isFirstRun()) {
   <div class="tools">
     <kaff-segmented-filter
       [options]="segmentedOptions"
@@ -65,6 +68,7 @@
       }
     </div>
   </div>
+  }
 
   @if (!failure() && !loading() && groups().length > 0) {
     <p class="count">
@@ -93,7 +97,7 @@
       } @else {
         <kaff-state mode="refusal" [bodyKey]="failed.key" testId="catalogue-list-failure" />
       }
-    } @else if (loading() && items().length === 0) {
+    } @else if ((loading() || !totalsReady()) && items().length === 0) {
       <!-- Loading: the header stays, and the body is skeleton rows at the real row height. No spinner, no
            overlay (README "The four list states"). -->
       <kaff-table [columnDefs]="headerColumns" [minInline]="800" testId="catalogue-table-header">
@@ -167,6 +171,7 @@
                       <kaff-table-row
                         class="item-row"
                         [archived]="item.status === 'Archived'"
+                        [class.is-new]="isJustCreated(item)"
                         [stacked]="true"
                         (click)="onRowClick(item, $event)"
                       >
@@ -241,6 +246,12 @@
                       </kaff-table-row>
                     }
 
+                    @if (isJustCreated(item)) {
+                      <kaff-banner tone="ok" icon="check" [flat]="true" testId="catalogue-row-created">{{
+                        createdText()
+                      }}</kaff-banner>
+                    }
+
                     @if (rowFailure(); as failed) {
                       @if (failed.id === item.id) {
                         <kaff-banner
@@ -270,6 +281,68 @@
           </section>
         }
       </kaff-table>
+    } @else if (isFirstRunNoBabs()) {
+      <kaff-first-run
+        icon="layers"
+        [title]="i18n.t('catalogue.first_run.nobabs_title')"
+        [body]="i18n.t('catalogue.first_run.nobabs_body')"
+        [steps]="[i18n.t('catalogue.first_run.nobabs_step_1'), i18n.t('catalogue.first_run.nobabs_step_2')]"
+        [exampleTitle]="i18n.t('catalogue.first_run.nobabs_example_title')"
+        [exampleTag]="i18n.t('catalogue.first_run.example_tag')"
+        testId="catalogue-first-run-no-babs"
+        exampleTestId="catalogue-first-run-example"
+      >
+        <span frActions>
+          <kaff-button variant="primary" testId="catalogue-first-run-go-babs" (clicked)="onGoToBabs()">
+            <kaff-icon [name]="'layers'" [small]="true" />
+            {{ i18n.t('catalogue.first_run.nobabs_action') }}
+          </kaff-button>
+        </span>
+        <span frExample>
+          <span class="ex">
+            <b>{{ i18n.t('catalogue.first_run.example_name') }}</b>
+            <bdi class="cd" dir="ltr">CON-1014</bdi>
+          </span>
+          <span class="ex">
+            <span class="cd">{{ i18n.t('catalogue.first_run.example_bab') }}</span>
+            <span class="n2">م³</span>
+          </span>
+        </span>
+      </kaff-first-run>
+    } @else if (isFirstRunNoItems()) {
+      <kaff-first-run
+        icon="catalog"
+        [title]="i18n.t('catalogue.list.empty')"
+        [body]="i18n.t('catalogue.first_run.noitems_body')"
+        [steps]="[i18n.t('catalogue.first_run.noitems_step_1'), i18n.t('catalogue.first_run.noitems_step_2')]"
+        [exampleTitle]="i18n.t('catalogue.first_run.noitems_example_title')"
+        [exampleTag]="i18n.t('catalogue.first_run.example_tag')"
+        testId="catalogue-list-empty"
+        exampleTestId="catalogue-first-run-example"
+      >
+        <span frActions>
+          <kaff-button variant="primary" testId="catalogue-empty-create" (clicked)="onCreate()">
+            <kaff-icon [name]="'plus'" [small]="true" />
+            {{ i18n.t('catalogue.action.create') }}
+          </kaff-button>
+          <kaff-button variant="secondary" testId="catalogue-empty-import" (clicked)="onImport()">
+            <kaff-icon [name]="'upload'" [small]="true" />
+            {{ i18n.t('catalogue.action.import') }}
+          </kaff-button>
+        </span>
+        <span frExample>
+          <span class="ex">
+            <b>{{ i18n.t('catalogue.first_run.example_name') }}</b>
+            <bdi class="cd" dir="ltr">CON-1014</bdi>
+          </span>
+          <span class="ex">
+            <span class="cd">{{ i18n.t('catalogue.first_run.noitems_example_unit_bab') }}</span>
+          </span>
+          <span class="ex">
+            <span class="cd">{{ i18n.t('catalogue.first_run.noitems_example_prices') }}</span>
+          </span>
+        </span>
+      </kaff-first-run>
     } @else if (isFiltered()) {
       <!-- AC-203-D: a search or filter that matched nothing is a different fact from an empty catalogue. -->
       @if (archivedEmpty()) {
@@ -327,5 +400,17 @@
     (archiveConfirmed)="openItem() && onPanelArchive(openItem()!)"
     (unarchiveRequested)="openItem() && onPanelUnarchive(openItem()!)"
     (closed)="onClosePanel()"
+  />
+
+  <!-- The create panel: a side panel on a desktop and a bottom sheet on a phone, over the list. The query
+       parameter ?create=1 opens it, so the back button closes it and a refresh restores it. -->
+  <kaff-catalogue-create-panel
+    [open]="createOpen()"
+    [babs]="babs()"
+    [takenCodes]="takenCodes()"
+    [saving]="createSaving()"
+    [refusalKey]="createRefusal()"
+    (createRequested)="onCreateRequested($event)"
+    (closed)="onCloseCreate()"
   />
 </section>

@@ -1,13 +1,15 @@
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
+import { By } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
 import { Bab, BabsApi } from '../../../core/catalogue/babs.api';
-import { CatalogueApi, CatalogueItem, CatalogueItemEdit } from '../../../core/catalogue/catalogue.api';
+import { CatalogueApi, CatalogueItem, CatalogueItemCreate, CatalogueItemEdit } from '../../../core/catalogue/catalogue.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { CatalogueCreatePanel } from './catalogue-create-panel';
 import { CatalogueListPage } from './catalogue-list-page';
 
 function item(code: string, babId: string, status: 'Active' | 'Archived' = 'Active'): CatalogueItem {
@@ -29,7 +31,20 @@ const BABS: readonly Bab[] = [
   { id: 'b2', code: 'FIN', nameAr: 'أعمال تشطيبات', nameEn: 'Finishing', parentBabId: null, defaultMarkup: '0.12', isActive: true },
 ];
 
-class FakeCatalogueApi implements Pick<CatalogueApi, 'list' | 'archive' | 'unarchive' | 'edit'> {
+class FakeCatalogueApi implements Pick<CatalogueApi, 'list' | 'archive' | 'unarchive' | 'edit' | 'create'> {
+  createFailure: HttpErrorResponse | null = null;
+  readonly creates: CatalogueItemCreate[] = [];
+
+  async create(request: CatalogueItemCreate): Promise<CatalogueItem> {
+    if (this.createFailure) {
+      throw this.createFailure;
+    }
+    this.creates.push(request);
+    const made = { ...item(request.code, request.babId), descriptionAr: request.descriptionAr };
+    this.items = [...this.items, made];
+    return made;
+  }
+
   editFailure: HttpErrorResponse | null = null;
   readonly edits: CatalogueItemEdit[] = [];
 
@@ -70,9 +85,12 @@ class FakeCatalogueApi implements Pick<CatalogueApi, 'list' | 'archive' | 'unarc
   }
 }
 
+/** The أبواب the fake serves; a test that needs none sets this to `[]`. */
+let servedBabs: readonly Bab[] = BABS;
+
 class FakeBabsApi implements Pick<BabsApi, 'list'> {
   async list(): Promise<readonly Bab[]> {
-    return BABS;
+    return servedBabs;
   }
 }
 
@@ -102,8 +120,10 @@ async function render(
   inputs: Readonly<Record<string, unknown>> = {},
   api: FakeCatalogueApi = new FakeCatalogueApi(),
   permissions: readonly string[] = [],
+  babs: readonly Bab[] = BABS,
 ) {
   api.items = items;
+  servedBabs = babs;
   TestBed.resetTestingModule();
   localStorage.removeItem('kaff.catalogue.open-groups');
   TestBed.configureTestingModule({
@@ -134,6 +154,14 @@ async function render(
       await settle(fixture);
     },
   };
+}
+
+function renderWithBabs(
+  babs: readonly Bab[],
+  items: readonly CatalogueItem[],
+  api: FakeCatalogueApi = new FakeCatalogueApi(),
+) {
+  return render(items, { status: 'all' }, api, [], babs);
 }
 
 /**
@@ -303,6 +331,93 @@ describe('CatalogueListPage · the table states read differently', () => {
     expect(byId('catalogue-list-empty')).toBeTruthy();
     expect(byId('catalogue-list-empty-filtered')).toBeNull();
     expect(byId('catalogue-empty-create')).toBeTruthy();
+  });
+
+  it('with no أبواب the empty catalogue points at the أبواب module and offers nothing to create or import', async () => {
+    const api = new FakeCatalogueApi();
+    api.items = [];
+    const { byId, root } = await renderWithBabs([], [], api);
+
+    expect(byId('catalogue-first-run-no-babs')).toBeTruthy();
+    expect(byId('catalogue-first-run-go-babs')).toBeTruthy();
+    expect(byId('catalogue-first-run-example')).toBeTruthy();
+    // One primary: the page header's own create, import and search are hidden while this shows.
+    expect(byId('catalogue-create')).toBeNull();
+    expect(byId('catalogue-import-link')).toBeNull();
+    expect(byId('catalogue-search')).toBeNull();
+    expect(root.querySelector('[data-testid="catalogue-empty-create"]')).toBeNull();
+  });
+
+  it('with أبواب and no items it offers create and import side by side', async () => {
+    const { byId } = await render([], { status: 'all' });
+
+    expect(byId('catalogue-list-empty')).toBeTruthy();
+    expect(byId('catalogue-empty-create')).toBeTruthy();
+    expect(byId('catalogue-empty-import')).toBeTruthy();
+    expect(byId('catalogue-first-run-no-babs')).toBeNull();
+    expect(byId('catalogue-create')).toBeNull();
+  });
+
+  it('a catalogue that holds items never shows a first run', async () => {
+    const { byId } = await render([item('C-1', 'b1')]);
+
+    expect(byId('catalogue-first-run-no-babs')).toBeNull();
+    expect(byId('catalogue-list-empty')).toBeNull();
+    expect(byId('catalogue-create')).toBeTruthy();
+  });
+
+  it('?create=1 opens the create panel over the list', async () => {
+    const { byId } = await render([item('C-1', 'b1')], { create: '1' });
+
+    expect(byId('catalogue-create-panel')).toBeTruthy();
+    expect(byId('catalogue-create-submit')).toBeTruthy();
+  });
+
+  it('creating sends the typed item, closes the panel and shows the new row with a band saying so', async () => {
+    const api = new FakeCatalogueApi();
+    const { fixture, byId } = await render([item('C-1', 'b1')], { create: '1' }, api);
+    const panel = fixture.debugElement.query(By.directive(CatalogueCreatePanel)).componentInstance as CatalogueCreatePanel;
+    const request: CatalogueItemCreate = {
+      code: 'C-2',
+      descriptionAr: 'بند جديد',
+      descriptionEn: null,
+      unit: 'م³',
+      babId: 'b1',
+      costPrice: '1.00',
+      baseSellRate: '2.00',
+    };
+
+    panel.createRequested.emit(request);
+    await settle(fixture);
+
+    expect(api.creates).toEqual([request]);
+    expect(byId('catalogue-row-created')!.textContent).toContain('catalogue.created');
+    expect(byId('catalogue-row-C-2')).toBeTruthy();
+  });
+
+  it("a refused create stays open and carries the key of the server down to the panel", async () => {
+    const api = new FakeCatalogueApi();
+    api.createFailure = new HttpErrorResponse({
+      status: 409,
+      error: { messageKey: 'errors.master.catalogue_item_code_taken' },
+    });
+    const { fixture, byId } = await render([item('C-1', 'b1')], { create: '1' }, api);
+    const panel = fixture.debugElement.query(By.directive(CatalogueCreatePanel)).componentInstance as CatalogueCreatePanel;
+
+    panel.createRequested.emit({
+      code: 'C-1',
+      descriptionAr: 'x',
+      descriptionEn: null,
+      unit: 'م³',
+      babId: 'b1',
+      costPrice: '1',
+      baseSellRate: '2',
+    });
+    await settle(fixture);
+
+    expect(api.creates).toHaveLength(0);
+    expect(byId('catalogue-create-panel')).toBeTruthy();
+    expect(byId('catalogue-row-created')).toBeNull();
   });
 
   it('a filter that matches nothing is not "no items yet", and offers to clear', async () => {

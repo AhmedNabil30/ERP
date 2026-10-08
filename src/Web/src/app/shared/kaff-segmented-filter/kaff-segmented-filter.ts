@@ -5,6 +5,8 @@ import { I18nService } from '../../core/i18n/i18n.service';
 export interface SegmentedFilterOption<T extends string = string> {
   readonly value: T;
   readonly labelKey: string;
+  /** Already-resolved text that wins over the key, for a label that carries a count ("New 150"). */
+  readonly labelText?: string;
 }
 
 /**

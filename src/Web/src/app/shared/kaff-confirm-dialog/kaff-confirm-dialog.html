@@ -1,6 +1,7 @@
 <dialog
   #dialog
   class="dlg"
+  [class.dlg--sheet]="sheetOnPhone()"
   aria-labelledby="kaff-dlg-title"
   [attr.data-testid]="testId()"
   (cancel)="onNativeCancel($event)"
@@ -14,6 +15,7 @@
       @if (body(); as text) {
         <p>{{ text }}</p>
       }
+      <ng-content select="[dialogExtra]" />
     </div>
   </div>
   <div class="foot">
