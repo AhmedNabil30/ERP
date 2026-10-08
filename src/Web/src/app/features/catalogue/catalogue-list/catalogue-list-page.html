@@ -222,10 +222,10 @@
                             >{{ unitParts(item.unit).base
                             }}@if (unitParts(item.unit).sup; as sup) {<sup>{{ sup }}</sup>}</span
                           >
-                          <span class="cell-internal money">
+                          <span class="cell-internal money cell-end">
                             <bdi class="figure" dir="ltr">{{ i18n.formatAmount(item.costPrice) }}</bdi>
                           </span>
-                          <span class="money">
+                          <span class="money cell-end">
                             <bdi class="figure" dir="ltr">{{ i18n.formatAmount(item.baseSellRate) }}</bdi>
                           </span>
                         }

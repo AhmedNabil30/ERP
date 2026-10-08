@@ -55,3 +55,23 @@
   background: var(--head);
   border-inline-end: 1px solid var(--line);
 }
+
+/*
+  Label and value share one edge (the client's "text must line up with its column title"). A header
+  cell sits on exactly the track its column's body cells sit on, with no padding of its own, so the two
+  start on the same inline edge by construction. The only way they can part is a body cell that carries
+  a 44px control at an edge (a tree disclosure, an edit pencil): the value then begins one control-width
+  in, and the column def says so with `lead` / `trail`, which pad the label by that same width. Logical
+  properties, so it holds in Arabic RTL and in English LTR.
+*/
+.header-cell--lead {
+  padding-inline-start: var(--tap-target);
+}
+
+.header-cell--trail {
+  padding-inline-end: var(--tap-target);
+}
+
+.header-cell--pinned.header-cell--lead {
+  padding-inline-start: calc(var(--space-4) + var(--tap-target));
+}

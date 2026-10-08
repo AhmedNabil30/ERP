@@ -21,9 +21,30 @@
   background: var(--hover);
 }
 
-/* Isolated identifiers are grid children; shrink their boxes to the content they carry. */
-.row > bdi {
+/*
+  Where a cell's text sits (the client's "text must line up with its column title"). A cell that names its
+  own direction (an English description, a phone or a code with dir="ltr"; a name that may be Latin with
+  dir="auto"; any bdi) would otherwise stretch across its track and resolve "start" against ITS direction,
+  so a Latin value in an Arabic list, or an Arabic one in an English list, sat on the opposite edge from its
+  header. Placing the cell's box with justify-self puts it on the ROW's inline-start edge, because a grid
+  item is placed by its container's direction; the box then shrinks to its text, so there is no text-align
+  left to disagree. It still clamps to the track (min-inline-size 0), so an ellipsis cell still ellipsises.
+  ng-deep because projected cells keep the caller's style scope.
+*/
+.row > ::ng-deep :is([dir], bdi) {
   justify-self: start;
+  min-inline-size: 0;
+}
+
+/*
+  A cell aligned to the end edge (money, counts, percentages). It is the body half of the header's
+  align: "end": the header label and this cell both sit on the track's inline-end edge. It follows the
+  rule above, so it wins by order. A cell that also carries a trailing 44px control gives its column def
+  "trail".
+*/
+.row > ::ng-deep .cell-end {
+  justify-self: end;
+  text-align: end;
 }
 
 /* Archived (README "Kit additions" 4): the row text drops to the dim colour. Never struck through, because the

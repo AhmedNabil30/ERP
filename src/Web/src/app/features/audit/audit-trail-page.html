@@ -119,7 +119,7 @@
               S-008's own reason, an `Occurred` record changed no entity and a zero is noise, not
               information, on every sign-in row in the trail.
             -->
-            <span class="row-fields">
+            <span class="row-fields cell-end">
               @if (changedCount(entry) > 0) {
                 {{ i18n.t('audit.row.fields_changed', { count: changedCount(entry) }) }}
               }

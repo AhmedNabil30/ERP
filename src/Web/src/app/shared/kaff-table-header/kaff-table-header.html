@@ -9,6 +9,8 @@
       [class]="col.cssClass ?? ''"
       [class.header-cell--end]="col.align === 'end'"
       [class.header-cell--pinned]="col.pinned === true"
+      [class.header-cell--lead]="col.lead === true"
+      [class.header-cell--trail]="col.trail === true"
     >
       @if (col.markerIcon; as icon) {
         <kaff-icon [name]="icon" [small]="true" />

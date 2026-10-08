@@ -14,6 +14,13 @@ export interface TableColumnDef {
   readonly pinned?: boolean;
   /** A desktop-only column: hidden where the layout stacks, and under a container that drops it. */
   readonly cssClass?: string;
+  /** The body cell of this column starts with a 44px control (a tree disclosure, say), so its value begins
+   *  one control-width in from the track edge. The header label skips the same width and so shares the
+   *  value's inline-start edge. */
+  readonly lead?: boolean;
+  /** The body cell of this column ends with a 44px control (an edit pencil, say). The header label skips
+   *  the same width and so shares the value's inline-end edge. */
+  readonly trail?: boolean;
   /** An internal-figure marker (README "Kit additions" 3): an icon before the label and a badge after it. */
   readonly markerIcon?: KaffIconName;
   readonly markerKey?: string;

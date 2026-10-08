@@ -50,4 +50,20 @@ describe('KaffTableHeader', () => {
     expect(cells[3].classList.contains('header-cell--end')).toBe(true);
     expect(cells[0].classList.contains('header-cell--end')).toBe(false);
   });
+
+  it('marks a column whose body cell carries a 44px control at an edge, so the label can skip it', () => {
+    const fixture = TestBed.createComponent(KaffTableHeader);
+    fixture.componentRef.setInput('columnDefs', [
+      { labelKey: 'bab.column.name', pinned: true, lead: true },
+      { labelKey: 'bab.column.default_markup', align: 'end', trail: true },
+      { labelKey: 'bab.column.items', align: 'end' },
+    ]);
+    fixture.detectChanges();
+
+    const cells: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('[role="columnheader"]'));
+    expect(cells[0].classList.contains('header-cell--lead')).toBe(true);
+    expect(cells[1].classList.contains('header-cell--trail')).toBe(true);
+    expect(cells[2].classList.contains('header-cell--lead')).toBe(false);
+    expect(cells[2].classList.contains('header-cell--trail')).toBe(false);
+  });
 });

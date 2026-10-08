@@ -15060,3 +15060,40 @@ inline edit and is now the pencil (desktop) or the chip (phone). Removed with th
 `npm test`: `Test Files  32 passed (32)`, `Tests  214 passed (214)` (the page, panel flow and move dialog
 add 38 cases over the previous 176). Screenshots of the running screen, light and dark at 1440 and 390,
 were taken against an isolated stack (own API and database, since dropped) and looked at one by one.
+
+### D-182 · Frontend — a column's header label and its body cells share one edge, owned by the kit · 2026-10-08
+
+**Defect (client, on `/babs`):** the Arabic and English text must line up with its column title. It did
+not, in four ways, measured at 1440 in Arabic and English as the distance between the header label's
+inline edge and the body text's inline edge (a header on an end-aligned column is measured on its end edge):
+1. A cell that names its own direction (`dir="ltr"` English or phone, `dir="auto"` name, any `bdi`)
+   stretched across its track and resolved "start" against its own direction, so a Latin value sat on the
+   opposite edge from its header in an Arabic list and an Arabic value in an English list (departments
+   English name 310.6px off in Arabic, users full name 436.3px off in English, employees specialty 80.3px,
+   projects client 68.2px, departments Arabic name 329.5px).
+2. A column marked `align: 'end'` had a header on the end edge and a body cell with nothing to put it
+   there (subcontractors retention 120.6px off, projects contract value 44.5px, audit changes).
+3. A body cell with a 44px control at an edge moved its value off the label: the أبواب markup figure sat
+   46px inside the label (the edit pencil is at the end edge), and every tree name sat 44px inside the label
+   (the disclosure or its spacer is at the start edge).
+4. A parent's "(118 with children)" note took the end edge, so the item figure was not under its header.
+
+**Kit fix, not per screen.** `kaff-table-row.css`: a direct child that carries `[dir]` or is a `bdi` is
+placed with `justify-self: start` (a grid item is placed by its container's direction, so it sits on the row's
+start edge and shrinks to its text, leaving no `text-align` to disagree); `.cell-end` is the body half of
+`align: 'end'` (`justify-self: end`). `kaff-table-header`'s `TableColumnDef` gains `lead` and `trail`: a
+column whose body cell carries a 44px control at the start or end edge pads its label by that width, so
+label and value share an edge. I tried `text-align: match-parent` first; Chromium drops the declaration, so
+it is not used. Pages: `.cell-end` on catalogue cost and sell, projects contract value, subcontractors
+retention, audit changes and the أبواب count; أبواب's header columns became a `computed` (`lead` only in the
+tree, not in a flat search or archived result), its markup track widened 140px to 176px so the padded label
+fits, and the count note is ordered before the figure.
+
+**Where the approved mockup is itself misaligned.** `babs.html` (`.tbl td.n` holds the figure and the pencil;
+`.tbl td.id` holds the 44px `.tg` chevron) has the same two defects: the markup figure ends 46px inside its
+header and the tree names start 44px inside theirs. The kit follows the rule, not the picture: the label
+skips the control width. Deeper tree levels indent a further 24px each and are not meant to line up with the
+header.
+
+**Not changed:** the two day-labour lists (worker pool and history) put a label inside each cell for the
+phone and align their figures themselves; they were not measured here.

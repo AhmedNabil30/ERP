@@ -127,13 +127,16 @@ export class BabTreePage {
   protected readonly i18n = inject(I18nService);
 
   /** Tracks run in `rowColumns` order (the stylesheet); the English name drops out below 1060px. */
-  protected readonly headerColumns: readonly TableColumnDef[] = [
-    { labelKey: 'bab.column.name', pinned: true },
+  protected readonly headerColumns = computed<readonly TableColumnDef[]>(() => [
+    // In the tree every name sits after a 44px disclosure (or its spacer), so the label skips the same
+    // width; a search result or the archived view is flat and has no disclosure.
+    { labelKey: 'bab.column.name', pinned: true, lead: !this.isFlat() },
     { labelKey: 'bab.column.name_en', cssClass: 'cell-en' },
     { labelKey: 'bab.column.items', align: 'end' },
-    { labelKey: 'bab.column.default_markup', align: 'end' },
+    // The figure is followed by the 44px edit pencil, so the label ends where the figure ends.
+    { labelKey: 'bab.column.default_markup', align: 'end', trail: true },
     {},
-  ];
+  ]);
 
   protected readonly skeletonRows = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
   protected readonly skeletonIndent = [0, 0, 1, 1, 1, 0, 0, 0, 1, 1] as const;

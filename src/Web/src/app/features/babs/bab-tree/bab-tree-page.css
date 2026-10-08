@@ -69,14 +69,14 @@
 }
 
 .frame kaff-table {
-  --kaff-columns: minmax(300px, 1.5fr) minmax(120px, 1fr) 150px 140px 64px;
+  --kaff-columns: minmax(300px, 1.5fr) minmax(120px, 1fr) 150px 176px 64px;
 }
 
 /* Below 1060px the English name drops out (it is in the panel) so the markup stays on screen and the
    identity column stays pinned. */
 @container babs (max-width: 1059px) {
   .frame kaff-table {
-    --kaff-columns: minmax(280px, 1fr) 150px 140px 64px;
+    --kaff-columns: minmax(280px, 1fr) 150px 176px 64px;
   }
 
   .frame ::ng-deep .cell-en,
@@ -209,6 +209,12 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The figure keeps the end edge, so a parent's "(118 with children)" note sits before it and every figure in
+   the column lines up under the header. */
+.with-kids {
+  order: -1;
+}
+
 .with-kids,
 .dim {
   color: var(--dim);
@@ -219,11 +225,9 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 2px;
 }
 
 .markup-figure {
-  min-inline-size: 44px;
   font-weight: 700;
 }
 

@@ -80,7 +80,7 @@
     } @else if (loading() && !hasAnyBab()) {
       <!-- Loading: the header stays and the body is skeleton rows at the real row height (README "The
            four list states"). No spinner, no overlay. -->
-      <kaff-table [columnDefs]="headerColumns" [minInline]="760" testId="bab-tree-table-header">
+      <kaff-table [columnDefs]="headerColumns()" [minInline]="800" testId="bab-tree-table-header">
         <div
           class="skeleton"
           role="status"
@@ -152,8 +152,8 @@
       <kaff-table
         role="treegrid"
         [attr.aria-label]="i18n.t('bab.tree.title')"
-        [columnDefs]="headerColumns"
-        [minInline]="760"
+        [columnDefs]="headerColumns()"
+        [minInline]="800"
         testId="bab-tree-table-header"
         data-testid="bab-tree-table-shell"
         [attr.aria-busy]="loading()"
@@ -316,7 +316,7 @@
                       </span>
                     } @else {
                       <span role="gridcell" class="cell-wide cell-en en"><bdi dir="ltr">{{ row.bab.nameEn }}</bdi></span>
-                      <span role="gridcell" class="cell-wide count">
+                      <span role="gridcell" class="cell-wide count cell-end">
                         @if (itemCountOf(row.bab); as items) {
                           <bdi class="figure" dir="ltr">{{ figure(items) }}</bdi>
                         } @else if (itemCountOf(row.bab) === 0) {
