@@ -165,7 +165,7 @@ export class AuditTrailPage {
       minute: '2-digit',
       second: '2-digit',
       hour12: false,
-    });
+    }).replace(/[‎‏]/g, ''); // the Arabic formatter's RLM marks are strong RTL and reorder the date inside dir=ltr
   }
 
   /** How many fields a row says moved, from the same source the panel builds its table from. */
