@@ -97,9 +97,10 @@
 }
 
 @container cat (max-width: 1059px) {
-  .frame ::ng-deep .cell-en,
-  .frame ::ng-deep .header .cell-en {
-    display: none;
+  /* !important: the kit header sets `display: flex` on its cells with a higher specificity (its own scope
+     attribute lands on the cell as well), and a hidden column must leave its track in header and body. */
+  .frame ::ng-deep .cell-en {
+    display: none !important;
   }
 }
 

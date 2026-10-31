@@ -34,6 +34,9 @@
 .row > ::ng-deep :is([dir], bdi) {
   justify-self: start;
   min-inline-size: 0;
+  /* A nowrap cell's min-content is its whole text, so a non-stretch item would grow past its track and
+     run over the next column; capping at the track makes its ellipsis work. */
+  max-inline-size: 100%;
 }
 
 /*
