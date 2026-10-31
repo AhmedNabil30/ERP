@@ -775,6 +775,9 @@
 
 
   "nav.subcontractors": "Subcontractors",
+  "subcontractor.search.placeholder": "Search by name, code or phone",
+  "subcontractor.search.clear": "Clear search",
+  "subcontractor.list.count": "{count} subcontractors",
   "subcontractor.list_title": "Subcontractor register",
   "subcontractor.create_title": "Register subcontractor",
   "subcontractor.edit_title": "Subcontractor file",
@@ -809,6 +812,9 @@
   "subcontractor.confirm.archive.body": "They leave the working list and their record stays intact.",
 
   "nav.suppliers": "Suppliers",
+  "supplier.search.placeholder": "Search by name, code or phone",
+  "supplier.search.clear": "Clear search",
+  "supplier.list.count": "{count} suppliers",
   "supplier.list_title": "Supplier register",
   "supplier.create_title": "Register supplier",
   "supplier.edit_title": "Supplier file",

@@ -775,6 +775,9 @@
 
 
   "nav.subcontractors": "مقاولو الباطن",
+  "subcontractor.search.placeholder": "ابحث بالاسم أو الرمز أو الهاتف",
+  "subcontractor.search.clear": "مسح البحث",
+  "subcontractor.list.count": "{count} مقاولًا",
   "subcontractor.list_title": "سجل مقاولي الباطن",
   "subcontractor.create_title": "تسجيل مقاول باطن",
   "subcontractor.edit_title": "بيانات مقاول الباطن",
@@ -809,6 +812,9 @@
   "subcontractor.confirm.archive.body": "سيخرج من القائمة الحالية ويبقى سجله كما هو.",
 
   "nav.suppliers": "الموردون",
+  "supplier.search.placeholder": "ابحث بالاسم أو الرمز أو الهاتف",
+  "supplier.search.clear": "مسح البحث",
+  "supplier.list.count": "{count} موردًا",
   "supplier.list_title": "سجل الموردين",
   "supplier.create_title": "تسجيل مورد",
   "supplier.edit_title": "بيانات المورد",

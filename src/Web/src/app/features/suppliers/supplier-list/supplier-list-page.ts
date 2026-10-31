@@ -1,10 +1,24 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  TemplateRef,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { SupplierListFilter, SupplierSummary, SuppliersApi } from '../../../core/suppliers/suppliers.api';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import { KaffSearchField } from '../../../shared/kaff-search-field/kaff-search-field';
+import { KaffSegmentedFilter, SegmentedFilterOption } from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
 import { KaffRowMenu, RowMenuItem } from '../../../shared/kaff-row-menu/kaff-row-menu';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { KaffTable } from '../../../shared/kaff-table/kaff-table';
@@ -32,7 +46,7 @@ const FILTERS: readonly SupplierListFilter[] = ['active', 'archived', 'all'];
  */
 @Component({
   selector: 'kaff-supplier-list-page',
-  imports: [RouterLink, KaffButton, KaffRowMenu, KaffState, KaffTable, KaffTableRow],
+  imports: [RouterLink, KaffButton, KaffSearchField, KaffSegmentedFilter, KaffRowMenu, KaffState, KaffTable, KaffTableRow],
   templateUrl: './supplier-list-page.html',
   styleUrl: './supplier-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -60,7 +74,27 @@ export class SupplierListPage {
   readonly status = input<SupplierListFilter>('active');
   protected readonly statusFilter = computed(() => this.status() ?? 'active');
 
-  protected readonly suppliers = signal<readonly SupplierSummary[]>([]);
+  protected readonly segmentedOptions: readonly SegmentedFilterOption<SupplierListFilter>[] = FILTERS.map(
+    (filter) => ({ value: filter, labelKey: this.filterKey(filter) }),
+  );
+
+  /** The search is local: the register is a few dozen rows, so name, code and phone are matched here. */
+  protected readonly searchTerm = signal('');
+
+  protected readonly all = signal<readonly SupplierSummary[]>([]);
+  protected readonly suppliers = computed(() => {
+    const term = this.searchTerm().trim().toLowerCase();
+    if (term === '') return this.all();
+    return this.all().filter((row) =>
+      [row.name, row.code, row.phone].some((value) => (value ?? '').toLowerCase().includes(term)),
+    );
+  });
+  protected readonly countText = computed(() =>
+    this.i18n.t('supplier.list.count', { count: this.suppliers().length }),
+  );
+
+  private readonly createAction = viewChild<TemplateRef<unknown>>('createAction');
+  private readonly headerActions = inject(HeaderActionsService);
   protected readonly loading = signal(true);
   protected readonly failure = signal<string | null>(null);
 
@@ -69,6 +103,9 @@ export class SupplierListPage {
   protected readonly rowFailure = signal<{ readonly id: string; readonly key: string } | null>(null);
 
   constructor() {
+    effect(() => this.headerActions.set(this.createAction() ?? null));
+    inject(DestroyRef).onDestroy(() => this.headerActions.set(null));
+
     effect(() => {
       void this.statusFilter();
       void this.reload();
@@ -84,6 +121,10 @@ export class SupplierListPage {
       case 'all':
         return 'supplier.filter.all';
     }
+  }
+
+  protected async onCreate(): Promise<void> {
+    await this.router.navigate(['/suppliers/new']);
   }
 
   protected async onFilter(filter: SupplierListFilter): Promise<void> {
@@ -151,10 +192,10 @@ export class SupplierListPage {
     this.failure.set(null);
 
     try {
-      this.suppliers.set(await this.api.list(this.statusFilter()));
+      this.all.set(await this.api.list(this.statusFilter()));
     } catch (error) {
       this.failure.set(toProblem(error).messageKey);
-      this.suppliers.set([]);
+      this.all.set([]);
     } finally {
       this.loading.set(false);
     }

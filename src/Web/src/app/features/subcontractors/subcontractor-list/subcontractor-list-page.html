@@ -1,19 +1,32 @@
-<section class="subcontractors" data-testid="subcontractor-list">
-  <h1 class="title">{{ i18n.t('subcontractor.list_title') }}</h1>
+<ng-template #createAction>
+  <kaff-button variant="primary" testId="subcontractor-create" (clicked)="onCreate()">
+    {{ i18n.t('subcontractor.action.create') }}
+  </kaff-button>
+</ng-template>
 
-  <!-- A segmented control, matching EmployeeListPage's own — AC-211-M's three server states. -->
-  <div class="filters" role="group" [attr.aria-label]="i18n.t('subcontractor.list_title')">
-    @for (option of filters; track option) {
-      <button
-        type="button"
-        class="chip"
-        [class.chip--on]="statusFilter() === option"
-        [attr.aria-pressed]="statusFilter() === option"
-        [attr.data-testid]="'subcontractor-filter-' + option"
-        (click)="onFilter(option)"
-      >
-        {{ i18n.t(filterKey(option)) }}
-      </button>
+<section class="subcontractors" data-testid="subcontractor-list">
+  <div class="action-bar">
+    <h1 class="title">{{ i18n.t('subcontractor.list_title') }}</h1>
+    <kaff-search-field
+      [value]="searchTerm()"
+      placeholderKey="subcontractor.search.placeholder"
+      clearLabelKey="subcontractor.search.clear"
+      testId="subcontractor-search"
+      clearTestId="subcontractor-search-clear"
+      (committed)="searchTerm.set($event)"
+    />
+  </div>
+
+  <div class="filter-strip">
+    <kaff-segmented-filter
+      [options]="segmentedOptions"
+      [value]="statusFilter()"
+      (valueChange)="onFilter($event)"
+      ariaLabelKey="subcontractor.list_title"
+      testIdPrefix="subcontractor-filter"
+    />
+    @if (all().length > 0) {
+      <span class="count" data-testid="subcontractor-list-count">{{ countText() }}</span>
     }
   </div>
 
@@ -105,19 +118,13 @@
         }
       </ul>
     </kaff-table>
-  } @else if (statusFilter() !== 'active') {
+  } @else if (statusFilter() !== 'active' || searchTerm() !== '') {
     <kaff-state mode="filtered-empty" titleKey="subcontractor.empty_filtered" testId="subcontractor-list-empty-filtered" />
   } @else {
     <kaff-state mode="empty" titleKey="subcontractor.empty" testId="subcontractor-list-empty">
-      <a stateAction class="create" routerLink="/subcontractors/new" data-testid="subcontractor-create">
+      <a stateAction class="create" routerLink="/subcontractors/new">
         {{ i18n.t('subcontractor.action.create') }}
       </a>
     </kaff-state>
-  }
-
-  @if (subcontractors().length > 0) {
-    <a class="create" routerLink="/subcontractors/new" data-testid="subcontractor-create">
-      {{ i18n.t('subcontractor.action.create') }}
-    </a>
   }
 </section>

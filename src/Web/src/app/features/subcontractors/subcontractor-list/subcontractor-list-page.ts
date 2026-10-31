@@ -1,9 +1,21 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  TemplateRef,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { BabsApi, Bab } from '../../../core/catalogue/babs.api';
 import { toProblem } from '../../../core/api/problem-details';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { fractionToPercent } from '../../../core/catalogue/percent-wire';
 import {
   SubcontractorListFilter,
@@ -11,6 +23,8 @@ import {
   SubcontractorsApi,
 } from '../../../core/subcontractors/subcontractors.api';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import { KaffSearchField } from '../../../shared/kaff-search-field/kaff-search-field';
+import { KaffSegmentedFilter, SegmentedFilterOption } from '../../../shared/kaff-segmented-filter/kaff-segmented-filter';
 import { KaffRowMenu, RowMenuItem } from '../../../shared/kaff-row-menu/kaff-row-menu';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { KaffTable } from '../../../shared/kaff-table/kaff-table';
@@ -38,7 +52,7 @@ const FILTERS: readonly SubcontractorListFilter[] = ['active', 'archived', 'all'
  */
 @Component({
   selector: 'kaff-subcontractor-list-page',
-  imports: [RouterLink, KaffButton, KaffRowMenu, KaffState, KaffTable, KaffTableRow],
+  imports: [RouterLink, KaffButton, KaffSearchField, KaffSegmentedFilter, KaffRowMenu, KaffState, KaffTable, KaffTableRow],
   templateUrl: './subcontractor-list-page.html',
   styleUrl: './subcontractor-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -70,7 +84,27 @@ export class SubcontractorListPage {
   readonly status = input<SubcontractorListFilter>('active');
   protected readonly statusFilter = computed(() => this.status() ?? 'active');
 
-  protected readonly subcontractors = signal<readonly SubcontractorSummary[]>([]);
+  protected readonly segmentedOptions: readonly SegmentedFilterOption<SubcontractorListFilter>[] = FILTERS.map(
+    (filter) => ({ value: filter, labelKey: this.filterKey(filter) }),
+  );
+
+  /** The search is local: the register is a few dozen rows, so name, code and phone are matched here. */
+  protected readonly searchTerm = signal('');
+
+  protected readonly all = signal<readonly SubcontractorSummary[]>([]);
+  protected readonly subcontractors = computed(() => {
+    const term = this.searchTerm().trim().toLowerCase();
+    if (term === '') return this.all();
+    return this.all().filter((row) =>
+      [row.name, row.code, row.phone].some((value) => (value ?? '').toLowerCase().includes(term)),
+    );
+  });
+  protected readonly countText = computed(() =>
+    this.i18n.t('subcontractor.list.count', { count: this.subcontractors().length }),
+  );
+
+  private readonly createAction = viewChild<TemplateRef<unknown>>('createAction');
+  private readonly headerActions = inject(HeaderActionsService);
   protected readonly loading = signal(true);
   protected readonly failure = signal<string | null>(null);
 
@@ -81,6 +115,9 @@ export class SubcontractorListPage {
   protected readonly rowFailure = signal<{ readonly id: string; readonly key: string } | null>(null);
 
   constructor() {
+    effect(() => this.headerActions.set(this.createAction() ?? null));
+    inject(DestroyRef).onDestroy(() => this.headerActions.set(null));
+
     void this.loadBabs();
 
     effect(() => {
@@ -99,6 +136,10 @@ export class SubcontractorListPage {
       case 'all':
         return 'subcontractor.filter.all';
     }
+  }
+
+  protected async onCreate(): Promise<void> {
+    await this.router.navigate(['/subcontractors/new']);
   }
 
   protected async onFilter(filter: SubcontractorListFilter): Promise<void> {
@@ -185,10 +226,10 @@ export class SubcontractorListPage {
     this.failure.set(null);
 
     try {
-      this.subcontractors.set(await this.api.list(this.statusFilter()));
+      this.all.set(await this.api.list(this.statusFilter()));
     } catch (error) {
       this.failure.set(toProblem(error).messageKey);
-      this.subcontractors.set([]);
+      this.all.set([]);
     } finally {
       this.loading.set(false);
     }
