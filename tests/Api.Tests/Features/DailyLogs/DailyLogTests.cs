@@ -288,6 +288,23 @@ public sealed class DailyLogTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AC_600_J_an_expense_draft_read_back_by_the_engineer_carries_no_amount()
+    {
+        (Guid project, _) = await NewActiveProjectAsync();
+        (await SendAsync(
+            HttpMethod.Post, $"{Logs(project)}/expense-drafts", _engineerA,
+            new { entryId = Guid.NewGuid(), description = "Fuel for the mixer", amount = "350.0000", occurredAt = At(10, 0) }))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        JsonElement drafts = (await MineAsync(project)).GetProperty("expenseDrafts");
+
+        drafts.GetArrayLength().Should().Be(1);
+        drafts[0].EnumerateObject().Select(member => member.Name)
+            .Should().BeEquivalentTo(["entryId", "description", "occurredAt"]);
+        drafts.GetRawText().Should().NotContain("350");
+    }
+
+    [Fact]
     public async Task AC_600_H_a_zero_expense_is_refused()
     {
         (Guid project, _) = await NewActiveProjectAsync();

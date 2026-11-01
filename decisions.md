@@ -15669,3 +15669,27 @@ when a field is added later.
 
 **Not done.** No Angular screen (another lane wires it), no change to `GetBoq`, no new permission, no
 migration, no pagination (a BOQ is a bounded list), no filter by باب.
+
+
+### D-192 · Backend — the expense-draft amount collision is registered as a ruling, and the engineer's read is pinned money-free · 2026-11-01
+
+**Collision.** spec.md section 8 rule 9 says an engineer's expense entry is a draft that Accounts confirms and
+posts. KAFF-600 `AC-600-J` says the engineer's screen shows no rate, amount, cost or balance anywhere.
+`DraftExpense` takes `Money Amount`. If the engineer types a figure, `AC-600-J` is wrong; if he does not, the
+endpoint is wrong. Nobody has ruled, so this is not decided here.
+
+**Registered, not resolved.** `src/Domain/Rulings/SiteExpenseDraftAmount.cs`, in `RulingSet` and its `Notes`,
+status `Assumed`, default `EngineerTypesAmount` (what the endpoint does today). Nothing reads the default yet;
+changing it alone changes no behaviour, and the note says what work follows each answer. The name does not start
+with "DailyLog" on purpose, so the existing "both daily log rulings" test keeps its count.
+
+**Investigated, with a draft present.** `GET .../daily-logs/mine` after a draft with amount 123.45 returns
+`"expenseDrafts":[{"entryId":...,"description":...,"occurredAt":...}]`. No amount. `AC-600-J` is not violated on
+the engineer's read. The amount does cross the wire once, inbound, on the POST he makes himself.
+
+**Tests.** `GetMyLogMoneyFreeTests` (reflection over `GetMyLog.Response`, any depth, no `Money`/`Percentage`
+member and no member named for cost, rate, price, amount, total, markup or balance) and
+`AC_600_J_an_expense_draft_read_back_by_the_engineer_carries_no_amount` (live body has exactly three fields).
+The existing `AC_600_H` test already asserts a draft leaves the `postings` row count unchanged.
+
+**Not done.** No change to `DraftExpense`, `SiteExpenseDraft` or any screen; that depends on the ruling.

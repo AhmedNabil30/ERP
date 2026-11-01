@@ -29,6 +29,8 @@ public sealed record RulingSet
 
     public DailyLogProjectStates DailyLogProjectStates { get; init; } = DailyLogProjectStates.Default;
 
+    public SiteExpenseDraftAmount SiteExpenseDraftAmount { get; init; } = SiteExpenseDraftAmount.Default;
+
     /// <summary>Who submits an extract's weekly QC report. Enforced in the permission catalogue.</summary>
     public ExtractQcReportAuthor ExtractQcReportAuthor { get; init; } = ExtractQcReportAuthor.Default;
 
@@ -43,6 +45,7 @@ public sealed record RulingSet
         PostingProjectStates.Note,
         DailyLogQuantityEntry.Note,
         DailyLogProjectStates.Note,
+        SiteExpenseDraftAmount.Note,
         ExtractQcReportAuthor.Note,
     ];
 }
