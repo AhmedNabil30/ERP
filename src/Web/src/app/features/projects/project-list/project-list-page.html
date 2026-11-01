@@ -67,6 +67,16 @@
               <span class="row-identity">
                 <span class="row-name" dir="auto">{{ project.name }}</span>
                 <bdi class="row-code" dir="ltr" translate="no">{{ project.code }}</bdi>
+                @if (canOpenLog(project)) {
+                  <a
+                    class="row-log-link"
+                    [routerLink]="['/projects', project.id, 'daily-log']"
+                    [attr.aria-label]="i18n.t('projects.action.open_daily_log', { name: project.name })"
+                    [attr.data-testid]="'project-log-link-' + project.code"
+                  >
+                    {{ i18n.t('daily_log.title') }}
+                  </a>
+                }
               </span>
 
               @if (canReadClients()) {

@@ -122,6 +122,12 @@ export class ProjectListPage {
     return entry?.permissions.includes('DayLabourSiteManage') ?? false;
   }
 
+  /** `DailyLogWrite` is `ProjectScoped` as well: this project's own session entry, convenience only. */
+  protected canOpenLog(project: ProjectSummary): boolean {
+    const entry = this.auth.current()?.projects.find((row) => row.projectId === project.id);
+    return entry?.permissions.includes('DailyLogWrite') ?? false;
+  }
+
   protected clientName(project: ProjectSummary): string | null {
     return this.clientNames().get(project.clientId) ?? null;
   }

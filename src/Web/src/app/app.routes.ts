@@ -5,6 +5,7 @@ import { auditReadGuard } from './core/auth/audit-read.guard';
 import { babManageGuard } from './core/auth/bab-manage.guard';
 import { catalogueManageGuard } from './core/auth/catalogue-manage.guard';
 import { clientManageGuard } from './core/auth/client-manage.guard';
+import { dailyLogWriteGuard } from './core/auth/daily-log-write.guard';
 import { dayLabourRateManageGuard } from './core/auth/day-labour-rate-manage.guard';
 import { dayLabourSiteManageGuard } from './core/auth/day-labour-site-manage.guard';
 import { departmentManageGuard } from './core/auth/department-manage.guard';
@@ -237,6 +238,14 @@ export const routes: Routes = [
           ),
       },
     ],
+  },
+  {
+    // KAFF-600 — the engineer's daily log, money-free (AC-600-J). Project-scoped, so it carries
+    // `:projectId` and has no company-wide nav row (nav-rows.ts): it is reached from the project list.
+    // `dailyLogWriteGuard` is convenience; every `…/daily-logs` endpoint checks role and assignment.
+    path: 'projects/:projectId/daily-log',
+    canActivate: [sessionGuard, mustChangePasswordGuard, dailyLogWriteGuard],
+    loadComponent: () => import('./features/daily-log/daily-log-page').then((m) => m.DailyLogPage),
   },
   {
     // إثبات الأرقام — the proof screen (project-journey study, 2026-10-08). Read-only, Finance and Owner.
