@@ -107,12 +107,31 @@ Then it shows quantities, hours, counts, photos and materials by type, and **no 
 balance anywhere** — built from a money-free read model, not a desk screen with columns hidden
 *The journey study, "Design principles". This is a separate read, not a filtered one.*
 
-**AC-600-K — Arabic RTL at mobile width**
-Given the log on a phone in Arabic
-When it is used one-handed
-Then the layout is correct RTL with logical properties, and the primary action sits in the shell's
-bottom bar per the phone primary-action contract
-*`CLAUDE.md` · `stories/open-decisions-2026-10-08.md` closed item 9.*
+**~~AC-600-K~~ — RETIRED 2026-11-01** · superseded by `AC-600-K1` and `AC-600-K2` below. The original text is kept exactly as it was when `KAFF-600` was built, so a Verifier reads the history in order:
+
+> **AC-600-K — Arabic RTL at mobile width**
+> Given the log on a phone in Arabic
+> When it is used one-handed
+> Then the layout is correct RTL with logical properties, and the primary action sits in the shell's
+> bottom bar per the phone primary-action contract
+> *`CLAUDE.md` · `stories/open-decisions-2026-10-08.md` closed item 9.*
+
+**Why it is retired, stated plainly.** `AC-600-K` was never satisfiable as written. It conflated two things: a layout check that can be run on the screen, and a placement that depends on a contract that did not exist. Closed item 9 of `stories/open-decisions-2026-10-08.md` rules that a screen declares one `primaryAction` and the shell places it in the bottom bar on phone, but no code declared or placed anything: the shell's `abar` carries only the menu button, and nothing joins it. The screen as built (`2f1879b`, `b78489e`) therefore uses a private `.footer` in `daily-log-page.html`, copied from `worker-register-page`. That is not a defect in the build, because the criterion asked for something no builder could deliver. The story that builds the contract is `KAFF-936` (`stories/design-system/KAFF-936-the-primary-action-slot.md`), which is `NOT-BUILT` and blocked on a Definition-of-Ready box. The same shape of unexecutable criterion is why `KAFF-125` has no standing verdict. This record is here so that it is not repeated.
+
+**Dependency.** `KAFF-936` now exists on the board with an identifier, which is what `process/agile.md` section 2a rule 6 (D-117) requires before a criterion can legitimately depend on a story. `AC-936-J` is the criterion in `KAFF-936` that discharges the move of this screen onto the contract.
+
+**AC-600-K1 — Arabic RTL at mobile width, as the screen is today**
+Given the daily log in Arabic at 390px
+When an engineer uses it
+Then the layout is correct RTL, there is no horizontal overflow, the screen's CSS uses logical properties only (`margin-inline-start`, `inset-block-end`; no `margin-left`, `left` or `right`), and the save action is visible and reachable without horizontal scrolling in its current pinned footer
+*`CLAUDE.md`, "RTL is the primary direction, not a mirror" · `KAFF-936`, "What the code looks like today" (the daily log's private `.footer` is the current placement). Executable now; it holds nothing back on `KAFF-936`. No touch-target height is asserted for the interim footer: the 56 to 60px figure is a rule for the shell bar (`KAFF-936` rule 9), not for this footer.*
+
+**AC-600-K2 — the primary action sits in the shell's bottom bar — HELD on `KAFF-936`**
+Given the daily log at 390px, with the primary-action contract built
+When the page renders
+Then the save action is declared to the shell and appears in the bottom bar beside the menu button, the screen's private `.footer` markup and CSS are gone, and the `data-testid` `daily-log-save` still reaches the rendered button
+*Closed item 9 of `stories/open-decisions-2026-10-08.md` · `KAFF-936` `AC-936-C` and `AC-936-J`. **HELD on `KAFF-936`**: not executable, and not to be reported as failed or passed, until that story is built. When it lands, `AC-936-J` and this criterion are verified together; the daily log declares exactly one action, so the two-or-more case (`Q117`, `AC-936-F`) does not apply to it. Closed item 9 also makes zero actions legal (the menu expands to fill the bar), but the daily log declares one.*
+
 
 ## Not in this story
 
