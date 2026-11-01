@@ -15693,3 +15693,52 @@ member and no member named for cost, rate, price, amount, total, markup or balan
 The existing `AC_600_H` test already asserts a draft leaves the `postings` row count unchanged.
 
 **Not done.** No change to `DraftExpense`, `SiteExpenseDraft` or any screen; that depends on the ruling.
+
+
+### D-193 · Backend — the Extract aggregate, its stored gate history and its state machine (KAFF-500 stage 1) · 2026-11-01
+
+**Built (domain and persistence only; no endpoint, handler or screen).** `src/Domain/Extracts/`: `Extract`,
+`ExtractGateRecord`, `ExtractFigure`, `ExtractStatus`/`ExtractGate`/`ExtractGateOutcome`, `ExtractErrors`. EF
+configuration in `ExtractConfigurations.cs`, migration `ExtractChain` (tables `extracts`, `extract_gate_records`,
+`extract_figures`), `DbSet`s on `KaffDbContext`. No check constraint was added, so `RequiredCheckConstraints` stays 37.
+
+**State machine.** `Draft -> QcSubmitted -> {TechnicalApproved | PartiallyApproved} -> DeductionsApplied ->
+OwnerApproved -> Issued -> Collected`, and `QcSubmitted | TechnicalApproved | PartiallyApproved | DeductionsApplied
+-> Draft` on rejection. A frozen set of pairs, in the shape of `Project.TransitionTo`; every other pair is refused
+with `ExtractErrors.IllegalTransition` and a refused step changes nothing. Statuses name where the extract waits:
+spec.md section 13 lists Draft, QC, TechnicalOffice, Accounts, OwnerApproval, Issued, Paid, and "waiting at the
+gate" and "passed the gate" are not distinguishable there, so each gate has the one status that means "waiting for
+the next decision".
+
+**Stored gate history.** Every step appends an `ExtractGateRecord` (gate, outcome, actor, time, reason on a
+rejection, approved portion on the Technical Office record). `Extract.EnsureMayDecide(userId)` reads the actors
+in the current cycle plus the preparer and refuses, with `SameActorCreatedAndApproved`, anyone already among
+them. The gate methods call it and a screen calls the same method before drawing the control, so the screen and
+the refusal cannot disagree. A rejection starts a new cycle, so the rejecter is not barred from the resubmission.
+
+**Judgement calls, each reversible, each listed as a question for Karim in the stage report.**
+1. Decision gates are Technical Office, Accounts, Owner and every rejection. The QC report, Issue and Collect
+   are not gates and are not separation-of-duties checked: the Owner who approved may issue. The QC submitter and
+   the preparer are, however, barred from the decision gates after them.
+2. A rejection is possible only from the four states that wait at a gate. Rejecting an Owner-approved, issued or
+   collected extract is not modelled (a disputed issued extract is KAFF-511).
+3. `ExtractPostingMoment` values `TechnicalOfficeApproval` and `Collected` are refused at the Technical Office gate
+   with `AccrualMomentUnsupported`: the figures do not exist before Accounts, and Collected has its own set.
+4. `Extract.Prepare` accepts Lump Sum projects only. Dispatch to the calculator is by `IBillingCalculator`; the
+   quantity evidence stored on the extract is the Lump Sum shape. Cost Plus intake is not built.
+5. A partial approval scales the period work value only, and releasing the held remainder records the release and
+   bills nothing. Registered as `RulingSet.ExtractPartialApprovalScope`, status Assumed.
+
+**Postings.** Transition methods return the unsaved `PostingSet` for the caller to commit with the status in one
+save. Nothing here writes, updates or deletes a posting. A rejection after the ruled accrual moment returns
+mirror postings built by `Posting.Reverse`, each referencing its original through `ReversesId`; the caller supplies
+the original legs, and a leg from another extract is refused. A stopped, closed or terminated project is refused
+at `Issue` through `PostingProjectStateLegality` even when the ruled moment writes no posting at that step.
+
+**Tests.** `ExtractChainTests` (every pair of the 8 x 8 statuses, every step from every status, separation of
+duties, rejection at each gate, reversal, partial approval, stopped project), `Section15ThroughExtractChainTests`
+(section 15 through the chain to Collected, five invariants, and that approval credits no cash).
+
+**Not done.** No endpoint, no handler, no permission wiring, no Angular. The document assembly step
+(`ExtractDocumentAssemble`) is not an aggregate method. No database guard makes `extract_gate_records` append-only.
+The extract's number is supplied by the caller; nothing allocates it.

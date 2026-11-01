@@ -226,3 +226,11 @@ fields. Closure, hold release and warranty. The client portal's view of an extra
 5. **Thirteen journey moments have no permission row at all**, and this story needs four of them: the
    Accounts deductions step, assembling the client extract document, the QC report, and the Owner's
    extract approval.
+
+## Build notes (2026-11-01, stage 1 of 3: the domain)
+
+Built in `src/Domain/Extracts/` and `ExtractConfigurations.cs`, recorded in `D-193`. The `Extract` aggregate,
+its stored gate history, the frozen state machine, the EF mapping and migration `ExtractChain`.
+`AC-500-A` and `AC-500-B` are proven in `Section15ThroughExtractChainTests`, carrying each extract to `Collected`.
+`AC-500-C`, `D`, `E`, `F`, `G` and `H` are proven at domain level in `ExtractChainTests`. `AC-500-I`, `J` and `K`
+need the endpoint and document slices and are not done. This story's trailer stays `READY`: stages 2 and 3 remain.
