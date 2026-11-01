@@ -50,4 +50,26 @@ public static class ExtractErrors
 
     public static readonly Error PostingNotFromThisExtract =
         Error.Conflict("extract.posting_not_from_this_extract", "errors.extract.posting_not_from_this_extract");
+
+    public static readonly Error NotFound =
+        Error.NotFound("extract.not_found", "errors.extract.not_found");
+
+    /// <summary>
+    /// Another extract of the project is still in flight, so its executed quantities are not yet certified and a
+    /// new one would bill the same work twice. Assumed, not ruled: see D-194.
+    /// </summary>
+    public static readonly Error AnotherExtractOpen =
+        Error.Conflict("extract.another_extract_open", "errors.extract.another_extract_open");
+
+    /// <summary>The project lacks an account the extract's postings need (the safe, or a ledger account).</summary>
+    public static readonly Error AccountsMissing =
+        Error.Conflict("extract.accounts_missing", "errors.extract.accounts_missing");
+
+    /// <summary>Two extracts were prepared at the same moment and took the same number. Retry.</summary>
+    public static readonly Error NumberTaken =
+        Error.Conflict("extract.number_taken", "errors.extract.number_taken");
+
+    /// <summary>A rejection route was called for an extract that does not wait at that route's gate.</summary>
+    public static readonly Error NotWaitingAtThisGate =
+        Error.Conflict("extract.not_waiting_at_this_gate", "errors.extract.not_waiting_at_this_gate");
 }
