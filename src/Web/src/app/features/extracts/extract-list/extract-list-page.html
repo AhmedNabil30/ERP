@@ -1,0 +1,29 @@
+<section class="list" data-testid="extract-list-page">
+  <header class="head">
+    <a class="back" routerLink="/projects"><kaff-icon name="back" />{{ i18n.t('nav.projects') }}</a>
+    <h1 class="title">{{ i18n.t('extract.list.title') }}</h1>
+  </header>
+
+  @if (failure(); as key) {
+    <kaff-state mode="refusal" [bodyKey]="key" testId="extract-list-failure" />
+    <div>
+      <kaff-button variant="secondary" testId="extract-list-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+    </div>
+  } @else if (loading()) {
+    <kaff-state mode="loading" titleKey="extract.loading" testId="extract-list-loading" />
+  } @else if (rows().length === 0) {
+    <kaff-state mode="empty" titleKey="extract.list.empty_title" bodyKey="extract.list.empty_body" testId="extract-list-empty" />
+  } @else {
+    <ul class="rows" data-testid="extract-rows">
+      @for (row of rows(); track row.id) {
+        <li>
+          <a class="row" [routerLink]="['/projects', projectId(), 'extracts', row.id]" [attr.data-testid]="'extract-row-' + row.number">
+            <b class="num">{{ i18n.t('extract.number', { number: row.number }) }}</b>
+            <span class="when">{{ i18n.t('extract.period', { from: day(row.periodStart), to: day(row.periodEnd) }) }}</span>
+            <kaff-badge tone="brand">{{ i18n.t(statusKeys[row.status]) }}</kaff-badge>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+</section>

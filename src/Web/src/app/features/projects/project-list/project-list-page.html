@@ -77,6 +77,16 @@
                     {{ i18n.t('daily_log.title') }}
                   </a>
                 }
+                @if (canOpenExtracts(project)) {
+                  <a
+                    class="row-log-link"
+                    [routerLink]="['/projects', project.id, 'extracts']"
+                    [attr.aria-label]="i18n.t('projects.action.open_extracts', { name: project.name })"
+                    [attr.data-testid]="'project-extracts-link-' + project.code"
+                  >
+                    {{ i18n.t('extract.list.title') }}
+                  </a>
+                }
               </span>
 
               @if (canReadClients()) {

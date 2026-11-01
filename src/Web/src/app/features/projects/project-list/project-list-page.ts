@@ -128,6 +128,12 @@ export class ProjectListPage {
     return entry?.permissions.includes('DailyLogWrite') ?? false;
   }
 
+  /** `ProjectRead` is project-scoped: this project's own session entry. Convenience; the server decides. */
+  protected canOpenExtracts(project: ProjectSummary): boolean {
+    const entry = this.auth.current()?.projects.find((row) => row.projectId === project.id);
+    return entry?.permissions.includes('ProjectRead') ?? false;
+  }
+
   protected clientName(project: ProjectSummary): string | null {
     return this.clientNames().get(project.clientId) ?? null;
   }

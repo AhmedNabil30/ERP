@@ -1,0 +1,339 @@
+:host {
+  display: block;
+}
+
+.ex {
+  display: grid;
+  gap: var(--space-3);
+  max-inline-size: 860px;
+  min-inline-size: 0;
+}
+
+.head {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: var(--tap-target);
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+  justify-self: start;
+}
+
+.back:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* The back chevron points toward the previous screen, which is inline-end in RTL. */
+:host-context([dir="rtl"]) .back kaff-icon {
+  transform: scaleX(-1);
+}
+
+.titleline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.title {
+  font: 700 var(--text-xl) / var(--line-height-tight) var(--display);
+  margin: 0;
+}
+
+.period {
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--text-sm);
+}
+
+.h2 {
+  font: 600 1.0625rem / 1.4 var(--display);
+  margin-block: var(--space-4) 0;
+}
+
+.panel {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1.5px solid var(--fieldline);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.panel .h2 {
+  margin: 0;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.none {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--text-sm);
+}
+
+/* ---------- rejection and revision forms ---------- */
+.reject,
+.revise {
+  display: grid;
+  gap: var(--space-2);
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--line);
+}
+
+.label {
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+.req {
+  margin-inline-start: 4px;
+  color: var(--err-ink);
+}
+
+.reason {
+  inline-size: 100%;
+  box-sizing: border-box;
+  min-block-size: 96px;
+  padding: var(--space-2) var(--space-3);
+  border: 1.5px solid var(--fieldline);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  resize: vertical;
+}
+
+.reason[aria-invalid="true"] {
+  border-color: var(--err-bar);
+}
+
+.reason:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.field-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--err-ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.hint {
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--text-sm);
+}
+
+/* ---------- the six figures ---------- */
+.figures {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.figure {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border: 1.5px solid var(--fieldline);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.figure-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.figure-label {
+  font-weight: 600;
+}
+
+.memo {
+  padding-inline: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--dim);
+  font-size: var(--text-xs);
+}
+
+.figure-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  font-size: var(--text-lg);
+}
+
+.unit {
+  color: var(--dim);
+  font-size: var(--text-sm);
+}
+
+.derivation summary {
+  display: flex;
+  align-items: center;
+  min-block-size: var(--tap-target);
+  color: var(--color-interactive);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.derivation summary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.derivation ul {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.derivation li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-1) var(--space-3);
+  align-items: center;
+  padding-block: var(--space-2);
+  border-block-start: 1px solid var(--line);
+  font-size: var(--text-sm);
+}
+
+.derivation li kaff-provenance {
+  grid-column: 1 / -1;
+  justify-self: start;
+  max-inline-size: 100%;
+}
+
+.input-value {
+  text-align: end;
+}
+
+/* ---------- the printed column ---------- */
+.column {
+  inline-size: 100%;
+  border-collapse: collapse;
+  border: 1.5px solid var(--fieldline);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.column th,
+.column td {
+  padding: var(--space-2) var(--space-4);
+  border-block-end: 1px solid var(--line);
+  font-weight: 400;
+  text-align: start;
+}
+
+.column .amt {
+  text-align: end;
+}
+
+.column tfoot .sum th,
+.column tfoot .sum td {
+  border-block-start: 2px solid var(--ink);
+  color: var(--dim);
+}
+
+.column tfoot .total th,
+.column tfoot .total td {
+  font-weight: 700;
+  border-block-end: 0;
+}
+
+.foots {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  border-inline-start: 8px solid var(--ok-ink);
+  background: var(--ok-bg);
+  color: var(--ok-ink);
+}
+
+.foots.bad {
+  border-inline-start-color: var(--err-bar);
+  background: var(--err-bg);
+  color: var(--err-ink);
+}
+
+/* ---------- gate history ---------- */
+.history {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.history li {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  border-inline-start: 4px solid var(--fieldline);
+}
+
+.history li.rejected {
+  border-inline-start-color: var(--err-bar);
+}
+
+.history-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.outcome {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-sm);
+}
+
+.when {
+  color: var(--dim);
+  font-size: var(--text-xs);
+}
+
+.why {
+  margin: var(--space-1) 0 0;
+  overflow-wrap: anywhere;
+}
+
+.sr {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

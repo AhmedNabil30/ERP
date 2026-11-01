@@ -9,6 +9,7 @@ import { dailyLogWriteGuard } from './core/auth/daily-log-write.guard';
 import { dayLabourRateManageGuard } from './core/auth/day-labour-rate-manage.guard';
 import { dayLabourSiteManageGuard } from './core/auth/day-labour-site-manage.guard';
 import { departmentManageGuard } from './core/auth/department-manage.guard';
+import { extractReadGuard } from './core/auth/extract-read.guard';
 import { employeeManageGuard } from './core/auth/employee-manage.guard';
 import { mustChangePasswordGuard } from './core/auth/must-change-password.guard';
 import { projectListGuard } from './core/auth/project-list.guard';
@@ -246,6 +247,24 @@ export const routes: Routes = [
     path: 'projects/:projectId/daily-log',
     canActivate: [sessionGuard, mustChangePasswordGuard, dailyLogWriteGuard],
     loadComponent: () => import('./features/daily-log/daily-log-page').then((m) => m.DailyLogPage),
+  },
+  {
+    // KAFF-500 stage 3 — the extract chain. `extractReadGuard` is convenience; every extract endpoint checks
+    // role and assignment on the server, and the buttons on the detail screen come from the server's `actions`.
+    path: 'projects/:projectId/extracts',
+    canActivate: [sessionGuard, mustChangePasswordGuard, extractReadGuard],
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/extracts/extract-list/extract-list-page').then((m) => m.ExtractListPage),
+      },
+      {
+        path: ':extractId',
+        loadComponent: () =>
+          import('./features/extracts/extract-detail/extract-detail-page').then((m) => m.ExtractDetailPage),
+      },
+    ],
   },
   {
     // إثبات الأرقام — the proof screen (project-journey study, 2026-10-08). Read-only, Finance and Owner.
