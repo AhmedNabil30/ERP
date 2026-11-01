@@ -15180,3 +15180,81 @@ run), `catalogue-import`, `-import-back`, `-import-download-template`, `-import-
 (`catalogue-form`, `-form-back`, `-form-refusal`, `-form-no-source`, `catalogue-field-*`, `catalogue-submit`,
 `catalogue-code`, `catalogue-current-bab`, `catalogue-move-*`). New ids carry the `catalogue-create-*`,
 `catalogue-first-run-*` and `catalogue-import-*` prefixes.
+
+### D-184 · Backend — the rulings module: one home for every business rule nobody has ruled, so a ruling is a one-line change · 2026-10-31
+
+**Source: Nabil's standing instruction for the project-journey build** (`stories/project-journey-study-2026-10-08.md`):
+build without waiting for Karim's rulings, but build so that changing a ruling is cheap. Karim will see a demo
+and name the gaps.
+
+**Decision.** `src/Domain/Rulings/` holds every rule this project has not had ruled, each as a named, typed
+value or strategy that describes itself (`RulingNote`: the rule, the open question it answers, the default we
+run on, what changes if it is ruled differently, and a status that is `Assumed` until the business answers).
+`RulingSet` aggregates them, `RulingSet.Default` is the single place a default changes, and the Api registers it
+as a singleton (`DependencyInjection.AddKaffInfrastructure`). **Nothing else in the codebase may hard-code one of
+these values.** A handler injects `RulingSet` and asks. A test builds its own set with `with` to run a different
+ruling.
+
+**The entries, all `Assumed`:**
+
+| Entry | Question | Default |
+|---|---|---|
+| `MaterialAdvanceRecoveryRule` (`PercentOfInstalledValueRecovery`) | `Q58` | 75% of material value installed this period, capped at the outstanding تشوينات. Reproduces §15's 45,000 and 30,000. It is a fit to two numbers, not a ruling, and the note says so. |
+| `ExtractPostingMoment` | the extract-posting moment | At Owner approval. `PostsOn(stage)` and `HasPostedBy(stage)` (a rejection from a stage that has posted needs reversing postings). The most consequential assumption in the system. |
+| `WithholdingBaseRule` | the withholding base | Net payable; the hold release carries withholding (otherwise the held money is never withheld on). |
+| `DeductionRounding` | `Q82` / `Q21` | Deductions computed on the rounded extract total, each rounded to 2 decimals away from zero, net payable derived from the rounded figures so the visible column foots. D-145 §2 covers line items only. |
+| `ContractValueSource` | contract value derivation; line rounding | Lump Sum = BOQ total, Cost Plus = none, Design = area × rate. BOQ lines priced on the surveyed quantity (§4.3), each line total rounded to 2 decimals. |
+| `PostingProjectStatePolicy` | journey study decision 6 | Per-posting-type allowed-status table. Only two cells come from `spec.md` (a stopped project issues no extracts, §7; the hold releases at handover, §5.1). The rest are assumed. Reversals are exempt (`ReversalsFollowTheTable = false`). |
+
+**Why a module and not constants where they are used.** The study found the money core had never produced §15
+through production code, and that the figures it did not derive were typed into the test. A rule scattered across
+handlers is rediscovered at acceptance. Here the list of assumptions is itself data: `RulingSet.Notes` can be shown
+to Karim, and `RulingsTests` pins each default, so when he rules, one file changes and the failing tests are what
+moved. `CanIssueExtracts` (which had no caller) is now `PostingProjectStatePolicy.AllowsExtracts`, read from the
+same table so the two cannot disagree.
+
+**Built with it, same change:**
+1. **Contract value is derived, never typed.** `CreateProject.Request` lost `ContractValue`;
+   `Project.SetLumpSumTerms` lost its `contractValue` argument; `Project.Sign(date, boqTotal)` takes the value
+   (BOQ total, area × rate, or none) per `ContractValueSource`. A client that still sends `contractValue` has it
+   ignored. Hold, advance and تشوينات stay rates, applied to the derived value.
+2. **The BOQ** (`src/Domain/Boqs`: `Boq`, `BoqLine`, tables `boqs`, `boq_lines`). Lines carry **copies** of
+   catalogue values (code, text, unit, cost, base rate, and the باب code and names) and **no key** to the
+   catalogue or the باب tables (`BoqAndSignatureTests` pins it from `pg_constraint`). Three quantity states per
+   line. Custom lines are flagged `PendingCatalogueReview` and never write the catalogue.
+3. **The freeze marker is `boqs.frozen_on`, on the header.** `003_boq_freeze.sql` (embedded, applied on every
+   start-up like `001_guards.sql`) refuses any insert, update or delete on the lines of a frozen BOQ except
+   `quantity_executed` (the one column execution writes), refuses unfreezing, re-dating or deleting a frozen
+   header, and refuses `TRUNCATE` of the lines. Freezing a 400-line BOQ changes one row and writes one audit record
+   (plus the project's), not 400. `IAuditExempt` was **not** used: lines drafted one by one are real state changes
+   and are audited as `Created`.
+4. **`POST /api/projects/{id}/sign`**: BOQ total becomes the contract value, the BOQ freezes, the date is stamped, in
+   one `SaveChangesAsync`. Refused with no BOQ (`errors.boq.required`) and with any line lacking the surveyed
+   quantity. Permission is `ProjectManage` as a **stand-in**: contract signature has no permission row (journey
+   study decision 7) and that is Nabil's to rule.
+5. **The multi-posting builder** (`PostingSetBuilder` / `PostingSet` in `Domain/Treasury`): collects the legs of one
+   document, runs every leg through `Posting.Create` plus the project-state check, and returns the set or the first
+   failure. `PostingSet.Preview` is the dry run (before, delta, after per touched account, `WouldBreachFloor`) — a
+   consequence statement, not a promise; the database still decides at commit. `BalanceQueries.GetSignedBalances`
+   reads every touched account's balance in one query. The guard-violation mapping left `PostMovement` for
+   `Api/Common/Results/GuardedSave` (`SaveAsync`, `CommitAsync(set)`), which `PostMovement`, `ReversePosting` and the
+   BOQ handlers now share.
+6. **`PostingProjectStateLegality`**, next to `PostingAccountLegality`, enforced in the domain by the builder and
+   by `PostMovement` and `ReversePosting`. Raw SQL can still bypass it; that is accepted.
+7. **BOQ endpoints** (`ProjectManage`, project-scoped, Owner and Technical Office): `GET .../boq`,
+   `POST .../boq/lines`, `PUT .../boq/lines/{id}`, `DELETE .../boq/lines/{id}`. They show `costPrice`, so they are
+   not opened to `ProjectRead` holders.
+
+**Migration** `BoqAndRulings` (tables `boqs`, `boq_lines`, four check constraints; the trigger script is applied by
+the initializer, not the migration).
+
+**Not built, so the next session does not assume it exists:** the review queue for custom lines (only the flag); Cost
+Plus line classification (§5.2); the change-order section (§5.1); the extract chain and the three calculators, which
+still return `CalculatorNotImplemented` and do not yet read `RulingSet`; a screen or endpoint that lists
+`RulingSet.Notes`; any frontend; `SourceDocumentId` still has no foreign key; `Terminated` settlement is still
+unruled (the table only lets the project collect and pay what it owes). A BOQ `GET` for site engineers (money-free
+read model) does not exist.
+
+**Open questions for Nabil this raises (none decided silently):** the permission row for contract signature; whether
+a project in Stopped, Terminated or Closed may be signed (not checked); whether the same catalogue item may appear
+twice on one BOQ (allowed).
