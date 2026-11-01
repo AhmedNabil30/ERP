@@ -2,6 +2,7 @@ using System.Reflection;
 using Kaff.Domain.Auditing;
 using Kaff.Domain.Boqs;
 using Kaff.Domain.Common;
+using Kaff.Domain.DailyLogs;
 using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
 using Kaff.Domain.Projects;
@@ -97,6 +98,21 @@ public sealed class KaffDbContext : DbContext
 
     /// <summary>spec.md section 4 — a project's bill of quantities. Its lines are reached through <c>Boq.Lines</c>.</summary>
     public DbSet<Boq> Boqs => Set<Boq>();
+
+    // ---- Daily log (spec.md section 8, KAFF-600) ----
+    public DbSet<DailyLog> DailyLogs => Set<DailyLog>();
+
+    public DbSet<ExecutedQuantityEntry> ExecutedQuantityEntries => Set<ExecutedQuantityEntry>();
+
+    public DbSet<DayLabourEntry> DayLabourEntries => Set<DayLabourEntry>();
+
+    public DbSet<MaterialEntry> MaterialEntries => Set<MaterialEntry>();
+
+    public DbSet<PhotoEntry> PhotoEntries => Set<PhotoEntry>();
+
+    public DbSet<FieldEntry> FieldEntries => Set<FieldEntry>();
+
+    public DbSet<SiteExpenseDraft> SiteExpenseDrafts => Set<SiteExpenseDraft>();
 
     /// <summary>KAFF-321 — staff departments, master data, superseding the D-153 §2 enum.</summary>
     public DbSet<Department> Departments => Set<Department>();

@@ -25,6 +25,10 @@ public sealed record RulingSet
 
     public PostingProjectStatePolicy PostingProjectStates { get; init; } = PostingProjectStatePolicy.Default;
 
+    public DailyLogQuantityEntry DailyLogQuantityEntry { get; init; } = DailyLogQuantityEntry.Default;
+
+    public DailyLogProjectStates DailyLogProjectStates { get; init; } = DailyLogProjectStates.Default;
+
     /// <summary>Every entry, each describing itself. A test pins that none is missing a question.</summary>
     public IReadOnlyList<RulingNote> Notes =>
     [
@@ -34,5 +38,7 @@ public sealed record RulingSet
         DeductionRounding.Note,
         ContractValueSource.Note,
         PostingProjectStates.Note,
+        DailyLogQuantityEntry.Note,
+        DailyLogProjectStates.Note,
     ];
 }

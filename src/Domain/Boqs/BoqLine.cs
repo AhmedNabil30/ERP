@@ -134,6 +134,21 @@ public sealed class BoqLine : Entity
         _ => throw new InvalidOperationException($"Unknown quantity basis {basis}."),
     };
 
+    /// <summary>
+    /// Moves the executed quantity by a signed change (spec.md section 4.3, KAFF-600 rule 6). The only
+    /// mutation a frozen line allows. The caller holds a row lock so concurrent entries cannot lose an update.
+    /// </summary>
+    public Result ApplyExecutedChange(decimal change)
+    {
+        if (QuantityExecuted + change < 0m)
+        {
+            return Result.Failure(DailyLogs.DailyLogErrors.ExecutedQuantityBelowZero);
+        }
+
+        QuantityExecuted += change;
+        return Result.Success();
+    }
+
     internal void SetQuantities(decimal? estimated, decimal? surveyed)
     {
         QuantityEstimated = estimated;

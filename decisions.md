@@ -15359,3 +15359,57 @@ route `GET /api/projects/{projectId}/treasury/proof` (`src/Api/Features/Treasury
 - **Not reachable from the project list yet:** the screen is reached by URL until a project hub exists.
 - `proof.*` i18n keys are built dynamically for checks, ledgers, assumptions, document and posting types, and
   `proof.` is not one of the prefixes `TranslationCatalogueTests` polices for orphans.
+
+### D-188 · Backend — the daily log core: period deltas, occurred-at, and a money-free read · 2026-11-01
+
+`KAFF-600`, step 5 of the build order the three-expert study reconciled. The extract chain was blocked
+behind it: an extract is assembled from executed quantities, and nothing wrote one. `BoqLine` shipped
+with `quantity_executed` as the only column that still moves on a frozen line, and nothing moved it.
+
+**Built.** `src/Domain/DailyLogs/` — `DailyLog`, `LogEntry`, `DailyLogErrors`. Seven endpoint slices
+under `src/Api/Features/DailyLogs/`: `OpenDailyLog`, `GetMyLog`, `RecordQuantity`, `RecordField`,
+`RecordDayLabour`, `RecordMaterial`, `RecordPhoto`, `DraftExpense`, with `DailyLogAccess.cs` holding the
+role-and-assignment check the slices share. EF configuration, and migration `20261101093937_DailyLogs`.
+Two new permissions, `DailyLogWrite` and `SiteExpenseDraft`.
+
+**The rule collision, registered rather than resolved.** `spec.md` §8 contradicts itself on one case and
+only one: rule 3 makes every quantity a period delta, so a second entry **adds**; rule 5 says same
+engineer, same day, same field, latest timestamp **wins**, so it **replaces**. Both cannot hold for a
+quantity.
+
+`Rulings/DailyLogQuantityEntry.cs` carries the question with `Mode = Adds` as the running default, and
+`Effective()` implements **both** modes, so a ruling to the contrary is one line in `RulingSet.Default`
+and no handler changes. Ties inside a mode break on entry id, so the answer never depends on arrival
+order — which matters because arrival order is exactly what offline sync does not preserve.
+
+This is the costliest assumption in the story and it is marked `Assumed`: executed quantities are what
+extracts bill from, so if a second entry was meant as a correction and we add it, **the client is
+billed twice for the same work.** It is topic 17 on Karim's sheet.
+
+`Rulings/DailyLogProjectStates.cs` holds the second assumption: `spec.md` §8 fixes one cell only — a
+Stopped project still takes a log — and says nothing about Setup, Handover, UnderWarranty, Closed or
+Terminated. Running default accepts `Active`, `HandoverPending` and `Stopped` and refuses the rest.
+
+**`OccurredAt` is separate from `CreatedAt` on every entry**, per the journey study. `CreatedAt` is the
+sync time. Without the entry's own time, a log entered offline across midnight lands on the wrong day
+and the offline design is not honest.
+
+**The engineer's read is money-free by construction, not by hiding.** `GetMyLog`'s response holds no
+member for a rate, an amount, a cost or a balance, and the handler projects only those columns, so the
+response cannot carry one by accident. A separate read, not a desk screen with columns hidden.
+
+**An engineer's expense is a draft and writes no posting.** `DraftExpense` stores it for Accounts to
+confirm and post, because money never moves offline and site engineers approve nothing financial.
+
+**Gates:** build clean, 0 warnings. Domain.Tests 395 of 395. Api.Tests 722 of 722 (23 new).
+
+**Not done:** the Angular screen — `AC-600-J` and `AC-600-K` are frontend and unbuilt, so no engineer
+can reach any of this by clicking. The offline sync transport itself; this story only makes the data
+model additive so that sync can be conflict-free. عهدة from site (`KAFF-609`, `KAFF-610`), check-in as a
+worked-time record (`KAFF-607`), the weekly QC report (`KAFF-612`), and photo publication beyond the
+client-visible default (`KAFF-606`).
+
+**Process note.** The agent that built this was terminated mid-run by an account session limit, before
+writing this entry or the story's build note. Both were written afterwards by the coordinator from the
+committed code, and the gate figures above were re-run rather than taken from the agent's report. The
+code was read before it was committed; it was not committed on the agent's word.

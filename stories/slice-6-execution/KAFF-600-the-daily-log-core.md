@@ -1,6 +1,6 @@
 # KAFF-600 · The daily log core — one log per engineer per day, recording deltas
 
-<!-- kaff id=KAFF-600 slice=6 points=13 state=READY -->
+<!-- kaff id=KAFF-600 slice=6 points=13 state=BUILT -->
 
 **Slice:** 6 (Execution) · **Epic:** Site execution · **Points:** 13 (absorbs `KAFF-601`, `KAFF-602`, `KAFF-603`, `KAFF-611`).
 **Owner:** Backend, then Frontend.
@@ -136,3 +136,36 @@ recorded rather than decided:
 2. May a junior engineer write a log directly, or does he draft it for his supervisor to submit, as he
    does for requests? `spec.md` §9 makes the junior a drafter for *requests*; a log is not obviously a
    request. Running assumption: the junior writes his own log directly.
+
+## Build note (Backend, 2026-11-01)
+
+Domain in `src/Domain/DailyLogs/` (`DailyLog`, `LogEntry`, `DailyLogErrors`). Seven slices under
+`src/Api/Features/DailyLogs/` — `OpenDailyLog`, `GetMyLog`, `RecordQuantity`, `RecordField`,
+`RecordDayLabour`, `RecordMaterial`, `RecordPhoto`, `DraftExpense` — sharing `DailyLogAccess.cs` for the
+role-and-assignment check. EF configuration plus migration `20261101093937_DailyLogs`. Two new
+permissions: `DailyLogWrite`, `SiteExpenseDraft`.
+
+Question 1 is **registered, not answered**: `Rulings/DailyLogQuantityEntry.cs`, `Mode = Adds`, status
+`Assumed`. `Effective()` implements `Adds` and `LatestWins` both, so Karim's ruling is one line in
+`RulingSet.Default` with no handler change. Ties break on entry id so the result never depends on
+arrival order — which offline sync does not preserve. A second assumption the story had not foreseen
+came out of the build and is registered the same way: `Rulings/DailyLogProjectStates.cs`, because
+`spec.md` §8 fixes only the Stopped cell and is silent on the other five states.
+
+`OccurredAt` sits beside `CreatedAt` on every entry (rule 11, `AC-600-I`). `GetMyLog` is money-free by
+construction (`AC-600-J`'s API half): no member for a rate, amount, cost or balance, and the handler
+projects only those columns. `DraftExpense` writes no posting.
+
+**Evidence:** `tests/Domain.Tests/DailyLogTests.cs` and `tests/Api.Tests/Features/DailyLogs/DailyLogTests.cs`.
+Build clean, 0 warnings. Domain.Tests 395 of 395 (baseline was 389). Api.Tests 722 of 722 (baseline was
+699, so 23 new). The daily-log subset runs 23 of 23.
+
+**Not done:** `AC-600-J`'s screen and `AC-600-K` entirely — there is no Angular daily log, so none of
+this is reachable by clicking, and RTL at mobile width is therefore untested. No verifier has looked at
+any of it.
+
+**Honest note on how this landed.** The building agent was terminated mid-run by an account session
+limit before it wrote this note or the `decisions.md` entry. Both were written afterwards by the
+coordinator, from the committed code rather than from the agent's report, and every gate figure above
+was re-run rather than quoted. The last thing the agent said was "engineers need Junior level, fix test
+and rerun" — by the time it stopped, it had already made that fix, and the 23 daily-log tests pass.

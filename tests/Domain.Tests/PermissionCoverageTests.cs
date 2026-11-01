@@ -54,7 +54,6 @@ public sealed class PermissionCoverageTests
         Permission.OpportunityManage,   // slice 4 — the spine
         Permission.ExtractPrepare,      // slice 5 — billing
         Permission.QuantityGateApprove, // slice 5
-        Permission.DailyLogWrite,       // slice 6 — execution
     ];
 
     [Fact]

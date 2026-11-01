@@ -300,6 +300,305 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Kaff.Domain.DailyLogs.DailyLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("EngineerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("engineer_id");
+
+                    b.Property<DateOnly>("LogDate")
+                        .HasColumnType("date")
+                        .HasColumnName("log_date");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EngineerId");
+
+                    b.HasIndex("ProjectId", "EngineerId", "LogDate")
+                        .IsUnique()
+                        .HasDatabaseName("ux_daily_logs_project_engineer_date");
+
+                    b.ToTable("daily_logs", (string)null);
+                });
+
+            modelBuilder.Entity("Kaff.Domain.DailyLogs.DayLabourEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("DailyLogId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("daily_log_id");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("employee_id");
+
+                    b.Property<decimal>("Hours")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("hours");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DailyLogId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("day_labour_entries", (string)null);
+                });
+
+            modelBuilder.Entity("Kaff.Domain.DailyLogs.ExecutedQuantityEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BoqLineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("boq_line_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("DailyLogId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("daily_log_id");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("quantity");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DailyLogId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("DailyLogId", "BoqLineId");
+
+                    b.ToTable("executed_quantity_entries", (string)null);
+                });
+
+            modelBuilder.Entity("Kaff.Domain.DailyLogs.FieldEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("DailyLogId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("daily_log_id");
+
+                    b.Property<string>("Field")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("field");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.Property<string>("Text")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DailyLogId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("field_entries", (string)null);
+                });
+
+            modelBuilder.Entity("Kaff.Domain.DailyLogs.MaterialEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("DailyLogId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("daily_log_id");
+
+                    b.Property<bool>("IsStockpile")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_stockpile");
+
+                    b.Property<string>("MaterialType")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("material_type");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("unit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DailyLogId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("material_entries", (string)null);
+                });
+
+            modelBuilder.Entity("Kaff.Domain.DailyLogs.PhotoEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Caption")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("caption");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("DailyLogId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("daily_log_id");
+
+                    b.Property<string>("FileReference")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("file_reference");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_published");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DailyLogId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("photo_entries", (string)null);
+                });
+
+            modelBuilder.Entity("Kaff.Domain.DailyLogs.SiteExpenseDraft", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("amount");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("DailyLogId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("daily_log_id");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DailyLogId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("site_expense_drafts", (string)null);
+                });
+
             modelBuilder.Entity("Kaff.Domain.Identity.ProjectAssignment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1668,6 +1967,117 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .WithMany("Lines")
                         .HasForeignKey("BoqId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kaff.Domain.DailyLogs.DailyLog", b =>
+                {
+                    b.HasOne("Kaff.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("EngineerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kaff.Domain.DailyLogs.DayLabourEntry", b =>
+                {
+                    b.HasOne("Kaff.Domain.DailyLogs.DailyLog", null)
+                        .WithMany()
+                        .HasForeignKey("DailyLogId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.MasterData.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kaff.Domain.DailyLogs.ExecutedQuantityEntry", b =>
+                {
+                    b.HasOne("Kaff.Domain.DailyLogs.DailyLog", null)
+                        .WithMany()
+                        .HasForeignKey("DailyLogId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kaff.Domain.DailyLogs.FieldEntry", b =>
+                {
+                    b.HasOne("Kaff.Domain.DailyLogs.DailyLog", null)
+                        .WithMany()
+                        .HasForeignKey("DailyLogId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kaff.Domain.DailyLogs.MaterialEntry", b =>
+                {
+                    b.HasOne("Kaff.Domain.DailyLogs.DailyLog", null)
+                        .WithMany()
+                        .HasForeignKey("DailyLogId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kaff.Domain.DailyLogs.PhotoEntry", b =>
+                {
+                    b.HasOne("Kaff.Domain.DailyLogs.DailyLog", null)
+                        .WithMany()
+                        .HasForeignKey("DailyLogId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kaff.Domain.DailyLogs.SiteExpenseDraft", b =>
+                {
+                    b.HasOne("Kaff.Domain.DailyLogs.DailyLog", null)
+                        .WithMany()
+                        .HasForeignKey("DailyLogId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Kaff.Domain.Projects.Project", null)
