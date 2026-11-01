@@ -1,10 +1,16 @@
-# Kaff ERP: what we assumed, and what it costs if we are wrong
+﻿# Kaff ERP: what we assumed, and what it costs if we are wrong
 
 For Karim. Use this sheet while you watch the demo. Each topic says what we assumed, why, where you can see it, and what changes if you rule differently. Topics are ordered by what costs most to get wrong.
 
 **How to read "cost".** Cheap = a wording or a setting. Moderate = days of rework on screens already built. Expensive = rework of money rules, or of postings already made (money postings cannot be edited, only reversed, so a wrong rule that has already posted is very hard to undo).
 
-**Honest note on the demo.** The catalogue, the أبواب tree, the import, the audit trail and the people lists are built. The money rules (topics 1 to 5) are not built as screens yet, so "what you can see" for them is the worked example in the specification (section 15) rather than a live screen. We need your answers before we build them.
+**Honest note on the demo, updated 2026-11-01.** The catalogue, the أبواب tree, the import, the audit trail and the people lists are built. Since this sheet was first written, three things changed and they change what you can see:
+
+1. **The contract value is now derived from a signed bill of quantities, not typed.** Signing freezes the priced lines, and the database itself refuses to alter a frozen line afterwards.
+2. **The three billing calculators are built**, and the specification's worked example (section 15) is now produced by the real calculation rather than by figures typed into a test. Every number in that example matches.
+3. **There is one money screen: إثبات الأرقام** (proof of numbers). It shows a project's actual ledger postings beside what the contract rules expect, and says line by line whether they agree.
+
+So topics 1 to 5 are no longer invisible — but they are **running on our assumptions, not your rulings**. Every assumption below is isolated in one place in the code so that your answer is a one-line change rather than a rebuild. That is deliberate: we built so you could correct us cheaply after seeing it, instead of waiting.
 
 ---
 
@@ -114,6 +120,68 @@ Related and also unruled: may Finance post money to a Stopped, Closed or Termina
 | **In the demo** | أبواب tree: the order of trades. A wrong number today is permanent. |
 | **If you rule differently** | Cheap if alphabetical is fine. Moderate if order matters, because reordering must be built. |
 
+## 12. Do the hold and the advance recovery apply to change-order value?
+
+| | |
+|---|---|
+| **What we assumed** | Nothing. The calculator **refuses** any extract carrying change-order value rather than guessing. |
+| **Why** | Section 5.1 says the hold is taken on "certified work value only". A change order is certified work, but it is priced separately and approved separately, so we cannot tell whether it joins the base for the 20% hold and the 25% advance recovery, or sits outside both. |
+| **In the demo** | Nothing to point at — an extract with a change order on it is refused with a clear message rather than producing a number we invented. |
+| **If you rule differently** | Moderate. It is the same calculation either way; the cost is that no extract with a change order can be issued until you answer. |
+
+**Ask Karim:** "When you add work to a signed contract and bill it, does the 20% hold come off that added work too? And does the advance come back out of it?"
+
+## 13. What does a billable design revision cost?
+
+| | |
+|---|---|
+| **What we assumed** | Nothing. The design stage fee ignores revision rounds entirely. |
+| **Why** | Section 5.3 gives the five design stages and their weights, and says revisions beyond the agreed rounds are billable. It never says at what price. |
+| **In the demo** | The design calculator bills a stage at its weight (concept is 30%). Revisions are simply not counted. |
+| **If you rule differently** | Cheap, if it is a rate or a fixed fee. Moderate if it varies per contract, because then it has to be a contract term captured at signing. |
+
+**Ask Karim:** "The client asks for a sixth revision when the contract allowed five. What do you charge?"
+
+## 14. How is the Cost Plus supervision markup rounded?
+
+| | |
+|---|---|
+| **What we assumed** | Not rounded at all — it is kept at four decimal places. |
+| **Why** | Our rounding rule (topic 4) covers deductions. The supervision markup is not a deduction, so nothing told us what to do, and we chose not to round rather than to round invisibly. |
+| **In the demo** | A Cost Plus project: 100,000 of supervised cost at 10%, plus 5,000 exempt, bills 115,000. |
+| **If you rule differently** | Cheap. One setting, alongside topic 4. |
+
+## 15. What two accounts does withholding tax move between? (Q91)
+
+| | |
+|---|---|
+| **What we assumed** | Nothing is settled. The calculation produces the withheld amount correctly, but which two accounts it is booked against is still open, and the posting rules may refuse the pair we picked. |
+| **Why** | Q91 is still pending in the question register. Section 6.7 says withholding is two fields and two accounts, and does not name the accounts. |
+| **In the demo** | We calculate 1% of a 240,000 net payable, which is 2,400. We have **not** tested booking it end to end. |
+| **If you rule differently** | Cheap to change the pair. **Expensive if it posts wrongly first**, because a posting can only be reversed, never edited. |
+
+## 16. What is the rule for a delay penalty?
+
+| | |
+|---|---|
+| **What we assumed** | That somebody types the amount in. The calculator takes it as given and refuses it if the project's terms do not allow one. |
+| **Why** | No formula exists anywhere in the specification — not a rate per day, not a cap. |
+| **In the demo** | Nothing to point at. |
+| **If you rule differently** | Cheap now. It becomes a calculation rather than a typed figure. |
+
+**Ask Karim:** "If the contractor finishes late, how is the penalty worked out — per day, as a percentage, and is there a maximum?"
+
+## 17. On site, does a second quantity entry on the same line add, or replace?
+
+| | |
+|---|---|
+| **What we assumed** | It **adds**. |
+| **Why** | The specification contradicts itself on exactly this case. Section 8 says the daily log records period deltas, which means a second entry adds. The same section says that for the same engineer, same day, same field, the latest entry wins, which means it replaces. Both cannot be true for a quantity. Our reading: a quantity is a delta and adds; "latest wins" governs single-valued things such as the check-in time, the weather, or a note. |
+| **In the demo** | Not visible yet — the daily log is being built now. |
+| **If you rule differently** | Moderate, and it matters more than it sounds: executed quantities are what extracts are billed from. If a correction is meant to replace and we add it, the client is billed twice for the same work. |
+
+**Ask Karim:** "An engineer logs 40 metres in the morning, then logs 25 metres on the same line that afternoon. Did he do 65 metres, or was he correcting himself to 25?"
+
 ## Other assumptions you can see in the demo
 
 | Assumed | Seen at | Cost if changed |
@@ -137,15 +205,16 @@ Related and also unruled: may Finance post money to a Stopped, Closed or Termina
 
 Say this plainly. Do not read the demo as more than it is.
 
-- **Projects:** a list only. No hub, no timeline, no contract screen.
-- **The BOQ** (bill of quantities): does not exist. Today a contract value can be typed in, and signing freezes nothing. This must be fixed before any money screen.
-- **Extracts (مستخلصات):** no screens, no approval chain, no calculators. The specification's worked example passes only as a hand-built test.
+- **Projects:** a list only. No hub, no timeline, no contract screen. A hub is being designed now and is not approved yet.
+- **The BOQ** (bill of quantities): **built** — priced lines, frozen at signature, and the contract value is now read from it instead of typed. There is no screen for it yet, so it is reachable only through the interface, not by clicking.
+- **Extracts (مستخلصات):** the **three calculators are built** and the worked example in section 15 is now produced by them rather than typed into a test. There is still **no extract screen and no approval chain** — no quantity gate, no deductions step, no Owner approval, no issuing.
 - **Treasury and payments:** no safe, no payment, no عهدة screens.
-- **The daily log and site execution:** not built. Only a day-worker registration form exists.
+- **The daily log and site execution:** being built now. Only a day-worker registration form exists today.
 - **Client portal:** not built.
 - **Alerts or notifications:** there is no place to show one yet.
 - **Change orders, collections, closure, hold release, warranty:** not built.
 - **Catalogue export** to Excel: not built, so updating through import means typing codes by hand.
 - **Failure screens** ("could not load, retry"), "discard unsaved changes", and the phone back button on panels: not built.
+- **إثبات الأرقام is reachable by typing its address only** — nothing links to it from the project list yet, and the column that compares against what the rules expect is still switched off, because it was built before the calculators were.
 
 Do not promise dates.
