@@ -34,6 +34,11 @@ internal sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
                 "ck_projects_area_positive",
                 "area_square_metres IS NULL OR area_square_metres > 0");
 
+            // The contract value is derived, never typed: a signed Lump Sum or Design project has one.
+            table.HasCheckConstraint(
+                "ck_projects_signed_has_value",
+                "contract_type = 'CostPlus' OR signed_on IS NULL OR contract_value IS NOT NULL");
+
             table.HasCheckConstraint(
                 "ck_projects_not_linked_to_itself",
                 "linked_project_id IS NULL OR linked_project_id <> id");
@@ -69,7 +74,6 @@ internal sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
         builder.Property(project => project.CreatedAt).IsRequired();
 
         builder.Ignore(project => project.IsSigned);
-        builder.Ignore(project => project.CanIssueExtracts);
 
         builder.HasIndex(project => project.Code).IsUnique().HasDatabaseName("ux_projects_code");
         builder.HasIndex(project => project.ClientId).HasDatabaseName("ix_projects_client");

@@ -150,16 +150,15 @@ public sealed class GetProjectTests : IAsyncLifetime
         Project project = Project.Create(
             UniqueNames.Code("GTP-P"), "مشروع القراءة", client.Id, ContractType.LumpSum, Now).Value;
 
-        // AC-400-A: a Lump Sum project always carries a ContractValue (D-135, wire is a JSON string).
-        // Project.Create alone leaves it null; the terms are a separate step, the same one
-        // CreateProject.Handler takes.
+        // A signed Lump Sum project carries a ContractValue (D-135, wire is a JSON string). The value is
+        // derived at signature from the BOQ total, never typed; the domain takes it as the argument here.
         project.SetLumpSumTerms(
-            new Money(1_000_000m),
             Percentage.FromPercent(25m),
             Percentage.FromPercent(20m),
             Percentage.FromPercent(25m),
             Percentage.FromPercent(75m),
             delayPenaltyEnabled: false);
+        project.Sign(new DateOnly(2026, 9, 25), new Money(1_000_000m)).IsSuccess.Should().BeTrue();
 
         User owner = MakeUser("gtp-owner", Role.Owner);
         User assignedEngineer = MakeUser(

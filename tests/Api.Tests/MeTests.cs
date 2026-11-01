@@ -699,12 +699,12 @@ public sealed class MeTests : IAsyncLifetime
         foreach (Project project in new[] { projectA, projectB, projectC })
         {
             project.SetLumpSumTerms(
-                new Money(1_000_000m),
                 Percentage.FromPercent(25),
                 Percentage.FromPercent(20),
                 Percentage.FromPercent(100),
                 Percentage.FromPercent(75),
                 delayPenaltyEnabled: false).IsSuccess.Should().BeTrue();
+            project.Sign(new DateOnly(2026, 9, 25), new Money(1_000_000m)).IsSuccess.Should().BeTrue();
         }
 
         context.Clients.Add(client);

@@ -4,6 +4,7 @@ using Kaff.Domain.Contracts;
 using Kaff.Domain.Contracts.Billing;
 using Kaff.Domain.Contracts.Progress;
 using Kaff.Domain.Identity;
+using Kaff.Domain.Rulings;
 using Kaff.Infrastructure.Auditing;
 using Kaff.Infrastructure.Authorization;
 using Kaff.Infrastructure.Persistence;
@@ -29,6 +30,10 @@ public static class DependencyInjection
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
         services.TryAddSingleton(TimeProvider.System);
+
+        // Every business rule the project has not had ruled lives in RulingSet. TryAdd so a test can
+        // register a set with a different ruling.
+        services.TryAddSingleton(RulingSet.Default);
 
         // The Api registers an HTTP-backed ICurrentUser before calling this, so TryAdd leaves it
         // alone. The system actor covers migrations, seeding and scheduled work, so that a change

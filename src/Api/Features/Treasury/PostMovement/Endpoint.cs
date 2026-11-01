@@ -3,6 +3,7 @@ using Kaff.Api.Common.Endpoints;
 using Kaff.Api.Common.Validation;
 using Kaff.Domain.Authorization;
 using Kaff.Domain.Identity;
+using Kaff.Domain.Rulings;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
@@ -53,9 +54,10 @@ public sealed class Endpoint : IEndpoint
                 Request request,
                 KaffDbContext database,
                 ICurrentUser currentUser,
+                RulingSet rulings,
                 TimeProvider clock,
                 CancellationToken cancellationToken)
-                => Handler.HandleAsync(null, request, database, currentUser, clock, cancellationToken))
+                => Handler.HandleAsync(null, request, database, currentUser, rulings, clock, cancellationToken))
             .RequirePermission(Permission.TreasuryPostCompany)
             .AddEndpointFilter<ValidationFilter<Request>>()
             .WithName("PostCompanyMovement")
@@ -66,9 +68,10 @@ public sealed class Endpoint : IEndpoint
                 Request request,
                 KaffDbContext database,
                 ICurrentUser currentUser,
+                RulingSet rulings,
                 TimeProvider clock,
                 CancellationToken cancellationToken)
-                => Handler.HandleAsync(projectId, request, database, currentUser, clock, cancellationToken))
+                => Handler.HandleAsync(projectId, request, database, currentUser, rulings, clock, cancellationToken))
             .RequirePermission(Permission.TreasuryPostProject, ProjectScope.FromRoute())
             .AddEndpointFilter<ValidationFilter<Request>>()
             .WithName("PostProjectMovement")

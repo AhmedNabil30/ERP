@@ -40,10 +40,12 @@ namespace Kaff.Api.Features.Projects.CreateProject;
 /// <param name="Name">Required.</param>
 /// <param name="ClientId">Must name an existing client.</param>
 /// <param name="ContractType">Lump Sum, Cost Plus or Design (spec.md §5). Immutable once created.</param>
-/// <param name="ContractValue">
-/// Required and positive for Lump Sum. Left null for Cost Plus (spec.md §5.2: no fixed value) and for
-/// Design, whose value is computed later from area × rate (contract signature, not this story).
-/// </param>
+/// <remarks>
+/// <b>There is no contract value on this request, and there must not be.</b> It is derived, never typed:
+/// Lump Sum takes the BOQ total at signature (<c>POST /api/projects/{id}/sign</c>), Design is area × rate,
+/// Cost Plus has none (<c>Kaff.Domain.Rulings.ContractValueSource</c>). Hold, advance and تشوينات are rates
+/// applied to that derived value.
+/// </remarks>
 /// <param name="HoldPercentage">
 /// Lump Sum only. Carried as <see cref="Percentage"/> — the fraction (D-151). Defaults to 20% when
 /// omitted.
@@ -60,7 +62,6 @@ public sealed record Request(
     string? Name,
     Guid ClientId,
     ContractType ContractType,
-    decimal? ContractValue,
     Percentage? HoldPercentage,
     decimal? ClientAdvance,
     ProjectStatus? Status);

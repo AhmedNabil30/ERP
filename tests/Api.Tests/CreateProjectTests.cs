@@ -99,19 +99,36 @@ public sealed class CreateProjectTests : IAsyncLifetime
     [Fact]
     public async Task Money_and_rate_fields_serialise_as_json_strings()
     {
-        HttpResponseMessage response = await CreateAsync(_owner, "مشروع نقدي", contractValue: 1_000_000m);
+        HttpResponseMessage response = await CreateAsync(_owner, "مشروع نقدي");
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         string raw = await response.Content.ReadAsStringAsync(Ct);
         using JsonDocument body = JsonDocument.Parse(raw);
 
-        body.RootElement.GetProperty("contractValue").ValueKind.Should().Be(
-            JsonValueKind.String, "decisions.md D-135 — a JSON number becomes a double and loses decimal(18,4)");
-        body.RootElement.GetProperty("contractValue").GetString().Should().Be("1000000.0000");
-
-        body.RootElement.GetProperty("holdRate").ValueKind.Should().Be(JsonValueKind.String);
+        body.RootElement.GetProperty("holdRate").ValueKind.Should().Be(
+            JsonValueKind.String, "decisions.md D-135 — a JSON number becomes a double and loses precision");
         body.RootElement.GetProperty("advanceRate").ValueKind.Should().Be(JsonValueKind.String);
+    }
+
+    // ---- The contract value is derived, never typed -------------------------------------------------
+
+    [Fact]
+    public async Task A_typed_contract_value_is_ignored_and_a_new_lump_sum_project_has_none_until_it_is_signed()
+    {
+        // The request record has no ContractValue member any more. A client that still sends one must not
+        // be able to set it: the value is the BOQ total at signature and nothing else.
+        HttpResponseMessage response = await CreateAsync(_owner, "مشروع بلا قيمة", typedContractValue: "9999999.0000");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+        body.RootElement.GetProperty("contractValue").ValueKind.Should().Be(JsonValueKind.Null);
+
+        Guid id = body.RootElement.GetProperty("id").GetGuid();
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        (await reader.Projects.SingleAsync(p => p.Id == id, Ct)).ContractValue.Should().BeNull();
     }
 
     // ---- AC-400-C · creating a project opens its account set ----------------------------------------
@@ -183,8 +200,8 @@ public sealed class CreateProjectTests : IAsyncLifetime
     private async Task<HttpResponseMessage> CreateAsync(
         Guid actorId,
         string name,
-        decimal? contractValue = 1_000_000m,
-        decimal? holdPercentage = 20m)
+        decimal? holdPercentage = 20m,
+        string? typedContractValue = null)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, new Uri("/api/projects", UriKind.Relative))
         {
@@ -193,7 +210,7 @@ public sealed class CreateProjectTests : IAsyncLifetime
                 name,
                 clientId = _clientId,
                 contractType = nameof(ContractType.LumpSum),
-                contractValue = contractValue?.ToString("0.0000"),
+                contractValue = typedContractValue,
                 // D-151: HoldPercentage is Percentage on the wire — the fraction, not the percent figure.
                 holdPercentage = holdPercentage.HasValue
                     ? (holdPercentage.Value / 100m).ToString(CultureInfo.InvariantCulture)

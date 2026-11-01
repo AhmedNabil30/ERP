@@ -42,12 +42,6 @@ public sealed class Validator : IRequestValidator<Request>
             return ValueTask.FromResult(Result.Failure(ProjectErrors.RateMustNotBeNegative));
         }
 
-        if (request.ContractType == ContractType.LumpSum
-            && request.ContractValue is null or <= 0m)
-        {
-            return ValueTask.FromResult(Result.Failure(ProjectErrors.ContractValueRequired));
-        }
-
         if (request.Status is not (null or ProjectStatus.Setup or ProjectStatus.Active))
         {
             return ValueTask.FromResult(Result.Failure(ProjectErrors.InitialStatusNotSupported));

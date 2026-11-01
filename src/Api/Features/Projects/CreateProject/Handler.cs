@@ -79,12 +79,11 @@ internal static class Handler
             // spec.md §5.1, §15 and §16 assumption 1 — the two figures the request may adjust, and
             // spec.md's own stated defaults for the three it does not carry.
             Result termsSet = project.SetLumpSumTerms(
-                new Money(request.ContractValue!.Value),
-                Percentage.FromPercent(request.ClientAdvance ?? 25m),
-                request.HoldPercentage ?? Percentage.FromPercent(20m),
-                Percentage.FromPercent(25m),
-                Percentage.FromPercent(75m),
-                delayPenaltyEnabled: false);
+                request.ClientAdvance is { } advance ? Percentage.FromPercent(advance) : ContractDefaults.AdvanceRate,
+                request.HoldPercentage ?? ContractDefaults.HoldRate,
+                ContractDefaults.AdvanceRecoveryRate,
+                ContractDefaults.MaterialAdvanceRate,
+                ContractDefaults.DelayPenaltyEnabled);
 
             if (termsSet.IsFailure)
             {

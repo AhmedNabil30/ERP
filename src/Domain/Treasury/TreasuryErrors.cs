@@ -83,6 +83,17 @@ public static class TreasuryErrors
     public static readonly Error PostingTypeAccountMismatch =
         Error.Conflict("treasury.posting_type_account_mismatch", "errors.treasury.posting_type_account_mismatch");
 
+    /// <summary>
+    /// The project's state does not accept this posting type. See
+    /// <see cref="PostingProjectStateLegality"/> and the ruling <c>PostingProjectStatePolicy</c>.
+    /// </summary>
+    public static readonly Error PostingNotAllowedInProjectState =
+        Error.Conflict("treasury.posting_not_allowed_in_project_state", "errors.treasury.posting_not_allowed_in_project_state");
+
+    /// <summary>A set of postings with no posting in it is not a movement.</summary>
+    public static readonly Error PostingSetEmpty =
+        Error.Validation("treasury.posting_set_empty", "errors.treasury.posting_set_empty");
+
     /// <summary>spec.md §6.10 — a project cost posting must name its project.</summary>
     public static readonly Error ProjectTagRequired =
         Error.Validation("treasury.project_tag_required", "errors.treasury.project_tag_required");

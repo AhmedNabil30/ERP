@@ -2,6 +2,7 @@ using System.Collections.Frozen;
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
 using Kaff.Domain.MasterData;
+using Kaff.Domain.Rulings;
 using Kaff.Domain.Treasury;
 
 namespace Kaff.Domain.Projects;
@@ -112,8 +113,10 @@ public sealed class Project : Entity
     public Currency Currency { get; private set; }
 
     /// <summary>
-    /// Signed contract value. Null for Cost Plus, which has no fixed value (spec.md §5.2), and for a
-    /// Design project until area and rate are set.
+    /// Contract value. <b>Derived, never typed</b>: a Lump Sum project's value is the frozen BOQ total, set by
+    /// <see cref="Sign"/>; a Design project's is area × rate, set by <see cref="SetDesignTerms"/>. Null for
+    /// Cost Plus, which has no fixed value (spec.md §5.2), and for a Lump Sum project until it is signed.
+    /// Where each type's value comes from is <see cref="ContractValueSource"/>.
     /// </summary>
     public Money? ContractValue { get; private set; }
 
@@ -192,9 +195,6 @@ public sealed class Project : Entity
 
     public bool IsSigned => SignedOn is not null;
 
-    /// <summary>spec.md §7: "A stopped project MUST NOT issue extracts."</summary>
-    public bool CanIssueExtracts => Status is ProjectStatus.Active or ProjectStatus.HandoverPending;
-
     public static Result<Project> Create(
         string code,
         string name,
@@ -225,9 +225,12 @@ public sealed class Project : Entity
             createdAt));
     }
 
-    /// <summary>Sets the Lump Sum commercial terms of spec.md §5.1. Owner-adjustable per project (🟡 assumption 1).</summary>
+    /// <summary>
+    /// Sets the Lump Sum commercial terms of spec.md §5.1. Owner-adjustable per project (🟡 assumption 1).
+    /// The contract value is not a term: hold, advance and تشوينات are rates, applied to the value the
+    /// BOQ gives at signature (<see cref="Sign"/>).
+    /// </summary>
     public Result SetLumpSumTerms(
-        Money contractValue,
         Percentage advanceRate,
         Percentage holdRate,
         Percentage advanceRecoveryRate,
@@ -244,12 +247,6 @@ public sealed class Project : Entity
             return Result.Failure(ProjectErrors.AlreadySigned);
         }
 
-        if (!contractValue.IsPositive)
-        {
-            return Result.Failure(ProjectErrors.ContractValueRequired);
-        }
-
-        ContractValue = contractValue;
         AdvanceRate = advanceRate;
         HoldRate = holdRate;
         AdvanceRecoveryRate = advanceRecoveryRate;
@@ -331,16 +328,43 @@ public sealed class Project : Entity
         return Result.Success();
     }
 
-    public Result Sign(DateOnly signedOn)
+    /// <summary>
+    /// Signs the contract. The value is taken, never accepted from a caller: a Lump Sum project takes the
+    /// BOQ total passed in, a Design project already holds area × rate, Cost Plus has none
+    /// (<see cref="ContractValueSource.OriginFor"/>). Freezing the BOQ is the caller's half of the same
+    /// transaction.
+    /// </summary>
+    /// <param name="signedOn">The signature date.</param>
+    /// <param name="boqTotal">The sum of the BOQ lines, or null when the project has no BOQ.</param>
+    public Result Sign(DateOnly signedOn, Money? boqTotal)
     {
         if (IsSigned)
         {
             return Result.Failure(ProjectErrors.AlreadySigned);
         }
 
-        if (ContractType != ContractType.CostPlus && ContractValue is null)
+        switch (ContractValueSource.OriginFor(ContractType))
         {
-            return Result.Failure(ProjectErrors.ContractValueRequired);
+            case ContractValueOrigin.BoqTotal:
+                if (boqTotal is not { IsPositive: true })
+                {
+                    return Result.Failure(ProjectErrors.ContractValueRequired);
+                }
+
+                ContractValue = boqTotal;
+                break;
+
+            case ContractValueOrigin.AreaTimesRate:
+                if (ContractValue is null)
+                {
+                    return Result.Failure(ProjectErrors.ContractValueRequired);
+                }
+
+                break;
+
+            case ContractValueOrigin.None:
+            default:
+                break;
         }
 
         SignedOn = signedOn;

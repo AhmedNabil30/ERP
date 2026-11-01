@@ -1,6 +1,8 @@
 using Kaff.Api.Common.Results;
 using Kaff.Domain.Common;
 using Kaff.Domain.Identity;
+using Kaff.Domain.Projects;
+using Kaff.Domain.Rulings;
 using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
@@ -48,10 +50,12 @@ internal static class Handler
         Request request,
         KaffDbContext database,
         ICurrentUser currentUser,
+        RulingSet rulings,
         TimeProvider clock,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(rulings);
         ArgumentNullException.ThrowIfNull(database);
         ArgumentNullException.ThrowIfNull(currentUser);
 
@@ -85,6 +89,29 @@ internal static class Handler
             return ResultExtensions.Problem(TreasuryErrors.ClosedPeriod);
         }
 
+        if (projectId is { } taggedProject)
+        {
+            // The domain's Posting cannot see a project, so the state check is made here, from the
+            // table in the rulings module. A company-level posting names no project and skips it.
+            ProjectStatus? status = await database.Projects
+                .Where(project => project.Id == taggedProject)
+                .Select(project => (ProjectStatus?)project.Status)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (status is null)
+            {
+                return ResultExtensions.Problem(ProjectErrors.NotFound);
+            }
+
+            Result stateCheck = PostingProjectStateLegality.Validate(
+                rulings.PostingProjectStates, status.Value, request.Type, isReversal: false);
+
+            if (stateCheck.IsFailure)
+            {
+                return ResultExtensions.Problem(stateCheck.Error);
+            }
+        }
+
         Result<Posting> created = Posting.Create(
             from,
             to,
@@ -104,25 +131,14 @@ internal static class Handler
         Posting posting = created.Value;
         database.Postings.Add(posting);
 
-        try
+        // The period pre-check above is not the enforcement: a period can close between the check and
+        // the insert, and the safe floor has no pre-check at all. GuardedSave turns any named database
+        // guard into the same translated refusal everyone else gets (KAFF-319), and rethrows the rest.
+        Error? refused = await GuardedSave.SaveAsync(database, cancellationToken);
+
+        if (refused is not null)
         {
-            await database.SaveChangesAsync(cancellationToken);
-        }
-        catch (Exception exception) when (GuardViolation(exception) is { } violation)
-        {
-            // The period pre-check above is not the enforcement: a period can close between the check
-            // and the insert, and the safe floor (rule 8, AC-301-F) has no pre-check at all — the
-            // reusable balance query it would need is KAFF-304, not yet built. Either guard's loser
-            // gets the same translated refusal as everyone else rather than a raw PostgresException
-            // surfacing as a 500. KAFF-319 generalises this mapping for every remaining guard; these
-            // are the two rules this story's own AC-301-F and AC-301-H require today.
-            //
-            // Caught as a bare Exception, not DbUpdateException: a deferred constraint trigger — which
-            // is what the non-negative-balance guard is — fails at COMMIT, outside the command EF
-            // wraps, so it can reach here as a raw PostgresException instead (see
-            // tests/Api.Tests/Infrastructure/DatabaseGuard.cs). The `when` clause keeps this from
-            // swallowing anything that is not one of the two named guards.
-            return ResultExtensions.Problem(violation);
+            return ResultExtensions.Problem(refused);
         }
 
         return Microsoft.AspNetCore.Http.Results.Created(
@@ -137,16 +153,4 @@ internal static class Handler
                 posting.ProjectId,
                 posting.IsReversal));
     }
-
-    /// <summary>
-    /// The <c>TreasuryErrors</c> this endpoint translates a database-guard failure into, or
-    /// <see langword="null"/> if <paramref name="exception"/> is not one of them — in which case it
-    /// is rethrown by the <c>when</c> clause at the call site rather than swallowed here.
-    /// </summary>
-    /// <remarks>
-    /// KAFF-319 generalised this from the two prefixes this handler used to know about
-    /// (<c>KAFF_CLOSED_PERIOD</c>, <c>KAFF_NEGATIVE_BALANCE</c>) to every named guard in
-    /// <c>001_guards.sql</c> — see <see cref="DatabaseGuardTranslation"/> for the full table.
-    /// </remarks>
-    private static Error? GuardViolation(Exception exception) => DatabaseGuardTranslation.Translate(exception);
 }

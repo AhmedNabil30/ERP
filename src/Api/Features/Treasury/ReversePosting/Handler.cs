@@ -1,6 +1,8 @@
 using Kaff.Api.Common.Results;
 using Kaff.Domain.Common;
 using Kaff.Domain.Identity;
+using Kaff.Domain.Projects;
+using Kaff.Domain.Rulings;
 using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
@@ -53,9 +55,11 @@ internal static class Handler
         Request request,
         KaffDbContext database,
         ICurrentUser currentUser,
+        RulingSet rulings,
         TimeProvider clock,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(rulings);
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(database);
         ArgumentNullException.ThrowIfNull(currentUser);
@@ -113,6 +117,27 @@ internal static class Handler
             return ResultExtensions.Problem(TreasuryErrors.ClosedPeriod);
         }
 
+        if (projectId is { } taggedProject)
+        {
+            ProjectStatus? status = await database.Projects
+                .Where(project => project.Id == taggedProject)
+                .Select(project => (ProjectStatus?)project.Status)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (status is null)
+            {
+                return ResultExtensions.Problem(ProjectErrors.NotFound);
+            }
+
+            Result stateCheck = PostingProjectStateLegality.Validate(
+                rulings.PostingProjectStates, status.Value, original.Type, isReversal: true);
+
+            if (stateCheck.IsFailure)
+            {
+                return ResultExtensions.Problem(stateCheck.Error);
+            }
+        }
+
         Result<Posting> reversed = Posting.Reverse(
             original,
             from,
@@ -129,16 +154,13 @@ internal static class Handler
         Posting reversal = reversed.Value;
         database.Postings.Add(reversal);
 
-        try
+        // A period can close, or a concurrent reversal of the same original can land, between the
+        // pre-checks above and this insert. The database guards are the enforcement of record.
+        Error? refused = await GuardedSave.SaveAsync(database, cancellationToken);
+
+        if (refused is not null)
         {
-            await database.SaveChangesAsync(cancellationToken);
-        }
-        catch (Exception exception) when (GuardViolation(exception) is { } violation)
-        {
-            // Same race guard as PostMovement.Handler: a period can close, or a concurrent reversal of
-            // the same original can land, between the pre-checks above and this insert. The database's
-            // own guards are the enforcement of record either way.
-            return ResultExtensions.Problem(violation);
+            return ResultExtensions.Problem(refused);
         }
 
         return Microsoft.AspNetCore.Http.Results.Created(
@@ -153,6 +175,4 @@ internal static class Handler
                 reversal.ProjectId,
                 reversal.ReversesId!.Value));
     }
-
-    private static Error? GuardViolation(Exception exception) => DatabaseGuardTranslation.Translate(exception);
 }

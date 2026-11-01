@@ -31,6 +31,22 @@ public static class BalanceQueries
         balances.SingleOrDefault(balance => balance.AccountId == accountId);
 
     /// <summary>
+    /// Signed balances for several accounts in one query. The dry run (<see cref="PostingSet.Preview"/>)
+    /// and the extract handler both need the current figure for every account a set touches; they read
+    /// it here. Accounts with no row (not real accounts) are absent from the result.
+    /// </summary>
+    public static IReadOnlyDictionary<Guid, Money> GetSignedBalances(
+        IQueryable<AccountBalance> balances, IReadOnlyCollection<Guid> accountIds)
+    {
+        ArgumentNullException.ThrowIfNull(balances);
+        ArgumentNullException.ThrowIfNull(accountIds);
+
+        return balances
+            .Where(balance => accountIds.Contains(balance.AccountId))
+            .ToDictionary(balance => balance.AccountId, balance => balance.SignedBalance);
+    }
+
+    /// <summary>
     /// AC-304-B. The five ledgers of spec.md §6.4 plus تشوينات, as five-plus-one independent figures.
     /// No field here sums or nets any two of them — see <see cref="LedgerBalances"/>'s own remarks.
     /// </summary>
