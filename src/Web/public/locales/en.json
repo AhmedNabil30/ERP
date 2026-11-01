@@ -413,6 +413,7 @@
   "errors.extract.accounts_missing": "The project is missing an account the extract needs to post to.",
   "errors.extract.number_taken": "Another extract took that number a moment ago. Try again.",
   "errors.extract.not_waiting_at_this_gate": "The extract is not waiting at this gate.",
+  "errors.extract.revision_not_allowed": "The extract evidence can be revised only while it is a draft that a rejection returned.",
   "errors.daily_log.boq_line_not_found": "That BOQ line does not belong to this project.",
   "errors.daily_log.quantity_must_be_positive": "The quantity must be greater than zero.",
   "errors.daily_log.executed_quantity_below_zero": "This change would take the executed quantity below zero.",

@@ -166,9 +166,7 @@ public sealed class Extract : Entity
             return Result.Failure<Extract>(ExtractErrors.PeriodInvalid);
         }
 
-        if (cumulativeCertifiedWork.IsNegative || previouslyCertifiedWork.IsNegative
-            || materialValueOnSite.IsNegative || materialInstalled.IsNegative
-            || cumulativeCertifiedWork < previouslyCertifiedWork)
+        if (!QuantitiesAreValid(cumulativeCertifiedWork, previouslyCertifiedWork, materialValueOnSite, materialInstalled))
         {
             return Result.Failure<Extract>(ExtractErrors.QuantitiesInvalid);
         }
@@ -177,6 +175,51 @@ public sealed class Extract : Entity
             project.Id, number, periodStart, periodEnd, cumulativeCertifiedWork, previouslyCertifiedWork,
             materialValueOnSite, materialInstalled, preparedByUserId, now);
     }
+
+    /// <summary>True for a Draft extract a rejection returned. The screen asks this before offering the control.</summary>
+    public bool IsRevisable =>
+        Status == ExtractStatus.Draft && _gateHistory.Exists(record => record.Outcome == ExtractGateOutcome.Rejected);
+
+    /// <summary>
+    /// A rejection returned the extract to Draft because its evidence was wrong; this is how the preparer corrects
+    /// it (spec.md section 7 returns the extract to Draft "with a written reason", which is only a rejection if
+    /// the reason can be acted on). Legal only in Draft and only after a rejection: a freshly prepared draft has
+    /// nothing to revise, and an extract past Draft is never edited.
+    /// </summary>
+    /// <remarks>
+    /// The period and the previously certified figure do not change. The revision writes a gate record naming who
+    /// and when; the before and after values are on the audit trail, written by the same save. It touches no
+    /// posting: what a rejection had to reverse was reversed at the rejection. The reviser joins the current
+    /// cycle's prior actors, so someone who revised the evidence cannot then approve or reject it.
+    /// </remarks>
+    public Result ReviseEvidence(
+        Guid actorUserId,
+        Money cumulativeCertifiedWork,
+        Money materialValueOnSite,
+        Money materialInstalled,
+        DateTimeOffset now)
+    {
+        if (!IsRevisable)
+        {
+            return Result.Failure(ExtractErrors.RevisionNotAllowed);
+        }
+
+        if (!QuantitiesAreValid(cumulativeCertifiedWork, PreviouslyCertifiedWork, materialValueOnSite, materialInstalled))
+        {
+            return Result.Failure(ExtractErrors.QuantitiesInvalid);
+        }
+
+        CumulativeCertifiedWork = cumulativeCertifiedWork;
+        MaterialValueOnSite = materialValueOnSite;
+        MaterialInstalled = materialInstalled;
+        _gateHistory.Add(new ExtractGateRecord(
+            Id, ExtractGate.EvidenceRevised, ExtractGateOutcome.Passed, actorUserId, now, null, null));
+        return Result.Success();
+    }
+
+    private static bool QuantitiesAreValid(Money cumulative, Money previous, Money materialOnSite, Money materialInstalled) =>
+        !(cumulative.IsNegative || previous.IsNegative || materialOnSite.IsNegative || materialInstalled.IsNegative
+            || cumulative < previous);
 
     /// <summary>
     /// Who has already acted on this extract in the current cycle, preparer included. A rejection starts a new

@@ -91,8 +91,7 @@ internal static class Handler
             : existing.OrderByDescending(candidate => candidate.Number).First().CumulativeCertifiedWork;
         int number = existing.Count == 0 ? 1 : existing.Max(candidate => candidate.Number) + 1;
 
-        Money cumulative = Money.Sum(boq.Lines.Select(line =>
-            rulings.ContractValueSource.LineTotal(line.SellRate, line.QuantityExecuted)));
+        Money cumulative = ExtractSupport.CumulativeCertifiedWork(boq, rulings);
 
         Guid actor = currentUser.UserId ?? Guid.Empty;
         DateTimeOffset now = clock.GetUtcNow();

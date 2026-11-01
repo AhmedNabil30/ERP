@@ -49,6 +49,9 @@ public enum ExtractGate
 
     /// <summary>The held remainder of a partial approval was released because its NCR closed.</summary>
     HeldPortionRelease = 8,
+
+    /// <summary>The preparer corrected the evidence of a rejected extract. Starts no new cycle and ends none.</summary>
+    EvidenceRevised = 9,
 }
 
 public enum ExtractGateOutcome

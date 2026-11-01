@@ -102,6 +102,7 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         {
             ["POST /api/projects/{projectId:guid}/extracts"] = Permission.ExtractPrepare,
             ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/qc-report"] = Permission.ExtractQcReportSubmit,
+            ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/evidence-revision"] = Permission.ExtractPrepare,
             ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/technical-approval"] = Permission.QuantityGateApprove,
             ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/technical-rejection"] = Permission.QuantityGateApprove,
             ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/deductions"] = Permission.ExtractDeductionsApply,
@@ -567,6 +568,114 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         refused.IsSuccessStatusCode.Should().BeFalse();
         (await PostingCountAsync(project.Id)).Should().Be(before);
         (await StatusOfAsync(extract)).Should().Be(ExtractStatus.OwnerApproved);
+    }
+
+    // ---- revising the evidence of a rejected extract (AC-500-F, the correctable half) --------------
+
+    private static object ReviseBody() => new { materialValueOnSite = "90000", materialInstalled = "0" };
+
+    private async Task<Guid> RejectedAsync(Project project)
+    {
+        Guid extract = await DriveAsync(project, ExtractStatus.QcSubmitted);
+        (await SendAsync(HttpMethod.Post, Step(project.Id, extract, "technical-rejection"), _technicalOffice, new { reason = "quantities are short" }))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+        return extract;
+    }
+
+    [Fact]
+    public async Task Revising_evidence_is_for_an_assigned_preparer_and_nobody_else()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await RejectedAsync(project);
+        string route = Step(project.Id, extract, "evidence-revision");
+
+        foreach (Guid refused in new[] { _owner, _finance, _technicalOffice, _hr, _engineerUnassigned })
+        {
+            (await SendAsync(HttpMethod.Post, route, refused, ReviseBody())).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+
+        (await SendAsync(HttpMethod.Post, route, _prepEngineer, ReviseBody())).StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task A_rejected_extract_is_revised_from_current_quantities_and_the_chain_runs_on_the_new_figures()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await RejectedAsync(project);
+        await ExecuteAsync(project, 350m);
+        long postings = await PostingCountAsync(project.Id);
+
+        HttpResponseMessage revised = await SendAsync(
+            HttpMethod.Post, Step(project.Id, extract, "evidence-revision"), _prepEngineer, ReviseBody());
+        revised.StatusCode.Should().Be(HttpStatusCode.OK, await revised.Content.ReadAsStringAsync(Ct));
+
+        (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Draft);
+        JsonElement read = await ReadAsync(project.Id, extract, _owner);
+        ParseDecimal(read.GetProperty("evidence").GetProperty("cumulativeCertifiedWork")).Should().Be(350_000m, "re-derived, not typed");
+        ParseDecimal(read.GetProperty("evidence").GetProperty("materialValueOnSite")).Should().Be(90_000m);
+
+        // The revision is on the history, after the rejection, with the revising engineer.
+        JsonElement[] history = [.. read.GetProperty("gateHistory").EnumerateArray()];
+        history.Count(record => record.GetProperty("outcome").GetString() == "Rejected").Should().Be(1);
+        JsonElement last = history[^1];
+        last.GetProperty("gate").GetString().Should().Be("EvidenceRevised");
+        last.GetProperty("actorUserId").GetGuid().Should().Be(_prepEngineer);
+
+        (await PostingCountAsync(project.Id)).Should().Be(postings, "a revision writes no posting");
+
+        await StepAsync(_client, project, extract, ExtractStatus.Draft, ExtractStatus.DeductionsApplied);
+        JsonElement document = (await ReadAsync(project.Id, extract, _finance)).GetProperty("document");
+        Decimal(document.GetProperty("figures"), "workValue").Should().Be(350_000m, "the chain ran on the revised quantities");
+    }
+
+    [Fact]
+    public async Task Revision_is_refused_outside_a_rejected_draft_and_changes_nothing()
+    {
+        Project project = await NewProjectAsync();
+        Guid fresh = await PrepareAsync(project);
+        string freshRoute = Step(project.Id, fresh, "evidence-revision");
+        HttpResponseMessage neverRejected = await SendAsync(HttpMethod.Post, freshRoute, _prepEngineer, ReviseBody());
+        neverRejected.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ErrorCodeAsync(neverRejected)).Should().Be("extract.revision_not_allowed");
+
+        await StepAsync(_client, project, fresh, ExtractStatus.Draft, ExtractStatus.QcSubmitted);
+        (await ErrorCodeAsync(await SendAsync(HttpMethod.Post, freshRoute, _prepEngineer, ReviseBody())))
+            .Should().Be("extract.revision_not_allowed", "an extract past Draft is never edited");
+
+        await StepAsync(_client, project, fresh, ExtractStatus.QcSubmitted, ExtractStatus.Issued);
+        (await ErrorCodeAsync(await SendAsync(HttpMethod.Post, freshRoute, _prepEngineer, ReviseBody())))
+            .Should().Be("extract.revision_not_allowed");
+        (await StatusOfAsync(fresh)).Should().Be(ExtractStatus.Issued);
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        Extract stored = await reader.Extracts.Include(candidate => candidate.GateHistory).SingleAsync(candidate => candidate.Id == fresh, Ct);
+        stored.GateHistory.Should().NotContain(record => record.Gate == ExtractGate.EvidenceRevised);
+        stored.MaterialValueOnSite.Should().Be(new Money(100_000m));
+    }
+
+    [Fact]
+    public async Task The_read_model_offers_revision_to_the_preparer_of_a_rejected_draft_and_to_nobody_else()
+    {
+        Project project = await NewProjectAsync();
+        Guid fresh = await PrepareAsync(project);
+        (await ActionsAsync(project.Id, fresh, _prepEngineer))["reviseEvidence"].Should().BeFalse("nothing has been rejected yet");
+
+        await StepAsync(_client, project, fresh, ExtractStatus.Draft, ExtractStatus.QcSubmitted);
+        (await SendAsync(HttpMethod.Post, Step(project.Id, fresh, "technical-rejection"), _technicalOffice, new { reason = "short" }))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (await ActionsAsync(project.Id, fresh, _prepEngineer))["reviseEvidence"].Should().BeTrue();
+        foreach (Guid other in new[] { _owner, _finance, _technicalOffice })
+        {
+            (await ActionsAsync(project.Id, fresh, other))["reviseEvidence"].Should().BeFalse("the control is left out, not disabled");
+        }
+
+        (await SendAsync(HttpMethod.Post, Step(project.Id, fresh, "evidence-revision"), _prepEngineer, ReviseBody()))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ActionsAsync(project.Id, fresh, _prepEngineer))["reviseEvidence"].Should().BeTrue("a draft may be revised again before resubmission");
+
+        await StepAsync(_client, project, fresh, ExtractStatus.Draft, ExtractStatus.QcSubmitted);
+        (await ActionsAsync(project.Id, fresh, _prepEngineer))["reviseEvidence"].Should().BeFalse("once resubmitted it is no longer a draft");
     }
 
     // ---- helpers -----------------------------------------------------------------------------------

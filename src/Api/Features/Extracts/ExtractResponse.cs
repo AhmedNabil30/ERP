@@ -91,6 +91,7 @@ public sealed record ExtractActions(
     bool ApproveAsOwner,
     bool RejectAtOwner,
     bool Issue,
+    bool ReviseEvidence,
     bool CallerMayDecide);
 
 public sealed record ExtractResponse(
@@ -129,6 +130,7 @@ internal static class ExtractView
 {
     public static readonly Permission[] Permissions =
     [
+        Permission.ExtractPrepare,
         Permission.ExtractQcReportSubmit,
         Permission.QuantityGateApprove,
         Permission.ExtractDeductionsApply,
@@ -194,6 +196,7 @@ internal static class ExtractView
             ApproveAsOwner: Holds(Permission.FinancialMovementApprove) && Can(ExtractStatus.OwnerApproved) && mayDecide,
             RejectAtOwner: Holds(Permission.FinancialMovementApprove) && atOwner && mayDecide,
             Issue: Holds(Permission.FinancialMovementApprove) && Can(ExtractStatus.Issued) && projectMayIssue,
+            ReviseEvidence: Holds(Permission.ExtractPrepare) && extract.IsRevisable,
             CallerMayDecide: mayDecide);
     }
 

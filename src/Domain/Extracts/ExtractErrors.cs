@@ -69,6 +69,10 @@ public static class ExtractErrors
     public static readonly Error NumberTaken =
         Error.Conflict("extract.number_taken", "errors.extract.number_taken");
 
+    /// <summary>Evidence can be revised only on a Draft extract that a rejection returned.</summary>
+    public static readonly Error RevisionNotAllowed =
+        Error.Conflict("extract.revision_not_allowed", "errors.extract.revision_not_allowed");
+
     /// <summary>A rejection route was called for an extract that does not wait at that route's gate.</summary>
     public static readonly Error NotWaitingAtThisGate =
         Error.Conflict("extract.not_waiting_at_this_gate", "errors.extract.not_waiting_at_this_gate");

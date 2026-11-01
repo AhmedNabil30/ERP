@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Kaff.Api.Authorization;
 using Kaff.Api.Common.Results;
 using Kaff.Domain.Authorization;
+using Kaff.Domain.Boqs;
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts.Billing;
 using Kaff.Domain.Extracts;
@@ -53,6 +54,19 @@ internal static class ExtractSupport
         }
 
         return new ExtractViewer(services.CurrentUser.UserId ?? Guid.Empty, held);
+    }
+
+    /// <summary>
+    /// Cumulative certified work: the sum, over the frozen BOQ's lines, of the line's rate times its executed
+    /// quantity, rounded as the ruled <c>ContractValueSource</c> rounds a line total. Shared by preparation and
+    /// by the revision of a rejected extract so the two can never derive it differently.
+    /// </summary>
+    public static Money CumulativeCertifiedWork(Boq boq, RulingSet rulings)
+    {
+        ArgumentNullException.ThrowIfNull(boq);
+        ArgumentNullException.ThrowIfNull(rulings);
+
+        return Money.Sum(boq.Lines.Select(line => rulings.ContractValueSource.LineTotal(line.SellRate, line.QuantityExecuted)));
     }
 
     public static IQueryable<Extract> WithChildren(KaffDbContext database) =>

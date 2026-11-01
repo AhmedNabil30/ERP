@@ -413,6 +413,7 @@
   "errors.extract.accounts_missing": "ينقص المشروع حساب يحتاجه المستخلص للترحيل.",
   "errors.extract.number_taken": "أخذ مستخلص آخر هذا الرقم قبل لحظات. حاول مرة أخرى.",
   "errors.extract.not_waiting_at_this_gate": "المستخلص ليس في انتظار هذه البوابة.",
+  "errors.extract.revision_not_allowed": "لا يمكن تعديل بيانات المستخلص إلا وهو مسودة أعادها الرفض.",
   "errors.daily_log.boq_line_not_found": "بند المقايسة هذا لا يخص هذا المشروع.",
   "errors.daily_log.quantity_must_be_positive": "يجب أن تكون الكمية أكبر من صفر.",
   "errors.daily_log.executed_quantity_below_zero": "هذا التعديل يجعل الكمية المنفذة أقل من صفر.",

@@ -254,3 +254,13 @@ Every route is `/api/projects/{projectId}/extracts...` and is gated with `Projec
 `AC-500-I`, `J` and `K` are proven over HTTP, and `AC-500-A`, `C`, `D`, `F`, `G` and `H` are exercised through the routes.
 Not done: `Collect` (`KAFF-316`), `ReleaseHeldPortion`, revising a rejected extract's evidence, and all Angular. This story's
 trailer stays `READY`: stage 3 remains.
+
+## Build notes (2026-11-01, revise-evidence gap)
+
+Recorded in `D-195`. `AC-500-F`'s rejection path was a dead end: a rejected extract returned to Draft with the same
+quantities and nothing could change them. `Extract.ReviseEvidence` now corrects them, legal only in Draft after a rejection,
+re-deriving certified work from the frozen BOQ's executed quantities. Route: `POST /extracts/{id}/evidence-revision`, gated
+`ExtractPrepare` with role and assignment. The read model's `actions.reviseEvidence` tells a screen to offer the control, or
+leave it out. The revision is a gate record (`EvidenceRevised`) with its actor, extends the cycle's prior actors, and writes no
+posting. Tests: `ExtractRevisionTests` (domain) and four in `ExtractEndpointTests`. Open questions are registered as
+`ExtractRevisionScope`. Not done: Angular; this story's trailer stays `READY`.

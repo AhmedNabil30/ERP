@@ -40,6 +40,9 @@ public sealed record RulingSet
     /// <summary>Who submits an extract's weekly QC report. Enforced in the permission catalogue.</summary>
     public ExtractQcReportAuthor ExtractQcReportAuthor { get; init; } = ExtractQcReportAuthor.Default;
 
+    /// <summary>What a preparer may change on an extract a rejection returned to Draft.</summary>
+    public ExtractRevisionScope ExtractRevisionScope { get; init; } = ExtractRevisionScope.Default;
+
     /// <summary>Every entry, each describing itself. A test pins that none is missing a question.</summary>
     public IReadOnlyList<RulingNote> Notes =>
     [
@@ -55,5 +58,6 @@ public sealed record RulingSet
         ExtractPartialApprovalScope.Note,
         ExtractPreparationScope.Note,
         ExtractQcReportAuthor.Note,
+        ExtractRevisionScope.Note,
     ];
 }

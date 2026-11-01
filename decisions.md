@@ -15806,3 +15806,44 @@ ruled decimals. Hold to date carries the previous ledger figure with source `led
 **Not done.** `Collect` has no endpoint (`KAFF-316` owns it). `ReleaseHeldPortion` has no endpoint (no permission names who
 closes an NCR, and no NCR entity exists). No endpoint revises a rejected extract's evidence: a rejected extract returns to
 Draft with the same quantities, and `Extract` has no method to re-derive them. No Angular.
+
+### D-195 · Backend — revising the evidence of a rejected extract (KAFF-500 revise-evidence gap) · 2026-11-01
+
+**The gap.** A rejection returns the extract to Draft (spec.md section 7) but `Extract` had no way to change the quantities
+it holds, and a Draft extract blocks a new prepare (`extract.another_extract_open`), so the rejected extract could only be
+resubmitted unchanged. The Technical Office rejects because the quantities are wrong; nothing could correct them.
+
+**Built.** `Extract.ReviseEvidence(actor, cumulativeCertifiedWork, materialValueOnSite, materialInstalled, now)` and
+`Extract.IsRevisable`. Legal only when the status is Draft and a rejection is on the gate history; otherwise
+`extract.revision_not_allowed` (409) and nothing changes. The same quantity rules as `Prepare` apply (shared private check).
+Endpoint `POST /api/projects/{projectId}/extracts/{id}/evidence-revision` in `src/Api/Features/Extracts/ReviseEvidence/`,
+gated `ExtractPrepare` with `ProjectScope.FromRoute()` (role and assignment). No new `Permission` row, no migration (gate
+values are stored as text with no check constraint on the set). The read model's `actions` gains `reviseEvidence`:
+`ExtractPrepare` held on the project AND `IsRevisable`.
+
+**Shape, and why.** Re-derivation, not typed input. The request carries only the two material values, as `Prepare` does;
+cumulative certified work is re-derived from the frozen BOQ's rates and the executed quantities as they stand at the moment
+of revision, by the same function `Prepare` now calls (`ExtractSupport.CumulativeCertifiedWork`). Typed certified work would
+let a preparer certify a figure the daily logs do not support. The period and the previously certified figure are not
+revisable.
+
+**What the history records.** One new `ExtractGateRecord` (gate `EvidenceRevised`, outcome `Passed`, the reviser, the time, no
+reason). It appends after the rejection and never replaces it. The before and after figures are on the audit trail, written by
+the interceptor on the same save; they are not duplicated on the extract.
+
+**Separation of duties: extended.** `PriorActors` already counts every actor recorded after the last rejection, so the reviser
+joins the new cycle's prior actors with no change to that rule. Someone who revised the evidence can therefore not approve or
+reject it, the same as the preparer. The rejecter is still not barred from the resubmission.
+
+**Postings.** None. The reversal, where the ruled accrual had already happened, was written at the rejection. The method
+returns no posting and has no way to reach one; a test pins the ledger unchanged across a revision.
+
+**Gates re-passed.** The extract is in Draft, so resubmission starts at the QC report and every gate runs again on the new
+figures. Registered as an assumption.
+
+**Registered, not decided:** `RulingSet.ExtractRevisionScope` (Assumed): may a revision change the period; must a revised
+extract re-pass every gate; are the original figures retained beyond the audit trail; which permission revises (`ExtractPrepare`
+reused because no revise permission was ruled; a dedicated row would be an Architect act).
+
+**Not done.** No Angular. A revision does not re-check the project's other extracts (the period is fixed, so nothing needs it).
+Cost Plus and Design extracts still have no intake (D-194).
