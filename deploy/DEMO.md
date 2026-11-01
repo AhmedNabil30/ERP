@@ -595,3 +595,13 @@ to account for them a second time.
 reached this pass for the reasons given; 21 points `DEFERRED`. 84 + 22 + 21 = the slice's 127** —
 every point is named somewhere on this list, on purpose, so nothing is accepted by silence and
 nothing is left unaccounted either.
+
+## Demo BOQ (seed-demo-boq.mjs)
+
+Run `node scripts/seed-demo-boq.mjs [baseUrl] [projectId] [--no-sign]` (with `TEMP`/`TMP` on D:) once the
+API is up. It adds 15 real catalogue lines (masonry, plaster, finishes, joinery, aluminium, plumbing,
+electrical) to the demo project `01a0de49-4a8c-7707-b19a-0f7592bbfdb0`, each with estimated and surveyed
+quantities, then signs the contract. Signing is irreversible: the BOQ freezes and its total (4,672,694.01)
+replaces the project's earlier contract value. Re-runs report "0 created, 15 existed" and "already signed".
+`quantity_executed` stays writable, so the site engineer's daily log
+(`GET /api/projects/{id}/daily-logs/boq-lines`, no money fields) works against it.
