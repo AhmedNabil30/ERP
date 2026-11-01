@@ -111,6 +111,9 @@
         <button type="button" class="kind" [attr.aria-pressed]="kind() === 'material'" data-testid="daily-log-kind-material" (click)="setKind('material')">
           {{ i18n.t('daily_log.kind.material') }}
         </button>
+        <button type="button" class="kind" [attr.aria-pressed]="kind() === 'quantity'" data-testid="daily-log-kind-quantity" (click)="setKind('quantity')">
+          {{ i18n.t('daily_log.kind.quantity') }}
+        </button>
       </div>
 
       <form class="fields" (submit)="$event.preventDefault(); onSave()">
@@ -156,6 +159,60 @@
               <input id="daily-log-labour-hours" class="input" type="text" dir="ltr" inputmode="decimal" data-testid="daily-log-labour-hours" [formField]="entryForm.hours" />
             </kaff-field>
           }
+          @case ('quantity') {
+            @if (boqLoading()) {
+              <kaff-state mode="loading" titleKey="daily_log.quantity.loading" testId="daily-log-boq-loading" />
+            } @else if (boqFailure(); as key) {
+              <kaff-state mode="refusal" [bodyKey]="key" testId="daily-log-boq-failure" />
+              <kaff-button testId="daily-log-boq-retry" (clicked)="retryBoq()">{{ i18n.t('daily_log.quantity.retry') }}</kaff-button>
+            } @else if (boq(); as list) {
+              @if (list.lines.length === 0) {
+                <kaff-state mode="empty" titleKey="daily_log.quantity.no_lines" testId="daily-log-boq-empty" />
+              } @else {
+                <kaff-field labelKey="daily_log.quantity.line" controlId="daily-log-quantity-line">
+                  <select
+                    id="daily-log-quantity-line"
+                    class="input select"
+                    data-testid="daily-log-quantity-line"
+                    [attr.aria-label]="i18n.t('daily_log.quantity.line')"
+                    (change)="onLineChange($event)"
+                  >
+                    <option value="">{{ i18n.t('daily_log.quantity.line_pick') }}</option>
+                    @for (line of list.lines; track line.id) {
+                      <option [value]="line.id" [selected]="line.id === selectedLineId()">{{ lineLabel(line) }}</option>
+                    }
+                  </select>
+                </kaff-field>
+                @if (selectedLine(); as chosen) {
+                  <dl class="states" data-testid="daily-log-quantity-states">
+                    <div class="state">
+                      <dt>{{ i18n.t('daily_log.quantity.estimated') }}</dt>
+                      <dd class="figure">@if (chosen.quantityEstimated !== null) { <bdi dir="ltr">{{ number(chosen.quantityEstimated) }}</bdi> } @else { — }</dd>
+                    </div>
+                    <div class="state">
+                      <dt>{{ i18n.t('daily_log.quantity.surveyed') }}</dt>
+                      <dd class="figure">@if (chosen.quantitySurveyed !== null) { <bdi dir="ltr">{{ number(chosen.quantitySurveyed) }}</bdi> } @else { — }</dd>
+                    </div>
+                    <div class="state">
+                      <dt>{{ i18n.t('daily_log.quantity.executed') }}</dt>
+                      <dd class="figure" data-testid="daily-log-quantity-executed"><bdi dir="ltr">{{ number(chosen.quantityExecuted) }}</bdi></dd>
+                    </div>
+                  </dl>
+                }
+                <kaff-field labelKey="daily_log.quantity.period" controlId="daily-log-quantity-period">
+                  <input id="daily-log-quantity-period" class="input" type="text" dir="ltr" inputmode="decimal" data-testid="daily-log-quantity-period" [formField]="entryForm.periodQuantity" />
+                </kaff-field>
+                <p class="hint" data-testid="daily-log-quantity-hint">
+                  {{ i18n.t('daily_log.quantity.period_hint') }}
+                  @if (selectedLine(); as chosen) {
+                    <span dir="auto">({{ chosen.unit }})</span>
+                  }
+                </p>
+              }
+            } @else {
+              <kaff-state mode="empty" titleKey="daily_log.quantity.no_boq" testId="daily-log-boq-none" />
+            }
+          }
           @case ('material') {
             <kaff-field labelKey="daily_log.form.material_type" controlId="daily-log-material-type">
               <input id="daily-log-material-type" class="input" type="text" dir="auto" data-testid="daily-log-material-type" [formField]="entryForm.materialType" />
@@ -181,7 +238,7 @@
 
         <!-- The one primary action, pinned to the bottom of the viewport (AC-600-K). -->
         <div class="footer">
-          <kaff-button variant="primary" type="submit" testId="daily-log-save" [busy]="busy()">
+          <kaff-button variant="primary" type="submit" testId="daily-log-save" [busy]="busy()" [disabled]="kind() === 'quantity' && !canRecordQuantity()">
             {{ i18n.t('action.save') }}
           </kaff-button>
         </div>

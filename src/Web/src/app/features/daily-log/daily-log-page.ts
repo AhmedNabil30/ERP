@@ -4,14 +4,14 @@ import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { toProblem } from '../../core/api/problem-details';
-import { DailyLog, DailyLogApi, DailyLogField } from '../../core/daily-log/daily-log.api';
+import { BoqLines, BoqPickLine, DailyLog, DailyLogApi, DailyLogField } from '../../core/daily-log/daily-log.api';
 import { DayLabourApi, PoolWorker } from '../../core/day-labour/day-labour.api';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { KaffButton } from '../../shared/kaff-button/kaff-button';
 import { KaffField } from '../../shared/kaff-field/kaff-field';
 import { KaffState } from '../../shared/kaff-state/kaff-state';
 
-type EntryKind = 'field' | 'labour' | 'material';
+type EntryKind = 'field' | 'labour' | 'material' | 'quantity';
 
 /** Check-in and check-out are timestamps in themselves; the server accepts no text for them. */
 const FIELDS_WITHOUT_TEXT: ReadonlySet<DailyLogField> = new Set<DailyLogField>(['CheckIn', 'CheckOut']);
@@ -29,11 +29,12 @@ interface EntryDraft {
   hours: string;
   materialType: string;
   quantity: string;
+  periodQuantity: string;
   unit: string;
   isStockpile: boolean;
 }
 
-const BLANK: EntryDraft = { text: '', hours: '', materialType: '', quantity: '', unit: '', isStockpile: false };
+const BLANK: EntryDraft = { text: '', hours: '', materialType: '', quantity: '', periodQuantity: '', unit: '', isStockpile: false };
 
 /**
  * The engineer's daily log: `KAFF-600`, `AC-600-J`, `AC-600-K`. Mobile-first, one hand, RTL.
@@ -46,8 +47,12 @@ const BLANK: EntryDraft = { text: '', hours: '', materialType: '', quantity: '',
  * Each entry carries a device-generated id (a retry is recognised, never double-counted) and the
  * device's own time with its offset (`OccurredAt`, rule 11), never the server clock.
  *
- * Not offered here, and why: executed-quantity entry (the engineer has no money-free read of the BOQ
- * lines to pick from; `GET …/boq` is `ProjectManage` and carries cost), photo entry (no upload
+ * Executed-quantity entry (`AC-600-C`, `AC-600-D`, `AC-600-F`) picks from `GET …/daily-logs/boq-lines`,
+ * a money-free read. The figure entered is **what was done this period and it adds**
+ * (`RulingSet.DailyLogQuantityEntry`, `Adds`); there is deliberately no correction affordance, that case
+ * is unruled.
+ *
+ * Not offered here, and why: photo entry (no upload
  * endpoint exists, only a file reference), expense drafts (the request carries an amount, which
  * `AC-600-J` forbids on this screen). Quantities and photos are shown read-only when present.
  */
@@ -78,6 +83,16 @@ export class DailyLogPage {
   protected readonly loading = signal(true);
   protected readonly loadFailure = signal<string | null>(null);
   protected readonly workers = signal<readonly PoolWorker[]>([]);
+
+  /** `null` once loaded means the project has no BOQ; `boqLoading` and `boqFailure` cover the rest. */
+  protected readonly boq = signal<BoqLines | null>(null);
+  protected readonly boqLoading = signal(true);
+  protected readonly boqFailure = signal<string | null>(null);
+  protected readonly selectedLineId = signal('');
+  protected readonly canRecordQuantity = computed(() => (this.boq()?.lines.length ?? 0) > 0);
+  protected readonly selectedLine = computed<BoqPickLine | null>(
+    () => this.boq()?.lines.find((line) => line.id === this.selectedLineId()) ?? null,
+  );
 
   protected readonly kind = signal<EntryKind>('field');
   protected readonly selectedField = signal<DailyLogField>('Note');
@@ -113,6 +128,7 @@ export class DailyLogPage {
       const id = this.projectId();
       void this.load(id);
       void this.loadWorkers(id);
+      void this.loadBoq(id);
     });
   }
 
@@ -126,6 +142,22 @@ export class DailyLogPage {
     if (target instanceof HTMLSelectElement) {
       this.selectedField.set(target.value as DailyLogField);
     }
+  }
+
+  protected onLineChange(event: Event): void {
+    const target = event.target;
+    if (target instanceof HTMLSelectElement) {
+      this.selectedLineId.set(target.value);
+    }
+  }
+
+  protected lineLabel(line: BoqPickLine): string {
+    const description = this.i18n.locale() === 'en' && line.descriptionEn ? line.descriptionEn : line.descriptionAr;
+    return `${line.position}. ${line.itemCode ? `${line.itemCode} · ` : ''}${description}`;
+  }
+
+  protected retryBoq(): void {
+    void this.loadBoq(this.projectId());
   }
 
   protected onWorkerChange(event: Event): void {
@@ -179,6 +211,20 @@ export class DailyLogPage {
           await this.api.recordDayLabour(projectId, { ...entry, employeeId: this.selectedWorker(), hours });
           break;
         }
+        case 'quantity': {
+          const quantity = positive(value.periodQuantity);
+          if (this.selectedLineId() === '') {
+            this.errorKey.set('errors.daily_log.boq_line_not_found');
+            return;
+          }
+          if (quantity === null) {
+            this.errorKey.set('errors.daily_log.quantity_must_be_positive');
+            return;
+          }
+          this.busy.set(true);
+          await this.api.recordQuantity(projectId, { ...entry, boqLineId: this.selectedLineId(), quantity });
+          break;
+        }
         case 'material': {
           const quantity = positive(value.quantity);
           if (value.materialType.trim().length === 0 || value.unit.trim().length === 0) {
@@ -203,7 +249,8 @@ export class DailyLogPage {
 
       this.model.set({ ...BLANK });
       this.selectedWorker.set('');
-      await this.load(projectId);
+      this.selectedLineId.set('');
+      await Promise.all([this.load(projectId), this.loadBoq(projectId)]);
     } catch (error) {
       this.errorKey.set(toProblem(error).messageKey);
     } finally {
@@ -219,6 +266,18 @@ export class DailyLogPage {
       this.loadFailure.set(toProblem(error).messageKey);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  private async loadBoq(projectId: string): Promise<void> {
+    this.boqLoading.set(true);
+    try {
+      this.boq.set(await this.api.listBoqLines(projectId));
+      this.boqFailure.set(null);
+    } catch (error) {
+      this.boqFailure.set(toProblem(error).messageKey);
+    } finally {
+      this.boqLoading.set(false);
     }
   }
 

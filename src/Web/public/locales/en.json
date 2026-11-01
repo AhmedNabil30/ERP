@@ -1308,5 +1308,17 @@
   "daily_log.form.material_type": "Material type",
   "daily_log.form.quantity": "Quantity",
   "daily_log.form.unit": "Unit",
+  "daily_log.kind.quantity": "Quantities",
+  "daily_log.quantity.loading": "Loading the BOQ lines…",
+  "daily_log.quantity.retry": "Try again",
+  "daily_log.quantity.no_lines": "The BOQ has no lines to record against.",
+  "daily_log.quantity.no_boq": "This project has no BOQ yet, so there is no line to record a quantity against.",
+  "daily_log.quantity.line": "BOQ line",
+  "daily_log.quantity.line_pick": "Pick a line",
+  "daily_log.quantity.estimated": "Estimated",
+  "daily_log.quantity.surveyed": "Surveyed",
+  "daily_log.quantity.executed": "Executed so far",
+  "daily_log.quantity.period": "Done this period",
+  "daily_log.quantity.period_hint": "Enter only what was done this period. It is added to what is already recorded; it does not replace it.",
   "projects.action.open_daily_log": "Daily log — {name}"
 }

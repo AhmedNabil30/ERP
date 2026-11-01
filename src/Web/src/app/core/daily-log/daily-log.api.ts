@@ -35,6 +35,24 @@ export interface QuantityLine {
   readonly occurredAt: string;
 }
 
+/** `GET …/daily-logs/boq-lines` (`ListBoqLines.Response`). No rate, cost, amount or total member exists. */
+export interface BoqLines {
+  readonly boqId: string;
+  readonly lines: readonly BoqPickLine[];
+}
+
+export interface BoqPickLine {
+  readonly id: string;
+  readonly position: number;
+  readonly itemCode: string | null;
+  readonly descriptionAr: string;
+  readonly descriptionEn: string | null;
+  readonly unit: string;
+  readonly quantityEstimated: number | null;
+  readonly quantitySurveyed: number | null;
+  readonly quantityExecuted: number;
+}
+
 export interface DayLabourLine {
   readonly entryId: string;
   readonly employeeId: string;
@@ -101,6 +119,26 @@ export class DailyLogApi {
 
   async recordField(projectId: string, entry: EntryEnvelope & { field: DailyLogField; text: string | null }): Promise<void> {
     await firstValueFrom(this.http.post(`${this.base(projectId)}/fields`, entry));
+  }
+
+  /**
+   * `GET …/daily-logs/boq-lines` — the money-free line list to record a quantity against. `null` when
+   * the project has no BOQ (`404 boq.not_found`), which is a state to show, not a failure.
+   */
+  async listBoqLines(projectId: string): Promise<BoqLines | null> {
+    try {
+      return await firstValueFrom(this.http.get<BoqLines>(`${this.base(projectId)}/boq-lines`));
+    } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /** A period delta: what was done in this period, added to the line's executed total by the server. */
+  async recordQuantity(projectId: string, entry: EntryEnvelope & { boqLineId: string; quantity: number }): Promise<void> {
+    await firstValueFrom(this.http.post(`${this.base(projectId)}/quantities`, entry));
   }
 
   async recordDayLabour(projectId: string, entry: EntryEnvelope & { employeeId: string; hours: number }): Promise<void> {

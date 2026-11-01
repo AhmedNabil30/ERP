@@ -1308,5 +1308,17 @@
   "daily_log.form.material_type": "نوع الخامة",
   "daily_log.form.quantity": "الكمية",
   "daily_log.form.unit": "الوحدة",
+  "daily_log.kind.quantity": "الكميات",
+  "daily_log.quantity.loading": "جارٍ تحميل بنود المقايسة…",
+  "daily_log.quantity.retry": "أعد المحاولة",
+  "daily_log.quantity.no_lines": "المقايسة لا تحتوي على بنود لتسجيل كمية عليها.",
+  "daily_log.quantity.no_boq": "لا توجد مقايسة لهذا المشروع بعد، فلا يوجد بند لتسجيل كمية عليه.",
+  "daily_log.quantity.line": "بند المقايسة",
+  "daily_log.quantity.line_pick": "اختر البند",
+  "daily_log.quantity.estimated": "التقديرية",
+  "daily_log.quantity.surveyed": "المحصورة",
+  "daily_log.quantity.executed": "المنفذة حتى الآن",
+  "daily_log.quantity.period": "المنفذ في هذه الفترة",
+  "daily_log.quantity.period_hint": "أدخل ما تم تنفيذه في هذه الفترة فقط. يُضاف إلى ما سُجّل من قبل ولا يحلّ محلّه.",
   "projects.action.open_daily_log": "اليومية — {name}"
 }
