@@ -1,4 +1,4 @@
-# STATUS — Kaff ERP, the single source of truth
+﻿# STATUS — Kaff ERP, the single source of truth
 
 **Read this file first. Nothing else in the repository states the current position.**
 
@@ -6,8 +6,63 @@ Everything above the generated block is maintained by hand and dated. Everything
 derived. If another file disagrees with this one, **this one is right and the other file is
 history** — see *The map* at the bottom for which is which.
 
-⚠️ **2026-09-27 · Read this section and the generated block at the foot. Everything between them
-stops at 2026-09-15 and is history.** Several of those paragraphs describe an uncommitted working
+⚠️ **2026-11-01 · This section is the current position. Everything below it, down to the generated
+block at the foot, is history — including the 2026-09-27 section that used to say this.**
+
+**The money core now exists, and that is the change that matters.** For the whole life of this project
+`spec.md` §15 — the acceptance criterion for the entire system — was satisfied only by
+`tests/Domain.Tests/Section15WorkedExampleTests.cs`, which built its postings by hand and said so. A
+wrong calculator could not fail it. That is no longer true.
+
+Landed 2026-10-31 and 2026-11-01, in order:
+
+| | What | Why it mattered |
+|---|---|---|
+| `516912f` | The BOQ, frozen at signature, and **the contract value derived from it rather than typed** | `CreateProject` used to accept a typed `ContractValue` and `Sign` stamped a date with nothing behind it, while hold, advance and تشوينات are all percentages of that number |
+| `98e3248` | The `BoqAndRulings` migration, and `003_boq_freeze.sql` | The database itself refuses to alter a frozen line; `quantity_executed` is the only column that still moves |
+| `a57d6ca` | `src/Domain/Rulings/` — **one home for every business default nobody has ruled** | `RulingSet.Default` is the single place a default changes, so Karim's answer is a one-line change rather than a hunt through handlers |
+| `f40c46b` | `PostingSetBuilder` and `PostingProjectStatePolicy` | An extract approval is about six postings that must commit together; `PostMovement` posts one. Nothing checked project state on a posting before |
+| `4c79016` | **The three billing calculators** (`D-186`) | `spec.md` §15 is now produced by the real calculation. Every figure matches, both extracts and the handover release |
+| `6409395`, `3e1fdb5` | **إثبات الأرقام**, the proof screen, its read endpoint and its permission tests (`D-187`) | The first money screen. It shows actual postings beside what the contract rules expect and says line by line whether they agree |
+| `acdc2f0` | **The daily log core** (`D-188`) | Executed quantities are what extracts bill from, and nothing wrote one |
+
+**Gates, re-run by the coordinator at `3e1fdb5`, 2026-11-01:** build **0 warnings, 0 errors** ·
+Domain.Tests **395 / 395** · Api.Tests **732 / 732** · `ng test` **248 / 248** · API and web both
+answering 200, the migration applied. The much older .NET figures quoted further down this file
+(Domain 298, Api 655) are history.
+
+**What is still not built, stated plainly so nobody reads the above as more than it is:**
+
+- **The extract chain** — `KAFF-500`, 21 points, refined and ready, every blocker now cleared. There is
+  no extract record, no approval chain, no quantity gate, no deductions step, no Owner approval, no
+  issuing. **This is the largest remaining piece of the project module.**
+- **No screen for the BOQ or the daily log.** Both are built behind the interface and neither is
+  reachable by clicking.
+- **إثبات الأرقام is reachable only by typing its address**, and its expected-versus-actual column is
+  switched off — not because the calculators are missing, but because no extract record exists to read a
+  period's inputs from (`ExpectedState = NoExtractsToCompare`).
+- **The project workspace is designed and not approved.** `.design/v2/team-a/project.html` is waiting on
+  Nabil, and four questions block it: Arabic words for `Stopped`, `HandoverPending`, `Handover`,
+  `UnderWarranty` and `Terminated`; Arabic names for the three contract types; whether an approved change
+  order shows the original or the revised contract value; and what happens to an extract mid-chain when a
+  project is stopped.
+- **Step 7 — collections and withholding, change orders, closure, hold release, warranty — not started.**
+  `Terminated` is entirely unruled: `spec.md` §13 names the state and §6.9 lists "termination settlement",
+  and nothing says what settles.
+
+**Everything above runs on assumptions, not rulings.** Each one is a `RulingNote` in
+`src/Domain/Rulings/` carrying the question and what changes if ruled differently, per Nabil's
+instruction to build without waiting. The costliest is in `DailyLogQuantityEntry`: `spec.md` §8
+contradicts itself on whether a second quantity entry on the same line **adds** (rule 3, period deltas)
+or **replaces** (rule 5, latest timestamp wins). It runs as *adds*. Executed quantities are what extracts
+bill from, so if a correction was meant to replace and we add it, the client is billed twice for the same
+work. `docs/for-karim-assumptions.md` carries all seventeen topics.
+
+---
+
+⚠️ **2026-09-27 · History from here down. Read the section above for the current position.**
+Everything between this line and the generated block at the foot stops at 2026-09-15. Several of those
+paragraphs describe an uncommitted working
 tree, red gates and an open `Q90`. All three were resolved on 2026-09-25/26; the paragraphs were
 never rewritten. They are kept as the record of how the board got here, not as its position.
 

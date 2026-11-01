@@ -1,4 +1,4 @@
-# KAFF-500 · The extract chain — prepare, gate, deduct, approve, issue
+﻿# KAFF-500 · The extract chain — prepare, gate, deduct, approve, issue
 
 <!-- kaff id=KAFF-500 slice=5 points=21 state=READY -->
 
@@ -14,13 +14,21 @@
 | The BOQ, frozen at signature | An extract bills against contract lines, not typed numbers | **done** |
 | `PostingSetBuilder` | An extract approval is about six postings that must commit together; `PostMovement` posts one | **done** |
 | `PostingProjectStatePolicy` | `spec.md` §7: "a stopped project MUST NOT issue extracts" | **done** |
-| The daily log, `KAFF-600` | An extract is assembled from **executed** quantities | **not built** |
-| The three billing calculators | Every one returns `CalculatorNotImplemented` today | **in progress** |
+| The daily log, `KAFF-600` | An extract is assembled from **executed** quantities | **done** — `acdc2f0`, `D-188` |
+| The three billing calculators | An extract's figures must be derived, not typed | **done** — `4c79016`, `D-186`. `spec.md` §15 is now produced by them |
 | The ruling on when an extract posts | Changes what the Owner's screen previews and whether a rejection needs reversing postings | `RulingSet.ExtractPostingMoment`, default `OwnerApproval`, **unruled** |
 
-**Do not start this story before `KAFF-600` and the calculators land.** The study's refusal list is
-explicit: no extract UI before the posting builder, and the chain driven from typed quantities is the
-defect this ordering exists to prevent.
+**Every blocker above has landed, so this story is ready to start.** It was held back until they did,
+because the study's refusal list is explicit: no extract UI before the posting builder, and the chain
+driven from typed quantities is the defect this ordering exists to prevent.
+
+One dependency is still open and is **not** a blocker, by Nabil's standing instruction to build without
+waiting: the ruling on when an extract posts. It runs on `RulingSet.ExtractPostingMoment` with
+`OwnerApproval` as the default, so Karim's answer stays a one-line change.
+
+*Dependency states verified against the repository 2026-11-01. This table said "not built" and "in
+progress" for a day after both had landed — a story's own dependency table is exactly the kind of line
+somebody reads instead of looking, so it is dated now.*
 
 ## Story
 
