@@ -182,6 +182,17 @@ Related and also unruled: may Finance post money to a Stopped, Closed or Termina
 
 **Ask Karim:** "An engineer logs 40 metres in the morning, then logs 25 metres on the same line that afternoon. Did he do 65 metres, or was he correcting himself to 25?"
 
+## 18. Can hours be charged to a worker whose account is switched off? (Q118)
+
+| | |
+|---|---|
+| **What we assumed** | Nothing. The system currently lets it happen, and nobody decided that. |
+| **Why** | The specification says engineers register workers and record day labour on the daily log. It does not say what happens to a worker who has been marked inactive. Today the daily log's worker list still offers him, and the system accepts the hours. |
+| **In the demo** | On a project, open the daily log and add day labour. Workers marked inactive still appear in the list and can be given hours. |
+| **If you rule differently** | Cheap if inactive workers should simply disappear from the list and be refused. Moderate if hours already recorded against an inactive worker need a rule of their own. |
+
+**Ask Karim:** "A worker has left, or you have stopped using him, and he is marked inactive. Should an engineer still be able to give him hours on a project — or should he stop appearing?"
+
 ## Other assumptions you can see in the demo
 
 | Assumed | Seen at | Cost if changed |
