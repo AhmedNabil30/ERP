@@ -1,6 +1,6 @@
 # KAFF-509 · The change order chain — an approved one raises the contract value
 
-<!-- kaff id=KAFF-509 slice=7 points=8 state=NOT-BUILT -->
+<!-- kaff id=KAFF-509 slice=5 points=8 state=NOT-BUILT -->
 
 **Slice:** 7 (reconciled build order, step 7) · **Epic:** Change orders · **Points:** 8.
 **Owner:** Backend. **No UI criterion is carried here.**

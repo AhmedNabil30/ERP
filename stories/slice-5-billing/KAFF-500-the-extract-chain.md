@@ -36,6 +36,50 @@ The Technical Office assembles a client extract for a period from the executed q
 recorded. It passes a blocking quantity gate, Accounts applies the deductions, the Owner approves every
 one of them, and it issues. At some ruled moment in that sequence it becomes six postings in the ledger.
 
+## Blocking defect found before this story started — fix it first
+
+**`ExtractPostings.Build` posts the client's cash into the safe at the moment the extract is approved.**
+`src/Domain/Contracts/Billing/ExtractPostings.cs:72`:
+
+```csharp
+.AddIfPositive(accounts.ClientReceivable, accounts.Safe, cash, PostingType.ClientCollection);
+```
+
+That leg, and the `TaxWithheldAtSource` leg below it, are inside the single posting set the extract writes
+when it reaches `ExtractPostingMoment` — `OwnerApproval` by default. **`spec.md` §7 makes collection a
+separate, later step:** `→ Owner approval → Issued → Collected`. Raised by the BA while cutting
+`KAFF-316`, and verified against the source.
+
+§15 does not license this. Its table constrains **amounts** — one row per extract with a "Client pays"
+column — and says nothing about **when** the cash arrives relative to approval. §7 is what constrains the
+timing, and the two are not in conflict; only the code is.
+
+Three consequences, in order of how much they cost:
+
+1. **The safe is credited with money the client has not paid.** Every approved-but-uncollected extract
+   inflates it. The safe-floor constraint — the one rule `CLAUDE.md` puts in the database rather than in
+   application code — is then evaluated against a balance that includes cash nobody has received, so **a
+   payment out can pass that should have been refused.** The journey study already corrected one error in
+   this exact area: approving a client extract takes no cash out. It does not bring cash in either.
+2. **`ClientReceivable` nets to zero at approval**, so the receivable ledger never shows what the client
+   owes. A receivable that is always zero is not a receivable, and the five-ledger strip would show it as
+   settled while the client has paid nothing.
+3. **Postings are append-only.** Once this has run against real data it can only be reversed, never
+   edited, which is what makes a wrong posting rule expensive rather than merely wrong.
+
+§15's invariants still pass today, because the figures net out correctly by the end. **That is the point:
+a totals-only test cannot see a timing error.** Whatever fixes this needs a test that asserts the safe is
+*not* credited at approval and *is* credited at collection.
+
+The fix belongs with `KAFF-316` (collections), which owns the later step, and `AC-500-A` moves when the
+cash leg leaves the extract. **Do not build the endpoint slices on top of the current shape.**
+
+A second, smaller one from the same read: `D-186` item 5 says the `TaxWithheldAtSource` account pair is
+"pending `Q91`", but `PostingAccountLegality.PendingQ91` does not list it. One of the two is wrong, and
+`KAFF-317` says to read the file when building.
+
+---
+
 ## Business rules
 
 | # | Rule | Source |

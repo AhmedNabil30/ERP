@@ -1,4 +1,4 @@
-﻿# STATUS — Kaff ERP, the single source of truth
+# STATUS — Kaff ERP, the single source of truth
 
 **Read this file first. Nothing else in the repository states the current position.**
 
@@ -751,16 +751,16 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 
 ## Points by slice
 
-| | slice 1 | slice 2 | slice 3 | slice 4 | slice 5 | slice 6 | slice design-system |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 0 | 0 | 0 | 0 |
-| ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 0 | 9 | 41 | 8 | 0 | 13 | 106 |
-| ⚪ READY / COMMITTED — refined, not built | 0 | 0 | 0 | 0 | 21 | 0 | 0 |
-| ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 0 | 0 | 0 | 0 | 0 |
-| 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 | 0 | 0 | 0 | 0 |
-| **total** | **127** | **67** | **41** | **8** | **21** | **13** | **106** |
+| | slice 1 | slice 2 | slice 3 | slice 4 | slice 5 | slice 6 | slice 8 | slice design-system |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 0 | 0 | 0 | 0 | 0 |
+| ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 9 | 41 | 8 | 0 | 13 | 0 | 106 |
+| ⚪ READY / COMMITTED — refined, not built | 0 | 0 | 0 | 0 | 21 | 0 | 0 | 0 |
+| ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 16 | 0 | 32 | 0 | 39 | 0 |
+| 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **total** | **127** | **67** | **57** | **8** | **53** | **13** | **39** | **106** |
 
 ## Every story
 
@@ -821,13 +821,25 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-304](stories/slice-3-treasury/KAFF-304-every-balance-is-derived-by-summing-postings.md) | 3 | 5 | ⚪ FOLDED | none | `-` | 2026-09-28 | Every balance is derived by summing postings |
 | [KAFF-305](stories/slice-3-treasury/KAFF-305-the-posting-type-account-pair-legality-table.md) | 3 | 8 | 🟡 BUILT | none | `-` | 2026-09-15 | The posting-type × account-pair legality table |
 | [KAFF-306](stories/slice-3-treasury/KAFF-306-treasury-read-api.md) | 3 | 5 | 🟡 BUILT | none | `-` | 2026-09-25 | The Treasury can post and reverse, but nothing reads |
+| [KAFF-316](stories/slice-3-treasury/KAFF-316-collections-and-cheque-states.md) | 3 | 8 | ⚫ NOT-BUILT | none | `-` | - | Collections — method, date, reference, and the cheque states |
+| [KAFF-317](stories/slice-3-treasury/KAFF-317-withholding-at-source-on-a-collection.md) | 3 | 8 | ⚫ NOT-BUILT | none | `-` | - | Withholding at source on a corporate client's collection |
 | [KAFF-319](stories/slice-3-treasury/KAFF-319-a-refused-posting-reads-as-a-translated-message.md) | 3 | 3 | 🟡 BUILT | none | `-` | 2026-09-15 | A refused posting reads as a translated message, not a 500 |
 | [KAFF-320](stories/slice-3-treasury/KAFF-320-bank-as-an-independent-master-record.md) | 3 | 0 | ⚪ BLOCKED | none | `-` | 2026-09-15 | Bank — an independent master record, not folded into the ledger |
 | [KAFF-321](stories/slice-2-masters/KAFF-321-department-master-data.md) | 2 | 0 | 🟡 BUILT | none | `-` | 2026-09-15 | Department — dynamic master data, not a fixed enum |
 | [KAFF-322](stories/slice-3-treasury/KAFF-322-treasury-guard-tests-against-real-postgres.md) | 3 | 2 | 🟡 BUILT | none | `-` | 2026-09-14 | Treasury guard tests against real PostgreSQL |
 | [KAFF-400](stories/slice-4-projects/KAFF-400-projects-api.md) | 4 | 8 | 🟡 BUILT | none | `-` | - | The Projects API — create, list, read |
 | [KAFF-500](stories/slice-5-billing/KAFF-500-the-extract-chain.md) | 5 | 21 | ⚪ READY | none | `-` | - | The extract chain — prepare, gate, deduct, approve, issue |
+| [KAFF-508](stories/slice-5-billing/KAFF-508-change-orders-on-the-extract.md) | 5 | 8 | ⚫ NOT-BUILT | none | `-` | - | Change orders appear on the extract in their own section, at their own prices |
+| [KAFF-509](stories/slice-5-billing/KAFF-509-the-change-order-chain.md) | 5 | 8 | ⚫ NOT-BUILT | none | `-` | - | The change order chain — an approved one raises the contract value |
+| [KAFF-511](stories/slice-5-billing/KAFF-511-a-disputed-extract.md) | 5 | 8 | ⚫ NOT-BUILT | none | `-` | - | A disputed issued extract resolves as a revised extract or a credit note |
+| [KAFF-512](stories/slice-5-billing/KAFF-512-the-adjustment-object.md) | 5 | 8 | ⚫ NOT-BUILT | none | `-` | - | One `Adjustment` object for every case where money flows back |
 | [KAFF-600](stories/slice-6-execution/KAFF-600-the-daily-log-core.md) | 6 | 13 | 🟡 BUILT | none | `-` | - | The daily log core — one log per engineer per day, recording deltas |
+| [KAFF-800](stories/slice-8-closure-warranty/KAFF-800-practical-completion-and-the-snag-list.md) | 8 | 8 | ⚫ NOT-BUILT | none | `-` | - | Practical completion and the snag list — major snags block handover |
+| [KAFF-802](stories/slice-8-closure-warranty/KAFF-802-handover-and-the-hold-release.md) | 8 | 8 | ⚫ NOT-BUILT | none | `-` | - | Handover releases the hold, once, in full |
+| [KAFF-803](stories/slice-8-closure-warranty/KAFF-803-snag-resolution.md) | 8 | 5 | ⚫ NOT-BUILT | none | `-` | - | Snag resolution — debit the subcontractor, or absorb it as internal cost |
+| [KAFF-804](stories/slice-8-closure-warranty/KAFF-804-warranty-and-callbacks.md) | 8 | 5 | ⚫ NOT-BUILT | none | `-` | - | Warranty runs four months from handover; callbacks attach to it |
+| [KAFF-806](stories/slice-8-closure-warranty/KAFF-806-subcontractor-retention-release.md) | 8 | 5 | ⚫ NOT-BUILT | none | `-` | - | Subcontractor retention releases when the warranty ends |
+| [KAFF-807](stories/slice-8-closure-warranty/KAFF-807-closing-a-project.md) | 8 | 8 | ⚫ NOT-BUILT | none | `-` | - | A project closes only when every account is settled |
 | [KAFF-900](stories/design-system/KAFF-900-design-tokens-and-shell.md) | design-system | 5 | 🟡 BUILT | none | `-` | - | Design tokens and the app shell (sidebar, header, page frame) |
 | [KAFF-901](stories/design-system/KAFF-901-shared-restyled-components.md) | design-system | 5 | 🟡 BUILT | none | `-` | - | Shared restyled components: table row, segmented filter, form field, button, badge |
 | [KAFF-910](stories/design-system/KAFF-910-restyle-catalogue-list.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: catalogue list |

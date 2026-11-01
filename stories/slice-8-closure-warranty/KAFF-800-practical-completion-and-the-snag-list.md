@@ -1,6 +1,6 @@
 # KAFF-800 · Practical completion and the snag list — major snags block handover
 
-<!-- kaff id=KAFF-800 slice=7 points=8 state=NOT-BUILT -->
+<!-- kaff id=KAFF-800 slice=8 points=8 state=NOT-BUILT -->
 
 **Slice:** 7 (reconciled build order, step 7) · **Epic:** Closure · **Points:** 8 (absorbs `KAFF-801`).
 **Owner:** Backend. **No UI criterion is carried here.**
