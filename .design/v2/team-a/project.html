@@ -498,16 +498,18 @@ const rv=(html,tag)=>`<div class="rv" lang="en" dir="ltr"><span class="tag">${ta
 
 /* ============ the project data (sample) ============ */
 const P={
- ls:{name:'فيلا 47 — التجمع الخامس',code:'PRJ-3F9A21C4',client:'هشام الكردي',type:'مقاولة بمبلغ مقطوع',team:6},
+ ls:{name:'فيلا 47 — التجمع الخامس',code:'PRJ-377EC1A2',client:'شركة النيل للتطوير العقاري',type:'مقاولة بمبلغ مقطوع',team:6},
  cp:{name:'مجمع الشيخ زايد التجاري',code:'PRJ-8C41D07E',client:'شركة الندى للتطوير',type:'التكلفة زائد إشراف',team:9},
  ds:{name:'تصميم فيلا الشروق',code:'PRJ-52B9E6A1',client:'طارق فؤاد',type:'تصميم',team:3}};
-const CV=8400000; /* contract value, Lump Sum. 8.4 x the spec section 15 worked example, so every figure stays reconcilable to it */
-const BABS=[['أعمال الهيكل والخرسانة',11,2310000,84],['المباني والبياض',8,1176000,71],['الأرضيات والتكسيات',14,1680000,38],['الدهانات',6,756000,12],['الأعمال الكهربائية',19,924000,55],['الأعمال الصحية',15,840000,49],['النجارة والألوميتال',12,714000,22]];
+const CV=4672694.01; /* contract value, Lump Sum. Live demo project PRJ-377EC1A2: derived from the signed BOQ (15 lines, 6 abwab, frozen 2026-11-01), GET /api/projects/{id}/boq total. Every Lump Sum figure below foots to this. */
+/* [bab name (live babNameAr), line count, bab total (sum of live lineTotal), executed % (illustrative: the live BOQ was frozen today, so live executed is 0)] */
+const BABS=[['أعمال مباني',4,1192124.51,71],['أعمال تشطيبات',6,2722053.10,38],['أعمال نجارة',2,296250.00,12],['أعمال معدنية',1,332580.00,22],['أعمال صحية',1,76896.00,49],['أعمال كهرباء',1,52790.40,55]];
+/* Worked example, 25% advance and 20% hold: extract work X1 1,400,000.00 + X2 1,400,000.00 = 2,800,000.00 certified; X3 1,872,694.01 = the remaining contract, so the advance lands on zero and the hold totals 20% x CV */
 const ACC={cli:'العميل',safe:'الخزنة',rec:'ذمم العميل',hold:'الحجز',adv:'دفعة العميل المقدمة',ma:'تشوينات'};
 const EVT={ADV:['2026-02-18','SIG-01'],X1:['2026-03-22','X-1'],X2:['2026-04-26','X-2']};
-const POST=[['P-2001','ADV',ACC.cli,ACC.safe,2100000,'تحصيل دفعة مقدمة',{adv:2100000}],
- ['P-2003','X1',ACC.rec,ACC.hold,504000,'حجز',{hold:504000}],['P-2004','X1',ACC.adv,ACC.rec,630000,'استرداد دفعة مقدمة',{adv:-630000}],['P-2005','X1',ACC.ma,ACC.rec,630000,'صرف تشوينات',{ma:630000}],
- ['P-2008','X2',ACC.rec,ACC.hold,504000,'حجز',{hold:504000}],['P-2009','X2',ACC.adv,ACC.rec,630000,'استرداد دفعة مقدمة',{adv:-630000}],['P-2010','X2',ACC.rec,ACC.ma,378000,'استرداد تشوينات',{ma:-378000}]];
+const POST=[['P-2001','ADV',ACC.cli,ACC.safe,1168173.50,'تحصيل دفعة مقدمة',{adv:1168173.50}],
+ ['P-2003','X1',ACC.rec,ACC.hold,280000,'حجز',{hold:280000}],['P-2004','X1',ACC.adv,ACC.rec,350000,'استرداد دفعة مقدمة',{adv:-350000}],['P-2005','X1',ACC.ma,ACC.rec,350000,'صرف تشوينات',{ma:350000}],
+ ['P-2008','X2',ACC.rec,ACC.hold,280000,'حجز',{hold:280000}],['P-2009','X2',ACC.adv,ACC.rec,350000,'استرداد دفعة مقدمة',{adv:-350000}],['P-2010','X2',ACC.rec,ACC.ma,210000,'استرداد تشوينات',{ma:-210000}]];
 const LEDN={adv:'دفعة العميل المقدمة',hold:'الحجز'};
 
 /* ============ state ============ */
@@ -571,11 +573,11 @@ function understand(){
        +rv('Contract value is null while the BOQ is unsigned. The row is kept, with the reason, instead of showing 0.00 or a dash: a null is not a zero, and the two rates beside it would otherwise look like they have amounts. The hold amount row says why it has no figure.','Null state');
     }else{
       out=kv(base.concat([
-       ['قيمة العقد',`<span class="big">${fig(CV)}</span> <small>جنيه مصري</small>`,pv('car','جدول الكميات الموقَّع 2026-02-18'),ds('served',SV)],
+       ['قيمة العقد',`<span class="big">${fig(CV)}</span> <small>جنيه مصري</small>`,pv('car','جدول الكميات الموقَّع 2026-11-01'),ds('served',SV)],
        ['الحجز',`${pc(20,0)} من قيمة كل مستخلص<small>يتراكم فقط، ويُفرج عنه مرة واحدة عند التسليم</small>`,pv('ent','أحمد نبيل، 2026-02-18'),ds('served',SV+' (rate only, no who/when)')],
        ['استرداد الدفعة المقدمة',`${pc(25,0)} من قيمة كل مستخلص<small>حتى يصل رصيد الدفعة إلى صفر</small>`,pv('ent','أحمد نبيل، 2026-02-18')+asm('A11'),ds('served',SV+' (rate only, no who/when)')],
        ['الحجز عند التسليم',`${fig(CV*0.2)}<small>20% × قيمة العقد</small>`,pv('calc'),ds('needs','derived on client from served fields')]]))
-       +`<div class="pg" ${ds('needs',NE)}><div class="top"><b>المعتمد من العقد</b><span class="num">${pc(60,1)}</span></div><div class="trk" role="img" aria-label="المعتمد 60 بالمئة من العقد"><i style="inline-size:60%"></i></div><div class="ft"><span>${fig(5040000)} من ${fig(CV)} ج.م</span>${pv('calc')}<span>مقياس التقدم لنوع المبلغ المقطوع: القيمة المعتمدة تراكمياً</span></div></div>`
+       +`<div class="pg" ${ds('needs',NE)}><div class="top"><b>المعتمد من العقد</b><span class="num">${pc(59.9,1)}</span></div><div class="trk" role="img" aria-label="المعتمد 59.9 بالمئة من العقد"><i style="inline-size:59.9%"></i></div><div class="ft"><span>${fig(2800000)} من ${fig(CV)} ج.م</span>${pv('calc')}<span>مقياس التقدم لنوع المبلغ المقطوع: القيمة المعتمدة تراكمياً</span></div></div>`
        +rv('Progress for Lump Sum is cumulative certified value over contract value (the progress metric for this type). Who entered the hold and advance rates, and when, is not served by GET /api/projects/{id}: the chips show a sample. Question for Nabil: should the entered chip show who and when for contract terms, and where is that stored?','Provenance');
     }
   }else if(S.type==='cp'){
@@ -612,7 +614,7 @@ function quantify(){
     const nitems=rows.reduce((a,b)=>a+b[1],0);
     const head=draft
       ?`<div class="ban note rowc">${mi('info')}<span><b>مسودة غير موقَّعة.</b> لا تُجمَّد القيم قبل التوقيع، ولا قيمة عقد قبله.</span></div>`
-      :`<div class="ban note rowc" ${ds('needs',NE)}>${mi('lock')}<span><b>موقَّع في <bdi dir="ltr">2026-02-18</bdi>.</b> القيم منسوخة من الكتالوج ولا يصلها أي تغيير سعر لاحق.</span></div>`;
+      :`<div class="ban note rowc" ${ds('needs',NE)}>${mi('lock')}<span><b>موقَّع في <bdi dir="ltr">2026-11-01</bdi>.</b> القيم منسوخة من الكتالوج ولا يصلها أي تغيير سعر لاحق.</span></div>`;
     if(site){
       out=head+`<div class="tw t-d" ${ds('needs',NE)}><table><thead><tr><th>الباب</th><th class="n">عدد البنود</th></tr></thead><tbody>${rows.map(b=>`<tr><td class="nm">${b[0]}</td><td class="n">${int(b[1])}</td></tr>`).join('')}<tr class="tot"><td>الإجمالي</td><td class="n">${int(nitems)}</td></tr></tbody></table></div><div class="mlist t-m">${rows.map(b=>`<div class="mrow"><b>${b[0]}</b><span>${int(b[1])} بنداً</span></div>`).join('')}</div>`
         +rv('Site engineers see item counts and, on the line screen, quantities. Rates and amounts are absent from this read, not hidden columns.','Role');
@@ -687,8 +689,8 @@ function chain(steps){return `<ol class="chain">${steps.map(s=>`<li class="${s[1
 function postTable(rows,led){return `<table><thead><tr><th>القيد</th><th>التاريخ</th><th>المستند</th><th>النوع</th><th>من</th><th>إلى</th><th class="n">المبلغ (ج.م)</th><th class="n">الأثر على الدفتر</th></tr></thead><tbody>${rows.map(p=>`<tr><td><bdi dir="ltr">${p[0]}</bdi></td><td><bdi dir="ltr">${EVT[p[1]][0]}</bdi></td><td><bdi dir="ltr">${EVT[p[1]][1]}</bdi></td><td>${p[5]}</td><td>${p[2]}</td><td>${p[3]}</td><td class="n">${fig(p[4])}</td><td class="n">${fig(p[6][led]||0,{plus:true})}</td></tr>`).join('')}</tbody></table>`}
 function strip(){
   const sum=l=>POST.reduce((a,p)=>a+(p[6][l]||0),0);
-  const T=[{k:'adv',t:'دفعة العميل المقدمة',m:'ما قبضناه مقدماً ولم يُسترد بعد من المستخلصات. يصل إلى صفر ولا يهبط تحته.',v:sum('adv'),fl:'حد أدنى صفر تفرضه قاعدة البيانات',bar:[1260000,2100000,'استُردّ']},
-   {k:'hold',t:'الحجز',m:'يتراكم فقط. لا يخرج منه شيء قبل التسليم، ثم يُفرج عنه مرة واحدة كاملاً.',v:sum('hold'),fl:'لا حد أدنى في القاعدة: يضبطه إصدار واحد عند التسليم',bar:[1008000,1680000,'20% من المعتمد']},
+  const T=[{k:'adv',t:'دفعة العميل المقدمة',m:'ما قبضناه مقدماً ولم يُسترد بعد من المستخلصات. يصل إلى صفر ولا يهبط تحته.',v:sum('adv'),fl:'حد أدنى صفر تفرضه قاعدة البيانات',bar:[700000,1168173.50,'استُردّ']},
+   {k:'hold',t:'الحجز',m:'يتراكم فقط. لا يخرج منه شيء قبل التسليم، ثم يُفرج عنه مرة واحدة كاملاً.',v:sum('hold'),fl:'لا حد أدنى في القاعدة: يضبطه إصدار واحد عند التسليم',bar:[560000,934538.80,'20% من المعتمد']},
    {k:'firm',t:'سلفة الشركة',m:'ما تنفقه كاف نيابة عن العميل، بموافقة المالك وسقف يفرضه النظام.',v:0,fl:'السقف الصلب غير مُنفَّذ بعد',asm:'A9'}];
   const dr=S.drill;
   return `<div class="lg" ${ds('needs',NE)}>
@@ -713,27 +715,27 @@ function pay(){
      <div ${ds('needs',NE)} style="display:grid;gap:12px">${chain(X3)}
       <div class="dec-who">${mi('lock')}<span>سارة عادل أنشأت هذا المستخلص، فلا يجوز لها اعتماده في أي بوابة. لا يظهر لك زر اعتماد قبل أن يصل إلى بوابتك، ولن يظهر لمن أنشأه.</span></div>
       <div class="wf"><div class="wf-h"><div><b>ما يفعله ترحيل المستخلص 3</b><div class="sub">حساب من أرقام المستخلص نفسه، وليس تقديراً</div></div><span class="sub">المبالغ بالجنيه المصري (ج.م)</span></div>
-       ${wfRow('قيمة أعمال هذه الفترة','',pv('calc'),fig(3360000))}
-       ${wfRow('− الحجز','20% × '+fig(3360000).replace('class="fig','class="fx fig'),pv('calc'),fig(-672000))}
-       ${wfRow('− استرداد الدفعة المقدمة','25% × '+fig(3360000),pv('calc')+asm('A11'),fig(-840000))}
-       ${wfRow('− استرداد تشوينات','مُدخل من المحاسبة، لا توجد معادلة تنتجه',pv('ent','منى سامي، 2026-10-31')+asm('A2'),fig(-252000),{cls:'asmrow'})}
-       ${wfRow('صافي المستحق','',pv('calc'),fig(1596000),{cls:'res'})}
+       ${wfRow('قيمة أعمال هذه الفترة','',pv('calc'),fig(1872694.01))}
+       ${wfRow('− الحجز','20% × '+fig(1872694.01).replace('class="fig','class="fx fig'),pv('calc'),fig(-374538.80))}
+       ${wfRow('− استرداد الدفعة المقدمة','25% × '+fig(1872694.01),pv('calc')+asm('A11'),fig(-468173.50))}
+       ${wfRow('− استرداد تشوينات','مُدخل من المحاسبة، لا توجد معادلة تنتجه',pv('ent','منى سامي، 2026-10-31')+asm('A2'),fig(-140000),{cls:'asmrow'})}
+       ${wfRow('صافي المستحق','',pv('calc'),fig(889981.71),{cls:'res'})}
        <div class="foot-note">${mi('info')}<span>متى تُنشأ القيود (عند الاعتماد أم الإصدار أم التحصيل) لم يُحسم ${asm('A1')}. لذلك تقول الشاشة «عند الترحيل» ولا تسمي اللحظة.</span></div></div>
       <div class="chk"><div class="h">ما قد ترفضه قاعدة البيانات</div><div class="b">
-        <div><small>رصيد الدفعة المقدمة الآن (اليوم 10:42)</small>${fig(840000)}</div>
-        <div><small>المطلوب استرداده في هذا المستخلص</small>${fig(840000)}</div>
+        <div><small>رصيد الدفعة المقدمة الآن (اليوم 10:42)</small>${fig(468173.50)}</div>
+        <div><small>المطلوب استرداده في هذا المستخلص</small>${fig(468173.50)}</div>
         <div><small>الباقي إن بقي الرصيد كما هو</small>${fig(0)}</div></div>
         <div class="n">${mi('warn')}<span>الحد الأدنى للدفعة المقدمة صفر، وتفرضه قاعدة البيانات لحظة الحفظ. هذا الرقم قراءة الآن وليس وعداً: إن تغيّر الرصيد قبل الحفظ رُفضت الحركة كلها دون أي أثر جزئي، وتُعرض لك الأرصدة كما هي حينها.</span></div></div></div>
      ${rv('The consequence block states arithmetic exactly (rows above) and, separately, shows the floor the database may refuse with its current figure and a timestamp. It never says it will succeed. This example lands exactly on zero by design (the section 15 sequence). The safe floor is not shown: approving an extract raises a receivable and takes no cash out (study correction). A refused commit is a designed state on the extract screen, not here.','Consequence')}
      <div class="sec-h"><h3>الدفاتر</h3></div>${strip()}
      <div class="sec-h"><h3>آخر مستخلص معتمد</h3><a class="lnk" href="#">كل المستخلصات</a></div>
      <div class="wf" ${ds('needs',NE)}><div class="wf-h"><div><b>المستخلص 2</b><div class="sub">اعتُمد 2026-04-26</div></div><span class="sub">المبالغ بالجنيه المصري (ج.م)</span></div>
-      ${wfRow('قيمة أعمال هذه الفترة','',pv('calc'),fig(2520000))}
-      ${wfRow('− الحجز هذه الفترة','',pv('calc'),fig(-504000))}
-      ${wfRow('− استرداد الدفعة المقدمة','',pv('calc')+asm('A11'),fig(-630000))}
-      ${wfRow('− استرداد تشوينات','',pv('ent','منى سامي، 2026-04-26')+asm('A2'),fig(-378000),{cls:'asmrow'})}
-      ${wfRow('صافي المستحق','',pv('calc'),fig(1008000),{cls:'res'})}
-      <div class="wf-f"><h5>الموقف التراكمي بعد هذا المستخلص (من القيود)</h5><dl><div><dt>الحجز حتى تاريخه</dt><dd>${fig(1008000)} ${pv('car','دفتر الحجز')}</dd></div><div><dt>الدفعة المقدمة المتبقية</dt><dd>${fig(840000)} ${pv('car','دفتر الدفعة')}</dd></div></dl></div></div>`;
+      ${wfRow('قيمة أعمال هذه الفترة','',pv('calc'),fig(1400000))}
+      ${wfRow('− الحجز هذه الفترة','',pv('calc'),fig(-280000))}
+      ${wfRow('− استرداد الدفعة المقدمة','',pv('calc')+asm('A11'),fig(-350000))}
+      ${wfRow('− استرداد تشوينات','',pv('ent','منى سامي، 2026-04-26')+asm('A2'),fig(-210000),{cls:'asmrow'})}
+      ${wfRow('صافي المستحق','',pv('calc'),fig(560000),{cls:'res'})}
+      <div class="wf-f"><h5>الموقف التراكمي بعد هذا المستخلص (من القيود)</h5><dl><div><dt>الحجز حتى تاريخه</dt><dd>${fig(560000)} ${pv('car','دفتر الحجز')}</dd></div><div><dt>الدفعة المقدمة المتبقية</dt><dd>${fig(468173.50)} ${pv('car','دفتر الدفعة')}</dd></div></dl></div></div>`;
   }else if(S.type==='cp'){
     out=`<div class="sec-h"><h3>فاتورة الفترة 4: عند المكتب الفني</h3><a class="lnk" href="#">فتح الفاتورة</a></div>
      <div ${ds('needs',NE)} style="display:grid;gap:12px">${chain([['مسودة','done','سارة عادل · 10-29'],['الجودة','done','هبة فؤاد · 10-30'],['المكتب الفني','cur','ياسر عوض','منذ يوم'],['الحسابات',''],['اعتماد المالك','','أحمد نبيل (أنت)'],['صدرت',''],['حُصِّلت','']])}
