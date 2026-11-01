@@ -809,7 +809,7 @@ Normal for each type and role; loading (header keeps shape, title is a bar, prim
 - The site engineer view is a money-free read model, not columns hidden: item counts, executed percent, logs, hours, counts. No rates, amounts, balances or the certified percent.
 - Every money figure carries a kind chip. Where a figure is entered the chip names who and when; where carried, the named document or ledger.
 - Pending-extract copy states what posting will do as arithmetic, and separately shows what the database may refuse (advance floor) as a current figure with a timestamp. Never "this will succeed".
-- The five-ledger strip is presentation, not a guard: drill-down per tile, reconciliation line, unclassified box that must stay at zero. On this page it is scoped to the project's own accounts (client advance, hold, firm advance) because that is what `ProjectAccountSetFactory` opens for Lump Sum; تشوينات sits beside it.
+- The five-ledger strip is presentation, not a guard: drill-down per tile, reconciliation line, unclassified box that must stay at zero. On this page it is scoped to the project's own accounts (client advance, hold, firm advance) because that is what `ProjectAccountSetFactory` opens for Lump Sum; تشوينات (MaterialAdvance) sits beside it, and ClientReceivable is deliberately not drawn because it carries no LedgerKind: that is why the unclassified box must stay at zero.
 - Destructive or irreversible actions are never in the phone bottom bar. The only lifecycle control drawn is stop (recoverable).
 
 ## What the API serves today
@@ -823,7 +823,7 @@ Normal for each type and role; loading (header keeps shape, title is a bar, prim
 3. Which roles see which group, and whether a site engineer may see the certified percent. No permission row exists for stop, restart, terminate, practical completion, snag, handover.
 4. After a change order is approved, does the page show original value, revised value or both?
 5. When an extract posts (the study's first question). The consequence block says "عند الترحيل" and flags assumption A1.
-6. Provenance of hold and advance rates (who entered, when) and of the contract value until the BOQ entity exists (today it is typed at creation, so its honest kind is entered, not carried).
+6. Provenance of hold and advance rates (who entered, when). Contract value is settled, not a question: it is derived and never typed (Lump Sum carried from the signed BOQ, named with its signature date; Design calculated as area x rate; Cost Plus has none, so the row is absent).
 7. Is the five-ledger strip on a project page scoped to project accounts (three tiles) or all five? عهدة has a per-project ceiling in the spec but no project account; the owner current account is company-level.
 8. Arabic labels for the six design-phase states, the number of included revision rounds per stage, and Arabic names for the three contract types (spec §14 has none; the screen uses those from `money.html`).
 9. What happens to an extract already in the chain when the project is stopped.

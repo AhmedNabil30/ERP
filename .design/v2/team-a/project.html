@@ -699,6 +699,7 @@ function strip(){
     <div class="box"><h6>تشوينات المتبقية ${asm('A8')}</h6><div class="big">${fig(sum('ma'))}</div><div class="mn">خارج الدفاتر الخمسة، لكنها رصيد يُسترد ويجب أن يصل إلى صفر.</div></div>
     <div class="box unc zero"><h6>غير مصنّف ${asm('A5')}</h6><div class="big">${fig(0)}</div><div class="mn">يجب أن يبقى صفراً. أي رقم هنا يعني قيداً لا يعرف دفتره.</div></div></div>
    <div class="rec">${mi('check')}<span>مطابقة: رصيد كل دفتر يساوي مجموع قيوده.</span><small>آخر فحص اليوم 10:42 · لا قيد غير مصنّف</small></div>
+   ${rv('Of the five accounts ProjectAccountSetFactory opens for Lump Sum, three are tiles (ClientAdvance, Hold, FirmAdvance), MaterialAdvance is the تشوينات box beside them, and ClientReceivable is not drawn: it is not a ledger, and it carries no LedgerKind. Section 15 routes hold, advance and تشوينات through it, which is exactly why the unclassified box exists: it is the visible guard against netting nobody can see, and it must read zero. عهدة and the owner current account have no project account, so they are not drawn on this page (question 7).','Strip scope')}
   </div>`}
 function pay(){
   const v=S.view;
