@@ -506,7 +506,7 @@ const CV=4672694.01; /* contract value, Lump Sum. Live demo project PRJ-377EC1A2
 const BABS=[['أعمال مباني',4,1192124.51,71],['أعمال تشطيبات',6,2722053.10,38],['أعمال نجارة',2,296250.00,12],['أعمال معدنية',1,332580.00,22],['أعمال صحية',1,76896.00,49],['أعمال كهرباء',1,52790.40,55]];
 /* Worked example, 25% advance and 20% hold: extract work X1 1,400,000.00 + X2 1,400,000.00 = 2,800,000.00 certified; X3 1,872,694.01 = the remaining contract, so the advance lands on zero and the hold totals 20% x CV */
 const ACC={cli:'العميل',safe:'الخزنة',rec:'ذمم العميل',hold:'الحجز',adv:'دفعة العميل المقدمة',ma:'تشوينات'};
-const EVT={ADV:['2026-02-18','SIG-01'],X1:['2026-03-22','X-1'],X2:['2026-04-26','X-2']};
+const EVT={ADV:['2026-11-01','SIG-01'],X1:['2026-11-27','X-1'],X2:['2026-12-26','X-2']};
 const POST=[['P-2001','ADV',ACC.cli,ACC.safe,1168173.50,'تحصيل دفعة مقدمة',{adv:1168173.50}],
  ['P-2003','X1',ACC.rec,ACC.hold,280000,'حجز',{hold:280000}],['P-2004','X1',ACC.adv,ACC.rec,350000,'استرداد دفعة مقدمة',{adv:-350000}],['P-2005','X1',ACC.ma,ACC.rec,350000,'صرف تشوينات',{ma:350000}],
  ['P-2008','X2',ACC.rec,ACC.hold,280000,'حجز',{hold:280000}],['P-2009','X2',ACC.adv,ACC.rec,350000,'استرداد دفعة مقدمة',{adv:-350000}],['P-2010','X2',ACC.rec,ACC.ma,210000,'استرداد تشوينات',{ma:-210000}]];
@@ -574,8 +574,8 @@ function understand(){
     }else{
       out=kv(base.concat([
        ['قيمة العقد',`<span class="big">${fig(CV)}</span> <small>جنيه مصري</small>`,pv('car','جدول الكميات الموقَّع 2026-11-01'),ds('served',SV)],
-       ['الحجز',`${pc(20,0)} من قيمة كل مستخلص<small>يتراكم فقط، ويُفرج عنه مرة واحدة عند التسليم</small>`,pv('ent','أحمد نبيل، 2026-02-18'),ds('served',SV+' (rate only, no who/when)')],
-       ['استرداد الدفعة المقدمة',`${pc(25,0)} من قيمة كل مستخلص<small>حتى يصل رصيد الدفعة إلى صفر</small>`,pv('ent','أحمد نبيل، 2026-02-18')+asm('A11'),ds('served',SV+' (rate only, no who/when)')],
+       ['الحجز',`${pc(20,0)} من قيمة كل مستخلص<small>يتراكم فقط، ويُفرج عنه مرة واحدة عند التسليم</small>`,pv('ent','أحمد نبيل، 2026-11-01'),ds('served',SV+' (rate only, no who/when)')],
+       ['استرداد الدفعة المقدمة',`${pc(25,0)} من قيمة كل مستخلص<small>حتى يصل رصيد الدفعة إلى صفر</small>`,pv('ent','أحمد نبيل، 2026-11-01')+asm('A11'),ds('served',SV+' (rate only, no who/when)')],
        ['الحجز عند التسليم',`${fig(CV*0.2)}<small>20% × قيمة العقد</small>`,pv('calc'),ds('needs','derived on client from served fields')]]))
        +`<div class="pg" ${ds('needs',NE)}><div class="top"><b>المعتمد من العقد</b><span class="num">${pc(59.9,1)}</span></div><div class="trk" role="img" aria-label="المعتمد 59.9 بالمئة من العقد"><i style="inline-size:59.9%"></i></div><div class="ft"><span>${fig(2800000)} من ${fig(CV)} ج.م</span>${pv('calc')}<span>مقياس التقدم لنوع المبلغ المقطوع: القيمة المعتمدة تراكمياً</span></div></div>`
        +rv('Progress for Lump Sum is cumulative certified value over contract value (the progress metric for this type). Who entered the hold and advance rates, and when, is not served by GET /api/projects/{id}: the chips show a sample. Question for Nabil: should the entered chip show who and when for contract terms, and where is that stored?','Provenance');
@@ -656,9 +656,9 @@ function execute(){
   if(['setup','empty'].includes(v))return gs('execute',`<div class="locked">${mi('lock')}<span><b>لم يبدأ التنفيذ بعد</b>يُفتح السجل اليومي بعد توقيع العقد وإسناد الفريق.</span></div>`+rv('Present but locked, because this project is in Setup. This differs from a group absent by contract type: here it will exist later. Needs a ruling: can a Setup project take daily logs? Spec 8 only states that a Stopped project still accepts them.','Question'));
   let out='';
   const logs=`<ul class="lst" ${ds('needs',NE)}>
-    <li><span><b>سجل 2026-10-30 · خالد منصور</b></span><span class="r">${int(5)} بنود · ${int(14)} يومية عمالة · ${int(8)} صور</span><small>أُدخل دون اتصال 16:40، وصل إلى الخادم 21:05 · يُحسب على يومه لا على يوم المزامنة</small></li>
-    <li><span><b>سجل 2026-10-29 · خالد منصور</b></span><span class="r">${int(4)} بنود · ${int(11)} يومية عمالة · ${int(6)} صور</span></li>
-    <li><span><b>سجل 2026-10-29 · محمود رضا</b></span><span class="r">${int(2)} بنود · ${int(6)} يومية عمالة · ${int(3)} صور</span></li></ul>`;
+    <li><span><b>سجل 2027-01-14 · خالد منصور</b></span><span class="r">${int(5)} بنود · ${int(14)} يومية عمالة · ${int(8)} صور</span><small>أُدخل دون اتصال 16:40، وصل إلى الخادم 21:05 · يُحسب على يومه لا على يوم المزامنة</small></li>
+    <li><span><b>سجل 2027-01-13 · خالد منصور</b></span><span class="r">${int(4)} بنود · ${int(11)} يومية عمالة · ${int(6)} صور</span></li>
+    <li><span><b>سجل 2027-01-13 · محمود رضا</b></span><span class="r">${int(2)} بنود · ${int(6)} يومية عمالة · ${int(3)} صور</span></li></ul>`;
   if(S.type==='ls'){
     out=`<h3>المنفَّذ من الكميات المحصورة</h3><p class="sub">من مجموع التغيّرات في السجلات اليومية. بلا أسعار ولا مبالغ.</p>
      <div class="tw t-d" ${ds('needs',NE)}><table><thead><tr><th>الباب</th><th style="inline-size:55%">المنفَّذ</th></tr></thead><tbody>${BABS.map(b=>`<tr><td class="nm">${b[0]}</td><td><div class="bd"><div class="trk" role="img" aria-label="${b[3]} بالمئة"><i style="inline-size:${b[3]}%"></i></div>${pc(b[3],0)}</div></td></tr>`).join('')}</tbody></table></div>
@@ -667,7 +667,8 @@ function execute(){
      <div class="sec-h"><h3>مفتوح الآن</h3></div>
      <ul class="lst" ${ds('needs',NE)}><li><span><b>تقرير عدم مطابقة <bdi dir="ltr">NCR-12</bdi></b></span><span class="r"><a class="lnk" href="#">فتح</a></span><small>فرق حصر الأعمدة · يحجز جزءاً من المستخلص 3 حتى يُغلق</small></li>
      <li><span><b>مقاولو الباطن</b></span><span class="r">${int(3)} مقاولين نشطين · ${int(1)} مستخلص أسبوعي ينتظر الشهادة</span></li></ul>`
-     +rv('Every figure in this group is a quantity, count or percentage of quantity: this is the money-free read model the site engineer sees too. The occurred-at line on the first log is the offline-sync honesty rule from the study. Subcontractor extracts are money and live in the pay group for roles that may see money.','Money-free');
+     +rv('Every figure in this group is a quantity, count or percentage of quantity: this is the money-free read model the site engineer sees too. The occurred-at line on the first log is the offline-sync honesty rule from the study. Subcontractor extracts are money and live in the pay group for roles that may see money.','Money-free')
+     +rv('The executed percentages, the certified 59.9% and the extract history are illustrative: the live demo BOQ was frozen on 2026-11-01 and quantityExecuted is 0 on every line.','Illustrative');
   }else if(S.type==='cp'){
     out=`<div class="sec-h"><h3>آخر السجلات اليومية</h3><a class="lnk" href="#">كل السجلات</a></div>${logs}
      <div class="pg" ${ds('needs',NE)}><div class="top"><b>ساعات مهندسي كاف هذا الأسبوع</b><span class="num">${int(182)} ساعة</span></div><div class="ft"><span>تكلفة داخلية، لا تدخل في الفاتورة</span>${pv('car','الموارد البشرية')}</div></div>`
@@ -710,7 +711,7 @@ function pay(){
   if(v==='partial')return gs('pay',`<div class="ban rowc" role="alert">${mi('err')}<span><b>تعذّر تحميل بيانات المال.</b> باقي الصفحة سليم، ولم يُغيَّر أي شيء في المشروع.</span><button type="button" class="btn sec2 sm act">${mi('redo','s')}إعادة المحاولة</button></div>`+rv('Each group reads independently: a failed money read must not blank the page. The refusal banner sits where the content was, with retry in place.','Partial failure'));
   let out='';
   if(S.type==='ls'){
-    const X3=[['مسودة','done','سارة عادل · 10-26'],['الجودة','done','هبة فؤاد · 10-27'],['المكتب الفني','done','ياسر عوض · 10-28'],['الحسابات','cur','منى سامي','منذ يومين'],['اعتماد المالك','','أحمد نبيل (أنت)'],['صدر',''],['حُصِّل','']];
+    const X3=[['مسودة','done','سارة عادل · 01-12'],['الجودة','done','هبة فؤاد · 01-13'],['المكتب الفني','done','ياسر عوض · 01-14'],['الحسابات','cur','منى سامي','منذ يومين'],['اعتماد المالك','','أحمد نبيل (أنت)'],['صدر',''],['حُصِّل','']];
     out=`<div class="sec-h"><h3>المستخلص 3: ينتظر الحسابات</h3><a class="lnk" href="#">فتح المستخلص</a></div>
      <div ${ds('needs',NE)} style="display:grid;gap:12px">${chain(X3)}
       <div class="dec-who">${mi('lock')}<span>سارة عادل أنشأت هذا المستخلص، فلا يجوز لها اعتماده في أي بوابة. لا يظهر لك زر اعتماد قبل أن يصل إلى بوابتك، ولن يظهر لمن أنشأه.</span></div>
@@ -718,7 +719,7 @@ function pay(){
        ${wfRow('قيمة أعمال هذه الفترة','',pv('calc'),fig(1872694.01))}
        ${wfRow('− الحجز','20% × '+fig(1872694.01).replace('class="fig','class="fx fig'),pv('calc'),fig(-374538.80))}
        ${wfRow('− استرداد الدفعة المقدمة','25% × '+fig(1872694.01),pv('calc')+asm('A11'),fig(-468173.50))}
-       ${wfRow('− استرداد تشوينات','مُدخل من المحاسبة، لا توجد معادلة تنتجه',pv('ent','منى سامي، 2026-10-31')+asm('A2'),fig(-140000),{cls:'asmrow'})}
+       ${wfRow('− استرداد تشوينات','مُدخل من المحاسبة، لا توجد معادلة تنتجه',pv('ent','منى سامي، 2027-01-15')+asm('A2'),fig(-140000),{cls:'asmrow'})}
        ${wfRow('صافي المستحق','',pv('calc'),fig(889981.71),{cls:'res'})}
        <div class="foot-note">${mi('info')}<span>متى تُنشأ القيود (عند الاعتماد أم الإصدار أم التحصيل) لم يُحسم ${asm('A1')}. لذلك تقول الشاشة «عند الترحيل» ولا تسمي اللحظة.</span></div></div>
       <div class="chk"><div class="h">ما قد ترفضه قاعدة البيانات</div><div class="b">
@@ -729,11 +730,11 @@ function pay(){
      ${rv('The consequence block states arithmetic exactly (rows above) and, separately, shows the floor the database may refuse with its current figure and a timestamp. It never says it will succeed. This example lands exactly on zero by design (the section 15 sequence). The safe floor is not shown: approving an extract raises a receivable and takes no cash out (study correction). A refused commit is a designed state on the extract screen, not here.','Consequence')}
      <div class="sec-h"><h3>الدفاتر</h3></div>${strip()}
      <div class="sec-h"><h3>آخر مستخلص معتمد</h3><a class="lnk" href="#">كل المستخلصات</a></div>
-     <div class="wf" ${ds('needs',NE)}><div class="wf-h"><div><b>المستخلص 2</b><div class="sub">اعتُمد 2026-04-26</div></div><span class="sub">المبالغ بالجنيه المصري (ج.م)</span></div>
+     <div class="wf" ${ds('needs',NE)}><div class="wf-h"><div><b>المستخلص 2</b><div class="sub">اعتُمد 2026-12-26</div></div><span class="sub">المبالغ بالجنيه المصري (ج.م)</span></div>
       ${wfRow('قيمة أعمال هذه الفترة','',pv('calc'),fig(1400000))}
       ${wfRow('− الحجز هذه الفترة','',pv('calc'),fig(-280000))}
       ${wfRow('− استرداد الدفعة المقدمة','',pv('calc')+asm('A11'),fig(-350000))}
-      ${wfRow('− استرداد تشوينات','',pv('ent','منى سامي، 2026-04-26')+asm('A2'),fig(-210000),{cls:'asmrow'})}
+      ${wfRow('− استرداد تشوينات','',pv('ent','منى سامي، 2026-12-26')+asm('A2'),fig(-210000),{cls:'asmrow'})}
       ${wfRow('صافي المستحق','',pv('calc'),fig(560000),{cls:'res'})}
       <div class="wf-f"><h5>الموقف التراكمي بعد هذا المستخلص (من القيود)</h5><dl><div><dt>الحجز حتى تاريخه</dt><dd>${fig(560000)} ${pv('car','دفتر الحجز')}</dd></div><div><dt>الدفعة المقدمة المتبقية</dt><dd>${fig(468173.50)} ${pv('car','دفتر الدفعة')}</dd></div></dl></div></div>`;
   }else if(S.type==='cp'){
