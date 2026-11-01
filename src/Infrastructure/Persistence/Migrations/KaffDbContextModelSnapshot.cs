@@ -153,6 +153,153 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Kaff.Domain.Boqs.Boq", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly?>("FrozenOn")
+                        .HasColumnType("date")
+                        .HasColumnName("frozen_on");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_boqs_project");
+
+                    b.ToTable("boqs", (string)null);
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Boqs.BoqLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BabCode")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bab_code");
+
+                    b.Property<string>("BabNameAr")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bab_name_ar");
+
+                    b.Property<string>("BabNameEn")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("bab_name_en");
+
+                    b.Property<decimal>("BaseSellRate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("base_sell_rate");
+
+                    b.Property<Guid>("BoqId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("boq_id");
+
+                    b.Property<decimal>("ConditionsRate")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("conditions_rate");
+
+                    b.Property<decimal>("CostPrice")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("cost_price");
+
+                    b.Property<string>("DescriptionAr")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description_ar");
+
+                    b.Property<string>("DescriptionEn")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description_en");
+
+                    b.Property<bool>("IsCustom")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_custom");
+
+                    b.Property<string>("ItemCode")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("item_code");
+
+                    b.Property<decimal>("LineMarkup")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("line_markup");
+
+                    b.Property<bool>("PendingCatalogueReview")
+                        .HasColumnType("boolean")
+                        .HasColumnName("pending_catalogue_review");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.Property<decimal?>("QuantityEstimated")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("quantity_estimated");
+
+                    b.Property<decimal>("QuantityExecuted")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("quantity_executed");
+
+                    b.Property<decimal?>("QuantitySurveyed")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("quantity_surveyed");
+
+                    b.Property<decimal>("SellRate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("sell_rate");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("unit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("BoqId", "Position")
+                        .HasDatabaseName("ix_boq_lines_boq_position");
+
+                    b.ToTable("boq_lines", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_boq_lines_prices_not_negative", "cost_price >= 0 AND base_sell_rate >= 0 AND sell_rate >= 0");
+
+                            t.HasCheckConstraint("ck_boq_lines_quantities_not_negative", "(quantity_estimated IS NULL OR quantity_estimated >= 0) AND (quantity_surveyed IS NULL OR quantity_surveyed >= 0) AND quantity_executed >= 0");
+
+                            t.HasCheckConstraint("ck_boq_lines_review_only_custom", "NOT pending_catalogue_review OR is_custom");
+                        });
+                });
+
             modelBuilder.Entity("Kaff.Domain.Identity.ProjectAssignment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1067,6 +1214,8 @@ namespace Kaff.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("ck_projects_not_linked_to_itself", "linked_project_id IS NULL OR linked_project_id <> id");
 
+                            t.HasCheckConstraint("ck_projects_signed_has_value", "contract_type = 'CostPlus' OR signed_on IS NULL OR contract_value IS NOT NULL");
+
                             t.HasCheckConstraint("ck_projects_stoppage_reason", "stopped_on IS NULL OR stoppage_reason IS NOT NULL");
 
                             t.HasCheckConstraint("ck_projects_termination_reason", "terminated_on IS NULL OR termination_reason IS NOT NULL");
@@ -1504,6 +1653,30 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Kaff.Domain.Boqs.Boq", b =>
+                {
+                    b.HasOne("Kaff.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Boqs.BoqLine", b =>
+                {
+                    b.HasOne("Kaff.Domain.Boqs.Boq", null)
+                        .WithMany("Lines")
+                        .HasForeignKey("BoqId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Kaff.Domain.Identity.ProjectAssignment", b =>
                 {
                     b.HasOne("Kaff.Domain.Projects.Project", null)
@@ -1639,6 +1812,11 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ToAccountId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Boqs.Boq", b =>
+                {
+                    b.Navigation("Lines");
                 });
 #pragma warning restore 612, 618
         }
