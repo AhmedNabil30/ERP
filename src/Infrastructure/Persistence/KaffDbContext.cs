@@ -1,5 +1,6 @@
 using System.Reflection;
 using Kaff.Domain.Auditing;
+using Kaff.Domain.Boqs;
 using Kaff.Domain.Common;
 using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
@@ -93,6 +94,9 @@ public sealed class KaffDbContext : DbContext
     public DbSet<Project> Projects => Set<Project>();
 
     public DbSet<Engagement> Engagements => Set<Engagement>();
+
+    /// <summary>spec.md section 4 — a project's bill of quantities. Its lines are reached through <c>Boq.Lines</c>.</summary>
+    public DbSet<Boq> Boqs => Set<Boq>();
 
     /// <summary>KAFF-321 — staff departments, master data, superseding the D-153 §2 enum.</summary>
     public DbSet<Department> Departments => Set<Department>();

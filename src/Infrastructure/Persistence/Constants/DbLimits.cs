@@ -32,4 +32,6 @@ internal static class DbTables
     public const string Opportunities = "opportunities";
     public const string Projects = "projects";
     public const string Engagements = "engagements";
+    public const string Boqs = "boqs";
+    public const string BoqLines = "boq_lines";
 }

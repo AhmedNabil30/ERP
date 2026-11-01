@@ -94,6 +94,11 @@ public sealed class DatabaseInitializer
         "ck_engagements_closed_shape",
         "ck_engagements_rating_range",
 
+        // BoqConfigurations
+        "ck_boq_lines_prices_not_negative",
+        "ck_boq_lines_quantities_not_negative",
+        "ck_boq_lines_review_only_custom",
+
         // ProjectConfigurations
         "ck_opportunities_closed_lost_reason",
         "ck_projects_area_positive",
@@ -102,6 +107,7 @@ public sealed class DatabaseInitializer
         "ck_projects_link_complete",
         "ck_projects_lump_sum_terms",
         "ck_projects_not_linked_to_itself",
+        "ck_projects_signed_has_value",
         "ck_projects_stoppage_reason",
         "ck_projects_termination_reason",
 
@@ -217,6 +223,14 @@ public sealed class DatabaseInitializer
             ["ck_engagements_rating_range"] =
                 "CHECK (((rating IS NULL) OR ((rating >= 1) AND (rating <= 5))))",
 
+            // BoqConfigurations
+            ["ck_boq_lines_prices_not_negative"] =
+                "CHECK (((cost_price >= (0)::numeric) AND (base_sell_rate >= (0)::numeric) AND (sell_rate >= (0)::numeric)))",
+            ["ck_boq_lines_quantities_not_negative"] =
+                "CHECK ((((quantity_estimated IS NULL) OR (quantity_estimated >= (0)::numeric)) AND ((quantity_surveyed IS NULL) OR (quantity_surveyed >= (0)::numeric)) AND (quantity_executed >= (0)::numeric)))",
+            ["ck_boq_lines_review_only_custom"] =
+                "CHECK ((NOT pending_catalogue_review OR is_custom))",
+
             // ProjectConfigurations
             ["ck_opportunities_closed_lost_reason"] =
                 "CHECK ((((status)::text <> 'ClosedLost'::text) OR (closed_lost_reason IS NOT NULL)))",
@@ -232,6 +246,8 @@ public sealed class DatabaseInitializer
                 "CHECK ((((contract_type)::text = 'LumpSum'::text) OR ((advance_rate IS NULL) AND (hold_rate IS NULL) AND (advance_recovery_rate IS NULL) AND (material_advance_rate IS NULL))))",
             ["ck_projects_not_linked_to_itself"] =
                 "CHECK (((linked_project_id IS NULL) OR (linked_project_id <> id)))",
+            ["ck_projects_signed_has_value"] =
+                "CHECK ((((contract_type)::text = 'CostPlus'::text) OR (signed_on IS NULL) OR (contract_value IS NOT NULL)))",
             ["ck_projects_stoppage_reason"] =
                 "CHECK (((stopped_on IS NULL) OR (stoppage_reason IS NOT NULL)))",
             ["ck_projects_termination_reason"] =
@@ -334,6 +350,9 @@ public sealed class DatabaseInitializer
             "trg_postings_non_negative_balance",
             "trg_postings_hold_release_in_full",
             "trg_accounts_configuration_immutable",
+            "trg_boq_lines_frozen",
+            "trg_boq_lines_no_truncate",
+            "trg_boqs_frozen",
         ];
 
         string[] requiredIndexes =

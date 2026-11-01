@@ -1,3 +1,4 @@
+using Kaff.Domain.Boqs;
 using Kaff.Domain.Common;
 using Kaff.Domain.Treasury;
 using Npgsql;
@@ -42,6 +43,9 @@ public static class DatabaseGuardTranslation
         ["KAFF_CURRENCY_MISMATCH"] = TreasuryErrors.CurrencyMismatch,
         ["KAFF_ACCOUNT_MISSING"] = TreasuryErrors.AccountNotFound,
         ["KAFF_POSTING_TYPE_ACCOUNT_MISMATCH"] = TreasuryErrors.PostingTypeAccountMismatch,
+
+        // 003_boq_freeze.sql — a signed BOQ is a frozen copy (spec.md 4.4).
+        ["KAFF_BOQ_FROZEN"] = BoqErrors.Frozen,
     };
 
     /// <summary>
