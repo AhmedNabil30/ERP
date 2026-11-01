@@ -65,7 +65,7 @@ public static class ExtractPostings
         ArgumentNullException.ThrowIfNull(accounts);
         ArgumentNullException.ThrowIfNull(rulings);
 
-        if (!rulings.ExtractPostingMoment.PostsOn(reachedStage))
+        if (!rulings.ExtractPostingMoment.AccruesOn(reachedStage))
         {
             return Result.Failure<PostingSet>(BillingErrors.NotAtPostingMoment);
         }

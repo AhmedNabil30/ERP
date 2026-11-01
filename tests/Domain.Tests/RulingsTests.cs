@@ -100,12 +100,12 @@ public sealed class RulingsTests
     // ---- ExtractPostingMoment ---------------------------------------------------------------------
 
     [Fact]
-    public void Extracts_post_at_owner_approval_by_default()
+    public void Extracts_accrue_at_owner_approval_by_default()
     {
-        _rulings.ExtractPostingMoment.PostsAt.Should().Be(ExtractStage.OwnerApproval);
-        _rulings.ExtractPostingMoment.PostsOn(ExtractStage.OwnerApproval).Should().BeTrue();
-        _rulings.ExtractPostingMoment.PostsOn(ExtractStage.TechnicalOfficeApproval).Should().BeFalse();
-        _rulings.ExtractPostingMoment.PostsOn(ExtractStage.Issued).Should().BeFalse();
+        _rulings.ExtractPostingMoment.AccruesAt.Should().Be(ExtractStage.OwnerApproval);
+        _rulings.ExtractPostingMoment.AccruesOn(ExtractStage.OwnerApproval).Should().BeTrue();
+        _rulings.ExtractPostingMoment.AccruesOn(ExtractStage.TechnicalOfficeApproval).Should().BeFalse();
+        _rulings.ExtractPostingMoment.AccruesOn(ExtractStage.Issued).Should().BeFalse();
     }
 
     [Theory]
@@ -114,10 +114,10 @@ public sealed class RulingsTests
     [InlineData(ExtractStage.OwnerApproval, true)]
     [InlineData(ExtractStage.Issued, true)]
     [InlineData(ExtractStage.Collected, true)]
-    public void A_rejection_needs_reversing_postings_only_from_a_stage_that_has_already_posted(
+    public void A_rejection_needs_reversing_postings_only_from_a_stage_that_has_already_accrued(
         ExtractStage stage, bool postingsExist)
     {
-        _rulings.ExtractPostingMoment.HasPostedBy(stage).Should().Be(postingsExist);
+        _rulings.ExtractPostingMoment.HasAccruedBy(stage).Should().Be(postingsExist);
     }
 
     [Fact]
@@ -125,9 +125,9 @@ public sealed class RulingsTests
     {
         ExtractPostingMoment atIssue = new(ExtractStage.Issued);
 
-        atIssue.PostsOn(ExtractStage.OwnerApproval).Should().BeFalse();
-        atIssue.PostsOn(ExtractStage.Issued).Should().BeTrue();
-        atIssue.HasPostedBy(ExtractStage.OwnerApproval).Should().BeFalse();
+        atIssue.AccruesOn(ExtractStage.OwnerApproval).Should().BeFalse();
+        atIssue.AccruesOn(ExtractStage.Issued).Should().BeTrue();
+        atIssue.HasAccruedBy(ExtractStage.OwnerApproval).Should().BeFalse();
     }
 
     // ---- WithholdingBase ----------------------------------------------------------------------------
