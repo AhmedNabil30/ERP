@@ -313,6 +313,9 @@ what actually matters, not superstition.
 | MarketingSales | `karim_sales_demo` | `Demo#Sales123` | **Yes** |
 | **Client (portal)** | `portal_client_demo` | `Demo#Portal1` | **Yes** — and it never gets that far; see below |
 | SiteEngineer | `site_eng_demo` | `Demo#Site1` then `Demo#Site1New` | Seeded by `node scripts/seed-demo-engineer.mjs`, which also completes the forced change. Junior on project `01a0de49-4a8c-7707-b19a-0f7592bbfdb0`. Use `Demo#Site1New`. |
+| SiteEngineer (Supervisor) | `site_sup_demo` | `Demo#Sup1` then `Demo#Sup1New` | Seeded by `node scripts/seed-demo-extract-roles.mjs`, which completes the forced change. Supervisor on project `01a0de49-4a8c-7707-b19a-0f7592bbfdb0`; submits the extract QC report (`ExtractQcReportSubmit` needs Supervisor). Use `Demo#Sup1New`. |
+| TechnicalOffice | `tech_office_demo` | `Demo#Tech1` then `Demo#Tech1New` | Same script. Standard on the project; holds `QuantityGateApprove`. Use `Demo#Tech1New`. |
+| Finance (extract accounts) | `accounts_demo` | `Demo#Acct1` then `Demo#Acct1New` | Same script. Standard on the project; holds `ExtractDeductionsApply` (Finance alone, D-189). Created because `sara_finance_demo`'s password is unknown (neither `Demo#Fin123` nor `Demo#Fin123New` signs in). Use `Demo#Acct1New`. |
 
 **⚠️ The portal account exists to be REFUSED, and its password above is the correct one.** Added
 2026-09-05 for `V-33-E`: until then the seed created no `Role.Client` user at all, so spec.md §12's
