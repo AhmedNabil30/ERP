@@ -64,6 +64,12 @@ public enum BillingComponentKind
 
     /// <summary>A credit note applied against the payment (spec.md §6.9).</summary>
     CreditNote = 13,
+
+    /// <summary>
+    /// Tax the client withholds at source from what it pays (spec.md §6.7). Memo: the extract's net payable is
+    /// unchanged; the collection carries less cash and the difference posts to the withheld-tax asset.
+    /// </summary>
+    TaxAtSource = 14,
 }
 
 /// <summary>One line of a billing result.</summary>

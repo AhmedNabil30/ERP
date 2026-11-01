@@ -15293,3 +15293,44 @@ because `KAFF_BOQ_FROZEN` lives in `003`; the mapped-error key assertion widened
 `errors.treasury.` to `errors.` for the same reason; and two treasury tests that post a `HoldAccrual`
 now move their project to `Active` first, because `PostingProjectStatePolicy` correctly refuses an
 extract-derived posting on a project still in `Setup`.
+
+### D-186 · Backend — the three billing calculators, and spec.md §15 derived rather than typed · 2026-11-01
+
+`LumpSumBillingCalculator`, `CostPlusBillingCalculator` and `DesignBillingCalculator` replace the
+`CalculatorNotImplemented` stubs (`src/Domain/Contracts/Billing/Calculators.cs`).
+`ExtractPostings.Build` (`ExtractPostings.cs`, same folder) turns a Lump Sum `BillingResult` into the
+extract's `PostingSet` through `PostingSetBuilder`, reading amounts only from the result's components.
+`Section15ThroughCalculatorTests` drives §15 through both, so a wrong calculator now fails the acceptance
+criterion; `Section15WorkedExampleTests` is unchanged and stays as the independent hand-typed reading.
+
+**Structural choices**
+
+1. `LumpSumBillingCalculator` takes `RulingSet` in its constructor. Cost Plus and Design need no ruling.
+   The hold, advance-recovery, material-advance and withholding rates come from the `Project`, never from here.
+2. `LumpSumBillingInput` gained three ledger readings: `ClientAdvanceOutstanding`, `MaterialAdvanceOutstanding`,
+   `HoldToDatePrevious`. Balances are never stored, so the caller derives them from postings and passes them in.
+   The advance recovery is capped at `ClientAdvanceOutstanding` ("until the advance ledger reaches zero", §5.1).
+3. Every deduction is rounded through `RulingSet.DeductionRounding` (rounded extract total, 2 dp, AwayFromZero) and
+   the net payable comes from `DeductionRounding.NetPayable`, so the printed column foots.
+4. تشوينات recovery comes from `RulingSet.MaterialAdvanceRecovery` (Q58, 75% of installed value). The issue is the
+   project's `MaterialAdvanceRate` times material on site, which §5.1 states.
+5. Withholding at source is a memo component (`BillingComponentKind.TaxAtSource`), computed on the base given by
+   `RulingSet.WithholdingBase`. `ExtractPostings` collects `NetPayable - withheld` in cash and posts the rest to
+   `TaxWithheldAtSource`, which `Posting.Create` may refuse: that account pair is still pending Q91. The key avoids
+   the word "withhold" because `TranslationCatalogueTests` whitelists those keys deliberately.
+6. `ExtractPostings.Build` refuses unless the extract is at the stage `RulingSet.ExtractPostingMoment` names.
+7. Refused with a distinct error instead of guessed: change orders (`ChangeOrderTreatmentUnruled`), a delay penalty
+   on a project where it is off, a negative period, a negative net payable, an unapproved design deliverable,
+   missing project terms.
+
+**Places spec.md is ambiguous (questions for Karim, none answered here)**
+
+- Do hold and advance recovery apply to change-order value? §5.1 says the hold is on "certified work value only".
+- Design: the price of a billable revision beyond the agreed rounds (§5.3 gives none). The stage fee ignores rounds.
+- Cost Plus: rounding of the supervision markup. Left at `Money` scale (4 dp); `DeductionRounding` covers deductions only.
+- Withholding on the hold release (the ruling default says it carries withholding; no extract in §15 tests it).
+- Posting pair for `TaxWithheldAtSource` (Q91).
+- Section 15 does not say how much material was installed in each extract; the test uses 0, 60,000, 40,000 (D-034 / Q58).
+
+**Not done:** an Api endpoint that calls the calculator; the hold-release (handover) calculator, which the test builds
+with `PostingSetBuilder` from the hold balance; Cost Plus and Design posting builders; the progress metrics (still stubs).

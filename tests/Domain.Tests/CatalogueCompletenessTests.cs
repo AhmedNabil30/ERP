@@ -471,7 +471,7 @@ public sealed class CatalogueCompletenessTests
         // CLAUDE.md: "Type dispatches, it does not fork."
         IBillingCalculator[] calculators =
         [
-            new LumpSumBillingCalculator(),
+            new LumpSumBillingCalculator(Kaff.Domain.Rulings.RulingSet.Default),
             new CostPlusBillingCalculator(),
             new DesignBillingCalculator(),
         ];

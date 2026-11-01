@@ -30,13 +30,22 @@ public abstract record BillingInput(ContractType ContractType);
 /// into original BOQ lines." Carried separately for that reason.
 /// </param>
 /// <param name="DelayPenalty">spec.md §5.1: optional, off by default 🟡.</param>
+/// <param name="ClientAdvanceOutstanding">
+/// The client advance ledger's signed balance now. Read from postings by the caller, never stored. Recovery stops
+/// when this reaches zero (spec.md §5.1: "until the advance ledger reaches zero").
+/// </param>
+/// <param name="MaterialAdvanceOutstanding">The تشوينات ledger's signed balance now. Caps the recovery.</param>
+/// <param name="HoldToDatePrevious">The hold ledger's signed balance now, for the display-only hold to date.</param>
 public sealed record LumpSumBillingInput(
     Money CumulativeCertifiedWork,
     Money PreviouslyCertifiedWork,
     Money MaterialValueOnSiteThisPeriod,
     Money MaterialInstalledThisPeriod,
     Money ChangeOrderValueThisPeriod,
-    Money DelayPenalty)
+    Money DelayPenalty,
+    Money ClientAdvanceOutstanding,
+    Money MaterialAdvanceOutstanding,
+    Money HoldToDatePrevious)
     : BillingInput(ContractType.LumpSum);
 
 /// <summary>
