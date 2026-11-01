@@ -1,0 +1,191 @@
+<section class="daily-log" data-testid="daily-log-page">
+  <header class="header">
+    <a
+      class="back"
+      [routerLink]="['/projects']"
+      [attr.aria-label]="i18n.t('daily_log.action.back')"
+      data-testid="daily-log-back"
+    >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="m14 6 6 6-6 6" />
+        <path d="M20 12H4" />
+      </svg>
+    </a>
+    <span class="header-titles">
+      <h1 class="title">{{ i18n.t('daily_log.title') }}</h1>
+      @if (projectName(); as name) {
+        <span class="header-project" dir="auto">{{ name }}</span>
+      }
+    </span>
+  </header>
+
+  <div class="body">
+    @if (loadFailure(); as key) {
+      <kaff-state mode="refusal" [bodyKey]="key" testId="daily-log-failure" />
+    } @else if (loading()) {
+      <kaff-state mode="loading" titleKey="daily_log.loading" testId="daily-log-loading" />
+    } @else {
+      @if (isEmpty()) {
+        <p class="empty" data-testid="daily-log-empty">{{ i18n.t('daily_log.empty') }}</p>
+      } @else if (log(); as current) {
+        <div class="summary" data-testid="daily-log-summary">
+          @if (current.checkIn) {
+            <p class="line"><span class="label">{{ i18n.t('daily_log.field.check_in') }}</span> <bdi dir="ltr" class="figure">{{ time(current.checkIn) }}</bdi></p>
+          }
+          @if (current.checkOut) {
+            <p class="line"><span class="label">{{ i18n.t('daily_log.field.check_out') }}</span> <bdi dir="ltr" class="figure">{{ time(current.checkOut) }}</bdi></p>
+          }
+          @if (current.weather) {
+            <p class="line"><span class="label">{{ i18n.t('daily_log.field.weather') }}</span> <span dir="auto">{{ current.weather }}</span></p>
+          }
+          @if (current.stoppageReason) {
+            <p class="line"><span class="label">{{ i18n.t('daily_log.field.stoppage_reason') }}</span> <span dir="auto">{{ current.stoppageReason }}</span></p>
+          }
+          @if (current.note) {
+            <p class="line"><span class="label">{{ i18n.t('daily_log.field.note') }}</span> <span dir="auto">{{ current.note }}</span></p>
+          }
+        </div>
+
+        @if (current.quantities.length > 0) {
+          <h2 class="group">{{ i18n.t('daily_log.group.quantities') }}</h2>
+          <ul class="rows" data-testid="daily-log-quantities">
+            @for (line of current.quantities; track line.entryId) {
+              <li class="row">
+                <span class="row-main" dir="auto">{{ line.descriptionAr }}</span>
+                <span class="row-figure figure"><bdi dir="ltr">{{ number(line.quantity) }}</bdi> <span dir="auto">{{ line.unit }}</span></span>
+              </li>
+            }
+          </ul>
+        }
+
+        @if (current.dayLabour.length > 0) {
+          <h2 class="group">{{ i18n.t('daily_log.group.labour') }}</h2>
+          <ul class="rows" data-testid="daily-log-labour">
+            @for (line of current.dayLabour; track line.entryId) {
+              <li class="row">
+                <span class="row-main" dir="auto">{{ line.workerName }}</span>
+                <span class="row-figure figure"><bdi dir="ltr">{{ number(line.hours) }}</bdi> {{ i18n.t('daily_log.unit.hours') }}</span>
+              </li>
+            }
+          </ul>
+        }
+
+        @if (current.materials.length > 0) {
+          <h2 class="group">{{ i18n.t('daily_log.group.materials') }}</h2>
+          <ul class="rows" data-testid="daily-log-materials">
+            @for (line of current.materials; track line.entryId) {
+              <li class="row">
+                <span class="row-main" dir="auto">
+                  {{ line.materialType }}
+                  @if (line.isStockpile) {
+                    <span class="tag">{{ i18n.t('daily_log.material.stockpile') }}</span>
+                  }
+                </span>
+                <span class="row-figure figure"><bdi dir="ltr">{{ number(line.quantity) }}</bdi> <span dir="auto">{{ line.unit }}</span></span>
+              </li>
+            }
+          </ul>
+        }
+
+        @if (current.photos.length > 0) {
+          <h2 class="group">{{ i18n.t('daily_log.group.photos') }}</h2>
+          <ul class="rows" data-testid="daily-log-photos">
+            @for (line of current.photos; track line.entryId) {
+              <li class="row">
+                <span class="row-main" dir="auto">{{ line.caption ?? line.fileReference }}</span>
+              </li>
+            }
+          </ul>
+        }
+      }
+
+      <h2 class="group">{{ i18n.t('daily_log.group.add') }}</h2>
+
+      <div class="kinds" role="group" [attr.aria-label]="i18n.t('daily_log.group.add')">
+        <button type="button" class="kind" [attr.aria-pressed]="kind() === 'field'" data-testid="daily-log-kind-field" (click)="setKind('field')">
+          {{ i18n.t('daily_log.kind.field') }}
+        </button>
+        <button type="button" class="kind" [attr.aria-pressed]="kind() === 'labour'" data-testid="daily-log-kind-labour" (click)="setKind('labour')">
+          {{ i18n.t('daily_log.kind.labour') }}
+        </button>
+        <button type="button" class="kind" [attr.aria-pressed]="kind() === 'material'" data-testid="daily-log-kind-material" (click)="setKind('material')">
+          {{ i18n.t('daily_log.kind.material') }}
+        </button>
+      </div>
+
+      <form class="fields" (submit)="$event.preventDefault(); onSave()">
+        @switch (kind()) {
+          @case ('field') {
+            <kaff-field labelKey="daily_log.form.field" controlId="daily-log-field-select">
+              <select
+                id="daily-log-field-select"
+                class="input select"
+                data-testid="daily-log-field-select"
+                [attr.aria-label]="i18n.t('daily_log.form.field')"
+                (change)="onFieldChange($event)"
+              >
+                @for (option of fieldOptions; track option.value) {
+                  <option [value]="option.value" [selected]="option.value === selectedField()">{{ i18n.t(option.labelKey) }}</option>
+                }
+              </select>
+            </kaff-field>
+            @if (takesText()) {
+              <kaff-field labelKey="daily_log.form.text" controlId="daily-log-field-text">
+                <input id="daily-log-field-text" class="input" type="text" dir="auto" data-testid="daily-log-field-text" [formField]="entryForm.text" />
+              </kaff-field>
+            } @else {
+              <p class="hint">{{ i18n.t('daily_log.form.now_hint') }}</p>
+            }
+          }
+          @case ('labour') {
+            <kaff-field labelKey="daily_log.form.worker" controlId="daily-log-labour-worker">
+              <select
+                id="daily-log-labour-worker"
+                class="input select"
+                data-testid="daily-log-labour-worker"
+                [attr.aria-label]="i18n.t('daily_log.form.worker')"
+                (change)="onWorkerChange($event)"
+              >
+                <option value="">{{ i18n.t('daily_log.form.worker_pick') }}</option>
+                @for (worker of workers(); track worker.id) {
+                  <option [value]="worker.id">{{ worker.fullName }}</option>
+                }
+              </select>
+            </kaff-field>
+            <kaff-field labelKey="daily_log.form.hours" controlId="daily-log-labour-hours">
+              <input id="daily-log-labour-hours" class="input" type="text" dir="ltr" inputmode="decimal" data-testid="daily-log-labour-hours" [formField]="entryForm.hours" />
+            </kaff-field>
+          }
+          @case ('material') {
+            <kaff-field labelKey="daily_log.form.material_type" controlId="daily-log-material-type">
+              <input id="daily-log-material-type" class="input" type="text" dir="auto" data-testid="daily-log-material-type" [formField]="entryForm.materialType" />
+            </kaff-field>
+            <kaff-field labelKey="daily_log.form.quantity" controlId="daily-log-material-quantity">
+              <input id="daily-log-material-quantity" class="input" type="text" dir="ltr" inputmode="decimal" data-testid="daily-log-material-quantity" [formField]="entryForm.quantity" />
+            </kaff-field>
+            <kaff-field labelKey="daily_log.form.unit" controlId="daily-log-material-unit">
+              <input id="daily-log-material-unit" class="input" type="text" dir="auto" data-testid="daily-log-material-unit" [formField]="entryForm.unit" />
+            </kaff-field>
+            <label class="check">
+              <input type="checkbox" data-testid="daily-log-material-stockpile" [formField]="entryForm.isStockpile" />
+              <span>{{ i18n.t('daily_log.material.stockpile') }}</span>
+            </label>
+          }
+        }
+
+        <div class="status" aria-live="polite">
+          @if (errorKey(); as key) {
+            <p class="refusal" role="alert" data-testid="daily-log-error">{{ i18n.t(key) }}</p>
+          }
+        </div>
+
+        <!-- The one primary action, pinned to the bottom of the viewport (AC-600-K). -->
+        <div class="footer">
+          <kaff-button variant="primary" type="submit" testId="daily-log-save" [busy]="busy()">
+            {{ i18n.t('action.save') }}
+          </kaff-button>
+        </div>
+      </form>
+    }
+  </div>
+</section>
