@@ -47,6 +47,26 @@ export interface ProjectSummary {
 }
 
 /**
+ * `GET /api/projects/{projectId}` — `GetProject.Response`, field for field. The project workspace's header
+ * and the facts the contract type declares. Money and rates are strings (D-135; a rate is the wire
+ * fraction, `"0.15"` is 15%); never `Number()` one. `contractValue` is null for Cost Plus and for a
+ * project whose BOQ is not signed. `holdRate` and `advanceRate` are Lump Sum only.
+ */
+export interface ProjectDetail {
+  readonly id: string;
+  readonly code: string;
+  readonly name: string;
+  readonly clientId: string;
+  readonly clientName: string;
+  readonly contractType: ContractType;
+  readonly status: ProjectStatus;
+  readonly contractValue: string | null;
+  readonly holdRate: string | null;
+  readonly advanceRate: string | null;
+  readonly teamSize: number;
+}
+
+/**
  * `GET /api/projects` — S-050's rows. KAFF-401.
  *
  * Gated `Permission.ProjectList` (company-wide: Owner, Finance, Technical Office, Marketing, Site
@@ -57,6 +77,11 @@ export interface ProjectSummary {
 @Injectable({ providedIn: 'root' })
 export class ProjectsApi {
   private readonly http = inject(HttpClient);
+
+  /** One project's header and terms. Gated `ProjectRead` + assignment; HR is refused, not redacted. */
+  async get(projectId: string): Promise<ProjectDetail> {
+    return await firstValueFrom(this.http.get<ProjectDetail>(`api/projects/${projectId}`));
+  }
 
   /** The rows, and the server's own total — read rather than recounted on the client. */
   async list(): Promise<{ readonly projects: readonly ProjectSummary[]; readonly total: number }> {

@@ -1,0 +1,32 @@
+:host {
+  display: block;
+}
+
+.pl {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-block-size: 48px;
+  padding-inline: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--color-interactive);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.pl:hover {
+  background: var(--hover);
+}
+
+.pl:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* `back` points to the inline start; in RTL (the primary direction) that is the way forward. */
+:host-context([dir='ltr']) .go {
+  transform: scaleX(-1);
+}

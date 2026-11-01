@@ -11,9 +11,8 @@ import { ProjectSummary, ProjectsApi } from '../../../core/projects/projects.api
 import { ProjectListPage } from './project-list-page';
 
 /**
- * KAFF-401 · S-050. The assertions that matter are the two this screen exists for: a row links to
- * `/projects/:projectId/day-labour` exactly when the session's own project entry carries
- * `DayLabourSiteManage`, and no status label is rendered for a state nobody has ruled (Q18).
+ * KAFF-401 · S-050. The assertion that matters: a row opens the project workspace (`/projects/:projectId`),
+ * never day labour, and no status label is rendered for a state nobody has ruled (Q18).
  */
 const LABELS: Readonly<Record<string, string>> = {
   'nav.projects': 'المشاريع',
@@ -147,15 +146,15 @@ async function createFixture(
   return fixture;
 }
 
-describe('ProjectListPage · the way into day labour', () => {
+describe('ProjectListPage · the way into the project', () => {
   beforeEach(() => {
     TestBed.resetTestingModule();
   });
 
-  it('links the row to the project day-labour route when the project entry carries DayLabourSiteManage', async () => {
+  it('links the row to the project workspace, not to day labour', async () => {
     const fixture = await createFixture(
       new FakeProjectsApi([LUMP_SUM]),
-      session(['ProjectList'], [entry('p-1', ['DayLabourSiteManage'])]),
+      session(['ProjectList'], [entry('p-1', ['DayLabourSiteManage', 'DailyLogWrite', 'ProjectRead'])]),
     );
 
     const link: HTMLAnchorElement = fixture.nativeElement.querySelector(
@@ -163,18 +162,39 @@ describe('ProjectListPage · the way into day labour', () => {
     );
 
     expect(link).not.toBeNull();
-    expect(link.getAttribute('href')).toBe('/projects/p-1/day-labour');
+    expect(link.getAttribute('href')).toBe('/projects/p-1');
+    expect(fixture.nativeElement.querySelector('a[href$="/day-labour"]')).toBeNull();
   });
 
-  it('renders no row link when the same project carries no DayLabourSiteManage', async () => {
+  it('links the row to the workspace whatever the session holds on the project; the server decides', async () => {
+    const fixture = await createFixture(new FakeProjectsApi([LUMP_SUM]), session(['ProjectList'], []));
+
+    const link: HTMLAnchorElement = fixture.nativeElement.querySelector(
+      '[data-testid="project-row-link-KF-P-0001"]',
+    );
+    expect(link.getAttribute('href')).toBe('/projects/p-1');
+  });
+
+  it('puts no onward screen link in the row: the workspace carries them', async () => {
     const fixture = await createFixture(
       new FakeProjectsApi([LUMP_SUM]),
-      session(['ProjectList'], [entry('p-1', ['TreasuryReadProject'])]),
+      session(
+        ['ProjectList', 'TreasuryReadCompany'],
+        [entry('p-1', ['DayLabourSiteManage', 'DailyLogWrite', 'ProjectRead', 'ProjectManage'])],
+      ),
     );
 
-    expect(fixture.nativeElement.querySelector('[data-testid="project-row-link-KF-P-0001"]')).toBeNull();
-    // The row is still rendered — it simply opens nothing.
-    expect(fixture.nativeElement.textContent as string).toContain('فيلا الشيخ زايد');
+    const rowLinks = fixture.nativeElement.querySelectorAll('[data-testid="project-rows"] a');
+    expect(rowLinks.length).toBe(1);
+  });
+
+  it('gives the row link an accessible name, never empty text', async () => {
+    const fixture = await createFixture(new FakeProjectsApi([LUMP_SUM]), session(['ProjectList'], []));
+
+    const link: HTMLAnchorElement = fixture.nativeElement.querySelector(
+      '[data-testid="project-row-link-KF-P-0001"]',
+    );
+    expect(link.getAttribute('aria-label')).toBeTruthy();
   });
 });
 
@@ -273,36 +293,5 @@ describe('ProjectListPage · the four states', () => {
     const refusal = fixture.nativeElement.querySelector('[data-testid="project-list-failure"]');
     expect(refusal).not.toBeNull();
     expect(refusal.textContent as string).toContain('errors.auth.forbidden');
-  });
-
-  it('renders the filtered-empty state above the rows, not instead of them, when none opens', async () => {
-    const fixture = await createFixture(
-      new FakeProjectsApi([LUMP_SUM]),
-      session(['ProjectList'], []),
-    );
-
-    expect(
-      fixture.nativeElement.querySelector('[data-testid="project-list-none-reachable"]'),
-    ).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-testid="project-rows"]')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-testid="project-list-empty"]')).toBeNull();
-  });
-});
-
-describe('ProjectListPage · the proof link', () => {
-  beforeEach(() => {
-    TestBed.resetTestingModule();
-  });
-
-  it('links the row to the proof screen only for a session holding TreasuryReadCompany, as proofReadGuard does', async () => {
-    const withPermission = await createFixture(
-      new FakeProjectsApi([LUMP_SUM]),
-      session(['TreasuryReadCompany'], [entry('p-1', [])]),
-    );
-    const link: HTMLAnchorElement = withPermission.nativeElement.querySelector('[data-testid="project-proof-link-KF-P-0001"]');
-    expect(link.getAttribute('href')).toBe('/projects/p-1/proof');
-
-    const without = await createFixture(new FakeProjectsApi([LUMP_SUM]), session([], [entry('p-1', ['ProjectRead'])]));
-    expect(without.nativeElement.querySelector('[data-testid="project-proof-link-KF-P-0001"]')).toBeNull();
   });
 });

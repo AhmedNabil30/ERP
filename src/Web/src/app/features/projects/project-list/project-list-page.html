@@ -15,24 +15,6 @@
   } @else if (loading()) {
     <kaff-state mode="loading" titleKey="projects.loading" testId="project-list-loading" />
   } @else if (projects().length > 0) {
-    @if (noneReachable()) {
-      <!--
-        Rows came back and not one of them opens anything for this session — a different fact from an
-        empty project master, and `kaff-state`'s fourth mode is where that difference is written down.
-
-        **It sits above the rows and does not replace them.** A Technical Office lead holds no
-        `DayLabourSiteManage` anywhere; replacing the table with this panel would hide every project
-        they legitimately read in order to explain that one link is missing.
-      -->
-      <kaff-state
-        mode="filtered-empty"
-        titleKey="projects.empty.unreachable.title"
-        bodyKey="projects.empty.unreachable.body"
-        [hiddenCount]="total()"
-        testId="project-list-none-reachable"
-      />
-    }
-
     <kaff-table
       [columns]="rowColumns()"
       [columnDefs]="headerColumns()"
@@ -43,23 +25,15 @@
         @for (project of projects(); track trackProject($index, project)) {
           <li class="rows-item">
             <kaff-table-row>
-              <!--
-                The whole point of this screen. `/projects/:projectId/day-labour` was reachable only by
-                typing a GUID; the row is the link, gated on this project's own `DayLabourSiteManage`
-                exactly as `dayLabourSiteManageGuard` gates the route. UI hiding is convenience — the
-                server refuses regardless.
-
-                KAFF-928 finding 6's stretched-link pattern: absolutely positioned, so it consumes no
-                grid track and the row is one click target without nesting interactive elements.
-              -->
-              @if (canOpen(project)) {
-                <a
-                  class="row-stretched-link"
-                  [routerLink]="['/projects', project.id, 'day-labour']"
-                  [attr.aria-label]="i18n.t('projects.action.open_day_labour', { name: project.name })"
-                  [attr.data-testid]="'project-row-link-' + project.code"
-                ></a>
-              }
+              <!-- The row is one click target (KAFF-928 finding 6's stretched link: absolutely positioned,
+                   so it consumes no grid track and nests no interactive element). It opens the project
+                   workspace; UI is convenience, the server decides each read the hub makes. -->
+              <a
+                class="row-stretched-link"
+                [routerLink]="['/projects', project.id]"
+                [attr.aria-label]="i18n.t('projects.action.open_project', { name: project.name })"
+                [attr.data-testid]="'project-row-link-' + project.code"
+              ></a>
 
               <!-- ux/components.md:259 — identity first. The name leads; the code is a ledger
                    reference (D-049) and demotes to muted secondary text in the same cell. <bdi> on the
@@ -67,46 +41,6 @@
               <span class="row-identity">
                 <span class="row-name" dir="auto">{{ project.name }}</span>
                 <bdi class="row-code" dir="ltr" translate="no">{{ project.code }}</bdi>
-                @if (canOpenLog(project)) {
-                  <a
-                    class="row-log-link"
-                    [routerLink]="['/projects', project.id, 'daily-log']"
-                    [attr.aria-label]="i18n.t('projects.action.open_daily_log', { name: project.name })"
-                    [attr.data-testid]="'project-log-link-' + project.code"
-                  >
-                    {{ i18n.t('daily_log.title') }}
-                  </a>
-                }
-                @if (canOpenExtracts(project)) {
-                  <a
-                    class="row-log-link"
-                    [routerLink]="['/projects', project.id, 'extracts']"
-                    [attr.aria-label]="i18n.t('projects.action.open_extracts', { name: project.name })"
-                    [attr.data-testid]="'project-extracts-link-' + project.code"
-                  >
-                    {{ i18n.t('extract.list.title') }}
-                  </a>
-                }
-                @if (canOpenBoq(project)) {
-                  <a
-                    class="row-log-link"
-                    [routerLink]="['/projects', project.id, 'boq']"
-                    [attr.aria-label]="i18n.t('projects.action.open_boq', { name: project.name })"
-                    [attr.data-testid]="'project-boq-link-' + project.code"
-                  >
-                    {{ i18n.t('boq.title') }}
-                  </a>
-                }
-                @if (canOpenProof()) {
-                  <a
-                    class="row-log-link"
-                    [routerLink]="['/projects', project.id, 'proof']"
-                    [attr.aria-label]="i18n.t('projects.action.open_proof', { name: project.name })"
-                    [attr.data-testid]="'project-proof-link-' + project.code"
-                  >
-                    {{ i18n.t('proof.title') }}
-                  </a>
-                }
               </span>
 
               @if (canReadClients()) {

@@ -16,27 +16,16 @@ import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 /**
  * S-050 · the project list. KAFF-401.
  *
- * **This screen exists because day labour was unreachable.** The whole day-labour feature — worker
- * pool, register-from-site, engage, close, rate — shipped behind `/projects/:projectId/day-labour`, a
- * URL carrying a project GUID that no screen rendered (`ux/research/flows.md`: *"The flow is right; the
- * way in does not exist"*). A row here links to it whenever the session's own project entry carries
- * `DayLabourSiteManage`, which is the same fact `dayLabourSiteManageGuard` reads and the same one
- * `GET /api/auth/me` has been returning since KAFF-105b. **No backend change and no new permission.**
+ * **A row opens the project workspace** (`/projects/:projectId`, the hub) and nothing else. It used to
+ * link straight to day labour, which made "open a project" mean "register work"; the hub now carries
+ * the onward links (BOQ, daily log, extracts, proof, day labour) grouped by what the person is doing.
+ * The link is convenience; the server decides on every read the hub makes.
  *
- * **The link is convenience; the server decides.** Every day-labour endpoint is gated
- * `Permission.DayLabourSiteManage` + `ProjectScope.FromRoute()` and answers `403` regardless of what
- * this template rendered.
- *
- * **No status label is invented here.** See `projectStatusKey` — six of the eight states of `spec.md`
- * §13 have no ruled Arabic label, and Q18 is the open question. Those rows render a placeholder.
+ * **No status label is invented here.** See `projectStatusKey`: six of the eight states of `spec.md`
+ * §13 have no ruled Arabic label (Q18), and those rows render a placeholder.
  *
  * **No paging, no search and no filter strip.** `GET /api/projects` takes no parameters, so there is
- * nothing to send and a client-side filter over a server-filtered list is a list that lies. The fourth
- * `kaff-state` mode, `filtered-empty`, renders for the one narrowing this screen cannot avoid: the
- * server returned rows and none of them carries a screen this session can open. That is a different
- * sentence from "no projects", and telling an Owner "no projects" while eight exist is the failure
- * `clients.empty.filtered.*` was written to prevent. That panel sits above the rows and never replaces
- * them — see the template.
+ * nothing to send and a client-side filter over a server-filtered list is a list that lies.
  */
 @Component({
   selector: 'kaff-project-list-page',
@@ -95,54 +84,12 @@ export class ProjectListPage {
     this.i18n.t('projects.list.count', { count: this.total() }),
   );
 
-  /**
-   * True when rows came back but none of them is a project this session can open. The list is not
-   * empty and the operator is not lost — they are looking at projects that carry no screen for them
-   * yet, which is a different sentence from "no projects".
-   */
-  protected readonly noneReachable = computed(
-    () => this.projects().length > 0 && !this.projects().some((project) => this.canOpen(project)),
-  );
-
   constructor() {
     void this.reload();
   }
 
   protected trackProject(_index: number, project: ProjectSummary): string {
     return project.id;
-  }
-
-  /**
-   * Mirrors `dayLabourSiteManageGuard` exactly — `DayLabourSiteManage` is `ProjectScoped` (D-140
-   * point 1), so the answer is on this project's own `Session.projects` entry and never on the
-   * company-wide permission list.
-   */
-  protected canOpen(project: ProjectSummary): boolean {
-    const entry = this.auth.current()?.projects.find((row) => row.projectId === project.id);
-    return entry?.permissions.includes('DayLabourSiteManage') ?? false;
-  }
-
-  /** `DailyLogWrite` is `ProjectScoped` as well: this project's own session entry, convenience only. */
-  protected canOpenLog(project: ProjectSummary): boolean {
-    const entry = this.auth.current()?.projects.find((row) => row.projectId === project.id);
-    return entry?.permissions.includes('DailyLogWrite') ?? false;
-  }
-
-  /** `ProjectRead` is project-scoped: this project's own session entry. Convenience; the server decides. */
-  protected canOpenExtracts(project: ProjectSummary): boolean {
-    const entry = this.auth.current()?.projects.find((row) => row.projectId === project.id);
-    return entry?.permissions.includes('ProjectRead') ?? false;
-  }
-
-  /** Mirrors `boqReadGuard`: `ProjectManage` on this project's own session entry. Convenience; the server decides. */
-  protected canOpenBoq(project: ProjectSummary): boolean {
-    const entry = this.auth.current()?.projects.find((row) => row.projectId === project.id);
-    return entry?.permissions.includes('ProjectManage') ?? false;
-  }
-
-  /** Mirrors `proofReadGuard`: the company-wide `TreasuryReadCompany`. Convenience; the server decides. */
-  protected canOpenProof(): boolean {
-    return this.auth.current()?.permissions.includes('TreasuryReadCompany') ?? false;
   }
 
   protected clientName(project: ProjectSummary): string | null {

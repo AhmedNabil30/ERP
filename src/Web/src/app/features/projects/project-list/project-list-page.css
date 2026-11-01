@@ -91,15 +91,3 @@
 .row-value {
   unicode-bidi: isolate;
 }
-
-/* Above the stretched link (z-index 0) so it is its own 44px target, not a click on the row. */
-.row-log-link {
-  position: relative;
-  z-index: 1;
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  min-block-size: var(--tap-target);
-  font-size: var(--text-sm);
-  color: var(--color-interactive);
-}

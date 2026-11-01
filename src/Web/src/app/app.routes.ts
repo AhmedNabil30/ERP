@@ -220,6 +220,18 @@ export const routes: Routes = [
       import('./features/projects/project-list/project-list-page').then((m) => m.ProjectListPage),
   },
   {
+    // The project workspace, the hub a row of the list opens (`.design/v2/team-a/project.html`). BOQ, daily
+    // log, extracts, proof and day labour stay valid routes below and are reached from the group each
+    // belongs to. `extractReadGuard` is exactly the check this needs (`ProjectRead` on this project's own
+    // session entry); convenience, since `GET /api/projects/:projectId` checks role and assignment.
+    path: 'projects/:projectId',
+    canActivate: [sessionGuard, mustChangePasswordGuard, extractReadGuard],
+    loadComponent: () =>
+      import('./features/projects/project-workspace/project-workspace-page').then(
+        (m) => m.ProjectWorkspacePage,
+      ),
+  },
+  {
     // KAFF-209, KAFF-210 — S-025, S-026, S-027. Same shape as `/employees` above, except the guard is
     // project-scoped (`dayLabourSiteManageGuard`, D-140 point 1) rather than company-wide: a Site
     // Engineer reaches this only on a project they are assigned to, and `:projectId` supplies which

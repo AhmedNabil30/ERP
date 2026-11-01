@@ -1,0 +1,71 @@
+:host {
+  display: block;
+}
+
+.gs {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  gap: 0 var(--space-6);
+  padding-block: var(--space-5) var(--space-6);
+  border-block-end: 1px solid var(--line);
+  /* clears the sticky jump line (48px) */
+  scroll-margin-block-start: 56px;
+}
+
+.gh {
+  position: sticky;
+  inset-block-start: 64px;
+  align-self: start;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.gi {
+  display: grid;
+  place-items: center;
+  inline-size: 44px;
+  block-size: 44px;
+  border-radius: var(--radius);
+  background: var(--head);
+}
+
+h2 {
+  margin: var(--space-2) 0 0;
+  font: 700 var(--text-lg) / 1.35 var(--display);
+}
+
+p {
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+
+.gb {
+  display: grid;
+  gap: var(--space-4);
+  min-inline-size: 0;
+  align-content: start;
+}
+
+@media (max-width: 1100px) {
+  .gs {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4) 0;
+  }
+
+  .gh {
+    position: static;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-1) var(--space-3);
+  }
+
+  .gi {
+    grid-row: span 2;
+  }
+
+  h2 {
+    margin: 0;
+  }
+}

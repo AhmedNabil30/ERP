@@ -193,6 +193,36 @@ export function projectStatusKey(status: ProjectStatus): string | null {
   }
 }
 
+/**
+ * The project workspace header's state word, for all eight states of `spec.md` §13.
+ *
+ * Setup, Active and Closed are Kaff's own words verbatim (`status.kaff.*`). The other five have no ruled
+ * Arabic word, so they read working text under `projects.workspace.vocab.status.*` (one namespace, so a
+ * correction is one line each; the list screen still shows a placeholder for them until Q18 is ruled).
+ */
+export function projectWorkspaceStatusKey(status: ProjectStatus): string {
+  switch (status) {
+    case 'Setup':
+      return 'status.kaff.not_started';
+    case 'Active':
+      return 'status.kaff.in_progress';
+    case 'Closed':
+      return 'status.kaff.finished';
+    case 'Stopped':
+      return 'projects.workspace.vocab.status.stopped';
+    case 'HandoverPending':
+      return 'projects.workspace.vocab.status.handover_pending';
+    case 'Handover':
+      return 'projects.workspace.vocab.status.handover';
+    case 'UnderWarranty':
+      return 'projects.workspace.vocab.status.under_warranty';
+    case 'Terminated':
+      return 'projects.workspace.vocab.status.terminated';
+    default:
+      return assertNever(status);
+  }
+}
+
 /** spec.md §6.7 — a client is a person or a company, and never neither. KAFF-126. */
 export function clientKindKey(kind: ClientKind): string {
   switch (kind) {
