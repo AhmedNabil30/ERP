@@ -1428,8 +1428,6 @@
   "extract.input.material_installed": "قيمة التشوينات المركّبة",
   "extract.input.material_advance_recovery_rule": "قاعدة الاسترداد",
   "extract.input.material_advance_recovered": "سلفة التشوينات المستردة",
-  "extract.input.withholding_category": "فئة الاستقطاع",
-  "extract.input.withholding_base": "وعاء الاستقطاع",
   "projects.action.open_extracts": "المستخلصات — {name}",
   "projects.action.open_proof": "إثبات الأرقام — {name}",
   "project.links.label": "شاشات المشروع",
