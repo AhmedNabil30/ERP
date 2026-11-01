@@ -403,6 +403,7 @@ public sealed class ReversePostingTests : IAsyncLifetime
 
         Project projectA = Project.Create(
             UniqueNames.Code("RP-PA"), "مشروع أ", client.Id, ContractType.LumpSum, Now).Value;
+        projectA.TransitionTo(ProjectStatus.Active, Today).IsSuccess.Should().BeTrue();
 
         User financeOnProjectA = User.Create(
             UniqueNames.Code("rp-fin-a"), "rp-fin-a", UniqueNames.Phone(), Role.Finance, Now, WellKnownDepartments.FinanceId).Value;

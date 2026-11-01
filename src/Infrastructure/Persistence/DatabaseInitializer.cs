@@ -229,7 +229,7 @@ public sealed class DatabaseInitializer
             ["ck_boq_lines_quantities_not_negative"] =
                 "CHECK ((((quantity_estimated IS NULL) OR (quantity_estimated >= (0)::numeric)) AND ((quantity_surveyed IS NULL) OR (quantity_surveyed >= (0)::numeric)) AND (quantity_executed >= (0)::numeric)))",
             ["ck_boq_lines_review_only_custom"] =
-                "CHECK ((NOT pending_catalogue_review OR is_custom))",
+                "CHECK (((NOT pending_catalogue_review) OR is_custom))",
 
             // ProjectConfigurations
             ["ck_opportunities_closed_lost_reason"] =

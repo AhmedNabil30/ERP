@@ -1,4 +1,4 @@
-using Kaff.Api.Tests.Infrastructure;
+﻿using Kaff.Api.Tests.Infrastructure;
 using Kaff.Domain.Common;
 using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
@@ -345,12 +345,14 @@ public sealed class SchemaInvariantTests
     /// this is the third statement that makes it loud. 30 on 2026-08-29, the number the Verifier
     /// counted (qa/slice-1/verification-2026-08-27.md §5); 33 as of KAFF-210, which adds
     /// <c>ck_engagements_closed_not_before_opened</c>, <c>ck_engagements_closed_shape</c> and
-    /// <c>ck_engagements_rating_range</c>. Change it when a slice adds constraints, in the same commit
-    /// that adds them.
+    /// <c>ck_engagements_rating_range</c>; 37 as of the BOQ, which adds
+    /// <c>ck_boq_lines_prices_not_negative</c>, <c>ck_boq_lines_quantities_not_negative</c>,
+    /// <c>ck_boq_lines_review_only_custom</c> and <c>ck_projects_signed_has_value</c>. Change it when a
+    /// slice adds constraints, in the same commit that adds them.
     /// </remarks>
     [Fact]
-    public void Thirty_three_check_constraints_are_required()
-        => DatabaseInitializer.RequiredCheckConstraints.Should().HaveCount(33);
+    public void Thirty_seven_check_constraints_are_required()
+        => DatabaseInitializer.RequiredCheckConstraints.Should().HaveCount(37);
 
     /// <summary>
     /// Every name in <see cref="DatabaseInitializer.RequiredCheckConstraints"/> has a recorded

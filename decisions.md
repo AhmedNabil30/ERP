@@ -15258,3 +15258,38 @@ read model) does not exist.
 **Open questions for Nabil this raises (none decided silently):** the permission row for contract signature; whether
 a project in Stopped, Terminated or Closed may be signed (not checked); whether the same catalogue item may appear
 twice on one BOQ (allowed).
+
+### D-185 · Backend — the no-delete gate gains one scoped exception: a BOQ line while the BOQ is a draft · 2026-11-01
+
+`tests/Api.Tests/ArchiveClientTests.cs` asserts that no endpoint in the application answers `DELETE`.
+It once carried an exception for a departments hard-delete route, and Nabil's ruling of 2026-09-15
+removed both the route and the exception. The BOQ build reintroduces one `DELETE` route:
+`/api/projects/{projectId:guid}/boq/lines/{lineId:guid}`.
+
+**Kept, with the exception scoped to that exact route pattern.** The reasoning:
+
+1. A draft BOQ line is neither a master record nor a posting. `spec.md` §2 and §3 make master rows
+   permanent and `CLAUDE.md` makes postings append-only; a line being assembled before signature is
+   working material, not a record of fact.
+2. Removing a line has to renumber the rest (`AC` — "removing a draft line renumbers the rest"), which
+   a soft-delete flag cannot do without the line numbers developing holes.
+3. After signature the database itself refuses the delete — `003_boq_freeze.sql`, raising
+   `KAFF_BOQ_FROZEN` — so permanence begins exactly where the record becomes a record of fact.
+
+The gate now asserts two things rather than one: that no `DELETE` route outside the listed pattern
+exists, **and** that the listed pattern still exists. The second half stops the exception outliving the
+route it was granted for.
+
+**This is a judgment call on an architectural prohibition, not a business ruling, and Nabil has not
+been asked.** It reverses the shape of a decision he made once before, so it is flagged rather than
+assumed. Narrowing or removing it is a one-line change in the test plus deleting the endpoint folder.
+
+**Also corrected in the same pass**, all test-side and none of them a change to behaviour:
+`DatabaseInitializer`'s expected predicate for `ck_boq_lines_review_only_custom` was hand-written from
+the C# source string instead of PostgreSQL's re-print, which failed the startup guard check and took
+597 API tests down with it; the required check-constraint count moved 33 to 37; the guard-prefix
+exhaustiveness test now reads every `*.sql` in the guards directory rather than `001_guards.sql` alone,
+because `KAFF_BOQ_FROZEN` lives in `003`; the mapped-error key assertion widened from
+`errors.treasury.` to `errors.` for the same reason; and two treasury tests that post a `HoldAccrual`
+now move their project to `Active` first, because `PostingProjectStatePolicy` correctly refuses an
+extract-derived posting on a project still in `Setup`.

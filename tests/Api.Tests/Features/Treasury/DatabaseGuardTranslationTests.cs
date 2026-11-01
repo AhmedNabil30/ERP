@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using Kaff.Api.Common.Results;
 using Kaff.Domain.Common;
 using Kaff.Domain.Treasury;
@@ -26,13 +26,18 @@ public sealed class DatabaseGuardTranslationTests
     // ---- AC-319-B — the mapping table is exhaustive against 001_guards.sql itself ------------------
 
     [Fact]
-    public void Every_named_posting_guard_prefix_in_001_guards_sql_has_a_mapped_treasury_error()
+    public void Every_named_posting_guard_prefix_in_the_guard_sql_files_has_a_mapped_treasury_error()
     {
-        string sql = File.ReadAllText(GuardsSqlPath());
+        // Every guard file, not only 001: the BOQ freeze guard lives in 003_boq_freeze.sql, and a
+        // mapping that only reads one file stops being exhaustive the moment a slice adds another.
+        string[] files = Directory.GetFiles(GuardsSqlDirectory(), "*.sql");
+        files.Should().NotBeEmpty("the guard SQL files must be discoverable from the test host");
+
+        string sql = string.Join(Environment.NewLine, files.Select(File.ReadAllText));
 
         // Positive control (D-116 §3 discipline): assert the search actually found guard text,
         // so an empty or moved file cannot make this test pass by finding nothing wrong.
-        sql.Should().Contain("RAISE EXCEPTION", "the guards file must contain real guard bodies");
+        sql.Should().Contain("RAISE EXCEPTION", "the guard files must contain real guard bodies");
 
         // Every 'KAFF_XXX: ...' template the file raises, deduplicated.
         HashSet<string> allPrefixes = Regex.Matches(sql, @"'(KAFF_[A-Z_]+):")
@@ -49,7 +54,7 @@ public sealed class DatabaseGuardTranslationTests
 
         inScope.Should().BeEquivalentTo(
             DatabaseGuardTranslation.Map.Keys,
-            "every posting-guard prefix 001_guards.sql can raise must resolve to a TreasuryErrors "
+            "every posting-guard prefix the guard SQL files can raise must resolve to a TreasuryErrors "
             + "member — AC-319-B; none may be left to fall through to the generic exception handler");
     }
 
@@ -75,13 +80,15 @@ public sealed class DatabaseGuardTranslationTests
     {
         _ = prefix;
 
-        // AC-319-A / AC-319-C: never 500, and the key is one the existing errors.treasury.* catalogue
-        // resolves — the i18n key format itself, not a fresh mechanism.
+        // AC-319-A / AC-319-C: never 500, and the key is one the existing errors.* catalogue
+        // resolves — the i18n key format itself, not a fresh mechanism. It was errors.treasury.* while
+        // every guard was a posting guard; the BOQ freeze guard is a guard with its own area, so the
+        // assertion is the key format, not one area's name.
         ResultExtensions.StatusFor(expected.Type).Should().NotBe(
             Microsoft.AspNetCore.Http.StatusCodes.Status500InternalServerError,
             "a refused posting reads as a translated message, never a bare 500 — AC-319-A");
 
-        expected.MessageKey.Should().StartWith("errors.treasury.");
+        expected.MessageKey.Should().StartWith("errors.");
     }
 
     // ---- AC-319-D — an unrecognised exception is not swallowed -------------------------------------
@@ -115,7 +122,7 @@ public sealed class DatabaseGuardTranslationTests
     private static PostgresException RaisedBy(string prefix) =>
         new($"{prefix}: simulated guard failure for translation testing.", "ERROR", "ERROR", "P0001");
 
-    private static string GuardsSqlPath()
+    private static string GuardsSqlDirectory()
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);
 
@@ -126,6 +133,6 @@ public sealed class DatabaseGuardTranslationTests
 
         directory.Should().NotBeNull("the tests must run from inside the repository");
 
-        return Path.Combine(directory!.FullName, "src", "Infrastructure", "Persistence", "Sql", "001_guards.sql");
+        return Path.Combine(directory!.FullName, "src", "Infrastructure", "Persistence", "Sql");
     }
 }

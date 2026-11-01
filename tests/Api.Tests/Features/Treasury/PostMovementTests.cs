@@ -461,6 +461,7 @@ public sealed class PostMovementTests : IAsyncLifetime
 
         Project projectA = Project.Create(
             UniqueNames.Code("PM-PA"), "مشروع أ", client.Id, ContractType.LumpSum, Now).Value;
+        projectA.TransitionTo(ProjectStatus.Active, Today).IsSuccess.Should().BeTrue();
 
         Project projectB = Project.Create(
             UniqueNames.Code("PM-PB"), "مشروع ب", client.Id, ContractType.LumpSum, Now).Value;

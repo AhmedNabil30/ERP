@@ -103,7 +103,7 @@ public sealed class BoqAndSignatureTests : IAsyncLifetime
 
         using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
         body.RootElement.GetProperty("contractValue").ValueKind.Should().Be(JsonValueKind.String, "D-135");
-        body.RootElement.GetProperty("contractValue").GetString().Should().Be("7820.0000");
+        body.RootElement.GetProperty("contractValue").GetString().Should().Be("7820.00");
 
         Project stored = await LoadProjectAsync(project);
         stored.ContractValue.Should().Be(new Money(7_820m));
@@ -275,10 +275,10 @@ public sealed class BoqAndSignatureTests : IAsyncLifetime
         line.GetProperty("baseSellRate").GetString().Should().Be("1500.0000");
         decimal.Parse(line.GetProperty("lineMarkup").GetString()!, CultureInfo.InvariantCulture).Should().Be(0.15m);
         line.GetProperty("sellRate").GetString().Should().Be("1725.0000");
-        line.GetProperty("lineTotal").GetString().Should().Be("6900.0000");
-        line.GetProperty("quantityEstimated").GetDecimal().Should().Be(5m);
-        line.GetProperty("quantitySurveyed").GetDecimal().Should().Be(4m);
-        line.GetProperty("quantityExecuted").GetDecimal().Should().Be(0m);
+        line.GetProperty("lineTotal").GetString().Should().Be("6900.00");
+        decimal.Parse(line.GetProperty("quantityEstimated").GetString()!, CultureInfo.InvariantCulture).Should().Be(5m);
+        decimal.Parse(line.GetProperty("quantitySurveyed").GetString()!, CultureInfo.InvariantCulture).Should().Be(4m);
+        decimal.Parse(line.GetProperty("quantityExecuted").GetString()!, CultureInfo.InvariantCulture).Should().Be(0m);
         line.GetProperty("pendingCatalogueReview").GetBoolean().Should().BeFalse();
     }
 
@@ -368,7 +368,7 @@ public sealed class BoqAndSignatureTests : IAsyncLifetime
             await (await SendAsync(HttpMethod.Get, $"/api/projects/{project}/boq", _owner, null)).Content.ReadAsStringAsync(Ct));
 
         // 1,500 x 1.10 x 1.15 = 1,897.50; x 2 = 3,795.00
-        full.RootElement.GetProperty("total").GetString().Should().Be("3795.0000");
+        full.RootElement.GetProperty("total").GetString().Should().Be("3795.00");
     }
 
     // ---- other contract types ---------------------------------------------------------------------------------------
@@ -560,7 +560,7 @@ public sealed class BoqAndSignatureTests : IAsyncLifetime
 
         User technicalOfficeUser = await context.Users.SingleAsync(user => user.Id == _technicalOffice, Ct);
         context.ProjectAssignments.Add(
-            ProjectAssignment.Create(project.Id, technicalOfficeUser, AssignmentLevel.Supervisor, _owner, Now).Value);
+            ProjectAssignment.Create(project.Id, technicalOfficeUser, AssignmentLevel.Standard, _owner, Now).Value);
         await context.SaveChangesAsync(Ct);
 
         return project.Id;

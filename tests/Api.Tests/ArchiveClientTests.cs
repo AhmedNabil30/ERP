@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Reflection;
@@ -210,10 +210,24 @@ public sealed class ArchiveClientTests : IAsyncLifetime
             }
         }
 
-        deleteRoutes.Should().BeEmpty(
+        // The one exception, scoped to the exact pattern so any other DELETE route still fails here:
+        // a BOQ line while the BOQ is still a draft. It is neither a master record nor a posting -
+        // it is working material being assembled before signature, and removing a mistyped line has
+        // to renumber the rest, which a soft-delete flag cannot do. After signature the database
+        // itself refuses the delete (003_boq_freeze.sql, KAFF_BOQ_FROZEN), so the permanence spec.md
+        // §2 and §3 require begins exactly where the record becomes a record of fact.
+        // See decisions.md D-185. Narrow it or remove it in one line if Nabil rules otherwise.
+        string[] allowed = ["/api/projects/{projectId:guid}/boq/lines/{lineId:guid}"];
+
+        deleteRoutes.Except(allowed, StringComparer.Ordinal).Should().BeEmpty(
             "every master record is archived and never deleted (spec.md §2, §3), postings are "
             + "append-only (CLAUDE.md), and this asserts it against what the host mapped rather than "
             + "against the word \"delete\" appearing in a file");
+
+        deleteRoutes.Should().BeEquivalentTo(
+            allowed,
+            "the exception above is exhaustive: a route listed there that no longer exists is a stale "
+            + "licence, and this fails when the draft-BOQ delete goes away so the licence goes with it");
     }
 
     // ---- AC-123-E · nobody outside Marketing and the Owner may archive --------------------------
