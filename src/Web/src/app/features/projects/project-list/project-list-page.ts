@@ -134,6 +134,11 @@ export class ProjectListPage {
     return entry?.permissions.includes('ProjectRead') ?? false;
   }
 
+  /** Mirrors `proofReadGuard`: the company-wide `TreasuryReadCompany`. Convenience; the server decides. */
+  protected canOpenProof(): boolean {
+    return this.auth.current()?.permissions.includes('TreasuryReadCompany') ?? false;
+  }
+
   protected clientName(project: ProjectSummary): string | null {
     return this.clientNames().get(project.clientId) ?? null;
   }

@@ -9,6 +9,7 @@ import { DayLabourApi, PoolWorker } from '../../core/day-labour/day-labour.api';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { KaffButton } from '../../shared/kaff-button/kaff-button';
 import { KaffField } from '../../shared/kaff-field/kaff-field';
+import { KaffProjectLinks } from '../../shared/kaff-project-links/kaff-project-links';
 import { KaffState } from '../../shared/kaff-state/kaff-state';
 
 type EntryKind = 'field' | 'labour' | 'material' | 'quantity';
@@ -58,7 +59,7 @@ const BLANK: EntryDraft = { text: '', hours: '', materialType: '', quantity: '',
  */
 @Component({
   selector: 'kaff-daily-log-page',
-  imports: [FormField, KaffField, KaffButton, KaffState, RouterLink],
+  imports: [FormField, KaffField, KaffProjectLinks, KaffButton, KaffState, RouterLink],
   templateUrl: './daily-log-page.html',
   styleUrl: './daily-log-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

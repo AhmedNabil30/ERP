@@ -21,6 +21,7 @@ import { KaffFigure } from '../../../shared/kaff-figure/kaff-figure';
 import { KaffIcon } from '../../../shared/kaff-icon/kaff-icon';
 import { KaffInlineConfirm } from '../../../shared/kaff-inline-confirm/kaff-inline-confirm';
 import { KaffMoneyField } from '../../../shared/kaff-money-field/kaff-money-field';
+import { KaffProjectLinks } from '../../../shared/kaff-project-links/kaff-project-links';
 import { KaffProvenance, ProvenanceKind } from '../../../shared/kaff-provenance/kaff-provenance';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { hasHiddenPrecision, percentOfFraction } from '../extract-display';
@@ -113,6 +114,7 @@ interface InputVm {
   selector: 'kaff-extract-detail-page',
   imports: [
     RouterLink,
+    KaffProjectLinks,
     KaffBadge,
     KaffBanner,
     KaffButton,

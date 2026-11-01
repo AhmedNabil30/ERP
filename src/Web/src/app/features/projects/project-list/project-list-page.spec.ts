@@ -288,3 +288,21 @@ describe('ProjectListPage · the four states', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="project-list-empty"]')).toBeNull();
   });
 });
+
+describe('ProjectListPage · the proof link', () => {
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  it('links the row to the proof screen only for a session holding TreasuryReadCompany, as proofReadGuard does', async () => {
+    const withPermission = await createFixture(
+      new FakeProjectsApi([LUMP_SUM]),
+      session(['TreasuryReadCompany'], [entry('p-1', [])]),
+    );
+    const link: HTMLAnchorElement = withPermission.nativeElement.querySelector('[data-testid="project-proof-link-KF-P-0001"]');
+    expect(link.getAttribute('href')).toBe('/projects/p-1/proof');
+
+    const without = await createFixture(new FakeProjectsApi([LUMP_SUM]), session([], [entry('p-1', ['ProjectRead'])]));
+    expect(without.nativeElement.querySelector('[data-testid="project-proof-link-KF-P-0001"]')).toBeNull();
+  });
+});

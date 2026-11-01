@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, input, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
@@ -7,13 +7,14 @@ import { I18nService } from '../../../core/i18n/i18n.service';
 import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { KaffIcon } from '../../../shared/kaff-icon/kaff-icon';
+import { KaffProjectLinks } from '../../../shared/kaff-project-links/kaff-project-links';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { STATUS_KEYS } from '../extract-detail/extract-detail-page';
 
 /** The extracts of one project, oldest first. The server decides who may read the list. */
 @Component({
   selector: 'kaff-extract-list-page',
-  imports: [RouterLink, KaffBadge, KaffButton, KaffIcon, KaffState],
+  imports: [RouterLink, KaffBadge, KaffButton, KaffIcon, KaffProjectLinks, KaffState],
   templateUrl: './extract-list-page.html',
   styleUrl: './extract-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,7 +33,14 @@ export class ExtractListPage {
   protected readonly failure = signal<string | null>(null);
 
   constructor() {
-    void this.reload();
+    // `projectId` is a required input, set AFTER construction: reading it here throws NG0950, which the
+    // catch in reload() turned into the unexpected-error state on first load. An effect reads it once it
+    // exists and reloads if the route moves to another project. reload() runs untracked so its own signal
+    // writes do not re-trigger the effect.
+    effect(() => {
+      this.projectId();
+      untracked(() => void this.reload());
+    });
   }
 
   protected async reload(): Promise<void> {

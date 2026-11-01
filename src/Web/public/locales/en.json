@@ -1430,5 +1430,7 @@
   "extract.input.material_advance_recovered": "Material advance recovered",
   "extract.input.withholding_category": "Withholding category",
   "extract.input.withholding_base": "Withholding base",
-  "projects.action.open_extracts": "Extracts — {name}"
+  "projects.action.open_extracts": "Extracts — {name}",
+  "projects.action.open_proof": "Proof of numbers — {name}",
+  "project.links.label": "Project screens"
 }

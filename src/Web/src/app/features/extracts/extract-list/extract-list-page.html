@@ -2,6 +2,7 @@
   <header class="head">
     <a class="back" routerLink="/projects"><kaff-icon name="back" />{{ i18n.t('nav.projects') }}</a>
     <h1 class="title">{{ i18n.t('extract.list.title') }}</h1>
+    <kaff-project-links [projectId]="projectId()" current="extracts" />
   </header>
 
   @if (failure(); as key) {

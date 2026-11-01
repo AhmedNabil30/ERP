@@ -16,6 +16,7 @@ import { isZeroAmount } from '../../shared/kaff-figure/amount';
 import { KaffFigure } from '../../shared/kaff-figure/kaff-figure';
 import { KaffIcon, KaffIconName } from '../../shared/kaff-icon/kaff-icon';
 import { ProofLedgerStrip } from './ledger-strip/ledger-strip';
+import { KaffProjectLinks } from '../../shared/kaff-project-links/kaff-project-links';
 import { KaffProvenance } from '../../shared/kaff-provenance/kaff-provenance';
 import { KaffState } from '../../shared/kaff-state/kaff-state';
 
@@ -130,7 +131,7 @@ type Verdict = 'ok' | 'bad' | 'none';
  */
 @Component({
   selector: 'kaff-proof-page',
-  imports: [RouterLink, KaffFigure, KaffIcon, KaffProvenance, KaffState, ProofLedgerStrip],
+  imports: [RouterLink, KaffFigure, KaffIcon, KaffProjectLinks, KaffProvenance, KaffState, ProofLedgerStrip],
   templateUrl: './proof-page.html',
   styleUrl: './proof-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

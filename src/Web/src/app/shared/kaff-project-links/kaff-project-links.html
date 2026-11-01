@@ -1,0 +1,9 @@
+@if (links().length > 0) {
+  <nav class="links" [attr.aria-label]="i18n.t('project.links.label')" data-testid="project-links">
+    @for (link of links(); track link.screen) {
+      <a class="link" [routerLink]="['/projects', projectId(), link.screen]" [attr.data-testid]="'project-link-' + link.screen">
+        {{ i18n.t(link.labelKey) }}
+      </a>
+    }
+  </nav>
+}

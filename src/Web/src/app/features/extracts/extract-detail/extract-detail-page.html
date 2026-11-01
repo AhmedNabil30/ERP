@@ -3,6 +3,7 @@
     <a class="back" [routerLink]="['/projects', projectId(), 'extracts']">
       <kaff-icon name="back" />{{ i18n.t('extract.list.title') }}
     </a>
+    <kaff-project-links [projectId]="projectId()" current="extracts" />
     @if (data(); as extract) {
       <div class="titleline">
         <h1 class="title">{{ i18n.t('extract.number', { number: extract.number }) }}</h1>

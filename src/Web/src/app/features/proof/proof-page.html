@@ -4,6 +4,7 @@
       <kaff-icon name="back" />{{ i18n.t('nav.projects') }}
     </a>
     <h1 class="title">{{ i18n.t('proof.title') }}</h1>
+    <kaff-project-links [projectId]="projectId()" current="proof" />
     <p class="lede">{{ i18n.t('proof.lede') }}</p>
   </header>
 

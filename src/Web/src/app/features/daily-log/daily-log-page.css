@@ -273,3 +273,7 @@
   margin: 0;
   font-weight: 600;
 }
+
+.links {
+  padding-inline: var(--space-4);
+}

@@ -19,6 +19,8 @@
     </span>
   </header>
 
+  <kaff-project-links class="links" [projectId]="projectId()" current="daily-log" />
+
   <div class="body">
     @if (loadFailure(); as key) {
       <kaff-state mode="refusal" [bodyKey]="key" testId="daily-log-failure" />

@@ -87,6 +87,16 @@
                     {{ i18n.t('extract.list.title') }}
                   </a>
                 }
+                @if (canOpenProof()) {
+                  <a
+                    class="row-log-link"
+                    [routerLink]="['/projects', project.id, 'proof']"
+                    [attr.aria-label]="i18n.t('projects.action.open_proof', { name: project.name })"
+                    [attr.data-testid]="'project-proof-link-' + project.code"
+                  >
+                    {{ i18n.t('proof.title') }}
+                  </a>
+                }
               </span>
 
               @if (canReadClients()) {

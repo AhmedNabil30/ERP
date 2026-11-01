@@ -1,0 +1,22 @@
+:host {
+  display: block;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--tap-target);
+  font-size: var(--text-sm);
+  color: var(--color-interactive);
+}
+
+.link:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
