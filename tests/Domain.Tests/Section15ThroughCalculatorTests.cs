@@ -89,13 +89,23 @@ public sealed class Section15ThroughCalculatorTests
             .CalculateAsync(new BillingContext(project, date.AddMonths(-1), date, input), CancellationToken.None);
         billed.IsSuccess.Should().BeTrue();
 
-        Result<PostingSet> posted = ExtractPostings.Build(
-            project, billed.Value, Accounts,
-            new SourceDocument(SourceDocumentType.Extract, Guid.CreateVersion7(), reference),
-            date, TestAccounts.Actor, TestAccounts.Now, ExtractStage.OwnerApproval, Rulings);
-        posted.IsSuccess.Should().BeTrue(posted.IsFailure ? posted.Error.Code : "");
+        // §15 runs each extract the whole way through spec.md §7's chain, so both posting sets are
+        // written here: the accrual at the ruled posting moment, then the collection at Collected.
+        // ExtractPostingTimingTests is what asserts they land at different stages.
+        SourceDocument source = new(SourceDocumentType.Extract, Guid.CreateVersion7(), reference);
 
-        Commit(posted.Value);
+        Result<PostingSet> accrual = ExtractPostings.BuildAccrual(
+            project, billed.Value, Accounts, source,
+            date, TestAccounts.Actor, TestAccounts.Now, ExtractStage.OwnerApproval, Rulings);
+        accrual.IsSuccess.Should().BeTrue(accrual.IsFailure ? accrual.Error.Code : "");
+        Commit(accrual.Value);
+
+        Result<PostingSet> collection = ExtractPostings.BuildCollection(
+            project, billed.Value, Accounts, source,
+            date, TestAccounts.Actor, TestAccounts.Now, ExtractStage.Collected, Rulings);
+        collection.IsSuccess.Should().BeTrue(collection.IsFailure ? collection.Error.Code : "");
+        Commit(collection.Value);
+
         return billed.Value;
     }
 
@@ -225,7 +235,7 @@ public sealed class Section15ThroughCalculatorTests
         Project project = _project;
         var result = new BillingResult(ContractType.LumpSum, new Money(1m), new Money(1m), []);
 
-        Result<PostingSet> posted = ExtractPostings.Build(
+        Result<PostingSet> posted = ExtractPostings.BuildAccrual(
             project, result, Accounts,
             new SourceDocument(SourceDocumentType.Extract, Guid.CreateVersion7(), "EXT-X"),
             SigningDate, TestAccounts.Actor, TestAccounts.Now, ExtractStage.TechnicalOfficeApproval, Rulings);
