@@ -15630,3 +15630,42 @@ reports 2,099 errors across 33 files, almost all `ENDOFLINE` on files this chang
 `DailyLogs` feature folders, `KaffDbContext`, `BoqLine`, `Bab`, plus `CHARSET` and `IMPORTS` on the
 `ProofOfNumbers` feature). It is a pre-existing CRLF/LF split in the tree, not a regression here, and
 fixing it would touch 33 unrelated files; it is reported rather than silently absorbed.
+
+### D-191 · Backend — the site engineer's money-free BOQ line read, gated `DailyLogWrite` · 2026-11-01
+
+**What.** `GET /api/projects/{projectId}/daily-logs/boq-lines` (`Features/DailyLogs/ListBoqLines`). It returns
+each BOQ line's position, item code, descriptions, unit and the three quantity states (`QuantityEstimated`,
+`QuantitySurveyed`, `QuantityExecuted`). `RecordQuantity` existed but no engineer could list the lines to
+record against, so executed quantities, which extracts bill from, could not be entered.
+
+**Why a new projection on a new route.** `GetBoq` is gated `ProjectManage` because "the BOQ shows cost
+prices", and that gate is correct and untouched. `BoqLineResponse` forbids reuse in its own words: "this
+projection is for `ProjectManage` holders and must never be reused for a client-facing or site-facing output
+(spec.md section 4.2)". So the response here is a separate record, `QuantityLine`, with no member for a rate,
+cost, amount or total: absent, not hidden and not nullable (AC-600-J). The query projects only the nine columns,
+so the cost and sell columns are never read.
+
+**Gate: `DailyLogWrite` is reused. No `Permission` row is added.** The catalogue row is
+`new(Permission.DailyLogWrite, PermissionScope.ProjectScoped, [engineerJunior], "§8")`. It fits for four reasons.
+1. Listing the lines you may record a quantity against is the same act as recording one. The list exists only
+   to feed `RecordQuantity`, so anyone who can record needs it and anyone who cannot has no use for it.
+2. A separate read permission would be a grant that always travels with `DailyLogWrite`. It could only ever
+   differ from it by being granted without it, which would let a role see the line list but never use it, or
+   the reverse, and nothing in spec.md section 8 asks for that.
+3. It is project-scoped and the route carries the project, so role **and** assignment are both required
+   server-side (D-173). An assigned Site Engineer reaches it through `MinimumAssignmentLevel`; an unassigned
+   one, one assigned to another project, and every other role are refused (`ListBoqLinesTests`).
+4. It cites the same spec.md section as the daily log itself, so the gate is documented once, in the catalogue,
+   where the permission and catalogue-completeness tests scan.
+
+The line list exposes quantities only, never money, so the exposure matches what recording already needs. This
+follows the D-189 standard: an argued reuse is a decision. If Nabil later wants a role to see the lines without
+being able to record, that is a new row, argued then.
+
+**Test.** `ListBoqLinesTests`: assigned engineer reads (and the body matches no money word), unassigned engineer
+refused, assignment to another project refused, HR refused, anonymous refused, and a reflection test that no
+member of the response type, at any depth, is named for money or typed `Money` or `Percentage`. It keeps holding
+when a field is added later.
+
+**Not done.** No Angular screen (another lane wires it), no change to `GetBoq`, no new permission, no
+migration, no pagination (a BOQ is a bounded list), no filter by باب.
