@@ -6,7 +6,9 @@
   display: flex;
   flex-direction: column;
   min-block-size: 100dvh;
-  overflow-x: hidden;
+  /* clip, not hidden: hidden turns this box into a scroll container, so the sticky footer below
+     sticks to a box that never scrolls and the save button sits under the shell bar. */
+  overflow-x: clip;
 }
 
 .header {
