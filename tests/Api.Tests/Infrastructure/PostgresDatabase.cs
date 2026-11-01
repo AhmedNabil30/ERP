@@ -45,6 +45,14 @@ public sealed class PostgresDatabase : IAsyncLifetime
         "Host=localhost;Port=5432;Database=kaff;Username=kaff;Password=kaff;Include Error Detail=true";
 
     private string _adminConnectionString = DefaultAdminConnectionString;
+    /// <summary>
+    /// Serialises schema and guard set-up across every database fixture in the process. The guard script revokes
+    /// privileges from the cluster-wide role <c>kaff_app</c>; two databases doing that at once fail with
+    /// <c>XX000: tuple concurrently updated</c>, which took out <c>CreateOwnerTests</c>'s class fixture whenever it
+    /// initialised alongside the collection fixture.
+    /// </summary>
+    private static readonly SemaphoreSlim InitialisationGate = new(1, 1);
+
     private string _databaseName = string.Empty;
 
     /// <summary>
@@ -100,7 +108,15 @@ public sealed class PostgresDatabase : IAsyncLifetime
 
         await using KaffDbContext context = CreateContext();
         var initializer = new DatabaseInitializer(context, NullLogger<DatabaseInitializer>.Instance);
-        await initializer.InitialiseAsync(SchemaStrategy.CreateFromModel);
+        await InitialisationGate.WaitAsync();
+        try
+        {
+            await initializer.InitialiseAsync(SchemaStrategy.CreateFromModel);
+        }
+        finally
+        {
+            InitialisationGate.Release();
+        }
     }
 
     public async ValueTask DisposeAsync()
