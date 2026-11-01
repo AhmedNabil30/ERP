@@ -15847,3 +15847,9 @@ reused because no revise permission was ruled; a dedicated row would be an Archi
 
 **Not done.** No Angular. A revision does not re-check the project's other extracts (the period is fixed, so nothing needs it).
 Cost Plus and Design extracts still have no intake (D-194).
+
+### D-196 · Frontend — the Owner lands on the project list, not the user list · 2026-11-01
+
+**Judgement call, not ruled by Nabil. Nabil to confirm.** `landingFor` sent the Owner to `/users` (S-006). It now sends a caller holding both `UserManage` and `ProjectList` (today the Owner alone) to `/projects`, like every other role that holds `ProjectList`. TechnicalOffice and MarketingSales landings are unchanged. The Owner still reaches `/users` and `/clients` through the `UserManage` and `ClientManage` side-nav rows (`nav-rows.ts`, one row per held permission); no nav row was added or removed. A `UserManage` holder without `ProjectList` still lands on `/users`.
+
+**Revert:** delete the first row of `RULED_LANDINGS` in `src/Web/src/app/core/navigation/landing.ts` and restore the Owner expectations in `landing.spec.ts`.

@@ -40,7 +40,7 @@ export type Landing =
  * caller to it. `ux/navigation.md` -> `Landing summary` is the source of both rows.
  *
  * **The order is the rule, and it names no role.** The Owner holds `UserManage` *and* `ClientManage`;
- * the summary lands the Owner on S-006 and MarketingSales on S-011. Putting the narrower grant first
+ * the summary lands MarketingSales on S-011, and the Owner on S-050 since D-196 (previously S-006). Putting the narrower grant first
  * reproduces that table from the set alone. A role that later gains `ClientManage` without
  * `UserManage` lands on the client list with no change here — which is the whole point of rule 6.
  *
@@ -51,28 +51,34 @@ export type Landing =
  * **`CatalogueManage` added for KAFF-202/203/206.** `ux/navigation.md` -> `Landing summary` rules it
  * explicitly: *"TechnicalOffice | S-005 My profile | S-017 Catalogue, then the quantity gate queue"* —
  * slice 2 is what turns "eventual" into "now". The Owner holds `CatalogueManage` too (D-129 §1) but
- * matches `UserManage` first because row order is precedence and this entry is appended after it, so
+ * matches the first row because row order is precedence and this entry is appended after it, so
  * the Owner's landing does not move.
  */
-const RULED_LANDINGS: readonly (readonly [permission: string, landing: Landing])[] = [
+const RULED_LANDINGS: readonly (readonly [permissions: readonly string[], landing: Landing])[] = [
+  // S-050 the project list for a caller who holds `UserManage` **and** `ProjectList` - today the Owner
+  // alone. Judgement call, not ruled by Nabil (D-196): the Owner lands on the project list like the other
+  // roles that hold it, and still reaches `/users` through the `UserManage` side-nav row. Must stay above
+  // the `UserManage` row (row order is precedence). A `UserManage` holder without `ProjectList` still
+  // falls through to the user list below, so no caller is sent to a screen the API refuses.
+  [['UserManage', 'ProjectList'], { kind: 'projects' }],
   // S-006 the user list — `Permission.UserManage`, CompanyWide, `Role.Owner` alone today (D-044).
-  ['UserManage', { kind: 'users' }],
+  [['UserManage'], { kind: 'users' }],
   // S-011 the client list — `Permission.ClientManage`, CompanyWide, Owner and Marketing (spec.md §2).
-  ['ClientManage', { kind: 'clients' }],
+  [['ClientManage'], { kind: 'clients' }],
   // S-017 the catalogue list — `Permission.CatalogueManage`, CompanyWide, Owner and TechnicalOffice.
-  ['CatalogueManage', { kind: 'catalogue' }],
+  [['CatalogueManage'], { kind: 'catalogue' }],
   // S-050 the project list — `Permission.ProjectList`, CompanyWide, Owner, Finance, TechnicalOffice,
   // MarketingSales and SiteEngineer (`PermissionCatalogue.cs:542-544`).
   //
   // **Appended last, because row order is precedence and no ruled landing above may move.** The Owner
-  // holds `ProjectList` as well as `UserManage` and stays on S-006; TechnicalOffice stays on the
+  // holds `ProjectList` as well as `UserManage` and lands on S-050 via the first row above (D-196); TechnicalOffice stays on the
   // catalogue; MarketingSales stays on the client list. What this row changes is the two roles that
   // reached this file's fall-through and landed on their own profile: **Finance**, whose only link was
   // to suppliers while it holds `TreasuryReadCompany`, and the **SiteEngineer**, whose landing was a
   // dead end — the whole day-labour feature was built, gate-green and reachable only by typing a URL
   // containing a project GUID that no screen rendered. Nabil raised it as a UX complaint on
   // 2026-09-26; the cause was navigation, not layout.
-  ['ProjectList', { kind: 'projects' }],
+  [['ProjectList'], { kind: 'projects' }],
 ];
 
 /**
@@ -102,7 +108,7 @@ export function landingFor(session: Session): Landing {
     return { kind: 'forbidden' };
   }
 
-  const ruled = RULED_LANDINGS.find(([permission]) => session.permissions.includes(permission));
+  const ruled = RULED_LANDINGS.find(([required]) => required.every((p) => session.permissions.includes(p)));
 
   if (ruled) {
     return ruled[1];
@@ -173,7 +179,7 @@ export function navLabelKeyFor(session: Session): string | null {
  * "Clients" or "Users" that navigates to the landing page is a label that lies.
  *
  * **Still one item per session**, because one destination per landing is still all that is ruled —
- * and the Owner reaches the client list too (`ClientManage` is granted to `Role.Owner` and
+ * and the Owner reaches the user list (`UserManage` row) and the client list too (`ClientManage` is granted to `Role.Owner` and
  * `Role.MarketingSales` alike) without that being their *landing*. `ux/navigation.md` and CLAUDE.md
  * both forbid navigation built "on the assumption it will need it"; a second Owner item belongs to
  * whatever story rules the Owner's menu, not to this function.

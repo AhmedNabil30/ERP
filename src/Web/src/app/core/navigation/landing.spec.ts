@@ -94,6 +94,13 @@ describe('the landing and the nav item are built from the permission set, not fr
    * shell from doing. `AC-125-D` routes such a caller to the change-password screen long before this
    * function is consulted, so no live landing changes; the assertion is about the mechanism.
    */
+  it('the Owner nav item points at the project list (D-196)', () => {
+    const owner = session('Owner', ['UserManage', 'ClientManage', 'CatalogueManage', 'ProjectList']);
+
+    expect(navPathFor(owner)).toBe('/projects');
+    expect(navLabelKeyFor(owner)).toBe('nav.projects');
+  });
+
   it('a role whose permission set is empty does not reach a ruled landing', () => {
     const ownerWithNothing = session('Owner', []);
 
@@ -108,8 +115,11 @@ describe('the landing and the nav item are built from the permission set, not fr
    * this pins the precedence so a later edit cannot reorder it silently and land the Owner on
    * `/clients`.
    */
-  it('holding both grants lands on the user list, which is the summary the Owner is ruled to', () => {
+  it('holding both grants lands on the user list, unless ProjectList is held too (D-196)', () => {
     expect(landingFor(session('Owner', ['ClientManage', 'UserManage']))).toEqual({ kind: 'users' });
+    expect(landingFor(session('Owner', ['ClientManage', 'UserManage', 'ProjectList']))).toEqual({
+      kind: 'projects',
+    });
   });
 
   /**
@@ -158,7 +168,7 @@ describe('the landing and the nav item are built from the permission set, not fr
    */
   it('the nine roles still land where the Landing summary rules them', () => {
     const ruled: readonly (readonly [Role, readonly string[], string])[] = [
-      ['Owner', ['UserManage', 'ClientManage', 'CatalogueManage'], 'users'],
+      ['Owner', ['UserManage', 'ClientManage', 'CatalogueManage', 'ProjectList'], 'projects'],
       ['MarketingSales', ['ClientManage'], 'clients'],
       ['Hr', ['EmployeeManage', 'UserRead'], 'hr-projects'],
       ['Finance', [], 'profile'],
