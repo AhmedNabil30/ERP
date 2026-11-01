@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { toProblem } from '../../core/api/problem-details';
@@ -120,10 +120,13 @@ type Verdict = 'ok' | 'bad' | 'none';
  * by line, with a word, whether they match. The server does every sum and every difference; this page
  * lays strings side by side and does no arithmetic (D-135).
  *
- * **The expected side is only ever the server's.** While the billing calculators return
- * `CalculatorNotImplemented`, `expectedState` says so and no event carries an expectation; the page
- * renders that as a designed state and never derives an "expected" from the postings, which would make
- * every row match by construction.
+ * **The expected side is only ever the server's.** The page never derives an "expected" from the
+ * postings, which would make every row match by construction.
+ *
+ * While `expectedState` is `NoExtractsToCompare` no event carries an expectation and the page renders
+ * that as a designed state. The reason is not the calculators - those are implemented (D-186) - but that
+ * a calculator needs one extract's period inputs and no extract record exists yet (KAFF-500). The page
+ * needs no change when that lands; the server fills `expected` and `difference` and sets `Available`.
  */
 @Component({
   selector: 'kaff-proof-page',
@@ -153,7 +156,7 @@ export class ProofPage {
   );
 
   protected readonly calculatorMissing = computed(
-    () => this.data()?.expectedState === 'CalculatorNotImplemented',
+    () => this.data()?.expectedState === 'NoExtractsToCompare',
   );
 
   protected readonly events = computed<readonly EventVm[]>(() => {

@@ -1,4 +1,4 @@
-import { signal } from '@angular/core';
+﻿import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -47,7 +47,7 @@ function proof(overrides: Partial<ProofResponse> = {}): ProofResponse {
       holdRatePercent: '20',
       advanceRecoveryRatePercent: '25',
     },
-    expectedState: 'CalculatorNotImplemented',
+    expectedState: 'NoExtractsToCompare',
     projectCashNet: '250000',
     events: [
       {

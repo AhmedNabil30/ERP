@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Kaff.Api.Common.Results;
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
@@ -16,10 +16,22 @@ namespace Kaff.Api.Features.Treasury.ProofOfNumbers;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>The expected side is never derived from the actual side.</b> The per-event expectation has to come
-/// from <c>IBillingCalculator</c>, and every calculator still returns <c>CalculatorNotImplemented</c>,
-/// so <see cref="Response.ExpectedState"/> says so and no event carries an expectation. Fitting a rule to the numbers
-/// that were posted would make every row match by construction and prove nothing.
+/// <b>The expected side is never derived from the actual side.</b> Fitting a rule to the numbers that were
+/// posted would make every row match by construction and prove nothing.
+/// </para>
+/// <para>
+/// The per-event expectation has to come from <c>IBillingCalculator</c>. Those are implemented now
+/// (<c>D-186</c>), so the reason this screen still carries no per-event expectation has changed and is no
+/// longer the calculators: <b>a calculator needs one extract's period inputs</b> - the work value certified
+/// in the period and the material installed in it - <b>and no extract record exists to read them from</b>.
+/// The extract chain is <c>KAFF-500</c>, unbuilt. Until it lands, <see cref="Response.ExpectedState"/>
+/// reports <c>NoExtractsToCompare</c>, and the screen renders its designed "expected unavailable" mark,
+/// which is never a green match.
+/// </para>
+/// <para>
+/// Wiring this is therefore one change in this handler once extracts exist, and not before: read each
+/// extract's inputs, call the calculator for its contract type, and fill <c>Expected</c> and
+/// <c>Difference</c> per event. Do not invent the inputs to make the column appear.
 /// </para>
 /// <para>
 /// The checks that need only the contract (hold is the hold rate times the contract value; client cash
@@ -217,7 +229,7 @@ internal static class Handler
                 contractValue,
                 Percent(holdRate),
                 Percent(advanceRecoveryRate)),
-            "CalculatorNotImplemented",
+            "NoExtractsToCompare",
             new Money(running),
             events,
             checks,

@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+﻿import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
@@ -53,7 +53,7 @@ export interface ProofEvent {
   readonly reference: string | null;
   readonly date: string;
   readonly actual: ProofColumns;
-  /** Null while `expectedState` is `CalculatorNotImplemented`. */
+  /** Null while `expectedState` is `NoExtractsToCompare`. */
   readonly expected: ProofColumns | null;
   /** Actual minus expected, computed by the server. Null whenever `expected` is. */
   readonly difference: ProofColumns | null;
@@ -100,8 +100,12 @@ export interface ProofPosting {
 export interface ProofResponse {
   readonly readAt: string;
   readonly project: ProofProject;
-  /** `CalculatorNotImplemented` is a designed state, not a failure. */
-  readonly expectedState: 'CalculatorNotImplemented' | 'Available';
+  /**
+   * `NoExtractsToCompare` is a designed state, not a failure. The billing calculators are implemented
+   * (D-186); what is missing is an extract record to read a period's inputs from, so there is nothing to
+   * compare against yet (KAFF-500).
+   */
+  readonly expectedState: 'NoExtractsToCompare' | 'Available';
   readonly projectCashNet: string;
   readonly events: readonly ProofEvent[];
   readonly checks: readonly ProofCheck[];

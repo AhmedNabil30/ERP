@@ -6,7 +6,7 @@ namespace Kaff.Api.Features.Treasury.ProofOfNumbers;
 
 /// <summary>The proof screen's whole read. Every amount is a <see cref="Money"/> (a JSON string, D-135).</summary>
 /// <param name="ExpectedState">
-/// <c>CalculatorNotImplemented</c> while the billing calculators are unfinished (a designed state, not a
+/// <c>NoExtractsToCompare</c> while no extract record exists to read a period's inputs from (a designed state, not a
 /// failure), otherwise <c>Available</c>.
 /// </param>
 /// <param name="ProjectCashNet">
@@ -45,7 +45,7 @@ public sealed record ProofColumns(Money Work, Money Hold, Money Advance, Money M
 /// <summary>
 /// One source document (an extract, a collection, a handover) and what its postings did. <c>Expected</c>
 /// and <c>Difference</c> (actual minus expected, computed here and never in the browser) are null while
-/// <see cref="Response.ExpectedState"/> is <c>CalculatorNotImplemented</c>.
+/// <see cref="Response.ExpectedState"/> is <c>NoExtractsToCompare</c>.
 /// </summary>
 public sealed record ProofEvent(
     SourceDocumentType SourceDocumentType,
