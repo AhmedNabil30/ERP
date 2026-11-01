@@ -1432,5 +1432,14 @@
   "extract.input.withholding_base": "وعاء الاستقطاع",
   "projects.action.open_extracts": "المستخلصات — {name}",
   "projects.action.open_proof": "إثبات الأرقام — {name}",
-  "project.links.label": "شاشات المشروع"
+  "project.links.label": "شاشات المشروع",
+  "boq.title": "المقايسة",
+  "boq.loading": "جارٍ تحميل المقايسة…",
+  "boq.empty": "المقايسة لا تحتوي على أي بند.",
+  "boq.frozen_on": "مجمّدة في {date}",
+  "boq.not_frozen": "لم تُجمَّد بعد",
+  "boq.total.pending": "غير محددة بعد: يوجد بند في المقايسة بلا كمية محصورة.",
+  "boq.line.sell_rate": "سعر البيع",
+  "boq.line.total": "الإجمالي",
+  "projects.action.open_boq": "المقايسة — {name}"
 }

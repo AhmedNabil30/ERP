@@ -87,6 +87,16 @@
                     {{ i18n.t('extract.list.title') }}
                   </a>
                 }
+                @if (canOpenBoq(project)) {
+                  <a
+                    class="row-log-link"
+                    [routerLink]="['/projects', project.id, 'boq']"
+                    [attr.aria-label]="i18n.t('projects.action.open_boq', { name: project.name })"
+                    [attr.data-testid]="'project-boq-link-' + project.code"
+                  >
+                    {{ i18n.t('boq.title') }}
+                  </a>
+                }
                 @if (canOpenProof()) {
                   <a
                     class="row-log-link"

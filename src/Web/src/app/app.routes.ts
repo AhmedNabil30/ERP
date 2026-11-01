@@ -9,6 +9,7 @@ import { dailyLogWriteGuard } from './core/auth/daily-log-write.guard';
 import { dayLabourRateManageGuard } from './core/auth/day-labour-rate-manage.guard';
 import { dayLabourSiteManageGuard } from './core/auth/day-labour-site-manage.guard';
 import { departmentManageGuard } from './core/auth/department-manage.guard';
+import { boqReadGuard } from './core/auth/boq-read.guard';
 import { extractReadGuard } from './core/auth/extract-read.guard';
 import { employeeManageGuard } from './core/auth/employee-manage.guard';
 import { mustChangePasswordGuard } from './core/auth/must-change-password.guard';
@@ -265,6 +266,13 @@ export const routes: Routes = [
           import('./features/extracts/extract-detail/extract-detail-page').then((m) => m.ExtractDetailPage),
       },
     ],
+  },
+  {
+    // The BOQ, read-only. Shows cost prices, so gated `ProjectManage` (Owner, Technical Office; assigned).
+    // `boqReadGuard` is convenience; `GET /api/projects/:projectId/boq` checks role and assignment.
+    path: 'projects/:projectId/boq',
+    canActivate: [sessionGuard, mustChangePasswordGuard, boqReadGuard],
+    loadComponent: () => import('./features/boqs/boq-page').then((m) => m.BoqPage),
   },
   {
     // إثبات الأرقام — the proof screen (project-journey study, 2026-10-08). Read-only, Finance and Owner.

@@ -134,6 +134,12 @@ export class ProjectListPage {
     return entry?.permissions.includes('ProjectRead') ?? false;
   }
 
+  /** Mirrors `boqReadGuard`: `ProjectManage` on this project's own session entry. Convenience; the server decides. */
+  protected canOpenBoq(project: ProjectSummary): boolean {
+    const entry = this.auth.current()?.projects.find((row) => row.projectId === project.id);
+    return entry?.permissions.includes('ProjectManage') ?? false;
+  }
+
   /** Mirrors `proofReadGuard`: the company-wide `TreasuryReadCompany`. Convenience; the server decides. */
   protected canOpenProof(): boolean {
     return this.auth.current()?.permissions.includes('TreasuryReadCompany') ?? false;

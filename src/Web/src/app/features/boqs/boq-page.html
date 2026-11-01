@@ -1,0 +1,61 @@
+<section class="boq" data-testid="boq-page">
+  <header class="head">
+    <a class="back" routerLink="/projects"><kaff-icon name="back" />{{ i18n.t('nav.projects') }}</a>
+    <h1 class="title">{{ i18n.t('boq.title') }}</h1>
+    <kaff-project-links [projectId]="projectId()" current="boq" />
+  </header>
+
+  @if (failure(); as key) {
+    <kaff-state mode="refusal" [bodyKey]="key" testId="boq-failure" />
+    <div>
+      <kaff-button variant="secondary" testId="boq-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+    </div>
+  } @else if (loading()) {
+    <kaff-state mode="loading" titleKey="boq.loading" testId="boq-loading" />
+  } @else if (boq(); as data) {
+    <div class="summary">
+      <div class="total">
+        <span class="label">{{ i18n.t('projects.field.contract_value') }}</span>
+        @if (data.total !== null) {
+          <bdi class="figure big" dir="ltr" data-testid="boq-total">{{ amount(data.total) }}</bdi>
+        } @else {
+          <span class="muted" data-testid="boq-total-pending">{{ i18n.t('boq.total.pending') }}</span>
+        }
+      </div>
+      <kaff-badge [tone]="data.frozenOn ? 'accent' : 'brand'">
+        <span data-testid="boq-state">{{ data.frozenOn ? i18n.t('boq.frozen_on', { date: day(data.frozenOn) }) : i18n.t('boq.not_frozen') }}</span>
+      </kaff-badge>
+    </div>
+
+    @if (data.lines.length === 0) {
+      <kaff-state mode="empty" titleKey="boq.empty" testId="boq-empty" />
+    } @else {
+      <ul class="rows" data-testid="boq-lines">
+        @for (line of data.lines; track line.id) {
+          <li class="line" [attr.data-testid]="'boq-line-' + line.position">
+            <div class="what">
+              <span class="desc" dir="auto">{{ i18n.locale() === 'ar' ? line.descriptionAr : (line.descriptionEn ?? line.descriptionAr) }}</span>
+              @if (line.itemCode) {
+                <bdi class="code" dir="ltr" translate="no">{{ line.itemCode }}</bdi>
+              }
+            </div>
+            <dl class="nums">
+              <div>
+                <dt>{{ i18n.t('daily_log.form.quantity') }}</dt>
+                <dd><bdi class="figure" dir="ltr">{{ quantity(line.quantitySurveyed) }}</bdi> <span dir="auto">{{ line.unit }}</span></dd>
+              </div>
+              <div>
+                <dt>{{ i18n.t('boq.line.sell_rate') }}</dt>
+                <dd><bdi class="figure" dir="ltr">{{ amount(line.sellRate) }}</bdi></dd>
+              </div>
+              <div>
+                <dt>{{ i18n.t('boq.line.total') }}</dt>
+                <dd class="strong"><bdi class="figure" dir="ltr">{{ amount(line.lineTotal) }}</bdi></dd>
+              </div>
+            </dl>
+          </li>
+        }
+      </ul>
+    }
+  }
+</section>

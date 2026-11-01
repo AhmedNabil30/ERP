@@ -4,11 +4,11 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 
-type Screen = 'extracts' | 'proof' | 'daily-log';
+type Screen = 'extracts' | 'proof' | 'daily-log' | 'boq';
 
 /**
- * Onward links between the project-scoped screens (extracts, proof, daily log). A link renders only when
- * the session may open its destination, mirroring the route guards: `ProjectRead` and `DailyLogWrite` on
+ * Onward links between the project-scoped screens (extracts, proof, daily log, BOQ). A link renders only when
+ * the session may open its destination, mirroring the route guards: `ProjectRead`, `ProjectManage` and `DailyLogWrite` on
  * this project's own session entry, `TreasuryReadCompany` company-wide (`proofReadGuard`). Absent, never
  * disabled. Convenience only: the server decides every request.
  */
@@ -35,6 +35,7 @@ export class KaffProjectLinks {
       { screen: 'extracts', labelKey: 'extract.list.title', allowed: entry?.permissions.includes('ProjectRead') ?? false },
       { screen: 'proof', labelKey: 'proof.title', allowed: session?.permissions.includes('TreasuryReadCompany') ?? false },
       { screen: 'daily-log', labelKey: 'daily_log.title', allowed: entry?.permissions.includes('DailyLogWrite') ?? false },
+      { screen: 'boq', labelKey: 'boq.title', allowed: entry?.permissions.includes('ProjectManage') ?? false },
     ];
     return all.filter((link) => link.allowed && link.screen !== this.current());
   });

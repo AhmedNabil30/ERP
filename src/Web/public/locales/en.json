@@ -1432,5 +1432,14 @@
   "extract.input.withholding_base": "Withholding base",
   "projects.action.open_extracts": "Extracts — {name}",
   "projects.action.open_proof": "Proof of numbers — {name}",
-  "project.links.label": "Project screens"
+  "project.links.label": "Project screens",
+  "boq.title": "BOQ",
+  "boq.loading": "Loading the BOQ…",
+  "boq.empty": "The BOQ has no lines.",
+  "boq.frozen_on": "Frozen on {date}",
+  "boq.not_frozen": "Not frozen yet",
+  "boq.total.pending": "Not set yet: a BOQ line has no surveyed quantity.",
+  "boq.line.sell_rate": "Sell rate",
+  "boq.line.total": "Total",
+  "projects.action.open_boq": "BOQ — {name}"
 }

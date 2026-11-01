@@ -15,7 +15,7 @@ function session(company: readonly string[], project: readonly string[]): Sessio
   };
 }
 
-function render(current: Session | null, screen: 'extracts' | 'proof' | 'daily-log'): string[] {
+function render(current: Session | null, screen: 'extracts' | 'proof' | 'daily-log' | 'boq'): string[] {
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
@@ -42,6 +42,14 @@ describe('KaffProjectLinks', () => {
     expect(render(session([], ['ProjectRead']), 'proof')).toEqual(['project-link-extracts']);
     TestBed.resetTestingModule();
     expect(render(session([], []), 'extracts')).toEqual([]);
+  });
+
+  it('gates the boq link on ProjectManage for this project, as boqReadGuard does', () => {
+    expect(render(session([], ['ProjectManage']), 'extracts')).toEqual(['project-link-boq']);
+    TestBed.resetTestingModule();
+    expect(render(session([], ['ProjectRead', 'DailyLogWrite']), 'extracts')).toEqual(['project-link-daily-log']);
+    TestBed.resetTestingModule();
+    expect(render(session([], ['ProjectManage']), 'boq')).toEqual([]);
   });
 
   it('gates proof on the company-wide TreasuryReadCompany, as proofReadGuard does', () => {
