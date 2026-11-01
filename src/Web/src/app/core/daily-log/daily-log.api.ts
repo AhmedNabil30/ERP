@@ -127,7 +127,18 @@ export class DailyLogApi {
    */
   async listBoqLines(projectId: string): Promise<BoqLines | null> {
     try {
-      return await firstValueFrom(this.http.get<BoqLines>(`${this.base(projectId)}/boq-lines`));
+      // Decimals arrive as strings on this API ("1180.0000"); the screen formats numbers.
+      const wire = await firstValueFrom(this.http.get<BoqLines>(`${this.base(projectId)}/boq-lines`));
+      const num = (value: number | string | null): number | null => (value === null ? null : Number(value));
+      return {
+        ...wire,
+        lines: wire.lines.map((line) => ({
+          ...line,
+          quantityEstimated: num(line.quantityEstimated),
+          quantitySurveyed: num(line.quantitySurveyed),
+          quantityExecuted: Number(line.quantityExecuted),
+        })),
+      };
     } catch (error) {
       if (error instanceof HttpErrorResponse && error.status === 404) {
         return null;
