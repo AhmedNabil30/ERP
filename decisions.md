@@ -15544,3 +15544,89 @@ and no Angular. The other nine journey moments with no permission row are untouc
 `TreasuryReadCompany` in `Permission.cs` were noticed and left: D-173 answered Q90 and the catalogue
 rows and the pinned unresolved set both reflect the answer, so the XML comments are the only thing out
 of date, and editing them is not this ruling's business.
+
+### D-190 · Backend — the extract's cash leg moves to collection, and D-186 item 5 is corrected · 2026-11-01
+
+**Supersedes one sentence of `D-186` item 5.** That item reads: "`ExtractPostings` collects
+`NetPayable - withheld` in cash and posts the rest to `TaxWithheldAtSource`, **which `Posting.Create`
+may refuse: that account pair is still pending Q91**." The emphasised clause is wrong, and it was
+wrong when it was written. `D-186`'s text is not edited — this entry replaces that clause.
+
+**Nothing refuses it.** `PostingAccountLegality.Validate` applies rules 2-7 (restricted ledger
+accounts) and rule 8 (a non-cash type must not touch a cash instrument). `AccountType.TaxWithheldAtSource`
+is not a restricted ledger, `AccountType.ClientReceivable` is not either, `PostingTypes` classifies
+`PostingType.TaxWithheldAtSource` as `PostingNature.NonCash`, and neither account is `Safe` or `Bank`.
+So the pair passes every rule in the table and the posting succeeds silently on a pair nobody confirmed.
+`PendingQ91` is a register, not a gate — it is read by `PostingAccountLegalityTests`, never by
+`Validate` — so being on it still would not have refused anything. **A decision record that misstates
+what the code does is worse than the gap it describes**, because the next reader stops looking.
+
+**And the register did not list the pair at all.** `PostingType.TaxWithheldAtSource` appeared zero times
+in `PostingAccountLegality`. Its own remark says `PendingQ91` exists "so `Q91` has a concrete list to
+answer rather than a vague 'some types'", and it omitted a pair `D-186` itself knew was pending — a
+register reporting a coverage it did not have. `PostingType.TaxWithheldAtSource` is now a member, with
+the reason in the remark, and the pinned set in `PostingAccountLegalityTests` moved in the same commit.
+This changes no behaviour: `Validate` does not read the list.
+
+**The timing defect this was found alongside.** `ExtractPostings.Build` wrote one posting set at the
+stage `RulingSet.ExtractPostingMoment` names (`OwnerApproval` by default), and the `ClientCollection`
+and `TaxWithheldAtSource` legs were inside it. `spec.md` §7's chain is
+`→ Owner approval → Issued → Collected`, so the client's cash was crossing into the safe two stages
+early. `ClientCollection` is `PostingNature.Cash`, so it was real cash: the safe was credited with money
+the client had not paid, and the **safe floor is a database constraint evaluated against the summed
+postings**, so it was measured against a balance containing cash nobody received and a payment out could
+pass that should have been refused. `ClientReceivable` also netted to zero at approval, so the receivable
+ledger never showed what the client owed.
+
+`Build` is replaced by `BuildAccrual` (revenue recognition, hold accrual, client-advance recovery,
+تشوينات issue and recovery — no cash account touched, the net payable left standing as a debit in
+`ClientReceivable`) and `BuildCollection` (the `ClientCollection` and `TaxWithheldAtSource` legs,
+refused at any stage other than `ExtractStage.Collected`).
+
+**`ExtractStage.Collected` is hard-coded in `BuildCollection` deliberately, and that is not an invented
+rule.** `spec.md` §7 answers it. `CLAUDE.md`'s instruction is to ask when `spec.md` is silent; it is not
+silent here, and modelling an answered question as a ruling would misreport it as assumed. §15 is not in
+conflict: it constrains the amounts and says nothing about when the cash arrives.
+
+**`ExtractPostingMoment` was named for one moment and now governs one of two.** `PostsAt`/`PostsOn`/
+`HasPostedBy` become `AccruesAt`/`AccruesOn`/`HasAccruedBy`; the doc comment and the `RulingNote` say
+that the rule moves the accrual only and that the collection is §7's answer. Its old promise — "Every
+caller asks `PostsOn` or `HasPostedBy` and nothing else names a stage" — was made false by
+`BuildCollection`, so the promise is rewritten rather than left misdescribing the code. The type name,
+`RulingNote.Name` and the proof screen's `extractPostingMoment` key are unchanged, so the register key
+does not move. **When an extract accrues is still Karim's question and is still the one line in
+`ExtractPostingMoment.Default`.**
+
+**The test is the deliverable.** `Section15ThroughCalculatorTests` was green while the sequence was two
+states early, and stays green after the split with every §15 figure unchanged — a totals-only assertion
+nets a timing error out, which is why this survived four months. `ExtractPostingTimingTests` asserts the
+stages instead: the approval set contains no `ClientCollection` leg and touches no safe account, the
+receivable carries exactly the net payable between approval and collection, the collection set is what
+credits the safe and clears the receivable, the cash leg is refused at all four earlier stages, and the
+withholding leg rides the collection rather than the accrual. **Measured against the unchanged production
+code it failed 4 of 4**; the first assertion to go red was the approval set containing a
+`PostingType.ClientCollection` leg. After the split, Domain.Tests is 402 of 402.
+
+**Questions, named and not answered**
+
+- **Karim:** at which stage does an extract accrue? Still unruled, still `OwnerApproval`.
+- **Karim / Q91:** the account pair for `TaxWithheldAtSource`. The code posts
+  `ClientReceivable → TaxWithheldAtSource` and nothing confirms it.
+- **Karim:** a partial collection. `BuildCollection` posts the whole net payable in one set, because
+  `spec.md` §7 says "Collected" and nothing about instalments. If a client pays an extract in parts, the
+  shape of this set changes and `KAFF-316` owns it.
+- **Karim:** does reaching `Collected` require the money actually received, or is it a clerical state? The
+  two differ the moment a cheque is involved (`spec.md` §13), and `KAFF-316` owns the cheque states.
+
+**Not done, deliberately:** no endpoint, no handler, no `Extract` entity, no state machine, no migration
+and no Angular — `KAFF-500` still has its whole chain to build, and `KAFF-316` still owns the collection
+endpoint that will call `BuildCollection`. No reversal path for a rejection after the accrual stage. No
+Cost Plus or Design posting builder. The repository-wide `dotnet format` failure described in the gates
+below is untouched.
+
+**Gates:** build clean, 0 warnings, 0 errors. Domain.Tests 402 of 402 (398 before, 4 new). Api.Tests
+732 of 732. `dotnet format --verify-no-changes` is **not** clean and was not clean before this work: it
+reports 2,099 errors across 33 files, almost all `ENDOFLINE` on files this change never touched (the
+`DailyLogs` feature folders, `KaffDbContext`, `BoqLine`, `Bab`, plus `CHARSET` and `IMPORTS` on the
+`ProofOfNumbers` feature). It is a pre-existing CRLF/LF split in the tree, not a regression here, and
+fixing it would touch 33 unrelated files; it is reported rather than silently absorbed.

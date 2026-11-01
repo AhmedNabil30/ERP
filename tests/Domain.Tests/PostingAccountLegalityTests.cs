@@ -196,6 +196,12 @@ public sealed class PostingAccountLegalityTests
             PostingType.ChequeDeposit,
             PostingType.ChequeClearance,
             PostingType.ChequeBounce,
+
+            // Found by the KAFF-500 read of the extract chain, 2026-11-01. D-186 recorded this pair
+            // as pending Q91 while this list omitted it; spec.md §6.7 names no pair for it, and rules
+            // 2-8 do not refuse ClientReceivable -> TaxWithheldAtSource, so it posts today on an
+            // unconfirmed pair.
+            PostingType.TaxWithheldAtSource,
         ];
 
         PostingAccountLegality.PendingQ91.Should().BeEquivalentTo(expected);

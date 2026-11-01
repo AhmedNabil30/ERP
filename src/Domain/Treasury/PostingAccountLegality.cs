@@ -88,6 +88,17 @@ public static class PostingAccountLegality
     /// <see cref="PostingType.ChequeBounce"/> — no <see cref="AccountType"/> represents a cheque in
     /// hand or in transit; the 34-member catalogue has nowhere for these three to land.</item>
     /// </list>
+    /// <para><b>Added 2026-11-01, from the KAFF-500 read of the extract chain:</b></para>
+    /// <list type="bullet">
+    /// <item><see cref="PostingType.TaxWithheldAtSource"/> — spec.md §6.7 is the whole of withholding
+    /// ("two fields and two accounts") and does not name the pair. <c>D-186</c> already recorded this
+    /// pair as pending <c>Q91</c> while this list omitted it, so the list reported a coverage it did
+    /// not have. <c>ExtractPostings.BuildCollection</c> posts
+    /// <see cref="AccountType.ClientReceivable"/> to <see cref="AccountType.TaxWithheldAtSource"/>,
+    /// which rules 2-8 do not refuse — the type is non-cash and neither account is a restricted
+    /// ledger — so the posting succeeds today on an unconfirmed pair. Listing it here does not change
+    /// that; it makes the gap visible to Q91, which is this list's whole job.</item>
+    /// </list>
     /// <para>
     /// <see cref="PostingType.Adjustment"/> is deliberately NOT on this list. Its own remark says it is
     /// a catch-all by design ("Any other movement covered by the single Adjustment object"), which is
@@ -105,6 +116,7 @@ public static class PostingAccountLegality
         PostingType.LoanDrawdown,
         PostingType.PeriodCloseTransfer,
         PostingType.YearEndProfitTransfer,
+        PostingType.TaxWithheldAtSource,
     ]);
 
     /// <summary>
