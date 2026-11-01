@@ -234,3 +234,23 @@ its stored gate history, the frozen state machine, the EF mapping and migration 
 `AC-500-A` and `AC-500-B` are proven in `Section15ThroughExtractChainTests`, carrying each extract to `Collected`.
 `AC-500-C`, `D`, `E`, `F`, `G` and `H` are proven at domain level in `ExtractChainTests`. `AC-500-I`, `J` and `K`
 need the endpoint and document slices and are not done. This story's trailer stays `READY`: stages 2 and 3 remain.
+
+## Build notes (2026-11-01, stage 2 of 3: the endpoints)
+
+Built in `src/Api/Features/Extracts/`, recorded in `D-194`. Tests in `tests/Api.Tests/Features/Extracts/ExtractEndpointTests.cs`.
+Every route is `/api/projects/{projectId}/extracts...` and is gated with `ProjectScope.FromRoute()`, so role and assignment are both required.
+
+| Route | Permission |
+|---|---|
+| `POST /extracts` (prepare) | `ExtractPrepare` |
+| `POST /extracts/{id}/qc-report` | `ExtractQcReportSubmit` (Supervisor level; unresolved holder) |
+| `POST /extracts/{id}/technical-approval` | `QuantityGateApprove` |
+| `POST /extracts/{id}/deductions` | `ExtractDeductionsApply` (Finance alone) |
+| `POST /extracts/{id}/owner-approval` | `FinancialMovementApprove` |
+| `POST /extracts/{id}/issue` | `FinancialMovementApprove` (assumed: no row exists for issuing) |
+| `POST /extracts/{id}/technical-rejection`, `accounts-rejection`, `owner-rejection` | the permission of the gate rejected at |
+| `GET /extracts`, `GET /extracts/{id}` | `ProjectRead`; money in the body only for holders of 73, 74 or 33 |
+
+`AC-500-I`, `J` and `K` are proven over HTTP, and `AC-500-A`, `C`, `D`, `F`, `G` and `H` are exercised through the routes.
+Not done: `Collect` (`KAFF-316`), `ReleaseHeldPortion`, revising a rejected extract's evidence, and all Angular. This story's
+trailer stays `READY`: stage 3 remains.

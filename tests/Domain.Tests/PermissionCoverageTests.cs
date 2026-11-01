@@ -51,9 +51,9 @@ public sealed class PermissionCoverageTests
         // Permission.SupplierManage left this list on 2026-08-26 (KAFF-105a): it is one of
         // Finance's CompanyWide rows GET /api/auth/me reports, and Finance_holds_a_flat_set_of_its_company_wide_permissions
         // (tests/Domain.Tests/PermissionEvaluatorTests.cs) names it.
+        // Permission.ExtractPrepare and Permission.QuantityGateApprove left this list on 2026-11-01 (KAFF-500 stage 2):
+        // Api.Tests/Features/Extracts/ExtractEndpointTests.cs names both and pins the routes they gate.
         Permission.OpportunityManage,   // slice 4 — the spine
-        Permission.ExtractPrepare,      // slice 5 — billing
-        Permission.QuantityGateApprove, // slice 5
     ];
 
     [Fact]

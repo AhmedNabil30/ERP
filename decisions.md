@@ -15742,3 +15742,67 @@ duties, rejection at each gate, reversal, partial approval, stopped project), `S
 **Not done.** No endpoint, no handler, no permission wiring, no Angular. The document assembly step
 (`ExtractDocumentAssemble`) is not an aggregate method. No database guard makes `extract_gate_records` append-only.
 The extract's number is supplied by the caller; nothing allocates it.
+
+### D-194 · Backend — the extract endpoint slices (KAFF-500 stage 2) · 2026-11-01
+
+**Built.** `src/Api/Features/Extracts/`: `PrepareExtract`, `SubmitQcReport`, `ApproveTechnicalOffice`, `ApplyDeductions`,
+`ApproveExtractAsOwner`, `IssueExtract`, `RejectExtract` (three routes), `GetExtract`, `ListExtracts`, plus `ExtractSupport`
+(the shared step runner) and `ExtractResponse` (the read model). No new `Permission` row, no migration, no new check
+constraint (`RequiredCheckConstraints` stays 37). Routes and gates are in the KAFF-500 story's stage 2 build note.
+
+**The step runner.** Every step opens a transaction, takes `SELECT ... FOR UPDATE` on the extract row, loads it, calls the
+aggregate method and commits the postings and the status change in one `SaveChangesAsync`. The lock stops two concurrent
+approvals both passing the state check and posting twice. The non-negative-balance guard is a deferred constraint trigger
+and fires at COMMIT, so the commit is inside the same guard translation as the save. A refusal rolls everything back
+(no posting, no status change), disposes the transaction, then reads the balances of the touched accounts as they then
+stand and returns them with the error (`balances` extension). AC-500-K.
+
+**Ledger balances** for the calculator come from `BalanceQueries.GetLedgerBalances` over the `account_balances` view, which
+sums postings. No balance is stored or read from a column.
+
+**Rejection reversal.** The reject handler loads the extract's standing accrual postings (not reversals, not already
+reversed) and hands them to `Extract.Reject`, which writes mirror postings through `Posting.Reverse`. Under the default
+ruling (accrual at Owner approval) a rejection from any rejectable state writes no posting, because nothing has accrued; the
+reversal path is reachable over HTTP only if the ruling moves earlier, and is tested with the ruling set to Accounts.
+
+**Prepare derives, it does not accept.** Cumulative certified work is the sum over the frozen BOQ's lines of
+`ContractValueSource.LineTotal(SellRate, QuantityExecuted)`. The only money the request carries is the two material values
+(a daily-log material entry has a quantity and no value). Previously certified work is the last extract's cumulative.
+
+**Number allocator.** Highest number in the project plus one. The unique index `ux_extracts_project_number` is the enforcement
+of record; the loser of a race gets `extract.number_taken` (409) and retries. No sequence table was added.
+
+**Rejection routes.** One endpoint can declare one permission, and the permission to reject is the permission to decide at
+that gate, so rejection has three routes (`technical-rejection`, `accounts-rejection`, `owner-rejection`) sharing one handler.
+A route called for an extract that is not waiting at its gate is refused with `extract.not_waiting_at_this_gate`.
+
+**What `ExtractDocumentAssemble` (73) gates.** The aggregate has no assembly method and the story's chain has no assembly
+status, so 73 gates nothing that writes. It is one of the three permissions that let a caller see the extract's money (the
+quantity evidence and the six-figure document): Technical Office via 73, Finance via 74, Owner via 33. A site engineer who
+prepared the extract holds none of them and gets `evidence: null, document: null`. This is a reading of D-189, not a ruling.
+
+**The read model leaves controls out.** `actions` is computed per caller: permission on the route's project, AND the state
+machine, AND `Extract.EnsureMayDecide(caller)` at a decision gate. A flag that is false means the control is absent, not
+disabled. `callerMayDecide` is the bare separation-of-duties answer so a screen can say why.
+
+**The document.** Six figures (work value, hold this period, hold to date, advance recovered, material advance, net payable),
+each with a kind (Calculated, Entered, Carried) and a derivation list whose inputs declare their own kind and source. The
+material advance figure is the issue less the recovery, one row, with both legs in its derivation. `foots` is computed from
+the printed rows as printed, never copied from the calculator, and the net is compared by exact `Money` equality at the
+ruled decimals. Hold to date carries the previous ledger figure with source `ledger.hold`.
+
+**Assumptions made, none ruled, all reversible.**
+1. `IssueExtract` is gated by `FinancialMovementApprove` (the Owner). No permission row exists for issuing, and adding one is
+   an Architect act. Issue is not a separation-of-duties gate (D-193).
+2. One extract in flight per project: preparing another is refused with `extract.another_extract_open` until the last is
+   issued. Registered as `RulingSet.ExtractPreparationScope`, Assumed.
+3. The material values are entered by the preparer. Same ruling note.
+4. A Lump Sum project has no revenue account (`ProjectAccountSetFactory` opens none for it), so the first step that posts
+   opens `{project code}-REV` through `Account.Create`. If a step that does not post also needs the context (rejection),
+   the account is opened there too.
+5. The safe is the first active `Safe` account by code. The system has no per-project safe and does not say which safe an
+   extract belongs to; only collection (`KAFF-316`) will use it.
+
+**Not done.** `Collect` has no endpoint (`KAFF-316` owns it). `ReleaseHeldPortion` has no endpoint (no permission names who
+closes an NCR, and no NCR entity exists). No endpoint revises a rejected extract's evidence: a rejected extract returns to
+Draft with the same quantities, and `Extract` has no method to re-derive them. No Angular.

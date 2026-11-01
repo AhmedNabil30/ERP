@@ -34,6 +34,9 @@ public sealed record RulingSet
     /// <summary>What a partial Technical Office approval scales and how its held remainder is billed. Registered, not resolved.</summary>
     public ExtractPartialApprovalScope ExtractPartialApprovalScope { get; init; } = ExtractPartialApprovalScope.Default;
 
+    /// <summary>How the next extract's evidence is assembled. Registered, not resolved.</summary>
+    public ExtractPreparationScope ExtractPreparationScope { get; init; } = ExtractPreparationScope.Default;
+
     /// <summary>Who submits an extract's weekly QC report. Enforced in the permission catalogue.</summary>
     public ExtractQcReportAuthor ExtractQcReportAuthor { get; init; } = ExtractQcReportAuthor.Default;
 
@@ -50,6 +53,7 @@ public sealed record RulingSet
         DailyLogProjectStates.Note,
         SiteExpenseDraftAmount.Note,
         ExtractPartialApprovalScope.Note,
+        ExtractPreparationScope.Note,
         ExtractQcReportAuthor.Note,
     ];
 }

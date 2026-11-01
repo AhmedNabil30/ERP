@@ -3,7 +3,9 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Kaff.Api.Authorization;
 using Kaff.Api.Tests.Infrastructure;
+using Kaff.Domain.Authorization;
 using Kaff.Domain.Boqs;
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
@@ -14,7 +16,9 @@ using Kaff.Domain.Projects;
 using Kaff.Domain.Rulings;
 using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -84,6 +88,62 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         }
 
         (await SendAsync(HttpMethod.Post, route, _prepEngineer, body)).StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
+    /// <summary>
+    /// The route-to-permission map, read from the endpoints the host actually built (the same source
+    /// <c>EndpointPermissionCoverageTests</c> uses), so a route re-pointed at another permission is red. D-189 rules
+    /// these gates; the Owner reuses <c>FinancialMovementApprove</c> and no new catalogue row exists.
+    /// </summary>
+    [Fact]
+    public void Each_extract_route_requires_the_permission_D_189_rules_and_the_route_project()
+    {
+        Dictionary<string, Permission> expected = new()
+        {
+            ["POST /api/projects/{projectId:guid}/extracts"] = Permission.ExtractPrepare,
+            ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/qc-report"] = Permission.ExtractQcReportSubmit,
+            ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/technical-approval"] = Permission.QuantityGateApprove,
+            ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/technical-rejection"] = Permission.QuantityGateApprove,
+            ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/deductions"] = Permission.ExtractDeductionsApply,
+            ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/accounts-rejection"] = Permission.ExtractDeductionsApply,
+            ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/owner-approval"] = Permission.FinancialMovementApprove,
+            ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/owner-rejection"] = Permission.FinancialMovementApprove,
+            ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/issue"] = Permission.FinancialMovementApprove,
+            ["GET /api/projects/{projectId:guid}/extracts"] = Permission.ProjectRead,
+            ["GET /api/projects/{projectId:guid}/extracts/{id:guid}"] = Permission.ProjectRead,
+        };
+
+        Dictionary<string, PermissionRequirement> actual = [];
+        foreach (EndpointDataSource source in _factory.Services.GetServices<EndpointDataSource>())
+        {
+            foreach (RouteEndpoint route in source.Endpoints.OfType<RouteEndpoint>())
+            {
+                string? pattern = route.RoutePattern.RawText;
+                if (pattern is null || !pattern.Contains("/extracts", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                foreach (string method in route.Metadata.GetMetadata<Microsoft.AspNetCore.Routing.HttpMethodMetadata>()!.HttpMethods)
+                {
+                    foreach (IAuthorizeData data in route.Metadata.OfType<IAuthorizeData>())
+                    {
+                        if (PermissionRequirement.TryParse(data.Policy ?? string.Empty, out PermissionRequirement? requirement)
+                            && requirement is not null)
+                        {
+                            actual[$"{method} {pattern}"] = requirement;
+                        }
+                    }
+                }
+            }
+        }
+
+        actual.Keys.Should().BeEquivalentTo(expected.Keys, "every extract route is gated, and no other extract route exists");
+        foreach ((string key, Permission permission) in expected)
+        {
+            actual[key].Permission.Should().Be(permission, key);
+            actual[key].Scope.Should().Be(ProjectScope.FromRoute(), $"{key} checks the assignment to the route's project");
+        }
     }
 
     [Fact]
