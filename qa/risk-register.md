@@ -37,6 +37,7 @@ withholding rate left the client record).
 | **RSK-18** | **The duplicate-client control moved from a database constraint to a human reading a warning** | **1** | **High — accepted** |
 | **RSK-19** | **An unauthenticated endpoint creates the Owner** | **1** | **High** |
 | **RSK-20** | **`SetWithholding` trusts a client kind the caller supplies** | **4** | **High** |
+| **RSK-21** | **A green suite cannot tell a reachable primary action from an unreachable one** | **6** | **Medium** |
 
 ---
 
@@ -544,5 +545,19 @@ the suite that can detect this, and it runs against KAFF-416.
 **A cheaper structural fix exists and is not QA's to choose:** have the handler load the `Client` row
 and pass `client.Kind`, and make that the only construction the code review accepts — or move the
 lookup behind a domain service. Raised as `qa/questions.md` **F-25**.
+
+---
+
+## RSK-21 · A green suite cannot tell a reachable primary action from an unreachable one
+
+**Slice 6** (`KAFF-600`, `AC-600-K1`), and every screen with a pinned footer.
+
+**What could go wrong.** The daily log shipped with its only Save button below the fold at 390px, and `ng test` was 255/255 green throughout. After the fix in `1a0321c` it is 255/255 again. The suite cannot distinguish the two states. Root cause, measured in a real browser: `.daily-log` carried `overflow-x: hidden`, which makes it a scroll container, so the sticky `.footer` stuck to a box that never scrolls. Save measured y=888 to 936 while the visible main region ended at y=819. `1a0321c` changed it to `overflow-x: clip`, and no test accompanies that change.
+
+**Why nothing else catches it.** The Angular unit suite runs in jsdom, which does no layout. A sticky or scroll-container defect cannot be reproduced there. `worker-register-page` has the same private sticky `.footer` pattern and is unmeasured. `KAFF-936` will migrate both screens onto a shell slot, so any check tied to the current markup would not outlive it.
+
+**This is a pattern, not a screen.** It is the same shape as `V-38-L` (`qa/slice-2/verification-2026-09-12-batch.md`), where no E2E test was written for a batch and every story was capped at `CONDITIONAL`. The request called this the fifth standing E2E gap; only `V-38-L` was verified by reading, so the count is not asserted here. The risk is that layout correctness is checked only where someone happens to take a screenshot.
+
+**The tests that must exist.** `TC-6-001` (daily log) and `TC-6-002` (worker register) in `qa/slice-6/test-cases.md`: position and hit-testing against the visible region at 390px, not a CSS property, with `TC-6-004` as the positive control. They are **not runnable today**: `tests/E2E.Tests/` has the Playwright harness but no seeded user, project or test class for either screen. Until they run, this risk is open.
 
 ---
