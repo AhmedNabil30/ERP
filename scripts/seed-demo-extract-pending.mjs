@@ -88,11 +88,35 @@ async function recordWork() {
   console.log(`${made} quantity entries created (round ${round})`);
 }
 
+// The evidence of an extract is a snapshot taken at prepare time, and only ReviseEvidence (D-195) re-derives it,
+// and only after a rejection. So an extract prepared with no new work is sent through one real rejection: the site
+// supervisor submits the QC report, the Technical Office rejects with a stored reason, the engineer revises the
+// evidence. It ends back in Draft at the first gate; the audit trail shows that one honest rejection.
+async function reviseEvidence(id, alreadyRevisable) {
+  const url = `${extractsUrl}/${id}`;
+  if (!alreadyRevisable) {
+    const sup = await session('site_sup_demo', 'Demo#Sup1New');
+    const q = await sup('POST', `${url}/qc-report`);
+    if (q.status >= 300) throw new Error(`qc-report ${q.status} ${q.text}`);
+    const tech = await session('tech_office_demo', 'Demo#Tech1New');
+    const r = await tech('POST', `${url}/technical-rejection`, { reason: 'demo: refresh evidence with the work recorded since preparation' });
+    if (r.status >= 300) throw new Error(`technical-rejection ${r.status} ${r.text}`);
+  }
+  const zero = { amount: 0, currency: 'EGP' };
+  let v = await eng('POST', `${url}/evidence-revision`, { materialValueOnSite: 0, materialInstalled: 0 });
+  if (v.status === 400) v = await eng('POST', `${url}/evidence-revision`, { materialValueOnSite: zero, materialInstalled: zero });
+  if (v.status >= 300) throw new Error(`evidence-revision ${v.status} ${v.text}`);
+  console.log('evidence revised after one rejection');
+}
+
 if (open.length) {
   // An open extract that was prepared with no new work (cumulative equals previous) is topped up with this round's deltas.
   const d = await owner('GET', `${extractsUrl}/${open[0].id}`);
   const ev = d.json?.evidence;
-  if (open[0].status === 'Draft' && ev && Number(ev.cumulativeCertifiedWork) === Number(ev.previouslyCertifiedWork)) await recordWork();
+  if (open[0].status === 'Draft' && ev && Number(ev.cumulativeCertifiedWork) === Number(ev.previouslyCertifiedWork)) {
+    await recordWork();
+    await reviseEvidence(open[0].id, d.json?.actions?.reviseEvidence === true);
+  }
   console.log(`0 created, ${open.length} existed (open extract #${open[0].number} ${open[0].id} is ${open[0].status})`);
   process.exit(0);
 }

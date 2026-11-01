@@ -100,7 +100,7 @@ Before the accounts step nobody sees figures: the page says "تظهر الأرق
 
 Extract 3 (`/projects/01a0de49-4a8c-7707-b19a-0f7592bbfdb0/extracts/01a19942-f102-77a9-bdfa-121670ae7ab7`) is parked as مسودة at the first gate. I did not click any gate on it. Walk it with the same five people in the same order as step 5; the buttons and statuses are the same.
 
-Be warned about its figures. It was prepared straight after extract 2 was issued, so it carries no new work: the evidence reads cumulative certified 110,734.65 and previously certified 110,734.65. I expect work value 0.00, hold 0.00 and net 0.00 at the accounts step. I did not verify that, because verifying means clicking the gates. If you want a pending extract with real figures, it needs a rejection and a revision (see "Not ready"), or a decision from you on how you want the demo reset.
+Its figures. Extract 3 was first prepared with no new work, so its evidence read cumulative certified 110,734.65 and previously certified 110,734.65. I then sent it through one real rejection and a revision (the Technical Office rejected it with the reason "demo: refresh evidence with the work recorded since preparation", then the engineer revised the evidence, which re-derives it from the BOQ). Its evidence now reads cumulative certified 220,237.65 and previously certified 110,734.65, read from the API. It is back in مسودة at the first gate, and I clicked no gate after the revision. The figures document does not exist until the accounts step, so the page shows none before then. At the accounts step I expect work value 109,503.00 (220,237.65 minus 110,734.65, my arithmetic), hold this period 21,900.60 and net payable 87,602.40, the same as extract 2. The hold and net are my arithmetic (20 percent of the work value), not read from the server, so compare them with what you see. The audit trail on extract 3 will show one rejection with its reason and one "EvidenceRevised" entry before your clicks. That is honest history, not a fault.
 
 ### Step 7. The issued document, as Owner (extract 2)
 
@@ -160,7 +160,7 @@ On the issued document (step 7), the "العمود المطبوع" block adds th
 
 ## 6. Not ready (things I could not walk or that do not work)
 
-- Extract 3 has no new work, so the gates can be walked but the figures will be zero (step 6). A pending extract with real figures would need a reject-and-revise on extract 3; I did not do that, because it means clicking the gates.
+- Extract 3 carries one rejection and one evidence revision on its audit trail (see step 6). I did the rejection to give it real figures. I did not click any gate after that.
 - I did not press حفظ on the daily log (it would change the next extract). I did not click رفض مع ذكر السبب at any gate (it would send the extract back and consume it).
 - The daily log's other tabs (عمالة، خامات) and the day-labour pages were not walked.
 - Phone-width screens other than the daily log and the project list were not measured.
@@ -170,7 +170,7 @@ On the issued document (step 7), the "العمود المطبوع" block adds th
 - The Owner's project list shows a second project, مشروع KAFF-934 (1,000,000.00, لم تبدأ). It looks like a test leftover, not a demo project.
 - Each project row has one link with no visible text, pointing to `/projects/<id>/day-labour`. I could not see it on screen.
 - The proof page's five checks are all "لم يُحكم بعد" and the expected row is unavailable, so for now the page proves the actual postings add up, not that they match the contract rules.
-- The pending-extract seeding script could not make a second extract with new work. It reused the first run's quantity ids, so extract 3 was prepared with nothing new. I changed the script so each new extract gets fresh quantities (commit `03d5755`). The extract's evidence is a snapshot taken when it is prepared, so the fix helps the next extract; it does not change extract 3.
+- The pending-extract seeding script could not make a second extract with new work. It reused the first run's quantity ids, so extract 3 was prepared with nothing new. I fixed the ids (commit `03d5755`), and the script now also sends such an extract through a reject-and-revise so its evidence picks up the new work. That is how extract 3 got its figures.
 
 ## 8. Things I changed for you
 
