@@ -29,6 +29,9 @@ public sealed record RulingSet
 
     public DailyLogProjectStates DailyLogProjectStates { get; init; } = DailyLogProjectStates.Default;
 
+    /// <summary>Who submits an extract's weekly QC report. Enforced in the permission catalogue.</summary>
+    public ExtractQcReportAuthor ExtractQcReportAuthor { get; init; } = ExtractQcReportAuthor.Default;
+
     /// <summary>Every entry, each describing itself. A test pins that none is missing a question.</summary>
     public IReadOnlyList<RulingNote> Notes =>
     [
@@ -40,5 +43,6 @@ public sealed record RulingSet
         PostingProjectStates.Note,
         DailyLogQuantityEntry.Note,
         DailyLogProjectStates.Note,
+        ExtractQcReportAuthor.Note,
     ];
 }

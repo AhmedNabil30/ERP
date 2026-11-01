@@ -15413,3 +15413,134 @@ client-visible default (`KAFF-606`).
 writing this entry or the story's build note. Both were written afterwards by the coordinator from the
 committed code, and the gate figures above were re-run rather than taken from the agent's report. The
 code was read before it was committed; it was not committed on the agent's word.
+
+### D-189 · Architect — four extract-chain permission moments ruled: three new rows, and one reuse argued rather than assumed · 2026-11-01
+
+`KAFF-500` question 5: "Thirteen journey moments have no permission row at all, and this story needs
+four of them: the Accounts deductions step, assembling the client extract document, the QC report, and
+the Owner's extract approval." Backend cannot build the chain without knowing which capability each
+endpoint requires, and a guessed holder on a money gate is the most expensive kind of invention
+available here. This entry rules all four. Three become rows; the fourth does not, and the reason is
+argued below rather than left as a silent omission.
+
+No endpoint, handler or migration is part of this ruling — the enum, the catalogue, one rulings entry
+and the tests that pin them, and nothing else.
+
+**§1 — `ExtractDocumentAssemble = 73`. `ProjectScoped`. Technical Office. Not `TouchesMoney`.**
+
+`spec.md` §7 names the actor in so many words: *"The Technical Office assembles the client extract
+document. The supervising engineer confirms field quantities."* So the holder was never open; what was
+open is whether it needed a row of its own.
+
+It does, and the row it is not is `ExtractPrepare`. `spec.md` §7's first step is the site engineer
+preparing quantities, and the catalogue grants `ExtractPrepare` to any assigned engineer. Folding
+assembly into it would let the engineer who recorded the quantities also produce the document that
+bills them — two actors `spec.md` separates by name in one sentence, merged back together by a
+convenience.
+
+Not `TouchesMoney`, and this is the half of the row that `spec.md` §9 decides outright: *"Technical
+Office gates quantities, never money."* Assembly derives the document from the frozen BOQ's values and
+the executed quantities. It writes no posting, authorises no movement, and computes none of the
+deductions — hold, تشوينات recovery, advance recovery and withholding are §2's row, which the Technical
+Office does not hold. The reading is `CataloguePriceEdit`'s (D-177 §3): a derived figure on a document
+is not a posting. Marking this row `TouchesMoney` would enter the Technical Office in the catalogue as
+an actor on money, which is the one thing §9 forbids it.
+
+Project-scoped without qualification: an extract is always one project's, so there is nothing here like
+the `ProjectCreate`/`ProjectManage` problem of D-055 §3, where the request could not name a project.
+
+**§2 — `ExtractDeductionsApply = 74`. `ProjectScoped`. Finance alone. `TouchesMoney`.**
+
+`spec.md` §7 puts *"Accounts (deductions, hold, advance recovery)"* between the quantity gate and the
+Owner's approval, and §9 reserves money to Finance and the Owner. Finance holds it.
+
+**Why not reuse `FinancialMovementPrepare`,** which is already Finance, already project-scoped and
+already `TouchesMoney`. Its spec reference is §9 alone, and the sentence behind it — *"Finance prepares
+and disburses"* — is about preparing a movement of cash that `FinancialMovementDisburse` then pays out.
+The Accounts step pays nothing and disburses nothing: it fixes the deduction figures on a billing
+document the Owner has not yet approved. Keeping them one row would mean that a later ruling about who
+may compute deductions could not be made without also moving who may prepare a disbursement, and §9
+subdivides Operations into Technical, Financial and Administrative precisely because those are
+separable. This is the split of D-055 §1 (`ProjectFinancialsEdit` off `ProjectManage`) and D-147
+(`SubcontractorTaxRegistrationEdit` off `SubcontractorManage`): one actor needs one act, and the broader
+row would hand over more than was asked.
+
+`TouchesMoney` is not arguable: the figures this step sets become the hold accrual, the advance recovery
+and the withholding on the extract's postings.
+
+**The Owner is deliberately absent from this row, and that absence is load-bearing.** The Owner holds
+`FinancialMovementApprove`. Adding the Owner here would make the Owner the only user in the system able
+to hold both ends of §7's chain, and `CLAUDE.md`'s "nobody creates and approves the same movement" is
+cheaper to honour by never granting both than by relying on a handler's comparison of the stored actor.
+The handler must still make that comparison — `AC-500-D` is about two different users of the same role,
+which no grant list can prevent — but the catalogue should not be the thing that creates the case.
+Pinned by `Only_finance_applies_an_extracts_deductions_and_it_touches_money`, which asserts that this
+row's grants and `FinancialMovementApprove`'s do not intersect.
+
+**§3 — `ExtractQcReportSubmit = 75`. `ProjectScoped`. The supervising engineer. Not `TouchesMoney`.
+UNRESOLVED — registered as an assumption, not ruled.**
+
+`spec.md` §7 names *"weekly QC report"* as the second step of the chain, and §14's extract machine has
+the `QC` state. **Neither §7 nor §9 says who performs it.** So this is not ruled; it is registered, the
+way `PeriodClose` has been registered since D-012, with `Unresolved: true` on the row, a running default
+that lets the chain run, and `Rulings/ExtractQcReportAuthor.cs` carrying the question into
+`RulingSet.Notes` so it is listed beside every other unruled rule.
+
+The running default is the supervising engineer on the project. §7's own sentence pairs the Technical
+Office's assembly of the document with *"the supervising engineer confirms field quantities"*, and §9
+makes the supervisor the actor who submits what juniors draft — the same grant `DraftSubmit` uses.
+
+The two rejected candidates matter more than the chosen one, because a reader six months from now will
+reach for one of them:
+
+- **The Technical Office.** §9 gives Operations / Technical *"quantities, BOQ, extract gate"*, which
+  reads like a fit. Rejected because the Technical Office holds `QuantityGateApprove`: it would be
+  producing the report that feeds the gate it then operates, which is the shape "nobody creates and
+  approves the same movement" exists to prevent.
+- **Operations / Administrative.** §9 gives it *"reports, photos, tasks"*. Rejected because the reports
+  that clause means are the site and KPI reports of §11, and because the only grant shape available for
+  a sub-department is a bare department grant, which matches **any** role placed in it — the mechanism
+  behind D-035, D-044 ruling 2 and finding F-04. `PhotoPublish` is the last bare-department grant in the
+  catalogue and it is money-free and deliberately left; a step in the billing chain is not the place to
+  add a second one.
+
+**A question for Karim, not answered here:** who writes the weekly QC report, and is the QC step a
+report *about* the extract's period or a precondition the period must satisfy? If the answer is the
+Technical Office, the splittable-gate rule of §7 and `QuantityGateApprove` need re-examining together,
+because the same department would then own both sides.
+
+**§4 — the Owner's extract approval gets no new row. It is `FinancialMovementApprove`.**
+
+This is a correction to the story's question 5, which asked for four rows. `FinancialMovementApprove`
+already exists, is granted to the Owner alone, is project-scoped, is `TouchesMoney`, and **its spec
+reference is already `"§7, §9"`** — its own catalogue comment quotes the sentence the story is asking
+about: *"spec.md §7: 'Owner approval [EVERY extract, no threshold].'"* The row was written for this
+moment.
+
+An `ExtractApprove` row would have the identical scope, the identical holder and the identical
+money-character, differing from `FinancialMovementApprove` in nothing a reader or the evaluator could
+act on. Two copies of one gate are two rows to keep in step, and the catalogue's own history is of
+comments and counts drifting from the data they describe (the `HeadOfDesign` paragraph, D-119, D-122).
+
+The split precedents do not apply: `ChangeOrderApprove` and `FirmAdvanceApprove` are separate rows
+because `spec.md` gives each its own actor rule — §9 excludes Finance from change orders by name, §6.4.3
+gives the firm advance a hard cap. §7 gives the extract no rule that differs from §9's "Owner approves
+all financial movements"; it only says there is no threshold, which is the same rule stated more
+emphatically. So `POST /api/extracts/{id}/approve` requires `FinancialMovementApprove`, and the
+no-threshold rule of `AC-500-C` is enforced by the state machine refusing to issue without that gate,
+not by a permission name.
+
+**What the three rows do not do.** None of them expresses "this user prepared this extract". That is a
+property of the record, not of a role: `AC-500-D` is refused by comparing the stored gate actor against
+the caller, inside the handler, and the catalogue cannot see it. The rows make the separation
+*expressible* — the creator's capability and the approver's capability are different permissions held by
+different roles — and that is all a grant list can do.
+
+**Gates:** build clean, 0 warnings, 0 errors. Domain.Tests GATE_DOMAIN. Api.Tests GATE_API.
+
+**Not done, deliberately:** no endpoint, no handler, no request/response, no validator, no migration,
+and no Angular. The other nine journey moments with no permission row are untouched — only the four
+`KAFF-500` named were examined. The stale `UNRESOLVED … Q90` remarks on `TreasuryReadProject` and
+`TreasuryReadCompany` in `Permission.cs` were noticed and left: D-173 answered Q90 and the catalogue
+rows and the pinned unresolved set both reflect the answer, so the XML comments are the only thing out
+of date, and editing them is not this ruling's business.

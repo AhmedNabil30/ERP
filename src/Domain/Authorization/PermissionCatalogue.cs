@@ -474,6 +474,70 @@ public static class PermissionCatalogue
             // spec.md §7: "Owner approval [EVERY extract, no threshold]." §9: "Owner approves all
             // financial movements." Finance is deliberately absent.
             new(Permission.FinancialMovementApprove, PermissionScope.ProjectScoped, [owner], "§7, §9", TouchesMoney: true),
+            // ---- The extract chain, spec.md §7 ----
+            //
+            // KAFF-500 question 5, ruled in decisions.md D-189. Three rows, and one reuse: the Owner's
+            // extract approval is FinancialMovementApprove above, which already cites §7's
+            // "Owner approval [EVERY extract, no threshold]" as its own reference. A fourth row with an
+            // identical scope, an identical holder and identical money-character would be the same gate
+            // written twice, and the two copies would be free to drift.
+
+            // spec.md §7, verbatim: "The Technical Office assembles the client extract document. The
+            // supervising engineer confirms field quantities." Deliberately NOT ExtractPrepare, which
+            // §7 gives to the site engineer preparing quantities: two actors, two acts, and one row would
+            // let the engineer who recorded the quantities also produce the document that bills them.
+            //
+            // NOT TouchesMoney. spec.md §9: "Technical Office gates quantities, never money." Assembly
+            // derives the document from the frozen BOQ's values and the executed quantities; it writes
+            // no posting and authorises nothing, and every deduction on it belongs to
+            // ExtractDeductionsApply below, which the Technical Office does not hold. Same reading as
+            // CataloguePriceEdit: a derived figure on a document is not a posting.
+            // SM-30: pinned by
+            // Only_the_technical_office_assembles_the_client_extract_document_and_it_touches_no_money.
+            new(Permission.ExtractDocumentAssemble, PermissionScope.ProjectScoped,
+                [technicalOffice],
+                "§7, §9 — see decisions.md D-189 §1"),
+
+            // spec.md §7: "Accounts (deductions, hold, advance recovery)", the step between the quantity
+            // gate and the Owner. Finance alone.
+            //
+            // Split off FinancialMovementPrepare rather than reusing it, the way ProjectFinancialsEdit
+            // split off ProjectManage (D-055 §1). That row is cited to §9 alone and means preparing a
+            // movement of cash that FinancialMovementDisburse then pays out; this step pays nothing and
+            // disburses nothing, it fixes the deduction figures on a document the Owner has not yet
+            // approved. One row would mean a ruling about who computes deductions could not be made
+            // without also moving who prepares a disbursement, and §9 subdivides Operations into
+            // Technical, Financial and Administrative because those are separable.
+            //
+            // The OWNER IS DELIBERATELY ABSENT, and this is the row where that matters: the Owner holds
+            // FinancialMovementApprove, and §9's "nobody creates and approves the same movement" is
+            // cheaper to honour by never granting both than by trusting a handler's actor comparison.
+            // A later session adding `owner` here would make the Owner the only user in the system who
+            // can hold both ends of the extract chain.
+            // SM-30: pinned by Only_finance_applies_an_extracts_deductions_and_it_touches_money.
+            new(Permission.ExtractDeductionsApply, PermissionScope.ProjectScoped,
+                [finance],
+                "§7, §9 — see decisions.md D-189 §2",
+                TouchesMoney: true),
+
+            // spec.md §7's second step, "weekly QC report", and the QC state of §14's extract machine.
+            //
+            // UNRESOLVED. §7 names the step and no actor, and §9 does not say either. Running default:
+            // the supervising engineer, because §7 pairs the Technical Office's assembly with "the
+            // supervising engineer confirms field quantities" and §9 makes the supervisor the actor who
+            // submits. The Technical Office is excluded because it holds QuantityGateApprove and would
+            // be gating its own report; Operations / Administrative is excluded because the only grant
+            // shape available for it is a bare department (finding F-04, D-052). Both alternatives and
+            // what each would change are in Rulings/ExtractQcReportAuthor.cs and decisions.md D-189 §3.
+            //
+            // Money-free: §9, "site engineers approve nothing financial".
+            // SM-30: pinned by The_set_of_unresolved_permissions_has_not_grown and
+            // The_qc_report_defaults_to_the_supervising_engineer_and_touches_no_money.
+            new(Permission.ExtractQcReportSubmit, PermissionScope.ProjectScoped,
+                [engineerSupervisor],
+                "§7, §14 — holder UNRESOLVED, the supervising engineer assumed, see decisions.md D-189 §3",
+                Unresolved: true),
+
             new(Permission.ChangeOrderApprove, PermissionScope.ProjectScoped, [owner], "§9, §13", TouchesMoney: true),
             new(Permission.FirmAdvanceApprove, PermissionScope.ProjectScoped, [owner], "§6.4.3", TouchesMoney: true),
 

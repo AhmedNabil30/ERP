@@ -294,4 +294,76 @@ public enum Permission
     /// ledger, so it is not <c>TouchesMoney</c>: a price list is not a posting (spec.md §4.1).
     /// </remarks>
     CataloguePriceEdit = 72,
+
+    /// <summary>
+    /// Assemble the client extract document for a period from the executed quantities the site
+    /// recorded — the step between the quantity gate and Accounts. spec.md §7, decisions.md D-189 §1.
+    /// </summary>
+    /// <remarks>
+    /// spec.md §7 names the actor in so many words: "The Technical Office assembles the client extract
+    /// document. The supervising engineer confirms field quantities." So this is not
+    /// <see cref="ExtractPrepare"/>, which spec.md §7 gives to the site engineer preparing quantities
+    /// and the catalogue grants to any assigned engineer: two different actors, two different acts, and
+    /// folding them together would let the engineer who recorded the quantities also produce the
+    /// document that bills them.
+    /// <para>
+    /// <b>Not <c>TouchesMoney</c>, deliberately.</b> spec.md §9: "Technical Office gates quantities,
+    /// never money." Assembly derives the document from the frozen BOQ's values and the executed
+    /// quantities; it authorises nothing, writes no posting, and computes none of the deductions —
+    /// hold, تشوينات recovery and withholding are <see cref="ExtractDeductionsApply"/>'s, which the
+    /// Technical Office does not hold. Same reasoning as <see cref="CataloguePriceEdit"/>: a derived
+    /// figure on a document is not a posting. Marking this row <c>TouchesMoney</c> would record the
+    /// Technical Office as an actor on money, which spec.md §9 forbids.
+    /// </para>
+    /// Project-scoped: an extract is always one project's, so spec.md §9's assignment requirement
+    /// applies without qualification.
+    /// </remarks>
+    ExtractDocumentAssemble = 73,
+
+    /// <summary>
+    /// The Accounts step of spec.md §7's chain: apply an extract's deductions — hold this period,
+    /// تشوينات recovery, advance recovery and withholding. decisions.md D-189 §2.
+    /// </summary>
+    /// <remarks>
+    /// Finance's, and nobody else's. spec.md §7 puts "Accounts (deductions, hold, advance recovery)"
+    /// between the quantity gate and the Owner's approval, and spec.md §9 reserves money to Finance and
+    /// the Owner.
+    /// <para>
+    /// Split off <see cref="FinancialMovementPrepare"/> rather than reusing it, the way
+    /// <see cref="ProjectFinancialsEdit"/> split off <see cref="ProjectManage"/> (D-055 §1).
+    /// <see cref="FinancialMovementPrepare"/> is cited to spec.md §9 alone and means preparing a
+    /// movement of cash that <see cref="FinancialMovementDisburse"/> then pays out. This step pays
+    /// nothing and disburses nothing: it fixes the deduction figures on a billing document that the
+    /// Owner has not yet approved. Keeping them one row would mean a later ruling about who may compute
+    /// deductions could not be made without also moving who may prepare a disbursement — and spec.md §9
+    /// subdivides Operations into Technical, Financial and Administrative precisely because those are
+    /// separable.
+    /// </para>
+    /// <b><c>TouchesMoney</c>.</b> The figures this step sets become the hold accrual, the advance
+    /// recovery and the withholding on the extract's postings. The Owner is deliberately absent: the
+    /// Owner holds <see cref="FinancialMovementApprove"/>, and spec.md §9's "nobody creates and
+    /// approves the same movement" is cheaper to honour by never granting both than by relying on the
+    /// handler's actor comparison alone.
+    /// </remarks>
+    ExtractDeductionsApply = 74,
+
+    /// <summary>
+    /// Submit the weekly QC report an extract must pass before the Technical Office quantity gate —
+    /// spec.md §7's second step, and the <c>QC</c> state of spec.md §14's extract machine.
+    /// </summary>
+    /// <remarks>
+    /// UNRESOLVED. spec.md §7 names the step and names no actor for it, and spec.md §9 does not say
+    /// either. The running default is the supervising engineer: spec.md §7's own sentence pairs the
+    /// Technical Office's assembly with "the supervising engineer confirms field quantities", and
+    /// spec.md §9 makes the supervisor the one who submits what juniors draft
+    /// (<see cref="DraftSubmit"/>). The two rejected candidates and what each would change are in
+    /// <see cref="Rulings.ExtractQcReportAuthor"/> and decisions.md D-189 §3; the shortest reason the
+    /// Technical Office is not the default is that it holds <see cref="QuantityGateApprove"/>, so it
+    /// would be gating its own report.
+    /// <para>
+    /// Money-free, like every other site-execution row: spec.md §9, "site engineers approve nothing
+    /// financial".
+    /// </para>
+    /// </remarks>
+    ExtractQcReportSubmit = 75,
 }

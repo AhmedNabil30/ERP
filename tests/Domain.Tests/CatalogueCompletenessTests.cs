@@ -396,14 +396,82 @@ public sealed class CatalogueCompletenessTests
         // answering questions-for-karim.md Q90): Owner, Finance and the assigned Site Engineer hold
         // TreasuryReadProject; Owner and Finance hold TreasuryReadCompany. See PermissionCatalogue.cs's
         // remarks on both rows.
+        //
+        // ExtractQcReportSubmit joined the list 2026-11-01 (decisions.md D-189 §3): spec.md §7 names the
+        // weekly QC report as a step in the extract chain and names nobody who performs it. The
+        // supervising engineer is assumed, and the two rejected candidates are in
+        // Rulings/ExtractQcReportAuthor.cs.
         Permission[] expected =
         [
             Permission.PeriodClose,
+            Permission.ExtractQcReportSubmit,
         ];
 
         PermissionCatalogue.Unresolved
             .Select(definition => definition.Permission)
             .Should().BeEquivalentTo(expected);
+    }
+
+    /// <summary>
+    /// SM-30 for <see cref="Permission.ExtractDocumentAssemble"/>. decisions.md D-189 §1. The
+    /// money-character is the half of this row that spec.md §9 decides outright: "Technical Office gates
+    /// quantities, never money."
+    /// </summary>
+    [Fact]
+    public void Only_the_technical_office_assembles_the_client_extract_document_and_it_touches_no_money()
+    {
+        PermissionDefinition definition = PermissionCatalogue.Of(Permission.ExtractDocumentAssemble);
+
+        definition.Scope.Should().Be(PermissionScope.ProjectScoped, "an extract is always one project's");
+        definition.TouchesMoney.Should().BeFalse(
+            "spec.md §9 — the Technical Office gates quantities, never money");
+        AccessGrant[] technicalOfficeOnly = [new AccessGrant { Role = Role.TechnicalOffice }];
+        definition.Grants.Should().BeEquivalentTo(technicalOfficeOnly);
+    }
+
+    /// <summary>
+    /// SM-30 for <see cref="Permission.ExtractDeductionsApply"/>. decisions.md D-189 §2. The assertion
+    /// that matters is the Owner's absence: the Owner holds
+    /// <see cref="Permission.FinancialMovementApprove"/>, so granting this row to the Owner as well
+    /// would make one user able to hold both ends of spec.md §7's chain.
+    /// </summary>
+    [Fact]
+    public void Only_finance_applies_an_extracts_deductions_and_it_touches_money()
+    {
+        PermissionDefinition definition = PermissionCatalogue.Of(Permission.ExtractDeductionsApply);
+
+        definition.Scope.Should().Be(PermissionScope.ProjectScoped);
+        definition.TouchesMoney.Should().BeTrue(
+            "the figures this step sets become the hold accrual, the advance recovery and the withholding");
+        AccessGrant[] financeOnly = [new AccessGrant { Role = Role.Finance }];
+        definition.Grants.Should().BeEquivalentTo(financeOnly);
+
+        PermissionCatalogue.Of(Permission.FinancialMovementApprove).Grants
+            .Should().NotIntersectWith(definition.Grants,
+                "spec.md §9 — nobody creates and approves the same movement");
+    }
+
+    /// <summary>
+    /// SM-30 for <see cref="Permission.ExtractQcReportSubmit"/>. decisions.md D-189 §3. The holder is an
+    /// assumption, so this test pins what we assumed, and the Technical Office's absence is the part of
+    /// it that is not arbitrary.
+    /// </summary>
+    [Fact]
+    public void The_qc_report_defaults_to_the_supervising_engineer_and_touches_no_money()
+    {
+        PermissionDefinition definition = PermissionCatalogue.Of(Permission.ExtractQcReportSubmit);
+
+        definition.Unresolved.Should().BeTrue("spec.md §7 names the step and not its actor");
+        definition.TouchesMoney.Should().BeFalse(
+            "spec.md §9 — site engineers approve nothing financial");
+        AccessGrant[] supervisorOnly =
+        [
+            new AccessGrant { Role = Role.SiteEngineer, MinimumAssignmentLevel = AssignmentLevel.Supervisor },
+        ];
+        definition.Grants.Should().BeEquivalentTo(supervisorOnly);
+
+        definition.Grants.Should().NotContain(grant => grant.Role == Role.TechnicalOffice,
+            "the Technical Office operates the quantity gate and must not gate its own report");
     }
 
     /// <summary>

@@ -162,6 +162,15 @@ public sealed class PermissionEvaluatorTests
             Permission.FinancialMovementPrepare,
             Permission.FinancialMovementDisburse,
             Permission.FinancialMovementApprove,
+
+            // Added 2026-11-01 with the row itself (decisions.md D-189 §2): the Accounts step of
+            // spec.md §7 fixes the hold accrual, the advance recovery and the withholding that the
+            // extract's postings then carry. Its one grant names a role, so the evaluator discards
+            // nothing. ExtractDocumentAssemble and ExtractQcReportSubmit are deliberately absent from
+            // this list: spec.md §9 keeps the Technical Office and site engineers off money, so a
+            // financial flag on either row would be the wrong record of who may act on it.
+            Permission.ExtractDeductionsApply,
+
             Permission.ChangeOrderApprove,
             Permission.FirmAdvanceApprove,
             Permission.TreasuryPostProject,
