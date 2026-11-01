@@ -696,15 +696,16 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 
 ## Points by slice
 
-| | slice 1 | slice 2 | slice 3 | slice 4 | slice design-system |
-|---|---:|---:|---:|---:|---:|
-| ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 | 0 | 0 |
-| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 0 | 0 |
-| ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 0 | 9 | 41 | 8 | 106 |
-| ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 0 | 0 | 0 |
-| 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 | 0 | 0 |
-| **total** | **127** | **67** | **41** | **8** | **106** |
+| | slice 1 | slice 2 | slice 3 | slice 4 | slice 5 | slice 6 | slice design-system |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 0 | 0 | 0 | 0 |
+| ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 9 | 41 | 8 | 0 | 0 | 106 |
+| ⚪ READY / COMMITTED — refined, not built | 0 | 0 | 0 | 0 | 21 | 13 | 0 |
+| ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 0 | 0 | 0 | 0 | 0 |
+| 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 | 0 | 0 | 0 | 0 |
+| **total** | **127** | **67** | **41** | **8** | **21** | **13** | **106** |
 
 ## Every story
 
@@ -770,6 +771,8 @@ not. Use `/run-kaff-erp`. Also: `--filter` matches nothing here — use `--filte
 | [KAFF-321](stories/slice-2-masters/KAFF-321-department-master-data.md) | 2 | 0 | 🟡 BUILT | none | `-` | 2026-09-15 | Department — dynamic master data, not a fixed enum |
 | [KAFF-322](stories/slice-3-treasury/KAFF-322-treasury-guard-tests-against-real-postgres.md) | 3 | 2 | 🟡 BUILT | none | `-` | 2026-09-14 | Treasury guard tests against real PostgreSQL |
 | [KAFF-400](stories/slice-4-projects/KAFF-400-projects-api.md) | 4 | 8 | 🟡 BUILT | none | `-` | - | The Projects API — create, list, read |
+| [KAFF-500](stories/slice-5-billing/KAFF-500-the-extract-chain.md) | 5 | 21 | ⚪ READY | none | `-` | - | The extract chain — prepare, gate, deduct, approve, issue |
+| [KAFF-600](stories/slice-6-execution/KAFF-600-the-daily-log-core.md) | 6 | 13 | ⚪ READY | none | `-` | - | The daily log core — one log per engineer per day, recording deltas |
 | [KAFF-900](stories/design-system/KAFF-900-design-tokens-and-shell.md) | design-system | 5 | 🟡 BUILT | none | `-` | - | Design tokens and the app shell (sidebar, header, page frame) |
 | [KAFF-901](stories/design-system/KAFF-901-shared-restyled-components.md) | design-system | 5 | 🟡 BUILT | none | `-` | - | Shared restyled components: table row, segmented filter, form field, button, badge |
 | [KAFF-910](stories/design-system/KAFF-910-restyle-catalogue-list.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: catalogue list |
