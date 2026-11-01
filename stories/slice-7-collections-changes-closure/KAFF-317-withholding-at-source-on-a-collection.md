@@ -7,7 +7,7 @@
 **Spec:** `spec.md` §6.7 (withholding tax — and this is not a tax module), §15 (the worked example carries no withholding).
 **Raised by:** the reconciled build order in `stories/project-journey-study-2026-10-08.md`, row 7.
 
-**Status: BLOCKED.** Definition of Ready fails on "Not BLOCKED on an open question" (`Q99`, `Q30`, and the unruled `RulingSet.WithholdingBase`) and on "QA has written at least one scenario that fails". The criteria depending on them are `HELD`.
+**Status: BLOCKED.** Definition of Ready fails on "Not BLOCKED on an open question" (`Q99`, `Q30`, and `Q114` for the unruled `RulingSet.WithholdingBase`) and on "QA has written at least one scenario that fails". The criteria depending on them are `HELD`.
 
 ## Depends on, and will be refused without
 
@@ -118,5 +118,5 @@ VAT. **Every screen** — no Frontend story is cut, so by `D-117` no UI criterio
 
 1. **`Q99`** — actual withheld amount versus the rate's figure, and the difference.
 2. **`Q30`** — may the rate change after the first issued extract?
-3. **The withholding base** and **whether the hold release carries withholding** — running default `RulingSet.WithholdingBase`. Same question as `KAFF-500` question 3; one answer serves both. It has no `Q` number in the register today.
+3. **The withholding base** and **whether the hold release carries withholding** — running default `RulingSet.WithholdingBase`. Registered as **`Q114`**; it is the same question as `KAFF-500` question 3, so one answer serves both.
 4. **`Q97`** — Owner approval of a receipt.
