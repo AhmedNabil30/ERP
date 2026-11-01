@@ -3,6 +3,7 @@ using Kaff.Domain.Auditing;
 using Kaff.Domain.Boqs;
 using Kaff.Domain.Common;
 using Kaff.Domain.DailyLogs;
+using Kaff.Domain.Extracts;
 using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
 using Kaff.Domain.Projects;
@@ -113,6 +114,12 @@ public sealed class KaffDbContext : DbContext
     public DbSet<FieldEntry> FieldEntries => Set<FieldEntry>();
 
     public DbSet<SiteExpenseDraft> SiteExpenseDrafts => Set<SiteExpenseDraft>();
+
+    public DbSet<Extract> Extracts => Set<Extract>();
+
+    public DbSet<ExtractGateRecord> ExtractGateRecords => Set<ExtractGateRecord>();
+
+    public DbSet<ExtractFigure> ExtractFigures => Set<ExtractFigure>();
 
     /// <summary>KAFF-321 — staff departments, master data, superseding the D-153 §2 enum.</summary>
     public DbSet<Department> Departments => Set<Department>();

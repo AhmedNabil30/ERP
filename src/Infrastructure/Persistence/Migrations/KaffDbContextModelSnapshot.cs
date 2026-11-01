@@ -599,6 +599,185 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                     b.ToTable("site_expense_drafts", (string)null);
                 });
 
+            modelBuilder.Entity("Kaff.Domain.Extracts.Extract", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("ApprovedPortion")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("approved_portion");
+
+                    b.Property<decimal?>("CertifiedValue")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("certified_value");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<decimal>("CumulativeCertifiedWork")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("cumulative_certified_work");
+
+                    b.Property<Guid?>("HeldForNcrId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("held_for_ncr_id");
+
+                    b.Property<DateTimeOffset?>("HeldPortionReleasedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("held_portion_released_at");
+
+                    b.Property<decimal>("MaterialInstalled")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("material_installed");
+
+                    b.Property<decimal>("MaterialValueOnSite")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("material_value_on_site");
+
+                    b.Property<decimal?>("NetPayable")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("net_payable");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("integer")
+                        .HasColumnName("number");
+
+                    b.Property<DateOnly>("PeriodEnd")
+                        .HasColumnType("date")
+                        .HasColumnName("period_end");
+
+                    b.Property<DateOnly>("PeriodStart")
+                        .HasColumnType("date")
+                        .HasColumnName("period_start");
+
+                    b.Property<decimal>("PreviouslyCertifiedWork")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("previously_certified_work");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("ProjectId", "Number")
+                        .IsUnique()
+                        .HasDatabaseName("ux_extracts_project_number");
+
+                    b.ToTable("extracts", (string)null);
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Extracts.ExtractFigure", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("amount");
+
+                    b.Property<Guid>("ExtractId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("extract_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("LabelKey")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("label_key");
+
+                    b.Property<string>("Sign")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("sign");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExtractId");
+
+                    b.ToTable("extract_figures", (string)null);
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Extracts.ExtractGateRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_user_id");
+
+                    b.Property<decimal?>("ApprovedPortion")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("approved_portion");
+
+                    b.Property<Guid>("ExtractId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("extract_id");
+
+                    b.Property<string>("Gate")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("gate");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("outcome");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("reason");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("ExtractId");
+
+                    b.ToTable("extract_gate_records", (string)null);
+                });
+
             modelBuilder.Entity("Kaff.Domain.Identity.ProjectAssignment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2087,6 +2266,45 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Kaff.Domain.Extracts.Extract", b =>
+                {
+                    b.HasOne("Kaff.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Extracts.ExtractFigure", b =>
+                {
+                    b.HasOne("Kaff.Domain.Extracts.Extract", null)
+                        .WithMany("Figures")
+                        .HasForeignKey("ExtractId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Extracts.ExtractGateRecord", b =>
+                {
+                    b.HasOne("Kaff.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Extracts.Extract", null)
+                        .WithMany("GateHistory")
+                        .HasForeignKey("ExtractId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Kaff.Domain.Identity.ProjectAssignment", b =>
                 {
                     b.HasOne("Kaff.Domain.Projects.Project", null)
@@ -2227,6 +2445,13 @@ namespace Kaff.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Kaff.Domain.Boqs.Boq", b =>
                 {
                     b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Extracts.Extract", b =>
+                {
+                    b.Navigation("Figures");
+
+                    b.Navigation("GateHistory");
                 });
 #pragma warning restore 612, 618
         }

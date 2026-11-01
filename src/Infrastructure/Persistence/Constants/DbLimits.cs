@@ -41,4 +41,7 @@ internal static class DbTables
     public const string PhotoEntries = "photo_entries";
     public const string FieldEntries = "field_entries";
     public const string SiteExpenseDrafts = "site_expense_drafts";
+    public const string Extracts = "extracts";
+    public const string ExtractGateRecords = "extract_gate_records";
+    public const string ExtractFigures = "extract_figures";
 }
