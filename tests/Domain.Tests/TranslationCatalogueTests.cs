@@ -122,7 +122,11 @@ public sealed class TranslationCatalogueTests
 
         foreach (string path in new[] { ArabicCatalogue, EnglishCatalogue })
         {
-            LoadCatalogue(path).Keys.Where(MentionsWithholding).Should().BeEquivalentTo(
+            // Refusals live under "errors."; extract.* withholding keys are UI labels (§6.7 fields),
+            // so only the errors namespace is filtered. A second errors.*withhold* key still fails.
+            LoadCatalogue(path).Keys
+                .Where(key => key.StartsWith("errors.", StringComparison.Ordinal) && MentionsWithholding(key))
+                .Should().BeEquivalentTo(
                 [TheKey],
                 $"{path} — §6.7 has one refusal, and a second spelling of it is a message that will "
                 + "reach a screen untranslated");
