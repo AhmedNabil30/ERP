@@ -15536,7 +15536,7 @@ the caller, inside the handler, and the catalogue cannot see it. The rows make t
 *expressible* — the creator's capability and the approver's capability are different permissions held by
 different roles — and that is all a grant list can do.
 
-**Gates:** build clean, 0 warnings, 0 errors. Domain.Tests GATE_DOMAIN. Api.Tests GATE_API.
+**Gates:** build clean, 0 warnings, 0 errors. Domain.Tests 398 of 398 (3 new). Api.Tests 732 of 732, unchanged.
 
 **Not done, deliberately:** no endpoint, no handler, no request/response, no validator, no migration,
 and no Angular. The other nine journey moments with no permission row are untouched — only the four
