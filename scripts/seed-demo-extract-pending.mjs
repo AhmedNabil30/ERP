@@ -25,10 +25,13 @@ const listOnly = process.argv.includes('--list');
 
 // [BOQ item code, executed quantity delta for this period, fixed entry id]
 const WORK = [
-  ['MAS-3006', 120, '5eed0001-0000-4000-8000-000000000001'], // interior plaster, m2
-  ['FIN-3007', 250, '5eed0001-0000-4000-8000-000000000002'], // premium paint with putty, m2
-  ['FIN-3002', 40, '5eed0001-0000-4000-8000-000000000003'],  // porcelain 80x80, m2
+  ['MAS-3006', 120], // interior plaster, m2
+  ['FIN-3007', 250], // premium paint with putty, m2
+  ['FIN-3002', 40],  // porcelain 80x80, m2
 ];
+// Entry ids are fixed per round (round = extract number - 1; extract #2 was round 1, so its ids are unchanged),
+// so a replay of the same round is recognised, while each new extract gets its own fresh quantity deltas.
+const entryId = (round, i) => `5eed${String(round).padStart(4, '0')}-0000-4000-8000-00000000000${i + 1}`;
 
 async function session(userName, password) {
   let cookie = '';
@@ -67,23 +70,34 @@ if (listOnly) {
 }
 
 const open = list.json.filter((e) => e.status !== 'Issued' && e.status !== 'Collected');
+const nextNumber = open.length ? open[0].number : Math.max(0, ...list.json.map((e) => e.number)) + 1;
+const round = nextNumber - 1;
+
+const eng = await session('site_eng_demo', 'Demo#Site1New');
+async function recordWork() {
+  const lines = (await eng('GET', `/api/projects/${projectId}/daily-logs/boq-lines`)).json?.lines ?? [];
+  let made = 0;
+  const occurredAt = new Date().toISOString();
+  for (const [i, [code, quantity]] of WORK.entries()) {
+    const line = lines.find((l) => l.itemCode === code);
+    if (!line) throw new Error('BOQ line missing: ' + code);
+    const r = await eng('POST', `/api/projects/${projectId}/daily-logs/quantities`, { entryId: entryId(round, i), boqLineId: line.id, quantity, occurredAt });
+    if (r.status !== 201 && r.status !== 200) throw new Error(`quantity ${code}: ${r.status} ${r.text}`);
+    if (r.status === 201) made++;
+  }
+  console.log(`${made} quantity entries created (round ${round})`);
+}
+
 if (open.length) {
+  // An open extract that was prepared with no new work (cumulative equals previous) is topped up with this round's deltas.
+  const d = await owner('GET', `${extractsUrl}/${open[0].id}`);
+  const ev = d.json?.evidence;
+  if (open[0].status === 'Draft' && ev && Number(ev.cumulativeCertifiedWork) === Number(ev.previouslyCertifiedWork)) await recordWork();
   console.log(`0 created, ${open.length} existed (open extract #${open[0].number} ${open[0].id} is ${open[0].status})`);
   process.exit(0);
 }
 
-const eng = await session('site_eng_demo', 'Demo#Site1New');
-const lines = (await eng('GET', `/api/projects/${projectId}/daily-logs/boq-lines`)).json?.lines ?? [];
-let created = 0;
-const occurredAt = new Date().toISOString();
-for (const [code, quantity, entryId] of WORK) {
-  const line = lines.find((l) => l.itemCode === code);
-  if (!line) throw new Error('BOQ line missing: ' + code);
-  const r = await eng('POST', `/api/projects/${projectId}/daily-logs/quantities`, { entryId, boqLineId: line.id, quantity, occurredAt });
-  if (r.status !== 201 && r.status !== 200) throw new Error(`quantity ${code}: ${r.status} ${r.text}`);
-  if (r.status === 201) created++;
-}
-console.log(`${created} quantity entries created`);
+await recordWork();
 
 const today = new Date();
 const first = new Date(Date.UTC(today.getFullYear(), today.getMonth(), 1)).toISOString().slice(0, 10);
