@@ -762,3 +762,74 @@ The refusal is shown BEFORE the confirm, because the rule is knowable from the p
 - Import diff cell: new value bold, old value struck beneath, only on cells that change; status pills for new, update and error with shapes.
 - Stepper for a true sequence, summary count blocks, a sticky apply bar that carries what will happen and "can't undo", and the irreversible confirmation used for a bulk action.
 - First-run and no-items states (the same pattern as the أبواب first run).
+
+---
+
+# The project workspace (`project.html`)
+
+The project's own page, the hub a user lands on after opening a project from the list. Mockup: `project.html` (open directly, no build step). Query parameters select a state for screenshots: `?type=ls|cp|ds&role=owner|site&view=normal|loading|failed|partial|setup|empty|refused|stop`; `embed=1` hides the preview strip. Screenshots are `shots/project-*.png`. The strip at the top (type, role, state, theme, direction, review notes, data-source flags, phone preview) and every dashed amber "Review note" block are review chrome: do not build them. The "data source" toggle outlines each region as served today (solid) or needing an endpoint (dashed red).
+
+## What it is
+
+Five groups, which are intentions and not tables: الفهم (understand), الكميات (quantify), التنفيذ (execute), المال (pay), التنظيم (organise). All three contract types hold all five groups; they differ in what each group declares. A control or whole group the viewer may not use is absent, never disabled (the site engineer role has no المال group and no money in any other group). The screen declares exactly one `primaryAction` and never renders it itself: the shell places it in the page header on desktop and the bottom bar on phone. The proposed actions are listed under "Not decided here".
+
+| Group | Lump Sum | Cost Plus | Design |
+|---|---|---|---|
+| الفهم | contract value (carried from signed BOQ), hold rate, advance rate, hold at handover, certified percent bar | supervision rate, cost to date, supervision to date. No contract value row, no percent bar | area, rate, fee, five-segment stage strip (width is the fixed weight) |
+| الكميات | BOQ by باب (frozen copy, signed date), change orders in their own list | classification of contract lines: supervised, exempt, non-billable. No BOQ | fee derivation, five fixed-weight stages (locked). No BOQ |
+| التنفيذ | executed vs surveyed per باب (percent only), daily logs, open NCR, subcontractors | daily logs, internal engineer hours. No executed-vs-surveyed | per-stage progress, revision rounds, deliverable state, six-step chain for the current stage. No site, subcontractors or materials |
+| المال | pending extract chain with gate actors, consequence block, five-ledger strip scoped to the project accounts, last extract | period invoice chain and waterfall, revenue and cost accounts. No hold, advance, تشوينات, strip | stage dues waterfall, revenue and consulting-cost accounts. No chain, strip, hold |
+| التنظيم | team, linked projects, stop control | team, stop control | team, linked execution project, stop control |
+
+## Layout
+
+Page header (shell): back link (المشاريع), title, status pill, then one meta line (code, client, contract type badge). The header ships the state alone. The health tags متعثرة and تم تأجيلها are tags, not states (D-044 §7) and have no data behind them: nothing is reserved or drawn for them.
+
+Below the header, a sticky jump line of five underlined links (one per group the viewer may see; 48px). Then five sections. Desktop: a 232px heading column (icon, group name, one intention question that changes by type) that sticks while its section scrolls, and a body column. At 1100px and narrower the heading becomes a row above the body. Phone: single column, jump line scrolls horizontally, key-value rows stack label over value, tables become rows (no horizontal scroll), the pending-extract chain turns vertical, ledger tiles stack. Sections are separated by hairlines; there are no cards as containers (bordered surfaces are the kit's own: key-value list, waterfall, tiles).
+
+## Parts: reused, and new
+
+Reused unchanged from the kit: status pill, badge, back link, link, buttons, refusal and notice banners, the four list states (the refused state is the project-scoped version), skeleton, `fig` (figure), provenance chip (`pv` calculated / entered / carried) and assumption chip (`asm`), waterfall (`wf`), five-ledger tile strip with drill-down, reconciliation line and unclassified box, approval chain, consequence block (`dec-con`), gate-actor statement (`dec-who`), table frame, quiet recoverable confirmation. Added by this screen (put them in the kit before building):
+
+- Group section: heading column plus body column, as above.
+- Key-value fact list (`kv`): label, value, provenance chips at the end. The null variant has an info icon, a bold reason and a smaller explanation: it is how contract value reads while the BOQ is unsigned (a null is never drawn as 0.00 or a dash).
+- Progress block (`pg`): label, big number, 12px track, footer with chip. The number is always printed beside the bar.
+- Design stage strip (`stg`): segment width is the fixed weight; fill (solid, hatched, half) plus a legend carries state, so colour is never the cue. Under 820px it wraps to two columns.
+- Percent bar rows in tables (`bd`): 10px track plus number.
+- "What the database may refuse" block (`chk`): three figures (current balance with timestamp, requirement, expected remainder) and one sentence that says it is a reading, not a promise.
+- Locked group line (`locked`): dashed box with a lock and one sentence, used when a group is not yet applicable because of state (Setup), as opposed to absent because of type.
+
+## States (each drawn)
+
+Normal for each type and role; loading (header keeps shape, title is a bar, primary slot reserved, all five headings shown with skeleton bodies); failed to load (refusal banner with retry; no groups, no primary); partial failure (the المال group fails alone, banner with retry in place, the rest stays); BOQ not signed (Setup: contract value null with reason, hold and advance as rates only, BOQ draft with its own total labelled "not the contract value", execute and pay locked); new project with an empty BOQ (explicit empty state); refused (role without assignment: dashed lock box, no project details, no retry); stop confirmation (recoverable, quiet, inline).
+
+## Permissions and money rules this screen carries
+
+- Role and assignment are checked server-side on every read. Each group is a separate read so a refusal or failure in one never blanks the page. A group a role may not read is absent from the DOM.
+- The site engineer view is a money-free read model, not columns hidden: item counts, executed percent, logs, hours, counts. No rates, amounts, balances or the certified percent.
+- Every money figure carries a kind chip. Where a figure is entered the chip names who and when; where carried, the named document or ledger.
+- Pending-extract copy states what posting will do as arithmetic, and separately shows what the database may refuse (advance floor) as a current figure with a timestamp. Never "this will succeed".
+- The five-ledger strip is presentation, not a guard: drill-down per tile, reconciliation line, unclassified box that must stay at zero. On this page it is scoped to the project's own accounts (client advance, hold, firm advance) because that is what `ProjectAccountSetFactory` opens for Lump Sum; تشوينات sits beside it.
+- Destructive or irreversible actions are never in the phone bottom bar. The only lifecycle control drawn is stop (recoverable).
+
+## What the API serves today
+
+`GET /api/projects/{id}` serves only: id, code, name, client id and name, contract type, status, contract value (null for Cost Plus), hold rate, advance rate, team size. Everything else drawn here needs an endpoint: progress, BOQ, change orders, logs, extracts, ledger balances and postings, roster, linked projects, lifecycle, Cost Plus supervision rate and Design area and rate. Money crosses the wire as strings (D-135): format with the same `fig` rules and never parse to a float. The data-source toggle in the file marks each region.
+
+## Not decided here (questions for Nabil)
+
+1. How are the project states Stopped, HandoverPending, Handover, UnderWarranty and Terminated worded in the header? The five Kaff words cover Setup (لم تبدأ), Active (جاري العمل) and Closed (انتهت) only, and a status pill may only carry those words.
+2. The primary action per type, state and role is a proposal (مستخلص جديد, فاتورة جديدة, رفع مخرجات المرحلة, فتح جدول الكميات, سجل يومي جديد).
+3. Which roles see which group, and whether a site engineer may see the certified percent. No permission row exists for stop, restart, terminate, practical completion, snag, handover.
+4. After a change order is approved, does the page show original value, revised value or both?
+5. When an extract posts (the study's first question). The consequence block says "عند الترحيل" and flags assumption A1.
+6. Provenance of hold and advance rates (who entered, when) and of the contract value until the BOQ entity exists (today it is typed at creation, so its honest kind is entered, not carried).
+7. Is the five-ledger strip on a project page scoped to project accounts (three tiles) or all five? عهدة has a per-project ceiling in the spec but no project account; the owner current account is company-level.
+8. Arabic labels for the six design-phase states, the number of included revision rounds per stage, and Arabic names for the three contract types (spec §14 has none; the screen uses those from `money.html`).
+9. What happens to an extract already in the chain when the project is stopped.
+10. Who may assign a user to a project (the refusal sentence names the permission, not a person), and whether a Setup project can take daily logs.
+11. Whether Cost Plus invoices use the same seven-step chain as Lump Sum extracts.
+
+## Deliberately left out
+
+Project documents (not in the spec at project level), history or audit timeline for the project (the audit read is Owner-only and the gate history exists only per document), edit-terms screen, collections and withholding, closure, hold release, snags, warranty and handover flows, any terminate control (unruled), any health tag.

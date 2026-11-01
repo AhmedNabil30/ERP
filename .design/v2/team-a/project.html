@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>كف - مساحة المشروع</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* KAAF project workspace. Composed only from the approved kit (components.html, money.html) inside the approved shell (layout.html).
+   New to the kit here: the group section (intention heading + body), the key-value fact row, the progress bar, the design stage strip,
+   and the reviewer chrome (notes, data-source flags). All are listed in README.md. Everything else is reused unchanged. */
+:root{
+  --g900:#09221e; --g800:#0f2e29; --g300:#9fb3ad; --c100:#f4eee9; --c200:#e6d9d1; --radius:6px;
+  --bg:var(--c100); --surface:#fbf8f5; --head:#ebe0d8; --ink:var(--g900); --dim:#4b5f59; --line:rgba(9,34,30,.16); --hover:rgba(9,34,30,.055);
+  --btn:var(--g900); --btn-h:#25544b; --btn-ink:var(--c200); --field:#fbf8f5; --fieldline:var(--g900); --focus:var(--g900);
+  --err-bg:#f9e4dd; --err-ink:#7a1a0e; --err-bar:#c2321c;
+  --st-run-bg:#d3e3db; --st-run-ink:#0b3b32; --st-done-bg:var(--g900); --st-done-ink:var(--c200);
+  --st-stuck-bg:#f9e4dd; --st-stuck-ink:#7a1a0e; --st-post-bg:#e6d9d1; --st-post-ink:#43392f; --st-none-ink:#4b5f59;
+  --note-bg:#ebe0d8; --ok-bg:#d3e3db; --ok-ink:#0b3b32; --asm-bg:#f3e4c9; --asm-ink:#4a3410;
+  --scrim:rgba(3,13,11,.55); --strip:var(--c200); --shadow:0 12px 36px rgba(9,34,30,.22);
+  --display:'Noto Kufi Arabic','IBM Plex Sans Arabic',system-ui,sans-serif;
+  --body:'IBM Plex Sans Arabic',system-ui,'Segoe UI',Tahoma,sans-serif;
+  --side:256px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#061815; --surface:#0a1f1b; --head:#0f2e29; --ink:var(--c200); --dim:var(--g300); --line:rgba(230,217,209,.18); --hover:rgba(230,217,209,.06);
+  --btn:var(--c200); --btn-h:#fbf6f2; --btn-ink:var(--g900); --field:#0f2e29; --fieldline:#7f9a92; --focus:var(--c200);
+  --err-bg:#3b1612; --err-ink:#ffd0c6; --err-bar:#ff7b63;
+  --st-run-bg:#17403a; --st-run-ink:#e6d9d1; --st-done-bg:var(--c200); --st-done-ink:var(--g900);
+  --st-stuck-bg:#3b1612; --st-stuck-ink:#ffd0c6; --st-post-bg:#1d2b27; --st-post-ink:#c9bfb7; --st-none-ink:#9fb3ad;
+  --note-bg:#0f2e29; --ok-bg:#17403a; --ok-ink:#e6d9d1; --asm-bg:#3d3017; --asm-ink:#f1dcae; --strip:#030d0b; --shadow:0 12px 36px rgba(0,0,0,.6);}}
+:root[data-theme="dark"]{
+  --bg:#061815; --surface:#0a1f1b; --head:#0f2e29; --ink:var(--c200); --dim:var(--g300); --line:rgba(230,217,209,.18); --hover:rgba(230,217,209,.06);
+  --btn:var(--c200); --btn-h:#fbf6f2; --btn-ink:var(--g900); --field:#0f2e29; --fieldline:#7f9a92; --focus:var(--c200);
+  --err-bg:#3b1612; --err-ink:#ffd0c6; --err-bar:#ff7b63;
+  --st-run-bg:#17403a; --st-run-ink:#e6d9d1; --st-done-bg:var(--c200); --st-done-ink:var(--g900);
+  --st-stuck-bg:#3b1612; --st-stuck-ink:#ffd0c6; --st-post-bg:#1d2b27; --st-post-ink:#c9bfb7; --st-none-ink:#9fb3ad;
+  --note-bg:#0f2e29; --ok-bg:#17403a; --ok-ink:#e6d9d1; --asm-bg:#3d3017; --asm-ink:#f1dcae; --strip:#030d0b; --shadow:0 12px 36px rgba(0,0,0,.6);}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 1rem/1.6 var(--body)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+svg.i{inline-size:22px;block-size:22px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+svg.i.s{inline-size:18px;block-size:18px}
+.vh{position:absolute;inline-size:1px;block-size:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus-visible,.is-focus{outline:3px solid var(--focus);outline-offset:3px}
+bdi{unicode-bidi:isolate}
+
+/* ---------- preview strip (NOT part of the design) ---------- */
+.strip{background:var(--strip);font-size:.8125rem;position:relative;z-index:80}
+.strip summary{list-style:none;display:flex;align-items:center;gap:.5rem;min-block-size:36px;padding:0 1rem;cursor:pointer}
+.strip summary::-webkit-details-marker{display:none}
+.strip .panelx{display:flex;flex-wrap:wrap;gap:.5rem 1.25rem;padding:.25rem 1rem .75rem}
+.strip .grp{display:flex;flex-wrap:wrap;gap:.25rem;align-items:center}
+.strip .grp>b{font-weight:600;margin-inline-end:6px}
+.strip button{min-block-size:36px;padding:0 .7rem;border:1px solid currentColor;background:transparent;border-radius:var(--radius);color:inherit}
+.strip button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+body.embed .strip{display:none}
+body.embed .app{block-size:100dvh}
+#phone{position:fixed;inset:0;z-index:200;background:var(--scrim);display:none;place-items:center}
+#phone[data-open="1"]{display:grid}
+#phone .dev{display:grid;gap:8px;justify-items:center}
+#phone iframe{inline-size:390px;block-size:min(800px,calc(100dvh - 90px));border:8px solid #000;border-radius:26px;background:var(--bg)}
+#phone button{min-block-size:44px;padding:0 18px;border:1.5px solid var(--c200);background:transparent;color:var(--c200);border-radius:var(--radius)}
+
+/* ---------- app + shell (layout.html, unchanged) ---------- */
+.app{display:grid;grid-template-columns:var(--side) minmax(0,1fr);block-size:calc(100dvh - 36px);overflow:hidden}
+.app[data-rail="1"]{--side:76px}
+.side{background:var(--g900);color:var(--c200);display:flex;flex-direction:column;min-inline-size:0;min-block-size:0}
+.side-top{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding-inline:20px 12px;block-size:72px;flex:none}
+.side-top img{display:block;inline-size:104px;block-size:auto;aspect-ratio:519/155}
+.coll{inline-size:44px;block-size:44px;display:grid;place-items:center;border:0;background:transparent;color:var(--c200);border-radius:var(--radius)}
+.coll:hover{background:rgba(230,217,209,.1)}
+[dir="rtl"] .coll .chev,[dir="ltr"] .app[data-rail="1"] .coll .chev{transform:scaleX(-1)}
+[dir="rtl"] .app[data-rail="1"] .coll .chev{transform:none}
+.nav{flex:1;overflow-y:auto;padding:8px 12px 16px;min-block-size:0}
+.grp-h{margin:18px 0 6px;padding-inline:12px;font:600 .8125rem/1.4 var(--display);color:var(--g300)}
+.nav .grp:first-child .grp-h{margin-block-start:6px}
+.nav .grp+.grp{margin-block-start:10px;border-block-start:1px solid rgba(230,217,209,.14)}
+.row{position:relative;display:flex;align-items:center;gap:14px;min-block-size:44px;padding:0 12px;border-radius:var(--radius);color:var(--c200);text-decoration:none;font:500 .96875rem/1.3 var(--body)}
+.row:hover{background:rgba(230,217,209,.09)}
+.row:focus-visible{outline:3px solid var(--c200);outline-offset:-3px}
+.row[aria-current="page"]{background:rgba(230,217,209,.15);font-weight:600}
+.row[aria-current="page"]::before{content:"";position:absolute;inset-block:8px;inset-inline-start:-12px;inline-size:5px;border-start-end-radius:3px;border-end-end-radius:3px;background:var(--c200)}
+.side-foot{flex:none;padding:12px;border-block-start:1px solid rgba(230,217,209,.14)}
+.who{display:flex;align-items:center;gap:12px;padding:6px 6px 12px}
+.av{inline-size:40px;block-size:40px;border-radius:50%;background:var(--c200);color:var(--g900);display:grid;place-items:center;font:700 1rem/1 var(--display);flex:none}
+.who b{display:block;font:600 .96875rem/1.3 var(--body)}
+.who span{display:block;font-size:.8125rem;color:var(--g300)}
+.ctl2{display:flex;gap:8px}
+.ctl2 button{flex:1;min-block-size:44px;border:1.5px solid rgba(230,217,209,.55);background:transparent;color:var(--c200);border-radius:var(--radius);font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px}
+.ctl2 button:hover{background:rgba(230,217,209,.1)}
+.i-short{display:none}
+.app[data-rail="1"] .i-short{display:inline;font-weight:700}
+.app[data-rail="1"] .lbl,.app[data-rail="1"] .grp-h,.app[data-rail="1"] .who>div,.app[data-rail="1"] .side-top img,.app[data-rail="1"] .ctl2 .t{display:none}
+.app[data-rail="1"] .side-top{justify-content:center;padding:0}
+.app[data-rail="1"] .row{justify-content:center;padding:0}
+.app[data-rail="1"] .who{justify-content:center;padding-inline:0}
+.app[data-rail="1"] .ctl2{flex-direction:column}
+.main{min-inline-size:0;min-block-size:0;display:flex;flex-direction:column;overflow-y:auto;position:relative}
+.ph{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:12px 32px 12px;flex-wrap:wrap}
+.ph h1{font:700 2rem/1.3 var(--display);margin:0}
+.acts{display:flex;align-items:center;gap:12px}
+.frame{padding:0 32px 56px;flex:1;min-inline-size:0}
+
+/* ---------- kit parts, unchanged ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-block-size:48px;padding:0 22px;border:2px solid transparent;border-radius:var(--radius);background:var(--btn);color:var(--btn-ink);font:700 1rem/1 var(--display);white-space:nowrap;text-decoration:none}
+.btn.sm{min-block-size:44px;padding:0 16px;font-size:.9375rem}
+.btn:hover{background:var(--btn-h)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.sec2{background:transparent;color:var(--ink);border-color:var(--fieldline)}
+.btn.sec2:hover{background:var(--hover)}
+.btn.quiet{background:transparent;color:var(--ink)}
+.btn.quiet:hover{background:var(--hover)}
+.ib{inline-size:44px;block-size:44px;display:inline-grid;place-items:center;border:2px solid transparent;background:transparent;color:var(--ink);border-radius:var(--radius);padding:0}
+.ib:hover{background:var(--hover)}
+.lnk{color:var(--ink);text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:4px;font-weight:500;background:none;border:0;padding:0}
+.lnk:hover{text-decoration-thickness:3px}
+a.lnk{display:inline-flex;align-items:center;min-block-size:44px}
+.back{display:inline-flex;align-items:center;gap:6px;min-block-size:44px;color:var(--ink);text-decoration:none;font-weight:600}
+[dir="rtl"] .back svg{transform:scaleX(-1)}
+.back:hover{text-decoration:underline;text-underline-offset:4px}
+.badge{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-inline-size:24px;block-size:24px;padding:0 8px;border-radius:var(--radius);border:1.5px solid var(--fieldline);font:600 .8125rem/1 var(--body);font-variant-numeric:tabular-nums;white-space:nowrap}
+.badge svg{inline-size:14px;block-size:14px}
+.badge.q{border-color:var(--line);color:var(--dim)}
+.pill{display:inline-flex;align-items:center;gap:7px;block-size:28px;padding-inline:10px 12px;border-radius:var(--radius);font:600 .8125rem/1 var(--body);white-space:nowrap;box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 30%,transparent)}
+.pill svg{inline-size:13px;block-size:13px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.s-run{background:var(--st-run-bg);color:var(--st-run-ink)}
+.s-done{background:var(--st-done-bg);color:var(--st-done-ink)}
+.s-none{background:transparent;color:var(--st-none-ink);box-shadow:inset 0 0 0 1.5px currentColor}
+.spin{display:none;inline-size:18px;block-size:18px;border:3px solid color-mix(in srgb,currentColor 30%,transparent);border-top-color:currentColor;border-radius:50%;animation:r .8s linear infinite}
+@keyframes r{to{transform:rotate(360deg)}}
+.ban{display:flex;gap:12px;align-items:flex-start;padding:12px 16px;border-radius:var(--radius);border-inline-start:6px solid var(--err-bar);background:var(--err-bg);color:var(--err-ink);font-weight:500;line-height:1.55}
+.ban svg{margin-block-start:2px}
+.ban.note{background:var(--note-bg);color:var(--ink);border-inline-start-color:var(--fieldline);font-weight:400}
+.ban.ok{background:var(--ok-bg);color:var(--ok-ink);border-inline-start-color:var(--ok-ink)}
+.ban .act{margin-inline-start:auto;flex:none}
+.ban>svg,.locked>svg,.cfm svg,.rec>svg{inline-size:20px;block-size:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.cfm>span{display:flex;gap:10px;align-items:flex-start}
+.ban b{font-weight:700}
+.ban.rowc{flex-wrap:wrap;align-items:center}
+.state{border:1.5px solid var(--line);border-radius:var(--radius);background:transparent;padding:44px 24px;text-align:center;display:grid;justify-items:center;gap:10px}
+.state.refused{border-style:dashed;border-color:var(--fieldline)}
+.state.solid{background:var(--surface)}
+.state .ico{inline-size:56px;block-size:56px;border-radius:var(--radius);display:grid;place-items:center;background:var(--head)}
+.state.refused .ico{border-radius:50%;border:2px solid var(--fieldline);background:transparent}
+.state .ico svg{inline-size:28px;block-size:28px}
+.state h4{font:700 1.125rem/1.4 var(--display);margin:4px 0 0}
+.state p{margin:0;color:var(--dim);max-inline-size:46ch;font-size:.9375rem}
+.sk{display:inline-block;block-size:14px;border-radius:4px;background:linear-gradient(90deg,var(--line),var(--hover),var(--line));background-size:200% 100%;animation:sh 1.4s linear infinite;vertical-align:middle}
+@keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.sk,.spin{animation:none}}
+.sk.b{display:block}
+
+/* ---------- money half of the kit, unchanged ---------- */
+.fig{font-variant-numeric:tabular-nums;font-weight:500;direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+.fig.neg{font-weight:600}
+.fig .u{color:var(--dim);font-weight:400;font-size:.8125em;margin-inline-start:6px}
+.fx{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+.pv{display:inline-flex;align-items:center;gap:5px;block-size:22px;padding:0 8px;border-radius:var(--radius);font:600 .75rem/1 var(--body);white-space:nowrap;border:1px solid var(--line);color:var(--dim);background:transparent;justify-self:start;align-self:start}
+.pv svg{inline-size:13px;block-size:13px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.pv.calc{color:var(--ink)}
+.pv.ent{border-color:var(--fieldline);color:var(--ink);background:var(--head)}
+.pv.car{border-style:dotted;border-width:1.5px;border-color:var(--fieldline);color:var(--ink)}
+.pv.asm{background:var(--asm-bg);color:var(--asm-ink);border:1.5px dashed currentColor}
+.pv.asm b{font-weight:700;font-variant-numeric:tabular-nums}
+button.pv{cursor:pointer}
+button.pv:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.wf{border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden}
+.wf-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 16px;background:var(--head);border-block-end:1px solid var(--line)}
+.wf-h b{font:700 1.0625rem/1.3 var(--display)}
+.wf-h .sub{color:var(--dim);font-size:.875rem}
+.wf-r{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(150px,auto);gap:4px 14px;align-items:center;padding:10px 16px;border-block-end:1px solid var(--line);min-block-size:56px}
+.wf-r .l b{font-weight:600;display:block}
+.wf-r .l small{display:block;color:var(--dim);font-size:.8125rem;line-height:1.45}
+.wf-r .p{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.wf-r .v{text-align:end;font-size:1.0625rem}
+.wf-r.sub-t{background:color-mix(in srgb,var(--ink) 3%,var(--surface))}
+.wf-r.res{background:var(--head);border-block-start:2px solid var(--fieldline);border-block-end:0;min-block-size:64px}
+.wf-r.res .l b{font:700 1.0625rem/1.3 var(--display)}
+.wf-r.res .v{font:700 1.375rem/1.2 var(--body);font-variant-numeric:tabular-nums}
+.wf-r.asmrow{background:color-mix(in srgb,var(--asm-bg) 35%,var(--surface))}
+.wf-f{padding:12px 16px;background:var(--surface);border-block-start:1px solid var(--line)}
+.wf-f h5{margin:0 0 8px;font:600 .9375rem/1.3 var(--display)}
+.wf-f dl{margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px 28px}
+.wf-f dl div{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:baseline;border-block-end:1px dotted var(--line);padding-block:3px}
+.wf-f dt{color:var(--dim);font-size:.875rem}
+.wf-f dd{margin:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.foot-note{display:flex;gap:8px;align-items:flex-start;padding:10px 16px;background:var(--note-bg);font-size:.875rem;line-height:1.5;border-block-start:1px solid var(--line)}
+.foot-note svg{inline-size:18px;block-size:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;margin-block-start:2px}
+.lg{display:grid;gap:12px}
+.lg-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.tile{border:1.5px solid var(--fieldline);border-radius:var(--radius);background:var(--surface);padding:14px;display:grid;gap:6px;align-content:start;position:relative}
+.tile h5{margin:0;font:700 .9375rem/1.35 var(--display)}
+.tile .mn{color:var(--dim);font-size:.8125rem;line-height:1.45;min-block-size:3.6em}
+.tile .big{font:700 1.375rem/1.2 var(--body);font-variant-numeric:tabular-nums}
+.tile .fl{font-size:.75rem;color:var(--dim);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.tile .fl svg{inline-size:13px;block-size:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tile .bar{block-size:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.tile .bar i{display:block;block-size:100%;background:var(--ink)}
+.tile .dr{min-block-size:44px;display:inline-flex;align-items:center;gap:6px;padding:0 10px;border:1.5px solid var(--fieldline);border-radius:var(--radius);background:transparent;font:600 .875rem/1 var(--body);justify-self:start}
+.tile .dr:hover{background:var(--hover)}
+.tile .dr[aria-expanded="true"]{background:var(--ink);color:var(--bg)}
+.tile .dr svg{inline-size:15px;block-size:15px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.tile.open{box-shadow:0 0 0 3px var(--focus)}
+.lg-no{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--dim);font-size:.9375rem;padding:2px 2px}
+.lg-no .nx{display:inline-flex;align-items:center;justify-content:center;inline-size:26px;block-size:26px;border:2px solid var(--fieldline);border-radius:50%;color:var(--ink)}
+.lg-no .nx::before{content:"";inline-size:12px;block-size:2px;background:currentColor;transform:rotate(-45deg)}
+.lg-side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.box{border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:12px 14px;display:grid;gap:4px;align-content:start}
+.box h6{margin:0;font:600 .875rem/1.35 var(--display);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.box .big{font:700 1.25rem/1.2 var(--body);font-variant-numeric:tabular-nums}
+.box .mn{color:var(--dim);font-size:.8125rem;line-height:1.45}
+.box.unc.zero{border-color:var(--line)}
+.rec{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border-radius:var(--radius);border-inline-start:6px solid var(--ok-ink);background:var(--ok-bg);color:var(--ok-ink);font-weight:600;line-height:1.5}
+.rec svg{inline-size:20px;block-size:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.rec small{font-weight:400;flex-basis:100%}
+.drill{border:1.5px solid var(--fieldline);border-radius:var(--radius);background:var(--surface);overflow-x:auto}
+.drill table{inline-size:100%;border-collapse:separate;border-spacing:0;font-size:.875rem;min-inline-size:760px}
+.drill th{background:var(--head);text-align:start;font:600 .8125rem/1.3 var(--body);color:var(--dim);padding:0 12px;block-size:40px;white-space:nowrap}
+.drill td{padding:0 12px;block-size:44px;border-block-start:1px solid var(--line);white-space:nowrap}
+.drill th.n,.drill td.n{text-align:end}
+.drill .dh{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;background:var(--head);border-block-end:1px solid var(--line);font-weight:600}
+.chain{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:0;border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden;list-style:none;margin:0;padding:0}
+.chain li{padding:12px 12px 14px;display:grid;gap:4px;align-content:start;position:relative;min-inline-size:0}
+.chain li+li{border-inline-start:1px solid var(--line)}
+.chain .st{display:flex;align-items:center;gap:8px;font-weight:600;line-height:1.3}
+.chain .mk{inline-size:26px;block-size:26px;border-radius:50%;border:2px solid var(--fieldline);display:grid;place-items:center;flex:none;font:700 .75rem/1 var(--body)}
+.chain .mk svg{inline-size:14px;block-size:14px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.chain li.done .mk{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chain li.cur{background:var(--head)}
+.chain li.cur .mk{border-width:3px;background:var(--bg)}
+.chain li.cur .mk::after{content:"";inline-size:8px;block-size:8px;border-radius:50%;background:var(--ink)}
+.chain .who2 bdi{white-space:nowrap}
+.chain .who2{font-size:.8125rem;color:var(--dim);line-height:1.4}
+.chain .age{display:inline-flex;gap:5px;align-items:center;font-size:.8125rem;font-weight:600}
+.chain .age svg{inline-size:14px;block-size:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.dec-con{border-inline-start:6px solid var(--fieldline);background:var(--note-bg);padding:10px 14px;border-radius:var(--radius);display:grid;gap:6px;font-size:.9375rem;line-height:1.55}
+.dec-con b{font-weight:700}
+.dec-who{display:flex;gap:10px;align-items:flex-start;padding:10px 14px;border-radius:var(--radius);border:1.5px dashed var(--fieldline);line-height:1.5}
+.dec-who svg{inline-size:20px;block-size:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;margin-block-start:2px}
+
+/* ---------- THIS SCREEN: new parts (documented in README) ---------- */
+.phl{display:grid;gap:2px;min-inline-size:0}
+.ttl{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.meta{display:flex;align-items:center;gap:6px 18px;flex-wrap:wrap;margin:2px 0 0;color:var(--dim);font-size:.9375rem}
+.meta .code{font-variant-numeric:tabular-nums;color:var(--dim)}
+.meta a{color:var(--ink);font-weight:600}
+
+/* the jump line: five links, no more. One per group the viewer may see. */
+.jump{position:sticky;inset-block-start:0;z-index:20;background:var(--bg);display:flex;gap:4px 26px;flex-wrap:wrap;align-items:center;padding:0 32px;margin-block-end:4px;border-block-end:1px solid var(--line)}
+.jump a{display:inline-flex;align-items:center;gap:8px;min-block-size:48px;color:var(--ink);font:600 .9375rem/1 var(--display);text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:6px;text-decoration-color:var(--line)}
+.jump a:hover{text-decoration-color:currentColor}
+.jump svg{inline-size:18px;block-size:18px}
+
+/* group section: heading column holds the INTENTION, body column holds what the type declares */
+.gs{display:grid;grid-template-columns:232px minmax(0,1fr);gap:0 36px;padding-block:28px 32px;border-block-end:1px solid var(--line);scroll-margin-block-start:56px}
+.gs:last-child{border-block-end:0}
+.gh{position:sticky;inset-block-start:64px;align-self:start;display:grid;gap:6px}
+.gh .gi{inline-size:44px;block-size:44px;border-radius:var(--radius);display:grid;place-items:center;background:var(--head)}
+.gh h2{font:700 1.375rem/1.35 var(--display);margin:6px 0 0}
+.gh p{margin:0;color:var(--dim);font-size:.9375rem;line-height:1.55}
+.gb{display:grid;gap:18px;min-inline-size:0;align-content:start}
+.gb>h3{font:600 1.0625rem/1.4 var(--display);margin:6px 0 -6px}
+.gb .sub{margin:0;color:var(--dim);font-size:.875rem}
+.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+
+.kv{margin:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.kv>div{display:grid;grid-template-columns:180px minmax(0,1fr) auto;gap:2px 16px;align-items:center;min-block-size:52px;padding:6px 16px;border-block-start:1px solid var(--line)}
+.kv>div:first-child{border-block-start:0}
+.kv dt{color:var(--dim);font-size:.9375rem}
+.kv dd{margin:0;font-weight:500;min-inline-size:0}
+.kv dd small{display:block;color:var(--dim);font-weight:400;font-size:.8125rem;line-height:1.45}
+.kv .tags{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.kv .big{font:700 1.375rem/1.25 var(--body)}
+.kv .nul{display:flex;gap:10px;align-items:flex-start;color:var(--ink)}
+.kv .nul svg{inline-size:20px;block-size:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;margin-block-start:2px}
+.kv .nul b{display:block;font-weight:600}
+.kv .nul small{display:block;color:var(--dim);font-weight:400;font-size:.8125rem}
+
+.pg{display:grid;gap:8px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:14px 16px}
+.pg .top{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.pg .top b{font:600 1rem/1.4 var(--display)}
+.pg .num{font:700 1.5rem/1.2 var(--body)}
+.pg .trk{block-size:12px;border-radius:4px;background:var(--line);overflow:hidden}
+.pg .trk i{display:block;block-size:100%;background:var(--ink)}
+.pg .ft{display:flex;gap:8px 16px;flex-wrap:wrap;align-items:center;color:var(--dim);font-size:.875rem}
+
+/* design stage strip: segment WIDTH is the fixed payment weight; fill and hatch say state */
+.stg{display:flex;gap:4px;direction:inherit}
+.stg>div{flex-grow:var(--w);flex-basis:0;min-inline-size:0;display:grid;gap:6px}
+.stg .sg{block-size:18px;border:2px solid var(--fieldline);border-radius:4px}
+.stg .sg.done{background:var(--ink)}
+.stg .sg.appr{background:repeating-linear-gradient(135deg,var(--ink) 0 4px,transparent 4px 8px)}
+.stg .sg.wip{background:linear-gradient(90deg,var(--ink) 40%,transparent 40%)}
+.stg small{display:block;font-size:.75rem;line-height:1.35;color:var(--dim)}
+.stg small b{display:block;color:var(--ink);font-weight:600;font-size:.8125rem}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.8125rem;color:var(--dim)}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.legend i{display:inline-block;inline-size:22px;block-size:12px;border:2px solid var(--fieldline);border-radius:3px}
+.legend i.done{background:var(--ink)}.legend i.appr{background:repeating-linear-gradient(135deg,var(--ink) 0 3px,transparent 3px 6px)}.legend i.wip{background:linear-gradient(90deg,var(--ink) 40%,transparent 40%)}
+[dir="rtl"] .stg .sg.wip,[dir="rtl"] .legend i.wip{background:linear-gradient(270deg,var(--ink) 40%,transparent 40%)}
+
+.tw{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow-x:auto}
+.tw table{inline-size:100%;border-collapse:separate;border-spacing:0;font-size:.9375rem;min-inline-size:560px}
+.tw th{background:var(--head);text-align:start;font:600 .8125rem/1.3 var(--body);color:var(--dim);padding:0 14px;block-size:44px;white-space:nowrap}
+.tw td{padding:0 14px;block-size:48px;border-block-start:1px solid var(--line)}
+.tw th.n,.tw td.n{text-align:end}
+.tw td.nm{font-weight:600}
+.tw tr.tot td{background:var(--head);font-weight:700;block-size:52px;border-block-start:2px solid var(--fieldline)}
+.tw tr.dim td{color:var(--dim)}
+.tw .bd{display:flex;align-items:center;gap:10px}
+.tw .bd .trk{flex:1;min-inline-size:60px;block-size:10px;border-radius:4px;background:var(--line);overflow:hidden}
+.tw .bd .trk i{display:block;block-size:100%;background:var(--ink)}
+.tw .bd bdi{min-inline-size:48px;text-align:end;font-variant-numeric:tabular-nums;font-weight:600}
+.tw .lk{display:inline-flex;gap:4px;align-items:center}
+.t-m{display:none}
+.mrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:10px 16px;border-block-start:1px solid var(--line);min-block-size:64px;align-items:center}
+.mrow:first-child{border-block-start:0}
+.mrow b{font-weight:600}
+.mrow small{grid-column:1/-1;color:var(--dim);font-size:.8125rem}
+.mrow .bd{grid-column:1/-1;display:flex;align-items:center;gap:10px}
+.mrow .bd .trk{flex:1;block-size:10px;border-radius:4px;background:var(--line);overflow:hidden}
+.mrow .bd .trk i{display:block;block-size:100%;background:var(--ink)}
+.mrow .bd bdi{font-weight:600;font-variant-numeric:tabular-nums}
+.mlist{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden}
+.mlist .mt{display:flex;justify-content:space-between;gap:10px;padding:12px 16px;background:var(--head);font-weight:700;border-block-start:2px solid var(--fieldline)}
+
+.lst{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.lst li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 14px;padding:10px 16px;border-block-start:1px solid var(--line);align-items:center;min-block-size:60px}
+.lst li:first-child{border-block-start:0}
+.lst b{font-weight:600}
+.lst small{grid-column:1/-1;color:var(--dim);font-size:.8125rem;line-height:1.45}
+.lst .r{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;color:var(--dim);font-size:.875rem}
+.sec-h{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.sec-h h3{font:600 1.0625rem/1.4 var(--display);margin:0}
+.locked{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border:1.5px dashed var(--fieldline);border-radius:var(--radius);color:var(--dim)}
+.locked svg{margin-block-start:2px}
+.locked b{color:var(--ink);display:block}
+.cfm{display:grid;gap:10px;padding:12px 16px;border-radius:var(--radius);background:var(--note-bg);border-block-start:1px solid var(--fieldline)}
+.cfm .bt{display:flex;gap:10px;flex-wrap:wrap}
+.chk{border:1.5px solid var(--fieldline);border-radius:var(--radius);background:var(--surface);overflow:hidden}
+.chk .h{padding:10px 16px;background:var(--head);font:600 .9375rem/1.4 var(--display)}
+.chk .b{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:12px 16px}
+.chk .b div{display:grid;gap:0;border-block-start:1px dotted var(--line);padding-block-start:6px}
+.chk small{color:var(--dim);font-size:.75rem}
+.chk .fig{font-size:1.125rem;font-weight:700}
+.chk .n{padding:10px 16px 12px;border-block-start:1px solid var(--line);font-size:.875rem;line-height:1.55;color:var(--ink);display:flex;gap:8px;align-items:flex-start}
+.chk .n svg{inline-size:18px;block-size:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;margin-block-start:2px}
+
+/* ---------- reviewer chrome (NOT part of the design) ---------- */
+.rv{border:1.5px dashed var(--fieldline);border-radius:var(--radius);background:var(--asm-bg);color:var(--asm-ink);padding:10px 14px;font-size:.875rem;line-height:1.6;text-align:start;direction:ltr}
+.rv b{font-weight:700}
+.rv ul{margin:4px 0 0;padding-inline-start:20px}
+.rv .tag{display:inline-block;font-weight:700;margin-inline-end:6px}
+body[data-rv="0"] .rv{display:none}
+[data-src]{position:relative}
+body[data-srcflag="1"] [data-src]{outline:2px solid var(--fieldline);outline-offset:3px}
+body[data-srcflag="1"] [data-src="needs"]{outline-style:dashed;outline-color:var(--err-bar)}
+body[data-srcflag="1"] [data-src]::after{content:attr(data-sl);position:absolute;inset-block-start:-12px;inset-inline-end:8px;z-index:6;background:var(--ink);color:var(--bg);font:600 .6875rem/1 var(--body);padding:3px 7px;border-radius:3px;direction:ltr;white-space:nowrap}
+body[data-srcflag="1"] [data-src="needs"]::after{background:var(--err-bar);color:#fff}
+
+/* ---------- phone (kit breakpoint) ---------- */
+.m-only{display:none}
+.mh{flex:none}
+@media (max-width:1100px){
+  .gs{grid-template-columns:1fr;gap:14px}
+  .gh{position:static;grid-template-columns:44px 1fr;column-gap:12px;align-items:center}
+  .gh .gi{grid-row:1/3}.gh h2{margin:0;font-size:1.25rem}
+  .lg-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .chain{grid-auto-flow:row}.chain li+li{border-inline-start:0;border-block-start:1px solid var(--line)}.chain li{grid-template-columns:auto 1fr;column-gap:12px;align-items:start}.chain .st{grid-row:1/4}
+  .pair{grid-template-columns:1fr}
+}
+@media (max-width:820px){
+  .app{display:flex;flex-direction:column;block-size:calc(100dvh - 36px)}
+  .side,.d-only{display:none!important}
+  .m-only{display:block}
+  .mh{display:flex;align-items:center;justify-content:space-between;block-size:56px;padding:0 16px;background:var(--g900);color:var(--c200)}
+  .mh img{display:block;inline-size:88px;block-size:auto;aspect-ratio:519/155}
+  .mh .lang{min-block-size:44px;padding:0 14px;border:1.5px solid rgba(230,217,209,.6);background:transparent;color:var(--c200);border-radius:var(--radius);font-weight:600}
+  .main{flex:1;overscroll-behavior:contain}
+  .ph{display:block;padding:8px 16px 8px}
+  .ph h1{font-size:1.625rem}
+  .frame{padding:0 16px 24px}
+  .jump{padding:0 16px;flex-wrap:nowrap;overflow-x:auto;gap:4px 22px;scrollbar-width:none}
+  .jump a{white-space:nowrap}
+  .gs{padding-block:22px 24px}
+  .kv>div{grid-template-columns:minmax(0,1fr) auto;padding:10px 14px}
+  .kv dt{grid-column:1/-1;font-size:.8125rem}
+  .kv .tags{grid-column:1/-1;justify-content:flex-start}
+  .t-d{display:none}.t-m{display:block}
+  .lg-tiles,.lg-side{grid-template-columns:1fr}
+  .tile .mn{min-block-size:0}
+  .chk .b{grid-template-columns:1fr}
+  .wf-r{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"l v" "p p"}
+  .wf-r .l{grid-area:l}.wf-r .v{grid-area:v}.wf-r .p{grid-area:p;justify-content:flex-start}
+  .drill table{min-inline-size:640px}
+  .stg{flex-wrap:wrap}.stg>div{flex-basis:calc(50% - 4px);flex-grow:0}.stg .sg{inline-size:100%}
+  .abar{flex:none;display:flex;gap:12px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:var(--surface);border-block-start:1px solid var(--line)}
+  .abar .menu{flex:none;min-inline-size:116px;block-size:60px;display:flex;align-items:center;justify-content:center;gap:10px;border:2px solid var(--fieldline);background:transparent;border-radius:var(--radius);font:700 1rem/1 var(--display)}
+  .abar .btn{flex:1;block-size:60px;font-size:1.0625rem}
+  [data-sheet="1"] .abar{visibility:hidden}
+  .nsheet{position:fixed;inset-inline:0;inset-block-end:0;z-index:70;max-block-size:90dvh;display:none;flex-direction:column;background:var(--bg);border-start-start-radius:var(--radius);border-start-end-radius:var(--radius);box-shadow:0 -12px 40px rgba(0,0,0,.35)}
+  [data-sheet="1"] .scrim{display:block;z-index:65}
+  [data-sheet="1"] .nsheet{display:flex}
+  .grab{inline-size:44px;block-size:4px;border-radius:2px;background:var(--line);margin:10px auto 0;flex:none}
+  .sh-top{display:flex;align-items:center;gap:12px;padding:12px 16px;border-block-end:1px solid var(--line)}
+  .sh-top .who{padding:0;flex:1}.sh-top .who span{color:var(--dim)}
+  .sh-top button{inline-size:48px;block-size:48px;border:1.5px solid var(--fieldline);background:transparent;border-radius:var(--radius);display:grid;place-items:center}
+  .sh-nav{overflow-y:auto;padding:6px 12px 14px}
+  .sh-nav .grp-h{color:var(--dim)}
+  .sh-nav .grp+.grp{border-block-start:1px solid var(--line)}
+  .sh-nav .row{min-block-size:52px;color:var(--ink);font-size:1.0625rem}
+  .sh-nav .row[aria-current="page"]{background:var(--head)}
+  .sh-nav .row[aria-current="page"]::before{background:var(--ink)}
+}
+.scrim{display:none;position:fixed;inset:0;background:var(--scrim)}
+@media (max-width:820px){.scrim{inset:0}}
+</style>
+</head>
+<body data-rv="1" data-srcflag="0">
+
+<details class="strip" id="strip">
+  <summary><span aria-hidden="true">▾</span> معاينة (ليست جزءاً من التصميم)</summary>
+  <div class="panelx">
+    <div class="grp" role="group" aria-label="نوع العقد"><b>نوع العقد</b>
+      <button type="button" data-type="ls" aria-pressed="true">مبلغ مقطوع</button>
+      <button type="button" data-type="cp" aria-pressed="false">التكلفة زائد</button>
+      <button type="button" data-type="ds" aria-pressed="false">تصميم</button>
+    </div>
+    <div class="grp" role="group" aria-label="الدور"><b>الدور</b>
+      <button type="button" data-role="owner" aria-pressed="true">المالك</button>
+      <button type="button" data-role="site" aria-pressed="false">مهندس موقع (مُسنَد)</button>
+    </div>
+    <div class="grp" role="group" aria-label="الحالة"><b>الحالة</b>
+      <button type="button" data-view="normal" aria-pressed="true">عادي</button>
+      <button type="button" data-view="loading" aria-pressed="false">تحميل</button>
+      <button type="button" data-view="failed" aria-pressed="false">تعذّر التحميل</button>
+      <button type="button" data-view="partial" aria-pressed="false">فشل جزء المال</button>
+      <button type="button" data-view="setup" aria-pressed="false">جدول كميات غير موقَّع</button>
+      <button type="button" data-view="empty" aria-pressed="false">مشروع جديد بلا بنود</button>
+      <button type="button" data-view="refused" aria-pressed="false">مرفوض (غير مُسنَد)</button>
+      <button type="button" data-view="stop" aria-pressed="false">تأكيد الإيقاف</button>
+    </div>
+    <div class="grp"><button type="button" id="themebtn">فاتح / داكن</button><button type="button" id="dirbtn">اتجاه LTR</button><button type="button" id="rvbtn" aria-pressed="true">ملاحظات المراجعة</button><button type="button" id="srcbtn" aria-pressed="false">مصدر البيانات</button><button type="button" id="phbtn">معاينة الهاتف</button></div>
+  </div>
+</details>
+
+<div class="app" id="app" data-rail="0" data-sheet="0">
+  <aside class="side" aria-label="التنقل الرئيسي">
+    <div class="side-top"><img src="../brand/kaaf-wordmark.png" width="519" height="155" alt="KAAF"><button type="button" class="coll" aria-label="تصغير الشريط الجانبي"><svg class="i chev" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button></div>
+    <nav class="nav" id="nav" aria-label="الشاشات"></nav>
+    <div class="side-foot"><div class="who"><div class="av" id="av1"></div><div><b id="un1"></b><span id="ur1"></span></div></div><div class="ctl2"><button type="button" id="lang1" lang="en" dir="ltr"><span class="t">English</span><span class="i-short">EN</span></button><button type="button" id="theme1" aria-label="الوضع"><svg class="i" viewBox="0 0 24 24"><path d="M21 13.5A8.5 8.5 0 1110.5 3a7 7 0 0010.5 10.5z"/></svg><span class="t">الوضع</span></button></div></div>
+  </aside>
+  <header class="mh m-only"><img src="../brand/kaaf-wordmark.png" width="519" height="155" alt="KAAF"><button type="button" class="lang" id="lang2" lang="en" dir="ltr">English</button></header>
+
+  <main class="main" id="main">
+    <div class="ph" id="ph"></div>
+    <div id="jumpw"></div>
+    <div class="frame" id="frame"></div>
+  </main>
+
+  <div class="abar m-only" id="abar"></div>
+  <div class="scrim" id="scrim"></div>
+  <div class="nsheet m-only" id="nsheet" role="dialog" aria-label="الشاشات"><div class="grab"></div><div class="sh-top"><div class="who"><div class="av" id="av2"></div><div><b id="un2"></b><span id="ur2"></span></div></div><button type="button" id="theme2" aria-label="الوضع"><svg class="i" viewBox="0 0 24 24"><path d="M21 13.5A8.5 8.5 0 1110.5 3a7 7 0 0010.5 10.5z"/></svg></button><button type="button" id="closeN" aria-label="إغلاق"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><nav class="sh-nav" id="nav2"></nav></div>
+</div>
+<div id="phone" role="dialog" aria-label="معاينة الهاتف"><div class="dev"><iframe id="phf" title="معاينة الهاتف"></iframe><button type="button" id="phx">إغلاق المعاينة</button></div></div>
+
+<script>
+/* ============ icons (one stroke family) ============ */
+const IC={projects:'M4 21V7l8-4 8 4v14M9 21v-6h6v6M8 10h.01M12 10h.01M16 10h.01',catalog:'M3 11V4h7l11 11-7 7L3 11zM7.5 7.5h.01',bab:'M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5',employees:'M16 20v-1.5a3.5 3.5 0 00-3.5-3.5h-5A3.5 3.5 0 004 18.5V20M10 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM20 20v-1.5a3.5 3.5 0 00-2.6-3.4M15.5 4.2a3.5 3.5 0 010 6.6',subs:'M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.8-3.8a6 6 0 01-7.9 7.9l-6.9 6.9a2.1 2.1 0 01-3-3l6.9-6.9a6 6 0 017.9-7.9l-3.8 3.8z',suppliers:'M3 6h11v10H3zM14 9h4l3 3v4h-7zM7 19a2 2 0 100-4 2 2 0 000 4zM17 19a2 2 0 100-4 2 2 0 000 4z',clients:'M3 8h18v12H3zM8 8V5h8v3M3 13h18',users:'M12 3l8 3v6c0 4.5-3.2 7.6-8 9-4.8-1.4-8-4.5-8-9V6l8-3zM12 11a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM7.5 17c.8-2 2.4-3 4.5-3s3.7 1 4.5 3',depts:'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',audit:'M9 4h6v3H9zM6 5h-.5A1.5 1.5 0 004 6.5v13A1.5 1.5 0 005.5 21h13a1.5 1.5 0 001.5-1.5v-13A1.5 1.5 0 0018.5 5H18M8 12h8M8 16h5',
+ left:'M15 6l-6 6 6 6',menu:'M4 7h16M4 12h16M4 17h16',plus:'M12 5v14M5 12h14',
+ calc:'M5 9h14M5 15h14',ent:'M4 20h4L19 9l-4-4L4 16v4z',car:'M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1',asm:'M12 21a9 9 0 100-18 9 9 0 000 18zM9.5 9.5a2.5 2.5 0 015 .5c0 1.5-2.5 2-2.5 3.5M12 17v.01',
+ check:'M5 12.5l4.5 4.5L19 7.5',x:'M6 6l12 12M18 6L6 18',clock:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 2',lock:'M6 11h12v9H6zM8 11V8a4 4 0 018 0v3',info:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 8v.01',warn:'M12 4l9 16H3zM12 10v4M12 17.5v.5',list:'M4 7h16M4 12h16M4 17h10',user:'M16 20v-1.5a3.5 3.5 0 00-3.5-3.5h-5A3.5 3.5 0 004 18.5V20M10 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7z',chev:'M6 9l6 6 6-6',doc:'M6 3h9l4 4v14H6zM14 3v5h5',pause:'M9 5v14M15 5v14',eye:'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 15a3 3 0 100-6 3 3 0 000 6z',err:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7.5v5.5M12 16.5v.01',redo:'M20 11a8 8 0 10-2.3 5.7M20 4v7h-7',folder:'M3 7h6l2 2h10v10H3z',
+ g_understand:'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 15a3 3 0 100-6 3 3 0 000 6z',g_quantify:'M3 17L17 3l4 4L7 21zM8 12l2 2M11 9l2 2M14 6l2 2',g_execute:'M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.8-3.8a6 6 0 01-7.9 7.9l-6.9 6.9a2.1 2.1 0 01-3-3l6.9-6.9a6 6 0 017.9-7.9l-3.8 3.8z',g_pay:'M3 7h18v10H3zM12 14.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM6.5 10v.01M17.5 14v.01',g_org:'M16 20v-1.5a3.5 3.5 0 00-3.5-3.5h-5A3.5 3.5 0 004 18.5V20M10 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM20 20v-1.5a3.5 3.5 0 00-2.6-3.4M15.5 4.2a3.5 3.5 0 010 6.6'};
+const i=(n,c='')=>`<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[n]}"/></svg>`;
+const mi=(n,c)=>`<svg class="${c||''}" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[n]}"/></svg>`;
+const ST={run:{ar:'جاري العمل',c:'s-run',p:'M12 12m-3 0a3 3 0 106 0 3 3 0 10-6 0'},done:{ar:'انتهت',c:'s-done',p:'M5 12.5l4.5 4.5L19 7.5'},none:{ar:'لم تبدأ',c:'s-none',p:'M12 12m-3.5 0a3.5 3.5 0 107 0 3.5 3.5 0 10-7 0'}};
+const pill=k=>`<span class="pill ${ST[k].c}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${ST[k].p}"/></svg>${ST[k].ar}</span>`;
+
+/* ============ figures and provenance (money.html lib, unchanged in behaviour) ============ */
+const group=s=>s.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+const fmt2=a=>{const r=Math.round(a*100+1e-7)/100;const [x,y]=r.toFixed(2).split('.');return group(x)+'.'+y};
+const fig=(v,o)=>{o=o||{};v=Number(v);const neg=v<0&&Math.abs(v)>=0.00005,abs=Math.abs(v);const sg=neg?'−':(o.plus&&abs>=0.00005?'+':'');return `<bdi class="fig ${neg?'neg':''}" dir="ltr">${sg}${fmt2(abs)}${o.u?`<span class="u">${o.u}</span>`:''}</bdi>`};
+const int=v=>`<bdi class="fig" dir="ltr">${group(String(v))}</bdi>`;
+const pc=(v,d=1)=>`<bdi class="fig" dir="ltr">${Number(v).toFixed(d)}%</bdi>`;
+const PK={calc:['calc','محسوب'],ent:['ent','مُدخل'],car:['car','منقول']};
+const pv=(k,extra)=>{const p=PK[k];return `<span class="pv ${p[0]}">${mi(k)}${p[1]}${extra?` <span style="font-weight:500">${extra}</span>`:''}</span>`};
+const asm=id=>`<button type="button" class="pv asm" aria-label="افتراض ${id}: اذهب إلى سجل الافتراضات">${mi('asm')}افتراض <b>${id}</b></button>`;
+/* data-source flags (preview chrome): served = GET /api/projects/{id} returns it today; needs = no endpoint yet */
+const ds=(k,t)=>`data-src="${k}" data-sl="${t}"`;
+const SV='يُخدَّم اليوم',NE='يحتاج نقطة نهاية';
+const rv=(html,tag)=>`<div class="rv" lang="en" dir="ltr"><span class="tag">${tag||'Review note'}.</span>${html}</div>`;
+
+/* ============ the project data (sample) ============ */
+const P={
+ ls:{name:'فيلا 47 — التجمع الخامس',code:'PRJ-3F9A21C4',client:'هشام الكردي',type:'مقاولة بمبلغ مقطوع',team:6},
+ cp:{name:'مجمع الشيخ زايد التجاري',code:'PRJ-8C41D07E',client:'شركة الندى للتطوير',type:'التكلفة زائد إشراف',team:9},
+ ds:{name:'تصميم فيلا الشروق',code:'PRJ-52B9E6A1',client:'طارق فؤاد',type:'تصميم',team:3}};
+const CV=8400000; /* contract value, Lump Sum. 8.4 x the spec section 15 worked example, so every figure stays reconcilable to it */
+const BABS=[['أعمال الهيكل والخرسانة',11,2310000,84],['المباني والبياض',8,1176000,71],['الأرضيات والتكسيات',14,1680000,38],['الدهانات',6,756000,12],['الأعمال الكهربائية',19,924000,55],['الأعمال الصحية',15,840000,49],['النجارة والألوميتال',12,714000,22]];
+const ACC={cli:'العميل',safe:'الخزنة',rec:'ذمم العميل',hold:'الحجز',adv:'دفعة العميل المقدمة',ma:'تشوينات'};
+const EVT={ADV:['2026-02-18','SIG-01'],X1:['2026-03-22','X-1'],X2:['2026-04-26','X-2']};
+const POST=[['P-2001','ADV',ACC.cli,ACC.safe,2100000,'تحصيل دفعة مقدمة',{adv:2100000}],
+ ['P-2003','X1',ACC.rec,ACC.hold,504000,'حجز',{hold:504000}],['P-2004','X1',ACC.adv,ACC.rec,630000,'استرداد دفعة مقدمة',{adv:-630000}],['P-2005','X1',ACC.ma,ACC.rec,630000,'صرف تشوينات',{ma:630000}],
+ ['P-2008','X2',ACC.rec,ACC.hold,504000,'حجز',{hold:504000}],['P-2009','X2',ACC.adv,ACC.rec,630000,'استرداد دفعة مقدمة',{adv:-630000}],['P-2010','X2',ACC.rec,ACC.ma,378000,'استرداد تشوينات',{ma:-378000}]];
+const LEDN={adv:'دفعة العميل المقدمة',hold:'الحجز'};
+
+/* ============ state ============ */
+const q0=new URLSearchParams(location.search);
+const S={type:q0.get('type')||'ls',role:q0.get('role')||'owner',view:q0.get('view')||'normal',drill:null,statusOnly:true};
+const EMBED=q0.get('embed')==='1';
+const $=s=>document.querySelector(s);
+const H=document.documentElement;
+const USERS={owner:{n:'أحمد نبيل',r:'المالك'},site:{n:'خالد منصور',r:'مهندس موقع'}};
+const NAV=[{id:'projects',g:'core',ar:'المشاريع'},{id:'catalog',g:'core',ar:'كتالوج الأسعار'},{id:'bab',g:'core',ar:'الأبواب'},{id:'employees',g:'core',ar:'الموظفون'},{id:'subs',g:'core',ar:'مقاولو الباطن'},{id:'suppliers',g:'core',ar:'الموردون'},{id:'clients',g:'core',ar:'العملاء'},{id:'users',g:'admin',ar:'المستخدمون'},{id:'depts',g:'admin',ar:'الأقسام'},{id:'audit',g:'admin',ar:'سجل التدقيق'}];
+const GROUPS={core:'البيانات الأساسية',admin:'الإدارة'};
+function navHtml(){let o='';for(const g of['core','admin']){const it=NAV.filter(n=>n.g===g);o+=`<div class="grp"><div class="grp-h">${GROUPS[g]}</div>`+it.map(n=>`<a class="row" href="#" ${n.id==='projects'?'aria-current="page"':''} title="${n.ar}">${i(n.id)}<span class="lbl">${n.ar}</span></a>`).join('')+'</div>'}return o}
+
+/* ============ the primary action: ONE per screen, declared here, placed by the shell (header on desktop, bottom bar on phone) ============ */
+function primaryAction(){
+  const v=S.view;
+  if(['failed','refused','loading'].includes(v))return null;
+  if(S.role==='site')return S.type==='ls'?{ar:'سجل يومي جديد',ic:'plus'}:null;
+  if(S.type==='ls'&&['setup','empty'].includes(v))return {ar:'فتح جدول الكميات',ic:'list'};
+  if(S.type==='ls')return {ar:'مستخلص جديد',ic:'plus'};
+  if(S.type==='cp')return {ar:'فاتورة جديدة',ic:'plus'};
+  return {ar:'رفع مخرجات المرحلة 3',ic:'plus'};
+}
+
+/* ============ header ============ */
+function header(){
+  const p=P[S.type],v=S.view;
+  const back=`<a class="back" href="#">${i('left','s')}المشاريع</a>`;
+  if(v==='loading')return `<div class="phl">${back}<div class="ttl"><h1><span class="sk b" style="inline-size:300px;block-size:34px"></span></h1></div><p class="meta"><span class="sk" style="inline-size:240px"></span></p></div><div class="acts d-only"><span class="sk b" style="inline-size:150px;block-size:48px"></span></div>`;
+  if(v==='failed'||v==='refused')return `<div class="phl">${back}<div class="ttl"><h1>المشروع</h1></div></div>`;
+  const st=['setup','empty'].includes(v)?'none':'run';
+  const pa=primaryAction();
+  return `<div class="phl">${back}<div class="ttl"><h1>${p.name}</h1>${pill(st)}</div>
+    <p class="meta" ${ds('served',SV)}><bdi class="code" dir="ltr">${p.code}</bdi><a class="lnk" href="#" style="min-block-size:0">${p.client}</a><span class="badge">${p.type}</span></p></div>
+    <div class="acts d-only">${pa?`<button type="button" class="btn">${i(pa.ic,'s')}${pa.ar}</button>`:''}</div>`}
+
+/* ============ group scaffolding ============ */
+const GN={understand:['الفهم','g_understand'],quantify:['الكميات','g_quantify'],execute:['التنفيذ','g_execute'],pay:['المال','g_pay'],org:['التنظيم','g_org']};
+const GQ={
+ ls:{understand:'ما هذا العقد، وكم أُنجز منه؟',quantify:'بماذا تعاقدنا، وبأي كميات؟',execute:'ما الذي يجري في الموقع؟',pay:'ما المستحق، وما الذي يتحرك الآن؟',org:'من يعمل عليه، وما الذي يمكن تغييره؟'},
+ cp:{understand:'ما هذا العقد، وكم كلّف حتى الآن؟',quantify:'كيف تُصنَّف بنود التكلفة؟',execute:'ما الذي يجري في الموقع؟',pay:'ما الذي نفوتره الآن؟',org:'من يعمل عليه، وما الذي يمكن تغييره؟'},
+ ds:{understand:'ما هذا العقد، وأين وصلت المراحل؟',quantify:'كم قيمة التصميم، وكيف تتوزع؟',execute:'أين وصل كل مخرج؟',pay:'ما المستحق من المراحل؟',org:'من يعمل عليه، وما الذي يمكن تغييره؟'}};
+function gs(id,body,attr){const [t,ic]=GN[id];return `<section class="gs" id="g-${id}" aria-labelledby="h-${id}"><header class="gh"><span class="gi">${i(ic)}</span><h2 id="h-${id}">${t}</h2><p>${GQ[S.type][id]}</p></header><div class="gb" ${attr||''}>${body}</div></section>`}
+const kv=rows=>`<dl class="kv">${rows.map(r=>`<div ${r[3]||''}><dt>${r[0]}</dt><dd>${r[1]}</dd><span class="tags">${r[2]||''}</span></div>`).join('')}</dl>`;
+const nulrow=(t,s)=>`<span class="nul">${mi('info')}<span><b>${t}</b><small>${s}</small></span></span>`;
+
+/* ============ UNDERSTAND ============ */
+function understand(){
+  const p=P[S.type],site=S.role==='site',un=['setup','empty'].includes(S.view);
+  const base=[['العميل',`<a class="lnk" href="#" style="min-block-size:0">${p.client}</a>`,'',ds('served',SV)],['نوع العقد',p.type,'',ds('served',SV)]];
+  let out='';
+  if(S.type==='ls'){
+    if(site){
+      out=kv(base.concat([['الفريق',`${int(p.team)} أفراد`,'',ds('served',SV)]]))+rv('A money-free read model: no contract value, no rates, no progress percentage (a certified percentage is money-derived). Whether a site engineer may see the certified percentage is a question for Nabil.','Role');
+    }else if(un){
+      out=kv(base.concat([
+       ['قيمة العقد',nulrow('لم تُحدَّد بعد','تُشتق من جدول الكميات عند التوقيع، ولا تُدخل يدوياً.'),'',ds('served',SV+' (null)')],
+       ['الحجز',`${pc(20,0)} من قيمة كل مستخلص`,pv('ent'),ds('served',SV)],
+       ['استرداد الدفعة المقدمة',`${pc(25,0)} من قيمة كل مستخلص`,pv('ent')+asm('A11'),ds('served',SV)],
+       ['مبلغ الحجز عند التسليم',nulrow('لا يُحسب قبل توقيع جدول الكميات','النسبة معلومة والأساس غير معلوم، فلا يُعرض مبلغ.'),'',ds('needs','derived')]]))
+       +rv('Contract value is null while the BOQ is unsigned. The row is kept, with the reason, instead of showing 0.00 or a dash: a null is not a zero, and the two rates beside it would otherwise look like they have amounts. The hold amount row says why it has no figure.','Null state');
+    }else{
+      out=kv(base.concat([
+       ['قيمة العقد',`<span class="big">${fig(CV)}</span> <small>جنيه مصري</small>`,pv('car','جدول الكميات الموقَّع 2026-02-18'),ds('served',SV)],
+       ['الحجز',`${pc(20,0)} من قيمة كل مستخلص<small>يتراكم فقط، ويُفرج عنه مرة واحدة عند التسليم</small>`,pv('ent','أحمد نبيل، 2026-02-18'),ds('served',SV+' (rate only, no who/when)')],
+       ['استرداد الدفعة المقدمة',`${pc(25,0)} من قيمة كل مستخلص<small>حتى يصل رصيد الدفعة إلى صفر</small>`,pv('ent','أحمد نبيل، 2026-02-18')+asm('A11'),ds('served',SV+' (rate only, no who/when)')],
+       ['الحجز عند التسليم',`${fig(CV*0.2)}<small>20% × قيمة العقد</small>`,pv('calc'),ds('needs','derived on client from served fields')]]))
+       +`<div class="pg" ${ds('needs',NE)}><div class="top"><b>المعتمد من العقد</b><span class="num">${pc(60,1)}</span></div><div class="trk" role="img" aria-label="المعتمد 60 بالمئة من العقد"><i style="inline-size:60%"></i></div><div class="ft"><span>${fig(5040000)} من ${fig(CV)} ج.م</span>${pv('calc')}<span>مقياس التقدم لنوع المبلغ المقطوع: القيمة المعتمدة تراكمياً</span></div></div>`
+       +rv('Progress for Lump Sum is cumulative certified value over contract value (the progress metric for this type). Who entered the hold and advance rates, and when, is not served by GET /api/projects/{id}: the chips show a sample. Question for Nabil: should the entered chip show who and when for contract terms, and where is that stored?','Provenance');
+    }
+  }else if(S.type==='cp'){
+    out=kv(base.concat([
+      ['نسبة الإشراف',`${pc(10,0)} فوق التكلفة<small>تُدخل لكل عقد</small>`,pv('ent','المكتب الفني، 2026-01-12')+asm('A12'),ds('needs','SupervisionRate not on Project yet')],
+      ['التكلفة حتى الآن',`<span class="big">${fig(885000)}</span> <small>جنيه مصري</small>`,pv('car','حساب تكاليف التشغيل'),ds('needs',NE)],
+      ['الإشراف حتى الآن',fig(80000),pv('calc'),ds('needs',NE)]]))
+      +rv('Cost Plus has no contract value (null by design) so that row is absent, not shown empty. There is no percentage bar: spec 5.2 says progress is cost to date plus supervision. Hold, advance and تشوينات rows are absent because this type has none.','Absent by type');
+  }else{
+    out=kv(base.concat([
+      ['مساحة المشروع',`${int(400)} <small>م²</small>`,pv('ent'),ds('needs','Design terms not served')],
+      ['سعر المتر',`${fig(450)} <small>جم / م²</small>`,pv('ent')+asm('A12'),ds('needs','Design terms not served')],
+      ['قيمة التصميم',`<span class="big">${fig(180000)}</span> <small>جنيه مصري</small>`,pv('calc','المساحة × السعر'),ds('served',SV+' (ContractValue once set)')]]))
+      +`<div class="pg" ${ds('needs',NE)}><div class="top"><b>المراحل المعتمدة</b><span class="num">${pc(50,0)}</span></div>${stageStrip()}<div class="ft">${pv('calc')}<span>مقياس التقدم لنوع التصميم: مجموع أوزان المراحل المعتمدة</span></div></div>`;
+  }
+  return gs('understand',out);
+}
+function stageStrip(){
+  const st=[['المفهوم',30,'done'],['المخطط',20,'appr'],['ثلاثي الأبعاد',20,'wip'],['تطوير التصميم',20,''],['الوثائق النهائية',10,'']];
+  return `<div class="stg" role="list">${st.map((s,k)=>`<div role="listitem" style="--w:${s[1]}"><span class="sg ${s[2]}"></span><small><b>${s[0]}</b>${s[1]}%</small></div>`).join('')}</div>
+   <div class="legend"><span><i class="done"></i>مفوترة</span><span><i class="appr"></i>معتمدة</span><span><i class="wip"></i>قيد العمل</span><span><i></i>لم تبدأ</span></div>`}
+
+/* ============ QUANTIFY ============ */
+function quantify(){
+  const site=S.role==='site',v=S.view;let out='';
+  if(S.type==='ls'){
+    if(v==='empty'){
+      return gs('quantify',`<div class="state solid"><div class="ico">${i('list')}</div><h4>جدول الكميات فارغ</h4><p>لا بنود بعد. ابدأ بإضافة بند من الكتالوج؛ يُنشأ الباب تلقائياً عند أول بند.</p><button type="button" class="btn sm">${i('plus','s')}إضافة بند</button></div>`
+        +rv('Explicit empty state per spec 4.5: never phantom rows. The action here is the same one the page header declares as its primary; the shell places the primary, this inline button is the empty state own call to action and stays because the empty state must carry its next step (kit: no data without a next step).','Empty'));
+    }
+    const draft=v==='setup';
+    const rows=draft?BABS.slice(0,4):BABS;
+    const tot=rows.reduce((a,b)=>a+b[2],0);
+    const nitems=rows.reduce((a,b)=>a+b[1],0);
+    const head=draft
+      ?`<div class="ban note rowc">${mi('info')}<span><b>مسودة غير موقَّعة.</b> لا تُجمَّد القيم قبل التوقيع، ولا قيمة عقد قبله.</span></div>`
+      :`<div class="ban note rowc" ${ds('needs',NE)}>${mi('lock')}<span><b>موقَّع في <bdi dir="ltr">2026-02-18</bdi>.</b> القيم منسوخة من الكتالوج ولا يصلها أي تغيير سعر لاحق.</span></div>`;
+    if(site){
+      out=head+`<div class="tw t-d" ${ds('needs',NE)}><table><thead><tr><th>الباب</th><th class="n">عدد البنود</th></tr></thead><tbody>${rows.map(b=>`<tr><td class="nm">${b[0]}</td><td class="n">${int(b[1])}</td></tr>`).join('')}<tr class="tot"><td>الإجمالي</td><td class="n">${int(nitems)}</td></tr></tbody></table></div><div class="mlist t-m">${rows.map(b=>`<div class="mrow"><b>${b[0]}</b><span>${int(b[1])} بنداً</span></div>`).join('')}</div>`
+        +rv('Site engineers see item counts and, on the line screen, quantities. Rates and amounts are absent from this read, not hidden columns.','Role');
+    }else{
+      out=head+`<div class="tw t-d" ${ds('needs',NE)}><table><thead><tr><th>الباب</th><th class="n">عدد البنود</th><th class="n">القيمة (ج.م)</th><th class="n">الحصة</th></tr></thead><tbody>${rows.map(b=>`<tr><td class="nm">${b[0]}</td><td class="n">${int(b[1])}</td><td class="n">${fig(b[2])}</td><td class="n">${pc(b[2]/tot*100)}</td></tr>`).join('')}
+        <tr class="tot"><td>${draft?'مجموع المسودة':'إجمالي جدول الكميات'}</td><td class="n">${int(nitems)}</td><td class="n">${fig(tot)}</td><td class="n"></td></tr></tbody></table></div>
+        <div class="mlist t-m" ${ds('needs',NE)}>${rows.map(b=>`<div class="mrow"><b>${b[0]}</b>${fig(b[2])}<small>${int(b[1])} بنداً · ${pc(b[2]/tot*100)}</small></div>`).join('')}<div class="mt"><span>${draft?'مجموع المسودة':'الإجمالي'}</span>${fig(tot)}</div></div>
+        <div class="row-inline" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">${pv('calc',draft?'مجموع بنود المسودة، وليس قيمة العقد':'مجموع '+nitems+' بنداً مجمّداً، ويساوي قيمة العقد')}<a class="lnk" href="#">${draft?'متابعة بناء الجدول':'عرض البنود'}</a></div>`;
+      if(!draft)out+=`<div class="sec-h"><h3>أوامر التغيير</h3><span class="sub">بأسعارها الخاصة، لا تُدمج في الجدول أعلاه</span></div>
+        <ul class="lst" ${ds('needs',NE)}><li><span><b>أمر تغيير 1: إضافة غرفة خدمات</b></span><span class="r">${fig(186000)} ${pv('ent')}</span><small>عند المراجعة الفنية · لم يُعتمد بعد، فلا يغيّر قيمة العقد</small></li></ul>`
+        +rv('Open question for Nabil: once a change order is approved it raises the contract value (spec 13). Does this page then show the original value, the revised value, or both? Nothing in spec.md or the API says. The header never shows a value that is not derivable from the signed BOQ plus approved change orders.','Question');
+      else out+=rv('Unsigned BOQ: the table is a draft with its own total, labelled as not the contract value. Items are not frozen; spec 4.4 only freezes at signature.','Unsigned');
+    }
+  }else if(S.type==='cp'){
+    out=`<div class="tw t-d" ${ds('needs',NE)}><table><thead><tr><th>الفئة</th><th class="n">عدد البنود</th><th class="n">التكلفة حتى الآن (ج.م)</th><th>المعاملة في الفاتورة</th></tr></thead><tbody>
+     <tr><td class="nm">إشراف</td><td class="n">${int(14)}</td><td class="n">${fig(800000)}</td><td>التكلفة × (1 + ${pc(10,0)})</td></tr>
+     <tr><td class="nm">معفاة من الإشراف</td><td class="n">${int(3)}</td><td class="n">${fig(50000)}</td><td>بالتكلفة فقط (مشال، تجهيز الموقع)</td></tr>
+     <tr><td class="nm">غير قابلة للفوترة</td><td class="n">${int(2)}</td><td class="n">${fig(35000)}</td><td>تتحملها كاف</td></tr>
+     <tr class="tot"><td>إجمالي التكلفة</td><td class="n">${int(19)}</td><td class="n">${fig(885000)}</td><td></td></tr></tbody></table></div>
+     <div class="mlist t-m" ${ds('needs',NE)}>${[['إشراف',14,800000,'التكلفة × (1 + 10%)'],['معفاة من الإشراف',3,50000,'بالتكلفة فقط'],['غير قابلة للفوترة',2,35000,'تتحملها كاف']].map(r=>`<div class="mrow"><b>${r[0]}</b>${fig(r[2])}<small>${int(r[1])} بنداً · ${r[3]}</small></div>`).join('')}<div class="mt"><span>إجمالي التكلفة</span>${fig(885000)}</div></div>
+     <div style="display:flex;gap:8px;flex-wrap:wrap">${pv('ent','المكتب الفني، عند إنشاء العقد')}${pv('calc','مجموع التكلفة')}</div>`
+     +rv('No BOQ card. What Cost Plus quantifies is the three-way classification of contract lines (spec 5.2), set once by the Technical Office. Kaff engineer hours are internal cost and never appear in billable columns.','Absent by type');
+  }else{
+    const f=180000;
+    out=`<div class="wf" ${ds('needs',NE)}><div class="wf-h"><div><b>قيمة التصميم</b><div class="sub">المساحة × سعر المتر · لا جدول كميات لهذا النوع</div></div></div>
+     <div class="wf-r"><div class="l"><b>المساحة</b></div><div class="p">${pv('ent')}</div><div class="v">${int(400)} م²</div></div>
+     <div class="wf-r"><div class="l"><b>سعر المتر</b></div><div class="p">${pv('ent')+asm('A12')}</div><div class="v">${fig(450)}</div></div>
+     <div class="wf-r res"><div class="l"><b>قيمة التصميم</b></div><div class="p">${pv('calc')}</div><div class="v">${fig(f)}</div></div></div>
+     <div class="tw t-d" ${ds('needs',NE)}><table><thead><tr><th>المرحلة</th><th class="n">الوزن</th><th class="n">القيمة (ج.م)</th></tr></thead><tbody>${[['المفهوم (العربون)',30],['المخطط',20],['ثلاثي الأبعاد',20],['تطوير التصميم',20],['الوثائق النهائية',10]].map((s,k)=>`<tr><td class="nm">المرحلة ${k+1}: ${s[0]}</td><td class="n"><span class="lk">${mi('lock')}${pc(s[1],0)}</span></td><td class="n">${fig(f*s[1]/100)}</td></tr>`).join('')}<tr class="tot"><td>الإجمالي</td><td class="n">${pc(100,0)}</td><td class="n">${fig(f)}</td></tr></tbody></table></div>
+     <div class="mlist t-m">${[['المفهوم (العربون)',30],['المخطط',20],['ثلاثي الأبعاد',20],['تطوير التصميم',20],['الوثائق النهائية',10]].map((s,k)=>`<div class="mrow"><b>المرحلة ${k+1}: ${s[0]}</b>${fig(f*s[1]/100)}<small>وزن ثابت ${s[1]}%</small></div>`).join('')}<div class="mt"><span>الإجمالي</span>${fig(f)}</div></div>`
+     +rv('The five weights (30, 20, 20, 20, 10) are fixed by spec 5.3, so they are drawn locked and are not inputs. No BOQ, no hold, no تشوينات rows exist for Design.','Absent by type');
+  }
+  return gs('quantify',out);
+}
+
+/* ============ EXECUTE ============ */
+function execute(){
+  const v=S.view;
+  if(['setup','empty'].includes(v))return gs('execute',`<div class="locked">${mi('lock')}<span><b>لم يبدأ التنفيذ بعد</b>يُفتح السجل اليومي بعد توقيع العقد وإسناد الفريق.</span></div>`+rv('Present but locked, because this project is in Setup. This differs from a group absent by contract type: here it will exist later. Needs a ruling: can a Setup project take daily logs? Spec 8 only states that a Stopped project still accepts them.','Question'));
+  let out='';
+  const logs=`<ul class="lst" ${ds('needs',NE)}>
+    <li><span><b>سجل 2026-10-30 · خالد منصور</b></span><span class="r">${int(5)} بنود · ${int(14)} يومية عمالة · ${int(8)} صور</span><small>أُدخل دون اتصال 16:40، وصل إلى الخادم 21:05 · يُحسب على يومه لا على يوم المزامنة</small></li>
+    <li><span><b>سجل 2026-10-29 · خالد منصور</b></span><span class="r">${int(4)} بنود · ${int(11)} يومية عمالة · ${int(6)} صور</span></li>
+    <li><span><b>سجل 2026-10-29 · محمود رضا</b></span><span class="r">${int(2)} بنود · ${int(6)} يومية عمالة · ${int(3)} صور</span></li></ul>`;
+  if(S.type==='ls'){
+    out=`<h3>المنفَّذ من الكميات المحصورة</h3><p class="sub">من مجموع التغيّرات في السجلات اليومية. بلا أسعار ولا مبالغ.</p>
+     <div class="tw t-d" ${ds('needs',NE)}><table><thead><tr><th>الباب</th><th style="inline-size:55%">المنفَّذ</th></tr></thead><tbody>${BABS.map(b=>`<tr><td class="nm">${b[0]}</td><td><div class="bd"><div class="trk" role="img" aria-label="${b[3]} بالمئة"><i style="inline-size:${b[3]}%"></i></div>${pc(b[3],0)}</div></td></tr>`).join('')}</tbody></table></div>
+     <div class="mlist t-m" ${ds('needs',NE)}>${BABS.map(b=>`<div class="mrow"><b>${b[0]}</b><span></span><div class="bd"><div class="trk" role="img" aria-label="${b[3]} بالمئة"><i style="inline-size:${b[3]}%"></i></div>${pc(b[3],0)}</div></div>`).join('')}</div>
+     <div class="sec-h"><h3>آخر السجلات اليومية</h3><a class="lnk" href="#">كل السجلات</a></div>${logs}
+     <div class="sec-h"><h3>مفتوح الآن</h3></div>
+     <ul class="lst" ${ds('needs',NE)}><li><span><b>تقرير عدم مطابقة <bdi dir="ltr">NCR-12</bdi></b></span><span class="r"><a class="lnk" href="#">فتح</a></span><small>فرق حصر الأعمدة · يحجز جزءاً من المستخلص 3 حتى يُغلق</small></li>
+     <li><span><b>مقاولو الباطن</b></span><span class="r">${int(3)} مقاولين نشطين · ${int(1)} مستخلص أسبوعي ينتظر الشهادة</span></li></ul>`
+     +rv('Every figure in this group is a quantity, count or percentage of quantity: this is the money-free read model the site engineer sees too. The occurred-at line on the first log is the offline-sync honesty rule from the study. Subcontractor extracts are money and live in the pay group for roles that may see money.','Money-free');
+  }else if(S.type==='cp'){
+    out=`<div class="sec-h"><h3>آخر السجلات اليومية</h3><a class="lnk" href="#">كل السجلات</a></div>${logs}
+     <div class="pg" ${ds('needs',NE)}><div class="top"><b>ساعات مهندسي كاف هذا الأسبوع</b><span class="num">${int(182)} ساعة</span></div><div class="ft"><span>تكلفة داخلية، لا تدخل في الفاتورة</span>${pv('car','الموارد البشرية')}</div></div>`
+     +rv('No executed-versus-surveyed bars: Cost Plus has no BOQ to measure against. The group shows the daily log and internal hours. Engineer hours are shown as hours, never as an amount.','Absent by type');
+  }else{
+    const rows=[['المفهوم',100,'3 من 3','معتمدة من العميل','مفوترة'],['المخطط',100,'2 من 3','معتمدة من العميل',''],['ثلاثي الأبعاد',55,'1 من 3','قيد العمل',''],['تطوير التصميم',0,'0 من 3','لم تبدأ المرحلة',''],['الوثائق النهائية',0,'0 من 3','لم تبدأ المرحلة','']];
+    out=`<h3>المخرجات</h3><div class="tw t-d" ${ds('needs',NE)}><table><thead><tr><th>المرحلة</th><th style="inline-size:34%">التقدم</th><th>جولات المراجعة</th><th>حالة المخرج</th></tr></thead><tbody>${rows.map((r,k)=>`<tr><td class="nm">${r[0]}</td><td><div class="bd"><div class="trk" role="img" aria-label="${r[1]} بالمئة"><i style="inline-size:${r[1]}%"></i></div>${pc(r[1],0)}</div></td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</tbody></table></div>
+     <div class="mlist t-m" ${ds('needs',NE)}>${rows.map(r=>`<div class="mrow"><b>${r[0]}</b><span>${r[3]}</span><div class="bd"><div class="trk"><i style="inline-size:${r[1]}%"></i></div>${pc(r[1],0)}</div><small>جولات المراجعة: ${r[2]}</small></div>`).join('')}</div>
+     <h3>المرحلة 3: ثلاثي الأبعاد</h3>
+     <ol class="chain" ${ds('needs',NE)}>${[['لم تبدأ','done'],['قيد العمل','cur'],['رُفع المخرج',''],['مراجعة داخلية',''],['معتمد من العميل',''],['مفوتر','']].map((s,k)=>`<li class="${s[1]}"><div class="st"><span class="mk">${s[1]==='done'?mi('check'):''}</span>${s[0]}</div>${s[1]==='cur'?'<div class="who2">محمود رضا · منذ 6 أيام</div>':''}</li>`).join('')}</ol>`
+     +rv('Design has no site, no subcontractors, no materials: none of that renders. The daily log for design records phase progress percent. Two open items: the Arabic labels of the six design-phase states are provisional (they are not Kaff status words, so they are plain text and never in a status pill), and the number of included revision rounds per stage is not in spec 5.3.','Question');
+  }
+  return gs('execute',out);
+}
+
+/* ============ PAY ============ */
+const wfRow=(l,sub,tags,v,o)=>`<div class="wf-r ${(o&&o.cls)||''}"><div class="l"><b>${l}</b>${sub?`<small>${sub}</small>`:''}</div><div class="p">${tags||''}</div><div class="v">${v}</div></div>`;
+function chain(steps){return `<ol class="chain">${steps.map(s=>`<li class="${s[1]}"><div class="st"><span class="mk">${s[1]==='done'?mi('check'):''}</span>${s[0]}</div>${s[2]?`<div class="who2">${s[2]}</div>`:''}${s[3]?`<div class="age">${mi('clock')}${s[3]}</div>`:''}</li>`).join('')}</ol>`}
+function postTable(rows,led){return `<table><thead><tr><th>القيد</th><th>التاريخ</th><th>المستند</th><th>النوع</th><th>من</th><th>إلى</th><th class="n">المبلغ (ج.م)</th><th class="n">الأثر على الدفتر</th></tr></thead><tbody>${rows.map(p=>`<tr><td><bdi dir="ltr">${p[0]}</bdi></td><td><bdi dir="ltr">${EVT[p[1]][0]}</bdi></td><td><bdi dir="ltr">${EVT[p[1]][1]}</bdi></td><td>${p[5]}</td><td>${p[2]}</td><td>${p[3]}</td><td class="n">${fig(p[4])}</td><td class="n">${fig(p[6][led]||0,{plus:true})}</td></tr>`).join('')}</tbody></table>`}
+function strip(){
+  const sum=l=>POST.reduce((a,p)=>a+(p[6][l]||0),0);
+  const T=[{k:'adv',t:'دفعة العميل المقدمة',m:'ما قبضناه مقدماً ولم يُسترد بعد من المستخلصات. يصل إلى صفر ولا يهبط تحته.',v:sum('adv'),fl:'حد أدنى صفر تفرضه قاعدة البيانات',bar:[1260000,2100000,'استُردّ']},
+   {k:'hold',t:'الحجز',m:'يتراكم فقط. لا يخرج منه شيء قبل التسليم، ثم يُفرج عنه مرة واحدة كاملاً.',v:sum('hold'),fl:'لا حد أدنى في القاعدة: يضبطه إصدار واحد عند التسليم',bar:[1008000,1680000,'20% من المعتمد']},
+   {k:'firm',t:'سلفة الشركة',m:'ما تنفقه كاف نيابة عن العميل، بموافقة المالك وسقف يفرضه النظام.',v:0,fl:'السقف الصلب غير مُنفَّذ بعد',asm:'A9'}];
+  const dr=S.drill;
+  return `<div class="lg" ${ds('needs',NE)}>
+   <div class="lg-tiles">${T.map(t=>`<div class="tile ${dr===t.k?'open':''}"><h5>${t.t}</h5><div class="mn">${t.m}</div><div class="big">${fig(t.v)}</div>${t.bar?`<div class="bar" role="img" aria-label="${t.bar[2]}"><i style="inline-size:${t.bar[0]/t.bar[1]*100}%"></i></div><div class="fl">${fig(t.bar[0])} من ${fig(t.bar[1])} · ${t.bar[2]}</div>`:''}<div class="fl">${mi('lock')}${t.fl} ${t.asm?asm(t.asm):''}</div>${['adv','hold'].includes(t.k)?`<button type="button" class="dr" data-dr="${t.k}" aria-expanded="${dr===t.k}">${mi('list')}القيود (${POST.filter(p=>p[6][t.k]).length})</button>`:''}</div>`).join('')}</div>
+   <div class="lg-no"><span class="nx" aria-hidden="true"></span><b>لا مجموع كلي لهذه الدفاتر. عمداً.</b> كل دفتر يُقرأ وحده ولا يُقاصّ بغيره.</div>
+   ${dr?`<div class="drill"><div class="dh"><span>قيود ${LEDN[dr]} (${POST.filter(p=>p[6][dr]).length})</span><span class="pv car">${mi('car')}من قيود المشروع</span></div>${postTable(POST.filter(p=>p[6][dr]),dr)}</div>`:''}
+   <div class="lg-side">
+    <div class="box"><h6>تشوينات المتبقية ${asm('A8')}</h6><div class="big">${fig(sum('ma'))}</div><div class="mn">خارج الدفاتر الخمسة، لكنها رصيد يُسترد ويجب أن يصل إلى صفر.</div></div>
+    <div class="box unc zero"><h6>غير مصنّف ${asm('A5')}</h6><div class="big">${fig(0)}</div><div class="mn">يجب أن يبقى صفراً. أي رقم هنا يعني قيداً لا يعرف دفتره.</div></div></div>
+   <div class="rec">${mi('check')}<span>مطابقة: رصيد كل دفتر يساوي مجموع قيوده.</span><small>آخر فحص اليوم 10:42 · لا قيد غير مصنّف</small></div>
+  </div>`}
+function pay(){
+  const v=S.view;
+  if(S.role==='site')return '';
+  if(['setup','empty'].includes(v))return gs('pay',`<div class="locked">${mi('lock')}<span><b>لا مستخلصات قبل توقيع العقد</b>يفتح المال بعد توقيع جدول الكميات. دفتر الدفعة المقدمة والحجز مفتوحان وفارغان.</span></div>`);
+  if(v==='partial')return gs('pay',`<div class="ban rowc" role="alert">${mi('err')}<span><b>تعذّر تحميل بيانات المال.</b> باقي الصفحة سليم، ولم يُغيَّر أي شيء في المشروع.</span><button type="button" class="btn sec2 sm act">${mi('redo','s')}إعادة المحاولة</button></div>`+rv('Each group reads independently: a failed money read must not blank the page. The refusal banner sits where the content was, with retry in place.','Partial failure'));
+  let out='';
+  if(S.type==='ls'){
+    const X3=[['مسودة','done','سارة عادل · 10-26'],['الجودة','done','هبة فؤاد · 10-27'],['المكتب الفني','done','ياسر عوض · 10-28'],['الحسابات','cur','منى سامي','منذ يومين'],['اعتماد المالك','','أحمد نبيل (أنت)'],['صدر',''],['حُصِّل','']];
+    out=`<div class="sec-h"><h3>المستخلص 3: ينتظر الحسابات</h3><a class="lnk" href="#">فتح المستخلص</a></div>
+     <div ${ds('needs',NE)} style="display:grid;gap:12px">${chain(X3)}
+      <div class="dec-who">${mi('lock')}<span>سارة عادل أنشأت هذا المستخلص، فلا يجوز لها اعتماده في أي بوابة. لا يظهر لك زر اعتماد قبل أن يصل إلى بوابتك، ولن يظهر لمن أنشأه.</span></div>
+      <div class="wf"><div class="wf-h"><div><b>ما يفعله ترحيل المستخلص 3</b><div class="sub">حساب من أرقام المستخلص نفسه، وليس تقديراً</div></div><span class="sub">المبالغ بالجنيه المصري (ج.م)</span></div>
+       ${wfRow('قيمة أعمال هذه الفترة','',pv('calc'),fig(3360000))}
+       ${wfRow('− الحجز','20% × '+fig(3360000).replace('class="fig','class="fx fig'),pv('calc'),fig(-672000))}
+       ${wfRow('− استرداد الدفعة المقدمة','25% × '+fig(3360000),pv('calc')+asm('A11'),fig(-840000))}
+       ${wfRow('− استرداد تشوينات','مُدخل من المحاسبة، لا توجد معادلة تنتجه',pv('ent','منى سامي، 2026-10-31')+asm('A2'),fig(-252000),{cls:'asmrow'})}
+       ${wfRow('صافي المستحق','',pv('calc'),fig(1596000),{cls:'res'})}
+       <div class="foot-note">${mi('info')}<span>متى تُنشأ القيود (عند الاعتماد أم الإصدار أم التحصيل) لم يُحسم ${asm('A1')}. لذلك تقول الشاشة «عند الترحيل» ولا تسمي اللحظة.</span></div></div>
+      <div class="chk"><div class="h">ما قد ترفضه قاعدة البيانات</div><div class="b">
+        <div><small>رصيد الدفعة المقدمة الآن (اليوم 10:42)</small>${fig(840000)}</div>
+        <div><small>المطلوب استرداده في هذا المستخلص</small>${fig(840000)}</div>
+        <div><small>الباقي إن بقي الرصيد كما هو</small>${fig(0)}</div></div>
+        <div class="n">${mi('warn')}<span>الحد الأدنى للدفعة المقدمة صفر، وتفرضه قاعدة البيانات لحظة الحفظ. هذا الرقم قراءة الآن وليس وعداً: إن تغيّر الرصيد قبل الحفظ رُفضت الحركة كلها دون أي أثر جزئي، وتُعرض لك الأرصدة كما هي حينها.</span></div></div></div>
+     ${rv('The consequence block states arithmetic exactly (rows above) and, separately, shows the floor the database may refuse with its current figure and a timestamp. It never says it will succeed. This example lands exactly on zero by design (the section 15 sequence). The safe floor is not shown: approving an extract raises a receivable and takes no cash out (study correction). A refused commit is a designed state on the extract screen, not here.','Consequence')}
+     <div class="sec-h"><h3>الدفاتر</h3></div>${strip()}
+     <div class="sec-h"><h3>آخر مستخلص معتمد</h3><a class="lnk" href="#">كل المستخلصات</a></div>
+     <div class="wf" ${ds('needs',NE)}><div class="wf-h"><div><b>المستخلص 2</b><div class="sub">اعتُمد 2026-04-26</div></div><span class="sub">المبالغ بالجنيه المصري (ج.م)</span></div>
+      ${wfRow('قيمة أعمال هذه الفترة','',pv('calc'),fig(2520000))}
+      ${wfRow('− الحجز هذه الفترة','',pv('calc'),fig(-504000))}
+      ${wfRow('− استرداد الدفعة المقدمة','',pv('calc')+asm('A11'),fig(-630000))}
+      ${wfRow('− استرداد تشوينات','',pv('ent','منى سامي، 2026-04-26')+asm('A2'),fig(-378000),{cls:'asmrow'})}
+      ${wfRow('صافي المستحق','',pv('calc'),fig(1008000),{cls:'res'})}
+      <div class="wf-f"><h5>الموقف التراكمي بعد هذا المستخلص (من القيود)</h5><dl><div><dt>الحجز حتى تاريخه</dt><dd>${fig(1008000)} ${pv('car','دفتر الحجز')}</dd></div><div><dt>الدفعة المقدمة المتبقية</dt><dd>${fig(840000)} ${pv('car','دفتر الدفعة')}</dd></div></dl></div></div>`;
+  }else if(S.type==='cp'){
+    out=`<div class="sec-h"><h3>فاتورة الفترة 4: عند المكتب الفني</h3><a class="lnk" href="#">فتح الفاتورة</a></div>
+     <div ${ds('needs',NE)} style="display:grid;gap:12px">${chain([['مسودة','done','سارة عادل · 10-29'],['الجودة','done','هبة فؤاد · 10-30'],['المكتب الفني','cur','ياسر عوض','منذ يوم'],['الحسابات',''],['اعتماد المالك','','أحمد نبيل (أنت)'],['صدرت',''],['حُصِّلت','']])}
+     <div class="dec-who">${mi('lock')}<span>سارة عادل أنشأت هذه الفاتورة، فلا يجوز لها اعتمادها في أي بوابة.</span></div></div>
+     <div class="wf" ${ds('needs',NE)}><div class="wf-h"><div><b>فاتورة الفترة</b><div class="sub">لا حجز ولا تشوينات ولا سقف فوترة</div></div><span class="sub">المبالغ بالجنيه المصري (ج.م)</span></div>
+      ${wfRow('تكلفة بنود الإشراف','مجموع البنود المصنَّفة «إشراف»',pv('calc'),fig(800000))}
+      ${wfRow('+ نسبة الإشراف','10% × '+fig(800000),pv('ent','عقد')+asm('A12'),fig(80000,{plus:true}))}
+      ${wfRow('+ بنود معفاة من الإشراف','تُفوتر بالتكلفة',pv('calc'),fig(50000,{plus:true}))}
+      ${wfRow('إجمالي الفاتورة','800,000 + 80,000 + 50,000',pv('calc'),fig(930000),{cls:'res'})}
+      <div class="wf-f"><h5>الحسابات (من القيود)</h5><dl><div><dt>إيرادات الإشراف المفوترة</dt><dd>${fig(80000)} ${pv('car','حساب إيرادات الإشراف')}</dd></div><div><dt>تكاليف تشغيل المشروع</dt><dd>${fig(885000)} ${pv('car','حساب تكاليف التشغيل')}</dd></div></dl></div></div>`
+     +rv('No five-ledger strip: the Cost Plus account set (D-161, Q88) is revenue and project cost only. There is no hold, advance or تشوينات account, so those tiles are absent rather than zero. Open question: does a Cost Plus invoice use the same seven-step chain as a Lump Sum extract? The approval engine is one engine, so it is drawn the same.','Absent by type');
+  }else{
+    out=`<div class="wf" ${ds('needs',NE)}><div class="wf-h"><div><b>مستحقات المراحل</b><div class="sub">تُفوتر المرحلة باعتماد العميل لمخرجاتها · لا حجز ولا مستخلصات</div></div><span class="sub">المبالغ بالجنيه المصري (ج.م)</span></div>
+      ${wfRow('المرحلة 1: المفهوم (العربون 30%)','دُفعت',pv('calc')+asm('A13'),fig(54000))}
+      ${wfRow('المرحلة 2: المخطط','معتمدة من العميل ولم تُدفع',pv('calc'),fig(36000))}
+      ${wfRow('المرحلة 3: ثلاثي الأبعاد','قيد العمل، لا تُفوتر قبل الاعتماد',pv('calc'),fig(36000),{cls:'sub-t'})}
+      ${wfRow('المستحق الآن','المراحل المعتمدة ولم تُدفع',pv('calc'),fig(36000),{cls:'res'})}
+      <div class="wf-f"><h5>الحسابات (من القيود)</h5><dl><div><dt>إيرادات التصميم المفوترة</dt><dd>${fig(90000)} ${pv('car','حساب إيرادات التصميم')}</dd></div><div><dt>تكاليف الاستشارات</dt><dd>${fig(24000)} ${pv('car','حساب تكاليف الاستشارات')}</dd></div></dl></div></div>`
+     +rv('No extract chain: a stage bills when the client approves its deliverable in the portal, so there is no internal approval to wait on. No ledger strip (account set is revenue and consulting cost only). The deposit appears as a paid stage invoice, not an advance balance (assumption A13).','Absent by type');
+  }
+  return gs('pay',out);
+}
+
+/* ============ ORGANISE ============ */
+function org(){
+  const p=P[S.type],owner=S.role==='owner',v=S.view;
+  const team=[['خالد منصور','مهندس موقع'],['محمود رضا','مهندس موقع'],['سارة عادل','المكتب الفني'],['ياسر عوض','المكتب الفني'],['منى سامي','المالية'],['هبة فؤاد','مشرف']].slice(0,Math.min(p.team,6));
+  let out=`<div class="sec-h"><h3>الفريق (${p.team})</h3><span class="sub" ${ds('served',SV+' (count only)')}>العدد وحده يُخدَّم اليوم</span></div>
+   <ul class="lst" ${ds('needs','roster: KAFF-115')}>${team.map(t=>`<li><span style="display:flex;gap:12px;align-items:center"><span class="av" style="background:var(--ink);color:var(--bg);inline-size:32px;block-size:32px;font-size:.875rem">${[...t[0]][0]}</span><b>${t[0]}</b></span><span class="r">${t[1]}</span></li>`).join('')}</ul>`;
+  if(S.type==='ls'&&!['setup','empty'].includes(v))out+=`<div class="sec-h"><h3>مشاريع مرتبطة</h3></div><ul class="lst" ${ds('needs',NE)}><li><span><b>تصميم فيلا 47 — التجمع الخامس</b></span><span class="r"><span class="badge q">من تصميم إلى تنفيذ</span></span><small>العميل نفسه، وحسابات وفوترة منفصلة. عند توقيع التنفيذ يُرحَّل ائتمان بنسبة 30% من قيمة التصميم.</small></li></ul>`;
+  if(S.type==='ds')out+=`<div class="sec-h"><h3>مشاريع مرتبطة</h3></div><ul class="lst" ${ds('needs',NE)}><li><span><b>فيلا الشروق: التنفيذ</b></span><span class="r"><span class="badge q">من تصميم إلى تنفيذ</span></span><small>لم يُوقَّع عقد التنفيذ بعد.</small></li></ul>`;
+  if(owner&&!['setup','empty'].includes(v)){
+    out+=`<div class="sec-h"><h3>حالة المشروع</h3></div>
+     <div class="wf" ${ds('needs','lifecycle endpoints not built')}><div style="padding:14px 16px;display:grid;gap:10px">
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between"><span>${pill('run')} <span style="color:var(--dim);font-size:.875rem;margin-inline-start:8px">الحالة في النظام: Active</span></span>
+      ${v==='stop'?'':`<button type="button" class="btn sec2 sm" data-stop>${mi('pause')}إيقاف المشروع…</button>`}</div>
+      ${v==='stop'?`<div class="cfm" role="group" aria-label="تأكيد الإيقاف"><span>${mi('pause')} إيقاف «${p.name}»؟ لا تُصدر مستخلصات أثناء الإيقاف، ويستمر قبول السجل اليومي. يمكنك إعادة التشغيل في أي وقت.</span><div class="bt"><button type="button" class="btn sm">إيقاف المشروع</button><button type="button" class="btn sec2 sm" data-stopx>إلغاء</button></div></div>`:''}
+     </div></div>`
+     +rv('Stop is recoverable, so it uses the quiet confirmation, never red. It is a secondary button inside this section, never the page primary and never in the phone bottom bar. Three questions for Nabil: (1) no permission row exists for stop, restart, terminate or practical completion (study item 7); (2) what happens to an extract already in the chain when the project stops (spec 7 only forbids issuing); (3) Terminated is entirely unruled (study item 8), so no terminate control is drawn. The five Kaff words cover only Setup, Active and Closed: how Stopped, HandoverPending, Handover and UnderWarranty are worded is open, so the pill above shows the system state beside it.','Question');
+  }
+  return gs('org',out);
+}
+
+/* ============ page composition ============ */
+function body(){
+  const v=S.view;
+  if(v==='loading')return `<div aria-busy="true" role="status"><span class="vh">جارٍ التحميل</span>${['understand','quantify','execute','pay','org'].map(k=>{const [t,ic]=GN[k];return `<section class="gs"><header class="gh"><span class="gi">${i(ic)}</span><h2>${t}</h2><p><span class="sk" style="inline-size:150px"></span></p></header><div class="gb"><span class="sk b" style="block-size:52px"></span><span class="sk b" style="block-size:52px"></span><span class="sk b" style="block-size:52px;inline-size:70%"></span></div></section>`}).join('')}</div>`
+    +rv('While loading, the header keeps its shape but the title is a bar (the name is not known yet), and the primary action is a reserved slot. This is a small deviation from the shell (which keeps the primary visible): the primary depends on type, state and role, none of which is known. All five group headings are shown because every contract type has all five groups; only their contents differ, so the headings are a safe promise.','Loading');
+  if(v==='failed')return `<div class="ban rowc" role="alert">${mi('err')}<span><b>تعذّر تحميل المشروع.</b> لم نتمكن من الوصول إلى الخادم. لم يتغير شيء.</span><button type="button" class="btn sec2 sm act">${mi('redo','s')}إعادة المحاولة</button></div>`+rv('Whole-record failure: nothing about the project is known, so no groups and no primary action. A business-rule or permission refusal never offers retry; a network failure does.','Failed');
+  if(v==='refused')return `<div class="state refused"><div class="ico">${i('lock')}</div><h4>هذا المشروع خارج تكليفك</h4><p>دورك يتيح لك فتح المشاريع، لكنك غير مُسنَد إلى هذا المشروع. اطلب الإسناد ممن يملك صلاحية إسناد المشاريع.</p><a class="back" href="#">${i('left','s')}العودة إلى المشاريع</a></div>`
+    +rv('Project-scoped refusal (role without assignment). Not red, not an error, no retry, and it reveals nothing about the project: no name, client or type. Who holds the right to assign users to projects is not stated in the material read; the sentence names the permission, not a person, until that is confirmed.','Refused');
+  const groups=[understand(),quantify(),execute(),pay(),org()].join('');
+  return groups;
+}
+function jump(){
+  if(['loading','failed','refused'].includes(S.view))return '';
+  const ids=['understand','quantify','execute','pay','org'].filter(k=>!(k==='pay'&&S.role==='site'));
+  return `<nav class="jump" aria-label="مجموعات المشروع">${ids.map(k=>`<a href="#g-${k}">${i(GN[k][1],'s')}${GN[k][0]}</a>`).join('')}</nav>`}
+function abar(){const pa=primaryAction();return `<button type="button" class="menu" id="menu">${i('menu')}القائمة</button>${pa?`<button type="button" class="btn">${i(pa.ic)}${pa.ar}</button>`:''}`}
+
+function isoDates(root){const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);const ns=[];let n;while(n=w.nextNode()){if(/\d{4}-\d{2}-\d{2}|\d{2}-\d{2}/.test(n.nodeValue)&&!n.parentElement.closest('bdi,script,style,.rv'))ns.push(n)}
+ ns.forEach(n=>{const sp=document.createElement('span');sp.innerHTML=n.nodeValue.replace(/(\d{4}-\d{2}-\d{2}|\d{2}-\d{2})/g,'<bdi dir="ltr">$1</bdi>');n.replaceWith(sp)})}
+function draw(){
+  if(['setup','empty'].includes(S.view)&&S.type!=='ls')S.view='normal';
+  if(S.role==='site'&&['setup','empty','stop'].includes(S.view))S.view='normal';
+  $('#ph').innerHTML=header();$('#jumpw').innerHTML=jump();$('#frame').innerHTML=body();$('#abar').innerHTML=abar();isoDates($('#ph'));isoDates($('#frame'));
+  $('#menu').onclick=()=>{$('#app').dataset.sheet='1'};
+  const u=USERS[S.role];['1','2'].forEach(k=>{$('#un'+k).textContent=u.n;$('#ur'+k).textContent=u.r;$('#av'+k).textContent=[...u.n][0]});
+  document.querySelectorAll('[data-type]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.type===S.type));
+  document.querySelectorAll('[data-role]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.role===S.role));
+  document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===S.view));
+  document.querySelectorAll('[data-dr]').forEach(b=>b.onclick=()=>{S.drill=S.drill===b.dataset.dr?null:b.dataset.dr;const y=$('#main').scrollTop;draw();$('#main').scrollTop=y});
+  const st=$('[data-stop]');if(st)st.onclick=()=>{S.view='stop';draw()};const sx=$('[data-stopx]');if(sx)sx.onclick=()=>{S.view='normal';draw()};
+  const url=new URLSearchParams({type:S.type,role:S.role,view:S.view});history.replaceState(null,'','?'+url+(EMBED?'&embed=1':''));
+}
+$('#nav').innerHTML=navHtml();$('#nav2').innerHTML=navHtml();
+$('#closeN').onclick=()=>{$('#app').dataset.sheet='0'};$('#scrim').onclick=()=>{$('#app').dataset.sheet='0'};
+const tgl=()=>{const d=H.dataset.theme?H.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;H.dataset.theme=d?'light':'dark'};
+$('#themebtn').onclick=$('#theme1').onclick=$('#theme2').onclick=tgl;
+$('#dirbtn').onclick=()=>{const l=H.dir==='rtl';H.dir=l?'ltr':'rtl';H.lang=l?'en':'ar'};
+$('#rvbtn').onclick=e=>{const o=document.body.dataset.rv==='1';document.body.dataset.rv=o?'0':'1';e.currentTarget.setAttribute('aria-pressed',!o)};
+$('#srcbtn').onclick=e=>{const o=document.body.dataset.srcflag==='1';document.body.dataset.srcflag=o?'0':'1';e.currentTarget.setAttribute('aria-pressed',!o)};
+$('#phbtn').onclick=()=>{$('#phf').src=location.pathname+location.search.replace(/&?embed=1/,'')+'&embed=1';$('#phone').dataset.open='1'};
+$('#phx').onclick=()=>{$('#phone').dataset.open='0'};
+document.querySelectorAll('[data-type]').forEach(b=>b.onclick=()=>{S.type=b.dataset.type;S.drill=null;draw()});
+document.querySelectorAll('[data-role]').forEach(b=>b.onclick=()=>{S.role=b.dataset.role;draw()});
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{S.view=b.dataset.view;draw()});
+const rail=()=>{$('#app').dataset.rail=(matchMedia('(max-width:1100px)').matches&&innerWidth>820)?'1':'0'};rail();addEventListener('resize',rail);
+if(EMBED){document.body.classList.add('embed');$('#strip').remove()}
+if(q0.get('rv')==='0')document.body.dataset.rv='0';
+if(q0.get('src')==='1')document.body.dataset.srcflag='1';
+draw();
+if(q0.get('goto'))requestAnimationFrame(()=>document.getElementById(q0.get('goto'))?.scrollIntoView());
+</script>
+</body>
+</html>
