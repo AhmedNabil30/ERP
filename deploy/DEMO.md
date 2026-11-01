@@ -312,6 +312,7 @@ what actually matters, not superstition.
 | Finance | `sara_finance_demo` | `Demo#Fin123` | **Yes** |
 | MarketingSales | `karim_sales_demo` | `Demo#Sales123` | **Yes** |
 | **Client (portal)** | `portal_client_demo` | `Demo#Portal1` | **Yes** — and it never gets that far; see below |
+| SiteEngineer | `site_eng_demo` | `Demo#Site1` then `Demo#Site1New` | Seeded by `node scripts/seed-demo-engineer.mjs`, which also completes the forced change. Junior on project `01a0de49-4a8c-7707-b19a-0f7592bbfdb0`. Use `Demo#Site1New`. |
 
 **⚠️ The portal account exists to be REFUSED, and its password above is the correct one.** Added
 2026-09-05 for `V-33-E`: until then the seed created no `Role.Client` user at all, so spec.md §12's
