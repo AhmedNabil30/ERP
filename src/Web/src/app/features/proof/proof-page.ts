@@ -1,4 +1,4 @@
-﻿import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { toProblem } from '../../core/api/problem-details';
@@ -247,7 +247,14 @@ export class ProofPage {
   });
 
   constructor() {
-    queueMicrotask(() => void this.reload());
+    // Deferred to an effect, as every other route page does: `projectId` is a required input and is
+    // not readable in the constructor body. queueMicrotask also deferred past construction, but it fired
+    // once, so moving between two projects' proof screens left the first project's figures on screen.
+    // reload() runs untracked because it writes the signals it also reads.
+    effect(() => {
+      this.projectId();
+      untracked(() => void this.reload());
+    });
   }
 
   protected isAssumed(id: string): boolean {
