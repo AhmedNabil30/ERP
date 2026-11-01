@@ -1,0 +1,343 @@
+<section class="proof" data-testid="proof-page">
+  <header class="head">
+    <a class="back" routerLink="/projects">
+      <kaff-icon name="back" />{{ i18n.t('nav.projects') }}
+    </a>
+    <h1 class="title">{{ i18n.t('proof.title') }}</h1>
+    <p class="lede">{{ i18n.t('proof.lede') }}</p>
+  </header>
+
+  @if (failure(); as key) {
+    <kaff-state mode="refusal" [bodyKey]="key" testId="proof-failure" />
+  } @else if (loading()) {
+    <kaff-state mode="loading" titleKey="proof.loading" testId="proof-loading" />
+  } @else if (data(); as proof) {
+    <!-- Where the figures came from and what they are measured against. -->
+    <div class="source" data-testid="proof-source">
+      <span class="chip"><kaff-icon name="check" [small]="true" />{{ i18n.t('proof.source.production') }}</span>
+      <span class="meta">{{ i18n.t('proof.source.read_at', { time: readAtText() }) }}</span>
+      <span class="meta">
+        <bdi dir="auto">{{ proof.project.name }}</bdi>
+        <bdi dir="ltr" translate="no">{{ proof.project.code }}</bdi>
+        @if (proof.project.contractValue; as value) {
+          · <kaff-figure [value]="value" /> {{ i18n.t('proof.unit') }}
+        } @else {
+          · {{ i18n.t('proof.contract.no_value') }}
+        }
+        ·
+        {{
+          i18n.t('proof.contract.rates', {
+            hold: proof.project.holdRatePercent,
+            advance: proof.project.advanceRecoveryRatePercent,
+          })
+        }}
+      </span>
+    </div>
+
+    <!-- The verdict: a sentence, an icon and a tone, never the tone alone. -->
+    <div class="verdict" [class]="verdict().tone" role="status" data-testid="proof-verdict">
+      <kaff-icon [name]="verdict().icon" />
+      <div>
+        <b>{{ i18n.t(verdict().titleKey, verdict().params) }}</b>
+        <span>{{ i18n.t(verdict().bodyKey, verdict().params) }}</span>
+      </div>
+    </div>
+
+    @if (proof.events.length === 0) {
+      <div class="note" data-testid="proof-empty">
+        <kaff-icon name="info" [small]="true" /><span>{{ i18n.t('proof.empty.note') }}</span>
+      </div>
+    }
+
+    <h2 class="h2">{{ i18n.t('proof.checks.title') }}</h2>
+    <div class="checks" data-testid="proof-checks">
+      @for (vm of checks(); track vm.check.key) {
+        <article class="check" [class]="vm.mark" [attr.data-testid]="'proof-check-' + vm.check.key">
+          <h3 class="check-head">
+            <span>{{ i18n.t(vm.titleKey, { rate: proof.project.holdRatePercent }) }}</span>
+            <span class="mark" [class]="vm.mark">
+              <kaff-icon [name]="mark[vm.mark].icon" [small]="true" />{{ i18n.t(vm.markKey) }}
+            </span>
+          </h3>
+          <p class="rule">{{ i18n.t(vm.ruleKey) }}</p>
+
+          @if (vm.check.status === 'Unavailable') {
+            <p class="rule">{{ i18n.t('proof.check.unavailable') }}</p>
+          } @else if (vm.check.status === 'Pending' && !vm.floor) {
+            <p class="rule">{{ i18n.t('proof.check.pending') }}</p>
+          } @else {
+            <div class="vs">
+              <div>
+                <small>{{ i18n.t(vm.floor ? 'proof.check.floor_required' : 'proof.check.expected') }}</small>
+                @if (vm.check.expected; as expected) {
+                  <kaff-figure [value]="expected" />
+                }
+                <kaff-provenance kind="calc" />
+              </div>
+              <div>
+                <small>{{ i18n.t(vm.floor ? 'proof.check.floor_actual' : 'proof.check.actual') }}</small>
+                @if (vm.check.actual; as actual) {
+                  <kaff-figure [value]="actual" />
+                }
+                <kaff-provenance kind="car" [detail]="i18n.t('proof.check.from_postings')" />
+              </div>
+            </div>
+          }
+
+          @if (vm.floor) {
+            <div class="chips">
+              <kaff-provenance assumption="A6" /><span class="rule">{{ i18n.t('proof.check.a6') }}</span>
+            </div>
+          }
+
+          @if (vm.mark === 'no' && vm.check.difference; as difference) {
+            <p class="diff">
+              {{ i18n.t('proof.check.difference') }} <kaff-figure [value]="difference" [plus]="true" />
+            </p>
+            <div class="chips">
+              @for (id of vm.postings; track id) {
+                <bdi class="pp" dir="ltr">{{ id }}</bdi>
+              }
+            </div>
+          }
+        </article>
+      }
+    </div>
+
+    <h2 class="h2">{{ i18n.t('proof.events.title') }}</h2>
+
+    @if (calculatorMissing()) {
+      <div class="note" data-testid="proof-calculator-missing">
+        <kaff-icon name="info" [small]="true" /><span>{{ i18n.t('proof.events.calculator_missing') }}</span>
+      </div>
+    }
+
+    @if (events().length > 0) {
+      <!-- Wide screens: one table, an expected row over an actual row per event. -->
+      <div class="table-wrap" role="region" tabindex="0" [attr.aria-label]="i18n.t('proof.events.region')">
+        <table class="events" data-testid="proof-events">
+          <thead>
+            <tr>
+              <th class="ev">{{ i18n.t('proof.col.event') }}</th>
+              <th>{{ i18n.t('proof.col.row') }}</th>
+              @for (column of columns; track column.key) {
+                <th class="n">
+                  {{ i18n.t(column.labelKey) }}
+                  @if (column.assumption; as id) {
+                    @if (isAssumed(id)) {
+                      <kaff-provenance [assumption]="id" />
+                    }
+                  }
+                </th>
+              }
+              <th>{{ i18n.t('proof.col.verdict') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (event of events(); track event.index) {
+              <tr class="expected">
+                <td class="ev" rowspan="2">
+                  <b>{{ event.label }}</b>
+                  <span class="sub">
+                    @if (event.reference; as reference) {
+                      <bdi dir="ltr">{{ reference }}</bdi> ·
+                    }
+                    <bdi dir="ltr">{{ event.date }}</bdi>
+                    @if (isAssumed('A1')) {
+                      <kaff-provenance assumption="A1" />
+                    }
+                  </span>
+                </td>
+                <td class="sub">{{ i18n.t('proof.row.expected') }}</td>
+                @if (event.hasExpected) {
+                  @for (cell of event.cells; track cell.id) {
+                    <td class="n">
+                      @if (cell.expected; as expected) {
+                        <kaff-figure [value]="expected" />
+                      }
+                    </td>
+                  }
+                } @else {
+                  <td class="n unavailable" [attr.colspan]="columns.length">
+                    {{ i18n.t('proof.cell.unavailable') }}
+                  </td>
+                }
+                <td rowspan="2">
+                  <span class="mark" [class]="event.mark">
+                    <kaff-icon [name]="mark[event.mark].icon" [small]="true" />{{
+                      i18n.t(event.hasExpected ? mark[event.mark].key : 'proof.mark.unavailable')
+                    }}
+                  </span>
+                </td>
+              </tr>
+              <tr class="actual" [class.diff]="event.mark === 'no'">
+                <td class="sub">{{ i18n.t('proof.row.actual') }}</td>
+                @for (cell of event.cells; track cell.id) {
+                  <td class="n" [class.bad]="cell.bad">
+                    <kaff-figure [value]="cell.actual" />
+                    @if (cell.bad && cell.difference; as difference) {
+                      <span class="df"><kaff-figure [value]="difference" [plus]="true" /></span>
+                      <button
+                        type="button"
+                        class="pp"
+                        [attr.aria-expanded]="cell.open"
+                        [attr.data-testid]="'proof-cell-' + cell.id"
+                        (click)="toggleCell(cell.id)"
+                      >
+                        <kaff-icon name="list" [small]="true" />{{ i18n.t('proof.cell.postings') }}
+                      </button>
+                    }
+                  </td>
+                }
+              </tr>
+              @for (cell of event.cells; track cell.id) {
+                @if (cell.open && cell.bad) {
+                  <tr class="expand">
+                    <td [attr.colspan]="columns.length + 3">
+                      <div class="expand-box">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>{{ i18n.t('proof.expand.source') }}</th>
+                              <th>{{ i18n.t('proof.th.posting') }}</th>
+                              <th>{{ i18n.t('proof.th.from') }}</th>
+                              <th>{{ i18n.t('proof.th.to') }}</th>
+                              <th class="n">{{ i18n.t('proof.th.amount') }}</th>
+                              <th>{{ i18n.t('proof.expand.origin') }}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr class="exp">
+                              <td>{{ i18n.t('proof.expand.expected_row') }}</td>
+                              <td>{{ i18n.t('proof.expand.computed') }}</td>
+                              <td colspan="2">{{ i18n.t(cell.column.ruleKey) }}</td>
+                              <td class="n">
+                                @if (cell.expected; as expected) {
+                                  <kaff-figure [value]="expected" />
+                                }
+                              </td>
+                              <td><kaff-provenance kind="calc" /></td>
+                            </tr>
+                            @for (posting of cell.postings; track posting.id) {
+                              <tr>
+                                <td>{{ i18n.t('proof.expand.actual_row') }}</td>
+                                <td><bdi dir="ltr">{{ shortId(posting.id) }}</bdi></td>
+                                <td>{{ posting.fromAccount }}</td>
+                                <td>{{ posting.toAccount }}</td>
+                                <td class="n"><kaff-figure [value]="posting.amount" /></td>
+                                <td><kaff-provenance kind="car" [detail]="i18n.t('proof.expand.posting')" /></td>
+                              </tr>
+                            } @empty {
+                              <tr>
+                                <td>{{ i18n.t('proof.expand.actual_row') }}</td>
+                                <td colspan="5">{{ i18n.t('proof.expand.no_posting') }}</td>
+                              </tr>
+                            }
+                            <tr class="exp">
+                              <td>{{ i18n.t('proof.check.difference') }}</td>
+                              <td colspan="3">{{ i18n.t('proof.expand.diff_rule') }}</td>
+                              <td class="n">
+                                @if (cell.difference; as difference) {
+                                  <kaff-figure [value]="difference" [plus]="true" />
+                                }
+                              </td>
+                              <td></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Phone width: one card per event, the same two numbers on each line. -->
+      <div class="cards" data-testid="proof-event-cards">
+        @for (event of events(); track event.index) {
+          <article class="card" [class.no]="event.mark === 'no'">
+            <div class="card-head">
+              <span>
+                {{ event.label }}
+                @if (event.reference; as reference) {
+                  <bdi dir="ltr" class="sub">{{ reference }}</bdi>
+                }
+              </span>
+              <span class="mark" [class]="event.mark">
+                <kaff-icon [name]="mark[event.mark].icon" [small]="true" />{{
+                  i18n.t(event.hasExpected ? mark[event.mark].key : 'proof.mark.unavailable')
+                }}
+              </span>
+            </div>
+            <div class="line head">
+              <span>{{ i18n.t('proof.card.item') }}</span>
+              <span>{{ i18n.t('proof.row.expected') }}</span>
+              <span>{{ i18n.t('proof.row.actual') }}</span>
+            </div>
+            @for (cell of event.cells; track cell.id) {
+              <div class="line" [class.bad]="cell.bad">
+                <span>{{ i18n.t(cell.column.labelKey) }}</span>
+                <span>
+                  @if (cell.expected; as expected) {
+                    <kaff-figure [value]="expected" />
+                  } @else {
+                    <span class="sub">{{ i18n.t('proof.cell.unavailable_short') }}</span>
+                  }
+                </span>
+                <span><kaff-figure [value]="cell.actual" /></span>
+                @if (cell.bad && cell.difference; as difference) {
+                  <span class="full">
+                    {{ i18n.t('proof.check.difference') }} <kaff-figure [value]="difference" [plus]="true" />
+                    @for (posting of cell.postings; track posting.id) {
+                      <bdi class="pp" dir="ltr">{{ shortId(posting.id) }}</bdi>
+                    }
+                  </span>
+                }
+              </div>
+            }
+          </article>
+        }
+      </div>
+
+      <p class="foot">{{ i18n.t('proof.events.foot') }}</p>
+    }
+
+    <kaff-proof-ledger-strip [proof]="proof" />
+
+    <h2 class="h2" id="assumptions">{{ i18n.t('proof.asm.title') }}</h2>
+    <p class="lede">{{ i18n.t('proof.asm.lede') }}</p>
+    <div class="table-wrap">
+      <table class="register" data-testid="proof-assumptions">
+        <thead>
+          <tr>
+            <th>{{ i18n.t('proof.asm.col.id') }}</th>
+            <th>{{ i18n.t('proof.asm.col.name') }}</th>
+            <th>{{ i18n.t('proof.asm.col.open') }}</th>
+            <th>{{ i18n.t('proof.asm.col.shows') }}</th>
+            <th>{{ i18n.t('proof.asm.col.changes') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (id of register; track id) {
+            <tr [id]="'asm-' + id">
+              <td>
+                @if (isAssumed(id)) {
+                  <span class="id"><kaff-icon name="help" [small]="true" /><b>{{ id }}</b></span>
+                } @else {
+                  <span class="id ruled"><b>{{ id }}</b> {{ i18n.t('proof.asm.ruled') }}</span>
+                }
+              </td>
+              <td><b>{{ i18n.t('proof.asm.' + id + '.name') }}</b></td>
+              <td>{{ i18n.t('proof.asm.' + id + '.open') }}</td>
+              <td>{{ i18n.t('proof.asm.' + id + '.shows') }}</td>
+              <td>{{ i18n.t('proof.asm.' + id + '.changes') }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

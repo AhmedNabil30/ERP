@@ -57,6 +57,10 @@
   --ok-bg: light-dark(#d3e3db, #17403a);
   --ok-ink: light-dark(#0b3b32, #e6d9d1);
 
+  /* ---- Assumption mark (money.html): a figure that rests on a rule nobody has ruled yet ---- */
+  --asm-bg: light-dark(#f3e4c9, #3d3017);
+  --asm-ink: light-dark(#4a3410, #f1dcae);
+
   /* ---- Status pill (the five Kaff words; README "Status pill") ---- */
   --st-run-bg: light-dark(#d3e3db, #17403a);
   --st-run-ink: light-dark(#0b3b32, #e6d9d1);
@@ -470,4 +474,10 @@ kaff-field textarea:disabled {
 kaff-field input::placeholder {
   color: var(--dim);
   opacity: 1;
+}
+
+/* A register row the reader was just sent to by an assumption chip. */
+.asm-flash {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
 }

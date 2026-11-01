@@ -11,6 +11,7 @@ import { departmentManageGuard } from './core/auth/department-manage.guard';
 import { employeeManageGuard } from './core/auth/employee-manage.guard';
 import { mustChangePasswordGuard } from './core/auth/must-change-password.guard';
 import { projectListGuard } from './core/auth/project-list.guard';
+import { proofReadGuard } from './core/auth/proof-read.guard';
 import { sessionGuard } from './core/auth/session.guard';
 import { subcontractorManageGuard } from './core/auth/subcontractor-manage.guard';
 import { supplierManageGuard } from './core/auth/supplier-manage.guard';
@@ -236,6 +237,14 @@ export const routes: Routes = [
           ),
       },
     ],
+  },
+  {
+    // إثبات الأرقام — the proof screen (project-journey study, 2026-10-08). Read-only, Finance and Owner.
+    // `proofReadGuard` is convenience; `GET /api/projects/:projectId/treasury/proof` checks role and
+    // assignment on the server.
+    path: 'projects/:projectId/proof',
+    canActivate: [sessionGuard, mustChangePasswordGuard, proofReadGuard],
+    loadComponent: () => import('./features/proof/proof-page').then((m) => m.ProofPage),
   },
   {
     // KAFF-210 — S-027, a worker's engagement history with the day rate. **Not nested under

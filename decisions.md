@@ -15334,3 +15334,28 @@ criterion; `Section15WorkedExampleTests` is unchanged and stays as the independe
 
 **Not done:** an Api endpoint that calls the calculator; the hold-release (handover) calculator, which the test builds
 with `PostingSetBuilder` from the hold balance; Cost Plus and Design posting builders; the progress metrics (still stubs).
+
+### D-187 · Frontend and Api read slice: إثبات الأرقام, the proof screen · 2026-11-01
+
+Built from the approved design `.design/v2/team-a/proof.html`. Route `/projects/:projectId/proof`, gated in the
+web by `proofReadGuard` (`TreasuryReadCompany`, held by Owner and Finance only). Convenience only: the server
+route `GET /api/projects/{projectId}/treasury/proof` (`src/Api/Features/Treasury/ProofOfNumbers/`) checks
+`TreasuryReadProject` with the route's project, which also admits an assigned Site Engineer (D-173).
+
+- **The browser does no arithmetic.** The server computes every sum, check and difference; the page lays strings
+  side by side (`shared/kaff-figure/amount.ts` only classifies and compares strings, D-135).
+- **Expected is never derived from actual.** `ExpectedState` is `CalculatorNotImplemented` and every event's
+  `Expected` and `Difference` are null; the page renders that as a designed state and never marks such an event a
+  match. The slice does not yet call the billing calculators (D-186 implemented them): wiring them in means filling
+  `ProofEvent.Expected` and `.Difference` in `ProofOfNumbers/Handler.cs` and setting `ExpectedState` to `Available`.
+  The page needs no change for that.
+- **Kit additions:** `kaff-figure` (the signed figure: a real minus U+2212 inside an LTR `bdi`, never parentheses),
+  `kaff-provenance` (calculated, entered, carried, assumption), `--asm-bg` and `--asm-ink` tokens.
+- **Design and API disagreements:** (1) the design toggles fixture and production sources; there is no fixture
+  source in the product, so only the production chip exists. (2) The design's totals row and the "4 decimals"
+  toggle are not built (a total needs client arithmetic; the five checks state the invariants instead). (3) The
+  design's cash box shows the safe's balance; the safe is company-wide, so the box shows this project's net postings
+  on the safe and says so. (4) The design's event labels ("المستخلص 2") become source-document type plus reference.
+- **Not reachable from the project list yet:** the screen is reached by URL until a project hub exists.
+- `proof.*` i18n keys are built dynamically for checks, ledgers, assumptions, document and posting types, and
+  `proof.` is not one of the prefixes `TranslationCatalogueTests` polices for orphans.

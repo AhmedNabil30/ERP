@@ -1,0 +1,140 @@
+<div class="strip">
+  <h2 class="h2">{{ i18n.t('proof.ledgers.title') }}</h2>
+  <div class="tiles" data-testid="proof-ledgers">
+    @for (tile of tiles(); track tile.def.key) {
+      <article class="tile" [class.open]="tile.open" [attr.data-testid]="'proof-tile-' + tile.def.key">
+        <h3>{{ i18n.t('proof.ledger.' + tile.def.key + '.title') }}</h3>
+        <p class="mean">{{ i18n.t('proof.ledger.' + tile.def.key + '.meaning') }}</p>
+        <div class="big"><kaff-figure [value]="tile.balance" /></div>
+        <div class="flr">
+          <kaff-icon name="lock" [small]="true" />{{ i18n.t('proof.ledger.' + tile.def.key + '.floor') }}
+          @if (tile.def.assumption; as id) {
+            <kaff-provenance [assumption]="id" />
+          }
+        </div>
+        <kaff-provenance kind="car" [detail]="i18n.t('proof.ledger.source')" />
+        @if (tile.count > 0) {
+          <button
+            type="button"
+            class="drill-btn"
+            [attr.aria-expanded]="tile.open"
+            [attr.data-testid]="'proof-drill-' + tile.def.key"
+            (click)="toggleDrill(tile.def.key)"
+          >
+            <kaff-icon name="list" [small]="true" />{{ i18n.t('proof.ledger.drill', { count: tile.count }) }}
+          </button>
+        } @else {
+          <span class="mean">{{ i18n.t('proof.ledger.no_postings') }}</span>
+        }
+      </article>
+    }
+  </div>
+  
+  <p class="no-total">
+    <span class="nx" aria-hidden="true"></span>
+    <b>{{ i18n.t('proof.ledgers.no_total') }}</b> {{ i18n.t('proof.ledgers.no_total_detail') }}
+  </p>
+  
+  @if (drill(); as key) {
+    <div class="drill" data-testid="proof-drill">
+      <div class="drill-head">
+        <span>
+          {{
+            i18n.t(key === 'unclassified' ? 'proof.drill.unclassified' : 'proof.drill.ledger', {
+              ledger: key === 'unclassified' ? '' : i18n.t('proof.ledger.' + key + '.title'),
+              count: drillRows().length,
+            })
+          }}
+        </span>
+        <kaff-provenance kind="car" [detail]="i18n.t('proof.drill.source')" />
+      </div>
+      <div class="drill-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>{{ i18n.t('proof.th.posting') }}</th>
+              <th>{{ i18n.t('proof.th.date') }}</th>
+              <th>{{ i18n.t('proof.th.document') }}</th>
+              <th>{{ i18n.t('proof.th.type') }}</th>
+              <th>{{ i18n.t('proof.th.from') }}</th>
+              <th>{{ i18n.t('proof.th.to') }}</th>
+              <th class="n">{{ i18n.t('proof.th.amount') }}</th>
+              @if (key !== 'unclassified') {
+                <th class="n">{{ i18n.t('proof.th.effect') }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (posting of drillRows(); track posting.id) {
+              <tr>
+                <td><bdi dir="ltr">{{ shortId(posting.id) }}</bdi></td>
+                <td><bdi dir="ltr">{{ posting.date }}</bdi></td>
+                <td><bdi dir="ltr">{{ posting.sourceDocumentReference }}</bdi></td>
+                <td>{{ typeLabel(posting.type) }}</td>
+                <td>{{ posting.fromAccount }}</td>
+                <td>{{ posting.toAccount }}</td>
+                <td class="n"><kaff-figure [value]="posting.amount" /></td>
+                @if (ledgerEffect(posting, key); as effect) {
+                  <td class="n"><kaff-figure [value]="effect" [plus]="true" /></td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+  
+  <div class="side">
+    <article class="box" data-testid="proof-cash">
+      <h3>{{ i18n.t('proof.side.cash.title') }} <kaff-provenance kind="car" [detail]="i18n.t('proof.side.cash.source')" /></h3>
+      <div class="big"><kaff-figure [value]="proof().projectCashNet" /></div>
+      <p class="mean">{{ i18n.t('proof.side.cash.note') }}</p>
+    </article>
+    <article class="box" data-testid="proof-material">
+      <h3>{{ i18n.t('proof.side.material.title') }} <kaff-provenance assumption="A8" /></h3>
+      <div class="big"><kaff-figure [value]="material()" /></div>
+      <p class="mean">{{ i18n.t('proof.side.material.note') }}</p>
+    </article>
+    <article class="box unc" [class.bad]="!unclassifiedClean()" data-testid="proof-unclassified">
+      <h3>{{ i18n.t('proof.side.unclassified.title') }} <kaff-provenance assumption="A5" /></h3>
+      <div class="big"><kaff-figure [value]="proof().unclassified.amount" /></div>
+      <p class="mean">
+        {{ i18n.t(unclassifiedClean() ? 'proof.side.unclassified.zero' : 'proof.side.unclassified.bad') }}
+      </p>
+      @if (!unclassifiedClean()) {
+        <button
+          type="button"
+          class="drill-btn"
+          [attr.aria-expanded]="drill() === 'unclassified'"
+          data-testid="proof-drill-unclassified"
+          (click)="toggleDrill('unclassified')"
+        >
+          <kaff-icon name="list" [small]="true" />{{ i18n.t('proof.side.unclassified.show') }}
+        </button>
+      }
+    </article>
+  </div>
+  
+  <!-- The reconciliation line: each ledger's balance against the sum of its own postings. -->
+  <div class="rec" [class.bad]="unreconciled().length > 0" data-testid="proof-reconciliation">
+    <kaff-icon [name]="unreconciled().length > 0 ? 'alert' : 'check'" />
+    <span>
+      @if (unreconciled().length === 0) {
+        {{ i18n.t('proof.rec.ok') }}
+      } @else {
+        {{ i18n.t('proof.rec.bad') }}
+      }
+    </span>
+    @for (ledger of unreconciled(); track ledger.key) {
+      <span class="rec-row">
+        {{ i18n.t('proof.ledger.' + ledger.key + '.title') }}:
+        {{ i18n.t('proof.rec.balance') }} <kaff-figure [value]="ledger.balance" />
+        {{ i18n.t('proof.rec.sum') }} <kaff-figure [value]="ledger.postingsSum" />
+      </span>
+    }
+    @if (unreconciled().length > 0) {
+      <small>{{ i18n.t('proof.rec.hint') }}</small>
+    }
+  </div>
+</div>

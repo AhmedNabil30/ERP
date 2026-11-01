@@ -1,0 +1,54 @@
+:host {
+  display: inline-flex;
+}
+
+.pv {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  block-size: 22px;
+  padding-inline: var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--dim);
+  background: transparent;
+  font: 600 0.75rem/1 var(--body);
+  white-space: nowrap;
+}
+
+.pv.calc {
+  color: var(--ink);
+}
+
+/* Entered: a filled chip. Carried: a dotted border. Assumed: a dashed border on its own tint. */
+.pv.ent {
+  border-color: var(--fieldline);
+  color: var(--ink);
+  background: var(--head);
+}
+
+.pv.car {
+  border: 1.5px dotted var(--fieldline);
+  color: var(--ink);
+}
+
+.pv.asm {
+  border: 1.5px dashed currentcolor;
+  color: var(--asm-ink);
+  background: var(--asm-bg);
+  cursor: pointer;
+}
+
+.pv.asm b {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.pv.asm:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.detail {
+  font-weight: 500;
+}

@@ -1,0 +1,18 @@
+@if (assumption(); as id) {
+  <button
+    type="button"
+    class="pv asm"
+    [attr.aria-label]="ariaLabel()"
+    [attr.data-testid]="'assumption-' + id"
+    (click)="goToRegister()"
+  >
+    <kaff-icon name="help" [small]="true" />{{ i18n.t('figure.kind.asm') }} <b>{{ id }}</b>
+  </button>
+} @else {
+  <span class="pv" [class]="kind()" [attr.data-kind]="kind()">
+    <kaff-icon [name]="icon()" [small]="true" />{{ label() }}
+    @if (detail(); as text) {
+      <span class="detail">{{ text }}</span>
+    }
+  </span>
+}

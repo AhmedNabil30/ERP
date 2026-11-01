@@ -1,0 +1,250 @@
+:host {
+  display: block;
+}
+
+.strip {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.h2 {
+  font: 600 1.0625rem / 1.4 var(--display);
+  margin-block: var(--space-5) var(--space-2);
+}
+
+table {
+  inline-size: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+th {
+  background: var(--head);
+  text-align: start;
+  font: 600 var(--text-xs) / 1.3 var(--body);
+  color: var(--dim);
+  padding: 0 var(--space-3);
+  block-size: var(--tap-target);
+  white-space: nowrap;
+}
+
+th.n,
+td.n {
+  text-align: end;
+}
+
+td {
+  padding: 6px var(--space-3);
+  border-block-start: 1px solid var(--line);
+  white-space: nowrap;
+  background: var(--surface);
+}
+
+/* The five-ledger strip: presentation, not a guard. */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tile,
+.box {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  padding: var(--space-3) var(--space-4);
+  border: 1.5px solid var(--fieldline);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.tile.open {
+  box-shadow: 0 0 0 3px var(--focus);
+}
+
+.tile h3,
+.box h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font: 700 var(--text-sm) / 1.35 var(--display);
+}
+
+.mean {
+  margin: 0;
+  color: var(--dim);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.tile .mean:first-of-type {
+  min-block-size: 3.6em;
+}
+
+.big {
+  font: 700 1.375rem / 1.2 var(--body);
+}
+
+.flr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--dim);
+  font-size: 0.75rem;
+}
+
+.drill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: var(--tap-target);
+  padding-inline: var(--space-3);
+  border: 1.5px solid var(--fieldline);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  font: 600 0.875rem / 1 var(--body);
+  justify-self: start;
+  cursor: pointer;
+}
+
+.drill-btn:hover {
+  background: var(--hover);
+}
+
+.drill-btn[aria-expanded="true"] {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.no-total {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--text-sm);
+}
+
+.nx {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 26px;
+  block-size: 26px;
+  border: 2px solid var(--fieldline);
+  border-radius: 50%;
+  color: var(--ink);
+}
+
+.nx::before {
+  content: "";
+  inline-size: 12px;
+  block-size: 2px;
+  background: currentcolor;
+  transform: rotate(-45deg);
+}
+
+.drill {
+  border: 1.5px solid var(--fieldline);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.drill-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--head);
+  border-block-end: 1px solid var(--line);
+  font-weight: 600;
+}
+
+.drill-scroll {
+  overflow-x: auto;
+}
+
+.drill table {
+  min-inline-size: 760px;
+  font-size: 0.875rem;
+}
+
+.side {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.box.unc {
+  border-color: var(--line);
+}
+
+.box.unc.bad {
+  border: 2px solid var(--err-bar);
+  background: var(--err-bg);
+  color: var(--err-ink);
+}
+
+.box.unc.bad .mean {
+  color: var(--err-ink);
+}
+
+.rec {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  border-inline-start: 6px solid var(--ok-ink);
+  background: var(--ok-bg);
+  color: var(--ok-ink);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.rec.bad {
+  border-inline-start-color: var(--err-bar);
+  background: var(--err-bg);
+  color: var(--err-ink);
+}
+
+.rec small {
+  flex-basis: 100%;
+  font-weight: 400;
+}
+
+.rec-row {
+  flex-basis: 100%;
+  font-weight: 700;
+}
+
+
+@media (width <= 1100px) {
+  .tiles,
+  .side {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (width <= 820px) {
+  .tiles,
+  .side {
+    grid-template-columns: 1fr;
+  }
+
+  .tile .mean:first-of-type {
+    min-block-size: 0;
+  }
+
+  .drill table {
+    min-inline-size: 640px;
+  }
+}
