@@ -36,7 +36,21 @@ The Technical Office assembles a client extract for a period from the executed q
 recorded. It passes a blocking quantity gate, Accounts applies the deductions, the Owner approves every
 one of them, and it issues. At some ruled moment in that sequence it becomes six postings in the ledger.
 
-## Blocking defect found before this story started — fix it first
+## The blocking defect found before this story started — **FIXED 2026-11-01**
+
+**Resolved by `e48de3a`, `49522a9` and `910561a`, and recorded in `D-190`.** `ExtractPostings.Build` is
+replaced by two methods: `BuildAccrual` posts revenue recognition, hold accrual, client-advance recovery
+and both تشوينات legs, touches **no cash account**, and leaves the net payable standing as a debit in
+`ClientReceivable`; `BuildCollection` carries the `ClientCollection` and `TaxWithheldAtSource` legs and is
+gated on `ExtractStage.Collected`. `tests/Domain.Tests/ExtractPostingTimingTests.cs` asserts the timing
+the totals could not see. Gates at the fix: build 0 warnings, Domain.Tests 402 of 402, Api.Tests 732 of 732.
+
+**So the endpoint slices may now be built.** What follows is kept as the record of the defect and of why
+the test has the shape it does — read it before writing a posting test, not as a live warning.
+
+---
+
+### The defect as it was
 
 **`ExtractPostings.Build` posts the client's cash into the safe at the moment the extract is approved.**
 `src/Domain/Contracts/Billing/ExtractPostings.cs:72`:
@@ -71,8 +85,17 @@ Three consequences, in order of how much they cost:
 a totals-only test cannot see a timing error.** Whatever fixes this needs a test that asserts the safe is
 *not* credited at approval and *is* credited at collection.
 
-The fix belongs with `KAFF-316` (collections), which owns the later step, and `AC-500-A` moves when the
-cash leg leaves the extract. **Do not build the endpoint slices on top of the current shape.**
+The fix belonged with `KAFF-316` (collections), which owns the later step. **`AC-500-A` has moved
+accordingly**: §15's "Client pays" column is now produced by `BuildCollection` at the `Collected` stage,
+not by the approval set, so a test driving §15 end to end must carry the extract to `Collected` to see the
+cash. `KAFF-316` still owns the collection endpoint that calls `BuildCollection`.
+
+**Four questions `D-190` named and did not answer**, all of which this story inherits: at which stage an
+extract accrues (still `OwnerApproval` by ruling); the account pair for `TaxWithheldAtSource` (`Q91` — the
+code posts `ClientReceivable → TaxWithheldAtSource` and nothing confirms it); whether a client may pay an
+extract in parts, since `BuildCollection` posts the whole net payable in one set; and whether reaching
+`Collected` requires the money actually received or is a clerical state, which diverges the moment a
+cheque is involved.
 
 A second, smaller one from the same read: `D-186` item 5 says the `TaxWithheldAtSource` account pair is
 "pending `Q91`", but `PostingAccountLegality.PendingQ91` does not list it. One of the two is wrong, and
