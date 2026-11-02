@@ -37,13 +37,25 @@ To switch person: open the side navigation, click تسجيل الخروج, sign 
 
 Sign in as `owner_demo`. You land on المشاريع, and the heading reads "2 مشروعاً".
 
-Row one: فيلا 47 — التجمع الخامس, code PRJ-377EC1A2, client شركة النيل للتطوير العقاري, type مقاولة بالمقطوعية, status جاري العمل, contract value 4,672,694.01. Under the name there are three links: المستخلصات، المقايسة، إثبات الأرقام.
+Row one: فيلا 47 — التجمع الخامس, code PRJ-377EC1A2, client شركة النيل للتطوير العقاري, type مقاولة بالمقطوعية, status جاري العمل, contract value 4,672,694.01. The row has no links inside it: the whole row is one link that opens the project (next step).
 
 Row two: مشروع KAFF-934, code PRJ-C7871BB1, status لم تبدأ, contract value 1,000,000.00. This is leftover test data, not part of the demo (see "What I found"). Ignore it.
 
-### Step 2. The project's BOQ, as Owner
+### Step 2. The project workspace, as Owner
 
-On row one click المقايسة. The page opens at `/projects/01a0de49-4a8c-7707-b19a-0f7592bbfdb0/boq`.
+Click row one anywhere. The page opens at `/projects/01a0de49-4a8c-7707-b19a-0f7592bbfdb0` (before this change a click went to day labour). At the top: the back link المشاريع, the title فيلا 47 — التجمع الخامس, the state جاري العمل, and one line with the code PRJ-377EC1A2, the client and the badge مقاولة بالمقطوعية. There is no متعثرة or تم تأجيلها tag: those two have no data yet.
+
+Under the header a line of five links sticks to the top as you scroll: الفهم، الكميات، التنفيذ، المال، التنظيم. Each opens its section. On a wide window the group name and its question sit in a column beside the content; on a phone they sit above it. What each section holds:
+
+- الفهم: قيمة التعاقد 4,672,694.01 with the chip منقول, نسبة الحجز 20%, نسبة استرداد الدفعة المقدمة 25%.
+- الكميات: عدد البنود 15, إجمالي المقايسة 4,672,694.01, the badge مجمّدة في 01/11/2026, and a link المقايسة.
+- التنفيذ: a link عمالة اليومية (the day-labour screen). The Owner has no اليومية link because the Owner does not write the daily log.
+- المال: عدد المستخلصات and آخر مستخلص, and links المستخلصات and إثبات الأرقام.
+- التنظيم: فريق العمل with the number of people assigned. The page prints the number the server sends (4 for this project). The design shows 6; I did not copy the design's number.
+
+The Arabic names of the five groups, their questions, the labels above and the words for the five states that have no ruled word are my working text. They all live under `projects.workspace.vocab.*` in `ar.json`, one line each, so a correction is one line. Setup, Active and Closed use لم تبدأ، جاري العمل، انتهت.
+
+The section الكميات links to the BOQ. Click المقايسة. The page opens at `/projects/01a0de49-4a8c-7707-b19a-0f7592bbfdb0/boq`.
 
 You see:
 
@@ -53,7 +65,7 @@ You see:
 
 ### Step 3. Daily log on a phone, as Junior site engineer
 
-Sign out, sign in as `site_eng_demo`. Make the browser window 390 pixels wide (or open it on a phone). You land on المشاريع and see one project only, with two links: اليومية and المستخلصات.
+Sign out, sign in as `site_eng_demo`. Make the browser window 390 pixels wide (or open it on a phone). You land on المشاريع and see one project only. Click its row. The workspace shows only two sections for him, التنفيذ and التنظيم: no money, no المال section, no الفهم or الكميات section. The primary button سجل يومي جديد is in the page header (on a phone the shell puts it at the top, not in the bottom bar). Under التنفيذ there are two links: اليومية and عمالة اليومية.
 
 Click اليومية. The page title is اليومية with the project name under it, and the line "لم يُسجَّل شيء في يومية اليوم بعد." Under "إضافة إلى اليومية" there are four tabs: حضور وملاحظات، عمالة، خامات، الكميات. Click الكميات. You see a drop-down "بند المقايسة" listing the 15 BOQ lines ("1. MAS-3004 · …" to "15. ELE-3002 · …"), a box "المنفذ في هذه الفترة", and the hint that you enter only what was done this period and it is added to what was recorded, not replacing it. Then a حفظ button.
 
@@ -75,7 +87,7 @@ I did not press حفظ. Saving a quantity adds to the project's executed work an
 
 ### Step 4. The extract list, as Junior site engineer
 
-On a wider window (anything over 390 px), open المستخلصات from the project row. The list shows:
+On a wider window (anything over 390 px), open اليومية as in step 3, then click the link المستخلصات in the strip of links at the top of that page. (The workspace hides it from him, because extracts are money.) The list shows:
 
 - مستخلص رقم 1, من 01/10/2026 إلى 31/10/2026, صادر.
 - مستخلص رقم 2, من 01/11/2026 إلى 30/11/2026, which was مسودة when I started.
@@ -121,7 +133,7 @@ Below the figures is a block "العمود المطبوع": قيمة الأعم�
 
 ### Step 8. صفحة إثبات الأرقام, as Owner
 
-From the project list click إثبات الأرقام on row one (the same link is on the extract pages). It opens `/projects/01a0de49-4a8c-7707-b19a-0f7592bbfdb0/proof`. Owner and accounts have this link. The Junior engineer's project row has no such link in my walk.
+From the project workspace, in the section المال, click إثبات الأرقام (the same link is on the extract pages). It opens `/projects/01a0de49-4a8c-7707-b19a-0f7592bbfdb0/proof`. Owner and accounts have this link. The Junior engineer's project row has no such link in my walk.
 
 What you see: "القيود الفعلية بجانب ما تتوقعه قواعد العقد، سطراً سطراً. للقراءة فقط: لا شيء هنا يُصحَّح تلقائياً." A stamp "من قاعدة بيانات الإنتاج" with the read time, and the project line "4,672,694.01 ج.م · حجز 20% · استرداد الدفعة 25%".
 
@@ -140,7 +152,7 @@ The 4,672,694.01 on the project list and on the BOQ page is the sum of the 15 si
 
 ### (b) A control you may not use is absent, not greyed out
 
-Pair 1: on the project list, Owner sees المستخلصات، المقايسة and إثبات الأرقام under the project name. The Junior engineer sees only اليومية and المستخلصات. There is no المقايسة link for him at all. I typed the BOQ address by hand as the engineer: the app took me to `/forbidden`, page title "غير مصرح بالدخول", "ليس لديك صلاحية لهذا الإجراء." (The server refuses, not only the menu.)
+Pair 1: in the project workspace, Owner sees five sections, including الكميات with the link المقايسة and المال with المستخلصات and إثبات الأرقام. The Junior engineer sees two sections, التنفيذ and التنظيم, and no المقايسة link at all. I typed the BOQ address by hand as the engineer: the app took me to `/forbidden`, page title "غير مصرح بالدخول", "ليس لديك صلاحية لهذا الإجراء." (The server refuses, not only the menu.)
 
 Pair 2, same screen, same extract, same role name (مهندس الموقع): on extract 2 as مسودة, the Supervisor sees the button تقديم تقرير الجودة. The Junior sees no button; the box says "لا يوجد ما تفعله في هذه المرحلة." The same pattern repeats at every gate: after the Supervisor's click, he sees "أنت من جهّز هذا المستخلص أو سبق أن تصرفت فيه، لذلك يقرر فيه شخص آخر في هذه المرحلة." and no button.
 
@@ -152,7 +164,8 @@ On the issued document (step 7), the "العمود المطبوع" block adds th
 
 ## 5. Not built
 
-- A project hub or workspace (one page per project). The project workspace design `.design/v2/team-a/project.html` is not approved, so I did not build it; it waits on you.
+- The project workspace is built only as far as the API serves it. Not on the page yet, because nothing serves it: executed-versus-surveyed progress, change orders, the list of daily logs, open NCRs, subcontractors, the five-ledger strip, the pending-extract chain, the team roster, linked projects, the stop control, Cost Plus supervision rate and classification, Design area, rate and stages. Cost Plus and Design projects were not walked in a browser (the demo has only Lump Sum projects); their screens are covered by the unit tests.
+- The primary buttons مستخلص جديد and فاتورة جديدة: there is no screen to create an extract or an invoice yet, so the workspace offers only فتح جدول الكميات (Owner, project in لم تبدأ) and سجل يومي جديد (site engineer).
 - Collections (client payments in).
 - Change orders.
 - Project closure, handover, warranty.
@@ -168,7 +181,8 @@ On the issued document (step 7), the "العمود المطبوع" block adds th
 ## 7. What I found
 
 - The Owner's project list shows a second project, مشروع KAFF-934 (1,000,000.00, لم تبدأ). It looks like a test leftover, not a demo project.
-- Each project row has one link with no visible text, pointing to `/projects/<id>/day-labour`. I could not see it on screen.
+- (Fixed.) Each project row used to carry a link with no visible text that opened day labour. It is gone; the whole row now opens the project workspace.
+- The second project مشروع KAFF-934 has contract value 1,000,000.00 and no BOQ, so its workspace shows "لا توجد مقايسة لهذا المشروع بعد" in الكميات next to a contract value chip منقول. The chip says the value is carried from a signed BOQ, which is not true there. It is leftover test data.
 - The proof page's five checks are all "لم يُحكم بعد" and the expected row is unavailable, so for now the page proves the actual postings add up, not that they match the contract rules.
 - The pending-extract seeding script could not make a second extract with new work. It reused the first run's quantity ids, so extract 3 was prepared with nothing new. I fixed the ids (commit `03d5755`), and the script now also sends such an extract through a reject-and-revise so its evidence picks up the new work. That is how extract 3 got its figures.
 
