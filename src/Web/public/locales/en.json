@@ -938,7 +938,6 @@
   "projects.field.contract_type": "Contract type",
   "projects.field.status": "Status",
   "projects.field.contract_value": "Contract value",
-  "projects.status.unruled": "—",
   "projects.value.not_applicable": "Not applicable",
   "projects.empty.title": "No projects yet.",
   "projects.empty.body": "A project appears here once it is created.",

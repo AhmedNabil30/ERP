@@ -22,12 +22,12 @@ const LABELS: Readonly<Record<string, string>> = {
   'projects.field.contract_type': 'نوع التعاقد',
   'projects.field.status': 'الحالة',
   'projects.field.contract_value': 'قيمة التعاقد',
-  'projects.status.unruled': '—',
   'projects.value.not_applicable': 'لا ينطبق',
   'projects.empty.title': 'لا توجد مشاريع بعد.',
   'projects.empty.unreachable.title': 'لا يوجد مشروع مفتوح لك.',
   'status.kaff.not_started': 'لم تبدأ',
   'status.kaff.in_progress': 'جاري العمل',
+  'status.kaff.finished': 'انتهت',
   'enum.ContractType.LumpSum': 'مقاولة بالمقطوعية',
   'enum.ContractType.CostPlus': 'التكلفة زائد نسبة إشراف',
 };
@@ -216,7 +216,7 @@ describe('ProjectListPage · columns', () => {
     expect(text).toContain('4500000.0000');
   });
 
-  it('renders Kaff vocabulary verbatim for Active, and the placeholder for an unruled state', async () => {
+  it('renders Kaff vocabulary verbatim for Active and Closed, the same word the hub shows', async () => {
     const fixture = await createFixture(
       new FakeProjectsApi([LUMP_SUM, CLOSED_COST_PLUS]),
       session(
@@ -229,9 +229,7 @@ describe('ProjectListPage · columns', () => {
     const closed = fixture.nativeElement.querySelector('[data-testid="project-status-KF-P-0002"]');
 
     expect((active.textContent as string).trim()).toBe('جاري العمل');
-    // Q18 is unanswered for `Closed`: no label, and above all not انتهت.
-    expect((closed.textContent as string).trim()).toBe('—');
-    expect(fixture.nativeElement.textContent as string).not.toContain('انتهت');
+    expect((closed.textContent as string).trim()).toBe('انتهت');
   });
 
   it('renders "not applicable" rather than a zero for a Cost Plus project with no contract value', async () => {

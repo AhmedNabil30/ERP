@@ -83,11 +83,6 @@
   white-space: nowrap;
 }
 
-/* A status nobody has ruled reads as muted and claims nothing — see the template's comment. */
-.row-status-unruled {
-  color: var(--color-muted);
-}
-
 .row-value {
   unicode-bidi: isolate;
 }

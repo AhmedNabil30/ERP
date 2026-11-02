@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { toProblem } from '../../../core/api/problem-details';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ClientsApi } from '../../../core/clients/clients.api';
-import { contractTypeKey, projectStatusKey } from '../../../core/i18n/enum-keys';
+import { contractTypeKey, projectWorkspaceStatusKey } from '../../../core/i18n/enum-keys';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { ProjectSummary, ProjectsApi } from '../../../core/projects/projects.api';
 import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
@@ -21,8 +21,8 @@ import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
  * the onward links (BOQ, daily log, extracts, proof, day labour) grouped by what the person is doing.
  * The link is convenience; the server decides on every read the hub makes.
  *
- * **No status label is invented here.** See `projectStatusKey`: six of the eight states of `spec.md`
- * §13 have no ruled Arabic label (Q18), and those rows render a placeholder.
+ * **The state word is the hub's.** `projectWorkspaceStatusKey` serves both screens, so a project reads the
+ * same on the list and in its workspace (Closed reads انتهت on both; Q18 still open).
  *
  * **No paging, no search and no filter strip.** `GET /api/projects` takes no parameters, so there is
  * nothing to send and a client-side filter over a server-filtered list is a list that lies.
@@ -41,7 +41,7 @@ export class ProjectListPage {
 
   protected readonly i18n = inject(I18nService);
   protected readonly contractTypeKey = contractTypeKey;
-  protected readonly projectStatusKey = projectStatusKey;
+  protected readonly projectStatusKey = projectWorkspaceStatusKey;
 
   protected readonly projects = signal<readonly ProjectSummary[]>([]);
   protected readonly loading = signal(true);

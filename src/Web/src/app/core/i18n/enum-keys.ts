@@ -159,46 +159,14 @@ export function contractTypeKey(type: ContractType): string {
 }
 
 /**
- * Kaff's Arabic status vocabulary for a project status — **or `null` where nobody has ruled yet**.
- *
- * `spec.md` §13 gives the project eight states; CLAUDE.md requires five Arabic labels verbatim, two of
- * which (متعثرة, تم تأجيلها) are health tags and not states at all (D-044 §7). That leaves three
- * labels for eight states, and the mapping is **open**: `stories/questions-for-karim.md` Q18 asks in
- * as many words whether انتهت means the site is finished or the file is closed and the money
- * collected. D-014 rejected "a plausible mapping" for exactly this reason.
- *
- * Two of the eight are already fixed by shipped product text and are not a guess made here:
- * `errors.project.initial_status_not_supported` reads *"لا يمكن أن يبدأ المشروع إلا بحالة لم تبدأ أو
- * جاري العمل"* against `Status is not (null or Setup or Active)` (`CreateProject/Validator.cs`), so
- * `Setup` is لم تبدأ and `Active` is جاري العمل in Kaff's own words.
- *
- * The other six return `null`, and the screen renders a placeholder rather than a label it invented.
- * **Do not fill these in without an answer to Q18.**
- */
-export function projectStatusKey(status: ProjectStatus): string | null {
-  switch (status) {
-    case 'Setup':
-      return 'status.kaff.not_started';
-    case 'Active':
-      return 'status.kaff.in_progress';
-    case 'HandoverPending':
-    case 'Handover':
-    case 'UnderWarranty':
-    case 'Closed':
-    case 'Stopped':
-    case 'Terminated':
-      return null;
-    default:
-      return assertNever(status);
-  }
-}
-
-/**
- * The project workspace header's state word, for all eight states of `spec.md` §13.
+ * A project's state word, for all eight states of `spec.md` §13. The project hub header and the project
+ * list both read this, so the two screens never disagree about a project's state.
  *
  * Setup, Active and Closed are Kaff's own words verbatim (`status.kaff.*`). The other five have no ruled
  * Arabic word, so they read working text under `projects.workspace.vocab.status.*` (one namespace, so a
- * correction is one line each; the list screen still shows a placeholder for them until Q18 is ruled).
+ * correction is one line each). `stories/questions-for-karim.md` Q18 still asks whether انتهت means the
+ * site is finished or the file is closed and the money collected; until it is answered, Closed reads
+ * انتهت on both screens.
  */
 export function projectWorkspaceStatusKey(status: ProjectStatus): string {
   switch (status) {

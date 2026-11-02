@@ -938,7 +938,6 @@
   "projects.field.contract_type": "نوع التعاقد",
   "projects.field.status": "الحالة",
   "projects.field.contract_value": "قيمة التعاقد",
-  "projects.status.unruled": "—",
   "projects.value.not_applicable": "لا ينطبق",
   "projects.empty.title": "لا توجد مشاريع بعد.",
   "projects.empty.body": "سيظهر المشروع هنا بعد إنشائه.",

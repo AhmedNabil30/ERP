@@ -53,17 +53,9 @@
 
               <kaff-badge tone="accent">{{ i18n.t(contractTypeKey(project.contractType)) }}</kaff-badge>
 
-              <!--
-                Kaff's vocabulary verbatim where it is ruled, and a placeholder where it is not.
-                `projectStatusKey` returns null for the six states of spec.md §13 that Q18 has not
-                answered — see its own doc. A plausible label here would read as compliance.
-              -->
+              <!-- The same state word the project hub shows (`projectWorkspaceStatusKey`). -->
               <span class="row-status" [attr.data-testid]="'project-status-' + project.code">
-                @if (projectStatusKey(project.status); as key) {
-                  {{ i18n.t(key) }}
-                } @else {
-                  <span class="row-status-unruled">{{ i18n.t('projects.status.unruled') }}</span>
-                }
+                {{ i18n.t(projectStatusKey(project.status)) }}
               </span>
 
               <bdi class="figure row-value cell-end" dir="ltr" [attr.data-testid]="'project-value-' + project.code">

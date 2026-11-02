@@ -11,7 +11,7 @@ export type ContractType = 'LumpSum' | 'CostPlus' | 'Design';
  * **This is not Kaff's Arabic status vocabulary and must never become it** — D-014, and
  * `ProjectStatus.cs`'s own remarks. متعثرة and تم تأجيلها are health tags with no state here
  * (D-044 §7), and what انتهت means is still open (`stories/questions-for-karim.md` Q18). See
- * `projectStatusKey` in `core/i18n/enum-keys.ts` for what this screen is allowed to render today.
+ * `projectWorkspaceStatusKey` in `core/i18n/enum-keys.ts` for the word each state renders.
  */
 export type ProjectStatus =
   | 'Setup'
