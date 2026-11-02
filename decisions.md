@@ -15853,3 +15853,33 @@ Cost Plus and Design extracts still have no intake (D-194).
 **Judgement call, not ruled by Nabil. Nabil to confirm.** `landingFor` sent the Owner to `/users` (S-006). It now sends a caller holding both `UserManage` and `ProjectList` (today the Owner alone) to `/projects`, like every other role that holds `ProjectList`. TechnicalOffice and MarketingSales landings are unchanged. The Owner still reaches `/users` and `/clients` through the `UserManage` and `ClientManage` side-nav rows (`nav-rows.ts`, one row per held permission); no nav row was added or removed. A `UserManage` holder without `ProjectList` still lands on `/users`.
 
 **Revert:** delete the first row of `RULED_LANDINGS` in `src/Web/src/app/core/navigation/landing.ts` and restore the Owner expectations in `landing.spec.ts`.
+
+### D-197 · Backend — the proof read judges each extract event against the billing calculator · 2026-11-02
+
+Supersedes the "expected is unavailable" note in D-187. `GET /api/projects/{id}/treasury/proof`
+(`src/Api/Features/Treasury/ProofOfNumbers/Handler.cs`) now fills `ProofEvent.Expected` and `.Difference` for every event
+whose source document is an extract, and reports `ExpectedState = Available` once any event carries an expectation
+(otherwise still `NoExtractsToCompare`).
+
+- **Expected comes from the calculator, never from the postings.** The project's `IBillingCalculator` (through
+  `IContractTypeDispatcher`) runs over `Extract.BillingInputFor(balances)`, the same method `ApplyDeductionsAsync` now uses,
+  so the extract's field-to-input mapping has one home. The ledger balances passed in are summed from the project's postings
+  made before that extract's own standing accrual, excluding the extract's own postings (no stored balance).
+- **Which columns are expected.** Work, hold (negative), advance recovery (negative) and the material advance net come from
+  the calculator's components. Collection is the net payable less tax withheld at source, and only once the extract is
+  `Collected` (spec.md section 7). An extract that has not reached the ruled accrual moment (`ExtractPostingMoment`), or is back
+  in Draft after a rejection, is expected to have posted nothing: zero in every column.
+- **Not judged.** Events whose source is not an extract (advance receipt at signing, handover hold release) keep a null
+  expectation: no calculator stands behind them. If the calculator refuses an extract, `ExpectedUnavailableReason` carries
+  its error code and `Expected` stays null.
+- **The five end-of-contract checks are unchanged.** spec.md section 15 states them as invariants of the finished contract
+  (hold is exactly 20 percent of contract value, advance ends at zero, and so on) and gives no mid-contract reading, so they
+  stay `Pending` until the hold release is posted. No tolerance exists in spec.md; every comparison is exact equality.
+- **Known approximation:** the balance baseline is cut at the creation time of the extract's accrual postings, whereas the
+  calculator originally read balances when Accounts applied the deductions. They differ only if another document posts to the
+  advance or material ledger between those two moments under a later `ExtractPostingMoment`; it would show as a difference,
+  never as a silent match.
+- **Contract change (additive):** `ProofEvent.expectedUnavailableReason: string | null`. `expectedState` can now be `Available`.
+
+**Not done:** Cost Plus and Design have no extract intake (D-194), so no event for them is judged. Web needs no change
+beyond optionally rendering `expectedUnavailableReason`.
