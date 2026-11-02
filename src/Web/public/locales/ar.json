@@ -1439,6 +1439,7 @@
   "projects.workspace.value_null.title": "قيمة التعاقد لم تُحدَّد بعد",
   "projects.workspace.value_null.body": "تُحسب القيمة من المقايسة بعد توقيعها ولا تُكتب يدويًا.",
   "projects.workspace.boq_total_pending": "إجمالي المقايسة غير جاهز بعد",
+  "projects.workspace.boq_none": "لا توجد مقايسة لهذا المشروع بعد",
   "projects.workspace.vocab.jump_label": "مجموعات المشروع",
   "projects.workspace.vocab.status.stopped": "متوقف",
   "projects.workspace.vocab.status.handover_pending": "في انتظار التسليم",

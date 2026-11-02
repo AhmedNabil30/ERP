@@ -97,6 +97,9 @@
                 @if (read.state === 'loading') {
                   <kaff-state mode="loading" titleKey="boq.loading" testId="workspace-boq-loading" />
                 }
+                @if (read.state === 'none') {
+                  <kaff-state mode="empty" titleKey="projects.workspace.boq_none" testId="workspace-boq-none" />
+                }
                 @if (read.state === 'failed') {
                   <kaff-banner tone="refusal" testId="workspace-boq-failed">
                     {{ i18n.t('projects.workspace.group_failed') }}

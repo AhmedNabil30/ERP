@@ -11,6 +11,7 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
@@ -47,6 +48,8 @@ import {
 type Read<T> =
   | { readonly state: 'loading' }
   | { readonly state: 'ok'; readonly data: T }
+  /** The server answered 404: the project has no such record yet (a BOQ before one is drafted). */
+  | { readonly state: 'none' }
   | { readonly state: 'failed'; readonly key: string };
 
 const LOADING = { state: 'loading' } as const;
@@ -201,6 +204,10 @@ export class ProjectWorkspacePage {
     try {
       this.boq.set({ state: 'ok', data: await this.boqsApi.get(this.projectId()) });
     } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 404) {
+        this.boq.set({ state: 'none' });
+        return;
+      }
       this.boq.set({ state: 'failed', key: toProblem(error).messageKey });
     }
   }

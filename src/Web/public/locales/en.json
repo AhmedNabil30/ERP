@@ -1439,6 +1439,7 @@
   "projects.workspace.value_null.title": "The contract value is not set yet",
   "projects.workspace.value_null.body": "The value is derived from the BOQ once it is signed. It is never typed.",
   "projects.workspace.boq_total_pending": "The BOQ total is not ready yet",
+  "projects.workspace.boq_none": "This project has no BOQ yet",
   "projects.workspace.vocab.jump_label": "Project groups",
   "projects.workspace.vocab.status.stopped": "Stopped",
   "projects.workspace.vocab.status.handover_pending": "Awaiting handover",

@@ -268,6 +268,17 @@ describe('ProjectWorkspacePage · partial failure', () => {
     expect(q(fixture, 'workspace-failure')).toBeNull();
   });
 
+  it('a BOQ that does not exist yet (404) is an empty state, not a failure', async () => {
+    const fixture = await createFixture(
+      new FakeProjectsApi(project('LumpSum', { status: 'Setup' })),
+      OWNER(),
+      new FakeBoqsApi(new HttpErrorResponse({ status: 404, error: { messageKey: 'errors.boq.not_found' } })),
+    );
+
+    expect(q(fixture, 'workspace-boq-none')).not.toBeNull();
+    expect(q(fixture, 'workspace-boq-failed')).toBeNull();
+  });
+
   it('a refused project read renders the refusal with the server own key and no groups', async () => {
     const fixture = await createFixture(
       new FakeProjectsApi(
