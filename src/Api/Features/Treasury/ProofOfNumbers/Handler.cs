@@ -2,6 +2,8 @@
 using Kaff.Api.Common.Results;
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
+using Kaff.Domain.Contracts.Billing;
+using Kaff.Domain.Extracts;
 using Kaff.Domain.Projects;
 using Kaff.Domain.Rulings;
 using Kaff.Domain.Treasury;
@@ -20,18 +22,14 @@ namespace Kaff.Api.Features.Treasury.ProofOfNumbers;
 /// posted would make every row match by construction and prove nothing.
 /// </para>
 /// <para>
-/// The per-event expectation has to come from <c>IBillingCalculator</c>. Those are implemented now
-/// (<c>D-186</c>), so the reason this screen still carries no per-event expectation has changed and is no
-/// longer the calculators: <b>a calculator needs one extract's period inputs</b> - the work value certified
-/// in the period and the material installed in it - <b>and no extract record exists to read them from</b>.
-/// The extract chain is <c>KAFF-500</c>, unbuilt. Until it lands, <see cref="Response.ExpectedState"/>
-/// reports <c>NoExtractsToCompare</c>, and the screen renders its designed "expected unavailable" mark,
-/// which is never a green match.
-/// </para>
-/// <para>
-/// Wiring this is therefore one change in this handler once extracts exist, and not before: read each
-/// extract's inputs, call the calculator for its contract type, and fill <c>Expected</c> and
-/// <c>Difference</c> per event. Do not invent the inputs to make the column appear.
+/// The per-event expectation comes from the project's <c>IBillingCalculator</c>, run over the extract's own
+/// stored inputs (<c>Extract.BillingInputFor</c>, the same method the deductions step uses) and over the ledger
+/// balances as they stood before that extract's standing accrual postings, summed from the postings. An event whose
+/// source document is an extract is judged; any other event (advance receipt, handover) has no calculator
+/// behind it and keeps a null expectation. An extract that has not reached the ruled accrual moment, or was
+/// rejected back to Draft, should have posted nothing, so its expectation is zero in every column; its collection
+/// is expected only once it is <c>Collected</c> (spec.md section 7).
+/// <see cref="Response.ExpectedState"/> is <c>Available</c> when at least one event carries an expectation.
 /// </para>
 /// <para>
 /// The checks that need only the contract (hold is the hold rate times the contract value; client cash
@@ -61,9 +59,13 @@ internal static class Handler
     public static async Task<IResult> HandleAsync(
         Guid projectId,
         KaffDbContext database,
+        IContractTypeDispatcher dispatcher,
+        RulingSet rulings,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(dispatcher);
+        ArgumentNullException.ThrowIfNull(rulings);
 
         Project? project = await database.Projects
             .FirstOrDefaultAsync(candidate => candidate.Id == projectId, cancellationToken);
@@ -107,21 +109,50 @@ internal static class Handler
             }
         }
 
-        List<ProofEvent> events =
-        [
-            .. postings
-                .GroupBy(posting => (posting.SourceDocumentType, posting.SourceDocumentId))
-                .Select(group => new ProofEvent(
-                    group.Key.SourceDocumentType,
-                    group.Key.SourceDocumentId,
-                    group.Select(posting => posting.SourceDocumentReference).FirstOrDefault(reference => reference is not null),
-                    group.Min(posting => posting.PostingDate),
-                    Columns(group),
-                    null,
-                    null,
-                    [.. group.Select(posting => posting.Id)]))
-                .OrderBy(@event => @event.Date),
-        ];
+        Dictionary<Guid, Extract> extracts = (await database.Extracts
+                .Where(extract => extract.ProjectId == projectId)
+                .ToListAsync(cancellationToken))
+            .ToDictionary(extract => extract.Id);
+        Dictionary<Guid, ProofPosting> rowById = rows.ToDictionary(row => row.Id);
+        Result<IBillingCalculator> calculator = dispatcher.BillingCalculatorFor(project.ContractType);
+
+        List<ProofEvent> events = [];
+        foreach (IGrouping<(SourceDocumentType Type, Guid Id), Posting> group in postings
+                     .GroupBy(posting => (posting.SourceDocumentType, posting.SourceDocumentId)))
+        {
+            ProofColumns actual = Columns(group);
+            ProofColumns? expected = null;
+            ProofColumns? difference = null;
+            string? unavailableReason = null;
+
+            if (group.Key.Type == SourceDocumentType.Extract
+                && extracts.TryGetValue(group.Key.Id, out Extract? extract))
+            {
+                if (calculator.IsFailure)
+                {
+                    unavailableReason = calculator.Error.Code;
+                }
+                else
+                {
+                    (expected, unavailableReason) = await ExpectedAsync(
+                        extract, project, calculator.Value, rulings, postings, rowById, cancellationToken);
+                    difference = expected is null ? null : Subtract(actual, expected);
+                }
+            }
+
+            events.Add(new ProofEvent(
+                group.Key.Type,
+                group.Key.Id,
+                group.Select(posting => posting.SourceDocumentReference).FirstOrDefault(reference => reference is not null),
+                group.Min(posting => posting.PostingDate),
+                actual,
+                expected,
+                difference,
+                [.. group.Select(posting => posting.Id)],
+                unavailableReason));
+        }
+
+        events = [.. events.OrderBy(@event => @event.Date)];
 
         bool released = postings.Any(posting => posting.Type == PostingType.HoldRelease && !posting.IsReversal);
         decimal holdAccrued = Net(postings, PostingType.HoldAccrual);
@@ -217,8 +248,6 @@ internal static class Handler
                 && !TouchesLedger(accounts, posting.ToAccountId)),
         ];
 
-        RulingSet rulings = RulingSet.Default;
-
         return Microsoft.AspNetCore.Http.Results.Ok(new Response(
             DateTimeOffset.UtcNow,
             new ProofProject(
@@ -229,7 +258,7 @@ internal static class Handler
                 contractValue,
                 Percent(holdRate),
                 Percent(advanceRecoveryRate)),
-            "NoExtractsToCompare",
+            events.Any(@event => @event.Expected is not null) ? "Available" : "NoExtractsToCompare",
             new Money(running),
             events,
             checks,
@@ -243,6 +272,85 @@ internal static class Handler
             ],
             rows));
     }
+
+    /// <summary>
+    /// What this extract's postings should be, from the calculator over the extract's stored inputs. Null with a
+    /// reason (the calculator's error code) when the calculator refuses; never fitted to the postings.
+    /// </summary>
+    private static async Task<(ProofColumns? Expected, string? Reason)> ExpectedAsync(
+        Extract extract,
+        Project project,
+        IBillingCalculator calculator,
+        RulingSet rulings,
+        List<Posting> postings,
+        Dictionary<Guid, ProofPosting> rowById,
+        CancellationToken cancellationToken)
+    {
+        ExtractStage? reached = extract.Status switch
+        {
+            ExtractStatus.DeductionsApplied => ExtractStage.AccountsDeductions,
+            ExtractStatus.OwnerApproved => ExtractStage.OwnerApproval,
+            ExtractStatus.Issued => ExtractStage.Issued,
+            ExtractStatus.Collected => ExtractStage.Collected,
+            _ => null,
+        };
+
+        if (reached is not { } stage || !rulings.ExtractPostingMoment.HasAccruedBy(stage))
+        {
+            return (new ProofColumns(Money.Zero, Money.Zero, Money.Zero, Money.Zero, Money.Zero), null);
+        }
+
+        // The balances the calculator would have read: every other document's effect posted before this
+        // extract's own standing accrual. Summed from postings, never stored.
+        DateTimeOffset cutoff = postings
+            .Where(posting => posting.SourceDocumentType == SourceDocumentType.Extract
+                && posting.SourceDocumentId == extract.Id
+                && !posting.IsReversal
+                && posting.Type is not (PostingType.ClientCollection or PostingType.TaxWithheldAtSource)
+                && !postings.Any(other => other.ReversesId == posting.Id))
+            .Select(posting => posting.CreatedAt)
+            .DefaultIfEmpty(DateTimeOffset.MaxValue)
+            .Min();
+
+        decimal Before(string ledgerKey) => postings
+            .Where(posting => posting.CreatedAt < cutoff
+                && !(posting.SourceDocumentType == SourceDocumentType.Extract && posting.SourceDocumentId == extract.Id))
+            .Sum(posting => rowById[posting.Id].Effects.Where(effect => effect.LedgerKey == ledgerKey).Sum(effect => effect.Effect.Amount));
+
+        var balances = new ExtractLedgerBalances(
+            new Money(Before("ClientAdvance")), new Money(Before("MaterialAdvance")), new Money(Before("Hold")));
+
+        Result<BillingResult> billed = await calculator.CalculateAsync(
+            new BillingContext(project, extract.PeriodStart, extract.PeriodEnd, extract.BillingInputFor(balances)),
+            cancellationToken);
+        if (billed.IsFailure)
+        {
+            return (null, billed.Error.Code);
+        }
+
+        Money Component(BillingComponentKind kind) =>
+            Money.Sum(billed.Value.Components.Where(component => component.Kind == kind).Select(component => component.Amount));
+
+        // Cash is the net payable less what the client withholds at source (ExtractPostings.BuildCollection), and
+        // only once the client has paid.
+        Money collection = stage == ExtractStage.Collected
+            ? billed.Value.NetPayable - Component(BillingComponentKind.TaxAtSource)
+            : Money.Zero;
+
+        return (new ProofColumns(
+            Component(BillingComponentKind.WorkValue),
+            -Component(BillingComponentKind.Hold),
+            -Component(BillingComponentKind.AdvanceRecovery),
+            Component(BillingComponentKind.MaterialAdvance) - Component(BillingComponentKind.MaterialAdvanceRecovery),
+            collection), null);
+    }
+
+    private static ProofColumns Subtract(ProofColumns actual, ProofColumns expected) => new(
+        actual.Work - expected.Work,
+        actual.Hold - expected.Hold,
+        actual.Advance - expected.Advance,
+        actual.MaterialAdvance - expected.MaterialAdvance,
+        actual.Collection - expected.Collection);
 
     private static string Percent(Percentage rate) =>
         (rate.Fraction * 100m).ToString("0.######", CultureInfo.InvariantCulture);

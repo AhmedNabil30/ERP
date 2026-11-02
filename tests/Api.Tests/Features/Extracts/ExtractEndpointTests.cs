@@ -406,6 +406,121 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         stored.CumulativeCertifiedWork.Should().Be(new Money(400_000m), "derived from 400 executed at 1,000, never typed");
     }
 
+    // ---- the proof read: expected from the calculator, actual from the postings -------------------
+
+    /// <summary>
+    /// spec.md section 15, extract 1: the proof screen's expectation for an issued extract comes from the
+    /// calculator over the extract's stored inputs, and the posted figures match it to the cent. Nothing is
+    /// collected yet, so the collection column is expected to be zero.
+    /// </summary>
+    [Fact]
+    public async Task The_proof_expects_extract_one_from_the_calculator_and_the_postings_match()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+
+        JsonElement proofEvent = ExtractEventOf(await ProofAsync(project.Id), extract, out string state);
+
+        state.Should().Be("Available");
+        ColumnsOf(proofEvent, "expected").Should().Equal(300_000m, -60_000m, -75_000m, 75_000m, 0m);
+        ColumnsOf(proofEvent, "actual").Should().Equal(300_000m, -60_000m, -75_000m, 75_000m, 0m);
+        ColumnsOf(proofEvent, "difference").Should().Equal(0m, 0m, 0m, 0m, 0m);
+        proofEvent.GetProperty("expectedUnavailableReason").ValueKind.Should().Be(JsonValueKind.Null);
+    }
+
+    /// <summary>
+    /// A second extract is expected over the ledger balances left by the first (the advance is 175,000 by then), read
+    /// from the postings as they stood before the second's own accrual, and still matches.
+    /// </summary>
+    [Fact]
+    public async Task The_proof_expects_a_second_extract_over_the_balances_the_first_left()
+    {
+        Project project = await NewProjectAsync();
+        Guid first = await DriveAsync(project, ExtractStatus.Issued);
+        await ExecuteAsync(project, 600m);
+        Guid second = await DriveAsync(project, ExtractStatus.Issued);
+
+        JsonElement proof = await ProofAsync(project.Id);
+
+        foreach (Guid id in new[] { first, second })
+        {
+            ColumnsOf(ExtractEventOf(proof, id, out _), "difference").Should().Equal(0m, 0m, 0m, 0m, 0m);
+        }
+
+        ColumnsOf(ExtractEventOf(proof, second, out _), "expected")[2].Should().Be(-75_000m);
+    }
+
+    /// <summary>
+    /// The expectation is not fitted to the postings: a stray hold accrual under the extract's source document makes
+    /// the hold column differ by exactly that amount and nothing else.
+    /// </summary>
+    [Fact]
+    public async Task The_proof_shows_a_stray_posting_as_a_difference_and_does_not_absorb_it()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+
+        await using (KaffDbContext context = _database.CreateContext())
+        {
+            Account hold = await context.Accounts.SingleAsync(a => a.ProjectId == project.Id && a.Type == AccountType.Hold, Ct);
+            Account receivable = await context.Accounts.SingleAsync(a => a.ProjectId == project.Id && a.Type == AccountType.ClientReceivable, Ct);
+            context.Postings.Add(Posting.Create(
+                receivable, hold, new Money(1_000m), PostingType.HoldAccrual,
+                new SourceDocument(SourceDocumentType.Extract, extract, "EXT-1"),
+                new DateOnly(2026, 9, 27), _owner, Now.AddMinutes(5), project.Id).Value);
+            await context.SaveChangesAsync(Ct);
+        }
+
+        JsonElement proofEvent = ExtractEventOf(await ProofAsync(project.Id), extract, out _);
+
+        ColumnsOf(proofEvent, "expected")[1].Should().Be(-60_000m);
+        ColumnsOf(proofEvent, "difference").Should().Equal(0m, -1_000m, 0m, 0m, 0m);
+    }
+
+    /// <summary>
+    /// An extract rejected back to Draft after its accrual is reversed by mirror postings; its expectation is zero in
+    /// every column and the netted postings match it.
+    /// </summary>
+    [Fact]
+    public async Task The_proof_expects_nothing_from_a_rejected_extract_whose_accrual_was_reversed()
+    {
+        using RulingHost accountsRuling = RulingFactory(ExtractStage.AccountsDeductions);
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.DeductionsApplied, accountsRuling.Client);
+
+        HttpResponseMessage rejected = await SendAsync(
+            accountsRuling.Client, HttpMethod.Post, Step(project.Id, extract, "owner-rejection"), _owner, new { reason = "test" });
+        rejected.StatusCode.Should().Be(HttpStatusCode.OK, await rejected.Content.ReadAsStringAsync(Ct));
+
+        JsonElement proofEvent = ExtractEventOf(await ProofAsync(project.Id, accountsRuling.Client), extract, out _);
+
+        ColumnsOf(proofEvent, "expected").Should().Equal(0m, 0m, 0m, 0m, 0m);
+        ColumnsOf(proofEvent, "difference").Should().Equal(0m, 0m, 0m, 0m, 0m);
+    }
+
+    private static readonly string[] ColumnKeys = ["work", "hold", "advance", "materialAdvance", "collection"];
+
+    private async Task<JsonElement> ProofAsync(Guid project, HttpClient? client = null)
+    {
+        HttpResponseMessage response = await SendAsync(client ?? _client, HttpMethod.Get, $"/api/projects/{project}/treasury/proof", _owner, null);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+        return document.RootElement.Clone();
+    }
+
+    private static JsonElement ExtractEventOf(JsonElement proof, Guid extract, out string expectedState)
+    {
+        expectedState = proof.GetProperty("expectedState").GetString()!;
+        return proof.GetProperty("events").EnumerateArray()
+            .Single(item => item.GetProperty("sourceDocumentId").GetGuid() == extract);
+    }
+
+    private static decimal[] ColumnsOf(JsonElement proofEvent, string side)
+    {
+        JsonElement columns = proofEvent.GetProperty(side);
+        return [.. ColumnKeys.Select(key => ParseDecimal(columns.GetProperty(key)))];
+    }
+
     // ---- separation of duties, and the read model that leaves the control out --------------------
 
     [Fact]

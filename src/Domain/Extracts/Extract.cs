@@ -352,19 +352,8 @@ public sealed class Extract : Entity
             return Result.Failure<PostingSet?>(gate.Error);
         }
 
-        Percentage portion = ApprovedPortion;
-        Money period = CumulativeCertifiedWork - PreviouslyCertifiedWork;
-        Money approvedCumulative = portion.Fraction == 1m
-            ? CumulativeCertifiedWork
-            : PreviouslyCertifiedWork + portion.Of(period);
-
-        var input = new LumpSumBillingInput(
-            approvedCumulative, PreviouslyCertifiedWork, MaterialValueOnSite, MaterialInstalled,
-            ChangeOrderValueThisPeriod: Money.Zero, DelayPenalty: Money.Zero,
-            balances.ClientAdvance, balances.MaterialAdvance, balances.Hold);
-
         Result<BillingResult> billed = await calculator.CalculateAsync(
-            new BillingContext(context.Project, PeriodStart, PeriodEnd, input), cancellationToken);
+            new BillingContext(context.Project, PeriodStart, PeriodEnd, BillingInputFor(balances)), cancellationToken);
         if (billed.IsFailure)
         {
             return Result.Failure<PostingSet?>(billed.Error);
@@ -382,6 +371,27 @@ public sealed class Extract : Entity
         NetPayable = billed.Value.NetPayable;
         Apply(ExtractStatus.DeductionsApplied, ExtractGate.Accounts, ExtractGateOutcome.Passed, actorUserId, now, null, null);
         return accrual;
+    }
+
+    /// <summary>
+    /// The Lump Sum evidence this extract hands the calculator, given the ledger balances at the moment of the run.
+    /// The single place the extract's own fields become calculator input, shared by the deductions step and the
+    /// proof read so the two cannot drift.
+    /// </summary>
+    public LumpSumBillingInput BillingInputFor(ExtractLedgerBalances balances)
+    {
+        ArgumentNullException.ThrowIfNull(balances);
+
+        Percentage portion = ApprovedPortion;
+        Money period = CumulativeCertifiedWork - PreviouslyCertifiedWork;
+        Money approvedCumulative = portion.Fraction == 1m
+            ? CumulativeCertifiedWork
+            : PreviouslyCertifiedWork + portion.Of(period);
+
+        return new LumpSumBillingInput(
+            approvedCumulative, PreviouslyCertifiedWork, MaterialValueOnSite, MaterialInstalled,
+            ChangeOrderValueThisPeriod: Money.Zero, DelayPenalty: Money.Zero,
+            balances.ClientAdvance, balances.MaterialAdvance, balances.Hold);
     }
 
     /// <summary>The Owner approves. Every extract, no threshold (spec.md section 7).</summary>

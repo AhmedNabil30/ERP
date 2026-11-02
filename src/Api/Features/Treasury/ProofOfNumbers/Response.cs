@@ -6,8 +6,9 @@ namespace Kaff.Api.Features.Treasury.ProofOfNumbers;
 
 /// <summary>The proof screen's whole read. Every amount is a <see cref="Money"/> (a JSON string, D-135).</summary>
 /// <param name="ExpectedState">
-/// <c>NoExtractsToCompare</c> while no extract record exists to read a period's inputs from (a designed state, not a
-/// failure), otherwise <c>Available</c>.
+/// <c>NoExtractsToCompare</c> while no event carries an expectation (a designed state, not a failure), otherwise
+/// <c>Available</c>. With <c>Available</c> an individual event can still have a null expectation (see
+/// <see cref="ProofEvent.ExpectedUnavailableReason"/> and the non-extract events).
 /// </param>
 /// <param name="ProjectCashNet">
 /// Net of this project's postings into and out of the safe. Not the safe's balance, which is company-wide.
@@ -44,9 +45,13 @@ public sealed record ProofColumns(Money Work, Money Hold, Money Advance, Money M
 
 /// <summary>
 /// One source document (an extract, a collection, a handover) and what its postings did. <c>Expected</c>
-/// and <c>Difference</c> (actual minus expected, computed here and never in the browser) are null while
-/// <see cref="Response.ExpectedState"/> is <c>NoExtractsToCompare</c>.
+/// and <c>Difference</c> (actual minus expected, computed here and never in the browser) are null when no calculator
+/// stands behind the event (anything that is not an extract) or the calculator refused.
 /// </summary>
+/// <param name="ExpectedUnavailableReason">
+/// The calculator's error code when it refused this extract (for example <c>billing.terms_missing</c>); null otherwise.
+/// Additive: absent readers are unaffected.
+/// </param>
 public sealed record ProofEvent(
     SourceDocumentType SourceDocumentType,
     Guid SourceDocumentId,
@@ -55,7 +60,8 @@ public sealed record ProofEvent(
     ProofColumns Actual,
     ProofColumns? Expected,
     ProofColumns? Difference,
-    IReadOnlyList<Guid> PostingIds);
+    IReadOnlyList<Guid> PostingIds,
+    string? ExpectedUnavailableReason = null);
 
 /// <summary>
 /// One live invariant. <see cref="Status"/> is <c>Match</c>, <c>Mismatch</c>, <c>Pending</c> (the contract

@@ -1,6 +1,8 @@
 using Kaff.Api.Authorization;
 using Kaff.Api.Common.Endpoints;
 using Kaff.Domain.Authorization;
+using Kaff.Domain.Contracts;
+using Kaff.Domain.Rulings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
@@ -29,8 +31,10 @@ public sealed class Endpoint : IEndpoint
         app.MapGet(Route, (
                 [FromRoute] Guid projectId,
                 KaffDbContext database,
+                IContractTypeDispatcher dispatcher,
+                RulingSet rulings,
                 CancellationToken cancellationToken)
-                => Handler.HandleAsync(projectId, database, cancellationToken))
+                => Handler.HandleAsync(projectId, database, dispatcher, rulings, cancellationToken))
             .RequirePermission(Permission.TreasuryReadProject, ProjectScope.FromRoute())
             .WithName("GetProofOfNumbers")
             .WithTags("Treasury");
