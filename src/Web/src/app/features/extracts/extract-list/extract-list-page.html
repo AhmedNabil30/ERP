@@ -1,30 +1,36 @@
-<section class="list" data-testid="extract-list-page">
-  <header class="head">
-    <a class="back" routerLink="/projects"><kaff-icon name="back" />{{ i18n.t('nav.projects') }}</a>
-    <h1 class="title">{{ i18n.t('extract.list.title') }}</h1>
-    <kaff-project-links [projectId]="projectId()" current="extracts" />
-  </header>
+<section class="pg" data-testid="extract-list-page">
+  <kaff-page-head [backLink]="['/projects', projectId()]" backLabelKey="project.back_to_workspace" [title]="i18n.t('extract.list.title')" />
 
   @if (failure(); as key) {
-    <kaff-state mode="refusal" [bodyKey]="key" testId="extract-list-failure" />
-    <div>
-      <kaff-button variant="secondary" testId="extract-list-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
-    </div>
+    <kaff-state mode="refusal" [bodyKey]="key" testId="extract-list-failure">
+      <kaff-button stateAction variant="secondary" testId="extract-list-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+    </kaff-state>
   } @else if (loading()) {
     <kaff-state mode="loading" titleKey="extract.loading" testId="extract-list-loading" />
   } @else if (rows().length === 0) {
-    <kaff-state mode="empty" titleKey="extract.list.empty_title" bodyKey="extract.list.empty_body" testId="extract-list-empty" />
+    <kaff-state mode="empty" titleKey="extract.list.empty_title" bodyKey="extract.list.empty_body" icon="file" testId="extract-list-empty" />
   } @else {
-    <ul class="rows" data-testid="extract-rows">
-      @for (row of rows(); track row.id) {
-        <li>
-          <a class="row" [routerLink]="['/projects', projectId(), 'extracts', row.id]" [attr.data-testid]="'extract-row-' + row.number">
-            <b class="num">{{ i18n.t('extract.number', { number: row.number }) }}</b>
-            <span class="when">{{ i18n.t('extract.period', { from: day(row.periodStart), to: day(row.periodEnd) }) }}</span>
-            <kaff-badge tone="brand">{{ i18n.t(statusKeys[row.status]) }}</kaff-badge>
-          </a>
-        </li>
-      }
-    </ul>
+    <kaff-table [columns]="columns" [columnDefs]="headerColumns" testId="extract-table-header">
+      <ul class="rows" data-testid="extract-rows">
+        @for (row of rows(); track row.id) {
+          <li class="rows-item">
+            <kaff-table-row [stacked]="true">
+              <a
+                class="row-stretched-link"
+                [routerLink]="['/projects', projectId(), 'extracts', row.id]"
+                [attr.aria-label]="i18n.t('extract.number', { number: row.number })"
+                [attr.data-testid]="'extract-row-' + row.number"
+              ></a>
+              <span class="cell-pinned cell-title num">{{ i18n.t('extract.number', { number: row.number }) }}</span>
+              <span class="cell-sub when">{{ i18n.t('extract.period', { from: day(row.periodStart), to: day(row.periodEnd) }) }}</span>
+              <span class="cell-wide when">{{ i18n.t('extract.period', { from: day(row.periodStart), to: day(row.periodEnd) }) }}</span>
+              <span class="cell-primary">
+                <kaff-status-pill [tone]="pill[row.status].tone" [icon]="pill[row.status].icon">{{ i18n.t(statusKeys[row.status]) }}</kaff-status-pill>
+              </span>
+            </kaff-table-row>
+          </li>
+        }
+      </ul>
+    </kaff-table>
   }
 </section>

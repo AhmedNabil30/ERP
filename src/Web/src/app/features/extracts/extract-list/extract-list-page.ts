@@ -4,17 +4,20 @@ import { RouterLink } from '@angular/router';
 import { toProblem } from '../../../core/api/problem-details';
 import { ExtractSummary, ExtractsApi } from '../../../core/extracts/extracts.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
-import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
-import { KaffIcon } from '../../../shared/kaff-icon/kaff-icon';
-import { KaffProjectLinks } from '../../../shared/kaff-project-links/kaff-project-links';
+import { KaffPageHead } from '../../../shared/kaff-page-head/kaff-page-head';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
+import { KaffStatusPill } from '../../../shared/kaff-status-pill/kaff-status-pill';
+import { KaffTable } from '../../../shared/kaff-table/kaff-table';
+import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
+import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
+import { EXTRACT_STATUS_PILL } from '../extract-display';
 import { STATUS_KEYS } from '../extract-detail/extract-detail-page';
 
 /** The extracts of one project, oldest first. The server decides who may read the list. */
 @Component({
   selector: 'kaff-extract-list-page',
-  imports: [RouterLink, KaffBadge, KaffButton, KaffIcon, KaffProjectLinks, KaffState],
+  imports: [RouterLink, KaffButton, KaffPageHead, KaffState, KaffStatusPill, KaffTable, KaffTableRow],
   templateUrl: './extract-list-page.html',
   styleUrl: './extract-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -24,6 +27,14 @@ export class ExtractListPage {
 
   protected readonly i18n = inject(I18nService);
   protected readonly statusKeys = STATUS_KEYS;
+  protected readonly pill = EXTRACT_STATUS_PILL;
+
+  protected readonly columns = 'minmax(10rem, 1fr) minmax(12rem, 2fr) 11rem';
+  protected readonly headerColumns: readonly TableColumnDef[] = [
+    { labelKey: 'extract.list.column.number', pinned: true },
+    { labelKey: 'extract.list.column.period' },
+    { labelKey: 'extract.list.column.status' },
+  ];
 
   /** Bound from `:projectId` by `withComponentInputBinding`. */
   readonly projectId = input.required<string>();

@@ -53,11 +53,17 @@ export interface ProofEvent {
   readonly reference: string | null;
   readonly date: string;
   readonly actual: ProofColumns;
-  /** Null while `expectedState` is `NoExtractsToCompare`. */
+  /**
+   * The contract calculator's expected figures for this event. Null when no calculator stands behind it
+   * (anything that is not an extract) or the calculator refused (see `expectedUnavailableReason`). Scale
+   * differs from `actual` ("1231.65" against "1231.6500"): compare with `sameAmount`, never as text.
+   */
   readonly expected: ProofColumns | null;
   /** Actual minus expected, computed by the server. Null whenever `expected` is. */
   readonly difference: ProofColumns | null;
   readonly postingIds: readonly string[];
+  /** The calculator's error code when it refused this extract (e.g. `billing.terms_missing`); null otherwise. */
+  readonly expectedUnavailableReason: string | null;
 }
 
 export interface ProofCheck {
@@ -101,9 +107,9 @@ export interface ProofResponse {
   readonly readAt: string;
   readonly project: ProofProject;
   /**
-   * `NoExtractsToCompare` is a designed state, not a failure. The billing calculators are implemented
-   * (D-186); what is missing is an extract record to read a period's inputs from, so there is nothing to
-   * compare against yet (KAFF-500).
+   * `NoExtractsToCompare` is a designed state, not a failure: the project has no extract to judge yet, so
+   * no event carries an expectation. `Available` means the server judged each extract event against the
+   * billing calculator; an event it could not judge still has a null `expected` and says why.
    */
   readonly expectedState: 'NoExtractsToCompare' | 'Available';
   readonly projectCashNet: string;

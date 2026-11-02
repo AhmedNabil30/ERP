@@ -1,0 +1,53 @@
+/* Same head the project hub draws; logical properties only. */
+
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+.head {
+  display: grid;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  align-self: start;
+  justify-self: start;
+  gap: var(--space-1);
+  min-block-size: var(--tap-target);
+  color: var(--color-interactive);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+
+.back:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.back:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* `back` is drawn pointing to the inline start; a back link points the other way (RTL: to the right). */
+:host-context([dir='rtl']) .back kaff-icon {
+  transform: scaleX(-1);
+}
+
+.ttl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-xl);
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}

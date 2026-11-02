@@ -12,7 +12,7 @@ import {
   ProofPosting,
   ProofResponse,
 } from '../../core/proof/proof.api';
-import { isZeroAmount } from '../../shared/kaff-figure/amount';
+import { sameAmount } from '../../shared/kaff-figure/amount';
 import { KaffFigure } from '../../shared/kaff-figure/kaff-figure';
 import { KaffIcon, KaffIconName } from '../../shared/kaff-icon/kaff-icon';
 import { ProofLedgerStrip } from './ledger-strip/ledger-strip';
@@ -99,6 +99,8 @@ interface EventVm {
   readonly date: string;
   readonly mark: Mark;
   readonly hasExpected: boolean;
+  /** The calculator's error code when it refused this event; shown as the server sent it. */
+  readonly unavailableReason: string | null;
   readonly cells: readonly CellVm[];
 }
 
@@ -125,9 +127,11 @@ type Verdict = 'ok' | 'bad' | 'none';
  * postings, which would make every row match by construction.
  *
  * While `expectedState` is `NoExtractsToCompare` no event carries an expectation and the page renders
- * that as a designed state. The reason is not the calculators - those are implemented (D-186) - but that
- * a calculator needs one extract's period inputs and no extract record exists yet (KAFF-500). The page
- * needs no change when that lands; the server fills `expected` and `difference` and sets `Available`.
+ * that as a designed state. Once the server judges extracts against the billing calculator it sets
+ * `Available` and fills `expected` and `difference` per event; an event it could not judge keeps a null
+ * `expected` and an `expectedUnavailableReason`. A cell differs when `actual` and `expected` are not the
+ * same number (they travel at different scales, so never as text). The five invariant checks stay
+ * Pending: spec.md §15 gives no mid-contract reading for them.
  */
 @Component({
   selector: 'kaff-proof-page',
@@ -171,13 +175,14 @@ export class ProofPage {
       const cells = COLUMNS.map((column): CellVm => {
         const id = `${index}:${column.key}`;
         const difference = event.difference?.[column.key] ?? null;
+        const expected = event.expected?.[column.key] ?? null;
         return {
           id,
           column,
           actual: event.actual[column.key],
-          expected: event.expected?.[column.key] ?? null,
+          expected,
           difference,
-          bad: difference !== null && !isZeroAmount(difference),
+          bad: expected !== null && !sameAmount(expected, event.actual[column.key]),
           open: open.has(id),
           postings: this.postingsOf(event, column),
         };
@@ -191,6 +196,7 @@ export class ProofPage {
         date: event.date,
         mark,
         hasExpected: event.expected !== null,
+        unavailableReason: event.expectedUnavailableReason,
         cells,
       };
     });

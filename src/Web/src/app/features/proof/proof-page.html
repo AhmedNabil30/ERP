@@ -1,4 +1,4 @@
-<section class="proof" data-testid="proof-page">
+﻿<section class="proof" data-testid="proof-page">
   <header class="head">
     <a class="back" routerLink="/projects">
       <kaff-icon name="back" />{{ i18n.t('nav.projects') }}
@@ -137,7 +137,7 @@
           <tbody>
             @for (event of events(); track event.index) {
               <tr class="expected">
-                <td class="ev" rowspan="2">
+                <td class="ev" [attr.rowspan]="event.hasExpected ? 3 : 2">
                   <b>{{ event.label }}</b>
                   <span class="sub">
                     @if (event.reference; as reference) {
@@ -160,10 +160,13 @@
                   }
                 } @else {
                   <td class="n unavailable" [attr.colspan]="columns.length">
-                    {{ i18n.t('proof.cell.unavailable') }}
+                    {{ i18n.t(calculatorMissing() ? 'proof.cell.unavailable' : 'proof.cell.unavailable_event') }}
+                    @if (event.unavailableReason; as reason) {
+                      <bdi class="sub" dir="ltr" data-testid="proof-unavailable-reason">{{ reason }}</bdi>
+                    }
                   </td>
                 }
-                <td rowspan="2">
+                <td [attr.rowspan]="event.hasExpected ? 3 : 2">
                   <span class="mark" [class]="event.mark">
                     <kaff-icon [name]="mark[event.mark].icon" [small]="true" />{{
                       i18n.t(event.hasExpected ? mark[event.mark].key : 'proof.mark.unavailable')
@@ -191,6 +194,18 @@
                   </td>
                 }
               </tr>
+              @if (event.hasExpected) {
+                <tr class="difference" [attr.data-testid]="'proof-difference-' + event.index">
+                  <td class="sub">{{ i18n.t('proof.row.difference') }}</td>
+                  @for (cell of event.cells; track cell.id) {
+                    <td class="n" [class.bad]="cell.bad">
+                      @if (cell.difference; as difference) {
+                        <kaff-figure [value]="difference" [plus]="true" />
+                      }
+                    </td>
+                  }
+                </tr>
+              }
               @for (cell of event.cells; track cell.id) {
                 @if (cell.open && cell.bad) {
                   <tr class="expand">

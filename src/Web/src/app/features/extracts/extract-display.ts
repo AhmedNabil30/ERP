@@ -1,3 +1,6 @@
+import { ExtractStatus } from '../../core/extracts/extracts.api';
+import { KaffIconName } from '../../shared/kaff-icon/kaff-icon';
+
 /**
  * String-only display helpers for the extract screens (D-135: the browser does no arithmetic on money).
  */
@@ -23,3 +26,17 @@ export function hasHiddenPrecision(value: string, decimals: number): boolean {
   const rest = value.trim().split('.')[1] ?? '';
   return /[1-9]/.test(rest.slice(decimals));
 }
+
+type PillTone = 'new' | 'overwrite' | 'error' | 'locked' | 'same';
+
+/** The status pill is word, shape and colour: a draft is quiet, a stage in the chain is outlined, a closed one is green. */
+export const EXTRACT_STATUS_PILL: Readonly<Record<ExtractStatus, { tone: PillTone; icon: KaffIconName }>> = {
+  Draft: { tone: 'same', icon: 'file' },
+  QcSubmitted: { tone: 'overwrite', icon: 'info' },
+  PartiallyApproved: { tone: 'overwrite', icon: 'info' },
+  TechnicalApproved: { tone: 'overwrite', icon: 'info' },
+  DeductionsApplied: { tone: 'overwrite', icon: 'info' },
+  OwnerApproved: { tone: 'overwrite', icon: 'check' },
+  Issued: { tone: 'new', icon: 'check' },
+  Collected: { tone: 'new', icon: 'check' },
+};

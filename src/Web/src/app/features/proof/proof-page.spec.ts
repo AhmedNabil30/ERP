@@ -58,6 +58,7 @@ function proof(overrides: Partial<ProofResponse> = {}): ProofResponse {
         actual: columns({ work: '300000', hold: '-60000', advance: '-75000', materialAdvance: '75000', collection: '240000' }),
         expected: null,
         difference: null,
+        expectedUnavailableReason: null,
         postingIds: ['aaaaaaaa-1', 'aaaaaaaa-2'],
       },
     ],
@@ -158,7 +159,7 @@ describe('ProofPage', () => {
       events: [
         {
           ...proof().events[0],
-          expected: columns({ advance: '-75000', hold: '-60000' }),
+          expected: columns({ advance: '-75000.01', hold: '-60000' }),
           difference: columns({ advance: '-0.01' }),
         },
       ],

@@ -1,14 +1,17 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, signal, untracked } from '@angular/core';
-import { RouterLink } from '@angular/router';
 
 import { toProblem } from '../../core/api/problem-details';
 import { Boq, BoqsApi } from '../../core/boqs/boqs.api';
 import { I18nService } from '../../core/i18n/i18n.service';
-import { KaffBadge } from '../../shared/kaff-badge/kaff-badge';
+import { KaffBanner } from '../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../shared/kaff-button/kaff-button';
-import { KaffIcon } from '../../shared/kaff-icon/kaff-icon';
-import { KaffProjectLinks } from '../../shared/kaff-project-links/kaff-project-links';
+import { KaffFigure } from '../../shared/kaff-figure/kaff-figure';
+import { KaffPageHead } from '../../shared/kaff-page-head/kaff-page-head';
 import { KaffState } from '../../shared/kaff-state/kaff-state';
+import { KaffStatusPill } from '../../shared/kaff-status-pill/kaff-status-pill';
+import { KaffTable } from '../../shared/kaff-table/kaff-table';
+import { TableColumnDef } from '../../shared/kaff-table-header/kaff-table-header';
+import { KaffTableRow } from '../../shared/kaff-table-row/kaff-table-row';
 
 /**
  * The project's BOQ, read-only. It shows cost-bearing data, so the server gates it `ProjectManage`; this
@@ -17,7 +20,7 @@ import { KaffState } from '../../shared/kaff-state/kaff-state';
  */
 @Component({
   selector: 'kaff-boq-page',
-  imports: [RouterLink, KaffBadge, KaffButton, KaffIcon, KaffProjectLinks, KaffState],
+  imports: [KaffBanner, KaffButton, KaffFigure, KaffPageHead, KaffState, KaffStatusPill, KaffTable, KaffTableRow],
   templateUrl: './boq-page.html',
   styleUrl: './boq-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,6 +32,15 @@ export class BoqPage {
 
   /** Bound from `:projectId` by `withComponentInputBinding`. */
   readonly projectId = input.required<string>();
+
+  /** Item first (the pinned identity), then three end-aligned figure columns; the currency is named in each money header. */
+  protected readonly columns = 'minmax(14rem, 1fr) 8rem 9rem 10rem';
+  protected readonly headerColumns: readonly TableColumnDef[] = [
+    { labelKey: 'boq.column.item', pinned: true },
+    { labelKey: 'boq.column.quantity', align: 'end' },
+    { labelKey: 'boq.column.sell_rate', align: 'end' },
+    { labelKey: 'boq.column.total', align: 'end' },
+  ];
 
   protected readonly boq = signal<Boq | null>(null);
   protected readonly loading = signal(true);
@@ -62,9 +74,5 @@ export class BoqPage {
 
   protected quantity(value: string | null): string {
     return value === null ? '-' : this.i18n.formatNumber(value);
-  }
-
-  protected amount(value: string | null): string {
-    return value === null ? '-' : this.i18n.formatAmount(value);
   }
 }

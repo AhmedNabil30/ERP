@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
-import { RouterLink } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
 import {
@@ -14,17 +13,20 @@ import {
   RejectionGate,
 } from '../../../core/extracts/extracts.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
-import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { KaffFigure } from '../../../shared/kaff-figure/kaff-figure';
 import { KaffIcon } from '../../../shared/kaff-icon/kaff-icon';
 import { KaffInlineConfirm } from '../../../shared/kaff-inline-confirm/kaff-inline-confirm';
 import { KaffMoneyField } from '../../../shared/kaff-money-field/kaff-money-field';
-import { KaffProjectLinks } from '../../../shared/kaff-project-links/kaff-project-links';
+import { KaffPageHead } from '../../../shared/kaff-page-head/kaff-page-head';
 import { KaffProvenance, ProvenanceKind } from '../../../shared/kaff-provenance/kaff-provenance';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
-import { hasHiddenPrecision, percentOfFraction } from '../extract-display';
+import { KaffStatusPill } from '../../../shared/kaff-status-pill/kaff-status-pill';
+import { KaffTable } from '../../../shared/kaff-table/kaff-table';
+import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
+import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
+import { EXTRACT_STATUS_PILL, hasHiddenPrecision, percentOfFraction } from '../extract-display';
 
 /** Every label key the screen reads, written out so each one is a literal the catalogue gate can see. */
 export const STATUS_KEYS: Readonly<Record<ExtractStatus, string>> = {
@@ -113,17 +115,18 @@ interface InputVm {
 @Component({
   selector: 'kaff-extract-detail-page',
   imports: [
-    RouterLink,
-    KaffProjectLinks,
-    KaffBadge,
     KaffBanner,
     KaffButton,
     KaffFigure,
     KaffIcon,
     KaffInlineConfirm,
     KaffMoneyField,
+    KaffPageHead,
     KaffProvenance,
     KaffState,
+    KaffStatusPill,
+    KaffTable,
+    KaffTableRow,
   ],
   templateUrl: './extract-detail-page.html',
   styleUrl: './extract-detail-page.css',
@@ -134,6 +137,15 @@ export class ExtractDetailPage {
 
   protected readonly i18n = inject(I18nService);
   protected readonly statusKeys = STATUS_KEYS;
+  protected readonly pill = EXTRACT_STATUS_PILL;
+
+  /** The document's figures as a kit table: the figure and its derivation, the amount (currency named once), where it came from. */
+  protected readonly figureColumns = 'minmax(14rem, 1fr) 11rem 9rem';
+  protected readonly figureHeader: readonly TableColumnDef[] = [
+    { labelKey: 'extract.figures.item', pinned: true },
+    { labelKey: 'extract.figures.amount', align: 'end' },
+    { labelKey: 'extract.figures.origin' },
+  ];
   protected readonly confirmKeys = CONFIRM_KEYS;
 
   /** Bound from the route by `withComponentInputBinding`. */

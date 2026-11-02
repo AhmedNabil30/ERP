@@ -1,50 +1,17 @@
+/* Logical properties only; colour is tokens only. The frame is the project hub's; frames are the kit's
+   (1px hairline, --radius, surface fill). */
+
 :host {
   display: block;
-}
-
-.ex {
-  display: grid;
-  gap: var(--space-3);
-  max-inline-size: 860px;
   min-inline-size: 0;
 }
 
-.head {
-  display: grid;
-  gap: var(--space-1);
-}
-
-.back {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-block-size: var(--tap-target);
-  color: var(--ink);
-  font-weight: 600;
-  text-decoration: none;
-  justify-self: start;
-}
-
-.back:hover {
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-
-/* The back chevron points toward the previous screen, which is inline-end in RTL. */
-:host-context([dir="rtl"]) .back kaff-icon {
-  transform: scaleX(-1);
-}
-
-.titleline {
+.pg {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-3);
-}
-
-.title {
-  font: 700 var(--text-xl) / var(--line-height-tight) var(--display);
-  margin: 0;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  min-inline-size: 0;
 }
 
 .period {
@@ -58,11 +25,17 @@
   margin-block: var(--space-4) 0;
 }
 
+.unit-note {
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--text-xs);
+}
+
 .panel {
   display: grid;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  border: 1.5px solid var(--fieldline);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
 }
@@ -143,26 +116,28 @@
   font-size: var(--text-sm);
 }
 
-/* ---------- the six figures ---------- */
-.figures {
-  display: grid;
-  gap: var(--space-2);
+/* ---------- the six figures, as kit table rows ---------- */
+.rows {
+  display: flex;
+  flex-direction: column;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.figure {
+.rows-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.fl {
   display: grid;
-  gap: var(--space-1);
-  padding: var(--space-3) var(--space-4);
-  border: 1.5px solid var(--fieldline);
-  border-radius: var(--radius);
-  background: var(--surface);
+  min-inline-size: 0;
 }
 
 .figure-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
 }
@@ -179,17 +154,17 @@
   font-size: var(--text-xs);
 }
 
-.figure-value {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-1) var(--space-3);
-  font-size: var(--text-lg);
+.amt-fig {
+  font-size: var(--text-md);
 }
 
-.unit {
-  color: var(--dim);
-  font-size: var(--text-sm);
+.amt-fig.net {
+  font-size: var(--text-lg);
+  font-weight: 700;
+}
+
+.origin {
+  min-inline-size: 0;
 }
 
 .derivation summary {
@@ -237,10 +212,12 @@
 /* ---------- the printed column ---------- */
 .column {
   inline-size: 100%;
-  border-collapse: collapse;
-  border: 1.5px solid var(--fieldline);
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
+  overflow: clip;
 }
 
 .column th,
@@ -257,12 +234,14 @@
 
 .column tfoot .sum th,
 .column tfoot .sum td {
-  border-block-start: 2px solid var(--ink);
+  border-block-start: 2px solid var(--fieldline);
+  background: var(--head);
   color: var(--dim);
 }
 
 .column tfoot .total th,
 .column tfoot .total td {
+  background: var(--head);
   font-weight: 700;
   border-block-end: 0;
 }
@@ -273,7 +252,7 @@
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius);
-  border-inline-start: 8px solid var(--ok-ink);
+  border-inline-start: 6px solid var(--ok-ink);
   background: var(--ok-bg);
   color: var(--ok-ink);
 }
@@ -284,24 +263,43 @@
   color: var(--err-ink);
 }
 
-/* ---------- gate history ---------- */
+/* ---------- gate history: the chain, one marker per gate ---------- */
 .history {
   display: grid;
-  gap: var(--space-2);
+  gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .history li {
+  position: relative;
   display: grid;
   gap: 2px;
   padding: var(--space-2) var(--space-3);
-  border-inline-start: 4px solid var(--fieldline);
+  padding-inline-start: var(--space-5);
+  border-inline-start: 2px solid var(--line);
+  margin-inline-start: var(--space-2);
+}
+
+.history li::before {
+  content: '';
+  position: absolute;
+  inset-block-start: var(--space-3);
+  inset-inline-start: -7px;
+  inline-size: 12px;
+  block-size: 12px;
+  border-radius: 50%;
+  background: var(--ok-ink);
+  box-shadow: 0 0 0 3px var(--bg);
 }
 
 .history li.rejected {
   border-inline-start-color: var(--err-bar);
+}
+
+.history li.rejected::before {
+  background: var(--err-bar);
 }
 
 .history-head {
@@ -336,4 +334,10 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .pg {
+    padding-inline: 16px;
+  }
 }

@@ -1,14 +1,15 @@
-<section class="ex" data-testid="extract-page">
-  <header class="head">
-    <a class="back" [routerLink]="['/projects', projectId(), 'extracts']">
-      <kaff-icon name="back" />{{ i18n.t('extract.list.title') }}
-    </a>
-    <kaff-project-links [projectId]="projectId()" current="extracts" />
+<section class="pg" data-testid="extract-page">
+  <kaff-page-head
+    [backLink]="['/projects', projectId(), 'extracts']"
+    backLabelKey="extract.list.title"
+    [title]="data() ? i18n.t('extract.number', { number: data()!.number }) : i18n.t('extract.list.title')"
+  >
     @if (data(); as extract) {
-      <div class="titleline">
-        <h1 class="title">{{ i18n.t('extract.number', { number: extract.number }) }}</h1>
-        <kaff-badge tone="brand" testId="extract-status">{{ i18n.t(statusKeys[extract.status]) }}</kaff-badge>
-      </div>
+      <kaff-status-pill titleAside [tone]="pill[extract.status].tone" [icon]="pill[extract.status].icon" testId="extract-status">
+        {{ i18n.t(statusKeys[extract.status]) }}
+      </kaff-status-pill>
+    }
+    @if (data(); as extract) {
       <p class="period">
         {{
           i18n.t('extract.period', {
@@ -18,13 +19,12 @@
         }}
       </p>
     }
-  </header>
+  </kaff-page-head>
 
   @if (failure(); as key) {
-    <kaff-state mode="refusal" [bodyKey]="key" testId="extract-failure" />
-    <div>
-      <kaff-button variant="secondary" testId="extract-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
-    </div>
+    <kaff-state mode="refusal" [bodyKey]="key" testId="extract-failure">
+      <kaff-button stateAction variant="secondary" testId="extract-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+    </kaff-state>
   } @else if (loading()) {
     <kaff-state mode="loading" titleKey="extract.loading" testId="extract-loading" />
   } @else if (data(); as extract) {
@@ -175,42 +175,52 @@
         <kaff-banner tone="note" testId="extract-unrounded">{{ i18n.t('extract.document.unrounded') }}</kaff-banner>
       }
 
-      <ul class="figures" data-testid="extract-figures">
-        @for (vm of figures(); track vm.figure.key) {
-          <li class="figure" [attr.data-testid]="'figure-' + vm.figure.key">
-            <div class="figure-head">
-              <span class="figure-label">{{ i18n.t(vm.figure.labelKey) }}</span>
-              @if (vm.figure.isMemo) {
-                <span class="memo">{{ i18n.t('extract.document.memo') }}</span>
-              }
-            </div>
-            <div class="figure-value">
-              <kaff-figure [value]="vm.figure.amount" />
-              <span class="unit">{{ i18n.t('extract.unit') }}</span>
-              <kaff-provenance [kind]="vm.kind" />
-            </div>
-            <details class="derivation">
-              <summary>{{ i18n.t('extract.document.derivation') }}</summary>
-              <ul>
-                @for (input of vm.inputs; track $index) {
-                  <li>
-                    <span class="input-label">{{ i18n.t(input.labelKey) }}</span>
-                    <span class="input-value">
-                      @if (input.amount !== null) {
-                        <kaff-figure [value]="input.amount" />
-                      }
-                      @if (input.rate !== null) {
-                        <bdi dir="ltr">{{ input.rate }}%</bdi>
+      <p class="unit-note">{{ i18n.t('money.currency_note') }}</p>
+      <kaff-table [columns]="figureColumns" [columnDefs]="figureHeader" [minInline]="560" testId="extract-figures-header">
+        <ul class="rows" data-testid="extract-figures">
+          @for (vm of figures(); track vm.figure.key) {
+            <li class="rows-item" [attr.data-testid]="'figure-' + vm.figure.key">
+              <kaff-table-row [stacked]="true">
+                <span class="cell-pinned cell-title">
+                  <span class="fl">
+                    <span class="figure-head">
+                      <span class="figure-label">{{ i18n.t(vm.figure.labelKey) }}</span>
+                      @if (vm.figure.isMemo) {
+                        <span class="memo">{{ i18n.t('extract.document.memo') }}</span>
                       }
                     </span>
-                    <kaff-provenance [kind]="input.kind" [detail]="input.detail" />
-                  </li>
-                }
-              </ul>
-            </details>
-          </li>
-        }
-      </ul>
+                    <details class="derivation">
+                      <summary>{{ i18n.t('extract.document.derivation') }}</summary>
+                      <ul>
+                        @for (input of vm.inputs; track $index) {
+                          <li>
+                            <span class="input-label">{{ i18n.t(input.labelKey) }}</span>
+                            <span class="input-value">
+                              @if (input.amount !== null) {
+                                <kaff-figure [value]="input.amount" />
+                              }
+                              @if (input.rate !== null) {
+                                <bdi dir="ltr">{{ input.rate }}%</bdi>
+                              }
+                            </span>
+                            <kaff-provenance [kind]="input.kind" [detail]="input.detail" />
+                          </li>
+                        }
+                      </ul>
+                    </details>
+                  </span>
+                </span>
+                <span class="cell-primary cell-end amt-fig" [class.net]="vm.figure.key === 'netPayable'">
+                  <kaff-figure [value]="vm.figure.amount" />
+                </span>
+                <span class="cell-sub origin">
+                  <kaff-provenance [kind]="vm.kind" />
+                </span>
+              </kaff-table-row>
+            </li>
+          }
+        </ul>
+      </kaff-table>
 
       <h2 class="h2">{{ i18n.t('extract.column.title') }}</h2>
       <table class="column" data-testid="extract-column">
