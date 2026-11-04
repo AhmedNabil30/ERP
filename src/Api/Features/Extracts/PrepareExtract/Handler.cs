@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Kaff.Api.Common.Results;
 using Kaff.Domain.Boqs;
+using Kaff.Domain.ChangeOrders;
 using Kaff.Domain.Common;
 using Kaff.Domain.DailyLogs;
 using Kaff.Domain.Extracts;
@@ -37,6 +38,7 @@ namespace Kaff.Api.Features.Extracts.PrepareExtract;
 internal static class Handler
 {
     private const string NumberIndex = "ux_extracts_project_number";
+    private const string ChangeOrderBilledIndex = "ux_extract_change_order_lines_change_order";
 
     public static async Task<IResult> HandleAsync(
         Guid projectId,
@@ -93,12 +95,35 @@ internal static class Handler
 
         Money cumulative = ExtractSupport.CumulativeCertifiedWork(boq, rulings);
 
+        // KAFF-508: every approved change order not yet billed is offered, whole, at its approved price (ruling
+        // ChangeOrderBillingBasis). Nothing is typed, and a change order in any earlier state is never offered.
+        List<ChangeOrder> approved = await database.ChangeOrders
+            .AsNoTracking()
+            .Include(candidate => candidate.Lines)
+            .Where(candidate => candidate.ProjectId == projectId && candidate.Status == ChangeOrderStatus.Approved)
+            .OrderBy(candidate => candidate.Number)
+            .ToListAsync(cancellationToken);
+        Guid[] approvedIds = [.. approved.Select(candidate => candidate.Id)];
+        HashSet<Guid> alreadyBilled =
+        [
+            .. await database.ExtractChangeOrderLines
+                .AsNoTracking()
+                .Where(line => approvedIds.Contains(line.ChangeOrderId))
+                .Select(line => line.ChangeOrderId)
+                .ToListAsync(cancellationToken),
+        ];
+        List<ExtractChangeOrderBilling> changeOrders =
+        [
+            .. approved.Where(candidate => !alreadyBilled.Contains(candidate.Id))
+                .Select(candidate => new ExtractChangeOrderBilling(candidate.Id, candidate.Total)),
+        ];
+
         Guid actor = currentUser.UserId ?? Guid.Empty;
         DateTimeOffset now = clock.GetUtcNow();
 
         Result<Extract> prepared = Extract.Prepare(
             project, number, request.PeriodStart, request.PeriodEnd, cumulative, previous,
-            request.MaterialValueOnSite, request.MaterialInstalled, actor, now);
+            request.MaterialValueOnSite, request.MaterialInstalled, actor, now, changeOrders);
         if (prepared.IsFailure)
         {
             return ResultExtensions.Problem(prepared.Error);
@@ -118,6 +143,10 @@ internal static class Handler
         catch (DbUpdateException exception) when (exception.InnerException is PostgresException { ConstraintName: NumberIndex })
         {
             return ResultExtensions.Problem(ExtractErrors.NumberTaken);
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is PostgresException { ConstraintName: ChangeOrderBilledIndex })
+        {
+            return ResultExtensions.Problem(ExtractErrors.ChangeOrderAlreadyBilled);
         }
 
         ExtractViewer viewer = await ExtractSupport.ViewerAsync(

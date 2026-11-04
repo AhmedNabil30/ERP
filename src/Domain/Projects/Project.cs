@@ -120,6 +120,14 @@ public sealed class Project : Entity
     /// </summary>
     public Money? ContractValue { get; private set; }
 
+    /// <summary>
+    /// The contract value including approved change orders: the signed value plus <paramref name="approvedChangeOrders"/>.
+    /// Derived on every read and never stored, so <see cref="ContractValue"/> (the signed BOQ total) and the frozen
+    /// BOQ lines are untouched (spec.md §4.4, §5.1). Null when there is no contract value.
+    /// </summary>
+    public Money? RevisedContractValue(Money approvedChangeOrders) =>
+        ContractValue is { } signed ? signed + approvedChangeOrders : null;
+
     // ---- Lump Sum terms (spec.md §5.1). Null on other types. ----
 
     public Percentage? AdvanceRate { get; private set; }

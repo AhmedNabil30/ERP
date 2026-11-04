@@ -1,6 +1,6 @@
 # KAFF-508 · Change orders appear on the extract in their own section, at their own prices
 
-<!-- kaff id=KAFF-508 slice=5 points=8 state=NOT-BUILT -->
+<!-- kaff id=KAFF-508 slice=5 points=8 state=BUILT -->
 
 **Slice:** 7 (reconciled build order, step 7) · **Epic:** Change orders · **Points:** 8.
 **Owner:** Backend. **No UI criterion is carried here.**

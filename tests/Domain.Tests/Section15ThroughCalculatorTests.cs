@@ -215,18 +215,62 @@ public sealed class Section15ThroughCalculatorTests
         Component(billed.Value, BillingComponentKind.MaterialAdvanceRecovery).Should().Be(new Money(30_000m));
     }
 
+    /// <summary>
+    /// KAFF-508 AC-508-C, running on the ChangeOrderBillingTreatment default (Q102 unruled): 100,000 of change-order
+    /// value billed beside 300,000 of BOQ work. The change order is its own component at its own price; the hold
+    /// (20%) and the advance recovery (25%) are taken on the 400,000 certified, and the work value is untouched.
+    /// </summary>
     [Fact]
-    public async Task Change_orders_are_refused_until_a_ruling_exists()
+    public async Task A_change_order_is_its_own_component_and_the_hold_and_advance_follow_the_ruling()
     {
-        Project project = _project;
         var input = new LumpSumBillingInput(
-            new Money(300_000m), Money.Zero, Money.Zero, Money.Zero, new Money(1m), Money.Zero,
-            Money.Zero, Money.Zero, Money.Zero);
+            new Money(300_000m), Money.Zero, Money.Zero, Money.Zero, new Money(100_000m), Money.Zero,
+            new Money(250_000m), Money.Zero, Money.Zero);
 
         Result<BillingResult> billed = await new LumpSumBillingCalculator(Rulings).CalculateAsync(
-            new BillingContext(project, SigningDate, SigningDate, input), CancellationToken.None);
+            new BillingContext(_project, SigningDate, SigningDate, input), CancellationToken.None);
 
-        billed.Error.Should().Be(BillingErrors.ChangeOrderTreatmentUnruled);
+        billed.IsSuccess.Should().BeTrue();
+        Component(billed.Value, BillingComponentKind.WorkValue).Should().Be(new Money(300_000m));
+        Component(billed.Value, BillingComponentKind.ChangeOrderValue).Should().Be(new Money(100_000m));
+        billed.Value.CertifiedValue.Should().Be(new Money(400_000m));
+        Component(billed.Value, BillingComponentKind.Hold).Should().Be(new Money(80_000m));
+        Component(billed.Value, BillingComponentKind.AdvanceRecovery).Should().Be(new Money(100_000m));
+        billed.Value.NetPayable.Should().Be(new Money(220_000m));
+    }
+
+    [Fact]
+    public async Task When_the_ruling_excludes_change_orders_the_hold_and_advance_are_taken_on_the_work_alone()
+    {
+        RulingSet other = Rulings with
+        {
+            ChangeOrderBillingTreatment = new ChangeOrderBillingTreatment { HoldAndAdvanceApply = false },
+        };
+        var input = new LumpSumBillingInput(
+            new Money(300_000m), Money.Zero, Money.Zero, Money.Zero, new Money(100_000m), Money.Zero,
+            new Money(250_000m), Money.Zero, Money.Zero);
+
+        Result<BillingResult> billed = await new LumpSumBillingCalculator(other).CalculateAsync(
+            new BillingContext(_project, SigningDate, SigningDate, input), CancellationToken.None);
+
+        Component(billed.Value, BillingComponentKind.Hold).Should().Be(new Money(60_000m));
+        Component(billed.Value, BillingComponentKind.AdvanceRecovery).Should().Be(new Money(75_000m));
+        billed.Value.NetPayable.Should().Be(new Money(265_000m));
+    }
+
+    [Fact]
+    public async Task A_contract_without_change_orders_reproduces_the_work_only_figures()
+    {
+        var input = new LumpSumBillingInput(
+            new Money(300_000m), Money.Zero, Money.Zero, Money.Zero, Money.Zero, Money.Zero,
+            new Money(250_000m), Money.Zero, Money.Zero);
+
+        Result<BillingResult> billed = await new LumpSumBillingCalculator(Rulings).CalculateAsync(
+            new BillingContext(_project, SigningDate, SigningDate, input), CancellationToken.None);
+
+        Component(billed.Value, BillingComponentKind.ChangeOrderValue).Should().Be(Money.Zero);
+        billed.Value.CertifiedValue.Should().Be(new Money(300_000m));
+        billed.Value.NetPayable.Should().Be(new Money(165_000m));
     }
 
     [Fact]

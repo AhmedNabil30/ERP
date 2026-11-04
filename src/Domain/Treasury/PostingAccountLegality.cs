@@ -8,7 +8,7 @@ namespace Kaff.Domain.Treasury;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>Two rules, both spec.md-cited, no others.</b> Rules 2-7 (a small set of restricted ledgers may
+/// <b>Rules 2-8 and 11, all spec.md-cited, no others.</b> Rules 2-7 (a small set of restricted ledgers may
 /// only be touched by the posting types spec.md names for them) and rule 8 (a non-cash posting type
 /// must never touch a cash instrument). Everything else a <see cref="PostingType"/> might legally
 /// touch is unconstrained by this table — not because it is safe, but because spec.md, decisions.md
@@ -58,6 +58,13 @@ public static class PostingAccountLegality
             // Rule 7 — spec.md §6.4.4.
             [AccountType.PettyCashAdvance] = FrozenSet.ToFrozenSet(
                 [PostingType.PettyCashIssue, PostingType.PettyCashSettlement, PostingType.PettyCashReturn]),
+
+            // Rule 11 (KAFF-316/317) — spec.md §6.7: the collection MUST post the withheld amount to a "tax
+            // withheld at source" asset. Only the TaxWithheldAtSource type may touch that account, from either
+            // side, so a reversal (swapped pair, inherited type) is legal and nothing else is. The other side of
+            // the pair is not restricted: §6.7 names the asset account, and the receivable it settles is the
+            // extract flow's own business, not a rule this table can cite.
+            [AccountType.TaxWithheldAtSource] = FrozenSet.ToFrozenSet([PostingType.TaxWithheldAtSource]),
         }.ToFrozenDictionary();
 
     /// <summary>
@@ -88,17 +95,11 @@ public static class PostingAccountLegality
     /// <see cref="PostingType.ChequeBounce"/> — no <see cref="AccountType"/> represents a cheque in
     /// hand or in transit; the 34-member catalogue has nowhere for these three to land.</item>
     /// </list>
-    /// <para><b>Added 2026-11-01, from the KAFF-500 read of the extract chain:</b></para>
-    /// <list type="bullet">
-    /// <item><see cref="PostingType.TaxWithheldAtSource"/> — spec.md §6.7 is the whole of withholding
-    /// ("two fields and two accounts") and does not name the pair. <c>D-186</c> already recorded this
-    /// pair as pending <c>Q91</c> while this list omitted it, so the list reported a coverage it did
-    /// not have. <c>ExtractPostings.BuildCollection</c> posts
-    /// <see cref="AccountType.ClientReceivable"/> to <see cref="AccountType.TaxWithheldAtSource"/>,
-    /// which rules 2-8 do not refuse — the type is non-cash and neither account is a restricted
-    /// ledger — so the posting succeeds today on an unconfirmed pair. Listing it here does not change
-    /// that; it makes the gap visible to Q91, which is this list's whole job.</item>
-    /// </list>
+    /// <para><b>Left this list 2026-11-04 (KAFF-316/317):</b> <see cref="PostingType.TaxWithheldAtSource"/>.
+    /// spec.md §6.7 says the collection posts the withheld amount "to a tax withheld at source asset". That
+    /// names the account the posting lands on, so the type is gated under rule 11 below, in
+    /// <c>RestrictedLedgerAccounts</c>: only this type may touch <see cref="AccountType.TaxWithheldAtSource"/>.
+    /// §6.7 does not name the other side, so no source account is gated.</para>
     /// <para>
     /// <see cref="PostingType.Adjustment"/> is deliberately NOT on this list. Its own remark says it is
     /// a catch-all by design ("Any other movement covered by the single Adjustment object"), which is
@@ -116,7 +117,6 @@ public static class PostingAccountLegality
         PostingType.LoanDrawdown,
         PostingType.PeriodCloseTransfer,
         PostingType.YearEndProfitTransfer,
-        PostingType.TaxWithheldAtSource,
     ]);
 
     /// <summary>
@@ -132,6 +132,12 @@ public static class PostingAccountLegality
             {
                 return Result.Failure(TreasuryErrors.PostingTypeAccountMismatch);
             }
+        }
+
+        // Rule 11, other direction — spec.md §6.7: a withheld-at-source posting lands on the withheld-at-source asset.
+        if (type == PostingType.TaxWithheldAtSource && from != AccountType.TaxWithheldAtSource && to != AccountType.TaxWithheldAtSource)
+        {
+            return Result.Failure(TreasuryErrors.PostingTypeAccountMismatch);
         }
 
         // Rule 8 — spec.md §6.2: a non-cash posting type must never touch a cash instrument.

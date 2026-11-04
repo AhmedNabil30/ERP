@@ -1,4 +1,6 @@
 using Kaff.Api.Common.Results;
+using Kaff.Api.Features.ChangeOrders;
+using Kaff.Domain.Common;
 using Kaff.Domain.Projects;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
@@ -23,26 +25,41 @@ internal static class Handler
     {
         ArgumentNullException.ThrowIfNull(database);
 
-        Response? project = await database.Projects
+        var found = await database.Projects
             .Where(candidate => candidate.Id == projectId)
-            .Select(candidate => new Response(
-                candidate.Id,
-                candidate.Code,
-                candidate.Name,
-                candidate.ClientId,
-                database.Clients.Where(client => client.Id == candidate.ClientId)
+            .Select(candidate => new
+            {
+                Project = candidate,
+                ClientName = database.Clients.Where(client => client.Id == candidate.ClientId)
                     .Select(client => client.Name).FirstOrDefault() ?? string.Empty,
-                candidate.ContractType,
-                candidate.Status,
-                candidate.ContractValue,
-                candidate.HoldRate,
-                candidate.AdvanceRate,
-                database.ProjectAssignments.Count(assignment =>
-                    assignment.ProjectId == candidate.Id && assignment.RevokedAt == null)))
+                TeamSize = database.ProjectAssignments.Count(assignment =>
+                    assignment.ProjectId == candidate.Id && assignment.RevokedAt == null),
+            })
             .FirstOrDefaultAsync(cancellationToken);
 
-        return project is null
-            ? ResultExtensions.Problem(ProjectErrors.NotFound)
-            : Microsoft.AspNetCore.Http.Results.Ok(project);
+        if (found is null)
+        {
+            return ResultExtensions.Problem(ProjectErrors.NotFound);
+        }
+
+        // The contract value is derived: the signed BOQ total plus the approved change orders (ChangeOrderDisplayedValue).
+        Money approved = await ChangeOrderQueries.ApprovedTotalAsync(database, projectId, cancellationToken);
+        Project candidateProject = found.Project;
+        Response project = new(
+            candidateProject.Id,
+            candidateProject.Code,
+            candidateProject.Name,
+            candidateProject.ClientId,
+            found.ClientName,
+            candidateProject.ContractType,
+            candidateProject.Status,
+            candidateProject.RevisedContractValue(approved),
+            candidateProject.HoldRate,
+            candidateProject.AdvanceRate,
+            found.TeamSize,
+            candidateProject.ContractValue,
+            approved);
+
+        return Microsoft.AspNetCore.Http.Results.Ok(project);
     }
 }

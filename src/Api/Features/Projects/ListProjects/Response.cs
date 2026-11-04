@@ -21,7 +21,9 @@ namespace Kaff.Api.Features.Projects.ListProjects;
 /// <param name="ClientId">The owning client.</param>
 /// <param name="ContractType">Lump Sum, Cost Plus or Design (spec.md §5).</param>
 /// <param name="Status">spec.md §13's state machine — never متعثرة or تم تأجيلها (D-044 §7).</param>
-/// <param name="ContractValue">Lump Sum's signed value, or Design's once set. Null for Cost Plus.</param>
+/// <param name="ContractValue">The revised value: signed value plus approved change orders (<c>ChangeOrderDisplayedValue</c>). Null for Cost Plus.</param>
+/// <param name="OriginalContractValue">The signed value, before any change order.</param>
+/// <param name="ApprovedChangeOrderTotal">The sum of the approved change orders. Zero when there are none.</param>
 public sealed record ProjectSummary(
     Guid Id,
     string Code,
@@ -29,7 +31,9 @@ public sealed record ProjectSummary(
     Guid ClientId,
     ContractType ContractType,
     ProjectStatus Status,
-    Money? ContractValue);
+    Money? ContractValue,
+    Money? OriginalContractValue,
+    Money ApprovedChangeOrderTotal);
 
 /// <summary>
 /// The projects the caller may reach. KAFF-400.

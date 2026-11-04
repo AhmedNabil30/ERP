@@ -45,9 +45,9 @@ public sealed class LumpSumBillingCalculator(RulingSet rulings) : BillingCalcula
             return Result.Failure<BillingResult>(BillingErrors.NegativePeriodWork);
         }
 
-        if (!input.ChangeOrderValueThisPeriod.IsZero)
+        if (input.ChangeOrderValueThisPeriod.IsNegative)
         {
-            return Result.Failure<BillingResult>(BillingErrors.ChangeOrderTreatmentUnruled);
+            return Result.Failure<BillingResult>(BillingErrors.NegativePeriodWork);
         }
 
         if (!input.DelayPenalty.IsZero && !project.DelayPenaltyEnabled)
@@ -58,10 +58,16 @@ public sealed class LumpSumBillingCalculator(RulingSet rulings) : BillingCalcula
         DeductionRounding rounding = _rulings.DeductionRounding;
 
         Money work = rounding.Round(periodWork);
-        Money hold = rounding.Deduct(work, holdRate);
+
+        // spec.md §5.1: change orders are billed in their own section at their own prices. Whether the hold and
+        // the advance recovery are taken on them is unruled (Q102); the base comes from the ruling.
+        Money changeOrders = rounding.Round(input.ChangeOrderValueThisPeriod);
+        Money certified = work + changeOrders;
+        Money deductionBase = _rulings.ChangeOrderBillingTreatment.BaseFor(work, changeOrders);
+        Money hold = rounding.Deduct(deductionBase, holdRate);
 
         // spec.md §5.1: recovered "until the advance ledger reaches zero".
-        Money advanceWanted = rounding.Deduct(work, advanceRecoveryRate);
+        Money advanceWanted = rounding.Deduct(deductionBase, advanceRecoveryRate);
         Money advanceLeft = input.ClientAdvanceOutstanding.IsPositive ? input.ClientAdvanceOutstanding : Money.Zero;
         Money advanceRecovery = advanceWanted > advanceLeft ? advanceLeft : advanceWanted;
 
@@ -70,7 +76,7 @@ public sealed class LumpSumBillingCalculator(RulingSet rulings) : BillingCalcula
             input.MaterialInstalledThisPeriod, input.MaterialAdvanceOutstanding));
         Money penalty = rounding.Round(input.DelayPenalty);
 
-        Money net = rounding.NetPayable(work, [hold, advanceRecovery, materialRecovery, penalty]) + materialIssued;
+        Money net = rounding.NetPayable(certified, [hold, advanceRecovery, materialRecovery, penalty]) + materialIssued;
         if (net.IsNegative)
         {
             return Result.Failure<BillingResult>(BillingErrors.NetPayableNegative);
@@ -79,6 +85,7 @@ public sealed class LumpSumBillingCalculator(RulingSet rulings) : BillingCalcula
         var components = new List<BillingComponent>
         {
             Line(BillingComponentKind.WorkValue, BillingSign.Addition, work),
+            Line(BillingComponentKind.ChangeOrderValue, BillingSign.Addition, changeOrders),
             Line(BillingComponentKind.MaterialAdvance, BillingSign.Addition, materialIssued),
             Line(BillingComponentKind.Hold, BillingSign.Deduction, hold),
             Line(BillingComponentKind.HoldToDate, BillingSign.Memo, input.HoldToDatePrevious + hold),
@@ -94,7 +101,7 @@ public sealed class LumpSumBillingCalculator(RulingSet rulings) : BillingCalcula
             components.Add(Line(BillingComponentKind.TaxAtSource, BillingSign.Memo, withheld));
         }
 
-        return Result.Success(new BillingResult(ContractType.LumpSum, work, net, components));
+        return Result.Success(new BillingResult(ContractType.LumpSum, certified, net, components));
     }
 
     private static BillingComponent Line(BillingComponentKind kind, BillingSign sign, Money amount) =>

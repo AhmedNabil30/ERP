@@ -82,13 +82,6 @@ public static class BillingErrors
     public static readonly Error NegativePeriodWork =
         Error.Validation("billing.negative_period_work", "errors.billing.negative_period_work");
 
-    /// <summary>
-    /// Change orders were supplied but no ruling says whether hold and advance recovery apply to them.
-    /// Refused rather than guessed (CLAUDE.md: an invented rule is always plausible).
-    /// </summary>
-    public static readonly Error ChangeOrderTreatmentUnruled =
-        Error.Conflict("billing.change_order_treatment_unruled", "errors.billing.change_order_treatment_unruled");
-
     /// <summary>A delay penalty was supplied on a project where the penalty is switched off.</summary>
     public static readonly Error DelayPenaltyNotEnabled =
         Error.Conflict("billing.delay_penalty_not_enabled", "errors.billing.delay_penalty_not_enabled");

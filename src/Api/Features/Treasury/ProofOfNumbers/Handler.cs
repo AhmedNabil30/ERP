@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using Kaff.Api.Common.Results;
+using Kaff.Api.Features.ChangeOrders;
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
 using Kaff.Domain.Contracts.Billing;
@@ -94,7 +95,10 @@ internal static class Handler
 
         Percentage holdRate = project.HoldRate ?? ContractDefaults.HoldRate;
         Percentage advanceRecoveryRate = project.AdvanceRecoveryRate ?? ContractDefaults.AdvanceRecoveryRate;
-        Money? contractValue = project.ContractValue;
+        // Revised: the signed value plus the approved change orders (ChangeOrderDisplayedValue), so the hold and
+        // collection checks measure what the contract is worth now.
+        Money? contractValue = project.RevisedContractValue(
+            await ChangeOrderQueries.ApprovedTotalAsync(database, projectId, cancellationToken));
 
         List<ProofPosting> rows = [.. postings.Select(posting => ToRow(posting, accounts))];
         Dictionary<string, decimal> ledgerSums = LedgerKeys.ToDictionary(key => key, _ => 0m);
@@ -110,6 +114,7 @@ internal static class Handler
         }
 
         Dictionary<Guid, Extract> extracts = (await database.Extracts
+                .Include(extract => extract.ChangeOrderLines)
                 .Where(extract => extract.ProjectId == projectId)
                 .ToListAsync(cancellationToken))
             .ToDictionary(extract => extract.Id);
@@ -338,7 +343,7 @@ internal static class Handler
             : Money.Zero;
 
         return (new ProofColumns(
-            Component(BillingComponentKind.WorkValue),
+            Component(BillingComponentKind.WorkValue) + Component(BillingComponentKind.ChangeOrderValue),
             -Component(BillingComponentKind.Hold),
             -Component(BillingComponentKind.AdvanceRecovery),
             Component(BillingComponentKind.MaterialAdvance) - Component(BillingComponentKind.MaterialAdvanceRecovery),

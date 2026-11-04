@@ -44,4 +44,10 @@ internal static class DbTables
     public const string Extracts = "extracts";
     public const string ExtractGateRecords = "extract_gate_records";
     public const string ExtractFigures = "extract_figures";
+    public const string CollectionRecords = "collection_records";
+    public const string Cheques = "cheques";
+    public const string ChangeOrders = "change_orders";
+    public const string ChangeOrderLines = "change_order_lines";
+    public const string ChangeOrderGateRecords = "change_order_gate_records";
+    public const string ExtractChangeOrderLines = "extract_change_order_lines";
 }

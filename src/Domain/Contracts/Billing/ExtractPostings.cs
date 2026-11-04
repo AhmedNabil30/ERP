@@ -75,7 +75,7 @@ public static class ExtractPostings
 
         return new PostingSetBuilder(
                 project, source, postingDate, createdByUserId, createdAt, rulings.PostingProjectStates)
-            .AddIfPositive(accounts.Revenue, accounts.ClientReceivable, Amount(BillingComponentKind.WorkValue), PostingType.RevenueRecognition)
+            .AddIfPositive(accounts.Revenue, accounts.ClientReceivable, Amount(BillingComponentKind.WorkValue) + Amount(BillingComponentKind.ChangeOrderValue), PostingType.RevenueRecognition)
             .AddIfPositive(accounts.ClientReceivable, accounts.Hold, Amount(BillingComponentKind.Hold), PostingType.HoldAccrual)
             .AddIfPositive(accounts.ClientReceivable, accounts.ClientAdvance, Amount(BillingComponentKind.AdvanceRecovery), PostingType.ClientAdvanceRecovery)
             .AddIfPositive(accounts.MaterialAdvance, accounts.ClientReceivable, Amount(BillingComponentKind.MaterialAdvance), PostingType.MaterialAdvanceIssue)

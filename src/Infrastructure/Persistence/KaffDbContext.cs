@@ -1,6 +1,8 @@
 using System.Reflection;
 using Kaff.Domain.Auditing;
 using Kaff.Domain.Boqs;
+using Kaff.Domain.ChangeOrders;
+using Kaff.Domain.Collections;
 using Kaff.Domain.Common;
 using Kaff.Domain.DailyLogs;
 using Kaff.Domain.Extracts;
@@ -120,6 +122,18 @@ public sealed class KaffDbContext : DbContext
     public DbSet<ExtractGateRecord> ExtractGateRecords => Set<ExtractGateRecord>();
 
     public DbSet<ExtractFigure> ExtractFigures => Set<ExtractFigure>();
+
+    public DbSet<CollectionRecord> CollectionRecords => Set<CollectionRecord>();
+
+    public DbSet<Cheque> Cheques => Set<Cheque>();
+
+    public DbSet<ChangeOrder> ChangeOrders => Set<ChangeOrder>();
+
+    public DbSet<ChangeOrderLine> ChangeOrderLines => Set<ChangeOrderLine>();
+
+    public DbSet<ChangeOrderGateRecord> ChangeOrderGateRecords => Set<ChangeOrderGateRecord>();
+
+    public DbSet<ExtractChangeOrderLine> ExtractChangeOrderLines => Set<ExtractChangeOrderLine>();
 
     /// <summary>KAFF-321 — staff departments, master data, superseding the D-153 §2 enum.</summary>
     public DbSet<Department> Departments => Set<Department>();

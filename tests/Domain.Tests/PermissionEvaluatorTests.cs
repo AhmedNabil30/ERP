@@ -171,6 +171,10 @@ public sealed class PermissionEvaluatorTests
             // financial flag on either row would be the wrong record of who may act on it.
             Permission.ExtractDeductionsApply,
 
+            // Added 2026-11-04 with the row itself (KAFF-316, Q97): it records the cash that reaches the safe.
+            // Its one grant names a role, so the evaluator discards nothing.
+            Permission.ExtractCollect,
+
             Permission.ChangeOrderApprove,
             Permission.FirmAdvanceApprove,
             Permission.TreasuryPostProject,

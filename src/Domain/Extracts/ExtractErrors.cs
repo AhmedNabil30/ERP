@@ -5,6 +5,10 @@ namespace Kaff.Domain.Extracts;
 /// <summary>Error catalogue for the extract chain (spec.md section 7).</summary>
 public static class ExtractErrors
 {
+    /// <summary>An approved change order is billed on one extract only (ruling ChangeOrderBillingBasis).</summary>
+    public static readonly Error ChangeOrderAlreadyBilled =
+        Error.Conflict("extract.change_order_already_billed", "errors.extract.change_order_already_billed");
+
     public static readonly Error IllegalTransition =
         Error.Conflict("extract.illegal_transition", "errors.extract.illegal_transition");
 

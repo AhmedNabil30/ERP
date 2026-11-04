@@ -1,5 +1,7 @@
 using Kaff.Api.Common.Results;
+using Kaff.Api.Features.ChangeOrders;
 using Kaff.Domain.Authorization;
+using Kaff.Domain.Common;
 using Kaff.Domain.Identity;
 using Kaff.Domain.Projects;
 using Kaff.Infrastructure.Persistence;
@@ -75,12 +77,20 @@ internal static class Handler
         // Order the entity query by its own Code column before projecting — EF cannot translate an
         // OrderBy over a member access on a freshly constructed ProjectSummary (it tries to rewrite
         // OrderBy(x => new ProjectSummary(...).Code) and fails to simplify that back to the column).
-        List<ProjectSummary> projects = await query
-            .OrderBy(project => project.Code)
-            .Select(project => new ProjectSummary(
-                project.Id, project.Code, project.Name, project.ClientId,
-                project.ContractType, project.Status, project.ContractValue))
-            .ToListAsync(cancellationToken);
+        List<Project> loaded = await query.OrderBy(project => project.Code).ToListAsync(cancellationToken);
+
+        // The contract value is derived: the signed BOQ total plus the approved change orders (ChangeOrderDisplayedValue).
+        Dictionary<Guid, Money> approved = await ChangeOrderQueries.ApprovedTotalsAsync(database, null, cancellationToken);
+        List<ProjectSummary> projects =
+        [
+            .. loaded.Select(project =>
+            {
+                Money change = approved.TryGetValue(project.Id, out Money total) ? total : Money.Zero;
+                return new ProjectSummary(
+                    project.Id, project.Code, project.Name, project.ClientId, project.ContractType, project.Status,
+                    project.RevisedContractValue(change), project.ContractValue, change);
+            }),
+        ];
 
         return Microsoft.AspNetCore.Http.Results.Ok(new Response(projects, projects.Count));
     }

@@ -64,6 +64,12 @@ public sealed record ExtractEvidence(
     Money MaterialValueOnSite,
     Money MaterialInstalled);
 
+/// <summary>
+/// One approved change order billed on this extract, in the extract's own change-order section at the price it was
+/// approved at (spec.md section 5.1). Never merged into a BOQ line.
+/// </summary>
+public sealed record ExtractChangeOrderResponse(Guid ChangeOrderId, Money Amount);
+
 public sealed record GateRecordResponse(
     ExtractGate Gate,
     ExtractGateOutcome Outcome,
@@ -109,7 +115,8 @@ public sealed record ExtractResponse(
     IReadOnlyList<GateRecordResponse> GateHistory,
     ExtractActions Actions,
     ExtractEvidence? Evidence,
-    ExtractDocument? Document);
+    ExtractDocument? Document,
+    IReadOnlyList<ExtractChangeOrderResponse>? ChangeOrders);
 
 /// <summary>Who is looking: their id and which of the extract permissions they hold on this project.</summary>
 internal sealed record ExtractViewer(Guid UserId, IReadOnlySet<Permission> Held)
@@ -166,7 +173,10 @@ internal static class ExtractView
                 ? new ExtractEvidence(
                     extract.CumulativeCertifiedWork, extract.PreviouslyCertifiedWork, extract.MaterialValueOnSite, extract.MaterialInstalled)
                 : null,
-            seesMoney ? DocumentFor(extract, project, rulings) : null);
+            seesMoney ? DocumentFor(extract, project, rulings) : null,
+            seesMoney
+                ? [.. extract.ChangeOrderLines.Select(line => new ExtractChangeOrderResponse(line.ChangeOrderId, line.Amount))]
+                : null);
     }
 
     private static ExtractActions ActionsFor(Extract extract, Project project, RulingSet rulings, ExtractViewer viewer)
@@ -212,6 +222,8 @@ internal static class ExtractView
             Money.Sum(extract.Figures.Where(figure => figure.Kind == kind).Select(figure => figure.Amount));
 
         Money work = Of(BillingComponentKind.WorkValue);
+        Money changeOrders = Of(BillingComponentKind.ChangeOrderValue);
+        Money deductionBase = rulings.ChangeOrderBillingTreatment.BaseFor(work, changeOrders);
         Money hold = Of(BillingComponentKind.Hold);
         Money holdToDate = Of(BillingComponentKind.HoldToDate);
         Money advance = Of(BillingComponentKind.AdvanceRecovery);
@@ -225,10 +237,20 @@ internal static class ExtractView
         List<PrintedRow> column =
         [
             new("workValue", "billing.component.WorkValue", IsDeduction: false, work),
+        ];
+
+        // spec.md section 5.1: change orders are in their own section at their own prices, a row of their own.
+        if (!changeOrders.IsZero)
+        {
+            column.Add(new PrintedRow("changeOrderValue", "billing.component.ChangeOrderValue", IsDeduction: false, changeOrders));
+        }
+
+        column.AddRange(
+        [
             new("materialAdvance", "billing.component.MaterialAdvance", IsDeduction: materialNet.IsNegative, materialNet.Abs()),
             new("holdThisPeriod", "billing.component.Hold", IsDeduction: true, hold),
             new("advanceRecovered", "billing.component.AdvanceRecovery", IsDeduction: true, advance),
-        ];
+        ]);
 
         if (!penalty.IsZero)
         {
@@ -249,20 +271,31 @@ internal static class ExtractView
             new(labelKey, FigureKind.Calculated, amount, null, null, null, null);
 
         // The advance is capped by what the ledger held. When it was capped, the cap is exactly what was recovered.
-        Money advanceWanted = rulings.DeductionRounding.Deduct(work, project.AdvanceRecoveryRate ?? Percentage.FromFraction(0m));
+        Money advanceWanted = rulings.DeductionRounding.Deduct(deductionBase, project.AdvanceRecoveryRate ?? Percentage.FromFraction(0m));
         bool advanceCapped = advance < advanceWanted;
 
-        List<FigureInput> advanceInputs =
-        [
-            Calculated("extract.input.work_value", work),
-            Terms("extract.input.advance_recovery_rate", project.AdvanceRecoveryRate),
-        ];
+        List<FigureInput> advanceInputs = [Calculated("extract.input.work_value", work)];
+        if (!changeOrders.IsZero)
+        {
+            advanceInputs.Add(Calculated("extract.input.change_order_value", changeOrders));
+            advanceInputs.Add(new FigureInput("extract.input.change_order_treatment", FigureKind.Carried, null, null, "ruling.ChangeOrderBillingTreatment", null, null));
+        }
+
+        advanceInputs.Add(Terms("extract.input.advance_recovery_rate", project.AdvanceRecoveryRate));
 
         if (advanceCapped)
         {
             advanceInputs.Add(new FigureInput(
                 "extract.input.client_advance_outstanding", FigureKind.Carried, advance, null, "ledger.clientAdvance", null, null));
         }
+
+        List<FigureInput> holdInputs = [Calculated("extract.input.work_value", work)];
+        if (!changeOrders.IsZero)
+        {
+            holdInputs.Add(Calculated("extract.input.change_order_value", changeOrders));
+        }
+
+        holdInputs.Add(Terms("extract.input.hold_rate", project.HoldRate));
 
         List<DocumentFigure> figures =
         [
@@ -275,7 +308,7 @@ internal static class ExtractView
                 ]),
             new(
                 "holdThisPeriod", "billing.component.Hold", FigureKind.Calculated, hold, IsMemo: false,
-                [Calculated("extract.input.work_value", work), Terms("extract.input.hold_rate", project.HoldRate)]),
+                holdInputs),
             new(
                 "holdToDate", "billing.component.HoldToDate", FigureKind.Calculated, holdToDate, IsMemo: true,
                 [
@@ -297,6 +330,13 @@ internal static class ExtractView
                 "netPayable", "extract.net_payable", FigureKind.Calculated, net, IsMemo: false,
                 [.. column.Select(row => Calculated(row.LabelKey, row.IsDeduction ? -row.Amount : row.Amount))]),
         ];
+
+        if (!changeOrders.IsZero)
+        {
+            figures.Insert(1, new DocumentFigure(
+                "changeOrderValue", "billing.component.ChangeOrderValue", FigureKind.Calculated, changeOrders, IsMemo: false,
+                [new("extract.input.approved_change_orders", FigureKind.Carried, changeOrders, null, "changeOrder.approvedTotals", null, null)]));
+        }
 
         Money tax = Of(BillingComponentKind.TaxAtSource);
         if (!tax.IsZero)

@@ -15883,3 +15883,117 @@ whose source document is an extract, and reports `ExpectedState = Available` onc
 
 **Not done:** Cost Plus and Design have no extract intake (D-194), so no event for them is judged. Web needs no change
 beyond optionally rendering `expectedUnavailableReason`.
+
+
+### D-198 · Backend — collections and cheque states (KAFF-316, KAFF-317) · 2026-11-04
+
+`POST /api/projects/{projectId}/extracts/{id}/collect` was the missing caller of `Extract.Collect`: an issued extract never
+turned into money in the safe. It now does, and the cash and withholding legs still post at `ExtractStage.Collected` only.
+
+- **Recorded fact.** `CollectionRecord` (table `collection_records`) stores method, date, reference, the cash received and the
+  amount withheld at source, plus actor and time. It stores what arrived, never a balance. The type is not called
+  `ExtractCollection` because analyzer CA1711 forbids a type name ending in `Collection`.
+- **Cheque.** `Cheque` (table `cheques`) has a `Received, Deposited, Cleared, Bounced` state machine modelled as a `FrozenSet` of
+  pairs like `Extract.LegalTransitions`. Legal: received to deposited, deposited to cleared, deposited to bounced. A cheque is
+  created by a collection whose method is Cheque. Moves are `POST /api/projects/{projectId}/cheques/{id}/deposit|clearance|bounce`.
+  A move writes audit through the interceptor and **posts nothing**: `Q91` records that no account type represents a cheque in
+  hand or in transit, so `ChequeDeposit`, `ChequeClearance` and `ChequeBounce` stay in `PostingAccountLegality.PendingQ91`.
+- **Permission.** New `Permission.ExtractCollect`, Finance, `Unresolved: true` (Q97), pinned in the unresolved-set test.
+  Self-approval (`EnsureMayDecide`) is deliberately not applied: under the Q97 default a collection is a receipt that Finance
+  records, not an approval, and Finance also applies the deductions, so the check would bar the normal flow.
+- **`TaxWithheldAtSource` left `PendingQ91`.** spec.md 6.7 names the asset account the withheld amount posts to, not the other
+  side of the pair. It is gated as rule 11 of `PostingAccountLegality`: only that posting type may touch the
+  `TaxWithheldAtSource` account, and that posting type must touch it. The source account is deliberately not gated.
+- **Rulings filed (all `Assumed`):** `CollectionApproval` (Q97), `CollectionSettlement` (Q98), `CollectionShortfall` (Q100),
+  `ChequeBounceEffect` (Q101).
+- **Not done:** no read endpoint for cheques or collections, no UI, no reversal endpoint for a mistaken collection (AC-316-F is
+  satisfied only by the existing `Posting.Reverse` mechanism, no route yet), and the bank-versus-safe default of spec.md 6.5 is not
+  modelled: `BuildCollection` posts the cash leg to the safe whatever the method.
+
+### D-199 · Backend — change orders and their billing on the extract (KAFF-508, KAFF-509) · 2026-11-04
+
+Nabil's standing instruction applied: nothing here waited for a ruling. Every unruled default is a `RulingNote` in
+`src/Domain/Rulings/ChangeOrderRulings.cs`, registered in `RulingSet` as a property and in `Notes`, all `Assumed`.
+
+- **The brief was wrong on one point, and it changes what repricing means.** The brief said the hold, the client advance and
+  تشوينات are percentages of the contract value, so a change order that moves the contract value would move all three.
+  `LumpSumBillingCalculator` does not read `Project.ContractValue`. Each deduction is a rate of the period's certified work
+  (`rounding.Deduct(work, holdRate)`); only the Design calculator reads `ContractValue`. The hold reaches 20% of the contract value
+  as an emergent total, not as a computation. So approving a change order changes no figure on any existing extract.
+  **Prospective-only repricing is therefore true by construction, not a choice** (`ChangeOrderRepricing`). The proof is
+  `Approving_a_change_order_after_an_extract_is_issued_does_not_reprice_it` (API) and its Domain twin: the issued extract's document,
+  the posting count and the hold and advance balances are identical before and after the approval. No reversing postings are written
+  and the hold is never debited.
+- **`ChangeOrder`** (`src/Domain/ChangeOrders/`). `Draft -> TechnicalReview -> ClientApproval -> OwnerApproval -> Approved`, `Rejected`
+  and `Withdrawn` terminal, and `Draft -> Logged` for Cost Plus and Design. The transitions are a `FrozenSet` of pairs plus
+  `IsLegalTransition`, the `Extract` pattern. Whether a move is legal for the contract type is `CanMoveTo`: an unpriced change order
+  only logs or is withdrawn, a priced one never logs. One entity for all three types; the type decides only `IsPriced`.
+  Gate history is `ChangeOrderGateRecord` (actor, time, non-blank reason on a rejection), stored on the change order because
+  `EnsureMayDecide` reads it. Separation of duties is `SeparationOfDuties.EnsureDifferentActor` over `PriorActors()`, not re-implemented.
+- **Rejection ends at `Rejected`**, as spec.md 13 writes it, not back to Draft (`ChangeOrderRejection`). CLAUDE.md's "rejections return
+  to origin" is read as: the origin is told why, by the stored reason and the audit record.
+- **The contract value stays derived.** `Project.ContractValue` is still the signed BOQ total and is never edited.
+  `Project.RevisedContractValue(approvedTotal)` adds the approved change orders, summed from `change_order_lines` on every read
+  (`ChangeOrderQueries`). `GetProject` and `ListProjects` return `ContractValue` as the REVISED value (Nabil: show the revised value,
+  `ChangeOrderDisplayedValue`), with `OriginalContractValue` and `ApprovedChangeOrderTotal` beside it. The proof read measures the
+  hold and collection checks against the revised value. No BOQ line, and no `003_boq_freeze.sql` rule, is touched.
+- **Lines are copied values** (`change_order_lines`: description, unit, quantity, unit price, rounded total), never a key into the
+  catalogue (`ChangeOrderLinePricing`, Q104). All strictly positive; omissions are not supported.
+- **Billing (KAFF-508).** `PrepareExtract` offers every approved change order not yet billed, whole, at its approved price
+  (`ChangeOrderBillingBasis`); nothing is typed. They are stored as `extract_change_order_lines`, with a unique index on the change
+  order so it is billed on one extract only. The calculator's `ChangeOrderTreatmentUnruled` refusal is removed: it now emits a
+  `ChangeOrderValue` component of its own, and the hold and advance recovery are taken on work plus change orders unless
+  `ChangeOrderBillingTreatment.HoldAndAdvanceApply` is false (Q102). The revenue posting is `WorkValue + ChangeOrderValue`. The
+  extract document shows the change order as its own figure and printed row, and the column foots. The Technical Office approved
+  portion does not scale the change-order value.
+- **Permissions.** `ChangeOrderPrepare = 77`, `ChangeOrderReview = 78`, `ChangeOrderClientApprovalRecord = 79`: Technical Office, all
+  `Unresolved: true` (Q103, Q105), money-free. `ChangeOrderApprove` (Owner, money) is used as it was. Finance holds none. Because
+  nobody who acted earlier may act later, the chain needs three distinct Technical Office users and the Owner.
+- **Migration** `ChangeOrders`: four new tables (`change_orders`, `change_order_lines`, `change_order_gate_records`,
+  `extract_change_order_lines`), money at `numeric(18,4)`. No constraint added by hand.
+- **Caught by the proof test, not by a totals test:** the proof read loaded extracts without their change-order lines, so its
+  expectation read zero change-order value. Fixed with an `Include`.
+- **Not done:** no UI (KAFF-936 and the screens are design work), no client portal approval (KAFF-812), no budget baseline raise
+  (KAFF-709), no progress billing or partial billing of a change order, no edit of a Draft's lines, no Cost Plus or Design extract
+  intake (D-194), no list of offered change orders on the extract screen beyond the ids on the extract.
+
+## D-200 — the collection read side, and reversing a mistaken collection (KAFF-316 AC-316-F)
+
+2026-11-04. Scrum Master, from the lane that finished KAFF-316's open criteria. Append-only: D-198 stands and this
+does not replace it.
+
+- **The cheque state machine was unreachable from outside, and that was the defect worth finding.** `CollectExtract`
+  returns the extract view, which carries no cheque id, so a client that created a cheque could never learn its
+  identifier and therefore could never deposit, clear or bounce it. Fixed by reading, not by changing the collect
+  response: `GET /api/projects/{projectId}/extracts/{id}/collection` returns the collection list including
+  `chequeId`, and `GET /api/projects/{projectId}/cheques/{id}` returns the cheque's state. The collect response's
+  shape is shared with the rest of the extract chain and was deliberately left alone.
+- **`reversed` on the collection read is derived, never stored.** Only the last record can be the standing one, and
+  only while the extract is `Collected`. There is no `reversed` column, in keeping with the rule that a state
+  readable from the records is not duplicated into one.
+- **A reversal is new mirror postings, never an update or a delete.** `Extract.ReverseCollection` mirrors every
+  standing `ClientCollection` and `TaxWithheldAtSource` posting through `Posting.Reverse`, so `ReversesId` is set on
+  each. The collection record and the cheque are never touched. The receivable returns to its pre-collection figure;
+  the hold and the client advance do not move, because a collection never nets against them.
+- **`ExtractGateOutcome.Reversed = 4` is a new outcome rather than a reuse of `Rejected`.** A `Rejected` gate record
+  starts a new approval cycle in `Extract.PriorActors`, which a reversal must not do.
+- **`Collected -> Issued` is deliberately NOT in `Extract.LegalTransitions`.** Adding it made `Issue` legal from
+  `Collected`, and `ExtractChainTests` caught that. `ReverseCollection` checks `Status == Collected` itself instead.
+  The lesson is the existing test's, not the lane's: a transition table is a two-way grant.
+- **Permissions.** Both reads and the reversal are gated `Permission.ExtractCollect` with `ProjectScope.FromRoute()`,
+  not `ProjectRead`: the bodies carry money figures. Role and assignment are both required, and the tests assert the
+  refusal for Owner, Technical Office, Supervisor, PrepEngineer, HR and an unassigned Finance user.
+- **Withholding is now proven end to end, and the calculation was not changed.** An individual client withholds
+  nothing; a corporate client at 1% posts 2,400 to `TaxWithheldAtSource` and 237,600 to the safe, the two summing to
+  the 240,000 net. Both legs are asserted to be absent at `Issued` and present only at `Collected` — a totals-only
+  test cannot see a timing error, which is how the original cash-leg defect passed every §15 invariant while posting
+  cash two stages early. spec.md §6.7's rates disagree with public 2025-26 guidance; spec.md wins and no rate moved.
+- **`CollectionReversalEffect` is the ruling note this raises**, registered in `RulingSet` alongside the other four
+  collection notes. It asks: after a collection is reversed, is the extract `Issued` again and collectable, or does
+  it stay `Collected` pending a corrected receipt — and what happens to a cheque already `Deposited` or `Cleared`?
+  Built as: the extract returns to `Issued` and may be collected again. It overlaps Q98, Q100 and Q101.
+- **Not done:** a reversal neither reverses nor locks the cheque, so a reversed cheque collection can still be
+  deposited, cleared or bounced. Locking it needs a link from the cheque to the reversal, which is a schema change
+  and was out of that lane's scope. AC-317-E (whether a hold release carries withholding) has nothing to test
+  against: `WithholdingBaseRule.HoldReleaseCarriesWithholding` is read nowhere in `src`, because no hold-release
+  path exists yet. It is KAFF-802's to discharge.

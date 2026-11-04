@@ -24,7 +24,12 @@ namespace Kaff.Api.Features.Projects.GetProject;
 /// <param name="ContractType">Lump Sum, Cost Plus or Design (spec.md §5).</param>
 /// <param name="Status">spec.md §13's state machine. Never متعثرة or تم تأجيلها — those are health tags,
 /// not states (D-044 §7), and carry no field here yet; KAFF-400 does not build the tag.</param>
-/// <param name="ContractValue">Lump Sum's signed value, or Design's once set. Null for Cost Plus.</param>
+/// <param name="ContractValue">
+/// The REVISED value: the signed value plus the approved change orders, derived on every read (ruling
+/// <c>ChangeOrderDisplayedValue</c>). Null for Cost Plus.
+/// </param>
+/// <param name="OriginalContractValue">The signed value, before any change order.</param>
+/// <param name="ApprovedChangeOrderTotal">The sum of the approved change orders. Zero when there are none.</param>
 /// <param name="HoldRate">Lump Sum only.</param>
 /// <param name="AdvanceRate">Lump Sum only.</param>
 /// <param name="TeamSize">
@@ -42,4 +47,6 @@ public sealed record Response(
     Money? ContractValue,
     Percentage? HoldRate,
     Percentage? AdvanceRate,
-    int TeamSize);
+    int TeamSize,
+    Money? OriginalContractValue,
+    Money ApprovedChangeOrderTotal);

@@ -7,8 +7,10 @@ using Kaff.Api.Authorization;
 using Kaff.Api.Tests.Infrastructure;
 using Kaff.Domain.Authorization;
 using Kaff.Domain.Boqs;
+using Kaff.Domain.Collections;
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
+using Kaff.Domain.Contracts.Billing;
 using Kaff.Domain.Extracts;
 using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
@@ -44,6 +46,7 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
     private HttpClient _client = null!;
 
     private Guid _clientId;
+    private Guid _individualClientId;
     private Guid _babId;
     private Guid _safeId;
     private Guid _owner;
@@ -110,6 +113,9 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
             ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/owner-approval"] = Permission.FinancialMovementApprove,
             ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/owner-rejection"] = Permission.FinancialMovementApprove,
             ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/issue"] = Permission.FinancialMovementApprove,
+            ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/collect"] = Permission.ExtractCollect,
+            ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/collection-reversal"] = Permission.ExtractCollect,
+            ["GET /api/projects/{projectId:guid}/extracts/{id:guid}/collection"] = Permission.ExtractCollect,
             ["GET /api/projects/{projectId:guid}/extracts"] = Permission.ProjectRead,
             ["GET /api/projects/{projectId:guid}/extracts/{id:guid}"] = Permission.ProjectRead,
         };
@@ -795,6 +801,450 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
 
     // ---- helpers -----------------------------------------------------------------------------------
 
+    // ---- KAFF-316 / KAFF-317: collections and cheques ----
+
+    private static object CollectBody(string method = "Transfer") => new { method, date = "2026-10-01", reference = "TRX-1" };
+
+    private async Task<long> CollectionPostingCountAsync(Guid project)
+    {
+        await using KaffDbContext reader = _database.CreateBareContext();
+        return await reader.Postings.LongCountAsync(posting => posting.ProjectId == project && posting.Type == PostingType.ClientCollection, Ct);
+    }
+
+    [Fact]
+    public async Task Collect_is_for_finance_alone_and_needs_an_assignment_to_the_project()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        string route = Step(project.Id, extract, "collect");
+
+        foreach (Guid refused in new[] { _owner, _technicalOffice, _supervisor, _prepEngineer, _hr, _financeUnassigned, _engineerUnassigned })
+        {
+            (await SendAsync(HttpMethod.Post, route, refused, CollectBody())).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+
+        (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Issued);
+        (await CollectionPostingCountAsync(project.Id)).Should().Be(0);
+        (await SendAsync(HttpMethod.Post, route, _finance, CollectBody())).StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Theory]
+    [InlineData("{\"date\":\"2026-10-01\",\"reference\":\"R-1\"}", "collection.method_required")]
+    [InlineData("{\"method\":\"Cash\",\"reference\":\"R-1\"}", "collection.date_required")]
+    [InlineData("{\"method\":\"Cash\",\"date\":\"2026-10-01\"}", "collection.reference_required")]
+    [InlineData("{\"method\":\"Cash\",\"date\":\"2026-10-01\",\"reference\":\"  \"}", "collection.reference_required")]
+    public async Task A_collection_missing_method_date_or_reference_is_refused_and_nothing_changes(string json, string code)
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+
+        using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(Step(project.Id, extract, "collect"), UriKind.Relative)) { Content = content };
+        await using KaffDbContext reader = _database.CreateBareContext();
+        var finance = await reader.Users.Where(user => user.Id == _finance).Select(user => new { user.SecurityStamp, user.Role }).FirstAsync(Ct);
+        request.Headers.Add(TestAuthHandler.UserIdHeader, _finance.ToString());
+        request.Headers.Add(TestAuthHandler.SecurityStampHeader, finance.SecurityStamp);
+        request.Headers.Add(TestAuthHandler.RoleHeader, finance.Role.ToString());
+
+        HttpResponseMessage response = await _client.SendAsync(request, Ct);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await ErrorCodeAsync(response)).Should().Be(code);
+        (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Issued);
+        (await CollectionPostingCountAsync(project.Id)).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Cash_reaches_the_safe_at_Collected_and_not_at_Issued_and_no_other_ledger_moves()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+
+        (await CollectionPostingCountAsync(project.Id)).Should().Be(0, "issuing writes no cash");
+        (await BalanceAsync(project.Id, AccountType.ClientReceivable)).Should().Be(240_000m);
+
+        HttpResponseMessage response = await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody("Cash"));
+        response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(Ct));
+
+        (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Collected);
+        await using KaffDbContext reader = _database.CreateBareContext();
+        List<Posting> cash = await reader.Postings
+            .Where(posting => posting.ProjectId == project.Id && posting.Type == PostingType.ClientCollection).ToListAsync(Ct);
+        cash.Should().ContainSingle().Which.Amount.Should().Be(new Money(240_000m), "cash received equals the net payable");
+        cash[0].SourceDocumentId.Should().Be(extract);
+        (await BalanceAsync(project.Id, AccountType.ClientReceivable)).Should().Be(0m, "the collection settles the debt");
+        (await BalanceAsync(project.Id, AccountType.Hold)).Should().Be(60_000m, "the hold is not touched by a collection");
+        (await BalanceAsync(project.Id, AccountType.ClientAdvance)).Should().Be(175_000m, "the ledgers do not net");
+
+        CollectionRecord record = await reader.CollectionRecords.SingleAsync(candidate => candidate.ExtractId == extract, Ct);
+        record.Method.Should().Be(CollectionMethod.Cash);
+        record.Reference.Should().Be("TRX-1");
+        record.Date.Should().Be(new DateOnly(2026, 10, 1));
+        record.CashReceived.Should().Be(new Money(240_000m));
+        record.WithheldAtSource.Should().Be(Money.Zero);
+        (await reader.Cheques.AnyAsync(cheque => cheque.ProjectId == project.Id, Ct)).Should().BeFalse("cash is not a cheque");
+        (await reader.AuditRecords.AnyAsync(a => a.EntityType == nameof(CollectionRecord) && a.EntityId == record.Id, Ct))
+            .Should().BeTrue("recording a collection writes audit");
+    }
+
+    [Fact]
+    public async Task An_extract_that_is_not_issued_cannot_be_collected_and_a_collected_one_cannot_be_collected_twice()
+    {
+        Project project = await NewProjectAsync();
+        Guid early = await DriveAsync(project, ExtractStatus.OwnerApproved);
+
+        (await SendAsync(HttpMethod.Post, Step(project.Id, early, "collect"), _finance, CollectBody())).StatusCode
+            .Should().Be(HttpStatusCode.Conflict);
+        (await CollectionPostingCountAsync(project.Id)).Should().Be(0);
+
+        await SendAsync(HttpMethod.Post, Step(project.Id, early, "issue"), _owner, null);
+        (await SendAsync(HttpMethod.Post, Step(project.Id, early, "collect"), _finance, CollectBody())).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, Step(project.Id, early, "collect"), _finance, CollectBody())).StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await CollectionPostingCountAsync(project.Id)).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task A_cheque_collection_starts_a_cheque_that_only_finance_moves_and_only_by_the_legal_transitions()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        (await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody("Cheque"))).StatusCode
+            .Should().Be(HttpStatusCode.OK);
+
+        Guid cheque;
+        await using (KaffDbContext reader = _database.CreateBareContext())
+        {
+            Cheque row = await reader.Cheques.SingleAsync(candidate => candidate.ProjectId == project.Id, Ct);
+            row.State.Should().Be(ChequeState.Received);
+            cheque = row.Id;
+        }
+
+        long postings = await PostingCountAsync(project.Id);
+        string Route(string step) => $"/api/projects/{project.Id}/cheques/{cheque}/{step}";
+
+        foreach (Guid refused in new[] { _owner, _technicalOffice, _supervisor, _hr, _financeUnassigned })
+        {
+            (await SendAsync(HttpMethod.Post, Route("deposit"), refused, null)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+
+        (await SendAsync(HttpMethod.Post, Route("clearance"), _finance, null)).StatusCode.Should().Be(HttpStatusCode.Conflict, "received cannot clear");
+        (await SendAsync(HttpMethod.Post, Route("bounce"), _finance, null)).StatusCode.Should().Be(HttpStatusCode.Conflict, "received cannot bounce");
+        (await SendAsync(HttpMethod.Post, Route("deposit"), _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, Route("deposit"), _finance, null)).StatusCode.Should().Be(HttpStatusCode.Conflict, "deposited cannot deposit again");
+        (await SendAsync(HttpMethod.Post, Route("clearance"), _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, Route("bounce"), _finance, null)).StatusCode.Should().Be(HttpStatusCode.Conflict, "cleared cannot bounce");
+
+        await using KaffDbContext after = _database.CreateBareContext();
+        (await after.Cheques.SingleAsync(candidate => candidate.Id == cheque, Ct)).State.Should().Be(ChequeState.Cleared);
+        (await PostingCountAsync(project.Id)).Should().Be(postings, "a cheque move posts nothing (Q91)");
+        (await after.AuditRecords.CountAsync(a => a.EntityType == nameof(Cheque) && a.EntityId == cheque, Ct))
+            .Should().BeGreaterThanOrEqualTo(3, "created, deposited and cleared each write audit");
+    }
+
+    [Fact]
+    public async Task A_deposited_cheque_can_bounce_and_the_extract_stays_collected()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody("Cheque"));
+        await using KaffDbContext reader = _database.CreateBareContext();
+        Guid cheque = await reader.Cheques.Where(c => c.ProjectId == project.Id).Select(c => c.Id).SingleAsync(Ct);
+
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project.Id}/cheques/{cheque}/deposit", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project.Id}/cheques/{cheque}/bounce", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project.Id}/cheques/{cheque}/clearance", _finance, null)).StatusCode.Should().Be(HttpStatusCode.Conflict);
+
+        (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Collected, "Q101 is unruled: a bounce does not reopen the extract");
+    }
+
+    // ---- KAFF-316 read side and reversal (AC-316-F) ----
+
+    private async Task<JsonElement> CollectionsAsync(Guid project, Guid extract, Guid actor)
+    {
+        HttpResponseMessage response = await SendAsync(HttpMethod.Get, Step(project, extract, "collection"), actor, null);
+        response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(Ct));
+        using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+        return document.RootElement.Clone();
+    }
+
+    [Fact]
+    public async Task A_cheque_collection_is_readable_and_its_cheque_id_reaches_the_state_machine()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        (await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody("Cheque"))).StatusCode
+            .Should().Be(HttpStatusCode.OK);
+
+        foreach (Guid refused in new[] { _owner, _technicalOffice, _supervisor, _prepEngineer, _hr, _financeUnassigned, _engineerUnassigned })
+        {
+            (await SendAsync(HttpMethod.Get, Step(project.Id, extract, "collection"), refused, null)).StatusCode
+                .Should().Be(HttpStatusCode.Forbidden);
+        }
+
+        JsonElement collections = await CollectionsAsync(project.Id, extract, _finance);
+        JsonElement only = collections.EnumerateArray().Single();
+        only.GetProperty("method").GetString().Should().Be("Cheque");
+        only.GetProperty("reference").GetString().Should().Be("TRX-1");
+        only.GetProperty("date").GetString().Should().Be("2026-10-01");
+        ParseDecimal(only.GetProperty("cashReceived")).Should().Be(240_000m);
+        ParseDecimal(only.GetProperty("withheldAtSource")).Should().Be(0m);
+        only.GetProperty("reversed").GetBoolean().Should().BeFalse();
+        Guid cheque = only.GetProperty("chequeId").GetGuid();
+
+        string route = $"/api/projects/{project.Id}/cheques/{cheque}";
+        foreach (Guid refused in new[] { _owner, _technicalOffice, _supervisor, _hr, _financeUnassigned })
+        {
+            (await SendAsync(HttpMethod.Get, route, refused, null)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+
+        async Task<JsonElement> ReadChequeAsync()
+        {
+            HttpResponseMessage response = await SendAsync(HttpMethod.Get, route, _finance, null);
+            response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(Ct));
+            using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+            return document.RootElement.Clone();
+        }
+
+        JsonElement received = await ReadChequeAsync();
+        received.GetProperty("state").GetString().Should().Be("Received");
+        received.GetProperty("collection").GetProperty("reference").GetString().Should().Be("TRX-1");
+
+        (await SendAsync(HttpMethod.Post, $"{route}/deposit", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ReadChequeAsync()).GetProperty("state").GetString().Should().Be("Deposited");
+
+        (await SendAsync(HttpMethod.Get, $"/api/projects/{project.Id}/cheques/{Guid.NewGuid()}", _finance, null)).StatusCode
+            .Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task A_cash_collection_reads_back_with_no_cheque()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        (await CollectionsAsync(project.Id, extract, _finance)).GetArrayLength().Should().Be(0);
+
+        await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody("Cash"));
+
+        JsonElement only = (await CollectionsAsync(project.Id, extract, _finance)).EnumerateArray().Single();
+        only.GetProperty("method").GetString().Should().Be("Cash");
+        only.GetProperty("chequeId").ValueKind.Should().Be(JsonValueKind.Null);
+    }
+
+    [Fact]
+    public async Task Reversing_a_collection_is_finance_alone_needs_a_reason_and_mirrors_the_postings()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        string route = Step(project.Id, extract, "collection-reversal");
+        object body = new { reason = "wrong client receipt" };
+
+        (await SendAsync(HttpMethod.Post, route, _finance, body)).StatusCode.Should().Be(HttpStatusCode.Conflict, "nothing is collected yet");
+
+        await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody("Cash"));
+        (await BalanceAsync(project.Id, AccountType.ClientReceivable)).Should().Be(0m);
+
+        foreach (Guid refused in new[] { _owner, _technicalOffice, _supervisor, _prepEngineer, _hr, _financeUnassigned, _engineerUnassigned })
+        {
+            (await SendAsync(HttpMethod.Post, route, refused, body)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+
+        foreach (object blank in new object[] { new { reason = "  " }, new { } })
+        {
+            HttpResponseMessage refused = await SendAsync(HttpMethod.Post, route, _finance, blank);
+            refused.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            (await ErrorCodeAsync(refused)).Should().Be("extract.reason_required");
+        }
+
+        (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Collected);
+        (await CollectionPostingCountAsync(project.Id)).Should().Be(1, "a refused reversal writes nothing");
+
+        HttpResponseMessage response = await SendAsync(HttpMethod.Post, route, _finance, body);
+        response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(Ct));
+
+        (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Issued);
+        (await BalanceAsync(project.Id, AccountType.ClientReceivable)).Should().Be(240_000m, "the debt stands again");
+        (await BalanceAsync(project.Id, AccountType.Hold)).Should().Be(60_000m, "the hold is untouched by a reversal");
+        (await BalanceAsync(project.Id, AccountType.ClientAdvance)).Should().Be(175_000m);
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        List<Posting> collection = await reader.Postings
+            .Where(posting => posting.ProjectId == project.Id && posting.Type == PostingType.ClientCollection).ToListAsync(Ct);
+        collection.Should().HaveCount(2, "the original stays and a new reversing posting is added; none is updated or deleted");
+        Posting original = collection.Single(posting => posting.ReversesId is null);
+        Posting reversal = collection.Single(posting => posting.ReversesId is not null);
+        reversal.ReversesId.Should().Be(original.Id);
+        reversal.Amount.Should().Be(original.Amount);
+        reversal.FromAccountId.Should().Be(original.ToAccountId);
+        reversal.ToAccountId.Should().Be(original.FromAccountId);
+
+        (await reader.CollectionRecords.CountAsync(record => record.ExtractId == extract, Ct)).Should().Be(1, "the record is never deleted");
+        ExtractGateRecord gate = await reader.Set<ExtractGateRecord>()
+            .SingleAsync(record => record.ExtractId == extract && record.Outcome == ExtractGateOutcome.Reversed, Ct);
+        gate.Reason.Should().Be("wrong client receipt");
+        gate.ActorUserId.Should().Be(_finance);
+        (await reader.AuditRecords.AnyAsync(a => a.EntityType == nameof(ExtractGateRecord) && a.EntityId == gate.Id, Ct))
+            .Should().BeTrue("the reversal writes audit: who, when, and the stored reason");
+
+        JsonElement read = (await CollectionsAsync(project.Id, extract, _finance)).EnumerateArray().Single();
+        read.GetProperty("reversed").GetBoolean().Should().BeTrue();
+
+        (await SendAsync(HttpMethod.Post, route, _finance, body)).StatusCode.Should().Be(HttpStatusCode.Conflict, "it cannot be reversed twice");
+        (await CollectionPostingCountAsync(project.Id)).Should().Be(2);
+    }
+
+    [Fact]
+    public async Task A_reversed_collection_can_be_recorded_again_and_the_read_shows_both()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody("Cash"));
+        await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collection-reversal"), _finance, new { reason = "wrong date" });
+
+        (await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody("Transfer"))).StatusCode
+            .Should().Be(HttpStatusCode.OK);
+
+        JsonElement[] rows = [.. (await CollectionsAsync(project.Id, extract, _finance)).EnumerateArray()];
+        rows.Should().HaveCount(2);
+        rows[0].GetProperty("method").GetString().Should().Be("Cash");
+        rows[0].GetProperty("reversed").GetBoolean().Should().BeTrue();
+        rows[1].GetProperty("method").GetString().Should().Be("Transfer");
+        rows[1].GetProperty("reversed").GetBoolean().Should().BeFalse();
+        (await BalanceAsync(project.Id, AccountType.ClientReceivable)).Should().Be(0m);
+
+        // The reversal that stands is the second collection's: the first set is already reversed and is not mirrored again.
+        (await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collection-reversal"), _finance, new { reason = "again" })).StatusCode
+            .Should().Be(HttpStatusCode.OK);
+        (await BalanceAsync(project.Id, AccountType.ClientReceivable)).Should().Be(240_000m);
+        (await CollectionPostingCountAsync(project.Id)).Should().Be(4);
+    }
+
+    // ---- KAFF-317: withholding at source, end to end through the endpoint ----
+
+    private async Task<(Guid Extract, List<Posting> Cash, List<Posting> Tax)> CollectAsync(
+        Project project, HttpClient? client = null)
+    {
+        client ??= _client;
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued, client);
+
+        HttpResponseMessage response = await SendAsync(client, HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody("Transfer"));
+        response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(Ct));
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        List<Posting> cash = await reader.Postings
+            .Where(posting => posting.ProjectId == project.Id && posting.Type == PostingType.ClientCollection).ToListAsync(Ct);
+        List<Posting> tax = await reader.Postings
+            .Where(posting => posting.ProjectId == project.Id && posting.Type == PostingType.TaxWithheldAtSource).ToListAsync(Ct);
+        return (extract, cash, tax);
+    }
+
+    [Fact]
+    public async Task An_individual_client_withholds_nothing_so_no_tax_component_and_no_withholding_posting()
+    {
+        // AC-317-B / F: the rate on an individual's contract is refused, and a collection from one records no withholding.
+        Project rejected = Project.Create(UniqueNames.Code("EX-IW"), "x", _individualClientId, ContractType.LumpSum, Now).Value;
+        rejected.SetWithholding(WithholdingCategory.ContractingAndSupplies, ClientKind.Individual).IsFailure.Should().BeTrue();
+
+        Project project = await NewProjectAsync(_individualClientId, WithholdingCategory.None, ClientKind.Individual);
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+
+        await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody());
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        Extract stored = await reader.Extracts.Include(e => e.Figures).SingleAsync(e => e.Id == extract, Ct);
+        stored.Figures.Should().NotBeEmpty();
+        stored.Figures.Should().NotContain(figure => figure.Kind == BillingComponentKind.TaxAtSource, "an individual's contract has no category");
+        (await reader.Postings.AnyAsync(p => p.ProjectId == project.Id && p.Type == PostingType.TaxWithheldAtSource, Ct)).Should().BeFalse();
+        (await reader.Postings.SingleAsync(p => p.ProjectId == project.Id && p.Type == PostingType.ClientCollection, Ct))
+            .Amount.Should().Be(new Money(240_000m));
+        (await reader.CollectionRecords.SingleAsync(r => r.ExtractId == extract, Ct)).WithheldAtSource.Should().Be(Money.Zero);
+    }
+
+    [Fact]
+    public async Task A_corporate_contract_with_no_category_withholds_nothing()
+    {
+        Project project = await NewProjectAsync(withholding: WithholdingCategory.None);
+
+        (Guid _, List<Posting> cash, List<Posting> tax) = await CollectAsync(project);
+
+        tax.Should().BeEmpty();
+        cash.Should().ContainSingle().Which.Amount.Should().Be(new Money(240_000m));
+    }
+
+    [Fact]
+    public async Task A_corporate_client_withholds_and_cash_is_the_net_less_the_withheld_amount_posted_only_at_Collected()
+    {
+        // spec.md 6.7: 1% contracting and supplies. Net payable 240,000 (spec.md 15, extract 1) -> withheld 2,400, cash 237,600.
+        // The rate is spec.md's; it is not changed here whatever public guidance says.
+        Project project = await NewProjectAsync(withholding: WithholdingCategory.ContractingAndSupplies);
+
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+
+        // The stage: nothing reaches the safe or the withholding account at Issued.
+        await using (KaffDbContext atIssued = _database.CreateBareContext())
+        {
+            (await atIssued.Postings.AnyAsync(
+                p => p.ProjectId == project.Id && (p.Type == PostingType.ClientCollection || p.Type == PostingType.TaxWithheldAtSource), Ct))
+                .Should().BeFalse("neither leg is written at Issued");
+        }
+
+        (await BalanceAsync(project.Id, AccountType.ClientReceivable)).Should().Be(240_000m, "the full net stands as the receivable at Issued");
+
+        (await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody())).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        Posting cash = await reader.Postings.SingleAsync(p => p.ProjectId == project.Id && p.Type == PostingType.ClientCollection, Ct);
+        Posting tax = await reader.Postings.SingleAsync(p => p.ProjectId == project.Id && p.Type == PostingType.TaxWithheldAtSource, Ct);
+
+        tax.Amount.Should().Be(new Money(2_400m));
+        cash.Amount.Should().Be(new Money(237_600m), "cash into the safe is the net less the withheld amount");
+        (cash.Amount + tax.Amount).Should().Be(new Money(240_000m), "the two legs sum to the net payable");
+
+        Account safe = await reader.Accounts.SingleAsync(a => a.Id == cash.ToAccountId, Ct);
+        safe.Type.Should().Be(AccountType.Safe);
+        Account taxAccount = await reader.Accounts.SingleAsync(a => a.Id == tax.ToAccountId, Ct);
+        taxAccount.Type.Should().Be(AccountType.TaxWithheldAtSource);
+        cash.SourceDocumentId.Should().Be(extract);
+        tax.SourceDocumentId.Should().Be(extract);
+
+        (await BalanceAsync(project.Id, AccountType.ClientReceivable)).Should().Be(0m, "both legs together settle the receivable");
+
+        CollectionRecord record = await reader.CollectionRecords.SingleAsync(r => r.ExtractId == extract, Ct);
+        record.CashReceived.Should().Be(new Money(237_600m));
+        record.WithheldAtSource.Should().Be(new Money(2_400m));
+
+        JsonElement view = (await CollectionsAsync(project.Id, extract, _finance)).EnumerateArray().Single();
+        ParseDecimal(view.GetProperty("cashReceived")).Should().Be(237_600m);
+        ParseDecimal(view.GetProperty("withheldAtSource")).Should().Be(2_400m);
+
+        // Reversing mirrors both legs: the debt stands again in full.
+        (await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collection-reversal"), _finance, new { reason = "bounced transfer" }))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+        (await BalanceAsync(project.Id, AccountType.ClientReceivable)).Should().Be(240_000m);
+        (await reader.Postings.CountAsync(p => p.ProjectId == project.Id && p.ReversesId != null, Ct)).Should().Be(2);
+    }
+
+    [Theory]
+    [InlineData(WithholdingBaseKind.NetPayable, 2_400)]
+    [InlineData(WithholdingBaseKind.PeriodWorkValue, 3_000)]
+    [InlineData(WithholdingBaseKind.CertifiedLessHold, 2_400)]
+    public async Task The_withheld_amount_follows_the_ruled_base_with_no_handler_change(WithholdingBaseKind kind, int expectedWithheld)
+    {
+        // AC-317-D. Net 240,000, period work 300,000, certified less hold 240,000; 1% of each.
+        var factory = new KaffApiFactory(_database.ConnectionString).WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddSingleton(RulingSet.Default with { WithholdingBase = new WithholdingBaseRule(kind, HoldReleaseCarriesWithholding: true) })));
+        using HttpClient client = factory.CreateClient();
+        using (factory)
+        {
+            Project project = await NewProjectAsync(withholding: WithholdingCategory.ContractingAndSupplies);
+
+            (Guid _, List<Posting> cash, List<Posting> tax) = await CollectAsync(project, client);
+
+            tax.Should().ContainSingle().Which.Amount.Should().Be(new Money(expectedWithheld));
+            cash.Should().ContainSingle().Which.Amount.Should().Be(new Money(240_000m - expectedWithheld));
+        }
+    }
+
     private static string Extracts(Guid project) => $"/api/projects/{project}/extracts";
 
     private static string Single(Guid project, Guid extract) => $"/api/projects/{project}/extracts/{extract}";
@@ -970,13 +1420,15 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         }
     }
 
-    private async Task<Project> NewProjectAsync()
+    private async Task<Project> NewProjectAsync(
+        Guid? clientId = null, WithholdingCategory withholding = WithholdingCategory.None, ClientKind kind = ClientKind.Corporate)
     {
         Project project;
 
         await using (KaffDbContext context = _database.CreateContext())
         {
-            project = Project.Create(UniqueNames.Code("EX-P"), "مشروع مستخلص", _clientId, ContractType.LumpSum, Now).Value;
+            project = Project.Create(UniqueNames.Code("EX-P"), "مشروع مستخلص", clientId ?? _clientId, ContractType.LumpSum, Now).Value;
+            project.SetWithholding(withholding, kind).IsSuccess.Should().BeTrue();
             project.SetLumpSumTerms(
                 Percentage.FromPercent(25m), Percentage.FromPercent(20m), Percentage.FromPercent(25m),
                 Percentage.FromPercent(75m), delayPenaltyEnabled: false).IsSuccess.Should().BeTrue();
@@ -1050,13 +1502,20 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         User engineerUnassigned = Make("ex-eng-un", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User hr = Make("ex-hr", Role.Hr, WellKnownDepartments.HrId);
 
-        context.Clients.Add(client);
+        Client individual = Client.Create(
+            UniqueNames.Code("EX-I"), "عميل فرد", UniqueNames.Phone(), ClientKind.Individual, Now).Value;
+        Account taxWithheld = Account.Create(
+            AccountType.TaxWithheldAtSource, UniqueNames.Code("EXTAX"), "ضريبة خصم من المنبع", "Tax withheld at source",
+            Currency.Egp, new DateOnly(2026, 1, 1)).Value;
+
+        context.Clients.AddRange(client, individual);
         context.Babs.Add(bab);
-        context.Accounts.Add(safe);
+        context.Accounts.AddRange(safe, taxWithheld);
         context.Users.AddRange(owner, finance, financeUnassigned, technicalOffice, technicalOffice2, prep, supervisor, engineerUnassigned, hr);
         await context.SaveChangesAsync(Ct);
 
         _clientId = client.Id;
+        _individualClientId = individual.Id;
         _babId = bab.Id;
         _safeId = safe.Id;
         _owner = owner.Id;

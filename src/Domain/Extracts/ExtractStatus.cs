@@ -63,4 +63,7 @@ public enum ExtractGateOutcome
 
     /// <summary>The extract returned to Draft. The record carries a non-blank reason.</summary>
     Rejected = 3,
+
+    /// <summary>A collection was reversed and the extract returned to Issued. The record carries a non-blank reason. It starts no new approval cycle.</summary>
+    Reversed = 4,
 }

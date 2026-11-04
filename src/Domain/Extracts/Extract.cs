@@ -59,6 +59,7 @@ public sealed class Extract : Entity
 
     private readonly List<ExtractGateRecord> _gateHistory = [];
     private readonly List<ExtractFigure> _figures = [];
+    private readonly List<ExtractChangeOrderLine> _changeOrderLines = [];
 
     private Extract()
     {
@@ -136,6 +137,12 @@ public sealed class Extract : Entity
 
     public IReadOnlyList<ExtractFigure> Figures => _figures;
 
+    /// <summary>The approved change orders this extract bills, each at its approved price (spec.md section 5.1).</summary>
+    public IReadOnlyList<ExtractChangeOrderLine> ChangeOrderLines => _changeOrderLines;
+
+    /// <summary>The change-order value this extract bills: the sum of its change-order lines. Derived, never typed.</summary>
+    public Money ChangeOrderValue => Money.Sum(_changeOrderLines.Select(line => line.Amount));
+
     public SourceDocument SourceDocument => new(SourceDocumentType.Extract, Id, $"EXT-{Number}");
 
     public static bool IsLegalTransition(ExtractStatus from, ExtractStatus to) => LegalTransitions.Contains((from, to));
@@ -150,7 +157,8 @@ public sealed class Extract : Entity
         Money materialValueOnSite,
         Money materialInstalled,
         Guid preparedByUserId,
-        DateTimeOffset now)
+        DateTimeOffset now,
+        IReadOnlyList<ExtractChangeOrderBilling>? changeOrders = null)
     {
         ArgumentNullException.ThrowIfNull(project);
 
@@ -171,9 +179,20 @@ public sealed class Extract : Entity
             return Result.Failure<Extract>(ExtractErrors.QuantitiesInvalid);
         }
 
-        return new Extract(
+        if (changeOrders is not null && changeOrders.Any(billing => !billing.Amount.IsPositive))
+        {
+            return Result.Failure<Extract>(ExtractErrors.QuantitiesInvalid);
+        }
+
+        var extract = new Extract(
             project.Id, number, periodStart, periodEnd, cumulativeCertifiedWork, previouslyCertifiedWork,
             materialValueOnSite, materialInstalled, preparedByUserId, now);
+        foreach (ExtractChangeOrderBilling billing in changeOrders ?? [])
+        {
+            extract._changeOrderLines.Add(new ExtractChangeOrderLine(extract.Id, billing.ChangeOrderId, billing.Amount));
+        }
+
+        return extract;
     }
 
     /// <summary>True for a Draft extract a rejection returned. The screen asks this before offering the control.</summary>
@@ -390,7 +409,7 @@ public sealed class Extract : Entity
 
         return new LumpSumBillingInput(
             approvedCumulative, PreviouslyCertifiedWork, MaterialValueOnSite, MaterialInstalled,
-            ChangeOrderValueThisPeriod: Money.Zero, DelayPenalty: Money.Zero,
+            ChangeOrderValueThisPeriod: ChangeOrderValue, DelayPenalty: Money.Zero,
             balances.ClientAdvance, balances.MaterialAdvance, balances.Hold);
     }
 
@@ -468,6 +487,75 @@ public sealed class Extract : Entity
 
         Apply(ExtractStatus.Collected, ExtractGate.Collect, ExtractGateOutcome.Passed, actorUserId, now, null, null);
         return collection;
+    }
+
+    /// <summary>
+    /// Reverses a mistaken collection (KAFF-316 AC-316-F). Each standing collection posting in
+    /// <paramref name="collectionLegs"/> is mirrored by a new posting referencing the original through
+    /// <c>ReversesId</c>; nothing is updated or deleted. The extract returns to Issued, where the net payable
+    /// stands in the receivable again, and the stored reason is on the gate record.
+    /// </summary>
+    public Result<IReadOnlyList<Posting>> ReverseCollection(
+        Guid actorUserId,
+        string? reason,
+        ExtractPostingContext context,
+        IReadOnlyList<ExtractPostedLeg> collectionLegs,
+        DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(collectionLegs);
+
+        // Not a step of the forward chain, so Collected to Issued is deliberately absent from LegalTransitions:
+        // putting it there would make Issue legal from Collected. Only a collected extract can have a collection reversed.
+        Result gate = Result.FirstFailureOrSuccess(
+            Status == ExtractStatus.Collected ? Result.Success() : Result.Failure(ExtractErrors.IllegalTransition),
+            CheckProject(context));
+        if (gate.IsFailure)
+        {
+            return Result.Failure<IReadOnlyList<Posting>>(gate.Error);
+        }
+
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            return Result.Failure<IReadOnlyList<Posting>>(ExtractErrors.ReasonRequired);
+        }
+
+        if (reason.Trim().Length > Project.MaxReasonLength)
+        {
+            return Result.Failure<IReadOnlyList<Posting>>(ExtractErrors.ReasonTooLong);
+        }
+
+        if (collectionLegs.Count == 0)
+        {
+            return Result.Failure<IReadOnlyList<Posting>>(ExtractErrors.ReversalPostingsRequired);
+        }
+
+        Result state = PostingProjectStateLegality.Validate(
+            context.Rulings.PostingProjectStates, context.Project.Status, PostingType.ClientCollection, isReversal: true);
+        if (state.IsFailure)
+        {
+            return Result.Failure<IReadOnlyList<Posting>>(state.Error);
+        }
+
+        var reversals = new List<Posting>();
+        foreach (ExtractPostedLeg leg in collectionLegs)
+        {
+            if (leg.Posting.SourceDocumentId != Id)
+            {
+                return Result.Failure<IReadOnlyList<Posting>>(ExtractErrors.PostingNotFromThisExtract);
+            }
+
+            Result<Posting> reversal = Posting.Reverse(leg.Posting, leg.From, leg.To, context.PostingDate, actorUserId, now);
+            if (reversal.IsFailure)
+            {
+                return Result.Failure<IReadOnlyList<Posting>>(reversal.Error);
+            }
+
+            reversals.Add(reversal.Value);
+        }
+
+        Apply(ExtractStatus.Issued, ExtractGate.Collect, ExtractGateOutcome.Reversed, actorUserId, now, reason.Trim(), null);
+        return reversals;
     }
 
     /// <summary>

@@ -538,7 +538,31 @@ public static class PermissionCatalogue
                 "§7, §14 — holder UNRESOLVED, the supervising engineer assumed, see decisions.md D-189 §3",
                 Unresolved: true),
 
-            new(Permission.ChangeOrderApprove, PermissionScope.ProjectScoped, [owner], "§9, §13", TouchesMoney: true),
+            // spec.md §6.5 and §7's last step, "Issued, Collected": Finance records that the client paid and
+            // moves a cheque through its states. UNRESOLVED (Q97): §6.5 names no actor and does not say whether
+            // the Owner approves a receipt. Finance alone is assumed; the Owner is deliberately absent, as on
+            // ExtractDeductionsApply. See Rulings/CollectionApproval.cs.
+            new(Permission.ExtractCollect, PermissionScope.ProjectScoped,
+                [finance],
+                "§6.5, §7, §9 — holder UNRESOLVED (Q97), Finance assumed, see Rulings/CollectionApproval.cs",
+                Unresolved: true, TouchesMoney: true),
+
+            new(Permission.ChangeOrderApprove,PermissionScope.ProjectScoped, [owner], "§9, §13", TouchesMoney: true),
+
+            // spec.md section 13 gives the change-order chain and names only the Owner's step (section 9). Who drafts,
+            // reviews, withdraws and records the client's approval before the portal exists is unruled (Q103, Q105);
+            // the Technical Office is assumed for all three, see Rulings/ChangeOrderRulings.cs ChangeOrderApprovers.
+            // Money-free: Technical Office gates quantities, never money (section 9). Finance is deliberately
+            // absent: it does not approve change orders. The Owner is absent so nobody holds both ends.
+            new(Permission.ChangeOrderPrepare, PermissionScope.ProjectScoped, [technicalOffice],
+                "§13 — holder UNRESOLVED (Q105), Technical Office assumed, see Rulings/ChangeOrderRulings.cs",
+                Unresolved: true),
+            new(Permission.ChangeOrderReview, PermissionScope.ProjectScoped, [technicalOffice],
+                "§13 — holder UNRESOLVED (Q105), Technical Office assumed, see Rulings/ChangeOrderRulings.cs",
+                Unresolved: true),
+            new(Permission.ChangeOrderClientApprovalRecord, PermissionScope.ProjectScoped, [technicalOffice],
+                "§12, §13 — holder UNRESOLVED (Q103), Technical Office assumed, see Rulings/ChangeOrderRulings.cs",
+                Unresolved: true),
             new(Permission.FirmAdvanceApprove, PermissionScope.ProjectScoped, [owner], "§6.4.3", TouchesMoney: true),
 
             // ---- Treasury ----

@@ -401,10 +401,22 @@ public sealed class CatalogueCompletenessTests
         // weekly QC report as a step in the extract chain and names nobody who performs it. The
         // supervising engineer is assumed, and the two rejected candidates are in
         // Rulings/ExtractQcReportAuthor.cs.
+        //
+        // ExtractCollect joined the list 2026-11-04 (KAFF-316, Q97): spec.md §6.5 names the collection and
+        // names no actor, and does not say whether the Owner approves a receipt. Finance is assumed; see
+        // Rulings/CollectionApproval.cs.
+        //
+        // ChangeOrderPrepare, ChangeOrderReview and ChangeOrderClientApprovalRecord joined the list 2026-11-04
+        // (KAFF-508/509, Q103, Q105): spec.md section 13 gives the change-order chain and names only the Owner's
+        // step. The Technical Office is assumed; see Rulings/ChangeOrderRulings.cs.
         Permission[] expected =
         [
             Permission.PeriodClose,
             Permission.ExtractQcReportSubmit,
+            Permission.ExtractCollect,
+            Permission.ChangeOrderPrepare,
+            Permission.ChangeOrderReview,
+            Permission.ChangeOrderClientApprovalRecord,
         ];
 
         PermissionCatalogue.Unresolved

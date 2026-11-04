@@ -50,7 +50,14 @@ internal sealed class ExtractConfiguration : IEntityTypeConfiguration<Extract>
             .OnDelete(DeleteBehavior.Cascade);
         builder.Navigation(extract => extract.Figures).UsePropertyAccessMode(PropertyAccessMode.Field);
 
+        builder.HasMany(extract => extract.ChangeOrderLines)
+            .WithOne()
+            .HasForeignKey(line => line.ExtractId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.Navigation(extract => extract.ChangeOrderLines).UsePropertyAccessMode(PropertyAccessMode.Field);
+
         builder.Ignore(extract => extract.SourceDocument);
+        builder.Ignore(extract => extract.ChangeOrderValue);
     }
 }
 

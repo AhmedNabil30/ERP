@@ -70,7 +70,7 @@ internal static class ExtractSupport
     }
 
     public static IQueryable<Extract> WithChildren(KaffDbContext database) =>
-        database.Extracts.Include(extract => extract.GateHistory).Include(extract => extract.Figures);
+        database.Extracts.Include(extract => extract.GateHistory).Include(extract => extract.Figures).Include(extract => extract.ChangeOrderLines);
 
     /// <summary>
     /// Runs one step against an extract that belongs to <paramref name="projectId"/>, holding a row lock for the
@@ -254,6 +254,29 @@ internal static class ExtractSupport
                 && posting.ReversesId == null
                 && posting.Type != PostingType.ClientCollection
                 && posting.Type != PostingType.TaxWithheldAtSource
+                && !database.Postings.Any(other => other.ReversesId == posting.Id))
+            .ToListAsync(cancellationToken);
+
+        Guid[] accountIds = [.. postings.SelectMany(posting => new[] { posting.FromAccountId, posting.ToAccountId }).Distinct()];
+        Dictionary<Guid, Account> accounts = await database.Accounts
+            .Where(account => accountIds.Contains(account.Id))
+            .ToDictionaryAsync(account => account.Id, cancellationToken);
+
+        return [.. postings.Select(posting => new ExtractPostedLeg(posting, accounts[posting.FromAccountId], accounts[posting.ToAccountId]))];
+    }
+
+    /// <summary>
+    /// The collection postings (cash and withholding) that are still standing: not reversals, and not already
+    /// reversed. These are the legs <see cref="Extract.ReverseCollection"/> mirrors.
+    /// </summary>
+    public static async Task<IReadOnlyList<ExtractPostedLeg>> StandingCollectionLegsAsync(
+        KaffDbContext database, Guid extractId, CancellationToken cancellationToken)
+    {
+        List<Posting> postings = await database.Postings
+            .Where(posting => posting.SourceDocumentType == SourceDocumentType.Extract
+                && posting.SourceDocumentId == extractId
+                && posting.ReversesId == null
+                && (posting.Type == PostingType.ClientCollection || posting.Type == PostingType.TaxWithheldAtSource)
                 && !database.Postings.Any(other => other.ReversesId == posting.Id))
             .ToListAsync(cancellationToken);
 

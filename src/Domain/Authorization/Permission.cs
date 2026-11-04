@@ -366,4 +366,37 @@ public enum Permission
     /// </para>
     /// </remarks>
     ExtractQcReportSubmit = 75,
+
+    /// <summary>
+    /// Record that a client paid an issued extract, and move the cheque it paid with through deposited,
+    /// cleared or bounced — spec.md §6.5, §7 ("Issued, Collected").
+    /// </summary>
+    /// <remarks>
+    /// UNRESOLVED (Q97). spec.md names the collection and the cheque states and names no actor, and does not say
+    /// whether the Owner approves a receipt. The running default is Finance alone, the role §9 gives money to;
+    /// see <see cref="Rulings.CollectionApproval"/>. The Owner is deliberately absent, the same reason as
+    /// <see cref="ExtractDeductionsApply"/>: the Owner holds <see cref="FinancialMovementApprove"/> and §9's
+    /// "nobody creates and approves the same movement" is cheaper to honour by never granting both.
+    /// </remarks>
+    ExtractCollect = 76,
+
+    /// <summary>
+    /// Create, submit and withdraw a change order (spec.md section 13). UNRESOLVED (Q105): spec.md names the chain and
+    /// not who drafts it. The Technical Office is assumed; see <see cref="Rulings.ChangeOrderApprovers"/>. Money-free:
+    /// it drafts a price, it moves nothing.
+    /// </summary>
+    ChangeOrderPrepare = 77,
+
+    /// <summary>
+    /// The technical review gate of a change order (spec.md section 13). UNRESOLVED (Q105). The Technical Office is
+    /// assumed; see <see cref="Rulings.ChangeOrderApprovers"/>. Technical Office gates quantities, never money.
+    /// </summary>
+    ChangeOrderReview = 78,
+
+    /// <summary>
+    /// Record that the client approved a priced change order (spec.md sections 12, 13). UNRESOLVED (Q103): the portal is
+    /// not built and spec.md does not say who records it meanwhile. The Technical Office is assumed; see
+    /// <see cref="Rulings.ChangeOrderApprovers"/>.
+    /// </summary>
+    ChangeOrderClientApprovalRecord = 79,
 }
