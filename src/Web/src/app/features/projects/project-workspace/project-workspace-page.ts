@@ -17,12 +17,13 @@ import { Router, RouterLink } from '@angular/router';
 import { toProblem } from '../../../core/api/problem-details';
 import { AuthService } from '../../../core/auth/auth.service';
 import { Boq, BoqsApi } from '../../../core/boqs/boqs.api';
-import { ExtractSummary, ExtractsApi } from '../../../core/extracts/extracts.api';
+import { Extract, ExtractSummary, ExtractsApi } from '../../../core/extracts/extracts.api';
 import { contractTypeKey, projectWorkspaceStatusKey } from '../../../core/i18n/enum-keys';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { ProjectDetail, ProjectStatus, ProjectsApi } from '../../../core/projects/projects.api';
 import { fractionToPercent } from '../../../core/catalogue/percent-wire';
+import { extractNoActionKey } from '../../extracts/extract-display';
 import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
@@ -40,6 +41,7 @@ import {
   GROUP_INTENT_KEY,
   GROUP_TITLE_KEY,
   GroupId,
+  PendingExtract,
   primaryAction,
   visibleGroups,
 } from './workspace-declaration';
@@ -126,6 +128,8 @@ export class ProjectWorkspacePage {
   protected readonly failure = signal<string | null>(null);
   protected readonly boq = signal<Read<Boq>>(LOADING);
   protected readonly extracts = signal<Read<readonly ExtractSummary[]>>(LOADING);
+  /** The newest extract still in the chain, read in full for its server-computed `actions`. Null: none, or the read failed. */
+  protected readonly pendingExtract = signal<Extract | null>(null);
 
   private readonly primaryTemplate = viewChild<TemplateRef<unknown>>('primaryAction');
 
@@ -153,7 +157,32 @@ export class ProjectWorkspacePage {
     const project = this.project();
     return project === null
       ? null
-      : primaryAction(project.contractType, project.status, this.caps(), project.id);
+      : primaryAction(project.contractType, project.status, this.caps(), project.id, this.pending());
+  });
+
+  private readonly pending = computed<PendingExtract | null>(() => {
+    const extract = this.pendingExtract();
+    if (extract === null) {
+      return null;
+    }
+    const a = extract.actions;
+    // reviseEvidence is a correction, not the next step, so it does not take the slot.
+    const hasAction =
+      a.submitQcReport ||
+      a.approveTechnicalOffice ||
+      a.rejectAtTechnicalOffice ||
+      a.applyDeductions ||
+      a.rejectAtAccounts ||
+      a.approveAsOwner ||
+      a.rejectAtOwner ||
+      a.issue;
+    return { id: extract.id, number: extract.number, hasAction };
+  });
+
+  /** Why the pending extract offers this viewer nothing (the extract screen's own wording), else null. */
+  protected readonly pendingNoActionKey = computed(() => {
+    const extract = this.pendingExtract();
+    return extract !== null && !this.pending()?.hasAction ? extractNoActionKey(extract) : null;
   });
 
   /** The newest extract by number, for the pay group's one-line summary. */
@@ -180,6 +209,7 @@ export class ProjectWorkspacePage {
     this.failure.set(null);
     this.boq.set(LOADING);
     this.extracts.set(LOADING);
+    this.pendingExtract.set(null);
     try {
       this.project.set(await this.projectsApi.get(this.projectId()));
     } catch (error) {
@@ -215,9 +245,25 @@ export class ProjectWorkspacePage {
   protected async loadExtracts(): Promise<void> {
     this.extracts.set(LOADING);
     try {
-      this.extracts.set({ state: 'ok', data: await this.extractsApi.list(this.projectId()) });
+      const list = await this.extractsApi.list(this.projectId());
+      this.extracts.set({ state: 'ok', data: list });
+      await this.loadPending(list);
     } catch (error) {
       this.extracts.set({ state: 'failed', key: toProblem(error).messageKey });
+    }
+  }
+
+  /** The newest extract not yet Issued or Collected. A failed read leaves the slot absent; the server still decides. */
+  private async loadPending(list: readonly ExtractSummary[]): Promise<void> {
+    const open = list.filter((row) => row.status !== 'Issued' && row.status !== 'Collected');
+    const newest = open.reduce<ExtractSummary | null>((a, b) => (a === null || b.number > a.number ? b : a), null);
+    if (newest === null) {
+      return;
+    }
+    try {
+      this.pendingExtract.set(await this.extractsApi.get(this.projectId(), newest.id));
+    } catch {
+      this.pendingExtract.set(null);
     }
   }
 

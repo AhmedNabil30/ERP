@@ -3,7 +3,7 @@
 <ng-template #primaryAction>
   @if (primary(); as action) {
     <kaff-button variant="primary" testId="workspace-primary-action" (clicked)="onPrimary()">
-      {{ i18n.t(action.labelKey) }}
+      {{ i18n.t(action.labelKey, action.params) }}
     </kaff-button>
   }
 </ng-template>
@@ -161,6 +161,11 @@
                     }
                   </kaff-fact-list>
                 }
+              }
+              @if (pendingNoActionKey(); as why) {
+                <p class="none" data-testid="workspace-extract-no-action">
+                  <kaff-icon name="info" [small]="true" /><span>{{ i18n.t(why) }}</span>
+                </p>
               }
               <kaff-part-link [link]="['/projects', p.id, 'extracts']" [label]="i18n.t('extract.list.title')" testId="workspace-link-extracts" />
             }

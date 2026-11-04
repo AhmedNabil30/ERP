@@ -26,7 +26,7 @@ import { KaffStatusPill } from '../../../shared/kaff-status-pill/kaff-status-pil
 import { KaffTable } from '../../../shared/kaff-table/kaff-table';
 import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
-import { EXTRACT_STATUS_PILL, hasHiddenPrecision, percentOfFraction } from '../extract-display';
+import { EXTRACT_STATUS_PILL, extractNoActionKey, hasHiddenPrecision, percentOfFraction } from '../extract-display';
 
 /** Every label key the screen reads, written out so each one is a literal the catalogue gate can see. */
 export const STATUS_KEYS: Readonly<Record<ExtractStatus, string>> = {
@@ -75,14 +75,6 @@ const KIND: Readonly<Record<FigureKind, ProvenanceKind>> = {
   Entered: 'ent',
   Carried: 'car',
 };
-
-/** The stages where one person decides, so a missing control may be the separation of duties. */
-const DECISION_STATUSES: readonly ExtractStatus[] = [
-  'QcSubmitted',
-  'TechnicalApproved',
-  'PartiallyApproved',
-  'DeductionsApplied',
-];
 
 type ConfirmStep = 'deductions' | 'owner-approval' | 'issue';
 
@@ -186,19 +178,7 @@ export class ExtractDetailPage {
   });
 
   /** Why nothing is offered: the separation-of-duties answer when it is the reason, else the stage. */
-  protected readonly noActionKey = computed(() => {
-    const extract = this.data();
-    if (extract === null) {
-      return 'extract.no_action.waiting';
-    }
-    if (extract.status === 'Issued' || extract.status === 'Collected') {
-      return 'extract.no_action.done';
-    }
-    if (!extract.actions.callerMayDecide && DECISION_STATUSES.includes(extract.status)) {
-      return 'extract.no_action.same_person';
-    }
-    return 'extract.no_action.waiting';
-  });
+  protected readonly noActionKey = computed(() => extractNoActionKey(this.data()));
 
   protected readonly history = computed(() =>
     (this.data()?.gateHistory ?? []).map((record) => ({

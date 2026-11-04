@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { AuthService, ProjectEntry, Role, Session } from '../../../core/auth/auth.service';
 import { Boq, BoqsApi } from '../../../core/boqs/boqs.api';
-import { ExtractSummary, ExtractsApi } from '../../../core/extracts/extracts.api';
+import { Extract, ExtractActions, ExtractSummary, ExtractsApi } from '../../../core/extracts/extracts.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { ContractType, ProjectDetail, ProjectsApi } from '../../../core/projects/projects.api';
@@ -97,14 +97,47 @@ class FakeBoqsApi implements Pick<BoqsApi, 'get'> {
   }
 }
 
-class FakeExtractsApi implements Pick<ExtractsApi, 'list'> {
+const NO_ACTIONS: ExtractActions = {
+  submitQcReport: false,
+  approveTechnicalOffice: false,
+  rejectAtTechnicalOffice: false,
+  applyDeductions: false,
+  rejectAtAccounts: false,
+  approveAsOwner: false,
+  rejectAtOwner: false,
+  issue: false,
+  reviseEvidence: false,
+  callerMayDecide: true,
+};
+
+class FakeExtractsApi implements Pick<ExtractsApi, 'list' | 'get'> {
   calls = 0;
+  getCalls = 0;
+
+  /** `pending` adds an extract 2 in the chain, whose server-computed actions are `actions`. */
+  constructor(
+    private readonly pending: { status: ExtractSummary['status']; actions: Partial<ExtractActions> } | null = null,
+  ) {}
 
   async list(): Promise<readonly ExtractSummary[]> {
     this.calls += 1;
-    return [
+    const rows: ExtractSummary[] = [
       { id: 'e-1', number: 1, periodStart: '2026-10-01', periodEnd: '2026-10-31', status: 'Issued' },
     ];
+    if (this.pending !== null) {
+      rows.push({ id: 'e-2', number: 2, periodStart: '2026-11-01', periodEnd: '2026-11-30', status: this.pending.status });
+    }
+    return rows;
+  }
+
+  async get(): Promise<Extract> {
+    this.getCalls += 1;
+    return {
+      id: 'e-2',
+      number: 2,
+      status: this.pending?.status ?? 'Draft',
+      actions: { ...NO_ACTIONS, ...this.pending?.actions },
+    } as Extract;
   }
 }
 
@@ -245,6 +278,56 @@ describe('ProjectWorkspacePage · role', () => {
 
     await createFixture(new FakeProjectsApi(project('LumpSum', { status: 'Active' })), OWNER());
     expect(TestBed.inject(HeaderActionsService).template()).toBeNull();
+  });
+});
+
+describe('ProjectWorkspacePage · the slot offers the extract awaiting this viewer', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  const active = () => new FakeProjectsApi(project('LumpSum', { status: 'Active' }));
+
+  it('offers "open extract 2" when the server says the viewer has an action, and it goes to that extract', async () => {
+    const fixture = await createFixture(
+      active(),
+      OWNER(),
+      new FakeBoqsApi(),
+      new FakeExtractsApi({ status: 'DeductionsApplied', actions: { approveAsOwner: true } }),
+    );
+    expect(TestBed.inject(HeaderActionsService).template()).not.toBeNull();
+    const host = document.createElement('div');
+    const view = TestBed.inject(HeaderActionsService).template()!.createEmbeddedView(null);
+    view.detectChanges();
+    host.append(...view.rootNodes);
+    const button = host.querySelector<HTMLButtonElement>('[data-testid="workspace-primary-action"]');
+    expect(button?.textContent).toContain('open_extract');
+    expect(q(fixture, 'workspace-extract-no-action')).toBeNull();
+  });
+
+  it('offers nothing and says why when the viewer prepared it (no action flags, callerMayDecide false)', async () => {
+    const fixture = await createFixture(
+      active(),
+      OWNER(),
+      new FakeBoqsApi(),
+      new FakeExtractsApi({ status: 'DeductionsApplied', actions: { callerMayDecide: false } }),
+    );
+    expect(TestBed.inject(HeaderActionsService).template()).toBeNull();
+    expect(q(fixture, 'workspace-extract-no-action')?.textContent).toContain('extract.no_action.same_person');
+  });
+
+  it('a revise-evidence-only action does not take the slot', async () => {
+    await createFixture(
+      active(),
+      OWNER(),
+      new FakeBoqsApi(),
+      new FakeExtractsApi({ status: 'Draft', actions: { reviseEvidence: true } }),
+    );
+    expect(TestBed.inject(HeaderActionsService).template()).toBeNull();
+  });
+
+  it('the site engineer never reads an extract', async () => {
+    const extracts = new FakeExtractsApi({ status: 'Draft', actions: { submitQcReport: true } });
+    await createFixture(active(), session('SiteEngineer', SITE_PERMS, []), new FakeBoqsApi(), extracts);
+    expect(extracts.getCalls).toBe(0);
   });
 });
 

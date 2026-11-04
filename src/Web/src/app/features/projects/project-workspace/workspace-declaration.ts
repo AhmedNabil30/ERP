@@ -132,25 +132,45 @@ export function visibleGroups(
 
 export interface PrimaryAction {
   readonly labelKey: string;
+  readonly params?: Readonly<Record<string, number>>;
   readonly link: readonly string[];
 }
 
 /**
+ * The newest extract still in the chain, as the server describes it for THIS viewer: `hasAction` is the
+ * server's own `actions` answer (permission, assignment, state and separation of duties already folded in),
+ * so the slot never re-derives who may do what.
+ */
+export interface PendingExtract {
+  readonly id: string;
+  readonly number: number;
+  readonly hasAction: boolean;
+}
+
+/**
  * The one primary action the shell places in the header (README Q2: working text). Only an action that
- * leads to a screen that exists is declared: "new extract" and "new invoice" have no screen yet, so they
- * are not offered.
+ * leads to a screen that exists is declared. "New extract", "new invoice", collect and the change-order
+ * gates have no web screen yet, so they are not offered.
  */
 export function primaryAction(
   type: ContractType,
   status: ProjectStatus,
   caps: Capabilities,
   projectId: string,
+  pending: PendingExtract | null = null,
 ): PrimaryAction | null {
   if (type !== 'LumpSum') {
     return null;
   }
   if (caps.seesMoney && status === 'Setup' && caps.canReadBoq) {
     return { labelKey: 'projects.workspace.vocab.action.open_boq', link: ['/projects', projectId, 'boq'] };
+  }
+  if (caps.seesMoney && pending?.hasAction === true) {
+    return {
+      labelKey: 'projects.workspace.vocab.action.open_extract',
+      params: { number: pending.number },
+      link: ['/projects', projectId, 'extracts', pending.id],
+    };
   }
   if (!caps.seesMoney && caps.canWriteDailyLog) {
     return {

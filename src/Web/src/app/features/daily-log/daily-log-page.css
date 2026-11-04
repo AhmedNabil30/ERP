@@ -2,10 +2,19 @@
    literals: every colour is a token from styles.css. Mobile-first at 390px; the layout is the full
    viewport and the single primary action is pinned to the bottom, as on `worker-register-page.css`. */
 
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 auto;
+  min-inline-size: 0;
+}
+
 .daily-log {
   display: flex;
   flex-direction: column;
-  min-block-size: 100dvh;
+  /* Fill the shell's scrolling `.main` (a flex column), not the viewport: 100dvh plus the shell header
+     overflowed `.main` and gave the page a second, inner vertical scrollbar at 390px. */
+  flex: 1 0 auto;
   /* clip, not hidden: hidden turns this box into a scroll container, so the sticky footer below
      sticks to a box that never scrolls and the save button sits under the shell bar. */
   overflow-x: clip;

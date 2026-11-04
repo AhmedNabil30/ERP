@@ -1,4 +1,4 @@
-import { ExtractStatus } from '../../core/extracts/extracts.api';
+import { Extract, ExtractStatus } from '../../core/extracts/extracts.api';
 import { KaffIconName } from '../../shared/kaff-icon/kaff-icon';
 
 /**
@@ -40,3 +40,25 @@ export const EXTRACT_STATUS_PILL: Readonly<Record<ExtractStatus, { tone: PillTon
   Issued: { tone: 'new', icon: 'check' },
   Collected: { tone: 'new', icon: 'check' },
 };
+
+/** The stages where one person decides, so a missing control may be the separation of duties. */
+const DECISION_STATUSES: readonly ExtractStatus[] = [
+  'QcSubmitted',
+  'TechnicalApproved',
+  'PartiallyApproved',
+  'DeductionsApplied',
+];
+
+/** Why nothing is offered on an extract: the separation-of-duties answer when it is the reason, else the stage. */
+export function extractNoActionKey(extract: Extract | null): string {
+  if (extract === null) {
+    return 'extract.no_action.waiting';
+  }
+  if (extract.status === 'Issued' || extract.status === 'Collected') {
+    return 'extract.no_action.done';
+  }
+  if (!extract.actions.callerMayDecide && DECISION_STATUSES.includes(extract.status)) {
+    return 'extract.no_action.same_person';
+  }
+  return 'extract.no_action.waiting';
+}
