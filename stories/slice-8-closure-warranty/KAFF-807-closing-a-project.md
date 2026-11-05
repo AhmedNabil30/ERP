@@ -1,6 +1,6 @@
 # KAFF-807 · A project closes only when every account is settled
 
-<!-- kaff id=KAFF-807 slice=8 points=8 state=BUILT -->
+<!-- kaff id=KAFF-807 slice=8 points=8 state=VERIFIED verdict=CONDITIONAL at=86b9f13 on=2026-11-06 -->
 
 **Slice:** 7 (reconciled build order, step 7) · **Epic:** Closure · **Points:** 8.
 **Owner:** Backend. **No UI criterion is carried here.**

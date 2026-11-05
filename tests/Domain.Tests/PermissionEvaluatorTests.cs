@@ -179,6 +179,11 @@ public sealed class PermissionEvaluatorTests
             // out of its ledger at handover. Its one grant names a role, so the evaluator discards nothing.
             Permission.HoldRelease,
 
+            // Added 2026-11-05 with the rows themselves (KAFF-512, KAFF-806): the first raises the adjustment that
+            // the Owner's approval posts, the second releases a subcontractor's retention. Each grant names a role.
+            Permission.AdjustmentRaise,
+            Permission.SubcontractorRetentionRelease,
+
             Permission.ChangeOrderApprove,
             Permission.FirmAdvanceApprove,
             Permission.TreasuryPostProject,

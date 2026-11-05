@@ -1,6 +1,7 @@
 using System.Reflection;
 using Kaff.Domain.Auditing;
 using Kaff.Domain.Boqs;
+using Kaff.Domain.Adjustments;
 using Kaff.Domain.ChangeOrders;
 using Kaff.Domain.Closure;
 using Kaff.Domain.Collections;
@@ -139,6 +140,8 @@ public sealed class KaffDbContext : DbContext
     public DbSet<Snag> Snags => Set<Snag>();
 
     public DbSet<WarrantyCallback> WarrantyCallbacks => Set<WarrantyCallback>();
+
+    public DbSet<Adjustment> Adjustments => Set<Adjustment>();
 
     /// <summary>KAFF-321 — staff departments, master data, superseding the D-153 §2 enum.</summary>
     public DbSet<Department> Departments => Set<Department>();

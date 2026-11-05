@@ -17,6 +17,9 @@ public sealed class ExtractChainTests
 
     private static readonly ExtractStatus[] AllStatuses = [.. Enum.GetValues<ExtractStatus>()];
 
+    /// <summary>Every status an extract can be driven to. Void is named by spec.md but nothing reaches it (Q106).</summary>
+    private static readonly ExtractStatus[] ReachableStatuses = [.. AllStatuses.Where(status => status != ExtractStatus.Void)];
+
     // ---- state machine: every legal transition and every illegal one ----
 
     private static readonly HashSet<(ExtractStatus, ExtractStatus)> Legal =
@@ -29,6 +32,7 @@ public sealed class ExtractChainTests
         (ExtractStatus.DeductionsApplied, ExtractStatus.OwnerApproved),
         (ExtractStatus.OwnerApproved, ExtractStatus.Issued),
         (ExtractStatus.Issued, ExtractStatus.Collected),
+        (ExtractStatus.Issued, ExtractStatus.Disputed),
         (ExtractStatus.QcSubmitted, ExtractStatus.Draft),
         (ExtractStatus.TechnicalApproved, ExtractStatus.Draft),
         (ExtractStatus.PartiallyApproved, ExtractStatus.Draft),
@@ -36,7 +40,7 @@ public sealed class ExtractChainTests
     ];
 
     [Fact]
-    public void The_transition_table_holds_exactly_the_legal_moves_and_no_other_of_the_64_pairs()
+    public void The_transition_table_holds_exactly_the_legal_moves_and_no_other_of_the_100_pairs()
     {
         foreach (ExtractStatus from in AllStatuses)
         {
@@ -101,7 +105,7 @@ public sealed class ExtractChainTests
     [MemberData(nameof(Steps))]
     public async Task A_step_succeeds_from_its_legal_states_and_is_refused_untouched_from_every_other(string step)
     {
-        foreach (ExtractStatus status in AllStatuses)
+        foreach (ExtractStatus status in ReachableStatuses)
         {
             Extract extract = await _h.DriveAsync(status);
             int historyBefore = extract.GateHistory.Count;

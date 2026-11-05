@@ -16059,3 +16059,79 @@ finished pass from an unfinished one: this entry is the finished design, the sec
   so how the client pays it (and whether `HoldReleaseCarriesWithholding` applies to that payment, AC-317-E) has no
   mechanism yet and is a question, not a default. A mistaken-release correction endpoint (Q111). A cost or posting
   for snags and callbacks (Q112, KAFF-512). Any UI.
+
+## D-202 — a disputed extract, the one Adjustment object, and subcontractor retention release (KAFF-511, KAFF-512, KAFF-806)
+
+Backend lane, 2026-11-05. Three stories, one migration (`AdjustmentsAndDisputes`: the `adjustments` table and its
+indexes; no check constraint, no balance column, so `DatabaseInitializer` needed no new entry). Every unruled default is a
+`RulingNote` in `src/Domain/Rulings/AdjustmentRulings.cs`, registered in `RulingSet` as a property and in `Notes`.
+
+**The brief and the stories were wrong about the code in four places, and the code was built to the facts.**
+- KAFF-511 rule 1 says `Disputed` and `Void` "exist in the extract machine". They did not: `ExtractStatus` stopped at
+  `Collected`. Both were added (`Disputed = 9`, `Void = 10`); enums are stored as text, so this is no schema change.
+- KAFF-511 says dispute depends on collections being "not built". They were built (D-200), so `Paid` exists as `Collected`.
+- KAFF-806 says it touches a ledger that may be `AccountType.Hold`. It does not: `AccountType.SubcontractorRetention` (24)
+  is its own account type, `ProjectRequired`, party `Subcontractor`, with **no `LedgerKind`**. It is none of the five
+  ledgers and is not the client `Hold`, so it can be released on its own clock without any ruling about the hold.
+- The brief says an adjustment "is reversing postings". A reversal (`Posting.Reverse`) mirrors the whole original amount
+  and keeps the original type; a credit note is usually partial and must be typed `CreditNote`. See the shared shape below.
+
+**The shared shape of 511 and 512 (decided first, built once).** A dispute that resolves as a credit note *raises an
+`Adjustment`*; it does not invent its own money object. `AdjustmentSupport.RaiseCreditNoteAsync` is the one function that
+raises, and both the `adjustments` route and the `dispute-resolution` route call it, so the two cannot disagree.
+- `Adjustment` (`src/Domain/Adjustments/`): type, reason, source document (the extract), target account, a positive amount,
+  a state machine `Raised -> Approved | Rejected`, `Approved -> Reversed`, one `FrozenSet` of pairs plus `IsLegalTransition`.
+- A client credit note is **one new `CreditNote` posting** from the project's `ClientReceivable` to its `ContractRevenue`,
+  written when the Owner approves, never when it is raised. It does not reverse the extract's postings: that would mirror
+  the full original and would have to reverse the `HoldAccrual` leg, which `spec.md` section 5.1 forbids mid-project.
+  Correcting an *approved* adjustment is the reversal: mirror postings through `ReversesId` (`Adjustment.Reverse`).
+- **The hold is refused three times.** `Adjustment.RaiseCreditNote` names it (`adjustment.hold_untouchable`) and refuses any
+  target but the project's contract revenue; `Posting` refuses a `CreditNote` out of the hold (`HoldOnlyGrows`); and
+  `PostingAccountLegality` refuses a `CreditNote` into it. A test hits each layer.
+- Amount above zero, at most the extract's `NetPayable` less credit notes already `Raised` or `Approved` against it
+  (summed in memory: EF cannot sum a `Money` complex type).
+- Only `ClientCreditNote` is built. `SubcontractorDebitNote` and `DesignCredit` are refused `adjustment.type_not_built`
+  (KAFF-510 and `spec.md` section 5.4's link are other stories). `TerminationSettlement` is refused
+  `adjustment.termination_settlement_unruled` and nothing settles (Q108), exactly as `ProjectClosure.Terminate` refuses.
+- Approval is the resolved `FinancialMovementApprove` row (the Owner). Raising is a new Unresolved row `AdjustmentRaise`
+  (Finance). `Adjustment.PriorActors` is the raiser plus whoever raised or resolved the dispute, read from the extract's gate
+  history, through `SeparationOfDuties.EnsureDifferentActor`. A rejection and a reversal carry a stored non-blank reason.
+
+**The dispute (`Extract`).**
+- `(Issued, Disputed)` was added to `LegalTransitions`. **`Disputed -> Issued` was deliberately not**: a transition table is
+  a two-way grant, and that pair would make `Issue` legal from `Disputed`. `ResolveDisputeAsCreditNote` checks
+  `Status == Disputed` itself, as `ReverseCollection` does for `Collected`. The 100-pair table test in `ExtractChainTests`
+  pins both, and `Extract.IsLegalTransition(Disputed, Issued)` is asserted false.
+- While `Disputed` the extract's postings **stand** (nothing is posted, edited or reversed), so the hold is untouched. It
+  cannot be collected, issued or rejected. A next extract may be prepared (`PrepareExtract` counts `Disputed` as issued).
+  The project cannot close (`CloseProject` already counts anything below `Issued`).
+- Resolution as a **credit note** returns the extract to `Issued` with a stored reason and raises the credit note in the
+  same save. Resolution as a **revised extract** is refused (`extract.dispute_revision_unruled`) and the extract stays
+  `Disputed`: what happens to the original, its postings and its hold leg is unruled (Q106). `Void` exists and nothing
+  reaches it.
+- **A collection is refused while a credit note is `Raised` or `Approved` against the extract** (`extract.credit_note_open`).
+  `Extract.Collect` posts the stored net; after a credit note it would over-collect. This is a refusal, not a rule: how the
+  client pays the reduced amount is the open question, and it is for Karim. A rejected credit note frees the extract.
+
+**KAFF-806 (`SubcontractorRetention.Release`).** The ledger is the subcontractor's own `SubcontractorRetention` account.
+The release is one `SubcontractorRetentionRelease` posting from that subcontractor's `SubcontractorPayable` to its
+`SubcontractorRetention`, for the whole retained balance summed from postings, never typed. Checks in order: the ruled
+project-state table (`UnderWarranty` only by default), `WarrantyEndsOn` (refused before, allowed on the day), the accounts,
+a positive balance. Finance alone (`SubcontractorRetentionRelease`, Unresolved, no Owner approval step, as for the hold
+release). A second release finds zero and is refused. Zeroing the 5% is not a mechanism: a subcontractor with nothing
+retained reads zero and posts nothing. **Nothing accrues the retention yet** (KAFF-510): the accounts and accrual postings
+exist only when that story or a test writes them. `SourceDocumentType.SubcontractorRetentionRelease = 22` was added.
+
+**Permissions 86 to 89**, all `Unresolved: true` with a real `SpecReference`: `ExtractDisputeRaise`,
+`ExtractDisputeResolve`, `AdjustmentRaise` (`TouchesMoney`), `SubcontractorRetentionRelease` (`TouchesMoney`). The
+resolved `FinancialMovementApprove` row is reused for approve, reject and reverse.
+
+**Ruling notes filed (six new, one superseded):** `ExtractDisputeActors`, `ExtractDisputeEffect`,
+`ExtractDisputeResolution`, `AdjustmentShape`, `AdjustmentApproval`, `SubcontractorRetentionRelease`; the existing
+`SubcontractorRetentionTiming` text now says the release is built.
+
+**Not built.** The revised-extract resolution; the subcontractor debit note; the 30% design credit; any termination
+settlement; the subcontractor extract and the retention accrual (KAFF-510); a zeroing mechanism for the 5%; an Owner
+approval step on the retention release; a mistaken-retention-release endpoint (the domain test proves the reversal through
+`ReversesId`); collecting the reduced amount after a credit note; and every screen. The extract `actions` block was not
+extended with dispute flags: that is a UI concern for the design lane, and the API does not need it.

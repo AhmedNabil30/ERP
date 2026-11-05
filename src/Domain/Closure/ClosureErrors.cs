@@ -86,4 +86,8 @@ public static class ClosureErrors
 
     public static readonly Error CallbackAlreadyResolved =
         Error.Conflict("closure.callback_already_resolved", "errors.closure.callback_already_resolved");
+
+    /// <summary>Subcontractor retention releases when the warranty ends, not before (spec.md section 5.1).</summary>
+    public static readonly Error WarrantyNotEnded =
+        Error.Conflict("closure.warranty_not_ended", "errors.closure.warranty_not_ended");
 }

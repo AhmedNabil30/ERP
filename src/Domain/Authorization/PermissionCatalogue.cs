@@ -588,6 +588,24 @@ public static class PermissionCatalogue
                 "§11, §13 — holder UNRESOLVED (Q109, Q113), Owner assumed, see Rulings/ClosureRulings.cs",
                 Unresolved: true),
 
+            // KAFF-511, KAFF-512, KAFF-806. spec.md section 7 says a disputed extract resolves as a revised extract or a
+            // credit note, section 6.9 gives the Adjustment object, section 5.1 the subcontractor retention. None names
+            // an actor (Q106, Q107, Q26, Q109). Finance raises and resolves; the Owner approves through
+            // FinancialMovementApprove, a resolved row, so nobody creates and approves the same movement. See
+            // Rulings/AdjustmentRulings.cs. Retention release has no approval step, as the hold release has none.
+            new(Permission.ExtractDisputeRaise, PermissionScope.ProjectScoped, [finance],
+                "§7, §9 — holder UNRESOLVED (Q106), Finance assumed, see Rulings/AdjustmentRulings.cs",
+                Unresolved: true),
+            new(Permission.ExtractDisputeResolve, PermissionScope.ProjectScoped, [finance],
+                "§7, §9 — holder UNRESOLVED (Q106), Finance assumed, see Rulings/AdjustmentRulings.cs",
+                Unresolved: true),
+            new(Permission.AdjustmentRaise, PermissionScope.ProjectScoped, [finance],
+                "§6.9, §9 — holder UNRESOLVED (Q107), Finance assumed, see Rulings/AdjustmentRulings.cs",
+                Unresolved: true, TouchesMoney: true),
+            new(Permission.SubcontractorRetentionRelease, PermissionScope.ProjectScoped, [finance],
+                "§5.1, §11 — holder UNRESOLVED (Q26, Q109), Finance assumed, see Rulings/AdjustmentRulings.cs",
+                Unresolved: true, TouchesMoney: true),
+
             // ---- Treasury ----
 
             new(Permission.TreasuryPostProject, PermissionScope.ProjectScoped, [finance], "§2, §9", TouchesMoney: true),

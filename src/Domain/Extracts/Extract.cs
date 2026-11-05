@@ -49,6 +49,11 @@ public sealed class Extract : Entity
             (ExtractStatus.OwnerApproved, ExtractStatus.Issued),
             (ExtractStatus.Issued, ExtractStatus.Collected),
 
+            // KAFF-511. A dispute is raised on an issued extract only. The way back, Disputed to Issued, is
+            // deliberately absent: it would make Issue legal from Disputed, as Collected to Issued would have. The
+            // resolution checks its own state instead.
+            (ExtractStatus.Issued, ExtractStatus.Disputed),
+
             // spec.md section 7: any rejection at any gate returns the extract to Draft. A gate is where the
             // extract waits for a decision, so the rejecting states are the four that wait at one.
             (ExtractStatus.QcSubmitted, ExtractStatus.Draft),
@@ -556,6 +561,70 @@ public sealed class Extract : Entity
 
         Apply(ExtractStatus.Issued, ExtractGate.Collect, ExtractGateOutcome.Reversed, actorUserId, now, reason.Trim(), null);
         return reversals;
+    }
+
+    /// <summary>
+    /// KAFF-511. The client disputes an issued extract. Only an Issued one can be disputed (a Collected one cannot:
+    /// Q106 is unruled and the narrower reading is built). The reason is stored on the gate record. No posting is
+    /// written, edited or reversed: the extract's postings stand while the dispute is open.
+    /// </summary>
+    public Result RaiseDispute(Guid actorUserId, string? reason, DateTimeOffset now)
+    {
+        Result move = CanMoveTo(ExtractStatus.Disputed);
+        if (move.IsFailure)
+        {
+            return move;
+        }
+
+        Result checkedReason = CheckReason(reason);
+        if (checkedReason.IsFailure)
+        {
+            return checkedReason;
+        }
+
+        Apply(ExtractStatus.Disputed, ExtractGate.Dispute, ExtractGateOutcome.Passed, actorUserId, now, reason!.Trim(), null);
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// KAFF-511. A disputed extract resolved as a credit note returns to Issued: the credit note is a separate
+    /// <c>Adjustment</c> the Owner approves, and the extract's own postings are not touched. Not in
+    /// <c>LegalTransitions</c> for the reason given there. The stored reason is on the gate record.
+    /// </summary>
+    public Result ResolveDisputeAsCreditNote(Guid actorUserId, string? reason, DateTimeOffset now)
+    {
+        if (Status != ExtractStatus.Disputed)
+        {
+            return Result.Failure(ExtractErrors.IllegalTransition);
+        }
+
+        Result checkedReason = CheckReason(reason);
+        if (checkedReason.IsFailure)
+        {
+            return checkedReason;
+        }
+
+        Apply(ExtractStatus.Issued, ExtractGate.DisputeResolution, ExtractGateOutcome.Passed, actorUserId, now, reason!.Trim(), null);
+        return Result.Success();
+    }
+
+    /// <summary>Everyone who raised or resolved a dispute on this extract, for separation of duties on its credit note.</summary>
+    public IReadOnlyCollection<Guid> DisputeActors() =>
+        [.. _gateHistory
+            .Where(record => record.Gate is ExtractGate.Dispute or ExtractGate.DisputeResolution)
+            .Select(record => record.ActorUserId)
+            .Distinct()];
+
+    private static Result CheckReason(string? reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            return Result.Failure(ExtractErrors.ReasonRequired);
+        }
+
+        return reason.Trim().Length > Project.MaxReasonLength
+            ? Result.Failure(ExtractErrors.ReasonTooLong)
+            : Result.Success();
     }
 
     /// <summary>

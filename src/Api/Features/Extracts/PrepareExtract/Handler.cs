@@ -83,7 +83,7 @@ internal static class Handler
             .Select(candidate => new { candidate.Number, candidate.Status, candidate.CumulativeCertifiedWork })
             .ToListAsync(cancellationToken);
 
-        if (existing.Any(candidate => candidate.Status is not (ExtractStatus.Issued or ExtractStatus.Collected)))
+        if (existing.Any(candidate => candidate.Status is not (ExtractStatus.Issued or ExtractStatus.Collected or ExtractStatus.Disputed)))
         {
             return ResultExtensions.Problem(ExtractErrors.AnotherExtractOpen);
         }

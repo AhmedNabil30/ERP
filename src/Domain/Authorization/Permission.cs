@@ -440,4 +440,29 @@ public enum Permission
     /// The Owner is assumed; see <see cref="Rulings.ClosureActors"/>. Reads the ledgers and moves no money.
     /// </summary>
     ProjectClose = 85,
+
+    /// <summary>
+    /// Raise a dispute on an issued extract (spec.md section 7, KAFF-511). UNRESOLVED (Q106): Finance is assumed; see
+    /// <see cref="Rulings.ExtractDisputeActors"/>. Writes no posting.
+    /// </summary>
+    ExtractDisputeRaise = 86,
+
+    /// <summary>
+    /// Resolve a disputed extract (spec.md section 7, KAFF-511). UNRESOLVED (Q106): Finance is assumed, so the Owner who
+    /// approves the resulting credit note is never the one who resolved the dispute. Raises the credit note it
+    /// resolves into; posts nothing itself.
+    /// </summary>
+    ExtractDisputeResolve = 87,
+
+    /// <summary>
+    /// Raise an adjustment (spec.md section 6.9, KAFF-512). UNRESOLVED (Q107): Finance is assumed. The Owner approves it
+    /// through <see cref="FinancialMovementApprove"/>, so nobody creates and approves the same adjustment.
+    /// </summary>
+    AdjustmentRaise = 88,
+
+    /// <summary>
+    /// Release a subcontractor's retention at the warranty end (spec.md sections 5.1, 11, KAFF-806). UNRESOLVED (Q26,
+    /// Q109): Finance alone is assumed, with no Owner approval step, as for <see cref="HoldRelease"/>.
+    /// </summary>
+    SubcontractorRetentionRelease = 89,
 }

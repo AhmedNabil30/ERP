@@ -153,6 +153,15 @@ internal sealed class ExtractHarness
             return extract;
         }
 
+        if (target == ExtractStatus.Disputed)
+        {
+            extract.RaiseDispute(NewUser(), "the client disputes the quantities", Now).IsSuccess.Should().BeTrue();
+            return extract;
+        }
+
+        // Nothing moves an extract to Void yet (Q106), so there is no way to build one honestly.
+        target.Should().NotBe(ExtractStatus.Void, "no step reaches Void");
+
         Result<PostingSet> collected = extract.Collect(NewUser(), Context(), Now);
         collected.IsSuccess.Should().BeTrue();
         Commit(collected.Value);

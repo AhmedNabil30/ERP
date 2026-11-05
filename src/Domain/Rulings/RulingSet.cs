@@ -115,6 +115,24 @@ public sealed record RulingSet
     /// <summary>How a terminated project ends (Q108). The transition refuses.</summary>
     public TerminationSettlement TerminationSettlement { get; init; } = TerminationSettlement.Default;
 
+    /// <summary>Who raises a dispute and against which extract states (Q106).</summary>
+    public ExtractDisputeActors ExtractDisputeActors { get; init; } = ExtractDisputeActors.Default;
+
+    /// <summary>Whether a disputed extract's postings stand while it is open (Q106).</summary>
+    public ExtractDisputeEffect ExtractDisputeEffect { get; init; } = ExtractDisputeEffect.Default;
+
+    /// <summary>How a dispute ends: credit note built, revised extract refused (Q106).</summary>
+    public ExtractDisputeResolution ExtractDisputeResolution { get; init; } = ExtractDisputeResolution.Default;
+
+    /// <summary>The shape of the one Adjustment object and what it may not touch (Q107, Q108).</summary>
+    public AdjustmentShape AdjustmentShape { get; init; } = AdjustmentShape.Default;
+
+    /// <summary>Who raises, approves and reverses an adjustment (Q107).</summary>
+    public AdjustmentApproval AdjustmentApproval { get; init; } = AdjustmentApproval.Default;
+
+    /// <summary>Where subcontractor retention sits and how it releases (Q26, Q109).</summary>
+    public SubcontractorRetentionRelease SubcontractorRetentionRelease { get; init; } = SubcontractorRetentionRelease.Default;
+
     /// <summary>Every entry, each describing itself. A test pins that none is missing a question.</summary>
     public IReadOnlyList<RulingNote> Notes =>
     [
@@ -155,5 +173,11 @@ public sealed record RulingSet
         ClosureConditions.Note,
         ClosedStateEffect.Note,
         TerminationSettlement.Note,
+        ExtractDisputeActors.Note,
+        ExtractDisputeEffect.Note,
+        ExtractDisputeResolution.Note,
+        AdjustmentShape.Note,
+        AdjustmentApproval.Note,
+        SubcontractorRetentionRelease.Note,
     ];
 }

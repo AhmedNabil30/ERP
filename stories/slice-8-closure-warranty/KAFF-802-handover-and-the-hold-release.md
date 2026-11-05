@@ -1,6 +1,6 @@
 # KAFF-802 · Handover releases the hold, once, in full
 
-<!-- kaff id=KAFF-802 slice=8 points=8 state=BUILT -->
+<!-- kaff id=KAFF-802 slice=8 points=8 state=BUILT verdict=REJECTED at=86b9f13 on=2026-11-06 -->
 
 **Slice:** 7 (reconciled build order, step 7) · **Epic:** Closure · **Points:** 8 (absorbs `KAFF-308`).
 **Owner:** Backend. **No UI criterion is carried here.**

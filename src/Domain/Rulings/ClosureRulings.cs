@@ -129,7 +129,7 @@ public sealed record SnagResolutionCost : IRuling
         RulingStatus.Assumed);
 }
 
-/// <summary>Q26: when subcontractor retention releases. Registered, not resolved; nothing is built.</summary>
+/// <summary>Q26: when subcontractor retention releases. Registered, not resolved.</summary>
 public sealed record SubcontractorRetentionTiming : IRuling
 {
     public static readonly SubcontractorRetentionTiming Default = new();
@@ -139,11 +139,12 @@ public sealed record SubcontractorRetentionTiming : IRuling
         "Q26: does subcontractor retention release with the client hold at handover, or on its own clock when the "
         + "warranty ends? Is the 5 percent zeroable per subcontractor, and how?",
         "When SubcontractorRetentionRelease posts.",
-        "Not built. Nothing accrues subcontractor retention yet (KAFF-510 is not built), so there is nothing to release. "
-        + "spec.md section 5.1 says it releases when the warranty ends, so the intended clock is its own, not the client "
-        + "hold's, and PostingProjectStatePolicy already allows the type in UnderWarranty only. ASSUMED.",
-        "When KAFF-510 lands, the release is a posting set built like the hold release, refused before WarrantyEndsOn, "
-        + "with its amount read from the retention balance.",
+        "On its own clock: on or after the project's WarrantyEndsOn, and refused before it. spec.md section 5.1 says it "
+        + "releases when the warranty ends, so it is not the client hold's clock, and PostingProjectStatePolicy allows "
+        + "the type in UnderWarranty only. The release is built (KAFF-806); nothing accrues the retention until KAFF-510. "
+        + "See SubcontractorRetentionRelease for the ledger and the actor. ASSUMED.",
+        "If it releases with the hold at handover, the Handover cell of PostingProjectStatePolicy.BuildDefault accepts the "
+        + "type and the WarrantyEndsOn check in SubcontractorRetention.Release is removed.",
         RulingStatus.Assumed);
 }
 

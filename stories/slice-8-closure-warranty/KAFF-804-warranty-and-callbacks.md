@@ -1,6 +1,6 @@
 # KAFF-804 · Warranty runs four months from handover; callbacks attach to it
 
-<!-- kaff id=KAFF-804 slice=8 points=5 state=BUILT -->
+<!-- kaff id=KAFF-804 slice=8 points=5 state=VERIFIED verdict=CONDITIONAL at=86b9f13 on=2026-11-06 -->
 
 **Slice:** 7 (reconciled build order, step 7) · **Epic:** Closure · **Points:** 5 (absorbs `KAFF-805`).
 **Owner:** Backend. **No UI criterion is carried here.**

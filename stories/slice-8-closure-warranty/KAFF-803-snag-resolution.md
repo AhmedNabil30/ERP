@@ -1,6 +1,6 @@
 # KAFF-803 · Snag resolution — debit the subcontractor, or absorb it as internal cost
 
-<!-- kaff id=KAFF-803 slice=8 points=5 state=BUILT -->
+<!-- kaff id=KAFF-803 slice=8 points=5 state=BUILT verdict=REJECTED at=86b9f13 on=2026-11-06 -->
 
 **Slice:** 7 (reconciled build order, step 7) · **Epic:** Closure · **Points:** 5.
 **Owner:** Backend. **No UI criterion is carried here.**

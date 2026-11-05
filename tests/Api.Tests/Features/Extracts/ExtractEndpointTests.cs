@@ -116,6 +116,8 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
             ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/collect"] = Permission.ExtractCollect,
             ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/collection-reversal"] = Permission.ExtractCollect,
             ["GET /api/projects/{projectId:guid}/extracts/{id:guid}/collection"] = Permission.ExtractCollect,
+            ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/dispute"] = Permission.ExtractDisputeRaise,
+            ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/dispute-resolution"] = Permission.ExtractDisputeResolve,
             ["GET /api/projects/{projectId:guid}/extracts"] = Permission.ProjectRead,
             ["GET /api/projects/{projectId:guid}/extracts/{id:guid}"] = Permission.ProjectRead,
         };
@@ -1243,6 +1245,463 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
             tax.Should().ContainSingle().Which.Amount.Should().Be(new Money(expectedWithheld));
             cash.Should().ContainSingle().Which.Amount.Should().Be(new Money(240_000m - expectedWithheld));
         }
+    }
+
+    // ---- KAFF-511 / KAFF-512: a disputed extract, and the one Adjustment object ----
+
+    private static string Adjustments(Guid project) => $"/api/projects/{project}/adjustments";
+
+    private static string AdjustmentStep(Guid project, Guid id, string step) => $"/api/projects/{project}/adjustments/{id}/{step}";
+
+    private async Task<Guid> AccountIdAsync(Guid project, AccountType type)
+    {
+        await using KaffDbContext reader = _database.CreateBareContext();
+        return await reader.Accounts.Where(a => a.ProjectId == project && a.Type == type).Select(a => a.Id).SingleAsync(Ct);
+    }
+
+    private async Task<List<string>> PostingSnapshotsAsync(Guid project)
+    {
+        await using KaffDbContext reader = _database.CreateBareContext();
+        List<Posting> postings = await reader.Postings.Where(p => p.ProjectId == project).OrderBy(p => p.Id).ToListAsync(Ct);
+        return [.. postings.Select(p => $"{p.Id}|{p.FromAccountId}|{p.ToAccountId}|{p.Amount.Amount}|{p.Type}|{p.ReversesId}|{p.PostingDate}|{p.CreatedByUserId}")];
+    }
+
+    private async Task<long> PostingCountOfAsync(Guid project, PostingType type)
+    {
+        await using KaffDbContext reader = _database.CreateBareContext();
+        return await reader.Postings.LongCountAsync(p => p.ProjectId == project && p.Type == type, Ct);
+    }
+
+    private async Task<long> AdjustmentCountAsync(Guid project)
+    {
+        await using KaffDbContext reader = _database.CreateBareContext();
+        return await reader.Adjustments.LongCountAsync(a => a.ProjectId == project, Ct);
+    }
+
+    /// <summary>Raises a credit note through the adjustment route. The revenue account exists once an extract has issued.</summary>
+    private async Task<Guid> RaiseCreditNoteAsync(Project project, Guid extract, decimal amount, string reason = "client disputes the quantities")
+    {
+        Guid revenue = await AccountIdAsync(project.Id, AccountType.ContractRevenue);
+        HttpResponseMessage response = await SendAsync(HttpMethod.Post, Adjustments(project.Id), _finance, new
+        {
+            type = "ClientCreditNote",
+            reason,
+            sourceExtractId = extract,
+            targetAccountId = revenue,
+            amount = amount.ToString(CultureInfo.InvariantCulture),
+        });
+        response.StatusCode.Should().Be(HttpStatusCode.Created, await response.Content.ReadAsStringAsync(Ct));
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+        return body.RootElement.GetProperty("id").GetGuid();
+    }
+
+    [Fact]
+    public void Each_adjustment_route_requires_the_permission_the_catalogue_names_and_the_route_project()
+    {
+        Dictionary<string, Permission> expected = new()
+        {
+            ["POST /api/projects/{projectId:guid}/adjustments"] = Permission.AdjustmentRaise,
+            ["POST /api/projects/{projectId:guid}/adjustments/{id:guid}/approval"] = Permission.FinancialMovementApprove,
+            ["POST /api/projects/{projectId:guid}/adjustments/{id:guid}/rejection"] = Permission.FinancialMovementApprove,
+            ["POST /api/projects/{projectId:guid}/adjustments/{id:guid}/reversal"] = Permission.FinancialMovementApprove,
+            ["GET /api/projects/{projectId:guid}/adjustments"] = Permission.TreasuryReadProject,
+            ["GET /api/projects/{projectId:guid}/adjustments/{id:guid}"] = Permission.TreasuryReadProject,
+        };
+
+        Dictionary<string, PermissionRequirement> actual = [];
+        foreach (EndpointDataSource source in _factory.Services.GetServices<EndpointDataSource>())
+        {
+            foreach (RouteEndpoint route in source.Endpoints.OfType<RouteEndpoint>())
+            {
+                string? pattern = route.RoutePattern.RawText;
+                if (pattern is null || !pattern.Contains("/adjustments", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                foreach (string method in route.Metadata.GetMetadata<Microsoft.AspNetCore.Routing.HttpMethodMetadata>()!.HttpMethods)
+                {
+                    foreach (IAuthorizeData data in route.Metadata.OfType<IAuthorizeData>())
+                    {
+                        if (PermissionRequirement.TryParse(data.Policy ?? string.Empty, out PermissionRequirement? requirement)
+                            && requirement is not null)
+                        {
+                            actual[$"{method} {pattern}"] = requirement;
+                        }
+                    }
+                }
+            }
+        }
+
+        actual.Keys.Should().BeEquivalentTo(expected.Keys, "every adjustment route is gated, and no other exists");
+        foreach ((string key, Permission permission) in expected)
+        {
+            actual[key].Permission.Should().Be(permission, key);
+            actual[key].Scope.Should().Be(ProjectScope.FromRoute(), $"{key} checks the assignment to the route project");
+        }
+    }
+
+    [Fact]
+    public async Task Only_assigned_finance_raises_or_resolves_a_dispute_and_nobody_else_reaches_either_route()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        string dispute = Step(project.Id, extract, "dispute");
+        string resolution = Step(project.Id, extract, "dispute-resolution");
+        object resolve = new { kind = "CreditNote", reason = "agreed", amount = "1000" };
+        List<string> before = await PostingSnapshotsAsync(project.Id);
+
+        foreach (Guid refused in new[] { _owner, _technicalOffice, _supervisor, _prepEngineer, _hr, _financeUnassigned, _engineerUnassigned })
+        {
+            (await SendAsync(HttpMethod.Post, dispute, refused, new { reason = "x" })).StatusCode.Should().Be(HttpStatusCode.Forbidden, "raise");
+            (await SendAsync(HttpMethod.Post, resolution, refused, resolve)).StatusCode.Should().Be(HttpStatusCode.Forbidden, "resolve");
+        }
+
+        (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Issued, "a refused call moves nothing");
+        (await PostingSnapshotsAsync(project.Id)).Should().Equal(before);
+        (await SendAsync(HttpMethod.Post, dispute, _finance, new { reason = "x" })).StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task Only_the_owner_decides_an_adjustment_and_only_assigned_finance_raises_one()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        Guid revenue = await AccountIdAsync(project.Id, AccountType.ContractRevenue);
+        object raise = new
+        {
+            type = "ClientCreditNote", reason = "x", sourceExtractId = extract, targetAccountId = revenue, amount = "1000",
+        };
+
+        foreach (Guid refused in new[] { _owner, _technicalOffice, _supervisor, _prepEngineer, _hr, _financeUnassigned, _engineerUnassigned })
+        {
+            (await SendAsync(HttpMethod.Post, Adjustments(project.Id), refused, raise)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+
+        (await AdjustmentCountAsync(project.Id)).Should().Be(0);
+        Guid note = await RaiseCreditNoteAsync(project, extract, 1_000m);
+
+        foreach (string step in new[] { "approval", "rejection", "reversal" })
+        {
+            foreach (Guid refused in new[] { _finance, _technicalOffice, _supervisor, _prepEngineer, _hr, _financeUnassigned })
+            {
+                (await SendAsync(HttpMethod.Post, AdjustmentStep(project.Id, note, step), refused, new { reason = "x" }))
+                    .StatusCode.Should().Be(HttpStatusCode.Forbidden, step);
+            }
+        }
+
+        (await PostingCountOfAsync(project.Id, PostingType.CreditNote)).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task A_dispute_changes_no_posting_and_the_hold_balance_not_at_the_raise_and_not_at_either_resolution()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        decimal hold = await BalanceAsync(project.Id, AccountType.Hold);
+        decimal receivable = await BalanceAsync(project.Id, AccountType.ClientReceivable);
+        List<string> before = await PostingSnapshotsAsync(project.Id);
+        hold.Should().BeGreaterThan(0m, "the issued extract accrued a hold");
+
+        (await SendAsync(HttpMethod.Post, Step(project.Id, extract, "dispute"), _finance, new { reason = "quantities are wrong" }))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+        (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Disputed);
+        (await PostingSnapshotsAsync(project.Id)).Should().Equal(before, "the extract postings stand while disputed");
+        (await BalanceAsync(project.Id, AccountType.Hold)).Should().Be(hold);
+
+        // Revised extract: refused, nothing changes, the extract stays disputed.
+        HttpResponseMessage revised = await SendAsync(
+            HttpMethod.Post, Step(project.Id, extract, "dispute-resolution"), _finance,
+            new { kind = "RevisedExtract", reason = "replace it", amount = "1000" });
+        revised.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ErrorCodeAsync(revised)).Should().Be("extract.dispute_revision_unruled");
+        (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Disputed);
+        (await AdjustmentCountAsync(project.Id)).Should().Be(0);
+
+        // Credit note: the extract is Issued again, a credit note is Raised, and still nothing is posted.
+        HttpResponseMessage credited = await SendAsync(
+            HttpMethod.Post, Step(project.Id, extract, "dispute-resolution"), _finance,
+            new { kind = "CreditNote", reason = "credit agreed", amount = "40000" });
+        credited.StatusCode.Should().Be(HttpStatusCode.OK, await credited.Content.ReadAsStringAsync(Ct));
+        (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Issued);
+        (await AdjustmentCountAsync(project.Id)).Should().Be(1);
+        (await PostingSnapshotsAsync(project.Id)).Should().Equal(before, "raising the credit note posts nothing");
+        (await BalanceAsync(project.Id, AccountType.Hold)).Should().Be(hold);
+        (await BalanceAsync(project.Id, AccountType.ClientReceivable)).Should().Be(receivable);
+    }
+
+    [Fact]
+    public async Task A_dispute_needs_an_issued_extract_a_reason_and_a_resolution_needs_a_disputed_one()
+    {
+        Project draftProject = await NewProjectAsync();
+        Guid draft = await PrepareAsync(draftProject);
+        (await SendAsync(HttpMethod.Post, Step(draftProject.Id, draft, "dispute"), _finance, new { reason = "x" })).StatusCode
+            .Should().Be(HttpStatusCode.Conflict, "a draft cannot be disputed");
+
+        Project project = await NewProjectAsync();
+        Guid issued = await DriveAsync(project, ExtractStatus.Issued);
+        HttpResponseMessage blank = await SendAsync(HttpMethod.Post, Step(project.Id, issued, "dispute"), _finance, new { reason = "  " });
+        blank.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await ErrorCodeAsync(blank)).Should().Be("extract.reason_required");
+        (await StatusOfAsync(issued)).Should().Be(ExtractStatus.Issued);
+
+        (await SendAsync(HttpMethod.Post, Step(project.Id, issued, "dispute-resolution"), _finance,
+            new { kind = "CreditNote", reason = "x", amount = "1000" })).StatusCode
+            .Should().Be(HttpStatusCode.Conflict, "an issued extract is not disputed");
+
+        (await SendAsync(HttpMethod.Post, Step(project.Id, issued, "dispute"), _finance, new { reason = "x" })).StatusCode
+            .Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, Step(project.Id, issued, "dispute"), _finance, new { reason = "again" })).StatusCode
+            .Should().Be(HttpStatusCode.Conflict, "already disputed");
+
+        (await SendAsync(HttpMethod.Post, Step(project.Id, issued, "collect"), _finance, CollectBody())).StatusCode
+            .Should().Be(HttpStatusCode.Conflict, "collect from Disputed");
+        (await SendAsync(HttpMethod.Post, Step(project.Id, issued, "issue"), _owner, null)).StatusCode
+            .Should().Be(HttpStatusCode.Conflict, "issue from Disputed");
+        (await SendAsync(HttpMethod.Post, Step(project.Id, issued, "owner-rejection"), _owner, new { reason = "x" })).StatusCode
+            .Should().Be(HttpStatusCode.Conflict, "reject from Disputed");
+
+        (await StatusOfAsync(issued)).Should().Be(ExtractStatus.Disputed);
+    }
+
+    [Fact]
+    public async Task A_resolution_with_no_kind_a_bad_amount_or_no_reason_is_refused_and_leaves_the_extract_disputed()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        await SendAsync(HttpMethod.Post, Step(project.Id, extract, "dispute"), _finance, new { reason = "x" });
+        string route = Step(project.Id, extract, "dispute-resolution");
+
+        (await SendAsync(HttpMethod.Post, route, _finance, new { reason = "x", amount = "1000" })).StatusCode
+            .Should().Be(HttpStatusCode.BadRequest, "no kind");
+        (await SendAsync(HttpMethod.Post, route, _finance, new { kind = "CreditNote", reason = " ", amount = "1000" })).StatusCode
+            .Should().Be(HttpStatusCode.BadRequest, "no reason");
+        (await SendAsync(HttpMethod.Post, route, _finance, new { kind = "CreditNote", reason = "x", amount = "0" })).StatusCode
+            .Should().Be(HttpStatusCode.BadRequest, "zero");
+        (await SendAsync(HttpMethod.Post, route, _finance, new { kind = "CreditNote", reason = "x", amount = "-5" })).StatusCode
+            .Should().Be(HttpStatusCode.BadRequest, "negative");
+        (await SendAsync(HttpMethod.Post, route, _finance, new { kind = "CreditNote", reason = "x", amount = "240000.0001" })).StatusCode
+            .Should().Be(HttpStatusCode.Conflict, "more than the net");
+
+        (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Disputed);
+        (await AdjustmentCountAsync(project.Id)).Should().Be(0);
+    }
+
+    /// <summary>
+    /// The stage each posting is written at. Raising a credit note writes none; the Owner approval writes exactly one
+    /// CreditNote posting, new, from the receivable to revenue, and every earlier posting is byte-for-byte unchanged.
+    /// The hold is read before and after at each stage.
+    /// </summary>
+    [Fact]
+    public async Task The_credit_note_posts_only_at_the_owners_approval_as_one_new_posting_and_the_hold_never_moves()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        decimal hold = await BalanceAsync(project.Id, AccountType.Hold);
+        decimal receivable = await BalanceAsync(project.Id, AccountType.ClientReceivable);
+        List<string> before = await PostingSnapshotsAsync(project.Id);
+
+        Guid note = await RaiseCreditNoteAsync(project, extract, 40_000m);
+        (await PostingCountOfAsync(project.Id, PostingType.CreditNote)).Should().Be(0, "raising posts nothing");
+        (await PostingSnapshotsAsync(project.Id)).Should().Equal(before);
+
+        HttpResponseMessage approved = await SendAsync(HttpMethod.Post, AdjustmentStep(project.Id, note, "approval"), _owner, null);
+        approved.StatusCode.Should().Be(HttpStatusCode.OK, await approved.Content.ReadAsStringAsync(Ct));
+
+        (await PostingCountOfAsync(project.Id, PostingType.CreditNote)).Should().Be(1);
+        (await BalanceAsync(project.Id, AccountType.ClientReceivable)).Should().Be(receivable - 40_000m);
+        (await BalanceAsync(project.Id, AccountType.Hold)).Should().Be(hold, "a credit note never reaches into the hold");
+        (await PostingCountOfAsync(project.Id, PostingType.HoldRelease)).Should().Be(0);
+
+        List<string> after = await PostingSnapshotsAsync(project.Id);
+        after.Should().HaveCount(before.Count + 1);
+        after.Where(row => before.Contains(row)).Should().BeEquivalentTo(before, "every earlier posting is unchanged");
+        await using (KaffDbContext reader = _database.CreateBareContext())
+        {
+            Posting credit = await reader.Postings.SingleAsync(p => p.ProjectId == project.Id && p.Type == PostingType.CreditNote, Ct);
+            credit.ReversesId.Should().BeNull();
+            credit.SourceDocumentType.Should().Be(SourceDocumentType.Adjustment);
+            credit.SourceDocumentId.Should().Be(note);
+            credit.FromAccountId.Should().Be(await AccountIdAsync(project.Id, AccountType.ClientReceivable));
+            credit.ToAccountId.Should().Be(await AccountIdAsync(project.Id, AccountType.ContractRevenue));
+            credit.Amount.Should().Be(new Money(40_000m));
+        }
+
+        (await SendAsync(HttpMethod.Post, AdjustmentStep(project.Id, note, "approval"), _owner, null)).StatusCode
+            .Should().Be(HttpStatusCode.Conflict, "a second approval posts nothing");
+        (await PostingCountOfAsync(project.Id, PostingType.CreditNote)).Should().Be(1);
+    }
+
+    /// <summary>AC-512-D at the endpoint: the hold is named as the target and nothing is created, posted or moved.</summary>
+    [Fact]
+    public async Task An_adjustment_that_names_the_hold_is_refused_in_the_domain_and_the_hold_balance_is_unchanged()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        Guid hold = await AccountIdAsync(project.Id, AccountType.Hold);
+        decimal balance = await BalanceAsync(project.Id, AccountType.Hold);
+        List<string> before = await PostingSnapshotsAsync(project.Id);
+
+        HttpResponseMessage response = await SendAsync(HttpMethod.Post, Adjustments(project.Id), _finance, new
+        {
+            type = "ClientCreditNote", reason = "settle from the hold", sourceExtractId = extract, targetAccountId = hold, amount = "5000",
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ErrorCodeAsync(response)).Should().Be("adjustment.hold_untouchable");
+        (await AdjustmentCountAsync(project.Id)).Should().Be(0);
+        (await BalanceAsync(project.Id, AccountType.Hold)).Should().Be(balance);
+        (await PostingSnapshotsAsync(project.Id)).Should().Equal(before);
+
+        foreach (AccountType other in new[] { AccountType.ClientAdvance, AccountType.ClientReceivable, AccountType.MaterialAdvance })
+        {
+            HttpResponseMessage refused = await SendAsync(HttpMethod.Post, Adjustments(project.Id), _finance, new
+            {
+                type = "ClientCreditNote", reason = "x", sourceExtractId = extract,
+                targetAccountId = await AccountIdAsync(project.Id, other), amount = "5000",
+            });
+            (await ErrorCodeAsync(refused)).Should().Be("adjustment.target_account_not_allowed", other.ToString());
+        }
+
+        (await AdjustmentCountAsync(project.Id)).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task An_adjustment_missing_a_field_or_of_a_type_not_built_is_refused_and_nothing_is_stored()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        Guid revenue = await AccountIdAsync(project.Id, AccountType.ContractRevenue);
+
+        object Body(string type = "ClientCreditNote", string reason = "x", string amount = "1000") => new
+        {
+            type, reason, sourceExtractId = extract, targetAccountId = revenue, amount,
+        };
+
+        (string Name, object Body, HttpStatusCode Status, string Code)[] refusals =
+        [
+            ("no type", new { reason = "x", sourceExtractId = extract, targetAccountId = revenue, amount = "1000" }, HttpStatusCode.BadRequest, "adjustment.type_required"),
+            ("no reason", Body(reason: " "), HttpStatusCode.BadRequest, "adjustment.reason_required"),
+            ("no source", new { type = "ClientCreditNote", reason = "x", targetAccountId = revenue, amount = "1000" }, HttpStatusCode.BadRequest, "adjustment.source_document_required"),
+            ("no target", new { type = "ClientCreditNote", reason = "x", sourceExtractId = extract, amount = "1000" }, HttpStatusCode.BadRequest, "adjustment.target_account_required"),
+            ("zero", Body(amount: "0"), HttpStatusCode.BadRequest, "adjustment.amount_must_be_positive"),
+            ("negative", Body(amount: "-1000"), HttpStatusCode.BadRequest, "adjustment.amount_must_be_positive"),
+            ("debit note", Body("SubcontractorDebitNote"), HttpStatusCode.Conflict, "adjustment.type_not_built"),
+            ("design credit", Body("DesignCredit"), HttpStatusCode.Conflict, "adjustment.type_not_built"),
+            ("termination", Body("TerminationSettlement"), HttpStatusCode.Conflict, "adjustment.termination_settlement_unruled"),
+        ];
+
+        foreach ((string name, object body, HttpStatusCode status, string code) in refusals)
+        {
+            HttpResponseMessage response = await SendAsync(HttpMethod.Post, Adjustments(project.Id), _finance, body);
+            response.StatusCode.Should().Be(status, name);
+            (await ErrorCodeAsync(response)).Should().Be(code, name);
+        }
+
+        (await AdjustmentCountAsync(project.Id)).Should().Be(0);
+        (await PostingCountOfAsync(project.Id, PostingType.CreditNote)).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Credit_notes_against_one_extract_cannot_together_exceed_its_net_and_a_rejected_one_frees_its_share()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        Guid revenue = await AccountIdAsync(project.Id, AccountType.ContractRevenue);
+
+        Guid first = await RaiseCreditNoteAsync(project, extract, 200_000m);
+        HttpResponseMessage over = await SendAsync(HttpMethod.Post, Adjustments(project.Id), _finance, new
+        {
+            type = "ClientCreditNote", reason = "x", sourceExtractId = extract, targetAccountId = revenue, amount = "40000.0001",
+        });
+        over.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ErrorCodeAsync(over)).Should().Be("adjustment.exceeds_extract_net");
+
+        (await SendAsync(HttpMethod.Post, AdjustmentStep(project.Id, first, "rejection"), _owner, new { reason = "  " })).StatusCode
+            .Should().Be(HttpStatusCode.BadRequest, "a rejection needs a reason");
+        (await SendAsync(HttpMethod.Post, AdjustmentStep(project.Id, first, "rejection"), _owner, new { reason = "not agreed" })).StatusCode
+            .Should().Be(HttpStatusCode.OK);
+
+        await RaiseCreditNoteAsync(project, extract, 240_000m);
+        (await PostingCountOfAsync(project.Id, PostingType.CreditNote)).Should().Be(0, "a rejection posts nothing");
+    }
+
+    [Fact]
+    public async Task An_extract_with_a_credit_note_open_cannot_be_collected_until_the_credit_note_is_rejected()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        Guid note = await RaiseCreditNoteAsync(project, extract, 10_000m);
+
+        HttpResponseMessage blocked = await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody());
+        blocked.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ErrorCodeAsync(blocked)).Should().Be("extract.credit_note_open");
+        (await CollectionPostingCountAsync(project.Id)).Should().Be(0);
+
+        (await SendAsync(HttpMethod.Post, AdjustmentStep(project.Id, note, "rejection"), _owner, new { reason = "withdrawn" })).StatusCode
+            .Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody())).StatusCode
+            .Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task Reversing_an_approved_credit_note_writes_a_mirror_through_ReversesId_and_never_edits_the_original()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        decimal receivable = await BalanceAsync(project.Id, AccountType.ClientReceivable);
+        decimal hold = await BalanceAsync(project.Id, AccountType.Hold);
+        Guid note = await RaiseCreditNoteAsync(project, extract, 40_000m);
+
+        (await SendAsync(HttpMethod.Post, AdjustmentStep(project.Id, note, "reversal"), _owner, new { reason = "x" })).StatusCode
+            .Should().Be(HttpStatusCode.Conflict, "a raised adjustment has nothing to reverse");
+        (await SendAsync(HttpMethod.Post, AdjustmentStep(project.Id, note, "approval"), _owner, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        List<string> approved = await PostingSnapshotsAsync(project.Id);
+
+        (await SendAsync(HttpMethod.Post, AdjustmentStep(project.Id, note, "reversal"), _owner, new { reason = "  " })).StatusCode
+            .Should().Be(HttpStatusCode.BadRequest);
+        (await SendAsync(HttpMethod.Post, AdjustmentStep(project.Id, note, "reversal"), _owner, new { reason = "wrong amount" })).StatusCode
+            .Should().Be(HttpStatusCode.OK);
+
+        await using (KaffDbContext reader = _database.CreateBareContext())
+        {
+            List<Posting> credits = await reader.Postings
+                .Where(p => p.ProjectId == project.Id && p.Type == PostingType.CreditNote).ToListAsync(Ct);
+            credits.Should().HaveCount(2);
+            Posting original = credits.Single(p => p.ReversesId is null);
+            Posting mirror = credits.Single(p => p.ReversesId is not null);
+            mirror.ReversesId.Should().Be(original.Id);
+            mirror.FromAccountId.Should().Be(original.ToAccountId);
+            mirror.ToAccountId.Should().Be(original.FromAccountId);
+        }
+
+        (await PostingSnapshotsAsync(project.Id)).Where(row => approved.Contains(row)).Should().BeEquivalentTo(approved, "nothing earlier was edited");
+        (await BalanceAsync(project.Id, AccountType.ClientReceivable)).Should().Be(receivable);
+        (await BalanceAsync(project.Id, AccountType.Hold)).Should().Be(hold);
+        (await SendAsync(HttpMethod.Post, AdjustmentStep(project.Id, note, "reversal"), _owner, new { reason = "again" })).StatusCode
+            .Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task Disputing_raising_and_deciding_write_audit_records_with_who_and_why()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        await SendAsync(HttpMethod.Post, Step(project.Id, extract, "dispute"), _finance, new { reason = "audit me" });
+        Guid note = await RaiseCreditNoteAsync(project, extract, 1_000m, "credit reason on record");
+        await SendAsync(HttpMethod.Post, AdjustmentStep(project.Id, note, "rejection"), _owner, new { reason = "rejection reason on record" });
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        List<Kaff.Domain.Auditing.AuditRecord> forNote = await reader.AuditRecords.Where(a => a.EntityId == note).ToListAsync(Ct);
+
+        forNote.Should().Contain(a => a.ActorUserId == _finance && (a.AfterJson ?? string.Empty).Contains("credit reason on record", StringComparison.Ordinal));
+        forNote.Should().Contain(a => a.ActorUserId == _owner
+            && a.ChangedProperties.Contains(nameof(Kaff.Domain.Adjustments.Adjustment.Status))
+            && (a.AfterJson ?? string.Empty).Contains("rejection reason on record", StringComparison.Ordinal));
+
+        List<Kaff.Domain.Auditing.AuditRecord> gateRecords = await reader.AuditRecords
+            .Where(a => a.EntityType == nameof(ExtractGateRecord) && a.ActorUserId == _finance).ToListAsync(Ct);
+        gateRecords.Should().Contain(a => (a.AfterJson ?? string.Empty).Contains("audit me", StringComparison.Ordinal));
     }
 
     private static string Extracts(Guid project) => $"/api/projects/{project}/extracts";

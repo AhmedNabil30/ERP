@@ -34,6 +34,18 @@ public enum ExtractStatus
 
     /// <summary>The client paid. spec.md section 13 calls this Paid; the code calls it Collected (spec.md section 14).</summary>
     Collected = 8,
+
+    /// <summary>
+    /// The client disputes an issued extract (spec.md section 13). Reached only from Issued, by a stored reason; its
+    /// postings stand while the dispute is open (see <c>Rulings.ExtractDisputeEffect</c>).
+    /// </summary>
+    Disputed = 9,
+
+    /// <summary>
+    /// Named by spec.md section 13 and section 7 (a revised extract replaces the original). Nothing moves an extract
+    /// here yet: what a revision does to the original is unruled (Q106), see <c>Rulings.ExtractDisputeResolution</c>.
+    /// </summary>
+    Void = 10,
 }
 
 /// <summary>The steps that leave a record in the stored gate history.</summary>
@@ -52,6 +64,12 @@ public enum ExtractGate
 
     /// <summary>The preparer corrected the evidence of a rejected extract. Starts no new cycle and ends none.</summary>
     EvidenceRevised = 9,
+
+    /// <summary>The client disputed the issued extract. Carries the stored reason.</summary>
+    Dispute = 10,
+
+    /// <summary>The dispute was resolved as a credit note. Carries the stored reason.</summary>
+    DisputeResolution = 11,
 }
 
 public enum ExtractGateOutcome
@@ -66,4 +84,14 @@ public enum ExtractGateOutcome
 
     /// <summary>A collection was reversed and the extract returned to Issued. The record carries a non-blank reason. It starts no new approval cycle.</summary>
     Reversed = 4,
+}
+
+/// <summary>spec.md section 7: a disputed issued extract resolves as either a revised extract or a credit note.</summary>
+public enum DisputeResolutionKind
+{
+    /// <summary>A credit note (an Adjustment) offsets the extract. Built.</summary>
+    CreditNote = 1,
+
+    /// <summary>A revised extract replaces it. Refused: what happens to the original is unruled (Q106).</summary>
+    RevisedExtract = 2,
 }

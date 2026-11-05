@@ -73,6 +73,9 @@ public enum SourceDocumentType
 
     /// <summary>The handover of a project: the hold release posts against it (spec.md section 5.1).</summary>
     ProjectHandover = 21,
+
+    /// <summary>A subcontractor's retention released at the warranty end (spec.md section 5.1). Its id is the subcontractor's.</summary>
+    SubcontractorRetentionRelease = 22,
 }
 
 /// <summary>

@@ -80,4 +80,15 @@ public static class ExtractErrors
     /// <summary>A rejection route was called for an extract that does not wait at that route's gate.</summary>
     public static readonly Error NotWaitingAtThisGate =
         Error.Conflict("extract.not_waiting_at_this_gate", "errors.extract.not_waiting_at_this_gate");
+
+    /// <summary>A revised extract replaces a disputed one is unruled (Q106): nothing is built, nothing changes.</summary>
+    public static readonly Error DisputeRevisionUnruled =
+        Error.Conflict("extract.dispute_revision_unruled", "errors.extract.dispute_revision_unruled");
+
+    /// <summary>A credit note is open against the extract, so a collection of its full net would over-collect (Q106, Q107).</summary>
+    public static readonly Error CreditNoteOpen =
+        Error.Conflict("extract.credit_note_open", "errors.extract.credit_note_open");
+
+    public static readonly Error DisputeResolutionRequired =
+        Error.Validation("extract.dispute_resolution_required", "errors.extract.dispute_resolution_required");
 }

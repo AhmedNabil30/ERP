@@ -413,6 +413,10 @@ public sealed class CatalogueCompletenessTests
         // ProjectPracticalCompletionDeclare, ProjectHandover, SnagManage, HoldRelease, WarrantyCallbackManage and
         // ProjectClose joined the list 2026-11-04 (KAFF-800 to KAFF-807, Q109, Q110, Q113, Q115, Q116): spec.md
         // section 11 gives the closure flow and names none of the actors. See Rulings/ClosureRulings.cs.
+        //
+        // ExtractDisputeRaise, ExtractDisputeResolve, AdjustmentRaise and SubcontractorRetentionRelease joined the list
+        // 2026-11-05 (KAFF-511, KAFF-512, KAFF-806, Q106, Q107, Q26, Q109): spec.md sections 7, 6.9 and 5.1 name the acts and
+        // no actor. See Rulings/AdjustmentRulings.cs.
         Permission[] expected =
         [
             Permission.PeriodClose,
@@ -427,6 +431,10 @@ public sealed class CatalogueCompletenessTests
             Permission.HoldRelease,
             Permission.WarrantyCallbackManage,
             Permission.ProjectClose,
+            Permission.ExtractDisputeRaise,
+            Permission.ExtractDisputeResolve,
+            Permission.AdjustmentRaise,
+            Permission.SubcontractorRetentionRelease,
         ];
 
         PermissionCatalogue.Unresolved
