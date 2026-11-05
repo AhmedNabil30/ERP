@@ -280,6 +280,14 @@ export const routes: Routes = [
     ],
   },
   {
+    // The end of a project's life: practical completion, snags, handover, the hold release, warranty and
+    // closing. `extractReadGuard` is convenience (`ProjectRead` on this project's own session entry); each
+    // act is gated on the server by its own permission and by assignment. Reached from the workspace hub.
+    path: 'projects/:projectId/closure',
+    canActivate: [sessionGuard, mustChangePasswordGuard, extractReadGuard],
+    loadComponent: () => import('./features/closure/closure-page').then((m) => m.ClosurePage),
+  },
+  {
     // The BOQ, read-only. Shows cost prices, so gated `ProjectManage` (Owner, Technical Office; assigned).
     // `boqReadGuard` is convenience; `GET /api/projects/:projectId/boq` checks role and assignment.
     path: 'projects/:projectId/boq',

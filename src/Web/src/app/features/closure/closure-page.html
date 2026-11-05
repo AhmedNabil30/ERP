@@ -1,0 +1,330 @@
+<section class="pg" data-testid="closure-page">
+  <kaff-page-head [backLink]="['/projects', projectId()]" backLabelKey="closure.back" [title]="i18n.t('closure.title')">
+    @if (project(); as p) {
+      <kaff-status-pill titleAside [tone]="pill[p.status].tone" [icon]="pill[p.status].icon" testId="closure-status">
+        {{ i18n.t(statusKey(p.status)) }}
+      </kaff-status-pill>
+    }
+    @if (project(); as p) {
+      <p class="sub" dir="auto" data-testid="closure-project">{{ p.name }}</p>
+    }
+  </kaff-page-head>
+
+  @if (failure(); as key) {
+    <kaff-state mode="refusal" [bodyKey]="key" testId="closure-failure">
+      <kaff-button stateAction variant="secondary" testId="closure-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+    </kaff-state>
+  } @else if (loading()) {
+    <kaff-state mode="loading" titleKey="closure.loading" testId="closure-loading" />
+  } @else if (project(); as p) {
+    @if (p.contractType === 'Design') {
+      <kaff-state mode="empty" titleKey="closure.design_none" testId="closure-design-none" />
+    } @else {
+      <div aria-live="polite">
+        @if (note(); as key) {
+          <kaff-banner tone="ok" testId="closure-note">{{ i18n.t(key) }}</kaff-banner>
+        }
+        @if (actionError(); as key) {
+          <kaff-banner tone="refusal" testId="closure-error">
+            {{ i18n.t(key) }}
+            @if (actionDetail(); as detail) {
+              <span class="detail" data-testid="closure-error-detail">{{ detail }}</span>
+            }
+          </kaff-banner>
+        }
+      </div>
+
+      <!-- The stage: where the project stands and the one act that moves it on. -->
+      <div class="panel" data-testid="closure-stage">
+        <h2 class="h2">{{ i18n.t('closure.stage.title') }}</h2>
+        <p class="lead" data-testid="closure-stage-text">{{ i18n.t('closure.stage.' + p.status) }}</p>
+
+        @if (steps().length > 0) {
+          <div class="buttons">
+            @for (step of steps(); track step) {
+              <kaff-button variant="primary" [busy]="busy()" [testId]="'closure-act-' + step" (clicked)="ask(step)">
+                {{ i18n.t(stepLabel[step]) }}
+              </kaff-button>
+            }
+          </div>
+        }
+
+        @if (confirming(); as pending) {
+          @if (pending !== 'hold-release') {
+          <kaff-inline-confirm
+            [question]="i18n.t(actKeys[pending].confirm)"
+            [detail]="actKeys[pending].detail ? i18n.t(actKeys[pending].detail!) : null"
+            [confirmLabel]="i18n.t('extract.confirm.yes')"
+            [cancelLabel]="i18n.t('extract.cancel')"
+            [busy]="busy()"
+            [tone]="pending === 'close' ? 'irreversible' : 'recoverable'"
+            confirmTestId="closure-confirm"
+            cancelTestId="closure-confirm-cancel"
+            (confirmed)="confirm(pending)"
+            (cancelled)="closePanels()"
+          />
+          }
+        }
+
+        @if (nothingToDo()) {
+          <p class="none" data-testid="closure-no-action">
+            <kaff-icon name="info" [small]="true" /><span>{{ i18n.t('extract.no_action.waiting') }}</span>
+          </p>
+        }
+      </div>
+
+      <!-- The hold. The figure is derived from the hold ledger's postings; there is no amount field. -->
+      @if (showHold()) {
+        <div class="panel" data-testid="closure-hold">
+          <h2 class="h2">{{ i18n.t('closure.hold.title') }}</h2>
+          @if (proofFailed()) {
+            <kaff-banner tone="refusal" testId="closure-hold-failed">
+              {{ i18n.t('closure.hold.failed') }}
+              <kaff-button bannerActions variant="secondary" testId="closure-hold-retry" (clicked)="reload()">
+                {{ i18n.t('extract.retry') }}
+              </kaff-button>
+            </kaff-banner>
+          } @else if (hold(); as h) {
+            <p class="fig" data-testid="closure-hold-amount"><kaff-figure [value]="h.balance" /></p>
+            <p class="source" data-testid="closure-hold-source">
+              {{ i18n.t('closure.hold.source', { count: i18n.formatNumber(h.postingCount) }) }}
+            </p>
+            @if (h.released) {
+              <p class="none" data-testid="closure-hold-released">
+                <kaff-icon name="check" [small]="true" /><span>{{ i18n.t('errors.closure.hold_already_released') }}</span>
+              </p>
+            } @else if (h.empty) {
+              <p class="none" data-testid="closure-hold-empty">
+                <kaff-icon name="info" [small]="true" /><span>{{ i18n.t('errors.closure.nothing_to_release') }}</span>
+              </p>
+            } @else {
+              <p class="rule">{{ i18n.t('closure.hold.rule') }}</p>
+              @if (confirming() === 'hold-release') {
+                <kaff-inline-confirm
+                  tone="irreversible"
+                  [question]="i18n.t(actKeys['hold-release'].confirm)"
+                  [detail]="i18n.t('closure.confirm.hold_release_detail')"
+                  [confirmLabel]="i18n.t('extract.confirm.yes')"
+                  [cancelLabel]="i18n.t('extract.cancel')"
+                  [busy]="busy()"
+                  confirmTestId="closure-confirm"
+                  cancelTestId="closure-confirm-cancel"
+                  (confirmed)="confirm('hold-release')"
+                  (cancelled)="closePanels()"
+                />
+              }
+              <div class="buttons">
+                <kaff-button variant="primary" [busy]="busy()" testId="closure-act-hold-release" (clicked)="ask('hold-release')">
+                  {{ i18n.t('closure.action.hold_release') }}
+                </kaff-button>
+              </div>
+            }
+          } @else {
+            <kaff-state mode="loading" titleKey="closure.hold.loading" testId="closure-hold-loading" />
+          }
+        </div>
+      }
+
+      <!-- The snag list. -->
+      @if (showSnags()) {
+        <div class="panel" data-testid="closure-snags">
+          <h2 class="h2">{{ i18n.t('closure.snags.title') }}</h2>
+          @if (canRaiseSnag()) {
+            <div class="buttons">
+              <kaff-button variant="secondary" testId="closure-snag-add" (clicked)="openSnagForm()">
+                {{ i18n.t('closure.snags.add') }}
+              </kaff-button>
+            </div>
+          }
+
+          @if (raisingSnag()) {
+            <form class="form" data-testid="closure-snag-form" (submit)="$event.preventDefault(); submitSnag()">
+              <label class="label" for="snag-description">{{ i18n.t('closure.snag.description') }}<span class="req" aria-hidden="true">*</span></label>
+              <textarea id="snag-description" rows="2" maxlength="1000" [value]="snagDescription()" data-testid="closure-snag-description"
+                (input)="onText(snagDescription, $event)"></textarea>
+              <label class="label" for="snag-location">{{ i18n.t('closure.snag.location') }}<span class="req" aria-hidden="true">*</span></label>
+              <input id="snag-location" type="text" maxlength="200" [value]="snagLocation()" data-testid="closure-snag-location"
+                (input)="onText(snagLocation, $event)" />
+              <label class="label" for="snag-priority">{{ i18n.t('closure.snag.priority') }}</label>
+              <kaff-select controlId="snag-priority" ariaLabelKey="closure.snag.priority" [options]="priorityOptions()" [(value)]="snagPriority" testId="closure-snag-priority" />
+              <label class="label" for="snag-owner">{{ i18n.t('closure.snag.owner') }}</label>
+              <kaff-select controlId="snag-owner" ariaLabelKey="closure.snag.owner" [options]="ownerOptions()" [(value)]="snagOwner" testId="closure-snag-owner" />
+              @if (snagOwner() === 'Subcontractor') {
+                <label class="label" for="snag-sub">{{ i18n.t('closure.snag.subcontractor') }}<span class="req" aria-hidden="true">*</span></label>
+                <kaff-select controlId="snag-sub" ariaLabelKey="closure.snag.subcontractor" [options]="subcontractorOptions()" [(value)]="snagSubcontractor" testId="closure-snag-sub" />
+              }
+              @if (snagInvalid()) {
+                <p class="field-error" role="alert" data-testid="closure-snag-invalid">
+                  <kaff-icon name="alert" [small]="true" />{{ i18n.t('closure.snag.invalid') }}
+                </p>
+              }
+              <div class="buttons">
+                <kaff-button variant="primary" type="submit" [busy]="busy()" testId="closure-snag-submit">{{ i18n.t('closure.snags.save') }}</kaff-button>
+                <kaff-button variant="secondary" [disabled]="busy()" testId="closure-snag-cancel" (clicked)="closePanels()">{{ i18n.t('extract.cancel') }}</kaff-button>
+              </div>
+            </form>
+          }
+
+          @if (snags().length === 0) {
+            <p class="none" data-testid="closure-snags-empty">
+              <kaff-icon name="info" [small]="true" /><span>{{ i18n.t('closure.snags.empty') }}</span>
+            </p>
+          } @else {
+            <ul class="rows" data-testid="closure-snag-list">
+              @for (snag of snags(); track snag.id) {
+                <li class="row" [attr.data-testid]="'closure-snag-' + snag.number">
+                  <div class="row-main">
+                    <span class="num" dir="ltr">#{{ snag.number }}</span>
+                    <span class="text" dir="auto">{{ snag.description }}</span>
+                  </div>
+                  <p class="row-meta">
+                    <span dir="auto">{{ snag.location }}</span>
+                    <span dir="auto">{{ snagOwnerName(snag) }}</span>
+                    <kaff-badge [tone]="snag.priority === 'Major' ? 'warning' : 'quiet'">{{ i18n.t('closure.snag.priority.' + snag.priority) }}</kaff-badge>
+                    <kaff-badge [tone]="snag.status === 'Verified' ? 'accent' : 'brand'">{{ i18n.t('closure.snag.status.' + snag.status) }}</kaff-badge>
+                    @if (snag.blocksHandover) {
+                      <kaff-badge tone="warning" [testId]="'closure-snag-blocks-' + snag.number">{{ i18n.t('closure.snag.blocks') }}</kaff-badge>
+                    }
+                    @if (snag.resolutionKind) {
+                      <kaff-badge tone="tag">{{ i18n.t('closure.snag.resolution.' + snag.resolutionKind) }}</kaff-badge>
+                    }
+                  </p>
+                  @if (snag.resolutionReason) {
+                    <p class="reason" dir="auto">{{ snag.resolutionReason }}</p>
+                  }
+                  @if (snagActsOpen()) {
+                    <div class="buttons">
+                      @if (snag.status === 'Open') {
+                        <kaff-button variant="secondary" [busy]="busy()" [testId]="'closure-snag-fix-' + snag.number" (clicked)="fixSnag(snag)">
+                          {{ i18n.t('closure.snag.fix') }}
+                        </kaff-button>
+                      }
+                      @if (snag.status === 'Fixed') {
+                        <kaff-button variant="secondary" [busy]="busy()" [testId]="'closure-snag-verify-' + snag.number" (clicked)="verifySnag(snag)">
+                          {{ i18n.t('closure.snag.verify') }}
+                        </kaff-button>
+                      }
+                      @if (snag.status !== 'Open' && !snag.resolutionKind) {
+                        <kaff-button variant="secondary" [busy]="busy()" [testId]="'closure-snag-resolve-' + snag.number" (clicked)="openResolve(snag)">
+                          {{ i18n.t('closure.snag.resolve') }}
+                        </kaff-button>
+                      }
+                    </div>
+                  }
+                  @if (resolvingSnag() === snag.id) {
+                    <form class="form" [attr.data-testid]="'closure-resolve-form-' + snag.number" (submit)="$event.preventDefault(); submitResolution(snag)">
+                      <label class="label" [for]="'resolve-kind-' + snag.number">{{ i18n.t('closure.snag.resolution') }}</label>
+                      <kaff-select [controlId]="'resolve-kind-' + snag.number" ariaLabelKey="closure.snag.resolution" [options]="resolutionOptions(snag)" [(value)]="resolutionKind" />
+                      <p class="hint">{{ i18n.t('closure.snag.resolution_hint') }}</p>
+                      <label class="label" [for]="'resolve-reason-' + snag.number">{{ i18n.t('closure.snag.reason') }}<span class="req" aria-hidden="true">*</span></label>
+                      <textarea [id]="'resolve-reason-' + snag.number" rows="2" [value]="resolutionReason()" data-testid="closure-resolve-reason"
+                        (input)="onText(resolutionReason, $event)"></textarea>
+                      @if (resolutionInvalid()) {
+                        <p class="field-error" role="alert" data-testid="closure-resolve-invalid">
+                          <kaff-icon name="alert" [small]="true" />{{ i18n.t('errors.closure.reason_required') }}
+                        </p>
+                      }
+                      <div class="buttons">
+                        <kaff-button variant="primary" type="submit" [busy]="busy()" testId="closure-resolve-submit">{{ i18n.t('closure.snags.save') }}</kaff-button>
+                        <kaff-button variant="secondary" [disabled]="busy()" testId="closure-resolve-cancel" (clicked)="closePanels()">{{ i18n.t('extract.cancel') }}</kaff-button>
+                      </div>
+                    </form>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
+
+      <!-- Warranty callbacks. -->
+      @if (showCallbacks()) {
+        <div class="panel" data-testid="closure-callbacks">
+          <h2 class="h2">{{ i18n.t('closure.callbacks.title') }}</h2>
+          @if (canRaiseCallback()) {
+            <div class="buttons">
+              <kaff-button variant="secondary" testId="closure-callback-add" (clicked)="openCallbackForm()">
+                {{ i18n.t('closure.callbacks.add') }}
+              </kaff-button>
+            </div>
+          }
+          @if (raisingCallback()) {
+            <form class="form" data-testid="closure-callback-form" (submit)="$event.preventDefault(); submitCallback()">
+              <label class="label" for="callback-description">{{ i18n.t('closure.callback.description') }}<span class="req" aria-hidden="true">*</span></label>
+              <textarea id="callback-description" rows="2" [value]="callbackDescription()" data-testid="closure-callback-description"
+                (input)="onText(callbackDescription, $event)"></textarea>
+              @if (callbackInvalid()) {
+                <p class="field-error" role="alert" data-testid="closure-callback-invalid">
+                  <kaff-icon name="alert" [small]="true" />{{ i18n.t('errors.closure.callback_description_required') }}
+                </p>
+              }
+              <div class="buttons">
+                <kaff-button variant="primary" type="submit" [busy]="busy()" testId="closure-callback-submit">{{ i18n.t('closure.snags.save') }}</kaff-button>
+                <kaff-button variant="secondary" [disabled]="busy()" testId="closure-callback-cancel" (clicked)="closePanels()">{{ i18n.t('extract.cancel') }}</kaff-button>
+              </div>
+            </form>
+          }
+          @if (callbacks().length === 0) {
+            <p class="none" data-testid="closure-callbacks-empty">
+              <kaff-icon name="info" [small]="true" /><span>{{ i18n.t('closure.callbacks.empty') }}</span>
+            </p>
+          } @else {
+            <ul class="rows" data-testid="closure-callback-list">
+              @for (callback of callbacks(); track callback.id) {
+                <li class="row" [attr.data-testid]="'closure-callback-' + callback.number">
+                  <div class="row-main">
+                    <span class="num" dir="ltr">#{{ callback.number }}</span>
+                    <span class="text" dir="auto">{{ callback.description }}</span>
+                  </div>
+                  <p class="row-meta">
+                    <span>{{ day(callback.raisedOn) }}</span>
+                    <kaff-badge [tone]="callback.isResolved ? 'accent' : 'warning'">
+                      {{ i18n.t(callback.isResolved ? 'closure.callback.resolved' : 'closure.callback.open') }}
+                    </kaff-badge>
+                  </p>
+                  @if (!callback.isResolved && caps().callback) {
+                    <div class="buttons">
+                      <kaff-button variant="secondary" [busy]="busy()" [testId]="'closure-callback-resolve-' + callback.number" (clicked)="resolveCallback(callback)">
+                        {{ i18n.t('closure.callback.resolve') }}
+                      </kaff-button>
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
+
+      <!-- Termination: unruled. The control asks; the server's own refusal is shown as "not decided yet". -->
+      @if (canTerminate()) {
+        <div class="panel" data-testid="closure-terminate">
+          <h2 class="h2">{{ i18n.t('closure.terminate.title') }}</h2>
+          <p class="lead">{{ i18n.t('closure.terminate.body') }}</p>
+          @if (!terminating()) {
+            <div class="buttons">
+              <kaff-button variant="secondary" testId="closure-terminate-open" (clicked)="openTerminate()">
+                {{ i18n.t('closure.terminate.ask') }}
+              </kaff-button>
+            </div>
+          } @else {
+            <form class="form" data-testid="closure-terminate-form" (submit)="$event.preventDefault(); submitTermination()">
+              <label class="label" for="terminate-reason">{{ i18n.t('closure.terminate.reason') }}<span class="req" aria-hidden="true">*</span></label>
+              <textarea id="terminate-reason" rows="2" [value]="terminationReason()" data-testid="closure-terminate-reason"
+                (input)="onTerminationReason($event)"></textarea>
+              @if (terminationRefused(); as key) {
+                <kaff-banner [tone]="key === 'errors.closure.reason_required' ? 'refusal' : 'note'" testId="closure-terminate-refused">
+                  {{ i18n.t(key) }}
+                </kaff-banner>
+              }
+              <div class="buttons">
+                <kaff-button variant="secondary" type="submit" [busy]="busy()" testId="closure-terminate-submit">{{ i18n.t('closure.terminate.submit') }}</kaff-button>
+                <kaff-button variant="secondary" [disabled]="busy()" testId="closure-terminate-cancel" (clicked)="closePanels()">{{ i18n.t('extract.cancel') }}</kaff-button>
+              </div>
+            </form>
+          }
+        </div>
+      }
+    }
+  }
+</section>

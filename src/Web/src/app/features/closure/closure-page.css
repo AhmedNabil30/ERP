@@ -1,0 +1,192 @@
+/* Logical properties only; colour is tokens only. Frames are the kit's: 1px hairline, --radius, surface fill. */
+
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+.pg {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  min-inline-size: 0;
+}
+
+.sub {
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.panel {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  min-inline-size: 0;
+}
+
+.h2 {
+  margin: 0;
+  font: 600 1.0625rem / 1.4 var(--display);
+}
+
+.lead {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.detail {
+  display: block;
+  margin-block-start: var(--space-1);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.none {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--text-sm);
+}
+
+/* ---------- the hold ---------- */
+.fig {
+  margin: 0;
+  font: 600 1.75rem / 1.2 var(--display);
+}
+
+.source,
+.rule,
+.hint {
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--text-xs);
+}
+
+/* ---------- forms ---------- */
+.form {
+  display: grid;
+  gap: var(--space-2);
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--line);
+  min-inline-size: 0;
+}
+
+.label {
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+.req {
+  margin-inline-start: 4px;
+  color: var(--err-ink);
+}
+
+.form input,
+.form textarea {
+  inline-size: 100%;
+  box-sizing: border-box;
+  min-block-size: var(--tap-target, 44px);
+  padding: var(--space-2) var(--space-3);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+}
+
+.form textarea {
+  resize: vertical;
+}
+
+.form input:focus-visible,
+.form textarea:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.field-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  color: var(--err-ink);
+  font-size: var(--text-sm);
+}
+
+/* ---------- snag and callback rows: a hairline between rows, not a card each ---------- */
+.rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  gap: var(--space-2);
+  padding-block: var(--space-3);
+  border-block-start: 1px solid var(--line);
+  min-inline-size: 0;
+}
+
+.row:first-child {
+  border-block-start: 0;
+}
+
+.row-main {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+  min-inline-size: 0;
+}
+
+.num {
+  flex: none;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.text {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+
+.row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--text-sm);
+}
+
+.reason {
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 40rem) {
+  .pg {
+    padding: var(--space-3);
+  }
+
+  .buttons > * {
+    flex: 1 1 100%;
+  }
+}

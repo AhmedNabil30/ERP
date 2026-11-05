@@ -21,7 +21,9 @@ import { Extract, ExtractSummary, ExtractsApi } from '../../../core/extracts/ext
 import { contractTypeKey, projectWorkspaceStatusKey } from '../../../core/i18n/enum-keys';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { HeaderActionsService } from '../../../core/layout/header-actions.service';
-import { ProjectDetail, ProjectStatus, ProjectsApi } from '../../../core/projects/projects.api';
+import { ProjectDetail, ProjectsApi } from '../../../core/projects/projects.api';
+import { closureCapsOf } from '../../closure/closure-display';
+import { STATUS_PILL } from '../project-status-pill';
 import { fractionToPercent } from '../../../core/catalogue/percent-wire';
 import { extractNoActionKey } from '../../extracts/extract-display';
 import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
@@ -30,7 +32,7 @@ import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { KaffFact, KaffFactList } from '../../../shared/kaff-fact/kaff-fact';
 import { KaffFigure } from '../../../shared/kaff-figure/kaff-figure';
 import { KaffGroupSection } from '../../../shared/kaff-group-section/kaff-group-section';
-import { KaffIcon, KaffIconName } from '../../../shared/kaff-icon/kaff-icon';
+import { KaffIcon } from '../../../shared/kaff-icon/kaff-icon';
 import { KaffPartLink } from '../../../shared/kaff-part-link/kaff-part-link';
 import { KaffProvenance } from '../../../shared/kaff-provenance/kaff-provenance';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
@@ -55,20 +57,6 @@ type Read<T> =
   | { readonly state: 'failed'; readonly key: string };
 
 const LOADING = { state: 'loading' } as const;
-
-type PillTone = 'new' | 'overwrite' | 'error' | 'locked' | 'same';
-
-/** The state pill is word, shape and colour (never colour alone); this is shape and colour. */
-const STATUS_PILL: Readonly<Record<ProjectStatus, { tone: PillTone; icon: KaffIconName }>> = {
-  Setup: { tone: 'same', icon: 'file' },
-  Active: { tone: 'new', icon: 'check' },
-  HandoverPending: { tone: 'overwrite', icon: 'info' },
-  Handover: { tone: 'overwrite', icon: 'info' },
-  UnderWarranty: { tone: 'overwrite', icon: 'info' },
-  Closed: { tone: 'same', icon: 'lock' },
-  Stopped: { tone: 'locked', icon: 'pause' },
-  Terminated: { tone: 'error', icon: 'x' },
-};
 
 /**
  * The project workspace: the hub a user lands on after opening a project from the list
@@ -145,6 +133,7 @@ export class ProjectWorkspacePage {
       canWriteDailyLog: has('DailyLogWrite'),
       canManageDayLabour: has('DayLabourSiteManage'),
       canReadProof: session?.permissions.includes('TreasuryReadCompany') ?? false,
+      closure: closureCapsOf(entry?.permissions),
     };
   });
 

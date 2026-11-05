@@ -207,7 +207,7 @@ describe('ProjectWorkspacePage · type dispatch', () => {
   it('Lump Sum holds all five groups and reaches the BOQ, daily log, extracts and proof from the group each belongs to', async () => {
     const fixture = await createFixture(new FakeProjectsApi(project('LumpSum')), OWNER());
 
-    for (const group of ['understand', 'quantify', 'execute', 'pay', 'org']) {
+    for (const group of ['understand', 'quantify', 'execute', 'pay', 'closure', 'org']) {
       expect(q(fixture, `workspace-group-${group}`), group).not.toBeNull();
     }
     expect(q(fixture, 'workspace-group-quantify')?.querySelector('a[href="/projects/p-1/boq"]')).not.toBeNull();
@@ -236,6 +236,24 @@ describe('ProjectWorkspacePage · type dispatch', () => {
     expect(q(fixture, 'workspace-group-execute')).toBeNull();
     expect(q(fixture, 'workspace-group-quantify')).toBeNull();
     expect(q(fixture, 'workspace-group-understand')).not.toBeNull();
+  });
+
+  it('holds a closure group that reaches the closure screen, for Lump Sum and Cost Plus but never Design', async () => {
+    for (const type of ['LumpSum', 'CostPlus'] as const) {
+      const fixture = await createFixture(new FakeProjectsApi(project(type)), OWNER());
+      expect(q(fixture, 'workspace-group-closure')?.querySelector('a[href="/projects/p-1/closure"]'), type).not.toBeNull();
+      expect(q(fixture, 'workspace-jump-closure'), type).not.toBeNull();
+    }
+    const design = await createFixture(new FakeProjectsApi(project('Design')), OWNER());
+    expect(q(design, 'workspace-group-closure')).toBeNull();
+  });
+
+  it('offers the closure act in the header slot only to a holder of that permission', async () => {
+    const holder = session('Owner', [...OWNER_PERMS, 'ProjectPracticalCompletionDeclare'], ['TreasuryReadCompany']);
+    await createFixture(new FakeProjectsApi(project('LumpSum')), holder);
+    expect(TestBed.inject(HeaderActionsService).template()).not.toBeNull();
+    await createFixture(new FakeProjectsApi(project('LumpSum')), OWNER());
+    expect(TestBed.inject(HeaderActionsService).template()).toBeNull();
   });
 });
 

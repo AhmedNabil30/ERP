@@ -172,6 +172,9 @@
             @case ('proof') {
               <kaff-part-link [link]="['/projects', p.id, 'proof']" [label]="i18n.t('proof.title')" testId="workspace-link-proof" />
             }
+            @case ('closure') {
+              <kaff-part-link [link]="['/projects', p.id, 'closure']" [label]="i18n.t('closure.title')" testId="workspace-link-closure" />
+            }
             @case ('team') {
               <kaff-fact-list>
                 <kaff-fact [label]="i18n.t('projects.workspace.vocab.fact.team')" testId="workspace-team">
