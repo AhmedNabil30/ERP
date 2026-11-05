@@ -6,8 +6,83 @@ Everything above the generated block is maintained by hand and dated. Everything
 derived. If another file disagrees with this one, **this one is right and the other file is
 history** — see *The map* at the bottom for which is which.
 
-⚠️ **2026-11-01 · This section is the current position. Everything below it, down to the generated
-block at the foot, is history — including the 2026-09-27 section that used to say this.**
+⚠️ **2026-11-06 · This section is the current position. Everything below it, down to the generated
+block at the foot, is history — including the 2026-11-01 and 2026-09-27 sections that each used to say
+this.**
+
+**The project module now runs end to end, from a signed BOQ to a closed project.** The gap that mattered
+on 2026-11-01 was that `spec.md` §15 was satisfied only by a hand-built test. The gap that mattered on
+2026-11-04 was different and worse: an issued extract never became money. `ExtractPostings.BuildCollection`
+existed and **nothing called it**. Both are now closed.
+
+Landed 2026-11-04 to 2026-11-06, in order:
+
+| | What | Why it mattered |
+|---|---|---|
+| `3eb3d74` | **Collections, cheque states and withholding at source** (KAFF-316, KAFF-317) | An issued extract now turns into cash in the safe. Cash reaches the safe only at `Collected`, asserted per stage — the original defect posted it two stages early and passed every §15 invariant while doing so |
+| `3eb3d74` | **The change order chain** (KAFF-508, KAFF-509) | The contract value stays derived from the signed BOQ and is never edited; the revised value is `original + approved change orders`, summed on every read. The signed BOQ stays frozen by copy |
+| `d702110` | The project workspace **primary action slot** | One act at a time, chosen by the server's own answer rather than re-derived on the client |
+| `86b9f13` | **Practical completion, handover, the hold release, snags, warranty and closing** (KAFF-800/802/803/804/807) | The end of a project's life exists. The hold releases **once, in full, at handover**, and the amount is derived from the postings — the endpoint accepts no amount at all |
+| `8b37a9a` | **The disputed extract, the adjustment object, subcontractor retention release** (KAFF-511, KAFF-512, KAFF-806) | A credit note is a new posting, never an edit. It cannot reach the hold, refused at three layers plus a database trigger |
+| `c84e9a1` | **The closure screen** | Fourteen closure routes existed and nothing was clickable. Now one screen carries the stage, the hold, snags, warranty and termination |
+
+**Gates, re-measured by the Scrum Master on the committed tree, not quoted from a lane:** build **0
+warnings, 0 errors** · Domain.Tests **631 / 631** · Api.Tests **851 / 851** · `ng test` **319 / 319** ·
+`ng build --configuration production` exit **0**. The 2026-11-01 figures (Domain 395, Api 732, `ng test`
+248) are history.
+
+**A Verifier read the closure acceptance criteria in a fresh session that did not write the code, and
+two stories came back.** `KAFF-802` and `KAFF-803` are `REJECTED`: each carries a criterion that is NOT
+MET rather than merely untested — 802-L has no approval step for the hold release to be separated from,
+and 803-E needs a debit-note posting that does not exist. `KAFF-800`, `KAFF-804` and `KAFF-807` are
+`VERIFIED / CONDITIONAL`. They had been marked `BUILT` from routes existing and tests passing, **which is
+not the same as reading the acceptance criteria**, and the difference was five criteria. The hold rules
+themselves verified clean: no debit before handover, no invented termination settlement, both database
+triggers intact.
+
+**A shipping blocker was found and fixed, and it had been invisible for months.** A fresh database could
+not be brought up by the application: the `DatabaseGuards` migration applied **every** guard script,
+including `003_boq_freeze.sql`, which creates a trigger on `boq_lines` before the migration that creates
+that table. Every developer database was migrated incrementally and so never hit it, and the test suite
+uses `EnsureCreated` rather than `Migrate`, so **no gate could have caught it**. `CLAUDE.md`'s Definition
+of Done says "runs on staging, not only locally", and until 2026-11-06 it did not. Fixed by pinning each
+migration to the scripts its schema supports; no guard script and no constraint string was changed.
+`tests/Api.Tests/FreshDatabaseBootstrapTests.cs` now brings up two genuinely empty databases, one through
+the application's path and one through migrations alone, and asserts every trigger and function named in
+every script is present. **The first version of that test could not fail** — the boot-time guard pass
+reinstalled the script the lane had deleted to test it — which is why the migrations-only database exists.
+
+**What is still not built, stated plainly so nothing above reads as more than it is:**
+
+- **No screen creates an extract, records a collection, raises a change order, raises a dispute or an
+  adjustment, releases subcontractor retention, or moves a cheque.** All of it is server-only and tested.
+  Nabil's standing verdict is that the user journey is the selling point, so these screens are the next
+  thing that matters, not another API slice.
+- **`Terminated` settles nothing, deliberately.** `spec.md` §13 names the state and §6.9 says "termination
+  settlement", and nothing says what settles. The transition refuses with a stored reason and writes no
+  posting. **This waits on Karim, not on code**, and it is the largest unanswered business question in
+  the module.
+- **An extract with an approved credit note can never reach `Collected`.** Collection is refused while a
+  credit note is open, because collecting the stored net would over-collect. How the client pays the
+  reduced amount, and whether withholding applies to it, is unanswered.
+- `KAFF-215` (a sidebar listing every destination) and `KAFF-941` are `NOT-BUILT`.
+- **Nothing is `ACCEPTED` that was not already.** Acceptance is Nabil running the demo script
+  (`process/agile.md` §4). No story from this run has been through it.
+
+**Everything above still runs on assumptions, not rulings**, and every one is a `RulingNote` in
+`src/Domain/Rulings/` carrying the question and what changes if ruled otherwise — per Nabil's standing
+instruction to build without waiting. There are now well over thirty. `docs/demo-walkthrough.md` §9 lists
+the questions in the order they would cost if guessed wrong, and `docs/for-karim-assumptions.md` carries
+the older set.
+
+**One known flake, not a product defect:** nine `CreateOwnerTests` fail with 409 under full-suite load and
+pass in isolation. The unconfirmed diagnosis is that `KaffApiFactory`'s constructor writes process-global
+environment variables that the host reads lazily, so a parallel factory clobbers the connection string.
+It makes every gate unreliable and deserves a lane. It did not appear in the final runs above.
+
+---
+
+⚠️ **2026-11-01 · History from here down. Read the section above for the current position.**
 
 **The money core now exists, and that is the change that matters.** For the whole life of this project
 `spec.md` §15 — the acceptance criterion for the entire system — was satisfied only by

@@ -39,10 +39,10 @@ namespace Kaff.Infrastructure.Persistence.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            foreach (string sql in GuardScripts.ReadAllInOrder())
-            {
-                migrationBuilder.Sql(sql);
-            }
+            // Pinned, not ReadAllInOrder: 003_boq_freeze.sql references boq_lines, which the BoqAndRulings
+            // migration creates later. Reading every script here broke any fresh database (D-203).
+            migrationBuilder.Sql(GuardScripts.Read("001_guards.sql"));
+            migrationBuilder.Sql(GuardScripts.Read("002_views.sql"));
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

@@ -97,6 +97,9 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                 table: "boqs",
                 column: "project_id",
                 unique: true);
+
+            // The BOQ freeze trigger needs boq_lines, so it is installed here and not in DatabaseGuards (D-203).
+            migrationBuilder.Sql(Kaff.Infrastructure.Persistence.GuardScripts.Read("003_boq_freeze.sql"));
         }
 
         /// <inheritdoc />

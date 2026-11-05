@@ -6,7 +6,7 @@ namespace Kaff.Infrastructure.Persistence;
 /// The embedded database guard scripts, in the order they must be applied.
 /// </summary>
 /// <remarks>
-/// One reader, two callers: the <c>DatabaseGuards</c> migration, so a database provisioned with
+/// Callers: the migrations (each pins the scripts it needs through <see cref="Read"/>), so a database provisioned with
 /// <c>dotnet ef database update</c> arrives with its rules already enforced; and
 /// <see cref="DatabaseInitializer"/>, so a schema built from the model — which is what the test
 /// harness does — gets them too, and so a running deployment cannot drift.
@@ -16,6 +16,24 @@ namespace Kaff.Infrastructure.Persistence;
 /// </remarks>
 public static class GuardScripts
 {
+    /// <summary>
+    /// Reads one embedded guard script by file name, for a migration that must apply only the scripts
+    /// its schema supports. A migration must never call <see cref="ReadAllInOrder"/>: that returns
+    /// scripts written after the migration, which reference tables it has not created yet.
+    /// </summary>
+    public static string Read(string fileName)
+    {
+        Assembly assembly = typeof(GuardScripts).Assembly;
+        string resource = assembly
+            .GetManifestResourceNames()
+            .Single(name => name.EndsWith("." + fileName, StringComparison.OrdinalIgnoreCase));
+
+        using Stream stream = assembly.GetManifestResourceStream(resource)
+            ?? throw new InvalidOperationException($"Guard script {fileName} is not embedded.");
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
+
     /// <summary>Reads every embedded <c>.sql</c> guard script, ordered by file name.</summary>
     public static IReadOnlyList<string> ReadAllInOrder()
     {

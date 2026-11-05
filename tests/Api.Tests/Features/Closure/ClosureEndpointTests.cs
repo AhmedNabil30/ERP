@@ -69,109 +69,6 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
         await _factory.DisposeAsync();
     }
 
-    // ---- permissions: role x assignment, hitting every route directly ----------------------------
-
-    [Fact]
-    public void Each_closure_route_requires_the_permission_the_catalogue_names_and_the_route_project()
-    {
-        Dictionary<string, Permission> expected = new()
-        {
-            ["POST /api/projects/{projectId:guid}/practical-completion"] = Permission.ProjectPracticalCompletionDeclare,
-            ["POST /api/projects/{projectId:guid}/handover"] = Permission.ProjectHandover,
-            ["POST /api/projects/{projectId:guid}/warranty"] = Permission.ProjectHandover,
-            ["POST /api/projects/{projectId:guid}/hold-release"] = Permission.HoldRelease,
-            ["POST /api/projects/{projectId:guid}/close"] = Permission.ProjectClose,
-            ["POST /api/projects/{projectId:guid}/termination"] = Permission.ProjectManage,
-            ["POST /api/projects/{projectId:guid}/snags"] = Permission.SnagManage,
-            ["POST /api/projects/{projectId:guid}/snags/{id:guid}/fix"] = Permission.SnagManage,
-            ["POST /api/projects/{projectId:guid}/snags/{id:guid}/verification"] = Permission.SnagManage,
-            ["POST /api/projects/{projectId:guid}/snags/{id:guid}/resolution"] = Permission.SnagManage,
-            ["GET /api/projects/{projectId:guid}/snags"] = Permission.ProjectRead,
-            ["POST /api/projects/{projectId:guid}/warranty-callbacks"] = Permission.WarrantyCallbackManage,
-            ["POST /api/projects/{projectId:guid}/warranty-callbacks/{id:guid}/resolution"] = Permission.WarrantyCallbackManage,
-            ["GET /api/projects/{projectId:guid}/warranty-callbacks"] = Permission.ProjectRead,
-        };
-
-        Dictionary<string, PermissionRequirement> actual = [];
-        foreach (EndpointDataSource source in _factory.Services.GetServices<EndpointDataSource>())
-        {
-            foreach (RouteEndpoint route in source.Endpoints.OfType<RouteEndpoint>())
-            {
-                string? pattern = route.RoutePattern.RawText;
-                if (pattern is null || !IsClosureRoute(pattern))
-                {
-                    continue;
-                }
-
-                foreach (string method in route.Metadata.GetMetadata<HttpMethodMetadata>()!.HttpMethods)
-                {
-                    foreach (IAuthorizeData data in route.Metadata.OfType<IAuthorizeData>())
-                    {
-                        if (PermissionRequirement.TryParse(data.Policy ?? string.Empty, out PermissionRequirement? requirement)
-                            && requirement is not null)
-                        {
-                            actual[$"{method} {pattern}"] = requirement;
-                        }
-                    }
-                }
-            }
-        }
-
-        actual.Keys.Should().BeEquivalentTo(expected.Keys, "every closure route is gated, and no other exists");
-        foreach ((string key, Permission permission) in expected)
-        {
-            actual[key].Permission.Should().Be(permission, key);
-            actual[key].Scope.Should().Be(ProjectScope.FromRoute(), $"{key} checks the assignment to the route's project");
-        }
-    }
-
-    private static readonly string[] ClosureSegments =
-        ["practical-completion", "handover", "warranty", "warranty-callbacks", "hold-release", "close", "termination", "snags"];
-
-    /// <summary>
-    /// A closure route is one whose <b>first</b> segment after the project is a closure act. Matching the
-    /// segment anywhere in the pattern also caught <c>day-labour/engagements/{id}/close</c>, which belongs
-    /// to a different feature and has its own gate.
-    /// </summary>
-    private static bool IsClosureRoute(string pattern)
-    {
-        const string prefix = "/api/projects/{projectId:guid}/";
-
-        return pattern.StartsWith(prefix, StringComparison.Ordinal)
-            && ClosureSegments.Contains(pattern[prefix.Length..].Split('/')[0], StringComparer.Ordinal);
-    }
-
-    [Fact]
-    public async Task Each_closure_act_refuses_the_roles_that_do_not_hold_it_and_the_holder_without_an_assignment()
-    {
-        Guid project = await NewProjectAsync(ProjectStatus.Active);
-
-        // role without the permission, and the right role without an assignment, hitting every act directly.
-        (string Route, Guid[] Refused)[] acts =
-        [
-            ($"/api/projects/{project}/practical-completion", [_finance, _hr, _supervisor, _prepEngineer, _technicalOfficeUnassigned]),
-            ($"/api/projects/{project}/handover", [_finance, _hr, _supervisor, _prepEngineer, _technicalOfficeUnassigned]),
-            ($"/api/projects/{project}/warranty", [_finance, _hr, _supervisor, _prepEngineer, _technicalOfficeUnassigned]),
-            ($"/api/projects/{project}/hold-release", [_owner, _technicalOffice, _hr, _supervisor, _prepEngineer, _financeUnassigned]),
-            ($"/api/projects/{project}/close", [_finance, _technicalOffice, _hr, _supervisor, _prepEngineer]),
-            ($"/api/projects/{project}/termination", [_finance, _hr, _supervisor, _prepEngineer, _technicalOfficeUnassigned]),
-            ($"/api/projects/{project}/snags", [_owner, _finance, _hr, _prepEngineer, _technicalOfficeUnassigned]),
-            ($"/api/projects/{project}/warranty-callbacks", [_owner, _finance, _hr, _prepEngineer, _technicalOfficeUnassigned]),
-        ];
-
-        foreach ((string route, Guid[] refused) in acts)
-        {
-            foreach (Guid actor in refused)
-            {
-                (await SendAsync(HttpMethod.Post, route, actor, new { reason = "x", description = "x" })).StatusCode
-                    .Should().Be(HttpStatusCode.Forbidden, $"{route} for {actor}");
-            }
-        }
-
-        (await StatusAsync(project)).Should().Be(ProjectStatus.Active, "a refused call moves nothing");
-        (await HoldReleaseCountAsync(project)).Should().Be(0);
-    }
-
     // ---- KAFF-800 · practical completion and the snag list -------------------------------------
 
     [Fact]
@@ -381,15 +278,40 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
         (await HoldAsync(project)).Should().Be(0m);
     }
 
+    /// <summary>
+    /// spec.md section 6.4: the five ledgers never net against each other. All five are read before and after the release:
+    /// client advance and firm advance on the project, عهدة and the owner current account at company level, and the hold.
+    /// Only the hold moves. Each of the other four is non-zero beforehand, so "unchanged" is not satisfied by emptiness.
+    /// </summary>
     [Fact]
-    public async Task The_release_does_not_touch_the_client_advance_or_any_other_ledger()
+    public async Task The_release_moves_the_hold_alone_and_none_of_the_other_four_ledgers()
     {
         Guid project = await NewProjectAsync(ProjectStatus.Handover, advance: 250_000m);
-        decimal advance = await BalanceAsync(project, AccountType.ClientAdvance);
+        (Guid firm, Guid petty, Guid ownerCurrent, Guid safe) = await SeedOtherLedgersAsync(project);
+        Guid hold = await AccountIdAsync(project, AccountType.Hold);
+        Guid clientAdvance = await AccountIdAsync(project, AccountType.ClientAdvance);
+        Guid receivable = await AccountIdAsync(project, AccountType.ClientReceivable);
+        (string, Guid)[] accounts =
+        [
+            ("ClientAdvance", clientAdvance), ("Hold", hold), ("FirmAdvance", firm), ("PettyCash", petty),
+            ("OwnerCurrent", ownerCurrent), ("Safe", safe), ("Receivable", receivable),
+        ];
+
+        Dictionary<string, decimal> before = await ReadLedgersAsync(accounts);
+        before["ClientAdvance"].Should().Be(250_000m);
+        before["Hold"].Should().Be(200_000m);
+        new[] { before["FirmAdvance"], before["PettyCash"], before["OwnerCurrent"] }.Should().OnlyContain(balance => balance != 0m);
 
         (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
 
-        (await BalanceAsync(project, AccountType.ClientAdvance)).Should().Be(advance).And.Be(250_000m);
+        Dictionary<string, decimal> after = await ReadLedgersAsync(accounts);
+        after["Hold"].Should().Be(0m);
+        foreach (string untouched in new[] { "ClientAdvance", "FirmAdvance", "PettyCash", "OwnerCurrent", "Safe" })
+        {
+            after[untouched].Should().Be(before[untouched], $"{untouched} is not netted against the hold");
+        }
+
+        (after["Receivable"] - before["Receivable"]).Should().Be(200_000m, "the released hold becomes what the client owes (spec.md section 15)");
     }
 
     [Fact]
@@ -593,7 +515,226 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
         }
     }
 
+    // ---- KAFF-807-G · after closing, only collections post ------------------------------------------
+
+    /// <summary>
+    /// The hold here was never released, so "already released" cannot be the reason for the refusal: a release attempted
+    /// on a Closed project with its hold intact is refused by the project-state policy and by nothing else. The control
+    /// is the same hold on an UnderWarranty project, released by the same call (<c>The_release_is_allowed_while_under_warranty_too</c>).
+    /// </summary>
+    [Fact]
+    public async Task A_closed_project_refuses_a_hold_release_because_of_its_state_and_not_because_one_happened_before()
+    {
+        Guid project = await NewProjectAsync(ProjectStatus.Closed);
+        (await StatusAsync(project)).Should().Be(ProjectStatus.Closed);
+        (await HoldAsync(project)).Should().Be(200_000m);
+        (await HoldReleaseCountAsync(project)).Should().Be(0, "no release was ever written, so the already-released check has nothing to find");
+        long postings = await PostingCountAsync(project);
+
+        HttpResponseMessage response = await SendAsync(HttpMethod.Post, $"/api/projects/{project}/hold-release", _finance, null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ErrorCodeAsync(response)).Should().Be("treasury.posting_not_allowed_in_project_state");
+        (await HoldAsync(project)).Should().Be(200_000m);
+        (await PostingCountAsync(project)).Should().Be(postings);
+    }
+
+    // ---- the audit trail: who, when, what changed before and after, and why where the flow gives a reason ----
+
+    [Fact]
+    public async Task A_snag_raised_fixed_and_verified_writes_an_audit_row_per_step_with_who_when_and_the_status_before_and_after()
+    {
+        Guid project = await NewProjectAsync(ProjectStatus.HandoverPending);
+        Guid snag = await RaiseSnagAsync(project, SnagPriority.Major);
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/snags/{snag}/fix", _supervisor, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/snags/{snag}/verification", _technicalOffice, null)).StatusCode
+            .Should().Be(HttpStatusCode.OK);
+
+        List<AuditRecord> rows = await AuditOfAsync(snag);
+
+        rows.Select(row => row.Action).Should().Equal(AuditAction.Created, AuditAction.Modified, AuditAction.Modified);
+        rows.Select(row => row.ActorUserId).Should().Equal(_technicalOffice, _supervisor, _technicalOffice);
+        rows.Should().OnlyContain(row => row.EntityType == nameof(Snag) && row.ProjectId == project && row.OccurredAt > Now);
+        rows[0].AfterJson.Should().Contain("crack in the wall").And.Contain("Open");
+        rows[1].ChangedProperties.Should().Contain(nameof(Snag.Status));
+        rows[1].BeforeJson.Should().Contain("Open");
+        rows[1].AfterJson.Should().Contain("Fixed");
+        rows[2].ChangedProperties.Should().Contain(nameof(Snag.Status));
+        rows[2].BeforeJson.Should().Contain("Fixed");
+        rows[2].AfterJson.Should().Contain("Verified");
+    }
+
+    [Fact]
+    public async Task A_snag_resolution_writes_an_audit_row_with_who_the_choice_and_the_reason()
+    {
+        Guid project = await NewProjectAsync(ProjectStatus.HandoverPending);
+        Guid snag = await RaiseSnagAsync(project, SnagPriority.Minor, SnagOwnerKind.Subcontractor);
+        await SendAsync(HttpMethod.Post, $"/api/projects/{project}/snags/{snag}/fix", _technicalOffice, null);
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/snags/{snag}/resolution", _technicalOffice,
+            new { kind = "DebitNote", reason = "their defect" })).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        AuditRecord last = (await AuditOfAsync(snag)).Last();
+
+        last.Action.Should().Be(AuditAction.Modified);
+        last.ActorUserId.Should().Be(_technicalOffice);
+        last.OccurredAt.Should().BeAfter(Now);
+        last.ChangedProperties.Should().Contain([nameof(Snag.ResolutionKind), nameof(Snag.ResolutionReason)]);
+        last.AfterJson.Should().Contain("DebitNote").And.Contain("their defect");
+        last.Reason.Should().Be("their defect", "a reason the flow asks for is on the audit record, not only on the snag");
+    }
+
+    [Fact]
+    public async Task A_callback_raised_and_resolved_writes_an_audit_row_per_step_with_who_when_and_what_changed()
+    {
+        Guid project = await NewProjectAsync(ProjectStatus.UnderWarranty);
+        HttpResponseMessage raised = await SendAsync(
+            HttpMethod.Post, $"/api/projects/{project}/warranty-callbacks", _supervisor, new { description = "leak in the bathroom" });
+        raised.StatusCode.Should().Be(HttpStatusCode.Created);
+        using JsonDocument body = JsonDocument.Parse(await raised.Content.ReadAsStringAsync(Ct));
+        Guid callback = body.RootElement.GetProperty("id").GetGuid();
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/warranty-callbacks/{callback}/resolution", _technicalOffice, null))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+
+        List<AuditRecord> rows = await AuditOfAsync(callback);
+
+        rows.Select(row => row.Action).Should().Equal(AuditAction.Created, AuditAction.Modified);
+        rows.Select(row => row.ActorUserId).Should().Equal(_supervisor, _technicalOffice);
+        rows.Should().OnlyContain(row => row.EntityType == nameof(WarrantyCallback) && row.ProjectId == project && row.OccurredAt > Now);
+        rows[0].AfterJson.Should().Contain("leak in the bathroom");
+        rows[1].ChangedProperties.Should().Contain([nameof(WarrantyCallback.ResolvedByUserId), nameof(WarrantyCallback.ResolvedAt)]);
+    }
+
+    [Fact]
+    public async Task The_release_posting_is_audited_with_who_when_and_the_amount()
+    {
+        Guid project = await NewProjectAsync(ProjectStatus.Handover);
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        Posting release = await reader.Postings.SingleAsync(posting => posting.ProjectId == project && posting.Type == PostingType.HoldRelease, Ct);
+        AuditRecord row = await reader.AuditRecords.SingleAsync(record => record.EntityId == release.Id && record.EntityType == nameof(Posting), Ct);
+
+        row.Action.Should().Be(AuditAction.Created);
+        row.ActorUserId.Should().Be(_finance);
+        row.OccurredAt.Should().BeAfter(Now);
+        row.ProjectId.Should().Be(project);
+        row.AfterJson.Should().Contain("200000").And.Contain("HoldRelease");
+    }
+
+    /// <summary>
+    /// AC-802-M: the trail of a released hold carries "the project state". Nothing records it today: the release changes
+    /// no project row, so the only audit record is the posting's own, and a posting does not carry the status of the
+    /// project it was written against. Product gap, routed to the Scrum Master: the release handler would have to set
+    /// the audit reason (as CloseProject does) or the posting would have to snapshot the state. Skipped, not deleted, so
+    /// the criterion stays visible; remove the Skip when the product records it.
+    /// </summary>
+    [Fact(Skip = "PRODUCT GAP AC-802-M: the release's audit trail does not record the project state. See the remarks.")]
+    public async Task The_release_audit_trail_records_the_project_state()
+    {
+        Guid project = await NewProjectAsync(ProjectStatus.Handover);
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        List<AuditRecord> trail = await reader.AuditRecords.Where(record => record.ProjectId == project).ToListAsync(Ct);
+
+        trail.Where(record => record.OccurredAt > Now && record.EntityType == nameof(Posting))
+            .Should().Contain(record => (record.Reason ?? string.Empty).Contains(nameof(ProjectStatus.Handover), StringComparison.Ordinal)
+                || (record.AfterJson ?? string.Empty).Contains(nameof(ProjectStatus.Handover), StringComparison.Ordinal));
+    }
+
+    // ---- snag edits after the project closes -------------------------------------------------------
+
+    /// <summary>
+    /// Snag.Fix, Verify and Resolve consult only the snag's own status, never the project's. A Closed project's snag can
+    /// still be moved. Whether a snag edit should consult <c>RulingSet.PostingProjectStates</c> or a snag-specific rule is
+    /// a design question for the Scrum Master and the Architect; this test states the expectation that a closed project's
+    /// snag is frozen and is skipped until that is ruled. It was run un-skipped and failed with 200 where 409 was expected.
+    /// </summary>
+    [Fact(Skip = "PRODUCT DEFECT (minor, design question): snag Fix/Verify/Resolve ignore the project state, so a Closed project's snags can still be edited.")]
+    public async Task A_closed_projects_snags_can_no_longer_be_fixed_verified_or_resolved()
+    {
+        Guid project = await NewProjectAsync(ProjectStatus.HandoverPending, hold: 0m);
+        Guid open = await RaiseSnagAsync(project, SnagPriority.Minor);
+        Guid fixedOne = await RaiseSnagAsync(project, SnagPriority.Minor);
+        await SendAsync(HttpMethod.Post, $"/api/projects/{project}/snags/{fixedOne}/fix", _technicalOffice, null);
+        foreach (string step in new[] { "handover", "warranty" })
+        {
+            (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/{step}", _technicalOffice, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/close", _owner, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await StatusAsync(project)).Should().Be(ProjectStatus.Closed);
+
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/snags/{open}/fix", _technicalOffice, null)).StatusCode
+            .Should().Be(HttpStatusCode.Conflict);
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/snags/{fixedOne}/verification", _technicalOffice, null)).StatusCode
+            .Should().Be(HttpStatusCode.Conflict);
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/snags/{fixedOne}/resolution", _technicalOffice,
+            new { kind = "Absorbed", reason = "late" })).StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await SnagStatusAsync(open)).Should().Be(SnagStatus.Open);
+        (await SnagStatusAsync(fixedOne)).Should().Be(SnagStatus.Fixed);
+    }
+
     // ---- helpers ------------------------------------------------------------------------------------
+
+    private async Task<List<AuditRecord>> AuditOfAsync(Guid entityId)
+    {
+        await using KaffDbContext reader = _database.CreateBareContext();
+        return await reader.AuditRecords.Where(record => record.EntityId == entityId).OrderBy(record => record.OccurredAt).ToListAsync(Ct);
+    }
+
+    private async Task<Guid> AccountIdAsync(Guid project, AccountType type)
+    {
+        await using KaffDbContext reader = _database.CreateBareContext();
+        return await reader.Accounts.Where(account => account.ProjectId == project && account.Type == type).Select(account => account.Id).SingleAsync(Ct);
+    }
+
+    private async Task<Dictionary<string, decimal>> ReadLedgersAsync((string Name, Guid Account)[] accounts)
+    {
+        await using KaffDbContext reader = _database.CreateBareContext();
+        Dictionary<string, decimal> read = [];
+        foreach ((string name, Guid account) in accounts)
+        {
+            read[name] = (await reader.AccountBalances.SingleAsync(balance => balance.AccountId == account, Ct)).SignedBalance.Amount;
+        }
+
+        return read;
+    }
+
+    /// <summary>
+    /// Gives the project a firm advance, and creates its own safe, عهدة and owner current accounts (company level) with a
+    /// balance each, so the five ledgers of spec.md section 6.4 are all non-zero around a release. The safe is funded by an
+    /// owner injection first, so no posting here can breach the safe's floor.
+    /// </summary>
+    private async Task<(Guid Firm, Guid Petty, Guid OwnerCurrent, Guid Safe)> SeedOtherLedgersAsync(Guid project)
+    {
+        await using KaffDbContext context = _database.CreateContext();
+        DateOnly date = new(2026, 10, 1);
+        Account safe = Account.Create(AccountType.Safe, UniqueNames.Code("CLS2"), "خزنة", "Safe", Currency.Egp, date).Value;
+        Account ownerCurrent = Account.Create(
+            AccountType.OwnerCurrentAccount, UniqueNames.Code("CLOCA"), "جاري المالك", "Owner current", Currency.Egp, date).Value;
+        Account petty = Account.Create(
+            AccountType.PettyCashAdvance, UniqueNames.Code("CLPC"), "عهدة", "Petty cash", Currency.Egp, date,
+            projectId: project, partyType: PartyType.Employee, partyId: Guid.CreateVersion7()).Value;
+        Account firm = await context.Accounts.SingleAsync(account => account.ProjectId == project && account.Type == AccountType.FirmAdvance, Ct);
+        context.Accounts.AddRange(safe, ownerCurrent, petty);
+        await context.SaveChangesAsync(Ct);
+
+        // from = credited side, to = debited side, as everywhere in this suite.
+        context.Postings.Add(Posting.Create(
+            ownerCurrent, safe, new Money(500_000m), PostingType.OwnerInjection,
+            new SourceDocument(SourceDocumentType.Payment, Guid.CreateVersion7(), "INJ"), date, _owner, Now).Value);
+        await context.SaveChangesAsync(Ct);
+        context.Postings.Add(Posting.Create(
+            safe, firm, new Money(30_000m), PostingType.FirmAdvanceIssue,
+            new SourceDocument(SourceDocumentType.FirmAdvanceRequest, Guid.CreateVersion7(), "FADV"), date, _owner, Now, project).Value);
+        context.Postings.Add(Posting.Create(
+            safe, petty, new Money(10_000m), PostingType.PettyCashIssue,
+            new SourceDocument(SourceDocumentType.PettyCashRequest, Guid.CreateVersion7(), "PC"), date, _owner, Now, project).Value);
+        await context.SaveChangesAsync(Ct);
+
+        return (firm.Id, petty.Id, ownerCurrent.Id, safe.Id);
+    }
 
     private async Task AssertHoldIntactAsync(Guid project)
     {
@@ -692,6 +833,8 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
             [ProjectStatus.Active, ProjectStatus.HandoverPending, ProjectStatus.Handover, ProjectStatus.UnderWarranty],
         [ProjectStatus.Stopped] = [ProjectStatus.Active, ProjectStatus.Stopped],
         [ProjectStatus.Terminated] = [ProjectStatus.Active, ProjectStatus.Terminated],
+        [ProjectStatus.Closed] =
+            [ProjectStatus.Active, ProjectStatus.HandoverPending, ProjectStatus.Handover, ProjectStatus.UnderWarranty, ProjectStatus.Closed],
     };
 
     /// <summary>

@@ -1,6 +1,6 @@
 # KAFF-512 · One `Adjustment` object for every case where money flows back
 
-<!-- kaff id=KAFF-512 slice=5 points=8 state=NOT-BUILT -->
+<!-- kaff id=KAFF-512 slice=5 points=8 state=BUILT -->
 
 **Slice:** 7 (reconciled build order, step 7) · **Epic:** Adjustments · **Points:** 8.
 **Owner:** Backend. **No UI criterion is carried here.**

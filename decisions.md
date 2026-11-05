@@ -16135,3 +16135,16 @@ settlement; the subcontractor extract and the retention accrual (KAFF-510); a ze
 approval step on the retention release; a mistaken-retention-release endpoint (the domain test proves the reversal through
 `ReversesId`); collecting the reduced amount after a credit note; and every screen. The extract `actions` block was not
 extended with dispute flags: that is a UI concern for the design lane, and the API does not need it.
+
+## D-203
+**A fresh database can now be brought up, by the application and by `dotnet ef database update` alike.** Before this, both died with `42P01: relation "boq_lines" does not exist`.
+
+*Cause.* The `DatabaseGuards` migration (the second migration) called `GuardScripts.ReadAllInOrder()`, which returns every embedded script. When `003_boq_freeze.sql` was added, it came along, and it creates a trigger on `boq_lines`, a table the later `BoqAndRulings` migration creates. Any database that had applied `DatabaseGuards` before 003 existed was unaffected, which is why the defect stayed hidden: the dev database was migrated incrementally. The test harness builds its schema with `EnsureCreated`, so no test ever ran a migration.
+
+*Fix.* A migration must never read "all scripts"; it pins the scripts its schema supports. `GuardScripts.Read(fileName)` is new. `DatabaseGuards` applies `001_guards.sql` and `002_views.sql` only. `BoqAndRulings` applies `003_boq_freeze.sql` at the end of `Up`, right after it creates `boq_lines`. `DatabaseInitializer.ApplyGuardsAsync` still applies every script on each boot, as before. No guard script and no constraint string changed. Already-migrated databases are unaffected (the edited migrations are already recorded as applied; the scripts are idempotent and re-applied at boot).
+
+*Rule for the next guard script.* Add its install to the migration that creates the tables it touches (or a new migration after it). Never to an earlier migration.
+
+*Test.* `FreshDatabaseBootstrapTests` brings up empty databases through `DatabaseInitializer.InitialiseAsync(SchemaStrategy.Migrate)` and through `MigrateAsync` alone, then asserts `FindMissingGuardsAsync` is empty, every trigger and function named in every script exists, the safe floor refuses a negative balance, a hold debit is refused, and the BOQ freeze trigger is present when only migrations ran.
+
+*Not done.* `KaffDbContextFactory` still falls back to a placeholder database `kaff_design_time` when `KAFF_DESIGN_TIME_DB` is unset, so `dotnet ef database update` without that variable reports success against the wrong database. Not changed here.

@@ -35,11 +35,9 @@ To switch person: open the side navigation, click تسجيل الخروج, sign 
 
 ### Step 1. Project list, as Owner
 
-Sign in as `owner_demo`. You land on المشاريع, and the heading reads "2 مشروعاً".
+Sign in as `owner_demo`. You land on المشاريع. The heading now reads "1 مشروعاً", not 2: the leftover test project was deleted on 2026-11-04 (see "What I found").
 
 Row one: فيلا 47 — التجمع الخامس, code PRJ-377EC1A2, client شركة النيل للتطوير العقاري, type مقاولة بالمقطوعية, status جاري العمل, contract value 4,672,694.01. The row has no links inside it: the whole row is one link that opens the project (next step).
-
-Row two: مشروع KAFF-934, code PRJ-C7871BB1, status لم تبدأ, contract value 1,000,000.00. This is leftover test data, not part of the demo (see "What I found"). Ignore it.
 
 ### Step 2. The project workspace, as Owner
 
@@ -144,6 +142,72 @@ Then, honestly:
 - "الدفاتر الخمسة": the الحجز card reads 22,146.93 with two entries, which equals 246.33 + 21,900.60. The other four ledgers read 0.00 with no entries. The page says "لا مجموع كلي لهذه الدفاتر الخمسة. عمداً." and "مطابقة: رصيد كل دفتر يساوي مجموع قيوده."
 - A list of assumptions at the foot, each tagged A1, A2 and so on, with what is not decided.
 
+### Step 9. إثبات الأرقام now judges, instead of saying it cannot
+
+The 2026-11-04 walk found this page's "المتوقع" row reading "غير متاح: حاسبة العقد لم تُنفَّذ" for every
+extract. The billing calculators landed since, and the page now judges each extract event against the
+real calculator rather than declining to compare. Re-walk it and read the expected column.
+
+**I have not re-photographed this page myself this session.** It changed in commits `94b1fa4` and
+`f7d5a86`, recorded as D-197. If the expected row still says غير متاح, tell me — that would be a
+regression and not a known state.
+
+### Step 10. الإقفال, the closure screen, as Owner and as Finance
+
+**This is the new screen, and it is the one worth your time.** From the project workspace, the hub now has
+a sixth group, الإقفال, holding a link to `/projects/{id}/closure`. One screen carries the whole end of a
+project's life: the stage, the hold, snags, warranty callbacks, and termination.
+
+What to try, and what each person should see:
+
+- **As Owner**, the header's primary action follows the stage, and it is the same slot that offers
+  فتح جدول الكميات at the start of a project: declare practical completion while the project is running,
+  then hand over, then begin warranty, then close. One act at a time, never a menu of four.
+- **Try handing over with a major snag open.** It is refused, and the refusal **names the snag's number**
+  rather than saying "cannot hand over". A minor snag does not block it.
+- **Try closing before the project is settled.** It is refused and **lists which conditions are unmet**.
+- **As Finance, at تم التسليم or في فترة الضمان**, the hold panel appears. Look at it closely:
+  it shows the amount **and the fact that it was computed from N postings, not typed**. There is no
+  amount field, and there is deliberately no way to type one. The release endpoint accepts no amount.
+  That is the spec rule made visible: the hold only grows, and it releases once, in full, at handover.
+- **Try releasing twice.** The second is refused. A database trigger refuses it even if the application
+  somehow did not.
+- **As Owner or Technical Office, press the termination control.** It returns the honest answer: the
+  settlement is not decided. See section 5.
+
+Roles, and the pattern this project holds to — a control you may not use is **absent, not greyed out**:
+Finance alone sees the hold panel; the Technical Office raises, fixes, verifies and resolves snags and
+raises callbacks; the Owner declares, hands over, begins warranty and closes. A Design project gets an
+empty state, because practical completion does not apply to it.
+
+**Photographed by the lane that built it, not by me**: Owner at 1440 and 390 across جاري العمل and
+في انتظار التسليم, a refused handover naming the snag, a refused close naming the unmet conditions, and
+the termination note; Technical Office at both widths on the snag list and forms; Finance at both widths
+through the hold panel, the release confirmation and the released state. After that release was clicked
+in a real browser, the database held exactly one `HoldRelease` posting and a hold balance of 0.0000.
+
+⛔ **Not seen by anyone, so treat as unphotographed:** dark mode, the English UI, Cost Plus and Design on
+a real screen, the callback-resolve click, and the Technical Office view at 390 under warranty.
+⛔ **The Arabic copy on this screen was written by a model and no human has read it.** If a sentence reads
+wrong to you, it is wrong — say so and it changes.
+
+### Step 11. The money that now exists behind the screens, and how to see it
+
+Three things shipped on the server with no screen, so you can only reach them through the API. They matter
+because each closes a hole in the money spine:
+
+- **A collection turns an issued extract into money in the safe.** Before this, `BuildCollection` existed
+  and nothing called it, so an issued extract never became cash. A collection records method, date and
+  reference, none optional. Withholding at source comes out of the same act: a corporate client at 1%
+  puts 2,400 into the withholding account and 237,600 into the safe, and the two sum to the 240,000 net.
+  An individual client withholds nothing. **Cash reaches the safe only at تم التحصيل and not one stage
+  earlier** — that timing was a real defect once, and it is now asserted per stage, not just per total.
+- **A mistaken collection is reversed, never edited.** The reversal writes mirror postings that point at
+  the originals. Nothing in this system updates or deletes a posting, ever.
+- **A change order changes the contract value without touching the signed BOQ.** The project reads lead
+  with the revised value, with the original and the approved total beside it. It reprices nothing that
+  is already issued, and it never touches the hold.
+
 ## 4. The three things worth your attention
 
 ### (a) The contract value is derived, and cannot be typed
@@ -164,12 +228,31 @@ On the issued document (step 7), the "العمود المطبوع" block adds th
 
 ## 5. Not built
 
-- The project workspace is built only as far as the API serves it. Not on the page yet, because nothing serves it: executed-versus-surveyed progress, change orders, the list of daily logs, open NCRs, subcontractors, the five-ledger strip, the pending-extract chain, the team roster, linked projects, the stop control, Cost Plus supervision rate and classification, Design area, rate and stages. Cost Plus and Design projects were not walked in a browser (the demo has only Lump Sum projects); their screens are covered by the unit tests.
-- The primary buttons مستخلص جديد and فاتورة جديدة: there is no screen to create an extract or an invoice yet, so the workspace offers only فتح جدول الكميات (Owner, project in لم تبدأ) and سجل يومي جديد (site engineer).
-- Collections (client payments in).
-- Change orders.
-- Project closure, handover, warranty.
-- Expected-versus-actual on the proof page (the contract calculator is not implemented; the page says so).
+**Four lines that used to live here are now built, and this section is the record of that.** Collections,
+change orders, project closure/handover/warranty, and expected-versus-actual on the proof page have all
+shipped since the 2026-11-04 walk. They are described in steps 9 to 11 above. What follows is what is
+genuinely still missing.
+
+- **No screen creates an extract.** The chain is driven from the extract list and the extract page, and
+  extracts are seeded by script. "مستخلص جديد" has no screen behind it and is not offered.
+- **No screen records a collection.** `POST .../extracts/{id}/collect` exists, takes method, date and
+  reference, and is tested; nothing on any page calls it. To see a collection you have to call the API.
+- **No screen raises or approves a change order.** The whole chain exists on the server, with its own
+  gates, rejections and separation of duties. There is no change-order screen at all.
+- **No screen raises a dispute or an adjustment, and none releases subcontractor retention.** Server only.
+- **Cheques have no screen.** The states (received, deposited, cleared, bounced) are a real state machine
+  on the server with audit, and nothing renders them.
+- Still not on the project workspace, because nothing serves it: executed-versus-surveyed progress, the
+  list of daily logs, open NCRs, subcontractors, the five-ledger strip, the pending-extract chain, the
+  team roster, linked projects, the stop control, Cost Plus supervision rate and classification, Design
+  area, rate and stages.
+- **`Terminated` settles nothing, deliberately.** `spec.md` §13 names the state and §6.9 says "termination
+  settlement", and nothing anywhere says what settles. The transition refuses with a stored reason and
+  writes no posting. The closure screen shows that refusal as a note. **This is waiting on Karim, not on
+  code.** Do not read the refusal as a bug.
+- **No invoice.** "فاتورة جديدة" has no screen and no server route.
+- Cost Plus and Design projects have never been walked in a browser — the demo holds one Lump Sum project.
+  Their behaviour is covered by tests only.
 
 ## 6. Not ready (things I could not walk or that do not work)
 
@@ -180,10 +263,10 @@ On the issued document (step 7), the "العمود المطبوع" block adds th
 
 ## 7. What I found
 
-- The Owner's project list shows a second project, مشروع KAFF-934 (1,000,000.00, لم تبدأ). It looks like a test leftover, not a demo project.
+- **(Fixed.)** The Owner's project list used to show a second project, مشروع KAFF-934 (1,000,000.00, لم تبدأ). It was test leftover, not seed code — nothing in the repository created it, so there was nothing to delete in source. It was database rows with no postings and no extracts, and they were deleted on 2026-11-04. The list now shows one project.
 - (Fixed.) Each project row used to carry a link with no visible text that opened day labour. It is gone; the whole row now opens the project workspace.
-- The second project مشروع KAFF-934 has contract value 1,000,000.00 and no BOQ, so its workspace shows "لا توجد مقايسة لهذا المشروع بعد" in الكميات next to a contract value chip منقول. The chip says the value is carried from a signed BOQ, which is not true there. It is leftover test data.
-- The proof page's five checks are all "لم يُحكم بعد" and the expected row is unavailable, so for now the page proves the actual postings add up, not that they match the contract rules.
+- **(Gone with it.)** That project had a contract value and no BOQ, so its workspace showed a منقول chip claiming the value came from a signed BOQ when it did not. The chip is still capable of saying that about any project in the same state, so it is worth knowing: the claim is only true where a signed BOQ exists.
+- **(Changed.)** The proof page's expected row used to be unavailable because no calculator existed. The calculators landed and the page now judges each extract against them (D-197). The five end-of-project checks still read "لم يُحكم بعد" until handover, which is correct — they are handover checks.
 - The pending-extract seeding script could not make a second extract with new work. It reused the first run's quantity ids, so extract 3 was prepared with nothing new. I fixed the ids (commit `03d5755`), and the script now also sends such an extract through a reject-and-revise so its evidence picks up the new work. That is how extract 3 got its figures.
 
 ## 8. Things I changed for you
@@ -198,3 +281,26 @@ The Owner now lands on the project list, not the user management screen (D-196).
 4. What happens to an extract that is mid-chain when its project is stopped.
 5. Whether an engineer types an expense amount (D-192).
 6. Whether an inactive worker may be charged hours (Q118).
+
+Added since the last walk, in rough order of what they cost if guessed wrong:
+
+7. **What a termination settles.** `spec.md` §13 names `Terminated` and §6.9 says "termination
+   settlement", and nothing says what settles. Nothing was invented: the transition refuses. This is the
+   largest unanswered business question in the project module, and it moves money at the end of a
+   contract, which is exactly where a guess surfaces too late to fix cheaply.
+8. **After a credit note is approved, how does the client pay the reduced amount, and does withholding
+   apply to that reduced amount?** Collection is refused while a credit note is open, so today an extract
+   with an approved credit note can never reach تم التحصيل. That is deliberate — collecting the stored
+   net would over-collect — but it is a dead end until Karim answers.
+9. **A dispute resolved as a revised extract.** Does the original go `Void`, are its postings reversed,
+   and how is its hold leg handled without breaking "the hold only grows"? Refused today.
+10. **Who approves what, in five places nobody has ruled:** a collection, an adjustment, the hold
+    release, a change order, and a subcontractor retention release. Each runs on an assumed default,
+    each default is written down as a `RulingNote`, and each is a one-line change once Karim answers.
+11. **Subcontractor retention:** confirm it releases at the warranty end rather than with the client
+    hold, and how the 5% is zeroed per subcontractor.
+12. **Whether the same person may fix a snag and then verify it.** The server does not currently stop
+    them, and the snag response does not even say who did which, so no screen could hide the control.
+13. **The five Arabic status words are still guesses.** `متوقف`, `في انتظار التسليم`, `تم التسليم`,
+    `في فترة الضمان`, `تم فسخ التعاقد` are on screen today and were written by a model, not given by you.
+    Your five status words for the states you did name are used verbatim; these five are not yours yet.
