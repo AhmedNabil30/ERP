@@ -175,6 +175,10 @@ public sealed class PermissionEvaluatorTests
             // Its one grant names a role, so the evaluator discards nothing.
             Permission.ExtractCollect,
 
+            // Added 2026-11-04 with the row itself (KAFF-802): the single release posting that takes the whole hold
+            // out of its ledger at handover. Its one grant names a role, so the evaluator discards nothing.
+            Permission.HoldRelease,
+
             Permission.ChangeOrderApprove,
             Permission.FirmAdvanceApprove,
             Permission.TreasuryPostProject,

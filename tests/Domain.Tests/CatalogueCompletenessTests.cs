@@ -409,6 +409,10 @@ public sealed class CatalogueCompletenessTests
         // ChangeOrderPrepare, ChangeOrderReview and ChangeOrderClientApprovalRecord joined the list 2026-11-04
         // (KAFF-508/509, Q103, Q105): spec.md section 13 gives the change-order chain and names only the Owner's
         // step. The Technical Office is assumed; see Rulings/ChangeOrderRulings.cs.
+        //
+        // ProjectPracticalCompletionDeclare, ProjectHandover, SnagManage, HoldRelease, WarrantyCallbackManage and
+        // ProjectClose joined the list 2026-11-04 (KAFF-800 to KAFF-807, Q109, Q110, Q113, Q115, Q116): spec.md
+        // section 11 gives the closure flow and names none of the actors. See Rulings/ClosureRulings.cs.
         Permission[] expected =
         [
             Permission.PeriodClose,
@@ -417,6 +421,12 @@ public sealed class CatalogueCompletenessTests
             Permission.ChangeOrderPrepare,
             Permission.ChangeOrderReview,
             Permission.ChangeOrderClientApprovalRecord,
+            Permission.ProjectPracticalCompletionDeclare,
+            Permission.ProjectHandover,
+            Permission.SnagManage,
+            Permission.HoldRelease,
+            Permission.WarrantyCallbackManage,
+            Permission.ProjectClose,
         ];
 
         PermissionCatalogue.Unresolved

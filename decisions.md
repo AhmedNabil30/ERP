@@ -15997,3 +15997,65 @@ does not replace it.
   and was out of that lane's scope. AC-317-E (whether a hold release carries withholding) has nothing to test
   against: `WithholdingBaseRule.HoldReleaseCarriesWithholding` is read nowhere in `src`, because no hold-release
   path exists yet. It is KAFF-802's to discharge.
+
+## D-201 — closure: practical completion, snags, handover, the hold release, warranty callbacks and closing (KAFF-800 to KAFF-807)
+
+2026-11-04. Backend lane. Append-only; nothing above is superseded. Written as the lane built, so a reader can tell a
+finished pass from an unfinished one: this entry is the finished design, the sections below it are added as pieces land.
+
+- **The brief was wrong in one place and the code is the authority.** It said `Calculators.cs` already computes the
+  handover release. It does not: `Calculators.cs` holds only the per-extract hold (`HoldRate` times the deduction base)
+  and the display-only `HoldToDate`. The release amount is not a calculation at all. It is the hold ledger balance,
+  summed from postings by `BalanceQueries.GetLedgerBalances(...).Hold`, and `ProjectClosure.ReleaseHold` takes that
+  balance as its only source of an amount. `spec.md` section 15's row "Handover - hold release +200,000" is therefore
+  the sum of the three accruals, which `Section15ThroughCalculatorTests` and `Section15ThroughExtractChainTests`
+  already prove.
+- **Where the code lives.** `src/Domain/Closure/`: `Snag`, `WarrantyCallback`, `ClosureErrors`, and `ProjectClosure`,
+  the static home of every closure act (`DeclarePracticalCompletion`, `HandOver`, `BeginWarranty`, `Close`,
+  `Terminate`, `ReleaseHold`). Each checks the contract type and the project state in the domain, not the handler.
+  `Project.TransitionTo` and its two transition tables are unchanged: every pair this story needs already existed
+  (`Active -> HandoverPending -> Handover -> UnderWarranty -> Closed`), and no pair was added, so no two-way grant
+  was opened. Endpoints are 14 vertical slices under `src/Api/Features/Closure/`.
+- **The hold release is one posting and the only legal debit of the hold.** `PostingType.HoldRelease`, from the hold
+  account to the client receivable (the mirror of the accrual, which is receivable to hold), for the whole hold
+  balance, built through `PostingSetBuilder`. The state is checked against `RulingSet.PostingProjectStates`
+  (`HoldRelease` allowed in `Handover` and `UnderWarranty` only), asked first so the refusal is
+  `PostingNotAllowedInProjectState`. `Posting.HoldOnlyGrows`, `PostingAccountLegality` and the database exact-zero
+  guard were not touched. The release is refused a second time (a standing release posting exists: not reversed),
+  refused at a zero hold, and refused on Cost Plus and Design, which have no hold.
+- **New `SourceDocumentType.ProjectHandover = 21`.** A release traces to the project's handover. Enums are stored as
+  text, so this is no schema change.
+- **Handover and the release are two acts.** `POST .../handover` moves `HandoverPending -> Handover` and stamps
+  `HandoverOn` and `WarrantyEndsOn` (the clock was already built). `POST .../hold-release` posts. `spec.md`
+  section 11 says the hold releases "at handover" and the story's AC-802-A reads "handed over and the hold released",
+  which fits two acts; AC-802-F (what moves Handover to UnderWarranty and the day of release) is held on Q110.
+  `POST .../warranty` is an explicit act `Handover -> UnderWarranty`. All of this is `RulingSet.HoldReleaseGate` and
+  `WarrantyStart`.
+- **Terminated refuses.** `ProjectClosure.Terminate` returns `errors.closure.termination_settlement_unruled`, changes
+  nothing and writes no posting. `POST .../termination` (gated `ProjectManage`) calls it. `Project.TransitionTo`
+  still permits `Terminated` as a raw state (existing tests build a terminated project through it); the refusal is
+  at the act, not in the table. `RulingSet.TerminationSettlement`.
+- **Closing reads the ledgers.** `ProjectClosure.Close` takes a `ClosureReadings` built from the balances view (client
+  advance, hold) and a count of extracts below Issued. No request field marks a condition met. A refusal names every
+  unmet condition. The readings go onto the audit record as the reason. `RulingSet.ClosureConditions`.
+- **Snag resolution records the toggle and posts nothing.** The debit note needs the Adjustment object (KAFF-512) and
+  the subcontractor sub-ledger (KAFF-510); neither exists. `Snag.Resolve` stores kind, reason, who and when, and a
+  debit note needs a subcontractor owner. The hold appears nowhere in it.
+- **Permissions 80 to 85**, all `Unresolved: true` with a real `SpecReference`: `ProjectPracticalCompletionDeclare`,
+  `ProjectHandover`, `SnagManage`, `HoldRelease` (Finance only, `TouchesMoney`; the Owner is absent so nobody creates
+  and approves the same release), `WarrantyCallbackManage`, `ProjectClose`.
+- **One migration, `ClosureAndWarranty`**: tables `snags` and `warranty_callbacks`, each with a unique index on
+  (project, number). No check constraint and no balance column, so `DatabaseInitializer` needed no new entry.
+- **Eleven ruling notes** in `src/Domain/Rulings/ClosureRulings.cs`, registered in `RulingSet`: `ClosureActors`,
+  `PracticalCompletionPrerequisites`, `SnagHandoverBlock`, `HoldReleaseGate`, `WarrantyStart`,
+  `WarrantyCallbackWindow`, `SnagResolutionCost`, `SubcontractorRetentionTiming`, `ClosureConditions`,
+  `ClosedStateEffect`, `TerminationSettlement`.
+- **Arabic words for five states.** `closure.status.stopped`, `.handover_pending`, `.handover`, `.under_warranty`,
+  `.terminated` carry the value `[PLACEHOLDER <state> - awaiting Nabil]` followed by a draft word. They are not
+  authoritative: open question 1 in `docs/demo-walkthrough.md` section 9 is Nabil's. Nothing reads these keys yet.
+- **Not built, and why.** `KAFF-806` (subcontractor retention release): nothing accrues subcontractor retention
+  (`KAFF-510` is not built), so there is no balance to release; the story says not to pull it before 510. Collecting
+  the released hold: a collection is per extract, and the release leaves a client receivable that no extract carries,
+  so how the client pays it (and whether `HoldReleaseCarriesWithholding` applies to that payment, AC-317-E) has no
+  mechanism yet and is a question, not a default. A mistaken-release correction endpoint (Q111). A cost or posting
+  for snags and callbacks (Q112, KAFF-512). Any UI.

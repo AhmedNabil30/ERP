@@ -1,0 +1,89 @@
+using Kaff.Domain.Common;
+
+namespace Kaff.Domain.Closure;
+
+/// <summary>Error catalogue for practical completion, the snag list, handover, warranty, the hold release and closure.</summary>
+public static class ClosureErrors
+{
+    /// <summary>A Design project has no snag list, no handover, no warranty and no hold (spec.md section 11, D-015).</summary>
+    public static readonly Error NotApplicableToDesign =
+        Error.Conflict("closure.not_applicable_to_design", "errors.closure.not_applicable_to_design");
+
+    /// <summary>The hold exists on a Lump Sum contract only (spec.md sections 5.2, 5.3).</summary>
+    public static readonly Error HoldNotApplicable =
+        Error.Conflict("closure.hold_not_applicable", "errors.closure.hold_not_applicable");
+
+    public static readonly Error MajorSnagsOpen =
+        Error.Conflict("closure.major_snags_open", "errors.closure.major_snags_open");
+
+    /// <summary>Terminated is unruled: spec.md names the state and a settlement and says what settles nowhere.</summary>
+    public static readonly Error TerminationSettlementUnruled =
+        Error.Conflict("closure.termination_settlement_unruled", "errors.closure.termination_settlement_unruled");
+
+    public static readonly Error NotSettled =
+        Error.Conflict("closure.not_settled", "errors.closure.not_settled");
+
+    public static readonly Error HoldAlreadyReleased =
+        Error.Conflict("closure.hold_already_released", "errors.closure.hold_already_released");
+
+    public static readonly Error NothingToRelease =
+        Error.Conflict("closure.nothing_to_release", "errors.closure.nothing_to_release");
+
+    public static readonly Error AccountsMissing =
+        Error.Conflict("closure.accounts_missing", "errors.closure.accounts_missing");
+
+    /// <summary>A snag is raised on the list kept between practical completion and handover (spec.md section 11).</summary>
+    public static readonly Error SnagListNotOpen =
+        Error.Conflict("closure.snag_list_not_open", "errors.closure.snag_list_not_open");
+
+    public static readonly Error SnagNotFound =
+        Error.NotFound("closure.snag_not_found", "errors.closure.snag_not_found");
+
+    public static readonly Error SnagDescriptionRequired =
+        Error.Validation("closure.snag_description_required", "errors.closure.snag_description_required");
+
+    public static readonly Error SnagLocationRequired =
+        Error.Validation("closure.snag_location_required", "errors.closure.snag_location_required");
+
+    public static readonly Error SnagOwnerRequired =
+        Error.Validation("closure.snag_owner_required", "errors.closure.snag_owner_required");
+
+    public static readonly Error SnagPriorityRequired =
+        Error.Validation("closure.snag_priority_required", "errors.closure.snag_priority_required");
+
+    public static readonly Error SnagIllegalTransition =
+        Error.Conflict("closure.snag_illegal_transition", "errors.closure.snag_illegal_transition");
+
+    public static readonly Error SnagNotFixed =
+        Error.Conflict("closure.snag_not_fixed", "errors.closure.snag_not_fixed");
+
+    public static readonly Error SnagAlreadyResolved =
+        Error.Conflict("closure.snag_already_resolved", "errors.closure.snag_already_resolved");
+
+    public static readonly Error DebitNeedsSubcontractorOwner =
+        Error.Conflict("closure.debit_needs_subcontractor_owner", "errors.closure.debit_needs_subcontractor_owner");
+
+    public static readonly Error ResolutionRequired =
+        Error.Validation("closure.resolution_required", "errors.closure.resolution_required");
+
+    public static readonly Error ReasonRequired =
+        Error.Validation("closure.reason_required", "errors.closure.reason_required");
+
+    public static readonly Error SubcontractorNotFound =
+        Error.NotFound("closure.subcontractor_not_found", "errors.closure.subcontractor_not_found");
+
+    public static readonly Error CallbackNotFound =
+        Error.NotFound("closure.callback_not_found", "errors.closure.callback_not_found");
+
+    public static readonly Error CallbackNoWarranty =
+        Error.Conflict("closure.callback_no_warranty", "errors.closure.callback_no_warranty");
+
+    public static readonly Error CallbackAfterWarranty =
+        Error.Conflict("closure.callback_after_warranty", "errors.closure.callback_after_warranty");
+
+    public static readonly Error CallbackDescriptionRequired =
+        Error.Validation("closure.callback_description_required", "errors.closure.callback_description_required");
+
+    public static readonly Error CallbackAlreadyResolved =
+        Error.Conflict("closure.callback_already_resolved", "errors.closure.callback_already_resolved");
+}

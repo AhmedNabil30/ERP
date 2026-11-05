@@ -565,6 +565,29 @@ public static class PermissionCatalogue
                 Unresolved: true),
             new(Permission.FirmAdvanceApprove, PermissionScope.ProjectScoped, [owner], "§6.4.3", TouchesMoney: true),
 
+            // spec.md section 11 gives the closure flow (practical completion, snag list, handover, warranty, closed)
+            // and section 5.1 the hold release; neither names who acts (Q109, Q110, Q113, Q115, Q116). Running defaults
+            // are in Rulings/ClosureRulings.cs ClosureActors. Finance alone releases the hold and the Owner is absent
+            // from that row, so nobody creates and approves the same release. Every other row is money-free.
+            new(Permission.ProjectPracticalCompletionDeclare, PermissionScope.ProjectScoped, [owner, technicalOffice],
+                "§11 — holder UNRESOLVED (Q109), Owner and Technical Office assumed, see Rulings/ClosureRulings.cs",
+                Unresolved: true),
+            new(Permission.ProjectHandover, PermissionScope.ProjectScoped, [owner, technicalOffice],
+                "§11, §13 — holder UNRESOLVED (Q109, Q110), Owner and Technical Office assumed, see Rulings/ClosureRulings.cs",
+                Unresolved: true),
+            new(Permission.SnagManage, PermissionScope.ProjectScoped, [technicalOffice, engineerSupervisor],
+                "§11 — holder UNRESOLVED (Q109, Q115), Technical Office and supervising engineer assumed, see Rulings/ClosureRulings.cs",
+                Unresolved: true),
+            new(Permission.HoldRelease, PermissionScope.ProjectScoped, [finance],
+                "§5.1, §11 — holder UNRESOLVED (Q109, Q110), Finance assumed, see Rulings/ClosureRulings.cs",
+                Unresolved: true, TouchesMoney: true),
+            new(Permission.WarrantyCallbackManage, PermissionScope.ProjectScoped, [technicalOffice, engineerSupervisor],
+                "§11 — holder UNRESOLVED (Q109, Q116), Technical Office and supervising engineer assumed, see Rulings/ClosureRulings.cs",
+                Unresolved: true),
+            new(Permission.ProjectClose, PermissionScope.ProjectScoped, [owner],
+                "§11, §13 — holder UNRESOLVED (Q109, Q113), Owner assumed, see Rulings/ClosureRulings.cs",
+                Unresolved: true),
+
             // ---- Treasury ----
 
             new(Permission.TreasuryPostProject, PermissionScope.ProjectScoped, [finance], "§2, §9", TouchesMoney: true),

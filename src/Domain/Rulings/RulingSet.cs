@@ -82,6 +82,39 @@ public sealed record RulingSet
     /// <summary>Where a rejected change order goes. Registered, not resolved.</summary>
     public ChangeOrderRejection ChangeOrderRejection { get; init; } = ChangeOrderRejection.Default;
 
+    /// <summary>Who declares, hands over, releases the hold, raises snags and callbacks, and closes (Q109).</summary>
+    public ClosureActors ClosureActors { get; init; } = ClosureActors.Default;
+
+    /// <summary>What practical completion requires before it may be declared. Registered, not resolved.</summary>
+    public PracticalCompletionPrerequisites PracticalCompletionPrerequisites { get; init; } = PracticalCompletionPrerequisites.Default;
+
+    /// <summary>Which snags block handover and whether a failed fix reopens (Q115).</summary>
+    public SnagHandoverBlock SnagHandoverBlock { get; init; } = SnagHandoverBlock.Default;
+
+    /// <summary>When the hold releases, what blocks it, and whether it can be undone (Q110, Q111).</summary>
+    public HoldReleaseGate HoldReleaseGate { get; init; } = HoldReleaseGate.Default;
+
+    /// <summary>What moves Handover to UnderWarranty (Q110).</summary>
+    public WarrantyStart WarrantyStart { get; init; } = WarrantyStart.Default;
+
+    /// <summary>When a callback is accepted and what it books (Q116, Q112).</summary>
+    public WarrantyCallbackWindow WarrantyCallbackWindow { get; init; } = WarrantyCallbackWindow.Default;
+
+    /// <summary>What resolving a snag books (Q112).</summary>
+    public SnagResolutionCost SnagResolutionCost { get; init; } = SnagResolutionCost.Default;
+
+    /// <summary>When subcontractor retention releases (Q26). Nothing is built.</summary>
+    public SubcontractorRetentionTiming SubcontractorRetentionTiming { get; init; } = SubcontractorRetentionTiming.Default;
+
+    /// <summary>What closure requires (Q113, Q116).</summary>
+    public ClosureConditions ClosureConditions { get; init; } = ClosureConditions.Default;
+
+    /// <summary>What a Closed project forbids that an Active one allowed.</summary>
+    public ClosedStateEffect ClosedStateEffect { get; init; } = ClosedStateEffect.Default;
+
+    /// <summary>How a terminated project ends (Q108). The transition refuses.</summary>
+    public TerminationSettlement TerminationSettlement { get; init; } = TerminationSettlement.Default;
+
     /// <summary>Every entry, each describing itself. A test pins that none is missing a question.</summary>
     public IReadOnlyList<RulingNote> Notes =>
     [
@@ -111,5 +144,16 @@ public sealed record RulingSet
         ChangeOrderBillingTreatment.Note,
         ChangeOrderBillingBasis.Note,
         ChangeOrderRejection.Note,
+        ClosureActors.Note,
+        PracticalCompletionPrerequisites.Note,
+        SnagHandoverBlock.Note,
+        HoldReleaseGate.Note,
+        WarrantyStart.Note,
+        WarrantyCallbackWindow.Note,
+        SnagResolutionCost.Note,
+        SubcontractorRetentionTiming.Note,
+        ClosureConditions.Note,
+        ClosedStateEffect.Note,
+        TerminationSettlement.Note,
     ];
 }

@@ -50,4 +50,6 @@ internal static class DbTables
     public const string ChangeOrderLines = "change_order_lines";
     public const string ChangeOrderGateRecords = "change_order_gate_records";
     public const string ExtractChangeOrderLines = "extract_change_order_lines";
+    public const string Snags = "snags";
+    public const string WarrantyCallbacks = "warranty_callbacks";
 }

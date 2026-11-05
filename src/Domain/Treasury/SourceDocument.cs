@@ -70,6 +70,9 @@ public enum SourceDocumentType
 
     /// <summary>Loan agreement or instalment (spec.md §6.6 🟡).</summary>
     LoanSchedule = 20,
+
+    /// <summary>The handover of a project: the hold release posts against it (spec.md section 5.1).</summary>
+    ProjectHandover = 21,
 }
 
 /// <summary>

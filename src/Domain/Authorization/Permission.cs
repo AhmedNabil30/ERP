@@ -399,4 +399,45 @@ public enum Permission
     /// <see cref="Rulings.ChangeOrderApprovers"/>.
     /// </summary>
     ChangeOrderClientApprovalRecord = 79,
+
+    /// <summary>
+    /// Declare practical completion (Active to HandoverPending, spec.md section 11). UNRESOLVED (Q109): spec.md names the
+    /// step and no actor. The Owner and the Technical Office are assumed; see <see cref="Rulings.ClosureActors"/>.
+    /// Money-free.
+    /// </summary>
+    ProjectPracticalCompletionDeclare = 80,
+
+    /// <summary>
+    /// Hand the project over and start the warranty (HandoverPending to Handover to UnderWarranty). UNRESOLVED (Q109,
+    /// Q110). The Owner and the Technical Office are assumed; see <see cref="Rulings.ClosureActors"/>. Money-free: the
+    /// hold release is its own row, <see cref="HoldRelease"/>.
+    /// </summary>
+    ProjectHandover = 81,
+
+    /// <summary>
+    /// Raise, fix, verify and resolve a snag (spec.md section 11). UNRESOLVED (Q109, Q115). The Technical Office and the
+    /// supervising site engineer are assumed; see <see cref="Rulings.ClosureActors"/>. Money-free: resolving records the
+    /// choice and posts nothing.
+    /// </summary>
+    SnagManage = 82,
+
+    /// <summary>
+    /// Release the hold, once and in full, at handover (spec.md sections 5.1, 11). UNRESOLVED (Q109, Q110): Finance alone
+    /// is assumed, with no Owner approval step; see <see cref="Rulings.ClosureActors"/> and
+    /// <see cref="Rulings.HoldReleaseGate"/>. The Owner is deliberately absent, so nobody creates and approves the same
+    /// release.
+    /// </summary>
+    HoldRelease = 83,
+
+    /// <summary>
+    /// Raise and resolve a warranty callback (spec.md section 11). UNRESOLVED (Q109, Q116). The Technical Office and the
+    /// supervising site engineer are assumed; see <see cref="Rulings.ClosureActors"/>. Money-free.
+    /// </summary>
+    WarrantyCallbackManage = 84,
+
+    /// <summary>
+    /// Close a project whose accounts are settled (UnderWarranty to Closed, spec.md section 11). UNRESOLVED (Q109, Q113).
+    /// The Owner is assumed; see <see cref="Rulings.ClosureActors"/>. Reads the ledgers and moves no money.
+    /// </summary>
+    ProjectClose = 85,
 }
