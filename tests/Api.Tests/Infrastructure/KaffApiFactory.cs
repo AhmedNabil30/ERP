@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Net;
 using Kaff.Api.Common.Endpoints;
 using Microsoft.AspNetCore.Authentication;
@@ -37,6 +37,33 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
     /// <see cref="FakeConnectionStartupFilter"/>.
     /// </summary>
     public static readonly IPAddress TestRemoteAddress = IPAddress.Parse("203.0.113.42");
+
+    /// <summary>
+    /// Serialises "write the environment variables, then let the host read them" across every factory in
+    /// the process.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The variables below are process-global, and <c>Program</c> reads them when the host is first built
+    /// — not when this constructor runs. Two factories constructed before either built its host therefore
+    /// both ran against whichever connection string was written last, and the first one silently queried
+    /// the second one's database.
+    /// </para>
+    /// <para>
+    /// <b>It presented as a permission failure, which is why it survived so long.</b> An Owner looked up
+    /// in the wrong database is not an Owner, so the request was refused: <c>CreateOwnerTests</c> saw
+    /// <c>409</c> where it expected <c>201</c>, and <c>EditCatalogueItemTests</c> saw <c>403</c> where it
+    /// expected <c>201</c>. Both pass in isolation and fail only when another class builds a factory in
+    /// the same window, so the suite reported product defects that were not there and, worse, could not
+    /// be trusted when it reported none.
+    /// </para>
+    /// <para>
+    /// Holding this gate while the host is forced to build closes the window: the host consumes the
+    /// variables before any other constructor can overwrite them. The eager build costs nothing overall —
+    /// the first <c>CreateClient</c> would have built it anyway.
+    /// </para>
+    /// </remarks>
+    private static readonly object EnvironmentGate = new();
 
     private readonly string _connectionString;
     private readonly IPAddress _remoteAddress;
@@ -99,23 +126,33 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
         // deferred host configuration is applied — so a value supplied through
         // ConfigureAppConfiguration arrives too late and Program sees an empty string.
         // CreateBuilder does read the environment, so this lands in time.
-        Environment.SetEnvironmentVariable("ConnectionStrings__KaffDatabase", connectionString);
-        Environment.SetEnvironmentVariable("Jwt__Issuer", "kaff-erp-tests");
-        Environment.SetEnvironmentVariable("Jwt__Audience", "kaff-erp-tests");
-        Environment.SetEnvironmentVariable("Jwt__SigningKey", "tests-only-signing-key-long-enough-for-hmac-sha256");
-        Environment.SetEnvironmentVariable("Kaff__ApplyMigrationsOnStartup", "false");
+        //
+        // Writing them under EnvironmentGate and building the host before releasing it is what makes
+        // them this factory's values rather than the last constructed factory's. See the gate's remarks.
+        lock (EnvironmentGate)
+        {
+            Environment.SetEnvironmentVariable("ConnectionStrings__KaffDatabase", connectionString);
+            Environment.SetEnvironmentVariable("Jwt__Issuer", "kaff-erp-tests");
+            Environment.SetEnvironmentVariable("Jwt__Audience", "kaff-erp-tests");
+            Environment.SetEnvironmentVariable("Jwt__SigningKey", "tests-only-signing-key-long-enough-for-hmac-sha256");
+            Environment.SetEnvironmentVariable("Kaff__ApplyMigrationsOnStartup", "false");
 
-        // Always set, including to null, so one factory's trust setting cannot survive into the
-        // next one built in the same process. Program.cs reads this before Build(), so — like the
-        // values above — the in-memory configuration below arrives too late for it.
-        Environment.SetEnvironmentVariable("Kaff__TrustedProxyNetworks__0", trustedProxyNetwork);
+            // Always set, including to null, so one factory's trust setting cannot survive into the
+            // next one built in the same process. Program.cs reads this before Build(), so — like the
+            // values above — the in-memory configuration below arrives too late for it.
+            Environment.SetEnvironmentVariable("Kaff__TrustedProxyNetworks__0", trustedProxyNetwork);
 
-        // Same reasoning, and the same "always set, including to null": a hop count left behind by a
-        // previous factory would make this one's audit addresses right or wrong for a reason nothing
-        // in the test names.
-        Environment.SetEnvironmentVariable(
-            "Kaff__ForwardedProxyHops",
-            forwardedProxyHops?.ToString(CultureInfo.InvariantCulture));
+            // Same reasoning, and the same "always set, including to null": a hop count left behind by a
+            // previous factory would make this one's audit addresses right or wrong for a reason nothing
+            // in the test names.
+            Environment.SetEnvironmentVariable(
+                "Kaff__ForwardedProxyHops",
+                forwardedProxyHops?.ToString(CultureInfo.InvariantCulture));
+
+            // Forces the host to build here, inside the gate, so it reads the values just written. Every
+            // field ConfigureWebHost touches is assigned above this block.
+            _ = Services;
+        }
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

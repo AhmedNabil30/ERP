@@ -1,4 +1,4 @@
-using Kaff.Domain.Auditing;
+﻿using Kaff.Domain.Auditing;
 using Kaff.Domain.Identity;
 using Kaff.Infrastructure.Auditing;
 using Kaff.Infrastructure.Persistence;
@@ -119,6 +119,22 @@ public sealed class PostgresDatabase : IAsyncLifetime
         }
     }
 
+    /// <summary>
+    /// Drops this fixture's database.
+    /// </summary>
+    /// <remarks>
+    /// This runs on a normal finish, including a failing run. It does not run when the test process is
+    /// killed outright — a session limit, a rate limit, a cancelled run — and each killed run then leaves
+    /// one database of roughly 10 MB behind. Twenty-three had accumulated by 2026-11-06, 272 MB in all.
+    /// <para>
+    /// There is deliberately no sweeper here. A sweeper cannot tell a database abandoned by a dead process
+    /// from one a sibling fixture created moments ago and has not yet connected to, so it would drop live
+    /// databases to tidy dead ones. Clean them by hand when they accumulate, with no test run in progress:
+    /// </para>
+    /// <code>
+    /// select datname from pg_database where datname like 'kaff\_test\_%';
+    /// </code>
+    /// </remarks>
     public async ValueTask DisposeAsync()
     {
         if (!_created)
