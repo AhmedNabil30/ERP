@@ -62,3 +62,17 @@ export function extractNoActionKey(extract: Extract | null): string {
   }
   return 'extract.no_action.waiting';
 }
+
+// Moved from workspace-reading.ts: the project workspace and the extract list name the same steps.
+/** The step an extract waits for, by the status it is in now. Literal keys, so the catalogue scan sees each. */
+export const WAITING_STEP_KEY: Readonly<Record<string, string>> = {
+  Draft: 'projects.workspace.waiting.step.Draft',
+  QcSubmitted: 'projects.workspace.waiting.step.QcSubmitted',
+  PartiallyApproved: 'projects.workspace.waiting.step.TechnicalApproved',
+  TechnicalApproved: 'projects.workspace.waiting.step.TechnicalApproved',
+  DeductionsApplied: 'projects.workspace.waiting.step.DeductionsApplied',
+  OwnerApproved: 'projects.workspace.waiting.step.OwnerApproved',
+  Issued: 'projects.workspace.waiting.step.Issued',
+  Disputed: 'projects.workspace.waiting.step.Disputed',
+};
+export const WAITING_STEP_FALLBACK_KEY = 'projects.workspace.waiting.step.other';

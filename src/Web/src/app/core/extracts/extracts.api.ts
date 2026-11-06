@@ -43,6 +43,20 @@ export interface ExtractSummary {
   readonly periodStart: string;
   readonly periodEnd: string;
   readonly status: ExtractStatus;
+  /**
+   * Null when the caller holds none of the extract-money permissions (the server withholds it). Inside it,
+   * every figure is a string or null; null means "does not exist yet", never zero.
+   */
+  readonly money: ExtractSummaryMoney | null;
+  readonly waitingOn: WaitingOnBlock;
+}
+
+/** `ExtractMoney` on the list row. Certified value and net payable are null until deductions are applied; collected and outstanding until the extract is issued. */
+export interface ExtractSummaryMoney {
+  readonly certifiedValue: string | null;
+  readonly netPayable: string | null;
+  readonly collected: string | null;
+  readonly outstanding: string | null;
 }
 
 export interface GateRecord {
@@ -138,21 +152,24 @@ export interface WaitingStaff {
   readonly level: AssignmentLevel | null;
 }
 
+/** What an extract waits for, as the list and the waiting-on read both carry it. */
+export interface WaitingOnBlock {
+  /** The extract's CURRENT status; the step waited for is the one that leaves it. */
+  readonly status: string;
+  readonly roles: readonly { readonly role: Role; readonly minimumLevel: AssignmentLevel }[];
+  readonly isDecisionGate: boolean;
+  readonly isTerminal: boolean;
+  /** Who may take the step now. */
+  readonly holders: readonly WaitingStaff[];
+  /** Hold the role but already acted this cycle, so separation of duties bars them. */
+  readonly barredHolders: readonly WaitingStaff[];
+}
+
 /** `GET /api/projects/{id}/waiting-on`: one open extract and what it waits for. No money. */
 export interface WaitingOnItem {
   readonly extractId: string;
   readonly number: number;
-  readonly waitingOn: {
-    /** The extract's CURRENT status; the step waited for is the one that leaves it. */
-    readonly status: string;
-    readonly roles: readonly { readonly role: Role; readonly minimumLevel: AssignmentLevel }[];
-    readonly isDecisionGate: boolean;
-    readonly isTerminal: boolean;
-    /** Who may take the step now. */
-    readonly holders: readonly WaitingStaff[];
-    /** Hold the role but already acted this cycle, so separation of duties bars them. */
-    readonly barredHolders: readonly WaitingStaff[];
-  };
+  readonly waitingOn: WaitingOnBlock;
 }
 
 /** The POST steps that carry no body of their own. */

@@ -1738,5 +1738,7 @@
   "projects.workspace.pay.billed": "المطالَب به في المستخلصات الصادرة",
   "projects.workspace.pay.collected": "المحصَّل",
   "projects.workspace.pay.outstanding": "المتبقي على العميل",
-  "projects.workspace.team_none": "لا أحد مُسنَد إلى المشروع بعد"
+  "projects.workspace.team_none": "لا أحد مُسنَد إلى المشروع بعد",
+  "extract.list.column.waiting": "بانتظار",
+  "extract.list.waiting": "بانتظار {step} من {who}"
 }

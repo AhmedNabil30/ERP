@@ -1,5 +1,6 @@
 import { AssignmentLevel, Role } from '../../../core/auth/auth.service';
 import { fractionToPercent } from '../../../core/catalogue/percent-wire';
+import { WAITING_STEP_FALLBACK_KEY, WAITING_STEP_KEY } from '../../extracts/extract-display';
 import { WaitingOnItem, WaitingStaff } from '../../../core/extracts/extracts.api';
 import { BabProgress, ProgressKind, ProjectProgress } from '../../../core/projects/projects.api';
 
@@ -112,19 +113,6 @@ export function progressViewOf(reading: ProjectProgress, locale: 'ar' | 'en'): P
   ];
   return draw === undefined ? UNAVAILABLE : draw(reading, locale);
 }
-
-/** The step an extract waits for, by the status it is in now. Literal keys, so the catalogue scan sees each. */
-export const WAITING_STEP_KEY: Readonly<Record<string, string>> = {
-  Draft: 'projects.workspace.waiting.step.Draft',
-  QcSubmitted: 'projects.workspace.waiting.step.QcSubmitted',
-  PartiallyApproved: 'projects.workspace.waiting.step.TechnicalApproved',
-  TechnicalApproved: 'projects.workspace.waiting.step.TechnicalApproved',
-  DeductionsApplied: 'projects.workspace.waiting.step.DeductionsApplied',
-  OwnerApproved: 'projects.workspace.waiting.step.OwnerApproved',
-  Issued: 'projects.workspace.waiting.step.Issued',
-  Disputed: 'projects.workspace.waiting.step.Disputed',
-};
-export const WAITING_STEP_FALLBACK_KEY = 'projects.workspace.waiting.step.other';
 
 /** Statuses whose next step is taken on the extract screen. Issued (collection) and Disputed have no web screen yet. */
 const ACTED_ON_THE_EXTRACT_SCREEN: readonly string[] = [

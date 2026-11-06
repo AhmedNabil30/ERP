@@ -1738,5 +1738,7 @@
   "projects.workspace.pay.billed": "Billed in issued extracts",
   "projects.workspace.pay.collected": "Collected",
   "projects.workspace.pay.outstanding": "Still owed by the client",
-  "projects.workspace.team_none": "Nobody is assigned to the project yet"
+  "projects.workspace.team_none": "Nobody is assigned to the project yet",
+  "extract.list.column.waiting": "Waiting for",
+  "extract.list.waiting": "Waiting for {step} from {who}"
 }

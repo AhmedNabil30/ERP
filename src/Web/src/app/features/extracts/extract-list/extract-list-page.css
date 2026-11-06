@@ -60,6 +60,25 @@
   }
 }
 
+.cell-wait {
+  color: var(--dim);
+  font-size: var(--text-sm);
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+/* An absent figure is a dash, never 0.00. */
+.none {
+  color: var(--dim);
+}
+
+/* Phone: the stacked row has two lines; the waiting text takes a third, full width. */
+@media (width <= 820px) {
+  .cell-wait {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (max-width: 640px) {
   .pg {
     padding-inline: 16px;

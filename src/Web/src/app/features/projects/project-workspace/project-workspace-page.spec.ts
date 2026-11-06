@@ -160,6 +160,15 @@ interface PendingExtract {
   readonly role?: 'SiteEngineer' | 'Finance' | 'Owner';
 }
 
+const NO_WAIT: ExtractSummary['waitingOn'] = {
+  status: 'Issued',
+  roles: [],
+  isDecisionGate: false,
+  isTerminal: false,
+  holders: [],
+  barredHolders: [],
+};
+
 class FakeExtractsApi implements Pick<ExtractsApi, 'list' | 'waitingOn'> {
   calls = 0;
   waitingCalls = 0;
@@ -170,10 +179,10 @@ class FakeExtractsApi implements Pick<ExtractsApi, 'list' | 'waitingOn'> {
   async list(): Promise<readonly ExtractSummary[]> {
     this.calls += 1;
     const rows: ExtractSummary[] = [
-      { id: 'e-1', number: 1, periodStart: '2026-10-01', periodEnd: '2026-10-31', status: 'Issued' },
+      { id: 'e-1', number: 1, periodStart: '2026-10-01', periodEnd: '2026-10-31', status: 'Issued', money: null, waitingOn: NO_WAIT },
     ];
     if (this.pending !== null) {
-      rows.push({ id: 'e-2', number: 2, periodStart: '2026-11-01', periodEnd: '2026-11-30', status: this.pending.status as ExtractSummary['status'] });
+      rows.push({ id: 'e-2', number: 2, periodStart: '2026-11-01', periodEnd: '2026-11-30', status: this.pending.status as ExtractSummary['status'], money: null, waitingOn: NO_WAIT });
     }
     return rows;
   }
