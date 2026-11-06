@@ -142,6 +142,78 @@ Then, honestly:
 - "الدفاتر الخمسة": the الحجز card reads 22,146.93 with two entries, which equals 246.33 + 21,900.60. The other four ledgers read 0.00 with no entries. The page says "لا مجموع كلي لهذه الدفاتر الخمسة. عمداً." and "مطابقة: رصيد كل دفتر يساوي مجموع قيوده."
 - A list of assumptions at the foot, each tagged A1, A2 and so on, with what is not decided.
 
+### Step 8a. Start a project yourself — the thing that was missing
+
+**Until 2026-11-06 you could not start a project by clicking at all.** The contract value derives from
+the signed BOQ, and there was no screen to build or sign one, so every project in this database was made
+by a script. That is fixed, and it is the first thing to try.
+
+1. On المشاريع, press **+ مشروع جديد** (also in the sidebar, and in the list's empty state).
+2. Name it, pick the client, pick the contract type. **There is no field for the contract value**, and
+   that absence is deliberate — a banner tells you where the value comes from instead. For Lump Sum you
+   may override the hold and advance percentages or leave them blank for the defaults.
+3. It lands you on the BOQ. Add lines from the catalogue, edit a quantity, remove a line.
+4. Press **توقيع التعاقد…**. The first press signs nothing: it asks, names the figure that is about to
+   become the contract value, and says the lines freeze and it cannot be undone. **This is the most
+   irreversible button in the application.**
+5. After signing, look for an add, edit, remove or sign control. **There is none** — not greyed out,
+   absent. The database itself refuses to alter a frozen line.
+6. The totals row reads إجمالي المقايسة before signing and قيمة التعاقد after, so it never claims a
+   contract value that is not yet fixed.
+
+**Walked end to end before this shipped**, against a throwaway copy of the database: three lines added,
+one edited, one removed, lines of 24,466.25 and 11,502.30, and after signing `contractValue` came back
+**35,968.55** — the sum of the lines, derived and not typed. A line added after signature was refused
+`409 boq.frozen` by the real server.
+
+⛔ Design and Cost Plus show an empty state instead of a BOQ builder. Design has none by `spec.md` §5.3.
+**Cost Plus is an open question for you:** the server would allow a Cost Plus BOQ and the screen does not
+offer one. Say which you want.
+
+### Step 8b. The project overview, rebuilt — this is the screen you complained about
+
+Open the project. Each group on the page prints a question; the complaint was that it printed the question
+and not the answer. Now:
+
+- **الفهم — "وكم أُنجز منه؟"** a **progress bar** with the percentage, the executed value against the
+  contract value, **which باب is running now**, and a row per باب with its own percentage and an active
+  badge. Progress is **derived** from executed quantities on the BOQ, never stored.
+- **التنفيذ — "ما الذي يجري في الموقع؟"** the date of the last daily log, and the active باب.
+- **المال — "ما المستحق؟"** certified, billed, collected and outstanding. It used to show a count and
+  the word مسودة with no amount at all.
+- **التنطيم — "من يعمل عليه؟"** the people's names. It used to show the number 4.
+
+**And a strip under the header says what the project is waiting for and on whom:** "المستخلص رقم 3:
+بانتظار تقرير الجودة من مشرف الموقع". **Sign in as the Supervisor and check this**, because it was
+the sharpest finding in the consultant's review: the system knew he held the next action, told him
+nothing, had no link to the extracts on his screen at all, and told everyone else "لا يوجد ما تفعله في
+هذه المرحلة". He now gets the badge **الدور عليك الآن**, a header action that opens the extract, and
+an المستخلصات link.
+
+**Three things to check deliberately, because they are where this is most likely wrong:**
+- **Cost Plus must show no progress bar at all** — `spec.md` §5.2 says so in those words. It shows cost
+  and supervision figures instead. **A Design project shows "unavailable", never 0%.**
+- **The junior site engineer must see no money anywhere**, including on this screen and on the extract
+  list. His قيمة التعاقد leak on the project list was fixed this run.
+- **The bar must fill from the right** under RTL.
+
+### Step 8c. The button that invited you to end your own project
+
+⛔ **This was a live hazard and it is the reason to re-walk the workspace.** On an active project with an
+extract mid-chain, the only filled control on the whole screen was **إعلان الاستلام الابتدائي** — declare
+the job finished. And `إنهاء المشروع`, which reads as *finish the project*, actually performed contract
+termination and landed on تم فسخ التعاقد. Two different business acts behind one label, sitting under a
+completion button.
+
+Now: the workspace header never offers a completion act on a running project. Practical completion is on
+the الإقفال screen only, as a secondary control. Termination is `فسخ التعاقد` throughout, behind a
+destructive-styled control at the foot of the page, and its text now says in words that it is not the
+same act as practical completion.
+
+**One thing for you to settle:** Technical Office genuinely holds the permission to declare practical
+completion — the catalogue grants it to Owner and Technical Office. That contradicts "the Owner declares".
+No permission was changed. Tell us which is right.
+
 ### Step 9. إثبات الأرقام now judges, instead of saying it cannot
 
 The 2026-11-04 walk found this page's "المتوقع" row reading "غير متاح: حاسبة العقد لم تُنفَّذ" for every
@@ -233,6 +305,10 @@ change orders, project closure/handover/warranty, and expected-versus-actual on 
 shipped since the 2026-11-04 walk. They are described in steps 9 to 11 above. What follows is what is
 genuinely still missing.
 
+- **(Built 2026-11-06.)** Creating a project, and building and signing a BOQ, now have screens. See
+  step 8a. That was the gap that mattered most, because nothing else could be reached without it.
+- **(Built 2026-11-06.)** Progress, the active باب, the money figures, the team, and what the project is
+  waiting for and on whom. See step 8b.
 - **No screen creates an extract.** The chain is driven from the extract list and the extract page, and
   extracts are seeded by script. "مستخلص جديد" has no screen behind it and is not offered.
 - **No screen records a collection.** `POST .../extracts/{id}/collect` exists, takes method, date and
@@ -284,23 +360,30 @@ The Owner now lands on the project list, not the user management screen (D-196).
 
 Added since the last walk, in rough order of what they cost if guessed wrong:
 
-7. **What a termination settles.** `spec.md` §13 names `Terminated` and §6.9 says "termination
+7. **Roughly ninety Arabic strings written this run are a model's guesses, not yours.** They cover the
+   create form, the BOQ builder, the overview and the extract list. The run's hand-back lists every key
+   and value for one correction pass. Two worth your eye: **المحصَّل** for the collected figure and
+   **المطالَب به** for billed.
+8. **Should a Cost Plus project have a BOQ?** The server allows one; the screen does not offer one.
+9. **May the Technical Office declare practical completion?** The permission catalogue says yes; the
+   documented flow says the Owner declares. Nothing was changed either way.
+10. **What a termination settles.** `spec.md` §13 names `Terminated` and §6.9 says "termination
    settlement", and nothing says what settles. Nothing was invented: the transition refuses. This is the
    largest unanswered business question in the project module, and it moves money at the end of a
    contract, which is exactly where a guess surfaces too late to fix cheaply.
-8. **After a credit note is approved, how does the client pay the reduced amount, and does withholding
+11. **After a credit note is approved, how does the client pay the reduced amount, and does withholding
    apply to that reduced amount?** Collection is refused while a credit note is open, so today an extract
    with an approved credit note can never reach تم التحصيل. That is deliberate — collecting the stored
    net would over-collect — but it is a dead end until Karim answers.
-9. **A dispute resolved as a revised extract.** Does the original go `Void`, are its postings reversed,
+12. **A dispute resolved as a revised extract.** Does the original go `Void`, are its postings reversed,
    and how is its hold leg handled without breaking "the hold only grows"? Refused today.
-10. **Who approves what, in five places nobody has ruled:** a collection, an adjustment, the hold
+13. **Who approves what, in five places nobody has ruled:** a collection, an adjustment, the hold
     release, a change order, and a subcontractor retention release. Each runs on an assumed default,
     each default is written down as a `RulingNote`, and each is a one-line change once Karim answers.
-11. **Subcontractor retention:** confirm it releases at the warranty end rather than with the client
+14. **Subcontractor retention:** confirm it releases at the warranty end rather than with the client
     hold, and how the 5% is zeroed per subcontractor.
-12. **Whether the same person may fix a snag and then verify it.** The server does not currently stop
+15. **Whether the same person may fix a snag and then verify it.** The server does not currently stop
     them, and the snag response does not even say who did which, so no screen could hide the control.
-13. **The five Arabic status words are still guesses.** `متوقف`, `في انتظار التسليم`, `تم التسليم`,
+16. **The five Arabic status words are still guesses.** `متوقف`, `في انتظار التسليم`, `تم التسليم`,
     `في فترة الضمان`, `تم فسخ التعاقد` are on screen today and were written by a model, not given by you.
     Your five status words for the states you did name are used verbatim; these five are not yours yet.

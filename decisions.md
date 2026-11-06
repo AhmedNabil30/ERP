@@ -16166,3 +16166,58 @@ extended with dispute flags: that is a UI concern for the design lane, and the A
 *Extract list.* `GET /api/projects/{projectId}/extracts` rows were money-free by design. They now carry `money` (certified value, net payable, collected, outstanding) for money viewers and `null` for others, and `waitingOn` for everyone. Collected and outstanding are blank before the extract is issued.
 
 **Not built.** A Design progress reading and any stage-completion store; target completion and contract duration; the per-line Cost Plus classification; a waiting-on for anything but extracts (an unsigned project, a missing BOQ, a change order or a dispute awaiting resolution is not reported); a per-Bab last-activity date; the screens.
+
+## D-205 — the screens that let a project start, and the overview that answers its own questions
+
+2026-11-06. Scrum Master, from four screen lanes in one run. Append-only: D-204 stands and this does
+not replace it. Nabil's words were *"the overview for the project dont tell me where we at no progress
+bar which bab is active where is create new project where is creating boq where is everything?!"*, and
+`qa/consultant-review.md` had independently reached the same conclusion.
+
+- **A project could not be started by clicking at all, and that was the worst of it.** `CreateProject`,
+  `AddBoqLine`, `UpdateBoqLine`, `RemoveBoqLine` and `SignProject` all existed server-side with no
+  screen, and the contract value derives from the signed BOQ — so there was no path to a project in a
+  state where anything else worked. Every project in the database had been made by a seeding script.
+  Now: `projects/new` plus a buildable, signable BOQ page, reachable three ways because routable is not
+  findable.
+- **The create form has no contract-value field, deliberately, and that must stay true.** It was removed
+  from `CreateProject` when the BOQ landed, and the consultant's review named its absence as something
+  the application does well. A future lane that adds one has reintroduced the defect.
+- **After signature the BOQ page renders no add, edit, remove or sign control** — counted in the DOM, not
+  assumed. That mirrors `003_boq_freeze.sql`, where the database itself refuses to alter a frozen line
+  and `quantity_executed` is the only column that still moves.
+- **Cost Plus renders no BOQ builder.** The server's `AllowsBoq` permits a Cost Plus BOQ but
+  `workspace-declaration.ts` says Cost Plus has no BOQ group, and the lane followed the workspace. The
+  two disagree and the server is the more permissive. **This is an open question for Nabil**, recorded
+  here because a silent divergence between a server capability and a screen is how a feature goes
+  missing for months.
+- **Progress is rendered from `ProgressKind`, never from a defaulted number.** `VIEW_OF_KIND` is a
+  `Record` over the enum so a new kind fails the build. Lump Sum draws a bar; Cost Plus never does and
+  its `completion` is not read even if a payload carried one, per `spec.md` §5.2 "no percentage progress
+  bar"; Design renders unavailable because nothing stores stage completion; a `Percentage` reading with
+  no completion also renders unavailable. **An empty bar is a confident lie**, which is why the API omits
+  rather than zeroes and the client must not undo that by defaulting to 0.
+- **Under RTL the bar fills from the right.** Confirmed in screenshots at both widths, not reasoned.
+- **A group whose question nothing answers stops printing the question.** The consultant's standard was
+  "printing a question above an answer that is not there is worse than printing neither". Three questions
+  were retargeted and a group with no content is dropped. Two remain unresolved and still print over a
+  link only — `cp.pay` and `ds.pay` — and that is a BA call, not a build one.
+- **Step labels live in one place.** `WAITING_STEP_KEY` is in `extract-display.ts` and both the workspace
+  strip and the extract list import it, so a step is worded once.
+- **"إنهاء المشروع" meant two different business acts and now means one.** The label read as *finish the
+  project* and landed on contract termination, under a completion button, on a running project. It is
+  `فسخ التعاقد` throughout. The copy that told Kaff's client the ruling was undecided is gone; the
+  refusal reads as "not available" while remaining honest that nothing was posted.
+- **The workspace header no longer offers a completion act on a running project**, whoever holds the
+  permission. Technical Office genuinely holds `ProjectPracticalCompletionDeclare` — `PermissionCatalogue`
+  grants it to Owner and Technical Office, marked ASSUMED against `Q109` — so that control appearing for
+  that role was accurate to the catalogue and not a UI leak. **The contradiction with "the Owner
+  declares" is Nabil's to settle and no permission was changed.**
+- **Every Arabic string on these screens is a model's guess.** Roughly ninety keys across the create
+  form, the BOQ builder, the overview and the extract list. They are listed in the run's hand-back for
+  one correction pass. Kaff's own status words — لم تبدأ · جاري العمل · انتهت · متعثرة · تم تأجيلها —
+  are used verbatim and were not touched.
+- **Not done:** the extract list's certified-value column, collected and outstanding on the phone row,
+  custom (non-catalogue) BOQ lines, Design stage progress, a contract duration or target completion
+  (neither exists on `Project`), and light mode anywhere — the headless driver renders dark only, so
+  **no screen from this run has been seen in light mode by anyone.**
