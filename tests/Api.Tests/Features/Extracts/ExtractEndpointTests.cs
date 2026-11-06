@@ -1704,6 +1704,305 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         gateRecords.Should().Contain(a => (a.AfterJson ?? string.Empty).Contains("audit me", StringComparison.Ordinal));
     }
 
+    // ---- the overview's reads: progress, team, waiting-on, money on the list (S-052) -----------------
+
+    private static string Progress(Guid project) => $"/api/projects/{project}/progress";
+
+    private static string TeamRoute(Guid project) => $"/api/projects/{project}/team";
+
+    private static string WaitingOnRoute(Guid project) => $"/api/projects/{project}/waiting-on";
+
+    private async Task<JsonElement> GetJsonAsync(string route, Guid actor)
+    {
+        HttpResponseMessage response = await SendAsync(HttpMethod.Get, route, actor, null);
+        response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(Ct));
+        using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+        return document.RootElement.Clone();
+    }
+
+    [Fact]
+    public void The_overview_routes_require_project_read_with_the_route_project()
+    {
+        Dictionary<string, Permission> expected = new()
+        {
+            ["GET /api/projects/{projectId:guid}/progress"] = Permission.ProjectRead,
+            ["GET /api/projects/{projectId:guid}/team"] = Permission.ProjectRead,
+            ["GET /api/projects/{projectId:guid}/waiting-on"] = Permission.ProjectRead,
+        };
+
+        Dictionary<string, PermissionRequirement> actual = [];
+        foreach (EndpointDataSource source in _factory.Services.GetServices<EndpointDataSource>())
+        {
+            foreach (RouteEndpoint route in source.Endpoints.OfType<RouteEndpoint>())
+            {
+                string? pattern = route.RoutePattern.RawText;
+                if (pattern is null || !expected.Keys.Any(key => key.EndsWith(pattern, StringComparison.Ordinal)))
+                {
+                    continue;
+                }
+
+                foreach (IAuthorizeData data in route.Metadata.OfType<IAuthorizeData>())
+                {
+                    if (PermissionRequirement.TryParse(data.Policy ?? string.Empty, out PermissionRequirement? requirement) && requirement is not null)
+                    {
+                        actual[$"GET {pattern}"] = requirement;
+                    }
+                }
+            }
+        }
+
+        actual.Keys.Should().BeEquivalentTo(expected.Keys);
+        foreach ((string key, Permission permission) in expected)
+        {
+            actual[key].Permission.Should().Be(permission, key);
+            actual[key].Scope.Should().Be(ProjectScope.FromRoute(), key);
+        }
+    }
+
+    [Fact]
+    public async Task The_overview_reads_refuse_hr_and_an_unassigned_caller_and_admit_the_assigned_roles()
+    {
+        Project project = await NewProjectAsync();
+
+        foreach (string route in new[] { Progress(project.Id), TeamRoute(project.Id), WaitingOnRoute(project.Id) })
+        {
+            foreach (Guid refused in new[] { _hr, _engineerUnassigned, _financeUnassigned })
+            {
+                (await SendAsync(HttpMethod.Get, route, refused, null)).StatusCode.Should().Be(HttpStatusCode.Forbidden, route);
+            }
+
+            foreach (Guid admitted in new[] { _owner, _finance, _technicalOffice, _supervisor })
+            {
+                (await SendAsync(HttpMethod.Get, route, admitted, null)).StatusCode.Should().Be(HttpStatusCode.OK, route);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task Lump_sum_progress_is_derived_from_the_executed_quantity_and_moves_when_it_moves()
+    {
+        Project project = await NewProjectAsync();   // 1,000 units at 1,000, 300 executed
+
+        JsonElement first = await GetJsonAsync(Progress(project.Id), _owner);
+        first.GetProperty("kind").GetString().Should().Be("Percentage");
+        ParseDecimal(first.GetProperty("completion")).Should().Be(0.3m);
+        ParseDecimal(first.GetProperty("executedValue")).Should().Be(300_000m);
+        ParseDecimal(first.GetProperty("contractValue")).Should().Be(1_000_000m);
+        JsonElement bab = first.GetProperty("babs").EnumerateArray().Should().ContainSingle().Subject;
+        bab.GetProperty("isActive").GetBoolean().Should().BeTrue();
+        ParseDecimal(bab.GetProperty("completion")).Should().Be(0.3m);
+
+        await ExecuteAsync(project, 500m);
+
+        JsonElement second = await GetJsonAsync(Progress(project.Id), _owner);
+        ParseDecimal(second.GetProperty("completion")).Should().Be(0.5m, "nothing stores progress: it follows QuantityExecuted");
+        ParseDecimal(second.GetProperty("executedValue")).Should().Be(500_000m);
+
+        await ExecuteAsync(project, 1_000m);
+        JsonElement done = await GetJsonAsync(Progress(project.Id), _owner);
+        ParseDecimal(done.GetProperty("completion")).Should().Be(1m);
+        done.GetProperty("babs")[0].GetProperty("isActive").GetBoolean().Should().BeFalse("a finished Bab is not active");
+    }
+
+    [Fact]
+    public async Task Progress_money_is_withheld_from_a_caller_who_may_not_see_extract_money_but_the_percentage_is_not()
+    {
+        Project project = await NewProjectAsync();
+
+        JsonElement siteEngineer = await GetJsonAsync(Progress(project.Id), _supervisor);
+
+        ParseDecimal(siteEngineer.GetProperty("completion")).Should().Be(0.3m);
+        foreach (string money in new[] { "executedValue", "contractValue", "certifiedToDate", "costToDate", "supervisionToDate" })
+        {
+            siteEngineer.TryGetProperty(money, out _).Should().BeFalse($"{money} is money and a site engineer does not see it");
+        }
+
+        siteEngineer.GetProperty("babs")[0].TryGetProperty("executedValue", out _).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Progress_reports_the_certified_value_of_issued_extracts_beside_the_bar_without_driving_it()
+    {
+        Project project = await NewProjectAsync();
+        await DriveAsync(project, ExtractStatus.Issued);
+
+        JsonElement progress = await GetJsonAsync(Progress(project.Id), _owner);
+
+        ParseDecimal(progress.GetProperty("certifiedToDate")).Should().Be(300_000m);
+        ParseDecimal(progress.GetProperty("completion")).Should().Be(0.3m);
+    }
+
+    [Fact]
+    public async Task Cost_plus_progress_has_no_completion_property_at_all()
+    {
+        Guid projectId;
+        await using (KaffDbContext context = _database.CreateContext())
+        {
+            Project costPlus = Project.Create(UniqueNames.Code("EX-CP"), "تكلفة وربح", _clientId, ContractType.CostPlus, Now).Value;
+            costPlus.SetCostPlusTerms(Percentage.FromPercent(10m)).IsSuccess.Should().BeTrue();
+            context.Projects.Add(costPlus);
+            await context.SaveChangesAsync(Ct);
+            projectId = costPlus.Id;
+        }
+
+        JsonElement progress = await GetJsonAsync(Progress(projectId), _owner);
+
+        progress.GetProperty("kind").GetString().Should().Be("MonetaryOnly");
+        progress.TryGetProperty("completion", out _).Should().BeFalse("spec.md section 5.2: no percentage progress bar, not even a zero");
+        progress.TryGetProperty("babs", out _).Should().BeFalse();
+        ParseDecimal(progress.GetProperty("costToDate")).Should().Be(0m);
+        ParseDecimal(progress.GetProperty("supervisionToDate")).Should().Be(0m);
+    }
+
+    [Fact]
+    public async Task Design_progress_is_refused_rather_than_invented()
+    {
+        Guid projectId;
+        await using (KaffDbContext context = _database.CreateContext())
+        {
+            Project design = Project.Create(UniqueNames.Code("EX-DS"), "تصميم", _clientId, ContractType.Design, Now).Value;
+            context.Projects.Add(design);
+            await context.SaveChangesAsync(Ct);
+            projectId = design.Id;
+        }
+
+        HttpResponseMessage response = await SendAsync(HttpMethod.Get, Progress(projectId), _owner, null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ErrorCodeAsync(response)).Should().Be("billing.calculator_not_implemented");
+    }
+
+    [Fact]
+    public async Task The_team_names_the_people_assigned_and_not_the_ones_who_are_not()
+    {
+        Project project = await NewProjectAsync();
+
+        JsonElement team = await GetJsonAsync(TeamRoute(project.Id), _owner);
+
+        team.EnumerateArray().Select(member => member.GetProperty("userId").GetGuid())
+            .Should().BeEquivalentTo(new[] { _finance, _technicalOffice, _technicalOffice2, _prepEngineer, _supervisor });
+        team.EnumerateArray().Should().OnlyContain(member => member.GetProperty("fullName").GetString()!.Length > 0);
+    }
+
+    [Fact]
+    public async Task The_project_read_carries_dates_and_money_derived_from_extracts_and_postings()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+
+        JsonElement issued = await GetJsonAsync($"/api/projects/{project.Id}", _owner);
+        issued.GetProperty("signedOn").GetString().Should().Be("2026-09-24");
+        issued.GetProperty("startedOn").ValueKind.Should().Be(JsonValueKind.String);
+        issued.GetProperty("handoverOn").ValueKind.Should().Be(JsonValueKind.Null);
+        issued.GetProperty("lastDailyLogOn").ValueKind.Should().Be(JsonValueKind.Null, "no daily log was written");
+        JsonElement money = issued.GetProperty("money");
+        ParseDecimal(money.GetProperty("certifiedToDate")).Should().Be(300_000m);
+        ParseDecimal(money.GetProperty("billedToDate")).Should().Be(240_000m);
+        ParseDecimal(money.GetProperty("collectedToDate")).Should().Be(0m);
+        ParseDecimal(money.GetProperty("outstanding")).Should().Be(240_000m);
+
+        (await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody())).StatusCode
+            .Should().Be(HttpStatusCode.OK);
+        JsonElement collected = (await GetJsonAsync($"/api/projects/{project.Id}", _owner)).GetProperty("money");
+        ParseDecimal(collected.GetProperty("collectedToDate")).Should().Be(240_000m);
+        ParseDecimal(collected.GetProperty("outstanding")).Should().Be(0m);
+
+        (await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collection-reversal"), _finance, new { reason = "bounced" }))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+        JsonElement reversed = (await GetJsonAsync($"/api/projects/{project.Id}", _owner)).GetProperty("money");
+        ParseDecimal(reversed.GetProperty("collectedToDate")).Should().Be(0m, "a reversal subtracts: the figure is summed from postings");
+        ParseDecimal(reversed.GetProperty("outstanding")).Should().Be(240_000m);
+
+        (await GetJsonAsync($"/api/projects/{project.Id}", _supervisor)).GetProperty("money").ValueKind
+            .Should().Be(JsonValueKind.Null, "a site engineer does not see project money");
+    }
+
+    [Fact]
+    public async Task The_extract_list_carries_the_money_a_money_column_needs_for_those_who_may_see_it()
+    {
+        Project project = await NewProjectAsync();
+        Guid issuedExtract = await DriveAsync(project, ExtractStatus.Issued);
+
+        JsonElement ownerRows = await GetJsonAsync(Extracts(project.Id), _owner);
+        JsonElement row = ownerRows.EnumerateArray().Single(candidate => candidate.GetProperty("id").GetGuid() == issuedExtract);
+        ParseDecimal(row.GetProperty("money").GetProperty("netPayable")).Should().Be(240_000m);
+        ParseDecimal(row.GetProperty("money").GetProperty("collected")).Should().Be(0m);
+        ParseDecimal(row.GetProperty("money").GetProperty("outstanding")).Should().Be(240_000m);
+
+        (await SendAsync(HttpMethod.Post, Step(project.Id, issuedExtract, "collect"), _finance, CollectBody())).StatusCode
+            .Should().Be(HttpStatusCode.OK);
+        JsonElement afterCollect = (await GetJsonAsync(Extracts(project.Id), _finance)).EnumerateArray().Single();
+        ParseDecimal(afterCollect.GetProperty("money").GetProperty("collected")).Should().Be(240_000m);
+        ParseDecimal(afterCollect.GetProperty("money").GetProperty("outstanding")).Should().Be(0m);
+
+        JsonElement engineerRow = (await GetJsonAsync(Extracts(project.Id), _supervisor)).EnumerateArray().Single();
+        engineerRow.GetProperty("money").ValueKind.Should().Be(JsonValueKind.Null);
+        engineerRow.GetProperty("waitingOn").GetProperty("isTerminal").GetBoolean().Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task The_extract_list_money_is_blank_before_the_extract_is_issued()
+    {
+        Project project = await NewProjectAsync();
+        await DriveAsync(project, ExtractStatus.QcSubmitted);
+
+        JsonElement row = (await GetJsonAsync(Extracts(project.Id), _owner)).EnumerateArray().Single();
+
+        row.GetProperty("money").GetProperty("netPayable").ValueKind.Should().Be(JsonValueKind.Null, "no figures exist before deductions");
+        row.GetProperty("money").GetProperty("collected").ValueKind.Should().Be(JsonValueKind.Null);
+    }
+
+    [Fact]
+    public async Task Waiting_on_names_the_role_that_holds_the_gate_and_the_people_in_it_as_the_chain_advances()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.QcSubmitted);
+
+        JsonElement atTechnical = (await GetJsonAsync(WaitingOnRoute(project.Id), _owner)).EnumerateArray().Single().GetProperty("waitingOn");
+        atTechnical.GetProperty("status").GetString().Should().Be("QcSubmitted");
+        atTechnical.GetProperty("permission").GetString().Should().Be("QuantityGateApprove");
+        atTechnical.GetProperty("roles").EnumerateArray().Select(role => role.GetProperty("role").GetString())
+            .Should().Equal("TechnicalOffice");
+        atTechnical.GetProperty("holders").EnumerateArray().Select(holder => holder.GetProperty("userId").GetGuid())
+            .Should().BeEquivalentTo(new[] { _technicalOffice, _technicalOffice2 }, "the Technical Office people assigned here, and nobody else");
+        atTechnical.GetProperty("isDecisionGate").GetBoolean().Should().BeTrue();
+
+        await StepAsync(_client, project, extract, ExtractStatus.QcSubmitted, ExtractStatus.TechnicalApproved);
+
+        JsonElement atAccounts = (await GetJsonAsync(WaitingOnRoute(project.Id), _supervisor)).EnumerateArray().Single().GetProperty("waitingOn");
+        atAccounts.GetProperty("status").GetString().Should().Be("TechnicalApproved");
+        atAccounts.GetProperty("holders").EnumerateArray().Select(holder => holder.GetProperty("userId").GetGuid())
+            .Should().BeEquivalentTo(new[] { _finance });
+
+        await StepAsync(_client, project, extract, ExtractStatus.TechnicalApproved, ExtractStatus.DeductionsApplied);
+
+        JsonElement atOwner = (await GetJsonAsync(WaitingOnRoute(project.Id), _finance)).EnumerateArray().Single().GetProperty("waitingOn");
+        atOwner.GetProperty("holders").EnumerateArray().Select(holder => holder.GetProperty("userId").GetGuid())
+            .Should().Contain(_owner, "the Owner reaches every project without an assignment row");
+    }
+
+    [Fact]
+    public async Task A_collected_extract_is_waiting_on_nobody_and_is_left_out()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        (await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody())).StatusCode
+            .Should().Be(HttpStatusCode.OK);
+
+        (await GetJsonAsync(WaitingOnRoute(project.Id), _owner)).GetArrayLength().Should().Be(0);
+    }
+
+    [Fact]
+    public async Task The_extract_read_says_what_it_is_waiting_for()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.QcSubmitted);
+
+        JsonElement read = await ReadAsync(project.Id, extract, _owner);
+
+        read.GetProperty("waitingOn").GetProperty("roles")[0].GetProperty("role").GetString().Should().Be("TechnicalOffice");
+    }
+
     private static string Extracts(Guid project) => $"/api/projects/{project}/extracts";
 
     private static string Single(Guid project, Guid extract) => $"/api/projects/{project}/extracts/{extract}";

@@ -41,6 +41,8 @@ internal static class Handler
         ExtractViewer viewer = await ExtractSupport.ViewerAsync(
             new StepServices(database, rulings, clock, currentUser, authorization, user));
 
-        return Microsoft.AspNetCore.Http.Results.Ok(ExtractView.Build(extract, project, rulings, viewer));
+        return Microsoft.AspNetCore.Http.Results.Ok(ExtractView.Build(
+            extract, project, rulings, viewer,
+            ExtractWaitingOnView.Build(extract, await ExtractWaitingOnView.StaffAsync(database, projectId, cancellationToken))));
     }
 }

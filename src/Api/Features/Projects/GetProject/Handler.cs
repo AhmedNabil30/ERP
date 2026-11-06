@@ -1,8 +1,12 @@
 using Kaff.Api.Common.Results;
+using System.Security.Claims;
 using Kaff.Api.Features.ChangeOrders;
+using Kaff.Api.Features.Extracts;
+using Kaff.Domain.Extracts;
 using Kaff.Domain.Common;
 using Kaff.Domain.Projects;
 using Kaff.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +25,8 @@ internal static class Handler
     public static async Task<IResult> HandleAsync(
         Guid projectId,
         KaffDbContext database,
+        IAuthorizationService authorization,
+        ClaimsPrincipal user,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(database);
@@ -58,8 +64,34 @@ internal static class Handler
             candidateProject.AdvanceRate,
             found.TeamSize,
             candidateProject.ContractValue,
-            approved);
+            approved,
+            candidateProject.SignedOn,
+            candidateProject.StartedOn,
+            candidateProject.HandoverOn,
+            candidateProject.WarrantyEndsOn,
+            candidateProject.ClosedOn,
+            await database.DailyLogs.Where(log => log.ProjectId == projectId)
+                .Select(log => (DateOnly?)log.LogDate)
+                .MaxAsync(cancellationToken),
+            await ExtractSupport.MaySeeMoneyAsync(authorization, user)
+                ? await MoneyAsync(database, projectId, cancellationToken)
+                : null);
 
         return Microsoft.AspNetCore.Http.Results.Ok(project);
+    }
+
+    private static async Task<ProjectMoney> MoneyAsync(KaffDbContext database, Guid projectId, CancellationToken cancellationToken)
+    {
+        List<Extract> billed = [.. (await database.Extracts.AsNoTracking()
+            .Where(extract => extract.ProjectId == projectId)
+            .ToListAsync(cancellationToken)).Where(extract => ExtractMoneyQueries.IsBilled(extract.Status))];
+
+        IReadOnlyDictionary<Guid, Money> collected = await ExtractMoneyQueries.CollectedAsync(
+            database, [.. billed.Select(extract => extract.Id)], cancellationToken);
+
+        Money certified = Money.Sum(billed.Select(extract => extract.CertifiedValue ?? Money.Zero));
+        Money net = Money.Sum(billed.Select(extract => extract.NetPayable ?? Money.Zero));
+        Money received = Money.Sum(billed.Select(extract => collected.GetValueOrDefault(extract.Id, Money.Zero)));
+        return new ProjectMoney(certified, net, received, net - received);
     }
 }

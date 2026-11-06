@@ -36,6 +36,20 @@ namespace Kaff.Api.Features.Projects.GetProject;
 /// Count of active <c>ProjectAssignment</c> rows. S-052's "team" — the per-member roster (KAFF-115) is
 /// its own story and is not built here; see the build notes.
 /// </param>
+/// <param name="SignedOn">Null until signed.</param>
+/// <param name="StartedOn">Null until the project first becomes Active.</param>
+/// <param name="HandoverOn">Null until handover.</param>
+/// <param name="WarrantyEndsOn">Null until the warranty period is set at handover.</param>
+/// <param name="ClosedOn">Null until closed.</param>
+/// <param name="LastDailyLogOn">
+/// The date of the most recent daily log on the project, derived on every read. Null when none has been written.
+/// There is no contract duration and no target completion on <c>Project</c>, so none is returned and none is
+/// invented (ruling <c>ProjectTargetCompletion</c>).
+/// </param>
+/// <param name="Money">
+/// Derived from the extracts and the collection postings; never a stored balance. Null for a caller who may not
+/// see extract money.
+/// </param>
 public sealed record Response(
     Guid Id,
     string Code,
@@ -49,4 +63,21 @@ public sealed record Response(
     Percentage? AdvanceRate,
     int TeamSize,
     Money? OriginalContractValue,
-    Money ApprovedChangeOrderTotal);
+    Money ApprovedChangeOrderTotal,
+    DateOnly? SignedOn,
+    DateOnly? StartedOn,
+    DateOnly? HandoverOn,
+    DateOnly? WarrantyEndsOn,
+    DateOnly? ClosedOn,
+    DateOnly? LastDailyLogOn,
+    ProjectMoney? Money);
+
+/// <summary>
+/// What the client has been billed, paid and still owes. Only extracts issued to the client count; an extract still
+/// in the approval chain is not yet a debt.
+/// </summary>
+/// <param name="CertifiedToDate">Certified work value of the issued extracts.</param>
+/// <param name="BilledToDate">Net payable of the issued extracts.</param>
+/// <param name="CollectedToDate">Cash received plus tax withheld at source on them, summed from the postings, net of reversals.</param>
+/// <param name="Outstanding">Billed less collected.</param>
+public sealed record ProjectMoney(Money CertifiedToDate, Money BilledToDate, Money CollectedToDate, Money Outstanding);

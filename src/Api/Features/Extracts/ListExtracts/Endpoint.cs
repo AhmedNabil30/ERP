@@ -8,7 +8,7 @@ namespace Kaff.Api.Features.Extracts.ListExtracts;
 
 /// <summary>
 /// <c>GET /api/projects/{projectId}/extracts</c>. Gated <c>ProjectRead</c> with the project from the route.
-/// A row is money-free: number, period, status. The figures are read per extract.
+/// A row carries number, period, status, who the extract waits on, and the money a caller who may see extract money is allowed: certified value, net payable, collected, outstanding.
 /// </summary>
 public sealed class Endpoint : IEndpoint
 {

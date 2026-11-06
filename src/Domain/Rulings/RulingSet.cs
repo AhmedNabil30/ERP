@@ -133,6 +133,18 @@ public sealed record RulingSet
     /// <summary>Where subcontractor retention sits and how it releases (Q26, Q109).</summary>
     public SubcontractorRetentionRelease SubcontractorRetentionRelease { get; init; } = SubcontractorRetentionRelease.Default;
 
+    /// <summary>What the Lump Sum progress bar is measured from. Registered, not resolved.</summary>
+    public LumpSumCompletionBasis LumpSumCompletionBasis { get; init; } = LumpSumCompletionBasis.Default;
+
+    /// <summary>What makes a باب active. Registered, not resolved.</summary>
+    public BabActivity BabActivity { get; init; } = BabActivity.Default;
+
+    /// <summary>What counts as Cost Plus cost-to-date. Registered, not resolved.</summary>
+    public CostPlusCostBasis CostPlusCostBasis { get; init; } = CostPlusCostBasis.Default;
+
+    /// <summary>Where a target completion date would come from. Registered, not resolved.</summary>
+    public ProjectTargetCompletion ProjectTargetCompletion { get; init; } = ProjectTargetCompletion.Default;
+
     /// <summary>Every entry, each describing itself. A test pins that none is missing a question.</summary>
     public IReadOnlyList<RulingNote> Notes =>
     [
@@ -179,5 +191,9 @@ public sealed record RulingSet
         AdjustmentShape.Note,
         AdjustmentApproval.Note,
         SubcontractorRetentionRelease.Note,
+        LumpSumCompletionBasis.Note,
+        BabActivity.Note,
+        CostPlusCostBasis.Note,
+        ProjectTargetCompletion.Note,
     ];
 }

@@ -116,7 +116,8 @@ public sealed record ExtractResponse(
     ExtractActions Actions,
     ExtractEvidence? Evidence,
     ExtractDocument? Document,
-    IReadOnlyList<ExtractChangeOrderResponse>? ChangeOrders);
+    IReadOnlyList<ExtractChangeOrderResponse>? ChangeOrders,
+    WaitingOnResponse WaitingOn);
 
 /// <summary>Who is looking: their id and which of the extract permissions they hold on this project.</summary>
 internal sealed record ExtractViewer(Guid UserId, IReadOnlySet<Permission> Held)
@@ -145,7 +146,8 @@ internal static class ExtractView
         Permission.ExtractDocumentAssemble,
     ];
 
-    public static ExtractResponse Build(Extract extract, Project project, RulingSet rulings, ExtractViewer viewer)
+    public static ExtractResponse Build(
+        Extract extract, Project project, RulingSet rulings, ExtractViewer viewer, WaitingOnResponse waitingOn)
     {
         ArgumentNullException.ThrowIfNull(extract);
         ArgumentNullException.ThrowIfNull(project);
@@ -176,7 +178,8 @@ internal static class ExtractView
             seesMoney ? DocumentFor(extract, project, rulings) : null,
             seesMoney
                 ? [.. extract.ChangeOrderLines.Select(line => new ExtractChangeOrderResponse(line.ChangeOrderId, line.Amount))]
-                : null);
+                : null,
+            waitingOn);
     }
 
     private static ExtractActions ActionsFor(Extract extract, Project project, RulingSet rulings, ExtractViewer viewer)

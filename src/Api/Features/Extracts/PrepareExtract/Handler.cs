@@ -154,6 +154,8 @@ internal static class Handler
 
         return Microsoft.AspNetCore.Http.Results.Created(
             $"/api/projects/{projectId}/extracts/{extract.Id}",
-            ExtractView.Build(extract, project, rulings, viewer));
+            ExtractView.Build(
+                extract, project, rulings, viewer,
+                ExtractWaitingOnView.Build(extract, await ExtractWaitingOnView.StaffAsync(database, projectId, cancellationToken))));
     }
 }

@@ -152,6 +152,10 @@ public sealed class Extract : Entity
 
     public static bool IsLegalTransition(ExtractStatus from, ExtractStatus to) => LegalTransitions.Contains((from, to));
 
+    /// <summary>Every status the machine allows <paramref name="from"/> to move to, rejections and side branches included.</summary>
+    public static IReadOnlyList<ExtractStatus> LegalTargetsFrom(ExtractStatus from) =>
+        [.. LegalTransitions.Where(transition => transition.From == from).Select(transition => transition.To).Order()];
+
     public static Result<Extract> Prepare(
         Project project,
         int number,

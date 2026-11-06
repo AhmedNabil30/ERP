@@ -40,20 +40,27 @@ internal static class ExtractSupport
     public static DateOnly Today(TimeProvider clock) => DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
 
     /// <summary>The extract permissions the caller holds on the route's project, each asked of the real evaluator.</summary>
-    public static async Task<ExtractViewer> ViewerAsync(StepServices services)
+    public static async Task<ExtractViewer> ViewerAsync(StepServices services) =>
+        new(services.CurrentUser.UserId ?? Guid.Empty, await HeldAsync(services.Authorization, services.User));
+
+    /// <summary>Whether the caller may see the money on an extract. The same rule <see cref="ExtractViewer.MaySeeMoney"/> applies.</summary>
+    public static async Task<bool> MaySeeMoneyAsync(IAuthorizationService authorization, ClaimsPrincipal user) =>
+        new ExtractViewer(Guid.Empty, await HeldAsync(authorization, user)).MaySeeMoney;
+
+    private static async Task<HashSet<Permission>> HeldAsync(IAuthorizationService authorization, ClaimsPrincipal user)
     {
         HashSet<Permission> held = [];
         foreach (Permission permission in ExtractView.Permissions)
         {
-            AuthorizationResult result = await services.Authorization.AuthorizeAsync(
-                services.User, resource: null, PermissionRequirement.ToPolicyName(permission, ProjectScope.FromRoute()));
+            AuthorizationResult result = await authorization.AuthorizeAsync(
+                user, resource: null, PermissionRequirement.ToPolicyName(permission, ProjectScope.FromRoute()));
             if (result.Succeeded)
             {
                 held.Add(permission);
             }
         }
 
-        return new ExtractViewer(services.CurrentUser.UserId ?? Guid.Empty, held);
+        return held;
     }
 
     /// <summary>
@@ -139,7 +146,9 @@ internal static class ExtractSupport
         }
 
         ExtractViewer viewer = await ViewerAsync(services);
-        return Microsoft.AspNetCore.Http.Results.Ok(ExtractView.Build(extract, project, services.Rulings, viewer));
+        return Microsoft.AspNetCore.Http.Results.Ok(ExtractView.Build(
+            extract, project, services.Rulings, viewer,
+            ExtractWaitingOnView.Build(extract, await ExtractWaitingOnView.StaffAsync(database, projectId, cancellationToken))));
     }
 
     /// <summary>

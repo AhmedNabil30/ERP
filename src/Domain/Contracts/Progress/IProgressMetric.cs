@@ -1,6 +1,8 @@
+using Kaff.Domain.Boqs;
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts.Billing;
 using Kaff.Domain.Projects;
+using Kaff.Domain.Rulings;
 
 namespace Kaff.Domain.Contracts.Progress;
 
@@ -87,9 +89,55 @@ public sealed record ProgressReading
 /// <summary>Type-specific evidence for a progress reading.</summary>
 public abstract record ProgressInput(ContractType ContractType);
 
-/// <summary>spec.md §5.1 — certified work against contract value.</summary>
-public sealed record LumpSumProgressInput(Money CertifiedToDate, IReadOnlyList<ProgressSegment> BabSegments)
-    : ProgressInput(ContractType.LumpSum);
+/// <summary>
+/// spec.md §5.1 — work done against contract value. The value is the executed quantity priced at the frozen
+/// BOQ rate (see <c>Rulings.LumpSumCompletionBasis</c>), so it moves the moment a daily log moves a line.
+/// </summary>
+public sealed record LumpSumProgressInput(Money ExecutedValueToDate, IReadOnlyList<ProgressSegment> BabSegments)
+    : ProgressInput(ContractType.LumpSum)
+{
+    /// <summary>
+    /// Prices each BOQ line's executed quantity at its frozen rate, rounded as the ruled
+    /// <see cref="ContractValueSource"/> rounds a line total, and groups the lines by باب in BOQ order.
+    /// A باب whose contract value is zero reports no completion rather than a made-up one.
+    /// </summary>
+    public static Result<LumpSumProgressInput> FromBoq(Boq boq, ContractValueSource rule)
+    {
+        ArgumentNullException.ThrowIfNull(boq);
+        ArgumentNullException.ThrowIfNull(rule);
+
+        if (boq.Lines.Count == 0)
+        {
+            return Result.Failure<LumpSumProgressInput>(BoqErrors.Empty);
+        }
+
+        List<ProgressSegment> segments = [];
+        foreach (IGrouping<string, BoqLine> bab in boq.Lines.OrderBy(line => line.Position).GroupBy(line => line.BabCode))
+        {
+            Money contracted = Money.Zero;
+            Money executed = Money.Zero;
+            foreach (BoqLine line in bab)
+            {
+                decimal? quantity = line.QuantityFor(rule.QuantityBasis);
+                if (quantity is null)
+                {
+                    return Result.Failure<LumpSumProgressInput>(BoqErrors.LineQuantityMissing);
+                }
+
+                contracted += rule.LineTotal(line.SellRate, quantity.Value);
+                executed += rule.LineTotal(line.SellRate, line.QuantityExecuted);
+            }
+
+            Percentage? completion = contracted.IsPositive
+                ? Percentage.FromFraction(executed.Amount / contracted.Amount)
+                : null;
+            segments.Add(new ProgressSegment(bab.Key, completion, executed));
+        }
+
+        Money total = Money.Sum(segments.Select(segment => segment.Value!.Value));
+        return Result.Success(new LumpSumProgressInput(total, segments));
+    }
+}
 
 /// <summary>spec.md §5.2 — cost-to-date plus supervision. Kaff engineers' hours are internal cost, never billed.</summary>
 public sealed record CostPlusProgressInput(Money BillableCostToDate, Money SupervisionToDate)
@@ -98,6 +146,12 @@ public sealed record CostPlusProgressInput(Money BillableCostToDate, Money Super
 /// <summary>spec.md §5.3 — completion per fixed-weight stage.</summary>
 public sealed record DesignProgressInput(IReadOnlyDictionary<DesignStage, Percentage> StageCompletion)
     : ProgressInput(ContractType.Design);
+
+/// <summary>
+/// What a caller has gathered about a project without knowing its contract type: the BOQ if it has one, and the
+/// cost paid against it. Each metric picks what it needs, so a handler never branches on the type.
+/// </summary>
+public sealed record ProgressEvidence(Boq? Boq, Money CostToDate, RulingSet Rulings);
 
 /// <summary>Everything a progress reading is given.</summary>
 public sealed record ProgressContext(Project Project, DateOnly AsOf, ProgressInput Input);
@@ -112,6 +166,9 @@ public interface IProgressMetric
 {
     ContractType ContractType { get; }
 
+    /// <summary>Builds this type's input from the evidence, or fails if the evidence cannot honestly support one.</summary>
+    Result<ProgressInput> InputFrom(Project project, ProgressEvidence evidence);
+
     Task<Result<ProgressReading>> MeasureAsync(ProgressContext context, CancellationToken cancellationToken);
 }
 
@@ -120,6 +177,8 @@ public abstract class ProgressMetric<TInput> : IProgressMetric
     where TInput : ProgressInput
 {
     public abstract ContractType ContractType { get; }
+
+    public abstract Result<ProgressInput> InputFrom(Project project, ProgressEvidence evidence);
 
     public Task<Result<ProgressReading>> MeasureAsync(ProgressContext context, CancellationToken cancellationToken)
     {
