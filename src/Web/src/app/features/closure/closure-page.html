@@ -42,7 +42,7 @@
         @if (steps().length > 0) {
           <div class="buttons">
             @for (step of steps(); track step) {
-              <kaff-button variant="primary" [busy]="busy()" [testId]="'closure-act-' + step" (clicked)="ask(step)">
+              <kaff-button [variant]="step === 'practical-completion' ? 'secondary' : 'primary'" [busy]="busy()" [testId]="'closure-act-' + step" (clicked)="ask(step)">
                 {{ i18n.t(stepLabel[step]) }}
               </kaff-button>
             }
@@ -68,7 +68,7 @@
 
         @if (nothingToDo()) {
           <p class="none" data-testid="closure-no-action">
-            <kaff-icon name="info" [small]="true" /><span>{{ i18n.t('extract.no_action.waiting') }}</span>
+            <kaff-icon name="info" [small]="true" /><span>{{ i18n.t('closure.nothing_to_do') }}</span>
           </p>
         }
       </div>
@@ -296,14 +296,15 @@
         </div>
       }
 
-      <!-- Termination: unruled. The control asks; the server's own refusal is shown as "not decided yet". -->
+      <!-- Contract termination: last on the page, a destructive control, never beside a completion act. The
+           settlement is unruled, so the server refuses; the screen says "not available" (errors.closure.termination_settlement_unruled). -->
       @if (canTerminate()) {
         <div class="panel" data-testid="closure-terminate">
           <h2 class="h2">{{ i18n.t('closure.terminate.title') }}</h2>
           <p class="lead">{{ i18n.t('closure.terminate.body') }}</p>
           @if (!terminating()) {
             <div class="buttons">
-              <kaff-button variant="secondary" testId="closure-terminate-open" (clicked)="openTerminate()">
+              <kaff-button variant="danger-outline" testId="closure-terminate-open" (clicked)="openTerminate()">
                 {{ i18n.t('closure.terminate.ask') }}
               </kaff-button>
             </div>
@@ -318,7 +319,7 @@
                 </kaff-banner>
               }
               <div class="buttons">
-                <kaff-button variant="secondary" type="submit" [busy]="busy()" testId="closure-terminate-submit">{{ i18n.t('closure.terminate.submit') }}</kaff-button>
+                <kaff-button variant="danger-outline" type="submit" [busy]="busy()" testId="closure-terminate-submit">{{ i18n.t('closure.terminate.submit') }}</kaff-button>
                 <kaff-button variant="secondary" [disabled]="busy()" testId="closure-terminate-cancel" (clicked)="closePanels()">{{ i18n.t('extract.cancel') }}</kaff-button>
               </div>
             </form>

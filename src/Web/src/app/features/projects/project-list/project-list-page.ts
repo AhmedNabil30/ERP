@@ -62,11 +62,16 @@ export class ProjectListPage {
     () => this.auth.current()?.permissions.includes('ClientManage') ?? false,
   );
 
+  /**
+   * False for the site engineer, whose every other screen is money-free (consultant review D4). Convenience:
+   * the figure is not rendered, and the server still decides what `GET /api/projects` carries.
+   */
+  protected readonly seesMoney = computed(() => this.auth.current()?.role !== 'SiteEngineer');
+
   /** `ux/components.md:259` — identity first: name leads, code demotes inside the same cell. */
-  protected readonly rowColumns = computed(() =>
-    this.canReadClients()
-      ? 'minmax(12rem, 1fr) minmax(8rem, 0.6fr) 8rem 8rem 9rem'
-      : 'minmax(12rem, 1fr) 8rem 8rem 9rem',
+  protected readonly rowColumns = computed(
+    () =>
+      `minmax(12rem, 1fr)${this.canReadClients() ? ' minmax(8rem, 0.6fr)' : ''} 8rem 8rem${this.seesMoney() ? ' 9rem' : ''}`,
   );
 
   protected readonly headerColumns = computed<readonly TableColumnDef[]>(() => [
@@ -74,7 +79,7 @@ export class ProjectListPage {
     ...(this.canReadClients() ? [{ labelKey: 'projects.field.client' }] : []),
     { labelKey: 'projects.field.contract_type' },
     { labelKey: 'projects.field.status' },
-    { labelKey: 'projects.field.contract_value', align: 'end' as const },
+    ...(this.seesMoney() ? [{ labelKey: 'projects.field.contract_value', align: 'end' as const }] : []),
   ]);
 
   /** The server's own total (`ListProjects.Response.Total`), not a count of the rows on screen. */

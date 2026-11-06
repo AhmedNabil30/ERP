@@ -55,7 +55,10 @@ export const STEP_LABEL_KEY: Readonly<Record<ClosureStep, string>> = {
  * there: the header does not read the hold ledger, and it must not invite a release it cannot show the figure for.
  */
 export function closurePrimary(type: ContractType, status: ProjectStatus, caps: ClosureCaps): ClosureStep | null {
-  return closureNextSteps(type, status, caps)[0] ?? null;
+  // Declaring practical completion is never the header's invitation: on a running project it would be the only
+  // filled control on the screen and would invite the user to call the job finished while money still moves
+  // (consultant review A4). It lives on the closure screen only.
+  return closureNextSteps(type, status, caps).find((step) => step !== 'practical-completion') ?? null;
 }
 
 /** The closure permissions in a project entry's list (`Session.projects[].permissions`). */

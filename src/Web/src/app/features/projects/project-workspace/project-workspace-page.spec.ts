@@ -248,11 +248,17 @@ describe('ProjectWorkspacePage · type dispatch', () => {
     expect(q(design, 'workspace-group-closure')).toBeNull();
   });
 
-  it('offers the closure act in the header slot only to a holder of that permission', async () => {
+  it('never offers practical completion in the header slot, whoever holds the permission (review A4)', async () => {
     const holder = session('Owner', [...OWNER_PERMS, 'ProjectPracticalCompletionDeclare'], ['TreasuryReadCompany']);
-    await createFixture(new FakeProjectsApi(project('LumpSum')), holder);
+    await createFixture(new FakeProjectsApi(project('LumpSum', { status: 'Active' })), holder);
+    expect(TestBed.inject(HeaderActionsService).template()).toBeNull();
+  });
+
+  it('still offers the later closure acts in the header slot, only to a holder of that permission', async () => {
+    const holder = session('Owner', [...OWNER_PERMS, 'ProjectHandover'], ['TreasuryReadCompany']);
+    await createFixture(new FakeProjectsApi(project('LumpSum', { status: 'HandoverPending' })), holder);
     expect(TestBed.inject(HeaderActionsService).template()).not.toBeNull();
-    await createFixture(new FakeProjectsApi(project('LumpSum')), OWNER());
+    await createFixture(new FakeProjectsApi(project('LumpSum', { status: 'HandoverPending' })), OWNER());
     expect(TestBed.inject(HeaderActionsService).template()).toBeNull();
   });
 });

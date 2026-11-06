@@ -223,6 +223,8 @@ describe('closure display, the permission and state rules', () => {
   it('offers nothing on a Design project, and never puts the hold release in the header slot', () => {
     expect(closureNextSteps('Design', 'Active', all)).toEqual([]);
     expect(closurePrimary('LumpSum', 'Handover', { ...none, holdRelease: true })).toBeNull();
+    expect(closurePrimary('LumpSum', 'Active', all)).toBeNull();
+    expect(closurePrimary('LumpSum', 'HandoverPending', all)).toBe('handover');
   });
 });
 
@@ -234,6 +236,14 @@ describe('ClosurePage', () => {
     expect(q(fixture, 'closure-act-practical-completion')).not.toBeNull();
     expect(q(fixture, 'closure-hold')).toBeNull();
     expect(q(fixture, 'closure-snag-add')).toBeNull();
+  });
+
+  it('on a running project no control is filled and termination is a destructive outline, never beside a filled completion act', async () => {
+    const fixture = await open(project('Active'), session('Owner', OWNER));
+    const act = q(fixture, 'closure-act-practical-completion');
+    expect(act?.className).toContain('variant-secondary');
+    expect(act?.className).not.toContain('variant-primary');
+    expect(q(fixture, 'closure-terminate-open')?.className).toContain('variant-danger-outline');
   });
 
   it('shows a user with the permission on no act the empty state, not a disabled button', async () => {

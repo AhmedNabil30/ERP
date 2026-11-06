@@ -35,9 +35,10 @@
         </kaff-status-pill>
       </div>
       <p class="meta">
-        <bdi class="code" dir="ltr" translate="no" data-testid="workspace-code">{{ p.code }}</bdi>
         <span class="client" dir="auto" data-testid="workspace-client">{{ p.clientName }}</span>
         <kaff-badge tone="accent" testId="workspace-type">{{ i18n.t(contractTypeKey(p.contractType)) }}</kaff-badge>
+        <!-- The code is a lookup key: last and small, after the client and the type (review D5). -->
+        <bdi class="code" dir="ltr" translate="no" data-testid="workspace-code">{{ p.code }}</bdi>
       </p>
     </header>
 
@@ -74,11 +75,6 @@
                       </span>
                     </span>
                   }
-                  <span tags>
-                    @if (p.contractValue !== null) {
-                      <kaff-provenance [kind]="p.contractType === 'LumpSum' ? 'car' : 'calc'" />
-                    }
-                  </span>
                 </kaff-fact>
                 @if (p.holdRate !== null) {
                   <kaff-fact [label]="i18n.t('projects.workspace.vocab.fact.hold_rate')" testId="workspace-fact-hold">

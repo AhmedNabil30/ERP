@@ -34,7 +34,6 @@ import { KaffFigure } from '../../../shared/kaff-figure/kaff-figure';
 import { KaffGroupSection } from '../../../shared/kaff-group-section/kaff-group-section';
 import { KaffIcon } from '../../../shared/kaff-icon/kaff-icon';
 import { KaffPartLink } from '../../../shared/kaff-part-link/kaff-part-link';
-import { KaffProvenance } from '../../../shared/kaff-provenance/kaff-provenance';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { KaffStatusPill } from '../../../shared/kaff-status-pill/kaff-status-pill';
 import {
@@ -85,7 +84,6 @@ const LOADING = { state: 'loading' } as const;
     KaffGroupSection,
     KaffIcon,
     KaffPartLink,
-    KaffProvenance,
     KaffState,
     KaffStatusPill,
   ],

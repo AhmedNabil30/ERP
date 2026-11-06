@@ -4,7 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { AuthService, ProjectEntry, Session } from '../../../core/auth/auth.service';
+import { AuthService, ProjectEntry, Role, Session } from '../../../core/auth/auth.service';
 import { ClientSummary, ClientsApi } from '../../../core/clients/clients.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { ProjectSummary, ProjectsApi } from '../../../core/projects/projects.api';
@@ -106,11 +106,11 @@ function entry(projectId: string, permissions: readonly string[]): ProjectEntry 
   };
 }
 
-function session(permissions: readonly string[], projects: readonly ProjectEntry[]): Session {
+function session(permissions: readonly string[], projects: readonly ProjectEntry[], role: Role = 'Owner'): Session {
   return {
     userId: '11111111-1111-1111-1111-111111111111',
     displayName: 'اختبار',
-    role: 'SiteEngineer',
+    role,
     departmentId: null,
     operationsSubDepartment: null,
     mustChangePassword: false,
@@ -214,6 +214,18 @@ describe('ProjectListPage · columns', () => {
     expect(text).toContain('KF-P-0001');
     expect(text).toContain('مقاولة بالمقطوعية');
     expect(text).toContain('4500000.0000');
+  });
+
+  it('shows the site engineer no contract value, header or cell (review D4)', async () => {
+    const fixture = await createFixture(
+      new FakeProjectsApi([LUMP_SUM]),
+      session(['ProjectList'], [entry('p-1', ['DayLabourSiteManage'])], 'SiteEngineer'),
+    );
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('KF-P-0001');
+    expect(text).not.toContain('4500000.0000');
+    expect(fixture.nativeElement.querySelector('[data-testid="project-value-KF-P-0001"]')).toBeNull();
   });
 
   it('renders Kaff vocabulary verbatim for Active and Closed, the same word the hub shows', async () => {

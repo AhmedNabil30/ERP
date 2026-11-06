@@ -213,9 +213,12 @@
                 <span class="cell-primary cell-end amt-fig" [class.net]="vm.figure.key === 'netPayable'">
                   <kaff-figure [value]="vm.figure.amount" />
                 </span>
-                <span class="cell-sub origin">
-                  <kaff-provenance [kind]="vm.kind" />
-                </span>
+                <!-- Only a figure that was typed or carried says so; "calculated" on all six is a wall, not information. -->
+                @if (vm.kind !== 'calc') {
+                  <span class="cell-sub origin">
+                    <kaff-provenance [kind]="vm.kind" />
+                  </span>
+                }
               </kaff-table-row>
             </li>
           }

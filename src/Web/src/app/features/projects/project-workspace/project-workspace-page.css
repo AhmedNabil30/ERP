@@ -63,6 +63,7 @@
 }
 
 .code {
+  font-size: var(--text-xs, 0.75rem);
   unicode-bidi: isolate;
   font-variant-numeric: tabular-nums;
 }

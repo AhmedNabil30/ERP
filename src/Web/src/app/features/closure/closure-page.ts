@@ -31,7 +31,7 @@ import { CLOSURE_PILL, ClosureCaps, ClosureStep, STEP_LABEL_KEY, closureCapsOf, 
 export type ProjectAct = ClosureStep;
 
 const ACT_KEYS: Readonly<Record<ProjectAct, { confirm: string; detail: string | null }>> = {
-  'practical-completion': { confirm: 'closure.confirm.practical_completion', detail: null },
+  'practical-completion': { confirm: 'closure.confirm.practical_completion', detail: 'closure.confirm.practical_completion_detail' },
   handover: { confirm: 'closure.confirm.handover', detail: 'closure.confirm.handover_detail' },
   warranty: { confirm: 'closure.confirm.warranty', detail: null },
   close: { confirm: 'closure.confirm.close', detail: 'closure.confirm.close_detail' },
