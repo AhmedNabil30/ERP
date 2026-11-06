@@ -2,6 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
+import type { AssignmentLevel, Role } from '../auth/auth.service';
+
 /**
  * `/api/projects/{projectId}/extracts` — KAFF-500, `ExtractResponse` field for field.
  *
@@ -128,6 +130,31 @@ export interface Extract {
   readonly document: ExtractDocument | null;
 }
 
+/** A person on the project's staff, as the waiting-on read names them. No contact data. */
+export interface WaitingStaff {
+  readonly userId: string;
+  readonly fullName: string;
+  readonly role: Role;
+  readonly level: AssignmentLevel | null;
+}
+
+/** `GET /api/projects/{id}/waiting-on`: one open extract and what it waits for. No money. */
+export interface WaitingOnItem {
+  readonly extractId: string;
+  readonly number: number;
+  readonly waitingOn: {
+    /** The extract's CURRENT status; the step waited for is the one that leaves it. */
+    readonly status: string;
+    readonly roles: readonly { readonly role: Role; readonly minimumLevel: AssignmentLevel }[];
+    readonly isDecisionGate: boolean;
+    readonly isTerminal: boolean;
+    /** Who may take the step now. */
+    readonly holders: readonly WaitingStaff[];
+    /** Hold the role but already acted this cycle, so separation of duties bars them. */
+    readonly barredHolders: readonly WaitingStaff[];
+  };
+}
+
 /** The POST steps that carry no body of their own. */
 export type ExtractStep =
   | 'qc-report'
@@ -148,6 +175,10 @@ export class ExtractsApi {
 
   async list(projectId: string): Promise<readonly ExtractSummary[]> {
     return await firstValueFrom(this.http.get<ExtractSummary[]>(this.base(projectId)));
+  }
+
+  async waitingOn(projectId: string): Promise<readonly WaitingOnItem[]> {
+    return await firstValueFrom(this.http.get<WaitingOnItem[]>(`api/projects/${projectId}/waiting-on`));
   }
 
   async get(projectId: string, id: string): Promise<Extract> {

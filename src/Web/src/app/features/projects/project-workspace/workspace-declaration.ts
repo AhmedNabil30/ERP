@@ -9,13 +9,28 @@ import { ClosureCaps, STEP_LABEL_KEY, closurePrimary } from '../../closure/closu
  * rendered empty or disabled.
  *
  * Source: `.design/v2/team-a/README.md` "The project workspace", cut down to what the API serves today.
- * What the design shows and nothing serves yet (progress, change orders, logs list, ledger balances,
- * roster, linked projects, lifecycle, Cost Plus supervision rate, Design area and rate) is not declared
+ * What the design shows and nothing serves yet (change orders, the logs list, the five ledger balances,
+ * linked projects, lifecycle, the Cost Plus supervision rate, Design area and rate) is not declared
  * here; it is listed in the build report with the endpoint it needs.
+ *
+ * Progress and the roster ARE served now and ARE declared here: GET /api/projects/{id}/progress and
+ * GET /api/projects/{id}/team landed in 3f7b0f3. Progress is read through `workspace-reading.ts`, which
+ * is also where the rule lives that a contract type without a percentage never draws a bar.
  */
 export type GroupId = 'understand' | 'quantify' | 'execute' | 'pay' | 'closure' | 'org';
 
-export type PartId = 'facts' | 'boq' | 'dailyLog' | 'dayLabour' | 'extracts' | 'proof' | 'closure' | 'team';
+export type PartId =
+  | 'progress'
+  | 'facts'
+  | 'site'
+  | 'boq'
+  | 'dailyLog'
+  | 'dayLabour'
+  | 'extractsSite'
+  | 'extracts'
+  | 'proof'
+  | 'closure'
+  | 'team';
 
 export const GROUP_ORDER: readonly GroupId[] = ['understand', 'quantify', 'execute', 'pay', 'closure', 'org'];
 
@@ -45,7 +60,7 @@ export const GROUP_INTENT_KEY: Readonly<Record<ContractType, Readonly<Record<Gro
     execute: 'projects.workspace.vocab.intent.ls.execute',
     pay: 'projects.workspace.vocab.intent.ls.pay',
     closure: 'projects.workspace.vocab.intent.ls.closure',
-    org: 'projects.workspace.vocab.intent.ls.org',
+    org: 'projects.workspace.vocab.intent.org_who',
   },
   CostPlus: {
     understand: 'projects.workspace.vocab.intent.cp.understand',
@@ -53,15 +68,15 @@ export const GROUP_INTENT_KEY: Readonly<Record<ContractType, Readonly<Record<Gro
     execute: 'projects.workspace.vocab.intent.cp.execute',
     pay: 'projects.workspace.vocab.intent.cp.pay',
     closure: 'projects.workspace.vocab.intent.cp.closure',
-    org: 'projects.workspace.vocab.intent.cp.org',
+    org: 'projects.workspace.vocab.intent.org_who',
   },
   Design: {
-    understand: 'projects.workspace.vocab.intent.ds.understand',
+    understand: 'projects.workspace.vocab.intent.ds.understand_contract',
     quantify: 'projects.workspace.vocab.intent.ds.quantify',
     execute: 'projects.workspace.vocab.intent.ds.execute',
     pay: 'projects.workspace.vocab.intent.ds.pay',
     closure: 'projects.workspace.vocab.intent.ds.closure',
-    org: 'projects.workspace.vocab.intent.ds.org',
+    org: 'projects.workspace.vocab.intent.org_who',
   },
 };
 
@@ -72,23 +87,23 @@ export const GROUP_INTENT_KEY: Readonly<Record<ContractType, Readonly<Record<Gro
  */
 export const DECLARATION: Readonly<Record<ContractType, Readonly<Record<GroupId, readonly PartId[]>>>> = {
   LumpSum: {
-    understand: ['facts'],
+    understand: ['progress', 'facts'],
     quantify: ['boq'],
-    execute: ['dailyLog', 'dayLabour'],
+    execute: ['site', 'dailyLog', 'dayLabour', 'extractsSite'],
     pay: ['extracts', 'proof'],
     closure: ['closure'],
     org: ['team'],
   },
   CostPlus: {
-    understand: [],
+    understand: ['progress'],
     quantify: [],
-    execute: ['dailyLog', 'dayLabour'],
+    execute: ['site', 'dailyLog', 'dayLabour'],
     pay: ['proof'],
     closure: ['closure'],
     org: ['team'],
   },
   Design: {
-    understand: ['facts'],
+    understand: ['progress', 'facts'],
     quantify: [],
     execute: [],
     pay: ['proof'],
@@ -113,6 +128,15 @@ export interface Capabilities {
 /** Whether a declared part is shown to this viewer. */
 export function partAllowed(part: PartId, caps: Capabilities): boolean {
   switch (part) {
+    case 'progress':
+      // The percentage and the Babs are for every reader; the money inside is the server's to withhold.
+      return caps.canReadProject;
+    case 'site':
+      // What is going on on site is for every reader of the project, not only the one who writes the log.
+      return caps.canReadProject;
+    case 'extractsSite':
+      // The people who act on an extract but see no money (the site engineer) have no pay group: this is their way in.
+      return !caps.seesMoney && caps.canReadProject;
     case 'facts':
       return caps.seesMoney;
     case 'boq':
@@ -176,7 +200,9 @@ export function primaryAction(
     if (caps.seesMoney && status === 'Setup' && caps.canReadBoq) {
       return { labelKey: 'projects.workspace.vocab.action.open_boq', link: ['/projects', projectId, 'boq'] };
     }
-    if (caps.seesMoney && pending?.hasAction === true) {
+    // `hasAction` is the server's own answer from waiting-on (who may act now), so it holds for the site
+    // engineer too: the Supervisor who must submit the QC report is offered it.
+    if (pending?.hasAction === true) {
       return {
         labelKey: 'projects.workspace.vocab.action.open_extract',
         params: { number: pending.number },

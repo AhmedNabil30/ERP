@@ -2,6 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
+import type { AssignmentLevel, Role } from '../auth/auth.service';
+
 /** spec.md §5 — three types, one project entity. Type dispatches, it does not fork. */
 export type ContractType = 'LumpSum' | 'CostPlus' | 'Design';
 
@@ -64,6 +66,64 @@ export interface ProjectDetail {
   readonly holdRate: string | null;
   readonly advanceRate: string | null;
   readonly teamSize: number;
+  /**
+   * The dates and money the API added with the overview (`GetProject.Response`). Optional here only so
+   * older fixtures still type-check; the server always sends them (a date as null until it happens).
+   */
+  readonly signedOn?: string | null;
+  readonly startedOn?: string | null;
+  readonly handoverOn?: string | null;
+  readonly warrantyEndsOn?: string | null;
+  readonly closedOn?: string | null;
+  readonly lastDailyLogOn?: string | null;
+  /** Null for a caller who holds none of the extract-money permissions. Every figure is a string (D-135). */
+  readonly money?: ProjectMoney | null;
+}
+
+/** What the client has been billed, has paid and still owes (issued extracts only). */
+export interface ProjectMoney {
+  readonly certifiedToDate: string;
+  readonly billedToDate: string;
+  readonly collectedToDate: string;
+  readonly outstanding: string;
+}
+
+/** `ProgressKind` on the wire. A Cost Plus reading is `MonetaryOnly` and never carries a `completion`. */
+export type ProgressKind = 'Percentage' | 'MonetaryOnly' | 'StageWeighted';
+
+/** One Bab of a Lump Sum project. `completion` is a fraction string and is ABSENT when there is nothing to measure against. */
+export interface BabProgress {
+  readonly code: string;
+  readonly nameAr: string;
+  readonly nameEn: string;
+  readonly completion?: string;
+  readonly executedValue?: string;
+  readonly isActive: boolean;
+}
+
+/**
+ * `GET /api/projects/{id}/progress`. **Every member after `asOf` is absent, not zero, when it does not
+ * apply**: a missing `completion` means draw no bar. Money members are absent for a caller who may not see money.
+ */
+export interface ProjectProgress {
+  readonly kind: ProgressKind;
+  readonly asOf: string;
+  readonly completion?: string;
+  readonly executedValue?: string;
+  readonly contractValue?: string;
+  readonly certifiedToDate?: string;
+  readonly costToDate?: string;
+  readonly supervisionToDate?: string;
+  readonly babs?: readonly BabProgress[];
+}
+
+/** `GET /api/projects/{id}/team`: one active assignment. */
+export interface TeamMember {
+  readonly userId: string;
+  readonly fullName: string;
+  readonly role: Role;
+  readonly level: AssignmentLevel;
+  readonly assignedAt: string;
 }
 
 /**
@@ -81,6 +141,16 @@ export class ProjectsApi {
   /** One project's header and terms. Gated `ProjectRead` + assignment; HR is refused, not redacted. */
   async get(projectId: string): Promise<ProjectDetail> {
     return await firstValueFrom(this.http.get<ProjectDetail>(`api/projects/${projectId}`));
+  }
+
+  /** Where the project stands in the form its contract type allows. A Design project answers 409 `billing.calculator_not_implemented`. */
+  async progress(projectId: string): Promise<ProjectProgress> {
+    return await firstValueFrom(this.http.get<ProjectProgress>(`api/projects/${projectId}/progress`));
+  }
+
+  /** Who is assigned, with names. Gated `ProjectRead` + assignment. */
+  async team(projectId: string): Promise<readonly TeamMember[]> {
+    return await firstValueFrom(this.http.get<TeamMember[]>(`api/projects/${projectId}/team`));
   }
 
   /** The rows, and the server's own total — read rather than recounted on the client. */

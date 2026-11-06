@@ -17,15 +17,14 @@ import { Router, RouterLink } from '@angular/router';
 import { toProblem } from '../../../core/api/problem-details';
 import { AuthService } from '../../../core/auth/auth.service';
 import { Boq, BoqsApi } from '../../../core/boqs/boqs.api';
-import { Extract, ExtractSummary, ExtractsApi } from '../../../core/extracts/extracts.api';
-import { contractTypeKey, projectWorkspaceStatusKey } from '../../../core/i18n/enum-keys';
+import { ExtractSummary, ExtractsApi, WaitingOnItem } from '../../../core/extracts/extracts.api';
+import { assignmentLevelKey, contractTypeKey, projectWorkspaceStatusKey, roleKey } from '../../../core/i18n/enum-keys';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { HeaderActionsService } from '../../../core/layout/header-actions.service';
-import { ProjectDetail, ProjectsApi } from '../../../core/projects/projects.api';
+import { ProjectDetail, ProjectProgress, ProjectsApi, TeamMember } from '../../../core/projects/projects.api';
 import { closureCapsOf } from '../../closure/closure-display';
 import { STATUS_PILL } from '../project-status-pill';
 import { fractionToPercent } from '../../../core/catalogue/percent-wire';
-import { extractNoActionKey } from '../../extracts/extract-display';
 import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
@@ -46,6 +45,7 @@ import {
   primaryAction,
   visibleGroups,
 } from './workspace-declaration';
+import { ProgressView, WaitingView, progressViewOf, waitingViewOf } from './workspace-reading';
 
 /** One group's read. Each group is its own read, so one failing never blanks the page. */
 type Read<T> =
@@ -56,6 +56,9 @@ type Read<T> =
   | { readonly state: 'failed'; readonly key: string };
 
 const LOADING = { state: 'loading' } as const;
+
+/** The progress read: a Design project answers 409, which is "cannot be measured yet", not a failure and not 0%. */
+type ProgressRead = Read<ProjectProgress> | { readonly state: 'unavailable' };
 
 /**
  * The project workspace: the hub a user lands on after opening a project from the list
@@ -114,8 +117,10 @@ export class ProjectWorkspacePage {
   protected readonly failure = signal<string | null>(null);
   protected readonly boq = signal<Read<Boq>>(LOADING);
   protected readonly extracts = signal<Read<readonly ExtractSummary[]>>(LOADING);
-  /** The newest extract still in the chain, read in full for its server-computed `actions`. Null: none, or the read failed. */
-  protected readonly pendingExtract = signal<Extract | null>(null);
+  protected readonly progress = signal<ProgressRead>(LOADING);
+  protected readonly team = signal<Read<readonly TeamMember[]>>(LOADING);
+  /** What the open extracts wait for. Null: nothing open, not a Lump Sum, or the read failed (the server still decides). */
+  private readonly waitingItems = signal<readonly WaitingOnItem[] | null>(null);
 
   private readonly primaryTemplate = viewChild<TemplateRef<unknown>>('primaryAction');
 
@@ -135,10 +140,70 @@ export class ProjectWorkspacePage {
     };
   });
 
+  /** How the progress read is drawn, for this viewer. */
+  protected readonly progressView = computed<ProgressView>(() => {
+    const read = this.progress();
+    switch (read.state) {
+      case 'loading':
+        return { kind: 'loading' };
+      case 'failed':
+        return { kind: 'failed', key: read.key };
+      case 'unavailable':
+      case 'none':
+        return { kind: 'unavailable' };
+      case 'ok':
+        return this.withoutMoneyForThoseWhoSeeNone(progressViewOf(read.data, this.i18n.locale()));
+    }
+  });
+
+  /**
+   * The groups this viewer sees. A progress part with nothing to say is dropped, and with it a group that
+   * would be left printing a question over an empty body. "Cannot be measured" is only worth a group of
+   * its own when the viewer also sees the contract facts beside it.
+   */
   protected readonly groups = computed(() => {
     const project = this.project();
-    return project === null ? [] : visibleGroups(project.contractType, this.caps());
+    if (project === null) {
+      return [];
+    }
+    const view = this.progressView().kind;
+    const noProgress = view === 'none' || (view === 'unavailable' && !this.caps().seesMoney);
+    return visibleGroups(project.contractType, this.caps())
+      .map((group) => ({ ...group, parts: group.parts.filter((part) => part !== 'progress' || !noProgress) }))
+      .filter((group) => group.parts.length > 0);
   });
+
+  /** The Babs with work in progress, for the site question. Empty when there is no bab list. */
+  protected readonly activeBabs = computed(() => {
+    const view = this.progressView();
+    return view.kind === 'bar' ? view.babs.filter((bab) => bab.isActive) : [];
+  });
+
+  protected readonly activeBabNames = computed(() => this.list(this.activeBabs().map((bab) => bab.name), 'conjunction'));
+
+  protected readonly hasBabs = computed(() => {
+    const view = this.progressView();
+    return view.kind === 'bar' && view.babs.length > 0;
+  });
+
+  /** The newest open extract and who it waits for, from this viewer's side. */
+  protected readonly waiting = computed<WaitingView | null>(() => {
+    const items = this.waitingItems();
+    return items === null ? null : waitingViewOf(items, this.auth.current()?.userId ?? null);
+  });
+
+  /** The holder roles as one phrase: "Technical Office or Owner". */
+  protected readonly waitingWho = computed(() => {
+    const w = this.waiting();
+    if (w === null) {
+      return '';
+    }
+    const labels = w.roles.map((r) => this.i18n.t(r.supervisor ? 'projects.workspace.waiting.supervisor' : roleKey(r.role)));
+    return this.list(labels, 'disjunction');
+  });
+
+  protected readonly holderNames = computed(() => this.list(this.waiting()?.holderNames ?? [], 'conjunction'));
+  protected readonly barredNames = computed(() => this.list(this.waiting()?.barredNames ?? [], 'conjunction'));
 
   protected readonly primary = computed(() => {
     const project = this.project();
@@ -147,30 +212,14 @@ export class ProjectWorkspacePage {
       : primaryAction(project.contractType, project.status, this.caps(), project.id, this.pending());
   });
 
+  /** The server named this viewer in `holders` of a step that is taken on the extract screen. */
   private readonly pending = computed<PendingExtract | null>(() => {
-    const extract = this.pendingExtract();
-    if (extract === null) {
-      return null;
-    }
-    const a = extract.actions;
-    // reviseEvidence is a correction, not the next step, so it does not take the slot.
-    const hasAction =
-      a.submitQcReport ||
-      a.approveTechnicalOffice ||
-      a.rejectAtTechnicalOffice ||
-      a.applyDeductions ||
-      a.rejectAtAccounts ||
-      a.approveAsOwner ||
-      a.rejectAtOwner ||
-      a.issue;
-    return { id: extract.id, number: extract.number, hasAction };
+    const w = this.waiting();
+    return w === null ? null : { id: w.extractId, number: w.number, hasAction: w.viewerIsHolder && w.hasScreen };
   });
 
-  /** Why the pending extract offers this viewer nothing (the extract screen's own wording), else null. */
-  protected readonly pendingNoActionKey = computed(() => {
-    const extract = this.pendingExtract();
-    return extract !== null && !this.pending()?.hasAction ? extractNoActionKey(extract) : null;
-  });
+  /** Separation of duties, in the extract screen's own words, when it is the reason this viewer is not offered the step. */
+  protected readonly barredKey = computed(() => (this.waiting()?.viewerIsBarred ? 'extract.no_action.same_person' : null));
 
   /** The newest extract by number, for the pay group's one-line summary. */
   protected readonly latestExtract = computed(() => {
@@ -196,7 +245,9 @@ export class ProjectWorkspacePage {
     this.failure.set(null);
     this.boq.set(LOADING);
     this.extracts.set(LOADING);
-    this.pendingExtract.set(null);
+    this.progress.set(LOADING);
+    this.team.set(LOADING);
+    this.waitingItems.set(null);
     try {
       this.project.set(await this.projectsApi.get(this.projectId()));
     } catch (error) {
@@ -207,7 +258,13 @@ export class ProjectWorkspacePage {
       this.loading.set(false);
     }
     // Not awaited: the groups load beside each other and beside the page.
-    const parts = this.groups().flatMap((group) => group.parts);
+    const loaded = this.project();
+    const parts = loaded === null ? [] : visibleGroups(loaded.contractType, this.caps()).flatMap((group) => group.parts);
+    void this.loadProgress();
+    void this.loadTeam();
+    if (loaded?.contractType === 'LumpSum') {
+      void this.loadWaiting();
+    }
     if (parts.includes('boq')) {
       void this.loadBoq();
     }
@@ -234,24 +291,56 @@ export class ProjectWorkspacePage {
     try {
       const list = await this.extractsApi.list(this.projectId());
       this.extracts.set({ state: 'ok', data: list });
-      await this.loadPending(list);
     } catch (error) {
       this.extracts.set({ state: 'failed', key: toProblem(error).messageKey });
     }
   }
 
-  /** The newest extract not yet Issued or Collected. A failed read leaves the slot absent; the server still decides. */
-  private async loadPending(list: readonly ExtractSummary[]): Promise<void> {
-    const open = list.filter((row) => row.status !== 'Issued' && row.status !== 'Collected');
-    const newest = open.reduce<ExtractSummary | null>((a, b) => (a === null || b.number > a.number ? b : a), null);
-    if (newest === null) {
-      return;
-    }
+  protected async loadProgress(): Promise<void> {
+    this.progress.set(LOADING);
     try {
-      this.pendingExtract.set(await this.extractsApi.get(this.projectId(), newest.id));
-    } catch {
-      this.pendingExtract.set(null);
+      this.progress.set({ state: 'ok', data: await this.projectsApi.progress(this.projectId()) });
+    } catch (error) {
+      // 409 billing.calculator_not_implemented: nothing stores stage completion yet. Honest, not 0%.
+      if (error instanceof HttpErrorResponse && error.status === 409) {
+        this.progress.set({ state: 'unavailable' });
+        return;
+      }
+      this.progress.set({ state: 'failed', key: toProblem(error).messageKey });
     }
+  }
+
+  protected async loadTeam(): Promise<void> {
+    this.team.set(LOADING);
+    try {
+      this.team.set({ state: 'ok', data: await this.projectsApi.team(this.projectId()) });
+    } catch (error) {
+      this.team.set({ state: 'failed', key: toProblem(error).messageKey });
+    }
+  }
+
+  /** A failed read leaves the strip and the slot absent; the server still decides every action. */
+  private async loadWaiting(): Promise<void> {
+    try {
+      this.waitingItems.set(await this.extractsApi.waitingOn(this.projectId()));
+    } catch {
+      this.waitingItems.set(null);
+    }
+  }
+
+  /** Convenience over the server's own redaction: a viewer who sees no money is shown no money, even from a mistaken payload. */
+  private withoutMoneyForThoseWhoSeeNone(view: ProgressView): ProgressView {
+    if (this.caps().seesMoney) {
+      return view;
+    }
+    if (view.kind === 'money') {
+      return { kind: 'none' };
+    }
+    return view.kind === 'bar' ? { ...view, executedValue: null, contractValue: null } : view;
+  }
+
+  private list(items: readonly string[], type: 'conjunction' | 'disjunction'): string {
+    return new Intl.ListFormat(this.i18n.locale(), { style: 'long', type }).format(items);
   }
 
   protected jumpTo(event: Event, id: GroupId): void {
@@ -261,6 +350,10 @@ export class ProjectWorkspacePage {
 
   protected intentKey(id: GroupId): string {
     const project = this.project();
+    // Without the contract facts the question "what is this contract" has no answer for this viewer.
+    if (id === 'understand' && !this.caps().seesMoney) {
+      return 'projects.workspace.vocab.intent.understand_progress';
+    }
     return GROUP_INTENT_KEY[project?.contractType ?? 'LumpSum'][id];
   }
 
@@ -268,6 +361,9 @@ export class ProjectWorkspacePage {
   protected rate(fraction: string): string {
     return `${this.i18n.formatNumber(fractionToPercent(fraction))}%`;
   }
+
+  protected readonly roleLabelKey = roleKey;
+  protected readonly levelLabelKey = assignmentLevelKey;
 
   protected day(value: string): string {
     const [year = 0, month = 1, day = 1] = value.split('-').map(Number);
