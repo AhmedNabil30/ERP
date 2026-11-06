@@ -60,3 +60,6 @@ web-dist/
 # cite a figure off a stale copy of it.
 graphify-out/
 .graphify-venv/
+
+# A consultant review regenerates its own evidence; the report cites what it saw.
+qa/shots-consultant/
