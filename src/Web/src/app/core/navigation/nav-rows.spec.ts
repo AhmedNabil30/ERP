@@ -62,6 +62,7 @@ describe('AC-215-B — every guarded top-level route has a row, derived from app
       // "every guarded top-level route has a row", and adding the permission is what lets the new
       // `/projects` row answer it. The assertion itself is untouched.
       'ProjectList',
+      'ProjectCreate',
       'ClientManage',
       'UserManage',
       'DepartmentManage',

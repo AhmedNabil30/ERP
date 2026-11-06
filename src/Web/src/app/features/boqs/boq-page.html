@@ -19,16 +19,146 @@
     </kaff-state>
   } @else if (loading()) {
     <kaff-state mode="loading" titleKey="boq.loading" testId="boq-loading" />
+  } @else if (!hasBoq()) {
+    <!-- Design has no BOQ (spec.md 5.3); Cost Plus has none in the workspace either. -->
+    <kaff-state mode="empty" titleKey="boq.not_for_type" icon="list" testId="boq-not-for-type" />
   } @else if (boq(); as data) {
-    @if (data.total === null) {
+    <div aria-live="polite">
+      @if (note(); as key) {
+        <kaff-banner tone="ok" testId="boq-note">{{ i18n.t(key) }}</kaff-banner>
+      }
+      @if (actionError(); as key) {
+        <kaff-banner tone="refusal" testId="boq-error">{{ i18n.t(key) }}</kaff-banner>
+      }
+    </div>
+
+    @if (data.total === null && data.lines.length > 0) {
       <kaff-banner tone="note" testId="boq-total-pending">{{ i18n.t('boq.total.pending') }}</kaff-banner>
     }
 
+    @if (editable()) {
+      <div class="toolbar">
+        @if (!adding()) {
+          <kaff-button variant="secondary" testId="boq-add" (clicked)="openAdd()">{{ i18n.t('boq.add.open') }}</kaff-button>
+        }
+      </div>
+    }
+
+    @if (adding()) {
+      <section class="panel" data-testid="boq-add-panel" aria-labelledby="boq-add-title">
+        <h2 id="boq-add-title" class="h2">{{ i18n.t('boq.add.title') }}</h2>
+
+        @if (picked(); as item) {
+          <div class="picked" data-testid="boq-picked">
+            <span class="picked-name" dir="auto">{{ i18n.locale() === 'ar' ? item.descriptionAr : (item.descriptionEn ?? item.descriptionAr) }}</span>
+            <bdi class="code" dir="ltr" translate="no">{{ item.code }}</bdi>
+            <span class="unit" dir="auto">{{ item.unit }}</span>
+            <kaff-figure [value]="item.baseSellRate" />
+            <kaff-button variant="ghost" testId="boq-unpick" (clicked)="unpick()">{{ i18n.t('boq.add.change_item') }}</kaff-button>
+          </div>
+
+          <form class="qty-form" novalidate (submit)="$event.preventDefault(); submitAdd()">
+            <kaff-field
+              labelKey="boq.field.quantity_surveyed"
+              controlId="boq-add-surveyed"
+              [required]="true"
+              [hintKey]="addSurveyedError() === null ? 'boq.hint.quantity_surveyed' : null"
+              [errorKey]="addSurveyedError()"
+              errorTestId="boq-add-surveyed-error"
+            >
+              <input
+                id="boq-add-surveyed"
+                class="input"
+                type="text"
+                dir="ltr"
+                inputmode="decimal"
+                autocomplete="off"
+                spellcheck="false"
+                data-testid="boq-add-surveyed"
+                [formField]="addForm.surveyed"
+              />
+            </kaff-field>
+            <kaff-field
+              labelKey="boq.field.quantity_estimated"
+              controlId="boq-add-estimated"
+              [errorKey]="addEstimatedError()"
+              errorTestId="boq-add-estimated-error"
+            >
+              <input
+                id="boq-add-estimated"
+                class="input"
+                type="text"
+                dir="ltr"
+                inputmode="decimal"
+                autocomplete="off"
+                spellcheck="false"
+                data-testid="boq-add-estimated"
+                [formField]="addForm.estimated"
+              />
+            </kaff-field>
+            <div class="buttons">
+              <kaff-button variant="primary" type="submit" testId="boq-add-submit" [busy]="busy()">{{ i18n.t('boq.add.submit') }}</kaff-button>
+              <kaff-button variant="secondary" testId="boq-add-cancel" [disabled]="busy()" (clicked)="closeAdd()">{{ i18n.t('action.cancel') }}</kaff-button>
+            </div>
+          </form>
+        } @else {
+          <input
+            class="input"
+            type="search"
+            dir="auto"
+            inputmode="search"
+            autocomplete="off"
+            data-testid="boq-search"
+            [attr.aria-label]="i18n.t('boq.add.search')"
+            [placeholder]="i18n.t('boq.add.search')"
+            [value]="search()"
+            (input)="onSearchInput($event)"
+          />
+
+          <div aria-live="polite">
+            @if (pickerFailure(); as key) {
+              <kaff-banner tone="refusal" testId="boq-picker-failure">{{ i18n.t(key) }}</kaff-banner>
+            } @else if (pickerLoading()) {
+              <p class="muted">{{ i18n.t('boq.add.searching') }}</p>
+            } @else if (shownResults().length === 0) {
+              <p class="muted" data-testid="boq-picker-empty">{{ i18n.t('boq.add.no_results') }}</p>
+            }
+          </div>
+
+          <ul class="picker" data-testid="boq-picker">
+            @for (item of shownResults(); track item.id) {
+              <li>
+                <button type="button" class="picker-row" [attr.data-testid]="'boq-pick-' + item.code" (click)="pick(item)">
+                  <span class="picker-name" dir="auto">{{ i18n.locale() === 'ar' ? item.descriptionAr : (item.descriptionEn ?? item.descriptionAr) }}</span>
+                  <span class="picker-meta">
+                    <bdi class="code" dir="ltr" translate="no">{{ item.code }}</bdi>
+                    <span class="unit" dir="auto">{{ item.unit }}</span>
+                    <kaff-figure [value]="item.baseSellRate" />
+                  </span>
+                </button>
+              </li>
+            }
+          </ul>
+          @if (moreResults()) {
+            <p class="muted">{{ i18n.t('boq.add.more_results') }}</p>
+          }
+          <div class="buttons">
+            <kaff-button variant="secondary" testId="boq-add-cancel" (clicked)="closeAdd()">{{ i18n.t('action.cancel') }}</kaff-button>
+          </div>
+        }
+      </section>
+    }
+
     @if (data.lines.length === 0) {
-      <kaff-state mode="empty" titleKey="boq.empty" icon="list" testId="boq-empty" />
+      <kaff-state
+        mode="empty"
+        [titleKey]="editable() ? 'boq.empty_editable' : 'boq.empty'"
+        icon="list"
+        testId="boq-empty"
+      />
     } @else {
       <p class="unit-note">{{ i18n.t('money.currency_note') }}</p>
-      <kaff-table [columns]="columns" [columnDefs]="headerColumns" [minInline]="720" testId="boq-table-header">
+      <kaff-table [columns]="columns()" [columnDefs]="headerColumns()" [minInline]="editable() ? 780 : 720" testId="boq-table-header">
         <ul class="rows" data-testid="boq-lines">
           @for (line of data.lines; track line.id) {
             <li class="rows-item" [attr.data-testid]="'boq-line-' + line.position">
@@ -68,12 +198,86 @@
                   {{ i18n.t('boq.line.sell_rate') }}
                   <kaff-figure [value]="line.sellRate" />
                 </span>
+                @if (editable()) {
+                  <span class="cell-act act">
+                    <kaff-row-menu
+                      [items]="rowMenu"
+                      triggerLabelKey="a11y.row_actions"
+                      [testId]="'boq-row-menu-' + line.position"
+                      (selected)="onRowAction(line, $event)"
+                    />
+                  </span>
+                }
               </kaff-table-row>
+
+              @if (editingId() === line.id) {
+                <form class="line-panel" novalidate [attr.data-testid]="'boq-edit-' + line.position" (submit)="$event.preventDefault(); submitEdit(line)">
+                  <kaff-field
+                    labelKey="boq.field.quantity_surveyed"
+                    [controlId]="'boq-edit-surveyed-' + line.position"
+                    [required]="true"
+                    [errorKey]="editSurveyedError()"
+                  >
+                    <input
+                      [id]="'boq-edit-surveyed-' + line.position"
+                      class="input"
+                      type="text"
+                      dir="ltr"
+                      inputmode="decimal"
+                      autocomplete="off"
+                      spellcheck="false"
+                      [attr.data-testid]="'boq-edit-surveyed-' + line.position"
+                      [formField]="editForm.surveyed"
+                    />
+                  </kaff-field>
+                  <kaff-field
+                    labelKey="boq.field.quantity_estimated"
+                    [controlId]="'boq-edit-estimated-' + line.position"
+                    [errorKey]="editEstimatedError()"
+                  >
+                    <input
+                      [id]="'boq-edit-estimated-' + line.position"
+                      class="input"
+                      type="text"
+                      dir="ltr"
+                      inputmode="decimal"
+                      autocomplete="off"
+                      spellcheck="false"
+                      [attr.data-testid]="'boq-edit-estimated-' + line.position"
+                      [formField]="editForm.estimated"
+                    />
+                  </kaff-field>
+                  <div class="buttons">
+                    <kaff-button variant="primary" type="submit" [testId]="'boq-edit-submit-' + line.position" [busy]="busy()">{{ i18n.t('action.save') }}</kaff-button>
+                    <kaff-button variant="secondary" [testId]="'boq-edit-cancel-' + line.position" [disabled]="busy()" (clicked)="closeEdit()">{{ i18n.t('action.cancel') }}</kaff-button>
+                  </div>
+                </form>
+              }
+
+              @if (removingId() === line.id) {
+                <div class="line-panel" [attr.data-testid]="'boq-remove-' + line.position">
+                  <kaff-inline-confirm
+                    tone="irreversible"
+                    icon="x"
+                    [question]="i18n.t('boq.remove.question')"
+                    [detail]="i18n.t('boq.remove.detail')"
+                    [confirmLabel]="i18n.t('boq.remove.confirm')"
+                    [cancelLabel]="i18n.t('action.cancel')"
+                    [busy]="busy()"
+                    [confirmTestId]="'boq-remove-confirm-' + line.position"
+                    [cancelTestId]="'boq-remove-cancel-' + line.position"
+                    (confirmed)="confirmRemove(line)"
+                    (cancelled)="removingId.set(null)"
+                  />
+                </div>
+              }
             </li>
           }
           <li class="rows-item totals" data-testid="boq-totals">
             <kaff-table-row [stacked]="true">
-              <span class="cell-pinned cell-title">{{ i18n.t('projects.field.contract_value') }}</span>
+              <span class="cell-pinned cell-title">
+                {{ frozen() !== null ? i18n.t('projects.field.contract_value') : i18n.t('boq.total.draft') }}
+              </span>
               <span class="cell-wide"></span>
               <span class="cell-wide"></span>
               <span class="cell-primary cell-end total">
@@ -83,10 +287,47 @@
                   <span class="muted" data-testid="boq-total-dash">-</span>
                 }
               </span>
+              @if (editable()) {
+                <span class="cell-wide"></span>
+              }
             </kaff-table-row>
           </li>
         </ul>
       </kaff-table>
+    }
+
+    <!-- The signature. Present only while the BOQ is editable and has a total; absent once frozen, absent
+         for a caller who may not manage the project. -->
+    @if (canSign()) {
+      <section class="panel sign" data-testid="boq-sign" aria-labelledby="boq-sign-title">
+        <h2 id="boq-sign-title" class="h2">{{ i18n.t('boq.sign.title') }}</h2>
+        <p class="lead">{{ i18n.t('boq.sign.lead') }}</p>
+        <p class="sign-total">
+          <span class="sign-total-label">{{ i18n.t('boq.sign.total_label') }}</span>
+          <span class="sign-total-value" data-testid="boq-sign-total"><kaff-figure [value]="data.total!" /></span>
+        </p>
+
+        @if (confirmingSign()) {
+          <kaff-inline-confirm
+            tone="irreversible"
+            icon="lock"
+            [question]="i18n.t('boq.sign.confirm_question')"
+            [detail]="signDetail()"
+            [confirmLabel]="i18n.t('boq.sign.confirm')"
+            [cancelLabel]="i18n.t('action.cancel')"
+            [busy]="busy()"
+            messageTestId="boq-sign-confirm-message"
+            confirmTestId="boq-sign-confirm"
+            cancelTestId="boq-sign-cancel"
+            (confirmed)="confirmSign()"
+            (cancelled)="confirmingSign.set(false)"
+          />
+        } @else {
+          <div class="buttons">
+            <kaff-button variant="primary" testId="boq-sign-ask" (clicked)="askSign()">{{ i18n.t('boq.sign.ask') }}</kaff-button>
+          </div>
+        }
+      </section>
     }
   }
 </section>

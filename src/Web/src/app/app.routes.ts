@@ -13,6 +13,7 @@ import { boqReadGuard } from './core/auth/boq-read.guard';
 import { extractReadGuard } from './core/auth/extract-read.guard';
 import { employeeManageGuard } from './core/auth/employee-manage.guard';
 import { mustChangePasswordGuard } from './core/auth/must-change-password.guard';
+import { projectCreateGuard } from './core/auth/project-create.guard';
 import { projectListGuard } from './core/auth/project-list.guard';
 import { proofReadGuard } from './core/auth/proof-read.guard';
 import { sessionGuard } from './core/auth/session.guard';
@@ -220,6 +221,16 @@ export const routes: Routes = [
       import('./features/projects/project-list/project-list-page').then((m) => m.ProjectListPage),
   },
   {
+    // Open a project. `POST /api/projects` is gated `ProjectCreate` (Owner and Technical Office); the guard is
+    // convenience. **Declared before `projects/:projectId`**, which would otherwise read "new" as a project id.
+    // A fixed path with a permission guard, so `nav-rows.ts` carries its row (`nav.project_new`) and
+    // `nav-rows.spec.ts` stays satisfied by construction.
+    path: 'projects/new',
+    canActivate: [sessionGuard, mustChangePasswordGuard, projectCreateGuard],
+    loadComponent: () =>
+      import('./features/projects/project-create/project-create-page').then((m) => m.ProjectCreatePage),
+  },
+  {
     // The project workspace, the hub a row of the list opens (`.design/v2/team-a/project.html`). BOQ, daily
     // log, extracts, proof and day labour stay valid routes below and are reached from the group each
     // belongs to. `extractReadGuard` is exactly the check this needs (`ProjectRead` on this project's own
@@ -288,7 +299,7 @@ export const routes: Routes = [
     loadComponent: () => import('./features/closure/closure-page').then((m) => m.ClosurePage),
   },
   {
-    // The BOQ, read-only. Shows cost prices, so gated `ProjectManage` (Owner, Technical Office; assigned).
+    // The BOQ: built by clicking, then signed (frozen). Shows cost prices, so gated `ProjectManage` (Owner, Technical Office; assigned).
     // `boqReadGuard` is convenience; `GET /api/projects/:projectId/boq` checks role and assignment.
     path: 'projects/:projectId/boq',
     canActivate: [sessionGuard, mustChangePasswordGuard, boqReadGuard],

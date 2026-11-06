@@ -1,0 +1,124 @@
+<section class="pg" data-testid="project-create">
+  <kaff-page-head [backLink]="['/projects']" backLabelKey="projects.create.back" [title]="i18n.t('projects.create.title')" />
+
+  <form class="fields" novalidate (submit)="$event.preventDefault(); onSubmit()">
+    <kaff-field
+      labelKey="projects.field.name"
+      controlId="project-name-input"
+      [required]="true"
+      [errorKey]="nameError()"
+      errorTestId="project-name-error"
+    >
+      <input
+        id="project-name-input"
+        class="input"
+        type="text"
+        dir="auto"
+        autocomplete="off"
+        data-testid="project-name"
+        [formField]="projectForm.name"
+      />
+    </kaff-field>
+
+    <kaff-field
+      labelKey="projects.field.client"
+      controlId="project-client-input"
+      [required]="true"
+      [hintKey]="clientsFailure() === null && !loadingClients() && clients().length === 0 ? 'projects.create.no_clients' : null"
+      [errorKey]="clientsFailure() ?? clientError()"
+      errorTestId="project-client-error"
+    >
+      <kaff-select
+        controlId="project-client-input"
+        ariaLabelKey="projects.field.client"
+        testId="project-client"
+        [options]="clientOptions()"
+        [value]="clientId()"
+        [invalid]="clientError() !== null"
+        (valueChange)="setClient($event)"
+      />
+    </kaff-field>
+
+    <fieldset class="field kind">
+      <legend class="label">{{ i18n.t('projects.field.contract_type') }}</legend>
+      <div class="chips">
+        @for (type of types; track type.value) {
+          <button
+            type="button"
+            class="chip"
+            [class.chip--on]="contractType() === type.value"
+            [attr.aria-pressed]="contractType() === type.value"
+            [attr.data-testid]="'project-type-' + type.value"
+            (click)="setContractType(type.value)"
+          >
+            {{ i18n.t(type.labelKey) }}
+          </button>
+        }
+      </div>
+      <p class="hint" data-testid="project-type-hint">{{ i18n.t('projects.create.type_hint.' + contractType()) }}</p>
+    </fieldset>
+
+    @if (isLumpSum()) {
+      <div class="rates">
+        <kaff-field
+          labelKey="projects.create.field.hold"
+          controlId="project-hold-input"
+          [hintKey]="holdError() === null ? 'projects.create.hint.hold' : null"
+          [errorKey]="holdError()"
+          errorTestId="project-hold-error"
+        >
+          <input
+            id="project-hold-input"
+            class="input"
+            type="text"
+            dir="ltr"
+            inputmode="decimal"
+            autocomplete="off"
+            spellcheck="false"
+            data-testid="project-hold"
+            [placeholder]="defaultHold"
+            [formField]="projectForm.holdPercent"
+          />
+        </kaff-field>
+
+        <kaff-field
+          labelKey="projects.create.field.advance"
+          controlId="project-advance-input"
+          [hintKey]="advanceError() === null ? 'projects.create.hint.advance' : null"
+          [errorKey]="advanceError()"
+          errorTestId="project-advance-error"
+        >
+          <input
+            id="project-advance-input"
+            class="input"
+            type="text"
+            dir="ltr"
+            inputmode="decimal"
+            autocomplete="off"
+            spellcheck="false"
+            data-testid="project-advance"
+            [placeholder]="defaultAdvance"
+            [formField]="projectForm.advancePercent"
+          />
+        </kaff-field>
+      </div>
+    }
+
+    <!-- No contract value input: it comes from the signed BOQ. Said here so nobody looks for the field. -->
+    <kaff-banner tone="note" testId="project-value-note">
+      {{ i18n.t('projects.create.value_note.' + contractType(), { status: i18n.t(setupWordKey) }) }}
+    </kaff-banner>
+
+    <div aria-live="polite">
+      @if (refusal(); as key) {
+        <kaff-banner tone="refusal" testId="project-create-refusal">{{ i18n.t(key) }}</kaff-banner>
+      }
+    </div>
+
+    <div class="actions">
+      <kaff-button variant="primary" type="submit" testId="project-create-submit" [busy]="busy()">
+        {{ i18n.t('projects.create.submit') }}
+      </kaff-button>
+    </div>
+  </form>
+</section>

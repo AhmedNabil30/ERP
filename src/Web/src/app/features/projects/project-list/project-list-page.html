@@ -1,3 +1,9 @@
+<ng-template #createAction>
+  <kaff-button variant="primary" testId="project-create" (clicked)="onCreate()">
+    {{ i18n.t('projects.action.create') }}
+  </kaff-button>
+</ng-template>
+
 <section class="projects" data-testid="project-list">
   <div class="action-bar">
     <!-- One label for the sidebar row and the screen it opens: `nav.projects`, read here and by the
@@ -74,6 +80,12 @@
       titleKey="projects.empty.title"
       bodyKey="projects.empty.body"
       testId="project-list-empty"
-    />
+    >
+      @if (canCreate()) {
+        <kaff-button stateAction variant="primary" testId="project-create-empty" (clicked)="onCreate()">
+          {{ i18n.t('projects.action.create') }}
+        </kaff-button>
+      }
+    </kaff-state>
   }
 </section>

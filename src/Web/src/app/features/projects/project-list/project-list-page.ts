@@ -1,13 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ChangeDetectionStrategy, Component, DestroyRef, TemplateRef, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ClientsApi } from '../../../core/clients/clients.api';
 import { contractTypeKey, projectWorkspaceStatusKey } from '../../../core/i18n/enum-keys';
+import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { ProjectSummary, ProjectsApi } from '../../../core/projects/projects.api';
 import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
+import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { KaffTable } from '../../../shared/kaff-table/kaff-table';
 import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
@@ -29,7 +31,7 @@ import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
  */
 @Component({
   selector: 'kaff-project-list-page',
-  imports: [RouterLink, KaffBadge, KaffState, KaffTable, KaffTableRow],
+  imports: [RouterLink, KaffBadge, KaffButton, KaffState, KaffTable, KaffTableRow],
   templateUrl: './project-list-page.html',
   styleUrl: './project-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,6 +40,8 @@ export class ProjectListPage {
   private readonly api = inject(ProjectsApi);
   private readonly clients = inject(ClientsApi);
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly headerActions = inject(HeaderActionsService);
 
   protected readonly i18n = inject(I18nService);
   protected readonly contractTypeKey = contractTypeKey;
@@ -89,8 +93,24 @@ export class ProjectListPage {
     this.i18n.t('projects.list.count', { count: this.total() }),
   );
 
+  /**
+   * "Create a project" (the Owner and the Technical Office hold `ProjectCreate`). Convenience: the button is
+   * not rendered for anyone else, and `POST /api/projects` refuses them regardless. It projects into the shell's
+   * action strip the way the client list's does, and again inside the empty state, where the first project starts.
+   */
+  protected readonly canCreate = computed(
+    () => this.auth.current()?.permissions.includes('ProjectCreate') ?? false,
+  );
+  private readonly createAction = viewChild<TemplateRef<unknown>>('createAction');
+
   constructor() {
     void this.reload();
+    effect(() => this.headerActions.set(this.canCreate() ? (this.createAction() ?? null) : null));
+    inject(DestroyRef).onDestroy(() => this.headerActions.set(null));
+  }
+
+  protected async onCreate(): Promise<void> {
+    await this.router.navigate(['/projects/new']);
   }
 
   protected trackProject(_index: number, project: ProjectSummary): string {

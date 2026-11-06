@@ -41,6 +41,9 @@ const NAV_ROWS: readonly NavRow[] = [
   // MarketingSales and SiteEngineer (`PermissionCatalogue.cs:542-544`); `ListProjects.Handler` still
   // filters the rows returned to what the caller is assigned to, so this row exposes no project.
   { permission: 'ProjectList', path: '/projects', labelKey: 'nav.projects', group: 'core', icon: 'projects' },
+  // Opening a project is a company-wide act (`ProjectCreate`: Owner and Technical Office), so it is a row of its own
+  // and not only a button on the list: a route with a permission guard and no row fails `nav-rows.spec.ts`.
+  { permission: 'ProjectCreate', path: '/projects/new', labelKey: 'nav.project_new', group: 'core', icon: 'projects' },
   { permission: 'CatalogueManage', path: '/catalogue', labelKey: 'nav.catalogue', group: 'core', icon: 'catalogue' },
   { permission: 'BabManage', path: '/babs', labelKey: 'nav.babs', group: 'core', icon: 'babs' },
   { permission: 'EmployeeManage', path: '/employees', labelKey: 'nav.employees', group: 'core', icon: 'employees' },
