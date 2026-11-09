@@ -1,6 +1,7 @@
 using Kaff.Api.Common.Results;
 using Kaff.Domain.Boqs;
 using Kaff.Domain.Common;
+using Kaff.Domain.Contracts;
 using Kaff.Domain.Projects;
 using Kaff.Domain.Rulings;
 using Kaff.Infrastructure.Persistence;
@@ -46,6 +47,36 @@ internal static class Handler
         Boq? boq = await database.Boqs
             .Include(candidate => candidate.Lines)
             .FirstOrDefaultAsync(candidate => candidate.ProjectId == projectId, cancellationToken);
+
+        if (request.HoldPercentage is not null || request.ClientAdvance is not null)
+        {
+            if (project.ContractType != ContractType.LumpSum)
+            {
+                return ResultExtensions.Problem(ProjectErrors.SigningTermsNotForContractType);
+            }
+
+            if (request.ClientAdvance is < 0m)
+            {
+                return ResultExtensions.Problem(ProjectErrors.RateMustNotBeNegative);
+            }
+
+            // KAFF-417: terms move to signature. An omitted figure keeps the project's current term, or the
+            // spec.md §5.1 default when none was ever set. The other three terms are left as they are. The
+            // project is a tracked entity, so the audit interceptor records before and after in the same save.
+            Result termsSet = project.SetLumpSumTerms(
+                request.ClientAdvance is { } advance
+                    ? Percentage.FromPercent(advance)
+                    : project.AdvanceRate ?? ContractDefaults.AdvanceRate,
+                request.HoldPercentage ?? project.HoldRate ?? ContractDefaults.HoldRate,
+                project.AdvanceRecoveryRate ?? ContractDefaults.AdvanceRecoveryRate,
+                project.MaterialAdvanceRate ?? ContractDefaults.MaterialAdvanceRate,
+                project.DelayPenaltyEnabled);
+
+            if (termsSet.IsFailure)
+            {
+                return ResultExtensions.Problem(termsSet.Error);
+            }
+        }
 
         DateOnly signedOn = request.SignedOn ?? DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
 

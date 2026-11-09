@@ -25,6 +25,14 @@ public static class ProjectErrors
     public static readonly Error TermsDoNotMatchContractType =
         Error.Conflict("project.terms_do_not_match_contract_type", "errors.project.terms_do_not_match_contract_type");
 
+    /// <summary>
+    /// KAFF-417: hold and advance are Lump Sum terms; a Cost Plus or Design signature may not carry them. A
+    /// validation (400) error, not the Conflict above, but it reuses that error's message key because the
+    /// sentence is the same and the translation files belong to the frontend lane.
+    /// </summary>
+    public static readonly Error SigningTermsNotForContractType =
+        Error.Validation("project.signing_terms_not_for_contract_type", "errors.project.terms_do_not_match_contract_type");
+
     public static readonly Error ContractValueRequired =
         Error.Validation("project.contract_value_required", "errors.project.contract_value_required");
 

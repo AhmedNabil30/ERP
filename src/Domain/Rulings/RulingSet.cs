@@ -145,6 +145,12 @@ public sealed record RulingSet
     /// <summary>Where a target completion date would come from. Registered, not resolved.</summary>
     public ProjectTargetCompletion ProjectTargetCompletion { get; init; } = ProjectTargetCompletion.Default;
 
+    /// <summary>What becomes of a project that is never signed (Q-207-1). Registered, not resolved.</summary>
+    public UnsignedProjectFate UnsignedProjectFate { get; init; } = UnsignedProjectFate.Default;
+
+    /// <summary>Whether the quotation printout shows line prices (Q-207-2). Registered, not resolved.</summary>
+    public QuotationLinePrices QuotationLinePrices { get; init; } = QuotationLinePrices.Default;
+
     /// <summary>Every entry, each describing itself. A test pins that none is missing a question.</summary>
     public IReadOnlyList<RulingNote> Notes =>
     [
@@ -195,5 +201,7 @@ public sealed record RulingSet
         BabActivity.Note,
         CostPlusCostBasis.Note,
         ProjectTargetCompletion.Note,
+        UnsignedProjectFate.Note,
+        QuotationLinePrices.Note,
     ];
 }

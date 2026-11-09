@@ -423,6 +423,94 @@ public sealed class BoqAndSignatureTests : IAsyncLifetime
             .StatusCode.Should().Be(HttpStatusCode.Created);
     }
 
+    // ---- KAFF-417: terms move to signature ------------------------------------------------------------------------------
+
+    [Fact]
+    public async Task Signing_a_lump_sum_project_with_hold_and_advance_applies_them_and_audits_before_and_after()
+    {
+        Guid project = await NewProjectAsync(ContractType.LumpSum);
+        (await AddCatalogueLineAsync(project, 1m, 1m)).StatusCode.Should().Be(HttpStatusCode.Created);
+
+        HttpResponseMessage response = await SendAsync(
+            HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { holdPercentage = "0.10", clientAdvance = 30m });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        Project stored = await LoadProjectAsync(project);
+        stored.IsSigned.Should().BeTrue();
+        stored.HoldRate.Should().Be(Percentage.FromPercent(10m));
+        stored.AdvanceRate.Should().Be(Percentage.FromPercent(30m));
+        stored.MaterialAdvanceRate.Should().Be(Percentage.FromPercent(75m), "the other terms are left alone");
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        AuditRecord record = await reader.AuditRecords.SingleAsync(
+            r => r.EntityType == nameof(Project) && r.EntityId == project && r.Action == AuditAction.Modified, Ct);
+        record.BeforeJson.Should().NotBeNullOrEmpty();
+        record.AfterJson.Should().NotBeNullOrEmpty();
+        record.ChangedProperties.Should().Contain(["HoldRate", "AdvanceRate"]);
+    }
+
+    [Fact]
+    public async Task Signing_a_lump_sum_project_without_terms_keeps_the_projects_current_terms()
+    {
+        Guid project = await NewProjectAsync(ContractType.LumpSum);
+        (await AddCatalogueLineAsync(project, 1m, 1m)).StatusCode.Should().Be(HttpStatusCode.Created);
+
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { })).StatusCode
+            .Should().Be(HttpStatusCode.OK);
+
+        Project stored = await LoadProjectAsync(project);
+        stored.HoldRate.Should().Be(Percentage.FromPercent(20m));
+        stored.AdvanceRate.Should().Be(Percentage.FromPercent(25m));
+    }
+
+    [Fact]
+    public async Task Signing_only_the_hold_keeps_the_current_advance()
+    {
+        Guid project = await NewProjectAsync(ContractType.LumpSum);
+        (await AddCatalogueLineAsync(project, 1m, 1m)).StatusCode.Should().Be(HttpStatusCode.Created);
+
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { holdPercentage = "0.05" }))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+
+        Project stored = await LoadProjectAsync(project);
+        stored.HoldRate.Should().Be(Percentage.FromPercent(5m));
+        stored.AdvanceRate.Should().Be(Percentage.FromPercent(25m));
+    }
+
+    [Theory]
+    [InlineData(ContractType.CostPlus)]
+    [InlineData(ContractType.Design)]
+    public async Task Signing_a_cost_plus_or_design_project_with_hold_or_advance_is_refused_and_signs_nothing(ContractType type)
+    {
+        Guid project = await NewProjectAsync(type, designArea: 200m);
+
+        foreach (object body in new object[] { new { holdPercentage = "0.20" }, new { clientAdvance = 25m } })
+        {
+            HttpResponseMessage response = await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, body);
+
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            (await MessageKeyAsync(response)).Should().Be("errors.project.terms_do_not_match_contract_type");
+        }
+
+        (await LoadProjectAsync(project)).IsSigned.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Signing_with_terms_is_refused_for_the_right_role_without_an_assignment_and_changes_nothing()
+    {
+        Guid project = await NewProjectAsync(ContractType.LumpSum);
+        (await AddCatalogueLineAsync(project, 1m, 1m)).StatusCode.Should().Be(HttpStatusCode.Created);
+
+        (await SendAsync(
+                HttpMethod.Post, $"/api/projects/{project}/sign", _technicalOfficeUnassigned, new { holdPercentage = "0.01", clientAdvance = 1m }))
+            .StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        Project stored = await LoadProjectAsync(project);
+        stored.IsSigned.Should().BeFalse();
+        stored.HoldRate.Should().Be(Percentage.FromPercent(20m));
+    }
+
     // ---- audit -------------------------------------------------------------------------------------------------------
 
     [Fact]
