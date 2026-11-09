@@ -239,6 +239,56 @@ public sealed class DesignToExecutionTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AC_417_K_design_signs_with_area_priced_at_450_per_m2_and_conversion_credits_30_percent()
+    {
+        Guid design = await NewDesignAsync(area: null);
+
+        HttpResponseMessage signed = await SendAsync(HttpMethod.Post, $"/api/projects/{design}/sign", _owner, new { areaSquareMetres = "100" });
+        signed.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await JsonAsync(signed)).GetProperty("contractValue").GetString().Should().StartWith("45000");
+
+        Guid execution = (await JsonAsync(await ConvertAsync(design, _owner, "LumpSum"))).GetProperty("id").GetGuid();
+        await AddBoqLineAsync(execution);
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{execution}/sign", _owner, new { })).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (await LoadCreditAsync(execution)).Amount.Should().Be(new Money(13_500m), "30% of 100 m2 x 450");
+    }
+
+    [Fact]
+    public async Task AC_417_K_design_without_area_is_refused()
+    {
+        Guid design = await NewDesignAsync(area: null);
+
+        HttpResponseMessage response = await SendAsync(HttpMethod.Post, $"/api/projects/{design}/sign", _owner, new { });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await MessageKeyAsync(response)).Should().Be("errors.project.area_required");
+    }
+
+    [Fact]
+    public async Task AC_417_K_non_positive_area_is_refused()
+    {
+        Guid design = await NewDesignAsync(area: null);
+
+        HttpResponseMessage response = await SendAsync(HttpMethod.Post, $"/api/projects/{design}/sign", _owner, new { areaSquareMetres = "0" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await MessageKeyAsync(response)).Should().Be("errors.project.area_required");
+    }
+
+    [Fact]
+    public async Task AC_417_K_lump_sum_with_area_is_refused()
+    {
+        Guid project = await NewProjectAsync(ContractType.LumpSum);
+        await AddBoqLineAsync(project);
+
+        HttpResponseMessage response = await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { areaSquareMetres = "100" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await MessageKeyAsync(response)).Should().Be("errors.project.terms_do_not_match_contract_type");
+    }
+
+    [Fact]
     public async Task An_unlinked_project_signs_without_any_design_credit()
     {
         Guid project = await NewProjectAsync(ContractType.LumpSum);
@@ -284,12 +334,16 @@ public sealed class DesignToExecutionTests : IAsyncLifetime
         return await JsonAsync(response);
     }
 
-    private async Task<Guid> NewDesignAsync()
+    private async Task<Guid> NewDesignAsync(decimal? area = 100m)
     {
         await using KaffDbContext context = _database.CreateContext();
 
         OpenedProject opened = ProjectOpening.Open("تصميم فيلا", _clientId, ContractType.Design, null, null, _clock.GetUtcNow()).Value;
-        opened.Project.SetDesignTerms(100m, new Money(450m)).IsSuccess.Should().BeTrue();
+        if (area is { } seeded)
+        {
+            opened.Project.SetDesignTerms(seeded, new Money(450m)).IsSuccess.Should().BeTrue();
+        }
+
         context.Projects.Add(opened.Project);
         context.Accounts.AddRange(opened.Accounts);
         await context.SaveChangesAsync(Ct);

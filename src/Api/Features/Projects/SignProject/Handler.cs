@@ -96,6 +96,30 @@ internal static class Handler
             }
         }
 
+        // AC-417-K: a Design project's area is entered here; no other route sets it. Priced at the default rate.
+        if (request.AreaSquareMetres is not null && project.ContractType != ContractType.Design)
+        {
+            return ResultExtensions.Problem(ProjectErrors.SigningTermsNotForContractType);
+        }
+
+        if (project.ContractType == ContractType.Design && !project.IsSigned)
+        {
+            if (request.AreaSquareMetres is null && project.AreaSquareMetres is null)
+            {
+                return ResultExtensions.Problem(ProjectErrors.AreaRequired);
+            }
+
+            if (request.AreaSquareMetres is { } area)
+            {
+                Result designSet = project.SetDesignTerms(area, ContractDefaults.DesignRatePerSquareMetre);
+
+                if (designSet.IsFailure)
+                {
+                    return ResultExtensions.Problem(designSet.Error);
+                }
+            }
+        }
+
         DateOnly signedOn = request.SignedOn ?? DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
 
         Money? boqTotal = null;
