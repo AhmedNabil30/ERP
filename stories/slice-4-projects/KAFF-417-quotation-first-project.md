@@ -24,7 +24,7 @@ Opportunity module is not built).
 
 | ID | Criterion | Source |
 |---|---|---|
-| AC-417-A | The create screen asks for name, client and contract type only (plus area for Design, which prices the contract). Hold and advance are not on it for any contract type | D-207 §1 |
+| AC-417-A | The create screen asks for name, client and contract type only . Hold and advance are not on it for any contract type | D-207 §1 |
 | AC-417-B | `SignProject` accepts optional hold percentage and client advance. For Lump Sum, an omitted value keeps the project's current term (the 20% / 25% defaults if none was set); a supplied value is applied through `Project.SetLumpSumTerms` before signing, in the same transaction | D-207 §1 · `spec.md` §5.1 |
 | AC-417-C | For Cost Plus and Design, `SignProject` refuses a request that carries hold or advance with a validation error, and signing without them works as today | `spec.md` §5.2, §5.3 |
 | AC-417-D | The signature step on the BOQ page shows hold 20% and advance 25% (or the project's current terms) pre-filled and editable, for Lump Sum only. It never shows them for Design or Cost Plus | D-207 §1 · `spec.md` §5.3 |
@@ -33,6 +33,7 @@ Opportunity module is not built).
 | AC-417-G | Changing terms at signature writes an audit record with before and after | `CLAUDE.md` Audit |
 | AC-417-H | Role and assignment are checked on the changed endpoint, as today | `spec.md` §9 |
 | AC-417-J | An unsigned project has a follow-up period that starts when it is created. When the period ends with no signature, the project is archived: it leaves the default project list and cannot be signed until it is reopened. Reopening restarts the period and writes an audit record. The period is a setting, default 30 days | D-208 Q-207-1 · Q-208-1 |
+| AC-417-K | A Design project's area is entered at signature (it is not on the create screen and no other route sets it). `SignProject` accepts `areaSquareMetres` for Design only and prices the fee as area x `ContractDefaults.DesignRatePerSquareMetre` through `Project.SetDesignTerms`; the signature step shows the area field for Design only. Added 2026-11-09 after the UI lane found no route could set a design area, which left a Design project unsignable and KAFF-415's credit unreachable | `spec.md` §5.3 · D-207 §1 |
 | AC-417-I | All new copy is i18n, Arabic, RTL correct at mobile width | `CLAUDE.md` |
 
 ## Ruled by the client (D-208), no longer assumptions
