@@ -468,3 +468,18 @@ so a Verifier reading `spec.md` in a fresh session reads Karim's rulings.
 **a ruling that answers half a question leaves the story BLOCKED on the other half.** Q7 answered the
 Supervisor case and left the Junior case; KAFF-109 stayed blocked. That is the correct outcome, not
 an obstruction.
+
+## Added 2026-11-10 — from D-207, D-208 and the build that followed (each running as a RulingNote)
+
+| Q | Question | Default built | RulingNote |
+|---|---|---|---|
+| Q-208-1 | How long is an unsigned project's follow-up period before it is archived? | 30 days | `FollowUpPeriod` |
+| Q-208-2 | When does the follow-up period start, and does reopening restart it? | At creation; reopening restarts it | `FollowUpPeriod` |
+| Q-207-3a | How far from the site is "far" for a check-in, and what is the site's reference point? | 500 m from the first located check-in | `CheckInDistanceRule` |
+| Q-207-5 | What are the "design quantities" that seed the execution BOQ, given a design project has no BOQ? | Nothing seeds; the design area is shown as a reference | `DesignQuantitySeed` |
+| Q-207-6 | Is "the design total" the design contract value, or what the client paid? | The design contract value (area x rate) | `DesignCreditBase` |
+| Q-207-7 | May one design project convert into execution more than once? | No | `DesignConversionCount` |
+| Q-207-8 | Does the 30% credit post at signature by itself, or after approval? | Raised at signature, posts on approval by a different user | `DesignCreditApproval` |
+| Q-207-9 | Which execution types may a design convert into? | Lump Sum or Cost Plus | `DesignConversionTargets` |
+| Q-210-1 | How does the 30% design credit reduce what the client pays: against the first extract, the advance, or separately? | It sits on the execution project's receivable; nothing nets it into an extract | (none yet; verifier finding F-415-2) |
+| Q-210-2 | Does the printed quotation say "عرض سعر" or "مقايسة"? | "عرض سعر" | (copy, not a RulingNote) |
