@@ -1,6 +1,6 @@
 # KAFF-613 · Check-in and check-out are their own buttons and record location and time
 
-<!-- kaff id=KAFF-613 slice=6 points=5 state=READY -->
+<!-- kaff id=KAFF-613 slice=6 points=5 state=BUILT -->
 
 **Slice:** 6 — Execution · **Points:** 5.
 **Owner:** Backend (endpoint and storage), then UI Designer (the buttons, mobile-first).
