@@ -195,6 +195,17 @@ describe('BoqPage', () => {
     expect(other.querySelector('[data-testid="boq-print-sheet"]')).toBeNull();
   });
 
+  it('prints interleaved lines of one bab under a single heading, in order of first appearance', async () => {
+    const other = { ...rates, babCode: 'B2', babNameAr: 'باب آخر', babNameEn: 'Other' };
+    const lines = [boq.lines[0], { ...boq.lines[1], id: 'l2', ...other }, { ...boq.lines[0], id: 'l3', position: 3 }];
+    const root = await render(vi.fn().mockResolvedValue({ ...boq, frozenOn: null, lines }), { permissions: ['ProjectManage'] });
+
+    const bodies = root.querySelectorAll('[data-testid="boq-print-sheet"] tbody');
+    expect(bodies.length).toBe(2);
+    expect(bodies[0].querySelectorAll('tr').length).toBe(3); // heading + 2 lines
+    expect(bodies[1].querySelectorAll('tr').length).toBe(2);
+  });
+
   it('an execution BOQ with no lines shows the design area as a reference and no rows', async () => {
     const root = await render(vi.fn().mockResolvedValue({ ...boq, frozenOn: null, lines: [], total: null }), {
       permissions: ['ProjectManage'],

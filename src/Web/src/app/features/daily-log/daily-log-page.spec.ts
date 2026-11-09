@@ -191,6 +191,31 @@ describe('DailyLogPage', () => {
       expect(api.checkIns[0].occurredAt).toMatch(/[+-]\d{2}:\d{2}$/);
     });
 
+    it('stamps the time of the press, not the time the place arrives', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      try {
+        vi.setSystemTime(new Date('2026-11-09T10:00:00Z'));
+        vi.stubGlobal('navigator', {
+          geolocation: {
+            getCurrentPosition: (ok: (p: unknown) => void) => {
+              vi.setSystemTime(new Date('2026-11-09T10:30:00Z')); // the fix takes half an hour
+              ok({ coords: { latitude: 30, longitude: 31, accuracy: 5 } });
+            },
+          },
+        });
+        const api = new FakeDailyLogApi(null);
+        const fixture = await createPage(api);
+
+        click(fixture.nativeElement, 'daily-log-check-in');
+        await flush(fixture);
+
+        const sent = new Date(api.checkIns[0].occurredAt).getTime();
+        expect(sent).toBe(new Date('2026-11-09T10:00:00Z').getTime());
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('sends a check-out as a check-out', async () => {
       stubGeolocation({ coords: { latitude: 30, longitude: 31, accuracy: 5 } });
       const api = new FakeDailyLogApi(null);

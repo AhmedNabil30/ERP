@@ -170,17 +170,17 @@ export class BoqPage {
 
   /** The unsigned BOQ as the client's quotation (D-208): lines grouped by باب, printed with the browser's print. */
   protected readonly printGroups = computed(() => {
-    const groups: { code: string; name: string; lines: readonly BoqLine[] }[] = [];
+    // One group per باب, in order of first appearance, even when its lines are not consecutive.
+    const groups = new Map<string, { code: string; name: string; lines: BoqLine[] }>();
     for (const line of this.boq()?.lines ?? []) {
-      const name = this.i18n.locale() === 'ar' ? line.babNameAr : line.babNameEn;
-      const last = groups[groups.length - 1];
-      if (last !== undefined && last.code === line.babCode) {
-        (last.lines as BoqLine[]).push(line);
-      } else {
-        groups.push({ code: line.babCode, name, lines: [line] });
+      let group = groups.get(line.babCode);
+      if (group === undefined) {
+        group = { code: line.babCode, name: this.i18n.locale() === 'ar' ? line.babNameAr : line.babNameEn, lines: [] };
+        groups.set(line.babCode, group);
       }
+      group.lines.push(line);
     }
-    return groups;
+    return [...groups.values()];
   });
   protected readonly canPrint = computed(() => this.canManage() && this.hasBoq() && (this.boq()?.lines.length ?? 0) > 0);
   protected readonly today = computed(() => this.i18n.formatDate(new Date(), { dateStyle: 'long' }));

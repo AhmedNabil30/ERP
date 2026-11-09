@@ -145,10 +145,11 @@ export class DailyLogPage {
     this.errorKey.set(null);
     this.locating.set(kind);
     try {
+      const occurredAt = localIso(new Date()); // device time at the press, not after the place resolves
       const place = await currentPlace();
       await this.api.recordCheckIn(this.projectId(), {
         entryId: crypto.randomUUID(),
-        occurredAt: localIso(new Date()),
+        occurredAt,
         kind,
         latitude: place.latitude,
         longitude: place.longitude,
