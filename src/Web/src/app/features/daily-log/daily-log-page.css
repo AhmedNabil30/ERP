@@ -298,10 +298,17 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
+  max-inline-size: 28rem;
 }
 
+/* The shared button is inline and content-wide; the two check buttons are the screen's main targets, so they
+   fill their grid cell (same ::ng-deep precedent as bab-panel). */
 .checkin-buttons kaff-button {
-  align-self: stretch;
+  display: block;
+}
+
+.checkin-buttons ::ng-deep .kaff-button {
+  inline-size: 100%;
   min-block-size: 56px;
 }
 

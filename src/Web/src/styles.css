@@ -486,7 +486,7 @@ kaff-field input::placeholder {
    Everything that is not the sheet, an ancestor of it or inside it is removed, and the ancestors lose
    the fixed heights and scroll containers the app shell gives them so the sheet can span pages. */
 @media print {
-  body *:not(:has(.print-sheet)):not(.print-sheet):not(.print-sheet *) {
+  body:has(.print-sheet) *:not(:has(.print-sheet)):not(.print-sheet):not(.print-sheet *) {
     display: none !important;
   }
 

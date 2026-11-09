@@ -335,6 +335,7 @@
   }
 }
 
+/* Paper is always black on white whatever the screen theme, so these are literals on purpose, not tokens. */
 @media print {
   .print-sheet {
     color: #000;

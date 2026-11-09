@@ -64,6 +64,7 @@
       @if (isEmpty()) {
         <p class="empty" data-testid="daily-log-empty">{{ i18n.t('daily_log.empty') }}</p>
       } @else if (log(); as current) {
+        @if (current.weather || current.stoppageReason || current.note) {
         <div class="summary" data-testid="daily-log-summary">
           @if (current.weather) {
             <p class="line"><span class="label">{{ i18n.t('daily_log.field.weather') }}</span> <span dir="auto">{{ current.weather }}</span></p>
@@ -75,6 +76,7 @@
             <p class="line"><span class="label">{{ i18n.t('daily_log.field.note') }}</span> <span dir="auto">{{ current.note }}</span></p>
           }
         </div>
+        }
 
         @if (current.quantities.length > 0) {
           <h2 class="group">{{ i18n.t('daily_log.group.quantities') }}</h2>

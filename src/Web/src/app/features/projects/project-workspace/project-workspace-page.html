@@ -72,8 +72,9 @@
         <kaff-icon name="info" />
         <div class="where-body">
           @if (p.designProjectId) {
-            <p class="where-line">
-              <a [routerLink]="['/projects', p.designProjectId]" data-testid="workspace-design-link">{{ i18n.t('projects.link.design') }}</a>
+            <p class="where-line">{{ i18n.t('projects.link.design') }}</p>
+            <p class="where-sub">
+              <a [routerLink]="['/projects', p.designProjectId]" data-testid="workspace-design-link">{{ i18n.t('projects.link.design_open') }}</a>
             </p>
             @if (p.designAreaSquareMetres) {
               <p class="where-sub" data-testid="workspace-design-area">
@@ -84,8 +85,9 @@
             }
           }
           @if (p.executionProjectId) {
-            <p class="where-line">
-              <a [routerLink]="['/projects', p.executionProjectId]" data-testid="workspace-execution-link">{{ i18n.t('projects.link.execution') }}</a>
+            <p class="where-line">{{ i18n.t('projects.link.execution') }}</p>
+            <p class="where-sub">
+              <a [routerLink]="['/projects', p.executionProjectId]" data-testid="workspace-execution-link">{{ i18n.t('projects.link.execution_open') }}</a>
             </p>
           }
           @if (canConvert()) {

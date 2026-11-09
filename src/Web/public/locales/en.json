@@ -1770,8 +1770,8 @@
   "projects.archived.reopen": "Reopen project",
   "projects.follow_up.line": "This project is unsigned. The follow-up period ends on {date}.",
   "projects.follow_up.next": "Sign the contract before then or the project is archived.",
-  "projects.link.design": "This project was converted from a design project. Open the design project",
-  "projects.link.execution": "This design was converted into an execution project. Open the execution project",
+  "projects.link.design": "This project was converted from a design project.",
+  "projects.link.execution": "This design was converted into an execution project.",
   "projects.convert.lead": "When the client accepts the design, convert it into a new execution project for the same client. The design project stays as it is.",
   "projects.convert.open": "Convert to execution",
   "projects.convert.name": "Execution project name",
@@ -1784,5 +1784,7 @@
   "daily_log.checkin.far_from_site": "Far from site",
   "daily_log.location.denied": "Access to your location was not allowed, so nothing was recorded. Allow location for this site in the browser or phone settings, then press again.",
   "daily_log.location.unavailable": "Your location could not be found, so nothing was recorded. Turn on location (GPS) on the phone, stand somewhere open, then press again.",
-  "daily_log.location.timeout": "Finding your location timed out, so nothing was recorded. Turn on location (GPS) on the phone, stand somewhere open, then press again."
+  "daily_log.location.timeout": "Finding your location timed out, so nothing was recorded. Turn on location (GPS) on the phone, stand somewhere open, then press again.",
+  "projects.link.design_open": "Open the design project",
+  "projects.link.execution_open": "Open the execution project"
 }
