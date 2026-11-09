@@ -23,12 +23,17 @@ You have no memory of previous sessions. Read these, in this order, at the start
 1. **`CLAUDE.md`** — the prohibitions. They are defects even when every test passes.
 2. **`STATUS.md`** — where the project actually stands. Its *map* section says which files are
    current and which are dated history. **No other file states the present position**, and several
-   still read as if they do.
-3. **`spec.md`** — the business. If code and `spec.md` disagree, **`spec.md` wins**.
-4. **`agents.md`** and **`process/agile.md`** — who the team is, and the ceremonies. `agents.md`
-   **§3b is your own job description** and **§M** binds which model runs which task.
+   still read as if they do. Dated sections live in `STATUS-history.md`; do not read it for the present.
+3. **`spec.md`** — the business. If code and `spec.md` disagree, **`spec.md` wins**. Read the sections
+   the work touches, not the whole file.
+4. **`agents.md`** §M and §3b — which model runs which task, and your own job. Read `process/agile.md`
+   by section when a ceremony or a law is in question, not on every start.
 
-Then `decisions.md` for why anything is the way it is, before you propose changing it.
+**`decisions.md` is about 280k tokens and is never read whole.** Grep `decisions-index.md` for the
+decision, then read that one entry with `Read`'s `offset` at the line the index gives.
+
+**Every file read at start-up is paid again on every resume after a rate limit.** That is why this
+list is short. Do not grow it.
 
 **⛔ If `spec.md` does not answer a business question, you stop and you ask Nabil.** Not consensus,
 not "to unblock the sprint" — *consensus among agents is the most confident possible way to be
@@ -217,6 +222,36 @@ finding is *tracked*; it is not where a finding is *resolved*.
 
 **Split the task before downgrading it** (§M). A brief mixing a register sweep with a ruling pays the
 strongest model's rate for the sweep. Send the sweep separately.
+
+#### The team, defined in `.claude/agents/` — dispatch these by name, do not rewrite them in a brief
+
+| Agent | Model | Use for |
+|---|---|---|
+| `gate-runner` | haiku | **Every gate figure.** You never read a test log yourself. |
+| `verifier` | opus | Whether a story's criteria are met. Fresh session, never the author. |
+| `ui-designer` | sonnet | Any screen, restyle or layout. Owns `src/Web/`. |
+| `ux-consultant` | sonnet | Fresh-eyes review after a module or a large screen change. |
+| `arabic-copy` | sonnet | After any lane adds or changes i18n keys. |
+| `journey-analyst` | sonnet | **Before** a module's screens are designed, or when a journey feels wrong. |
+
+Backend work goes to a `general-purpose` spawn on `sonnet` with a brief naming its files; there is no
+backend definition, because the `tools:` field cannot stop an agent writing outside its folders.
+
+**The definition carries the standing rules, so your brief carries only the task.** Do not paste the
+agent's own rules back into its brief. That is tokens paid twice.
+
+#### Before you dispatch: check the brief's claims
+
+Every factual claim in a brief about the code goes to `caveman:cavecrew-investigator` (haiku) first,
+as one batch: "confirm or refute each, with file and identifier". **This is the cheapest fix for the
+most repeated failure on this project.** In one week of November 2026 the coordinator wrote seven false
+claims into briefs and the Scrum Master three per run, and each one cost a lane its run.
+
+#### Every lane commits each green step
+
+On 2026-11-05 a lane died on a rate limit holding a whole closure module uncommitted, and the file it
+was writing did not compile. Each lane commits as soon as a step builds and its tests pass. A death
+then costs minutes, not a lane.
 
 #### Delegation — one agent at a time, and you stay running
 

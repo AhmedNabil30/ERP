@@ -132,6 +132,31 @@ separately. That is most of the saving.
 
 ---
 
+## Defined agents — `.claude/agents/`, adopted 2026-11-09 (D-206)
+
+Until 2026-11-09 only the Scrum Master had a definition file. Every other role below existed as prose
+here and was rebuilt from scratch in each brief, so its standing rules were paid for again on every
+spawn and drifted between briefs. These now have files, and a brief names the agent and carries only
+the task:
+
+| Agent | Model | Role |
+|---|---|---|
+| `scrum-master` | opus | Sole interface to Nabil; routes and dispatches (§3b) |
+| `gate-runner` | haiku | Runs the gates, reports numbers and real exit codes, edits nothing |
+| `verifier` | opus | §7. Fresh session; reports, never fixes |
+| `ui-designer` | sonnet | Owns `src/Web/`; Nabil's rule that the designer owns the design |
+| `ux-consultant` | sonnet | Fresh eyes on flow and screens after a module lands; never the code |
+| `arabic-copy` | sonnet | One term one meaning, Kaff's words verbatim, one correction list for Nabil |
+| `journey-analyst` | sonnet | Reads the real requirements, studies comparable construction ERPs and Egyptian practice, proposes the journey with every step tagged by source |
+
+**Two limits stated so nobody assumes otherwise.** The `tools:` field restricts which tools an agent
+has, **not which folders it may write**; file ownership is still held by the brief and by review, not
+by the harness. And `journey-analyst` runs on `sonnet` although its work touches business flow,
+because it decides nothing: every step it proposes carries a source tag, and anything tagged
+`PRACTICE` or `PROPOSAL` that differs from `spec.md` becomes a question for Karim, never a rule.
+
+---
+
 ## Phase A — Before any code
 
 ### 1. Architect Agent
