@@ -553,11 +553,11 @@ public sealed class ChangeUserRoleTests : IAsyncLifetime
             UniqueNames.Code("CRR-C1"), "عميل تغيير الدور", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
 
         Project projectA = Project.Create(
-            UniqueNames.Code("CRR-PA"), "مشروع أ", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("CRR-PA"), "مشروع أ", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
         Project projectB = Project.Create(
-            UniqueNames.Code("CRR-PB"), "مشروع ب", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("CRR-PB"), "مشروع ب", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
         Project projectC = Project.Create(
-            UniqueNames.Code("CRR-PC"), "مشروع ج", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("CRR-PC"), "مشروع ج", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         User owner = MakeUser("crr-owner", Role.Owner);
         User hr = MakeUser("crr-hr", Role.Hr, WellKnownDepartments.HrId);

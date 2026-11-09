@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -441,20 +441,28 @@ public sealed class DailyLogTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task AC_613_D_a_check_in_without_location_is_recorded_and_flagged_never_refused()
+    public async Task AC_613_D_a_check_in_without_a_usable_location_is_refused_and_nothing_is_stored()
     {
         (Guid project, _) = await NewActiveProjectAsync();
 
-        (await CheckIn(project, "CheckIn", null, null, At(8, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
-        // Latitude without longitude, and coordinates off the planet, are no location either.
-        (await CheckIn(project, "CheckOut", 30.0, null, At(15, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
-        (await CheckIn(project, "CheckOut", 123.0, 31.0, At(16, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
+        // No location, latitude without longitude, longitude without latitude, and coordinates off the planet.
+        HttpResponseMessage[] refusals =
+        [
+            await CheckIn(project, "CheckIn", null, null, At(8, 0)),
+            await CheckIn(project, "CheckOut", 30.0, null, At(15, 0)),
+            await CheckIn(project, "CheckOut", null, 31.0, At(15, 30)),
+            await CheckIn(project, "CheckOut", 123.0, 31.0, At(16, 0)),
+            await CheckIn(project, "CheckIn", 30.0, 181.0, At(16, 30)),
+        ];
 
-        JsonElement[] lines = (await MineAsync(project)).GetProperty("checkIns").EnumerateArray().ToArray();
-        lines.Should().HaveCount(3);
-        lines.Should().OnlyContain(line => line.GetProperty("flagReason").GetString() == "LocationUnavailable");
-        lines.Should().OnlyContain(line => line.GetProperty("latitude").ValueKind == JsonValueKind.Null);
-        (await LoadProjectAsync(project)).SiteReference.Should().BeNull("an unlocated check-in sets no reference point");
+        foreach (HttpResponseMessage refusal in refusals)
+        {
+            refusal.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            (await MessageKeyAsync(refusal)).Should().Be("errors.daily_log.location_required");
+        }
+
+        (await CountAsync("field_entries", project)).Should().Be(0);
+        (await LoadProjectAsync(project)).SiteReference.Should().BeNull("a refused check-in sets no reference point");
     }
 
     [Fact]
@@ -462,7 +470,6 @@ public sealed class DailyLogTests : IAsyncLifetime
     {
         (Guid project, _) = await NewActiveProjectAsync();
 
-        (await CheckIn(project, "CheckIn", null, null, At(7, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
         (await CheckIn(project, "CheckIn", 30.0444, 31.2357, At(8, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
         // About 200 m north: inside the 500 m threshold.
         (await CheckIn(project, "CheckIn", 30.0462, 31.2357, At(9, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
@@ -478,7 +485,7 @@ public sealed class DailyLogTests : IAsyncLifetime
             .OrderBy(line => line.GetProperty("deviceTime").GetDateTimeOffset())
             .Select(line => line.GetProperty("flagReason").GetString())
             .ToArray();
-        flags.Should().Equal("LocationUnavailable", null, null, "FarFromReference", "FarFromReference");
+        flags.Should().Equal(null, null, "FarFromReference", "FarFromReference");
     }
 
     [Fact]
@@ -538,14 +545,19 @@ public sealed class DailyLogTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task The_older_fields_route_still_takes_a_check_in_and_flags_it_for_having_no_location()
+    public async Task The_older_fields_route_refuses_a_check_in_and_a_check_out_because_they_carry_no_location()
     {
         (Guid project, _) = await NewActiveProjectAsync();
 
-        (await Field(project, "CheckIn", null, At(8, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
+        foreach (string kind in new[] { "CheckIn", "CheckOut" })
+        {
+            HttpResponseMessage response = await Field(project, kind, null, At(8, 0));
 
-        (await MineAsync(project)).GetProperty("checkIns").EnumerateArray().Single()
-            .GetProperty("flagReason").GetString().Should().Be("LocationUnavailable");
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            (await MessageKeyAsync(response)).Should().Be("errors.daily_log.check_in_uses_check_in_route");
+        }
+
+        (await CountAsync("field_entries", project)).Should().Be(0);
     }
 
     // ---- helpers ------------------------------------------------------------------------------------------------
@@ -643,7 +655,7 @@ public sealed class DailyLogTests : IAsyncLifetime
 
         await using (KaffDbContext context = _database.CreateContext())
         {
-            Project created = Project.Create(UniqueNames.Code("DL-P"), "مشروع اليومية", _clientId, ContractType.LumpSum, Now).Value;
+            Project created = Project.Create(UniqueNames.Code("DL-P"), "مشروع اليومية", _clientId, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
             created.SetLumpSumTerms(
                 Percentage.FromPercent(25m), Percentage.FromPercent(20m), Percentage.FromPercent(25m),
                 Percentage.FromPercent(75m), delayPenaltyEnabled: false).IsSuccess.Should().BeTrue();

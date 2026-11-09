@@ -50,6 +50,8 @@ namespace Kaff.Api.Features.Projects.GetProject;
 /// Derived from the extracts and the collection postings; never a stored balance. Null for a caller who may not
 /// see extract money.
 /// </param>
+/// <param name="IsArchived">True for an unsigned Setup project whose follow-up period has ended (AC-417-J). Derived on every read.</param>
+/// <param name="FollowUpEndsOn">The day the follow-up period ends. Null once the project is signed or has left Setup.</param>
 public sealed record Response(
     Guid Id,
     string Code,
@@ -70,7 +72,9 @@ public sealed record Response(
     DateOnly? WarrantyEndsOn,
     DateOnly? ClosedOn,
     DateOnly? LastDailyLogOn,
-    ProjectMoney? Money);
+    ProjectMoney? Money,
+    bool IsArchived,
+    DateOnly? FollowUpEndsOn);
 
 /// <summary>
 /// What the client has been billed, paid and still owes. Only extracts issued to the client count; an extract still

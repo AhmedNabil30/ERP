@@ -1143,7 +1143,7 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
     public async Task An_individual_client_withholds_nothing_so_no_tax_component_and_no_withholding_posting()
     {
         // AC-317-B / F: the rate on an individual's contract is refused, and a collection from one records no withholding.
-        Project rejected = Project.Create(UniqueNames.Code("EX-IW"), "x", _individualClientId, ContractType.LumpSum, Now).Value;
+        Project rejected = Project.Create(UniqueNames.Code("EX-IW"), "x", _individualClientId, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
         rejected.SetWithholding(WithholdingCategory.ContractingAndSupplies, ClientKind.Individual).IsFailure.Should().BeTrue();
 
         Project project = await NewProjectAsync(_individualClientId, WithholdingCategory.None, ClientKind.Individual);
@@ -1838,7 +1838,7 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         Guid projectId;
         await using (KaffDbContext context = _database.CreateContext())
         {
-            Project costPlus = Project.Create(UniqueNames.Code("EX-CP"), "تكلفة وربح", _clientId, ContractType.CostPlus, Now).Value;
+            Project costPlus = Project.Create(UniqueNames.Code("EX-CP"), "تكلفة وربح", _clientId, ContractType.CostPlus, DateTimeOffset.UtcNow).Value;
             costPlus.SetCostPlusTerms(Percentage.FromPercent(10m)).IsSuccess.Should().BeTrue();
             context.Projects.Add(costPlus);
             await context.SaveChangesAsync(Ct);
@@ -1860,7 +1860,7 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         Guid projectId;
         await using (KaffDbContext context = _database.CreateContext())
         {
-            Project design = Project.Create(UniqueNames.Code("EX-DS"), "تصميم", _clientId, ContractType.Design, Now).Value;
+            Project design = Project.Create(UniqueNames.Code("EX-DS"), "تصميم", _clientId, ContractType.Design, DateTimeOffset.UtcNow).Value;
             context.Projects.Add(design);
             await context.SaveChangesAsync(Ct);
             projectId = design.Id;
@@ -2185,7 +2185,7 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
 
         await using (KaffDbContext context = _database.CreateContext())
         {
-            project = Project.Create(UniqueNames.Code("EX-P"), "مشروع مستخلص", clientId ?? _clientId, ContractType.LumpSum, Now).Value;
+            project = Project.Create(UniqueNames.Code("EX-P"), "مشروع مستخلص", clientId ?? _clientId, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
             project.SetWithholding(withholding, kind).IsSuccess.Should().BeTrue();
             project.SetLumpSumTerms(
                 Percentage.FromPercent(25m), Percentage.FromPercent(20m), Percentage.FromPercent(25m),

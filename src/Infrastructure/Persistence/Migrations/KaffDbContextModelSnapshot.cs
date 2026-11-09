@@ -2129,6 +2129,10 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .HasColumnType("numeric(18,4)")
                         .HasColumnName("design_rate_per_square_metre");
 
+                    b.Property<DateTimeOffset>("FollowUpStartedOn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("follow_up_started_on");
+
                     b.Property<DateOnly?>("HandoverOn")
                         .HasColumnType("date")
                         .HasColumnName("handover_on");

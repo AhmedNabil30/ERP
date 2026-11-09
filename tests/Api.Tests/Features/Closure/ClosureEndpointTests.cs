@@ -849,7 +849,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
         }
 
         await using KaffDbContext context = _database.CreateContext();
-        Project project = Project.Create(UniqueNames.Code("CL-P"), "مشروع إقفال", _clientId, ContractType.LumpSum, Now).Value;
+        Project project = Project.Create(UniqueNames.Code("CL-P"), "مشروع إقفال", _clientId, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
         project.SetLumpSumTerms(
             Percentage.FromPercent(25m), Percentage.FromPercent(20m), Percentage.FromPercent(25m),
             Percentage.FromPercent(75m), delayPenaltyEnabled: false).IsSuccess.Should().BeTrue();
@@ -912,7 +912,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
     private async Task<Guid> NewSetupProjectAsync(decimal hold)
     {
         await using KaffDbContext context = _database.CreateContext();
-        Project project = Project.Create(UniqueNames.Code("CL-S"), "مشروع إعداد", _clientId, ContractType.LumpSum, Now).Value;
+        Project project = Project.Create(UniqueNames.Code("CL-S"), "مشروع إعداد", _clientId, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
         project.SetLumpSumTerms(
             Percentage.FromPercent(25m), Percentage.FromPercent(20m), Percentage.FromPercent(25m),
             Percentage.FromPercent(75m), delayPenaltyEnabled: false).IsSuccess.Should().BeTrue();
@@ -952,7 +952,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
     private async Task<Guid> NewDesignProjectAsync()
     {
         await using KaffDbContext context = _database.CreateContext();
-        Project project = Project.Create(UniqueNames.Code("CL-D"), "مشروع تصميم", _clientId, ContractType.Design, Now).Value;
+        Project project = Project.Create(UniqueNames.Code("CL-D"), "مشروع تصميم", _clientId, ContractType.Design, DateTimeOffset.UtcNow).Value;
         project.SetDesignTerms(100m, new Money(500m)).IsSuccess.Should().BeTrue();
         project.Sign(new DateOnly(2026, 9, 1), null).IsSuccess.Should().BeTrue();
         project.TransitionTo(ProjectStatus.Active, new DateOnly(2026, 9, 1)).IsSuccess.Should().BeTrue();

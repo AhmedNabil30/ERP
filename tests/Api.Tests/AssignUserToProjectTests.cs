@@ -535,10 +535,10 @@ public sealed class AssignUserToProjectTests : IAsyncLifetime
             UniqueNames.Code("ASG-C1"), "عميل الإسناد", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
 
         Project projectA = Project.Create(
-            UniqueNames.Code("ASG-PA"), "مشروع أ", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("ASG-PA"), "مشروع أ", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         Project projectB = Project.Create(
-            UniqueNames.Code("ASG-PB"), "مشروع ب", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("ASG-PB"), "مشروع ب", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         User owner = MakeUser("asg-owner", Role.Owner);
         User hr = MakeUser("asg-hr", Role.Hr, WellKnownDepartments.HrId);

@@ -24,6 +24,8 @@ namespace Kaff.Api.Features.Projects.ListProjects;
 /// <param name="ContractValue">The revised value: signed value plus approved change orders (<c>ChangeOrderDisplayedValue</c>). Null for Cost Plus.</param>
 /// <param name="OriginalContractValue">The signed value, before any change order.</param>
 /// <param name="ApprovedChangeOrderTotal">The sum of the approved change orders. Zero when there are none.</param>
+/// <param name="IsArchived">True for an unsigned Setup project whose follow-up period has ended (AC-417-J). Archived rows are listed only with <c>includeArchived=true</c>.</param>
+/// <param name="FollowUpEndsOn">The day the follow-up period ends. Null once signed or out of Setup.</param>
 public sealed record ProjectSummary(
     Guid Id,
     string Code,
@@ -33,7 +35,9 @@ public sealed record ProjectSummary(
     ProjectStatus Status,
     Money? ContractValue,
     Money? OriginalContractValue,
-    Money ApprovedChangeOrderTotal);
+    Money ApprovedChangeOrderTotal,
+    bool IsArchived,
+    DateOnly? FollowUpEndsOn);
 
 /// <summary>
 /// The projects the caller may reach. KAFF-400.

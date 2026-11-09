@@ -52,6 +52,12 @@ public static class DailyLogErrors
     public static readonly Error UnknownField =
         Error.Validation("daily_log.unknown_field", "errors.daily_log.unknown_field");
 
+    public static readonly Error LocationRequired =
+        Error.Validation("daily_log.location_required", "errors.daily_log.location_required");
+
+    public static readonly Error CheckInUsesCheckInRoute =
+        Error.Validation("daily_log.check_in_uses_check_in_route", "errors.daily_log.check_in_uses_check_in_route");
+
     public static readonly Error ExpenseMustBePositive =
         Error.Validation("daily_log.expense_must_be_positive", "errors.daily_log.expense_must_be_positive");
 

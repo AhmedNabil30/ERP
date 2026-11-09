@@ -702,9 +702,9 @@ public sealed class ReadAuditTrailTests : IAsyncLifetime
             UniqueNames.Code("AUD-C1"), "عميل سجل التدقيق", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
 
         Project projectA = Project.Create(
-            UniqueNames.Code("AUD-PA"), "مشروع أ", company.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("AUD-PA"), "مشروع أ", company.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
         Project projectB = Project.Create(
-            UniqueNames.Code("AUD-PB"), "مشروع ب", company.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("AUD-PB"), "مشروع ب", company.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         User owner = MakeUser("aud-owner", Role.Owner);
         User finance = MakeUser("aud-finance", Role.Finance, WellKnownDepartments.FinanceId);

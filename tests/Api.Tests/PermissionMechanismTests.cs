@@ -901,7 +901,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
     }
 
     private static Project MakeProject(string code, Guid clientId) =>
-        Project.Create(UniqueNames.Code(code), "مشروع", clientId, ContractType.LumpSum, Now).Value;
+        Project.Create(UniqueNames.Code(code), "مشروع", clientId, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
     private static User MakeUser(
         string userName,

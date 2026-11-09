@@ -135,7 +135,7 @@ public sealed class ProjectAccountSetCreationTests : IAsyncLifetime
     public async Task TC_3_037_Account_set_creation_is_all_or_nothing_with_project_creation()
     {
         Project project = Project.Create(
-            UniqueNames.Code("PAS-E"), "مشروع اختبار الذرية", _clientId, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("PAS-E"), "مشروع اختبار الذرية", _clientId, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         // Force the account-creation step to fail: pre-plant a row at the exact code the factory
         // would generate for this project's Hold account, so the later INSERT collides on the unique
@@ -245,7 +245,7 @@ public sealed class ProjectAccountSetCreationTests : IAsyncLifetime
     private async Task<Project> CreateProjectAsync(ContractType contractType)
     {
         Project project = Project.Create(
-            UniqueNames.Code("PAS-P"), "مشروع اختبار", _clientId, contractType, Now).Value;
+            UniqueNames.Code("PAS-P"), "مشروع اختبار", _clientId, contractType, DateTimeOffset.UtcNow).Value;
 
         await using KaffDbContext context = _database.CreateContext();
         context.Projects.Add(project);

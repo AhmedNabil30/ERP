@@ -4,6 +4,7 @@ using Kaff.Domain.Authorization;
 using Kaff.Domain.Common;
 using Kaff.Domain.Identity;
 using Kaff.Domain.Projects;
+using Kaff.Domain.Rulings;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -40,9 +41,12 @@ internal static class Handler
 {
     public static async Task<IResult> HandleAsync(
         HttpContext http,
+        bool? includeArchived,
         KaffDbContext database,
         ICurrentUser currentUser,
         IPermissionSubjectReader subjectReader,
+        RulingSet rulings,
+        TimeProvider clock,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(http);
@@ -79,6 +83,13 @@ internal static class Handler
         // OrderBy(x => new ProjectSummary(...).Code) and fails to simplify that back to the column).
         List<Project> loaded = await query.OrderBy(project => project.Code).ToListAsync(cancellationToken);
 
+        // AC-417-J: archived is derived on read, so it is filtered here, not in SQL. Default hides them.
+        DateTimeOffset now = clock.GetUtcNow();
+        if (includeArchived != true)
+        {
+            loaded = [.. loaded.Where(project => !project.IsArchived(now, rulings.FollowUp))];
+        }
+
         // The contract value is derived: the signed BOQ total plus the approved change orders (ChangeOrderDisplayedValue).
         Dictionary<Guid, Money> approved = await ChangeOrderQueries.ApprovedTotalsAsync(database, null, cancellationToken);
         List<ProjectSummary> projects =
@@ -88,7 +99,8 @@ internal static class Handler
                 Money change = approved.TryGetValue(project.Id, out Money total) ? total : Money.Zero;
                 return new ProjectSummary(
                     project.Id, project.Code, project.Name, project.ClientId, project.ContractType, project.Status,
-                    project.RevisedContractValue(change), project.ContractValue, change);
+                    project.RevisedContractValue(change), project.ContractValue, change,
+                    project.IsArchived(now, rulings.FollowUp), project.FollowUpEndsOn(rulings.FollowUp));
             }),
         ];
 

@@ -44,6 +44,12 @@ internal static class Handler
             return ResultExtensions.Problem(ProjectErrors.NotFound);
         }
 
+        // AC-417-J: an archived project is reopened before it can be signed.
+        if (project.IsArchived(clock.GetUtcNow(), rulings.FollowUp))
+        {
+            return ResultExtensions.Problem(ProjectErrors.Archived);
+        }
+
         Boq? boq = await database.Boqs
             .Include(candidate => candidate.Lines)
             .FirstOrDefaultAsync(candidate => candidate.ProjectId == projectId, cancellationToken);

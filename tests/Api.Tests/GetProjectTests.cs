@@ -148,7 +148,7 @@ public sealed class GetProjectTests : IAsyncLifetime
             UniqueNames.Code("GTP-C"), "عميل القراءة", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
 
         Project project = Project.Create(
-            UniqueNames.Code("GTP-P"), "مشروع القراءة", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("GTP-P"), "مشروع القراءة", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         // A signed Lump Sum project carries a ContractValue (D-135, wire is a JSON string). The value is
         // derived at signature from the BOQ total, never typed; the domain takes it as the argument here.

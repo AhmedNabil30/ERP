@@ -149,12 +149,9 @@ public enum DailyLogField
     StoppageReason = 5,
 }
 
-/// <summary>Why a check-in or check-out is flagged for a reader. It is a flag, never a refusal (Q-207-3, Q-207-4).</summary>
+/// <summary>Why a check-in or check-out is flagged for a reader. It is a flag, never a refusal (Q-207-3, D-208).</summary>
 public enum CheckInFlagReason
 {
-    /// <summary>The phone gave no usable location: denied, unavailable, timed out or out of range.</summary>
-    LocationUnavailable = 1,
-
     /// <summary>The location is farther from the project's reference point than <c>CheckInDistanceRule</c> allows.</summary>
     FarFromReference = 2,
 }

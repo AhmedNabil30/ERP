@@ -229,10 +229,10 @@ public sealed class GetBalancesTests : IAsyncLifetime
             UniqueNames.Code("GB-C1"), "عميل اختبار", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
 
         Project projectA = Project.Create(
-            UniqueNames.Code("GB-PA"), "مشروع أ", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("GB-PA"), "مشروع أ", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         Project projectB = Project.Create(
-            UniqueNames.Code("GB-PB"), "مشروع ب", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("GB-PB"), "مشروع ب", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         User owner = User.Create(
             UniqueNames.Code("gb-owner"), "gb-owner", UniqueNames.Phone(), Role.Owner, Now, WellKnownDepartments.FinanceId).Value;

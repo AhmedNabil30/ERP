@@ -5,6 +5,7 @@ using Kaff.Api.Features.Extracts;
 using Kaff.Domain.Extracts;
 using Kaff.Domain.Common;
 using Kaff.Domain.Projects;
+using Kaff.Domain.Rulings;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -27,6 +28,8 @@ internal static class Handler
         KaffDbContext database,
         IAuthorizationService authorization,
         ClaimsPrincipal user,
+        RulingSet rulings,
+        TimeProvider clock,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(database);
@@ -75,7 +78,9 @@ internal static class Handler
                 .MaxAsync(cancellationToken),
             await ExtractSupport.MaySeeMoneyAsync(authorization, user)
                 ? await MoneyAsync(database, projectId, cancellationToken)
-                : null);
+                : null,
+            candidateProject.IsArchived(clock.GetUtcNow(), rulings.FollowUp),
+            candidateProject.FollowUpEndsOn(rulings.FollowUp));
 
         return Microsoft.AspNetCore.Http.Results.Ok(project);
     }

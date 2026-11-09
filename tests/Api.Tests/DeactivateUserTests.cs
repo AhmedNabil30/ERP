@@ -528,11 +528,11 @@ public sealed class DeactivateUserTests : IAsyncLifetime
             UniqueNames.Code("DCT-C1"), "عميل الإيقاف", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
 
         Project projectA = Project.Create(
-            UniqueNames.Code("DCT-PA"), "مشروع أ", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("DCT-PA"), "مشروع أ", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
         Project projectB = Project.Create(
-            UniqueNames.Code("DCT-PB"), "مشروع ب", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("DCT-PB"), "مشروع ب", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
         Project projectC = Project.Create(
-            UniqueNames.Code("DCT-PC"), "مشروع ج", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("DCT-PC"), "مشروع ج", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         User owner = MakeUser("dct-owner", Role.Owner);
         User secondOwner = MakeUser("dct-owner-2", Role.Owner);

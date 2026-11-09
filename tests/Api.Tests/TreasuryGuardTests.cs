@@ -471,7 +471,7 @@ public sealed class TreasuryGuardTests
             "مشروع اختبار",
             client.Id,
             Domain.Contracts.ContractType.LumpSum,
-            Now).Value;
+            DateTimeOffset.UtcNow).Value;
 
         context.Clients.Add(client);
         context.Projects.Add(project);

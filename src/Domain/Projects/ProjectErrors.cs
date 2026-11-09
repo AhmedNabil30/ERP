@@ -47,6 +47,12 @@ public static class ProjectErrors
     public static readonly Error AreaRequired =
         Error.Validation("project.area_required", "errors.project.area_required");
 
+    public static readonly Error Archived =
+        Error.Validation("project.archived", "errors.project.archived");
+
+    public static readonly Error NotArchived =
+        Error.Conflict("project.not_archived", "errors.project.not_archived");
+
     public static readonly Error AlreadySigned =
         Error.Conflict("project.already_signed", "errors.project.already_signed");
 

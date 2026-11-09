@@ -436,11 +436,11 @@ public sealed class ReactivateUserTests : IAsyncLifetime
             UniqueNames.Code("RCT-C1"), "عميل العودة", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
 
         Project projectA = Project.Create(
-            UniqueNames.Code("RCT-PA"), "مشروع أ", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("RCT-PA"), "مشروع أ", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
         Project projectB = Project.Create(
-            UniqueNames.Code("RCT-PB"), "مشروع ب", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("RCT-PB"), "مشروع ب", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
         Project projectC = Project.Create(
-            UniqueNames.Code("RCT-PC"), "مشروع ج", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("RCT-PC"), "مشروع ج", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         User owner = MakeUser("rct-owner", Role.Owner);
         User hr = MakeUser("rct-hr", Role.Hr, WellKnownDepartments.HrId);

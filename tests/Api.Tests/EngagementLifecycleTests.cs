@@ -346,10 +346,10 @@ public sealed class EngagementLifecycleTests : IAsyncLifetime
             UniqueNames.Code("EN-C1"), "عميل التعاقد", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
 
         Project projectA = Project.Create(
-            UniqueNames.Code("EN-PA"), "مشروع أ", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("EN-PA"), "مشروع أ", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         Project projectB = Project.Create(
-            UniqueNames.Code("EN-PB"), "مشروع ب", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("EN-PB"), "مشروع ب", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         Bab bab = Bab.Create(UniqueNames.Code("EN-BAB"), "باب", "Bab", Percentage.FromPercent(15m)).Value;
 

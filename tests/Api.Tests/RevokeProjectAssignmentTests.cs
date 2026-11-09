@@ -380,7 +380,7 @@ public sealed class RevokeProjectAssignmentTests : IAsyncLifetime
             UniqueNames.Code("RVK-C1"), "عميل الإلغاء", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
 
         Project projectA = Project.Create(
-            UniqueNames.Code("RVK-PA"), "مشروع الإلغاء", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("RVK-PA"), "مشروع الإلغاء", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         User owner = MakeUser("rvk-owner", Role.Owner);
         User hr = MakeUser("rvk-hr", Role.Hr, WellKnownDepartments.HrId);

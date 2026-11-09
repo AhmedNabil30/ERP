@@ -227,10 +227,10 @@ public sealed class ProofOfNumbersTests : IAsyncLifetime
             UniqueNames.Code("PF-C1"), "عميل اختبار", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
 
         Project projectA = Project.Create(
-            UniqueNames.Code("PF-PA"), "مشروع أ", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("PF-PA"), "مشروع أ", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         Project projectB = Project.Create(
-            UniqueNames.Code("PF-PB"), "مشروع ب", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("PF-PB"), "مشروع ب", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         User owner = User.Create(
             UniqueNames.Code("pf-owner"), "pf-owner", UniqueNames.Phone(), Role.Owner, Now, WellKnownDepartments.FinanceId).Value;

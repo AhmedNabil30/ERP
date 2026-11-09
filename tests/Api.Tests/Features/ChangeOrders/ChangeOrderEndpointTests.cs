@@ -768,7 +768,7 @@ public sealed class ChangeOrderEndpointTests : IAsyncLifetime
     private async Task<Project> NewCostPlusProjectAsync()
     {
         await using KaffDbContext context = _database.CreateContext();
-        Project project = Project.Create(UniqueNames.Code("CO-CP"), "مشروع تكلفة", _clientId, ContractType.CostPlus, Now).Value;
+        Project project = Project.Create(UniqueNames.Code("CO-CP"), "مشروع تكلفة", _clientId, ContractType.CostPlus, DateTimeOffset.UtcNow).Value;
         project.SetCostPlusTerms(Percentage.FromPercent(10m)).IsSuccess.Should().BeTrue();
         project.Sign(new DateOnly(2026, 9, 24), null).IsSuccess.Should().BeTrue();
         project.TransitionTo(ProjectStatus.Active, new DateOnly(2026, 9, 24)).IsSuccess.Should().BeTrue();
@@ -787,7 +787,7 @@ public sealed class ChangeOrderEndpointTests : IAsyncLifetime
 
         await using (KaffDbContext context = _database.CreateContext())
         {
-            project = Project.Create(UniqueNames.Code("CO-P"), "مشروع أمر تغيير", _clientId, ContractType.LumpSum, Now).Value;
+            project = Project.Create(UniqueNames.Code("CO-P"), "مشروع أمر تغيير", _clientId, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
             project.SetLumpSumTerms(
                 Percentage.FromPercent(25m), Percentage.FromPercent(20m), Percentage.FromPercent(25m),
                 Percentage.FromPercent(75m), delayPenaltyEnabled: false).IsSuccess.Should().BeTrue();

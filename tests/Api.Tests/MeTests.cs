@@ -692,9 +692,9 @@ public sealed class MeTests : IAsyncLifetime
 
         // AC-105b-C: three projects, each with a ContractValue set and a distinct reference code —
         // the given the story repaired away from Budget/Balance, neither of which exists.
-        Project projectA = Project.Create(UniqueNames.Code("ME-PA"), "مشروع أ", client.Id, ContractType.LumpSum, Now).Value;
-        Project projectB = Project.Create(UniqueNames.Code("ME-PB"), "مشروع ب", client.Id, ContractType.LumpSum, Now).Value;
-        Project projectC = Project.Create(UniqueNames.Code("ME-PC"), "مشروع ج", client.Id, ContractType.LumpSum, Now).Value;
+        Project projectA = Project.Create(UniqueNames.Code("ME-PA"), "مشروع أ", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
+        Project projectB = Project.Create(UniqueNames.Code("ME-PB"), "مشروع ب", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
+        Project projectC = Project.Create(UniqueNames.Code("ME-PC"), "مشروع ج", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         foreach (Project project in new[] { projectA, projectB, projectC })
         {

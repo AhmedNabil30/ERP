@@ -149,7 +149,7 @@ public sealed partial class FreshDatabaseBootstrapTests : IAsyncLifetime
                 Domain.MasterData.ClientKind.Corporate, Now).Value;
             Domain.Projects.Project project = Domain.Projects.Project.Create(
                 $"P{Guid.CreateVersion7():N}"[..12], "مشروع اختبار", client.Id,
-                Domain.Contracts.ContractType.LumpSum, Now).Value;
+                Domain.Contracts.ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
             seed.Clients.Add(client);
             seed.Projects.Add(project);
             await seed.SaveChangesAsync(Ct);

@@ -460,11 +460,11 @@ public sealed class PostMovementTests : IAsyncLifetime
             UniqueNames.Code("PM-C1"), "عميل اختبار", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
 
         Project projectA = Project.Create(
-            UniqueNames.Code("PM-PA"), "مشروع أ", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("PM-PA"), "مشروع أ", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
         projectA.TransitionTo(ProjectStatus.Active, Today).IsSuccess.Should().BeTrue();
 
         Project projectB = Project.Create(
-            UniqueNames.Code("PM-PB"), "مشروع ب", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("PM-PB"), "مشروع ب", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         User financeOnProjectA = User.Create(
             UniqueNames.Code("pm-fin-a"), "pm-fin-a", UniqueNames.Phone(), Role.Finance, Now, WellKnownDepartments.FinanceId).Value;

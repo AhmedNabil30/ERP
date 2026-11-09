@@ -145,17 +145,11 @@ public sealed record RulingSet
     /// <summary>Where a target completion date would come from. Registered, not resolved.</summary>
     public ProjectTargetCompletion ProjectTargetCompletion { get; init; } = ProjectTargetCompletion.Default;
 
-    /// <summary>What becomes of a project that is never signed (Q-207-1). Registered, not resolved.</summary>
-    public UnsignedProjectFate UnsignedProjectFate { get; init; } = UnsignedProjectFate.Default;
-
-    /// <summary>Whether the quotation printout shows line prices (Q-207-2). Registered, not resolved.</summary>
-    public QuotationLinePrices QuotationLinePrices { get; init; } = QuotationLinePrices.Default;
+    /// <summary>How long an unsigned project is followed up before it is archived (Q-208-1, Q-208-2).</summary>
+    public FollowUpPeriod FollowUp { get; init; } = FollowUpPeriod.Default;
 
     /// <summary>How far from the reference point a check-in may be before it is flagged (Q-207-3, Q-207-3a).</summary>
     public CheckInDistanceRule CheckInDistance { get; init; } = CheckInDistanceRule.Default;
-
-    /// <summary>What a check-in without a location does (Q-207-4).</summary>
-    public CheckInWithoutLocation CheckInWithoutLocation { get; init; } = CheckInWithoutLocation.Default;
 
     /// <summary>Every entry, each describing itself. A test pins that none is missing a question.</summary>
     public IReadOnlyList<RulingNote> Notes =>
@@ -207,9 +201,7 @@ public sealed record RulingSet
         BabActivity.Note,
         CostPlusCostBasis.Note,
         ProjectTargetCompletion.Note,
-        UnsignedProjectFate.Note,
-        QuotationLinePrices.Note,
+        FollowUp.Note,
         CheckInDistance.Note,
-        CheckInWithoutLocation.Note,
     ];
 }

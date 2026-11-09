@@ -526,10 +526,10 @@ public sealed class MoveUserDepartmentTests : IAsyncLifetime
             UniqueNames.Code("MOV-C1"), "عميل نقل الأقسام", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
 
         Project project = Project.Create(
-            UniqueNames.Code("MOV-P1"), "مشروع", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("MOV-P1"), "مشروع", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         Project otherProject = Project.Create(
-            UniqueNames.Code("MOV-P2"), "مشروع آخر", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("MOV-P2"), "مشروع آخر", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         User owner = MakeUser("mov-owner", Role.Owner);
         User technicalOffice = MakeUser(

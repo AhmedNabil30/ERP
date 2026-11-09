@@ -533,7 +533,7 @@ public sealed class RegisterDayLabourerFromSiteTests : IAsyncLifetime
             UniqueNames.Code("DL-C1"), "عميل العمالة", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
 
         Project projectA = Project.Create(
-            UniqueNames.Code("DL-PA"), "مشروع العمالة", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("DL-PA"), "مشروع العمالة", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         Bab bab = Bab.Create(UniqueNames.Code("DL-BAB"), "باب", "Bab", Percentage.FromPercent(15m)).Value;
 

@@ -166,9 +166,9 @@ public sealed class ListBoqLinesTests : IAsyncLifetime
         Client client = Client.Create(
             UniqueNames.Code("BL-C1"), "عميل اختبار", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
         Project projectA = Project.Create(
-            UniqueNames.Code("BL-PA"), "مشروع أ", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("BL-PA"), "مشروع أ", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
         Project projectB = Project.Create(
-            UniqueNames.Code("BL-PB"), "مشروع ب", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("BL-PB"), "مشروع ب", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         User engineerOnA = User.Create(
             UniqueNames.Code("bl-eng-a"), "bl-eng-a", UniqueNames.Phone(), Role.SiteEngineer, Now,

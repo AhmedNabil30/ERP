@@ -361,11 +361,11 @@ public sealed class ListUsersTests : IAsyncLifetime
         _revokedProjectName = "مشروع " + UniqueNames.Code("LSU-PR");
 
         Project projectA = Project.Create(
-            UniqueNames.Code("LSU-PA"), _projectAName, company.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("LSU-PA"), _projectAName, company.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
         Project projectB = Project.Create(
-            UniqueNames.Code("LSU-PB"), _projectBName, company.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("LSU-PB"), _projectBName, company.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
         Project revoked = Project.Create(
-            UniqueNames.Code("LSU-PR"), _revokedProjectName, company.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("LSU-PR"), _revokedProjectName, company.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         User owner = MakeUser("lsu-owner", Role.Owner);
         User finance = MakeUser("lsu-finance", Role.Finance, WellKnownDepartments.FinanceId);

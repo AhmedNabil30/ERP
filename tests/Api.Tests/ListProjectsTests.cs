@@ -164,9 +164,9 @@ public sealed class ListProjectsTests : IAsyncLifetime
             UniqueNames.Code("LSP-C"), "عميل القائمة", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
 
         Project projectA = Project.Create(
-            UniqueNames.Code("LSP-PA"), "مشروع أ", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("LSP-PA"), "مشروع أ", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
         Project projectB = Project.Create(
-            UniqueNames.Code("LSP-PB"), "مشروع ب", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("LSP-PB"), "مشروع ب", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         User owner = MakeUser("lsp-owner", Role.Owner);
         User hr = MakeUser("lsp-hr", Role.Hr, WellKnownDepartments.HrId);

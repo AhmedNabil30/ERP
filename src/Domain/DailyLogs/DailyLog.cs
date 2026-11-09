@@ -162,9 +162,8 @@ public sealed class DailyLog : Entity
 
         if (field is DailyLogField.CheckIn or DailyLogField.CheckOut)
         {
-            // The older path carries no location, so by Q-207-4 it is recorded and flagged. New callers use RecordCheckIn.
-            return Result.Success(new FieldEntry(
-                entryId, this, field, null, occurredAt, now, flag: CheckInFlagReason.LocationUnavailable));
+            // This path carries no location, and check-in needs one (Q-207-4, D-208). Callers use RecordCheckIn.
+            return Result.Failure<FieldEntry>(DailyLogErrors.CheckInUsesCheckInRoute);
         }
 
         if (string.IsNullOrWhiteSpace(text))
@@ -181,10 +180,10 @@ public sealed class DailyLog : Entity
     }
 
     /// <summary>
-    /// Records a check-in or check-out with the phone's location (KAFF-613). Never refuses for location: no usable
-    /// location is recorded and flagged <see cref="CheckInFlagReason.LocationUnavailable"/> (Q-207-4), and a location
+    /// Records a check-in or check-out with the phone's location (KAFF-613). A missing or unusable location is
+    /// refused with <see cref="DailyLogErrors.LocationRequired"/> and nothing is recorded (Q-207-4, D-208). A location
     /// farther from <paramref name="reference"/> than the rule allows is recorded and flagged
-    /// <see cref="CheckInFlagReason.FarFromReference"/> (Q-207-3). <paramref name="occurredAt"/> is the device time and
+    /// <see cref="CheckInFlagReason.FarFromReference"/> (Q-207-3, D-208). <paramref name="occurredAt"/> is the device time and
     /// <paramref name="now"/> the server time; neither replaces the other.
     /// </summary>
     public Result<FieldEntry> RecordCheckIn(
@@ -216,8 +215,7 @@ public sealed class DailyLog : Entity
 
         if (!located)
         {
-            return Result.Success(new FieldEntry(
-                entryId, this, kind, null, occurredAt, now, flag: CheckInFlagReason.LocationUnavailable));
+            return Result.Failure<FieldEntry>(DailyLogErrors.LocationRequired);
         }
 
         double? accuracy = accuracyMetres is { } a && double.IsFinite(a) && a >= 0d ? a : null;

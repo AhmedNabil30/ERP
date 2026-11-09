@@ -388,10 +388,10 @@ public sealed class DayLabourRateManageTests : IAsyncLifetime
             UniqueNames.Code("DR-C1"), "عميل الأجر", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
 
         Project projectA = Project.Create(
-            UniqueNames.Code("DR-PA"), "مشروع أ", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("DR-PA"), "مشروع أ", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         Project projectB = Project.Create(
-            UniqueNames.Code("DR-PB"), "مشروع ب", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("DR-PB"), "مشروع ب", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         Bab bab = Bab.Create(UniqueNames.Code("DR-BAB"), "باب", "Bab", Percentage.FromPercent(15m)).Value;
 

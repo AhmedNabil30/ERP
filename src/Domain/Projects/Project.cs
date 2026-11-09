@@ -94,6 +94,7 @@ public sealed class Project : Entity
         OpportunityId = opportunityId;
         Status = ProjectStatus.Setup;
         CreatedAt = createdAt;
+        FollowUpStartedOn = createdAt;
     }
 
     public string Code { get; private set; } = null!;
@@ -225,6 +226,41 @@ public sealed class Project : Entity
     public DateTimeOffset CreatedAt { get; private set; }
 
     public bool IsSigned => SignedOn is not null;
+
+    // ---- Follow-up (KAFF-417, AC-417-J, D-208). Archive is derived on read; there is no stored flag and no state. ----
+
+    /// <summary>When the follow-up period started: creation, or the last <see cref="Reopen"/>.</summary>
+    public DateTimeOffset FollowUpStartedOn { get; private set; }
+
+    /// <summary>The day the follow-up period ends for an unsigned project, or null once signed or out of Setup.</summary>
+    public DateOnly? FollowUpEndsOn(FollowUpPeriod period)
+    {
+        ArgumentNullException.ThrowIfNull(period);
+
+        return IsSigned || Status != ProjectStatus.Setup
+            ? null
+            : DateOnly.FromDateTime(FollowUpStartedOn.AddDays(period.Days).UtcDateTime);
+    }
+
+    /// <summary>Archived: not signed, still in Setup, and the follow-up period has ended. Never true for a signed project.</summary>
+    public bool IsArchived(DateTimeOffset now, FollowUpPeriod period)
+    {
+        ArgumentNullException.ThrowIfNull(period);
+
+        return !IsSigned && Status == ProjectStatus.Setup && now >= FollowUpStartedOn.AddDays(period.Days);
+    }
+
+    /// <summary>Restarts the follow-up period from <paramref name="now"/>. Only an archived project can be reopened.</summary>
+    public Result Reopen(DateTimeOffset now, FollowUpPeriod period)
+    {
+        if (!IsArchived(now, period))
+        {
+            return Result.Failure(ProjectErrors.NotArchived);
+        }
+
+        FollowUpStartedOn = now;
+        return Result.Success();
+    }
 
     public static Result<Project> Create(
         string code,

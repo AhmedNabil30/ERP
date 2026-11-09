@@ -828,7 +828,7 @@ public sealed class SignInTests : IAsyncLifetime
             UniqueNames.Code("SGN-C1"), "عميل الدخول", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
 
         Project project = Project.Create(
-            UniqueNames.Code("SGN-P1"), "مشروع الدخول", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("SGN-P1"), "مشروع الدخول", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         User engineer = MakeUser(
             "sgn-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);

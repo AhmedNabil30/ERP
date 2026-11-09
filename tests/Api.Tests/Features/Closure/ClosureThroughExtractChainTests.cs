@@ -438,7 +438,7 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
 
         await using (KaffDbContext context = _database.CreateContext())
         {
-            project = Project.Create(UniqueNames.Code("CC-P"), "مشروع إقفال بالمستخلصات", _clientId, ContractType.LumpSum, Now).Value;
+            project = Project.Create(UniqueNames.Code("CC-P"), "مشروع إقفال بالمستخلصات", _clientId, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
             project.SetWithholding(WithholdingCategory.None, ClientKind.Corporate).IsSuccess.Should().BeTrue();
             project.SetLumpSumTerms(
                 Percentage.FromPercent(25m), Percentage.FromPercent(20m), Percentage.FromPercent(25m),

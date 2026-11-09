@@ -19,7 +19,7 @@ public sealed class ExtractWaitingOnViewTests
 
     private static Extract SubmittedBy(Guid preparer)
     {
-        Project project = Project.Create("PRJ-W", "W", Guid.CreateVersion7(), ContractType.LumpSum, Now).Value;
+        Project project = Project.Create("PRJ-W", "W", Guid.CreateVersion7(), ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
         Extract extract = Extract.Prepare(
             project, 1, new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 30),
             new Money(300_000m), Money.Zero, new Money(100_000m), Money.Zero, preparer, Now).Value;
@@ -46,7 +46,7 @@ public sealed class ExtractWaitingOnViewTests
     [Fact]
     public void A_site_engineer_below_the_supervisor_level_does_not_hold_the_qc_report_step()
     {
-        Project project = Project.Create("PRJ-W2", "W2", Guid.CreateVersion7(), ContractType.LumpSum, Now).Value;
+        Project project = Project.Create("PRJ-W2", "W2", Guid.CreateVersion7(), ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
         Extract draft = Extract.Prepare(
             project, 1, new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 30),
             new Money(300_000m), Money.Zero, new Money(100_000m), Money.Zero, Guid.CreateVersion7(), Now).Value;

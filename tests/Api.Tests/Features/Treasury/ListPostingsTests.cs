@@ -170,7 +170,7 @@ public sealed class ListPostingsTests : IAsyncLifetime
             UniqueNames.Code("LP-C1"), "عميل اختبار", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
 
         Project projectA = Project.Create(
-            UniqueNames.Code("LP-PA"), "مشروع أ", client.Id, ContractType.LumpSum, Now).Value;
+            UniqueNames.Code("LP-PA"), "مشروع أ", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
         User owner = User.Create(
             UniqueNames.Code("lp-owner"), "lp-owner", UniqueNames.Phone(), Role.Owner, Now, WellKnownDepartments.FinanceId).Value;

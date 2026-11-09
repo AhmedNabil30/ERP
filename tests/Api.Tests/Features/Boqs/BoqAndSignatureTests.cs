@@ -629,7 +629,7 @@ public sealed class BoqAndSignatureTests : IAsyncLifetime
     {
         await using KaffDbContext context = _database.CreateContext();
 
-        Project project = Project.Create(UniqueNames.Code("BQ-P"), "مشروع المقايسة", _clientId, type, Now).Value;
+        Project project = Project.Create(UniqueNames.Code("BQ-P"), "مشروع المقايسة", _clientId, type, DateTimeOffset.UtcNow).Value;
 
         if (type == ContractType.LumpSum)
         {
