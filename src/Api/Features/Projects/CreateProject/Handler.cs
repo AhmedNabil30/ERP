@@ -20,7 +20,7 @@ namespace Kaff.Api.Features.Projects.CreateProject;
 /// later request would 500 against. Both <c>Project</c> and its <see cref="Account"/> rows are added
 /// to the same <c>KaffDbContext</c> before the single <c>SaveChangesAsync</c> call, so EF Core's
 /// implicit transaction covers both — no second save, no window where one exists without the other.
-/// <see cref="ProjectAccountSetFactory.Create"/> only builds the rows (KAFF-302); nothing here bypasses
+/// <see cref="ProjectOpening.Open"/> builds the project and, through <c>ProjectAccountSetFactory.Create</c>, its rows (KAFF-302); nothing here bypasses
 /// <see cref="Account.Create"/>'s own validation.
 /// </para>
 /// <para>
@@ -60,36 +60,20 @@ internal static class Handler
         DateTimeOffset now = clock.GetUtcNow();
         DateOnly today = DateOnly.FromDateTime(now.UtcDateTime);
 
-        Result<Project> created = Project.Create(
-            GenerateCode(),
-            request.Name ?? string.Empty,
+        Result<OpenedProject> opened = ProjectOpening.Open(
+            request.Name,
             request.ClientId,
             request.ContractType,
+            request.ClientAdvance is { } advance ? Percentage.FromPercent(advance) : null,
+            request.HoldPercentage,
             now);
 
-        if (created.IsFailure)
+        if (opened.IsFailure)
         {
-            return ResultExtensions.Problem(created.Error);
+            return ResultExtensions.Problem(opened.Error);
         }
 
-        Project project = created.Value;
-
-        if (request.ContractType == ContractType.LumpSum)
-        {
-            // spec.md §5.1, §15 and §16 assumption 1 — the two figures the request may adjust, and
-            // spec.md's own stated defaults for the three it does not carry.
-            Result termsSet = project.SetLumpSumTerms(
-                request.ClientAdvance is { } advance ? Percentage.FromPercent(advance) : ContractDefaults.AdvanceRate,
-                request.HoldPercentage ?? ContractDefaults.HoldRate,
-                ContractDefaults.AdvanceRecoveryRate,
-                ContractDefaults.MaterialAdvanceRate,
-                ContractDefaults.DelayPenaltyEnabled);
-
-            if (termsSet.IsFailure)
-            {
-                return ResultExtensions.Problem(termsSet.Error);
-            }
-        }
+        Project project = opened.Value.Project;
 
         if (request.Status == ProjectStatus.Active)
         {
@@ -101,16 +85,8 @@ internal static class Handler
             }
         }
 
-        Result<IReadOnlyList<Account>> accounts = ProjectAccountSetFactory.Create(
-            project, existingTypes: new HashSet<AccountType>(), today);
-
-        if (accounts.IsFailure)
-        {
-            return ResultExtensions.Problem(accounts.Error);
-        }
-
         database.Projects.Add(project);
-        database.Accounts.AddRange(accounts.Value);
+        database.Accounts.AddRange(opened.Value.Accounts);
 
         await database.SaveChangesAsync(cancellationToken);
 
@@ -128,22 +104,4 @@ internal static class Handler
                 project.AdvanceRate,
                 project.CreatedAt));
     }
-
-    /// <summary>
-    /// <c>PRJ-</c> plus eight hex characters from a fresh <see cref="Guid"/>.
-    /// </summary>
-    /// <remarks>
-    /// <b>A named, deliberate simplification, not the house pattern.</b> <c>Client</c>, <c>Employee</c>,
-    /// <c>Subcontractor</c> and <c>Supplier</c> all draw a sequential code from a PostgreSQL sequence —
-    /// <c>KaffDbContext.ClientCodeSequence</c> and its siblings — because a read-max-and-increment loses
-    /// a race between two concurrent registrations (decisions.md D-107 §1). There is no
-    /// <c>project_code_seq</c> today, and this story ships no migration: CLAUDE.md and the dispatch
-    /// brief both say to stop and report rather than write one. A <see cref="Guid"/>-derived code needs
-    /// no sequence and cannot lose that race — collision odds are astronomically below a sequence's
-    /// exhaustion — at the cost of a code that is not sequential and not customer-facing-readable the
-    /// way <c>C-10001</c> is. Upgrade path: add <c>project_code_seq</c> in a migration once this story's
-    /// codes need to read the same way.
-    /// </remarks>
-    private static string GenerateCode() =>
-        "PRJ-" + Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
 }

@@ -76,6 +76,9 @@ public enum SourceDocumentType
 
     /// <summary>A subcontractor's retention released at the warranty end (spec.md section 5.1). Its id is the subcontractor's.</summary>
     SubcontractorRetentionRelease = 22,
+
+    /// <summary>A design project as a whole: the 30% design credit traces to it (spec.md section 5.4, KAFF-415).</summary>
+    DesignProject = 23,
 }
 
 /// <summary>

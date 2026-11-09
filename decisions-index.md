@@ -215,3 +215,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-206 | 16225 | the team gets definition files, and the start-up reading gets cheaper · 2026-11-09 |
 | D-207 | 16274 | the client's three comments: a project can start as a price, design turns into execution, check-in stands alone with GPS · 2026-11-09 |
 | D-208 | 16324 | the client answers D-207's four questions · 2026-11-09 |
+| D-209 | 16337 | a design project converts into an execution project, and the signature raises the 30% credit · 2026-11-09 |

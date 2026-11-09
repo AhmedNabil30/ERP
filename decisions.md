@@ -16333,3 +16333,37 @@ Nabil relayed the answers on 2026-11-09. They replace D-207's defaults.
 - **Q-207-3, a check-in far from the site.** Accepted and flagged, as D-207 defaulted.
 - **Q-207-4, location turned off.** Check-in is refused until location access is on. This reverses
   D-207's default. The screen says why and how to turn it on.
+
+## D-209 — a design project converts into an execution project, and the signature raises the 30% credit · 2026-11-09
+
+KAFF-415, `design_to_execution` half. spec.md section 5.4.
+
+- **The link lives on the execution project.** `Project.LinkedProjectId` on the execution project
+  points at the design project, with `LinkType = DesignToExecution`. The design project row is never
+  modified. The design project's GET finds its execution project by query (`executionProjectId`), so
+  there is one stored fact, not two that could disagree. No migration: the columns already existed.
+- **One way to open a project.** `ProjectOpening.Open` in `Domain/Projects` builds the project, its
+  Lump Sum default terms and its account set. `CreateProject` and `ConvertToExecution` both call it, so
+  an execution project's accounts are built exactly as any new project's (AC-415-C). The `PRJ-` code
+  generator moved there from `CreateProject`'s handler.
+- **The credit is raised at signature and posts on approval.** `SignProject` raises one
+  `AdjustmentType.DesignCredit` adjustment in the same save as the signature. Amount: 30%
+  (`ContractDefaults.DesignToExecutionCreditRate`) of the design project's contract value. Source
+  document: the new `SourceDocumentType.DesignProject`, id = design project. Target: the execution
+  project's `ContractRevenue` account. It posts through the existing `ApproveAdjustment` route, with the
+  client credit note's pair: `ClientReceivable` to `ContractRevenue`, `PostingType.CreditNote`. No new
+  pair was added to `PostingAccountLegality`: neither account is a restricted ledger.
+- **Accounts opened late.** A Lump Sum project has no revenue account until its first extract, and a
+  Cost Plus project has no client receivable at all. The signature opens whichever of the two is
+  missing through the new `ProjectAccountSetFactory.Open`, which `ExtractSupport` now also uses for the
+  Lump Sum revenue account (same code `-REV` and names as before). Opening a client receivable on a Cost
+  Plus project is structural and was not asked; it is the client sub-ledger spec.md section 6.3 puts
+  under every project account.
+- **Database guards.** A credit before any extract puts the receivable on the credit side. The
+  receivable and the revenue account are not `enforce_non_negative` (D-044 section 8), so no guard
+  refuses it; the hold trigger and the netting trigger do not apply to this pair.
+- **Assumed, as RulingNotes** in `Domain/Rulings/DesignToExecutionRulings.cs`: Q-207-5 (no BOQ line
+  seeded; the design area is shown as a reference), Q-207-6 (the base is the design contract value; a
+  design project with no value refuses the execution signature), Q-207-7 (one conversion per design
+  project, under a row lock), Q-207-8 (raised at signature, posted by a different approver), Q-207-9
+  (Lump Sum or Cost Plus).

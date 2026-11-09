@@ -62,4 +62,16 @@ public static class AdjustmentErrors
 
     public static readonly Error NumberTaken =
         Error.Conflict("adjustment.number_taken", "errors.adjustment.number_taken");
+
+    /// <summary>KAFF-415, Q-207-6: the design credit is 30% of the design contract value, and there is none.</summary>
+    public static readonly Error DesignValueMissing =
+        Error.Conflict("adjustment.design_value_missing", "errors.adjustment.design_value_missing");
+
+    /// <summary>KAFF-415: a design credit is raised only for an execution project linked to that design project.</summary>
+    public static readonly Error DesignCreditNotLinked =
+        Error.Conflict("adjustment.design_credit_not_linked", "errors.adjustment.design_credit_not_linked");
+
+    /// <summary>KAFF-415: one design credit per execution project.</summary>
+    public static readonly Error DesignCreditAlreadyRaised =
+        Error.Conflict("adjustment.design_credit_already_raised", "errors.adjustment.design_credit_already_raised");
 }

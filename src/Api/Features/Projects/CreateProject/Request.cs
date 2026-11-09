@@ -11,7 +11,7 @@ namespace Kaff.Api.Features.Projects.CreateProject;
 /// <para>
 /// <b>No <c>Code</c> member</b>, the same shape as <c>CreateClient.Request</c>: it is generated, never
 /// typed or edited. There is no <c>project_code_seq</c> sequence today and this story ships no
-/// migration (CLAUDE.md, the story's own hard limit) — <c>Handler.GenerateCode</c> is a named,
+/// migration (CLAUDE.md, the story's own hard limit) — <c>ProjectOpening.GenerateCode</c> is a named,
 /// deliberate simplification rather than the sequential-code mechanism <c>Client</c>/<c>Employee</c>/
 /// <c>Subcontractor</c>/<c>Supplier</c> use. See the handler's remarks.
 /// </para>

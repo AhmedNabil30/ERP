@@ -43,6 +43,16 @@ internal static class Handler
                     .Select(client => client.Name).FirstOrDefault() ?? string.Empty,
                 TeamSize = database.ProjectAssignments.Count(assignment =>
                     assignment.ProjectId == candidate.Id && assignment.RevokedAt == null),
+
+                // KAFF-415, AC-415-I: the link is stored on the execution project, pointing at its design project.
+                ExecutionProjectId = database.Projects
+                    .Where(other => other.LinkedProjectId == candidate.Id && other.LinkType == ProjectLinkType.DesignToExecution)
+                    .Select(other => (Guid?)other.Id)
+                    .FirstOrDefault(),
+                DesignAreaSquareMetres = database.Projects
+                    .Where(other => candidate.LinkType == ProjectLinkType.DesignToExecution && other.Id == candidate.LinkedProjectId)
+                    .Select(other => other.AreaSquareMetres)
+                    .FirstOrDefault(),
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -80,7 +90,10 @@ internal static class Handler
                 ? await MoneyAsync(database, projectId, cancellationToken)
                 : null,
             candidateProject.IsArchived(clock.GetUtcNow(), rulings.FollowUp),
-            candidateProject.FollowUpEndsOn(rulings.FollowUp));
+            candidateProject.FollowUpEndsOn(rulings.FollowUp),
+            candidateProject.LinkType == ProjectLinkType.DesignToExecution ? candidateProject.LinkedProjectId : null,
+            found.ExecutionProjectId,
+            found.DesignAreaSquareMetres);
 
         return Microsoft.AspNetCore.Http.Results.Ok(project);
     }

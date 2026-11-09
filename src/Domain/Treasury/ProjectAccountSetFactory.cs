@@ -84,18 +84,7 @@ public static class ProjectAccountSetFactory
                 continue;
             }
 
-            AccountTypeMetadata meta = AccountTypes.Of(type);
-
-            Result<Account> created = Account.Create(
-                type,
-                Code(project.Code, type, project.ContractType),
-                NameAr(type, project.ContractType),
-                NameEn(type, project.ContractType),
-                project.Currency,
-                openedOn,
-                projectId: project.Id,
-                partyType: meta.RequiredParty,
-                partyId: meta.RequiredParty is null ? null : project.ClientId);
+            Result<Account> created = Open(project, type, openedOn);
 
             if (created.IsFailure)
             {
@@ -106,6 +95,30 @@ public static class ProjectAccountSetFactory
         }
 
         return Result.Success<IReadOnlyList<Account>>(accounts);
+    }
+
+    /// <summary>
+    /// Builds â€” but does not persist â€” one project account of <paramref name="type"/>, with the same code, names and
+    /// party the automatic set gives it. Used for the accounts a project opens later than its creation: the Lump Sum
+    /// revenue account the first extract or a design credit needs, and the Cost Plus client sub-ledger a design credit
+    /// needs (KAFF-415).
+    /// </summary>
+    public static Result<Account> Open(Project project, AccountType type, DateOnly openedOn)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+
+        AccountTypeMetadata meta = AccountTypes.Of(type);
+
+        return Account.Create(
+            type,
+            Code(project.Code, type, project.ContractType),
+            NameAr(type, project.ContractType),
+            NameEn(type, project.ContractType),
+            project.Currency,
+            openedOn,
+            projectId: project.Id,
+            partyType: meta.RequiredParty,
+            partyId: meta.RequiredParty is null ? null : project.ClientId);
     }
 
     /// <summary>
@@ -121,6 +134,7 @@ public static class ProjectAccountSetFactory
         (AccountType.MaterialAdvance, _) => $"{projectCode}-MATADV",
         (AccountType.ClientReceivable, _) => $"{projectCode}-CREC",
         (AccountType.ProjectCost, ContractType.CostPlus) => $"{projectCode}-OPCOST",
+        (AccountType.ContractRevenue, ContractType.LumpSum) => $"{projectCode}-REV",
         (AccountType.ContractRevenue, ContractType.CostPlus) => $"{projectCode}-MREV",
         (AccountType.ContractRevenue, ContractType.Design) => $"{projectCode}-DREV",
         (AccountType.ProjectCost, ContractType.Design) => $"{projectCode}-CONSULT",
@@ -135,6 +149,7 @@ public static class ProjectAccountSetFactory
         (AccountType.MaterialAdvance, _) => "تشوينات",
         (AccountType.ClientReceivable, _) => "مستحق من العميل",
         (AccountType.ProjectCost, ContractType.CostPlus) => "تكاليف تشغيل المشروع",
+        (AccountType.ContractRevenue, ContractType.LumpSum) => "إيرادات المشروع",
         (AccountType.ContractRevenue, ContractType.CostPlus) => "إيرادات الإدارة/الإشراف",
         (AccountType.ContractRevenue, ContractType.Design) => "إيرادات التصميم",
         (AccountType.ProjectCost, ContractType.Design) => "تكاليف الاستشارات",
@@ -149,6 +164,7 @@ public static class ProjectAccountSetFactory
         (AccountType.MaterialAdvance, _) => "Material advance",
         (AccountType.ClientReceivable, _) => "Client receivable",
         (AccountType.ProjectCost, ContractType.CostPlus) => "Project operating costs",
+        (AccountType.ContractRevenue, ContractType.LumpSum) => "Project revenue",
         (AccountType.ContractRevenue, ContractType.CostPlus) => "Management/Supervision revenues",
         (AccountType.ContractRevenue, ContractType.Design) => "Design revenues",
         (AccountType.ProjectCost, ContractType.Design) => "Consulting costs",

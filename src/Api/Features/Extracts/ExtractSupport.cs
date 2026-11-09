@@ -183,7 +183,7 @@ internal static class ExtractSupport
     /// <summary>
     /// The accounts an extract posts across. The four ledgers are the project's own; the safe is the company's.
     /// A Lump Sum project is not opened with a revenue account (<c>ProjectAccountSetFactory</c> lists none), so it
-    /// is opened here the first time an extract needs it, through <see cref="Account.Create"/>.
+    /// is opened here the first time an extract needs it, through <see cref="ProjectAccountSetFactory.Open"/>.
     /// </summary>
     public static async Task<Result<ExtractPostingContext>> ContextAsync(
         KaffDbContext database, Project project, RulingSet rulings, TimeProvider clock, CancellationToken cancellationToken)
@@ -216,14 +216,7 @@ internal static class ExtractSupport
         Account? revenue = Pick(AccountType.ContractRevenue);
         if (revenue is null)
         {
-            Result<Account> opened = Account.Create(
-                AccountType.ContractRevenue,
-                $"{project.Code}-REV",
-                "إيرادات المشروع",
-                "Project revenue",
-                project.Currency,
-                Today(clock),
-                projectId: project.Id);
+            Result<Account> opened = ProjectAccountSetFactory.Open(project, AccountType.ContractRevenue, Today(clock));
             if (opened.IsFailure)
             {
                 return Result.Failure<ExtractPostingContext>(opened.Error);

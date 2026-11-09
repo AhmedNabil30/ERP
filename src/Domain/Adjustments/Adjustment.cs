@@ -1,6 +1,7 @@
 using System.Collections.Frozen;
 using Kaff.Domain.Authorization;
 using Kaff.Domain.Common;
+using Kaff.Domain.Contracts;
 using Kaff.Domain.Extracts;
 using Kaff.Domain.Projects;
 using Kaff.Domain.Rulings;
@@ -17,7 +18,7 @@ public enum AdjustmentType
     /// <summary>A debit note to a subcontractor. Not built: it needs the subcontractor sub-ledger (KAFF-510).</summary>
     SubcontractorDebitNote = 2,
 
-    /// <summary>The 30% design credit (spec.md section 5.4). Not built: its trigger is a separate story.</summary>
+    /// <summary>The 30% design credit (spec.md section 5.4). Raised by the execution signature only (KAFF-415), never by hand.</summary>
     DesignCredit = 3,
 
     /// <summary>A termination settlement. Refused: spec.md says what settles nowhere (Q108).</summary>
@@ -214,6 +215,74 @@ public sealed class Adjustment : Entity
 
         return new Adjustment(
             project.Id, number, AdjustmentType.ClientCreditNote, reason!.Trim(), extract.SourceDocument, target.Id, amount,
+            raisedByUserId, now);
+    }
+
+    /// <summary>
+    /// Raises the 30% design credit (spec.md section 5.4) on <paramref name="execution"/> when it is signed. Validates
+    /// first, mutates nothing. The credit is <see cref="ContractDefaults.DesignToExecutionCreditRate"/> of the design
+    /// project's contract value (Q-207-6), traces to the design project, lands on the execution project's contract
+    /// revenue account and is only raised: it posts when a different user approves it (Q-207-8).
+    /// </summary>
+    /// <param name="alreadyRaised">True when the execution project already carries a design credit in any status.</param>
+    public static Result<Adjustment> RaiseDesignCredit(
+        Project execution,
+        int number,
+        Project design,
+        Account? target,
+        bool alreadyRaised,
+        RulingSet rulings,
+        Guid raisedByUserId,
+        DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(execution);
+        ArgumentNullException.ThrowIfNull(design);
+        ArgumentNullException.ThrowIfNull(rulings);
+
+        if (execution.LinkType != ProjectLinkType.DesignToExecution
+            || execution.LinkedProjectId != design.Id
+            || design.ContractType != ContractType.Design)
+        {
+            return Result.Failure<Adjustment>(AdjustmentErrors.DesignCreditNotLinked);
+        }
+
+        if (alreadyRaised)
+        {
+            return Result.Failure<Adjustment>(AdjustmentErrors.DesignCreditAlreadyRaised);
+        }
+
+        if (design.ContractValue is not { IsPositive: true } designValue)
+        {
+            return Result.Failure<Adjustment>(AdjustmentErrors.DesignValueMissing);
+        }
+
+        if (target is null)
+        {
+            return Result.Failure<Adjustment>(AdjustmentErrors.TargetAccountRequired);
+        }
+
+        if (target.Type == AccountType.Hold || target.LedgerKind == LedgerKind.Hold)
+        {
+            return Result.Failure<Adjustment>(AdjustmentErrors.HoldUntouchable);
+        }
+
+        if (target.Type != AccountType.ContractRevenue || target.ProjectId != execution.Id)
+        {
+            return Result.Failure<Adjustment>(AdjustmentErrors.TargetAccountNotAllowed);
+        }
+
+        if (!rulings.PostingProjectStates.Allows(execution.Status, PostingType.CreditNote))
+        {
+            return Result.Failure<Adjustment>(AdjustmentErrors.ProjectStateNotAllowed);
+        }
+
+        Percentage rate = ContractDefaults.DesignToExecutionCreditRate;
+        string reason = FormattableString.Invariant(
+            $"Design credit: {rate.Percent:0.##}% of design project {design.Code} contract value {designValue.Amount:0.####} (spec.md section 5.4).");
+
+        return new Adjustment(
+            execution.Id, number, AdjustmentType.DesignCredit, reason,
+            new SourceDocument(SourceDocumentType.DesignProject, design.Id, design.Code), target.Id, rate.Of(designValue),
             raisedByUserId, now);
     }
 

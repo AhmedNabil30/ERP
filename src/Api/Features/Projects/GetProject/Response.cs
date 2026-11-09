@@ -52,6 +52,12 @@ namespace Kaff.Api.Features.Projects.GetProject;
 /// </param>
 /// <param name="IsArchived">True for an unsigned Setup project whose follow-up period has ended (AC-417-J). Derived on every read.</param>
 /// <param name="FollowUpEndsOn">The day the follow-up period ends. Null once the project is signed or has left Setup.</param>
+/// <param name="DesignProjectId">KAFF-415: on an execution project, the design project it was converted from. Null otherwise.</param>
+/// <param name="ExecutionProjectId">KAFF-415: on a design project, the execution project it converted into. Null otherwise.</param>
+/// <param name="DesignAreaSquareMetres">
+/// KAFF-415, Q-207-5: on an execution project converted from a design, the design area, carried as a reference. No BOQ
+/// line is seeded from it. Null otherwise.
+/// </param>
 public sealed record Response(
     Guid Id,
     string Code,
@@ -74,7 +80,10 @@ public sealed record Response(
     DateOnly? LastDailyLogOn,
     ProjectMoney? Money,
     bool IsArchived,
-    DateOnly? FollowUpEndsOn);
+    DateOnly? FollowUpEndsOn,
+    Guid? DesignProjectId,
+    Guid? ExecutionProjectId,
+    decimal? DesignAreaSquareMetres);
 
 /// <summary>
 /// What the client has been billed, paid and still owes. Only extracts issued to the client count; an extract still

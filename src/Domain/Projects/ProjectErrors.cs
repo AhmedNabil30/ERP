@@ -63,6 +63,18 @@ public static class ProjectErrors
     public static readonly Error ProjectCannotLinkToItself =
         Error.Validation("project.cannot_link_to_itself", "errors.project.cannot_link_to_itself");
 
+    /// <summary>KAFF-415: only a design project converts into an execution project.</summary>
+    public static readonly Error NotDesign =
+        Error.Conflict("project.not_design", "errors.project.not_design");
+
+    /// <summary>KAFF-415, Q-207-7: one execution project per design project.</summary>
+    public static readonly Error AlreadyConverted =
+        Error.Conflict("project.already_converted", "errors.project.already_converted");
+
+    /// <summary>KAFF-415, Q-207-9: a design project converts into Lump Sum or Cost Plus only.</summary>
+    public static readonly Error ExecutionTypeNotAllowed =
+        Error.Validation("project.execution_type_not_allowed", "errors.project.execution_type_not_allowed");
+
     /// <summary>
     /// KAFF-400: a create request may only start a project at Setup (the default) or skip straight to
     /// Active. spec.md §13's state machine has no other legal first step, and متعثرة / تم تأجيلها are

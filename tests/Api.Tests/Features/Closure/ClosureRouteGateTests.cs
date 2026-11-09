@@ -305,18 +305,29 @@ public sealed class ClosureRouteGateTests : IAsyncLifetime
     private static IEnumerable<string> MethodsOf(RouteEndpoint route) =>
         route.Metadata.GetMetadata<HttpMethodMetadata>()?.HttpMethods ?? ["*"];
 
+    /// <summary>
+    /// The route's permission requirement. A route may carry more than one (every policy must pass); the project-scoped
+    /// one is returned when there is one, since that is the one this file checks (KAFF-415's conversion route carries a
+    /// company-wide ProjectCreate and a project-scoped ProjectManage).
+    /// </summary>
     private static PermissionRequirement? RequirementOf(RouteEndpoint route)
     {
+        PermissionRequirement? first = null;
         foreach (IAuthorizeData data in route.Metadata.OfType<IAuthorizeData>())
         {
             if (PermissionRequirement.TryParse(data.Policy ?? string.Empty, out PermissionRequirement? requirement)
                 && requirement is not null)
             {
-                return requirement;
+                if (requirement.Scope.Source != ProjectScopeSource.None)
+                {
+                    return requirement;
+                }
+
+                first ??= requirement;
             }
         }
 
-        return null;
+        return first;
     }
 
     private static void RequirementOfClosureRoute(RouteEndpoint route, out PermissionRequirement requirement) =>

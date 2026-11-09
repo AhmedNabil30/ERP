@@ -151,6 +151,21 @@ public sealed record RulingSet
     /// <summary>How far from the reference point a check-in may be before it is flagged (Q-207-3, Q-207-3a).</summary>
     public CheckInDistanceRule CheckInDistance { get; init; } = CheckInDistanceRule.Default;
 
+    /// <summary>KAFF-415: what a design project hands its execution project (Q-207-5).</summary>
+    public DesignQuantitySeed DesignQuantitySeed { get; init; } = DesignQuantitySeed.Default;
+
+    /// <summary>KAFF-415: what the 30% design credit is taken of (Q-207-6).</summary>
+    public DesignCreditBase DesignCreditBase { get; init; } = DesignCreditBase.Default;
+
+    /// <summary>KAFF-415: one execution project per design project (Q-207-7).</summary>
+    public DesignConversionCount DesignConversionCount { get; init; } = DesignConversionCount.Default;
+
+    /// <summary>KAFF-415: the design credit posts on approval by a different user (Q-207-8).</summary>
+    public DesignCreditApproval DesignCreditApproval { get; init; } = DesignCreditApproval.Default;
+
+    /// <summary>KAFF-415: the execution types a design project may convert into (Q-207-9).</summary>
+    public DesignConversionTargets DesignConversionTargets { get; init; } = DesignConversionTargets.Default;
+
     /// <summary>Every entry, each describing itself. A test pins that none is missing a question.</summary>
     public IReadOnlyList<RulingNote> Notes =>
     [
@@ -203,5 +218,10 @@ public sealed record RulingSet
         ProjectTargetCompletion.Note,
         FollowUp.Note,
         CheckInDistance.Note,
+        DesignQuantitySeed.Note,
+        DesignCreditBase.Note,
+        DesignConversionCount.Note,
+        DesignCreditApproval.Note,
+        DesignConversionTargets.Note,
     ];
 }

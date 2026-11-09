@@ -1,9 +1,13 @@
 using Kaff.Api.Common.Results;
+using Kaff.Api.Features.Adjustments;
+using Kaff.Domain.Adjustments;
 using Kaff.Domain.Boqs;
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
+using Kaff.Domain.Identity;
 using Kaff.Domain.Projects;
 using Kaff.Domain.Rulings;
+using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +24,13 @@ namespace Kaff.Api.Features.Projects.SignProject;
 /// rounds are rulings (<see cref="ContractValueSource"/>), not code here. No audit record is written by
 /// hand: the project and the BOQ header are tracked entities, so the interceptor writes one <c>Modified</c>
 /// record for each. Freezing touches no line row, so a 400-line BOQ writes two records, not 402.
+/// <para>
+/// <b>An execution project converted from a design (KAFF-415)</b> raises its 30% design credit in the same save: one
+/// <see cref="AdjustmentType.DesignCredit"/> adjustment, status Raised, nothing posted. The signer is its raiser, so the
+/// signer cannot approve it (Q-207-8). The two accounts its posting will need are opened here if the project lacks
+/// them: a Lump Sum project has no revenue account until its first extract, and a Cost Plus project has no client
+/// sub-ledger at all.
+/// </para>
 /// </remarks>
 internal static class Handler
 {
@@ -29,6 +40,7 @@ internal static class Handler
         KaffDbContext database,
         RulingSet rulings,
         TimeProvider clock,
+        ICurrentUser currentUser,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -122,7 +134,23 @@ internal static class Handler
             }
         }
 
-        Error? refused = await GuardedSave.SaveAsync(database, cancellationToken);
+        Adjustment? designCredit = null;
+
+        if (project.LinkType == ProjectLinkType.DesignToExecution && project.LinkedProjectId is { } designId)
+        {
+            Result<Adjustment> raised = await RaiseDesignCreditAsync(
+                database, project, designId, rulings, currentUser.UserId ?? Guid.Empty, clock, cancellationToken);
+
+            if (raised.IsFailure)
+            {
+                return ResultExtensions.Problem(raised.Error);
+            }
+
+            designCredit = raised.Value;
+        }
+
+        // SaveNewAsync is GuardedSave plus the adjustment number race, which a concurrent second signature would lose.
+        Error? refused = await AdjustmentSupport.SaveNewAsync(database, cancellationToken);
 
         if (refused is not null)
         {
@@ -130,6 +158,72 @@ internal static class Handler
         }
 
         return Microsoft.AspNetCore.Http.Results.Ok(
-            new Response(project.Id, signedOn, project.ContractValue, boq?.FrozenOn));
+            new Response(project.Id, signedOn, project.ContractValue, boq?.FrozenOn, designCredit?.Id));
+    }
+
+    /// <summary>
+    /// Raises the design credit on <paramref name="execution"/> and adds it, and any account it needed opened, to the
+    /// context unsaved.
+    /// </summary>
+    private static async Task<Result<Adjustment>> RaiseDesignCreditAsync(
+        KaffDbContext database,
+        Project execution,
+        Guid designId,
+        RulingSet rulings,
+        Guid actor,
+        TimeProvider clock,
+        CancellationToken cancellationToken)
+    {
+        Project? design = await database.Projects
+            .AsNoTracking()
+            .FirstOrDefaultAsync(candidate => candidate.Id == designId, cancellationToken);
+
+        if (design is null)
+        {
+            return Result.Failure<Adjustment>(AdjustmentErrors.DesignCreditNotLinked);
+        }
+
+        DateOnly today = DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
+        List<Account> own = await database.Accounts
+            .Where(account => account.ProjectId == execution.Id && account.IsActive)
+            .ToListAsync(cancellationToken);
+
+        Account? revenue = null;
+        foreach (AccountType type in (AccountType[])[AccountType.ContractRevenue, AccountType.ClientReceivable])
+        {
+            Account? account = own.FirstOrDefault(candidate => candidate.Type == type);
+            if (account is null)
+            {
+                Result<Account> opened = ProjectAccountSetFactory.Open(execution, type, today);
+                if (opened.IsFailure)
+                {
+                    return Result.Failure<Adjustment>(opened.Error);
+                }
+
+                account = opened.Value;
+                database.Accounts.Add(account);
+            }
+
+            if (type == AccountType.ContractRevenue)
+            {
+                revenue = account;
+            }
+        }
+
+        bool alreadyRaised = await database.Adjustments.AnyAsync(
+            candidate => candidate.ProjectId == execution.Id && candidate.Type == AdjustmentType.DesignCredit, cancellationToken);
+        int number = (await database.Adjustments
+            .Where(candidate => candidate.ProjectId == execution.Id)
+            .Select(candidate => (int?)candidate.Number)
+            .MaxAsync(cancellationToken) ?? 0) + 1;
+
+        Result<Adjustment> raised = Adjustment.RaiseDesignCredit(
+            execution, number, design, revenue, alreadyRaised, rulings, actor, clock.GetUtcNow());
+        if (raised.IsSuccess)
+        {
+            database.Adjustments.Add(raised.Value);
+        }
+
+        return raised;
     }
 }
