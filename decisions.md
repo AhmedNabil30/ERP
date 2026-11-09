@@ -16270,3 +16270,53 @@ from `spec.md` becomes a question for Karim. The tagging is the guard, not the m
   give. Backend work goes to a `general-purpose` spawn on `sonnet`.
 - The savings above are measured file sizes, not measured spend. Nobody has yet compared a run's token
   count before and after.
+
+## D-207 — the client's three comments: a project can start as a price, design turns into execution, check-in stands alone with GPS · 2026-11-09
+
+**Source.** Nabil relayed the client's comments on 2026-11-09. They are client rulings and override
+the spec where the two differ. The spec text itself has not been amended yet.
+
+### 1. A project and its BOQ can be created before the details are known
+
+The client's words, through Nabil: a project can be created and its BOQ built without entering every
+detail, because a client often wants a price first and the rest is not complete yet.
+
+What is already true: `POST /api/projects` needs only name, client and contract type. Hold and advance
+are optional and default to 20% and 25% (`CreateProject/Request.cs`). The create screen still shows
+both fields on every contract type, including Design, where neither applies (spec.md §5.3).
+
+What this changes: the create screen asks only for name, client and contract type. Hold, advance and
+the other contract terms move to contract signature, where the defaults are shown and can be changed.
+A BOQ can be priced and printed as a quotation while the project is unsigned.
+
+This differs from spec.md §3, where the estimate lives on the Opportunity and is only a reference.
+The Opportunity module is not built, so the unsigned project carries the quotation for now. A signed
+BOQ stays frozen by copy (spec.md §4.4); nothing here touches that rule.
+
+Unruled and isolated as RulingNotes until the client answers:
+- Q-207-1. What happens to an unsigned project whose client never signs? Default: it stays in
+  `Setup` and can be archived. No new state is added.
+- Q-207-2. Does the quotation printout show line prices, or only the total? Default: line prices.
+
+### 2. A design project can turn into an execution (تنفيذ) project
+
+This is spec.md §5.4 `design_to_execution`, backlog KAFF-415, not yet built. On execution signature,
+30% of the design total posts as a credit adjustment on the execution contract, and the design
+quantities seed the execution BOQ. The client's comment confirms it is wanted now. The conversion
+starts from the design project ("turn into execution"), carrying the client and a link back. The
+execution project gets its own accounts; the five ledgers still never net.
+
+### 3. Check-in is its own action and records GPS and time
+
+Today check-in is one option in the daily log's field dropdown and records only the time
+(`daily-log-page.html`, `DailyLogField.CheckIn`). The client wants it as a separate button that
+captures the device location and the time by itself, with nothing to choose.
+
+Unruled and isolated as RulingNotes:
+- Q-207-3. Is a check-in far from the site refused, or only flagged? Default: recorded and flagged,
+  never refused, because the project has no site coordinates yet and a refusal would block real
+  attendance. The first check-in on a project can set its reference point.
+- Q-207-4. If the phone refuses location access, is check-in blocked? Default: no. It records the
+  time with "location unavailable" and flags it.
+- Offline: the time is the device time when the button was pressed, and the server time is stored
+  as well on sync. Both are kept. Daily logs stay period deltas.

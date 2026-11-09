@@ -213,3 +213,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-204 | 16152 | The project overview gets its data: progress, the team, dates, money in and out, and who each extract is waiting on. Nabil opened the overview and it told hi... |
 | D-205 | 16170 | the screens that let a project start, and the overview that answers its own questions |
 | D-206 | 16225 | the team gets definition files, and the start-up reading gets cheaper · 2026-11-09 |
+| D-207 | 16274 | the client's three comments: a project can start as a price, design turns into execution, check-in stands alone with GPS · 2026-11-09 |
