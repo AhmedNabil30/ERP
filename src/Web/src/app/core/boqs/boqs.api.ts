@@ -68,6 +68,8 @@ export interface SignResult {
 export interface SignTerms {
   readonly holdPercentage?: string;
   readonly clientAdvance?: number;
+  /** Design only (AC-417-K): the area in square metres as a decimal string; the server prices it. */
+  readonly areaSquareMetres?: string;
 }
 
 @Injectable({ providedIn: 'root' })

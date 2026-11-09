@@ -30,6 +30,7 @@ import { KaffBadge } from '../../../shared/kaff-badge/kaff-badge';
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { KaffFact, KaffFactList } from '../../../shared/kaff-fact/kaff-fact';
+import { KaffInlineConfirm } from '../../../shared/kaff-inline-confirm/kaff-inline-confirm';
 import { KaffFigure } from '../../../shared/kaff-figure/kaff-figure';
 import { KaffGroupSection } from '../../../shared/kaff-group-section/kaff-group-section';
 import { KaffIcon } from '../../../shared/kaff-icon/kaff-icon';
@@ -57,6 +58,24 @@ type Read<T> =
   | { readonly state: 'failed'; readonly key: string };
 
 const LOADING = { state: 'loading' } as const;
+
+/** The default design fee per square metre (AC-417-K); the server computes the stored value, this only previews it. */
+const DESIGN_RATE_PER_SQUARE_METRE = 450n;
+const AREA_PATTERN = /^(\d+)(?:\.(\d{1,4}))?$/;
+
+/** Area x rate in exact integer arithmetic (D-135: no floats near money). Null when the area is not a positive decimal. */
+export function designFeeOf(area: string): string | null {
+  const match = AREA_PATTERN.exec(area.trim());
+  if (match === null) {
+    return null;
+  }
+  const scaled = BigInt(match[1] + (match[2] ?? '').padEnd(4, '0'));
+  if (scaled === 0n) {
+    return null;
+  }
+  const fee = (scaled * DESIGN_RATE_PER_SQUARE_METRE).toString().padStart(5, '0');
+  return `${fee.slice(0, -4)}.${fee.slice(-4)}`;
+}
 
 /** The progress read: a Design project answers 409, which is "cannot be measured yet", not a failure and not 0%. */
 type ProgressRead = Read<ProjectProgress> | { readonly state: 'unavailable' };
@@ -87,6 +106,7 @@ type ProgressRead = Read<ProjectProgress> | { readonly state: 'unavailable' };
     KaffFigure,
     KaffGroupSection,
     KaffIcon,
+    KaffInlineConfirm,
     KaffPartLink,
     KaffState,
     KaffStatusPill,
@@ -385,6 +405,57 @@ export class ProjectWorkspacePage {
       (this.auth.current()?.permissions.includes('ProjectCreate') ?? false)
     );
   });
+  // ---- sign a Design project (KAFF-417 AC-417-K): no BOQ, so the area is entered here ---------------
+  protected readonly canSignDesign = computed(() => {
+    const project = this.project();
+    return (
+      project !== null &&
+      project.contractType === 'Design' &&
+      !project.signedOn &&
+      !project.isArchived &&
+      this.canManage()
+    );
+  });
+  protected readonly area = signal('');
+  protected readonly areaAttempted = signal(false);
+  protected readonly confirmingSign = signal(false);
+  protected readonly designFee = computed(() => designFeeOf(this.area()));
+  protected readonly areaError = computed(() =>
+    this.areaAttempted() && this.designFee() === null ? 'projects.sign_design.error.area' : null,
+  );
+  protected readonly signDesignDetail = computed(() => {
+    const fee = this.designFee();
+    return fee === null ? null : this.i18n.t('projects.sign_design.confirm_detail', { fee: this.i18n.formatAmount(fee) });
+  });
+
+  protected onAreaInput(event: Event): void {
+    this.area.set((event.target as HTMLInputElement).value);
+    this.confirmingSign.set(false);
+  }
+
+  protected askSignDesign(): void {
+    this.areaAttempted.set(true);
+    this.lifecycleError.set(null);
+    this.confirmingSign.set(this.designFee() !== null);
+  }
+
+  protected async confirmSignDesign(): Promise<void> {
+    if (this.designFee() === null) {
+      return;
+    }
+    this.lifecycleBusy.set(true);
+    this.lifecycleError.set(null);
+    try {
+      await this.boqsApi.sign(this.projectId(), { areaSquareMetres: this.area().trim() });
+      this.project.set(await this.projectsApi.get(this.projectId()));
+    } catch (error) {
+      this.lifecycleError.set(toProblem(error).messageKey);
+    } finally {
+      this.confirmingSign.set(false);
+      this.lifecycleBusy.set(false);
+    }
+  }
+
   protected readonly lifecycleError = signal<string | null>(null);
   protected readonly lifecycleBusy = signal(false);
   protected readonly converting = signal(false);

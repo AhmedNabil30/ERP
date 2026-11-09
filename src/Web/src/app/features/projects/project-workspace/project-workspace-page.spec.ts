@@ -10,7 +10,7 @@ import { ExtractSummary, ExtractsApi, WaitingOnItem } from '../../../core/extrac
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { ContractType, ProjectDetail, ProjectProgress, ProjectsApi, TeamMember } from '../../../core/projects/projects.api';
-import { ProjectWorkspacePage } from './project-workspace-page';
+import { ProjectWorkspacePage, designFeeOf } from './project-workspace-page';
 
 /**
  * The project workspace. What matters here: the contract type dispatches through ONE declaration (Lump Sum
@@ -133,8 +133,14 @@ class FakeProjectsApi implements Pick<ProjectsApi, 'get' | 'progress' | 'team'> 
   }
 }
 
-class FakeBoqsApi implements Pick<BoqsApi, 'get'> {
+class FakeBoqsApi implements Pick<BoqsApi, 'get' | 'sign'> {
   calls = 0;
+  signed: unknown[] = [];
+
+  async sign(_id: string, terms: unknown): Promise<never> {
+    this.signed.push(terms);
+    return {} as never;
+  }
 
   constructor(private readonly failWith: unknown = null) {}
 
@@ -686,5 +692,73 @@ describe('ProjectWorkspacePage · progress', () => {
     expect(text).not.toContain('1687500');
     // The question the group prints is one this viewer's answer actually answers.
     expect(text).toContain('projects.workspace.vocab.intent.understand_progress');
+  });
+});
+
+describe('ProjectWorkspacePage · sign a Design project (AC-417-K)', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  const OWNER_NO_MANAGE = () => session('Owner', ['ProjectRead'], []);
+  const type = (fixture: { nativeElement: HTMLElement }, value: string) => {
+    const input = q(fixture, 'workspace-sign-area') as HTMLInputElement;
+    input.value = value;
+    input.dispatchEvent(new Event('input'));
+  };
+  const click = (fixture: { nativeElement: HTMLElement; detectChanges(): void }, id: string) => {
+    ((q(fixture, id) as HTMLElement).querySelector('button') ?? (q(fixture, id) as HTMLElement)).click();
+    fixture.detectChanges();
+  };
+
+  it('computes the fee in exact arithmetic', () => {
+    expect(designFeeOf('100')).toBe('45000.0000');
+    expect(designFeeOf('85.5')).toBe('38475.0000');
+    expect(designFeeOf('0.0001')).toBe('0.0450');
+    expect(designFeeOf('0')).toBeNull();
+    expect(designFeeOf('-5')).toBeNull();
+    expect(designFeeOf('abc')).toBeNull();
+    expect(designFeeOf('')).toBeNull();
+  });
+
+  it('shows the step for an unsigned Design project, with no hold and no advance', async () => {
+    const fixture = await createFixture(new FakeProjectsApi(project('Design', { contractValue: null })), OWNER());
+    expect(q(fixture, 'workspace-sign-design')).not.toBeNull();
+    expect(q(fixture, 'workspace-sign-hold')).toBeNull();
+    expect(q(fixture, 'workspace-sign-advance')).toBeNull();
+  });
+
+  it('is absent for signed, archived, non-Design and non-managing users', async () => {
+    const absent = async (api: FakeProjectsApi, who: Session) =>
+      expect(q(await createFixture(api, who), 'workspace-sign-design')).toBeNull();
+    await absent(new FakeProjectsApi(project('Design', { signedOn: '2026-11-01' })), OWNER());
+    await absent(new FakeProjectsApi(project('Design', { isArchived: true, contractValue: null })), OWNER());
+    await absent(new FakeProjectsApi(project('LumpSum')), OWNER());
+    await absent(new FakeProjectsApi(project('Design', { contractValue: null })), OWNER_NO_MANAGE());
+  });
+
+  it('previews the fee, asks for confirmation, and sends the area', async () => {
+    const boq = new FakeBoqsApi();
+    const fixture = await createFixture(new FakeProjectsApi(project('Design', { contractValue: null })), OWNER(), boq);
+    type(fixture, '100');
+    fixture.detectChanges();
+    expect(q(fixture, 'workspace-sign-fee')?.textContent).toContain('45000.0000');
+
+    click(fixture, 'workspace-sign-ask');
+    expect(q(fixture, 'workspace-sign-confirm-message')).not.toBeNull();
+    expect(boq.signed).toEqual([]);
+
+    click(fixture, 'workspace-sign-confirm');
+    for (let i = 0; i < 5; i += 1) {
+      await Promise.resolve();
+    }
+    expect(boq.signed).toEqual([{ areaSquareMetres: '100' }]);
+  });
+
+  it('refuses an empty area inline and sends nothing', async () => {
+    const boq = new FakeBoqsApi();
+    const fixture = await createFixture(new FakeProjectsApi(project('Design', { contractValue: null })), OWNER(), boq);
+    click(fixture, 'workspace-sign-ask');
+    expect(q(fixture, 'workspace-sign-area-error')).not.toBeNull();
+    expect(q(fixture, 'workspace-sign-confirm')).toBeNull();
+    expect(boq.signed).toEqual([]);
   });
 });

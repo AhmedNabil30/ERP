@@ -177,6 +177,8 @@
 .where-body {
   display: grid;
   gap: var(--space-1);
+  grid-template-columns: minmax(0, 1fr);
+  flex: 1;
   min-inline-size: 0;
 }
 

@@ -140,6 +140,61 @@
       </section>
     }
 
+    @if (canSignDesign()) {
+      <section class="where" data-testid="workspace-sign-design">
+        <div class="where-body">
+          <p class="where-line">{{ i18n.t('projects.sign_design.title') }}</p>
+          <p class="where-sub">{{ i18n.t('projects.sign_design.lead') }}</p>
+          <div class="convert">
+            <label class="convert-label" for="sign-design-area">{{ i18n.t('projects.sign_design.area') }}</label>
+            <input
+              id="sign-design-area"
+              class="input"
+              type="text"
+              dir="ltr"
+              inputmode="decimal"
+              autocomplete="off"
+              spellcheck="false"
+              data-testid="workspace-sign-area"
+              [attr.aria-invalid]="areaError() !== null"
+              [value]="area()"
+              (input)="onAreaInput($event)"
+            />
+            @if (areaError(); as key) {
+              <p class="where-sub" role="alert" data-testid="workspace-sign-area-error">{{ i18n.t(key) }}</p>
+            }
+            @if (designFee(); as fee) {
+              <p class="where-line" data-testid="workspace-sign-fee">
+                {{ i18n.t('projects.sign_design.fee') }} <kaff-figure [value]="fee" />
+              </p>
+            }
+          </div>
+          @if (confirmingSign()) {
+            <kaff-inline-confirm
+              tone="irreversible"
+              icon="lock"
+              [question]="i18n.t('projects.sign_design.confirm_question')"
+              [detail]="signDesignDetail()"
+              [confirmLabel]="i18n.t('projects.sign_design.confirm')"
+              [cancelLabel]="i18n.t('action.cancel')"
+              [busy]="lifecycleBusy()"
+              messageTestId="workspace-sign-confirm-message"
+              confirmTestId="workspace-sign-confirm"
+              cancelTestId="workspace-sign-cancel"
+              (confirmed)="confirmSignDesign()"
+              (cancelled)="confirmingSign.set(false)"
+            />
+          } @else {
+            <div class="where-act">
+              <kaff-button variant="primary" testId="workspace-sign-ask" (clicked)="askSignDesign()">
+                {{ i18n.t('projects.sign_design.ask') }}
+              </kaff-button>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
     <div aria-live="polite">
       @if (lifecycleError(); as key) {
         <kaff-banner tone="refusal" testId="workspace-lifecycle-error">{{ i18n.t(key) }}</kaff-banner>

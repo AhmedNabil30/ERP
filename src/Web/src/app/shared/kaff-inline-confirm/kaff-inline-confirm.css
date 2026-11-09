@@ -83,6 +83,7 @@
 
   .actions {
     flex-basis: 100%;
+    flex-wrap: wrap;
   }
 
   .actions kaff-button {
