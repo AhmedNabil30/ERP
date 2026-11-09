@@ -1343,7 +1343,6 @@
   "daily_log.kind.material": "خامات",
   "daily_log.form.field": "البند",
   "daily_log.form.text": "النص",
-  "daily_log.form.now_hint": "يُسجَّل وقت الآن.",
   "daily_log.form.worker": "العامل",
   "daily_log.form.worker_pick": "اختر العامل",
   "daily_log.form.hours": "الساعات",
@@ -1778,5 +1777,12 @@
   "projects.convert.name": "اسم مشروع التنفيذ",
   "projects.convert.type": "نوع عقد التنفيذ",
   "projects.convert.submit": "تحويل إلى تنفيذ",
-  "projects.convert.default_name": "{name} - تنفيذ"
+  "projects.convert.default_name": "{name} - تنفيذ",
+  "daily_log.checkin.title": "الحضور والانصراف",
+  "daily_log.checkin.hint": "عند الضغط يُسجَّل موقعك ووقت جهازك.",
+  "daily_log.checkin.locating": "جارٍ تحديد موقعك…",
+  "daily_log.checkin.far_from_site": "بعيد عن الموقع",
+  "daily_log.location.denied": "لم يُسمح بالوصول إلى موقعك فلم يُسجَّل شيء. فعّل إذن الموقع لهذا الموقع من إعدادات المتصفح أو الهاتف، ثم اضغط مرة أخرى.",
+  "daily_log.location.unavailable": "تعذّر تحديد موقعك فلم يُسجَّل شيء. شغّل خدمة الموقع (GPS) في الهاتف، وقف في مكان مفتوح، ثم اضغط مرة أخرى.",
+  "daily_log.location.timeout": "انتهت مهلة تحديد الموقع فلم يُسجَّل شيء. شغّل خدمة الموقع (GPS) في الهاتف، وقف في مكان مفتوح، ثم اضغط مرة أخرى."
 }

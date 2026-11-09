@@ -14,12 +14,10 @@ import { KaffState } from '../../shared/kaff-state/kaff-state';
 
 type EntryKind = 'field' | 'labour' | 'material' | 'quantity';
 
-/** Check-in and check-out are timestamps in themselves; the server accepts no text for them. */
-const FIELDS_WITHOUT_TEXT: ReadonlySet<DailyLogField> = new Set<DailyLogField>(['CheckIn', 'CheckOut']);
+/** How long to wait for a fix before telling the engineer location is not available (AC-613-D). */
+const LOCATION_TIMEOUT_MS = 15_000;
 
 const FIELD_OPTIONS: readonly { value: DailyLogField; labelKey: string }[] = [
-  { value: 'CheckIn', labelKey: 'daily_log.field.check_in' },
-  { value: 'CheckOut', labelKey: 'daily_log.field.check_out' },
   { value: 'Weather', labelKey: 'daily_log.field.weather' },
   { value: 'Note', labelKey: 'daily_log.field.note' },
   { value: 'StoppageReason', labelKey: 'daily_log.field.stoppage_reason' },
@@ -105,14 +103,13 @@ export class DailyLogPage {
   protected readonly busy = signal(false);
   protected readonly errorKey = signal<string | null>(null);
 
-  protected readonly takesText = computed(() => !FIELDS_WITHOUT_TEXT.has(this.selectedField()));
-
   protected readonly isEmpty = computed(() => {
     const log = this.log();
     return (
       log === null ||
       (log.checkIn === null &&
         log.checkOut === null &&
+        (log.checkIns?.length ?? 0) === 0 &&
         log.weather === null &&
         log.note === null &&
         log.stoppageReason === null &&
@@ -131,6 +128,49 @@ export class DailyLogPage {
       void this.loadWorkers(id);
       void this.loadBoq(id);
     });
+  }
+
+  /**
+   * Check-in and check-out (KAFF-613). One press takes the place and the device time and sends both; nothing is
+   * chosen. Without a place nothing is sent and the screen says why (AC-613-D); the server refuses it too.
+   */
+  protected readonly locating = signal<'CheckIn' | 'CheckOut' | null>(null);
+  protected readonly locationErrorKey = signal<string | null>(null);
+
+  protected async checkIn(kind: 'CheckIn' | 'CheckOut'): Promise<void> {
+    if (this.locating() !== null) {
+      return;
+    }
+    this.locationErrorKey.set(null);
+    this.errorKey.set(null);
+    this.locating.set(kind);
+    try {
+      const place = await currentPlace();
+      await this.api.recordCheckIn(this.projectId(), {
+        entryId: crypto.randomUUID(),
+        occurredAt: localIso(new Date()),
+        kind,
+        latitude: place.latitude,
+        longitude: place.longitude,
+        accuracyMetres: place.accuracyMetres,
+      });
+      await this.load(this.projectId());
+    } catch (error) {
+      if (error instanceof LocationError) {
+        this.locationErrorKey.set(error.messageKey);
+      } else {
+        const key = toProblem(error).messageKey;
+        // The server's own refusal for a missing place is the same advice as the screen's.
+        this.locationErrorKey.set(key === 'errors.daily_log.location_required' ? key : null);
+        this.errorKey.set(key === 'errors.daily_log.location_required' ? null : key);
+      }
+    } finally {
+      this.locating.set(null);
+    }
+  }
+
+  protected checkInLabelKey(kind: 'CheckIn' | 'CheckOut'): string {
+    return kind === 'CheckIn' ? 'daily_log.field.check_in' : 'daily_log.field.check_out';
   }
 
   protected setKind(kind: EntryKind): void {
@@ -186,7 +226,7 @@ export class DailyLogPage {
       switch (this.kind()) {
         case 'field': {
           const text = value.text.trim();
-          if (this.takesText() && text.length === 0) {
+          if (text.length === 0) {
             this.errorKey.set('errors.daily_log.text_required');
             return;
           }
@@ -194,7 +234,7 @@ export class DailyLogPage {
           await this.api.recordField(projectId, {
             ...entry,
             field: this.selectedField(),
-            text: this.takesText() ? text : null,
+            text,
           });
           break;
         }
@@ -290,6 +330,48 @@ export class DailyLogPage {
       this.workers.set([]);
     }
   }
+}
+
+/** The reason a place could not be taken; `messageKey` says why and how to turn location on. */
+class LocationError extends Error {
+  constructor(readonly messageKey: string) {
+    super(messageKey);
+  }
+}
+
+interface Place {
+  readonly latitude: number;
+  readonly longitude: number;
+  readonly accuracyMetres: number | null;
+}
+
+/** The device's place, or a `LocationError`. High accuracy: the site is a few hundred metres across. */
+function currentPlace(): Promise<Place> {
+  return new Promise((resolve, reject) => {
+    if (!('geolocation' in navigator)) {
+      reject(new LocationError('daily_log.location.unavailable'));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) =>
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracyMetres: Number.isFinite(position.coords.accuracy) ? position.coords.accuracy : null,
+        }),
+      (failure) =>
+        reject(
+          new LocationError(
+            failure.code === failure.PERMISSION_DENIED
+              ? 'daily_log.location.denied'
+              : failure.code === failure.TIMEOUT
+                ? 'daily_log.location.timeout'
+                : 'daily_log.location.unavailable',
+          ),
+        ),
+      { enableHighAccuracy: true, timeout: LOCATION_TIMEOUT_MS, maximumAge: 0 },
+    );
+  });
 }
 
 /** A positive finite number from a text field, or `null`. */

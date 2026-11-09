@@ -1343,7 +1343,6 @@
   "daily_log.kind.material": "Materials",
   "daily_log.form.field": "Item",
   "daily_log.form.text": "Text",
-  "daily_log.form.now_hint": "The time now is recorded.",
   "daily_log.form.worker": "Worker",
   "daily_log.form.worker_pick": "Pick a worker",
   "daily_log.form.hours": "Hours",
@@ -1778,5 +1777,12 @@
   "projects.convert.name": "Execution project name",
   "projects.convert.type": "Execution contract type",
   "projects.convert.submit": "Convert to execution",
-  "projects.convert.default_name": "{name} - execution"
+  "projects.convert.default_name": "{name} - execution",
+  "daily_log.checkin.title": "Check in and check out",
+  "daily_log.checkin.hint": "Pressing records your location and your device's time.",
+  "daily_log.checkin.locating": "Finding your location…",
+  "daily_log.checkin.far_from_site": "Far from site",
+  "daily_log.location.denied": "Access to your location was not allowed, so nothing was recorded. Allow location for this site in the browser or phone settings, then press again.",
+  "daily_log.location.unavailable": "Your location could not be found, so nothing was recorded. Turn on location (GPS) on the phone, stand somewhere open, then press again.",
+  "daily_log.location.timeout": "Finding your location timed out, so nothing was recorded. Turn on location (GPS) on the phone, stand somewhere open, then press again."
 }

@@ -23,6 +23,30 @@ export interface DailyLog {
   readonly materials: readonly MaterialLine[];
   readonly photos: readonly PhotoLine[];
   readonly expenseDrafts: readonly ExpenseDraftLine[];
+  /** KAFF-613: each check-in and check-out with its place. Optional so older fixtures still type-check. */
+  readonly checkIns?: readonly CheckInLine[];
+}
+
+/** One check-in or check-out. `flagReason` is set when the place is far from the site (Q-207-3). */
+export interface CheckInLine {
+  readonly entryId: string;
+  readonly kind: 'CheckIn' | 'CheckOut';
+  readonly deviceTime: string;
+  readonly serverTime: string;
+  readonly latitude: number | null;
+  readonly longitude: number | null;
+  readonly accuracyMetres: number | null;
+  readonly flagReason: 'FarFromReference' | null;
+}
+
+/** `POST …/daily-logs/check-ins`. The place is required; the server refuses a check-in without it. */
+export interface CheckInEntry {
+  readonly entryId: string;
+  readonly occurredAt: string;
+  readonly kind: 'CheckIn' | 'CheckOut';
+  readonly latitude: number;
+  readonly longitude: number;
+  readonly accuracyMetres: number | null;
 }
 
 export interface QuantityLine {
@@ -115,6 +139,10 @@ export class DailyLogApi {
       }
       throw error;
     }
+  }
+
+  async recordCheckIn(projectId: string, entry: CheckInEntry): Promise<void> {
+    await firstValueFrom(this.http.post(`${this.base(projectId)}/check-ins`, entry));
   }
 
   async recordField(projectId: string, entry: EntryEnvelope & { field: DailyLogField; text: string | null }): Promise<void> {

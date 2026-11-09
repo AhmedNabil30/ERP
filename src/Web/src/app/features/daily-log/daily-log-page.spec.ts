@@ -2,9 +2,9 @@ import { provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { BoqLines, DailyLog, DailyLogApi, DailyLogField } from '../../core/daily-log/daily-log.api';
+import { BoqLines, CheckInEntry, DailyLog, DailyLogApi, DailyLogField } from '../../core/daily-log/daily-log.api';
 import { DayLabourApi, PoolWorker } from '../../core/day-labour/day-labour.api';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { DailyLogPage } from './daily-log-page';
@@ -63,6 +63,7 @@ class FakeDailyLogApi {
   materials: MaterialCall[] = [];
   quantities: QuantityCall[] = [];
   boqCalls = 0;
+  checkIns: CheckInEntry[] = [];
   boqResult: BoqLines | null | Error = BOQ;
   saveFailure: Error | null = null;
   constructor(private readonly log: DailyLog | null) {}
@@ -76,6 +77,7 @@ class FakeDailyLogApi {
     this.quantities.push(e);
   }
   async getMine(): Promise<DailyLog | null> { return this.log; }
+  async recordCheckIn(_p: string, e: CheckInEntry): Promise<void> { this.checkIns.push(e); }
   async recordField(_p: string, e: FieldCall): Promise<void> { this.fields.push(e); }
   async recordDayLabour(_p: string, e: LabourCall): Promise<void> { this.labour.push(e); }
   async recordMaterial(_p: string, e: MaterialCall): Promise<void> { this.materials.push(e); }
@@ -155,18 +157,95 @@ describe('DailyLogPage', () => {
     expect(api.fields[0].occurredAt).toMatch(/[+-]\d{2}:\d{2}$/);
   });
 
-  it('records check-in with no text', async () => {
-    const api = new FakeDailyLogApi(null);
-    const fixture = await createPage(api);
-    const root: HTMLElement = fixture.nativeElement;
+  it('offers no check-in or check-out in the field select', async () => {
+    const fixture = await createPage(new FakeDailyLogApi(null));
+    const select = (fixture.nativeElement as HTMLElement).querySelector('[data-testid="daily-log-field-select"]')!;
 
-    type(root, 'daily-log-field-select', 'CheckIn');
-    fixture.detectChanges();
-    expect(root.querySelector('[data-testid="daily-log-field-text"]')).toBeNull();
-    click(root, 'daily-log-save');
-    await flush(fixture);
+    expect(Array.from(select.querySelectorAll('option')).map((o) => o.value)).toEqual(['Weather', 'Note', 'StoppageReason']);
+  });
 
-    expect(api.fields[0]).toMatchObject({ field: 'CheckIn', text: null });
+  describe('check-in with location (KAFF-613)', () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    function stubGeolocation(result: { coords: Record<string, number> } | { code: number }): void {
+      vi.stubGlobal('navigator', {
+        geolocation: {
+          getCurrentPosition: (ok: (p: unknown) => void, fail: (e: unknown) => void) =>
+            'coords' in result ? ok(result) : fail({ ...result, PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 }),
+        },
+      });
+    }
+
+    it('sends the place and the device time with its offset, and nothing is chosen', async () => {
+      stubGeolocation({ coords: { latitude: 30.05, longitude: 31.23, accuracy: 12 } });
+      const api = new FakeDailyLogApi(null);
+      const fixture = await createPage(api);
+      const root: HTMLElement = fixture.nativeElement;
+
+      click(root, 'daily-log-check-in');
+      await flush(fixture);
+
+      expect(api.checkIns).toHaveLength(1);
+      expect(api.checkIns[0]).toMatchObject({ kind: 'CheckIn', latitude: 30.05, longitude: 31.23, accuracyMetres: 12 });
+      expect(api.checkIns[0].entryId).toMatch(/^[0-9a-f-]{36}$/);
+      expect(api.checkIns[0].occurredAt).toMatch(/[+-]\d{2}:\d{2}$/);
+    });
+
+    it('sends a check-out as a check-out', async () => {
+      stubGeolocation({ coords: { latitude: 30, longitude: 31, accuracy: 5 } });
+      const api = new FakeDailyLogApi(null);
+      const fixture = await createPage(api);
+
+      click(fixture.nativeElement, 'daily-log-check-out');
+      await flush(fixture);
+
+      expect(api.checkIns[0].kind).toBe('CheckOut');
+    });
+
+    it.each([
+      [1, 'daily_log.location.denied'],
+      [2, 'daily_log.location.unavailable'],
+      [3, 'daily_log.location.timeout'],
+    ])('sends nothing and says why when the place is refused (code %i)', async (code, key) => {
+      stubGeolocation({ code });
+      const api = new FakeDailyLogApi(null);
+      const fixture = await createPage(api);
+      const root: HTMLElement = fixture.nativeElement;
+
+      click(root, 'daily-log-check-in');
+      await flush(fixture);
+
+      expect(api.checkIns).toHaveLength(0);
+      expect(root.querySelector('[data-testid="daily-log-location-error"]')?.textContent).toContain(key);
+    });
+
+    it('says why when the device has no geolocation at all', async () => {
+      vi.stubGlobal('navigator', {});
+      const api = new FakeDailyLogApi(null);
+      const fixture = await createPage(api);
+      const root: HTMLElement = fixture.nativeElement;
+
+      click(root, 'daily-log-check-in');
+      await flush(fixture);
+
+      expect(api.checkIns).toHaveLength(0);
+      expect(root.querySelector('[data-testid="daily-log-location-error"]')?.textContent).toContain('daily_log.location.unavailable');
+    });
+
+    it('marks an entry that is far from the site', async () => {
+      const log: DailyLog = {
+        ...LOG,
+        checkIns: [
+          { entryId: 'c1', kind: 'CheckIn', deviceTime: '2026-11-01T07:30:00+02:00', serverTime: '2026-11-01T05:30:01Z', latitude: 30, longitude: 31, accuracyMetres: 8, flagReason: 'FarFromReference' },
+          { entryId: 'c2', kind: 'CheckOut', deviceTime: '2026-11-01T15:30:00+02:00', serverTime: '2026-11-01T13:30:01Z', latitude: 30, longitude: 31, accuracyMetres: 8, flagReason: null },
+        ],
+      };
+      const fixture = await createPage(new FakeDailyLogApi(log));
+      const root: HTMLElement = fixture.nativeElement;
+
+      expect(root.querySelector('[data-testid="daily-log-checkin-c1"] [data-testid="daily-log-checkin-flag"]')).not.toBeNull();
+      expect(root.querySelector('[data-testid="daily-log-checkin-c2"] [data-testid="daily-log-checkin-flag"]')).toBeNull();
+    });
   });
 
   it('records day-labour hours for a picked worker', async () => {

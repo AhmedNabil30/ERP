@@ -27,16 +27,44 @@
     } @else if (loading()) {
       <kaff-state mode="loading" titleKey="daily_log.loading" testId="daily-log-loading" />
     } @else {
+      <section class="checkin" data-testid="daily-log-checkin" [attr.aria-label]="i18n.t('daily_log.checkin.title')">
+        <div class="checkin-buttons">
+          <kaff-button variant="primary" testId="daily-log-check-in" [busy]="locating() === 'CheckIn'" [disabled]="locating() !== null" (clicked)="checkIn('CheckIn')">
+            {{ i18n.t('daily_log.field.check_in') }}
+          </kaff-button>
+          <kaff-button variant="secondary" testId="daily-log-check-out" [busy]="locating() === 'CheckOut'" [disabled]="locating() !== null" (clicked)="checkIn('CheckOut')">
+            {{ i18n.t('daily_log.field.check_out') }}
+          </kaff-button>
+        </div>
+        <p class="hint">{{ i18n.t(locating() !== null ? 'daily_log.checkin.locating' : 'daily_log.checkin.hint') }}</p>
+        <div aria-live="polite">
+          @if (locationErrorKey(); as key) {
+            <p class="refusal" role="alert" data-testid="daily-log-location-error">{{ i18n.t(key) }}</p>
+          }
+        </div>
+        @if (log()?.checkIns; as entries) {
+          @if (entries.length > 0) {
+            <ul class="rows" data-testid="daily-log-checkins">
+              @for (entry of entries; track entry.entryId) {
+                <li class="row" [attr.data-testid]="'daily-log-checkin-' + entry.entryId">
+                  <span class="row-main">
+                    {{ i18n.t(checkInLabelKey(entry.kind)) }}
+                    @if (entry.flagReason) {
+                      <span class="tag tag-flag" data-testid="daily-log-checkin-flag">{{ i18n.t('daily_log.checkin.far_from_site') }}</span>
+                    }
+                  </span>
+                  <span class="row-figure figure"><bdi dir="ltr">{{ time(entry.deviceTime) }}</bdi></span>
+                </li>
+              }
+            </ul>
+          }
+        }
+      </section>
+
       @if (isEmpty()) {
         <p class="empty" data-testid="daily-log-empty">{{ i18n.t('daily_log.empty') }}</p>
       } @else if (log(); as current) {
         <div class="summary" data-testid="daily-log-summary">
-          @if (current.checkIn) {
-            <p class="line"><span class="label">{{ i18n.t('daily_log.field.check_in') }}</span> <bdi dir="ltr" class="figure">{{ time(current.checkIn) }}</bdi></p>
-          }
-          @if (current.checkOut) {
-            <p class="line"><span class="label">{{ i18n.t('daily_log.field.check_out') }}</span> <bdi dir="ltr" class="figure">{{ time(current.checkOut) }}</bdi></p>
-          }
           @if (current.weather) {
             <p class="line"><span class="label">{{ i18n.t('daily_log.field.weather') }}</span> <span dir="auto">{{ current.weather }}</span></p>
           }
@@ -134,13 +162,9 @@
                 }
               </select>
             </kaff-field>
-            @if (takesText()) {
-              <kaff-field labelKey="daily_log.form.text" controlId="daily-log-field-text">
-                <input id="daily-log-field-text" class="input" type="text" dir="auto" data-testid="daily-log-field-text" [formField]="entryForm.text" />
-              </kaff-field>
-            } @else {
-              <p class="hint">{{ i18n.t('daily_log.form.now_hint') }}</p>
-            }
+            <kaff-field labelKey="daily_log.form.text" controlId="daily-log-field-text">
+              <input id="daily-log-field-text" class="input" type="text" dir="auto" data-testid="daily-log-field-text" [formField]="entryForm.text" />
+            </kaff-field>
           }
           @case ('labour') {
             <kaff-field labelKey="daily_log.form.worker" controlId="daily-log-labour-worker">

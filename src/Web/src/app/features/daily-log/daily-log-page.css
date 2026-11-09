@@ -286,3 +286,26 @@
 .links {
   padding-inline: var(--space-4);
 }
+
+/* ---- check-in and check-out: the first thing on the screen, two wide targets for one thumb ------- */
+.checkin {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.checkin-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.checkin-buttons kaff-button {
+  align-self: stretch;
+  min-block-size: 56px;
+}
+
+.tag-flag {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
