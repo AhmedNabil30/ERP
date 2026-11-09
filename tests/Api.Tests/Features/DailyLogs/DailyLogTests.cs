@@ -4,8 +4,10 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Kaff.Api.Tests.Infrastructure;
+using Kaff.Domain.Auditing;
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
+using Kaff.Domain.DailyLogs;
 using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
 using Kaff.Domain.Projects;
@@ -413,7 +415,152 @@ public sealed class DailyLogTests : IAsyncLifetime
             .StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
+    // ---- KAFF-613: check-in and check-out with location ---------------------------------------------------------------
+
+    [Fact]
+    public async Task AC_613_C_a_located_check_in_stores_the_location_the_device_time_and_the_server_time_apart()
+    {
+        (Guid project, _) = await NewActiveProjectAsync();
+        Guid entryId = Guid.NewGuid();
+        DateTimeOffset before = DateTimeOffset.UtcNow;
+
+        HttpResponseMessage response = await CheckIn(project, "CheckIn", 30.0444, 31.2357, At(8, 0), 12.5, entryId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        JsonElement line = (await MineAsync(project)).GetProperty("checkIns").EnumerateArray().Single();
+        line.GetProperty("entryId").GetGuid().Should().Be(entryId);
+        line.GetProperty("kind").GetString().Should().Be("CheckIn");
+        line.GetProperty("latitude").GetDouble().Should().Be(30.0444);
+        line.GetProperty("longitude").GetDouble().Should().Be(31.2357);
+        line.GetProperty("accuracyMetres").GetDouble().Should().Be(12.5);
+        line.GetProperty("flagReason").ValueKind.Should().Be(JsonValueKind.Null);
+        line.GetProperty("deviceTime").GetDateTimeOffset().Should().Be(DateTimeOffset.Parse(At(8, 0), System.Globalization.CultureInfo.InvariantCulture));
+        line.GetProperty("serverTime").GetDateTimeOffset().Should().BeOnOrAfter(before, "the server stamps its own clock, not the device's");
+        line.GetProperty("serverTime").GetDateTimeOffset().Should().NotBe(line.GetProperty("deviceTime").GetDateTimeOffset());
+    }
+
+    [Fact]
+    public async Task AC_613_D_a_check_in_without_location_is_recorded_and_flagged_never_refused()
+    {
+        (Guid project, _) = await NewActiveProjectAsync();
+
+        (await CheckIn(project, "CheckIn", null, null, At(8, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
+        // Latitude without longitude, and coordinates off the planet, are no location either.
+        (await CheckIn(project, "CheckOut", 30.0, null, At(15, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
+        (await CheckIn(project, "CheckOut", 123.0, 31.0, At(16, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
+
+        JsonElement[] lines = (await MineAsync(project)).GetProperty("checkIns").EnumerateArray().ToArray();
+        lines.Should().HaveCount(3);
+        lines.Should().OnlyContain(line => line.GetProperty("flagReason").GetString() == "LocationUnavailable");
+        lines.Should().OnlyContain(line => line.GetProperty("latitude").ValueKind == JsonValueKind.Null);
+        (await LoadProjectAsync(project)).SiteReference.Should().BeNull("an unlocated check-in sets no reference point");
+    }
+
+    [Fact]
+    public async Task AC_613_E_the_first_located_check_in_sets_the_reference_point_and_a_far_one_is_flagged_not_refused()
+    {
+        (Guid project, _) = await NewActiveProjectAsync();
+
+        (await CheckIn(project, "CheckIn", null, null, At(7, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
+        (await CheckIn(project, "CheckIn", 30.0444, 31.2357, At(8, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
+        // About 200 m north: inside the 500 m threshold.
+        (await CheckIn(project, "CheckIn", 30.0462, 31.2357, At(9, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
+        // About 11 km north: far.
+        (await CheckIn(project, "CheckIn", 30.1444, 31.2357, At(10, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
+        // A check-out is measured from the same point.
+        (await CheckIn(project, "CheckOut", 30.1444, 31.2357, At(17, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
+
+        (double Latitude, double Longitude)? reference = (await LoadProjectAsync(project)).SiteReference;
+        reference.Should().Be((30.0444, 31.2357), "the first located check-in sets it and a later one never moves it");
+
+        string?[] flags = (await MineAsync(project)).GetProperty("checkIns").EnumerateArray()
+            .OrderBy(line => line.GetProperty("deviceTime").GetDateTimeOffset())
+            .Select(line => line.GetProperty("flagReason").GetString())
+            .ToArray();
+        flags.Should().Equal("LocationUnavailable", null, null, "FarFromReference", "FarFromReference");
+    }
+
+    [Fact]
+    public async Task AC_613_H_an_engineer_not_assigned_to_the_project_cannot_check_in()
+    {
+        (Guid project, _) = await NewActiveProjectAsync();
+
+        HttpResponseMessage response = await SendAsync(
+            HttpMethod.Post, $"{Logs(project)}/check-ins", _engineerUnassigned,
+            new { entryId = Guid.NewGuid(), kind = "CheckIn", latitude = 30.0, longitude = 31.0, occurredAt = At(8, 0) });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await LoadProjectAsync(project)).SiteReference.Should().BeNull();
+        (await CountAsync("field_entries", project)).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task AC_613_H_finance_cannot_check_in()
+    {
+        (Guid project, _) = await NewActiveProjectAsync();
+
+        (await SendAsync(
+            HttpMethod.Post, $"{Logs(project)}/check-ins", _finance,
+            new { entryId = Guid.NewGuid(), kind = "CheckIn", latitude = 30.0, longitude = 31.0, occurredAt = At(8, 0) }))
+            .StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task AC_613_the_kind_must_be_check_in_or_check_out_and_a_retried_entry_id_is_not_counted_twice()
+    {
+        (Guid project, _) = await NewActiveProjectAsync();
+        Guid entryId = Guid.NewGuid();
+
+        (await CheckIn(project, "Weather", 30.0, 31.0, At(8, 0))).StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await CheckIn(project, "CheckIn", 30.0, 31.0, At(8, 0), null, entryId)).StatusCode.Should().Be(HttpStatusCode.Created);
+        (await CheckIn(project, "CheckIn", 30.0, 31.0, At(8, 0), null, entryId)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (await CountAsync("field_entries", project)).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task AC_613_J_recording_a_check_in_writes_an_audit_record_and_audits_the_reference_point()
+    {
+        (Guid project, _) = await NewActiveProjectAsync();
+        Guid entryId = Guid.NewGuid();
+
+        (await CheckIn(project, "CheckIn", 30.0444, 31.2357, At(8, 0), null, entryId)).StatusCode.Should().Be(HttpStatusCode.Created);
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        AuditRecord entry = await reader.AuditRecords.SingleAsync(
+            r => r.EntityType == nameof(FieldEntry) && r.EntityId == entryId && r.Action == AuditAction.Created, Ct);
+        entry.ActorUserId.Should().Be(_engineerA);
+
+        AuditRecord projectChange = await reader.AuditRecords.SingleAsync(
+            r => r.EntityType == nameof(Project) && r.EntityId == project && r.CorrelationId == entry.CorrelationId, Ct);
+        projectChange.ChangedProperties.Should().Contain(["SiteLatitude", "SiteLongitude"]);
+    }
+
+    [Fact]
+    public async Task The_older_fields_route_still_takes_a_check_in_and_flags_it_for_having_no_location()
+    {
+        (Guid project, _) = await NewActiveProjectAsync();
+
+        (await Field(project, "CheckIn", null, At(8, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
+
+        (await MineAsync(project)).GetProperty("checkIns").EnumerateArray().Single()
+            .GetProperty("flagReason").GetString().Should().Be("LocationUnavailable");
+    }
+
     // ---- helpers ------------------------------------------------------------------------------------------------
+
+    private Task<HttpResponseMessage> CheckIn(
+        Guid project, string kind, double? latitude, double? longitude, string occurredAt, double? accuracy = null, Guid? entryId = null) =>
+        SendAsync(
+            HttpMethod.Post, $"{Logs(project)}/check-ins", _engineerA,
+            new { entryId = entryId ?? Guid.NewGuid(), kind, latitude, longitude, accuracyMetres = accuracy, occurredAt });
+
+    private async Task<Project> LoadProjectAsync(Guid id)
+    {
+        await using KaffDbContext reader = _database.CreateBareContext();
+        return await reader.Projects.SingleAsync(candidate => candidate.Id == id, Ct);
+    }
 
     private static string Logs(Guid project) => $"/api/projects/{project}/daily-logs";
 
@@ -427,6 +574,7 @@ public sealed class DailyLogTests : IAsyncLifetime
         yield return (HttpMethod.Post, $"{Logs(project)}/day-labour", new { entryId = Guid.NewGuid(), employeeId = _workerId, hours = 8m, occurredAt = occurred });
         yield return (HttpMethod.Post, $"{Logs(project)}/materials", new { entryId = Guid.NewGuid(), materialType = "Cement", quantity = 1m, unit = "bag", isStockpile = false, occurredAt = occurred });
         yield return (HttpMethod.Post, $"{Logs(project)}/photos", new { entryId = Guid.NewGuid(), fileReference = "p.jpg", occurredAt = occurred });
+        yield return (HttpMethod.Post, $"{Logs(project)}/check-ins", new { entryId = Guid.NewGuid(), kind = "CheckIn", latitude = 30.0, longitude = 31.0, occurredAt = occurred });
         yield return (HttpMethod.Post, $"{Logs(project)}/fields", new { entryId = Guid.NewGuid(), field = "Note", text = "x", occurredAt = occurred });
         yield return (HttpMethod.Post, $"{Logs(project)}/expense-drafts", new { entryId = Guid.NewGuid(), description = "x", amount = "1", occurredAt = occurred });
         yield return (HttpMethod.Get, $"{Logs(project)}/mine?date=2026-09-25", null);

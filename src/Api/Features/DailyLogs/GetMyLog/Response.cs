@@ -1,3 +1,5 @@
+using Kaff.Domain.DailyLogs;
+
 namespace Kaff.Api.Features.DailyLogs.GetMyLog;
 
 /// <summary>
@@ -18,7 +20,22 @@ public sealed record Response(
     IReadOnlyList<DayLabourLine> DayLabour,
     IReadOnlyList<MaterialLine> Materials,
     IReadOnlyList<PhotoLine> Photos,
-    IReadOnlyList<ExpenseDraftLine> ExpenseDrafts);
+    IReadOnlyList<ExpenseDraftLine> ExpenseDrafts,
+    IReadOnlyList<CheckInLine> CheckIns);
+
+/// <summary>
+/// One check-in or check-out, with its location and flag (KAFF-613). <c>DeviceTime</c> is when the button was
+/// pressed on the phone; <c>ServerTime</c> is when the server received it. Coordinates are degrees, not money.
+/// </summary>
+public sealed record CheckInLine(
+    Guid EntryId,
+    DailyLogField Kind,
+    DateTimeOffset DeviceTime,
+    DateTimeOffset ServerTime,
+    double? Latitude,
+    double? Longitude,
+    double? AccuracyMetres,
+    CheckInFlagReason? FlagReason);
 
 public sealed record QuantityLine(
     Guid EntryId, Guid BoqLineId, string? ItemCode, string DescriptionAr, string Unit, decimal Quantity, DateTimeOffset OccurredAt);

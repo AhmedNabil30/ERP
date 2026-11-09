@@ -96,6 +96,13 @@ internal static class Handler
             labour,
             materials,
             photos,
-            drafts));
+            drafts,
+            fields
+                .Where(entry => entry.Field is DailyLogField.CheckIn or DailyLogField.CheckOut)
+                .OrderBy(entry => entry.OccurredAt)
+                .Select(entry => new CheckInLine(
+                    entry.Id, entry.Field, entry.OccurredAt, entry.CreatedAt,
+                    entry.Latitude, entry.Longitude, entry.AccuracyMetres, entry.FlagReason))
+                .ToList()));
     }
 }

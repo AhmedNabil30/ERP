@@ -151,6 +151,12 @@ public sealed record RulingSet
     /// <summary>Whether the quotation printout shows line prices (Q-207-2). Registered, not resolved.</summary>
     public QuotationLinePrices QuotationLinePrices { get; init; } = QuotationLinePrices.Default;
 
+    /// <summary>How far from the reference point a check-in may be before it is flagged (Q-207-3, Q-207-3a).</summary>
+    public CheckInDistanceRule CheckInDistance { get; init; } = CheckInDistanceRule.Default;
+
+    /// <summary>What a check-in without a location does (Q-207-4).</summary>
+    public CheckInWithoutLocation CheckInWithoutLocation { get; init; } = CheckInWithoutLocation.Default;
+
     /// <summary>Every entry, each describing itself. A test pins that none is missing a question.</summary>
     public IReadOnlyList<RulingNote> Notes =>
     [
@@ -203,5 +209,7 @@ public sealed record RulingSet
         ProjectTargetCompletion.Note,
         UnsignedProjectFate.Note,
         QuotationLinePrices.Note,
+        CheckInDistance.Note,
+        CheckInWithoutLocation.Note,
     ];
 }

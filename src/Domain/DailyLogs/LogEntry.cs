@@ -149,6 +149,16 @@ public enum DailyLogField
     StoppageReason = 5,
 }
 
+/// <summary>Why a check-in or check-out is flagged for a reader. It is a flag, never a refusal (Q-207-3, Q-207-4).</summary>
+public enum CheckInFlagReason
+{
+    /// <summary>The phone gave no usable location: denied, unavailable, timed out or out of range.</summary>
+    LocationUnavailable = 1,
+
+    /// <summary>The location is farther from the project's reference point than <c>CheckInDistanceRule</c> allows.</summary>
+    FarFromReference = 2,
+}
+
 /// <summary>
 /// One recording of a single-valued field. The log never overwrites: it keeps every recording and the
 /// value in force is the one with the latest <see cref="LogEntry.OccurredAt"/>, so an out-of-order sync
@@ -161,16 +171,43 @@ public sealed class FieldEntry : LogEntry
     {
     }
 
-    internal FieldEntry(Guid id, DailyLog log, DailyLogField field, string? text, DateTimeOffset occurredAt, DateTimeOffset createdAt)
+    internal FieldEntry(
+        Guid id,
+        DailyLog log,
+        DailyLogField field,
+        string? text,
+        DateTimeOffset occurredAt,
+        DateTimeOffset createdAt,
+        double? latitude = null,
+        double? longitude = null,
+        double? accuracyMetres = null,
+        CheckInFlagReason? flag = null)
         : base(id, log, occurredAt, createdAt)
     {
         Field = field;
         Text = text;
+        Latitude = latitude;
+        Longitude = longitude;
+        AccuracyMetres = accuracyMetres;
+        FlagReason = flag;
     }
 
     public DailyLogField Field { get; private set; }
 
     public string? Text { get; private set; }
+
+    // Coordinates are degrees, not money: double is correct here and nothing on this entry is a money value.
+
+    /// <summary>Check-in and check-out only. Null when the phone gave no usable location.</summary>
+    public double? Latitude { get; private set; }
+
+    public double? Longitude { get; private set; }
+
+    /// <summary>The phone's reported accuracy radius in metres. Null when not reported.</summary>
+    public double? AccuracyMetres { get; private set; }
+
+    /// <summary>Set when a reader should look twice. Null for an unremarkable entry.</summary>
+    public CheckInFlagReason? FlagReason { get; private set; }
 }
 
 /// <summary>

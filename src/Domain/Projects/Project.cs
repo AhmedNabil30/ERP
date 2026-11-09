@@ -128,6 +128,29 @@ public sealed class Project : Entity
     public Money? RevisedContractValue(Money approvedChangeOrders) =>
         ContractValue is { } signed ? signed + approvedChangeOrders : null;
 
+    // ---- Site reference point (KAFF-613). Degrees, not money, so double is correct. ----
+
+    /// <summary>Set once by the first located check-in on the project. Null until then.</summary>
+    public double? SiteLatitude { get; private set; }
+
+    public double? SiteLongitude { get; private set; }
+
+    /// <summary>The reference point check-ins are measured from, or null before the first located check-in.</summary>
+    public (double Latitude, double Longitude)? SiteReference =>
+        SiteLatitude is { } latitude && SiteLongitude is { } longitude ? (latitude, longitude) : null;
+
+    /// <summary>Takes the point as the reference if none is set. A later point never moves it.</summary>
+    public void SetSiteReferenceIfUnset(double latitude, double longitude)
+    {
+        if (SiteReference is not null)
+        {
+            return;
+        }
+
+        SiteLatitude = latitude;
+        SiteLongitude = longitude;
+    }
+
     // ---- Lump Sum terms (spec.md §5.1). Null on other types. ----
 
     public Percentage? AdvanceRate { get; private set; }

@@ -923,6 +923,10 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<double?>("AccuracyMetres")
+                        .HasColumnType("double precision")
+                        .HasColumnName("accuracy_metres");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -936,6 +940,19 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
                         .HasColumnName("field");
+
+                    b.Property<string>("FlagReason")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("flag_reason");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("latitude");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("longitude");
 
                     b.Property<DateTimeOffset>("OccurredAt")
                         .HasColumnType("timestamp with time zone")
@@ -2148,6 +2165,14 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                     b.Property<DateOnly?>("SignedOn")
                         .HasColumnType("date")
                         .HasColumnName("signed_on");
+
+                    b.Property<double?>("SiteLatitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("site_latitude");
+
+                    b.Property<double?>("SiteLongitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("site_longitude");
 
                     b.Property<DateOnly?>("StartedOn")
                         .HasColumnType("date")

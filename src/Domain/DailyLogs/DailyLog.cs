@@ -1,5 +1,6 @@
 using Kaff.Domain.Boqs;
 using Kaff.Domain.Common;
+using Kaff.Domain.Rulings;
 
 namespace Kaff.Domain.DailyLogs;
 
@@ -161,7 +162,9 @@ public sealed class DailyLog : Entity
 
         if (field is DailyLogField.CheckIn or DailyLogField.CheckOut)
         {
-            return Result.Success(new FieldEntry(entryId, this, field, null, occurredAt, now));
+            // The older path carries no location, so by Q-207-4 it is recorded and flagged. New callers use RecordCheckIn.
+            return Result.Success(new FieldEntry(
+                entryId, this, field, null, occurredAt, now, flag: CheckInFlagReason.LocationUnavailable));
         }
 
         if (string.IsNullOrWhiteSpace(text))
@@ -175,6 +178,57 @@ public sealed class DailyLog : Entity
         }
 
         return Result.Success(new FieldEntry(entryId, this, field, text.Trim(), occurredAt, now));
+    }
+
+    /// <summary>
+    /// Records a check-in or check-out with the phone's location (KAFF-613). Never refuses for location: no usable
+    /// location is recorded and flagged <see cref="CheckInFlagReason.LocationUnavailable"/> (Q-207-4), and a location
+    /// farther from <paramref name="reference"/> than the rule allows is recorded and flagged
+    /// <see cref="CheckInFlagReason.FarFromReference"/> (Q-207-3). <paramref name="occurredAt"/> is the device time and
+    /// <paramref name="now"/> the server time; neither replaces the other.
+    /// </summary>
+    public Result<FieldEntry> RecordCheckIn(
+        Guid entryId,
+        DailyLogField kind,
+        double? latitude,
+        double? longitude,
+        double? accuracyMetres,
+        (double Latitude, double Longitude)? reference,
+        CheckInDistanceRule distanceRule,
+        DateTimeOffset occurredAt,
+        DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(distanceRule);
+
+        Result onDay = OnThisDay(occurredAt);
+        if (onDay.IsFailure)
+        {
+            return Result.Failure<FieldEntry>(onDay.Error);
+        }
+
+        if (kind is not (DailyLogField.CheckIn or DailyLogField.CheckOut))
+        {
+            return Result.Failure<FieldEntry>(DailyLogErrors.UnknownField);
+        }
+
+        bool located = latitude is { } lat && longitude is { } lng
+            && double.IsFinite(lat) && double.IsFinite(lng) && GeoDistance.IsValid(lat, lng);
+
+        if (!located)
+        {
+            return Result.Success(new FieldEntry(
+                entryId, this, kind, null, occurredAt, now, flag: CheckInFlagReason.LocationUnavailable));
+        }
+
+        double? accuracy = accuracyMetres is { } a && double.IsFinite(a) && a >= 0d ? a : null;
+
+        CheckInFlagReason? flag = reference is { } point
+            && distanceRule.IsFar(GeoDistance.Metres(latitude!.Value, longitude!.Value, point.Latitude, point.Longitude))
+                ? CheckInFlagReason.FarFromReference
+                : null;
+
+        return Result.Success(new FieldEntry(
+            entryId, this, kind, null, occurredAt, now, latitude, longitude, accuracy, flag));
     }
 
     /// <summary>
