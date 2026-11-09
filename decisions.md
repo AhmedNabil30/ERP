@@ -16320,3 +16320,16 @@ Unruled and isolated as RulingNotes:
   time with "location unavailable" and flags it.
 - Offline: the time is the device time when the button was pressed, and the server time is stored
   as well on sync. Both are kept. Daily logs stay period deltas.
+
+## D-208 — the client answers D-207's four questions · 2026-11-09
+
+Nabil relayed the answers on 2026-11-09. They replace D-207's defaults.
+
+- **Q-207-1, an unsigned project that never signs.** It has a follow-up period. When the period ends
+  without a signature, the project is archived. The length of the period was not given; it is a
+  setting, and its default of 30 days is a RulingNote until the client names the figure (Q-208-1).
+- **Q-207-2, the quotation.** The quotation is the BOQ. The BOQ builder is the quotation builder, and
+  the printed quotation is the BOQ with its line prices. There is no separate quotation document.
+- **Q-207-3, a check-in far from the site.** Accepted and flagged, as D-207 defaulted.
+- **Q-207-4, location turned off.** Check-in is refused until location access is on. This reverses
+  D-207's default. The screen says why and how to turn it on.
