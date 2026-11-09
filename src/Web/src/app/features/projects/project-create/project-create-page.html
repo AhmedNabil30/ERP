@@ -58,52 +58,6 @@
       <p class="hint" data-testid="project-type-hint">{{ i18n.t('projects.create.type_hint.' + contractType()) }}</p>
     </fieldset>
 
-    @if (isLumpSum()) {
-      <div class="rates">
-        <kaff-field
-          labelKey="projects.create.field.hold"
-          controlId="project-hold-input"
-          [hintKey]="holdError() === null ? 'projects.create.hint.hold' : null"
-          [errorKey]="holdError()"
-          errorTestId="project-hold-error"
-        >
-          <input
-            id="project-hold-input"
-            class="input"
-            type="text"
-            dir="ltr"
-            inputmode="decimal"
-            autocomplete="off"
-            spellcheck="false"
-            data-testid="project-hold"
-            [placeholder]="defaultHold"
-            [formField]="projectForm.holdPercent"
-          />
-        </kaff-field>
-
-        <kaff-field
-          labelKey="projects.create.field.advance"
-          controlId="project-advance-input"
-          [hintKey]="advanceError() === null ? 'projects.create.hint.advance' : null"
-          [errorKey]="advanceError()"
-          errorTestId="project-advance-error"
-        >
-          <input
-            id="project-advance-input"
-            class="input"
-            type="text"
-            dir="ltr"
-            inputmode="decimal"
-            autocomplete="off"
-            spellcheck="false"
-            data-testid="project-advance"
-            [placeholder]="defaultAdvance"
-            [formField]="projectForm.advancePercent"
-          />
-        </kaff-field>
-      </div>
-    }
-
     <!-- No contract value input: it comes from the signed BOQ. Said here so nobody looks for the field. -->
     <kaff-banner tone="note" testId="project-value-note">
       {{ i18n.t('projects.create.value_note.' + contractType(), { status: i18n.t(setupWordKey) }) }}

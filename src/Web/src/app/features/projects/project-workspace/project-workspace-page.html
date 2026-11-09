@@ -42,6 +42,108 @@
       </p>
     </header>
 
+    @if (p.isArchived) {
+      <section class="where" aria-live="polite" data-testid="workspace-archived">
+        <kaff-icon name="info" />
+        <div class="where-body">
+          <p class="where-line">{{ i18n.t('projects.archived.line') }}</p>
+          <p class="where-sub">{{ i18n.t('projects.archived.next') }}</p>
+          @if (canManage()) {
+            <div class="where-act">
+              <kaff-button variant="secondary" testId="workspace-reopen" [busy]="lifecycleBusy()" (clicked)="reopen()">
+                {{ i18n.t('projects.archived.reopen') }}
+              </kaff-button>
+            </div>
+          }
+        </div>
+      </section>
+    } @else if (p.followUpEndsOn) {
+      <section class="where" data-testid="workspace-follow-up">
+        <kaff-icon name="info" />
+        <div class="where-body">
+          <p class="where-line">{{ i18n.t('projects.follow_up.line', { date: day(p.followUpEndsOn) }) }}</p>
+          <p class="where-sub">{{ i18n.t('projects.follow_up.next') }}</p>
+        </div>
+      </section>
+    }
+
+    @if (p.designProjectId || p.executionProjectId || canConvert()) {
+      <section class="where" data-testid="workspace-lineage">
+        <kaff-icon name="info" />
+        <div class="where-body">
+          @if (p.designProjectId) {
+            <p class="where-line">
+              <a [routerLink]="['/projects', p.designProjectId]" data-testid="workspace-design-link">{{ i18n.t('projects.link.design') }}</a>
+            </p>
+            @if (p.designAreaSquareMetres) {
+              <p class="where-sub" data-testid="workspace-design-area">
+                {{ i18n.t('boq.design_area') }}
+                <bdi class="figure" dir="ltr">{{ i18n.formatNumber(p.designAreaSquareMetres) }}</bdi>
+                {{ i18n.t('boq.design_area_unit') }}
+              </p>
+            }
+          }
+          @if (p.executionProjectId) {
+            <p class="where-line">
+              <a [routerLink]="['/projects', p.executionProjectId]" data-testid="workspace-execution-link">{{ i18n.t('projects.link.execution') }}</a>
+            </p>
+          }
+          @if (canConvert()) {
+            @if (converting()) {
+              <form class="convert" novalidate (submit)="$event.preventDefault(); confirmConvert()" data-testid="workspace-convert-form">
+                <label class="convert-label" for="convert-name">{{ i18n.t('projects.convert.name') }}</label>
+                <input
+                  id="convert-name"
+                  class="input"
+                  type="text"
+                  dir="auto"
+                  autocomplete="off"
+                  data-testid="workspace-convert-name"
+                  [value]="convertName()"
+                  (input)="onNameInput($event)"
+                />
+                <div class="convert-types" role="group" [attr.aria-label]="i18n.t('projects.convert.type')">
+                  @for (type of convertTypes; track type.value) {
+                    <button
+                      type="button"
+                      class="chip"
+                      [class.chip--on]="convertType() === type.value"
+                      [attr.aria-pressed]="convertType() === type.value"
+                      [attr.data-testid]="'workspace-convert-type-' + type.value"
+                      (click)="convertType.set(type.value)"
+                    >
+                      {{ i18n.t(type.labelKey) }}
+                    </button>
+                  }
+                </div>
+                <div class="where-act">
+                  <kaff-button variant="primary" type="submit" testId="workspace-convert-submit" [busy]="lifecycleBusy()">
+                    {{ i18n.t('projects.convert.submit') }}
+                  </kaff-button>
+                  <kaff-button variant="secondary" testId="workspace-convert-cancel" [disabled]="lifecycleBusy()" (clicked)="converting.set(false)">
+                    {{ i18n.t('action.cancel') }}
+                  </kaff-button>
+                </div>
+              </form>
+            } @else {
+              <p class="where-sub">{{ i18n.t('projects.convert.lead') }}</p>
+              <div class="where-act">
+                <kaff-button variant="secondary" testId="workspace-convert" (clicked)="openConvert()">
+                  {{ i18n.t('projects.convert.open') }}
+                </kaff-button>
+              </div>
+            }
+          }
+        </div>
+      </section>
+    }
+
+    <div aria-live="polite">
+      @if (lifecycleError(); as key) {
+        <kaff-banner tone="refusal" testId="workspace-lifecycle-error">{{ i18n.t(key) }}</kaff-banner>
+      }
+    </div>
+
     @if (waiting(); as w) {
       <section class="where" [class.mine]="w.viewerIsHolder" aria-live="polite" data-testid="workspace-waiting">
         <kaff-icon name="info" />

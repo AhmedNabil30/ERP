@@ -50,6 +50,8 @@ export class ProjectListPage {
   protected readonly projects = signal<readonly ProjectSummary[]>([]);
   protected readonly loading = signal(true);
   protected readonly failure = signal<string | null>(null);
+  /** AC-417-J: archived (unsigned, follow-up ended) projects leave the default list; this brings them back. */
+  protected readonly showArchived = signal(false);
 
   /**
    * Client id → name, and empty whenever the session may not read the client master.
@@ -109,6 +111,16 @@ export class ProjectListPage {
     inject(DestroyRef).onDestroy(() => this.headerActions.set(null));
   }
 
+  protected toggleArchived(): void {
+    this.showArchived.update((on) => !on);
+    void this.reload();
+  }
+
+  protected day(value: string): string {
+    const [year = 0, month = 1, day = 1] = value.split('-').map(Number);
+    return this.i18n.formatDate(new Date(year, month - 1, day), { dateStyle: 'medium' });
+  }
+
   protected async onCreate(): Promise<void> {
     await this.router.navigate(['/projects/new']);
   }
@@ -133,7 +145,7 @@ export class ProjectListPage {
     this.failure.set(null);
 
     try {
-      const response = await this.api.list();
+      const response = await this.api.list(this.showArchived());
       this.projects.set(response.projects);
       this.total.set(response.total);
       void this.loadClientNames();

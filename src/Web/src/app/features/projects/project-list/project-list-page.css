@@ -86,3 +86,37 @@
 .row-value {
   unicode-bidi: isolate;
 }
+
+.filter {
+  display: flex;
+}
+
+.chip {
+  min-block-size: var(--tap-target);
+  padding-inline: var(--space-4);
+  font: inherit;
+  cursor: pointer;
+  color: var(--color-muted);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.chip--on {
+  background: var(--color-background);
+  border-color: var(--color-interactive);
+  color: var(--color-text);
+  font-weight: 600;
+  box-shadow: var(--elevation-1);
+}
+
+.row-follow {
+  white-space: normal;
+  display: block;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+.row-archived {
+  opacity: 0.7;
+}

@@ -5,7 +5,6 @@ import { Router } from '@angular/router';
 import { toProblem } from '../../../core/api/problem-details';
 import { AuthApi } from '../../../core/auth/auth.api';
 import { AuthService } from '../../../core/auth/auth.service';
-import { PERCENT_INPUT_PATTERN, percentToFraction } from '../../../core/catalogue/percent-wire';
 import { ClientSummary, ClientsApi } from '../../../core/clients/clients.api';
 import { contractTypeKey, projectWorkspaceStatusKey } from '../../../core/i18n/enum-keys';
 import { I18nService } from '../../../core/i18n/i18n.service';
@@ -21,9 +20,6 @@ interface ProjectDraft {
   name: string;
   clientId: string;
   contractType: ContractType;
-  /** Percent units as typed (`"20"`); converted to the wire fraction on the way out. Blank means the default. */
-  holdPercent: string;
-  advancePercent: string;
 }
 
 const rules = schema<ProjectDraft>((path) => {
@@ -31,9 +27,6 @@ const rules = schema<ProjectDraft>((path) => {
 });
 
 /** spec.md section 16 assumption 1, shown as the placeholder and the hint; the SERVER applies the default, not this file. */
-const DEFAULT_HOLD_PERCENT = '20';
-const DEFAULT_ADVANCE_PERCENT = '25';
-
 const TYPES: readonly ContractType[] = ['LumpSum', 'CostPlus', 'Design'];
 
 /**
@@ -64,16 +57,12 @@ export class ProjectCreatePage {
   private readonly router = inject(Router);
 
   protected readonly i18n = inject(I18nService);
-  protected readonly defaultHold = DEFAULT_HOLD_PERCENT;
-  protected readonly defaultAdvance = DEFAULT_ADVANCE_PERCENT;
   protected readonly setupWordKey = projectWorkspaceStatusKey('Setup');
 
   private readonly model = signal<ProjectDraft>({
     name: '',
     clientId: '',
     contractType: 'LumpSum',
-    holdPercent: '',
-    advancePercent: '',
   });
 
   protected readonly projectForm = form(this.model, rules);
@@ -88,8 +77,6 @@ export class ProjectCreatePage {
 
   protected readonly contractType = computed(() => this.model().contractType);
   protected readonly clientId = computed(() => this.model().clientId);
-  /** Hold and advance are Lump Sum terms; Cost Plus and Design have neither, so the fields are absent for them. */
-  protected readonly isLumpSum = computed(() => this.model().contractType === 'LumpSum');
 
   protected readonly clientOptions = computed<readonly SelectOption[]>(() => [
     { value: '', label: this.i18n.t('projects.create.client_placeholder') },
@@ -102,8 +89,6 @@ export class ProjectCreatePage {
   protected readonly clientError = computed(() =>
     this.attempted() && this.model().clientId === '' ? 'errors.project.client_required' : null,
   );
-  protected readonly holdError = computed(() => this.rateError(this.model().holdPercent));
-  protected readonly advanceError = computed(() => this.rateError(this.model().advancePercent));
 
   constructor() {
     void this.loadClients();
@@ -126,13 +111,8 @@ export class ProjectCreatePage {
     this.refusal.set(null);
 
     const value = this.model();
-    const lumpSum = value.contractType === 'LumpSum';
 
-    if (
-      value.name.trim().length === 0 ||
-      value.clientId === '' ||
-      (lumpSum && (this.holdError() !== null || this.advanceError() !== null))
-    ) {
+    if (value.name.trim().length === 0 || value.clientId === '') {
       return;
     }
 
@@ -140,8 +120,6 @@ export class ProjectCreatePage {
       name: value.name.trim(),
       clientId: value.clientId,
       contractType: value.contractType,
-      holdPercentage: lumpSum && value.holdPercent.trim() !== '' ? percentToFraction(value.holdPercent) : null,
-      clientAdvance: lumpSum && value.advancePercent.trim() !== '' ? value.advancePercent.trim() : null,
     };
 
     this.busy.set(true);
@@ -154,11 +132,6 @@ export class ProjectCreatePage {
     } finally {
       this.busy.set(false);
     }
-  }
-
-  private rateError(raw: string): string | null {
-    const text = raw.trim();
-    return text !== '' && !PERCENT_INPUT_PATTERN.test(text) ? 'projects.create.error.rate_format' : null;
   }
 
   /**

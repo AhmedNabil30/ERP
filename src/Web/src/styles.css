@@ -481,3 +481,27 @@ kaff-field input::placeholder {
   outline: 3px solid var(--focus);
   outline-offset: -3px;
 }
+
+/* A printable document (the quotation on the BOQ page): when the page holds one, printing shows only it.
+   Everything that is not the sheet, an ancestor of it or inside it is removed, and the ancestors lose
+   the fixed heights and scroll containers the app shell gives them so the sheet can span pages. */
+@media print {
+  body *:not(:has(.print-sheet)):not(.print-sheet):not(.print-sheet *) {
+    display: none !important;
+  }
+
+  html:has(.print-sheet),
+  body:has(.print-sheet),
+  *:has(.print-sheet) {
+    display: block !important;
+    block-size: auto !important;
+    max-block-size: none !important;
+    overflow: visible !important;
+    position: static !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: none !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+}

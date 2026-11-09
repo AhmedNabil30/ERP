@@ -15,6 +15,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
+import { AuthApi } from '../../../core/auth/auth.api';
 import { AuthService } from '../../../core/auth/auth.service';
 import { Boq, BoqsApi } from '../../../core/boqs/boqs.api';
 import { ExtractSummary, ExtractsApi, WaitingOnItem } from '../../../core/extracts/extracts.api';
@@ -99,6 +100,7 @@ export class ProjectWorkspacePage {
   private readonly boqsApi = inject(BoqsApi);
   private readonly extractsApi = inject(ExtractsApi);
   private readonly auth = inject(AuthService);
+  private readonly authApi = inject(AuthApi);
   private readonly router = inject(Router);
   private readonly headerActions = inject(HeaderActionsService);
 
@@ -368,6 +370,76 @@ export class ProjectWorkspacePage {
   protected day(value: string): string {
     const [year = 0, month = 1, day = 1] = value.split('-').map(Number);
     return this.i18n.formatDate(new Date(year, month - 1, day), { dateStyle: 'medium' });
+  }
+
+  // ---- archive and design-to-execution (KAFF-417, KAFF-415) ---------------------------------------
+  /** Convenience; the server checks `ProjectManage` (and `ProjectCreate` for converting) on every call. */
+  protected readonly canManage = computed(() => this.caps().canReadBoq);
+  protected readonly canConvert = computed(() => {
+    const project = this.project();
+    return (
+      project !== null &&
+      project.contractType === 'Design' &&
+      !project.executionProjectId &&
+      this.canManage() &&
+      (this.auth.current()?.permissions.includes('ProjectCreate') ?? false)
+    );
+  });
+  protected readonly lifecycleError = signal<string | null>(null);
+  protected readonly lifecycleBusy = signal(false);
+  protected readonly converting = signal(false);
+  protected readonly convertName = signal('');
+  protected readonly convertType = signal<'LumpSum' | 'CostPlus'>('LumpSum');
+  protected readonly convertTypes = [
+    { value: 'LumpSum' as const, labelKey: contractTypeKey('LumpSum') },
+    { value: 'CostPlus' as const, labelKey: contractTypeKey('CostPlus') },
+  ];
+
+  protected async reopen(): Promise<void> {
+    this.lifecycleBusy.set(true);
+    this.lifecycleError.set(null);
+    try {
+      await this.projectsApi.reopen(this.projectId());
+      this.project.set(await this.projectsApi.get(this.projectId()));
+    } catch (error) {
+      this.lifecycleError.set(toProblem(error).messageKey);
+    } finally {
+      this.lifecycleBusy.set(false);
+    }
+  }
+
+  protected openConvert(): void {
+    this.convertName.set(this.i18n.t('projects.convert.default_name', { name: this.project()?.name ?? '' }));
+    this.lifecycleError.set(null);
+    this.converting.set(true);
+  }
+
+  protected async confirmConvert(): Promise<void> {
+    const name = this.convertName().trim();
+    if (name.length === 0) {
+      this.lifecycleError.set('errors.project.name_required');
+      return;
+    }
+    this.lifecycleBusy.set(true);
+    this.lifecycleError.set(null);
+    try {
+      const created = await this.projectsApi.convertToExecution(this.projectId(), name, this.convertType());
+      try {
+        // The session lists the projects a caller may open and predates this one.
+        this.auth.set(await this.authApi.me());
+      } catch {
+        // the navigation below still runs; a guard may send the user to the list
+      }
+      await this.router.navigate(['/projects', created.id]);
+    } catch (error) {
+      this.lifecycleError.set(toProblem(error).messageKey);
+    } finally {
+      this.lifecycleBusy.set(false);
+    }
+  }
+
+  protected onNameInput(event: Event): void {
+    this.convertName.set((event.target as HTMLInputElement).value);
   }
 
   protected async onPrimary(): Promise<void> {

@@ -44,7 +44,7 @@ const boq: Boq = {
 
 let last: ComponentFixture<BoqPage>;
 
-const project = (contractType: string) => ({ id: 'p-1', contractType });
+const project = (contractType: string, extra: Record<string, unknown> = {}) => ({ id: 'p-1', contractType, clientName: 'عميل', name: 'مشروع', ...extra });
 
 function session(permissions: readonly string[]): unknown {
   return { current: signal({ projects: [{ projectId: 'p-1', permissions }] }) };
@@ -52,14 +52,14 @@ function session(permissions: readonly string[]): unknown {
 
 async function render(
   get: ReturnType<typeof vi.fn>,
-  options: { permissions?: readonly string[]; type?: string; extra?: Record<string, unknown> } = {},
+  options: { permissions?: readonly string[]; type?: string; extra?: Record<string, unknown>; projectExtra?: Record<string, unknown> } = {},
 ): Promise<HTMLElement> {
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
       { provide: I18nService, useClass: FakeI18n },
       { provide: BoqsApi, useValue: { get, ...options.extra } },
-      { provide: ProjectsApi, useValue: { get: vi.fn().mockResolvedValue(project(options.type ?? 'LumpSum')) } },
+      { provide: ProjectsApi, useValue: { get: vi.fn().mockResolvedValue(project(options.type ?? 'LumpSum', options.projectExtra)) } },
       { provide: CatalogueApi, useValue: { list: vi.fn().mockResolvedValue([]) } },
       { provide: AuthService, useValue: session(options.permissions ?? []) },
     ],
@@ -146,7 +146,63 @@ describe('BoqPage', () => {
     root.querySelector<HTMLButtonElement>('button[data-testid="boq-sign-confirm"]')!.click();
     await last.whenStable();
 
-    expect(sign).toHaveBeenCalledExactlyOnceWith('p-1');
+    expect(sign).toHaveBeenCalledExactlyOnceWith('p-1', { holdPercentage: '0.2', clientAdvance: 25 });
+  });
+
+  it('shows hold 20 and advance 25 prefilled at signature, or the project terms, and sends an edit', async () => {
+    const sign = vi.fn().mockResolvedValue({});
+    const root = await render(vi.fn().mockResolvedValue({ ...boq, frozenOn: null }), {
+      permissions: ['ProjectManage'],
+      extra: { sign },
+      projectExtra: { holdRate: '0.1500', advanceRate: '0.3000' },
+    });
+
+    const hold = root.querySelector<HTMLInputElement>('[data-testid="boq-sign-hold"]')!;
+    expect(hold.value).toBe('15');
+    expect(root.querySelector<HTMLInputElement>('[data-testid="boq-sign-advance"]')!.value).toBe('30');
+
+    hold.value = '12.5';
+    hold.dispatchEvent(new Event('input'));
+    await last.whenStable();
+    root.querySelector<HTMLButtonElement>('button[data-testid="boq-sign-ask"]')!.click();
+    await last.whenStable();
+    last.detectChanges();
+    root.querySelector<HTMLButtonElement>('button[data-testid="boq-sign-confirm"]')!.click();
+    await last.whenStable();
+
+    expect(sign).toHaveBeenCalledExactlyOnceWith('p-1', { holdPercentage: '0.125', clientAdvance: 30 });
+  });
+
+  it('an archived project cannot be signed from here and says so', async () => {
+    const root = await render(vi.fn().mockResolvedValue({ ...boq, frozenOn: null }), {
+      permissions: ['ProjectManage'],
+      projectExtra: { isArchived: true },
+    });
+
+    expect(root.querySelector('[data-testid="boq-archived"]')).not.toBeNull();
+    expect(root.querySelector('[data-testid="boq-sign"]')).toBeNull();
+  });
+
+  it('offers print, with the lines grouped by bab, only to someone who manages the project', async () => {
+    const managed = await render(vi.fn().mockResolvedValue({ ...boq, frozenOn: null }), { permissions: ['ProjectManage'] });
+    expect(managed.querySelector('button[data-testid="boq-print"]')).not.toBeNull();
+    expect(managed.querySelectorAll('[data-testid="boq-print-sheet"] tbody').length).toBe(1);
+    expect(managed.querySelectorAll('[data-testid="boq-print-sheet"] tbody tr').length).toBe(3);
+
+    TestBed.resetTestingModule();
+    const other = await render(vi.fn().mockResolvedValue({ ...boq, frozenOn: null }), { permissions: [] });
+    expect(other.querySelector('[data-testid="boq-print"]')).toBeNull();
+    expect(other.querySelector('[data-testid="boq-print-sheet"]')).toBeNull();
+  });
+
+  it('an execution BOQ with no lines shows the design area as a reference and no rows', async () => {
+    const root = await render(vi.fn().mockResolvedValue({ ...boq, frozenOn: null, lines: [], total: null }), {
+      permissions: ['ProjectManage'],
+      projectExtra: { designAreaSquareMetres: '240.5' },
+    });
+
+    expect(root.querySelector('[data-testid="boq-design-area"]')?.textContent).toContain('N:240.5');
+    expect(root.querySelectorAll('[data-testid^="boq-line-"]').length).toBe(0);
   });
 
   it('a Lump Sum project with no BOQ row yet is an empty buildable BOQ, not a failure', async () => {

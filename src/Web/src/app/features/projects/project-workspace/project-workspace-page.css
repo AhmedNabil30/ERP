@@ -292,3 +292,51 @@
   color: var(--dim);
   font-size: var(--text-sm);
 }
+
+.where-act,
+.convert-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-block-start: var(--space-2);
+}
+
+.convert {
+  display: grid;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.convert-label {
+  font-size: var(--text-sm);
+  color: var(--dim);
+}
+
+.input {
+  inline-size: 100%;
+  box-sizing: border-box;
+  min-block-size: var(--tap-target);
+  padding-inline: var(--space-3);
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.chip {
+  min-block-size: var(--tap-target);
+  padding-inline: var(--space-4);
+  font: inherit;
+  cursor: pointer;
+  color: var(--dim);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.chip--on {
+  color: var(--ink);
+  border-color: var(--ink);
+  font-weight: 600;
+}

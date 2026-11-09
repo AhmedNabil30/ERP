@@ -4,6 +4,7 @@ import { FormField, form } from '@angular/forms/signals';
 import { toProblem } from '../../core/api/problem-details';
 import { AuthService } from '../../core/auth/auth.service';
 import { Boq, BoqLine, BoqsApi } from '../../core/boqs/boqs.api';
+import { PERCENT_INPUT_PATTERN, fractionToPercent, percentToFraction } from '../../core/catalogue/percent-wire';
 import { CatalogueApi, CatalogueItem } from '../../core/catalogue/catalogue.api';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { ProjectDetail, ProjectsApi } from '../../core/projects/projects.api';
@@ -27,6 +28,14 @@ const QUANTITY_PATTERN = /^[0-9]+(\.[0-9]+)?$/;
 const PICKER_LIMIT = 30;
 
 const SEARCH_DELAY_MS = 250;
+
+const DEFAULT_HOLD_PERCENT = '20';
+const DEFAULT_ADVANCE_PERCENT = '25';
+
+interface TermsDraft {
+  hold: string;
+  advance: string;
+}
 
 interface QuantityDraft {
   surveyed: string;
@@ -91,6 +100,8 @@ export class BoqPage {
   protected readonly busy = signal(false);
   protected readonly actionError = signal<string | null>(null);
   protected readonly note = signal<string | null>(null);
+  /** KAFF-415: signing raised the design credit. Labelled by its type; the adjustment's stored reason is never shown. */
+  protected readonly creditRaised = signal(false);
 
   // ---- who may do what (convenience; the server decides) ------------------------------------------
   protected readonly canManage = computed(
@@ -146,7 +157,35 @@ export class BoqPage {
 
   // ---- sign ---------------------------------------------------------------------------------------
   protected readonly confirmingSign = signal(false);
-  protected readonly canSign = computed(() => this.editable() && (this.boq()?.lines.length ?? 0) > 0 && this.boq()?.total != null);
+  /** An archived project cannot be signed until it is reopened (AC-417-J); the server refuses too. */
+  protected readonly archived = computed(() => this.project()?.isArchived === true);
+  protected readonly canSign = computed(
+    () => this.editable() && !this.archived() && (this.boq()?.lines.length ?? 0) > 0 && this.boq()?.total != null,
+  );
+  /** Hold and advance are asked here, at signature, for Lump Sum only (AC-417-D). Percent units as typed. */
+  private readonly termsModel = signal<TermsDraft>({ hold: DEFAULT_HOLD_PERCENT, advance: DEFAULT_ADVANCE_PERCENT });
+  protected readonly termsForm = form(this.termsModel);
+  protected readonly holdError = computed(() => this.rateError(this.termsModel().hold));
+  protected readonly advanceError = computed(() => this.rateError(this.termsModel().advance));
+
+  /** The unsigned BOQ as the client's quotation (D-208): lines grouped by باب, printed with the browser's print. */
+  protected readonly printGroups = computed(() => {
+    const groups: { code: string; name: string; lines: readonly BoqLine[] }[] = [];
+    for (const line of this.boq()?.lines ?? []) {
+      const name = this.i18n.locale() === 'ar' ? line.babNameAr : line.babNameEn;
+      const last = groups[groups.length - 1];
+      if (last !== undefined && last.code === line.babCode) {
+        (last.lines as BoqLine[]).push(line);
+      } else {
+        groups.push({ code: line.babCode, name, lines: [line] });
+      }
+    }
+    return groups;
+  });
+  protected readonly canPrint = computed(() => this.canManage() && this.hasBoq() && (this.boq()?.lines.length ?? 0) > 0);
+  protected readonly today = computed(() => this.i18n.formatDate(new Date(), { dateStyle: 'long' }));
+  protected readonly designArea = computed(() => this.project()?.designAreaSquareMetres ?? null);
+
   protected readonly signDetail = computed(() => {
     const total = this.boq()?.total;
     return total == null ? null : this.i18n.t('boq.sign.confirm_detail', { total: this.i18n.formatAmount(total) });
@@ -164,7 +203,12 @@ export class BoqPage {
     this.loading.set(true);
     this.failure.set(null);
     try {
-      this.project.set(await this.projects.get(this.projectId()));
+      const project = await this.projects.get(this.projectId());
+      this.project.set(project);
+      this.termsModel.set({
+        hold: project.holdRate != null ? fractionToPercent(project.holdRate) : DEFAULT_HOLD_PERCENT,
+        advance: project.advanceRate != null ? fractionToPercent(project.advanceRate) : DEFAULT_ADVANCE_PERCENT,
+      });
       await this.loadBoq();
     } catch (error) {
       this.boq.set(null);
@@ -322,6 +366,9 @@ export class BoqPage {
 
   // ---- sign ---------------------------------------------------------------------------------------
   protected askSign(): void {
+    if (this.holdError() !== null || this.advanceError() !== null) {
+      return;
+    }
     this.closeAdd();
     this.closeEdit();
     this.removingId.set(null);
@@ -331,10 +378,19 @@ export class BoqPage {
   }
 
   protected async confirmSign(): Promise<void> {
+    if (this.holdError() !== null || this.advanceError() !== null) {
+      this.confirmingSign.set(false);
+      return;
+    }
+    const terms = this.termsModel();
     await this.mutate(async () => {
-      await this.api.sign(this.projectId());
+      const signed = await this.api.sign(this.projectId(), {
+        holdPercentage: percentToFraction(terms.hold),
+        clientAdvance: Number(terms.advance.trim()),
+      });
       this.confirmingSign.set(false);
       this.note.set('boq.note.signed');
+      this.creditRaised.set(!!signed.designCreditAdjustmentId);
       this.project.set(await this.projects.get(this.projectId()));
     });
   }
@@ -353,6 +409,14 @@ export class BoqPage {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  private rateError(raw: string): string | null {
+    return PERCENT_INPUT_PATTERN.test(raw.trim()) ? null : 'boq.sign.error.rate_format';
+  }
+
+  protected print(): void {
+    window.print();
   }
 
   private quantityError(raw: string, requiredValue: boolean): string | null {

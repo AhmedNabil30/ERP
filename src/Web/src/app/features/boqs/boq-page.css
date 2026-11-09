@@ -304,3 +304,92 @@
     flex: 1;
   }
 }
+
+/* ---- signature terms (Lump Sum only) and the design-area reference ------------------------------ */
+.rates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-block: var(--space-3);
+}
+
+@media (width <= 640px) {
+  .rates {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.design-ref {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+/* ---- the quotation print: on screen it does not exist, in print it is the only thing on the page - */
+.print-sheet {
+  display: none;
+}
+
+@media print {
+  .print-sheet {
+    display: block;
+  }
+}
+
+@media print {
+  .print-sheet {
+    color: #000;
+    background: #fff;
+    font-size: 11pt;
+  }
+
+  .print-sheet h1 {
+    margin-block: 0 12pt;
+    font-size: 16pt;
+  }
+
+  .print-meta {
+    margin: 0 0 12pt;
+  }
+
+  .print-meta div {
+    display: flex;
+    gap: 8pt;
+  }
+
+  .print-meta dt {
+    font-weight: 600;
+  }
+
+  .print-meta dd {
+    margin: 0;
+  }
+
+  .print-sheet table {
+    inline-size: 100%;
+    border-collapse: collapse;
+  }
+
+  .print-sheet th,
+  .print-sheet td {
+    padding: 4pt 6pt;
+    border-block-end: 0.5pt solid #888;
+    text-align: start;
+  }
+
+  .print-sheet .num {
+    text-align: end;
+  }
+
+  .print-sheet .bab th {
+    background: #eee;
+  }
+
+  .print-sheet tr {
+    break-inside: avoid;
+  }
+
+  .print-note {
+    margin-block-start: 8pt;
+    font-size: 9pt;
+  }
+}

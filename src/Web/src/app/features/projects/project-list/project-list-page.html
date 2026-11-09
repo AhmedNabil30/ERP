@@ -16,6 +16,19 @@
     }
   </div>
 
+  <div class="filter" role="group" [attr.aria-label]="i18n.t('projects.list.filter')">
+    <button
+      type="button"
+      class="chip"
+      [class.chip--on]="showArchived()"
+      [attr.aria-pressed]="showArchived()"
+      data-testid="project-show-archived"
+      (click)="toggleArchived()"
+    >
+      {{ i18n.t('projects.list.show_archived') }}
+    </button>
+  </div>
+
   @if (failure(); as key) {
     <kaff-state mode="refusal" [bodyKey]="key" testId="project-list-failure" />
   } @else if (loading()) {
@@ -60,8 +73,13 @@
               <kaff-badge tone="accent">{{ i18n.t(contractTypeKey(project.contractType)) }}</kaff-badge>
 
               <!-- The same state word the project hub shows (`projectWorkspaceStatusKey`). -->
-              <span class="row-status" [attr.data-testid]="'project-status-' + project.code">
+              <span class="row-status" [class.row-archived]="project.isArchived" [attr.data-testid]="'project-status-' + project.code">
                 {{ i18n.t(projectStatusKey(project.status)) }}
+                @if (project.isArchived) {
+                  <span class="row-follow" [attr.data-testid]="'project-archived-' + project.code">{{ i18n.t('projects.state.archived') }}</span>
+                } @else if (project.followUpEndsOn) {
+                  <span class="row-follow" [attr.data-testid]="'project-follow-up-' + project.code">{{ i18n.t('projects.state.follow_up_until', { date: day(project.followUpEndsOn) }) }}</span>
+                }
               </span>
 
               @if (seesMoney()) {

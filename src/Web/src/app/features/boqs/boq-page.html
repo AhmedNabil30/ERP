@@ -27,19 +27,31 @@
       @if (note(); as key) {
         <kaff-banner tone="ok" testId="boq-note">{{ i18n.t(key) }}</kaff-banner>
       }
+      @if (creditRaised()) {
+        <kaff-banner tone="ok" testId="boq-credit-note">{{ i18n.t('boq.credit.raised', { label: i18n.t('billing.component.DesignCredit') }) }}</kaff-banner>
+      }
       @if (actionError(); as key) {
         <kaff-banner tone="refusal" testId="boq-error">{{ i18n.t(key) }}</kaff-banner>
       }
     </div>
 
+    @if (archived()) {
+      <kaff-banner tone="refusal" testId="boq-archived">{{ i18n.t('boq.archived') }}</kaff-banner>
+    } @else if (project()?.followUpEndsOn; as ends) {
+      <kaff-banner tone="note" testId="boq-follow-up">{{ i18n.t('boq.follow_up', { date: day(ends) }) }}</kaff-banner>
+    }
+
     @if (data.total === null && data.lines.length > 0) {
       <kaff-banner tone="note" testId="boq-total-pending">{{ i18n.t('boq.total.pending') }}</kaff-banner>
     }
 
-    @if (editable()) {
+    @if (editable() || canPrint()) {
       <div class="toolbar">
-        @if (!adding()) {
+        @if (editable() && !adding()) {
           <kaff-button variant="secondary" testId="boq-add" (clicked)="openAdd()">{{ i18n.t('boq.add.open') }}</kaff-button>
+        }
+        @if (canPrint()) {
+          <kaff-button variant="secondary" testId="boq-print" (clicked)="print()">{{ i18n.t('boq.print') }}</kaff-button>
         }
       </div>
     }
@@ -156,6 +168,13 @@
         icon="list"
         testId="boq-empty"
       />
+      @if (designArea(); as area) {
+        <p class="design-ref" data-testid="boq-design-area">
+          {{ i18n.t('boq.design_area') }}
+          <bdi class="figure" dir="ltr">{{ i18n.formatNumber(area) }}</bdi>
+          {{ i18n.t('boq.design_area_unit') }}
+        </p>
+      }
     } @else {
       <p class="unit-note">{{ i18n.t('money.currency_note') }}</p>
       <kaff-table [columns]="columns()" [columnDefs]="headerColumns()" [minInline]="editable() ? 780 : 720" testId="boq-table-header">
@@ -307,6 +326,47 @@
           <span class="sign-total-value" data-testid="boq-sign-total"><kaff-figure [value]="data.total!" /></span>
         </p>
 
+        <div class="rates" data-testid="boq-sign-terms">
+          <kaff-field
+            labelKey="boq.sign.field.hold"
+            controlId="boq-sign-hold"
+            [hintKey]="holdError() === null ? 'boq.sign.hint.hold' : null"
+            [errorKey]="holdError()"
+            errorTestId="boq-sign-hold-error"
+          >
+            <input
+              id="boq-sign-hold"
+              class="input"
+              type="text"
+              dir="ltr"
+              inputmode="decimal"
+              autocomplete="off"
+              spellcheck="false"
+              data-testid="boq-sign-hold"
+              [formField]="termsForm.hold"
+            />
+          </kaff-field>
+          <kaff-field
+            labelKey="boq.sign.field.advance"
+            controlId="boq-sign-advance"
+            [hintKey]="advanceError() === null ? 'boq.sign.hint.advance' : null"
+            [errorKey]="advanceError()"
+            errorTestId="boq-sign-advance-error"
+          >
+            <input
+              id="boq-sign-advance"
+              class="input"
+              type="text"
+              dir="ltr"
+              inputmode="decimal"
+              autocomplete="off"
+              spellcheck="false"
+              data-testid="boq-sign-advance"
+              [formField]="termsForm.advance"
+            />
+          </kaff-field>
+        </div>
+
         @if (confirmingSign()) {
           <kaff-inline-confirm
             tone="irreversible"
@@ -328,6 +388,49 @@
           </div>
         }
       </section>
+    }
+
+    @if (canPrint()) {
+      <article class="print-sheet" data-testid="boq-print-sheet">
+        <h1>{{ i18n.t('boq.print.title') }}</h1>
+        <dl class="print-meta">
+          <div><dt>{{ i18n.t('boq.print.client') }}</dt><dd dir="auto">{{ project()?.clientName }}</dd></div>
+          <div><dt>{{ i18n.t('boq.print.project') }}</dt><dd dir="auto">{{ project()?.name }}</dd></div>
+          <div><dt>{{ i18n.t('boq.print.date') }}</dt><dd>{{ today() }}</dd></div>
+        </dl>
+        <table>
+          <thead>
+            <tr>
+              <th>{{ i18n.t('boq.column.item') }}</th>
+              <th>{{ i18n.t('boq.print.unit') }}</th>
+              <th class="num">{{ i18n.t('boq.column.quantity') }}</th>
+              <th class="num">{{ i18n.t('boq.column.sell_rate') }}</th>
+              <th class="num">{{ i18n.t('boq.column.total') }}</th>
+            </tr>
+          </thead>
+          @for (group of printGroups(); track group.code) {
+            <tbody>
+              <tr class="bab"><th colspan="5" dir="auto">{{ group.name }}</th></tr>
+              @for (line of group.lines; track line.id) {
+                <tr>
+                  <td dir="auto">{{ i18n.locale() === 'ar' ? line.descriptionAr : (line.descriptionEn ?? line.descriptionAr) }}</td>
+                  <td dir="auto">{{ line.unit }}</td>
+                  <td class="num"><bdi dir="ltr">{{ quantity(line.quantitySurveyed) }}</bdi></td>
+                  <td class="num"><bdi dir="ltr">{{ i18n.formatAmount(line.sellRate) }}</bdi></td>
+                  <td class="num"><bdi dir="ltr">{{ line.lineTotal === null ? '-' : i18n.formatAmount(line.lineTotal) }}</bdi></td>
+                </tr>
+              }
+            </tbody>
+          }
+          <tfoot>
+            <tr>
+              <th colspan="4">{{ i18n.t('boq.total.draft') }}</th>
+              <td class="num"><bdi dir="ltr">{{ data.total === null ? '-' : i18n.formatAmount(data.total) }}</bdi></td>
+            </tr>
+          </tfoot>
+        </table>
+        <p class="print-note">{{ i18n.t('money.currency_note') }}</p>
+      </article>
     }
   }
 </section>

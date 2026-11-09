@@ -67,11 +67,10 @@ describe('ProjectCreatePage', () => {
     expect(root.querySelector('[data-testid="project-client-error"]')?.textContent).toContain('errors.project.client_required');
   });
 
-  it('sends the typed name, client and type, turns the hold percent into a fraction, and opens the BOQ', async () => {
+  it('sends the typed name, client and type only, and opens the BOQ', async () => {
     const { root, create, navigate } = await render();
 
     type(root, 'project-name', '  فيلا الشروق ');
-    type(root, 'project-hold', '12.5');
     const select = root.querySelector<HTMLSelectElement>('[data-testid="project-client"]')!;
     select.value = 'c-1';
     select.dispatchEvent(new Event('change'));
@@ -80,24 +79,19 @@ describe('ProjectCreatePage', () => {
     root.querySelector<HTMLButtonElement>('button[data-testid="project-create-submit"]')!.click();
     await fixture.whenStable();
 
-    expect(create).toHaveBeenCalledExactlyOnceWith({
-      name: 'فيلا الشروق',
-      clientId: 'c-1',
-      contractType: 'LumpSum',
-      holdPercentage: '0.125',
-      clientAdvance: null,
-    });
+    expect(create).toHaveBeenCalledExactlyOnceWith({ name: 'فيلا الشروق', clientId: 'c-1', contractType: 'LumpSum' });
     expect(navigate).toHaveBeenCalledWith('/projects/new-1/boq');
   });
 
-  it('hides the Lump Sum rates for Cost Plus and sends neither', async () => {
+  it('asks for no hold or advance for any contract type', async () => {
     const { root } = await render();
 
-    root.querySelector<HTMLButtonElement>('button[data-testid="project-type-CostPlus"]')!.click();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    expect(root.querySelector('[data-testid="project-hold"]')).toBeNull();
-    expect(root.querySelector('[data-testid="project-advance"]')).toBeNull();
+    for (const type of ['LumpSum', 'CostPlus', 'Design']) {
+      root.querySelector<HTMLButtonElement>(`button[data-testid="project-type-${type}"]`)!.click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(root.querySelector('[data-testid="project-hold"]')).toBeNull();
+      expect(root.querySelector('[data-testid="project-advance"]')).toBeNull();
+    }
   });
 });

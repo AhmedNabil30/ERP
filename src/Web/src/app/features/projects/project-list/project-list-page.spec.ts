@@ -69,14 +69,16 @@ const CLOSED_COST_PLUS: ProjectSummary = {
 
 class FakeProjectsApi implements Pick<ProjectsApi, 'list'> {
   calls = 0;
+  archivedArgs: boolean[] = [];
 
   constructor(
     private readonly projects: readonly ProjectSummary[],
     private readonly failWith: unknown = null,
   ) {}
 
-  async list(): Promise<{ readonly projects: readonly ProjectSummary[]; readonly total: number }> {
+  async list(includeArchived = false): Promise<{ readonly projects: readonly ProjectSummary[]; readonly total: number }> {
     this.calls += 1;
+    this.archivedArgs.push(includeArchived);
     if (this.failWith !== null) {
       throw this.failWith;
     }
@@ -303,5 +305,21 @@ describe('ProjectListPage · the four states', () => {
     const refusal = fixture.nativeElement.querySelector('[data-testid="project-list-failure"]');
     expect(refusal).not.toBeNull();
     expect(refusal.textContent as string).toContain('errors.auth.forbidden');
+  });
+
+  it('hides archived projects by default and asks for them when the toggle is pressed', async () => {
+    const api = new FakeProjectsApi([{ ...LUMP_SUM, isArchived: true }]);
+    const fixture = await createFixture(api, session(['ProjectList'], []));
+    const root = fixture.nativeElement as HTMLElement;
+
+    expect(api.archivedArgs).toEqual([false]);
+
+    root.querySelector<HTMLButtonElement>('[data-testid="project-show-archived"]')!.click();
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(api.archivedArgs).toEqual([false, true]);
+    expect(root.querySelector('[data-testid="project-archived-KF-P-0001"]')).not.toBeNull();
   });
 });

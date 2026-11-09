@@ -17,8 +17,6 @@ export interface ProjectCreate {
   readonly name: string;
   readonly clientId: string;
   readonly contractType: ContractType;
-  readonly holdPercentage: string | null;
-  readonly clientAdvance: string | null;
 }
 
 /** `CreateProject.Response`, narrowed to what the screen uses. */

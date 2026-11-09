@@ -46,6 +46,10 @@ export interface ProjectSummary {
   readonly contractType: ContractType;
   readonly status: ProjectStatus;
   readonly contractValue: string | null;
+  /** AC-417-J: true for an unsigned project whose follow-up period ended. Listed only with `includeArchived`. */
+  readonly isArchived?: boolean;
+  /** The day the follow-up period ends (`yyyy-mm-dd`); null once signed. */
+  readonly followUpEndsOn?: string | null;
 }
 
 /**
@@ -78,6 +82,28 @@ export interface ProjectDetail {
   readonly lastDailyLogOn?: string | null;
   /** Null for a caller who holds none of the extract-money permissions. Every figure is a string (D-135). */
   readonly money?: ProjectMoney | null;
+  readonly isArchived?: boolean;
+  readonly followUpEndsOn?: string | null;
+  /** KAFF-415: the link both ways between a design project and the execution project made from it. */
+  readonly designProjectId?: string | null;
+  readonly executionProjectId?: string | null;
+  /** A reference only (decimal string); no BOQ line is seeded from it. */
+  readonly designAreaSquareMetres?: string | null;
+}
+
+/** `POST /api/projects/{id}/convert-to-execution` response (KAFF-415). */
+export interface ConvertedProject {
+  readonly id: string;
+  readonly code: string;
+  readonly name: string;
+  readonly contractType: ContractType;
+  readonly designProjectId: string;
+}
+
+export interface ReopenResult {
+  readonly projectId: string;
+  readonly followUpStartedOn: string;
+  readonly followUpEndsOn: string | null;
 }
 
 /** What the client has been billed, has paid and still owes (issued extracts only). */
@@ -154,9 +180,23 @@ export class ProjectsApi {
   }
 
   /** The rows, and the server's own total — read rather than recounted on the client. */
-  async list(): Promise<{ readonly projects: readonly ProjectSummary[]; readonly total: number }> {
+  async list(includeArchived = false): Promise<{ readonly projects: readonly ProjectSummary[]; readonly total: number }> {
     return await firstValueFrom(
-      this.http.get<{ projects: ProjectSummary[]; total: number }>('api/projects'),
+      this.http.get<{ projects: ProjectSummary[]; total: number }>('api/projects', {
+        params: includeArchived ? { includeArchived: true } : {},
+      }),
+    );
+  }
+
+  /** AC-417-J: restart the follow-up period of an archived project. 409 `errors.project.not_archived` otherwise. */
+  async reopen(projectId: string): Promise<ReopenResult> {
+    return await firstValueFrom(this.http.post<ReopenResult>(`api/projects/${projectId}/reopen`, {}));
+  }
+
+  /** AC-415-A: a new execution project linked to this design project. The design project is not changed. */
+  async convertToExecution(designProjectId: string, name: string, contractType: 'LumpSum' | 'CostPlus'): Promise<ConvertedProject> {
+    return await firstValueFrom(
+      this.http.post<ConvertedProject>(`api/projects/${designProjectId}/convert-to-execution`, { name, contractType }),
     );
   }
 }

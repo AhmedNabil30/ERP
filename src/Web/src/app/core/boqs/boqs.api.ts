@@ -60,6 +60,14 @@ export interface SignResult {
   readonly signedOn: string;
   readonly contractValue: string | null;
   readonly boqFrozenOn: string | null;
+  /** KAFF-415: the 30% design credit this signature raised, when the project was converted from a design project. */
+  readonly designCreditAdjustmentId?: string | null;
+}
+
+/** `POST …/sign` body. Lump Sum only; both optional. `holdPercentage` is a wire fraction, `clientAdvance` percent units. */
+export interface SignTerms {
+  readonly holdPercentage?: string;
+  readonly clientAdvance?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -84,7 +92,7 @@ export class BoqsApi {
   }
 
   /** Irreversible: fixes the contract value at the BOQ total and freezes the BOQ. The body is empty so the server dates it. */
-  async sign(projectId: string): Promise<SignResult> {
-    return await firstValueFrom(this.http.post<SignResult>(`api/projects/${projectId}/sign`, {}));
+  async sign(projectId: string, terms: SignTerms = {}): Promise<SignResult> {
+    return await firstValueFrom(this.http.post<SignResult>(`api/projects/${projectId}/sign`, terms));
   }
 }
