@@ -10,8 +10,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Kaff.Api.Features.DailyLogs.RecordCheckIn;
 
 /// <summary>
-/// Records a check-in or check-out against the caller's log. Never refuses for location (Q-207-3, Q-207-4): the
-/// entry carries a flag instead. The first located check-in on a project sets its reference point in the same
+/// Records a check-in or check-out against the caller's log. Refuses with <c>DailyLogErrors.LocationRequired</c> when
+/// the phone gives no usable location (D-208). A located entry far from the reference point is still recorded and
+/// flagged (Q-207-3, Q-207-4). The first located check-in on a project sets its reference point in the same
 /// save, so the project change is audited by the interceptor with the entry. The audit record for the entry itself
 /// is written by the interceptor too.
 /// </summary>

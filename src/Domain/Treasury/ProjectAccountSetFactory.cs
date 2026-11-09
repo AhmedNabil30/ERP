@@ -98,7 +98,7 @@ public static class ProjectAccountSetFactory
     }
 
     /// <summary>
-    /// Builds â€” but does not persist â€” one project account of <paramref name="type"/>, with the same code, names and
+    /// Builds — but does not persist — one project account of <paramref name="type"/>, with the same code, names and
     /// party the automatic set gives it. Used for the accounts a project opens later than its creation: the Lump Sum
     /// revenue account the first extract or a design credit needs, and the Cost Plus client sub-ledger a design credit
     /// needs (KAFF-415).

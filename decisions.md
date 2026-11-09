@@ -16367,3 +16367,32 @@ KAFF-415, `design_to_execution` half. spec.md section 5.4.
   design project with no value refuses the execution signature), Q-207-7 (one conversion per design
   project, under a row lock), Q-207-8 (raised at signature, posted by a different approver), Q-207-9
   (Lump Sum or Cost Plus).
+
+## D-210 — D-207 and D-208 built: the archive is derived, a design's area is entered at signature, check-in has its own route · 2026-11-10
+
+**Source.** Scrum Master, building KAFF-417, KAFF-415 and KAFF-613 from D-207 and D-208 at Nabil's
+instruction to build without waiting for the client.
+
+1. **An unsigned project's archive is derived, not stored.** `Project.IsArchived(now, FollowUpPeriod)`
+   is true when the project is unsigned, in `Setup`, and the follow-up period (`RulingSet.FollowUp`,
+   default 30 days, RulingNote Q-208-1) has run out since `FollowUpStartedOn`. No `ProjectStatus` value
+   was added, so `spec.md` §13 is untouched, and no background job exists (the codebase has none).
+   Reopening (`POST /api/projects/{id}/reopen`) restarts the period and is audited. **Known cost:** the
+   moment a project becomes archived writes no audit record, because nothing is stored; and changing
+   the period length moves past archive moments retroactively. If either matters, archive becomes a
+   stored, audited transition written by a job. Migration `ProjectFollowUp` backfills
+   `follow_up_started_on` from `created_at`, so stale unsigned projects archive at deploy.
+2. **A Design project's area is entered at signature** (AC-417-K). No route set it, so a Design
+   project could not be signed and KAFF-415's credit was unreachable. `SignProject` accepts
+   `areaSquareMetres` for Design only and prices through `Project.SetDesignTerms` at
+   `ContractDefaults.DesignRatePerSquareMetre`. The workspace page carries the Design signing step,
+   because a Design project has no BOQ page.
+3. **Check-in and check-out have their own route**, `POST /api/projects/{id}/daily-logs/check-ins`,
+   and the old fields route refuses both kinds. Missing or invalid location is refused (D-208). The
+   reference point is the first located check-in (not check-out) and never moves; the 500 m threshold
+   is RulingNote Q-207-3a.
+4. **The quotation is the BOQ** (D-208): the print is the BOQ page under print CSS, grouped by باب,
+   with line prices. No quotation entity or document was added.
+
+Verified CONDITIONAL in a fresh session at `553309c` (`qa/verification-KAFF-415-417-613-2026-11-09.md`).
+Not accepted: acceptance is Nabil running the demo script.
