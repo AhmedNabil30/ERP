@@ -257,13 +257,13 @@ Written 2026-11-10 for five screens. Read these rules before any brief.
 - A state sentence (empty, failed, refused) is not a "word beyond labels". It is what the screen says
   when it cannot show data.
 - **Nabil's answers, 2026-11-10 (D-212). Where a brief below says otherwise, these stand.**
-  - Labour leaving the daily log for its own crew screen (brief 2): not decided. Nabil asked to see the
-    proposal, so brief 2 is drawn as a mock first and brief 1 waits for his word on it.
+  - Labour leaves the daily log for its own crew screen (brief 2): accepted by Nabil on the mock,
+    2026-11-10 (D-213).
   - Q-E: the engineer may enter yesterday's log. A back-dated entry carries a visible flag. How many
     days back is still open; the mock draws yesterday only.
-  - Q-C: labour is entered in hours and in days. Nobody has ruled how a day converts to hours, so no
-    screen converts one into the other and totals are shown per unit. The server stores hours only today
-    (`RecordDayLabour/Request.cs`, `Hours`); days need a backend lane.
+  - Q-C: labour is entered in hours, per man, per day (D-213). A man may work 4 hours one day and 8
+    the next; each date holds its own hours. There is no separate "days" unit. D-212 read Nabil's
+    "Hours and days" as two units, and that reading was wrong.
   - Q-D: yes, "same crew as yesterday".
   - Q-M: nobody at Kaff uses the codes; the system introduced them. People search by name. Project,
     worker and catalogue codes stay off every screen, the catalogue add picker included, and every

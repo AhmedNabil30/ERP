@@ -16500,3 +16500,23 @@ mocks (journey `ux/journey-project-module-2026-11-09.md`, section 4 and `## Scre
 **Not done.** Nothing is built. No backend change for days or for the back-dated flag. The other
 questions in section 4 of the journey (Q-N to Q-X) are unanswered and not yet in
 `stories/questions-for-karim.md`.
+
+## D-213 — the crew screen is accepted, and labour is hours per man per day: D-212 item 3 corrected · 2026-11-10
+
+**Source.** Nabil, 2026-11-10, on the mock `.design/v2/team-a/day-labour.html` (commit `d1f9c54`):
+"Okay but it should take hours of each day he may work 4 in day and 8 in another", then "Fix it" when
+asked whether the separate days box should go.
+
+1. **Labour entry leaves the daily log and gets its own crew screen.** D-212 item 1 left this open;
+   Nabil accepted it on the mock.
+2. **Labour is recorded in hours, per man, per date.** D-212 item 3 read "Hours and days" as two units
+   and the mock drew an hours box and a days box per man. That reading was wrong. The days box is
+   removed. `RecordDayLabour` already stores `Hours` against a date, so this needs no backend lane.
+
+**Read from "Fix it", not stated in his own words.** He was offered three readings (hours only per day,
+both units, a week view) with the first recommended, and answered "Fix it". The mock is redrawn on the
+first reading and goes back to him for approval.
+
+**Still not ruled.** The hours cap per man per day, the step size, whether a saved day can be edited
+and by whom, whether "same crew as yesterday" copies the men or their hours too, and how many days
+back an entry may go.
