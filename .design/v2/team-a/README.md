@@ -833,3 +833,64 @@ Normal for each type and role; loading (header keeps shape, title is a bar, prim
 ## Deliberately left out
 
 Project documents (not in the spec at project level), history or audit timeline for the project (the audit read is Owner-only and the gate history exists only per document), edit-terms screen, collections and withholding, closure, hold release, snags, warranty and handover flows, any terminate control (unruled), any health tag.
+
+# Today's crew (`day-labour.html`)
+
+Proposal mock for the day-labour screen (route `/projects/:projectId/day-labour`), brief 2 of `ux/journey-project-module-2026-11-09.md`, with Nabil's answers of 2026-11-10 (D-212) applied. Nabil has not decided that labour leaves the daily log; this mock is the proposal he asked to see, so the daily-log screen waits on his word. Open `day-labour.html` directly. `?view=normal|filled|saved|yesterday|empty|sheet|loading|failed|refused|unassigned`; `embed=1` hides the preview strip (the strip is review chrome, do not build it). The steppers, the "same crew as yesterday" button, the date switch and the add-a-man sheet work, so the screen can be judged by use.
+
+## What it holds
+
+For the Site Supervisor or site engineer, on a phone, one job: say which men worked on the chosen day and for how long, in one save.
+
+- Back link carrying the project name (where am I), the title, the date switch (اليوم / أمس) with the date written out.
+- Totals strip, sticky: men, hours, days. Each figure is its own unit. Hours and days are never added and never converted (nobody has ruled how a day converts). Before anything is entered the strip says "لم يُسجَّل أحد بعد".
+- "نفس عمالة أمس" (quiet button), present only while nothing is entered. It fills the rows from yesterday's entries; the supervisor then adjusts.
+- The crew: one row per engaged man, name and trade, then two steppers side by side, hours and days. A man with a value gets a 5px start bar. A man left empty did not work. Steppers move in half steps; the middle is a real input, so a value can be typed.
+- "أضف عاملاً" (outline) at the foot of the list opens the add-a-man sheet.
+- Primary action "حفظ", in the bottom bar on a phone and in the page header on desktop (the shell places it). It is disabled until one man has a value; the totals strip carries the reason.
+
+## States
+
+- **Normal**: crew listed, nothing entered.
+- **Filled**: hours and days entered, totals live. One man has both (4 hours and half a day) to show the two units together.
+- **Saved**: every row read-only with a tick and its values, banner "تم الحفظ". The primary becomes "تعديل" and returns to editing. "أضف عاملاً" is absent.
+- **Yesterday**: the date switch on أمس. A note banner "بأثر رجعي · date" sits above the totals. Yesterday only.
+- **Empty**: "لا عمالة مشغَّلة على المشروع". "أضف عاملاً" is the primary here, in the bottom bar or header.
+- **Add-a-man sheet**: bottom sheet on a phone, side panel on desktop. Search placeholder "اسم أو مهنة", searches name or trade, never a code. Each result: name, trade, times engaged, rating, phone, and one "تشغيل" button. A "تسجيل عامل جديد" link at the foot opens the registration route.
+- **Loading**: skeleton rows. **Failed**: refusal banner with retry. **Unassigned**: the project-scoped refusal, same as the workspace.
+- **Row refused**: three kinds on one screen. Saved rows show a tick and are read-only; one row whose hours the server refuses (the stepper border and a line in place, "الحد الأقصى 24 ساعة"); one row whose save failed, which keeps its values and shows "إعادة المحاولة". Saved rows are not resubmitted; each row carries its own entry id so a retry cannot double it.
+
+## Reused from the kit, unchanged
+
+App shell and bottom bar, back link, buttons (outline `sec2`, small), segmented control, search field, refusal banner, note banner, saved-in-place banner (`rec`), the four list states, skeleton, bottom sheet.
+
+## New in the kit (put these in `components.html` before building)
+
+- **Stepper pair field** (`stp`): minus, typed value, plus, with the unit word under the number. 44px buttons in a 56px field. Minus is disabled at zero (the limit explains itself); plus is disabled at the cap. In error the border takes the error colour and a line under the row states the reason with an icon.
+- **Crew row** (`man`): name and trade, two steppers; phone: name over two half-width steppers; desktop: name, then two 190px steppers on one line. Variants: entered (start bar), saved (tick and values, read-only), refused (error bar), failed (retry line).
+- **Totals strip** (`tot-in`): three figures, each with its unit word; the zero variant is one line.
+- **Side panel on desktop, bottom sheet on a phone** (`sx`): the kit already has the bottom sheet and the side panel; this joins them under one markup so a part is not drawn twice.
+
+No new colour: everything is an existing token.
+
+## Left off the screen, on purpose
+
+Worker code, the day rate (D-139), phone number on the crew row (it shows in the sheet, where duplicates are told apart), times engaged and rating on the row (they show in the sheet, where they help choose), the history link, any explanatory sentence. No code of any kind is on the screen.
+
+## Not decided here
+
+1. Whether labour leaves the daily log (Nabil, after seeing this).
+2. The hours cap. 24 is a guess; the server's `DayLabourEntry.MaxHours` is not in the material read.
+3. The day cap. The stepper stops at 1 day per man per date; nobody ruled it.
+4. Step size. Half steps for both units are a guess.
+5. A day count needs a backend lane: the server stores hours only (`RecordDayLabour/Request.cs`, `Hours`).
+6. Can the same man carry hours and days on the same date? The mock allows it because Nabil said both are enterable per man.
+7. Editing after save. The mock returns to editing with "تعديل". Whether a saved day may be changed, by whom, and until when is not ruled.
+8. How far back. Yesterday only, per D-212.
+9. What "same crew as yesterday" copies: the mock copies yesterday's hours and days; copying only the men is the alternative.
+10. The Supervisor's history link (the dump shows it because his entry has the rate permission). The mock drops it.
+11. The phone number in the sheet: the brief lists it in one place and leaves it out of the result list in another. The mock shows it.
+
+## What the mock does not draw
+
+Weekly payroll and the screen that follows it; rate entry for a new man; registration (`.../day-labour/new`); closing an engagement and rating; the daily log with labour removed (brief 1 waits for Nabil); the history route; the English/LTR text.
