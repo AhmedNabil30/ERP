@@ -144,16 +144,35 @@ the task:
 | `scrum-master` | opus | Sole interface to Nabil; routes and dispatches (§3b) |
 | `gate-runner` | haiku | Runs the gates, reports numbers and real exit codes, edits nothing |
 | `verifier` | opus | §7. Fresh session; reports, never fixes |
-| `ui-designer` | sonnet | Owns `src/Web/`; Nabil's rule that the designer owns the design |
-| `ux-consultant` | sonnet | Fresh eyes on flow and screens after a module lands; never the code |
-| `arabic-copy` | sonnet | One term one meaning, Kaff's words verbatim, one correction list for Nabil |
-| `journey-analyst` | sonnet | Reads the real requirements, studies comparable construction ERPs and Egyptian practice, proposes the journey with every step tagged by source |
+| `journey-analyst` | sonnet | Reads the real requirements, studies comparable construction ERPs and Egyptian practice, proposes the journey with every step tagged by source, and writes one screen brief per screen |
+| `ui-designer` | sonnet | Mode `mock` draws one screen as static HTML in `.design/v2/team-a/`; mode `build` turns the approved mock into Angular. Nabil's rule that the designer owns the design |
+| `ux-consultant` | sonnet | Fresh eyes on flow and screens, never the code. Mode `mock` before Nabil approves a design; mode `app` after a module lands, scoped, re-checking the previous review first |
+| `arabic-copy` | sonnet | One term one meaning, Kaff's words verbatim, one correction list for Nabil, once per module |
 
 **Two limits stated so nobody assumes otherwise.** The `tools:` field restricts which tools an agent
 has, **not which folders it may write**; file ownership is still held by the brief and by review, not
 by the harness. And `journey-analyst` runs on `sonnet` although its work touches business flow,
 because it decides nothing: every step it proposes carries a source tag, and anything tagged
 `PRACTICE` or `PROPOSAL` that differs from `spec.md` becomes a question for Karim, never a rule.
+
+### A screen's path — amended 2026-11-10 (D-211)
+
+```
+journey-analyst ──→ journey + screen briefs ──→ [Nabil: open questions]
+        ▼
+ui-designer (mock) ──→ layout-url check ──→ ux-consultant (mock, new screens only)
+        ▼
+[Nabil approves the mock]            one screen at a time; not approved goes back to the designer
+        ▼
+Backend lane if the API lacks the data ──→ ui-designer (build) ──→ layout check
+        ▼
+gate-runner ──→ arabic-copy (once per module) ──→ verifier ──→ ux-consultant (app, scoped)
+```
+
+The design language is `.design/v2/team-a/README.md` (D-175), read by section. The old
+`apple-erp-design` skill is archived at `.design/archive/` and no agent loads it. Mechanical screen
+checks (sideways scroll, controls under 44px, raw i18n keys, an empty page) are measured by
+`driver.mjs layout` and `layout-url`, so a screenshot is opened only to judge what cannot be measured.
 
 ---
 

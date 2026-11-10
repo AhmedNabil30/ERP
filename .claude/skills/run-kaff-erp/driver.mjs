@@ -279,11 +279,27 @@ async function screenshot(url, out, width, colorScheme) {
 }
 
 /**
+ * Waits until the page text has held still for 1.5s (15s at most). "Body has some text" is satisfied by
+ * the shell and a route's own loading line, and the project workspace was measured as
+ * "جارٍ التحميل…" on 2026-11-10 because of it.
+ */
+async function settle(evaluate) {
+  let last = -1;
+  let same = 0;
+  for (let i = 0; i < 30 && same < 3; i++) {
+    const now = await evaluate('document.body.innerText.length');
+    same = now === last ? same + 1 : 0;
+    last = now;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+}
+
+/**
  * Signs in through the on-screen form (autocomplete-located, same as the E2E suites), navigates to
  * `path`, then screenshots. One chromium session throughout, so the sign-in cookie is still attached
  * for the navigation and the shot — KAFF-922, for rendering staff-chrome screens that need a session.
  */
-async function signedShot(userName, password, targetPath, out, width, colorScheme, openDrawer) {
+async function signedShot(userName, password, targetPath, out, width, colorScheme, openDrawer, finish) {
   return withPage(`${WEB}/sign-in`, async ({ evaluate, call, shoot }) => {
     // The sign-in form is its own lazy chunk; withPage's readiness wait is satisfied by the boot
     // spinner's text alone, same trap SKILL.md documents for a route's first paint.
@@ -337,6 +353,7 @@ async function signedShot(userName, password, targetPath, out, width, colorSchem
       if (ready) break;
       await new Promise((r) => setTimeout(r, 200));
     }
+    await settle(evaluate);
     // One more frame so the sidebar's grouped rows/account block have painted before capture.
     await evaluate('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))');
 
@@ -381,8 +398,61 @@ async function signedShot(userName, password, targetPath, out, width, colorSchem
       }
     }
 
-    return shoot(out);
+    return finish ? finish({ evaluate, call, shoot }) : shoot(out);
   }, { ...(width ? { width: Number(width) } : {}), ...(colorScheme ? { colorScheme } : {}) });
+}
+
+// What a screenshot shows but a model has to open and look at to find. Measured in the page instead,
+// so the mechanical half of a screen review costs no image tokens: sideways scroll, controls under the
+// 44px the KAAF README fixes at every width, i18n keys rendered raw, and text cut off with no ellipsis.
+const LAYOUT_PROBE = `(() => {
+  const vw = window.innerWidth;
+  const visible = (e) => { const r = e.getBoundingClientRect(); const c = getComputedStyle(e);
+    return r.width > 0 && r.height > 0 && c.visibility !== 'hidden' && c.display !== 'none'; };
+  const name = (e) => e.getAttribute('data-testid') || (e.tagName.toLowerCase() + (typeof e.className === 'string' && e.className.trim() ? '.' + e.className.trim().split(' ').slice(0, 2).join('.') : ''));
+  const scrolls = (e) => { for (let p = e.parentElement; p && p !== document.body; p = p.parentElement) {
+    if (['auto', 'scroll', 'hidden', 'clip'].includes(getComputedStyle(p).overflowX)) return true; } return false; };
+  const all = Array.from(document.body.querySelectorAll('*')).filter(visible);
+  const overflowPx = Math.max(0, document.documentElement.scrollWidth - vw);
+  const outside = overflowPx > 1 ? all.filter((e) => { const r = e.getBoundingClientRect(); return (r.left < -1 || r.right > vw + 1) && !scrolls(e); }).map(name) : [];
+  const size = (e) => { const r = e.getBoundingClientRect(); return Math.round(r.width) + 'x' + Math.round(r.height); };
+  const small = Array.from(document.querySelectorAll('button, [role="button"], select, textarea, input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"])'))
+    .filter(visible).filter((e) => { const r = e.getBoundingClientRect(); return r.height < 43.5 || r.width < 43.5; })
+    .map((e) => name(e) + ' ' + size(e));
+  const rawKeys = []; const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) { const t = n.textContent.trim();
+    if (/^[a-z][a-z0-9_]*([.][a-z][a-z0-9_]*)+$/.test(t) && visible(n.parentElement)) rawKeys.push(t); }
+  const clipped = all.filter((e) => e.children.length === 0 && e.textContent.trim() !== '' && e.scrollWidth > e.clientWidth + 1
+    && ['hidden', 'clip'].includes(getComputedStyle(e).overflowX) && getComputedStyle(e).textOverflow !== 'ellipsis').map(name);
+  const uniq = (list) => Array.from(new Set(list)).slice(0, 12);
+  return { path: location.pathname, dir: document.documentElement.dir, width: vw,
+    chars: document.querySelector('main')?.innerText.trim().length ?? 0, text: (document.querySelector('main')?.innerText.trim() ?? '').slice(0, 40), controls: all.filter((e) => e.matches('button, a[href], input, select, textarea')).length, overflowPx,
+    outside: uniq(outside), smallTargets: uniq(small), rawKeys: uniq(rawKeys), clipped: uniq(clipped) };
+})()`;
+
+const measure = async ({ evaluate }) => {
+  await settle(evaluate);
+  return evaluate(LAYOUT_PROBE);
+};
+
+/**
+ * Measures the page `open(width)` returns at each width. Exit 1 when `<main>` is empty, the page scrolls
+ * sideways, shows a raw i18n key, or (at phone widths) holds a control under 44px. `clipped` is a
+ * heuristic and only reported. `layout` opens a signed-in route; `layout-url` opens any URL, which is how
+ * a static mock under `.design/` is measured before it is built.
+ */
+async function layout(open, widths) {
+  let failed = false;
+  for (const width of widths) {
+    const result = await open(width);
+    const phone = result.width <= 820;
+    // An empty <main> is a failure, not a pass: nothing was there to measure.
+    const bad = result.chars === 0 || result.overflowPx > 1 || result.rawKeys.length > 0 || (phone && result.smallTargets.length > 0);
+    if (!phone) delete result.smallTargets;
+    failed ||= bad;
+    console.log(`${bad ? 'FAIL' : 'PASS'}  ${JSON.stringify(result)}`);
+  }
+  return failed ? 1 : 0;
 }
 
 /** The end-to-end check: API healthy, guards installed, and the SPA rendering real content. */
@@ -511,6 +581,25 @@ try {
       );
       break;
     }
+    case 'layout': {
+      const [userName, password, targetPath, widths = '390,1440', steps] = args;
+      if (!userName || !password || !targetPath) {
+        throw new Error('usage: layout <user> <password> <path> [widths=390,1440] [click:steps]');
+      }
+      process.exit(
+        await layout(
+          (width) => signedShot(userName, password, targetPath, null, width, undefined, steps, measure),
+          widths.split(',').map(Number),
+        ),
+      );
+      break;
+    }
+    case 'layout-url': {
+      const [url, widths = '390,1440'] = args;
+      if (!url) throw new Error('usage: layout-url <url> [widths=390,1440]');
+      process.exit(await layout((width) => withPage(url, measure, { width }), widths.split(',').map(Number)));
+      break;
+    }
     case 'eval': {
       const [url, expression] = args;
       if (!expression) throw new Error('usage: eval <url> <javascript>');
@@ -529,6 +618,9 @@ try {
           '  health                      GET /api/health\n' +
           '  api <METHOD> <path> [json]  any API call\n' +
           '  shot <url> <out.png>        screenshot a page\n' +
+          '  signed-shot <user> <pw> <path> <out.png> [width] [light|dark] [steps]\n' +
+          '  layout <user> <pw> <path> [widths] [steps]  measure overflow, tap targets, raw keys\n' +
+          '  layout-url <url> [widths]                    the same, on any URL (a static mock)\n' +
           '  eval <url> <js>             evaluate JavaScript in the page\n' +
           '  smoke                       API + guards + app mounted + SPA render + RTL + Arabic\n' +
           '  flow <outDir>               language switch, two screenshots, asserts dir flips\n' +

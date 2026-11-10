@@ -1,3 +1,8 @@
+> **ARCHIVED 2026-11-10 (D-211). Do not follow this for any work.** This was the `apple-erp-design` skill.
+> It encodes the UI direction the client rejected (D-175). The approved design language is
+> `.design/v2/team-a/README.md`. The file is kept only because older stylesheet comments cite its
+> section numbers.
+
 ---
 name: apple-erp-design
 description: Use when building, restyling, or reviewing any Kaff ERP screen — Apple-HIG visual rigor at ERP data density, in Arabic RTL. Covers typography and bidi isolation, the token vocabulary, surfaces and elevation, table and list density, filter controls, and mobile field screens. Invoke for any work touching src/Web CSS or templates.

@@ -102,12 +102,25 @@ Every driver command:
 |---|---|
 | `driver.mjs health` | `GET /api/health`, prints status and body, exit 1 if not 200 |
 | `driver.mjs api <METHOD> <path> [json]` | any API call |
-| `driver.mjs shot <url> <out.png>` | full-page screenshot |
+| `driver.mjs shot <url> <out.png> [width] [light|dark]` | full-page screenshot of any URL, a `file:///` mock included |
+| `driver.mjs signed-shot <user> <password> <path> <out.png> [width] [light|dark] [steps]` | signs in on screen, opens the route, waits for the text to settle, screenshots |
+| `driver.mjs layout <user> <password> <path> [widths=390,1440] [steps]` | signs in and **measures** the route at each width: one `PASS`/`FAIL` JSON line per width, exit 1 on any `FAIL` |
+| `driver.mjs layout-url <url> [widths=390,1440]` | the same measurement on any URL, for a static mock under `.design/` |
 | `driver.mjs eval <url> "<js>"` | evaluate JavaScript in the page, print the JSON result |
 | `driver.mjs flow <outDir>` | the language-switch flow: clicks, two screenshots, asserts direction flips |
 | `driver.mjs smoke` | API + guards + app mounted + SPA render + RTL + Arabic |
 
 `KAFF_API` and `KAFF_WEB` override the two base URLs. `CHROME` overrides the browser binary.
+
+**Measure before you screenshot.** `layout` fails a width when `<main>` is empty, the page scrolls
+sideways (`overflowPx`, with the elements `outside`), a raw i18n key is on screen (`rawKeys`), or, at
+820px and narrower, a control is under 44px (`smallTargets`). `clipped` is a heuristic and only
+reported. It costs no image tokens, so run it first and screenshot only to judge what cannot be
+measured: hierarchy, reading order, whether the screen makes sense. Proven able to fail on 2026-11-10
+by injecting a 3000px block, a 20px button and a raw key.
+
+**Run path arguments from PowerShell.** Git Bash rewrites a leading `/projects/...` into a Windows
+path and the driver then reports `is not a valid URL`. In Git Bash, set `MSYS_NO_PATHCONV=1` first.
 
 Examples that were run:
 
@@ -129,14 +142,10 @@ PASS  language switch flips direction
 
 ### 3. What the app actually is today
 
-**No longer one endpoint.** `src/Api/Features/` now holds 15 feature areas — Health, Setup, Auth,
-Users, Assignments, Clients, Catalogue, Babs, Employees, DayLabour, Departments, Subcontractors,
-Suppliers, Treasury, Audit — each a vertical slice with its own endpoints. `driver.mjs api …` has
-real endpoints to call beyond `/api/health`.
-
-**Sign-in exists.** The SPA has a sign-in screen (`src/Web/src/app/features/auth/sign-in/`), plus
-change-password and first-run owner setup. It is no longer a single status page — check
-`src/Web/src/app/app.routes.ts` for the current route list before assuming what screens exist.
+This file does not list the features, because the list went stale. `ls src/Api/Features` is the
+current set of API areas, each a vertical slice. `src/Web/src/app/app.routes.ts` is the current set of
+screens. Almost every screen needs a session, so use `signed-shot` and `layout`, not `shot`, on a
+route. The seeded sign-ins are in `docs/uat-manual.md` §1.
 
 ---
 

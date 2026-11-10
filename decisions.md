@@ -16396,3 +16396,84 @@ instruction to build without waiting for the client.
 
 Verified CONDITIONAL in a fresh session at `553309c` (`qa/verification-KAFF-415-417-613-2026-11-09.md`).
 Not accepted: acceptance is Nabil running the demo script.
+
+## D-211 — the agents and the screen workflow reviewed: the designer follows the approved language, a screen is mocked and approved before it is built, and layout is measured · 2026-11-10
+
+**Source.** Nabil, 2026-11-10: review the agents and the workflow, make them more efficient and
+cheaper, "especially the user journey and UI/UX", which he still finds short of what it should be.
+
+**What the review found.**
+
+1. **The designer's definition pointed at the rejected design.** `ui-designer.md` (D-206) ordered the
+   agent to invoke `apple-erp-design` and to treat `ux/components.md` as the tie-breaker. D-175 had
+   already ruled that skill "encodes the rejected direction and is not to be followed for new work",
+   and the definition never named `.design/v2/team-a/`, where the approved language lives. Any
+   screen built through that definition was steered by the wrong source.
+2. **Three screens were built with no approved design.** The labour and daily-log screens, project
+   create and the BOQ builder have no file in `.design/v2/team-a/`. They went from a story straight to
+   Angular, against Nabil's rule that screens ship one at a time, each approved by him.
+3. **The journey did not reach the designer.** The journey-analyst wrote prose; nothing in it said,
+   per screen, who it is for, its one job, its primary action, and what to leave off. The designer
+   filled that gap alone.
+4. **The consultant ran once, late, on everything**, and never re-checked the previous review.
+5. **Reading was paid for that nobody needed.** The designer loaded about 72 KB before its first edit
+   (its definition, `apple-erp-design`, `run-kaff-erp`, `fast-execution`, `ux/components.md`), none of
+   it the approved language. The Scrum Master's definition was 16 KB on the strongest model, most of
+   it generic Scrum lists. `CLAUDE.md` told every agent to read `STATUS.md` and `spec.md` whole.
+6. **Screen checks were done by opening screenshots**, four per state, to find things a script can
+   measure.
+
+**What changed.**
+
+1. **`ui-designer`** follows `.design/v2/team-a/README.md`, read by section, with the tokens in
+   `styles.css` and the kit in `shared/kaff-*`. It has two modes. `mock` draws one screen as static
+   HTML from its screen brief, using `ui-ux-pro-max:ui-ux-pro-max` and `frontend-design:frontend-design`
+   as Nabil ruled on 2026-10-05, and stops for his approval. `build` turns an approved mock into
+   Angular and refuses when there is none. A fix that changes no layout or flow needs no mock.
+2. **`apple-erp-design` is archived** at `.design/archive/apple-erp-design.md`, out of
+   `.claude/skills/`, so no agent can load it. It was moved and not deleted because 23 stylesheets and
+   components still cite its section numbers in comments.
+3. **`journey-analyst`** updates a module's journey in place, keeps what it learns from the web in
+   `ux/research/practice-*.md` so the same search is not paid for twice, and writes a `## Screen briefs`
+   section: screen and route, who, the one job, the primary action, at most five things the user must
+   see, what stays off the screen, the states, what happens next, and the sources.
+4. **`ux-consultant`** is always scoped by its brief. Mode `mock` judges a design against its screen
+   brief before Nabil approves it. Mode `app` starts by marking each earlier finding `FIXED`,
+   `STILL THERE` or `CHANGED`.
+5. **`driver.mjs layout` and `layout-url`** measure a route or a static mock at each width and print
+   one `PASS` or `FAIL` line: an empty `<main>`, sideways scroll, a raw i18n key, and at 820px and
+   narrower a control under 44px. Agents run it before any screenshot, then take three screenshots per
+   changed state (390 light, 390 dark, 1440 light) and not four. The first version of this check passed
+   every screen because it measured the route's loading line; it now waits for the text to settle and
+   fails an empty page, and it was shown to fail on an injected 3000px block, a 20px button and a raw
+   key. `signed-shot` waits the same way.
+6. **`scrum-master`** is 10 KB, down from 16 KB. Every project rule is kept; the generic lists are
+   gone. It gains the screen path below, the rule to ask Nabil the open questions before dispatching
+   when he is in the session (D-207 was dispatched on four open questions and three defaults were built
+   and then removed after D-208), and `arabic-copy` once per module instead of once per lane.
+7. **`CLAUDE.md`, "Before you start"**: a dispatched agent reads what its definition and brief name.
+   The full list is for a session with no brief.
+8. **`run-kaff-erp/SKILL.md`**: the stale feature list is replaced by where to look, and the driver
+   table gains `signed-shot`, `layout` and `layout-url`.
+
+**The screen path.** journey-analyst (journey and screen briefs) → Nabil sees the open questions →
+ui-designer `mock` → ux-consultant `mock` for a new screen → Nabil approves → backend lane if the API
+lacks the data → ui-designer `build` → gate-runner → arabic-copy once per module → verifier →
+ux-consultant `app`, scoped.
+
+**Measured, and what the numbers are not.** These are file sizes, not token spend; no run has been
+compared before and after. Designer start-up reading: about 72 KB before; about 21 KB in `build` mode
+(definition 6 KB, the two README rule sections 5 KB, one screen section about 10 KB) and about 46 KB
+in `mock` mode, where the two design skills add 25 KB. Scrum Master definition: 16.0 KB to 10.3 KB.
+
+**Found by the new check, not fixed here.** `layout-url` at 390px fails three approved mocks:
+`project.html` draws its assumption chips (`button.pv.asm`) 22px high, and `catalogue.html` and
+`babs.html` hold 36px buttons, which may belong to their preview strip (those two files have no
+`embed=1` switch). The README fixes controls at 44px. These are the designer's to judge, not the
+coordinator's to patch.
+
+**Not done.** No screen was redesigned. The labour, daily-log, project-create and BOQ-builder screens
+still have no approved mock, and the existing journey file has no screen briefs yet; both wait on
+Nabil's go. The 23 source comments citing `apple-erp-design` were left as they are. No hook enforces
+which folders an agent may write. Definitions load at session start, so a running session still holds
+the old ones.

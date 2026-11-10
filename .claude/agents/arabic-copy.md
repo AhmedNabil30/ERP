@@ -1,6 +1,6 @@
 ---
 name: arabic-copy
-description: "Reviews Kaff ERP's Arabic UI copy for sense in context: one term one meaning, Kaff's vocabulary verbatim, no developer talk on customer screens. Produces one correction list for Nabil. Use after any lane adds or changes i18n keys."
+description: "Reviews Kaff ERP's Arabic UI copy for sense in context: one term one meaning, Kaff's vocabulary verbatim, no developer talk on customer screens. Produces one correction list for Nabil. Use once per module, after its last build lane has added or changed i18n keys and before the Verifier."
 tools: Read, Grep, Glob, Bash, Write
 model: sonnet
 ---

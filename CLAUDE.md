@@ -25,6 +25,10 @@ asked for this because most of the budget went on reading and prose, not on buil
 
 ## Before you start
 
+**A dispatched agent reads what its definition in `.claude/agents/` and its brief name, and nothing
+else from this list.** The list below is for a session that starts with no brief. Every file read at
+start-up is paid again on each restart, and steps 2 and 3 alone are about 72 KB.
+
 1. Read this file.
 2. **Read `STATUS.md` — it is the single source of truth for where the project stands.** Its map
    section says which files are current and which are dated history. **No other file states the
