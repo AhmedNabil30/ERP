@@ -16565,3 +16565,25 @@ change when the screen is built, in a backend lane, not before.
 project that is running may record a stoppage for one day (rain stops work on a project whose status is
 still جاري العمل), or only a project whose status is already stopped. `spec.md` section 8 speaks only of
 a stopped project.
+
+## D-216 — the BOQ builder mock is accepted in direction; its defaults and four findings are not ruled · 2026-11-10
+
+**Source.** Nabil, 2026-11-10, on the BOQ builder mock (`.design/v2/team-a/boq.html`, commit `3c34ad1`):
+"Yes this is much better xD".
+
+**Taken as.** The direction is accepted: a catalogue pane beside the lines, add by drag, by "+" or by
+tick, quantity typed on the line, signing in a sheet, no codes, search by name. The README section does
+not carry an approval mark yet; the designer adds it on its next run on that screen.
+
+**Not ruled.** Nabil's reply answered none of these, and the mock runs on the designer's defaults:
+which projects may be the source of "start from a previous project" and what comes across (the mock
+copies lines and quantities at today's catalogue rates); signing blocked while a line has no quantity;
+one catalogue item at most once in a BOQ; line removal without a confirmation; the surveyed quantity as
+the one shown; the print title; the follow-up period.
+
+**Open findings from the coordinator's check, for the designer before the build.** The empty state makes
+"start from a previous project" the filled primary although no backend route exists. The rate is shown
+on every line, which the screen brief did not ask for. One act carries three wordings (button, sheet
+title, confirm). The empty view shows the start choice and the catalogue pane together.
+
+**Not checked.** The drag gesture: neither the designer nor the coordinator could drive it headless.

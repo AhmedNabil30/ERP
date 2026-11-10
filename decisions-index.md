@@ -222,3 +222,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-213 | 16504 | the crew screen is accepted, and labour is hours per man per day: D-212 item 3 corrected · 2026-11-10 |
 | D-214 | 16524 | the daily-log quantity is approximate and the extract needs the real value; the code has no step between them · 2026-11-10 |
 | D-215 | 16552 | weather is a reason for a stoppage, not a daily-log entry of its own · 2026-11-10 |
+| D-216 | 16569 | the BOQ builder mock is accepted in direction; its defaults and four findings are not ruled · 2026-11-10 |
