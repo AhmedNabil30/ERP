@@ -264,6 +264,12 @@ Written 2026-11-10 for five screens. Read these rules before any brief.
   - Q-C: labour is entered in hours, per man, per day (D-213). A man may work 4 hours one day and 8
     the next; each date holds its own hours. There is no separate "days" unit. D-212 read Nabil's
     "Hours and days" as two units, and that reading was wrong.
+  - The daily-log quantity is approximate (D-214). The engineer types what he judges was done; the
+    real value is fixed at the extract. The daily-log screen marks the quantity as approximate. Who
+    confirms the real value, and on which screen, is not ruled.
+  - Brief 1 left out two entries the live screen has. The stoppage reason is required (`SPEC §8`: a
+    stopped project still takes entries recording the stoppage and its reason) and returns. Weather is
+    in the code (`LogEntry`, `Weather`) and not in `spec.md`; it stays until Nabil says to drop it.
   - Q-D: yes, "same crew as yesterday".
   - Q-M: nobody at Kaff uses the codes; the system introduced them. People search by name. Project,
     worker and catalogue codes stay off every screen, the catalogue add picker included, and every

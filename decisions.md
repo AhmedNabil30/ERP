@@ -16520,3 +16520,31 @@ first reading and goes back to him for approval.
 **Still not ruled.** The hours cap per man per day, the step size, whether a saved day can be edited
 and by whom, whether "same crew as yesterday" copies the men or their hours too, and how many days
 back an entry may go.
+
+## D-214 — the daily-log quantity is approximate and the extract needs the real value; the code has no step between them · 2026-11-10
+
+**Source.** Nabil, 2026-11-10, on the daily-log mock (`.design/v2/team-a/daily-log.html`, commit
+`3e79d60`): "in كمية at first the engineer is putting approximate but in the mostkhlas it have to be the
+real value".
+
+**What he ruled.** A quantity typed in the daily log is the engineer's approximation. The quantity an
+extract bills is the real one.
+
+**What the code does today.** `PrepareExtract` and `ReviseEvidence` derive the certified work from the
+frozen BOQ's rates and the executed quantities summed from daily logs
+(`ExtractSupport.CumulativeCertifiedWork`). Their own doc comments say "the certified work is never
+typed". Nothing in `src/Api/Features/Extracts` or `src/Domain/Extracts` confirms or corrects a
+quantity. So the approximation is billed as it stands.
+
+**What `spec.md` says.** Section 7: "The supervising engineer confirms field quantities." Section 4.3
+names three quantity states (estimated, surveyed, executed) and has "executed" captured from the daily
+log. The confirmation step is in the spec and is not built. No fourth quantity state is defined.
+
+**Done here.** The daily-log mock marks the quantity as approximate. The mock also gets back the
+stoppage reason, which `spec.md` section 8 requires and the screen brief had left out, and weather,
+which the code records and the brief had also left out.
+
+**Not ruled, and not invented.** Who types the real value and on which screen; whether it is entered
+per period or as a cumulative figure to date; whether the daily-log entries stay as they are beside it;
+which quantity the surveyed-to-executed variance and the month-close percentage-of-completion revenue
+(section 6) read. These go to Nabil, and through him to Karim. No extract code is changed.
