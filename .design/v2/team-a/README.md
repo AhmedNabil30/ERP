@@ -836,13 +836,15 @@ Project documents (not in the spec at project level), history or audit timeline 
 
 # Today's crew (`day-labour.html`)
 
+Approved by Nabil, 2026-11-10, with these two fixes (D-213): the title is neutral and the date shows once.
+
 Mock of the day-labour screen (route `/projects/:projectId/day-labour`), brief 2 of `ux/journey-project-module-2026-11-09.md`. Nabil saw it and accepted the crew screen. His ruling (D-213): labour is hours, per man, per day; a man may work 4 hours one day and 8 another. There is one unit, hours; the first draft's second unit was a misreading of D-212 and is gone. Brief 1 (the daily log without labour) still waits for his word. Open `day-labour.html` directly. `?view=normal|filled|saved|yesterday|empty|sheet|loading|failed|refused|unassigned`; `embed=1` hides the preview strip (review chrome, do not build it). The stepper, the "same crew as yesterday" button, the date switch and the add-a-man sheet work.
 
 ## What it holds
 
 For the Site Supervisor or site engineer, on a phone, one job: say how many hours each man worked on the chosen day, in one save.
 
-- Back link carrying the project name (where am I), the title, the date switch (اليوم / أمس) with the date written out. Each date holds its own hours: switch to أمس and the rows show yesterday's hours (a man with 8 yesterday may show 4 today).
+- Back link carrying the project name (where am I), the title "العمالة" (neutral, so it never contradicts the selected date), the date switch (اليوم / أمس) with the date written out once. Each date holds its own hours: switch to أمس and the rows show yesterday's hours (a man with 8 yesterday may show 4 today).
 - Totals strip, sticky: men and hours. Before anything is entered it says "لم يُسجَّل أحد بعد".
 - "نفس عمالة أمس" (outline button), present only on today while nothing is entered. It copies yesterday's hours into today's rows, which the supervisor then adjusts.
 - The crew: one row per engaged man. Name and trade stacked on the start side, one hours stepper on the end side, on the same line at 390 and 360. A man with hours gets a 5px start bar. A man left at zero did not work that day.
@@ -855,7 +857,7 @@ For the Site Supervisor or site engineer, on a phone, one job: say how many hour
 - **Normal**: crew listed, nothing entered.
 - **Filled**: hours entered, totals live.
 - **Saved**: rows read-only with a tick and hours, banner "تم الحفظ". The primary becomes "تعديل". "أضف عاملاً" is absent.
-- **Yesterday**: date switch on أمس, yesterday's own hours per man, and a note banner "بأثر رجعي · date" above the totals. Yesterday only.
+- **Yesterday**: date switch on أمس, yesterday's own hours per man, and a note banner "بأثر رجعي" above the totals (the date is written once, beside the switch). Yesterday only.
 - **Empty**: "لا عمالة مشغَّلة على المشروع". "أضف عاملاً" is the primary here.
 - **Add-a-man sheet**: bottom sheet on a phone, side panel on desktop. Search placeholder "اسم أو مهنة", by name or trade, never a code. Each result: name, trade, times engaged, rating, phone, and one "تشغيل" button. A "تسجيل عامل جديد" link at the foot opens the registration route.
 - **Loading**: skeleton rows. **Failed**: refusal banner with retry. **Unassigned**: the project-scoped refusal, same as the workspace.

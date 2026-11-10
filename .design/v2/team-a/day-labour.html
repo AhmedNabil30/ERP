@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>كف - عمالة اليوم</title>
+<title>كف - العمالة</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
@@ -377,7 +377,7 @@ const pbtn=(p,cls)=>p?`<button type="button" class="btn ${cls||''}" data-act="${
 function header(){
   const v=S.view,p=primary();
   return `<div class="phl"><a class="back" href="#">${i('left','s')}${v==='unassigned'?'المشاريع':PROJECT}</a>
-    <div class="ttl"><h1>عمالة اليوم</h1></div>
+    <div class="ttl"><h1>العمالة</h1></div>
     ${v==='unassigned'?'':`<div class="drow"><div class="seg" role="group" aria-label="التاريخ"><button type="button" data-date="today" aria-pressed="${S.date==='today'}">اليوم</button><button type="button" data-date="yesterday" aria-pressed="${S.date==='yesterday'}">أمس</button></div><span class="dt">${DATE[S.date]}</span></div>`}</div>
     <div class="acts d-only" id="acts">${pbtn(p)}</div>`}
 function abar(){return `<button type="button" class="menu" id="menu">${i('menu')}القائمة</button><span id="abtn" style="display:contents">${pbtn(primary())}</span>`}
@@ -388,7 +388,7 @@ function body(){
   if(v==='failed')return `<div class="ban rowc" role="alert">${mi('err')}<span><b>تعذّر تحميل العمالة.</b> لم يتغير شيء.</span><button type="button" class="btn sec2 sm act" data-retry="1">${mi('redo','s')}إعادة المحاولة</button></div>`;
   if(v==='loading')return `<div aria-busy="true" role="status"><span class="vh">جارٍ التحميل</span><div class="crew-wrap"><div class="tot"><div class="tot-in zero">${sk('40%')}</div></div><div class="crew">${CREW.map(()=>`<div class="skr">${sk('45%')}${sk('30%')}</div>`).join('')}</div></div></div>`;
   if(v==='empty')return `<div class="crew-wrap"><div class="state"><div class="ico">${i('employees')}</div><h4>لا عمالة مشغَّلة على المشروع</h4></div></div>`;
-  const back=S.date==='yesterday'?`<div class="ban note" role="status" style="margin-block-end:10px">${mi('clock')}<span><b>بأثر رجعي</b> · ${DATE.yesterday}</span></div>`:'';
+  const back=S.date==='yesterday'?`<div class="ban note" role="status" style="margin-block-end:10px">${mi('clock')}<span><b>بأثر رجعي</b></span></div>`:'';
   const sameBtn=(!cnt(S.ent)&&v!=='saved'&&S.date==='today')?`<div class="tools"><button type="button" class="btn sec2 sm" data-act="same">${i('copy','s')}نفس عمالة أمس</button></div>`:'';
   const rec=v==='saved'?`<div class="rec" role="status" style="margin-block:6px 10px">${mi('check')}تم الحفظ</div>`:'';
   const add=v==='saved'?'':`<div class="addrow"><button type="button" class="btn sec2" data-act="add">${i('plus','s')}أضف عاملاً</button></div>`;
