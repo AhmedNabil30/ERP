@@ -16548,3 +16548,20 @@ which the code records and the brief had also left out.
 per period or as a cumulative figure to date; whether the daily-log entries stay as they are beside it;
 which quantity the surveyed-to-executed variance and the month-close percentage-of-completion revenue
 (section 6) read. These go to Nabil, and through him to Karim. No extract code is changed.
+
+## D-215 — weather is a reason for a stoppage, not a daily-log entry of its own · 2026-11-10
+
+**Source.** Nabil, 2026-11-10, on the daily-log mock (commit `328c345`), which drew weather as its own
+row of four buttons: "The weather is made as the reason not alone".
+
+**Ruled.** The daily log has no standalone weather entry. Weather is one of the reasons work stopped,
+and is chosen inside the stoppage reason.
+
+**Effect.** The mock loses the weather row; the stoppage reason offers weather as a choice beside a
+written reason. `LogEntry` still has a separate `Weather` kind and the live screen still offers it; both
+change when the screen is built, in a backend lane, not before.
+
+**Not ruled.** The other reasons a stoppage may carry, if there is a fixed list at all. Whether a
+project that is running may record a stoppage for one day (rain stops work on a project whose status is
+still جاري العمل), or only a project whose status is already stopped. `spec.md` section 8 speaks only of
+a stopped project.

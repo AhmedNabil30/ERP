@@ -221,3 +221,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-212 | 16481 | Nabil answers the first screen-brief questions: back-dated logs are flagged, labour is in hours and days, codes are off every screen · 2026-11-10 |
 | D-213 | 16504 | the crew screen is accepted, and labour is hours per man per day: D-212 item 3 corrected · 2026-11-10 |
 | D-214 | 16524 | the daily-log quantity is approximate and the extract needs the real value; the code has no step between them · 2026-11-10 |
+| D-215 | 16552 | weather is a reason for a stoppage, not a daily-log entry of its own · 2026-11-10 |

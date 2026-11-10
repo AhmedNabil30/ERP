@@ -269,7 +269,8 @@ Written 2026-11-10 for five screens. Read these rules before any brief.
     confirms the real value, and on which screen, is not ruled.
   - Brief 1 left out two entries the live screen has. The stoppage reason is required (`SPEC §8`: a
     stopped project still takes entries recording the stoppage and its reason) and returns. Weather is
-    in the code (`LogEntry`, `Weather`) and not in `spec.md`; it stays until Nabil says to drop it.
+    not an entry of its own (D-215): it is one of the reasons for a stoppage, chosen inside the stoppage
+    reason. The code still has a separate `Weather` kind on `LogEntry`.
   - Q-D: yes, "same crew as yesterday".
   - Q-M: nobody at Kaff uses the codes; the system introduced them. People search by name. Project,
     worker and catalogue codes stay off every screen, the catalogue add picker included, and every
