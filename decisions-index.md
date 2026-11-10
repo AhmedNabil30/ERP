@@ -218,3 +218,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-209 | 16337 | a design project converts into an execution project, and the signature raises the 30% credit · 2026-11-09 |
 | D-210 | 16371 | D-207 and D-208 built: the archive is derived, a design's area is entered at signature, check-in has its own route · 2026-11-10 |
 | D-211 | 16400 | the agents and the screen workflow reviewed: the designer follows the approved language, a screen is mocked and approved before it is built, and layout is me... |
+| D-212 | 16481 | Nabil answers the first screen-brief questions: back-dated logs are flagged, labour is in hours and days, codes are off every screen · 2026-11-10 |

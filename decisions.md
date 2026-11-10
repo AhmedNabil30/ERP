@@ -16477,3 +16477,26 @@ still have no approved mock, and the existing journey file has no screen briefs 
 Nabil's go. The 23 source comments citing `apple-erp-design` were left as they are. No hook enforces
 which folders an agent may write. Definitions load at session start, so a running session still holds
 the old ones.
+
+## D-212 — Nabil answers the first screen-brief questions: back-dated logs are flagged, labour is in hours and days, codes are off every screen · 2026-11-10
+
+**Source.** Nabil, 2026-11-10, answering the five questions that blocked the daily-log and day-labour
+mocks (journey `ux/journey-project-module-2026-11-09.md`, section 4 and `## Screen briefs`).
+
+1. **Labour on its own crew screen (brief 2): not decided.** He asked to see the proposal. The crew
+   screen is drawn as a mock first; the daily-log mock waits for his word on it.
+2. **Q-E. The engineer may enter yesterday's log, and the entry is flagged.** His words: "yes but flag
+   it". Not ruled: how many days back, and who sees the flag. The mock draws yesterday only.
+3. **Q-C. Labour is entered in hours and in days.** His words: "Hours and days". Not ruled: how a day
+   converts to hours, half days, overtime. No screen converts one unit into the other until that is
+   ruled. `RecordDayLabour` stores `Hours` only today, so days need a backend lane before any build.
+4. **Q-D. "Same crew as yesterday": yes.**
+5. **Q-M. Codes stay off every screen.** His words: "they will search with names the codes introduced
+   in the system". Project, worker and catalogue codes are not shown, the catalogue add picker
+   included, and search boxes search by name. This narrows the brief's reading of `spec.md` §4.5, which
+   has the catalogue searched by code: the code may still be matched by the server, but it is not
+   displayed.
+
+**Not done.** Nothing is built. No backend change for days or for the back-dated flag. The other
+questions in section 4 of the journey (Q-N to Q-X) are unanswered and not yet in
+`stories/questions-for-karim.md`.

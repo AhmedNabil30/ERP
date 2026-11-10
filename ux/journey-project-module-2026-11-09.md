@@ -256,6 +256,18 @@ Written 2026-11-10 for five screens. Read these rules before any brief.
 - "Dump" means the `signed-text` output at 390 px in `qa/shots-consultant/text-2026-11-10/`.
 - A state sentence (empty, failed, refused) is not a "word beyond labels". It is what the screen says
   when it cannot show data.
+- **Nabil's answers, 2026-11-10 (D-212). Where a brief below says otherwise, these stand.**
+  - Labour leaving the daily log for its own crew screen (brief 2): not decided. Nabil asked to see the
+    proposal, so brief 2 is drawn as a mock first and brief 1 waits for his word on it.
+  - Q-E: the engineer may enter yesterday's log. A back-dated entry carries a visible flag. How many
+    days back is still open; the mock draws yesterday only.
+  - Q-C: labour is entered in hours and in days. Nobody has ruled how a day converts to hours, so no
+    screen converts one into the other and totals are shown per unit. The server stores hours only today
+    (`RecordDayLabour/Request.cs`, `Hours`); days need a backend lane.
+  - Q-D: yes, "same crew as yesterday".
+  - Q-M: nobody at Kaff uses the codes; the system introduced them. People search by name. Project,
+    worker and catalogue codes stay off every screen, the catalogue add picker included, and every
+    search box searches by name.
 - Order of the briefs: daily log, day labour, BOQ, project create, workspace. Open questions are in
   section 4, Q-M to Q-X, plus Q-C, Q-D, Q-E, Q-A and Q-B above.
 
