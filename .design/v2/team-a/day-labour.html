@@ -202,6 +202,10 @@ a.lnk{display:inline-flex;align-items:center;min-block-size:44px}
 @media (min-width:821px){.ph{max-inline-size:944px}}
 .drow{display:flex;align-items:center;gap:10px 16px;flex-wrap:wrap;margin-block:10px 4px}
 .drow .dt{font-weight:600}
+.drow:has(.days){gap:4px 12px}
+.seg.days button{padding:0 9px;min-inline-size:50px;font-size:.9375rem}
+.rec{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border-radius:var(--radius);border-inline-start:6px solid var(--ok-ink);background:var(--ok-bg);color:var(--ok-ink);font-weight:600;line-height:1.5}
+.rec svg{inline-size:20px;block-size:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;flex:none}
 /* totals: three figures, each per its own unit, nothing converted */
 .tot{position:sticky;inset-block-start:0;z-index:5;background:var(--bg);padding-block:10px;margin-block-end:4px}
 .tot-in{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1.5px solid var(--fieldline);border-radius:var(--radius);background:var(--surface);overflow:hidden}
@@ -233,7 +237,7 @@ a.lnk{display:inline-flex;align-items:center;min-block-size:44px}
 .man .msg{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;color:var(--err-ink);font-weight:500}
 .man .msg svg{inline-size:18px;block-size:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .man .msg .btn{margin-inline-start:auto}
-.man .sv{display:flex;justify-content:flex-end;align-items:center;gap:10px;flex-wrap:wrap;font-weight:600;font-variant-numeric:tabular-nums}
+.man .sv{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;font-weight:600;font-variant-numeric:tabular-nums}
 .man .sv svg{inline-size:20px;block-size:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;color:var(--ok-ink);flex:none}
 .man .sv .none{color:var(--dim);font-weight:400}
 .crew-h{display:flex;justify-content:flex-end;padding:6px 16px 0;color:var(--dim);font-size:.8125rem;font-weight:600}
@@ -277,7 +281,9 @@ a.lnk{display:inline-flex;align-items:center;min-block-size:44px}
       <button type="button" data-view="normal">عادي</button>
       <button type="button" data-view="filled">مُدخل</button>
       <button type="button" data-view="saved">محفوظ</button>
-      <button type="button" data-view="yesterday">أمس</button>
+      <button type="button" data-view="yesterday">أمس محفوظ</button>
+      <button type="button" data-view="backdated">يوم سابق</button>
+      <button type="button" data-view="flag">المهندس المشرف</button>
       <button type="button" data-view="empty">لا عمالة</button>
       <button type="button" data-view="sheet">أضف عاملاً</button>
       <button type="button" data-view="loading">تحميل</button>
@@ -326,42 +332,51 @@ const $=s=>document.querySelector(s);
 const H=document.documentElement;
 const q0=new URLSearchParams(location.search);
 const EMBED=q0.get('embed')==='1';
-const USER={n:'خالد منصور',r:'مهندس موقع'};
 
 /* ============ sample data ============ */
 const PROJECT='فيلا 47 — التجمع الخامس';
-const DATE={today:'الثلاثاء 10 نوفمبر',yesterday:'الاثنين 9 نوفمبر'};
+/* the same day switch as daily-log.html: today, yesterday, then two day names (up to 3 days back, D-217) */
+const DAYS=['d0','d1','d2','d3'];
+const DATE={d0:'الثلاثاء 10 نوفمبر',d1:'الاثنين 9 نوفمبر',d2:'الأحد 8 نوفمبر',d3:'السبت 7 نوفمبر'};
+const DAYW={d0:'اليوم',d1:'أمس',d2:'الأحد',d3:'السبت'};
 const CREW=[[1,'عم صلاح إبراهيم','بناء'],[2,'سيد جمعة','نقاش'],[3,'رمضان عبد الحميد','كهربائي'],[4,'محمد فتحي','سباك'],[5,'حسن عبد الله','نجار'],[6,'إبراهيم سعيد','محارة']];
 const TODAY={1:{h:8},2:{h:8},3:{h:10},4:{h:4},5:{h:6}};
 const YEST={1:{h:8},2:{h:4},3:{h:8},4:{h:8},6:{h:6}};
+const BACK={1:{h:8},2:{h:6},3:{h:8}};
+const POOL=[['أحمد مصطفى','بلاط',3,4.5],['وليد حسين','نقاش',0,0],['عم صلاح إبراهيم','بناء',12,4],['كريم عادل','سباك',1,3],['ياسر محمود','حداد',5,4.5],['سيد جمعة','نقاش',7,3.5]];
+const MAX=16; /* D-217 item 1 */
 const cp=o=>JSON.parse(JSON.stringify(o));
-const POOL=[['أحمد مصطفى','بلاط',3,4.5,'01001234567'],['وليد حسين','نقاش',0,0,'01044445511'],['عم صلاح إبراهيم','بناء',12,4,'01044445505'],['كريم عادل','سباك',1,3,'01044445520'],['ياسر محمود','حداد',5,4.5,'01044445533'],['سيد جمعة','نقاش',7,3.5,'01044445506']];
-const MAX=24;
-const S={view:q0.get('view')||'normal',date:'today',ent:{},mode:{},store:{}};
+const S={view:q0.get('view')||'normal',role:'eng',date:'d0',store:{},saved:{},editing:{},mode:{}};
 const num=v=>String(v);
 const cnt=e=>Object.values(e).filter(x=>(x.h||0)>0).length;
+const ent=()=>S.store[S.date];
 
 function setup(){
-  const v=S.view;S.mode={};
-  S.date=v==='yesterday'?'yesterday':'today';
-  S.store={today:['filled','saved','refused'].includes(v)?cp(TODAY):{},yesterday:cp(YEST)};
-  S.ent=S.store[S.date];
-  if(v==='saved')CREW.forEach(c=>S.mode[c[0]]='saved');
-  if(v==='refused'){S.ent[3]={h:30};S.mode={1:'saved',2:'saved',3:'bad',4:'fail',5:'saved'}}
+  const v=S.view;S.mode={};S.editing={};
+  S.role=v==='flag'?'sup':'eng';
+  S.date=v==='yesterday'||v==='flag'?'d1':v==='backdated'?'d2':'d0';
+  S.store={d0:['filled','saved','refused'].includes(v)?cp(TODAY):{},d1:cp(YEST),d2:v==='backdated'?cp(BACK):{},d3:{}};
+  S.saved={d0:v==='saved'||v==='refused',d1:true,d2:false,d3:false};
+  if(v==='flag')S.editing.d1=true;if(v==='refused')S.editing.d0=true;
+  if(v==='refused'){S.store.d0[3]={h:20};S.mode={1:'saved',2:'saved',3:'bad',4:'fail',5:'saved'}}
 }
+/* D-217 item 3: today, the engineer who entered it; an earlier day, the supervising engineer */
+const canEdit=()=>S.date==='d0'?S.role==='eng':S.role==='sup';
+const readonly=()=>S.saved[S.date]&&!S.editing[S.date];
+const anyBad=()=>Object.values(S.mode).includes('bad');
 
 /* ============ parts ============ */
 const stepper=(id,val,err)=>{const n=CREW.find(c=>c[0]===id)[1];
   return `<div class="stp ${err?'err':''}" data-id="${id}"><button type="button" data-s="-1" aria-label="إنقاص ساعات ${n}" ${!val?'disabled':''}>${i('minus')}</button><input type="text" inputmode="decimal" dir="ltr" value="${val?num(val):''}" placeholder="0" aria-label="ساعات ${n}"><button type="button" data-s="1" aria-label="زيادة ساعات ${n}" ${val>=MAX?'disabled':''}>${i('plus')}</button></div>`};
-const man=c=>{const [id,n,t]=c,e=S.ent[id]||{},m=S.mode[id]||'edit',on=e.h?'on':'';
+const man=c=>{const [id,n,t]=c,e=ent()[id]||{},m=S.mode[id]||(readonly()?'saved':'edit'),on=e.h?'on':'';
   const idh=`<div class="id"><b>${n}</b><span>${t}</span></div>`;
   if(m==='saved')return `<div class="man saved ${on}" data-row="${id}">${idh}<div class="sv">${e.h?mi('check')+`<bdi dir="ltr">${num(e.h)}</bdi>`:'<span class="none">—</span>'}</div></div>`;
   const bad=m==='bad',fail=m==='fail';
   return `<div class="man ${on} ${bad||fail?'bad':''}" data-row="${id}">${idh}${stepper(id,e.h,bad)}`
-   +(bad?`<div class="msg" role="alert">${mi('err')}الحد الأقصى 24 ساعة</div>`:'')
+   +(bad?`<div class="msg" role="alert">${mi('err')}الحد الأقصى ${MAX} ساعة</div>`:'')
    +(fail?`<div class="msg" role="alert">${mi('err')}تعذّر حفظ هذا السطر<button type="button" class="btn sec2 sm">${mi('redo','s')}إعادة المحاولة</button></div>`:'')+`</div>`};
-const totals=()=>{const n=cnt(S.ent);if(!n)return `<div class="tot-in zero" id="totin">لم يُسجَّل أحد بعد</div>`;
-  const h=Object.values(S.ent).reduce((a,x)=>a+(x.h||0),0);
+const totals=()=>{const n=cnt(ent());if(!n)return `<div class="tot-in zero" id="totin">لم يُسجَّل أحد بعد</div>`;
+  const h=Object.values(ent()).reduce((a,x)=>a+(x.h||0),0);
   return `<div class="tot-in" id="totin"><div><b>${n}</b><span>عمال</span></div><div><b>${num(h)}</b><span>ساعات</span></div></div>`};
 const sk=w=>`<span class="sk b" style="inline-size:${w}"></span>`;
 
@@ -369,16 +384,18 @@ function primary(){
   const v=S.view;
   if(['loading','failed','unassigned'].includes(v))return null;
   if(v==='empty')return {ar:'أضف عاملاً',ic:'plus',act:'add'};
-  if(v==='saved')return {ar:'تعديل',ic:'ent',act:'edit'};
-  return {ar:'حفظ',ic:'check',act:'save',off:!cnt(S.ent)};
+  if(readonly())return canEdit()?{ar:'تعديل',ic:'ent',act:'edit'}:null;
+  return {ar:'حفظ',ic:'check',act:'save',off:!cnt(ent())||anyBad()};
 }
 const pbtn=(p,cls)=>p?`<button type="button" class="btn ${cls||''}" data-act="${p.act}" ${p.off?'disabled':''}>${i(p.ic,'s')}${p.ar}</button>`:'';
 
 function header(){
   const v=S.view,p=primary();
+  /* D-217 item 8: the back-dated tag is for the supervising engineer and the owner only, drawn as in daily-log.html ?view=flag */
+  const tag=S.role==='sup'&&S.date!=='d0'?` <span class="pill s-none">${mi('clock')}بأثر رجعي</span>`:'';
   return `<div class="phl"><a class="back" href="#">${i('left','s')}${v==='unassigned'?'المشاريع':PROJECT}</a>
     <div class="ttl"><h1>العمالة</h1></div>
-    ${v==='unassigned'?'':`<div class="drow"><div class="seg" role="group" aria-label="التاريخ"><button type="button" data-date="today" aria-pressed="${S.date==='today'}">اليوم</button><button type="button" data-date="yesterday" aria-pressed="${S.date==='yesterday'}">أمس</button></div><span class="dt">${DATE[S.date]}</span></div>`}</div>
+    ${v==='unassigned'?'':`<div class="drow"><div class="seg days" role="group" aria-label="التاريخ">${DAYS.map(d=>`<button type="button" data-date="${d}" aria-pressed="${S.date===d}">${DAYW[d]}</button>`).join('')}</div><span class="dt">${DATE[S.date]}</span>${tag}</div>`}</div>
     <div class="acts d-only" id="acts">${pbtn(p)}</div>`}
 function abar(){return `<button type="button" class="menu" id="menu">${i('menu')}القائمة</button><span id="abtn" style="display:contents">${pbtn(primary())}</span>`}
 
@@ -388,18 +405,18 @@ function body(){
   if(v==='failed')return `<div class="ban rowc" role="alert">${mi('err')}<span><b>تعذّر تحميل العمالة.</b> لم يتغير شيء.</span><button type="button" class="btn sec2 sm act" data-retry="1">${mi('redo','s')}إعادة المحاولة</button></div>`;
   if(v==='loading')return `<div aria-busy="true" role="status"><span class="vh">جارٍ التحميل</span><div class="crew-wrap"><div class="tot"><div class="tot-in zero">${sk('40%')}</div></div><div class="crew">${CREW.map(()=>`<div class="skr">${sk('45%')}${sk('30%')}</div>`).join('')}</div></div></div>`;
   if(v==='empty')return `<div class="crew-wrap"><div class="state"><div class="ico">${i('employees')}</div><h4>لا عمالة مشغَّلة على المشروع</h4></div></div>`;
-  const back=S.date==='yesterday'?`<div class="ban note" role="status" style="margin-block-end:10px">${mi('clock')}<span><b>بأثر رجعي</b></span></div>`:'';
-  const sameBtn=(!cnt(S.ent)&&v!=='saved'&&S.date==='today')?`<div class="tools"><button type="button" class="btn sec2 sm" data-act="same">${i('copy','s')}نفس عمالة أمس</button></div>`:'';
-  const rec=v==='saved'?`<div class="rec" role="status" style="margin-block:6px 10px">${mi('check')}تم الحفظ</div>`:'';
-  const add=v==='saved'?'':`<div class="addrow"><button type="button" class="btn sec2" data-act="add">${i('plus','s')}أضف عاملاً</button></div>`;
-  return `<div class="crew-wrap">${back}${rec}<div class="tot" id="tot">${totals()}</div>${sameBtn}<div class="crew"><div class="crew-h"><span>ساعات</span></div>${CREW.map(man).join('')}${add}</div></div>`;
+  const ro=readonly();
+  const sameBtn=(!cnt(ent())&&!ro&&S.date==='d0')?`<div class="tools"><button type="button" class="btn sec2 sm" data-act="same">${i('copy','s')}نفس عمالة أمس</button></div>`:'';
+  const rec=(ro&&S.saved[S.date]&&v==='saved')?`<div class="rec" role="status" style="margin-block:6px 10px">${mi('check')}تم الحفظ</div>`:'';
+  const add=ro?'':`<div class="addrow"><button type="button" class="btn sec2" data-act="add">${i('plus','s')}أضف عاملاً</button></div>`;
+  return `<div class="crew-wrap">${rec}<div class="tot" id="tot">${totals()}</div>${sameBtn}<div class="crew"><div class="crew-h"><span>ساعات</span></div>${CREW.map(man).join('')}${add}</div></div>`;
 }
 
-/* ============ the add-a-man sheet ============ */
+/* ============ the add-a-man sheet (D-217 item 6: no phone) ============ */
 function sheetList(q){q=(q||'').trim();
   const r=POOL.filter(p=>!q||p[0].includes(q)||p[1].includes(q));
   const eng=c=>c===0?'لم يُشغَّل من قبل':c===1?'شُغّل مرة واحدة':`شُغّل <bdi dir="ltr">${c}</bdi> مرات`;
-  return r.length?r.map(p=>`<div class="res"><div><b>${p[0]}</b> <span class="tr">${p[1]}</span></div><button type="button" class="btn sec2 sm" data-act="close">تشغيل</button><div class="mt"><span>${eng(p[2])}</span>${p[2]?`<span>تقييم <bdi dir="ltr">${p[3]}</bdi></span>`:''}<bdi dir="ltr">${p[4]}</bdi></div></div>`).join(''):'<div class="res-none">لا نتائج</div>'}
+  return r.length?r.map(p=>`<div class="res"><div><b>${p[0]}</b> <span class="tr">${p[1]}</span></div><button type="button" class="btn sec2 sm" data-act="close">تشغيل</button><div class="mt"><span>${eng(p[2])}</span>${p[2]?`<span>تقييم <bdi dir="ltr">${p[3]}</bdi></span>`:''}</div></div>`).join(''):'<div class="res-none">لا نتائج</div>'}
 function sheet(){return `<div class="grab"></div><div class="hd"><h2>أضف عاملاً</h2><button type="button" class="ib" data-act="close" aria-label="إغلاق">${i('x')}</button></div>
   <div class="bd"><div class="search">${i('search')}<input type="search" id="sq" placeholder="اسم أو مهنة" aria-label="بحث"></div>
   <div class="res-l" id="resl">${sheetList('')}</div></div>
@@ -409,31 +426,41 @@ function bindSheet(){document.querySelectorAll('#sx [data-act="close"]').forEach
 
 /* ============ behaviour ============ */
 function liveUpdate(){$('#totin').outerHTML=totals();const p=primary();$('#acts').innerHTML=pbtn(p);$('#abtn').innerHTML=pbtn(p);bindActs()}
-function setVal(st,v){const id=+st.dataset.id;v=Math.max(0,Math.min(MAX,v));
-  S.ent[id]=S.ent[id]||{};S.ent[id].h=v||undefined;
+function setVal(st,v,typed){const id=+st.dataset.id;
+  const e=ent();e[id]=e[id]||{};
+  if(typed&&v>MAX){ /* a typed value above 16 is refused in place, and kept so the user sees what was typed */
+    e[id].h=v;S.mode[id]='bad';const row=st.closest('.man');row.outerHTML=man(CREW.find(c=>c[0]===id));bindStp(document.querySelector(`.man[data-row="${id}"] .stp`));
+    const inp=document.querySelector(`.man[data-row="${id}"] .stp input`);inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);return liveUpdate()}
+  v=Math.max(0,Math.min(MAX,v));
+  if(S.mode[id]==='bad'){delete S.mode[id];e[id].h=v||undefined;const row=st.closest('.man');row.outerHTML=man(CREW.find(c=>c[0]===id));bindStp(document.querySelector(`.man[data-row="${id}"] .stp`));return liveUpdate()}
+  e[id].h=v||undefined;
   const inp=st.querySelector('input');if(document.activeElement!==inp)inp.value=v?num(v):'';
   st.querySelector('[data-s="-1"]').disabled=!v;st.querySelector('[data-s="1"]').disabled=v>=MAX;
-  st.closest('.man').classList.toggle('on',!!S.ent[id].h);liveUpdate()}
+  st.closest('.man').classList.toggle('on',!!e[id].h);liveUpdate()}
+function bindStp(st){
+  /* D-217 item 2: half-hour steps */
+  st.querySelectorAll('button').forEach(b=>b.onclick=()=>setVal(st,Math.round(((ent()[st.dataset.id]||{}).h||0)*2+ +b.dataset.s)/2));
+  st.querySelector('input').oninput=e=>{const v=parseFloat(e.target.value.replace(/[^\d.]/g,''));setVal(st,isNaN(v)?0:Math.round(v*2)/2,true)}}
 function bindActs(){document.querySelectorAll('[data-act]').forEach(b=>{const a=b.dataset.act;
   if(a==='add')b.onclick=()=>openSheet(true);
-  if(a==='save')b.onclick=()=>{S.view='saved';draw()};
-  if(a==='edit')b.onclick=()=>{S.view='filled';draw()};
-  if(a==='same')b.onclick=()=>{S.ent=S.store.today=cp(S.store.yesterday);S.view='filled';draw(true)}});
-  document.querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>{S.store[S.date]=S.ent;S.date=b.dataset.date;S.ent=S.store[S.date];draw(true)});
+  if(a==='save')b.onclick=()=>{S.saved[S.date]=true;S.editing[S.date]=false;if(S.view==='filled'||S.view==='normal')S.view='saved';draw(true)};
+  if(a==='edit')b.onclick=()=>{S.editing[S.date]=true;S.mode={};if(S.view==='saved')S.view='filled';draw(true)};
+  /* D-217 item 4: copies the men and their hours */
+  if(a==='same')b.onclick=()=>{S.store.d0=cp(S.store.d1);S.view='filled';draw(true)}});
+  document.querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>{S.date=b.dataset.date;draw(true)});
   document.querySelectorAll('[data-retry]').forEach(b=>b.onclick=()=>{S.view='loading';draw()})}
 function draw(keep){
   if(!keep)setup();
+  const u={n:'خالد منصور',r:S.role==='sup'?'مهندس مشرف':'مهندس موقع'};
+  ['1','2'].forEach(k=>{$('#un'+k).textContent=u.n;$('#ur'+k).textContent=u.r;$('#av'+k).textContent=[...u.n][0]});
   $('#ph').innerHTML=header();$('#frame').innerHTML=body();$('#abar').innerHTML=abar();
   $('#menu').onclick=()=>{$('#app').dataset.sheet='1'};
-  document.querySelectorAll('.stp').forEach(st=>{
-    st.querySelectorAll('button').forEach(b=>b.onclick=()=>setVal(st,Math.round(((S.ent[st.dataset.id]||{}).h||0)*2+ +b.dataset.s)/2));
-    st.querySelector('input').oninput=e=>{const v=parseFloat(e.target.value.replace(/[^\d.]/g,''));setVal(st,isNaN(v)?0:Math.round(v*2)/2)}});
+  document.querySelectorAll('.stp').forEach(bindStp);
   document.querySelectorAll('.strip [data-view]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===S.view));
   bindActs();
   history.replaceState(null,'','?view='+S.view+(EMBED?'&embed=1':''));
   if(!keep&&S.view==='sheet')openSheet(true);
 }
-const u=USER;['1','2'].forEach(k=>{$('#un'+k).textContent=u.n;$('#ur'+k).textContent=u.r;$('#av'+k).textContent=[...u.n][0]});
 $('#nav').innerHTML=navHtml();$('#nav2').innerHTML=navHtml();
 $('#closeN').onclick=()=>{$('#app').dataset.sheet='0'};$('#scrim').onclick=()=>{$('#app').dataset.sheet='0'};
 $('#sxs').onclick=()=>openSheet(false);
