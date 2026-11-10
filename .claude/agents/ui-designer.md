@@ -61,8 +61,14 @@ flow (a bug, a string, a state the mock already draws) needs no new mock.
 
 - **One job per screen, one primary action.** A second filled button is a design error.
 - **Every screen answers: where am I, what happened, what do I do next, who is it waiting on.**
-- **Show what this role needs for a decision, not what the database stores.** Ids, class names,
-  provenance tags and internal registers stay off customer screens (consultant review, 2026-11-06).
+- **The screen explains itself** (Nabil, 2026-11-10). Text on a screen is a label, a value, an action,
+  a state or a refusal reason. No explanatory paragraph, no section question, no sentence telling the
+  user how the system works. If a screen needs a sentence to be understood, the layout is wrong; fix
+  the layout. Allowed: a format or unit hint the user cannot guess, one line in an empty state, and
+  the consequence line before an irreversible or money action.
+- **A stored value is not a displayed value** (Nabil, 2026-11-10). Codes and ids (`PRJ-…`, `MAS-…`,
+  `E-…`, GUIDs), class names, provenance tags and internal registers stay off the screen. A code
+  appears only where the screen brief says this person reads, types or searches by it.
 - **A control the user may not use is absent, not greyed out.** The server decides.
 - **RTL is the primary direction.** Logical properties only.
 - **It works at 360 and 390 px with no sideways scroll, and every control is at least 44 px.**
@@ -80,7 +86,7 @@ node .claude/skills/run-kaff-erp/driver.mjs shot <url> <out.png> 390 light
 ```
 
 `layout` and `layout-url` print one `PASS` or `FAIL` line per width: sideways scroll, controls under
-44 px, raw i18n keys, an empty page. **Every width must pass before you take a screenshot.** Fix and
+44 px, raw i18n keys, a database GUID on screen, an empty page. **Every width must pass before you take a screenshot.** Fix and
 re-run; it costs no image tokens. If `health` fails, invoke `run-kaff-erp` and start the stack.
 
 Then three screenshots per state you changed: 390 light, 390 dark, 1440 light. Open every one. Add
@@ -96,6 +102,7 @@ step: a lane that dies holding uncommitted work loses it.
 
 Commit hashes; the `layout` lines; in `build`, `ng test` and `ng build --configuration production`
 with their own exit codes; the screenshots you opened; every invented Arabic string; every place you
-departed from the screen brief or the mock, and why; what you did not build.
+departed from the screen brief or the mock, and why; every sentence and every code you left on the
+screen, each with its reason; what you did not build.
 
 Report anything in this brief that was wrong.

@@ -106,6 +106,7 @@ Every driver command:
 | `driver.mjs signed-shot <user> <password> <path> <out.png> [width] [light|dark] [steps]` | signs in on screen, opens the route, waits for the text to settle, screenshots |
 | `driver.mjs layout <user> <password> <path> [widths=390,1440] [steps]` | signs in and **measures** the route at each width: one `PASS`/`FAIL` JSON line per width, exit 1 on any `FAIL` |
 | `driver.mjs layout-url <url> [widths=390,1440]` | the same measurement on any URL, for a static mock under `.design/` |
+| `driver.mjs signed-text <user> <password> <path> [width=390]` | signs in and prints the text of `<main>`: what the person reads on that route |
 | `driver.mjs eval <url> "<js>"` | evaluate JavaScript in the page, print the JSON result |
 | `driver.mjs flow <outDir>` | the language-switch flow: clicks, two screenshots, asserts direction flips |
 | `driver.mjs smoke` | API + guards + app mounted + SPA render + RTL + Arabic |
@@ -113,7 +114,7 @@ Every driver command:
 `KAFF_API` and `KAFF_WEB` override the two base URLs. `CHROME` overrides the browser binary.
 
 **Measure before you screenshot.** `layout` fails a width when `<main>` is empty, the page scrolls
-sideways (`overflowPx`, with the elements `outside`), a raw i18n key is on screen (`rawKeys`), or, at
+sideways (`overflowPx`, with the elements `outside`), a raw i18n key (`rawKeys`) or a database GUID (`ids`) is on screen, or, at
 820px and narrower, a control is under 44px (`smallTargets`). `clipped` is a heuristic and only
 reported. It costs no image tokens, so run it first and screenshot only to judge what cannot be
 measured: hierarchy, reading order, whether the screen makes sense. Proven able to fail on 2026-11-10

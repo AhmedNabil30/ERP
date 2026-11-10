@@ -419,15 +419,16 @@ const LAYOUT_PROBE = `(() => {
   const small = Array.from(document.querySelectorAll('button, [role="button"], select, textarea, input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"])'))
     .filter(visible).filter((e) => { const r = e.getBoundingClientRect(); return r.height < 43.5 || r.width < 43.5; })
     .map((e) => name(e) + ' ' + size(e));
-  const rawKeys = []; const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const ids = []; const rawKeys = []; const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   for (let n = walker.nextNode(); n; n = walker.nextNode()) { const t = n.textContent.trim();
-    if (/^[a-z][a-z0-9_]*([.][a-z][a-z0-9_]*)+$/.test(t) && visible(n.parentElement)) rawKeys.push(t); }
+    if (/^[a-z][a-z0-9_]*([.][a-z][a-z0-9_]*)+$/.test(t) && visible(n.parentElement)) rawKeys.push(t);
+    const id = t.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i); if (id && visible(n.parentElement)) ids.push(id[0]); }
   const clipped = all.filter((e) => e.children.length === 0 && e.textContent.trim() !== '' && e.scrollWidth > e.clientWidth + 1
     && ['hidden', 'clip'].includes(getComputedStyle(e).overflowX) && getComputedStyle(e).textOverflow !== 'ellipsis').map(name);
   const uniq = (list) => Array.from(new Set(list)).slice(0, 12);
   return { path: location.pathname, dir: document.documentElement.dir, width: vw,
     chars: document.querySelector('main')?.innerText.trim().length ?? 0, text: (document.querySelector('main')?.innerText.trim() ?? '').slice(0, 40), controls: all.filter((e) => e.matches('button, a[href], input, select, textarea')).length, overflowPx,
-    outside: uniq(outside), smallTargets: uniq(small), rawKeys: uniq(rawKeys), clipped: uniq(clipped) };
+    outside: uniq(outside), smallTargets: uniq(small), rawKeys: uniq(rawKeys), ids: uniq(ids), clipped: uniq(clipped) };
 })()`;
 
 const measure = async ({ evaluate }) => {
@@ -437,7 +438,7 @@ const measure = async ({ evaluate }) => {
 
 /**
  * Measures the page `open(width)` returns at each width. Exit 1 when `<main>` is empty, the page scrolls
- * sideways, shows a raw i18n key, or (at phone widths) holds a control under 44px. `clipped` is a
+ * sideways, shows a raw i18n key or a database id (a GUID), or (at phone widths) holds a control under 44px. `clipped` is a
  * heuristic and only reported. `layout` opens a signed-in route; `layout-url` opens any URL, which is how
  * a static mock under `.design/` is measured before it is built.
  */
@@ -447,7 +448,7 @@ async function layout(open, widths) {
     const result = await open(width);
     const phone = result.width <= 820;
     // An empty <main> is a failure, not a pass: nothing was there to measure.
-    const bad = result.chars === 0 || result.overflowPx > 1 || result.rawKeys.length > 0 || (phone && result.smallTargets.length > 0);
+    const bad = result.chars === 0 || result.overflowPx > 1 || result.rawKeys.length > 0 || result.ids.length > 0 || (phone && result.smallTargets.length > 0);
     if (!phone) delete result.smallTargets;
     failed ||= bad;
     console.log(`${bad ? 'FAIL' : 'PASS'}  ${JSON.stringify(result)}`);
@@ -594,6 +595,18 @@ try {
       );
       break;
     }
+    case 'signed-text': {
+      // What the person actually reads on the route, as text: the cheap input for a journey or copy review.
+      const [userName, password, targetPath, width = '390'] = args;
+      if (!userName || !password || !targetPath) throw new Error('usage: signed-text <user> <password> <path> [width=390]');
+      console.log(
+        await signedShot(userName, password, targetPath, null, width, undefined, undefined, async ({ evaluate }) => {
+          await settle(evaluate);
+          return evaluate("document.querySelector('main')?.innerText ?? ''");
+        }),
+      );
+      break;
+    }
     case 'layout-url': {
       const [url, widths = '390,1440'] = args;
       if (!url) throw new Error('usage: layout-url <url> [widths=390,1440]');
@@ -621,6 +634,7 @@ try {
           '  signed-shot <user> <pw> <path> <out.png> [width] [light|dark] [steps]\n' +
           '  layout <user> <pw> <path> [widths] [steps]  measure overflow, tap targets, raw keys\n' +
           '  layout-url <url> [widths]                    the same, on any URL (a static mock)\n' +
+          '  signed-text <user> <pw> <path> [width]       print the text a signed-in person reads on the route\n' +
           '  eval <url> <js>             evaluate JavaScript in the page\n' +
           '  smoke                       API + guards + app mounted + SPA render + RTL + Arabic\n' +
           '  flow <outDir>               language switch, two screenshots, asserts dir flips\n' +

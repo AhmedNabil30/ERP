@@ -21,14 +21,16 @@ showing.
 Your brief names a journey (`ux/journey-*.md`), the screens or steps to walk, and the roles. Walk
 those. A whole-app walk happens only when the brief says so. Without a named scope, stop and ask.
 
-## Nabil's four questions
+## Nabil's questions
 
 1. Is this the best flow, or could the order of steps match site work better?
 2. Can you tell, without being told, what stage a project is at, what already happened, and what
    happens next?
 3. Could a stranger use it unaided? Name every point where you would have to ask.
 4. What is on screen because the database stores it rather than because this role needs it? Name the
-   column, field or panel.
+   column, field or panel, and every code or id.
+5. What sentence is on screen to explain the screen? Quote each one. A clear screen needs none
+   (Nabil, 2026-11-10); each is a sign the layout is not carrying the meaning.
 
 Judge the Arabic as a reader. Kaff's approved status words are لم تبدأ · جاري العمل · انتهت · متعثرة
 · تم تأجيلها. Flag any phrase that is developer talk aimed at a customer, any word used for two
@@ -48,8 +50,10 @@ paragraph. The same flaw found after the build costs a lane.
    your scope, say `FIXED`, `STILL THERE` or `CHANGED`, with what you saw. A review that does not
    close the previous findings lets them rot.
 2. **Measure before you look.** For each screen and role, run `layout` at 360, 390 and 1440. It
-   reports sideways scroll, controls under 44 px, raw i18n keys and an empty page as text, so you do
-   not spend a screenshot finding them. A `FAIL` line is a finding as it stands.
+   reports sideways scroll, controls under 44 px, raw i18n keys, database GUIDs and an empty page as
+   text, so you do not spend a screenshot finding them. A `FAIL` line is a finding as it stands. Run
+   `signed-text` too: it prints what the person reads, which is where codes and explaining sentences
+   show up without a screenshot.
 3. **Then walk it** as each person in scope, clicking, at 390 first and 1440 second. Take a
    screenshot where you need to judge hierarchy or reading order, and open every one you take.
 
@@ -63,6 +67,7 @@ Run from PowerShell (Git Bash rewrites a leading `/`). Sign-ins are in `docs/uat
 ```powershell
 node .claude/skills/run-kaff-erp/driver.mjs health
 node .claude/skills/run-kaff-erp/driver.mjs layout <user> <password> <path> 360,390,1440
+node .claude/skills/run-kaff-erp/driver.mjs signed-text <user> <password> <path> 390
 node .claude/skills/run-kaff-erp/driver.mjs signed-shot <user> <password> <path> <out.png> 390 light
 node .claude/skills/run-kaff-erp/driver.mjs shot "file:///D:/ERP/.design/v2/team-a/<screen>.html?embed=1&view=empty" <out.png> 390 light
 ```

@@ -31,7 +31,8 @@ same module. Your brief may also ask only for screen briefs for named screens; t
   it asks. Those are the places a journey is most likely to be wrong.
 - The newest `qa/consultant-review*.md` for what a stranger already hit.
 - `src/Web/src/app/app.routes.ts` for which screens are real. Read a template only for a screen in
-  your brief.
+  your brief. Where your brief names a text dump of a screen (`driver.mjs signed-text` output), read
+  that first: it is exactly what the person reads today.
 
 ## Then study comparable practice, once
 
@@ -83,7 +84,11 @@ acceptance.
    - **The one job.** One sentence. A screen with two jobs is two screens.
    - **Primary action.** The single button, and what the user sees the moment after pressing it.
    - **What they must see to decide.** Five things at most, in order of importance.
-   - **What stays off the screen.** Data that exists for the database or for another role.
+   - **What stays off the screen.** Data that exists for the database or for another role. Codes and
+     ids are off by default (Nabil, 2026-11-10); name a code as shown only where a tagged step has this
+     person read, type or search by it.
+   - **Words beyond labels.** None by default: a clear screen needs no explanation (Nabil, 2026-11-10).
+     List each sentence you believe the screen still needs, and why the layout cannot carry it.
    - **States.** Empty, loading, failed, refused: what each one says and offers.
    - **Next.** Who the work is now waiting on, and how that person finds out.
    - **Sources.** The step numbers and tags this brief rests on. A brief resting on `ASSUMED` or
