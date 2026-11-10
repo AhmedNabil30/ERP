@@ -256,6 +256,8 @@ Written 2026-11-10 for five screens. Read these rules before any brief.
 - "Dump" means the `signed-text` output at 390 px in `qa/shots-consultant/text-2026-11-10/`.
 - A state sentence (empty, failed, refused) is not a "word beyond labels". It is what the screen says
   when it cannot show data.
+- **Nabil's rulings of 2026-11-10 in D-217 come first: 39 answers on these five screens. Where this
+  preamble or a brief says otherwise, D-217 stands.**
 - **Nabil's answers, 2026-11-10 (D-212). Where a brief below says otherwise, these stand.**
   - Labour leaves the daily log for its own crew screen (brief 2): accepted by Nabil on the mock,
     2026-11-10 (D-213).

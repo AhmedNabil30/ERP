@@ -16587,3 +16587,90 @@ on every line, which the screen brief did not ask for. One act carries three wor
 title, confirm). The empty view shows the start choice and the catalogue pane together.
 
 **Not checked.** The drag gesture: neither the designer nor the coordinator could drive it headless.
+
+## D-217 — Nabil rules the open screen questions for the crew screen, the daily log, the BOQ builder, project create and the workspace · 2026-11-10
+
+**Source.** Nabil, 2026-11-10, choosing among options the coordinator put to him one question at a time.
+Where he typed his own answer it is quoted. These are Nabil's rulings as product owner. Karim was not
+asked; the money rulings (items 13, 26, 35 and 36) are marked for Karim to confirm.
+
+**Crew screen (العمالة).**
+1. At most 16 hours per man per day.
+2. Hours move in half-hour steps.
+3. A saved day may be edited: today by the engineer who entered it, an earlier day by the supervising
+   engineer ("Today same engineer yesterday supervisor engineer").
+4. "نفس عمالة أمس" copies the men and their hours.
+5. No link to past days for the supervisor for now.
+6. The worker's phone is not shown in the add-worker sheet.
+
+**Daily log (اليومية).**
+7. An entry may be made up to 3 days back (this replaces "yesterday only" in D-212). It applies to the
+   crew screen too.
+8. The back-dated flag is seen by the supervising engineer and the owner, not by everyone.
+9. Check-in comes first: "The first thing he sees in the screen the check in after check in he start
+   entering the data". No entry is saved before check-in.
+10. A past day is entered by an engineer who is checked in today. The past day itself gets no check-in.
+11. A second quantity for the same item on the same day adds, and an edit action corrects a saved
+    quantity ("Add yes but we will add action edit if he wants to correct"). How the edit is stored is
+    not ruled; daily-log entries are append-only deltas today.
+12. A second note on the same day is kept beside the first; it does not replace it.
+13. The real quantity an extract bills on is confirmed by the supervising engineer, per item, on the
+    extract screen, as the total done to date; the daily figures stay beside it. Money rule: Karim to
+    confirm. Nothing is built (D-214).
+14. A running project may record a stoppage reason for a day; its status does not change.
+15. A stopped project still records quantities, materials and photos.
+16. The stoppage reason is a text area only. The weather quick choice of D-215 goes; weather is written
+    as the reason.
+17. The seven material units stay in the mock; Karim confirms the list.
+18. A check-in is "far" from 500 m (the default already running).
+
+**BOQ builder (المقايسة).**
+19. Starting from a base: technical office prepares named bases, for example a 120 m apartment at a
+    finish level, "to be a quick quotation for the customer asking the average of prices". The picker
+    lists the prepared bases and also any earlier project the user can open.
+20. Items and quantities come across, editable. Rates are today's catalogue rates. Hold and advance
+    percentages do not come across.
+21. One quantity box per line. It counts as estimated until a survey is recorded; the surveyed value
+    then replaces it.
+22. Whether the same catalogue item may appear twice in one BOQ: Nabil does not know. To Karim.
+23. A BOQ with a line that has no quantity cannot be signed.
+24. A line is removed without a confirmation.
+25. The rate stays on every line.
+26. A custom item may be typed from the builder and goes to review, as `spec.md` section 4.5 says.
+27. Site conditions and line markup get no control on this screen for now.
+28. The printed paper is titled "عرض سعر".
+29. Hold and advance percentages start empty in the sign sheet and are typed for every project.
+30. The advance means what `spec.md` section 5.1 says: recovered from each extract. The sign hint that
+    says otherwise is removed.
+31. An unsigned project is archived after 30 days. An archived BOQ is read-only.
+32. In an empty BOQ the main button is the start from a base; the blank BOQ is the second choice.
+33. The act is named "توقيع المقايسة" on the button, the sheet title and the confirm.
+
+**Project create.**
+34. No contract type is preselected. The three types show as names with no hint.
+    The same project name is refused for the same client. A client who is not registered is added
+    inside the form (quick add), not on the clients screen.
+
+**Money and closure.**
+35. The hold releases once, in full, at handover, as `spec.md` section 11 says. Accounts asks and the
+    owner approves. Karim to confirm who.
+36. Finance is added to every new project automatically. Karim to confirm.
+
+**Project workspace.**
+37. The junior site engineer does not see the extract waiting line or the extracts link, and does not
+    see the closing group. He does see the percent of the contract done.
+38. A stage not reached yet shows as a coming step with no sentence and no lock.
+39. The workspace mock is redrawn under the rules of 2026-11-10.
+
+**Approvals.** The crew mock was approved before (D-213) and takes items 1 to 7. The daily-log mock is
+approved once the designer applies items 7 to 16. The BOQ and project-create mocks go back to Nabil
+after their fixes. Mocks stay on `sonnet`.
+
+**What this needs that does not exist.** A base-BOQ entity and a screen to prepare one; a copy route; a
+multi-line add; a quick-add client on project create; a project-name check per client; an edit path for
+a saved daily quantity; a confirm step for extract quantities; Finance staffed at project creation;
+`LogEntry`'s `Weather` kind retired; the daily log refusing entries before check-in. None is built.
+
+**Still with Karim.** The closure status words, who prepares the monthly extract and how far back it
+reaches, what a terminated project settles, and how a credit note is paid: Nabil gave no answer and the
+coordinator offered none.

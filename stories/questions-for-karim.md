@@ -483,3 +483,16 @@ an obstruction.
 | Q-207-9 | Which execution types may a design convert into? | Lump Sum or Cost Plus | `DesignConversionTargets` |
 | Q-210-1 | How does the 30% design credit reduce what the client pays: against the first extract, the advance, or separately? | It sits on the execution project's receivable; nothing nets it into an extract | (none yet; verifier finding F-415-2) |
 | Q-210-2 | Does the printed quotation say "عرض سعر" or "مقايسة"? | "عرض سعر" | (copy, not a RulingNote) |
+
+## Added 2026-11-10 — from D-217 (Nabil ruled the screen questions; these he passed on)
+
+| Q | Question | Default in the mock | RulingNote |
+|---|---|---|---|
+| Q-217-1 | May the same catalogue item appear twice in one BOQ, for example once per floor? | No: one line per item | (none; mock only) |
+| Q-217-2 | Which units does a site engineer record delivered materials in? | كيس، م³، م²، طن، متر، قطعة، لتر | (none; mock only) |
+| Q-217-3 | Nabil ruled that the supervising engineer confirms the real quantity per item on the extract, as the total done to date. Does Karim agree? | Not built; the extract bills the daily-log sum | (none; D-214) |
+| Q-217-4 | Nabil ruled that Finance is added to every new project automatically. Does Karim agree? | Not built | (none) |
+| Q-217-5 | Nabil ruled that accounts asks for the hold release and the owner approves it. Does Karim agree? | See Q115 | (none) |
+
+Answered by Nabil in D-217, and no longer open unless Karim says otherwise: Q-208-1 (30 days), Q-207-3a
+(500 m), Q-210-2 ("عرض سعر").
