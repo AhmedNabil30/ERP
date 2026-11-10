@@ -975,46 +975,69 @@ An offline state; check-out of a past date; the photo being taken or uploaded; a
 
 # The BOQ and quotation builder (`boq.html`)
 
-Mock of the BOQ screen (route `/projects/:projectId/boq`), brief 3 of `ux/journey-project-module-2026-11-09.md`, redrawn after Nabil's review on 2026-11-10: the BOQ "could be better, like drag and drop, maybe drag from the catalogue, and I think there was a base project he can use and edit". Open `boq.html` directly. `?view=empty|base|blank|building|edit|pending|sheet|dropfail|partial|sign|frozen|archived|design|loading|failed`; `embed=1` hides the preview strip (review chrome, do not build it). Not yet approved by Nabil.
+Mock of the BOQ screen (route `/projects/:projectId/boq`), brief 3 of `ux/journey-project-module-2026-11-09.md`. First drawn after Nabil's review of 2026-11-10 (drag and drop from the catalogue, start from a base project); redrawn the same day to apply his rulings (D-217). Nabil called the first draft "much better". Open `boq.html` directly. `?view=empty|base|blank|building|edit|pending|sheet|dropfail|partial|sign|signerr|custom|customerr|review|frozen|archived|design|loading|failed`; `embed=1` hides the preview strip (review chrome, do not build it). Not approved by Nabil yet.
 
-**Proposals in this mock, not rules.** Drag, tick-to-add and start-from-a-base-project are PROPOSAL (Nabil's direction, no spec rule). There is no backend route for the base project: no copy-from-project route, no base-project flag, no template entity, no multi-line add.
+Drag, tick-to-add and start-from-a-base are Nabil's direction. The base start is ruled (D-217) but has no backend yet (see "What the backend lacks").
 
 ## What it holds
 
 For the Technical Office (and the Owner), mostly on a laptop: build the priced list of work until it can be signed, then sign it.
 
-- Header: back link with the project name, title "المقايسة", one quiet badge (follow-up end date while unsigned, "مجمّدة في ..." once frozen, "مؤرشف" when archived), "طباعة عرض السعر" (outline, shown once there are lines, in any state), and the ONE primary button.
+- Header: back link with the project name, title "المقايسة", one quiet badge (follow-up end date while unsigned, "مجمّدة في ..." once frozen, "مؤرشف" when archived), "طباعة عرض السعر" (outline, shown once there are lines, any state), and the ONE primary button.
 - Totals strip, sticky: the total with "ج.م" named once beside it, and the line count. Draft reads "الإجمالي", frozen reads "قيمة التعاقد". When any line has no quantity the total is "-" and a dashed tag says how many lines are missing one.
-- The lines, grouped under the باب (name at the start, باب subtotal at the end). Columns on a wide screen: item, quantity (typed in place, with its unit), rate, total. Column heads name the columns once; "الإجمالي (ج.م)" carries the currency, so rows do not repeat it. Below 1100 px and on the phone a line is two rows: name and remove; then quantity, `x rate`, total.
-- The catalogue pane at the inline-end (desktop only, 400 px, sticky, scrolls inside itself): "الكتالوج", a name search, the items under their باب (collapsible, the first three open). Each row: tick, grip, name over unit and rate, and "+" (44 px). Items already in the BOQ show a tick mark and are not draggable. No codes anywhere (D-212).
+- The lines, grouped under the باب (name at the start, باب subtotal at the end). Columns on a wide screen: item, quantity (typed in place, with its unit), rate, total. Rate is on every line (D-217). Below 1100 px and on the phone a line is two rows: name and remove; then quantity, `x rate`, total.
+- **Quantity state, no sentence.** One quantity box per line. A line whose quantity is an estimate carries the dashed tag "تقديري"; once the survey is recorded the surveyed quantity replaces it and the line carries the quiet check mark "معاينة". A line with no quantity carries the dashed "بلا كمية". Frozen and archived lines carry no mark (a signed BOQ has settled quantities).
+- **Awaiting review.** A custom item shows the dashed tag "بانتظار المراجعة" beside its quantity tag.
+- The catalogue pane at the inline-end (desktop only, 400 px, sticky, scrolls inside itself): "الكتالوج", the outline button "بند مخصص", a name search, the items under their باب (collapsible, the first three open). Each row: tick, grip, name over unit and rate, "+" (44 px). Items already in the BOQ show a tick mark and are not draggable. No codes anywhere (D-212).
 - Primary action, one at a time: "ابدأ من مشروع سابق" in the empty state; "توقيع المقايسة" once lines exist (disabled while a line has no quantity; the dashed tag next to the total is the reason); none after signing.
 
-## The three ways to add a line
+## The ways to add a line
 
-1. **Drag** a catalogue row into the lines (HTML5 drag, works in the mock). While dragging, the line list shows a dashed slot at the end of the row's own باب section, and a ghost section with the باب name when that باب has no lines yet. Dropping anywhere over the lines adds it to that section.
+1. **Drag** a catalogue row into the lines (HTML5 drag). While dragging, the list shows a dashed slot at the end of the row's own باب section, and a ghost section with the باب name when that باب has no lines yet.
 2. **"+"** on the row.
 3. **Tick** several rows and press "أضف (n)" (outline button at the foot of the pane; a second filled button would break the one-primary rule).
+4. **Custom item** (D-217, spec section 4.5): "بند مخصص" opens the side panel (bottom sheet at 390). Fields: "اسم البند", "الوحدة", "السعر" (with ج.م), "الباب" (select). Confirm is "أضف للمقايسة" (filled: the panel covers the page primary). A missing field shows the field error colour and one word, "مطلوب". The new line lands with no quantity, focus in its quantity box, and the "بانتظار المراجعة" tag. It goes to the Technical Office review queue and never writes to the catalogue.
+5. **A base** (below).
 
-Keyboard: every row's tick and "+" are tabbable; Space and Enter work. A new line takes focus in its quantity box, so typing the quantity follows the add directly. At 390 px the pane becomes a full-height sheet opened from "إضافة بنود": ticks only (no "+", no grip), search on top, footer button "أضف (n)" (filled, because the sheet covers the page primary).
+Keyboard: every row's tick and "+" are tabbable; Space and Enter work. A new line takes focus in its quantity box. At 390 px the pane becomes a full-height sheet opened from "إضافة بنود": ticks only (no "+", no grip), search and "بند مخصص" on top, footer button "أضف (n)" (filled, because the sheet covers the page primary).
 
-## Start from a base project (PROPOSAL)
+## Start from a base (ruled, D-217)
 
-The empty state offers two buttons: "ابدأ من مشروع سابق" (primary) and "مقايسة فارغة". The catalogue pane stays open beside it, so a drop also starts the BOQ. "ابدأ من مشروع سابق" opens a side panel (bottom sheet at 390): name search, each result with name, line count and signing month, and "استخدام". Choosing one fills the lines, all editable and removable like any other line. "مقايسة فارغة" leaves an empty list that is a drop zone (a plus icon and, on desktop, one line "اسحب بنداً من الكتالوج"; on a phone the button "إضافة بنود").
+The Technical Office prepares named bases for quick quotation (example: "شقة 120 م، سوبر لوكس"). The empty state offers two buttons: "ابدأ من مشروع سابق" (the one filled button) and "مقايسة فارغة" (outline). "ابدأ من مشروع سابق" opens a side panel (bottom sheet at 390): a name search, then two groups, "مقايسات جاهزة" (the prepared bases, first) and "مشاريع سابقة" (any earlier project the user can open). Each result: name, line count (projects also the signing month), "استخدام". Choosing one fills items and quantities, priced at today's catalogue rates; all lines are editable and removable and read "تقديري". Hold and advance do not come across (they are typed at signature).
 
-The mock copies the lines and quantities of the chosen project and prices them at today's catalogue rates. That is a guess (see Not decided).
+**The catalogue pane is not shown before the first choice.** The empty state has one decision to make, and the pane (a long list with its own search and ticks) beside it would offer a second, competing way to start and push the filled button off the centre. The pane appears as soon as the BOQ has a first line or "مقايسة فارغة" is chosen. This replaces the first draft, where the pane sat beside the choice so a drop could start the BOQ.
+
+"مقايسة فارغة" leaves an empty list that is a drop zone (a plus icon and, on desktop, one line "اسحب بنداً من الكتالوج"; on a phone the button "إضافة بنود").
 
 ## States (each drawn)
 
-- **empty**: the choice, pane beside it. **base**: the picker open. **blank**: empty list as a drop zone.
+- **empty**: the choice, full width. **base**: the picker open over it. **blank**: empty list as a drop zone, pane beside it.
 - **building**, **edit** (the first quantity focused), **pending** (a line added with no quantity: dashed start bar, dashed "بلا كمية" tag, total "-", subtotal "-", overall total "-", sign disabled).
 - **sheet**: the 390 add sheet (on a wide screen this view looks like building).
-- **dropfail**: the item was archived meanwhile; the pane row turns to the error colour with one line, "تعذّرت الإضافة: البند مؤرشف", and nothing is added. Dropping or adding "سيراميك أرضيات 60×60" in any view reproduces it.
-- **partial**: four ticked, two landed, the third refused. The banner in the pane (or sheet footer) says "أُضيف 2 من 4"; the lines that did not land stay ticked. The batch stops at the first failure, which matches one add call per line.
-- **sign**: the signature panel (bottom sheet at 390): total (read-only, "ستصبح قيمة التعاقد"), hold "نسبة المحجوز" (20 %), advance "نسبة الدفعة المقدمة" (25 %) with their defaults (spec section 15 example), the one freeze sentence, "وقّع وثبّت القيمة" (filled), "إلغاء". Confirming goes to the frozen state in the mock.
+- **custom**: the custom item panel, empty. **customerr**: submitted with fields missing (unit, rate, باب). **review**: a custom line in the list awaiting review.
+- **dropfail**: the item was archived meanwhile; the pane row turns to the error colour with one line, "تعذّرت الإضافة: البند مؤرشف", and nothing is added. Adding "سيراميك أرضيات 60×60" in any view reproduces it.
+- **partial**: four ticked, two landed, the third refused. The banner says "أُضيف 2 من 4"; the lines that did not land stay ticked. The batch stops at the first failure, which matches one add call per line.
+- **sign**: the signature panel (bottom sheet at 390): total (read-only, "ستصبح قيمة التعاقد"), "نسبة المحجوز" and "نسبة الدفعة المقدمة" both **empty and required**, the one freeze sentence, "توقيع المقايسة" (filled), "إلغاء". **signerr**: confirm pressed with the fields empty (or outside 0 to 100): each field turns to the error colour with "مطلوب" or "من 0 إلى 100"; nothing freezes. A valid confirm goes to the frozen state.
 - **frozen**: lines read-only, no pane, no remove, no primary, the date as a badge, print stays.
 - **archived**: as frozen but labelled "الإجمالي", a "مؤرشف" tag and one line with a link to the project.
 - **design** (not for this type): the existing sentence "لا توجد مقايسة لهذا النوع من التعاقد." and a link back to the project.
 - **loading** (skeleton strip, rows and pane), **failed** (refusal banner with retry, no pane).
+
+## Rules from D-217 (Nabil, 2026-11-10)
+
+1. Base start: prepared bases first, then earlier projects; search by name; fills items and quantities at today's catalogue rates; hold and advance do not come across.
+2. Empty state: the filled button is the base start, "مقايسة فارغة" is outline.
+3. One quantity box per line; estimated until the survey is recorded, then surveyed replaces it. The state is shown by a mark, not a sentence.
+4. Signing is blocked while any line has no quantity.
+5. Removing a line asks no confirmation.
+6. The rate is on every line.
+7. A custom item is allowed from the builder and goes to review (spec section 4.5).
+8. Conditions and line markup are not on this screen.
+9. Hold and advance percentages start empty, are required and are typed per project.
+10. One name for the act: "توقيع المقايسة" on the button, the panel title and the confirm. "توقيع التعاقد" and "وقّع وثبّت القيمة" are gone.
+11. The advance hint stays off.
+12. An archived BOQ is read-only. Follow-up is 30 days.
+14. The print title is "عرض سعر".
 
 ## Reused from the kit, unchanged
 
@@ -1022,44 +1045,42 @@ App shell and bottom bar, back link, buttons (filled, outline `sec2`, small), se
 
 ## New in the kit (put these in `components.html` before building)
 
-- **BOQ line** (`ln`): name, quantity box (`qi`: typed value with the unit as an affix), rate, total, remove. Wide grid of five columns; compact two-row shape below 1100 px. Variants: pending (dashed 5 px start bar, dashed tag, total "-"), read-only (plain quantity and unit, no remove).
-- **Totals strip with figure** (`tot2`): a money figure with the currency named once, the line count, and the optional dashed tag.
-- **Catalogue pick row** (`ci`): tick, grip, name over unit and rate, "+". Variants: added (tick mark, not draggable), failed (error bar and one line), phone (`sci`, tick only, 60 px).
-- **Drop slot and ghost section**: dashed slot at the end of the target باب while a drag is on; a ghost section carries a باب that has no lines yet.
-- **Full-height sheet** (`sx.full`): the bottom sheet at 96 % height with a sticky search and a footer button.
-- **Collapsible باب band in a pane** (`gbtn` outside a table): the catalogue screen's group row, without the table around it.
-- **Neutral badge** (`bdg`): quiet bordered label for the follow-up date and the frozen date.
+- **BOQ line** (`ln`): name, quantity box (`qi`: typed value with the unit as an affix), rate, total, remove, and a tag slot (`tags`) for the quantity state and the review mark. Wide grid of five columns; compact two-row shape below 1100 px. Variants: pending (dashed 5 px start bar, dashed tag, total "-"), read-only (plain quantity and unit, no remove, no tags).
+- **Quantity state mark** (`qs`): quiet check plus "معاينة" for a surveyed quantity; the existing dashed tag carries "تقديري".
+- **Totals strip with figure** (`tot2`), **catalogue pick row** (`ci`) with added, failed and phone (`sci`) variants, **drop slot and ghost section**, **full-height sheet** (`sx.full`), **collapsible باب band in a pane**, **neutral badge** (`bdg`).
+- **Field error** (`ctl.err` plus `fmsg`): error-colour border and one short message under the field. Used by the sign panel and the custom item form.
+- **Select in a field** (`ctl select`): the باب choice.
+- **Grouped result list** (`res-g`): a quiet band heading inside the result list ("مقايسات جاهزة", "مشاريع سابقة").
 
 No new colour: every value is an existing token.
 
 ## Left off the screen, on purpose
 
-Item codes (lines and pane). The words "سعر البيع" on rows. Cost price and margin. Both quantities on a row. Line positions and ids. The advance hint. The sentence under the quantity field. "المبالغ بالجنيه المصري (ج.م)". Any explanatory text about drag or ticks: the grip, the dashed slot and the "+" carry it.
+Item codes (lines and pane). The words "سعر البيع" on rows. Cost price and margin. A second quantity box. Line positions and ids. The advance hint. The sentence under the quantity field. "المبالغ بالجنيه المصري (ج.م)". Any explanatory text about drag, ticks or estimates: the grip, the dashed slot, the "+" and the tags carry it.
 
-Sentences kept: the freeze sentence in the signature panel (irreversible, spec section 4.4); one empty-state line "اسحب بنداً من الكتالوج" (desktop only); the state sentences (failed, partial, drop failed, archived, not for this type).
+Sentences kept: the freeze sentence in the sign panel (irreversible, spec section 4.4); one empty-state line "اسحب بنداً من الكتالوج" (desktop only); the state sentences (failed, partial, drop failed, archived, not for this type).
 
-## Not decided here (the mock runs on these defaults; Nabil to rule)
+## Not decided here (the mock runs on these defaults)
 
-1. **Q-N**: the quantity on a line is the surveyed one; one quantity is on screen. The estimated quantity is not drawn.
-2. **Q-U**: the print title "عرض سعر" (existing key) is not drawn on this screen; print is a button only.
-3. **Q-V**: no custom-item control. Not drawn.
-4. **Conditions and line markup**: spec section 4.2 has both (the conditions rate on the request, `lineMarkup` per line) but no screen has controls for them. Not drawn.
-5. **Follow-up period**: 30 days (10 December 2026 in the mock), the default of D-208.
-6. **Base project copy rules (Q-A, Q-B)**: which projects may be a source (signed only? any? the same client?), whether quantities come across, whether rates are today's catalogue rates or the source project's frozen rates (the mock: lines and quantities, today's rates), whether hold and advance carry, and what happens to a source item archived since (not drawn).
-7. **Adding an item twice**: the mock shows an added item as added and offers no second add. Whether the same catalogue item may appear twice in a BOQ is not ruled.
-8. **Signing with a line that has no quantity**: the mock disables the primary, with the dashed tag as the reason. The spec does not say whether a BOQ with a missing quantity may be signed.
-9. **Removing a line**: immediate, no confirmation (the current build asks). The item returns to the pane, so it is recoverable until signing.
-10. **Archived BOQ**: read-only in the mock; reopening happens on the project page.
-11. **Hold and advance defaults**: 20 % and 25 % are the spec section 15 example; whether the defaults are company settings is not asked.
-12. **Quantity saves**: the mock saves as the number is typed. Saving on blur, with a failed-save state per line, is not drawn.
+1. **Same item twice in one BOQ** (D-217: not ruled, goes to Karim). The mock shows an added item as added and offers no second add.
+2. **Signing with a custom line still awaiting review.** The mock lets it be signed (the review concerns the catalogue, not the quantity). Not ruled.
+3. **Which projects may be a base source** and what happens to a source item archived since the base was prepared (not drawn).
+4. **Whether a custom item may be edited or removed after it goes to review.** The mock treats it like any line (editable quantity, removable).
+5. **Quantity saves**: the mock saves as the number is typed. Saving on blur, with a failed-save state per line, is not drawn.
+6. **Who sees "مقايسات جاهزة"**: shown to everyone who can open the BOQ screen in the mock.
 
 ## What the backend lacks for this design
 
-A base project: no source-project route, no flag, no template. A multi-line add (one line per call today, so a batch can stop halfway, which the partial state draws). The pane uses `ListCatalogueItems` (`search`, `babId`); drop and "+" use `AddBoqLine`. Reorder is not needed (lines sort by باب).
+- A base entity (a named, prepared BOQ template of items and quantities), and a source list that returns prepared bases first, then earlier projects the user may open.
+- A copy route that fills a BOQ from a base or earlier project at today's catalogue rates (no hold or advance).
+- A multi-line add (one `AddBoqLine` call per line today, so a batch can stop halfway, which the partial state draws).
+- Estimated versus surveyed quantity on a line: the screen needs a flag per line saying the surveyed quantity has been recorded.
+- The custom-item review queue view for the Technical Office, if it does not exist, and a per-line `pendingCatalogueReview` flag on the BOQ line response.
+- The pane uses `ListCatalogueItems` (`search`, `babId`); drop and "+" use `AddBoqLine`. Reorder is not needed (lines sort by باب).
 
 ## What the mock does not draw
 
-The printed quotation itself; the conditions and markup controls; a custom item; an estimated quantity; reopening an archived project; per-line save failure; the English/LTR text; two people editing at once.
+The screen where the Technical Office prepares a base (not in scope here). The printed quotation; the conditions and markup controls (ruled off this screen); reopening an archived project; per-line save failure; the English/LTR text; two people editing at once.
 
 # Project create (`project-create.html`)
 

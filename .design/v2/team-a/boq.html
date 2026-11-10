@@ -335,6 +335,16 @@ body.dragging .sec.tgt .slot{display:flex}
 .res b{font-weight:700}
 .res .mt{grid-column:1;display:flex;gap:4px 12px;flex-wrap:wrap;color:var(--dim);font-size:.8125rem}
 .res .btn{grid-row:1/3;grid-column:2}
+.res-g{font:700 .875rem/1.4 var(--body);color:var(--dim);padding:12px 14px 6px;background:var(--head);border-block-end:1px solid var(--line)}
+.ctl.err{border-color:var(--err-bar)}
+.fmsg{display:flex;gap:6px;align-items:center;color:var(--err-ink);font-size:.875rem;font-weight:600}
+.fmsg svg{inline-size:16px;block-size:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ctl select,.ctl input[type=text]{flex:1;min-inline-size:0;border:0;background:transparent;padding:0 14px;font:inherit;font-size:1.0625rem;color:inherit;outline:none;block-size:100%}
+.qs{display:inline-flex;align-items:center;gap:4px;color:var(--dim);font:600 .75rem/1 var(--body)}
+.qs svg{inline-size:14px;block-size:14px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.tags{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}
+.pane-h .hrow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sbar .btn{margin-block-start:8px;inline-size:100%}
 .res-none{padding:20px 14px;color:var(--dim);text-align:center}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .lead{margin:0;line-height:1.7}
@@ -384,6 +394,10 @@ body.dragging .sec.tgt .slot{display:flex}
       <button type="button" data-view="dropfail">فشل الإفلات</button>
       <button type="button" data-view="partial">إضافة جزئية</button>
       <button type="button" data-view="sign">التوقيع</button>
+      <button type="button" data-view="signerr">توقيع ناقص</button>
+      <button type="button" data-view="custom">بند مخصص</button>
+      <button type="button" data-view="customerr">بند مخصص ناقص</button>
+      <button type="button" data-view="review">بند بانتظار المراجعة</button>
       <button type="button" data-view="frozen">مجمّدة</button>
       <button type="button" data-view="archived">مؤرشفة</button>
       <button type="button" data-view="design">مشروع تصميم</button>
@@ -440,8 +454,11 @@ const CAT={};
  ['e1','e','نقطة إنارة','نقطة',385],['e2','e','نقطة بريزة','نقطة',420],['e3','e','لوحة كهرباء رئيسية','عدد',6200],
  ['s1','s','نقطة صرف','نقطة',540],['s2','s','نقطة تغذية مياه','نقطة',460]
 ].forEach(a=>CAT[a[0]]={id:a[0],b:a[1],n:a[2],u:a[3],r:a[4],fail:!!a[5]});
-const LINES0=[['m1',1146],['p1',2467.5],['p2',641.25],['p3',783.5],['f1',648.75],['f2',214.5],['f3',308.25],['f4',3126]];
+const LINES0=[['m1',1146,1],['p1',2467.5,1],['p2',641.25,1],['p3',783.5],['f1',648.75],['f2',214.5],['f3',308.25],['f4',3126]];
+let CN=0;const CUSTOM0={n:'ورق جدران مستورد',u:'م²',r:950,b:'f'};
 const BASES=[
+ {p:1,n:'شقة 120 م، سوبر لوكس',c:7,l:[['m1',300],['p1',420],['p3',120],['f1',120],['f4',420],['e1',28],['s1',14]]},
+ {p:1,n:'شقة 90 م، تشطيب عادي',c:5,l:[['m1',210],['p1',320],['p3',90],['f1',90],['f4',320]]},
  {n:'فيلا 31 — القاهرة الجديدة',c:8,d:'مارس 2026',l:[['m1',980],['m3',62],['p1',2100],['p3',700],['f1',560],['f4',2800],['e1',74],['s1',28]]},
  {n:'شقة 12 — الشيخ زايد',c:6,d:'يناير 2026',l:[['m1',420],['p1',900],['p3',310],['f1',280],['f4',1100],['s1',16]]},
  {n:'مبنى إداري — العبور',c:11,d:'نوفمبر 2025',l:[['m2',1500],['p1',3200],['f1',1800],['f5',900],['e1',160],['e3',4]]},
@@ -449,8 +466,8 @@ const BASES=[
 const cp=o=>JSON.parse(JSON.stringify(o));
 const fm=n=>n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fq=n=>n.toLocaleString('en-US',{maximumFractionDigits:3});
-const BUILD=['building','edit','pending','sheet','dropfail','partial','sign'];
-const S={view:q0.get('view')||'building',lines:[],ticks:new Set(),open:{m:1,p:1,f:1,e:0,s:0},q:'',rowErr:{},pb:null,started:false,sx:null,bq:'',drag:null};
+const BUILD=['building','edit','pending','sheet','dropfail','partial','sign','signerr','custom','customerr','review'];
+const S={view:q0.get('view')||'building',lines:[],ticks:new Set(),open:{m:1,p:1,f:1,e:0,s:0},q:'',rowErr:{},pb:null,started:false,sx:null,bq:'',drag:null,hold:'',adv:'',serr:false,cf:{n:'',u:'',r:'',b:''},cerr:false};
 const mobile=()=>matchMedia('(max-width:820px)').matches;
 const ro=()=>S.view==='frozen'||S.view==='archived';
 const isBuild=()=>BUILD.includes(S.view);
@@ -460,21 +477,24 @@ const totalV=()=>pendN()?null:S.lines.reduce((a,l)=>a+lineTot(l),0);
 const added=id=>S.lines.some(l=>l.id===id);
 
 function setup(){
-  const v=S.view;S.lines=[];S.ticks=new Set();S.rowErr={};S.pb=null;S.started=false;S.sx=null;S.q='';S.bq='';
-  if(!['empty','base','blank','loading','failed','design'].includes(v))S.lines=LINES0.map(a=>({id:a[0],qty:a[1]}));
+  const v=S.view;S.lines=[];S.ticks=new Set();S.rowErr={};S.pb=null;S.started=false;S.sx=null;S.q='';S.bq='';S.hold='';S.adv='';S.serr=false;S.cf={n:'',u:'',r:'',b:''};S.cerr=false;
+  if(!['empty','base','blank','loading','failed','design'].includes(v))S.lines=LINES0.map(a=>({id:a[0],qty:a[1],s:a[2]}));
   if(v==='pending')S.lines.push({id:'e1',qty:null});
   if(v==='blank')S.started=true;
   if(v==='dropfail')S.rowErr.fx=true;
   if(v==='partial'){S.ticks=new Set(['e1','e2','fx','e3']);addMany([...S.ticks],true)}
   if(v==='base')S.sx='base';
-  if(v==='sign')S.sx='sign';
+  if(v==='sign'||v==='signerr')S.sx='sign';if(v==='signerr')S.serr=true;
+  if(v==='custom'||v==='customerr')S.sx='custom';if(v==='customerr'){S.cerr=true;S.cf={n:'ورق جدران مستورد',u:'',r:'',b:''}}
+  if(v==='review'){CAT.c1={id:'c1',b:'f',n:CUSTOM0.n,u:CUSTOM0.u,r:CUSTOM0.r,custom:1};S.lines.push({id:'c1',qty:120})}
   if(['sheet','dropfail','partial'].includes(v)&&mobile())S.sx='add';
 }
 
 /* ============ parts ============ */
 const sk=w=>`<span class="sk b" style="inline-size:${w}"></span>`;
+const tags=l=>{if(ro())return '';const rv=CAT[l.id].custom?`<span class="atag">${mi('clock')}بانتظار المراجعة</span>`:'';const q=!(l.qty>0)?`<span class="atag">${mi('info')}بلا كمية</span>`:(l.s?`<span class="qs">${mi('check')}معاينة</span>`:`<span class="atag">تقديري</span>`);return q+rv};
 function row(l){const c=CAT[l.id],t=lineTot(l),pend=!(l.qty>0),r=ro();
-  return `<div class="ln ${pend&&!r?'pend':''}" data-ln="${l.id}"><div class="nm"><b>${c.n}</b>${pend?`<span class="atag">${mi('info')}بلا كمية</span>`:''}</div>`
+  return `<div class="ln ${pend&&!r?'pend':''}" data-ln="${l.id}"><div class="nm"><b>${c.n}</b><span class="tags">${tags(l)}</span></div>`
   +(r?'':`<button type="button" class="ib rm" data-rm="${l.id}" aria-label="حذف ${c.n}">${i('x')}</button>`)
   +`<div class="calc"><div class="qty">${r?`<span class="ro"><bdi dir="ltr">${fq(l.qty)}</bdi> ${c.u}</span>`:`<div class="qi ${S.view==='edit'&&l.id==='m1'?'is-focus':''}"><input type="text" inputmode="decimal" dir="ltr" data-q="${l.id}" value="${l.qty?fq(l.qty):''}" placeholder="0" aria-label="كمية ${c.n}"><span class="aff">${c.u}</span></div>`}</div>`
   +`<div class="rt"><bdi dir="ltr">${fm(c.r)}</bdi></div><div class="tt" id="t-${l.id}">${t==null?'<span class="none">—</span>':`<bdi dir="ltr">${fm(t)}</bdi>`}</div></div></div>`}
@@ -500,7 +520,7 @@ function groupsH(mode){const m=matches();if(!m.length)return '<div class="pane-n
    return `<div class="pg"><button type="button" class="gbtn" data-gb="${b.id}" aria-expanded="${op}">${i('chev','s chev')}<span class="gn">${b.n}</span><span class="gc">${it.length}</span></button>${op?it.map(c=>ciRow(c,mode)).join(''):''}</div>`}).join('')}
 const addBtn=(sec)=>{const n=S.ticks.size;return `<button type="button" class="btn ${sec?'sec2':''}" data-act="addticks" ${n?'':'disabled'}>${i('plus','s')}${n?`أضف (${n})`:'أضف'}</button>`};
 const pbanH=()=>S.pb?`<div class="ban" role="alert">${mi('err')}<span>أُضيف ${S.pb.done} من ${S.pb.total}. ما تبقّى بقي محدّداً.</span></div>`:'';
-function paneH(){return `<aside class="pane d-only" id="pane" aria-label="الكتالوج"><div class="pane-h"><h2>الكتالوج</h2><div class="search">${i('search')}<input type="search" id="psq" value="${S.q}" placeholder="اسم البند" aria-label="بحث"></div></div><div class="pane-b" id="pb">${groupsH('pane')}</div>${S.ticks.size||S.pb?`<div class="pane-f" id="pf">${pbanH()}${addBtn(true)}</div>`:''}</aside>`}
+function paneH(){return `<aside class="pane d-only" id="pane" aria-label="الكتالوج"><div class="pane-h"><div class="hrow"><h2>الكتالوج</h2><button type="button" class="btn sec2 sm" data-act="custom">${i('plus','s')}بند مخصص</button></div><div class="search">${i('search')}<input type="search" id="psq" value="${S.q}" placeholder="اسم البند" aria-label="بحث"></div></div><div class="pane-b" id="pb">${groupsH('pane')}</div>${S.ticks.size||S.pb?`<div class="pane-f" id="pf">${pbanH()}${addBtn(true)}</div>`:''}</aside>`}
 const paneSk=()=>`<aside class="pane d-only" aria-busy="true"><div class="pane-h"><h2>الكتالوج</h2></div><div class="pane-b">${[1,2,3,4,5,6].map(()=>`<div class="skr">${sk('55%')}${sk('25%')}</div>`).join('')}</div></aside>`;
 
 /* header */
@@ -521,22 +541,27 @@ function body(){const v=S.view;
   if(v==='design')return `<div class="state refused"><div class="ico">${i('lock')}</div><h4>لا توجد مقايسة لهذا النوع من التعاقد.</h4><a class="lnk" href="#">العودة إلى المشروع</a></div>`;
   if(v==='failed')return `<div class="ban rowc" role="alert">${mi('err')}<span><b>تعذّر تحميل المقايسة.</b> لم يتغير شيء.</span><button type="button" class="btn sec2 sm act" data-retry="1">${mi('redo','s')}إعادة المحاولة</button></div>`;
   if(v==='loading')return `<div class="boq" aria-busy="true" role="status"><span class="vh">جارٍ التحميل</span><div class="lw"><div class="tot2"><div class="tot2-in">${sk('40%')}</div></div><div class="lines">${[1,2,3,4,5,6].map(()=>`<div class="skr">${sk('45%')}${sk('30%')}</div>`).join('')}</div></div>${paneSk()}</div>`;
-  const edit=!ro(),pane=edit?paneH():'';
+  const edit=!ro(),first=(v==='empty'||v==='base')&&!S.started&&!S.lines.length,pane=edit&&!first?paneH():'';
   let main;
-  if(!S.lines.length&&v==='empty'&&!S.started)main=`<div class="state drop" id="drop"><div class="ico">${i('doc')}</div><h4>لا بنود بعد</h4><div class="choose"><button type="button" class="btn" data-act="frombase">${i('copy','s')}ابدأ من مشروع سابق</button><button type="button" class="btn sec2" data-act="blank">${i('plus','s')}مقايسة فارغة</button></div></div>`;
+  if(first)main=`<div class="state drop" id="drop"><div class="ico">${i('doc')}</div><h4>لا بنود بعد</h4><div class="choose"><button type="button" class="btn" data-act="frombase">${i('copy','s')}ابدأ من مشروع سابق</button><button type="button" class="btn sec2" data-act="blank">${i('plus','s')}مقايسة فارغة</button></div></div>`;
   else if(!S.lines.length)main=`<div class="state drop" id="drop"><div class="ico">${i('plus')}</div><h4 class="d-only">اسحب بنداً من الكتالوج</h4><div class="tools2" style="margin:6px 0 0"><button type="button" class="btn" data-act="opensheet">${i('plus','s')}إضافة بنود</button></div></div>`;
   else main=totH()+(edit?`<div class="tools2"><button type="button" class="btn sec2" data-act="opensheet">${i('plus','s')}إضافة بنود</button></div>`:'')
     +(v==='archived'?`<div class="ban note" role="status" style="margin-block-end:10px">${mi('archive')}<span>انتهت فترة المتابعة دون توقيع. <a class="lnk" href="#">فتح المشروع</a></span></div>`:'')+linesH();
-  return `<div class="boq ${edit?'':'solo'}"><div class="lw" id="lw">${main}</div>${pane}</div>`}
+  return `<div class="boq ${pane?'':'solo'}"><div class="lw" id="lw">${main}</div>${pane}</div>`}
 
 /* ============ sheets ============ */
-function baseList(){const q=S.bq.trim(),r=BASES.filter(b=>!q||b.n.includes(q));
-  return r.length?r.map((b,k)=>`<div class="res"><div><b>${b.n}</b></div><button type="button" class="btn sec2 sm" data-usebase="${BASES.indexOf(b)}">استخدام</button><div class="mt"><span>${b.c} بنود</span><span>${b.d}</span></div></div>`).join(''):'<div class="res-none">لا نتائج</div>'}
+function baseList(){const q=S.bq.trim(),ok=b=>!q||b.n.includes(q);let o='',any=false;
+  for(const [p,h] of [[1,'مقايسات جاهزة'],[0,'مشاريع سابقة']]){const r=BASES.filter(b=>!!b.p===!!p&&ok(b));if(!r.length)continue;any=true;
+   o+=`<div class="res-g">${h}</div>`+r.map(b=>`<div class="res"><div><b>${b.n}</b></div><button type="button" class="btn sec2 sm" data-usebase="${BASES.indexOf(b)}">استخدام</button><div class="mt"><span>${b.c} بنود</span>${b.d?`<span>${b.d}</span>`:''}</div></div>`).join('')}
+  return any?o:'<div class="res-none">لا نتائج</div>'}
 function sxHtml(k){
   if(k==='base')return `<div class="grab"></div><div class="hd"><h2>مشروع سابق</h2><button type="button" class="ib" data-act="closesx" aria-label="إغلاق">${i('x')}</button></div><div class="bd"><div class="search">${i('search')}<input type="search" id="bq" value="${S.bq}" placeholder="اسم المشروع" aria-label="بحث"></div><div class="res-l" id="bl">${baseList()}</div></div>`;
-  if(k==='sign')return `<div class="grab"></div><div class="hd"><h2>توقيع التعاقد</h2><button type="button" class="ib" data-act="closesx" aria-label="إغلاق">${i('x')}</button></div><div class="bd"><div class="field"><label>ستصبح قيمة التعاقد</label><div class="ctl money ro"><span class="val"><bdi dir="ltr">${fm(totalV()||0)}</bdi></span><span class="aff">ج.م</span></div></div><div class="two"><div class="field"><label for="hold">نسبة المحجوز</label><div class="ctl money"><input id="hold" inputmode="decimal" dir="ltr" value="20"><span class="aff">%</span></div></div><div class="field"><label for="adv">نسبة الدفعة المقدمة</label><div class="ctl money"><input id="adv" inputmode="decimal" dir="ltr" value="25"><span class="aff">%</span></div></div></div><p class="lead">التوقيع يثبّت قيمة التعاقد على إجمالي المقايسة، وتُجمَّد البنود بعده فلا تُضاف ولا تُعدَّل ولا تُحذف.</p></div><div class="ft"><button type="button" class="btn" data-act="confirmsign">${i('check','s')}وقّع وثبّت القيمة</button><button type="button" class="btn sec2" data-act="closesx">إلغاء</button></div>`;
-  return `<div class="grab"></div><div class="hd"><h2>إضافة بنود</h2><button type="button" class="ib" data-act="closesx" aria-label="إغلاق">${i('x')}</button></div><div class="bd flush"><div class="sbar"><div class="search">${i('search')}<input type="search" id="psq" value="${S.q}" placeholder="اسم البند" aria-label="بحث"></div></div><div id="pb">${groupsH('sheet')}</div></div><div class="ft" id="pf">${pbanH()}${addBtn(false)}</div>`}
-function openSx(k){S.sx=k;document.body.dataset.sx=k?'1':'0';const e=$('#sx');e.className='sx'+(k==='add'?' full':'');e.setAttribute('aria-label',{base:'مشروع سابق',sign:'توقيع التعاقد',add:'إضافة بنود'}[k]||'');if(k)e.innerHTML=sxHtml(k);bind()}
+  if(k==='sign'){const pf=(id,lab,v)=>{const m=S.serr?(v===''?'مطلوب':(isNaN(+v)||+v<0||+v>100?'من 0 إلى 100':'')):'';return `<div class="field"><label for="${id}">${lab}</label><div class="ctl money ${m?'err':''}"><input id="${id}" inputmode="decimal" dir="ltr" value="${v}" ${m?'aria-invalid="true"':''}><span class="aff">%</span></div>${m?`<div class="fmsg">${mi('err')}${m}</div>`:''}</div>`};
+    return `<div class="grab"></div><div class="hd"><h2>توقيع المقايسة</h2><button type="button" class="ib" data-act="closesx" aria-label="إغلاق">${i('x')}</button></div><div class="bd"><div class="field"><label>ستصبح قيمة التعاقد</label><div class="ctl money ro"><span class="val"><bdi dir="ltr">${fm(totalV()||0)}</bdi></span><span class="aff">ج.م</span></div></div><div class="two">${pf('hold','نسبة المحجوز',S.hold)}${pf('adv','نسبة الدفعة المقدمة',S.adv)}</div><p class="lead">التوقيع يثبّت قيمة التعاقد على إجمالي المقايسة، وتُجمَّد البنود بعده فلا تُضاف ولا تُعدَّل ولا تُحذف.</p></div><div class="ft"><button type="button" class="btn" data-act="confirmsign">${i('check','s')}توقيع المقايسة</button><button type="button" class="btn sec2" data-act="closesx">إلغاء</button></div>`}
+  if(k==='custom'){const f=S.cf,e=S.cerr,fl=(id,lab,inner,bad)=>`<div class="field"><label for="${id}">${lab}</label><div class="ctl ${id==='cr'?'money':''} ${e&&bad?'err':''}">${inner}</div>${e&&bad?`<div class="fmsg">${mi('err')}مطلوب</div>`:''}</div>`;
+    return `<div class="grab"></div><div class="hd"><h2>بند مخصص</h2><button type="button" class="ib" data-act="closesx" aria-label="إغلاق">${i('x')}</button></div><div class="bd">${fl('cn','اسم البند',`<input id="cn" type="text" value="${f.n}">`,!f.n.trim())}<div class="two">${fl('cu','الوحدة',`<input id="cu" type="text" value="${f.u}">`,!f.u.trim())}${fl('cr','السعر',`<input id="cr" inputmode="decimal" dir="ltr" value="${f.r}"><span class="aff">ج.م</span>`,!(+f.r>0))}</div>${fl('cb','الباب',`<select id="cb"><option value=""></option>${BABS.map(x=>`<option value="${x.id}" ${f.b===x.id?'selected':''}>${x.n}</option>`).join('')}</select>`,!f.b)}</div><div class="ft"><button type="button" class="btn" data-act="confirmcustom">${i('plus','s')}أضف للمقايسة</button><button type="button" class="btn sec2" data-act="closesx">إلغاء</button></div>`}
+  return `<div class="grab"></div><div class="hd"><h2>إضافة بنود</h2><button type="button" class="ib" data-act="closesx" aria-label="إغلاق">${i('x')}</button></div><div class="bd flush"><div class="sbar"><div class="search">${i('search')}<input type="search" id="psq" value="${S.q}" placeholder="اسم البند" aria-label="بحث"></div><button type="button" class="btn sec2 sm" data-act="custom">${i('plus','s')}بند مخصص</button></div><div id="pb">${groupsH('sheet')}</div></div><div class="ft" id="pf">${pbanH()}${addBtn(false)}</div>`}
+function openSx(k){S.sx=k;document.body.dataset.sx=k?'1':'0';const e=$('#sx');e.className='sx'+(k==='add'?' full':'');e.setAttribute('aria-label',{base:'مشروع سابق',sign:'توقيع المقايسة',custom:'بند مخصص',add:'إضافة بنود'}[k]||'');if(k)e.innerHTML=sxHtml(k);bind()}
 
 /* ============ actions ============ */
 function addMany(ids,quiet){let done=0,k=0,last=null;S.pb=null;
@@ -551,16 +576,19 @@ function addMany(ids,quiet){let done=0,k=0,last=null;S.pb=null;
 function upd(id){const l=S.lines.find(x=>x.id===id),t=lineTot(l);
   $('#t-'+id).innerHTML=t==null?'<span class="none">—</span>':`<bdi dir="ltr">${fm(t)}</bdi>`;
   document.querySelector(`[data-ln="${id}"]`).classList.toggle('pend',!(l.qty>0));
-  const nm=document.querySelector(`[data-ln="${id}"] .nm`),tag=nm.querySelector('.atag');
-  if(!(l.qty>0)&&!tag)nm.insertAdjacentHTML('beforeend',`<span class="atag">${mi('info')}بلا كمية</span>`);
-  if(l.qty>0&&tag)tag.remove();
+  document.querySelector(`[data-ln="${id}"] .tags`).innerHTML=tags(l);
   $('#s-'+CAT[id].b).innerHTML=subH(CAT[id].b);$('#tot2').outerHTML=totH();
   const p=primary();$('#pri').innerHTML=pbtn(p);$('#abtn').innerHTML=pbtn(p);bind()}
 function bind(){
   document.querySelectorAll('[data-act]').forEach(b=>{const a=b.dataset.act;
     if(a==='sign')b.onclick=()=>openSx('sign');
     if(a==='closesx')b.onclick=()=>openSx(null);
-    if(a==='confirmsign')b.onclick=()=>{S.sx=null;document.body.dataset.sx='0';S.view='frozen';draw(true)};
+    if(a==='confirmsign')b.onclick=()=>{const h=$('#hold').value.trim(),d=$('#adv').value.trim();S.hold=h;S.adv=d;const bad=v=>v===''||isNaN(+v)||+v<0||+v>100;
+      if(bad(h)||bad(d)){S.serr=true;openSx('sign');return}S.sx=null;document.body.dataset.sx='0';S.view='frozen';draw(true)};
+    if(a==='custom')b.onclick=()=>{S.cerr=false;openSx('custom')};
+    if(a==='confirmcustom')b.onclick=()=>{const f=S.cf;if(!f.n.trim()||!f.u.trim()||!(+f.r>0)||!f.b){S.cerr=true;openSx('custom');return}
+      const id='c'+(++CN);CAT[id]={id,b:f.b,n:f.n.trim(),u:f.u.trim(),r:+f.r,custom:1};S.lines.push({id,qty:null});S.cf={n:'',u:'',r:'',b:''};S.cerr=false;
+      if(['empty','blank','base'].includes(S.view))S.view='building';S.sx=null;document.body.dataset.sx='0';draw(true);const inp=document.querySelector(`[data-q="${id}"]`);if(inp){inp.scrollIntoView({block:'nearest'});inp.focus()}};
     if(a==='frombase')b.onclick=()=>openSx('base');
     if(a==='blank')b.onclick=()=>{S.started=true;S.view='blank';draw(true)};
     if(a==='opensheet')b.onclick=()=>openSx('add');
@@ -570,8 +598,10 @@ function bind(){
   document.querySelectorAll('[data-tk]').forEach(b=>b.onchange=()=>{b.checked?S.ticks.add(b.dataset.tk):S.ticks.delete(b.dataset.tk);S.pb=null;refreshPick()});
   document.querySelectorAll('[data-gb]').forEach(b=>b.onclick=()=>{S.open[b.dataset.gb]=!S.open[b.dataset.gb];refreshPick(true)});
   document.querySelectorAll('[data-q]').forEach(inp=>inp.oninput=()=>{const l=S.lines.find(x=>x.id===inp.dataset.q),v=parseFloat(inp.value.replace(/[^\d.]/g,''));l.qty=isNaN(v)?null:v;upd(l.id)});
-  document.querySelectorAll('[data-usebase]').forEach(b=>b.onclick=()=>{S.lines=BASES[+b.dataset.usebase].l.map(a=>({id:a[0],qty:a[1]}));S.view='building';openSx(null);draw(true)});
+  document.querySelectorAll('[data-usebase]').forEach(b=>b.onclick=()=>{S.lines=BASES[+b.dataset.usebase].l.map(a=>({id:a[0],qty:a[1],s:0}));S.view='building';openSx(null);draw(true)});
   document.querySelectorAll('#psq').forEach(e=>e.oninput=()=>{S.q=e.value;refreshPick(true)});
+  const fv=(id,k)=>{const e=$('#'+id);if(e)e.oninput=e.onchange=()=>{S.cf[k]=e.value}};fv('cn','n');fv('cu','u');fv('cr','r');fv('cb','b');
+  ['hold','adv'].forEach(k=>{const e=$('#'+k);if(e)e.oninput=()=>{S[k]=e.value}});
   const bq=$('#bq');if(bq)bq.oninput=()=>{S.bq=bq.value;$('#bl').innerHTML=baseList();bind()};
   document.querySelectorAll('[data-retry]').forEach(b=>b.onclick=()=>{S.view='loading';draw()})}
 function refreshPick(){const m=S.sx==='add'?'sheet':'pane';const pb=$('#pb');if(pb)pb.innerHTML=groupsH(m);
