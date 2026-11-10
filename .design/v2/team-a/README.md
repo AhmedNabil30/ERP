@@ -896,82 +896,75 @@ Weekly payroll and the screen that follows it; rate entry for a new man; registr
 
 # The daily log (`daily-log.html`)
 
-Mock of the daily-log screen (route `/projects/:projectId/daily-log`), brief 1 of `ux/journey-project-module-2026-11-09.md`, with Nabil's rulings of 2026-11-10 (D-212, D-213) applied over it. Awaiting Nabil's approval; nothing is built. Open `daily-log.html` directly. `?view=before|empty|saved|qty|picker|mat|photo|yesterday|location|far|stopped|stoppedsaved|closed|loading|failed`; `embed=1` hides the preview strip (review chrome, do not build it). Working in the mock: check-in and check-out, the kind switch, the item picker with search by name, saving an entry (it joins "today so far", the form clears, the executed figure moves), the date switch.
+**Approved by Nabil, 2026-11-10, under D-217 (items 7 to 16 applied).** Nothing is built yet.
+
+Mock of the daily-log screen (route `/projects/:projectId/daily-log`), brief 1 of `ux/journey-project-module-2026-11-09.md`, with Nabil's rulings D-212, D-213, D-214, D-215 and D-217 applied; where they differ, D-217 stands. Open `daily-log.html` directly. `?view=before|location|empty|saved|qty|edit|picker|mat|photo|past|flag|far|stoppage|stopped|stoppedsaved|closed|loading|failed`; `embed=1` hides the preview strip (review chrome, do not build it). Working in the mock: check-in and check-out, the four-day switch, the kind switch, the item picker with search by name, saving an entry (it joins "المسجَّل", the form clears, the executed figure moves), editing a saved quantity.
 
 ## What it holds
 
-For the site engineer or Supervisor, on a phone, one job: put today's site facts into the log, as quantities, materials, a note or a photo. It is the same tool as the crew screen (`day-labour.html`): the header, the date switch, the back-dated banner and the bottom bar are copied from it, not redrawn.
+For the site engineer or Supervisor, on a phone, one job: put the day's site facts into the log, as quantities, materials, notes, photos and, when work stops, the reason. It is the same tool as the crew screen (`day-labour.html`): header, bottom bar with one primary and the date switch family are shared.
 
-- Back link with the project name, neutral title "اليومية", date switch اليوم / أمس with the date written once beside it.
-- Check-in strip (top, not the page primary): before check-in one outline button "الحضور" (a 56px row); after it, one row with a tick, "الحضور" and the time, and an outline "الانصراف" button; after check-out, both times and no button. A far-from-site check-in is accepted and carries the tag "بعيد عن الموقع" (shape and word) beside the time. No dropdown, no site picker (D-207, D-208).
-- Crew link: one navigation row "العمالة" with the day's summary ("5 عمال · 36 ساعة") and a chevron, to the crew screen. It is a link, not a button: outline row, no fill, so the page has one primary. Labour is not entered here (D-213).
-- "المسجَّل اليوم": entries grouped by kind (الكميات, الخامات, الملاحظات, الصور), each group with a count badge, newest first inside a group. One figure per entry: quantity and unit for a quantity or a material, nothing for a note, a thumbnail for a photo. After a save, "تم الحفظ" appears above the list.
-- The entry form: four kinds in a segmented row, ملاحظة · كمية · خامات · صورة (icon over word, 64px). Note: one text area. Quantity: the BOQ line picked by name, then "الكمية المقاسة" and "المنفَّذ حتى الآن" side by side (unit in the label), then "تنفيذ اليوم" with the unit as the field affix. Materials: name, quantity, unit chosen from a list. Photo: a large dashed "التقاط صورة" and an optional caption.
-- Primary "حفظ": bottom bar on a phone, page header on desktop. Disabled until the form is complete; required fields carry the `*`. After saving, the form clears and stays open for the next entry. On a phone the date, strip and crew link come first, then the form, then "المسجَّل اليوم", so a long list never pushes the form off the screen and a saved entry appears right under the form; on desktop (1000px and wider) the form and the list sit side by side.
+- **Check-in comes first (D-217 item 9).** Until the engineer has checked in today the screen holds only the back link, the neutral title "اليومية", one state block "لم يُسجَّل الحضور بعد" and one primary, "الحضور" (bottom bar on a phone, page header on desktop). No date switch, no crew link, no entry control of any kind: they are absent, not greyed. After check-in the entry screen replaces it.
+- **Check-in strip (today only):** a tick, "الحضور" and the time, and an outline "الانصراف" button; after check-out, both times and no button. A far-from-site check-in (from 500 m, item 18) is accepted and carries the tag "بعيد عن الموقع" (shape and word) beside the time. No dropdown (D-207, D-208).
+- **Day switch (item 7):** four buttons, today and up to three days back: اليوم · أمس · الأحد · السبت (weekday names for the older two), the full date written once beside it. It appears only after check-in, because a past day is entered by an engineer who is checked in today (item 10). A past day has no check-in strip and no check-in line.
+- **Back-dated entries carry no banner or tag for the entering engineer (item 8).** Only the supervising engineer (and the owner) sees the flag: each back-dated entry in "المسجَّل" carries the tag "بأثر رجعي" (`?view=flag`, signed in as "مهندس مشرف"). The old banner "بأثر رجعي" of the first draft is gone.
+- **Crew link:** one navigation row "العمالة" with the day's summary and a chevron, to the crew screen. A link, not a button: the page has one primary. Labour is not entered here (D-213).
+- **The entry form**, first on a phone; five kinds in a segmented row (3 + 2): ملاحظة · كمية · خامات · صورة · سبب التوقف, each 64px high. Note: one text area. Quantity: the BOQ line picked by name, "الكمية المقاسة" and "المنفَّذ حتى الآن" side by side (unit in the label), then "تنفيذ اليوم (تقديري)" with the unit as the field affix. Materials: name, quantity, unit from a list. Photo: a large dashed "التقاط صورة" and an optional caption. Stoppage: one required text area "سبب التوقف".
+- **"المسجَّل" for the chosen day**, below the form: grouped by kind (سبب التوقف, الكميات التقديرية, الخامات, الملاحظات, الصور), each group with a count badge, newest first inside a group. A second quantity for the same item on the same day is a second row (it adds, item 11). A second note is a second row beside the first (item 12). A saved quantity row carries "تعديل".
+- **Edit a saved quantity (item 11):** "تعديل" loads that row into the form. The kind row is absent while editing, the line is shown read-only (settled style), the quantity field holds the saved figure, the row being edited gets a start bar, "إلغاء" (quiet) sits under the field, and the primary reads "حفظ التعديل". How the edit is stored is not ruled (see below).
+- **Primary "حفظ":** bottom bar on a phone, page header on desktop. Disabled until the form is complete; required fields carry the `*`.
 
 ## States
 
-- **Before check-in** (`before`): strip is the single button; log empty with its one line; form open on note.
-- **Checked in, log empty** (`empty`): strip shows the time; "لم يُسجَّل شيء في يومية اليوم بعد." inside the list frame; the form directly below. No second prompt.
-- **Entries saved** (`saved`): groups with figures.
-- **Quantity form** (`qty`) and **item picker** (`picker`): the picker is the add-a-man sheet part (bottom sheet on a phone, side panel on desktop) with the search "اسم البند". Each result: line name, the باب name in dim, "المنفَّذ x من y unit", and "اختيار". Search by line name or باب name; no code anywhere.
-- **Materials form** (`mat`), **photo form** (`photo`).
-- **Yesterday** (`yesterday`): switch on أمس, the banner "بأثر رجعي" (the date is not repeated inside it), yesterday's own entries, the form labelled "تنفيذ أمس". The check-in strip is absent: attendance is a live GPS act and cannot be recorded for a past date. Yesterday only (D-212).
-- **Location refused** (`location`): refusal banner above the strip saying why and how to switch location on; "الحضور" stays pressable.
-- **Far from site** (`far`): accepted, tagged "بعيد عن الموقع".
-- **Project stopped** (`stopped`, and `stoppedsaved` for the saved row): a note banner "المشروع متوقف" (state, not a sentence) above the strip; the kind row gains a fifth kind "سبب التوقف", first and selected; the form is the weather choice plus a written reason. The project still takes the other entries (not ruled, see below).
-- **Project does not take a log yet** (`closed`): the refused state with "هذا المشروع لا يقبل اليومية بعد" and a link back to the workspace. No form, no date switch, no primary.
+- **Not checked in** (`before`): see above. **Location refused** (`location`): the refusal banner above the state block says why and how to switch location on; "الحضور" stays pressable.
+- **Checked in, log empty** (`empty`), **entries saved** (`saved`: two quantities for the same item, two notes), **quantity form** (`qty`), **edit** (`edit`), **item picker** (`picker`: the add-a-man sheet part, search "اسم البند", results show line name, باب name, "المنفَّذ ≈ x من y unit" and "اختيار"; no code anywhere), **materials** (`mat`), **photo** (`photo`).
+- **Past day** (`past`, as the entering engineer): switch on أمس, yesterday's own entries, no strip, no flag.
+- **Supervising engineer** (`flag`): the same day with the flag on each back-dated entry.
+- **Far from site** (`far`): tag beside the check-in time.
+- **Stoppage on a running project** (`stoppage`): the "سبب التوقف" kind is available on a running project (item 14); selecting it shows the text area. The project status does not change and nothing about status is shown.
+- **Stopped project** (`stopped`, `stoppedsaved`): a note banner "المشروع متوقف" (a state, not a sentence). A stopped project still takes quantities, materials and photos (item 15), so the kinds are unchanged; the stoppage kind is preselected. `stoppedsaved` shows the saved reason row.
+- **Project does not take a log yet** (`closed`): refused state with "هذا المشروع لا يقبل اليومية بعد" and a link back to the workspace. No form, no date switch, no primary.
 - **Loading**: skeleton of the strip and the list. **Failed**: refusal banner with retry; the strip stays, the form is not drawn (the item list may not have loaded; attendance does not depend on it).
 
-## Changes after Nabil's review (D-214)
+## Quantity is an estimate (D-214, kept)
 
-1. **The quantity is an estimate, and the screen says so by label and by figure, not by a sentence.** The input is labelled "تنفيذ اليوم (تقديري)" (yesterday: "تنفيذ أمس (تقديري)"). Every executed figure carries a "≈" written inside the figure (left-to-right, "≈ 12.5"): the "المنفَّذ حتى الآن" cell, each saved quantity row, and the picker result. The group is headed "الكميات التقديرية". The measured quantity ("الكمية المقاسة") has no "≈" because it is a real figure. The "≈" is a glyph that carries the meaning on its own, so it does not rely on colour. No control to confirm the real value is drawn: who confirms and where is not ruled (journey preamble, D-214).
-2. **Stoppage reason returns as its own kind**, "سبب التوقف", with the choice and the written field of item 3. It is a fifth kind and appears only on a stopped project (`?view=stopped`), where it is first and selected. In a running project it is absent. Whether a running project may record a stoppage is not ruled.
-3. **Weather is not an entry of its own; it is one reason for a stoppage (D-215, Nabil: "the weather is made as the reason not alone").** The first draft's weather row and its four values are gone from every view. The stoppage form is: the required label "سبب التوقف", one choice "الطقس" (a one-tap button, pressed when chosen), and a written field "سبب آخر" for anything else. The two are mutually exclusive: choosing "الطقس" clears the text, typing clears the choice. "حفظ" is enabled when one of them is given. No other reasons are offered because no fixed list is ruled. The saved row in the list shows "الطقس" or the written text (`?view=stoppedsaved`). The code still has a separate `Weather` kind on `LogEntry`; that changes at build, in the backend lane.
-4. **Single-valued entries replace, they do not stack.** Note and stoppage reason hold one value per day (latest wins, as `DailyLogQuantityEntry` remarks do): the form opens with the current text and saving replaces it, and the list shows one row. Quantities, materials and photos still add.
-5. **The kind row grows.** Four kinds stay one row at 360px (80px wide, 64px high). Five kinds (stopped) wrap as three then two, each 64px high and wider than 44px, so nothing shrinks below the touch target.
+The input is labelled "تنفيذ اليوم (تقديري)" (a past day: "تنفيذ الأحد (تقديري)"); every executed figure carries "≈" inside it, left to right ("≈ 12.5"): the "المنفَّذ حتى الآن" cell, each saved quantity row, the picker result; the group is headed "الكميات التقديرية". The measured quantity has no "≈". Confirming the real quantity happens on the extract screen (item 13), not here: no confirm control is drawn.
 
 ## Reused from the kit, unchanged
 
-App shell, bottom bar with one primary, back link, outline buttons (`sec2`, small), quiet button, segmented control (date switch and the kind row), form field with label / control / affix / `*`, text area, select, tot-in (two figures), badge, pill (`s-none` for the far-from-site tag), refusal banner, note banner, saved-in-place banner (`ok`), state block (refused), skeleton, bottom sheet / side panel (`sx`), search field, result list, text link.
+App shell, bottom bar with one primary, back link, outline and quiet buttons (`sec2`, small), segmented control (day switch and kind row), form field with label / control / affix / `*`, text area, select, read-only field (`ro`), tot-in, badge, pill (`s-none`, for "بعيد عن الموقع" and "بأثر رجعي"), refusal banner, note banner, saved-in-place banner (`ban ok`; `day-labour.html` names its saved banner `rec` and never defines it, so it should switch to `ban ok` when built), state block, skeleton, bottom sheet / side panel (`sx`), search field, result list, text link.
 
 ## New in the kit (put these in `components.html` before building)
 
-- **Check-in strip** (`att`): one bordered row, tick + label + time on the start side, outline button on the end side. Variants: before (a single 56px button filling the row), in, out (no button). The only new part with behaviour.
-- **Link row** (`clink`): icon, bold name over a dim summary, chevron at the end; 64px; hover tint. A navigation row inside a page, distinct from a list row that opens a detail panel.
-- **Log group** (`lg`) and **log entry** (`ent`): a head row in the table-head tone with an icon, the group name and a count badge; entry rows of name at the start, one figure at the end. The photo variant swaps the figure for a 48px thumbnail at the start.
-- **Kind row**: the kit segmented control in an equal-buttons variant (icon over word, 64px, fills the width; wraps 3 + 2 when there are five). Not a new colour or shape. New small part: the **choice chip** (`chip`), a 48px outline button with an icon and a word that fills when pressed; used for the one-tap stoppage reason "الطقس".
-- **Picker trigger**: a field whose whole 56px surface is a button with a down chevron, opening the picker sheet; used where a value is chosen from a long list by name.
-- **Photo capture** (`shot`): a 72px dashed full-width button; once a photo is taken it becomes a row with a 56px thumbnail and "إزالة".
+- **Check-in strip** (`att`): one bordered row, tick + label + time at the start, outline button at the end; variants in and out. Before check-in the same action is the page primary instead.
+- **Link row** (`clink`): icon, bold name over a dim summary, chevron; 64px; hover tint. A navigation row inside a page.
+- **Log group** (`lg`) and **log entry** (`ent`): a head row in the table-head tone with icon, name and count badge; entry rows with the text at the start, one figure and, for a quantity, a quiet "تعديل" button at the end; the edited row has a 5px start bar. The photo variant has a 48px thumbnail at the start.
+- **Kind row**: the kit segmented control as equal buttons (icon over word, 64px, fills the width; five wrap 3 + 2). The day switch is the same control with four plain buttons.
+- **Picker trigger**: a field whose whole 56px surface is a button with a chevron, opening the picker sheet.
+- **Photo capture** (`shot`): a 72px dashed full-width button; once taken it becomes a row with a 56px thumbnail and "إزالة".
 
-No new colour: everything is an existing token. The saved-in-place banner is the kit's `ban ok`; `day-labour.html` calls its saved banner `rec` but never defines it, so that screen shows it unstyled and should be switched to `ban ok` when it is built.
+No new colour.
 
 ## Left off the screen, on purpose
 
-The estimated quantity (a Sales number, SPEC section 4.3), project code and contract value, line codes (lines are picked and searched by name, D-212 Q-M), entry ids, the photo's file reference, the المستخلصات link, the worker dropdown, hours box and labour kind (crew screen), the free "unit" text box on materials (replaced by a list), both hint sentences of the old screen (the GPS sentence and the "executed in this period only" sentence).
+The estimated (Sales) quantity, project code and contract value, line codes (picked and searched by name), entry ids, the photo's file reference, the المستخلصات link, the worker dropdown, hours box and labour kind (crew screen), the free "unit" box on materials, both hint sentences of the old screen, the weather row and any quick-choice chip (weather is written as the stoppage reason, D-217 item 16), the back-dated banner (the flag is the supervising engineer's, item 8).
 
-## Not decided here (guesses in the mock; Nabil to rule)
+## Not decided here (guesses in the mock)
 
-1. **Offline.** Not drawn. Brief 1 says offline creates drafts but nobody checked whether this page queues anything. Ask the builder first.
-2. **Does the engineer see the estimated quantity?** The brief hides it and the mock keeps it hidden. Open.
-3. **Photo upload.** The API has `RecordPhoto` but no upload endpoint was found (journey break 13). The photo kind is drawn per the brief and needs backend before it can be built.
-4. **Unit list on materials.** The seven units (كيس, م³, م², طن, متر, قطعة, لتر) are a guess; no data source was checked.
-5. **Check-in before a form.** The mock does not require check-in before saving entries. Whether it should is not ruled.
-6. **Check-out before yesterday's entries, attendance for yesterday.** The strip is absent on yesterday; whether a missed check-in can be filled afterwards is not ruled.
-7. **Order and grouping.** The brief lists "today so far" before the form, and says a saved entry appears at the top. The mock puts the form first and the list under it (a long list would otherwise hide the form), and groups by kind with the newest first inside its group.
-8. **Check-in button pair.** The brief draws a pair of large buttons before check-in. The mock shows only "الحضور"; "الانصراف" has nothing to close yet, so it is absent (a control the user may not use is absent), and appears after check-in.
-9. **Whether the quantity second entry adds or replaces** (Q-T). The mock adds and moves "المنفَّذ حتى الآن"; if the answer is "replaces" the label and the reasoning change.
-10. **How many days back.** The mock offers yesterday only.
-11. **Who confirms the real quantity, and where** (D-214). Nothing is drawn.
-12. **May a running project record a stoppage?** The mock shows the kind only on a stopped project. Also not ruled: whether a stopped project may take quantities, materials and photos (the mock allows them).
-13. **Other stoppage reasons.** Only "الطقس" and a written reason are drawn. Whether a fixed list of reasons exists is not ruled. Whether a running project may record a one-day stoppage (rain while the project is still جاري العمل) is not ruled; the stoppage kind is drawn on a stopped project only.
-14. **Latest wins for note.** The mock replaces the note; whether an engineer should be able to keep two notes in a day is not ruled.
+1. **Offline.** Not drawn; whether the page queues drafts is not checked.
+2. **How a corrected quantity is stored** (D-217 item 11). Daily-log entries are append-only deltas today. The mock shows the saved row changed in place and "المنفَّذ حتى الآن" recomputed; whether the edit is a reversing entry, a replacement or an in-place update is not ruled.
+3. **Photo upload.** The API has `RecordPhoto` but no upload endpoint was found (journey break 13). Needs backend before the photo kind can be built.
+4. **Materials unit list.** The seven units (كيس, م³, م², طن, متر, قطعة, لتر) stay for the mock; Karim confirms the list (item 17).
+5. **Second stoppage reason on the same day.** The mock keeps one (saving replaces it and the form opens with the current text); notes are the kind ruled to stack.
+6. **Check-in rules around the past days.** The mock offers the four-day switch only after check-in today. Whether a check-out is needed, and what happens to a past day if the engineer never checks in today, is not ruled.
+7. **Edit permission.** Who may edit a saved quantity and until when (the crew screen rule of item 3 is the nearest, not applied here).
+8. **Does an entry on a past day need a reason?** Not asked; none is drawn.
+9. **The flag on the crew screen.** The crew mock still draws "بأثر رجعي" as a banner for everyone; item 8 and item 7 apply to it too. Not changed here.
+10. **Confirmation of the real quantity** (item 13) lives on the extract screen; nothing is drawn here.
 
 ## What the mock does not draw
 
-An offline state; check-out of a past date; the photo being taken or uploaded; a refused or failed save of one entry; a refused quantity (over the surveyed total); the English/LTR text beyond the direction switch.
-
----
+An offline state; the photo being taken or uploaded; a refused or failed save of one entry; a quantity over the surveyed total; check-out of a past day; the owner's view of the flag (the supervising engineer's view stands for it); the English/LTR text beyond the direction switch.
 
 # The BOQ and quotation builder (`boq.html`)
 
