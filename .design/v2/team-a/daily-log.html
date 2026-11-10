@@ -272,10 +272,11 @@ button.ctl .val.ph0{color:var(--dim)}
 .seg.kinds button{flex:1 1 0;min-inline-size:0;min-block-size:64px;padding:6px 4px;flex-direction:column;justify-content:center;gap:4px;font-size:.9375rem;border:0;background:var(--field)}
 .seg.kinds button[aria-pressed="true"]{background:var(--ink)}
 .seg.kinds.k5 button{flex:1 1 calc(33.333% - 2px)}
-.wx{border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:10px 12px 12px;display:grid;gap:8px;margin-block-end:14px}
-.wx>.lab{font:600 1rem/1.4 var(--body)}
-.wx .seg.kinds button{min-block-size:56px}
-.wx .seg.kinds{max-inline-size:480px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;min-block-size:48px;padding:0 18px;border:2px solid var(--fieldline);border-radius:var(--radius);background:var(--field);font:600 1rem/1 var(--body)}
+.chip:hover{background:var(--hover)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);font-weight:700}
+.chip:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
 .form{border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:16px;display:grid;gap:16px;margin-block-start:10px}
 .f2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
 .tot-in span small{font-size:inherit}
@@ -323,6 +324,7 @@ button.ctl .val.ph0{color:var(--dim)}
       <button type="button" data-view="location">الموقع مرفوض</button>
       <button type="button" data-view="far">بعيد عن الموقع</button>
       <button type="button" data-view="stopped">المشروع متوقف</button>
+      <button type="button" data-view="stoppedsaved">توقف مسجَّل</button>
       <button type="button" data-view="closed">المشروع لا يقبل يومية</button>
       <button type="button" data-view="loading">تحميل</button>
       <button type="button" data-view="failed">تعذّر التحميل</button>
@@ -372,10 +374,7 @@ IC.qty='M3 17L17 3l4 4L7 21zM8 12l2 2M11 9l2 2M14 6l2 2';
 IC.mat='M3 8l9-5 9 5v8l-9 5-9-5zM3 8l9 5 9-5M12 13v8';
 IC.out='M9 5H5v14h4M16 8l4 4-4 4M20 12H9';
 IC.stop='M12 21a9 9 0 100-18 9 9 0 000 18zM9.5 9.5h5v5h-5z';
-IC.sun='M12 16a4 4 0 100-8 4 4 0 000 8zM12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5';
 IC.cloud='M7 18a4 4 0 01-.5-8 5.5 5.5 0 0110.7 1A3.5 3.5 0 0117 18z';
-IC.rain='M7 15a4 4 0 01-.5-8 5.5 5.5 0 0110.7 1A3.5 3.5 0 0117 15zM8 18l-1 3M12 18l-1 3M16 18l-1 3';
-IC.wind='M3 8h11a3 3 0 10-3-3M3 12h16a3 3 0 11-3 3M3 16h7';
 const $=s=>document.querySelector(s);
 const H=document.documentElement;
 const q0=new URLSearchParams(location.search);
@@ -394,26 +393,25 @@ const LINES=[
 const UNITS=['كيس','م³','م²','طن','متر','قطعة','لتر'];
 const KINDS=[['n','ملاحظة','note'],['q','كمية','qty'],['m','خامات','mat'],['p','صورة','cam']];
 const KSTOP=['s','سبب التوقف','stop'];
-const WX=[['صافٍ','sun'],['غائم','cloud'],['ممطر','rain'],['رياح','wind']];
 const GH={s:['سبب التوقف','stop'],q:['الكميات التقديرية','qty'],m:['الخامات','mat'],n:['الملاحظة','note'],p:['الصور','cam']};
 const SEED_T=[{k:'q',n:'تبليط أرضيات المعيشة',f:'12.5',u:'م²'},{k:'q',n:'محارة داخلية',f:'30',u:'م²'},{k:'m',n:'أسمنت بورتلاندي',f:'20',u:'كيس'},{k:'n',n:'وصل الرخام صباح اليوم'},{k:'p',n:'واجهة الدور الأول'}];
 const SEED_Y=[{k:'q',n:'محارة داخلية',f:'45',u:'م²'},{k:'n',n:'توقف ساعتين لانقطاع الكهرباء'}];
 const CREWSUM={today:'5 عمال · 36 ساعة',yesterday:'5 عمال · 34 ساعة'};
 const S={};
-const blank=()=>({note:'',stop:'',line:null,qv:'',mn:'',mq:'',mu:'',cap:'',photo:false});
+const blank=()=>({note:'',stop:'',sw:false,line:null,qv:'',mn:'',mq:'',mu:'',cap:'',photo:false});
 
 const cur=k=>(S.ent[S.date].find(e=>e.k===k)||{}).n||'';
-function sync(){S.note=cur('n');S.stop=cur('s')}
+function sync(){S.note=cur('n');const e=S.ent[S.date].find(x=>x.k==='s')||{};S.stop=e.w?'':(e.n||'');S.sw=!!e.w}
 function setup(){
   const v=S.view;
   Object.assign(S,blank());
   S.date=v==='yesterday'?'yesterday':'today';
   S.kind=({qty:'q',picker:'q',mat:'m',photo:'p'})[v]||'n';
-  S.att=['empty','saved','qty','picker','mat','photo','far','stopped'].includes(v)?{in:'07:42',out:null,far:v==='far'}:null;
+  S.att=['empty','saved','qty','picker','mat','photo','far','stopped','stoppedsaved'].includes(v)?{in:'07:42',out:null,far:v==='far'}:null;
   S.ent={today:['saved','qty','picker','mat','photo','far'].includes(v)?SEED_T.map(x=>({...x})):[],yesterday:SEED_Y.map(x=>({...x}))};
-  S.ok=false;S.stopped=v==='stopped';
+  S.ok=false;S.stopped=v==='stopped'||v==='stoppedsaved';
+  if(v==='stoppedsaved')S.ent.today=[{k:'s',n:'',w:1}];
   if(S.stopped)S.kind='s';
-  S.wx={today:['saved','qty','picker','mat','photo','far'].includes(v)?'صافٍ':null,yesterday:'غائم'};
   sync();
   if(v==='qty'||v==='picker'){S.line=1;S.qv=v==='qty'?'6':''}
   if(v==='mat'){S.mn='أسمنت بورتلاندي';S.mq='20';S.mu='كيس'}
@@ -425,7 +423,7 @@ const line=()=>LINES.find(l=>l.id===S.line);
 const dayWord=()=>S.date==='today'?'اليوم':'أمس';
 function valid(){const k=S.kind;
   if(k==='n')return !!S.note.trim();
-  if(k==='s')return !!S.stop.trim();
+  if(k==='s')return S.sw||!!S.stop.trim();
   if(k==='q')return !!S.line&&parseFloat(S.qv)>0;
   if(k==='m')return !!S.mn.trim()&&parseFloat(S.mq)>0&&!!S.mu;
   return S.photo}
@@ -454,8 +452,8 @@ function attBlock(){
 
 const crewLink=()=>`<a class="clink" href="#">${i('employees')}<span class="tx"><b>العمالة</b><span>${CREWSUM[S.date]}</span></span>${i('left','go')}</a>`;
 
-const wxBlock=()=>`<div class="wx"><span class="lab" id="wxl">الطقس</span><div class="seg kinds" role="group" aria-labelledby="wxl">${WX.map(([w,ic])=>`<button type="button" data-wx="${w}" aria-pressed="${S.wx[S.date]===w}">${i(ic,'s')}${w}</button>`).join('')}</div></div>`;
 function entRow(e){
+  if(e.k==='s'&&e.w)return `<div class="ent"><span class="nm">الطقس</span></div>`;
   if(e.k==='p')return `<div class="ent"><span class="th">${i('cam')}</span><span class="nm">${e.n||'صورة'}</span></div>`;
   if(e.k==='n'||e.k==='s')return `<div class="ent"><span class="nm">${e.n}</span></div>`;
   return `<div class="ent"><span class="nm">${e.n}</span><span class="fg"><bdi dir="ltr">${e.k==='q'?'≈ ':''}${e.f}</bdi> <small>${e.u}</small></span></div>`}
@@ -470,7 +468,7 @@ function listBlock(){
 const fld=(id,lab,ctl,req)=>`<div class="field"><label for="${id}">${lab}${req?'<span class="req" aria-hidden="true">*</span><span class="vh">مطلوب</span>':''}</label>${ctl}</div>`;
 function formBody(){
   const k=S.kind;
-  if(k==='s')return fld('f-stop','سبب التوقف',`<div class="ctl ta"><textarea id="f-stop" data-f="stop">${S.stop}</textarea></div>`,1);
+  if(k==='s')return `<div class="field"><span class="lab" id="f-sl">سبب التوقف<span class="req" aria-hidden="true">*</span><span class="vh">مطلوب</span></span><div class="chips" role="group" aria-labelledby="f-sl"><button type="button" class="chip" data-sw="1" aria-pressed="${S.sw}">${i('cloud','s')}الطقس</button></div></div>`+fld('f-stop','سبب آخر',`<div class="ctl ta"><textarea id="f-stop" data-f="stop">${S.stop}</textarea></div>`);
   if(k==='n')return fld('f-note','الملاحظة',`<div class="ctl ta"><textarea id="f-note" data-f="note">${S.note}</textarea></div>`,1);
   if(k==='q'){const l=line();
     const pick=fld('f-line','البند',`<button type="button" class="ctl" id="f-line" data-act="pick"><span class="val ${l?'':'ph0'}">${l?l.n:'اختر البند'}</span><span class="tail">${i('chev','s')}</span></button>`,1);
@@ -494,7 +492,7 @@ function body(){
   const head=`<div class="dl-wrap">${stp}${attBlock()}`;
   if(v==='failed')return head+`<div class="ban rowc" role="alert" style="margin-block-start:14px">${mi('err')}<span><b>تعذّر تحميل اليومية.</b> لم يتغير شيء.</span><button type="button" class="btn sec2 sm act" data-retry="1">${mi('redo','s')}إعادة المحاولة</button></div></div>`;
   const back=S.date==='yesterday'?`<div class="ban note" role="status" style="margin-block:10px 14px">${mi('clock')}<span><b>بأثر رجعي</b></span></div>`:'';
-  return head+back+crewLink()+wxBlock()+`<div class="cols"><section aria-label="إدخال">${formBlock()}</section><section aria-label="المسجَّل">${listBlock()}</section></div></div>`}
+  return head+back+crewLink()+`<div class="cols"><section aria-label="إدخال">${formBlock()}</section><section aria-label="المسجَّل">${listBlock()}</section></div></div>`}
 
 /* ============ the item picker (sheet on a phone, panel on desktop) ============ */
 function pickList(q){q=(q||'').trim();
@@ -509,7 +507,7 @@ function openSheet(on){document.body.dataset.sx=on?'1':'0';if(on){$('#sx').inner
 /* ============ behaviour ============ */
 function refreshPrimary(){const p=primary();const a=$('#acts'),b=$('#abtn');if(a)a.innerHTML=pbtn(p);if(b)b.innerHTML=pbtn(p);bindActs()}
 function save(){const k=S.kind,L=S.ent[S.date],l=line();
-  if(k==='n'||k==='s'){const t=(k==='n'?S.note:S.stop).trim();const x=L.findIndex(e=>e.k===k);if(x>=0)L.splice(x,1);L.unshift({k,n:t})}
+  if(k==='n'||k==='s'){const t=(k==='n'?S.note:S.stop).trim();const x=L.findIndex(e=>e.k===k);if(x>=0)L.splice(x,1);L.unshift(k==='s'&&S.sw&&!t?{k,n:'',w:1}:{k,n:t})}
   if(k==='q'){L.unshift({k:'q',n:l.n,f:S.qv,u:l.u});l.ex=Math.round((l.ex+parseFloat(S.qv))*100)/100}
   if(k==='m')L.unshift({k:'m',n:S.mn.trim(),f:S.mq,u:S.mu});
   if(k==='p')L.unshift({k:'p',n:S.cap.trim()});
@@ -527,9 +525,9 @@ function draw(keep){
   $('#ph').innerHTML=header();$('#frame').innerHTML=body();$('#abar').innerHTML=abar();
   $('#menu').onclick=()=>{$('#app').dataset.sheet='1'};
   document.querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>{S.date=b.dataset.date;S.ok=false;sync();draw(true)});
-  document.querySelectorAll('[data-wx]').forEach(b=>b.onclick=()=>{S.wx[S.date]=b.dataset.wx;draw(true)});
+  document.querySelectorAll('[data-sw]').forEach(b=>b.onclick=()=>{S.sw=!S.sw;if(S.sw)S.stop='';draw(true)});
   document.querySelectorAll('[data-kind]').forEach(b=>b.onclick=()=>{S.kind=b.dataset.kind;S.ok=false;sync();draw(true)});
-  document.querySelectorAll('[data-f]').forEach(el=>{el.oninput=()=>{S[el.dataset.f]=el.value;refreshPrimary()};el.onchange=el.oninput});
+  document.querySelectorAll('[data-f]').forEach(el=>{el.oninput=()=>{S[el.dataset.f]=el.value;if(el.dataset.f==='stop'&&el.value.trim()&&S.sw){S.sw=false;document.querySelectorAll('[data-sw]').forEach(c=>c.setAttribute('aria-pressed','false'))}refreshPrimary()};el.onchange=el.oninput});
   document.querySelectorAll('.strip [data-view]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===S.view));
   refreshPrimary();
   history.replaceState(null,'','?view='+S.view+(EMBED?'&embed=1':''));

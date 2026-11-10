@@ -896,7 +896,7 @@ Weekly payroll and the screen that follows it; rate entry for a new man; registr
 
 # The daily log (`daily-log.html`)
 
-Mock of the daily-log screen (route `/projects/:projectId/daily-log`), brief 1 of `ux/journey-project-module-2026-11-09.md`, with Nabil's rulings of 2026-11-10 (D-212, D-213) applied over it. Awaiting Nabil's approval; nothing is built. Open `daily-log.html` directly. `?view=before|empty|saved|qty|picker|mat|photo|yesterday|location|far|stopped|closed|loading|failed`; `embed=1` hides the preview strip (review chrome, do not build it). Working in the mock: check-in and check-out, the kind switch, the item picker with search by name, saving an entry (it joins "today so far", the form clears, the executed figure moves), the date switch.
+Mock of the daily-log screen (route `/projects/:projectId/daily-log`), brief 1 of `ux/journey-project-module-2026-11-09.md`, with Nabil's rulings of 2026-11-10 (D-212, D-213) applied over it. Awaiting Nabil's approval; nothing is built. Open `daily-log.html` directly. `?view=before|empty|saved|qty|picker|mat|photo|yesterday|location|far|stopped|stoppedsaved|closed|loading|failed`; `embed=1` hides the preview strip (review chrome, do not build it). Working in the mock: check-in and check-out, the kind switch, the item picker with search by name, saving an entry (it joins "today so far", the form clears, the executed figure moves), the date switch.
 
 ## What it holds
 
@@ -919,15 +919,15 @@ For the site engineer or Supervisor, on a phone, one job: put today's site facts
 - **Yesterday** (`yesterday`): switch on أمس, the banner "بأثر رجعي" (the date is not repeated inside it), yesterday's own entries, the form labelled "تنفيذ أمس". The check-in strip is absent: attendance is a live GPS act and cannot be recorded for a past date. Yesterday only (D-212).
 - **Location refused** (`location`): refusal banner above the strip saying why and how to switch location on; "الحضور" stays pressable.
 - **Far from site** (`far`): accepted, tagged "بعيد عن الموقع".
-- **Project stopped** (`stopped`): a note banner "المشروع متوقف" (state, not a sentence) above the strip; the kind row gains a fifth kind "سبب التوقف", first and selected; the form is one required text area. The project still takes the other entries (not ruled, see below).
+- **Project stopped** (`stopped`, and `stoppedsaved` for the saved row): a note banner "المشروع متوقف" (state, not a sentence) above the strip; the kind row gains a fifth kind "سبب التوقف", first and selected; the form is the weather choice plus a written reason. The project still takes the other entries (not ruled, see below).
 - **Project does not take a log yet** (`closed`): the refused state with "هذا المشروع لا يقبل اليومية بعد" and a link back to the workspace. No form, no date switch, no primary.
 - **Loading**: skeleton of the strip and the list. **Failed**: refusal banner with retry; the strip stays, the form is not drawn (the item list may not have loaded; attendance does not depend on it).
 
 ## Changes after Nabil's review (D-214)
 
 1. **The quantity is an estimate, and the screen says so by label and by figure, not by a sentence.** The input is labelled "تنفيذ اليوم (تقديري)" (yesterday: "تنفيذ أمس (تقديري)"). Every executed figure carries a "≈" written inside the figure (left-to-right, "≈ 12.5"): the "المنفَّذ حتى الآن" cell, each saved quantity row, and the picker result. The group is headed "الكميات التقديرية". The measured quantity ("الكمية المقاسة") has no "≈" because it is a real figure. The "≈" is a glyph that carries the meaning on its own, so it does not rely on colour. No control to confirm the real value is drawn: who confirms and where is not ruled (journey preamble, D-214).
-2. **Stoppage reason returns as its own kind**, "سبب التوقف", one required text area. It is a fifth kind and appears only on a stopped project (`?view=stopped`), where it is first and selected. In a running project it is absent. Whether a running project may record a stoppage is not ruled.
-3. **Weather returns as a one-tap row**, "الطقس": four buttons, صافٍ · غائم · ممطر · رياح, each with an icon and a word, in a framed card under the crew link. One tap sets it; there is no free text and no save step. One value per day: tapping another replaces it (the pressed button is the stored value, so it is not repeated in the list). Each date holds its own. Weather is in the code (`LogEntry`, `Weather`) but not in `spec.md`; Nabil may drop it.
+2. **Stoppage reason returns as its own kind**, "سبب التوقف", with the choice and the written field of item 3. It is a fifth kind and appears only on a stopped project (`?view=stopped`), where it is first and selected. In a running project it is absent. Whether a running project may record a stoppage is not ruled.
+3. **Weather is not an entry of its own; it is one reason for a stoppage (D-215, Nabil: "the weather is made as the reason not alone").** The first draft's weather row and its four values are gone from every view. The stoppage form is: the required label "سبب التوقف", one choice "الطقس" (a one-tap button, pressed when chosen), and a written field "سبب آخر" for anything else. The two are mutually exclusive: choosing "الطقس" clears the text, typing clears the choice. "حفظ" is enabled when one of them is given. No other reasons are offered because no fixed list is ruled. The saved row in the list shows "الطقس" or the written text (`?view=stoppedsaved`). The code still has a separate `Weather` kind on `LogEntry`; that changes at build, in the backend lane.
 4. **Single-valued entries replace, they do not stack.** Note and stoppage reason hold one value per day (latest wins, as `DailyLogQuantityEntry` remarks do): the form opens with the current text and saving replaces it, and the list shows one row. Quantities, materials and photos still add.
 5. **The kind row grows.** Four kinds stay one row at 360px (80px wide, 64px high). Five kinds (stopped) wrap as three then two, each 64px high and wider than 44px, so nothing shrinks below the touch target.
 
@@ -940,7 +940,7 @@ App shell, bottom bar with one primary, back link, outline buttons (`sec2`, smal
 - **Check-in strip** (`att`): one bordered row, tick + label + time on the start side, outline button on the end side. Variants: before (a single 56px button filling the row), in, out (no button). The only new part with behaviour.
 - **Link row** (`clink`): icon, bold name over a dim summary, chevron at the end; 64px; hover tint. A navigation row inside a page, distinct from a list row that opens a detail panel.
 - **Log group** (`lg`) and **log entry** (`ent`): a head row in the table-head tone with an icon, the group name and a count badge; entry rows of name at the start, one figure at the end. The photo variant swaps the figure for a 48px thumbnail at the start.
-- **Kind row**: the kit segmented control in an equal-buttons variant (icon over word, 64px, fills the width; wraps 3 + 2 when there are five). Not a new colour or shape. The weather row is the same part at 56px inside a framed card (`wx`), with the label "الطقس" above it.
+- **Kind row**: the kit segmented control in an equal-buttons variant (icon over word, 64px, fills the width; wraps 3 + 2 when there are five). Not a new colour or shape. New small part: the **choice chip** (`chip`), a 48px outline button with an icon and a word that fills when pressed; used for the one-tap stoppage reason "الطقس".
 - **Picker trigger**: a field whose whole 56px surface is a button with a down chevron, opening the picker sheet; used where a value is chosen from a long list by name.
 - **Photo capture** (`shot`): a 72px dashed full-width button; once a photo is taken it becomes a row with a 56px thumbnail and "إزالة".
 
@@ -948,7 +948,7 @@ No new colour: everything is an existing token. The saved-in-place banner is the
 
 ## Left off the screen, on purpose
 
-The estimated quantity (a Sales number, SPEC section 4.3), project code and contract value, line codes (lines are picked and searched by name, D-212 Q-M), entry ids, the photo's file reference, the المستخلصات link, the worker dropdown, hours box and labour kind (crew screen), the free "unit" text box on materials (replaced by a list), both hint sentences of the old screen (the GPS sentence and the "executed in this period only" sentence), a free-text weather box (weather is four taps-to-choose buttons).
+The estimated quantity (a Sales number, SPEC section 4.3), project code and contract value, line codes (lines are picked and searched by name, D-212 Q-M), entry ids, the photo's file reference, the المستخلصات link, the worker dropdown, hours box and labour kind (crew screen), the free "unit" text box on materials (replaced by a list), both hint sentences of the old screen (the GPS sentence and the "executed in this period only" sentence).
 
 ## Not decided here (guesses in the mock; Nabil to rule)
 
@@ -964,7 +964,7 @@ The estimated quantity (a Sales number, SPEC section 4.3), project code and cont
 10. **How many days back.** The mock offers yesterday only.
 11. **Who confirms the real quantity, and where** (D-214). Nothing is drawn.
 12. **May a running project record a stoppage?** The mock shows the kind only on a stopped project. Also not ruled: whether a stopped project may take quantities, materials and photos (the mock allows them).
-13. **Weather.** Not in `spec.md`; the four values (صافٍ, غائم, ممطر, رياح) are a guess; Nabil may drop it.
+13. **Other stoppage reasons.** Only "الطقس" and a written reason are drawn. Whether a fixed list of reasons exists is not ruled. Whether a running project may record a one-day stoppage (rain while the project is still جاري العمل) is not ruled; the stoppage kind is drawn on a stopped project only.
 14. **Latest wins for note.** The mock replaces the note; whether an engineer should be able to keep two notes in a day is not ruled.
 
 ## What the mock does not draw
