@@ -893,3 +893,67 @@ Worker code, the day rate (D-139), phone number on the crew row (it shows in the
 ## What the mock does not draw
 
 Weekly payroll and the screen that follows it; rate entry for a new man; registration (`.../day-labour/new`); closing an engagement and rating; the daily log with labour removed (brief 1); the history route; the English/LTR text.
+
+# The daily log (`daily-log.html`)
+
+Mock of the daily-log screen (route `/projects/:projectId/daily-log`), brief 1 of `ux/journey-project-module-2026-11-09.md`, with Nabil's rulings of 2026-11-10 (D-212, D-213) applied over it. Awaiting Nabil's approval; nothing is built. Open `daily-log.html` directly. `?view=before|empty|saved|qty|picker|mat|photo|yesterday|location|far|closed|loading|failed`; `embed=1` hides the preview strip (review chrome, do not build it). Working in the mock: check-in and check-out, the kind switch, the item picker with search by name, saving an entry (it joins "today so far", the form clears, the executed figure moves), the date switch.
+
+## What it holds
+
+For the site engineer or Supervisor, on a phone, one job: put today's site facts into the log, as quantities, materials, a note or a photo. It is the same tool as the crew screen (`day-labour.html`): the header, the date switch, the back-dated banner and the bottom bar are copied from it, not redrawn.
+
+- Back link with the project name, neutral title "اليومية", date switch اليوم / أمس with the date written once beside it.
+- Check-in strip (top, not the page primary): before check-in one outline button "الحضور" (a 56px row); after it, one row with a tick, "الحضور" and the time, and an outline "الانصراف" button; after check-out, both times and no button. A far-from-site check-in is accepted and carries the tag "بعيد عن الموقع" (shape and word) beside the time. No dropdown, no site picker (D-207, D-208).
+- Crew link: one navigation row "العمالة" with the day's summary ("5 عمال · 36 ساعة") and a chevron, to the crew screen. It is a link, not a button: outline row, no fill, so the page has one primary. Labour is not entered here (D-213).
+- "المسجَّل اليوم": entries grouped by kind (الكميات, الخامات, الملاحظات, الصور), each group with a count badge, newest first inside a group. One figure per entry: quantity and unit for a quantity or a material, nothing for a note, a thumbnail for a photo. After a save, "تم الحفظ" appears above the list.
+- The entry form: four kinds in a segmented row, ملاحظة · كمية · خامات · صورة (icon over word, 64px). Note: one text area. Quantity: the BOQ line picked by name, then "الكمية المقاسة" and "المنفَّذ حتى الآن" side by side (unit in the label), then "تنفيذ اليوم" with the unit as the field affix. Materials: name, quantity, unit chosen from a list. Photo: a large dashed "التقاط صورة" and an optional caption.
+- Primary "حفظ": bottom bar on a phone, page header on desktop. Disabled until the form is complete; required fields carry the `*`. After saving, the form clears and stays open for the next entry. On a phone the date, strip and crew link come first, then the form, then "المسجَّل اليوم", so a long list never pushes the form off the screen and a saved entry appears right under the form; on desktop (1000px and wider) the form and the list sit side by side.
+
+## States
+
+- **Before check-in** (`before`): strip is the single button; log empty with its one line; form open on note.
+- **Checked in, log empty** (`empty`): strip shows the time; "لم يُسجَّل شيء في يومية اليوم بعد." inside the list frame; the form directly below. No second prompt.
+- **Entries saved** (`saved`): groups with figures.
+- **Quantity form** (`qty`) and **item picker** (`picker`): the picker is the add-a-man sheet part (bottom sheet on a phone, side panel on desktop) with the search "اسم البند". Each result: line name, the باب name in dim, "المنفَّذ x من y unit", and "اختيار". Search by line name or باب name; no code anywhere.
+- **Materials form** (`mat`), **photo form** (`photo`).
+- **Yesterday** (`yesterday`): switch on أمس, the banner "بأثر رجعي" (the date is not repeated inside it), yesterday's own entries, the form labelled "تنفيذ أمس". The check-in strip is absent: attendance is a live GPS act and cannot be recorded for a past date. Yesterday only (D-212).
+- **Location refused** (`location`): refusal banner above the strip saying why and how to switch location on; "الحضور" stays pressable.
+- **Far from site** (`far`): accepted, tagged "بعيد عن الموقع".
+- **Project does not take a log yet** (`closed`): the refused state with "هذا المشروع لا يقبل اليومية بعد" and a link back to the workspace. No form, no date switch, no primary.
+- **Loading**: skeleton of the strip and the list. **Failed**: refusal banner with retry; the strip stays, the form is not drawn (the item list may not have loaded; attendance does not depend on it).
+
+## Reused from the kit, unchanged
+
+App shell, bottom bar with one primary, back link, outline buttons (`sec2`, small), quiet button, segmented control (date switch and the kind row), form field with label / control / affix / `*`, text area, select, tot-in (two figures), badge, pill (`s-none` for the far-from-site tag), refusal banner, note banner, saved-in-place banner (`ok`), state block (refused), skeleton, bottom sheet / side panel (`sx`), search field, result list, text link.
+
+## New in the kit (put these in `components.html` before building)
+
+- **Check-in strip** (`att`): one bordered row, tick + label + time on the start side, outline button on the end side. Variants: before (a single 56px button filling the row), in, out (no button). The only new part with behaviour.
+- **Link row** (`clink`): icon, bold name over a dim summary, chevron at the end; 64px; hover tint. A navigation row inside a page, distinct from a list row that opens a detail panel.
+- **Log group** (`lg`) and **log entry** (`ent`): a head row in the table-head tone with an icon, the group name and a count badge; entry rows of name at the start, one figure at the end. The photo variant swaps the figure for a 48px thumbnail at the start.
+- **Kind row**: the kit segmented control in a four-equal-buttons variant (icon over word, 64px, fills the width). Not a new colour or shape.
+- **Picker trigger**: a field whose whole 56px surface is a button with a down chevron, opening the picker sheet; used where a value is chosen from a long list by name.
+- **Photo capture** (`shot`): a 72px dashed full-width button; once a photo is taken it becomes a row with a 56px thumbnail and "إزالة".
+
+No new colour: everything is an existing token. The saved-in-place banner is the kit's `ban ok`; `day-labour.html` calls its saved banner `rec` but never defines it, so that screen shows it unstyled and should be switched to `ban ok` when it is built.
+
+## Left off the screen, on purpose
+
+The estimated quantity (a Sales number, SPEC section 4.3), project code and contract value, line codes (lines are picked and searched by name, D-212 Q-M), entry ids, the photo's file reference, the المستخلصات link, the worker dropdown, hours box and labour kind (crew screen), the free "unit" text box on materials (replaced by a list), both hint sentences of the old screen (the GPS sentence and the "executed in this period only" sentence), weather and stoppage reason from the old screen's dump (not in the brief's kinds).
+
+## Not decided here (guesses in the mock; Nabil to rule)
+
+1. **Offline.** Not drawn. Brief 1 says offline creates drafts but nobody checked whether this page queues anything. Ask the builder first.
+2. **Does the engineer see the estimated quantity?** The brief hides it and the mock keeps it hidden. Open.
+3. **Photo upload.** The API has `RecordPhoto` but no upload endpoint was found (journey break 13). The photo kind is drawn per the brief and needs backend before it can be built.
+4. **Unit list on materials.** The seven units (كيس, م³, م², طن, متر, قطعة, لتر) are a guess; no data source was checked.
+5. **Check-in before a form.** The mock does not require check-in before saving entries. Whether it should is not ruled.
+6. **Check-out before yesterday's entries, attendance for yesterday.** The strip is absent on yesterday; whether a missed check-in can be filled afterwards is not ruled.
+7. **Order and grouping.** The brief lists "today so far" before the form, and says a saved entry appears at the top. The mock puts the form first and the list under it (a long list would otherwise hide the form), and groups by kind with the newest first inside its group.
+8. **Check-in button pair.** The brief draws a pair of large buttons before check-in. The mock shows only "الحضور"; "الانصراف" has nothing to close yet, so it is absent (a control the user may not use is absent), and appears after check-in.
+9. **Whether the quantity second entry adds or replaces** (Q-T). The mock adds and moves "المنفَّذ حتى الآن"; if the answer is "replaces" the label and the reasoning change.
+10. **How many days back.** The mock offers yesterday only.
+
+## What the mock does not draw
+
+An offline state; check-out of a past date; the photo being taken or uploaded; a refused or failed save of one entry; a refused quantity (over the surveyed total); the English/LTR text beyond the direction switch.
