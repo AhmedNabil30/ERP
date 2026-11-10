@@ -1084,9 +1084,9 @@ The screen where the Technical Office prepares a base (not in scope here). The p
 
 # Project create (`project-create.html`)
 
-Mock of `/projects/new`, brief 4 of `ux/journey-project-module-2026-11-09.md`. Open `project-create.html` directly. `?view=normal|filled|search|noresult|noclients|loading|failed|errors|submitting|refused`; `embed=1` hides the preview strip (review chrome, do not build it). Not yet approved by Nabil.
+Mock of `/projects/new`, brief 4 of `ux/journey-project-module-2026-11-09.md`, revised after Nabil's rulings of 2026-11-10 (D-217). Open `project-create.html` directly. `?view=normal|filled|search|noresult|noclients|quickadd|quickerr|loading|failed|errors|duplicate|submitting|refused`; `embed=1` hides the preview strip (review chrome, do not build it). Not approved by Nabil yet.
 
-**Proposals in this mock, not rules.** The client typeahead and the missing-client link rest on Q-S (PROPOSAL). Everything else is RULED in the brief.
+**Proposals in this mock, not rules.** The client typeahead rests on Q-S (PROPOSAL). The quick-add client panel is drawn to D-217 ruling 4; its layout (side panel, bottom sheet) is my choice.
 
 ## What it holds
 
@@ -1094,51 +1094,74 @@ For the Owner and the Technical Office (`ProjectCreate`), mostly on a laptop: op
 
 - Header: back link "المشاريع" and the title "مشروع جديد". No badge, no code.
 - "المشروع": a text field, required.
-- "العميل": a type-to-filter field (combobox). Focusing or typing opens a popup list; a result is the client's name and nothing else, with the typed part underlined and bold. Choosing a name fills the field and shows a 44 px clear button. Required.
-- "نوع التعاقد": three radio rows, 56 px, the selected one with an ink border and bold text. The first is selected by default (a guess, see Not decided).
-- The ONE primary "إنشاء المشروع": at the foot of the form on desktop (hairline above), in the bottom bar beside "القائمة" on a phone, as the other screens do. After pressing, a Lump Sum project opens its BOQ and the other two types open the workspace (brief; not drawn, it is navigation).
+- "العميل": a type-to-filter field (combobox), searched by name. Focusing or typing opens a popup list; a result is the client's name and nothing else, with the typed part underlined and bold (the match sits inside one text span, so "شركة النيل" keeps its space). Choosing a name fills the field and shows a 44 px clear button. Required.
+- "نوع التعاقد": three radio rows, 56 px. Nothing is selected until the person chooses (D-217 ruling 1). Required. The three names only, no hint (ruling 2).
+- The ONE primary "إنشاء المشروع": at the foot of the form on desktop (hairline above), in the bottom bar beside "القائمة" on a phone. After pressing, a Lump Sum project opens its BOQ and the other two types open the workspace (brief; navigation, not drawn).
+
+## Quick add of a client (D-217 ruling 4)
+
+From the no-result row and from the no-clients state the link "عميل جديد" opens a panel over the form: a side panel of 460 px on desktop, a bottom sheet at 390 (the kit's `sx`, as on the crew and BOQ screens). The typed text becomes the name. The fields are only those `CreateClient` requires (`src/Api/Features/Clients/CreateClient/Request.cs` and `Validator.cs`):
+
+- "الاسم" (`Name`, required: `Client.Create` refuses a blank one)
+- "رقم الهاتف" (`Phone`, required: it is the de-duplication key)
+- "نوع العميل" (`Kind`, required: the validator refuses a missing kind; the two options are "فرد" and "شركة", nothing preselected)
+
+Left out because the API treats them as optional: alternate phone, email, address, tax registration number. The code is generated server side and has no member on the request. The panel has one filled action "حفظ العميل" and "إلغاء". Saving closes the panel and the new client sits selected in the field. Errors sit under the field ("الاسم مطلوب", "رقم الهاتف مطلوب", "اختر نوع العميل"). The link to the clients screen is gone.
 
 ## States (each drawn)
 
-- **normal**: empty form. **filled**: all three set.
-- **search**: the popup open with the matches for "شركة". **noresult**: the popup shows "لا يوجد عميل بهذا الاسم" and the link "تسجيل عميل جديد" to the clients screen.
-- **noclients**: in place of the field, "لا يوجد عملاء مسجّلون" and the same link.
-- **loading**: the client field is dashed, disabled, with a skeleton and spinner; the primary is disabled (the loading field is the reason).
-- **failed**: in place of the field, the refusal banner "تعذّر تحميل العملاء" with "إعادة المحاولة".
-- **errors**: the footer line under each field, with the alert icon: "اسم المشروع مطلوب", "اختر العميل". The footer slot is reserved at 24 px so nothing shifts. Pressing the primary on an incomplete form also reaches this state in the mock.
+- **normal**: empty form, no type chosen. **filled**: all three set.
+- **search**: the popup open with the matches for "شركة". **noresult**: the popup shows "لا يوجد عميل بهذا الاسم" and the link "عميل جديد".
+- **noclients**: in place of the field, "لا يوجد عملاء مسجّلون" and the link "عميل جديد". This is the way out.
+- **quickadd**: the panel open from no-result with the typed name. **quickerr**: the panel after saving empty, three errors.
+- **loading**: the client field is dashed, disabled, with a skeleton and spinner; the primary is disabled while it loads.
+- **failed**: in place of the field, the refusal banner "تعذّر تحميل العملاء" with "إعادة المحاولة". The primary is absent: the form cannot succeed until the list loads, and retry is the only action.
+- **errors**: a footer line under each unfilled field with the alert icon: "اسم المشروع مطلوب", "اختر العميل", "اختر نوع التعاقد". The footer slot is reserved at 24 px for the name and client fields, so they do not shift. Pressing the primary on an incomplete form reaches this state.
+- **duplicate**: after pressing, the server refuses the name for this client. The name field takes the error border and the line "يوجد مشروع بهذا الاسم لهذا العميل". Two different clients may share a name (ruling 3), so the line names the pair.
 - **submitting**: primary in its busy form ("جارٍ الإنشاء…", spinner, same size), name read-only, radios disabled.
-- **refused**: the form and the primary are absent. A refused state with the lock: "لا تملك صلاحية إنشاء المشاريع". It names the missing permission, not a person.
+- **refused**: the form and the primary are absent. The lock state says "لا تملك صلاحية إنشاء المشاريع": it names the missing permission, not a person.
 
 ## Reused from the kit, unchanged
 
-App shell and bottom bar, back link, buttons (filled, outline small), form field with its label, required mark and reserved footer slot, radio (`ck rd`), link, refusal banner, refused state, skeleton, spinner, busy button, popup (`--shadow`, the only shadow on the screen).
+App shell and bottom bar, back link, buttons (filled, outline small), form field with its label, required mark and reserved footer slot, radio (`ck rd`), link, refusal banner, refused state, skeleton, spinner, busy button, popup (`--shadow`), side panel and bottom sheet (`sx`, from the crew screen), icon button.
 
 ## New in the kit (put these in `components.html` before building)
 
-- **Combobox (type to filter)** (`cb`, `pop`, `opt-c`): a kit field with a search icon at the start and a clear button at the end, a popup list below it (max 300 px, scrolls inside, options 48 px, 56 px on a phone), the match underlined, the first match highlighted while typing, and a no-result row with a link. Closed, it is an ordinary field. Disabled and loading follow the kit's disabled field.
-- **Choice row** (`types label.ck`): a radio inside a 56 px bordered box, for a short list of mutually exclusive named choices. The border carries the selection (with the filled radio and bold text, so colour is not alone).
+- **Combobox (type to filter)** (`cb`, `pop`, `opt-c`): a kit field with a search icon at the start and a clear button at the end, a popup list below it (max 300 px, scrolls inside, options 48 px, 56 px on a phone), the match underlined, the first match highlighted while typing, and a no-result row with an action. Closed, it is an ordinary field.
+- **Choice row** (`types label.ck`): a radio inside a 56 px bordered box, for a short list of mutually exclusive named choices. The border carries the selection, with the filled radio and bold text, so colour is not alone. A group error line sits under the last row.
 
 No new colour: every value is an existing token.
 
 ## Left off the screen, on purpose
 
-Contract value, hold, advance, the project code, the follow-up period, the start date, the base-project choice (it lives on the BOQ screen), the type hints, the value-comes-from-the-BOQ sentence, the banner about the initial status (the status shows on the next page). Client codes: a client is found by name only.
+Contract value, hold, advance, the project code, the follow-up period, the start date, the base-project choice (it lives on the BOQ screen), type hints, the value-comes-from-the-BOQ sentence, the initial-status banner. Client codes: a client is found by name only.
 
-Sentences kept: none beyond labels, values, actions and state lines (empty clients, no result, failed to load, validation, refusal).
+Sentences kept: none beyond labels, values, actions and state lines (no result, no clients, failed to load, validation, name refused, refusal).
 
-## Not decided here (the mock runs on these defaults; Nabil to rule)
+## Ruled (D-217, 2026-11-10)
 
-1. **Duplicate project name**: not ruled, not drawn. No check, no state.
-2. **Q-S**: the typeahead and the link to the clients screen are a proposal. The link label "تسجيل عميل جديد" is a guess. Whether an Owner and a Technical Office user may register a client at all is not checked.
-3. **Default contract type**: the mock selects "مقاولة بالمقطوعية" so the type cannot be missing (the brief lists validation for name and client only). Whether no type should be preselected is open.
-4. **No clients or failed load**: the primary stays. Pressing it shows "اختر العميل", which cannot be satisfied. Absent or disabled is the alternative.
-5. **Contract type names** are kept as they are now. Whether an owner understands "التكلفة زائد نسبة إشراف" without a hint is a labelling question.
-6. **After pressing**: the destination by type is from the brief and `project-create-page.ts`; the mock does not navigate.
+1. No contract type preselected; a missing type is a validation error.
+2. The three type names stay, no hint.
+3. The same project name is refused for the same client; two different clients may share a name.
+4. A client who is not registered is added inside this form; no link to the clients screen.
+5. Client search is by name.
+
+## Not decided here
+
+1. **Q-S**: the typeahead is still a proposal. Whether the list needs server-side name search depends on how many clients Kaff has.
+2. **Quick-add permission**: `CreateClient` requires `Permission.ClientManage` (CompanyWide, spec section 2), which may not be granted to the same roles as `ProjectCreate`. If it is not, the link must be absent for that person and "لا يوجد عملاء مسجّلون" needs a different state; the mock draws the link for everyone.
+3. **Duplicate phone in quick add**: `CreateClient` returns the clients that already hold the number and asks for an acknowledgement (`AcknowledgedDuplicatePhone`). Not drawn. Which of the two clients to pick, or whether to proceed, is open.
+4. **Archived clients**: whether they appear in the search is not drawn.
+5. **Quick-add tax registration, address, email**: not asked here. Added later on the clients screen.
+6. **Failed load**: the primary is absent and the retry button is the only action (my decision, report to Nabil). Alternative: leave the primary and refuse it.
+7. **After pressing**: the destination by type is from the brief and `project-create-page.ts`; the mock does not navigate.
 
 ## What the backend lacks for this design
 
-Nothing known. The client list is today's list endpoint; filtering by name is done in the page unless the list is long (7 clients in the dump). If the client list is paged, a server-side name search is needed and the page does not have it.
+- Name check per client: no endpoint or constraint refuses a project name that already exists for the same client. The duplicate refusal needs a server rule (and an error code for the page to show).
+- Quick add: `CreateClient` exists, but needs `ClientManage`. If that differs from `ProjectCreate`, either the permission is widened for this flow or a project-create user cannot add a client.
+- The client list endpoint (`ListClients`) has no per-name search known to this mock; filtering runs in the page.
 
 ## What the mock does not draw
 
-The destination after create; a server refusal after pressing (the role refusal is drawn as a whole-screen state only); a server error on create; the English/LTR text; duplicate name.
+The destination after create; a server error other than the duplicate name; the duplicate-phone answer; the English/LTR text; the quick-add saving state.

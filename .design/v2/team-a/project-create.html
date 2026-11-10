@@ -259,6 +259,31 @@ fieldset.types legend{padding:0;margin-block-end:8px;font:600 1rem/1.4 var(--bod
   .opt-c{min-block-size:56px}
   .ph .back{margin-inline-start:-4px}
 }
+/* sheet / panel (day-labour sx, plus a full-height variant for the catalogue sheet) */
+.sx-scrim{display:none;position:fixed;inset:0;background:var(--scrim);z-index:90}
+.sx{display:none;position:fixed;z-index:95;background:var(--bg);flex-direction:column;box-shadow:var(--shadow);inset-inline:0;inset-block-end:0;max-block-size:92dvh;border-start-start-radius:var(--radius);border-start-end-radius:var(--radius)}
+.sx.full{block-size:96dvh;max-block-size:96dvh}
+[data-sx="1"] .sx-scrim{display:block}[data-sx="1"] .sx{display:flex}
+.sx .hd{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 20px;padding-inline:20px 8px}
+.sx .hd h2{margin:0;font:700 1.25rem/1.4 var(--display);flex:1}
+.sx .bd{padding:4px 16px 12px;overflow:auto;display:grid;gap:14px;align-content:start;flex:1}
+.sx .bd.flush{padding:0;gap:0}
+.sx .bd .sbar{padding:4px 16px 10px;position:sticky;inset-block-start:0;background:var(--bg);z-index:3}
+.sx .ft{padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-block-start:1px solid var(--line);background:var(--surface);display:grid;gap:10px}
+.sx .ft .btn{inline-size:100%;min-block-size:56px}
+.sx .grab{inline-size:44px;block-size:4px;border-radius:2px;background:var(--line);margin:10px auto 0;flex:none}
+@media (min-width:821px){
+  .sx{inset-inline-start:auto;inset-inline-end:0;inset-block:0;inline-size:460px;max-block-size:none;block-size:auto;border-radius:0;border-inline-start:1px solid var(--line)}
+  .sx.full{block-size:auto;max-block-size:none}
+  .sx .grab{display:none}
+  .m-only2{display:none!important}
+}
+.opt-c>span{display:block}
+.fgrid{display:grid;gap:20px}
+.sx .bd .field{grid-template-columns:minmax(0,1fr)}
+.sx .ft .btn.sec2{min-block-size:56px}
+.ctl input.ltr{direction:ltr;text-align:start}
+.lnk.b{min-block-size:44px;display:inline-flex;align-items:center;cursor:pointer}
 </style>
 </head>
 <body>
@@ -274,7 +299,10 @@ fieldset.types legend{padding:0;margin-block-end:8px;font:600 1rem/1.4 var(--bod
       <button type="button" data-view="noclients">لا عملاء</button>
       <button type="button" data-view="loading">تحميل العملاء</button>
       <button type="button" data-view="failed">تعذّر تحميل العملاء</button>
+      <button type="button" data-view="quickadd">عميل جديد</button>
+      <button type="button" data-view="quickerr">عميل جديد (أخطاء)</button>
       <button type="button" data-view="errors">أخطاء التحقق</button>
+      <button type="button" data-view="duplicate">اسم مكرر</button>
       <button type="button" data-view="submitting">جارٍ الإنشاء</button>
       <button type="button" data-view="refused">مرفوض (الدور)</button>
     </div>
@@ -300,6 +328,9 @@ fieldset.types legend{padding:0;margin-block-end:8px;font:600 1rem/1.4 var(--bod
   <div class="nsheet m-only" id="nsheet" role="dialog" aria-label="الشاشات"><div class="grab"></div><div class="sh-top"><div class="who"><div class="av" id="av2"></div><div><b id="un2"></b><span id="ur2"></span></div></div><button type="button" id="theme2" aria-label="الوضع"><svg class="i" viewBox="0 0 24 24"><path d="M21 13.5A8.5 8.5 0 1110.5 3a7 7 0 0010.5 10.5z"/></svg></button><button type="button" id="closeN" aria-label="إغلاق"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><nav class="sh-nav" id="nav2"></nav></div>
 </div>
 
+<div class="sx-scrim" id="sxs"></div>
+<section class="sx" id="sx" role="dialog" aria-modal="true"></section>
+
 <script>
 const IC={projects:'M4 21V7l8-4 8 4v14M9 21v-6h6v6M8 10h.01M12 10h.01M16 10h.01',catalog:'M3 11V4h7l11 11-7 7L3 11zM7.5 7.5h.01',bab:'M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5',employees:'M16 20v-1.5a3.5 3.5 0 00-3.5-3.5h-5A3.5 3.5 0 004 18.5V20M10 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM20 20v-1.5a3.5 3.5 0 00-2.6-3.4M15.5 4.2a3.5 3.5 0 010 6.6',subs:'M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.8-3.8a6 6 0 01-7.9 7.9l-6.9 6.9a2.1 2.1 0 01-3-3l6.9-6.9a6 6 0 017.9-7.9l-3.8 3.8z',suppliers:'M3 6h11v10H3zM14 9h4l3 3v4h-7zM7 19a2 2 0 100-4 2 2 0 000 4zM17 19a2 2 0 100-4 2 2 0 000 4z',clients:'M3 8h18v12H3zM8 8V5h8v3M3 13h18',users:'M12 3l8 3v6c0 4.5-3.2 7.6-8 9-4.8-1.4-8-4.5-8-9V6l8-3zM12 11a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM7.5 17c.8-2 2.4-3 4.5-3s3.7 1 4.5 3',depts:'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',audit:'M9 4h6v3H9zM6 5h-.5A1.5 1.5 0 004 6.5v13A1.5 1.5 0 005.5 21h13a1.5 1.5 0 001.5-1.5v-13A1.5 1.5 0 0018.5 5H18M8 12h8M8 16h5',
  left:'M15 6l-6 6 6 6',menu:'M4 7h16M4 12h16M4 17h16',plus:'M12 5v14M5 12h14',check:'M5 12.5l4.5 4.5L19 7.5',x:'M6 6l12 12M18 6L6 18',clock:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 2',lock:'M6 11h12v9H6zM8 11V8a4 4 0 018 0v3',info:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 8v.01',err:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7.5v5.5M12 16.5v.01',redo:'M20 11a8 8 0 10-2.3 5.7M20 4v7h-7',chev:'M6 9l6 6 6-6',
@@ -317,20 +348,25 @@ const USER={n:'سامي عادل',r:'المكتب الفني'};
 const CLIENTS=['شركة النيل للتطوير العقاري','شركة النخبة للاستثمار العقاري','مجموعة الأمل للتطوير','م. أحمد عبد الرحمن','د. منى السيد','أ. محمود فؤاد','شركة السلام للفنادق'];
 const TYPES=['مقاولة بالمقطوعية','التكلفة زائد نسبة إشراف','تصميم'];
 const V=q0.get('view')||'normal';
-const S={view:V,name:'',client:'',q:'',type:0,errs:false,open:false};
+const S={view:V,name:'',client:'',q:'',type:-1,errs:false,open:false,dup:false,qa:null};
+const SAMPLE='فيلا الشروق — القاهرة الجديدة';
+const KINDS=['فرد','شركة'];
 function setup(){
-  const v=S.view;S.errs=false;S.open=false;S.q='';
-  S.name=['filled','search','noresult','submitting'].includes(v)?'فيلا الشروق — القاهرة الجديدة':'';
-  S.client=(v==='filled'||v==='submitting')?CLIENTS[0]:'';
-  S.type=(v==='filled'||v==='submitting')?1:0;
+  const v=S.view;S.errs=false;S.open=false;S.q='';S.dup=false;S.qa=null;
+  S.name=['filled','search','noresult','submitting','duplicate','quickadd','quickerr'].includes(v)?SAMPLE:'';
+  S.client=(v==='filled'||v==='submitting'||v==='duplicate')?CLIENTS[0]:'';
+  S.type=(v==='filled'||v==='submitting'||v==='duplicate')?1:-1;
+  if(v==='duplicate')S.dup=true;
   if(v==='search'){S.open=true;S.q='شركة'}
   if(v==='noresult'){S.open=true;S.q='حسن'}
+  if(v==='quickadd'){S.open=true;S.q='حسن';S.qa={name:'حسن',phone:'',kind:-1,errs:false}}
+  if(v==='quickerr'){S.open=true;S.q='';S.qa={name:'',phone:'',kind:-1,errs:true}}
   if(v==='errors')S.errs=true;
 }
 const ES=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const req='<span aria-hidden="true">*</span><span class="vh">مطلوب</span>';
 const slot=t=>t?`<div class="ft1" id="e-${t[0]}" role="alert">${mi('err')}${t[1]}</div>`:'<div class="ft1"></div>';
-const ncl=()=>`<a class="lnk" href="#">تسجيل عميل جديد</a>`;
+const ncl=()=>`<button type="button" class="lnk b" data-qa="1" data-testid="quick-add-client">عميل جديد</button>`;
 function hl(n,q){if(!q)return ES(n);const k=n.indexOf(q);return k<0?ES(n):ES(n.slice(0,k))+'<mark>'+ES(q)+'</mark>'+ES(n.slice(k+q.length))}
 function clientField(){
   const v=S.view,bad=S.errs&&!S.client;
@@ -339,19 +375,19 @@ function clientField(){
   if(v==='failed')return `<div class="field"><div class="fl">العميل ${req}</div><div class="ban rowc" role="alert">${mi('err')}<span>تعذّر تحميل العملاء</span><button type="button" class="btn sm sec2 act" data-testid="retry-clients">إعادة المحاولة</button></div></div>`;
   if(v==='noclients')return `<div class="field"><div class="fl">العميل ${req}</div><div class="state" style="padding:24px 16px;justify-items:start;text-align:start"><h4 style="margin:0">لا يوجد عملاء مسجّلون</h4>${ncl()}</div></div>`;
   const list=CLIENTS.filter(c=>!S.q||c.includes(S.q));
-  const pop=S.open?`<div class="pop" role="listbox" id="cl">${list.length?list.map((c,k)=>`<button type="button" class="opt-c${k===0&&S.q?' act':''}" role="option" aria-selected="${c===S.client}" data-c="${ES(c)}">${hl(c,S.q)}</button>`).join(''):`<div class="none"><span>لا يوجد عميل بهذا الاسم</span>${ncl()}</div>`}</div>`:'';
+  const pop=S.open?`<div class="pop" role="listbox" id="cl">${list.length?list.map((c,k)=>`<button type="button" class="opt-c${k===0&&S.q?' act':''}" role="option" aria-selected="${c===S.client}" data-c="${ES(c)}"><span>${hl(c,S.q)}</span></button>`).join(''):`<div class="none"><span>لا يوجد عميل بهذا الاسم</span>${ncl()}</div>`}</div>`:'';
   const val=S.open?S.q:S.client;
   return `<div class="field${bad?' bad':''}">${lab}<div class="cb"><div class="ctl">${mi('search','i')}<input id="cq" role="combobox" aria-expanded="${S.open}" aria-controls="cl" autocomplete="off" value="${ES(val)}" ${bad?'aria-invalid="true" aria-describedby="e-c"':''}>${val?`<button type="button" class="clr" id="clr" aria-label="مسح">${mi('x')}</button>`:''}</div>${pop}</div>${slot(bad?['c','اختر العميل']:null)}</div>`;
 }
 function body(){
   const v=S.view;
   if(v==='refused')return `<div class="state refused"><div class="ico">${mi('lock')}</div><h4>لا تملك صلاحية إنشاء المشاريع</h4></div>`;
-  const bn=S.errs&&!S.name.trim(),busy=v==='submitting';
+  const bn=S.errs&&!S.name.trim(),bd=S.dup&&!bn,bt=S.errs&&S.type<0,busy=v==='submitting';
   return `<form class="form" id="f" novalidate>
-   <div class="field${bn?' bad':''}"><label for="nm">المشروع ${req}</label><div class="ctl${busy?' ro':''}"><input id="nm" value="${ES(S.name)}" ${busy?'readonly':''} ${bn?'aria-invalid="true" aria-describedby="e-n"':''}></div>${slot(bn?['n','اسم المشروع مطلوب']:null)}</div>
+   <div class="field${bn||bd?' bad':''}"><label for="nm">المشروع ${req}</label><div class="ctl${busy?' ro':''}"><input id="nm" value="${ES(S.name)}" ${busy?'readonly':''} ${bn||bd?'aria-invalid="true" aria-describedby="e-n"':''}></div>${slot(bn?['n','اسم المشروع مطلوب']:bd?['n','يوجد مشروع بهذا الاسم لهذا العميل']:null)}</div>
    ${clientField()}
-   <fieldset class="types"><legend>نوع التعاقد</legend>${TYPES.map((t,k)=>`<label class="ck rd${S.type===k?' on':''}"><input type="radio" name="t" value="${k}" ${S.type===k?'checked':''} ${busy?'disabled':''}><span class="bx"></span><span class="lb">${t}</span></label>`).join('')}</fieldset>
-   <div class="fa d-only">${pbtn()}</div>
+   <fieldset class="types"${bt?' aria-describedby="e-t"':''}><legend>نوع التعاقد ${req}</legend>${TYPES.map((t,k)=>`<label class="ck rd${S.type===k?' on':''}"><input type="radio" name="t" value="${k}" ${S.type===k?'checked':''} ${busy?'disabled':''}><span class="bx"></span><span class="lb">${t}</span></label>`).join('')}${bt?slot(['t','اختر نوع التعاقد']):''}</fieldset>
+   ${nop()?'':`<div class="fa d-only">${pbtn()}</div>`}
   </form>`;
 }
 function pbtn(){
@@ -359,8 +395,20 @@ function pbtn(){
   if(v==='submitting')return `<button type="button" class="btn" aria-busy="true" data-testid="create-project"><span class="spin" aria-hidden="true"></span>جارٍ الإنشاء…</button>`;
   return `<button type="submit" form="f" class="btn" data-testid="create-project" ${v==='loading'?'disabled':''}>إنشاء المشروع</button>`;
 }
+function quick(){
+  const a=S.qa,e=a.errs;
+  const f=(id,lab,val,msg,extra='')=>`<div class="field${msg?' bad':''}"><label for="${id}">${lab} ${req}</label><div class="ctl"><input id="${id}" value="${ES(val)}" ${extra} ${msg?`aria-invalid="true" aria-describedby="e-${id}"`:''}></div>${slot(msg?[id,msg]:null)}</div>`;
+  return `<div class="grab"></div><div class="hd"><h2>عميل جديد</h2><button type="button" class="ib" id="qx" aria-label="إغلاق">${mi('x')}</button></div>
+  <div class="bd"><div class="fgrid">
+   ${f('qn','الاسم',a.name,e&&!a.name.trim()?'الاسم مطلوب':'')}
+   ${f('qp','رقم الهاتف',a.phone,e&&!a.phone.trim()?'رقم الهاتف مطلوب':'','class="ltr" inputmode="tel" dir="ltr"')}
+   <fieldset class="types"><legend>نوع العميل ${req}</legend>${KINDS.map((t,k)=>`<label class="ck rd${a.kind===k?' on':''}"><input type="radio" name="qk" value="${k}" ${a.kind===k?'checked':''}><span class="bx"></span><span class="lb">${t}</span></label>`).join('')}${e&&a.kind<0?slot(['k','اختر نوع العميل']):''}</fieldset>
+  </div></div>
+  <div class="ft"><button type="button" class="btn" id="qs" data-testid="save-client">حفظ العميل</button><button type="button" class="btn sec2" id="qc" data-testid="cancel-client">إلغاء</button></div>`;
+}
 function header(){return `<div><a class="back" href="#">${mi('left')}المشاريع</a><h1>مشروع جديد</h1></div>`}
-function abar(){return `<button type="button" class="menu" id="menu">${i('menu')}القائمة</button>${S.view==='refused'?'':pbtn()}`}
+const nop=()=>['refused','failed'].includes(S.view);
+function abar(){return `<button type="button" class="menu" id="menu">${i('menu')}القائمة</button>${nop()?'':pbtn()}`}
 function draw(keep){
   if(!keep)setup();
   const f=document.activeElement&&document.activeElement.id==='cq';
@@ -368,20 +416,31 @@ function draw(keep){
   $('#menu').onclick=()=>{$('#app').dataset.sheet='1'};
   document.querySelectorAll('.strip [data-view]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===S.view));
   history.replaceState(null,'','?view='+S.view+(EMBED?'&embed=1':''));
+  document.body.dataset.sx=S.qa?'1':'0';const sx=$('#sx');sx.innerHTML=S.qa?quick():'';if(S.qa)sx.setAttribute('aria-label','عميل جديد');
   bind();
   if(f){const e=$('#cq');e.focus();e.setSelectionRange(e.value.length,e.value.length)}
 }
+function closeQa(){S.qa=null;draw(true)}
 function bind(){
+  document.querySelectorAll('[data-qa]').forEach(b=>b.onclick=()=>{S.qa={name:S.q,phone:'',kind:-1,errs:false};S.open=false;draw(true);const n=$('#qn');if(n)n.focus()});
+  if(S.qa){
+    const a=S.qa;
+    $('#qn').oninput=e=>{a.name=e.target.value};$('#qp').oninput=e=>{a.phone=e.target.value};
+    document.querySelectorAll('input[name=qk]').forEach(r=>r.onchange=()=>{a.kind=+r.value;draw(true)});
+    $('#qc').onclick=$('#qx').onclick=closeQa;
+    $('#qs').onclick=()=>{a.errs=true;if(a.name.trim()&&a.phone.trim()&&a.kind>=0){const n=a.name.trim();if(!CLIENTS.includes(n))CLIENTS.push(n);S.client=n;S.q='';S.open=false;S.qa=null}draw(true)};
+  }
   const cq=$('#cq');
   if(cq){cq.oninput=()=>{S.q=cq.value;S.open=true;S.client='';draw(true)};cq.onfocus=()=>{if(!S.open){S.open=true;S.q=S.client?'':S.q;draw(true)}}}
   document.querySelectorAll('.opt-c').forEach(b=>b.onclick=()=>{S.client=b.dataset.c;S.open=false;S.q='';draw(true)});
   const c=$('#clr');if(c)c.onclick=()=>{S.client='';S.q='';S.open=true;draw(true)};
   document.querySelectorAll('input[name=t]').forEach(r=>r.onchange=()=>{S.type=+r.value;draw(true)});
   const nm=$('#nm');if(nm)nm.oninput=()=>{S.name=nm.value};
-  const f=$('#f');if(f)f.onsubmit=e=>{e.preventDefault();S.errs=true;S.open=false;draw(true)};
+  const f=$('#f');if(f)f.onsubmit=e=>{e.preventDefault();S.errs=true;S.open=false;S.dup=S.name===SAMPLE&&S.client===CLIENTS[0]&&S.type>=0;draw(true)};
 }
 const u=USER;['1','2'].forEach(k=>{$('#un'+k).textContent=u.n;$('#ur'+k).textContent=u.r;$('#av'+k).textContent=[...u.n][0]});
 $('#nav').innerHTML=navHtml();$('#nav2').innerHTML=navHtml();
+$('#sxs').onclick=()=>closeQa();
 $('#closeN').onclick=()=>{$('#app').dataset.sheet='0'};$('#scrim').onclick=()=>{$('#app').dataset.sheet='0'};
 const tgl=()=>{const d=H.dataset.theme?H.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;H.dataset.theme=d?'light':'dark'};
 $('#themebtn').onclick=$('#theme1').onclick=$('#theme2').onclick=tgl;
