@@ -1843,5 +1843,6 @@
   "projects.frame.action.open_boq": "Open the BOQ",
   "projects.frame.action.open_extract": "Open the extract",
   "projects.frame.action.reopen": "Reopen",
-  "projects.frame.team_failed": "The team did not load."
+  "projects.frame.team_failed": "The team did not load.",
+  "projects.frame.hero.contract_value": "Contract value"
 }

@@ -1,4 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  afterRenderEffect,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { toProblem } from '../../core/api/problem-details';
@@ -60,6 +72,7 @@ function notReached(project: ProjectDetail): readonly FrameTab[] {
 export class KaffProjectFrame {
   private readonly api = inject(ProjectsApi);
   private readonly auth = inject(AuthService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly i18n = inject(I18nService);
 
   readonly projectId = input.required<string>();
@@ -107,6 +120,15 @@ export class KaffProjectFrame {
     effect(() => {
       this.projectId();
       untracked(() => void this.reload());
+    });
+    // On a phone the bar scrolls inside itself: keep the current tab in view (the first tab is already).
+    afterRenderEffect(() => {
+      this.tabs();
+      if (this.current() !== 'overview') {
+        this.host.nativeElement
+          .querySelector('.tab[aria-current="page"]')
+          ?.scrollIntoView?.({ inline: 'center', block: 'nearest' });
+      }
     });
   }
 

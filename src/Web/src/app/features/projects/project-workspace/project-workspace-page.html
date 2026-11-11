@@ -211,7 +211,7 @@
 
         @if (!p.isSigned || p.isArchived) {
           <kaff-fact-list>
-            <kaff-fact [label]="i18n.t('projects.field.contract_value')" testId="workspace-fact-value">
+            <kaff-fact [label]="i18n.t('projects.frame.hero.contract_value')" testId="workspace-fact-value">
               @if (p.contractValue !== null) {
                 <kaff-figure [value]="p.contractValue" /> <span class="u">{{ i18n.t('catalogue.currency.affix') }}</span>
               } @else {
@@ -240,7 +240,7 @@
             }
           } @else if (p.contractType === 'Design') {
             <kaff-fact-list>
-              <kaff-fact [label]="i18n.t('projects.field.contract_value')" testId="workspace-fact-value">
+              <kaff-fact [label]="i18n.t('projects.frame.hero.contract_value')" testId="workspace-fact-value">
                 @if (p.contractValue !== null) {
                   <kaff-figure [value]="p.contractValue" /> <span class="u">{{ i18n.t('catalogue.currency.affix') }}</span>
                 } @else {
@@ -279,7 +279,7 @@
                 <dl data-testid="workspace-hero-figures">
                   @if (p.contractValue !== null) {
                     <div>
-                      <dt>{{ i18n.t('projects.field.contract_value') }}</dt>
+                      <dt>{{ i18n.t('projects.frame.hero.contract_value') }}</dt>
                       <dd><kaff-figure [value]="p.contractValue" /> <span class="u">{{ i18n.t('catalogue.currency.affix') }}</span></dd>
                     </div>
                   }

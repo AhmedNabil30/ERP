@@ -1843,5 +1843,6 @@
   "projects.frame.action.open_boq": "فتح المقايسة",
   "projects.frame.action.open_extract": "فتح المستخلص",
   "projects.frame.action.reopen": "إعادة فتح",
-  "projects.frame.team_failed": "تعذّر تحميل الفريق."
+  "projects.frame.team_failed": "تعذّر تحميل الفريق.",
+  "projects.frame.hero.contract_value": "قيمة العقد"
 }
