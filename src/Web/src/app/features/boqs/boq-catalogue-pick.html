@@ -1,0 +1,87 @@
+<div class="pane" [attr.data-testid]="testPrefix()">
+  <div class="pane-h">
+    <div class="hrow">
+      <h2>{{ i18n.t('boq.catalogue.title') }}</h2>
+      <kaff-button variant="secondary" [testId]="testPrefix() + '-custom'" (clicked)="customRequested.emit()">{{ i18n.t('boq.custom.open') }}</kaff-button>
+    </div>
+    <kaff-search-field
+      [(value)]="search"
+      placeholderKey="boq.catalogue.search"
+      clearLabelKey="catalogue.search.clear"
+      [testId]="testPrefix() + '-search'"
+    />
+  </div>
+
+  <div class="pane-b">
+    @for (section of sections(); track section.id; let i = $index) {
+      <button
+        type="button"
+        class="gbtn"
+        [attr.aria-expanded]="isOpen(i, section.id)"
+        [attr.data-testid]="testPrefix() + '-bab-' + i"
+        (click)="toggleSection(i, section.id)"
+      >
+        <kaff-icon class="chev" name="chev" [small]="true" />
+        <span class="gn" dir="auto">{{ section.name }}</span>
+        <span class="gc">{{ i18n.formatNumber(section.items.length) }}</span>
+      </button>
+      @if (isOpen(i, section.id)) {
+        @for (item of section.items; track item.id) {
+          <div
+            class="ci"
+            [attr.draggable]="!ticksOnly() && !addedIds().has(item.id) ? 'true' : null"
+            (dragstart)="onDragStart($event, item.id)"
+          >
+            @if (addedIds().has(item.id)) {
+              <span class="added">
+                <kaff-icon name="check" />
+                <span class="tx"><b dir="auto">{{ itemName(item) }}</b></span>
+              </span>
+            } @else {
+              <label class="ck">
+                <input
+                  type="checkbox"
+                  [checked]="ticked().has(item.id)"
+                  [attr.data-testid]="testPrefix() + '-tick-' + item.id"
+                  (change)="tick(item.id, $any($event.target).checked)"
+                />
+                <span class="tx">
+                  <b dir="auto">{{ itemName(item) }}</b>
+                  <small>
+                    <span dir="auto">{{ item.unit }}</span>
+                    <kaff-figure [value]="item.baseSellRate" />
+                  </small>
+                </span>
+              </label>
+              @if (!ticksOnly()) {
+                <button
+                  type="button"
+                  class="plus"
+                  [disabled]="busy()"
+                  [attr.aria-label]="i18n.t('boq.add.line')"
+                  [attr.data-testid]="testPrefix() + '-add-' + item.id"
+                  (click)="addOne(item.id)"
+                >
+                  <kaff-icon name="plus" />
+                </button>
+              }
+            }
+          </div>
+        }
+      }
+    } @empty {
+      <p class="none">{{ i18n.t('boq.add.no_results') }}</p>
+    }
+  </div>
+
+  @if (ticked().size > 0) {
+    <div class="pane-f">
+      <kaff-button
+        [variant]="ticksOnly() ? 'primary' : 'secondary'"
+        [busy]="busy()"
+        [testId]="testPrefix() + '-add-ticked'"
+        (clicked)="addTicked()"
+      >{{ i18n.t('boq.add.ticked', { count: ticked().size }) }}</kaff-button>
+    </div>
+  }
+</div>

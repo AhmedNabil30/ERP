@@ -1,0 +1,203 @@
+/* Column template shared with the column header the BOQ page draws (`.ln-h`); keep the two in step. */
+:host {
+  display: block;
+}
+
+.ln {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px 96px 132px 44px;
+  gap: var(--space-1) var(--space-3);
+  align-items: center;
+  min-block-size: 60px;
+  padding-block: var(--space-2);
+  padding-inline: var(--space-4) var(--space-2);
+  border-block-start: 1px solid var(--line);
+}
+
+.ln.pend::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 5px;
+  background: repeating-linear-gradient(180deg, var(--ink) 0 6px, transparent 6px 10px);
+}
+
+.nm {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  min-inline-size: 0;
+}
+
+.nm b {
+  font-weight: 600;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.rm {
+  grid-column: 5;
+  grid-row: 1;
+  display: grid;
+  place-items: center;
+  inline-size: var(--tap-target);
+  block-size: var(--tap-target);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: var(--radius);
+  color: var(--dim);
+  cursor: pointer;
+}
+
+.rm:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+.rm:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.calc {
+  display: contents;
+}
+
+.qty {
+  grid-column: 2;
+  grid-row: 1;
+  min-inline-size: 0;
+}
+
+.ro {
+  font-variant-numeric: tabular-nums;
+}
+
+.rt {
+  grid-column: 3;
+  grid-row: 1;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  color: var(--dim);
+}
+
+.tt {
+  grid-column: 4;
+  grid-row: 1;
+  text-align: end;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.tt .none {
+  color: var(--dim);
+  font-weight: 500;
+}
+
+.qi {
+  display: flex;
+  align-items: stretch;
+  block-size: var(--tap-target);
+  box-shadow: inset 0 0 0 2px var(--fieldline);
+  border-radius: var(--radius);
+  background: var(--field);
+  min-inline-size: 0;
+}
+
+.qi.bad {
+  box-shadow: inset 0 0 0 2px var(--err-bar);
+}
+
+.qi input {
+  flex: 1 1 0;
+  inline-size: 0;
+  min-inline-size: 0;
+  border: 0;
+  background: transparent;
+  padding-inline: var(--space-3);
+  text-align: end;
+  font: 600 1rem/1 var(--body);
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+
+.qi .aff {
+  display: flex;
+  align-items: center;
+  padding-inline: var(--space-3);
+  border-inline-start: 2px solid var(--line);
+  color: var(--dim);
+  font-weight: 600;
+}
+
+.qi:focus-within {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.atag {
+  display: inline-flex;
+  align-items: center;
+  block-size: 24px;
+  padding-inline: var(--space-2);
+  border-radius: var(--radius);
+  border: 1.5px dashed var(--fieldline);
+  font: 600 0.75rem/1 var(--body);
+  white-space: nowrap;
+}
+
+.qs {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--dim);
+  font: 600 0.75rem/1 var(--body);
+}
+
+@media (max-width: 1100px) {
+  .ln {
+    grid-template-columns: minmax(0, 1fr) var(--tap-target);
+    padding-inline: var(--space-4) var(--space-2);
+  }
+
+  .nm {
+    grid-column: 1;
+  }
+
+  .rm {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .calc {
+    display: flex;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .qty {
+    flex: 0 0 150px;
+  }
+
+  .rt {
+    flex: none;
+    text-align: start;
+  }
+
+  .rt::before {
+    content: '× ';
+    color: var(--dim);
+  }
+
+  .tt {
+    margin-inline-start: auto;
+  }
+}

@@ -1,0 +1,50 @@
+<div class="ln" [class.pend]="pending()" [attr.data-testid]="testId()">
+  <div class="nm">
+    <b dir="auto">{{ name() }}</b>
+    @if (!readOnly()) {
+      @if (state() === 'estimated') {
+        <span class="atag">{{ i18n.t('boq.qty.estimated') }}</span>
+      } @else if (state() === 'surveyed') {
+        <span class="qs"><kaff-icon name="check" [small]="true" />{{ i18n.t('boq.qty.surveyed') }}</span>
+      } @else if (state() === 'none') {
+        <span class="atag">{{ i18n.t('boq.qty.none') }}</span>
+      }
+    }
+  </div>
+  @if (!readOnly()) {
+    <button type="button" class="rm" [attr.aria-label]="i18n.t('boq.line.remove')" [attr.data-testid]="testId() + '-remove'" (click)="removed.emit()">
+      <kaff-icon name="x" />
+    </button>
+  }
+  <div class="calc">
+    <div class="qty">
+      @if (readOnly()) {
+        <span class="ro"><bdi dir="ltr">{{ quantity() === '' ? '-' : i18n.formatNumber(quantity()) }}</bdi> {{ unit() }}</span>
+      } @else {
+        <div class="qi" [class.bad]="invalid()">
+          <input
+            type="text"
+            inputmode="decimal"
+            dir="ltr"
+            autocomplete="off"
+            spellcheck="false"
+            [value]="quantity()"
+            [attr.aria-label]="i18n.t('boq.column.quantity')"
+            [attr.aria-invalid]="invalid() ? 'true' : null"
+            [attr.data-testid]="testId() + '-qty'"
+            (change)="onChange($event)"
+          />
+          <span class="aff" dir="auto">{{ unit() }}</span>
+        </div>
+      }
+    </div>
+    <span class="rt"><kaff-figure [value]="rate()" /></span>
+    <span class="tt">
+      @if (total() !== null) {
+        <kaff-figure [value]="total()!" />
+      } @else {
+        <span class="none">-</span>
+      }
+    </span>
+  </div>
+</div>

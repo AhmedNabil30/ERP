@@ -28,6 +28,39 @@ export interface BoqLine {
   readonly quantityEstimated: string | null;
   readonly quantitySurveyed: string | null;
   readonly lineTotal: string | null;
+  /** A typed line (not from the catalogue). Shown like any other line; the review is the Technical Office's, not this screen's. */
+  readonly isCustom?: boolean;
+  readonly pendingCatalogueReview?: boolean;
+}
+
+/** `GET /api/boq-bases` summary: a prepared base in the start sheet. Holds no rate. */
+export interface BoqBaseSummary {
+  readonly id: string;
+  readonly name: string;
+  readonly lineCount: number;
+}
+
+/** `POST …/boq/copy` source: exactly one of the two. */
+export type BoqCopySource = { readonly baseId: string } | { readonly sourceProjectId: string };
+
+/** A source item the copy left out. `itemCode` is on the wire but never shown (no codes on screens). */
+export interface BoqCopySkipped {
+  readonly descriptionAr: string | null;
+  readonly reason: string;
+}
+
+export interface BoqCopyResult {
+  readonly lines: readonly BoqLine[];
+  readonly skipped: readonly BoqCopySkipped[];
+}
+
+/** `POST …/boq/lines` for a typed item. The server stores it flagged for catalogue review and writes nothing to the catalogue. */
+export interface BoqCustomLineAdd {
+  readonly descriptionAr: string;
+  readonly unit: string;
+  readonly babId: string;
+  readonly costPrice: string;
+  readonly baseSellRate: string;
 }
 
 export interface Boq {
@@ -83,6 +116,25 @@ export class BoqsApi {
   /** Opens the BOQ on first use. Refused with `errors.boq.frozen` once the contract is signed. */
   async addLine(projectId: string, line: BoqLineAdd): Promise<BoqLine> {
     return await firstValueFrom(this.http.post<BoqLine>(`api/projects/${projectId}/boq/lines`, line));
+  }
+
+  /** All-or-nothing: several catalogue items in one request. A line may have no quantity yet. */
+  async addLines(projectId: string, items: readonly BoqLineAdd[]): Promise<void> {
+    await firstValueFrom(this.http.post<unknown>(`api/projects/${projectId}/boq/lines/batch`, { items }));
+  }
+
+  async addCustomLine(projectId: string, line: BoqCustomLineAdd): Promise<BoqLine> {
+    return await firstValueFrom(this.http.post<BoqLine>(`api/projects/${projectId}/boq/lines`, line));
+  }
+
+  async listBases(): Promise<readonly BoqBaseSummary[]> {
+    const response = await firstValueFrom(this.http.get<{ bases: BoqBaseSummary[] }>('api/boq-bases'));
+    return response.bases;
+  }
+
+  /** Only into an empty BOQ. Rates are today's catalogue rates; hold and advance never come across. */
+  async copy(projectId: string, source: BoqCopySource): Promise<BoqCopyResult> {
+    return await firstValueFrom(this.http.post<BoqCopyResult>(`api/projects/${projectId}/boq/copy`, source));
   }
 
   async editLine(projectId: string, lineId: string, edit: BoqLineEdit): Promise<BoqLine> {
