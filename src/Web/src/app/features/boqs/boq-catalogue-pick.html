@@ -1,7 +1,9 @@
-<div class="pane" [attr.data-testid]="testPrefix()">
+<div class="pane" [class.sheet]="ticksOnly()" [attr.data-testid]="testPrefix()">
   <div class="pane-h">
     <div class="hrow">
-      <h2>{{ i18n.t('boq.catalogue.title') }}</h2>
+      @if (!ticksOnly()) {
+        <h2>{{ i18n.t('boq.catalogue.title') }}</h2>
+      }
       <kaff-button variant="secondary" [testId]="testPrefix() + '-custom'" (clicked)="customRequested.emit()">{{ i18n.t('boq.custom.open') }}</kaff-button>
     </div>
     <kaff-search-field

@@ -187,6 +187,10 @@
     flex: 0 0 150px;
   }
 
+  .ln.read .qty {
+    flex: 1 1 auto;
+  }
+
   .rt {
     flex: none;
     text-align: start;

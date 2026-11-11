@@ -1,4 +1,4 @@
-<div class="ln" [class.pend]="pending()" [attr.data-testid]="testId()">
+<div class="ln" [class.pend]="pending()" [class.read]="readOnly()" [attr.data-testid]="testId()">
   <div class="nm">
     <b dir="auto">{{ name() }}</b>
     @if (!readOnly()) {
