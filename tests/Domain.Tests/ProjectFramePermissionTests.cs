@@ -18,7 +18,7 @@ public sealed class ProjectFramePermissionTests
     }
 
     [Fact]
-    public void ExtractRead_is_every_project_reader_except_the_junior_engineer_and_head_of_design()
+    public void ExtractRead_is_every_project_reader_except_the_junior_engineer()
     {
         PermissionDefinition definition = PermissionCatalogue.Of(Permission.ExtractRead);
 
@@ -29,6 +29,8 @@ public sealed class ProjectFramePermissionTests
             (Role.Owner, AssignmentLevel.Standard), (Role.Finance, AssignmentLevel.Standard),
             (Role.TechnicalOffice, AssignmentLevel.Standard), (Role.MarketingSales, AssignmentLevel.Standard),
             (Role.SiteEngineer, AssignmentLevel.Supervisor),
+            // Head of Design keeps the extracts reach ProjectRead gave him before D-221.
+            (Role.HeadOfDesign, AssignmentLevel.Standard),
         ]);
     }
 

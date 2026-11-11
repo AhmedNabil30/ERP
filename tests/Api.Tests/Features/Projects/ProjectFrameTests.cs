@@ -128,13 +128,39 @@ public sealed class ProjectFrameTests : IAsyncLifetime
             using JsonDocument body = await ReadAsync(Who(who), $"/api/projects/{_projectId}");
 
             body.RootElement.GetProperty("lastDailyLogOn").GetString().Should().Be(
-                DateOnly.FromDateTime(DateTime.UtcNow).ToString("yyyy-MM-dd"));
+                new Kaff.Domain.Rulings.RulingSet().DailyLogEntry.SiteDate(DateTimeOffset.UtcNow).ToString("yyyy-MM-dd"));
             body.RootElement.GetProperty("loggedToday").GetBoolean().Should().BeTrue();
         }
 
         using JsonDocument none = await ReadAsync(_owner, $"/api/projects/{_unsignedProjectId}");
         none.RootElement.GetProperty("lastDailyLogOn").ValueKind.Should().Be(JsonValueKind.Null);
         none.RootElement.GetProperty("loggedToday").GetBoolean().Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Logged_today_follows_the_site_day_not_the_utc_day()
+    {
+        // 22:30 UTC on 10 June is 01:30 on 11 June in Cairo (UTC+3 in summer): the two dates differ.
+        var clock = new TestClock();
+        clock.Advance(new DateTimeOffset(2026, 6, 10, 22, 30, 0, TimeSpan.Zero) - DateTimeOffset.UtcNow);
+        await using KaffDbContext context = _database.CreateContext();
+        context.DailyLogs.Add(DailyLog.Open(
+            _unsignedProjectId, _junior, new DateTimeOffset(2026, 6, 11, 1, 30, 0, TimeSpan.FromHours(3)), clock.GetUtcNow()));
+        await context.SaveChangesAsync(Ct);
+
+        await using var factory = new KaffApiFactory(_database.ConnectionString, clock: clock);
+        using HttpClient http = factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"/api/projects/{_unsignedProjectId}", UriKind.Relative));
+        request.Headers.Add(TestAuthHandler.UserIdHeader, _owner.ToString());
+        request.Headers.Add(
+            TestAuthHandler.SecurityStampHeader,
+            await context.Users.Where(user => user.Id == _owner).Select(user => user.SecurityStamp).FirstAsync(Ct));
+        request.Headers.Add(TestAuthHandler.RoleHeader, nameof(Role.Owner));
+        using HttpResponseMessage response = await http.SendAsync(request, Ct);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+        body.RootElement.GetProperty("loggedToday").GetBoolean().Should().BeTrue("the log is dated 11 June, the Cairo day");
     }
 
     // ---- routes behind a tab the role does not have ----------------------------------------------------

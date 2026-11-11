@@ -65,7 +65,8 @@ internal static class Handler
         // The contract value is derived: the signed BOQ total plus the approved change orders (ChangeOrderDisplayedValue).
         Money approved = await ChangeOrderQueries.ApprovedTotalAsync(database, projectId, cancellationToken);
         Project candidateProject = found.Project;
-        DateOnly today = DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
+        // The daily log judges "today" in the site zone (DailyLogEntryRule), so the overview uses the same rule.
+        DateOnly today = rulings.DailyLogEntry.SiteDate(clock.GetUtcNow());
         Response project = new(
             candidateProject.Id,
             candidateProject.Code,

@@ -176,16 +176,18 @@ public sealed class CatalogueCompletenessTests
     /// </para>
     /// </remarks>
     [Fact]
-    public void A_head_of_design_holds_exactly_one_permission()
+    public void A_head_of_design_holds_exactly_one_permission_besides_the_extract_read_carry_over()
     {
         IEnumerable<Permission> granted = PermissionCatalogue.All
             .Where(definition => definition.Grants.Any(grant => grant.Role == Role.HeadOfDesign))
             .Select(definition => definition.Permission);
 
         granted.Should().BeEquivalentTo(
-            [Permission.ProjectRead],
+            [Permission.ProjectRead, Permission.ExtractRead],
+            // ExtractRead (KAFF-420, D-221) only carries the reach ProjectRead gave him before D-221: the extracts list
+            // and waiting-on were readable by ProjectRead, so splitting them out must not take them from him. Nothing new.
             "spec.md §9 marks Role.HeadOfDesign phase 2 and PermissionCatalogue's own comment says it "
-            + "holds exactly one row. Any other permission reaching this role — ClientManage above "
+            + "holds one row (plus the ExtractRead carry-over). Any other permission reaching this role — ClientManage above "
             + "all, which reaches every client Kaff has including the internal notes §12 forbids the "
             + "client seeing — is a widening nothing else in this repository would notice");
     }
