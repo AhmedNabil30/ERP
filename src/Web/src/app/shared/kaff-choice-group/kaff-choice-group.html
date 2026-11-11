@@ -1,0 +1,32 @@
+<fieldset class="group" [attr.aria-describedby]="errorKey() !== null ? name + '-err' : null">
+  <legend>
+    {{ i18n.t(legendKey()) }}
+    @if (required()) {
+      <span class="req" aria-hidden="true">*</span>
+      <span class="sr-only">{{ i18n.t('a11y.required') }}</span>
+    }
+  </legend>
+  @for (choice of choices(); track choice.value) {
+    <label class="row" [class.on]="value() === choice.value" [class.bad]="errorKey() !== null">
+      <input
+        type="radio"
+        [name]="name"
+        [value]="choice.value"
+        [checked]="value() === choice.value"
+        [disabled]="disabled()"
+        [attr.data-testid]="testId() + '-' + choice.value"
+        (change)="value.set(choice.value)"
+      />
+      <span class="bx" aria-hidden="true"></span>
+      <span>{{ i18n.t(choice.labelKey) }}</span>
+    </label>
+  }
+  <div class="foot">
+    @if (errorKey(); as key) {
+      <p class="err" role="alert" [id]="name + '-err'" [attr.data-testid]="testId() + '-error'">
+        <svg class="alert-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3zM12 10v4M12 17.5v.5" /></svg>
+        <span>{{ i18n.t(key) }}</span>
+      </p>
+    }
+  </div>
+</fieldset>

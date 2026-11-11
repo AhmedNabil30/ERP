@@ -54,6 +54,14 @@ export interface ClientFile {
   readonly isActive: boolean;
 }
 
+/** `POST /api/clients/quick`, field for field. */
+export interface QuickClientWrite {
+  readonly name: string;
+  readonly phone: string;
+  readonly kind: ClientKind;
+  readonly acknowledgedDuplicatePhone: boolean;
+}
+
 /** What the create and edit forms send. There is no `code` member, and that is the point of it. */
 export interface ClientWrite {
   readonly name: string;
@@ -118,7 +126,25 @@ export class ClientsApi {
     return response.matches;
   }
 
-  /** S-014's load. `404` with `errors.master.client_not_found` when the id names nobody. */
+  /**
+   * KAFF-419 · the project-create form's quick add: name, phone and kind only. Gated `ProjectCreate`, not
+   * `ClientManage` (D-218 item 8). `409` `errors.master.duplicate_phone_not_acknowledged` when the phone
+   * belongs to another client and `acknowledgedDuplicatePhone` was not sent (D-218 item 9).
+   */
+  async quickAdd(client: QuickClientWrite): Promise<ClientSummary> {
+    return await firstValueFrom(this.http.post<ClientSummary>('api/clients/quick', client));
+  }
+
+  /** The warning half of {@link quickAdd}: the same answer as {@link phoneCheck}, gated `ProjectCreate`. */
+  async quickPhoneCheck(phone: string): Promise<readonly PhoneMatch[]> {
+    const response = await firstValueFrom(
+      this.http.post<{ matches: PhoneMatch[] }>('api/clients/quick/phone-check', { phone }),
+    );
+
+    return response.matches;
+  }
+
+  /** S-014's load.`404` with `errors.master.client_not_found` when the id names nobody. */
   async get(id: string): Promise<ClientFile> {
     return await firstValueFrom(this.http.get<ClientFile>(`api/clients/${id}`));
   }

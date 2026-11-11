@@ -1,0 +1,135 @@
+.cb {
+  position: relative;
+  min-inline-size: 0;
+}
+
+.ctl {
+  display: flex;
+  align-items: stretch;
+  min-inline-size: 0;
+  block-size: 3rem;
+  border: 2px solid var(--fieldline);
+  border-radius: var(--radius);
+  background: var(--field);
+}
+
+.ctl:hover {
+  border-color: var(--ink);
+}
+
+.ctl:focus-within {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.ctl.bad {
+  border-color: var(--err-bar);
+  box-shadow: inset 0 0 0 1px var(--err-bar);
+}
+
+.lead {
+  align-self: center;
+  margin-inline-start: 14px;
+  color: var(--dim);
+}
+
+/* `.ctl input` outranks the global `kaff-field input` rule: the border belongs to .ctl, not to the input. */
+.ctl input {
+  flex: 1;
+  min-inline-size: 0;
+  min-block-size: 0;
+  block-size: 100%;
+  padding: 0 14px;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 1.0625rem;
+  outline: none;
+}
+
+.clr {
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.clr:hover {
+  background: var(--hover);
+}
+
+.pop {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: calc(100% + 6px);
+  z-index: 20;
+  max-block-size: 300px;
+  overflow: auto;
+  background: var(--surface);
+  border: 1.5px solid var(--fieldline);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.opt {
+  display: flex;
+  align-items: center;
+  inline-size: 100%;
+  min-block-size: 3rem;
+  padding: 6px 14px;
+  border: 0;
+  border-block-end: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.opt:last-child {
+  border-block-end: 0;
+}
+
+.opt:hover,
+.opt.act {
+  background: var(--hover);
+}
+
+.opt[aria-selected='true'] {
+  font-weight: 700;
+}
+
+mark {
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.none {
+  display: grid;
+  justify-items: start;
+  padding: 12px 14px;
+  color: var(--dim);
+}
+
+@media (width <= 820px) {
+  .ctl {
+    block-size: 3.5rem;
+  }
+
+  .opt {
+    min-block-size: 3.5rem;
+  }
+}

@@ -1,0 +1,43 @@
+<div class="cb" #host (focusout)="onFocusOut($event, host)">
+  <div class="ctl" [class.bad]="invalid()">
+    <kaff-icon class="lead" name="search" />
+    <input
+      [id]="controlId()"
+      type="text"
+      role="combobox"
+      autocomplete="off"
+      dir="auto"
+      [attr.aria-expanded]="open()"
+      [attr.aria-controls]="controlId() + '-list'"
+      [attr.aria-describedby]="describedBy()"
+      [attr.data-testid]="testId()"
+      [value]="text()"
+      (focus)="onFocus()"
+      (input)="onInput($event)"
+      (keydown)="onKey($event)"
+    />
+    @if (selected() !== null && !open()) {
+      <button type="button" class="clr" [attr.aria-label]="i18n.t(clearLabelKey())" [attr.data-testid]="testId() + '-clear'" (click)="clear()">
+        <kaff-icon name="x" />
+      </button>
+    }
+  </div>
+
+  @if (open()) {
+    <div class="pop" role="listbox" [id]="controlId() + '-list'">
+      @for (item of shown(); track item.value; let k = $index) {
+        <button
+          type="button"
+          class="opt"
+          role="option"
+          [class.act]="query() !== '' && k === active()"
+          [attr.aria-selected]="item.value === value()"
+          [attr.data-testid]="testId() + '-option'"
+          (click)="choose(item.value)"
+        ><span>{{ item.before }}@if (item.match !== '') {<mark>{{ item.match }}</mark>}{{ item.after }}</span></button>
+      } @empty {
+        <div class="none" [attr.data-testid]="testId() + '-none'"><ng-content select="[comboNone]" /></div>
+      }
+    </div>
+  }
+</div>
