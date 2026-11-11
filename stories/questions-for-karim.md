@@ -504,3 +504,32 @@ Answered by Nabil in D-217, and no longer open unless Karim says otherwise: Q-20
 | Q-218-1 | Nabil ruled that the supervising site engineer sees the project's money figures as the owner does. Does Karim agree? | To be built as ruled | (to be named by the lane) |
 | Q-218-2 | Nabil ruled that a BOQ may be signed while a custom item still waits for catalogue review, so the custom price freezes with the BOQ. Does Karim agree? | To be built as ruled | (to be named by the lane) |
 | Q-218-3 | What are Kaff's words for the stages after handover (warranty, closed)? The stage line stops at التسليم until answered. | Not shown | (none) |
+
+## Added 2026-11-11 — from the project module build (D-219 to D-222, KAFF-418, 419, 420, 614, 615)
+
+Raised by the backend lanes and the screen builds. Each is built as the default shown and is open until
+Nabil rules it or passes it to Karim. Q-219-1 to Q-219-3 block the daily log and crew screens.
+
+| Q | Question | Default built | RulingNote |
+|---|---|---|---|
+| Q-219-1 | An entry made offline arrives after midnight. Is it judged by the day it was made or the day it arrived? | The day it arrived | (D-219) |
+| Q-219-2 | Is the 16-hour cap per man per day counted inside one engineer's log, or for the man across the whole project? | Inside one engineer's log | (D-219) |
+| Q-219-3 | Does "نفس عمالة أمس" copy the engineer's own crew of yesterday, or the whole project's crew of yesterday? | Not built; the screen waits | (none) |
+| Q-219-4 | May the supervising site engineer and the owner correct an entry without checking in? | Yes | (D-219) |
+| Q-219-5 | Do corrections close with the three-day window? | Yes | (D-219) |
+| Q-220-1 | Should the default 20% hold and 25% advance be removed from project creation, now that both are required and empty at signature? | Defaults still applied at creation | (D-220) |
+| Q-220-2 | Is a custom item copied from an earlier project flagged for catalogue review again? | Yes, flagged again | (D-220 item 3) |
+| Q-220-3 | Does a quantity of zero count as a quantity at signature? | Yes: a line "has no quantity" only when it has neither figure | (D-220 item 4) |
+| Q-220-4 | Does copying a BOQ from an earlier project need an assignment on the source project? | Yes: `ProjectManage` with assignment on the source | (D-220 item 3) |
+| Q-220-5 | **Money.** A custom BOQ item is typed with one figure, "السعر". Is that figure the cost, with the باب markup added on top, or the final price to the client? `spec.md` §4.5 does not say. | The cost: typing 100 shows 115 on the line | (none; `ponytail:` note in `boq-page.ts`) |
+| Q-221-1 | The junior site engineer still receives the contract value, the hold and advance rates and the approved change-order total. Hide them? | Sent | (D-221) |
+| Q-221-2 | The junior site engineer can open one extract by its id but cannot list extracts. Keep? | Kept | (D-221) |
+| Q-221-3 | The supervising site engineer sees the money on the project but not inside an extract (`ExtractViewer.MaySeeMoney`). Open it? | Closed inside the extract | (D-221) |
+| Q-221-4 | Where does a terminated project sit on the stage line? | The furthest stage it reached | (D-221) |
+| Q-221-5 | Is a Finance user created later added to the existing projects? May Finance be removed from a project? | Not added; removal allowed | (D-221) |
+| Q-221-6 | Technical Office, Finance and Marketing get no اليومية tab. Correct? | No tab | (D-221) |
+| Q-221-7 | The proof screen has no link from the overview, and closure is reachable only from the main button when a closure step is due. Where should both live? | As described | (none) |
+| Q-221-8 | The server decides tabs by permission only; hiding a tab by stage or contract type is done in the Web. Move it to the server? | In the Web | (D-221) |
+| Q-221-9 | The waiting line shows to everyone who has the المستخلصات tab, not to the owner only. Correct? | Everyone with the tab | (D-221) |
+| Q-221-10 | The owner's turn reads "الاعتماد النهائي"; the approved mock says "اعتماد المالك". Which? | "الاعتماد النهائي" | (copy) |
+| Q-222-1 | The Technical Office may pick any active client by name when creating a project (`GET /api/clients/picker`, id and name only). Confirm. | Built | (D-222) |
