@@ -16787,3 +16787,36 @@ business value below is Nabil's ruling of D-217 or D-218.
 
 **Open, not decided here:** whether a correction needs the engineer's check-in today (not required as built; the owner cannot check
 in); entries made offline and sent after midnight are judged against the new day (see the report to the coordinator).
+
+## D-220 — Backend for KAFF-418: the prepared base, the copy route, the one quantity and the required signing terms · 2026-11-11
+
+**Source.** Backend lane, building the server side of KAFF-418 (AC-1 to AC-10 and AC-16) under D-217 items 19 to 33 and D-218 items
+10 to 13. Structural choices only; every business rule below is Nabil's, quoted by item.
+
+1. **A prepared base is its own entity** (`BoqBase`, `BoqBaseLine`; tables `boq_bases`, `boq_base_lines`). A line holds a catalogue
+   item key and a quantity, no rate, no hold, no advance. A key is allowed because a base is not a contract; the freeze-by-copy
+   rule (spec.md section 4.4) still binds the project BOQ the base is copied into. Editing a base replaces its whole line list
+   (`PUT /api/boq-bases/{id}`), so the editor sends what it shows. Archiving hides a base and makes it read-only; there is no delete.
+2. **Two new company-wide permissions**, `BoqBaseRead` (list and read) and `BoqBaseManage` (create, edit, archive), both held by the
+   Owner and the Technical Office. "Everyone who may build a BOQ" (D-218 item 13) is the holders of `ProjectManage`, which are the
+   same two roles; the read permission is separate so that the two can diverge without a code change.
+3. **The copy route fills an empty BOQ only** (`POST /api/projects/{id}/boq/copy`, one of `baseId` or `sourceProjectId`). From a base:
+   catalogue lines priced on today's catalogue, quantity entered as estimated. From an earlier project: the caller must hold
+   `ProjectManage` with assignment on the source project (checked in the handler, since the source comes from the body); a catalogue
+   line is matched to today's catalogue by item code, because a frozen line holds no key; the quantity is the project's one quantity
+   (surveyed if present, else estimated) and comes across as estimated; a custom line comes across as a custom line with the values it
+   stored and is flagged for review again. An item the catalogue no longer has or has archived is skipped and named in `skipped`
+   with a reason code; nothing is invented. Hold and advance are never read.
+4. **One quantity per line (D-217 item 21).** `BoqLine.QuantityFor(Surveyed)` now returns the surveyed quantity if there is one and the
+   estimated quantity otherwise. The `ContractValueSource` ruling note says so. A line "has no quantity" only when it has neither.
+   Before this, a line with only an estimate blocked signing.
+5. **Signing requires the hold and the advance for Lump Sum (D-217 item 29)**: both, typed, no default. A missing one is refused with
+   `project.signing_terms_required`. Cost Plus and Design still refuse them, as before. `ProjectOpening` still applies the spec.md
+   5.1 defaults when a project is created; whether project creation should stop carrying them is not decided here.
+6. **The archived guard is one helper** (`BoqWriteGuard`) called by the update and remove handlers; add, batch add and copy read the
+   project they already load. The signing refusal for a line without a quantity names the line in the problem body
+   (`lineId`, `position`, `itemCode`, `descriptionAr`).
+7. **Migration `BoqBases`** adds the two tables and one required check constraint, `ck_boq_base_lines_quantity_not_negative`
+   (`DatabaseInitializer`, count now 38).
+
+**Not decided, left as built:** whether the same catalogue item may appear twice in one BOQ or one base (D-217 item 22, with Karim).

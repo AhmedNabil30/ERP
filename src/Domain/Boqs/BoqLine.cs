@@ -130,7 +130,8 @@ public sealed class BoqLine : Entity
     public decimal? QuantityFor(Rulings.BoqQuantityBasis basis) => basis switch
     {
         Rulings.BoqQuantityBasis.Estimated => QuantityEstimated,
-        Rulings.BoqQuantityBasis.Surveyed => QuantitySurveyed,
+        // D-217 item 21: one quantity per line. It counts as estimated until a survey is recorded; the surveyed value then replaces it.
+        Rulings.BoqQuantityBasis.Surveyed => QuantitySurveyed ?? QuantityEstimated,
         _ => throw new InvalidOperationException($"Unknown quantity basis {basis}."),
     };
 

@@ -470,7 +470,7 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
             await context.SaveChangesAsync(Ct);
         }
 
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{project.Id}/sign", _owner, new { signedOn = "2026-09-24" }))
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project.Id}/sign", _owner, new { signedOn = "2026-09-24", holdPercentage = "0.20", clientAdvance = 25m }))
             .StatusCode.Should().Be(HttpStatusCode.OK);
 
         await using (KaffDbContext activate = _database.CreateContext())

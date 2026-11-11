@@ -189,10 +189,10 @@ public sealed class BoqTests
     }
 
     [Fact]
-    public void A_line_without_the_ruled_quantity_stops_the_total_rather_than_counting_as_zero()
+    public void A_line_with_no_quantity_at_all_stops_the_total_rather_than_counting_as_zero()
     {
         Boq boq = OpenBoq();
-        boq.AddCatalogueLine(_item, _bab, 10m, null);
+        boq.AddCatalogueLine(_item, _bab, null, null);
 
         boq.Total(_rulings.ContractValueSource).Error.Should().Be(BoqErrors.LineQuantityMissing);
     }

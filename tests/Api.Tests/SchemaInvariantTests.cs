@@ -351,8 +351,8 @@ public sealed class SchemaInvariantTests
     /// slice adds constraints, in the same commit that adds them.
     /// </remarks>
     [Fact]
-    public void Thirty_seven_check_constraints_are_required()
-        => DatabaseInitializer.RequiredCheckConstraints.Should().HaveCount(37);
+    public void Thirty_eight_check_constraints_are_required()
+        => DatabaseInitializer.RequiredCheckConstraints.Should().HaveCount(38);
 
     /// <summary>
     /// Every name in <see cref="DatabaseInitializer.RequiredCheckConstraints"/> has a recorded

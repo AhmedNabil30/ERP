@@ -350,6 +350,10 @@ public static class PermissionCatalogue
             // SM-30: pinned by Only_the_owner_holds_CataloguePriceEdit_and_it_touches_no_money.
             new(Permission.CataloguePriceEdit, PermissionScope.CompanyWide, [owner], "§2, §4.1 — D-177 §3"),
             new(Permission.BabManage,PermissionScope.CompanyWide, [owner, technicalOffice], "§2"),
+            // KAFF-418, D-217 item 19, D-218 item 13. A base BOQ holds a catalogue item and a quantity and no rate, so neither row touches money.
+            // SM-30: pinned by Only_the_owner_and_the_technical_office_hold_the_base_boq_permissions.
+            new(Permission.BoqBaseRead, PermissionScope.CompanyWide, [owner, technicalOffice], "§4.4 — D-218 item 13", TouchesMoney: false),
+            new(Permission.BoqBaseManage, PermissionScope.CompanyWide, [owner, technicalOffice], "§4.4 — D-217 item 19", TouchesMoney: false),
             new(Permission.EmployeeManage, PermissionScope.CompanyWide, [owner, hr], "§2, §10"),
             new(Permission.SubcontractorManage, PermissionScope.CompanyWide, [owner, technicalOffice], "§2"),
 

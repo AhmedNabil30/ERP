@@ -43,22 +43,19 @@ internal static class Handler
             return ResultExtensions.Problem(ProjectErrors.NotFound);
         }
 
-        Boq? boq = await database.Boqs
-            .Include(candidate => candidate.Lines)
-            .FirstOrDefaultAsync(candidate => candidate.ProjectId == projectId, cancellationToken);
-
-        if (boq is null)
+        if (project.IsArchived(clock.GetUtcNow(), rulings.FollowUp))
         {
-            Result<Boq> opened = Boq.Open(project, clock.GetUtcNow());
-
-            if (opened.IsFailure)
-            {
-                return ResultExtensions.Problem(opened.Error);
-            }
-
-            boq = opened.Value;
-            database.Boqs.Add(boq);
+            return ResultExtensions.Problem(ProjectErrors.Archived);
         }
+
+        Result<Boq> opened = await BoqOpener.GetOrOpenAsync(database, project, clock, cancellationToken);
+
+        if (opened.IsFailure)
+        {
+            return ResultExtensions.Problem(opened.Error);
+        }
+
+        Boq boq = opened.Value;
 
         Result<BoqLine> added = request.CatalogueItemId is { } itemId
             ? await AddFromCatalogueAsync(boq, itemId, request, database, cancellationToken)

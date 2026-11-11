@@ -104,6 +104,9 @@ public sealed class KaffDbContext : DbContext
     /// <summary>spec.md section 4 — a project's bill of quantities. Its lines are reached through <c>Boq.Lines</c>.</summary>
     public DbSet<Boq> Boqs => Set<Boq>();
 
+    /// <summary>KAFF-418 — prepared base BOQs. Their lines are reached through <c>BoqBase.Lines</c>.</summary>
+    public DbSet<BoqBase> BoqBases => Set<BoqBase>();
+
     // ---- Daily log (spec.md section 8, KAFF-600) ----
     public DbSet<DailyLog> DailyLogs => Set<DailyLog>();
 

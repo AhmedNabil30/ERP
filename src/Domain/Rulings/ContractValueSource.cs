@@ -37,7 +37,7 @@ public sealed record ContractValueSource(BoqQuantityBasis QuantityBasis, int Lin
         "Lump Sum: BOQ total at signature. Cost Plus: none. Design: area x rate. Which quantity prices a line, "
         + "and how a line total rounds.",
         $"Origin per type is fixed by spec.md. BOQ lines priced on {QuantityBasis} quantity (spec.md 4.3: the "
-        + $"surveyed quantity produces the binding BOQ); each line total rounded to {LineTotalDecimals} decimals "
+        + $"surveyed quantity produces the binding BOQ; D-217 item 21 ruled that a line with no survey yet is priced on its estimated quantity); each line total rounded to {LineTotalDecimals} decimals "
         + "away from zero, so the visible lines foot to the contract value. The rounding is ASSUMED, borrowed "
         + "from D-145 section 2.",
         "Change OriginFor for a type, or the record in ContractValueSource.Default.",

@@ -42,4 +42,29 @@ public static class BoqErrors
 
     public static readonly Error CatalogueItemArchived =
         Error.Conflict("boq.catalogue_item_archived", "errors.boq.catalogue_item_archived");
+
+    public static readonly Error BaseNotFound =
+        Error.NotFound("boq.base_not_found", "errors.boq.base_not_found");
+
+    public static readonly Error BaseNameRequired =
+        Error.Validation("boq.base_name_required", "errors.boq.base_name_required");
+
+    /// <summary>An archived base is hidden and read-only.</summary>
+    public static readonly Error BaseArchived =
+        Error.Conflict("boq.base_archived", "errors.boq.base_archived");
+
+    /// <summary>D-217 item 20: a base or an earlier project fills an empty BOQ only.</summary>
+    public static readonly Error NotEmpty =
+        Error.Conflict("boq.not_empty", "errors.boq.not_empty");
+
+    /// <summary>A copy named neither a base nor a source project, or both.</summary>
+    public static readonly Error CopySourceInvalid =
+        Error.Validation("boq.copy_source_invalid", "errors.boq.copy_source_invalid");
+
+    /// <summary>The source project has no BOQ, or the base has no line, so there is nothing to copy.</summary>
+    public static readonly Error CopySourceEmpty =
+        Error.Conflict("boq.copy_source_empty", "errors.boq.copy_source_empty");
+
+    public static readonly Error BatchEmpty =
+        Error.Validation("boq.batch_empty", "errors.boq.batch_empty");
 }

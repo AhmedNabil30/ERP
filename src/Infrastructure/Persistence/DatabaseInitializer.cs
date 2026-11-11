@@ -98,6 +98,7 @@ public sealed class DatabaseInitializer
         "ck_boq_lines_prices_not_negative",
         "ck_boq_lines_quantities_not_negative",
         "ck_boq_lines_review_only_custom",
+        "ck_boq_base_lines_quantity_not_negative",
 
         // ProjectConfigurations
         "ck_opportunities_closed_lost_reason",
@@ -230,6 +231,8 @@ public sealed class DatabaseInitializer
                 "CHECK ((((quantity_estimated IS NULL) OR (quantity_estimated >= (0)::numeric)) AND ((quantity_surveyed IS NULL) OR (quantity_surveyed >= (0)::numeric)) AND (quantity_executed >= (0)::numeric)))",
             ["ck_boq_lines_review_only_custom"] =
                 "CHECK (((NOT pending_catalogue_review) OR is_custom))",
+            ["ck_boq_base_lines_quantity_not_negative"] =
+                "CHECK ((quantity >= (0)::numeric))",
 
             // ProjectConfigurations
             ["ck_opportunities_closed_lost_reason"] =

@@ -88,3 +88,52 @@ internal sealed class BoqLineConfiguration : IEntityTypeConfiguration<BoqLine>
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
+
+/// <summary>
+/// A prepared base BOQ (KAFF-418). Not a contract, so a base line may name its catalogue item by key; the
+/// restrict rule keeps a referenced catalogue row from being deleted under a base.
+/// </summary>
+internal sealed class BoqBaseConfiguration : IEntityTypeConfiguration<BoqBase>
+{
+    public void Configure(EntityTypeBuilder<BoqBase> builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        builder.ToTable(DbTables.BoqBases);
+        builder.HasKey(boqBase => boqBase.Id);
+        builder.Property(boqBase => boqBase.Id).ValueGeneratedNever();
+        builder.Ignore(boqBase => boqBase.IsArchived);
+
+        builder.Property(boqBase => boqBase.Name).IsRequired().HasMaxLength(BoqBase.MaxNameLength);
+        builder.Property(boqBase => boqBase.CreatedAt).IsRequired();
+
+        builder.HasMany(boqBase => boqBase.Lines)
+            .WithOne()
+            .HasForeignKey(line => line.BoqBaseId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Navigation(boqBase => boqBase.Lines).UsePropertyAccessMode(PropertyAccessMode.Field);
+    }
+}
+
+internal sealed class BoqBaseLineConfiguration : IEntityTypeConfiguration<BoqBaseLine>
+{
+    public void Configure(EntityTypeBuilder<BoqBaseLine> builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        builder.ToTable(DbTables.BoqBaseLines, table =>
+            table.HasCheckConstraint("ck_boq_base_lines_quantity_not_negative", "quantity >= 0"));
+
+        builder.HasKey(line => line.Id);
+        builder.Property(line => line.Id).ValueGeneratedNever();
+        builder.Property(line => line.Quantity).IsRequired();
+
+        builder.HasIndex(line => new { line.BoqBaseId, line.Position }).HasDatabaseName("ix_boq_base_lines_base_position");
+
+        builder.HasOne<Kaff.Domain.MasterData.CatalogueItem>()
+            .WithMany()
+            .HasForeignKey(line => line.CatalogueItemId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}

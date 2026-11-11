@@ -715,7 +715,7 @@ public sealed partial class DailyLogTests : IAsyncLifetime
 
         if (sign)
         {
-            (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { signedOn = "2026-09-24" }))
+            (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { signedOn = "2026-09-24", holdPercentage = "0.20", clientAdvance = 25m }))
                 .StatusCode.Should().Be(HttpStatusCode.OK);
         }
 

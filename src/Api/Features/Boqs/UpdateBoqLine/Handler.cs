@@ -16,11 +16,20 @@ internal static class Handler
         Request request,
         KaffDbContext database,
         RulingSet rulings,
+        TimeProvider clock,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(database);
         ArgumentNullException.ThrowIfNull(rulings);
+        ArgumentNullException.ThrowIfNull(clock);
+
+        Error? archived = await BoqWriteGuard.ArchivedAsync(database, rulings, clock, projectId, cancellationToken);
+
+        if (archived is not null)
+        {
+            return ResultExtensions.Problem(archived);
+        }
 
         Boq? boq = await database.Boqs
             .Include(candidate => candidate.Lines)

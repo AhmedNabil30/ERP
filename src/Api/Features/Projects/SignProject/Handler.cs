@@ -66,26 +66,36 @@ internal static class Handler
             .Include(candidate => candidate.Lines)
             .FirstOrDefaultAsync(candidate => candidate.ProjectId == projectId, cancellationToken);
 
-        if (request.HoldPercentage is not null || request.ClientAdvance is not null)
+        if (project.IsSigned)
         {
-            if (project.ContractType != ContractType.LumpSum)
+            return ResultExtensions.Problem(ProjectErrors.AlreadySigned);
+        }
+
+        // AC-417-K: a Design project's area is entered here; no other route sets it.
+        if (request.AreaSquareMetres is not null && project.ContractType != ContractType.Design)
+        {
+            return ResultExtensions.Problem(ProjectErrors.SigningTermsNotForContractType);
+        }
+
+        if (project.ContractType == ContractType.LumpSum)
+        {
+            // D-217 item 29, KAFF-418 AC-9: the hold and the advance start empty and are typed for every project.
+            // A missing figure is refused; no default is applied.
+            if (request.HoldPercentage is not { } hold || request.ClientAdvance is not { } advance)
             {
-                return ResultExtensions.Problem(ProjectErrors.SigningTermsNotForContractType);
+                return ResultExtensions.Problem(ProjectErrors.SigningTermsRequired);
             }
 
-            if (request.ClientAdvance is < 0m)
+            if (advance < 0m)
             {
                 return ResultExtensions.Problem(ProjectErrors.RateMustNotBeNegative);
             }
 
-            // KAFF-417: terms move to signature. An omitted figure keeps the project's current term, or the
-            // spec.md §5.1 default when none was ever set. The other three terms are left as they are. The
-            // project is a tracked entity, so the audit interceptor records before and after in the same save.
+            // KAFF-417: terms move to signature. The other three terms are left as they are. The project is a
+            // tracked entity, so the audit interceptor records before and after in the same save.
             Result termsSet = project.SetLumpSumTerms(
-                request.ClientAdvance is { } advance
-                    ? Percentage.FromPercent(advance)
-                    : project.AdvanceRate ?? ContractDefaults.AdvanceRate,
-                request.HoldPercentage ?? project.HoldRate ?? ContractDefaults.HoldRate,
+                Percentage.FromPercent(advance),
+                hold,
                 project.AdvanceRecoveryRate ?? ContractDefaults.AdvanceRecoveryRate,
                 project.MaterialAdvanceRate ?? ContractDefaults.MaterialAdvanceRate,
                 project.DelayPenaltyEnabled);
@@ -95,9 +105,7 @@ internal static class Handler
                 return ResultExtensions.Problem(termsSet.Error);
             }
         }
-
-        // AC-417-K: a Design project's area is entered here; no other route sets it. Priced at the default rate.
-        if (request.AreaSquareMetres is not null && project.ContractType != ContractType.Design)
+        else if (request.HoldPercentage is not null || request.ClientAdvance is not null)
         {
             return ResultExtensions.Problem(ProjectErrors.SigningTermsNotForContractType);
         }
@@ -129,6 +137,22 @@ internal static class Handler
             if (boq is null)
             {
                 return ResultExtensions.Problem(BoqErrors.Required);
+            }
+
+            // D-217 item 23: the refusal names the line that has no quantity.
+            BoqLine? unquantified = boq.FirstLineWithoutQuantity(rulings.ContractValueSource);
+
+            if (unquantified is not null)
+            {
+                return ResultExtensions.Problem(
+                    BoqErrors.LineQuantityMissing,
+                    new Dictionary<string, object?>(StringComparer.Ordinal)
+                    {
+                        ["lineId"] = unquantified.Id,
+                        ["position"] = unquantified.Position,
+                        ["itemCode"] = unquantified.ItemCode,
+                        ["descriptionAr"] = unquantified.DescriptionAr,
+                    });
             }
 
             Result<Money> total = boq.Total(rulings.ContractValueSource);

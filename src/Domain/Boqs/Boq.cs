@@ -239,6 +239,26 @@ public sealed class Boq : Entity
         return Result.Success(total);
     }
 
+    /// <summary>The first line, by position, that has no quantity on the ruled basis (D-217 item 23), or null.</summary>
+    public BoqLine? FirstLineWithoutQuantity(ContractValueSource rule)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+
+        return _lines.OrderBy(line => line.Position).FirstOrDefault(line => line.QuantityFor(rule.QuantityBasis) is null);
+    }
+
+    /// <summary>A base or an earlier project fills an empty, unfrozen BOQ only (D-217 item 20).</summary>
+    public Result EnsureEmptyToFill()
+    {
+        Result open = EnsureOpen();
+        if (open.IsFailure)
+        {
+            return open;
+        }
+
+        return _lines.Count == 0 ? Result.Success() : Result.Failure(BoqErrors.NotEmpty);
+    }
+
     /// <summary>Freezes the BOQ at contract signature. One way: there is no thaw.</summary>
     public Result Freeze(DateOnly on)
     {

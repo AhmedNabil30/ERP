@@ -477,4 +477,16 @@ public enum Permission
     /// Q109): Finance alone is assumed, with no Owner approval step, as for <see cref="HoldRelease"/>.
     /// </summary>
     SubcontractorRetentionRelease = 89,
+
+    /// <summary>
+    /// List and read the prepared base BOQs (D-218 item 13): everyone who may build a BOQ, which is the holders of
+    /// <see cref="ProjectManage"/>. Company-wide: a base belongs to no project. KAFF-418.
+    /// </summary>
+    BoqBaseRead = 90,
+
+    /// <summary>
+    /// Prepare, rename, edit and archive a base BOQ (D-217 item 19): the Technical Office, with the Owner beside it as for
+    /// <see cref="CatalogueManage"/>. A base holds no rate. KAFF-418.
+    /// </summary>
+    BoqBaseManage = 91,
 }

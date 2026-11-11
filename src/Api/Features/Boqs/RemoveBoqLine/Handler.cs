@@ -1,6 +1,7 @@
 using Kaff.Api.Common.Results;
 using Kaff.Domain.Boqs;
 using Kaff.Domain.Common;
+using Kaff.Domain.Rulings;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -13,9 +14,20 @@ internal static class Handler
         Guid projectId,
         Guid lineId,
         KaffDbContext database,
+        RulingSet rulings,
+        TimeProvider clock,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(rulings);
+        ArgumentNullException.ThrowIfNull(clock);
+
+        Error? archived = await BoqWriteGuard.ArchivedAsync(database, rulings, clock, projectId, cancellationToken);
+
+        if (archived is not null)
+        {
+            return ResultExtensions.Problem(archived);
+        }
 
         Boq? boq = await database.Boqs
             .Include(candidate => candidate.Lines)

@@ -34,6 +34,8 @@ internal static class DbTables
     public const string Engagements = "engagements";
     public const string Boqs = "boqs";
     public const string BoqLines = "boq_lines";
+    public const string BoqBases = "boq_bases";
+    public const string BoqBaseLines = "boq_base_lines";
     public const string DailyLogs = "daily_logs";
     public const string ExecutedQuantityEntries = "executed_quantity_entries";
     public const string DayLabourEntries = "day_labour_entries";

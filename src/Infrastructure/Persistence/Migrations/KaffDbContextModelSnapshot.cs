@@ -274,6 +274,67 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                     b.ToTable("boqs", (string)null);
                 });
 
+            modelBuilder.Entity("Kaff.Domain.Boqs.BoqBase", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("ArchivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("archived_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("boq_bases", (string)null);
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Boqs.BoqBaseLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BoqBaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("boq_base_id");
+
+                    b.Property<Guid>("CatalogueItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("catalogue_item_id");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("quantity");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CatalogueItemId");
+
+                    b.HasIndex("BoqBaseId", "Position")
+                        .HasDatabaseName("ix_boq_base_lines_base_position");
+
+                    b.ToTable("boq_base_lines", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_boq_base_lines_quantity_not_negative", "quantity >= 0");
+                        });
+                });
+
             modelBuilder.Entity("Kaff.Domain.Boqs.BoqLine", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2745,6 +2806,21 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Kaff.Domain.Boqs.BoqBaseLine", b =>
+                {
+                    b.HasOne("Kaff.Domain.Boqs.BoqBase", null)
+                        .WithMany("Lines")
+                        .HasForeignKey("BoqBaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.MasterData.CatalogueItem", null)
+                        .WithMany()
+                        .HasForeignKey("CatalogueItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Kaff.Domain.Boqs.BoqLine", b =>
                 {
                     b.HasOne("Kaff.Domain.Boqs.Boq", null)
@@ -3199,6 +3275,11 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("Kaff.Domain.Boqs.Boq", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Boqs.BoqBase", b =>
                 {
                     b.Navigation("Lines");
                 });
