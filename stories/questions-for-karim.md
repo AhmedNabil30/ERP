@@ -496,3 +496,11 @@ an obstruction.
 
 Answered by Nabil in D-217, and no longer open unless Karim says otherwise: Q-208-1 (30 days), Q-207-3a
 (500 m), Q-210-2 ("عرض سعر").
+
+## Added 2026-11-11 — from D-218
+
+| Q | Question | Default built | RulingNote |
+|---|---|---|---|
+| Q-218-1 | Nabil ruled that the supervising site engineer sees the project's money figures as the owner does. Does Karim agree? | To be built as ruled | (to be named by the lane) |
+| Q-218-2 | Nabil ruled that a BOQ may be signed while a custom item still waits for catalogue review, so the custom price freezes with the BOQ. Does Karim agree? | To be built as ruled | (to be named by the lane) |
+| Q-218-3 | What are Kaff's words for the stages after handover (warranty, closed)? The stage line stops at التسليم until answered. | Not shown | (none) |

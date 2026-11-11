@@ -16674,3 +16674,83 @@ a saved daily quantity; a confirm step for extract quantities; Finance staffed a
 **Still with Karim.** The closure status words, who prepares the monthly extract and how far back it
 reaches, what a terminated project settles, and how a credit note is paid: Nabil gave no answer and the
 coordinator offered none.
+
+## D-218 — Nabil approves the BOQ, project-create and workspace mocks, rules the project frame with real tabs, and rules the questions the revised mocks left open · 2026-11-11
+
+**Source.** Nabil, 2026-11-11, in the session. On the workspace redraw (`5ac8028`): "Great work but the
+project it self and the tabs could be better than this right ?". On the coordinator's proposal that the
+tabs be the project's real screens: "Ok lets seee your opinion". After the redraw (`07878d8`): "Okay now
+complete all the projects scrum master start and finish everything". The rest are his picks and typed
+answers to questions put to him one by one; his typed words are quoted.
+
+**Mocks at this point.** Crew `ecb140d` (approved, revised under D-217). Daily log `b0066c6` (approved
+under D-217). BOQ `9a61abf`, project create `726f68a`, workspace `07878d8`: approved here for build,
+together with the rulings below. Where a ruling below differs from a mock, the ruling stands and the
+build follows the ruling; the mock is not redrawn first.
+
+**The project frame.**
+
+1. The tabs are the project's real screens. The frame (project name, client, status, contract type,
+   stage line, tabs) sits above the workspace overview, the BOQ, the daily log, the crew screen and the
+   extracts. The user does not leave the project to reach them.
+2. The frame is built onto the BOQ, daily-log and crew screens straight from the frame's specification
+   in `.design/v2/team-a/README.md`. Those three mocks are not redrawn; Nabil judges the frame on them in
+   the running app.
+3. The stage line shows المقايسة, التنفيذ and التسليم only ("Just do the تسليم"). الضمان and الإقفال stay
+   off it until Karim rules the closure words. Extracts are not a stage; they run during التنفيذ.
+4. The kit rule that tabs are "not for navigation between screens" no longer holds for the project frame.
+
+**Workspace.**
+
+5. The junior site engineer has no المقايسة tab. He meets BOQ items inside the daily log only.
+6. The supervising site engineer sees what the owner sees: every tab and the money figures. Karim to
+   confirm, because it shows money to a site role.
+7. The owner's overview shows آخر يومية: the date of the last daily log and whether the site logged today.
+
+**Project create.**
+
+8. Anyone who may create a project may add a missing client from inside the form. This widens who may
+   create a client, for the quick add only; the full client screen keeps `Permission.ClientManage`.
+9. A phone that already belongs to another client warns and allows, as the full client screen does.
+
+**BOQ.**
+
+10. The empty BOQ has one main button, "ابدأ المقايسة". It opens one sheet: a blank BOQ as the first
+    choice, then the prepared bases, then earlier projects. This replaces D-217 item 32 (two buttons).
+    The Arabic wording is the coordinator's and goes to the copy review.
+11. A BOQ may be signed while a custom item still waits for review.
+12. A custom item behaves as any other line: "The coustome will be treated okay the review is only about
+    putting it in the catalouge". It can be changed and removed like any line. The review decides only
+    whether the item enters the catalogue (`spec.md` §4.5). The coordinator reads this as: the BOQ line
+    carries no "بانتظار المراجعة" mark, because the flag is stored for the Technical Office queue and is
+    not something the person building the BOQ acts on. Nabil sees that reading in the build.
+13. Everyone who may build a BOQ sees the prepared bases. The technical office prepares them (D-217 item 19).
+
+**Daily log.**
+
+14. A saved quantity is corrected under the crew rule of D-217 item 3: today by the engineer who entered
+    it, an earlier day by the supervising engineer.
+15. A stoppage reason may be recorded on any of the open days (today and three back). A second reason on
+    the same day is kept beside the first.
+
+**Crew.**
+
+16. The owner may edit the crew of any open day. The supervising engineer does not edit today's crew.
+    "نفس عمالة أمس" is offered on today only.
+
+**Order of work.** The five screens are built and verified first. The extract screens (create an extract,
+confirm the real quantity per item, record a collection) have no journey brief or mock and come after.
+
+**Decided by the coordinator, structural, not business.** A correction to a saved daily-log quantity is
+stored as a new signed delta entry that names the entry it corrects. The log stays period deltas and
+stays additive (`CLAUDE.md`, Data); the screen shows the corrected figure as one row. No entry is
+updated in place.
+
+**Not ruled, and not built.** Whether the owner may also correct a daily-log quantity (item 16 was asked
+about the crew only). Who may reopen an archived project and where stop and restart live on the new
+workspace: the build keeps what the app does today. The Cost Plus and Design overviews stay as reduced
+as the mock draws them. The findings still on the mocks go to the build as defects to fix, not as
+rulings: the daily-log quantity field sits under the bottom bar at 390 px, and the crew total counts a
+refused value.
+
+**Still with Karim.** D-217's list, plus Q-218-1 and Q-218-2 below.
