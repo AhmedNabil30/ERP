@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Collections.Concurrent;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -22,7 +23,7 @@ namespace Kaff.Api.Tests.Features.DailyLogs;
 /// half of J (a money-free read model) is asserted here too. K is a frontend criterion and is not built.
 /// </summary>
 [Collection(DatabaseCollection.Name)]
-public sealed class DailyLogTests : IAsyncLifetime
+public sealed partial class DailyLogTests : IAsyncLifetime
 {
     private readonly PostgresDatabase _database;
     private KaffApiFactory _factory = null!;
@@ -34,6 +35,9 @@ public sealed class DailyLogTests : IAsyncLifetime
     private Guid _engineerA;
     private Guid _engineerB;
     private Guid _engineerUnassigned;
+    private Guid _supervisor;
+    private TestClock _clock = null!;
+    private readonly ConcurrentDictionary<(Guid Project, Guid Actor), Lazy<Task>> _checkedIn = new();
     private Guid _itemId;
     private Guid _workerId;
 
@@ -42,7 +46,9 @@ public sealed class DailyLogTests : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         await SeedAsync();
-        _factory = new KaffApiFactory(_database.ConnectionString);
+        // The server clock is fixed on the day the tests write their entries on (2026-09-25, noon UTC), so "today" is that day.
+        _clock = new TestClock(new DateTimeOffset(2026, 9, 25, 12, 0, 0, TimeSpan.Zero) - DateTimeOffset.UtcNow);
+        _factory = new KaffApiFactory(_database.ConnectionString, clock: _clock);
         _client = _factory.CreateClient();
     }
 
@@ -107,7 +113,7 @@ public sealed class DailyLogTests : IAsyncLifetime
         (Guid project, Guid line) = await NewActiveProjectAsync();
 
         (await Quantity(project, line, 40m, "2026-09-25T09:00:00+00:00")).StatusCode.Should().Be(HttpStatusCode.Created);
-        (await Quantity(project, line, 25m, "2026-09-26T15:00:00+00:00")).StatusCode.Should().Be(HttpStatusCode.Created);
+        (await Quantity(project, line, 25m, "2026-09-24T15:00:00+00:00")).StatusCode.Should().Be(HttpStatusCode.Created);
 
         (await ExecutedAsync(line)).Should().Be(65m);
     }
@@ -175,25 +181,28 @@ public sealed class DailyLogTests : IAsyncLifetime
     // ---- AC-600-E -----------------------------------------------------------------------------------------------
 
     [Fact]
-    public async Task AC_600_E_the_later_timestamp_wins_for_a_single_valued_field()
+    public async Task AC_600_E_the_later_timestamp_wins_for_the_check_in_which_is_single_valued()
     {
         (Guid project, _) = await NewActiveProjectAsync();
 
-        (await Field(project, "Weather", "sunny", At(9, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
-        (await Field(project, "Weather", "rain", At(11, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
+        (await CheckIn(project, "CheckIn", 30.0444, 31.2357, At(8, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
+        (await CheckIn(project, "CheckIn", 30.0444, 31.2357, At(10, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
 
-        (await MineAsync(project)).GetProperty("weather").GetString().Should().Be("rain");
+        (await MineAsync(project)).GetProperty("checkIn").GetDateTimeOffset()
+            .Should().Be(DateTimeOffset.Parse(At(10, 0), System.Globalization.CultureInfo.InvariantCulture));
     }
 
     [Fact]
-    public async Task AC_600_E_arrival_order_does_not_decide_the_winner_the_entry_time_does()
+    public async Task AC_600_E_arrival_order_does_not_decide_the_order_notes_are_read_in_the_entry_time_does()
     {
         (Guid project, _) = await NewActiveProjectAsync();
 
         (await Field(project, "Note", "later note", At(14, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
         (await Field(project, "Note", "earlier note, synced second", At(8, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
 
-        (await MineAsync(project)).GetProperty("note").GetString().Should().Be("later note");
+        // D-217 item 12: the second note is kept beside the first, so neither wins; they read in the order they happened.
+        (await MineAsync(project)).GetProperty("notes").EnumerateArray().Select(note => note.GetProperty("text").GetString())
+            .Should().Equal("earlier note, synced second", "later note");
     }
 
     // ---- AC-600-F -----------------------------------------------------------------------------------------------
@@ -257,7 +266,7 @@ public sealed class DailyLogTests : IAsyncLifetime
         HttpResponseMessage response = await Field(project, "StoppageReason", "Client has not released the site", At(9, 0));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        (await MineAsync(project)).GetProperty("stoppageReason").GetString().Should().Contain("released the site");
+        (await MineAsync(project)).GetProperty("stoppageReasons")[0].GetProperty("text").GetString().Should().Contain("released the site");
     }
 
     [Fact]
@@ -422,7 +431,7 @@ public sealed class DailyLogTests : IAsyncLifetime
     {
         (Guid project, _) = await NewActiveProjectAsync();
         Guid entryId = Guid.NewGuid();
-        DateTimeOffset before = DateTimeOffset.UtcNow;
+        DateTimeOffset before = _clock.GetUtcNow();
 
         HttpResponseMessage response = await CheckIn(project, "CheckIn", 30.0444, 31.2357, At(8, 0), 12.5, entryId);
 
@@ -436,7 +445,7 @@ public sealed class DailyLogTests : IAsyncLifetime
         line.GetProperty("accuracyMetres").GetDouble().Should().Be(12.5);
         line.GetProperty("flagReason").ValueKind.Should().Be(JsonValueKind.Null);
         line.GetProperty("deviceTime").GetDateTimeOffset().Should().Be(DateTimeOffset.Parse(At(8, 0), System.Globalization.CultureInfo.InvariantCulture));
-        line.GetProperty("serverTime").GetDateTimeOffset().Should().BeOnOrAfter(before, "the server stamps its own clock, not the device's");
+        line.GetProperty("serverTime").GetDateTimeOffset().Should().BeCloseTo(before, TimeSpan.FromSeconds(1), "the server stamps its own clock, not the device's");
         line.GetProperty("serverTime").GetDateTimeOffset().Should().NotBe(line.GetProperty("deviceTime").GetDateTimeOffset());
     }
 
@@ -557,7 +566,8 @@ public sealed class DailyLogTests : IAsyncLifetime
             (await MessageKeyAsync(response)).Should().Be("errors.daily_log.check_in_uses_check_in_route");
         }
 
-        (await CountAsync("field_entries", project)).Should().Be(0);
+        // The only field entry is the check-in the helper made so the gate lets the call through.
+        (await CountAsync("field_entries", project)).Should().Be(1);
     }
 
     // ---- helpers ------------------------------------------------------------------------------------------------
@@ -573,6 +583,24 @@ public sealed class DailyLogTests : IAsyncLifetime
         await using KaffDbContext reader = _database.CreateBareContext();
         return await reader.Projects.SingleAsync(candidate => candidate.Id == id, Ct);
     }
+
+    // D-217 item 9: no entry is saved before the engineer has checked in today. The helpers check in once per engineer and project
+    // so a test about something else is not about the gate; the gate tests send with autoCheckIn false.
+    private static bool NeedsCheckIn(string route, out Guid project)
+    {
+        Match match = Regex.Match(route, @"^/api/projects/([0-9a-f-]{36})/daily-logs/(quantities|day-labour|materials|photos|fields|expense-drafts)$");
+        project = match.Success ? Guid.Parse(match.Groups[1].Value) : Guid.Empty;
+        return match.Success;
+    }
+
+    private Task EnsureCheckedInAsync(Guid project, Guid actor) =>
+        _checkedIn.GetOrAdd((project, actor), _ => new Lazy<Task>(async () =>
+        {
+            await SendAsync(
+                HttpMethod.Post, $"{Logs(project)}/check-ins", actor,
+                new { entryId = Guid.NewGuid(), kind = "CheckIn", latitude = 30.0444, longitude = 31.2357, occurredAt = At(7, 0) },
+                autoCheckIn: false);
+        })).Value;
 
     private static string Logs(Guid project) => $"/api/projects/{project}/daily-logs";
 
@@ -669,6 +697,10 @@ public sealed class DailyLogTests : IAsyncLifetime
                     ProjectAssignment.Create(created.Id, user, AssignmentLevel.Junior, _owner, Now).Value);
             }
 
+            User supervising = await context.Users.SingleAsync(candidate => candidate.Id == _supervisor, Ct);
+            context.ProjectAssignments.Add(
+                ProjectAssignment.Create(created.Id, supervising, AssignmentLevel.Supervisor, _owner, Now).Value);
+
             await context.SaveChangesAsync(Ct);
             project = created.Id;
         }
@@ -695,8 +727,13 @@ public sealed class DailyLogTests : IAsyncLifetime
         return (project, line);
     }
 
-    private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string route, Guid actorId, object? body)
+    private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string route, Guid actorId, object? body, bool autoCheckIn = true)
     {
+        if (autoCheckIn && method == HttpMethod.Post && NeedsCheckIn(route, out Guid routeProject))
+        {
+            await EnsureCheckedInAsync(routeProject, actorId);
+        }
+
         using var request = new HttpRequestMessage(method, new Uri(route, UriKind.Relative));
 
         if (body is not null)
@@ -747,6 +784,7 @@ public sealed class DailyLogTests : IAsyncLifetime
         User engineerA = MakeEngineer("dl-eng-a");
         User engineerB = MakeEngineer("dl-eng-b");
         User engineerUnassigned = MakeEngineer("dl-eng-un");
+        User supervisor = MakeEngineer("dl-sup");
 
         Bab bab = Bab.Create(UniqueNames.Code("DLB"), "أعمال خرسانة", "Concrete", Percentage.FromPercent(15m)).Value;
         CatalogueItem item = CatalogueItem.Create(
@@ -755,7 +793,7 @@ public sealed class DailyLogTests : IAsyncLifetime
             UniqueNames.Code("DL-W"), "عامل يومية", UniqueNames.Phone(), EmployeeKind.DayLabour, Now, bab.Id).Value;
 
         context.Clients.Add(client);
-        context.Users.AddRange(owner, finance, engineerA, engineerB, engineerUnassigned);
+        context.Users.AddRange(owner, finance, engineerA, engineerB, engineerUnassigned, supervisor);
         context.Babs.Add(bab);
         context.CatalogueItems.Add(item);
         context.Employees.Add(worker);
@@ -767,6 +805,7 @@ public sealed class DailyLogTests : IAsyncLifetime
         _engineerA = engineerA.Id;
         _engineerB = engineerB.Id;
         _engineerUnassigned = engineerUnassigned.Id;
+        _supervisor = supervisor.Id;
         _itemId = item.Id;
         _workerId = worker.Id;
     }

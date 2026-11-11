@@ -66,4 +66,38 @@ public static class DailyLogErrors
 
     public static readonly Error OccurredAtRequired =
         Error.Validation("daily_log.occurred_at_required", "errors.daily_log.occurred_at_required");
+
+    /// <summary>No entry is saved before the engineer has checked in today on this project (D-217 item 9).</summary>
+    public static readonly Error CheckInRequired =
+        Error.Conflict("daily_log.check_in_required", "errors.daily_log.check_in_required");
+
+    /// <summary>A check-in belongs to today. A past day gets no check-in of its own (D-217 item 10).</summary>
+    public static readonly Error CheckInOnlyToday =
+        Error.Conflict("daily_log.check_in_only_today", "errors.daily_log.check_in_only_today");
+
+    /// <summary>The entry is dated in the future or more days back than the window allows (D-217 item 7).</summary>
+    public static readonly Error EntryOutsideWindow =
+        Error.Conflict("daily_log.entry_outside_window", "errors.daily_log.entry_outside_window");
+
+    /// <summary>The weather entry kind is retired (D-217 item 16). Weather is written as the stoppage reason.</summary>
+    public static readonly Error WeatherRetired =
+        Error.Validation("daily_log.weather_retired", "errors.daily_log.weather_retired");
+
+    public static readonly Error EntryNotFound =
+        Error.NotFound("daily_log.entry_not_found", "errors.daily_log.entry_not_found");
+
+    /// <summary>The caller may not correct this entry on this day (D-217 item 3, D-218 items 14 and 16).</summary>
+    public static readonly Error CorrectionNotAllowed =
+        Error.Forbidden("daily_log.correction_not_allowed", "errors.daily_log.correction_not_allowed");
+
+    /// <summary>The day of the entry is outside the open days, so it can no longer be corrected.</summary>
+    public static readonly Error CorrectionWindowClosed =
+        Error.Conflict("daily_log.correction_window_closed", "errors.daily_log.correction_window_closed");
+
+    public static readonly Error NothingToCorrect =
+        Error.Validation("daily_log.nothing_to_correct", "errors.daily_log.nothing_to_correct");
+
+    /// <summary>A correction names the saved entry it corrects, never another correction.</summary>
+    public static readonly Error CannotCorrectACorrection =
+        Error.Validation("daily_log.cannot_correct_a_correction", "errors.daily_log.cannot_correct_a_correction");
 }

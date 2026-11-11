@@ -31,6 +31,7 @@ internal static class Handler
             currentUser,
             rulings,
             clock,
+            DailyLogAccess.EntryGate.Entry,
             (log, now) => log.RecordField(request.EntryId!.Value, request.Field, request.Text, request.OccurredAt!.Value, now),
             cancellationToken);
     }

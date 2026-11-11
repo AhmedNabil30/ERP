@@ -29,15 +29,15 @@ public sealed record DailyLogQuantityEntry(QuantityEntryMode Mode) : IRuling
 
     public RulingNote Note => new(
         "DailyLogQuantityEntry",
-        "KAFF-600 question 1: is a quantity a \"field\" for rule 5, or does a second entry on the same line mean "
+        "KAFF-600 question 1 (ruled by Nabil, D-217 item 11): is a quantity a \"field\" for rule 5, or does a second entry on the same line mean "
         + "he did more work? spec.md section 8 rule 3 (deltas, so it adds) collides with rule 5 (latest timestamp "
         + "wins, so it replaces) on exactly this case.",
         "What a second quantity entry by the same engineer on the same day and BOQ line does to the executed quantity.",
         $"Mode {Mode}: a quantity against a BOQ line adds, because it is a period delta (rule 3). Latest-timestamp-wins "
-        + "(rule 5) governs the single-valued fields only: check-in, check-out, weather, note, stoppage reason. ASSUMED.",
+        + "(rule 5) governs the single-valued fields only: check-in and check-out. A note and a stoppage reason are kept beside one another (D-217 items 12, 16; D-218 item 15). RULED (D-217 item 11): a second quantity adds, and a saved quantity is corrected by a new signed delta entry (D-218).",
         "Set Default to LatestWins. Per engineer, day and line only the quantity with the latest OccurredAt then "
         + "counts, and the BOQ line moves by the difference. Entries already stored are unchanged; they are only re-read.",
-        RulingStatus.Assumed);
+        RulingStatus.Ruled);
 
     /// <summary>
     /// The quantity the entries of one log on one line count for. Adds: their sum. Latest wins: the one with

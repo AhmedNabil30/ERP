@@ -41,6 +41,7 @@ internal static class DailyLogAccess
         Guid engineerId,
         DateTimeOffset occurredAt,
         DateTimeOffset now,
+        EntryGate gate,
         CancellationToken cancellationToken)
     {
         ProjectStatus? status = await database.Projects
@@ -57,6 +58,13 @@ internal static class DailyLogAccess
         if (!rulings.DailyLogProjectStates.Accepts(status.Value))
         {
             return Result.Failure<(DailyLog, bool)>(DailyLogErrors.ProjectStateClosedToLogs);
+        }
+
+        Result gated = await GateAsync(database, rulings, gate, projectId, engineerId, occurredAt, now, cancellationToken);
+
+        if (gated.IsFailure)
+        {
+            return Result.Failure<(DailyLog, bool)>(gated.Error);
         }
 
         DateOnly day = DailyLog.DayOf(occurredAt);
@@ -88,6 +96,74 @@ internal static class DailyLogAccess
         }
     }
 
+    /// <summary>
+    /// What an entry must satisfy before the server saves it. <see cref="Entry"/> is every ordinary entry: dated inside the open
+    /// days, by an engineer who has checked in today (D-217 items 7, 9, 10). <see cref="CheckIn"/> is the check-in itself: exempt
+    /// from the check-in rule, and dated today because a past day gets no check-in of its own. <see cref="Window"/> is opening a
+    /// log, which is not an entry.
+    /// </summary>
+    public enum EntryGate
+    {
+        Window = 0,
+        Entry = 1,
+        CheckIn = 2,
+    }
+
+    /// <summary>
+    /// "Today" is the server's clock read in the site's time zone, never the device's. An entry that waited offline and is sent
+    /// after midnight is therefore judged against the new day: it is refused for want of a check-in on that day, even though the
+    /// engineer was checked in when he made it. Reported to the coordinator as an open question; no rule is invented here.
+    /// </summary>
+    private static async Task<Result> GateAsync(
+        KaffDbContext database,
+        RulingSet rulings,
+        EntryGate gate,
+        Guid projectId,
+        Guid engineerId,
+        DateTimeOffset occurredAt,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        DailyLogEntryRule rule = rulings.DailyLogEntry;
+        DateOnly today = rule.SiteDate(now);
+        DateOnly day = DailyLog.DayOf(occurredAt);
+
+        if (gate == EntryGate.CheckIn)
+        {
+            return day == today ? Result.Success() : Result.Failure(DailyLogErrors.CheckInOnlyToday);
+        }
+
+        if (!rule.InWindow(day, today))
+        {
+            return Result.Failure(DailyLogErrors.EntryOutsideWindow);
+        }
+
+        if (gate == EntryGate.Window)
+        {
+            return Result.Success();
+        }
+
+        bool checkedInToday = await (
+            from field in database.FieldEntries.AsNoTracking()
+            join log in database.DailyLogs.AsNoTracking() on field.DailyLogId equals log.Id
+            where log.ProjectId == projectId && log.EngineerId == engineerId && log.LogDate == today
+                && field.Field == DailyLogField.CheckIn
+            select field.Id)
+            .AnyAsync(cancellationToken);
+
+        return checkedInToday ? Result.Success() : Result.Failure(DailyLogErrors.CheckInRequired);
+    }
+
+    /// <summary>True when the user holds a live supervising assignment on the project (spec.md section 9).</summary>
+    public static Task<bool> IsSupervisingEngineerAsync(
+        KaffDbContext database, Guid projectId, Guid userId, CancellationToken cancellationToken) =>
+        database.ProjectAssignments.AsNoTracking().AnyAsync(
+            assignment => assignment.ProjectId == projectId
+                && assignment.UserId == userId
+                && assignment.RevokedAt == null
+                && assignment.Level == AssignmentLevel.Supervisor,
+            cancellationToken);
+
     /// <summary>The entry already stored under this client-generated id, when it is this log's own.</summary>
     public static async Task<Result<TEntry?>> ReplayAsync<TEntry>(
         KaffDbContext database, Guid entryId, DailyLog log, CancellationToken cancellationToken)
@@ -118,6 +194,7 @@ internal static class DailyLogAccess
         ICurrentUser currentUser,
         RulingSet rulings,
         TimeProvider clock,
+        EntryGate gate,
         Func<DailyLog, DateTimeOffset, Result<TEntry>> create,
         CancellationToken cancellationToken)
         where TEntry : LogEntry
@@ -138,7 +215,7 @@ internal static class DailyLogAccess
         DateTimeOffset now = clock.GetUtcNow();
 
         Result<(DailyLog Log, bool Created)> opened = await OpenAsync(
-            database, rulings, projectId, currentUser.UserId ?? Guid.Empty, occurredAt!.Value, now, cancellationToken);
+            database, rulings, projectId, currentUser.UserId ?? Guid.Empty, occurredAt!.Value, now, gate, cancellationToken);
 
         if (opened.IsFailure)
         {

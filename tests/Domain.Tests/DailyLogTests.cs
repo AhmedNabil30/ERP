@@ -59,11 +59,15 @@ public sealed class DailyLogTests
     }
 
     [Fact]
-    public void Both_daily_log_rulings_describe_themselves_and_are_listed_as_assumed()
+    public void The_daily_log_rulings_describe_themselves_and_only_the_ruled_ones_are_marked_ruled()
     {
-        RulingSet.Default.Notes.Where(note => note.Name.StartsWith("DailyLog", StringComparison.Ordinal))
-            .Should().HaveCount(2)
-            .And.OnlyContain(note => note.Status == RulingStatus.Assumed && note.Question.Length > 0 && note.IfRuledDifferently.Length > 0);
+        var notes = RulingSet.Default.Notes.Where(note => note.Name.StartsWith("DailyLog", StringComparison.Ordinal)).ToList();
+
+        notes.Should().HaveCount(3)
+            .And.OnlyContain(note => note.Question.Length > 0 && note.IfRuledDifferently.Length > 0);
+        notes.Where(note => note.Status == RulingStatus.Ruled).Select(note => note.Name)
+            .Should().BeEquivalentTo("DailyLogQuantityEntry", "DailyLogEntryRule");
+        notes.Single(note => note.Name == "DailyLogProjectStates").Status.Should().Be(RulingStatus.Assumed);
     }
 
     [Fact]

@@ -225,3 +225,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-216 | 16569 | the BOQ builder mock is accepted in direction; its defaults and four findings are not ruled · 2026-11-10 |
 | D-217 | 16591 | Nabil rules the open screen questions for the crew screen, the daily log, the BOQ builder, project create and the workspace · 2026-11-10 |
 | D-218 | 16678 | Nabil approves the BOQ, project-create and workspace mocks, rules the project frame with real tabs, and rules the questions the revised mocks left open · 202... |
+| D-219 | 16758 | Backend for KAFF-614 and KAFF-615: how the daily log gate, the corrections and the back-dated flag are built · 2026-11-11 |

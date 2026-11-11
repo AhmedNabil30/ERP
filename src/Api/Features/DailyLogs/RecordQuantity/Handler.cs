@@ -59,7 +59,7 @@ internal static class Handler
         DateTimeOffset now = clock.GetUtcNow();
 
         Result<(DailyLog Log, bool Created)> opened = await DailyLogAccess.OpenAsync(
-            database, rulings, projectId, currentUser.UserId ?? Guid.Empty, occurredAt, now, cancellationToken);
+            database, rulings, projectId, currentUser.UserId ?? Guid.Empty, occurredAt, now, DailyLogAccess.EntryGate.Entry, cancellationToken);
 
         if (opened.IsFailure)
         {

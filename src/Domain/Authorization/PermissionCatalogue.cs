@@ -462,6 +462,12 @@ public static class PermissionCatalogue
             // See decisions.md D-052.
             new(Permission.PhotoPublish, PermissionScope.ProjectScoped, [operationsAdmin], "§8, §9"),
 
+            // D-217 item 3 and D-218 item 16: the owner edits the crew of any open day; a site engineer passes the gate and the
+            // handler allows him only where the day rule does. D-217 item 8: only the owner and the supervising engineer read the
+            // back-dated flag, and they read other engineers' logs to correct them.
+            new(Permission.DailyLogCrewCorrect, PermissionScope.ProjectScoped, [owner, engineerJunior], "§8, §9 - D-217, D-218"),
+            new(Permission.DailyLogReview, PermissionScope.ProjectScoped, [owner, engineerSupervisor], "§8, §9 - D-217, D-218"),
+
             // ---- Gates ----
 
             // spec.md §9: "Technical Office gates quantities, never money."

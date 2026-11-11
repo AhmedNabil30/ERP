@@ -839,6 +839,14 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<Guid?>("CorrectedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("corrected_by_user_id");
+
+                    b.Property<Guid?>("CorrectsEntryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("corrects_entry_id");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -866,6 +874,8 @@ namespace Kaff.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CorrectsEntryId");
+
                     b.HasIndex("DailyLogId");
 
                     b.HasIndex("EmployeeId");
@@ -884,6 +894,14 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("BoqLineId")
                         .HasColumnType("uuid")
                         .HasColumnName("boq_line_id");
+
+                    b.Property<Guid?>("CorrectedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("corrected_by_user_id");
+
+                    b.Property<Guid?>("CorrectsEntryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("corrects_entry_id");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -907,6 +925,8 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .HasColumnName("quantity");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CorrectsEntryId");
 
                     b.HasIndex("DailyLogId");
 

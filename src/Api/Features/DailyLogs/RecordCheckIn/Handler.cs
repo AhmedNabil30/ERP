@@ -43,6 +43,7 @@ internal static class Handler
             currentUser,
             rulings,
             clock,
+            DailyLogAccess.EntryGate.CheckIn,
             (log, now) =>
             {
                 var recorded = log.RecordCheckIn(

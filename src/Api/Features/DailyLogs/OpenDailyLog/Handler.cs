@@ -33,7 +33,7 @@ internal static class Handler
         }
 
         Result<(DailyLog Log, bool Created)> opened = await DailyLogAccess.OpenAsync(
-            database, rulings, projectId, currentUser.UserId ?? Guid.Empty, occurredAt, clock.GetUtcNow(), cancellationToken);
+            database, rulings, projectId, currentUser.UserId ?? Guid.Empty, occurredAt, clock.GetUtcNow(), DailyLogAccess.EntryGate.Window, cancellationToken);
 
         if (opened.IsFailure)
         {

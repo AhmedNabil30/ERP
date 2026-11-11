@@ -33,6 +33,15 @@ internal static class Handler
             return ResultExtensions.Problem(DailyLogErrors.WorkerNotFound);
         }
 
+        // What this man already counts for in the caller's log of that day, corrections included. The log may not exist yet.
+        Guid engineerId = currentUser.UserId ?? Guid.Empty;
+        DateOnly day = DailyLog.DayOf(request.OccurredAt ?? DateTimeOffset.UtcNow);
+        decimal alreadyRecorded = await database.DayLabourEntries.AsNoTracking()
+            .Where(entry => entry.EmployeeId == request.EmployeeId
+                && entry.ProjectId == projectId
+                && database.DailyLogs.Any(log => log.Id == entry.DailyLogId && log.EngineerId == engineerId && log.LogDate == day))
+            .SumAsync(entry => entry.Hours, cancellationToken);
+
         return await DailyLogAccess.RecordAsync(
             projectId,
             request.EntryId,
@@ -41,7 +50,9 @@ internal static class Handler
             currentUser,
             rulings,
             clock,
-            (log, now) => log.RecordDayLabour(request.EntryId!.Value, request.EmployeeId!.Value, request.Hours, request.OccurredAt!.Value, now),
+            DailyLogAccess.EntryGate.Entry,
+            (log, now) => log.RecordDayLabour(
+                request.EntryId!.Value, request.EmployeeId!.Value, request.Hours, alreadyRecorded, rulings.DailyLogEntry, request.OccurredAt!.Value, now),
             cancellationToken);
     }
 }

@@ -31,6 +31,7 @@ internal static class Handler
             currentUser,
             rulings,
             clock,
+            DailyLogAccess.EntryGate.Entry,
             (log, now) => log.RecordPhoto(request.EntryId!.Value, request.FileReference, request.Caption, request.OccurredAt!.Value, now),
             cancellationToken);
     }

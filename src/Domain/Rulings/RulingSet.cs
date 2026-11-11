@@ -29,6 +29,9 @@ public sealed record RulingSet
 
     public DailyLogProjectStates DailyLogProjectStates { get; init; } = DailyLogProjectStates.Default;
 
+    /// <summary>The window an entry may be dated in and the crew-hours limits (D-217).</summary>
+    public DailyLogEntryRule DailyLogEntry { get; init; } = DailyLogEntryRule.Default;
+
     public SiteExpenseDraftAmount SiteExpenseDraftAmount { get; init; } = SiteExpenseDraftAmount.Default;
 
     /// <summary>What a partial Technical Office approval scales and how its held remainder is billed. Registered, not resolved.</summary>
@@ -177,6 +180,7 @@ public sealed record RulingSet
         PostingProjectStates.Note,
         DailyLogQuantityEntry.Note,
         DailyLogProjectStates.Note,
+        DailyLogEntry.Note,
         SiteExpenseDraftAmount.Note,
         ExtractPartialApprovalScope.Note,
         ExtractPreparationScope.Note,

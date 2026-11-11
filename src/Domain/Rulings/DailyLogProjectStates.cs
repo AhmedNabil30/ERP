@@ -17,7 +17,7 @@ public sealed record DailyLogProjectStates(FrozenSet<ProjectStatus> Accepting) :
         "KAFF-600: spec.md section 8 says a Stopped project still takes a log, and says nothing of Setup, "
         + "Handover, UnderWarranty, Closed or Terminated.",
         "Which project states accept a daily log entry.",
-        "Active, HandoverPending and Stopped accept; every other state refuses. Only Stopped is fixed by spec.md. ASSUMED.",
+        "Active, HandoverPending and Stopped accept; every other state refuses. Stopped is fixed by spec.md and D-217 item 15 (a stopped project still records quantities, materials and photos). The other cells are ASSUMED.",
         "Edit the set in DailyLogProjectStates.Default.",
         RulingStatus.Assumed);
 

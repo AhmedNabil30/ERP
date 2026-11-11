@@ -79,20 +79,99 @@ public sealed class DailyLog : Entity
         return Result.Success(new ExecutedQuantityEntry(entryId, this, line.Id, quantity, occurredAt, now));
     }
 
-    public Result<DayLabourEntry> RecordDayLabour(Guid entryId, Guid employeeId, decimal hours, DateTimeOffset occurredAt, DateTimeOffset now)
+    /// <summary>
+    /// Records crew hours. <paramref name="hoursAlreadyRecorded"/> is what this man's entries in this log already count for,
+    /// corrections included: one man works at most 16 hours a day (D-217 item 1).
+    /// </summary>
+    public Result<DayLabourEntry> RecordDayLabour(
+        Guid entryId, Guid employeeId, decimal hours, decimal hoursAlreadyRecorded, DailyLogEntryRule rule, DateTimeOffset occurredAt, DateTimeOffset now)
     {
+        ArgumentNullException.ThrowIfNull(rule);
+
         Result onDay = OnThisDay(occurredAt);
         if (onDay.IsFailure)
         {
             return Result.Failure<DayLabourEntry>(onDay.Error);
         }
 
-        if (hours <= 0m || hours > DayLabourEntry.MaxHours)
+        if (!rule.HoursAllowed(hours) || hoursAlreadyRecorded + hours > rule.MaxCrewHours)
         {
             return Result.Failure<DayLabourEntry>(DailyLogErrors.HoursOutOfRange);
         }
 
         return Result.Success(new DayLabourEntry(entryId, this, employeeId, hours, occurredAt, now));
+    }
+
+    /// <summary>
+    /// Corrects a saved quantity (D-218). Nothing is updated: the result is a new signed delta that names the entry it
+    /// corrects, on the same day and log as that entry. <paramref name="currentFigure"/> is what the entry counts for now.
+    /// </summary>
+    public Result<ExecutedQuantityEntry> CorrectQuantity(
+        Guid entryId, ExecutedQuantityEntry original, decimal currentFigure, decimal newFigure, Guid correctedBy, DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(original);
+
+        if (original.DailyLogId != Id)
+        {
+            return Result.Failure<ExecutedQuantityEntry>(DailyLogErrors.EntryNotFound);
+        }
+
+        if (original.CorrectsEntryId is not null)
+        {
+            return Result.Failure<ExecutedQuantityEntry>(DailyLogErrors.CannotCorrectACorrection);
+        }
+
+        if (newFigure <= 0m)
+        {
+            return Result.Failure<ExecutedQuantityEntry>(DailyLogErrors.QuantityMustBePositive);
+        }
+
+        decimal delta = newFigure - currentFigure;
+
+        return delta == 0m
+            ? Result.Failure<ExecutedQuantityEntry>(DailyLogErrors.NothingToCorrect)
+            : Result.Success(new ExecutedQuantityEntry(
+                entryId, this, original.BoqLineId, delta, original.OccurredAt, now, original.Id, correctedBy));
+    }
+
+    /// <summary>
+    /// Corrects saved crew hours (D-218, KAFF-615 AC-11): a new signed delta that names the entry it corrects.
+    /// <paramref name="hoursOfOtherEntries"/> is what this man's other entries in the log count for.
+    /// </summary>
+    public Result<DayLabourEntry> CorrectDayLabour(
+        Guid entryId,
+        DayLabourEntry original,
+        decimal currentFigure,
+        decimal newFigure,
+        decimal hoursOfOtherEntries,
+        DailyLogEntryRule rule,
+        Guid correctedBy,
+        DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(original);
+        ArgumentNullException.ThrowIfNull(rule);
+
+        if (original.DailyLogId != Id)
+        {
+            return Result.Failure<DayLabourEntry>(DailyLogErrors.EntryNotFound);
+        }
+
+        if (original.CorrectsEntryId is not null)
+        {
+            return Result.Failure<DayLabourEntry>(DailyLogErrors.CannotCorrectACorrection);
+        }
+
+        if (!rule.HoursAllowed(newFigure) || hoursOfOtherEntries + newFigure > rule.MaxCrewHours)
+        {
+            return Result.Failure<DayLabourEntry>(DailyLogErrors.HoursOutOfRange);
+        }
+
+        decimal delta = newFigure - currentFigure;
+
+        return delta == 0m
+            ? Result.Failure<DayLabourEntry>(DailyLogErrors.NothingToCorrect)
+            : Result.Success(new DayLabourEntry(
+                entryId, this, original.EmployeeId, delta, original.OccurredAt, now, original.Id, correctedBy));
     }
 
     public Result<MaterialEntry> RecordMaterial(
@@ -158,6 +237,11 @@ public sealed class DailyLog : Entity
         if (!Enum.IsDefined(field))
         {
             return Result.Failure<FieldEntry>(DailyLogErrors.UnknownField);
+        }
+
+        if (field == DailyLogField.Weather)
+        {
+            return Result.Failure<FieldEntry>(DailyLogErrors.WeatherRetired);
         }
 
         if (field is DailyLogField.CheckIn or DailyLogField.CheckOut)

@@ -140,6 +140,18 @@ public enum Permission
     /// <summary>spec.md §8, §9 — photos are published deliberately by Operations / Administrative.</summary>
     PhotoPublish = 26,
 
+    /// <summary>
+    /// D-217 item 3, D-218 item 16 — correct saved crew hours. The owner may on any open day; an assigned site engineer reaches
+    /// the handler, which decides by day and by who entered them. Moves no money.
+    /// </summary>
+    DailyLogCrewCorrect = 27,
+
+    /// <summary>
+    /// D-217 item 8, D-218 item 14 — read every engineer's log of a day, with the back-dated flag. The owner and the supervising
+    /// site engineer. Money-free.
+    /// </summary>
+    DailyLogReview = 28,
+
     // ---- Gates ----
 
     /// <summary>spec.md §7, §9 — the Technical Office gates quantities, never money.</summary>

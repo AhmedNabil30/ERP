@@ -31,6 +31,7 @@ internal static class Handler
             currentUser,
             rulings,
             clock,
+            DailyLogAccess.EntryGate.Entry,
             (log, now) => log.RecordMaterial(request.EntryId!.Value, request.MaterialType, request.Quantity, request.Unit, request.IsStockpile, request.OccurredAt!.Value, now),
             cancellationToken);
     }

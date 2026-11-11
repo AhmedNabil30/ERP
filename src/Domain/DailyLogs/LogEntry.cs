@@ -49,37 +49,69 @@ public sealed class ExecutedQuantityEntry : LogEntry
     {
     }
 
-    internal ExecutedQuantityEntry(Guid id, DailyLog log, Guid boqLineId, decimal quantity, DateTimeOffset occurredAt, DateTimeOffset createdAt)
+    internal ExecutedQuantityEntry(
+        Guid id,
+        DailyLog log,
+        Guid boqLineId,
+        decimal quantity,
+        DateTimeOffset occurredAt,
+        DateTimeOffset createdAt,
+        Guid? correctsEntryId = null,
+        Guid? correctedByUserId = null)
         : base(id, log, occurredAt, createdAt)
     {
         BoqLineId = boqLineId;
         Quantity = quantity;
+        CorrectsEntryId = correctsEntryId;
+        CorrectedByUserId = correctedByUserId;
     }
 
     public Guid BoqLineId { get; private set; }
 
+    /// <summary>The quantity of a saved entry, or the signed difference a correction adds to it (D-218).</summary>
     public decimal Quantity { get; private set; }
+
+    /// <summary>Set on a correction: the saved entry whose figure this delta moves. Null on an ordinary entry.</summary>
+    public Guid? CorrectsEntryId { get; private set; }
+
+    /// <summary>Set on a correction: who made it. <see cref="LogEntry.CreatedAt"/> says when.</summary>
+    public Guid? CorrectedByUserId { get; private set; }
 }
 
 /// <summary>Hours a day labourer (يومية) worked, as the engineer saw it. Carries no rate: the rate is Finance's.</summary>
 public sealed class DayLabourEntry : LogEntry
 {
-    public const decimal MaxHours = 24m;
-
     private DayLabourEntry()
     {
     }
 
-    internal DayLabourEntry(Guid id, DailyLog log, Guid employeeId, decimal hours, DateTimeOffset occurredAt, DateTimeOffset createdAt)
+    internal DayLabourEntry(
+        Guid id,
+        DailyLog log,
+        Guid employeeId,
+        decimal hours,
+        DateTimeOffset occurredAt,
+        DateTimeOffset createdAt,
+        Guid? correctsEntryId = null,
+        Guid? correctedByUserId = null)
         : base(id, log, occurredAt, createdAt)
     {
         EmployeeId = employeeId;
         Hours = hours;
+        CorrectsEntryId = correctsEntryId;
+        CorrectedByUserId = correctedByUserId;
     }
 
     public Guid EmployeeId { get; private set; }
 
+    /// <summary>The hours of a saved entry, or the signed difference a correction adds to it (D-218).</summary>
     public decimal Hours { get; private set; }
+
+    /// <summary>Set on a correction: the saved entry whose hours this delta moves. Null on an ordinary entry.</summary>
+    public Guid? CorrectsEntryId { get; private set; }
+
+    /// <summary>Set on a correction: who made it. <see cref="LogEntry.CreatedAt"/> says when.</summary>
+    public Guid? CorrectedByUserId { get; private set; }
 }
 
 /// <summary>
@@ -139,7 +171,11 @@ public sealed class PhotoEntry : LogEntry
     public bool IsPublished { get; private set; }
 }
 
-/// <summary>The single-valued fields of a log, where the latest timestamp wins (spec.md section 8).</summary>
+/// <summary>
+/// The fields of a log. Check-in and check-out are single-valued, where the latest timestamp wins (spec.md section 8). A note and a
+/// stoppage reason are kept beside one another (D-217 items 12, 16). <see cref="Weather"/> is retired (D-217 item 16): stored
+/// rows stay readable, and no route accepts a new one.
+/// </summary>
 public enum DailyLogField
 {
     CheckIn = 1,

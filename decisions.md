@@ -16754,3 +16754,36 @@ rulings: the daily-log quantity field sits under the bottom bar at 390 px, and t
 refused value.
 
 **Still with Karim.** D-217's list, plus Q-218-1 and Q-218-2 below.
+
+## D-219 — Backend for KAFF-614 and KAFF-615: how the daily log gate, the corrections and the back-dated flag are built · 2026-11-11
+
+**Source.** Backend lane, building the server side of KAFF-614 and KAFF-615 under D-217 and D-218. Structural choices only; every
+business value below is Nabil's ruling of D-217 or D-218.
+
+1. **A correction is a new entry in the log of the entry it corrects.** `ExecutedQuantityEntry` and `DayLabourEntry` gained
+   `CorrectsEntryId` and `CorrectedByUserId` (migration `DailyLogCorrections`). The stored `Quantity` or `Hours` of a correction
+   is the signed difference between the figure the caller sent and the figure the saved entry counts for now. The correction takes
+   the saved entry's `OccurredAt`, so the delta belongs to the day it corrects; its `CreatedAt` and `CorrectedByUserId` say when and
+   by whom. The log reads one row per saved entry with the corrected figure (saved value plus its deltas). `BoqLine.QuantityExecuted`
+   moves by the delta under the same row lock a new quantity takes. A correction cannot name another correction.
+2. **Who may correct is `CorrectionAccess` in `Domain/DailyLogs`**, a pure function of the day, the open window and three facts the
+   handler looks up: author, supervising site engineer (a live `ProjectAssignment` with `AssignmentLevel.Supervisor`), owner.
+   Quantity: today the author, an earlier open day the supervising engineer, nobody else; the owner is refused at the permission gate
+   because whether the owner may correct a quantity is not ruled (D-218). Crew: as D-217 item 3 and D-218 item 16.
+3. **Two permissions were added.** `DailyLogCrewCorrect` (owner, any assigned site engineer) and `DailyLogReview` (owner, supervising
+   site engineer). `DailyLogWrite` is unchanged. Quantity correction uses `DailyLogWrite`.
+4. **The check-in gate and the window run before a log is opened**, inside `DailyLogAccess.OpenAsync`, after the project-state check.
+   A refused entry therefore opens no log row. "Today" is the server clock read in the site time zone (`Africa/Cairo`, held in
+   `DailyLogEntryRule`), never the device clock.
+5. **The back-dated flag is derived, not stored.** A line is back-dated when the site day it was received (`CreatedAt`) is later than
+   the day it belongs to. It is built into the read model only for the supervising engineer (own read) and for the owner and
+   supervising engineer (the new review read, `GET /api/projects/{id}/daily-logs?date=`); for everyone else the member is absent.
+6. **Notes and stoppage reasons stopped being single-valued.** The read returns lists. "Latest wins" now governs check-in and
+   check-out only. `DailyLogField.Weather` stays in the enum so stored rows load, but no route accepts it and the read ignores it.
+7. **Crew hours**: 16 per man per day in half-hour steps, enforced on the sum of that man's entries in the log, so a second entry
+   cannot pass the cap. The limit lives in `DailyLogEntryRule`, not as a constant on the entry.
+
+**Rulings that became `Ruled`:** `DailyLogEntryRule` (new) and `DailyLogQuantityEntry` (D-217 item 11).
+
+**Open, not decided here:** whether a correction needs the engineer's check-in today (not required as built; the owner cannot check
+in); entries made offline and sent after midnight are judged against the new day (see the report to the coordinator).

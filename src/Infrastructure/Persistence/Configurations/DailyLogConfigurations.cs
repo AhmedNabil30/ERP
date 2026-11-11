@@ -58,6 +58,9 @@ internal sealed class ExecutedQuantityEntryConfiguration : IEntityTypeConfigurat
         builder.Property(entry => entry.Quantity).HasPrecision(18, 4).IsRequired();
         builder.HasIndex(entry => new { entry.DailyLogId, entry.BoqLineId });
 
+        // A correction names the saved entry it corrects (D-218). No foreign key: the entries are append-only and the link is read, never enforced.
+        builder.HasIndex(entry => entry.CorrectsEntryId);
+
         // Deliberately no foreign key to boq_lines. A key would make TRUNCATE boq_lines fail on the key before
         // kaff_boq_lines_reject_truncate (003_boq_freeze.sql) could refuse it, hiding the freeze guard's own
         // message. The line cannot be deleted from a frozen BOQ anyway, and the handler only records against
@@ -73,6 +76,7 @@ internal sealed class DayLabourEntryConfiguration : IEntityTypeConfiguration<Day
 
         LogEntryMapping.Map(builder, DbTables.DayLabourEntries);
         builder.Property(entry => entry.Hours).HasPrecision(18, 4).IsRequired();
+        builder.HasIndex(entry => entry.CorrectsEntryId);
         builder.HasOne<Employee>().WithMany().HasForeignKey(entry => entry.EmployeeId).OnDelete(DeleteBehavior.Restrict);
     }
 }
