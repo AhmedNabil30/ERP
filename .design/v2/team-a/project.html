@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* KAAF project workspace, redrawn 2026-11-11 under D-217 item 39. Kit parts only (components.html, money.html) inside the approved shell (layout.html).
-   New here: group section (name only), fact list, progress block, coming step, disclosure link. All listed in README.md. */
+/* KAAF project workspace, r3 2026-11-11: project frame (header, stage line, tabs) plus the overview tab. Kit parts (components.html, money.html) inside the approved shell (layout.html).
+   New here: project frame (stage line, screen tabs), hero, fact list, disclosure link. All listed in README.md. */
 :root{
   --g900:#09221e; --g800:#0f2e29; --g300:#9fb3ad; --c100:#f4eee9; --c200:#e6d9d1; --radius:6px;
   --bg:var(--c100); --surface:#fbf8f5; --head:#ebe0d8; --ink:var(--g900); --dim:#4b5f59; --line:rgba(9,34,30,.16); --hover:rgba(9,34,30,.055);
@@ -185,23 +185,6 @@ a.lnk{display:inline-flex;align-items:center;min-block-size:44px}
 .meta .code{font-variant-numeric:tabular-nums;color:var(--dim)}
 .meta a{color:var(--ink);font-weight:600}
 
-/* the jump line: five links, no more. One per group the viewer may see. */
-.jump{position:sticky;inset-block-start:0;z-index:20;background:var(--bg);display:flex;gap:4px 26px;flex-wrap:wrap;align-items:center;padding:0 32px;margin-block-end:4px;border-block-end:1px solid var(--line)}
-.jump a{display:inline-flex;align-items:center;gap:8px;min-block-size:48px;color:var(--ink);font:600 .9375rem/1 var(--display);text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:6px;text-decoration-color:var(--line)}
-.jump a:hover{text-decoration-color:currentColor}
-.jump svg{inline-size:18px;block-size:18px}
-
-/* group section: heading column holds the INTENTION, body column holds what the type declares */
-.gs{display:grid;grid-template-columns:232px minmax(0,1fr);gap:0 36px;padding-block:28px 32px;border-block-end:1px solid var(--line);scroll-margin-block-start:56px}
-.gs:last-child{border-block-end:0}
-.gh{position:sticky;inset-block-start:64px;align-self:start;display:grid;gap:6px}
-.gh .gi{inline-size:44px;block-size:44px;border-radius:var(--radius);display:grid;place-items:center;background:var(--head)}
-.gh h2{font:700 1.375rem/1.35 var(--display);margin:6px 0 0}
-.gh p{margin:0;color:var(--dim);font-size:.9375rem;line-height:1.55}
-.gb{display:grid;gap:18px;min-inline-size:0;align-content:start}
-.gb>h3{font:600 1.0625rem/1.4 var(--display);margin:6px 0 -6px}
-.gb .sub{margin:0;color:var(--dim);font-size:.875rem}
-.pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
 
 .kv{margin:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
 .kv>div{display:grid;grid-template-columns:180px minmax(0,1fr) auto;gap:2px 16px;align-items:center;min-block-size:52px;padding:6px 16px;border-block-start:1px solid var(--line)}
@@ -239,11 +222,7 @@ a.lnk{display:inline-flex;align-items:center;min-block-size:44px}
 .m-only{display:none}
 .mh{flex:none}
 @media (max-width:1100px){
-  .gs{grid-template-columns:1fr;gap:14px}
-  .gh{position:static;grid-template-columns:44px 1fr;column-gap:12px;align-items:center}
-  .gh .gi{grid-row:1/3}.gh h2{margin:0;font-size:1.25rem}
   .chain{grid-auto-flow:row}.chain li+li{border-inline-start:0;border-block-start:1px solid var(--line)}.chain li{grid-template-columns:auto 1fr;column-gap:12px;align-items:start}.chain .st{grid-row:1/4}
-  .pair{grid-template-columns:1fr}
 }
 @media (max-width:820px){
   .app{display:flex;flex-direction:column;block-size:calc(100dvh - 36px)}
@@ -256,9 +235,6 @@ a.lnk{display:inline-flex;align-items:center;min-block-size:44px}
   .ph{display:block;padding:8px 16px 8px}
   .ph h1{font-size:1.625rem}
   .frame{padding:0 16px 24px}
-  .jump{padding:0 16px;flex-wrap:nowrap;overflow-x:auto;gap:4px 22px;scrollbar-width:none}
-  .jump a{white-space:nowrap}
-  .gs{padding-block:22px 24px}
   .kv>div{grid-template-columns:minmax(0,1fr) auto;padding:10px 14px}
   .kv dt{grid-column:1/-1;font-size:.8125rem}
   .kv .tags{grid-column:1/-1;justify-content:flex-start}
@@ -283,12 +259,6 @@ a.lnk{display:inline-flex;align-items:center;min-block-size:44px}
 .scrim{display:none;position:fixed;inset:0;background:var(--scrim)}
 @media (max-width:820px){.scrim{inset:0}}
 
-/* ---------- new on this screen (README lists them) ---------- */
-.gh p{display:none}
-.gs.next .gh h2{color:var(--dim)}
-.gs.next .gh .gi{background:transparent;border:2px dashed var(--fieldline);color:var(--dim)}
-.gs.next .gb{align-content:center}
-.nxt{border-block-start:2px dashed var(--line);inline-size:100%}
 .lst .bd{grid-column:1/-1;display:flex;align-items:center;gap:10px}
 .lst .bd .trk{flex:1;block-size:10px;border-radius:4px;background:var(--line);overflow:hidden}
 .lst .bd .trk i{display:block;block-size:100%;background:var(--ink)}
@@ -298,14 +268,56 @@ a.lnk{display:inline-flex;align-items:center;min-block-size:44px}
 .disc{display:inline-flex;align-items:center;gap:6px;min-block-size:44px;justify-self:start}
 .disc svg{inline-size:18px;block-size:18px;transition:transform .15s}
 .disc[aria-expanded="true"] svg{transform:rotate(180deg)}
-.btn.wide{inline-size:100%}
 .badge.t{border-color:var(--line);color:var(--ink)}
 .badge svg{fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 /* preview only (not part of the design): lets a screenshot take the whole page */
 body.flow .app,body.flow .main{block-size:auto;overflow:visible}
 .ban.rowc .act{min-block-size:44px}
 @media (prefers-reduced-motion:reduce){.disc svg{transition:none}}
-@media (min-width:821px){.btn.wide{inline-size:auto;justify-self:start}}
+
+/* ---------- PROJECT FRAME: header, stage line, screen tabs (README: "Project frame") ---------- */
+.ph .phl{flex:1}
+.stl{list-style:none;margin:16px 0 8px;padding:0;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);max-inline-size:640px}
+.stl li{position:relative;display:grid;justify-items:center;align-content:start;gap:6px;text-align:center;font:600 .8125rem/1.3 var(--display);color:var(--dim);min-inline-size:0}
+.stl li::before{content:"";position:absolute;inset-block-start:12px;inset-inline-start:-50%;inset-inline-end:50%;border-block-start:2px dashed var(--line)}
+.stl li:first-child::before{display:none}
+.stl li.done::before,.stl li.cur::before{border-block-start:2px solid var(--ink)}
+.stl .mk{position:relative;z-index:1;inline-size:26px;block-size:26px;border-radius:50%;border:2px solid var(--fieldline);background:var(--bg);display:grid;place-items:center;color:var(--bg)}
+.stl .mk svg{inline-size:14px;block-size:14px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.stl li.done .mk{background:var(--ink);border-color:var(--ink)}
+.stl li.cur{color:var(--ink);font-weight:700}
+.stl li.cur .mk{border-width:3px}
+.stl li.cur .mk::after{content:"";inline-size:8px;block-size:8px;border-radius:50%;background:var(--ink)}
+.stl li.done{color:var(--ink)}
+.stl.sk-l{display:block;block-size:50px;margin-block:16px 8px;border-radius:var(--radius)}
+/* the kit's tabs part, used here as the project's screen switcher (links); sticky under the frame */
+.tabs{display:flex;gap:4px;border-block-end:2px solid var(--line);overflow-x:auto;scrollbar-width:none;position:sticky;inset-block-start:0;z-index:20;background:var(--bg);padding-inline:32px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{position:relative;min-block-size:48px;padding:0 18px;border:0;background:transparent;font:600 1rem/1 var(--display);color:var(--dim);display:inline-flex;align-items:center;gap:8px;white-space:nowrap;border-radius:var(--radius) var(--radius) 0 0;text-decoration:none;flex:none}
+.tab::after{content:"";position:absolute;inset-inline:12px;inset-block-end:-2px;block-size:4px;background:transparent;border-radius:2px 2px 0 0}
+.tab:hover{background:var(--hover);color:var(--ink)}
+.tab[aria-current="page"]{color:var(--ink);font-weight:700}
+.tab[aria-current="page"]::after{background:var(--ink)}
+.tab:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.pane{display:grid;gap:16px;padding-block-start:20px;max-inline-size:860px}
+.pane>h3,.pane .sec-h h3{font:600 1.0625rem/1.4 var(--display);margin:6px 0 -4px}
+.hero{display:grid;gap:12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:18px 18px 16px}
+.hero .top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.hero .num{font:700 3rem/1 var(--body);font-variant-numeric:tabular-nums}
+.hero .top b{font:600 1.0625rem/1.4 var(--display)}
+.hero .trk{block-size:14px;border-radius:4px;background:var(--line);overflow:hidden}
+.hero .trk i{display:block;block-size:100%;background:var(--ink)}
+.hero dl{margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 18px;padding-block-start:10px;border-block-start:1px solid var(--line)}
+.hero dl div{display:grid;gap:2px}
+.hero dt{color:var(--dim);font-size:.8125rem}
+.hero dd{margin:0;font-weight:500}
+@media (max-width:820px){
+  .tabs{padding-inline:16px}
+  .tab{min-block-size:56px}
+  .stl{margin-block:14px 6px}
+  .hero .num{font-size:2.5rem}
+}
+@media (min-width:821px){.ph .acts{align-self:flex-start;padding-block-start:44px}}
 </style>
 </head>
 <body>
@@ -325,7 +337,6 @@ body.flow .app,body.flow .main{block-size:auto;overflow:visible}
       <button type="button" data-view="sitedone" aria-pressed="false">مهندس موقع: سجّل اليوم</button>
       <button type="button" data-view="nolog" aria-pressed="false">لا يوجد سجل</button>
       <button type="button" data-view="setup" aria-pressed="false">المقايسة غير موقّعة</button>
-      <button type="button" data-view="empty" aria-pressed="false">مقايسة فارغة</button>
       <button type="button" data-view="archived" aria-pressed="false">مؤرشف</button>
       <button type="button" data-view="loading" aria-pressed="false">تحميل</button>
       <button type="button" data-view="failed" aria-pressed="false">تعذّر التحميل</button>
@@ -346,7 +357,7 @@ body.flow .app,body.flow .main{block-size:auto;overflow:visible}
 
   <main class="main" id="main">
     <div class="ph" id="ph"></div>
-    <div id="jumpw"></div>
+    <div id="tabw"></div>
     <div class="frame" id="frame"></div>
   </main>
 
@@ -360,8 +371,7 @@ body.flow .app,body.flow .main{block-size:auto;overflow:visible}
 /* ============ icons (one stroke family) ============ */
 const IC={projects:'M4 21V7l8-4 8 4v14M9 21v-6h6v6M8 10h.01M12 10h.01M16 10h.01',catalog:'M3 11V4h7l11 11-7 7L3 11zM7.5 7.5h.01',bab:'M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5',employees:'M16 20v-1.5a3.5 3.5 0 00-3.5-3.5h-5A3.5 3.5 0 004 18.5V20M10 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM20 20v-1.5a3.5 3.5 0 00-2.6-3.4M15.5 4.2a3.5 3.5 0 010 6.6',subs:'M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.8-3.8a6 6 0 01-7.9 7.9l-6.9 6.9a2.1 2.1 0 01-3-3l6.9-6.9a6 6 0 017.9-7.9l-3.8 3.8z',suppliers:'M3 6h11v10H3zM14 9h4l3 3v4h-7zM7 19a2 2 0 100-4 2 2 0 000 4zM17 19a2 2 0 100-4 2 2 0 000 4z',clients:'M3 8h18v12H3zM8 8V5h8v3M3 13h18',users:'M12 3l8 3v6c0 4.5-3.2 7.6-8 9-4.8-1.4-8-4.5-8-9V6l8-3zM12 11a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM7.5 17c.8-2 2.4-3 4.5-3s3.7 1 4.5 3',depts:'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',audit:'M9 4h6v3H9zM6 5h-.5A1.5 1.5 0 004 6.5v13A1.5 1.5 0 005.5 21h13a1.5 1.5 0 001.5-1.5v-13A1.5 1.5 0 0018.5 5H18M8 12h8M8 16h5',
  left:'M15 6l-6 6 6 6',menu:'M4 7h16M4 12h16M4 17h16',plus:'M12 5v14M5 12h14',
- check:'M5 12.5l4.5 4.5L19 7.5',clock:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 2',lock:'M6 11h12v9H6zM8 11V8a4 4 0 018 0v3',info:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 8v.01',list:'M4 7h16M4 12h16M4 17h10',chev:'M6 9l6 6 6-6',err:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7.5v5.5M12 16.5v.01',redo:'M20 11a8 8 0 10-2.3 5.7M20 4v7h-7',doc:'M6 3h9l4 4v14H6zM14 3v5h5',
- g_understand:'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 15a3 3 0 100-6 3 3 0 000 6z',g_quantify:'M3 17L17 3l4 4L7 21zM8 12l2 2M11 9l2 2M14 6l2 2',g_execute:'M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.8-3.8a6 6 0 01-7.9 7.9l-6.9 6.9a2.1 2.1 0 01-3-3l6.9-6.9a6 6 0 017.9-7.9l-3.8 3.8z',g_pay:'M3 7h18v10H3zM12 14.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM6.5 10v.01M17.5 14v.01',g_closure:'M5 21V4M5 4h12l-2 4 2 4H5',g_org:'M16 20v-1.5a3.5 3.5 0 00-3.5-3.5h-5A3.5 3.5 0 004 18.5V20M10 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM20 20v-1.5a3.5 3.5 0 00-2.6-3.4M15.5 4.2a3.5 3.5 0 010 6.6'};
+ check:'M5 12.5l4.5 4.5L19 7.5',clock:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 2',lock:'M6 11h12v9H6zM8 11V8a4 4 0 018 0v3',info:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 8v.01',list:'M4 7h16M4 12h16M4 17h10',chev:'M6 9l6 6 6-6',err:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7.5v5.5M12 16.5v.01',redo:'M20 11a8 8 0 10-2.3 5.7M20 4v7h-7',doc:'M6 3h9l4 4v14H6zM14 3v5h5'};
 const i=(n,c='')=>`<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[n]}"/></svg>`;
 const mi=(n,c)=>`<svg class="${c||''}" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[n]}"/></svg>`;
 /* the five Kaff status words only. Archived and the waiting states are not statuses and never use a pill. */
@@ -374,26 +384,28 @@ const fmt2=a=>{const r=Math.round(a*100+1e-7)/100;const [x,y]=r.toFixed(2).split
 const fig=(v,o)=>{o=o||{};v=Number(v);return `<bdi class="fig" dir="ltr">${fmt2(Math.abs(v))}${o.u?`<span class="u">${o.u}</span>`:''}</bdi>`};
 const int=v=>`<bdi class="fig" dir="ltr">${group(String(v))}</bdi>`;
 const pc=(v,d=1)=>`<bdi class="fig" dir="ltr">${Number(v).toFixed(d)}%</bdi>`;
-const dt=d=>`<bdi class="fig" dir="ltr">${d}</bdi>`;
+/* dates are written as the daily log writes them: weekday, day, month. No year, no ISO. */
+const D={today:'الأربعاء 11 نوفمبر',yest:'الثلاثاء 10 نوفمبر',signed:'الأحد 1 نوفمبر',start:'السبت 26 سبتمبر',deadline:'السبت 5 ديسمبر'};
 
-/* ============ sample data (the live demo project, rounded as the workspace dump shows it) ============ */
+/* ============ sample data (the live demo project, as the workspace dump shows it) ============ */
+/* type names follow project-create.html */
 const P={
- ls:{name:'فيلا 47 — التجمع الخامس',client:'شركة النيل للتطوير العقاري',type:'مقاولة بمبلغ مقطوع'},
- cp:{name:'مجمع الشيخ زايد التجاري',client:'شركة الندى للتطوير',type:'التكلفة زائد إشراف'},
+ ls:{name:'فيلا 47 — التجمع الخامس',client:'شركة النيل للتطوير العقاري',type:'مقاولة بالمقطوعية'},
+ cp:{name:'مجمع الشيخ زايد التجاري',client:'شركة الندى للتطوير',type:'التكلفة زائد نسبة إشراف'},
  ds:{name:'تصميم فيلا الشروق',client:'طارق فؤاد',type:'تصميم'}};
 const CV=4672694.01;
 const BABS0=[['أعمال مباني',11.921],['أعمال تشطيبات',16.992],['أعمال نجارة',0],['أعمال معدنية',0],['أعمال صحية',0],['أعمال كهرباء',0]];
 const BABS=()=>S.view==='nolog'?BABS0.map(b=>[b[0],0]):BABS0;
 const TEAM=[['سارة عادل','المكتب الفني'],['منى سامي','المالية'],['هبة فؤاد','مهندس موقع · مشرف'],['خالد منصور','مهندس موقع · مبتدئ']];
-const TODAY='2026-11-11';
 
 /* ============ state ============ */
 const q0=new URLSearchParams(location.search);
-const S={type:q0.get('type')||'ls',view:q0.get('view')||'normal',terms:q0.get('terms')==='1'};
+const S={type:q0.get('type')||'ls',view:q0.get('view')||'normal',tab:q0.get('tab')||'ov',terms:q0.get('terms')==='1'};
 const EMBED=q0.get('embed')==='1';
 const $=s=>document.querySelector(s);
 const H=document.documentElement;
 const SITE=()=>['site','sitedone','nolog'].includes(S.view);
+const UNSIGNED=()=>['setup','archived'].includes(S.view);
 const USERS={owner:{n:'أحمد نبيل',r:'المالك'},site:{n:'خالد منصور',r:'مهندس موقع · مبتدئ'}};
 const NAV=[{id:'projects',g:'core',ar:'المشاريع'},{id:'catalog',g:'core',ar:'كتالوج الأسعار'},{id:'bab',g:'core',ar:'الأبواب'},{id:'employees',g:'core',ar:'الموظفون'},{id:'subs',g:'core',ar:'مقاولو الباطن'},{id:'suppliers',g:'core',ar:'الموردون'},{id:'clients',g:'core',ar:'العملاء'},{id:'users',g:'admin',ar:'المستخدمون'},{id:'depts',g:'admin',ar:'الأقسام'},{id:'audit',g:'admin',ar:'سجل التدقيق'}];
 const GROUPS={core:'البيانات الأساسية',admin:'الإدارة'};
@@ -406,132 +418,111 @@ function primaryAction(){
   if(v==='archived')return {ar:'إعادة فتح',ic:'redo'};
   if(SITE())return {ar:'سجل يومي جديد',ic:'plus'};
   if(S.type!=='ls')return null;
-  if(['setup','empty'].includes(v))return {ar:'فتح المقايسة',ic:'list'};
+  if(v==='setup')return {ar:'فتح المقايسة',ic:'list'};
   if(v==='turn')return {ar:'فتح المستخلص',ic:'doc'};
   return null;
 }
 
-/* ============ header ============ */
+/* ============ the project frame: header, stage line, tabs ============ */
+/* stages follow ProjectStatus: Setup, Active, HandoverPending and Handover, UnderWarranty, Closed. Extracts are not a stage. */
+const STAGES=['المقايسة','التنفيذ','التسليم','الضمان','الإقفال'];
+function stageLine(){
+  const cur=S.view==='setup'?0:1;
+  return `<ol class="stl" aria-label="مرحلة المشروع">${STAGES.map((s,k)=>{const c=k<cur?'done':k===cur?'cur':'';return `<li class="${c}" ${k===cur?'aria-current="step"':''}><span class="mk">${k<cur?mi('check'):''}</span>${s}</li>`}).join('')}</ol>`}
 function header(){
   const p=P[S.type],v=S.view;
   const back=`<a class="back" href="#">${i('left','s')}المشاريع</a>`;
-  if(v==='loading')return `<div class="phl">${back}<div class="ttl"><h1><span class="sk b" style="inline-size:300px;max-inline-size:70vw;block-size:34px"></span></h1></div></div><div class="acts d-only"></div>`;
+  if(v==='loading')return `<div class="phl">${back}<div class="ttl"><h1><span class="sk b" style="inline-size:300px;max-inline-size:70vw;block-size:34px"></span></h1></div><span class="sk b stl sk-l"></span></div><div class="acts d-only"></div>`;
   if(v==='failed'||v==='refused')return `<div class="phl">${back}<div class="ttl"><h1>المشروع</h1></div></div>`;
-  const st=['setup','empty'].includes(v)?'none':'run';
+  const st=v==='setup'?'none':'run';
   const pa=primaryAction();
   const meta=SITE()?'':`<p class="meta"><a class="lnk" href="#" style="min-block-size:0">${p.client}</a><span class="badge t">${p.type}</span></p>`;
-  return `<div class="phl">${back}<div class="ttl"><h1>${p.name}</h1>${v==='archived'?'':pill(st)}</div>${meta}</div>
+  return `<div class="phl">${back}<div class="ttl"><h1>${p.name}</h1>${v==='archived'?'':pill(st)}</div>${meta}${v==='archived'?'':stageLine()}</div>
     <div class="acts d-only">${pa?`<button type="button" class="btn">${i(pa.ic,'s')}${pa.ar}</button>`:''}</div>`}
+/* the project's real screens. A screen the viewer may not open, or the project has not reached, is absent. */
+const TABS={ov:['نظرة عامة'],boq:['المقايسة','boq.html'],log:['اليومية','daily-log.html'],ext:['المستخلصات','#'],team:['الفريق']};
+function tabIds(){
+  if(['loading','failed','refused'].includes(S.view))return [];
+  if(S.type==='ds')return ['ov','team'];
+  if(S.type==='cp'||SITE())return ['ov','log','team'];
+  if(UNSIGNED())return ['ov','boq','team'];
+  return ['ov','boq','log','ext','team'];
+}
+function tabs(){
+  const ids=tabIds();if(!ids.length)return '';
+  if(!ids.includes(S.tab))S.tab='ov';
+  return `<nav class="tabs" aria-label="شاشات المشروع">${ids.map(k=>`<a class="tab" href="${TABS[k][1]||'#'}" data-tab="${k}" ${k===S.tab?'aria-current="page"':''}>${TABS[k][0]}</a>`).join('')}</nav>`}
 
-/* ============ group scaffolding: the group NAME carries the meaning, no question line ============ */
-const GN={understand:['الفهم','g_understand'],quantify:['الكميات','g_quantify'],execute:['التنفيذ','g_execute'],pay:['المال','g_pay'],closure:['الإقفال','g_closure'],org:['التنظيم','g_org']};
-const gs=(id,body,cls)=>{const [t,ic]=GN[id];return `<section class="gs ${cls||''}" id="g-${id}" aria-labelledby="h-${id}"><header class="gh"><span class="gi">${i(ic)}</span><h2 id="h-${id}">${t}</h2></header><div class="gb">${body}</div></section>`};
-/* a stage not reached yet: a coming step, no sentence, no lock (D-217 item 38) */
-const nextGrp=(id,body)=>gs(id,body||'<span class="nxt"></span>','next');
+/* ============ small parts ============ */
 const kv=rows=>`<dl class="kv">${rows.map(r=>`<div><dt>${r[0]}</dt><dd>${r[1]}</dd>${r[2]?`<span class="tags">${r[2]}</span>`:''}</div>`).join('')}</dl>`;
 const retry=(msg)=>`<div class="ban rowc" role="alert">${mi('err')}<span><b>${msg}</b></span><button type="button" class="btn sec2 sm act">${mi('redo','s')}إعادة المحاولة</button></div>`;
-
-/* ============ الفهم ============ */
+const trk=(v,l)=>`<div class="trk" role="img" aria-label="${l} ${v} بالمئة"><i style="inline-size:${v}%"></i></div>`;
 function babList(){
-  return `<div class="sec-h"><h3>الأبواب</h3></div><ul class="lst">${BABS().map(b=>`<li><b>${b[0]}</b><span class="r">${pill(b[1]>0?'run':'none')}</span><div class="bd"><div class="trk" role="img" aria-label="${b[0]} ${b[1]} بالمئة"><i style="inline-size:${b[1]}%"></i></div>${pc(b[1],b[1]?1:0)}</div></li>`).join('')}</ul>`}
-function understand(){
-  const v=S.view,site=SITE();
-  if(S.type==='ls'&&['setup','empty','archived'].includes(v))
-    return gs('understand',kv([['قيمة العقد',`<span class="nul" style="display:flex;gap:10px;align-items:center">${mi('info')}<b>لم تُحدَّد بعد</b></span>`]]));
-  if(S.type==='ls'){
-    const pv0=v==='nolog'?0:12.94;const pg=`<div class="pg"><div class="top"><b>المنجز من العقد</b><span class="num">${pc(pv0,v==='nolog'?0:2)}</span></div><div class="trk" role="img" aria-label="المنجز من العقد ${pv0} بالمئة"><i style="inline-size:${pv0}%"></i></div></div>`;
-    if(site)return gs('understand',pg+babList());
-    const terms=`<button type="button" class="lnk disc" id="termsbtn" aria-expanded="${S.terms}" aria-controls="termsbox">شروط العقد${mi('chev')}</button>`
-      +(S.terms?`<div id="termsbox">${kv([['نسبة الحجز',pc(20,0)],['نسبة استرداد الدفعة المقدمة',pc(25,0)],['تاريخ توقيع العقد',dt('2026-11-01')],['تاريخ بدء التنفيذ',dt('2026-09-26')]])}</div>`:'');
-    return gs('understand',pg+kv([['قيمة العقد',fig(CV,{u:'ج.م'})],['منفَّذ في الموقع',fig(604646.65)],['معتمد في المستخلصات',fig(110734.65)]])+terms+babList());
-  }
-  if(S.type==='cp')return gs('understand',kv([['نسبة الإشراف',pc(10,0)],['التكلفة حتى الآن',fig(885000,{u:'ج.م'})],['الإشراف حتى الآن',fig(80000)]]));
-  return gs('understand',`<div class="pg"><div class="top"><b>المنجز من العقد</b><span class="num">${pc(50,0)}</span></div><div class="trk" role="img" aria-label="المنجز من العقد 50 بالمئة"><i style="inline-size:50%"></i></div></div>`
-    +kv([['مساحة المشروع',`<bdi class="fig" dir="ltr">400<span class="u">م²</span></bdi>`],['سعر المتر',fig(450)],['قيمة التصميم',fig(180000,{u:'ج.م'})]]));
-}
+  return `<div class="sec-h"><h3>الأبواب</h3></div><ul class="lst">${BABS().map(b=>`<li><b>${b[0]}</b><span class="r">${pill(b[1]>0?'run':'none')}</span><div class="bd">${trk(b[1],b[0])}${pc(b[1],b[1]?1:0)}</div></li>`).join('')}</ul>`}
 
-/* ============ الكميات (owner only, Lump Sum) ============ */
-function quantify(){
-  const v=S.view;
-  if(S.type!=='ls'||SITE())return '';
-  if(v==='empty')return gs('quantify',`<div class="state solid"><div class="ico">${i('list')}</div><h4>لا بنود بعد</h4></div>`);
-  const n=v==='setup'||v==='archived'?9:15;
-  return gs('quantify',kv([['عدد البنود',int(n)]])+`<a class="lnk" href="#">المقايسة</a>`);
-}
-
-/* ============ التنفيذ ============ */
-function execute(){
-  const v=S.view,site=SITE();
-  if(['setup','empty','archived'].includes(v))return v==='archived'?'':nextGrp('execute');
-  if(S.type==='ds'){
-    const rows=[['المفهوم',100],['المخطط',100],['ثلاثي الأبعاد',55],['تطوير التصميم',0],['الوثائق النهائية',0]];
-    return gs('execute',`<ul class="lst">${rows.map(r=>`<li><b>${r[0]}</b><div class="bd"><div class="trk" role="img" aria-label="${r[0]} ${r[1]} بالمئة"><i style="inline-size:${r[1]}%"></i></div>${pc(r[1],0)}</div></li>`).join('')}</ul>`);
-  }
-  const none=v==='nolog',done=v==='sitedone';
-  const last=none?'<b>لا يوجد</b>':dt(done?TODAY:'2026-11-10');
-  const tag=done?`<span class="badge">${mi('check')}سُجِّلت اليوم</span>`:`<span class="badge q">${mi('clock')}لم تُسجَّل اليوم</span>`;
-  const row=kv([['آخر يومية',last,tag]]);
-  const crew=site?`<a class="btn sec2 wide" href="#">عمالة اليومية</a>`:`<a class="lnk" href="#">عمالة اليومية</a>`;
-  return gs('execute',row+crew);
-}
-
-/* ============ المال (owner only) ============ */
-function pay(){
-  const v=S.view;
-  if(SITE()||S.type!=='ls')return '';
-  if(['setup','empty'].includes(v))return nextGrp('pay');
-  if(v==='archived')return '';
-  if(v==='partial')return gs('pay',retry('تعذّر تحميل بيانات المال.'));
-  return gs('pay',kv([['المطالَب به',fig(88587.72,{u:'ج.م'})],['المحصَّل',fig(0)],['المتبقي على العميل',fig(88587.72)]])+`<a class="lnk" href="#">المستخلصات</a>`);
-}
-
-/* ============ الإقفال: a coming step in every state drawn (closure status words are not ruled) ============ */
-function closure(){
-  if(SITE()||S.type!=='ls'||S.view==='archived')return '';
-  if(['setup','empty'].includes(S.view))return nextGrp('closure');
-  return nextGrp('closure',`<ol class="chain">${['التسليم','الضمان','الإقفال'].map(s=>`<li><div class="st"><span class="mk"></span>${s}</div></li>`).join('')}</ol>`);
-}
-
-/* ============ التنظيم ============ */
-function org(){
-  const team=S.type==='ls'?TEAM:TEAM.slice(0,3);
-  return gs('org',`<ul class="lst">${team.map(t=>`<li><span class="pp"><span class="av" aria-hidden="true">${[...t[0]][0]}</span><b>${t[0]}</b></span><span class="r">${t[1]}</span></li>`).join('')}</ul>`);
-}
-
-/* ============ the waiting line: who the extract waits on, once. Owner only; the junior site engineer never sees it (D-217 item 37) ============ */
+/* ============ the overview tab ============ */
 function waiting(){
-  if(S.type!=='ls'||SITE()||['setup','empty','archived','loading','failed','refused'].includes(S.view))return '';
+  if(S.type!=='ls'||SITE()||UNSIGNED())return '';
   const mine=S.view==='turn';
-  return `<div class="ban note" role="status" style="margin-block-start:10px">${mi('clock')}<span><b>المستخلص 3</b> ${mine?'عندك: اعتماد المالك':'عند المكتب الفني: اعتماد الكميات'}</span></div>`}
+  return `<div class="ban note" role="status">${mi('clock')}<span><b>المستخلص 3</b> ${mine?'عندك: اعتماد المالك':'عند المكتب الفني: اعتماد الكميات'}</span></div>`}
 function stateLine(){
-  if(S.view==='setup'||S.view==='empty')return `<div class="ban note" role="status" style="margin-block-start:10px">${mi('clock')}<span><b>المشروع غير موقّع.</b> تنتهي فترة المتابعة في ${dt('2026-12-05')}.</span></div>`;
-  if(S.view==='archived')return `<div class="ban note" role="status" style="margin-block-start:10px">${mi('info')}<span><b>المشروع مؤرشف</b></span></div>`;
+  if(S.view==='setup')return `<div class="ban note" role="status">${mi('clock')}<span><b>المشروع غير موقّع.</b> تنتهي فترة المتابعة في ${D.deadline}.</span></div>`;
+  if(S.view==='archived')return `<div class="ban note" role="status">${mi('info')}<span><b>المشروع مؤرشف</b></span></div>`;
   return ''}
+function hero(pct,stats){
+  const d=Number.isInteger(pct)?0:2;
+  return `<div class="hero"><div class="top"><span class="num">${pc(pct,d)}</span><b>المنجز من العقد</b></div>${trk(pct,'المنجز من العقد')}${stats?`<dl>${stats.map(s=>`<div><dt>${s[0]}</dt><dd>${s[1]}</dd></div>`).join('')}</dl>`:''}</div>`}
+function overview(){
+  const v=S.view,site=SITE();
+  let out=stateLine()+waiting();
+  if(S.type==='ls'&&UNSIGNED())
+    return out+kv([['قيمة العقد',`<span class="nul">${mi('info')}<b>لم تُحدَّد بعد</b></span>`]]);
+  if(S.type==='ls'){
+    const pct=v==='nolog'?0:12.94;
+    if(site){
+      const none=v==='nolog',done=v==='sitedone';
+      const tag=done?`<span class="badge">${mi('check')}سُجِّلت اليوم</span>`:`<span class="badge q">${mi('clock')}لم تُسجَّل اليوم</span>`;
+      return out+hero(pct)+babList()+kv([['آخر يومية',none?'<b>لا يوجد</b>':(done?D.today:D.yest),tag]]);
+    }
+    out+=hero(pct,[['قيمة العقد',fig(CV,{u:'ج.م'})],['منفَّذ في الموقع',fig(604646.65)],['معتمد في المستخلصات',fig(110734.65)]])+babList();
+    out+=v==='partial'?retry('تعذّر تحميل بيانات المال.'):kv([['المطالَب به',fig(88587.72,{u:'ج.م'})],['المحصَّل',fig(0)],['المتبقي على العميل',fig(88587.72)]]);
+    out+=`<button type="button" class="lnk disc" id="termsbtn" aria-expanded="${S.terms}">شروط العقد${mi('chev')}</button>`
+      +(S.terms?kv([['نسبة الحجز',pc(20,0)],['نسبة استرداد الدفعة المقدمة',pc(25,0)],['تاريخ توقيع العقد',D.signed],['تاريخ بدء التنفيذ',D.start]]):'');
+    return out;
+  }
+  if(S.type==='cp')return out+kv([['نسبة الإشراف',pc(10,0)],['التكلفة حتى الآن',fig(885000,{u:'ج.م'})],['الإشراف حتى الآن',fig(80000)]]);
+  const rows=[['المفهوم',100],['المخطط',100],['ثلاثي الأبعاد',55],['تطوير التصميم',0],['الوثائق النهائية',0]];
+  return out+hero(50)+kv([['مساحة المشروع',`<bdi class="fig" dir="ltr">400<span class="u">م²</span></bdi>`],['سعر المتر',fig(450)],['قيمة التصميم',fig(180000,{u:'ج.م'})]])
+    +`<div class="sec-h"><h3>المراحل</h3></div><ul class="lst">${rows.map(r=>`<li><b>${r[0]}</b><div class="bd">${trk(r[1],r[0])}${pc(r[1],0)}</div></li>`).join('')}</ul>`;
+}
+/* ============ the team tab (its own tab view) ============ */
+function team(){
+  const t=S.type==='ls'?TEAM:TEAM.slice(0,3);
+  return `<ul class="lst">${t.map(m=>`<li><span class="pp"><span class="av" aria-hidden="true">${[...m[0]][0]}</span><b>${m[0]}</b></span><span class="r">${m[1]}</span></li>`).join('')}</ul>`}
 
 /* ============ page composition ============ */
 function body(){
   const v=S.view;
-  if(v==='loading')return `<div aria-busy="true" role="status"><span class="vh">جارٍ التحميل</span>${['understand','execute','pay','org'].map(k=>{const [t,ic]=GN[k];return `<section class="gs"><header class="gh"><span class="gi">${i(ic)}</span><h2>${t}</h2></header><div class="gb"><span class="sk b" style="block-size:52px"></span><span class="sk b" style="block-size:52px"></span><span class="sk b" style="block-size:52px;inline-size:70%"></span></div></section>`}).join('')}</div>`;
-  if(v==='failed')return `<div style="margin-block-start:14px">${retry('تعذّر تحميل المشروع.')}</div>`;
-  if(v==='refused')return `<div class="state refused" style="margin-block-start:14px"><div class="ico">${i('lock')}</div><h4>هذا المشروع خارج تكليفك</h4><p>اطلب الإسناد ممن يملك صلاحية إسناد المشاريع.</p></div>`;
-  const parts=SITE()?[execute(),understand(),org()]:[understand(),quantify(),execute(),pay(),closure(),org()];
-  return waiting()+stateLine()+parts.join('');
+  if(v==='loading')return `<div class="pane" aria-busy="true" role="status"><span class="vh">جارٍ التحميل</span><span class="sk b" style="block-size:150px"></span><span class="sk b" style="block-size:52px"></span><span class="sk b" style="block-size:52px"></span><span class="sk b" style="block-size:52px;inline-size:70%"></span></div>`;
+  if(v==='failed')return `<div class="pane">${retry('تعذّر تحميل المشروع.')}</div>`;
+  if(v==='refused')return `<div class="pane"><div class="state refused"><div class="ico">${i('lock')}</div><h4>هذا المشروع خارج تكليفك</h4><p>اطلب الإسناد ممن يملك صلاحية إسناد المشاريع.</p></div></div>`;
+  return `<div class="pane">${S.tab==='team'?team():overview()}</div>`;
 }
-function jump(){
-  if(['loading','failed','refused'].includes(S.view))return '';
-  const ids=[...document.querySelectorAll('#frame .gs:not(.next)')].map(e=>e.id.slice(2));
-  return `<nav class="jump" aria-label="مجموعات المشروع">${ids.map(k=>`<a href="#g-${k}">${i(GN[k][1],'s')}${GN[k][0]}</a>`).join('')}</nav>`}
 function abar(){const pa=primaryAction();return `<button type="button" class="menu" id="menu">${i('menu')}القائمة</button>${pa?`<button type="button" class="btn">${i(pa.ic)}${pa.ar}</button>`:''}`}
 
+function centerTab(){const cur=document.querySelector('.tab[aria-current="page"]');if(cur&&S.tab!=='ov')cur.scrollIntoView({inline:'center',block:'nearest'})}
 function draw(){
-  if(['setup','empty','turn','partial','archived','nolog','site','sitedone'].includes(S.view)&&S.type!=='ls')S.view='normal';
-  $('#ph').innerHTML=header();$('#frame').innerHTML=body();$('#jumpw').innerHTML=jump();$('#abar').innerHTML=abar();
+  if(['setup','turn','partial','archived','nolog','site','sitedone'].includes(S.view)&&S.type!=='ls')S.view='normal';
+  $('#ph').innerHTML=header();$('#tabw').innerHTML=tabs();$('#frame').innerHTML=body();$('#abar').innerHTML=abar();
   $('#menu').onclick=()=>{$('#app').dataset.sheet='1'};
   const tb=$('#termsbtn');if(tb)tb.onclick=()=>{S.terms=!S.terms;const y=$('#main').scrollTop;draw();$('#main').scrollTop=y};
+  document.querySelectorAll('.tab[data-tab="ov"],.tab[data-tab="team"]').forEach(a=>a.onclick=e=>{e.preventDefault();S.tab=a.dataset.tab;draw()});
+  document.querySelectorAll('.tab[href="#"]').forEach(a=>a.addEventListener('click',e=>e.preventDefault()));
+  centerTab();if(document.fonts&&document.fonts.ready)document.fonts.ready.then(centerTab);
   const u=USERS[SITE()?'site':'owner'];['1','2'].forEach(k=>{$('#un'+k).textContent=u.n;$('#ur'+k).textContent=u.r;$('#av'+k).textContent=[...u.n][0]});
   document.querySelectorAll('[data-type]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.type===S.type));
   document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===S.view));
-  const url=new URLSearchParams({type:S.type,view:S.view});if(S.terms)url.set('terms','1');history.replaceState(null,'','?'+url+(EMBED?'&embed=1':''));
+  const url=new URLSearchParams({type:S.type,view:S.view});if(S.tab!=='ov')url.set('tab',S.tab);if(S.terms)url.set('terms','1');history.replaceState(null,'','?'+url+(EMBED?'&embed=1':''));
 }
 $('#nav').innerHTML=navHtml();$('#nav2').innerHTML=navHtml();
 $('#closeN').onclick=()=>{$('#app').dataset.sheet='0'};$('#scrim').onclick=()=>{$('#app').dataset.sheet='0'};

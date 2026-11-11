@@ -767,85 +767,90 @@ The refusal is shown BEFORE the confirm, because the rule is knowable from the p
 
 # The project workspace (`project.html`)
 
-**PROPOSAL, not approved; redrawn 2026-11-11 under D-217 item 39.** The earlier version (approved before Nabil's rules of 2026-11-10) is in git history. This redraw applies: the screen explains itself, no explanatory sentence, no code or id, a stored value is not a displayed value, D-217 items 33, 37 and 38.
+**PROPOSAL, not approved; r3 2026-11-11.** Nabil saw r2 (`5ac8028`) and ruled that the project page and its tabs must be better, and that the tabs are the project's real screens: the user stays inside the project and always sees its name and its stage. r3 draws the **project frame** (header, stage line, tabs) and the tab **نظرة عامة**. The earlier versions are in git history.
 
-Route `/projects/:projectId`, brief 5 of `ux/journey-project-module-2026-11-09.md`. Open `project.html` directly, no build step. `?view=normal|turn|site|sitedone|nolog|setup|empty|archived|loading|failed|partial|refused`, `?type=ls|cp|ds` (default `ls`), `?terms=1` opens the contract-terms disclosure, `?embed=1` hides the preview strip, `?flow=1` lets a screenshot take the whole page. The strip and `flow` are review chrome: do not build them. The old review notes, data-source flags and the stop-confirmation state are gone.
+Route `/projects/:projectId` (and, later, `/projects/:projectId/<tab>`). Open `project.html` directly, no build step. `?view=normal|turn|site|sitedone|nolog|setup|archived|loading|failed|partial|refused`, `?type=ls|cp|ds` (default `ls`), `?tab=team` shows the team tab, `?terms=1` opens the contract-terms disclosure, `?embed=1` hides the preview strip, `?flow=1` lets a screenshot take the whole page. The strip and `flow` are review chrome: do not build them.
 
-## What it holds
+## What r2 got wrong, and what changed
 
-The one job: show where the project stands and what I do next. Six groups, named only by their name (no question line): الفهم, الكميات, التنفيذ, المال, الإقفال, التنظيم. A group the viewer may not read is absent. A stage not reached is a coming step (below). A sticky jump line lists only the groups that are reached and readable.
+- Anchor links jumping down one long page, no active mark, a 2900 px phone page: now real tabs, one active, and the overview is one short screen and a half at 390.
+- Nothing said where the project is in its life: now a stage line in the frame.
+- Nine cards of equal weight: now one start point (the waiting line for the owner, the large percent for everyone) and a calm list under it.
+- Headings "الفهم" and "الكميات" meant nothing to a site man: gone. The overview has no section names except "الأبواب". The BOQ line count is off this tab.
+- Dates printed as `2026-11-10`: now written as the daily log writes them, "الثلاثاء 10 نوفمبر" (weekday, day, month, no year).
+- Lump Sum is written "مقاولة بالمقطوعية", the wording of `project-create.html` (r2 used "مقاولة بمبلغ مقطوع"). Cost Plus is written "التكلفة زائد نسبة إشراف", also from `project-create.html`. Both are wordings to settle (see not decided).
 
-- **Header.** Back link, title, status pill (only the Kaff words: لم تبدأ in Setup, جاري العمل when running), then client name (link) and contract-type badge for the owner. Code is not shown. The site engineer's header has no client and no type. An archived project shows no pill: archived is not one of the five status words.
-- **The waiting line** (owner views only): "المستخلص 3 عند المكتب الفني: اعتماد الكميات". The holder is named once. When it is the owner's turn: "المستخلص 3 عندك: اعتماد المالك", and the primary becomes "فتح المستخلص". The holder is not repeated under المال or anywhere else.
-- **الفهم.** Owner: percent done with a bar (المنجز من العقد), then three figures: قيمة العقد (unit ج.م once), منفَّذ في الموقع, معتمد في المستخلصات; then "شروط العقد", a disclosure that opens hold rate, advance rate, signing date and start date; then الأبواب, one row per باب with a status pill and a percent bar. The contract value shows once. Site engineer: percent and the باب list only, no money.
-- **الكميات** (owner, Lump Sum): item count and the link "المقايسة". The frozen date is in the terms disclosure (signing date), not here.
-- **التنفيذ.** One row "آخر يومية" with the date and one tag, "سُجِّلت اليوم" (check) or "لم تُسجَّل اليوم" (clock); "لا يوجد" when there is no log. Owner: the link "عمالة اليومية". Site engineer: the group comes first on the page, and "عمالة اليومية" is an outline button (second button, not filled).
-- **المال** (owner, Lump Sum): three figures, المطالَب به, المحصَّل, المتبقي على العميل, and the link "المستخلصات". The ledger strip, waterfall, chain, consequence block and proof link of the old mock are not on this screen.
-- **الإقفال** (owner): always a coming step in every state drawn (see not decided).
-- **التنظيم.** Team by name and role. Nothing else.
-- **Primary action** (one, placed by the shell: header on desktop, bottom bar on phone): owner normal, none; owner's turn, "فتح المستخلص"; Setup and empty BOQ, "فتح المقايسة"; archived, "إعادة فتح"; site engineer, "سجل يومي جديد". Cost Plus and Design draw none (not ruled).
+## The project frame (one named part: put it in the kit as `project-frame`)
 
-## Who sees what (D-217 item 37)
+The frame sits above the content of every tab of a project and does not change when the tab changes. It replaces the page header each project screen draws today (back link + title + status pill + meta line), the group jump line of the old workspace, and, on screens that were a long page of sections, the sections themselves. `boq.html`, `daily-log.html` and `day-labour.html` adopt it in later runs: each keeps its own content under the tab bar and loses its own project title block.
 
-The junior site engineer view (`site`, `sitedone`, `nolog`) has no waiting line, no المستخلصات link, no المال, no الكميات, no الإقفال, no client, no money. He sees percent of the contract done (a ratio, no figure). The supervising engineer is not ruled and is not drawn.
+**Anatomy, top to bottom.**
+1. **Back link** "المشاريع" (kit back link, 44px).
+2. **Title row**: project name (display font, 2rem on desktop, 1.625rem on a phone, wraps) and the status pill. The pill carries only the five Kaff status words (لم تبدأ in Setup, جاري العمل while running). A project that is archived shows no pill (archived is not one of the five).
+3. **Meta line** (owner and roles who see money or the client only): client name (link) and the contract-type badge. The junior site engineer's frame has no meta line.
+4. **Stage line** (`stl`): five stages from `ProjectStatus` in `src/Domain/Projects/ProjectStatus.cs`: Setup is المقايسة, Active is التنفيذ, HandoverPending and Handover are together التسليم, UnderWarranty is الضمان, Closed is الإقفال. Extracts are not a stage; they run during التنفيذ. Each stage is one of three shapes: **done** (filled disc with a check, ink label), **current** (ring with a centre dot, bold ink label), **coming** (hollow ring, dim label). A rule joins the markers: solid up to and including the current stage, dashed after it. A coming stage has no sentence and no lock (D-217 item 38). The first stage sits at the start edge (right in Arabic, left in English; the rule mirrors). Five equal columns, labels centred under their markers; at 360 px each column is about 65 px and the longest label (المقايسة) fits on one line, so the line never scrolls. Maximum width 640 px on desktop. The line is a labelled `ol`; the current stage has `aria-current="step"`. Not drawn on an archived project (nothing is current).
+5. **Primary action slot**: unchanged from the shell rule. The frame never renders the primary itself; the shell puts it at the end of the title row on desktop and in the bottom bar on a phone. One per screen.
+6. **Tab bar** (`tabs`, the kit's tabs part used as the screen switcher): نظرة عامة · المقايسة · اليومية · المستخلصات · الفريق. Each tab is a link to the project's screen of that name (`<a>`, `aria-current="page"` on the active one). 48 px high on desktop, 56 px on a phone, the 4 px ink bar and the bold weight mark the active tab (colour is never the cue). The bar is **sticky** at the top of the scrolling area, under the frame. On a phone it scrolls sideways inside itself (scrollbar hidden), keeps the active tab in view, and the page never scrolls sideways. First tab at the start edge.
+   - A tab the viewer may not open, or that belongs to a stage not reached, is **absent**, never greyed. Owner of a running Lump Sum project: all five. Unsigned or archived Lump Sum: نظرة عامة, المقايسة, الفريق. Junior site engineer: نظرة عامة, اليومية, الفريق (no المستخلصات, D-217 item 37; no المقايسة, a guess, see not decided). Cost Plus: نظرة عامة, اليومية, الفريق. Design: نظرة عامة, الفريق.
+   - This is a departure from the kit's tabs rule "not for navigation between screens": a project is a second level of navigation inside the sidebar's المشاريع, and Nabil ruled the tabs are the project's screens. The kit rule should be amended to say so.
 
-## States
+**States.** Loading: the frame keeps its shape (title bar and stage line as skeletons), the tab bar is absent, the pane shows skeletons. Failed to load and refused: only the back link and the neutral title "المشروع"; no stage line, no tabs, no project detail.
 
-Normal owner; owner's turn; site engineer (log not done today, done today, no log yet); Setup (BOQ unsigned); empty BOQ; archived; loading; failed to load; المال fails alone; refused (not assigned).
+## Tab: نظرة عامة (the overview)
 
-- **Setup:** the state line "المشروع غير موقّع. تنتهي فترة المتابعة في {date}." (D-208, second sentence gone); contract value reads "لم تُحدَّد بعد" with an info icon, never 0.00; hold and advance rates are absent (typed at signing, D-217 item 29); الكميات shows the draft count and the link; التنفيذ, المال and الإقفال are coming steps.
-- **Empty BOQ:** same, with "لا بنود بعد" in الكميات and no button inside it (the page primary already opens the BOQ; a second filled button is a design error).
-- **Archived:** one line "المشروع مؤرشف", the primary "إعادة فتح", الفهم, الكميات and التنظيم only.
-- **Loading:** header keeps its shape, group names show with skeleton bodies. **Failed:** refusal banner "تعذّر تحميل المشروع." with retry, no groups. **المال fails alone:** the banner "تعذّر تحميل بيانات المال." with retry inside the group; the rest stays. **Refused:** a lock, "هذا المشروع خارج تكليفك" and one line naming whom to ask; no project details.
-- **Cost Plus and Design** (`?type=cp|ds`): the same screen with different content. Cost Plus: supervision rate, cost to date, supervision to date in الفهم; the last-log row; team. Design: percent bar, area, rate and design value in الفهم; per-stage percent bars in التنفيذ; team. The money group, the waiting line and the closing group are not drawn for these two types.
+One short pane under the tab bar. Order and content by role:
 
-## A stage not reached is a coming step (D-217 item 38)
+- **Owner, running Lump Sum.** (1) The waiting line: "المستخلص 3 عند المكتب الفني: اعتماد الكميات" (on the owner's turn: "المستخلص 3 عندك: اعتماد المالك", and the primary becomes "فتح المستخلص"). (2) The **hero**: the percent done, large (3rem, 2.5rem on a phone), a 14 px bar, and under a hairline three figures: قيمة العقد (unit ج.م once), منفَّذ في الموقع, معتمد في المستخلصات. (3) "الأبواب": one row per باب with its status pill and a percent bar. (4) Three money figures: المطالَب به (unit once), المحصَّل, المتبقي على العميل. (5) The disclosure "شروط العقد" opens hold rate, advance rate, signing date, start date.
+- **Junior site engineer.** The hero with the percent only (no figures, no money), "الأبواب", then one row "آخر يومية" with the date and one tag, "سُجِّلت اليوم" or "لم تُسجَّل اليوم" ("لا يوجد" when no log). Primary "سجل يومي جديد". The crew link of r2 is off this tab (the crew screen is reached from the daily log).
+- **Setup (BOQ unsigned).** The state line "المشروع غير موقّع. تنتهي فترة المتابعة في {date}." and the contract value "لم تُحدَّد بعد" (never 0.00). Stage line: المقايسة current, the rest coming. Tabs: نظرة عامة, المقايسة, الفريق. Primary "فتح المقايسة". There is no separate "empty BOQ" view: the BOQ's empty state lives on the المقايسة tab (not drawn here).
+- **Archived.** The line "المشروع مؤرشف", the contract value row, primary "إعادة فتح". No stage line.
+- **المال fails alone** (`partial`): the refusal banner "تعذّر تحميل بيانات المال." with retry replaces the three money figures; the rest stays.
+- **Cost Plus** (`?type=cp`): supervision rate, cost to date, supervision to date. **Design** (`?type=ds`): the hero (percent of stages approved), area, rate and design value, and "المراحل" with a percent bar each. Their waiting line, money group and primary actions are not drawn.
 
-Group heading in the dimmed ink, the icon in a dashed frame, a dashed rule where the body would be. No sentence, no lock. In a running project the الإقفال group carries three hollow step markers (التسليم, الضمان, الإقفال) using the kit's approval-chain part with no step done or current.
+## Tab: الفريق
+
+Drawn as its own tab view (`?tab=team`): the team by name and role, one list, nothing else. The other tabs (المقايسة, اليومية) are links to `boq.html` and `daily-log.html`; المستخلصات is inert (no mock).
 
 ## Reused from the kit, unchanged
 
-Status pill, badge, back link, link, buttons (filled, outline, quiet), refusal banner with retry, notice banner, the refused state, skeleton, `fig` (money, percent, date as LTR isolates), approval chain (`chain`, hollow steps only), list (`lst`), the shell, sidebar and bottom bar, with the role label under the user name.
+Status pill, badge, back link, link, buttons, refusal banner with retry, notice banner, the refused state, skeleton, `fig` (money, percent as LTR isolates), list (`lst`), the shell, the sidebar and bottom bar with the role label under the user name, the tabs part (with `aria-current` for links).
 
 ## New in the kit (put these in `components.html` before building)
 
-- **Group section (`gs`)** with a name-only heading (icon box and name; sticky on desktop). This replaces the heading-plus-question part of the old mock.
-- **Coming step (`gs.next`)** as above.
-- **Fact list (`kv`)**: label, value, optional tag at the end. No chips.
-- **Progress block (`pg`)**: label, big number, 12px track. The number is always beside the bar.
-- **Row percent bar (`lst .bd`)**: a 10px track and a number under the row name.
-- **Disclosure link (`disc`)**: a link with a chevron that opens a fact list in place (44px).
+- **Project frame**: the named part above (header, meta line, stage line, tab bar). Specified so three other screens can adopt it. Its stage line is also a new part, **stage line (`stl`)**, usable alone.
+- **Hero**: the large percent, a 14 px bar and an optional row of up to three figures.
+- **Fact list (`kv`)**, **row percent bar (`lst .bd`)**, **disclosure link (`disc`)**: as in r2.
 
-Removed from the old mock, not in the kit: provenance chips (`pv`) and assumption chips (`asm`, the 22px defect at 390), the ledger tile strip and drill-down, waterfall, consequence block, the "what the database may refuse" block, the design stage strip and legend, the locked group line, the stop confirmation, review chrome.
+Removed from r2: the group section and its heading column, the group jump line, the coming-step group, the closing group, the count of BOQ lines, executed and certified figures as a separate pair (now inside the hero).
 
 ## Left off the screen, on purpose
 
-Project code; the intention question under each group; the second line of the unsigned state and the body of the null contract value; every provenance and assumption chip; hold and advance rates, signing date and start date on the first view (one tap away); the second mention of the contract value, of the running باب and of the latest extract; the extract count; the holder person's name (the waiting line names the role once); the client and the type for the site engineer; the "إثبات الأرقام" link; linked projects; the stop control and the system state beside the pill.
+Project code; any question or explanation line; the BOQ line count; chips of any kind; hold and advance rates, signing date and start date on the first view; the holder's personal name (the waiting line names the role once); the client and type for the junior site engineer; the crew link on the overview; the stop control; the ledger strip, waterfall and extract chain (they belong to the المستخلصات tab); `Stopped` and `Terminated` (not stages).
 
 ## Sentences left on the screen
 
-- "المشروع غير موقّع. تنتهي فترة المتابعة في {date}." A state line the brief keeps (D-208).
-- "المستخلص 3 عند المكتب الفني: اعتماد الكميات" and "المستخلص 3 عندك: اعتماد المالك". The waiting line: who it waits on, the one fact the owner opens the project for.
-- "المشروع مؤرشف", "تعذّر تحميل المشروع.", "تعذّر تحميل بيانات المال.", "لا بنود بعد", "هذا المشروع خارج تكليفك" plus "اطلب الإسناد ممن يملك صلاحية إسناد المشاريع.". States and one refusal reason.
+- "المشروع غير موقّع. تنتهي فترة المتابعة في {date}." A state line (D-208).
+- The waiting line: who it waits on, the one fact the owner opens the project for.
+- "المشروع مؤرشف", "تعذّر تحميل المشروع.", "تعذّر تحميل بيانات المال.", "هذا المشروع خارج تكليفك" with "اطلب الإسناد ممن يملك صلاحية إسناد المشاريع.". States and one refusal reason.
 
-No code or id is left on the screen. The dates are shown as dates because the brief asks for the last log date and the unsigned deadline.
+No code or id is left on the screen. Dates are shown where a date is the fact (last log, unsigned deadline, terms).
 
 ## Not decided here
 
-1. **Closure status words** (Karim, D-217): the الإقفال group is therefore never drawn as reached; the order التسليم, الضمان, الإقفال is taken from the built page's group text and is not verified.
-2. **How the owner starts handover**, and who prepares the monthly extract: no control is drawn.
-3. **Terminated project settlement** and **credit note payment**: nothing drawn.
-4. **What the supervising site engineer sees**: item 37 rules the junior only.
-5. **Who may reopen an archived project**: the primary "إعادة فتح" is drawn for the owner; the brief says "for those who may".
-6. **Stop and restart** of a project: no permission row exists, and the brief lists no stop state; the control of the old mock is off.
-7. **The wording of the archived line** is invented (brief says "one line" and gives none).
-8. **Primary for Setup**: "فتح المقايسة" (the brief says open the BOQ). The signing act "توقيع المقايسة" (item 33) is on the BOQ screen, not here.
-9. **Cost Plus and Design**: the brief did not re-check them. Their money group (invoice chain, ledgers, stage dues), their primary actions and the Design phase words are not drawn.
-10. **After a change order is approved**, whether the value shown is the original, the revised or both (the old question 4): change orders are not drawn.
+1. **What the supervising site engineer sees** (item 37 rules the junior only).
+2. **Stop and restart**, and the states Stopped and Terminated: not stages, not drawn.
+3. **Who reopens an archived project**: "إعادة فتح" is drawn for the owner.
+4. **Closure words and stage labels.** التسليم, الضمان and الإقفال are the writer's words (from r2), not ruled. المقايسة and التنفيذ are also the writer's choice. The mapping of HandoverPending and Handover into one stage, التسليم, is a guess.
+5. **Which tab opens first for each role.** Every view here opens on نظرة عامة.
+6. **Whether the junior site engineer sees المقايسة** (it carries rates, so the mock leaves it off).
+7. **Wording of the contract types** across screens: "مقاولة بالمقطوعية" (project-create, now here) against "مقاولة بمبلغ مقطوع" (r2); "التكلفة زائد نسبة إشراف" against "التكلفة زائد إشراف". One wording must be settled for the build.
+8. **The stage line for Cost Plus and Design**: the label المقايسة does not fit a type that has no BOQ; the mock draws the same five labels.
+9. **Cost Plus and Design** money, primary action and waiting line.
+10. **Who prepares the monthly extract, what a terminated project settles, how a credit note is paid** (Karim): nothing drawn.
 
 ## What the mock does not draw
 
-The English/LTR text beyond the direction switch; the supervising engineer's view; the owner's disclosure open on a phone beyond `?terms=1`; the extract screen; any change order; a project in HandoverPending, UnderWarranty, Stopped or Terminated.
+The tabs المقايسة, اليومية and المستخلصات (the first two are links to the existing mocks, the third is inert); the supervising engineer's view; the English/LTR text beyond the direction switch; a project in HandoverPending, Handover, UnderWarranty or Closed (the stage line shape for those is the same, with the current marker moved).
 
 # Today's crew (`day-labour.html`)
 
