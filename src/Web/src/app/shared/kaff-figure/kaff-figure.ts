@@ -21,7 +21,7 @@ const MINUS = '−';
  */
 @Component({
   selector: 'kaff-figure',
-  template: `<bdi class="fig" dir="ltr" [class.neg]="parts().negative">{{ text() }}</bdi>`,
+  template: `<bdi class="fig" dir="ltr" [class.neg]="parts().negative">{{ text() }}@if (unit(); as u) {<span class="u">{{ u }}</span>}</bdi>`,
   styles: `
     :host {
       display: inline;
@@ -34,6 +34,13 @@ const MINUS = '−';
       white-space: nowrap;
     }
 
+    .u {
+      margin-inline-start: 6px;
+      color: var(--dim);
+      font-weight: 400;
+      font-size: 0.8125em;
+    }
+
     .fig.neg {
       font-weight: 600;
     }
@@ -43,6 +50,8 @@ const MINUS = '−';
 export class KaffFigure {
   readonly value = input.required<string>();
   readonly plus = input(false);
+  /** The unit, shown once after the figure with a gap (`fig .u` in the mock). */
+  readonly unit = input<string | null>(null);
 
   private readonly i18n = inject(I18nService);
 

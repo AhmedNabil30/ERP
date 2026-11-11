@@ -288,6 +288,11 @@ export class ProjectWorkspacePage {
     return `${this.i18n.formatNumber(fractionToPercent(fraction))}%`;
   }
 
+  /** The one percent format on this screen: at most two decimals, the hero and the babs alike. */
+  protected pct(text: string): string {
+    return `${this.i18n.formatNumber(text, { maximumFractionDigits: 2 })}%`;
+  }
+
   protected day(value: string): string {
     const [year = 0, month = 1, day = 1] = value.split('-').map(Number);
     return this.i18n.formatDate(new Date(year, month - 1, day), { dateStyle: 'medium' });
