@@ -89,7 +89,7 @@
 
     @if (clientsFailure() === null) {
       <div class="actions">
-        <kaff-button variant="primary" type="submit" testId="project-create-submit" [busy]="busy()" [disabled]="loadingClients()">
+        <kaff-button variant="primary" type="submit" class="fill-phone" testId="project-create-submit" [busy]="busy()" [disabled]="loadingClients()">
           {{ i18n.t('projects.create.submit') }}
         </kaff-button>
       </div>
@@ -150,8 +150,8 @@
       />
     </form>
     <div panelFooter class="foot">
-      <kaff-button variant="primary" testId="quick-client-save" [busy]="quickBusy()" [disabled]="quickNeedsAck()" (clicked)="saveQuick()">{{ i18n.t('projects.quick.save') }}</kaff-button>
-      <kaff-button variant="secondary" testId="quick-client-cancel" (clicked)="closeQuick()">{{ i18n.t('action.cancel') }}</kaff-button>
+      <kaff-button variant="primary" class="fill" testId="quick-client-save" [busy]="quickBusy()" [disabled]="quickNeedsAck()" (clicked)="saveQuick()">{{ i18n.t('projects.quick.save') }}</kaff-button>
+      <kaff-button variant="secondary" class="fill" testId="quick-client-cancel" (clicked)="closeQuick()">{{ i18n.t('action.cancel') }}</kaff-button>
     </div>
   </kaff-detail-panel>
 </section>

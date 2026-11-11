@@ -505,3 +505,14 @@ kaff-field input::placeholder {
     box-shadow: none !important;
   }
 }
+
+/* A button that fills its slot (the foot of a phone form or a sheet). The caller adds `fill` to the host. */
+kaff-button.fill > .kaff-button {
+  inline-size: 100%;
+}
+
+@media (width <= 820px) {
+  kaff-button.fill-phone > .kaff-button {
+    inline-size: 100%;
+  }
+}
