@@ -10,6 +10,7 @@ import { BabsApi } from '../../core/catalogue/babs.api';
 import { CatalogueApi } from '../../core/catalogue/catalogue.api';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { ProjectsApi } from '../../core/projects/projects.api';
+import { KaffProjectFrame } from '../../shared/kaff-project-frame/kaff-project-frame';
 import { BoqPage, plainQuantity, sumAmounts } from './boq-page';
 
 class FakeI18n implements Pick<I18nService, 't' | 'locale' | 'formatDate' | 'formatNumber' | 'formatAmount'> {
@@ -90,7 +91,7 @@ async function render(
         provide: ProjectsApi,
         useValue: {
           get: vi.fn().mockResolvedValue(project(options.projectExtra)),
-          list: vi.fn().mockResolvedValue({ projects: [{ id: 'p-0', name: 'مشروع سابق' }, { id: 'p-1', name: 'هذا' }], total: 2 }),
+          list: vi.fn().mockResolvedValue({ projects: [{ id: 'p-0', name: 'مشروع سابق', contractType: 'LumpSum' }, { id: 'p-1', name: 'هذا', contractType: 'LumpSum' }, { id: 'p-2', name: 'تصميم', contractType: 'Design' }], total: 3 }),
         },
       },
       { provide: CatalogueApi, useValue: { list: vi.fn().mockResolvedValue([]) } },
@@ -177,6 +178,7 @@ describe('BoqPage', () => {
     expect(byId(root, 'boq-start-blank')).not.toBeNull();
     expect(byId(root, 'boq-base-base-1')).not.toBeNull();
     expect(byId(root, 'boq-source-p-0')).not.toBeNull();
+    expect(byId(root, 'boq-source-p-2')).toBeNull();
     expect(byId(root, 'boq-source-p-1')).toBeNull();
   });
 
@@ -207,6 +209,7 @@ describe('BoqPage', () => {
 
   it('signs with the hold as a fraction and the advance as percent units, even with a custom line waiting (AC-8)', async () => {
     const sign = vi.fn().mockResolvedValue({});
+    const reload = vi.spyOn(KaffProjectFrame.prototype, 'reload');
     const root = await render({ api: { sign } });
     await click(byId(root, 'boq-sign-ask'));
 
@@ -218,6 +221,7 @@ describe('BoqPage', () => {
     await click(byId(root, 'boq-sign-confirm'));
 
     expect(sign).toHaveBeenCalledWith('p-1', { holdPercentage: '0.2', clientAdvance: 25 });
+    expect(reload).toHaveBeenCalled();
   });
 
   it('disables signing while a line has no quantity and names the count', async () => {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, signal, WritableSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, signal, viewChild, WritableSignal } from '@angular/core';
 
 import { toProblem } from '../../core/api/problem-details';
 import { AuthService } from '../../core/auth/auth.service';
@@ -70,6 +70,11 @@ export function sumAmounts(values: readonly (string | null)[]): string | null {
  * `canManage` and `editable` only decide what to RENDER; every call is gated on the server by role and
  * assignment. Only Lump Sum has a BOQ here; Design and Cost Plus get an honest empty state.
  */
+/** Only Lump Sum has a BOQ here; the page's not-for-this-type state and the earlier-projects list both read this. */
+function hasBoqType(type: string | undefined): boolean {
+  return type === 'LumpSum';
+}
+
 @Component({
   selector: 'kaff-boq-page',
   imports: [
@@ -123,7 +128,8 @@ export class BoqPage {
       this.auth.current()?.projects.find((entry) => entry.projectId === this.projectId())?.permissions.includes('ProjectManage') ??
       false,
   );
-  protected readonly hasBoq = computed(() => this.project()?.contractType === 'LumpSum');
+  private readonly frame = viewChild(KaffProjectFrame);
+  protected readonly hasBoq = computed(() => hasBoqType(this.project()?.contractType));
   protected readonly frozen = computed(() => this.boq()?.frozenOn ?? null);
   protected readonly archived = computed(() => this.project()?.isArchived === true);
   /** Build and sign controls exist only on an unsigned, unarchived Lump Sum BOQ for someone who may manage it. */
@@ -418,7 +424,7 @@ export class BoqPage {
     try {
       const [bases, listed] = await Promise.all([this.api.listBases(), this.projects.list()]);
       this.bases.set(bases);
-      this.earlier.set(listed.projects.filter((project) => project.id !== this.projectId()));
+      this.earlier.set(listed.projects.filter((project) => project.id !== this.projectId() && hasBoqType(project.contractType)));
     } catch (error) {
       this.startFailure.set(toProblem(error).messageKey);
     } finally {
@@ -523,6 +529,7 @@ export class BoqPage {
       this.project.set(await this.projects.get(this.projectId()));
     });
     if (done) {
+      void this.frame()?.reload(); // the frame's stage line and tabs change once signed
       this.signSheet.set(false);
     } else if (this.missingLineId !== null) {
       // The server named the line with no quantity: leave the sheet and take the user to that line.
