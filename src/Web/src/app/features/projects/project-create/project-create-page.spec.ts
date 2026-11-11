@@ -43,7 +43,7 @@ async function render(setup: Setup = {}) {
       {
         provide: ClientsApi,
         useValue: {
-          list: vi.fn().mockResolvedValue(setup.clients ?? [{ id: 'c-1', name: 'شركة النيل' }]),
+          picker: vi.fn().mockResolvedValue(setup.clients ?? [{ id: 'c-1', name: 'شركة النيل' }]),
           quickAdd,
           quickPhoneCheck,
         },

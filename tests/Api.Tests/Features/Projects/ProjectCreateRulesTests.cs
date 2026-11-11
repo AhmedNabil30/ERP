@@ -209,6 +209,45 @@ public sealed class ProjectCreateRulesTests : IAsyncLifetime
         allowed.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 
+    // ---- Client picker (D-222) ----------------------------------------------------------------------
+
+    [Fact]
+    public async Task The_technical_office_can_list_clients_for_the_picker_with_id_and_name_only()
+    {
+        HttpResponseMessage response = await GetAsync(_technicalOffice, "/api/clients/picker");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+        JsonElement item = body.RootElement.GetProperty("clients").EnumerateArray()
+            .Single(c => c.GetProperty("id").GetGuid() == _clientId);
+        item.EnumerateObject().Select(p => p.Name).Should().BeEquivalentTo(["id", "name"]);
+        item.GetProperty("name").GetString().Should().Be("عميل القواعد");
+    }
+
+    [Fact]
+    public async Task The_picker_leaves_out_an_archived_client()
+    {
+        await using (KaffDbContext context = _database.CreateContext())
+        {
+            Client archived = await context.Clients.SingleAsync(c => c.Id == _otherClientId, Ct);
+            archived.Archive().IsSuccess.Should().BeTrue();
+            await context.SaveChangesAsync(Ct);
+        }
+
+        HttpResponseMessage response = await GetAsync(_technicalOffice, "/api/clients/picker");
+
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+        body.RootElement.GetProperty("clients").EnumerateArray()
+            .Select(c => c.GetProperty("id").GetGuid()).Should().Contain(_clientId).And.NotContain(_otherClientId);
+    }
+
+    [Fact]
+    public async Task The_picker_is_refused_to_a_role_without_project_create()
+    {
+        (await GetAsync(_siteEngineer, "/api/clients/picker")).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await GetAsync(_finance, "/api/clients/picker")).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
     // ---- AC-5 ---------------------------------------------------------------------------------------
 
     [Fact]

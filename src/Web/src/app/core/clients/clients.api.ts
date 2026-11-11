@@ -54,6 +54,12 @@ export interface ClientFile {
   readonly isActive: boolean;
 }
 
+/** One row of the project-create client picker: id and name only (D-222). */
+export interface ClientOption {
+  readonly id: string;
+  readonly name: string;
+}
+
 /** `POST /api/clients/quick`, field for field. */
 export interface QuickClientWrite {
   readonly name: string;
@@ -106,6 +112,21 @@ export class ClientsApi {
 
     const response = await firstValueFrom(
       this.http.get<{ clients: ClientSummary[] }>('api/clients', { params }),
+    );
+
+    return response.clients;
+  }
+
+  /** KAFF-419 · the project-create client picker. Gated `ProjectCreate`; id and name of active clients (D-222). */
+  async picker(search = ''): Promise<readonly ClientOption[]> {
+    let params = new HttpParams();
+
+    if (search.trim().length > 0) {
+      params = params.set('search', search.trim());
+    }
+
+    const response = await firstValueFrom(
+      this.http.get<{ clients: ClientOption[] }>('api/clients/picker', { params }),
     );
 
     return response.clients;

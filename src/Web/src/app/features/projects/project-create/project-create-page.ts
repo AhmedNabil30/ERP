@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { toProblem } from '../../../core/api/problem-details';
 import { AuthApi } from '../../../core/auth/auth.api';
 import { AuthService } from '../../../core/auth/auth.service';
-import { ClientKind, ClientSummary, ClientsApi, PhoneMatch } from '../../../core/clients/clients.api';
+import { ClientKind, ClientOption, ClientsApi, PhoneMatch } from '../../../core/clients/clients.api';
 import { clientKindKey, contractTypeKey } from '../../../core/i18n/enum-keys';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { ContractType } from '../../../core/projects/projects.api';
@@ -68,7 +68,7 @@ export class ProjectCreatePage {
   protected readonly clientId = signal('');
   protected readonly contractType = signal('');
 
-  protected readonly clients = signal<readonly ClientSummary[]>([]);
+  protected readonly clients = signal<readonly ClientOption[]>([]);
   protected readonly clientsFailure = signal<string | null>(null);
   protected readonly loadingClients = signal(true);
   protected readonly attempted = signal(false);
@@ -192,7 +192,7 @@ export class ProjectCreatePage {
 
   private async loadClients(): Promise<void> {
     try {
-      this.clients.set(await this.clientsApi.list('', 'active'));
+      this.clients.set(await this.clientsApi.picker());
     } catch (error) {
       this.clientsFailure.set(toProblem(error).messageKey);
     } finally {
@@ -263,7 +263,7 @@ export class ProjectCreatePage {
         acknowledgedDuplicatePhone: this.quickAcknowledged(),
       });
 
-      this.clients.update((list) => [...list, saved]);
+      this.clients.update((list) => [...list, { id: saved.id, name: saved.name }]);
       this.setClient(saved.id);
       this.quickOpen.set(false);
     } catch (error) {

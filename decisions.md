@@ -16833,3 +16833,12 @@ in); entries made offline and sent after midnight are judged against the new day
 6. **The frame's tabs are sent by the server.** `GET /api/projects/{id}` carries `tabs` (overview, boq, dailyLog, extracts, team), computed from the same permissions that gate each route, so a tab and its route cannot disagree. It also carries `stage` (Boq, Execution, Handover), `isSigned` and `loggedToday`. The `money` key is absent, not null, for a caller without `ProjectMoneyRead`.
 
 7. **Correction, same day.** Head of Design keeps the extracts list and waiting-on: he is granted `ExtractRead`, which carries only the reach `ProjectRead` gave him before this decision. The pin in `CatalogueCompletenessTests` now reads ProjectRead plus ExtractRead. `loggedToday` is judged in the site zone through `DailyLogEntryRule.SiteDate`, the rule the daily log uses, not the UTC date.
+
+
+## D-222 — Client picker for project create: id and name under ProjectCreate · 2026-11-11
+
+**Source.** Defect found by the coordinator on KAFF-419. Built by the coordinator as a consequence of D-052/D-055; Nabil to confirm.
+
+1. **Why.** The Technical Office holds `ProjectCreate` but not `ClientManage`. The create screen loaded its clients with `GET /api/clients`, which needs `ClientManage`, so the Technical Office got 403, could not pick a client and could not create a project. The old create page had the same fault.
+2. **What.** `GET /api/clients/picker`, gated `ProjectCreate`, no project scope (a company-wide row, like the quick phone-check). It returns `{ clients: [{ id, name }] }`: active clients only, ordered by name, with an optional `search` matched on the name only. No code, phone, kind or notes. No audit record (a read) and no new permission. `GET /api/clients` is not widened and keeps `ClientManage`. The screen calls the picker.
+3. **Why this is not a new exposure.** The quick phone-check under `ProjectCreate` already shows a holder's name to the same roles (D-218 item 9, D-221 item 3). The picker shows names the person needs to choose a client, and nothing else of the record.
