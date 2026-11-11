@@ -1,0 +1,58 @@
+<header class="head" data-testid="project-frame">
+  <a class="back" routerLink="/projects"><kaff-icon name="back" />{{ i18n.t('nav.projects') }}</a>
+  @switch (state()) {
+    @case ('ok') {
+      @if (project(); as p) {
+        <div class="ttl">
+          <h1 class="title" dir="auto" data-testid="workspace-title">{{ p.name }}</h1>
+          @if (!p.isArchived) {
+            <kaff-status-pill [tone]="pill[p.status].tone" [icon]="pill[p.status].icon" testId="workspace-status">
+              {{ i18n.t(statusKey(p.status)) }}
+            </kaff-status-pill>
+          }
+        </div>
+        @if (showMeta()) {
+          <p class="meta">
+            @if (clientLinked()) {
+              <a class="client" dir="auto" data-testid="workspace-client" [routerLink]="['/clients', p.clientId]">{{ p.clientName }}</a>
+            } @else {
+              <span class="client" dir="auto" data-testid="workspace-client">{{ p.clientName }}</span>
+            }
+            <kaff-badge tone="accent" testId="workspace-type">{{ i18n.t(contractTypeKey(p.contractType)) }}</kaff-badge>
+          </p>
+        }
+        @if (stageIndex() >= 0) {
+          <ol class="stl" [attr.aria-label]="i18n.t('projects.frame.stage.label')" data-testid="workspace-stages">
+            @for (stage of stages; track stage.id; let k = $index) {
+              <li [class.done]="k < stageIndex()" [class.cur]="k === stageIndex()" [attr.aria-current]="k === stageIndex() ? 'step' : null">
+                <span class="mk">@if (k < stageIndex()) {<kaff-icon name="check" [small]="true" />}</span>{{ i18n.t(stage.key) }}
+              </li>
+            }
+          </ol>
+        }
+      }
+    }
+    @case ('loading') {
+      <div class="ttl" role="status"><span class="sk title-sk"></span><span class="sr-only">{{ i18n.t('projects.workspace.loading') }}</span></div>
+      <span class="sk stl-sk" aria-hidden="true"></span>
+    }
+    @default {
+      <div class="ttl"><h1 class="title">{{ i18n.t('projects.frame.title_neutral') }}</h1></div>
+    }
+  }
+</header>
+@if (tabs().length > 0) {
+  <nav class="tabs" [attr.aria-label]="i18n.t('projects.frame.tabs.label')" data-testid="project-tabs">
+    @for (tab of tabs(); track tab) {
+      <a
+        class="tab"
+        [routerLink]="link(tab)"
+        [queryParams]="query(tab)"
+        [attr.aria-current]="tab === current() ? 'page' : null"
+        [attr.data-testid]="'project-tab-' + tab"
+        >{{ i18n.t('projects.frame.tab.' + tab) }}</a
+      >
+    }
+  </nav>
+}
+<div class="pane"><ng-content /></div>

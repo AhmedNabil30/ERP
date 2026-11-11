@@ -1,176 +1,32 @@
 import { ContractType, ProjectStatus } from '../../../core/projects/projects.api';
-import { KaffIconName } from '../../../shared/kaff-icon/kaff-icon';
 import { ClosureCaps, STEP_LABEL_KEY, closurePrimary } from '../../closure/closure-display';
 
 /**
- * What the project workspace declares per contract type, in ONE table. **Type dispatches, it does not
- * fork** (CLAUDE.md): there is one page, and this table is the only place Lump Sum, Cost Plus and
- * Design differ. A group with no part, and a part the viewer may not use, is ABSENT from the page, never
- * rendered empty or disabled.
+ * What the overview offers as its one primary action. The tabs and the groups of the old workspace are
+ * gone: the project frame draws the tabs from the server's `tabs` (D-218 item 2), and the overview is one
+ * short pane (`.design/v2/team-a/README.md` "Tab: نظرة عامة").
  *
- * Source: `.design/v2/team-a/README.md` "The project workspace", cut down to what the API serves today.
- * What the design shows and nothing serves yet (change orders, the logs list, the five ledger balances,
- * linked projects, lifecycle, the Cost Plus supervision rate, Design area and rate) is not declared
- * here; it is listed in the build report with the endpoint it needs.
- *
- * Progress and the roster ARE served now and ARE declared here: GET /api/projects/{id}/progress and
- * GET /api/projects/{id}/team landed in 3f7b0f3. Progress is read through `workspace-reading.ts`, which
- * is also where the rule lives that a contract type without a percentage never draws a bar.
+ * **Type dispatches, it does not fork** (CLAUDE.md): one function, one table of what differs.
  */
-export type GroupId = 'understand' | 'quantify' | 'execute' | 'pay' | 'closure' | 'org';
-
-export type PartId =
-  | 'progress'
-  | 'facts'
-  | 'site'
-  | 'boq'
-  | 'dailyLog'
-  | 'dayLabour'
-  | 'extractsSite'
-  | 'extracts'
-  | 'proof'
-  | 'closure'
-  | 'team';
-
-export const GROUP_ORDER: readonly GroupId[] = ['understand', 'quantify', 'execute', 'pay', 'closure', 'org'];
-
-export const GROUP_ICON: Readonly<Record<GroupId, KaffIconName>> = {
-  understand: 'info',
-  quantify: 'list',
-  execute: 'layers',
-  pay: 'calc',
-  closure: 'check',
-  org: 'folder',
-};
-
-export const GROUP_TITLE_KEY: Readonly<Record<GroupId, string>> = {
-  understand: 'projects.workspace.vocab.group.understand',
-  quantify: 'projects.workspace.vocab.group.quantify',
-  execute: 'projects.workspace.vocab.group.execute',
-  pay: 'projects.workspace.vocab.group.pay',
-  closure: 'projects.workspace.vocab.group.closure',
-  org: 'projects.workspace.vocab.group.org',
-};
-
-/** One intention question per type and group (design `GQ`). Literal keys, so a key scan finds each. */
-export const GROUP_INTENT_KEY: Readonly<Record<ContractType, Readonly<Record<GroupId, string>>>> = {
-  LumpSum: {
-    understand: 'projects.workspace.vocab.intent.ls.understand',
-    quantify: 'projects.workspace.vocab.intent.ls.quantify',
-    execute: 'projects.workspace.vocab.intent.ls.execute',
-    pay: 'projects.workspace.vocab.intent.ls.pay',
-    closure: 'projects.workspace.vocab.intent.ls.closure',
-    org: 'projects.workspace.vocab.intent.org_who',
-  },
-  CostPlus: {
-    understand: 'projects.workspace.vocab.intent.cp.understand',
-    quantify: 'projects.workspace.vocab.intent.cp.quantify',
-    execute: 'projects.workspace.vocab.intent.cp.execute',
-    pay: 'projects.workspace.vocab.intent.cp.pay',
-    closure: 'projects.workspace.vocab.intent.cp.closure',
-    org: 'projects.workspace.vocab.intent.org_who',
-  },
-  Design: {
-    understand: 'projects.workspace.vocab.intent.ds.understand_contract',
-    quantify: 'projects.workspace.vocab.intent.ds.quantify',
-    execute: 'projects.workspace.vocab.intent.ds.execute',
-    pay: 'projects.workspace.vocab.intent.ds.pay',
-    closure: 'projects.workspace.vocab.intent.ds.closure',
-    org: 'projects.workspace.vocab.intent.org_who',
-  },
-};
-
-/**
- * The parts each type holds in each group, in order. Cost Plus has no BOQ, so its quantify group is
- * empty and therefore absent (what Cost Plus quantifies, the classification of contract lines, is
- * served by nothing yet). Design has no site: no daily log, no day labour.
- */
-export const DECLARATION: Readonly<Record<ContractType, Readonly<Record<GroupId, readonly PartId[]>>>> = {
-  LumpSum: {
-    understand: ['progress', 'facts'],
-    quantify: ['boq'],
-    execute: ['site', 'dailyLog', 'dayLabour', 'extractsSite'],
-    pay: ['extracts', 'proof'],
-    closure: ['closure'],
-    org: ['team'],
-  },
-  CostPlus: {
-    understand: ['progress'],
-    quantify: [],
-    execute: ['site', 'dailyLog', 'dayLabour'],
-    pay: ['proof'],
-    closure: ['closure'],
-    org: ['team'],
-  },
-  Design: {
-    understand: ['progress', 'facts'],
-    quantify: [],
-    execute: [],
-    pay: ['proof'],
-    closure: [],
-    org: ['team'],
-  },
-};
 
 /** What a viewer may use. Convenience only: every read and every screen is decided again by the server. */
 export interface Capabilities {
-  /** False for the site engineer: a money-free read model, no money in any group. */
+  /** The server's `tabs.extracts`: the viewer reads extract money. False for the junior site engineer. */
   readonly seesMoney: boolean;
-  readonly canReadProject: boolean;
+  /** The server's `tabs.boq`. */
   readonly canReadBoq: boolean;
+  /** The server's `tabs.dailyLog`. */
   readonly canWriteDailyLog: boolean;
-  readonly canManageDayLabour: boolean;
-  readonly canReadProof: boolean;
   /** What the viewer holds on THIS project for the closure chain (practical completion to closing). */
   readonly closure: ClosureCaps;
-}
-
-/** Whether a declared part is shown to this viewer. */
-export function partAllowed(part: PartId, caps: Capabilities): boolean {
-  switch (part) {
-    case 'progress':
-      // The percentage and the Babs are for every reader; the money inside is the server's to withhold.
-      return caps.canReadProject;
-    case 'site':
-      // What is going on on site is for every reader of the project, not only the one who writes the log.
-      return caps.canReadProject;
-    case 'extractsSite':
-      // The people who act on an extract but see no money (the site engineer) have no pay group: this is their way in.
-      return !caps.seesMoney && caps.canReadProject;
-    case 'facts':
-      return caps.seesMoney;
-    case 'boq':
-      return caps.canReadBoq;
-    case 'dailyLog':
-      return caps.canWriteDailyLog;
-    case 'dayLabour':
-      return caps.canManageDayLabour;
-    case 'extracts':
-      return caps.seesMoney && caps.canReadProject;
-    case 'proof':
-      return caps.canReadProof;
-    case 'closure':
-      return caps.canReadProject;
-    case 'team':
-      return true;
-  }
-}
-
-/** The groups this viewer sees, each with its visible parts; a group with none is absent. */
-export function visibleGroups(
-  type: ContractType,
-  caps: Capabilities,
-): readonly { readonly id: GroupId; readonly parts: readonly PartId[] }[] {
-  return GROUP_ORDER.map((id) => ({
-    id,
-    parts: DECLARATION[type][id].filter((part) => partAllowed(part, caps)),
-  })).filter((group) => group.parts.length > 0);
 }
 
 export interface PrimaryAction {
   readonly labelKey: string;
   readonly params?: Readonly<Record<string, number>>;
-  readonly link: readonly string[];
+  /** Where it goes. Absent for an act the page performs itself (`act`). */
+  readonly link?: readonly string[];
+  readonly act?: 'reopen';
 }
 
 /**
@@ -185,9 +41,9 @@ export interface PendingExtract {
 }
 
 /**
- * The one primary action the shell places in the header (README Q2: working text). Only an action that
- * leads to a screen that exists is declared. "New extract", "new invoice", collect and the change-order
- * gates have no web screen yet, so they are not offered.
+ * The one primary action the shell places in the header (mock `project.html`): reopen on an archived
+ * project, open the BOQ while it is unsigned, open the extract that waits on the viewer, a new daily log
+ * for the junior site engineer. Only an action that leads to a screen that exists is declared.
  */
 export function primaryAction(
   type: ContractType,
@@ -197,15 +53,13 @@ export function primaryAction(
   pending: PendingExtract | null = null,
 ): PrimaryAction | null {
   if (type === 'LumpSum') {
-    if (caps.seesMoney && status === 'Setup' && caps.canReadBoq) {
-      return { labelKey: 'projects.workspace.vocab.action.open_boq', link: ['/projects', projectId, 'boq'] };
+    if (caps.canReadBoq && status === 'Setup') {
+      return { labelKey: 'projects.frame.action.open_boq', link: ['/projects', projectId, 'boq'] };
     }
-    // `hasAction` is the server's own answer from waiting-on (who may act now), so it holds for the site
-    // engineer too: the Supervisor who must submit the QC report is offered it.
+    // `hasAction` is the server's own answer from waiting-on (who may act now).
     if (pending?.hasAction === true) {
       return {
-        labelKey: 'projects.workspace.vocab.action.open_extract',
-        params: { number: pending.number },
+        labelKey: 'projects.frame.action.open_extract',
         link: ['/projects', projectId, 'extracts', pending.id],
       };
     }

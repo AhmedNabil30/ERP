@@ -89,6 +89,24 @@ export interface ProjectDetail {
   readonly executionProjectId?: string | null;
   /** A reference only (decimal string); no BOQ line is seeded from it. */
   readonly designAreaSquareMetres?: string | null;
+  /** The furthest stage reached (the stage line). The server sends it for every status. */
+  readonly stage: ProjectStage;
+  readonly isSigned: boolean;
+  /** True when a daily log exists for today's site day. */
+  readonly loggedToday: boolean;
+  /** Which tabs this caller may open. The server decides; a false tab is absent from the frame. */
+  readonly tabs: ProjectTabs;
+}
+
+/** `ProjectStage` on the wire: the three stages the stage line draws (D-218 item 3). */
+export type ProjectStage = 'Boq' | 'Execution' | 'Handover';
+
+export interface ProjectTabs {
+  readonly overview: boolean;
+  readonly boq: boolean;
+  readonly dailyLog: boolean;
+  readonly extracts: boolean;
+  readonly team: boolean;
 }
 
 /** `POST /api/projects/{id}/convert-to-execution` response (KAFF-415). */

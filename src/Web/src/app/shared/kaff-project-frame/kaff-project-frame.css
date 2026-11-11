@@ -1,0 +1,229 @@
+/*
+ * The project frame. Logical properties only; colour from tokens. The host adds no box of its own, so the
+ * sticky tab bar is held by the page that contains the frame, not by the frame.
+ */
+:host {
+  display: contents;
+}
+
+.head {
+  display: grid;
+  gap: var(--space-1);
+  min-inline-size: 0;
+  margin-block-end: var(--space-3);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  align-self: start;
+  gap: var(--space-1);
+  min-block-size: var(--tap-target);
+  color: var(--color-interactive);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+
+/* `back` is drawn pointing to the inline start; a back link points the other way (RTL: to the right). */
+:host-context([dir='rtl']) .back kaff-icon {
+  transform: scaleX(-1);
+}
+
+.ttl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.625rem;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.title-sk {
+  inline-size: min(300px, 70%);
+  block-size: 34px;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+  color: var(--dim);
+  font-size: var(--text-sm);
+}
+
+.client {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* The stage line: three markers joined by a rule, solid up to the current stage and dashed after it. */
+.stl {
+  list-style: none;
+  margin: var(--space-4) 0 var(--space-2);
+  padding: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  max-inline-size: 640px;
+}
+
+.stl li {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  text-align: center;
+  font: 600 var(--text-xs) / 1.3 var(--display);
+  color: var(--dim);
+  min-inline-size: 0;
+}
+
+.stl li::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 12px;
+  inset-inline-start: -50%;
+  inset-inline-end: 50%;
+  border-block-start: 2px dashed var(--line);
+}
+
+.stl li:first-child::before {
+  display: none;
+}
+
+.stl li.done::before,
+.stl li.cur::before {
+  border-block-start: 2px solid var(--ink);
+}
+
+.mk {
+  position: relative;
+  z-index: 1;
+  inline-size: 26px;
+  block-size: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--fieldline);
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  color: var(--bg);
+}
+
+.stl li.done .mk {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.stl li.done {
+  color: var(--ink);
+}
+
+.stl li.cur {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.stl li.cur .mk {
+  border-width: 3px;
+}
+
+.stl li.cur .mk::after {
+  content: '';
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.stl-sk {
+  display: block;
+  block-size: 50px;
+  margin-block: var(--space-4) var(--space-2);
+  border-radius: var(--radius);
+}
+
+/* The tab bar: links, sticky under the top of the scrolling area, scrolls inside itself on a phone. */
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  border-block-end: 2px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: none;
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 20;
+  background: var(--bg);
+  margin-block-end: var(--space-4);
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 56px;
+  padding-inline: 18px;
+  color: var(--dim);
+  font: 600 var(--text-md) / 1 var(--display);
+  white-space: nowrap;
+  text-decoration: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.tab::after {
+  content: '';
+  position: absolute;
+  inset-inline: 12px;
+  inset-block-end: -2px;
+  block-size: 4px;
+  border-radius: 2px 2px 0 0;
+  background: transparent;
+}
+
+.tab:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+.tab[aria-current='page'] {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.tab[aria-current='page']::after {
+  background: var(--ink);
+}
+
+.tab:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+
+.pane {
+  display: grid;
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+
+@media (min-width: 821px) {
+  .title {
+    font-size: var(--text-xl);
+  }
+
+  .tab {
+    min-block-size: 48px;
+  }
+}

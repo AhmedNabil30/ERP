@@ -28,7 +28,9 @@ const LABELS: Readonly<Record<string, string>> = {
   'projects.workspace.value_null.title': 'قيمة التعاقد لم تُحدَّد بعد',
   'projects.workspace.group_failed': 'تعذّر تحميل هذه المجموعة.',
   'extract.retry': 'إعادة المحاولة',
-  'projects.workspace.vocab.action.open_boq': 'فتح جدول الكميات',
+  'projects.frame.action.open_boq': 'open_boq',
+  'projects.frame.action.reopen': 'reopen',
+  'projects.frame.action.open_extract': 'open_extract',
   'projects.workspace.vocab.action.new_daily_log': 'سجل يومي جديد',
 };
 
@@ -52,6 +54,15 @@ class FakeI18nService implements Pick<I18nService, 't' | 'locale' | 'formatAmoun
   }
 }
 
+const OWNER_TABS = { overview: true, boq: true, dailyLog: true, extracts: true, team: true };
+const JUNIOR_TABS = { overview: true, boq: false, dailyLog: true, extracts: false, team: true };
+const MONEY = {
+  certifiedToDate: '110734.6500',
+  billedToDate: '88587.7200',
+  collectedToDate: '0.0000',
+  outstanding: '88587.7200',
+};
+
 function project(type: ContractType, patch: Partial<ProjectDetail> = {}): ProjectDetail {
   return {
     id: 'p-1',
@@ -65,6 +76,11 @@ function project(type: ContractType, patch: Partial<ProjectDetail> = {}): Projec
     holdRate: type === 'LumpSum' ? '0.05' : null,
     advanceRate: type === 'LumpSum' ? '0.1' : null,
     teamSize: 1,
+    stage: 'Execution',
+    isSigned: true,
+    loggedToday: false,
+    tabs: OWNER_TABS,
+    money: MONEY,
     ...patch,
   };
 }
@@ -245,6 +261,7 @@ async function createFixture(
   current: Session,
   boq = new FakeBoqsApi(),
   extracts = new FakeExtractsApi(),
+  tab?: string,
 ) {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
@@ -261,6 +278,7 @@ async function createFixture(
 
   const fixture = TestBed.createComponent(ProjectWorkspacePage);
   fixture.componentRef.setInput('projectId', 'p-1');
+  fixture.componentRef.setInput('tab', tab);
   fixture.detectChanges();
   for (let i = 0; i < 10; i += 1) {
     await Promise.resolve();
@@ -275,113 +293,14 @@ function q(fixture: { nativeElement: HTMLElement }, testId: string): Element | n
 
 const OWNER = () => session('Owner', OWNER_PERMS, ['TreasuryReadCompany']);
 
-describe('ProjectWorkspacePage · type dispatch', () => {
-  beforeEach(() => TestBed.resetTestingModule());
+const JUNIOR = () => session('SiteEngineer', SITE_PERMS, []);
 
-  it('Lump Sum holds all six groups and reaches the BOQ, daily log, extracts and proof from the group each belongs to', async () => {
-    const fixture = await createFixture(new FakeProjectsApi(project('LumpSum')), OWNER());
+const tabsOf = (fixture: { nativeElement: HTMLElement }): string[] =>
+  Array.from(fixture.nativeElement.querySelectorAll('[data-testid^="project-tab-"]')).map(
+    (a) => (a as HTMLElement).dataset['testid']!.replace('project-tab-', ''),
+  );
 
-    for (const group of ['understand', 'quantify', 'execute', 'pay', 'closure', 'org']) {
-      expect(q(fixture, `workspace-group-${group}`), group).not.toBeNull();
-    }
-    expect(q(fixture, 'workspace-group-quantify')?.querySelector('a[href="/projects/p-1/boq"]')).not.toBeNull();
-    expect(q(fixture, 'workspace-group-execute')?.querySelector('a[href="/projects/p-1/daily-log"]')).not.toBeNull();
-    expect(q(fixture, 'workspace-group-execute')?.querySelector('a[href="/projects/p-1/day-labour"]')).not.toBeNull();
-    expect(q(fixture, 'workspace-group-pay')?.querySelector('a[href="/projects/p-1/extracts"]')).not.toBeNull();
-    expect(q(fixture, 'workspace-group-pay')?.querySelector('a[href="/projects/p-1/proof"]')).not.toBeNull();
-  });
-
-  it('Cost Plus has no BOQ: no quantify group, no BOQ link, and the BOQ is never read', async () => {
-    const boq = new FakeBoqsApi();
-    const cost: ProjectProgress = { kind: 'MonetaryOnly', asOf: '2026-11-06', costToDate: '1.0000' };
-    const fixture = await createFixture(new FakeProjectsApi(project('CostPlus'), { progress: cost }), OWNER(), boq);
-
-    expect(q(fixture, 'workspace-group-quantify')).toBeNull();
-    expect(q(fixture, 'workspace-jump-quantify')).toBeNull();
-    expect(fixture.nativeElement.querySelector('a[href$="/boq"]')).toBeNull();
-    expect(boq.calls).toBe(0);
-    // Cost Plus understands itself by cost, not by contract facts: no facts, and no percentage.
-    expect(q(fixture, 'workspace-fact-value')).toBeNull();
-    expect(q(fixture, 'workspace-group-execute')).not.toBeNull();
-  });
-
-  it('Design has no site: no execute group', async () => {
-    const fixture = await createFixture(new FakeProjectsApi(project('Design')), OWNER());
-
-    expect(q(fixture, 'workspace-group-execute')).toBeNull();
-    expect(q(fixture, 'workspace-group-quantify')).toBeNull();
-    expect(q(fixture, 'workspace-group-understand')).not.toBeNull();
-  });
-
-  it('holds a closure group that reaches the closure screen, for Lump Sum and Cost Plus but never Design', async () => {
-    for (const type of ['LumpSum', 'CostPlus'] as const) {
-      const fixture = await createFixture(new FakeProjectsApi(project(type)), OWNER());
-      expect(q(fixture, 'workspace-group-closure')?.querySelector('a[href="/projects/p-1/closure"]'), type).not.toBeNull();
-      expect(q(fixture, 'workspace-jump-closure'), type).not.toBeNull();
-    }
-    const design = await createFixture(new FakeProjectsApi(project('Design')), OWNER());
-    expect(q(design, 'workspace-group-closure')).toBeNull();
-  });
-
-  it('never offers practical completion in the header slot, whoever holds the permission (review A4)', async () => {
-    const holder = session('Owner', [...OWNER_PERMS, 'ProjectPracticalCompletionDeclare'], ['TreasuryReadCompany']);
-    await createFixture(new FakeProjectsApi(project('LumpSum', { status: 'Active' })), holder);
-    expect(TestBed.inject(HeaderActionsService).template()).toBeNull();
-  });
-
-  it('still offers the later closure acts in the header slot, only to a holder of that permission', async () => {
-    const holder = session('Owner', [...OWNER_PERMS, 'ProjectHandover'], ['TreasuryReadCompany']);
-    await createFixture(new FakeProjectsApi(project('LumpSum', { status: 'HandoverPending' })), holder);
-    expect(TestBed.inject(HeaderActionsService).template()).not.toBeNull();
-    await createFixture(new FakeProjectsApi(project('LumpSum', { status: 'HandoverPending' })), OWNER());
-    expect(TestBed.inject(HeaderActionsService).template()).toBeNull();
-  });
-});
-
-describe('ProjectWorkspacePage · role', () => {
-  beforeEach(() => TestBed.resetTestingModule());
-
-  it('the site engineer has no money and no pay group in the DOM, and the money reads never run', async () => {
-    const boq = new FakeBoqsApi();
-    const extracts = new FakeExtractsApi();
-    const fixture = await createFixture(
-      new FakeProjectsApi(project('LumpSum')),
-      session('SiteEngineer', SITE_PERMS, []),
-      boq,
-      extracts,
-    );
-
-    expect(q(fixture, 'workspace-group-pay')).toBeNull();
-    expect(q(fixture, 'workspace-jump-pay')).toBeNull();
-    expect(q(fixture, 'workspace-fact-value')).toBeNull();
-    expect(fixture.nativeElement.textContent as string).not.toContain('4500000');
-    expect(boq.calls).toBe(0);
-    expect(extracts.calls).toBe(0);
-    // No money anywhere: not the cost, not the paid-in figures.
-    expect(q(fixture, 'workspace-pay-outstanding')).toBeNull();
-    // What the site engineer does hold stays.
-    expect(q(fixture, 'workspace-group-execute')).not.toBeNull();
-    expect(q(fixture, 'workspace-group-org')).not.toBeNull();
-  });
-
-  it('declares the daily log as the site engineer primary action, and the BOQ for an owner on a Setup project', async () => {
-    const site = await createFixture(
-      new FakeProjectsApi(project('LumpSum')),
-      session('SiteEngineer', SITE_PERMS, []),
-    );
-    expect(TestBed.inject(HeaderActionsService).template()).not.toBeNull();
-    site.destroy();
-    expect(TestBed.inject(HeaderActionsService).template()).toBeNull();
-
-    await createFixture(new FakeProjectsApi(project('LumpSum', { status: 'Setup' })), OWNER());
-    expect(TestBed.inject(HeaderActionsService).template()).not.toBeNull();
-
-    await createFixture(new FakeProjectsApi(project('LumpSum', { status: 'Active' })), OWNER());
-    expect(TestBed.inject(HeaderActionsService).template()).toBeNull();
-  });
-});
-
-function slotButton(): HTMLButtonElement | null {
+const slotButton = () => {
   const template = TestBed.inject(HeaderActionsService).template();
   if (template === null) {
     return null;
@@ -389,309 +308,229 @@ function slotButton(): HTMLButtonElement | null {
   const host = document.createElement('div');
   const view = template.createEmbeddedView(null);
   view.detectChanges();
-  host.append(...view.rootNodes);
-  return host.querySelector<HTMLButtonElement>('[data-testid="workspace-primary-action"]');
-}
+  view.rootNodes.forEach((node) => host.appendChild(node));
+  return host.querySelector('button');
+};
 
-describe('ProjectWorkspacePage · the chain is paused: name the step and the holder', () => {
+describe('ProjectWorkspacePage · the frame and the owner overview', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  it('draws the tabs the server sent, the three stages with the current one marked, and no code', async () => {
+    const fixture = await createFixture(new FakeProjectsApi(project('LumpSum')), OWNER());
+    expect(tabsOf(fixture)).toEqual(['overview', 'boq', 'dailyLog', 'extracts', 'team']);
+    expect(q(fixture, 'project-tab-overview')?.getAttribute('aria-current')).toBe('page');
+    const stages: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('[data-testid="workspace-stages"] li'));
+    expect(stages.length).toBe(3);
+    expect(stages[1].getAttribute('aria-current')).toBe('step');
+    expect(stages[0].classList.contains('done')).toBe(true);
+    expect(fixture.nativeElement.textContent as string).not.toContain('KF-P-0001');
+  });
+
+  it('shows the percent, the contract figures, the babs, the three money figures and the last log', async () => {
+    const fixture = await createFixture(
+      new FakeProjectsApi(project('LumpSum', { lastDailyLogOn: '2026-11-10', loggedToday: true })),
+      OWNER(),
+    );
+    expect(q(fixture, 'workspace-progress-pct')?.textContent).toContain('37.5');
+    expect(q(fixture, 'workspace-executed')?.textContent).toContain('1687500');
+    expect(q(fixture, 'workspace-pay-certified')?.textContent).toContain('110734.6500');
+    expect(q(fixture, 'workspace-pay-billed')).not.toBeNull();
+    expect(q(fixture, 'workspace-pay-outstanding')).not.toBeNull();
+    expect(fixture.nativeElement.querySelectorAll('[data-testid="workspace-babs"] li').length).toBe(4);
+    expect(q(fixture, 'workspace-logged-today')?.textContent).toContain('projects.frame.log.today');
+  });
+
+  it('opens the contract terms on demand, not on the first view', async () => {
+    const fixture = await createFixture(new FakeProjectsApi(project('LumpSum')), OWNER());
+    expect(q(fixture, 'workspace-fact-hold')).toBeNull();
+    (q(fixture, 'workspace-terms') as HTMLElement).click();
+    fixture.detectChanges();
+    expect(q(fixture, 'workspace-fact-hold')).not.toBeNull();
+  });
+
+  it('says "none" for the last log when there is no log, with no tag', async () => {
+    const fixture = await createFixture(new FakeProjectsApi(project('LumpSum', { lastDailyLogOn: null })), OWNER());
+    expect(q(fixture, 'workspace-last-log')?.textContent).toContain('projects.frame.log.none');
+    expect(q(fixture, 'workspace-logged-today')).toBeNull();
+  });
+
+  it('draws no money group when the server sent no money', async () => {
+    const fixture = await createFixture(new FakeProjectsApi(project('LumpSum', { money: undefined })), OWNER());
+    expect(q(fixture, 'workspace-money')).toBeNull();
+    expect(q(fixture, 'workspace-progress-pct')).not.toBeNull();
+  });
+});
+
+describe('ProjectWorkspacePage · the junior site engineer', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  const junior = (patch: Partial<ProjectDetail> = {}) =>
+    new FakeProjectsApi(project('LumpSum', { tabs: JUNIOR_TABS, money: undefined, ...patch }), { progress: MONEY_FREE_PROGRESS });
+
+  it('has overview, daily log and team only, and no meta line', async () => {
+    const fixture = await createFixture(junior(), JUNIOR());
+    expect(tabsOf(fixture)).toEqual(['overview', 'dailyLog', 'team']);
+    expect(q(fixture, 'workspace-client')).toBeNull();
+    expect(q(fixture, 'workspace-type')).toBeNull();
+  });
+
+  it('sees the percent and the babs and not one figure of money, and never reads the extracts', async () => {
+    const extracts = new FakeExtractsApi({ status: 'Draft', holders: [SUPERVISOR] });
+    const fixture = await createFixture(junior({ lastDailyLogOn: '2026-11-09' }), JUNIOR(), new FakeBoqsApi(), extracts);
+    expect(q(fixture, 'workspace-progress-pct')).not.toBeNull();
+    expect(q(fixture, 'workspace-hero-figures')).toBeNull();
+    expect(q(fixture, 'workspace-money')).toBeNull();
+    expect(q(fixture, 'workspace-waiting')).toBeNull();
+    expect(q(fixture, 'workspace-terms')).toBeNull();
+    expect(extracts.waitingCalls).toBe(0);
+    expect(q(fixture, 'workspace-last-log')).not.toBeNull();
+    expect(q(fixture, 'workspace-logged-today')?.textContent).toContain('not_today');
+  });
+
+  it('is offered a new daily log as the one primary action', async () => {
+    await createFixture(junior(), JUNIOR());
+    expect(slotButton()?.textContent).toContain('سجل يومي جديد');
+  });
+});
+
+describe('ProjectWorkspacePage · unsigned, archived, failed', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  it('an unsigned project: stage line on the BOQ, tabs overview, BOQ, team, the follow-up line, no zero value', async () => {
+    const fixture = await createFixture(
+      new FakeProjectsApi(
+        project('LumpSum', { status: 'Setup', stage: 'Boq', isSigned: false, contractValue: null, money: undefined, followUpEndsOn: '2026-12-01' }),
+      ),
+      OWNER(),
+    );
+    expect(tabsOf(fixture)).toEqual(['overview', 'boq', 'team']);
+    const stages: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('[data-testid="workspace-stages"] li'));
+    expect(stages[0].getAttribute('aria-current')).toBe('step');
+    expect(q(fixture, 'workspace-follow-up')).not.toBeNull();
+    expect(q(fixture, 'workspace-value-null')?.textContent).toContain('projects.frame.value_unset');
+    expect(q(fixture, 'workspace-progress')).toBeNull();
+    expect(slotButton()?.textContent).toContain('open_boq');
+  });
+
+  it('an archived project: no stage line, no status pill, reopen as the primary action', async () => {
+    const fixture = await createFixture(
+      new FakeProjectsApi(project('LumpSum', { status: 'Setup', isSigned: false, isArchived: true, contractValue: null, money: undefined })),
+      OWNER(),
+    );
+    expect(q(fixture, 'workspace-archived')).not.toBeNull();
+    expect(q(fixture, 'workspace-stages')).toBeNull();
+    expect(q(fixture, 'workspace-status')).toBeNull();
+    expect(slotButton()?.textContent).toContain('reopen');
+  });
+
+  it('a refused project read draws only the back link, a neutral title, the server key, and no tabs', async () => {
+    const error = new HttpErrorResponse({ status: 403, error: { messageKey: 'errors.project.forbidden' } });
+    const fixture = await createFixture(new FakeProjectsApi(project('LumpSum'), { failWith: error }), OWNER());
+    expect(q(fixture, 'workspace-failure')).not.toBeNull();
+    expect(q(fixture, 'project-tabs')).toBeNull();
+    expect(q(fixture, 'workspace-stages')).toBeNull();
+    expect(q(fixture, 'workspace-title')).toBeNull();
+    expect(fixture.nativeElement.querySelector('h1')?.textContent).toContain('projects.frame.title_neutral');
+  });
+
+  it('a failed progress read is a banner with retry; the rest stays', async () => {
+    const fixture = await createFixture(
+      new FakeProjectsApi(project('LumpSum'), { progress: new HttpErrorResponse({ status: 500 }) }),
+      OWNER(),
+    );
+    expect(q(fixture, 'workspace-progress-failed')).not.toBeNull();
+    expect(q(fixture, 'workspace-progress-retry')).not.toBeNull();
+    expect(tabsOf(fixture).length).toBe(5);
+  });
+
+  it('Design: the 409 draws no hero and no zero', async () => {
+    const fixture = await createFixture(
+      new FakeProjectsApi(project('Design', { stage: 'Execution' }), { progress: new HttpErrorResponse({ status: 409 }) }),
+      OWNER(),
+    );
+    expect(q(fixture, 'workspace-progress')).toBeNull();
+    expect(tabsOf(fixture)).toEqual(['overview', 'team']);
+  });
+
+  it('Cost Plus: cost and supervision to date, no bar; tabs overview, daily log, team', async () => {
+    const fixture = await createFixture(
+      new FakeProjectsApi(project('CostPlus'), {
+        progress: { kind: 'MonetaryOnly', asOf: '2026-11-06', costToDate: '885000.0000', supervisionToDate: '80000.0000' },
+      }),
+      OWNER(),
+    );
+    expect(q(fixture, 'workspace-cost-to-date')?.textContent).toContain('885000');
+    expect(q(fixture, 'workspace-progress')).toBeNull();
+    expect(tabsOf(fixture)).toEqual(['overview', 'dailyLog', 'team']);
+  });
+});
+
+describe('ProjectWorkspacePage · the team tab', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  it('lists the team by name and role under the team tab, which is the current one', async () => {
+    const fixture = await createFixture(new FakeProjectsApi(project('LumpSum')), OWNER(), new FakeBoqsApi(), new FakeExtractsApi(), 'team');
+    expect(q(fixture, 'project-tab-team')?.getAttribute('aria-current')).toBe('page');
+    expect(q(fixture, 'project-tab-overview')?.getAttribute('aria-current')).toBeNull();
+    const rows = fixture.nativeElement.querySelectorAll('[data-testid="workspace-team-list"] li');
+    expect(rows.length).toBe(2);
+    expect(rows[0].textContent).toContain('منى عادل');
+    expect(q(fixture, 'workspace-progress')).toBeNull();
+  });
+
+  it('says so when nobody is assigned', async () => {
+    const fixture = await createFixture(
+      new FakeProjectsApi(project('LumpSum'), { team: [] }),
+      OWNER(),
+      new FakeBoqsApi(),
+      new FakeExtractsApi(),
+      'team',
+    );
+    expect(q(fixture, 'workspace-team-none')).not.toBeNull();
+  });
+});
+
+describe('ProjectWorkspacePage · the chain is paused', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
   const active = () => new FakeProjectsApi(project('LumpSum', { status: 'Active' }));
 
-  it('names the step and the role that holds it, instead of "nothing to do here" (review A5)', async () => {
-    const fixture = await createFixture(
-      active(),
-      OWNER(),
-      new FakeBoqsApi(),
-      new FakeExtractsApi({ status: 'Draft', holders: [SUPERVISOR] }),
-    );
-    const line = q(fixture, 'workspace-waiting-line')?.textContent as string;
-    expect(line).toContain('projects.workspace.waiting.line');
-    expect(fixture.nativeElement.textContent as string).not.toContain('extract.no_action.waiting');
+  it('names the extract, the step and the role that holds it', async () => {
+    const fixture = await createFixture(active(), OWNER(), new FakeBoqsApi(), new FakeExtractsApi({ status: 'Draft', role: 'Finance', holders: [OTHER] }));
+    expect(q(fixture, 'workspace-waiting-line')?.textContent).toContain('projects.frame.waiting.line');
   });
 
-  it('offers "open extract 2" in the slot when the server names the viewer in holders, and it goes to that extract', async () => {
-    await createFixture(
+  it('says it is the viewer turn, and offers the extract in the slot', async () => {
+    const fixture = await createFixture(
       active(),
       OWNER(),
       new FakeBoqsApi(),
       new FakeExtractsApi({ status: 'DeductionsApplied', role: 'Owner', holders: [SUPERVISOR] }),
     );
+    expect(q(fixture, 'workspace-waiting-line')?.textContent).toContain('projects.frame.waiting.mine');
     expect(slotButton()?.textContent).toContain('open_extract');
   });
 
-  it('says it is the viewer own turn in the strip', async () => {
-    const fixture = await createFixture(
-      active(),
-      OWNER(),
-      new FakeBoqsApi(),
-      new FakeExtractsApi({ status: 'DeductionsApplied', role: 'Owner', holders: [SUPERVISOR] }),
-    );
-    expect(q(fixture, 'workspace-waiting-you')).not.toBeNull();
-  });
-
-  it('offers nothing and says why when the viewer is barred by separation of duties, in the existing wording', async () => {
-    const fixture = await createFixture(
-      active(),
-      OWNER(),
-      new FakeBoqsApi(),
-      new FakeExtractsApi({ status: 'DeductionsApplied', role: 'Owner', holders: [OTHER], barred: [SUPERVISOR] }),
-    );
-    expect(slotButton()).toBeNull();
-    expect(q(fixture, 'workspace-extract-no-action')?.textContent).toContain('extract.no_action.same_person');
-  });
-
-  it('offers nothing when someone else holds the step, and names who can act', async () => {
-    const fixture = await createFixture(
-      active(),
-      OWNER(),
-      new FakeBoqsApi(),
-      new FakeExtractsApi({ status: 'DeductionsApplied', role: 'Owner', holders: [OTHER] }),
-    );
-    expect(slotButton()).toBeNull();
-    expect(q(fixture, 'workspace-waiting-holders')).not.toBeNull();
-  });
-
-  it('does not point the slot at a step with no web screen yet (collection)', async () => {
-    await createFixture(
-      active(),
-      OWNER(),
-      new FakeBoqsApi(),
-      new FakeExtractsApi({ status: 'Issued', role: 'Finance', holders: [SUPERVISOR] }),
-    );
+  it('offers nothing in the slot when someone else holds the step', async () => {
+    await createFixture(active(), OWNER(), new FakeBoqsApi(), new FakeExtractsApi({ status: 'QcSubmitted', role: 'Finance', holders: [OTHER] }));
     expect(slotButton()).toBeNull();
   });
 
-  it('draws no strip when nothing is open', async () => {
+  it('draws no line when nothing is open', async () => {
     const fixture = await createFixture(active(), OWNER());
     expect(q(fixture, 'workspace-waiting')).toBeNull();
   });
-
-  it('the Supervisor sees the step he holds, a link to the extracts, and the extract in the slot, with no money', async () => {
-    const fixture = await createFixture(
-      active(),
-      session('SiteEngineer', SITE_PERMS, []),
-      new FakeBoqsApi(),
-      new FakeExtractsApi({ status: 'Draft', holders: [SUPERVISOR] }),
-    );
-    expect(q(fixture, 'workspace-link-extracts-site')?.getAttribute('href')).toBe('/projects/p-1/extracts');
-    expect(q(fixture, 'workspace-waiting-you')).not.toBeNull();
-    expect(slotButton()?.textContent).toContain('open_extract');
-    expect(q(fixture, 'workspace-group-pay')).toBeNull();
-    expect(fixture.nativeElement.textContent as string).not.toContain('4500000');
-  });
-
-  it('the money users do not get the site-only link (they have the pay group)', async () => {
-    const fixture = await createFixture(active(), OWNER());
-    expect(q(fixture, 'workspace-link-extracts-site')).toBeNull();
-    expect(q(fixture, 'workspace-link-extracts')).not.toBeNull();
-  });
 });
 
-describe('ProjectWorkspacePage · partial failure', () => {
+describe('ProjectWorkspacePage · closure acts in the slot', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
-  it('a BOQ read that fails is a banner with retry in its group; the rest of the page stays', async () => {
-    const fixture = await createFixture(
-      new FakeProjectsApi(project('LumpSum')),
-      OWNER(),
-      new FakeBoqsApi(new HttpErrorResponse({ status: 500, error: { messageKey: 'errors.unexpected' } })),
-    );
-
-    expect(q(fixture, 'workspace-boq-failed')).not.toBeNull();
-    expect(q(fixture, 'workspace-boq-retry')).not.toBeNull();
-    // Everything else still rendered.
-    expect(q(fixture, 'workspace-title')).not.toBeNull();
-    expect(q(fixture, 'workspace-group-pay')).not.toBeNull();
-    expect(q(fixture, 'workspace-extracts-count')).not.toBeNull();
-    expect(q(fixture, 'workspace-group-execute')).not.toBeNull();
-    expect(q(fixture, 'workspace-failure')).toBeNull();
-  });
-
-  it('a BOQ that does not exist yet (404) is an empty state, not a failure', async () => {
-    const fixture = await createFixture(
-      new FakeProjectsApi(project('LumpSum', { status: 'Setup' })),
-      OWNER(),
-      new FakeBoqsApi(new HttpErrorResponse({ status: 404, error: { messageKey: 'errors.boq.not_found' } })),
-    );
-
-    expect(q(fixture, 'workspace-boq-none')).not.toBeNull();
-    expect(q(fixture, 'workspace-boq-failed')).toBeNull();
-  });
-
-  it('a refused project read renders the refusal with the server own key and no groups', async () => {
-    const fixture = await createFixture(
-      new FakeProjectsApi(project('LumpSum'), {
-        failWith: new HttpErrorResponse({ status: 403, error: { messageKey: 'errors.auth.forbidden' } }),
-      }),
-      OWNER(),
-    );
-
-    expect(q(fixture, 'workspace-failure')?.textContent).toContain('errors.auth.forbidden');
-    expect(q(fixture, 'workspace-jump')).toBeNull();
-    expect(q(fixture, 'workspace-group-pay')).toBeNull();
-  });
-});
-
-describe('ProjectWorkspacePage · header and facts', () => {
-  beforeEach(() => TestBed.resetTestingModule());
-
-  it('ships the state alone in Kaff vocabulary, with code, client and contract type, and no health tag', async () => {
-    const fixture = await createFixture(new FakeProjectsApi(project('LumpSum', { status: 'Setup' })), OWNER());
-
-    expect((q(fixture, 'workspace-status')?.textContent as string).trim()).toBe('لم تبدأ');
-    expect(q(fixture, 'workspace-code')?.textContent).toContain('KF-P-0001');
-    expect(q(fixture, 'workspace-client')?.textContent).toContain('عميل أول');
-    expect(q(fixture, 'workspace-type')?.textContent).toContain('مقاولة بالمقطوعية');
-    const text = fixture.nativeElement.textContent as string;
-    expect(text).not.toContain('متعثرة');
-    expect(text).not.toContain('تم تأجيلها');
-  });
-
-  it('renders the served contract value as a figure, untouched, and the rates as percents', async () => {
-    const fixture = await createFixture(new FakeProjectsApi(project('LumpSum')), OWNER());
-
-    expect(q(fixture, 'workspace-fact-value')?.textContent).toContain('4500000.0000');
-    expect(q(fixture, 'workspace-fact-hold')?.textContent).toContain('5%');
-    expect(q(fixture, 'workspace-fact-advance')?.textContent).toContain('10%');
-  });
-
-  it('draws a null contract value as its own variant with a reason, never 0.00', async () => {
-    const fixture = await createFixture(
-      new FakeProjectsApi(project('LumpSum', { contractValue: null, status: 'Setup' })),
-      OWNER(),
-    );
-
-    const nullVariant = q(fixture, 'workspace-value-null');
-    expect(nullVariant?.textContent).toContain('قيمة التعاقد لم تُحدَّد بعد');
-    expect(q(fixture, 'workspace-fact-value')?.textContent).not.toContain('0.00');
-  });
-
-  it('names the team the API serves, with role and level, instead of a bare count', async () => {
-    const fixture = await createFixture(new FakeProjectsApi(project('LumpSum')), OWNER());
-
-    const team = q(fixture, 'workspace-team')?.textContent as string;
-    expect(team).toContain('منى عادل');
-    expect(team).toContain('هاني سعيد');
-    expect(team).toContain('enum.Role.SiteEngineer');
-    expect(team).toContain('enum.AssignmentLevel.Supervisor');
-    expect(team).not.toContain('enum.AssignmentLevel.Standard');
-  });
-
-  it('shows the dates the API serves and the money the project has moved, only when present', async () => {
-    const fixture = await createFixture(
-      new FakeProjectsApi(
-        project('LumpSum', {
-          signedOn: '2026-09-01',
-          startedOn: null,
-          lastDailyLogOn: '2026-11-05',
-          money: { certifiedToDate: '100.0000', billedToDate: '90.0000', collectedToDate: '40.0000', outstanding: '50.0000' },
-        }),
-      ),
-      OWNER(),
-    );
-    expect(q(fixture, 'workspace-fact-signed')).not.toBeNull();
-    expect(q(fixture, 'workspace-fact-started')).toBeNull();
-    expect(q(fixture, 'workspace-last-log')?.textContent).toContain('date');
-    expect(q(fixture, 'workspace-pay-outstanding')?.textContent).toContain('50.0000');
-  });
-
-  it('a project with no daily log says so rather than showing a blank', async () => {
-    const fixture = await createFixture(new FakeProjectsApi(project('LumpSum', { lastDailyLogOn: null })), OWNER());
-    expect(q(fixture, 'workspace-last-log')?.textContent).toContain('projects.workspace.site.no_log');
-  });
-});
-
-describe('ProjectWorkspacePage · progress', () => {
-  beforeEach(() => TestBed.resetTestingModule());
-
-  it('Lump Sum: a bar filled to the served percentage, the running bab named and marked, finished ones only a percent', async () => {
-    const fixture = await createFixture(new FakeProjectsApi(project('LumpSum')), OWNER());
-
-    expect(q(fixture, 'workspace-progress-pct')?.textContent).toContain('37.5');
-    const bar = q(fixture, 'workspace-progress-bar') as HTMLElement;
-    expect(bar.getAttribute('role')).toBe('progressbar');
-    expect(bar.getAttribute('aria-valuenow')).toBe('37.5');
-    expect((bar.firstElementChild as HTMLElement).style.inlineSize).toBe('37.5%');
-
-    expect(q(fixture, 'workspace-active-bab')?.textContent).toContain('الخرسانة');
-    expect(q(fixture, 'workspace-bab-B02')?.textContent).toContain('جاري العمل');
-    expect(q(fixture, 'workspace-bab-B01')?.textContent).not.toContain('جاري العمل');
-    // The answer to the site question is on the execute group too.
-    expect(q(fixture, 'workspace-site-active-bab')?.textContent).toContain('الخرسانة');
-  });
-
-  it('a bab with nothing to measure against draws no bar and no percent, never 0', async () => {
-    const fixture = await createFixture(new FakeProjectsApi(project('LumpSum')), OWNER());
-    const row = q(fixture, 'workspace-bab-B04') as HTMLElement;
-    expect(row.querySelector('.bar')).toBeNull();
-    expect(row.textContent).not.toContain('%');
-  });
-
-  it('Cost Plus: no percentage bar at all; cost and supervision are shown as money', async () => {
-    const reading: ProjectProgress = {
-      kind: 'MonetaryOnly',
-      asOf: '2026-11-06',
-      costToDate: '700000.0000',
-      supervisionToDate: '70000.0000',
-    };
-    const fixture = await createFixture(new FakeProjectsApi(project('CostPlus'), { progress: reading }), OWNER());
-
-    expect(q(fixture, 'workspace-progress-bar')).toBeNull();
-    expect(fixture.nativeElement.querySelector('[role="progressbar"]')).toBeNull();
-    expect(q(fixture, 'workspace-progress-pct')).toBeNull();
-    expect(q(fixture, 'workspace-cost-to-date')?.textContent).toContain('700000.0000');
-    expect(q(fixture, 'workspace-supervision-to-date')?.textContent).toContain('70000.0000');
-  });
-
-  it('Cost Plus for a viewer who sees no money: nothing to show, so no understand group and no empty question', async () => {
-    const reading: ProjectProgress = { kind: 'MonetaryOnly', asOf: '2026-11-06' };
-    const fixture = await createFixture(
-      new FakeProjectsApi(project('CostPlus'), { progress: reading }),
-      session('SiteEngineer', SITE_PERMS, []),
-    );
-    expect(q(fixture, 'workspace-group-understand')).toBeNull();
-    expect(fixture.nativeElement.querySelector('[role="progressbar"]')).toBeNull();
-  });
-
-  it('Design: the 409 is "cannot be measured yet", never a bar and never 0%', async () => {
-    const conflict = new HttpErrorResponse({ status: 409, error: { messageKey: 'billing.calculator_not_implemented' } });
-    const fixture = await createFixture(new FakeProjectsApi(project('Design'), { progress: conflict }), OWNER());
-
-    expect(q(fixture, 'workspace-progress-unavailable')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('[role="progressbar"]')).toBeNull();
-    expect(q(fixture, 'workspace-progress-pct')).toBeNull();
-    expect(q(fixture, 'workspace-progress-failed')).toBeNull();
-  });
-
-  it('a percentage kind that arrives without a completion is unavailable, not an empty bar', async () => {
-    const reading: ProjectProgress = { kind: 'Percentage', asOf: '2026-11-06' };
-    const fixture = await createFixture(new FakeProjectsApi(project('LumpSum'), { progress: reading }), OWNER());
-    expect(fixture.nativeElement.querySelector('[role="progressbar"]')).toBeNull();
-    expect(q(fixture, 'workspace-progress-unavailable')).not.toBeNull();
-  });
-
-  it('a failed progress read is a banner with retry in its group, and the rest of the page stays', async () => {
-    const boom = new HttpErrorResponse({ status: 500, error: { messageKey: 'errors.unexpected' } });
-    const fixture = await createFixture(new FakeProjectsApi(project('LumpSum'), { progress: boom }), OWNER());
-    expect(q(fixture, 'workspace-progress-failed')).not.toBeNull();
-    expect(q(fixture, 'workspace-progress-retry')).not.toBeNull();
-    expect(q(fixture, 'workspace-group-pay')).not.toBeNull();
-  });
-
-  it('the junior site engineer sees the percentage and the babs and not one figure of money', async () => {
-    const api = new FakeProjectsApi(project('LumpSum'), { progress: MONEY_FREE_PROGRESS });
-    const fixture = await createFixture(api, session('SiteEngineer', SITE_PERMS, []));
-
-    expect(q(fixture, 'workspace-progress-pct')?.textContent).toContain('37.5');
-    expect(q(fixture, 'workspace-progress-money-line')).toBeNull();
-    expect(q(fixture, 'workspace-fact-value')).toBeNull();
-    expect(q(fixture, 'workspace-pay-outstanding')).toBeNull();
-    const text = fixture.nativeElement.textContent as string;
-    expect(text).not.toContain('4500000');
-    expect(text).not.toContain('1687500');
-    // The question the group prints is one this viewer's answer actually answers.
-    expect(text).toContain('projects.workspace.vocab.intent.understand_progress');
+  it('offers the later closure acts only to a holder of that permission', async () => {
+    const holder = session('Owner', [...OWNER_PERMS, 'ProjectHandover'], ['TreasuryReadCompany']);
+    await createFixture(new FakeProjectsApi(project('LumpSum', { status: 'HandoverPending', stage: 'Handover' })), holder);
+    expect(TestBed.inject(HeaderActionsService).template()).not.toBeNull();
+    await createFixture(new FakeProjectsApi(project('LumpSum', { status: 'HandoverPending', stage: 'Handover' })), OWNER());
+    expect(TestBed.inject(HeaderActionsService).template()).toBeNull();
   });
 });
 

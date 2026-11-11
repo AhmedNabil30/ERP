@@ -51,6 +51,10 @@ function project(status: ProjectStatus, type: ContractType = 'LumpSum'): Project
     holdRate: '0.05',
     advanceRate: null,
     teamSize: 1,
+    stage: 'Execution',
+    isSigned: true,
+    loggedToday: false,
+    tabs: { overview: true, boq: true, dailyLog: true, extracts: true, team: true },
   };
 }
 

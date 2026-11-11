@@ -3,71 +3,57 @@
 <ng-template #primaryAction>
   @if (primary(); as action) {
     <kaff-button variant="primary" testId="workspace-primary-action" (clicked)="onPrimary()">
-      {{ i18n.t(action.labelKey, action.params) }}
+      {{ i18n.t(action.labelKey) }}
     </kaff-button>
   }
 </ng-template>
 
 <section class="ws" data-testid="project-workspace">
-  @if (failure(); as key) {
-    <header class="head">
-      <a class="back" routerLink="/projects"><kaff-icon name="back" />{{ i18n.t('nav.projects') }}</a>
-    </header>
-    <kaff-state mode="refusal" [bodyKey]="key" testId="workspace-failure" />
-    <div>
-      <kaff-button variant="secondary" testId="workspace-retry" (clicked)="reload()">
-        {{ i18n.t('extract.retry') }}
-      </kaff-button>
-    </div>
-  } @else if (loading()) {
-    <header class="head">
-      <a class="back" routerLink="/projects"><kaff-icon name="back" />{{ i18n.t('nav.projects') }}</a>
-    </header>
-    <kaff-state mode="loading" titleKey="projects.workspace.loading" testId="workspace-loading" />
-  } @else if (project(); as p) {
-    <header class="head">
-      <a class="back" routerLink="/projects"><kaff-icon name="back" />{{ i18n.t('nav.projects') }}</a>
-      <div class="ttl">
-        <h1 class="title" dir="auto" data-testid="workspace-title">{{ p.name }}</h1>
-        <!-- The state alone. No health tag: متعثرة and تم تأجيلها have no data behind them (D-044 §7). -->
-        <kaff-status-pill [tone]="pill[p.status].tone" [icon]="pill[p.status].icon" testId="workspace-status">
-          {{ i18n.t(projectWorkspaceStatusKey(p.status)) }}
-        </kaff-status-pill>
+  <kaff-project-frame [projectId]="projectId()" [current]="current()" (loaded)="onLoaded($event)" (failed)="onFailed($event)">
+    @if (failure(); as key) {
+      <kaff-state mode="refusal" [bodyKey]="key" testId="workspace-failure" />
+      <div>
+        <kaff-button variant="secondary" testId="workspace-retry" (clicked)="retry()">
+          {{ i18n.t('extract.retry') }}
+        </kaff-button>
       </div>
-      <p class="meta">
-        <span class="client" dir="auto" data-testid="workspace-client">{{ p.clientName }}</span>
-        <kaff-badge tone="accent" testId="workspace-type">{{ i18n.t(contractTypeKey(p.contractType)) }}</kaff-badge>
-        <!-- The code is a lookup key: last and small, after the client and the type (review D5). -->
-        <bdi class="code" dir="ltr" translate="no" data-testid="workspace-code">{{ p.code }}</bdi>
-      </p>
-    </header>
-
-    @if (p.isArchived) {
-      <section class="where" aria-live="polite" data-testid="workspace-archived">
-        <kaff-icon name="info" />
-        <div class="where-body">
-          <p class="where-line">{{ i18n.t('projects.archived.line') }}</p>
-          <p class="where-sub">{{ i18n.t('projects.archived.next') }}</p>
-          @if (canManage()) {
-            <div class="where-act">
-              <kaff-button variant="secondary" testId="workspace-reopen" [busy]="lifecycleBusy()" (clicked)="reopen()">
-                {{ i18n.t('projects.archived.reopen') }}
-              </kaff-button>
-            </div>
+    } @else if (project(); as p) {
+      @if (isTeam()) {
+        <div data-testid="workspace-team">
+          @switch (team().state) {
+            @case ('loading') {
+              <kaff-state mode="loading" titleKey="projects.workspace.loading" testId="workspace-team-loading" />
+            }
+            @case ('failed') {
+              <kaff-banner tone="refusal" testId="workspace-team-failed">
+                {{ i18n.t('projects.frame.team_failed') }}
+                <kaff-button bannerActions variant="secondary" testId="workspace-team-retry" (clicked)="loadTeam()">
+                  {{ i18n.t('extract.retry') }}
+                </kaff-button>
+              </kaff-banner>
+            }
+            @case ('ok') {
+              @if (teamRows(); as rows) {
+                @if (rows.length === 0) {
+                  <p class="none" data-testid="workspace-team-none">
+                    <kaff-icon name="info" [small]="true" /><span>{{ i18n.t('projects.workspace.team_none') }}</span>
+                  </p>
+                } @else {
+                  <ul class="lst" data-testid="workspace-team-list">
+                    @for (member of rows; track member.userId) {
+                      <li [attr.data-testid]="'workspace-member-' + member.userId">
+                        <span class="pp"><span class="av" aria-hidden="true">{{ initial(member.fullName) }}</span><b dir="auto">{{ member.fullName }}</b></span>
+                        <span class="r">{{ i18n.t(roleLabelKey(member.role)) }}@if (member.level !== 'Standard') { · {{ i18n.t(levelLabelKey(member.level)) }} }</span>
+                      </li>
+                    }
+                  </ul>
+                }
+              }
+            }
           }
         </div>
-      </section>
-    } @else if (p.followUpEndsOn) {
-      <section class="where" data-testid="workspace-follow-up">
-        <kaff-icon name="info" />
-        <div class="where-body">
-          <p class="where-line">{{ i18n.t('projects.follow_up.line', { date: day(p.followUpEndsOn) }) }}</p>
-          <p class="where-sub">{{ i18n.t('projects.follow_up.next') }}</p>
-        </div>
-      </section>
-    }
-
-    @if (p.designProjectId || p.executionProjectId || canConvert()) {
+      } @else {
+        @if (p.designProjectId || p.executionProjectId || canConvert()) {
       <section class="where" data-testid="workspace-lineage">
         <kaff-icon name="info" />
         <div class="where-body">
@@ -201,319 +187,215 @@
       }
     </div>
 
-    @if (waiting(); as w) {
-      <section class="where" [class.mine]="w.viewerIsHolder" aria-live="polite" data-testid="workspace-waiting">
-        <kaff-icon name="info" />
-        <div class="where-body">
-          <p class="where-line" data-testid="workspace-waiting-line">
-            {{ i18n.t('projects.workspace.waiting.line', { number: w.number, step: i18n.t(w.stepKey), who: waitingWho() }) }}
-          </p>
-          @if (w.viewerIsHolder) {
-            <p class="where-sub" data-testid="workspace-waiting-you">
-              <kaff-badge tone="accent">{{ i18n.t('projects.workspace.waiting.you') }}</kaff-badge>
-            </p>
-          } @else if (holderNames()) {
-            <p class="where-sub" data-testid="workspace-waiting-holders">
-              {{ i18n.t('projects.workspace.waiting.holders', { names: holderNames() }) }}
-            </p>
-          }
-          @if (barredKey(); as why) {
-            <p class="where-sub" data-testid="workspace-extract-no-action">{{ i18n.t(why) }}</p>
-          } @else if (barredNames() && !w.viewerIsHolder) {
-            <p class="where-sub" data-testid="workspace-waiting-barred">
-              {{ i18n.t('projects.workspace.waiting.barred', { names: barredNames() }) }}
-            </p>
-          }
-        </div>
-      </section>
-    }
+        @if (p.isArchived) {
+          <kaff-banner tone="note" icon="info" testId="workspace-archived">
+            <b>{{ i18n.t('projects.frame.archived') }}</b>
+          </kaff-banner>
+        } @else if (p.followUpEndsOn) {
+          <kaff-banner tone="note" icon="info" testId="workspace-follow-up">
+            <b>{{ i18n.t('projects.follow_up.line', { date: day(p.followUpEndsOn) }) }}</b>
+          </kaff-banner>
+        }
 
-    <nav class="jump" [attr.aria-label]="i18n.t('projects.workspace.vocab.jump_label')" data-testid="workspace-jump">
-      @for (group of groups(); track group.id) {
-        <a [href]="'#g-' + group.id" (click)="jumpTo($event, group.id)" [attr.data-testid]="'workspace-jump-' + group.id">
-          <kaff-icon [name]="groupIcon[group.id]" [small]="true" />{{ i18n.t(groupTitleKey[group.id]) }}
-        </a>
-      }
-    </nav>
+        @if (waiting(); as w) {
+          <kaff-banner tone="note" icon="info" testId="workspace-waiting">
+            <span data-testid="workspace-waiting-line">
+              @if (w.viewerIsHolder) {
+                {{ i18n.t('projects.frame.waiting.mine', { number: w.number, step: i18n.t(w.stepKey) }) }}
+              } @else {
+                {{ i18n.t('projects.frame.waiting.line', { number: w.number, step: i18n.t(w.stepKey), who: waitingWho() }) }}
+              }
+            </span>
+          </kaff-banner>
+        }
 
-    @for (group of groups(); track group.id) {
-      <kaff-group-section
-        [id]="group.id"
-        [icon]="groupIcon[group.id]"
-        [title]="i18n.t(groupTitleKey[group.id])"
-        [intent]="i18n.t(intentKey(group.id))"
-        [testId]="'workspace-group-' + group.id"
-      >
-        @for (part of group.parts; track part) {
-          @switch (part) {
-            @case ('progress') {
-              @let view = progressView();
-              @if (view.kind === 'loading') {
-                <kaff-state mode="loading" titleKey="projects.workspace.loading" testId="workspace-progress-loading" />
-              } @else if (view.kind === 'failed') {
-                <kaff-banner tone="refusal" testId="workspace-progress-failed">
-                  {{ i18n.t('projects.workspace.group_failed') }}
-                  <kaff-button bannerActions variant="secondary" testId="workspace-progress-retry" (clicked)="loadProgress()">
-                    {{ i18n.t('extract.retry') }}
-                  </kaff-button>
-                </kaff-banner>
-              } @else if (view.kind === 'unavailable') {
-                <p class="none" data-testid="workspace-progress-unavailable">
-                  <kaff-icon name="info" [small]="true" /><span>{{ i18n.t('projects.workspace.progress.unavailable') }}</span>
-                </p>
-              } @else if (view.kind === 'money') {
-                <!-- Cost Plus: spec.md 5.2, cost to date plus supervision, no percentage bar. Never a bar. -->
-                <div data-testid="workspace-progress-money">
-                  <kaff-fact-list>
-                    @if (view.costToDate !== null) {
-                      <kaff-fact [label]="i18n.t('projects.workspace.progress.cost_to_date')" testId="workspace-cost-to-date">
-                        <kaff-figure [value]="view.costToDate" />
+        @if (!p.isSigned || p.isArchived) {
+          <kaff-fact-list>
+            <kaff-fact [label]="i18n.t('projects.field.contract_value')" testId="workspace-fact-value">
+              @if (p.contractValue !== null) {
+                <kaff-figure [value]="p.contractValue" /> <span class="u">{{ i18n.t('catalogue.currency.affix') }}</span>
+              } @else {
+                <span class="nul" data-testid="workspace-value-null">
+                  <kaff-icon name="info" /><b>{{ i18n.t('projects.frame.value_unset') }}</b>
+                </span>
+              }
+            </kaff-fact>
+          </kaff-fact-list>
+        } @else {
+          @let view = progressView();
+          @if (p.contractType === 'CostPlus') {
+            @if (view.kind === 'money') {
+              <kaff-fact-list data-testid="workspace-progress-money">
+                @if (view.costToDate !== null) {
+                  <kaff-fact [label]="i18n.t('projects.workspace.progress.cost_to_date')" testId="workspace-cost-to-date">
+                    <kaff-figure [value]="view.costToDate" />
+                  </kaff-fact>
+                }
+                @if (view.supervisionToDate !== null) {
+                  <kaff-fact [label]="i18n.t('projects.workspace.progress.supervision_to_date')" testId="workspace-supervision-to-date">
+                    <kaff-figure [value]="view.supervisionToDate" />
+                  </kaff-fact>
+                }
+              </kaff-fact-list>
+            }
+          } @else if (p.contractType === 'Design') {
+            <kaff-fact-list>
+              <kaff-fact [label]="i18n.t('projects.field.contract_value')" testId="workspace-fact-value">
+                @if (p.contractValue !== null) {
+                  <kaff-figure [value]="p.contractValue" /> <span class="u">{{ i18n.t('catalogue.currency.affix') }}</span>
+                } @else {
+                  <b>{{ i18n.t('projects.frame.value_unset') }}</b>
+                }
+              </kaff-fact>
+            </kaff-fact-list>
+          }
+          @if (view.kind === 'failed') {
+            <kaff-banner tone="refusal" testId="workspace-progress-failed">
+              {{ i18n.t('projects.frame.progress_failed') }}
+              <kaff-button bannerActions variant="secondary" testId="workspace-progress-retry" (clicked)="loadProgress()">
+                {{ i18n.t('extract.retry') }}
+              </kaff-button>
+            </kaff-banner>
+          } @else if (view.kind === 'loading') {
+            <kaff-state mode="loading" titleKey="projects.workspace.loading" testId="workspace-progress-loading" />
+          } @else if (view.kind === 'bar') {
+            <div class="hero" data-testid="workspace-progress">
+              <div class="top">
+                <bdi dir="ltr" class="num" data-testid="workspace-progress-pct">{{ i18n.formatNumber(view.percentText) }}%</bdi>
+                <b>{{ i18n.t('projects.workspace.progress.done') }}</b>
+              </div>
+              <div
+                class="trk"
+                role="progressbar"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                [attr.aria-valuenow]="view.percent"
+                [attr.aria-label]="i18n.t('projects.workspace.progress.done')"
+                data-testid="workspace-progress-bar"
+              >
+                <i [style.inline-size.%]="view.percent"></i>
+              </div>
+              @if (money(); as m) {
+                <dl data-testid="workspace-hero-figures">
+                  @if (p.contractValue !== null) {
+                    <div>
+                      <dt>{{ i18n.t('projects.field.contract_value') }}</dt>
+                      <dd><kaff-figure [value]="p.contractValue" /> <span class="u">{{ i18n.t('catalogue.currency.affix') }}</span></dd>
+                    </div>
+                  }
+                  @if (executedValue(); as executed) {
+                    <div>
+                      <dt>{{ i18n.t('projects.frame.hero.site') }}</dt>
+                      <dd data-testid="workspace-executed"><kaff-figure [value]="executed" /></dd>
+                    </div>
+                  }
+                  <div>
+                    <dt>{{ i18n.t('projects.frame.hero.certified') }}</dt>
+                    <dd data-testid="workspace-pay-certified"><kaff-figure [value]="m.certifiedToDate" /></dd>
+                  </div>
+                </dl>
+              }
+            </div>
+            @if (babs().length > 0) {
+              <h2 class="sec">{{ i18n.t('projects.frame.babs') }}</h2>
+              <ul class="lst" data-testid="workspace-babs">
+                @for (bab of babs(); track bab.code) {
+                  <li [attr.data-testid]="'workspace-bab-' + bab.code">
+                    <b dir="auto">{{ bab.name }}</b>
+                    <span class="r">
+                      @switch (bab.status) {
+                        @case ('finished') {
+                          <kaff-status-pill tone="same" icon="check">{{ i18n.t('status.kaff.finished') }}</kaff-status-pill>
+                        }
+                        @case ('running') {
+                          <kaff-status-pill tone="new" icon="check">{{ i18n.t('status.kaff.in_progress') }}</kaff-status-pill>
+                        }
+                        @default {
+                          <kaff-status-pill tone="same" icon="file">{{ i18n.t('status.kaff.not_started') }}</kaff-status-pill>
+                        }
+                      }
+                    </span>
+                    @if (bab.percent !== null && bab.percentText !== null) {
+                      <div class="bd">
+                        <div class="trk sm" role="progressbar" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="bab.percent" [attr.aria-label]="bab.name">
+                          <i [style.inline-size.%]="bab.percent"></i>
+                        </div>
+                        <bdi dir="ltr" class="num">{{ i18n.formatNumber(bab.percentText) }}%</bdi>
+                      </div>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+            @if (money(); as m) {
+              <kaff-fact-list data-testid="workspace-money">
+                <kaff-fact [label]="i18n.t('projects.frame.money.billed')" testId="workspace-pay-billed">
+                  <kaff-figure [value]="m.billedToDate" /> <span class="u">{{ i18n.t('catalogue.currency.affix') }}</span>
+                </kaff-fact>
+                <kaff-fact [label]="i18n.t('projects.workspace.pay.collected')" testId="workspace-pay-collected"><kaff-figure [value]="m.collectedToDate" /></kaff-fact>
+                <kaff-fact [label]="i18n.t('projects.workspace.pay.outstanding')" testId="workspace-pay-outstanding"><kaff-figure [value]="m.outstanding" /></kaff-fact>
+              </kaff-fact-list>
+              @if (p.holdRate !== null || p.advanceRate !== null || p.signedOn || p.startedOn) {
+                <button
+                  type="button"
+                  class="disc"
+                  [attr.aria-expanded]="termsOpen()"
+                  aria-controls="contract-terms"
+                  data-testid="workspace-terms"
+                  (click)="termsOpen.set(!termsOpen())"
+                >
+                  {{ i18n.t('projects.frame.terms') }}<kaff-icon name="chev" [small]="true" />
+                </button>
+                @if (termsOpen()) {
+                  <kaff-fact-list id="contract-terms">
+                    @if (p.holdRate !== null) {
+                      <kaff-fact [label]="i18n.t('projects.workspace.vocab.fact.hold_rate')" testId="workspace-fact-hold">
+                        <bdi dir="ltr" class="num">{{ rate(p.holdRate) }}</bdi>
                       </kaff-fact>
                     }
-                    @if (view.supervisionToDate !== null) {
-                      <kaff-fact [label]="i18n.t('projects.workspace.progress.supervision_to_date')" testId="workspace-supervision-to-date">
-                        <kaff-figure [value]="view.supervisionToDate" />
+                    @if (p.advanceRate !== null) {
+                      <kaff-fact [label]="i18n.t('projects.workspace.vocab.fact.advance_rate')" testId="workspace-fact-advance">
+                        <bdi dir="ltr" class="num">{{ rate(p.advanceRate) }}</bdi>
                       </kaff-fact>
+                    }
+                    @if (p.signedOn) {
+                      <kaff-fact [label]="i18n.t('projects.workspace.date.signed')" testId="workspace-fact-signed">{{ day(p.signedOn) }}</kaff-fact>
+                    }
+                    @if (p.startedOn) {
+                      <kaff-fact [label]="i18n.t('projects.workspace.date.started')" testId="workspace-fact-started">{{ day(p.startedOn) }}</kaff-fact>
                     }
                   </kaff-fact-list>
-                  <p class="none"><kaff-icon name="info" [small]="true" /><span>{{ i18n.t('projects.workspace.progress.cost_plus_note') }}</span></p>
-                </div>
-              } @else if (view.kind === 'bar') {
-                <div class="prog" data-testid="workspace-progress">
-                  <div class="prog-head">
-                    <span>{{ i18n.t('projects.workspace.progress.done') }}</span>
-                    <bdi dir="ltr" class="num prog-pct" data-testid="workspace-progress-pct">{{ i18n.formatNumber(view.percentText) }}%</bdi>
-                  </div>
-                  <!-- Fills from the inline start: the right edge under RTL, the way an Arabic reader counts. -->
-                  <div
-                    class="bar"
-                    role="progressbar"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    [attr.aria-valuenow]="view.percent"
-                    [attr.aria-label]="i18n.t('projects.workspace.progress.done')"
-                    data-testid="workspace-progress-bar"
-                  >
-                    <span class="fill" [style.inline-size.%]="view.percent"></span>
-                  </div>
-                  @if (view.executedValue !== null && view.contractValue !== null) {
-                    <p class="prog-money" data-testid="workspace-progress-money-line">
-                      {{ i18n.t('projects.workspace.progress.executed_of') }}
-                      <kaff-figure [value]="view.executedValue" /> / <kaff-figure [value]="view.contractValue" />
-                    </p>
-                  }
-                  @if (view.babs.length > 0) {
-                    <p class="active-bab" data-testid="workspace-active-bab">
-                      @if (activeBabs().length === 0) {
-                        {{ i18n.t('projects.workspace.progress.no_active_bab') }}
-                      } @else {
-                        <b>{{ i18n.t(activeBabs().length === 1 ? 'projects.workspace.progress.active_bab' : 'projects.workspace.progress.active_babs') }}</b>
-                        <span dir="auto">{{ activeBabNames() }}</span>
-                      }
-                    </p>
-                    <ol class="babs" data-testid="workspace-babs">
-                      @for (bab of view.babs; track bab.code) {
-                        <li class="bab" [class.on]="bab.isActive" [attr.data-testid]="'workspace-bab-' + bab.code">
-                          <span class="bab-name" dir="auto">{{ bab.name }}</span>
-                          @if (bab.isActive) {
-                            <kaff-badge tone="accent">{{ i18n.t('status.kaff.in_progress') }}</kaff-badge>
-                          }
-                          @if (bab.percent !== null && bab.percentText !== null) {
-                            <bdi dir="ltr" class="num bab-pct">{{ i18n.formatNumber(bab.percentText) }}%</bdi>
-                            <span class="bar sm" aria-hidden="true"><span class="fill" [style.inline-size.%]="bab.percent"></span></span>
-                          }
-                        </li>
-                      }
-                    </ol>
-                  }
-                </div>
+                }
               }
             }
-            @case ('facts') {
-              <kaff-fact-list>
-                <kaff-fact [label]="i18n.t('projects.field.contract_value')" testId="workspace-fact-value">
-                  @if (p.contractValue !== null) {
-                    <kaff-figure [value]="p.contractValue" />
-                  } @else {
-                    <!-- The null variant: a reason, never 0.00 and never a dash. -->
-                    <span class="nul" data-testid="workspace-value-null">
-                      <kaff-icon name="info" />
-                      <span>
-                        <b>{{ i18n.t('projects.workspace.value_null.title') }}</b>
-                        <small>{{ i18n.t('projects.workspace.value_null.body') }}</small>
-                      </span>
+          }
+          @if (p.tabs.dailyLog && p.contractType !== 'Design') {
+            <kaff-fact-list>
+              <kaff-fact [label]="i18n.t('projects.workspace.site.last_log')" testId="workspace-last-log">
+                @if (p.lastDailyLogOn) {
+                  {{ day(p.lastDailyLogOn) }}
+                } @else {
+                  <b>{{ i18n.t('projects.frame.log.none') }}</b>
+                }
+                <span tags>
+                  @if (p.lastDailyLogOn) {
+                    <span class="tag" [class.q]="!p.loggedToday" data-testid="workspace-logged-today">
+                      <kaff-icon [name]="p.loggedToday ? 'check' : 'info'" [small]="true" />{{ i18n.t(p.loggedToday ? 'projects.frame.log.today' : 'projects.frame.log.not_today') }}
                     </span>
                   }
-                </kaff-fact>
-                @if (p.signedOn) {
-                  <kaff-fact [label]="i18n.t('projects.workspace.date.signed')" testId="workspace-fact-signed">
-                    {{ day(p.signedOn) }}
-                  </kaff-fact>
-                }
-                @if (p.startedOn) {
-                  <kaff-fact [label]="i18n.t('projects.workspace.date.started')" testId="workspace-fact-started">
-                    {{ day(p.startedOn) }}
-                  </kaff-fact>
-                }
-                @if (p.holdRate !== null) {
-                  <kaff-fact [label]="i18n.t('projects.workspace.vocab.fact.hold_rate')" testId="workspace-fact-hold">
-                    <bdi dir="ltr" class="num">{{ rate(p.holdRate) }}</bdi>
-                  </kaff-fact>
-                }
-                @if (p.advanceRate !== null) {
-                  <kaff-fact [label]="i18n.t('projects.workspace.vocab.fact.advance_rate')" testId="workspace-fact-advance">
-                    <bdi dir="ltr" class="num">{{ rate(p.advanceRate) }}</bdi>
-                  </kaff-fact>
-                }
-              </kaff-fact-list>
-            }
-            @case ('boq') {
-              @if (boq(); as read) {
-                @if (read.state === 'loading') {
-                  <kaff-state mode="loading" titleKey="boq.loading" testId="workspace-boq-loading" />
-                }
-                @if (read.state === 'none') {
-                  <kaff-state mode="empty" titleKey="projects.workspace.boq_none" testId="workspace-boq-none" />
-                }
-                @if (read.state === 'failed') {
-                  <kaff-banner tone="refusal" testId="workspace-boq-failed">
-                    {{ i18n.t('projects.workspace.group_failed') }}
-                    <kaff-button bannerActions variant="secondary" testId="workspace-boq-retry" (clicked)="loadBoq()">
-                      {{ i18n.t('extract.retry') }}
-                    </kaff-button>
-                  </kaff-banner>
-                }
-                @if (read.state === 'ok') {
-                  <kaff-fact-list>
-                    <kaff-fact [label]="i18n.t('projects.workspace.vocab.fact.boq_lines')" testId="workspace-boq-lines">
-                      <bdi dir="ltr" class="num">{{ i18n.formatNumber(read.data.lines.length) }}</bdi>
-                    </kaff-fact>
-                    <kaff-fact [label]="i18n.t('projects.workspace.vocab.fact.boq_total')" testId="workspace-boq-total">
-                      @if (read.data.total !== null) {
-                        <kaff-figure [value]="read.data.total" />
-                      } @else {
-                        <span class="muted">{{ i18n.t('projects.workspace.boq_total_pending') }}</span>
-                      }
-                    </kaff-fact>
-                    <kaff-fact [label]="i18n.t('projects.field.status')">
-                      <kaff-badge [tone]="read.data.frozenOn ? 'accent' : 'brand'">
-                        {{ read.data.frozenOn ? i18n.t('boq.frozen_on', { date: day(read.data.frozenOn) }) : i18n.t('boq.not_frozen') }}
-                      </kaff-badge>
-                    </kaff-fact>
-                  </kaff-fact-list>
-                }
-              }
-              <kaff-part-link [link]="['/projects', p.id, 'boq']" [label]="i18n.t('boq.title')" testId="workspace-link-boq" />
-            }
-            @case ('site') {
-              <kaff-fact-list>
-                <kaff-fact [label]="i18n.t('projects.workspace.site.last_log')" testId="workspace-last-log">
-                  @if (p.lastDailyLogOn) {
-                    {{ day(p.lastDailyLogOn) }}
-                  } @else {
-                    <span class="muted">{{ i18n.t('projects.workspace.site.no_log') }}</span>
-                  }
-                </kaff-fact>
-                @if (hasBabs()) {
-                  <kaff-fact [label]="i18n.t('projects.workspace.site.active_bab')" testId="workspace-site-active-bab">
-                    @if (activeBabs().length > 0) {
-                      <span dir="auto">{{ activeBabNames() }}</span>
-                    } @else {
-                      <span class="muted">{{ i18n.t('projects.workspace.progress.no_active_bab') }}</span>
-                    }
-                  </kaff-fact>
-                }
-              </kaff-fact-list>
-            }
-            @case ('dailyLog') {
-              <kaff-part-link [link]="['/projects', p.id, 'daily-log']" [label]="i18n.t('daily_log.title')" testId="workspace-link-daily-log" />
-            }
-            @case ('dayLabour') {
-              <kaff-part-link [link]="['/projects', p.id, 'day-labour']" [label]="i18n.t('hr.worker.pool_title')" testId="workspace-link-day-labour" />
-            }
-            @case ('extractsSite') {
-              <kaff-part-link [link]="['/projects', p.id, 'extracts']" [label]="i18n.t('extract.list.title')" testId="workspace-link-extracts-site" />
-            }
-            @case ('extracts') {
-              @if (extracts(); as read) {
-                @if (read.state === 'loading') {
-                  <kaff-state mode="loading" titleKey="extract.loading" testId="workspace-extracts-loading" />
-                }
-                @if (read.state === 'failed') {
-                  <kaff-banner tone="refusal" testId="workspace-extracts-failed">
-                    {{ i18n.t('projects.workspace.group_failed') }}
-                    <kaff-button bannerActions variant="secondary" testId="workspace-extracts-retry" (clicked)="loadExtracts()">
-                      {{ i18n.t('extract.retry') }}
-                    </kaff-button>
-                  </kaff-banner>
-                }
-                @if (read.state === 'ok') {
-                  <kaff-fact-list>
-                    <kaff-fact [label]="i18n.t('projects.workspace.vocab.fact.extracts_count')" testId="workspace-extracts-count">
-                      <bdi dir="ltr" class="num">{{ i18n.formatNumber(read.data.length) }}</bdi>
-                    </kaff-fact>
-                    @if (latestExtract(); as last) {
-                      <kaff-fact [label]="i18n.t('projects.workspace.vocab.fact.extracts_latest')" testId="workspace-extracts-latest">
-                        <kaff-badge tone="brand">{{ i18n.t('extract.status.' + last.status) }}</kaff-badge>
-                      </kaff-fact>
-                    }
-                  </kaff-fact-list>
-                }
-              }
-              @if (p.money; as m) {
-                <kaff-fact-list>
-                  <kaff-fact [label]="i18n.t('projects.workspace.pay.certified')" testId="workspace-pay-certified"><kaff-figure [value]="m.certifiedToDate" /></kaff-fact>
-                  <kaff-fact [label]="i18n.t('projects.workspace.pay.billed')" testId="workspace-pay-billed"><kaff-figure [value]="m.billedToDate" /></kaff-fact>
-                  <kaff-fact [label]="i18n.t('projects.workspace.pay.collected')" testId="workspace-pay-collected"><kaff-figure [value]="m.collectedToDate" /></kaff-fact>
-                  <kaff-fact [label]="i18n.t('projects.workspace.pay.outstanding')" testId="workspace-pay-outstanding"><kaff-figure [value]="m.outstanding" /></kaff-fact>
-                </kaff-fact-list>
-              }
-              <kaff-part-link [link]="['/projects', p.id, 'extracts']" [label]="i18n.t('extract.list.title')" testId="workspace-link-extracts" />
-            }
-            @case ('proof') {
-              <kaff-part-link [link]="['/projects', p.id, 'proof']" [label]="i18n.t('proof.title')" testId="workspace-link-proof" />
-            }
-            @case ('closure') {
-              <kaff-part-link [link]="['/projects', p.id, 'closure']" [label]="i18n.t('closure.title')" testId="workspace-link-closure" />
-            }
-            @case ('team') {
-              <div data-testid="workspace-team">
-                @if (team(); as read) {
-                  @if (read.state === 'loading') {
-                    <kaff-state mode="loading" titleKey="projects.workspace.loading" testId="workspace-team-loading" />
-                  }
-                  @if (read.state === 'failed') {
-                    <kaff-banner tone="refusal" testId="workspace-team-failed">
-                      {{ i18n.t('projects.workspace.group_failed') }}
-                      <kaff-button bannerActions variant="secondary" testId="workspace-team-retry" (clicked)="loadTeam()">
-                        {{ i18n.t('extract.retry') }}
-                      </kaff-button>
-                    </kaff-banner>
-                  }
-                  @if (read.state === 'ok') {
-                    @if (read.data.length === 0) {
-                      <p class="none" data-testid="workspace-team-none">
-                        <kaff-icon name="info" [small]="true" /><span>{{ i18n.t('projects.workspace.team_none') }}</span>
-                      </p>
-                    } @else {
-                      <kaff-fact-list>
-                        @for (member of read.data; track member.userId) {
-                          <kaff-fact [label]="member.fullName" [testId]="'workspace-member-' + member.userId">
-                            {{ i18n.t(roleLabelKey(member.role)) }}@if (member.level !== 'Standard') {
-                              ·
-                              {{ i18n.t(levelLabelKey(member.level)) }}
-                            }
-                          </kaff-fact>
-                        }
-                      </kaff-fact-list>
-                    }
-                  }
-                }
-              </div>
-            }
+                </span>
+              </kaff-fact>
+            </kaff-fact-list>
           }
         }
-      </kaff-group-section>
+      }
+    } @else {
+      <div aria-busy="true" role="status">
+        <span class="sr-only">{{ i18n.t('projects.workspace.loading') }}</span>
+        <span class="sk blk hero-sk"></span>
+        <span class="sk blk"></span>
+        <span class="sk blk"></span>
+      </div>
     }
-  }
+  </kaff-project-frame>
 </section>
