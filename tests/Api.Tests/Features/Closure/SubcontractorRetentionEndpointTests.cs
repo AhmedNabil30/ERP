@@ -289,7 +289,7 @@ public sealed class SubcontractorRetentionEndpointTests : IAsyncLifetime
         Subcontractor subcontractor = Subcontractor.Create(UniqueNames.Code("RT-SUB"), "مقاول احتجاز", UniqueNames.Phone(), Now).Value;
         context.Subcontractors.Add(subcontractor);
 
-        Project project = Project.Create(UniqueNames.Code("RT-P"), "مشروع احتجاز", _clientId, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
+        Project project = Project.Create(UniqueNames.Code("RT-P"), UniqueNames.Code("مشروع احتجاز"), _clientId, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
         project.SetLumpSumTerms(
             Percentage.FromPercent(25m), Percentage.FromPercent(20m), Percentage.FromPercent(25m),
             Percentage.FromPercent(75m), delayPenaltyEnabled: false).IsSuccess.Should().BeTrue();

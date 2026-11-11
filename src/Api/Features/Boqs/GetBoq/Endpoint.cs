@@ -16,7 +16,7 @@ public sealed class Endpoint : IEndpoint
         ArgumentNullException.ThrowIfNull(app);
 
         app.MapGet(Route, Handler.HandleAsync)
-            .RequirePermission(Permission.ProjectManage, ProjectScope.FromRoute())
+            .RequirePermission(Permission.BoqRead, ProjectScope.FromRoute())
             .WithName("GetBoq")
             .WithTags("Boqs");
     }

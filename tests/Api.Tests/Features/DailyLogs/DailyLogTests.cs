@@ -683,7 +683,7 @@ public sealed partial class DailyLogTests : IAsyncLifetime
 
         await using (KaffDbContext context = _database.CreateContext())
         {
-            Project created = Project.Create(UniqueNames.Code("DL-P"), "مشروع اليومية", _clientId, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
+            Project created = Project.Create(UniqueNames.Code("DL-P"), UniqueNames.Code("مشروع اليومية"), _clientId, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
             created.SetLumpSumTerms(
                 Percentage.FromPercent(25m), Percentage.FromPercent(20m), Percentage.FromPercent(25m),
                 Percentage.FromPercent(75m), delayPenaltyEnabled: false).IsSuccess.Should().BeTrue();

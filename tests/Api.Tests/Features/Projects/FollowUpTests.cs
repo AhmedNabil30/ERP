@@ -175,7 +175,7 @@ public sealed class FollowUpTests : IAsyncLifetime
     {
         await using KaffDbContext context = _database.CreateContext();
 
-        Project project = Project.Create(UniqueNames.Code("FU-P"), "مشروع المتابعة", _clientId, ContractType.LumpSum, _clock.GetUtcNow()).Value;
+        Project project = Project.Create(UniqueNames.Code("FU-P"), UniqueNames.Code("مشروع المتابعة"), _clientId, ContractType.LumpSum, _clock.GetUtcNow()).Value;
         project.SetLumpSumTerms(
             Percentage.FromPercent(25m), Percentage.FromPercent(20m), Percentage.FromPercent(25m),
             Percentage.FromPercent(75m), delayPenaltyEnabled: false).IsSuccess.Should().BeTrue();

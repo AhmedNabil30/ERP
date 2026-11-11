@@ -489,4 +489,22 @@ public enum Permission
     /// <see cref="CatalogueManage"/>. A base holds no rate. KAFF-418.
     /// </summary>
     BoqBaseManage = 91,
+
+    /// <summary>
+    /// D-218 items 5, 6 - read the project's BOQ. The owner, the Technical Office and the supervising site engineer. The junior
+    /// site engineer has no BOQ tab and the server refuses the route. Editing stays <see cref="ProjectManage"/>. Money-free.
+    /// </summary>
+    BoqRead = 92,
+
+    /// <summary>
+    /// D-217 item 37, D-218 item 5 - read a project's extracts. Every <see cref="ProjectRead"/> holder except the junior site
+    /// engineer and the Head of Design. Money-free: the extract body keeps its own money rule.
+    /// </summary>
+    ExtractRead = 93,
+
+    /// <summary>
+    /// D-217 item 37, D-218 item 6 - see the project's claimed, collected and remaining figures and its progress values. The
+    /// owner, Finance, the Technical Office and the supervising site engineer (Karim to confirm the last).
+    /// </summary>
+    ProjectMoneyRead = 94,
 }

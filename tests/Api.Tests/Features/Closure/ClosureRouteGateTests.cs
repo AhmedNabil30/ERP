@@ -416,7 +416,7 @@ public sealed class ClosureRouteGateTests : IAsyncLifetime
     private async Task<Guid> NewProjectAsync()
     {
         await using KaffDbContext context = _database.CreateContext();
-        Project project = Project.Create(UniqueNames.Code("GT-P"), "مشروع بوابة", _clientId, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
+        Project project = Project.Create(UniqueNames.Code("GT-P"), UniqueNames.Code("مشروع بوابة"), _clientId, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
         project.SetLumpSumTerms(
             Percentage.FromPercent(25m), Percentage.FromPercent(20m), Percentage.FromPercent(25m),
             Percentage.FromPercent(75m), delayPenaltyEnabled: false).IsSuccess.Should().BeTrue();

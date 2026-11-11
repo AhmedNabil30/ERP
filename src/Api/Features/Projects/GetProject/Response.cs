@@ -78,12 +78,16 @@ public sealed record Response(
     DateOnly? WarrantyEndsOn,
     DateOnly? ClosedOn,
     DateOnly? LastDailyLogOn,
-    ProjectMoney? Money,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] ProjectMoney? Money,
     bool IsArchived,
     DateOnly? FollowUpEndsOn,
     Guid? DesignProjectId,
     Guid? ExecutionProjectId,
-    decimal? DesignAreaSquareMetres);
+    decimal? DesignAreaSquareMetres,
+    ProjectStage Stage,
+    bool IsSigned,
+    bool LoggedToday,
+    ProjectTabs Tabs);
 
 /// <summary>
 /// What the client has been billed, paid and still owes. Only extracts issued to the client count; an extract still

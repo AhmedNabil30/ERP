@@ -44,6 +44,17 @@ public static class ProjectErrors
     public static readonly Error ClientRequired =
         Error.Validation("project.client_required", "errors.project.client_required");
 
+    /// <summary>KAFF-419, D-217 item 34: a create request named no contract type. There is no default.</summary>
+    public static readonly Error ContractTypeRequired =
+        Error.Validation("project.contract_type_required", "errors.project.contract_type_required");
+
+    /// <summary>
+    /// KAFF-419, D-217 item 34: the client already has a project of this name. Compared trimmed and case-insensitively; every
+    /// project of the client counts, archived or not.
+    /// </summary>
+    public static readonly Error NameTakenForClient =
+        Error.Conflict("project.name_taken_for_client", "errors.project.name_taken_for_client");
+
     /// <summary>KAFF-400: a rate percentage below zero. <c>Percentage.FromPercent</c> throws rather than refusing.</summary>
     public static readonly Error RateMustNotBeNegative =
         Error.Validation("project.rate_must_not_be_negative", "errors.project.rate_must_not_be_negative");

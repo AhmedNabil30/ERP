@@ -25,7 +25,7 @@ public sealed class Validator : IRequestValidator<Request>
 
         if (!Enum.IsDefined(request.ContractType))
         {
-            return ValueTask.FromResult(Result.Failure(ProjectErrors.TermsDoNotMatchContractType));
+            return ValueTask.FromResult(Result.Failure(ProjectErrors.ContractTypeRequired));
         }
 
         if (request.ClientId == Guid.Empty)

@@ -470,6 +470,8 @@
   "errors.project.execution_type_not_allowed": "Choose the execution contract type: Lump Sum or Cost Plus.",
   "errors.project.not_found": "Project not found.",
   "errors.project.client_required": "A client is required.",
+  "errors.project.contract_type_required": "Choose a contract type.",
+  "errors.project.name_taken_for_client": "This client already has a project with this name.",
   "errors.project.rate_must_not_be_negative": "A rate must not be negative.",
   "errors.project.signing_terms_required": "Enter the hold percentage and the advance percentage before signing.",
   "errors.project.initial_status_not_supported": "A project can only start at Setup or Active.",

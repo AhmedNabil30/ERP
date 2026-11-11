@@ -170,6 +170,10 @@ public sealed record RulingSet
     public DesignConversionTargets DesignConversionTargets { get; init; } = DesignConversionTargets.Default;
 
     /// <summary>Every entry, each describing itself. A test pins that none is missing a question.</summary>
+    public FinanceStaffing FinanceStaffing { get; init; } = FinanceStaffing.Default;
+
+    public SupervisorSeesProjectMoney SupervisorSeesProjectMoney { get; init; } = SupervisorSeesProjectMoney.Default;
+
     public IReadOnlyList<RulingNote> Notes =>
     [
         MaterialAdvanceRecovery.Note,
@@ -227,5 +231,7 @@ public sealed record RulingSet
         DesignConversionCount.Note,
         DesignCreditApproval.Note,
         DesignConversionTargets.Note,
+        FinanceStaffing.Note,
+        SupervisorSeesProjectMoney.Note,
     ];
 }

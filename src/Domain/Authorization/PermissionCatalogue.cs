@@ -472,6 +472,16 @@ public static class PermissionCatalogue
             new(Permission.DailyLogCrewCorrect, PermissionScope.ProjectScoped, [owner, engineerJunior], "§8, §9 - D-217, D-218"),
             new(Permission.DailyLogReview, PermissionScope.ProjectScoped, [owner, engineerSupervisor], "§8, §9 - D-217, D-218"),
 
+            // KAFF-420. The project frame's tabs and the overview's money, decided by the server (D-217 item 37, D-218 items 5, 6).
+            // The junior site engineer holds none of the three. ExtractRead keeps every other ProjectRead holder except Head of
+            // Design, whose single-row set is pinned (CatalogueCompletenessTests).
+            new(Permission.BoqRead, PermissionScope.ProjectScoped, [owner, technicalOffice, engineerSupervisor], "§4, §9 - D-218 item 5"),
+            new(Permission.ExtractRead, PermissionScope.ProjectScoped,
+                [owner, finance, technicalOffice, marketing, engineerSupervisor], "§7, §9 - D-217 item 37"),
+            new(Permission.ProjectMoneyRead, PermissionScope.ProjectScoped,
+                [owner, finance, technicalOffice, engineerSupervisor], "§9 - D-218 item 6, Karim to confirm",
+                TouchesMoney: true),
+
             // ---- Gates ----
 
             // spec.md §9: "Technical Office gates quantities, never money."

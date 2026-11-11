@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Kaff.Api.Common.Results;
 using Kaff.Api.Features.Extracts;
+using Kaff.Domain.Authorization;
 using Kaff.Domain.Boqs;
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
@@ -69,7 +70,7 @@ internal static class Handler
             return ResultExtensions.Problem(reading.Error);
         }
 
-        bool seesMoney = await ExtractSupport.MaySeeMoneyAsync(authorization, user);
+        bool seesMoney = await CallerPermissions.HoldsAsync(authorization, user, Permission.ProjectMoneyRead);
         Money? certified = reading.Value.Kind == ProgressKind.Percentage && seesMoney
             ? await CertifiedToDateAsync(database, projectId, cancellationToken)
             : null;

@@ -196,6 +196,9 @@ public sealed class PermissionEvaluatorTests
             // does, and an empty grant list is not an exemption from the flag.
             Permission.TreasuryReadProject,
             Permission.TreasuryReadCompany,
+
+            // KAFF-420: the project overview's claimed, collected and remaining figures (D-218 item 6).
+            Permission.ProjectMoneyRead,
         ];
 
         // The list above is the expected set, written out rather than read from the flag — reading

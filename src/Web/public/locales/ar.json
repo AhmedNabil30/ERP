@@ -470,6 +470,8 @@
   "errors.project.execution_type_not_allowed": "اختر نوع عقد التنفيذ: مقاولة بالمقطوعية أو التكلفة زائد نسبة إشراف.",
   "errors.project.not_found": "المشروع غير موجود.",
   "errors.project.client_required": "العميل مطلوب.",
+  "errors.project.contract_type_required": "اختر نوع العقد.",
+  "errors.project.name_taken_for_client": "يوجد مشروع بهذا الاسم لهذا العميل",
   "errors.project.rate_must_not_be_negative": "يجب ألا تكون النسبة سالبة.",
   "errors.project.signing_terms_required": "اكتب نسبة المحجوز ونسبة الدفعة المقدمة قبل التوقيع.",
   "errors.project.initial_status_not_supported": "لا يمكن أن يبدأ المشروع إلا بحالة لم تبدأ أو جاري العمل.",

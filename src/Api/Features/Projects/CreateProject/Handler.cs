@@ -1,12 +1,14 @@
 using Kaff.Api.Common.Results;
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
+using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
 using Kaff.Domain.Projects;
 using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Kaff.Api.Features.Projects.CreateProject;
 
@@ -42,12 +44,14 @@ internal static class Handler
     public static async Task<IResult> HandleAsync(
         Request request,
         KaffDbContext database,
+        ICurrentUser currentUser,
         TimeProvider clock,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(database);
         ArgumentNullException.ThrowIfNull(clock);
+        ArgumentNullException.ThrowIfNull(currentUser);
 
         bool clientExists = await database.Clients
             .AnyAsync(client => client.Id == request.ClientId, cancellationToken);
@@ -56,6 +60,20 @@ internal static class Handler
         {
             return ResultExtensions.Problem(MasterDataErrors.ClientNotFound);
         }
+
+        // KAFF-419, D-217 item 34: one name per client. Trimmed and case-insensitive, every project of the client counts. The
+        // unique index ux_projects_client_name is the enforcement; this check turns the ordinary case into a keyed 409.
+        string trimmedName = (request.Name ?? string.Empty).Trim();
+        string lowered = trimmedName.ToLowerInvariant();
+
+#pragma warning disable CA1304, CA1311, CA1862 // The comparison must run in PostgreSQL as lower(name) = @lowered, the expression ux_projects_client_name indexes. Only ToLower() translates; OrdinalIgnoreCase and ToLowerInvariant do not. The SQL lower() ignores the .NET culture.
+        if (trimmedName.Length > 0
+            && await database.Projects.AnyAsync(
+                other => other.ClientId == request.ClientId && other.Name.ToLower() == lowered, cancellationToken))
+        {
+            return ResultExtensions.Problem(ProjectErrors.NameTakenForClient);
+        }
+#pragma warning restore CA1304, CA1311, CA1862
 
         DateTimeOffset now = clock.GetUtcNow();
         DateOnly today = DateOnly.FromDateTime(now.UtcDateTime);
@@ -88,7 +106,37 @@ internal static class Handler
         database.Projects.Add(project);
         database.Accounts.AddRange(opened.Value.Accounts);
 
-        await database.SaveChangesAsync(cancellationToken);
+        // KAFF-419 AC-5, D-217 item 36 (FinanceStaffing ruling): Finance is staffed on every new project in the same save.
+        List<User> financeUsers = await database.Users
+            .Where(candidate => candidate.Role == Role.Finance && candidate.IsActive)
+            .ToListAsync(cancellationToken);
+
+        foreach (User finance in financeUsers)
+        {
+            Result<ProjectAssignment> staffed = ProjectAssignment.Create(
+                project.Id, finance, AssignmentLevel.Standard, currentUser.UserId ?? Guid.Empty, now);
+
+            if (staffed.IsFailure)
+            {
+                return ResultExtensions.Problem(staffed.Error);
+            }
+
+            database.ProjectAssignments.Add(staffed.Value);
+        }
+
+        try
+        {
+            await database.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: "ux_projects_client_name",
+        })
+        {
+            // Two requests passed the check above together; the loser gets the same refusal as everyone else.
+            return ResultExtensions.Problem(ProjectErrors.NameTakenForClient);
+        }
 
         return Microsoft.AspNetCore.Http.Results.Created(
             $"/api/projects/{project.Id}",

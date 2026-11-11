@@ -20,7 +20,7 @@ public sealed class Endpoint : IEndpoint
         ArgumentNullException.ThrowIfNull(app);
 
         app.MapGet(Route, Handler.HandleAsync)
-            .RequirePermission(Permission.ProjectRead, ProjectScope.FromRoute())
+            .RequirePermission(Permission.ExtractRead, ProjectScope.FromRoute())
             .WithName("GetWaitingOn")
             .WithTags("Extracts");
     }

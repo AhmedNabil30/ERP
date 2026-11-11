@@ -118,7 +118,7 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
             ["GET /api/projects/{projectId:guid}/extracts/{id:guid}/collection"] = Permission.ExtractCollect,
             ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/dispute"] = Permission.ExtractDisputeRaise,
             ["POST /api/projects/{projectId:guid}/extracts/{id:guid}/dispute-resolution"] = Permission.ExtractDisputeResolve,
-            ["GET /api/projects/{projectId:guid}/extracts"] = Permission.ProjectRead,
+            ["GET /api/projects/{projectId:guid}/extracts"] = Permission.ExtractRead,
             ["GET /api/projects/{projectId:guid}/extracts/{id:guid}"] = Permission.ProjectRead,
         };
 
@@ -1727,7 +1727,7 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         {
             ["GET /api/projects/{projectId:guid}/progress"] = Permission.ProjectRead,
             ["GET /api/projects/{projectId:guid}/team"] = Permission.ProjectRead,
-            ["GET /api/projects/{projectId:guid}/waiting-on"] = Permission.ProjectRead,
+            ["GET /api/projects/{projectId:guid}/waiting-on"] = Permission.ExtractRead,
         };
 
         Dictionary<string, PermissionRequirement> actual = [];
@@ -1809,7 +1809,7 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
     {
         Project project = await NewProjectAsync();
 
-        JsonElement siteEngineer = await GetJsonAsync(Progress(project.Id), _supervisor);
+        JsonElement siteEngineer = await GetJsonAsync(Progress(project.Id), _prepEngineer);
 
         ParseDecimal(siteEngineer.GetProperty("completion")).Should().Be(0.3m);
         foreach (string money in new[] { "executedValue", "contractValue", "certifiedToDate", "costToDate", "supervisionToDate" })
@@ -1818,6 +1818,11 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         }
 
         siteEngineer.GetProperty("babs")[0].TryGetProperty("executedValue", out _).Should().BeFalse();
+
+        // D-218 item 6 (Q-218-1, Karim to confirm): the supervising site engineer sees what the owner sees.
+        JsonElement supervisor = await GetJsonAsync(Progress(project.Id), _supervisor);
+        ParseDecimal(supervisor.GetProperty("executedValue")).Should().Be(300_000m);
+        ParseDecimal(supervisor.GetProperty("contractValue")).Should().Be(1_000_000m);
     }
 
     [Fact]
@@ -1838,7 +1843,7 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         Guid projectId;
         await using (KaffDbContext context = _database.CreateContext())
         {
-            Project costPlus = Project.Create(UniqueNames.Code("EX-CP"), "تكلفة وربح", _clientId, ContractType.CostPlus, DateTimeOffset.UtcNow).Value;
+            Project costPlus = Project.Create(UniqueNames.Code("EX-CP"), UniqueNames.Code("تكلفة وربح"), _clientId, ContractType.CostPlus, DateTimeOffset.UtcNow).Value;
             costPlus.SetCostPlusTerms(Percentage.FromPercent(10m)).IsSuccess.Should().BeTrue();
             context.Projects.Add(costPlus);
             await context.SaveChangesAsync(Ct);
@@ -1860,7 +1865,7 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         Guid projectId;
         await using (KaffDbContext context = _database.CreateContext())
         {
-            Project design = Project.Create(UniqueNames.Code("EX-DS"), "تصميم", _clientId, ContractType.Design, DateTimeOffset.UtcNow).Value;
+            Project design = Project.Create(UniqueNames.Code("EX-DS"), UniqueNames.Code("تصميم"), _clientId, ContractType.Design, DateTimeOffset.UtcNow).Value;
             context.Projects.Add(design);
             await context.SaveChangesAsync(Ct);
             projectId = design.Id;
@@ -1913,8 +1918,11 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         ParseDecimal(reversed.GetProperty("collectedToDate")).Should().Be(0m, "a reversal subtracts: the figure is summed from postings");
         ParseDecimal(reversed.GetProperty("outstanding")).Should().Be(240_000m);
 
+        (await GetJsonAsync($"/api/projects/{project.Id}", _prepEngineer)).TryGetProperty("money", out _)
+            .Should().BeFalse("the junior site engineer does not receive the money block");
+
         (await GetJsonAsync($"/api/projects/{project.Id}", _supervisor)).GetProperty("money").ValueKind
-            .Should().Be(JsonValueKind.Null, "a site engineer does not see project money");
+            .Should().Be(JsonValueKind.Object, "D-218 item 6: the supervising engineer sees project money");
     }
 
     [Fact]
@@ -2185,7 +2193,7 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
 
         await using (KaffDbContext context = _database.CreateContext())
         {
-            project = Project.Create(UniqueNames.Code("EX-P"), "مشروع مستخلص", clientId ?? _clientId, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
+            project = Project.Create(UniqueNames.Code("EX-P"), UniqueNames.Code("مشروع مستخلص"), clientId ?? _clientId, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
             project.SetWithholding(withholding, kind).IsSuccess.Should().BeTrue();
             project.SetLumpSumTerms(
                 Percentage.FromPercent(25m), Percentage.FromPercent(20m), Percentage.FromPercent(25m),

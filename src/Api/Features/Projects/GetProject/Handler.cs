@@ -4,6 +4,7 @@ using Kaff.Api.Features.ChangeOrders;
 using Kaff.Api.Features.Extracts;
 using Kaff.Domain.Extracts;
 using Kaff.Domain.Common;
+using Kaff.Domain.Authorization;
 using Kaff.Domain.Projects;
 using Kaff.Domain.Rulings;
 using Kaff.Infrastructure.Persistence;
@@ -64,6 +65,7 @@ internal static class Handler
         // The contract value is derived: the signed BOQ total plus the approved change orders (ChangeOrderDisplayedValue).
         Money approved = await ChangeOrderQueries.ApprovedTotalAsync(database, projectId, cancellationToken);
         Project candidateProject = found.Project;
+        DateOnly today = DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
         Response project = new(
             candidateProject.Id,
             candidateProject.Code,
@@ -86,17 +88,34 @@ internal static class Handler
             await database.DailyLogs.Where(log => log.ProjectId == projectId)
                 .Select(log => (DateOnly?)log.LogDate)
                 .MaxAsync(cancellationToken),
-            await ExtractSupport.MaySeeMoneyAsync(authorization, user)
+            await CallerPermissions.HoldsAsync(authorization, user, Permission.ProjectMoneyRead)
                 ? await MoneyAsync(database, projectId, cancellationToken)
                 : null,
             candidateProject.IsArchived(clock.GetUtcNow(), rulings.FollowUp),
             candidateProject.FollowUpEndsOn(rulings.FollowUp),
             candidateProject.LinkType == ProjectLinkType.DesignToExecution ? candidateProject.LinkedProjectId : null,
             found.ExecutionProjectId,
-            found.DesignAreaSquareMetres);
+            found.DesignAreaSquareMetres,
+            StageOf.Of(candidateProject),
+            candidateProject.IsSigned,
+            await database.DailyLogs.AnyAsync(log => log.ProjectId == projectId && log.LogDate == today, cancellationToken),
+            await TabsAsync(authorization, user));
 
         return Microsoft.AspNetCore.Http.Results.Ok(project);
     }
+
+    /// <summary>
+    /// Tabs follow the permission behind each route (D-218 items 5, 6): BOQ is <c>BoqRead</c>, extracts <c>ExtractRead</c>,
+    /// the daily log is <c>DailyLogWrite</c> (any assigned site engineer) or <c>DailyLogReview</c> (owner, supervising engineer).
+    /// The overview and the team are open to every <c>ProjectRead</c> holder, which is what reached this handler.
+    /// </summary>
+    private static async Task<ProjectTabs> TabsAsync(IAuthorizationService authorization, ClaimsPrincipal user) => new(
+        Overview: true,
+        Boq: await CallerPermissions.HoldsAsync(authorization, user, Permission.BoqRead),
+        DailyLog: await CallerPermissions.HoldsAsync(authorization, user, Permission.DailyLogWrite)
+            || await CallerPermissions.HoldsAsync(authorization, user, Permission.DailyLogReview),
+        Extracts: await CallerPermissions.HoldsAsync(authorization, user, Permission.ExtractRead),
+        Team: true);
 
     private static async Task<ProjectMoney> MoneyAsync(KaffDbContext database, Guid projectId, CancellationToken cancellationToken)
     {

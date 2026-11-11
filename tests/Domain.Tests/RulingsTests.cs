@@ -34,7 +34,7 @@ public sealed class RulingsTests
     public void Every_entry_is_assumed_until_the_business_has_ruled_and_the_seeded_names_are_present()
     {
         // Ruled by Nabil in D-217: the daily-log entry window and crew hours, and that a second quantity adds.
-        string[] ruled = ["DailyLogEntryRule", "DailyLogQuantityEntry"];
+        string[] ruled = ["DailyLogEntryRule", "DailyLogQuantityEntry", "SupervisorSeesProjectMoney"];
 
         _rulings.Notes.Where(note => !ruled.Contains(note.Name)).Should().OnlyContain(note => note.Status == RulingStatus.Assumed);
         _rulings.Notes.Where(note => ruled.Contains(note.Name)).Should().OnlyContain(note => note.Status == RulingStatus.Ruled);
