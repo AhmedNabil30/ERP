@@ -27,6 +27,7 @@ namespace Kaff.Api.Tests;
 public sealed class EngagementLifecycleTests : IAsyncLifetime
 {
     private readonly PostgresDatabase _database;
+    private readonly TestClock _clock = new();
     private KaffApiFactory _factory = null!;
     private HttpClient _client = null!;
 
@@ -46,7 +47,7 @@ public sealed class EngagementLifecycleTests : IAsyncLifetime
     {
         await SeedAsync();
 
-        _factory = new KaffApiFactory(_database.ConnectionString);
+        _factory = new KaffApiFactory(_database.ConnectionString, clock: _clock);
         _client = _factory.CreateClient();
     }
 
@@ -237,6 +238,30 @@ public sealed class EngagementLifecycleTests : IAsyncLifetime
         await using KaffDbContext reader = _database.CreateBareContext();
         Engagement stored = await reader.Engagements.SingleAsync(e => e.Id == engagementId, Ct);
         stored.Rating.Should().Be(4);
+    }
+
+    // ---- the day an engagement opens or closes is the site day, not the UTC day --------------
+
+    [Theory]
+    [InlineData("2026-09-25T22:30:00+00:00", "2026-09-26")] // Cairo is +03:00 in summer: 01:30 on the 26th
+    [InlineData("2026-12-15T22:30:00+00:00", "2026-12-16")] // Cairo is +02:00 in winter: 00:30 on the 16th
+    [InlineData("2026-12-15T21:30:00+00:00", "2026-12-15")] // 23:30 on the 15th in winter: still the 15th
+    public async Task An_engagement_opened_and_closed_carries_the_site_day_not_the_utc_day(string instant, string siteDay)
+    {
+        _clock.Advance(DateTimeOffset.Parse(instant, System.Globalization.CultureInfo.InvariantCulture) - _clock.GetUtcNow());
+
+        HttpResponseMessage opened = await OpenAsync(_projectA, _assignedToA, _worker);
+        opened.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        using JsonDocument openedBody = JsonDocument.Parse(await opened.Content.ReadAsStringAsync(Ct));
+        openedBody.RootElement.GetProperty("openedOn").GetString().Should().Be(siteDay);
+
+        Guid id = openedBody.RootElement.GetProperty("id").GetGuid();
+        HttpResponseMessage closed = await CloseAsync(_projectA, id, _assignedToA);
+        closed.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        using JsonDocument closedBody = JsonDocument.Parse(await closed.Content.ReadAsStringAsync(Ct));
+        closedBody.RootElement.GetProperty("closedOn").GetString().Should().Be(siteDay);
     }
 
     // ---- helpers -------------------------------------------------------------------------------

@@ -1,3 +1,5 @@
+using Kaff.Domain.Authorization;
+using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
@@ -28,9 +30,23 @@ namespace Kaff.Api.Features.DayLabour.ListPool;
 /// </remarks>
 internal static class Handler
 {
-    public static async Task<IResult> HandleAsync(KaffDbContext database, CancellationToken cancellationToken)
+    public static async Task<IResult> HandleAsync(
+        KaffDbContext database,
+        ICurrentUser currentUser,
+        IPermissionSubjectReader subjectReader,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(currentUser);
+        ArgumentNullException.ThrowIfNull(subjectReader);
+
+        // Code and phone are worker-register contact details: only a caller who holds EmployeeManage (the register's own
+        // permission) gets them. A site engineer picking a man from the pool does not.
+        PermissionSubject? subject = currentUser.UserId is { } userId
+            ? await subjectReader.ReadAsync(userId, currentUser.SecurityStamp, cancellationToken)
+            : null;
+        bool seesContact = PermissionEvaluator.Evaluate(subject, Permission.EmployeeManage, projectId: null, projectAccess: null)
+            == PermissionDecision.Granted;
 
         Dictionary<Guid, (int Frequency, int RatingSum, int RatingCount)> stats = await database.Engagements
             .GroupBy(engagement => engagement.WorkerId)
@@ -65,9 +81,9 @@ internal static class Handler
 
             return new PoolWorker(
                 employee.Id,
-                employee.Code,
+                seesContact ? employee.Code : null,
                 employee.FullName,
-                employee.PhoneEntered,
+                seesContact ? employee.PhoneEntered : null,
                 employee.BabId,
                 employee.Specialty,
                 employee.IsActive,

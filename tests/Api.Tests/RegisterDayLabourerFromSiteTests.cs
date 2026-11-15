@@ -190,10 +190,33 @@ public sealed class RegisterDayLabourerFromSiteTests : IAsyncLifetime
         foreach (JsonElement item in items)
         {
             item.EnumerateObject().Select(property => property.Name).Should().BeEquivalentTo(
-                ["id", "code", "fullName", "phone", "babId", "specialty", "isActive", "frequency", "averageRating"],
-                "D-140 point 4's allow-list, plus the two non-money figures D-153 §1 point 5 adds — "
+                ["id", "fullName", "babId", "specialty", "isActive", "frequency", "averageRating"],
+                "D-140 point 4's allow-list minus the contact details (code and phone are withheld from a caller without "
+                + "EmployeeManage), plus the two non-money figures D-153 §1 point 5 adds — "
                 + "frequency and average rating stay available here; the average day rate stays "
                 + "gated behind DayLabourRateManage's own ListEngagements read");
+        }
+    }
+
+    [Fact]
+    public async Task The_owner_pool_carries_code_and_phone_because_the_owner_holds_EmployeeManage()
+    {
+        HttpResponseMessage registered = await RegisterAsync(
+            _projectA, _assignedEngineer, Role.SiteEngineer, "Owner Pool Worker", UniqueNames.Phone().ToString());
+        registered.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        HttpResponseMessage pool = await GetAsync($"/api/projects/{_projectA}/day-labour", _owner, Role.Owner);
+        pool.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        using JsonDocument body = JsonDocument.Parse(await pool.Content.ReadAsStringAsync(Ct));
+        JsonElement[] items = body.RootElement.GetProperty("items").EnumerateArray().ToArray();
+
+        items.Should().NotBeEmpty();
+
+        foreach (JsonElement item in items)
+        {
+            item.EnumerateObject().Select(property => property.Name).Should().BeEquivalentTo(
+                ["id", "code", "fullName", "phone", "babId", "specialty", "isActive", "frequency", "averageRating"]);
         }
     }
 

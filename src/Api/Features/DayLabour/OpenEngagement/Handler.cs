@@ -2,6 +2,7 @@ using Kaff.Api.Common.Results;
 using Kaff.Domain.Common;
 using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
+using Kaff.Domain.Rulings;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -33,11 +34,13 @@ internal static class Handler
         Request request,
         KaffDbContext database,
         ICurrentUser currentUser,
+        RulingSet rulings,
         TimeProvider clock,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(currentUser);
+        ArgumentNullException.ThrowIfNull(rulings);
         ArgumentNullException.ThrowIfNull(clock);
 
         if (request.WorkerId is not { } workerId)
@@ -58,7 +61,7 @@ internal static class Handler
         Result<Engagement> opened = Engagement.Open(
             workerId,
             projectId,
-            DateOnly.FromDateTime(now.UtcDateTime),
+            rulings.DailyLogEntry.SiteDate(now),
             now,
 
             // D-153 §1 point 4 — "responsible" means the engineer who opened the engagement. The

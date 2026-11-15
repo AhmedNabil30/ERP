@@ -47,7 +47,11 @@ export interface WorkerFile {
  * D-153 §1 point 5 added. **No money member here** — the average day rate is a pool figure but stays
  * on the rate-gated `ListEngagements` read alone (KAFF-210, D-153 §1).
  */
-export interface PoolWorker extends WorkerFile {
+export interface PoolWorker extends Omit<WorkerFile, 'code' | 'phone'> {
+  /** Absent unless the caller holds EmployeeManage (the server withholds the key from a site engineer). */
+  readonly code?: string;
+  /** Absent on the same terms as `code`. */
+  readonly phone?: string;
   /** A count of engagements (D-139 §3), not days and not projects. `0` renders as "never engaged". */
   readonly frequency: number;
   /** The average of the recorded ratings, as a wire decimal string, or `null` when none is rated. */

@@ -1,6 +1,7 @@
 using Kaff.Api.Common.Results;
 using Kaff.Domain.Common;
 using Kaff.Domain.MasterData;
+using Kaff.Domain.Rulings;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -25,9 +26,11 @@ internal static class Handler
         Guid projectId,
         Guid engagementId,
         KaffDbContext database,
+        RulingSet rulings,
         TimeProvider clock,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(rulings);
         ArgumentNullException.ThrowIfNull(clock);
 
         Engagement? engagement = await database.Engagements
@@ -46,7 +49,7 @@ internal static class Handler
 
         DateTimeOffset now = clock.GetUtcNow();
 
-        Result closed = engagement.Close(DateOnly.FromDateTime(now.UtcDateTime), now);
+        Result closed = engagement.Close(rulings.DailyLogEntry.SiteDate(now), now);
 
         if (closed.IsFailure)
         {

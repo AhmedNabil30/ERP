@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Kaff.Api.Features.DayLabour.ListPool;
 
 /// <summary>One worker in the day-labour pool, for a Site Engineer picking a worker. KAFF-209/210.</summary>
@@ -14,6 +16,8 @@ namespace Kaff.Api.Features.DayLabour.ListPool;
 /// Both are derived from <c>Engagements</c> at read time, never a stored column — KAFF-210 rule 2.
 /// </para>
 /// </remarks>
+/// <param name="Code">Absent unless the caller holds <c>EmployeeManage</c>, the permission that owns the worker register.</param>
+/// <param name="Phone">Absent on the same terms as <paramref name="Code"/>.</param>
 /// <param name="Frequency">A count of engagements (D-139 §3), not days and not projects.</param>
 /// <param name="AverageRating">
 /// The average of the recorded ratings across every engagement, or <c>null</c> when none is rated —
@@ -21,9 +25,9 @@ namespace Kaff.Api.Features.DayLabour.ListPool;
 /// </param>
 public sealed record PoolWorker(
     Guid Id,
-    string Code,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Code,
     string FullName,
-    string Phone,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Phone,
     Guid? BabId,
     string? Specialty,
     bool IsActive,
