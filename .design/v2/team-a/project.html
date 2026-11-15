@@ -337,6 +337,7 @@ body.flow .app,body.flow .main{block-size:auto;overflow:visible}
       <button type="button" data-view="sitedone" aria-pressed="false">مهندس موقع: سجّل اليوم</button>
       <button type="button" data-view="nolog" aria-pressed="false">لا يوجد سجل</button>
       <button type="button" data-view="setup" aria-pressed="false">المقايسة غير موقّعة</button>
+      <button type="button" data-view="signed" aria-pressed="false">بعد التوقيع (اقتراح)</button>
       <button type="button" data-view="archived" aria-pressed="false">مؤرشف</button>
       <button type="button" data-view="loading" aria-pressed="false">تحميل</button>
       <button type="button" data-view="failed" aria-pressed="false">تعذّر التحميل</button>
@@ -370,7 +371,7 @@ body.flow .app,body.flow .main{block-size:auto;overflow:visible}
 <script>
 /* ============ icons (one stroke family) ============ */
 const IC={projects:'M4 21V7l8-4 8 4v14M9 21v-6h6v6M8 10h.01M12 10h.01M16 10h.01',catalog:'M3 11V4h7l11 11-7 7L3 11zM7.5 7.5h.01',bab:'M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5',employees:'M16 20v-1.5a3.5 3.5 0 00-3.5-3.5h-5A3.5 3.5 0 004 18.5V20M10 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM20 20v-1.5a3.5 3.5 0 00-2.6-3.4M15.5 4.2a3.5 3.5 0 010 6.6',subs:'M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.8-3.8a6 6 0 01-7.9 7.9l-6.9 6.9a2.1 2.1 0 01-3-3l6.9-6.9a6 6 0 017.9-7.9l-3.8 3.8z',suppliers:'M3 6h11v10H3zM14 9h4l3 3v4h-7zM7 19a2 2 0 100-4 2 2 0 000 4zM17 19a2 2 0 100-4 2 2 0 000 4z',clients:'M3 8h18v12H3zM8 8V5h8v3M3 13h18',users:'M12 3l8 3v6c0 4.5-3.2 7.6-8 9-4.8-1.4-8-4.5-8-9V6l8-3zM12 11a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM7.5 17c.8-2 2.4-3 4.5-3s3.7 1 4.5 3',depts:'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',audit:'M9 4h6v3H9zM6 5h-.5A1.5 1.5 0 004 6.5v13A1.5 1.5 0 005.5 21h13a1.5 1.5 0 001.5-1.5v-13A1.5 1.5 0 0018.5 5H18M8 12h8M8 16h5',
- left:'M15 6l-6 6 6 6',menu:'M4 7h16M4 12h16M4 17h16',plus:'M12 5v14M5 12h14',
+ left:'M15 6l-6 6 6 6',uadd:'M16 20v-1.5a3.5 3.5 0 00-3.5-3.5h-5A3.5 3.5 0 004 18.5V20M10 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM19 8v6M16 11h6',menu:'M4 7h16M4 12h16M4 17h16',plus:'M12 5v14M5 12h14',
  check:'M5 12.5l4.5 4.5L19 7.5',clock:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 2',lock:'M6 11h12v9H6zM8 11V8a4 4 0 018 0v3',info:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 8v.01',list:'M4 7h16M4 12h16M4 17h10',chev:'M6 9l6 6 6-6',err:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7.5v5.5M12 16.5v.01',redo:'M20 11a8 8 0 10-2.3 5.7M20 4v7h-7',doc:'M6 3h9l4 4v14H6zM14 3v5h5'};
 const i=(n,c='')=>`<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[n]}"/></svg>`;
 const mi=(n,c)=>`<svg class="${c||''}" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[n]}"/></svg>`;
@@ -395,12 +396,12 @@ const P={
  ds:{name:'تصميم فيلا الشروق',client:'طارق فؤاد',type:'تصميم'}};
 const CV=4672694.01;
 const BABS0=[['أعمال مباني',11.921],['أعمال تشطيبات',16.992],['أعمال نجارة',0],['أعمال معدنية',0],['أعمال صحية',0],['أعمال كهرباء',0]];
-const BABS=()=>S.view==='nolog'?BABS0.map(b=>[b[0],0]):BABS0;
+const BABS=()=>(S.view==='nolog'||S.view==='signed')?BABS0.map(b=>[b[0],0]):BABS0;
 const TEAM=[['سارة عادل','المكتب الفني'],['منى سامي','المالية'],['هبة فؤاد','مهندس موقع · مشرف'],['خالد منصور','مهندس موقع · مبتدئ']];
 
 /* ============ state ============ */
 const q0=new URLSearchParams(location.search);
-const S={type:q0.get('type')||'ls',view:q0.get('view')||'normal',tab:q0.get('tab')||'ov',terms:q0.get('terms')==='1'};
+const S={type:q0.get('type')||'ls',view:q0.get('view')||'normal',tab:q0.get('tab')||'ov',terms:q0.get('terms')==='1'||q0.get('view')==='signed'};
 const EMBED=q0.get('embed')==='1';
 const $=s=>document.querySelector(s);
 const H=document.documentElement;
@@ -417,7 +418,9 @@ function primaryAction(){
   if(['failed','refused','loading'].includes(v))return null;
   if(v==='archived')return {ar:'إعادة فتح',ic:'redo'};
   if(SITE())return {ar:'سجل يومي جديد',ic:'plus'};
+  if(S.type==='ds')return v==='setup'?{ar:'توقيع التعاقد',ic:'check'}:{ar:'تحويل إلى تنفيذ',ic:'left'};
   if(S.type!=='ls')return null;
+  if(v==='signed')return {ar:'إضافة مهندس موقع',ic:'uadd',go:'project-team.html'};
   if(v==='setup')return {ar:'فتح المقايسة',ic:'list'};
   if(v==='turn')return {ar:'فتح المستخلص',ic:'doc'};
   return null;
@@ -426,9 +429,10 @@ function primaryAction(){
 /* ============ the project frame: header, stage line, tabs ============ */
 /* stages follow ProjectStatus: Setup, Active, HandoverPending and Handover, UnderWarranty, Closed. Extracts are not a stage. */
 const STAGES=['المقايسة','التنفيذ','التسليم','الضمان','الإقفال'];
+const STAGES_DS=['التعاقد',...STAGES.slice(1)];
 function stageLine(){
   const cur=S.view==='setup'?0:1;
-  return `<ol class="stl" aria-label="مرحلة المشروع">${STAGES.map((s,k)=>{const c=k<cur?'done':k===cur?'cur':'';return `<li class="${c}" ${k===cur?'aria-current="step"':''}><span class="mk">${k<cur?mi('check'):''}</span>${s}</li>`}).join('')}</ol>`}
+  return `<ol class="stl" aria-label="مرحلة المشروع">${(S.type==='ds'?STAGES_DS:STAGES).map((s,k)=>{const c=k<cur?'done':k===cur?'cur':'';return `<li class="${c}" ${k===cur?'aria-current="step"':''}><span class="mk">${k<cur?mi('check'):''}</span>${s}</li>`}).join('')}</ol>`}
 function header(){
   const p=P[S.type],v=S.view;
   const back=`<a class="back" href="#">${i('left','s')}المشاريع</a>`;
@@ -438,7 +442,7 @@ function header(){
   const pa=primaryAction();
   const meta=SITE()?'':`<p class="meta"><a class="lnk" href="#" style="min-block-size:0">${p.client}</a><span class="badge t">${p.type}</span></p>`;
   return `<div class="phl">${back}<div class="ttl"><h1>${p.name}</h1>${v==='archived'?'':pill(st)}</div>${meta}${v==='archived'?'':stageLine()}</div>
-    <div class="acts d-only">${pa?`<button type="button" class="btn">${i(pa.ic,'s')}${pa.ar}</button>`:''}</div>`}
+    <div class="acts d-only">${pa?`<button type="button" class="btn" ${pa.go?`data-go="${pa.go}"`:''}>${i(pa.ic,'s')}${pa.ar}</button>`:''}</div>`}
 /* the project's real screens. A screen the viewer may not open, or the project has not reached, is absent. */
 const TABS={ov:['نظرة عامة'],boq:['المقايسة','boq.html'],log:['اليومية','daily-log.html'],ext:['المستخلصات','#'],team:['الفريق']};
 function tabIds(){
@@ -462,6 +466,7 @@ function babList(){
 
 /* ============ the overview tab ============ */
 function waiting(){
+  if(S.type==='ls'&&S.view==='signed')return `<div class="ban note" role="status">${mi('info')}<span><b>لا يوجد مهندس موقع</b></span></div>`;
   if(S.type!=='ls'||SITE()||UNSIGNED())return '';
   const mine=S.view==='turn';
   return `<div class="ban note" role="status">${mi('clock')}<span><b>المستخلص 3</b> ${mine?'عندك: اعتماد المالك':'عند المكتب الفني: اعتماد الكميات'}</span></div>`}
@@ -475,19 +480,21 @@ function hero(pct,stats){
 function overview(){
   const v=S.view,site=SITE();
   let out=stateLine()+waiting();
+  if(S.type==='ds'&&S.view==='setup'){const nul=`<span class="nul">${mi('info')}<b>لم تُحدَّد بعد</b></span>`;return out+kv([['مساحة المشروع',nul],['سعر المتر',fig(450,{u:'ج.م'})],['قيمة التصميم',nul]])}
   if(S.type==='ls'&&UNSIGNED())
     return out+kv([['قيمة العقد',`<span class="nul">${mi('info')}<b>لم تُحدَّد بعد</b></span>`]]);
   if(S.type==='ls'){
-    const pct=v==='nolog'?0:12.94;
+    const pct=(v==='nolog'||v==='signed')?0:12.94;
+    const z=v==='signed';
     if(site){
       const none=v==='nolog',done=v==='sitedone';
       const tag=done?`<span class="badge">${mi('check')}سُجِّلت اليوم</span>`:`<span class="badge q">${mi('clock')}لم تُسجَّل اليوم</span>`;
       return out+hero(pct)+babList()+kv([['آخر يومية',none?'<b>لا يوجد</b>':(done?D.today:D.yest),tag]]);
     }
-    out+=hero(pct,[['قيمة العقد',fig(CV,{u:'ج.م'})],['منفَّذ في الموقع',fig(604646.65)],['معتمد في المستخلصات',fig(110734.65)]])+babList();
-    out+=v==='partial'?retry('تعذّر تحميل بيانات المال.'):kv([['المطالَب به',fig(88587.72,{u:'ج.م'})],['المحصَّل',fig(0)],['المتبقي على العميل',fig(88587.72)]]);
+    out+=hero(pct,[['قيمة العقد',fig(CV,{u:'ج.م'})],['منفَّذ في الموقع',fig(z?0:604646.65)],['معتمد في المستخلصات',fig(z?0:110734.65)]])+babList();
+    out+=v==='partial'?retry('تعذّر تحميل بيانات المال.'):kv([['المطالَب به',fig(z?0:88587.72,{u:'ج.م'})],['المحصَّل',fig(0)],['المتبقي على العميل',fig(z?0:88587.72)]]);
     out+=`<button type="button" class="lnk disc" id="termsbtn" aria-expanded="${S.terms}">شروط العقد${mi('chev')}</button>`
-      +(S.terms?kv([['نسبة الحجز',pc(20,0)],['نسبة استرداد الدفعة المقدمة',pc(25,0)],['تاريخ توقيع العقد',D.signed],['تاريخ بدء التنفيذ',D.start]]):'');
+      +(S.terms?kv([['نسبة الحجز',pc(20,0)],['نسبة الدفعة المقدمة',pc(20,0)],['نسبة استرداد الدفعة المقدمة',pc(25,0)],['تاريخ توقيع العقد',D.signed],['تاريخ بدء التنفيذ',D.start]]):'');
     return out;
   }
   if(S.type==='cp')return out+kv([['نسبة الإشراف',pc(10,0)],['التكلفة حتى الآن',fig(885000,{u:'ج.م'})],['الإشراف حتى الآن',fig(80000)]]);
@@ -508,13 +515,15 @@ function body(){
   if(v==='refused')return `<div class="pane"><div class="state refused"><div class="ico">${i('lock')}</div><h4>هذا المشروع خارج تكليفك</h4><p>اطلب الإسناد ممن يملك صلاحية إسناد المشاريع.</p></div></div>`;
   return `<div class="pane">${S.tab==='team'?team():overview()}</div>`;
 }
-function abar(){const pa=primaryAction();return `<button type="button" class="menu" id="menu">${i('menu')}القائمة</button>${pa?`<button type="button" class="btn">${i(pa.ic)}${pa.ar}</button>`:''}`}
+function abar(){const pa=primaryAction();return `<button type="button" class="menu" id="menu">${i('menu')}القائمة</button>${pa?`<button type="button" class="btn" ${pa.go?`data-go="${pa.go}"`:''}>${i(pa.ic)}${pa.ar}</button>`:''}`}
 
 function centerTab(){const cur=document.querySelector('.tab[aria-current="page"]');if(cur&&S.tab!=='ov')cur.scrollIntoView({inline:'center',block:'nearest'})}
 function draw(){
-  if(['setup','turn','partial','archived','nolog','site','sitedone'].includes(S.view)&&S.type!=='ls')S.view='normal';
+  if(['signed','turn','partial','nolog','site','sitedone'].includes(S.view)&&S.type!=='ls')S.view='normal';
+  if(['setup','archived'].includes(S.view)&&S.type==='cp')S.view='normal';
   $('#ph').innerHTML=header();$('#tabw').innerHTML=tabs();$('#frame').innerHTML=body();$('#abar').innerHTML=abar();
   $('#menu').onclick=()=>{$('#app').dataset.sheet='1'};
+  document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{location.href=b.dataset.go+(EMBED?'?embed=1':'')});
   const tb=$('#termsbtn');if(tb)tb.onclick=()=>{S.terms=!S.terms;const y=$('#main').scrollTop;draw();$('#main').scrollTop=y};
   document.querySelectorAll('.tab[data-tab="ov"],.tab[data-tab="team"]').forEach(a=>a.onclick=e=>{e.preventDefault();S.tab=a.dataset.tab;draw()});
   document.querySelectorAll('.tab[href="#"]').forEach(a=>a.addEventListener('click',e=>e.preventDefault()));

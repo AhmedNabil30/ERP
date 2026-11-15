@@ -1241,3 +1241,67 @@ Every other word is from the approved mocks.
 ## What the mock does not draw
 
 The native date picker's own popup (the browser draws it); a photo at full size; a log still being written live; English/LTR text beyond the direction switch; the supervising engineer's view of the same screen.
+
+# D-227 proposals: team add and remove, the third sign field, after signing, design project (`project-team.html`, `boq.html`, `project.html`)
+
+**PROPOSAL, not approved; 2026-11-16.** Source: D-227 (Nabil) and the consultant review `ux/consultant-review-modules-1-2-2026-11-16.md`. No new visual idea: every part below is already in the kit or in an approved mock. Nothing here is built.
+
+## A. The team tab with add and remove (`project-team.html`, new)
+
+Open `project-team.html` directly. `?view=normal|noeng|add|adderr|addeng|addfail|addnone|confirm|added|removed|readonly|loading|failed`, `?embed=1` hides the preview strip. The frame (back link, title, pill, meta line, stage line, tabs) is `project.html`'s, unchanged, with الفريق current.
+
+**The list.** One `lst`: avatar disc, name, then the role as the app writes it (`enum.Role.*` plus the level: «مهندس الموقع · مشرف», «مهندس الموقع · مبتدئ», «المكتب الفني», «المالية»). How the person came to be on the project is one quiet badge (kit `badge q`) after the role, and only where it helps: «تلقائي» (Finance, assigned on every project) and «أنشأ المشروع» (the creator, D-227 item 1). A person added by hand has no badge: absence says "a person did this". The Owner is not listed (he is on every project). Phone: name and the remove button on line one, role and badge on line two. Desktop: name, role and badge, button in three columns.
+
+**Primary action.** «إضافة شخص» (add-person icon): the phone bottom bar beside «القائمة» (KAFF-936), the desktop page header slot. One per screen. The bar hides under the add sheet and the confirmation.
+
+**Add.** Phone bottom sheet, desktop side panel (the same sheet as the BOQ sign sheet). Fields: «الشخص» (a select of active users not on the project, each option "name — role", nothing preselected). Only when the chosen person is a site engineer, «الدرجة» appears: two radio choices «مبتدئ» / «مشرف», nothing preselected. Other roles are assigned at one standard level, so no level field. Footer: «إضافة» (the one primary) and «إلغاء». Errors per field, written for the field: «اختر شخصاً», «اختر الدرجة» (not the bare «مطلوب», consultant polish 16). Refused by the server: the refusal banner at the top of the sheet with the app's own string «هذا الشخص مسند بالفعل إلى هذا المشروع.». Nobody left to add: the empty state with one line «لا يوجد مستخدم متاح للإضافة» and «إغلاق». After adding: the sheet closes and the saved banner (kit `rec`) «أُضيفت نورا سعيد» sits above the list for about three seconds; the new row is tinted.
+
+**Remove.** A bordered secondary button «إزالة» with the remove-person icon on each removable row (KAFF-935: a destructive-class action is never a filled button and never the primary). It opens the kit's confirmation dialog for a **recoverable** action (neutral icon tile, the ordinary primary as confirm, because the person can be added again): «إزالة خالد منصور من المشروع؟ / يفقد وصوله إلى المشروع وتبقى أعماله السابقة. يمكنك إضافته من جديد.» Confirm «إزالة», cancel «إلغاء». Afterwards the row is gone and «أُزيل خالد منصور» shows in the saved banner. No red: nothing is destroyed (the history is kept), so the irreversible pattern would be wrong. Finance has no remove button: absent, not greyed.
+
+**States drawn.** normal (one of each), empty of engineers (a notice banner «لا يوجد مهندس موقع» under the list, no sentence), add (empty), add with a missing field, add with a site engineer chosen (level shown), add refused, nobody to add, remove confirmation, just added, just removed, read-only (a non-owner sees the list: no add, no remove, no primary), loading, failed (refusal banner with retry). Busy is the kit's (button keeps its size, «جارٍ…»), not redrawn.
+
+**Reused, unchanged.** Project frame and stage line, tabs, `lst`, avatar, `badge q`, pill, buttons (primary, secondary `sm`), refusal banner, notice banner, saved banner, field with select, radio, field error, bottom sheet and side panel, confirmation dialog (recoverable form), the empty-state box, skeleton, shell.
+
+**New in the kit.** No new part. The radio pair as two bordered choices (`rdg`) is the kit radio set in two columns so each choice is a 48 px target; add it to `components.html` before building. The add-person and remove-person icons join the icon set.
+
+**Left off the screen, on purpose.** User ids and emails; the assignment date and who added whom (it is in the audit log); a count of members; a "former members" list; any sentence about who may do what.
+
+**New words** (guesses, for Nabil): «إضافة شخص», «إزالة», «تلقائي», «أنشأ المشروع», «الشخص», «الدرجة» (the level words «مبتدئ» / «مشرف» exist as `enum.AssignmentLevel.*`), «لا يوجد مهندس موقع», «لا يوجد مستخدم متاح للإضافة», «اختر شخصاً», «اختر الدرجة», «أُضيفت {name}», «أُزيل {name}», «إزالة {name} من المشروع؟», «يفقد وصوله إلى المشروع وتبقى أعماله السابقة. يمكنك إضافته من جديد.», «تعذّر تحميل الفريق.». Note: `project.html` writes «مهندس موقع» where the app's enum says «مهندس الموقع»; this mock follows the app, and `project.html` should be aligned.
+
+### For Nabil to rule (the mock draws the recommendation)
+
+1. **May the Owner remove Finance?** Recommend no. Finance is on every project so payments and extracts can reach it; removing it strands the money flow. No button.
+2. **May the Owner remove the creator?** Recommend yes. The creator is a convenience (D-227 item 1), not a role. The Owner may hand the project to someone else.
+3. **Can one project have two supervising engineers?** Recommend yes, no cap. Levels are per person and the spec sets no limit; a cap would be an invented rule.
+4. **A removed person's past work.** Recommend: stays attributed by name (the audit keeps who acted and when; a daily log keeps its author). The team tab lists current members only; a former member is read in the audit log. The mock draws that: row gone, no "former" section.
+5. **May a person be added back after removal?** Recommend yes (the confirmation says so). If no, the sentence is wrong.
+
+## B. The sign sheet with a third field (`boq.html`, changed; `?view=sign`, `?view=signerr`)
+
+«نسبة استرداد الدفعة المقدمة» is the third field, empty, required, same field part as the other two (percent affix, same error). The two existing rates stay side by side; the long label takes the full width under them, so it stays on one line at 360. The sentence under the fields (`boq.sign.lead`) is unchanged. The label has no "(%)" because the percent affix already says it and the other two labels in the mock have none; the app keys `boq.sign.field.*` carry "(%)", so the build either drops it or keeps it on all three. The mock's «نسبة المحجوز» is the app's «نسبة الحجز (%)»: mock and app already disagree; align before the build. Confirming now leaves the page for the project overview (section C).
+
+## C. After signing, and the design project (`project.html`, changed)
+
+**After signing (`?view=signed`).** The approved mock already draws the signed project correctly (stage line on التنفيذ, no BOQ primary: `?view=normal`). The consultant saw the stage on المقايسة and «فتح المقايسة» because the **build stayed on the BOQ page and the overview did not move**: a build defect, not a design gap. What the mock did not draw is the first next step, so this adds one view: the user lands on the overview; stage التنفيذ; the hero at 0%; the money at zero; the contract terms open with all three rates (hold, advance, recovery; consultant finding 4, where the third rate showed without having been asked); a notice banner «لا يوجد مهندس موقع» and the primary «إضافة مهندس موقع», which goes to the team tab. The bar stops showing a primary once an engineer is assigned (the approved `normal` view). The terms list gains the row «نسبة الدفعة المقدمة» in every view.
+
+**Design project (`?type=ds`, new: `?type=ds&view=setup`).** The tabs of a design project were already only نظرة عامة and الفريق in the approved mock, and `boq.html?view=design` already refuses the BOQ: an empty BOQ tab is a **build defect**. Gaps drawn: (1) the stage line's first stage is «التعاقد», not «المقايسة», for a design project; (2) unsigned, the overview holds the rate per م² (known) and «لم تُحدَّد بعد» for area and fee (set at signing), and the primary is «توقيع التعاقد» alone; (3) after signing the primary is «تحويل إلى تنفيذ» alone, never beside the signing button; (4) the fee is always shown with the rate (already so in the signed overview; the sign sheet, not drawn, should show area × rate = fee as read-only rows).
+
+**Disabled primary buttons.** The kit already says a disabled primary with no reason shown is never allowed and that the reason is text next to it. It never said which part carries it. Proposal, once for the kit: the reason is the field-error line (`fmsg`: info icon and a short count or name) placed directly above the primary in the phone bar and directly before it in the header. Drawn on the BOQ with a line without a quantity (`boq.html?view=pending`): «بنود بلا كمية: 1». For a form, the primary is **not** disabled while a required field is empty: pressing it marks the field with its own error (the sign sheet already does this). Disabled is kept only for a condition the user cannot fix on that screen.
+
+### Consultant findings: design gap or build defect
+
+- 3 (after signing): build defect for the landing and the stage; design gap only for the next step, now drawn.
+- 4 (third rate): closed by the third sign field and the terms listing all three.
+- 12 (design project): empty BOQ tab = build defect; stage label and unsigned overview = design gap, drawn; convert beside sign = build defect against the one-primary rule.
+- 13 (disabled primary): design gap at kit level, proposed above; the daily log and crew «حفظ» follow the form rule.
+
+### For Nabil to rule
+
+6. **Where the first step after signing leads.** Recommend the team tab (add a site engineer), because the first daily log needs one.
+7. **Design project: show the rate per م² beside the fee everywhere.** Recommend yes (drawn).
+8. **Design project: when «تحويل إلى تنفيذ» appears.** Drawn: right after signing. Alternative: only when every design stage is approved. Needs the business rule.
+9. **The design project's first stage word.** «التعاقد» is a guess. «المقايسة» does not fit a project with no BOQ.
+
+## What these mocks do not draw
+
+The design project's sign sheet; the convert sheet; the add sheet's busy state beyond the kit's own; English/LTR text beyond the direction switch; the daily log and crew «حفظ» reason lines.
