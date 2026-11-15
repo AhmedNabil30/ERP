@@ -27,6 +27,8 @@ export type KaffStateMode = 'loading' | 'empty' | 'filtered-empty' | 'refusal' |
 export class KaffState {
   readonly mode = input.required<KaffStateMode>();
   readonly titleKey = input<string | null>(null);
+  /** An already-resolved title, for a title that names a day; wins over `titleKey`. */
+  readonly titleText = input<string | null>(null);
   readonly bodyKey = input<string | null>(null);
   /** An already-resolved sentence, for a body that names what was searched; wins over `bodyKey`. */
   readonly bodyText = input<string | null>(null);
@@ -40,6 +42,10 @@ export class KaffState {
   protected readonly skeletonRows = [0, 1, 2, 3, 4] as const;
 
   protected readonly resolvedTitle = computed(() => {
+    const text = this.titleText();
+    if (text) {
+      return text;
+    }
     const key = this.titleKey();
     return key ? this.i18n.t(key) : null;
   });

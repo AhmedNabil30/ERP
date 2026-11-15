@@ -1,0 +1,103 @@
+/* The owner's read-only daily log. Logical properties only; every colour is a token from styles.css. The entry page's
+   rules for the log box and the entry are repeated here, not shared: the two screens may drift apart. */
+
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+.dl {
+  max-inline-size: 1104px;
+  overflow-x: clip;
+}
+
+.stack {
+  display: grid;
+  gap: 14px;
+  min-inline-size: 0;
+}
+
+.cols {
+  display: grid;
+  gap: 20px;
+  min-inline-size: 0;
+}
+
+@media (min-width: 1000px) {
+  .cols {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+}
+
+.eng {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-inline-size: 0;
+}
+
+.sec-h {
+  margin: 0;
+  font: 700 1.125rem/1.4 var(--display);
+}
+
+.log {
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.log-empty {
+  padding: 14px 16px;
+  color: var(--dim);
+  text-align: center;
+}
+
+.tr {
+  margin-inline-start: 8px;
+  color: var(--dim);
+  font-size: 0.9375rem;
+}
+
+[entFigure] small {
+  color: var(--dim);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.fig {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+}
+
+.old {
+  color: var(--dim);
+  font-weight: 500;
+  text-decoration: line-through;
+}
+
+[entNote] {
+  flex: 1 1 100%;
+  color: var(--dim);
+  font-size: 0.875rem;
+}
+
+.th {
+  inline-size: 48px;
+  block-size: 48px;
+  border-radius: var(--radius);
+  background: var(--head);
+  object-fit: cover;
+  flex: none;
+}
+
+.pl {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}

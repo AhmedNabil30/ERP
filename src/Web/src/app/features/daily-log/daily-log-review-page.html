@@ -1,0 +1,150 @@
+<section class="dl" data-testid="daily-log-review-page">
+  <kaff-project-frame [projectId]="projectId()" current="dailyLog" (loaded)="onLoaded($event)">
+    <div class="stack">
+      @if (stopped()) {
+        <kaff-banner tone="note" icon="pause" testId="daily-log-stopped"><b>{{ i18n.t('daily_log.stopped') }}</b></kaff-banner>
+      }
+
+      <kaff-day-switch
+        [today]="today()"
+        [(value)]="dayValue"
+        [allowOther]="true"
+        [(otherDate)]="otherDate"
+        [maxDate]="maxDate()"
+        testIdPrefix="daily-log-day"
+        dateTestId="daily-log-date"
+      />
+
+      @if (loading()) {
+        <kaff-state mode="loading" titleKey="daily_log.loading" testId="daily-log-loading" />
+      } @else if (failed()) {
+        <kaff-banner tone="refusal" icon="error" testId="daily-log-failure">
+          <b>{{ i18n.t('daily_log.failed') }}</b> {{ i18n.t('daily_log.failed.nothing_changed') }}
+          <kaff-button bannerActions variant="secondary" testId="daily-log-retry" (clicked)="reload()">{{ i18n.t('daily_log.action.retry') }}</kaff-button>
+        </kaff-banner>
+      } @else {
+        <kaff-link-row
+          icon="crew"
+          [link]="['/projects', projectId(), 'day-labour']"
+          [name]="i18n.t('daily_log.crew')"
+          [summary]="crewSummary()"
+          testId="daily-log-crew"
+        />
+
+        @if (blocks().length === 0) {
+          <kaff-state mode="empty" icon="note" [titleText]="emptyLine()" testId="daily-log-empty" />
+        } @else {
+          <div class="cols">
+            @for (block of blocks(); track block.id) {
+              <section class="eng" [attr.aria-label]="block.name" data-testid="daily-log-engineer">
+                <h2 class="sec-h">{{ block.name }}</h2>
+
+                @if (block.checkIn; as checkIn) {
+                  <kaff-attendance-strip
+                    testId="daily-log-checkin"
+                    [readonly]="true"
+                    [checkInTime]="time(checkIn)"
+                    [checkOutTime]="block.checkOut ? time(block.checkOut) : null"
+                    [far]="checkIn.flagReason !== null"
+                    [distanceMetres]="checkIn.distanceFromSiteMetres ?? null"
+                  >
+                    @if (block.backDated) {
+                      <kaff-status-pill tone="same" icon="clock" testId="daily-log-flag">{{ i18n.t('daily_log.back_dated') }}</kaff-status-pill>
+                    }
+                  </kaff-attendance-strip>
+                }
+
+                <div class="log" data-testid="daily-log-list">
+                  @if (block.empty) {
+                    <div class="log-empty" data-testid="daily-log-block-empty">{{ emptyLine() }}</div>
+                  }
+
+                  @if (block.stoppages.length > 0) {
+                    <kaff-log-group icon="stop" [name]="i18n.t('daily_log.group.stoppage')" [count]="number(block.stoppages.length)" testId="daily-log-stoppages">
+                      @for (line of block.stoppages; track line.entryId) {
+                        <kaff-log-entry><span dir="auto">{{ line.text }}</span></kaff-log-entry>
+                      }
+                    </kaff-log-group>
+                  }
+
+                  @if (block.quantities.length > 0) {
+                    <kaff-log-group icon="qty" [name]="i18n.t('daily_log.group.quantities')" [count]="number(block.quantities.length)" testId="daily-log-quantities">
+                      @for (line of block.quantities; track line.entryId) {
+                        <kaff-log-entry [testId]="'daily-log-quantity-' + $index">
+                          <span dir="auto">{{ line.descriptionAr }}</span>
+                          @if (line.babName) {
+                            <span class="tr" dir="auto">{{ line.babName }}</span>
+                          }
+                          <span entFigure class="fig">
+                            @if (line.corrected) {
+                              <kaff-status-pill tone="same" icon="pen" testId="daily-log-corrected">{{ i18n.t('daily_log.review.corrected') }}</kaff-status-pill>
+                              @if (line.previousQuantity != null) {
+                                <s class="old" data-testid="daily-log-previous"><bdi dir="ltr">≈ {{ number(line.previousQuantity) }}</bdi></s>
+                              }
+                            }
+                            <span><bdi dir="ltr">≈ {{ number(line.quantity) }}</bdi> <small dir="auto">{{ line.unit }}</small></span>
+                          </span>
+                          @if (line.corrected && line.correctedByName) {
+                            <span entNote class="cor">{{ i18n.t('daily_log.review.corrected_by', { name: line.correctedByName }) }}</span>
+                          }
+                        </kaff-log-entry>
+                      }
+                    </kaff-log-group>
+                  }
+
+                  @if (block.materials.length > 0) {
+                    <kaff-log-group icon="mat" [name]="i18n.t('daily_log.group.materials')" [count]="number(block.materials.length)" testId="daily-log-materials">
+                      @for (line of block.materials; track line.entryId) {
+                        <kaff-log-entry>
+                          <span dir="auto">{{ line.materialType }}</span>
+                          <span entFigure><bdi dir="ltr">{{ number(line.quantity) }}</bdi> <small dir="auto">{{ line.unit }}</small></span>
+                        </kaff-log-entry>
+                      }
+                    </kaff-log-group>
+                  }
+
+                  @if (block.notes.length > 0) {
+                    <kaff-log-group icon="note" [name]="i18n.t('daily_log.group.notes')" [count]="number(block.notes.length)" testId="daily-log-notes">
+                      @for (line of block.notes; track line.entryId) {
+                        <kaff-log-entry><span dir="auto">{{ line.text }}</span></kaff-log-entry>
+                      }
+                    </kaff-log-group>
+                  }
+
+                  @if (block.photos.length > 0) {
+                    <kaff-log-group icon="cam" [name]="i18n.t('daily_log.group.photos')" [count]="number(block.photos.length)" testId="daily-log-photos">
+                      @for (line of block.photos; track line.entryId) {
+                        <kaff-log-entry>
+                          <span class="pl">
+                            @if (thumbs()[line.entryId]; as thumb) {
+                              <img class="th" [src]="thumb" alt="" data-testid="daily-log-photo-thumb" />
+                            }
+                            <span dir="auto">{{ line.caption || i18n.t('daily_log.photo') }}</span>
+                          </span>
+                        </kaff-log-entry>
+                      }
+                    </kaff-log-group>
+                  }
+
+                  @if (block.crew.length > 0) {
+                    <kaff-log-group icon="crew" [name]="i18n.t('daily_log.crew')" [count]="number(block.crew.length)" testId="daily-log-crew-lines">
+                      @for (line of block.crew; track line.entryId) {
+                        <kaff-log-entry>
+                          <span dir="auto">{{ line.workerName }}</span>
+                          @if (line.trade) {
+                            <span class="tr" dir="auto">{{ line.trade }}</span>
+                          }
+                          <span entFigure><bdi dir="ltr">{{ number(line.hours) }}</bdi> <small>{{ i18n.t('daily_log.review.hours') }}</small></span>
+                        </kaff-log-entry>
+                      }
+                    </kaff-log-group>
+                  }
+                </div>
+              </section>
+            }
+          </div>
+        }
+      }
+    </div>
+  </kaff-project-frame>
+</section>

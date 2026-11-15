@@ -355,6 +355,13 @@ button.ctl .val.ph0{color:var(--dim)}
 .att .tm.dim svg{stroke:var(--dim)}
 .log-empty{padding:14px 16px}
 .cols{gap:20px}
+/* the other-day control: a native date input under a button face, beside the day switch */
+.dpick{position:relative;display:inline-flex;align-items:center;gap:8px;min-block-size:52px;padding:0 14px;border:2px solid var(--fieldline);border-radius:var(--radius);background:var(--field);font:600 .9375rem/1 var(--body);cursor:pointer}
+.dpick:hover{background:var(--hover)}
+.dpick.on{background:var(--ink);color:var(--bg);font-weight:700}
+.dpick:focus-within{outline:3px solid var(--focus);outline-offset:3px}
+.dpick input{position:absolute;inset:0;inline-size:100%;block-size:100%;opacity:0;cursor:pointer;border:0;padding:0}
+.dpick svg.i{inline-size:18px;block-size:18px}
 </style></head>
 <body>
 
@@ -367,7 +374,7 @@ button.ctl .val.ph0{color:var(--dim)}
       <button type="button" data-view="partial">أحدهم لم يسجّل</button>
       <button type="button" data-view="idle">حضروا ولم يسجّلوا</button>
       <button type="button" data-view="none">لا حضور ولا يومية</button>
-      <button type="button" data-view="dist">مع المسافة</button>
+      <button type="button" data-view="older">يوم أقدم</button>
       <button type="button" data-view="stopped">المشروع متوقف</button>
       <button type="button" data-view="loading">تحميل</button>
       <button type="button" data-view="failed">تعذّر التحميل</button>
@@ -413,6 +420,7 @@ IC.note='M6 3h9l4 4v14H6zM14 3v5h5M9 13h6M9 17h6';
 IC.qty='M3 17L17 3l4 4L7 21zM8 12l2 2M11 9l2 2M14 6l2 2';
 IC.mat='M3 8l9-5 9 5v8l-9 5-9-5zM3 8l9 5 9-5M12 13v8';
 IC.out='M9 5H5v14h4M16 8l4 4-4 4M20 12H9';
+IC.cal='M4 6h16v14H4zM4 10h16M8 3v4M16 3v4';
 IC.stop='M12 21a9 9 0 100-18 9 9 0 000 18zM9.5 9.5h5v5h-5z';
 const $=s=>document.querySelector(s);
 const H=document.documentElement;
@@ -449,12 +457,16 @@ const HS={...HF,far:0,items:[{k:'s',n:'أمطار غزيرة، توقف العم
 const quiet=l=>({...l,bd:0,items:[]});
 const LOGS={d0:[KH,HF],d1:[KH1],d2:[],d3:[{...KH1,bd:0,in:'07:35',out:'16:20',items:[{k:'q',n:'خرسانة أساسات',b:'الخرسانة',f:'12',u:'م³'},{k:'c',n:'حسن عبد الله',t:'نجار',f:8},{k:'c',n:'إبراهيم سعيد',t:'محارة',f:8}]},quiet({...HF,far:0,out:'16:00'})]};
 const S={view:q0.get('view')||'two'};
-const VD={one:'d1',none:'d2',partial:'d3'};
-function setup(){const v=S.view;S.date=VD[v]||'d0';S.stopped=v==='stopped';S.dist=v==='dist'||q0.get('dist')==='1';S.logs={...LOGS};
-  if(S.stopped)S.logs.d0=[KS,HS];if(v==='idle')S.logs.d0=[quiet(KH),quiet(HF)];if(v==='dist')S.logs.d0=[quiet(HF),quiet(KH)]}
+const VD={one:'d1',none:'d2',partial:'d3',older:'o'};
+const TODAY='2026-11-10';
+const OLDER={...KH1,bd:0,in:'07:48',out:'16:05'};
+const fmt=(iso,o)=>new Date(iso+'T12:00:00').toLocaleDateString('ar-EG-u-nu-latn',o);
+function setup(){const v=S.view;S.date=VD[v]||'d0';S.stopped=v==='stopped';S.other=v==='older'?'2026-11-02':null;S.logs={...LOGS,o:[OLDER,quiet({...HF,far:0,out:'15:50'})]};
+  if(S.stopped)S.logs.d0=[KS,HS];if(v==='idle')S.logs.d0=[quiet(KH),quiet(HF)];}
 const crewOf=L=>{const m=new Map();L.forEach(l=>l.items.filter(x=>x.k==='c').forEach(x=>m.set(x.n,(m.get(x.n)||0)+x.f)));return [m.size,[...m.values()].reduce((a,b)=>a+b,0)]};
 const crewSum=L=>{const [n,h]=crewOf(L);return n?`${n} عمال · ${h} ساعة`:'لم يُسجَّل أحد بعد'};
-const emptyLine=d=>`لم يُسجَّل شيء في يومية ${DAYW[d]}${d==='d0'?' بعد':''}.`;
+const dayName=d=>d==='o'?fmt(S.other,{weekday:'long'}):DAYW[d];
+const emptyLine=d=>`لم يُسجَّل شيء في يومية ${dayName(d)}${d==='d0'?' بعد':''}.`;
 const sk=w=>`<span class="sk b" style="inline-size:${w}"></span>`;
 const pillOf=(ic,t,c)=>`<span class="pill s-none ${c||''}">${mi(ic)}${t}</span>`;
 function header(){
@@ -467,7 +479,8 @@ function header(){
 const TABS=[['نظرة عامة','project.html'],['المقايسة','boq.html'],['اليومية','daily-log-review.html'],['المستخلصات','#'],['الفريق','project.html?tab=team']];
 const tabs=()=>S.view==='loading'?'':`<nav class="tabs" aria-label="شاشات المشروع">${TABS.map((t,k)=>`<a class="tab" href="${t[1]}" ${k===2?'aria-current="page"':''}>${t[0]}</a>`).join('')}</nav>`;
 const abar=()=>`<button type="button" class="menu" id="menu">${i('menu')}القائمة</button>`;
-const dayRow=()=>`<div class="drow"><div class="seg days" role="group" aria-label="التاريخ">${DAYS.map(d=>`<button type="button" data-date="${d}" aria-pressed="${S.date===d}"><span>${DAYW[d]}</span><small>${DAYN[d]}</small></button>`).join('')}</div><span class="dt">${DATE[S.date]}</span></div>`;
+const other=()=>`<label class="dpick${S.date==='o'?' on':''}">${i('cal')}<span>يوم آخر</span><input type="date" max="${TODAY}" value="${S.other||''}" aria-label="يوم آخر" data-other="1"></label>`;
+const dayRow=()=>`<div class="drow"><div class="seg days" role="group" aria-label="التاريخ">${DAYS.map(d=>`<button type="button" data-date="${d}" aria-pressed="${S.date===d}"><span>${DAYW[d]}</span><small>${DAYN[d]}</small></button>`).join('')}</div>${other()}<span class="dt">${S.date==='o'?fmt(S.other,{weekday:'long',day:'numeric',month:'long'}):DATE[S.date]}</span></div>`;
 const crewLink=L=>`<a class="clink" href="day-labour.html">${i('employees')}<span class="tx"><b>العمالة</b><span>${crewSum(L)}</span></span>${i('left','go')}</a>`;
 function entRow(e){
   if(e.k==='p')return `<div class="ent"><span class="th">${i('cam')}</span><span class="nm">${e.n}</span></div>`;
@@ -479,7 +492,7 @@ function entRow(e){
   return `<div class="ent"><span class="nm">${e.n}${e.b?' <span class="tr">'+e.b+'</span>':''}</span><span class="fg">${mark}${old}<span><bdi dir="ltr">${e.k==='q'?'≈ ':''}${e.f}</bdi> <small>${e.u}</small></span></span>${by}</div>`}
 function eng(l,d){
   const g=['s','q','m','n','p','c'].map(k=>{const r=l.items.filter(x=>x.k===k);return r.length?`<div class="lg"><div class="lg-h">${i(GH[k][1])}${GH[k][0]}<span class="badge q">${r.length}</span></div>${r.map(entRow).join('')}</div>`:''}).join('');
-  const far=l.far?pillOf('warn','بعيد عن الموقع'+(S.dist?` · <bdi dir="ltr">${l.far}</bdi> متر`:'')):'';
+  const far=l.far?pillOf('warn','بعيد عن الموقع'+` · <bdi dir="ltr">${l.far}</bdi> متر`):'';
   const out=l.out?`<span class="tm">${mi('check')}الانصراف <bdi dir="ltr">${l.out}</bdi></span>`:`<span class="tm dim">${mi('clock')}لم يُسجَّل الانصراف</span>`;
   const att=`<div class="att"><span class="tm">${mi('check')}الحضور <bdi dir="ltr">${l.in}</bdi>${far}</span>${out}${l.bd?pillOf('clock','بأثر رجعي'):''}</div>`;
   const log=g?`<div class="log">${g}</div>`:`<div class="log"><div class="log-empty">${emptyLine(d)}</div></div>`;
@@ -499,6 +512,7 @@ function draw(keep){
   $('#ph').innerHTML=header();$('#tabw').innerHTML=tabs();$('#frame').innerHTML=body();$('#abar').innerHTML=abar();
   $('#menu').onclick=()=>{$('#app').dataset.sheet='1'};
   document.querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>{S.date=b.dataset.date;draw(true)});
+  document.querySelectorAll('[data-other]').forEach(b=>b.onchange=()=>{if(!b.value)return;S.other=b.value;S.date='o';draw(true)});
   document.querySelectorAll('[data-retry]').forEach(b=>b.onclick=()=>{S.view='loading';draw()});
   document.querySelectorAll('.strip [data-view]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===S.view));
   document.querySelectorAll('.tab[href="#"]').forEach(a=>a.onclick=e=>e.preventDefault());

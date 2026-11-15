@@ -5,7 +5,7 @@ import { auditReadGuard } from './core/auth/audit-read.guard';
 import { babManageGuard } from './core/auth/bab-manage.guard';
 import { catalogueManageGuard } from './core/auth/catalogue-manage.guard';
 import { clientManageGuard } from './core/auth/client-manage.guard';
-import { dailyLogWriteGuard } from './core/auth/daily-log-write.guard';
+import { dailyLogModeMatch } from './core/auth/daily-log-mode.guard';
 import { dayLabourRateManageGuard } from './core/auth/day-labour-rate-manage.guard';
 import { dayLabourSiteManageGuard } from './core/auth/day-labour-site-manage.guard';
 import { departmentManageGuard } from './core/auth/department-manage.guard';
@@ -273,10 +273,24 @@ export const routes: Routes = [
   {
     // KAFF-600 — the engineer's daily log, money-free (AC-600-J). Project-scoped, so it carries
     // `:projectId` and has no company-wide nav row (nav-rows.ts): it is reached from the project list.
-    // `dailyLogWriteGuard` is convenience; every `…/daily-logs` endpoint checks role and assignment.
+    // The page follows the mode the server sent on the project read (`tabs.dailyLogMode`, D-225 item 1): `write` the
+    // entry page, `review` the owner's read-only page, no mode the refusal. Convenience; every `…/daily-logs`
+    // endpoint checks role and assignment.
     path: 'projects/:projectId/daily-log',
-    canActivate: [sessionGuard, mustChangePasswordGuard, dailyLogWriteGuard],
+    canMatch: [dailyLogModeMatch('write')],
+    canActivate: [sessionGuard, mustChangePasswordGuard],
     loadComponent: () => import('./features/daily-log/daily-log-page').then((m) => m.DailyLogPage),
+  },
+  {
+    path: 'projects/:projectId/daily-log',
+    canMatch: [dailyLogModeMatch('review')],
+    canActivate: [sessionGuard, mustChangePasswordGuard],
+    loadComponent: () =>
+      import('./features/daily-log/daily-log-review-page').then((m) => m.DailyLogReviewPage),
+  },
+  {
+    path: 'projects/:projectId/daily-log',
+    redirectTo: '/forbidden',
   },
   {
     // KAFF-500 stage 3 — the extract chain. `extractReadGuard` is convenience; every extract endpoint checks

@@ -1186,9 +1186,9 @@ The destination after create; a server error other than the duplicate name; the 
 
 # The owner's daily log (`daily-log-review.html`)
 
-**PROPOSAL, not approved; r2 2026-11-15 (consultant review applied).** From D-225 item 1: the owner's اليومية tab opens a read-only view of every engineer's log for the chosen day, with a link to the crew screen where he may edit. Same view serves any caller whose daily-log tab mode is `review` (today: the owner). Data: `GET /api/projects/{id}/daily-logs?date=`. Nothing is built.
+**APPROVED, D-226 (2026-11-15); r3 adds the other-day control and shows the distance by default.** From D-225 item 1: the owner's اليومية tab opens a read-only view of every engineer's log for the chosen day, with a link to the crew screen where he may edit. Same view serves any caller whose daily-log tab mode is `review` (today: the owner). Data: `GET /api/projects/{id}/daily-logs?date=`. Build: KAFF-420 AC-3 (the owner's اليومية tab).
 
-Open `daily-log-review.html` directly. `?view=two|one|partial|idle|none|stopped|dist|loading|failed`; `embed=1` hides the preview strip (review chrome, do not build it). The four-day switch works in every view.
+Open `daily-log-review.html` directly. `?view=two|one|partial|idle|none|older|stopped|loading|failed`; `embed=1` hides the preview strip (review chrome, do not build it). The four-day switch works in every view.
 
 ## What it holds
 
@@ -1196,10 +1196,11 @@ One job: read what each engineer logged on a day, and who was on site. No entry 
 
 - **Project frame** from `project.html` (back link, name, status pill, client and type, stage line, tabs), tab اليومية active.
 - **Day switch**: اليوم · أمس · الأحد · السبت, each chip carrying the day number under the weekday (as far as 390 allows: four chips fit at 360 and 390); the full date is written once beside it.
+- **Other day (D-226 item 4)**: one control «يوم آخر» beside the switch, a native date input under a button face (calendar icon), `max` = today. Any past day opens; the entry window of D-217 limits what may be recorded, not what may be read. While an older day is open the control takes the filled pressed tone, no chip is pressed, and the full date is written beside it. A future date cannot be chosen; the server returns an empty day for one anyway. The `older` view shows 2 نوفمبر.
 - **Link row** "العمالة" to the crew screen, above the blocks. **Its total is the sum of the crew lines listed in the blocks below** (men counted once each, hours added): one truth, the two cannot disagree. A day with no crew line reads "لم يُسجَّل أحد بعد". The row stays on every day, because the owner edits crew on that screen.
 - **One block per engineer**: his name (kit section heading), his attendance strip, then either his entries in the approved log groups (each with a count badge: سبب التوقف, الكميات التقديرية, الخامات, الملاحظات, الصور, العمالة) or, when he logged nothing, one dim line in the log frame.
 - **Attendance strip** (the kit `att` without its button): الحضور and time, الانصراف and time, the "بعيد عن الموقع" pill and the "بأثر رجعي" pill. No check-out is named in the strip: "لم يُسجَّل الانصراف" with a clock icon in the dim tone (an engineer still on site and one who left without checking out look the same; the server decides which it is, see questions).
-- **Far from site, two drawn variants.** Tag only: "بعيد عن الموقع" (views `two`, `idle`, `partial`). With distance: "بعيد عن الموقع · 650 متر" (view `dist`). **Needs a server field, Nabil to decide**: today's read sends the flag reason plus coordinates and accuracy, not a distance. The mock keeps both so either answer is ready.
+- **Far from site** shows the distance in metres (D-226 item 2): "بعيد عن الموقع · 650 متر". The server sends the distance; the screen does not compute it. When the server sends none the tag stands alone.
 - **A corrected quantity** shows the new figure, the old figure struck through in the dim tone before it, and the pill "مصححة" on the same line as the figure; "بواسطة {name}" sits on a dim line under the row. At 390 the line name takes the first line of the row and the mark and figures the second: name, mark and both figures cannot share one 358 px line, so the mark stays with the figures, which is what it refers to. A quantity row shows its باب in the dim tone beside the line name.
 - No money, no code, no id, no "تعديل" button anywhere.
 
@@ -1211,7 +1212,7 @@ One job: read what each engineer logged on a day, and who was on site. No entry 
 - `idle`: today, check-ins exist, no entries from anyone: every block is name, strip, dim line. The crew row says "لم يُسجَّل أحد بعد".
 - `none`: الأحد, nobody checked in and nobody logged: the state block with the approved sentence, without "بعد" (a past day). Today keeps "بعد" (`لم يُسجَّل شيء في يومية اليوم بعد.`), in both the dim line and the state block.
 - `stopped`: note banner "المشروع متوقف" as `daily-log.html`. The status pill keeps its place and shows "جاري العمل", because `project.html` has no stopped view and no pill for one (its frame draws only جاري العمل and لم تبدأ). No status word is invented. See questions.
-- `dist`: today, the tag-with-distance variant on the first engineer.
+- `older`: 2 نوفمبر chosen through «يوم آخر»: two engineers, one logged, one checked in and logged nothing.
 - `loading`: skeleton, tab bar absent (as `project.html`). `failed`: refusal banner "تعذّر تحميل اليومية." with retry; frame, tabs and day switch stay.
 
 ## Reused from the kit, unchanged
@@ -1220,28 +1221,23 @@ Project frame with stage line and tabs, status pill, badge, back link, text link
 
 ## New in the kit
 
-Nothing visual and no new colour. Small additions to existing parts, all existing tones: a struck dim figure and a mark inside the entry's figure cell; a dim line under an entry; a dim secondary text inside the name (`tr`, as the picker result); a two-line day chip (weekday over day number) in the day switch; a dim variant of the strip's time item.
+The other-day control (`dpick`: a native date input behind a 52 px button face, the day switch's height, the switch's tones). Small additions to existing parts, all existing tones: a struck dim figure and a mark inside the entry's figure cell; a dim line under an entry; a dim secondary text inside the name (`tr`, as the picker result); a two-line day chip (weekday over day number) in the day switch; a dim variant of the strip's time item.
 
 ## New words (for Nabil to confirm)
 
 1. "مصححة": corrected mark on a quantity, printed without tashkeel.
 2. "بواسطة {name}": who corrected it.
 3. "لم يُسجَّل الانصراف": a check-in with no check-out, patterned on the approved "لم يُسجَّل الحضور بعد". No approved mock has a word for "still on site".
-4. "متر": distance unit in the far-from-site pill, only if the server sends a distance. The word is already in the materials unit list.
+4. "يوم آخر": the date control. "متر" is in the materials unit list.
 
 Every other word is from the approved mocks.
 
-## Not decided here (questions for Nabil, each with the mock's default)
+## Not decided here
 
-1. **Distance in "بعيد عن الموقع".** The server does not send one. Recommend adding the field and showing the metres: "how far" is the question the owner asks. Without it, the tag alone stays.
-2. **"لم يُسجَّل الانصراف" on today.** The owner cannot tell still on site from left without checking out. Recommend keeping the word on past days and, on today, showing it as is until the server says a day is closed.
-3. **Crew lines.** Block groups and link row both stay, and the row total is computed from the blocks. If one man appears under two engineers the mock counts him once and adds his hours. Recommend keep; confirm the server sends crew per engineer log.
-4. **Back-dated flag per log, in the strip.** Recommend per log.
-5. **Stopped project status word.** The frame mock has no pill for a stopped project; the mock keeps جاري العمل. Recommend Nabil names the word (متعثرة or تم تأجيلها are Kaff's, neither is chosen here).
-6. **Earlier than four days.** The mock adds no path past the four-day window (D-217 item 7). The owner who wants last week has no path and no hint. Recommend a single "يوم آخر" date control if Nabil wants the owner outside the window; not drawn.
-7. **Corrected quantity shows both figures.** Recommend keep; it needs the server to send the original row beside the corrected one (it keeps both).
-8. **Block order.** One block per engineer, as D-225 words it. A by-work view for the case of two engineers logging the same trade is Nabil's call, not drawn.
+1. **Stopped project status word.** The frame mock has no pill for a stopped project; the mock keeps جاري العمل. Nabil names the word (متعثرة or تم تأجيلها are Kaff's, neither is chosen here).
+2. **Arabic plural of workers and hours** (عمال, ساعة): no plural mechanism exists; the crew link row uses one pattern for every count.
+3. **Block order.** One block per engineer, as D-225 words it. A by-work view for two engineers on the same trade is not drawn.
 
 ## What the mock does not draw
 
-More than three days back; a photo at full size; a log still being written live; English/LTR text beyond the direction switch; the supervising engineer's view of the same screen.
+The native date picker's own popup (the browser draws it); a photo at full size; a log still being written live; English/LTR text beyond the direction switch; the supervising engineer's view of the same screen.

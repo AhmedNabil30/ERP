@@ -33,3 +33,8 @@
 .end {
   margin-inline-start: auto;
 }
+
+.tm.dim {
+  color: var(--dim);
+  font-weight: 500;
+}

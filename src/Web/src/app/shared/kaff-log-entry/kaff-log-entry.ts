@@ -10,6 +10,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
     <span class="nm"><ng-content /></span>
     <span class="fg"><ng-content select="[entFigure]" /></span>
     <ng-content select="[entAction]" />
+    <ng-content select="[entNote]" />
   </div>`,
   styleUrl: './kaff-log-entry.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

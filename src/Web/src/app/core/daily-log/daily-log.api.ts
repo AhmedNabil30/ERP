@@ -79,6 +79,10 @@ export interface QuantityLine {
   readonly previousQuantity?: number | null;
   readonly occurredAt: string;
   readonly corrected: boolean;
+  /** Who corrected the line last; null until it is corrected. */
+  readonly correctedByName?: string | null;
+  /** The name of the line's باب, where the server sends it. */
+  readonly babName?: string | null;
   /** Whether this caller may correct the line now: the verdict the correction endpoint would give. */
   readonly canCorrect?: boolean;
   readonly backDated?: boolean;
