@@ -16,7 +16,7 @@ export interface KindOption<T extends string = string> {
 @Component({
   selector: 'kaff-kind-row',
   imports: [KaffIcon],
-  template: `<div class="seg" role="group" [attr.aria-label]="i18n.t(ariaLabelKey())">
+  template: `<div class="seg" [class.k5]="options().length > 4" role="group" [attr.aria-label]="i18n.t(ariaLabelKey())">
     @for (option of options(); track option.value) {
       <button
         type="button"

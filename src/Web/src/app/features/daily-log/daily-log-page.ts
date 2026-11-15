@@ -27,6 +27,7 @@ import { DayValue, dayDate, dayWord, localDate, localIso } from '../../shared/ka
 import { KaffDetailPanel } from '../../shared/kaff-detail-panel/kaff-detail-panel';
 import { KaffField } from '../../shared/kaff-field/kaff-field';
 import { KaffFigurePair } from '../../shared/kaff-figure-pair/kaff-figure-pair';
+import { KaffIcon } from '../../shared/kaff-icon/kaff-icon';
 import { KaffKindRow, KindOption } from '../../shared/kaff-kind-row/kaff-kind-row';
 import { KaffLinkRow } from '../../shared/kaff-link-row/kaff-link-row';
 import { KaffLogEntry } from '../../shared/kaff-log-entry/kaff-log-entry';
@@ -39,7 +40,9 @@ import { KaffSelect, SelectOption } from '../../shared/kaff-select/kaff-select';
 import { KaffState } from '../../shared/kaff-state/kaff-state';
 import { KaffStatusPill } from '../../shared/kaff-status-pill/kaff-status-pill';
 
-type EntryKind = 'note' | 'quantity' | 'material' | 'stoppage';
+type EntryKind = 'note' | 'quantity' | 'material' | 'photo' | 'stoppage';
+/** The server's limit (10 MB); the check here only saves a pointless upload, the server decides. */
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 /** How long to wait for a fix before telling the engineer location is not available (AC-613-D). */
 const LOCATION_TIMEOUT_MS = 15_000;
 
@@ -47,6 +50,7 @@ const KIND_OPTIONS: readonly KindOption<EntryKind>[] = [
   { value: 'note', labelKey: 'daily_log.kind.note', icon: 'note' },
   { value: 'quantity', labelKey: 'daily_log.kind.quantity', icon: 'qty' },
   { value: 'material', labelKey: 'daily_log.kind.material', icon: 'mat' },
+  { value: 'photo', labelKey: 'daily_log.kind.photo', icon: 'cam' },
   { value: 'stoppage', labelKey: 'daily_log.kind.stoppage', icon: 'stop' },
 ];
 
@@ -67,9 +71,10 @@ interface EntryDraft {
   quantity: string;
   materialName: string;
   materialQuantity: string;
+  caption: string;
 }
 
-const BLANK: EntryDraft = { note: '', stoppage: '', quantity: '', materialName: '', materialQuantity: '' };
+const BLANK: EntryDraft = { note: '', stoppage: '', quantity: '', materialName: '', materialQuantity: '', caption: '' };
 
 /** The quantity row being corrected (D-218 item 14). */
 interface EditTarget {
@@ -92,7 +97,9 @@ interface EditTarget {
  * **The server decides.** The back-dated tag is drawn only where the server sent the flag. Refusals come back as
  * message keys. The one primary ("الحضور" or "حفظ") goes into the shell's primary-action slot.
  *
- * Not built: the photo kind (no upload endpoint exists, only a file reference).
+ * **Photo.** The native file input picks or takes the picture. Save uploads it, then records the returned reference. If
+ * the record fails after the upload the reference is kept, so a retry does not upload again or ask for the file again.
+ * Thumbnails are fetched as blobs through `HttpClient` (the session is an HttpOnly cookie) and revoked on destroy.
  */
 @Component({
   selector: 'kaff-daily-log-page',
@@ -106,6 +113,7 @@ interface EditTarget {
     KaffDetailPanel,
     KaffField,
     KaffFigurePair,
+    KaffIcon,
     KaffKindRow,
     KaffLinkRow,
     KaffLogEntry,
@@ -211,6 +219,14 @@ export class DailyLogPage {
   protected readonly entryForm = form(this.model);
   protected readonly materialUnit = signal('');
 
+  /** The picked picture, its preview, and the server reference once it is uploaded (kept for a retry). */
+  protected readonly photoFile = signal<File | null>(null);
+  protected readonly photoPreview = signal<string | null>(null);
+  private uploaded: { reference: string; entryId: string } | null = null;
+  /** Object URLs of the logged thumbnails, by entry. */
+  protected readonly thumbs = signal<Readonly<Record<string, string>>>({});
+  private readonly requested = new Set<string>();
+
   protected readonly busy = signal(false);
   protected readonly saved = signal(false);
   protected readonly errorKey = signal<string | null>(null);
@@ -228,6 +244,8 @@ export class DailyLogPage {
         return draft.stoppage.trim().length > 0;
       case 'quantity':
         return (this.editing() !== null || this.selectedLine() !== null) && positive(draft.quantity) !== null;
+      case 'photo':
+        return this.photoFile() !== null;
       case 'material':
         return draft.materialName.trim().length > 0 && positive(draft.materialQuantity) !== null && this.materialUnit() !== '';
     }
@@ -266,7 +284,18 @@ export class DailyLogPage {
     });
 
     effect(() => this.headerActions.set(this.primary() !== null ? (this.primaryTemplate() ?? null) : null));
-    inject(DestroyRef).onDestroy(() => this.headerActions.set(null));
+
+    // Thumbnails of the shown day's photos: one authenticated fetch per entry, kept as an object URL.
+    effect(() => {
+      const lines = this.photos();
+      untracked(() => lines.forEach((line) => void this.loadThumb(line.entryId, line.url)));
+    });
+
+    inject(DestroyRef).onDestroy(() => {
+      this.headerActions.set(null);
+      Object.values(this.thumbs()).forEach((url) => URL.revokeObjectURL(url));
+      this.revokePreview();
+    });
   }
 
   protected onLoaded(project: ProjectDetail): void {
@@ -376,6 +405,52 @@ export class DailyLogPage {
     this.errorKey.set(null);
   }
 
+  /** The native picker returned a file. A new file is a new photo: the earlier upload no longer applies. */
+  protected pickPhoto(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.item(0) ?? null;
+    input.value = '';
+    if (file === null) {
+      return;
+    }
+    this.errorKey.set(null);
+    this.saved.set(false);
+    if (file.size > MAX_PHOTO_BYTES) {
+      this.errorKey.set('errors.daily_log.photo_too_large');
+      return;
+    }
+    this.clearPhoto();
+    this.photoFile.set(file);
+    this.photoPreview.set(URL.createObjectURL(file));
+  }
+
+  protected clearPhoto(): void {
+    this.revokePreview();
+    this.photoFile.set(null);
+    this.photoPreview.set(null);
+    this.uploaded = null;
+  }
+
+  private revokePreview(): void {
+    const url = this.photoPreview();
+    if (url !== null) {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  private async loadThumb(entryId: string, url: string | null): Promise<void> {
+    if (url === null || this.requested.has(entryId)) {
+      return;
+    }
+    this.requested.add(entryId);
+    try {
+      const objectUrl = URL.createObjectURL(await this.api.fetchPhoto(url));
+      this.thumbs.update((all) => ({ ...all, [entryId]: objectUrl }));
+    } catch {
+      this.requested.delete(entryId); // the caption fallback stays; a later read tries again
+    }
+  }
+
   protected async onSave(): Promise<void> {
     if (!this.valid() || this.busy()) {
       return;
@@ -402,6 +477,22 @@ export class DailyLogPage {
           } else {
             await this.api.recordQuantity(projectId, { ...entry, boqLineId: this.selectedLineId(), quantity });
           }
+          break;
+        }
+        case 'photo': {
+          // The upload and the entry id are kept after a failed record, so the retry does not pick or upload again.
+          this.uploaded ??= {
+            reference: (await this.api.uploadPhoto(projectId, this.photoFile() as File)).reference,
+            entryId: entry.entryId,
+          };
+          const caption = draft.caption.trim();
+          await this.api.recordPhoto(projectId, {
+            entryId: this.uploaded.entryId,
+            occurredAt: entry.occurredAt,
+            fileReference: this.uploaded.reference,
+            caption: caption === '' ? null : caption,
+          });
+          this.clearPhoto();
           break;
         }
         case 'material':

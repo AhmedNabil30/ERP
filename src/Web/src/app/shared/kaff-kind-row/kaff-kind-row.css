@@ -43,3 +43,8 @@ button:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: -5px;
 }
+
+/* five kinds wrap three then two, as the mock draws them */
+.k5 button {
+  flex-basis: calc(33.333% - 2px);
+}

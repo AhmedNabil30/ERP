@@ -177,3 +177,61 @@ section > kaff-banner {
   font-size: 0.875rem;
   font-weight: 500;
 }
+
+.shot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  inline-size: 100%;
+  min-block-size: 72px;
+  border: 2px dashed var(--fieldline);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  font: 700 1rem/1 var(--display);
+}
+
+.shot:hover {
+  background: var(--hover);
+}
+
+.shot:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.shotted {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  background: var(--field);
+}
+
+.shotted .th {
+  inline-size: 56px;
+  block-size: 56px;
+}
+
+.shotted .nm {
+  flex: 1;
+  font-weight: 600;
+}
+
+.th {
+  inline-size: 48px;
+  block-size: 48px;
+  border-radius: var(--radius);
+  background: var(--head);
+  object-fit: cover;
+  flex: none;
+}
+
+.pl {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}

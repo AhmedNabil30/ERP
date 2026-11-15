@@ -129,6 +129,23 @@
                     }
                   }
                 }
+                @case ('photo') {
+                  <input #photoInput type="file" accept="image/*" capture="environment" hidden data-testid="daily-log-photo-input" (change)="pickPhoto($event)" />
+                  @if (photoPreview(); as preview) {
+                    <div class="shotted" data-testid="daily-log-photo-picked">
+                      <img class="th" [src]="preview" alt="" />
+                      <span class="nm">{{ i18n.t('daily_log.photo') }}</span>
+                      <kaff-button variant="ghost" testId="daily-log-photo-remove" (clicked)="clearPhoto()">{{ i18n.t('daily_log.photo.remove') }}</kaff-button>
+                    </div>
+                  } @else {
+                    <button type="button" class="shot" data-testid="daily-log-photo-take" (click)="photoInput.click()">
+                      <kaff-icon name="cam" />{{ i18n.t('daily_log.photo.take') }}
+                    </button>
+                  }
+                  <kaff-field labelKey="daily_log.form.caption" controlId="daily-log-caption">
+                    <input id="daily-log-caption" type="text" dir="auto" data-testid="daily-log-caption" [formField]="entryForm.caption" />
+                  </kaff-field>
+                }
                 @case ('material') {
                   <kaff-field labelKey="daily_log.form.material" controlId="daily-log-material-name" [required]="true">
                     <input id="daily-log-material-name" type="text" dir="auto" data-testid="daily-log-material-name" [formField]="entryForm.materialName" />
@@ -221,7 +238,12 @@
                 <kaff-log-group icon="cam" [name]="i18n.t('daily_log.group.photos')" [count]="number(photos().length)" testId="daily-log-photos">
                   @for (line of photos(); track line.entryId) {
                     <kaff-log-entry>
-                      <span dir="auto">{{ line.caption || i18n.t('daily_log.photo') }}</span>
+                      <span class="pl">
+                        @if (thumbs()[line.entryId]; as thumb) {
+                          <img class="th" [src]="thumb" alt="" data-testid="daily-log-photo-thumb" />
+                        }
+                        <span dir="auto">{{ line.caption || i18n.t('daily_log.photo') }}</span>
+                      </span>
                       @if (line.backDated) {
                         <kaff-status-pill tone="same" icon="clock" testId="daily-log-flag">{{ i18n.t('daily_log.back_dated') }}</kaff-status-pill>
                       }

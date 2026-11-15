@@ -83,6 +83,11 @@ class FakeDailyLogApi {
   readonly corrections: { entryId: string; correctionId: string; quantity: number }[] = [];
   readonly checkIns: CheckInEntry[] = [];
   readonly reads: string[] = [];
+  readonly calls: string[] = [];
+  readonly recordedPhotos: { entryId: string; fileReference: string; caption?: string | null }[] = [];
+  readonly fetched: string[] = [];
+  uploadFailure: Error | null = null;
+  recordFailure: Error | null = null;
   boqResult: BoqLines | null = BOQ;
   saveFailure: Error | null = null;
 
@@ -117,6 +122,24 @@ class FakeDailyLogApi {
   async correctQuantity(_p: string, entryId: string, correction: { correctionId: string; quantity: number }): Promise<void> {
     this.fail();
     this.corrections.push({ entryId, ...correction });
+  }
+  async uploadPhoto(_p: string, file: Blob): Promise<{ reference: string; url: string }> {
+    this.calls.push(`upload:${file.size}`);
+    if (this.uploadFailure) {
+      throw this.uploadFailure;
+    }
+    return { reference: 'ref-1', url: '/api/x/photos/ref-1' };
+  }
+  async recordPhoto(_p: string, entry: { entryId: string; fileReference: string; caption?: string | null }): Promise<void> {
+    this.calls.push('record');
+    if (this.recordFailure) {
+      throw this.recordFailure;
+    }
+    this.recordedPhotos.push(entry);
+  }
+  async fetchPhoto(url: string): Promise<Blob> {
+    this.fetched.push(url);
+    return new Blob(['x'], { type: 'image/jpeg' });
   }
   private fail(): void {
     if (this.saveFailure) {
@@ -254,7 +277,7 @@ describe('DailyLogPage', () => {
       expect(el(fixture.nativeElement, 'daily-log-before-state')).not.toBeNull();
     });
 
-    it('after check-in it shows the day switch, the four kinds and a save primary', async () => {
+    it('after check-in it shows the day switch, the five kinds and a save primary', async () => {
       const fixture = await createPage(new FakeDailyLogApi(log()));
       const root: HTMLElement = fixture.nativeElement;
 
@@ -264,6 +287,7 @@ describe('DailyLogPage', () => {
         'daily-log-kind-note',
         'daily-log-kind-quantity',
         'daily-log-kind-material',
+        'daily-log-kind-photo',
         'daily-log-kind-stoppage',
       ]);
       expect(primary(fixture)?.getAttribute('data-testid')).toBe('daily-log-save');
@@ -624,7 +648,7 @@ describe('DailyLogPage', () => {
 
       expect(el(root, 'daily-log-stopped')).not.toBeNull();
       expect(el(root, 'daily-log-stoppage')).not.toBeNull();
-      expect(root.querySelectorAll('[data-testid^="daily-log-kind-"]')).toHaveLength(4);
+      expect(root.querySelectorAll('[data-testid^="daily-log-kind-"]')).toHaveLength(5);
     });
 
     it('records a material with its unit from the list', async () => {
@@ -641,6 +665,131 @@ describe('DailyLogPage', () => {
 
       expect(api.materials).toHaveLength(1);
       expect(api.materials[0]).toMatchObject({ materialType: 'أسمنت', quantity: 20, unit: 'daily_log.unit.bag' });
+    });
+  });
+
+  describe('AC-9: the photo kind', () => {
+    function pick(root: HTMLElement, file: File): void {
+      const input = el(root, 'daily-log-photo-input') as HTMLInputElement;
+      Object.defineProperty(input, 'files', { value: { item: () => file }, configurable: true });
+      input.dispatchEvent(new Event('change'));
+    }
+    const jpg = () => new File(['abc'], 'a.jpg', { type: 'image/jpeg' });
+
+    beforeEach(() => {
+      let n = 0;
+      vi.stubGlobal('URL', Object.assign(URL, { createObjectURL: () => `blob:test/${n++}`, revokeObjectURL: () => undefined }));
+    });
+
+    async function openPhoto(api: FakeDailyLogApi, status = 'Active') {
+      const fixture = await createPage(api, status);
+      click(fixture.nativeElement, 'daily-log-kind-photo');
+      fixture.detectChanges();
+      return fixture;
+    }
+
+    it('offers the picker, the caption and a primary that stays off until a photo is picked', async () => {
+      const fixture = await openPhoto(new FakeDailyLogApi(log()));
+      const root: HTMLElement = fixture.nativeElement;
+
+      expect(el(root, 'daily-log-photo-input')?.getAttribute('accept')).toBe('image/*');
+      expect(el(root, 'daily-log-photo-input')?.getAttribute('capture')).toBe('environment');
+      expect(el(root, 'daily-log-caption')).not.toBeNull();
+      expect(primary(fixture)?.disabled).toBe(true);
+
+      pick(root, jpg());
+      fixture.detectChanges();
+
+      expect(el(root, 'daily-log-photo-picked')).not.toBeNull();
+      expect(primary(fixture)?.disabled).toBe(false);
+    });
+
+    it('uploads first, then records the returned reference with the caption', async () => {
+      const api = new FakeDailyLogApi(log());
+      const fixture = await openPhoto(api);
+      const root: HTMLElement = fixture.nativeElement;
+      pick(root, jpg());
+      fixture.detectChanges();
+      type(root, 'daily-log-caption', ' الواجهة ');
+      await pressPrimary(fixture);
+
+      expect(api.calls).toEqual(['upload:3', 'record']);
+      expect(api.recordedPhotos[0]).toMatchObject({ fileReference: 'ref-1', caption: 'الواجهة' });
+      expect(el(root, 'daily-log-photo-picked')).toBeNull();
+    });
+
+    it('keeps the picked file and the upload when the record fails, and the retry records without uploading again', async () => {
+      const api = new FakeDailyLogApi(log());
+      api.recordFailure = refusal('errors.daily_log.file_reference_invalid');
+      const fixture = await openPhoto(api);
+      const root: HTMLElement = fixture.nativeElement;
+      pick(root, jpg());
+      fixture.detectChanges();
+      await pressPrimary(fixture);
+
+      expect(el(root, 'daily-log-error')?.textContent).toContain('errors.daily_log.file_reference_invalid');
+      expect(el(root, 'daily-log-photo-picked')).not.toBeNull();
+
+      api.recordFailure = null;
+      await pressPrimary(fixture);
+
+      expect(api.calls).toEqual(['upload:3', 'record', 'record']);
+      expect(api.recordedPhotos).toHaveLength(1);
+    });
+
+    it('shows the key the server sent when the upload is refused and keeps the form', async () => {
+      const api = new FakeDailyLogApi(log());
+      api.uploadFailure = refusal('errors.daily_log.photo_not_an_image');
+      const fixture = await openPhoto(api);
+      const root: HTMLElement = fixture.nativeElement;
+      pick(root, new File(['text'], 'a.jpg', { type: 'image/jpeg' }));
+      fixture.detectChanges();
+      await pressPrimary(fixture);
+
+      expect(el(root, 'daily-log-error')?.textContent).toContain('errors.daily_log.photo_not_an_image');
+      expect(api.recordedPhotos).toHaveLength(0);
+      expect(el(root, 'daily-log-photo-picked')).not.toBeNull();
+    });
+
+    it('removes the picked photo', async () => {
+      const fixture = await openPhoto(new FakeDailyLogApi(log()));
+      const root: HTMLElement = fixture.nativeElement;
+      pick(root, jpg());
+      fixture.detectChanges();
+      click(root, 'daily-log-photo-remove');
+      fixture.detectChanges();
+
+      expect(el(root, 'daily-log-photo-take')).not.toBeNull();
+      expect(primary(fixture)?.disabled).toBe(true);
+    });
+
+    it('is recorded on a stopped project too', async () => {
+      const api = new FakeDailyLogApi(log());
+      const fixture = await openPhoto(api, 'Stopped');
+      pick(fixture.nativeElement, jpg());
+      fixture.detectChanges();
+      await pressPrimary(fixture);
+
+      expect(api.recordedPhotos).toHaveLength(1);
+    });
+
+    it('shows the fetched blob as the thumbnail, and the caption alone for a line with no url', async () => {
+      const api = new FakeDailyLogApi(
+        log({
+          photos: [
+            { entryId: 'p1', fileReference: 'r1', caption: 'واجهة', url: '/api/x/photos/r1', isPublished: false, occurredAt: '2026-11-10T09:00:00+02:00' },
+            { entryId: 'p2', fileReference: 'old', caption: 'قديمة', url: null, isPublished: false, occurredAt: '2026-11-10T08:00:00+02:00' },
+          ],
+        }),
+      );
+      const fixture = await createPage(api);
+      await flush(fixture);
+      const thumbs = fixture.nativeElement.querySelectorAll('[data-testid="daily-log-photo-thumb"]');
+
+      expect(api.fetched).toEqual(['/api/x/photos/r1']);
+      expect(thumbs).toHaveLength(1);
+      expect(thumbs[0].getAttribute('src')).toMatch(/^blob:/);
+      expect(el(fixture.nativeElement, 'daily-log-photos')?.textContent).toContain('قديمة');
     });
   });
 
