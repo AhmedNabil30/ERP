@@ -1183,3 +1183,55 @@ Sentences kept: none beyond labels, values, actions and state lines (no result, 
 ## What the mock does not draw
 
 The destination after create; a server error other than the duplicate name; the duplicate-phone answer; the English/LTR text; the quick-add saving state.
+
+# The owner's daily log (`daily-log-review.html`)
+
+**PROPOSAL, not approved; 2026-11-15.** From D-225 item 1: the owner's اليومية tab opens a read-only view of every engineer's log for the chosen day, with a link to the crew screen where he may edit. Same view serves any caller whose daily-log tab mode is `review` (today: the owner). Data: `GET /api/projects/{id}/daily-logs?date=`. Nothing is built.
+
+Open `daily-log-review.html` directly. `?view=two|one|none|stopped|loading|failed`; `embed=1` hides the preview strip (review chrome, do not build it). The four-day switch works in every view.
+
+## What it holds
+
+One job: read what each engineer logged on a day. No entry form, no kind row, no primary action: the phone bottom bar holds the menu alone, the desktop header has no action slot.
+
+- **Project frame** from `project.html` (back link, name, status pill, client and type, stage line, tabs), tab اليومية active.
+- **Day switch**: اليوم · أمس · الأحد · السبت with the date written once, as `daily-log.html`.
+- **Link row** "العمالة" with the day's summary, to the crew screen, above the blocks (as `daily-log.html`).
+- **One block per engineer** (`eng`): his name (the kit section heading), his attendance strip (الحضور, الانصراف; "بعيد عن الموقع" and "بأثر رجعي" as pills), then his entries in the approved log groups, each with a count badge: سبب التوقف, الكميات التقديرية, الخامات, الملاحظات, الصور, and the new group العمالة (man, trade, hours). Desktop: two blocks side by side from 1000 px, one block full width. Phone: stacked.
+- **A corrected quantity** carries a pill "مصحَّحة" and "بواسطة {name}" on a second line of its row. A quantity row shows its باب beside the line name in the dim tone, as the picker result does. Executed figures keep "≈".
+- No money, no code, no id, no "تعديل" button anywhere.
+
+## States
+
+- `two`: today, two engineers (one far from site and not yet checked out, one with a corrected quantity).
+- `one`: أمس, one engineer, back-dated log.
+- `none`: الأحد, the state block "لم يُسجَّل شيء في يومية الأحد بعد." (the approved sentence of `daily-log.html`); no link row.
+- `stopped`: note banner "المشروع متوقف" as `daily-log.html`; each block opens with its stoppage reason; no status pill.
+- `loading`: skeleton, tab bar absent (as `project.html`). `failed`: refusal banner "تعذّر تحميل اليومية." with retry; frame, tabs and day switch stay.
+
+## Reused from the kit, unchanged
+
+Project frame and its stage line and tabs, status pill, badge, back link, text link, segmented control (day switch), check-in strip (`att`, without its button), link row (`clink`), log group (`lg`) and entry (`ent`) with the photo thumbnail variant, note banner, refusal banner with retry, state block, skeleton, section heading, shell, bottom bar with the menu only.
+
+## New in the kit
+
+Nothing visual. Two small additions to the existing log entry: a dim second line (`cor`) carrying a small pill, and a dim secondary text (`tr`) inside the name. Both are existing tones. The crew group reuses `lg`/`ent`.
+
+## New words (for Nabil to confirm)
+
+1. "مصحَّحة" (corrected mark on a quantity).
+2. "بواسطة {name}" (who corrected it).
+
+Every other word is taken from the approved mocks.
+
+## Not decided here (questions for Nabil, each with the mock's default)
+
+1. **Crew lines inside each engineer's block.** The server sends crew lines per engineer log. The mock lists them as a group العمالة under his entries and also keeps the link row with the day total. Recommend keep both: the group says who his men were, the row opens the screen where the owner edits.
+2. **Attendance on past days.** `daily-log.html` hides the check-in strip on a past day for the entering engineer. Here the owner sees each engineer's attendance on every day. Recommend keep: the data is there and attendance is what the owner checks.
+3. **Back-dated flag per log or per entry.** `daily-log.html` tags each entry. The mock tags the engineer's log once, in his attendance strip, because the server sends one flag per log. Recommend per log.
+4. **Stopped project: which status word shows.** Stopped is not one of the five Kaff words, so the mock shows no pill and the banner "المشروع متوقف". Recommend keep until Nabil names the word.
+5. **Owner-only edit of a corrected quantity.** None drawn: the corrected mark names who corrected, the owner does not edit here. Recommend keep.
+
+## What the mock does not draw
+
+More than three days back; an engineer who checked in but logged nothing (the code shows his attendance strip alone, not drawn as a state); a log still being written live; photo full size on tap; English/LTR text beyond the direction switch; the supervising engineer's view of the same screen.
