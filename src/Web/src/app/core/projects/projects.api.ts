@@ -45,7 +45,7 @@ export interface ProjectSummary {
   readonly clientId: string;
   readonly contractType: ContractType;
   readonly status: ProjectStatus;
-  readonly contractValue: string | null;
+  readonly contractValue?: string | null;
   /** AC-417-J: true for an unsigned project whose follow-up period ended. Listed only with `includeArchived`. */
   readonly isArchived?: boolean;
   /** The day the follow-up period ends (`yyyy-mm-dd`); null once signed. */
@@ -66,9 +66,9 @@ export interface ProjectDetail {
   readonly clientName: string;
   readonly contractType: ContractType;
   readonly status: ProjectStatus;
-  readonly contractValue: string | null;
-  readonly holdRate: string | null;
-  readonly advanceRate: string | null;
+  readonly contractValue?: string | null;
+  readonly holdRate?: string | null;
+  readonly advanceRate?: string | null;
   readonly teamSize: number;
   /**
    * The dates and money the API added with the overview (`GetProject.Response`). Optional here only so

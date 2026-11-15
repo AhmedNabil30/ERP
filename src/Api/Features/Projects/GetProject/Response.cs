@@ -10,11 +10,10 @@ namespace Kaff.Api.Features.Projects.GetProject;
 /// <remarks>
 /// <b>No stored balance</b> — CLAUDE.md, spec.md §6.1. <c>ContractValue</c> is the signed term, never a
 /// derived figure. <b>Every money-shaped member crosses the wire as a JSON string</b> — decisions.md
-/// D-135, through the global converters in <c>KaffJson</c>. <b>No redaction by role</b>: every role
-/// that can reach this endpoint at all already holds <c>Permission.ProjectRead</c>, whose catalogue
-/// grants are Owner, Finance, Technical Office, Marketing, Site Engineer and Head of Design — HR is
-/// deliberately absent from that row (D-044 ruling 2) and never reaches this handler, so there is no
-/// caller here for whom a financial field would need to be hidden.
+/// D-135, through the global converters in <c>KaffJson</c>. <b>Contract terms follow <c>Permission.ProjectMoneyRead</c></b> (KAFF-420 AC-5), the rule
+/// <c>GetProgress</c> already uses: <c>ContractValue</c>, <c>OriginalContractValue</c>, <c>ApprovedChangeOrderTotal</c>,
+/// <c>HoldRate</c>, <c>AdvanceRate</c> and <c>AdvanceRecoveryRate</c> are null, and so absent from the JSON, for any
+/// other <c>ProjectRead</c> holder, as is <c>Money</c>.
 /// </remarks>
 /// <param name="Id">The project.</param>
 /// <param name="Code">Generated.</param>
@@ -32,6 +31,7 @@ namespace Kaff.Api.Features.Projects.GetProject;
 /// <param name="ApprovedChangeOrderTotal">The sum of the approved change orders. Zero when there are none.</param>
 /// <param name="HoldRate">Lump Sum only.</param>
 /// <param name="AdvanceRate">Lump Sum only.</param>
+/// <param name="AdvanceRecoveryRate">Lump Sum only. The share of each extract that repays the advance.</param>
 /// <param name="TeamSize">
 /// Count of active <c>ProjectAssignment</c> rows. S-052's "team" — the per-member roster (KAFF-115) is
 /// its own story and is not built here; see the build notes.
@@ -66,12 +66,12 @@ public sealed record Response(
     string ClientName,
     ContractType ContractType,
     ProjectStatus Status,
-    Money? ContractValue,
-    Percentage? HoldRate,
-    Percentage? AdvanceRate,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] Money? ContractValue,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] Percentage? HoldRate,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] Percentage? AdvanceRate,
     int TeamSize,
-    Money? OriginalContractValue,
-    Money ApprovedChangeOrderTotal,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] Money? OriginalContractValue,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] Money? ApprovedChangeOrderTotal,
     DateOnly? SignedOn,
     DateOnly? StartedOn,
     DateOnly? HandoverOn,
@@ -87,7 +87,8 @@ public sealed record Response(
     ProjectStage Stage,
     bool IsSigned,
     bool LoggedToday,
-    ProjectTabs Tabs);
+    ProjectTabs Tabs,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] Percentage? AdvanceRecoveryRate = null);
 
 /// <summary>
 /// What the client has been billed, paid and still owes. Only extracts issued to the client count; an extract still

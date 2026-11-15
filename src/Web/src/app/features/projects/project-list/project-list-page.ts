@@ -135,7 +135,7 @@ export class ProjectListPage {
 
   /** D-135: the wire string reaches `Intl` untouched. `formatAmount` — the column names the unit. */
   protected contractValueText(project: ProjectSummary): string {
-    return project.contractValue === null
+    return project.contractValue == null
       ? this.i18n.t('projects.value.not_applicable')
       : this.i18n.formatAmount(project.contractValue);
   }

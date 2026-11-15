@@ -210,7 +210,7 @@
         @if (!p.isSigned || p.isArchived) {
           <kaff-fact-list>
             <kaff-fact [label]="i18n.t('projects.frame.hero.contract_value')" testId="workspace-fact-value">
-              @if (p.contractValue !== null) {
+              @if (p.contractValue != null) {
                 <kaff-figure [value]="p.contractValue" [unit]="i18n.t('catalogue.currency.affix')" />
               } @else {
                 <span class="nul" data-testid="workspace-value-null">
@@ -239,7 +239,7 @@
           } @else if (p.contractType === 'Design') {
             <kaff-fact-list>
               <kaff-fact [label]="i18n.t('projects.frame.hero.contract_value')" testId="workspace-fact-value">
-                @if (p.contractValue !== null) {
+                @if (p.contractValue != null) {
                   <kaff-figure [value]="p.contractValue" [unit]="i18n.t('catalogue.currency.affix')" />
                 } @else {
                   <b>{{ i18n.t('projects.frame.value_unset') }}</b>
@@ -275,7 +275,7 @@
               </div>
               @if (money(); as m) {
                 <dl data-testid="workspace-hero-figures">
-                  @if (p.contractValue !== null) {
+                  @if (p.contractValue != null) {
                     <div>
                       <dt>{{ i18n.t('projects.frame.hero.contract_value') }}</dt>
                       <dd><kaff-figure [value]="p.contractValue" [unit]="i18n.t('catalogue.currency.affix')" /></dd>
@@ -333,7 +333,7 @@
                 <kaff-fact [label]="i18n.t('projects.workspace.pay.collected')" testId="workspace-pay-collected"><kaff-figure [value]="m.collectedToDate" /></kaff-fact>
                 <kaff-fact [label]="i18n.t('projects.workspace.pay.outstanding')" testId="workspace-pay-outstanding"><kaff-figure [value]="m.outstanding" /></kaff-fact>
               </kaff-fact-list>
-              @if (p.holdRate !== null || p.advanceRate !== null || p.signedOn || p.startedOn) {
+              @if (p.holdRate != null || p.advanceRate != null || p.signedOn || p.startedOn) {
                 <button
                   type="button"
                   class="disc"
@@ -346,12 +346,12 @@
                 </button>
                 @if (termsOpen()) {
                   <kaff-fact-list id="contract-terms">
-                    @if (p.holdRate !== null) {
+                    @if (p.holdRate != null) {
                       <kaff-fact [label]="i18n.t('projects.workspace.vocab.fact.hold_rate')" testId="workspace-fact-hold">
                         <bdi dir="ltr" class="num">{{ rate(p.holdRate) }}</bdi>
                       </kaff-fact>
                     }
-                    @if (p.advanceRate !== null) {
+                    @if (p.advanceRate != null) {
                       <kaff-fact [label]="i18n.t('projects.workspace.vocab.fact.advance_rate')" testId="workspace-fact-advance">
                         <bdi dir="ltr" class="num">{{ rate(p.advanceRate) }}</bdi>
                       </kaff-fact>

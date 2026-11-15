@@ -8,11 +8,9 @@ namespace Kaff.Api.Features.Projects.ListProjects;
 /// One project, as a row in the list. KAFF-400, S-050.
 /// </summary>
 /// <remarks>
-/// <b>No redaction by role, the same reasoning as <c>GetProject.Response</c>.</b> Every role that
-/// reaches this endpoint already holds <c>Permission.ProjectList</c>, whose catalogue grants are Owner,
-/// Finance, Technical Office, Marketing and Site Engineer — HR holds no grant on this row and is
-/// refused at the gate before <c>Handler</c> runs at all; its own project list is
-/// <c>GET /api/auth/me</c>'s <c>TeamProjectEntry</c> (KAFF-105b, D-103). <b>Every money-shaped member
+/// <b>Contract figures follow <c>Permission.ProjectMoneyRead</c> per project, the same rule as <c>GetProject.Response</c></b>
+/// (KAFF-420 AC-5): they are null, and so absent from the JSON, where the caller does not hold it. HR is refused at the
+/// gate before <c>Handler</c> runs at all; its own project list is <c>GET /api/auth/me</c>'s <c>TeamProjectEntry</c> (KAFF-105b, D-103). <b>Every money-shaped member
 /// crosses the wire as a JSON string</b> (D-135) through the global converters in <c>KaffJson</c>.
 /// </remarks>
 /// <param name="Id">The project.</param>
@@ -33,9 +31,9 @@ public sealed record ProjectSummary(
     Guid ClientId,
     ContractType ContractType,
     ProjectStatus Status,
-    Money? ContractValue,
-    Money? OriginalContractValue,
-    Money ApprovedChangeOrderTotal,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] Money? ContractValue,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] Money? OriginalContractValue,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] Money? ApprovedChangeOrderTotal,
     bool IsArchived,
     DateOnly? FollowUpEndsOn);
 

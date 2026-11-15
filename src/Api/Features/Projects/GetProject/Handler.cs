@@ -67,6 +67,7 @@ internal static class Handler
         Project candidateProject = found.Project;
         // The daily log judges "today" in the site zone (DailyLogEntryRule), so the overview uses the same rule.
         DateOnly today = rulings.DailyLogEntry.SiteDate(clock.GetUtcNow());
+        bool seesMoney = await CallerPermissions.HoldsAsync(authorization, user, Permission.ProjectMoneyRead);
         Response project = new(
             candidateProject.Id,
             candidateProject.Code,
@@ -75,12 +76,12 @@ internal static class Handler
             found.ClientName,
             candidateProject.ContractType,
             candidateProject.Status,
-            candidateProject.RevisedContractValue(approved),
-            candidateProject.HoldRate,
-            candidateProject.AdvanceRate,
+            seesMoney ? candidateProject.RevisedContractValue(approved) : null,
+            seesMoney ? candidateProject.HoldRate : null,
+            seesMoney ? candidateProject.AdvanceRate : null,
             found.TeamSize,
-            candidateProject.ContractValue,
-            approved,
+            seesMoney ? candidateProject.ContractValue : null,
+            seesMoney ? approved : null,
             candidateProject.SignedOn,
             candidateProject.StartedOn,
             candidateProject.HandoverOn,
@@ -89,7 +90,7 @@ internal static class Handler
             await database.DailyLogs.Where(log => log.ProjectId == projectId)
                 .Select(log => (DateOnly?)log.LogDate)
                 .MaxAsync(cancellationToken),
-            await CallerPermissions.HoldsAsync(authorization, user, Permission.ProjectMoneyRead)
+            seesMoney
                 ? await MoneyAsync(database, projectId, cancellationToken)
                 : null,
             candidateProject.IsArchived(clock.GetUtcNow(), rulings.FollowUp),
@@ -100,7 +101,8 @@ internal static class Handler
             StageOf.Of(candidateProject),
             candidateProject.IsSigned,
             await database.DailyLogs.AnyAsync(log => log.ProjectId == projectId && log.LogDate == today, cancellationToken),
-            await TabsAsync(authorization, user));
+            await TabsAsync(authorization, user),
+            seesMoney ? candidateProject.AdvanceRecoveryRate : null);
 
         return Microsoft.AspNetCore.Http.Results.Ok(project);
     }

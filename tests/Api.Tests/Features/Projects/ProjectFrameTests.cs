@@ -118,6 +118,52 @@ public sealed class ProjectFrameTests : IAsyncLifetime
 
         body.RootElement.TryGetProperty("money", out _).Should().BeFalse("the key is absent, not null");
         raw.Should().NotContain("billedToDate").And.NotContain("collectedToDate").And.NotContain("outstanding");
+        body.RootElement.EnumerateObject().Select(property => property.Name).Should().NotIntersectWith(ContractFigureKeys);
+    }
+
+    private static readonly string[] ContractFigureKeys =
+        ["contractValue", "originalContractValue", "approvedChangeOrderTotal", "holdRate", "advanceRate", "advanceRecoveryRate"];
+
+    [Theory]
+    [InlineData("owner")]
+    [InlineData("supervisor")]
+    [InlineData("finance")]
+    [InlineData("technicalOffice")]
+    public async Task Money_roles_receive_every_contract_figure_including_the_advance_recovery_rate(string who)
+    {
+        using JsonDocument body = await ReadAsync(Who(who), $"/api/projects/{_projectId}");
+
+        body.RootElement.EnumerateObject().Select(property => property.Name).Should().Contain(ContractFigureKeys);
+        body.RootElement.GetProperty("advanceRecoveryRate").ValueKind.Should().NotBe(JsonValueKind.Null);
+    }
+
+    [Theory]
+    [InlineData("junior")]
+    [InlineData("marketing")]
+    public async Task The_junior_and_marketing_never_receive_a_contract_figure_in_the_project_list(string who)
+    {
+        string raw = await RawAsync(Who(who), "/api/projects");
+        using JsonDocument body = JsonDocument.Parse(raw);
+
+        JsonElement row = body.RootElement.GetProperty("projects").EnumerateArray()
+            .Single(item => item.GetProperty("id").GetGuid() == _projectId);
+        row.EnumerateObject().Select(property => property.Name).Should().NotIntersectWith(ContractFigureKeys);
+    }
+
+    [Theory]
+    [InlineData("owner")]
+    [InlineData("supervisor")]
+    [InlineData("finance")]
+    [InlineData("technicalOffice")]
+    public async Task Money_roles_still_receive_the_contract_value_in_the_project_list(string who)
+    {
+        using JsonDocument body = await ReadAsync(Who(who), "/api/projects");
+
+        JsonElement row = body.RootElement.GetProperty("projects").EnumerateArray()
+            .Single(item => item.GetProperty("id").GetGuid() == _projectId);
+        row.TryGetProperty("contractValue", out _).Should().BeTrue();
+        row.TryGetProperty("originalContractValue", out _).Should().BeTrue();
+        row.TryGetProperty("approvedChangeOrderTotal", out _).Should().BeTrue();
     }
 
 

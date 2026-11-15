@@ -45,6 +45,7 @@ internal static class Handler
         KaffDbContext database,
         ICurrentUser currentUser,
         IPermissionSubjectReader subjectReader,
+        IProjectAccessPolicy accessPolicy,
         RulingSet rulings,
         TimeProvider clock,
         CancellationToken cancellationToken)
@@ -53,6 +54,7 @@ internal static class Handler
         ArgumentNullException.ThrowIfNull(database);
         ArgumentNullException.ThrowIfNull(currentUser);
         ArgumentNullException.ThrowIfNull(subjectReader);
+        ArgumentNullException.ThrowIfNull(accessPolicy);
 
         // RequirePermission(Permission.ProjectList) has already run: an authenticated subject with a
         // role holding the grant is guaranteed here. The read is repeated rather than passed through
@@ -92,17 +94,22 @@ internal static class Handler
 
         // The contract value is derived: the signed BOQ total plus the approved change orders (ChangeOrderDisplayedValue).
         Dictionary<Guid, Money> approved = await ChangeOrderQueries.ApprovedTotalsAsync(database, null, cancellationToken);
-        List<ProjectSummary> projects =
-        [
-            .. loaded.Select(project =>
-            {
-                Money change = approved.TryGetValue(project.Id, out Money total) ? total : Money.Zero;
-                return new ProjectSummary(
-                    project.Id, project.Code, project.Name, project.ClientId, project.ContractType, project.Status,
-                    project.RevisedContractValue(change), project.ContractValue, change,
-                    project.IsArchived(now, rulings.FollowUp), project.FollowUpEndsOn(rulings.FollowUp));
-            }),
-        ];
+        // ProjectMoneyRead is project-scoped, so it is asked per row, through the same evaluator the gate uses.
+        // ponytail: one access query per listed project; batch it if the list ever grows past a few hundred.
+        List<ProjectSummary> projects = [];
+        foreach (Project project in loaded)
+        {
+            ProjectAccess access = await accessPolicy.EvaluateAsync(subject, project.Id, cancellationToken);
+            bool seesMoney = PermissionEvaluator.Evaluate(subject, Permission.ProjectMoneyRead, project.Id, access)
+                == PermissionDecision.Granted;
+            Money change = approved.TryGetValue(project.Id, out Money total) ? total : Money.Zero;
+            projects.Add(new ProjectSummary(
+                project.Id, project.Code, project.Name, project.ClientId, project.ContractType, project.Status,
+                seesMoney ? project.RevisedContractValue(change) : null,
+                seesMoney ? project.ContractValue : null,
+                seesMoney ? change : null,
+                project.IsArchived(now, rulings.FollowUp), project.FollowUpEndsOn(rulings.FollowUp)));
+        }
 
         return Microsoft.AspNetCore.Http.Results.Ok(new Response(projects, projects.Count));
     }
