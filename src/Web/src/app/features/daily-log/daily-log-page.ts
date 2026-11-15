@@ -277,7 +277,7 @@ export class DailyLogPage {
       });
     });
 
-    effect(() => this.headerActions.set(this.primary() !== null ? (this.primaryTemplate() ?? null) : null));
+    effect(() => this.headerActions.set(this.primary() !== null ? (this.primaryTemplate() ?? null) : null, 'primary'));
 
     // Thumbnails of the shown day's photos: one authenticated fetch per entry, kept as an object URL.
     effect(() => {
@@ -286,7 +286,7 @@ export class DailyLogPage {
     });
 
     inject(DestroyRef).onDestroy(() => {
-      this.headerActions.set(null);
+      this.headerActions.clear();
       Object.values(this.thumbs()).forEach((url) => URL.revokeObjectURL(url));
       this.revokePreview();
     });

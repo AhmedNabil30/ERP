@@ -15,6 +15,7 @@ import { AuthService } from './core/auth/auth.service';
 import { SessionResolver } from './core/auth/session-resolver';
 import { roleKey } from './core/i18n/enum-keys';
 import { I18nService, Locale } from './core/i18n/i18n.service';
+import { OverlayService } from './core/layout/overlay.service';
 import { HeaderActionsService } from './core/layout/header-actions.service';
 import { navLabelKeyFor } from './core/navigation/landing';
 import { NavRowGroup, navGroupsFor } from './core/navigation/nav-rows';
@@ -58,6 +59,7 @@ export class App {
   protected readonly i18n = inject(I18nService);
   protected readonly theme = inject(ThemeService);
   protected readonly headerActions = inject(HeaderActionsService);
+  private readonly overlays = inject(OverlayService);
 
   private readonly menuButton = viewChild<ElementRef<HTMLButtonElement>>('menuButton');
   private readonly sheetClose = viewChild<ElementRef<HTMLButtonElement>>('sheetClose');
@@ -71,6 +73,9 @@ export class App {
   /** The phone's destinations sheet. */
   private readonly navOpen = signal(false);
   protected readonly isNavOpen = this.navOpen.asReadonly();
+
+  /** AC-936-H: the nav sheet or any overlay (confirm dialog, detail panel) hides the bottom bar. */
+  protected readonly overlayOpen = computed(() => this.navOpen() || this.overlays.anyOpen());
 
   /**
    * The desktop sidebar rail, set by hand (Nabil, 2026-09-26: "the side menue should be collapsable").

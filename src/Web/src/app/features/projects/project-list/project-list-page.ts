@@ -107,8 +107,8 @@ export class ProjectListPage {
 
   constructor() {
     void this.reload();
-    effect(() => this.headerActions.set(this.canCreate() ? (this.createAction() ?? null) : null));
-    inject(DestroyRef).onDestroy(() => this.headerActions.set(null));
+    effect(() => this.headerActions.set(this.canCreate() ? (this.createAction() ?? null) : null, 'primary'));
+    inject(DestroyRef).onDestroy(() => this.headerActions.clear());
   }
 
   protected toggleArchived(): void {

@@ -279,8 +279,8 @@ export class CrewPage {
       });
     });
 
-    effect(() => this.headerActions.set(this.primary() !== null ? (this.primaryTemplate() ?? null) : null));
-    inject(DestroyRef).onDestroy(() => this.headerActions.set(null));
+    effect(() => this.headerActions.set(this.primary() !== null ? (this.primaryTemplate() ?? null) : null, 'primary'));
+    inject(DestroyRef).onDestroy(() => this.headerActions.clear());
   }
 
   protected onPrimary(): void {

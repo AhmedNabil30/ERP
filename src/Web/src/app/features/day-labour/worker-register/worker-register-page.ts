@@ -1,4 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  TemplateRef,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormField, form, required, schema, submit } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
 
@@ -10,6 +21,7 @@ import {
   WorkerPhoneMatch,
   isRestrictedMatch,
 } from '../../../core/day-labour/day-labour.api';
+import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { DuplicatePhoneWarning } from '../../../shared/duplicate-phone-warning/duplicate-phone-warning';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
@@ -62,6 +74,8 @@ export class WorkerRegisterPage {
   private readonly auth = inject(AuthService);
 
   protected readonly i18n = inject(I18nService);
+  private readonly headerActions = inject(HeaderActionsService);
+  private readonly primaryTemplate = viewChild<TemplateRef<unknown>>('primaryAction');
 
   /** `WorkerMobile.dc.html`'s sticky-header subtitle — the project's own name, read off the session's
    *  assignment list the same way `worker-history-page.ts`'s `projectLabel` does. `null` while the
@@ -92,6 +106,9 @@ export class WorkerRegisterPage {
   protected readonly canSubmit = computed(() => this.workerForm().valid() && !this.workerForm().submitting());
 
   constructor() {
+    effect(() => this.headerActions.set(this.primaryTemplate() ?? null, 'primary'));
+    inject(DestroyRef).onDestroy(() => this.headerActions.clear());
+
     // Deferred to an `effect`, not called straight from the constructor body: `projectId` is a
     // required input, and reading it before Angular applies the route-bound value (or, in a test,
     // before `setInput` runs) throws `NG0951`. `effect` defers the first read to the next change

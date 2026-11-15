@@ -115,8 +115,8 @@ export class SubcontractorListPage {
   protected readonly rowFailure = signal<{ readonly id: string; readonly key: string } | null>(null);
 
   constructor() {
-    effect(() => this.headerActions.set(this.createAction() ?? null));
-    inject(DestroyRef).onDestroy(() => this.headerActions.set(null));
+    effect(() => this.headerActions.set(this.createAction() ?? null, 'primary'));
+    inject(DestroyRef).onDestroy(() => this.headerActions.clear());
 
     void this.loadBabs();
 

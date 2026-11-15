@@ -177,7 +177,8 @@
   border-block-start: 1px solid var(--line);
 }
 
-.app[data-sheet='1'] .abar {
+/* AC-936-H: any open overlay hides the bar. */
+.app[data-overlay='1'] .abar {
   visibility: hidden;
 }
 
@@ -194,6 +195,10 @@
   color: var(--ink);
   font: 700 1rem / 1 var(--display);
   cursor: pointer;
+}
+
+.menu:only-child {
+  flex: 1;
 }
 
 .menu:hover {

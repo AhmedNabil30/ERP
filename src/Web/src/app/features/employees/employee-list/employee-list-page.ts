@@ -126,8 +126,8 @@ export class EmployeeListPage {
       void this.reload();
     });
 
-    effect(() => this.headerActions.set(this.createAction() ?? null));
-    inject(DestroyRef).onDestroy(() => this.headerActions.set(null));
+    effect(() => this.headerActions.set(this.createAction() ?? null, 'primary'));
+    inject(DestroyRef).onDestroy(() => this.headerActions.clear());
   }
 
   protected async onCreate(): Promise<void> {

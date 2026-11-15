@@ -122,23 +122,6 @@
   border-radius: var(--radius-md);
 }
 
-/* `WorkerMobile.dc.html`: the footer is pinned to the bottom of the viewport, not the end of the last
-   field, so the primary action is always one thumb-reach away regardless of form length. */
-.footer {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom));
-  background: var(--color-background);
-  border-block-start: 1px solid var(--color-border);
-  position: sticky;
-  inset-block-end: 0;
-}
-
-.footer kaff-button {
-  align-self: stretch;
-}
-
 .cancel {
   align-self: center;
   min-block-size: var(--tap-target);

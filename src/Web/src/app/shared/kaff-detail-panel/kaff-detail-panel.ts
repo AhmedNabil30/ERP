@@ -10,6 +10,7 @@ import {
   viewChild,
 } from '@angular/core';
 
+import { OverlayService } from '../../core/layout/overlay.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { KaffIcon } from '../kaff-icon/kaff-icon';
 
@@ -57,6 +58,7 @@ export class KaffDetailPanel {
   private opener: HTMLElement | null = null;
 
   constructor() {
+    inject(OverlayService).track(() => this.open());
     effect(() => {
       if (this.open()) {
         this.opener = document.activeElement as HTMLElement | null;

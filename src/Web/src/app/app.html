@@ -94,7 +94,7 @@
   class="app"
   [class.is-rail]="isRail()"
   [class.is-bare]="!session()"
-  [attr.data-sheet]="isNavOpen() ? '1' : null">
+  [attr.data-overlay]="overlayOpen() ? '1' : null">
   <!--
     The application name, always present and always announced, in every session state. There is no top
     bar to carry it any more (the sidebar and the phone header both show the wordmark image), and

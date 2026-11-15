@@ -1,3 +1,10 @@
+<!-- The shell places this in the bottom bar on a phone and the page header on desktop; the screen never renders it itself. -->
+<ng-template #primaryAction>
+  <kaff-button variant="primary" testId="worker-submit" [disabled]="!canSubmit()" (clicked)="onSubmit()">
+    {{ i18n.t('action.save') }}
+  </kaff-button>
+</ng-template>
+
 <section class="worker-register" data-testid="worker-register-form">
   <!-- `WorkerMobile.dc.html`: a sticky header carrying a back arrow, the screen title and the project
        name beneath it. -->
@@ -114,15 +121,8 @@
       <p class="refusal" role="alert" data-testid="worker-form-refusal">{{ i18n.t(key) }}</p>
     }
 
-    <!-- `WorkerMobile.dc.html`: a bottom-anchored footer, 52px primary action, cancel as plain text
-         below it. -->
-    <div class="footer">
-      <kaff-button variant="primary" type="submit" testId="worker-submit" [disabled]="!canSubmit()">
-        {{ i18n.t('action.save') }}
-      </kaff-button>
-      <a class="cancel" [routerLink]="['/projects', projectId(), 'day-labour']" data-testid="worker-register-cancel">
-        {{ i18n.t('action.cancel') }}
-      </a>
-    </div>
+    <a class="cancel" [routerLink]="['/projects', projectId(), 'day-labour']" data-testid="worker-register-cancel">
+      {{ i18n.t('action.cancel') }}
+    </a>
   </form>
 </section>

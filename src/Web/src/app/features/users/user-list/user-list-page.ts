@@ -170,8 +170,8 @@ export class UserListPage {
     void this.reload();
     void this.loadDepartments();
 
-    effect(() => this.headerActions.set(this.createAction() ?? null));
-    inject(DestroyRef).onDestroy(() => this.headerActions.set(null));
+    effect(() => this.headerActions.set(this.createAction() ?? null, 'primary'));
+    inject(DestroyRef).onDestroy(() => this.headerActions.clear());
   }
 
   protected trackUser(_index: number, user: UserSummary): string {

@@ -1,5 +1,5 @@
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
-import { signal } from '@angular/core';
+import { ApplicationRef, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -11,6 +11,7 @@ import {
   WorkerPhoneMatch,
   WorkerRegister,
 } from '../../../core/day-labour/day-labour.api';
+import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { WorkerRegisterPage } from './worker-register-page';
 
@@ -199,5 +200,25 @@ describe('WorkerRegisterPage · duplicate-phone resend (S-026, D-141)', () => {
     expect(api.registerCalls).toHaveLength(2);
     expect(api.registerCalls[0].acknowledgedDuplicatePhone).toBe(false);
     expect(api.registerCalls[1].acknowledgedDuplicatePhone).toBe(true);
+  });
+});
+
+describe('WorkerRegisterPage · the primary action goes through the shell slot (KAFF-936 AC-936-J)', () => {
+  it('declares its save through the slot: no footer and no primary button on the page itself', async () => {
+    const fixture = await createPage(new FakeDayLabourApi([]));
+    const page: HTMLElement = fixture.nativeElement;
+
+    expect(page.querySelector('.footer')).toBeNull();
+    expect(page.querySelector('[data-testid="worker-submit"]')).toBeNull();
+    expect(page.querySelector('[data-testid="worker-register-cancel"]')).not.toBeNull();
+
+    const template = TestBed.inject(HeaderActionsService).template();
+    expect(template).not.toBeNull();
+    const view = template!.createEmbeddedView({});
+    TestBed.inject(ApplicationRef).attachView(view);
+    view.detectChanges();
+    const host = document.createElement('div');
+    view.rootNodes.forEach((node: Node) => host.appendChild(node));
+    expect(host.querySelector('button[data-testid="worker-submit"]')).not.toBeNull();
   });
 });

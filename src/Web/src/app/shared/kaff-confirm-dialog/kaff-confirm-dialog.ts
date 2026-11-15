@@ -3,11 +3,13 @@ import {
   Component,
   ElementRef,
   effect,
+  inject,
   input,
   output,
   viewChild,
 } from '@angular/core';
 
+import { OverlayService } from '../../core/layout/overlay.service';
 import { KaffButton } from '../kaff-button/kaff-button';
 import { KaffIcon, KaffIconName } from '../kaff-icon/kaff-icon';
 
@@ -49,6 +51,7 @@ export class KaffConfirmDialog {
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
 
   constructor() {
+    inject(OverlayService).track(() => this.open());
     effect(() => {
       const el = this.dialog().nativeElement;
       if (this.open() && !el.open) {
