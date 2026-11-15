@@ -215,7 +215,7 @@
                       @if (line.backDated) {
                         <kaff-status-pill tone="same" icon="clock" testId="daily-log-flag">{{ i18n.t('daily_log.back_dated') }}</kaff-status-pill>
                       }
-                      <span entFigure><bdi dir="ltr">{{ number(line.quantity) }}</bdi> <small dir="auto">{{ line.unit }}</small></span>
+                      <span entFigure><bdi dir="ltr">{{ number(line.quantity) }}</bdi> <small dir="auto">{{ unitLabel(line.unit) }}</small></span>
                     </kaff-log-entry>
                   }
                 </kaff-log-group>

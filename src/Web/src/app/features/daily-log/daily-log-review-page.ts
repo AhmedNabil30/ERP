@@ -10,6 +10,7 @@ import {
   QuantityLine,
   TextLine,
 } from '../../core/daily-log/daily-log.api';
+import { materialUnitLabel } from '../../core/daily-log/material-units';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { ProjectDetail } from '../../core/projects/projects.api';
 import { KaffAttendanceStrip } from '../../shared/kaff-attendance-strip/kaff-attendance-strip';
@@ -76,6 +77,10 @@ export class DailyLogReviewPage {
 
   private readonly api = inject(DailyLogApi);
   protected readonly i18n = inject(I18nService);
+
+  protected unitLabel(unit: string): string {
+    return materialUnitLabel(this.i18n, unit);
+  }
 
   protected readonly project = signal<ProjectDetail | null>(null);
   protected readonly stopped = computed(() => this.project()?.status === 'Stopped');

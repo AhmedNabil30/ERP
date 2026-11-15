@@ -448,6 +448,7 @@
   "errors.daily_log.worker_not_found": "لم يتم العثور على عامل اليومية.",
   "errors.daily_log.text_required": "هذا الحقل مطلوب.",
   "errors.daily_log.text_too_long": "النص أطول من المسموح.",
+  "errors.daily_log.unit_not_allowed": "اختر وحدة من القائمة.",
   "errors.daily_log.file_reference_required": "الصورة تحتاج إلى مرجع ملف.",
   "errors.daily_log.file_reference_invalid": "لم يتم رفع هذه الصورة إلى هذا المشروع. ارفعها مرة أخرى.",
   "errors.daily_log.photo_not_an_image": "يُقبل فقط ملف صورة بصيغة JPEG أو PNG أو WebP.",

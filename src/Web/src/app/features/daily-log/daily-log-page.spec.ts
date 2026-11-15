@@ -660,11 +660,29 @@ describe('DailyLogPage', () => {
       fixture.detectChanges();
       type(root, 'daily-log-material-name', 'أسمنت');
       type(root, 'daily-log-material-quantity', '20');
-      type(root, 'daily-log-material-unit', 'daily_log.unit.bag');
+      type(root, 'daily-log-material-unit', 'bag');
       await pressPrimary(fixture);
 
       expect(api.materials).toHaveLength(1);
-      expect(api.materials[0]).toMatchObject({ materialType: 'أسمنت', quantity: 20, unit: 'daily_log.unit.bag' });
+      expect(api.materials[0]).toMatchObject({ materialType: 'أسمنت', quantity: 20, unit: 'bag' });
+    });
+  });
+
+  describe('S-6: the unit of a material is a key, shown as its label', () => {
+    const MATERIAL = { entryId: 'm1', materialType: 'أسمنت', quantity: 20, isStockpile: false, occurredAt: '2026-11-10T09:00:00+02:00' };
+
+    it('shows a stored key as its translated label', async () => {
+      const fixture = await createPage(new FakeDailyLogApi(log({ materials: [{ ...MATERIAL, unit: 'bag' }] })));
+
+      expect(el(fixture.nativeElement, 'daily-log-materials')?.textContent).toContain('daily_log.unit.bag');
+    });
+
+    it('shows a stored unit that is not a known key as it was stored', async () => {
+      const fixture = await createPage(new FakeDailyLogApi(log({ materials: [{ ...MATERIAL, unit: 'كيس' }] })));
+
+      const text = el(fixture.nativeElement, 'daily-log-materials')?.textContent ?? '';
+      expect(text).toContain('كيس');
+      expect(text).not.toContain('daily_log.unit.');
     });
   });
 

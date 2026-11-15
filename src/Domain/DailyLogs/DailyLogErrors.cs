@@ -46,6 +46,10 @@ public static class DailyLogErrors
     public static readonly Error TextTooLong =
         Error.Validation("daily_log.text_too_long", "errors.daily_log.text_too_long");
 
+    /// <summary>The material unit is not a key of <see cref="MaterialUnits.Keys"/>.</summary>
+    public static readonly Error UnitNotAllowed =
+        Error.Validation("daily_log.unit_not_allowed", "errors.daily_log.unit_not_allowed");
+
     public static readonly Error FileReferenceRequired =
         Error.Validation("daily_log.file_reference_required", "errors.daily_log.file_reference_required");
 

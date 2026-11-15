@@ -16,6 +16,7 @@ import { RouterLink } from '@angular/router';
 
 import { toProblem } from '../../core/api/problem-details';
 import { BoqLines, BoqPickLine, CheckInLine, DailyLog, DailyLogApi, QuantityLine } from '../../core/daily-log/daily-log.api';
+import { MATERIAL_UNIT_KEYS, materialUnitLabel } from '../../core/daily-log/material-units';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { HeaderActionsService } from '../../core/layout/header-actions.service';
 import { ProjectDetail } from '../../core/projects/projects.api';
@@ -52,17 +53,6 @@ const KIND_OPTIONS: readonly KindOption<EntryKind>[] = [
   { value: 'material', labelKey: 'daily_log.kind.material', icon: 'mat' },
   { value: 'photo', labelKey: 'daily_log.kind.photo', icon: 'cam' },
   { value: 'stoppage', labelKey: 'daily_log.kind.stoppage', icon: 'stop' },
-];
-
-/** The material units the screen offers; Karim confirms the list (D-217 item 17). */
-const UNIT_KEYS: readonly string[] = [
-  'daily_log.unit.bag',
-  'daily_log.unit.m3',
-  'daily_log.unit.m2',
-  'daily_log.unit.ton',
-  'daily_log.unit.metre',
-  'daily_log.unit.piece',
-  'daily_log.unit.litre',
 ];
 
 interface EntryDraft {
@@ -143,8 +133,12 @@ export class DailyLogPage {
 
   protected readonly kindOptions = KIND_OPTIONS;
   protected readonly unitOptions = computed<readonly SelectOption[]>(() =>
-    UNIT_KEYS.map((key) => ({ value: this.i18n.t(key), label: this.i18n.t(key) })),
+    MATERIAL_UNIT_KEYS.map((key) => ({ value: key, label: this.i18n.t(`daily_log.unit.${key}`) })),
   );
+
+  protected unitLabel(unit: string): string {
+    return materialUnitLabel(this.i18n, unit);
+  }
 
   protected readonly project = signal<ProjectDetail | null>(null);
   protected readonly stopped = computed(() => this.project()?.status === 'Stopped');

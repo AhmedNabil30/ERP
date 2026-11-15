@@ -175,6 +175,27 @@ describe('DailyLogReviewPage', () => {
     expect(strips[2].textContent).not.toContain('far');
   });
 
+  it('shows a stored material unit key as its label and any other stored unit as it was stored', async () => {
+    const material = { entryId: 'm', materialType: 'x', quantity: 2, isStockpile: false, occurredAt: '2026-11-10T09:00:00+02:00' };
+    const root: HTMLElement = (await createPage(new FakeDailyLogApi([
+      engineer('a', { materials: [{ ...material, entryId: 'm1', unit: 'bag' }, { ...material, entryId: 'm2', unit: 'كيس' }] }),
+    ]))).nativeElement;
+
+    const text = el(root, 'daily-log-materials')!.textContent!;
+    expect(text).toContain('daily_log.unit.bag');
+    expect(text).toContain('كيس');
+  });
+
+  it('shows the name of the باب on a quantity line when the server sends it', async () => {
+    const quantity: QuantityLine = {
+      entryId: 'q1', boqLineId: 'l1', itemCode: null, descriptionAr: 'tile', unit: 'm2', quantity: 5, previousQuantity: null,
+      occurredAt: '2026-11-10T09:00:00+02:00', corrected: false, correctedByName: null, babName: 'أعمال الأرضيات',
+    };
+    const root: HTMLElement = (await createPage(new FakeDailyLogApi([engineer('a', { quantities: [quantity] })]))).nativeElement;
+
+    expect(el(root, 'daily-log-quantity-0')!.textContent).toContain('أعمال الأرضيات');
+  });
+
   it('shows a corrected quantity with the old figure, the new figure, the mark and who corrected it', async () => {
     const corrected: QuantityLine = {
       entryId: 'q1',

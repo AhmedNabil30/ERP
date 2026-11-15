@@ -454,6 +454,64 @@ public sealed partial class DailyLogTests
         (await reader.FieldEntries.AsNoTracking().CountAsync(entry => entry.Id == stored, Ct)).Should().Be(1, "stored rows are not deleted");
     }
 
+    // ---- S-6: the unit of a material is a stable key, not a translated label --------------------------------------
+
+    [Fact]
+    public async Task Finding_S6_a_material_unit_is_stored_and_read_as_its_key()
+    {
+        (Guid project, _) = await NewActiveProjectAsync();
+
+        (await SendAsync(HttpMethod.Post, $"{Logs(project)}/materials", _engineerA,
+            new { entryId = Guid.NewGuid(), materialType = "Cement", quantity = 3m, unit = "m3", isStockpile = false, occurredAt = At(9, 0) }))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        (await MineAsync(project)).GetProperty("materials")[0].GetProperty("unit").GetString().Should().Be("m3");
+    }
+
+    [Theory]
+    [InlineData("كيس")]
+    [InlineData("Bag")]
+    [InlineData("kg")]
+    public async Task Finding_S6_a_material_unit_that_is_not_a_key_of_the_list_is_refused(string unit)
+    {
+        (Guid project, _) = await NewActiveProjectAsync();
+
+        HttpResponseMessage refused = await SendAsync(HttpMethod.Post, $"{Logs(project)}/materials", _engineerA,
+            new { entryId = Guid.NewGuid(), materialType = "Cement", quantity = 3m, unit, isStockpile = false, occurredAt = At(9, 0) });
+
+        refused.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await MessageKeyAsync(refused)).Should().Be("errors.daily_log.unit_not_allowed");
+    }
+
+    [Fact]
+    public async Task Finding_S6_a_stored_unit_that_is_a_label_is_read_back_as_it_was_stored()
+    {
+        (Guid project, _) = await NewActiveProjectAsync();
+        Guid stored = Guid.NewGuid();
+        (await SendAsync(HttpMethod.Post, $"{Logs(project)}/materials", _engineerA,
+            new { entryId = stored, materialType = "Cement", quantity = 3m, unit = "bag", isStockpile = false, occurredAt = At(9, 0) }))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+
+        // A row written before the key: the translated label, as the old screen sent it.
+        await using (KaffDbContext writer = _database.CreateBareContext())
+        {
+            await writer.Database.ExecuteSqlAsync($"UPDATE material_entries SET unit = 'كيس' WHERE id = {stored}", Ct);
+        }
+
+        (await MineAsync(project)).GetProperty("materials")[0].GetProperty("unit").GetString().Should().Be("كيس");
+    }
+
+    // ---- S-6: a quantity line names its باب -----------------------------------------------------------------------
+
+    [Fact]
+    public async Task Finding_S6_a_quantity_line_in_the_log_read_carries_its_bab_name()
+    {
+        (Guid project, Guid line) = await NewActiveProjectAsync();
+        (await Quantity(project, line, 4m, At(9, 0))).StatusCode.Should().Be(HttpStatusCode.Created);
+
+        (await MineAsync(project)).GetProperty("quantities")[0].GetProperty("babName").GetString().Should().Be("أعمال خرسانة");
+    }
+
     // ---- KAFF-614 AC-13: audit ------------------------------------------------------------------------------------
 
     [Fact]

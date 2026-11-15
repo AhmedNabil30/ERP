@@ -448,6 +448,7 @@
   "errors.daily_log.worker_not_found": "The day labourer was not found.",
   "errors.daily_log.text_required": "This field is required.",
   "errors.daily_log.text_too_long": "The text is too long.",
+  "errors.daily_log.unit_not_allowed": "Choose a unit from the list.",
   "errors.daily_log.file_reference_required": "A photo needs a file reference.",
   "errors.daily_log.file_reference_invalid": "This photo was not uploaded to this project. Upload it again.",
   "errors.daily_log.photo_not_an_image": "Only JPEG, PNG or WebP photos are accepted.",

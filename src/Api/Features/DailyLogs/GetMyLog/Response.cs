@@ -68,6 +68,7 @@ public sealed record QuantityLine(
     string? ItemCode,
     string DescriptionAr,
     string Unit,
+    string BabName,
     decimal Quantity,
     decimal? PreviousQuantity,
     DateTimeOffset OccurredAt,

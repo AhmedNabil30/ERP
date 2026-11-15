@@ -197,6 +197,11 @@ public sealed class DailyLog : Entity
             return Result.Failure<MaterialEntry>(DailyLogErrors.TextTooLong);
         }
 
+        if (!MaterialUnits.Keys.Contains(unit.Trim()))
+        {
+            return Result.Failure<MaterialEntry>(DailyLogErrors.UnitNotAllowed);
+        }
+
         if (quantity <= 0m)
         {
             return Result.Failure<MaterialEntry>(DailyLogErrors.QuantityMustBePositive);

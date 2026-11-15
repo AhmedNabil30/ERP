@@ -62,7 +62,7 @@ internal static class LogView
             join line in database.Set<BoqLine>().AsNoTracking() on entry.BoqLineId equals line.Id
             where entry.DailyLogId == logId
             orderby entry.OccurredAt, entry.CreatedAt
-            select new { Entry = entry, line.ItemCode, line.DescriptionAr, line.Unit })
+            select new { Entry = entry, line.ItemCode, line.DescriptionAr, line.Unit, line.BabNameAr })
             .ToListAsync(cancellationToken);
 
         var labourRows = await (
@@ -92,7 +92,7 @@ internal static class LogView
                     .Where(other => other.Entry.CorrectsEntryId == row.Entry.Id).Select(other => other.Entry)];
                 ExecutedQuantityEntry? last = deltas.OrderByDescending(delta => delta.CreatedAt).FirstOrDefault();
                 return new QuantityLine(
-                    row.Entry.Id, row.Entry.BoqLineId, row.ItemCode, row.DescriptionAr, row.Unit,
+                    row.Entry.Id, row.Entry.BoqLineId, row.ItemCode, row.DescriptionAr, row.Unit, row.BabNameAr,
                     row.Entry.Quantity + deltas.Sum(delta => delta.Quantity),
                     last is null ? null : row.Entry.Quantity + deltas.Where(delta => delta.Id != last.Id).Sum(delta => delta.Quantity),
                     row.Entry.OccurredAt,
