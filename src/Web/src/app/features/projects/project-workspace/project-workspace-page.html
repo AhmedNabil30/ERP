@@ -114,7 +114,6 @@
                 </div>
               </form>
             } @else {
-              <p class="where-sub">{{ i18n.t('projects.convert.lead') }}</p>
               <div class="where-act">
                 <kaff-button variant="secondary" testId="workspace-convert" (clicked)="openConvert()">
                   {{ i18n.t('projects.convert.open') }}
@@ -130,7 +129,6 @@
       <section class="where" data-testid="workspace-sign-design">
         <div class="where-body">
           <p class="where-line">{{ i18n.t('projects.sign_design.title') }}</p>
-          <p class="where-sub">{{ i18n.t('projects.sign_design.lead') }}</p>
           <div class="convert">
             <label class="convert-label" for="sign-design-area">{{ i18n.t('projects.sign_design.area') }}</label>
             <input
