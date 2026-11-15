@@ -229,3 +229,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-220 | 16791 | Backend for KAFF-418: the prepared base, the copy route, the one quantity and the required signing terms · 2026-11-11 |
 | D-221 | 16824 | Backend for KAFF-419 and KAFF-420: project name per client, quick-add client, Finance staffed at creation, and the frame's tabs and money decided by the serv... |
 | D-222 | 16838 | Client picker for project create: id and name under ProjectCreate · 2026-11-11 |
+| D-223 | 16847 | Nabil rules staged releases and four wordings on the project screens · 2026-11-14 |

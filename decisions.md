@@ -16842,3 +16842,18 @@ in); entries made offline and sent after midnight are judged against the new day
 1. **Why.** The Technical Office holds `ProjectCreate` but not `ClientManage`. The create screen loaded its clients with `GET /api/clients`, which needs `ClientManage`, so the Technical Office got 403, could not pick a client and could not create a project. The old create page had the same fault.
 2. **What.** `GET /api/clients/picker`, gated `ProjectCreate`, no project scope (a company-wide row, like the quick phone-check). It returns `{ clients: [{ id, name }] }`: active clients only, ordered by name, with an optional `search` matched on the name only. No code, phone, kind or notes. No audit record (a read) and no new permission. `GET /api/clients` is not widened and keeps `ClientManage`. The screen calls the picker.
 3. **Why this is not a new exposure.** The quick phone-check under `ProjectCreate` already shows a holder's name to the same roles (D-218 item 9, D-221 item 3). The picker shows names the person needs to choose a client, and nothing else of the record.
+
+
+## D-223 — Nabil rules staged releases and four wordings on the project screens · 2026-11-14
+
+**Source.** Nabil, in session with the Scrum Master, 2026-11-14.
+
+1. **Staged releases.** The project is finished in releases, each usable, verified and accepted before the next opens. Release 0 stabilises the gates and the board. Release 1 is one project from start to finish on screen. Site money, the sales spine, accounting, the portal and offline mobile follow, and their order is reviewed at each release boundary.
+2. **Order of work.** Stabilise first, then one module at a time through the full pipeline: refine, journey brief, mock, mock review, approval, build, gates, Arabic copy, Verifier, fresh-eyes review, acceptance.
+3. **Karim's open questions.** Building continues on recorded assumptions, each a `RulingNote`. One short question sheet per release goes to Karim through Nabil, ordered by rebuild cost.
+4. **Contract wording.** The screens say «التعاقد» everywhere: «قيمة التعاقد», «نوع التعاقد». «قيمة العقد» on the overview is replaced.
+5. **Hold rate.** The label is «نسبة الحجز» on both the BOQ sign sheet and the contract terms.
+6. **Advance rates.** The advance taken at signing and the advance recovered from each extract are two different rates. The sign sheet must say which one it sets, and the server must hold both. Whether it does is not yet checked.
+7. **Measured quantity.** The quantity type beside «تقديري» on a BOQ line reads «مقاسة», not «معاينة».
+
+Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-11.md`. The other rows of D, E and H stay open.
