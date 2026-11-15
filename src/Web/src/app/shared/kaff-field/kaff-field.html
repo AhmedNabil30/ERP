@@ -1,6 +1,6 @@
 <div class="field">
   <label [for]="controlId()" class="field-label">
-    {{ i18n.t(labelKey()) }}
+    {{ labelText() ?? i18n.t(labelKey()) }}
     @if (required()) {
       <span class="required-marker" aria-hidden="true">*</span>
       <span class="sr-only">{{ i18n.t('a11y.required') }}</span>

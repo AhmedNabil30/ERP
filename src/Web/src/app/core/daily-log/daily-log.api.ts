@@ -2,8 +2,11 @@ import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
-/** `DailyLogField` on the wire (`JsonStringEnumConverter`). Check-in and check-out take no text. */
-export type DailyLogField = 'CheckIn' | 'CheckOut' | 'Weather' | 'Note' | 'StoppageReason';
+/**
+ * `DailyLogField` on the wire (`JsonStringEnumConverter`). Check-in and check-out take no text. Weather is gone
+ * (D-217 item 16): the server refuses it, so the client cannot send it.
+ */
+export type DailyLogField = 'CheckIn' | 'CheckOut' | 'Note' | 'StoppageReason';
 
 /**
  * `GET …/daily-logs/mine` — KAFF-600, `AC-600-J`. **Money-free by construction**: the server projects
@@ -15,16 +18,29 @@ export interface DailyLog {
   readonly logDate: string;
   readonly checkIn: string | null;
   readonly checkOut: string | null;
-  readonly weather: string | null;
-  readonly note: string | null;
-  readonly stoppageReason: string | null;
+  /** A second note or stoppage reason the same day is kept beside the first (D-217 items 12 and 16). */
+  readonly notes: readonly TextLine[];
+  readonly stoppageReasons: readonly TextLine[];
   readonly quantities: readonly QuantityLine[];
   readonly dayLabour: readonly DayLabourLine[];
   readonly materials: readonly MaterialLine[];
   readonly photos: readonly PhotoLine[];
   readonly expenseDrafts: readonly ExpenseDraftLine[];
   /** KAFF-613: each check-in and check-out with its place. Optional so older fixtures still type-check. */
-  readonly checkIns?: readonly CheckInLine[];
+  readonly checkIns: readonly CheckInLine[];
+  /**
+   * D-217 item 8: present only when the server sends the back-dated flag, which it does for the supervising site
+   * engineer and the owner. Absent for everyone else.
+   */
+  readonly backDated?: boolean;
+}
+
+/** A note or a stoppage reason. Free text. */
+export interface TextLine {
+  readonly entryId: string;
+  readonly text: string;
+  readonly occurredAt: string;
+  readonly backDated?: boolean;
 }
 
 /** One check-in or check-out. `flagReason` is set when the place is far from the site (Q-207-3). */
@@ -55,8 +71,11 @@ export interface QuantityLine {
   readonly itemCode: string | null;
   readonly descriptionAr: string;
   readonly unit: string;
+  /** The corrected figure: the saved quantity plus every signed delta that corrects it (D-218). */
   readonly quantity: number;
   readonly occurredAt: string;
+  readonly corrected: boolean;
+  readonly backDated?: boolean;
 }
 
 /** `GET …/daily-logs/boq-lines` (`ListBoqLines.Response`). No rate, cost, amount or total member exists. */
@@ -83,6 +102,7 @@ export interface DayLabourLine {
   readonly workerName: string;
   readonly hours: number;
   readonly occurredAt: string;
+  readonly backDated?: boolean;
 }
 
 export interface MaterialLine {
@@ -92,6 +112,7 @@ export interface MaterialLine {
   readonly unit: string;
   readonly isStockpile: boolean;
   readonly occurredAt: string;
+  readonly backDated?: boolean;
 }
 
 export interface PhotoLine {
@@ -100,6 +121,7 @@ export interface PhotoLine {
   readonly caption: string | null;
   readonly isPublished: boolean;
   readonly occurredAt: string;
+  readonly backDated?: boolean;
 }
 
 export interface ExpenseDraftLine {
@@ -130,9 +152,16 @@ export class DailyLogApi {
   /** The caller's log for `date` (`yyyy-MM-dd`), or `null` when none is opened yet (`404`). */
   async getMine(projectId: string, date: string): Promise<DailyLog | null> {
     try {
-      return await firstValueFrom(
+      const wire = await firstValueFrom(
         this.http.get<DailyLog>(`${this.base(projectId)}/mine`, { params: new HttpParams().set('date', date) }),
       );
+      // Decimals may arrive as strings; the screen formats numbers.
+      return {
+        ...wire,
+        quantities: wire.quantities.map((line) => ({ ...line, quantity: Number(line.quantity) })),
+        materials: wire.materials.map((line) => ({ ...line, quantity: Number(line.quantity) })),
+        dayLabour: wire.dayLabour.map((line) => ({ ...line, hours: Number(line.hours) })),
+      };
     } catch (error) {
       if (error instanceof HttpErrorResponse && error.status === 404) {
         return null;
@@ -178,6 +207,14 @@ export class DailyLogApi {
   /** A period delta: what was done in this period, added to the line's executed total by the server. */
   async recordQuantity(projectId: string, entry: EntryEnvelope & { boqLineId: string; quantity: number }): Promise<void> {
     await firstValueFrom(this.http.post(`${this.base(projectId)}/quantities`, entry));
+  }
+
+  /**
+   * Corrects a saved quantity (D-218 item 14): sends the figure the quantity should read, not the difference.
+   * The server stores a signed delta that names the entry; nothing is updated or deleted.
+   */
+  async correctQuantity(projectId: string, entryId: string, correction: { correctionId: string; quantity: number }): Promise<void> {
+    await firstValueFrom(this.http.post(`${this.base(projectId)}/quantities/${entryId}/corrections`, correction));
   }
 
   async recordDayLabour(projectId: string, entry: EntryEnvelope & { employeeId: string; hours: number }): Promise<void> {

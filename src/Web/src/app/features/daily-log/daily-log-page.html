@@ -1,276 +1,258 @@
-<section class="daily-log" data-testid="daily-log-page">
-  <header class="header">
-    <a
-      class="back"
-      [routerLink]="['/projects']"
-      [attr.aria-label]="i18n.t('daily_log.action.back')"
-      data-testid="daily-log-back"
+<!-- The shell places this in the bottom bar on a phone and the page header on desktop; the screen never renders it itself. -->
+<ng-template #primaryAction>
+  @if (primary(); as action) {
+    <kaff-button
+      variant="primary"
+      [testId]="action.act === 'check-in' ? 'daily-log-check-in' : 'daily-log-save'"
+      [busy]="action.act === 'check-in' ? locating() === 'CheckIn' : busy()"
+      [disabled]="action.act === 'check-in' ? locating() !== null : !valid()"
+      (clicked)="onPrimary()"
     >
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="m14 6 6 6-6 6" />
-        <path d="M20 12H4" />
-      </svg>
-    </a>
-    <span class="header-titles">
-      <h1 class="title">{{ i18n.t('daily_log.title') }}</h1>
-      @if (projectName(); as name) {
-        <span class="header-project" dir="auto">{{ name }}</span>
-      }
-    </span>
-  </header>
+      {{ i18n.t(action.labelKey) }}
+    </kaff-button>
+  }
+</ng-template>
 
-  <kaff-project-links class="links" [projectId]="projectId()" current="daily-log" />
-
-  <div class="body">
-    @if (loadFailure(); as key) {
-      <kaff-state mode="refusal" [bodyKey]="key" testId="daily-log-failure" />
-    } @else if (loading()) {
+<section class="dl" data-testid="daily-log-page">
+  <kaff-project-frame [projectId]="projectId()" current="dailyLog" (loaded)="onLoaded($event)">
+    @if (loading()) {
       <kaff-state mode="loading" titleKey="daily_log.loading" testId="daily-log-loading" />
-    } @else {
-      <section class="checkin" data-testid="daily-log-checkin" [attr.aria-label]="i18n.t('daily_log.checkin.title')">
-        <div class="checkin-buttons">
-          <kaff-button variant="primary" testId="daily-log-check-in" [busy]="locating() === 'CheckIn'" [disabled]="locating() !== null" (clicked)="checkIn('CheckIn')">
-            {{ i18n.t('daily_log.field.check_in') }}
-          </kaff-button>
-          <kaff-button variant="secondary" testId="daily-log-check-out" [busy]="locating() === 'CheckOut'" [disabled]="locating() !== null" (clicked)="checkIn('CheckOut')">
-            {{ i18n.t('daily_log.field.check_out') }}
-          </kaff-button>
-        </div>
-        <p class="hint">{{ i18n.t(locating() !== null ? 'daily_log.checkin.locating' : 'daily_log.checkin.hint') }}</p>
-        <div aria-live="polite">
-          @if (locationErrorKey(); as key) {
-            <p class="refusal" role="alert" data-testid="daily-log-location-error">{{ i18n.t(key) }}</p>
-          }
-        </div>
-        @if (log()?.checkIns; as entries) {
-          @if (entries.length > 0) {
-            <ul class="rows" data-testid="daily-log-checkins">
-              @for (entry of entries; track entry.entryId) {
-                <li class="row" [attr.data-testid]="'daily-log-checkin-' + entry.entryId">
-                  <span class="row-main">
-                    {{ i18n.t(checkInLabelKey(entry.kind)) }}
-                    @if (entry.flagReason) {
-                      <span class="tag tag-flag" data-testid="daily-log-checkin-flag">{{ i18n.t('daily_log.checkin.far_from_site') }}</span>
-                    }
-                  </span>
-                  <span class="row-figure figure"><bdi dir="ltr">{{ time(entry.deviceTime) }}</bdi></span>
-                </li>
-              }
-            </ul>
-          }
+    } @else if (closed()) {
+      <kaff-state mode="refusal" titleKey="daily_log.closed" icon="lock" testId="daily-log-closed">
+        <a stateAction class="back-link" [routerLink]="['/projects', projectId()]" data-testid="daily-log-closed-back">{{ i18n.t('daily_log.closed.back') }}</a>
+      </kaff-state>
+    } @else if (loadFailure(); as key) {
+      <kaff-banner tone="refusal" icon="error" testId="daily-log-failure">
+        <b>{{ i18n.t('daily_log.failed') }}</b> {{ i18n.t('daily_log.failed.nothing_changed') }}
+        <kaff-button bannerActions variant="secondary" testId="daily-log-retry" (clicked)="reload()">{{ i18n.t('daily_log.action.retry') }}</kaff-button>
+      </kaff-banner>
+    } @else if (!checkedIn()) {
+      <div class="stack" data-testid="daily-log-before">
+        @if (locationRefused()) {
+          <kaff-banner tone="refusal" icon="error" testId="daily-log-location-error">
+            <b>{{ i18n.t('daily_log.location.refused_title') }}</b> {{ i18n.t('daily_log.location.refused') }}
+          </kaff-banner>
         }
-      </section>
-
-      @if (isEmpty()) {
-        <p class="empty" data-testid="daily-log-empty">{{ i18n.t('daily_log.empty') }}</p>
-      } @else if (log(); as current) {
-        @if (current.weather || current.stoppageReason || current.note) {
-        <div class="summary" data-testid="daily-log-summary">
-          @if (current.weather) {
-            <p class="line"><span class="label">{{ i18n.t('daily_log.field.weather') }}</span> <span dir="auto">{{ current.weather }}</span></p>
-          }
-          @if (current.stoppageReason) {
-            <p class="line"><span class="label">{{ i18n.t('daily_log.field.stoppage_reason') }}</span> <span dir="auto">{{ current.stoppageReason }}</span></p>
-          }
-          @if (current.note) {
-            <p class="line"><span class="label">{{ i18n.t('daily_log.field.note') }}</span> <span dir="auto">{{ current.note }}</span></p>
-          }
-        </div>
+        @if (errorKey(); as key) {
+          <kaff-banner tone="refusal" testId="daily-log-error">{{ i18n.t(key) }}</kaff-banner>
         }
-
-        @if (current.quantities.length > 0) {
-          <h2 class="group">{{ i18n.t('daily_log.group.quantities') }}</h2>
-          <ul class="rows" data-testid="daily-log-quantities">
-            @for (line of current.quantities; track line.entryId) {
-              <li class="row">
-                <span class="row-main" dir="auto">{{ line.descriptionAr }}</span>
-                <span class="row-figure figure"><bdi dir="ltr">{{ number(line.quantity) }}</bdi> <span dir="auto">{{ line.unit }}</span></span>
-              </li>
-            }
-          </ul>
-        }
-
-        @if (current.dayLabour.length > 0) {
-          <h2 class="group">{{ i18n.t('daily_log.group.labour') }}</h2>
-          <ul class="rows" data-testid="daily-log-labour">
-            @for (line of current.dayLabour; track line.entryId) {
-              <li class="row">
-                <span class="row-main" dir="auto">{{ line.workerName }}</span>
-                <span class="row-figure figure"><bdi dir="ltr">{{ number(line.hours) }}</bdi> {{ i18n.t('daily_log.unit.hours') }}</span>
-              </li>
-            }
-          </ul>
-        }
-
-        @if (current.materials.length > 0) {
-          <h2 class="group">{{ i18n.t('daily_log.group.materials') }}</h2>
-          <ul class="rows" data-testid="daily-log-materials">
-            @for (line of current.materials; track line.entryId) {
-              <li class="row">
-                <span class="row-main" dir="auto">
-                  {{ line.materialType }}
-                  @if (line.isStockpile) {
-                    <span class="tag">{{ i18n.t('daily_log.material.stockpile') }}</span>
-                  }
-                </span>
-                <span class="row-figure figure"><bdi dir="ltr">{{ number(line.quantity) }}</bdi> <span dir="auto">{{ line.unit }}</span></span>
-              </li>
-            }
-          </ul>
-        }
-
-        @if (current.photos.length > 0) {
-          <h2 class="group">{{ i18n.t('daily_log.group.photos') }}</h2>
-          <ul class="rows" data-testid="daily-log-photos">
-            @for (line of current.photos; track line.entryId) {
-              <li class="row">
-                <span class="row-main" dir="auto">{{ line.caption ?? line.fileReference }}</span>
-              </li>
-            }
-          </ul>
-        }
-      }
-
-      <h2 class="group">{{ i18n.t('daily_log.group.add') }}</h2>
-
-      <div class="kinds" role="group" [attr.aria-label]="i18n.t('daily_log.group.add')">
-        <button type="button" class="kind" [attr.aria-pressed]="kind() === 'field'" data-testid="daily-log-kind-field" (click)="setKind('field')">
-          {{ i18n.t('daily_log.kind.field') }}
-        </button>
-        <button type="button" class="kind" [attr.aria-pressed]="kind() === 'labour'" data-testid="daily-log-kind-labour" (click)="setKind('labour')">
-          {{ i18n.t('daily_log.kind.labour') }}
-        </button>
-        <button type="button" class="kind" [attr.aria-pressed]="kind() === 'material'" data-testid="daily-log-kind-material" (click)="setKind('material')">
-          {{ i18n.t('daily_log.kind.material') }}
-        </button>
-        <button type="button" class="kind" [attr.aria-pressed]="kind() === 'quantity'" data-testid="daily-log-kind-quantity" (click)="setKind('quantity')">
-          {{ i18n.t('daily_log.kind.quantity') }}
-        </button>
+        <kaff-state mode="empty" titleKey="daily_log.before" icon="pin" testId="daily-log-before-state" />
       </div>
-
-      <form class="fields" (submit)="$event.preventDefault(); onSave()">
-        @switch (kind()) {
-          @case ('field') {
-            <kaff-field labelKey="daily_log.form.field" controlId="daily-log-field-select">
-              <select
-                id="daily-log-field-select"
-                class="input select"
-                data-testid="daily-log-field-select"
-                [attr.aria-label]="i18n.t('daily_log.form.field')"
-                (change)="onFieldChange($event)"
-              >
-                @for (option of fieldOptions; track option.value) {
-                  <option [value]="option.value" [selected]="option.value === selectedField()">{{ i18n.t(option.labelKey) }}</option>
-                }
-              </select>
-            </kaff-field>
-            <kaff-field labelKey="daily_log.form.text" controlId="daily-log-field-text">
-              <input id="daily-log-field-text" class="input" type="text" dir="auto" data-testid="daily-log-field-text" [formField]="entryForm.text" />
-            </kaff-field>
-          }
-          @case ('labour') {
-            <kaff-field labelKey="daily_log.form.worker" controlId="daily-log-labour-worker">
-              <select
-                id="daily-log-labour-worker"
-                class="input select"
-                data-testid="daily-log-labour-worker"
-                [attr.aria-label]="i18n.t('daily_log.form.worker')"
-                (change)="onWorkerChange($event)"
-              >
-                <option value="">{{ i18n.t('daily_log.form.worker_pick') }}</option>
-                @for (worker of workers(); track worker.id) {
-                  <option [value]="worker.id">{{ worker.fullName }}</option>
-                }
-              </select>
-            </kaff-field>
-            <kaff-field labelKey="daily_log.form.hours" controlId="daily-log-labour-hours">
-              <input id="daily-log-labour-hours" class="input" type="text" dir="ltr" inputmode="decimal" data-testid="daily-log-labour-hours" [formField]="entryForm.hours" />
-            </kaff-field>
-          }
-          @case ('quantity') {
-            @if (boqLoading()) {
-              <kaff-state mode="loading" titleKey="daily_log.quantity.loading" testId="daily-log-boq-loading" />
-            } @else if (boqFailure(); as key) {
-              <kaff-state mode="refusal" [bodyKey]="key" testId="daily-log-boq-failure" />
-              <kaff-button testId="daily-log-boq-retry" (clicked)="retryBoq()">{{ i18n.t('daily_log.quantity.retry') }}</kaff-button>
-            } @else if (boq(); as list) {
-              @if (list.lines.length === 0) {
-                <kaff-state mode="empty" titleKey="daily_log.quantity.no_lines" testId="daily-log-boq-empty" />
-              } @else {
-                <kaff-field labelKey="daily_log.quantity.line" controlId="daily-log-quantity-line">
-                  <select
-                    id="daily-log-quantity-line"
-                    class="input select"
-                    data-testid="daily-log-quantity-line"
-                    [attr.aria-label]="i18n.t('daily_log.quantity.line')"
-                    (change)="onLineChange($event)"
-                  >
-                    <option value="">{{ i18n.t('daily_log.quantity.line_pick') }}</option>
-                    @for (line of list.lines; track line.id) {
-                      <option [value]="line.id" [selected]="line.id === selectedLineId()">{{ lineLabel(line) }}</option>
-                    }
-                  </select>
-                </kaff-field>
-                @if (selectedLine(); as chosen) {
-                  <dl class="states" data-testid="daily-log-quantity-states">
-                    <div class="state">
-                      <dt>{{ i18n.t('daily_log.quantity.estimated') }}</dt>
-                      <dd class="figure">@if (chosen.quantityEstimated !== null) { <bdi dir="ltr">{{ number(chosen.quantityEstimated) }}</bdi> } @else { — }</dd>
-                    </div>
-                    <div class="state">
-                      <dt>{{ i18n.t('daily_log.quantity.surveyed') }}</dt>
-                      <dd class="figure">@if (chosen.quantitySurveyed !== null) { <bdi dir="ltr">{{ number(chosen.quantitySurveyed) }}</bdi> } @else { — }</dd>
-                    </div>
-                    <div class="state">
-                      <dt>{{ i18n.t('daily_log.quantity.executed') }}</dt>
-                      <dd class="figure" data-testid="daily-log-quantity-executed"><bdi dir="ltr">{{ number(chosen.quantityExecuted) }}</bdi></dd>
-                    </div>
-                  </dl>
-                }
-                <kaff-field labelKey="daily_log.quantity.period" controlId="daily-log-quantity-period">
-                  <input id="daily-log-quantity-period" class="input" type="text" dir="ltr" inputmode="decimal" data-testid="daily-log-quantity-period" [formField]="entryForm.periodQuantity" />
-                </kaff-field>
-                <p class="hint" data-testid="daily-log-quantity-hint">
-                  {{ i18n.t('daily_log.quantity.period_hint') }}
-                  @if (selectedLine(); as chosen) {
-                    <span dir="auto">({{ chosen.unit }})</span>
-                  }
-                </p>
-              }
-            } @else {
-              <kaff-state mode="empty" titleKey="daily_log.quantity.no_boq" testId="daily-log-boq-none" />
-            }
-          }
-          @case ('material') {
-            <kaff-field labelKey="daily_log.form.material_type" controlId="daily-log-material-type">
-              <input id="daily-log-material-type" class="input" type="text" dir="auto" data-testid="daily-log-material-type" [formField]="entryForm.materialType" />
-            </kaff-field>
-            <kaff-field labelKey="daily_log.form.quantity" controlId="daily-log-material-quantity">
-              <input id="daily-log-material-quantity" class="input" type="text" dir="ltr" inputmode="decimal" data-testid="daily-log-material-quantity" [formField]="entryForm.quantity" />
-            </kaff-field>
-            <kaff-field labelKey="daily_log.form.unit" controlId="daily-log-material-unit">
-              <input id="daily-log-material-unit" class="input" type="text" dir="auto" data-testid="daily-log-material-unit" [formField]="entryForm.unit" />
-            </kaff-field>
-            <label class="check">
-              <input type="checkbox" data-testid="daily-log-material-stockpile" [formField]="entryForm.isStockpile" />
-              <span>{{ i18n.t('daily_log.material.stockpile') }}</span>
-            </label>
-          }
+    } @else {
+      <div class="stack">
+        @if (stopped()) {
+          <kaff-banner tone="note" icon="pause" testId="daily-log-stopped"><b>{{ i18n.t('daily_log.stopped') }}</b></kaff-banner>
         }
 
-        <div class="status" aria-live="polite">
-          @if (errorKey(); as key) {
-            <p class="refusal" role="alert" data-testid="daily-log-error">{{ i18n.t(key) }}</p>
-          }
+        <div class="drow">
+          <kaff-segmented-filter [options]="dayOptions()" [(value)]="dayValue" ariaLabelKey="daily_log.day.switch" testIdPrefix="daily-log-day" />
+          <span class="dt" data-testid="daily-log-date">{{ dateLine() }}</span>
         </div>
 
-        <!-- The one primary action, pinned to the bottom of the viewport (AC-600-K). -->
-        <div class="footer">
-          <kaff-button variant="primary" type="submit" testId="daily-log-save" [busy]="busy()" [disabled]="kind() === 'quantity' && !canRecordQuantity()">
-            {{ i18n.t('action.save') }}
-          </kaff-button>
+        @if (isToday() && checkInLine(); as attendance) {
+          <kaff-attendance-strip
+            testId="daily-log-checkin"
+            [checkInTime]="time(attendance.deviceTime)"
+            [checkOutTime]="checkOutLine() ? time(checkOutLine()!.deviceTime) : null"
+            [far]="attendance.flagReason !== null"
+            [busy]="locating() === 'CheckOut'"
+            (out)="press('CheckOut')"
+          />
+        }
+
+        @if (locationRefused()) {
+          <kaff-banner tone="refusal" icon="error" testId="daily-log-location-error">
+            <b>{{ i18n.t('daily_log.location.refused_title') }}</b> {{ i18n.t('daily_log.location.refused') }}
+          </kaff-banner>
+        }
+
+        <kaff-link-row
+          icon="crew"
+          [link]="['/projects', projectId(), 'day-labour']"
+          [name]="i18n.t('daily_log.crew')"
+          [summary]="crewSummary()"
+          testId="daily-log-crew"
+        />
+
+        <div class="cols">
+          <section [attr.aria-label]="i18n.t('daily_log.section.entry')" class="entry">
+            @if (editing() === null) {
+              <kaff-kind-row [options]="kindOptions" [value]="kind()" (valueChange)="setKind($event)" ariaLabelKey="daily_log.kind.label" testIdPrefix="daily-log-kind" />
+            }
+
+            <div class="form">
+              @switch (kind()) {
+                @case ('note') {
+                  <kaff-field labelKey="daily_log.form.note" controlId="daily-log-note" [required]="true">
+                    <textarea id="daily-log-note" dir="auto" data-testid="daily-log-note" [formField]="entryForm.note"></textarea>
+                  </kaff-field>
+                }
+                @case ('stoppage') {
+                  <kaff-field labelKey="daily_log.form.stoppage" controlId="daily-log-stoppage" [required]="true">
+                    <textarea id="daily-log-stoppage" dir="auto" data-testid="daily-log-stoppage" [formField]="entryForm.stoppage"></textarea>
+                  </kaff-field>
+                }
+                @case ('quantity') {
+                  @if (boqFailure(); as key) {
+                    <kaff-banner tone="refusal" testId="daily-log-boq-failure">{{ i18n.t(key) }}</kaff-banner>
+                  } @else if (boq() === null || boq()!.lines.length === 0) {
+                    <kaff-state mode="empty" titleKey="daily_log.quantity.no_lines" testId="daily-log-boq-empty" />
+                  } @else {
+                    @if (editing() !== null) {
+                      <kaff-readonly-field labelKey="daily_log.quantity.line" controlId="daily-log-line-ro" [value]="selectedLine() ? lineName(selectedLine()!) : ''" testId="daily-log-line-ro" />
+                    } @else {
+                      <kaff-field labelKey="daily_log.quantity.line" controlId="daily-log-line" [required]="true">
+                        <kaff-picker-button
+                          controlId="daily-log-line"
+                          testId="daily-log-line"
+                          [valueText]="selectedLine() ? lineName(selectedLine()!) : i18n.t('daily_log.quantity.line_pick')"
+                          (opened)="openPicker()"
+                        />
+                      </kaff-field>
+                    }
+                    @if (selectedLine(); as chosen) {
+                      <kaff-figure-pair
+                        testId="daily-log-quantity-states"
+                        [firstValue]="lineTotal(chosen)"
+                        [firstLabel]="i18n.t('daily_log.quantity.measured', { unit: chosen.unit })"
+                        [secondValue]="'≈ ' + number(chosen.quantityExecuted)"
+                        [secondLabel]="i18n.t('daily_log.quantity.executed', { unit: chosen.unit })"
+                      />
+                      <kaff-field labelKey="daily_log.quantity.today" [labelText]="i18n.t('daily_log.quantity.today', { day: dayWordNow() })" controlId="daily-log-quantity" [required]="true">
+                        <div class="num">
+                          <input id="daily-log-quantity" type="text" dir="ltr" inputmode="decimal" data-testid="daily-log-quantity" [formField]="entryForm.quantity" />
+                          <span class="aff" dir="auto">{{ chosen.unit }}</span>
+                        </div>
+                      </kaff-field>
+                    }
+                    @if (editing() !== null) {
+                      <div class="f-cancel">
+                        <kaff-button variant="ghost" testId="daily-log-edit-cancel" (clicked)="cancelEdit()">{{ i18n.t('action.cancel') }}</kaff-button>
+                      </div>
+                    }
+                  }
+                }
+                @case ('material') {
+                  <kaff-field labelKey="daily_log.form.material" controlId="daily-log-material-name" [required]="true">
+                    <input id="daily-log-material-name" type="text" dir="auto" data-testid="daily-log-material-name" [formField]="entryForm.materialName" />
+                  </kaff-field>
+                  <div class="f2">
+                    <kaff-field labelKey="daily_log.form.quantity" controlId="daily-log-material-quantity" [required]="true">
+                      <input id="daily-log-material-quantity" type="text" dir="ltr" inputmode="decimal" data-testid="daily-log-material-quantity" [formField]="entryForm.materialQuantity" />
+                    </kaff-field>
+                    <kaff-field labelKey="daily_log.form.unit" controlId="daily-log-material-unit" [required]="true">
+                      <kaff-select [options]="unitOptions()" [(value)]="materialUnit" controlId="daily-log-material-unit" ariaLabelKey="daily_log.form.unit" testId="daily-log-material-unit" />
+                    </kaff-field>
+                  </div>
+                }
+              }
+            </div>
+
+            @if (errorKey(); as key) {
+              <kaff-banner tone="refusal" testId="daily-log-error">{{ i18n.t(key) }}</kaff-banner>
+            }
+          </section>
+
+          <section [attr.aria-label]="i18n.t('daily_log.section.logged')">
+            <h2 class="sec-h">{{ i18n.t('daily_log.logged', { day: dayWordNow() }) }}</h2>
+            @if (saved()) {
+              <kaff-banner tone="ok" testId="daily-log-saved"><b>{{ i18n.t('daily_log.saved') }}</b></kaff-banner>
+            }
+            <div class="log" data-testid="daily-log-list">
+              @if (nothingLogged()) {
+                <div class="log-empty" data-testid="daily-log-empty">{{ i18n.t('daily_log.empty', { day: dayWordNow() }) }}</div>
+              }
+
+              @if (stoppages().length > 0) {
+                <kaff-log-group icon="stop" [name]="i18n.t('daily_log.group.stoppage')" [count]="number(stoppages().length)" testId="daily-log-stoppages">
+                  @for (line of stoppages(); track line.entryId) {
+                    <kaff-log-entry>
+                      <span dir="auto">{{ line.text }}</span>
+                      @if (line.backDated) {
+                        <kaff-status-pill tone="same" icon="clock" testId="daily-log-flag">{{ i18n.t('daily_log.back_dated') }}</kaff-status-pill>
+                      }
+                    </kaff-log-entry>
+                  }
+                </kaff-log-group>
+              }
+
+              @if (quantities().length > 0) {
+                <kaff-log-group icon="qty" [name]="i18n.t('daily_log.group.quantities')" [count]="number(quantities().length)" testId="daily-log-quantities">
+                  @for (line of quantities(); track line.entryId) {
+                    <kaff-log-entry [editing]="editing()?.entryId === line.entryId" [testId]="'daily-log-quantity-' + $index">
+                      <span dir="auto">{{ line.descriptionAr }}</span>
+                      @if (line.backDated) {
+                        <kaff-status-pill tone="same" icon="clock" testId="daily-log-flag">{{ i18n.t('daily_log.back_dated') }}</kaff-status-pill>
+                      }
+                      <span entFigure><bdi dir="ltr">≈ {{ number(line.quantity) }}</bdi> <small dir="auto">{{ line.unit }}</small></span>
+                      @if (editing() === null && canEditShown()) {
+                        <kaff-button entAction variant="ghost" [testId]="'daily-log-edit-' + $index" (clicked)="startEdit(line)">{{ i18n.t('daily_log.action.edit') }}</kaff-button>
+                      }
+                    </kaff-log-entry>
+                  }
+                </kaff-log-group>
+              }
+
+              @if (materials().length > 0) {
+                <kaff-log-group icon="mat" [name]="i18n.t('daily_log.group.materials')" [count]="number(materials().length)" testId="daily-log-materials">
+                  @for (line of materials(); track line.entryId) {
+                    <kaff-log-entry>
+                      <span dir="auto">{{ line.materialType }}</span>
+                      @if (line.backDated) {
+                        <kaff-status-pill tone="same" icon="clock" testId="daily-log-flag">{{ i18n.t('daily_log.back_dated') }}</kaff-status-pill>
+                      }
+                      <span entFigure><bdi dir="ltr">{{ number(line.quantity) }}</bdi> <small dir="auto">{{ line.unit }}</small></span>
+                    </kaff-log-entry>
+                  }
+                </kaff-log-group>
+              }
+
+              @if (notes().length > 0) {
+                <kaff-log-group icon="note" [name]="i18n.t('daily_log.group.notes')" [count]="number(notes().length)" testId="daily-log-notes">
+                  @for (line of notes(); track line.entryId) {
+                    <kaff-log-entry>
+                      <span dir="auto">{{ line.text }}</span>
+                      @if (line.backDated) {
+                        <kaff-status-pill tone="same" icon="clock" testId="daily-log-flag">{{ i18n.t('daily_log.back_dated') }}</kaff-status-pill>
+                      }
+                    </kaff-log-entry>
+                  }
+                </kaff-log-group>
+              }
+
+              @if (photos().length > 0) {
+                <kaff-log-group icon="cam" [name]="i18n.t('daily_log.group.photos')" [count]="number(photos().length)" testId="daily-log-photos">
+                  @for (line of photos(); track line.entryId) {
+                    <kaff-log-entry>
+                      <span dir="auto">{{ line.caption || i18n.t('daily_log.photo') }}</span>
+                      @if (line.backDated) {
+                        <kaff-status-pill tone="same" icon="clock" testId="daily-log-flag">{{ i18n.t('daily_log.back_dated') }}</kaff-status-pill>
+                      }
+                    </kaff-log-entry>
+                  }
+                </kaff-log-group>
+              }
+            </div>
+          </section>
         </div>
-      </form>
+      </div>
     }
-  </div>
+  </kaff-project-frame>
+
+  <kaff-detail-panel [open]="pickerOpen()" titleKey="daily_log.picker.title" testId="daily-log-picker" (closed)="pickerOpen.set(false)">
+    <div panelBody class="picker">
+      <kaff-search-field [(value)]="pickerSearch" placeholderKey="daily_log.picker.search" clearLabelKey="catalogue.search.clear" testId="daily-log-picker-search" />
+      <div class="res-l">
+        @for (line of pickerResults(); track line.id) {
+          <div class="res" [attr.data-testid]="'daily-log-pick-' + $index">
+            <b dir="auto">{{ lineName(line) }}</b>
+            <kaff-button variant="secondary" [testId]="'daily-log-pick-button-' + $index" (clicked)="pick(line)">{{ i18n.t('daily_log.action.pick') }}</kaff-button>
+            <span class="mt">{{ i18n.t('daily_log.picker.done', { done: '≈ ' + number(line.quantityExecuted), total: lineTotal(line), unit: line.unit }) }}</span>
+          </div>
+        } @empty {
+          <div class="res-none">{{ i18n.t('daily_log.picker.none') }}</div>
+        }
+      </div>
+    </div>
+  </kaff-detail-panel>
 </section>

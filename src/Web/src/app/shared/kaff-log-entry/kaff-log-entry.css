@@ -1,0 +1,37 @@
+:host {
+  display: block;
+  border-block-end: 1px solid var(--line);
+}
+
+:host(:last-child) {
+  border-block-end: 0;
+}
+
+.ent {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  min-block-size: 52px;
+}
+
+.ent--edit {
+  border-inline-start: 5px solid var(--ink);
+}
+
+.nm {
+  flex: 1 1 140px;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.fg {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fg:empty {
+  display: none;
+}

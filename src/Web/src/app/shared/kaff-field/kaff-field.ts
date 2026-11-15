@@ -25,6 +25,8 @@ import { I18nService } from '../../core/i18n/i18n.service';
 })
 export class KaffField {
   readonly labelKey = input.required<string>();
+  /** A label that carries a value of the screen (a day's name) and so has no single catalogue key. Wins over `labelKey`. */
+  readonly labelText = input<string | null>(null);
   readonly hintKey = input<string | null>(null);
   readonly errorKey = input<string | null>(null);
   readonly errorTestId = input<string | null>(null);

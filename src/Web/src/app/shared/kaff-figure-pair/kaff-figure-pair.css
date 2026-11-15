@@ -1,0 +1,33 @@
+:host {
+  display: block;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1.5px solid var(--fieldline);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.pair > div {
+  padding: 8px 12px;
+  display: grid;
+  justify-items: start;
+  min-inline-size: 0;
+}
+
+.pair > div + div {
+  border-inline-start: 1px solid var(--line);
+}
+
+b {
+  font: 700 1.5rem/1.25 var(--body);
+  font-variant-numeric: tabular-nums;
+}
+
+span {
+  font-size: 0.8125rem;
+  color: var(--dim);
+}

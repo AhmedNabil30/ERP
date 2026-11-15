@@ -1,0 +1,35 @@
+:host {
+  display: block;
+}
+
+.att {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  min-block-size: 64px;
+  padding: 10px 16px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.tm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  font-weight: 600;
+}
+
+.tm bdi {
+  font-variant-numeric: tabular-nums;
+}
+
+.tick {
+  color: var(--ok-ink);
+}
+
+.end {
+  margin-inline-start: auto;
+}

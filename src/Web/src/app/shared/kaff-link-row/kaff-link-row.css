@@ -1,0 +1,54 @@
+:host {
+  display: block;
+}
+
+.clink {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-block-size: 64px;
+  padding: 8px 16px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.clink:hover {
+  background: var(--hover);
+}
+
+.clink:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.lead {
+  color: var(--dim);
+}
+
+.tx {
+  flex: 1;
+  display: grid;
+  min-inline-size: 0;
+}
+
+.tx b {
+  font: 700 1.0625rem/1.4 var(--display);
+}
+
+.tx span {
+  color: var(--dim);
+  font-size: 0.9375rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The back glyph points to the inline-start; a link goes toward the inline-end, so it is mirrored in RTL. */
+:host-context([dir='rtl']) .go {
+  transform: none;
+}
+
+:host-context([dir='ltr']) .go {
+  transform: scaleX(-1);
+}
