@@ -347,6 +347,13 @@ button.ctl .val.ph0{color:var(--dim)}
 .ent .tr{color:var(--dim);font-size:.9375rem}
 .ent .cor{flex:1 1 100%;display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--dim);font-size:.875rem}
 .pill.sm{block-size:24px;font-size:.75rem}
+.ent .fg{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap}
+.ent .old{color:var(--dim);font-weight:500;text-decoration:line-through}
+.seg.days button{flex-direction:column;justify-content:center;gap:2px;min-block-size:52px;padding:0 10px;min-inline-size:56px}
+.seg.days button small{font:500 .75rem/1 var(--body);font-variant-numeric:tabular-nums;opacity:.85}
+.att .tm.dim{color:var(--dim);font-weight:500}
+.att .tm.dim svg{stroke:var(--dim)}
+.log-empty{padding:14px 16px}
 .cols{gap:20px}
 </style></head>
 <body>
@@ -355,9 +362,12 @@ button.ctl .val.ph0{color:var(--dim)}
   <summary><span aria-hidden="true">▾</span> معاينة (ليست جزءاً من التصميم)</summary>
   <div class="panelx">
     <div class="grp" role="group" aria-label="الحالة"><b>الحالة</b>
-      <button type="button" data-view="two">يومية لمهندسين</button>
+      <button type="button" data-view="two">مهندسان</button>
       <button type="button" data-view="one">مهندس واحد</button>
-      <button type="button" data-view="none">لا يومية</button>
+      <button type="button" data-view="partial">أحدهم لم يسجّل</button>
+      <button type="button" data-view="idle">حضروا ولم يسجّلوا</button>
+      <button type="button" data-view="none">لا حضور ولا يومية</button>
+      <button type="button" data-view="dist">مع المسافة</button>
       <button type="button" data-view="stopped">المشروع متوقف</button>
       <button type="button" data-view="loading">تحميل</button>
       <button type="button" data-view="failed">تعذّر التحميل</button>
@@ -413,54 +423,67 @@ const PROJECT='فيلا 47 — التجمع الخامس',CLIENT='شركة ال�
 const DAYS=['d0','d1','d2','d3'];
 const DATE={d0:'الثلاثاء 10 نوفمبر',d1:'الاثنين 9 نوفمبر',d2:'الأحد 8 نوفمبر',d3:'السبت 7 نوفمبر'};
 const DAYW={d0:'اليوم',d1:'أمس',d2:'الأحد',d3:'السبت'};
-const CREWSUM={d0:'9 عمال · 62 ساعة',d1:'5 عمال · 34 ساعة',d2:'لم يُسجَّل أحد بعد',d3:'4 عمال · 30 ساعة'};
+const DAYN={d0:'10',d1:'9',d2:'8',d3:'7'};
 const GH={s:['سبب التوقف','stop'],q:['الكميات التقديرية','qty'],m:['الخامات','mat'],n:['الملاحظات','note'],p:['الصور','cam'],c:['العمالة','employees']};
-/* one block per engineer. in/out: attendance; far: far-from-site tag; bd: back-dated log; quantity rows carry b (باب) and fix (corrected by) */
+/* one block per engineer. in/out: attendance (out null = no check-out); far: metres from site, 0 = near (the server sends a flag only: the distance is a proposal);
+   bd: back-dated log; quantity rows carry b (باب); fix = corrected by, old = the figure before the correction.
+   The crew total in the link row is computed from the crew lines listed in the blocks, so the two cannot disagree. */
 const KH={name:'خالد منصور',in:'07:42',out:'16:10',far:0,bd:0,items:[
- {k:'q',n:'تبليط أرضيات المعيشة',b:'التشطيبات',f:'12.5',u:'م²',fix:'هبة فؤاد'},
+ {k:'q',n:'تبليط أرضيات المعيشة',b:'التشطيبات',f:'12.5',old:'10',u:'م²',fix:'هبة فؤاد'},
  {k:'q',n:'محارة داخلية',b:'أعمال المباني',f:'30',u:'م²'},
  {k:'m',n:'أسمنت بورتلاندي',f:'20',u:'كيس'},
  {k:'n',n:'وصل الرخام صباح اليوم'},
  {k:'p',n:'واجهة الدور الأول'},
- {k:'c',n:'عم صلاح إبراهيم',t:'بناء',f:'8'},{k:'c',n:'سيد جمعة',t:'نقاش',f:'7'},{k:'c',n:'رمضان عبد الحميد',t:'كهربائي',f:'8'}]};
-const HF={name:'هبة فؤاد',in:'08:05',out:null,far:1,bd:0,items:[
+ {k:'c',n:'عم صلاح إبراهيم',t:'بناء',f:8},{k:'c',n:'سيد جمعة',t:'نقاش',f:7},{k:'c',n:'رمضان عبد الحميد',t:'كهربائي',f:8}]};
+const HF={name:'هبة فؤاد',in:'08:05',out:null,far:650,bd:0,items:[
  {k:'q',n:'نقط كهرباء',b:'الكهرباء',f:'6',u:'نقطة'},
  {k:'n',n:'زيارة المالك الساعة الثانية'},{k:'n',n:'تأخر وصول الحديد'},
  {k:'p',n:'غرفة الكهرباء'},{k:'p',n:'السقف'},
- {k:'c',n:'محمد فتحي',t:'سباك',f:'8'},{k:'c',n:'حسن عبد الله',t:'نجار',f:'8'}]};
+ {k:'c',n:'محمد فتحي',t:'سباك',f:8},{k:'c',n:'حسن عبد الله',t:'نجار',f:8}]};
 const KH1={name:'خالد منصور',in:'07:50',out:'15:55',far:0,bd:1,items:[
  {k:'q',n:'محارة داخلية',b:'أعمال المباني',f:'45',u:'م²'},
  {k:'n',n:'تأخر وصول الحديد'},
- {k:'c',n:'عم صلاح إبراهيم',t:'بناء',f:'8'},{k:'c',n:'سيد جمعة',t:'نقاش',f:'6'}]};
-const KS={...KH,items:[{k:'s',n:'أمطار غزيرة، توقف العمل بالواجهة'},{k:'n',n:'تغطية الأسطح بالمشمع'},{k:'c',n:'عم صلاح إبراهيم',t:'بناء',f:'3'}]};
-const HS={...HF,far:0,items:[{k:'s',n:'أمطار غزيرة، توقف العمل بالواجهة'},{k:'m',n:'مشمع بلاستيك',f:'4',u:'لفة'},{k:'c',n:'محمد فتحي',t:'سباك',f:'3'}]};
-const LOGS={d0:[KH,HF],d1:[KH1],d2:[],d3:[{...KH1,in:'07:35',out:'16:20',items:[{k:'q',n:'خرسانة أساسات',b:'الخرسانة',f:'12',u:'م³'},{k:'c',n:'حسن عبد الله',t:'نجار',f:'8'}]}]};
+ {k:'c',n:'عم صلاح إبراهيم',t:'بناء',f:8},{k:'c',n:'سيد جمعة',t:'نقاش',f:6}]};
+const KS={...KH,items:[{k:'s',n:'أمطار غزيرة، توقف العمل بالواجهة'},{k:'n',n:'تغطية الأسطح بالمشمع'},{k:'c',n:'عم صلاح إبراهيم',t:'بناء',f:3},{k:'c',n:'سيد جمعة',t:'نقاش',f:3}]};
+const HS={...HF,far:0,items:[{k:'s',n:'أمطار غزيرة، توقف العمل بالواجهة'},{k:'m',n:'مشمع بلاستيك',f:'4',u:'لفة'},{k:'c',n:'محمد فتحي',t:'سباك',f:3}]};
+const quiet=l=>({...l,bd:0,items:[]});
+const LOGS={d0:[KH,HF],d1:[KH1],d2:[],d3:[{...KH1,bd:0,in:'07:35',out:'16:20',items:[{k:'q',n:'خرسانة أساسات',b:'الخرسانة',f:'12',u:'م³'},{k:'c',n:'حسن عبد الله',t:'نجار',f:8},{k:'c',n:'إبراهيم سعيد',t:'محارة',f:8}]},quiet({...HF,far:0,out:'16:00'})]};
 const S={view:q0.get('view')||'two'};
-function setup(){const v=S.view;S.date=v==='one'?'d1':v==='none'?'d2':'d0';S.stopped=v==='stopped';S.logs={...LOGS};if(S.stopped)S.logs.d0=[KS,HS]}
+const VD={one:'d1',none:'d2',partial:'d3'};
+function setup(){const v=S.view;S.date=VD[v]||'d0';S.stopped=v==='stopped';S.dist=v==='dist'||q0.get('dist')==='1';S.logs={...LOGS};
+  if(S.stopped)S.logs.d0=[KS,HS];if(v==='idle')S.logs.d0=[quiet(KH),quiet(HF)];if(v==='dist')S.logs.d0=[quiet(HF),quiet(KH)]}
+const crewOf=L=>{const m=new Map();L.forEach(l=>l.items.filter(x=>x.k==='c').forEach(x=>m.set(x.n,(m.get(x.n)||0)+x.f)));return [m.size,[...m.values()].reduce((a,b)=>a+b,0)]};
+const crewSum=L=>{const [n,h]=crewOf(L);return n?`${n} عمال · ${h} ساعة`:'لم يُسجَّل أحد بعد'};
+const emptyLine=d=>`لم يُسجَّل شيء في يومية ${DAYW[d]}${d==='d0'?' بعد':''}.`;
 const sk=w=>`<span class="sk b" style="inline-size:${w}"></span>`;
 const pillOf=(ic,t,c)=>`<span class="pill s-none ${c||''}">${mi(ic)}${t}</span>`;
 function header(){
   const v=S.view,back=`<a class="back" href="#">${i('left','s')}المشاريع</a>`;
   if(v==='loading')return `<div class="phl">${back}<div class="ttl"><h1><span class="sk b" style="inline-size:300px;max-inline-size:70vw;block-size:34px"></span></h1></div></div><div class="acts d-only"></div>`;
-  const pill=S.stopped?'':`<span class="pill s-run"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12m-3 0a3 3 0 106 0 3 3 0 10-6 0"/></svg>جاري العمل</span>`;
+  const pill=`<span class="pill s-run"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12m-3 0a3 3 0 106 0 3 3 0 10-6 0"/></svg>جاري العمل</span>`;
   const stages=['المقايسة','التنفيذ','التسليم','الضمان','الإقفال'];
   const stl=`<ol class="stl" aria-label="مرحلة المشروع">${stages.map((s,k)=>{const c=k<1?'done':k===1?'cur':'';return `<li class="${c}" ${k===1?'aria-current="step"':''}><span class="mk">${k<1?mi('check'):''}</span>${s}</li>`}).join('')}</ol>`;
   return `<div class="phl">${back}<div class="ttl"><h1>${PROJECT}</h1>${pill}</div><p class="meta"><a class="lnk" href="#" style="min-block-size:0">${CLIENT}</a><span class="badge t">${TYPE}</span></p>${stl}</div><div class="acts d-only"></div>`}
 const TABS=[['نظرة عامة','project.html'],['المقايسة','boq.html'],['اليومية','daily-log-review.html'],['المستخلصات','#'],['الفريق','project.html?tab=team']];
 const tabs=()=>S.view==='loading'?'':`<nav class="tabs" aria-label="شاشات المشروع">${TABS.map((t,k)=>`<a class="tab" href="${t[1]}" ${k===2?'aria-current="page"':''}>${t[0]}</a>`).join('')}</nav>`;
 const abar=()=>`<button type="button" class="menu" id="menu">${i('menu')}القائمة</button>`;
-const dayRow=()=>`<div class="drow"><div class="seg days" role="group" aria-label="التاريخ">${DAYS.map(d=>`<button type="button" data-date="${d}" aria-pressed="${S.date===d}">${DAYW[d]}</button>`).join('')}</div><span class="dt">${DATE[S.date]}</span></div>`;
-const crewLink=()=>`<a class="clink" href="day-labour.html">${i('employees')}<span class="tx"><b>العمالة</b><span>${CREWSUM[S.date]}</span></span>${i('left','go')}</a>`;
+const dayRow=()=>`<div class="drow"><div class="seg days" role="group" aria-label="التاريخ">${DAYS.map(d=>`<button type="button" data-date="${d}" aria-pressed="${S.date===d}"><span>${DAYW[d]}</span><small>${DAYN[d]}</small></button>`).join('')}</div><span class="dt">${DATE[S.date]}</span></div>`;
+const crewLink=L=>`<a class="clink" href="day-labour.html">${i('employees')}<span class="tx"><b>العمالة</b><span>${crewSum(L)}</span></span>${i('left','go')}</a>`;
 function entRow(e){
   if(e.k==='p')return `<div class="ent"><span class="th">${i('cam')}</span><span class="nm">${e.n}</span></div>`;
   if(e.k==='n'||e.k==='s')return `<div class="ent"><span class="nm">${e.n}</span></div>`;
   if(e.k==='c')return `<div class="ent"><span class="nm">${e.n} <span class="tr">${e.t}</span></span><span class="fg"><bdi dir="ltr">${e.f}</bdi> <small>ساعة</small></span></div>`;
-  const fix=e.fix?`<span class="cor">${pillOf('ent','مصحَّحة','sm')}<span>بواسطة ${e.fix}</span></span>`:'';
-  return `<div class="ent"><span class="nm">${e.n}${e.b?' <span class="tr">'+e.b+'</span>':''}</span><span class="fg"><bdi dir="ltr">${e.k==='q'?'≈ ':''}${e.f}</bdi> <small>${e.u}</small></span>${fix}</div>`}
-function eng(l){
+  const mark=e.fix?pillOf('ent','مصححة','sm'):'';
+  const old=e.old?`<s class="old"><bdi dir="ltr">≈ ${e.old}</bdi></s>`:'';
+  const by=e.fix?`<span class="cor">بواسطة ${e.fix}</span>`:'';
+  return `<div class="ent"><span class="nm">${e.n}${e.b?' <span class="tr">'+e.b+'</span>':''}</span><span class="fg">${mark}${old}<span><bdi dir="ltr">${e.k==='q'?'≈ ':''}${e.f}</bdi> <small>${e.u}</small></span></span>${by}</div>`}
+function eng(l,d){
   const g=['s','q','m','n','p','c'].map(k=>{const r=l.items.filter(x=>x.k===k);return r.length?`<div class="lg"><div class="lg-h">${i(GH[k][1])}${GH[k][0]}<span class="badge q">${r.length}</span></div>${r.map(entRow).join('')}</div>`:''}).join('');
-  const att=`<div class="att"><span class="tm">${mi('check')}الحضور <bdi dir="ltr">${l.in}</bdi>${l.far?pillOf('warn','بعيد عن الموقع'):''}</span>${l.out?`<span class="tm">${mi('check')}الانصراف <bdi dir="ltr">${l.out}</bdi></span>`:''}${l.bd?pillOf('clock','بأثر رجعي'):''}</div>`;
-  return `<section class="eng" aria-label="${l.name}"><h2 class="sec-h">${l.name}</h2>${att}${g?`<div class="log">${g}</div>`:""}</section>`}
+  const far=l.far?pillOf('warn','بعيد عن الموقع'+(S.dist?` · <bdi dir="ltr">${l.far}</bdi> متر`:'')):'';
+  const out=l.out?`<span class="tm">${mi('check')}الانصراف <bdi dir="ltr">${l.out}</bdi></span>`:`<span class="tm dim">${mi('clock')}لم يُسجَّل الانصراف</span>`;
+  const att=`<div class="att"><span class="tm">${mi('check')}الحضور <bdi dir="ltr">${l.in}</bdi>${far}</span>${out}${l.bd?pillOf('clock','بأثر رجعي'):''}</div>`;
+  const log=g?`<div class="log">${g}</div>`:`<div class="log"><div class="log-empty">${emptyLine(d)}</div></div>`;
+  return `<section class="eng" aria-label="${l.name}"><h2 class="sec-h">${l.name}</h2>${att}${log}</section>`}
 function body(){
   const v=S.view;
   if(v==='loading')return `<div class="dl-wrap" aria-busy="true" role="status"><span class="vh">جارٍ التحميل</span><div class="att">${sk('40%')}</div><div class="log" style="margin-block-start:14px">${[0,1,2,3].map(()=>`<div class="ent" style="display:grid;gap:8px">${sk('55%')}${sk('30%')}</div>`).join('')}</div></div>`;
@@ -468,8 +491,9 @@ function body(){
   const head=`<div class="dl-wrap">${stp}${dayRow()}`;
   if(v==='failed')return head+`<div class="ban rowc" role="alert" style="margin-block-start:14px">${mi('err')}<span><b>تعذّر تحميل اليومية.</b> لم يتغير شيء.</span><button type="button" class="btn sec2 sm act" data-retry="1">${mi('redo','s')}إعادة المحاولة</button></div></div>`;
   const L=S.logs[S.date];
-  if(!L.length)return head+`<div class="state" style="margin-block-start:14px"><div class="ico">${i('note')}</div><h4>لم يُسجَّل شيء في يومية ${DAYW[S.date]} بعد.</h4></div></div>`;
-  return head+`<div style="margin-block-start:10px">${crewLink()}</div><div class="cols">${L.map(eng).join('')}</div></div>`}
+  const link=`<div style="margin-block-start:10px">${crewLink(L)}</div>`;
+  if(!L.length)return head+link+`<div class="state"><div class="ico">${i('note')}</div><h4>${emptyLine(S.date)}</h4></div></div>`;
+  return head+link+`<div class="cols">${L.map(l=>eng(l,S.date)).join('')}</div></div>`}
 function draw(keep){
   if(!keep)setup();
   $('#ph').innerHTML=header();$('#tabw').innerHTML=tabs();$('#frame').innerHTML=body();$('#abar').innerHTML=abar();

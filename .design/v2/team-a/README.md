@@ -1186,52 +1186,62 @@ The destination after create; a server error other than the duplicate name; the 
 
 # The owner's daily log (`daily-log-review.html`)
 
-**PROPOSAL, not approved; 2026-11-15.** From D-225 item 1: the owner's اليومية tab opens a read-only view of every engineer's log for the chosen day, with a link to the crew screen where he may edit. Same view serves any caller whose daily-log tab mode is `review` (today: the owner). Data: `GET /api/projects/{id}/daily-logs?date=`. Nothing is built.
+**PROPOSAL, not approved; r2 2026-11-15 (consultant review applied).** From D-225 item 1: the owner's اليومية tab opens a read-only view of every engineer's log for the chosen day, with a link to the crew screen where he may edit. Same view serves any caller whose daily-log tab mode is `review` (today: the owner). Data: `GET /api/projects/{id}/daily-logs?date=`. Nothing is built.
 
-Open `daily-log-review.html` directly. `?view=two|one|none|stopped|loading|failed`; `embed=1` hides the preview strip (review chrome, do not build it). The four-day switch works in every view.
+Open `daily-log-review.html` directly. `?view=two|one|partial|idle|none|stopped|dist|loading|failed`; `embed=1` hides the preview strip (review chrome, do not build it). The four-day switch works in every view.
 
 ## What it holds
 
-One job: read what each engineer logged on a day. No entry form, no kind row, no primary action: the phone bottom bar holds the menu alone, the desktop header has no action slot.
+One job: read what each engineer logged on a day, and who was on site. No entry form, no kind row, no primary action: the phone bottom bar holds the menu alone, the desktop header has no action slot.
 
 - **Project frame** from `project.html` (back link, name, status pill, client and type, stage line, tabs), tab اليومية active.
-- **Day switch**: اليوم · أمس · الأحد · السبت with the date written once, as `daily-log.html`.
-- **Link row** "العمالة" with the day's summary, to the crew screen, above the blocks (as `daily-log.html`).
-- **One block per engineer** (`eng`): his name (the kit section heading), his attendance strip (الحضور, الانصراف; "بعيد عن الموقع" and "بأثر رجعي" as pills), then his entries in the approved log groups, each with a count badge: سبب التوقف, الكميات التقديرية, الخامات, الملاحظات, الصور, and the new group العمالة (man, trade, hours). Desktop: two blocks side by side from 1000 px, one block full width. Phone: stacked.
-- **A corrected quantity** carries a pill "مصحَّحة" and "بواسطة {name}" on a second line of its row. A quantity row shows its باب beside the line name in the dim tone, as the picker result does. Executed figures keep "≈".
+- **Day switch**: اليوم · أمس · الأحد · السبت, each chip carrying the day number under the weekday (as far as 390 allows: four chips fit at 360 and 390); the full date is written once beside it.
+- **Link row** "العمالة" to the crew screen, above the blocks. **Its total is the sum of the crew lines listed in the blocks below** (men counted once each, hours added): one truth, the two cannot disagree. A day with no crew line reads "لم يُسجَّل أحد بعد". The row stays on every day, because the owner edits crew on that screen.
+- **One block per engineer**: his name (kit section heading), his attendance strip, then either his entries in the approved log groups (each with a count badge: سبب التوقف, الكميات التقديرية, الخامات, الملاحظات, الصور, العمالة) or, when he logged nothing, one dim line in the log frame.
+- **Attendance strip** (the kit `att` without its button): الحضور and time, الانصراف and time, the "بعيد عن الموقع" pill and the "بأثر رجعي" pill. No check-out is named in the strip: "لم يُسجَّل الانصراف" with a clock icon in the dim tone (an engineer still on site and one who left without checking out look the same; the server decides which it is, see questions).
+- **Far from site, two drawn variants.** Tag only: "بعيد عن الموقع" (views `two`, `idle`, `partial`). With distance: "بعيد عن الموقع · 650 متر" (view `dist`). **Needs a server field, Nabil to decide**: today's read sends the flag reason plus coordinates and accuracy, not a distance. The mock keeps both so either answer is ready.
+- **A corrected quantity** shows the new figure, the old figure struck through in the dim tone before it, and the pill "مصححة" on the same line as the figure; "بواسطة {name}" sits on a dim line under the row. At 390 the line name takes the first line of the row and the mark and figures the second: name, mark and both figures cannot share one 358 px line, so the mark stays with the figures, which is what it refers to. A quantity row shows its باب in the dim tone beside the line name.
 - No money, no code, no id, no "تعديل" button anywhere.
 
 ## States
 
-- `two`: today, two engineers (one far from site and not yet checked out, one with a corrected quantity).
+- `two`: today, two engineers. One far from site and with no check-out, one with a corrected quantity.
 - `one`: أمس, one engineer, back-dated log.
-- `none`: الأحد, the state block "لم يُسجَّل شيء في يومية الأحد بعد." (the approved sentence of `daily-log.html`); no link row.
-- `stopped`: note banner "المشروع متوقف" as `daily-log.html`; each block opens with its stoppage reason; no status pill.
+- `partial`: السبت, two engineers present, one logged, the other has name and strip and the dim line only (an engineer who checked in and logged nothing).
+- `idle`: today, check-ins exist, no entries from anyone: every block is name, strip, dim line. The crew row says "لم يُسجَّل أحد بعد".
+- `none`: الأحد, nobody checked in and nobody logged: the state block with the approved sentence, without "بعد" (a past day). Today keeps "بعد" (`لم يُسجَّل شيء في يومية اليوم بعد.`), in both the dim line and the state block.
+- `stopped`: note banner "المشروع متوقف" as `daily-log.html`. The status pill keeps its place and shows "جاري العمل", because `project.html` has no stopped view and no pill for one (its frame draws only جاري العمل and لم تبدأ). No status word is invented. See questions.
+- `dist`: today, the tag-with-distance variant on the first engineer.
 - `loading`: skeleton, tab bar absent (as `project.html`). `failed`: refusal banner "تعذّر تحميل اليومية." with retry; frame, tabs and day switch stay.
 
 ## Reused from the kit, unchanged
 
-Project frame and its stage line and tabs, status pill, badge, back link, text link, segmented control (day switch), check-in strip (`att`, without its button), link row (`clink`), log group (`lg`) and entry (`ent`) with the photo thumbnail variant, note banner, refusal banner with retry, state block, skeleton, section heading, shell, bottom bar with the menu only.
+Project frame with stage line and tabs, status pill, badge, back link, text link, segmented control (day switch), check-in strip (`att`, without its button), link row (`clink`), log group (`lg`) and entry (`ent`) with the photo thumbnail, the log's empty line (`log-empty`), note banner, refusal banner with retry, state block, skeleton, section heading, shell, bottom bar with the menu only.
 
 ## New in the kit
 
-Nothing visual. Two small additions to the existing log entry: a dim second line (`cor`) carrying a small pill, and a dim secondary text (`tr`) inside the name. Both are existing tones. The crew group reuses `lg`/`ent`.
+Nothing visual and no new colour. Small additions to existing parts, all existing tones: a struck dim figure and a mark inside the entry's figure cell; a dim line under an entry; a dim secondary text inside the name (`tr`, as the picker result); a two-line day chip (weekday over day number) in the day switch; a dim variant of the strip's time item.
 
 ## New words (for Nabil to confirm)
 
-1. "مصحَّحة" (corrected mark on a quantity).
-2. "بواسطة {name}" (who corrected it).
+1. "مصححة": corrected mark on a quantity, printed without tashkeel.
+2. "بواسطة {name}": who corrected it.
+3. "لم يُسجَّل الانصراف": a check-in with no check-out, patterned on the approved "لم يُسجَّل الحضور بعد". No approved mock has a word for "still on site".
+4. "متر": distance unit in the far-from-site pill, only if the server sends a distance. The word is already in the materials unit list.
 
-Every other word is taken from the approved mocks.
+Every other word is from the approved mocks.
 
 ## Not decided here (questions for Nabil, each with the mock's default)
 
-1. **Crew lines inside each engineer's block.** The server sends crew lines per engineer log. The mock lists them as a group العمالة under his entries and also keeps the link row with the day total. Recommend keep both: the group says who his men were, the row opens the screen where the owner edits.
-2. **Attendance on past days.** `daily-log.html` hides the check-in strip on a past day for the entering engineer. Here the owner sees each engineer's attendance on every day. Recommend keep: the data is there and attendance is what the owner checks.
-3. **Back-dated flag per log or per entry.** `daily-log.html` tags each entry. The mock tags the engineer's log once, in his attendance strip, because the server sends one flag per log. Recommend per log.
-4. **Stopped project: which status word shows.** Stopped is not one of the five Kaff words, so the mock shows no pill and the banner "المشروع متوقف". Recommend keep until Nabil names the word.
-5. **Owner-only edit of a corrected quantity.** None drawn: the corrected mark names who corrected, the owner does not edit here. Recommend keep.
+1. **Distance in "بعيد عن الموقع".** The server does not send one. Recommend adding the field and showing the metres: "how far" is the question the owner asks. Without it, the tag alone stays.
+2. **"لم يُسجَّل الانصراف" on today.** The owner cannot tell still on site from left without checking out. Recommend keeping the word on past days and, on today, showing it as is until the server says a day is closed.
+3. **Crew lines.** Block groups and link row both stay, and the row total is computed from the blocks. If one man appears under two engineers the mock counts him once and adds his hours. Recommend keep; confirm the server sends crew per engineer log.
+4. **Back-dated flag per log, in the strip.** Recommend per log.
+5. **Stopped project status word.** The frame mock has no pill for a stopped project; the mock keeps جاري العمل. Recommend Nabil names the word (متعثرة or تم تأجيلها are Kaff's, neither is chosen here).
+6. **Earlier than four days.** The mock adds no path past the four-day window (D-217 item 7). The owner who wants last week has no path and no hint. Recommend a single "يوم آخر" date control if Nabil wants the owner outside the window; not drawn.
+7. **Corrected quantity shows both figures.** Recommend keep; it needs the server to send the original row beside the corrected one (it keeps both).
+8. **Block order.** One block per engineer, as D-225 words it. A by-work view for the case of two engineers logging the same trade is Nabil's call, not drawn.
 
 ## What the mock does not draw
 
-More than three days back; an engineer who checked in but logged nothing (the code shows his attendance strip alone, not drawn as a state); a log still being written live; photo full size on tap; English/LTR text beyond the direction switch; the supervising engineer's view of the same screen.
+More than three days back; a photo at full size; a log still being written live; English/LTR text beyond the direction switch; the supervising engineer's view of the same screen.
