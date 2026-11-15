@@ -154,3 +154,58 @@ Also noted, not copy: the unit the daily log stores for a material is the locali
 - "Sixteen `crew.*`" is right: 16 keys in both languages.
 - Item (c) asked whether the mock has each sentence: answered in B.
 - Safe fixes that only restore mock wording: none found. The one text change inside mock wording is the period after `crew.row_failed` (A), which adds a character the mock did not have.
+
+## Addendum 2026-11-16: photo, units and the owner's view
+
+Scope: keys added between `8f8898a` and HEAD in `ar.json` (16 keys). Compared against `.design/v2/team-a/daily-log.html`, `.design/v2/team-a/daily-log-review.html` and D-226. Everything marked "suggestion" is mine, not Kaff's ruling.
+
+### Mock wording check
+
+| Key | Current | Mock | Result |
+|---|---|---|---|
+| `daily_log.kind.photo` | صورة | صورة | verbatim |
+| `daily_log.photo.take` | التقاط صورة | التقاط صورة | verbatim |
+| `daily_log.photo.remove` | إزالة | إزالة | verbatim |
+| `daily_log.form.caption` | الوصف | الوصف | verbatim |
+| `daily_log.day.other` | يوم آخر | يوم آخر | verbatim, ruled in D-226 |
+| `daily_log.checkin.far_distance` | بعيد عن الموقع · {metres} متر | same | verbatim, ruled |
+| `daily_log.review.no_check_out` | لم يُسجَّل الانصراف | same | verbatim, ruled |
+| `daily_log.review.empty_past` | لم يُسجَّل شيء في يومية {day}. | `لم يُسجَّل شيء في يومية {day}` plus « بعد» for today only, then period | verbatim; today keeps the older `daily_log.empty` with «بعد» |
+| `daily_log.review.corrected` | مصححة | مصححة | verbatim, ruled |
+| `daily_log.review.corrected_by` | بواسطة {name} | بواسطة {name} | verbatim, ruled |
+| `daily_log.review.hours` | ساعة | ساعة | verbatim |
+
+No mock deviation found. Terms are consistent with the rest of the daily log: «صورة» means the photo in both `daily_log.photo` and `daily_log.kind.photo`; «ساعة» here matches `daily_log.crew.summary`.
+
+### Error sentences
+
+| Key | Current | Problem | Suggestion |
+|---|---|---|---|
+| `errors.daily_log.unit_not_allowed` | اختر وحدة من القائمة. | Fine. Says what to do. | keep |
+| `errors.daily_log.file_reference_invalid` | لم يتم رفع هذه الصورة إلى هذا المشروع. ارفعها مرة أخرى. | Tells the action. «إلى هذا المشروع» is developer-side (project scoping); the engineer only needs to retry. | لم يتم رفع الصورة. ارفعها مرة أخرى. |
+| `errors.daily_log.photo_not_an_image` | يُقبل فقط ملف صورة بصيغة JPEG أو PNG أو WebP. | Format names are developer talk for a site engineer; a phone camera gives JPEG anyway. | اختر صورة من الكاميرا أو من معرض الصور. |
+| `errors.daily_log.photo_too_large` | حجم الصورة كبير جدًا. | States the fault, gives no action or limit (server limit is 10 MB). | الصورة كبيرة جدًا. التقط صورة أخرى أو اختر صورة أصغر. |
+| `errors.daily_log.photo_not_found` | الصورة غير موجودة. | No action. Reads as a missing file, not as something to retry. | تعذّر العثور على الصورة. حدّث الصفحة وحاول مرة أخرى. |
+
+Not in this diff but the same family and still live: `errors.daily_log.file_reference_required` «الصورة تحتاج إلى مرجع ملف.» is the «مرجع ملف» developer talk. Suggestion: «اختر صورة أولاً.» (the screen should block this before the server does). Folded into question 11 of the main review (server error wording).
+
+### Notes only
+
+- `far_distance`: number then «متر» reads right for 650 or 12. For 1 it should be «متر واحد», for 2 «مترين», for 3 to 10 «أمتار». The mock has the same fixed «متر». Part of the open plural mechanism.
+- `daily_log.review.hours` «ساعة» beside a decimal such as 20.5 reads correctly: Arabic puts the singular after a decimal or after 11 and above. It fails for 1 («ساعة واحدة»), 2 («ساعتان»), 3 to 10 («ساعات»). Same open plural mechanism. Note `crew.hours` is «ساعات» (column heading) beside «ساعة» on figures; consistent with the mock.
+
+### Safe fixes
+
+None. Every non-error key is verbatim from its mock. The error rows above change what the sentence says, so they are questions.
+
+### Questions for Nabil
+
+1. `file_reference_invalid`: drop «إلى هذا المشروع»? (suggestion above)
+2. `photo_not_an_image`: replace the format list with «اختر صورة من الكاميرا أو من معرض الصور.»?
+3. `photo_too_large`: add the action «التقط صورة أخرى أو اختر صورة أصغر»? Or state the 10 MB limit (needs a parameter)?
+4. `photo_not_found`: add «حدّث الصفحة وحاول مرة أخرى»?
+5. `file_reference_required`: replace «مرجع ملف» with «اختر صورة أولاً.»?
+
+### Invented by a lane, never confirmed by Kaff (this diff)
+
+`errors.daily_log.unit_not_allowed`, `file_reference_invalid`, `photo_not_an_image`, `photo_too_large`, `photo_not_found`. The other 11 keys are in the approved mocks.
