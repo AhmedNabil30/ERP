@@ -1805,5 +1805,21 @@
   "daily_log.unit.ton": "طن",
   "daily_log.unit.metre": "متر",
   "daily_log.unit.piece": "قطعة",
-  "daily_log.unit.litre": "لتر"
+  "daily_log.unit.litre": "لتر",
+  "crew.add": "أضف عاملاً",
+  "crew.same_as_yesterday": "نفس عمالة أمس",
+  "crew.hours": "ساعات",
+  "crew.men": "عمال",
+  "crew.max_hours": "الحد الأقصى {max} ساعة",
+  "crew.row_failed": "تعذّر حفظ هذا السطر",
+  "crew.failed": "تعذّر تحميل العمالة.",
+  "crew.empty": "لا عمالة مشغَّلة على المشروع",
+  "crew.hours.minus": "إنقاص ساعات {name}",
+  "crew.hours.plus": "زيادة ساعات {name}",
+  "crew.hours.input": "ساعات {name}",
+  "crew.sheet.search": "اسم أو مهنة",
+  "crew.sheet.new_worker": "تسجيل عامل جديد",
+  "crew.sheet.once": "شُغّل مرة واحدة",
+  "crew.sheet.times": "شُغّل {count} مرات",
+  "crew.sheet.rating": "تقييم {rating}"
 }

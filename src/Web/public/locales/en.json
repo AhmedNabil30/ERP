@@ -1805,5 +1805,21 @@
   "daily_log.unit.ton": "Ton",
   "daily_log.unit.metre": "Metre",
   "daily_log.unit.piece": "Piece",
-  "daily_log.unit.litre": "Litre"
+  "daily_log.unit.litre": "Litre",
+  "crew.add": "Add a man",
+  "crew.same_as_yesterday": "Same crew as yesterday",
+  "crew.hours": "Hours",
+  "crew.men": "Men",
+  "crew.max_hours": "At most {max} hours",
+  "crew.row_failed": "This row was not saved",
+  "crew.failed": "The crew could not be loaded.",
+  "crew.empty": "No men engaged on this project",
+  "crew.hours.minus": "Fewer hours for {name}",
+  "crew.hours.plus": "More hours for {name}",
+  "crew.hours.input": "Hours for {name}",
+  "crew.sheet.search": "Name or trade",
+  "crew.sheet.new_worker": "Register a new man",
+  "crew.sheet.once": "Engaged once",
+  "crew.sheet.times": "Engaged {count} times",
+  "crew.sheet.rating": "Rating {rating}"
 }

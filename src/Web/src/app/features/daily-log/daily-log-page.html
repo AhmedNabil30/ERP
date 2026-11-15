@@ -44,10 +44,7 @@
           <kaff-banner tone="note" icon="pause" testId="daily-log-stopped"><b>{{ i18n.t('daily_log.stopped') }}</b></kaff-banner>
         }
 
-        <div class="drow">
-          <kaff-segmented-filter [options]="dayOptions()" [(value)]="dayValue" ariaLabelKey="daily_log.day.switch" testIdPrefix="daily-log-day" />
-          <span class="dt" data-testid="daily-log-date">{{ dateLine() }}</span>
-        </div>
+        <kaff-day-switch [(value)]="dayValue" [today]="today()" testIdPrefix="daily-log-day" dateTestId="daily-log-date" />
 
         @if (isToday() && checkInLine(); as attendance) {
           <kaff-attendance-strip

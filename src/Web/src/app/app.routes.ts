@@ -251,7 +251,13 @@ export const routes: Routes = [
     canActivate: [sessionGuard, mustChangePasswordGuard, dayLabourSiteManageGuard],
     children: [
       {
+        // KAFF-615: the crew screen. The pool (engage, close, rate) is not drawn in the approved mock, so it keeps its
+        // own address; nothing links to it yet.
         path: '',
+        loadComponent: () => import('./features/day-labour/crew/crew-page').then((m) => m.CrewPage),
+      },
+      {
+        path: 'pool',
         loadComponent: () =>
           import('./features/day-labour/worker-pool/worker-pool-page').then((m) => m.WorkerPoolPage),
       },

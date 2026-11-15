@@ -17,17 +17,6 @@
   min-inline-size: 0;
 }
 
-.drow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 12px;
-}
-
-.dt {
-  font-weight: 600;
-}
-
 .cols {
   display: grid;
   gap: 16px;

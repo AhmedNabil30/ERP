@@ -22,6 +22,8 @@ import { ProjectDetail } from '../../core/projects/projects.api';
 import { KaffAttendanceStrip } from '../../shared/kaff-attendance-strip/kaff-attendance-strip';
 import { KaffBanner } from '../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../shared/kaff-button/kaff-button';
+import { KaffDaySwitch } from '../../shared/kaff-day-switch/kaff-day-switch';
+import { DayValue, dayDate, dayWord, localDate, localIso } from '../../shared/kaff-day-switch/site-days';
 import { KaffDetailPanel } from '../../shared/kaff-detail-panel/kaff-detail-panel';
 import { KaffField } from '../../shared/kaff-field/kaff-field';
 import { KaffFigurePair } from '../../shared/kaff-figure-pair/kaff-figure-pair';
@@ -33,17 +35,11 @@ import { KaffPickerButton } from '../../shared/kaff-picker-button/kaff-picker-bu
 import { KaffProjectFrame } from '../../shared/kaff-project-frame/kaff-project-frame';
 import { KaffReadonlyField } from '../../shared/kaff-readonly-field/kaff-readonly-field';
 import { KaffSearchField } from '../../shared/kaff-search-field/kaff-search-field';
-import { KaffSegmentedFilter, SegmentedFilterOption } from '../../shared/kaff-segmented-filter/kaff-segmented-filter';
 import { KaffSelect, SelectOption } from '../../shared/kaff-select/kaff-select';
 import { KaffState } from '../../shared/kaff-state/kaff-state';
 import { KaffStatusPill } from '../../shared/kaff-status-pill/kaff-status-pill';
 
 type EntryKind = 'note' | 'quantity' | 'material' | 'stoppage';
-type DayValue = '0' | '1' | '2' | '3';
-
-/** The open window (D-217 item 7): today and three days back. The server judges it again. */
-const DAY_VALUES: readonly DayValue[] = ['0', '1', '2', '3'];
-
 /** How long to wait for a fix before telling the engineer location is not available (AC-613-D). */
 const LOCATION_TIMEOUT_MS = 15_000;
 
@@ -106,6 +102,7 @@ interface EditTarget {
     KaffAttendanceStrip,
     KaffBanner,
     KaffButton,
+    KaffDaySwitch,
     KaffDetailPanel,
     KaffField,
     KaffFigurePair,
@@ -117,7 +114,6 @@ interface EditTarget {
     KaffProjectFrame,
     KaffReadonlyField,
     KaffSearchField,
-    KaffSegmentedFilter,
     KaffSelect,
     KaffState,
     KaffStatusPill,
@@ -156,16 +152,9 @@ export class DailyLogPage {
   protected readonly dayValue = signal<DayValue>('0');
   private readonly dayIndex = computed(() => Number(this.dayValue()));
   protected readonly isToday = computed(() => this.dayIndex() === 0);
-  private readonly today = signal(new Date());
+  protected readonly today = signal(new Date());
 
-  /** The day switch: today and up to three days back. Weekday names for the older two. */
-  protected readonly dayOptions = computed<readonly SegmentedFilterOption<DayValue>[]>(() =>
-    DAY_VALUES.map((value) => ({ value, labelKey: '', labelText: this.dayWord(Number(value)) })),
-  );
-  protected readonly dayWordNow = computed(() => this.dayWord(this.dayIndex()));
-  protected readonly dateLine = computed(() =>
-    this.i18n.formatDate(this.dayDate(this.dayIndex()), { weekday: 'long', day: 'numeric', month: 'long' }),
-  );
+  protected readonly dayWordNow = computed(() => dayWord(this.i18n, this.today(), this.dayIndex()));
 
   protected readonly shownLog = computed<DailyLog | null>(() => (this.isToday() ? this.todayLog() : this.pastLog()));
 
@@ -458,23 +447,7 @@ export class DailyLogPage {
 
   /** The device's time on the shown day: an entry belongs to the day it names, not the day it is sent (rule 11). */
   private occurredAt(): string {
-    return localIso(new Date(), this.isToday() ? null : localDate(this.dayDate(this.dayIndex())));
-  }
-
-  private dayDate(index: number): Date {
-    const date = new Date(this.today());
-    date.setDate(date.getDate() - index);
-    return date;
-  }
-
-  private dayWord(index: number): string {
-    if (index === 0) {
-      return this.i18n.t('daily_log.day.today');
-    }
-    if (index === 1) {
-      return this.i18n.t('daily_log.day.yesterday');
-    }
-    return this.i18n.formatDate(this.dayDate(index), { weekday: 'long' });
+    return localIso(new Date(), this.isToday() ? null : localDate(dayDate(this.today(), this.dayIndex())));
   }
 
   private async loadAll(projectId: string): Promise<void> {
@@ -496,7 +469,7 @@ export class DailyLogPage {
   private async loadPast(projectId: string, index: number): Promise<void> {
     this.pastLog.set(null);
     try {
-      this.pastLog.set(await this.api.getMine(projectId, localDate(this.dayDate(index))));
+      this.pastLog.set(await this.api.getMine(projectId, localDate(dayDate(this.today(), index))));
     } catch (error) {
       this.errorKey.set(toProblem(error).messageKey);
     }
@@ -553,21 +526,4 @@ function currentPlace(): Promise<Place> {
 function positive(text: string): number | null {
   const value = Number(text.trim());
   return Number.isFinite(value) && value > 0 ? value : null;
-}
-
-/** The device's calendar date, `yyyy-MM-dd`. */
-function localDate(now: Date): string {
-  const pad = (n: number): string => String(n).padStart(2, '0');
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-}
-
-/** ISO-8601 in the device's own offset, not UTC. `day` puts the device's time of day on another date. */
-function localIso(now: Date, day: string | null = null): string {
-  const pad = (n: number): string => String(n).padStart(2, '0');
-  const offset = -now.getTimezoneOffset();
-  const sign = offset >= 0 ? '+' : '-';
-  return (
-    `${day ?? localDate(now)}T${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}` +
-    `${sign}${pad(Math.floor(Math.abs(offset) / 60))}:${pad(Math.abs(offset) % 60)}`
-  );
 }

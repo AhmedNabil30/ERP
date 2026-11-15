@@ -96,6 +96,23 @@ export interface BoqPickLine {
   readonly quantityExecuted: number;
 }
 
+/** One engineer's log of a day, as the review read returns it. */
+export interface EngineerLog {
+  readonly engineerId: string;
+  readonly engineerName: string;
+  readonly log: DailyLog;
+}
+
+/** Decimals may arrive as strings; the screen formats numbers. */
+function normalise(wire: DailyLog): DailyLog {
+  return {
+    ...wire,
+    quantities: wire.quantities.map((line) => ({ ...line, quantity: Number(line.quantity) })),
+    materials: wire.materials.map((line) => ({ ...line, quantity: Number(line.quantity) })),
+    dayLabour: wire.dayLabour.map((line) => ({ ...line, hours: Number(line.hours) })),
+  };
+}
+
 export interface DayLabourLine {
   readonly entryId: string;
   readonly employeeId: string;
@@ -155,19 +172,24 @@ export class DailyLogApi {
       const wire = await firstValueFrom(
         this.http.get<DailyLog>(`${this.base(projectId)}/mine`, { params: new HttpParams().set('date', date) }),
       );
-      // Decimals may arrive as strings; the screen formats numbers.
-      return {
-        ...wire,
-        quantities: wire.quantities.map((line) => ({ ...line, quantity: Number(line.quantity) })),
-        materials: wire.materials.map((line) => ({ ...line, quantity: Number(line.quantity) })),
-        dayLabour: wire.dayLabour.map((line) => ({ ...line, hours: Number(line.hours) })),
-      };
+      return normalise(wire);
     } catch (error) {
       if (error instanceof HttpErrorResponse && error.status === 404) {
         return null;
       }
       throw error;
     }
+  }
+
+  /**
+   * `GET …/daily-logs?date=` — every engineer's log of one day, for the supervising site engineer and the owner
+   * (`DailyLogReview`). It is how they reach a crew entered by someone else, to correct it.
+   */
+  async listDayLogs(projectId: string, date: string): Promise<readonly EngineerLog[]> {
+    const wire = await firstValueFrom(
+      this.http.get<EngineerLog[]>(this.base(projectId), { params: new HttpParams().set('date', date) }),
+    );
+    return wire.map((entry) => ({ ...entry, log: normalise(entry.log) }));
   }
 
   async recordCheckIn(projectId: string, entry: CheckInEntry): Promise<void> {
@@ -219,6 +241,14 @@ export class DailyLogApi {
 
   async recordDayLabour(projectId: string, entry: EntryEnvelope & { employeeId: string; hours: number }): Promise<void> {
     await firstValueFrom(this.http.post(`${this.base(projectId)}/day-labour`, entry));
+  }
+
+  /**
+   * Corrects saved crew hours (D-217 item 3, D-218 item 16): sends the hours the saved entry should read. The server
+   * stores a signed delta that names the entry; nothing is updated or deleted.
+   */
+  async correctDayLabour(projectId: string, entryId: string, correction: { correctionId: string; hours: number }): Promise<void> {
+    await firstValueFrom(this.http.post(`${this.base(projectId)}/day-labour/${entryId}/corrections`, correction));
   }
 
   async recordMaterial(

@@ -1,0 +1,165 @@
+<!-- The shell places this in the bottom bar on a phone and the page header on desktop; the screen never renders it itself. -->
+<ng-template #primaryAction>
+  @if (primary(); as action) {
+    <kaff-button
+      variant="primary"
+      [testId]="'crew-' + action.act"
+      [busy]="action.act === 'save' && busy()"
+      [disabled]="action.act === 'save' && !canSave()"
+      (clicked)="onPrimary()"
+    >
+      {{ i18n.t(action.labelKey) }}
+    </kaff-button>
+  }
+</ng-template>
+
+<section class="crew" data-testid="crew-page">
+  <kaff-project-frame [projectId]="projectId()" current="dailyLog">
+    @if (loading()) {
+      <kaff-state mode="loading" titleKey="daily_log.loading" testId="crew-loading" />
+    } @else if (failure(); as key) {
+      <kaff-banner tone="refusal" icon="error" testId="crew-failure">
+        <b>{{ i18n.t('crew.failed') }}</b> {{ i18n.t('daily_log.failed.nothing_changed') }}
+        <kaff-button bannerActions variant="secondary" testId="crew-retry" (clicked)="reload()">{{ i18n.t('daily_log.action.retry') }}</kaff-button>
+      </kaff-banner>
+    } @else {
+      <div class="stack">
+        <h2 class="title">{{ i18n.t('daily_log.crew') }}</h2>
+
+        <kaff-day-switch [(value)]="dayValue" [today]="today()" testIdPrefix="crew-day" dateTestId="crew-date">
+          @if (backDated()) {
+            <kaff-status-pill tone="same" icon="clock" testId="crew-back-dated">{{ i18n.t('daily_log.back_dated') }}</kaff-status-pill>
+          }
+        </kaff-day-switch>
+
+        @if (errorKey(); as key) {
+          <kaff-banner tone="refusal" icon="error" testId="crew-error">{{ i18n.t(key) }}</kaff-banner>
+        }
+
+        @if (empty()) {
+          <kaff-state mode="empty" titleKey="crew.empty" icon="crew" testId="crew-empty" />
+        } @else {
+          @if (justSaved()) {
+            <kaff-banner tone="ok" icon="check" testId="crew-saved">{{ i18n.t('daily_log.saved') }}</kaff-banner>
+          }
+
+          <div class="tot">
+            @if (menCount() === 0) {
+              <div class="tot-zero" data-testid="crew-totals">{{ i18n.t('daily_log.crew.none') }}</div>
+            } @else {
+              <kaff-figure-pair
+                testId="crew-totals"
+                [firstValue]="number(menCount())"
+                [firstLabel]="i18n.t('crew.men')"
+                [secondValue]="number(hoursTotal())"
+                [secondLabel]="i18n.t('crew.hours')"
+              />
+            }
+          </div>
+
+          @if (showSame()) {
+            <div class="tools">
+              <kaff-button variant="secondary" testId="crew-same" (clicked)="copyYesterday()">
+                {{ i18n.t('crew.same_as_yesterday') }}
+              </kaff-button>
+            </div>
+          }
+
+          <div class="list" data-testid="crew-list">
+            <div class="list-head"><span>{{ i18n.t('crew.hours') }}</span></div>
+            @for (row of rows(); track row.id) {
+              <div class="man" [class.on]="row.value > 0 && !row.bad" [class.bad]="row.bad || row.failKey !== null" [attr.data-testid]="'crew-row-' + $index">
+                <div class="id">
+                  <b dir="auto">{{ row.name }}</b>
+                  @if (row.trade) {
+                    <span dir="auto">{{ row.trade }}</span>
+                  }
+                </div>
+                @if (row.editable) {
+                  <kaff-hours-stepper
+                    [testId]="'crew-hours-' + $index"
+                    [text]="row.text"
+                    [invalid]="row.bad || row.failKey !== null"
+                    [minusDisabled]="minusDisabled(row)"
+                    [plusDisabled]="plusDisabled(row)"
+                    [minusLabel]="i18n.t('crew.hours.minus', { name: row.name })"
+                    [plusLabel]="i18n.t('crew.hours.plus', { name: row.name })"
+                    [inputLabel]="i18n.t('crew.hours.input', { name: row.name })"
+                    (stepped)="onStep(row, $event)"
+                    (typed)="onTyped(row, $event)"
+                    (committed)="onCommitted(row)"
+                  />
+                } @else {
+                  <div class="sv" [attr.data-testid]="'crew-saved-' + $index">
+                    @if (row.saved > 0) {
+                      <kaff-icon name="check" /><bdi dir="ltr">{{ number(row.saved) }}</bdi>
+                    } @else {
+                      <span class="none">—</span>
+                    }
+                  </div>
+                }
+                @if (row.bad) {
+                  <div class="msg" role="alert" [attr.data-testid]="'crew-refused-' + $index">
+                    <kaff-icon name="error" />{{ i18n.t('crew.max_hours', { max: maxHours }) }}
+                  </div>
+                } @else if (row.failKey; as key) {
+                  <div class="msg" role="alert" [attr.data-testid]="'crew-failed-' + $index">
+                    <kaff-icon name="error" /><span><b>{{ i18n.t('crew.row_failed') }}</b> {{ i18n.t(key) }}</span>
+                    <kaff-button variant="secondary" [testId]="'crew-retry-row-' + $index" (clicked)="onSave()">{{ i18n.t('daily_log.action.retry') }}</kaff-button>
+                  </div>
+                }
+              </div>
+            }
+            @if (editMode() && canRecord()) {
+              <div class="add-row">
+                <kaff-button variant="secondary" testId="crew-add" (clicked)="openSheet()">
+                  <kaff-icon name="plus" />{{ i18n.t('crew.add') }}
+                </kaff-button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </kaff-project-frame>
+
+  <kaff-detail-panel [open]="sheetOpen()" titleKey="crew.add" testId="crew-sheet" (closed)="sheetOpen.set(false)">
+    <div panelBody class="sheet">
+      <kaff-search-field [(value)]="sheetSearch" placeholderKey="crew.sheet.search" clearLabelKey="catalogue.search.clear" testId="crew-sheet-search" />
+      @if (sheetError(); as key) {
+        <kaff-banner tone="refusal" icon="error" testId="crew-sheet-error">{{ i18n.t(key) }}</kaff-banner>
+      }
+      <div class="res-l">
+        @for (worker of sheetResults(); track worker.id) {
+          <div class="res" [attr.data-testid]="'crew-sheet-result-' + $index">
+            <div class="res-id">
+              <b dir="auto">{{ worker.fullName }}</b>
+              @if (worker.specialty) {
+                <span class="trade" dir="auto">{{ worker.specialty }}</span>
+              }
+            </div>
+            <kaff-button
+              variant="secondary"
+              [testId]="'crew-engage-' + $index"
+              [busy]="sheetBusy() === worker.id"
+              (clicked)="engage(worker)"
+            >
+              {{ i18n.t('hr.worker.engagement.engage_action') }}
+            </kaff-button>
+            <div class="mt">
+              <span>{{ engagedLabel(worker) }}</span>
+              @if (rating(worker); as stars) {
+                <span>{{ i18n.t('crew.sheet.rating', { rating: stars }) }}</span>
+              }
+            </div>
+          </div>
+        } @empty {
+          <div class="res-none">{{ i18n.t('daily_log.picker.none') }}</div>
+        }
+      </div>
+    </div>
+    <a panelFooter class="new-worker" [routerLink]="['/projects', projectId(), 'day-labour', 'new']" data-testid="crew-new-worker">
+      {{ i18n.t('crew.sheet.new_worker') }}
+    </a>
+  </kaff-detail-panel>
+</section>
