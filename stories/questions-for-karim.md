@@ -533,3 +533,11 @@ Nabil rules it or passes it to Karim. Q-219-1 to Q-219-3 block the daily log and
 | Q-221-9 | The waiting line shows to everyone who has the المستخلصات tab, not to the owner only. Correct? | Everyone with the tab | (D-221) |
 | Q-221-10 | The owner's turn reads "الاعتماد النهائي"; the approved mock says "اعتماد المالك". Which? | "الاعتماد النهائي" | (copy) |
 | Q-222-1 | The Technical Office may pick any active client by name when creating a project (`GET /api/clients/picker`, id and name only). Confirm. | Built | (D-222) |
+
+## Added 2026-11-15 — from the release 1 Verifier passes (D-224, D-225)
+
+| # | Question | Built on | Decision |
+|---|---|---|---|
+| Q-225-1 | Where is material marked as stockpiled on site, which is what starts تشوينات? On the engineer's daily log material entry, or by Accounts when the extract is prepared? The approved daily log has no such control, so today nothing from site can start a material advance. | Not marked from site | (D-225) |
+| Q-225-2 | A man entered on a day's crew by mistake cannot be taken off: a correction must leave him above 0 hours. May a correction bring a man to zero? | Above 0 only | (D-219) |
+| Q-225-3 | Units on a material entry: «متر» or «م.ط», «كيس» or «شكارة», and is the list of seven complete? | The seven in the mock | (D-217 item 17) |

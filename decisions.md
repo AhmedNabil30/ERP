@@ -16872,3 +16872,13 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 7. **The phone primary action sits in the bottom bar**, placed once by the shell (KAFF-936).
 
 **Not decided here, and still open.** Other "today" dates are still taken from the UTC day: the sign date default, the hold release, subcontractor retention release, adjustments, closure and extracts (`ExtractSupport.Today`, `ClosureSupport.Today`, `AdjustmentSupport.Today`, `SignProject/Handler.cs:131`). Between 22:00 and 24:00 UTC they date a document one day early. They touch money documents, so they wait for their own lane and Verifier.
+
+
+## D-225 — Nabil rules the owner's daily log, photos, site expense confirmation and the stockpile question · 2026-11-15
+
+**Source.** Nabil, in session with the Scrum Master, 2026-11-15, on the open findings of `qa/slice-6/verification-2026-11-15.md`.
+
+1. **The owner reads the daily log.** His اليومية tab opens a read-only view of every engineer's log for the day, with a link to the crew screen, where he may edit (KAFF-615 AC-5). He records nothing on the daily log.
+2. **Photos are built in release 1, stored on the server's disk.** Files live in a folder outside the database, behind the same role and assignment checks as the rest of the daily log. The storage sits behind one interface so it can move to object storage later without a screen change.
+3. **Accounts confirming a site expense moves to release 2.** KAFF-600 AC-600-H keeps its first half: the expense is a draft and posts nothing. The confirmation and its posting are built with the site money flows.
+4. **Stockpile marking goes to Karim** (Q-225-1). The daily log stays without a stockpile control until he answers, and every material entry is recorded as not stockpiled.

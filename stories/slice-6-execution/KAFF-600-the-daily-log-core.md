@@ -91,7 +91,9 @@ Then the entry is accepted
 **AC-600-H — an engineer's expense is a draft and posts nothing**
 Given an assigned engineer
 When he enters a site expense
-Then it is stored as a draft, no posting is written, and it is Accounts that confirms and posts it
+Then it is stored as a draft and no posting is written
+
+> **Changed 2026-11-15 (D-225 item 3, Nabil).** The second half of this criterion, Accounts confirming and posting the draft, leaves this story. It is built in release 2 with the site money flows. Until then a draft stays a draft.
 *Rules: 9, 10.*
 
 **AC-600-I — occurred-at is the engineer's time, not the sync time**
