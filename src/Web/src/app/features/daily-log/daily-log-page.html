@@ -182,7 +182,7 @@
                         <kaff-status-pill tone="same" icon="clock" testId="daily-log-flag">{{ i18n.t('daily_log.back_dated') }}</kaff-status-pill>
                       }
                       <span entFigure><bdi dir="ltr">≈ {{ number(line.quantity) }}</bdi> <small dir="auto">{{ line.unit }}</small></span>
-                      @if (editing() === null && canEditShown()) {
+                      @if (editing() === null && line.canCorrect === true) {
                         <kaff-button entAction variant="ghost" [testId]="'daily-log-edit-' + $index" (clicked)="startEdit(line)">{{ i18n.t('daily_log.action.edit') }}</kaff-button>
                       }
                     </kaff-log-entry>
@@ -242,7 +242,7 @@
       <div class="res-l">
         @for (line of pickerResults(); track line.id) {
           <div class="res" [attr.data-testid]="'daily-log-pick-' + $index">
-            <b dir="auto">{{ lineName(line) }}</b>
+            <div><b dir="auto">{{ lineName(line) }}</b>@if (line.babName) { <span class="tr" dir="auto" [attr.data-testid]="'daily-log-pick-bab-' + $index">{{ line.babName }}</span>}</div>
             <kaff-button variant="secondary" [testId]="'daily-log-pick-button-' + $index" (clicked)="pick(line)">{{ i18n.t('daily_log.action.pick') }}</kaff-button>
             <span class="mt">{{ i18n.t('daily_log.picker.done', { done: '≈ ' + number(line.quantityExecuted), total: lineTotal(line), unit: line.unit }) }}</span>
           </div>

@@ -91,7 +91,7 @@ async function render(
         provide: ProjectsApi,
         useValue: {
           get: vi.fn().mockResolvedValue(project(options.projectExtra)),
-          list: vi.fn().mockResolvedValue({ projects: [{ id: 'p-0', name: 'مشروع سابق', contractType: 'LumpSum' }, { id: 'p-1', name: 'هذا', contractType: 'LumpSum' }, { id: 'p-2', name: 'تصميم', contractType: 'Design' }], total: 3 }),
+          list: vi.fn().mockResolvedValue({ projects: [{ id: 'p-0', name: 'مشروع سابق', contractType: 'LumpSum' }, { id: 'p-1', name: 'هذا', contractType: 'LumpSum' }, { id: 'p-2', name: 'تصميم', contractType: 'Design' }, { id: 'p-3', name: 'فارغ', contractType: 'LumpSum', boqLineCount: 0 }, { id: 'p-4', name: 'ببنود', contractType: 'LumpSum', boqLineCount: 5 }], total: 5 }),
         },
       },
       { provide: CatalogueApi, useValue: { list: vi.fn().mockResolvedValue([]) } },
@@ -179,6 +179,8 @@ describe('BoqPage', () => {
     expect(byId(root, 'boq-base-base-1')).not.toBeNull();
     expect(byId(root, 'boq-source-p-0')).not.toBeNull();
     expect(byId(root, 'boq-source-p-2')).toBeNull();
+    expect(byId(root, 'boq-source-p-3')).toBeNull();
+    expect(byId(root, 'boq-source-p-4')).not.toBeNull();
     expect(byId(root, 'boq-source-p-1')).toBeNull();
   });
 

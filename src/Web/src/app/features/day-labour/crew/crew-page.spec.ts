@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { AuthService, Role } from '../../../core/auth/auth.service';
 import { DailyLog, DailyLogApi, DayLabourLine, EngineerLog } from '../../../core/daily-log/daily-log.api';
-import { DayLabourApi, PoolWorker } from '../../../core/day-labour/day-labour.api';
+import { CrewMember, DayLabourApi, PoolWorker } from '../../../core/day-labour/day-labour.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { ProjectsApi } from '../../../core/projects/projects.api';
@@ -37,8 +37,8 @@ function dateOf(daysBack: number): string {
 const ME = 'me';
 const OTHER = 'other-engineer';
 
-function labour(entryId: string, employeeId: string, workerName: string, hours: number, backDated?: boolean): DayLabourLine {
-  return { entryId, employeeId, workerName, hours, occurredAt: '2026-11-10T09:00:00+02:00', ...(backDated === undefined ? {} : { backDated }) };
+function labour(entryId: string, employeeId: string, workerName: string, hours: number, backDated?: boolean, canCorrect = true): DayLabourLine {
+  return { entryId, employeeId, workerName, hours, occurredAt: '2026-11-10T09:00:00+02:00', canCorrect, ...(backDated === undefined ? {} : { backDated }) };
 }
 
 function log(dayLabour: DayLabourLine[] = [], backDated?: boolean): DailyLog {
@@ -115,7 +115,8 @@ async function flush(fixture: { detectChanges(): void }): Promise<void> {
   fixture.detectChanges();
 }
 
-async function createPage(api: FakeDailyLogApi, permissions = JUNIOR, role: Role = 'SiteEngineer') {
+/** `crew` answers the crew read; `'forbidden'` is the 403 an owner or finance user gets. */
+async function createPage(api: FakeDailyLogApi, permissions = JUNIOR, role: Role = 'SiteEngineer', crew: CrewMember[] | 'forbidden' = []) {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
@@ -124,7 +125,15 @@ async function createPage(api: FakeDailyLogApi, permissions = JUNIOR, role: Role
       { provide: DailyLogApi, useValue: api },
       {
         provide: DayLabourApi,
-        useValue: { listPool: async () => POOL, openEngagement: async () => ({ id: 'e', workerId: 'w2', projectId: 'p', openedOn: '2026-11-10' }) },
+        useValue: {
+          listPool: async () => POOL,
+          listCrew: async () => {
+            if (crew === 'forbidden') {
+              throw new HttpErrorResponse({ status: 403, error: { code: 'forbidden', messageKey: 'errors.forbidden' } });
+            }
+            return crew;
+          }, openEngagement: async () => ({ id: 'e', workerId: 'w2', projectId: 'p', openedOn: '2026-11-10' }),
+        },
       },
       {
         provide: ProjectsApi,
@@ -344,7 +353,7 @@ describe('CrewPage', () => {
     });
 
     it('does not offer an edit of today to the supervising engineer when another engineer entered it', async () => {
-      const api = new FakeDailyLogApi({}, { [dateOf(0)]: [{ engineerId: OTHER, engineerName: 'Other', log: log([labour('e1', 'w1', 'Ali', 8)]) }] });
+      const api = new FakeDailyLogApi({}, { [dateOf(0)]: [{ engineerId: OTHER, engineerName: 'Other', log: log([labour('e1', 'w1', 'Ali', 8, undefined, false)]) }] });
       const fixture = await createPage(api, SUPERVISOR);
 
       expect(el(fixture.nativeElement, 'crew-hours-0')).toBeNull();
@@ -353,7 +362,7 @@ describe('CrewPage', () => {
   });
 
   describe('AC-4, AC-11: an earlier day', () => {
-    const yesterdayMine = { [dateOf(1)]: log([labour('y1', 'w1', 'Ali', 8)]) };
+    const yesterdayMine = { [dateOf(1)]: log([labour('y1', 'w1', 'Ali', 8, undefined, false)]) };
 
     it('is read-only for the engineer who entered it: no stepper, no add, no primary', async () => {
       const fixture = await createPage(new FakeDailyLogApi(yesterdayMine));
@@ -379,6 +388,15 @@ describe('CrewPage', () => {
       expect(api.corrections).toHaveLength(1);
       expect(api.corrections[0]).toMatchObject({ entryId: 'y1', hours: 8.5 });
       expect(api.corrections[0].correctionId).toBeTruthy();
+    });
+
+    it('stays read-only for the supervising engineer when the server says canCorrect is false', async () => {
+      const api = new FakeDailyLogApi({}, { [dateOf(1)]: [{ engineerId: ME, engineerName: 'Me', log: log([labour('y1', 'w1', 'Ali', 8, undefined, false)]) }] });
+      const fixture = await createPage(api, SUPERVISOR);
+      await click(fixture, 'crew-day-1');
+
+      expect(el(fixture.nativeElement, 'crew-hours-0')).toBeNull();
+      expect(primary(fixture)).toBeNull();
     });
 
     it('reads every engineer\'s log for the supervising engineer, not only his own', async () => {
@@ -409,6 +427,33 @@ describe('CrewPage', () => {
       const fixture = await createPage(new FakeDailyLogApi(), OWNER, 'Owner');
 
       expect(primary(fixture)).toBeNull();
+    });
+  });
+
+  describe('the roster comes from the crew read', () => {
+    it('lists the engaged men with their trade, merged with men who have hours that day', async () => {
+      const crew: CrewMember[] = [
+        { workerId: 'w1', name: 'Ali', trade: 'Builder' },
+        { workerId: 'w9', name: 'Zaki', trade: null },
+      ];
+      const api = new FakeDailyLogApi({ [dateOf(0)]: log([labour('e1', 'w1', 'Ali', 8), labour('e2', 'w5', 'Hamed', 3)]) });
+      const fixture = await createPage(api, JUNIOR, 'SiteEngineer', crew);
+      const text = (fixture.nativeElement as HTMLElement).textContent!;
+
+      expect(text).toContain('Zaki');
+      expect(text).toContain('Hamed');
+      expect(text).toContain('Builder');
+      expect(el(fixture.nativeElement, 'crew-empty')).toBeNull();
+    });
+
+    it('a 403 on the crew read is no roster, not a failed page: the saved lines still show', async () => {
+      const api = new FakeDailyLogApi({}, { [dateOf(0)]: [{ engineerId: OTHER, engineerName: 'Other', log: log([labour('e1', 'w1', 'Ali', 8)]) }] });
+      const fixture = await createPage(api, OWNER, 'Owner', 'forbidden');
+      const root: HTMLElement = fixture.nativeElement;
+
+      expect(root.textContent).toContain('Ali');
+      expect(root.querySelector('[role="alert"]')).toBeNull();
+      expect(el(root, 'crew-saved')).not.toBeNull();
     });
   });
 

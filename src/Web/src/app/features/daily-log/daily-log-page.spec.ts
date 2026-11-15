@@ -65,12 +65,13 @@ const QUANTITY = {
   quantity: 12.5,
   occurredAt: '2026-11-10T09:00:00+02:00',
   corrected: false,
+  canCorrect: true,
 };
 
 const BOQ: BoqLines = {
   boqId: 'boq-1',
   lines: [
-    { id: 'l1', position: 1, itemCode: 'A-1', descriptionAr: 'بلاط', descriptionEn: null, unit: 'م٢', quantityEstimated: 100, quantitySurveyed: 120, quantityExecuted: 38.5 },
+    { id: 'l1', position: 1, itemCode: 'A-1', descriptionAr: 'بلاط', descriptionEn: null, unit: 'م٢', quantityEstimated: 100, quantitySurveyed: 120, quantityExecuted: 38.5, babName: 'أعمال الأرضيات' },
     { id: 'l2', position: 2, itemCode: null, descriptionAr: 'دهان', descriptionEn: null, unit: 'م٢', quantityEstimated: null, quantitySurveyed: 60, quantityExecuted: 0 },
   ],
 };
@@ -433,6 +434,8 @@ describe('DailyLogPage', () => {
       fixture.detectChanges();
       click(root, 'daily-log-line');
       fixture.detectChanges();
+      expect(el(root, 'daily-log-pick-bab-0')?.textContent).toContain('أعمال الأرضيات');
+      expect(el(root, 'daily-log-pick-bab-1')).toBeNull();
       click(root, 'daily-log-pick-button-0');
       fixture.detectChanges();
       type(root, 'daily-log-quantity', '6');
@@ -526,15 +529,22 @@ describe('DailyLogPage', () => {
       expect(rows[0].textContent).toContain('10');
     });
 
-    it('a past day offers "تعديل" only where the server sent the flag (the supervising engineer)', async () => {
-      const past = (backDated: boolean | undefined) => log({ logDate: dateOf(1), checkIns: [], backDated, quantities: [QUANTITY] });
-      const junior = await createPage(new FakeDailyLogApi(log(), { [dateOf(1)]: past(undefined) }));
+    it('offers "تعديل" on a line only where the server says canCorrect, today or on a past day', async () => {
+      const day = (canCorrect: boolean | undefined, date = dateOf(1)) =>
+        log({ logDate: date, checkIns: [], quantities: [{ ...QUANTITY, canCorrect }] });
+      const junior = await createPage(new FakeDailyLogApi(log(), { [dateOf(1)]: day(false) }));
       await chooseDay(junior, 1);
       expect(el(junior.nativeElement, 'daily-log-edit-0')).toBeNull();
 
-      const supervisor = await createPage(new FakeDailyLogApi(log(), { [dateOf(1)]: past(false) }));
+      const supervisor = await createPage(new FakeDailyLogApi(log(), { [dateOf(1)]: day(true) }));
       await chooseDay(supervisor, 1);
       expect(el(supervisor.nativeElement, 'daily-log-edit-0')).not.toBeNull();
+
+      const others = await createPage(new FakeDailyLogApi(log({ quantities: [{ ...QUANTITY, canCorrect: false }] })));
+      expect(el(others.nativeElement, 'daily-log-edit-0')).toBeNull();
+
+      const old = await createPage(new FakeDailyLogApi(log({ quantities: [{ ...QUANTITY, canCorrect: undefined }] })));
+      expect(el(old.nativeElement, 'daily-log-edit-0')).toBeNull();
     });
 
     it('shows the server refusal when the correction is refused', async () => {

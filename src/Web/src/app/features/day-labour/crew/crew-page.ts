@@ -16,7 +16,7 @@ import { RouterLink } from '@angular/router';
 import { toProblem } from '../../../core/api/problem-details';
 import { AuthService } from '../../../core/auth/auth.service';
 import { DailyLogApi } from '../../../core/daily-log/daily-log.api';
-import { DayLabourApi, PoolWorker } from '../../../core/day-labour/day-labour.api';
+import { CrewMember, DayLabourApi, PoolWorker } from '../../../core/day-labour/day-labour.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
@@ -44,7 +44,8 @@ interface CrewLine {
   readonly employeeId: string;
   readonly workerName: string;
   readonly hours: number;
-  readonly engineerId: string;
+  /** The server's verdict for this caller, per line (`canCorrect`). Absent (an older server) counts as no. */
+  readonly canCorrect: boolean;
   readonly backDated: boolean;
 }
 
@@ -79,14 +80,13 @@ export function parseHours(text: string): { value: number; bad: boolean } {
  * The crew screen under D-217 and D-218 (KAFF-615), built from `.design/v2/team-a/day-labour.html`: how many hours
  * each man worked on the chosen day, in one save. Today and three days back (the day switch is the daily log's).
  *
- * **The server decides who edits which day.** The read does not carry a "may edit" flag, so the screen draws the
- * rule of D-217 item 3 and D-218 item 16 from what the session says (author of the entry, `DailyLogReview`, owner)
- * and the server refuses a wrong edit with a key the screen shows. An edit never updates a saved entry: it sends a
- * correction naming the entry (KAFF-615 AC-11).
+ * **The server decides who edits which day.** Each saved line carries `canCorrect`, the verdict the correction
+ * endpoint would give; the screen draws the edit action from it and nothing else. An edit never updates a saved
+ * entry: it sends a correction naming the entry (KAFF-615 AC-11).
  *
- * **Who is on the list.** No read gives a site engineer the men engaged on the project (the engagements read is gated
- * by the rate permission), so the list is the men who appear in a day this screen has read, plus the men engaged
- * here. Reported as a backend gap.
+ * **Who is on the list.** The crew read (`listCrew`: the men engaged on the project, with trade) merged with the men
+ * who have hours on a day this screen has read. A role that may not read the crew (403) gets no roster, only the
+ * day's saved lines.
  */
 @Component({
   selector: 'kaff-crew-page',
@@ -135,6 +135,8 @@ export class CrewPage {
   private readonly days = signal<Readonly<Record<string, readonly CrewLine[]>>>({});
   /** The men this screen knows, by id: from the days read and from the men engaged here. */
   private readonly known = signal<ReadonlyMap<string, string>>(new Map());
+  private readonly trades = signal<ReadonlyMap<string, string | null>>(new Map());
+  /** The company pool, read only when the add-a-man sheet opens. */
   private readonly pool = signal<readonly PoolWorker[]>([]);
 
   /** What the user typed, by man. A man not in here shows what is saved. */
@@ -155,7 +157,6 @@ export class CrewPage {
   private readonly permissions = computed(
     () => this.session()?.projects.find((entry) => entry.projectId === this.projectId())?.permissions ?? [],
   );
-  private readonly isOwner = computed(() => this.session()?.role === 'Owner');
   /** `DailyLogReview`: the owner and the supervising site engineer. It is also how the screen reads other engineers' logs. */
   private readonly canReview = computed(() => this.permissions().includes('DailyLogReview'));
   protected readonly canRecord = computed(() => this.permissions().includes('DailyLogWrite'));
@@ -167,12 +168,9 @@ export class CrewPage {
   private readonly shownLines = computed<readonly CrewLine[]>(() => this.days()[this.dateOf(this.dayIndex())] ?? []);
   private readonly yesterdayLines = computed<readonly CrewLine[]>(() => this.days()[this.dateOf(1)] ?? []);
 
-  /** D-217 item 3, D-218 item 16: today the engineer who entered it, an earlier day the supervising engineer, the owner any open day. */
+  /** The server's verdict for the line (D-217 item 3, D-218 item 16 are decided there). */
   private mayEdit(line: CrewLine): boolean {
-    if (this.isOwner()) {
-      return true;
-    }
-    return this.isToday() ? line.engineerId === this.session()?.userId : this.canReview();
+    return line.canCorrect;
   }
 
   private savedOf(id: string, lines: readonly CrewLine[]): { total: number; editable: boolean } {
@@ -186,7 +184,7 @@ export class CrewPage {
   protected readonly hasSaved = computed(() => this.shownLines().length > 0);
   private readonly anyEditable = computed(() => this.shownLines().some((line) => this.mayEdit(line)));
   /** An earlier day opens for editing straight away for the supervising engineer (mock `?view=flag`). */
-  private readonly autoEdit = computed(() => !this.isToday() && this.canReview() && this.anyEditable());
+  private readonly autoEdit = computed(() => !this.isToday() && this.anyEditable());
   /** The stepper state: nothing saved yet, a press of the edit action, or the supervising engineer on an earlier day. */
   protected readonly editMode = computed(() => (!this.hasSaved() ? this.canRecord() : this.editing() || this.autoEdit()));
 
@@ -195,7 +193,7 @@ export class CrewPage {
     const draft = this.draft();
     const failed = this.failed();
     const editMode = this.editMode();
-    const trades = new Map(this.pool().map((worker) => [worker.id, worker.specialty]));
+    const trades = this.trades();
     return [...this.known()]
       .sort(([, a], [, b]) => a.localeCompare(b, 'ar'))
       .map(([id, name]) => {
@@ -405,6 +403,17 @@ export class CrewPage {
     this.sheetSearch.set('');
     this.sheetError.set(null);
     this.sheetOpen.set(true);
+    if (this.pool().length === 0) {
+      void this.loadPool();
+    }
+  }
+
+  private async loadPool(): Promise<void> {
+    try {
+      this.pool.set(await this.labour.listPool(this.projectId()));
+    } catch (error) {
+      this.sheetError.set(toProblem(error).messageKey);
+    }
   }
 
   /** The engage action: engages the man on this project and puts him on the list (D-217 item 6: his phone is never shown). */
@@ -414,6 +423,7 @@ export class CrewPage {
     try {
       await this.labour.openEngagement(this.projectId(), worker.id);
       this.known.update((current) => new Map(current).set(worker.id, worker.fullName));
+      this.trades.update((current) => new Map(current).set(worker.id, worker.specialty));
       this.sheetOpen.set(false);
     } catch (error) {
       this.sheetError.set(toProblem(error).messageKey);
@@ -447,13 +457,20 @@ export class CrewPage {
     this.today.set(new Date());
     this.known.set(new Map());
     this.days.set({});
+    this.trades.set(new Map());
+    this.pool.set([]);
     try {
-      const [pool] = await Promise.all([
-        this.labour.listPool(projectId),
+      const [crew] = await Promise.all([
+        this.readCrew(projectId),
         this.loadDay(projectId, 0, true),
         this.loadDay(projectId, 1, true),
       ]);
-      this.pool.set(pool);
+      this.trades.set(new Map(crew.map((man) => [man.workerId, man.trade])));
+      this.known.update((current) => {
+        const next = new Map(current);
+        crew.forEach((man) => next.set(man.workerId, man.name));
+        return next;
+      });
     } catch (error) {
       this.failure.set(toProblem(error).messageKey);
     } finally {
@@ -461,6 +478,18 @@ export class CrewPage {
     }
     if (this.failure() === null && this.dayIndex() > 1) {
       await this.loadDay(projectId, this.dayIndex());
+    }
+  }
+
+  /** A role the server refuses the crew read (403) has no roster: not a failure. */
+  private async readCrew(projectId: string): Promise<readonly CrewMember[]> {
+    try {
+      return await this.labour.listCrew(projectId);
+    } catch (error) {
+      if (toProblem(error).status === 403) {
+        return [];
+      }
+      throw error;
     }
   }
 
@@ -472,12 +501,11 @@ export class CrewPage {
       if (this.canReview()) {
         const all = await this.logs.listDayLogs(projectId, date);
         lines = all.flatMap((entry) =>
-          entry.log.dayLabour.map((line) => toLine(line, entry.engineerId, entry.log.backDated === true)),
+          entry.log.dayLabour.map((line) => toLine(line, entry.log.backDated === true)),
         );
       } else {
         const log = await this.logs.getMine(projectId, date);
-        const me = this.session()?.userId ?? '';
-        lines = (log?.dayLabour ?? []).map((line) => toLine(line, me, false));
+        lines = (log?.dayLabour ?? []).map((line) => toLine(line, false));
       }
       this.days.update((current) => ({ ...current, [date]: lines }));
       this.known.update((current) => {
@@ -495,8 +523,7 @@ export class CrewPage {
 }
 
 function toLine(
-  line: { entryId: string; employeeId: string; workerName: string; hours: number; backDated?: boolean },
-  engineerId: string,
+  line: { entryId: string; employeeId: string; workerName: string; hours: number; canCorrect?: boolean; backDated?: boolean },
   logBackDated: boolean,
 ): CrewLine {
   return {
@@ -504,7 +531,7 @@ function toLine(
     employeeId: line.employeeId,
     workerName: line.workerName,
     hours: line.hours,
-    engineerId,
+    canCorrect: line.canCorrect === true,
     backDated: line.backDated ?? logBackDated,
   };
 }

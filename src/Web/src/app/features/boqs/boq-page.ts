@@ -424,7 +424,7 @@ export class BoqPage {
     try {
       const [bases, listed] = await Promise.all([this.api.listBases(), this.projects.list()]);
       this.bases.set(bases);
-      this.earlier.set(listed.projects.filter((project) => project.id !== this.projectId() && hasBoqType(project.contractType)));
+      this.earlier.set(listed.projects.filter((project) => project.id !== this.projectId() && hasBoqType(project.contractType) && project.boqLineCount !== 0));
     } catch (error) {
       this.startFailure.set(toProblem(error).messageKey);
     } finally {

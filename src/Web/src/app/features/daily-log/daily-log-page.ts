@@ -166,10 +166,6 @@ export class DailyLogPage {
   );
   protected readonly checkedIn = computed(() => this.checkInLine() !== null);
 
-  /** The server sends the back-dated flag only to the supervising engineer (and the owner): its presence says who may edit an earlier day. */
-  private readonly serverSendsFlag = computed(() => this.shownLog()?.backDated !== undefined);
-  protected readonly canEditShown = computed(() => this.isToday() || this.serverSendsFlag());
-
   /** Entries of the shown day, newest first inside each group (README "المسجَّل"). */
   protected readonly stoppages = computed(() => newestFirst(this.shownLog()?.stoppageReasons ?? []));
   protected readonly quantities = computed(() => newestFirst(this.shownLog()?.quantities ?? []));
