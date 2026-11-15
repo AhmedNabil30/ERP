@@ -117,8 +117,7 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 39 | 0 | 5 | 21 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 🔴 REJECTED — a Verifier looked, and it did not pass | 0 | 0 | 0 | 8 | 0 | 0 | 13 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 0 | 9 | 57 | 0 | 53 | 21 | 5 | 111 |
-| ⚪ READY / COMMITTED — refined, not built | 0 | 0 | 0 | 0 | 0 | 5 | 0 | 0 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 9 | 57 | 0 | 53 | 26 | 5 | 111 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | **total** | **127** | **67** | **57** | **47** | **53** | **31** | **39** | **111** |
@@ -202,7 +201,7 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | [KAFF-600](stories/slice-6-execution/KAFF-600-the-daily-log-core.md) | 6 | 13 | 🟡 BUILT | none | `-` | - | The daily log core — one log per engineer per day, recording deltas |
 | [KAFF-613](stories/slice-6-execution/KAFF-613-check-in-with-location.md) | 6 | 5 | 🔶 VERIFIED | CONDITIONAL | `553309c` | 2026-11-10 | Check-in and check-out are their own buttons and record location and time |
 | [KAFF-614](stories/slice-6-execution/KAFF-614-daily-log-under-d217.md) | 6 | 8 | 🟡 BUILT | none | `-` | - | The daily log under D-217 and D-218: check-in first, three days back, edit a quantity, stoppage as text |
-| [KAFF-615](stories/slice-6-execution/KAFF-615-crew-under-d217.md) | 6 | 5 | ⚪ COMMITTED | none | `-` | - | The crew screen under D-217 and D-218: 16 hours, half-hour steps, who edits which day |
+| [KAFF-615](stories/slice-6-execution/KAFF-615-crew-under-d217.md) | 6 | 5 | 🟡 BUILT | none | `-` | - | The crew screen under D-217 and D-218: 16 hours, half-hour steps, who edits which day |
 | [KAFF-800](stories/slice-8-closure-warranty/KAFF-800-practical-completion-and-the-snag-list.md) | 8 | 8 | 🔶 VERIFIED | CONDITIONAL | `86b9f13` | 2026-11-06 | Practical completion and the snag list — major snags block handover |
 | [KAFF-802](stories/slice-8-closure-warranty/KAFF-802-handover-and-the-hold-release.md) | 8 | 8 | 🔴 BUILT | REJECTED | `86b9f13` | 2026-11-06 | Handover releases the hold, once, in full |
 | [KAFF-803](stories/slice-8-closure-warranty/KAFF-803-snag-resolution.md) | 8 | 5 | 🔴 BUILT | REJECTED | `86b9f13` | 2026-11-06 | Snag resolution — debit the subcontractor, or absorb it as internal cost |
