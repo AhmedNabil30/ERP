@@ -1,6 +1,6 @@
 # KAFF-400 · The Projects API — create, list, read
 
-<!-- kaff id=KAFF-400 slice=4 points=8 state=BUILT -->
+<!-- kaff id=KAFF-400 slice=4 points=8 state=VERIFIED verdict=CONDITIONAL at=ea26899 on=2026-11-15 -->
 
 **Slice:** 4 — Projects · **Points:** 8.
 **Why now:** the demo walkthrough is blocked on this and nothing else. `src/Api/Features/` has no

@@ -1,6 +1,6 @@
 # KAFF-418 · The BOQ builder: start from a prepared base or an earlier project, add many lines, sign
 
-<!-- kaff id=KAFF-418 slice=4 points=13 state=BUILT -->
+<!-- kaff id=KAFF-418 slice=4 points=13 state=VERIFIED verdict=CONDITIONAL at=ea26899 on=2026-11-15 -->
 
 **Slice:** 4 — Projects · **Points:** 13.
 **Owner:** Backend, then UI Designer (`build` from `.design/v2/team-a/boq.html`, commit `9a61abf`, with the D-218 changes).

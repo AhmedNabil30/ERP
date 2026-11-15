@@ -114,10 +114,10 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | | slice 1 | slice 2 | slice 3 | slice 4 | slice 5 | slice 6 | slice 8 | slice design-system |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 13 | 0 | 5 | 21 | 0 |
+| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 39 | 0 | 5 | 21 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 🔴 REJECTED — a Verifier looked, and it did not pass | 0 | 0 | 0 | 0 | 0 | 0 | 13 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 0 | 9 | 57 | 34 | 53 | 13 | 5 | 111 |
+| 🔴 REJECTED — a Verifier looked, and it did not pass | 0 | 0 | 0 | 8 | 0 | 0 | 13 | 0 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 9 | 57 | 0 | 53 | 13 | 5 | 111 |
 | ⚪ READY / COMMITTED — refined, not built | 0 | 0 | 0 | 0 | 0 | 13 | 0 | 0 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
@@ -188,12 +188,12 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | [KAFF-320](stories/slice-3-treasury/KAFF-320-bank-as-an-independent-master-record.md) | 3 | 0 | ⚪ BLOCKED | none | `-` | 2026-09-15 | Bank — an independent master record, not folded into the ledger |
 | [KAFF-321](stories/slice-2-masters/KAFF-321-department-master-data.md) | 2 | 0 | 🟡 BUILT | none | `-` | 2026-09-15 | Department — dynamic master data, not a fixed enum |
 | [KAFF-322](stories/slice-3-treasury/KAFF-322-treasury-guard-tests-against-real-postgres.md) | 3 | 2 | 🟡 BUILT | none | `-` | 2026-09-14 | Treasury guard tests against real PostgreSQL |
-| [KAFF-400](stories/slice-4-projects/KAFF-400-projects-api.md) | 4 | 8 | 🟡 BUILT | none | `-` | - | The Projects API — create, list, read |
+| [KAFF-400](stories/slice-4-projects/KAFF-400-projects-api.md) | 4 | 8 | 🔶 VERIFIED | CONDITIONAL | `ea26899` | 2026-11-15 | The Projects API — create, list, read |
 | [KAFF-415](stories/slice-4-projects/KAFF-415-design-to-execution.md) | 4 | 8 | 🔶 VERIFIED | CONDITIONAL | `553309c` | 2026-11-10 | A design project turns into an execution project |
 | [KAFF-417](stories/slice-4-projects/KAFF-417-quotation-first-project.md) | 4 | 5 | 🔶 VERIFIED | CONDITIONAL | `553309c` | 2026-11-10 | A project can start as a price: terms move to signature, the unsigned BOQ prints as a quotation |
-| [KAFF-418](stories/slice-4-projects/KAFF-418-boq-builder.md) | 4 | 13 | 🟡 BUILT | none | `-` | - | The BOQ builder: start from a prepared base or an earlier project, add many lines, sign |
-| [KAFF-419](stories/slice-4-projects/KAFF-419-project-create.md) | 4 | 5 | 🟡 BUILT | none | `-` | - | Project create: no preselected type, one name per client, add a client in the form |
-| [KAFF-420](stories/slice-4-projects/KAFF-420-project-frame-and-overview.md) | 4 | 8 | 🟡 BUILT | none | `-` | - | The project frame with real tabs, and the overview |
+| [KAFF-418](stories/slice-4-projects/KAFF-418-boq-builder.md) | 4 | 13 | 🔶 VERIFIED | CONDITIONAL | `ea26899` | 2026-11-15 | The BOQ builder: start from a prepared base or an earlier project, add many lines, sign |
+| [KAFF-419](stories/slice-4-projects/KAFF-419-project-create.md) | 4 | 5 | 🔶 VERIFIED | CONDITIONAL | `ea26899` | 2026-11-15 | Project create: no preselected type, one name per client, add a client in the form |
+| [KAFF-420](stories/slice-4-projects/KAFF-420-project-frame-and-overview.md) | 4 | 8 | 🔴 BUILT | REJECTED | `ea26899` | 2026-11-15 | The project frame with real tabs, and the overview |
 | [KAFF-500](stories/slice-5-billing/KAFF-500-the-extract-chain.md) | 5 | 21 | 🟡 BUILT | none | `-` | - | The extract chain — prepare, gate, deduct, approve, issue |
 | [KAFF-508](stories/slice-5-billing/KAFF-508-change-orders-on-the-extract.md) | 5 | 8 | 🟡 BUILT | none | `-` | - | Change orders appear on the extract in their own section, at their own prices |
 | [KAFF-509](stories/slice-5-billing/KAFF-509-the-change-order-chain.md) | 5 | 8 | 🟡 BUILT | none | `-` | - | The change order chain — an approved one raises the contract value |
