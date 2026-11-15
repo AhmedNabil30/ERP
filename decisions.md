@@ -16857,3 +16857,18 @@ in); entries made offline and sent after midnight are judged against the new day
 7. **Measured quantity.** The quantity type beside «تقديري» on a BOQ line reads «مقاسة», not «معاينة».
 
 Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-11.md`. The other rows of D, E and H stay open.
+
+
+## D-224 — Release 1 fixes after the first two Verifier passes: who is sent money, which day an entry belongs to, and what the site reads carry · 2026-11-15
+
+**Source.** Verifier reports `qa/slice-4/verification-2026-11-15.md` and `qa/slice-6/verification-2026-11-15.md`. Built by lanes dispatched by the Scrum Master under D-223. No new business rule: each item applies a rule already in force.
+
+1. **Contract figures follow `ProjectMoneyRead`.** `GET /api/projects/{id}` and `GET /api/projects` sent the contract value, hold rate and advance rate to every `ProjectRead` holder. They now follow the permission the progress read and the money block already used. A withheld figure is absent from the response, not null. The project list checks the permission per row, one access query per listed project.
+2. **The project read carries both advance rates** for money roles: `advanceRate`, set at signing, and `advanceRecoveryRate` (D-223 item 6).
+3. **An entry belongs to the site day.** `DailyLog.DayOf(occurredAt, rule)` converts the instant to the site zone through `DailyLogEntryRule.SiteDate`. Every record method takes the rule as a parameter, so a caller cannot omit it. Engagement open and close use the same rule. Rows stored before this keep their stored day and were not repaired.
+4. **One correction check.** `DailyLogAccess.CorrectionRightsAsync` is used by both correct routes and by the reads, which now carry `canCorrect` on every quantity and crew line.
+5. **A crew read for the site.** `GET /api/projects/{projectId}/day-labour/crew`, gated `DailyLogWrite` with the project scope, returns open engagements as worker id, name and trade. No rate, phone or code.
+6. **The pool read withholds phone and code** from callers without `EmployeeManage`, the worker register's own permission. The owner still receives them; site engineers do not.
+7. **The phone primary action sits in the bottom bar**, placed once by the shell (KAFF-936).
+
+**Not decided here, and still open.** Other "today" dates are still taken from the UTC day: the sign date default, the hold release, subcontractor retention release, adjustments, closure and extracts (`ExtractSupport.Today`, `ClosureSupport.Today`, `AdjustmentSupport.Today`, `SignProject/Handler.cs:131`). Between 22:00 and 24:00 UTC they date a document one day early. They touch money documents, so they wait for their own lane and Verifier.

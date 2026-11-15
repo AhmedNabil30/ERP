@@ -230,3 +230,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-221 | 16824 | Backend for KAFF-419 and KAFF-420: project name per client, quick-add client, Finance staffed at creation, and the frame's tabs and money decided by the serv... |
 | D-222 | 16838 | Client picker for project create: id and name under ProjectCreate · 2026-11-11 |
 | D-223 | 16847 | Nabil rules staged releases and four wordings on the project screens · 2026-11-14 |
+| D-224 | 16862 | Release 1 fixes after the first two Verifier passes: who is sent money, which day an entry belongs to, and what the site reads carry · 2026-11-15 |
