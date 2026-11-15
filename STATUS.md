@@ -10,6 +10,18 @@ history** — see *The map* at the bottom for which is which.
 block at the foot, is history — including the 2026-11-01 and 2026-09-27 sections that each used to say
 this.**
 
+**2026-11-14 addendum · Release 0 of the staged plan.** Nabil ruled staged releases, stabilise first then
+module by module, and build on recorded assumptions. The trailers of `KAFF-418`, `419` and `420` moved
+from `COMMITTED` to `BUILT`: their screens and backend were committed on 2026-11-11. `KAFF-614` and `615`
+have backend only and stay `COMMITTED`.
+
+**Gate baseline, measured by `gate-runner` on the working tree, Api.Tests started 22:17 UTC:** build
+**0 warnings, 0 errors** · Domain.Tests **727 / 727** · Api.Tests **1024 passed, 0 failed, 2 skipped of
+1026** · `ng test` **374 / 374** · `ng build --configuration production` exit **0**. The two skips are
+`ClosureEndpointTests.The_release_audit_trail_records_the_project_state` and
+`ClosureEndpointTests.A_closed_projects_snags_can_no_longer_be_fixed_verified_or_resolved`. The
+2026-11-06 figures below are history.
+
 **The project module now runs end to end, from a signed BOQ to a closed project.** The gap that mattered
 on 2026-11-01 was that `spec.md` §15 was satisfied only by a hand-built test. The gap that mattered on
 2026-11-04 was different and worse: an issued extract never became money. `ExtractPostings.BuildCollection`
@@ -75,10 +87,16 @@ instruction to build without waiting. There are now well over thirty. `docs/demo
 the questions in the order they would cost if guessed wrong, and `docs/for-karim-assumptions.md` carries
 the older set.
 
-**One known flake, not a product defect:** nine `CreateOwnerTests` fail with 409 under full-suite load and
-pass in isolation. The unconfirmed diagnosis is that `KaffApiFactory`'s constructor writes process-global
-environment variables that the host reads lazily, so a parallel factory clobbers the connection string.
-It makes every gate unreliable and deserves a lane. It did not appear in the final runs above.
+**The `CreateOwnerTests` flake was fixed in `357ecf2` on 2026-11-06** (`EnvironmentGate` in
+`KaffApiFactory`), and the note that used to stand here was stale. It did not appear in four full
+Api.Tests runs on 2026-11-14. The old failure was not reproduced, so those runs do not show the fix can
+fail. **A second flake was found and fixed on 2026-11-14:**
+`ProjectFrameTests.Every_overview_role_sees_the_last_daily_log_and_whether_the_site_logged_today` failed
+whenever it ran between 22:00 and 24:00 UTC, because the fixture opened the daily log with a UTC instant
+and `DailyLog.Open` takes the day from the offset it is given. The fixture now opens the log on the site
+day. It failed before the change and passed after it, both inside that window. **Not yet checked:**
+whether the production `OpenDailyLog` handler passes a site-local instant; that goes to the Verifier
+with the site-day module.
 
 ---
 
@@ -99,8 +117,8 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 13 | 0 | 5 | 21 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 🔴 REJECTED — a Verifier looked, and it did not pass | 0 | 0 | 0 | 0 | 0 | 0 | 13 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 0 | 9 | 57 | 8 | 53 | 13 | 5 | 111 |
-| ⚪ READY / COMMITTED — refined, not built | 0 | 0 | 0 | 26 | 0 | 13 | 0 | 0 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 9 | 57 | 34 | 53 | 13 | 5 | 111 |
+| ⚪ READY / COMMITTED — refined, not built | 0 | 0 | 0 | 0 | 0 | 13 | 0 | 0 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | **total** | **127** | **67** | **57** | **47** | **53** | **31** | **39** | **111** |
@@ -173,9 +191,9 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | [KAFF-400](stories/slice-4-projects/KAFF-400-projects-api.md) | 4 | 8 | 🟡 BUILT | none | `-` | - | The Projects API — create, list, read |
 | [KAFF-415](stories/slice-4-projects/KAFF-415-design-to-execution.md) | 4 | 8 | 🔶 VERIFIED | CONDITIONAL | `553309c` | 2026-11-10 | A design project turns into an execution project |
 | [KAFF-417](stories/slice-4-projects/KAFF-417-quotation-first-project.md) | 4 | 5 | 🔶 VERIFIED | CONDITIONAL | `553309c` | 2026-11-10 | A project can start as a price: terms move to signature, the unsigned BOQ prints as a quotation |
-| [KAFF-418](stories/slice-4-projects/KAFF-418-boq-builder.md) | 4 | 13 | ⚪ COMMITTED | none | `-` | - | The BOQ builder: start from a prepared base or an earlier project, add many lines, sign |
-| [KAFF-419](stories/slice-4-projects/KAFF-419-project-create.md) | 4 | 5 | ⚪ COMMITTED | none | `-` | - | Project create: no preselected type, one name per client, add a client in the form |
-| [KAFF-420](stories/slice-4-projects/KAFF-420-project-frame-and-overview.md) | 4 | 8 | ⚪ COMMITTED | none | `-` | - | The project frame with real tabs, and the overview |
+| [KAFF-418](stories/slice-4-projects/KAFF-418-boq-builder.md) | 4 | 13 | 🟡 BUILT | none | `-` | - | The BOQ builder: start from a prepared base or an earlier project, add many lines, sign |
+| [KAFF-419](stories/slice-4-projects/KAFF-419-project-create.md) | 4 | 5 | 🟡 BUILT | none | `-` | - | Project create: no preselected type, one name per client, add a client in the form |
+| [KAFF-420](stories/slice-4-projects/KAFF-420-project-frame-and-overview.md) | 4 | 8 | 🟡 BUILT | none | `-` | - | The project frame with real tabs, and the overview |
 | [KAFF-500](stories/slice-5-billing/KAFF-500-the-extract-chain.md) | 5 | 21 | 🟡 BUILT | none | `-` | - | The extract chain — prepare, gate, deduct, approve, issue |
 | [KAFF-508](stories/slice-5-billing/KAFF-508-change-orders-on-the-extract.md) | 5 | 8 | 🟡 BUILT | none | `-` | - | Change orders appear on the extract in their own section, at their own prices |
 | [KAFF-509](stories/slice-5-billing/KAFF-509-the-change-order-chain.md) | 5 | 8 | 🟡 BUILT | none | `-` | - | The change order chain — an approved one raises the contract value |
