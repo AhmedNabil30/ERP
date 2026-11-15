@@ -27,6 +27,7 @@ public sealed class ProjectFrameTests : IAsyncLifetime
 
     private Guid _projectId;
     private Guid _unsignedProjectId;
+    private DateTimeOffset _loggedAt;
     private Guid _owner;
     private Guid _supervisor;
     private Guid _junior;
@@ -123,13 +124,18 @@ public sealed class ProjectFrameTests : IAsyncLifetime
     [Fact]
     public async Task Every_overview_role_sees_the_last_daily_log_and_whether_the_site_logged_today()
     {
+        // The expected date comes from the instant the log was seeded. A second UtcNow here made the
+        // test fail whenever the suite crossed Cairo midnight between seeding and asserting.
+        var entry = new Kaff.Domain.Rulings.RulingSet().DailyLogEntry;
+        DateOnly loggedOn = entry.SiteDate(_loggedAt);
         foreach (string who in new[] { "owner", "supervisor", "junior" })
         {
+            bool sameSiteDay = entry.SiteDate(DateTimeOffset.UtcNow) == loggedOn;
             using JsonDocument body = await ReadAsync(Who(who), $"/api/projects/{_projectId}");
 
             body.RootElement.GetProperty("lastDailyLogOn").GetString().Should().Be(
-                new Kaff.Domain.Rulings.RulingSet().DailyLogEntry.SiteDate(DateTimeOffset.UtcNow).ToString("yyyy-MM-dd"));
-            body.RootElement.GetProperty("loggedToday").GetBoolean().Should().BeTrue();
+                loggedOn.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
+            body.RootElement.GetProperty("loggedToday").GetBoolean().Should().Be(sameSiteDay);
         }
 
         using JsonDocument none = await ReadAsync(_owner, $"/api/projects/{_unsignedProjectId}");
@@ -285,7 +291,12 @@ public sealed class ProjectFrameTests : IAsyncLifetime
             ProjectAssignment.Create(project.Id, finance, AssignmentLevel.Standard, owner.Id, Now).Value,
             ProjectAssignment.Create(project.Id, technicalOffice, AssignmentLevel.Standard, owner.Id, Now).Value,
             ProjectAssignment.Create(project.Id, marketing, AssignmentLevel.Standard, owner.Id, Now).Value);
-        context.DailyLogs.Add(DailyLog.Open(project.Id, junior.Id, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
+        _loggedAt = DateTimeOffset.UtcNow;
+        // DailyLog.Open takes the day from the offset it is given. A UTC instant between 22:00 and 24:00 UTC
+        // is already the next day in Cairo, so the log is opened at noon on the site day instead.
+        DateOnly siteDay = new Kaff.Domain.Rulings.RulingSet().DailyLogEntry.SiteDate(_loggedAt);
+        context.DailyLogs.Add(DailyLog.Open(
+            project.Id, junior.Id, new DateTimeOffset(siteDay.ToDateTime(new TimeOnly(12, 0)), TimeSpan.Zero), _loggedAt));
         await context.SaveChangesAsync(Ct);
 
         _projectId = project.Id;
