@@ -1,6 +1,6 @@
 # KAFF-936 · The primary-action slot — one declaration, one desktop placement, one phone placement
 
-<!-- kaff id=KAFF-936 slice=design-system points=5 state=BUILT -->
+<!-- kaff id=KAFF-936 slice=design-system points=5 state=BUILT verdict=REJECTED at=9fb1c83 on=2026-11-16 -->
 
 **Slice:** Design system (cross-cutting, not slice-numbered) · **Epic:** Apple-grade restyle · **Points:** 5.
 **Owner:** Frontend. **This is a shell/kit story**, not a per-screen fix: it builds the contract once. It is Frontend-only and carries no backend criterion, so `process/agile.md` §2a rule 6 (D-117) does not bite.

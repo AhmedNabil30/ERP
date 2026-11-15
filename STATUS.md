@@ -114,10 +114,10 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | | slice 1 | slice 2 | slice 3 | slice 4 | slice 5 | slice 6 | slice 8 | slice design-system |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 39 | 0 | 5 | 21 | 0 |
+| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 0 | 47 | 0 | 31 | 21 | 0 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 🔴 REJECTED — a Verifier looked, and it did not pass | 0 | 0 | 0 | 8 | 0 | 26 | 13 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 0 | 9 | 57 | 0 | 53 | 0 | 5 | 111 |
+| 🔴 REJECTED — a Verifier looked, and it did not pass | 0 | 0 | 0 | 0 | 0 | 0 | 13 | 5 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 9 | 57 | 0 | 53 | 0 | 5 | 106 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 21 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | **total** | **127** | **67** | **57** | **47** | **53** | **31** | **39** | **111** |
@@ -192,16 +192,16 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | [KAFF-417](stories/slice-4-projects/KAFF-417-quotation-first-project.md) | 4 | 5 | 🔶 VERIFIED | CONDITIONAL | `553309c` | 2026-11-10 | A project can start as a price: terms move to signature, the unsigned BOQ prints as a quotation |
 | [KAFF-418](stories/slice-4-projects/KAFF-418-boq-builder.md) | 4 | 13 | 🔶 VERIFIED | CONDITIONAL | `ea26899` | 2026-11-15 | The BOQ builder: start from a prepared base or an earlier project, add many lines, sign |
 | [KAFF-419](stories/slice-4-projects/KAFF-419-project-create.md) | 4 | 5 | 🔶 VERIFIED | CONDITIONAL | `ea26899` | 2026-11-15 | Project create: no preselected type, one name per client, add a client in the form |
-| [KAFF-420](stories/slice-4-projects/KAFF-420-project-frame-and-overview.md) | 4 | 8 | 🔴 BUILT | REJECTED | `8f8898a` | 2026-11-15 | The project frame with real tabs, and the overview |
+| [KAFF-420](stories/slice-4-projects/KAFF-420-project-frame-and-overview.md) | 4 | 8 | 🔵 VERIFIED | PASS | `9fb1c83` | 2026-11-16 | The project frame with real tabs, and the overview |
 | [KAFF-500](stories/slice-5-billing/KAFF-500-the-extract-chain.md) | 5 | 21 | 🟡 BUILT | none | `-` | - | The extract chain — prepare, gate, deduct, approve, issue |
 | [KAFF-508](stories/slice-5-billing/KAFF-508-change-orders-on-the-extract.md) | 5 | 8 | 🟡 BUILT | none | `-` | - | Change orders appear on the extract in their own section, at their own prices |
 | [KAFF-509](stories/slice-5-billing/KAFF-509-the-change-order-chain.md) | 5 | 8 | 🟡 BUILT | none | `-` | - | The change order chain — an approved one raises the contract value |
 | [KAFF-511](stories/slice-5-billing/KAFF-511-a-disputed-extract.md) | 5 | 8 | 🟡 BUILT | none | `-` | - | A disputed issued extract resolves as a revised extract or a credit note |
 | [KAFF-512](stories/slice-5-billing/KAFF-512-the-adjustment-object.md) | 5 | 8 | 🟡 BUILT | none | `-` | - | One `Adjustment` object for every case where money flows back |
-| [KAFF-600](stories/slice-6-execution/KAFF-600-the-daily-log-core.md) | 6 | 13 | 🔴 BUILT | REJECTED | `8f8898a` | 2026-11-15 | The daily log core — one log per engineer per day, recording deltas |
-| [KAFF-613](stories/slice-6-execution/KAFF-613-check-in-with-location.md) | 6 | 5 | 🔶 VERIFIED | CONDITIONAL | `553309c` | 2026-11-10 | Check-in and check-out are their own buttons and record location and time |
-| [KAFF-614](stories/slice-6-execution/KAFF-614-daily-log-under-d217.md) | 6 | 8 | 🔴 BUILT | REJECTED | `8f8898a` | 2026-11-15 | The daily log under D-217 and D-218: check-in first, three days back, edit a quantity, stoppage as text |
-| [KAFF-615](stories/slice-6-execution/KAFF-615-crew-under-d217.md) | 6 | 5 | 🔴 BUILT | REJECTED | `8f8898a` | 2026-11-15 | The crew screen under D-217 and D-218: 16 hours, half-hour steps, who edits which day |
+| [KAFF-600](stories/slice-6-execution/KAFF-600-the-daily-log-core.md) | 6 | 13 | 🔵 VERIFIED | PASS | `9fb1c83` | 2026-11-16 | The daily log core — one log per engineer per day, recording deltas |
+| [KAFF-613](stories/slice-6-execution/KAFF-613-check-in-with-location.md) | 6 | 5 | 🔵 VERIFIED | PASS | `9fb1c83` | 2026-11-16 | Check-in and check-out are their own buttons and record location and time |
+| [KAFF-614](stories/slice-6-execution/KAFF-614-daily-log-under-d217.md) | 6 | 8 | 🔶 VERIFIED | CONDITIONAL | `9fb1c83` | 2026-11-16 | The daily log under D-217 and D-218: check-in first, three days back, edit a quantity, stoppage as text |
+| [KAFF-615](stories/slice-6-execution/KAFF-615-crew-under-d217.md) | 6 | 5 | 🔵 VERIFIED | PASS | `9fb1c83` | 2026-11-16 | The crew screen under D-217 and D-218: 16 hours, half-hour steps, who edits which day |
 | [KAFF-800](stories/slice-8-closure-warranty/KAFF-800-practical-completion-and-the-snag-list.md) | 8 | 8 | 🔶 VERIFIED | CONDITIONAL | `86b9f13` | 2026-11-06 | Practical completion and the snag list — major snags block handover |
 | [KAFF-802](stories/slice-8-closure-warranty/KAFF-802-handover-and-the-hold-release.md) | 8 | 8 | 🔴 BUILT | REJECTED | `86b9f13` | 2026-11-06 | Handover releases the hold, once, in full |
 | [KAFF-803](stories/slice-8-closure-warranty/KAFF-803-snag-resolution.md) | 8 | 5 | 🔴 BUILT | REJECTED | `86b9f13` | 2026-11-06 | Snag resolution — debit the subcontractor, or absorb it as internal cost |
@@ -236,7 +236,7 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | [KAFF-933](stories/design-system/KAFF-933-the-forms-that-never-got-the-kit.md) | design-system | 8 | 🟡 BUILT | none | `-` | - | The forms that never got the kit |
 | [KAFF-934](stories/design-system/KAFF-934-the-field-screens-and-the-plain-pages.md) | design-system | 8 | 🟡 BUILT | none | `-` | - | The field screens, and the plain pages nobody restyled |
 | [KAFF-935](stories/design-system/KAFF-935-a-destructive-action-is-bordered-not-filled.md) | design-system | 3 | 🟡 BUILT | none | `-` | - | A destructive action is bordered, not filled |
-| [KAFF-936](stories/design-system/KAFF-936-the-primary-action-slot.md) | design-system | 5 | 🟡 BUILT | none | `-` | - | The primary-action slot — one declaration, one desktop placement, one phone placement |
+| [KAFF-936](stories/design-system/KAFF-936-the-primary-action-slot.md) | design-system | 5 | 🔴 BUILT | REJECTED | `9fb1c83` | 2026-11-16 | The primary-action slot — one declaration, one desktop placement, one phone placement |
 | [KAFF-940](stories/slice-2-masters/KAFF-940-cost-and-override-belong-to-the-owner.md) | 2 | 5 | 🟡 BUILT | none | `-` | - | Cost and the sell-price override belong to the Owner alone |
 | [KAFF-941](stories/slice-2-masters/KAFF-941-a-request-the-owner-approves.md) | 2 | 0 | ⚫ NOT-BUILT | none | `-` | - | A change request the Owner approves |
 | [KAFF-942](stories/slice-2-masters/KAFF-942-filter-the-catalogue-by-bab-on-the-server.md) | 2 | 2 | 🟡 BUILT | none | `-` | - | Filter the catalogue by باب on the server |
