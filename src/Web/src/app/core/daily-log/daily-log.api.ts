@@ -53,6 +53,8 @@ export interface CheckInLine {
   readonly longitude: number | null;
   readonly accuracyMetres: number | null;
   readonly flagReason: 'FarFromReference' | null;
+  /** Whole metres from the project's site reference point, measured by the server (D-226). Null without a reference point. */
+  readonly distanceFromSiteMetres?: number | null;
 }
 
 /** `POST …/daily-logs/check-ins`. The place is required; the server refuses a check-in without it. */
@@ -73,6 +75,8 @@ export interface QuantityLine {
   readonly unit: string;
   /** The corrected figure: the saved quantity plus every signed delta that corrects it (D-218). */
   readonly quantity: number;
+  /** The figure in force before the latest correction; null when never corrected (D-226). */
+  readonly previousQuantity?: number | null;
   readonly occurredAt: string;
   readonly corrected: boolean;
   /** Whether this caller may correct the line now: the verdict the correction endpoint would give. */
@@ -121,6 +125,8 @@ export interface DayLabourLine {
   readonly entryId: string;
   readonly employeeId: string;
   readonly workerName: string;
+  /** The worker's trade (باب name); null when he has none. */
+  readonly trade?: string | null;
   readonly hours: number;
   readonly occurredAt: string;
   /** Whether this caller may correct the line now: the verdict the correction endpoint would give. */

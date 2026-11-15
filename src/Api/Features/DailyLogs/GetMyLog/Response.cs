@@ -34,6 +34,8 @@ public sealed record Response(
 /// <summary>
 /// One check-in or check-out, with its location and flag (KAFF-613). <c>DeviceTime</c> is when the button was
 /// pressed on the phone; <c>ServerTime</c> is when the server received it. Coordinates are degrees, not money.
+/// <c>DistanceFromSiteMetres</c> is the whole-metre distance from the project's site reference point, measured by the same
+/// <c>GeoDistance</c> that decides the far-from-site flag; null when the project has no reference point.
 /// </summary>
 public sealed record CheckInLine(
     Guid EntryId,
@@ -43,7 +45,8 @@ public sealed record CheckInLine(
     double? Latitude,
     double? Longitude,
     double? AccuracyMetres,
-    CheckInFlagReason? FlagReason);
+    CheckInFlagReason? FlagReason,
+    int? DistanceFromSiteMetres);
 
 /// <summary>A note or a stoppage reason. Free text.</summary>
 public sealed record TextLine(
@@ -55,7 +58,8 @@ public sealed record TextLine(
 /// <summary>
 /// A saved quantity as one row. <c>Quantity</c> is the corrected figure: the saved quantity plus every signed delta that
 /// corrects it (D-218). <c>EntryId</c> is the saved entry, the one a correction names. The correction fields are null until
-/// the quantity is corrected, then say who corrected it last and when. <c>CanCorrect</c> says whether this caller may correct
+/// the quantity is corrected, then say who corrected it last and when. <c>PreviousQuantity</c> is the figure in force before
+/// that last correction (null when never corrected). <c>CanCorrect</c> says whether this caller may correct
 /// the line now: the verdict the correction endpoint would give.
 /// </summary>
 public sealed record QuantityLine(
@@ -65,6 +69,7 @@ public sealed record QuantityLine(
     string DescriptionAr,
     string Unit,
     decimal Quantity,
+    decimal? PreviousQuantity,
     DateTimeOffset OccurredAt,
     bool Corrected,
     Guid? CorrectedByUserId,
@@ -78,6 +83,7 @@ public sealed record DayLabourLine(
     Guid EntryId,
     Guid EmployeeId,
     string WorkerName,
+    string? Trade,
     decimal Hours,
     DateTimeOffset OccurredAt,
     bool Corrected,

@@ -32,6 +32,12 @@ internal static class LogView
         // A line is back-dated when the server received it on a later site day than the day it belongs to.
         bool? Flag(DateTimeOffset receivedAt) => includeBackDated ? date < rule.SiteDate(receivedAt) : null;
 
+        var siteRow = await database.Projects.AsNoTracking()
+            .Where(project => project.Id == log.ProjectId)
+            .Select(project => new { project.SiteLatitude, project.SiteLongitude })
+            .FirstAsync(cancellationToken);
+        (double Latitude, double Longitude)? site = siteRow is { SiteLatitude: { } siteLat, SiteLongitude: { } siteLng } ? (siteLat, siteLng) : null;
+
         List<FieldEntry> fields = await database.FieldEntries.AsNoTracking()
             .Where(entry => entry.DailyLogId == logId)
             .ToListAsync(cancellationToken);
@@ -62,9 +68,11 @@ internal static class LogView
         var labourRows = await (
             from entry in database.DayLabourEntries.AsNoTracking()
             join worker in database.Employees.AsNoTracking() on entry.EmployeeId equals worker.Id
+            join bab in database.Babs.AsNoTracking() on worker.BabId equals bab.Id into trades
+            from trade in trades.DefaultIfEmpty()
             where entry.DailyLogId == logId
             orderby entry.OccurredAt, entry.CreatedAt
-            select new { Entry = entry, worker.FullName })
+            select new { Entry = entry, worker.FullName, Trade = trade.NameAr })
             .ToListAsync(cancellationToken);
 
         List<Guid> correctors = [.. quantityRows.Select(row => row.Entry.CorrectedByUserId)
@@ -85,7 +93,9 @@ internal static class LogView
                 ExecutedQuantityEntry? last = deltas.OrderByDescending(delta => delta.CreatedAt).FirstOrDefault();
                 return new QuantityLine(
                     row.Entry.Id, row.Entry.BoqLineId, row.ItemCode, row.DescriptionAr, row.Unit,
-                    row.Entry.Quantity + deltas.Sum(delta => delta.Quantity), row.Entry.OccurredAt,
+                    row.Entry.Quantity + deltas.Sum(delta => delta.Quantity),
+                    last is null ? null : row.Entry.Quantity + deltas.Where(delta => delta.Id != last.Id).Sum(delta => delta.Quantity),
+                    row.Entry.OccurredAt,
                     last is not null, last?.CorrectedByUserId, NameOf(last?.CorrectedByUserId), last?.CreatedAt,
                     rights.Quantity.IsSuccess, Flag(row.Entry.CreatedAt));
             })];
@@ -98,7 +108,7 @@ internal static class LogView
                     .Where(other => other.Entry.CorrectsEntryId == row.Entry.Id).Select(other => other.Entry)];
                 DayLabourEntry? last = deltas.OrderByDescending(delta => delta.CreatedAt).FirstOrDefault();
                 return new DayLabourLine(
-                    row.Entry.Id, row.Entry.EmployeeId, row.FullName,
+                    row.Entry.Id, row.Entry.EmployeeId, row.FullName, row.Trade,
                     row.Entry.Hours + deltas.Sum(delta => delta.Hours), row.Entry.OccurredAt,
                     last is not null, last?.CorrectedByUserId, NameOf(last?.CorrectedByUserId), last?.CreatedAt,
                     rights.Crew.IsSuccess, Flag(row.Entry.CreatedAt));
@@ -157,7 +167,10 @@ internal static class LogView
                 .OrderBy(entry => entry.OccurredAt)
                 .Select(entry => new CheckInLine(
                     entry.Id, entry.Field, entry.OccurredAt, entry.CreatedAt,
-                    entry.Latitude, entry.Longitude, entry.AccuracyMetres, entry.FlagReason))],
+                    entry.Latitude, entry.Longitude, entry.AccuracyMetres, entry.FlagReason,
+                    site is { } point && entry.Latitude is { } lat && entry.Longitude is { } lng
+                        ? (int)Math.Round(GeoDistance.Metres(lat, lng, point.Latitude, point.Longitude))
+                        : null))],
             anyBackDated);
     }
 }
