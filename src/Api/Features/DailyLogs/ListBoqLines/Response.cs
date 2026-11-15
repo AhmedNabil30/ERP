@@ -15,4 +15,5 @@ public sealed record QuantityLine(
     string Unit,
     decimal? QuantityEstimated,
     decimal? QuantitySurveyed,
-    decimal QuantityExecuted);
+    decimal QuantityExecuted,
+    string BabName);

@@ -50,6 +50,8 @@ export interface ProjectSummary {
   readonly isArchived?: boolean;
   /** The day the follow-up period ends (`yyyy-mm-dd`); null once signed. */
   readonly followUpEndsOn?: string | null;
+  /** How many lines the project's BOQ holds; 0 when it has none. */
+  readonly boqLineCount?: number;
 }
 
 /**

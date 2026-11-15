@@ -3,6 +3,8 @@ using System.Net.Http;
 using System.Text.Json;
 using Kaff.Api.Tests.Infrastructure;
 using Kaff.Domain.Authorization;
+using Kaff.Domain.Boqs;
+using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
 using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
@@ -100,6 +102,18 @@ public sealed class ListProjectsTests : IAsyncLifetime
         body.RootElement.GetProperty("total").GetInt32().Should().Be(0);
     }
 
+    [Fact]
+    public async Task Each_row_carries_the_count_of_its_boq_lines_and_zero_for_a_project_without_a_boq()
+    {
+        HttpResponseMessage response = await GetAsync(_owner);
+
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+        JsonElement[] rows = [.. body.RootElement.GetProperty("projects").EnumerateArray()];
+
+        rows.Single(row => row.GetProperty("id").GetGuid() == _projectA).GetProperty("boqLineCount").GetInt32().Should().Be(2);
+        rows.Single(row => row.GetProperty("id").GetGuid() == _projectB).GetProperty("boqLineCount").GetInt32().Should().Be(0);
+    }
+
     /// <summary>See this class's own remarks — AC-400-B's HR expectation collides with D-044 ruling 2.</summary>
     [Fact]
     public async Task Hr_is_refused_and_must_use_its_own_project_dashboard()
@@ -176,9 +190,16 @@ public sealed class ListProjectsTests : IAsyncLifetime
             "lsp-unassigned", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User portal = MakeUser("lsp-portal", Role.Client, clientId: client.Id);
 
+        Bab bab = Bab.Create(UniqueNames.Code("LSP-BAB"), "باب", "Bab", Percentage.FromPercent(11m)).Value;
+        Boq boq = Boq.Open(projectA, Now).Value;
+        boq.AddCustomLine("X-1", "بند", null, "m2", bab, Money.From(100m), Money.From(150m), quantityEstimated: 5m, quantitySurveyed: 5m).IsSuccess.Should().BeTrue();
+        boq.AddCustomLine("X-2", "بند", null, "m2", bab, Money.From(100m), Money.From(150m), quantityEstimated: 5m, quantitySurveyed: 5m).IsSuccess.Should().BeTrue();
+
         context.Clients.Add(client);
         context.Projects.AddRange(projectA, projectB);
         context.Users.AddRange(owner, hr, assignedEngineer, unassignedEngineer, portal);
+        context.Babs.Add(bab);
+        context.Boqs.Add(boq);
 
         await context.SaveChangesAsync(Ct);
 

@@ -40,7 +40,8 @@ internal static class Handler
                 line.Unit,
                 line.QuantityEstimated,
                 line.QuantitySurveyed,
-                line.QuantityExecuted))
+                line.QuantityExecuted,
+                line.BabNameAr))
             .ToListAsync(cancellationToken);
 
         return Microsoft.AspNetCore.Http.Results.Ok(new Response(boqId.Value, lines));

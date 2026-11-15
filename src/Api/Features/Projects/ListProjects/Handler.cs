@@ -1,6 +1,7 @@
 using Kaff.Api.Common.Results;
 using Kaff.Api.Features.ChangeOrders;
 using Kaff.Domain.Authorization;
+using Kaff.Domain.Boqs;
 using Kaff.Domain.Common;
 using Kaff.Domain.Identity;
 using Kaff.Domain.Projects;
@@ -94,6 +95,14 @@ internal static class Handler
 
         // The contract value is derived: the signed BOQ total plus the approved change orders (ChangeOrderDisplayedValue).
         Dictionary<Guid, Money> approved = await ChangeOrderQueries.ApprovedTotalsAsync(database, null, cancellationToken);
+        // One grouped query for every project's BOQ size, not one per row.
+        Dictionary<Guid, int> boqLineCounts = await (
+            from boq in database.Boqs.AsNoTracking()
+            join line in database.Set<BoqLine>().AsNoTracking() on boq.Id equals line.BoqId
+            group line by boq.ProjectId into lines
+            select new { ProjectId = lines.Key, Count = lines.Count() })
+            .ToDictionaryAsync(row => row.ProjectId, row => row.Count, cancellationToken);
+
         // ProjectMoneyRead is project-scoped, so it is asked per row, through the same evaluator the gate uses.
         // ponytail: one access query per listed project; batch it if the list ever grows past a few hundred.
         List<ProjectSummary> projects = [];
@@ -108,7 +117,8 @@ internal static class Handler
                 seesMoney ? project.RevisedContractValue(change) : null,
                 seesMoney ? project.ContractValue : null,
                 seesMoney ? change : null,
-                project.IsArchived(now, rulings.FollowUp), project.FollowUpEndsOn(rulings.FollowUp)));
+                project.IsArchived(now, rulings.FollowUp), project.FollowUpEndsOn(rulings.FollowUp),
+                boqLineCounts.GetValueOrDefault(project.Id)));
         }
 
         return Microsoft.AspNetCore.Http.Results.Ok(new Response(projects, projects.Count));

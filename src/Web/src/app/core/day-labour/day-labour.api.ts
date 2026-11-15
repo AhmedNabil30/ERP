@@ -54,6 +54,13 @@ export interface PoolWorker extends WorkerFile {
   readonly averageRating: string | null;
 }
 
+/** One man engaged on the project now (`GET …/day-labour/crew`). No day rate, phone or code. */
+export interface CrewMember {
+  readonly workerId: string;
+  readonly name: string;
+  readonly trade: string | null;
+}
+
 /** One engagement in a worker's history, on the route's project. KAFF-210. */
 export interface EngagementEntry {
   readonly id: string;
@@ -138,6 +145,14 @@ export class DayLabourApi {
   async listPool(projectId: string): Promise<readonly PoolWorker[]> {
     const response = await firstValueFrom(
       this.http.get<{ items: PoolWorker[] }>(this.base(projectId)),
+    );
+    return response.items;
+  }
+
+  /** `GET …/day-labour/crew` — the men engaged on this project now, for the crew screen. */
+  async listCrew(projectId: string): Promise<readonly CrewMember[]> {
+    const response = await firstValueFrom(
+      this.http.get<{ items: CrewMember[] }>(`${this.base(projectId)}/crew`),
     );
     return response.items;
   }

@@ -68,6 +68,18 @@ public sealed class ListBoqLinesTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task Each_line_carries_the_name_of_its_bab_and_no_other_bab_member()
+    {
+        HttpResponseMessage response = await GetAsync(_projectA, _engineerOnA);
+
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+        JsonElement line = body.RootElement.GetProperty("lines").EnumerateArray().Single();
+
+        line.GetProperty("babName").GetString().Should().Be("باب");
+        line.TryGetProperty("babCode", out _).Should().BeFalse();
+    }
+
+    [Fact]
     public async Task An_engineer_without_an_assignment_is_refused()
         => (await GetAsync(_projectA, _engineerUnassigned)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
 

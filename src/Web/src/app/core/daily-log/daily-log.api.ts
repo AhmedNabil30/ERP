@@ -75,6 +75,8 @@ export interface QuantityLine {
   readonly quantity: number;
   readonly occurredAt: string;
   readonly corrected: boolean;
+  /** Whether this caller may correct the line now: the verdict the correction endpoint would give. */
+  readonly canCorrect?: boolean;
   readonly backDated?: boolean;
 }
 
@@ -94,6 +96,8 @@ export interface BoqPickLine {
   readonly quantityEstimated: number | null;
   readonly quantitySurveyed: number | null;
   readonly quantityExecuted: number;
+  /** The name of the line's باب. */
+  readonly babName?: string;
 }
 
 /** One engineer's log of a day, as the review read returns it. */
@@ -119,6 +123,8 @@ export interface DayLabourLine {
   readonly workerName: string;
   readonly hours: number;
   readonly occurredAt: string;
+  /** Whether this caller may correct the line now: the verdict the correction endpoint would give. */
+  readonly canCorrect?: boolean;
   readonly backDated?: boolean;
 }
 

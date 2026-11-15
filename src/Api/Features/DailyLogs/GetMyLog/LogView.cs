@@ -1,5 +1,6 @@
 using Kaff.Domain.Boqs;
 using Kaff.Domain.DailyLogs;
+using Kaff.Domain.Identity;
 using Kaff.Domain.Rulings;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -15,12 +16,18 @@ internal static class LogView
     public static async Task<Response> BuildAsync(
         KaffDbContext database,
         RulingSet rulings,
+        ICurrentUser currentUser,
+        TimeProvider clock,
         Guid logId,
         DateOnly date,
         bool includeBackDated,
         CancellationToken cancellationToken)
     {
         DailyLogEntryRule rule = rulings.DailyLogEntry;
+
+        DailyLog log = await database.DailyLogs.AsNoTracking().FirstAsync(candidate => candidate.Id == logId, cancellationToken);
+        DailyLogAccess.CorrectionRights rights = await DailyLogAccess.CorrectionRightsAsync(
+            database, rulings, log, currentUser, clock.GetUtcNow(), cancellationToken);
 
         // A line is back-dated when the server received it on a later site day than the day it belongs to.
         bool? Flag(DateTimeOffset receivedAt) => includeBackDated ? date < rule.SiteDate(receivedAt) : null;
@@ -80,7 +87,7 @@ internal static class LogView
                     row.Entry.Id, row.Entry.BoqLineId, row.ItemCode, row.DescriptionAr, row.Unit,
                     row.Entry.Quantity + deltas.Sum(delta => delta.Quantity), row.Entry.OccurredAt,
                     last is not null, last?.CorrectedByUserId, NameOf(last?.CorrectedByUserId), last?.CreatedAt,
-                    Flag(row.Entry.CreatedAt));
+                    rights.Quantity.IsSuccess, Flag(row.Entry.CreatedAt));
             })];
 
         List<DayLabourLine> labour = [.. labourRows
@@ -94,7 +101,7 @@ internal static class LogView
                     row.Entry.Id, row.Entry.EmployeeId, row.FullName,
                     row.Entry.Hours + deltas.Sum(delta => delta.Hours), row.Entry.OccurredAt,
                     last is not null, last?.CorrectedByUserId, NameOf(last?.CorrectedByUserId), last?.CreatedAt,
-                    Flag(row.Entry.CreatedAt));
+                    rights.Crew.IsSuccess, Flag(row.Entry.CreatedAt));
             })];
 
         List<MaterialLine> materials = [.. (await database.MaterialEntries.AsNoTracking()

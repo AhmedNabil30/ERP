@@ -48,23 +48,9 @@ internal static class Handler
             return ResultExtensions.Problem(DailyLogErrors.EntryNotFound);
         }
 
-        ProjectStatus status = await database.Projects.AsNoTracking()
-            .Where(project => project.Id == projectId).Select(project => project.Status).FirstAsync(cancellationToken);
-
-        if (!rulings.DailyLogProjectStates.Accepts(status))
-        {
-            return ResultExtensions.Problem(DailyLogErrors.ProjectStateClosedToLogs);
-        }
-
         DailyLog log = await database.DailyLogs.FirstAsync(candidate => candidate.Id == original.DailyLogId, cancellationToken);
 
-        Result allowed = CorrectionAccess.ForCrew(
-            log.LogDate,
-            rulings.DailyLogEntry.SiteDate(now),
-            rulings.DailyLogEntry,
-            isAuthor: log.EngineerId == caller,
-            isSupervisingEngineer: await DailyLogAccess.IsSupervisingEngineerAsync(database, projectId, caller, cancellationToken),
-            isOwner: currentUser.Role == Role.Owner);
+        Result allowed = (await DailyLogAccess.CorrectionRightsAsync(database, rulings, log, currentUser, now, cancellationToken)).Crew;
 
         if (allowed.IsFailure)
         {

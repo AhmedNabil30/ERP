@@ -1,4 +1,5 @@
 using Kaff.Api.Features.DailyLogs.GetMyLog;
+using Kaff.Domain.Identity;
 using Kaff.Domain.Rulings;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
@@ -13,11 +14,15 @@ internal static class Handler
         Guid projectId,
         DateOnly date,
         KaffDbContext database,
+        ICurrentUser currentUser,
         RulingSet rulings,
+        TimeProvider clock,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(currentUser);
         ArgumentNullException.ThrowIfNull(rulings);
+        ArgumentNullException.ThrowIfNull(clock);
 
         var logs = await (
             from log in database.DailyLogs.AsNoTracking()
@@ -32,7 +37,7 @@ internal static class Handler
         foreach (var log in logs)
         {
             result.Add(new EngineerLog(
-                log.EngineerId, log.FullName, await LogView.BuildAsync(database, rulings, log.Id, date, true, cancellationToken)));
+                log.EngineerId, log.FullName, await LogView.BuildAsync(database, rulings, currentUser, clock, log.Id, date, true, cancellationToken)));
         }
 
         return Microsoft.AspNetCore.Http.Results.Ok(result);

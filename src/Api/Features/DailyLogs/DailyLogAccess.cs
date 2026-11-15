@@ -164,6 +164,45 @@ internal static class DailyLogAccess
                 && assignment.Level == AssignmentLevel.Supervisor,
             cancellationToken);
 
+    /// <summary>What the caller may correct on one log now: a quantity line, a crew line. Each is the exact verdict a correction would get.</summary>
+    public sealed record CorrectionRights(Result Quantity, Result Crew);
+
+    /// <summary>
+    /// The one place that decides whether the caller may correct a figure on <paramref name="log"/> now: the project state
+    /// first, then the window, the day and who the caller is (<see cref="CorrectionAccess"/>). The two Correct handlers
+    /// refuse on it and the log reads show it as <c>canCorrect</c>, so a button cannot promise what the endpoint refuses.
+    /// The route gate (role and assignment) has already run.
+    /// </summary>
+    public static async Task<CorrectionRights> CorrectionRightsAsync(
+        KaffDbContext database,
+        RulingSet rulings,
+        DailyLog log,
+        ICurrentUser currentUser,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(log);
+        ArgumentNullException.ThrowIfNull(currentUser);
+
+        ProjectStatus status = await database.Projects.AsNoTracking()
+            .Where(project => project.Id == log.ProjectId).Select(project => project.Status).FirstAsync(cancellationToken);
+
+        if (!rulings.DailyLogProjectStates.Accepts(status))
+        {
+            Result closed = Result.Failure(DailyLogErrors.ProjectStateClosedToLogs);
+            return new CorrectionRights(closed, closed);
+        }
+
+        Guid caller = currentUser.UserId ?? Guid.Empty;
+        DateOnly today = rulings.DailyLogEntry.SiteDate(now);
+        bool isAuthor = log.EngineerId == caller;
+        bool supervising = await IsSupervisingEngineerAsync(database, log.ProjectId, caller, cancellationToken);
+
+        return new CorrectionRights(
+            CorrectionAccess.ForQuantity(log.LogDate, today, rulings.DailyLogEntry, isAuthor, supervising),
+            CorrectionAccess.ForCrew(log.LogDate, today, rulings.DailyLogEntry, isAuthor, supervising, currentUser.Role == Role.Owner));
+    }
+
     /// <summary>The entry already stored under this client-generated id, when it is this log's own.</summary>
     public static async Task<Result<TEntry?>> ReplayAsync<TEntry>(
         KaffDbContext database, Guid entryId, DailyLog log, CancellationToken cancellationToken)

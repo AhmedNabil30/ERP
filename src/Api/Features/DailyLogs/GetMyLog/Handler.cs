@@ -22,11 +22,13 @@ internal static class Handler
         KaffDbContext database,
         ICurrentUser currentUser,
         RulingSet rulings,
+        TimeProvider clock,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(database);
         ArgumentNullException.ThrowIfNull(currentUser);
         ArgumentNullException.ThrowIfNull(rulings);
+        ArgumentNullException.ThrowIfNull(clock);
 
         Guid engineerId = currentUser.UserId ?? Guid.Empty;
 
@@ -44,6 +46,6 @@ internal static class Handler
         bool supervising = await DailyLogAccess.IsSupervisingEngineerAsync(database, projectId, engineerId, cancellationToken);
 
         return Microsoft.AspNetCore.Http.Results.Ok(
-            await LogView.BuildAsync(database, rulings, id, date, supervising, cancellationToken));
+            await LogView.BuildAsync(database, rulings, currentUser, clock, id, date, supervising, cancellationToken));
     }
 }

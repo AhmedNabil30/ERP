@@ -55,7 +55,8 @@ public sealed record TextLine(
 /// <summary>
 /// A saved quantity as one row. <c>Quantity</c> is the corrected figure: the saved quantity plus every signed delta that
 /// corrects it (D-218). <c>EntryId</c> is the saved entry, the one a correction names. The correction fields are null until
-/// the quantity is corrected, then say who corrected it last and when.
+/// the quantity is corrected, then say who corrected it last and when. <c>CanCorrect</c> says whether this caller may correct
+/// the line now: the verdict the correction endpoint would give.
 /// </summary>
 public sealed record QuantityLine(
     Guid EntryId,
@@ -69,6 +70,7 @@ public sealed record QuantityLine(
     Guid? CorrectedByUserId,
     string? CorrectedByName,
     DateTimeOffset? CorrectedAt,
+    bool CanCorrect,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? BackDated);
 
 /// <summary>Crew hours of one man as one row, with the corrected figure, as for <see cref="QuantityLine"/>.</summary>
@@ -82,6 +84,7 @@ public sealed record DayLabourLine(
     Guid? CorrectedByUserId,
     string? CorrectedByName,
     DateTimeOffset? CorrectedAt,
+    bool CanCorrect,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? BackDated);
 
 public sealed record MaterialLine(
