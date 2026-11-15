@@ -1,6 +1,6 @@
 # KAFF-600 · The daily log core — one log per engineer per day, recording deltas
 
-<!-- kaff id=KAFF-600 slice=6 points=13 state=BUILT -->
+<!-- kaff id=KAFF-600 slice=6 points=13 state=BUILT verdict=REJECTED at=8f8898a on=2026-11-15 -->
 
 **Slice:** 6 (Execution) · **Epic:** Site execution · **Points:** 13 (absorbs `KAFF-601`, `KAFF-602`, `KAFF-603`, `KAFF-611`).
 **Owner:** Backend, then Frontend.

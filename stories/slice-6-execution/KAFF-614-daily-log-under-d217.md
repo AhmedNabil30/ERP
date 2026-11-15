@@ -1,6 +1,6 @@
 # KAFF-614 · The daily log under D-217 and D-218: check-in first, three days back, edit a quantity, stoppage as text
 
-<!-- kaff id=KAFF-614 slice=6 points=8 state=BUILT -->
+<!-- kaff id=KAFF-614 slice=6 points=8 state=BUILT verdict=REJECTED at=8f8898a on=2026-11-15 -->
 
 **Slice:** 6 — Execution · **Points:** 8.
 **Owner:** Backend, then UI Designer (`build` from `.design/v2/team-a/daily-log.html`, commit `b0066c6`).
