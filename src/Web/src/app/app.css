@@ -171,6 +171,7 @@
 .abar {
   flex: none;
   display: flex;
+  gap: var(--space-3);
   padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
   background: var(--surface);
   border-block-start: 1px solid var(--line);
@@ -197,6 +198,23 @@
 
 .menu:hover {
   background: var(--hover);
+}
+
+/* KAFF-936: the declared primary fills what the menu leaves, at the bar's 60px. */
+.abar-action {
+  flex: 1;
+  min-inline-size: 0;
+  display: flex;
+  --kaff-button-size: 60px;
+}
+
+.abar-action ::ng-deep kaff-button {
+  flex: 1;
+  display: flex;
+}
+
+.abar-action ::ng-deep .kaff-button {
+  inline-size: 100%;
 }
 
 /* ---------- phone destinations sheet ---------- */

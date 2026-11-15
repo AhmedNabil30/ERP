@@ -62,6 +62,12 @@ export class App {
   private readonly menuButton = viewChild<ElementRef<HTMLButtonElement>>('menuButton');
   private readonly sheetClose = viewChild<ElementRef<HTMLButtonElement>>('sheetClose');
 
+  /**
+   * KAFF-936: at phone width (the same 820px the CSS uses) the declared primary action renders in the
+   * bottom bar beside the menu; wider, in the page-actions strip. One template, one outlet at a time.
+   */
+  protected readonly phone = signal(App.matchesPhone());
+
   /** The phone's destinations sheet. */
   private readonly navOpen = signal(false);
   protected readonly isNavOpen = this.navOpen.asReadonly();
@@ -89,6 +95,10 @@ export class App {
     } catch {
       return false;
     }
+  }
+
+  private static matchesPhone(): boolean {
+    return typeof matchMedia === 'function' && matchMedia('(max-width: 820px)').matches;
   }
 
   private static matchesNarrowDesktop(): boolean {
@@ -152,6 +162,9 @@ export class App {
     void this.resolver.ensureResolved();
 
     if (typeof matchMedia === 'function') {
+      matchMedia('(max-width: 820px)').addEventListener('change', (event) => {
+        this.phone.set(event.matches);
+      });
       matchMedia('(max-width: 1100px)').addEventListener('change', (event) => {
         this.narrowDesktop.set(event.matches);
       });

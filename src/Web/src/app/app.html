@@ -215,9 +215,11 @@
         can go.
       -->
       @if (headerActions.template(); as actions) {
-        <div class="page-actions">
+        @if (!(phone() && session())) {
+        <div class="page-actions" data-testid="page-actions">
           <ng-container [ngTemplateOutlet]="actions" />
         </div>
+        }
       }
       <div class="page">
         <router-outlet />
@@ -226,8 +228,8 @@
   </main>
 
   @if (session()) {
-    <!-- Phone action bar: the menu button at the start edge. A screen's own primary action joins it
-         here when that screen is redesigned. -->
+    <!-- Phone action bar: the menu button at the start edge, the screen's declared primary action
+         (KAFF-936) filling the rest. Without a declared action the bar holds the menu alone. -->
     <div class="abar">
       <button
         #menuButton
@@ -240,6 +242,11 @@
         <ng-container [ngTemplateOutlet]="icon" [ngTemplateOutletContext]="{ $implicit: 'menu' }" />
         <span>{{ i18n.t('shell.nav.toggle') }}</span>
       </button>
+      @if (phone() && headerActions.template(); as actions) {
+        <div class="abar-action" data-testid="bar-action">
+          <ng-container [ngTemplateOutlet]="actions" />
+        </div>
+      }
     </div>
   }
 
