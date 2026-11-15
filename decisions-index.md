@@ -233,3 +233,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-224 | 16862 | Release 1 fixes after the first two Verifier passes: who is sent money, which day an entry belongs to, and what the site reads carry · 2026-11-15 |
 | D-225 | 16877 | Nabil rules the owner's daily log, photos, site expense confirmation and the stockpile question · 2026-11-15 |
 | D-226 | 16887 | Nabil approves the owner's daily log mock and rules four points on it · 2026-11-15 |
+| D-227 | 16899 | Nabil rules who is on a new project, the team controls, and the recovery rate at signing · 2026-11-16 |

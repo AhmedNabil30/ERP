@@ -16894,3 +16894,12 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 4. **The owner may open any day**, through one date control beside the four-day switch. The view is read-only, so the entry window of D-217 is unchanged: it limits what may be recorded, not what may be read.
 
 **Built before a ruling, for Nabil to confirm.** Photo download is gated by a new permission, `DailyLogRead`, held by the owner and by site engineers from junior upward, project-scoped. No existing permission meant "the owner or an assigned engineer"; `ProjectRead` would have let Finance and Marketing fetch site photos.
+
+
+## D-227 — Nabil rules who is on a new project, the team controls, and the recovery rate at signing · 2026-11-16
+
+**Source.** Nabil, in session with the Scrum Master, 2026-11-16, on the consultant review `ux/consultant-review-modules-1-2-2026-11-16.md`.
+
+1. **Whoever creates a project is assigned to it** in the same save, beside Finance (D-217 item 36). The consultant found that the Technical Office created a project and was then refused on it.
+2. **The team tab gets add and remove controls in release 1.** The Owner adds and removes people on a project from the screen. The routes exist (`AssignUserToProject`, `RevokeProjectAssignment`); the screen goes through a mock and Nabil's approval. This takes up the deferred KAFF-115.
+3. **The advance recovery rate is asked on the sign sheet:** a third field beside the hold rate and the advance rate, empty and required, with nothing preselected (the rule of D-217 item 29). The silent default of 25% no longer applies at signing.
