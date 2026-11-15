@@ -12,13 +12,37 @@ public sealed class DailyLogTests
     private static readonly Guid Low = Guid.Parse("00000000-0000-7000-8000-000000000001");
     private static readonly Guid High = Guid.Parse("00000000-0000-7000-8000-000000000002");
 
-    [Fact]
-    public void An_entry_at_2350_local_belongs_to_that_local_day_whatever_the_utc_date_is()
-    {
-        var occurred = new DateTimeOffset(2026, 9, 25, 23, 50, 0, TimeSpan.FromHours(-3));
+    private static readonly DailyLogEntryRule SiteRule = DailyLogEntryRule.Default;
 
-        DailyLog.DayOf(occurred).Should().Be(new DateOnly(2026, 9, 25));
-        occurred.UtcDateTime.Date.Should().Be(new DateTime(2026, 9, 26), "the instant is already the next day in UTC");
+    [Theory]
+    [InlineData(2026, 7, 15, 22, 30, "2026-07-16")] // summer, Cairo is +03:00: 01:30 on the 16th
+    [InlineData(2026, 1, 15, 22, 30, "2026-01-16")] // winter, Cairo is +02:00: 00:30 on the 16th
+    [InlineData(2026, 7, 15, 20, 59, "2026-07-15")] // 23:59 Cairo, still the 15th
+    [InlineData(2026, 1, 15, 21, 59, "2026-01-15")] // 23:59 Cairo, still the 15th
+    public void The_same_instant_is_the_same_site_day_whatever_offset_the_device_wrote(
+        int year, int month, int day, int hour, int minute, string expectedSiteDay)
+    {
+        var instant = new DateTimeOffset(year, month, day, hour, minute, 0, TimeSpan.Zero);
+        DateOnly expected = DateOnly.ParseExact(expectedSiteDay, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+
+        foreach (int offsetHours in new[] { 0, 2, 3, -3 })
+        {
+            DateTimeOffset written = instant.ToOffset(TimeSpan.FromHours(offsetHours));
+
+            DailyLog.DayOf(written, SiteRule).Should().Be(expected, $"written at {written:O}");
+            DailyLog.Open(Guid.NewGuid(), Guid.NewGuid(), written, instant, SiteRule).LogDate.Should().Be(expected);
+        }
+    }
+
+    [Fact]
+    public void An_entry_sent_in_utc_at_2230_lands_on_the_log_the_same_instant_in_plus_three_opened()
+    {
+        var utc = new DateTimeOffset(2026, 7, 15, 22, 30, 0, TimeSpan.Zero);
+        DailyLog log = DailyLog.Open(Guid.NewGuid(), Guid.NewGuid(), utc.ToOffset(TimeSpan.FromHours(3)), utc, SiteRule);
+
+        log.RecordField(Guid.NewGuid(), DailyLogField.Note, "n", SiteRule, utc, utc).IsSuccess.Should().BeTrue();
+        log.RecordField(Guid.NewGuid(), DailyLogField.Note, "n", SiteRule, utc.AddHours(-2), utc).Error
+            .Should().Be(DailyLogErrors.EntryOnAnotherDay, "20:30Z is 23:30 in Cairo, the day before");
     }
 
     [Fact]

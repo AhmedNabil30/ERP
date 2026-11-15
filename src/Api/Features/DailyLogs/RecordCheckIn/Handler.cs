@@ -54,6 +54,7 @@ internal static class Handler
                     request.AccuracyMetres,
                     project?.SiteReference,
                     rulings.CheckInDistance,
+                    rulings.DailyLogEntry,
                     request.OccurredAt!.Value,
                     now);
 

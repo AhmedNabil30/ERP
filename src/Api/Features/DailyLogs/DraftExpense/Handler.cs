@@ -32,7 +32,7 @@ internal static class Handler
             rulings,
             clock,
             DailyLogAccess.EntryGate.Entry,
-            (log, now) => log.DraftExpense(request.EntryId!.Value, request.Description, request.Amount, request.OccurredAt!.Value, now),
+            (log, now) => log.DraftExpense(request.EntryId!.Value, request.Description, request.Amount, rulings.DailyLogEntry, request.OccurredAt!.Value, now),
             cancellationToken);
     }
 }

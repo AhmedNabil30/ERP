@@ -35,7 +35,7 @@ internal static class Handler
 
         // What this man already counts for in the caller's log of that day, corrections included. The log may not exist yet.
         Guid engineerId = currentUser.UserId ?? Guid.Empty;
-        DateOnly day = DailyLog.DayOf(request.OccurredAt ?? DateTimeOffset.UtcNow);
+        DateOnly day = DailyLog.DayOf(request.OccurredAt ?? clock.GetUtcNow(), rulings.DailyLogEntry);
         decimal alreadyRecorded = await database.DayLabourEntries.AsNoTracking()
             .Where(entry => entry.EmployeeId == request.EmployeeId
                 && entry.ProjectId == projectId

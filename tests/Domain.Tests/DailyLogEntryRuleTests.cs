@@ -136,9 +136,9 @@ public sealed class DailyLogEntryRuleTests
     {
         DailyLog log = OpenLog();
 
-        log.RecordField(Guid.NewGuid(), DailyLogField.Weather, "sunny", Noon, Noon).Error.Should().Be(DailyLogErrors.WeatherRetired);
-        log.RecordField(Guid.NewGuid(), DailyLogField.Note, "a note", Noon, Noon).IsSuccess.Should().BeTrue();
-        log.RecordField(Guid.NewGuid(), DailyLogField.StoppageReason, "rain", Noon, Noon).IsSuccess.Should().BeTrue();
+        log.RecordField(Guid.NewGuid(), DailyLogField.Weather, "sunny", Rule, Noon, Noon).Error.Should().Be(DailyLogErrors.WeatherRetired);
+        log.RecordField(Guid.NewGuid(), DailyLogField.Note, "a note", Rule, Noon, Noon).IsSuccess.Should().BeTrue();
+        log.RecordField(Guid.NewGuid(), DailyLogField.StoppageReason, "rain", Rule, Noon, Noon).IsSuccess.Should().BeTrue();
     }
 
     // ---- who may correct ----------------------------------------------------------------------------------------
@@ -210,5 +210,5 @@ public sealed class DailyLogEntryRuleTests
         definition.Grants.Single(grant => grant.Role == Role.SiteEngineer).MinimumAssignmentLevel.Should().Be(AssignmentLevel.Supervisor);
     }
 
-    private static DailyLog OpenLog() => DailyLog.Open(Guid.NewGuid(), Guid.NewGuid(), Noon, Noon);
+    private static DailyLog OpenLog() => DailyLog.Open(Guid.NewGuid(), Guid.NewGuid(), Noon, Noon, Rule);
 }

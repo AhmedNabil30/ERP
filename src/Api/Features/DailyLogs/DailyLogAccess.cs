@@ -67,7 +67,7 @@ internal static class DailyLogAccess
             return Result.Failure<(DailyLog, bool)>(gated.Error);
         }
 
-        DateOnly day = DailyLog.DayOf(occurredAt);
+        DateOnly day = DailyLog.DayOf(occurredAt, rulings.DailyLogEntry);
 
         DailyLog? existing = await FindAsync(database, projectId, engineerId, day, cancellationToken);
 
@@ -76,7 +76,7 @@ internal static class DailyLogAccess
             return Result.Success((existing, false));
         }
 
-        DailyLog opened = DailyLog.Open(projectId, engineerId, occurredAt, now);
+        DailyLog opened = DailyLog.Open(projectId, engineerId, occurredAt, now, rulings.DailyLogEntry);
         database.DailyLogs.Add(opened);
 
         try
@@ -126,7 +126,7 @@ internal static class DailyLogAccess
     {
         DailyLogEntryRule rule = rulings.DailyLogEntry;
         DateOnly today = rule.SiteDate(now);
-        DateOnly day = DailyLog.DayOf(occurredAt);
+        DateOnly day = DailyLog.DayOf(occurredAt, rule);
 
         if (gate == EntryGate.CheckIn)
         {

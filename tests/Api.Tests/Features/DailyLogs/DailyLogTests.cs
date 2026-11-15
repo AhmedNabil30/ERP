@@ -335,21 +335,23 @@ public sealed partial class DailyLogTests : IAsyncLifetime
     {
         (Guid project, Guid line) = await NewActiveProjectAsync();
 
-        // 23:50 local (+02:00) on the 25th. The API clock is the real now, which is never that day: the
-        // entry arrived "later", and still belongs to the 25th.
-        HttpResponseMessage response = await Quantity(project, line, 9m, "2026-09-25T23:50:00+02:00");
+        // The server clock passes Cairo midnight: 21:30 UTC on the 25th is 00:30 on the 26th (+03:00 in September).
+        _clock.Advance(new DateTimeOffset(2026, 9, 25, 21, 30, 0, TimeSpan.Zero) - _clock.GetUtcNow());
+        // The engineer must be checked in on the new day (D-217 item 9); the check-in is dated today.
+        (await CheckIn(project, "CheckIn", 30.0444, 31.2357, "2026-09-26T00:10:00+03:00")).StatusCode.Should().Be(HttpStatusCode.Created);
+
+        // Made at 23:50 on the 25th (+03:00), before midnight, and synced now, after it. It still belongs to the 25th.
+        HttpResponseMessage response = await NoCheckIn("quantity", project, line, _engineerA, "2026-09-25T23:50:00+03:00");
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
         (await MineAsync(project, "2026-09-25")).GetProperty("quantities").GetArrayLength().Should().Be(1);
-
-        HttpResponseMessage nextDay = await SendAsync(HttpMethod.Get, $"{Logs(project)}/mine?date=2026-09-26", _engineerA, null);
-        nextDay.StatusCode.Should().Be(HttpStatusCode.NotFound, "the entry did not occur on the 26th");
+        (await MineAsync(project, "2026-09-26")).GetProperty("quantities").GetArrayLength().Should().Be(0, "the entry did not occur on the 26th");
 
         await using KaffDbContext reader = _database.CreateBareContext();
-        string logDate = await reader.Database
-            .SqlQuery<string>($"SELECT log_date::text AS \"Value\" FROM daily_logs WHERE project_id = {project}")
+        string logDates = await reader.Database
+            .SqlQuery<string>($"SELECT string_agg(log_date::text, ',' ORDER BY log_date) AS \"Value\" FROM daily_logs WHERE project_id = {project}")
             .SingleAsync(Ct);
-        logDate.Should().Be("2026-09-25");
+        logDates.Should().Be("2026-09-25,2026-09-26");
     }
 
     [Fact]

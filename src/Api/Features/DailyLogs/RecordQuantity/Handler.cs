@@ -103,7 +103,7 @@ internal static class Handler
             return Microsoft.AspNetCore.Http.Results.Ok(new EntryResponse(stored.Id, log.Id, stored.OccurredAt));
         }
 
-        Result<ExecutedQuantityEntry> recorded = log.RecordQuantity(entryId, boq, line, request.Quantity, occurredAt, now);
+        Result<ExecutedQuantityEntry> recorded = log.RecordQuantity(entryId, boq, line, request.Quantity, rulings.DailyLogEntry, occurredAt, now);
 
         if (recorded.IsFailure)
         {

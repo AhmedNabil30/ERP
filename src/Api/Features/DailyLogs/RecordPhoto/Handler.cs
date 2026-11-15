@@ -32,7 +32,7 @@ internal static class Handler
             rulings,
             clock,
             DailyLogAccess.EntryGate.Entry,
-            (log, now) => log.RecordPhoto(request.EntryId!.Value, request.FileReference, request.Caption, request.OccurredAt!.Value, now),
+            (log, now) => log.RecordPhoto(request.EntryId!.Value, request.FileReference, request.Caption, rulings.DailyLogEntry, request.OccurredAt!.Value, now),
             cancellationToken);
     }
 }

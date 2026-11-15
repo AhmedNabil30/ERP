@@ -37,25 +37,29 @@ public sealed class DailyLog : Entity
     public DateTimeOffset CreatedAt { get; private set; }
 
     /// <summary>
-    /// The day an entry belongs to: the calendar date in the offset the engineer's device reported. 23:50 at
-    /// +02:00 is that day, whenever the server hears of it (KAFF-600 rule 11).
+    /// The day an entry belongs to: the calendar day of the instant in the site time zone (D-217, D-218). The offset the
+    /// device wrote does not matter: the same instant is the same day, whenever the server hears of it (KAFF-600 rule 11).
     /// </summary>
-    public static DateOnly DayOf(DateTimeOffset occurredAt) => DateOnly.FromDateTime(occurredAt.DateTime);
+    public static DateOnly DayOf(DateTimeOffset occurredAt, DailyLogEntryRule rule)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+        return rule.SiteDate(occurredAt);
+    }
 
-    public static DailyLog Open(Guid projectId, Guid engineerId, DateTimeOffset occurredAt, DateTimeOffset now) =>
-        new(projectId, engineerId, DayOf(occurredAt), now);
+    public static DailyLog Open(Guid projectId, Guid engineerId, DateTimeOffset occurredAt, DateTimeOffset now, DailyLogEntryRule rule) =>
+        new(projectId, engineerId, DayOf(occurredAt, rule), now);
 
     /// <summary>
     /// Records an executed quantity against a BOQ line. The caller applies the entry to
     /// <see cref="BoqLine.QuantityExecuted"/> under a lock, using <c>RulingSet.DailyLogQuantityEntry</c>.
     /// </summary>
     public Result<ExecutedQuantityEntry> RecordQuantity(
-        Guid entryId, Boq boq, BoqLine line, decimal quantity, DateTimeOffset occurredAt, DateTimeOffset now)
+        Guid entryId, Boq boq, BoqLine line, decimal quantity, DailyLogEntryRule rule, DateTimeOffset occurredAt, DateTimeOffset now)
     {
         ArgumentNullException.ThrowIfNull(boq);
         ArgumentNullException.ThrowIfNull(line);
 
-        Result onDay = OnThisDay(occurredAt);
+        Result onDay = OnThisDay(occurredAt, rule);
         if (onDay.IsFailure)
         {
             return Result.Failure<ExecutedQuantityEntry>(onDay.Error);
@@ -88,7 +92,7 @@ public sealed class DailyLog : Entity
     {
         ArgumentNullException.ThrowIfNull(rule);
 
-        Result onDay = OnThisDay(occurredAt);
+        Result onDay = OnThisDay(occurredAt, rule);
         if (onDay.IsFailure)
         {
             return Result.Failure<DayLabourEntry>(onDay.Error);
@@ -175,9 +179,9 @@ public sealed class DailyLog : Entity
     }
 
     public Result<MaterialEntry> RecordMaterial(
-        Guid entryId, string? materialType, decimal quantity, string? unit, bool isStockpile, DateTimeOffset occurredAt, DateTimeOffset now)
+        Guid entryId, string? materialType, decimal quantity, string? unit, bool isStockpile, DailyLogEntryRule rule, DateTimeOffset occurredAt, DateTimeOffset now)
     {
-        Result onDay = OnThisDay(occurredAt);
+        Result onDay = OnThisDay(occurredAt, rule);
         if (onDay.IsFailure)
         {
             return Result.Failure<MaterialEntry>(onDay.Error);
@@ -201,9 +205,9 @@ public sealed class DailyLog : Entity
         return Result.Success(new MaterialEntry(entryId, this, materialType.Trim(), quantity, unit.Trim(), isStockpile, occurredAt, now));
     }
 
-    public Result<PhotoEntry> RecordPhoto(Guid entryId, string? fileReference, string? caption, DateTimeOffset occurredAt, DateTimeOffset now)
+    public Result<PhotoEntry> RecordPhoto(Guid entryId, string? fileReference, string? caption, DailyLogEntryRule rule, DateTimeOffset occurredAt, DateTimeOffset now)
     {
-        Result onDay = OnThisDay(occurredAt);
+        Result onDay = OnThisDay(occurredAt, rule);
         if (onDay.IsFailure)
         {
             return Result.Failure<PhotoEntry>(onDay.Error);
@@ -226,9 +230,9 @@ public sealed class DailyLog : Entity
     /// Records a single-valued field. Check-in and check-out are the entry's own time and take no text; the
     /// others require text.
     /// </summary>
-    public Result<FieldEntry> RecordField(Guid entryId, DailyLogField field, string? text, DateTimeOffset occurredAt, DateTimeOffset now)
+    public Result<FieldEntry> RecordField(Guid entryId, DailyLogField field, string? text, DailyLogEntryRule rule, DateTimeOffset occurredAt, DateTimeOffset now)
     {
-        Result onDay = OnThisDay(occurredAt);
+        Result onDay = OnThisDay(occurredAt, rule);
         if (onDay.IsFailure)
         {
             return Result.Failure<FieldEntry>(onDay.Error);
@@ -278,12 +282,13 @@ public sealed class DailyLog : Entity
         double? accuracyMetres,
         (double Latitude, double Longitude)? reference,
         CheckInDistanceRule distanceRule,
+        DailyLogEntryRule rule,
         DateTimeOffset occurredAt,
         DateTimeOffset now)
     {
         ArgumentNullException.ThrowIfNull(distanceRule);
 
-        Result onDay = OnThisDay(occurredAt);
+        Result onDay = OnThisDay(occurredAt, rule);
         if (onDay.IsFailure)
         {
             return Result.Failure<FieldEntry>(onDay.Error);
@@ -317,9 +322,9 @@ public sealed class DailyLog : Entity
     /// An engineer's expense, stored as a draft. No posting is created or referenced: Accounts confirms and
     /// posts it (spec.md section 8).
     /// </summary>
-    public Result<SiteExpenseDraft> DraftExpense(Guid entryId, string? description, Money amount, DateTimeOffset occurredAt, DateTimeOffset now)
+    public Result<SiteExpenseDraft> DraftExpense(Guid entryId, string? description, Money amount, DailyLogEntryRule rule, DateTimeOffset occurredAt, DateTimeOffset now)
     {
-        Result onDay = OnThisDay(occurredAt);
+        Result onDay = OnThisDay(occurredAt, rule);
         if (onDay.IsFailure)
         {
             return Result.Failure<SiteExpenseDraft>(onDay.Error);
@@ -343,6 +348,6 @@ public sealed class DailyLog : Entity
         return Result.Success(new SiteExpenseDraft(entryId, this, description.Trim(), amount, occurredAt, now));
     }
 
-    private Result OnThisDay(DateTimeOffset occurredAt) =>
-        DayOf(occurredAt) == LogDate ? Result.Success() : Result.Failure(DailyLogErrors.EntryOnAnotherDay);
+    private Result OnThisDay(DateTimeOffset occurredAt, DailyLogEntryRule rule) =>
+        DayOf(occurredAt, rule) == LogDate ? Result.Success() : Result.Failure(DailyLogErrors.EntryOnAnotherDay);
 }

@@ -32,7 +32,7 @@ internal static class Handler
             rulings,
             clock,
             DailyLogAccess.EntryGate.Entry,
-            (log, now) => log.RecordField(request.EntryId!.Value, request.Field, request.Text, request.OccurredAt!.Value, now),
+            (log, now) => log.RecordField(request.EntryId!.Value, request.Field, request.Text, rulings.DailyLogEntry, request.OccurredAt!.Value, now),
             cancellationToken);
     }
 }

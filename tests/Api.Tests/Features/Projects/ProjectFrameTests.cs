@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using Kaff.Api.Tests.Infrastructure;
@@ -192,12 +192,13 @@ public sealed class ProjectFrameTests : IAsyncLifetime
     [Fact]
     public async Task Logged_today_follows_the_site_day_not_the_utc_day()
     {
-        // 22:30 UTC on 10 June is 01:30 on 11 June in Cairo (UTC+3 in summer): the two dates differ.
+        // 22:30 UTC on 10 June is 01:30 on 11 June in Cairo (UTC+3 in summer): the two dates differ. The log is opened with the plain UTC instant.
         var clock = new TestClock();
         clock.Advance(new DateTimeOffset(2026, 6, 10, 22, 30, 0, TimeSpan.Zero) - DateTimeOffset.UtcNow);
         await using KaffDbContext context = _database.CreateContext();
         context.DailyLogs.Add(DailyLog.Open(
-            _unsignedProjectId, _junior, new DateTimeOffset(2026, 6, 11, 1, 30, 0, TimeSpan.FromHours(3)), clock.GetUtcNow()));
+            _unsignedProjectId, _junior, clock.GetUtcNow(), clock.GetUtcNow(),
+            new Kaff.Domain.Rulings.RulingSet().DailyLogEntry));
         await context.SaveChangesAsync(Ct);
 
         await using var factory = new KaffApiFactory(_database.ConnectionString, clock: clock);
@@ -338,11 +339,8 @@ public sealed class ProjectFrameTests : IAsyncLifetime
             ProjectAssignment.Create(project.Id, technicalOffice, AssignmentLevel.Standard, owner.Id, Now).Value,
             ProjectAssignment.Create(project.Id, marketing, AssignmentLevel.Standard, owner.Id, Now).Value);
         _loggedAt = DateTimeOffset.UtcNow;
-        // DailyLog.Open takes the day from the offset it is given. A UTC instant between 22:00 and 24:00 UTC
-        // is already the next day in Cairo, so the log is opened at noon on the site day instead.
-        DateOnly siteDay = new Kaff.Domain.Rulings.RulingSet().DailyLogEntry.SiteDate(_loggedAt);
         context.DailyLogs.Add(DailyLog.Open(
-            project.Id, junior.Id, new DateTimeOffset(siteDay.ToDateTime(new TimeOnly(12, 0)), TimeSpan.Zero), _loggedAt));
+            project.Id, junior.Id, _loggedAt, _loggedAt, new Kaff.Domain.Rulings.RulingSet().DailyLogEntry));
         await context.SaveChangesAsync(Ct);
 
         _projectId = project.Id;
