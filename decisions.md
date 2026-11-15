@@ -16882,3 +16882,15 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 2. **Photos are built in release 1, stored on the server's disk.** Files live in a folder outside the database, behind the same role and assignment checks as the rest of the daily log. The storage sits behind one interface so it can move to object storage later without a screen change.
 3. **Accounts confirming a site expense moves to release 2.** KAFF-600 AC-600-H keeps its first half: the expense is a draft and posts nothing. The confirmation and its posting are built with the site money flows.
 4. **Stockpile marking goes to Karim** (Q-225-1). The daily log stays without a stockpile control until he answers, and every material entry is recorded as not stockpiled.
+
+
+## D-226 — Nabil approves the owner's daily log mock and rules four points on it · 2026-11-15
+
+**Source.** Nabil, in session with the Scrum Master, 2026-11-15. Mock `.design/v2/team-a/daily-log-review.html` revision 2, after the consultant review `ux/consultant-review-daily-log-review-mock-2026-11-15.md`.
+
+1. **The mock is approved for build as drawn:** one block per engineer with his name, attendance and entries by kind; the back-dated tag once per log; attendance shown on past days; a corrected quantity showing the old figure and the new one; the crew total equal to the men listed.
+2. **Distance from site is shown in metres** beside «بعيد عن الموقع». The server sends the distance; the screen does not compute it.
+3. **No check-out reads «لم يُسجَّل الانصراف»** on any day. The screen does not claim the engineer is still on site.
+4. **The owner may open any day**, through one date control beside the four-day switch. The view is read-only, so the entry window of D-217 is unchanged: it limits what may be recorded, not what may be read.
+
+**Built before a ruling, for Nabil to confirm.** Photo download is gated by a new permission, `DailyLogRead`, held by the owner and by site engineers from junior upward, project-scoped. No existing permission meant "the owner or an assigned engineer"; `ProjectRead` would have let Finance and Marketing fetch site photos.
