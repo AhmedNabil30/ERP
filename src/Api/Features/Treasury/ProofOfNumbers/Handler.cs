@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using Kaff.Api.Common.Results;
 using Kaff.Api.Features.ChangeOrders;
 using Kaff.Domain.Common;

@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Net;
 using Kaff.Api.Common.Endpoints;
 using Microsoft.AspNetCore.Authentication;

@@ -1,4 +1,4 @@
-﻿using Kaff.Api.Tests.Infrastructure;
+using Kaff.Api.Tests.Infrastructure;
 using Kaff.Domain.Common;
 using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;

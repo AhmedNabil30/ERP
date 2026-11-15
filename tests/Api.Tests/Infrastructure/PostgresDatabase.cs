@@ -1,4 +1,4 @@
-﻿using Kaff.Domain.Auditing;
+using Kaff.Domain.Auditing;
 using Kaff.Domain.Identity;
 using Kaff.Infrastructure.Auditing;
 using Kaff.Infrastructure.Persistence;

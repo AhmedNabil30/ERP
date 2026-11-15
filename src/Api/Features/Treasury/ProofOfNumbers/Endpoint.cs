@@ -3,10 +3,10 @@ using Kaff.Api.Common.Endpoints;
 using Kaff.Domain.Authorization;
 using Kaff.Domain.Contracts;
 using Kaff.Domain.Rulings;
+using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using Kaff.Infrastructure.Persistence;
 
 namespace Kaff.Api.Features.Treasury.ProofOfNumbers;
 

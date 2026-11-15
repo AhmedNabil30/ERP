@@ -20,7 +20,7 @@ public sealed partial class DailyLogTests
     // ---- canCorrect: the flag equals what the endpoint then does ------------------------------------------------
 
     [Fact]
-    public async Task canCorrect_on_a_quantity_line_equals_what_the_correct_endpoint_does_for_every_reader()
+    public async Task CanCorrect_on_a_quantity_line_equals_what_the_correct_endpoint_does_for_every_reader()
     {
         (Guid project, Guid line) = await NewActiveProjectAsync();
         Guid todayEntry = await SavedQuantityAsync(project, line, 40m, At(9, 0));
@@ -44,7 +44,7 @@ public sealed partial class DailyLogTests
     }
 
     [Fact]
-    public async Task canCorrect_on_a_crew_line_equals_what_the_correct_endpoint_does_for_every_reader()
+    public async Task CanCorrect_on_a_crew_line_equals_what_the_correct_endpoint_does_for_every_reader()
     {
         (Guid project, _) = await NewActiveProjectAsync();
         Guid todayEntry = await SavedCrewAsync(project, 8m, At(9, 0), _engineerA);
@@ -67,7 +67,7 @@ public sealed partial class DailyLogTests
     }
 
     [Fact]
-    public async Task canCorrect_is_false_on_every_line_once_the_project_is_closed_to_logs()
+    public async Task CanCorrect_is_false_on_every_line_once_the_project_is_closed_to_logs()
     {
         (Guid project, Guid line) = await NewActiveProjectAsync();
         Guid quantity = await SavedQuantityAsync(project, line, 40m, At(9, 0));

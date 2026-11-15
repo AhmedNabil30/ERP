@@ -1370,7 +1370,11 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         Guid revenue = await AccountIdAsync(project.Id, AccountType.ContractRevenue);
         object raise = new
         {
-            type = "ClientCreditNote", reason = "x", sourceExtractId = extract, targetAccountId = revenue, amount = "1000",
+            type = "ClientCreditNote",
+            reason = "x",
+            sourceExtractId = extract,
+            targetAccountId = revenue,
+            amount = "1000",
         };
 
         foreach (Guid refused in new[] { _owner, _technicalOffice, _supervisor, _prepEngineer, _hr, _financeUnassigned, _engineerUnassigned })
@@ -1544,7 +1548,11 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
 
         HttpResponseMessage response = await SendAsync(HttpMethod.Post, Adjustments(project.Id), _finance, new
         {
-            type = "ClientCreditNote", reason = "settle from the hold", sourceExtractId = extract, targetAccountId = hold, amount = "5000",
+            type = "ClientCreditNote",
+            reason = "settle from the hold",
+            sourceExtractId = extract,
+            targetAccountId = hold,
+            amount = "5000",
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
@@ -1557,8 +1565,11 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         {
             HttpResponseMessage refused = await SendAsync(HttpMethod.Post, Adjustments(project.Id), _finance, new
             {
-                type = "ClientCreditNote", reason = "x", sourceExtractId = extract,
-                targetAccountId = await AccountIdAsync(project.Id, other), amount = "5000",
+                type = "ClientCreditNote",
+                reason = "x",
+                sourceExtractId = extract,
+                targetAccountId = await AccountIdAsync(project.Id, other),
+                amount = "5000",
             });
             (await ErrorCodeAsync(refused)).Should().Be("adjustment.target_account_not_allowed", other.ToString());
         }
@@ -1575,7 +1586,11 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
 
         object Body(string type = "ClientCreditNote", string reason = "x", string amount = "1000") => new
         {
-            type, reason, sourceExtractId = extract, targetAccountId = revenue, amount,
+            type,
+            reason,
+            sourceExtractId = extract,
+            targetAccountId = revenue,
+            amount,
         };
 
         (string Name, object Body, HttpStatusCode Status, string Code)[] refusals =
@@ -1612,7 +1627,11 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         Guid first = await RaiseCreditNoteAsync(project, extract, 200_000m);
         HttpResponseMessage over = await SendAsync(HttpMethod.Post, Adjustments(project.Id), _finance, new
         {
-            type = "ClientCreditNote", reason = "x", sourceExtractId = extract, targetAccountId = revenue, amount = "40000.0001",
+            type = "ClientCreditNote",
+            reason = "x",
+            sourceExtractId = extract,
+            targetAccountId = revenue,
+            amount = "40000.0001",
         });
         over.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await ErrorCodeAsync(over)).Should().Be("adjustment.exceeds_extract_net");

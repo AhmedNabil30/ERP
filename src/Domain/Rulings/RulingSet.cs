@@ -1,4 +1,4 @@
-﻿namespace Kaff.Domain.Rulings;
+namespace Kaff.Domain.Rulings;
 
 /// <summary>
 /// Every business rule this project has not had ruled, in one place. Nothing else in the codebase may
