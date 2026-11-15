@@ -69,6 +69,8 @@ export interface ProjectDetail {
   readonly contractValue?: string | null;
   readonly holdRate?: string | null;
   readonly advanceRate?: string | null;
+  /** Recovered from each extract; absent for roles without money. `advanceRate` is the advance taken at signing. */
+  readonly advanceRecoveryRate?: string | null;
   readonly teamSize: number;
   /**
    * The dates and money the API added with the overview (`GetProject.Response`). Optional here only so

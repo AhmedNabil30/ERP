@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Extract, ExtractActions, ExtractsApi } from '../../../core/extracts/extracts.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { ProjectsApi } from '../../../core/projects/projects.api';
 import { ExtractDetailPage } from './extract-detail-page';
 
 /**
@@ -89,6 +90,7 @@ async function open(data: Extract, api: Partial<ExtractsApi> = {}) {
       provideRouter([]),
       { provide: I18nService, useClass: FakeI18n },
       { provide: ExtractsApi, useValue: { get: () => Promise.resolve(data), ...api } },
+      { provide: ProjectsApi, useValue: { get: () => new Promise(() => undefined) } },
     ],
   });
   const fixture = TestBed.createComponent(ExtractDetailPage);

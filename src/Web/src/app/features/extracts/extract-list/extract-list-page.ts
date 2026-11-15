@@ -8,7 +8,7 @@ import { roleKey } from '../../../core/i18n/enum-keys';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { KaffFigure } from '../../../shared/kaff-figure/kaff-figure';
-import { KaffPageHead } from '../../../shared/kaff-page-head/kaff-page-head';
+import { KaffProjectFrame } from '../../../shared/kaff-project-frame/kaff-project-frame';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { KaffStatusPill } from '../../../shared/kaff-status-pill/kaff-status-pill';
 import { KaffTable } from '../../../shared/kaff-table/kaff-table';
@@ -20,7 +20,7 @@ import { STATUS_KEYS } from '../extract-detail/extract-detail-page';
 /** The extracts of one project, oldest first. The server decides who may read the list. */
 @Component({
   selector: 'kaff-extract-list-page',
-  imports: [RouterLink, KaffButton, KaffFigure, KaffPageHead, KaffState, KaffStatusPill, KaffTable, KaffTableRow],
+  imports: [RouterLink, KaffButton, KaffFigure, KaffProjectFrame, KaffState, KaffStatusPill, KaffTable, KaffTableRow],
   templateUrl: './extract-list-page.html',
   styleUrl: './extract-list-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

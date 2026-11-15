@@ -237,6 +237,7 @@
               </kaff-fact-list>
             }
           } @else if (p.contractType === 'Design') {
+            @if (money()) {
             <kaff-fact-list>
               <kaff-fact [label]="i18n.t('projects.frame.hero.contract_value')" testId="workspace-fact-value">
                 @if (p.contractValue != null) {
@@ -246,6 +247,7 @@
                 }
               </kaff-fact>
             </kaff-fact-list>
+            }
           }
           @if (view.kind === 'failed') {
             <kaff-banner tone="refusal" testId="workspace-progress-failed">
@@ -333,7 +335,7 @@
                 <kaff-fact [label]="i18n.t('projects.workspace.pay.collected')" testId="workspace-pay-collected"><kaff-figure [value]="m.collectedToDate" /></kaff-fact>
                 <kaff-fact [label]="i18n.t('projects.workspace.pay.outstanding')" testId="workspace-pay-outstanding"><kaff-figure [value]="m.outstanding" /></kaff-fact>
               </kaff-fact-list>
-              @if (p.holdRate != null || p.advanceRate != null || p.signedOn || p.startedOn) {
+              @if (p.holdRate != null || p.advanceRate != null || p.advanceRecoveryRate != null || p.signedOn || p.startedOn) {
                 <button
                   type="button"
                   class="disc"
@@ -352,8 +354,13 @@
                       </kaff-fact>
                     }
                     @if (p.advanceRate != null) {
-                      <kaff-fact [label]="i18n.t('projects.workspace.vocab.fact.advance_rate')" testId="workspace-fact-advance">
+                      <kaff-fact [label]="i18n.t('projects.workspace.vocab.fact.advance_signing')" testId="workspace-fact-advance">
                         <bdi dir="ltr" class="num">{{ rate(p.advanceRate) }}</bdi>
+                      </kaff-fact>
+                    }
+                    @if (p.advanceRecoveryRate != null) {
+                      <kaff-fact [label]="i18n.t('projects.workspace.vocab.fact.advance_rate')" testId="workspace-fact-advance-recovery">
+                        <bdi dir="ltr" class="num">{{ rate(p.advanceRecoveryRate) }}</bdi>
                       </kaff-fact>
                     }
                     @if (p.signedOn) {

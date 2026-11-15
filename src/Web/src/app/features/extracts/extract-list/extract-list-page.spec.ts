@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ExtractSummary, ExtractsApi } from '../../../core/extracts/extracts.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
+import { ProjectsApi } from '../../../core/projects/projects.api';
 import { ExtractListPage } from './extract-list-page';
 
 class FakeI18n implements Pick<I18nService, 't' | 'locale' | 'formatDate' | 'formatMoney' | 'formatAmount'> {
@@ -38,6 +39,7 @@ describe('ExtractListPage', () => {
         provideRouter([]),
         { provide: I18nService, useClass: FakeI18n },
         { provide: ExtractsApi, useValue: { list } },
+        { provide: ProjectsApi, useValue: { get: () => new Promise(() => undefined) } },
         { provide: AuthService, useValue: { current: signal(null) } },
       ],
     });
@@ -48,6 +50,7 @@ describe('ExtractListPage', () => {
 
     expect(list).toHaveBeenCalledWith('p-1');
     const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('kaff-project-frame')).not.toBeNull();
     expect(root.querySelector('[data-testid="extract-list-failure"]')).toBeNull();
     expect(root.querySelector('[data-testid="extract-list-empty"]')).not.toBeNull();
   });
@@ -77,6 +80,7 @@ describe('ExtractListPage', () => {
         provideRouter([]),
         { provide: I18nService, useClass: FakeI18n },
         { provide: ExtractsApi, useValue: { list: vi.fn().mockResolvedValue(rows) } },
+        { provide: ProjectsApi, useValue: { get: () => new Promise(() => undefined) } },
         { provide: AuthService, useValue: { current: signal({ role, permissions: [], projects: [{ projectId: 'p-1', permissions }] }) } },
       ],
     });

@@ -20,6 +20,7 @@ import { KaffIcon } from '../../../shared/kaff-icon/kaff-icon';
 import { KaffInlineConfirm } from '../../../shared/kaff-inline-confirm/kaff-inline-confirm';
 import { KaffMoneyField } from '../../../shared/kaff-money-field/kaff-money-field';
 import { KaffPageHead } from '../../../shared/kaff-page-head/kaff-page-head';
+import { KaffProjectFrame } from '../../../shared/kaff-project-frame/kaff-project-frame';
 import { KaffProvenance, ProvenanceKind } from '../../../shared/kaff-provenance/kaff-provenance';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { KaffStatusPill } from '../../../shared/kaff-status-pill/kaff-status-pill';
@@ -114,6 +115,7 @@ interface InputVm {
     KaffInlineConfirm,
     KaffMoneyField,
     KaffPageHead,
+    KaffProjectFrame,
     KaffProvenance,
     KaffState,
     KaffStatusPill,

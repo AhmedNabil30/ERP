@@ -75,6 +75,7 @@ function project(type: ContractType, patch: Partial<ProjectDetail> = {}): Projec
     contractValue: type === 'CostPlus' ? null : '4500000.0000',
     holdRate: type === 'LumpSum' ? '0.05' : null,
     advanceRate: type === 'LumpSum' ? '0.1' : null,
+    advanceRecoveryRate: type === 'LumpSum' ? '0.25' : null,
     teamSize: 1,
     stage: 'Execution',
     isSigned: true,
@@ -346,6 +347,38 @@ describe('ProjectWorkspacePage · the frame and the owner overview', () => {
     (q(fixture, 'workspace-terms') as HTMLElement).click();
     fixture.detectChanges();
     expect(q(fixture, 'workspace-fact-hold')).not.toBeNull();
+  });
+
+  it('terms: the signing advance and the recovery rate are two facts, each under its own label', async () => {
+    const fixture = await createFixture(new FakeProjectsApi(project('LumpSum')), OWNER());
+    (q(fixture, 'workspace-terms') as HTMLElement).click();
+    fixture.detectChanges();
+    const signing = q(fixture, 'workspace-fact-advance')?.textContent ?? '';
+    const recovery = q(fixture, 'workspace-fact-advance-recovery')?.textContent ?? '';
+    expect(signing).toContain('projects.workspace.vocab.fact.advance_signing');
+    expect(signing).toContain('10');
+    expect(recovery).toContain('projects.workspace.vocab.fact.advance_rate');
+    expect(recovery).toContain('25');
+  });
+
+  it('terms: a rate the server withheld is absent, not blank', async () => {
+    const fixture = await createFixture(
+      new FakeProjectsApi(project('LumpSum', { advanceRate: undefined, advanceRecoveryRate: undefined })),
+      OWNER(),
+    );
+    (q(fixture, 'workspace-terms') as HTMLElement).click();
+    fixture.detectChanges();
+    expect(q(fixture, 'workspace-fact-advance')).toBeNull();
+    expect(q(fixture, 'workspace-fact-advance-recovery')).toBeNull();
+  });
+
+  it('Design: a role without money sees no contract value fact and no placeholder', async () => {
+    const fixture = await createFixture(
+      new FakeProjectsApi(project('Design', { money: undefined, contractValue: undefined }), { progress: new HttpErrorResponse({ status: 409 }) }),
+      OWNER(),
+    );
+    expect(q(fixture, 'workspace-fact-value')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('undefined');
   });
 
   it('says "none" for the last log when there is no log, with no tag', async () => {

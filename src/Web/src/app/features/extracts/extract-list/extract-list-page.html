@@ -1,6 +1,5 @@
 <section class="pg" data-testid="extract-list-page">
-  <kaff-page-head [backLink]="['/projects', projectId()]" backLabelKey="project.back_to_workspace" [title]="i18n.t('extract.list.title')" />
-
+  <kaff-project-frame [projectId]="projectId()" current="extracts">
   @if (failure(); as key) {
     <kaff-state mode="refusal" [bodyKey]="key" testId="extract-list-failure">
       <kaff-button stateAction variant="secondary" testId="extract-list-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
@@ -47,4 +46,5 @@
       </ul>
     </kaff-table>
   }
+  </kaff-project-frame>
 </section>

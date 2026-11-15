@@ -1495,6 +1495,7 @@
   "projects.workspace.vocab.status.terminated": "Terminated",
   "projects.workspace.vocab.fact.hold_rate": "Hold rate",
   "projects.workspace.vocab.fact.advance_rate": "Advance recovery rate",
+  "projects.workspace.vocab.fact.advance_signing": "Advance rate",
   "projects.workspace.vocab.action.new_daily_log": "New daily log",
   "errors.closure.not_applicable_to_design": "A Design project has no snag list, no handover, no warranty and no hold.",
   "errors.closure.hold_not_applicable": "The hold exists on lump sum contracts only.",
