@@ -54,7 +54,7 @@ function project(status: ProjectStatus, type: ContractType = 'LumpSum'): Project
     stage: 'Execution',
     isSigned: true,
     loggedToday: false,
-    tabs: { overview: true, boq: true, dailyLog: true, extracts: true, team: true },
+    tabs: { overview: true, boq: true, dailyLog: true, extracts: true, team: true, dailyLogMode: 'write' },
   };
 }
 

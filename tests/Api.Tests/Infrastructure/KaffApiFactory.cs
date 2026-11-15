@@ -104,6 +104,10 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
     /// remarks for why. Pass <c>"Development"</c> only to test what Development itself changes; every
     /// other suite should take the default so a broken guard still fails the build.
     /// </param>
+    /// <param name="sitePhotoRoot">
+    /// <c>Kaff:SitePhotos:Root</c>, the folder uploaded site photos are kept in. A suite that uploads passes a temp folder
+    /// it deletes afterwards; <see langword="null"/> leaves the shipped default.
+    /// </param>
     public KaffApiFactory(
         string connectionString,
         IPAddress? remoteAddress = null,
@@ -111,7 +115,8 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
         int? forwardedProxyHops = null,
         bool useRealAuthentication = false,
         TimeProvider? clock = null,
-        string environment = "Testing")
+        string environment = "Testing",
+        string? sitePhotoRoot = null)
     {
         _connectionString = connectionString;
         _remoteAddress = remoteAddress ?? TestRemoteAddress;
@@ -148,6 +153,8 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
             Environment.SetEnvironmentVariable(
                 "Kaff__ForwardedProxyHops",
                 forwardedProxyHops?.ToString(CultureInfo.InvariantCulture));
+
+            Environment.SetEnvironmentVariable("Kaff__SitePhotos__Root", sitePhotoRoot);
 
             // Forces the host to build here, inside the gate, so it reads the values just written. Every
             // field ConfigureWebHost touches is assigned above this block.

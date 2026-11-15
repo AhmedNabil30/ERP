@@ -142,6 +142,8 @@ export interface PhotoLine {
   readonly entryId: string;
   readonly fileReference: string;
   readonly caption: string | null;
+  /** The route that fetches the file (`GET`, signed-in), or `null` for a reference that is not a stored id. Use `DailyLogApi.photoUrl` to build one. */
+  readonly url: string | null;
   readonly isPublished: boolean;
   readonly occurredAt: string;
   readonly backDated?: boolean;
@@ -263,4 +265,31 @@ export class DailyLogApi {
   ): Promise<void> {
     await firstValueFrom(this.http.post(`${this.base(projectId)}/materials`, entry));
   }
+
+  /**
+   * `POST …/photos/upload` — keeps one image (JPEG, PNG or WebP, up to 10 MB by default) on the server and returns the
+   * reference to hand to `recordPhoto`. The body is the file itself; the server decides the type from its bytes.
+   */
+  async uploadPhoto(projectId: string, file: Blob): Promise<UploadedPhoto> {
+    return firstValueFrom(this.http.post<UploadedPhoto>(`${this.base(projectId)}/photos/upload`, file));
+  }
+
+  /** `POST …/photos` — records an uploaded photo on the caller's log. `fileReference` is the id `uploadPhoto` returned. */
+  async recordPhoto(
+    projectId: string,
+    entry: EntryEnvelope & { fileReference: string; caption?: string | null },
+  ): Promise<void> {
+    await firstValueFrom(this.http.post(`${this.base(projectId)}/photos`, entry));
+  }
+
+  /** The route a recorded photo is fetched from. Needs the signed-in session, so load it through `HttpClient`, not a bare `<img src>` link to another origin. */
+  photoUrl(projectId: string, reference: string): string {
+    return `${this.base(projectId)}/photos/${reference}`;
+  }
+}
+
+/** `POST …/photos/upload` response. */
+export interface UploadedPhoto {
+  readonly reference: string;
+  readonly url: string;
 }

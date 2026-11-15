@@ -147,7 +147,7 @@ async function createPage(api: FakeDailyLogApi, permissions = JUNIOR, role: Role
             stage: 'Execution',
             isSigned: true,
             isArchived: false,
-            tabs: { overview: true, boq: true, dailyLog: true, extracts: false, team: true },
+            tabs: { overview: true, boq: true, dailyLog: true, extracts: false, team: true, dailyLogMode: 'write' },
           }),
         },
       },

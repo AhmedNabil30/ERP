@@ -105,12 +105,17 @@ export interface ProjectDetail {
 /** `ProjectStage` on the wire: the three stages the stage line draws (D-218 item 3). */
 export type ProjectStage = 'Boq' | 'Execution' | 'Handover';
 
+/** `ProjectTabs.dailyLogMode` on the wire (D-225 item 1). */
+export type DailyLogMode = 'write' | 'review';
+
 export interface ProjectTabs {
   readonly overview: boolean;
   readonly boq: boolean;
   readonly dailyLog: boolean;
   readonly extracts: boolean;
   readonly team: boolean;
+  /** How the daily log tab opens: `write` records the log, `review` only reads every engineer's log (the owner), `null` when there is no tab. */
+  readonly dailyLogMode: DailyLogMode | null;
 }
 
 /** `POST /api/projects/{id}/convert-to-execution` response (KAFF-415). */

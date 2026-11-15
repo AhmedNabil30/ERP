@@ -90,6 +90,7 @@ public static class ResultExtensions
         ErrorType.NotFound => StatusCodes.Status404NotFound,
         ErrorType.Conflict => StatusCodes.Status409Conflict,
         ErrorType.Locked => StatusCodes.Status423Locked,
+        ErrorType.TooLarge => StatusCodes.Status413PayloadTooLarge,
         _ => StatusCodes.Status500InternalServerError,
     };
 }

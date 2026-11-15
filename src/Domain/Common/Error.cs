@@ -38,6 +38,9 @@ public enum ErrorType
     /// keeps it.
     /// </remarks>
     Locked = 6,
+
+    /// <summary>The request body is larger than the endpoint accepts. 413.</summary>
+    TooLarge = 7,
 }
 
 /// <summary>
@@ -68,4 +71,6 @@ public sealed record Error(string Code, string MessageKey, ErrorType Type)
     public static Error Unauthenticated(string code, string messageKey) => new(code, messageKey, ErrorType.Unauthenticated);
 
     public static Error Locked(string code, string messageKey) => new(code, messageKey, ErrorType.Locked);
+
+    public static Error TooLarge(string code, string messageKey) => new(code, messageKey, ErrorType.TooLarge);
 }

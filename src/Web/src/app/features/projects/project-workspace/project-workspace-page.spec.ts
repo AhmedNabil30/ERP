@@ -9,7 +9,7 @@ import { Boq, BoqsApi } from '../../../core/boqs/boqs.api';
 import { ExtractSummary, ExtractsApi, WaitingOnItem } from '../../../core/extracts/extracts.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { HeaderActionsService } from '../../../core/layout/header-actions.service';
-import { ContractType, ProjectDetail, ProjectProgress, ProjectsApi, TeamMember } from '../../../core/projects/projects.api';
+import { ContractType, ProjectDetail, ProjectProgress, ProjectsApi, ProjectTabs, TeamMember } from '../../../core/projects/projects.api';
 import { ProjectWorkspacePage, designFeeOf } from './project-workspace-page';
 
 /**
@@ -54,8 +54,8 @@ class FakeI18nService implements Pick<I18nService, 't' | 'locale' | 'formatAmoun
   }
 }
 
-const OWNER_TABS = { overview: true, boq: true, dailyLog: true, extracts: true, team: true };
-const JUNIOR_TABS = { overview: true, boq: false, dailyLog: true, extracts: false, team: true };
+const OWNER_TABS: ProjectTabs = { overview: true, boq: true, dailyLog: true, extracts: true, team: true, dailyLogMode: 'review' };
+const JUNIOR_TABS: ProjectTabs = { overview: true, boq: false, dailyLog: true, extracts: false, team: true, dailyLogMode: 'write' };
 const MONEY = {
   certifiedToDate: '110734.6500',
   billedToDate: '88587.7200',

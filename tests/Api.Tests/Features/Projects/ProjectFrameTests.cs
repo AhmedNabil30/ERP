@@ -73,6 +73,29 @@ public sealed class ProjectFrameTests : IAsyncLifetime
         tabs.GetProperty("team").GetBoolean().Should().Be(team);
     }
 
+    [Theory]
+    [InlineData("owner", "review")]
+    [InlineData("supervisor", "write")]
+    [InlineData("junior", "write")]
+    [InlineData("technicalOffice", null)]
+    [InlineData("finance", null)]
+    [InlineData("marketing", null)]
+    public async Task The_daily_log_tab_says_whether_the_caller_writes_or_only_reviews(string who, string? mode)
+    {
+        using JsonDocument body = await ReadAsync(Who(who), $"/api/projects/{_projectId}");
+        JsonElement tabs = body.RootElement.GetProperty("tabs");
+
+        if (mode is null)
+        {
+            tabs.GetProperty("dailyLog").GetBoolean().Should().BeFalse();
+            tabs.GetProperty("dailyLogMode").ValueKind.Should().Be(JsonValueKind.Null);
+        }
+        else
+        {
+            tabs.GetProperty("dailyLogMode").GetString().Should().Be(mode);
+        }
+    }
+
     [Fact]
     public async Task The_frame_carries_name_client_status_contract_type_signed_stage_and_archived()
     {

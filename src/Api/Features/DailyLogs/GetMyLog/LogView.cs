@@ -116,7 +116,9 @@ internal static class LogView
             .OrderBy(entry => entry.OccurredAt)
             .ToListAsync(cancellationToken))
             .Select(entry => new PhotoLine(
-                entry.Id, entry.FileReference, entry.Caption, entry.IsPublished, entry.OccurredAt, Flag(entry.CreatedAt)))];
+                entry.Id, entry.FileReference, entry.Caption,
+                Guid.TryParse(entry.FileReference, out _) ? PhotoRoute.Of(log.ProjectId, entry.FileReference) : null,
+                entry.IsPublished, entry.OccurredAt, Flag(entry.CreatedAt)))];
 
         // Description and time only. The amount is never read into the model.
         List<ExpenseDraftLine> drafts = [.. (await database.SiteExpenseDrafts.AsNoTracking()

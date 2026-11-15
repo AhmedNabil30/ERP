@@ -40,6 +40,7 @@ public sealed partial class DailyLogTests : IAsyncLifetime
     private readonly ConcurrentDictionary<(Guid Project, Guid Actor), Lazy<Task>> _checkedIn = new();
     private Guid _itemId;
     private Guid _workerId;
+    private string _photoRoot = string.Empty;
 
     public DailyLogTests(PostgresDatabase database) => _database = database;
 
@@ -48,7 +49,8 @@ public sealed partial class DailyLogTests : IAsyncLifetime
         await SeedAsync();
         // The server clock is fixed on the day the tests write their entries on (2026-09-25, noon UTC), so "today" is that day.
         _clock = new TestClock(new DateTimeOffset(2026, 9, 25, 12, 0, 0, TimeSpan.Zero) - DateTimeOffset.UtcNow);
-        _factory = new KaffApiFactory(_database.ConnectionString, clock: _clock);
+        _photoRoot = Path.Combine(Path.GetTempPath(), "kaff-photo-tests-" + Guid.NewGuid().ToString("N"));
+        _factory = new KaffApiFactory(_database.ConnectionString, clock: _clock, sitePhotoRoot: _photoRoot);
         _client = _factory.CreateClient();
     }
 
@@ -56,6 +58,11 @@ public sealed partial class DailyLogTests : IAsyncLifetime
     {
         _client.Dispose();
         await _factory.DisposeAsync();
+
+        if (Directory.Exists(_photoRoot))
+        {
+            Directory.Delete(_photoRoot, recursive: true);
+        }
     }
 
     // ---- AC-600-A -----------------------------------------------------------------------------------------------
@@ -402,7 +409,7 @@ public sealed partial class DailyLogTests : IAsyncLifetime
         (await SendAsync(HttpMethod.Post, $"{Logs(project)}/materials", _engineerA,
             new { entryId = Guid.NewGuid(), materialType = "Cement", quantity = 30m, unit = "bag", isStockpile = true, occurredAt = At(9, 0) })).StatusCode.Should().Be(HttpStatusCode.Created);
         (await SendAsync(HttpMethod.Post, $"{Logs(project)}/photos", _engineerA,
-            new { entryId = Guid.NewGuid(), fileReference = "photos/a.jpg", caption = "slab", occurredAt = At(9, 0) })).StatusCode.Should().Be(HttpStatusCode.Created);
+            new { entryId = Guid.NewGuid(), fileReference = await UploadedAsync(project), caption = "slab", occurredAt = At(9, 0) })).StatusCode.Should().Be(HttpStatusCode.Created);
         (await SendAsync(HttpMethod.Post, $"{Logs(project)}/expense-drafts", _engineerA,
             new { entryId = Guid.NewGuid(), description = "Fuel", amount = "350.0000", occurredAt = At(9, 0) })).StatusCode.Should().Be(HttpStatusCode.Created);
 
@@ -729,7 +736,8 @@ public sealed partial class DailyLogTests : IAsyncLifetime
         return (project, line);
     }
 
-    private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string route, Guid actorId, object? body, bool autoCheckIn = true)
+    private async Task<HttpResponseMessage> SendAsync(
+        HttpMethod method, string route, Guid actorId, object? body, bool autoCheckIn = true, HttpContent? content = null)
     {
         if (autoCheckIn && method == HttpMethod.Post && NeedsCheckIn(route, out Guid routeProject))
         {
@@ -738,7 +746,11 @@ public sealed partial class DailyLogTests : IAsyncLifetime
 
         using var request = new HttpRequestMessage(method, new Uri(route, UriKind.Relative));
 
-        if (body is not null)
+        if (content is not null)
+        {
+            request.Content = content;
+        }
+        else if (body is not null)
         {
             request.Content = JsonContent.Create(body);
         }

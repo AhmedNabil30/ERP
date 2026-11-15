@@ -49,6 +49,20 @@ public static class DailyLogErrors
     public static readonly Error FileReferenceRequired =
         Error.Validation("daily_log.file_reference_required", "errors.daily_log.file_reference_required");
 
+    /// <summary>The photo reference is not one this project holds: not an id, or an id with no stored file in this project.</summary>
+    public static readonly Error FileReferenceInvalid =
+        Error.Validation("daily_log.file_reference_invalid", "errors.daily_log.file_reference_invalid");
+
+    /// <summary>The uploaded bytes are not a JPEG, PNG or WebP, whatever the client called them.</summary>
+    public static readonly Error PhotoNotAnImage =
+        Error.Validation("daily_log.photo_not_an_image", "errors.daily_log.photo_not_an_image");
+
+    public static readonly Error PhotoTooLarge =
+        Error.TooLarge("daily_log.photo_too_large", "errors.daily_log.photo_too_large");
+
+    public static readonly Error PhotoNotFound =
+        Error.NotFound("daily_log.photo_not_found", "errors.daily_log.photo_not_found");
+
     public static readonly Error UnknownField =
         Error.Validation("daily_log.unknown_field", "errors.daily_log.unknown_field");
 

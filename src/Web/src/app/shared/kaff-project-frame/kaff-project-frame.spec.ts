@@ -24,7 +24,7 @@ const DETAIL: ProjectDetail = {
   stage: 'Execution',
   isSigned: true,
   loggedToday: false,
-  tabs: { overview: true, boq: true, dailyLog: true, extracts: true, team: true },
+  tabs: { overview: true, boq: true, dailyLog: true, extracts: true, team: true, dailyLogMode: 'write' },
 };
 
 async function render(detail: ProjectDetail | Error, current: FrameTab = 'boq') {

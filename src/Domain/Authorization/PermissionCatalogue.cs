@@ -471,6 +471,7 @@ public static class PermissionCatalogue
             // back-dated flag, and they read other engineers' logs to correct them.
             new(Permission.DailyLogCrewCorrect, PermissionScope.ProjectScoped, [owner, engineerJunior], "§8, §9 - D-217, D-218"),
             new(Permission.DailyLogReview, PermissionScope.ProjectScoped, [owner, engineerSupervisor], "§8, §9 - D-217, D-218"),
+            new(Permission.DailyLogRead, PermissionScope.ProjectScoped, [owner, engineerJunior], "§8, §9 - D-225 item 2"),
 
             // KAFF-420. The project frame's tabs and the overview's money, decided by the server (D-217 item 37, D-218 items 5, 6).
             // The junior site engineer holds none of the three. ExtractRead keeps every other ProjectRead holder, Head of

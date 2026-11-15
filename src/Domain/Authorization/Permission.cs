@@ -152,6 +152,12 @@ public enum Permission
     /// </summary>
     DailyLogReview = 28,
 
+    /// <summary>
+    /// D-225 item 2 - open a site photo of a daily log. Whoever may read a log: the owner, and any assigned site engineer (the
+    /// handler narrows a junior to the photos he recorded himself). Money-free; reads only.
+    /// </summary>
+    DailyLogRead = 29,
+
     // ---- Gates ----
 
     /// <summary>spec.md §7, §9 — the Technical Office gates quantities, never money.</summary>

@@ -13,6 +13,7 @@ using Kaff.Domain.Identity;
 using Kaff.Infrastructure;
 using Kaff.Infrastructure.Persistence;
 using Kaff.Infrastructure.Persistence.Seeding;
+using Kaff.Infrastructure.SitePhotos;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -63,6 +64,10 @@ builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 builder.Services.AddSingleton<StaffSessionMinter>();
 
 builder.Services.AddKaffInfrastructure(connectionString);
+
+// Site photos (D-225 item 2): a folder on disk, outside the database. Kaff:SitePhotos:Root names it; deployment mounts a volume there.
+builder.Services.Configure<SitePhotoOptions>(builder.Configuration.GetSection(SitePhotoOptions.SectionName));
+builder.Services.AddSingleton<ISitePhotoStore, LocalDiskSitePhotoStore>();
 
 // ---------------------------------------------------------------------------------------------
 //  Authentication
@@ -304,6 +309,9 @@ WebApplication app = builder.Build();
 //  spec.md §6.1 requires to live in the database would simply be absent. Outside Development that is
 //  a reason to refuse to start.
 // ---------------------------------------------------------------------------------------------
+
+// Built here so the photo folder exists before the first upload.
+_ = app.Services.GetRequiredService<ISitePhotoStore>();
 
 bool applyMigrations = app.Configuration.GetValue("Kaff:ApplyMigrationsOnStartup", app.Environment.IsDevelopment());
 

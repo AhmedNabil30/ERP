@@ -68,7 +68,7 @@ const project = (extra: Record<string, unknown> = {}) => ({
   isSigned: false,
   isArchived: false,
   followUpEndsOn: null,
-  tabs: { overview: true, boq: true, dailyLog: false, extracts: false, team: true },
+  tabs: { overview: true, boq: true, dailyLog: false, extracts: false, team: true, dailyLogMode: null },
   ...extra,
 });
 

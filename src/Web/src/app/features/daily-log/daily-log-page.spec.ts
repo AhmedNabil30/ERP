@@ -173,7 +173,7 @@ async function createPage(api: FakeDailyLogApi, status = 'Active') {
             stage: 'Execution',
             isSigned: true,
             isArchived: false,
-            tabs: { overview: true, boq: true, dailyLog: true, extracts: false, team: true },
+            tabs: { overview: true, boq: true, dailyLog: true, extracts: false, team: true, dailyLogMode: 'write' },
           }),
         },
       },
@@ -704,7 +704,7 @@ describe('DailyLogPage', () => {
         new FakeDailyLogApi(
           log({
             quantities: [QUANTITY],
-            photos: [{ entryId: 'p1', fileReference: 'secret/file.jpg', caption: null, isPublished: false, occurredAt: '2026-11-10T09:00:00+02:00' }],
+            photos: [{ entryId: 'p1', fileReference: 'secret/file.jpg', caption: null, url: null, isPublished: false, occurredAt: '2026-11-10T09:00:00+02:00' }],
           }),
         ),
       );

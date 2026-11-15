@@ -12,9 +12,10 @@ public enum ProjectStage
 
 /// <summary>
 /// The tabs of the project frame the caller may open, decided by the server (D-218 items 5, 6). A <c>false</c> tab is a route
-/// the server refuses to this caller.
+/// the server refuses to this caller. <c>DailyLogMode</c> says how the daily log tab opens: <c>write</c> for a caller who records
+/// the log (an assigned site engineer), <c>review</c> for one who only reads it (the owner), and null when there is no tab (D-225 item 1).
 /// </summary>
-public sealed record ProjectTabs(bool Overview, bool Boq, bool DailyLog, bool Extracts, bool Team);
+public sealed record ProjectTabs(bool Overview, bool Boq, bool DailyLog, bool Extracts, bool Team, string? DailyLogMode);
 
 internal static class StageOf
 {

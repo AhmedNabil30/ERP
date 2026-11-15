@@ -112,13 +112,21 @@ internal static class Handler
     /// the daily log is <c>DailyLogWrite</c> (any assigned site engineer) or <c>DailyLogReview</c> (owner, supervising engineer).
     /// The overview and the team are open to every <c>ProjectRead</c> holder, which is what reached this handler.
     /// </summary>
-    private static async Task<ProjectTabs> TabsAsync(IAuthorizationService authorization, ClaimsPrincipal user) => new(
-        Overview: true,
-        Boq: await CallerPermissions.HoldsAsync(authorization, user, Permission.BoqRead),
-        DailyLog: await CallerPermissions.HoldsAsync(authorization, user, Permission.DailyLogWrite)
-            || await CallerPermissions.HoldsAsync(authorization, user, Permission.DailyLogReview),
-        Extracts: await CallerPermissions.HoldsAsync(authorization, user, Permission.ExtractRead),
-        Team: true);
+    private static async Task<ProjectTabs> TabsAsync(IAuthorizationService authorization, ClaimsPrincipal user)
+    {
+        // Writing wins: a supervising engineer holds both, and he records the log.
+        string? mode = await CallerPermissions.HoldsAsync(authorization, user, Permission.DailyLogWrite) ? "write"
+            : await CallerPermissions.HoldsAsync(authorization, user, Permission.DailyLogReview) ? "review"
+            : null;
+
+        return new ProjectTabs(
+            Overview: true,
+            Boq: await CallerPermissions.HoldsAsync(authorization, user, Permission.BoqRead),
+            DailyLog: mode is not null,
+            Extracts: await CallerPermissions.HoldsAsync(authorization, user, Permission.ExtractRead),
+            Team: true,
+            DailyLogMode: mode);
+    }
 
     private static async Task<ProjectMoney> MoneyAsync(KaffDbContext database, Guid projectId, CancellationToken cancellationToken)
     {

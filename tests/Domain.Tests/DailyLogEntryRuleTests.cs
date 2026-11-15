@@ -210,5 +210,16 @@ public sealed class DailyLogEntryRuleTests
         definition.Grants.Single(grant => grant.Role == Role.SiteEngineer).MinimumAssignmentLevel.Should().Be(AssignmentLevel.Supervisor);
     }
 
+    [Fact]
+    public void Opening_a_site_photo_is_the_owner_and_any_assigned_site_engineer_and_nobody_else()
+    {
+        PermissionDefinition definition = PermissionCatalogue.Of(Permission.DailyLogRead);
+
+        definition.Scope.Should().Be(PermissionScope.ProjectScoped);
+        definition.TouchesMoney.Should().BeFalse();
+        definition.Grants.Select(grant => grant.Role).Should().BeEquivalentTo([Role.Owner, Role.SiteEngineer]);
+        definition.Grants.Single(grant => grant.Role == Role.SiteEngineer).MinimumAssignmentLevel.Should().Be(AssignmentLevel.Junior);
+    }
+
     private static DailyLog OpenLog() => DailyLog.Open(Guid.NewGuid(), Guid.NewGuid(), Noon, Noon, Rule);
 }

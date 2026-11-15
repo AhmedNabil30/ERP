@@ -420,7 +420,7 @@ public sealed partial class DailyLogTests
             new { entryId = Guid.NewGuid(), materialType = "Cement", quantity = 3m, unit = "bag", isStockpile = true, occurredAt = At(9, 0) }))
             .StatusCode.Should().Be(HttpStatusCode.Created);
         (await SendAsync(HttpMethod.Post, $"{Logs(project)}/photos", _engineerA,
-            new { entryId = Guid.NewGuid(), fileReference = "photos/a.jpg", occurredAt = At(9, 0) }))
+            new { entryId = Guid.NewGuid(), fileReference = await UploadedAsync(project), occurredAt = At(9, 0) }))
             .StatusCode.Should().Be(HttpStatusCode.Created);
         (await ExecutedAsync(line)).Should().Be(5m);
     }

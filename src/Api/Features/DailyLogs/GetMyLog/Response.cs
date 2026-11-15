@@ -96,10 +96,12 @@ public sealed record MaterialLine(
     DateTimeOffset OccurredAt,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? BackDated);
 
+/// <summary>A recorded photo. <c>Url</c> is the route that fetches the file; it is null for a reference that is not a stored id.</summary>
 public sealed record PhotoLine(
     Guid EntryId,
     string FileReference,
     string? Caption,
+    string? Url,
     bool IsPublished,
     DateTimeOffset OccurredAt,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? BackDated);
