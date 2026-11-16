@@ -16934,3 +16934,12 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 1. **Signing makes the project active, in the same save.** `spec.md` §13 gives `Setup → Active` and names no trigger; this is the trigger.
 2. **The word shown is unchanged from D-228 item 4:** «لم تبدأ» from signing until the first daily log entry, then «جاري العمل».
 3. **Rows already signed and still in `Setup` are not rewritten by this decision.** None exists outside development data: staging has never received the signing flow.
+
+
+## D-231 — Nabil: salaried employees and day-labour workers are separated on screen · 2026-11-16
+
+**Source.** Nabil, in session with the Scrum Master, 2026-11-16: "we need to separate the employees who take a monthly salary from the workers on يومية."
+
+1. **Two destinations, not one list with a badge.** Today `employees` shows both populations in one list and marks each row with its kind. Salaried staff and day-labour workers get their own menu entry, their own list and their own add form, each with only the fields that population has.
+2. **The record underneath stays one register.** `spec.md` §10 already says two populations, nobody in both, and `EmployeeKind` is fixed at creation (KAFF-207, KAFF-208). This ruling changes the screens and the menu, not the entity. Read by the Scrum Master as a screen separation; if Nabil meant separate records as well, that is a different decision and he will say so when he sees the mock.
+3. **It goes through a mock and Nabil's approval before any build.**

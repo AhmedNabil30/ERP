@@ -237,3 +237,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-228 | 16908 | Nabil rules the team tab, when a design project converts, the recovery rate's label and the word for a signed project with no work yet · 2026-11-16 |
 | D-229 | 16920 | Nabil approves the team tab, the three-rate sign sheet and the after-signing states, and rules how a primary button behaves · 2026-11-16 |
 | D-230 | 16930 | Nabil rules that a project becomes active at signing · 2026-11-16 |
+| D-231 | 16939 | Nabil: salaried employees and day-labour workers are separated on screen · 2026-11-16 |
