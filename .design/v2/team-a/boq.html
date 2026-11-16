@@ -166,7 +166,6 @@ a.lnk{display:inline-flex;align-items:center;min-block-size:44px}
   .abar{flex:none;display:flex;flex-wrap:wrap;gap:12px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:var(--surface);border-block-start:1px solid var(--line)}
   .abar .menu{flex:none;min-inline-size:116px;block-size:60px;display:flex;align-items:center;justify-content:center;gap:10px;border:2px solid var(--fieldline);background:transparent;border-radius:var(--radius);font:700 1rem/1 var(--display)}
   .abar .btn{flex:1;block-size:60px;font-size:1.0625rem}
-  .abar .why{order:-1;flex-basis:100%}
   [data-sheet="1"] .abar{visibility:hidden}
   .nsheet{position:fixed;inset-inline:0;inset-block-end:0;z-index:70;max-block-size:90dvh;display:none;flex-direction:column;background:var(--bg);border-start-start-radius:var(--radius);border-start-end-radius:var(--radius);box-shadow:0 -12px 40px rgba(0,0,0,.35)}
   [data-sheet="1"] .scrim{display:block;z-index:65}
@@ -480,7 +479,7 @@ const added=id=>S.lines.some(l=>l.id===id);
 function setup(){
   const v=S.view;S.lines=[];S.ticks=new Set();S.rowErr={};S.pb=null;S.started=false;S.sx=null;S.q='';S.bq='';S.hold='';S.adv='';S.rec='';S.serr=false;S.cf={n:'',u:'',r:'',b:''};S.cerr=false;
   if(!['empty','base','blank','loading','failed','design'].includes(v))S.lines=LINES0.map(a=>({id:a[0],qty:a[1],s:a[2]}));
-  if(v==='pending')S.lines.push({id:'e1',qty:null});
+  if(v==='pending')S.lines[0].qty=null;
   if(v==='blank')S.started=true;
   if(v==='dropfail')S.rowErr.fx=true;
   if(v==='partial'){S.ticks=new Set(['e1','e2','fx','e3']);addMany([...S.ticks],true)}
@@ -525,9 +524,8 @@ function paneH(){return `<aside class="pane d-only" id="pane" aria-label="الك
 const paneSk=()=>`<aside class="pane d-only" aria-busy="true"><div class="pane-h"><h2>الكتالوج</h2></div><div class="pane-b">${[1,2,3,4,5,6].map(()=>`<div class="skr">${sk('55%')}${sk('25%')}</div>`).join('')}</div></aside>`;
 
 /* header */
-function primary(){if(isBuild()||S.view==='sign')return {ar:'توقيع المقايسة',ic:'check',act:'sign',off:pendN()>0};return null}
-const why=p=>p&&p.off?`<span class="fmsg why">${mi('info')}بنود بلا كمية: ${pendN()}</span>`:'';
-const pbtn=(p,cls)=>p?why(p)+`<button type="button" class="btn ${cls||''}" data-act="${p.act}" ${p.off?'disabled':''}>${i(p.ic,'s')}${p.ar}</button>`:'';
+function primary(){if(isBuild()||S.view==='sign')return {ar:'توقيع المقايسة',ic:'check',act:'sign'};return null}
+const pbtn=(p,cls)=>p?`<button type="button" class="btn ${cls||''}" data-act="${p.act}" ${p.off?'disabled':''}>${i(p.ic,'s')}${p.ar}</button>`:'';
 function header(){const v=S.view;
   const list=(isBuild()||v==='blank'||v==='empty'||v==='base');
   let meta='';
@@ -559,7 +557,7 @@ function baseList(){const q=S.bq.trim(),ok=b=>!q||b.n.includes(q);let o='',any=f
 function sxHtml(k){
   if(k==='base')return `<div class="grab"></div><div class="hd"><h2>مشروع سابق</h2><button type="button" class="ib" data-act="closesx" aria-label="إغلاق">${i('x')}</button></div><div class="bd"><div class="search">${i('search')}<input type="search" id="bq" value="${S.bq}" placeholder="اسم المشروع" aria-label="بحث"></div><div class="res-l" id="bl">${baseList()}</div></div>`;
   if(k==='sign'){const pf=(id,lab,v)=>{const m=S.serr?(v===''?'مطلوب':(isNaN(+v)||+v<0||+v>100?'من 0 إلى 100':'')):'';return `<div class="field"><label for="${id}">${lab}</label><div class="ctl money ${m?'err':''}"><input id="${id}" inputmode="decimal" dir="ltr" value="${v}" ${m?'aria-invalid="true"':''}><span class="aff">%</span></div>${m?`<div class="fmsg">${mi('err')}${m}</div>`:''}</div>`};
-    return `<div class="grab"></div><div class="hd"><h2>توقيع المقايسة</h2><button type="button" class="ib" data-act="closesx" aria-label="إغلاق">${i('x')}</button></div><div class="bd"><div class="field"><label>ستصبح قيمة التعاقد</label><div class="ctl money ro"><span class="val"><bdi dir="ltr">${fm(totalV()||0)}</bdi></span><span class="aff">ج.م</span></div></div><div class="two">${pf('hold','نسبة المحجوز',S.hold)}${pf('adv','نسبة الدفعة المقدمة',S.adv)}</div>${pf('rec','نسبة استرداد الدفعة المقدمة',S.rec)}<p class="lead">التوقيع يثبّت قيمة التعاقد على إجمالي المقايسة، وتُجمَّد البنود بعده فلا تُضاف ولا تُعدَّل ولا تُحذف.</p></div><div class="ft"><button type="button" class="btn" data-act="confirmsign">${i('check','s')}توقيع المقايسة</button><button type="button" class="btn sec2" data-act="closesx">إلغاء</button></div>`}
+    return `<div class="grab"></div><div class="hd"><h2>توقيع المقايسة</h2><button type="button" class="ib" data-act="closesx" aria-label="إغلاق">${i('x')}</button></div><div class="bd"><div class="field"><label>ستصبح قيمة التعاقد</label><div class="ctl money ro"><span class="val"><bdi dir="ltr">${fm(totalV()||0)}</bdi></span><span class="aff">ج.م</span></div></div><div class="two">${pf('hold','نسبة الحجز',S.hold)}${pf('adv','نسبة الدفعة المقدمة',S.adv)}</div>${pf('rec','نسبة الخصم من كل مستخلص',S.rec)}<p class="lead">التوقيع يثبّت قيمة التعاقد على إجمالي المقايسة، وتُجمَّد البنود بعده فلا تُضاف ولا تُعدَّل ولا تُحذف.</p></div><div class="ft"><button type="button" class="btn" data-act="confirmsign">${i('check','s')}توقيع المقايسة</button><button type="button" class="btn sec2" data-act="closesx">إلغاء</button></div>`}
   if(k==='custom'){const f=S.cf,e=S.cerr,fl=(id,lab,inner,bad)=>`<div class="field"><label for="${id}">${lab}</label><div class="ctl ${id==='cr'?'money':''} ${e&&bad?'err':''}">${inner}</div>${e&&bad?`<div class="fmsg">${mi('err')}مطلوب</div>`:''}</div>`;
     return `<div class="grab"></div><div class="hd"><h2>بند مخصص</h2><button type="button" class="ib" data-act="closesx" aria-label="إغلاق">${i('x')}</button></div><div class="bd">${fl('cn','اسم البند',`<input id="cn" type="text" value="${f.n}">`,!f.n.trim())}<div class="two">${fl('cu','الوحدة',`<input id="cu" type="text" value="${f.u}">`,!f.u.trim())}${fl('cr','السعر',`<input id="cr" inputmode="decimal" dir="ltr" value="${f.r}"><span class="aff">ج.م</span>`,!(+f.r>0))}</div>${fl('cb','الباب',`<select id="cb"><option value=""></option>${BABS.map(x=>`<option value="${x.id}" ${f.b===x.id?'selected':''}>${x.n}</option>`).join('')}</select>`,!f.b)}</div><div class="ft"><button type="button" class="btn" data-act="confirmcustom">${i('plus','s')}أضف للمقايسة</button><button type="button" class="btn sec2" data-act="closesx">إلغاء</button></div>`}
   return `<div class="grab"></div><div class="hd"><h2>إضافة بنود</h2><button type="button" class="ib" data-act="closesx" aria-label="إغلاق">${i('x')}</button></div><div class="bd flush"><div class="sbar"><div class="search">${i('search')}<input type="search" id="psq" value="${S.q}" placeholder="اسم البند" aria-label="بحث"></div><button type="button" class="btn sec2 sm" data-act="custom">${i('plus','s')}بند مخصص</button></div><div id="pb">${groupsH('sheet')}</div></div><div class="ft" id="pf">${pbanH()}${addBtn(false)}</div>`}
@@ -583,7 +581,7 @@ function upd(id){const l=S.lines.find(x=>x.id===id),t=lineTot(l);
   const p=primary();$('#pri').innerHTML=pbtn(p);$('#abtn').innerHTML=pbtn(p);bind()}
 function bind(){
   document.querySelectorAll('[data-act]').forEach(b=>{const a=b.dataset.act;
-    if(a==='sign')b.onclick=()=>openSx('sign');
+    if(a==='sign')b.onclick=()=>{const k=S.lines.find(l=>!(l.qty>0));if(k){const inp=document.querySelector(`[data-q="${k.id}"]`);if(inp){inp.scrollIntoView({block:'center'});inp.focus()}return}openSx('sign')};
     if(a==='closesx')b.onclick=()=>openSx(null);
     if(a==='confirmsign')b.onclick=()=>{const h=$('#hold').value.trim(),d=$('#adv').value.trim(),rc=$('#rec').value.trim();S.hold=h;S.adv=d;S.rec=rc;const bad=v=>v===''||isNaN(+v)||+v<0||+v>100;
       if(bad(h)||bad(d)||bad(rc)){S.serr=true;openSx('sign');return}location.href='project.html?type=ls&view=signed'+(EMBED?'&embed=1':'')};

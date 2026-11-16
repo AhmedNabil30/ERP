@@ -333,11 +333,13 @@ body.flow .app,body.flow .main{block-size:auto;overflow:visible}
     <div class="grp" role="group" aria-label="العرض"><b>العرض</b>
       <button type="button" data-view="normal" aria-pressed="true">المالك</button>
       <button type="button" data-view="turn" aria-pressed="false">المالك: دوره</button>
-      <button type="button" data-view="site" aria-pressed="false">مهندس موقع</button>
-      <button type="button" data-view="sitedone" aria-pressed="false">مهندس موقع: سجّل اليوم</button>
+      <button type="button" data-view="site" aria-pressed="false">مهندس الموقع</button>
+      <button type="button" data-view="sitedone" aria-pressed="false">مهندس الموقع: سجّل اليوم</button>
       <button type="button" data-view="nolog" aria-pressed="false">لا يوجد سجل</button>
       <button type="button" data-view="setup" aria-pressed="false">المقايسة غير موقّعة</button>
-      <button type="button" data-view="signed" aria-pressed="false">بعد التوقيع (اقتراح)</button>
+      <button type="button" data-view="signed" aria-pressed="false">بعد التوقيع: المالك</button>
+      <button type="button" data-view="signedto" aria-pressed="false">بعد التوقيع: المكتب الفني</button>
+      <button type="button" data-view="designdone" aria-pressed="false">تصميم منتهٍ</button>
       <button type="button" data-view="archived" aria-pressed="false">مؤرشف</button>
       <button type="button" data-view="loading" aria-pressed="false">تحميل</button>
       <button type="button" data-view="failed" aria-pressed="false">تعذّر التحميل</button>
@@ -396,18 +398,19 @@ const P={
  ds:{name:'تصميم فيلا الشروق',client:'طارق فؤاد',type:'تصميم'}};
 const CV=4672694.01;
 const BABS0=[['أعمال مباني',11.921],['أعمال تشطيبات',16.992],['أعمال نجارة',0],['أعمال معدنية',0],['أعمال صحية',0],['أعمال كهرباء',0]];
-const BABS=()=>(S.view==='nolog'||S.view==='signed')?BABS0.map(b=>[b[0],0]):BABS0;
-const TEAM=[['سارة عادل','المكتب الفني'],['منى سامي','المالية'],['هبة فؤاد','مهندس موقع · مشرف'],['خالد منصور','مهندس موقع · مبتدئ']];
+const BABS=()=>(S.view==='nolog'||SIGNED())?BABS0.map(b=>[b[0],0]):BABS0;
+const TEAM=[['سارة عادل','المكتب الفني'],['منى سامي','المالية'],['هبة فؤاد','مهندس الموقع · مشرف'],['خالد منصور','مهندس الموقع · مبتدئ']];
 
 /* ============ state ============ */
 const q0=new URLSearchParams(location.search);
-const S={type:q0.get('type')||'ls',view:q0.get('view')||'normal',tab:q0.get('tab')||'ov',terms:q0.get('terms')==='1'||q0.get('view')==='signed'};
+const S={type:q0.get('type')||'ls',view:q0.get('view')||'normal',tab:q0.get('tab')||'ov',terms:q0.get('terms')==='1'};
 const EMBED=q0.get('embed')==='1';
 const $=s=>document.querySelector(s);
 const H=document.documentElement;
+const SIGNED=()=>['signed','signedto'].includes(S.view);
 const SITE=()=>['site','sitedone','nolog'].includes(S.view);
 const UNSIGNED=()=>['setup','archived'].includes(S.view);
-const USERS={owner:{n:'أحمد نبيل',r:'المالك'},site:{n:'خالد منصور',r:'مهندس موقع · مبتدئ'}};
+const USERS={owner:{n:'أحمد نبيل',r:'المالك'},site:{n:'خالد منصور',r:'مهندس الموقع · مبتدئ'},to:{n:'سارة عادل',r:'المكتب الفني'}};
 const NAV=[{id:'projects',g:'core',ar:'المشاريع'},{id:'catalog',g:'core',ar:'كتالوج الأسعار'},{id:'bab',g:'core',ar:'الأبواب'},{id:'employees',g:'core',ar:'الموظفون'},{id:'subs',g:'core',ar:'مقاولو الباطن'},{id:'suppliers',g:'core',ar:'الموردون'},{id:'clients',g:'core',ar:'العملاء'},{id:'users',g:'admin',ar:'المستخدمون'},{id:'depts',g:'admin',ar:'الأقسام'},{id:'audit',g:'admin',ar:'سجل التدقيق'}];
 const GROUPS={core:'البيانات الأساسية',admin:'الإدارة'};
 function navHtml(){let o='';for(const g of['core','admin']){const it=NAV.filter(n=>n.g===g);o+=`<div class="grp"><div class="grp-h">${GROUPS[g]}</div>`+it.map(n=>`<a class="row" href="#" ${n.id==='projects'?'aria-current="page"':''} title="${n.ar}">${i(n.id)}<span class="lbl">${n.ar}</span></a>`).join('')+'</div>'}return o}
@@ -418,9 +421,9 @@ function primaryAction(){
   if(['failed','refused','loading'].includes(v))return null;
   if(v==='archived')return {ar:'إعادة فتح',ic:'redo'};
   if(SITE())return {ar:'سجل يومي جديد',ic:'plus'};
-  if(S.type==='ds')return v==='setup'?{ar:'توقيع التعاقد',ic:'check'}:{ar:'تحويل إلى تنفيذ',ic:'left'};
+  if(S.type==='ds')return v==='setup'?{ar:'توقيع التعاقد',ic:'check'}:v==='designdone'?{ar:'تحويل إلى تنفيذ',ic:'left'}:null;
   if(S.type!=='ls')return null;
-  if(v==='signed')return {ar:'إضافة مهندس موقع',ic:'uadd',go:'project-team.html'};
+  if(v==='signed')return {ar:'إضافة شخص',ic:'uadd',go:'project-team.html'};
   if(v==='setup')return {ar:'فتح المقايسة',ic:'list'};
   if(v==='turn')return {ar:'فتح المستخلص',ic:'doc'};
   return null;
@@ -429,16 +432,16 @@ function primaryAction(){
 /* ============ the project frame: header, stage line, tabs ============ */
 /* stages follow ProjectStatus: Setup, Active, HandoverPending and Handover, UnderWarranty, Closed. Extracts are not a stage. */
 const STAGES=['المقايسة','التنفيذ','التسليم','الضمان','الإقفال'];
-const STAGES_DS=['التعاقد',...STAGES.slice(1)];
+const STAGES_DS=['التعاقد','التصميم','التسليم'];
 function stageLine(){
-  const cur=S.view==='setup'?0:1;
+  const cur=S.view==='setup'?0:(S.type==='ds'&&S.view==='designdone')?2:1;
   return `<ol class="stl" aria-label="مرحلة المشروع">${(S.type==='ds'?STAGES_DS:STAGES).map((s,k)=>{const c=k<cur?'done':k===cur?'cur':'';return `<li class="${c}" ${k===cur?'aria-current="step"':''}><span class="mk">${k<cur?mi('check'):''}</span>${s}</li>`}).join('')}</ol>`}
 function header(){
   const p=P[S.type],v=S.view;
   const back=`<a class="back" href="#">${i('left','s')}المشاريع</a>`;
   if(v==='loading')return `<div class="phl">${back}<div class="ttl"><h1><span class="sk b" style="inline-size:300px;max-inline-size:70vw;block-size:34px"></span></h1></div><span class="sk b stl sk-l"></span></div><div class="acts d-only"></div>`;
   if(v==='failed'||v==='refused')return `<div class="phl">${back}<div class="ttl"><h1>المشروع</h1></div></div>`;
-  const st=v==='setup'?'none':'run';
+  const st=v==='setup'||SIGNED()?'none':v==='designdone'?'done':'run';
   const pa=primaryAction();
   const meta=SITE()?'':`<p class="meta"><a class="lnk" href="#" style="min-block-size:0">${p.client}</a><span class="badge t">${p.type}</span></p>`;
   return `<div class="phl">${back}<div class="ttl"><h1>${p.name}</h1>${v==='archived'?'':pill(st)}</div>${meta}${v==='archived'?'':stageLine()}</div>
@@ -466,11 +469,12 @@ function babList(){
 
 /* ============ the overview tab ============ */
 function waiting(){
-  if(S.type==='ls'&&S.view==='signed')return `<div class="ban note" role="status">${mi('info')}<span><b>لا يوجد مهندس موقع</b></span></div>`;
+  if(S.type==='ls'&&SIGNED())return `<div class="ban note" role="status">${mi('info')}<span><b>لم يُسنَد مهندس الموقع بعد</b></span></div>`;
   if(S.type!=='ls'||SITE()||UNSIGNED())return '';
   const mine=S.view==='turn';
   return `<div class="ban note" role="status">${mi('clock')}<span><b>المستخلص 3</b> ${mine?'عندك: اعتماد المالك':'عند المكتب الفني: اعتماد الكميات'}</span></div>`}
 function stateLine(){
+  if(S.view==='setup'&&S.type==='ds')return `<div class="ban note" role="status">${mi('clock')}<span>تنتهي فترة المتابعة في ${D.deadline}.</span></div>`;
   if(S.view==='setup')return `<div class="ban note" role="status">${mi('clock')}<span><b>المشروع غير موقّع.</b> تنتهي فترة المتابعة في ${D.deadline}.</span></div>`;
   if(S.view==='archived')return `<div class="ban note" role="status">${mi('info')}<span><b>المشروع مؤرشف</b></span></div>`;
   return ''}
@@ -480,26 +484,28 @@ function hero(pct,stats){
 function overview(){
   const v=S.view,site=SITE();
   let out=stateLine()+waiting();
-  if(S.type==='ds'&&S.view==='setup'){const nul=`<span class="nul">${mi('info')}<b>لم تُحدَّد بعد</b></span>`;return out+kv([['مساحة المشروع',nul],['سعر المتر',fig(450,{u:'ج.م'})],['قيمة التصميم',nul]])}
+  if(S.type==='ds'&&S.view==='setup'){const nul='<b>لم تُحدَّد بعد</b>';return out+kv([['مساحة المشروع',nul],['سعر المتر',fig(450,{u:'ج.م'})],['قيمة التصميم',nul]])}
   if(S.type==='ls'&&UNSIGNED())
-    return out+kv([['قيمة العقد',`<span class="nul">${mi('info')}<b>لم تُحدَّد بعد</b></span>`]]);
+    return out+kv([['قيمة العقد','<b>لم تُحدَّد بعد</b>']]);
   if(S.type==='ls'){
-    const pct=(v==='nolog'||v==='signed')?0:12.94;
-    const z=v==='signed';
+    const pct=(v==='nolog'||SIGNED())?0:12.94;
+    const z=SIGNED();
     if(site){
       const none=v==='nolog',done=v==='sitedone';
       const tag=done?`<span class="badge">${mi('check')}سُجِّلت اليوم</span>`:`<span class="badge q">${mi('clock')}لم تُسجَّل اليوم</span>`;
       return out+hero(pct)+babList()+kv([['آخر يومية',none?'<b>لا يوجد</b>':(done?D.today:D.yest),tag]]);
     }
+    if(SIGNED())out+=kv([['نسبة الحجز',pc(20,0)],['نسبة الدفعة المقدمة',pc(20,0)],['نسبة الخصم من كل مستخلص',pc(25,0)]]);
     out+=hero(pct,[['قيمة العقد',fig(CV,{u:'ج.م'})],['منفَّذ في الموقع',fig(z?0:604646.65)],['معتمد في المستخلصات',fig(z?0:110734.65)]])+babList();
     out+=v==='partial'?retry('تعذّر تحميل بيانات المال.'):kv([['المطالَب به',fig(z?0:88587.72,{u:'ج.م'})],['المحصَّل',fig(0)],['المتبقي على العميل',fig(z?0:88587.72)]]);
-    out+=`<button type="button" class="lnk disc" id="termsbtn" aria-expanded="${S.terms}">شروط العقد${mi('chev')}</button>`
-      +(S.terms?kv([['نسبة الحجز',pc(20,0)],['نسبة الدفعة المقدمة',pc(20,0)],['نسبة استرداد الدفعة المقدمة',pc(25,0)],['تاريخ توقيع العقد',D.signed],['تاريخ بدء التنفيذ',D.start]]):'');
+    if(!SIGNED())out+=`<button type="button" class="lnk disc" id="termsbtn" aria-expanded="${S.terms}">شروط العقد${mi('chev')}</button>`
+      +(S.terms?kv([['نسبة الحجز',pc(20,0)],['نسبة الدفعة المقدمة',pc(20,0)],['نسبة الخصم من كل مستخلص',pc(25,0)],['تاريخ توقيع العقد',D.signed],['تاريخ بدء التنفيذ',D.start]]):'');
     return out;
   }
   if(S.type==='cp')return out+kv([['نسبة الإشراف',pc(10,0)],['التكلفة حتى الآن',fig(885000,{u:'ج.م'})],['الإشراف حتى الآن',fig(80000)]]);
-  const rows=[['المفهوم',100],['المخطط',100],['ثلاثي الأبعاد',55],['تطوير التصميم',0],['الوثائق النهائية',0]];
-  return out+hero(50)+kv([['مساحة المشروع',`<bdi class="fig" dir="ltr">400<span class="u">م²</span></bdi>`],['سعر المتر',fig(450)],['قيمة التصميم',fig(180000,{u:'ج.م'})]])
+  const fin=v==='designdone';
+  const rows=fin?[['المفهوم',100],['المخطط',100],['ثلاثي الأبعاد',100],['تطوير التصميم',100],['الوثائق النهائية',100]]:[['المفهوم',100],['المخطط',100],['ثلاثي الأبعاد',55],['تطوير التصميم',0],['الوثائق النهائية',0]];
+  return out+hero(fin?100:50)+kv([['مساحة المشروع',`<bdi class="fig" dir="ltr">400<span class="u">م²</span></bdi>`],['سعر المتر',fig(450)],['قيمة التصميم',fig(180000,{u:'ج.م'})]])
     +`<div class="sec-h"><h3>المراحل</h3></div><ul class="lst">${rows.map(r=>`<li><b>${r[0]}</b><div class="bd">${trk(r[1],r[0])}${pc(r[1],0)}</div></li>`).join('')}</ul>`;
 }
 /* ============ the team tab (its own tab view) ============ */
@@ -519,7 +525,8 @@ function abar(){const pa=primaryAction();return `<button type="button" class="me
 
 function centerTab(){const cur=document.querySelector('.tab[aria-current="page"]');if(cur&&S.tab!=='ov')cur.scrollIntoView({inline:'center',block:'nearest'})}
 function draw(){
-  if(['signed','turn','partial','nolog','site','sitedone'].includes(S.view)&&S.type!=='ls')S.view='normal';
+  if(['signed','signedto','turn','partial','nolog','site','sitedone'].includes(S.view)&&S.type!=='ls')S.view='normal';
+  if(S.view==='designdone'&&S.type!=='ds')S.type='ds';
   if(['setup','archived'].includes(S.view)&&S.type==='cp')S.view='normal';
   $('#ph').innerHTML=header();$('#tabw').innerHTML=tabs();$('#frame').innerHTML=body();$('#abar').innerHTML=abar();
   $('#menu').onclick=()=>{$('#app').dataset.sheet='1'};
@@ -528,7 +535,7 @@ function draw(){
   document.querySelectorAll('.tab[data-tab="ov"],.tab[data-tab="team"]').forEach(a=>a.onclick=e=>{e.preventDefault();S.tab=a.dataset.tab;draw()});
   document.querySelectorAll('.tab[href="#"]').forEach(a=>a.addEventListener('click',e=>e.preventDefault()));
   centerTab();if(document.fonts&&document.fonts.ready)document.fonts.ready.then(centerTab);
-  const u=USERS[SITE()?'site':'owner'];['1','2'].forEach(k=>{$('#un'+k).textContent=u.n;$('#ur'+k).textContent=u.r;$('#av'+k).textContent=[...u.n][0]});
+  const u=USERS[SITE()?'site':S.view==='signedto'?'to':'owner'];['1','2'].forEach(k=>{$('#un'+k).textContent=u.n;$('#ur'+k).textContent=u.r;$('#av'+k).textContent=[...u.n][0]});
   document.querySelectorAll('[data-type]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.type===S.type));
   document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===S.view));
   const url=new URLSearchParams({type:S.type,view:S.view});if(S.tab!=='ov')url.set('tab',S.tab);if(S.terms)url.set('terms','1');history.replaceState(null,'','?'+url+(EMBED?'&embed=1':''));

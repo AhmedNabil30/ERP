@@ -378,10 +378,10 @@ body.flow .app,body.flow .main{block-size:auto;overflow:visible}
   <div class="panelx">
     <div class="grp" role="group" aria-label="العرض"><b>العرض</b>
       <button type="button" data-view="normal">المالك</button>
-      <button type="button" data-view="noeng">بلا مهندس موقع</button>
+      <button type="button" data-view="noeng">بلا مهندس الموقع</button>
       <button type="button" data-view="add">إضافة</button>
       <button type="button" data-view="adderr">إضافة ناقصة</button>
-      <button type="button" data-view="addeng">إضافة مهندس موقع</button>
+      <button type="button" data-view="addeng">إضافة مهندس الموقع</button>
       <button type="button" data-view="addfail">إضافة مرفوضة</button>
       <button type="button" data-view="addnone">لا أحد متاح</button>
       <button type="button" data-view="confirm">تأكيد الإزالة</button>
@@ -455,24 +455,23 @@ function team(){
   if(v==='loading')return `<div class="pane" aria-busy="true" role="status"><span class="vh">جارٍ التحميل</span><span class="sk b" style="block-size:60px"></span><span class="sk b" style="block-size:60px"></span><span class="sk b" style="block-size:60px"></span><span class="sk b" style="block-size:60px;inline-size:70%"></span></div>`;
   if(v==='failed')return `<div class="pane"><div class="ban rowc" role="alert">${mi('err')}<span><b>تعذّر تحميل الفريق.</b></span><button type="button" class="btn sec2 sm act">${mi('redo','s')}إعادة المحاولة</button></div></div>`;
   const ok=v==='added'?`<div class="rec" role="status">${mi('check')}أُضيفت نورا سعيد</div>`:v==='removed'?`<div class="rec" role="status">${mi('check')}أُزيل خالد منصور</div>`:'';
-  const none=v==='noeng'?`<div class="ban note" role="status">${mi('info')}<span><b>لا يوجد مهندس موقع</b></span></div>`:'';
+  const none=v==='noeng'?`<div class="ban note" role="status">${mi('info')}<span><b>لم يُسنَد مهندس الموقع بعد</b></span></div>`:'';
   return `<div class="pane">${ok}<ul class="lst tm">${members().map(row).join('')}</ul>${none}</div>`}
 
 const pa=()=>OWNER()&&!['loading','failed'].includes(S.view)?`<button type="button" class="btn" data-open="1">${i('uadd','s')}إضافة شخص</button>`:'';
 function header(){
   const back=`<a class="back" href="#">${i('left','s')}المشاريع</a>`;
   if(S.view==='loading')return `<div class="phl">${back}<div class="ttl"><h1><span class="sk b" style="inline-size:300px;max-inline-size:70vw;block-size:34px"></span></h1></div><span class="sk b stl sk-l"></span></div><div class="acts d-only"></div>`;
-  if(S.view==='failed')return `<div class="phl">${back}<div class="ttl"><h1>المشروع</h1></div></div><div class="acts d-only"></div>`;
-  return `<div class="phl">${back}<div class="ttl"><h1>فيلا 47 — التجمع الخامس</h1>${pill}</div><p class="meta"><a class="lnk" href="#" style="min-block-size:0">شركة النيل للتطوير العقاري</a><span class="badge t">مقاولة بالمقطوعية</span></p>${stageLine()}</div>
+    return `<div class="phl">${back}<div class="ttl"><h1>فيلا 47 — التجمع الخامس</h1>${pill}</div><p class="meta"><a class="lnk" href="#" style="min-block-size:0">شركة النيل للتطوير العقاري</a><span class="badge t">مقاولة بالمقطوعية</span></p>${stageLine()}</div>
    <div class="acts d-only">${pa()}</div>`}
 const TABS=[['نظرة عامة','project.html'],['المقايسة','boq.html'],['اليومية','daily-log.html'],['المستخلصات','#'],['الفريق','#']];
-const tabs=()=>['loading','failed'].includes(S.view)?'':`<nav class="tabs" aria-label="شاشات المشروع">${TABS.map((t,k)=>`<a class="tab" href="${t[1]}" ${k===4?'aria-current="page"':''}>${t[0]}</a>`).join('')}</nav>`;
+const tabs=()=>S.view==='loading'?'':`<nav class="tabs" aria-label="شاشات المشروع">${TABS.map((t,k)=>`<a class="tab" href="${t[1]}" ${k===4?'aria-current="page"':''}>${t[0]}</a>`).join('')}</nav>`;
 
 /* the add sheet: a person, and for a site engineer a level. Nothing preselected. */
 function sheet(){
   const p=PEOPLE.find(x=>x.id===S.pick),v=S.view;
   const top=`<div class="grab"></div><div class="hd"><h2>إضافة شخص</h2><button type="button" class="ib" data-close="1" aria-label="إغلاق">${i('x')}</button></div>`;
-  if(v==='addnone')return top+`<div class="bd"><div class="state"><div class="ico">${i('info')}</div><h4>لا يوجد مستخدم متاح للإضافة</h4></div></div><div class="ft"><button type="button" class="btn sec2" data-close="1">إغلاق</button></div>`;
+  if(v==='addnone')return top+`<div class="bd"><div class="state"><div class="ico">${i('info')}</div><h4>لا يوجد أحد متاح للإضافة</h4></div></div><div class="ft"><button type="button" class="btn sec2" data-close="1">إغلاق</button></div>`;
   const e1=S.err&&!S.pick,e2=S.err&&p&&p.se&&!S.lvl;
   return top+`<div class="bd">
    ${v==='addfail'?`<div class="ban" role="alert">${mi('err')}<span>هذا الشخص مسند بالفعل إلى هذا المشروع.</span></div>`:''}
@@ -496,6 +495,8 @@ function wire(){
 function draw(){
   $('#ph').innerHTML=header();$('#tabw').innerHTML=tabs();$('#frame').innerHTML=team();$('#abar').innerHTML=abar();
   $('#menu').onclick=()=>{$('#app').dataset.sheet='1'};
+  const centerTab=()=>{const c=document.querySelector('.tab[aria-current="page"]');if(c)c.scrollIntoView({inline:'center',block:'nearest'});const n=document.querySelector('.tm li.new');if(n)n.scrollIntoView({block:'center'})};
+  centerTab();if(document.fonts&&document.fonts.ready)document.fonts.ready.then(centerTab);
   document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openSheet(true));
   document.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>openCf(b.dataset.rm));
   const own=OWNER();['1','2'].forEach(k=>{$('#un'+k).textContent=own?'أحمد نبيل':'سارة عادل';$('#ur'+k).textContent=own?'المالك':R.to;$('#av'+k).textContent=own?'أ':'س'});
