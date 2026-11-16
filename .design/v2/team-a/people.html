@@ -342,6 +342,10 @@ body.embed .scrim{inset:0}
 .ban li{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .ban svg{margin-block-start:2px}
 .dn{display:flex;gap:10px;align-items:center}
+.panel .pdup{padding:12px 20px 0;display:grid;gap:4px;border-block-start:1px solid var(--line);flex:none}
+.panel .pdup .ban{padding:10px 12px}
+.panel .pdup .ck{min-block-size:48px}
+.panel .pdup .ban ul{margin-block-start:2px}
 .tot-in{display:grid;grid-template-columns:repeat(var(--n,2),minmax(0,1fr));border:1.5px solid var(--fieldline);border-radius:var(--radius);background:var(--surface);overflow:hidden}
 .tot-in>div{padding:8px 12px;display:grid;gap:0;justify-items:start;min-inline-size:0}
 .tot-in>div+div{border-inline-start:1px solid var(--line)}
@@ -392,8 +396,7 @@ tr.hl td{background:color-mix(in srgb,var(--ok-bg) 45%,var(--surface))}
       <button type="button" data-view="workers-create">تسجيل</button>
       <button type="button" data-view="workers-createerr">تسجيل: أخطاء</button>
       <button type="button" data-view="workers-dup">رقم مسجّل (تنبيه)</button>
-      <button type="button" data-view="workers-edit">تعديل (الموارد البشرية)</button>
-      <button type="button" data-view="workers-edit-owner">تعديل (المالك)</button>
+      <button type="button" data-view="workers-edit">تعديل</button>
       <button type="button" data-view="workers-menu">قائمة الصف</button>
       <button type="button" data-view="workers-archive">تأكيد الأرشفة</button>
       <button type="button" data-view="workers-archived">المؤرشف</button>
@@ -451,7 +454,7 @@ const q0=new URLSearchParams(location.search);
 const view=q0.get('view')||'staff';
 const W=/^workers/.test(view)||view==='nav';
 const EMBED=q0.get('embed')==='1';
-const role=q0.get('role')||(/owner/.test(view)?'owner':view==='workers-ro'?'ro':'hr');
+const role=q0.get('role')||(view==='workers-ro'?'ro':'hr');
 const USERS={hr:{n:'منى سامي',r:'الموارد البشرية'},owner:{n:'أحمد نبيل',r:'المالك'},ro:{n:'هالة فؤاد',r:'المالية'}};
 const USER=USERS[role];
 if(EMBED){document.body.classList.add('embed');$('#strip').remove()}
@@ -466,7 +469,6 @@ const NAV=[{id:'projects',g:'core',ar:'المشاريع'},{id:'catalog',g:'core'
 const GROUPS={core:'البيانات الأساسية',admin:'الإدارة'};
 const IDS=role==='owner'?NAV.map(n=>n.id):['projects','staff','workers'];
 const here=W?'workers':'staff';
-const keep=()=>(role!==(/owner/.test(view)?'owner':view==='workers-ro'?'ro':'hr')?'&role='+role:'')+(EMBED?'&embed=1':'')+(q0.get('theme')?'&theme='+q0.get('theme'):'');
 function navHtml(){let o='';for(const g of['core','admin']){const it=NAV.filter(n=>n.g===g&&IDS.includes(n.id));if(!it.length)continue;
  o+=`<div class="grp"><div class="grp-h">${GROUPS[g]}</div>`+it.map(n=>`<a class="row" href="${(n.id==='staff'||n.id==='workers')?'?view='+n.id+(role==='owner'?'&role=owner':'')+(EMBED?'&embed=1':''):'#'}" ${n.id===here?'aria-current="page"':''} title="${n.ar}"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[n.id]}"/></svg><span class="lbl">${n.ar}</span></a>`).join('')+'</div>'}return o}
 
@@ -474,8 +476,11 @@ function navHtml(){let o='';for(const g of['core','admin']){const it=NAV.filter(
 const BABS=['أعمال الحفر والردم','أعمال خرسانة','أعمال بناء','أعمال عزل','أعمال كهرباء','أعمال سباكة','أعمال تشطيبات','أعمال نجارة وألومنيوم'];
 let ST=[['s1','هاني فتحي','010 1234 5678','محاسب','المالية','12/03/2022',1],['s2','نهى محمود','011 2345 6789','منسقة مشتريات','المشتريات','01/09/2023',1],['s3','طارق إبراهيم','012 3456 7890','مهندس مكتب فني','المكتب الفني','15/01/2021',1],['s4','ريم خالد','010 9876 5432','مساعدة إدارية','الإدارة','03/06/2024',1],['s5','وليد صبحي','011 8765 4321','مشرف مخازن','المشتريات','20/02/2020',0],['s6','دعاء رمضان','012 7654 3210','محاسبة','المالية','10/10/2022',1],['s7','كريم عادل','010 5555 0101','مهندس موقع','الموقع','05/05/2023',1],['s8','سلمى يوسف','011 6666 0202','سكرتيرة','الإدارة','18/11/2024',1]];
 let WK=[['w1','حسن علي','010 1111 2222','أعمال سباكة','تأسيس صرف',12,4.5,1,650],['w2','محمود عطية','011 2222 3333','أعمال خرسانة','نجار مسلح',9,4.2,1,720],['w3','إسلام فرج','012 3333 4444','أعمال كهرباء','تأسيس وتركيب',4,3.8,1,600],['w4','عادل زكريا','010 4444 5555','أعمال تشطيبات','محارة',17,4.7,1,780],['w5','سيد الشحات','011 5555 6666','أعمال بناء','',0,null,1,null],['w6','جمال حمدي','012 6666 7777','أعمال تشطيبات','دهانات',6,4,1,640],['w7','ياسر نبيل','010 7777 8888','أعمال عزل','عزل مائي',3,null,1,610],['w8','مصطفى سلامة','012 9999 0000','أعمال نجارة وألومنيوم','ألومنيوم',8,3.5,0,690]];
+const NEWB=()=>`<span class="badge">جديد</span>`;
 const SITE=['w0','خالد منير','010 3030 4040','أعمال سباكة','تركيب أدوات صحية',0,null,1,null];
 if(view==='workers-site')WK.push(SITE);
+WK.push(['w9','رضا عبد الحميد','011 4040 5050','أعمال بناء','بناء طوب',5,3.9,0,630]);
+if(view==='workers-unarch')WK.find(p=>p[0]==='w8')[7]=1;
 if(/-empty$/.test(view)){ST=[];WK=[]}
 const people=()=>[...ST.map(p=>({n:p[1],ph:p[2],k:'s',on:p[6]})),...WK.map(p=>({n:p[1],ph:p[2],k:'w',on:p[7]}))];
 const norm=s=>s.replace(/\D/g,'');
@@ -484,23 +489,25 @@ const NOUN=W?['عامل','عاملان','عمال','عاملاً']:['موظف','
 const NOUN3=W?['عامل','عاملين','عمال','عاملاً']:['موظف','موظفين','موظفين','موظفاً'];
 const ratingTxt=r=>r==null?'—':r.toFixed(1)+'/5';
 
+let newIds=new Set(view==='workers-site'?['w0']:[]);
 let filter=/archived|unarch/.test(view)?'archived':'active',query=/-none$/.test(view)?'جلال':'',tradeSel='',
-  confirmId=/-archive$/.test(view)?(W?'w2':'s3'):null,doneId=view==='workers-unarch'?'w8':null,hlId=view==='workers-site'?'w0':null,P=null;
+  confirmId=/-archive$/.test(view)?(W?'w2':'s3'):null,doneId=view==='workers-unarch'?'w8':null,hlId=null,P=null;
 const blank=()=>W?{name:'',phone:'',bab:'',spec:''}:{name:'',phone:'',nid:'',job:'',dept:'',hired:''};
 const mk=(mode,id,v,extra={})=>({mode,id,v,err:{},dup:[],ack:false,ackErr:false,busy:false,dirty:false,...extra});
 if(/-create$/.test(view))P=mk('create',null,blank());
 if(view==='staff-createerr')P=mk('create',null,{...blank(),phone:'01x',nid:'2900101'},{err:{name:'الاسم مطلوب.',phone:'أدخل رقم هاتف صحيحاً، مثل <bdi dir="ltr">010 1234 5678</bdi>.'}});
 if(view==='workers-createerr')P=mk('create',null,{...blank(),name:'عبد الرحمن سعد',phone:'010 2020 3030'},{err:{bab:'عامل اليومية يجب تسجيله على باب.'}});
-if(view==='staff-taken')P=mk('create',null,{...blank(),name:'هاني فتحي',phone:'010 1234 5678',job:'محاسب'},{err:{phone:'رقم الهاتف هذا مسجل بالفعل لموظف آخر.'}});
+if(view==='staff-taken')P=mk('create',null,{...blank(),name:'هاني فتحي',phone:'010 1234 5678',job:'محاسب'},{err:{phone:'رقم الهاتف هذا مسجل بالفعل لموظف بالراتب نشط.'}});
 if(view==='staff-dup')P=mk('create',null,{...blank(),name:'مصطفى سلامة',phone:'012 9999 0000',job:'مشرف موقع'},{dup:[{n:'مصطفى سلامة',kind:'يومية',arch:true}]});
 if(view==='workers-dup')P=mk('create',null,{...blank(),name:'هاني فتحي',phone:'010 1234 5678',bab:BABS[6]},{dup:[{n:'هاني فتحي',kind:'موظف بالراتب',arch:false}]});
 if(view==='staff-edit')P=mk('edit','s3',null);
-if(view==='workers-edit'||view==='workers-edit-owner'||view==='workers-ro')P=mk('edit','w2',null);
+if(view==='workers-edit'||view==='workers-ro')P=mk('edit','w2',null);
 const find=id=>ST.find(p=>p[0]===id)||WK.find(p=>p[0]===id);
 
 /* ---- list ---- */
 function visible(){const t=query.trim().toLowerCase(),tn=norm(query);
  return (W?WK:ST).filter(p=>{const on=W?p[7]:p[6];
+  if(p[0]===doneId)return true;
   if(filter==='active'&&!on)return false;if(filter==='archived'&&on)return false;
   if(W&&tradeSel&&p[3]!==tradeSel)return false;
   if(!t)return true;return p[1].toLowerCase().includes(t)||(tn&&norm(p[2]).includes(tn))})}
@@ -514,7 +521,7 @@ function rowS(p){const[id,n,phn,job,dept,hired,on]=p;
 function rowW(p){const[id,n,phn,bab,spec,freq,rate,on]=p,ro=role==='ro',cols=ro?6:7;
  if(confirmId===id)return confirmRow(id,n,cols);
  if(doneId===id)return `<tr class="done"><td colspan="${cols}"><span class="dn">${i('check','s')}تمت استعادة «${n}» إلى القائمة النشطة.</span></td></tr>`;
- return `<tr class="it ${on?'':'arch'} ${hlId===id?'hl':''}" data-id="${id}"><td class="id"><div class="idc"><span class="nm">${n}</span>${atag(on)}</div></td><td>${bab}</td><td class="dim">${spec||''}</td><td class="n">${freq?`<bdi class="tn">${freq}</bdi>`:'<span class="dimt">لم يُشغَّل من قبل</span>'}</td><td class="n"><bdi class="tn" dir="ltr">${ratingTxt(rate)}</bdi></td>${ro?'':`<td>${ph(phn)}</td>`}<td class="act">${menuBtn(id,n)}</td></tr>`}
+ return `<tr class="it ${on?'':'arch'} ${hlId===id?'hl':''}" data-id="${id}"><td class="id"><div class="idc"><span class="nm">${n}</span>${newIds.has(id)?NEWB():''}${atag(on)}</div></td><td>${bab}</td><td class="dim">${spec||''}</td><td class="n">${freq?`<bdi class="tn">${freq}</bdi>`:'<span class="dimt">لم يُشغَّل من قبل</span>'}</td><td class="n"><bdi class="tn" dir="ltr">${ratingTxt(rate)}</bdi></td>${ro?'':`<td>${ph(phn)}</td>`}<td class="act">${menuBtn(id,n)}</td></tr>`}
 function confirmRow(id,n,cols){return `<tr class="conf"><td colspan="${cols}"><div class="confrow"><span class="ico">${i('arch')}</span><span class="msg">أرشفة <b>«${n}»</b>؟<small>يختفي من القائمة النشطة، ويمكنك استرجاعه من «مؤرشف» في أي وقت.</small></span><button class="btn sm" type="button" data-yes="${id}"><span class="spin"></span>أرشفة</button><button class="btn sec2 sm" type="button" data-no>إلغاء</button></div></td></tr>`}
 function liS(p){const[id,n,phn,job,dept,hired,on]=p;
  if(confirmId===id)return confirmLi(id,n);
@@ -523,10 +530,10 @@ function liS(p){const[id,n,phn,job,dept,hired,on]=p;
 function liW(p){const[id,n,phn,bab,spec,freq,rate,on]=p,ro=role==='ro';
  if(confirmId===id)return confirmLi(id,n);
  if(doneId===id)return `<div class="pd" style="padding:12px 16px;background:var(--ok-bg);color:var(--ok-ink)">${i('check','s')} تمت استعادة «${n}» إلى القائمة النشطة.</div>`;
- return `<div class="li r3 ${on?'':'arch'} ${hlId===id?'hl':''}" data-id="${id}"><span class="t">${n}</span><span class="sell">${ro?'':ph(phn)}</span><span class="sub"><span>${bab}</span>${spec?`<span class="dimt">${spec}</span>`:''}${atag(on)}</span><span class="costl">${freq?`<span>تشغيل <bdi class="tn">${freq}</bdi></span>`:'<span>لم يُشغَّل من قبل</span>'}${rate==null?'':`<span style="display:inline-flex;gap:4px;align-items:center">${i('star','s')}<bdi class="tn" dir="ltr">${ratingTxt(rate)}</bdi></span>`}</span>${ro?'<span></span>':`<button type="button" class="ib" data-menu="${id}" aria-label="إجراءات ${n}">${i('dots')}</button>`}</div>`}
+ return `<div class="li r3 ${on?'':'arch'} ${hlId===id?'hl':''}" data-id="${id}"><span class="t">${n}</span><span class="sell">${ro?'':ph(phn)}</span><span class="sub"><span>${bab}</span>${spec?`<span class="dimt">${spec}</span>`:''}${atag(on)}${newIds.has(id)?NEWB():''}</span><span class="costl">${freq?(freq===1?'<span>شُغِّل مرة واحدة</span>':`<span>شُغِّل <bdi class="tn">${freq}</bdi> مرة</span>`):'<span>لم يُشغَّل من قبل</span>'}${rate==null?'':`<span style="display:inline-flex;gap:4px;align-items:center">${i('star','s')}<bdi class="tn" dir="ltr">${ratingTxt(rate)}</bdi></span>`}</span>${ro?'<span></span>':`<button type="button" class="ib" data-menu="${id}" aria-label="إجراءات ${n}">${i('dots')}</button>`}</div>`}
 function confirmLi(id,n){return `<div class="li conf"><div class="msg">${i('arch','s')} أرشفة <b>«${n}»</b>؟ يختفي من القائمة النشطة، ويمكنك استرجاعه من «مؤرشف» في أي وقت.</div><div class="bt"><button class="btn" type="button" data-yes="${id}"><span class="spin"></span>أرشفة</button><button class="btn sec2" type="button" data-no>إلغاء</button></div></div>`}
 
-function countText(){const n=visible().length,qs=query.trim(),sc=filter==='archived'?'في المؤرشف':filter==='all'?'في السجل كله':'في '+(W?'العمال':'الموظفين')+' النشطين';
+function countText(){const n=visible().filter(p=>p[0]!==doneId).length,qs=query.trim(),sc=filter==='archived'?'في المؤرشف':filter==='all'?'في السجل كله':'في '+(W?'العمال':'الموظفين')+' النشطين';
  if(qs)return `${n} نتيجة لـ «${qs}» ${sc}`;
  if(filter==='all')return `يعرض الكل: ${n}`;
  const few=n>=3&&n<=10,arc=filter==='archived',w=W?['عاملاً','عمال','عاملين']:['موظفاً','موظفين','موظفين'];
@@ -576,8 +583,7 @@ function dupBlock(p){if(!p.dup.length)return '';
  return `<div class="ban note" role="status">${i('info','s')}<span><b>هذا الرقم مسجل بالفعل:</b><ul>${p.dup.map(m=>`<li><span>${m.n}</span><span class="badge q">${m.kind}</span>${m.arch?`<span class="atag">${i('arch','s')}مؤرشف</span>`:''}</li>`).join('')}</ul></span></div>
  <label class="ck ${p.ackErr?'err':''}"><input type="checkbox" id="ack" ${p.ack?'checked':''}><span class="bx">${CHK}</span><span>رأيت من يحمل الرقم وأريد المتابعة.</span></label>${p.ackErr?`<div class="foot" style="color:var(--err-ink);font-weight:500;margin-block-start:-10px">${i('err','s')}<span>علّم هذا المربع للمتابعة.</span></div>`:''}`}
 function figs(r){const cols=[['عدد مرات التشغيل',r[5]?String(r[5]):'0'],['متوسط التقييم',ratingTxt(r[6])]];
- const own=role==='owner';
- return `<div class="tot-in" style="grid-template-columns:${own?'minmax(0,1fr) minmax(0,1fr) minmax(0,1.5fr)':'repeat(2,minmax(0,1fr))'}">${cols.map(c=>`<div><b><bdi class="tn" dir="ltr">${c[1]}</bdi></b><span>${c[0]}</span></div>`).join('')}${own?`<div><b><bdi class="money" dir="ltr">${r[8]?r[8].toFixed(2):'—'}</bdi></b><span class="int">${i('eyeoff','s')}الأجر اليومي (ج.م)</span></div>`:''}</div>${own?`<div><button type="button" class="lnk">سجل التشغيل</button></div>`:''}`}
+ return `<div class="tot-in" style="grid-template-columns:repeat(2,minmax(0,1fr))">${cols.map(c=>`<div><b><bdi class="tn" dir="ltr">${c[1]}</bdi></b><span>${c[0]}</span></div>`).join('')}</div>`}
 function drawPanel(){
  if(!P){A.dataset.panel='0';$('#panel').innerHTML='';return}
  A.dataset.panel='1';
@@ -586,14 +592,14 @@ function drawPanel(){
  const v=c.v,rd=ro;
  const title=c.mode==='create'?(W?'تسجيل عامل':'تسجيل موظف'):v.name;
  const sub=c.mode==='edit'?`<div class="sub"><span>${W?r[3]:r[3]}</span>${rd?`<span class="badge q lk">${i('lock','s')}للاطلاع فقط</span>`:''}</div>`:'';
- const staffF=`${fld('f_name','الاسم الكامل',1,v.name,{err:e.name,ro:rd})}${rd?'':''}${fld('f_phone','رقم الهاتف',1,v.phone,{dir:'ltr',type:'tel',im:'tel',err:e.phone})}${dupBlock(c)}${fld('f_nid','الرقم القومي',0,v.nid,{dir:'ltr',im:'numeric',hint:'14 رقماً'})}${fld('f_job','المسمى الوظيفي',0,v.job)}${fld('f_dept','القسم',0,v.dept)}${fld('f_hired','تاريخ التعيين',0,v.hired,{type:'date'})}`;
- const workF=`${fld('f_name','الاسم الكامل',rd?0:1,v.name,{err:e.name,ro:rd})}${rd?'':fld('f_phone','رقم الهاتف',1,v.phone,{dir:'ltr',type:'tel',im:'tel',err:e.phone})}${rd?'':dupBlock(c)}${rd?fld('f_bab','الباب',0,v.bab,{ro:1}):selF('f_bab','الباب',1,v.bab,e.bab)}${fld('f_spec','التخصص',0,v.spec,{ro:rd})}`;
- const body=(W&&c.mode==='edit'?figs(r):'')+(W?workF:staffF);
+ const staffF=`${fld('f_name','الاسم الكامل',1,v.name,{err:e.name,ro:rd})}${rd?'':''}${fld('f_phone','رقم الهاتف',1,v.phone,{dir:'ltr',type:'tel',im:'tel',err:e.phone})}${fld('f_nid','الرقم القومي',0,v.nid,{dir:'ltr',im:'numeric',hint:'14 رقماً'})}${fld('f_job','المسمى الوظيفي',0,v.job)}${fld('f_dept','القسم',0,v.dept)}${fld('f_hired','تاريخ التعيين',0,v.hired,{type:'date'})}`;
+ const workF=`${fld('f_name','الاسم الكامل',rd?0:1,v.name,{err:e.name,ro:rd})}${rd?'':fld('f_phone','رقم الهاتف',1,v.phone,{dir:'ltr',type:'tel',im:'tel',err:e.phone})}${rd?fld('f_bab','الباب',0,v.bab,{ro:1}):selF('f_bab','الباب',1,v.bab,e.bab)}${fld('f_spec','التخصص',0,v.spec,{ro:rd})}`;
+ const body=(W&&c.mode==='edit'?figs(r):'')+(W?workF:staffF);const dupb=(!rd&&c.dup.length)?`<div class="pdup">${dupBlock(c)}</div>`:'';
  const busy=c.busy;
  const ft=rd?`<button class="btn sec2" type="button" id="pclose2">إغلاق</button>`:
   c.mode==='create'?`<button class="btn prim ${busy?'is-busy':''}" type="button" data-save ${busy?'disabled aria-busy="true"':''}><span class="spin"></span>${busy?'جارٍ الحفظ…':'حفظ'}</button><button class="btn sec2" type="button" id="pclose2" ${busy?'disabled':''}>إلغاء</button>`:
   `<button class="btn prim" type="button" data-save ${c.dirty?'':'disabled'}>حفظ</button><button class="btn sec2" type="button" id="pclose2">إغلاق</button><span class="spacer"></span>${(W?r[7]:r[6])?`<button class="btn sec2" type="button" data-parch="${c.id}">${i('arch','s')}أرشفة</button>`:`<button class="btn sec2" type="button" data-punarch="${c.id}">${i('unarch','s')}إلغاء الأرشفة</button>`}`;
- $('#panel').innerHTML=`<div class="grabp"></div><div class="hd"><div class="t"><h4>${title}</h4>${sub}</div><button class="ib" type="button" id="pclose" aria-label="إغلاق">${i('x')}</button></div><div class="bd">${body}</div><div class="ft">${ft}</div>`;
+ $('#panel').innerHTML=`<div class="grabp"></div><div class="hd"><div class="t"><h4>${title}</h4>${sub}</div><button class="ib" type="button" id="pclose" aria-label="إغلاق">${i('x')}</button></div><div class="bd">${body}</div>${dupb}<div class="ft">${ft}</div>`;
  $('#pclose').onclick=$('#pclose2').onclick=()=>{P=null;draw()};
 }
 
@@ -607,7 +613,7 @@ function save(){const c=P,v=c.v;c.err={};
  if(W&&!v.bab)c.err.bab='عامل اليومية يجب تسجيله على باب.';
  if(!c.err.phone&&c.mode==='create'){
   const hits=people().filter(p=>norm(p.ph)===dg);
-  if(!W&&hits.some(p=>p.k==='s'&&p.on))c.err.phone='رقم الهاتف هذا مسجل بالفعل لموظف آخر.';
+  if(!W&&hits.some(p=>p.k==='s'&&p.on))c.err.phone='رقم الهاتف هذا مسجل بالفعل لموظف بالراتب نشط.';
   else{c.dup=hits.map(p=>({n:p.n,kind:p.k==='s'?'موظف بالراتب':'يومية',arch:!p.on}))}}
  if(!Object.keys(c.err).length&&c.dup.length&&!c.ack){c.ackErr=true;drawPanel();return}
  if(Object.keys(c.err).length){drawPanel();return}
@@ -623,13 +629,13 @@ document.addEventListener('click',e=>{
  const pa=e.target.closest('[data-parch]');if(pa){P=null;confirmId=pa.dataset.parch;draw();return}
  const pu=e.target.closest('[data-punarch]');if(pu){const r=find(pu.dataset.punarch);r[W?7:6]=1;P=null;doneId=pu.dataset.punarch;draw();return}
  const g=e.target.closest('[data-f]');if(g){filter=g.dataset.f;draw();return}
- const o=e.target.closest('[data-open]');if(o){P=mk('edit',o.dataset.open,null);draw();return}
+ const o=e.target.closest('[data-open]');if(o){newIds.delete(o.dataset.open);P=mk('edit',o.dataset.open,null);draw();return}
  const ar=e.target.closest('[data-arch]');if(ar){confirmId=ar.dataset.arch;draw();return}
  const ua=e.target.closest('[data-unarch]');if(ua){find(ua.dataset.unarch)[W?7:6]=1;doneId=ua.dataset.unarch;draw();return}
  if(e.target.closest('[data-no]')){confirmId=null;draw();return}
  const yes=e.target.closest('[data-yes]');if(yes){yes.classList.add('is-busy');setTimeout(()=>{find(yes.dataset.yes)[W?7:6]=0;confirmId=null;draw()},800);return}
  if(e.target.closest('#clr,#clr2')){query='';tradeSel='';draw();return}
- const row=e.target.closest('tr.it,.li');if(row&&row.dataset.id&&!e.target.closest('.ib,.menuwrap')){P=mk('edit',row.dataset.id,null);draw();return}
+ const row=e.target.closest('tr.it,.li');if(row&&row.dataset.id&&!e.target.closest('.ib,.menuwrap')){newIds.delete(row.dataset.id);P=mk('edit',row.dataset.id,null);draw();return}
 });
 document.addEventListener('change',e=>{if(e.target.id==='bs'){tradeSel=e.target.value;draw()}if(e.target.id==='ack'&&P){P.ack=e.target.checked;P.ackErr=false;drawPanel()}if(e.target.id==='f_bab'&&P){P.v.bab=e.target.value;P.dirty=true}});
 document.addEventListener('input',e=>{const m={f_name:'name',f_phone:'phone',f_nid:'nid',f_job:'job',f_dept:'dept',f_hired:'hired',f_spec:'spec'};if(P&&m[e.target.id]){P.v[m[e.target.id]]=e.target.value;if(P.mode==='edit'&&!P.dirty){P.dirty=true;const b=$('#panel [data-save]');if(b)b.disabled=false}}});
@@ -650,7 +656,7 @@ document.querySelectorAll('[data-view]').forEach(b=>{b.onclick=()=>{location.sea
 const rail=()=>{A.dataset.rail=(matchMedia('(max-width:1100px)').matches&&innerWidth>820)?'1':'0'};rail();addEventListener('resize',rail);
 draw();
 if(view.endsWith('-menu')){requestAnimationFrame(()=>{const b=[...document.querySelectorAll('[data-menu="'+(W?'w2':'s3')+'"]')].find(x=>x.offsetParent);if(b)b.click()})}
-if(view==='workers-site')requestAnimationFrame(()=>[...document.querySelectorAll('.hl')].find(x=>x.offsetParent)?.scrollIntoView({block:'center'}));
+if(view==='workers-site')requestAnimationFrame(()=>[...document.querySelectorAll('.badge')].filter(b=>b.textContent==='جديد').find(x=>x.offsetParent)?.scrollIntoView({block:'center'}));
 if(view.endsWith('-archive'))requestAnimationFrame(()=>[...document.querySelectorAll('.conf')].find(x=>x.offsetParent)?.scrollIntoView({block:'center'}));
 </script>
 </body>
