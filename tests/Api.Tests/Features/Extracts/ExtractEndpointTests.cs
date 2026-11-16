@@ -1903,9 +1903,10 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
 
         JsonElement team = await GetJsonAsync(TeamRoute(project.Id), _owner);
 
-        team.EnumerateArray().Select(member => member.GetProperty("userId").GetGuid())
+        JsonElement members = team.GetProperty("members");
+        members.EnumerateArray().Select(member => member.GetProperty("userId").GetGuid())
             .Should().BeEquivalentTo(new[] { _finance, _technicalOffice, _technicalOffice2, _prepEngineer, _supervisor });
-        team.EnumerateArray().Should().OnlyContain(member => member.GetProperty("fullName").GetString()!.Length > 0);
+        members.EnumerateArray().Should().OnlyContain(member => member.GetProperty("fullName").GetString()!.Length > 0);
     }
 
     [Fact]

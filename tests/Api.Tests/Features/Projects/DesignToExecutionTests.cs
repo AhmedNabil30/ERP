@@ -151,6 +151,29 @@ public sealed class DesignToExecutionTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task D_228_the_team_read_of_a_converted_project_names_finance_automatic_and_the_converter_creator()
+    {
+        await using (KaffDbContext seed = _database.CreateContext())
+        {
+            seed.Users.Add(User.Create(
+                UniqueNames.Code("dx-fin"), "dx-fin", UniqueNames.Phone(), Role.Finance, DateTimeOffset.UtcNow,
+                WellKnownDepartments.FinanceId).Value);
+            await seed.SaveChangesAsync(Ct);
+        }
+
+        Guid design = await NewDesignAsync();
+        Guid execution = (await JsonAsync(await ConvertAsync(design, _technicalOffice, "LumpSum"))).GetProperty("id").GetGuid();
+
+        JsonElement team = await JsonAsync(await SendAsync(HttpMethod.Get, $"/api/projects/{execution}/team", _owner, null));
+
+        JsonElement[] members = [.. team.GetProperty("members").EnumerateArray()];
+        members.Single(m => m.GetProperty("userId").GetGuid() == _technicalOffice).GetProperty("origin").GetString()
+            .Should().Be("Creator");
+        members.Where(m => m.GetProperty("role").GetString() == "Finance").Should().NotBeEmpty()
+            .And.OnlyContain(m => m.GetProperty("origin").GetString() == "Automatic" && !m.GetProperty("canRemove").GetBoolean());
+    }
+
+    [Fact]
     public async Task AC_415_B_a_non_design_project_is_refused()
     {
         Guid lumpSum = await NewProjectAsync(ContractType.LumpSum);

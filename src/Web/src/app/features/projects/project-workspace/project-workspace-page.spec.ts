@@ -110,8 +110,8 @@ const MONEY_FREE_PROGRESS: ProjectProgress = {
 };
 
 const TEAM: readonly TeamMember[] = [
-  { userId: 'u-1', fullName: 'منى عادل', role: 'TechnicalOffice', level: 'Standard', assignedAt: '2026-10-01T00:00:00Z' },
-  { userId: 'u-2', fullName: 'هاني سعيد', role: 'SiteEngineer', level: 'Supervisor', assignedAt: '2026-10-02T00:00:00Z' },
+  { assignmentId: 'a-1', userId: 'u-1', fullName: 'منى عادل', role: 'TechnicalOffice', level: 'Standard', origin: 'Creator', canRemove: true, assignedAt: '2026-10-01T00:00:00Z' },
+  { assignmentId: 'a-2', userId: 'u-2', fullName: 'هاني سعيد', role: 'SiteEngineer', level: 'Supervisor', origin: 'Added', canRemove: true, assignedAt: '2026-10-02T00:00:00Z' },
 ];
 
 interface ProjectsFakeOptions {

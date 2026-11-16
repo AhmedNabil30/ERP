@@ -69,6 +69,17 @@ internal static class Handler
             return ResultExtensions.Problem(IdentityErrors.ProjectAssignmentNotFound);
         }
 
+        // D-228 item 1: Finance is staffed on every project and cannot be taken off one. The same rule feeds the team read.
+        Role memberRole = await database.Users
+            .Where(member => member.Id == assignment.UserId)
+            .Select(member => member.Role)
+            .SingleAsync(cancellationToken);
+
+        if (assignment.IsActive && !ProjectAssignment.MayBeRemoved(memberRole))
+        {
+            return ResultExtensions.Problem(IdentityErrors.FinanceCannotBeRemoved);
+        }
+
         Result revoked = assignment.Revoke(currentUser.UserId ?? Guid.Empty, clock.GetUtcNow());
 
         if (revoked.IsFailure)

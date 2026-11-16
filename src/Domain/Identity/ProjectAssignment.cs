@@ -98,6 +98,12 @@ public sealed class ProjectAssignment : Entity
             assignedAt));
     }
 
+    /// <summary>
+    /// D-228 item 1: whether a member of this role may be taken off a project. Finance may not; everyone else may, the
+    /// creator included. The revoke route and the team read both ask this, so the rule has one copy.
+    /// </summary>
+    public static bool MayBeRemoved(Role memberRole) => memberRole != Role.Finance;
+
     public Result Revoke(Guid revokedByUserId, DateTimeOffset revokedAt)
     {
         if (RevokedAt is not null)

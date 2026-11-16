@@ -59,8 +59,10 @@ internal static class Handler
             candidate => candidate.LinkedProjectId == projectId && candidate.LinkType == ProjectLinkType.DesignToExecution,
             cancellationToken);
 
+        DateTimeOffset now = clock.GetUtcNow();
+
         Result<OpenedProject> opened = ProjectOpening.ConvertToExecution(
-            design, alreadyConverted, request.Name, executionType, rulings, clock.GetUtcNow());
+            design, alreadyConverted, request.Name, executionType, rulings, now);
 
         if (opened.IsFailure)
         {
@@ -80,7 +82,7 @@ internal static class Handler
         database.Accounts.AddRange(opened.Value.Accounts);
 
         // D-217 item 36, D-227 item 1: Finance and the person converting are staffed like any new project.
-        Result staffed = await NewProjectStaffing.StaffAsync(database, currentUser, execution.Id, clock.GetUtcNow(), cancellationToken);
+        Result staffed = await NewProjectStaffing.StaffAsync(database, currentUser, execution.Id, now, cancellationToken);
 
         if (staffed.IsFailure)
         {

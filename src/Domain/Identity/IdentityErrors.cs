@@ -173,4 +173,8 @@ public static class IdentityErrors
         Error.Conflict(
             "identity.user_already_assigned_to_project",
             "errors.identity.user_already_assigned_to_project");
+
+    /// <summary>D-228 item 1: the Owner cannot remove Finance from a project. Every other member may be removed.</summary>
+    public static readonly Error FinanceCannotBeRemoved =
+        Error.Conflict("identity.finance_cannot_be_removed", "errors.identity.finance_cannot_be_removed");
 }

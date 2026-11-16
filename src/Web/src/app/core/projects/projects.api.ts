@@ -176,13 +176,40 @@ export interface ProjectProgress {
   readonly babs?: readonly BabProgress[];
 }
 
-/** `GET /api/projects/{id}/team`: one active assignment. */
+/** How a person came to be on the project: Finance staffed by the system, the person who created it, or added by somebody. */
+export type TeamMemberOrigin = 'Automatic' | 'Creator' | 'Added';
+
+/** `GET /api/projects/{id}/team`: one current member. `assignmentId` is what remove takes; the user id is never shown. */
 export interface TeamMember {
+  readonly assignmentId: string;
   readonly userId: string;
   readonly fullName: string;
   readonly role: Role;
   readonly level: AssignmentLevel;
+  readonly origin: TeamMemberOrigin;
+  /** The caller may manage the team and the rule lets this member go (Finance never). */
+  readonly canRemove: boolean;
   readonly assignedAt: string;
+}
+
+/** `GET /api/projects/{id}/team`: the current members and whether the caller may add and remove (the assign permission). */
+export interface TeamRead {
+  readonly canManage: boolean;
+  readonly members: readonly TeamMember[];
+}
+
+/** `GET /api/projects/{id}/assignments/candidates`: one person the add sheet may offer. `levelRequired` is true for a site engineer. */
+export interface TeamCandidate {
+  readonly userId: string;
+  readonly fullName: string;
+  readonly role: Role;
+  readonly levelRequired: boolean;
+}
+
+/** `POST /api/projects/{id}/assignments`: a site engineer is Junior or Supervisor, everyone else Standard. */
+export interface AssignRequest {
+  readonly userId: string;
+  readonly level: AssignmentLevel;
 }
 
 /**
@@ -207,9 +234,29 @@ export class ProjectsApi {
     return await firstValueFrom(this.http.get<ProjectProgress>(`api/projects/${projectId}/progress`));
   }
 
-  /** Who is assigned, with names. Gated `ProjectRead` + assignment. */
+  /** The current members with how each came and whether he may be removed, and whether the caller manages the team. Gated `ProjectRead` + assignment. */
+  async teamRead(projectId: string): Promise<TeamRead> {
+    return await firstValueFrom(this.http.get<TeamRead>(`api/projects/${projectId}/team`));
+  }
+
+  /** Who is assigned, with names: the members of `teamRead`. */
   async team(projectId: string): Promise<readonly TeamMember[]> {
-    return await firstValueFrom(this.http.get<TeamMember[]>(`api/projects/${projectId}/team`));
+    return (await this.teamRead(projectId)).members;
+  }
+
+  /** Who the add sheet may offer. Gated like add: the assign permission on this project. */
+  async teamCandidates(projectId: string): Promise<readonly TeamCandidate[]> {
+    return await firstValueFrom(this.http.get<TeamCandidate[]>(`api/projects/${projectId}/assignments/candidates`));
+  }
+
+  /** Put somebody on the project. 409 `errors.identity.user_already_assigned_to_project`, `errors.identity.user_is_inactive`; 400 `errors.identity.assignment_level_not_applicable`. */
+  async assign(projectId: string, request: AssignRequest): Promise<void> {
+    await firstValueFrom(this.http.post(`api/projects/${projectId}/assignments`, request));
+  }
+
+  /** Take somebody off by his assignment id (`TeamMember.assignmentId`). 409 `errors.identity.finance_cannot_be_removed` for Finance. */
+  async removeMember(projectId: string, assignmentId: string): Promise<void> {
+    await firstValueFrom(this.http.post(`api/projects/${projectId}/assignments/${assignmentId}/revoke`, {}));
   }
 
   /** The rows, and the server's own total — read rather than recounted on the client. */
