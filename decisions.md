@@ -16903,3 +16903,15 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 1. **Whoever creates a project is assigned to it** in the same save, beside Finance (D-217 item 36). The consultant found that the Technical Office created a project and was then refused on it.
 2. **The team tab gets add and remove controls in release 1.** The Owner adds and removes people on a project from the screen. The routes exist (`AssignUserToProject`, `RevokeProjectAssignment`); the screen goes through a mock and Nabil's approval. This takes up the deferred KAFF-115.
 3. **The advance recovery rate is asked on the sign sheet:** a third field beside the hold rate and the advance rate, empty and required, with nothing preselected (the rule of D-217 item 29). The silent default of 25% no longer applies at signing.
+
+
+## D-228 — Nabil rules the team tab, when a design project converts, the recovery rate's label and the word for a signed project with no work yet · 2026-11-16
+
+**Source.** Nabil, in session with the Scrum Master, 2026-11-16, on the D-227 mocks and the consultant review `ux/consultant-review-d227-mocks-2026-11-16.md`.
+
+1. **Team tab rules.** The Owner cannot remove Finance. The Owner may remove the creator. A project may have any number of supervising engineers. A removed person's past work stays under his name through the audit trail, and the tab lists current members only. A removed person can be added back.
+2. **A design project converts to execution only when its design is finished.** «تحويل إلى تنفيذ» is not offered before that. **Not yet buildable as ruled:** the design phases of `spec.md` §13 (`NotStarted` to `Invoiced`) are not built, so the server cannot yet say that a design is finished. Until they are, conversion is refused before signing and allowed after it, and this entry is the record that the interim is wider than the ruling.
+3. **The rate deducted from each extract reads «نسبة الخصم من كل مستخلص»** on the sign sheet and in the contract terms. «نسبة استرداد الدفعة المقدمة» is retired. The advance taken at signing stays «نسبة الدفعة المقدمة».
+4. **A signed project with no daily log yet reads «لم تبدأ»,** and «جاري العمل» from its first daily log entry. This is the word shown, derived on read from whether an entry exists. The project state machine is unchanged.
+
+**Built under D-227, recorded here.** The recovery rate crosses the wire as a `Percentage` fraction (`"0.25"`), like the hold rate, not in percent units like the advance: the D-151 guard `Every_rate_on_the_wire_is_typed_Percentage` refuses a bare decimal named as a rate. Whoever converts a design project is assigned to the execution project. Finance is not yet staffed on a converted project, which D-217 item 36 requires for every new project; that is a defect to fix.
