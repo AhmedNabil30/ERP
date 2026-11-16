@@ -5,18 +5,17 @@ import { join } from 'node:path';
  * KAFF-936 AC-936-I. A screen declares its primary action to the shell (`HeaderActionsService`); it
  * does not draw a `kaff-button variant="primary"` of its own. A template that still does must be on
  * this list. The list may only shrink: a template that no longer draws one fails until it is removed.
- * Declarations live inside an `<ng-template>` and are not counted.
+ * Declarations live inside an `<ng-template>` and are not counted. A button inside an overlay part (`kaff-detail-panel`,
+ * `kaff-confirm-dialog`: a side panel, a bottom sheet, a dialog) is that overlay's own action, not the screen's primary, and is
+ * not counted either. The exclusion is by structure (the element a button sits in), never by file name.
  */
 const NOT_YET_MIGRATED = [
   'audit/audit-trail-page.html',
   'auth/change-password/change-password-page.html',
   'babs/bab-move-dialog/bab-move-dialog.html',
-  'babs/bab-panel/bab-panel.html',
   'babs/bab-tree/bab-tree-page.html',
   'boqs/boq-page.html',
   'catalogue/catalogue-import/catalogue-import-page.html',
-  'catalogue/catalogue-list/catalogue-create-panel.html',
-  'catalogue/catalogue-list/catalogue-item-panel.html',
   'catalogue/catalogue-list/catalogue-list-page.html',
   'clients/client-form/client-form-page.html',
   'closure/closure-page.html',
@@ -39,10 +38,36 @@ function templates(dir: string): string[] {
   );
 }
 
-function drawsOwnPrimary(file: string): boolean {
-  const withoutDeclarations = readFileSync(file, 'utf8').replace(/<ng-template[\s\S]*?<\/ng-template>/g, '');
-  return /<kaff-button[^>]*variant="primary"/.test(withoutDeclarations);
+/** Overlay parts: a button inside one is the overlay's own action. Matched by element, never by file name. */
+const OVERLAY = /<(kaff-detail-panel|kaff-confirm-dialog)\b[\s\S]*?<\/\1>/g;
+
+/** True when the markup draws a primary of its own: outside every ng-template and every overlay part. */
+function drawsOwnPrimaryIn(source: string): boolean {
+  const body = source.replace(/<ng-template[\s\S]*?<\/ng-template>/g, '').replace(OVERLAY, '');
+  return /<kaff-button[^>]*variant="primary"/.test(body);
 }
+
+function drawsOwnPrimary(file: string): boolean {
+  return drawsOwnPrimaryIn(readFileSync(file, 'utf8'));
+}
+
+describe('drawsOwnPrimaryIn: what counts as a screen primary', () => {
+  const primary = '<kaff-button variant="primary" testId="x">go</kaff-button>';
+
+  it('counts a primary drawn in the page body', () => {
+    expect(drawsOwnPrimaryIn('<section>' + primary + '</section>')).toBe(true);
+  });
+
+  it('does not count a primary inside an ng-template, a detail panel or a confirm dialog', () => {
+    expect(drawsOwnPrimaryIn('<ng-template #a>' + primary + '</ng-template>')).toBe(false);
+    expect(drawsOwnPrimaryIn('<kaff-detail-panel [open]="o"><div panelFooter>' + primary + '</div></kaff-detail-panel>')).toBe(false);
+    expect(drawsOwnPrimaryIn('<kaff-confirm-dialog>' + primary + '</kaff-confirm-dialog>')).toBe(false);
+  });
+
+  it('still counts a body primary that sits beside an overlay', () => {
+    expect(drawsOwnPrimaryIn('<kaff-detail-panel>' + primary + '</kaff-detail-panel>' + primary)).toBe(true);
+  });
+});
 
 describe('The primary-action contract (KAFF-936 AC-936-I)', () => {
   const all = templates(FEATURES).map((f) => f.slice(FEATURES.length + 1).replaceAll(String.fromCharCode(92), '/'));

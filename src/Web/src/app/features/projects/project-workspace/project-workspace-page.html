@@ -21,7 +21,7 @@
       @if (isTeam()) {
         <kaff-project-team-tab [projectId]="projectId()" [openAdd]="add() === '1'" />
       } @else {
-        @if (p.designProjectId || p.executionProjectId || canConvert()) {
+        @if (p.designProjectId || p.executionProjectId || (canConvert() && converting())) {
       <section class="where" data-testid="workspace-lineage">
         <kaff-icon name="info" />
         <div class="where-body">
@@ -81,12 +81,6 @@
                   </kaff-button>
                 </div>
               </form>
-            } @else {
-              <div class="where-act">
-                <kaff-button variant="secondary" testId="workspace-convert" (clicked)="openConvert()">
-                  {{ i18n.t('projects.convert.open') }}
-                </kaff-button>
-              </div>
             }
           }
         </div>
@@ -136,12 +130,6 @@
               (confirmed)="confirmSignDesign()"
               (cancelled)="confirmingSign.set(false)"
             />
-          } @else {
-            <div class="where-act">
-              <kaff-button variant="primary" testId="workspace-sign-ask" (clicked)="askSignDesign()">
-                {{ i18n.t('projects.sign_design.ask') }}
-              </kaff-button>
-            </div>
           }
         </div>
       </section>
@@ -159,7 +147,7 @@
           </kaff-banner>
         } @else if (p.followUpEndsOn) {
           <kaff-banner tone="note" icon="info" testId="workspace-follow-up">
-            <b>{{ i18n.t('projects.follow_up.line', { date: day(p.followUpEndsOn) }) }}</b>
+            <b>{{ i18n.t(isDesign() ? 'projects.follow_up.date_only' : 'projects.follow_up.line', { date: day(p.followUpEndsOn) }) }}</b>
           </kaff-banner>
         }
 
@@ -175,18 +163,62 @@
           </kaff-banner>
         }
 
-        @if (!p.isSigned || p.isArchived) {
-          <kaff-fact-list>
-            <kaff-fact [label]="i18n.t('projects.frame.hero.contract_value')" testId="workspace-fact-value">
-              @if (p.contractValue != null) {
-                <kaff-figure [value]="p.contractValue" [unit]="i18n.t('catalogue.currency.affix')" />
-              } @else {
-                <span class="nul" data-testid="workspace-value-null">
-                  <kaff-icon name="info" /><b>{{ i18n.t('projects.frame.value_unset') }}</b>
-                </span>
-              }
-            </kaff-fact>
+        @if (fresh() && team() !== null && noEngineer()) {
+          <kaff-banner tone="note" icon="info" testId="workspace-no-engineer">
+            <b>{{ i18n.t('projects.team.no_engineer') }}</b>
+          </kaff-banner>
+        }
+
+        @if (fresh() && (p.holdRate != null || p.advanceRate != null || p.advanceRecoveryRate != null)) {
+          <kaff-fact-list data-testid="workspace-rates">
+            @if (p.holdRate != null) {
+              <kaff-fact [label]="i18n.t('projects.workspace.vocab.fact.hold_rate')" testId="workspace-fact-hold">
+                <bdi dir="ltr" class="num">{{ rate(p.holdRate) }}</bdi>
+              </kaff-fact>
+            }
+            @if (p.advanceRate != null) {
+              <kaff-fact [label]="i18n.t('projects.workspace.vocab.fact.advance_signing')" testId="workspace-fact-advance">
+                <bdi dir="ltr" class="num">{{ rate(p.advanceRate) }}</bdi>
+              </kaff-fact>
+            }
+            @if (p.advanceRecoveryRate != null) {
+              <kaff-fact [label]="i18n.t('projects.workspace.vocab.fact.advance_rate')" testId="workspace-fact-advance-recovery">
+                <bdi dir="ltr" class="num">{{ rate(p.advanceRecoveryRate) }}</bdi>
+              </kaff-fact>
+            }
           </kaff-fact-list>
+        }
+
+        @if (!p.isSigned || p.isArchived) {
+          @if (isDesign() && !p.isArchived) {
+            <kaff-fact-list data-testid="workspace-design-facts">
+              @if (!canSignDesign()) {
+                <kaff-fact [label]="i18n.t('projects.workspace.design.area')" testId="workspace-fact-area">
+                  <b>{{ i18n.t('projects.frame.value_unset') }}</b>
+                </kaff-fact>
+              }
+              <kaff-fact [label]="i18n.t('projects.workspace.design.rate')" testId="workspace-fact-rate">
+                <kaff-figure [value]="designRate" [unit]="i18n.t('catalogue.currency.affix')" />
+              </kaff-fact>
+              @if (!canSignDesign()) {
+                <kaff-fact [label]="i18n.t('projects.frame.hero.contract_value')" testId="workspace-fact-value">
+                  <b>{{ i18n.t('projects.frame.value_unset') }}</b>
+                </kaff-fact>
+              }
+            </kaff-fact-list>
+          } @else {
+            <kaff-fact-list>
+              <kaff-fact [label]="i18n.t('projects.frame.hero.contract_value')" testId="workspace-fact-value">
+                @if (p.contractValue != null) {
+                  <kaff-figure [value]="p.contractValue" [unit]="i18n.t('catalogue.currency.affix')" />
+                } @else {
+                  <span class="nul" data-testid="workspace-value-null">
+                    <kaff-icon name="info" /><b>{{ i18n.t('projects.frame.value_unset') }}</b>
+                  </span>
+                }
+              </kaff-fact>
+            </kaff-fact-list>
+          }
         } @else {
           @let view = progressView();
           @if (p.contractType === 'CostPlus') {
@@ -303,7 +335,7 @@
                 <kaff-fact [label]="i18n.t('projects.workspace.pay.collected')" testId="workspace-pay-collected"><kaff-figure [value]="m.collectedToDate" /></kaff-fact>
                 <kaff-fact [label]="i18n.t('projects.workspace.pay.outstanding')" testId="workspace-pay-outstanding"><kaff-figure [value]="m.outstanding" /></kaff-fact>
               </kaff-fact-list>
-              @if (p.holdRate != null || p.advanceRate != null || p.advanceRecoveryRate != null || p.signedOn || p.startedOn) {
+              @if (!fresh() && (p.holdRate != null || p.advanceRate != null || p.advanceRecoveryRate != null || p.signedOn || p.startedOn)) {
                 <button
                   type="button"
                   class="disc"

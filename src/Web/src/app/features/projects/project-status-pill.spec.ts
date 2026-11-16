@@ -11,6 +11,8 @@ describe('shownStatus (D-228 item 4)', () => {
 
   it('shows Active from the first entry', () => {
     expect(shownStatus({ status: 'Active', workStarted: true })).toBe('Active');
+    expect(shownStatus({ status: 'Active', contractType: 'Design' })).toBe('Active');
+    expect(shownStatus({ status: 'Active', contractType: 'LumpSum' })).toBe('Setup');
   });
 
   it('leaves every other status as it is, started or not', () => {

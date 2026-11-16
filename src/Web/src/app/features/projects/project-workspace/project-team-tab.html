@@ -86,7 +86,7 @@
   </div>
   <div panelFooter class="foot">
     @if (candidates() !== null && candidates()?.length !== 0) {
-      <kaff-button [variant]="sheetConfirm" testId="team-add-confirm" [busy]="busy()" (clicked)="confirmAdd()">
+      <kaff-button variant="primary" testId="team-add-confirm" [busy]="busy()" (clicked)="confirmAdd()">
         <kaff-icon name="plus" [small]="true" />{{ i18n.t('projects.team.add_confirm') }}
       </kaff-button>
       <kaff-button variant="secondary" testId="team-add-cancel" [disabled]="busy()" (clicked)="sheetOpen.set(false)">{{ i18n.t('action.cancel') }}</kaff-button>

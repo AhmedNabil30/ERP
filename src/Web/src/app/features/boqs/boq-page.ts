@@ -1,4 +1,6 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, signal, viewChild, WritableSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, signal, WritableSignal } from '@angular/core';
+
+import { Router } from '@angular/router';
 
 import { toProblem } from '../../core/api/problem-details';
 import { AuthService } from '../../core/auth/auth.service';
@@ -103,6 +105,7 @@ export class BoqPage {
   private readonly catalogue = inject(CatalogueApi);
   private readonly babsApi = inject(BabsApi);
   private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly i18n = inject(I18nService);
@@ -128,7 +131,6 @@ export class BoqPage {
       this.auth.current()?.projects.find((entry) => entry.projectId === this.projectId())?.permissions.includes('ProjectManage') ??
       false,
   );
-  private readonly frame = viewChild(KaffProjectFrame);
   protected readonly hasBoq = computed(() => hasBoqType(this.project()?.contractType));
   protected readonly frozen = computed(() => this.boq()?.frozenOn ?? null);
   protected readonly archived = computed(() => this.project()?.isArchived === true);
@@ -139,7 +141,6 @@ export class BoqPage {
 
   protected readonly lines = computed(() => this.boq()?.lines ?? []);
   protected readonly missing = computed(() => this.lines().filter((line) => this.quantityOf(line) === null).length);
-  protected readonly canSign = computed(() => this.editable() && this.lines().length > 0 && this.missing() === 0);
   protected readonly canPrint = computed(() => this.canManage() && this.hasBoq() && this.lines().length > 0);
   protected readonly showPane = computed(() => this.editable() && (this.lines().length > 0 || this.started()));
   protected readonly designArea = computed(() => this.project()?.designAreaSquareMetres ?? null);
@@ -501,6 +502,16 @@ export class BoqPage {
   }
 
   // ---- sign -------------------------------------------------------------------------------------------
+  /** D-229 item 3: never disabled for a gap the user can fix here. A line with no quantity takes him to its box. */
+  protected askSign(): void {
+    const gap = this.lines().find((line) => this.quantityOf(line) === null);
+    if (gap !== undefined) {
+      this.focusLine(gap.id);
+      return;
+    }
+    this.openSign();
+  }
+
   protected openSign(): void {
     this.hold.set('');
     this.advance.set('');
@@ -533,8 +544,9 @@ export class BoqPage {
       this.project.set(await this.projects.get(this.projectId()));
     });
     if (done) {
-      void this.frame()?.reload(); // the frame's stage line and tabs change once signed
       this.signSheet.set(false);
+      // The project is signed and active: the overview shows the stage, the rates and what is next (project.html ?view=signed).
+      void this.router.navigate(['/projects', this.projectId()]);
     } else if (this.missingLineId !== null) {
       // The server named the line with no quantity: leave the sheet and take the user to that line.
       this.signSheet.set(false);

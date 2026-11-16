@@ -26,7 +26,9 @@ export interface PrimaryAction {
   readonly params?: Readonly<Record<string, number>>;
   /** Where it goes. Absent for an act the page performs itself (`act`). */
   readonly link?: readonly string[];
-  readonly act?: 'reopen';
+  readonly act?: 'reopen' | 'signDesign' | 'convert';
+  /** Query string of the link (the after-signing primary opens the team tab with its add sheet). */
+  readonly query?: Readonly<Record<string, string>>;
 }
 
 /**

@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AuthService } from '../../core/auth/auth.service';
@@ -10,7 +10,6 @@ import { BabsApi } from '../../core/catalogue/babs.api';
 import { CatalogueApi } from '../../core/catalogue/catalogue.api';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { ProjectsApi } from '../../core/projects/projects.api';
-import { KaffProjectFrame } from '../../shared/kaff-project-frame/kaff-project-frame';
 import { BoqPage, plainQuantity, sumAmounts } from './boq-page';
 
 class FakeI18n implements Pick<I18nService, 't' | 'locale' | 'formatDate' | 'formatNumber' | 'formatAmount'> {
@@ -213,8 +212,8 @@ describe('BoqPage', () => {
 
   it('signs with the hold as a fraction and the advance as percent units, even with a custom line waiting (AC-8)', async () => {
     const sign = vi.fn().mockResolvedValue({});
-    const reload = vi.spyOn(KaffProjectFrame.prototype, 'reload');
     const root = await render({ api: { sign } });
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     await click(byId(root, 'boq-sign-ask'));
 
     for (const [id, value] of [['boq-sign-hold', '20'], ['boq-sign-advance', '25'], ['boq-sign-recovery', '25']] as const) {
@@ -225,13 +224,18 @@ describe('BoqPage', () => {
     await click(byId(root, 'boq-sign-confirm'));
 
     expect(sign).toHaveBeenCalledWith('p-1', { holdPercentage: '0.2', clientAdvance: 25, advanceRecoveryRate: '0.25' });
-    expect(reload).toHaveBeenCalled();
+    expect(navigate).toHaveBeenCalledWith(['/projects', 'p-1']);
   });
 
-  it('disables signing while a line has no quantity and names the count', async () => {
+  it('never disables the sign button for a missing quantity: pressing it focuses that line and opens no sheet (D-229 item 3)', async () => {
     const root = await render({ boq: boq({ total: null, lines: [line('l1', { quantityEstimated: null, lineTotal: null })] }) });
+    const ask = (byId(root, 'boq-sign-ask')?.querySelector('button') ?? byId(root, 'boq-sign-ask')) as HTMLButtonElement;
+    expect(ask.disabled).toBe(false);
+    await click(ask);
+    await new Promise((resolve) => setTimeout(resolve));
 
-    expect((byId(root, 'boq-sign-ask')?.querySelector('button') ?? byId(root, 'boq-sign-ask')) as HTMLButtonElement).toHaveProperty('disabled', true);
+    expect(document.activeElement).toBe(byId(root, 'boq-line-l1-qty'));
+    expect(byId(root, 'boq-sign-hold')).toBeNull();
     expect(byId(root, 'boq-missing')).not.toBeNull();
     expect(byId(root, 'boq-total-dash')).not.toBeNull();
   });

@@ -24,7 +24,7 @@
             <kaff-button variant="secondary" testId="boq-print" (clicked)="print()">{{ i18n.t('boq.print') }}</kaff-button>
           }
           @if (editable() && lines().length > 0) {
-            <kaff-button variant="primary" testId="boq-sign-ask" [disabled]="!canSign()" (clicked)="openSign()">{{ i18n.t('boq.sign.title') }}</kaff-button>
+            <kaff-button variant="primary" testId="boq-sign-ask" (clicked)="askSign()">{{ i18n.t('boq.sign.title') }}</kaff-button>
           }
         </span>
       </div>
@@ -284,15 +284,11 @@
       @if (boq()?.total; as total) {
         <kaff-money-field labelKey="boq.sign.total_label" controlId="boq-sign-total" [readOnly]="true" [displayValue]="i18n.formatAmount(total)" testId="boq-sign-total" />
       }
-      <kaff-field labelKey="boq.sign.field.hold" controlId="boq-sign-hold" [required]="true" [errorKey]="signErrors().hold" errorTestId="boq-sign-hold-error">
-        <input id="boq-sign-hold" class="input" type="text" dir="ltr" inputmode="decimal" autocomplete="off" spellcheck="false" data-testid="boq-sign-hold" [value]="hold()" (input)="onText($event.target, hold)" />
-      </kaff-field>
-      <kaff-field labelKey="boq.sign.field.advance" controlId="boq-sign-advance" [required]="true" [errorKey]="signErrors().advance" errorTestId="boq-sign-advance-error">
-        <input id="boq-sign-advance" class="input" type="text" dir="ltr" inputmode="decimal" autocomplete="off" spellcheck="false" data-testid="boq-sign-advance" [value]="advance()" (input)="onText($event.target, advance)" />
-      </kaff-field>
-      <kaff-field labelKey="boq.sign.field.recovery" controlId="boq-sign-recovery" [required]="true" [errorKey]="signErrors().recovery" errorTestId="boq-sign-recovery-error">
-        <input id="boq-sign-recovery" class="input" type="text" dir="ltr" inputmode="decimal" autocomplete="off" spellcheck="false" data-testid="boq-sign-recovery" [value]="recovery()" (input)="onText($event.target, recovery)" />
-      </kaff-field>
+      <div class="two">
+        <kaff-money-field labelKey="boq.sign.field.hold" controlId="boq-sign-hold" affixKey="bab.affix.percent" [required]="true" [errorKey]="signErrors().hold" hintTestId="boq-sign-hold-error" testId="boq-sign-hold" [(value)]="hold" />
+        <kaff-money-field labelKey="boq.sign.field.advance" controlId="boq-sign-advance" affixKey="bab.affix.percent" [required]="true" [errorKey]="signErrors().advance" hintTestId="boq-sign-advance-error" testId="boq-sign-advance" [(value)]="advance" />
+      </div>
+      <kaff-money-field labelKey="boq.sign.field.recovery" controlId="boq-sign-recovery" affixKey="bab.affix.percent" [required]="true" [errorKey]="signErrors().recovery" hintTestId="boq-sign-recovery-error" testId="boq-sign-recovery" [(value)]="recovery" />
       <p class="lead" data-testid="boq-sign-lead">{{ i18n.t('boq.sign.lead') }}</p>
     </div>
     <div panelFooter class="foot">

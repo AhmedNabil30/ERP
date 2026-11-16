@@ -77,8 +77,6 @@ export class ProjectTeamTab {
 
   /** `?add=1` opens the sheet once; a reload of the list (canManage flickers) must not reopen it. */
   private addOpened = false;
-  /** The sheet's own confirm is not the screen's primary (that is the shell slot's); it takes the variant by binding. */
-  protected readonly sheetConfirm = 'primary' as const;
   private readonly addAction = viewChild<TemplateRef<unknown>>('addAction');
 
   protected readonly team = signal<TeamState>({ state: 'loading' });

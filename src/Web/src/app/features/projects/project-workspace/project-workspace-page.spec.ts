@@ -80,6 +80,7 @@ function project(type: ContractType, patch: Partial<ProjectDetail> = {}): Projec
     stage: 'Execution',
     isSigned: true,
     loggedToday: false,
+    workStarted: true,
     tabs: OWNER_TABS,
     money: MONEY,
     ...patch,
@@ -630,7 +631,8 @@ describe('ProjectWorkspacePage · sign a Design project (AC-417-K)', () => {
     fixture.detectChanges();
     expect(q(fixture, 'workspace-sign-fee')?.textContent).toContain('45000.0000');
 
-    click(fixture, 'workspace-sign-ask');
+    slotButton()?.click();
+    fixture.detectChanges();
     expect(q(fixture, 'workspace-sign-confirm-message')).not.toBeNull();
     expect(boq.signed).toEqual([]);
 
@@ -644,7 +646,10 @@ describe('ProjectWorkspacePage · sign a Design project (AC-417-K)', () => {
   it('refuses an empty area inline and sends nothing', async () => {
     const boq = new FakeBoqsApi();
     const fixture = await createFixture(new FakeProjectsApi(project('Design', { contractValue: null })), OWNER(), boq);
-    click(fixture, 'workspace-sign-ask');
+    // D-229 item 3: the primary is there with no area typed; pressing it marks the area box and sends nothing.
+    expect(slotButton()?.disabled).toBe(false);
+    slotButton()?.click();
+    fixture.detectChanges();
     expect(q(fixture, 'workspace-sign-area-error')).not.toBeNull();
     expect(q(fixture, 'workspace-sign-confirm')).toBeNull();
     expect(boq.signed).toEqual([]);
@@ -682,7 +687,77 @@ describe('ProjectWorkspacePage · after signing and work not started (D-228)', (
       new FakeProjectsApi(project('Design', { signedOn: '2026-11-01', conversionOffered: true })),
       CONVERTER(),
     );
-    expect(q(fixture, 'workspace-convert')).not.toBeNull();
+    expect(slotButton()?.textContent).toContain('projects.convert.open');
     expect(q(fixture, 'workspace-sign-design')).toBeNull();
+    slotButton()?.click();
+    fixture.detectChanges();
+    expect(q(fixture, 'workspace-convert-form')).not.toBeNull();
+  });
+
+  it('a signed Design project the server does not offer to convert has no primary (design phases not built: the ruled in-progress state is unreachable)', async () => {
+    await createFixture(new FakeProjectsApi(project('Design', { signedOn: '2026-11-01', conversionOffered: false })), CONVERTER());
+    expect(slotButton()).toBeNull();
+  });
+
+  it('a Design project has its own stage line: contract, design, handover', async () => {
+    const fixture = await createFixture(new FakeProjectsApi(project('Design', { stage: 'Execution', signedOn: '2026-11-01' })), CONVERTER());
+    const words = Array.from(fixture.nativeElement.querySelectorAll('[data-testid="workspace-stages"] li')).map((li) => (li as HTMLElement).textContent?.trim());
+    expect(words).toEqual(['projects.frame.stage.contract', 'projects.frame.stage.design', 'projects.frame.stage.handover']);
+  });
+
+  it('an unsigned Design project shows the rate per square metre and the date-only notice', async () => {
+    const fixture = await createFixture(
+      new FakeProjectsApi(project('Design', { contractValue: null, isSigned: false, signedOn: null, status: 'Setup', stage: 'Boq', followUpEndsOn: '2026-12-05' })),
+      CONVERTER(),
+    );
+    expect(q(fixture, 'workspace-fact-rate')?.textContent).toContain('450');
+    expect(q(fixture, 'workspace-follow-up')?.textContent).toContain('projects.follow_up.date_only');
+    expect(slotButton()?.textContent).toContain('projects.sign_design.title');
+  });
+});
+
+describe('ProjectWorkspacePage · just signed (D-229, project.html ?view=signed)', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  const fresh = () => project('LumpSum', { workStarted: false, money: undefined });
+  const NO_ENGINEER = TEAM.filter((m) => m.role !== 'SiteEngineer');
+
+  it('lists the three rates above the hero, with the notice, and offers «add a person» only because the server says canManage', async () => {
+    const fixture = await createFixture(new FakeProjectsApi(fresh(), { team: NO_ENGINEER, canManage: true }), OWNER());
+    expect(q(fixture, 'workspace-status')?.textContent).toContain('لم تبدأ');
+    expect(q(fixture, 'workspace-no-engineer')).not.toBeNull();
+    const rates = q(fixture, 'workspace-rates') as HTMLElement;
+    expect(rates.textContent).toContain('projects.workspace.vocab.fact.hold_rate');
+    expect(rates.textContent).toContain('projects.workspace.vocab.fact.advance_signing');
+    expect(rates.textContent).toContain('projects.workspace.vocab.fact.advance_rate');
+    const hero = q(fixture, 'workspace-progress') as HTMLElement;
+    expect(rates.compareDocumentPosition(hero) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(q(fixture, 'workspace-terms')).toBeNull();
+    expect(slotButton()?.textContent).toContain('projects.team.add');
+  });
+
+  it('when the server says canManage is false: the notice, and no primary', async () => {
+    const fixture = await createFixture(new FakeProjectsApi(fresh(), { team: NO_ENGINEER, canManage: false }), OWNER());
+    expect(q(fixture, 'workspace-no-engineer')).not.toBeNull();
+    expect(q(fixture, 'workspace-rates')).not.toBeNull();
+    expect(slotButton()).toBeNull();
+  });
+
+  it('with a site engineer on the team there is no notice and no add primary', async () => {
+    const fixture = await createFixture(new FakeProjectsApi(fresh(), { canManage: true }), OWNER());
+    expect(q(fixture, 'workspace-no-engineer')).toBeNull();
+    expect(slotButton()?.textContent ?? '').not.toContain('projects.team.add');
+  });
+
+  it('the primary never reads a role name: a Technical Office session with canManage true gets it', async () => {
+    await createFixture(new FakeProjectsApi(fresh(), { team: NO_ENGINEER, canManage: true }), session('TechnicalOffice', ['ProjectRead'], []));
+    expect(slotButton()?.textContent).toContain('projects.team.add');
+  });
+
+  it('once work has started the rates fold back into the contract terms', async () => {
+    const fixture = await createFixture(new FakeProjectsApi(project('LumpSum', { workStarted: true }), { team: NO_ENGINEER, canManage: true }), OWNER());
+    expect(q(fixture, 'workspace-rates')).toBeNull();
+    expect(q(fixture, 'workspace-no-engineer')).toBeNull();
+    expect(q(fixture, 'workspace-terms')).not.toBeNull();
   });
 });

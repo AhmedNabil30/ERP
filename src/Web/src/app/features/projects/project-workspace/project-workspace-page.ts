@@ -23,7 +23,7 @@ import { ExtractsApi, WaitingOnItem } from '../../../core/extracts/extracts.api'
 import { contractTypeKey, roleKey } from '../../../core/i18n/enum-keys';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { HeaderActionsService } from '../../../core/layout/header-actions.service';
-import { ProjectDetail, ProjectProgress, ProjectsApi } from '../../../core/projects/projects.api';
+import { ProjectDetail, ProjectProgress, ProjectsApi, TeamRead } from '../../../core/projects/projects.api';
 import { closureCapsOf } from '../../closure/closure-display';
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
@@ -127,6 +127,22 @@ export class ProjectWorkspacePage {
   /** What the open extracts wait for. Null: nothing open, not a Lump Sum, or the read failed (the server still decides). */
   private readonly waitingItems = signal<readonly WaitingOnItem[] | null>(null);
   protected readonly termsOpen = signal(false);
+  /** The team read, only while the overview needs it (a signed project with no daily log yet). Null: not read, or failed. */
+  protected readonly team = signal<TeamRead | null>(null);
+
+  /** Signed, active, no daily log entry yet: the state project.html draws as ?view=signed. Execution projects only. */
+  protected readonly fresh = computed(() => {
+    const p = this.project();
+    return p !== null && p.contractType === 'LumpSum' && p.isSigned && !p.isArchived && p.workStarted !== true;
+  });
+  /** The team read answered and lists no site engineer. */
+  protected readonly noEngineer = computed(() => {
+    const t = this.team();
+    return t !== null && !t.members.some((m) => m.role === 'SiteEngineer');
+  });
+  protected readonly isDesign = computed(() => this.project()?.contractType === 'Design');
+  /** The design fee per square metre, shown on an unsigned design project. */
+  protected readonly designRate = String(DESIGN_RATE_PER_SQUARE_METRE);
 
   /** The team tab, when the server lets this viewer open it. */
   protected readonly isTeam = computed(() => this.tab() === 'team' && this.project()?.tabs.team === true);
@@ -198,6 +214,19 @@ export class ProjectWorkspacePage {
     if (project.isArchived) {
       return this.caps().canManage ? { labelKey: 'projects.frame.action.reopen', act: 'reopen' as const } : null;
     }
+    // After signing (D-228 item 3, project.html ?view=signed): the server says whether this viewer may add people, so no role name is read.
+    if (this.fresh() && this.noEngineer() && this.team()?.canManage === true) {
+      return { labelKey: 'projects.team.add', link: ['/projects', project.id], query: { tab: 'team', add: '1' } };
+    }
+    if (project.contractType === 'Design') {
+      // D-229 item 3: pressing takes him to the gap. The area is entered on this screen, so sign is never disabled for it.
+      if (this.canSignDesign() && !this.confirmingSign()) {
+        return { labelKey: 'projects.sign_design.title', act: 'signDesign' as const };
+      }
+      if (this.canConvert() && !this.converting()) {
+        return { labelKey: 'projects.convert.open', act: 'convert' as const };
+      }
+    }
     return primaryAction(project.contractType, project.status, this.caps(), project.id, this.pending(), project.isSigned);
   });
 
@@ -222,6 +251,12 @@ export class ProjectWorkspacePage {
         'primary',
       ),
     );
+    // The team is read for the after-signing notice and primary; read again when the user comes back from the team tab.
+    effect(() => {
+      const project = this.project();
+      this.isTeam();
+      untracked(() => void this.loadTeam(project));
+    });
     inject(DestroyRef).onDestroy(() => this.headerActions.clear());
   }
 
@@ -236,6 +271,19 @@ export class ProjectWorkspacePage {
       if (project.contractType === 'LumpSum' && project.tabs.extracts) {
         void this.loadWaiting();
       }
+    }
+  }
+
+  private async loadTeam(project: ProjectDetail | null): Promise<void> {
+    if (project === null || !this.fresh()) {
+      this.team.set(null);
+      return;
+    }
+    try {
+      this.team.set(await this.projectsApi.teamRead(project.id));
+    } catch {
+      // No notice and no primary: the server still decides every add.
+      this.team.set(null);
     }
   }
 
@@ -328,6 +376,17 @@ export class ProjectWorkspacePage {
     this.confirmingSign.set(false);
   }
 
+  /** A missing area marks the box and takes him to it (D-229 item 3). */
+  private focusAreaBox(): void {
+    setTimeout(() => {
+      const box = document.getElementById('sign-design-area');
+      if (this.designFee() === null) {
+        box?.scrollIntoView?.({ block: 'center' });
+        box?.focus();
+      }
+    });
+  }
+
   protected askSignDesign(): void {
     this.areaAttempted.set(true);
     this.lifecycleError.set(null);
@@ -412,8 +471,13 @@ export class ProjectWorkspacePage {
     const action = this.primary();
     if (action?.act === 'reopen') {
       await this.reopen();
+    } else if (action?.act === 'signDesign') {
+      this.askSignDesign();
+      this.focusAreaBox();
+    } else if (action?.act === 'convert') {
+      this.openConvert();
     } else if (action?.link) {
-      await this.router.navigate([...action.link]);
+      await this.router.navigate([...action.link], action.query ? { queryParams: action.query } : undefined);
     }
   }
 }

@@ -422,3 +422,11 @@
     font-size: 9pt;
   }
 }
+
+/* The hold and the advance side by side (boq.html `.two`); the third rate takes the full width. */
+.sheet .two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  align-items: start;
+}

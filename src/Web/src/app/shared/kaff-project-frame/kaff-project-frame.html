@@ -23,7 +23,7 @@
         }
         @if (stageIndex() >= 0) {
           <ol class="stl" [attr.aria-label]="i18n.t('projects.frame.stage.label')" data-testid="workspace-stages">
-            @for (stage of stages; track stage.id; let k = $index) {
+            @for (stage of stages(); track stage.id; let k = $index) {
               <li [class.done]="k < stageIndex()" [class.cur]="k === stageIndex()" [attr.aria-current]="k === stageIndex() ? 'step' : null">
                 <span class="mk">@if (k < stageIndex()) {<kaff-icon name="check" [small]="true" />}</span>{{ i18n.t(stage.key) }}
               </li>

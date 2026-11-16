@@ -33,6 +33,13 @@ const STAGE_KEY: Readonly<Record<ProjectStage, string>> = {
   Handover: 'projects.frame.stage.handover',
 };
 
+/** D-229 item 2: a design project's own stage line. The server's three stages read as contract, design, handover. */
+const DESIGN_STAGE_KEY: Readonly<Record<ProjectStage, string>> = {
+  Boq: 'projects.frame.stage.contract',
+  Execution: 'projects.frame.stage.design',
+  Handover: 'projects.frame.stage.handover',
+};
+
 /**
  * Tabs that belong to a stage not reached or to another contract type (README "The project frame": a tab of
  * a stage not reached is absent). Facts of the project, not of the viewer: the viewer's side is `tabs`.
@@ -90,7 +97,10 @@ export class KaffProjectFrame {
   protected readonly shown = shownStatus;
   protected readonly contractTypeKey = contractTypeKey;
   protected readonly statusKey = projectWorkspaceStatusKey;
-  protected readonly stages = STAGES.map((id) => ({ id, key: STAGE_KEY[id] }));
+  protected readonly stages = computed(() => {
+    const keys = this.project()?.contractType === 'Design' ? DESIGN_STAGE_KEY : STAGE_KEY;
+    return STAGES.map((id) => ({ id, key: keys[id] }));
+  });
 
   /** Tabs the server allows, in the frame's order. */
   protected readonly tabs = computed(() => {
