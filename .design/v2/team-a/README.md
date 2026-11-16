@@ -1295,3 +1295,96 @@ Three fields, empty, required, one field part: **«نسبة الحجز»** (was 
 ## What these mocks do not draw
 
 The design sign sheet and the convert sheet; busy states beyond the kit's; English/LTR copy; the daily log and crew «حفظ» reason lines; a disabled-primary case with an unfixable reason.
+
+
+# People: salaried staff and day-labour workers (`people.html`)
+
+**PROPOSAL, not approved; 2026-11-16.** Draws D-231: salaried employees and day-labour workers (يومية) are separated on screen. Each has its own menu entry, its own list and its own add form, with only the fields that population has. Open `people.html` directly. `?view=staff|staff-create|staff-createerr|staff-taken|staff-dup|staff-edit|staff-menu|staff-archive|staff-archived|staff-none|staff-empty|staff-loading|staff-failed` and `?view=workers|workers-site|workers-create|workers-createerr|workers-dup|workers-edit|workers-edit-owner|workers-menu|workers-archive|workers-archived|workers-unarch|workers-none|workers-empty|workers-loading|workers-failed|workers-ro|nav`. `embed=1` hides the preview strip (review chrome, do not build it). `role=owner` switches any view to the Owner's sign-in. Nothing here has been seen by Nabil.
+
+The record underneath is unchanged: one `Employee` register, `EmployeeKind` fixed at creation, nobody in both (`spec.md` §10, `Employee.cs:82`, D-231 item 2). Only the screens split.
+
+## What it holds
+
+- **Menu.** The one row «الموظفون» becomes two rows, side by side in «البيانات الأساسية»: «الموظفون» (salaried) and «عمالة اليومية» (day labour). No new group heading. Both words already exist in `ar.json` (`nav.employees`, `hr.worker.pool_title`). View `nav` opens the phone menu sheet on the workers row.
+- **Salaried staff list** (`staff`). Title «الموظفون». Columns: name (pinned), المسمى الوظيفي, القسم, تاريخ التعيين, رقم الهاتف, row menu. Filter strip: search by name or phone, the segmented filter نشط / مؤرشف / الكل, the count line. Primary «تسجيل موظف» in the header slot on desktop and in the bottom bar on a phone.
+- **Day-labour list** (`workers`). Title «عمالة اليومية». Columns: name (pinned), الباب, التخصص, عدد مرات التشغيل, متوسط التقييم, رقم الهاتف, row menu. Same filter strip plus a الباب select. Primary «تسجيل عامل».
+- **Register and edit** are the catalogue's side panel (bottom sheet on a phone), not a page. The primary is always enabled; a missing field is refused in place on press (D-229 item 3). Edit's «حفظ» is disabled only while nothing has changed.
+  - Staff form: الاسم الكامل*, رقم الهاتف*, الرقم القومي (hint «14 رقماً»), المسمى الوظيفي, القسم, تاريخ التعيين. No kind field, no باب, no التخصص.
+  - Worker form: الاسم الكامل*, رقم الهاتف*, الباب*, التخصص. No national id, no job title, no department, no hire date.
+  - Worker edit opens with a figures strip: عدد مرات التشغيل, متوسط التقييم, and for the Owner only a third cell, الأجر اليومي (ج.م), with the eye-off icon and the existing "internal" marker, plus a «سجل التشغيل» link.
+- **The kind is not on any screen.** Today's form has a «نوع التكلفة» select and a line saying the kind is permanent. Both go: the menu entry the user came from is the kind.
+
+## Fields per population, and where they come from
+
+| Field | Salaried | Day labour | Source |
+|---|---|---|---|
+| Full name | yes | yes | `Employee.cs:75` |
+| Phone | yes | yes | `Employee.cs:77` |
+| الباب (trade) | no | yes, required | `Employee.cs:85`, guard in `Employee.Create` and `Edit` (`DayLabourRequiresTrade`) |
+| التخصص | no (dropped, see Q8) | yes | `Employee.cs:88` |
+| الرقم القومي, المسمى الوظيفي, القسم, تاريخ التعيين | yes | no | `Employee.cs:90-96`, written by `SetStaffDetails` (`Employee.cs:140`) |
+| Times engaged, average rating | no | yes | `DayLabour/ListPool/Response.cs:26-37` (computed per worker) |
+| Average day rate, per-engagement rate | no | yes, Owner only here | `DayLabour/ListEngagements/Response.cs:6-24`, `Permission.DayLabourRateManage` (`PermissionCatalogue.cs:398`) |
+| Code | generated, **not shown** | generated, **not shown** | `Employee.cs:73` |
+| Salary | **does not exist** | n/a | no field on `Employee`; payroll is `spec.md` §10 "🟡" |
+| Day rate on the worker | **does not exist** on the worker | the rate lives on each engagement | there is no single rate to put on a form |
+
+## Who sees what
+
+- **HR** holds `EmployeeManage` (`PermissionCatalogue.cs:357`: Owner and HR, company-wide). Sees both lists and both forms, full edit and archive. **Never sees a rate**: HR holds no money permission (`Hr_holds_no_permission_that_touches_money`, `CatalogueCompletenessTests.cs:222`). The worker edit panel for HR has two figures and no rate and no history link.
+- **Owner** holds `EmployeeManage` and `DayLabourRateManage`. Same screens as HR, plus the rate cell and «سجل التشغيل» in the worker panel (`?view=workers-edit-owner`).
+- **Finance and the assigned site engineer** also hold `DayLabourRateManage`, project-scoped. They reach a rate from the project's day-labour screens, not from this register. They do not get the menu rows (no `EmployeeManage`).
+- **Site engineer** sees neither list. He keeps today's project pool and the crew sheet, which show no phone and no code (D-224 item 6: `DayLabour/ListPool/Handler.cs:48,84,86`).
+- **Read-only** (`workers-ro`): no role reads the register without managing it today (`ListEmployees` requires `EmployeeManage`, `Employees/ListEmployees/Endpoint.cs:26`). The view is drawn in case one is added: no «تسجيل عامل», no row menu, a panel with read-only fields and a "للاطلاع فقط" badge, and **no phone column**, because contact is withheld from anyone without `EmployeeManage` (D-224 item 6). Draw-only; see Q7.
+
+## How a site registration reaches the list
+
+`workers-site`: a worker registered from site (`RegisterFromSite`, request `Request.cs:21`) is an `Employee` of kind DayLabour, so he is one more row of «عمالة اليومية», with his trade and specialty, times engaged 0 (shown as «لم يُشغَّل من قبل»). Nothing marks the row as "from site": provenance tags stay off the screen. The row is tinted in this view only so a reviewer can find it (the kit's just-created tint). The site pool and the crew sheet are not redrawn; they read the same people.
+
+## The edge cases the model forces
+
+- **A person cannot be moved between the two.** The screen offers nothing: no kind field, no «نقل إلى…» in the row menu (the menu has تعديل and أرشفة…/إلغاء الأرشفة only, `workers-menu`, `staff-menu`). A control the user may not use is absent. The way a man who was on يومية is hired on payroll is: archive the worker, register him as an employee. His phone then matches the archived worker, which draws the warning below. The server accepts this (`CreateEmployee/Handler.cs:63-90`: only an ACTIVE salaried match refuses; every other match is warn-and-acknowledge).
+- **Duplicate phone, warn** (`staff-dup`, `workers-dup`): a note banner «هذا الرقم مسجل بالفعل:» listing each match as name, a badge with the match's population (موظف بالراتب / يومية) and the archived tag, then the checkbox «رأيت من يحمل الرقم وأريد المتابعة.». Pressing «حفظ» without the box refuses in place: «علّم هذا المربع للمتابعة.» No code is shown for a match.
+- **Duplicate phone, refuse** (`staff-taken`): a new employee whose phone is an ACTIVE employee's is refused on the phone field: «رقم الهاتف هذا مسجل بالفعل لموظف آخر.» (existing `errors.master.employee_phone_taken`). There is no checkbox: it cannot be overridden.
+- **Archive and unarchive**: the catalogue's recoverable pattern. Row menu «أرشفة…» opens the inline confirmation («أرشفة «الاسم»؟» and one line); the panel's «أرشفة» does the same. «إلغاء الأرشفة» restores the row in place (`workers-unarch`). **The API has no unarchive for employees today** (only `Employee.Archive`, `Employee.cs:176`); it is drawn ahead, like the أبواب screen. Until it exists the confirmation line must not promise a restore.
+- **First run, no results, loading, failed**: the kit's four list states. First run is an icon and the existing title only (the primary is already in the header and bottom bar, so no second button). Failed is the refusal banner with «إعادة المحاولة».
+- **Archived rows** keep the dashed «مؤرشف» tag and dim text.
+
+## Reused from the kit and earlier mocks, unchanged
+
+App shell, menu sheet, table shell with pinned identity column, phone row, segmented filter, search field, row menu, inline archive confirmation, side panel and bottom sheet, text field, select, checkbox, note banner, refusal banner, saved-in-place row, four list states, skeleton, totals strip (`tot-in`, now with a variable column count for the figures strip), the internal-marker pattern of the catalogue's cost column, the read-only badge with a lock, the just-created row tint.
+
+## New in the kit
+
+Nothing visual. One generalisation: `tot-in` takes 2 or 3 cells. One new phone row shape: three lines (name and phone; trade and specialty; times engaged and rating) for a worker, two lines for an employee. Both use the existing `li` grid.
+
+## New words (every one is a guess; Nabil or the BA confirms)
+
+«تسجيل عامل» and «تسجيل موظف» exist (`hr.worker.action.register`, `hr.employee.action.create`). New: «ابحث بالاسم أو الهاتف»; «اختر الباب» (the select's placeholder, as in the catalogue mock); «تعذّر تحميل الموظفين.» / «تعذّر تحميل العمال.»; «لا يوجد موظفون مؤرشفون» / «لا يوجد عمال مؤرشفون»; «علّم هذا المربع للمتابعة.»; «أدخل رقم هاتف صحيحاً، مثل 010 1234 5678.»; «14 رقماً»; «تشغيل» (the phone-row label for times engaged); «تمت استعادة «الاسم» إلى القائمة النشطة.»; count lines «يعرض 7 موظفين نشطين», «يعرض 7 عمال نشطين». Existing words reused: «الموظفون», «عمالة اليومية», «موظف بالراتب», «يومية», «الباب», «التخصص», «الرقم القومي», «المسمى الوظيفي», «القسم», «تاريخ التعيين», «عدد مرات التشغيل», «متوسط التقييم», «الأجر اليومي», «سجل التشغيل», «لم يُشغَّل من قبل», «رقم الهاتف مطلوب», «عامل اليومية يجب تسجيله على باب.», «الاسم مطلوب.», «مؤرشف», «أرشفة», «إلغاء الأرشفة», «إعادة المحاولة».
+
+## Left off the screen, on purpose
+
+The employee code (`E-…`) in every list, panel and warning; the kind badge on rows; the kind select and its "permanent" line; salary (no field); a worker's current engagement (the API sends none on a list); any sentence explaining that the two populations are separate.
+
+## What the API does not send (the build stops here until it does)
+
+1. `EmployeeSummary` (`Employees/ListEmployees/Response.cs:7`) carries no job title, department or hire date, so the salaried list columns need them added. It carries a `BabId` and no باب name, so the worker list needs the name resolved (the site pool has the same gap).
+2. Times engaged and average rating are computed only in `ListPool`, which is project-scoped and needs `DayLabourSiteManage`, which HR does not hold. HR's worker list needs a company-wide read of the same two figures.
+3. The Owner's average day rate comes from `ListEngagements`, per worker and project-scoped. The panel's figure needs a company-wide average, or the cell is dropped (Q4).
+4. No unarchive for employees.
+5. `errors.master.duplicate_phone_not_acknowledged` says «راجع العميل الذي يحمله», a client's wording, on an employee form.
+
+## Not decided here: questions for Nabil, each drawn on its recommendation
+
+1. **The two menu labels.** Recommended and drawn: «الموظفون» and «عمالة اليومية». Both exist. Alternatives: «الموظفون بالراتب» and «عمال اليومية».
+2. **One heading or two entries.** Recommended and drawn: two top-level rows next to each other in «البيانات الأساسية»; no new group (it would add a level for two rows).
+3. **Separate screens only, or separate records.** Recommended and drawn: screens only. One register stays, so one person is never two records and the phone check across both populations keeps working (`spec.md` §2 "exactly one record each"; `Employee.cs` remarks, D-016).
+4. **Who sees the day rate.** Recommended and drawn: the Owner in the worker panel, Finance and the assigned engineer on the project screens they already have, HR never.
+5. **The code on people lists.** Recommended and drawn: off. Search is by name or phone. Today's list shows `E-…` under each name. Ask HR if they search by it.
+6. **Moving a person between the two.** Recommended and drawn: nothing on screen. The duplicate-phone warning is the only trace.
+7. **A read-only role.** Recommended: do not build `workers-ro` until a role needs it. No role reads the register without managing it today.
+8. **التخصص on a salaried form.** Recommended and drawn: dropped, because المسمى الوظيفي says the same thing. The API still accepts it for salaried records; the form sends nothing.
+
+## What the mock does not draw
+
+The English/LTR text; the register-from-site form and the crew sheet (not redrawn by order); the worker history screen; payroll; the Owner's rate edit (it lives on the engagement, not here); the HR landing page's own menu (the `layout.html` sample gives HR three admin rows and no register, which the real guard `employeeManageGuard` contradicts; the sample is stale, not this mock).
