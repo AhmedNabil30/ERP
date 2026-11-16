@@ -16915,3 +16915,13 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 4. **A signed project with no daily log yet reads «لم تبدأ»,** and «جاري العمل» from its first daily log entry. This is the word shown, derived on read from whether an entry exists. The project state machine is unchanged.
 
 **Built under D-227, recorded here.** The recovery rate crosses the wire as a `Percentage` fraction (`"0.25"`), like the hold rate, not in percent units like the advance: the D-151 guard `Every_rate_on_the_wire_is_typed_Percentage` refuses a bare decimal named as a rate. Whoever converts a design project is assigned to the execution project. Finance is not yet staffed on a converted project, which D-217 item 36 requires for every new project; that is a defect to fix.
+
+
+## D-229 — Nabil approves the team tab, the three-rate sign sheet and the after-signing states, and rules how a primary button behaves · 2026-11-16
+
+**Source.** Nabil, in session with the Scrum Master, 2026-11-16. Mocks `.design/v2/team-a/project-team.html`, `boq.html` and `project.html` as revised at `f4cbcff`.
+
+1. **The mocks are approved for build:** the team tab with add and remove; the sign sheet with three rates; the after-signing overview, where the Owner's primary is «إضافة شخص» and the Technical Office sees the notice «لم يُسنَد مهندس الموقع بعد» with no primary; the design project states.
+2. **A design project's stage line is «التعاقد · التصميم · التسليم».**
+3. **A primary button is never disabled for something the user can fix on that screen.** Pressing it takes him to the gap and marks it. It is disabled only for what he cannot fix there. This is a kit rule for every screen; the daily log and crew save follow it.
+4. **The sign sheet keeps its one sentence,** «التوقيع يثبّت قيمة التعاقد على إجمالي المقايسة، وتُجمَّد البنود بعده فلا تُضاف ولا تُعدَّل ولا تُحذف.» Signing cannot be undone, and this is the stated exception to "screens explain themselves". It closes the question raised on `boq.sign.lead` on 2026-11-11.
