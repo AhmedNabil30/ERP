@@ -1,0 +1,114 @@
+<!-- The shell places this in the page header on desktop and the phone bottom bar; the workspace reads `declared`. -->
+<ng-template #addAction>
+  <kaff-button variant="primary" testId="team-add" (clicked)="openSheet()">
+    <kaff-icon name="uadd" [small]="true" />{{ i18n.t('projects.team.add') }}
+  </kaff-button>
+</ng-template>
+
+<div class="pane" data-testid="workspace-team">
+  @switch (team().state) {
+    @case ('loading') {
+      <kaff-state mode="loading" titleKey="projects.workspace.loading" testId="workspace-team-loading" />
+    }
+    @case ('failed') {
+      <kaff-banner tone="refusal" testId="workspace-team-failed">
+        {{ i18n.t('projects.frame.team_failed') }}
+        <kaff-button bannerActions variant="secondary" testId="workspace-team-retry" (clicked)="load()">
+          {{ i18n.t('extract.retry') }}
+        </kaff-button>
+      </kaff-banner>
+    }
+    @case ('ok') {
+      @if (done(); as d) {
+        <kaff-banner tone="ok" testId="team-done">{{ i18n.t(d.key, { name: d.name }) }}</kaff-banner>
+      }
+      @if (actionError(); as key) {
+        <kaff-banner tone="refusal" testId="team-action-error">{{ i18n.t(key) }}</kaff-banner>
+      }
+      <ul class="lst" data-testid="workspace-team-list">
+        @for (member of members(); track member.assignmentId) {
+          <li [class.new]="member.userId === justAdded()" [attr.data-user]="member.userId" [attr.data-testid]="'workspace-member-' + member.userId">
+            <span class="pp"><span class="av" aria-hidden="true">{{ initial(member.fullName) }}</span><b dir="auto">{{ member.fullName }}</b></span>
+            @if (member.canRemove) {
+              <kaff-button variant="secondary" [testId]="'team-remove-' + member.userId" (clicked)="removing.set(member)">
+                <kaff-icon name="umin" [small]="true" />{{ i18n.t('projects.team.remove') }}
+              </kaff-button>
+            }
+            <span class="mt">
+              {{ i18n.t(roleLabelKey(member.role)) }}@if (member.level !== 'Standard') { · {{ i18n.t(levelLabelKey(member.level)) }} }
+              @if (member.origin !== 'Added') {
+                <kaff-badge tone="quiet" [testId]="'team-origin-' + member.userId">{{ i18n.t('projects.team.origin.' + member.origin) }}</kaff-badge>
+              }
+            </span>
+          </li>
+        }
+      </ul>
+      @if (noEngineer()) {
+        <kaff-banner tone="note" icon="info" testId="team-no-engineer"><b>{{ i18n.t('projects.team.no_engineer') }}</b></kaff-banner>
+      }
+    }
+  }
+</div>
+
+<kaff-detail-panel [open]="sheetOpen()" titleKey="projects.team.add" testId="team-add-sheet" (closed)="sheetOpen.set(false)">
+  <div panelBody class="sheet">
+    @if (candidates() === null) {
+      <kaff-state mode="loading" titleKey="projects.workspace.loading" testId="team-candidates-loading" />
+    } @else if (candidates()?.length === 0 && refusal() === null) {
+      <kaff-state mode="empty" icon="info" titleKey="projects.team.none_available" testId="team-none-available" />
+    } @else {
+      @if (refusal(); as key) {
+        <kaff-banner tone="refusal" testId="team-add-error">{{ i18n.t(key) }}</kaff-banner>
+      }
+      <kaff-field #personField labelKey="projects.team.field.person" controlId="team-person" [errorKey]="personError()" errorTestId="team-person-error">
+        <kaff-select
+          controlId="team-person"
+          ariaLabelKey="projects.team.field.person"
+          testId="team-person"
+          [options]="personOptions()"
+          [value]="pick()"
+          [describedBy]="personField.describedById()"
+          [invalid]="personError() !== null"
+          (valueChange)="onPick($event)"
+        />
+      </kaff-field>
+      @if (chosen()?.levelRequired) {
+        <kaff-choice-group
+          legendKey="projects.team.field.level"
+          testId="team-level"
+          [columns]="2"
+          [choices]="levelChoices"
+          [errorKey]="levelError()"
+          [(value)]="level"
+        />
+      }
+    }
+  </div>
+  <div panelFooter class="foot">
+    @if (candidates() !== null && candidates()?.length !== 0) {
+      <kaff-button [variant]="sheetConfirm" testId="team-add-confirm" [busy]="busy()" (clicked)="confirmAdd()">
+        <kaff-icon name="plus" [small]="true" />{{ i18n.t('projects.team.add_confirm') }}
+      </kaff-button>
+      <kaff-button variant="secondary" testId="team-add-cancel" [disabled]="busy()" (clicked)="sheetOpen.set(false)">{{ i18n.t('action.cancel') }}</kaff-button>
+    } @else {
+      <kaff-button variant="secondary" testId="team-add-close" (clicked)="sheetOpen.set(false)">{{ i18n.t('action.close') }}</kaff-button>
+    }
+  </div>
+</kaff-detail-panel>
+
+<kaff-confirm-dialog
+  [open]="removing() !== null"
+  tone="recoverable"
+  icon="umin"
+  [title]="i18n.t('projects.team.remove_question', removeParams())"
+  [body]="i18n.t('projects.team.remove_detail')"
+  [confirmLabel]="i18n.t('projects.team.remove')"
+  [cancelLabel]="i18n.t('action.cancel')"
+  [busy]="removeBusy()"
+  [sheetOnPhone]="true"
+  testId="team-dialog"
+  confirmTestId="team-dialog-confirm"
+  cancelTestId="team-dialog-cancel"
+  (confirmed)="confirmRemove()"
+  (cancelled)="removing.set(null)"
+/>

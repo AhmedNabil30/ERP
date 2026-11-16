@@ -28,6 +28,8 @@ export class KaffChoiceGroup {
   readonly required = input(false);
   readonly errorKey = input<string | null>(null);
   readonly disabled = input(false);
+  /** Two columns side by side (the team sheet's seniority: two short words). Default one. */
+  readonly columns = input<1 | 2>(1);
   /** Prefix for each row's `data-testid` (`<prefix>-<value>`) and for the error. */
   readonly testId = input.required<string>();
 

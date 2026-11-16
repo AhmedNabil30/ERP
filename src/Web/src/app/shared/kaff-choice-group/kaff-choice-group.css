@@ -7,6 +7,16 @@
   border: 0;
 }
 
+.rows {
+  display: grid;
+  gap: 8px;
+}
+
+.rows.two {
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
 legend {
   display: flex;
   align-items: baseline;

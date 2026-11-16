@@ -19,39 +19,7 @@
       </div>
     } @else if (project(); as p) {
       @if (isTeam()) {
-        <div data-testid="workspace-team">
-          @switch (team().state) {
-            @case ('loading') {
-              <kaff-state mode="loading" titleKey="projects.workspace.loading" testId="workspace-team-loading" />
-            }
-            @case ('failed') {
-              <kaff-banner tone="refusal" testId="workspace-team-failed">
-                {{ i18n.t('projects.frame.team_failed') }}
-                <kaff-button bannerActions variant="secondary" testId="workspace-team-retry" (clicked)="loadTeam()">
-                  {{ i18n.t('extract.retry') }}
-                </kaff-button>
-              </kaff-banner>
-            }
-            @case ('ok') {
-              @if (teamRows(); as rows) {
-                @if (rows.length === 0) {
-                  <p class="none" data-testid="workspace-team-none">
-                    <kaff-icon name="info" [small]="true" /><span>{{ i18n.t('projects.workspace.team_none') }}</span>
-                  </p>
-                } @else {
-                  <ul class="lst" data-testid="workspace-team-list">
-                    @for (member of rows; track member.userId) {
-                      <li [attr.data-testid]="'workspace-member-' + member.userId">
-                        <span class="pp"><span class="av" aria-hidden="true">{{ initial(member.fullName) }}</span><b dir="auto">{{ member.fullName }}</b></span>
-                        <span class="r">{{ i18n.t(roleLabelKey(member.role)) }}@if (member.level !== 'Standard') { · {{ i18n.t(levelLabelKey(member.level)) }} }</span>
-                      </li>
-                    }
-                  </ul>
-                }
-              }
-            }
-          }
-        </div>
+        <kaff-project-team-tab [projectId]="projectId()" [openAdd]="add() === '1'" />
       } @else {
         @if (p.designProjectId || p.executionProjectId || canConvert()) {
       <section class="where" data-testid="workspace-lineage">

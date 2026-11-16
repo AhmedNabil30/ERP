@@ -20,10 +20,10 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { BoqsApi } from '../../../core/boqs/boqs.api';
 import { fractionToPercent } from '../../../core/catalogue/percent-wire';
 import { ExtractsApi, WaitingOnItem } from '../../../core/extracts/extracts.api';
-import { assignmentLevelKey, contractTypeKey, roleKey } from '../../../core/i18n/enum-keys';
+import { contractTypeKey, roleKey } from '../../../core/i18n/enum-keys';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { HeaderActionsService } from '../../../core/layout/header-actions.service';
-import { ProjectDetail, ProjectProgress, ProjectsApi, TeamMember } from '../../../core/projects/projects.api';
+import { ProjectDetail, ProjectProgress, ProjectsApi } from '../../../core/projects/projects.api';
 import { closureCapsOf } from '../../closure/closure-display';
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
@@ -34,6 +34,7 @@ import { KaffInlineConfirm } from '../../../shared/kaff-inline-confirm/kaff-inli
 import { KaffProjectFrame } from '../../../shared/kaff-project-frame/kaff-project-frame';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { KaffStatusPill } from '../../../shared/kaff-status-pill/kaff-status-pill';
+import { ProjectTeamTab } from './project-team-tab';
 import { Capabilities, PendingExtract, primaryAction } from './workspace-declaration';
 import { BabRow, ProgressView, WaitingView, progressViewOf, waitingViewOf } from './workspace-reading';
 
@@ -91,6 +92,7 @@ type ProgressRead = Read<ProjectProgress> | { readonly state: 'unavailable' };
     KaffProjectFrame,
     KaffState,
     KaffStatusPill,
+    ProjectTeamTab,
   ],
   templateUrl: './project-workspace-page.html',
   styleUrl: './project-workspace-page.css',
@@ -107,21 +109,21 @@ export class ProjectWorkspacePage {
 
   protected readonly i18n = inject(I18nService);
   protected readonly contractTypeKey = contractTypeKey;
-  protected readonly roleLabelKey = roleKey;
-  protected readonly levelLabelKey = assignmentLevelKey;
 
   /** Bound from `:projectId` by `withComponentInputBinding`. */
   readonly projectId = input.required<string>();
   /** Bound from `?tab=`: `team` opens the team tab, anything else the overview. */
   readonly tab = input<string | undefined>(undefined);
+  /** Bound from `?add=1`: the team tab opens its add sheet (the overview's after-signing link uses it). */
+  readonly add = input<string | undefined>(undefined);
 
   private readonly frame = viewChild(KaffProjectFrame);
   private readonly primaryTemplate = viewChild<TemplateRef<unknown>>('primaryAction');
+  private readonly teamTab = viewChild(ProjectTeamTab);
 
   protected readonly project = signal<ProjectDetail | null>(null);
   protected readonly failure = signal<string | null>(null);
   protected readonly progress = signal<ProgressRead>(LOADING);
-  protected readonly team = signal<Read<readonly TeamMember[]>>(LOADING);
   /** What the open extracts wait for. Null: nothing open, not a Lump Sum, or the read failed (the server still decides). */
   private readonly waitingItems = signal<readonly WaitingOnItem[] | null>(null);
   protected readonly termsOpen = signal(false);
@@ -144,11 +146,6 @@ export class ProjectWorkspacePage {
   });
 
   /** The figures the server sent for money. Absent for a caller without `ProjectMoneyRead`. */
-  protected readonly teamRows = computed(() => {
-    const read = this.team();
-    return read.state === 'ok' ? read.data : [];
-  });
-
   protected readonly money = computed(() => this.project()?.money ?? null);
 
   protected readonly progressView = computed<ProgressView>(() => {
@@ -218,13 +215,13 @@ export class ProjectWorkspacePage {
         this.failure.set(null);
       });
     });
-    // The team is read only when its tab is open, and again when the project is read again.
-    effect(() => {
-      if (this.isTeam()) {
-        untracked(() => void this.loadTeam());
-      }
-    });
-    effect(() => this.headerActions.set(this.primary() !== null ? (this.primaryTemplate() ?? null) : null, 'primary'));
+    // The team tab declares its own primary (add a person, only when the server says canManage); the overview its own.
+    effect(() =>
+      this.headerActions.set(
+        this.isTeam() ? (this.teamTab()?.declared() ?? null) : this.primary() !== null ? (this.primaryTemplate() ?? null) : null,
+        'primary',
+      ),
+    );
     inject(DestroyRef).onDestroy(() => this.headerActions.clear());
   }
 
@@ -265,15 +262,6 @@ export class ProjectWorkspacePage {
     }
   }
 
-  protected async loadTeam(): Promise<void> {
-    this.team.set(LOADING);
-    try {
-      this.team.set({ state: 'ok', data: await this.projectsApi.team(this.projectId()) });
-    } catch (error) {
-      this.team.set({ state: 'failed', key: toProblem(error).messageKey });
-    }
-  }
-
   /** A failed read leaves the line and the slot absent; the server still decides every action. */
   private async loadWaiting(): Promise<void> {
     try {
@@ -296,10 +284,6 @@ export class ProjectWorkspacePage {
   protected day(value: string): string {
     const [year = 0, month = 1, day = 1] = value.split('-').map(Number);
     return this.i18n.formatDate(new Date(year, month - 1, day), { dateStyle: 'medium' });
-  }
-
-  protected initial(name: string): string {
-    return [...name][0] ?? '';
   }
 
   // ---- archive and design-to-execution (KAFF-417, KAFF-415) ---------------------------------------

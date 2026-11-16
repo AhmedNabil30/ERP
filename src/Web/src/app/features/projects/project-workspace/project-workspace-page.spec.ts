@@ -9,7 +9,7 @@ import { Boq, BoqsApi } from '../../../core/boqs/boqs.api';
 import { ExtractSummary, ExtractsApi, WaitingOnItem } from '../../../core/extracts/extracts.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { HeaderActionsService } from '../../../core/layout/header-actions.service';
-import { ContractType, ProjectDetail, ProjectProgress, ProjectsApi, ProjectTabs, TeamMember } from '../../../core/projects/projects.api';
+import { ContractType, ProjectDetail, ProjectProgress, ProjectsApi, ProjectTabs, TeamMember, TeamRead } from '../../../core/projects/projects.api';
 import { ProjectWorkspacePage, designFeeOf } from './project-workspace-page';
 
 /**
@@ -119,9 +119,10 @@ interface ProjectsFakeOptions {
   /** A reading, or an error the progress read throws (409 for Design). */
   readonly progress?: ProjectProgress | HttpErrorResponse;
   readonly team?: readonly TeamMember[];
+  readonly canManage?: boolean;
 }
 
-class FakeProjectsApi implements Pick<ProjectsApi, 'get' | 'progress' | 'team'> {
+class FakeProjectsApi implements Pick<ProjectsApi, 'get' | 'progress' | 'teamRead'> {
   progressCalls = 0;
 
   constructor(
@@ -145,8 +146,8 @@ class FakeProjectsApi implements Pick<ProjectsApi, 'get' | 'progress' | 'team'> 
     return reading;
   }
 
-  async team(): Promise<readonly TeamMember[]> {
-    return this.options.team ?? TEAM;
+  async teamRead(): Promise<TeamRead> {
+    return { canManage: this.options.canManage ?? true, members: this.options.team ?? TEAM };
   }
 }
 
@@ -511,7 +512,7 @@ describe('ProjectWorkspacePage · the team tab', () => {
     expect(q(fixture, 'workspace-progress')).toBeNull();
   });
 
-  it('says so when nobody is assigned', async () => {
+  it('says no site engineer is assigned when the list has none, and offers the add primary only to a caller who manages', async () => {
     const fixture = await createFixture(
       new FakeProjectsApi(project('LumpSum'), { team: [] }),
       OWNER(),
@@ -519,7 +520,22 @@ describe('ProjectWorkspacePage · the team tab', () => {
       new FakeExtractsApi(),
       'team',
     );
-    expect(q(fixture, 'workspace-team-none')).not.toBeNull();
+    expect(q(fixture, 'team-no-engineer')).not.toBeNull();
+    expect(slotButton()?.textContent).toContain('projects.team.add');
+    expect(slotButton()?.className).toContain('variant-primary');
+  });
+
+  it('declares no primary and draws no remove control for a caller the server does not let manage', async () => {
+    const fixture = await createFixture(
+      new FakeProjectsApi(project('LumpSum'), { canManage: false, team: TEAM.map((m) => ({ ...m, canRemove: false })) }),
+      OWNER(),
+      new FakeBoqsApi(),
+      new FakeExtractsApi(),
+      'team',
+    );
+    expect(fixture.nativeElement.querySelectorAll('[data-testid="workspace-team-list"] li').length).toBe(2);
+    expect(slotButton()).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-testid^="team-remove-"]')).toBeNull();
   });
 });
 

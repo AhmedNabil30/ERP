@@ -6,6 +6,7 @@
       <span class="sr-only">{{ i18n.t('a11y.required') }}</span>
     }
   </legend>
+  <div class="rows" [class.two]="columns() === 2">
   @for (choice of choices(); track choice.value) {
     <label class="row" [class.on]="value() === choice.value" [class.bad]="errorKey() !== null">
       <input
@@ -21,6 +22,7 @@
       <span>{{ i18n.t(choice.labelKey) }}</span>
     </label>
   }
+  </div>
   <div class="foot">
     @if (errorKey(); as key) {
       <p class="err" role="alert" [id]="name + '-err'" [attr.data-testid]="testId() + '-error'">
