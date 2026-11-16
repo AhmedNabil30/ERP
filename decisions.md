@@ -16925,3 +16925,12 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 2. **A design project's stage line is «التعاقد · التصميم · التسليم».**
 3. **A primary button is never disabled for something the user can fix on that screen.** Pressing it takes him to the gap and marks it. It is disabled only for what he cannot fix there. This is a kit rule for every screen; the daily log and crew save follow it.
 4. **The sign sheet keeps its one sentence,** «التوقيع يثبّت قيمة التعاقد على إجمالي المقايسة، وتُجمَّد البنود بعده فلا تُضاف ولا تُعدَّل ولا تُحذف.» Signing cannot be undone, and this is the stated exception to "screens explain themselves". It closes the question raised on `boq.sign.lead` on 2026-11-11.
+
+
+## D-230 — Nabil rules that a project becomes active at signing · 2026-11-16
+
+**Source.** Nabil, in session with the Scrum Master, 2026-11-16. Found by the backend lane for D-228: `Project.Sign` stored the signature date only, the one `Setup → Active` call sat in `CreateProject` for a project created with its terms, and the daily log refuses a project in `Setup`. A project made by create, BOQ, sign could never take a daily log.
+
+1. **Signing makes the project active, in the same save.** `spec.md` §13 gives `Setup → Active` and names no trigger; this is the trigger.
+2. **The word shown is unchanged from D-228 item 4:** «لم تبدأ» from signing until the first daily log entry, then «جاري العمل».
+3. **Rows already signed and still in `Setup` are not rewritten by this decision.** None exists outside development data: staging has never received the signing flow.
