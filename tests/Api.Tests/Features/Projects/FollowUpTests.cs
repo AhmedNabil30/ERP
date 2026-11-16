@@ -62,7 +62,7 @@ public sealed class FollowUpTests : IAsyncLifetime
     public async Task AC_417_J_a_signed_project_is_never_archived()
     {
         Guid project = await NewProjectAsync(withBoq: true);
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { signedOn = "2026-09-30", holdPercentage = "0.20", clientAdvance = 25m }))
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { signedOn = "2026-09-30", holdPercentage = "0.20", clientAdvance = 25m, advanceRecoveryRate = "0.25" }))
             .StatusCode.Should().Be(HttpStatusCode.OK);
 
         _clock.Advance(TimeSpan.FromDays(400));
@@ -79,7 +79,7 @@ public sealed class FollowUpTests : IAsyncLifetime
         _clock.Advance(TimeSpan.FromDays(31));
 
         HttpResponseMessage response = await SendAsync(
-            HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { signedOn = "2026-09-30", holdPercentage = "0.20", clientAdvance = 25m });
+            HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { signedOn = "2026-09-30", holdPercentage = "0.20", clientAdvance = 25m, advanceRecoveryRate = "0.25" });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await MessageKeyAsync(response)).Should().Be("errors.project.archived");
@@ -113,7 +113,7 @@ public sealed class FollowUpTests : IAsyncLifetime
 
         // Reopened again, the project can then be signed.
         (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/reopen", _owner, null)).StatusCode.Should().Be(HttpStatusCode.OK);
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { signedOn = "2026-09-30", holdPercentage = "0.20", clientAdvance = 25m }))
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { signedOn = "2026-09-30", holdPercentage = "0.20", clientAdvance = 25m, advanceRecoveryRate = "0.25" }))
             .StatusCode.Should().Be(HttpStatusCode.OK);
     }
 

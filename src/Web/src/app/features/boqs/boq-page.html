@@ -290,6 +290,9 @@
       <kaff-field labelKey="boq.sign.field.advance" controlId="boq-sign-advance" [required]="true" [errorKey]="signErrors().advance" errorTestId="boq-sign-advance-error">
         <input id="boq-sign-advance" class="input" type="text" dir="ltr" inputmode="decimal" autocomplete="off" spellcheck="false" data-testid="boq-sign-advance" [value]="advance()" (input)="onText($event.target, advance)" />
       </kaff-field>
+      <kaff-field labelKey="boq.sign.field.recovery" controlId="boq-sign-recovery" [required]="true" [errorKey]="signErrors().recovery" errorTestId="boq-sign-recovery-error">
+        <input id="boq-sign-recovery" class="input" type="text" dir="ltr" inputmode="decimal" autocomplete="off" spellcheck="false" data-testid="boq-sign-recovery" [value]="recovery()" (input)="onText($event.target, recovery)" />
+      </kaff-field>
       <p class="lead" data-testid="boq-sign-lead">{{ i18n.t('boq.sign.lead') }}</p>
     </div>
     <div panelFooter class="foot">

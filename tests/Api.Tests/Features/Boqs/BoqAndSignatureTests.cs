@@ -60,7 +60,7 @@ public sealed class BoqAndSignatureTests : IAsyncLifetime
     {
         Guid project = await NewProjectAsync(ContractType.LumpSum);
 
-        HttpResponseMessage response = await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { holdPercentage = "0.20", clientAdvance = 25m });
+        HttpResponseMessage response = await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { holdPercentage = "0.20", clientAdvance = 25m, advanceRecoveryRate = "0.25" });
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await MessageKeyAsync(response)).Should().Be("errors.boq.required");
@@ -83,7 +83,7 @@ public sealed class BoqAndSignatureTests : IAsyncLifetime
         (await AddCustomLineAsync(project, surveyed: 10m)).StatusCode.Should().Be(HttpStatusCode.Created);
 
         HttpResponseMessage response = await SendAsync(
-            HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { signedOn = "2026-09-30", holdPercentage = "0.20", clientAdvance = 25m });
+            HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { signedOn = "2026-09-30", holdPercentage = "0.20", clientAdvance = 25m, advanceRecoveryRate = "0.25" });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -104,7 +104,7 @@ public sealed class BoqAndSignatureTests : IAsyncLifetime
     {
         Guid project = await NewSignedProjectAsync();
 
-        HttpResponseMessage response = await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { holdPercentage = "0.20", clientAdvance = 25m });
+        HttpResponseMessage response = await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { holdPercentage = "0.20", clientAdvance = 25m, advanceRecoveryRate = "0.25" });
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await MessageKeyAsync(response)).Should().Be("errors.project.already_signed");
@@ -400,7 +400,7 @@ public sealed class BoqAndSignatureTests : IAsyncLifetime
                 .StatusCode.Should().Be(HttpStatusCode.Forbidden);
             (await SendAsync(HttpMethod.Delete, $"/api/projects/{project}/boq/lines/{Guid.NewGuid()}", refused, null))
                 .StatusCode.Should().Be(HttpStatusCode.Forbidden);
-            (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", refused, new { holdPercentage = "0.20", clientAdvance = 25m }))
+            (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", refused, new { holdPercentage = "0.20", clientAdvance = 25m, advanceRecoveryRate = "0.25" }))
                 .StatusCode.Should().Be(HttpStatusCode.Forbidden);
         }
 
@@ -418,7 +418,7 @@ public sealed class BoqAndSignatureTests : IAsyncLifetime
         (await AddCatalogueLineAsync(project, 1m, 1m)).StatusCode.Should().Be(HttpStatusCode.Created);
 
         HttpResponseMessage response = await SendAsync(
-            HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { holdPercentage = "0.10", clientAdvance = 30m });
+            HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { holdPercentage = "0.10", clientAdvance = 30m, advanceRecoveryRate = "0.25" });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -436,6 +436,31 @@ public sealed class BoqAndSignatureTests : IAsyncLifetime
         record.ChangedProperties.Should().Contain(["HoldRate", "AdvanceRate"]);
     }
 
+    [Fact]
+    public async Task D_227_a_lump_sum_signature_without_the_advance_recovery_rate_is_refused_and_no_default_is_applied()
+    {
+        Guid project = await NewProjectAsync(ContractType.LumpSum);
+        (await AddCatalogueLineAsync(project, 1m, 1m)).StatusCode.Should().Be(HttpStatusCode.Created);
+
+        HttpResponseMessage response = await SendAsync(
+            HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { holdPercentage = "0.20", clientAdvance = 25m });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await MessageKeyAsync(response)).Should().Be("errors.project.advance_recovery_rate_required");
+        (await LoadProjectAsync(project)).IsSigned.Should().BeFalse();
+
+        (await SendAsync(
+                HttpMethod.Post, $"/api/projects/{project}/sign", _owner,
+                new { holdPercentage = "0.20", clientAdvance = 25m, advanceRecoveryRate = "-0.01" }))
+            .StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        (await SendAsync(
+                HttpMethod.Post, $"/api/projects/{project}/sign", _owner,
+                new { holdPercentage = "0.20", clientAdvance = 25m, advanceRecoveryRate = "0.30" }))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+        (await LoadProjectAsync(project)).AdvanceRecoveryRate.Should().Be(Percentage.FromPercent(30m), "the typed rate is stored, not the default");
+    }
+
     [Theory]
     [InlineData(ContractType.CostPlus)]
     [InlineData(ContractType.Design)]
@@ -443,7 +468,7 @@ public sealed class BoqAndSignatureTests : IAsyncLifetime
     {
         Guid project = await NewProjectAsync(type, designArea: 200m);
 
-        foreach (object body in new object[] { new { holdPercentage = "0.20" }, new { clientAdvance = 25m } })
+        foreach (object body in new object[] { new { holdPercentage = "0.20" }, new { clientAdvance = 25m, advanceRecoveryRate = "0.25" }, new { advanceRecoveryRate = "0.25" } })
         {
             HttpResponseMessage response = await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, body);
 
@@ -461,7 +486,7 @@ public sealed class BoqAndSignatureTests : IAsyncLifetime
         (await AddCatalogueLineAsync(project, 1m, 1m)).StatusCode.Should().Be(HttpStatusCode.Created);
 
         (await SendAsync(
-                HttpMethod.Post, $"/api/projects/{project}/sign", _technicalOfficeUnassigned, new { holdPercentage = "0.01", clientAdvance = 1m }))
+                HttpMethod.Post, $"/api/projects/{project}/sign", _technicalOfficeUnassigned, new { holdPercentage = "0.01", clientAdvance = 1m, advanceRecoveryRate = "0.25" }))
             .StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
         Project stored = await LoadProjectAsync(project);
@@ -489,7 +514,7 @@ public sealed class BoqAndSignatureTests : IAsyncLifetime
                 .Should().Be(5, "each line added while drafting is a state change and is audited");
         }
 
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { holdPercentage = "0.20", clientAdvance = 25m })).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { holdPercentage = "0.20", clientAdvance = 25m, advanceRecoveryRate = "0.25" })).StatusCode.Should().Be(HttpStatusCode.OK);
 
         await using KaffDbContext after = _database.CreateBareContext();
 
@@ -578,7 +603,7 @@ public sealed class BoqAndSignatureTests : IAsyncLifetime
     {
         Guid project = await NewProjectAsync(ContractType.LumpSum);
         (await AddCatalogueLineAsync(project, 5m, 4m)).StatusCode.Should().Be(HttpStatusCode.Created);
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { signedOn = "2026-09-30", holdPercentage = "0.20", clientAdvance = 25m }))
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { signedOn = "2026-09-30", holdPercentage = "0.20", clientAdvance = 25m, advanceRecoveryRate = "0.25" }))
             .StatusCode.Should().Be(HttpStatusCode.OK);
         return project;
     }

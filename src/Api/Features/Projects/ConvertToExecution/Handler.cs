@@ -1,5 +1,6 @@
 using Kaff.Api.Common.Results;
 using Kaff.Domain.Common;
+using Kaff.Domain.Identity;
 using Kaff.Domain.Projects;
 using Kaff.Domain.Rulings;
 using Kaff.Infrastructure.Persistence;
@@ -24,12 +25,14 @@ internal static class Handler
         Request request,
         KaffDbContext database,
         RulingSet rulings,
+        ICurrentUser currentUser,
         TimeProvider clock,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(database);
         ArgumentNullException.ThrowIfNull(rulings);
+        ArgumentNullException.ThrowIfNull(currentUser);
         ArgumentNullException.ThrowIfNull(clock);
 
         if (request.ContractType is not { } executionType || !Enum.IsDefined(executionType))
@@ -67,6 +70,15 @@ internal static class Handler
         Project execution = opened.Value.Project;
         database.Projects.Add(execution);
         database.Accounts.AddRange(opened.Value.Accounts);
+
+        // D-227 item 1: the person converting must be able to open the new project. Finance staffing is not part of this path.
+        Result creatorStaffed = await CreatorStaffing.StaffAsync(
+            database, currentUser, execution.Id, [], clock.GetUtcNow(), cancellationToken);
+
+        if (creatorStaffed.IsFailure)
+        {
+            return ResultExtensions.Problem(creatorStaffed.Error);
+        }
 
         Error? refused = await GuardedSave.SaveAsync(database, cancellationToken);
         if (refused is not null)

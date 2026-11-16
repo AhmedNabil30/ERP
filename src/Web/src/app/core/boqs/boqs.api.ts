@@ -97,13 +97,19 @@ export interface SignResult {
   readonly designCreditAdjustmentId?: string | null;
 }
 
-/** `POST …/sign` body. Lump Sum only; both optional. `holdPercentage` is a wire fraction, `clientAdvance` percent units. */
-export interface SignTerms {
-  readonly holdPercentage?: string;
-  readonly clientAdvance?: number;
-  /** Design only (AC-417-K): the area in square metres as a decimal string; the server prices it. */
-  readonly areaSquareMetres?: string;
+/** `POST …/sign` body for Lump Sum. `holdPercentage` and `advanceRecoveryRate` are wire fractions; `clientAdvance` is percent units. All three are required, none has a default (D-227). */
+export interface LumpSumSignTerms {
+  readonly holdPercentage: string;
+  readonly clientAdvance: number;
+  readonly advanceRecoveryRate: string;
 }
+
+/** `POST …/sign` body for Design (AC-417-K): the area in square metres as a decimal string; the server prices it. */
+export interface DesignSignTerms {
+  readonly areaSquareMetres: string;
+}
+
+export type SignTerms = LumpSumSignTerms | DesignSignTerms;
 
 @Injectable({ providedIn: 'root' })
 export class BoqsApi {
@@ -146,7 +152,7 @@ export class BoqsApi {
   }
 
   /** Irreversible: fixes the contract value at the BOQ total and freezes the BOQ. The body is empty so the server dates it. */
-  async sign(projectId: string, terms: SignTerms = {}): Promise<SignResult> {
+  async sign(projectId: string, terms: SignTerms): Promise<SignResult> {
     return await firstValueFrom(this.http.post<SignResult>(`api/projects/${projectId}/sign`, terms));
   }
 }

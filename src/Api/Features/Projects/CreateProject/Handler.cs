@@ -124,6 +124,15 @@ internal static class Handler
             database.ProjectAssignments.Add(staffed.Value);
         }
 
+        // D-227 item 1: the creator is staffed too.
+        Result creatorStaffed = await CreatorStaffing.StaffAsync(
+            database, currentUser, project.Id, financeUsers.ConvertAll(finance => finance.Id), now, cancellationToken);
+
+        if (creatorStaffed.IsFailure)
+        {
+            return ResultExtensions.Problem(creatorStaffed.Error);
+        }
+
         try
         {
             await database.SaveChangesAsync(cancellationToken);

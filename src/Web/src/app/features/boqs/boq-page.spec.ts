@@ -203,10 +203,12 @@ describe('BoqPage', () => {
     await click(byId(root, 'boq-sign-ask'));
     expect((byId(root, 'boq-sign-hold') as HTMLInputElement).value).toBe('');
     expect((byId(root, 'boq-sign-advance') as HTMLInputElement).value).toBe('');
+    expect((byId(root, 'boq-sign-recovery') as HTMLInputElement).value).toBe('');
     await click(byId(root, 'boq-sign-confirm'));
 
     expect(sign).not.toHaveBeenCalled();
     expect(byId(root, 'boq-sign-hold-error')).not.toBeNull();
+    expect(byId(root, 'boq-sign-recovery-error')).not.toBeNull();
   });
 
   it('signs with the hold as a fraction and the advance as percent units, even with a custom line waiting (AC-8)', async () => {
@@ -215,14 +217,14 @@ describe('BoqPage', () => {
     const root = await render({ api: { sign } });
     await click(byId(root, 'boq-sign-ask'));
 
-    for (const [id, value] of [['boq-sign-hold', '20'], ['boq-sign-advance', '25']] as const) {
+    for (const [id, value] of [['boq-sign-hold', '20'], ['boq-sign-advance', '25'], ['boq-sign-recovery', '25']] as const) {
       const input = byId(root, id) as HTMLInputElement;
       input.value = value;
       input.dispatchEvent(new Event('input'));
     }
     await click(byId(root, 'boq-sign-confirm'));
 
-    expect(sign).toHaveBeenCalledWith('p-1', { holdPercentage: '0.2', clientAdvance: 25 });
+    expect(sign).toHaveBeenCalledWith('p-1', { holdPercentage: '0.2', clientAdvance: 25, advanceRecoveryRate: '0.25' });
     expect(reload).toHaveBeenCalled();
   });
 
@@ -241,7 +243,7 @@ describe('BoqPage', () => {
     });
     const root = await render({ api: { sign: vi.fn().mockRejectedValue(error) } });
     await click(byId(root, 'boq-sign-ask'));
-    for (const [id, value] of [['boq-sign-hold', '20'], ['boq-sign-advance', '25']] as const) {
+    for (const [id, value] of [['boq-sign-hold', '20'], ['boq-sign-advance', '25'], ['boq-sign-recovery', '25']] as const) {
       const input = byId(root, id) as HTMLInputElement;
       input.value = value;
       input.dispatchEvent(new Event('input'));

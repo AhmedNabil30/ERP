@@ -86,7 +86,13 @@ internal static class Handler
                 return ResultExtensions.Problem(ProjectErrors.SigningTermsRequired);
             }
 
-            if (advance < 0m)
+            // D-227 item 3: the recovery rate is typed too. The silent 25% no longer applies at signing.
+            if (request.AdvanceRecoveryRate is not { } recovery)
+            {
+                return ResultExtensions.Problem(ProjectErrors.AdvanceRecoveryRateRequired);
+            }
+
+            if (advance < 0m || recovery < Percentage.Zero)
             {
                 return ResultExtensions.Problem(ProjectErrors.RateMustNotBeNegative);
             }
@@ -96,7 +102,7 @@ internal static class Handler
             Result termsSet = project.SetLumpSumTerms(
                 Percentage.FromPercent(advance),
                 hold,
-                project.AdvanceRecoveryRate ?? ContractDefaults.AdvanceRecoveryRate,
+                recovery,
                 project.MaterialAdvanceRate ?? ContractDefaults.MaterialAdvanceRate,
                 project.DelayPenaltyEnabled);
 
@@ -105,7 +111,7 @@ internal static class Handler
                 return ResultExtensions.Problem(termsSet.Error);
             }
         }
-        else if (request.HoldPercentage is not null || request.ClientAdvance is not null)
+        else if (request.HoldPercentage is not null || request.ClientAdvance is not null || request.AdvanceRecoveryRate is not null)
         {
             return ResultExtensions.Problem(ProjectErrors.SigningTermsNotForContractType);
         }

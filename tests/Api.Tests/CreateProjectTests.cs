@@ -6,6 +6,7 @@ using System.Text.Json;
 using Kaff.Api.Tests.Infrastructure;
 using Kaff.Domain.Auditing;
 using Kaff.Domain.Authorization;
+using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
 using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
@@ -33,6 +34,8 @@ public sealed class CreateProjectTests : IAsyncLifetime
     private Guid _marketing;
     private Guid _hr;
     private Guid _siteEngineer;
+    private Guid _otherTechnicalOffice;
+    private Guid _itemId;
 
     public CreateProjectTests(PostgresDatabase database) => _database = database;
 
@@ -195,7 +198,81 @@ public sealed class CreateProjectTests : IAsyncLifetime
         codeA.Should().StartWith("PRJ-");
     }
 
+    // ---- D-227 item 1: the creator is assigned in the same save ------------------------------------
+
+    [Fact]
+    public async Task The_technical_office_creator_can_open_read_and_build_the_project_he_created_but_a_colleague_cannot()
+    {
+        HttpResponseMessage created = await CreateAsync(_technicalOffice, "مشروع المكتب الفني");
+        created.StatusCode.Should().Be(HttpStatusCode.Created);
+        Guid id = await CreatedIdAsync(created);
+
+        (await SendAsync(HttpMethod.Get, $"/api/projects/{id}", _technicalOffice)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        HttpResponseMessage list = await SendAsync(HttpMethod.Get, "/api/projects", _technicalOffice);
+        list.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await list.Content.ReadAsStringAsync(Ct)).Should().Contain(id.ToString());
+
+        (await SendAsync(
+            HttpMethod.Post,
+            $"/api/projects/{id}/boq/lines",
+            _technicalOffice,
+            new { catalogueItemId = _itemId, quantityEstimated = 5m, quantitySurveyed = 4m }))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+        (await SendAsync(HttpMethod.Get, $"/api/projects/{id}/boq", _technicalOffice)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (await SendAsync(HttpMethod.Get, $"/api/projects/{id}", _otherTechnicalOffice)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await SendAsync(HttpMethod.Get, $"/api/projects/{id}/boq", _otherTechnicalOffice)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task The_creator_row_is_standard_audited_and_sits_beside_the_one_finance_row()
+    {
+        Guid id = await CreatedIdAsync(await CreateAsync(_technicalOffice, "مشروع الطاقم"));
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        List<ProjectAssignment> rows = await reader.ProjectAssignments.Where(a => a.ProjectId == id).ToListAsync(Ct);
+
+        rows.Count(a => a.UserId == _technicalOffice).Should().Be(1);
+        rows.Count(a => a.UserId == _finance).Should().Be(1);
+        int financeActive = await reader.Users.CountAsync(u => u.Role == Role.Finance && u.IsActive, Ct);
+        rows.Should().HaveCount(financeActive + 1, "Finance staffing is unchanged and only the creator is added");
+        rows.Should().OnlyContain(a => a.Level == AssignmentLevel.Standard && a.AssignedByUserId == _technicalOffice);
+        List<Guid> rowIds = rows.Select(a => a.Id).ToList();
+        (await reader.AuditRecords.CountAsync(
+            r => r.EntityType == nameof(ProjectAssignment) && rowIds.Contains(r.EntityId!.Value) && r.Action == AuditAction.Created, Ct))
+            .Should().Be(financeActive + 1);
+    }
+
+    [Fact]
+    public async Task An_owner_creator_gets_no_row_because_owner_reach_is_global()
+    {
+        Guid id = await CreatedIdAsync(await CreateAsync(_owner, "مشروع المالك"));
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        (await reader.ProjectAssignments.AnyAsync(a => a.ProjectId == id && a.UserId == _owner, Ct)).Should().BeFalse();
+        (await SendAsync(HttpMethod.Get, $"/api/projects/{id}", _owner)).StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
     // ---- helpers ---------------------------------------------------------------------------------
+
+    private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string route, Guid actorId, object? body = null)
+    {
+        using var request = new HttpRequestMessage(method, new Uri(route, UriKind.Relative));
+
+        if (body is not null)
+        {
+            request.Content = JsonContent.Create(body);
+        }
+
+        (string stamp, Role? role) = await SessionAsync(actorId);
+
+        request.Headers.Add(TestAuthHandler.UserIdHeader, actorId.ToString());
+        request.Headers.Add(TestAuthHandler.SecurityStampHeader, stamp);
+        request.Headers.Add(TestAuthHandler.RoleHeader, role!.Value.ToString());
+
+        return await _client.SendAsync(request, Ct);
+    }
 
     private async Task<HttpResponseMessage> CreateAsync(
         Guid actorId,
@@ -271,6 +348,11 @@ public sealed class CreateProjectTests : IAsyncLifetime
         User owner = MakeUser("crp-owner", Role.Owner);
         User technicalOffice = MakeUser(
             "crp-tech", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User otherTechnicalOffice = MakeUser(
+            "crp-tech2", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        Bab bab = Bab.Create(UniqueNames.Code("CRB"), "أعمال خرسانة", "Concrete", Percentage.FromPercent(15m)).Value;
+        CatalogueItem item = CatalogueItem.Create(
+            UniqueNames.Code("CRI"), "خرسانة مسلحة", "م٣", bab.Id, new Money(1_000m), new Money(1_500m), "Reinforced concrete").Value;
         User finance = MakeUser("crp-finance", Role.Finance, WellKnownDepartments.FinanceId);
         User marketing = MakeUser("crp-marketing", Role.MarketingSales);
         User hr = MakeUser("crp-hr", Role.Hr, WellKnownDepartments.HrId);
@@ -278,7 +360,9 @@ public sealed class CreateProjectTests : IAsyncLifetime
             "crp-engineer", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
 
         context.Clients.Add(client);
-        context.Users.AddRange(owner, technicalOffice, finance, marketing, hr, siteEngineer);
+        context.Users.AddRange(owner, technicalOffice, otherTechnicalOffice, finance, marketing, hr, siteEngineer);
+        context.Babs.Add(bab);
+        context.CatalogueItems.Add(item);
 
         await context.SaveChangesAsync(Ct);
 
@@ -289,6 +373,8 @@ public sealed class CreateProjectTests : IAsyncLifetime
         _marketing = marketing.Id;
         _hr = hr.Id;
         _siteEngineer = siteEngineer.Id;
+        _otherTechnicalOffice = otherTechnicalOffice.Id;
+        _itemId = item.Id;
     }
 
     private static User MakeUser(

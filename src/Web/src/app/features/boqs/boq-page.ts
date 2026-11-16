@@ -211,10 +211,12 @@ export class BoqPage {
   /** Percent units as typed. Both start empty and are required (AC-9). */
   protected readonly hold = signal('');
   protected readonly advance = signal('');
+  protected readonly recovery = signal('');
   protected readonly signAttempted = signal(false);
   protected readonly signErrors = computed(() => ({
     hold: this.signAttempted() ? this.rateError(this.hold()) : null,
     advance: this.signAttempted() ? this.rateError(this.advance()) : null,
+    recovery: this.signAttempted() ? this.rateError(this.recovery()) : null,
   }));
 
   /** The quotation as the client's paper (D-208): printed with the browser's print. */
@@ -502,6 +504,7 @@ export class BoqPage {
   protected openSign(): void {
     this.hold.set('');
     this.advance.set('');
+    this.recovery.set('');
     this.signAttempted.set(false);
     this.refusal.set(null);
     this.signSheet.set(true);
@@ -518,13 +521,14 @@ export class BoqPage {
   protected async confirmSign(): Promise<void> {
     this.signAttempted.set(true);
     const errors = this.signErrors();
-    if (errors.hold || errors.advance) {
+    if (errors.hold || errors.advance || errors.recovery) {
       return;
     }
     const done = await this.mutate(async () => {
       await this.api.sign(this.projectId(), {
         holdPercentage: percentToFraction(this.hold()),
         clientAdvance: Number(this.advance().trim()),
+        advanceRecoveryRate: percentToFraction(this.recovery()),
       });
       this.project.set(await this.projects.get(this.projectId()));
     });

@@ -97,6 +97,16 @@ public sealed class DesignToExecutionTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task D_227_the_technical_office_user_who_converts_can_open_the_execution_project()
+    {
+        Guid design = await NewDesignAsync();
+        Guid execution = (await JsonAsync(await ConvertAsync(design, _technicalOffice, "LumpSum"))).GetProperty("id").GetGuid();
+
+        (await SendAsync(HttpMethod.Get, $"/api/projects/{execution}", _technicalOffice, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Get, $"/api/projects/{execution}", _technicalOfficeUnassigned, null)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task AC_415_B_a_non_design_project_is_refused()
     {
         Guid lumpSum = await NewProjectAsync(ContractType.LumpSum);
@@ -152,7 +162,7 @@ public sealed class DesignToExecutionTests : IAsyncLifetime
         Guid execution = (await JsonAsync(await ConvertAsync(design, _owner, "LumpSum"))).GetProperty("id").GetGuid();
         await AddBoqLineAsync(execution);
 
-        HttpResponseMessage signed = await SendAsync(HttpMethod.Post, $"/api/projects/{execution}/sign", _owner, new { holdPercentage = "0.20", clientAdvance = 25m });
+        HttpResponseMessage signed = await SendAsync(HttpMethod.Post, $"/api/projects/{execution}/sign", _owner, new { holdPercentage = "0.20", clientAdvance = 25m, advanceRecoveryRate = "0.25" });
         signed.StatusCode.Should().Be(HttpStatusCode.OK);
         Guid creditId = (await JsonAsync(signed)).GetProperty("designCreditAdjustmentId").GetGuid();
 
@@ -167,7 +177,7 @@ public sealed class DesignToExecutionTests : IAsyncLifetime
         (await AdjustmentPostingsAsync(creditId)).Should().BeEmpty("raised, not posted");
 
         // A second signature is refused and raises nothing.
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{execution}/sign", _owner, new { holdPercentage = "0.20", clientAdvance = 25m })).StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{execution}/sign", _owner, new { holdPercentage = "0.20", clientAdvance = 25m, advanceRecoveryRate = "0.25" })).StatusCode.Should().Be(HttpStatusCode.Conflict);
         await using (KaffDbContext reader = _database.CreateBareContext())
         {
             (await reader.Adjustments.CountAsync(a => a.ProjectId == execution, Ct)).Should().Be(1);
@@ -225,7 +235,7 @@ public sealed class DesignToExecutionTests : IAsyncLifetime
     {
         Guid design = await NewDesignAsync();
         Guid execution = (await JsonAsync(await ConvertAsync(design, _technicalOffice, "CostPlus"))).GetProperty("id").GetGuid();
-        await AssignAsync(execution, _technicalOffice);
+        // D-227: the converting user is assigned by the conversion itself, no manual assignment.
 
         (await SendAsync(HttpMethod.Post, $"/api/projects/{execution}/sign", _technicalOffice, new { })).StatusCode.Should().Be(HttpStatusCode.OK);
 
@@ -249,7 +259,7 @@ public sealed class DesignToExecutionTests : IAsyncLifetime
 
         Guid execution = (await JsonAsync(await ConvertAsync(design, _owner, "LumpSum"))).GetProperty("id").GetGuid();
         await AddBoqLineAsync(execution);
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{execution}/sign", _owner, new { holdPercentage = "0.20", clientAdvance = 25m })).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{execution}/sign", _owner, new { holdPercentage = "0.20", clientAdvance = 25m, advanceRecoveryRate = "0.25" })).StatusCode.Should().Be(HttpStatusCode.OK);
 
         (await LoadCreditAsync(execution)).Amount.Should().Be(new Money(13_500m), "30% of 100 m2 x 450");
     }
@@ -294,7 +304,7 @@ public sealed class DesignToExecutionTests : IAsyncLifetime
         Guid project = await NewProjectAsync(ContractType.LumpSum);
         await AddBoqLineAsync(project);
 
-        HttpResponseMessage signed = await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { holdPercentage = "0.20", clientAdvance = 25m });
+        HttpResponseMessage signed = await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _owner, new { holdPercentage = "0.20", clientAdvance = 25m, advanceRecoveryRate = "0.25" });
 
         signed.StatusCode.Should().Be(HttpStatusCode.OK);
         (await JsonAsync(signed)).GetProperty("designCreditAdjustmentId").ValueKind.Should().Be(JsonValueKind.Null);
