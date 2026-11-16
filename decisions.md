@@ -16943,3 +16943,14 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 1. **Two destinations, not one list with a badge.** Today `employees` shows both populations in one list and marks each row with its kind. Salaried staff and day-labour workers get their own menu entry, their own list and their own add form, each with only the fields that population has.
 2. **The record underneath stays one register.** `spec.md` §10 already says two populations, nobody in both, and `EmployeeKind` is fixed at creation (KAFF-207, KAFF-208). This ruling changes the screens and the menu, not the entity. Read by the Scrum Master as a screen separation; if Nabil meant separate records as well, that is a different decision and he will say so when he sees the mock.
 3. **It goes through a mock and Nabil's approval before any build.**
+
+
+## D-232 — Nabil rules the employees and day-labour separation · 2026-11-16
+
+**Source.** Nabil, in session with the Scrum Master, 2026-11-16, on the mock `.design/v2/team-a/people.html` and the consultant review `ux/consultant-review-people-mock-2026-11-16.md`.
+
+1. **Screens only.** Two menu rows, two lists, two forms, on the one register of `spec.md` §10. The Scrum Master's reading in D-231 item 2 is confirmed.
+2. **The menu labels are «الموظفون» and «عمالة اليومية».**
+3. **No salary is stored on a salaried employee now.** Salary, insurance number and pay method come with the accounting and payroll work.
+4. **The day rate stays per engagement.** A worker has no standard rate of his own. The Owner's worker panel shows no rate figure, since an average of different rates would mislead.
+5. **No move action.** A day-labourer who becomes salaried staff is archived as a worker and registered as an employee, as today.
