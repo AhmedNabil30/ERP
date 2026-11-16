@@ -239,3 +239,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-230 | 16930 | Nabil rules that a project becomes active at signing · 2026-11-16 |
 | D-231 | 16939 | Nabil: salaried employees and day-labour workers are separated on screen · 2026-11-16 |
 | D-232 | 16948 | Nabil rules the employees and day-labour separation · 2026-11-16 |
+| D-233 | 16959 | Nabil approves the people mock, rules out a review of site registrations, and makes team management the Owner's alone · 2026-11-17 |

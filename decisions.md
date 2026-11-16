@@ -16954,3 +16954,14 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 3. **No salary is stored on a salaried employee now.** Salary, insurance number and pay method come with the accounting and payroll work.
 4. **The day rate stays per engagement.** A worker has no standard rate of his own. The Owner's worker panel shows no rate figure, since an average of different rates would mislead.
 5. **No move action.** A day-labourer who becomes salaried staff is archived as a worker and registered as an employee, as today.
+
+
+## D-233 — Nabil approves the people mock, rules out a review of site registrations, and makes team management the Owner's alone · 2026-11-17
+
+**Source.** Nabil, in session with the Scrum Master, 2026-11-17. Mock `.design/v2/team-a/people.html` as revised at `cd74ab4`.
+
+1. **The people mock is approved for build,** after the server gaps its README lists are closed: the staff list fields, a company-wide read of a worker's times engaged and rating for HR, unarchive for employees, and duplicate-phone wording that does not speak of a client.
+2. **HR does not review site registrations.** A worker registered from site is an ordinary row. The «جديد» mark is not built and no reviewed fact is stored.
+3. **Only the Owner adds and removes people on a project.** `ProjectAssignmentManage` was granted to the Owner and HR since slice 1, but HR cannot open a project and so never reached the team tab. HR loses the grant.
+
+**Built before this ruling, recorded here.** The team read `GET /api/projects/{id}/team` returns `{ canManage, members[] }`, each member with how he joined (automatic, creator, added) and whether the caller may remove him. `GET /api/projects/{id}/assignments/candidates` lists who can be added. Removing Finance is refused with `errors.identity.finance_cannot_be_removed`. How a member joined is derived from stored timestamps, so a creator who is removed and added back reads as added.
