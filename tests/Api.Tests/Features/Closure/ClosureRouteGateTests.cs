@@ -421,7 +421,7 @@ public sealed class ClosureRouteGateTests : IAsyncLifetime
             Percentage.FromPercent(25m), Percentage.FromPercent(20m), Percentage.FromPercent(25m),
             Percentage.FromPercent(75m), delayPenaltyEnabled: false).IsSuccess.Should().BeTrue();
         project.Sign(new DateOnly(2026, 9, 1), new Money(1_000_000m)).IsSuccess.Should().BeTrue();
-        project.TransitionTo(ProjectStatus.Active, new DateOnly(2026, 9, 1)).IsSuccess.Should().BeTrue();
+        project.Status.Should().Be(ProjectStatus.Active, "D-230: signing activates the project");
         context.Projects.Add(project);
         await context.SaveChangesAsync(Ct);
 

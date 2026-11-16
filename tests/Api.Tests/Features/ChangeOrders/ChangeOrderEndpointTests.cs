@@ -771,7 +771,7 @@ public sealed class ChangeOrderEndpointTests : IAsyncLifetime
         Project project = Project.Create(UniqueNames.Code("CO-CP"), UniqueNames.Code("مشروع تكلفة"), _clientId, ContractType.CostPlus, DateTimeOffset.UtcNow).Value;
         project.SetCostPlusTerms(Percentage.FromPercent(10m)).IsSuccess.Should().BeTrue();
         project.Sign(new DateOnly(2026, 9, 24), null).IsSuccess.Should().BeTrue();
-        project.TransitionTo(ProjectStatus.Active, new DateOnly(2026, 9, 24)).IsSuccess.Should().BeTrue();
+        project.Status.Should().Be(ProjectStatus.Active, "D-230: signing activates the project");
         context.Projects.Add(project);
         await context.SaveChangesAsync(Ct);
 
@@ -826,7 +826,7 @@ public sealed class ChangeOrderEndpointTests : IAsyncLifetime
         await using (KaffDbContext activate = _database.CreateContext())
         {
             Project loaded = await activate.Projects.SingleAsync(candidate => candidate.Id == project.Id, Ct);
-            loaded.TransitionTo(ProjectStatus.Active, new DateOnly(2026, 9, 24)).IsSuccess.Should().BeTrue();
+            loaded.Status.Should().Be(ProjectStatus.Active, "D-230: signing activates the project");
 
             // spec.md section 15: the client's 25% advance comes in at signing.
             Account advance = await activate.Accounts.SingleAsync(a => a.ProjectId == project.Id && a.Type == AccountType.ClientAdvance, Ct);

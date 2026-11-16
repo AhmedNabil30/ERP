@@ -25,7 +25,7 @@ internal sealed class ExtractHarness
             ContractDefaults.AdvanceRate, ContractDefaults.HoldRate, ContractDefaults.AdvanceRecoveryRate,
             ContractDefaults.MaterialAdvanceRate, delayPenaltyEnabled: false).IsSuccess.Should().BeTrue();
         Project.Sign(SigningDate, new Money(1_000_000m)).IsSuccess.Should().BeTrue();
-        Project.TransitionTo(ProjectStatus.Active, SigningDate).IsSuccess.Should().BeTrue();
+        Project.Status.Should().Be(ProjectStatus.Active, "D-230: signing activates the project");
 
         Guid id = Project.Id;
         Revenue = Account.Create(

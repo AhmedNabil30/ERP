@@ -45,17 +45,30 @@ public sealed class ClosureTests
             project.SetLumpSumTerms(
                 ContractDefaults.AdvanceRate, ContractDefaults.HoldRate, ContractDefaults.AdvanceRecoveryRate,
                 ContractDefaults.MaterialAdvanceRate, delayPenaltyEnabled: false).IsSuccess.Should().BeTrue();
-            project.Sign(Today, new Money(1_000_000m)).IsSuccess.Should().BeTrue();
+            // D-230: signing makes the project Active, so a project meant to be in Setup stays unsigned.
+            if (status != ProjectStatus.Setup)
+            {
+                project.Sign(Today, new Money(1_000_000m)).IsSuccess.Should().BeTrue();
+            }
         }
 
         if (type == ContractType.Design)
         {
             project.SetDesignTerms(100m, new Money(500m)).IsSuccess.Should().BeTrue();
-            project.Sign(Today, null).IsSuccess.Should().BeTrue();
+            // D-230: signing makes the project Active, so a project meant to be in Setup stays unsigned.
+            if (status != ProjectStatus.Setup)
+            {
+                project.Sign(Today, null).IsSuccess.Should().BeTrue();
+            }
         }
 
         foreach (ProjectStatus step in Paths[status].Where(step => type != ContractType.Design || step is ProjectStatus.Active or ProjectStatus.Closed or ProjectStatus.Stopped or ProjectStatus.Terminated))
         {
+            if (project.Status == step)
+            {
+                continue; // D-230: signing already made the project Active.
+            }
+
             project.TransitionTo(step, Today, "test").IsSuccess.Should().BeTrue($"{step}");
         }
 
@@ -300,7 +313,6 @@ public sealed class ClosureTests
         Project costPlus = Project.Create("PRJ-CP", "CP", TestAccounts.ClientId, ContractType.CostPlus, Now).Value;
         costPlus.SetCostPlusTerms(Percentage.FromPercent(10m));
         costPlus.Sign(Today, null);
-        costPlus.TransitionTo(ProjectStatus.Active, Today);
         costPlus.TransitionTo(ProjectStatus.HandoverPending, Today);
         costPlus.TransitionTo(ProjectStatus.Handover, Today);
         Release(costPlus, 1m).Error.Should().Be(ClosureErrors.HoldNotApplicable);

@@ -302,6 +302,47 @@ public sealed class BoqTests
         design.Sign(TestAccounts.Today, null).Error.Should().Be(ProjectErrors.ContractValueRequired);
     }
 
+    [Theory]
+    [InlineData(ContractType.LumpSum)]
+    [InlineData(ContractType.CostPlus)]
+    [InlineData(ContractType.Design)]
+    public void D_230_signing_a_project_in_setup_makes_it_active_on_the_signature_date_for_every_contract_type(ContractType type)
+    {
+        Project project = Project.Create("PRJ-ACT", "Activate", TestAccounts.ClientId, type, TestAccounts.Now).Value;
+        if (type == ContractType.Design)
+        {
+            project.SetDesignTerms(100m, new Money(450m)).IsSuccess.Should().BeTrue();
+        }
+
+        project.Status.Should().Be(ProjectStatus.Setup);
+
+        project.Sign(TestAccounts.Today, type == ContractType.LumpSum ? new Money(10m) : null).IsSuccess.Should().BeTrue();
+
+        project.Status.Should().Be(ProjectStatus.Active);
+        project.StartedOn.Should().Be(TestAccounts.Today);
+    }
+
+    [Fact]
+    public void D_230_signing_a_project_that_is_already_active_keeps_it_active_and_keeps_its_start_date()
+    {
+        Project cp = Project.Create("PRJ-ACT2", "Active", TestAccounts.ClientId, ContractType.CostPlus, TestAccounts.Now).Value;
+        DateOnly started = TestAccounts.Today.AddDays(-3);
+        cp.TransitionTo(ProjectStatus.Active, started).IsSuccess.Should().BeTrue();
+
+        cp.Sign(TestAccounts.Today, null).IsSuccess.Should().BeTrue();
+
+        cp.Status.Should().Be(ProjectStatus.Active);
+        cp.StartedOn.Should().Be(started);
+    }
+
+    [Fact]
+    public void D_230_a_refused_signature_leaves_the_project_in_setup()
+    {
+        _project.Sign(TestAccounts.Today, null).IsFailure.Should().BeTrue();
+
+        _project.Status.Should().Be(ProjectStatus.Setup);
+    }
+
     [Fact]
     public void Signing_a_cost_plus_project_leaves_it_with_no_contract_value()
     {

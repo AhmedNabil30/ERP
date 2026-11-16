@@ -104,11 +104,11 @@ public sealed class ProjectFrameTests : IAsyncLifetime
 
         root.GetProperty("name").GetString().Should().Be("مشروع الإطار");
         root.GetProperty("clientName").GetString().Should().Be("عميل الإطار");
-        root.GetProperty("status").GetString().Should().Be(nameof(ProjectStatus.Setup));
+        root.GetProperty("status").GetString().Should().Be(nameof(ProjectStatus.Active));
         root.GetProperty("contractType").GetString().Should().Be(nameof(ContractType.LumpSum));
         root.GetProperty("isSigned").GetBoolean().Should().BeTrue();
         root.GetProperty("isArchived").GetBoolean().Should().BeFalse();
-        root.GetProperty("stage").GetString().Should().Be("Execution", "a signed project has left the BOQ stage even while its state is Setup (D-218 item 3)");
+        root.GetProperty("stage").GetString().Should().Be("Execution", "a signed project is Active and has left the BOQ stage (D-218 item 3, D-230)");
 
         using JsonDocument unsigned = await ReadAsync(_owner, $"/api/projects/{_unsignedProjectId}");
         unsigned.RootElement.GetProperty("isSigned").GetBoolean().Should().BeFalse();

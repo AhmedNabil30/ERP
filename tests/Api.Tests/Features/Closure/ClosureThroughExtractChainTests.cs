@@ -476,7 +476,7 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
         await using (KaffDbContext activate = _database.CreateContext())
         {
             Project loaded = await activate.Projects.SingleAsync(candidate => candidate.Id == project.Id, Ct);
-            loaded.TransitionTo(ProjectStatus.Active, new DateOnly(2026, 9, 24)).IsSuccess.Should().BeTrue();
+            loaded.Status.Should().Be(ProjectStatus.Active, "D-230: signing activates the project");
 
             // spec.md section 15: the client's 25% advance comes in at signing.
             Account advance = await activate.Accounts.SingleAsync(a => a.ProjectId == project.Id && a.Type == AccountType.ClientAdvance, Ct);

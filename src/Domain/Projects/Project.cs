@@ -399,7 +399,7 @@ public sealed class Project : Entity
     /// Signs the contract. The value is taken, never accepted from a caller: a Lump Sum project takes the
     /// BOQ total passed in, a Design project already holds area × rate, Cost Plus has none
     /// (<see cref="ContractValueSource.OriginFor"/>). Freezing the BOQ is the caller's half of the same
-    /// transaction.
+    /// transaction. A project in Setup becomes Active here, whatever its contract type (D-230).
     /// </summary>
     /// <param name="signedOn">The signature date.</param>
     /// <param name="boqTotal">The sum of the BOQ lines, or null when the project has no BOQ.</param>
@@ -435,7 +435,10 @@ public sealed class Project : Entity
         }
 
         SignedOn = signedOn;
-        return Result.Success();
+
+        // D-230: signing is the trigger for Setup to Active (spec.md section 13 names none), in the same save. Both tables allow it.
+        // A project already Active (created with its terms) or Stopped is left where it is. The signature date is the start date.
+        return Status == ProjectStatus.Setup ? TransitionTo(ProjectStatus.Active, signedOn) : Result.Success();
     }
 
     /// <summary>spec.md §5.4. Two link semantics, both keeping separate accounts and billing.</summary>

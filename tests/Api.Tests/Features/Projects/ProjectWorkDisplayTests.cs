@@ -84,7 +84,7 @@ public sealed class ProjectWorkDisplayTests : IAsyncLifetime
 
         using JsonDocument read = await GetAsync($"/api/projects/{project}");
 
-        read.RootElement.GetProperty("status").GetString().Should().Be("Setup");
+        read.RootElement.GetProperty("status").GetString().Should().Be("Active", "D-230: signing makes the project active");
         read.RootElement.GetProperty("stage").GetString().Should().Be("Execution", "signing ends the BOQ stage");
     }
 
@@ -127,7 +127,7 @@ public sealed class ProjectWorkDisplayTests : IAsyncLifetime
 
     private async Task<Guid> SeedActiveProjectAsync(bool withEntry)
     {
-        Guid id = await SeedProjectAsync(ContractType.LumpSum, signed: true, activate: true);
+        Guid id = await SeedProjectAsync(ContractType.LumpSum, signed: true);
         await using KaffDbContext context = _database.CreateContext();
         RulingSet rulings = new();
         DailyLog log = DailyLog.Open(id, _owner, Now, Now, rulings.DailyLogEntry);
@@ -142,7 +142,7 @@ public sealed class ProjectWorkDisplayTests : IAsyncLifetime
         return id;
     }
 
-    private async Task<Guid> SeedProjectAsync(ContractType type, bool signed, bool activate = false)
+    private async Task<Guid> SeedProjectAsync(ContractType type, bool signed)
     {
         await using KaffDbContext context = _database.CreateContext();
         Project project = Project.Create(UniqueNames.Code("WD-P"), UniqueNames.Code("WD-N"), _clientId, type, DateTimeOffset.UtcNow).Value;
@@ -154,11 +154,6 @@ public sealed class ProjectWorkDisplayTests : IAsyncLifetime
         if (signed)
         {
             project.Sign(new DateOnly(2026, 9, 25), type == ContractType.LumpSum ? new Money(1_000_000m) : null).IsSuccess.Should().BeTrue();
-        }
-
-        if (activate)
-        {
-            project.TransitionTo(ProjectStatus.Active, new DateOnly(2026, 9, 25)).IsSuccess.Should().BeTrue();
         }
 
         context.Projects.Add(project);

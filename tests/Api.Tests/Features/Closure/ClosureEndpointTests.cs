@@ -870,7 +870,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
         await context.SaveChangesAsync(Ct);
 
         // The accruals happen while the project is Active, as the extract chain would write them.
-        project.TransitionTo(ProjectStatus.Active, new DateOnly(2026, 9, 1)).IsSuccess.Should().BeTrue();
+        project.Status.Should().Be(ProjectStatus.Active, "D-230: signing activates the project");
         await context.SaveChangesAsync(Ct);
 
         Account receivable = accounts.Single(account => account.Type == AccountType.ClientReceivable);
@@ -916,7 +916,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
         project.SetLumpSumTerms(
             Percentage.FromPercent(25m), Percentage.FromPercent(20m), Percentage.FromPercent(25m),
             Percentage.FromPercent(75m), delayPenaltyEnabled: false).IsSuccess.Should().BeTrue();
-        project.Sign(new DateOnly(2026, 9, 1), new Money(1_000_000m)).IsSuccess.Should().BeTrue();
+        // D-230: signing activates a project, so the Setup project stays unsigned.
         context.Projects.Add(project);
         await context.SaveChangesAsync(Ct);
 
@@ -955,7 +955,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
         Project project = Project.Create(UniqueNames.Code("CL-D"), UniqueNames.Code("مشروع تصميم"), _clientId, ContractType.Design, DateTimeOffset.UtcNow).Value;
         project.SetDesignTerms(100m, new Money(500m)).IsSuccess.Should().BeTrue();
         project.Sign(new DateOnly(2026, 9, 1), null).IsSuccess.Should().BeTrue();
-        project.TransitionTo(ProjectStatus.Active, new DateOnly(2026, 9, 1)).IsSuccess.Should().BeTrue();
+        project.Status.Should().Be(ProjectStatus.Active, "D-230: signing activates the project");
         context.Projects.Add(project);
         await context.SaveChangesAsync(Ct);
 

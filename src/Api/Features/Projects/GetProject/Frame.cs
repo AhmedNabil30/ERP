@@ -33,8 +33,8 @@ internal static class StageOf
             return ProjectStage.Handover;
         }
 
-        // Signing freezes the BOQ and ends the BOQ stage, though the state stays Setup until the project is activated.
-        return !project.IsSigned && (project.Status == ProjectStatus.Setup || project.StartedOn is null)
+        // D-230: signing activates the project, so a project that has left Setup is on the execution stage.
+        return project.Status == ProjectStatus.Setup || project.StartedOn is null
             ? ProjectStage.Boq
             : ProjectStage.Execution;
     }

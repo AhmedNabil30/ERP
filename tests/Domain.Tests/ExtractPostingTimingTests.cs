@@ -40,7 +40,7 @@ public sealed class ExtractPostingTimingTests
             ContractDefaults.MaterialAdvanceRate,
             delayPenaltyEnabled: false).IsSuccess.Should().BeTrue();
         _project.Sign(SigningDate, new Money(1_000_000m)).IsSuccess.Should().BeTrue();
-        _project.TransitionTo(ProjectStatus.Active, SigningDate).IsSuccess.Should().BeTrue();
+        _project.Status.Should().Be(ProjectStatus.Active, "D-230: signing activates the project");
 
         Guid id = _project.Id;
         _revenue = Account.Create(

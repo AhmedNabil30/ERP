@@ -30,6 +30,11 @@ public sealed class SubcontractorRetentionTests
         project.Sign(HandoverDay, new Money(1_000_000m)).IsSuccess.Should().BeTrue();
         foreach (ProjectStatus step in Path.Take(Array.IndexOf(Path, status) + 1))
         {
+            if (project.Status == step)
+            {
+                continue; // D-230: signing already made the project Active.
+            }
+
             project.TransitionTo(step, HandoverDay, "test").IsSuccess.Should().BeTrue($"{step}");
         }
 

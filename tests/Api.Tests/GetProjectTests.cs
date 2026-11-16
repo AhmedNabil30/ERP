@@ -94,7 +94,7 @@ public sealed class GetProjectTests : IAsyncLifetime
         body.RootElement.GetProperty("name").GetString().Should().Be("مشروع القراءة");
         body.RootElement.GetProperty("clientName").GetString().Should().NotBeNullOrEmpty();
         body.RootElement.GetProperty("contractType").GetString().Should().Be(nameof(ContractType.LumpSum));
-        body.RootElement.GetProperty("status").GetString().Should().Be(nameof(ProjectStatus.Setup));
+        body.RootElement.GetProperty("status").GetString().Should().Be(nameof(ProjectStatus.Active), "D-230: the seeded project is signed, and signing activates it");
         body.RootElement.GetProperty("teamSize").GetInt32().Should().Be(1, "one active assignment was seeded");
         body.RootElement.GetProperty("contractValue").ValueKind.Should().Be(JsonValueKind.String, "D-135");
     }

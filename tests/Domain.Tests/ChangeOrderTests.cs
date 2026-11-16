@@ -43,7 +43,7 @@ public sealed class ChangeOrderTests
             project.Sign(new DateOnly(2026, 1, 1), null).IsSuccess.Should().BeTrue();
         }
 
-        project.TransitionTo(ProjectStatus.Active, new DateOnly(2026, 1, 1)).IsSuccess.Should().BeTrue();
+        project.Status.Should().Be(ProjectStatus.Active, "D-230: signing activates the project");
         return project;
     }
 

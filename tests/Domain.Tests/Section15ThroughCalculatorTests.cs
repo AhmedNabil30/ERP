@@ -52,7 +52,7 @@ public sealed class Section15ThroughCalculatorTests
             ContractDefaults.MaterialAdvanceRate,
             delayPenaltyEnabled: false).IsSuccess.Should().BeTrue();
         project.Sign(SigningDate, boqTotal).IsSuccess.Should().BeTrue();
-        project.TransitionTo(ProjectStatus.Active, SigningDate).IsSuccess.Should().BeTrue();
+        project.Status.Should().Be(ProjectStatus.Active, "D-230: signing activates the project");
         return project;
     }
 

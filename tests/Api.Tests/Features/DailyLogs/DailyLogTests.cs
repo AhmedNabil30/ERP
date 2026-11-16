@@ -730,7 +730,14 @@ public sealed partial class DailyLogTests : IAsyncLifetime
 
         await using KaffDbContext activate = _database.CreateContext();
         Project loaded = await activate.Projects.SingleAsync(candidate => candidate.Id == project, Ct);
-        loaded.TransitionTo(ProjectStatus.Active, new DateOnly(2026, 9, 24)).IsSuccess.Should().BeTrue();
+        if (sign)
+        {
+            loaded.Status.Should().Be(ProjectStatus.Active, "D-230: signing activates the project");
+        }
+        else
+        {
+            loaded.TransitionTo(ProjectStatus.Active, new DateOnly(2026, 9, 24)).IsSuccess.Should().BeTrue();
+        }
         await activate.SaveChangesAsync(Ct);
 
         return (project, line);

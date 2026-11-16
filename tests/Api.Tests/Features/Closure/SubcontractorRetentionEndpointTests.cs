@@ -311,7 +311,7 @@ public sealed class SubcontractorRetentionEndpointTests : IAsyncLifetime
         context.Accounts.AddRange(retention, payable);
         await context.SaveChangesAsync(Ct);
 
-        project.TransitionTo(ProjectStatus.Active, new DateOnly(2025, 1, 2)).IsSuccess.Should().BeTrue();
+        project.Status.Should().Be(ProjectStatus.Active, "D-230: signing activates the project");
         await context.SaveChangesAsync(Ct);
 
         Account receivable = accounts.Single(account => account.Type == AccountType.ClientReceivable);
