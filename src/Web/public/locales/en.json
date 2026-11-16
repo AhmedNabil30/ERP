@@ -472,6 +472,7 @@
   "errors.project.cannot_link_to_itself": "A project cannot be linked to itself.",
   "errors.project.not_design": "Only a design project can be converted to execution.",
   "errors.project.already_converted": "This design project has already been converted to an execution project.",
+  "errors.project.design_not_signed": "A design project cannot be converted to execution before it is signed.",
   "errors.project.execution_type_not_allowed": "Choose the execution contract type: Lump Sum or Cost Plus.",
   "errors.project.not_found": "Project not found.",
   "errors.project.client_required": "A client is required.",

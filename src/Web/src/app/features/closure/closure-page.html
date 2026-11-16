@@ -1,8 +1,8 @@
 <section class="pg" data-testid="closure-page">
   <kaff-page-head [backLink]="['/projects', projectId()]" backLabelKey="closure.back" [title]="i18n.t('closure.title')">
     @if (project(); as p) {
-      <kaff-status-pill titleAside [tone]="pill[p.status].tone" [icon]="pill[p.status].icon" testId="closure-status">
-        {{ i18n.t(statusKey(p.status)) }}
+      <kaff-status-pill titleAside [tone]="pill[shown(p)].tone" [icon]="pill[shown(p)].icon" testId="closure-status">
+        {{ i18n.t(statusKey(shown(p))) }}
       </kaff-status-pill>
     }
     @if (project(); as p) {

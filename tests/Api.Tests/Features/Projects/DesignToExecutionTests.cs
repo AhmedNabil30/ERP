@@ -107,6 +107,50 @@ public sealed class DesignToExecutionTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task D_228_item_2_an_unsigned_design_project_is_refused_with_a_stored_reason_and_nothing_is_opened()
+    {
+        Guid design = await NewDesignAsync(signed: false);
+
+        HttpResponseMessage response = await ConvertAsync(design, _technicalOffice, "LumpSum");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await MessageKeyAsync(response)).Should().Be("errors.project.design_not_signed");
+        await using KaffDbContext reader = _database.CreateBareContext();
+        (await reader.Projects.CountAsync(p => p.LinkedProjectId == design, Ct)).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task D_217_item_36_conversion_staffs_every_active_finance_user_and_the_converter_once_each_audited()
+    {
+        Guid financeId;
+        await using (KaffDbContext seed = _database.CreateContext())
+        {
+            User finance = User.Create(
+                UniqueNames.Code("dx-fin"), "dx-fin", UniqueNames.Phone(), Role.Finance, DateTimeOffset.UtcNow,
+                WellKnownDepartments.FinanceId).Value;
+            seed.Users.Add(finance);
+            await seed.SaveChangesAsync(Ct);
+            financeId = finance.Id;
+        }
+
+        Guid design = await NewDesignAsync();
+        Guid execution = (await JsonAsync(await ConvertAsync(design, _technicalOffice, "LumpSum"))).GetProperty("id").GetGuid();
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        List<Guid> staffed = await reader.ProjectAssignments
+            .Where(a => a.ProjectId == execution && a.RevokedAt == null).Select(a => a.UserId).ToListAsync(Ct);
+        staffed.Should().Contain(financeId).And.Contain(_technicalOffice);
+        staffed.Should().OnlyHaveUniqueItems();
+        List<Guid> activeFinance = await reader.Users
+            .Where(u => u.Role == Role.Finance && u.IsActive).Select(u => u.Id).ToListAsync(Ct);
+        staffed.Intersect(activeFinance).Should().BeEquivalentTo(activeFinance);
+        List<Guid> assignmentIds = await reader.ProjectAssignments.Where(a => a.ProjectId == execution).Select(a => a.Id).ToListAsync(Ct);
+        (await reader.AuditRecords.CountAsync(
+            r => r.EntityType == nameof(ProjectAssignment) && r.EntityId != null && assignmentIds.Contains(r.EntityId.Value) && r.Action == AuditAction.Created, Ct))
+            .Should().Be(assignmentIds.Count, "every staffing row is audited");
+    }
+
+    [Fact]
     public async Task AC_415_B_a_non_design_project_is_refused()
     {
         Guid lumpSum = await NewProjectAsync(ContractType.LumpSum);
@@ -344,7 +388,7 @@ public sealed class DesignToExecutionTests : IAsyncLifetime
         return await JsonAsync(response);
     }
 
-    private async Task<Guid> NewDesignAsync(decimal? area = 100m)
+    private async Task<Guid> NewDesignAsync(decimal? area = 100m, bool signed = true)
     {
         await using KaffDbContext context = _database.CreateContext();
 
@@ -352,6 +396,11 @@ public sealed class DesignToExecutionTests : IAsyncLifetime
         if (area is { } seeded)
         {
             opened.Project.SetDesignTerms(seeded, new Money(450m)).IsSuccess.Should().BeTrue();
+            if (signed)
+            {
+                // D-228 item 2: only a signed design project converts.
+                opened.Project.Sign(new DateOnly(2026, 11, 9), null).IsSuccess.Should().BeTrue();
+            }
         }
 
         context.Projects.Add(opened.Project);

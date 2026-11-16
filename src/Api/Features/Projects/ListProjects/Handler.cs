@@ -103,6 +103,9 @@ internal static class Handler
             select new { ProjectId = lines.Key, Count = lines.Count() })
             .ToDictionaryAsync(row => row.ProjectId, row => row.Count, cancellationToken);
 
+        // One query for every project's work-started flag (D-228 item 4).
+        HashSet<Guid> workStarted = await WorkStartedQuery.ProjectIdsAsync(database, null, cancellationToken);
+
         // ProjectMoneyRead is project-scoped, so it is asked per row, through the same evaluator the gate uses.
         // ponytail: one access query per listed project; batch it if the list ever grows past a few hundred.
         List<ProjectSummary> projects = [];
@@ -118,7 +121,8 @@ internal static class Handler
                 seesMoney ? project.ContractValue : null,
                 seesMoney ? change : null,
                 project.IsArchived(now, rulings.FollowUp), project.FollowUpEndsOn(rulings.FollowUp),
-                boqLineCounts.GetValueOrDefault(project.Id)));
+                boqLineCounts.GetValueOrDefault(project.Id),
+                workStarted.Contains(project.Id)));
         }
 
         return Microsoft.AspNetCore.Http.Results.Ok(new Response(projects, projects.Count));

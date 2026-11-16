@@ -74,7 +74,7 @@
 
               <!-- The same state word the project hub shows (`projectWorkspaceStatusKey`). -->
               <span class="row-status" [class.row-archived]="project.isArchived" [attr.data-testid]="'project-status-' + project.code">
-                {{ i18n.t(projectStatusKey(project.status)) }}
+                {{ i18n.t(projectStatusKey(shown(project))) }}
                 @if (project.isArchived) {
                   <span class="row-follow" [attr.data-testid]="'project-archived-' + project.code">{{ i18n.t('projects.state.archived') }}</span>
                 } @else if (project.followUpEndsOn) {

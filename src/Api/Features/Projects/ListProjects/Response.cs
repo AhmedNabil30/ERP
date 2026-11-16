@@ -25,6 +25,7 @@ namespace Kaff.Api.Features.Projects.ListProjects;
 /// <param name="IsArchived">True for an unsigned Setup project whose follow-up period has ended (AC-417-J). Archived rows are listed only with <c>includeArchived=true</c>.</param>
 /// <param name="FollowUpEndsOn">The day the follow-up period ends. Null once signed or out of Setup.</param>
 /// <param name="BoqLineCount">How many lines the project's BOQ holds; zero when it has none. A count, not money, so every role that sees the row sees it.</param>
+/// <param name="WorkStarted">D-228 item 4: true once any daily log entry exists on the project. Absent when false.</param>
 public sealed record ProjectSummary(
     Guid Id,
     string Code,
@@ -37,7 +38,8 @@ public sealed record ProjectSummary(
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] Money? ApprovedChangeOrderTotal,
     bool IsArchived,
     DateOnly? FollowUpEndsOn,
-    int BoqLineCount);
+    int BoqLineCount,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] bool WorkStarted = false);
 
 /// <summary>
 /// The projects the caller may reach. KAFF-400.

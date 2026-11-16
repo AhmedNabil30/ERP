@@ -106,31 +106,12 @@ internal static class Handler
         database.Projects.Add(project);
         database.Accounts.AddRange(opened.Value.Accounts);
 
-        // KAFF-419 AC-5, D-217 item 36 (FinanceStaffing ruling): Finance is staffed on every new project in the same save.
-        List<User> financeUsers = await database.Users
-            .Where(candidate => candidate.Role == Role.Finance && candidate.IsActive)
-            .ToListAsync(cancellationToken);
+        // KAFF-419 AC-5, D-217 item 36 and D-227 item 1: Finance and the creator are staffed in the same save.
+        Result staffed = await NewProjectStaffing.StaffAsync(database, currentUser, project.Id, now, cancellationToken);
 
-        foreach (User finance in financeUsers)
+        if (staffed.IsFailure)
         {
-            Result<ProjectAssignment> staffed = ProjectAssignment.Create(
-                project.Id, finance, AssignmentLevel.Standard, currentUser.UserId ?? Guid.Empty, now);
-
-            if (staffed.IsFailure)
-            {
-                return ResultExtensions.Problem(staffed.Error);
-            }
-
-            database.ProjectAssignments.Add(staffed.Value);
-        }
-
-        // D-227 item 1: the creator is staffed too.
-        Result creatorStaffed = await CreatorStaffing.StaffAsync(
-            database, currentUser, project.Id, financeUsers.ConvertAll(finance => finance.Id), now, cancellationToken);
-
-        if (creatorStaffed.IsFailure)
-        {
-            return ResultExtensions.Problem(creatorStaffed.Error);
+            return ResultExtensions.Problem(staffed.Error);
         }
 
         try

@@ -201,7 +201,7 @@ export class ProjectWorkspacePage {
     if (project.isArchived) {
       return this.caps().canManage ? { labelKey: 'projects.frame.action.reopen', act: 'reopen' as const } : null;
     }
-    return primaryAction(project.contractType, project.status, this.caps(), project.id, this.pending());
+    return primaryAction(project.contractType, project.status, this.caps(), project.id, this.pending(), project.isSigned);
   });
 
   /** The server named this viewer in `holders` of a step that is taken on the extract screen. */
@@ -310,6 +310,7 @@ export class ProjectWorkspacePage {
     return (
       project !== null &&
       project.contractType === 'Design' &&
+      project.conversionOffered === true &&
       !project.executionProjectId &&
       this.canManage() &&
       (this.auth.current()?.permissions.includes('ProjectCreate') ?? false)

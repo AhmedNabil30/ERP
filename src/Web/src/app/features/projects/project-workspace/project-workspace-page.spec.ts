@@ -634,3 +634,39 @@ describe('ProjectWorkspacePage · sign a Design project (AC-417-K)', () => {
     expect(boq.signed).toEqual([]);
   });
 });
+describe('ProjectWorkspacePage · after signing and work not started (D-228)', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  const CONVERTER = () => session('Owner', OWNER_PERMS, ['TreasuryReadCompany', 'ProjectCreate']);
+
+  it('an Active project with no daily log entry reads «not started», and «in progress» from its first entry', async () => {
+    const idle = await createFixture(new FakeProjectsApi(project('LumpSum', { workStarted: false })), OWNER());
+    expect(q(idle, 'workspace-status')?.textContent).toContain('لم تبدأ');
+    TestBed.resetTestingModule();
+    const working = await createFixture(new FakeProjectsApi(project('LumpSum', { workStarted: true })), OWNER());
+    expect(q(working, 'workspace-status')?.textContent).toContain('جاري العمل');
+  });
+
+  it('a signed Setup Lump Sum project does not offer to open the BOQ', async () => {
+    await createFixture(new FakeProjectsApi(project('LumpSum', { status: 'Setup', stage: 'Execution' })), OWNER());
+    expect(slotButton()?.textContent ?? '').not.toContain('open_boq');
+  });
+
+  it('an unsigned Design project offers sign and not convert; the server decides conversion', async () => {
+    const fixture = await createFixture(
+      new FakeProjectsApi(project('Design', { contractValue: null, isSigned: false, signedOn: null, conversionOffered: false })),
+      CONVERTER(),
+    );
+    expect(q(fixture, 'workspace-sign-design')).not.toBeNull();
+    expect(q(fixture, 'workspace-convert')).toBeNull();
+  });
+
+  it('a signed Design project offers convert and not sign', async () => {
+    const fixture = await createFixture(
+      new FakeProjectsApi(project('Design', { signedOn: '2026-11-01', conversionOffered: true })),
+      CONVERTER(),
+    );
+    expect(q(fixture, 'workspace-convert')).not.toBeNull();
+    expect(q(fixture, 'workspace-sign-design')).toBeNull();
+  });
+});

@@ -51,9 +51,10 @@ export function primaryAction(
   caps: Capabilities,
   projectId: string,
   pending: PendingExtract | null = null,
+  signed = false,
 ): PrimaryAction | null {
   if (type === 'LumpSum') {
-    if (caps.canReadBoq && status === 'Setup') {
+    if (caps.canReadBoq && status === 'Setup' && !signed) {
       return { labelKey: 'projects.frame.action.open_boq', link: ['/projects', projectId, 'boq'] };
     }
     // `hasAction` is the server's own answer from waiting-on (who may act now).

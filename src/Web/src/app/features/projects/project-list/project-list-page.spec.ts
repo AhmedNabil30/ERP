@@ -230,9 +230,20 @@ describe('ProjectListPage · columns', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="project-value-KF-P-0001"]')).toBeNull();
   });
 
+  it('an Active project with no daily log entry reads «لم تبدأ» in the list (D-228 item 4)', async () => {
+    const fixture = await createFixture(
+      new FakeProjectsApi([LUMP_SUM]),
+      session(['ProjectList'], [entry('p-1', ['DayLabourSiteManage'])]),
+    );
+
+    const active = fixture.nativeElement.querySelector('[data-testid="project-status-KF-P-0001"]');
+
+    expect((active.textContent as string).trim()).toBe('لم تبدأ');
+  });
+
   it('renders Kaff vocabulary verbatim for Active and Closed, the same word the hub shows', async () => {
     const fixture = await createFixture(
-      new FakeProjectsApi([LUMP_SUM, CLOSED_COST_PLUS]),
+      new FakeProjectsApi([{ ...LUMP_SUM, workStarted: true }, CLOSED_COST_PLUS]),
       session(
         ['ProjectList'],
         [entry('p-1', ['DayLabourSiteManage']), entry('p-2', ['DayLabourSiteManage'])],

@@ -67,17 +67,24 @@ internal static class Handler
             return ResultExtensions.Problem(opened.Error);
         }
 
+        // D-228 item 2, interim: conversion is refused before signing. The ruling is wider: only a finished design converts.
+        // ponytail: replace this check with "design finished" (spec.md section 13 design phases NotStarted to Invoiced) once the
+        // design phases are built; D-228 item 2 is the rule to apply then.
+        if (!design.IsSigned)
+        {
+            return ResultExtensions.Problem(ProjectErrors.DesignNotSigned);
+        }
+
         Project execution = opened.Value.Project;
         database.Projects.Add(execution);
         database.Accounts.AddRange(opened.Value.Accounts);
 
-        // D-227 item 1: the person converting must be able to open the new project. Finance staffing is not part of this path.
-        Result creatorStaffed = await CreatorStaffing.StaffAsync(
-            database, currentUser, execution.Id, [], clock.GetUtcNow(), cancellationToken);
+        // D-217 item 36, D-227 item 1: Finance and the person converting are staffed like any new project.
+        Result staffed = await NewProjectStaffing.StaffAsync(database, currentUser, execution.Id, clock.GetUtcNow(), cancellationToken);
 
-        if (creatorStaffed.IsFailure)
+        if (staffed.IsFailure)
         {
-            return ResultExtensions.Problem(creatorStaffed.Error);
+            return ResultExtensions.Problem(staffed.Error);
         }
 
         Error? refused = await GuardedSave.SaveAsync(database, cancellationToken);

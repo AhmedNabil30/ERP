@@ -90,6 +90,10 @@ public static class ProjectErrors
     public static readonly Error AlreadyConverted =
         Error.Conflict("project.already_converted", "errors.project.already_converted");
 
+    /// <summary>D-228 item 2, interim: a design project converts to execution only after it is signed.</summary>
+    public static readonly Error DesignNotSigned =
+        Error.Conflict("project.design_not_signed", "errors.project.design_not_signed");
+
     /// <summary>KAFF-415, Q-207-9: a design project converts into Lump Sum or Cost Plus only.</summary>
     public static readonly Error ExecutionTypeNotAllowed =
         Error.Validation("project.execution_type_not_allowed", "errors.project.execution_type_not_allowed");

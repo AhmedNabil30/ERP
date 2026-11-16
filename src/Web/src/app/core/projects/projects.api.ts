@@ -52,6 +52,8 @@ export interface ProjectSummary {
   readonly followUpEndsOn?: string | null;
   /** How many lines the project's BOQ holds; 0 when it has none. */
   readonly boqLineCount?: number;
+  /** D-228 item 4: any daily log entry exists. Absent when false. */
+  readonly workStarted?: boolean;
 }
 
 /**
@@ -100,6 +102,10 @@ export interface ProjectDetail {
   readonly loggedToday: boolean;
   /** Which tabs this caller may open. The server decides; a false tab is absent from the frame. */
   readonly tabs: ProjectTabs;
+  /** D-228 item 4: any daily log entry exists. Absent when false. Display only. */
+  readonly workStarted?: boolean;
+  /** D-228 item 2: the server offers conversion to execution (a signed design project, not yet converted). */
+  readonly conversionOffered?: boolean;
 }
 
 /** `ProjectStage` on the wire: the three stages the stage line draws (D-218 item 3). */

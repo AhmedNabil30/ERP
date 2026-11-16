@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { toProblem } from '../../../core/api/problem-details';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ClientsApi } from '../../../core/clients/clients.api';
+import { shownStatus } from '../project-status-pill';
 import { contractTypeKey, projectWorkspaceStatusKey } from '../../../core/i18n/enum-keys';
 import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
@@ -46,6 +47,7 @@ export class ProjectListPage {
   protected readonly i18n = inject(I18nService);
   protected readonly contractTypeKey = contractTypeKey;
   protected readonly projectStatusKey = projectWorkspaceStatusKey;
+  protected readonly shown = shownStatus;
 
   protected readonly projects = signal<readonly ProjectSummary[]>([]);
   protected readonly loading = signal(true);

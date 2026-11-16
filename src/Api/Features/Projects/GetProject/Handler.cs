@@ -4,6 +4,7 @@ using Kaff.Api.Features.ChangeOrders;
 using Kaff.Api.Features.Extracts;
 using Kaff.Domain.Authorization;
 using Kaff.Domain.Common;
+using Kaff.Domain.Contracts;
 using Kaff.Domain.Extracts;
 using Kaff.Domain.Projects;
 using Kaff.Domain.Rulings;
@@ -68,6 +69,11 @@ internal static class Handler
         // The daily log judges "today" in the site zone (DailyLogEntryRule), so the overview uses the same rule.
         DateOnly today = rulings.DailyLogEntry.SiteDate(clock.GetUtcNow());
         bool seesMoney = await CallerPermissions.HoldsAsync(authorization, user, Permission.ProjectMoneyRead);
+        // ponytail: D-228 item 2 rules "design finished"; the design phases (spec.md section 13) are not built, so signed stands in.
+        bool conversionOffered = candidateProject.ContractType == ContractType.Design
+            && candidateProject.IsSigned
+            && found.ExecutionProjectId is null
+            && !candidateProject.IsArchived(clock.GetUtcNow(), rulings.FollowUp);
         Response project = new(
             candidateProject.Id,
             candidateProject.Code,
@@ -102,7 +108,9 @@ internal static class Handler
             candidateProject.IsSigned,
             await database.DailyLogs.AnyAsync(log => log.ProjectId == projectId && log.LogDate == today, cancellationToken),
             await TabsAsync(authorization, user),
-            seesMoney ? candidateProject.AdvanceRecoveryRate : null);
+            seesMoney ? candidateProject.AdvanceRecoveryRate : null,
+            (await WorkStartedQuery.ProjectIdsAsync(database, projectId, cancellationToken)).Contains(projectId),
+            conversionOffered);
 
         return Microsoft.AspNetCore.Http.Results.Ok(project);
     }

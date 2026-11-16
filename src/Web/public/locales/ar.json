@@ -472,6 +472,7 @@
   "errors.project.cannot_link_to_itself": "لا يمكن ربط المشروع بنفسه.",
   "errors.project.not_design": "التحويل إلى تنفيذ متاح لمشروع التصميم فقط.",
   "errors.project.already_converted": "تم تحويل مشروع التصميم هذا إلى مشروع تنفيذ من قبل.",
+  "errors.project.design_not_signed": "لا يمكن تحويل مشروع التصميم إلى تنفيذ قبل توقيعه.",
   "errors.project.execution_type_not_allowed": "اختر نوع عقد التنفيذ: مقاولة بالمقطوعية أو التكلفة زائد نسبة إشراف.",
   "errors.project.not_found": "المشروع غير موجود.",
   "errors.project.client_required": "اختر العميل",

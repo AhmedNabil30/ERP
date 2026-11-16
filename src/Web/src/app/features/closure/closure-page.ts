@@ -25,6 +25,7 @@ import { KaffPageHead } from '../../shared/kaff-page-head/kaff-page-head';
 import { KaffSelect, SelectOption } from '../../shared/kaff-select/kaff-select';
 import { KaffState } from '../../shared/kaff-state/kaff-state';
 import { KaffStatusPill } from '../../shared/kaff-status-pill/kaff-status-pill';
+import { shownStatus } from '../projects/project-status-pill';
 import { CLOSURE_PILL, ClosureCaps, ClosureStep, STEP_LABEL_KEY, closureCapsOf, closureNextSteps } from './closure-display';
 
 /** A project act that asks the user to confirm before it runs. */
@@ -86,6 +87,7 @@ export class ClosurePage {
 
   protected readonly i18n = inject(I18nService);
   protected readonly statusKey = projectWorkspaceStatusKey;
+  protected readonly shown = shownStatus;
   protected readonly pill = CLOSURE_PILL;
   protected readonly actKeys = ACT_KEYS;
   protected readonly stepLabel = STEP_LABEL_KEY;

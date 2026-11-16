@@ -18,7 +18,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { contractTypeKey, projectWorkspaceStatusKey } from '../../core/i18n/enum-keys';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { ProjectDetail, ProjectStage, ProjectTabs, ProjectsApi } from '../../core/projects/projects.api';
-import { STATUS_PILL } from '../../features/projects/project-status-pill';
+import { STATUS_PILL, shownStatus } from '../../features/projects/project-status-pill';
 import { KaffBadge } from '../kaff-badge/kaff-badge';
 import { KaffIcon } from '../kaff-icon/kaff-icon';
 import { KaffStatusPill } from '../kaff-status-pill/kaff-status-pill';
@@ -87,6 +87,7 @@ export class KaffProjectFrame {
   protected readonly state = signal<'loading' | 'ok' | 'failed'>('loading');
 
   protected readonly pill = STATUS_PILL;
+  protected readonly shown = shownStatus;
   protected readonly contractTypeKey = contractTypeKey;
   protected readonly statusKey = projectWorkspaceStatusKey;
   protected readonly stages = STAGES.map((id) => ({ id, key: STAGE_KEY[id] }));

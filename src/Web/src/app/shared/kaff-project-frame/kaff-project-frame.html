@@ -6,8 +6,8 @@
         <div class="ttl">
           <h1 class="title" dir="auto" data-testid="workspace-title">{{ p.name }}</h1>
           @if (!p.isArchived) {
-            <kaff-status-pill [tone]="pill[p.status].tone" [icon]="pill[p.status].icon" testId="workspace-status">
-              {{ i18n.t(statusKey(p.status)) }}
+            <kaff-status-pill [tone]="pill[shown(p)].tone" [icon]="pill[shown(p)].icon" testId="workspace-status">
+              {{ i18n.t(statusKey(shown(p))) }}
             </kaff-status-pill>
           }
         </div>
