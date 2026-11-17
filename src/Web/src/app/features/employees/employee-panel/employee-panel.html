@@ -1,0 +1,219 @@
+<!-- Each projected slot is ONE unconditional element, with the `@if` inside it. -->
+<kaff-detail-panel [open]="open()" [title]="title()" testId="employee-panel" (closed)="closed.emit()">
+  <span panelBack></span>
+
+  <span panelMeta class="meta">
+    @if (isEdit()) {
+      @if (subline(); as line) {
+        <span dir="auto">{{ line }}</span>
+      }
+      @if (archived()) {
+        <kaff-badge tone="tag" testId="employee-panel-archived-badge">
+          <kaff-icon [name]="'arch'" [small]="true" />
+          {{ i18n.t('hr.employee.archived_badge') }}
+        </kaff-badge>
+      }
+    }
+  </span>
+
+  <div panelBody class="body">
+    @if (open()) {
+      @if (bannerRefusal(); as key) {
+        <kaff-banner tone="refusal" testId="employee-form-refusal">{{ i18n.t(key) }}</kaff-banner>
+      }
+
+      @if (figures(); as f) {
+        @if (isWorker()) {
+          <kaff-figure-pair
+            [firstValue]="f.times"
+            [firstLabel]="i18n.t('hr.worker.pool.frequency')"
+            [secondValue]="f.rating"
+            [secondLabel]="i18n.t('hr.worker.pool.rating')"
+            testId="employee-panel-figures"
+          />
+        }
+      }
+
+      <kaff-field
+        #nameField="kaffField"
+        labelKey="hr.employee.field.full_name"
+        controlId="employee-field-full-name"
+        [required]="true"
+        [errorKey]="nameError()"
+      >
+        <input
+          id="employee-field-full-name"
+          type="text"
+          dir="auto"
+          autocomplete="off"
+          data-testid="employee-field-full-name"
+          [value]="draft().fullName"
+          [attr.aria-invalid]="nameError() !== null ? 'true' : null"
+          [attr.aria-describedby]="nameField.describedById()"
+          (input)="onInput('fullName', $event)"
+        />
+      </kaff-field>
+
+      <kaff-field
+        #phoneField="kaffField"
+        labelKey="hr.employee.field.phone"
+        controlId="employee-field-phone"
+        [required]="true"
+        [errorKey]="phoneError()"
+        errorTestId="employee-field-phone-error"
+      >
+        <input
+          id="employee-field-phone"
+          type="tel"
+          dir="ltr"
+          inputmode="tel"
+          autocomplete="tel"
+          data-testid="employee-field-phone"
+          [value]="draft().phone"
+          [attr.aria-invalid]="phoneError() !== null ? 'true' : null"
+          [attr.aria-describedby]="phoneField.describedById()"
+          (input)="onInput('phone', $event)"
+          (blur)="onPhoneBlur()"
+        />
+      </kaff-field>
+
+      @if (isWorker()) {
+        <kaff-field
+          #babField="kaffField"
+          labelKey="hr.employee.field.bab"
+          controlId="employee-field-bab"
+          [required]="true"
+          [errorKey]="babError()"
+          errorTestId="employee-field-bab-error"
+        >
+          <kaff-select
+            controlId="employee-field-bab"
+            ariaLabelKey="hr.employee.field.bab"
+            [options]="babOptions()"
+            [value]="draft().babId"
+            [describedBy]="babField.describedById()"
+            [invalid]="babError() !== null"
+            testId="employee-field-bab"
+            (valueChange)="onBab($event)"
+          />
+        </kaff-field>
+
+        <kaff-field labelKey="hr.employee.field.specialty" controlId="employee-field-specialty">
+          <input
+            id="employee-field-specialty"
+            type="text"
+            dir="auto"
+            autocomplete="off"
+            data-testid="employee-field-specialty"
+            [value]="draft().specialty"
+            (input)="onInput('specialty', $event)"
+          />
+        </kaff-field>
+      } @else {
+        <kaff-field
+          #nidField="kaffField"
+          labelKey="hr.employee.field.national_id"
+          controlId="employee-field-national-id"
+          hintKey="people.hint.national_id"
+        >
+          <input
+            id="employee-field-national-id"
+            type="text"
+            dir="ltr"
+            inputmode="numeric"
+            autocomplete="off"
+            data-testid="employee-field-national-id"
+            [value]="draft().nationalId"
+            [attr.aria-describedby]="nidField.describedById()"
+            (input)="onInput('nationalId', $event)"
+          />
+        </kaff-field>
+
+        <kaff-field labelKey="hr.employee.field.job_title" controlId="employee-field-job-title">
+          <input
+            id="employee-field-job-title"
+            type="text"
+            dir="auto"
+            autocomplete="off"
+            data-testid="employee-field-job-title"
+            [value]="draft().jobTitle"
+            (input)="onInput('jobTitle', $event)"
+          />
+        </kaff-field>
+
+        <kaff-field labelKey="hr.employee.field.department" controlId="employee-field-department">
+          <input
+            id="employee-field-department"
+            type="text"
+            dir="auto"
+            autocomplete="off"
+            data-testid="employee-field-department"
+            [value]="draft().department"
+            (input)="onInput('department', $event)"
+          />
+        </kaff-field>
+
+        <kaff-field labelKey="hr.employee.field.hired_on" controlId="employee-field-hired-on">
+          <input
+            id="employee-field-hired-on"
+            type="date"
+            data-testid="employee-field-hired-on"
+            [value]="draft().hiredOn"
+            (input)="onInput('hiredOn', $event)"
+          />
+        </kaff-field>
+      }
+    }
+  </div>
+
+  <div panelFooter class="actions">
+    @if (open()) {
+      @if (duplicates().length > 0) {
+        <div class="dup">
+          <kaff-duplicate-phone-warning
+            [matches]="duplicates()"
+            titleKey="hr.worker.duplicate_phone_warning"
+            confirmKey="hr.worker.duplicate_phone_confirm"
+            testIdPrefix="employee"
+            [showCode]="false"
+            [missing]="ackMissing()"
+            missingKey="errors.master.employee_duplicate_phone_not_acknowledged"
+            (acknowledgeChange)="onAcknowledge($event)"
+          />
+        </div>
+      }
+
+      <kaff-button
+        class="save"
+        variant="primary"
+        [disabled]="isEdit() && !dirty()"
+        [busy]="saving()"
+        testId="employee-submit"
+        (clicked)="onSave()"
+      >
+        {{ saving() ? i18n.t('people.panel.saving') : i18n.t('action.save') }}
+      </kaff-button>
+      <kaff-button
+        variant="secondary"
+        [disabled]="saving()"
+        testId="employee-panel-close"
+        (clicked)="closed.emit()"
+      >
+        {{ i18n.t(isEdit() ? 'action.close' : 'action.cancel') }}
+      </kaff-button>
+      @if (isEdit()) {
+        @if (archived()) {
+          <kaff-button class="trailing" variant="secondary" testId="employee-panel-unarchive" (clicked)="unarchiveRequested.emit()">
+            <kaff-icon [name]="'unarch'" [small]="true" />
+            {{ i18n.t('people.menu.unarchive') }}
+          </kaff-button>
+        } @else {
+          <kaff-button class="trailing" variant="secondary" testId="employee-panel-archive" (clicked)="archiveRequested.emit()">
+            <kaff-icon [name]="'arch'" [small]="true" />
+            {{ i18n.t('hr.employee.archive_action') }}
+          </kaff-button>
+        }
+      }
+    }
+  </div>
+</kaff-detail-panel>

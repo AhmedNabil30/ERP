@@ -20,7 +20,6 @@ const NOT_YET_MIGRATED = [
   'clients/client-form/client-form-page.html',
   'closure/closure-page.html',
   'departments/department-settings/department-settings-page.html',
-  'employees/employee-form/employee-form-page.html',
   'extracts/extract-detail/extract-detail-page.html',
   'projects/project-create/project-create-page.html',
   'projects/project-list/project-list-page.html',

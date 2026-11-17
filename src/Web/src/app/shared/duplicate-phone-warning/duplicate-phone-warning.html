@@ -15,7 +15,7 @@
     }
   </ul>
 
-  <label class="acknowledge">
+  <label class="acknowledge" [class.acknowledge--missing]="missing()">
     <input
       type="checkbox"
       [attr.data-testid]="testIdPrefix() + '-duplicate-acknowledge'"
@@ -23,4 +23,8 @@
     />
     <span>{{ i18n.t(confirmKey()) }}</span>
   </label>
+
+  @if (missing() && missingKey(); as key) {
+    <p class="duplicate-missing" role="alert" [attr.data-testid]="testIdPrefix() + '-duplicate-missing'">{{ i18n.t(key) }}</p>
+  }
 </div>

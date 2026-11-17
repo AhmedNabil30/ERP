@@ -83,6 +83,25 @@ describe('AC-215-B — every guarded top-level route has a row, derived from app
   });
 });
 
+describe('D-231 — the people register is two adjacent rows, shown by the one permission', () => {
+  it('EmployeeManage gives الموظفون then عمالة اليومية, side by side in the same group', () => {
+    const rows = navRowsFor(session('Hr', ['EmployeeManage']));
+
+    expect(rows.map((row) => [row.path, row.labelKey, row.group])).toEqual([
+      ['/employees', 'nav.employees', 'core'],
+      ['/workers', 'nav.workers', 'core'],
+    ]);
+    expect(arJson['nav.workers' as keyof typeof arJson]).toBe('عمالة اليومية');
+  });
+
+  it('a session without EmployeeManage sees neither row', () => {
+    const rows = navRowsFor(session('SiteEngineer', ['ProjectList', 'DayLabourSiteManage']));
+
+    expect(rows.map((row) => row.path)).not.toContain('/employees');
+    expect(rows.map((row) => row.path)).not.toContain('/workers');
+  });
+});
+
 describe('AC-215-C — a permission the session lacks shows no row at all', () => {
   it('a session holding only ClientManage produces only the clients row', () => {
     const rows = navRowsFor(session('MarketingSales', ['ClientManage']));

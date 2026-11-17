@@ -59,3 +59,16 @@
   min-block-size: var(--tap-target);
   accent-color: var(--ink);
 }
+
+/* The box was left unticked on a save: the error colour and an icon-free line, never colour alone. */
+.acknowledge--missing {
+  color: var(--err-ink);
+  font-weight: 600;
+}
+
+.duplicate-missing {
+  margin: 0;
+  color: var(--err-ink);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}

@@ -1,0 +1,59 @@
+/* The people panel: layout only. Every part inside it is the kit's (detail panel, field, select, figure
+   pair, duplicate warning, banner, badge, button); this file arranges them. */
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-block-start: 2px;
+  color: var(--dim);
+  font-size: 0.875rem;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.body > * {
+  flex: none;
+}
+
+.actions {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* The warning and its box sit directly above the buttons, outside the scrolling fields, so on a phone
+   they never push a field off screen and stay next to the save. */
+.dup {
+  flex: 1 1 100%;
+}
+
+.trailing {
+  margin-inline-start: auto;
+}
+
+@media (width <= 820px) {
+  .actions {
+    --kaff-button-size: 3.5rem;
+  }
+
+  .save {
+    flex: 1;
+  }
+
+  .save ::ng-deep .kaff-button {
+    inline-size: 100%;
+  }
+}
+
+/* The kit's field reserves a one-line footer so a form does not reflow when validation runs. */
+kaff-field ::ng-deep .field-foot:not(:has(*)) {
+  min-block-size: 0;
+}

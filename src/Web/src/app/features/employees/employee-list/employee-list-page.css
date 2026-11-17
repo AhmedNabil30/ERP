@@ -1,15 +1,21 @@
 /*
- * Logical properties throughout — RTL is the primary direction, not a mirror (CLAUDE.md). Zero colour
- * literals: every colour is a token from styles.css (apple-erp-design §2). Mirrors bab-tree-page.css's
- * and catalogue-list-page.css's shape deliberately — one house style, not a second one invented here.
+ * Logical properties throughout; RTL is the primary direction. Zero colour literals: every colour is a token
+ * from styles.css. Mirrors catalogue-list-page.css's shape: one house style, not a second one.
  */
 
-/* KAFF-928 finding 8 / AC-928-I: full width, no centred column — matches `user-list-page.css`. */
-.employees {
+.people {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-4);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
 }
 
 .title {
@@ -17,32 +23,39 @@
   font-size: var(--text-xl);
 }
 
-/* KAFF-929 finding 4: one action bar (title only — this screen has no search). Primary action
-   projects into the shell's top-bar slot instead of living in this row. */
-.action-bar {
+.tools {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
 }
 
-/* KAFF-929 finding 4: the filter strip — segmented filter at the inline-start, the count at the
-   inline-end, sitting directly above the table with no gap. */
-.filter-strip {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
+.bab-filter {
+  min-inline-size: 14rem;
 }
 
 .count {
-  font-size: var(--text-xs);
-  color: var(--color-muted);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--dim);
 }
 
-/* KAFF-928: `kaff-table` is the card host now — its own border, radius, background and shadow
-   replace what `.rows` used to draw per screen. */
+.lnk {
+  min-block-size: var(--tap-target);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: 600 var(--text-sm) / 1.3 var(--body);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
 .rows {
   list-style: none;
   margin: 0;
@@ -56,32 +69,27 @@
   flex-direction: column;
 }
 
-/* KAFF-928 finding 6: takes the row out of grid flow entirely (an absolutely-positioned grid child
-   consumes no track), so the whole row is still a click target without nesting a `<button>`/`<a>`
-   inside another `<a>` — see catalogue-list-page.css's identical rule for the full explanation. */
+/* Takes the row out of grid flow (an absolutely-positioned grid child consumes no track), so the whole row is
+   one click target without nesting a button inside another. The row's own menu sits above it. */
 .row-stretched-link {
   position: absolute;
   inset: 0;
   z-index: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
 }
 
-/* ux/components.md:259 — the identity cell: the name leads, the generated code sits beneath it as
-   muted secondary text. One grid child, so the row still projects one child per column track. */
-.row-identity {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  min-inline-size: 0;
-  justify-self: start;
+.person {
+  display: block;
 }
 
-.row-code {
-  unicode-bidi: isolate;
-  font-size: var(--text-xs);
-  color: var(--color-muted);
+.identity {
+  gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
-.row-name {
+.name {
   font-size: var(--text-md);
   font-weight: 600;
   min-inline-size: 0;
@@ -90,55 +98,105 @@
   white-space: nowrap;
 }
 
-/* KAFF-929 finding 1: row metadata takes the scale step below the data. */
-.row-phone {
-  font-size: var(--text-xs);
-  color: var(--color-muted);
+.cell {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-sm);
 }
 
-.row-specialty {
-  font-size: var(--text-xs);
-  color: var(--color-muted);
+.dim {
+  color: var(--dim);
+}
+
+.row-trailing {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-end;
+  justify-self: end;
+}
+
+/* A row just saved takes the saved-band tint. */
+.is-new ::ng-deep .row,
+.is-new ::ng-deep .cell-pinned {
+  background: color-mix(in srgb, var(--ok-bg) 45%, var(--surface));
+}
+
+/* The phone row: the name and the phone on line one, the trade or job on line two, a worker's figures on
+   line three, the 44px menu spanning them at the end. */
+.pr {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto var(--tap-target);
+  grid-template-areas:
+    'name phone act'
+    'sub sub act'
+    'figs figs act';
+  column-gap: var(--space-3);
+  row-gap: 2px;
+  align-items: center;
+  min-block-size: 84px;
+  padding-inline-start: 0;
+}
+
+.pr-name {
+  grid-area: name;
+  font-size: var(--text-md);
+  font-weight: 600;
   min-inline-size: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.row-actions {
+.pr-phone {
+  grid-area: phone;
+  font-size: var(--text-sm);
+  color: var(--dim);
+  justify-self: end;
+}
+
+.pr-sub {
+  grid-area: sub;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-4) var(--space-3);
-}
-
-.row-confirm {
-  flex-basis: 100%;
-  margin: 0;
+  min-inline-size: 0;
   font-size: var(--text-sm);
-  color: var(--color-muted);
 }
 
-.row-refusal {
-  flex-basis: 100%;
-  margin: 0;
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--text-sm);
-  border: 1px solid var(--color-danger);
-  border-radius: var(--radius-md);
-  color: var(--color-danger);
-}
-
-/* KAFF-931: loading/empty/refusal render through `kaff-state` now — its own stylesheet draws these,
-   this file no longer needs to. */
-
-/* The trailing grid cell: the archived badge and the row menu, stacked at the inline-end — same shape
-   `bab-tree-page.css`/`catalogue-list-page.css` use for their own trailing column. */
-.row-trailing {
+.pr-figs {
+  grid-area: figs;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--dim);
+}
+
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pr-act {
+  grid-area: act;
+  position: relative;
+  z-index: 1;
+  display: flex;
   justify-content: flex-end;
-  gap: var(--space-2);
-  justify-self: end;
+}
+
+@media (width <= 820px) {
+  .bab-filter {
+    flex: 1 1 100%;
+  }
+
+  .head > kaff-search-field {
+    flex: 1 1 100%;
+  }
 }

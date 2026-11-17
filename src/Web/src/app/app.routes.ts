@@ -20,7 +20,6 @@ import { sessionGuard } from './core/auth/session.guard';
 import { subcontractorManageGuard } from './core/auth/subcontractor-manage.guard';
 import { supplierManageGuard } from './core/auth/supplier-manage.guard';
 import { userManageGuard } from './core/auth/user-manage.guard';
-import { confirmUnsavedChangesGuard } from './core/navigation/unsaved-changes.guard';
 
 /**
  * Routes.
@@ -169,41 +168,39 @@ export const routes: Routes = [
       ),
   },
   {
-    // KAFF-207, KAFF-208 — S-023, S-024. Same shape as `/catalogue` and `/babs` above: `sessionGuard`
-    // resolves the session first, then `employeeManageGuard` keeps a role without the permission out
-    // of a screen the server would refuse anyway. Reached by URL today — `landing.ts`'s
-    // `RULED_LANDINGS` deliberately does not gain an `EmployeeManage` row: `landing.spec.ts` pins HR
-    // with `EmployeeManage` landing on `hr-projects`, and adding one here would move it out from under
-    // that ruling rather than build on top of it.
+    // KAFF-207, KAFF-208, D-231, D-232 — the two people screens. One register, two lists: `/employees` is
+    // the salaried staff and `/workers` is day labour, each the same page with its own population. The
+    // form is a side panel on the list, so the old `/employees/new` and `/employees/:id` routes redirect
+    // to the list. `employeeManageGuard` keeps a role without `EmployeeManage` out of both.
     path: 'employees',
     canActivate: [sessionGuard, mustChangePasswordGuard, employeeManageGuard],
     children: [
       {
         path: '',
+        pathMatch: 'full',
+        data: { kind: 'Salaried' },
         loadComponent: () =>
           import('./features/employees/employee-list/employee-list-page').then(
             (m) => m.EmployeeListPage,
           ),
       },
+      { path: '**', redirectTo: '' },
+    ],
+  },
+  {
+    path: 'workers',
+    canActivate: [sessionGuard, mustChangePasswordGuard, employeeManageGuard],
+    children: [
       {
-        path: 'new',
-        canDeactivate: [confirmUnsavedChangesGuard],
+        path: '',
+        pathMatch: 'full',
+        data: { kind: 'DayLabour' },
         loadComponent: () =>
-          import('./features/employees/employee-form/employee-form-page').then(
-            (m) => m.EmployeeFormPage,
+          import('./features/employees/employee-list/employee-list-page').then(
+            (m) => m.EmployeeListPage,
           ),
       },
-      {
-        // `withComponentInputBinding` binds `:employeeId` to the component's input signal. There is no
-        // `GET /api/employees/{id}` on this API, so this loads the same way `bab-form-page.ts` does —
-        // see `employee-form-page.ts` for the gap that leaves.
-        path: ':employeeId',
-        canDeactivate: [confirmUnsavedChangesGuard],
-        loadComponent: () =>
-          import('./features/employees/employee-form/employee-form-page').then(
-            (m) => m.EmployeeFormPage,
-          ),
-      },
+      { path: '**', redirectTo: '' },
     ],
   },
   {

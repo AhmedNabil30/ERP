@@ -47,6 +47,7 @@ const NAV_ROWS: readonly NavRow[] = [
   { permission: 'CatalogueManage', path: '/catalogue', labelKey: 'nav.catalogue', group: 'core', icon: 'catalogue' },
   { permission: 'BabManage', path: '/babs', labelKey: 'nav.babs', group: 'core', icon: 'babs' },
   { permission: 'EmployeeManage', path: '/employees', labelKey: 'nav.employees', group: 'core', icon: 'employees' },
+  { permission: 'EmployeeManage', path: '/workers', labelKey: 'nav.workers', group: 'core', icon: 'workers' },
   { permission: 'SubcontractorManage', path: '/subcontractors', labelKey: 'nav.subcontractors', group: 'core', icon: 'subcontractors' },
   { permission: 'SupplierManage', path: '/suppliers', labelKey: 'nav.suppliers', group: 'core', icon: 'suppliers' },
   { permission: 'ClientManage', path: '/clients', labelKey: 'nav.clients', group: 'core', icon: 'clients' },

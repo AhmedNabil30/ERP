@@ -1,126 +1,247 @@
 <ng-template #createAction>
   <kaff-button variant="primary" testId="employee-create" (clicked)="onCreate()">
-    {{ i18n.t('hr.employee.action.create') }}
+    {{ i18n.t(isWorkers() ? 'hr.worker.action.register' : 'hr.employee.action.create') }}
   </kaff-button>
 </ng-template>
 
-<section class="employees" data-testid="employee-list">
-  <!-- KAFF-929 finding 4: one action bar. Primary action projects into the shell's top-bar slot
-       above (`#createAction`), matching `UserListPage`'s own wiring. -->
-  <div class="action-bar">
-    <h1 class="title">{{ i18n.t('hr.employee.list_title') }}</h1>
-  </div>
-
-  <!-- KAFF-929 finding 4: one filter strip. -->
-  <div class="filter-strip">
-    <!-- KAFF-913: KAFF-901's segmented filter, matching CatalogueListPage's and BabTreePage's own —
-         AC-207-F's three server states. -->
-    <kaff-segmented-filter
-      [options]="segmentedOptions"
-      [value]="statusFilter()"
-      (valueChange)="onFilter($event)"
-      ariaLabelKey="hr.employee.list_title"
-      testIdPrefix="employee-filter"
-    />
-    @if (employees().length > 0) {
-      <span class="count" data-testid="employee-list-count">{{ countText() }}</span>
+<section class="people" [attr.data-testid]="isWorkers() ? 'worker-list' : 'employee-list'">
+  <header class="head">
+    <h1 class="title">{{ i18n.t(isWorkers() ? 'hr.worker.pool_title' : 'hr.employee.list_title') }}</h1>
+    @if (!firstRun() && failure() === null) {
+      <kaff-search-field
+        [value]="query()"
+        placeholderKey="people.search.placeholder"
+        clearLabelKey="people.search.clear"
+        testId="employee-search"
+        clearTestId="employee-search-clear"
+        (committed)="query.set($event)"
+      />
     }
-  </div>
+  </header>
+
+  @if (!firstRun() && failure() === null) {
+    <div class="tools">
+      <kaff-segmented-filter
+        [options]="segmentedOptions"
+        [value]="statusFilter()"
+        (valueChange)="onFilter($event)"
+        ariaLabelKey="people.filter.group"
+        testIdPrefix="employee-filter"
+      />
+      @if (isWorkers()) {
+        <div class="bab-filter">
+          <kaff-select
+            [options]="babOptions()"
+            [value]="babFilter()"
+            ariaLabelKey="hr.employee.field.bab"
+            testId="worker-bab-filter"
+            (valueChange)="babFilter.set($event)"
+          />
+        </div>
+      }
+    </div>
+
+    @if (!loading() || rows().length > 0) {
+      <p class="count">
+        <span data-testid="employee-list-count">{{ countText() }}</span>
+        @if (filtering()) {
+          <button type="button" class="lnk" data-testid="employee-clear-filters" (click)="onClearFilters()">
+            {{ i18n.t('people.filter.clear') }}
+          </button>
+        }
+      </p>
+    }
+  }
 
   @if (failure(); as key) {
-    <kaff-state mode="refusal" [bodyKey]="key" testId="employee-list-failure" />
-  } @else if (loading()) {
+    <kaff-state
+      mode="refusal"
+      [titleKey]="isWorkers() ? 'people.failed.workers' : 'people.failed.staff'"
+      bodyKey="people.failed.unchanged"
+      testId="employee-list-failure"
+    >
+      <kaff-button stateAction variant="secondary" testId="employee-list-retry" (clicked)="onRetry()">
+        <kaff-icon [name]="'redo'" [small]="true" />
+        {{ i18n.t('people.retry') }}
+      </kaff-button>
+    </kaff-state>
+  } @else if (loading() && rows().length === 0) {
     <kaff-state mode="loading" titleKey="hr.employee.loading" testId="employee-list-loading" />
-  } @else if (employees().length > 0) {
-    <kaff-table [columns]="rowColumns" [columnDefs]="headerColumns" testId="employee-table-header" data-testid="employee-table-shell">
+  } @else if (firstRun()) {
+    <kaff-state
+      mode="empty"
+      [icon]="'crew'"
+      [titleKey]="isWorkers() ? 'hr.worker.pool_empty' : 'hr.employee.empty'"
+      testId="employee-list-empty"
+    />
+  } @else if (entries().length === 0) {
+    @if (filtering()) {
+      <kaff-state mode="filtered-empty" icon="search" titleKey="people.no_results" testId="employee-list-empty-filtered">
+        <kaff-button stateAction variant="secondary" testId="employee-clear-filters-empty" (clicked)="onClearFilters()">
+          {{ i18n.t('people.filter.clear') }}
+        </kaff-button>
+      </kaff-state>
+    } @else {
+      <kaff-state
+        mode="filtered-empty"
+        icon="arch"
+        [titleKey]="isWorkers() ? 'people.empty_archived.workers' : 'people.empty_archived.staff'"
+        testId="employee-list-empty-filtered"
+      />
+    }
+  } @else {
+    <kaff-table
+      [columns]="columns()"
+      [columnDefs]="headerColumns()"
+      [minInline]="minInline()"
+      testId="employee-table-header"
+      data-testid="employee-table-shell"
+    >
       <ul class="rows" data-testid="employee-rows">
-        @for (employee of employees(); track trackRow($index, employee)) {
-          <li class="rows-item" [attr.data-testid]="'employee-row-' + employee.code">
-            <kaff-table-row [archived]="!employee.isActive">
-              <!-- KAFF-928 finding 6's stretched-link pattern — see catalogue-list-page.html's comment. -->
-              <a
-                class="row-stretched-link"
-                [routerLink]="['/employees', employee.id]"
-                [state]="{ employee: employee }"
-                [attr.aria-label]="employee.fullName"
-              ></a>
-
-              <!-- ux/components.md:259 — identity first. HR scans a staff list by name; the generated
-                   code demotes to muted secondary text on the second line of the same identity cell.
-                   One grid child, one column track. -->
-              <span class="row-identity">
-                <span class="row-name" dir="auto">{{ employee.fullName }}</span>
-                <bdi class="row-code" dir="ltr" translate="no">{{ employee.code }}</bdi>
-              </span>
-              <bdi class="row-phone" dir="ltr">{{ employee.phone }}</bdi>
-              <kaff-badge tone="accent">{{ i18n.t(kindKey(employee)) }}</kaff-badge>
-
-              @if (employee.specialty; as specialty) {
-                <span class="row-specialty" dir="auto">{{ specialty }}</span>
+        @for (entry of entries(); track trackEntry($index, entry)) {
+          <li class="rows-item">
+            @if (entry.type === 'restored') {
+              <kaff-banner tone="ok" icon="check" [flat]="true" testId="employee-row-restored">{{
+                restoredText(entry.name)
+              }}</kaff-banner>
+            } @else {
+              @let row = entry.row;
+              @if (confirmingArchiveId() === row.id) {
+                <kaff-inline-confirm
+                  tone="recoverable"
+                  icon="arch"
+                  [question]="archiveQuestion(row)"
+                  [detail]="i18n.t('people.archive.detail')"
+                  [confirmLabel]="
+                    archivingId() === row.id ? i18n.t('people.archive.busy') : i18n.t('hr.employee.archive_action')
+                  "
+                  [cancelLabel]="i18n.t('action.cancel')"
+                  [busy]="archivingId() === row.id"
+                  [messageTestId]="'employee-archive-body-' + row.code"
+                  [confirmTestId]="'employee-archive-confirm-' + row.code"
+                  [cancelTestId]="'employee-archive-cancel-' + row.code"
+                  (confirmed)="onConfirmArchive(row.id)"
+                  (cancelled)="onCancelArchive()"
+                />
               } @else {
-                <span class="row-specialty"></span>
-              }
+                <kaff-table-row
+                  class="person"
+                  [class.is-new]="justSavedId() === row.id"
+                  [archived]="!row.isActive"
+                  [attr.data-testid]="'employee-row-' + row.code"
+                >
+                  <!-- The whole row opens the person; the name is the accessible name of that target. -->
+                  <button
+                    type="button"
+                    class="row-stretched-link"
+                    [attr.aria-label]="row.fullName"
+                    [attr.data-testid]="'employee-open-' + row.code"
+                    (click)="onOpen(row)"
+                  ></button>
 
-              <!-- KAFF-928 finding 7 (extended here for the identical pattern): an always-present
-                   wrapper, so an active and an archived row project the same number of grid children. -->
-              <span class="row-trailing">
-                <span class="row-archived-badge">
-                  @if (!employee.isActive) {
-                    <kaff-badge tone="neutral" testId="employee-row-archived-badge">
-                      {{ i18n.t('hr.employee.archived_badge') }}
-                    </kaff-badge>
+                  @if (isPhone()) {
+                    <div class="pr">
+                      <span class="pr-name" dir="auto">{{ row.fullName }}</span>
+                      <bdi class="pr-phone" dir="ltr">{{ row.phone }}</bdi>
+                      <span class="pr-sub">
+                        @if (isWorkers()) {
+                          <span dir="auto">{{ rowBab(row) }}</span>
+                          @if (row.specialty) {
+                            <span class="dim" dir="auto">{{ row.specialty }}</span>
+                          }
+                        } @else {
+                          <span dir="auto">{{ row.jobTitle }}</span>
+                          @if (row.department) {
+                            <span class="dim" dir="auto">{{ row.department }}</span>
+                          }
+                        }
+                        @if (!row.isActive) {
+                          <kaff-badge tone="tag" testId="employee-row-archived-badge">
+                            <kaff-icon [name]="'arch'" [small]="true" />
+                            {{ i18n.t('hr.employee.archived_badge') }}
+                          </kaff-badge>
+                        }
+                      </span>
+                      @if (isWorkers()) {
+                        <span class="pr-figs">
+                          <span>{{ timesText(row) }}</span>
+                          @if (ratingText(row); as rating) {
+                            <span class="rating">
+                              <kaff-icon [name]="'star'" [small]="true" />
+                              <bdi dir="ltr">{{ rating }}</bdi>
+                            </span>
+                          }
+                        </span>
+                      }
+                      <span class="pr-act">
+                        <kaff-row-menu
+                          [items]="rowMenuItems(row)"
+                          triggerLabelKey="a11y.row_actions"
+                          [testId]="'employee-row-menu-' + row.code"
+                          (selected)="onRowMenuSelected(row, $event)"
+                        />
+                      </span>
+                    </div>
+                  } @else {
+                    <span class="cell-pinned identity">
+                      <span class="name" dir="auto">{{ row.fullName }}</span>
+                      @if (!row.isActive) {
+                        <kaff-badge tone="tag" testId="employee-row-archived-badge">
+                          <kaff-icon [name]="'arch'" [small]="true" />
+                          {{ i18n.t('hr.employee.archived_badge') }}
+                        </kaff-badge>
+                      }
+                    </span>
+                    @if (isWorkers()) {
+                      <span class="cell" dir="auto">{{ rowBab(row) }}</span>
+                      <span class="cell dim" dir="auto">{{ row.specialty }}</span>
+                      <span class="cell cell-end">{{ timesText(row) }}</span>
+                      <span class="cell cell-end">
+                        @if (ratingText(row); as rating) {
+                          <bdi dir="ltr">{{ rating }}</bdi>
+                        } @else {
+                          <span class="dim">—</span>
+                        }
+                      </span>
+                    } @else {
+                      <span class="cell" dir="auto">{{ row.jobTitle }}</span>
+                      <span class="cell dim" dir="auto">{{ row.department }}</span>
+                      <bdi class="cell dim" dir="ltr">{{ hired(row) }}</bdi>
+                    }
+                    <bdi class="cell" dir="ltr">{{ row.phone }}</bdi>
+                    <span class="row-trailing">
+                      <kaff-row-menu
+                        [items]="rowMenuItems(row)"
+                        triggerLabelKey="a11y.row_actions"
+                        [testId]="'employee-row-menu-' + row.code"
+                        (selected)="onRowMenuSelected(row, $event)"
+                      />
+                    </span>
                   }
-                </span>
-                @if (confirmingArchiveId() !== employee.id) {
-                  <kaff-row-menu
-                    [items]="rowMenuItems(employee)"
-                    triggerLabelKey="a11y.row_actions"
-                    [testId]="'employee-row-menu-' + employee.code"
-                    (selected)="onRowMenuSelected(employee, $event)"
-                  />
-                }
-              </span>
-            </kaff-table-row>
+                </kaff-table-row>
+              }
 
-            <div class="row-actions">
               @if (rowFailure(); as failed) {
-                @if (failed.id === employee.id) {
-                  <p class="row-refusal" role="alert" [attr.data-testid]="'employee-row-refusal-' + employee.code">
-                    {{ i18n.t(failed.key) }}
-                  </p>
+                @if (failed.id === row.id) {
+                  <kaff-banner tone="refusal" [flat]="true" [testId]="'employee-row-refusal-' + row.code">{{
+                    i18n.t(failed.key)
+                  }}</kaff-banner>
                 }
               }
-
-              @if (employee.isActive && confirmingArchiveId() === employee.id) {
-                <p class="row-confirm" [attr.data-testid]="'employee-archive-body-' + employee.code">
-                  {{ i18n.t('hr.employee.archive_confirm') }}
-                </p>
-                <kaff-button
-                  variant="danger"
-                  [disabled]="isArchiving(employee.id)"
-                  [testId]="'employee-archive-confirm-' + employee.code"
-                  (clicked)="onConfirmArchive(employee.id)"
-                >
-                  {{ i18n.t('hr.employee.archive_action') }}
-                </kaff-button>
-                <kaff-button
-                  variant="secondary"
-                  [testId]="'employee-archive-cancel-' + employee.code"
-                  (clicked)="onCancelArchive()"
-                >
-                  {{ i18n.t('action.cancel') }}
-                </kaff-button>
-              }
-            </div>
+            }
           </li>
         }
       </ul>
     </kaff-table>
-  } @else if (statusFilter() !== 'active') {
-    <kaff-state mode="filtered-empty" titleKey="hr.employee.empty_filtered" testId="employee-list-empty-filtered" />
-  } @else {
-    <!-- KAFF-929 finding 2: the create action is always in the top bar now (`#createAction` above),
-         so the empty state names the fact without repeating the action a second time on the page. -->
-    <kaff-state mode="empty" titleKey="hr.employee.empty" testId="employee-list-empty" />
   }
+
+  <kaff-employee-panel
+    [kind]="kind()"
+    [target]="panelTarget()"
+    [babs]="allBabs()"
+    (saved)="onPanelSaved($event)"
+    (closed)="onPanelClosed()"
+    (archiveRequested)="onPanelArchive()"
+    (unarchiveRequested)="onPanelUnarchive()"
+  />
 </section>

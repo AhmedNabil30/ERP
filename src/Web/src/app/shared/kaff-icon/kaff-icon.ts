@@ -10,6 +10,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
  */
 const PATHS = {
   chev: 'M6 9l6 6 6-6',
+  star: 'M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z',
   dots: 'M12 5.5v.01M12 12v.01M12 18.5v.01',
   x: 'M6 6l12 12M18 6L6 18',
   eye: 'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 15a3 3 0 100-6 3 3 0 000 6z',

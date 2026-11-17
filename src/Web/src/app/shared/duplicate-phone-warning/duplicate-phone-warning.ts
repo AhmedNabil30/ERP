@@ -27,6 +27,9 @@ export class DuplicatePhoneWarning {
   readonly testIdPrefix = input.required<string>();
   /** The client code is a database register; a screen whose person does not search by it passes false. */
   readonly showCode = input(true);
+  /** The box was left unticked on a save: the checkbox is marked and `missingKey` is said beneath it. */
+  readonly missing = input(false);
+  readonly missingKey = input<string | null>(null);
 
   /** The operator saying "I saw who holds this number and I am proceeding anyway." */
   readonly acknowledgeChange = output<boolean>();
