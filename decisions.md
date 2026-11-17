@@ -16965,3 +16965,14 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 3. **Only the Owner adds and removes people on a project.** `ProjectAssignmentManage` was granted to the Owner and HR since slice 1, but HR cannot open a project and so never reached the team tab. HR loses the grant.
 
 **Built before this ruling, recorded here.** The team read `GET /api/projects/{id}/team` returns `{ canManage, members[] }`, each member with how he joined (automatic, creator, added) and whether the caller may remove him. `GET /api/projects/{id}/assignments/candidates` lists who can be added. Removing Finance is refused with `errors.identity.finance_cannot_be_removed`. How a member joined is derived from stored timestamps, so a creator who is removed and added back reads as added.
+
+
+## D-234 — "Today" on every document is the site day, HR is not assignable, and what the release 1 Verifier pass settled · 2026-11-17
+
+**Source.** Lanes dispatched by the Scrum Master; Verifier report `qa/release-1/verification-2026-11-17.md`. No new business rule: each item applies a ruling already in force.
+
+1. **One helper says what today is.** `src/Domain/Rulings/SiteTime.cs` holds the site zone and `Today`. The sign date default, hold release, handover and warranty dates, subcontractor retention release, extract and adjustment dates, account opening and the follow-up end all use it. This closes the item D-224 left open. A date the user types is kept as typed. No stored row was rewritten.
+2. **An HR user is not assignable to a project** (`identity.hr_is_not_assignable`) and is not listed among the people who can be added. HR's reach is global and an assignment gave it nothing (D-233 item 3).
+3. **A design project has no extracts tab.** `spec.md` §5.3: "No BOQ, no extract, no hold, no تشوينات, no subcontractors, no site."
+4. **A module is verified by walking its journey, not only its endpoints.** Two defects passed three Verifier passes because each endpoint was right alone: the Technical Office was refused on the project it created, and a signed project never became active. From 2026-11-17 every Verifier brief names the end-to-end chain to walk, as real requests and on the running app, and every module keeps one chain test.
+5. **Stories that the rulings have overtaken.** KAFF-113, KAFF-114 and KAFF-115 still name HR as the one who assigns and still ask for an HR team screen. D-233 item 3 made team management the Owner's. The stories are rewritten to the rulings before they go back to a Verifier.
