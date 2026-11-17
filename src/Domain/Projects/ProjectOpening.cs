@@ -49,7 +49,7 @@ public static class ProjectOpening
         }
 
         Result<IReadOnlyList<Account>> accounts = ProjectAccountSetFactory.Create(
-            project, existingTypes: new HashSet<AccountType>(), DateOnly.FromDateTime(now.UtcDateTime));
+            project, existingTypes: new HashSet<AccountType>(), SiteTime.DateOf(now));
 
         return accounts.IsFailure
             ? Result.Failure<OpenedProject>(accounts.Error)

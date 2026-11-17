@@ -35,6 +35,7 @@ public sealed class SubcontractorRetentionEndpointTests : IAsyncLifetime
     private static readonly DateTimeOffset Now = new(2026, 1, 15, 8, 0, 0, TimeSpan.Zero);
 
     private readonly PostgresDatabase _database;
+    private readonly TestClock _clock = new();
     private KaffApiFactory _factory = null!;
     private HttpClient _client = null!;
 
@@ -69,7 +70,7 @@ public sealed class SubcontractorRetentionEndpointTests : IAsyncLifetime
         _technicalOffice = office.Id;
         _hr = hr.Id;
 
-        _factory = new KaffApiFactory(_database.ConnectionString);
+        _factory = new KaffApiFactory(_database.ConnectionString, clock: _clock);
         _client = _factory.CreateClient();
     }
 
@@ -181,6 +182,22 @@ public sealed class SubcontractorRetentionEndpointTests : IAsyncLifetime
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await ErrorCodeAsync(response)).Should().Be("closure.nothing_to_release");
         (await ReleaseCountAsync(project)).Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData("2027-07-15T22:30:00+00:00", "2027-07-16")]
+    [InlineData("2027-12-15T22:30:00+00:00", "2027-12-16")]
+    public async Task The_retention_release_posting_carries_the_site_day(string instant, string postingDate)
+    {
+        (Guid project, Guid sub) = await NewProjectAsync(handoverOn: new DateOnly(2025, 5, 1));
+        _clock.Advance(DateTimeOffset.Parse(instant, CultureInfo.InvariantCulture) - _clock.GetUtcNow());
+
+        (await SendAsync(HttpMethod.Post, Route(project, sub), _finance)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        Posting release = await reader.Postings.SingleAsync(
+            p => p.ProjectId == project && p.Type == PostingType.SubcontractorRetentionRelease, Ct);
+        release.PostingDate.Should().Be(DateOnly.Parse(postingDate, CultureInfo.InvariantCulture));
     }
 
     [Fact]

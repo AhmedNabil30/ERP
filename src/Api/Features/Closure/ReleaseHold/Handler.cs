@@ -67,7 +67,7 @@ internal static class Handler
             alreadyReleased,
             currentUser.UserId ?? Guid.Empty,
             now,
-            DateOnly.FromDateTime(now.UtcDateTime),
+            SiteTime.DateOf(now),
             rulings.PostingProjectStates);
 
         if (built.IsFailure)

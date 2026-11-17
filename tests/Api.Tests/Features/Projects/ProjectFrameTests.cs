@@ -29,6 +29,7 @@ public sealed class ProjectFrameTests : IAsyncLifetime
     private Guid _unsignedProjectId;
     private Guid _designUnsignedId;
     private Guid _designSignedId;
+    private Guid _costPlusId;
     private DateTimeOffset _loggedAt;
     private Guid _owner;
     private Guid _supervisor;
@@ -300,6 +301,25 @@ public sealed class ProjectFrameTests : IAsyncLifetime
         lump.RootElement.GetProperty("tabs").GetProperty("boq").GetBoolean().Should().BeTrue();
     }
 
+    [Theory]
+    [InlineData("owner")]
+    [InlineData("technicalOffice")]
+    public async Task Only_a_design_project_is_sent_no_extracts_tab_because_a_design_bills_by_stages(string who)
+    {
+        // spec.md 5.3: "No BOQ, no extract, no hold, no site." A design project bills by stage, so the extracts tab is not sent.
+        foreach (Guid design in new[] { _designUnsignedId, _designSignedId })
+        {
+            using JsonDocument body = await ReadAsync(Who(who), $"/api/projects/{design}");
+            body.RootElement.GetProperty("tabs").GetProperty("extracts").GetBoolean().Should().BeFalse("a design project has no extract");
+        }
+
+        foreach (Guid billed in new[] { _projectId, _costPlusId })
+        {
+            using JsonDocument body = await ReadAsync(Who(who), $"/api/projects/{billed}");
+            body.RootElement.GetProperty("tabs").GetProperty("extracts").GetBoolean().Should().BeTrue("Lump Sum and Cost Plus bill by extract");
+        }
+    }
+
     [Fact]
     public async Task A_design_project_sends_its_rate_per_square_metre_to_a_money_reader_the_default_before_signing_and_the_stored_one_after()
     {
@@ -390,6 +410,9 @@ public sealed class ProjectFrameTests : IAsyncLifetime
         designSigned.SetDesignTerms(120m, new Money(500m)).IsSuccess.Should().BeTrue();
         designSigned.Sign(new DateOnly(2026, 9, 25), null).IsSuccess.Should().BeTrue();
 
+        Project costPlus = Project.Create(
+            UniqueNames.Code("FRM-CP"), "تكلفة زائد", client.Id, ContractType.CostPlus, DateTimeOffset.UtcNow).Value;
+
         User owner = MakeUser("frm-owner", Role.Owner);
         User supervisor = MakeEngineer("frm-sup");
         User junior = MakeEngineer("frm-jun");
@@ -400,7 +423,7 @@ public sealed class ProjectFrameTests : IAsyncLifetime
         User marketing = MakeUser("frm-mkt", Role.MarketingSales);
 
         context.Clients.Add(client);
-        context.Projects.AddRange(project, unsigned, designUnsigned, designSigned);
+        context.Projects.AddRange(project, unsigned, designUnsigned, designSigned, costPlus);
         context.Users.AddRange(owner, supervisor, junior, stranger, finance, technicalOffice, marketing);
         await context.SaveChangesAsync(Ct);
 
@@ -411,6 +434,7 @@ public sealed class ProjectFrameTests : IAsyncLifetime
             ProjectAssignment.Create(project.Id, technicalOffice, AssignmentLevel.Standard, owner.Id, Now).Value,
             ProjectAssignment.Create(project.Id, marketing, AssignmentLevel.Standard, owner.Id, Now).Value,
             ProjectAssignment.Create(designUnsigned.Id, technicalOffice, AssignmentLevel.Standard, owner.Id, Now).Value,
+            ProjectAssignment.Create(costPlus.Id, technicalOffice, AssignmentLevel.Standard, owner.Id, Now).Value,
             ProjectAssignment.Create(designSigned.Id, technicalOffice, AssignmentLevel.Standard, owner.Id, Now).Value,
             ProjectAssignment.Create(designUnsigned.Id, junior, AssignmentLevel.Junior, owner.Id, Now).Value);
         _loggedAt = DateTimeOffset.UtcNow;
@@ -422,6 +446,7 @@ public sealed class ProjectFrameTests : IAsyncLifetime
         _unsignedProjectId = unsigned.Id;
         _designUnsignedId = designUnsigned.Id;
         _designSignedId = designSigned.Id;
+        _costPlusId = costPlus.Id;
         _owner = owner.Id;
         _supervisor = supervisor.Id;
         _junior = junior.Id;

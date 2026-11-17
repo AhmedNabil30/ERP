@@ -4,6 +4,7 @@ using Kaff.Domain.Contracts;
 using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
 using Kaff.Domain.Projects;
+using Kaff.Domain.Rulings;
 using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
@@ -76,7 +77,7 @@ internal static class Handler
 #pragma warning restore CA1304, CA1311, CA1862
 
         DateTimeOffset now = clock.GetUtcNow();
-        DateOnly today = DateOnly.FromDateTime(now.UtcDateTime);
+        DateOnly today = SiteTime.DateOf(now);
 
         Result<OpenedProject> opened = ProjectOpening.Open(
             request.Name,

@@ -2,6 +2,7 @@ using Kaff.Api.Common.Results;
 using Kaff.Domain.Closure;
 using Kaff.Domain.Common;
 using Kaff.Domain.Projects;
+using Kaff.Domain.Rulings;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -29,7 +30,7 @@ public sealed record ProjectClosureResponse(
 /// </summary>
 internal static class ClosureSupport
 {
-    public static DateOnly Today(TimeProvider clock) => DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
+    public static DateOnly Today(TimeProvider clock) => SiteTime.Today(clock);
 
     public static async Task<IResult> RunAsync(
         Guid projectId,

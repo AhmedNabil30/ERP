@@ -220,7 +220,8 @@ public sealed class ProjectTeamTabTests : IAsyncLifetime
         JsonElement[] candidates = [.. (await ReadAsync(await SendAsync(HttpMethod.Get, CandidatesRoute, _owner))).EnumerateArray()];
         Guid[] ids = [.. candidates.Select(c => c.GetProperty("userId").GetGuid())];
 
-        ids.Should().Contain([_engineerOne, _engineerTwo, _engineerThree, _headOfDesign, _hr]);
+        ids.Should().Contain([_engineerOne, _engineerTwo, _engineerThree, _headOfDesign]);
+        ids.Should().NotContain(_hr, "an assignment gives HR nothing: HR reads every project without a row, and team management is the Owner's (D-233 item 3)");
         ids.Should().NotContain(_owner, "the Owner is never a member");
         ids.Should().NotContain(_portalClient, "a portal client is not assignable");
         ids.Should().NotContain(_leaver, "an inactive user is not assignable");

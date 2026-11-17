@@ -78,6 +78,12 @@ public sealed class ProjectAssignment : Entity
             return Result.Failure<ProjectAssignment>(IdentityErrors.ClientIsNotAssignable);
         }
 
+        if (user.Role == Role.Hr)
+        {
+            // HR reaches every project without a row (HrGlobal), so an assignment would add nothing.
+            return Result.Failure<ProjectAssignment>(IdentityErrors.HrIsNotAssignable);
+        }
+
         if (level != AssignmentLevel.Standard && user.Role != Role.SiteEngineer)
         {
             // spec.md §9 attaches Junior/Supervisor to the site engineer role only.

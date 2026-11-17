@@ -219,6 +219,16 @@ public sealed class AssignUserToProjectTests : IAsyncLifetime
         }
     }
 
+    [Fact]
+    public async Task An_hr_user_is_not_assignable_because_an_assignment_gives_hr_nothing()
+    {
+        HttpResponseMessage response = await AssignAsync(_owner, _projectA, _hr, AssignmentLevel.Standard);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await MessageKeyAsync(response)).Should().Be("errors.identity.hr_is_not_assignable");
+        (await ActiveAssignmentCountAsync(_hr)).Should().Be(0);
+    }
+
     // ---- AC-113-G · nobody else can staff a project ---------------------------------------------
 
     /// <summary>

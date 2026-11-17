@@ -24,6 +24,7 @@ public sealed class ProjectActivatesAtSigningTests : IAsyncLifetime
     private static readonly DateTimeOffset Now = new(2026, 9, 25, 8, 0, 0, TimeSpan.Zero);
 
     private readonly PostgresDatabase _database;
+    private readonly TestClock _clock = new(new DateTimeOffset(2026, 9, 25, 12, 0, 0, TimeSpan.Zero) - DateTimeOffset.UtcNow);
     private KaffApiFactory _factory = null!;
     private HttpClient _client = null!;
     private Guid _clientId;
@@ -62,7 +63,7 @@ public sealed class ProjectActivatesAtSigningTests : IAsyncLifetime
         // The server clock sits on the day the entries are written, so "today" is 2026-09-25.
         _factory = new KaffApiFactory(
             _database.ConnectionString,
-            clock: new TestClock(new DateTimeOffset(2026, 9, 25, 12, 0, 0, TimeSpan.Zero) - DateTimeOffset.UtcNow));
+            clock: _clock);
         _client = _factory.CreateClient();
     }
 
@@ -174,6 +175,43 @@ public sealed class ProjectActivatesAtSigningTests : IAsyncLifetime
             .StatusCode.Should().Be(HttpStatusCode.Conflict, "no BOQ");
 
         (await LoadAsync(project)).Status.Should().Be(ProjectStatus.Setup);
+    }
+
+    // ---- "today" is the site day, a typed date is taken as given (D-224 open item) -----------------
+
+    [Theory]
+    [InlineData("2026-09-25T22:30:00+00:00", "2026-09-26")] // Cairo +03:00 in summer: 01:30 on the 26th
+    [InlineData("2026-12-15T22:30:00+00:00", "2026-12-16")] // Cairo +02:00 in winter: 00:30 on the 16th
+    public async Task A_signature_with_no_date_takes_the_site_day_and_a_typed_date_is_kept(string instant, string siteDay)
+    {
+        _clock.Advance(DateTimeOffset.Parse(instant, System.Globalization.CultureInfo.InvariantCulture) - _clock.GetUtcNow());
+        Guid defaulted = await CreateAsync(ContractType.CostPlus);
+        Guid typed = await CreateAsync(ContractType.CostPlus);
+
+        JsonElement first = await ReadAsync(await SendAsync(HttpMethod.Post, $"/api/projects/{defaulted}/sign", _technicalOffice, new { }));
+        first.GetProperty("signedOn").GetString().Should().Be(siteDay);
+
+        JsonElement second = await ReadAsync(await SendAsync(HttpMethod.Post, $"/api/projects/{typed}/sign", _technicalOffice, new { signedOn = "2026-01-05" }));
+        second.GetProperty("signedOn").GetString().Should().Be("2026-01-05", "a date the user typed is a calendar date and is not shifted");
+    }
+
+    [Theory]
+    [InlineData("2026-09-01T22:30:00+00:00", "2026-10-02")] // 30 days on is 01:30 on 2 Oct in Cairo
+    [InlineData("2026-12-01T22:30:00+00:00", "2027-01-01")] // 30 days on is 00:30 on 1 Jan in Cairo
+    public async Task A_new_project_follow_up_ends_on_a_site_day_and_its_accounts_open_on_the_site_day(string instant, string endsOn)
+    {
+        _clock.Advance(DateTimeOffset.Parse(instant, System.Globalization.CultureInfo.InvariantCulture) - _clock.GetUtcNow());
+
+        Guid project = await CreateAsync(ContractType.CostPlus);
+
+        JsonElement read = await ReadAsync(await SendAsync(HttpMethod.Get, $"/api/projects/{project}", _owner, null));
+        read.GetProperty("followUpEndsOn").GetString().Should().Be(endsOn);
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        DateOnly siteDay = Kaff.Domain.Rulings.SiteTime.DateOf(_clock.GetUtcNow());
+        siteDay.Should().NotBe(DateOnly.FromDateTime(_clock.GetUtcNow().UtcDateTime), "the instant sits in the two hours where the days differ");
+        (await reader.Accounts.Where(a => a.ProjectId == project).Select(a => a.OpenedOn).Distinct().ToListAsync(Ct))
+            .Should().Equal(siteDay);
     }
 
     private async Task<Guid> CreateAsync(ContractType type)

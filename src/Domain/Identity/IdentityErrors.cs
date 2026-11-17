@@ -132,6 +132,10 @@ public static class IdentityErrors
     public static readonly Error AssignmentLevelNotApplicable =
         Error.Validation("identity.assignment_level_not_applicable", "errors.identity.assignment_level_not_applicable");
 
+    /// <summary>HR reads every project without an assignment row and holds no project-scoped permission, so a row would give nothing (D-233 item 3).</summary>
+    public static readonly Error HrIsNotAssignable =
+        Error.Validation("identity.hr_is_not_assignable", "errors.identity.hr_is_not_assignable");
+
     public static readonly Error ClientIsNotAssignable =
         Error.Validation("identity.client_is_not_assignable", "errors.identity.client_is_not_assignable");
 

@@ -58,7 +58,7 @@ internal static class AdjustmentSupport
 {
     private const string NumberIndex = "ux_adjustments_project_number";
 
-    public static DateOnly Today(TimeProvider clock) => DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
+    public static DateOnly Today(TimeProvider clock) => SiteTime.Today(clock);
 
     /// <summary>
     /// Raises a client credit note against <paramref name="extract"/>. Adds it to the context unsaved on success. The

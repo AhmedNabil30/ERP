@@ -8,7 +8,7 @@ namespace Kaff.Domain.Rulings;
 /// </summary>
 public sealed record DailyLogEntryRule(int MaxDaysBack, decimal MaxCrewHours, decimal CrewHoursStep, string SiteTimeZoneId) : IRuling
 {
-    public static readonly DailyLogEntryRule Default = new(3, 16m, 0.5m, "Africa/Cairo");
+    public static readonly DailyLogEntryRule Default = new(3, 16m, 0.5m, SiteTime.ZoneId);
 
     public RulingNote Note => new(
         "DailyLogEntryRule",
@@ -21,37 +21,11 @@ public sealed record DailyLogEntryRule(int MaxDaysBack, decimal MaxCrewHours, de
         RulingStatus.Ruled);
 
     /// <summary>The calendar day of <paramref name="instant"/> in the site's time zone.</summary>
-    public DateOnly SiteDate(DateTimeOffset instant)
-    {
-        TimeSpan offset = ResolveZone().GetUtcOffset(instant);
-        return DateOnly.FromDateTime(instant.ToOffset(offset).DateTime);
-    }
+    public DateOnly SiteDate(DateTimeOffset instant) => SiteTime.DateOf(instant, SiteTimeZoneId);
 
     /// <summary>True when <paramref name="day"/> is today or at most <see cref="MaxDaysBack"/> days before it.</summary>
     public bool InWindow(DateOnly day, DateOnly today) => day <= today && day >= today.AddDays(-MaxDaysBack);
 
     /// <summary>True when <paramref name="hours"/> is above zero, within the daily maximum and on a half-hour step.</summary>
     public bool HoursAllowed(decimal hours) => hours > 0m && hours <= MaxCrewHours && hours % CrewHoursStep == 0m;
-
-    private TimeZoneInfo ResolveZone()
-    {
-        foreach (string id in new[] { SiteTimeZoneId, "Egypt Standard Time" })
-        {
-            try
-            {
-                return TimeZoneInfo.FindSystemTimeZoneById(id);
-            }
-            catch (TimeZoneNotFoundException)
-            {
-                // Try the next name for the same zone.
-            }
-            catch (InvalidTimeZoneException)
-            {
-                // Same.
-            }
-        }
-
-        // ponytail: a host with no tz database gets a fixed +02:00, which is wrong during Egyptian summer time; install tzdata.
-        return TimeZoneInfo.CreateCustomTimeZone("kaff-site", TimeSpan.FromHours(2), "Kaff site", "Kaff site");
-    }
 }

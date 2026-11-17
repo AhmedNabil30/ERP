@@ -239,7 +239,7 @@ public sealed class Project : Entity
 
         return IsSigned || Status != ProjectStatus.Setup
             ? null
-            : DateOnly.FromDateTime(FollowUpStartedOn.AddDays(period.Days).UtcDateTime);
+            : SiteTime.DateOf(FollowUpStartedOn.AddDays(period.Days));
     }
 
     /// <summary>Archived: not signed, still in Setup, and the follow-up period has ended. Never true for a signed project.</summary>

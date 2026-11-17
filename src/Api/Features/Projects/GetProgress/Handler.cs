@@ -63,7 +63,7 @@ internal static class Handler
             return ResultExtensions.Problem(input.Error);
         }
 
-        DateOnly today = DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
+        DateOnly today = SiteTime.Today(clock);
         Result<ProgressReading> reading = await metric.Value.MeasureAsync(new ProgressContext(project, today, input.Value), cancellationToken);
         if (reading.IsFailure)
         {

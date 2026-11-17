@@ -38,6 +38,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
     private static readonly DateTimeOffset Now = new(2026, 11, 4, 8, 0, 0, TimeSpan.Zero);
 
     private readonly PostgresDatabase _database;
+    private readonly TestClock _clock = new();
     private KaffApiFactory _factory = null!;
     private HttpClient _client = null!;
 
@@ -59,7 +60,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         await SeedAsync();
-        _factory = new KaffApiFactory(_database.ConnectionString);
+        _factory = new KaffApiFactory(_database.ConnectionString, clock: _clock);
         _client = _factory.CreateClient();
     }
 
@@ -332,6 +333,47 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await ErrorCodeAsync(response)).Should().Be("closure.nothing_to_release");
+    }
+
+    // ---- a closure document is dated by the site day, not the UTC day (D-224 open item) ------------
+
+    [Theory]
+    [InlineData("2027-07-15T22:30:00+00:00", "2027-07-16", "2027-11-16")] // Cairo +03:00 in summer: 01:30 on the 16th
+    [InlineData("2027-12-15T22:30:00+00:00", "2027-12-16", "2028-04-16")] // Cairo +02:00 in winter: 00:30 on the 16th
+    public async Task Handover_at_22_30_utc_starts_the_warranty_on_the_site_day(string instant, string handoverOn, string warrantyEndsOn)
+    {
+        Guid project = await NewProjectAsync(ProjectStatus.HandoverPending);
+        MoveClockTo(instant);
+
+        HttpResponseMessage response = await SendAsync(HttpMethod.Post, $"/api/projects/{project}/handover", _technicalOffice, null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+        body.RootElement.GetProperty("handoverOn").GetString().Should().Be(handoverOn);
+        body.RootElement.GetProperty("warrantyEndsOn").GetString().Should().Be(warrantyEndsOn);
+    }
+
+    [Theory]
+    [InlineData("2027-07-15T22:30:00+00:00", "2027-07-16")]
+    [InlineData("2027-12-15T22:30:00+00:00", "2027-12-16")]
+    public async Task The_hold_release_posting_carries_the_site_day(string instant, string postingDate)
+    {
+        Guid project = await NewProjectAsync(ProjectStatus.Handover);
+        MoveClockTo(instant);
+
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        Posting release = await reader.Postings.SingleAsync(p => p.ProjectId == project && p.Type == PostingType.HoldRelease, Ct);
+        release.PostingDate.Should().Be(DateOnly.Parse(postingDate, CultureInfo.InvariantCulture));
+    }
+
+    private bool _clockPinned;
+
+    private void MoveClockTo(string instant)
+    {
+        _clockPinned = true;
+        _clock.Advance(DateTimeOffset.Parse(instant, CultureInfo.InvariantCulture) - _clock.GetUtcNow());
     }
 
     // ---- handover stamps the warranty clock; the audit trail -------------------------------------
@@ -765,6 +807,12 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
 
     private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string route, Guid actorId, object? body)
     {
+        if (!_clockPinned)
+        {
+            // Unpinned, the clock follows the real one, so rows the test seeds and rows the route writes keep their real order.
+            _clock.Advance(DateTimeOffset.UtcNow - _clock.GetUtcNow());
+        }
+
         using var request = new HttpRequestMessage(method, new Uri(route, UriKind.Relative));
 
         if (body is not null)

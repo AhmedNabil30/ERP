@@ -37,7 +37,7 @@ internal delegate Task<Result<IReadOnlyList<Posting>>> ExtractStep(
 /// </summary>
 internal static class ExtractSupport
 {
-    public static DateOnly Today(TimeProvider clock) => DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
+    public static DateOnly Today(TimeProvider clock) => SiteTime.Today(clock);
 
     /// <summary>The extract permissions the caller holds on the route's project, each asked of the real evaluator.</summary>
     public static async Task<ExtractViewer> ViewerAsync(StepServices services) =>

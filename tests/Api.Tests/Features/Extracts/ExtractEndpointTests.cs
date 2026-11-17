@@ -42,6 +42,7 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
     private static readonly DateTimeOffset Now = new(2026, 9, 24, 8, 0, 0, TimeSpan.Zero);
 
     private readonly PostgresDatabase _database;
+    private readonly TestClock _clock = new();
     private KaffApiFactory _factory = null!;
     private HttpClient _client = null!;
 
@@ -66,7 +67,7 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         await SeedAsync();
-        _factory = new KaffApiFactory(_database.ConnectionString);
+        _factory = new KaffApiFactory(_database.ConnectionString, clock: _clock);
         _client = _factory.CreateClient();
     }
 
@@ -74,6 +75,58 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
     {
         _client.Dispose();
         await _factory.DisposeAsync();
+    }
+
+    // ---- money documents are dated by the site day, not the UTC day (D-224 open item) --------------
+
+    [Theory]
+    [InlineData("2027-07-15T22:30:00+00:00", "2027-07-16")] // Cairo +03:00 in summer: 01:30 on the 16th
+    [InlineData("2027-12-15T22:30:00+00:00", "2027-12-16")] // Cairo +02:00 in winter: 00:30 on the 16th
+    public async Task The_issue_postings_carry_the_site_day(string instant, string postingDate)
+    {
+        Project project = await NewProjectAsync();
+        _clock.Advance(DateTimeOffset.Parse(instant, CultureInfo.InvariantCulture) - _clock.GetUtcNow());
+
+        await DriveAsync(project, ExtractStatus.Issued);
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        List<Posting> postings = await reader.Postings
+            .Where(p => p.ProjectId == project.Id && p.SourceDocumentType == SourceDocumentType.Extract).ToListAsync(Ct);
+        postings.Should().NotBeEmpty();
+        postings.Select(p => p.PostingDate).Distinct().Should().Equal(DateOnly.Parse(postingDate, CultureInfo.InvariantCulture));
+    }
+
+    [Theory]
+    [InlineData("2027-07-15T22:30:00+00:00", "2027-07-16")]
+    [InlineData("2027-12-15T22:30:00+00:00", "2027-12-16")]
+    public async Task The_credit_note_posting_carries_the_site_day(string instant, string postingDate)
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        Guid note = await RaiseCreditNoteAsync(project, extract, 40_000m);
+        _clock.Advance(DateTimeOffset.Parse(instant, CultureInfo.InvariantCulture) - _clock.GetUtcNow());
+
+        (await SendAsync(HttpMethod.Post, AdjustmentStep(project.Id, note, "approval"), _owner, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        Posting credit = await reader.Postings.SingleAsync(p => p.ProjectId == project.Id && p.Type == PostingType.CreditNote, Ct);
+        credit.PostingDate.Should().Be(DateOnly.Parse(postingDate, CultureInfo.InvariantCulture));
+    }
+
+    [Fact]
+    public async Task A_collection_posts_on_the_site_day_and_keeps_the_date_the_user_gave()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        _clock.Advance(DateTimeOffset.Parse("2027-07-15T22:30:00+00:00", CultureInfo.InvariantCulture) - _clock.GetUtcNow());
+
+        (await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody())).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        Posting cash = await reader.Postings.SingleAsync(p => p.ProjectId == project.Id && p.Type == PostingType.ClientCollection, Ct);
+        cash.PostingDate.Should().Be(new DateOnly(2027, 7, 16), "the posting is dated by the site day");
+        CollectionRecord record = await reader.CollectionRecords.SingleAsync(c => c.ExtractId == extract, Ct);
+        record.Date.Should().Be(new DateOnly(2026, 10, 1), "the date the user typed is taken as given");
     }
 
     // ---- permissions: role x assignment, hitting every route directly ---------------------------

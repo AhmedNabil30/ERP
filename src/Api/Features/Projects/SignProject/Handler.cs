@@ -134,7 +134,7 @@ internal static class Handler
             }
         }
 
-        DateOnly signedOn = request.SignedOn ?? DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
+        DateOnly signedOn = request.SignedOn ?? SiteTime.Today(clock);
 
         Money? boqTotal = null;
 
@@ -237,7 +237,7 @@ internal static class Handler
             return Result.Failure<Adjustment>(AdjustmentErrors.DesignCreditNotLinked);
         }
 
-        DateOnly today = DateOnly.FromDateTime(clock.GetUtcNow().UtcDateTime);
+        DateOnly today = SiteTime.Today(clock);
         List<Account> own = await database.Accounts
             .Where(account => account.ProjectId == execution.Id && account.IsActive)
             .ToListAsync(cancellationToken);

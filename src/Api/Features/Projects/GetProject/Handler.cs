@@ -131,12 +131,13 @@ internal static class Handler
             : await CallerPermissions.HoldsAsync(authorization, user, Permission.DailyLogReview) ? "review"
             : null;
 
+        // spec.md 5.3: a design project bills by stage; it has no extract, so it gets no extracts tab.
         return new ProjectTabs(
             Overview: true,
             // A design project has no BOQ: its fee is area x rate, and the BOQ route refuses it.
             Boq: contractType != ContractType.Design && await CallerPermissions.HoldsAsync(authorization, user, Permission.BoqRead),
             DailyLog: mode is not null,
-            Extracts: await CallerPermissions.HoldsAsync(authorization, user, Permission.ExtractRead),
+            Extracts: contractType != ContractType.Design && await CallerPermissions.HoldsAsync(authorization, user, Permission.ExtractRead),
             Team: true,
             DailyLogMode: mode);
     }

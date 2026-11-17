@@ -14,8 +14,8 @@ internal static class Handler
     {
         ArgumentNullException.ThrowIfNull(database);
 
-        // The Owner has global reach and no row; a Client or Subcontractor is refused by ProjectAssignment.Create.
-        Role[] never = [Role.Owner, Role.Client, Role.Subcontractor];
+        // The Owner and HR reach every project without a row; a Client or Subcontractor is refused by ProjectAssignment.Create.
+        Role[] never = [Role.Owner, Role.Hr, Role.Client, Role.Subcontractor];
 
         var people = await database.Users
             .AsNoTracking()
