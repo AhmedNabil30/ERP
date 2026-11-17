@@ -40,9 +40,12 @@ function templates(dir: string): string[] {
 /** Overlay parts: a button inside one is the overlay's own action. Matched by element, never by file name. */
 const OVERLAY = /<(kaff-detail-panel|kaff-confirm-dialog)\b[\s\S]*?<\/\1>/g;
 
+/** An overlay whose open binding is a constant true (`[open]="true"` or a bare `open`) is page body, not an overlay. */
+const ALWAYS_OPEN = /\s(?:\[open\]="true"|open)(?=[\s>/])/;
+
 /** True when the markup draws a primary of its own: outside every ng-template and every overlay part. */
 function drawsOwnPrimaryIn(source: string): boolean {
-  const body = source.replace(/<ng-template[\s\S]*?<\/ng-template>/g, '').replace(OVERLAY, '');
+  const body = source.replace(/<ng-template[\s\S]*?<\/ng-template>/g, '').replace(OVERLAY, (overlay) => (ALWAYS_OPEN.test(overlay.slice(0, overlay.indexOf('>') + 1)) ? overlay : ''));
   return /<kaff-button[^>]*variant="primary"/.test(body);
 }
 
@@ -61,6 +64,13 @@ describe('drawsOwnPrimaryIn: what counts as a screen primary', () => {
     expect(drawsOwnPrimaryIn('<ng-template #a>' + primary + '</ng-template>')).toBe(false);
     expect(drawsOwnPrimaryIn('<kaff-detail-panel [open]="o"><div panelFooter>' + primary + '</div></kaff-detail-panel>')).toBe(false);
     expect(drawsOwnPrimaryIn('<kaff-confirm-dialog>' + primary + '</kaff-confirm-dialog>')).toBe(false);
+  });
+
+  it('counts the primary of an overlay bound always open: it is page body', () => {
+    expect(drawsOwnPrimaryIn('<kaff-detail-panel [open]="true"><div panelFooter>' + primary + '</div></kaff-detail-panel>')).toBe(true);
+    expect(drawsOwnPrimaryIn('<kaff-detail-panel open titleKey="t">' + primary + '</kaff-detail-panel>')).toBe(true);
+    expect(drawsOwnPrimaryIn('<kaff-confirm-dialog [open]="true">' + primary + '</kaff-confirm-dialog>')).toBe(true);
+    expect(drawsOwnPrimaryIn('<kaff-detail-panel [open]="opened()">' + primary + '</kaff-detail-panel>')).toBe(false);
   });
 
   it('still counts a body primary that sits beside an overlay', () => {

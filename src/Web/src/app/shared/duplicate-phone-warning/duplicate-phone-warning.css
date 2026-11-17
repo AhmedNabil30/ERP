@@ -38,14 +38,6 @@
   font-size: var(--text-sm);
 }
 
-/* A code is a bdi: dim, small, tabular, never truncated (README "Identity cell"). */
-.duplicate-code {
-  unicode-bidi: isolate;
-  font-size: var(--text-xs);
-  font-variant-numeric: tabular-nums;
-  color: var(--dim);
-}
-
 .duplicate-archived {
   font-size: var(--text-xs);
   font-weight: 600;

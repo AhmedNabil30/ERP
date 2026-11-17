@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   TemplateRef,
   computed,
   effect,
@@ -103,7 +104,28 @@ export class WorkerRegisterPage {
 
   protected readonly refusal = signal<string | null>(null);
 
-  protected readonly canSubmit = computed(() => this.workerForm().valid() && !this.workerForm().submitting());
+  /** D-229 item 3: the button is disabled only while a save is in flight, never for a gap the user can fix. */
+  protected readonly busy = computed(() => this.workerForm().submitting());
+
+  /** Set by a press with a gap: each missing field then shows the kit's field error. */
+  private readonly attempted = signal(false);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  /** The required fields still empty, in screen order (the first one takes focus on a press). */
+  private readonly missing = computed(() => {
+    const value = this.model();
+    const gaps: { id: string; empty: boolean }[] = [
+      { id: 'worker-name-input', empty: value.fullName.trim().length === 0 },
+      { id: 'worker-phone-input', empty: value.phone.trim().length === 0 },
+      { id: 'worker-bab-input', empty: value.babId.length === 0 },
+    ];
+    return gaps.filter((gap) => gap.empty).map((gap) => gap.id);
+  });
+
+  /** The kit's «مطلوب» under a field a press found empty; clears as soon as the field is filled. */
+  protected fieldError(id: string): string | null {
+    return this.attempted() && this.missing().includes(id) ? 'a11y.required' : null;
+  }
 
   constructor() {
     effect(() => this.headerActions.set(this.primaryTemplate() ?? null, 'primary'));
@@ -154,6 +176,17 @@ export class WorkerRegisterPage {
 
   protected async onSubmit(): Promise<void> {
     this.refusal.set(null);
+
+    if (this.busy()) {
+      return;
+    }
+
+    const first = this.missing()[0];
+    if (first !== undefined) {
+      this.attempted.set(true);
+      this.host.nativeElement.querySelector<HTMLElement>(`#${first}`)?.focus();
+      return;
+    }
 
     await submit(this.workerForm, async () => {
       try {

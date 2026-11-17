@@ -115,6 +115,15 @@ describe('ProjectTeamTab', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid^="team-remove-"]')).toBeNull();
   });
 
+  it('draws no empty list shell when the team has no rows; the no-engineer notice carries the screen', async () => {
+    const api = new FakeApi();
+    api.members = [];
+    const fixture = await create(api);
+    expect(el(fixture, 'workspace-team-list')).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelector('ul.lst')).toBeNull();
+    expect(el(fixture, 'team-no-engineer')).not.toBeNull();
+  });
+
   it('declares the add primary for a caller who manages, and removes only rows the server marks removable', async () => {
     const fixture = await create(new FakeApi());
     expect(fixture.componentInstance.declared()).not.toBeNull();

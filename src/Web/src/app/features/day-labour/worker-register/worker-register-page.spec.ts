@@ -241,3 +241,63 @@ describe('WorkerRegisterPage · the primary action goes through the shell slot (
     expect(host.querySelector('button[data-testid="worker-submit"]')).not.toBeNull();
   });
 });
+
+describe('WorkerRegisterPage · a fixable gap never greys the save (D-229 item 3)', () => {
+  function slotButton(): HTMLButtonElement {
+    const view = TestBed.inject(HeaderActionsService).template()!.createEmbeddedView({});
+    TestBed.inject(ApplicationRef).attachView(view);
+    view.detectChanges();
+    const host = document.createElement('div');
+    view.rootNodes.forEach((node: Node) => host.appendChild(node));
+    return host.querySelector('button[data-testid="worker-submit"]') as HTMLButtonElement;
+  }
+
+  it('the save is live on an empty form; a press marks every missing field, focuses the first and sends nothing', async () => {
+    const api = new FakeDayLabourApi([]);
+    const fixture = await createPage(api);
+    const page: HTMLElement = fixture.nativeElement;
+    document.body.appendChild(page);
+
+    const button = slotButton();
+    expect(button.disabled).toBe(false);
+
+    button.click();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(api.registerCalls).toHaveLength(0);
+    expect(page.querySelectorAll('.field-message--error')).toHaveLength(3);
+    expect(document.activeElement).toBe(page.querySelector('[data-testid="worker-field-name"]'));
+
+    fillRequired(fixture);
+    setPhoneAndBlur(fixture, '01000000009');
+    fixture.detectChanges();
+    expect(page.querySelectorAll('.field-message--error')).toHaveLength(0);
+    page.remove();
+  });
+
+  it('Enter on a valid form submits', async () => {
+    const api = new FakeDayLabourApi([]);
+    const fixture = await createPage(api);
+    fillRequired(fixture);
+    setPhoneAndBlur(fixture, '01000000009');
+    fixture.detectChanges();
+    fixture.nativeElement.querySelector('[data-testid="worker-implicit-submit"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(api.registerCalls).toHaveLength(1);
+  });
+});
+
+describe('WorkerRegisterPage · no code on the duplicate warning (D-224 item 6)', () => {
+  it('shows the matching worker by name only', async () => {
+    const api = new FakeDayLabourApi([{ id: 'w-1', code: 'E-0042', name: 'سيد حسن', isArchived: false }] as unknown as WorkerPhoneMatch[]);
+    const fixture = await createPage(api);
+    setPhoneAndBlur(fixture, '01000000009');
+    await Promise.resolve();
+    await Promise.resolve();
+    fixture.detectChanges();
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('سيد حسن');
+    expect(text).not.toContain('E-0042');
+  });
+});

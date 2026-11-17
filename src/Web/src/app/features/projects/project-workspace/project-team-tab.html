@@ -25,24 +25,26 @@
       @if (actionError(); as key) {
         <kaff-banner tone="refusal" testId="team-action-error">{{ i18n.t(key) }}</kaff-banner>
       }
-      <ul class="lst" data-testid="workspace-team-list">
-        @for (member of members(); track member.assignmentId) {
-          <li [class.new]="member.userId === justAdded()" [attr.data-user]="member.userId" [attr.data-testid]="'workspace-member-' + member.userId">
-            <span class="pp"><span class="av" aria-hidden="true">{{ initial(member.fullName) }}</span><b dir="auto">{{ member.fullName }}</b></span>
-            @if (member.canRemove) {
-              <kaff-button variant="secondary" [testId]="'team-remove-' + member.userId" (clicked)="removing.set(member)">
-                <kaff-icon name="umin" [small]="true" />{{ i18n.t('projects.team.remove') }}
-              </kaff-button>
-            }
-            <span class="mt">
-              {{ i18n.t(roleLabelKey(member.role)) }}@if (member.level !== 'Standard') { · {{ i18n.t(levelLabelKey(member.level)) }} }
-              @if (member.origin !== 'Added') {
-                <kaff-badge tone="quiet" [testId]="'team-origin-' + member.userId">{{ i18n.t('projects.team.origin.' + member.origin) }}</kaff-badge>
+      @if (members().length > 0) {
+        <ul class="lst" data-testid="workspace-team-list">
+          @for (member of members(); track member.assignmentId) {
+            <li [class.new]="member.userId === justAdded()" [attr.data-user]="member.userId" [attr.data-testid]="'workspace-member-' + member.userId">
+              <span class="pp"><span class="av" aria-hidden="true">{{ initial(member.fullName) }}</span><b dir="auto">{{ member.fullName }}</b></span>
+              @if (member.canRemove) {
+                <kaff-button variant="secondary" [testId]="'team-remove-' + member.userId" (clicked)="removing.set(member)">
+                  <kaff-icon name="umin" [small]="true" />{{ i18n.t('projects.team.remove') }}
+                </kaff-button>
               }
-            </span>
-          </li>
-        }
-      </ul>
+              <span class="mt">
+                {{ i18n.t(roleLabelKey(member.role)) }}@if (member.level !== 'Standard') { · {{ i18n.t(levelLabelKey(member.level)) }} }
+                @if (member.origin !== 'Added') {
+                  <kaff-badge tone="quiet" [testId]="'team-origin-' + member.userId">{{ i18n.t('projects.team.origin.' + member.origin) }}</kaff-badge>
+                }
+              </span>
+            </li>
+          }
+        </ul>
+      }
       @if (noEngineer()) {
         <kaff-banner tone="note" icon="info" testId="team-no-engineer"><b>{{ i18n.t('projects.team.no_engineer') }}</b></kaff-banner>
       }

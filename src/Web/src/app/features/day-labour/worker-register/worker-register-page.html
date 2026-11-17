@@ -1,6 +1,6 @@
 <!-- The shell places this in the bottom bar on a phone and the page header on desktop; the screen never renders it itself. -->
 <ng-template #primaryAction>
-  <kaff-button variant="primary" testId="worker-submit" [disabled]="!canSubmit()" (clicked)="onSubmit()">
+  <kaff-button variant="primary" testId="worker-submit" [disabled]="busy()" (clicked)="onSubmit()">
     {{ i18n.t('action.save') }}
   </kaff-button>
 </ng-template>
@@ -33,7 +33,7 @@
          to submit (implicit submission). It is never shown; the visible one calls the same `onSubmit`. -->
     <button type="submit" hidden tabindex="-1" aria-hidden="true" data-testid="worker-implicit-submit"></button>
 
-    <kaff-field labelKey="hr.worker.field.name" controlId="worker-name-input" [required]="true">
+    <kaff-field labelKey="hr.worker.field.name" controlId="worker-name-input" [required]="true" [errorKey]="fieldError('worker-name-input')">
       <input
         id="worker-name-input"
         class="input"
@@ -44,7 +44,7 @@
       />
     </kaff-field>
 
-    <kaff-field labelKey="hr.worker.field.phone" controlId="worker-phone-input" [required]="true">
+    <kaff-field labelKey="hr.worker.field.phone" controlId="worker-phone-input" [required]="true" [errorKey]="fieldError('worker-phone-input')">
       <input
         id="worker-phone-input"
         class="input"
@@ -87,7 +87,7 @@
       labelKey="hr.worker.field.bab"
       controlId="worker-bab-input"
       [required]="true"
-      [errorKey]="babsUnavailable() ? 'hr.employee.babs_unavailable' : null"
+      [errorKey]="babsUnavailable() ? 'hr.employee.babs_unavailable' : fieldError('worker-bab-input')"
       errorTestId="worker-babs-unavailable"
     >
       <select

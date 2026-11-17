@@ -25,8 +25,6 @@ export class DuplicatePhoneWarning {
   readonly confirmKey = input.required<string>();
   /** Prefixes every `data-testid` here, e.g. `client` -> `client-duplicate-warning`. */
   readonly testIdPrefix = input.required<string>();
-  /** The client code is a database register; a screen whose person does not search by it passes false. */
-  readonly showCode = input(true);
   /** The box was left unticked on a save: the checkbox is marked and `missingKey` is said beneath it. */
   readonly missing = input(false);
   readonly missingKey = input<string | null>(null);

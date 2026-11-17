@@ -5,7 +5,6 @@
     @for (match of matches(); track trackMatch($index, match)) {
       <li class="duplicate-row" [attr.data-testid]="testIdPrefix() + '-duplicate-' + match.code">
         <span class="duplicate-name" dir="auto">{{ match.name }}</span>
-        @if (showCode()) { <bdi class="duplicate-code">{{ match.code }}</bdi> }
         @if (match.isArchived) {
           <span class="duplicate-archived" [attr.data-testid]="testIdPrefix() + '-duplicate-archived'">
             {{ i18n.t('clients.status.archived') }}
