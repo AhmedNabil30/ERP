@@ -106,8 +106,8 @@ public sealed record PermissionDefinition(
 /// to, or only design projects, is a phase-2 question nobody has asked.
 /// </para>
 /// <para>
-/// <b>Role.Hr holds four rows: EmployeeManage, ProjectAssignmentManage, ProjectTeamRead and
-/// UserRead.</b> Karim, 2026-08-20 — HR is "strictly administrative" with "zero financial visibility
+/// <b>Role.Hr holds three rows: EmployeeManage, ProjectTeamRead and UserRead</b> (ProjectAssignmentManage
+/// was withdrawn on 2026-11-17, D-233 item 3). Karim, 2026-08-20 — HR is "strictly administrative" with "zero financial visibility
 /// (cannot see project costs, margins, or the safe)". HR is therefore absent from <c>ProjectRead</c>,
 /// from every treasury permission, and from every gate, and none of its rows touches money.
 /// <c>UserRead</c> was added on 2026-08-22 (decisions.md D-055 §2) because HR could staff a project
@@ -290,13 +290,12 @@ public static class PermissionCatalogue
                 "§9 — ruled by Nabil 2026-08-22 answering Q42, see decisions.md D-055 §2"),
 
             // Answered by Karim via Nabil, 2026-08-17: the Owner and HR assign users to projects.
-            // 2026-08-20: HR does this with GLOBAL reach — "HR does not need to be assigned to a
-            // project first in order to staff it" — which is a reach rule and therefore lives in
-            // IProjectAccessPolicy, not here. The permission stays project-scoped so the route must
-            // still name a project and the project must still exist. See decisions.md D-044.
+            // 2026-11-17 (D-233 item 3): HR loses the grant — HR cannot open a project and never reached
+            // the team tab, so only the Owner adds and removes people on a project. The permission stays
+            // project-scoped so the route must still name a project and the project must still exist.
             new(Permission.ProjectAssignmentManage, PermissionScope.ProjectScoped,
-                [owner, hr],
-                "§2, §9 — answered by Karim 2026-08-17 and 2026-08-20, see decisions.md D-012, D-044"),
+                [owner],
+                "§2, §9 — Karim 2026-08-17, narrowed to the Owner by Nabil 2026-11-17, see decisions.md D-012, D-044, D-233"),
 
             // KAFF-105b, closing D-051 (Q32) / D-100 (Q43). Karim: HR may see "the project name and
             // the list of assigned engineers" but must never hold ProjectRead (D-044 ruling 2). D-051

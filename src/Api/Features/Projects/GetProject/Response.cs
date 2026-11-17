@@ -33,6 +33,11 @@ namespace Kaff.Api.Features.Projects.GetProject;
 /// <param name="AdvanceRate">Lump Sum only.</param>
 /// <param name="WorkStarted">D-228 item 4: true once any daily log entry exists on the project. Absent when false. Display only; the state machine does not read it.</param>
 /// <param name="ConversionOffered">D-228 item 2, interim: a signed design project that has not converted. The web offers «تحويل إلى تنفيذ» only when true, so sign and convert are never offered together.</param>
+/// <param name="DesignRatePerSquareMetre">
+/// A Design project only, and only for a caller who may read project money: the fee per square metre. The rate stored at
+/// signing once signed, <c>ContractDefaults.DesignRatePerSquareMetre</c> before, which is what <c>SignProject</c> will store.
+/// The web previews the fee from this and holds no price of its own.
+/// </param>
 /// <param name="AdvanceRecoveryRate">Lump Sum only. The share of each extract that repays the advance.</param>
 /// <param name="TeamSize">
 /// Count of active <c>ProjectAssignment</c> rows. S-052's "team" — the per-member roster (KAFF-115) is
@@ -92,7 +97,8 @@ public sealed record Response(
     ProjectTabs Tabs,
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] Percentage? AdvanceRecoveryRate = null,
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] bool WorkStarted = false,
-    bool ConversionOffered = false);
+    bool ConversionOffered = false,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] Money? DesignRatePerSquareMetre = null);
 
 /// <summary>
 /// What the client has been billed, paid and still owes. Only extracts issued to the client count; an extract still

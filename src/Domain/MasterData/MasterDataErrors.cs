@@ -133,6 +133,15 @@ public static class MasterDataErrors
     public static readonly Error DuplicatePhoneNotAcknowledged =
         Error.Conflict("master.duplicate_phone_not_acknowledged", "errors.master.duplicate_phone_not_acknowledged");
 
+    /// <summary>
+    /// The same refusal on an employee or worker form (D-233 item 1). The code is shared with
+    /// <see cref="DuplicatePhoneNotAcknowledged"/> so the web keys on one code; only the message
+    /// differs, because the client wording («راجع العميل الذي يحمله») is wrong on a people form.
+    /// </summary>
+    public static readonly Error EmployeeDuplicatePhoneNotAcknowledged =
+        Error.Conflict(
+            "master.duplicate_phone_not_acknowledged", "errors.master.employee_duplicate_phone_not_acknowledged");
+
     /// <summary>The route named a client id that no client carries. KAFF-121.</summary>
     /// <remarks>
     /// The same shape as <c>IdentityErrors.UserNotFound</c>: an endpoint that addresses a row by an

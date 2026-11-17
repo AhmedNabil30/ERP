@@ -26,9 +26,9 @@ export interface BabOption {
 }
 
 /**
- * One employee row — `ListEmployees.Response`'s `EmployeeSummary`. **Narrower than the create/edit/
- * `get` response**: it carries no `nationalId`, `jobTitle` or `hiredOn` — see `EmployeeFile`. The edit
- * form loads through `get(id)` instead of this list, D-137.
+ * One employee row — `ListEmployees.Response`'s `EmployeeSummary`. A salaried row fills `jobTitle`, `department`
+ * and `hiredOn`; a day-labour row fills the باب names and the two company-wide figures. The rest are `null`.
+ * **No rate and no money member** (D-232 item 4). The edit form loads through `get(id)`, D-137.
  */
 export interface EmployeeSummary {
   readonly id: string;
@@ -37,17 +37,24 @@ export interface EmployeeSummary {
   readonly phone: string;
   readonly kind: EmployeeKind;
   readonly babId: string | null;
+  readonly babNameAr: string | null;
+  readonly babNameEn: string | null;
   readonly specialty: string | null;
+  readonly jobTitle: string | null;
+  readonly department: string | null;
+  /** `DateOnly?` on the wire as `"YYYY-MM-DD"`, or `null`. */
+  readonly hiredOn: string | null;
+  /** Day labour only: how many engagements, company-wide. `null` on a salaried row. */
+  readonly timesEngaged: number | null;
+  /** Day labour only: the mean rating as a decimal string, `null` when no engagement is rated. */
+  readonly averageRating: string | null;
   readonly isActive: boolean;
 }
 
-/** What `CreateEmployee`/`EditEmployee` return — `EmployeeSummary` plus the staff-only fields. */
-export interface EmployeeFile extends EmployeeSummary {
-  /** `DateOnly?` on the wire as `"YYYY-MM-DD"`, or `null`. */
+/** What `CreateEmployee`/`EditEmployee` return — the row without the read-only list figures, plus `nationalId`. */
+export interface EmployeeFile
+  extends Omit<EmployeeSummary, 'babNameAr' | 'babNameEn' | 'timesEngaged' | 'averageRating'> {
   readonly nationalId: string | null;
-  readonly jobTitle: string | null;
-  readonly department: string | null;
-  readonly hiredOn: string | null;
 }
 
 /**
@@ -145,5 +152,13 @@ export class EmployeesApi {
   /** `204`. A `POST` to a sub-resource, never a `DELETE` — `AC-207-F`, no route deletes an employee. */
   async archive(id: string): Promise<void> {
     await firstValueFrom(this.http.post<void>(`api/employees/${id}/archive`, {}));
+  }
+
+  /**
+   * `POST /api/employees/{id}/unarchive` — `204`. `409 errors.master.not_archived` for an active row,
+   * `409 errors.master.employee_phone_taken` when an active salaried record now holds the phone (D-233 item 1).
+   */
+  async unarchive(id: string): Promise<void> {
+    await firstValueFrom(this.http.post<void>(`api/employees/${id}/unarchive`, {}));
   }
 }

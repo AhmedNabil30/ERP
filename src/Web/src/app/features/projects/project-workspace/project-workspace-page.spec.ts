@@ -81,6 +81,7 @@ function project(type: ContractType, patch: Partial<ProjectDetail> = {}): Projec
     isSigned: true,
     loggedToday: false,
     workStarted: true,
+    designRatePerSquareMetre: type === 'Design' ? '450.0000' : null,
     tabs: OWNER_TABS,
     money: MONEY,
     ...patch,
@@ -598,14 +599,17 @@ describe('ProjectWorkspacePage · sign a Design project (AC-417-K)', () => {
     fixture.detectChanges();
   };
 
-  it('computes the fee in exact arithmetic', () => {
-    expect(designFeeOf('100')).toBe('45000.0000');
-    expect(designFeeOf('85.5')).toBe('38475.0000');
-    expect(designFeeOf('0.0001')).toBe('0.0450');
-    expect(designFeeOf('0')).toBeNull();
-    expect(designFeeOf('-5')).toBeNull();
-    expect(designFeeOf('abc')).toBeNull();
-    expect(designFeeOf('')).toBeNull();
+  it('computes the fee in exact arithmetic from the rate the server sent', () => {
+    expect(designFeeOf('100', '450.0000')).toBe('45000.0000');
+    expect(designFeeOf('85.5', '450')).toBe('38475.0000');
+    expect(designFeeOf('0.0001', '450.0000')).toBe('0.0450');
+    expect(designFeeOf('100', '500.2500')).toBe('50025.0000');
+    expect(designFeeOf('0', '450.0000')).toBeNull();
+    expect(designFeeOf('-5', '450.0000')).toBeNull();
+    expect(designFeeOf('abc', '450.0000')).toBeNull();
+    expect(designFeeOf('', '450.0000')).toBeNull();
+    expect(designFeeOf('100', null)).toBeNull();
+    expect(designFeeOf('100', undefined)).toBeNull();
   });
 
   it('shows the step for an unsigned Design project, with no hold and no advance', async () => {
@@ -759,5 +763,33 @@ describe('ProjectWorkspacePage · just signed (D-229, project.html ?view=signed)
     expect(q(fixture, 'workspace-rates')).toBeNull();
     expect(q(fixture, 'workspace-no-engineer')).toBeNull();
     expect(q(fixture, 'workspace-terms')).not.toBeNull();
+  });
+
+  it('the rate and the fee preview come from the server, not from the page', async () => {
+    const fixture = await createFixture(
+      new FakeProjectsApi(
+        project('Design', {
+          contractValue: null,
+          isSigned: false,
+          signedOn: null,
+          status: 'Setup',
+          stage: 'Boq',
+          designRatePerSquareMetre: '500.0000',
+        }),
+      ),
+      OWNER(),
+    );
+    expect(q(fixture, 'workspace-fact-rate')?.textContent).toContain('500');
+    expect(q(fixture, 'workspace-fact-rate')?.textContent).not.toContain('450');
+  });
+
+  it('a Design project sent no rate draws no rate row', async () => {
+    const fixture = await createFixture(
+      new FakeProjectsApi(
+        project('Design', { contractValue: null, isSigned: false, signedOn: null, status: 'Setup', stage: 'Boq', designRatePerSquareMetre: null }),
+      ),
+      OWNER(),
+    );
+    expect(q(fixture, 'workspace-fact-rate')).toBeNull();
   });
 });

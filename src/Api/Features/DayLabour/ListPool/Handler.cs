@@ -1,3 +1,4 @@
+using Kaff.Api.Common;
 using Kaff.Domain.Authorization;
 using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
@@ -48,17 +49,7 @@ internal static class Handler
         bool seesContact = PermissionEvaluator.Evaluate(subject, Permission.EmployeeManage, projectId: null, projectAccess: null)
             == PermissionDecision.Granted;
 
-        Dictionary<Guid, (int Frequency, int RatingSum, int RatingCount)> stats = await database.Engagements
-            .GroupBy(engagement => engagement.WorkerId)
-            .Select(group => new
-            {
-                WorkerId = group.Key,
-                Frequency = group.Count(),
-                RatingSum = group.Sum(engagement => engagement.Rating ?? 0),
-                RatingCount = group.Count(engagement => engagement.Rating != null),
-            })
-            .ToDictionaryAsync(
-                row => row.WorkerId, row => (row.Frequency, row.RatingSum, row.RatingCount), cancellationToken);
+        Dictionary<Guid, EngagementFigure> stats = await EngagementFigures.ReadAsync(database, cancellationToken);
 
         var employees = await database.Employees
             .Where(employee => employee.Kind == EmployeeKind.DayLabour)
@@ -77,7 +68,7 @@ internal static class Handler
 
         List<PoolWorker> items = [.. employees.Select(employee =>
         {
-            (int frequency, int ratingSum, int ratingCount) = stats.GetValueOrDefault(employee.Id);
+            EngagementFigure figure = stats.GetValueOrDefault(employee.Id) ?? new EngagementFigure(0, null);
 
             return new PoolWorker(
                 employee.Id,
@@ -87,8 +78,8 @@ internal static class Handler
                 employee.BabId,
                 employee.Specialty,
                 employee.IsActive,
-                frequency,
-                ratingCount == 0 ? null : (decimal)ratingSum / ratingCount);
+                figure.TimesEngaged,
+                figure.AverageRating);
         })];
 
         return Microsoft.AspNetCore.Http.Results.Ok(new Response(items));

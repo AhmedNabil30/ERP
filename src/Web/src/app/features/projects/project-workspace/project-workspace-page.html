@@ -197,9 +197,11 @@
                   <b>{{ i18n.t('projects.frame.value_unset') }}</b>
                 </kaff-fact>
               }
-              <kaff-fact [label]="i18n.t('projects.workspace.design.rate')" testId="workspace-fact-rate">
-                <kaff-figure [value]="designRate" [unit]="i18n.t('catalogue.currency.affix')" />
-              </kaff-fact>
+              @if (designRate(); as rate) {
+                <kaff-fact [label]="i18n.t('projects.workspace.design.rate')" testId="workspace-fact-rate">
+                  <kaff-figure [value]="rate" [unit]="i18n.t('catalogue.currency.affix')" />
+                </kaff-fact>
+              }
               @if (!canSignDesign()) {
                 <kaff-fact [label]="i18n.t('projects.frame.hero.contract_value')" testId="workspace-fact-value">
                   <b>{{ i18n.t('projects.frame.value_unset') }}</b>

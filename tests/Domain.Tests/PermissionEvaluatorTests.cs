@@ -74,16 +74,15 @@ public sealed class PermissionEvaluatorTests
     }
 
     [Fact]
-    public void Hr_may_manage_project_assignments()
+    public void Only_the_owner_may_manage_project_assignments()
     {
-        // Karim, 2026-08-17: the Owner and HR assign users to projects. 2026-08-20: HR is now a role
-        // of its own, so the grant is a role grant.
+        // D-233 item 3 (Nabil, 2026-11-17): the grant given to HR on 2026-08-17 is withdrawn.
         PermissionEvaluator.Evaluate(
                 Subject(Role.Hr, WellKnownDepartments.HrId),
                 Permission.ProjectAssignmentManage,
                 ProjectId,
                 new ProjectAccess(ProjectAccessPath.Assignment, AssignmentLevel.Standard))
-            .Should().Be(PermissionDecision.Granted);
+            .Should().Be(PermissionDecision.RoleNotGranted);
 
         PermissionEvaluator.Evaluate(
                 Subject(Role.Finance, WellKnownDepartments.FinanceId),
@@ -717,7 +716,7 @@ public sealed class PermissionEvaluatorTests
     }
 
     [Fact]
-    public void Hr_reaches_a_project_without_an_assignment_but_sees_nothing_financial()
+    public void Hr_reaches_a_project_without_an_assignment_but_holds_nothing_on_it()
     {
         // Karim, 2026-08-20 — "HR does not need to be assigned to a project first in order to staff
         // it." The reach itself is IProjectAccessPolicy's; what this pins is the pair of outcomes
@@ -727,7 +726,7 @@ public sealed class PermissionEvaluatorTests
 
         PermissionEvaluator.Evaluate(
                 Subject(Role.Hr, WellKnownDepartments.HrId), Permission.ProjectAssignmentManage, ProjectId, globalReach)
-            .Should().Be(PermissionDecision.Granted);
+            .Should().Be(PermissionDecision.RoleNotGranted, "D-233 item 3");
 
         // Same reach, same project, and still refused — because HR holds no grant on ProjectRead.
         PermissionEvaluator.Evaluate(

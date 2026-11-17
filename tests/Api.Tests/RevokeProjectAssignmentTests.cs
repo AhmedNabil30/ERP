@@ -98,7 +98,7 @@ public sealed class RevokeProjectAssignmentTests : IAsyncLifetime
         beforeRevoke.StatusCode.Should().Be(
             HttpStatusCode.OK, "the engineer is assigned to project A and may act on it");
 
-        HttpResponseMessage revoked = await RevokeAsync(_hr, _projectA, _siteEngineerAssignmentId);
+        HttpResponseMessage revoked = await RevokeAsync(_owner, _projectA, _siteEngineerAssignmentId);
 
         revoked.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
@@ -120,7 +120,7 @@ public sealed class RevokeProjectAssignmentTests : IAsyncLifetime
     {
         DateTimeOffset before = DateTimeOffset.UtcNow;
 
-        (await RevokeAsync(_hr, _projectA, _siteEngineerAssignmentId))
+        (await RevokeAsync(_owner, _projectA, _siteEngineerAssignmentId))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         await using KaffDbContext reader = _database.CreateBareContext();
@@ -131,7 +131,7 @@ public sealed class RevokeProjectAssignmentTests : IAsyncLifetime
         row.AssignedAt.Should().NotBe(default, "the original grant is untouched by the revocation");
         row.AssignedByUserId.Should().Be(_owner, "who put them on the project in the first place");
         row.RevokedAt.Should().NotBeNull().And.BeOnOrAfter(before);
-        row.RevokedByUserId.Should().Be(_hr, "who closed the row, not who held it");
+        row.RevokedByUserId.Should().Be(_owner, "who closed the row, not who held it");
         row.IsActive.Should().BeFalse("computed from RevokedAt, not a second stored flag");
     }
 
@@ -140,7 +140,7 @@ public sealed class RevokeProjectAssignmentTests : IAsyncLifetime
     [Fact]
     public async Task Re_assignment_after_revocation_creates_a_new_row_and_leaves_the_old_one_untouched()
     {
-        (await RevokeAsync(_hr, _projectA, _siteEngineerAssignmentId))
+        (await RevokeAsync(_owner, _projectA, _siteEngineerAssignmentId))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         await using KaffDbContext beforeReader = _database.CreateBareContext();
@@ -149,7 +149,7 @@ public sealed class RevokeProjectAssignmentTests : IAsyncLifetime
         DateTimeOffset revokedAtBeforeReassignment = revokedRow.RevokedAt!.Value;
 
         HttpResponseMessage reassigned = await AssignAsync(
-            _hr, _projectA, _siteEngineer, AssignmentLevel.Junior);
+            _owner, _projectA, _siteEngineer, AssignmentLevel.Junior);
 
         reassigned.StatusCode.Should().Be(HttpStatusCode.Created);
 
@@ -174,10 +174,10 @@ public sealed class RevokeProjectAssignmentTests : IAsyncLifetime
     [Fact]
     public async Task Revoking_an_already_revoked_assignment_is_refused()
     {
-        (await RevokeAsync(_hr, _projectA, _siteEngineerAssignmentId))
+        (await RevokeAsync(_owner, _projectA, _siteEngineerAssignmentId))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        HttpResponseMessage second = await RevokeAsync(_hr, _projectA, _siteEngineerAssignmentId);
+        HttpResponseMessage second = await RevokeAsync(_owner, _projectA, _siteEngineerAssignmentId);
 
         second.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await MessageKeyAsync(second)).Should().Be("errors.identity.assignment_already_revoked");
@@ -205,9 +205,9 @@ public sealed class RevokeProjectAssignmentTests : IAsyncLifetime
     /// <c>AC-113-G</c> uses the identical shape).
     /// </remarks>
     [Fact]
-    public async Task Nobody_but_the_owner_and_hr_can_revoke_an_assignment()
+    public async Task Nobody_but_the_owner_can_revoke_an_assignment()
     {
-        foreach (Guid caller in new[] { _finance, _technicalOffice, _supervisorOnProjectA })
+        foreach (Guid caller in new[] { _hr, _finance, _technicalOffice, _supervisorOnProjectA })
         {
             HttpResponseMessage response = await RevokeAsync(caller, _projectA, _siteEngineerAssignmentId);
 
@@ -243,7 +243,7 @@ public sealed class RevokeProjectAssignmentTests : IAsyncLifetime
     [Fact]
     public async Task Revoking_an_assignment_id_that_does_not_exist_on_the_project_is_a_translatable_404()
     {
-        HttpResponseMessage response = await RevokeAsync(_hr, _projectA, Guid.CreateVersion7());
+        HttpResponseMessage response = await RevokeAsync(_owner, _projectA, Guid.CreateVersion7());
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         (await MessageKeyAsync(response)).Should().Be("errors.identity.project_assignment_not_found");
@@ -253,7 +253,7 @@ public sealed class RevokeProjectAssignmentTests : IAsyncLifetime
 
     /// <summary>
     /// The story's audit bullet: <c>Modified</c> on <c>ProjectAssignment</c>, <c>ProjectId</c> set,
-    /// <c>ChangedProperties</c> naming <c>RevokedAt</c> and <c>RevokedByUserId</c>, actor Owner or HR.
+    /// <c>ChangedProperties</c> naming <c>RevokedAt</c> and <c>RevokedByUserId</c>, actor the Owner.
     /// No handler writes this — the change tracker sees the entity change and
     /// <c>AuditSaveChangesInterceptor</c> writes it in the same transaction, exactly as
     /// <c>AssignUserToProjectTests</c>' equivalent test asserts for the <c>Created</c> half.
@@ -261,7 +261,7 @@ public sealed class RevokeProjectAssignmentTests : IAsyncLifetime
     [Fact]
     public async Task The_revocation_leaves_a_modified_audit_record_naming_what_changed()
     {
-        (await RevokeAsync(_hr, _projectA, _siteEngineerAssignmentId))
+        (await RevokeAsync(_owner, _projectA, _siteEngineerAssignmentId))
             .StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         await using KaffDbContext reader = _database.CreateBareContext();
@@ -273,15 +273,15 @@ public sealed class RevokeProjectAssignmentTests : IAsyncLifetime
             .SingleAsync(Ct);
 
         record.ProjectId.Should().Be(_projectA, "the trail filters per project");
-        record.ActorUserId.Should().Be(_hr);
-        record.ActorRole.Should().Be(Role.Hr);
+        record.ActorUserId.Should().Be(_owner);
+        record.ActorRole.Should().Be(Role.Owner);
         record.ChangedProperties.Should().BeEquivalentTo(
             [nameof(ProjectAssignment.RevokedAt), nameof(ProjectAssignment.RevokedByUserId)]);
 
         using JsonDocument after = JsonDocument.Parse(record.AfterJson!);
 
         after.RootElement.GetProperty(nameof(ProjectAssignment.RevokedByUserId)).GetGuid()
-            .Should().Be(_hr);
+            .Should().Be(_owner);
     }
 
     // ---- helpers ---------------------------------------------------------------------------------

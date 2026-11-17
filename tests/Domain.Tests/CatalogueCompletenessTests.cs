@@ -224,7 +224,7 @@ public sealed class CatalogueCompletenessTests
         // Karim, 2026-08-20: HR is "strictly administrative and must have zero financial visibility
         // (cannot see project costs, margins, or the safe)."
         //
-        // UserRead joined the set on 2026-08-22, answering Q42: HR held ProjectAssignmentManage and
+        // UserRead joined the set on 2026-08-22, answering Q42: HR held ProjectAssignmentManage (removed 2026-11-17, D-233 item 3) and
         // could not name a single person to put on a project. Nabil: "granted strictly to HR and the
         // Owner … names and roles only". See decisions.md D-055 §2.
         //
@@ -233,7 +233,6 @@ public sealed class CatalogueCompletenessTests
         Permission[] expected =
         [
             Permission.EmployeeManage,
-            Permission.ProjectAssignmentManage,
             Permission.ProjectTeamRead,
             Permission.UserRead,
         ];
@@ -246,7 +245,7 @@ public sealed class CatalogueCompletenessTests
         held.Select(definition => definition.Permission)
             .Should().BeEquivalentTo(
                 expected,
-                "HR staffs projects, owns people records, and names the projects it staffs — nothing else");
+                "HR owns people records and names the projects; D-233 item 3 took project staffing away — nothing else");
 
         // The second half of this test's name, which until 2026-08-22 it did not actually assert —
         // the set was pinned and the money claim was decoration. Adding a financial permission to HR

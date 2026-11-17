@@ -1,3 +1,4 @@
+using Kaff.Api.Common;
 using Kaff.Api.Common.Results;
 using Kaff.Domain.MasterData;
 using Kaff.Infrastructure.Persistence;
@@ -52,18 +53,54 @@ internal static class Handler
             query = query.Where(employee => employee.Kind == kind);
         }
 
-        List<EmployeeSummary> items = await query
-            .OrderBy(employee => employee.Code)
-            .Select(employee => new EmployeeSummary(
-                employee.Id,
-                employee.Code,
-                employee.FullName,
-                employee.PhoneEntered,
-                employee.Kind,
-                employee.BabId,
-                employee.Specialty,
-                employee.IsActive))
+        // One query, باب name by left join; the two worker figures come from one grouped read shared with ListPool.
+        var rows = await (
+                from employee in query
+                join bab in database.Babs on employee.BabId equals bab.Id into babs
+                from bab in babs.DefaultIfEmpty()
+                orderby employee.Code
+                select new
+                {
+                    employee.Id,
+                    employee.Code,
+                    employee.FullName,
+                    employee.PhoneEntered,
+                    employee.Kind,
+                    employee.BabId,
+                    BabNameAr = bab == null ? null : bab.NameAr,
+                    BabNameEn = bab == null ? null : bab.NameEn,
+                    employee.Specialty,
+                    employee.JobTitle,
+                    employee.Department,
+                    employee.HiredOn,
+                    employee.IsActive,
+                })
             .ToListAsync(cancellationToken);
+
+        Dictionary<Guid, EngagementFigure> figures = await EngagementFigures.ReadAsync(database, cancellationToken);
+
+        List<EmployeeSummary> items = [.. rows.Select(row =>
+        {
+            bool worker = row.Kind == EmployeeKind.DayLabour;
+            EngagementFigure figure = figures.GetValueOrDefault(row.Id) ?? new EngagementFigure(0, null);
+
+            return new EmployeeSummary(
+                row.Id,
+                row.Code,
+                row.FullName,
+                row.PhoneEntered,
+                row.Kind,
+                row.BabId,
+                row.BabNameAr,
+                row.BabNameEn,
+                row.Specialty,
+                row.JobTitle,
+                row.Department,
+                row.HiredOn,
+                worker ? figure.TimesEngaged : null,
+                worker ? figure.AverageRating : null,
+                row.IsActive);
+        })];
 
         return Microsoft.AspNetCore.Http.Results.Ok(new Response(items));
     }

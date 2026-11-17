@@ -96,7 +96,7 @@ internal static class Handler
         if (matches.Count > 0 && !request.AcknowledgedDuplicatePhone)
         {
             // 409, no match data — the names belong to the 200 from phone-check. D-141 §5.
-            return ResultExtensions.Problem(MasterDataErrors.DuplicatePhoneNotAcknowledged);
+            return ResultExtensions.Problem(MasterDataErrors.EmployeeDuplicatePhoneNotAcknowledged);
         }
 
         if (request.BabId is not null)

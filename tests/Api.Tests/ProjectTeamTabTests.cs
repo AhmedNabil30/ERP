@@ -13,8 +13,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kaff.Api.Tests;
 
 /// <summary>
-/// D-227 / D-228 item 1 / D-229: the backend of the project team tab. The Owner (and HR, who hold the same
-/// <c>ProjectAssignmentManage</c> permission) adds and removes people; Finance cannot be removed; any number of supervising
+/// D-227 / D-228 item 1 / D-229: the backend of the project team tab. Only the Owner (D-233 item 3: HR lost the
+/// <c>ProjectAssignmentManage</c> grant) adds and removes people; Finance cannot be removed; any number of supervising
 /// engineers; the tab reads current members with how each came to be on the project; a candidates read feeds the add sheet.
 /// </summary>
 /// <remarks>
@@ -259,7 +259,7 @@ public sealed class ProjectTeamTabTests : IAsyncLifetime
             .StatusCode.Should().Be(HttpStatusCode.Created);
         Guid removable = await ActiveRowAsync(_engineerTwo);
 
-        foreach (Guid caller in new[] { _technicalOffice, _finance, _engineerOne, _engineerTwo, _engineerThree })
+        foreach (Guid caller in new[] { _hr, _technicalOffice, _finance, _engineerOne, _engineerTwo, _engineerThree })
         {
             (await SendAsync(HttpMethod.Get, CandidatesRoute, caller)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
             (await SendAsync(HttpMethod.Post, AssignRoute, caller, new { userId = _engineerThree, level = "Junior" }))

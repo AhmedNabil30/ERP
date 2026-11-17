@@ -61,6 +61,20 @@ public sealed class EmployeeTests
         second.Error.Should().Be(MasterDataErrors.AlreadyArchived);
     }
 
+    [Fact]
+    public void Unarchiving_reactivates_and_an_active_employee_is_refused()
+    {
+        Employee employee = NewSalariedEmployee();
+
+        Result active = employee.Unarchive();
+        active.IsFailure.Should().BeTrue();
+        active.Error.Should().Be(MasterDataErrors.NotArchived);
+
+        employee.Archive().IsSuccess.Should().BeTrue();
+        employee.Unarchive().IsSuccess.Should().BeTrue();
+        employee.IsActive.Should().BeTrue();
+    }
+
     // ---- AC-207-E · the register stores no pay figure --------------------------------------------
 
     [Fact]
@@ -128,6 +142,7 @@ public sealed class EmployeeTests
             nameof(Employee.SetStaffDetails),
             nameof(Employee.Edit),
             nameof(Employee.Archive),
+            nameof(Employee.Unarchive),
         ];
 
         MethodInfo[] publicMethods = typeof(Employee)

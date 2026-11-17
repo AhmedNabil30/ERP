@@ -66,44 +66,27 @@ public sealed class AssignUserToProjectTests : IAsyncLifetime
         await _factory.DisposeAsync();
     }
 
-    // ---- AC-113-A / AC-113-B · HR staffs what it cannot open -----------------------------------
+    // ---- D-233 item 3 · only the Owner staffs a project ----------------------------------------
 
     /// <summary>
-    /// AC-113-A and AC-113-B, in one test because they are one point.
+    /// HR held <c>ProjectAssignmentManage</c> with global reach from slice 1 (AC-113-A / AC-113-B). D-233 item 3
+    /// removed the grant: HR cannot open a project, so it never reached the team tab. The refusal is a 403 and
+    /// no row is written.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// The HR user seeded here holds <b>no assignment row anywhere</b> — asserted, not assumed, so
-    /// the test cannot pass by accident on a fixture somebody widened later. D-044 ruling 3: "HR does
-    /// not need to be assigned to a project first in order to staff it", because requiring an
-    /// assignment in order to create assignments is circular.
-    /// </para>
-    /// <para>
-    /// <b>The second half is what stops "global reach" from meaning "global access."</b> HR's reach
-    /// is <c>IProjectAccessPolicy</c>'s answer and it is the same on every permission; what keeps HR
-    /// out of the project is that the catalogue does not grant HR <c>ProjectRead</c> at all (D-044
-    /// ruling 2). Written as one test, one line apart, because a suite that asserted only the first
-    /// would report a permission model that is one catalogue edit away from handing HR the project.
-    /// </para>
-    /// </remarks>
     [Fact]
-    public async Task Hr_staffs_a_project_it_was_never_assigned_to_and_still_cannot_open_it()
+    public async Task Hr_cannot_staff_a_project_and_the_refusal_leaves_no_row()
     {
-        (await ActiveAssignmentCountAsync(_hr)).Should().Be(
-            0, "the criterion is 'Role.Hr with no assignment rows anywhere'");
+        // D-233 item 3: only the Owner adds and removes people on a project. HR lost the grant.
+        HttpResponseMessage refused = await AssignAsync(_hr, _projectA, _technicalOffice, AssignmentLevel.Standard);
 
-        HttpResponseMessage assigned = await AssignAsync(_hr, _projectA, _technicalOffice, AssignmentLevel.Standard);
-
-        assigned.StatusCode.Should().Be(HttpStatusCode.Created);
+        refused.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await MessageKeyAsync(refused)).Should().Be("errors.auth.forbidden");
+        (await ActiveAssignmentCountAsync(_technicalOffice)).Should().Be(0, "a refused attempt puts nobody on a project");
 
         HttpResponseMessage read = await SendAsync(
             new Uri($"/probe/projects/{_projectA}", UriKind.Relative), _hr);
 
-        read.StatusCode.Should().Be(
-            HttpStatusCode.Forbidden,
-            "reach is not capability — HR is absent from ProjectRead, D-044 ruling 2");
-
-        (await MessageKeyAsync(read)).Should().Be("errors.auth.forbidden");
+        read.StatusCode.Should().Be(HttpStatusCode.Forbidden, "HR is absent from ProjectRead, D-044 ruling 2");
     }
 
     /// <summary>AC-113-A's other half: the Owner reaches every project without a row either (rule 3).</summary>
@@ -129,10 +112,10 @@ public sealed class AssignUserToProjectTests : IAsyncLifetime
     /// company-wide row would never consult it.
     /// </remarks>
     [Fact]
-    public async Task Hrs_reach_stops_at_a_project_that_does_not_exist()
+    public async Task The_owners_reach_stops_at_a_project_that_does_not_exist()
     {
         HttpResponseMessage response = await AssignAsync(
-            _hr, Guid.CreateVersion7(), _technicalOffice, AssignmentLevel.Standard);
+            _owner, Guid.CreateVersion7(), _technicalOffice, AssignmentLevel.Standard);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         ((int)response.StatusCode).Should().BeLessThan(500, "the refusal is not a 500");
@@ -159,10 +142,10 @@ public sealed class AssignUserToProjectTests : IAsyncLifetime
     [Fact]
     public async Task The_same_engineer_is_supervisor_on_one_project_and_junior_on_another()
     {
-        (await AssignAsync(_hr, _projectA, _siteEngineer, AssignmentLevel.Supervisor))
+        (await AssignAsync(_owner, _projectA, _siteEngineer, AssignmentLevel.Supervisor))
             .StatusCode.Should().Be(HttpStatusCode.Created);
 
-        (await AssignAsync(_hr, _projectB, _siteEngineer, AssignmentLevel.Junior))
+        (await AssignAsync(_owner, _projectB, _siteEngineer, AssignmentLevel.Junior))
             .StatusCode.Should().Be(HttpStatusCode.Created);
 
         (await LevelOnAsync(_projectA, _siteEngineer)).Should().Be(AssignmentLevel.Supervisor);
@@ -209,7 +192,7 @@ public sealed class AssignUserToProjectTests : IAsyncLifetime
             (_siteEngineer, AssignmentLevel.Standard, "a site engineer is one or the other, never neither"),
         })
         {
-            HttpResponseMessage response = await AssignAsync(_hr, _projectA, target, level);
+            HttpResponseMessage response = await AssignAsync(_owner, _projectA, target, level);
 
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest, because);
 
@@ -228,7 +211,7 @@ public sealed class AssignUserToProjectTests : IAsyncLifetime
     {
         foreach (Guid target in new[] { _portalClient, _subcontractor })
         {
-            HttpResponseMessage response = await AssignAsync(_hr, _projectA, target, AssignmentLevel.Standard);
+            HttpResponseMessage response = await AssignAsync(_owner, _projectA, target, AssignmentLevel.Standard);
 
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             (await MessageKeyAsync(response)).Should().Be("errors.identity.client_is_not_assignable");
@@ -247,9 +230,9 @@ public sealed class AssignUserToProjectTests : IAsyncLifetime
     /// assignment" and could not be mistaken for a missing row.
     /// </remarks>
     [Fact]
-    public async Task Nobody_but_the_owner_and_hr_can_staff_a_project()
+    public async Task Nobody_but_the_owner_can_staff_a_project()
     {
-        foreach (Guid caller in new[] { _finance, _technicalOffice, _supervisorOnProjectA })
+        foreach (Guid caller in new[] { _hr, _finance, _technicalOffice, _supervisorOnProjectA })
         {
             HttpResponseMessage response = await AssignAsync(caller, _projectA, _siteEngineer, AssignmentLevel.Junior);
 
@@ -267,7 +250,7 @@ public sealed class AssignUserToProjectTests : IAsyncLifetime
     [Fact]
     public async Task A_deactivated_user_is_not_assignable()
     {
-        HttpResponseMessage response = await AssignAsync(_hr, _projectA, _leaver, AssignmentLevel.Standard);
+        HttpResponseMessage response = await AssignAsync(_owner, _projectA, _leaver, AssignmentLevel.Standard);
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await MessageKeyAsync(response)).Should().Be("errors.identity.user_is_inactive");
@@ -284,10 +267,10 @@ public sealed class AssignUserToProjectTests : IAsyncLifetime
     [Fact]
     public async Task A_second_active_assignment_is_refused_and_re_assignment_after_revocation_is_not()
     {
-        (await AssignAsync(_hr, _projectA, _technicalOffice, AssignmentLevel.Standard))
+        (await AssignAsync(_owner, _projectA, _technicalOffice, AssignmentLevel.Standard))
             .StatusCode.Should().Be(HttpStatusCode.Created);
 
-        HttpResponseMessage again = await AssignAsync(_hr, _projectA, _technicalOffice, AssignmentLevel.Standard);
+        HttpResponseMessage again = await AssignAsync(_owner, _projectA, _technicalOffice, AssignmentLevel.Standard);
 
         again.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await MessageKeyAsync(again)).Should().Be("errors.identity.user_already_assigned_to_project");
@@ -295,7 +278,7 @@ public sealed class AssignUserToProjectTests : IAsyncLifetime
 
         await RevokeAsync(_projectA, _technicalOffice);
 
-        (await AssignAsync(_hr, _projectA, _technicalOffice, AssignmentLevel.Standard))
+        (await AssignAsync(_owner, _projectA, _technicalOffice, AssignmentLevel.Standard))
             .StatusCode.Should().Be(
                 HttpStatusCode.Created,
                 "the unique index filters on revoked_at IS NULL, so a revoked row is not in the way");
@@ -313,7 +296,7 @@ public sealed class AssignUserToProjectTests : IAsyncLifetime
     public async Task Assigning_a_user_who_does_not_exist_is_refused()
     {
         HttpResponseMessage response = await AssignAsync(
-            _hr, _projectA, Guid.CreateVersion7(), AssignmentLevel.Standard);
+            _owner, _projectA, Guid.CreateVersion7(), AssignmentLevel.Standard);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         (await MessageKeyAsync(response)).Should().Be("errors.identity.user_not_found");
@@ -340,52 +323,35 @@ public sealed class AssignUserToProjectTests : IAsyncLifetime
     /// </para>
     /// </remarks>
     [Fact]
-    public async Task The_assignment_leaves_an_audit_record_naming_the_project_and_how_hr_reached_it()
+    public async Task The_assignment_leaves_an_audit_record_naming_the_project_and_how_the_owner_reached_it()
     {
-        HttpResponseMessage hrAssigned = await AssignAsync(
-            _hr, _projectA, _technicalOffice, AssignmentLevel.Standard);
         HttpResponseMessage ownerAssigned = await AssignAsync(
             _owner, _projectB, _technicalOffice, AssignmentLevel.Standard);
 
-        hrAssigned.StatusCode.Should().Be(HttpStatusCode.Created);
         ownerAssigned.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        // By the row each call created, not by its project: the fixture already puts a supervisor on
-        // project A, so filtering on ProjectId would pick up the seeded assignment's record too.
-        Guid hrRow = await CreatedIdAsync(hrAssigned);
         Guid ownerRow = await CreatedIdAsync(ownerAssigned);
 
         await using KaffDbContext reader = _database.CreateBareContext();
 
-        List<AuditRecord> records = await reader.AuditRecords
-            .Where(record => record.EntityType == nameof(ProjectAssignment)
-                             && record.Action == AuditAction.Created
-                             && (record.EntityId == hrRow || record.EntityId == ownerRow))
-            .ToListAsync(Ct);
+        AuditRecord byOwner = await reader.AuditRecords.SingleAsync(
+            record => record.EntityType == nameof(ProjectAssignment)
+                      && record.Action == AuditAction.Created
+                      && record.EntityId == ownerRow,
+            Ct);
 
-        records.Should().HaveCount(2);
-
-        AuditRecord byHr = records.Single(record => record.EntityId == hrRow);
-        AuditRecord byOwner = records.Single(record => record.EntityId == ownerRow);
-
-        byHr.ProjectId.Should().Be(_projectA, "the trail filters per project");
-        byOwner.ProjectId.Should().Be(_projectB);
-
-        byHr.ActorUserId.Should().Be(_hr);
-        byHr.ActorRole.Should().Be(Role.Hr);
-        byHr.GrantPath.Should().Be(
-            ProjectAccessPath.HrGlobal, "HR holds no row on this project — there is nothing to derive");
-
+        byOwner.ProjectId.Should().Be(_projectB, "the trail filters per project");
         byOwner.ActorUserId.Should().Be(_owner);
+        byOwner.ActorRole.Should().Be(Role.Owner);
         byOwner.GrantPath.Should().Be(ProjectAccessPath.OwnerGlobal);
 
-        using JsonDocument after = JsonDocument.Parse(byHr.AfterJson!);
+        using JsonDocument after = JsonDocument.Parse(byOwner.AfterJson!);
 
         after.RootElement.GetProperty(nameof(ProjectAssignment.UserId)).GetGuid()
             .Should().Be(_technicalOffice);
 
         after.RootElement.GetProperty(nameof(ProjectAssignment.AssignedByUserId)).GetGuid()
-            .Should().Be(_hr, "KAFF-113 rule 10 — the row records who assigned");
+            .Should().Be(_owner, "KAFF-113 rule 10 — the row records who assigned");
 
         after.RootElement.GetProperty(nameof(ProjectAssignment.Level)).GetString()
             .Should().Be(nameof(AssignmentLevel.Standard), "enums travel as member names");

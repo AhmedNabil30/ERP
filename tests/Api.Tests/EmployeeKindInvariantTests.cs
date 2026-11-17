@@ -123,7 +123,7 @@ public sealed class EmployeeKindInvariantTests : IAsyncLifetime
             "Field Worker", EmployeeKind.Salaried, phone, null, acknowledgedDuplicatePhone: false);
 
         unacknowledged.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await MessageKeyAsync(unacknowledged)).Should().Be("errors.master.duplicate_phone_not_acknowledged");
+        (await MessageKeyAsync(unacknowledged)).Should().Be("errors.master.employee_duplicate_phone_not_acknowledged");
 
         HttpResponseMessage reregistered = await CreateRawAsync(
             "Field Worker", EmployeeKind.Salaried, phone, null, acknowledgedDuplicatePhone: true);

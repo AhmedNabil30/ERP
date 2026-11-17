@@ -46,21 +46,32 @@ type Read<T> =
 
 const LOADING = { state: 'loading' } as const;
 
-/** The default design fee per square metre (AC-417-K); the server computes the stored value, this only previews it. */
-const DESIGN_RATE_PER_SQUARE_METRE = 450n;
-const AREA_PATTERN = /^(\d+)(?:\.(\d{1,4}))?$/;
+const DECIMAL_PATTERN = /^(\d+)(?:\.(\d{1,4}))?$/;
 
-/** Area x rate in exact integer arithmetic (D-135: no floats near money). Null when the area is not a positive decimal. */
-export function designFeeOf(area: string): string | null {
-  const match = AREA_PATTERN.exec(area.trim());
-  if (match === null) {
+/** A decimal string as an integer scaled by 10^4 (D-135: no floats near money), or null when it is not one. */
+function scaled(value: string): bigint | null {
+  const match = DECIMAL_PATTERN.exec(value.trim());
+  return match === null ? null : BigInt(match[1] + (match[2] ?? '').padEnd(4, '0'));
+}
+
+/** True when the area is a positive decimal. */
+export function isValidArea(area: string): boolean {
+  const value = scaled(area);
+  return value !== null && value > 0n;
+}
+
+/**
+ * Area x rate in exact integer arithmetic, rounded half up to four places. The rate is the server's
+ * (`designRatePerSquareMetre`); the server computes the stored fee, this only previews it. Null when the area
+ * is not a positive decimal or the server sent no rate.
+ */
+export function designFeeOf(area: string, rate: string | null | undefined): string | null {
+  const areaScaled = scaled(area);
+  const rateScaled = rate == null ? null : scaled(rate);
+  if (areaScaled === null || areaScaled === 0n || rateScaled === null) {
     return null;
   }
-  const scaled = BigInt(match[1] + (match[2] ?? '').padEnd(4, '0'));
-  if (scaled === 0n) {
-    return null;
-  }
-  const fee = (scaled * DESIGN_RATE_PER_SQUARE_METRE).toString().padStart(5, '0');
+  const fee = ((areaScaled * rateScaled + 5000n) / 10000n).toString().padStart(5, '0');
   return `${fee.slice(0, -4)}.${fee.slice(-4)}`;
 }
 
@@ -142,7 +153,7 @@ export class ProjectWorkspacePage {
   });
   protected readonly isDesign = computed(() => this.project()?.contractType === 'Design');
   /** The design fee per square metre, shown on an unsigned design project. */
-  protected readonly designRate = String(DESIGN_RATE_PER_SQUARE_METRE);
+  protected readonly designRate = computed(() => this.project()?.designRatePerSquareMetre ?? null);
 
   /** The team tab, when the server lets this viewer open it. */
   protected readonly isTeam = computed(() => this.tab() === 'team' && this.project()?.tabs.team === true);
@@ -362,9 +373,9 @@ export class ProjectWorkspacePage {
   protected readonly area = signal('');
   protected readonly areaAttempted = signal(false);
   protected readonly confirmingSign = signal(false);
-  protected readonly designFee = computed(() => designFeeOf(this.area()));
+  protected readonly designFee = computed(() => designFeeOf(this.area(), this.designRate()));
   protected readonly areaError = computed(() =>
-    this.areaAttempted() && this.designFee() === null ? 'projects.sign_design.error.area' : null,
+    this.areaAttempted() && !isValidArea(this.area()) ? 'projects.sign_design.error.area' : null,
   );
   protected readonly signDesignDetail = computed(() => {
     const fee = this.designFee();
@@ -380,7 +391,7 @@ export class ProjectWorkspacePage {
   private focusAreaBox(): void {
     setTimeout(() => {
       const box = document.getElementById('sign-design-area');
-      if (this.designFee() === null) {
+      if (!isValidArea(this.area())) {
         box?.scrollIntoView?.({ block: 'center' });
         box?.focus();
       }
@@ -390,11 +401,11 @@ export class ProjectWorkspacePage {
   protected askSignDesign(): void {
     this.areaAttempted.set(true);
     this.lifecycleError.set(null);
-    this.confirmingSign.set(this.designFee() !== null);
+    this.confirmingSign.set(isValidArea(this.area()));
   }
 
   protected async confirmSignDesign(): Promise<void> {
-    if (this.designFee() === null) {
+    if (!isValidArea(this.area())) {
       return;
     }
     this.lifecycleBusy.set(true);

@@ -27,6 +27,8 @@ public sealed class ProjectFrameTests : IAsyncLifetime
 
     private Guid _projectId;
     private Guid _unsignedProjectId;
+    private Guid _designUnsignedId;
+    private Guid _designSignedId;
     private DateTimeOffset _loggedAt;
     private Guid _owner;
     private Guid _supervisor;
@@ -281,6 +283,45 @@ public sealed class ProjectFrameTests : IAsyncLifetime
         (await StatusAsync(_stranger, $"/api/projects/{_projectId}/boq")).Should().Be(HttpStatusCode.Forbidden);
     }
 
+    // ---- a design project has no BOQ and its rate comes from the server (D-233 follow-up, items 6 and 7) ------------------
+
+    [Theory]
+    [InlineData("owner")]
+    [InlineData("technicalOffice")]
+    public async Task A_design_project_is_sent_no_boq_tab_signed_or_not_and_a_lump_sum_one_still_is(string who)
+    {
+        foreach (Guid design in new[] { _designUnsignedId, _designSignedId })
+        {
+            using JsonDocument body = await ReadAsync(Who(who), $"/api/projects/{design}");
+            body.RootElement.GetProperty("tabs").GetProperty("boq").GetBoolean().Should().BeFalse("a design project has no BOQ");
+        }
+
+        using JsonDocument lump = await ReadAsync(Who(who), $"/api/projects/{_projectId}");
+        lump.RootElement.GetProperty("tabs").GetProperty("boq").GetBoolean().Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task A_design_project_sends_its_rate_per_square_metre_to_a_money_reader_the_default_before_signing_and_the_stored_one_after()
+    {
+        using JsonDocument unsigned = await ReadAsync(_owner, $"/api/projects/{_designUnsignedId}");
+        decimal.Parse(unsigned.RootElement.GetProperty("designRatePerSquareMetre").GetString()!, System.Globalization.CultureInfo.InvariantCulture)
+            .Should().Be(Kaff.Domain.Contracts.ContractDefaults.DesignRatePerSquareMetre.Amount);
+
+        using JsonDocument signed = await ReadAsync(_technicalOffice, $"/api/projects/{_designSignedId}");
+        decimal.Parse(signed.RootElement.GetProperty("designRatePerSquareMetre").GetString()!, System.Globalization.CultureInfo.InvariantCulture)
+            .Should().Be(500m, "the rate stored at signing, not the current default");
+    }
+
+    [Fact]
+    public async Task The_design_rate_is_withheld_from_a_caller_without_project_money_and_absent_on_other_contract_types()
+    {
+        string junior = await RawAsync(_junior, $"/api/projects/{_designUnsignedId}");
+        junior.Should().NotContain("designRatePerSquareMetre");
+
+        using JsonDocument lump = await ReadAsync(_owner, $"/api/projects/{_projectId}");
+        lump.RootElement.TryGetProperty("designRatePerSquareMetre", out _).Should().BeFalse();
+    }
+
     // ---- helpers ---------------------------------------------------------------------------------------
 
     private Guid Who(string who) => who switch
@@ -341,6 +382,14 @@ public sealed class ProjectFrameTests : IAsyncLifetime
         Project unsigned = Project.Create(
             UniqueNames.Code("FRM-U"), "مشروع غير موقع", client.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
 
+        Project designUnsigned = Project.Create(
+            UniqueNames.Code("FRM-DU"), "تصميم غير موقع", client.Id, ContractType.Design, DateTimeOffset.UtcNow).Value;
+
+        Project designSigned = Project.Create(
+            UniqueNames.Code("FRM-DS"), "تصميم موقع", client.Id, ContractType.Design, DateTimeOffset.UtcNow).Value;
+        designSigned.SetDesignTerms(120m, new Money(500m)).IsSuccess.Should().BeTrue();
+        designSigned.Sign(new DateOnly(2026, 9, 25), null).IsSuccess.Should().BeTrue();
+
         User owner = MakeUser("frm-owner", Role.Owner);
         User supervisor = MakeEngineer("frm-sup");
         User junior = MakeEngineer("frm-jun");
@@ -351,7 +400,7 @@ public sealed class ProjectFrameTests : IAsyncLifetime
         User marketing = MakeUser("frm-mkt", Role.MarketingSales);
 
         context.Clients.Add(client);
-        context.Projects.AddRange(project, unsigned);
+        context.Projects.AddRange(project, unsigned, designUnsigned, designSigned);
         context.Users.AddRange(owner, supervisor, junior, stranger, finance, technicalOffice, marketing);
         await context.SaveChangesAsync(Ct);
 
@@ -360,7 +409,10 @@ public sealed class ProjectFrameTests : IAsyncLifetime
             ProjectAssignment.Create(project.Id, junior, AssignmentLevel.Junior, owner.Id, Now).Value,
             ProjectAssignment.Create(project.Id, finance, AssignmentLevel.Standard, owner.Id, Now).Value,
             ProjectAssignment.Create(project.Id, technicalOffice, AssignmentLevel.Standard, owner.Id, Now).Value,
-            ProjectAssignment.Create(project.Id, marketing, AssignmentLevel.Standard, owner.Id, Now).Value);
+            ProjectAssignment.Create(project.Id, marketing, AssignmentLevel.Standard, owner.Id, Now).Value,
+            ProjectAssignment.Create(designUnsigned.Id, technicalOffice, AssignmentLevel.Standard, owner.Id, Now).Value,
+            ProjectAssignment.Create(designSigned.Id, technicalOffice, AssignmentLevel.Standard, owner.Id, Now).Value,
+            ProjectAssignment.Create(designUnsigned.Id, junior, AssignmentLevel.Junior, owner.Id, Now).Value);
         _loggedAt = DateTimeOffset.UtcNow;
         context.DailyLogs.Add(DailyLog.Open(
             project.Id, junior.Id, _loggedAt, _loggedAt, new Kaff.Domain.Rulings.RulingSet().DailyLogEntry));
@@ -368,6 +420,8 @@ public sealed class ProjectFrameTests : IAsyncLifetime
 
         _projectId = project.Id;
         _unsignedProjectId = unsigned.Id;
+        _designUnsignedId = designUnsigned.Id;
+        _designSignedId = designSigned.Id;
         _owner = owner.Id;
         _supervisor = supervisor.Id;
         _junior = junior.Id;

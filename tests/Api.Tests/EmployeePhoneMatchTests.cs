@@ -84,7 +84,7 @@ public sealed class EmployeePhoneMatchTests : IAsyncLifetime
             "Second Worker", EmployeeKind.DayLabour, phone, bab, acknowledgedDuplicatePhone: false);
 
         refused.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await MessageKeyAsync(refused)).Should().Be("errors.master.duplicate_phone_not_acknowledged");
+        (await MessageKeyAsync(refused)).Should().Be("errors.master.employee_duplicate_phone_not_acknowledged");
 
         await using KaffDbContext after = _database.CreateBareContext();
         (await after.Employees.LongCountAsync(Ct)).Should().Be(countBefore, "the refused create wrote no row");
@@ -124,7 +124,7 @@ public sealed class EmployeePhoneMatchTests : IAsyncLifetime
             "Second Salaried", EmployeeKind.Salaried, phone, null, acknowledgedDuplicatePhone: false);
 
         unacknowledged.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await MessageKeyAsync(unacknowledged)).Should().Be("errors.master.duplicate_phone_not_acknowledged");
+        (await MessageKeyAsync(unacknowledged)).Should().Be("errors.master.employee_duplicate_phone_not_acknowledged");
 
         HttpResponseMessage second = await CreateRawAsync(
             "Second Salaried", EmployeeKind.Salaried, phone, null, acknowledgedDuplicatePhone: true);
@@ -206,7 +206,7 @@ public sealed class EmployeePhoneMatchTests : IAsyncLifetime
             "New Worker", EmployeeKind.DayLabour, phone, bab, acknowledgedDuplicatePhone: false);
 
         unacknowledged.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await MessageKeyAsync(unacknowledged)).Should().Be("errors.master.duplicate_phone_not_acknowledged");
+        (await MessageKeyAsync(unacknowledged)).Should().Be("errors.master.employee_duplicate_phone_not_acknowledged");
 
         HttpResponseMessage acknowledged = await CreateRawAsync(
             "New Worker", EmployeeKind.DayLabour, phone, bab, acknowledgedDuplicatePhone: true);

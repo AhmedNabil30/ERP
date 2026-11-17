@@ -235,7 +235,7 @@ public sealed class CreateEmployeeTests : IAsyncLifetime
 
         unacknowledged.StatusCode.Should().Be(
             HttpStatusCode.Conflict, "a cross-population match still needs an acknowledgement");
-        (await MessageKeyAsync(unacknowledged)).Should().Be("errors.master.duplicate_phone_not_acknowledged");
+        (await MessageKeyAsync(unacknowledged)).Should().Be("errors.master.employee_duplicate_phone_not_acknowledged");
 
         await using KaffDbContext after = _database.CreateBareContext();
         (await after.Employees.LongCountAsync(Ct)).Should().Be(countBefore, "the unacknowledged create wrote no row");

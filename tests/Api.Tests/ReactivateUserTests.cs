@@ -167,7 +167,7 @@ public sealed class ReactivateUserTests : IAsyncLifetime
 
         (await DeactivateAsync(_owner, _leaver)).StatusCode.Should().Be(HttpStatusCode.NoContent);
         (await ReactivateAsync(_owner, _leaver)).StatusCode.Should().Be(HttpStatusCode.NoContent);
-        (await AssignAsync(_hr, _projectA, _leaver, AssignmentLevel.Junior))
+        (await AssignAsync(_owner, _projectA, _leaver, AssignmentLevel.Junior))
             .StatusCode.Should().Be(HttpStatusCode.Created);
 
         string currentToken = await StaleSession(_leaver);
@@ -278,7 +278,7 @@ public sealed class ReactivateUserTests : IAsyncLifetime
 
         DateTimeOffset before = DateTimeOffset.UtcNow;
 
-        HttpResponseMessage assigned = await AssignAsync(_hr, _projectA, _leaver, AssignmentLevel.Junior);
+        HttpResponseMessage assigned = await AssignAsync(_owner, _projectA, _leaver, AssignmentLevel.Junior);
         assigned.StatusCode.Should().Be(HttpStatusCode.Created);
 
         await using KaffDbContext afterReader = _database.CreateBareContext();
@@ -290,7 +290,7 @@ public sealed class ReactivateUserTests : IAsyncLifetime
         rows.Should().HaveCount(2, "the old revoked row stays, and this is a new row, not a resurrection");
 
         ProjectAssignment freshRow = rows.Single(row => row.Id != oldRow.Id);
-        freshRow.AssignedByUserId.Should().Be(_hr, "HR performed this act, not the Owner who reactivated the person");
+        freshRow.AssignedByUserId.Should().Be(_owner, "the assignment is its own act, recorded against the one who made it");
         freshRow.AssignedAt.Should().BeOnOrAfter(before);
         freshRow.RevokedAt.Should().BeNull();
 

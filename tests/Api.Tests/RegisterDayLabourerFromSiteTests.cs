@@ -389,7 +389,7 @@ public sealed class RegisterDayLabourerFromSiteTests : IAsyncLifetime
             _projectA, _assignedEngineer, Role.SiteEngineer, "Second Worker", phone);
 
         unacknowledged.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await MessageKeyAsync(unacknowledged)).Should().Be("errors.master.duplicate_phone_not_acknowledged");
+        (await MessageKeyAsync(unacknowledged)).Should().Be("errors.master.employee_duplicate_phone_not_acknowledged");
 
         HttpResponseMessage acknowledged = await RegisterAsync(
             _projectA, _assignedEngineer, Role.SiteEngineer, "Second Worker", phone, acknowledgedDuplicatePhone: true);

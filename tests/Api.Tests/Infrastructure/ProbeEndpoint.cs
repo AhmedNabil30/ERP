@@ -150,8 +150,10 @@ public sealed class ProbeEndpoint : IEndpoint
         app.MapGet(WriteOwnerRoute, WriteAsync)
             .RequirePermission(Permission.FinancialMovementApprove, ProjectScope.FromRoute());
 
+        // D-233 item 3 took ProjectAssignmentManage from HR; ProjectTeamRead is the project-scoped grant HR still holds,
+        // and it reaches a project through the same HrGlobal path.
         app.MapGet(WriteHrRoute, WriteAsync)
-            .RequirePermission(Permission.ProjectAssignmentManage, ProjectScope.FromRoute());
+            .RequirePermission(Permission.ProjectTeamRead, ProjectScope.FromRoute());
 
         app.MapGet(WritePortalRoute, WriteAsync)
             .RequirePermission(Permission.PortalRead, ProjectScope.FromRoute());

@@ -394,18 +394,16 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Hr_staffs_a_project_it_was_never_assigned_to()
+    public async Task Only_the_owner_staffs_a_project_and_needs_no_assignment_to_do_it()
     {
-        // Karim, 2026-08-20: "HR has Global Reach for project assignments … HR does not need to be
-        // assigned to a project first in order to staff it."
-        //
-        // This is not merely a convenience. Requiring an assignment in order to create assignments
-        // is circular: on a brand-new project nobody is assigned, so nobody could ever make the
-        // first one. The seeded HR user holds no ProjectAssignment row at all.
-        HttpResponseMessage response = await SendAsync(
-            Assign(_projectId), _hr, Role.Hr, WellKnownDepartments.HrId);
+        // Karim, 2026-08-20 gave HR global reach to staff a project; Nabil, 2026-11-17 (D-233 item 3) took the
+        // grant away. Requiring an assignment in order to create assignments is still circular, so the Owner
+        // staffs a project it holds no row on, and HR, whatever its reach, is refused.
+        (await SendAsync(Assign(_projectId), _ownerUnassigned, Role.Owner))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(Assign(_projectId), _hr, Role.Hr, WellKnownDepartments.HrId))
+            .StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
     [Fact]
@@ -417,8 +415,8 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
         // Global reach makes this the sharpest test in the file. The access policy waves HR through
         // on any project — so the ONLY thing standing between HR and every project's financial data
         // is the absence of a ProjectRead grant. Same user, same project, one line apart.
-        (await SendAsync(Assign(_projectId), _hr, Role.Hr, WellKnownDepartments.HrId))
-            .StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(WriteAsHr(_projectId), _hr, Role.Hr, WellKnownDepartments.HrId))
+            .StatusCode.Should().Be(HttpStatusCode.OK, "HR's reach on ProjectTeamRead is real");
 
         (await SendAsync(Read(_projectId), _hr, Role.Hr, WellKnownDepartments.HrId))
             .StatusCode.Should().Be(HttpStatusCode.Forbidden);
@@ -436,7 +434,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
         // Global reach is reach, not a bypass. It is bounded by the project existing, exactly as the
         // Owner's is — otherwise a typo'd identifier would be an authorization success.
         HttpResponseMessage response = await SendAsync(
-            Assign(Guid.CreateVersion7()), _hr, Role.Hr, WellKnownDepartments.HrId);
+            WriteAsHr(Guid.CreateVersion7()), _hr, Role.Hr, WellKnownDepartments.HrId);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }

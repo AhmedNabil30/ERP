@@ -107,10 +107,13 @@ internal static class Handler
             StageOf.Of(candidateProject),
             candidateProject.IsSigned,
             await database.DailyLogs.AnyAsync(log => log.ProjectId == projectId && log.LogDate == today, cancellationToken),
-            await TabsAsync(authorization, user),
+            await TabsAsync(authorization, user, candidateProject.ContractType),
             seesMoney ? candidateProject.AdvanceRecoveryRate : null,
             (await WorkStartedQuery.ProjectIdsAsync(database, projectId, cancellationToken)).Contains(projectId),
-            conversionOffered);
+            conversionOffered,
+            seesMoney && candidateProject.ContractType == ContractType.Design
+                ? candidateProject.DesignRatePerSquareMetre ?? ContractDefaults.DesignRatePerSquareMetre
+                : null);
 
         return Microsoft.AspNetCore.Http.Results.Ok(project);
     }
@@ -120,7 +123,8 @@ internal static class Handler
     /// the daily log is <c>DailyLogWrite</c> (any assigned site engineer) or <c>DailyLogReview</c> (owner, supervising engineer).
     /// The overview and the team are open to every <c>ProjectRead</c> holder, which is what reached this handler.
     /// </summary>
-    private static async Task<ProjectTabs> TabsAsync(IAuthorizationService authorization, ClaimsPrincipal user)
+    private static async Task<ProjectTabs> TabsAsync(
+        IAuthorizationService authorization, ClaimsPrincipal user, ContractType contractType)
     {
         // Writing wins: a supervising engineer holds both, and he records the log.
         string? mode = await CallerPermissions.HoldsAsync(authorization, user, Permission.DailyLogWrite) ? "write"
@@ -129,7 +133,8 @@ internal static class Handler
 
         return new ProjectTabs(
             Overview: true,
-            Boq: await CallerPermissions.HoldsAsync(authorization, user, Permission.BoqRead),
+            // A design project has no BOQ: its fee is area x rate, and the BOQ route refuses it.
+            Boq: contractType != ContractType.Design && await CallerPermissions.HoldsAsync(authorization, user, Permission.BoqRead),
             DailyLog: mode is not null,
             Extracts: await CallerPermissions.HoldsAsync(authorization, user, Permission.ExtractRead),
             Team: true,

@@ -106,6 +106,8 @@ export interface ProjectDetail {
   readonly workStarted?: boolean;
   /** D-228 item 2: the server offers conversion to execution (a signed design project, not yet converted). */
   readonly conversionOffered?: boolean;
+  /** A Design project, for a caller who may read project money: the fee per square metre (decimal string). The server holds the price. */
+  readonly designRatePerSquareMetre?: string | null;
 }
 
 /** `ProjectStage` on the wire: the three stages the stage line draws (D-218 item 3). */

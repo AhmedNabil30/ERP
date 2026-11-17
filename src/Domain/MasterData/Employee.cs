@@ -183,4 +183,21 @@ public sealed class Employee : Entity, IAuditScopedByGrant
         IsActive = false;
         return Result.Success();
     }
+
+    /// <summary>
+    /// Brings an archived employee back onto the active register (D-233 item 1), the catalogue's
+    /// recoverable pattern. Refuses an active record with <see cref="MasterDataErrors.NotArchived"/>.
+    /// Whether the phone is now held by another active salaried record is not visible here; the
+    /// handler checks it, the same way <c>CreateEmployee</c> does.
+    /// </summary>
+    public Result Unarchive()
+    {
+        if (IsActive)
+        {
+            return Result.Failure(MasterDataErrors.NotArchived);
+        }
+
+        IsActive = true;
+        return Result.Success();
+    }
 }
