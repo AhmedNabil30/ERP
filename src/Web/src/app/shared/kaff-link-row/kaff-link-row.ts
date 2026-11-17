@@ -10,7 +10,7 @@ import { KaffIcon, KaffIconName } from '../kaff-icon/kaff-icon';
 @Component({
   selector: 'kaff-link-row',
   imports: [RouterLink, KaffIcon],
-  template: `<a class="clink" [routerLink]="link()" [attr.data-testid]="testId()">
+  template: `<a class="clink" [routerLink]="link()" [queryParams]="queryParams()" [attr.data-testid]="testId()">
     <kaff-icon class="lead" [name]="icon()" />
     <span class="tx">
       <b>{{ name() }}</b>
@@ -23,6 +23,8 @@ import { KaffIcon, KaffIconName } from '../kaff-icon/kaff-icon';
 })
 export class KaffLinkRow {
   readonly link = input.required<readonly string[]>();
+  /** Carried in the URL, so the page opened knows what the viewer was looking at (the crew screen's day). */
+  readonly queryParams = input<Readonly<Record<string, string>> | null>(null);
   readonly icon = input.required<KaffIconName>();
   readonly name = input.required<string>();
   readonly summary = input.required<string>();

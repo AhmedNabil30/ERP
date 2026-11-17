@@ -116,7 +116,13 @@ async function flush(fixture: { detectChanges(): void }): Promise<void> {
 }
 
 /** `crew` answers the crew read; `'forbidden'` is the 403 an owner or finance user gets. */
-async function createPage(api: FakeDailyLogApi, permissions = JUNIOR, role: Role = 'SiteEngineer', crew: CrewMember[] | 'forbidden' = []) {
+async function createPage(
+  api: FakeDailyLogApi,
+  permissions = JUNIOR,
+  role: Role = 'SiteEngineer',
+  crew: CrewMember[] | 'forbidden' = [],
+  date?: string,
+) {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
@@ -167,6 +173,9 @@ async function createPage(api: FakeDailyLogApi, permissions = JUNIOR, role: Role
   });
   const fixture = TestBed.createComponent(CrewPage);
   fixture.componentRef.setInput('projectId', 'project-1');
+  if (date !== undefined) {
+    fixture.componentRef.setInput('date', date);
+  }
   fixture.detectChanges();
   await flush(fixture);
   await flush(fixture);
@@ -270,8 +279,9 @@ describe('CrewPage', () => {
       expect((el(root, 'crew-hours-0-plus') as HTMLButtonElement).disabled).toBe(true);
     });
 
-    it('a typed value above 16 is kept, refused in place and not counted; save is off', async () => {
-      const fixture = await createPage(new FakeDailyLogApi({ [dateOf(1)]: log([labour('y1', 'w1', 'Ali', 8), labour('y2', 'w2', 'Bassem', 4)]) }));
+    it('a typed value above 16 is kept, refused in place and not counted; save is not sent', async () => {
+      const api = new FakeDailyLogApi({ [dateOf(1)]: log([labour('y1', 'w1', 'Ali', 8), labour('y2', 'w2', 'Bassem', 4)]) });
+      const fixture = await createPage(api);
       const root: HTMLElement = fixture.nativeElement;
 
       type(root, 'crew-hours-0-input', '8');
@@ -283,12 +293,36 @@ describe('CrewPage', () => {
       const totals = el(root, 'crew-totals')!;
       expect(totals.textContent).toContain('8');
       expect(totals.textContent).not.toContain('28');
-      expect(primary(fixture)!.disabled).toBe(true);
+      // D-229 item 3: a fixable gap leaves the button live; the press sends nothing and focuses the refused row.
+      expect(primary(fixture)!.disabled).toBe(false);
+      await pressPrimary(fixture);
+      expect(api.recorded).toHaveLength(0);
+      expect(document.activeElement).toBe(el(root, 'crew-hours-1-input'));
 
       type(root, 'crew-hours-1-input', '16');
       fixture.detectChanges();
       expect(el(root, 'crew-refused-1')).toBeNull();
       expect(primary(fixture)!.disabled).toBe(false);
+    });
+
+    it('a press with no hours anywhere marks the first row and focuses it; typing clears the mark', async () => {
+      const api = new FakeDailyLogApi({ [dateOf(1)]: log([labour('y1', 'w1', 'Ali', 8), labour('y2', 'w2', 'Bassem', 4)]) });
+      const fixture = await createPage(api);
+      const root: HTMLElement = fixture.nativeElement;
+
+      expect(primary(fixture)!.disabled).toBe(false);
+      expect(el(root, 'crew-required-0')).toBeNull();
+      await pressPrimary(fixture);
+
+      expect(api.recorded).toHaveLength(0);
+      expect(el(root, 'crew-required-0')?.textContent).toContain('daily_log.field.required');
+      expect(el(root, 'crew-required-1')).toBeNull();
+      expect(document.activeElement).toBe(el(root, 'crew-hours-0-input'));
+
+      type(root, 'crew-hours-0', '1');
+      type(root, 'crew-hours-0-input', '5');
+      fixture.detectChanges();
+      expect(el(root, 'crew-required-0')).toBeNull();
     });
 
     it('a saved man cannot be stepped to zero', async () => {
@@ -335,6 +369,40 @@ describe('CrewPage', () => {
     });
   });
 
+  describe('the day in the URL (consultant review 5)', () => {
+    const chipPressed = (root: HTMLElement, index: number): string | null =>
+      el(root, `crew-day-${index}`)!.getAttribute('aria-pressed');
+
+    it('opens a writer on yesterday when the link names yesterday', async () => {
+      const api = new FakeDailyLogApi({ [dateOf(1)]: log([labour('y1', 'w1', 'Ali', 8)]) });
+      const fixture = await createPage(api, JUNIOR, 'SiteEngineer', [], dateOf(1));
+      const root: HTMLElement = fixture.nativeElement;
+
+      expect(chipPressed(root, 1)).toBe('true');
+      expect(chipPressed(root, 0)).toBe('false');
+      expect(hoursOf(root, 0)).toBe('8');
+    });
+
+    it('opens a writer on today when the date is outside the window, malformed or in the future', async () => {
+      for (const wanted of [dateOf(9), 'not-a-date', dateOf(-3)]) {
+        const fixture = await createPage(new FakeDailyLogApi(), JUNIOR, 'SiteEngineer', [], wanted);
+        expect(chipPressed(fixture.nativeElement, 0)).toBe('true');
+        expect(el(fixture.nativeElement, 'crew-day-other')).toBeNull();
+      }
+    });
+
+    it('opens the owner on a day far back, read through the other-day control', async () => {
+      const api = new FakeDailyLogApi({}, { [dateOf(9)]: [{ engineerId: OTHER, engineerName: 'Other', log: log([labour('e1', 'w1', 'Ali', 8, undefined, false)]) }] });
+      const fixture = await createPage(api, OWNER, 'Owner', 'forbidden', dateOf(9));
+      const root: HTMLElement = fixture.nativeElement;
+
+      expect(api.reads).toContain(`all ${dateOf(9)}`);
+      expect((el(root, 'crew-day-other') as HTMLInputElement).value).toBe(dateOf(9));
+      expect(chipPressed(root, 0)).toBe('false');
+      expect(el(root, 'crew-saved-0')).not.toBeNull();
+    });
+  });
+
   describe('AC-3: today, the engineer who entered it', () => {
     const today = { [dateOf(0)]: log([labour('e1', 'w1', 'Ali', 8)]) };
 
@@ -342,7 +410,7 @@ describe('CrewPage', () => {
       const fixture = await createPage(new FakeDailyLogApi(today));
       const root: HTMLElement = fixture.nativeElement;
 
-      expect(el(root, 'crew-saved')).not.toBeNull();
+      expect(el(root, 'crew-saved-0')).not.toBeNull();
       expect(el(root, 'crew-hours-0')).toBeNull();
       expect(el(root, 'crew-add')).toBeNull();
       expect(primary(fixture)?.getAttribute('data-testid')).toBe('crew-edit');
@@ -350,6 +418,21 @@ describe('CrewPage', () => {
       await pressPrimary(fixture);
       expect(el(root, 'crew-hours-0')).not.toBeNull();
       expect(primary(fixture)?.getAttribute('data-testid')).toBe('crew-save');
+    });
+
+    it('says «تم الحفظ» only after a save made in this visit, never on arrival (consultant review 6)', async () => {
+      const fixture = await createPage(new FakeDailyLogApi(today));
+      const root: HTMLElement = fixture.nativeElement;
+
+      expect(el(root, 'crew-saved')).toBeNull();
+
+      await pressPrimary(fixture);
+      expect(el(root, 'crew-saved')).toBeNull();
+      type(root, 'crew-hours-0-input', '9');
+      fixture.detectChanges();
+      await pressPrimary(fixture);
+
+      expect(el(root, 'crew-saved')).not.toBeNull();
     });
 
     it('does not offer an edit of today to the supervising engineer when another engineer entered it', async () => {
@@ -440,10 +523,45 @@ describe('CrewPage', () => {
       const fixture = await createPage(api, JUNIOR, 'SiteEngineer', crew);
       const text = (fixture.nativeElement as HTMLElement).textContent!;
 
-      expect(text).toContain('Zaki');
+      // A read state lists the men with hours that day, so the rows equal the summary above them.
+      expect(text).not.toContain('Zaki');
       expect(text).toContain('Hamed');
       expect(text).toContain('Builder');
       expect(el(fixture.nativeElement, 'crew-empty')).toBeNull();
+
+      // The editing state lists the whole crew: each man takes a stepper.
+      await pressPrimary(fixture);
+      expect((fixture.nativeElement as HTMLElement).textContent).toContain('Zaki');
+    });
+
+    it('draws no list shell when a read-only day has no man to list', async () => {
+      const crew: CrewMember[] = [{ workerId: 'w9', name: 'Zaki', trade: null }];
+      const fixture = await createPage(new FakeDailyLogApi(), OWNER, 'Owner', crew, dateOf(1));
+      const root: HTMLElement = fixture.nativeElement;
+
+      expect(el(root, 'crew-totals')!.textContent).toContain('daily_log.crew.none');
+      expect(el(root, 'crew-list')).toBeNull();
+    });
+
+    it('the summary is the men listed: a man engaged here or worked on another day is not counted nor listed (consultant review 7)', async () => {
+      const crew: CrewMember[] = [
+        { workerId: 'w1', name: 'Ali', trade: 'Builder' },
+        { workerId: 'w9', name: 'Zaki', trade: null },
+        { workerId: 'w7', name: 'Yasser', trade: null },
+      ];
+      const api = new FakeDailyLogApi({
+        [dateOf(0)]: log([labour('e1', 'w1', 'Ali', 8), labour('e2', 'w5', 'Hamed', 3), labour('e3', 'w1', 'Ali', 1)]),
+        [dateOf(1)]: log([labour('y1', 'w7', 'Yasser', 6)]),
+      });
+      const fixture = await createPage(api, JUNIOR, 'SiteEngineer', crew);
+      const root: HTMLElement = fixture.nativeElement;
+
+      const listed = root.querySelectorAll('[data-testid^="crew-saved-"]').length;
+      expect(listed).toBe(2);
+      const totals = el(root, 'crew-totals')!.textContent!;
+      expect(totals).toContain('2');
+      expect(totals).toContain('12');
+      expect(root.textContent).not.toContain('Yasser');
     });
 
     it('a 403 on the crew read is no roster, not a failed page: the saved lines still show', async () => {
@@ -453,7 +571,7 @@ describe('CrewPage', () => {
 
       expect(root.textContent).toContain('Ali');
       expect(root.querySelector('[role="alert"]')).toBeNull();
-      expect(el(root, 'crew-saved')).not.toBeNull();
+      expect(el(root, 'crew-saved-0')).not.toBeNull();
     });
   });
 

@@ -16,6 +16,7 @@ import { KaffIcon } from '../kaff-icon/kaff-icon';
     aria-haspopup="dialog"
     [id]="controlId()"
     [attr.aria-describedby]="describedBy()"
+    [attr.aria-invalid]="invalid() ? 'true' : null"
     [attr.data-testid]="testId()"
     (click)="opened.emit()"
   >
@@ -29,6 +30,8 @@ export class KaffPickerButton {
   readonly controlId = input.required<string>();
   readonly valueText = input.required<string>();
   readonly describedBy = input<string | null>(null);
+  /** The press found the choice missing: sets `aria-invalid`, which draws the error border inside a field. */
+  readonly invalid = input(false);
   readonly testId = input<string | null>(null);
 
   readonly opened = output<void>();

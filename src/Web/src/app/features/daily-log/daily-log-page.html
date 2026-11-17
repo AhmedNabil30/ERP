@@ -5,7 +5,7 @@
       variant="primary"
       [testId]="action.act === 'check-in' ? 'daily-log-check-in' : 'daily-log-save'"
       [busy]="action.act === 'check-in' ? locating() === 'CheckIn' : busy()"
-      [disabled]="action.act === 'check-in' ? locating() !== null : !valid()"
+      [disabled]="action.act === 'check-in' ? locating() !== null : saveBlocked()"
       (clicked)="onPrimary()"
     >
       {{ i18n.t(action.labelKey) }}
@@ -66,6 +66,7 @@
         <kaff-link-row
           icon="crew"
           [link]="['/projects', projectId(), 'day-labour']"
+          [queryParams]="{ date: shownDate() }"
           [name]="i18n.t('daily_log.crew')"
           [summary]="crewSummary()"
           testId="daily-log-crew"
@@ -80,13 +81,13 @@
             <div class="form">
               @switch (kind()) {
                 @case ('note') {
-                  <kaff-field labelKey="daily_log.form.note" controlId="daily-log-note" [required]="true">
-                    <textarea id="daily-log-note" dir="auto" data-testid="daily-log-note" [formField]="entryForm.note"></textarea>
+                  <kaff-field labelKey="daily_log.form.note" controlId="daily-log-note" [required]="true" [errorKey]="gap('daily-log-note')" errorTestId="daily-log-note-error">
+                    <textarea id="daily-log-note" dir="auto" data-testid="daily-log-note" [attr.aria-invalid]="gap('daily-log-note') ? 'true' : null" [formField]="entryForm.note"></textarea>
                   </kaff-field>
                 }
                 @case ('stoppage') {
-                  <kaff-field labelKey="daily_log.form.stoppage" controlId="daily-log-stoppage" [required]="true">
-                    <textarea id="daily-log-stoppage" dir="auto" data-testid="daily-log-stoppage" [formField]="entryForm.stoppage"></textarea>
+                  <kaff-field labelKey="daily_log.form.stoppage" controlId="daily-log-stoppage" [required]="true" [errorKey]="gap('daily-log-stoppage')" errorTestId="daily-log-stoppage-error">
+                    <textarea id="daily-log-stoppage" dir="auto" data-testid="daily-log-stoppage" [attr.aria-invalid]="gap('daily-log-stoppage') ? 'true' : null" [formField]="entryForm.stoppage"></textarea>
                   </kaff-field>
                 }
                 @case ('quantity') {
@@ -98,9 +99,10 @@
                     @if (editing() !== null) {
                       <kaff-readonly-field labelKey="daily_log.quantity.line" controlId="daily-log-line-ro" [value]="selectedLine() ? lineName(selectedLine()!) : ''" testId="daily-log-line-ro" />
                     } @else {
-                      <kaff-field labelKey="daily_log.quantity.line" controlId="daily-log-line" [required]="true">
+                      <kaff-field labelKey="daily_log.quantity.line" controlId="daily-log-line" [required]="true" [errorKey]="gap('daily-log-line')" errorTestId="daily-log-line-error">
                         <kaff-picker-button
                           controlId="daily-log-line"
+                          [invalid]="gap('daily-log-line') !== null"
                           testId="daily-log-line"
                           [valueText]="selectedLine() ? lineName(selectedLine()!) : i18n.t('daily_log.quantity.line_pick')"
                           (opened)="openPicker()"
@@ -115,9 +117,9 @@
                         [secondValue]="'≈ ' + number(chosen.quantityExecuted)"
                         [secondLabel]="i18n.t('daily_log.quantity.executed', { unit: chosen.unit })"
                       />
-                      <kaff-field labelKey="daily_log.quantity.today" [labelText]="i18n.t('daily_log.quantity.today', { day: dayWordNow() })" controlId="daily-log-quantity" [required]="true">
+                      <kaff-field labelKey="daily_log.quantity.today" [labelText]="i18n.t('daily_log.quantity.today', { day: dayWordNow() })" controlId="daily-log-quantity" [required]="true" [errorKey]="gap('daily-log-quantity')" errorTestId="daily-log-quantity-error">
                         <div class="num">
-                          <input id="daily-log-quantity" type="text" dir="ltr" inputmode="decimal" data-testid="daily-log-quantity" [formField]="entryForm.quantity" />
+                          <input id="daily-log-quantity" type="text" dir="ltr" inputmode="decimal" data-testid="daily-log-quantity" [attr.aria-invalid]="gap('daily-log-quantity') ? 'true' : null" [formField]="entryForm.quantity" />
                           <span class="aff" dir="auto">{{ chosen.unit }}</span>
                         </div>
                       </kaff-field>
@@ -138,7 +140,7 @@
                       <kaff-button variant="ghost" testId="daily-log-photo-remove" (clicked)="clearPhoto()">{{ i18n.t('daily_log.photo.remove') }}</kaff-button>
                     </div>
                   } @else {
-                    <button type="button" class="shot" data-testid="daily-log-photo-take" (click)="photoInput.click()">
+                    <button type="button" id="daily-log-photo-take" class="shot" data-testid="daily-log-photo-take" [attr.aria-invalid]="gap('daily-log-photo-take') ? 'true' : null" (click)="photoInput.click()">
                       <kaff-icon name="cam" />{{ i18n.t('daily_log.photo.take') }}
                     </button>
                   }
@@ -147,15 +149,15 @@
                   </kaff-field>
                 }
                 @case ('material') {
-                  <kaff-field labelKey="daily_log.form.material" controlId="daily-log-material-name" [required]="true">
-                    <input id="daily-log-material-name" type="text" dir="auto" data-testid="daily-log-material-name" [formField]="entryForm.materialName" />
+                  <kaff-field labelKey="daily_log.form.material" controlId="daily-log-material-name" [required]="true" [errorKey]="gap('daily-log-material-name')" errorTestId="daily-log-material-name-error">
+                    <input id="daily-log-material-name" type="text" dir="auto" data-testid="daily-log-material-name" [attr.aria-invalid]="gap('daily-log-material-name') ? 'true' : null" [formField]="entryForm.materialName" />
                   </kaff-field>
                   <div class="f2">
-                    <kaff-field labelKey="daily_log.form.quantity" controlId="daily-log-material-quantity" [required]="true">
-                      <input id="daily-log-material-quantity" type="text" dir="ltr" inputmode="decimal" data-testid="daily-log-material-quantity" [formField]="entryForm.materialQuantity" />
+                    <kaff-field labelKey="daily_log.form.quantity" controlId="daily-log-material-quantity" [required]="true" [errorKey]="gap('daily-log-material-quantity')" errorTestId="daily-log-material-quantity-error">
+                      <input id="daily-log-material-quantity" type="text" dir="ltr" inputmode="decimal" data-testid="daily-log-material-quantity" [attr.aria-invalid]="gap('daily-log-material-quantity') ? 'true' : null" [formField]="entryForm.materialQuantity" />
                     </kaff-field>
-                    <kaff-field labelKey="daily_log.form.unit" controlId="daily-log-material-unit" [required]="true">
-                      <kaff-select [options]="unitOptions()" [(value)]="materialUnit" controlId="daily-log-material-unit" ariaLabelKey="daily_log.form.unit" testId="daily-log-material-unit" />
+                    <kaff-field labelKey="daily_log.form.unit" controlId="daily-log-material-unit" [required]="true" [errorKey]="gap('daily-log-material-unit')" errorTestId="daily-log-material-unit-error">
+                      <kaff-select [options]="unitOptions()" [(value)]="materialUnit" [invalid]="gap('daily-log-material-unit') !== null" controlId="daily-log-material-unit" ariaLabelKey="daily_log.form.unit" testId="daily-log-material-unit" />
                     </kaff-field>
                   </div>
                 }

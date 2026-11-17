@@ -2,7 +2,10 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
+  Injector,
   TemplateRef,
+  afterNextRender,
   computed,
   effect,
   inject,
@@ -15,7 +18,16 @@ import { FormField, form } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
 
 import { toProblem } from '../../core/api/problem-details';
-import { BoqLines, BoqPickLine, CheckInLine, DailyLog, DailyLogApi, QuantityLine } from '../../core/daily-log/daily-log.api';
+import { AuthService } from '../../core/auth/auth.service';
+import {
+  BoqLines,
+  BoqPickLine,
+  CheckInLine,
+  DailyLog,
+  DailyLogApi,
+  DayLabourLine,
+  QuantityLine,
+} from '../../core/daily-log/daily-log.api';
 import { MATERIAL_UNIT_KEYS, materialUnitLabel } from '../../core/daily-log/material-units';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { HeaderActionsService } from '../../core/layout/header-actions.service';
@@ -46,6 +58,9 @@ type EntryKind = 'note' | 'quantity' | 'material' | 'photo' | 'stoppage';
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 /** How long to wait for a fix before telling the engineer location is not available (AC-613-D). */
 const LOCATION_TIMEOUT_MS = 15_000;
+
+/** The first control of the open form: the field, the picker button or the photo button, never the hidden file input. */
+const FORM_FIELD = '.form textarea, .form input:not([hidden]), .form select, .form button';
 
 const KIND_OPTIONS: readonly KindOption<EntryKind>[] = [
   { value: 'note', labelKey: 'daily_log.kind.note', icon: 'note' },
@@ -125,6 +140,9 @@ export class DailyLogPage {
   readonly projectId = input.required<string>();
 
   private readonly api = inject(DailyLogApi);
+  private readonly auth = inject(AuthService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
   private readonly headerActions = inject(HeaderActionsService);
 
   protected readonly i18n = inject(I18nService);
@@ -156,6 +174,22 @@ export class DailyLogPage {
   protected readonly isToday = computed(() => this.dayIndex() === 0);
   protected readonly today = signal(new Date());
 
+  /** The shown day, `yyyy-MM-dd`: carried in the crew link so the crew screen opens on the same day. */
+  protected readonly shownDate = computed(() => localDate(dayDate(this.today(), this.dayIndex())));
+
+  /** `DailyLogReview`: the supervising engineer reads every engineer's log, as the crew screen does. */
+  private readonly canReview = computed(
+    () =>
+      this.auth.current()?.projects.find((entry) => entry.projectId === this.projectId())?.permissions.includes('DailyLogReview') ??
+      false,
+  );
+  /**
+   * The crew of the shown day as the crew screen lists it. A reviewer's crew screen holds every engineer's lines, so
+   * his link row counts those; the others read their own log, the same read the crew screen makes (`null`: not read).
+   */
+  private readonly reviewedCrew = signal<readonly DayLabourLine[] | null>(null);
+  private crewToken = 0;
+
   protected readonly dayWordNow = computed(() => dayWord(this.i18n, this.today(), this.dayIndex()));
 
   protected readonly shownLog = computed<DailyLog | null>(() => (this.isToday() ? this.todayLog() : this.pastLog()));
@@ -180,7 +214,7 @@ export class DailyLogPage {
   );
 
   protected readonly crewSummary = computed(() => {
-    const crew = this.shownLog()?.dayLabour ?? [];
+    const crew = (this.canReview() ? this.reviewedCrew() : null) ?? this.shownLog()?.dayLabour ?? [];
     if (crew.length === 0) {
       return this.i18n.t('daily_log.crew.none');
     }
@@ -228,22 +262,49 @@ export class DailyLogPage {
   protected readonly locating = signal<'CheckIn' | 'CheckOut' | null>(null);
   protected readonly locationRefused = signal(false);
 
-  /** The primary is disabled until the form is complete (README "Primary حفظ"). */
-  protected readonly valid = computed(() => {
+  /** True once «حفظ» was pressed with a gap: the missing fields are marked until the kind or the day changes. */
+  protected readonly attempted = signal(false);
+
+  /**
+   * The fields the chosen kind still lacks, in form order (D-229 item 3). Each is the id of the control, so the
+   * press can focus the first one.
+   */
+  protected readonly missing = computed<readonly string[]>(() => {
     const draft = this.model();
     switch (this.kind()) {
       case 'note':
-        return draft.note.trim().length > 0;
+        return draft.note.trim().length > 0 ? [] : ['daily-log-note'];
       case 'stoppage':
-        return draft.stoppage.trim().length > 0;
+        return draft.stoppage.trim().length > 0 ? [] : ['daily-log-stoppage'];
       case 'quantity':
-        return (this.editing() !== null || this.selectedLine() !== null) && positive(draft.quantity) !== null;
+        if (this.editing() === null && this.selectedLine() === null) {
+          return ['daily-log-line'];
+        }
+        return positive(draft.quantity) !== null ? [] : ['daily-log-quantity'];
       case 'photo':
-        return this.photoFile() !== null;
+        return this.photoFile() !== null ? [] : ['daily-log-photo-take'];
       case 'material':
-        return draft.materialName.trim().length > 0 && positive(draft.materialQuantity) !== null && this.materialUnit() !== '';
+        return [
+          draft.materialName.trim().length > 0 ? null : 'daily-log-material-name',
+          positive(draft.materialQuantity) !== null ? null : 'daily-log-material-quantity',
+          this.materialUnit() !== '' ? null : 'daily-log-material-unit',
+        ].filter((id): id is string => id !== null);
     }
   });
+  protected readonly valid = computed(() => this.missing().length === 0);
+
+  /** «حفظ» is disabled only for a gap the screen cannot fix: a quantity with no BOQ line to pick. */
+  protected readonly saveBlocked = computed(
+    () =>
+      this.kind() === 'quantity' &&
+      this.editing() === null &&
+      (this.boqFailure() !== null || this.boq() === null || this.boq()!.lines.length === 0),
+  );
+
+  /** The message key of a field the press found empty, else `null`. */
+  protected gap(id: string): string | null {
+    return this.attempted() && this.missing().includes(id) ? 'daily_log.field.required' : null;
+  }
 
   /** What the one primary says and does. `null`: no primary (loading, failed, closed). */
   protected readonly primary = computed<{ labelKey: string; act: 'check-in' | 'save' } | null>(() => {
@@ -270,6 +331,7 @@ export class DailyLogPage {
       untracked(() => {
         this.cancelEdit();
         this.saved.set(false);
+        this.attempted.set(false);
         this.errorKey.set(null);
         if (index > 0) {
           void this.loadPast(id, index);
@@ -278,6 +340,14 @@ export class DailyLogPage {
     });
 
     effect(() => this.headerActions.set(this.primary() !== null ? (this.primaryTemplate() ?? null) : null, 'primary'));
+
+    // A reviewer's crew row counts what his crew screen lists: every engineer's lines of the shown day.
+    effect(() => {
+      const id = this.projectId();
+      const date = this.shownDate();
+      const reviewer = this.canReview();
+      untracked(() => void this.loadReviewedCrew(id, date, reviewer));
+    });
 
     // Thumbnails of the shown day's photos: one authenticated fetch per entry, kept as an object URL.
     effect(() => {
@@ -378,6 +448,7 @@ export class DailyLogPage {
   /** "تعديل": loads the saved row into the form. The kind row goes while editing. */
   protected startEdit(line: QuantityLine): void {
     this.saved.set(false);
+    this.attempted.set(false);
     this.errorKey.set(null);
     this.kind.set('quantity');
     this.selectedLineId.set(line.boqLineId);
@@ -396,7 +467,19 @@ export class DailyLogPage {
   protected setKind(kind: EntryKind): void {
     this.kind.set(kind);
     this.saved.set(false);
+    this.attempted.set(false);
     this.errorKey.set(null);
+    // The form of the chosen kind opens below the kind row, often under the bottom bar: bring it into view.
+    afterNextRender(() => this.reveal(this.host.nativeElement.querySelector<HTMLElement>(FORM_FIELD)), { injector: this.injector });
+  }
+
+  /** Focuses a control and scrolls it to the middle of the screen, clear of the bottom bar. */
+  private reveal(control: HTMLElement | null): void {
+    if (control === null) {
+      return;
+    }
+    control.focus({ preventScroll: true });
+    control.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
   }
 
   /** The native picker returned a file. A new file is a new photo: the earlier upload no longer applies. */
@@ -446,7 +529,15 @@ export class DailyLogPage {
   }
 
   protected async onSave(): Promise<void> {
-    if (!this.valid() || this.busy()) {
+    if (this.busy()) {
+      return;
+    }
+    if (!this.valid()) {
+      // D-229 item 3: a gap the user can fix is marked and focused, the button is not greyed.
+      this.attempted.set(true);
+      afterNextRender(() => this.reveal(this.host.nativeElement.querySelector<HTMLElement>(`#${this.missing()[0]}`)), {
+        injector: this.injector,
+      });
       return;
     }
     this.errorKey.set(null);
@@ -553,6 +644,22 @@ export class DailyLogPage {
       this.pastLog.set(await this.api.getMine(projectId, localDate(dayDate(this.today(), index))));
     } catch (error) {
       this.errorKey.set(toProblem(error).messageKey);
+    }
+  }
+
+  private async loadReviewedCrew(projectId: string, date: string, reviewer: boolean): Promise<void> {
+    const token = ++this.crewToken;
+    this.reviewedCrew.set(null);
+    if (!reviewer) {
+      return;
+    }
+    try {
+      const all = await this.api.listDayLogs(projectId, date);
+      if (token === this.crewToken) {
+        this.reviewedCrew.set(all.flatMap((entry) => entry.log.dayLabour));
+      }
+    } catch {
+      // The row falls back to the caller's own log; the crew screen shows its own failure.
     }
   }
 

@@ -67,14 +67,6 @@
   white-space: nowrap;
 }
 
-/* `unicode-bidi: isolate` is what <bdi> means; stated so a later reset cannot quietly remove it. */
-.row-code {
-  unicode-bidi: isolate;
-  justify-self: start;
-  font-size: var(--text-xs);
-  color: var(--color-muted);
-}
-
 .row-client,
 .row-status {
   min-inline-size: 0;

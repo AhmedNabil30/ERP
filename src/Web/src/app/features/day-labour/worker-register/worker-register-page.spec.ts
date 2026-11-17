@@ -203,6 +203,25 @@ describe('WorkerRegisterPage · duplicate-phone resend (S-026, D-141)', () => {
   });
 });
 
+describe('WorkerRegisterPage · Enter in a field submits (consultant review, KAFF-936 follow-up)', () => {
+  it('the form carries its own submit button, which runs the one save path; with the shell button outside the form it is what Enter presses', async () => {
+    const api = new FakeDayLabourApi([]);
+    const fixture = await createPage(api);
+    setPhoneAndBlur(fixture, '01000000003');
+    fillRequired(fixture);
+    fixture.detectChanges();
+
+    const implicit: HTMLButtonElement | null = fixture.nativeElement.querySelector('form button[type="submit"]');
+    expect(implicit).not.toBeNull();
+    expect(implicit!.hidden).toBe(true);
+
+    implicit!.click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(api.registerCalls).toHaveLength(1);
+  });
+});
+
 describe('WorkerRegisterPage · the primary action goes through the shell slot (KAFF-936 AC-936-J)', () => {
   it('declares its save through the slot: no footer and no primary button on the page itself', async () => {
     const fixture = await createPage(new FakeDayLabourApi([]));

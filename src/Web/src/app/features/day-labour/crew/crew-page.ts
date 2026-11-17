@@ -2,7 +2,10 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
+  Injector,
   TemplateRef,
+  afterNextRender,
   computed,
   effect,
   inject,
@@ -64,6 +67,8 @@ interface Row {
   readonly bad: boolean;
   readonly changed: boolean;
   readonly failKey: string | null;
+  /** «حفظ» was pressed with no hours anywhere: this row, the first, is the gap. */
+  readonly required: boolean;
 }
 
 /** The hours a text field says, cleaned the way the mock cleans it. `bad` is above the cap. */
@@ -111,7 +116,15 @@ export function parseHours(text: string): { value: number; bad: boolean } {
 export class CrewPage {
   /** Bound from the route: `/projects/:projectId/day-labour`. */
   readonly projectId = input.required<string>();
+  /**
+   * `?date=yyyy-MM-dd`: the day the viewer was looking at on the daily log. A day inside the four-day window opens on
+   * its chip. An older day opens only for a reviewer (the owner, the supervising engineer), through the other-day
+   * control. For anyone else, and for a malformed or future date, the screen opens on today.
+   */
+  readonly date = input<string | undefined>(undefined);
 
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
   private readonly logs = inject(DailyLogApi);
   private readonly labour = inject(DayLabourApi);
   private readonly auth = inject(AuthService);
@@ -124,8 +137,13 @@ export class CrewPage {
 
   protected readonly today = signal(new Date());
   protected readonly dayValue = signal<DayValue>('0');
+  /** A reviewer's «يوم آخر»: any earlier day, `yyyy-MM-dd`. `null` while one of the four chips is chosen. */
+  protected readonly otherDate = signal<string | null>(null);
   private readonly dayIndex = computed(() => Number(this.dayValue()));
-  protected readonly isToday = computed(() => this.dayIndex() === 0);
+  /** The day shown, `yyyy-MM-dd`. */
+  private readonly shownDate = computed(() => this.otherDate() ?? this.dateOf(this.dayIndex()));
+  protected readonly maxDate = computed(() => this.dateOf(0));
+  protected readonly isToday = computed(() => this.shownDate() === this.dateOf(0));
 
   protected readonly loading = signal(true);
   protected readonly failure = signal<string | null>(null);
@@ -146,6 +164,10 @@ export class CrewPage {
   private readonly sentIds = new Map<string, string>();
   protected readonly editing = signal(false);
   protected readonly busy = signal(false);
+  /** True only after a save made in this visit: arriving on a saved day is a state, not an event. */
+  private readonly savedNow = signal(false);
+  /** «حفظ» was pressed with nothing to save: the gap is marked until the user types or the day changes. */
+  private readonly attempted = signal(false);
 
   protected readonly sheetOpen = signal(false);
   protected readonly sheetSearch = signal('');
@@ -158,14 +180,14 @@ export class CrewPage {
     () => this.session()?.projects.find((entry) => entry.projectId === this.projectId())?.permissions ?? [],
   );
   /** `DailyLogReview`: the owner and the supervising site engineer. It is also how the screen reads other engineers' logs. */
-  private readonly canReview = computed(() => this.permissions().includes('DailyLogReview'));
+  protected readonly canReview = computed(() => this.permissions().includes('DailyLogReview'));
   protected readonly canRecord = computed(() => this.permissions().includes('DailyLogWrite'));
 
   private dateOf(index: number): string {
     return localDate(dayDate(this.today(), index));
   }
 
-  private readonly shownLines = computed<readonly CrewLine[]>(() => this.days()[this.dateOf(this.dayIndex())] ?? []);
+  private readonly shownLines = computed<readonly CrewLine[]>(() => this.days()[this.shownDate()] ?? []);
   private readonly yesterdayLines = computed<readonly CrewLine[]>(() => this.days()[this.dateOf(1)] ?? []);
 
   /** The server's verdict for the line (D-217 item 3, D-218 item 16 are decided there). */
@@ -188,7 +210,7 @@ export class CrewPage {
   /** The stepper state: nothing saved yet, a press of the edit action, or the supervising engineer on an earlier day. */
   protected readonly editMode = computed(() => (!this.hasSaved() ? this.canRecord() : this.editing() || this.autoEdit()));
 
-  protected readonly rows = computed<readonly Row[]>(() => {
+  private readonly baseRows = computed<readonly Row[]>(() => {
     const lines = this.shownLines();
     const draft = this.draft();
     const failed = this.failed();
@@ -213,9 +235,27 @@ export class CrewPage {
           bad,
           changed: touched !== undefined && !bad && value > 0 && value !== total,
           failKey: failed[id] ?? null,
+          required: false,
         };
       });
   });
+
+  /** After a press with no hours anywhere, the first row that takes hours is marked (D-229 item 3). */
+  protected readonly rows = computed<readonly Row[]>(() => {
+    const base = this.baseRows();
+    const anyHours = base.some((row) => !(row.editable && row.bad) && (row.editable ? row.value : row.saved) > 0);
+    if (!this.attempted() || anyHours) {
+      return base;
+    }
+    const first = base.findIndex((row) => row.editable);
+    return base.map((row, index) => (index === first ? { ...row, required: true } : row));
+  });
+
+  /**
+   * What the list shows. The editing state lists the whole crew, because each man takes a stepper. A read state lists
+   * only the men with hours on the day, so the rows and the summary above them are the same men (consultant review 7).
+   */
+  protected readonly visibleRows = computed(() => (this.editMode() ? this.rows() : this.rows().filter((row) => row.saved > 0)));
 
   private readonly anyBad = computed(() => this.rows().some((row) => row.editable && row.bad));
   /** AC-9: a refused value is not counted, in the men or in the hours. */
@@ -229,7 +269,7 @@ export class CrewPage {
 
   /** The edit action: a saved day the viewer may edit and is not editing yet. */
   protected readonly canStartEdit = computed(() => this.hasSaved() && !this.editMode() && this.anyEditable());
-  protected readonly justSaved = computed(() => this.hasSaved() && !this.editMode() && this.isToday());
+  protected readonly justSaved = computed(() => this.savedNow() && this.hasSaved() && !this.editMode());
   protected readonly showSame = computed(
     () => this.isToday() && this.editMode() && this.canRecord() && this.menCount() === 0 && this.yesterdayLines().length > 0,
   );
@@ -269,14 +309,22 @@ export class CrewPage {
     });
 
     effect(() => {
-      const index = this.dayIndex();
+      const date = this.shownDate();
       const id = this.projectId();
       untracked(() => {
         this.resetDraft();
+        this.savedNow.set(false);
         if (!this.loading()) {
-          void this.loadDay(id, index);
+          void this.loadDay(id, date);
         }
       });
+    });
+
+    // The day carried in the URL. Read when the input or the viewer's rights change, never from the constructor.
+    effect(() => {
+      const wanted = this.date();
+      const reviewer = this.canReview();
+      untracked(() => this.applyDate(wanted, reviewer));
     });
 
     effect(() => this.headerActions.set(this.primary() !== null ? (this.primaryTemplate() ?? null) : null, 'primary'));
@@ -289,6 +337,7 @@ export class CrewPage {
         void this.onSave();
         break;
       case 'edit':
+        this.savedNow.set(false);
         this.editing.set(true);
         break;
       case 'add':
@@ -308,6 +357,20 @@ export class CrewPage {
     const floor = row.saved > 0 ? STEP : 0;
     const next = Math.min(MAX_HOURS, Math.max(floor, current + direction * STEP));
     this.setText(row.id, next === 0 ? '' : String(next));
+  }
+
+  /** Opens on the day the URL names, as far as the viewer may see it (see `date`). */
+  private applyDate(wanted: string | undefined, reviewer: boolean): void {
+    if (wanted === undefined || !/^\d{4}-\d{2}-\d{2}$/.test(wanted)) {
+      return;
+    }
+    const index = [0, 1, 2, 3].find((i) => this.dateOf(i) === wanted);
+    if (index !== undefined) {
+      this.otherDate.set(null);
+      this.dayValue.set(String(index) as DayValue);
+    } else if (reviewer && wanted < this.dateOf(0)) {
+      this.otherDate.set(wanted);
+    }
   }
 
   protected onTyped(row: Row, text: string): void {
@@ -340,6 +403,7 @@ export class CrewPage {
   }
 
   private setText(id: string, text: string): void {
+    this.attempted.set(false);
     this.draft.update((current) => ({ ...current, [id]: text }));
     this.failed.update(({ [id]: _dropped, ...rest }) => rest);
   }
@@ -347,6 +411,7 @@ export class CrewPage {
   private resetDraft(): void {
     this.draft.set({});
     this.failed.set({});
+    this.attempted.set(false);
     this.errorKey.set(null);
     this.editing.set(false);
   }
@@ -354,13 +419,26 @@ export class CrewPage {
   // --- save -------------------------------------------------------------------------------------------------------
 
   protected async onSave(): Promise<void> {
+    if (this.busy()) {
+      return;
+    }
     if (!this.canSave()) {
+      // D-229 item 3: nothing to save is a gap the user can fix here. The button is not greyed: this marks the row
+      // that needs hours (the first bad one, else the first one) and focuses it.
+      this.attempted.set(true);
+      const target = this.visibleRows().findIndex((row) => row.editable && row.bad);
+      const index = target >= 0 ? target : this.visibleRows().findIndex((row) => row.editable);
+      afterNextRender(
+        () => this.host.nativeElement.querySelector<HTMLElement>(`[data-testid="crew-hours-${index}-input"]`)?.focus(),
+        { injector: this.injector },
+      );
       return;
     }
     this.busy.set(true);
     this.errorKey.set(null);
+    this.savedNow.set(false);
     const projectId = this.projectId();
-    const date = this.dateOf(this.dayIndex());
+    const date = this.shownDate();
     const occurredAt = localIso(new Date(), this.isToday() ? null : date);
     const lines = this.shownLines();
     let refused = 0;
@@ -387,10 +465,11 @@ export class CrewPage {
     }
 
     try {
-      await this.loadDay(projectId, this.dayIndex());
+      await this.loadDay(projectId, date);
       if (refused === 0) {
         this.draft.set({});
         this.editing.set(false);
+        this.savedNow.set(true);
       }
     } finally {
       this.busy.set(false);
@@ -462,8 +541,8 @@ export class CrewPage {
     try {
       const [crew] = await Promise.all([
         this.readCrew(projectId),
-        this.loadDay(projectId, 0, true),
-        this.loadDay(projectId, 1, true),
+        this.loadDay(projectId, this.dateOf(0), true),
+        this.loadDay(projectId, this.dateOf(1), true),
       ]);
       this.trades.set(new Map(crew.map((man) => [man.workerId, man.trade])));
       this.known.update((current) => {
@@ -476,8 +555,8 @@ export class CrewPage {
     } finally {
       this.loading.set(false);
     }
-    if (this.failure() === null && this.dayIndex() > 1) {
-      await this.loadDay(projectId, this.dayIndex());
+    if (this.failure() === null && !(this.shownDate() in this.days())) {
+      await this.loadDay(projectId, this.shownDate());
     }
   }
 
@@ -494,8 +573,7 @@ export class CrewPage {
   }
 
   /** Reads one day. A reviewer reads every engineer's log; the others read their own. */
-  private async loadDay(projectId: string, index: number, throwOnFailure = false): Promise<void> {
-    const date = this.dateOf(index);
+  private async loadDay(projectId: string, date: string, throwOnFailure = false): Promise<void> {
     try {
       let lines: CrewLine[];
       if (this.canReview()) {

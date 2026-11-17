@@ -29,6 +29,10 @@
   </header>
 
   <form class="fields" (submit)="$event.preventDefault(); onSubmit()">
+    <!-- The save button lives in the shell slot, outside this form, so Enter in a field needs a submit button here
+         to submit (implicit submission). It is never shown; the visible one calls the same `onSubmit`. -->
+    <button type="submit" hidden tabindex="-1" aria-hidden="true" data-testid="worker-implicit-submit"></button>
+
     <kaff-field labelKey="hr.worker.field.name" controlId="worker-name-input" [required]="true">
       <input
         id="worker-name-input"

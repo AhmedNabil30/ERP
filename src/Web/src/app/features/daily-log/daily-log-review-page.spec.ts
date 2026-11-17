@@ -246,6 +246,24 @@ describe('DailyLogReviewPage', () => {
     expect([...root.querySelectorAll('button')].some((b) => /edit/.test(b.getAttribute('data-testid') ?? ''))).toBe(false);
   });
 
+  it('opens the crew screen on the day shown, including a day chosen with «يوم آخر» (consultant review 5)', async () => {
+    const fixture = await createPage(new FakeDailyLogApi([]));
+    const root: HTMLElement = fixture.nativeElement;
+    const href = (): string => el(root, 'daily-log-crew')!.getAttribute('href')!;
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    expect(href()).toContain(`date=${today}`);
+
+    const input = el(root, 'daily-log-day-other') as HTMLInputElement;
+    input.value = '2026-10-02';
+    input.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    await flush(fixture);
+
+    expect(href()).toContain('date=2026-10-02');
+  });
+
   it('reads the date the owner chose through the other-day control', async () => {
     const api = new FakeDailyLogApi([]);
     const fixture = await createPage(api);

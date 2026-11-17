@@ -192,6 +192,10 @@ section > kaff-banner {
   font: 700 1rem/1 var(--display);
 }
 
+.shot[aria-invalid='true'] {
+  border-color: var(--err-bar);
+}
+
 .shot:hover {
   background: var(--hover);
 }

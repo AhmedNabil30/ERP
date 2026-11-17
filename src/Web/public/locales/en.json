@@ -1857,6 +1857,7 @@
   "daily_log.action.save_edit": "Save the edit",
   "daily_log.logged": "Logged {day}",
   "daily_log.saved": "Saved",
+  "daily_log.field.required": "Required",
   "daily_log.group.stoppage": "Stoppage reason",
   "daily_log.group.notes": "Notes",
   "daily_log.back_dated": "Back-dated",

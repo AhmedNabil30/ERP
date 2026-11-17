@@ -76,7 +76,7 @@ export class ProjectListPage {
    */
   protected readonly seesMoney = computed(() => this.auth.current()?.role !== 'SiteEngineer');
 
-  /** `ux/components.md:259` — identity first: name leads, code demotes inside the same cell. */
+  /** `ux/components.md:259` — identity first: the name leads (the project code is not shown). */
   protected readonly rowColumns = computed(
     () =>
       `minmax(12rem, 1fr)${this.canReadClients() ? ' minmax(8rem, 0.6fr)' : ''} 8rem 8rem${this.seesMoney() ? ' 9rem' : ''}`,

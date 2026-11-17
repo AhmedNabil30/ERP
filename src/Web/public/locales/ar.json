@@ -1857,6 +1857,7 @@
   "daily_log.action.save_edit": "حفظ التعديل",
   "daily_log.logged": "المسجَّل {day}",
   "daily_log.saved": "تم الحفظ",
+  "daily_log.field.required": "مطلوب",
   "daily_log.group.stoppage": "سبب التوقف",
   "daily_log.group.notes": "الملاحظات",
   "daily_log.back_dated": "بأثر رجعي",

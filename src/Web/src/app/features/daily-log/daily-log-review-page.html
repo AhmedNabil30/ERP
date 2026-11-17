@@ -26,6 +26,7 @@
         <kaff-link-row
           icon="crew"
           [link]="['/projects', projectId(), 'day-labour']"
+          [queryParams]="{ date: date() }"
           [name]="i18n.t('daily_log.crew')"
           [summary]="crewSummary()"
           testId="daily-log-crew"

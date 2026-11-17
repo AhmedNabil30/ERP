@@ -470,7 +470,7 @@ describe('DailyLogPage', () => {
       expect(api.quantities[0].entryId).toMatch(/^[0-9a-f-]{36}$/);
     });
 
-    it('keeps the save primary off until a line and a positive figure are there', async () => {
+    it('never greys the save for a gap the user can fix: a press marks the missing line, then the missing figure', async () => {
       const api = new FakeDailyLogApi(log());
       const fixture = await createPage(api);
       const root: HTMLElement = fixture.nativeElement;
@@ -478,17 +478,41 @@ describe('DailyLogPage', () => {
       click(root, 'daily-log-kind-quantity');
       fixture.detectChanges();
 
-      expect(primary(fixture)!.disabled).toBe(true);
+      expect(primary(fixture)!.disabled).toBe(false);
+      expect(el(root, 'daily-log-line-error')).toBeNull();
+      await pressPrimary(fixture);
+      expect(api.quantities).toHaveLength(0);
+      expect(el(root, 'daily-log-line-error')).not.toBeNull();
+      expect(document.activeElement).toBe(el(root, 'daily-log-line'));
+
       click(root, 'daily-log-line');
       fixture.detectChanges();
       click(root, 'daily-log-pick-button-0');
       fixture.detectChanges();
       type(root, 'daily-log-quantity', '0');
       fixture.detectChanges();
-      expect(primary(fixture)!.disabled).toBe(true);
+      await pressPrimary(fixture);
+      expect(api.quantities).toHaveLength(0);
+      expect(el(root, 'daily-log-quantity-error')).not.toBeNull();
+      expect(el(root, 'daily-log-quantity')?.getAttribute('aria-invalid')).toBe('true');
+      expect(document.activeElement).toBe(el(root, 'daily-log-quantity'));
+
       type(root, 'daily-log-quantity', '2.5');
       fixture.detectChanges();
-      expect(primary(fixture)!.disabled).toBe(false);
+      expect(el(root, 'daily-log-quantity-error')).toBeNull();
+      await pressPrimary(fixture);
+      expect(api.quantities).toHaveLength(1);
+    });
+
+    it('is the one case where the save is greyed: no BOQ line exists to pick, which the screen cannot fix', async () => {
+      const api = new FakeDailyLogApi(log());
+      api.boqResult = null;
+      const fixture = await createPage(api);
+
+      click(fixture.nativeElement, 'daily-log-kind-quantity');
+      fixture.detectChanges();
+
+      expect(primary(fixture)!.disabled).toBe(true);
     });
 
     it('shows the measured and the executed figures of the picked line, the executed one with an approximate sign', async () => {
@@ -504,6 +528,48 @@ describe('DailyLogPage', () => {
 
       expect(el(root, 'daily-log-quantity-states')?.textContent).toContain('120');
       expect(el(root, 'daily-log-quantity-states')?.textContent).toContain('≈ 38.5');
+    });
+  });
+
+  describe('the form of a chosen kind is brought into view (consultant review 9)', () => {
+    it('focuses the first field and scrolls it to the middle of the screen, clear of the bottom bar', async () => {
+      const scrolled: HTMLElement[] = [];
+      const original = HTMLElement.prototype.scrollIntoView;
+      HTMLElement.prototype.scrollIntoView = function (this: HTMLElement) {
+        scrolled.push(this);
+      };
+      try {
+        const fixture = await createPage(new FakeDailyLogApi(log()));
+        const root: HTMLElement = fixture.nativeElement;
+
+        click(root, 'daily-log-kind-stoppage');
+        fixture.detectChanges();
+        await flush(fixture);
+
+        expect(document.activeElement).toBe(el(root, 'daily-log-stoppage'));
+        expect(scrolled).toContain(el(root, 'daily-log-stoppage'));
+
+        click(root, 'daily-log-kind-material');
+        fixture.detectChanges();
+        await flush(fixture);
+
+        expect(document.activeElement).toBe(el(root, 'daily-log-material-name'));
+        expect(scrolled).toContain(el(root, 'daily-log-material-name'));
+      } finally {
+        HTMLElement.prototype.scrollIntoView = original;
+      }
+    });
+  });
+
+  describe('the crew link carries the shown day (consultant review 5)', () => {
+    it('names today, then the chosen earlier day, in the URL', async () => {
+      const fixture = await createPage(new FakeDailyLogApi(log()));
+      const root: HTMLElement = fixture.nativeElement;
+      const href = (): string => el(root, 'daily-log-crew')!.getAttribute('href')!;
+
+      expect(href()).toContain(`date=${dateOf(0)}`);
+      await chooseDay(fixture, 2);
+      expect(href()).toContain(`date=${dateOf(2)}`);
     });
   });
 
@@ -706,14 +772,17 @@ describe('DailyLogPage', () => {
       return fixture;
     }
 
-    it('offers the picker, the caption and a primary that stays off until a photo is picked', async () => {
+    it('offers the picker, the caption and a save that marks the missing photo until one is picked', async () => {
       const fixture = await openPhoto(new FakeDailyLogApi(log()));
       const root: HTMLElement = fixture.nativeElement;
 
       expect(el(root, 'daily-log-photo-input')?.getAttribute('accept')).toBe('image/*');
       expect(el(root, 'daily-log-photo-input')?.getAttribute('capture')).toBe('environment');
       expect(el(root, 'daily-log-caption')).not.toBeNull();
-      expect(primary(fixture)?.disabled).toBe(true);
+      expect(primary(fixture)?.disabled).toBe(false);
+      await pressPrimary(fixture);
+      expect(el(root, 'daily-log-photo-take')?.getAttribute('aria-invalid')).toBe('true');
+      expect(document.activeElement).toBe(el(root, 'daily-log-photo-take'));
 
       pick(root, jpg());
       fixture.detectChanges();
@@ -778,7 +847,7 @@ describe('DailyLogPage', () => {
       fixture.detectChanges();
 
       expect(el(root, 'daily-log-photo-take')).not.toBeNull();
-      expect(primary(fixture)?.disabled).toBe(true);
+      expect(el(root, 'daily-log-photo-picked')).toBeNull();
     });
 
     it('is recorded on a stopped project too', async () => {

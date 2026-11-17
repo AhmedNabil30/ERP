@@ -54,12 +54,9 @@
                 [attr.data-testid]="'project-row-link-' + project.code"
               ></a>
 
-              <!-- ux/components.md:259 — identity first. The name leads; the code is a ledger
-                   reference (D-049) and demotes to muted secondary text in the same cell. <bdi> on the
-                   code: a Latin run inside an Arabic line reorders without isolation. -->
+              <!-- The name alone (Nabil's no-codes rule): the project code is a stored value, not a displayed one. -->
               <span class="row-identity">
                 <span class="row-name" dir="auto">{{ project.name }}</span>
-                <bdi class="row-code" dir="ltr" translate="no">{{ project.code }}</bdi>
               </span>
 
               @if (canReadClients()) {

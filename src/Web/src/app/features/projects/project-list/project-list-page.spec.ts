@@ -205,7 +205,7 @@ describe('ProjectListPage · columns', () => {
     TestBed.resetTestingModule();
   });
 
-  it('renders the name, the code, the contract type and the contract value', async () => {
+  it('renders the name, the contract type and the contract value, and never the project code', async () => {
     const fixture = await createFixture(
       new FakeProjectsApi([LUMP_SUM]),
       session(['ProjectList'], [entry('p-1', ['DayLabourSiteManage'])]),
@@ -213,7 +213,7 @@ describe('ProjectListPage · columns', () => {
 
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('فيلا الشيخ زايد');
-    expect(text).toContain('KF-P-0001');
+    expect(text).not.toContain('KF-P-0001');
     expect(text).toContain('مقاولة بالمقطوعية');
     expect(text).toContain('4500000.0000');
   });
@@ -225,7 +225,7 @@ describe('ProjectListPage · columns', () => {
     );
 
     const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('KF-P-0001');
+    expect(text).not.toContain('KF-P-0001');
     expect(text).not.toContain('4500000.0000');
     expect(fixture.nativeElement.querySelector('[data-testid="project-value-KF-P-0001"]')).toBeNull();
   });

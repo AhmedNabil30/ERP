@@ -5,7 +5,6 @@
       variant="primary"
       [testId]="'crew-' + action.act"
       [busy]="action.act === 'save' && busy()"
-      [disabled]="action.act === 'save' && !canSave()"
       (clicked)="onPrimary()"
     >
       {{ i18n.t(action.labelKey) }}
@@ -26,7 +25,7 @@
       <div class="stack">
         <h2 class="title">{{ i18n.t('daily_log.crew') }}</h2>
 
-        <kaff-day-switch [(value)]="dayValue" [today]="today()" testIdPrefix="crew-day" dateTestId="crew-date">
+        <kaff-day-switch [(value)]="dayValue" [today]="today()" [allowOther]="canReview()" [(otherDate)]="otherDate" [maxDate]="maxDate()" testIdPrefix="crew-day" dateTestId="crew-date">
           @if (backDated()) {
             <kaff-status-pill tone="same" icon="clock" testId="crew-back-dated">{{ i18n.t('daily_log.back_dated') }}</kaff-status-pill>
           }
@@ -65,59 +64,65 @@
             </div>
           }
 
-          <div class="list" data-testid="crew-list">
-            <div class="list-head"><span>{{ i18n.t('crew.hours') }}</span></div>
-            @for (row of rows(); track row.id) {
-              <div class="man" [class.on]="row.value > 0 && !row.bad" [class.bad]="row.bad || row.failKey !== null" [attr.data-testid]="'crew-row-' + $index">
-                <div class="id">
-                  <b dir="auto">{{ row.name }}</b>
-                  @if (row.trade) {
-                    <span dir="auto">{{ row.trade }}</span>
-                  }
-                </div>
-                @if (row.editable) {
-                  <kaff-hours-stepper
-                    [testId]="'crew-hours-' + $index"
-                    [text]="row.text"
-                    [invalid]="row.bad || row.failKey !== null"
-                    [minusDisabled]="minusDisabled(row)"
-                    [plusDisabled]="plusDisabled(row)"
-                    [minusLabel]="i18n.t('crew.hours.minus', { name: row.name })"
-                    [plusLabel]="i18n.t('crew.hours.plus', { name: row.name })"
-                    [inputLabel]="i18n.t('crew.hours.input', { name: row.name })"
-                    (stepped)="onStep(row, $event)"
-                    (typed)="onTyped(row, $event)"
-                    (committed)="onCommitted(row)"
-                  />
-                } @else {
-                  <div class="sv" [attr.data-testid]="'crew-saved-' + $index">
-                    @if (row.saved > 0) {
-                      <kaff-icon name="check" /><bdi dir="ltr">{{ number(row.saved) }}</bdi>
-                    } @else {
-                      <span class="none">—</span>
+          @if (visibleRows().length > 0 || editMode()) {
+            <div class="list" data-testid="crew-list">
+              <div class="list-head"><span>{{ i18n.t('crew.hours') }}</span></div>
+              @for (row of visibleRows(); track row.id) {
+                <div class="man" [class.on]="row.value > 0 && !row.bad" [class.bad]="row.bad || row.required || row.failKey !== null" [attr.data-testid]="'crew-row-' + $index">
+                  <div class="id">
+                    <b dir="auto">{{ row.name }}</b>
+                    @if (row.trade) {
+                      <span dir="auto">{{ row.trade }}</span>
                     }
                   </div>
-                }
-                @if (row.bad) {
-                  <div class="msg" role="alert" [attr.data-testid]="'crew-refused-' + $index">
-                    <kaff-icon name="error" />{{ i18n.t('crew.max_hours', { max: maxHours }) }}
-                  </div>
-                } @else if (row.failKey; as key) {
-                  <div class="msg" role="alert" [attr.data-testid]="'crew-failed-' + $index">
-                    <kaff-icon name="error" /><span><b>{{ i18n.t('crew.row_failed') }}</b> {{ i18n.t(key) }}</span>
-                    <kaff-button variant="secondary" [testId]="'crew-retry-row-' + $index" (clicked)="onSave()">{{ i18n.t('daily_log.action.retry') }}</kaff-button>
-                  </div>
-                }
-              </div>
-            }
-            @if (editMode() && canRecord()) {
-              <div class="add-row">
-                <kaff-button variant="secondary" testId="crew-add" (clicked)="openSheet()">
-                  <kaff-icon name="plus" />{{ i18n.t('crew.add') }}
-                </kaff-button>
-              </div>
-            }
-          </div>
+                  @if (row.editable) {
+                    <kaff-hours-stepper
+                      [testId]="'crew-hours-' + $index"
+                      [text]="row.text"
+                      [invalid]="row.bad || row.required || row.failKey !== null"
+                      [minusDisabled]="minusDisabled(row)"
+                      [plusDisabled]="plusDisabled(row)"
+                      [minusLabel]="i18n.t('crew.hours.minus', { name: row.name })"
+                      [plusLabel]="i18n.t('crew.hours.plus', { name: row.name })"
+                      [inputLabel]="i18n.t('crew.hours.input', { name: row.name })"
+                      (stepped)="onStep(row, $event)"
+                      (typed)="onTyped(row, $event)"
+                      (committed)="onCommitted(row)"
+                    />
+                  } @else {
+                    <div class="sv" [attr.data-testid]="'crew-saved-' + $index">
+                      @if (row.saved > 0) {
+                        <kaff-icon name="check" /><bdi dir="ltr">{{ number(row.saved) }}</bdi>
+                      } @else {
+                        <span class="none">—</span>
+                      }
+                    </div>
+                  }
+                  @if (row.bad) {
+                    <div class="msg" role="alert" [attr.data-testid]="'crew-refused-' + $index">
+                      <kaff-icon name="error" />{{ i18n.t('crew.max_hours', { max: maxHours }) }}
+                    </div>
+                  } @else if (row.required) {
+                    <div class="msg" role="alert" [attr.data-testid]="'crew-required-' + $index">
+                      <kaff-icon name="error" />{{ i18n.t('daily_log.field.required') }}
+                    </div>
+                  } @else if (row.failKey; as key) {
+                    <div class="msg" role="alert" [attr.data-testid]="'crew-failed-' + $index">
+                      <kaff-icon name="error" /><span><b>{{ i18n.t('crew.row_failed') }}</b> {{ i18n.t(key) }}</span>
+                      <kaff-button variant="secondary" [testId]="'crew-retry-row-' + $index" (clicked)="onSave()">{{ i18n.t('daily_log.action.retry') }}</kaff-button>
+                    </div>
+                  }
+                </div>
+              }
+              @if (editMode() && canRecord()) {
+                <div class="add-row">
+                  <kaff-button variant="secondary" testId="crew-add" (clicked)="openSheet()">
+                    <kaff-icon name="plus" />{{ i18n.t('crew.add') }}
+                  </kaff-button>
+                </div>
+              }
+            </div>
+          }
         }
       </div>
     }
