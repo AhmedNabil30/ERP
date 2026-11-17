@@ -1,6 +1,6 @@
 # KAFF-419 · Project create: no preselected type, one name per client, add a client in the form
 
-<!-- kaff id=KAFF-419 slice=4 points=5 state=VERIFIED verdict=CONDITIONAL at=ea26899 on=2026-11-15 -->
+<!-- kaff id=KAFF-419 slice=4 points=5 state=VERIFIED verdict=PASS at=91cdcb3 on=2026-11-17 -->
 
 **Slice:** 4 — Projects · **Points:** 5.
 **Owner:** Backend, then UI Designer (`build` from `.design/v2/team-a/project-create.html`, commit `726f68a`).

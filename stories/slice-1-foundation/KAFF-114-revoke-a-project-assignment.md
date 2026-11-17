@@ -1,6 +1,6 @@
 # KAFF-114 · Revoke a project assignment without losing who could act when
 
-<!-- kaff id=KAFF-114 slice=1 points=3 state=VERIFIED verdict=PASS at=- on=2026-08-26 -->
+<!-- kaff id=KAFF-114 slice=1 points=3 state=VERIFIED verdict=CONDITIONAL at=91cdcb3 on=2026-11-17 -->
 
 **Slice:** 1 · **Epic:** Foundation · **Points:** 3 · **Status:** ACCEPTED 2026-08-26, standing. No commit since has touched this story's own code. `TC-1-120` is still uncovered — QA → Backend, P2
 **Spec:** §9, §7 · **Decisions:** D-044 (ruling 3)

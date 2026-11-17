@@ -1,6 +1,6 @@
 # KAFF-415 · A design project turns into an execution project
 
-<!-- kaff id=KAFF-415 slice=4 points=8 state=VERIFIED verdict=CONDITIONAL at=553309c on=2026-11-10 -->
+<!-- kaff id=KAFF-415 slice=4 points=8 state=VERIFIED verdict=CONDITIONAL at=91cdcb3 on=2026-11-17 -->
 
 **Slice:** 4 — Projects · **Points:** 8 (the `design_to_execution` half only; `parent_child` stays in the backlog).
 **Owner:** Backend (money: the 30% credit), then UI Designer (the action on the design project).

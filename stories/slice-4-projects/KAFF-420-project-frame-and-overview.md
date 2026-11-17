@@ -1,6 +1,6 @@
 # KAFF-420 · The project frame with real tabs, and the overview
 
-<!-- kaff id=KAFF-420 slice=4 points=8 state=VERIFIED verdict=PASS at=9fb1c83 on=2026-11-16 -->
+<!-- kaff id=KAFF-420 slice=4 points=8 state=VERIFIED verdict=PASS at=91cdcb3 on=2026-11-17 -->
 
 **Slice:** 4 — Projects · **Points:** 8.
 **Owner:** Backend only if the API lacks a field, then UI Designer (`build` from `.design/v2/team-a/project.html` r3, commit `07878d8`, with the D-218 changes).

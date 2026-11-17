@@ -1,6 +1,6 @@
 # KAFF-417 · A project can start as a price: terms move to signature, the unsigned BOQ prints as a quotation
 
-<!-- kaff id=KAFF-417 slice=4 points=5 state=VERIFIED verdict=CONDITIONAL at=553309c on=2026-11-10 -->
+<!-- kaff id=KAFF-417 slice=4 points=5 state=VERIFIED verdict=CONDITIONAL at=91cdcb3 on=2026-11-17 -->
 
 **Slice:** 4 — Projects · **Points:** 5.
 **Owner:** Backend (`SignProject`), then UI Designer (create screen, signature step, quotation print).

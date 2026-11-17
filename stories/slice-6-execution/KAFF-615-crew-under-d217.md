@@ -1,6 +1,6 @@
 # KAFF-615 · The crew screen under D-217 and D-218: 16 hours, half-hour steps, who edits which day
 
-<!-- kaff id=KAFF-615 slice=6 points=5 state=VERIFIED verdict=PASS at=9fb1c83 on=2026-11-16 -->
+<!-- kaff id=KAFF-615 slice=6 points=5 state=VERIFIED verdict=PASS at=91cdcb3 on=2026-11-17 -->
 
 **Slice:** 6 — Execution · **Points:** 5.
 **Owner:** Backend, then UI Designer (`build` from `.design/v2/team-a/day-labour.html`, commit `ecb140d`).
