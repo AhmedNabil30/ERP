@@ -17,6 +17,9 @@ services:
       - "5432:5432"
     volumes:
       - kaff-db-data:/var/lib/postgresql/data
+      # First start of a fresh volume only: creates kaff_app, the least-privilege role the API connects as.
+      # A volume that already holds data: run scripts/dev-db-least-privilege.ps1 once instead.
+      - ./scripts/db/dev-app-role.sql:/docker-entrypoint-initdb.d/010-dev-app-role.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U kaff -d kaff"]
       interval: 10s

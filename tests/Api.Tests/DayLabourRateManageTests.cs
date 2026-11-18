@@ -44,7 +44,7 @@ public sealed class DayLabourRateManageTests : IAsyncLifetime
     {
         await SeedAsync();
 
-        _factory = new KaffApiFactory(_database.ConnectionString);
+        _factory = new KaffApiFactory(_database);
         _client = _factory.CreateClient();
     }
 

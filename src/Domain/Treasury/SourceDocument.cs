@@ -99,4 +99,15 @@ public readonly record struct SourceDocument(SourceDocumentType Type, Guid Id, s
     public string? Reference { get; } = Reference?.Trim() is { Length: > 0 } trimmed
         ? trimmed[..Math.Min(trimmed.Length, MaxReferenceLength)]
         : null;
+
+    /// <summary>
+    /// The source types whose postings a flow writes through <see cref="PostingSetBuilder"/> and owns: the extract
+    /// (accrual, advance and تشوينات recovery, collection), the adjustment (credit and debit notes), the handover
+    /// (the hold release) and the subcontractor retention release. Each is reversed, if at all, by its own flow
+    /// (D-236). Mirrored by <c>kaff_flow_reversal_owned</c> in 006_flow_reversal.sql.
+    /// </summary>
+    public static bool HasOwningFlow(SourceDocumentType type) => type is SourceDocumentType.Extract
+        or SourceDocumentType.Adjustment
+        or SourceDocumentType.ProjectHandover
+        or SourceDocumentType.SubcontractorRetentionRelease;
 }

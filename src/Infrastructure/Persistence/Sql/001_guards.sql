@@ -470,16 +470,7 @@ CREATE UNIQUE INDEX ux_accounts_company_ledger
 -- ---------------------------------------------------------------------------------------------
 --  5. Least privilege
 --
---  The triggers above stop mistakes. Revoking the grants stops the operation from being attempted
---  at all, including from psql. Applied only if the application role exists, so a developer machine
---  connecting as the owner is unaffected.
+--  Moved to 005_app_role.sql, which grants the application role what it needs and nothing else.
+--  Revoking UPDATE, DELETE and TRUNCATE here was not enough: a role holding them by default never
+--  existed, and the role the application really used was a superuser (F-1, 2026-11-18).
 -- ---------------------------------------------------------------------------------------------
-
-DO $$
-BEGIN
-    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'kaff_app') THEN
-        EXECUTE 'REVOKE UPDATE, DELETE, TRUNCATE ON postings FROM kaff_app';
-        EXECUTE 'REVOKE UPDATE, DELETE, TRUNCATE ON audit_records FROM kaff_app';
-    END IF;
-END;
-$$;

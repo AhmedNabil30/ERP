@@ -352,6 +352,7 @@ public sealed class DatabaseInitializer
             "trg_postings_validate",
             "trg_postings_non_negative_balance",
             "trg_postings_hold_release_in_full",
+            "trg_postings_flow_reversal",
             "trg_accounts_configuration_immutable",
             "trg_boq_lines_frozen",
             "trg_boq_lines_no_truncate",
@@ -501,6 +502,54 @@ public sealed class DatabaseInitializer
         }
 
         return missing;
+    }
+
+    /// <summary>
+    /// What the connection's own role can do that would let it get past the guards. Empty when the role is least
+    /// privilege.
+    /// </summary>
+    /// <remarks>
+    /// qa/slice-3/verification-2026-11-18.md F-1. Every trigger in <c>001_guards.sql</c> binds an ordinary role and
+    /// no superuser: a superuser sets <c>session_replication_role = replica</c>, and a table's owner disables its
+    /// triggers, and either then updates a posting. So the application's connection must be neither, and must hold
+    /// no grant that changes or removes a posting or an audit record. Run on the application's connection, never the
+    /// owner's. The start-up refuses a non-empty answer in every environment, Development included: a developer
+    /// machine that runs as the superuser is the machine on which a guard bypass passes every test.
+    /// </remarks>
+    public async Task<IReadOnlyList<string>> FindExcessPrivilegesAsync(CancellationToken cancellationToken = default)
+    {
+        List<string> excess = await _context.Database
+            .SqlQuery<string>(
+                $"""
+                 SELECT finding AS "Value" FROM (
+                     SELECT 'superuser' AS finding FROM pg_roles WHERE rolname = current_user AND rolsuper
+                     UNION ALL SELECT 'createrole' FROM pg_roles WHERE rolname = current_user AND rolcreaterole
+                     UNION ALL SELECT 'createdb' FROM pg_roles WHERE rolname = current_user AND rolcreatedb
+                     UNION ALL SELECT 'replication' FROM pg_roles WHERE rolname = current_user AND rolreplication
+                     UNION ALL SELECT 'bypassrls' FROM pg_roles WHERE rolname = current_user AND rolbypassrls
+                     UNION ALL SELECT 'SET session_replication_role'
+                         WHERE has_parameter_privilege('session_replication_role', 'SET')
+                     UNION ALL SELECT 'owner of ' || c.relname
+                         FROM pg_class c
+                         WHERE c.relnamespace = 'public'::regnamespace
+                           AND c.relname IN ('postings', 'audit_records')
+                           AND pg_has_role(current_user, c.relowner, 'MEMBER')
+                     UNION ALL SELECT p.privilege || ' on ' || t.name
+                         FROM unnest(ARRAY['postings', 'audit_records']) AS t(name)
+                         CROSS JOIN unnest(ARRAY['UPDATE', 'DELETE', 'TRUNCATE', 'TRIGGER', 'REFERENCES']) AS p(privilege)
+                         WHERE to_regclass('public.' || t.name) IS NOT NULL
+                           AND has_table_privilege(current_user, 'public.' || t.name, p.privilege)
+                 ) AS findings
+                 ORDER BY finding
+                 """)
+            .ToListAsync(cancellationToken);
+
+        if (excess.Count > 0)
+        {
+            _logger.LogError("The application's database role is not least privilege: {Excess}.", string.Join(", ", excess));
+        }
+
+        return excess;
     }
 
     /// <summary>One row of <c>pg_constraint</c>, projected for <see cref="FindMissingGuardsAsync"/>.</summary>

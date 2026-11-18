@@ -18,6 +18,11 @@ namespace Kaff.Api.Tests;
 /// Every other test class gets its schema from <c>EnsureCreated</c> (<see cref="PostgresDatabase"/>, and
 /// <c>KaffApiFactory</c> through it), so no migration ever ran in the suite and a migration that could not
 /// run on an empty database shipped unnoticed. This class is the only place migrations run.
+/// <para>
+/// Two roles, as at start-up: the schema is migrated and the guards installed as the owner, and every test of the
+/// migrated database then runs as the application's role, <c>kaff_app</c>. The migrations-only database has no
+/// start-up pass, so no grants either; its tests run as the owner, which the triggers bind as well.
+/// </para>
 /// </remarks>
 public sealed partial class FreshDatabaseBootstrapTests : IAsyncLifetime
 {
@@ -30,6 +35,7 @@ public sealed partial class FreshDatabaseBootstrapTests : IAsyncLifetime
     private readonly string _name = $"kaff_fresh_{Guid.CreateVersion7():N}";
     private readonly string _migrateOnlyName = $"kaff_fresh_{Guid.CreateVersion7():N}";
     private string _connectionString = string.Empty;
+    private string _ownerConnectionString = string.Empty;
     private string _migrateOnlyConnectionString = string.Empty;
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -45,15 +51,18 @@ public sealed partial class FreshDatabaseBootstrapTests : IAsyncLifetime
         await ExecuteAdminAsync($"CREATE DATABASE \"{_name}\"");
         await ExecuteAdminAsync($"CREATE DATABASE \"{_migrateOnlyName}\"");
         _migrateOnlyConnectionString = new NpgsqlConnectionStringBuilder(AdminConnectionString) { Database = _migrateOnlyName }.ConnectionString;
-        _connectionString = new NpgsqlConnectionStringBuilder(AdminConnectionString) { Database = _name }.ConnectionString;
+        _ownerConnectionString = new NpgsqlConnectionStringBuilder(AdminConnectionString) { Database = _name }.ConnectionString;
+        _connectionString = PostgresDatabase.ApplicationConnectionString(_ownerConnectionString);
 
-        await using KaffDbContext context = CreateContext();
+        await using var context = new KaffDbContext(
+            new DbContextOptionsBuilder<KaffDbContext>().UseNpgsql(_ownerConnectionString).Options);
         var initializer = new DatabaseInitializer(context, NullLogger<DatabaseInitializer>.Instance);
 
-        // The guard script revokes privileges from a cluster-wide role; see PostgresDatabase.InitialisationGate.
+        // The guard script grants to a cluster-wide role; see PostgresDatabase.InitialisationGate.
         await Gate.WaitAsync(Ct);
         try
         {
+            await PostgresDatabase.EnsureApplicationRoleAsync(AdminConnectionString);
             await initializer.InitialiseAsync(SchemaStrategy.Migrate, Ct);
 
             // Migrations alone, as `dotnet ef database update` runs them, with no start-up guard pass to mask a
@@ -84,13 +93,23 @@ public sealed partial class FreshDatabaseBootstrapTests : IAsyncLifetime
         (await initializer.FindMissingGuardsAsync(Ct)).Should().BeEmpty();
     }
 
+    /// <summary>F-1: on a database brought up the application's way, the application's role cannot switch a guard off.</summary>
+    [Fact]
+    public async Task The_application_role_is_least_privilege_on_a_migrated_empty_database()
+    {
+        await using KaffDbContext context = CreateContext();
+        var initializer = new DatabaseInitializer(context, NullLogger<DatabaseInitializer>.Instance);
+
+        (await initializer.FindExcessPrivilegesAsync(Ct)).Should().BeEmpty();
+    }
+
     [Fact]
     public async Task Every_trigger_and_function_in_every_guard_script_exists_after_migrating()
     {
         // Goes red if any script is skipped, because it reads the scripts themselves.
         List<string> missing = [];
 
-        foreach (string connectionString in new[] { _connectionString, _migrateOnlyConnectionString })
+        foreach (string connectionString in new[] { _ownerConnectionString, _migrateOnlyConnectionString })
         {
             await using var connection = new NpgsqlConnection(connectionString);
             await connection.OpenAsync(Ct);

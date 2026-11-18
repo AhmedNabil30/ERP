@@ -63,7 +63,9 @@ builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 // signing key derived from them once.
 builder.Services.AddSingleton<StaffSessionMinter>();
 
-builder.Services.AddKaffInfrastructure(connectionString);
+builder.Services.AddKaffInfrastructure(
+    connectionString,
+    builder.Configuration.GetConnectionString(DependencyInjection.OwnerConnectionStringName));
 
 // Site photos (D-225 item 2): a folder on disk, outside the database. Kaff:SitePhotos:Root names it; deployment mounts a volume there.
 builder.Services.Configure<SitePhotoOptions>(builder.Configuration.GetSection(SitePhotoOptions.SectionName));
@@ -308,6 +310,11 @@ WebApplication app = builder.Build();
 //  triggers would serve traffic normally and pass every application-level test, while the rule
 //  spec.md §6.1 requires to live in the database would simply be absent. Outside Development that is
 //  a reason to refuse to start.
+//
+//  Schema, guards and seed run as the owner (ConnectionStrings:KaffDatabaseOwner); the request path
+//  runs as the application role, which must not be able to switch the guards off. That is checked on
+//  the application's own connection and refused in EVERY environment, Development included
+//  (qa/slice-3/verification-2026-11-18.md F-1).
 // ---------------------------------------------------------------------------------------------
 
 // Built here so the photo folder exists before the first upload.
@@ -317,6 +324,7 @@ bool applyMigrations = app.Configuration.GetValue("Kaff:ApplyMigrationsOnStartup
 
 await using (AsyncServiceScope scope = app.Services.CreateAsyncScope())
 {
+    scope.ServiceProvider.GetRequiredService<OwnerConnection>().Use();
     var initializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
 
     if (applyMigrations)
@@ -338,6 +346,22 @@ await using (AsyncServiceScope scope = app.Services.CreateAsyncScope())
             "Refusing to start: database guards are missing — "
             + string.Join(", ", missingGuards)
             + ". The append-only and non-negative-balance rules are not enforced on this database.");
+    }
+}
+
+await using (AsyncServiceScope scope = app.Services.CreateAsyncScope())
+{
+    IReadOnlyList<string> excessPrivileges = await scope.ServiceProvider
+        .GetRequiredService<DatabaseInitializer>()
+        .FindExcessPrivilegesAsync();
+
+    if (excessPrivileges.Count > 0)
+    {
+        throw new InvalidOperationException(
+            "Refusing to start: the application's database connection is not least privilege — "
+            + string.Join(", ", excessPrivileges)
+            + ". A role that can do this can switch the append-only guards off. Connect "
+            + $"'{DependencyInjection.ConnectionStringName}' as kaff_app; see deploy/README.md.");
     }
 }
 

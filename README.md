@@ -120,7 +120,8 @@ falling back to an in-memory provider — the rules it checks live in the databa
 
 | Setting | Environment variable | Notes |
 |---|---|---|
-| `ConnectionStrings:KaffDatabase` | `ConnectionStrings__KaffDatabase` | Required. |
+| `ConnectionStrings:KaffDatabase` | `ConnectionStrings__KaffDatabase` | Required. The least-privilege role `kaff_app`; the API refuses to start on a superuser or a table owner. |
+| `ConnectionStrings:KaffDatabaseOwner` | `ConnectionStrings__KaffDatabaseOwner` | Required. The schema owner: migrations, guard scripts and seeders, at start-up only. |
 | `Jwt:Issuer` | `Jwt__Issuer` | Required. |
 | `Jwt:Audience` | `Jwt__Audience` | Required. |
 | `Jwt:SigningKey` | `Jwt__SigningKey` | Required, at least 32 characters. **Never commit a real one.** |

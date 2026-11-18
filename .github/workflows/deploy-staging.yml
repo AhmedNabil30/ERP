@@ -158,12 +158,14 @@ jobs:
         if: vars.STAGING_URL != ''
         run: |
           for i in $(seq 1 30); do
-            if curl -sf "${{ vars.STAGING_URL }}/api/health" | grep -q '"guardsInstalled":true'; then
-              echo "Staging is healthy and its database guards are installed."; exit 0
+            health="$(curl -sf "${{ vars.STAGING_URL }}/api/health" || true)"
+            # leastPrivilege: Verifier F-1. The API refuses to boot without it, so this only fails on a stale image.
+            if echo "$health" | grep -q '"guardsInstalled":true' && echo "$health" | grep -q '"leastPrivilege":true'; then
+              echo "Staging is healthy, its guards are installed and it connects least privilege."; exit 0
             fi
             sleep 10
           done
-          echo "Staging did not report healthy with guards installed."; exit 1
+          echo "Staging did not report healthy with guards installed and a least-privilege connection."; exit 1
 
       # The check above proves the API, not the screen: it stops at /api/health, so "runs on staging"
       # had never been ticked for KAFF-101b's or KAFF-103's screens — sprint-1 close said "the pipeline

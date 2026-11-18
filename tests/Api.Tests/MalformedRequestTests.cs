@@ -51,7 +51,7 @@ public sealed class MalformedRequestTests : IAsyncLifetime
 
     public ValueTask InitializeAsync()
     {
-        _factory = new KaffApiFactory(_database.ConnectionString);
+        _factory = new KaffApiFactory(_database);
         _client = _factory.CreateClient();
 
         return ValueTask.CompletedTask;
@@ -194,7 +194,7 @@ public sealed class MalformedRequestTests : IAsyncLifetime
     [Fact]
     public async Task A_malformed_json_body_is_refused_as_a_client_error_when_the_host_runs_as_development()
     {
-        await using var factory = new KaffApiFactory(_database.ConnectionString, environment: "Development");
+        await using var factory = new KaffApiFactory(_database, environment: "Development");
         using HttpClient client = factory.CreateClient();
 
         using var content = new StringContent("{value: \"x\"}", System.Text.Encoding.UTF8, "application/json");

@@ -67,7 +67,7 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         await SeedAsync();
-        _factory = new KaffApiFactory(_database.ConnectionString, clock: _clock);
+        _factory = new KaffApiFactory(_database, clock: _clock);
         _client = _factory.CreateClient();
     }
 
@@ -1204,6 +1204,102 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         (await CollectionPostingCountAsync(project.Id)).Should().Be(4);
     }
 
+    // ---- D-236 "still open": a flow's posting is reversed by that flow and by nothing else ----------
+
+    [Fact]
+    public async Task No_posting_of_a_collected_extract_can_be_reversed_as_a_generic_movement()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        (await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody("Cash"))).StatusCode
+            .Should().Be(HttpStatusCode.OK);
+        List<string> before = await PostingSnapshotsAsync(project.Id);
+
+        List<Posting> owned;
+        await using (KaffDbContext reader = _database.CreateBareContext())
+        {
+            owned = await reader.Postings
+                .Where(posting => posting.SourceDocumentType == SourceDocumentType.Extract && posting.SourceDocumentId == extract)
+                .ToListAsync(Ct);
+        }
+
+        owned.Should().Contain(posting => posting.Type == PostingType.ClientCollection, "the collection is the case D-236 names");
+        foreach (Posting posting in owned)
+        {
+            HttpResponseMessage refused = await SendAsync(
+                HttpMethod.Post,
+                $"/api/projects/{project.Id}/treasury/postings/{posting.Id}/reverse",
+                _finance,
+                new { postingDate = posting.PostingDate });
+
+            refused.StatusCode.Should().Be(HttpStatusCode.Conflict, posting.Type.ToString());
+            (await ErrorCodeAsync(refused)).Should().BeOneOf(
+                ["treasury.flow_posting_not_reversible", "treasury.hold_posting_not_reversible"], posting.Type.ToString());
+        }
+
+        (await PostingSnapshotsAsync(project.Id)).Should().BeEquivalentTo(before, "a refused reversal writes nothing");
+        (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Collected);
+    }
+
+    [Fact]
+    public async Task An_approved_credit_note_cannot_be_reversed_as_a_generic_movement_only_through_the_adjustment()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        Guid note = await RaiseCreditNoteAsync(project, extract, 40_000m);
+        (await SendAsync(HttpMethod.Post, AdjustmentStep(project.Id, note, "approval"), _owner, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        Posting credit;
+        await using (KaffDbContext reader = _database.CreateBareContext())
+        {
+            credit = await reader.Postings.SingleAsync(
+                posting => posting.ProjectId == project.Id && posting.Type == PostingType.CreditNote, Ct);
+        }
+
+        HttpResponseMessage refused = await SendAsync(
+            HttpMethod.Post,
+            $"/api/projects/{project.Id}/treasury/postings/{credit.Id}/reverse",
+            _finance,
+            new { postingDate = credit.PostingDate });
+        refused.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ErrorCodeAsync(refused)).Should().Be("treasury.flow_posting_not_reversible");
+
+        (await SendAsync(HttpMethod.Post, AdjustmentStep(project.Id, note, "reversal"), _owner, new { reason = "wrong amount" })).StatusCode
+            .Should().Be(HttpStatusCode.OK, "the adjustment's own reversal still works");
+    }
+
+    /// <summary>
+    /// The same rule with the domain and the handler out of the way: a mirror of the collection inserted straight into
+    /// the table, as the application's role, with no gate record beside it.
+    /// </summary>
+    [Fact]
+    public async Task The_database_refuses_a_reversal_of_a_flow_posting_that_its_flow_did_not_make()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody("Cash"));
+
+        await using KaffDbContext raw = _database.CreateBareContext();
+        Posting collection = await raw.Postings.SingleAsync(
+            posting => posting.ProjectId == project.Id && posting.Type == PostingType.ClientCollection, Ct);
+
+        await DatabaseGuard.RefusesAsync(
+            () => raw.Database.ExecuteSqlAsync(
+                $"""
+                 INSERT INTO postings
+                     (id, posting_date, from_account_id, to_account_id, amount, "type",
+                      source_document_type, source_document_id, source_document_reference,
+                      project_id, created_by_user_id, created_at, reverses_id)
+                 VALUES
+                     ({Guid.CreateVersion7()}, {collection.PostingDate}, {collection.ToAccountId}, {collection.FromAccountId},
+                      {collection.Amount.Amount}, {nameof(PostingType.ClientCollection)},
+                      {nameof(SourceDocumentType.Extract)}, {extract}, NULL,
+                      {project.Id}, {_finance}, {DateTimeOffset.UtcNow}, {collection.Id})
+                 """,
+                Ct),
+            DatabaseGuard.FlowReversal);
+    }
+
     // ---- KAFF-317: withholding at source, end to end through the endpoint ----
 
     private async Task<(Guid Extract, List<Posting> Cash, List<Posting> Tax)> CollectAsync(
@@ -1316,7 +1412,7 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
     public async Task The_withheld_amount_follows_the_ruled_base_with_no_handler_change(WithholdingBaseKind kind, int expectedWithheld)
     {
         // AC-317-D. Net 240,000, period work 300,000, certified less hold 240,000; 1% of each.
-        var factory = new KaffApiFactory(_database.ConnectionString).WithWebHostBuilder(builder =>
+        var factory = new KaffApiFactory(_database).WithWebHostBuilder(builder =>
             builder.ConfigureServices(services =>
                 services.AddSingleton(RulingSet.Default with { WithholdingBase = new WithholdingBaseRule(kind, HoldReleaseCarriesWithholding: true) })));
         using HttpClient client = factory.CreateClient();
@@ -2273,7 +2369,7 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
     /// <summary>A host whose ruled accrual moment is <paramref name="stage"/>, over the same database.</summary>
     private RulingHost RulingFactory(ExtractStage stage)
     {
-        var factory = new KaffApiFactory(_database.ConnectionString).WithWebHostBuilder(builder =>
+        var factory = new KaffApiFactory(_database).WithWebHostBuilder(builder =>
             builder.ConfigureServices(services =>
                 services.AddSingleton(RulingSet.Default with { ExtractPostingMoment = new ExtractPostingMoment(stage) })));
         return new RulingHost(factory, factory.CreateClient());

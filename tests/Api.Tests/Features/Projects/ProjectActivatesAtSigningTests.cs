@@ -62,7 +62,7 @@ public sealed class ProjectActivatesAtSigningTests : IAsyncLifetime
 
         // The server clock sits on the day the entries are written, so "today" is 2026-09-25.
         _factory = new KaffApiFactory(
-            _database.ConnectionString,
+            _database,
             clock: _clock);
         _client = _factory.CreateClient();
     }

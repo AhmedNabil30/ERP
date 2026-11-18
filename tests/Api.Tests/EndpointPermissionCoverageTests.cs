@@ -151,7 +151,7 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
 
     public ValueTask InitializeAsync()
     {
-        _factory = new KaffApiFactory(_database.ConnectionString);
+        _factory = new KaffApiFactory(_database);
 
         // Reading Services starts the host, which is what runs Program and maps the routes.
         _ = _factory.Services;

@@ -50,7 +50,7 @@ public sealed partial class DailyLogTests : IAsyncLifetime
         // The server clock is fixed on the day the tests write their entries on (2026-09-25, noon UTC), so "today" is that day.
         _clock = new TestClock(new DateTimeOffset(2026, 9, 25, 12, 0, 0, TimeSpan.Zero) - DateTimeOffset.UtcNow);
         _photoRoot = Path.Combine(Path.GetTempPath(), "kaff-photo-tests-" + Guid.NewGuid().ToString("N"));
-        _factory = new KaffApiFactory(_database.ConnectionString, clock: _clock, sitePhotoRoot: _photoRoot);
+        _factory = new KaffApiFactory(_database, clock: _clock, sitePhotoRoot: _photoRoot);
         _client = _factory.CreateClient();
     }
 

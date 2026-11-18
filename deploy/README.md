@@ -6,6 +6,48 @@ Everything needed to stand staging up again from nothing, or to work out why it 
 API, and nginx serving the Angular build — with **Caddy in front of them holding 80 and 443 and
 terminating TLS**. `decisions.md` D-023, D-076 and **D-115**.
 
+> **⛔ Changed 2026-11-18: the API connects as a least-privilege role. Do this on the host BEFORE the
+> next deploy, or the deploy fails.** (qa/slice-3/verification-2026-11-18.md F-1.) The API used to
+> connect as `POSTGRES_USER`, a superuser, which can switch the append-only guards off. It now
+> connects as `kaff_app` and runs migrations and guard scripts as `POSTGRES_USER`. It refuses to start
+> when its own connection is a superuser or owns the tables. CI never writes `.env`, so the operator
+> must make two changes on the host, once, in `STAGING_DEPLOY_TARGET` (for example
+> `/home/ubuntu/erp`), while the current stack is still running:
+>
+> 1. **Add one variable to `.env`.** Use a new random password, letters and digits only (it goes
+>    inside a connection string, where `;` and `=` break it), and not the `POSTGRES_PASSWORD`:
+>
+>    ```bash
+>    cd /home/ubuntu/erp
+>    echo "KAFF_APP_PASSWORD=$(openssl rand -hex 24)" >> .env
+>    chmod 600 .env
+>    ```
+>
+> 2. **Create the role**, with the password from `.env`. Idempotent; it changes no data and grants
+>    nothing on tables, because the API grants exactly what `kaff_app` needs
+>    (`src/Infrastructure/Persistence/Sql/005_app_role.sql`) as the owner at every start-up:
+>
+>    ```bash
+>    cd /home/ubuntu/erp
+>    set -a; . ./.env; set +a
+>    docker compose --env-file .env --env-file .env.images -f docker-compose.staging.yml exec -T db \
+>      psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v app_password="$KAFF_APP_PASSWORD" <<'SQL'
+>    SELECT format('CREATE ROLE kaff_app LOGIN PASSWORD %L', :'app_password')
+>     WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'kaff_app') \gexec
+>    ALTER ROLE kaff_app WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS INHERIT;
+>    ALTER ROLE kaff_app WITH PASSWORD :'app_password';
+>    SELECT rolname, rolsuper FROM pg_roles WHERE rolname = 'kaff_app';
+>    SQL
+>    ```
+>
+>    The last line must print `kaff_app|f`.
+>
+> After the next deploy, `/api/health` must report `"leastPrivilege":true`; the deploy workflow's smoke
+> check now requires it. **If the code is pushed first:** with `KAFF_APP_PASSWORD` missing from
+> `.env`, `docker compose` stops at `KAFF_APP_PASSWORD must be set` and the old containers keep
+> running; with the variable set but no role, the new API cannot sign in to PostgreSQL and does not
+> start. Both are by design. Do the two steps above and re-run the deploy job.
+
 > **⚠️ Changed 2026-09-04: staging is HTTPS and nginx has moved off port 80.** Caddy owns 80 (which
 > it needs for the ACME challenge) and 443. The `web` container now publishes **8080, bound to
 > `127.0.0.1`**, and that port is not the way in. Three things follow, and none of them is optional:
@@ -60,6 +102,7 @@ cat > /home/ubuntu/erp/.env <<'EOF'
 POSTGRES_USER=kaff
 POSTGRES_PASSWORD=<a real password, not kaff>
 POSTGRES_DB=kaff
+KAFF_APP_PASSWORD=<letters and digits, not the POSTGRES_PASSWORD; the role is created as in the 2026-11-18 note above>
 JWT_SIGNING_KEY=<64+ random characters, nothing like the development one>
 STAGING_ORIGIN=https://<the name Caddy serves>
 STAGING_HTTP_PORT=8080

@@ -93,6 +93,14 @@ public static class TreasuryErrors
         Error.Conflict("treasury.hold_posting_not_reversible", "errors.treasury.hold_posting_not_reversible");
 
     /// <summary>
+    /// A posting a flow wrote (an extract's, an adjustment's, the handover's, a subcontractor retention release's) is
+    /// reversed through that flow, which moves its document with it, and never as a generic movement (D-236). Mirrored
+    /// by <c>KAFF_FLOW_REVERSAL</c>.
+    /// </summary>
+    public static readonly Error FlowPostingNotReversible =
+        Error.Conflict("treasury.flow_posting_not_reversible", "errors.treasury.flow_posting_not_reversible");
+
+    /// <summary>
     /// spec.md §5.1 — the hold releases in full: a release must leave it at exactly zero. Mirrors
     /// <c>KAFF_HOLD_PARTIAL_RELEASE</c>, which only the database can check.
     /// </summary>

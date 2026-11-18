@@ -47,7 +47,7 @@ public sealed class EngagementLifecycleTests : IAsyncLifetime
     {
         await SeedAsync();
 
-        _factory = new KaffApiFactory(_database.ConnectionString, clock: _clock);
+        _factory = new KaffApiFactory(_database, clock: _clock);
         _client = _factory.CreateClient();
     }
 

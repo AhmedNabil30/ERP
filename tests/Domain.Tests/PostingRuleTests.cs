@@ -304,6 +304,92 @@ public sealed class PostingRuleTests
         reversal.Error.Should().Be(TreasuryErrors.HoldPostingNotReversible);
     }
 
+    /// <summary>
+    /// D-236 "Still open": a posting a flow wrote is reversed by that flow, never by a generic reversal. The flow's
+    /// own reversal moves the owning document with it (the extract back to Issued, the adjustment to Reversed); a
+    /// generic one would leave the document saying the money is still there. A posting is the flow's when its source
+    /// document is of a type a flow writes AND that document exists: a movement posted by hand may carry the same
+    /// type with an id that names nothing.
+    /// </summary>
+    [Theory]
+    [InlineData(SourceDocumentType.Extract)]
+    [InlineData(SourceDocumentType.Adjustment)]
+    [InlineData(SourceDocumentType.ProjectHandover)]
+    [InlineData(SourceDocumentType.SubcontractorRetentionRelease)]
+    public void A_posting_a_flow_wrote_cannot_be_reversed_as_a_movement(SourceDocumentType owner)
+    {
+        Account receivable = TestAccounts.ClientReceivable();
+        Account safe = TestAccounts.Safe();
+        Posting collection = Posting.Create(
+            receivable, safe, new Money(240_000m), PostingType.ClientCollection,
+            new SourceDocument(owner, Guid.Parse("0195c000-0000-7000-8000-0000000000e1"), "EXT-1"),
+            TestAccounts.Today, TestAccounts.Actor, TestAccounts.Now, TestAccounts.ProjectId).Value;
+
+        Result<Posting> reversal = Posting.ReverseMovement(
+            collection, receivable, safe, TestAccounts.Today, TestAccounts.Actor, TestAccounts.Now, sourceDocumentExists: true);
+
+        reversal.IsFailure.Should().BeTrue();
+        reversal.Error.Should().Be(TreasuryErrors.FlowPostingNotReversible);
+    }
+
+    [Fact]
+    public void The_owning_flow_still_reverses_its_own_posting()
+    {
+        Account receivable = TestAccounts.ClientReceivable();
+        Account safe = TestAccounts.Safe();
+        Posting collection = Posting.Create(
+            receivable, safe, new Money(240_000m), PostingType.ClientCollection,
+            new SourceDocument(SourceDocumentType.Extract, Guid.Parse("0195c000-0000-7000-8000-0000000000e1"), "EXT-1"),
+            TestAccounts.Today, TestAccounts.Actor, TestAccounts.Now, TestAccounts.ProjectId).Value;
+
+        Posting.Reverse(collection, receivable, safe, TestAccounts.Today, TestAccounts.Actor, TestAccounts.Now)
+            .IsSuccess.Should().BeTrue();
+    }
+
+    [Fact]
+    public void A_movement_with_no_owning_flow_is_reversed_as_a_movement()
+    {
+        Account safe = TestAccounts.Safe();
+        Account expense = TestAccounts.CompanyExpense();
+        Posting payment = Posting.Create(
+            safe, expense, new Money(1_000m), PostingType.CompanyExpensePayment,
+            new SourceDocument(SourceDocumentType.CompanyExpense, Guid.Parse("0195c000-0000-7000-8000-0000000000e2"), null),
+            TestAccounts.Today, TestAccounts.Actor, TestAccounts.Now).Value;
+
+        Result<Posting> reversal = Posting.ReverseMovement(
+            payment, safe, expense, TestAccounts.Today, TestAccounts.Actor, TestAccounts.Now, sourceDocumentExists: true);
+
+        reversal.IsSuccess.Should().BeTrue();
+        reversal.Value.ReversesId.Should().Be(payment.Id);
+    }
+
+    [Fact]
+    public void A_movement_labelled_with_a_flow_type_but_no_such_document_is_reversed_as_a_movement()
+    {
+        Account receivable = TestAccounts.ClientReceivable();
+        Account safe = TestAccounts.Safe();
+        Posting labelled = Posting.Create(
+            receivable, safe, new Money(1_000m), PostingType.ClientCollection,
+            TestAccounts.Document(), TestAccounts.Today, TestAccounts.Actor, TestAccounts.Now, TestAccounts.ProjectId).Value;
+
+        Posting.ReverseMovement(labelled, receivable, safe, TestAccounts.Today, TestAccounts.Actor, TestAccounts.Now, sourceDocumentExists: false)
+            .IsSuccess.Should().BeTrue();
+    }
+
+    [Fact]
+    public void A_hold_posting_a_flow_wrote_still_reports_the_hold_rule_first()
+    {
+        Account receivable = TestAccounts.ClientReceivable();
+        Account hold = TestAccounts.Hold();
+        Posting accrual = Posting.Create(
+            receivable, hold, new Money(60_000m), PostingType.HoldAccrual,
+            new SourceDocument(SourceDocumentType.Extract, Guid.Parse("0195c000-0000-7000-8000-0000000000e1"), "EXT-1"),
+            TestAccounts.Today, TestAccounts.Actor, TestAccounts.Now, TestAccounts.ProjectId).Value;
+
+        Posting.ReverseMovement(accrual, receivable, hold, TestAccounts.Today, TestAccounts.Actor, TestAccounts.Now, sourceDocumentExists: true)
+            .Error.Should().Be(TreasuryErrors.HoldPostingNotReversible);
+    }
+
     [Fact]
     public void Posting_has_no_way_to_be_modified()
     {

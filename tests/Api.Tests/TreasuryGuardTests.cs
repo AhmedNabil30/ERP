@@ -28,7 +28,7 @@ public sealed class TreasuryGuardTests
         Posting posting = await FundAsync(safe, new Money(1_000m));
         _ = expense;
 
-        await using KaffDbContext context = _database.CreateBareContext();
+        await using KaffDbContext context = _database.CreateBareAdminContext();
 
         await DatabaseGuard.RefusesAsync(
             () => context.Database.ExecuteSqlAsync($"UPDATE postings SET amount = 1 WHERE id = {posting.Id}", Ct),
@@ -42,7 +42,7 @@ public sealed class TreasuryGuardTests
         Posting posting = await FundAsync(safe, new Money(1_000m));
         _ = expense;
 
-        await using KaffDbContext context = _database.CreateBareContext();
+        await using KaffDbContext context = _database.CreateBareAdminContext();
 
         await DatabaseGuard.RefusesAsync(
             () => context.Database.ExecuteSqlAsync($"DELETE FROM postings WHERE id = {posting.Id}", Ct),
@@ -424,7 +424,7 @@ public sealed class TreasuryGuardTests
         (Account safe, _) = await CreateCashAndExpenseAsync();
         await FundAsync(safe, new Money(1_000m));
 
-        await using KaffDbContext raw = _database.CreateBareContext();
+        await using KaffDbContext raw = _database.CreateBareAdminContext();
         await using Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction =
             await raw.Database.BeginTransactionAsync(Ct);
 

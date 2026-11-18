@@ -192,6 +192,32 @@ public sealed class Posting : Entity
             reversesId: original.Id));
     }
 
+    /// <summary>
+    /// The generic reversal (<c>POST .../treasury/postings/{id}/reversal</c>): <see cref="Reverse"/>, refused for a
+    /// posting a flow owns.
+    /// </summary>
+    /// <param name="sourceDocumentExists">
+    /// Whether <paramref name="original"/>'s source document exists in its own table. A posting is a flow's when its
+    /// source type is one a flow writes AND that document exists; a movement posted by hand may carry the same type
+    /// with an id that names nothing, and stays reversible.
+    /// </param>
+    public static Result<Posting> ReverseMovement(
+        Posting original,
+        Account originalFrom,
+        Account originalTo,
+        DateOnly postingDate,
+        Guid createdByUserId,
+        DateTimeOffset createdAt,
+        bool sourceDocumentExists)
+    {
+        Result<Posting> mirror = Reverse(original, originalFrom, originalTo, postingDate, createdByUserId, createdAt);
+
+        // After Reverse, so a hold posting still reports the hold rule, the more specific of the two.
+        return mirror.IsSuccess && sourceDocumentExists && SourceDocument.HasOwningFlow(original.SourceDocumentType)
+            ? Result.Failure<Posting>(TreasuryErrors.FlowPostingNotReversible)
+            : mirror;
+    }
+
     private static Result Validate(
         Account from,
         Account to,

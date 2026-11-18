@@ -249,6 +249,7 @@
   "errors.treasury.ledgers_must_not_net": "لا تجوز المقاصة بين الدفاتر الخمسة.",
   "errors.treasury.hold_only_grows": "المحجوز لا يُخصم منه قبل التسليم النهائي.",
   "errors.treasury.hold_posting_not_reversible": "لا يجوز عكس قيد على المحجوز.",
+  "errors.treasury.flow_posting_not_reversible": "لا يُعكس هذا القيد إلا من المستند الذي أنشأه.",
   "errors.treasury.hold_release_in_full": "المحجوز يُصرف كاملاً، لا جزء منه.",
   "errors.treasury.project_tag_required": "الحركة يجب أن تحمل المشروع الذي تخص حساباته.",
   "errors.treasury.project_tag_forbidden": "هذه الحركة على مستوى الشركة ولا تحمل مشروعاً.",

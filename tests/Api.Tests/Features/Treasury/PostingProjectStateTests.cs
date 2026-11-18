@@ -46,7 +46,7 @@ public sealed class PostingProjectStateTests : IAsyncLifetime
         _clientId = client.Id;
         _finance = finance.Id;
 
-        _factory = new KaffApiFactory(_database.ConnectionString);
+        _factory = new KaffApiFactory(_database);
         _client = _factory.CreateClient();
     }
 

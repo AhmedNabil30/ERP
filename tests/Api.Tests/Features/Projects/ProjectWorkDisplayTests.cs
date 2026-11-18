@@ -41,7 +41,7 @@ public sealed class ProjectWorkDisplayTests : IAsyncLifetime
         _clientId = client.Id;
         _owner = owner.Id;
 
-        _factory = new KaffApiFactory(_database.ConnectionString);
+        _factory = new KaffApiFactory(_database);
         _client = _factory.CreateClient();
     }
 

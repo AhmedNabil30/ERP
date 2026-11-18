@@ -40,9 +40,19 @@ E2E project built first (see Build).
 
 ```powershell
 docker compose up -d db
+powershell -NoProfile -File scripts\dev-db-least-privilege.ps1
 dotnet build KaffErp.sln --configuration Release
 cd src\Web; npm ci; cd ..\..
 ```
+
+**Two database roles (2026-11-18, Verifier F-1).** The API connects as `kaff_app`, which owns nothing
+and is no superuser (`ConnectionStrings:KaffDatabase`). Migrations, the guard scripts and the seeders
+run at start-up as the owner `kaff` (`ConnectionStrings:KaffDatabaseOwner`). Both strings are in
+`appsettings.Development.json`. `scripts\dev-db-least-privilege.ps1` creates `kaff_app` (password
+`kaff_app`) on the existing `kaff-db-data` volume and applies its grants. It is idempotent, touches no
+data, and is needed once per volume; a fresh volume gets the role from `docker-compose.yml`'s init
+script. Without the role the API cannot sign in to PostgreSQL. With `kaff` in `KaffDatabase` it
+refuses to start, in Development too. **Never drop or recreate the volume** to fix either.
 
 `npm ci` is only needed on a fresh clone — `src\Web\node_modules` already exists here.
 
@@ -365,6 +375,12 @@ uses and still works; the *reason* recorded for it is stale. Flagged, not change
   when the PostgreSQL guards are absent, because the append-only and non-negative-balance rules live
   in the database. A stack that is "up" without them reports a safety it does not have — `smoke`
   asserts it for that reason, not for completeness.
+- **`leastPrivilege` is load-bearing in the same way** (Verifier F-1, 2026-11-18). A superuser or the
+  table owner can switch the guards off, so the API refuses to start, in every environment, when its
+  own connection can, and `/api/health` lists what it holds under `excessPrivileges`. `smoke` asserts
+  it. `Refusing to start: the application's database connection is not least privilege` means
+  `KaffDatabase` points at `kaff`; `Connection string 'KaffDatabaseOwner' is not configured` means the
+  owner string is missing.
 - **⚠️ Chromium's own error page passes the RTL and Arabic checks.** "This site can't be reached" is
   served in the browser's UI locale, so against a web server that is not up yet it renders as Arabic,
   RTL, 176 characters of text — and `SPA renders content`, `document direction is RTL` and

@@ -16,8 +16,11 @@ namespace Kaff.Api.Tests.Infrastructure;
 /// Runs the real application against the test database.
 /// </summary>
 /// <remarks>
-/// Only two things are substituted: the connection string, and authentication. Authorization,
+/// Only two things are substituted: the connection strings, and authentication. Authorization,
 /// the audit interceptor, the database guards and the endpoint conventions are the shipped ones.
+/// The privilege model is the shipped one too: requests run as <see cref="PostgresDatabase.ApplicationRole"/>
+/// and start-up as the owner, and <c>Program</c> refuses an application connection that could switch a
+/// guard off in every environment, Development included (qa/slice-3/verification-2026-11-18.md F-1).
 ///
 /// The environment defaults to "Testing" rather than "Development" on purpose — that is what makes
 /// <c>Program</c> refuse to start if the database guards are missing, so a broken guard fails the
@@ -66,12 +69,43 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
     private static readonly object EnvironmentGate = new();
 
     private readonly string _connectionString;
+    private readonly string? _ownerConnectionString;
     private readonly IPAddress _remoteAddress;
     private readonly bool _useRealAuthentication;
     private readonly TimeProvider? _clock;
     private readonly string _environment;
 
-    /// <param name="connectionString">The test database.</param>
+    /// <summary>The usual host: the request path connects as the fixture's least-privilege role, start-up as the owner.</summary>
+    public KaffApiFactory(
+        PostgresDatabase database,
+        IPAddress? remoteAddress = null,
+        string? trustedProxyNetwork = null,
+        int? forwardedProxyHops = null,
+        bool useRealAuthentication = false,
+        TimeProvider? clock = null,
+        string environment = "Testing",
+        string? sitePhotoRoot = null)
+        : this(
+            (database ?? throw new ArgumentNullException(nameof(database))).ConnectionString,
+            database.AdminConnectionString,
+            remoteAddress,
+            trustedProxyNetwork,
+            forwardedProxyHops,
+            useRealAuthentication,
+            clock,
+            environment,
+            sitePhotoRoot)
+    {
+    }
+
+    /// <param name="connectionString">
+    /// <c>ConnectionStrings:KaffDatabase</c>, what the request path connects as. A test of the start-up privilege
+    /// refusal passes an owner connection here on purpose.
+    /// </param>
+    /// <param name="ownerConnectionString">
+    /// <c>ConnectionStrings:KaffDatabaseOwner</c>, what migrations, the guard scripts and the seeders run as.
+    /// <see langword="null"/> leaves it unset, which the host must refuse.
+    /// </param>
     /// <param name="remoteAddress">
     /// What <see cref="FakeConnectionStartupFilter"/> puts on the connection. Defaults to
     /// <see cref="TestRemoteAddress"/>; a test of decisions.md D-079 passes an address inside the
@@ -110,6 +144,7 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
     /// </param>
     public KaffApiFactory(
         string connectionString,
+        string? ownerConnectionString,
         IPAddress? remoteAddress = null,
         string? trustedProxyNetwork = null,
         int? forwardedProxyHops = null,
@@ -119,6 +154,7 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
         string? sitePhotoRoot = null)
     {
         _connectionString = connectionString;
+        _ownerConnectionString = ownerConnectionString;
         _remoteAddress = remoteAddress ?? TestRemoteAddress;
         _useRealAuthentication = useRealAuthentication;
         _clock = clock;
@@ -137,6 +173,7 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
         lock (EnvironmentGate)
         {
             Environment.SetEnvironmentVariable("ConnectionStrings__KaffDatabase", connectionString);
+            Environment.SetEnvironmentVariable("ConnectionStrings__KaffDatabaseOwner", ownerConnectionString);
             Environment.SetEnvironmentVariable("Jwt__Issuer", "kaff-erp-tests");
             Environment.SetEnvironmentVariable("Jwt__Audience", "kaff-erp-tests");
             Environment.SetEnvironmentVariable("Jwt__SigningKey", "tests-only-signing-key-long-enough-for-hmac-sha256");
@@ -172,6 +209,7 @@ public sealed class KaffApiFactory : WebApplicationFactory<Program>
             configuration.AddInMemoryCollection(new Dictionary<string, string?>(StringComparer.Ordinal)
             {
                 ["ConnectionStrings:KaffDatabase"] = _connectionString,
+                ["ConnectionStrings:KaffDatabaseOwner"] = _ownerConnectionString,
                 ["Jwt:Issuer"] = "kaff-erp-tests",
                 ["Jwt:Audience"] = "kaff-erp-tests",
                 ["Jwt:SigningKey"] = "tests-only-signing-key-long-enough-for-hmac-sha256",

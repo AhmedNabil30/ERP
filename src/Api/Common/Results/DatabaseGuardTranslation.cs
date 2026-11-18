@@ -32,6 +32,9 @@ public static class DatabaseGuardTranslation
         ["KAFF_LEDGER_NETTING"] = TreasuryErrors.LedgersMustNotNet,
         ["KAFF_HOLD_DEBIT"] = TreasuryErrors.HoldOnlyGrows,
         ["KAFF_HOLD_REVERSAL"] = TreasuryErrors.HoldPostingNotReversible,
+
+        // 006_flow_reversal.sql — a flow's posting is reversed by that flow (D-236).
+        ["KAFF_FLOW_REVERSAL"] = TreasuryErrors.FlowPostingNotReversible,
         ["KAFF_HOLD_PARTIAL_RELEASE"] = TreasuryErrors.HoldReleaseMustBeInFull,
         ["KAFF_CLOSED_PERIOD"] = TreasuryErrors.ClosedPeriod,
         ["KAFF_REVERSAL_MISMATCH"] = TreasuryErrors.ReversalMustMirrorOriginal,

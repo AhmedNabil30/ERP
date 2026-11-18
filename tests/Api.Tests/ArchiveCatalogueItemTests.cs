@@ -49,7 +49,7 @@ public sealed class ArchiveCatalogueItemTests : IAsyncLifetime
     {
         await SeedAsync();
 
-        _factory = new KaffApiFactory(_database.ConnectionString);
+        _factory = new KaffApiFactory(_database);
         _client = _factory.CreateClient();
     }
 

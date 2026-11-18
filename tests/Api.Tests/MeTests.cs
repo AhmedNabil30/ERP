@@ -83,7 +83,7 @@ public sealed class MeTests : IAsyncLifetime
     {
         await SeedAsync();
 
-        _factory = new KaffApiFactory(_database.ConnectionString, useRealAuthentication: true);
+        _factory = new KaffApiFactory(_database, useRealAuthentication: true);
         _client = _factory.CreateClient();
     }
 

@@ -11,7 +11,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Kaff.Api.Features.Treasury.ReversePosting;
 
 /// <summary>
-/// Creates the correcting posting for an existing one, through <c>Posting.Reverse</c>. KAFF-303.
+/// Creates the correcting posting for an existing one, through <c>Posting.ReverseMovement</c>, which refuses a
+/// posting a flow owns (D-236). KAFF-303.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -141,13 +142,18 @@ internal static class Handler
             }
         }
 
-        Result<Posting> reversed = Posting.Reverse(
+        // D-236: a posting its flow wrote is reversed by that flow. The domain owns the rule; the lookup is here because
+        // the entity cannot see other tables. Mirrored at commit by KAFF_FLOW_REVERSAL.
+        bool sourceDocumentExists = await SourceDocumentExistsAsync(database, original, cancellationToken);
+
+        Result<Posting> reversed = Posting.ReverseMovement(
             original,
             from,
             to,
             postingDate,
             currentUser.UserId ?? Guid.Empty,
-            clock.GetUtcNow());
+            clock.GetUtcNow(),
+            sourceDocumentExists);
 
         if (reversed.IsFailure)
         {
@@ -177,5 +183,20 @@ internal static class Handler
                 reversal.Type,
                 reversal.ProjectId,
                 reversal.ReversesId!.Value));
+    }
+
+    /// <summary>Whether a flow's own document backs <paramref name="original"/> (see <c>SourceDocument.HasOwningFlow</c>).</summary>
+    private static Task<bool> SourceDocumentExistsAsync(KaffDbContext database, Posting original, CancellationToken cancellationToken)
+    {
+        Guid id = original.SourceDocumentId;
+        return original.SourceDocumentType switch
+        {
+            SourceDocumentType.Extract => database.Extracts.AnyAsync(extract => extract.Id == id, cancellationToken),
+            SourceDocumentType.Adjustment => database.Adjustments.AnyAsync(adjustment => adjustment.Id == id, cancellationToken),
+            SourceDocumentType.ProjectHandover => database.Projects.AnyAsync(project => project.Id == id, cancellationToken),
+            SourceDocumentType.SubcontractorRetentionRelease =>
+                database.Subcontractors.AnyAsync(subcontractor => subcontractor.Id == id, cancellationToken),
+            _ => Task.FromResult(false),
+        };
     }
 }

@@ -249,6 +249,7 @@
   "errors.treasury.ledgers_must_not_net": "The five ledgers cannot be netted against each other.",
   "errors.treasury.hold_only_grows": "Nothing comes out of the hold before handover.",
   "errors.treasury.hold_posting_not_reversible": "A hold movement cannot be reversed.",
+  "errors.treasury.flow_posting_not_reversible": "This movement can be reversed only from the document that created it.",
   "errors.treasury.hold_release_in_full": "The hold is released in full, never in part.",
   "errors.treasury.project_tag_required": "The posting must name the project its accounts belong to.",
   "errors.treasury.project_tag_forbidden": "This is a company-level posting and cannot name a project.",

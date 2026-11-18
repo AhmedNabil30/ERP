@@ -66,7 +66,59 @@ public sealed class PostgresDatabase : IAsyncLifetime
     /// </remarks>
     private bool _created;
 
+    /// <summary>
+    /// The application's role, <c>kaff_app</c>: what <see cref="KaffApiFactory"/> serves requests as, and what a test
+    /// reaching the database directly gets by default. It owns nothing and is no superuser, so a test that passes on
+    /// it passes under the privilege model production runs (qa/slice-3/verification-2026-11-18.md F-1).
+    /// </summary>
     public string ConnectionString { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// The same database as the cluster administrator, which owns the schema it creates. For the start-up path, and
+    /// for a test that must act as the owner: planting a row the application could never write, or proving a
+    /// trigger holds even for the owner.
+    /// </summary>
+    public string AdminConnectionString { get; private set; } = string.Empty;
+
+    /// <summary>The application role's name. Cluster-wide, so every fixture database shares it.</summary>
+    public const string ApplicationRole = "kaff_app";
+
+    /// <summary>Matches scripts/db/dev-app-role.sql, so the suite and the dev API share one role on a dev cluster.</summary>
+    private const string ApplicationRolePassword = "kaff_app";
+
+    /// <summary>
+    /// Creates <see cref="ApplicationRole"/> on the cluster if it is absent, as scripts/db/dev-app-role.sql does.
+    /// </summary>
+    /// <remarks>
+    /// Never alters an existing role: on a developer cluster it is the dev API's role too. The grants are not made
+    /// here: <c>005_app_role.sql</c> makes them when the schema is initialised, exactly as at start-up.
+    /// </remarks>
+    public static async Task EnsureApplicationRoleAsync(string adminConnectionString)
+    {
+        await using var connection = new NpgsqlConnection(adminConnectionString);
+        await connection.OpenAsync();
+        await using var command = new NpgsqlCommand(
+            $"""
+             DO $$
+             BEGIN
+                 IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '{ApplicationRole}') THEN
+                     CREATE ROLE {ApplicationRole} LOGIN PASSWORD '{ApplicationRolePassword}';
+                 END IF;
+             EXCEPTION WHEN duplicate_object OR unique_violation THEN NULL;
+             END;
+             $$
+             """,
+            connection);
+        await command.ExecuteNonQueryAsync();
+    }
+
+    /// <summary><paramref name="adminConnectionString"/>'s server and database, as <see cref="ApplicationRole"/>.</summary>
+    public static string ApplicationConnectionString(string adminConnectionString) =>
+        new NpgsqlConnectionStringBuilder(adminConnectionString)
+        {
+            Username = ApplicationRole,
+            Password = ApplicationRolePassword,
+        }.ConnectionString;
 
     public async ValueTask InitializeAsync()
     {
@@ -104,13 +156,15 @@ public sealed class PostgresDatabase : IAsyncLifetime
         }
 
         var builder = new NpgsqlConnectionStringBuilder(_adminConnectionString) { Database = _databaseName };
-        ConnectionString = builder.ConnectionString;
+        AdminConnectionString = builder.ConnectionString;
+        ConnectionString = ApplicationConnectionString(AdminConnectionString);
 
-        await using KaffDbContext context = CreateContext();
+        await using KaffDbContext context = CreateAdminContext();
         var initializer = new DatabaseInitializer(context, NullLogger<DatabaseInitializer>.Instance);
         await InitialisationGate.WaitAsync();
         try
         {
+            await EnsureApplicationRoleAsync(_adminConnectionString);
             await initializer.InitialiseAsync(SchemaStrategy.CreateFromModel);
         }
         finally
@@ -158,12 +212,22 @@ public sealed class PostgresDatabase : IAsyncLifetime
     /// A context wired the way the application wires it: append-only guard first, then audit.
     /// </summary>
     public KaffDbContext CreateContext(ICurrentUser? currentUser = null, IAuditContext? auditContext = null)
+        => CreateContext(ConnectionString, currentUser, auditContext);
+
+    /// <summary>
+    /// <see cref="CreateContext(ICurrentUser?, IAuditContext?)"/> as the owner. Only for what the application's role
+    /// must not be able to do; see <see cref="AdminConnectionString"/>.
+    /// </summary>
+    public KaffDbContext CreateAdminContext(ICurrentUser? currentUser = null, IAuditContext? auditContext = null)
+        => CreateContext(AdminConnectionString, currentUser, auditContext);
+
+    private static KaffDbContext CreateContext(string connectionString, ICurrentUser? currentUser, IAuditContext? auditContext)
     {
         ICurrentUser user = currentUser ?? new SystemCurrentUser();
         IAuditContext audit = auditContext ?? new AuditContext();
 
         DbContextOptions<KaffDbContext> options = new DbContextOptionsBuilder<KaffDbContext>()
-            .UseNpgsql(ConnectionString)
+            .UseNpgsql(connectionString)
             .AddInterceptors(
                 new AppendOnlySaveChangesInterceptor(),
                 new AuditSaveChangesInterceptor(user, audit, TimeProvider.System))
@@ -174,14 +238,16 @@ public sealed class PostgresDatabase : IAsyncLifetime
     }
 
     /// <summary>A context with no interceptors, for tests that need to observe raw behaviour.</summary>
-    public KaffDbContext CreateBareContext()
-    {
-        DbContextOptions<KaffDbContext> options = new DbContextOptionsBuilder<KaffDbContext>()
-            .UseNpgsql(ConnectionString)
-            .Options;
+    public KaffDbContext CreateBareContext() => CreateBareContext(ConnectionString);
 
-        return new KaffDbContext(options);
-    }
+    /// <summary>
+    /// <see cref="CreateBareContext()"/> as the owner: for a test proving a trigger binds even the owner, for test
+    /// clean-up the application role may not do, and for planting a row only the owner could write.
+    /// </summary>
+    public KaffDbContext CreateBareAdminContext() => CreateBareContext(AdminConnectionString);
+
+    private static KaffDbContext CreateBareContext(string connectionString) =>
+        new(new DbContextOptionsBuilder<KaffDbContext>().UseNpgsql(connectionString).Options);
 }
 
 /// <summary>Shares one database across every test class in the collection.</summary>

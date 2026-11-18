@@ -174,11 +174,21 @@ jobs:
           name: web-dist
           path: web-dist
 
+      # The API refuses to start on a superuser connection (Verifier F-1), so the least-privilege role the
+      # request path uses is created first, the way deploy/README.md tells the staging operator to.
+      - name: Create the application role
+        env:
+          PGPASSWORD: postgres
+        run: >-
+          psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d kaff_e2e -c
+          "CREATE ROLE kaff_app LOGIN PASSWORD 'kaff_app' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS"
+
       - name: Start the API
         env:
           ASPNETCORE_ENVIRONMENT: Staging
           ASPNETCORE_URLS: http://localhost:5080
-          ConnectionStrings__KaffDatabase: "Host=localhost;Port=5432;Database=kaff_e2e;Username=postgres;Password=postgres"
+          ConnectionStrings__KaffDatabase: "Host=localhost;Port=5432;Database=kaff_e2e;Username=kaff_app;Password=kaff_app"
+          ConnectionStrings__KaffDatabaseOwner: "Host=localhost;Port=5432;Database=kaff_e2e;Username=postgres;Password=postgres"
           Jwt__Issuer: kaff-erp-e2e
           Jwt__Audience: kaff-erp-e2e
           Jwt__SigningKey: end-to-end-only-signing-key-long-enough-for-hmac

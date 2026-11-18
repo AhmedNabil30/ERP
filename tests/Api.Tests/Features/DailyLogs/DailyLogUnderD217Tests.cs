@@ -441,7 +441,7 @@ public sealed partial class DailyLogTests
         // A row written before the ruling: a note turned into weather underneath, as old data is.
         (await SendAsync(HttpMethod.Post, $"{Logs(project)}/fields", _engineerA,
             new { entryId = stored, field = "Note", text = "sunny and hot", occurredAt = At(9, 0) })).StatusCode.Should().Be(HttpStatusCode.Created);
-        await using (KaffDbContext writer = _database.CreateBareContext())
+        await using (KaffDbContext writer = _database.CreateBareAdminContext())
         {
             await writer.Database.ExecuteSqlAsync($"UPDATE field_entries SET field = 'Weather' WHERE id = {stored}", Ct);
         }
@@ -493,7 +493,7 @@ public sealed partial class DailyLogTests
             .StatusCode.Should().Be(HttpStatusCode.Created);
 
         // A row written before the key: the translated label, as the old screen sent it.
-        await using (KaffDbContext writer = _database.CreateBareContext())
+        await using (KaffDbContext writer = _database.CreateBareAdminContext())
         {
             await writer.Database.ExecuteSqlAsync($"UPDATE material_entries SET unit = 'كيس' WHERE id = {stored}", Ct);
         }

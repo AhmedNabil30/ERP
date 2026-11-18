@@ -41,7 +41,11 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Staging
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__KaffDatabase: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+      # Two roles (Verifier F-1, 2026-11-18). Requests run as kaff_app, which owns nothing and cannot switch
+      # the guards off; the API refuses to start otherwise. Migrations, guard scripts and seeders run at
+      # start-up as POSTGRES_USER, the owner. kaff_app is created once by the operator: deploy/README.md.
+      ConnectionStrings__KaffDatabase: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=kaff_app;Password=${KAFF_APP_PASSWORD:?KAFF_APP_PASSWORD must be set, see deploy/README.md}"
+      ConnectionStrings__KaffDatabaseOwner: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
       Jwt__Issuer: kaff-erp-staging
       Jwt__Audience: kaff-erp-web-staging
       # From the host's .env. There is no default and there must not be one: appsettings.json ships

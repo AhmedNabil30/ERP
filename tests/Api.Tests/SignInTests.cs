@@ -73,7 +73,7 @@ public sealed class SignInTests : IAsyncLifetime
         await SeedAsync();
 
         _clock = new TestClock();
-        _factory = new KaffApiFactory(_database.ConnectionString, useRealAuthentication: true, clock: _clock);
+        _factory = new KaffApiFactory(_database, useRealAuthentication: true, clock: _clock);
         _client = _factory.CreateClient();
     }
 
@@ -486,7 +486,7 @@ public sealed class SignInTests : IAsyncLifetime
     {
         var past = new TestClock(TimeSpan.FromMinutes(-31));
         await using var host = new KaffApiFactory(
-            _database.ConnectionString, useRealAuthentication: true, clock: past);
+            _database, useRealAuthentication: true, clock: past);
 
         using HttpClient client = host.CreateClient();
 

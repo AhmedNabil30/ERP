@@ -18,7 +18,8 @@ namespace Kaff.Api.Features.Health.GetHealth;
 /// database is simply not there.
 ///
 /// Anonymous by design — a health probe has no credentials. It reveals nothing beyond whether the
-/// database answers and whether the guards are present.
+/// database answers, whether the guards are present and whether
+/// the application's own role is least privilege.
 /// </remarks>
 public sealed class Endpoint : IEndpoint
 {
@@ -42,19 +43,23 @@ public sealed class Endpoint : IEndpoint
         if (!databaseReachable)
         {
             return Microsoft.AspNetCore.Http.Results.Json(
-                new Response(Status: "unhealthy", DatabaseReachable: false, GuardsInstalled: false, []),
+                new Response(Status: "unhealthy", DatabaseReachable: false, GuardsInstalled: false, [], LeastPrivilege: false, []),
                 statusCode: StatusCodes.Status503ServiceUnavailable);
         }
 
         IReadOnlyList<string> missingGuards = await initializer.FindMissingGuardsAsync(cancellationToken);
+        IReadOnlyList<string> excessPrivileges = await initializer.FindExcessPrivilegesAsync(cancellationToken);
+        bool healthy = missingGuards.Count == 0 && excessPrivileges.Count == 0;
 
         var response = new Response(
-            Status: missingGuards.Count == 0 ? "healthy" : "degraded",
+            Status: healthy ? "healthy" : "degraded",
             DatabaseReachable: true,
             GuardsInstalled: missingGuards.Count == 0,
-            MissingGuards: missingGuards);
+            MissingGuards: missingGuards,
+            LeastPrivilege: excessPrivileges.Count == 0,
+            ExcessPrivileges: excessPrivileges);
 
-        return missingGuards.Count == 0
+        return healthy
             ? Microsoft.AspNetCore.Http.Results.Ok(response)
             : Microsoft.AspNetCore.Http.Results.Json(response, statusCode: StatusCodes.Status503ServiceUnavailable);
     }

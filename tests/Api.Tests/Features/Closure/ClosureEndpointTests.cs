@@ -60,7 +60,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         await SeedAsync();
-        _factory = new KaffApiFactory(_database.ConnectionString, clock: _clock);
+        _factory = new KaffApiFactory(_database, clock: _clock);
         _client = _factory.CreateClient();
     }
 
@@ -770,7 +770,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
         string root = $"/api/projects/{project}";
         (await SendAsync(HttpMethod.Post, $"{root}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
 
-        await using (KaffDbContext legacy = _database.CreateBareContext())
+        await using (KaffDbContext legacy = _database.CreateBareAdminContext())
         {
             Posting release = await legacy.Postings.SingleAsync(
                 posting => posting.ProjectId == project && posting.Type == PostingType.HoldRelease, Ct);

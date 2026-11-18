@@ -44,7 +44,7 @@ public sealed class ProjectFrameTests : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         await SeedAsync();
-        _factory = new KaffApiFactory(_database.ConnectionString);
+        _factory = new KaffApiFactory(_database);
         _client = _factory.CreateClient();
     }
 
@@ -227,7 +227,7 @@ public sealed class ProjectFrameTests : IAsyncLifetime
             new Kaff.Domain.Rulings.RulingSet().DailyLogEntry));
         await context.SaveChangesAsync(Ct);
 
-        await using var factory = new KaffApiFactory(_database.ConnectionString, clock: clock);
+        await using var factory = new KaffApiFactory(_database, clock: clock);
         using HttpClient http = factory.CreateClient();
         using var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"/api/projects/{_unsignedProjectId}", UriKind.Relative));
         request.Headers.Add(TestAuthHandler.UserIdHeader, _owner.ToString());

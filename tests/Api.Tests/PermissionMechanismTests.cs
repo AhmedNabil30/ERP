@@ -51,7 +51,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
     {
         await SeedAsync();
 
-        _factory = new KaffApiFactory(_database.ConnectionString);
+        _factory = new KaffApiFactory(_database);
         _client = _factory.CreateClient();
     }
 
@@ -619,7 +619,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
         IPAddress caller = IPAddress.Parse("198.51.100.7");
 
         await using var proxied = new KaffApiFactory(
-            _database.ConnectionString,
+            _database,
             remoteAddress: proxy,
             trustedProxyNetwork: "192.0.2.0/24");
 
@@ -667,7 +667,7 @@ public sealed class PermissionMechanismTests : IAsyncLifetime
         IPAddress caller = IPAddress.Parse("198.51.100.7");
 
         await using var proxied = new KaffApiFactory(
-            _database.ConnectionString,
+            _database,
             remoteAddress: nginx,
             trustedProxyNetwork: "192.0.2.0/24",
             forwardedProxyHops: 2);

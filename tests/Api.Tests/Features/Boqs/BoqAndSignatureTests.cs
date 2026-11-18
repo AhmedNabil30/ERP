@@ -43,7 +43,7 @@ public sealed class BoqAndSignatureTests : IAsyncLifetime
     {
         await SeedAsync();
 
-        _factory = new KaffApiFactory(_database.ConnectionString);
+        _factory = new KaffApiFactory(_database);
         _client = _factory.CreateClient();
     }
 
@@ -572,7 +572,7 @@ public sealed class BoqAndSignatureTests : IAsyncLifetime
 
     private async Task ExpectFrozenRefusalAsync(FormattableString sql)
     {
-        await using KaffDbContext writer = _database.CreateBareContext();
+        await using KaffDbContext writer = _database.CreateBareAdminContext();
 
         Exception? thrown = null;
 

@@ -71,7 +71,7 @@ public sealed class ReadAuditTrailTests : IAsyncLifetime
     {
         await SeedAsync();
 
-        _factory = new KaffApiFactory(_database.ConnectionString);
+        _factory = new KaffApiFactory(_database);
         _client = _factory.CreateClient();
     }
 
@@ -425,7 +425,7 @@ public sealed class ReadAuditTrailTests : IAsyncLifetime
     [Fact]
     public async Task A_record_cannot_be_deleted_from_the_database_either()
     {
-        await using KaffDbContext reader = _database.CreateBareContext();
+        await using KaffDbContext reader = _database.CreateBareAdminContext();
 
         await DatabaseGuard.RefusesAsync(
             () => reader.Database.ExecuteSqlAsync(

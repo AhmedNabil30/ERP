@@ -106,6 +106,7 @@ public sealed class SmokeTests
 
         root.GetProperty("status").GetString().Should().Be("healthy", body);
         root.GetProperty("guardsInstalled").GetBoolean().Should().BeTrue(body);
+        root.GetProperty("leastPrivilege").GetBoolean().Should().BeTrue(body);
         root.GetProperty("missingGuards").GetArrayLength().Should().Be(0, body);
     }
 

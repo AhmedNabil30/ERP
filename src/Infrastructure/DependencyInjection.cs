@@ -22,12 +22,29 @@ public static class DependencyInjection
     /// <summary>Configuration key for the PostgreSQL connection string.</summary>
     public const string ConnectionStringName = "KaffDatabase";
 
+    /// <summary>
+    /// Configuration key for the owner's connection string: migrations, the guard scripts and the seeders, at
+    /// start-up only. The request path never uses it (qa/slice-3/verification-2026-11-18.md F-1).
+    /// </summary>
+    public const string OwnerConnectionStringName = "KaffDatabaseOwner";
+
     public static IServiceCollection AddKaffInfrastructure(
         this IServiceCollection services,
-        string connectionString)
+        string connectionString,
+        string? ownerConnectionString)
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
+
+        // Two roles, never one. Falling back to the application's connection for migrations would put the owner's
+        // rights on the request path again, which is the defect this key exists to close.
+        if (string.IsNullOrWhiteSpace(ownerConnectionString))
+        {
+            throw new InvalidOperationException(
+                $"Connection string '{OwnerConnectionStringName}' is not configured. Migrations and the guard scripts "
+                + $"run as the schema owner, and '{ConnectionStringName}' must be the least-privilege application role. "
+                + "See deploy/README.md.");
+        }
 
         services.TryAddSingleton(TimeProvider.System);
 
@@ -46,9 +63,13 @@ public static class DependencyInjection
         services.AddScoped<AuditSaveChangesInterceptor>();
         services.AddScoped<AppendOnlySaveChangesInterceptor>();
 
+        services.AddScoped<OwnerConnection>();
+
         services.AddDbContext<KaffDbContext>((provider, options) =>
         {
-            options.UseNpgsql(connectionString, npgsql =>
+            string selected = provider.GetRequiredService<OwnerConnection>().InUse ? ownerConnectionString : connectionString;
+
+            options.UseNpgsql(selected, npgsql =>
                 npgsql.MigrationsHistoryTable("__ef_migrations_history"));
 
             // Order matters: refuse forbidden mutations before spending effort describing them.

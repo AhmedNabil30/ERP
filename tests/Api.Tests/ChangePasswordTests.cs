@@ -45,7 +45,7 @@ public sealed class ChangePasswordTests : IAsyncLifetime
         await SeedAsync();
 
         _clock = new TestClock();
-        _factory = new KaffApiFactory(_database.ConnectionString, useRealAuthentication: true, clock: _clock);
+        _factory = new KaffApiFactory(_database, useRealAuthentication: true, clock: _clock);
         _client = _factory.CreateClient();
     }
 

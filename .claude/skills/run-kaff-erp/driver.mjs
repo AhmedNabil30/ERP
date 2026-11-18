@@ -480,6 +480,8 @@ async function smoke() {
   // are missing, because the append-only and non-negative-balance rules live in PostgreSQL. A stack
   // that is "up" without them is reporting a safety it does not have.
   say(parsed.guardsInstalled === true, 'database guards installed', JSON.stringify(parsed.missingGuards ?? []));
+  // Verifier F-1: a superuser or table-owner connection can switch those guards off.
+  say(parsed.leastPrivilege === true, 'application connection is least privilege', JSON.stringify(parsed.excessPrivileges ?? []));
 
   const page = await withPage(WEB, async ({ evaluate }) => ({
     title: await evaluate('document.title'),

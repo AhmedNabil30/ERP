@@ -70,7 +70,7 @@ public sealed class CreateOwnerTests : IClassFixture<CreateOwnerTests.Fixture>, 
         public async ValueTask InitializeAsync()
         {
             await Database.InitializeAsync();
-            Factory = new KaffApiFactory(Database.ConnectionString);
+            Factory = new KaffApiFactory(Database);
         }
 
         public async ValueTask DisposeAsync()
@@ -92,7 +92,7 @@ public sealed class CreateOwnerTests : IClassFixture<CreateOwnerTests.Fixture>, 
         /// </remarks>
         public async Task ResetAsync()
         {
-            await using KaffDbContext context = Database.CreateBareContext();
+            await using KaffDbContext context = Database.CreateBareAdminContext(); // The application role has no TRUNCATE.
 
 #pragma warning disable EF1002 // Fixed SQL, no user input.
             await context.Database.ExecuteSqlRawAsync(

@@ -197,7 +197,7 @@ public sealed class SchemaInvariantTests
     [Fact]
     public async Task A_dropped_check_constraint_is_reported_as_a_missing_guard()
     {
-        await using KaffDbContext context = _database.CreateBareContext();
+        await using KaffDbContext context = _database.CreateBareAdminContext();
         var initializer = new DatabaseInitializer(context, NullLogger<DatabaseInitializer>.Instance);
 
         IReadOnlyList<string> before = await initializer.FindMissingGuardsAsync(Ct);
@@ -254,7 +254,7 @@ public sealed class SchemaInvariantTests
     [Fact]
     public async Task An_account_row_whose_floor_disagrees_with_the_catalogue_is_reported_as_a_missing_guard()
     {
-        await using KaffDbContext context = _database.CreateBareContext();
+        await using KaffDbContext context = _database.CreateBareAdminContext();
         var initializer = new DatabaseInitializer(context, NullLogger<DatabaseInitializer>.Instance);
 
         (await initializer.FindMissingGuardsAsync(Ct)).Should().BeEmpty();
@@ -408,7 +408,7 @@ public sealed class SchemaInvariantTests
     public async Task A_check_constraints_predicate_changed_while_its_name_did_not_is_reported_as_a_missing_guard(
         string table, string constraintName, string originalPredicate, string weakenedPredicate)
     {
-        await using KaffDbContext context = _database.CreateBareContext();
+        await using KaffDbContext context = _database.CreateBareAdminContext();
         var initializer = new DatabaseInitializer(context, NullLogger<DatabaseInitializer>.Instance);
 
         (await initializer.FindMissingGuardsAsync(Ct)).Should().BeEmpty();

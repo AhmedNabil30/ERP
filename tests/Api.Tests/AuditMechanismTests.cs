@@ -157,7 +157,7 @@ public sealed class AuditMechanismTests
             await context.SaveChangesAsync(Ct);
         }
 
-        await using KaffDbContext reader = _database.CreateBareContext();
+        await using KaffDbContext reader = _database.CreateBareAdminContext(); // The trigger binds even the owner; LeastPrivilegeTests covers the application role.
 
         AuditRecord record = await reader.AuditRecords.SingleAsync(entry => entry.EntityId == client.Id, Ct);
 
