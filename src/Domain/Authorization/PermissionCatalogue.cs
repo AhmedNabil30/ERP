@@ -250,7 +250,7 @@ public static class PermissionCatalogue
             // ledger. Both grants name a role, so the evaluator's guard discards nothing today; the
             // flag is there for the grant somebody writes next year.
             //
-            // NO ENDPOINT YET. Project.SetWithholding is slice 4, KAFF-416. 🟡 And it raises
+            // The endpoint is PUT /api/projects/{projectId}/withholding (Verifier F-8, 2026-11-18). 🟡 It raises
             // Q-N10-2b, open for Karim: Finance has no global reach, so on a newly-opened project
             // Finance cannot set the withholding category until HR or the Owner assigns Finance to
             // that project — while Karim said Finance sets it "during contract creation or approval".
@@ -551,13 +551,15 @@ public static class PermissionCatalogue
             // shape available for it is a bare department (finding F-04, D-052). Both alternatives and
             // what each would change are in Rulings/ExtractQcReportAuthor.cs and decisions.md D-189 §3.
             //
-            // Money-free: §9, "site engineers approve nothing financial".
+            // TouchesMoney since D-235 item 4 (Nabil, 2026-11-18): the supervising engineer confirms the executed
+            // quantities and enters the two material values when he submits the QC report, so this route carries money.
+            // It approves nothing financial (§9). The junior engineer stays absent: he never touches money.
             // SM-30: pinned by The_set_of_unresolved_permissions_has_not_grown and
-            // The_qc_report_defaults_to_the_supervising_engineer_and_touches_no_money.
+            // The_qc_report_defaults_to_the_supervising_engineer_and_carries_the_material_values.
             new(Permission.ExtractQcReportSubmit, PermissionScope.ProjectScoped,
                 [engineerSupervisor],
-                "§7, §14 — holder UNRESOLVED, the supervising engineer assumed, see decisions.md D-189 §3",
-                Unresolved: true),
+                "§7, §9, §14 — holder UNRESOLVED, the supervising engineer assumed, see decisions.md D-189 §3; money per D-235 item 4",
+                Unresolved: true, TouchesMoney: true),
 
             // spec.md §6.5 and §7's last step, "Issued, Collected": Finance records that the client paid and
             // moves a cheque through its states. UNRESOLVED (Q97): §6.5 names no actor and does not say whether

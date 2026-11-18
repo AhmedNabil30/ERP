@@ -654,7 +654,17 @@ public sealed class ChangeOrderEndpointTests : IAsyncLifetime
         foreach ((string route, Guid actor) in steps)
         {
             HttpResponseMessage response = await SendAsync(
-                HttpMethod.Post, ExtractStep(project.Id, extract, route), actor, route == "technical-approval" ? new { } : null);
+                HttpMethod.Post,
+                ExtractStep(project.Id, extract, route),
+                actor,
+                route switch
+                {
+                    "technical-approval" => new { },
+
+                    // D-235 item 4: the supervising engineer enters the two material values with the QC report.
+                    "qc-report" => new { materialValueOnSite = "100000", materialInstalled = "0" },
+                    _ => null,
+                });
             response.StatusCode.Should().Be(HttpStatusCode.OK, $"{route}: {await response.Content.ReadAsStringAsync(Ct)}");
         }
     }

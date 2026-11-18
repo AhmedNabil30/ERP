@@ -9,6 +9,10 @@ public static class ProjectErrors
     public static readonly Error NotFound =
         Error.NotFound("project.not_found", "errors.project.not_found");
 
+    /// <summary>Setting a contract's withholding category names the category; an absent one is not read as None.</summary>
+    public static readonly Error WithholdingCategoryRequired =
+        Error.Validation("project.withholding_category_required", "errors.project.withholding_category_required");
+
     public static readonly Error CodeRequired =
         Error.Validation("project.code_required", "errors.project.code_required");
 

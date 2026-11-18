@@ -158,7 +158,7 @@ public sealed class PostingProjectStateTests : IAsyncLifetime
                 amount = "1000.0000",
                 type = type.ToString(),
                 postingDate = Today,
-                sourceDocumentType = nameof(SourceDocumentType.Extract),
+                sourceDocumentType = nameof(SourceDocumentType.Payment),
                 sourceDocumentId = Guid.CreateVersion7(),
                 sourceDocumentReference = (string?)null,
             }),

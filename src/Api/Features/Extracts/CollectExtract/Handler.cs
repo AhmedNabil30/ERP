@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using Kaff.Domain.Adjustments;
 using Kaff.Domain.Collections;
 using Kaff.Domain.Common;
 using Kaff.Domain.Extracts;
@@ -9,14 +8,15 @@ using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 
 namespace Kaff.Api.Features.Extracts.CollectExtract;
 
 /// <summary>
-/// Records the collection: <c>Extract.Collect</c> builds the cash and withholding postings and moves the extract
-/// to Collected, and the collection (plus a cheque in Received, for a cheque) is stored in the same save. Either
-/// everything commits or nothing does. No posting is edited or deleted; a mistaken collection is a reversal.
+/// Records a collection of what arrived (D-235 items 1 and 2). Cash and transfer: <c>Extract.Collect</c> posts the cash
+/// and the withheld amount and makes the extract Collected once received plus withheld reach what is expected. Cheque:
+/// <c>Extract.AcceptCheque</c> checks the same rules and nothing is posted; the cheque starts Received and becomes cash
+/// when it clears. The record (and the cheque) are stored in the same save. Either everything commits or nothing does.
+/// No posting is edited or deleted; a mistaken collection is a reversal.
 /// </summary>
 internal static class Handler
 {
@@ -41,30 +41,35 @@ internal static class Handler
             new StepServices(database, rulings, clock, currentUser, authorization, user),
             async (extract, project, context, services, token) =>
             {
-                // KAFF-511/512: a collection posts the stored net, so it would over-collect once a credit note is
-                // Raised or Approved against the extract. Refused until Q106 rules how the reduced amount is paid.
-                bool creditOpen = await services.Database.Adjustments.AnyAsync(
-                    adjustment => adjustment.SourceDocumentType == SourceDocumentType.Extract
-                        && adjustment.SourceDocumentId == extract.Id
-                        && (adjustment.Status == AdjustmentStatus.Raised || adjustment.Status == AdjustmentStatus.Approved),
-                    token);
-                if (creditOpen)
-                {
-                    return Result.Failure<IReadOnlyList<Posting>>(ExtractErrors.CreditNoteOpen);
-                }
-
                 Guid actor = services.CurrentUser.UserId ?? Guid.Empty;
                 DateTimeOffset now = services.Clock.GetUtcNow();
+                Money cash = request.CashReceived ?? Money.Zero;
+                Money withheld = request.WithheldAtSource ?? Money.Zero;
 
-                Result<PostingSet> collected = extract.Collect(actor, context!, now);
-                if (collected.IsFailure)
+                // Null only before Issued, where EnsureMayRecordCollection refuses anyway.
+                ExtractCollectionState? state = await ExtractCollections.StateAsync(services.Database, extract, token);
+                CollectionPosition position = state?.Position ?? new CollectionPosition(Money.Zero, Money.Zero, Money.Zero);
+                bool creditRaised = state?.CreditNoteRaised ?? false;
+
+                IReadOnlyList<Posting> postings = [];
+                if (request.Method == CollectionMethod.Cheque)
                 {
-                    return Result.Failure<IReadOnlyList<Posting>>(collected.Error);
+                    Result accepted = extract.AcceptCheque(project, services.Rulings, position, creditRaised, cash, withheld);
+                    if (accepted.IsFailure)
+                    {
+                        return Result.Failure<IReadOnlyList<Posting>>(accepted.Error);
+                    }
                 }
+                else
+                {
+                    Result<PostingSet> collected = extract.Collect(actor, context!, position, cash, withheld, now, creditRaised);
+                    if (collected.IsFailure)
+                    {
+                        return Result.Failure<IReadOnlyList<Posting>>(collected.Error);
+                    }
 
-                IReadOnlyList<Posting> postings = [.. collected.Value.Postings];
-                Money cash = Money.Sum(postings.Where(p => p.Type == PostingType.ClientCollection).Select(p => p.Amount));
-                Money withheld = Money.Sum(postings.Where(p => p.Type == PostingType.TaxWithheldAtSource).Select(p => p.Amount));
+                    postings = [.. collected.Value.Postings];
+                }
 
                 Result<CollectionRecord> recorded = CollectionRecord.Record(
                     project.Id, extract.Id, request.Method, request.Date, request.Reference, cash, withheld, actor, now);

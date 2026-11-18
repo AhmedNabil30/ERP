@@ -96,8 +96,11 @@ internal static class AdjustmentSupport
             .Select(candidate => (int?)candidate.Number)
             .MaxAsync(cancellationToken) ?? 0) + 1;
 
+        Extracts.ExtractCollectionState? collection = await Extracts.ExtractCollections.StateAsync(database, extract, cancellationToken);
+        Money paid = collection is null ? Money.Zero : collection.Position.Collected + collection.Position.InCheques;
+
         Result<Adjustment> raised = Adjustment.RaiseCreditNote(
-            project, number, extract, target, amount, Money.Sum(credited), reason, rulings, actor, now);
+            project, number, extract, target, amount, Money.Sum(credited), reason, rulings, actor, now, paid);
         if (raised.IsSuccess)
         {
             database.Adjustments.Add(raised.Value);

@@ -83,8 +83,15 @@ internal static class ExtractSupport
     /// Runs one step against an extract that belongs to <paramref name="projectId"/>, holding a row lock for the
     /// transaction so two concurrent approvals cannot both pass the state check and post twice.
     /// </summary>
+    /// <param name="respond">What a successful step answers. The extract as read, unless the route answers about something else (a cheque).</param>
     public static async Task<IResult> RunAsync(
-        Guid projectId, Guid id, bool needsAccounts, StepServices services, ExtractStep step, CancellationToken cancellationToken)
+        Guid projectId,
+        Guid id,
+        bool needsAccounts,
+        StepServices services,
+        ExtractStep step,
+        CancellationToken cancellationToken,
+        Func<IResult>? respond = null)
     {
         KaffDbContext database = services.Database;
 
@@ -145,10 +152,25 @@ internal static class ExtractSupport
             return await RefusalAsync(database, refused, postings, cancellationToken);
         }
 
+        if (respond is not null)
+        {
+            return respond();
+        }
+
+        return Microsoft.AspNetCore.Http.Results.Ok(await ViewAsync(services, extract, project, cancellationToken));
+    }
+
+    /// <summary>The extract as this caller reads it: the shared build behind every route that answers with the extract.</summary>
+    public static async Task<ExtractResponse> ViewAsync(
+        StepServices services, Extract extract, Project project, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+
         ExtractViewer viewer = await ViewerAsync(services);
-        return Microsoft.AspNetCore.Http.Results.Ok(ExtractView.Build(
+        return ExtractView.Build(
             extract, project, services.Rulings, viewer,
-            ExtractWaitingOnView.Build(extract, await ExtractWaitingOnView.StaffAsync(database, projectId, cancellationToken))));
+            ExtractWaitingOnView.Build(extract, await ExtractWaitingOnView.StaffAsync(services.Database, project.Id, cancellationToken)),
+            await ExtractCollections.StateAsync(services.Database, extract, cancellationToken));
     }
 
     /// <summary>

@@ -50,11 +50,17 @@ public sealed class CollectionRecord : Entity
 
     public string Reference { get; private set; } = string.Empty;
 
-    /// <summary>What reached the safe: the cash leg. Exactly what was received, no balancing entry (spec.md section 6.7).</summary>
+    /// <summary>
+    /// What the client paid by this method, as recorded (D-235 item 2), with no balancing entry (spec.md section 6.7). It
+    /// is the cash leg: posted to the safe at once for cash and transfer, and for a cheque only when the cheque clears.
+    /// </summary>
     public Money CashReceived { get; private set; }
 
-    /// <summary>What the client withheld at source: the second leg. Zero when the contract withholds nothing.</summary>
+    /// <summary>What the client withheld at source, as recorded. Recognised when the collection completes, with the cash leg.</summary>
     public Money WithheldAtSource { get; private set; }
+
+    /// <summary>The whole of what this collection settles: received plus withheld.</summary>
+    public Money Settles => CashReceived + WithheldAtSource;
 
     public Guid RecordedByUserId { get; private set; }
 

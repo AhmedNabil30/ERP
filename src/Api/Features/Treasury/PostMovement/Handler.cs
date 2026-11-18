@@ -115,7 +115,7 @@ internal static class Handler
             }
         }
 
-        Result<Posting> created = Posting.Create(
+        Result<Posting> created = Posting.CreateMovement(
             from,
             to,
             request.Amount,

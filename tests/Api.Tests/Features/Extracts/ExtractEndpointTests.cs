@@ -37,7 +37,7 @@ namespace Kaff.Api.Tests.Features.Extracts;
 /// and the gate is the shipped one (<see cref="TestAuthHandler"/> replaces authentication only).
 /// </remarks>
 [Collection(DatabaseCollection.Name)]
-public sealed class ExtractEndpointTests : IAsyncLifetime
+public sealed partial class ExtractEndpointTests : IAsyncLifetime
 {
     private static readonly DateTimeOffset Now = new(2026, 9, 24, 8, 0, 0, TimeSpan.Zero);
 
@@ -217,10 +217,10 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
 
         foreach (Guid refused in new[] { _prepEngineer, _owner, _finance, _technicalOffice, _hr, _engineerUnassigned })
         {
-            (await SendAsync(HttpMethod.Post, route, refused, null)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+            (await SendAsync(HttpMethod.Post, route, refused, QcBody())).StatusCode.Should().Be(HttpStatusCode.Forbidden);
         }
 
-        (await SendAsync(HttpMethod.Post, route, _supervisor, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, route, _supervisor, QcBody())).StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
@@ -819,7 +819,9 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Draft);
         JsonElement read = await ReadAsync(project.Id, extract, _owner);
         ParseDecimal(read.GetProperty("evidence").GetProperty("cumulativeCertifiedWork")).Should().Be(350_000m, "re-derived, not typed");
-        ParseDecimal(read.GetProperty("evidence").GetProperty("materialValueOnSite")).Should().Be(90_000m);
+        // D-235 item 4: the revision carries no money. The material values stay as the supervisor entered them and are
+        // entered again with the next QC report.
+        ParseDecimal(read.GetProperty("evidence").GetProperty("materialValueOnSite")).Should().Be(100_000m);
 
         // The revision is on the history, after the rejection, with the revising engineer.
         JsonElement[] history = [.. read.GetProperty("gateHistory").EnumerateArray()];
@@ -889,7 +891,18 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
 
     // ---- KAFF-316 / KAFF-317: collections and cheques ----
 
-    private static object CollectBody(string method = "Transfer") => new { method, date = "2026-10-01", reference = "TRX-1" };
+    /// <summary>
+    /// D-235 item 2: a collection records what arrived. The default is spec.md section 15's extract one paid in full, with
+    /// nothing withheld.
+    /// </summary>
+    private static object CollectBody(string method = "Transfer", decimal cash = 240_000m, decimal withheld = 0m) => new
+    {
+        method,
+        date = "2026-10-01",
+        reference = "TRX-1",
+        cashReceived = cash.ToString(CultureInfo.InvariantCulture),
+        withheldAtSource = withheld.ToString(CultureInfo.InvariantCulture),
+    };
 
     private async Task<long> CollectionPostingCountAsync(Guid project)
     {
@@ -1022,13 +1035,15 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
 
         await using KaffDbContext after = _database.CreateBareContext();
         (await after.Cheques.SingleAsync(candidate => candidate.Id == cheque, Ct)).State.Should().Be(ChequeState.Cleared);
-        (await PostingCountAsync(project.Id)).Should().Be(postings, "a cheque move posts nothing (Q91)");
+        // D-235 item 1: the cheque becomes cash when it clears, and only then; deposit and the refused moves post nothing.
+        (await PostingCountAsync(project.Id)).Should().Be(postings + 1, "the clearance writes the cash leg and nothing else does");
+        (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Collected, "the cleared cheque completes the collection");
         (await after.AuditRecords.CountAsync(a => a.EntityType == nameof(Cheque) && a.EntityId == cheque, Ct))
             .Should().BeGreaterThanOrEqualTo(3, "created, deposited and cleared each write audit");
     }
 
     [Fact]
-    public async Task A_deposited_cheque_can_bounce_and_the_extract_stays_collected()
+    public async Task A_deposited_cheque_can_bounce_and_the_extract_stays_issued()
     {
         Project project = await NewProjectAsync();
         Guid extract = await DriveAsync(project, ExtractStatus.Issued);
@@ -1037,10 +1052,12 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         Guid cheque = await reader.Cheques.Where(c => c.ProjectId == project.Id).Select(c => c.Id).SingleAsync(Ct);
 
         (await SendAsync(HttpMethod.Post, $"/api/projects/{project.Id}/cheques/{cheque}/deposit", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{project.Id}/cheques/{cheque}/bounce", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project.Id}/cheques/{cheque}/bounce", _finance, new { reason = "returned unpaid" }))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
         (await SendAsync(HttpMethod.Post, $"/api/projects/{project.Id}/cheques/{cheque}/clearance", _finance, null)).StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Collected, "Q101 is unruled: a bounce does not reopen the extract");
+        // D-235 item 1: a cheque in hand never made the extract Collected, so a bounce leaves it Issued.
+        (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Issued);
     }
 
     // ---- KAFF-316 read side and reversal (AC-316-F) ----
@@ -1308,7 +1325,10 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         client ??= _client;
         Guid extract = await DriveAsync(project, ExtractStatus.Issued, client);
 
-        HttpResponseMessage response = await SendAsync(client, HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody("Transfer"));
+        // D-235 item 2: the client pays what the extract expects, split as the ruled base expects it.
+        (decimal cashDue, decimal withheldDue) = await DueAsync(client, project.Id, extract);
+        HttpResponseMessage response = await SendAsync(
+            client, HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody("Transfer", cashDue, withheldDue));
         response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(Ct));
 
         await using KaffDbContext reader = _database.CreateBareContext();
@@ -1371,7 +1391,8 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
 
         (await BalanceAsync(project.Id, AccountType.ClientReceivable)).Should().Be(240_000m, "the full net stands as the receivable at Issued");
 
-        (await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody())).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody(cash: 237_600m, withheld: 2_400m)))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
 
         await using KaffDbContext reader = _database.CreateBareContext();
         Posting cash = await reader.Postings.SingleAsync(p => p.ProjectId == project.Id && p.Type == PostingType.ClientCollection, Ct);
@@ -2253,7 +2274,7 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
     {
         (ExtractStatus Reaches, string Route, Guid Actor, object? Body)[] chain =
         [
-            (ExtractStatus.QcSubmitted, "qc-report", _supervisor, null),
+            (ExtractStatus.QcSubmitted, "qc-report", _supervisor, QcBody()),
             (ExtractStatus.TechnicalApproved, "technical-approval", _technicalOffice, new { }),
             (ExtractStatus.DeductionsApplied, "deductions", _finance, null),
             (ExtractStatus.OwnerApproved, "owner-approval", _owner, null),

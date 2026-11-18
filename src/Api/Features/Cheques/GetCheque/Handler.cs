@@ -13,8 +13,8 @@ namespace Kaff.Api.Features.Cheques.GetCheque;
 /// <param name="Method">Always Cheque.</param>
 /// <param name="Date">The day the client paid.</param>
 /// <param name="Reference">The cheque number.</param>
-/// <param name="CashReceived">What reached the safe.</param>
-/// <param name="WithheldAtSource">What the client withheld at source.</param>
+/// <param name="CashReceived">The cheque's face value. It reaches the safe only when the cheque clears (D-235 item 1).</param>
+/// <param name="WithheldAtSource">What the client withheld at source, recognised with the clearance.</param>
 public sealed record CollectionSummary(
     Guid Id, Guid ExtractId, CollectionMethod Method, DateOnly Date, string Reference, Money CashReceived, Money WithheldAtSource);
 
@@ -22,8 +22,9 @@ public sealed record CollectionSummary(
 /// <param name="Id">The cheque.</param>
 /// <param name="State">Received, Deposited, Cleared or Bounced.</param>
 /// <param name="StateChangedAt">When it last moved.</param>
+/// <param name="ExtractNumber">The number of the extract it paid, as the extract list shows it.</param>
 /// <param name="Collection">The collection that created it.</param>
-public sealed record Response(Guid Id, ChequeState State, DateTimeOffset StateChangedAt, CollectionSummary Collection);
+public sealed record Response(Guid Id, ChequeState State, DateTimeOffset StateChangedAt, int ExtractNumber, CollectionSummary Collection);
 
 internal static class Handler
 {
@@ -32,21 +33,25 @@ internal static class Handler
     {
         ArgumentNullException.ThrowIfNull(database);
 
-        Response? response = await (
-            from cheque in database.Cheques.AsNoTracking()
-            join collection in database.CollectionRecords.AsNoTracking() on cheque.CollectionId equals collection.Id
-            where cheque.Id == id && cheque.ProjectId == projectId
-            select new Response(
-                cheque.Id,
-                cheque.State,
-                cheque.StateChangedAt,
-                new CollectionSummary(
-                    collection.Id, collection.ExtractId, collection.Method, collection.Date, collection.Reference,
-                    collection.CashReceived, collection.WithheldAtSource)))
-            .FirstOrDefaultAsync(cancellationToken);
+        Response? response = await Project(database, projectId, id).FirstOrDefaultAsync(cancellationToken);
 
         return response is null
             ? ResultExtensions.Problem(CollectionErrors.ChequeNotFound)
             : Microsoft.AspNetCore.Http.Results.Ok(response);
     }
+
+    /// <summary>The project's cheques as read, or the one named. The single read and the project's list share it.</summary>
+    internal static IQueryable<Response> Project(KaffDbContext database, Guid projectId, Guid? id = null) =>
+        from cheque in database.Cheques.AsNoTracking()
+        join collection in database.CollectionRecords.AsNoTracking() on cheque.CollectionId equals collection.Id
+        join extract in database.Extracts.AsNoTracking() on collection.ExtractId equals extract.Id
+        where cheque.ProjectId == projectId && (id == null || cheque.Id == id)
+        select new Response(
+            cheque.Id,
+            cheque.State,
+            cheque.StateChangedAt,
+            extract.Number,
+            new CollectionSummary(
+                collection.Id, collection.ExtractId, collection.Method, collection.Date, collection.Reference,
+                collection.CashReceived, collection.WithheldAtSource));
 }

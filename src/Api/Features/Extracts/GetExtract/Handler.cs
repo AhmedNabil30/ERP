@@ -38,11 +38,7 @@ internal static class Handler
             return ResultExtensions.Problem(ExtractErrors.NotFound);
         }
 
-        ExtractViewer viewer = await ExtractSupport.ViewerAsync(
-            new StepServices(database, rulings, clock, currentUser, authorization, user));
-
-        return Microsoft.AspNetCore.Http.Results.Ok(ExtractView.Build(
-            extract, project, rulings, viewer,
-            ExtractWaitingOnView.Build(extract, await ExtractWaitingOnView.StaffAsync(database, projectId, cancellationToken))));
+        return Microsoft.AspNetCore.Http.Results.Ok(await ExtractSupport.ViewAsync(
+            new StepServices(database, rulings, clock, currentUser, authorization, user), extract, project, cancellationToken));
     }
 }

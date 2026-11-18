@@ -166,8 +166,10 @@ public sealed class CollectionTests
         extract.GateHistory[^1].Should().Match<ExtractGateRecord>(
             r => r.Outcome == ExtractGateOutcome.Reversed && r.Reason == "wrong client" && r.ActorUserId == actor);
 
-        // Not a forward step: an Issued extract has no collection to reverse, and Issue is still refused from Collected.
-        extract.ReverseCollection(actor, "again", h.Context(), legs, ExtractHarness.Now).Error.Should().Be(ExtractErrors.IllegalTransition);
+        // Not a forward step: an Issued extract with no standing collection has nothing to reverse. D-235 item 2: an
+        // Issued extract may hold a standing part payment, so the caller's standing legs decide; these legs were reversed
+        // above and a caller passes only standing ones, which here are none.
+        extract.ReverseCollection(actor, "again", h.Context(), [], ExtractHarness.Now).Error.Should().Be(ExtractErrors.IllegalTransition);
     }
 
     // ---- KAFF-317: PostingAccountLegality rule 11 ----

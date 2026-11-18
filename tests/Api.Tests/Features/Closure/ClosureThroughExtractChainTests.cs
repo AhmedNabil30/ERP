@@ -42,6 +42,7 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
     private static readonly DateTimeOffset Now = new(2026, 9, 24, 8, 0, 0, TimeSpan.Zero);
 
     private readonly PostgresDatabase _database;
+    private readonly Dictionary<Guid, object> _materialValues = [];
     private KaffApiFactory _factory = null!;
     private HttpClient _client = null!;
 
@@ -284,7 +285,7 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
         (await CountAllAsync(id)).Should().Be(postings);
 
         // 3. a collection: accepted, and it writes the cash.
-        HttpResponseMessage collection = await SendAsync(HttpMethod.Post, Step(id, issued, "collect"), _finance, CollectBody());
+        HttpResponseMessage collection = await SendAsync(HttpMethod.Post, Step(id, issued, "collect"), _finance, CollectBody("240000"));
         collection.StatusCode.Should().Be(HttpStatusCode.OK, await collection.Content.ReadAsStringAsync(Ct));
         (await ExtractStatusAsync(issued)).Should().Be(ExtractStatus.Collected);
         (await CountAsync(id, PostingType.ClientCollection)).Should().Be(1);
@@ -295,7 +296,8 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
 
     private static string Step(Guid project, Guid extract, string step) => $"/api/projects/{project}/extracts/{extract}/{step}";
 
-    private static object CollectBody() => new { method = "Transfer", date = "2026-10-01", reference = "TRX-1" };
+    private static object CollectBody(string cashReceived) =>
+        new { method = "Transfer", date = "2026-10-01", reference = "TRX-1", cashReceived, withheldAtSource = "0" };
 
     private static async Task<string?> ErrorCodeAsync(HttpResponseMessage response)
     {
@@ -309,10 +311,14 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
             HttpMethod.Post,
             $"/api/projects/{project.Id}/extracts",
             _prepEngineer,
-            new { periodStart = "2026-09-01", periodEnd = "2026-09-30", materialValueOnSite, materialInstalled });
+            new { periodStart = "2026-09-01", periodEnd = "2026-09-30" });
         response.StatusCode.Should().Be(HttpStatusCode.Created, await response.Content.ReadAsStringAsync(Ct));
         using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
-        return body.RootElement.GetProperty("id").GetGuid();
+        Guid id = body.RootElement.GetProperty("id").GetGuid();
+
+        // D-235 item 4: the supervising engineer enters the two material values with the QC report, not the preparer.
+        _materialValues[id] = new { materialValueOnSite, materialInstalled };
+        return id;
     }
 
     /// <summary>Walks an extract from Draft to <paramref name="target"/> with a different actor at each gate.</summary>
@@ -322,7 +328,7 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
 
         (ExtractStatus Reaches, string Route, Guid Actor, object? Body)[] chain =
         [
-            (ExtractStatus.QcSubmitted, "qc-report", _supervisor, null),
+            (ExtractStatus.QcSubmitted, "qc-report", _supervisor, _materialValues[extract]),
             (ExtractStatus.TechnicalApproved, "technical-approval", _technicalOffice, new { }),
             (ExtractStatus.DeductionsApplied, "deductions", _finance, null),
             (ExtractStatus.OwnerApproved, "owner-approval", _owner, null),
@@ -341,9 +347,16 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
         }
     }
 
+    /// <summary>spec.md section 15: the client pays the full net each time. D-235 item 2: the collection says what arrived.</summary>
     private async Task CollectAsync(Project project, Guid extract)
     {
-        HttpResponseMessage response = await SendAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody());
+        HttpResponseMessage read = await SendAsync(HttpMethod.Get, $"/api/projects/{project.Id}/extracts/{extract}", _finance, null);
+        read.StatusCode.Should().Be(HttpStatusCode.OK);
+        using JsonDocument document = JsonDocument.Parse(await read.Content.ReadAsStringAsync(Ct));
+        string remaining = document.RootElement.GetProperty("collection").GetProperty("remaining").GetString()!;
+
+        HttpResponseMessage response = await SendAsync(
+            HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody(remaining));
         response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(Ct));
     }
 

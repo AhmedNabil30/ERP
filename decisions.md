@@ -17016,3 +17016,21 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 4. **Staging needs a one-time operator step before the next deploy:** a new `KAFF_APP_PASSWORD` in the host's `.env` and the role created on the database. The steps are at the top of `deploy/README.md`. A push before that step fails the deploy and leaves the running containers as they are.
 
 **Open.** `PostMovement` still accepts a flow-owned source type with any document id, so a generic movement naming a real extract counts as that extract's. Insert-only child tables have no UPDATE grant: a path the suite does not exercise that updates one would fail at run time.
+
+## D-238 — An extract's money follows what actually arrived: cheques at clearance, part payments, withholding set by Finance · 2026-11-18
+
+**Source.** Nabil's rulings in D-235 and the open item of D-237; built by a lane dispatched by the Scrum Master.
+
+1. **A generic movement may not name a flow-owned source type.** `Posting.CreateMovement` refuses Extract, Adjustment, ProjectHandover and SubcontractorRetentionRelease (`treasury.flow_source_not_allowed`, 400). This closes D-237's open item.
+2. **A cheque is cash only when it clears.** Recording a cheque posts nothing and the extract stays Issued. Clearance posts the cash and the withheld amount, and the extract becomes Collected once the total reaches what is expected. A bounce requires a reason, posts nothing, keeps the extract Issued and stores the reason on gate `ChequeBounce`. Cash and transfer still post at recording. Clearance and bounce run under the extract row lock.
+3. **A collection records what arrived.** The request carries `cashReceived` (required) and `withheldAtSource` (default 0). Expected is net payable less approved credit notes; cheques in hand count against what remains. Part payments are allowed; a payment past what remains is refused (`collection.exceeds_expected`, 409). A withheld amount on a contract with no withholding category is refused. The old refusal for an approved credit note is gone; a raised, not yet approved, credit note still blocks collection (open question). Collection reversal reverses every standing payment at once and is legal from Issued when a part payment stands.
+4. **The supervising engineer enters both material values at QC.** Prepare and evidence revision carry no money. The QC report permission is now marked as touching money. The junior site engineer gets 403 on every route carrying money.
+5. **Finance sets the withholding category** (spec §6.7 amendment, D-055 §2): `PUT /api/projects/{projectId}/withholding`, behind ProjectFinancialsEdit. An individual client's contract is refused.
+6. **The extract read tells the screen what the viewer may do**: action flags `recordCollection`, `recordChequeMove`, `reverseCollection`, `raiseDispute`, `resolveDispute`, each from the same domain check the route makes, and a `collection` block (expected, expected withheld, collected, in cheques, remaining) for money viewers. The cheque read carries `extractNumber`; `GET /api/projects/{projectId}/cheques` lists cheques in hand for Finance.
+7. **No new extract state** (spec §13 has none for a cheque in hand) and no migration.
+
+**Proof.** A chain test walks a cheque, a clearance, a transfer with withholding, a bounce and a credit note through to collection with the ledgers checked at every step. Eight mutations each turned a test red. Gates at the hand-back: build 0/0, Domain 767/767, Api 1241 passed and 2 skipped of 1243, `ng test` 515/515, format clean.
+
+**Open, for Nabil.** A raised credit note blocking collection; the lane's own guard that a credit note may not exceed what is still owed (`adjustment.exceeds_extract_net`); reversing an approved credit note after the extract is Collected; per-payment reversal; a cleared cheque whose collection is reversed; a cheque clearing on a Disputed extract; the typed withheld amount not checked against the rate (Q99); the category changeable at any time (Q30); the cheque list closed to the Owner.
+
+**Not done.** The web QC button still sends an empty body and is refused; the evidence-revision panel still sends values the server ignores; no screen for collection, cheques or withholding; the new error keys are not reviewed by `arabic-copy`; no date or bank on deposit and clearance.

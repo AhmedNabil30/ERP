@@ -165,10 +165,14 @@ public sealed class PermissionEvaluatorTests
             // Added 2026-11-01 with the row itself (decisions.md D-189 §2): the Accounts step of
             // spec.md §7 fixes the hold accrual, the advance recovery and the withholding that the
             // extract's postings then carry. Its one grant names a role, so the evaluator discards
-            // nothing. ExtractDocumentAssemble and ExtractQcReportSubmit are deliberately absent from
-            // this list: spec.md §9 keeps the Technical Office and site engineers off money, so a
-            // financial flag on either row would be the wrong record of who may act on it.
+            // nothing. ExtractDocumentAssemble is deliberately absent from this list: spec.md §9 keeps the
+            // Technical Office off money.
             Permission.ExtractDeductionsApply,
+
+            // Added 2026-11-18 (D-235 item 4, Nabil): the supervising engineer enters the two material values
+            // with the QC report, and they are the base of the material advance the extract posts. Its one
+            // grant names a role, so the evaluator discards nothing.
+            Permission.ExtractQcReportSubmit,
 
             // Added 2026-11-04 with the row itself (KAFF-316, Q97): it records the cash that reaches the safe.
             // Its one grant names a role, so the evaluator discards nothing.

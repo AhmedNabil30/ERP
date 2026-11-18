@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using Kaff.Domain.Authorization;
+using Kaff.Domain.Collections;
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
 using Kaff.Domain.Contracts.Billing;
@@ -272,7 +273,35 @@ public sealed class Extract : Entity
     /// </summary>
     public Result EnsureMayDecide(Guid userId) => SeparationOfDuties.EnsureDifferentActor(PriorActors(), userId);
 
-    /// <summary>Draft to QcSubmitted. The weekly QC report is in.</summary>
+    /// <summary>
+    /// Draft to QcSubmitted with the two material values (D-235 item 4): the supervising engineer confirms the executed
+    /// quantities and enters the value of material on site and of material installed when he submits the QC report. The
+    /// junior site engineer who prepared the extract never enters money (spec.md section 9). Both are required.
+    /// </summary>
+    public Result SubmitQcReport(Guid actorUserId, Money? materialValueOnSite, Money? materialInstalled, DateTimeOffset now)
+    {
+        if (materialValueOnSite is not { } onSite || materialInstalled is not { } installed)
+        {
+            return Result.Failure(ExtractErrors.MaterialValuesRequired);
+        }
+
+        Result move = CanMoveTo(ExtractStatus.QcSubmitted);
+        if (move.IsFailure)
+        {
+            return move;
+        }
+
+        if (!QuantitiesAreValid(CumulativeCertifiedWork, PreviouslyCertifiedWork, onSite, installed))
+        {
+            return Result.Failure(ExtractErrors.QuantitiesInvalid);
+        }
+
+        MaterialValueOnSite = onSite;
+        MaterialInstalled = installed;
+        return SubmitQcReport(actorUserId, now);
+    }
+
+    /// <summary>Draft to QcSubmitted, keeping the material values the extract already carries.</summary>
     public Result SubmitQcReport(Guid actorUserId, DateTimeOffset now)
     {
         Result move = CanMoveTo(ExtractStatus.QcSubmitted);
@@ -472,29 +501,182 @@ public sealed class Extract : Entity
         return accrual;
     }
 
+    /// <summary>What the extract's own figures expect the client to withhold at source. Zero before Accounts.</summary>
+    public Money ExpectedWithheld => NetPayable is null ? Money.Zero : ExtractPostings.ExpectedWithheld(StoredResult());
+
     /// <summary>
-    /// The client paid. Writes the collection set, the only one that touches the safe (spec.md section 7:
-    /// "Issued, Collected").
+    /// The client paid the whole net in one payment, split as the figures expect the withholding, with nothing collected
+    /// before: spec.md section 15's "Client pays" column. The collection route records what actually arrived through
+    /// the overload below; this is that overload with the section 15 amounts.
     /// </summary>
     public Result<PostingSet> Collect(Guid actorUserId, ExtractPostingContext context, DateTimeOffset now)
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        Result gate = Result.FirstFailureOrSuccess(CanMoveTo(ExtractStatus.Collected), CheckProject(context));
-        if (gate.IsFailure)
+        if (NetPayable is not { } net)
         {
-            return Result.Failure<PostingSet>(gate.Error);
+            return Result.Failure<PostingSet>(ExtractErrors.IllegalTransition);
         }
 
+        Money withheld = ExpectedWithheld;
+        return Collect(actorUserId, context, new CollectionPosition(net, Money.Zero, Money.Zero), net - withheld, withheld, now);
+    }
+
+    /// <summary>
+    /// Whether a collection may be recorded against this extract now (D-235 item 2). The route and the extract's read
+    /// both ask this, so the control and the refusal cannot disagree: Issued, no credit note waiting for the Owner, the
+    /// project in a state that takes a collection, and something still expected once cheques in hand are counted.
+    /// </summary>
+    public Result EnsureMayRecordCollection(Project project, RulingSet rulings, CollectionPosition position, bool creditNoteRaised)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(rulings);
+        ArgumentNullException.ThrowIfNull(position);
+
+        if (Status != ExtractStatus.Issued)
+        {
+            return Result.Failure(ExtractErrors.IllegalTransition);
+        }
+
+        // An open credit note is not yet a reduction of what is owed: until the Owner decides it, what the client owes is
+        // unknown. KAFF-511/512 do not say a raised note may be collected around, so it still blocks (question for Nabil).
+        if (creditNoteRaised)
+        {
+            return Result.Failure(ExtractErrors.CreditNoteOpen);
+        }
+
+        Result state = PostingProjectStateLegality.Validate(
+            rulings.PostingProjectStates, project.Status, PostingType.ClientCollection, isReversal: false);
+        if (state.IsFailure)
+        {
+            return state;
+        }
+
+        return position.Remaining.IsPositive ? Result.Success() : Result.Failure(CollectionErrors.ExceedsExpected);
+    }
+
+    /// <summary>
+    /// The amounts of one payment against <paramref name="position"/>: neither negative, together more than zero, a
+    /// withheld amount only on a contract that withholds, and no more than is still expected.
+    /// </summary>
+    public static Result CheckPayment(Project project, CollectionPosition position, Money cash, Money withheld)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(position);
+
+        if (cash.IsNegative || withheld.IsNegative || !(cash + withheld).IsPositive)
+        {
+            return Result.Failure(CollectionErrors.AmountInvalid);
+        }
+
+        if (withheld.IsPositive && project.WithholdingCategory == WithholdingCategory.None)
+        {
+            return Result.Failure(CollectionErrors.WithholdingNotApplicable);
+        }
+
+        return cash + withheld > position.Remaining ? Result.Failure(CollectionErrors.ExceedsExpected) : Result.Success();
+    }
+
+    /// <summary>
+    /// D-235 item 1: a cheque is recorded as received and posts nothing. The extract stays Issued with the cheque in hand,
+    /// and the cheque counts against what is still expected until it clears or bounces.
+    /// </summary>
+    public Result AcceptCheque(
+        Project project, RulingSet rulings, CollectionPosition position, bool creditNoteRaised, Money cash, Money withheld) =>
+        Result.FirstFailureOrSuccess(
+            EnsureMayRecordCollection(project, rulings, position, creditNoteRaised),
+            CheckPayment(project, position, cash, withheld));
+
+    /// <summary>
+    /// A payment by cash or transfer (D-235 item 2): posts what arrived, the cash to the safe and the withheld amount to
+    /// the withholding account, and makes the extract Collected once received plus withheld reach what is expected.
+    /// A part payment leaves it Issued. The gate record names who recorded it either way.
+    /// </summary>
+    public Result<PostingSet> Collect(
+        Guid actorUserId,
+        ExtractPostingContext context,
+        CollectionPosition position,
+        Money cash,
+        Money withheld,
+        DateTimeOffset now,
+        bool creditNoteRaised = false)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        Result gate = Result.FirstFailureOrSuccess(
+            CheckProject(context),
+            EnsureMayRecordCollection(context.Project, context.Rulings, position, creditNoteRaised),
+            CheckPayment(context.Project, position, cash, withheld));
+        return gate.IsFailure
+            ? Result.Failure<PostingSet>(gate.Error)
+            : PostReceipt(actorUserId, context, position, cash, withheld, now);
+    }
+
+    /// <summary>
+    /// D-235 item 1: the cheque cleared, so it is cash. Posts its amounts as a payment would and completes the collection
+    /// when they reach what is expected. <paramref name="position"/> still counts the cheque in hand; it is released here.
+    /// An open credit note does not stop a clearance: the bank has paid. A disputed extract takes the money and stays
+    /// disputed.
+    /// </summary>
+    public Result<PostingSet> ClearCheque(
+        Guid actorUserId, ExtractPostingContext context, CollectionPosition position, Money cash, Money withheld, DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(position);
+
+        CollectionPosition released = position.Releasing(cash + withheld);
+        Result gate = Result.FirstFailureOrSuccess(
+            CheckProject(context),
+            Status is ExtractStatus.Issued or ExtractStatus.Disputed ? Result.Success() : Result.Failure(ExtractErrors.IllegalTransition),
+            CheckPayment(context.Project, released, cash, withheld));
+        return gate.IsFailure
+            ? Result.Failure<PostingSet>(gate.Error)
+            : PostReceipt(actorUserId, context, released, cash, withheld, now);
+    }
+
+    /// <summary>
+    /// D-235 item 1: a deposited cheque bounced. Nothing was posted for it, so nothing is reversed. The extract is Issued
+    /// (it never became Collected on the cheque) and the stored reason is on its gate record.
+    /// </summary>
+    public Result RecordChequeBounce(Guid actorUserId, string? reason, DateTimeOffset now)
+    {
+        Result checkedReason = CheckReason(reason);
+        if (checkedReason.IsFailure)
+        {
+            return checkedReason;
+        }
+
+        if (Status is not (ExtractStatus.Issued or ExtractStatus.Disputed))
+        {
+            return Result.Failure(ExtractErrors.IllegalTransition);
+        }
+
+        Apply(Status, ExtractGate.ChequeBounce, ExtractGateOutcome.Reversed, actorUserId, now, reason!.Trim(), null);
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Whether the standing collection may be reversed: a Collected extract, or an Issued one holding a part payment
+    /// (<paramref name="hasStandingCollection"/>, read off the postings by the caller). The route and the read both ask.
+    /// </summary>
+    public Result EnsureMayReverseCollection(bool hasStandingCollection) =>
+        Status == ExtractStatus.Collected || (Status == ExtractStatus.Issued && hasStandingCollection)
+            ? Result.Success()
+            : Result.Failure(ExtractErrors.IllegalTransition);
+
+    private Result<PostingSet> PostReceipt(
+        Guid actorUserId, ExtractPostingContext context, CollectionPosition position, Money cash, Money withheld, DateTimeOffset now)
+    {
         Result<PostingSet> collection = ExtractPostings.BuildCollection(
-            context.Project, StoredResult(), context.Accounts, SourceDocument, context.PostingDate,
+            context.Project, cash, withheld, context.Accounts, SourceDocument, context.PostingDate,
             actorUserId, now, ExtractStage.Collected, context.Rulings);
         if (collection.IsFailure)
         {
             return collection;
         }
 
-        Apply(ExtractStatus.Collected, ExtractGate.Collect, ExtractGateOutcome.Passed, actorUserId, now, null, null);
+        bool complete = Status == ExtractStatus.Issued && position.Collected + cash + withheld >= position.Expected;
+        Apply(complete ? ExtractStatus.Collected : Status, ExtractGate.Collect, ExtractGateOutcome.Passed, actorUserId, now, null, null);
         return collection;
     }
 
@@ -515,9 +697,10 @@ public sealed class Extract : Entity
         ArgumentNullException.ThrowIfNull(collectionLegs);
 
         // Not a step of the forward chain, so Collected to Issued is deliberately absent from LegalTransitions:
-        // putting it there would make Issue legal from Collected. Only a collected extract can have a collection reversed.
+        // putting it there would make Issue legal from Collected. D-235 item 2: a part payment leaves the extract Issued,
+        // and that payment is reversible too, so an Issued extract with standing collection legs qualifies.
         Result gate = Result.FirstFailureOrSuccess(
-            Status == ExtractStatus.Collected ? Result.Success() : Result.Failure(ExtractErrors.IllegalTransition),
+            EnsureMayReverseCollection(collectionLegs.Count > 0),
             CheckProject(context));
         if (gate.IsFailure)
         {

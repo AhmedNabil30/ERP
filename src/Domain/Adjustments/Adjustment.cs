@@ -153,6 +153,10 @@ public sealed class Adjustment : Entity
     /// the reason, the amount, the target account (the hold by name first), the extract and the project state.
     /// </summary>
     /// <param name="alreadyCredited">Credit notes already Raised or Approved against this extract, summed by the caller.</param>
+    /// <param name="alreadyPaid">
+    /// What the client has already paid on the extract, posted or in cheques in hand, summed by the caller. D-235 item 2
+    /// allows part payments, so a credit note may not bring what is owed below what was already paid.
+    /// </param>
     public static Result<Adjustment> RaiseCreditNote(
         Project project,
         int number,
@@ -163,7 +167,8 @@ public sealed class Adjustment : Entity
         string? reason,
         RulingSet rulings,
         Guid raisedByUserId,
-        DateTimeOffset now)
+        DateTimeOffset now,
+        Money alreadyPaid = default)
     {
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(extract);
@@ -203,7 +208,7 @@ public sealed class Adjustment : Entity
             return Result.Failure<Adjustment>(AdjustmentErrors.SourceNotCreditable);
         }
 
-        if (amount + alreadyCredited > net)
+        if (amount + alreadyCredited + alreadyPaid > net)
         {
             return Result.Failure<Adjustment>(AdjustmentErrors.ExceedsExtractNet);
         }

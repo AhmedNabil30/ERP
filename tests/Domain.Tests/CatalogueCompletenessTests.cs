@@ -488,13 +488,13 @@ public sealed class CatalogueCompletenessTests
     /// it that is not arbitrary.
     /// </summary>
     [Fact]
-    public void The_qc_report_defaults_to_the_supervising_engineer_and_touches_no_money()
+    public void The_qc_report_defaults_to_the_supervising_engineer_and_carries_the_material_values()
     {
         PermissionDefinition definition = PermissionCatalogue.Of(Permission.ExtractQcReportSubmit);
 
         definition.Unresolved.Should().BeTrue("spec.md §7 names the step and not its actor");
-        definition.TouchesMoney.Should().BeFalse(
-            "spec.md §9 — site engineers approve nothing financial");
+        definition.TouchesMoney.Should().BeTrue(
+            "D-235 item 4: the supervising engineer enters the two material values with the QC report");
         AccessGrant[] supervisorOnly =
         [
             new AccessGrant { Role = Role.SiteEngineer, MinimumAssignmentLevel = AssignmentLevel.Supervisor },

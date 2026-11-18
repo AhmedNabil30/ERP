@@ -14,8 +14,9 @@ public enum ChequeState
 
 /// <summary>
 /// A cheque a client paid with. It has a life of its own: a cheque clears or bounces from deposited only.
-/// A state change writes audit (the interceptor, on the same save) and posts nothing: Q91 records that no
-/// account type represents a cheque in hand or in transit, so the three cheque posting types stay unenforced.
+/// A state change writes audit (the interceptor, on the same save). D-235 item 1: a cheque becomes cash only when it
+/// clears, so the clearance is the move that posts, through the extract's collection (<c>Extract.ClearCheque</c>);
+/// receiving, depositing and bouncing post nothing. No account type represents a cheque in hand (Q91).
 /// </summary>
 public sealed class Cheque : Entity
 {
@@ -52,6 +53,12 @@ public sealed class Cheque : Entity
     public DateTimeOffset StateChangedAt { get; private set; }
 
     public static bool IsLegalTransition(ChequeState from, ChequeState to) => LegalTransitions.Contains((from, to));
+
+    /// <summary>
+    /// A cheque still in hand: received or deposited, so it can still clear or bounce. Read off the transition table, so
+    /// the cheque list, the extract's read and the move routes cannot disagree.
+    /// </summary>
+    public static bool IsInHand(ChequeState state) => LegalTransitions.Any(transition => transition.From == state);
 
     /// <summary>A cheque collection starts the cheque in <see cref="ChequeState.Received"/>.</summary>
     public static Cheque Receive(CollectionRecord collection, Guid actorUserId, DateTimeOffset now)

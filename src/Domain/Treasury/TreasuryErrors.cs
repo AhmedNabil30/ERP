@@ -101,6 +101,14 @@ public static class TreasuryErrors
         Error.Conflict("treasury.flow_posting_not_reversible", "errors.treasury.flow_posting_not_reversible");
 
     /// <summary>
+    /// A generic movement may not name a source type a flow owns (an extract, an adjustment, the handover, a subcontractor
+    /// retention release): it would count as that document's own posting (D-237, open item). Those postings are written
+    /// by their flows only.
+    /// </summary>
+    public static readonly Error FlowSourceNotAllowed =
+        Error.Validation("treasury.flow_source_not_allowed", "errors.treasury.flow_source_not_allowed");
+
+    /// <summary>
     /// spec.md §5.1 — the hold releases in full: a release must leave it at exactly zero. Mirrors
     /// <c>KAFF_HOLD_PARTIAL_RELEASE</c>, which only the database can check.
     /// </summary>

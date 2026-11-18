@@ -91,4 +91,8 @@ public static class ExtractErrors
 
     public static readonly Error DisputeResolutionRequired =
         Error.Validation("extract.dispute_resolution_required", "errors.extract.dispute_resolution_required");
+
+    /// <summary>D-235 item 4: the supervising engineer enters both material values with the QC report.</summary>
+    public static readonly Error MaterialValuesRequired =
+        Error.Validation("extract.material_values_required", "errors.extract.material_values_required");
 }

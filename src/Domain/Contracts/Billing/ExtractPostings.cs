@@ -111,22 +111,51 @@ public static class ExtractPostings
         ArgumentNullException.ThrowIfNull(accounts);
         ArgumentNullException.ThrowIfNull(rulings);
 
+        Money withheld = ExpectedWithheld(result);
+
+        // Cash that reaches the safe is the net the client owes less what it withholds at source.
+        return BuildCollection(
+            project, result.NetPayable - withheld, withheld, accounts, source, postingDate, createdByUserId, createdAt,
+            reachedStage, rulings);
+    }
+
+    /// <summary>What the extract's own figures expect the client to withhold at source: its TaxAtSource component.</summary>
+    public static Money ExpectedWithheld(BillingResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        return Money.Sum(result.Components.Where(c => c.Kind == BillingComponentKind.TaxAtSource).Select(c => c.Amount));
+    }
+
+    /// <summary>
+    /// D-235 item 2: the collection posts what arrived, not what the figures expected. <paramref name="cash"/> goes from
+    /// the receivable to the safe and <paramref name="withheld"/> from the receivable to the withholding account, in one
+    /// set. The caller has checked the amounts against what the extract still expects.
+    /// </summary>
+    public static Result<PostingSet> BuildCollection(
+        Project project,
+        Money cash,
+        Money withheld,
+        ExtractAccounts accounts,
+        SourceDocument source,
+        DateOnly postingDate,
+        Guid createdByUserId,
+        DateTimeOffset createdAt,
+        ExtractStage reachedStage,
+        RulingSet rulings)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(accounts);
+        ArgumentNullException.ThrowIfNull(rulings);
+
         if (reachedStage != ExtractStage.Collected)
         {
             return Result.Failure<PostingSet>(BillingErrors.NotAtPostingMoment);
         }
 
-        Money withheld = Money.Sum(result.Components
-            .Where(c => c.Kind == BillingComponentKind.TaxAtSource)
-            .Select(c => c.Amount));
-
         if (withheld.IsPositive && accounts.TaxWithheldAtSource is null)
         {
             return Result.Failure<PostingSet>(BillingErrors.TaxAtSourceAccountRequired);
         }
-
-        // Cash that reaches the safe is the net the client owes less what it withholds at source.
-        Money cash = result.NetPayable - withheld;
 
         PostingSetBuilder builder = new PostingSetBuilder(
                 project, source, postingDate, createdByUserId, createdAt, rulings.PostingProjectStates)

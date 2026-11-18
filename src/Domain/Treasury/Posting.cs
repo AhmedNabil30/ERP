@@ -135,6 +135,24 @@ public sealed class Posting : Entity
     }
 
     /// <summary>
+    /// The generic movement (<c>POST .../treasury/postings</c>): <see cref="Create"/>, refused for a source type a flow
+    /// owns. A movement naming a real extract would otherwise count as that extract's own collection (D-237, open item).
+    /// </summary>
+    public static Result<Posting> CreateMovement(
+        Account from,
+        Account to,
+        Money amount,
+        PostingType type,
+        SourceDocument sourceDocument,
+        DateOnly postingDate,
+        Guid createdByUserId,
+        DateTimeOffset createdAt,
+        Guid? projectId = null) =>
+        SourceDocument.HasOwningFlow(sourceDocument.Type)
+            ? Result.Failure<Posting>(TreasuryErrors.FlowSourceNotAllowed)
+            : Create(from, to, amount, type, sourceDocument, postingDate, createdByUserId, createdAt, projectId);
+
+    /// <summary>
     /// Produces the correcting posting for <paramref name="original"/>.
     /// </summary>
     /// <remarks>

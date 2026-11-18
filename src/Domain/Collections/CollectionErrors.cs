@@ -22,4 +22,22 @@ public static class CollectionErrors
 
     public static readonly Error ChequeNotFound =
         Error.NotFound("cheque.not_found", "errors.cheque.not_found");
+
+    /// <summary>D-235 item 2: a collection records the amount received. It is never inferred from the extract.</summary>
+    public static readonly Error AmountRequired =
+        Error.Validation("collection.amount_required", "errors.collection.amount_required");
+
+    /// <summary>Neither amount may be negative, and together they must be more than zero.</summary>
+    public static readonly Error AmountInvalid =
+        Error.Validation("collection.amount_invalid", "errors.collection.amount_invalid");
+
+    /// <summary>
+    /// D-235 item 2: received plus withheld may not pass what the extract still expects, counting cheques in hand.
+    /// </summary>
+    public static readonly Error ExceedsExpected =
+        Error.Conflict("collection.exceeds_expected", "errors.collection.exceeds_expected");
+
+    /// <summary>spec.md section 6.7: a contract with no withholding category withholds nothing (AC-317-B, AC-317-F).</summary>
+    public static readonly Error WithholdingNotApplicable =
+        Error.Validation("collection.withholding_not_applicable", "errors.collection.withholding_not_applicable");
 }

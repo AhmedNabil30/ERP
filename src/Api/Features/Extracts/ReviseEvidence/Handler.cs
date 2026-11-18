@@ -15,14 +15,14 @@ namespace Kaff.Api.Features.Extracts.ReviseEvidence;
 
 /// <summary>
 /// Re-derives the certified work from the BOQ as it stands and replaces the evidence of a rejected Draft extract.
-/// Writes no posting.
+/// Writes no posting. Takes no body: D-235 item 4, the preparer enters no money, so the material values stay as the
+/// supervising engineer entered them and are entered again with the next QC report.
 /// </summary>
 internal static class Handler
 {
     public static Task<IResult> HandleAsync(
         Guid projectId,
         Guid id,
-        Request request,
         KaffDbContext database,
         RulingSet rulings,
         TimeProvider clock,
@@ -31,8 +31,6 @@ internal static class Handler
         ClaimsPrincipal user,
         CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(request);
-
         return ExtractSupport.RunAsync(
             projectId,
             id,
@@ -58,8 +56,8 @@ internal static class Handler
                 return ExtractSupport.NoPostingsOr(extract.ReviseEvidence(
                     actor,
                     ExtractSupport.CumulativeCertifiedWork(boq, services.Rulings),
-                    request.MaterialValueOnSite,
-                    request.MaterialInstalled,
+                    extract.MaterialValueOnSite,
+                    extract.MaterialInstalled,
                     services.Clock.GetUtcNow()));
             },
             cancellationToken);

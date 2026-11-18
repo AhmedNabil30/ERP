@@ -117,6 +117,15 @@ public sealed class TranslationCatalogueTests
     {
         const string TheKey = "errors.master.individual_does_not_withhold";
 
+        // D-235 item 2 and Verifier F-8 add two refusals that are not the individual-client claim: a withheld amount on a
+        // corporate contract whose category is None, and a category request that names none. Each is one exact key.
+        string[] theKeys =
+        [
+            TheKey,
+            "errors.collection.withholding_not_applicable",
+            "errors.project.withholding_category_required",
+        ];
+
         static bool MentionsWithholding(string key) =>
             key.Contains("withhold", StringComparison.OrdinalIgnoreCase);
 
@@ -127,8 +136,8 @@ public sealed class TranslationCatalogueTests
             LoadCatalogue(path).Keys
                 .Where(key => key.StartsWith("errors.", StringComparison.Ordinal) && MentionsWithholding(key))
                 .Should().BeEquivalentTo(
-                [TheKey],
-                $"{path} — §6.7 has one refusal, and a second spelling of it is a message that will "
+                theKeys,
+                $"{path} — each §6.7 refusal has one key, and a second spelling of one is a message that will "
                 + "reach a screen untranslated");
         }
 
@@ -137,8 +146,8 @@ public sealed class TranslationCatalogueTests
             .Select(entry => entry.Key)
             .Distinct(StringComparer.Ordinal)
             .Should().BeEquivalentTo(
-                [TheKey],
-                "the domain declares one withholding refusal; Client.SetClassification and "
+                theKeys,
+                "the domain declares one individual-client refusal; Client.SetClassification and "
                 + "Project.SetWithholding return the same Error because they refuse the same claim");
     }
 

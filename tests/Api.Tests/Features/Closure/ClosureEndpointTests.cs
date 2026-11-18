@@ -818,7 +818,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
             amount = "150000.0000",
             type = nameof(PostingType.HoldRelease),
             postingDate = SiteToday,
-            sourceDocumentType = nameof(SourceDocumentType.ProjectHandover),
+            sourceDocumentType = nameof(SourceDocumentType.Payment),
             sourceDocumentId = Guid.CreateVersion7(),
             sourceDocumentReference = (string?)null,
         });

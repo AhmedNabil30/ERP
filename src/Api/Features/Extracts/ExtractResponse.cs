@@ -88,6 +88,11 @@ public sealed record GateRecordResponse(
 /// The bare separation-of-duties answer: false when the caller prepared the extract or acted on it earlier in
 /// the current cycle. A screen can use it to say why a gate control is absent.
 /// </param>
+/// <param name="RecordCollection">Record a payment or a cheque now: Issued, nothing waiting for the Owner, something still expected.</param>
+/// <param name="RecordChequeMove">Deposit, clear or bounce: the extract has a cheque still in hand.</param>
+/// <param name="ReverseCollection">Reverse the standing collection: something posted stands to be reversed.</param>
+/// <param name="RaiseDispute">The client disputes the issued extract.</param>
+/// <param name="ResolveDispute">The dispute is open and may be resolved.</param>
 public sealed record ExtractActions(
     bool SubmitQcReport,
     bool ApproveTechnicalOffice,
@@ -98,7 +103,23 @@ public sealed record ExtractActions(
     bool RejectAtOwner,
     bool Issue,
     bool ReviseEvidence,
-    bool CallerMayDecide);
+    bool CallerMayDecide,
+    bool RecordCollection,
+    bool RecordChequeMove,
+    bool ReverseCollection,
+    bool RaiseDispute,
+    bool ResolveDispute);
+
+/// <summary>
+/// What an issued extract expects and has received (D-235 item 2), derived on every read. Money, so only a viewer who
+/// may see money gets it, and null before the extract is issued.
+/// </summary>
+/// <param name="Expected">Net payable less approved credit notes.</param>
+/// <param name="ExpectedWithheld">What the extract's figures expect the client to withhold at source. A guide: the client's own figure is recorded.</param>
+/// <param name="Collected">Received plus withheld, as posted, net of reversals.</param>
+/// <param name="InCheques">Cheques received or deposited and not yet cleared.</param>
+/// <param name="Remaining">What may still be recorded: expected less collected less cheques in hand.</param>
+public sealed record ExtractCollectionResponse(Money Expected, Money ExpectedWithheld, Money Collected, Money InCheques, Money Remaining);
 
 public sealed record ExtractResponse(
     Guid Id,
@@ -117,7 +138,8 @@ public sealed record ExtractResponse(
     ExtractEvidence? Evidence,
     ExtractDocument? Document,
     IReadOnlyList<ExtractChangeOrderResponse>? ChangeOrders,
-    WaitingOnResponse WaitingOn);
+    WaitingOnResponse WaitingOn,
+    ExtractCollectionResponse? Collection);
 
 /// <summary>Who is looking: their id and which of the extract permissions they hold on this project.</summary>
 internal sealed record ExtractViewer(Guid UserId, IReadOnlySet<Permission> Held)
@@ -144,10 +166,18 @@ internal static class ExtractView
         Permission.ExtractDeductionsApply,
         Permission.FinancialMovementApprove,
         Permission.ExtractDocumentAssemble,
+        Permission.ExtractCollect,
+        Permission.ExtractDisputeRaise,
+        Permission.ExtractDisputeResolve,
     ];
 
     public static ExtractResponse Build(
-        Extract extract, Project project, RulingSet rulings, ExtractViewer viewer, WaitingOnResponse waitingOn)
+        Extract extract,
+        Project project,
+        RulingSet rulings,
+        ExtractViewer viewer,
+        WaitingOnResponse waitingOn,
+        ExtractCollectionState? collection = null)
     {
         ArgumentNullException.ThrowIfNull(extract);
         ArgumentNullException.ThrowIfNull(project);
@@ -170,7 +200,7 @@ internal static class ExtractView
             extract.HeldPortionReleasedAt,
             [.. extract.GateHistory.Select(record => new GateRecordResponse(
                 record.Gate, record.Outcome, record.ActorUserId, record.OccurredAt, record.Reason, record.ApprovedPortion))],
-            ActionsFor(extract, project, rulings, viewer),
+            ActionsFor(extract, project, rulings, viewer, collection),
             seesMoney
                 ? new ExtractEvidence(
                     extract.CumulativeCertifiedWork, extract.PreviouslyCertifiedWork, extract.MaterialValueOnSite, extract.MaterialInstalled)
@@ -179,10 +209,15 @@ internal static class ExtractView
             seesMoney
                 ? [.. extract.ChangeOrderLines.Select(line => new ExtractChangeOrderResponse(line.ChangeOrderId, line.Amount))]
                 : null,
-            waitingOn);
+            waitingOn,
+            seesMoney && collection is { Position: var position }
+                ? new ExtractCollectionResponse(
+                    position.Expected, extract.ExpectedWithheld, position.Collected, position.InCheques, position.Remaining)
+                : null);
     }
 
-    private static ExtractActions ActionsFor(Extract extract, Project project, RulingSet rulings, ExtractViewer viewer)
+    private static ExtractActions ActionsFor(
+        Extract extract, Project project, RulingSet rulings, ExtractViewer viewer, ExtractCollectionState? collection)
     {
         bool mayDecide = extract.EnsureMayDecide(viewer.UserId).IsSuccess;
         ExtractStatus status = extract.Status;
@@ -210,7 +245,16 @@ internal static class ExtractView
             RejectAtOwner: Holds(Permission.FinancialMovementApprove) && atOwner && mayDecide,
             Issue: Holds(Permission.FinancialMovementApprove) && Can(ExtractStatus.Issued) && projectMayIssue,
             ReviseEvidence: Holds(Permission.ExtractPrepare) && extract.IsRevisable,
-            CallerMayDecide: mayDecide);
+            CallerMayDecide: mayDecide,
+
+            // The same domain checks the collection, cheque, reversal and dispute routes make, asked of the same state.
+            RecordCollection: Holds(Permission.ExtractCollect) && collection is not null
+                && extract.EnsureMayRecordCollection(project, rulings, collection.Position, collection.CreditNoteRaised).IsSuccess,
+            RecordChequeMove: Holds(Permission.ExtractCollect) && collection is { ChequesInHand.Count: > 0 },
+            ReverseCollection: Holds(Permission.ExtractCollect) && collection is not null
+                && extract.EnsureMayReverseCollection(collection.Position.Collected.IsPositive).IsSuccess,
+            RaiseDispute: Holds(Permission.ExtractDisputeRaise) && Can(ExtractStatus.Disputed),
+            ResolveDispute: Holds(Permission.ExtractDisputeResolve) && status == ExtractStatus.Disputed);
     }
 
     /// <summary>Null until Accounts has applied the deductions: there are no figures before that, and none is invented.</summary>
@@ -262,7 +306,9 @@ internal static class ExtractView
 
         Money columnSum = Money.Sum(column.Select(row => row.IsDeduction ? -row.Amount : row.Amount));
 
-        ExtractGateRecord prepared = extract.GateHistory.First(record => record.Gate == ExtractGate.Prepared);
+        // D-235 item 4: the material values are entered with the QC report, so the figure names its last submitter.
+        ExtractGateRecord prepared = extract.GateHistory.LastOrDefault(record => record.Gate == ExtractGate.QcReport)
+            ?? extract.GateHistory.First(record => record.Gate == ExtractGate.Prepared);
 
         FigureInput Terms(string labelKey, Percentage? rate) =>
             new(labelKey, FigureKind.Carried, null, rate, "project.terms", null, null);

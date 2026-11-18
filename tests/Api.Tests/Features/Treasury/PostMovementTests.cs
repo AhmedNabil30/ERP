@@ -305,7 +305,7 @@ public sealed class PostMovementTests : IAsyncLifetime
                 toAccountId = expense.Id,
                 amount = "10.0000",
                 type = nameof(PostingType.CompanyExpensePayment),
-                sourceDocumentType = nameof(SourceDocumentType.Adjustment),
+                sourceDocumentType = nameof(SourceDocumentType.Payment),
                 sourceDocumentId = Guid.CreateVersion7(),
             });
 
@@ -357,6 +357,40 @@ public sealed class PostMovementTests : IAsyncLifetime
         {
             (await MessageKeyAsync(response)).Should().Be("errors.treasury.posting_date_out_of_range");
         }
+    }
+
+    // ---- D-237 open item: a generic movement may not name a flow's document --------------------------
+
+    /// <summary>
+    /// A generic movement that names a flow-owned source type would count as that flow's own posting: a ClientCollection
+    /// naming a real extract reads as that extract's collection. Those types are written by their flows only.
+    /// </summary>
+    [Theory]
+    [InlineData(nameof(SourceDocumentType.Extract))]
+    [InlineData(nameof(SourceDocumentType.Adjustment))]
+    [InlineData(nameof(SourceDocumentType.ProjectHandover))]
+    [InlineData(nameof(SourceDocumentType.SubcontractorRetentionRelease))]
+    public async Task A_generic_movement_naming_a_flow_owned_source_type_is_refused_and_writes_nothing(string sourceType)
+    {
+        (Account safe, Account expense) = await CreateFundedSafeAndExpenseAsync(10_000m);
+
+        HttpResponseMessage response = await SendBodyAsync(
+            new Uri("/api/treasury/postings", UriKind.Relative),
+            _financeCompanyWide,
+            new
+            {
+                fromAccountId = safe.Id,
+                toAccountId = expense.Id,
+                amount = "10.0000",
+                type = nameof(PostingType.CompanyExpensePayment),
+                postingDate = Today,
+                sourceDocumentType = sourceType,
+                sourceDocumentId = Guid.CreateVersion7(),
+            });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest, await response.Content.ReadAsStringAsync(Ct));
+        (await MessageKeyAsync(response)).Should().Be("errors.treasury.flow_source_not_allowed");
+        (await PostingCountAsync(safe.Id, expense.Id)).Should().Be(0);
     }
 
     private async Task<HttpResponseMessage> SendBodyAsync(Uri route, Guid actorId, object body)
@@ -498,7 +532,7 @@ public sealed class PostMovementTests : IAsyncLifetime
                 amount,
                 type = type.ToString(),
                 postingDate = postingDate ?? Today,
-                sourceDocumentType = nameof(SourceDocumentType.Adjustment),
+                sourceDocumentType = nameof(SourceDocumentType.Payment),
                 sourceDocumentId = Guid.CreateVersion7(),
                 sourceDocumentReference = (string?)null,
             }),

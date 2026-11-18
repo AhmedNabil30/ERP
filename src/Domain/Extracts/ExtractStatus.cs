@@ -70,6 +70,12 @@ public enum ExtractGate
 
     /// <summary>The dispute was resolved as a credit note. Carries the stored reason.</summary>
     DisputeResolution = 11,
+
+    /// <summary>
+    /// A client's cheque bounced (D-235 item 1). Nothing had been posted for it, so nothing is reversed and the extract
+    /// stays where it was. Carries the stored reason.
+    /// </summary>
+    ChequeBounce = 12,
 }
 
 public enum ExtractGateOutcome

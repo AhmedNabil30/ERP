@@ -7,15 +7,21 @@ using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Kaff.Api.Features.Extracts.SubmitQcReport;
 
-/// <summary>Draft to QcSubmitted. Writes no posting, so no accounts are needed.</summary>
+/// <summary>
+/// Draft to QcSubmitted with the supervising engineer's two material values (D-235 item 4). Writes no posting, so no
+/// accounts are needed.
+/// </summary>
 internal static class Handler
 {
     public static Task<IResult> HandleAsync(
         Guid projectId,
         Guid id,
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] Request? request,
         KaffDbContext database,
         RulingSet rulings,
         TimeProvider clock,
@@ -32,7 +38,8 @@ internal static class Handler
             {
                 Guid actor = services.CurrentUser.UserId ?? Guid.Empty;
                 DateTimeOffset now = services.Clock.GetUtcNow();
-                return Task.FromResult(ExtractSupport.NoPostingsOr(extract.SubmitQcReport(actor, now)));
+                return Task.FromResult(ExtractSupport.NoPostingsOr(
+                    extract.SubmitQcReport(actor, request?.MaterialValueOnSite, request?.MaterialInstalled, now)));
             },
             cancellationToken);
 }

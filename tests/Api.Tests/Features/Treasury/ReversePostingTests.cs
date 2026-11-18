@@ -360,7 +360,7 @@ public sealed class ReversePostingTests : IAsyncLifetime
                 amount,
                 type = type.ToString(),
                 postingDate = Today,
-                sourceDocumentType = nameof(SourceDocumentType.Adjustment),
+                sourceDocumentType = nameof(SourceDocumentType.Payment),
                 sourceDocumentId = Guid.CreateVersion7(),
                 sourceDocumentReference = (string?)null,
             }),

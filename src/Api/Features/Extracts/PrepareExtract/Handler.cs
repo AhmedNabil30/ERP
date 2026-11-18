@@ -121,9 +121,11 @@ internal static class Handler
         Guid actor = currentUser.UserId ?? Guid.Empty;
         DateTimeOffset now = clock.GetUtcNow();
 
+        // D-235 item 4: the material values are money, and the junior site engineer who prepares never enters money. The
+        // supervising engineer enters them with the QC report; until then the extract carries none.
         Result<Extract> prepared = Extract.Prepare(
             project, number, request.PeriodStart, request.PeriodEnd, cumulative, previous,
-            request.MaterialValueOnSite, request.MaterialInstalled, actor, now, changeOrders);
+            Money.Zero, Money.Zero, actor, now, changeOrders);
         if (prepared.IsFailure)
         {
             return ResultExtensions.Problem(prepared.Error);
@@ -149,13 +151,9 @@ internal static class Handler
             return ResultExtensions.Problem(ExtractErrors.ChangeOrderAlreadyBilled);
         }
 
-        ExtractViewer viewer = await ExtractSupport.ViewerAsync(
-            new StepServices(database, rulings, clock, currentUser, authorization, user));
-
         return Microsoft.AspNetCore.Http.Results.Created(
             $"/api/projects/{projectId}/extracts/{extract.Id}",
-            ExtractView.Build(
-                extract, project, rulings, viewer,
-                ExtractWaitingOnView.Build(extract, await ExtractWaitingOnView.StaffAsync(database, projectId, cancellationToken))));
+            await ExtractSupport.ViewAsync(
+                new StepServices(database, rulings, clock, currentUser, authorization, user), extract, project, cancellationToken));
     }
 }
