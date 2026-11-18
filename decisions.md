@@ -16988,3 +16988,19 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 4. **The supervising engineer confirms the real executed quantities line by line and enters the two material values when he submits the QC report.** The junior site engineer never touches money (`spec.md` §9). This needs one permission change on the server.
 
 **Not yet ruled, recorded so they are not forgotten:** whether the Owner approves a receipt (Q97); who records the client's approval of a change order (the chain needs three distinct Technical Office users plus the Owner); the withholding base and category (Q99, Q114, Q30); who is told when a credit note, change order or cheque waits.
+
+
+## D-236 — The Treasury defects of the 2026-11-18 Verifier pass, as fixed · 2026-11-18
+
+**Source.** `qa/slice-3/verification-2026-11-18.md`; built by a lane dispatched by the Scrum Master. No new business rule except where marked.
+
+1. **A posting that touches the hold ledger cannot be reversed,** in the domain (`treasury.hold_posting_not_reversible`) and by the database (`KAFF_HOLD_REVERSAL`); `KAFF_HOLD_DEBIT` lost its exemption for reversals. Once a hold release exists, the hold is released, whether or not that release was reversed under the old code. The development database held no reversed release and no reversed hold posting.
+2. **A typed posting date is required** (`errors.treasury.posting_date_required`) and must fall between 2000-01-01 and one day after the site day (`errors.treasury.posting_date_out_of_range`). The one-day tolerance is the lane's choice, for Nabil to confirm. Flow postings still take the site day.
+3. **Every database guard prefix has a translated refusal,** and the translation test derives its list from the guard scripts, so an untranslated prefix fails the build.
+4. **A ledger with two accounts is summed within the ledger, never across ledgers.** عهدة is per employee (AC-302-D), so a project may hold several.
+5. **The tax-account rule is mirrored in SQL** in both directions.
+6. **Wire change:** `clientAdvance` on `POST /api/projects` and `POST /api/projects/{id}/sign` is a `Percentage` fraction (`"0.25"` for 25%), like the hold and recovery rates. It was percent units, so `"0.25"` used to sign a 0.25% advance.
+
+**Consequence to rule on (Karim).** An extract rejection reverses its postings. If an extract's accrual is ever moved before the Owner's approval, a rejection after accrual would reverse a hold posting, which is now refused. Under today's ruling the accrual happens after the last gate, so no rejection can reach it.
+
+**Still open.** A generic reversal of any other flow-owned posting (for example an extract's client collection) is not yet blocked; only hold postings are. The application connects to the database as a superuser (Verifier F-1), which can switch the append-only triggers off: next lane.

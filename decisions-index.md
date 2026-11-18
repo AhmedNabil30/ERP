@@ -242,3 +242,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-233 | 16959 | Nabil approves the people mock, rules out a review of site registrations, and makes team management the Owner's alone · 2026-11-17 |
 | D-234 | 16970 | "Today" on every document is the site day, HR is not assignable, and what the release 1 Verifier pass settled · 2026-11-17 |
 | D-235 | 16981 | Nabil rules cheque cash, short-pay, dispute kind and who enters extract quantities and material values · 2026-11-18 |
+| D-236 | 16993 | The Treasury defects of the 2026-11-18 Verifier pass, as fixed · 2026-11-18 |
