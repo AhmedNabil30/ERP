@@ -1,120 +1,172 @@
-# KAFF-115 · The project team panel is built from assignment rows, not from the access check
+# KAFF-115 · The project team tab is built from assignment rows, not from the access check
 
 <!-- kaff id=KAFF-115 slice=1 points=8 state=BUILT verdict=REJECTED at=91cdcb3 on=2026-11-17 -->
 
-**Slice:** 1 · **Epic:** Foundation · **Points:** 8 · **Status:** **Ready, 2026-09-02.** ~~BLOCKED — transitively on KAFF-105b (BLOCKED on Q43), and on its own account~~ — struck rather than deleted, per SM-29. **`Q43` is answered (D-100) and KAFF-105b is Ready, so the transitive block is gone.** This story's own three Definition of Ready failures named at the 2026-09-01 refinement (`meetings/2026-09-01-sprint-2-refinement.md` §3.3) — `AC-115-H`'s money/dashboard-endpoint defect, `AC-115-G`'s wrong-reason refusal, and `AC-115-I`'s unfailable "when the code is read" shape — are **repaired in this revision**, the same way their KAFF-105b counterparts (`AC-105b-C`/`E`, `AC-105b-G`, `AC-105b-F`) were repaired on 2026-09-01. **`AC-115-H` also now carries the `[RefCode] Project Name` display format**, cited to `Q43` (answered 2026-09-02) · D-100, and new rules 8 and 9 say plainly that this screen does **not** render HR's team-size figure — that belongs to HR's project *list*, S-009a, which is **KAFF-125**, not this story. **Re-estimated 3 → 8, 2026-09-01** (`meetings/2026-09-01-sprint-2-refinement.md` §3.3): it births the `ProjectTeamRead` permission row (`process/agile.md` puts touching the permission model at 5) and spans backend and frontend through `AC-115-J` (8) — take the higher, not the sum. Frontend, asked independently at refinement, returned 8 with the same reasoning. **Points unchanged at 8 today** — `Q43`'s answer adds two fields to an existing payload and a display convention, not new scope. Depends on KAFF-105b, which defines the payload this panel reads. `AC-101b-D` was deferred here and **still does not discharge here**: HR lands on **S-009a**, the project *list* (`ux/navigation.md` -> `Landing summary`); this story builds **S-009b**, one project's *team panel* — `AC-115-H` opens *"the Project Team screen **for project A**"*, which is per-project, not the list `AC-101b-D` requires HR to land on. That finding stands (`meetings/2026-09-01-sprint-2-refinement.md` §3.1) — it is why `AC-101b-A` and `AC-101b-D` are re-pointed, in a dated amendment made in this same pass, at **KAFF-125** instead, rather than being discharged by either this story or KAFF-105b
-**Spec:** §9, §12 · **Decisions:** D-010, D-044 (rulings 2, 3), **D-051 (Q32)**, **D-100 (`Q43`)**
-**Depends on:** KAFF-113, KAFF-114, KAFF-105b *(which names the permission)*
+**Slice:** 1 · **Epic:** Foundation · **Points:** 8 (unchanged) · **Rewritten 2026-11-18** to Nabil's rulings D-227 item 2, D-228 item 1, D-229 item 1, D-233 item 3, D-234 (Verifier finding, `qa/release-1/verification-2026-11-17.md`: AC-F, H, I not met). State is in the trailer.
+**Spec:** §9 · **Decisions:** D-010, D-044 (rulings 2, 3), D-217 item 36, D-227, D-228, D-229, D-233, D-234. ~~D-051 (Q32), D-100 (Q43)~~ — see rules 5 and 8
+**Depends on:** KAFF-113, KAFF-114
+**Built mock:** `.design/v2/team-a/project-team.html` (approved, D-229 item 1)
 
-> **Re-estimated 2 → 3 on 2026-08-21.** Q32 is answered and the answer adds a second surface and a
-> new permission to this story — HR's Project Team screen (D-051 Q32). It is the same data behind a
-> different route and a different permission, not a second implementation.
+> Changed 2026-11-18. This story was a read-only panel plus a separate HR "Project Team" screen. It is now
+> the **team tab** inside a project: current members, how each joined, and, for the Owner alone, the add
+> and remove controls (KAFF-113, KAFF-114). Everyone else reads it and can change nothing. The history of
+> the old Status paragraph (blocks, re-estimates, the KAFF-105b dependency and `ProjectTeamRead`) is in git.
 
 ## Story
-As anyone who can open a project, I see who is on its team — and the list is the assignment rows, not
-"everybody the access check would let in", because the second list contains Karim on every project in
-the company.
+As anyone who can open a project, I see who is on its team, how each person joined, and, if I am the
+Owner, I can add and remove people. The list is the assignment rows, not "everybody the access check
+would let in", because the second list contains the Owner on every project in the company.
 
-Raised at the kickoff, BA → UX: *"build the project team panel from `ProjectAssignment` rows, never
-from the access check, or Karim appears on every project team in the system"*
-(`meetings/2026-08-18-slice-1-kickoff.md` §4). Since then the same became true of HR (D-044 ruling
-3), so there are now two actors who reach every project without being on any team.
+Raised at the kickoff, BA to UX: *"build the project team panel from `ProjectAssignment` rows, never
+from the access check"* (`meetings/2026-08-18-slice-1-kickoff.md` §4).
 
 ## Business rules
 | # | Rule | Source |
 |---|---|---|
-| 1 | The team is the set of **active** `ProjectAssignment` rows for the project | §9 |
-| 2 | The Owner and HR reach every project without an assignment row and therefore appear on no team panel unless somebody actually assigned them. Both go through the same row-less branch, distinguished only by `ProjectAccessPath.OwnerGlobal` / `HrGlobal` [Verified: 2026-08-22 @ `src/Infrastructure/Authorization/ProjectAccessPolicy.cs` -> `EvaluateAsync`, `GlobalReachAsync`] — **so the access check can never be the source of this panel** | D-010 · D-044 ruling 3 |
-| 3 | Each member shows name, role and — for site engineers — `AssignmentLevel`, because seniority is per project [Verified: 2026-08-22 @ `src/Domain/Identity/ProjectAssignment.cs` -> `Level` — the level is on the assignment row, not on the user] | §9 · D-044 ruling 5 |
-| 4 | Revoked members are not in the panel. History belongs to the audit trail. `IsActive` is the computed `RevokedAt is null` [Verified: 2026-08-22 @ `src/Domain/Identity/ProjectAssignment.cs` -> `IsActive`, `RevokedAt`] | slice 0 `ProjectAssignment.IsActive` |
-| 5 | **The team is reachable from two surfaces, and they are separate surfaces, not one view filtered.** Staff read it inside the project with `ProjectRead`. **HR reads it on its own "Project Team" screen with the new narrow `ProjectTeamRead`** — Karim: *"HR may only see the project name and the list of assigned engineers … HR must be routed to a separate 'Project Team' tab/screen that contains zero financial details."* This closes **Q32** and finding **F-03** | **D-051 (Q32)** · KAFF-105b (which defines `ProjectTeamRead`) |
-| 5a | **HR is not granted `ProjectRead`**, and a route that would give HR the project dashboard is a defect. Granting it would undo D-044 ruling 2, which makes HR *"strictly administrative"* with *"zero financial visibility"* | **D-051 (Q32)** · D-044 ruling 2 |
-| 5b | The separate surface is chosen for the reason `spec.md` §12 uses for the client portal: **a filtered view leaks the first time somebody adds a field.** Both surfaces read the same assignment rows; neither shares a response type with the project dashboard | **D-051 (Q32)** · §12 · D-035 |
-| 6 | A portal client never sees it. §12 lists what the client sees, and the team is not on the list | §12 |
-| 7 | A deactivated member is absent from the panel because deactivation revokes their assignments (D-049 ruling 5), not because the panel filters on the user's `IsActive`. One mechanism, and it lives in KAFF-111 | D-049 ruling 5 · KAFF-111 |
-| 8 | **This screen's name line is rendered `[RefCode] Project Name`**, not the bare name — the format `Q43` (D-100) rules for every HR-facing surface that names a project | **`Q43` (answered 2026-09-02) · D-100** |
-| 9 | **HR's team-size figure is not rendered on this panel.** This screen already lists every member of one project by name; a numeric headcount across *all* projects is HR's project **list**'s job — S-009a, which is **KAFF-125**, not this story. `Q43` (D-100) answers whether a team size is shown at all; it does not move it onto this screen | **`Q43` (answered 2026-09-02) · D-100** |
+| 1 | The team is the set of **active** `ProjectAssignment` rows for the project. It lists current members only | §9 · D-228 item 1 |
+| 2 | The Owner reaches every project without an assignment row and appears on no team unless somebody actually assigned him. **The access check can never be the source of this tab** [Verified: 2026-11-17 @ `GetProjectTeam/Handler.cs`: rows only]. HR also reaches without a row, and cannot be assigned, so HR is on no team (D-234 item 2) | D-010 · D-044 ruling 3 · D-234 |
+| 3 | Each member shows name, role and, for site engineers, the level («مبتدئ» / «مشرف»), because seniority is per project | §9 · D-044 ruling 5 |
+| 4 | Removed members are not in the tab. Their past work stays under their name through the audit trail | D-228 item 1 |
+| 5 | ~~The team is reachable from two surfaces: staff with `ProjectRead`, and HR on its own "Project Team" screen with `ProjectTeamRead`.~~ > Removed 2026-11-18 (D-233 item 3). HR cannot open a project and has no team screen. There is one surface, the tab, read with `ProjectRead` and assignment | D-233 item 3 |
+| 5a | **HR is not granted `ProjectRead`**, and a route that gives HR the project is a defect. Holds unchanged (D-044 ruling 2) | D-044 ruling 2 |
+| 5b | ~~Two separate response types so a filtered view cannot leak.~~ > Changed 2026-11-18 (D-233): with no HR surface the team type is simply never the project dashboard's type and never carries money, see AC-115-I | §12 · D-035 |
+| 6 | A portal client never sees it | §12 |
+| 7 | A deactivated member is absent because deactivation revokes their assignments (D-049 ruling 5), not because the tab filters on `IsActive` | D-049 ruling 5 · KAFF-111 |
+| 8 | ~~The name line is rendered `[RefCode] Project Name`.~~ > Removed 2026-11-18 (D-233 / no-codes rule: no code on a screen). The tab names people, not the project | D-233 · memory: screens explain themselves |
+| 9 | ~~HR's team-size figure is not on this panel.~~ > Removed 2026-11-18 (D-233 item 3): HR has no team screen. HR's list figure remains KAFF-125's | D-233 item 3 |
+| 10 | **Each row shows how the person joined** (`origin`): «تلقائي» for an automatic Finance row, «أنشأ المشروع» for the creator, nothing for a person who was added. A creator who was removed and added back reads as added | D-233 "Built before this ruling" · D-229 item 1 |
+| 11 | **Each row says whether the caller may remove him** (`canRemove`), and the read says whether the caller may manage at all (`canManage`). `canManage` is true only for the Owner. `canRemove` is false on every Finance row and false on every row when `canManage` is false. The server decides; the screen only reflects it | D-233 item 3 · D-228 item 1 |
+| 12 | Read-only for everyone but the Owner: no add button, no remove button | D-233 item 3 |
+| 13 | Add is a sheet with a person select and, for a site engineer only, the level choice («مبتدئ» / «مشرف»), required. Remove asks first (KAFF-114 rule 8). Both end with a short notice, «أُضيفت {name}» / «أُزيل {name}», with no project code and no database code on screen | D-229 item 1 · KAFF-113 · KAFF-114 |
+| 14 | On an overview with no site engineer the Owner's primary is «إضافة شخص»; the Technical Office sees «لم يُسنَد مهندس الموقع بعد» with no primary | D-229 item 1 |
 
 ## Permissions, money, audit, i18n
-- **Permissions:** `ProjectRead`, `ProjectScoped`, for the in-project panel — assignment required for
-  everyone except the Owner, whose global reach is a reach rule (D-010). **Or `ProjectTeamRead`,
-  `ProjectScoped`, granted to `Role.Owner` and `Role.Hr` with the same global reach
-  `ProjectAssignmentManage` already gives both** (D-044 rulings 3, 4), for the Project Team screen.
-  One new catalogue row, mirroring an existing row's grant and reach — defined in KAFF-105b.
-  **It does not exist yet** [Verified: 2026-08-22 @ `src/Domain/Authorization/Permission.cs` and
-  `src/Domain/Authorization/PermissionCatalogue.cs` — no `ProjectTeamRead` member and no such row],
-  and **SM-30 binds it**: the row and a test naming it land in the same change, and the test name the
-  row's comment cites must be one that exists. Three rows shipped named in no test on 2026-08-22
-  (D-056 §3); this must not be the fourth.
-- **Money:** moves no money and shows no money — no rate, no cost, no salary. A team panel showing
-  what an engineer costs would put payroll in front of everyone who can open a project.
-- **Audit:** none. It is a read.
-- **i18n:** `team.title`, `team.empty`, `team.member.role`, `team.member.level`, and
-  `team.screen.title` for HR's separate surface, reusing `enum.Role.*` and `enum.AssignmentLevel.*`. *(Was `users.role.*` / `assignments.level.*` until 2026-08-22 — `enum.<Type>.<Member>` is the shape for a server enum rendered as text [Verified: 2026-08-22 @ `ux/rtl-and-i18n.md` -> `enum.<Type>.<Member>`]. Finding **V-07** under **SM-15**. This story is deferred out of sprint 1; the pass covers the whole slice-1 key list so the divergence does not survive into the sprint that builds it.)*
+- **Permissions:** the read is `ProjectRead`, `ProjectScoped`: assignment required for everyone except
+  the Owner, whose global reach is a reach rule (D-010). `GET /api/projects/{id}/team` returns
+  `{ canManage, members[] }`. Add and remove are `ProjectAssignmentManage`, Owner only (KAFF-113, KAFF-114).
+  > Changed 2026-11-18 (D-233 item 3). `ProjectTeamRead` and the HR surface are dropped; whether the
+  > unused permission row is deleted is Q-115-1.
+- **Money:** moves no money and shows no money: no rate, no cost, no salary.
+- **Audit:** the read writes none. Add and remove write theirs (KAFF-113, KAFF-114).
+- **i18n:** `team.title`, `team.empty`, `team.member.role`, `team.member.level`, `team.origin.auto`
+  («تلقائي»), `team.origin.creator` («أنشأ المشروع»), `team.action.add`, `team.action.remove`, reusing
+  `enum.Role.*` and `enum.AssignmentLevel.*`. `team.screen.title` (HR's surface) is dropped.
 
 ## Acceptance criteria
 **AC-115-A — the Owner is not on every team** *(fails if the rule is broken)*
+> Changed 2026-11-18 (D-217 item 36). "Exactly one member" can no longer happen: Finance is staffed automatically. Restated; the intent holds.
+
 Given an Owner who has never been assigned to project A, and one Technical Office user who has
-When project A's team panel is read
-Then it contains exactly one member, and the Owner is not in it
+When project A's team is read
+Then the Technical Office user is in it and the Owner is not, and no row exists for the Owner
 
 **AC-115-B — nor is HR** *(fails if the rule is broken)*
-Given an HR user who assigned everyone on project A and holds no assignment row
-When the panel is read
+> Changed 2026-11-18 (D-233 item 3, D-234 item 2). The given ("HR who assigned everyone") can no longer happen. Restated: HR cannot be on a team at all.
+
+Given an HR user who reached project A and holds no assignment row
+When A's team is read as the Owner
 Then HR is not in it
+And the Owner's attempt to add that HR user is refused (`identity.hr_is_not_assignable`, KAFF-113 AC-113-J)
 
 **AC-115-C — seniority shows, per project**
 Given a Site Engineer who is Supervisor on A and Junior on B
-When A's panel and B's panel are read
+When A's team and B's team are read
 Then each shows the level for that project
+> Holds as written (Verifier: MET).
 
-**AC-115-D — revoked members are gone**
-Given a member whose assignment was revoked
-When the panel is read
+**AC-115-D — removed members are gone**
+Given a member whose assignment was removed
+When the team is read
 Then they are absent
+> Holds as written (Verifier: MET). A re-added person reads as added.
 
 **AC-115-E — and a leaver is gone the same way** *(fails if the rule is broken)*
 Given a team of two, one of whom the Owner then deactivates
-When the panel is read, and then the audit trail for that project
-Then the panel shows one member, and the trail still shows both and when the second came off (D-049 ruling 5)
+When the team is read, and then the audit trail for that project
+Then the team shows one member, and the trail still shows both and when the second came off (D-049 ruling 5)
+> Holds as written. Verifier: UNTESTED, to be covered by a test.
 
 **AC-115-F — an empty team has an explicit empty state**
-Given a project with no assignments
-When the panel is read
+> Holds as written (Verifier: NOT MET at `project-team-tab.html:28-43`). The empty state occurs when a project is created while no Finance user is active (Q-113-1) and the creator was later removed.
+
+Given a project with no active assignments
+When the team tab is read as the Owner, and as a user with `ProjectRead` and no manage right
 Then it renders `team.empty` — never a blank area and never a phantom row
+And the Owner still sees «إضافة شخص»; the other reader sees no button
 
 **AC-115-G — a client cannot read it** *(fails if the rule is broken)*
 Given I am a `Role.Client` user whose client owns project A
-When I request project A's team panel
+When I request project A's team
 Then I am refused before any handler runs — `Role.Client` may never hold a staff session [Verified: 2026-09-02 @ `src/Domain/Identity/Role.cs` -> `MayHoldStaffSession`]
-*(Repaired 2026-09-02 — the previous Then asserted "refused with 403 — `PortalRead` is not `ProjectRead`", which passed for the wrong reason: a `Role.Client` is refused at the staff door by `MayHoldStaffSession` before any handler or permission check runs, so the criterion stayed green even though the rule it named was never the one doing the refusing. `meetings/2026-09-01-sprint-2-refinement.md` §3.2 names this as a live defect and the same class as `TC-1-021` and `TC-1-042`. Repaired the way `AC-105b-G` was repaired on 2026-09-01: assert the refusal at the door, not a reason the code never reaches.)*
+> Holds as written (Verifier: MET).
 
-**AC-115-H — HR reads the team, and reaches nothing else** *(fails if the rule is broken)*
-Given I am `Role.Hr` with no assignment row, and project A has a `ContractValue` set and a reference code
-When I open the Project Team screen for project A
-Then I see its name and code together as `[RefCode] Project Name`, and its members with their roles and levels
-And the payload contains no value, cost, margin, balance, budget, status or client field
-And `Role.Hr` holds no `ProjectRead` grant in the permission catalogue — in the catalogue itself, and by no global-reach rule either
-*(Repaired 2026-09-01 in KAFF-105b at `AC-105b-C` and `AC-105b-E`, and here 2026-09-02: the given used to name "a budget, a contract value and a balance" — `Budget` is nowhere in `src/Domain/` [Verified: 2026-09-02 — searched `src/Domain/Projects/Project.cs`; only `ContractValue` exists, no `Budget` member] and a stored balance is forbidden outright by `CLAUDE.md`. And the last And used to assert a `403` from "the project dashboard endpoint", which does not exist — the entire API exposes three `GET` routes, `/api/auth/me`, `/api/health` and `/api/setup` [Verified: 2026-09-02 — searched `src/Api/Features/*/*/Endpoint.cs` for `MapGet`]. Restated against the permission catalogue, the same shape as `AC-105b-E`. And the display format is new 2026-09-02 — `Q43` / D-100: the code is no longer shown as a bare separate field, it is composed with the name as `[RefCode] Project Name`.)*
+**AC-115-H — HR is refused and reaches nothing** *(fails if the rule is broken)*
+> Changed 2026-11-18 (D-233 item 3). Was "HR reads the team on its own Project Team screen as `[RefCode] Project Name`". The HR screen and the `[RefCode]` format are removed (no-codes rule).
 
-**AC-115-I — the two surfaces are different types** *(fails if the rule is broken)*
-Given the response type the Project Team screen returns and the project dashboard's type
+Given I am `Role.Hr` with no assignment row, and project A has a `ContractValue` set
+When I request `GET /api/projects/A/team`
+Then I am refused 403
+And `Role.Hr` holds no `ProjectRead` grant in the permission catalogue, and by no global-reach rule either
+
+**AC-115-I — the team type carries people, never money** *(fails if the rule is broken)*
+> Changed 2026-11-18 (D-233 item 3). Was "two distinct types for two surfaces, limited to name, code, member name, role and level". With one surface the limit moves to what the tab needs, and the money exclusion stays.
+
+Given the team read's response type (`TeamResponse` / `TeamMember`) and the project dashboard's type
 When a test enumerates every public property of each type by reflection
-Then the two are distinct CLR types, the team screen's type carries no property outside {name, code, and per-member name, role and level}, and the test fails the moment a financial field is added to either type or the two types are collapsed into one
-*(Repaired 2026-09-02 — the previous Then was "when the code is read, then they are different types", a manual-review instruction with no way to fail on its own — QA's own hard rule, `agents.md` §3c, and the same defect repaired in KAFF-105b's `AC-105b-F` on 2026-09-01. Restated as a reflection assertion, the shape QA already used to close the identical defect [Verified: 2026-09-02 @ `qa/slice-1/test-cases.md` -> `TC-1-046`].)*
+Then the two are distinct CLR types
+And the team types carry no property outside {`canManage`; per member: `assignmentId`, `userId`, name, role, level, `origin`, `canRemove`, `assignedAt`}
+And the test fails the moment a financial field (value, cost, rate, margin, balance, status, client) or a project code is added to either team type
 
 **AC-115-J — Arabic, RTL, at mobile width**
-Given the panel at 390px in Arabic
+Given the tab at 390px in Arabic
 When it renders
-Then direction is RTL, names and Latin codes are bidi-isolated, and there is no horizontal overflow
+Then direction is RTL, names are bidi-isolated, and there is no horizontal overflow
+> Holds as written (Verifier: MET).
+
+**AC-115-K — each row says how the person joined** — added 2026-11-18 (D-233 "Built before this ruling")
+Given project A created by a Technical Office user, with an active Finance user added automatically, and an engineer added by the Owner
+When the Owner reads A's team
+Then the creator's row reads `origin` creator and shows «أنشأ المشروع», the Finance row reads automatic and shows «تلقائي», and the engineer's row shows neither
+And when the creator is removed and added back, his row reads as added and shows neither mark
+
+**AC-115-L — `canRemove` and `canManage` follow the caller and the row** *(fails if the rule is broken)* — added 2026-11-18 (D-233 item 3, D-228 item 1)
+Given project A with a creator, a Finance user and a Site Engineer
+When the Owner reads the team
+Then `canManage` is true, the Finance row has `canRemove` false, and the creator and engineer rows have `canRemove` true
+And when a Technical Office user and a Site Engineer on A each read it, `canManage` is false and every row has `canRemove` false and the screen shows no add or remove button
+
+**AC-115-M — the add sheet and the candidates read** — added 2026-11-18 (D-229 item 1)
+Given the Owner on the team tab
+When he opens «إضافة شخص»
+Then the sheet lists the people from `GET /api/projects/A/assignments/candidates` and no one else, and shows the level choice only for a Site Engineer (KAFF-113 AC-113-K, AC-113-L)
+And after adding, the team shows the new member and the notice «أُضيفت {name}»
+
+**AC-115-N — Finance has no remove button** — added 2026-11-18 (D-228 item 1)
+Given the Owner on the team tab of a project with a Finance member
+When the tab renders
+Then the Finance row has no «إزالة» button and the other rows have one
+
+**AC-115-O — remove confirms and refreshes** — added 2026-11-18 (D-229 item 1)
+Given the Owner on the team tab
+When he removes a Site Engineer through the confirmation (KAFF-114 AC-114-I)
+Then the row leaves the list, the notice «أُزيل {name}» shows, and the person appears again in the candidates
 
 ## Not in this story
-Adding or removing members (KAFF-113, KAFF-114). Showing who assigned whom and when — that is the
-audit trail, KAFF-117, which is now `Ready`: Karim ruled the trail is the Owner's alone (D-049
-ruling 1), so **nobody reading this panel can also read the history behind it unless they are the
-Owner.** Stated here because it is a surprising consequence, not a defect. **HR's project list and its
-team-size figure** — S-009a — is not this screen either; it is **KAFF-125**.
+Adding and removing as actions (KAFF-113, KAFF-114). Who assigned whom and when: the audit trail,
+KAFF-117, the Owner's alone (D-049 ruling 1) — **nobody reading this tab can also read the history
+behind it unless they are the Owner.**
 
-## Questions for Karim
-None. **Q32 is closed by D-051**, and it is what rules 5, 5a and 5b are built on. **`Q43` is closed by
-D-100, 2026-09-02**, and it is what `AC-115-H`'s display format and rules 8 and 9 are built on.
+> Changed 2026-11-18. **Out of this story:** the HR Project Team screen (S-009b) and `ProjectTeamRead`
+> (D-233 item 3); HR's project list and team-size figure (S-009a, KAFF-125); **design-phase conversion**
+> (who is staffed on the converted project, and the Finance gap, D-228); **a per-person history screen**
+> ("what did he do on this project"): the trail is the history; a team tab on a design project's states
+> is the project overview's, not this story's.
+
+## Questions for Nabil
+Added 2026-11-18. Recommended answers are mine, not rulings.
+1. **Q-115-1 — the `ProjectTeamRead` permission row.** The HR screen it served is gone and no route uses it. Recommended: delete the row and its test together, in one change, so it is not an unused grant.
+2. **Q-115-2 — who besides the Owner may read the tab?** Today it is anyone with `ProjectRead` and an assignment (Technical Office, Finance, site engineers). Recommended: keep that, read-only.
+3. **Q-115-3 — should a site engineer see the other members' roles and levels?** Recommended: yes, no money is shown.
+4. **Q-115-4 — what the empty state offers a non-Owner** (AC-115-F). Recommended: the text `team.empty` only.
+
+Closed and no longer this story's: Q32 (D-051) and Q43 (D-100), which concerned the HR screen and the `[RefCode]` format, both removed under D-233 item 3 and the no-codes rule.
