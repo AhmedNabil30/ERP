@@ -17004,3 +17004,15 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 **Consequence to rule on (Karim).** An extract rejection reverses its postings. If an extract's accrual is ever moved before the Owner's approval, a rejection after accrual would reverse a hold posting, which is now refused. Under today's ruling the accrual happens after the last gate, so no rejection can reach it.
 
 **Still open.** A generic reversal of any other flow-owned posting (for example an extract's client collection) is not yet blocked; only hold postings are. The application connects to the database as a superuser (Verifier F-1), which can switch the append-only triggers off: next lane.
+
+
+## D-237 — The application connects as a least-privilege role, and a flow's postings are reversed only by that flow · 2026-11-18
+
+**Source.** Verifier finding F-1 (`qa/slice-3/verification-2026-11-18.md`) and D-236 "Still open"; built by a lane dispatched by the Scrum Master.
+
+1. **Two database roles.** The owner (`POSTGRES_USER`) owns the schema and is used at start-up only, for migrations, guard scripts and seeders (`ConnectionStrings:KaffDatabaseOwner`). The request path connects as `kaff_app` (`ConnectionStrings:KaffDatabase`): not a superuser, owns nothing, may not create roles or databases, replicate or bypass row security. It holds SELECT and INSERT on every table, and nothing else on `postings` and `audit_records`. UPDATE and DELETE are granted only on the tables the code changes, listed in `src/Infrastructure/Persistence/Sql/005_app_role.sql`, which the owner re-applies at every start-up.
+2. **The API refuses to start** when the owner connection string is missing, or when the application connection holds more than it should: superuser, role or database creation, replication, row-security bypass, `session_replication_role`, ownership of `postings` or `audit_records`, or UPDATE, DELETE, TRUNCATE, TRIGGER or REFERENCES on them. There is no Development exception. `/api/health` reports `leastPrivilege`.
+3. **A posting owned by a flow** (source type Extract, Adjustment, ProjectHandover or SubcontractorRetentionRelease, with that document in its table) is reversed only by the flow that owns it: reverse collection, the credit-note reversal and the rejection after accrual. A generic reversal is refused in the domain (`treasury.flow_posting_not_reversible`) and by the database (`KAFF_FLOW_REVERSAL`, `006_flow_reversal.sql`, migration `20261118125444_FlowReversalGuard`). A handover or retention-release posting is never reversed.
+4. **Staging needs a one-time operator step before the next deploy:** a new `KAFF_APP_PASSWORD` in the host's `.env` and the role created on the database. The steps are at the top of `deploy/README.md`. A push before that step fails the deploy and leaves the running containers as they are.
+
+**Open.** `PostMovement` still accepts a flow-owned source type with any document id, so a generic movement naming a real extract counts as that extract's. Insert-only child tables have no UPDATE grant: a path the suite does not exercise that updates one would fail at run time.
