@@ -1,6 +1,6 @@
 # KAFF-316 · Collections — method, date, reference, and the cheque states
 
-<!-- kaff id=KAFF-316 slice=3 points=8 state=BUILT -->
+<!-- kaff id=KAFF-316 slice=3 points=8 state=VERIFIED verdict=CONDITIONAL at=792c1ba on=2026-11-18 -->
 
 **Slice:** 7 (reconciled build order, step 7 — *not* the backlog's "Slice 7 — Accounting") · **Epic:** Collections · **Points:** 8.
 **Owner:** Backend. **No UI criterion is carried here** (see "Not in this story").

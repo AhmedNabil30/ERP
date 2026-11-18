@@ -1,6 +1,6 @@
 # KAFF-317 · Withholding at source on a corporate client's collection
 
-<!-- kaff id=KAFF-317 slice=3 points=8 state=BUILT -->
+<!-- kaff id=KAFF-317 slice=3 points=8 state=BUILT verdict=REJECTED at=792c1ba on=2026-11-18 -->
 
 **Slice:** 7 (reconciled build order, step 7) · **Epic:** Collections · **Points:** 8.
 **Owner:** Backend. **No UI criterion is carried here.**

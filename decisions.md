@@ -16976,3 +16976,15 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 3. **A design project has no extracts tab.** `spec.md` §5.3: "No BOQ, no extract, no hold, no تشوينات, no subcontractors, no site."
 4. **A module is verified by walking its journey, not only its endpoints.** Two defects passed three Verifier passes because each endpoint was right alone: the Technical Office was refused on the project it created, and a signed project never became active. From 2026-11-17 every Verifier brief names the end-to-end chain to walk, as real requests and on the running app, and every module keeps one chain test.
 5. **Stories that the rulings have overtaken.** KAFF-113, KAFF-114 and KAFF-115 still name HR as the one who assigns and still ask for an HR team screen. D-233 item 3 made team management the Owner's. The stories are rewritten to the rulings before they go back to a Verifier.
+
+
+## D-235 — Nabil rules cheque cash, short-pay, dispute kind and who enters extract quantities and material values · 2026-11-18
+
+**Source.** Nabil, in session with the Scrum Master, 2026-11-18, on `ux/journey-extract-chain-2026-11-18.md` §4 and the money finding of the Treasury Verifier pass (`qa/slice-3/verification-2026-11-18.md`).
+
+1. **A cheque becomes cash in the safe only when it clears.** The extract is `Collected` only when the cheque clears, and a bounced cheque returns it to `Issued`. Today the collection puts the cash in the safe while the cheque is `Received`, deposit and clearance write no posting, and a bounce posts nothing. That is a build to change, in the extract and collections module, before its screens.
+2. **A collection records what arrived:** the amount received and the amount the client withheld. The extract is `Collected` when received plus withheld reach the expected figure, which is net payable less approved credit notes. Part payments are allowed. This replaces the permanent refusal of collecting an extract with an approved credit note.
+3. **A quantity dispute is a revised extract and runs the chain again. A price or amount dispute is a credit note.** The revised extract is not built; `Void` is unreachable today.
+4. **The supervising engineer confirms the real executed quantities line by line and enters the two material values when he submits the QC report.** The junior site engineer never touches money (`spec.md` §9). This needs one permission change on the server.
+
+**Not yet ruled, recorded so they are not forgotten:** whether the Owner approves a receipt (Q97); who records the client's approval of a change order (the chain needs three distinct Technical Office users plus the Owner); the withholding base and category (Q99, Q114, Q30); who is told when a credit note, change order or cheque waits.

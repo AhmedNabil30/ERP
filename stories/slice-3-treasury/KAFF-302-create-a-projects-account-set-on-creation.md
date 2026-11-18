@@ -1,6 +1,6 @@
 # KAFF-302 · Create a project's account set when a project is created
 
-<!-- kaff id=KAFF-302 slice=3 points=5 state=BUILT verdict=none at=- on=2026-09-14 -->
+<!-- kaff id=KAFF-302 slice=3 points=5 state=VERIFIED verdict=PASS at=792c1ba on=2026-11-18 -->
 
 **Slice:** 3 (Treasury) · **Epic:** Treasury · **Points:** 5 (`stories/backlog.md` slice-3 table) · **Status:** BUILT.
 **Spec:** §6.3 (account tree, project × party), §6.4 (the five ledgers), §5.1 (Lump Sum: hold, تشوينات), §5.2 (Cost Plus: "No hold. No تشوينات"), §5.3 (Design: "no hold, no تشوينات") · **Decisions:** D-034 (تشوينات is a liability)

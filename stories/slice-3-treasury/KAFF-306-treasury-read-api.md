@@ -1,6 +1,6 @@
 # KAFF-306 · The Treasury can post and reverse, but nothing reads
 
-<!-- kaff id=KAFF-306 slice=3 points=5 state=BUILT verdict=none at=- on=2026-09-25 -->
+<!-- kaff id=KAFF-306 slice=3 points=5 state=VERIFIED verdict=CONDITIONAL at=792c1ba on=2026-11-18 -->
 
 **Slice:** 3 — Treasury · **Points:** 5.
 **Why now:** `src/Api/Features/Treasury/` holds exactly `PostMovement` and `ReversePosting`.

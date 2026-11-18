@@ -1,6 +1,6 @@
 # KAFF-300 · The §15 worked example as a fixture — present and failing before anything else is built
 
-<!-- kaff id=KAFF-300 slice=3 points=5 state=BUILT verdict=none at=- on=2026-09-07 -->
+<!-- kaff id=KAFF-300 slice=3 points=5 state=VERIFIED verdict=PASS at=792c1ba on=2026-11-18 -->
 
 **Slice:** 3 (Treasury) · **Epic:** Treasury · **Points:** 5 (`stories/backlog.md`'s slice-3 table) · **Status:** **NOT-BUILT.** Cut 2026-09-07 by the BA against `STATUS.md`'s *"What is actually next"* item 3, which had no story file. **One Definition-of-Ready box is unticked, and it is not `Q14` — see *Definition of Ready* below.**
 **Spec:** **§15** (the whole of it), §6.1, §6.4 · **Decisions:** **D-034** (which mandates this story by name), **D-044 §6** and **§8**, **D-033**, D-096 §1

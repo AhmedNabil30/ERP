@@ -1,6 +1,6 @@
 # KAFF-322 · Treasury guard tests against real PostgreSQL
 
-<!-- kaff id=KAFF-322 slice=3 points=2 state=BUILT verdict=none at=- on=2026-09-14 -->
+<!-- kaff id=KAFF-322 slice=3 points=2 state=VERIFIED verdict=PASS at=792c1ba on=2026-11-18 -->
 
 **Slice:** 3 (Treasury) · **Epic:** Treasury · **Points:** 2 · **Status:** BUILT, 2026-09-14.
 **Spec:** §5.1 ("the hold releases once, in full, at handover"), §6.1 ("the safe balance MUST NOT go
