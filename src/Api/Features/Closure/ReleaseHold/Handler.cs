@@ -51,11 +51,12 @@ internal static class Handler
 
         Money holdBalance = BalanceQueries.GetLedgerBalances(database.AccountBalances, projectId).Hold;
 
+        // Once released, released (spec.md §5.1: "It releases once"). A release reversed before 2026-11-18, when the
+        // generic reversal route still allowed it, does not reopen the release; a hold posting can no longer be reversed.
         bool alreadyReleased = await database.Postings.AnyAsync(
             posting => posting.ProjectId == projectId
                 && posting.Type == PostingType.HoldRelease
-                && posting.ReversesId == null
-                && !database.Postings.Any(other => other.ReversesId == posting.Id),
+                && posting.ReversesId == null,
             cancellationToken);
 
         DateTimeOffset now = clock.GetUtcNow();

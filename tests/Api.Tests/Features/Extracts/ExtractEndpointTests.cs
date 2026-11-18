@@ -546,7 +546,8 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
     public async Task The_proof_expects_nothing_from_a_rejected_extract_whose_accrual_was_reversed()
     {
         using RulingHost accountsRuling = RulingFactory(ExtractStage.AccountsDeductions);
-        Project project = await NewProjectAsync();
+        // No hold: a hold leg is never reversed (spec.md §5.1, Verifier F-5), so only a hold-free accrual can be rejected.
+        Project project = await NewProjectAsync(holdPercent: 0m);
         Guid extract = await DriveAsync(project, ExtractStatus.DeductionsApplied, accountsRuling.Client);
 
         HttpResponseMessage rejected = await SendAsync(
@@ -677,19 +678,26 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
     public async Task A_rejection_after_the_ruled_accrual_writes_reversing_postings_and_deletes_nothing()
     {
         using RulingHost accountsRuling = RulingFactory(ExtractStage.AccountsDeductions);
-        Project project = await NewProjectAsync();
+        // No hold on this contract: a hold leg is never reversed (spec.md §5.1, Verifier F-5); the next test covers that.
+        Project project = await NewProjectAsync(holdPercent: 0m);
         Guid extract = await DriveAsync(project, ExtractStatus.TechnicalApproved, accountsRuling.Client);
 
         (await SendAsync(accountsRuling.Client, HttpMethod.Post, Step(project.Id, extract, "deductions"), _finance, null))
             .StatusCode.Should().Be(HttpStatusCode.OK);
         long accrued = await PostingCountAsync(project.Id);
-        (await BalanceAsync(project.Id, AccountType.Hold)).Should().Be(60_000m);
+        int legs;
+        await using (KaffDbContext before = _database.CreateBareContext())
+        {
+            legs = await before.Postings.CountAsync(posting => posting.SourceDocumentId == extract, Ct);
+        }
+
+        legs.Should().BePositive();
 
         HttpResponseMessage rejected = await SendAsync(
-            accountsRuling.Client, HttpMethod.Post, Step(project.Id, extract, "owner-rejection"), _owner, new { reason = "hold rate wrong" });
-        rejected.StatusCode.Should().Be(HttpStatusCode.OK);
+            accountsRuling.Client, HttpMethod.Post, Step(project.Id, extract, "owner-rejection"), _owner, new { reason = "rate wrong" });
+        rejected.StatusCode.Should().Be(HttpStatusCode.OK, await rejected.Content.ReadAsStringAsync(Ct));
 
-        (await PostingCountAsync(project.Id)).Should().Be(accrued + 4, "four accrual legs, four mirrors, none removed");
+        (await PostingCountAsync(project.Id)).Should().Be(accrued + legs, "one mirror per accrual leg, none removed");
         (await BalanceAsync(project.Id, AccountType.Hold)).Should().Be(0m);
         (await BalanceAsync(project.Id, AccountType.ClientAdvance)).Should().Be(250_000m);
 
@@ -697,8 +705,31 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
         List<Posting> reversals = await reader.Postings
             .Where(posting => posting.ProjectId == project.Id && posting.ReversesId != null)
             .ToListAsync(Ct);
-        reversals.Should().HaveCount(4);
+        reversals.Should().HaveCount(legs);
         reversals.Should().OnlyContain(reversal => reversal.SourceDocumentId == extract);
+    }
+
+    /// <summary>
+    /// spec.md §5.1: nothing comes out of the hold before handover. With the ruling at Accounts, a rejection after the
+    /// accrual would reverse its hold leg, so the rejection is refused whole and nothing is written (Verifier F-5).
+    /// </summary>
+    [Fact]
+    public async Task A_rejection_that_would_reverse_a_hold_accrual_is_refused_and_writes_nothing()
+    {
+        using RulingHost accountsRuling = RulingFactory(ExtractStage.AccountsDeductions);
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.TechnicalApproved, accountsRuling.Client);
+        (await SendAsync(accountsRuling.Client, HttpMethod.Post, Step(project.Id, extract, "deductions"), _finance, null))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+        long accrued = await PostingCountAsync(project.Id);
+
+        HttpResponseMessage rejected = await SendAsync(
+            accountsRuling.Client, HttpMethod.Post, Step(project.Id, extract, "owner-rejection"), _owner, new { reason = "hold rate wrong" });
+
+        rejected.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ErrorCodeAsync(rejected)).Should().Be("treasury.hold_posting_not_reversible");
+        (await PostingCountAsync(project.Id)).Should().Be(accrued);
+        (await BalanceAsync(project.Id, AccountType.Hold)).Should().Be(60_000m);
     }
 
     /// <summary>
@@ -2260,7 +2291,8 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
     }
 
     private async Task<Project> NewProjectAsync(
-        Guid? clientId = null, WithholdingCategory withholding = WithholdingCategory.None, ClientKind kind = ClientKind.Corporate)
+        Guid? clientId = null, WithholdingCategory withholding = WithholdingCategory.None, ClientKind kind = ClientKind.Corporate,
+        decimal holdPercent = 20m)
     {
         Project project;
 
@@ -2269,7 +2301,7 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
             project = Project.Create(UniqueNames.Code("EX-P"), UniqueNames.Code("مشروع مستخلص"), clientId ?? _clientId, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
             project.SetWithholding(withholding, kind).IsSuccess.Should().BeTrue();
             project.SetLumpSumTerms(
-                Percentage.FromPercent(25m), Percentage.FromPercent(20m), Percentage.FromPercent(25m),
+                Percentage.FromPercent(25m), Percentage.FromPercent(holdPercent), Percentage.FromPercent(25m),
                 Percentage.FromPercent(75m), delayPenaltyEnabled: false).IsSuccess.Should().BeTrue();
             context.Projects.Add(project);
             await context.SaveChangesAsync(Ct);
@@ -2299,7 +2331,7 @@ public sealed class ExtractEndpointTests : IAsyncLifetime
             await context.SaveChangesAsync(Ct);
         }
 
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{project.Id}/sign", _owner, new { signedOn = "2026-09-24", holdPercentage = "0.20", clientAdvance = 25m, advanceRecoveryRate = "0.25" }))
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project.Id}/sign", _owner, new { signedOn = "2026-09-24", holdPercentage = (holdPercent / 100m).ToString(System.Globalization.CultureInfo.InvariantCulture), clientAdvance = "0.25", advanceRecoveryRate = "0.25" }))
             .StatusCode.Should().Be(HttpStatusCode.OK);
 
         await using (KaffDbContext activate = _database.CreateContext())

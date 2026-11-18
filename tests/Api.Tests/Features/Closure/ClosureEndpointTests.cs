@@ -717,6 +717,120 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
         (await SnagStatusAsync(fixedOne)).Should().Be(SnagStatus.Fixed);
     }
 
+    // ---- Verifier F-5 and F-2, 2026-11-18: the hold through the generic treasury routes ---------------
+
+    /// <summary>
+    /// The Verifier's live walk: after a clean release, the generic reversal route reversed an accrual (hold -60,000), then
+    /// the release itself (hold 140,000), and the hold was released a second time. Both reversals are refused now, the
+    /// hold stays at zero, and a second release is refused.
+    /// </summary>
+    [Fact]
+    public async Task The_generic_reversal_route_refuses_every_hold_posting_and_the_hold_is_released_once()
+    {
+        Guid project = await NewProjectAsync(ProjectStatus.Handover);
+        string root = $"/api/projects/{project}";
+        (await SendAsync(HttpMethod.Post, $"{root}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        Guid accrual;
+        Guid release;
+        await using (KaffDbContext reader = _database.CreateBareContext())
+        {
+            accrual = await reader.Postings
+                .Where(posting => posting.ProjectId == project && posting.Type == PostingType.HoldAccrual)
+                .Select(posting => posting.Id).FirstAsync(Ct);
+            release = await reader.Postings
+                .Where(posting => posting.ProjectId == project && posting.Type == PostingType.HoldRelease)
+                .Select(posting => posting.Id).SingleAsync(Ct);
+        }
+
+        foreach (Guid target in new[] { accrual, release })
+        {
+            HttpResponseMessage reversed = await SendAsync(
+                HttpMethod.Post, $"{root}/treasury/postings/{target}/reverse", _finance, new { postingDate = SiteToday });
+            reversed.StatusCode.Should().Be(HttpStatusCode.Conflict, await reversed.Content.ReadAsStringAsync(Ct));
+            (await ErrorCodeAsync(reversed)).Should().Be("treasury.hold_posting_not_reversible");
+            (await HoldAsync(project)).Should().Be(0m, "a refused reversal writes nothing");
+        }
+
+        HttpResponseMessage again = await SendAsync(HttpMethod.Post, $"{root}/hold-release", _finance, null);
+        again.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ErrorCodeAsync(again)).Should().Be("closure.hold_already_released");
+        (await HoldReleaseCountAsync(project)).Should().Be(1);
+    }
+
+    /// <summary>
+    /// A release reversed under the old code (before 2026-11-18) is written here the only way it can be now, with the
+    /// guards switched off for one statement, standing for a stored row. Once released, released: the project still
+    /// counts as released, and the refilled hold cannot be released a second time.
+    /// </summary>
+    [Fact]
+    public async Task A_release_reversed_under_the_old_code_still_counts_as_the_one_release()
+    {
+        Guid project = await NewProjectAsync(ProjectStatus.Handover);
+        string root = $"/api/projects/{project}";
+        (await SendAsync(HttpMethod.Post, $"{root}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await using (KaffDbContext legacy = _database.CreateBareContext())
+        {
+            Posting release = await legacy.Postings.SingleAsync(
+                posting => posting.ProjectId == project && posting.Type == PostingType.HoldRelease, Ct);
+            await using Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction =
+                await legacy.Database.BeginTransactionAsync(Ct);
+            await legacy.Database.ExecuteSqlRawAsync("SET LOCAL session_replication_role = replica", Ct);
+            await legacy.Database.ExecuteSqlAsync(
+                $"""
+                 INSERT INTO postings
+                     (id, posting_date, from_account_id, to_account_id, amount, "type",
+                      source_document_type, source_document_id, source_document_reference,
+                      project_id, created_by_user_id, created_at, reverses_id)
+                 VALUES
+                     ({Guid.CreateVersion7()}, {SiteToday}, {release.ToAccountId}, {release.FromAccountId}, {release.Amount.Amount},
+                      {nameof(PostingType.HoldRelease)}, {release.SourceDocumentType.ToString()}, {release.SourceDocumentId}, NULL,
+                      {project}, {_finance}, {DateTimeOffset.UtcNow}, {release.Id})
+                 """,
+                Ct);
+            await transaction.CommitAsync(Ct);
+        }
+
+        (await HoldAsync(project)).Should().Be(200_000m, "the legacy reversal refilled the hold");
+
+        HttpResponseMessage again = await SendAsync(HttpMethod.Post, $"{root}/hold-release", _finance, null);
+        again.StatusCode.Should().Be(HttpStatusCode.Conflict, await again.Content.ReadAsStringAsync(Ct));
+        (await ErrorCodeAsync(again)).Should().Be("closure.hold_already_released");
+        (await HoldAsync(project)).Should().Be(200_000m, "no second release was written");
+    }
+
+    /// <summary>
+    /// Verifier F-2: a HoldRelease for less than the hold through the treasury posting route returned a bare 500. The
+    /// database still refuses it; the refusal now reads as a translated message.
+    /// </summary>
+    [Fact]
+    public async Task A_partial_hold_release_through_the_treasury_route_is_refused_with_a_translated_message()
+    {
+        Guid project = await NewProjectAsync(ProjectStatus.Handover);
+        Guid hold = await AccountIdAsync(project, AccountType.Hold);
+        Guid receivable = await AccountIdAsync(project, AccountType.ClientReceivable);
+
+        HttpResponseMessage response = await SendAsync(HttpMethod.Post, $"/api/projects/{project}/treasury/postings", _finance, new
+        {
+            fromAccountId = hold,
+            toAccountId = receivable,
+            amount = "150000.0000",
+            type = nameof(PostingType.HoldRelease),
+            postingDate = SiteToday,
+            sourceDocumentType = nameof(SourceDocumentType.ProjectHandover),
+            sourceDocumentId = Guid.CreateVersion7(),
+            sourceDocumentReference = (string?)null,
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict, await response.Content.ReadAsStringAsync(Ct));
+        (await ErrorCodeAsync(response)).Should().Be("treasury.hold_release_in_full");
+        (await HoldAsync(project)).Should().Be(200_000m);
+        (await HoldReleaseCountAsync(project)).Should().Be(0);
+    }
+
+    private static DateOnly SiteToday => Kaff.Domain.Rulings.SiteTime.DateOf(DateTimeOffset.UtcNow);
+
     // ---- helpers ------------------------------------------------------------------------------------
 
     private async Task<List<AuditRecord>> AuditOfAsync(Guid entityId)

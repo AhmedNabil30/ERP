@@ -97,10 +97,10 @@ export interface SignResult {
   readonly designCreditAdjustmentId?: string | null;
 }
 
-/** `POST …/sign` body for Lump Sum. `holdPercentage` and `advanceRecoveryRate` are wire fractions; `clientAdvance` is percent units. All three are required, none has a default (D-227). */
+/** `POST …/sign` body for Lump Sum. All three rates are wire fractions (D-151): `"0.25"` is 25%. All three are required, none has a default (D-227). */
 export interface LumpSumSignTerms {
   readonly holdPercentage: string;
-  readonly clientAdvance: number;
+  readonly clientAdvance: string;
   readonly advanceRecoveryRate: string;
 }
 

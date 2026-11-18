@@ -170,7 +170,8 @@ public sealed class ExtractRevisionTests
         {
             ExtractPostingMoment = new ExtractPostingMoment(ExtractStage.AccountsDeductions),
         };
-        ExtractHarness h = new(accruesAtAccounts);
+        // No hold: a hold leg is never reversed (spec.md §5.1), so this contract carries none.
+        ExtractHarness h = new(accruesAtAccounts, Percentage.Zero);
         Extract extract = h.Prepare(ExtractHarness.NewUser());
         extract.SubmitQcReport(ExtractHarness.NewUser(), ExtractHarness.Now).IsSuccess.Should().BeTrue();
         extract.ApproveTechnicalOffice(

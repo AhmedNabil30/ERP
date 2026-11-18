@@ -538,7 +538,7 @@ export class BoqPage {
     const done = await this.mutate(async () => {
       await this.api.sign(this.projectId(), {
         holdPercentage: percentToFraction(this.hold()),
-        clientAdvance: Number(this.advance().trim()),
+        clientAdvance: percentToFraction(this.advance()),
         advanceRecoveryRate: percentToFraction(this.recovery()),
       });
       this.project.set(await this.projects.get(this.projectId()));

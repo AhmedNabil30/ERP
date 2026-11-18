@@ -83,7 +83,7 @@ internal static class Handler
             request.Name,
             request.ClientId,
             request.ContractType,
-            request.ClientAdvance is { } advance ? Percentage.FromPercent(advance) : null,
+            request.ClientAdvance,
             request.HoldPercentage,
             now);
 

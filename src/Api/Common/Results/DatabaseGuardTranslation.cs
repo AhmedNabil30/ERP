@@ -18,20 +18,21 @@ namespace Kaff.Api.Common.Results;
 /// <c>catch ... when</c> clause only fires when this method returns a non-null <see cref="Error"/>.
 /// </para>
 /// <para>
-/// Three guard prefixes in <c>001_guards.sql</c> are deliberately absent from <see cref="Map"/>:
-/// <c>KAFF_APPEND_ONLY</c> (an update/delete on a posting — not a posting insert this story's callers
-/// perform), <c>KAFF_HOLD_PARTIAL_RELEASE</c> and <c>KAFF_ACCOUNT_IMMUTABLE</c> (out of scope per the
-/// story's own list of twelve/thirteen named prefixes — <c>KAFF-319</c>'s "Not in this story").
+/// Two guard prefixes in <c>001_guards.sql</c> are absent from <see cref="Map"/> because no request
+/// performs the statement they refuse: <c>KAFF_APPEND_ONLY</c> (an update, delete or truncate of a
+/// posting or audit record) and <c>KAFF_ACCOUNT_IMMUTABLE</c> (an update of an account's configuration).
 /// </para>
 /// </remarks>
 public static class DatabaseGuardTranslation
 {
-    /// <summary>The twelve/thirteen named guard prefixes, each resolving to an existing or new <see cref="TreasuryErrors"/> member.</summary>
+    /// <summary>Every guard prefix a posting insert can raise, each resolving to its domain error.</summary>
     public static readonly IReadOnlyDictionary<string, Error> Map = new Dictionary<string, Error>(StringComparer.Ordinal)
     {
         ["KAFF_NEGATIVE_BALANCE"] = TreasuryErrors.NegativeBalance,
         ["KAFF_LEDGER_NETTING"] = TreasuryErrors.LedgersMustNotNet,
         ["KAFF_HOLD_DEBIT"] = TreasuryErrors.HoldOnlyGrows,
+        ["KAFF_HOLD_REVERSAL"] = TreasuryErrors.HoldPostingNotReversible,
+        ["KAFF_HOLD_PARTIAL_RELEASE"] = TreasuryErrors.HoldReleaseMustBeInFull,
         ["KAFF_CLOSED_PERIOD"] = TreasuryErrors.ClosedPeriod,
         ["KAFF_REVERSAL_MISMATCH"] = TreasuryErrors.ReversalMustMirrorOriginal,
         ["KAFF_REVERSAL_OF_REVERSAL"] = TreasuryErrors.ReversalOfReversal,

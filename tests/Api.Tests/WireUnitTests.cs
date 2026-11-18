@@ -14,6 +14,12 @@ public sealed class WireUnitTests
     /// </summary>
     private static readonly HashSet<string> MoneyNamedLikeARate = ["BaseSellRate", "DayRate"];
 
+    /// <summary>
+    /// Rates whose names do not end in Rate, Markup or Percentage. <c>ClientAdvance</c> is the advance rate on the create
+    /// and sign requests; as a bare decimal it read <c>"0.25"</c> as 0.25% (Verifier F-3, 2026-11-18).
+    /// </summary>
+    private static readonly HashSet<string> RatesNamedOtherwise = ["ClientAdvance"];
+
     [Fact]
     public void Every_rate_on_the_wire_is_typed_Percentage()
     {
@@ -35,7 +41,8 @@ public sealed class WireUnitTests
             {
                 bool looksLikeARate = property.Name.EndsWith("Rate", StringComparison.Ordinal)
                     || property.Name.EndsWith("Markup", StringComparison.Ordinal)
-                    || property.Name.EndsWith("Percentage", StringComparison.Ordinal);
+                    || property.Name.EndsWith("Percentage", StringComparison.Ordinal)
+                    || RatesNamedOtherwise.Contains(property.Name);
 
                 if (!looksLikeARate || MoneyNamedLikeARate.Contains(property.Name))
                 {

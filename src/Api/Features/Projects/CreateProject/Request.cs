@@ -18,9 +18,8 @@ namespace Kaff.Api.Features.Projects.CreateProject;
 /// <para>
 /// <b><c>HoldPercentage</c> is carried as <see cref="Percentage"/> — the fraction, e.g. <c>"0.20"</c>
 /// for 20% (decisions.md D-151). A negative value is refused by the type itself before this handler
-/// ever sees it.</b> <c>ClientAdvance</c> stays a percent figure, not a fraction —
-/// <c>25</c> means 25% — because its own name does not end <c>Rate</c>/<c>Percentage</c>/<c>Markup</c>
-/// and D-151's wire sweep (<c>WireUnitTests</c>) does not flag it; it is out of KAFF-400's scope.
+/// ever sees it.</b> <c>ClientAdvance</c> is the same fraction type (<c>"0.25"</c> for 25%); until 2026-11-18 it was
+/// percent units, which let <c>"0.25"</c> mean 0.25% (Verifier F-3), and D-151's wire sweep now names it.
 /// <c>HoldPercentage</c> defaults to 20% when absent (spec.md §5.1, §15). <c>ClientAdvance</c> is
 /// read as the advance <b>rate</b> — <c>Project.AdvanceRate</c> — not an absolute cash amount: spec.md
 /// §16 assumption 1 pairs exactly these two figures, "Advance 25%, hold 20% as defaults,
@@ -50,7 +49,7 @@ namespace Kaff.Api.Features.Projects.CreateProject;
 /// Lump Sum only. Carried as <see cref="Percentage"/> — the fraction (D-151). Defaults to 20% when
 /// omitted.
 /// </param>
-/// <param name="ClientAdvance">Lump Sum only. Percent units, read as the advance rate. Defaults to 25.</param>
+/// <param name="ClientAdvance">Lump Sum only. The advance rate as a fraction (D-151), e.g. <c>"0.25"</c>. Defaults to 25%.</param>
 /// <param name="Status">
 /// Optional. <c>null</c> or <see cref="ProjectStatus.Setup"/> leaves the project at its default Setup
 /// state. <see cref="ProjectStatus.Active"/> transitions it immediately — a convenience for a project
@@ -63,5 +62,5 @@ public sealed record Request(
     Guid ClientId,
     ContractType ContractType,
     Percentage? HoldPercentage,
-    decimal? ClientAdvance,
+    Percentage? ClientAdvance,
     ProjectStatus? Status);

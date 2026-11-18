@@ -17,12 +17,12 @@ internal sealed class ExtractHarness
     public static readonly DateOnly SigningDate = new(2026, 1, 1);
     public static readonly DateTimeOffset Now = TestAccounts.Now;
 
-    public ExtractHarness(RulingSet? rulings = null)
+    public ExtractHarness(RulingSet? rulings = null, Percentage? holdRate = null)
     {
         Rulings = rulings ?? RulingSet.Default;
         Project = Project.Create("PRJ-X", "X", TestAccounts.ClientId, ContractType.LumpSum, Now).Value;
         Project.SetLumpSumTerms(
-            ContractDefaults.AdvanceRate, ContractDefaults.HoldRate, ContractDefaults.AdvanceRecoveryRate,
+            ContractDefaults.AdvanceRate, holdRate ?? ContractDefaults.HoldRate, ContractDefaults.AdvanceRecoveryRate,
             ContractDefaults.MaterialAdvanceRate, delayPenaltyEnabled: false).IsSuccess.Should().BeTrue();
         Project.Sign(SigningDate, new Money(1_000_000m)).IsSuccess.Should().BeTrue();
         Project.Status.Should().Be(ProjectStatus.Active, "D-230: signing activates the project");

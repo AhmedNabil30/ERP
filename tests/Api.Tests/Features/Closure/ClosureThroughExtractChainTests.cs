@@ -141,6 +141,25 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
         (await BalanceAsync(id, AccountType.Hold)).Should().Be(0m);
         (await BalanceAsync(id, AccountType.ClientReceivable)).Should().Be(200_000m, "the released hold is what the client now owes (section 15, handover row)");
 
+        // Verifier F-5, 2026-11-18, the same walk: after the release the generic reversal route took extract 1's accrual
+        // out of the hold (-60,000), then reversed the release (140,000), and the hold was released again. Every step is
+        // refused now, and the ledgers do not move.
+        Guid firstAccrual = afterRelease.Where(posting => posting.Type == PostingType.HoldAccrual).OrderBy(posting => posting.CreatedAt).First().Id;
+        foreach (Guid target in new[] { firstAccrual, release.Id })
+        {
+            HttpResponseMessage reversed = await SendAsync(
+                HttpMethod.Post, $"/api/projects/{id}/treasury/postings/{target}/reverse", _finance, new { postingDate = "2026-11-06" });
+            reversed.StatusCode.Should().Be(HttpStatusCode.Conflict, await reversed.Content.ReadAsStringAsync(Ct));
+            using JsonDocument problem = JsonDocument.Parse(await reversed.Content.ReadAsStringAsync(Ct));
+            problem.RootElement.GetProperty("code").GetString().Should().Be("treasury.hold_posting_not_reversible");
+            (await BalanceAsync(id, AccountType.Hold)).Should().Be(0m);
+            (await BalanceAsync(id, AccountType.ClientReceivable)).Should().Be(200_000m);
+        }
+
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{id}/hold-release", _finance, null)).StatusCode
+            .Should().Be(HttpStatusCode.Conflict, "the hold releases once");
+        (await CountAsync(id, PostingType.HoldRelease)).Should().Be(1);
+
         // The final collection: the client pays the released hold. Total client cash then equals the contract value.
         Guid receivable = await AccountIdAsync(id, AccountType.ClientReceivable);
         HttpResponseMessage paid = await SendAsync(HttpMethod.Post, $"/api/projects/{id}/treasury/postings", _finance, new
@@ -470,7 +489,7 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
             await context.SaveChangesAsync(Ct);
         }
 
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{project.Id}/sign", _owner, new { signedOn = "2026-09-24", holdPercentage = "0.20", clientAdvance = 25m, advanceRecoveryRate = "0.25" }))
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project.Id}/sign", _owner, new { signedOn = "2026-09-24", holdPercentage = "0.20", clientAdvance = "0.25", advanceRecoveryRate = "0.25" }))
             .StatusCode.Should().Be(HttpStatusCode.OK);
 
         await using (KaffDbContext activate = _database.CreateContext())

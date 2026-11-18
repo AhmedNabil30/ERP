@@ -1,5 +1,6 @@
 using Kaff.Api.Common.Validation;
 using Kaff.Domain.Common;
+using Kaff.Domain.Rulings;
 using Kaff.Domain.Treasury;
 
 namespace Kaff.Api.Features.Treasury.PostMovement;
@@ -20,7 +21,7 @@ namespace Kaff.Api.Features.Treasury.PostMovement;
 /// value in a column the database guards compare against named literals (<c>001_guards.sql</c>).
 /// </para>
 /// </remarks>
-public sealed class Validator : IRequestValidator<Request>
+public sealed class Validator(TimeProvider clock) : IRequestValidator<Request>
 {
     public ValueTask<Result> ValidateAsync(Request request, CancellationToken cancellationToken)
     {
@@ -36,6 +37,6 @@ public sealed class Validator : IRequestValidator<Request>
             return ValueTask.FromResult(Result.Failure(TreasuryErrors.SourceDocumentTypeRequired));
         }
 
-        return ValueTask.FromResult(Result.Success());
+        return ValueTask.FromResult(TypedPostingDate.Check(request.PostingDate, SiteTime.Today(clock)));
     }
 }

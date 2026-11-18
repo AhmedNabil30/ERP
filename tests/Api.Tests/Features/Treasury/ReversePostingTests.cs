@@ -121,10 +121,10 @@ public sealed class ReversePostingTests : IAsyncLifetime
         (await ReversalCountAsync(reversalId)).Should().Be(0, "a reversal of a reversal wrote no row");
     }
 
-    // ---- AC-303-D · the hold ledger accepts a reversal that debits it -------------------------------
+    // ---- AC-303-D, overruled by spec.md §5.1 (Verifier F-5, 2026-11-18): a hold posting is never reversed ----
 
     [Fact]
-    public async Task AC_303_D_The_hold_ledger_accepts_a_reversal_that_debits_it()
+    public async Task AC_303_D_A_reversal_that_would_debit_the_hold_is_refused_and_writes_nothing()
     {
         Guid clientId = Guid.CreateVersion7();
         Account receivable = await AddAccountAsync(AccountType.ClientReceivable, _projectA, PartyType.Client, clientId);
@@ -135,19 +135,13 @@ public sealed class ReversePostingTests : IAsyncLifetime
         accrual.StatusCode.Should().Be(HttpStatusCode.Created);
         Guid accrualId = await IdOfAsync(accrual);
 
-        // A normal debit off Hold is refused outright (rule 5, covered by PostMovementTests
-        // TC_3_027). The reversal of the very accrual that made the mistake must succeed, even though
-        // it moves value out of Hold before handover.
+        // spec.md §5.1: "Nothing may be taken out of it mid-project." A reversal of the accrual debits the
+        // hold before handover exactly as a withdrawal would.
         HttpResponseMessage reversal = await ReverseProjectAsync(_financeOnProjectA, _projectA, accrualId);
 
-        reversal.StatusCode.Should().Be(
-            HttpStatusCode.Created,
-            "a reversal corrects an accrual that should never have existed — it is not a withdrawal, rule 5");
-
-        using JsonDocument body = JsonDocument.Parse(await reversal.Content.ReadAsStringAsync(Ct));
-        JsonElement root = body.RootElement;
-        root.GetProperty("fromAccountId").GetGuid().Should().Be(hold.Id);
-        root.GetProperty("toAccountId").GetGuid().Should().Be(receivable.Id);
+        reversal.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await MessageKeyAsync(reversal)).Should().Be("errors.treasury.hold_posting_not_reversible");
+        (await ReversalCountAsync(accrualId)).Should().Be(0);
     }
 
     // ---- AC-303-E · a reversal dated into a closed period is refused --------------------------------
@@ -158,7 +152,7 @@ public sealed class ReversePostingTests : IAsyncLifetime
         (Account safe, Account expense) = await CreateFundedSafeAndExpenseAsync(10_000m);
         Guid originalId = await CreatePostingAsync(safe.Id, expense.Id, 500m, PostingType.CompanyExpensePayment);
 
-        var period = AccountingPeriod.Create(2027, 6).Value;
+        var period = AccountingPeriod.Create(2024, 6).Value;
         period.Close(Guid.CreateVersion7(), Now).IsSuccess.Should().BeTrue();
 
         await using (KaffDbContext setup = _database.CreateContext())
@@ -168,7 +162,7 @@ public sealed class ReversePostingTests : IAsyncLifetime
         }
 
         HttpResponseMessage response = await ReverseCompanyAsync(
-            _financeCompanyWide, originalId, postingDate: new DateOnly(2027, 6, 15));
+            _financeCompanyWide, originalId, postingDate: new DateOnly(2024, 6, 15));
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await MessageKeyAsync(response)).Should().Be("errors.treasury.closed_period");
@@ -220,6 +214,43 @@ public sealed class ReversePostingTests : IAsyncLifetime
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         (await MessageKeyAsync(response)).Should().Be("errors.treasury.reversal_target_not_found");
 
+        (await ReversalCountAsync(originalId)).Should().Be(0);
+    }
+
+    // ---- Verifier F-7, 2026-11-18: a reversal needs a typed, plausible date -------------------------
+
+    [Fact]
+    public async Task A_reversal_sent_without_a_date_is_refused_and_writes_nothing()
+    {
+        // Before: an empty body reversed the posting with 201 and "postingDate":"0001-01-01".
+        (Account safe, Account expense) = await CreateFundedSafeAndExpenseAsync(10_000m);
+        Guid originalId = await CreatePostingAsync(safe.Id, expense.Id, 500m, PostingType.CompanyExpensePayment);
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post, new Uri($"/api/treasury/postings/{originalId}/reverse", UriKind.Relative))
+        {
+            Content = JsonContent.Create(new { }),
+        };
+        HttpResponseMessage response = await AuthorizedSendAsync(request, _financeCompanyWide);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await MessageKeyAsync(response)).Should().Be("errors.treasury.posting_date_required");
+        (await ReversalCountAsync(originalId)).Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData(1999, 12, 31)]
+    [InlineData(2031, 1, 1)]
+    public async Task A_reversal_dated_before_2000_or_after_the_site_day_is_refused(int year, int month, int day)
+    {
+        (Account safe, Account expense) = await CreateFundedSafeAndExpenseAsync(10_000m);
+        Guid originalId = await CreatePostingAsync(safe.Id, expense.Id, 500m, PostingType.CompanyExpensePayment);
+
+        HttpResponseMessage response = await ReverseCompanyAsync(
+            _financeCompanyWide, originalId, postingDate: new DateOnly(year, month, day));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await MessageKeyAsync(response)).Should().Be("errors.treasury.posting_date_out_of_range");
         (await ReversalCountAsync(originalId)).Should().Be(0);
     }
 

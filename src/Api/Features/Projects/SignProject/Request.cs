@@ -11,8 +11,9 @@ namespace Kaff.Api.Features.Projects.SignProject;
 /// <c>CreateProject.Request</c>. Required for Lump Sum, no default (D-217 item 29, KAFF-418).
 /// </param>
 /// <param name="ClientAdvance">
-/// Lump Sum only. Percent units, <c>25</c> means 25%, read as the advance rate; the same unit as
-/// <c>CreateProject.Request</c>. Required for Lump Sum, no default (D-217 item 29, KAFF-418).
+/// Lump Sum only. The advance rate as a fraction, e.g. <c>"0.25"</c> for 25% (D-151), the same type as
+/// <paramref name="HoldPercentage"/>. Until 2026-11-18 it was percent units, so <c>"0.25"</c> silently signed 0.25%
+/// (Verifier F-3). Required for Lump Sum, no default (D-217 item 29, KAFF-418).
 /// </param>
 /// <param name="AdvanceRecoveryRate">
 /// Lump Sum only. The fraction, e.g. <c>"0.25"</c> for 25% (D-151), the same type as <paramref name="HoldPercentage"/>:
@@ -24,5 +25,5 @@ namespace Kaff.Api.Features.Projects.SignProject;
 /// the fee is priced as area x the default rate per m2. Refused on Lump Sum and Cost Plus.
 /// </param>
 public sealed record Request(
-    DateOnly? SignedOn, Percentage? HoldPercentage = null, decimal? ClientAdvance = null, decimal? AreaSquareMetres = null,
+    DateOnly? SignedOn, Percentage? HoldPercentage = null, Percentage? ClientAdvance = null, decimal? AreaSquareMetres = null,
     Percentage? AdvanceRecoveryRate = null);

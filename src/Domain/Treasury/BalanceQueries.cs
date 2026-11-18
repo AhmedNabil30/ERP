@@ -57,12 +57,14 @@ public static class BalanceQueries
                 && (balance.LedgerKind != null || balance.Type == AccountType.MaterialAdvance))
             .ToList();
 
-        Money ForLedger(LedgerKind kind) =>
-            rows.SingleOrDefault(balance => balance.LedgerKind == kind)?.SignedBalance ?? Money.Zero;
+        // A ledger may span several accounts of the project: عهدة is held per employee, and the client-party ledgers
+        // per client party (AC-302-D, ux_accounts_project_dimension). Each figure sums its own accounts only.
+        Money Sum(Func<AccountBalance, bool> belongs) =>
+            rows.Where(belongs).Aggregate(Money.Zero, (total, balance) => total + balance.SignedBalance);
 
-        Money materialAdvance = rows
-            .SingleOrDefault(balance => balance.Type == AccountType.MaterialAdvance)?.SignedBalance
-            ?? Money.Zero;
+        Money ForLedger(LedgerKind kind) => Sum(balance => balance.LedgerKind == kind);
+
+        Money materialAdvance = Sum(balance => balance.Type == AccountType.MaterialAdvance);
 
         return new LedgerBalances(
             projectId,

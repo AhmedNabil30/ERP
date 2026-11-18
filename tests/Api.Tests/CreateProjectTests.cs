@@ -292,7 +292,7 @@ public sealed class CreateProjectTests : IAsyncLifetime
                 holdPercentage = holdPercentage.HasValue
                     ? (holdPercentage.Value / 100m).ToString(CultureInfo.InvariantCulture)
                     : null,
-                clientAdvance = "25.0000",
+                clientAdvance = "0.25",
                 status = (string?)null,
             }),
         };

@@ -187,6 +187,75 @@ public sealed partial class FreshDatabaseBootstrapTests : IAsyncLifetime
             "KAFF_BOQ_FROZEN");
     }
 
+    /// <summary>
+    /// KAFF-305 rule 11 (spec.md §6.7) reaches a database built by migrations alone, in both directions: only a
+    /// TaxWithheldAtSource posting touches the tax asset, and such a posting always does (Verifier SQL probe 6).
+    /// </summary>
+    [Fact]
+    public async Task The_withheld_at_source_rule_is_installed_by_migrations_alone()
+    {
+        Account tax = await AddAccountAsync(AccountType.TaxWithheldAtSource, migrateOnly: true);
+        Account capital = await AddAccountAsync(AccountType.PaidInCapital, migrateOnly: true);
+        Account expense = await AddAccountAsync(AccountType.CompanyExpense, migrateOnly: true);
+
+        await using KaffDbContext context = CreateMigrateOnlyContext();
+        await DatabaseGuard.RefusesAsync(
+            () => InsertRawAsync(context, capital.Id, tax.Id, nameof(PostingType.OpeningBalance), null, null),
+            DatabaseGuard.PostingTypeAccountMismatch);
+        await DatabaseGuard.RefusesAsync(
+            () => InsertRawAsync(context, capital.Id, expense.Id, nameof(PostingType.TaxWithheldAtSource), null, null),
+            DatabaseGuard.PostingTypeAccountMismatch);
+    }
+
+    /// <summary>spec.md §5.1: a posting on the hold is never reversed, on a database built by migrations alone.</summary>
+    [Fact]
+    public async Task The_hold_reversal_guard_is_installed_by_migrations_alone()
+    {
+        Guid projectId;
+        await using (KaffDbContext seed = CreateMigrateOnlyContext())
+        {
+            Domain.MasterData.Client client = Domain.MasterData.Client.Create(
+                $"C{Guid.CreateVersion7():N}"[..12], "عميل اختبار", UniqueNames.Phone(),
+                Domain.MasterData.ClientKind.Corporate, Now).Value;
+            Domain.Projects.Project project = Domain.Projects.Project.Create(
+                $"P{Guid.CreateVersion7():N}"[..12], "مشروع اختبار", client.Id,
+                Domain.Contracts.ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
+            seed.Clients.Add(client);
+            seed.Projects.Add(project);
+            await seed.SaveChangesAsync(Ct);
+            projectId = project.Id;
+        }
+
+        Account hold = await AddAccountAsync(AccountType.Hold, projectId, PartyType.Client, migrateOnly: true);
+        Account receivable = await AddAccountAsync(AccountType.ClientReceivable, projectId, PartyType.Client, migrateOnly: true);
+
+        await using KaffDbContext context = CreateMigrateOnlyContext();
+        Posting accrual = Posting.Create(
+            receivable, hold, new Money(5_000m), PostingType.HoldAccrual,
+            new SourceDocument(SourceDocumentType.Extract, Guid.CreateVersion7(), null), Today, Actor, Now, projectId).Value;
+        context.Postings.Add(accrual);
+        await context.SaveChangesAsync(Ct);
+
+        await DatabaseGuard.RefusesAsync(
+            () => InsertRawAsync(context, hold.Id, receivable.Id, nameof(PostingType.HoldAccrual), projectId, accrual.Id),
+            DatabaseGuard.HoldReversal);
+    }
+
+    private static Task<int> InsertRawAsync(
+        KaffDbContext context, Guid fromAccountId, Guid toAccountId, string postingType, Guid? projectId, Guid? reversesId)
+        => context.Database.ExecuteSqlAsync(
+            $"""
+             INSERT INTO postings
+                 (id, posting_date, from_account_id, to_account_id, amount, "type",
+                  source_document_type, source_document_id, source_document_reference,
+                  project_id, created_by_user_id, created_at, reverses_id)
+             VALUES
+                 ({Guid.CreateVersion7()}, {Today}, {fromAccountId}, {toAccountId}, {5_000m}, {postingType},
+                  {nameof(SourceDocumentType.Adjustment)}, {Guid.CreateVersion7()}, NULL,
+                  {projectId}, {Actor}, {Now}, {reversesId})
+             """,
+            Ct);
+
     [GeneratedRegex(@"CREATE\s+TRIGGER\s+(\w+)", RegexOptions.IgnoreCase)]
     private static partial Regex TriggerPattern();
 
@@ -211,14 +280,18 @@ public sealed partial class FreshDatabaseBootstrapTests : IAsyncLifetime
     private KaffDbContext CreateContext() =>
         new(new DbContextOptionsBuilder<KaffDbContext>().UseNpgsql(_connectionString).Options);
 
-    private async Task<Account> AddAccountAsync(AccountType type, Guid? projectId = null, PartyType? partyType = null)
+    private KaffDbContext CreateMigrateOnlyContext() =>
+        new(new DbContextOptionsBuilder<KaffDbContext>().UseNpgsql(_migrateOnlyConnectionString).Options);
+
+    private async Task<Account> AddAccountAsync(
+        AccountType type, Guid? projectId = null, PartyType? partyType = null, bool migrateOnly = false)
     {
         Account account = Account.Create(
             type, $"T{(int)type}-{Guid.CreateVersion7():N}"[..20], "حساب اختبار", "Test account",
             Currency.Egp, new DateOnly(2026, 1, 1), projectId, partyType,
             partyType is null ? null : Guid.CreateVersion7()).Value;
 
-        await using KaffDbContext context = CreateContext();
+        await using KaffDbContext context = migrateOnly ? CreateMigrateOnlyContext() : CreateContext();
         context.Accounts.Add(account);
         await context.SaveChangesAsync(Ct);
         return account;

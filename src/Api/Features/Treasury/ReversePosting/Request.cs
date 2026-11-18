@@ -15,6 +15,7 @@ namespace Kaff.Api.Features.Treasury.ReversePosting;
 /// <param name="PostingDate">
 /// The accounting date the reversal books against. Distinct from the original's own
 /// <c>PostingDate</c> — a correction made today reverses a posting from last month, but is dated
-/// today's open period (<c>AC-303-E</c>).
+/// today's open period (<c>AC-303-E</c>). Required, never defaulted, and between 2000-01-01 and one day past the site
+/// day (<c>TypedPostingDate</c>, Verifier F-7).
 /// </param>
-public sealed record Request(DateOnly PostingDate);
+public sealed record Request(DateOnly? PostingDate);

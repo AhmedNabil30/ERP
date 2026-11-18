@@ -223,7 +223,7 @@ describe('BoqPage', () => {
     }
     await click(byId(root, 'boq-sign-confirm'));
 
-    expect(sign).toHaveBeenCalledWith('p-1', { holdPercentage: '0.2', clientAdvance: 25, advanceRecoveryRate: '0.25' });
+    expect(sign).toHaveBeenCalledWith('p-1', { holdPercentage: '0.2', clientAdvance: '0.25', advanceRecoveryRate: '0.25' });
     expect(navigate).toHaveBeenCalledWith(['/projects', 'p-1']);
   });
 

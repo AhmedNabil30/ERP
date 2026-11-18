@@ -243,11 +243,10 @@ public sealed class PostingRuleTests
     }
 
     [Fact]
-    public void A_hold_accrual_can_be_reversed_even_though_the_hold_only_grows()
+    public void A_hold_accrual_cannot_be_reversed_because_a_reversal_would_take_value_out_of_the_hold()
     {
-        // Correcting an accrual that should never have been made is not the same as taking money out
-        // of the hold. spec.md §6.1 makes reversal the only correction mechanism, so refusing it here
-        // would leave a wrong hold with no way to fix it.
+        // spec.md §5.1: "Nothing may be taken out of it mid-project". A reversal of an accrual debits the
+        // hold exactly as a withdrawal would, so it is refused like one (Verifier F-5, 2026-11-18).
         Account from = TestAccounts.ClientReceivable();
         Account to = TestAccounts.Hold();
 
@@ -270,7 +269,39 @@ public sealed class PostingRuleTests
             Guid.Parse("0195c000-0000-7000-8000-0000000000bb"),
             TestAccounts.Now);
 
-        reversal.IsSuccess.Should().BeTrue();
+        reversal.IsFailure.Should().BeTrue();
+        reversal.Error.Should().Be(TreasuryErrors.HoldPostingNotReversible);
+    }
+
+    [Fact]
+    public void A_hold_release_cannot_be_reversed_because_the_hold_releases_once()
+    {
+        // spec.md §5.1: "It releases once, in full, at handover." Reversing the release would put the
+        // hold back and let it be released a second time (Verifier F-5, 2026-11-18).
+        Account hold = TestAccounts.Hold();
+        Account receivable = TestAccounts.ClientReceivable();
+
+        Posting release = Posting.Create(
+            hold,
+            receivable,
+            new Money(200_000m),
+            PostingType.HoldRelease,
+            TestAccounts.Document(),
+            TestAccounts.Today,
+            TestAccounts.Actor,
+            TestAccounts.Now,
+            TestAccounts.ProjectId).Value;
+
+        Result<Posting> reversal = Posting.Reverse(
+            release,
+            hold,
+            receivable,
+            TestAccounts.Today,
+            Guid.Parse("0195c000-0000-7000-8000-0000000000bb"),
+            TestAccounts.Now);
+
+        reversal.IsFailure.Should().BeTrue();
+        reversal.Error.Should().Be(TreasuryErrors.HoldPostingNotReversible);
     }
 
     [Fact]

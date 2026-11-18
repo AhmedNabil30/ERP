@@ -21,7 +21,8 @@ namespace Kaff.Api.Features.Treasury.PostMovement;
 /// <param name="Type">Sent as the member name, per every other enum on the wire.</param>
 /// <param name="PostingDate">
 /// The accounting date. Distinct from when the request was made — a back-dated posting is checked
-/// against the accounting period it names, not against today (<c>AC-301-H</c>).
+/// against the accounting period it names, not against today (<c>AC-301-H</c>). Required, never defaulted, and between
+/// 2000-01-01 and one day past the site day (<c>TypedPostingDate</c>, Verifier F-7).
 /// </param>
 /// <param name="SourceDocumentType">The kind of business document this movement traces to.</param>
 /// <param name="SourceDocumentId">That document's id.</param>
@@ -31,7 +32,7 @@ public sealed record Request(
     Guid ToAccountId,
     Money Amount,
     PostingType Type,
-    DateOnly PostingDate,
+    DateOnly? PostingDate,
     SourceDocumentType SourceDocumentType,
     Guid SourceDocumentId,
     string? SourceDocumentReference);

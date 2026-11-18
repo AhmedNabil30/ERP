@@ -53,6 +53,14 @@ public static class TreasuryErrors
     public static readonly Error SourceDocumentTypeRequired =
         Error.Validation("treasury.source_document_type_required", "errors.treasury.source_document_type_required");
 
+    /// <summary>A typed posting date is required; it is never defaulted (Verifier F-7). See <see cref="TypedPostingDate"/>.</summary>
+    public static readonly Error PostingDateRequired =
+        Error.Validation("treasury.posting_date_required", "errors.treasury.posting_date_required");
+
+    /// <summary>A typed posting date before 2000 or past the site day. See <see cref="TypedPostingDate"/>.</summary>
+    public static readonly Error PostingDateOutOfRange =
+        Error.Validation("treasury.posting_date_out_of_range", "errors.treasury.posting_date_out_of_range");
+
     public static readonly Error AmountMustBePositive =
         Error.Validation("treasury.amount_must_be_positive", "errors.treasury.amount_must_be_positive");
 
@@ -75,6 +83,21 @@ public static class TreasuryErrors
     /// <summary>spec.md §5.1 — the hold only grows; nothing comes out of it before handover.</summary>
     public static readonly Error HoldOnlyGrows =
         Error.Conflict("treasury.hold_only_grows", "errors.treasury.hold_only_grows");
+
+    /// <summary>
+    /// spec.md §5.1 — the hold only grows and releases once. A posting that touches the hold is never
+    /// reversed: reversing an accrual takes value out of the hold, and reversing the release puts it back
+    /// for a second release (Verifier F-5, 2026-11-18). Mirrored by <c>KAFF_HOLD_REVERSAL</c>.
+    /// </summary>
+    public static readonly Error HoldPostingNotReversible =
+        Error.Conflict("treasury.hold_posting_not_reversible", "errors.treasury.hold_posting_not_reversible");
+
+    /// <summary>
+    /// spec.md §5.1 — the hold releases in full: a release must leave it at exactly zero. Mirrors
+    /// <c>KAFF_HOLD_PARTIAL_RELEASE</c>, which only the database can check.
+    /// </summary>
+    public static readonly Error HoldReleaseMustBeInFull =
+        Error.Conflict("treasury.hold_release_in_full", "errors.treasury.hold_release_in_full");
 
     /// <summary>
     /// KAFF-305 — a posting type may only run between the account pair spec.md names for it. See

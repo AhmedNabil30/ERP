@@ -85,7 +85,7 @@ public sealed class ProjectActivatesAtSigningTests : IAsyncLifetime
 
         (await SendAsync(
                 HttpMethod.Post, $"/api/projects/{project}/sign", _technicalOffice,
-                new { signedOn = "2026-09-25", holdPercentage = "0.20", clientAdvance = 25m, advanceRecoveryRate = "0.25" }))
+                new { signedOn = "2026-09-25", holdPercentage = "0.20", clientAdvance = "0.25", advanceRecoveryRate = "0.25" }))
             .StatusCode.Should().Be(HttpStatusCode.OK);
 
         JsonElement signed = await ReadAsync(await SendAsync(HttpMethod.Get, $"/api/projects/{project}", _owner, null));
@@ -171,7 +171,7 @@ public sealed class ProjectActivatesAtSigningTests : IAsyncLifetime
 
         (await SendAsync(
                 HttpMethod.Post, $"/api/projects/{project}/sign", _technicalOffice,
-                new { holdPercentage = "0.20", clientAdvance = 25m, advanceRecoveryRate = "0.25" }))
+                new { holdPercentage = "0.20", clientAdvance = "0.25", advanceRecoveryRate = "0.25" }))
             .StatusCode.Should().Be(HttpStatusCode.Conflict, "no BOQ");
 
         (await LoadAsync(project)).Status.Should().Be(ProjectStatus.Setup);

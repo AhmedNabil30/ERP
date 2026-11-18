@@ -9,7 +9,7 @@ import { ContractType, ProjectStatus } from '../../../core/projects/projects.api
  *
  * **There is no contract value, and there must not be one.** The server derives it: Lump Sum takes the
  * signed BOQ's total (`POST /api/projects/{id}/sign`), Design is area x rate, Cost Plus has none.
- * `holdPercentage` is a wire fraction (`"0.20"` is 20%, D-151); `clientAdvance` is percent units. Both are
+ * `holdPercentage` and `clientAdvance` are wire fractions (`"0.20"` is 20%, D-151). Both are
  * Lump Sum only and are omitted (`null`) to take the spec defaults. `status` is never sent: a new project
  * starts in Setup.
  */

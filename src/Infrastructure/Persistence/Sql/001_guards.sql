@@ -118,9 +118,17 @@ BEGIN
     -- spec.md 5.1 / CLAUDE.md: "The hold only grows. Nothing comes out of it mid-project — no snag,
     -- no debit note, no adjustment. It releases once, in full, at handover."
     --
-    -- A reversal is exempt: it corrects an accrual that should never have existed, which is not the
-    -- same thing as taking money out of the hold.
-    IF v_from.ledger_kind = 'Hold' AND NEW."type" <> 'HoldRelease' AND NEW.reverses_id IS NULL THEN
+    -- No posting that touches the hold is ever reversed. Reversing an accrual takes value out of the
+    -- hold before handover; reversing the release refills it for a second release (Verifier F-5,
+    -- 2026-11-18). Mirrored by Kaff.Domain.Treasury.Posting.Reverse (HoldPostingNotReversible).
+    IF NEW.reverses_id IS NOT NULL
+       AND (v_from.ledger_kind = 'Hold' OR v_to.ledger_kind = 'Hold') THEN
+        RAISE EXCEPTION 'KAFF_HOLD_REVERSAL: a posting on the hold ledger cannot be reversed.'
+            USING ERRCODE = 'restrict_violation',
+                  HINT = 'spec.md 5.1. The hold only grows and releases once, in full, at handover.';
+    END IF;
+
+    IF v_from.ledger_kind = 'Hold' AND NEW."type" <> 'HoldRelease' THEN
         RAISE EXCEPTION 'KAFF_HOLD_DEBIT: posting type % cannot take value out of the hold ledger.', NEW."type"
             USING ERRCODE = 'restrict_violation',
                   HINT = 'spec.md 5.1. The hold releases once, in full, at handover, as a HoldRelease posting.';
@@ -163,6 +171,21 @@ BEGIN
     IF (v_from.type = 'PettyCashAdvance' OR v_to.type = 'PettyCashAdvance')
        AND NEW."type" NOT IN ('PettyCashIssue', 'PettyCashSettlement', 'PettyCashReturn') THEN
         RAISE EXCEPTION 'KAFF_POSTING_TYPE_ACCOUNT_MISMATCH: posting type % cannot touch a PettyCashAdvance account.', NEW."type"
+            USING ERRCODE = 'restrict_violation';
+    END IF;
+
+    -- KAFF-305 rule 11, spec.md 6.7: only TaxWithheldAtSource touches the "tax withheld at source"
+    -- asset, and a TaxWithheldAtSource posting always lands on it. Mirrors PostingAccountLegality
+    -- rule 11 in both directions (Verifier SQL probe 6, 2026-11-18).
+    IF (v_from.type = 'TaxWithheldAtSource' OR v_to.type = 'TaxWithheldAtSource')
+       AND NEW."type" <> 'TaxWithheldAtSource' THEN
+        RAISE EXCEPTION 'KAFF_POSTING_TYPE_ACCOUNT_MISMATCH: posting type % cannot touch a TaxWithheldAtSource account.', NEW."type"
+            USING ERRCODE = 'restrict_violation';
+    END IF;
+
+    IF NEW."type" = 'TaxWithheldAtSource'
+       AND v_from.type <> 'TaxWithheldAtSource' AND v_to.type <> 'TaxWithheldAtSource' THEN
+        RAISE EXCEPTION 'KAFF_POSTING_TYPE_ACCOUNT_MISMATCH: a TaxWithheldAtSource posting must touch a TaxWithheldAtSource account.'
             USING ERRCODE = 'restrict_violation';
     END IF;
 
@@ -230,9 +253,8 @@ BEGIN
         END IF;
 
         -- A reversal cannot itself be reversed. The unique index on reverses_id stops the same
-        -- posting being reversed twice, but without this a chain — accrue, reverse, reverse the
-        -- reversal, reverse that — walks around the hold rule above indefinitely, because every
-        -- reversal is exempt from it. One correction per posting, and the correction is final.
+        -- posting being reversed twice; this stops a chain of corrections of corrections. One
+        -- correction per posting, and the correction is final.
         IF v_original.reverses_id IS NOT NULL THEN
             RAISE EXCEPTION 'KAFF_REVERSAL_OF_REVERSAL: posting % is already a correction.', NEW.reverses_id
                 USING ERRCODE = 'restrict_violation',

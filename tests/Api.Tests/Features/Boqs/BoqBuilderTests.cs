@@ -220,7 +220,7 @@ public sealed class BoqBuilderTests : IAsyncLifetime
                 HttpMethod.Post, $"/api/projects/{source}/boq/lines", _technicalOffice,
                 new { descriptionAr = "بند خاص", unit = "عدد", babId = _babId, costPrice = "50.0000", baseSellRate = "80.0000", quantityEstimated = 3m }))
             .StatusCode.Should().Be(HttpStatusCode.Created);
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{source}/sign", _technicalOffice, new { holdPercentage = "0.10", clientAdvance = 30m, advanceRecoveryRate = "0.25" }))
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{source}/sign", _technicalOffice, new { holdPercentage = "0.10", clientAdvance = "0.30", advanceRecoveryRate = "0.25" }))
             .StatusCode.Should().Be(HttpStatusCode.OK);
         await RepriceAsync(_itemA, cost: 1_100m, sell: 1_700m);
 
@@ -401,7 +401,7 @@ public sealed class BoqBuilderTests : IAsyncLifetime
         Guid project = await NewProjectAsync(assigned: _technicalOffice);
         (await AddLineAsync(project, _itemA, estimated: 4m, surveyed: null)).StatusCode.Should().Be(HttpStatusCode.Created);
 
-        foreach (object body in new object[] { new { }, new { holdPercentage = "0.10" }, new { clientAdvance = 30m, advanceRecoveryRate = "0.25" } })
+        foreach (object body in new object[] { new { }, new { holdPercentage = "0.10" }, new { clientAdvance = "0.30", advanceRecoveryRate = "0.25" } })
         {
             HttpResponseMessage response = await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _technicalOffice, body);
 
@@ -411,7 +411,7 @@ public sealed class BoqBuilderTests : IAsyncLifetime
 
         (await LoadProjectAsync(project)).IsSigned.Should().BeFalse();
 
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _technicalOffice, new { holdPercentage = "0.10", clientAdvance = 30m, advanceRecoveryRate = "0.25" }))
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/sign", _technicalOffice, new { holdPercentage = "0.10", clientAdvance = "0.30", advanceRecoveryRate = "0.25" }))
             .StatusCode.Should().Be(HttpStatusCode.OK);
         Project stored = await LoadProjectAsync(project);
         stored.HoldRate.Should().Be(Percentage.FromPercent(10m));
@@ -454,7 +454,7 @@ public sealed class BoqBuilderTests : IAsyncLifetime
 
     private static decimal Dec(JsonElement element) => decimal.Parse(element.GetString()!, System.Globalization.CultureInfo.InvariantCulture);
 
-    private static object Terms() => new { holdPercentage = "0.20", clientAdvance = 25m, advanceRecoveryRate = "0.25" };
+    private static object Terms() => new { holdPercentage = "0.20", clientAdvance = "0.25", advanceRecoveryRate = "0.25" };
 
     private Task<HttpResponseMessage> AddLineAsync(Guid project, Guid item, decimal? estimated, decimal? surveyed) =>
         SendAsync(

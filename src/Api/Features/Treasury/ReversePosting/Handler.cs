@@ -64,6 +64,9 @@ internal static class Handler
         ArgumentNullException.ThrowIfNull(database);
         ArgumentNullException.ThrowIfNull(currentUser);
 
+        // The validator refuses a missing date (TypedPostingDate); nothing here may default it.
+        DateOnly postingDate = request.PostingDate!.Value;
+
         Posting? original = await database.Postings
             .FirstOrDefaultAsync(posting => posting.Id == id, cancellationToken);
 
@@ -108,8 +111,8 @@ internal static class Handler
         bool periodClosed = await database.AccountingPeriods
             .AnyAsync(
                 period => period.Status == PeriodStatus.Closed
-                          && period.StartsOn <= request.PostingDate
-                          && period.EndsOn >= request.PostingDate,
+                          && period.StartsOn <= postingDate
+                          && period.EndsOn >= postingDate,
                 cancellationToken);
 
         if (periodClosed)
@@ -142,7 +145,7 @@ internal static class Handler
             original,
             from,
             to,
-            request.PostingDate,
+            postingDate,
             currentUser.UserId ?? Guid.Empty,
             clock.GetUtcNow());
 

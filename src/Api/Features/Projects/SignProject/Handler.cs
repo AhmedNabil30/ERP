@@ -92,7 +92,7 @@ internal static class Handler
                 return ResultExtensions.Problem(ProjectErrors.AdvanceRecoveryRateRequired);
             }
 
-            if (advance < 0m || recovery < Percentage.Zero)
+            if (advance < Percentage.Zero || recovery < Percentage.Zero)
             {
                 return ResultExtensions.Problem(ProjectErrors.RateMustNotBeNegative);
             }
@@ -100,7 +100,7 @@ internal static class Handler
             // KAFF-417: terms move to signature. The other three terms are left as they are. The project is a
             // tracked entity, so the audit interceptor records before and after in the same save.
             Result termsSet = project.SetLumpSumTerms(
-                Percentage.FromPercent(advance),
+                advance,
                 hold,
                 recovery,
                 project.MaterialAdvanceRate ?? ContractDefaults.MaterialAdvanceRate,

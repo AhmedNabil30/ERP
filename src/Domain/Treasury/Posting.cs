@@ -114,7 +114,7 @@ public sealed class Posting : Entity
         ArgumentNullException.ThrowIfNull(from);
         ArgumentNullException.ThrowIfNull(to);
 
-        Result check = Validate(from, to, amount, type, projectId, isReversal: false);
+        Result check = Validate(from, to, amount, type, projectId);
         if (check.IsFailure)
         {
             return Result.Failure<Posting>(check.Error);
@@ -163,8 +163,16 @@ public sealed class Posting : Entity
             return Result.Failure<Posting>(TreasuryErrors.ReversalMustMirrorOriginal);
         }
 
+        // spec.md §5.1: the hold only grows and releases once, in full. Reversing an accrual would take
+        // value out of it before handover; reversing the release would put it back for a second release.
+        // Either way the posting stands. Mirrored by KAFF_HOLD_REVERSAL in 001_guards.sql.
+        if (originalFrom.LedgerKind == Treasury.LedgerKind.Hold || originalTo.LedgerKind == Treasury.LedgerKind.Hold)
+        {
+            return Result.Failure<Posting>(TreasuryErrors.HoldPostingNotReversible);
+        }
+
         // Accounts are swapped, so the "from" side of the reversal is the original's "to" account.
-        Result check = Validate(originalTo, originalFrom, original.Amount, original.Type, original.ProjectId, isReversal: true);
+        Result check = Validate(originalTo, originalFrom, original.Amount, original.Type, original.ProjectId);
         if (check.IsFailure)
         {
             return Result.Failure<Posting>(check.Error);
@@ -189,8 +197,7 @@ public sealed class Posting : Entity
         Account to,
         Money amount,
         PostingType type,
-        Guid? projectId,
-        bool isReversal)
+        Guid? projectId)
     {
         if (!amount.IsPositive)
         {
@@ -227,10 +234,10 @@ public sealed class Posting : Entity
         // Nothing may be taken out of it mid-project — not a snag, not a debit note, not an
         // adjustment. It releases once, in full, at handover."
         //
-        // A reversal is exempt because it corrects an accrual that should never have been made; it
-        // is not a withdrawal from the hold. The handover precondition on HoldRelease is a project
-        // state check and lives with the handover flow, not here — the ledger cannot see project state.
-        if (from.LedgerKind == Treasury.LedgerKind.Hold && type != PostingType.HoldRelease && !isReversal)
+        // No reversal reaches here with a hold account: Reverse refuses those first. The handover
+        // precondition on HoldRelease is a project state check and lives with the handover flow, not
+        // here — the ledger cannot see project state.
+        if (from.LedgerKind == Treasury.LedgerKind.Hold && type != PostingType.HoldRelease)
         {
             return Result.Failure(TreasuryErrors.HoldOnlyGrows);
         }

@@ -44,13 +44,13 @@ public sealed class DatabaseGuardTranslationTests
             .Select(match => match.Groups[1].Value)
             .ToHashSet(StringComparer.Ordinal);
 
-        // Three prefixes are deliberately out of this story's scope (see KAFF-319 "Not in this
-        // story" and DatabaseGuardTranslation's own remarks): KAFF_APPEND_ONLY guards UPDATE/DELETE,
-        // not the INSERT path this mapping serves; KAFF_HOLD_PARTIAL_RELEASE and
-        // KAFF_ACCOUNT_IMMUTABLE are not in the story's named list of twelve/thirteen prefixes.
-        string[] outOfScope = ["KAFF_APPEND_ONLY", "KAFF_HOLD_PARTIAL_RELEASE", "KAFF_ACCOUNT_IMMUTABLE"];
+        // Two prefixes guard statements no request performs, so no request can meet them:
+        // KAFF_APPEND_ONLY refuses UPDATE, DELETE and TRUNCATE on postings and audit records, and
+        // KAFF_ACCOUNT_IMMUTABLE refuses an UPDATE of an account's configuration. Every other prefix,
+        // including any a later script adds, must map (Verifier T-3, 2026-11-18).
+        string[] notOnAnInsertPath = ["KAFF_APPEND_ONLY", "KAFF_ACCOUNT_IMMUTABLE"];
 
-        IEnumerable<string> inScope = allPrefixes.Except(outOfScope, StringComparer.Ordinal);
+        IEnumerable<string> inScope = allPrefixes.Except(notOnAnInsertPath, StringComparer.Ordinal);
 
         inScope.Should().BeEquivalentTo(
             DatabaseGuardTranslation.Map.Keys,

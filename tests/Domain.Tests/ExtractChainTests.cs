@@ -259,7 +259,9 @@ public sealed class ExtractChainTests
         {
             ExtractPostingMoment = new ExtractPostingMoment(ExtractStage.AccountsDeductions),
         };
-        ExtractHarness h = new(accruesAtAccounts);
+        // No hold on this contract: a hold leg is never reversed (spec.md §5.1, Verifier F-5), and that
+        // refusal has its own test below. What this test proves is the mechanism for every other leg.
+        ExtractHarness h = new(accruesAtAccounts, Percentage.Zero);
         Extract extract = h.Prepare(ExtractHarness.NewUser());
         DateTimeOffset now = ExtractHarness.Now;
         extract.SubmitQcReport(ExtractHarness.NewUser(), now).IsSuccess.Should().BeTrue();
@@ -273,7 +275,7 @@ public sealed class ExtractChainTests
         h.Commit(accrual.Value);
         List<Posting> originals = [.. h.Ledger];
         IReadOnlyList<ExtractPostedLeg> legs = ExtractHarness.LegsOf(accrual.Value!);
-        h.Balance(h.Hold).Should().Be(new Money(60_000m));
+        h.Balance(h.Hold).Should().Be(Money.Zero, "the contract carries no hold");
 
         extract.Reject(ExtractHarness.NewUser(), "no", h.Context(), [], now).Error
             .Should().Be(ExtractErrors.ReversalPostingsRequired);
@@ -290,6 +292,36 @@ public sealed class ExtractChainTests
         h.Balance(h.Receivable).Should().Be(Money.Zero);
         h.Sum(PostingType.RevenueRecognition).Should().Be(new Money(300_000m) * 2m, "original and its mirror both stand");
         extract.Status.Should().Be(ExtractStatus.Draft);
+    }
+
+    [Fact]
+    public async Task Rejection_after_the_accrual_moment_is_refused_when_the_accrual_put_value_into_the_hold()
+    {
+        // spec.md §5.1: nothing comes out of the hold before handover. Under a ruling that accrues before
+        // the owner's gate, a later rejection would have to reverse the hold leg, so it is refused whole
+        // and the extract stays where it is (Verifier F-5, 2026-11-18).
+        RulingSet accruesAtAccounts = RulingSet.Default with
+        {
+            ExtractPostingMoment = new ExtractPostingMoment(ExtractStage.AccountsDeductions),
+        };
+        ExtractHarness h = new(accruesAtAccounts);
+        Extract extract = h.Prepare(ExtractHarness.NewUser());
+        DateTimeOffset now = ExtractHarness.Now;
+        extract.SubmitQcReport(ExtractHarness.NewUser(), now).IsSuccess.Should().BeTrue();
+        extract.ApproveTechnicalOffice(ExtractHarness.NewUser(), Percentage.FromFraction(1m), null, accruesAtAccounts, now)
+            .IsSuccess.Should().BeTrue();
+        Result<PostingSet?> accrual = await extract.ApplyDeductionsAsync(
+            ExtractHarness.NewUser(), new LumpSumBillingCalculator(accruesAtAccounts), h.Balances(), h.Context(), now,
+            CancellationToken.None);
+        h.Commit(accrual.Value);
+        h.Balance(h.Hold).Should().Be(new Money(60_000m));
+
+        Result<IReadOnlyList<Posting>> rejected = extract.Reject(
+            ExtractHarness.NewUser(), "the deductions are wrong", h.Context(), ExtractHarness.LegsOf(accrual.Value!), now);
+
+        rejected.Error.Should().Be(TreasuryErrors.HoldPostingNotReversible);
+        extract.Status.Should().Be(ExtractStatus.DeductionsApplied);
+        h.Balance(h.Hold).Should().Be(new Money(60_000m));
     }
 
     [Fact]

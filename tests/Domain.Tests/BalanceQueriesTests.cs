@@ -77,6 +77,31 @@ public sealed class BalanceQueriesTests
             .Should().NotContain(name => name.Contains("Total", StringComparison.OrdinalIgnoreCase));
     }
 
+    /// <summary>
+    /// Verifier F-6, 2026-11-18. عهدة is held per employee, so a project with two custodians has two
+    /// PettyCashAdvance accounts (AC-302-D; ux_accounts_project_dimension allows one per employee). The
+    /// ledger figure is their sum, within that one ledger and never across ledgers.
+    /// </summary>
+    [Fact]
+    public void GetLedgerBalances_sums_several_accounts_of_one_ledger_and_nets_nothing_across_ledgers()
+    {
+        var rows = new List<AccountBalance>
+        {
+            Row(Guid.CreateVersion7(), LedgerKind.PettyCashAdvance, inflow: 10_000m, outflow: 4_000m, normalDebit: true, projectId: ProjectId),
+            Row(Guid.CreateVersion7(), LedgerKind.PettyCashAdvance, inflow: 7_000m, outflow: 0m, normalDebit: true, projectId: ProjectId),
+            Row(Guid.CreateVersion7(), LedgerKind.Hold, inflow: 60_000m, outflow: 0m, normalDebit: true, projectId: ProjectId),
+            RowMaterialAdvance(Guid.CreateVersion7(), inflow: 5_000m, outflow: 0m, projectId: ProjectId),
+            RowMaterialAdvance(Guid.CreateVersion7(), inflow: 3_000m, outflow: 1_000m, projectId: ProjectId),
+        };
+
+        LedgerBalances balances = BalanceQueries.GetLedgerBalances(rows.AsQueryable(), ProjectId);
+
+        balances.PettyCashAdvance.Should().Be(new Money(13_000m));
+        balances.MaterialAdvance.Should().Be(new Money(7_000m));
+        balances.Hold.Should().Be(new Money(60_000m), "the hold is not touched by the two عهدة accounts");
+        balances.ClientAdvance.Should().Be(Money.Zero);
+    }
+
     /// <summary>TC-3-048.</summary>
     [Fact]
     public void GetLedgerBalances_ledgers_missing_for_the_project_default_to_zero_not_an_exception()

@@ -9,6 +9,7 @@ using Kaff.Domain.Contracts;
 using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
 using Kaff.Domain.Projects;
+using Kaff.Domain.Rulings;
 using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -242,7 +243,7 @@ public sealed class PostMovementTests : IAsyncLifetime
     [Fact]
     public async Task TC_3_030_A_posting_dated_inside_a_closed_period_is_refused()
     {
-        var period = AccountingPeriod.Create(2027, 3).Value;
+        var period = AccountingPeriod.Create(2024, 3).Value;
         period.Close(Guid.CreateVersion7(), Now).IsSuccess.Should().BeTrue();
 
         await using (KaffDbContext setup = _database.CreateContext())
@@ -259,7 +260,7 @@ public sealed class PostMovementTests : IAsyncLifetime
             expense.Id,
             10m,
             PostingType.CompanyExpensePayment,
-            postingDate: new DateOnly(2027, 3, 15));
+            postingDate: new DateOnly(2024, 3, 15));
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await MessageKeyAsync(response)).Should().Be("errors.treasury.closed_period");
@@ -285,6 +286,91 @@ public sealed class PostMovementTests : IAsyncLifetime
 
         (await PostingCountAsync(revenueA.Id, costA.Id)).Should().Be(
             0, "the refusal must land before the domain or the database ever sees the request");
+    }
+
+    // ---- Verifier F-7, 2026-11-18: a typed posting date is required and must be plausible ------------
+
+    [Fact]
+    public async Task A_posting_sent_without_a_date_is_refused_and_writes_nothing()
+    {
+        // Before: the missing field bound to 0001-01-01 and was stored with 201, outside every period.
+        (Account safe, Account expense) = await CreateFundedSafeAndExpenseAsync(10_000m);
+
+        HttpResponseMessage response = await SendBodyAsync(
+            new Uri("/api/treasury/postings", UriKind.Relative),
+            _financeCompanyWide,
+            new
+            {
+                fromAccountId = safe.Id,
+                toAccountId = expense.Id,
+                amount = "10.0000",
+                type = nameof(PostingType.CompanyExpensePayment),
+                sourceDocumentType = nameof(SourceDocumentType.Adjustment),
+                sourceDocumentId = Guid.CreateVersion7(),
+            });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await MessageKeyAsync(response)).Should().Be("errors.treasury.posting_date_required");
+        (await PostingCountAsync(safe.Id, expense.Id)).Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData(-1, true)]
+    [InlineData(0, true)]
+    [InlineData(1, true)]
+    [InlineData(2, false)]
+    [InlineData(365, false)]
+    public async Task A_posting_date_after_the_site_day_is_accepted_only_within_one_day(int daysAhead, bool accepted)
+    {
+        (Account safe, Account expense) = await CreateFundedSafeAndExpenseAsync(10_000m);
+        DateOnly date = SiteTime.Today(TimeProvider.System).AddDays(daysAhead);
+
+        HttpResponseMessage response = await PostCompanyAsync(
+            _financeCompanyWide, safe.Id, expense.Id, 10m, PostingType.CompanyExpensePayment, postingDate: date);
+
+        if (accepted)
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.Created, await response.Content.ReadAsStringAsync(Ct));
+        }
+        else
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            (await MessageKeyAsync(response)).Should().Be("errors.treasury.posting_date_out_of_range");
+            (await PostingCountAsync(safe.Id, expense.Id)).Should().Be(0);
+        }
+    }
+
+    [Theory]
+    [InlineData(1, 1, 1, false)]
+    [InlineData(1999, 12, 31, false)]
+    [InlineData(2000, 1, 1, true)]
+    public async Task A_posting_date_before_2000_is_refused(int year, int month, int day, bool accepted)
+    {
+        (Account safe, Account expense) = await CreateFundedSafeAndExpenseAsync(10_000m);
+
+        HttpResponseMessage response = await PostCompanyAsync(
+            _financeCompanyWide, safe.Id, expense.Id, 10m, PostingType.CompanyExpensePayment,
+            postingDate: new DateOnly(year, month, day));
+
+        response.StatusCode.Should().Be(accepted ? HttpStatusCode.Created : HttpStatusCode.BadRequest);
+        if (!accepted)
+        {
+            (await MessageKeyAsync(response)).Should().Be("errors.treasury.posting_date_out_of_range");
+        }
+    }
+
+    private async Task<HttpResponseMessage> SendBodyAsync(Uri route, Guid actorId, object body)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, route) { Content = JsonContent.Create(body) };
+        (string stamp, Role? role) = await SessionAsync(actorId);
+        request.Headers.Add(TestAuthHandler.UserIdHeader, actorId.ToString());
+        request.Headers.Add(TestAuthHandler.SecurityStampHeader, stamp);
+        if (role is not null)
+        {
+            request.Headers.Add(TestAuthHandler.RoleHeader, role.Value.ToString());
+        }
+
+        return await _client.SendAsync(request, Ct);
     }
 
     // ---- helpers -----------------------------------------------------------------------------------

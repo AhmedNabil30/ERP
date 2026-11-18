@@ -352,6 +352,127 @@ public sealed class TreasuryGuardTests
     }
 
     [Fact]
+    public async Task A_reversal_of_a_hold_accrual_is_refused_by_the_database()
+    {
+        // spec.md §5.1: nothing comes out of the hold before handover. A reversal of an accrual takes
+        // value out of the hold exactly as a withdrawal does (Verifier F-5, 2026-11-18).
+        Guid projectId = await CreateProjectShellAsync();
+        Account hold = await AddAccountAsync(AccountType.Hold, projectId, PartyType.Client);
+        Account receivable = await AddAccountAsync(AccountType.ClientReceivable, projectId, PartyType.Client);
+        Posting accrual = await SaveAsync(Posting.Create(
+            receivable, hold, new Money(60_000m), PostingType.HoldAccrual,
+            Document(SourceDocumentType.Extract), Today, Actor, Now, projectId).Value);
+
+        await using KaffDbContext raw = _database.CreateBareContext();
+
+        await DatabaseGuard.RefusesAsync(
+            () => InsertRawReversalAsync(raw, hold.Id, receivable.Id, 60_000m, nameof(PostingType.HoldAccrual), projectId, accrual.Id),
+            DatabaseGuard.HoldReversal);
+    }
+
+    [Fact]
+    public async Task A_reversal_of_a_hold_release_is_refused_by_the_database()
+    {
+        // spec.md §5.1: "It releases once, in full, at handover." Reversing the release would refill the
+        // hold for a second release (Verifier F-5: a second release paid 140,000).
+        Guid projectId = await CreateProjectShellAsync();
+        Account hold = await AddAccountAsync(AccountType.Hold, projectId, PartyType.Client);
+        Account receivable = await AddAccountAsync(AccountType.ClientReceivable, projectId, PartyType.Client);
+        await SaveAsync(Posting.Create(
+            receivable, hold, new Money(200_000m), PostingType.HoldAccrual,
+            Document(SourceDocumentType.Extract), Today, Actor, Now, projectId).Value);
+        Posting release = await SaveAsync(Posting.Create(
+            hold, receivable, new Money(200_000m), PostingType.HoldRelease,
+            Document(SourceDocumentType.ProjectHandover), Today, Actor, Now, projectId).Value);
+
+        await using KaffDbContext raw = _database.CreateBareContext();
+
+        await DatabaseGuard.RefusesAsync(
+            () => InsertRawReversalAsync(raw, receivable.Id, hold.Id, 200_000m, nameof(PostingType.HoldRelease), projectId, release.Id),
+            DatabaseGuard.HoldReversal);
+
+        (await ReadBalanceAsync(hold.Id)).SignedBalance.Should().Be(Money.Zero, "the release still stands");
+    }
+
+    [Fact]
+    public async Task A_reversal_of_a_reversal_is_refused_by_the_database_even_bypassing_the_handler()
+    {
+        // Verifier T-1: the handler's pre-check met this first, so nothing proved the database guard.
+        // The insert below mirrors the reversal exactly and names a target no other row reverses, so
+        // KAFF_REVERSAL_OF_REVERSAL is the only rule that can refuse it.
+        (Account safe, Account expense) = await CreateCashAndExpenseAsync();
+        await FundAsync(safe, new Money(5_000m));
+        Posting original = await SaveAsync(Posting.Create(
+            safe, expense, new Money(1_000m), PostingType.CompanyExpensePayment,
+            Document(SourceDocumentType.CompanyExpense), Today, Actor, Now).Value);
+        Posting reversal = await SaveAsync(Posting.Reverse(original, safe, expense, Today, Actor, Now).Value);
+
+        await using KaffDbContext raw = _database.CreateBareContext();
+
+        await DatabaseGuard.RefusesAsync(
+            () => InsertRawReversalAsync(raw, safe.Id, expense.Id, 1_000m, nameof(PostingType.CompanyExpensePayment), null, reversal.Id),
+            DatabaseGuard.ReversalOfReversal);
+    }
+
+    [Theory]
+    [InlineData("postings")]
+    [InlineData("audit_records")]
+    public async Task An_append_only_table_cannot_be_truncated_even_by_raw_sql(string table)
+    {
+        // Verifier T-2: the no-truncate triggers were asserted present by name only. Run inside a
+        // transaction that is always rolled back, so a missing guard cannot empty the shared test database.
+        (Account safe, _) = await CreateCashAndExpenseAsync();
+        await FundAsync(safe, new Money(1_000m));
+
+        await using KaffDbContext raw = _database.CreateBareContext();
+        await using Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction =
+            await raw.Database.BeginTransactionAsync(Ct);
+
+        try
+        {
+            await DatabaseGuard.RefusesAsync(
+                () => raw.Database.ExecuteSqlRawAsync(
+                    table == "postings" ? "TRUNCATE postings CASCADE" : "TRUNCATE audit_records CASCADE", Ct),
+                DatabaseGuard.AppendOnly);
+        }
+        finally
+        {
+            await transaction.RollbackAsync(Ct);
+        }
+    }
+
+    [Fact]
+    public async Task A_withheld_at_source_posting_that_misses_the_tax_account_is_refused_by_the_database()
+    {
+        // KAFF-305 rule 11, spec.md §6.7: the withheld amount lands on the "tax withheld at source" asset.
+        // The domain refuses this pair; the database must too (Verifier SQL probe 6).
+        Guid projectId = await CreateProjectShellAsync();
+        Account revenue = await AddAccountAsync(AccountType.ContractRevenue, projectId);
+        Account receivable = await AddAccountAsync(AccountType.ClientReceivable, projectId, PartyType.Client);
+
+        await using KaffDbContext raw = _database.CreateBareContext();
+
+        await DatabaseGuard.RefusesAsync(
+            () => InsertRawPostingAsync(raw, revenue.Id, receivable.Id, 1_000m, nameof(PostingType.TaxWithheldAtSource), projectId),
+            DatabaseGuard.PostingTypeAccountMismatch);
+    }
+
+    [Fact]
+    public async Task Only_a_withheld_at_source_posting_may_touch_the_tax_account_at_the_database()
+    {
+        // KAFF-305 rule 11, the other direction: no other posting type may touch the tax asset.
+        Guid projectId = await CreateProjectShellAsync();
+        Account tax = await AddAccountAsync(AccountType.TaxWithheldAtSource);
+        Account receivable = await AddAccountAsync(AccountType.ClientReceivable, projectId, PartyType.Client);
+
+        await using KaffDbContext raw = _database.CreateBareContext();
+
+        await DatabaseGuard.RefusesAsync(
+            () => InsertRawPostingAsync(raw, receivable.Id, tax.Id, 1_000m, nameof(PostingType.Adjustment), projectId),
+            DatabaseGuard.PostingTypeAccountMismatch);
+    }
+
+    [Fact]
     public async Task Balances_come_from_the_view_and_reconcile()
     {
         (Account safe, Account expense) = await CreateCashAndExpenseAsync();
@@ -479,6 +600,35 @@ public sealed class TreasuryGuardTests
 
         return project.Id;
     }
+
+    private async Task<Posting> SaveAsync(Posting posting)
+    {
+        await using KaffDbContext context = _database.CreateContext();
+        context.Postings.Add(posting);
+        await context.SaveChangesAsync(Ct);
+        return posting;
+    }
+
+    private static Task<int> InsertRawReversalAsync(
+        KaffDbContext context,
+        Guid fromAccountId,
+        Guid toAccountId,
+        decimal amount,
+        string postingType,
+        Guid? projectId,
+        Guid reversesId)
+        => context.Database.ExecuteSqlAsync(
+            $"""
+             INSERT INTO postings
+                 (id, posting_date, from_account_id, to_account_id, amount, "type",
+                  source_document_type, source_document_id, source_document_reference,
+                  project_id, created_by_user_id, created_at, reverses_id)
+             VALUES
+                 ({Guid.CreateVersion7()}, {Today}, {fromAccountId}, {toAccountId}, {amount}, {postingType},
+                  {nameof(SourceDocumentType.Adjustment)}, {Guid.CreateVersion7()}, NULL,
+                  {projectId}, {Actor}, {Now}, {reversesId})
+             """,
+            Ct);
 
     private static Task<int> InsertRawPostingAsync(
         KaffDbContext context,
