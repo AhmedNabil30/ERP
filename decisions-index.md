@@ -247,3 +247,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-238 | 17020 | An extract's money follows what actually arrived: cheques at clearance, part payments, withholding set by Finance · 2026-11-18 |
 | D-239 | 17038 | Nabil rules four open questions of D-238 on credit notes and the cheque list · 2026-11-19 |
 | D-240 | 17049 | Nabil rules the hold and posting words, and no future posting dates · 2026-11-19 |
+| D-241 | 17058 | Junior sees extracts list, revised extract cancels the original, money sub-screens in the Extracts tab, supervisor records client change-order approval · 2026-11-19 |

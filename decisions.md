@@ -17054,3 +17054,12 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 2. **A posting is «حركة» everywhere** in user-facing Arabic. «قيد» is replaced.
 3. **No future posting dates.** A typed posting date may be today (the site day) or earlier, never later. This removes the 1-day tolerance of D-236 §2.
 4. **The withholding word is not ruled.** Nabil asked why tax comes up at all. The Scrum Master answered from spec §6.7: a corporate client keeps back 1–5% of a payment for the tax authority, so the collection records it; this is two fields and two accounts, not a tax module. The wording stays «الخصم من المنبع» until Nabil rules otherwise.
+
+## D-241 — Nabil rules the junior engineer's extracts view, the revised extract, where the money sub-screens sit, and who records a client's change-order approval · 2026-11-19
+
+**Source.** Nabil, answering the Scrum Master on 2026-11-19, on the open questions of the extract chain mock (`.design/v2/team-a/extracts.html`).
+
+1. **The junior site engineer sees the project's extracts list** (number and status, no money) **and starts a new extract** for a period. Every money field stays hidden from him.
+2. **A revised extract cancels the disputed original.** The original's postings are reversed by its own flow, and the revised extract goes through the whole approval chain again.
+3. **Cheques in hand and change orders sit inside the project's Extracts tab** as sub-sections. The withholding category sits with the contract details.
+4. **The project manager or supervisor records the client's approval of a change order**, not the Technical Office or the Owner.
