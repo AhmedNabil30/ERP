@@ -17063,3 +17063,12 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 2. **A revised extract cancels the disputed original.** The original's postings are reversed by its own flow, and the revised extract goes through the whole approval chain again.
 3. **Cheques in hand and change orders sit inside the project's Extracts tab** as sub-sections. The withholding category sits with the contract details.
 4. **The project manager or supervisor records the client's approval of a change order**, not the Technical Office or the Owner.
+
+## D-242 — Nabil approves the extract chain mock, and rules rejection routing, payments on a cancelled extract and the revised extract's place in the one-in-flight rule · 2026-11-19
+
+**Source.** Nabil, answering the Scrum Master on 2026-11-19, on `.design/v2/team-a/extracts.html` round 2 (commit fde59f3) and its README open questions.
+
+1. **The extract chain mock (E1 to E13 and the contract-terms withholding row) is approved for building.**
+2. **A rejection goes to whoever can fix its reason.** The rejecter picks the reason: wrong quantities return the extract to the site engineer at preparation; wrong material values return it to the supervisor at the QC report. This amends spec §7, where every rejection returned to Draft.
+3. **Payments already received on an extract that a revised extract cancels move to the revised extract**, counted as already paid against it. Nothing is refunded and no payment is lost.
+4. **A revised extract is the one exception to the one-extract-in-flight rule.** It may run alongside the next normal extract; the rule stands for normal extracts.
