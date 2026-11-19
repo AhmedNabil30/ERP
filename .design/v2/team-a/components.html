@@ -391,13 +391,102 @@ bdi,.ltr{unicode-bidi:isolate}
 .ban.ok{background:var(--ok-bg);color:var(--ok-ink);border-inline-start-color:var(--ok-ink)}
 .ban .act{margin-inline-start:auto;flex:none}
 .ban b{font-weight:700}
+/* ---- kit+ from the extract chain (extracts.html, README "Extract chain", approved D-242) ---- */
+.fig{font-variant-numeric:tabular-nums;font-weight:500;direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+.s-out{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px currentColor}
+.pillset{display:flex;flex-wrap:wrap;gap:8px}
+/* chain line: the project frame's stage line; x7 = the extract's seven steps */
+.stl{list-style:none;margin:0;padding:0;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);max-inline-size:640px}
+.stl li{position:relative;display:grid;justify-items:center;align-content:start;gap:6px;text-align:center;font:600 .8125rem/1.3 var(--display);color:var(--dim);min-inline-size:0}
+.stl li::before{content:"";position:absolute;inset-block-start:12px;inset-inline-start:-50%;inset-inline-end:50%;border-block-start:2px dashed var(--line)}
+.stl li:first-child::before{display:none}
+.stl li.done::before,.stl li.cur::before{border-block-start:2px solid var(--ink)}
+.stl .mk{position:relative;z-index:1;inline-size:26px;block-size:26px;border-radius:50%;border:2px solid var(--fieldline);background:var(--bg);display:grid;place-items:center;color:var(--bg)}
+.stl .mk svg{inline-size:14px;block-size:14px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.stl li.done .mk{background:var(--ink);border-color:var(--ink)}
+.stl li.cur{color:var(--ink);font-weight:700}
+.stl li.cur .mk{border-width:3px}
+.stl li.cur .mk::after{content:"";inline-size:8px;block-size:8px;border-radius:50%;background:var(--ink)}
+.stl li.done{color:var(--ink)}
+.stl.x7{max-inline-size:860px}
+/* waiting line */
+.wait{display:grid;gap:2px;padding:12px 16px;border-radius:var(--radius);background:var(--head)}
+.wait b{font:600 1rem/1.5 var(--body)}
+.wait small{color:var(--dim);font-size:.875rem}
+/* figure list */
+.fl{margin:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.fl>div{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:4px 16px;min-block-size:48px;padding:6px 16px;border-block-start:1px solid var(--line)}
+.fl>div:first-child{border-block-start:0}
+.fl dt{flex:0 1 auto}
+.fl dd{margin:0;margin-inline-start:auto;text-align:end}
+.fl .tot{background:var(--head);border-block-start:2px solid var(--fieldline);font-weight:600;min-block-size:52px}
+.fl .tot .fig{font-weight:700;font-size:1.125rem}
+.fl small{display:block;color:var(--dim);font-size:.8125rem}
+.xh{font:600 1.0625rem/1.4 var(--display);margin:0 0 8px}
+/* collection position: five figures */
+.pos{margin:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.pos>div{display:grid;gap:2px;padding:12px 16px;min-inline-size:0}
+.pos>div+div{border-inline-start:1px solid var(--line)}
+.pos dt{color:var(--dim);font-size:.8125rem}
+.pos dd{margin:0;font:700 1.25rem/1.3 var(--body)}
+.pos dd small{display:block;font:400 .8125rem/1.4 var(--body);color:var(--dim)}
+.pos .rem{background:var(--head)}
+.cell .pos{grid-template-columns:1fr 1fr}
+.cell .pos>div+div{border-inline-start:0}
+.cell .pos>div:nth-child(even){border-inline-start:1px solid var(--line)}
+.cell .pos>div:nth-child(n+3){border-block-start:1px solid var(--line)}
+.cell .pos .rem{grid-column:1/-1;border-inline-start:0}
+/* quantities table, no prices */
+.qt{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden}
+.qh,.qr{display:grid;grid-template-columns:minmax(0,1fr) 92px 92px;gap:4px 18px;align-items:center;padding:8px 16px}
+.qh{font:600 .8125rem/1.3 var(--body);color:var(--dim);background:var(--head)}
+.qh span+span,.qr .c{text-align:end}
+.qg{font:600 .9375rem/1.4 var(--display);padding:8px 16px;border-block-start:1px solid var(--line)}
+.qr{border-block-start:1px solid var(--line);min-block-size:56px}
+.qr .u{display:block;color:var(--dim);font-size:.8125rem}
+/* change-order line editor */
+.edt{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.ln{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.4fr) auto auto;gap:10px;align-items:start;padding:14px 16px;border-block-start:1px solid var(--line)}
+.ln:first-child{border-block-start:0}
+.ln .lt{display:grid;align-content:center;justify-items:end;min-block-size:48px;margin-block-start:30px;min-inline-size:96px}
+.ln .lt span{color:var(--dim);font-size:.75rem}
+.ln>.ib{margin-block-start:32px}
+.ln .field .foot:empty{display:none}
+.edt .ft2{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 16px;border-block-start:1px solid var(--line);background:var(--head);flex-wrap:wrap}
+.edt .ft2 .fig{font-weight:700;font-size:1.125rem}
+/* list band: names the first column and the money column with its unit, once */
+.lh{display:flex;justify-content:space-between;padding:8px 16px;font:600 .8125rem/1.3 var(--body);color:var(--dim);background:var(--head);border:1px solid var(--line);border-block-end:0;border-start-start-radius:var(--radius);border-start-end-radius:var(--radius)}
+.lhl{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-end-start-radius:var(--radius);border-end-end-radius:var(--radius);background:var(--surface)}
+.lhl li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 14px;padding:10px 16px;border-block-start:1px solid var(--line);align-items:center;min-block-size:76px}
+.lhl li:first-child{border-block-start:0}
+.lhl .l3{grid-column:1/-1;display:flex;justify-content:space-between;gap:12px;color:var(--dim);font-size:.875rem;flex-wrap:wrap}
+.lhl .l3 .fig{color:var(--ink);font-weight:600}
+/* forward link row: the back link's face, chevron forward, optional count */
+.fwd{display:inline-flex;align-items:center;gap:10px;min-block-size:44px;color:var(--ink);text-decoration:none;font-weight:600}
+.fwd:hover{text-decoration:underline;text-underline-offset:4px}
+[dir="ltr"] .fwd svg{transform:scaleX(-1)}
+.badge.q{border-color:var(--line);color:var(--dim)}
+@media (max-width:820px){
+  .stl.x7 li{font-size:.6875rem}
+  .pos{grid-template-columns:1fr 1fr}
+  .pos>div+div{border-inline-start:0}
+  .pos>div:nth-child(even){border-inline-start:1px solid var(--line)}
+  .pos>div:nth-child(n+3){border-block-start:1px solid var(--line)}
+  .pos .rem{grid-column:1/-1;border-inline-start:0}
+  .pos dd{font-size:1.0625rem}
+  .qh,.qr{grid-template-columns:minmax(0,1fr) 72px 72px;gap:4px 10px;padding-inline:14px}
+  .ln{grid-template-columns:1fr 1fr;padding:14px}
+  .ln .f-d{grid-column:1/-1}
+  .ln .lt{margin:0;justify-items:start;min-inline-size:0}
+  .ln>.ib{margin:0;justify-self:end;align-self:end}
+}
 </style>
 </head>
 <body>
 
 <div class="strip">
   <nav aria-label="الأقسام">
-    <a href="#s-buttons">الأزرار</a><a href="#s-fields">الحقول</a><a href="#s-choice">الاختيار والتبويب</a><a href="#s-lists">الجداول</a><a href="#s-states">حالات القائمة</a><a href="#s-actions">إجراءات الصف</a><a href="#s-filters">التصفية</a><a href="#s-overlays">النوافذ</a><a href="#s-kitplus">إضافات الكتالوج</a><a href="#s-feedback">التنبيهات</a>
+    <a href="#s-buttons">الأزرار</a><a href="#s-fields">الحقول</a><a href="#s-choice">الاختيار والتبويب</a><a href="#s-lists">الجداول</a><a href="#s-states">حالات القائمة</a><a href="#s-actions">إجراءات الصف</a><a href="#s-filters">التصفية</a><a href="#s-overlays">النوافذ</a><a href="#s-kitplus">إضافات الكتالوج</a><a href="#s-extracts">إضافات المستخلص</a><a href="#s-feedback">التنبيهات</a>
   </nav>
   <div style="display:flex;gap:8px">
     <button type="button" id="dirbtn" aria-pressed="false">اختبار الاتجاه: يقلب التخطيط فقط</button>
@@ -504,6 +593,13 @@ bdi,.ltr{unicode-bidi:isolate}
   <h2>إضافات من شاشة الكتالوج</h2>
   <p class="spec">أجزاء لم تكن في المجموعة وأضافتها شاشة كتالوج الأسعار: صف مجموعة قابل للطي، صف «عرض المزيد»، علامة الحقل الداخلي، علامة الصف المؤرشف، الاستعادة في المكان، والحقل المعدَّل غير المحفوظ، وصف الشجرة، ومحرِّر القيمة المتعمَّد، ومنتقي الشجرة (شاشة الأبواب). (التأكيد الهادئ في قسم إجراءات الصف.) التفاصيل والمواصفات في ملف README قسم «الكتالوج».</p>
   <div class="grid g2" id="kpgrid"></div>
+</section>
+
+<!-- ============ KIT+ EXTRACT CHAIN ============ -->
+<section class="sec" id="s-extracts">
+  <h2>إضافات من سلسلة المستخلص</h2>
+  <p class="spec">أجزاء أضافتها شاشات المستخلص والتحصيل وأوامر التغيير (extracts.html، معتمدة D-242): مجموعات الحالة، خط المسار، سطر الانتظار، قائمة الأرقام، موقف التحصيل، جدول الكميات، محرر بنود أمر التغيير، شريط القائمة على الجوال ورابط التقدم. التفاصيل في ملف README قسم «Extract chain».</p>
+  <div class="grid g2" id="xgrid"></div>
 </section>
 
 <!-- ============ FEEDBACK ============ -->
@@ -690,6 +786,28 @@ $('#kpgrid').innerHTML=
  cap('علامة المؤرشف: وسم متقطع بأيقونة أرشيف، والنص يخفت. لا شطب',`<div style="display:flex;gap:10px;align-items:center;color:var(--dim)"><span style="font-weight:500">معالجة وإنهاء الأسطح الخرسانية</span><span class="atag" style="color:var(--ink)">${ic2(ARC)}مؤرشف</span><bdi style="font-size:.8125rem">CON-1027</bdi></div>`)+
  cap('الاستعادة في المكان (بلا تأكيد ولا إشعار منبثق) + حقل معدَّل غير محفوظ بحدّ داكن',`<div class="doneb" role="status">${i('check','s')}تمت استعادة «معالجة وإنهاء الأسطح» إلى القائمة النشطة.</div><div class="field" style="margin-block-start:14px"><label>سعر التكلفة <span class="badge" style="border-color:var(--line);color:var(--dim)">داخلي</span></label><div class="ctl money dirty"><input value="1,250.00" dir="ltr"><span class="aff">ج.م</span></div><div class="foot">تعديل غير محفوظ.</div></div>`);
 
+
+/* ---- kit+ from the extract chain ---- */
+const XP={none:['s-none','M12 12m-3.5 0a3.5 3.5 0 107 0 3.5 3.5 0 10-7 0'],run:['s-run','M12 12m-3 0a3 3 0 106 0 3 3 0 10-6 0'],done:['s-done','M5 12.5l4.5 4.5L19 7.5'],stuck:['s-stuck','M12 4l9 16H3zM12 10v4M12 17.5v.5'],out:['s-out','M5 12h12M13 7l5 5-5 5'],x:['s-post','M7 7l10 10M17 7L7 17']};
+const xp=(t,k)=>`<span class="pill ${XP[k][0]}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${XP[k][1]}"/></svg>${t}</span>`;
+const xset=a=>`<div class="pillset">${a.map(p=>xp(...p)).join('')}</div>`;
+const xf=(v,neg)=>`<bdi class="fig" dir="ltr">${neg&&v?'−':''}${Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</bdi>`;
+const xfl=rows=>`<dl class="fl">${rows.map(r=>`<div class="${r[2]||''}"><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('')}</dl>`;
+const xchk='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const xstl=(steps,c)=>`<ol class="stl x7" aria-label="المسار">${steps.map((s,k)=>`<li class="${k<c?'done':k===c?'cur':''}" ${k===c?'aria-current="step"':''}><span class="mk">${k<c?xchk:''}</span>${s}</li>`).join('')}</ol>`;
+const xpos=(due,rc,wh,ch,rem,note)=>`<dl class="pos"><div><dt>المستحق</dt><dd>${xf(due)}${note?`<small>${note}</small>`:''}</dd></div><div><dt>المستلم</dt><dd>${xf(rc)}</dd></div><div><dt>المخصوم من المنبع</dt><dd>${xf(wh)}</dd></div><div><dt>في شيكات</dt><dd>${xf(ch)}</dd></div><div class="rem"><dt>المتبقي</dt><dd>${xf(rem)}</dd></div></dl>`;
+const xq=v=>`<bdi dir="ltr" style="font-variant-numeric:tabular-nums">${Number.isInteger(v)?v.toLocaleString('en-US'):v.toLocaleString('en-US',{minimumFractionDigits:1})}</bdi>`;
+const xln=(l,k,err)=>`<div class="ln">${fld({id:'xd'+k,label:'الوصف',req:1,cls:'f-d',ctl:tin('xd'+k,l[0],''),foot:''})}${fld({id:'xu'+k,label:'الوحدة',req:1,ctl:`<div class="ctl"><select id="xu${k}">${['م²','م³','م.ط','عدد'].map(u=>`<option ${u===l[1]?'selected':''}>${u}</option>`).join('')}</select></div>`,foot:''})}${fld({id:'xq'+k,label:'الكمية',req:1,cls:err?'err':'',ctl:`<div class="ctl num"><input id="xq${k}" inputmode="decimal" dir="ltr" value="${err?0:l[2]}"></div>`,foot:err?i('err')+'<span>الكمية أكبر من صفر.</span>':''})}${fld({id:'xr'+k,label:'سعر الوحدة',req:1,ctl:`<div class="ctl money"><input id="xr${k}" inputmode="decimal" dir="ltr" value="${l[3].toFixed(2)}"><span class="aff">ج.م</span></div>`,foot:''})}<div class="lt"><span>الإجمالي</span>${xf(err?0:l[2]*l[3])}</div><button type="button" class="ib" aria-label="حذف البند">${i('trash')}</button></div>`;
+$('#xgrid').innerHTML=
+ cap('حالة المستخلص: كلمات التطبيق على النغمات الموجودة. «صادر» إطار بلون الحبر وسهم (جديد: s-out). «معترض عليه» الأحمر الوحيد. «ملغى» نغمة التأجيل مع علامة ×. كلمات المشروع الخمس تبقى على حالة المشروع فقط',xset([['مسودة','none'],['عند المكتب الفني','run'],['معتمد جزئيًا','run'],['عند الحسابات','run'],['عند المالك','run'],['معتمد من المالك','run'],['صادر','out'],['تم تحصيله','done'],['معترض عليه','stuck'],['ملغى','x']]))+
+ cap('حالة الشيك، وأمر التغيير بصيغة «عند …»، والإشعار الدائن',`<div style="display:grid;gap:12px">${xset([['مستلم','none'],['تم إيداعه','run'],['تم صرفه','done'],['مرتد','stuck']])}${xset([['مسودة','none'],['عند المكتب الفني','run'],['عند العميل','run'],['عند المالك','run'],['معتمد','done'],['مسجل','done'],['مرفوض','stuck'],['مسحوب','x']])}${xset([['عند المالك','run'],['معتمد','done'],['مرفوض','stuck']])}</div>`)+
+ cap('خط المسار: خط مراحل المشروع بسبع خطوات للمستخلص (11 بكسل للتسميات على الجوال، 860 بكسل حدًا على المكتب)، وأربع خطوات لأمر التغيير. المستخلص الملغى بلا خط',`<div style="display:grid;gap:20px">${xstl(['التجهيز','تقرير الجودة','المكتب الفني','الحسابات','المالك','الإصدار','التحصيل'],4)}${xstl(['المسودة','المراجعة الفنية','موافقة العميل','اعتماد المالك'],2)}</div>`)+
+ cap('سطر الانتظار: صيغة واحدة «بانتظار {الشخص}: {المهمة}»، وسطر ثانٍ خافت للمدة أو لمن لا يحق له الاعتماد. العميل وحده بلا اسم شخص',`<div style="display:grid;gap:10px"><div class="wait" role="status"><b>بانتظار كريم حسن: اعتماد الكميات</b><small>لا يمكنه الاعتماد: سارة عادل</small></div><div class="wait" role="status"><b>بانتظار منى سامي: إيداع الشيك</b><small>منذ 3 أيام</small></div><div class="wait" role="status"><b>بانتظار العميل: الموافقة</b></div></div>`)+
+ cap('قائمة الأرقام: التسمية عند الطرف الأول والرقم عند الطرف النهائي، الخصم بعلامة ناقص حقيقية، صف إجمالي مسطّر بخلفية الترويسة. الوحدة مرة واحدة في العنوان. «الحجز حتى تاريخه» صف مستقل تحت الإجمالي، خارج الخصومات',`<h4 class="xh">مستند المستخلص (ج.م)</h4>${xfl([['قيمة الأعمال',xf(400000)],['الحجز',xf(80000,1)],['استرداد الدفعة المقدمة',xf(100000,1)],['تشوينات',xf(0)],['استرداد التشوينات',xf(30000,1)],['صافي المستحق',xf(190000),'tot']])}<div style="margin-block-start:12px">${xfl([['الحجز حتى تاريخه',xf(200000)]])}</div>`)+
+ cap('موقف التحصيل: خمسة أرقام، والمتبقي بخلفية الترويسة. خمسة متجاورة على المكتب، واثنان في صف على الجوال والمتبقي بعرض كامل (كما هنا في الخلية الضيقة). «في شيكات» = القيمة الاسمية للشيك + المخصوم معه',`<h4 class="xh">التحصيل (ج.م)</h4>${xpos(170000,99000,1000,0,70000,'بعد إشعار دائن 20,000.00')}`)+
+ cap('جدول الكميات بلا أسعار: شريط الباب، اسم البند ووحدته تحته، «هذه الفترة» و«حتى تاريخه» عند الطرف النهائي. الكسور تظهر فقط حين توجد',`<div class="qt"><div class="qh"><span>البند</span><span>هذه الفترة</span><span>حتى تاريخه</span></div><div class="qg">أعمال الخرسانة</div><div class="qr"><span>خرسانة مسلحة للأسقف<span class="u">م³</span></span><span class="c">${xq(42.5)}</span><span class="c">${xq(180)}</span></div><div class="qr"><span>خرسانة الأعمدة<span class="u">م³</span></span><span class="c">${xq(12)}</span><span class="c">${xq(64)}</span></div><div class="qg">أعمال المباني</div><div class="qr"><span>مباني طوب أحمر 25 سم<span class="u">م²</span></span><span class="c">${xq(310)}</span><span class="c">${xq(1240)}</span></div></div>`)+
+ cap('شريط القائمة على الجوال: يسمّي العمود الأول وعمود المبلغ بوحدته مرة واحدة، كما تفعل ترويسة الجدول على المكتب. ورابط التقدم: وجه رابط الرجوع بسهم إلى الأمام وشارة عدد، للأقسام الفرعية',`<div class="lh"><span>المستخلص</span><span>المتبقي (ج.م)</span></div><ul class="lhl"><li><b>مستخلص 3</b>${xp('صادر','out')}<span class="l3"><span><bdi dir="ltr">01/09/2026 – 30/09/2026</bdi></span>${xf(0)}</span></li><li><b>مستخلص 2</b>${xp('تم تحصيله','done')}<span class="l3"><span><bdi dir="ltr">01/08/2026 – 31/08/2026</bdi></span>${xf(0)}</span></li></ul><div style="display:flex;flex-wrap:wrap;gap:4px 28px;margin-block-start:8px"><a class="fwd" href="#">الشيكات تحت التحصيل<span class="badge q">1</span>${i('left','s')}</a><a class="fwd" href="#">أوامر التغيير<span class="badge q">3</span>${i('left','s')}</a></div>`)+
+ `<div class="cell" style="grid-column:1/-1">`+`<div class="edt">${xln(['تكسية حجر هاشمي للواجهة الجانبية','م²',120,650],0)}${xln(['كرانيش حجر','م.ط',40,175],1,true)}<div class="ft2"><button type="button" class="btn sec2 sm">${i('plus','s')}إضافة بند</button><span>الإجمالي (ج.م) ${xf(78000)}</span></div></div><span class="cap">محرر بنود أمر التغيير: صف لكل بند على المكتب (الوصف، الوحدة، الكمية، سعر الوحدة، الإجمالي المشتق، حذف). على الجوال يأخذ الوصف العرض الكامل والباقي أزواج. شريط سفلي بـ«إضافة بند» والإجمالي الجاري. البند الثاني يُظهر خطأ الكمية</span></div>`;
 
 /* ---- two confirmations side by side ---- */
 const ARCI='M3 5h18v4H3zM5 9v10h14V9M10 13h4';

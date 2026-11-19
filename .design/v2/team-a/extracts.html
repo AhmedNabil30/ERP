@@ -669,14 +669,14 @@ r(s){
 }};
 
 /* E3 Extract detail */
-SCR.e3={t:'تفاصيل المستخلص',who:'كل الأدوار، كل زر بعلَمه من الخادم',v:{sedraft:'مهندس الموقع: مسودة',sup:'المشرف',qc:'قيم التشوينات',qcerr:'قيم ناقصة',to:'المكتب الفني',barred:'ممنوع من الاعتماد',fin:'الحسابات',applied:'بعد تطبيق الخصومات',owner:'المالك',confirm:'تأكيد الاعتماد',reject:'رفض',rejected:'رُفض: الكميات، إلى مهندس الموقع',rejsup:'رُفض: التشوينات، إلى المشرف',issue:'إصدار',stopped:'مشروع متوقف',issued0:'صادر، لا دفعات',issued:'صادر، شيك في اليد',disputed:'معترض عليه',credit:'إشعار دائن لم يُحسم',aftercn:'بعد اعتماد الإشعار الدائن',cancelled:'ملغى بمستخلص معدّل',collected:'تم تحصيله',loading:'تحميل',failed:'تعذّر التحميل'},
+SCR.e3={t:'تفاصيل المستخلص',who:'كل الأدوار، كل زر بعلَمه من الخادم',v:{sedraft:'مهندس الموقع: مسودة',sup:'المشرف',qc:'قيم التشوينات',qcerr:'قيم ناقصة',to:'المكتب الفني',barred:'ممنوع من الاعتماد',fin:'الحسابات',applied:'بعد تطبيق الخصومات',owner:'المالك',confirm:'تأكيد الاعتماد',reject:'رفض',rejerr:'رفض ناقص',rejected:'رُفض: الكميات، إلى مهندس الموقع',rejsup:'رُفض: التشوينات، إلى المشرف',issue:'إصدار',stopped:'مشروع متوقف',issued0:'صادر، لا دفعات',issued:'صادر، شيك في اليد',disputed:'معترض عليه',credit:'إشعار دائن لم يُحسم',aftercn:'بعد اعتماد الإشعار الدائن',cancelled:'ملغى بمستخلص معدّل',collected:'تم تحصيله',loading:'تحميل',failed:'تعذّر التحميل'},
 r(s){
   const o={back:'المستخلصات',to:'e1',title:'مستخلص 3',meta:meta(PRJ,dt('01/09/2026 – 30/09/2026'))};
   if(s==='loading')return {...o,title:'<span class="sk b" style="inline-size:180px;block-size:34px"></span>',meta:'',body:skel(5)};
   if(s==='failed')return {...o,body:failed('تعذّر تحميل المستخلص.')};
   if(s==='qc'||s==='qcerr'){const e=s==='qcerr';
     return {...o,body:sheet('قيم التشوينات',fld({id:'m1',label:'قيمة التشوينات بالموقع',req:1,ctl:money('m1',e?'':'0.00'),err:e?'أدخل قيمة التشوينات بالموقع.':''})+fld({id:'m2',label:'قيمة التشوينات المركّبة',req:1,ctl:money('m2',e?'':'40,000.00'),err:e?'أدخل قيمة التشوينات المركّبة.':''}),btn('تسليم تقرير الجودة')+btn('إلغاء','sec2'))};}
-  if(s==='reject')return {...o,body:sheet('رفض المستخلص',fld({id:'rj',label:'سبب الرفض',req:1,ctl:areac('rj')}),btn('رفض المستخلص')+btn('إلغاء','sec2'))};
+  if(s==='reject'||s==='rejerr'){const e=s==='rejerr';return {...o,body:sheet('رفض المستخلص',fld({id:'rk',lb:1,label:'الخطأ في',req:1,err:e?'اختر موضع الخطأ.':'',ctl:radios('rk',[['q','الكميات','يعود إلى مهندس الموقع'],['m','قيم التشوينات','يعود إلى المشرف']],e?'':'q','r1')})+fld({id:'rj',label:'سبب الرفض',req:1,ctl:areac('rj',e?'':'كميات البياض الداخلي في الدور الأول لا تطابق اليومية.'),err:e?'اكتب سبب الرفض.':''}),btn('رفض المستخلص')+btn('إلغاء','sec2'))};}
   if(s==='confirm')return {...o,body:dialog('اعتماد مستخلص 3؟',`صافي المستحق ${fg(190000)} ج.م، ويُضاف إلى الحجز ${fg(80000)} ج.م.`,'اعتماد')};
   const D=docB(),P0=pos(190000,99000,1000,0,90000);
   /* [status, chain step, waiting line, small line, primary, primary target, body, history rows] */
