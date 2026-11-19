@@ -94,13 +94,6 @@ public static class ExtractErrors
         Error.Conflict("extract.awaiting_evidence_revision", "errors.extract.awaiting_evidence_revision");
 
     /// <summary>
-    /// D-241 item 2 against CLAUDE.md's hold rule: cancelling the original would reverse its hold accrual, and the hold
-    /// only grows before handover. Refused until Nabil rules what a revision does to an accrued hold.
-    /// </summary>
-    public static readonly Error RevisionHoldAccrued =
-        Error.Conflict("extract.revision_hold_accrued", "errors.extract.revision_hold_accrued");
-
-    /// <summary>
     /// A cheque in hand or a credit note stands on the disputed original; what a revision does to either is not ruled.
     /// Payments already received move to the revision (D-242 item 3) and do not block.
     /// </summary>

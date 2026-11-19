@@ -1,4 +1,8 @@
+using Kaff.Domain.Common;
+using Kaff.Domain.Contracts;
+using Kaff.Domain.Contracts.Billing;
 using Kaff.Domain.Extracts;
+using Kaff.Domain.Rulings;
 using Kaff.Domain.Treasury;
 
 namespace Kaff.Domain.Tests;
@@ -44,17 +48,58 @@ public sealed class ExtractCancellationTests
             .Error.Should().Be(ExtractErrors.IllegalTransition, "Void is final");
     }
 
+    /// <summary>
+    /// D-244 item 1: the original's hold carries to the revision. The cancellation mirrors every accrual leg except the
+    /// hold accrual, which stays standing, so the hold never decreases.
+    /// </summary>
     [Fact]
-    public async Task A_cancellation_that_would_reverse_the_hold_accrual_is_refused_and_moves_nothing()
+    public async Task A_cancellation_keeps_the_hold_accrual_standing_and_mirrors_every_other_accrual_leg()
     {
         var h = new ExtractHarness();
         Extract extract = await h.DriveAsync(ExtractStatus.Disputed);
-        h.Balance(h.Hold).IsPositive.Should().BeTrue("the harness project accrues a hold");
+        Money hold = h.Balance(h.Hold);
+        hold.IsPositive.Should().BeTrue("the harness project accrues a hold");
+        IReadOnlyList<ExtractPostedLeg> legs = Legs(h, withHold: true);
 
-        extract.CancelForRevision(
-                ExtractHarness.NewUser(), "x", h.Context(), Legs(h, withHold: true), false, false, ExtractHarness.Now)
-            .Error.Should().Be(ExtractErrors.RevisionHoldAccrued);
-        extract.Status.Should().Be(ExtractStatus.Disputed);
+        IReadOnlyList<Posting> reversals = extract.CancelForRevision(
+            ExtractHarness.NewUser(), "x", h.Context(), legs, false, false, ExtractHarness.Now).Value;
+
+        extract.Status.Should().Be(ExtractStatus.Void);
+        reversals.Select(posting => posting.ReversesId).Should().BeEquivalentTo(
+            legs.Where(leg => leg.Posting.Type != PostingType.HoldAccrual).Select(leg => (Guid?)leg.Posting.Id));
+        reversals.Should().NotContain(posting => posting.FromAccountId == h.Hold.Id || posting.ToAccountId == h.Hold.Id);
+        h.Ledger.AddRange(reversals);
+        h.Balance(h.Hold).Should().Be(hold, "the hold only grows");
+    }
+
+    /// <summary>
+    /// D-244 item 1: the revision accrues only the part of its own hold above the hold carried from the original, never
+    /// less than zero.
+    /// </summary>
+    [Theory]
+    [InlineData(60_000, 40_000, 20_000)]
+    [InlineData(60_000, 60_000, 0)]
+    [InlineData(50_000, 60_000, 0)]
+    [InlineData(60_000, 0, 60_000)]
+    public void The_revision_accrues_its_hold_less_the_carried_hold_and_never_less_than_zero(
+        decimal ownHold, decimal carried, decimal accrued)
+    {
+        var h = new ExtractHarness();
+        BillingResult result = new(
+            ContractType.LumpSum, new Money(300_000m), new Money(300_000m - ownHold),
+            [
+                new BillingComponent(BillingComponentKind.WorkValue, BillingSign.Addition, new Money(300_000m), "work"),
+                new BillingComponent(BillingComponentKind.Hold, BillingSign.Deduction, new Money(ownHold), "hold"),
+            ]);
+
+        PostingSet set = ExtractPostings.BuildAccrual(
+            h.Project, result, h.Accounts, new SourceDocument(SourceDocumentType.Extract, Guid.CreateVersion7(), "EXT-2"),
+            new DateOnly(2026, 2, 1), ExtractHarness.NewUser(), ExtractHarness.Now, ExtractStage.OwnerApproval, h.Rulings,
+            new Money(carried)).Value;
+
+        set.Postings.Where(posting => posting.Type == PostingType.HoldAccrual).Sum(posting => posting.Amount.Amount)
+            .Should().Be(accrued);
+        set.Postings.Single(posting => posting.Type == PostingType.RevenueRecognition).Amount.Should().Be(new Money(300_000m));
     }
 
     [Fact]

@@ -90,4 +90,16 @@ public static class ClosureErrors
     /// <summary>Subcontractor retention releases when the warranty ends, not before (spec.md section 5.1).</summary>
     public static readonly Error WarrantyNotEnded =
         Error.Conflict("closure.warranty_not_ended", "errors.closure.warranty_not_ended");
+
+    /// <summary>D-244 item 2: a released hold is collected only once the hold has been released.</summary>
+    public static readonly Error HoldNotReleased =
+        Error.Conflict("closure.hold_not_released", "errors.closure.hold_not_released");
+
+    /// <summary>D-244 item 2: what was collected and the cheques in hand already cover the released hold.</summary>
+    public static readonly Error ReleasedHoldNothingRemaining =
+        Error.Conflict("closure.released_hold_nothing_remaining", "errors.closure.released_hold_nothing_remaining");
+
+    /// <summary>D-244 item 2: received plus withheld may not pass what remains of the released hold.</summary>
+    public static readonly Error ReleasedHoldExceeded =
+        Error.Conflict("closure.released_hold_exceeded", "errors.closure.released_hold_exceeded");
 }

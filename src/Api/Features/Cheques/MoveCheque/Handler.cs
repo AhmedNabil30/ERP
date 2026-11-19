@@ -1,8 +1,10 @@
 using Kaff.Api.Common.Results;
 using Kaff.Api.Features.Extracts;
+using Kaff.Domain.Closure;
 using Kaff.Domain.Collections;
 using Kaff.Domain.Common;
 using Kaff.Domain.Identity;
+using Kaff.Domain.Rulings;
 using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
@@ -53,13 +55,13 @@ internal static class Handler
     {
         ArgumentNullException.ThrowIfNull(services);
 
-        Guid? extractId = await (
+        var paid = await (
                 from cheque in services.Database.Cheques.AsNoTracking()
                 join record in services.Database.CollectionRecords.AsNoTracking() on cheque.CollectionId equals record.Id
                 where cheque.Id == id && cheque.ProjectId == projectId
-                select (Guid?)record.ExtractId)
+                select new { record.ExtractId })
             .FirstOrDefaultAsync(cancellationToken);
-        if (extractId is null)
+        if (paid is null)
         {
             return ResultExtensions.Problem(CollectionErrors.ChequeNotFound);
         }
@@ -67,9 +69,15 @@ internal static class Handler
         ChequeState target = bounce ? ChequeState.Bounced : ChequeState.Cleared;
         Cheque? moving = null;
 
+        // D-244 item 2: a cheque with no extract paid the released hold, and settles against the handover.
+        if (paid.ExtractId is null)
+        {
+            return await SettleReleasedHoldAsync(projectId, id, bounceReason, target, services, cancellationToken);
+        }
+
         return await ExtractSupport.RunAsync(
             projectId,
-            extractId.Value,
+            paid.ExtractId.Value,
             needsAccounts: !bounce,
             services,
             async (extract, project, context, step, token) =>
@@ -114,7 +122,7 @@ internal static class Handler
                     postings = [.. cleared.Value.Postings];
                 }
 
-                Result moved = cheque.MoveTo(target, actor, now);
+                Result moved = cheque.MoveTo(target, actor, now, bounceReason);
                 if (moved.IsFailure)
                 {
                     return Result.Failure<IReadOnlyList<Posting>>(moved.Error);
@@ -125,5 +133,59 @@ internal static class Handler
             },
             cancellationToken,
             respond: () => Microsoft.AspNetCore.Http.Results.Ok(new Response(moving!.Id, moving.State)));
+    }
+
+    /// <summary>
+    /// A cheque on the released hold clears or bounces under the project row lock. A clearance posts through
+    /// <see cref="ReleasedHoldPayments.ClearCheque"/>, the same rules an extract's clearance uses; a bounce posts nothing
+    /// and stores the reason on the cheque.
+    /// </summary>
+    private static Task<IResult> SettleReleasedHoldAsync(
+        Guid projectId, Guid id, string? bounceReason, ChequeState target, StepServices services, CancellationToken cancellationToken)
+    {
+        Cheque? moving = null;
+
+        return Closure.CollectReleasedHold.Handler.RunAsync(
+            projectId,
+            services.Database,
+            services.Rulings,
+            services.Clock,
+            async (project, accounts, state, actor, now, token) =>
+            {
+                Cheque cheque = await services.Database.Cheques.FirstAsync(candidate => candidate.Id == id, token);
+                CollectionRecord record = await services.Database.CollectionRecords.AsNoTracking()
+                    .FirstAsync(candidate => candidate.Id == cheque.CollectionId, token);
+
+                if (!Cheque.IsLegalTransition(cheque.State, target))
+                {
+                    return Result.Failure<IReadOnlyList<Posting>>(CollectionErrors.ChequeIllegalTransition);
+                }
+
+                IReadOnlyList<Posting> postings = [];
+                if (target == ChequeState.Cleared)
+                {
+                    Result<PostingSet> cleared = ReleasedHoldPayments.ClearCheque(
+                        project, services.Rulings, accounts, state.Position, record.CashReceived, record.WithheldAtSource,
+                        SiteTime.DateOf(now), actor, now);
+                    if (cleared.IsFailure)
+                    {
+                        return Result.Failure<IReadOnlyList<Posting>>(cleared.Error);
+                    }
+
+                    postings = [.. cleared.Value.Postings];
+                }
+
+                Result moved = cheque.MoveTo(target, actor, now, bounceReason);
+                if (moved.IsFailure)
+                {
+                    return Result.Failure<IReadOnlyList<Posting>>(moved.Error);
+                }
+
+                moving = cheque;
+                return Result.Success(postings);
+            },
+            services.CurrentUser,
+            respond: () => Microsoft.AspNetCore.Http.Results.Ok(new Response(moving!.Id, moving.State)),
+            cancellationToken);
     }
 }

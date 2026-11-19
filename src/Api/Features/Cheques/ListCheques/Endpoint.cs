@@ -33,10 +33,8 @@ public sealed class Endpoint : IEndpoint
     {
         List<GetCheque.Response> all = await GetCheque.Handler.Project(database, projectId).ToListAsync(cancellationToken);
 
-        return Results.Ok(all
-            .Where(row => Cheque.IsInHand(row.State))
-            .OrderBy(row => row.Collection.Date)
-            .ThenBy(row => row.Id)
-            .ToList());
+        List<GetCheque.Response> inHand = [.. all.Where(row => Cheque.IsInHand(row.State)).OrderBy(row => row.Collection.Date).ThenBy(row => row.Id)];
+        return Results.Ok(GetCheque.Handler.WithWaiting(
+            inHand, await Extracts.ExtractWaitingOnView.StaffAsync(database, projectId, cancellationToken)));
     }
 }

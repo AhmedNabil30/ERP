@@ -13,10 +13,16 @@ namespace Kaff.Api.Features.Extracts;
 /// item 2): the collection position, whether a credit note waits for the Owner, and the cheques still in hand.
 /// </summary>
 /// <param name="ChequesInHand">The extract's cheques that can still clear or bounce, oldest first.</param>
+/// <param name="ApprovedCredits">The credit notes the Owner approved against the extract.</param>
+/// <param name="Received">Cash received, net of reversals. With <paramref name="Withheld"/> it makes the position's collected.</param>
+/// <param name="Withheld">Tax the client withheld at source, net of reversals.</param>
 internal sealed record ExtractCollectionState(
     CollectionPosition Position,
     bool CreditNoteRaised,
-    IReadOnlyList<(Cheque Cheque, CollectionRecord Record)> ChequesInHand);
+    IReadOnlyList<(Cheque Cheque, CollectionRecord Record)> ChequesInHand,
+    Money ApprovedCredits,
+    Money Received,
+    Money Withheld);
 
 /// <summary>
 /// The one place the collection routes, the cheque routes and the extract's read derive the position, so the control a
@@ -45,8 +51,13 @@ internal static class ExtractCollections
             .ToListAsync(cancellationToken);
 
         Money approved = Money.Sum(credits.Where(credit => credit.Status == AdjustmentStatus.Approved).Select(credit => credit.Amount));
-        Money collected = (await ExtractMoneyQueries.CollectedAsync(database, [extract.Id], cancellationToken))
-            .GetValueOrDefault(extract.Id, Money.Zero);
+        (Money received, Money withheld) = (await ExtractMoneyQueries.ReceivedAndWithheldAsync(database, [extract.Id], cancellationToken))
+            .GetValueOrDefault(extract.Id, (Money.Zero, Money.Zero));
+        Money collected = received + withheld;
+
+        // D-244 item 1: a carried hold above the revision's own stays in the hold, so the client owes that much less now.
+        Money held = extract.HeldBeyondOwnHold(
+            (await ExtractMoneyQueries.CarriedHoldAsync(database, [extract], cancellationToken)).GetValueOrDefault(extract.Id, Money.Zero));
 
         List<(Cheque Cheque, CollectionRecord Record)> inHand =
         [
@@ -62,8 +73,11 @@ internal static class ExtractCollections
         ];
 
         return new ExtractCollectionState(
-            new CollectionPosition(net - approved, collected, Money.Sum(inHand.Select(row => row.Record.Settles))),
+            new CollectionPosition(net - approved - held, collected, Money.Sum(inHand.Select(row => row.Record.Settles))),
             credits.Exists(credit => credit.Status == AdjustmentStatus.Raised),
-            inHand);
+            inHand,
+            approved,
+            received,
+            withheld);
     }
 }

@@ -54,6 +54,7 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
     private Guid _technicalOffice;
     private Guid _prepEngineer;
     private Guid _supervisor;
+    private Guid _financeUnassigned;
 
     public ClosureThroughExtractChainTests(PostgresDatabase database) => _database = database;
 
@@ -161,33 +162,10 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
             .Should().Be(HttpStatusCode.Conflict, "the hold releases once");
         (await CountAsync(id, PostingType.HoldRelease)).Should().Be(1);
 
-        // The final collection: the client pays the released hold. Total client cash then equals the contract value.
-        // O-r2-1 closed the generic route to a ClientCollection, and no route yet collects a released hold (Verifier
-        // round 2, KAFF-317-E), so the payment is inserted directly. The generic route's refusal is asserted first.
-        Guid receivable = await AccountIdAsync(id, AccountType.ClientReceivable);
-        HttpResponseMessage generic = await SendAsync(HttpMethod.Post, $"/api/projects/{id}/treasury/postings", _finance, new
-        {
-            fromAccountId = receivable,
-            toAccountId = _safeId,
-            amount = 200_000m,
-            type = nameof(PostingType.ClientCollection),
-            postingDate = "2026-11-06",
-            sourceDocumentType = nameof(SourceDocumentType.Collection),
-            sourceDocumentId = Guid.CreateVersion7(),
-            sourceDocumentReference = "HOLD",
-        });
-        generic.StatusCode.Should().Be(HttpStatusCode.BadRequest, await generic.Content.ReadAsStringAsync(Ct));
-
-        await using (KaffDbContext payment = _database.CreateContext())
-        {
-            Account from = await payment.Accounts.SingleAsync(account => account.Id == receivable, Ct);
-            Account to = await payment.Accounts.SingleAsync(account => account.Id == _safeId, Ct);
-            payment.Postings.Add(Posting.Create(
-                from, to, new Money(200_000m), PostingType.ClientCollection,
-                new SourceDocument(SourceDocumentType.Collection, Guid.CreateVersion7(), "HOLD"),
-                new DateOnly(2026, 11, 6), _finance, Now, id).Value);
-            await payment.SaveChangesAsync(Ct);
-        }
+        // The final collection: the client pays the released hold through its own route (D-244 item 2, KAFF-317-E), on
+        // the same collection flow as an extract. Total client cash then equals the contract value.
+        HttpResponseMessage paid = await SendAsync(HttpMethod.Post, HoldCollect(id), _finance, HoldPayment("Transfer", "200000", "0", "HOLD"));
+        paid.StatusCode.Should().Be(HttpStatusCode.OK, await paid.Content.ReadAsStringAsync(Ct));
 
         List<Posting> all = await PostingsAsync(id);
         all.Where(posting => posting.Type is PostingType.ClientAdvanceReceipt or PostingType.ClientCollection)
@@ -199,6 +177,103 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
         HttpResponseMessage closed = await SendAsync(HttpMethod.Post, $"/api/projects/{id}/close", _owner, null);
         closed.StatusCode.Should().Be(HttpStatusCode.OK, await closed.Content.ReadAsStringAsync(Ct));
         (await StatusAsync(id)).Should().Be(ProjectStatus.Closed);
+    }
+
+    // ---- D-244 item 2, KAFF-317-E: the released hold is collected on the extract's collection flow ----------
+
+    /// <summary>
+    /// Handover, the hold released, then the client pays it as it pays an extract: a part transfer with tax withheld at
+    /// source, a cheque that bounces (reason stored, nothing posted), a cheque that is cash only when it clears, and a
+    /// cap at what remains. Finance alone, with the assignment. The receivable ends at zero.
+    /// </summary>
+    [Fact]
+    public async Task The_released_hold_is_collected_in_parts_with_withholding_and_a_cheque_that_is_cash_only_at_clearance()
+    {
+        Project project = await NewProjectAsync(WithholdingCategory.ContractingAndSupplies);
+        Guid id = project.Id;
+        Guid first = await PrepareAsync(project, "100000", "0");
+        await AdvanceAsync(project, first, ExtractStatus.Issued);
+        await CollectAsync(project, first);
+        (await BalanceAsync(id, AccountType.ClientReceivable)).Should().Be(0m);
+
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{id}/practical-completion", _technicalOffice, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        HttpResponseMessage early = await SendAsync(HttpMethod.Post, HoldCollect(id), _finance, HoldPayment("Transfer", "1000", "0", "EARLY"));
+        early.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ErrorCodeAsync(early)).Should().Be("closure.hold_not_released");
+
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{id}/handover", _technicalOffice, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{id}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await BalanceAsync(id, AccountType.ClientReceivable)).Should().Be(60_000m, "the released hold is what the client owes");
+        (await HoldPositionAsync(id)).Should().Equal(60_000m, 0m, 0m, 0m, 60_000m);
+        decimal safe = await NetIntoAsync(id, AccountType.Safe);
+        decimal tax = await NetIntoAsync(id, AccountType.TaxWithheldAtSource);
+
+        // Finance alone, and only with the assignment.
+        foreach (Guid refused in new[] { _owner, _technicalOffice, _financeUnassigned })
+        {
+            (await SendAsync(HttpMethod.Post, HoldCollect(id), refused, HoldPayment("Cash", "1", "0", "X"))).StatusCode
+                .Should().Be(HttpStatusCode.Forbidden);
+            (await SendAsync(HttpMethod.Get, $"/api/projects/{id}/hold-release/collection", refused, null)).StatusCode
+                .Should().Be(HttpStatusCode.Forbidden);
+        }
+
+        // A part transfer with tax withheld at source.
+        HttpResponseMessage part = await SendAsync(HttpMethod.Post, HoldCollect(id), _finance, HoldPayment("Transfer", "29400", "600", "TRX-H1"));
+        part.StatusCode.Should().Be(HttpStatusCode.OK, await part.Content.ReadAsStringAsync(Ct));
+        (await HoldPositionAsync(id)).Should().Equal(60_000m, 29_400m, 600m, 0m, 30_000m);
+        (await NetIntoAsync(id, AccountType.Safe)).Should().Be(safe + 29_400m);
+        (await NetIntoAsync(id, AccountType.TaxWithheldAtSource)).Should().Be(tax + 600m);
+        (await BalanceAsync(id, AccountType.ClientReceivable)).Should().Be(30_000m);
+
+        // Never more than remains.
+        HttpResponseMessage over = await SendAsync(HttpMethod.Post, HoldCollect(id), _finance, HoldPayment("Cash", "30000.01", "0", "OVER"));
+        over.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ErrorCodeAsync(over)).Should().Be("closure.released_hold_exceeded");
+
+        // A cheque that bounces: nothing posted, the reason stored, the amount expected again.
+        long before = await CountAllAsync(id);
+        Guid bounced = await HoldChequeAsync(id, "30000", "CHQ-H1");
+        (await HoldPositionAsync(id)).Should().Equal(60_000m, 29_400m, 600m, 30_000m, 0m);
+        HttpResponseMessage nothing = await SendAsync(HttpMethod.Post, HoldCollect(id), _finance, HoldPayment("Cash", "1", "0", "N"));
+        (await ErrorCodeAsync(nothing)).Should().Be("closure.released_hold_nothing_remaining");
+        (await SendAsync(HttpMethod.Post, ChequeStep(id, bounced, "deposit"), _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        HttpResponseMessage noReason = await SendAsync(HttpMethod.Post, ChequeStep(id, bounced, "bounce"), _finance, new { reason = " " });
+        noReason.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await ErrorCodeAsync(noReason)).Should().Be("collection.bounce_reason_required");
+        (await SendAsync(HttpMethod.Post, ChequeStep(id, bounced, "bounce"), _finance, new { reason = "insufficient funds" })).StatusCode
+            .Should().Be(HttpStatusCode.OK);
+        (await CountAllAsync(id)).Should().Be(before, "a cheque posts nothing until it clears");
+        (await HoldPositionAsync(id)).Should().Equal(60_000m, 29_400m, 600m, 0m, 30_000m);
+        using (JsonDocument cheque = JsonDocument.Parse(await (await SendAsync(HttpMethod.Get, $"/api/projects/{id}/cheques/{bounced}", _finance, null)).Content.ReadAsStringAsync(Ct)))
+        {
+            cheque.RootElement.GetProperty("bounceReason").GetString().Should().Be("insufficient funds");
+            cheque.RootElement.GetProperty("extractNumber").ValueKind.Should().Be(JsonValueKind.Null, "it paid the released hold");
+        }
+
+        // A cheque that clears: cash only at clearance, and the released hold is fully collected.
+        Guid good = await HoldChequeAsync(id, "30000", "CHQ-H2");
+        (await SendAsync(HttpMethod.Post, ChequeStep(id, good, "deposit"), _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await NetIntoAsync(id, AccountType.Safe)).Should().Be(safe + 29_400m, "a deposited cheque is not yet cash");
+        HttpResponseMessage cleared = await SendAsync(HttpMethod.Post, ChequeStep(id, good, "clearance"), _finance, null);
+        cleared.StatusCode.Should().Be(HttpStatusCode.OK, await cleared.Content.ReadAsStringAsync(Ct));
+        (await NetIntoAsync(id, AccountType.Safe)).Should().Be(safe + 59_400m);
+        (await HoldPositionAsync(id)).Should().Equal(60_000m, 59_400m, 600m, 0m, 0m);
+        (await BalanceAsync(id, AccountType.ClientReceivable)).Should().Be(0m);
+        (await BalanceAsync(id, AccountType.Hold)).Should().Be(0m);
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        List<Posting> collections = await reader.Postings
+            .Where(posting => posting.ProjectId == id && posting.SourceDocumentType == SourceDocumentType.ProjectHandover
+                && (posting.Type == PostingType.ClientCollection || posting.Type == PostingType.TaxWithheldAtSource))
+            .ToListAsync(Ct);
+        collections.Select(posting => posting.Amount.Amount).Should().BeEquivalentTo([29_400m, 600m, 30_000m]);
+        collections.Should().AllSatisfy(posting => posting.SourceDocumentId.Should().Be(id));
+        Guid[] records = await reader.CollectionRecords.Where(r => r.ProjectId == id && r.ExtractId == null).Select(r => r.Id).ToArrayAsync(Ct);
+        records.Should().HaveCount(3);
+        (await reader.AuditRecords.Where(a => a.EntityId != null && records.Contains(a.EntityId.Value)).Select(a => a.EntityId).Distinct().CountAsync(Ct))
+            .Should().Be(3, "every released-hold collection is audited");
+        (await reader.AuditRecords.Where(a => a.EntityType == "Cheque" && a.EntityId == bounced).Select(a => a.AfterJson).ToListAsync(Ct))
+            .Should().Contain(after => after != null && after.Contains("insufficient funds", StringComparison.Ordinal), "the bounce and its reason are audited");
     }
 
     // ---- KAFF-807-B: the extracts condition, through the handler's own query ------------------------------
@@ -308,6 +383,48 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
     // ---- helpers ---------------------------------------------------------------------------------------
 
     private static string Step(Guid project, Guid extract, string step) => $"/api/projects/{project}/extracts/{extract}/{step}";
+
+    private static readonly string[] HoldPositionFields = ["expected", "received", "withheld", "inCheques", "remaining"];
+
+    private static string HoldCollect(Guid project) => $"/api/projects/{project}/hold-release/collect";
+
+    private static string ChequeStep(Guid project, Guid cheque, string step) => $"/api/projects/{project}/cheques/{cheque}/{step}";
+
+    private static object HoldPayment(string method, string cashReceived, string withheldAtSource, string reference) =>
+        new { method, date = "2026-11-06", reference, cashReceived, withheldAtSource };
+
+    /// <summary>The released hold's position as read: expected, received, withheld, in cheques, remaining.</summary>
+    private async Task<decimal[]> HoldPositionAsync(Guid project)
+    {
+        HttpResponseMessage response = await SendAsync(HttpMethod.Get, $"/api/projects/{project}/hold-release/collection", _finance, null);
+        response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(Ct));
+        using JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+        return [.. HoldPositionFields
+            .Select(name => decimal.Parse(body.RootElement.GetProperty(name).GetString()!, CultureInfo.InvariantCulture))];
+    }
+
+    private async Task<Guid> HoldChequeAsync(Guid project, string amount, string reference)
+    {
+        HttpResponseMessage response = await SendAsync(HttpMethod.Post, HoldCollect(project), _finance, HoldPayment("Cheque", amount, "0", reference));
+        response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(Ct));
+        await using KaffDbContext reader = _database.CreateBareContext();
+        return await (
+            from cheque in reader.Cheques
+            join record in reader.CollectionRecords on cheque.CollectionId equals record.Id
+            where cheque.ProjectId == project && record.Reference == reference
+            select cheque.Id).SingleAsync(Ct);
+    }
+
+    /// <summary>Net value this project's postings moved into accounts of <paramref name="type"/> (the safe and the tax account are company-wide).</summary>
+    private async Task<decimal> NetIntoAsync(Guid project, AccountType type)
+    {
+        await using KaffDbContext reader = _database.CreateBareContext();
+        Guid[] ids = await reader.Accounts.Where(account => account.Type == type).Select(account => account.Id).ToArrayAsync(Ct);
+        List<Posting> postings = await reader.Postings
+            .Where(posting => posting.ProjectId == project && (ids.Contains(posting.ToAccountId) || ids.Contains(posting.FromAccountId)))
+            .ToListAsync(Ct);
+        return postings.Sum(posting => ids.Contains(posting.ToAccountId) ? posting.Amount.Amount : -posting.Amount.Amount);
+    }
 
     private static object CollectBody(string cashReceived) =>
         new { method = "Transfer", date = "2026-10-01", reference = "TRX-1", cashReceived, withheldAtSource = "0" };
@@ -477,14 +594,14 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
         await context.SaveChangesAsync(Ct);
     }
 
-    private async Task<Project> NewProjectAsync()
+    private async Task<Project> NewProjectAsync(WithholdingCategory withholding = WithholdingCategory.None)
     {
         Project project;
 
         await using (KaffDbContext context = _database.CreateContext())
         {
             project = Project.Create(UniqueNames.Code("CC-P"), UniqueNames.Code("مشروع إقفال بالمستخلصات"), _clientId, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
-            project.SetWithholding(WithholdingCategory.None, ClientKind.Corporate).IsSuccess.Should().BeTrue();
+            project.SetWithholding(withholding, ClientKind.Corporate).IsSuccess.Should().BeTrue();
             project.SetLumpSumTerms(
                 Percentage.FromPercent(25m), Percentage.FromPercent(20m), Percentage.FromPercent(25m),
                 Percentage.FromPercent(75m), delayPenaltyEnabled: false).IsSuccess.Should().BeTrue();
@@ -552,11 +669,15 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
         User technicalOffice = Make("cc-to", Role.TechnicalOffice, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User prep = Make("cc-prep", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
         User supervisor = Make("cc-sup", Role.SiteEngineer, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);
+        User financeUnassigned = Make("cc-fin-un", Role.Finance, WellKnownDepartments.FinanceId);
+        Account taxWithheld = Account.Create(
+            AccountType.TaxWithheldAtSource, UniqueNames.Code("CCTAX"), "ضريبة خصم من المنبع", "Tax withheld at source",
+            Currency.Egp, new DateOnly(2026, 1, 1)).Value;
 
         context.Clients.Add(client);
         context.Babs.Add(bab);
-        context.Accounts.Add(safe);
-        context.Users.AddRange(owner, finance, technicalOffice, prep, supervisor);
+        context.Accounts.AddRange(safe, taxWithheld);
+        context.Users.AddRange(owner, finance, technicalOffice, prep, supervisor, financeUnassigned);
         await context.SaveChangesAsync(Ct);
 
         _clientId = client.Id;
@@ -567,6 +688,7 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
         _technicalOffice = technicalOffice.Id;
         _prepEngineer = prep.Id;
         _supervisor = supervisor.Id;
+        _financeUnassigned = financeUnassigned.Id;
     }
 
     private static User Make(string name, Role role, Guid? department = null, OperationsSubDepartment? subDepartment = null) =>

@@ -59,11 +59,23 @@ public sealed class CollectionTests
 
                 // The method agrees with the table, from a cheque really in `from`.
                 Cheque cheque = ChequeIn(from);
-                Result moved = cheque.MoveTo(to, Guid.NewGuid(), TestAccounts.Now);
+                Result moved = cheque.MoveTo(to, Guid.NewGuid(), TestAccounts.Now, "returned by the bank");
                 moved.IsSuccess.Should().Be(legal.Contains((from, to)), $"{from} to {to}");
                 cheque.State.Should().Be(legal.Contains((from, to)) ? to : from, "a refused move leaves the cheque untouched");
             }
         }
+    }
+
+    /// <summary>D-235 item 1: a bounce needs the bank's reason, and the cheque keeps it.</summary>
+    [Fact]
+    public void A_bounce_needs_a_reason_and_the_cheque_stores_it()
+    {
+        Cheque cheque = ChequeIn(ChequeState.Deposited);
+
+        cheque.MoveTo(ChequeState.Bounced, Guid.NewGuid(), TestAccounts.Now, " ").Error.Should().Be(CollectionErrors.BounceReasonRequired);
+        cheque.State.Should().Be(ChequeState.Deposited);
+        cheque.MoveTo(ChequeState.Bounced, Guid.NewGuid(), TestAccounts.Now, " insufficient funds ").IsSuccess.Should().BeTrue();
+        cheque.BounceReason.Should().Be("insufficient funds");
     }
 
     [Fact]
@@ -89,7 +101,7 @@ public sealed class CollectionTests
 
         if (state is ChequeState.Cleared or ChequeState.Bounced)
         {
-            cheque.MoveTo(state, actor, TestAccounts.Now).IsSuccess.Should().BeTrue();
+            cheque.MoveTo(state, actor, TestAccounts.Now, "returned by the bank").IsSuccess.Should().BeTrue();
         }
 
         return cheque;

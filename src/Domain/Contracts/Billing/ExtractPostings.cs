@@ -49,6 +49,10 @@ public static class ExtractPostings
     /// Fails with <see cref="BillingErrors.NotAtPostingMoment"/> at any other stage: when an extract
     /// accrues is <see cref="ExtractPostingMoment"/>'s ruling, not this method's.
     /// </summary>
+    /// <param name="carriedHold">
+    /// D-244 item 1: the hold a cancelled original accrued, which still stands. A revision posts only its own hold above
+    /// it, never less than zero. The result's figures are not changed.
+    /// </param>
     public static Result<PostingSet> BuildAccrual(
         Project project,
         BillingResult result,
@@ -58,7 +62,8 @@ public static class ExtractPostings
         Guid createdByUserId,
         DateTimeOffset createdAt,
         ExtractStage reachedStage,
-        RulingSet rulings)
+        RulingSet rulings,
+        Money carriedHold = default)
     {
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(result);
@@ -73,10 +78,13 @@ public static class ExtractPostings
         Money Amount(BillingComponentKind kind) =>
             Money.Sum(result.Components.Where(c => c.Kind == kind).Select(c => c.Amount));
 
+        Money hold = Amount(BillingComponentKind.Hold);
+        Money holdToAccrue = hold > carriedHold ? hold - carriedHold : Money.Zero;
+
         return new PostingSetBuilder(
                 project, source, postingDate, createdByUserId, createdAt, rulings.PostingProjectStates)
             .AddIfPositive(accounts.Revenue, accounts.ClientReceivable, Amount(BillingComponentKind.WorkValue) + Amount(BillingComponentKind.ChangeOrderValue), PostingType.RevenueRecognition)
-            .AddIfPositive(accounts.ClientReceivable, accounts.Hold, Amount(BillingComponentKind.Hold), PostingType.HoldAccrual)
+            .AddIfPositive(accounts.ClientReceivable, accounts.Hold, holdToAccrue, PostingType.HoldAccrual)
             .AddIfPositive(accounts.ClientReceivable, accounts.ClientAdvance, Amount(BillingComponentKind.AdvanceRecovery), PostingType.ClientAdvanceRecovery)
             .AddIfPositive(accounts.MaterialAdvance, accounts.ClientReceivable, Amount(BillingComponentKind.MaterialAdvance), PostingType.MaterialAdvanceIssue)
             .AddIfPositive(accounts.ClientReceivable, accounts.MaterialAdvance, Amount(BillingComponentKind.MaterialAdvanceRecovery), PostingType.MaterialAdvanceRecovery)

@@ -21,6 +21,65 @@ namespace Kaff.Api.Tests.Features.Extracts;
 /// </summary>
 public sealed partial class ExtractEndpointTests
 {
+    /// <summary>
+    /// KAFF-317 AC-317-I: the cash leg and the withholding leg commit together or not at all. A guard on the withholding
+    /// leg alone is stood in for by a test trigger scoped to this project, raising the currency guard's own prefix, so
+    /// the cash leg has already been inserted in the same transaction when it fires. Nothing of the collection is left:
+    /// no posting, no record, the extract still Issued, the safe untouched. The refusal names the guard.
+    /// </summary>
+    [Fact]
+    public async Task A_guard_refusing_the_withholding_leg_leaves_no_partial_collection()
+    {
+        Project project = await NewProjectAsync(withholding: WithholdingCategory.ContractingAndSupplies);
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        (decimal cash, decimal withheld) = await DueAsync(_client, project.Id, extract);
+        withheld.Should().BePositive("the contract withholds, so the collection has two legs");
+        decimal safe = await NetIntoAsync(project.Id, AccountType.Safe);
+        long postings = await PostingCountAsync(project.Id);
+        string trigger = $"trg_kaff_test_317i_{project.Id:N}";
+
+        string install =
+                $$"""
+                CREATE OR REPLACE FUNCTION {{trigger}}() RETURNS trigger LANGUAGE plpgsql AS $f$
+                BEGIN
+                    RAISE EXCEPTION 'KAFF_CURRENCY_MISMATCH: test guard on the withholding leg.' USING ERRCODE = 'check_violation';
+                END;
+                $f$;
+                CREATE TRIGGER {{trigger}} BEFORE INSERT ON postings FOR EACH ROW
+                    WHEN (NEW."type" = 'TaxWithheldAtSource' AND NEW.project_id = '{{project.Id}}')
+                    EXECUTE FUNCTION {{trigger}}();
+                """;
+        string remove = $"DROP TRIGGER IF EXISTS {trigger} ON postings; DROP FUNCTION IF EXISTS {trigger}();";
+        await using (KaffDbContext admin = _database.CreateAdminContext())
+        {
+            await admin.Database.ExecuteSqlRawAsync(install, Ct);
+        }
+
+        try
+        {
+            HttpResponseMessage refused = await SendAsync(
+                HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, Collect("Transfer", cash, withheld, "TRX-317I"));
+
+            refused.StatusCode.Should().Be(HttpStatusCode.Conflict, await refused.Content.ReadAsStringAsync(Ct));
+            (await ErrorCodeAsync(refused)).Should().Be("treasury.currency_mismatch", "the refusal names the guard");
+            (await PostingCountAsync(project.Id)).Should().Be(postings, "neither leg is written");
+            (await CollectionPostingCountAsync(project.Id)).Should().Be(0);
+            (await NetIntoAsync(project.Id, AccountType.Safe)).Should().Be(safe);
+            (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Issued);
+            await using KaffDbContext reader = _database.CreateBareContext();
+            (await reader.CollectionRecords.AnyAsync(record => record.ExtractId == extract, Ct)).Should().BeFalse("the record rolls back with the postings");
+        }
+        finally
+        {
+            await using KaffDbContext admin = _database.CreateAdminContext();
+            await admin.Database.ExecuteSqlRawAsync(remove, Ct);
+        }
+
+        await OkAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, Collect("Transfer", cash, withheld, "TRX-317I"));
+        (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Collected, "with the guard gone the same collection commits whole");
+        (await NetIntoAsync(project.Id, AccountType.Safe)).Should().Be(safe + cash);
+    }
+
     private static object QcBody(decimal materialValueOnSite = 100_000m, decimal materialInstalled = 0m) => new
     {
         materialValueOnSite = materialValueOnSite.ToString(CultureInfo.InvariantCulture),
@@ -379,9 +438,14 @@ public sealed partial class ExtractEndpointTests
 
         // The single read is ProjectRead and strips the money for him; every route that carries money refuses him.
         JsonElement read = await ReadAsync(project.Id, draft, _prepEngineer);
-        foreach (string field in new[] { "evidence", "document", "collection", "changeOrders" })
+        foreach (string field in new[] { "evidence", "document", "collection" })
         {
             read.GetProperty(field).ValueKind.Should().Be(JsonValueKind.Null, field);
+        }
+
+        foreach (JsonElement line in read.GetProperty("changeOrders").EnumerateArray())
+        {
+            line.GetProperty("amount").ValueKind.Should().Be(JsonValueKind.Null, "a change order's price is money");
         }
 
         (string Method, string Route, object? Body)[] money =

@@ -1,3 +1,4 @@
+using Kaff.Api.Features.Extracts;
 using Kaff.Domain.Authorization;
 using Kaff.Domain.ChangeOrders;
 using Kaff.Domain.Common;
@@ -30,6 +31,7 @@ public sealed record ChangeOrderActions(
 
 /// <param name="Lines">Null when the caller may not see money.</param>
 /// <param name="Total">The change order price, derived from its lines. Null when the caller may not see money.</param>
+/// <param name="WaitingOn">Who the change order waits on, and for what. Null once it has ended, and on the write routes' answers.</param>
 public sealed record ChangeOrderResponse(
     Guid Id,
     Guid ProjectId,
@@ -43,7 +45,8 @@ public sealed record ChangeOrderResponse(
     IReadOnlyList<ChangeOrderGateRecordResponse> GateHistory,
     ChangeOrderActions Actions,
     IReadOnlyList<ChangeOrderLineResponse>? Lines,
-    Money? Total);
+    Money? Total,
+    WaitingLineResponse? WaitingOn = null);
 
 /// <summary>Who is looking: their id and which of the change-order permissions they hold on this project.</summary>
 internal sealed record ChangeOrderViewer(Guid UserId, IReadOnlySet<Permission> Held)
@@ -92,6 +95,28 @@ internal static class ChangeOrderView
                     line.LineNumber, line.Description, line.Unit, line.Quantity, line.UnitPrice, line.Total))]
                 : null,
             seesMoney ? order.Total : null);
+    }
+
+    /// <summary>
+    /// The change order's waiting line: the permission that takes the step out of its status and the task it names.
+    /// The review, the client approval and the Owner's approval are decisions, so the people who already acted are barred.
+    /// </summary>
+    public static WaitingLineResponse? WaitingOn(ChangeOrder order, IReadOnlyList<StaffMember> staff)
+    {
+        ArgumentNullException.ThrowIfNull(order);
+
+        (Permission Permission, string Task, bool Decision)? step = order.Status switch
+        {
+            ChangeOrderStatus.Draft => (Permission.ChangeOrderPrepare, "waiting.task.change_order_submit", false),
+            ChangeOrderStatus.TechnicalReview => (Permission.ChangeOrderReview, "waiting.task.change_order_technical_review", true),
+            ChangeOrderStatus.ClientApproval => (Permission.ChangeOrderClientApprovalRecord, "waiting.task.change_order_client_approval", true),
+            ChangeOrderStatus.OwnerApproval => (Permission.ChangeOrderApprove, "waiting.task.change_order_owner_approval", true),
+            _ => null,
+        };
+
+        return step is { } next
+            ? WaitingLine.Build(next.Task, next.Permission, staff, next.Decision ? order.PriorActors() : [])
+            : null;
     }
 
     private static ChangeOrderActions ActionsFor(ChangeOrder order, Project project, RulingSet rulings, ChangeOrderViewer viewer)

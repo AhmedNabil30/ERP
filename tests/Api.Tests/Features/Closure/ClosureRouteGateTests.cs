@@ -62,6 +62,8 @@ public sealed class ClosureRouteGateTests : IAsyncLifetime
         ["POST /api/projects/{projectId:guid}/handover"] = Permission.ProjectHandover,
         ["POST /api/projects/{projectId:guid}/warranty"] = Permission.ProjectHandover,
         ["POST /api/projects/{projectId:guid}/hold-release"] = Permission.HoldRelease,
+        ["POST /api/projects/{projectId:guid}/hold-release/collect"] = Permission.ExtractCollect,
+        ["GET /api/projects/{projectId:guid}/hold-release/collection"] = Permission.ExtractCollect,
         ["POST /api/projects/{projectId:guid}/close"] = Permission.ProjectClose,
         ["POST /api/projects/{projectId:guid}/termination"] = Permission.ProjectManage,
         ["POST /api/projects/{projectId:guid}/snags"] = Permission.SnagManage,

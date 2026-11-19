@@ -120,6 +120,12 @@ internal static class ExtractSupport
             }
 
             context = built.Value;
+            if (extract.RevisesExtractId is not null)
+            {
+                Money carried = (await ExtractMoneyQueries.CarriedHoldAsync(database, [extract], cancellationToken))
+                    .GetValueOrDefault(extract.Id, Money.Zero);
+                context = context with { CarriedHold = carried };
+            }
         }
 
         Result<IReadOnlyList<Posting>> stepped = await step(extract, project, context, services, cancellationToken);
@@ -167,10 +173,31 @@ internal static class ExtractSupport
         ArgumentNullException.ThrowIfNull(services);
 
         ExtractViewer viewer = await ViewerAsync(services);
+        KaffDbContext database = services.Database;
+
+        Guid[] changeOrderIds = [.. extract.ChangeOrderLines.Select(line => line.ChangeOrderId)];
+        Dictionary<Guid, (int Number, string Title)> titles = (await database.ChangeOrders.AsNoTracking()
+                .Where(order => changeOrderIds.Contains(order.Id))
+                .Select(order => new { order.Id, order.Number, order.Title })
+                .ToListAsync(cancellationToken))
+            .ToDictionary(order => order.Id, order => (order.Number, order.Title));
+
+        // D-241 item 2: the link both ways, so the original names its revision and the revision its original.
+        List<ExtractLink> links = await database.Extracts.AsNoTracking()
+            .Where(candidate => candidate.ProjectId == extract.ProjectId
+                && (candidate.Id == extract.RevisesExtractId || candidate.RevisesExtractId == extract.Id))
+            .Select(candidate => new ExtractLink(candidate.Id, candidate.Number, candidate.Status))
+            .ToListAsync(cancellationToken);
+
         return ExtractView.Build(
             extract, project, services.Rulings, viewer,
-            ExtractWaitingOnView.Build(extract, await ExtractWaitingOnView.StaffAsync(services.Database, project.Id, cancellationToken)),
-            await ExtractCollections.StateAsync(services.Database, extract, cancellationToken));
+            ExtractWaitingOnView.Build(extract, await ExtractWaitingOnView.StaffAsync(database, project.Id, cancellationToken)),
+            await ExtractCollections.StateAsync(database, extract, cancellationToken),
+            titles) with
+        {
+            Revises = links.Find(link => link.Id == extract.RevisesExtractId),
+            RevisedBy = links.Find(link => link.Id != extract.RevisesExtractId),
+        };
     }
 
     /// <summary>

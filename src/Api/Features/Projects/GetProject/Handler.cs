@@ -144,7 +144,7 @@ internal static class Handler
 
     private static async Task<ProjectMoney> MoneyAsync(KaffDbContext database, Guid projectId, CancellationToken cancellationToken)
     {
-        List<Extract> billed = [.. (await database.Extracts.AsNoTracking()
+        List<Extract> billed = [.. (await database.Extracts.AsNoTracking().Include(extract => extract.Figures)
             .Where(extract => extract.ProjectId == projectId)
             .ToListAsync(cancellationToken)).Where(extract => ExtractMoneyQueries.IsBilled(extract.Status))];
 
@@ -154,6 +154,8 @@ internal static class Handler
         Money certified = Money.Sum(billed.Select(extract => extract.CertifiedValue ?? Money.Zero));
         Money net = Money.Sum(billed.Select(extract => extract.NetPayable ?? Money.Zero));
         Money received = Money.Sum(billed.Select(extract => collected.GetValueOrDefault(extract.Id, Money.Zero)));
-        return new ProjectMoney(certified, net, received, net - received);
+        IReadOnlyDictionary<Guid, Money> carriedHold = await ExtractMoneyQueries.CarriedHoldAsync(database, billed, cancellationToken);
+        Money held = Money.Sum(billed.Select(extract => extract.HeldBeyondOwnHold(carriedHold.GetValueOrDefault(extract.Id, Money.Zero))));
+        return new ProjectMoney(certified, net, received, net - held - received);
     }
 }

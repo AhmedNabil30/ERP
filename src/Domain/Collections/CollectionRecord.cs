@@ -25,7 +25,7 @@ public sealed class CollectionRecord : Entity
     }
 
     private CollectionRecord(
-        Guid projectId, Guid extractId, CollectionMethod method, DateOnly date, string reference,
+        Guid projectId, Guid? extractId, CollectionMethod method, DateOnly date, string reference,
         Money cashReceived, Money withheldAtSource, Guid recordedByUserId, DateTimeOffset recordedAt)
         : base(NewId())
     {
@@ -42,7 +42,8 @@ public sealed class CollectionRecord : Entity
 
     public Guid ProjectId { get; private set; }
 
-    public Guid ExtractId { get; private set; }
+    /// <summary>The extract paid, or null for a payment of the released hold against the handover (D-244 item 2).</summary>
+    public Guid? ExtractId { get; private set; }
 
     public CollectionMethod Method { get; private set; }
 
@@ -68,7 +69,7 @@ public sealed class CollectionRecord : Entity
 
     /// <summary>Method, date and reference are all required (spec.md section 6.5 rule 1).</summary>
     public static Result<CollectionRecord> Record(
-        Guid projectId, Guid extractId, CollectionMethod? method, DateOnly? date, string? reference,
+        Guid projectId, Guid? extractId, CollectionMethod? method, DateOnly? date, string? reference,
         Money cashReceived, Money withheldAtSource, Guid recordedByUserId, DateTimeOffset now)
     {
         if (method is null || !Enum.IsDefined(method.Value))

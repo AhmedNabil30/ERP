@@ -43,6 +43,9 @@ internal static class Handler
         IReadOnlyDictionary<Guid, Money> collected = seesMoney
             ? await ExtractMoneyQueries.CollectedAsync(database, [.. extracts.Select(extract => extract.Id)], cancellationToken)
             : new Dictionary<Guid, Money>();
+        IReadOnlyDictionary<Guid, Money> carriedHold = seesMoney
+            ? await ExtractMoneyQueries.CarriedHoldAsync(database, extracts, cancellationToken)
+            : new Dictionary<Guid, Money>();
         IReadOnlyList<StaffMember> staff = await ExtractWaitingOnView.StaffAsync(database, projectId, cancellationToken);
 
         List<ExtractSummary> rows =
@@ -53,7 +56,7 @@ internal static class Handler
                 extract.PeriodStart,
                 extract.PeriodEnd,
                 extract.Status,
-                seesMoney ? ExtractMoneyQueries.For(extract, collected) : null,
+                seesMoney ? ExtractMoneyQueries.For(extract, collected, carriedHold) : null,
                 ExtractWaitingOnView.Build(extract, staff))),
         ];
 

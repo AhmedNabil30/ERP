@@ -17,6 +17,6 @@ internal static class Handler
             .OrderBy(candidate => candidate.Number)
             .ToListAsync(cancellationToken);
 
-        return Microsoft.AspNetCore.Http.Results.Ok(adjustments.Select(AdjustmentResponse.From).ToList());
+        return Microsoft.AspNetCore.Http.Results.Ok(await AdjustmentReads.BuildAsync(database, projectId, adjustments, cancellationToken));
     }
 }

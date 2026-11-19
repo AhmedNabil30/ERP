@@ -44,6 +44,10 @@ public static class CollectionErrors
     public static readonly Error NothingRemaining =
         Error.Conflict("collection.nothing_remaining", "errors.collection.nothing_remaining");
 
+    /// <summary>D-235 item 1: a bounce needs the bank's reason, stored with the cheque.</summary>
+    public static readonly Error BounceReasonRequired =
+        Error.Validation("collection.bounce_reason_required", "errors.collection.bounce_reason_required");
+
     /// <summary>spec.md section 6.7: a contract with no withholding category withholds nothing (AC-317-B, AC-317-F).</summary>
     public static readonly Error WithholdingNotApplicable =
         Error.Validation("collection.withholding_not_applicable", "errors.collection.withholding_not_applicable");

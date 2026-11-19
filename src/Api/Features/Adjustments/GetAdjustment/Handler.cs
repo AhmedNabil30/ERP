@@ -18,6 +18,6 @@ internal static class Handler
 
         return adjustment is null
             ? ResultExtensions.Problem(AdjustmentErrors.NotFound)
-            : Microsoft.AspNetCore.Http.Results.Ok(AdjustmentResponse.From(adjustment));
+            : Microsoft.AspNetCore.Http.Results.Ok((await AdjustmentReads.BuildAsync(database, projectId, [adjustment], cancellationToken))[0]);
     }
 }

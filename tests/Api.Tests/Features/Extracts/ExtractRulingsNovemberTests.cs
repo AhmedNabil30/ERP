@@ -182,24 +182,61 @@ public sealed partial class ExtractEndpointTests
     }
 
     /// <summary>
-    /// CLAUDE.md: the hold only grows. A cancellation would reverse the hold accrual, so an original that accrued a hold
-    /// is refused before anything is written, and the extract stays disputed.
+    /// D-244 item 1 through the routes, on a project with a 20% hold: issue, dispute, revise, then the revision approved
+    /// and issued. The original's hold accrual is never reversed and carries to the revision, which accrues only its
+    /// own hold above the carried amount. The hold never decreases at any step, and what the client still owes on the
+    /// revision is exactly the receivable, whether the revision is larger or smaller than the original.
     /// </summary>
-    [Fact]
-    public async Task A_revision_is_refused_when_the_original_accrued_a_hold_and_nothing_changes()
+    [Theory]
+    [InlineData(350, 70_000)]
+    [InlineData(250, 60_000)]
+    public async Task A_revision_carries_the_original_hold_accrues_only_the_difference_and_the_hold_never_decreases(
+        int revisedQuantity, int holdAfterRevision)
     {
         Project project = await NewProjectAsync();
-        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
-        await OkAsync(HttpMethod.Post, Step(project.Id, extract, "dispute"), _finance, new { reason = "quantities overstated" });
-        List<string> before = await PostingSnapshotsAsync(project.Id);
+        List<decimal> holds = [];
+        async Task<decimal> HoldAsync()
+        {
+            decimal hold = await LedgerAsync(project.Id, AccountType.Hold);
+            holds.Add(hold);
+            return hold;
+        }
 
-        HttpResponseMessage refused = await SendAsync(
-            HttpMethod.Post, Step(project.Id, extract, "dispute-resolution"), _finance, new { kind = "RevisedExtract", reason = "remeasured" });
+        Guid original = await DriveAsync(project, ExtractStatus.Issued);
+        (await HoldAsync()).Should().Be(60_000m, "20% of the original's 300,000");
 
-        refused.StatusCode.Should().Be(HttpStatusCode.Conflict, await refused.Content.ReadAsStringAsync(Ct));
-        (await ErrorCodeAsync(refused)).Should().Be("extract.revision_hold_accrued");
-        (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Disputed);
-        (await PostingSnapshotsAsync(project.Id)).Should().Equal(before);
+        await OkAsync(HttpMethod.Post, Step(project.Id, original, "dispute"), _finance, new { reason = "quantities overstated" });
+        await HoldAsync();
+        await OkAsync(HttpMethod.Post, Step(project.Id, original, "dispute-resolution"), _finance, new { kind = "RevisedExtract", reason = "remeasured" });
+        (await StatusOfAsync(original)).Should().Be(ExtractStatus.Void);
+        (await HoldAsync()).Should().Be(60_000m, "cancelling the original does not reverse its hold accrual");
+        Math.Abs(await LedgerAsync(project.Id, AccountType.ContractRevenue)).Should().Be(0m, "the original's revenue is reversed");
+
+        await ExecuteAsync(project, revisedQuantity);
+        Guid revision = await PrepareRevisionAsync(project, original);
+        foreach (ExtractStatus reached in new[] { ExtractStatus.QcSubmitted, ExtractStatus.TechnicalApproved, ExtractStatus.DeductionsApplied, ExtractStatus.OwnerApproved, ExtractStatus.Issued })
+        {
+            await StepAsync(_client, project, revision, await StatusOfAsync(revision), reached);
+            await HoldAsync();
+        }
+
+        (await StatusOfAsync(revision)).Should().Be(ExtractStatus.Issued);
+        Math.Abs(await LedgerAsync(project.Id, AccountType.ContractRevenue)).Should().Be(revisedQuantity * 1_000m);
+        (await HoldAsync()).Should().Be(holdAfterRevision, "the hold is the larger of the carried hold and the revision's own");
+        holds.Should().BeInAscendingOrder("the hold never decreases at any step");
+
+        await using (KaffDbContext reader = _database.CreateBareContext())
+        {
+            (await reader.Postings.AnyAsync(posting => posting.ProjectId == project.Id && posting.Type == PostingType.HoldAccrual && posting.ReversesId != null, Ct))
+                .Should().BeFalse("no hold accrual is ever reversed");
+        }
+
+        (decimal cash, decimal withheld) = await DueAsync(_client, project.Id, revision);
+        (cash + withheld).Should().Be(await LedgerAsync(project.Id, AccountType.ClientReceivable), "what the revision expects is what the client owes");
+        await OkAsync(HttpMethod.Post, Step(project.Id, revision, "collect"), _finance, Collect("Transfer", cash, withheld, "TRX-REV"));
+        (await StatusOfAsync(revision)).Should().Be(ExtractStatus.Collected);
+        (await LedgerAsync(project.Id, AccountType.ClientReceivable)).Should().Be(0m);
+        (await HoldAsync()).Should().Be(holdAfterRevision);
     }
 
     [Fact]
@@ -254,6 +291,53 @@ public sealed partial class ExtractEndpointTests
         (await NetIntoAsync(project.Id, AccountType.Safe)).Should().Be(safeBefore + 100_000m + cash);
     }
 
+    /// <summary>
+    /// D-243 not-done item, closed: reversing the collection on a revision also reverses the payment carried from the
+    /// cancelled original. Both are mirrored by their own flow: the revision returns to Issued, the original stays Void
+    /// with the reversal on its gate history, and the safe and the receivable are back where the revision started.
+    /// </summary>
+    [Fact]
+    public async Task Reversing_a_revisions_collection_also_reverses_the_payment_carried_from_the_original()
+    {
+        Project project = await NewProjectAsync(holdPercent: 0m);
+        Guid original = await DriveAsync(project, ExtractStatus.Issued);
+        decimal safeBefore = await NetIntoAsync(project.Id, AccountType.Safe);
+        await OkAsync(HttpMethod.Post, Step(project.Id, original, "collect"), _finance, Collect("Transfer", 100_000m, 0m, "TRX-CARRY"));
+        await OkAsync(HttpMethod.Post, Step(project.Id, original, "dispute"), _finance, new { reason = "quantities overstated" });
+        await OkAsync(HttpMethod.Post, Step(project.Id, original, "dispute-resolution"), _finance, new { kind = "RevisedExtract", reason = "remeasured" });
+        await ExecuteAsync(project, 250m);
+        Guid revision = await PrepareRevisionAsync(project, original);
+        await StepAsync(_client, project, revision, ExtractStatus.Draft, ExtractStatus.Issued);
+        decimal owed = await LedgerAsync(project.Id, AccountType.ClientReceivable) + 100_000m;
+
+        (decimal cash, decimal withheld) = await DueAsync(_client, project.Id, revision);
+        await OkAsync(HttpMethod.Post, Step(project.Id, revision, "collect"), _finance, Collect("Transfer", cash, withheld, "TRX-REST"));
+        (await StatusOfAsync(revision)).Should().Be(ExtractStatus.Collected);
+        (await ActionsAsync(project.Id, revision, _finance))["reverseCollection"].Should().BeTrue();
+
+        await OkAsync(HttpMethod.Post, Step(project.Id, revision, "collection-reversal"), _finance, new { reason = "paid into the wrong account" });
+
+        (await StatusOfAsync(revision)).Should().Be(ExtractStatus.Issued);
+        (await StatusOfAsync(original)).Should().Be(ExtractStatus.Void, "a cancelled extract is never reopened");
+        (await NetIntoAsync(project.Id, AccountType.Safe)).Should().Be(safeBefore, "both payments are reversed");
+        (await LedgerAsync(project.Id, AccountType.ClientReceivable)).Should().Be(owed, "the revision's whole net is owed again");
+        ParseDecimal((await CollectionFiguresAsync(project.Id, revision, _finance)).GetProperty("collected")).Should().Be(0m);
+
+        await using (KaffDbContext reader = _database.CreateBareContext())
+        {
+            ExtractGateRecord gate = await reader.Set<ExtractGateRecord>()
+                .SingleAsync(record => record.ExtractId == original && record.Reason == "paid into the wrong account", Ct);
+            gate.Outcome.Should().Be(ExtractGateOutcome.Reversed);
+            (await reader.AuditRecords.AnyAsync(a => a.EntityType == nameof(ExtractGateRecord) && a.EntityId == gate.Id, Ct))
+                .Should().BeTrue("the reversal on the original is audited with its reason");
+        }
+
+        (await SendAsync(HttpMethod.Post, Step(project.Id, revision, "collection-reversal"), _finance, new { reason = "again" }))
+            .StatusCode.Should().Be(HttpStatusCode.Conflict, "nothing stands to be reversed twice");
+        (cash, withheld) = await DueAsync(_client, project.Id, revision);
+        (cash + withheld).Should().Be(owed);
+    }
+
     /// <summary>D-242 item 4: a revision in flight does not block the next normal extract, and the rule stands for normal ones.</summary>
     [Fact]
     public async Task A_revision_in_flight_runs_alongside_the_next_normal_extract_and_only_one_normal_extract_is_open()
@@ -276,6 +360,96 @@ public sealed partial class ExtractEndpointTests
 
         (await SendAsync(HttpMethod.Post, Extracts(project.Id), _prepEngineer, new { periodStart = "2026-09-01", periodEnd = "2026-09-30", revisesExtractId = original }))
             .StatusCode.Should().Be(HttpStatusCode.Conflict, "a cancelled extract has one revision");
+    }
+
+    // ---- The extract chain mock's server gaps (.design/v2/team-a/README.md, "What the API does not send") ----
+
+    /// <summary>
+    /// The extract read sends received and withheld apart in its collection block, the client's dispute reason, and the
+    /// link between a cancelled original and its revision both ways. The junior site engineer reads the link and the
+    /// reason, and no money.
+    /// </summary>
+    [Fact]
+    public async Task The_extract_read_sends_received_and_withheld_apart_the_dispute_reason_and_the_revision_link_both_ways()
+    {
+        Project project = await NewProjectAsync(withholding: WithholdingCategory.ContractingAndSupplies, holdPercent: 0m);
+        Guid original = await DriveAsync(project, ExtractStatus.Issued);
+        await OkAsync(HttpMethod.Post, Step(project.Id, original, "collect"), _finance, Collect("Transfer", 50_000m, 1_000m, "TRX-SPLIT"));
+
+        JsonElement collection = (await ReadAsync(project.Id, original, _finance)).GetProperty("collection");
+        ParseDecimal(collection.GetProperty("received")).Should().Be(50_000m);
+        ParseDecimal(collection.GetProperty("withheld")).Should().Be(1_000m);
+        ParseDecimal(collection.GetProperty("collected")).Should().Be(51_000m, "collected stays their sum");
+
+        await OkAsync(HttpMethod.Post, Step(project.Id, original, "dispute"), _finance, new { reason = "the client measured 250 units" });
+        (await ReadAsync(project.Id, original, _finance)).GetProperty("disputeReason").GetString().Should().Be("the client measured 250 units");
+        await OkAsync(HttpMethod.Post, Step(project.Id, original, "dispute-resolution"), _finance, new { kind = "RevisedExtract", reason = "remeasured" });
+        await ExecuteAsync(project, 250m);
+        Guid revision = await PrepareRevisionAsync(project, original);
+
+        JsonElement originalRead = await ReadAsync(project.Id, original, _finance);
+        originalRead.GetProperty("revisedBy").GetProperty("id").GetGuid().Should().Be(revision);
+        originalRead.GetProperty("revisedBy").GetProperty("number").GetInt32().Should().Be(2);
+        originalRead.GetProperty("revises").ValueKind.Should().Be(JsonValueKind.Null);
+
+        JsonElement revisionRead = await ReadAsync(project.Id, revision, _prepEngineer);
+        revisionRead.GetProperty("revises").GetProperty("id").GetGuid().Should().Be(original);
+        revisionRead.GetProperty("revises").GetProperty("status").GetString().Should().Be(nameof(ExtractStatus.Void));
+        revisionRead.GetProperty("revisedBy").ValueKind.Should().Be(JsonValueKind.Null);
+        revisionRead.GetProperty("collection").ValueKind.Should().Be(JsonValueKind.Null, "the junior engineer sees no money");
+        (await ReadAsync(project.Id, original, _prepEngineer)).GetProperty("disputeReason").GetString()
+            .Should().Be("the client measured 250 units", "the reason is not money");
+    }
+
+    /// <summary>
+    /// A credit note raised by a dispute's resolution carries the dispute's reason on its read, and its waiting line: the
+    /// Owner by name, the task, and the people who raised or resolved the dispute barred from deciding it.
+    /// </summary>
+    [Fact]
+    public async Task A_credit_note_read_carries_the_dispute_reason_and_who_it_waits_on()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        await OkAsync(HttpMethod.Post, Step(project.Id, extract, "dispute"), _finance, new { reason = "two rooms not finished" });
+        await OkAsync(HttpMethod.Post, Step(project.Id, extract, "dispute-resolution"), _finance,
+            new { kind = "CreditNote", reason = "credit agreed", amount = "40000" });
+
+        JsonElement note = (await GetJsonAsync(Adjustments(project.Id), _owner)).EnumerateArray().Single();
+        note.GetProperty("disputeReason").GetString().Should().Be("two rooms not finished");
+        JsonElement waiting = note.GetProperty("waitingOn");
+        waiting.GetProperty("taskKey").GetString().Should().Be("waiting.task.adjustment_approval");
+        waiting.GetProperty("holders").EnumerateArray().Select(holder => holder.GetProperty("userId").GetGuid()).Should().Contain(_owner);
+        waiting.GetProperty("holders").EnumerateArray().Should().AllSatisfy(holder => holder.GetProperty("fullName").GetString().Should().NotBeNullOrWhiteSpace());
+
+        JsonElement single = await GetJsonAsync($"{Adjustments(project.Id)}/{note.GetProperty("id").GetGuid()}", _owner);
+        single.GetProperty("disputeReason").GetString().Should().Be("two rooms not finished");
+        single.GetProperty("waitingOn").GetProperty("permission").GetString().Should().Be("FinancialMovementApprove");
+
+        await OkAsync(HttpMethod.Post, AdjustmentStep(project.Id, note.GetProperty("id").GetGuid(), "approval"), _owner, null);
+        (await GetJsonAsync($"{Adjustments(project.Id)}/{note.GetProperty("id").GetGuid()}", _owner))
+            .GetProperty("waitingOn").ValueKind.Should().Be(JsonValueKind.Null, "a decided note waits on nobody");
+    }
+
+    /// <summary>A cheque in hand names who it waits on and for what, and the date its state last changed.</summary>
+    [Fact]
+    public async Task A_cheque_in_hand_names_who_it_waits_on_and_when_its_state_last_changed()
+    {
+        Project project = await NewProjectAsync();
+        Guid extract = await DriveAsync(project, ExtractStatus.Issued);
+        await OkAsync(HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, Collect("Cheque", 10_000m, 0m, "CHQ-W"));
+
+        JsonElement row = (await GetJsonAsync(Cheques(project.Id), _owner)).EnumerateArray().Single();
+        DateTimeOffset received = row.GetProperty("stateChangedAt").GetDateTimeOffset();
+        row.GetProperty("waitingOn").GetProperty("taskKey").GetString().Should().Be("waiting.task.cheque_deposit");
+        row.GetProperty("waitingOn").GetProperty("holders").EnumerateArray().Select(holder => holder.GetProperty("userId").GetGuid())
+            .Should().Contain(_finance).And.NotContain(_owner, "only Finance moves a cheque");
+
+        Guid cheque = row.GetProperty("id").GetGuid();
+        await OkAsync(HttpMethod.Post, ChequeStep(project.Id, cheque, "deposit"), _finance, null);
+        row = (await GetJsonAsync(Cheques(project.Id), _owner)).EnumerateArray().Single();
+        row.GetProperty("waitingOn").GetProperty("taskKey").GetString().Should().Be("waiting.task.cheque_settlement");
+        row.GetProperty("stateChangedAt").GetDateTimeOffset().Should().BeOnOrAfter(received);
+        row.GetProperty("state").GetString().Should().Be("Deposited");
     }
 
     // ---- D-242 item 2: a rejection goes to whoever can fix its reason --------------------------------

@@ -1615,15 +1615,6 @@ public sealed partial class ExtractEndpointTests : IAsyncLifetime
         (await PostingSnapshotsAsync(project.Id)).Should().Equal(before, "the extract postings stand while disputed");
         (await BalanceAsync(project.Id, AccountType.Hold)).Should().Be(hold);
 
-        // Revised extract: the original accrued a hold, which only grows, so it is refused and the extract stays disputed.
-        HttpResponseMessage revised = await SendAsync(
-            HttpMethod.Post, Step(project.Id, extract, "dispute-resolution"), _finance,
-            new { kind = "RevisedExtract", reason = "replace it", amount = "1000" });
-        revised.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await ErrorCodeAsync(revised)).Should().Be("extract.revision_hold_accrued");
-        (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Disputed);
-        (await AdjustmentCountAsync(project.Id)).Should().Be(0);
-
         // Credit note: the extract is Issued again, a credit note is Raised, and still nothing is posted.
         HttpResponseMessage credited = await SendAsync(
             HttpMethod.Post, Step(project.Id, extract, "dispute-resolution"), _finance,

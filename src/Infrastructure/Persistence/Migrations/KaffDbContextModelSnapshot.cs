@@ -768,6 +768,11 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("BounceReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("bounce_reason");
+
                     b.Property<Guid>("CollectionId")
                         .HasColumnType("uuid")
                         .HasColumnName("collection_id");
@@ -817,7 +822,7 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .HasColumnType("date")
                         .HasColumnName("date");
 
-                    b.Property<Guid>("ExtractId")
+                    b.Property<Guid?>("ExtractId")
                         .HasColumnType("uuid")
                         .HasColumnName("extract_id");
 
@@ -2970,8 +2975,7 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                     b.HasOne("Kaff.Domain.Extracts.Extract", null)
                         .WithMany()
                         .HasForeignKey("ExtractId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Kaff.Domain.Projects.Project", null)
                         .WithMany()

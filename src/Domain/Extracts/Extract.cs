@@ -11,7 +11,12 @@ using Kaff.Domain.Treasury;
 namespace Kaff.Domain.Extracts;
 
 /// <summary>The accounts, rulings and date one extract step posts with.</summary>
-public sealed record ExtractPostingContext(Project Project, ExtractAccounts Accounts, RulingSet Rulings, DateOnly PostingDate);
+/// <param name="CarriedHold">
+/// D-244 item 1: the hold accrued by the cancelled extracts this one revises, which still stands in the hold. The
+/// revision accrues only its own hold above it. Zero for a normal extract. Summed from postings by the caller.
+/// </param>
+public sealed record ExtractPostingContext(
+    Project Project, ExtractAccounts Accounts, RulingSet Rulings, DateOnly PostingDate, Money CarriedHold = default);
 
 /// <summary>
 /// The ledger balances the calculator reads, taken from the postings by the caller. Never stored on the extract.
@@ -586,6 +591,20 @@ public sealed class Extract : Entity
             return Result.Failure(ExtractErrors.CreditNoteOpen);
         }
 
+        return EnsureProjectTakesPayment(project, rulings, position);
+    }
+
+    /// <summary>
+    /// The part of the collection rule that is not about the extract: the project is in a state that takes a client
+    /// collection and something is still expected once cheques in hand are counted. Shared with the released hold's
+    /// collection (D-244 item 2).
+    /// </summary>
+    public static Result EnsureProjectTakesPayment(Project project, RulingSet rulings, CollectionPosition position)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(rulings);
+        ArgumentNullException.ThrowIfNull(position);
+
         Result state = PostingProjectStateLegality.Validate(
             rulings.PostingProjectStates, project.Status, PostingType.ClientCollection, isReversal: false);
         if (state.IsFailure)
@@ -727,12 +746,19 @@ public sealed class Extract : Entity
     /// <c>ReversesId</c>; nothing is updated or deleted. The extract returns to Issued, where the net payable
     /// stands in the receivable again, and the stored reason is on the gate record.
     /// </summary>
+    /// <param name="original">
+    /// For a revision, the cancelled extract it revises. Payments received on the original count against the revision
+    /// (D-242 item 3), so its standing collection legs may be in <paramref name="collectionLegs"/> and are reversed with
+    /// the revision's own. The original stays Void; the reversal is recorded on its gate history with the same reason
+    /// and instant, which is how the database knows its own flow reversed them.
+    /// </param>
     public Result<IReadOnlyList<Posting>> ReverseCollection(
         Guid actorUserId,
         string? reason,
         ExtractPostingContext context,
         IReadOnlyList<ExtractPostedLeg> collectionLegs,
-        DateTimeOffset now)
+        DateTimeOffset now,
+        Extract? original = null)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(collectionLegs);
@@ -770,14 +796,18 @@ public sealed class Extract : Entity
             return Result.Failure<IReadOnlyList<Posting>>(state.Error);
         }
 
+        bool carriesFrom = original is not null && original.Id == RevisesExtractId && original.Status == ExtractStatus.Void;
+        bool reversesCarried = false;
         var reversals = new List<Posting>();
         foreach (ExtractPostedLeg leg in collectionLegs)
         {
-            if (leg.Posting.SourceDocumentId != Id)
+            bool carried = carriesFrom && leg.Posting.SourceDocumentId == original!.Id;
+            if (leg.Posting.SourceDocumentId != Id && !carried)
             {
                 return Result.Failure<IReadOnlyList<Posting>>(ExtractErrors.PostingNotFromThisExtract);
             }
 
+            reversesCarried |= carried;
             Result<Posting> reversal = Posting.Reverse(leg.Posting, leg.From, leg.To, context.PostingDate, actorUserId, now);
             if (reversal.IsFailure)
             {
@@ -785,6 +815,12 @@ public sealed class Extract : Entity
             }
 
             reversals.Add(reversal.Value);
+        }
+
+        if (reversesCarried)
+        {
+            original!._gateHistory.Add(new ExtractGateRecord(
+                original.Id, ExtractGate.Collect, ExtractGateOutcome.Reversed, actorUserId, now, reason.Trim(), null));
         }
 
         Apply(ExtractStatus.Issued, ExtractGate.Collect, ExtractGateOutcome.Reversed, actorUserId, now, reason.Trim(), null);
@@ -845,9 +881,9 @@ public sealed class Extract : Entity
     /// </summary>
     /// <remarks>
     /// Refused, with nothing written, where a cancellation would break a rule this ruling did not address: a later extract
-    /// exists, a cheque in hand or a credit note stands on the original, the original billed a change order, or it
-    /// accrued a hold (the hold only grows before handover, CLAUDE.md and spec.md section 5.1). Payments already received
-    /// stay as posted and count against the revision (D-242 item 3).
+    /// exists, a cheque in hand or a credit note stands on the original, or the original billed a change order. The hold
+    /// accrual is not reversed: it carries to the revision, which accrues only its own hold above it (D-244 item 1).
+    /// Payments already received stay as posted and count against the revision (D-242 item 3).
     /// </remarks>
     public Result<IReadOnlyList<Posting>> CancelForRevision(
         Guid actorUserId,
@@ -867,10 +903,7 @@ public sealed class Extract : Entity
             CheckReason(reason),
             laterExtractExists ? Result.Failure(ExtractErrors.RevisionNotLatest) : Result.Success(),
             moneyStanding ? Result.Failure(ExtractErrors.RevisionMoneyStanding) : Result.Success(),
-            _changeOrderLines.Count > 0 ? Result.Failure(ExtractErrors.RevisionChangeOrdersBilled) : Result.Success(),
-            accrualLegs.Any(leg => leg.From.LedgerKind == LedgerKind.Hold || leg.To.LedgerKind == LedgerKind.Hold)
-                ? Result.Failure(ExtractErrors.RevisionHoldAccrued)
-                : Result.Success());
+            _changeOrderLines.Count > 0 ? Result.Failure(ExtractErrors.RevisionChangeOrdersBilled) : Result.Success());
         if (gate.IsFailure)
         {
             return Result.Failure<IReadOnlyList<Posting>>(gate.Error);
@@ -896,6 +929,12 @@ public sealed class Extract : Entity
                 return Result.Failure<IReadOnlyList<Posting>>(ExtractErrors.PostingNotFromThisExtract);
             }
 
+            // D-244 item 1: the hold accrual stays standing and carries to the revision. The hold only grows.
+            if (IsHoldLeg(leg))
+            {
+                continue;
+            }
+
             Result<Posting> reversal = Posting.Reverse(leg.Posting, leg.From, leg.To, context.PostingDate, actorUserId, now);
             if (reversal.IsFailure)
             {
@@ -908,6 +947,20 @@ public sealed class Extract : Entity
         Apply(ExtractStatus.Void, ExtractGate.Cancellation, ExtractGateOutcome.Reversed, actorUserId, now, reason!.Trim(), null);
         return reversals;
     }
+
+    /// <summary>
+    /// D-244 item 1: the part of the hold carried from a cancelled original that is above this revision's own hold. It
+    /// stays in the hold, so the client owes that much less on this extract until the hold is released at handover.
+    /// Zero for a normal extract and before Accounts has applied the deductions.
+    /// </summary>
+    public Money HeldBeyondOwnHold(Money carriedHold)
+    {
+        Money own = Money.Sum(_figures.Where(figure => figure.Kind == BillingComponentKind.Hold).Select(figure => figure.Amount));
+        return NetPayable is null || carriedHold <= own ? Money.Zero : carriedHold - own;
+    }
+
+    private static bool IsHoldLeg(ExtractPostedLeg leg) =>
+        leg.From.LedgerKind == LedgerKind.Hold || leg.To.LedgerKind == LedgerKind.Hold;
 
     /// <summary>Everyone who raised or resolved a dispute on this extract, for separation of duties on its credit note.</summary>
     public IReadOnlyCollection<Guid> DisputeActors() =>
@@ -1049,7 +1102,7 @@ public sealed class Extract : Entity
 
         Result<PostingSet> accrual = ExtractPostings.BuildAccrual(
             context.Project, result, context.Accounts, SourceDocument, context.PostingDate,
-            actorUserId, now, stage, context.Rulings);
+            actorUserId, now, stage, context.Rulings, context.CarriedHold);
         return accrual.IsFailure ? Result.Failure<PostingSet?>(accrual.Error) : Result.Success<PostingSet?>(accrual.Value);
     }
 

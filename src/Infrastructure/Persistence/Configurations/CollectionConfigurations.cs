@@ -44,6 +44,7 @@ internal sealed class ChequeConfiguration : IEntityTypeConfiguration<Cheque>
         builder.Property(cheque => cheque.Id).ValueGeneratedNever();
         builder.Property(cheque => cheque.State).IsRequired();
         builder.Property(cheque => cheque.StateChangedAt).IsRequired();
+        builder.Property(cheque => cheque.BounceReason).HasMaxLength(Project.MaxReasonLength);
 
         builder.HasIndex(cheque => cheque.CollectionId).IsUnique();
         builder.HasOne<CollectionRecord>().WithMany().HasForeignKey(cheque => cheque.CollectionId).OnDelete(DeleteBehavior.Restrict);

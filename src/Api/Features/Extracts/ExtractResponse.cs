@@ -68,7 +68,12 @@ public sealed record ExtractEvidence(
 /// One approved change order billed on this extract, in the extract's own change-order section at the price it was
 /// approved at (spec.md section 5.1). Never merged into a BOQ line.
 /// </summary>
-public sealed record ExtractChangeOrderResponse(Guid ChangeOrderId, Money Amount);
+/// <param name="Title">The change order's title, as its own read shows it. Not money: every reader sees it.</param>
+/// <param name="Amount">The price billed. Null when the caller may not see money.</param>
+public sealed record ExtractChangeOrderResponse(Guid ChangeOrderId, int Number, string Title, Money? Amount);
+
+/// <summary>The other end of a revision link (D-241 item 2): a cancelled original or the extract that revises it.</summary>
+public sealed record ExtractLink(Guid Id, int Number, ExtractStatus Status);
 
 public sealed record GateRecordResponse(
     ExtractGate Gate,
@@ -119,7 +124,10 @@ public sealed record ExtractActions(
 /// <param name="Collected">Received plus withheld, as posted, net of reversals.</param>
 /// <param name="InCheques">Cheques received or deposited and not yet cleared.</param>
 /// <param name="Remaining">What may still be recorded: expected less collected less cheques in hand.</param>
-public sealed record ExtractCollectionResponse(Money Expected, Money ExpectedWithheld, Money Collected, Money InCheques, Money Remaining);
+/// <param name="Received">The cash part of collected: what reached the safe.</param>
+/// <param name="Withheld">The tax part of collected: what the client withheld at source.</param>
+public sealed record ExtractCollectionResponse(
+    Money Expected, Money ExpectedWithheld, Money Collected, Money InCheques, Money Remaining, Money Received, Money Withheld);
 
 public sealed record ExtractResponse(
     Guid Id,
@@ -139,7 +147,10 @@ public sealed record ExtractResponse(
     ExtractDocument? Document,
     IReadOnlyList<ExtractChangeOrderResponse>? ChangeOrders,
     WaitingOnResponse WaitingOn,
-    ExtractCollectionResponse? Collection);
+    ExtractCollectionResponse? Collection,
+    string? DisputeReason = null,
+    ExtractLink? Revises = null,
+    ExtractLink? RevisedBy = null);
 
 /// <summary>Who is looking: their id and which of the extract permissions they hold on this project.</summary>
 internal sealed record ExtractViewer(Guid UserId, IReadOnlySet<Permission> Held)
@@ -177,7 +188,8 @@ internal static class ExtractView
         RulingSet rulings,
         ExtractViewer viewer,
         WaitingOnResponse waitingOn,
-        ExtractCollectionState? collection = null)
+        ExtractCollectionState? collection = null,
+        IReadOnlyDictionary<Guid, (int Number, string Title)>? changeOrderTitles = null)
     {
         ArgumentNullException.ThrowIfNull(extract);
         ArgumentNullException.ThrowIfNull(project);
@@ -206,14 +218,18 @@ internal static class ExtractView
                     extract.CumulativeCertifiedWork, extract.PreviouslyCertifiedWork, extract.MaterialValueOnSite, extract.MaterialInstalled)
                 : null,
             seesMoney ? DocumentFor(extract, project, rulings) : null,
-            seesMoney
-                ? [.. extract.ChangeOrderLines.Select(line => new ExtractChangeOrderResponse(line.ChangeOrderId, line.Amount))]
-                : null,
+            [.. extract.ChangeOrderLines.Select(line =>
+            {
+                (int number, string title) = changeOrderTitles?.GetValueOrDefault(line.ChangeOrderId) ?? (0, string.Empty);
+                return new ExtractChangeOrderResponse(line.ChangeOrderId, number, title, seesMoney ? line.Amount : null);
+            })],
             waitingOn,
             seesMoney && collection is { Position: var position }
                 ? new ExtractCollectionResponse(
-                    position.Expected, extract.ExpectedWithheld, position.Collected, position.InCheques, position.Remaining)
-                : null);
+                    position.Expected, extract.ExpectedWithheld, position.Collected, position.InCheques, position.Remaining,
+                    collection.Received, collection.Withheld)
+                : null,
+            extract.GateHistory.LastOrDefault(record => record.Gate == ExtractGate.Dispute)?.Reason);
     }
 
     private static ExtractActions ActionsFor(

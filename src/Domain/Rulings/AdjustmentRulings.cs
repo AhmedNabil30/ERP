@@ -62,10 +62,12 @@ public sealed record ExtractDisputeResolution : IRuling
         + "net less approved credit notes (D-238). Revised extract (D-241 item 2): the original goes Disputed to Void "
         + "and its standing accrual postings are reversed by its own flow, with a stored reason. The revised extract is "
         + "prepared for the same period through the prepare route and runs the whole chain. Refused while a later "
-        + "extract exists, money stands on the original, it billed a change order, or it accrued a hold "
-        + "(errors.extract.revision_hold_accrued): the hold only grows before handover. RULED except the hold case.",
-        "If Nabil rules that the hold accrual of a cancelled extract carries to its revision, the revision's own hold "
-        + "accrual would be reduced by the original's, and the hold leg would stay out of the cancellation's reversals.",
+        + "extract exists, money stands on the original, or it billed a change order. The original's hold accrual is "
+        + "not reversed: it carries to the revision, which accrues only its own hold above the carried amount, never "
+        + "less than zero (D-244 item 1). RULED.",
+        "If the hold carried is above the revision's own hold, the client owes that much less on the revision until "
+        + "the hold is released at handover. A different rule would change ExtractPostings.BuildAccrual's carriedHold "
+        + "and Extract.HeldBeyondOwnHold.",
         RulingStatus.Assumed);
 }
 

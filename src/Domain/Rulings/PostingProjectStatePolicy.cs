@@ -27,7 +27,6 @@ public sealed record PostingProjectStatePolicy : IRuling
         PostingType.MaterialAdvanceIssue,
         PostingType.MaterialAdvanceRecovery,
         PostingType.ClientAdvanceRecovery,
-        PostingType.TaxWithheldAtSource,
         PostingType.TaxWithholdingRetained,
         PostingType.SubcontractorRetentionAccrual,
     }.ToFrozenSet();
@@ -37,10 +36,15 @@ public sealed record PostingProjectStatePolicy : IRuling
     private static readonly FrozenSet<PostingType> RetentionRelease =
         new[] { PostingType.SubcontractorRetentionRelease }.ToFrozenSet();
 
-    /// <summary>What is still collectable or correctable once work has stopped being billed.</summary>
+    /// <summary>
+    /// What is still collectable or correctable once work has stopped being billed. The tax a client withholds at source
+    /// is part of a collection, not of the billing: D-244 item 2 collects the released hold after handover with
+    /// withholding as on an extract.
+    /// </summary>
     private static readonly FrozenSet<PostingType> Collections = new[]
     {
         PostingType.ClientCollection,
+        PostingType.TaxWithheldAtSource,
         PostingType.ChequeDeposit,
         PostingType.ChequeClearance,
         PostingType.ChequeBounce,
@@ -73,7 +77,8 @@ public sealed record PostingProjectStatePolicy : IRuling
         "A per-posting-type allowed-status table, enforced in the domain.",
         "Active and HandoverPending accept everything except the two release types. Setup, Stopped, Handover "
         + "and UnderWarranty refuse extract-derived postings. HoldRelease only at Handover or UnderWarranty. "
-        + "Closed accepts collections and adjustments. Terminated accepts collections, payments of what is owed, "
+        + "Closed accepts collections (with the tax withheld at source on them, D-244 item 2) and adjustments. "
+        + "Terminated accepts collections, payments of what is owed, "
         + "credit and debit notes and adjustments. Reversals are exempt. ASSUMED except the stopped-project "
         + "extract ban (spec.md 7) and hold-at-handover (spec.md 5.1).",
         "Edit BuildDefault, one line per cell. Set reversalsFollowTheTable to true to make corrections obey the "
@@ -108,6 +113,7 @@ public sealed record PostingProjectStatePolicy : IRuling
             [ProjectStatus.Terminated] = new[]
             {
                 PostingType.ClientCollection,
+                PostingType.TaxWithheldAtSource,
                 PostingType.ChequeDeposit,
                 PostingType.ChequeClearance,
                 PostingType.ChequeBounce,

@@ -52,6 +52,9 @@ public sealed class Cheque : Entity
 
     public DateTimeOffset StateChangedAt { get; private set; }
 
+    /// <summary>The bank's reason, stored when the cheque bounced. Null for every other state.</summary>
+    public string? BounceReason { get; private set; }
+
     public static bool IsLegalTransition(ChequeState from, ChequeState to) => LegalTransitions.Contains((from, to));
 
     /// <summary>
@@ -67,11 +70,22 @@ public sealed class Cheque : Entity
         return new Cheque(collection.ProjectId, collection.Id, actorUserId, now);
     }
 
-    public Result MoveTo(ChequeState target, Guid actorUserId, DateTimeOffset now)
+    /// <param name="bounceReason">Required for a bounce, and stored with the cheque; ignored for any other move.</param>
+    public Result MoveTo(ChequeState target, Guid actorUserId, DateTimeOffset now, string? bounceReason = null)
     {
         if (!IsLegalTransition(State, target))
         {
             return Result.Failure(CollectionErrors.ChequeIllegalTransition);
+        }
+
+        if (target == ChequeState.Bounced)
+        {
+            if (string.IsNullOrWhiteSpace(bounceReason) || bounceReason.Trim().Length > Projects.Project.MaxReasonLength)
+            {
+                return Result.Failure(CollectionErrors.BounceReasonRequired);
+            }
+
+            BounceReason = bounceReason.Trim();
         }
 
         State = target;

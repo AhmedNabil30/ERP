@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Kaff.Api.Common.Results;
+using Kaff.Api.Features.Extracts;
 using Kaff.Domain.ChangeOrders;
 using Kaff.Domain.Identity;
 using Kaff.Domain.Projects;
@@ -41,6 +42,8 @@ internal static class Handler
         ChangeOrderViewer viewer = await ChangeOrderSupport.ViewerAsync(
             new ChangeOrderServices(database, rulings, clock, currentUser, authorization, user));
 
-        return Microsoft.AspNetCore.Http.Results.Ok(ChangeOrderView.Build(order, project, rulings, viewer));
+        IReadOnlyList<StaffMember> staff = await ExtractWaitingOnView.StaffAsync(database, projectId, cancellationToken);
+        return Microsoft.AspNetCore.Http.Results.Ok(
+            ChangeOrderView.Build(order, project, rulings, viewer) with { WaitingOn = ChangeOrderView.WaitingOn(order, staff) });
     }
 }

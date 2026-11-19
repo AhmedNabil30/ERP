@@ -1,5 +1,7 @@
 using Kaff.Api.Common.Results;
+using Kaff.Api.Features.Extracts;
 using Kaff.Domain.Adjustments;
+using Kaff.Domain.Authorization;
 using Kaff.Domain.Common;
 using Kaff.Domain.Extracts;
 using Kaff.Domain.Projects;
@@ -13,6 +15,8 @@ using Npgsql;
 namespace Kaff.Api.Features.Adjustments;
 
 /// <summary>An adjustment as read. The postings it wrote trace to it through their source document.</summary>
+/// <param name="DisputeReason">For a credit note raised on a disputed extract: the client's dispute reason. Filled on the reads.</param>
+/// <param name="WaitingOn">Who a Raised adjustment waits on, and for what. Null once decided, and on the write routes' answers.</param>
 public sealed record AdjustmentResponse(
     Guid Id,
     Guid ProjectId,
@@ -29,7 +33,9 @@ public sealed record AdjustmentResponse(
     DateTimeOffset RaisedAt,
     Guid? DecidedByUserId,
     DateTimeOffset? DecidedAt,
-    string? DecisionReason)
+    string? DecisionReason,
+    string? DisputeReason = null,
+    WaitingLineResponse? WaitingOn = null)
 {
     internal static AdjustmentResponse From(Adjustment adjustment) => new(
         adjustment.Id,
@@ -48,6 +54,51 @@ public sealed record AdjustmentResponse(
         adjustment.DecidedByUserId,
         adjustment.DecidedAt,
         adjustment.DecisionReason);
+}
+
+/// <summary>The adjustment reads: each adjustment with its extract's dispute reason and its waiting line.</summary>
+internal static class AdjustmentReads
+{
+    public static async Task<IReadOnlyList<AdjustmentResponse>> BuildAsync(
+        KaffDbContext database, Guid projectId, IReadOnlyList<Adjustment> adjustments, CancellationToken cancellationToken)
+    {
+        Guid[] extractIds =
+        [
+            .. adjustments.Where(adjustment => adjustment.SourceDocumentType == SourceDocumentType.Extract)
+                .Select(adjustment => adjustment.SourceDocumentId).Distinct(),
+        ];
+        Dictionary<Guid, Extract> extracts = await database.Extracts
+            .AsNoTracking()
+            .Include(extract => extract.GateHistory)
+            .Where(extract => extractIds.Contains(extract.Id))
+            .ToDictionaryAsync(extract => extract.Id, cancellationToken);
+        IReadOnlyList<StaffMember> staff = adjustments.Any(adjustment => adjustment.Status == AdjustmentStatus.Raised)
+            ? await ExtractWaitingOnView.StaffAsync(database, projectId, cancellationToken)
+            : [];
+
+        return
+        [
+            .. adjustments.Select(adjustment =>
+            {
+                Extract? extract = adjustment.SourceDocumentType == SourceDocumentType.Extract
+                    ? extracts.GetValueOrDefault(adjustment.SourceDocumentId)
+                    : null;
+                IReadOnlyCollection<Guid> disputeActors = extract?.DisputeActors() ?? [];
+
+                // The Owner decides a Raised adjustment; whoever raised it or the dispute behind it may not (Adjustment.Approve).
+                WaitingLineResponse? waiting = adjustment.Status == AdjustmentStatus.Raised
+                    ? WaitingLine.Build(
+                        "waiting.task.adjustment_approval", Permission.FinancialMovementApprove, staff, adjustment.PriorActors(disputeActors))
+                    : null;
+
+                return AdjustmentResponse.From(adjustment) with
+                {
+                    DisputeReason = extract?.GateHistory.LastOrDefault(record => record.Gate == ExtractGate.Dispute)?.Reason,
+                    WaitingOn = waiting,
+                };
+            }),
+        ];
+    }
 }
 
 /// <summary>

@@ -420,6 +420,35 @@ public sealed class ChangeOrderEndpointTests : IAsyncLifetime
     /// ruling: the change order is its own row at its own price, the hold is 20% of 400,000, the advance recovery is
     /// 25% of 400,000 (still within the 250,000 advance), and the printed column foots.
     /// </summary>
+    /// <summary>
+    /// Journey gap 7: a change order names who it waits on and for what, on its read and in the list. At a decision gate
+    /// the people who already acted on it are barred; once it has ended it waits on nobody.
+    /// </summary>
+    [Fact]
+    public async Task A_change_order_names_who_it_waits_on_and_bars_who_already_acted()
+    {
+        Project project = await NewProjectAsync();
+        Guid id = await DriveAsync(project, ChangeOrderStatus.TechnicalReview);
+
+        JsonElement waiting = (await ReadAsync(project.Id, id, _owner)).GetProperty("waitingOn");
+        waiting.GetProperty("taskKey").GetString().Should().Be("waiting.task.change_order_technical_review");
+        waiting.GetProperty("permission").GetString().Should().Be("ChangeOrderReview");
+        waiting.GetProperty("holders").EnumerateArray().Select(holder => holder.GetProperty("userId").GetGuid())
+            .Should().Contain(_technicalOffice2).And.NotContain(_technicalOffice);
+        waiting.GetProperty("barredHolders").EnumerateArray().Select(holder => holder.GetProperty("userId").GetGuid())
+            .Should().Contain(_technicalOffice, "he prepared it, so he may not review it");
+
+        HttpResponseMessage list = await SendAsync(HttpMethod.Get, ChangeOrders(project.Id), _owner, null);
+        using (JsonDocument rows = JsonDocument.Parse(await list.Content.ReadAsStringAsync(Ct)))
+        {
+            rows.RootElement.EnumerateArray().Single().GetProperty("waitingOn").GetProperty("taskKey").GetString()
+                .Should().Be("waiting.task.change_order_technical_review");
+        }
+
+        Guid approved = await DriveAsync(project, ChangeOrderStatus.Approved);
+        (await ReadAsync(project.Id, approved, _owner)).GetProperty("waitingOn").ValueKind.Should().Be(JsonValueKind.Null);
+    }
+
     [Fact]
     public async Task An_approved_change_order_is_billed_in_its_own_section_and_the_figures_foot()
     {
@@ -431,8 +460,11 @@ public sealed class ChangeOrderEndpointTests : IAsyncLifetime
         JsonElement section = read.GetProperty("changeOrders").EnumerateArray().Single();
         section.GetProperty("changeOrderId").GetGuid().Should().Be(changeOrder);
         ParseDecimal(section.GetProperty("amount")).Should().Be(100_000m);
-        (await ExtractAsync(project.Id, extract, _prepEngineer)).GetProperty("changeOrders").ValueKind
-            .Should().Be(JsonValueKind.Null, "a site engineer sees no money");
+        section.GetProperty("title").GetString().Should().NotBeNullOrWhiteSpace("the extract names the change order it bills");
+        section.GetProperty("number").GetInt32().Should().BePositive();
+        JsonElement seen = (await ExtractAsync(project.Id, extract, _prepEngineer)).GetProperty("changeOrders").EnumerateArray().Single();
+        seen.GetProperty("title").GetString().Should().Be(section.GetProperty("title").GetString(), "the title is not money");
+        seen.GetProperty("amount").ValueKind.Should().Be(JsonValueKind.Null, "a site engineer sees no money");
 
         await StepAsync(project, extract, ("qc-report", _supervisor), ("technical-approval", _technicalOffice), ("deductions", _finance));
         JsonElement document = (await ExtractAsync(project.Id, extract, _finance)).GetProperty("document");

@@ -17098,3 +17098,18 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 
 1. **The original's hold carries to the revision.** Cancelling the original does not reverse its hold accrual; the hold stays as it is. The revised extract accrues only the difference between its own hold and the carried amount, never less than zero. This replaces the lane's refusal `extract.revision_hold_accrued`.
 2. **A released hold is collected on the same collection flow as an extract**: Finance records it against the handover, by cash, transfer or cheque, with part payments and withholding as on an extract. This closes KAFF-317-E's missing route.
+
+## D-245 — D-244 as built: the hold carries to a revision, a released hold is collected on the extract collection logic, and the reads carry what the extract screens need · 2026-11-20
+
+**Source.** Built by a lane dispatched by the Scrum Master on D-244 and the open items of D-243.
+
+1. **Hold on a revision.** Cancelling an original never reverses its hold accrual. A revision accrues max(0, its own hold − the carried hold), walking the `RevisesExtractId` chain. When the revision is smaller, the excess stays in the hold and is taken off what the client owes now (`Extract.HeldBeyondOwnHold`), so the client pays it at handover with the rest of the hold. This split was derived by the lane from D-244 §1.
+2. **Released-hold collection** (`POST /api/projects/{id}/hold-release/collect`, `GET .../hold-release/collection`, Finance and assignment) reuses the extract's payment checks and postings (`Domain/Closure/ReleasedHoldPayments.cs`): cash, transfer, cheque cleared or bounced with a reason, part payments, withholding, capped at what remains. `CollectionRecord.ExtractId` is nullable; cheques carry a required `BounceReason`. Migration `20261119204341_ReleasedHoldCollection`. Closes KAFF-317-E.
+3. **Posting-state policy change.** `TaxWithheldAtSource` is now allowed at Handover, UnderWarranty, Closed and Terminated, with the other collection postings, because a released hold is collected with withholding after handover. Before it was grouped with extract billing and refused there.
+4. **Reversing a revision's collection** also reverses payments carried from its Void original, writing a reversal gate record on the original so the flow guard accepts it.
+5. **Reads.** The collection block sends `received` and `withheld` apart; the extract sends `disputeReason`, `revises` and `revisedBy`, and change orders with titles (amount null for non-money viewers). Adjustments, change orders and cheques send a waiting line: task key, permission, holders' names and barred holders. Cheques send `bounceReason` and `stateChangedAt`.
+6. **KAFF-317-I.** A test proves a collection whose withholding leg is refused leaves no partial posting or record.
+
+**Gates at hand-back.** Build 0/0 (no-incremental); Domain 800/800; Api 1261 passed, 2 skipped, 1 failed of 1264. The failure is `SubcontractorRetentionEndpointTests.The_release_is_refused_before_the_warranty_ends_and_posts_nothing`, a test that takes today from the UTC date while the server uses the Cairo site day, so it fails between 22:00 and 24:00 UTC; the code under it is unchanged. `ng test` 515/515; format clean apart from ENDOFLINE; health leastPrivilege true; smoke passed.
+
+**Open.** A revision's hold-to-date memo shows the sum of both holds instead of the larger (display only). No reversal of a released-hold collection. A revision of a revision carries payments only one level. The seven waiting-line task words and four new error strings need `arabic-copy`.

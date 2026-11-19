@@ -100,7 +100,7 @@ internal static class Handler
         bool moneyStanding = state is not null
             && (state.Position.InCheques.IsPositive
                 || state.CreditNoteRaised
-                || state.Position.Expected != extract.NetPayable);
+                || state.ApprovedCredits.IsPositive);
 
         IReadOnlyList<ExtractPostedLeg> legs = await ExtractSupport.StandingAccrualLegsAsync(database, extract.Id, token);
 
