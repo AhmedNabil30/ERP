@@ -1,6 +1,6 @@
 # KAFF-303 · Correct a mistake with a reversing posting, never an edit
 
-<!-- kaff id=KAFF-303 slice=3 points=5 state=BUILT verdict=REJECTED at=792c1ba on=2026-11-18 -->
+<!-- kaff id=KAFF-303 slice=3 points=5 state=VERIFIED verdict=CONDITIONAL at=33ff701 on=2026-11-19 -->
 
 **Slice:** 3 (Treasury) · **Epic:** Treasury · **Points:** 5 (`stories/backlog.md` slice-3 table) · **Status:** NOT-BUILT.
 **Spec:** §6.1 ("Corrections are new reversing postings referencing the original") · **Decisions:** D-007 (cited by `Posting.Reverse`'s own remarks — partial reversals are a spec change, not a loosening)
@@ -71,10 +71,10 @@ When a reversal of it is attempted
 Then it is refused — HELD on the exact i18n key, since `KAFF_REVERSAL_OF_REVERSAL` has no domain-level `Error` yet
 *Rule: 4. See `KAFF-319`'s scope note.*
 
-**AC-303-D — the hold ledger accepts a reversal that debits it, where a normal posting would be refused**
-Given a Hold account that has accrued value from a `HoldAccrual` posting made in error
-When that posting is reversed
-Then the reversal succeeds even though it moves value out of the hold before handover
+**AC-303-D — a reversal that would debit the hold is refused** (amended 2026-11-19, D-236 §1 and spec §5.1: the hold only grows)
+Given a Hold account that has accrued value from a `HoldAccrual` posting
+When a generic reversal of that posting is attempted before handover
+Then it is refused with `errors.treasury.hold_posting_not_reversible`, by the domain and by the database, and the hold is unchanged
 *Rule: 5.*
 
 **AC-303-E — a reversal dated into a closed period is refused**

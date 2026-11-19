@@ -1,0 +1,893 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>كف - سلسلة المستخلص</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* KAAF extract chain E1-E13 and the withholding category (mock). Shell, frame, tabs, list, buttons, banners, chain, fields, sheet and dialog copied unchanged from project-team.html (itself from project.html, boq.html, components.html). New parts under "THIS FILE". */
+:root{
+  --g900:#09221e; --g800:#0f2e29; --g300:#9fb3ad; --c100:#f4eee9; --c200:#e6d9d1; --radius:6px;
+  --bg:var(--c100); --surface:#fbf8f5; --head:#ebe0d8; --ink:var(--g900); --dim:#4b5f59; --line:rgba(9,34,30,.16); --hover:rgba(9,34,30,.055);
+  --btn:var(--g900); --btn-h:#25544b; --btn-ink:var(--c200); --field:#fbf8f5; --fieldline:var(--g900); --focus:var(--g900);
+  --err-bg:#f9e4dd; --err-ink:#7a1a0e; --err-bar:#c2321c;
+  --st-run-bg:#d3e3db; --st-run-ink:#0b3b32; --st-done-bg:var(--g900); --st-done-ink:var(--c200);
+  --st-stuck-bg:#f9e4dd; --st-stuck-ink:#7a1a0e; --st-post-bg:#e6d9d1; --st-post-ink:#43392f; --st-none-ink:#4b5f59;
+  --note-bg:#ebe0d8; --ok-bg:#d3e3db; --ok-ink:#0b3b32;
+  --scrim:rgba(3,13,11,.55); --strip:var(--c200); --shadow:0 12px 36px rgba(9,34,30,.22);
+  --display:'Noto Kufi Arabic','IBM Plex Sans Arabic',system-ui,sans-serif;
+  --body:'IBM Plex Sans Arabic',system-ui,'Segoe UI',Tahoma,sans-serif;
+  --side:256px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#061815; --surface:#0a1f1b; --head:#0f2e29; --ink:var(--c200); --dim:var(--g300); --line:rgba(230,217,209,.18); --hover:rgba(230,217,209,.06);
+  --btn:var(--c200); --btn-h:#fbf6f2; --btn-ink:var(--g900); --field:#0f2e29; --fieldline:#7f9a92; --focus:var(--c200);
+  --err-bg:#3b1612; --err-ink:#ffd0c6; --err-bar:#ff7b63;
+  --st-run-bg:#17403a; --st-run-ink:#e6d9d1; --st-done-bg:var(--c200); --st-done-ink:var(--g900);
+  --st-stuck-bg:#3b1612; --st-stuck-ink:#ffd0c6; --st-post-bg:#1d2b27; --st-post-ink:#c9bfb7; --st-none-ink:#9fb3ad;
+  --note-bg:#0f2e29; --ok-bg:#17403a; --ok-ink:#e6d9d1; --strip:#030d0b; --shadow:0 12px 36px rgba(0,0,0,.6);}}
+:root[data-theme="dark"]{
+  --bg:#061815; --surface:#0a1f1b; --head:#0f2e29; --ink:var(--c200); --dim:var(--g300); --line:rgba(230,217,209,.18); --hover:rgba(230,217,209,.06);
+  --btn:var(--c200); --btn-h:#fbf6f2; --btn-ink:var(--g900); --field:#0f2e29; --fieldline:#7f9a92; --focus:var(--c200);
+  --err-bg:#3b1612; --err-ink:#ffd0c6; --err-bar:#ff7b63;
+  --st-run-bg:#17403a; --st-run-ink:#e6d9d1; --st-done-bg:var(--c200); --st-done-ink:var(--g900);
+  --st-stuck-bg:#3b1612; --st-stuck-ink:#ffd0c6; --st-post-bg:#1d2b27; --st-post-ink:#c9bfb7; --st-none-ink:#9fb3ad;
+  --note-bg:#0f2e29; --ok-bg:#17403a; --ok-ink:#e6d9d1; --strip:#030d0b; --shadow:0 12px 36px rgba(0,0,0,.6);}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 1rem/1.6 var(--body)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+svg.i{inline-size:22px;block-size:22px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+svg.i.s{inline-size:18px;block-size:18px}
+.vh{position:absolute;inline-size:1px;block-size:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus-visible,.is-focus{outline:3px solid var(--focus);outline-offset:3px}
+bdi{unicode-bidi:isolate}
+
+/* ---------- preview strip (NOT part of the design) ---------- */
+.strip{background:var(--strip);font-size:.8125rem;position:relative;z-index:80}
+.strip summary{list-style:none;display:flex;align-items:center;gap:.5rem;min-block-size:36px;padding:0 1rem;cursor:pointer}
+.strip summary::-webkit-details-marker{display:none}
+.strip .panelx{display:flex;flex-wrap:wrap;gap:.5rem 1.25rem;padding:.25rem 1rem .75rem}
+.strip .grp{display:flex;flex-wrap:wrap;gap:.25rem;align-items:center}
+.strip .grp>b{font-weight:600;margin-inline-end:6px}
+.strip button{min-block-size:36px;padding:0 .7rem;border:1px solid currentColor;background:transparent;border-radius:var(--radius);color:inherit}
+.strip button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+body.embed .strip{display:none}
+body.embed .app{block-size:100dvh}
+#phone{position:fixed;inset:0;z-index:200;background:var(--scrim);display:none;place-items:center}
+#phone[data-open="1"]{display:grid}
+#phone .dev{display:grid;gap:8px;justify-items:center}
+#phone iframe{inline-size:390px;block-size:min(800px,calc(100dvh - 90px));border:8px solid #000;border-radius:26px;background:var(--bg)}
+#phone button{min-block-size:44px;padding:0 18px;border:1.5px solid var(--c200);background:transparent;color:var(--c200);border-radius:var(--radius)}
+
+/* ---------- app + shell (layout.html, unchanged) ---------- */
+.app{display:grid;grid-template-columns:var(--side) minmax(0,1fr);block-size:calc(100dvh - 36px);overflow:hidden}
+.app[data-rail="1"]{--side:76px}
+.side{background:var(--g900);color:var(--c200);display:flex;flex-direction:column;min-inline-size:0;min-block-size:0}
+.side-top{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding-inline:20px 12px;block-size:72px;flex:none}
+.side-top img{display:block;inline-size:104px;block-size:auto;aspect-ratio:519/155}
+.coll{inline-size:44px;block-size:44px;display:grid;place-items:center;border:0;background:transparent;color:var(--c200);border-radius:var(--radius)}
+.coll:hover{background:rgba(230,217,209,.1)}
+[dir="rtl"] .coll .chev,[dir="ltr"] .app[data-rail="1"] .coll .chev{transform:scaleX(-1)}
+[dir="rtl"] .app[data-rail="1"] .coll .chev{transform:none}
+.nav{flex:1;overflow-y:auto;padding:8px 12px 16px;min-block-size:0}
+.grp-h{margin:18px 0 6px;padding-inline:12px;font:600 .8125rem/1.4 var(--display);color:var(--g300)}
+.nav .grp:first-child .grp-h{margin-block-start:6px}
+.nav .grp+.grp{margin-block-start:10px;border-block-start:1px solid rgba(230,217,209,.14)}
+.row{position:relative;display:flex;align-items:center;gap:14px;min-block-size:44px;padding:0 12px;border-radius:var(--radius);color:var(--c200);text-decoration:none;font:500 .96875rem/1.3 var(--body)}
+.row:hover{background:rgba(230,217,209,.09)}
+.row:focus-visible{outline:3px solid var(--c200);outline-offset:-3px}
+.row[aria-current="page"]{background:rgba(230,217,209,.15);font-weight:600}
+.row[aria-current="page"]::before{content:"";position:absolute;inset-block:8px;inset-inline-start:-12px;inline-size:5px;border-start-end-radius:3px;border-end-end-radius:3px;background:var(--c200)}
+.side-foot{flex:none;padding:12px;border-block-start:1px solid rgba(230,217,209,.14)}
+.who{display:flex;align-items:center;gap:12px;padding:6px 6px 12px}
+.av{inline-size:40px;block-size:40px;border-radius:50%;background:var(--c200);color:var(--g900);display:grid;place-items:center;font:700 1rem/1 var(--display);flex:none}
+.who b{display:block;font:600 .96875rem/1.3 var(--body)}
+.who span{display:block;font-size:.8125rem;color:var(--g300)}
+.ctl2{display:flex;gap:8px}
+.ctl2 button{flex:1;min-block-size:44px;border:1.5px solid rgba(230,217,209,.55);background:transparent;color:var(--c200);border-radius:var(--radius);font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px}
+.ctl2 button:hover{background:rgba(230,217,209,.1)}
+.i-short{display:none}
+.app[data-rail="1"] .i-short{display:inline;font-weight:700}
+.app[data-rail="1"] .lbl,.app[data-rail="1"] .grp-h,.app[data-rail="1"] .who>div,.app[data-rail="1"] .side-top img,.app[data-rail="1"] .ctl2 .t{display:none}
+.app[data-rail="1"] .side-top{justify-content:center;padding:0}
+.app[data-rail="1"] .row{justify-content:center;padding:0}
+.app[data-rail="1"] .who{justify-content:center;padding-inline:0}
+.app[data-rail="1"] .ctl2{flex-direction:column}
+.main{min-inline-size:0;min-block-size:0;display:flex;flex-direction:column;overflow-y:auto;position:relative}
+.ph{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:12px 32px 12px;flex-wrap:wrap}
+.ph h1{font:700 2rem/1.3 var(--display);margin:0}
+.acts{display:flex;align-items:center;gap:12px}
+.frame{padding:0 32px 56px;flex:1;min-inline-size:0}
+
+/* ---------- kit parts, unchanged ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-block-size:48px;padding:0 22px;border:2px solid transparent;border-radius:var(--radius);background:var(--btn);color:var(--btn-ink);font:700 1rem/1 var(--display);white-space:nowrap;text-decoration:none}
+.btn.sm{min-block-size:44px;padding:0 16px;font-size:.9375rem}
+.btn:hover{background:var(--btn-h)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.sec2{background:transparent;color:var(--ink);border-color:var(--fieldline)}
+.btn.sec2:hover{background:var(--hover)}
+.btn.quiet{background:transparent;color:var(--ink)}
+.btn.quiet:hover{background:var(--hover)}
+.ib{inline-size:44px;block-size:44px;display:inline-grid;place-items:center;border:2px solid transparent;background:transparent;color:var(--ink);border-radius:var(--radius);padding:0}
+.ib:hover{background:var(--hover)}
+.lnk{color:var(--ink);text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:4px;font-weight:500;background:none;border:0;padding:0}
+.lnk:hover{text-decoration-thickness:3px}
+a.lnk{display:inline-flex;align-items:center;min-block-size:44px}
+.back{display:inline-flex;align-items:center;gap:6px;min-block-size:44px;color:var(--ink);text-decoration:none;font-weight:600}
+[dir="rtl"] .back svg{transform:scaleX(-1)}
+.back:hover{text-decoration:underline;text-underline-offset:4px}
+.badge{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-inline-size:24px;block-size:24px;padding:0 8px;border-radius:var(--radius);border:1.5px solid var(--fieldline);font:600 .8125rem/1 var(--body);font-variant-numeric:tabular-nums;white-space:nowrap}
+.badge svg{inline-size:14px;block-size:14px}
+.badge.q{border-color:var(--line);color:var(--dim)}
+.pill{display:inline-flex;align-items:center;gap:7px;block-size:28px;padding-inline:10px 12px;border-radius:var(--radius);font:600 .8125rem/1 var(--body);white-space:nowrap;box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 30%,transparent)}
+.pill svg{inline-size:13px;block-size:13px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.s-run{background:var(--st-run-bg);color:var(--st-run-ink)}
+.s-done{background:var(--st-done-bg);color:var(--st-done-ink)}
+.s-none{background:transparent;color:var(--st-none-ink);box-shadow:inset 0 0 0 1.5px currentColor}
+.spin{display:none;inline-size:18px;block-size:18px;border:3px solid color-mix(in srgb,currentColor 30%,transparent);border-top-color:currentColor;border-radius:50%;animation:r .8s linear infinite}
+@keyframes r{to{transform:rotate(360deg)}}
+.ban{display:flex;gap:12px;align-items:flex-start;padding:12px 16px;border-radius:var(--radius);border-inline-start:6px solid var(--err-bar);background:var(--err-bg);color:var(--err-ink);font-weight:500;line-height:1.55}
+.ban svg{margin-block-start:2px}
+.ban.note{background:var(--note-bg);color:var(--ink);border-inline-start-color:var(--fieldline);font-weight:400}
+.ban.ok{background:var(--ok-bg);color:var(--ok-ink);border-inline-start-color:var(--ok-ink)}
+.ban .act{margin-inline-start:auto;flex:none}
+.ban>svg,.locked>svg,.cfm svg,.rec>svg{inline-size:20px;block-size:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.cfm>span{display:flex;gap:10px;align-items:flex-start}
+.ban b{font-weight:700}
+.ban.rowc{flex-wrap:wrap;align-items:center}
+.state{border:1.5px solid var(--line);border-radius:var(--radius);background:transparent;padding:44px 24px;text-align:center;display:grid;justify-items:center;gap:10px}
+.state.refused{border-style:dashed;border-color:var(--fieldline)}
+.state.solid{background:var(--surface)}
+.state .ico{inline-size:56px;block-size:56px;border-radius:var(--radius);display:grid;place-items:center;background:var(--head)}
+.state.refused .ico{border-radius:50%;border:2px solid var(--fieldline);background:transparent}
+.state .ico svg{inline-size:28px;block-size:28px}
+.state h4{font:700 1.125rem/1.4 var(--display);margin:4px 0 0}
+.state p{margin:0;color:var(--dim);max-inline-size:46ch;font-size:.9375rem}
+.sk{display:inline-block;block-size:14px;border-radius:4px;background:linear-gradient(90deg,var(--line),var(--hover),var(--line));background-size:200% 100%;animation:sh 1.4s linear infinite;vertical-align:middle}
+@keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.sk,.spin{animation:none}}
+.sk.b{display:block}
+
+/* ---------- money half of the kit, unchanged ---------- */
+.fig{font-variant-numeric:tabular-nums;font-weight:500;direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+.fig.neg{font-weight:600}
+.fig .u{color:var(--dim);font-weight:400;font-size:.8125em;margin-inline-start:6px}
+.fx{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+.rec{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border-radius:var(--radius);border-inline-start:6px solid var(--ok-ink);background:var(--ok-bg);color:var(--ok-ink);font-weight:600;line-height:1.5}
+.rec svg{inline-size:20px;block-size:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.rec small{font-weight:400;flex-basis:100%}
+.chain{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:0;border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden;list-style:none;margin:0;padding:0}
+.chain li{padding:12px 12px 14px;display:grid;gap:4px;align-content:start;position:relative;min-inline-size:0}
+.chain li+li{border-inline-start:1px solid var(--line)}
+.chain .st{display:flex;align-items:center;gap:8px;font-weight:600;line-height:1.3}
+.chain .mk{inline-size:26px;block-size:26px;border-radius:50%;border:2px solid var(--fieldline);display:grid;place-items:center;flex:none;font:700 .75rem/1 var(--body)}
+.chain .mk svg{inline-size:14px;block-size:14px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.chain li.done .mk{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chain li.cur{background:var(--head)}
+.chain li.cur .mk{border-width:3px;background:var(--bg)}
+.chain li.cur .mk::after{content:"";inline-size:8px;block-size:8px;border-radius:50%;background:var(--ink)}
+.chain .who2 bdi{white-space:nowrap}
+.chain .who2{font-size:.8125rem;color:var(--dim);line-height:1.4}
+.chain .age{display:inline-flex;gap:5px;align-items:center;font-size:.8125rem;font-weight:600}
+.chain .age svg{inline-size:14px;block-size:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+
+/* ---------- THIS SCREEN: new parts (documented in README) ---------- */
+.phl{display:grid;gap:2px;min-inline-size:0}
+.ttl{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.meta{display:flex;align-items:center;gap:6px 18px;flex-wrap:wrap;margin:2px 0 0;color:var(--dim);font-size:.9375rem}
+.meta .code{font-variant-numeric:tabular-nums;color:var(--dim)}
+.meta a{color:var(--ink);font-weight:600}
+
+
+.kv{margin:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.kv>div{display:grid;grid-template-columns:180px minmax(0,1fr) auto;gap:2px 16px;align-items:center;min-block-size:52px;padding:6px 16px;border-block-start:1px solid var(--line)}
+.kv>div:first-child{border-block-start:0}
+.kv dt{color:var(--dim);font-size:.9375rem}
+.kv dd{margin:0;font-weight:500;min-inline-size:0}
+.kv dd small{display:block;color:var(--dim);font-weight:400;font-size:.8125rem;line-height:1.45}
+.kv .tags{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.kv .big{font:700 1.375rem/1.25 var(--body)}
+.kv .nul{display:flex;gap:10px;align-items:flex-start;color:var(--ink)}
+.kv .nul svg{inline-size:20px;block-size:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;margin-block-start:2px}
+.kv .nul b{display:block;font-weight:600}
+.kv .nul small{display:block;color:var(--dim);font-weight:400;font-size:.8125rem}
+
+.pg{display:grid;gap:8px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:14px 16px}
+.pg .top{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.pg .top b{font:600 1rem/1.4 var(--display)}
+.pg .num{font:700 1.5rem/1.2 var(--body)}
+.pg .trk{block-size:12px;border-radius:4px;background:var(--line);overflow:hidden}
+.pg .trk i{display:block;block-size:100%;background:var(--ink)}
+.pg .ft{display:flex;gap:8px 16px;flex-wrap:wrap;align-items:center;color:var(--dim);font-size:.875rem}
+
+
+
+.lst{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.lst li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 14px;padding:10px 16px;border-block-start:1px solid var(--line);align-items:center;min-block-size:60px}
+.lst li:first-child{border-block-start:0}
+.lst b{font-weight:600}
+.lst small{grid-column:1/-1;color:var(--dim);font-size:.8125rem;line-height:1.45}
+.lst .r{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;color:var(--dim);font-size:.875rem}
+.sec-h{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.sec-h h3{font:600 1.0625rem/1.4 var(--display);margin:0}
+
+/* ---------- phone (kit breakpoint) ---------- */
+.m-only{display:none}
+.mh{flex:none}
+@media (max-width:1100px){
+  .chain{grid-auto-flow:row}.chain li+li{border-inline-start:0;border-block-start:1px solid var(--line)}.chain li{grid-template-columns:auto 1fr;column-gap:12px;align-items:start}.chain .st{grid-row:1/4}
+}
+@media (max-width:820px){
+  .app{display:flex;flex-direction:column;block-size:calc(100dvh - 36px)}
+  .side,.d-only{display:none!important}
+  .m-only{display:block}
+  .mh{display:flex;align-items:center;justify-content:space-between;block-size:56px;padding:0 16px;background:var(--g900);color:var(--c200)}
+  .mh img{display:block;inline-size:88px;block-size:auto;aspect-ratio:519/155}
+  .mh .lang{min-block-size:44px;padding:0 14px;border:1.5px solid rgba(230,217,209,.6);background:transparent;color:var(--c200);border-radius:var(--radius);font-weight:600}
+  .main{flex:1;overscroll-behavior:contain}
+  .ph{display:block;padding:8px 16px 8px}
+  .ph h1{font-size:1.625rem}
+  .frame{padding:0 16px 24px}
+  .kv>div{grid-template-columns:minmax(0,1fr) auto;padding:10px 14px}
+  .kv dt{grid-column:1/-1;font-size:.8125rem}
+  .kv .tags{grid-column:1/-1;justify-content:flex-start}
+  .abar{flex:none;display:flex;gap:12px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:var(--surface);border-block-start:1px solid var(--line)}
+  .abar .menu{flex:none;min-inline-size:116px;block-size:60px;display:flex;align-items:center;justify-content:center;gap:10px;border:2px solid var(--fieldline);background:transparent;border-radius:var(--radius);font:700 1rem/1 var(--display)}
+  .abar .btn{flex:1;block-size:60px;font-size:1.0625rem}
+  [data-sheet="1"] .abar{visibility:hidden}
+  .nsheet{position:fixed;inset-inline:0;inset-block-end:0;z-index:70;max-block-size:90dvh;display:none;flex-direction:column;background:var(--bg);border-start-start-radius:var(--radius);border-start-end-radius:var(--radius);box-shadow:0 -12px 40px rgba(0,0,0,.35)}
+  [data-sheet="1"] .scrim{display:block;z-index:65}
+  [data-sheet="1"] .nsheet{display:flex}
+  .grab{inline-size:44px;block-size:4px;border-radius:2px;background:var(--line);margin:10px auto 0;flex:none}
+  .sh-top{display:flex;align-items:center;gap:12px;padding:12px 16px;border-block-end:1px solid var(--line)}
+  .sh-top .who{padding:0;flex:1}.sh-top .who span{color:var(--dim)}
+  .sh-top button{inline-size:48px;block-size:48px;border:1.5px solid var(--fieldline);background:transparent;border-radius:var(--radius);display:grid;place-items:center}
+  .sh-nav{overflow-y:auto;padding:6px 12px 14px}
+  .sh-nav .grp-h{color:var(--dim)}
+  .sh-nav .grp+.grp{border-block-start:1px solid var(--line)}
+  .sh-nav .row{min-block-size:52px;color:var(--ink);font-size:1.0625rem}
+  .sh-nav .row[aria-current="page"]{background:var(--head)}
+  .sh-nav .row[aria-current="page"]::before{background:var(--ink)}
+}
+.scrim{display:none;position:fixed;inset:0;background:var(--scrim)}
+@media (max-width:820px){.scrim{inset:0}}
+
+.lst .bd{grid-column:1/-1;display:flex;align-items:center;gap:10px}
+.lst .bd .trk{flex:1;block-size:10px;border-radius:4px;background:var(--line);overflow:hidden}
+.lst .bd .trk i{display:block;block-size:100%;background:var(--ink)}
+.lst .bd bdi{min-inline-size:56px;text-align:end;font-variant-numeric:tabular-nums;font-weight:600}
+.lst .pp{display:flex;gap:12px;align-items:center;min-inline-size:0}
+.lst .pp .av{inline-size:32px;block-size:32px;font-size:.875rem;background:var(--ink);color:var(--bg)}
+.disc{display:inline-flex;align-items:center;gap:6px;min-block-size:44px;justify-self:start}
+.disc svg{inline-size:18px;block-size:18px;transition:transform .15s}
+.disc[aria-expanded="true"] svg{transform:rotate(180deg)}
+.badge.t{border-color:var(--line);color:var(--ink)}
+.badge svg{fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+/* preview only (not part of the design): lets a screenshot take the whole page */
+body.flow .app,body.flow .main{block-size:auto;overflow:visible}
+.ban.rowc .act{min-block-size:44px}
+@media (prefers-reduced-motion:reduce){.disc svg{transition:none}}
+
+/* ---------- PROJECT FRAME: header, stage line, screen tabs (README: "Project frame") ---------- */
+.ph .phl{flex:1}
+.stl{list-style:none;margin:16px 0 8px;padding:0;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);max-inline-size:640px}
+.stl li{position:relative;display:grid;justify-items:center;align-content:start;gap:6px;text-align:center;font:600 .8125rem/1.3 var(--display);color:var(--dim);min-inline-size:0}
+.stl li::before{content:"";position:absolute;inset-block-start:12px;inset-inline-start:-50%;inset-inline-end:50%;border-block-start:2px dashed var(--line)}
+.stl li:first-child::before{display:none}
+.stl li.done::before,.stl li.cur::before{border-block-start:2px solid var(--ink)}
+.stl .mk{position:relative;z-index:1;inline-size:26px;block-size:26px;border-radius:50%;border:2px solid var(--fieldline);background:var(--bg);display:grid;place-items:center;color:var(--bg)}
+.stl .mk svg{inline-size:14px;block-size:14px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.stl li.done .mk{background:var(--ink);border-color:var(--ink)}
+.stl li.cur{color:var(--ink);font-weight:700}
+.stl li.cur .mk{border-width:3px}
+.stl li.cur .mk::after{content:"";inline-size:8px;block-size:8px;border-radius:50%;background:var(--ink)}
+.stl li.done{color:var(--ink)}
+.stl.sk-l{display:block;block-size:50px;margin-block:16px 8px;border-radius:var(--radius)}
+/* the kit's tabs part, used here as the project's screen switcher (links); sticky under the frame */
+.tabs{display:flex;gap:4px;border-block-end:2px solid var(--line);overflow-x:auto;scrollbar-width:none;position:sticky;inset-block-start:0;z-index:20;background:var(--bg);padding-inline:32px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{position:relative;min-block-size:48px;padding:0 18px;border:0;background:transparent;font:600 1rem/1 var(--display);color:var(--dim);display:inline-flex;align-items:center;gap:8px;white-space:nowrap;border-radius:var(--radius) var(--radius) 0 0;text-decoration:none;flex:none}
+.tab::after{content:"";position:absolute;inset-inline:12px;inset-block-end:-2px;block-size:4px;background:transparent;border-radius:2px 2px 0 0}
+.tab:hover{background:var(--hover);color:var(--ink)}
+.tab[aria-current="page"]{color:var(--ink);font-weight:700}
+.tab[aria-current="page"]::after{background:var(--ink)}
+.tab:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+.pane{display:grid;gap:16px;padding-block-start:20px;max-inline-size:860px}
+.pane>h3,.pane .sec-h h3{font:600 1.0625rem/1.4 var(--display);margin:6px 0 -4px}
+.hero{display:grid;gap:12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:18px 18px 16px}
+.hero .top{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.hero .num{font:700 3rem/1 var(--body);font-variant-numeric:tabular-nums}
+.hero .top b{font:600 1.0625rem/1.4 var(--display)}
+.hero .trk{block-size:14px;border-radius:4px;background:var(--line);overflow:hidden}
+.hero .trk i{display:block;block-size:100%;background:var(--ink)}
+.hero dl{margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 18px;padding-block-start:10px;border-block-start:1px solid var(--line)}
+.hero dl div{display:grid;gap:2px}
+.hero dt{color:var(--dim);font-size:.8125rem}
+.hero dd{margin:0;font-weight:500}
+@media (max-width:820px){
+  .tabs{padding-inline:16px}
+  .tab{min-block-size:56px}
+  .stl{margin-block:14px 6px}
+  .hero .num{font-size:2.5rem}
+}
+@media (min-width:821px){.ph .acts{align-self:flex-start;padding-block-start:44px}}
+/* ---------- from boq.html / components.html (kit parts, unchanged) ---------- */
+.field{display:grid;gap:6px;min-inline-size:0}
+.field>label,.field>.lb{display:flex;gap:8px;align-items:center;font:600 1rem/1.4 var(--body)}
+.ctl{display:flex;align-items:stretch;min-inline-size:0;block-size:48px;border:2px solid var(--fieldline);border-radius:var(--radius);background:var(--field)}
+.ctl:focus-within,.ctl.is-focus{outline:3px solid var(--focus);outline-offset:3px}
+.ctl.err{border-color:var(--err-bar)}
+.ctl select{flex:1;min-inline-size:0;border:0;background:transparent;padding:0 14px;font:inherit;font-size:1.0625rem;color:inherit;outline:none;block-size:100%}
+.ctl select option{background:var(--field);color:var(--ink)}
+.fmsg{display:flex;gap:6px;align-items:center;color:var(--err-ink);font-size:.875rem;font-weight:600}
+.fmsg svg{inline-size:16px;block-size:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ck{display:flex;align-items:center;gap:12px;min-block-size:44px;cursor:pointer;font-size:1rem;position:relative}
+.ck input{position:absolute;opacity:0;inline-size:1px;block-size:1px}
+.ck .bx{inline-size:24px;block-size:24px;flex:none;border:2px solid var(--fieldline);background:var(--field);display:grid;place-items:center;border-radius:50%}
+.ck.rd input:checked+.bx{background:var(--ink);box-shadow:inset 0 0 0 4px var(--field)}
+.ck input:focus-visible+.bx{outline:3px solid var(--focus);outline-offset:3px}
+.rdg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rdg .ck{border:2px solid var(--fieldline);border-radius:var(--radius);padding:0 14px;min-block-size:48px;background:var(--field)}
+.rdg .ck:has(input:checked){background:var(--head);font-weight:700}
+.rdg.err .ck{border-color:var(--err-bar)}
+.sx-scrim{display:none;position:fixed;inset:0;background:var(--scrim);z-index:90}
+.sx{display:none;position:fixed;z-index:95;background:var(--bg);flex-direction:column;box-shadow:var(--shadow);inset-inline:0;inset-block-end:0;max-block-size:92dvh;border-start-start-radius:var(--radius);border-start-end-radius:var(--radius)}
+[data-sx="1"] .sx-scrim{display:block}[data-sx="1"] .sx{display:flex}
+.sx .hd{display:flex;align-items:center;gap:8px;padding-inline:20px 8px;padding-block:8px}
+.sx .hd h2{margin:0;font:700 1.25rem/1.4 var(--display);flex:1}
+.sx .bd{padding:4px 16px 12px;overflow:auto;display:grid;gap:14px;align-content:start;flex:1}
+.sx .ft{padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-block-start:1px solid var(--line);background:var(--surface);display:grid;gap:10px}
+.sx .ft .btn{inline-size:100%;min-block-size:56px}
+.sx .grab{inline-size:44px;block-size:4px;border-radius:2px;background:var(--line);margin:10px auto 0;flex:none}
+[data-sx="1"] .abar,[data-cf="1"] .abar{visibility:hidden}
+.abar .menu:only-child{flex:1}
+@media (min-width:821px){
+  .sx{inset-inline-start:auto;inset-inline-end:0;inset-block:0;inline-size:460px;max-block-size:none;border-radius:0;border-inline-start:1px solid var(--line)}
+  .sx .grab{display:none}
+}
+.cfd{display:none;position:fixed;inset:0;z-index:96;place-items:center;grid-template-columns:minmax(0,1fr);padding:16px;background:var(--scrim)}
+[data-cf="1"] .cfd{display:grid}
+.dlg{background:var(--surface);color:var(--ink);border-radius:var(--radius);box-shadow:var(--shadow);inline-size:min(420px,100%);justify-self:center;display:flex;flex-direction:column;border:1px solid var(--line)}
+.dlg .bd{padding:20px;display:flex;gap:16px;align-items:flex-start}
+.dlg h4{font:700 1.125rem/1.4 var(--display);margin:0 0 4px}
+.dlg p{margin:0;color:var(--dim);font-size:.9375rem}
+.dlg .ft{display:flex;gap:12px;padding:0 20px 20px;flex-wrap:wrap}
+.dlg .conf-ico{inline-size:48px;block-size:48px;border-radius:var(--radius);background:var(--head);color:var(--ink);display:grid;place-items:center;flex:none}
+@media (max-width:820px){.dlg .ft .btn{flex:1;min-block-size:56px}}
+/* ---------- THIS SCREEN ---------- */
+.tm li{grid-template-columns:minmax(0,1fr) auto}
+.tm .mt{grid-column:1/-1;display:flex;gap:8px 10px;flex-wrap:wrap;align-items:center;color:var(--dim);font-size:.875rem}
+.tm li.new{background:var(--head)}
+@media (min-width:821px){
+  .tm li{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto}
+  .tm .mt{grid-column:2;grid-row:1;font-size:.9375rem}
+  .tm li>.btn{grid-column:3;grid-row:1}
+}
+/* kit tokens for the destructive pair (README "Tokens added by the kit"); not in the project-team copy */
+:root{--danger:#a42a16;--danger-ink:#ffffff;--dh:#8a2211}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--danger:#ff9d8a;--danger-ink:#2a0d08;--dh:#ffb9ab}}
+:root[data-theme="dark"]{--danger:#ff9d8a;--danger-ink:#2a0d08;--dh:#ffb9ab}
+/* ---------- kit field parts not in the project-team copy (components.html "Form fields", unchanged) ---------- */
+.ctl input{flex:1;min-inline-size:0;border:0;background:transparent;padding:0 14px;font-size:1.0625rem;outline:none;block-size:100%}
+.ctl .aff{display:flex;align-items:center;padding:0 14px;border-inline-start:2px solid var(--line);color:var(--dim);font-weight:600;white-space:nowrap}
+.ctl.money input,.ctl.num input{text-align:end;direction:ltr;font-variant-numeric:tabular-nums}
+.ctl input[dir="ltr"]{text-align:start}
+.ctl.money input,.ctl.num input{text-align:end}
+.ctl .ib{block-size:44px;align-self:center}
+.foot{min-block-size:24px;display:flex;align-items:flex-start;gap:6px;font-size:.875rem;line-height:1.5;color:var(--dim)}
+.foot svg{inline-size:18px;block-size:18px;margin-block-start:2px;flex:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.field.err .ctl,.field.err .rdg .ck{border-color:var(--err-bar);box-shadow:inset 0 0 0 1px var(--err-bar)}
+.field.err .foot{color:var(--err-ink);font-weight:500}
+.ctl.ro{background:var(--head);border-color:var(--line)}
+.ctl.ro .val{flex:1;display:flex;align-items:center;padding:0 14px;font-weight:500}
+.ctl.ta{block-size:auto;min-block-size:112px}
+.ctl.ta textarea{resize:vertical;min-block-size:104px;padding:12px 14px;border:0;background:transparent;font-size:1.0625rem;flex:1;outline:none;line-height:1.6}
+.req{color:var(--ink);font-weight:700}
+.btn.dtrig{background:transparent;color:var(--err-ink);border-color:var(--err-ink)}
+.btn.dtrig:hover{background:var(--err-bg)}
+.btn.dconf{background:var(--danger);color:var(--danger-ink);border-color:transparent}
+.btn.dconf:hover{background:var(--dh)}
+.s-stuck{background:var(--st-stuck-bg);color:var(--st-stuck-ink)}
+.s-post{background:var(--st-post-bg);color:var(--st-post-ink)}
+
+/* ---------- THIS FILE: new parts (README "Extract chain", kit additions) ---------- */
+/* preview: one artboard per screen. The label row is NOT part of the design. */
+.scr{display:flex;flex-direction:column;min-block-size:100%}
+.scr+.scr{border-block-start:8px solid var(--head)}
+.artl{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;padding:10px 32px;background:var(--strip);font-size:.8125rem}
+.artl b{font-weight:700;margin-inline-end:8px}
+.artl button{min-block-size:44px;min-inline-size:44px;padding:0 .7rem;border:1px solid currentColor;background:transparent;border-radius:var(--radius);color:inherit}
+.artl button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+body.embed .artl{display:none}
+.app{block-size:calc(100dvh - 44px)}
+body.embed .app{block-size:100dvh}
+.strip summary{min-block-size:44px}
+.strip button{min-block-size:44px;min-inline-size:44px}
+/* extract-chain status pill: issued is an ink outline with an arrow (new); the rest reuse the kit pill tones */
+.s-out{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px currentColor}
+/* the chain line: the project frame's stage line, seven steps, compact on a phone */
+.stl.x7{max-inline-size:860px;margin:4px 0 0}
+.pane.wide{max-inline-size:1180px}
+.tbl td:first-child,.tbl td.nw{white-space:nowrap}
+/* waiting line: who holds it, since when, who may not act */
+.wait{display:grid;gap:2px;padding:12px 16px;border-radius:var(--radius);background:var(--head)}
+.wait b{font:600 1rem/1.5 var(--body)}
+.wait small{color:var(--dim);font-size:.875rem}
+/* figure list: label at the start, figure at the end; deductions carry a real minus; the total row is ruled */
+.fl{margin:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.fl>div{display:flex;justify-content:space-between;align-items:center;gap:16px;min-block-size:48px;padding:6px 16px;border-block-start:1px solid var(--line)}
+.fl>div:first-child{border-block-start:0}
+.fl dd{margin:0;text-align:end}
+.fl .tot{background:var(--head);border-block-start:2px solid var(--fieldline);font-weight:600;min-block-size:52px}
+.fl .tot .fig{font-weight:700;font-size:1.125rem}
+.fl small{display:block;color:var(--dim);font-size:.8125rem}
+/* four-figure collection position */
+.pos{margin:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.pos>div{display:grid;gap:2px;padding:12px 16px;min-inline-size:0}
+.pos>div+div{border-inline-start:1px solid var(--line)}
+.pos dt{color:var(--dim);font-size:.8125rem}
+.pos dd{margin:0;font:700 1.25rem/1.3 var(--body)}
+.pos .rem{background:var(--head)}
+/* desktop table (kit "Lists and tables", shortened) */
+.tbl{inline-size:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden}
+.tbl th{block-size:44px;background:var(--head);font:600 .8125rem/1.3 var(--body);color:var(--dim);text-align:start;padding:0 14px;white-space:nowrap}
+.tbl td{block-size:56px;padding:6px 14px;border-block-start:1px solid var(--line);vertical-align:middle}
+.tbl .n{text-align:end}
+.tbl td small{display:block;color:var(--dim);font-size:.8125rem}
+.tbl tr.go{cursor:pointer}.tbl tr.go:hover td{background:var(--hover)}
+.tbl a{color:var(--ink);font-weight:600}
+.tbl tr.void td{color:var(--dim)}
+.tbl tr.void .fig{text-decoration:line-through}
+/* phone list band naming the columns once (the unit lives here) */
+.lh{display:flex;justify-content:space-between;padding:8px 16px;font:600 .8125rem/1.3 var(--body);color:var(--dim);background:var(--head);border:1px solid var(--line);border-block-end:0;border-start-start-radius:var(--radius);border-start-end-radius:var(--radius)}
+.lh+.lst{border-start-start-radius:0;border-start-end-radius:0}
+.lst li.go{cursor:pointer;min-block-size:76px}
+.lst .l3{grid-column:1/-1;display:flex;justify-content:space-between;gap:12px;color:var(--dim);font-size:.875rem;flex-wrap:wrap}
+.lst .l3 .fig{color:var(--ink);font-weight:600}
+.lst .bar{grid-column:1/-1;color:var(--dim);font-size:.8125rem}
+.lst li.void b,.lst li.void .l3 .fig{text-decoration:line-through;text-decoration-thickness:1.5px}
+/* secondary actions under the content */
+.more{display:flex;flex-wrap:wrap;gap:12px;border-block-start:1px solid var(--line);padding-block-start:16px}
+/* quantities by bab, no prices */
+.qt{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden}
+.qh,.qr{display:grid;grid-template-columns:minmax(0,1fr) 92px 92px;gap:4px 18px;align-items:center;padding:8px 16px}
+.qh{font:600 .8125rem/1.3 var(--body);color:var(--dim);background:var(--head)}
+.qh span+span,.qr .c{text-align:end}
+.qg{font:600 .9375rem/1.4 var(--display);padding:8px 16px;border-block-start:1px solid var(--line)}
+.qr{border-block-start:1px solid var(--line);min-block-size:56px}
+.qr .u{display:block;color:var(--dim);font-size:.8125rem}
+/* change-order line editor (E12) */
+.edt{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.ln{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.4fr) auto auto;gap:10px;align-items:start;padding:14px 16px;border-block-start:1px solid var(--line)}
+.ln:first-child{border-block-start:0}
+.ln .lt{display:grid;align-content:center;justify-items:end;min-block-size:48px;margin-block-start:30px;min-inline-size:96px}
+.ln .lt span{color:var(--dim);font-size:.75rem}
+.ln>.ib{margin-block-start:32px}
+.ln .field .foot:empty{display:none}
+.edt .ft2{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 16px;border-block-start:1px solid var(--line);background:var(--head);flex-wrap:wrap}
+.edt .ft2 .fig{font-weight:700;font-size:1.125rem}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.rdg.r3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.rdg.r1{grid-template-columns:1fr}
+.rdg .ck small{display:block;color:var(--dim);font-size:.8125rem;font-weight:400}
+.rdg.r1 .ck{min-block-size:60px;padding-block:8px}
+.big2{font:700 2rem/1.2 var(--body)}
+.lead{display:grid;gap:4px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:16px}
+.lead small{color:var(--dim);font-size:.875rem}
+@media (max-width:820px){
+  .artl{padding:10px 16px}
+  .stl.x7 li{font-size:.6875rem}
+  .pos{grid-template-columns:1fr 1fr}
+  .pos>div+div{border-inline-start:0}
+  .pos>div:nth-child(even){border-inline-start:1px solid var(--line)}
+  .pos>div:nth-child(n+3){border-block-start:1px solid var(--line)}
+  .pos dd{font-size:1.0625rem}
+  .abar{position:sticky;inset-block-end:0;z-index:30;margin-block-start:auto}
+  .ln{grid-template-columns:1fr 1fr;padding:14px}
+  .ln .f-d{grid-column:1/-1}
+  .ln .lt{margin:0;justify-items:start;min-inline-size:0}
+  .ln>.ib{margin:0;justify-self:end;align-self:end}
+  .g2{grid-template-columns:1fr}
+  .qh,.qr{grid-template-columns:minmax(0,1fr) 72px 72px;gap:4px 10px;padding-inline:14px}
+  .rdg.r3{grid-template-columns:1fr 1fr 1fr}
+  .rdg.r3 .ck{padding:0 10px;gap:8px}
+  .big2{font-size:1.75rem}
+}
+/* a sheet or dialog drawn open in its artboard (preview of the kit overlay; in the build it is fixed over the page) */
+.stage{background:var(--scrim);border-radius:var(--radius);padding:24px;display:grid;min-block-size:420px;align-items:start}
+.stage .sx.inl{display:flex;position:static;inline-size:min(460px,100%);max-block-size:none;justify-self:end;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.stage .sx.inl .grab{display:none}
+.stage.dl{place-items:center}
+.stage .dlg .ft .btn{flex:1}
+@media (max-width:820px){
+  .stage{padding:48px 0 0;margin-inline:-16px;border-radius:0;align-items:end;min-block-size:calc(100dvh - 160px)}
+  .stage.dl{padding:16px;place-items:center}
+  .stage .sx.inl{inline-size:100%;border-radius:var(--radius) var(--radius) 0 0}
+  .stage .sx.inl .grab{display:block}
+}
+</style>
+</head>
+<body>
+
+<details class="strip" id="strip">
+  <summary><span aria-hidden="true">▾</span> معاينة (ليست جزءاً من التصميم)</summary>
+  <div class="panelx">
+    <div class="grp" id="jump" role="group" aria-label="الشاشات"><b>الشاشات</b></div>
+    <div class="grp"><button type="button" id="themebtn">فاتح / داكن</button><button type="button" id="dirbtn">اتجاه LTR</button></div>
+  </div>
+</details>
+
+<div class="app" id="app" data-rail="0" data-sheet="0">
+  <aside class="side" aria-label="التنقل الرئيسي">
+    <div class="side-top"><img src="../brand/kaaf-wordmark.png" width="519" height="155" alt="KAAF"><button type="button" class="coll" aria-label="تصغير الشريط الجانبي"><svg class="i chev" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button></div>
+    <nav class="nav" id="nav" aria-label="الشاشات"></nav>
+    <div class="side-foot"><div class="who"><div class="av">م</div><div><b>منى سامي</b><span>المالية</span></div></div><div class="ctl2"><button type="button" lang="en" dir="ltr"><span class="t">English</span><span class="i-short">EN</span></button><button type="button" class="thm" aria-label="الوضع"><svg class="i" viewBox="0 0 24 24"><path d="M21 13.5A8.5 8.5 0 1110.5 3a7 7 0 0010.5 10.5z"/></svg><span class="t">الوضع</span></button></div></div>
+  </aside>
+  <header class="mh m-only"><img src="../brand/kaaf-wordmark.png" width="519" height="155" alt="KAAF"><button type="button" class="lang" lang="en" dir="ltr">English</button></header>
+  <main class="main" id="main"></main>
+  <div class="scrim" id="scrim"></div>
+  <div class="nsheet m-only" id="nsheet" role="dialog" aria-label="الشاشات"><div class="grab"></div><div class="sh-top"><div class="who"><div class="av">م</div><div><b>منى سامي</b><span>المالية</span></div></div><button type="button" class="thm" aria-label="الوضع"><svg class="i" viewBox="0 0 24 24"><path d="M21 13.5A8.5 8.5 0 1110.5 3a7 7 0 0010.5 10.5z"/></svg></button><button type="button" id="closeN" aria-label="إغلاق"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><nav class="sh-nav" id="nav2"></nav></div>
+</div>
+<div class="sx-scrim" id="sxs"></div>
+<div class="sx" id="sx" role="dialog" aria-modal="true" aria-label="نافذة"></div>
+<div class="cfd" id="cfd"></div>
+
+<script>
+/* ---------------- icons (one stroke family, from layout.html and the kit) ---------------- */
+const IC={projects:'M4 21V7l8-4 8 4v14M9 21v-6h6v6M8 10h.01M12 10h.01M16 10h.01',catalog:'M3 11V4h7l11 11-7 7L3 11zM7.5 7.5h.01',bab:'M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5',employees:'M16 20v-1.5a3.5 3.5 0 00-3.5-3.5h-5A3.5 3.5 0 004 18.5V20M10 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM20 20v-1.5a3.5 3.5 0 00-2.6-3.4M15.5 4.2a3.5 3.5 0 010 6.6',subs:'M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.8-3.8a6 6 0 01-7.9 7.9l-6.9 6.9a2.1 2.1 0 01-3-3l6.9-6.9a6 6 0 017.9-7.9l-3.8 3.8z',suppliers:'M3 6h11v10H3zM14 9h4l3 3v4h-7zM7 19a2 2 0 100-4 2 2 0 000 4zM17 19a2 2 0 100-4 2 2 0 000 4z',clients:'M3 8h18v12H3zM8 8V5h8v3M3 13h18',users:'M12 3l8 3v6c0 4.5-3.2 7.6-8 9-4.8-1.4-8-4.5-8-9V6l8-3zM12 11a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM7.5 17c.8-2 2.4-3 4.5-3s3.7 1 4.5 3',depts:'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z',audit:'M9 4h6v3H9zM6 5h-.5A1.5 1.5 0 004 6.5v13A1.5 1.5 0 005.5 21h13a1.5 1.5 0 001.5-1.5v-13A1.5 1.5 0 0018.5 5H18M8 12h8M8 16h5',
+ left:'M15 6l-6 6 6 6',menu:'M4 7h16M4 12h16M4 17h16',plus:'M12 5v14M5 12h14',x:'M6 6l12 12M18 6L6 18',
+ check:'M5 12.5l4.5 4.5L19 7.5',info:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 8v.01',err:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7.5v5.5M12 16.5v.01',redo:'M20 11a8 8 0 10-2.3 5.7M20 4v7h-7',
+ cal:'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',trash:'M5 7h14M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',chev:'M6 9l6 6 6-6',lock:'M6 11h12v10H6zM9 11V8a3 3 0 016 0v3',doc:'M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6'};
+const i=(n,c='')=>`<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[n]}"/></svg>`;
+const mi=n=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[n]}"/></svg>`;
+
+/* ---------------- kit helpers ---------------- */
+const f2=v=>{const [a,b]=Math.abs(v).toFixed(2).split('.');return a.replace(/\B(?=(\d{3})+(?!\d))/g,',')+'.'+b};
+const fg=(v,neg)=>`<bdi class="fig" dir="ltr">${neg&&v?'−':''}${f2(v)}</bdi>`;
+const dt=s=>`<bdi class="fx" dir="ltr">${s}</bdi>`;
+const q1=v=>`<bdi class="fx" dir="ltr">${v.toFixed(1)}</bdi>`;
+const PS={none:['s-none','M12 12m-3.5 0a3.5 3.5 0 107 0 3.5 3.5 0 10-7 0'],run:['s-run','M12 12m-3 0a3 3 0 106 0 3 3 0 10-6 0'],done:['s-done','M5 12.5l4.5 4.5L19 7.5'],stuck:['s-stuck','M12 4l9 16H3zM12 10v4M12 17.5v.5'],out:['s-out','M5 12h12M13 7l5 5-5 5'],x:['s-post','M7 7l10 10M17 7L7 17']};
+const pl=(t,k)=>`<span class="pill ${PS[k][0]}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${PS[k][1]}"/></svg>${t}</span>`;
+/* extract statuses: the app's own words (extract.status.*), plus the dispute state */
+const XS={draft:['مسودة','none'],to:['عند المكتب الفني','run'],part:['معتمد جزئيًا','run'],acc:['عند الحسابات','run'],own:['عند المالك','run'],oa:['معتمد من المالك','run'],iss:['صادر','out'],col:['تم تحصيله','done'],dis:['معترض عليه','stuck']};
+const xs=k=>pl(...XS[k]);
+const CH={rec:['مستلم','none'],dep:['تم إيداعه','run'],clr:['تم صرفه','done'],bnc:['مرتد','stuck']};
+const chs=k=>pl(...CH[k]);
+const CO={draft:['مسودة','none'],tr:['المراجعة الفنية','run'],cl:['موافقة العميل','run'],ow:['اعتماد المالك','run'],ok:['معتمد','done'],rej:['مرفوض','stuck'],wd:['مسحوب','x'],log:['مسجل','done']};
+const cos=k=>pl(...CO[k]);
+const btn=(t,c='',a='')=>`<button type="button" class="btn ${c}" ${a}>${t}</button>`;
+const go=(id,v)=>`data-go="${id}${v?':'+v:''}"`;
+const fld=o=>`<div class="field ${o.err?'err':''} ${o.cls||''}">${o.lb?`<span class="lb" id="${o.id}-l">${o.label}${o.req?' <span class="req" aria-hidden="true">*</span>':''}</span>`:`<label for="${o.id}">${o.label}${o.req?' <span class="req" aria-hidden="true">*</span><span class="vh">مطلوب</span>':''}</label>`}${o.ctl}<div class="foot">${o.err?mi('err')+'<span>'+o.err+'</span>':(o.foot||'')}</div></div>`;
+const money=(id,v='')=>`<div class="ctl money"><input id="${id}" inputmode="decimal" dir="ltr" value="${v}"><span class="aff">ج.م</span></div>`;
+const numc=(id,v='',aff='')=>`<div class="ctl num"><input id="${id}" inputmode="decimal" dir="ltr" value="${v}">${aff?`<span class="aff">${aff}</span>`:''}</div>`;
+const datec=(id,v='')=>`<div class="ctl"><input id="${id}" dir="ltr" inputmode="numeric" value="${v}" placeholder="DD/MM/YYYY"><button type="button" class="ib" aria-label="اختيار التاريخ">${i('cal','s')}</button></div>`;
+const textc=(id,v='',ltr)=>`<div class="ctl"><input id="${id}" value="${v}" ${ltr?'dir="ltr"':''}></div>`;
+const areac=(id,v='')=>`<div class="ctl ta"><textarea id="${id}">${v}</textarea></div>`;
+const selc=(id,opts,sel)=>`<div class="ctl"><select id="${id}">${opts.map(o=>`<option ${o===sel?'selected':''}>${o}</option>`).join('')}</select></div>`;
+const radios=(name,opts,sel,cls='')=>`<div class="rdg ${cls}" role="radiogroup" aria-labelledby="${name}-l">${opts.map(o=>`<label class="ck rd"><input type="radio" name="${name}" ${o[0]===sel?'checked':''}><span class="bx"></span><span>${o[1]}${o[2]?`<small>${o[2]}</small>`:''}</span></label>`).join('')}</div>`;
+const ban=(t,k='',act='')=>`<div class="ban ${k} ${act?'rowc':''}" role="${k?'status':'alert'}">${mi(k==='ok'?'check':k==='note'?'info':'err')}<span>${t}</span>${act}</div>`;
+const rec=t=>`<div class="rec" role="status">${mi('check')}<span>${t}</span></div>`;
+const retry=`<button type="button" class="btn sec2 sm act">${i('redo','s')}إعادة المحاولة</button>`;
+const skel=n=>`<div class="pane" aria-busy="true" role="status"><span class="vh">جارٍ التحميل</span><span class="sk b" style="block-size:56px"></span>${Array.from({length:n},()=>'<span class="sk b" style="block-size:60px"></span>').join('')}</div>`;
+const failed=t=>`<div class="pane">${ban(`<b>${t}</b>`,'',retry)}</div>`;
+const st=(t,p,ic='info',cls='',act='')=>`<div class="state ${cls}"><div class="ico">${i(ic)}</div><h4>${t}</h4>${p?`<p>${p}</p>`:''}${act}</div>`;
+const wait=(b,s)=>`<div class="wait" role="status"><b>${b}</b>${s?`<small>${s}</small>`:''}</div>`;
+const sh=(t,a='')=>`<div class="sec-h"><h3>${t}</h3>${a}</div>`;
+const fl=rows=>`<dl class="fl">${rows.map(r=>`<div class="${r[2]||''}"><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('')}</dl>`;
+const more=b=>b?`<div class="more">${b}</div>`:'';
+const pane=(s,w)=>`<div class="pane ${w?'wide':''}">${s}</div>`;
+/* a sheet or dialog, drawn open in place of the page it sits over (in the build it is the kit overlay) */
+const sheet=(t,bd,ft)=>`<div class="stage"><div class="sx inl" role="dialog" aria-label="${t}"><div class="grab"></div><div class="hd"><h2>${t}</h2><button type="button" class="ib" aria-label="إغلاق">${i('x')}</button></div><div class="bd">${bd}</div><div class="ft">${ft}</div></div></div>`;
+const dialog=(t,p,ok,cls='')=>`<div class="stage dl"><div class="dlg" role="alertdialog" aria-label="${t}"><div class="bd"><span class="conf-ico">${i('info')}</span><div><h4>${t}</h4><p>${p}</p></div></div><div class="ft">${btn(ok,cls)}${btn('إلغاء','sec2')}</div></div></div>`;
+
+const PRJ='فيلا 47 — التجمع الخامس',CLI='شركة النيل للتطوير العقاري';
+const meta=(...a)=>a.filter(Boolean).map(x=>`<span>${x}</span>`).join('');
+
+/* ---------------- shared blocks ---------------- */
+const STEPS=['التجهيز','تقرير الجودة','المكتب الفني','الحسابات','المالك','الإصدار','التحصيل'];
+const chainL=(c,steps=STEPS)=>`<ol class="stl x7" aria-label="المسار">${steps.map((s,k)=>`<li class="${k<c?'done':k===c?'cur':''}" ${k===c?'aria-current="step"':''}><span class="mk">${k<c?mi('check'):''}</span>${s}</li>`).join('')}</ol>`;
+const DOC=[['قيمة الأعمال',400000],['الحجز',80000,1],['استرداد الدفعة المقدمة',100000,1],['سلفة التشوينات',0],['استرداد التشوينات',30000,1]];
+const docB=()=>sh('مستند المستخلص (ج.م)',`<span class="badge t">${mi('check')}المجموع مطابق</span>`)+fl([...DOC.map(d=>[d[0],fg(d[1],d[2])]),['صافي المستحق',fg(190000),'tot']])+`<button type="button" class="btn quiet sm disc" aria-expanded="false">التفاصيل ${i('chev','s')}</button>`;
+const QB=[['أعمال الخرسانة',[['خرسانة مسلحة للأسقف','م³',42.5,180],['خرسانة الأعمدة','م³',12,64]]],['أعمال المباني',[['مباني طوب أحمر 25 سم','م²',310,1240]]],['أعمال البياض',[['بياض داخلي للحوائط','م²',520,520]]]];
+const qtyB=()=>sh('الكميات')+`<div class="qt"><div class="qh"><span>البند</span><span>هذه الفترة</span><span>حتى تاريخه</span></div>${QB.map(g=>`<div class="qg">${g[0]}</div>`+g[1].map(l=>`<div class="qr"><span>${l[0]}<span class="u">${l[1]}</span></span><span class="c">${q1(l[2])}</span><span class="c">${q1(l[3])}</span></div>`).join('')).join('')}</div>`;
+const pos=(e,c,ch,r)=>sh('التحصيل (ج.م)')+`<dl class="pos"><div><dt>المتوقع</dt><dd>${fg(e)}</dd></div><div><dt>المحصّل</dt><dd>${fg(c)}</dd></div><div><dt>في شيكات</dt><dd>${fg(ch)}</dd></div><div class="rem"><dt>المتبقي</dt><dd>${fg(r)}</dd></div></dl>`;
+const H3=[['التجهيز','خالد منصور، مهندس الموقع','02/06/2026 16:20'],['تقرير الجودة','هبة فؤاد، المشرف','03/06/2026 09:10'],['المكتب الفني: اعتماد','كريم حسن','04/06/2026 11:00'],['الحسابات: تطبيق الخصومات','منى سامي','05/06/2026 10:30'],['المالك: اعتماد','أحمد نبيل','06/06/2026 09:15'],['الإصدار','أحمد نبيل','06/06/2026 09:20']];
+const hist=(rows,extra=[])=>sh('مسار المستخلص')+`<ul class="lst">${[...rows,...extra].map(r=>`<li><b>${r[0]}</b><span class="r">${dt(r[2])}</span><small>${r[1]}${r[3]?`<br>${r[3]}`:''}</small></li>`).join('')}</ul>`;
+const linkRow=(t,to)=>`<a class="back" href="#${to.split(':')[0]}" ${go(...to.split(':'))}>${t}<svg class="i s" viewBox="0 0 24 24" aria-hidden="true" style="transform:scaleX(1)"><path d="${IC.left}"/></svg></a>`;
+
+/* project frame for E1 (project.html "Project frame", unchanged) */
+const STAGES=['المقايسة','التنفيذ','التسليم','الضمان','الإقفال'];
+const stageLine=()=>`<ol class="stl" aria-label="مرحلة المشروع">${STAGES.map((s,k)=>`<li class="${k<1?'done':k===1?'cur':''}" ${k===1?'aria-current="step"':''}><span class="mk">${k<1?mi('check'):''}</span>${s}</li>`).join('')}</ol>`;
+const TABS=['نظرة عامة','المقايسة','اليومية','المستخلصات','الفريق'];
+const tabs=()=>`<nav class="tabs" aria-label="شاشات المشروع">${TABS.map((t,k)=>`<a class="tab" href="#" ${k===3?'aria-current="page"':''}>${t}</a>`).join('')}</nav>`;
+const frameHead=()=>`<div class="phl"><a class="back" href="#">${i('left','s')}المشاريع</a><div class="ttl"><h1>${PRJ}</h1>${pl('جاري العمل','run')}</div><p class="meta"><span>${CLI}</span><span class="badge t">مقاولة بالمقطوعية</span></p>${stageLine()}</div>`;
+
+/* ---------------- the screens ---------------- */
+const SCR={};
+
+/* E1 Extracts list */
+SCR.e1={t:'المستخلصات',who:'المالك، المالية، المكتب الفني، المشرف',v:{normal:'المالية',sup:'المشرف',prep:'المهندس، لا مستخلص مفتوح',dis:'معترض عليه',empty:'فارغ',loading:'تحميل',failed:'تعذّر التحميل'},
+r(s){
+  const o={head:frameHead(),tabs:tabs()};
+  if(s==='loading')return {...o,body:skel(4)};
+  if(s==='failed')return {...o,body:failed('تعذّر تحميل المستخلصات.')};
+  const prepr=s==='prep';
+  if(s==='empty')return {...o,pa:btn('مستخلص جديد','',go('e2')),body:pane(st('لا توجد مستخلصات'))};
+  let rows=[
+   {n:4,s:'to',p:'01/06/2026 – 30/06/2026',w:'بانتظار المكتب الفني: كريم حسن',b:'لا يمكنه الاعتماد: سارة عادل',net:null},
+   {n:3,s:s==='dis'?'dis':'iss',p:'01/05/2026 – 31/05/2026',w:s==='dis'?'بانتظار المالية: حل الاعتراض':'بانتظار المالية: التحصيل',net:190000,c:100000,r:90000},
+   {n:2,s:'col',p:'01/04/2026 – 30/04/2026',net:120000,c:120000,r:0},
+   {n:1,s:'col',p:'01/03/2026 – 31/03/2026',net:240000,c:240000,r:0}];
+  if(prepr)rows=rows.slice(1).map(x=>x.n===3?{...x,w:''}:x);
+  const m=!(s==='sup'||prepr);
+  const cell=v=>v==null?'<span aria-label="لم تُطبق الخصومات بعد">—</span>':fg(v);
+  const tbl=`<table class="tbl"><thead><tr><th>المستخلص</th><th>الحالة</th><th>بانتظار</th><th>الفترة</th>${m?'<th class="n">صافي المستحق (ج.م)</th><th class="n">المحصّل (ج.م)</th><th class="n">المتبقي (ج.م)</th>':''}</tr></thead><tbody>${rows.map(x=>`<tr class="go" ${go('e3')}><td><a href="#e3">مستخلص ${x.n}</a></td><td>${xs(x.s)}</td><td>${x.w?x.w.replace('بانتظار ',''):''}${x.b?`<small>${x.b}</small>`:''}</td><td class="nw">${dt(x.p)}</td>${m?`<td class="n">${cell(x.net)}</td><td class="n">${x.c!=null?fg(x.c):''}</td><td class="n">${x.r!=null?fg(x.r):''}</td>`:''}</tr>`).join('')}</tbody></table>`;
+  const lst=`<div class="lh"><span>المستخلص</span><span>${m?'المتبقي (ج.م)':''}</span></div><ul class="lst">${rows.map(x=>`<li class="go" ${go('e3')}><b>مستخلص ${x.n}</b><span class="r">${xs(x.s)}</span>${x.w?`<span class="bar" style="color:var(--ink)">${x.w}</span>`:''}${x.b?`<span class="bar">${x.b}</span>`:''}<span class="l3"><span>${dt(x.p)}</span>${m&&x.r!=null?fg(x.r):''}</span></li>`).join('')}</ul>`;
+  return {...o,pa:prepr?btn('مستخلص جديد','',go('e2')):'',body:pane(`<div class="d-only">${tbl}</div><div class="m-only">${lst}</div>`,1)};
+}};
+
+/* E2 New extract */
+SCR.e2={t:'مستخلص جديد',who:'مهندس الموقع (بلا مبالغ)',v:{normal:'عادي',err:'نهاية الفترة ناقصة',empty:'لا كميات',inflight:'مستخلص مفتوح',boq:'المقايسة غير موقعة',loading:'تحميل',failed:'تعذّر الإنشاء'},
+r(s){
+  const o={back:'المستخلصات',to:'e1',title:'مستخلص جديد',meta:meta(PRJ)};
+  if(s==='loading')return {...o,body:skel(3)};
+  if(s==='inflight')return {...o,body:pane(st('مستخلص 4 ما زال مفتوحًا','','lock','refused',btn('فتح مستخلص 4','sec2',go('e3'))))};
+  if(s==='boq')return {...o,body:pane(st('المقايسة لم تُوقَّع بعد','','lock','refused'))};
+  const per=`<div class="g2">${fld({id:'p1',label:'من',req:1,ctl:datec('p1','01/06/2026')})}${fld({id:'p2',label:'إلى',req:1,ctl:datec('p2',s==='err'?'':'30/06/2026'),err:s==='err'?'أدخل نهاية الفترة.':''})}</div>`;
+  const last=`<div class="lead"><small>آخر مستخلص</small><div class="ttl" style="gap:10px"><b>مستخلص 3</b>${xs('iss')}</div></div>`;
+  if(s==='empty')return {...o,body:pane(last+per+st('لا توجد كميات منفذة في هذه الفترة'))};
+  const cos=sh('أوامر التغيير')+`<ul class="lst"><li><b>توسعة الجراج</b><span class="r">${pl('معتمد','done')}</span></li></ul>`;
+  return {...o,pa:btn('إنشاء المستخلص'),body:pane((s==='failed'?ban('<b>تعذّر إنشاء المستخلص.</b> انتهت جلستك، سجّل الدخول من جديد.','',retry):'')+last+per+qtyB()+cos)};
+}};
+
+/* E3 Extract detail */
+SCR.e3={t:'تفاصيل المستخلص',who:'كل الأدوار، كل زر بعلَمه من الخادم',v:{sedraft:'المهندس: مسودة',sup:'المشرف',qc:'تقرير الجودة',qcerr:'تقرير ناقص',to:'المكتب الفني',barred:'ممنوع من الاعتماد',fin:'الحسابات',owner:'المالك',confirm:'تأكيد الاعتماد',reject:'رفض',rejected:'المهندس بعد الرفض',issue:'إصدار',stopped:'مشروع متوقف',issued:'صادر: المالية',credit:'إشعار دائن مفتوح',disputed:'معترض عليه',collected:'تم تحصيله',loading:'تحميل',failed:'تعذّر التحميل'},
+r(s){
+  const o={back:'المستخلصات',to:'e1',title:'مستخلص 3',meta:meta(PRJ,dt('01/05/2026 – 31/05/2026'))};
+  if(s==='loading')return {...o,title:'<span class="sk b" style="inline-size:180px;block-size:34px"></span>',meta:'',body:skel(5)};
+  if(s==='failed')return {...o,body:failed('تعذّر تحميل المستخلص.')};
+  const MAT=sh('التشوينات (ج.م)')+fl([['قيمة التشوينات بالموقع',fg(75000)],['قيمة التشوينات المركّبة',fg(30000)]]);
+  const K={
+   sedraft:['draft',1,'بانتظار المشرف: هبة فؤاد','منذ ساعتين','',qtyB(),1],
+   sup:['draft',1,'بانتظار المشرف: هبة فؤاد','منذ ساعتين','تسليم تقرير الجودة',qtyB(),1],
+   to:['to',2,'بانتظار المكتب الفني: كريم حسن','لا يمكنه الاعتماد: سارة عادل','اعتماد الكميات',qtyB()+MAT,2],
+   barred:['to',2,'بانتظار المكتب الفني: كريم حسن','لا يمكنه الاعتماد: سارة عادل','',ban('شاركتَ في هذا المستخلص، فلا تعتمده.','note')+qtyB()+MAT,2],
+   fin:['acc',3,'بانتظار الحسابات: منى سامي','','تطبيق الخصومات',sh('مستند المستخلص (ج.م)')+st('لم تُطبق الخصومات بعد')+MAT,3],
+   owner:['own',4,'بانتظار المالك: أحمد نبيل','','اعتماد',docB(),4],
+   issue:['oa',5,'بانتظار المالك: الإصدار','','إصدار',docB(),5],
+   stopped:['oa',5,'بانتظار المالك: الإصدار','',''  ,ban('المشروع متوقف، فلا يصدر المستخلص.','note')+docB(),5],
+   rejected:['draft',1,'بانتظار مهندس الموقع: خالد منصور','','إعادة التجهيز',qtyB(),1],
+   issued:['iss',6,'بانتظار المالية: التحصيل','','تسجيل التحصيل',pos(190000,100000,0,90000)+linkRow('الدفعات','e6')+docB(),6],
+   credit:['iss',6,'بانتظار المالك: إشعار دائن','',''  ,ban(`<b>إشعار دائن ${fg(20000)} ج.م بانتظار المالك</b>`,'note',`<button type="button" class="btn sec2 sm act" ${go('e10')}>فتح</button>`)+pos(190000,100000,0,90000)+docB(),6],
+   disputed:['dis',6,'بانتظار المالية: حل الاعتراض','','حل الاعتراض',ban('<b>اعتراض العميل</b> · 08/06/2026<br>كميات البياض الداخلي أكثر من المنفذ في الدور الأول.','note')+pos(190000,100000,0,90000)+docB(),6],
+   collected:['col',7,'','','',pos(190000,190000,0,0)+linkRow('الدفعات','e6')+docB(),6]};
+  if(s==='qc'||s==='qcerr'){const e=s==='qcerr';
+    return {...o,body:sheet('تقرير الجودة',fld({id:'m1',label:'قيمة التشوينات بالموقع',req:1,ctl:money('m1',e?'':'75,000.00'),err:e?'أدخل قيمة التشوينات بالموقع.':''})+fld({id:'m2',label:'قيمة التشوينات المركّبة',req:1,ctl:money('m2',e?'':'30,000.00'),err:e?'أدخل قيمة التشوينات المركّبة.':''}),btn('تسليم التقرير')+btn('إلغاء','sec2'))};}
+  if(s==='reject')return {...o,body:sheet('رفض المستخلص',fld({id:'rj',label:'سبب الرفض',req:1,ctl:areac('rj')}),btn('رفض المستخلص')+btn('إلغاء','sec2'))};
+  if(s==='confirm')return {...o,body:dialog('اعتماد مستخلص 3؟',`صافي المستحق ${fg(190000)} ج.م، ويُرحَّل الحجز ${fg(80000)} ج.م.`,'اعتماد')};
+  const k=K[s]||K.owner;
+  const sec={to:btn('اعتماد جزء','sec2',go('e4'))+btn('رفض','sec2',go('e3','reject')),fin:btn('رفض','sec2',go('e3','reject')),owner:btn('رفض','sec2',go('e3','reject')),issued:btn('تسجيل اعتراض','sec2',go('e8'))}[s]||'';
+  const pa=k[4]?btn(k[4],'',{sup:go('e3','qc'),issued:go('e5'),disputed:go('e9'),owner:go('e3','confirm')}[s]||''):'';
+  const top=s==='rejected'?ban('<b>رفضه المالك</b> · أحمد نبيل · 06/06/2026 09:15<br>الحجز محسوب على قيمة لا تطابق كميات الدور الأول. راجِع البياض.'):'';
+  const extra=s==='rejected'?[['المالك: رفض','أحمد نبيل','06/06/2026 09:15','الحجز محسوب على قيمة لا تطابق كميات الدور الأول. راجِع البياض.']]:s==='disputed'?[['اعتراض','منى سامي','08/06/2026 12:40']]:[];
+  return {...o,pill:xs(k[0]),under:chainL(k[1]),pa,body:pane(top+(k[2]?wait(k[2],k[3]):'')+k[5]+hist(H3.slice(0,k[6]),extra)+more(sec))};
+}};
+
+/* E4 Approve part (sheet over E3) */
+SCR.e4={t:'اعتماد جزء',who:'المكتب الفني',v:{normal:'عادي',err:'نسبة خارج الحد',noncr:'لا ملاحظات مفتوحة'},
+r(s){
+  const o={back:'المستخلصات',to:'e1',title:'مستخلص 3',pill:xs('to'),meta:meta(PRJ)};
+  if(s==='noncr')return {...o,body:sheet('اعتماد جزء',st('لا توجد ملاحظات جودة مفتوحة'),btn('إغلاق','sec2'))};
+  const e=s==='err';
+  return {...o,body:sheet('اعتماد جزء',
+   fld({id:'pc',label:'النسبة المعتمدة',req:1,ctl:numc('pc',e?'120':'70','%'),err:e?'النسبة من 1 إلى 99.':''})+
+   fld({id:'nc',label:'ملاحظة الجودة',req:1,ctl:selc('nc',['شروخ في بياض الدور الأول','تسريب في سقف الحمام'],'شروخ في بياض الدور الأول')})+
+   (e?'':fl([['المعتمد للدفع',fg(280000)],['المعلّق',fg(120000)]]))+
+   `<p class="foot" style="margin:0">المعلّق ينتظر إغلاق ملاحظة الجودة.</p>`,
+   btn('اعتماد النسبة')+btn('إلغاء','sec2'))};
+}};
+
+/* E5 Record collection */
+const WH='مقاولات وتوريدات <bdi dir="ltr">1%</bdi>';
+SCR.e5={t:'تسجيل التحصيل',who:'المالية',v:{normal:'تحويل',part:'دفعة ثانية',cheque:'شيك',err:'حقول ناقصة',future:'تاريخ بعد اليوم',exceeds:'أكبر من المتبقي',nowh:'عقد بلا خصم من المنبع',credit:'إشعار دائن لم يُحسم',notissued:'غير صادر',loading:'تحميل',failed:'تعذّر التحميل'},
+r(s){
+  const o={back:'مستخلص 3',to:'e3',title:'تسجيل التحصيل',meta:meta(CLI,'مستخلص 3')};
+  if(s==='loading')return {...o,body:skel(4)};
+  if(s==='failed')return {...o,body:failed('تعذّر تحميل المستخلص.')};
+  if(s==='credit')return {...o,body:pane(st('يوجد إشعار دائن لم يُحسم','','lock','refused',btn('فتح الإشعار الدائن','sec2',go('e10'))))};
+  if(s==='notissued')return {...o,body:pane(st('مستخلص 3 عند المالك','','lock','refused',btn('فتح المستخلص','sec2',go('e3'))))};
+  const part=s==='part',e=s==='err',x=s==='exceeds';
+  const m=s==='cheque'?'chq':part?'cash':'tr';
+  const refL={cash:'رقم الإيصال',chq:'رقم الشيك',tr:'رقم التحويل'}[m];
+  const cash=e?'':x?'200,000.00':part?'89,100.00':s==='cheque'?'188,100.00':'188,100.00';
+  const body=(x?ban('هذا المبلغ أكبر من المتبقي على المستخلص بعد ما تم تحصيله والشيكات تحت التحصيل.'):'')+
+   (part?pos(190000,100000,0,90000):pos(190000,0,0,190000))+
+   fld({id:'mt',lb:1,label:'طريقة السداد',req:1,ctl:radios('mt',[['cash','نقدًا'],['chq','شيك'],['tr','تحويل']],m,'r3')})+
+   `<div class="g2">${fld({id:'dt',label:'تاريخ السداد',req:1,ctl:datec('dt',s==='future'?'25/11/2026':'19/11/2026'),err:s==='future'?'التاريخ اليوم أو قبله.':''})}${fld({id:'rf',label:refL,req:1,ctl:textc('rf',e?'':m==='chq'?'004512':'TR-55821',1),err:e?'مرجع السداد مطلوب.':''})}</div>`+
+   `<div class="g2">${fld({id:'cr',label:'المبلغ المستلم',req:1,ctl:money('cr',cash),err:e?'أدخل المبلغ المستلم.':x?'المتبقي '+f2(190000)+' ج.م':''})}${s==='nowh'?'':fld({id:'wh',label:'المخصوم من المنبع',ctl:money('wh',e||x?'':part?'900.00':'1,900.00'),foot:`${WH}، المتوقع <bdi class="fig" dir="ltr">${f2(part?900:1900)}</bdi> ج.م`})}</div>`;
+  return {...o,pa:btn('تسجيل التحصيل'),body:pane(body)};
+}};
+
+/* E6 Payment and cheque */
+SCR.e6={t:'الدفعات',who:'المالية',v:{received:'شيك مستلم',deposited:'شيك تم إيداعه',cleared:'تم صرفه',bounce:'تسجيل ارتداد',bounced:'مرتد',reverse:'تصحيح التسجيل',reversed:'بعد التصحيح',movefail:'نقل مرفوض',loading:'تحميل',failed:'تعذّر التحميل'},
+r(s){
+  const o={back:'مستخلص 3',to:'e3',title:'الدفعات',meta:meta(CLI,'مستخلص 3')};
+  if(s==='loading')return {...o,body:skel(3)};
+  if(s==='failed')return {...o,body:failed('تعذّر تحميل الدفعات.')};
+  if(s==='bounce')return {...o,body:sheet('الشيك مرتد',fld({id:'bn',label:'سبب الارتداد',req:1,ctl:areac('bn')})+`<p class="foot" style="margin:0;color:var(--ink)">لا يُسجَّل أي مبلغ، ويبقى المستخلص صادرًا.</p>`,btn('تسجيل الارتداد','dconf')+btn('إلغاء','sec2'))};
+  if(s==='reverse')return {...o,body:sheet('تصحيح التسجيل',fld({id:'rv',label:'السبب',req:1,ctl:areac('rv')})+`<p class="foot" style="margin:0;color:var(--ink)">تُعكس كل الدفعات القائمة على مستخلص 3 (<bdi class="fig" dir="ltr">${f2(100000)}</bdi> ج.م)، ويعود المستخلص صادرًا.</p>`,btn('عكس الدفعات','dconf')+btn('إلغاء','sec2'))};
+  const cq={received:'rec',deposited:'dep',movefail:'dep',cleared:'clr',bounced:'bnc'}[s];
+  const cqDate={rec:'15/06/2026',dep:'16/06/2026',clr:'20/06/2026',bnc:'20/06/2026'}[cq];
+  const vd=s==='reversed';
+  const rows=[
+   {t:'تحويل',d:'10/06/2026',ref:'TR-55821',c:99000,w:1000},
+   ...(vd?[]:[{t:'شيك',d:'15/06/2026',ref:'004512',c:87300,w:2700,cq}])];
+  const P={received:[100000,90000,0],deposited:[100000,90000,0],movefail:[100000,90000,0],cleared:[190000,0,0],bounced:[100000,0,90000],reversed:[0,0,190000]}[s];
+  const li=x=>`<li class="${vd?'void':''}"><b>${x.t} ${dt(x.d)}</b><span class="r">${x.cq?chs(x.cq):''}${fg(x.c)}</span><small>${dt(x.ref)}${x.w?` · المخصوم من المنبع ${fg(x.w)}`:''}${x.cq?`<br>${CH[x.cq][0]} ${dt(cqDate)}`:''}${x.cq==='bnc'?`<br>رصيد غير كافٍ لدى العميل.`:''}</small></li>`;
+  const top=s==='cleared'?rec('تم صرف الشيك. المستخلص تم تحصيله.'):s==='movefail'?ban('الشيك تم إيداعه بالفعل.'):vd?ban('<b>صُحِّح التسجيل</b> · منى سامي · 21/06/2026<br>رقم التحويل مسجل على مستخلص آخر.','note'):'';
+  const pa={received:'إيداع الشيك',deposited:'تأكيد الصرف',movefail:'تأكيد الصرف',bounced:'تسجيل دفعة',reversed:'تسجيل دفعة'}[s];
+  const sec=(cq==='dep'?btn('الشيك مرتد','dtrig',go('e6','bounce')):'')+(vd?'':btn('تصحيح التسجيل','quiet',go('e6','reverse')));
+  return {...o,pill:xs(s==='cleared'?'col':'iss'),pa:pa?btn(pa,'',pa==='تسجيل دفعة'?go('e5'):''):'',body:pane(top+pos(190000,...P)+sh('الدفعات (ج.م)')+`<ul class="lst">${rows.map(li).join('')}</ul>`+more(sec))};
+}};
+
+/* E7 Cheques in hand */
+SCR.e7={t:'الشيكات تحت التحصيل',who:'المالية، والمالك للقراءة',v:{normal:'المالية',owner:'المالك (قراءة)',empty:'فارغ',loading:'تحميل',failed:'تعذّر التحميل'},
+r(s){
+  const o={back:PRJ,to:'e1',title:'الشيكات تحت التحصيل'};
+  if(s==='loading')return {...o,body:skel(2)};
+  if(s==='failed')return {...o,body:failed('تعذّر تحميل الشيكات.')};
+  if(s==='empty')return {...o,body:pane(st('لا توجد شيكات معلقة'))};
+  const R=[{x:3,n:'004512',s:'dep',d:'15/06/2026',a:'منذ يومين',v:87300},{x:4,n:'118230',s:'rec',d:'02/07/2026',a:'منذ 5 أيام',v:45000}];
+  const ro=s==='owner',gr=ro?'':go('e6'),xn=r=>ro?`مستخلص ${r.x}`:`<a href="#e6">مستخلص ${r.x}</a>`;
+  const tbl=`<table class="tbl"><thead><tr><th>المستخلص</th><th>رقم الشيك</th><th>الحالة</th><th>تاريخ الاستلام</th><th>آخر تغيير</th><th class="n">المبلغ (ج.م)</th></tr></thead><tbody>${R.map(r=>`<tr class="${ro?'':'go'}" ${gr}><td>${xn(r)}</td><td>${dt(r.n)}</td><td>${chs(r.s)}</td><td>${dt(r.d)}</td><td>${r.a}</td><td class="n">${fg(r.v)}</td></tr>`).join('')}</tbody></table>`;
+  const lst=`<div class="lh"><span>المستخلص</span><span>المبلغ (ج.م)</span></div><ul class="lst">${R.map(r=>`<li class="${ro?'':'go'}" ${gr}><b>مستخلص ${r.x}</b><span class="r">${chs(r.s)}</span><span class="l3"><span>${dt(r.n)} · ${r.a}</span>${fg(r.v)}</span></li>`).join('')}</ul>`;
+  return {...o,body:pane(`<div class="d-only">${tbl}</div><div class="m-only">${lst}</div>`,1)};
+}};
+
+/* E8 Raise a dispute */
+SCR.e8={t:'تسجيل اعتراض',who:'المالية',v:{normal:'عادي',err:'سبب فارغ',collected:'تم تحصيله',loading:'تحميل',failed:'تعذّر التسجيل'},
+r(s){
+  const o={back:'مستخلص 3',to:'e3',title:'تسجيل اعتراض',meta:meta(CLI,'مستخلص 3')};
+  if(s==='loading')return {...o,body:skel(2)};
+  if(s==='collected')return {...o,body:pane(st('مستخلص 3 تم تحصيله','','lock','refused',btn('فتح الدفعات','sec2',go('e6'))))};
+  const e=s==='err';
+  return {...o,pa:btn('تسجيل الاعتراض'),body:pane((s==='failed'?ban('<b>تعذّر تسجيل الاعتراض.</b>','',retry):'')+sh('مستخلص 3 (ج.م)')+fl([['صافي المستحق',fg(190000)],['المحصّل',fg(100000)]])+fld({id:'dr',label:'سبب الاعتراض',req:1,ctl:areac('dr',e?'':'كميات البياض الداخلي أكثر من المنفذ في الدور الأول.'),err:e?'اكتب سبب الاعتراض.':''}))};
+}};
+
+/* E9 Resolve a dispute */
+SCR.e9={t:'حل الاعتراض',who:'المالية',v:{normal:'إشعار دائن',err:'مبلغ فارغ',revised:'مستخلص معدّل',loading:'تحميل',failed:'تعذّر الحل'},
+r(s){
+  const o={back:'مستخلص 3',to:'e3',title:'حل الاعتراض',pill:xs('dis'),meta:meta(CLI,'مستخلص 3')};
+  if(s==='loading')return {...o,body:skel(3)};
+  const rv=s==='revised',e=s==='err';
+  const kind=fld({id:'kd',lb:1,label:'نوع الخطأ',req:1,ctl:radios('kd',[['cn','السعر أو المبلغ','إشعار دائن'],['rv','الكميات','مستخلص معدّل']],rv?'rv':'cn','r1')});
+  const cn=fl([['صافي المستحق',fg(190000)],['إشعارات دائنة سابقة',fg(0)]])+fld({id:'am',label:'مبلغ الإشعار',req:1,ctl:money('am',e?'':'20,000.00'),err:e?'أدخل مبلغ الإشعار.':''});
+  const rs=fld({id:'rr',label:'السبب',req:1,ctl:areac('rr',rv?'كميات البياض في الدور الأول تُعاد من اليومية.':'خصم متفق عليه على سعر البياض.')});
+  const top=ban('<b>اعتراض العميل</b> · 08/06/2026<br>كميات البياض الداخلي أكثر من المنفذ في الدور الأول.','note');
+  return {...o,pa:btn(rv?'إنشاء مستخلص معدّل':'إصدار إشعار دائن'),body:pane((s==='failed'?ban('<b>تعذّر حل الاعتراض.</b>','',retry):'')+top+kind+(rv?'':sh('مستخلص 3 (ج.م)')+cn)+rs+(rv?`<p class="foot" style="margin:0;color:var(--ink)">يُجهَّز مستخلص معدّل ويمر بالمسار من البداية.</p>`:''))};
+}};
+
+/* E10 Credit note */
+SCR.e10={t:'إشعار دائن',who:'المالك يقرر، المالية تقرأ',v:{owner:'المالك',raiser:'المالية (أنشأته)',reject:'رفض',approved:'معتمد',rejected:'مرفوض',loading:'تحميل',failed:'تعذّر التحميل'},
+r(s){
+  const o={back:'مستخلص 3',to:'e3',title:'إشعار دائن',meta:meta(CLI,'مستخلص 3')};
+  if(s==='loading')return {...o,body:skel(3)};
+  if(s==='failed')return {...o,body:failed('تعذّر تحميل الإشعار الدائن.')};
+  if(s==='reject')return {...o,pill:pl('بانتظار المالك','run'),body:sheet('رفض الإشعار الدائن',fld({id:'cr',label:'سبب الرفض',req:1,ctl:areac('cr')}),btn('رفض الإشعار')+btn('إلغاء','sec2'))};
+  const P={owner:['بانتظار المالك','run'],raiser:['بانتظار المالك','run'],approved:['معتمد','done'],rejected:['مرفوض','stuck']}[s];
+  const top=s==='approved'?rec('اعتمده أحمد نبيل · 09/06/2026 10:05'):s==='rejected'?ban('<b>رفضه أحمد نبيل</b> · 09/06/2026 10:05<br>الخصم المتفق عليه 15,000 لا 20,000.'):s==='raiser'?ban('أنشأتَ هذا الإشعار، فيعتمده المالك.','note'):'';
+  const body=top+`<div class="lead"><small>المبلغ (ج.م)</small><span class="big2">${fg(20000)}</span></div>`+
+   fl([['السبب','خصم متفق عليه على سعر البياض.'],['المستخلص',`<a class="lnk" href="#e3" ${go('e3')}>مستخلص 3</a>`],['صافي المستحق (ج.م)',fg(190000)],['معتمد سابقًا (ج.م)',fg(0)],['أنشأه',`منى سامي <small>${dt('08/06/2026 13:10')}</small>`]]);
+  return {...o,pill:pl(...P),pa:s==='owner'?btn('اعتماد الإشعار الدائن'):'',body:pane(body+(s==='owner'?more(btn('رفض','sec2',go('e10','reject'))):''))};
+}};
+
+/* E11 Change orders */
+SCR.e11={t:'أوامر التغيير',who:'المكتب الفني، المالك، المشرف (بلا مبالغ)',v:{normal:'المكتب الفني',sup:'المشرف',cp:'تكلفة زائد',empty:'فارغ',loading:'تحميل',failed:'تعذّر التحميل'},
+r(s){
+  const o={back:PRJ,to:'e1',title:'أوامر التغيير'};
+  if(s==='loading')return {...o,body:skel(3)};
+  if(s==='failed')return {...o,body:failed('تعذّر تحميل أوامر التغيير.')};
+  const pa=s==='sup'?'':btn('أمر تغيير جديد','',go('e12'));
+  if(s==='empty')return {...o,pa,body:pane(st('لا توجد أوامر تغيير'))};
+  const cp=s==='cp',m=!(s==='sup'||cp);
+  const R=cp?[{n:2,t:'تكسية واجهة إضافية',s:'log'},{n:1,t:'توسعة الجراج',s:'log'}]:[
+   {n:3,t:'عزل سطح الملحق',s:'draft',w:'بانتظار المكتب الفني: سارة عادل',v:18500},
+   {n:2,t:'تكسية واجهة إضافية',s:'tr',w:'بانتظار المكتب الفني: كريم حسن',v:85000},
+   {n:1,t:'توسعة الجراج',s:'ok',b:'مستخلص 4',v:50000}];
+  const tbl=`<table class="tbl"><thead><tr><th>أمر التغيير</th><th>الحالة</th><th>بانتظار</th>${cp?'':'<th>المستخلص</th>'}${m?'<th class="n">الإجمالي (ج.م)</th>':''}</tr></thead><tbody>${R.map(r=>`<tr class="go" ${go('e13')}><td><a href="#e13">${r.t}</a><small>أمر تغيير ${r.n}</small></td><td>${cos(r.s)}</td><td>${r.w?r.w.replace('بانتظار ',''):''}</td>${cp?'':`<td>${r.b||(r.s==='ok'?'':'')}</td>`}${m?`<td class="n">${fg(r.v)}</td>`:''}</tr>`).join('')}</tbody></table>`;
+  const lst=`<div class="lh"><span>أمر التغيير</span><span>${m?'الإجمالي (ج.م)':''}</span></div><ul class="lst">${R.map(r=>`<li class="go" ${go('e13')}><b>${r.t}</b><span class="r">${cos(r.s)}</span>${r.w?`<span class="bar" style="color:var(--ink)">${r.w}</span>`:''}<span class="l3"><span>${r.b?'حوسب في '+r.b:'أمر تغيير '+r.n}</span>${m?fg(r.v):''}</span></li>`).join('')}</ul>`;
+  return {...o,pa,body:pane(`<div class="d-only">${tbl}</div><div class="m-only">${lst}</div>`,1)};
+}};
+
+/* E12 New change order */
+SCR.e12={t:'أمر تغيير جديد',who:'المكتب الفني',v:{normal:'عادي',nolines:'بلا بنود',qty0:'كمية صفر',cp:'تكلفة زائد',failed:'تعذّر الحفظ'},
+r(s){
+  const o={back:'أوامر التغيير',to:'e11',title:'أمر تغيير جديد',meta:meta(PRJ)};
+  const cp=s==='cp';
+  const L=s==='nolines'?[]:[['تكسية حجر هاشمي للواجهة الجانبية','م²',120,650],['كرانيش حجر','م.ط',40,175]];
+  const ln=(l,k)=>`<div class="ln">${fld({id:'d'+k,label:'الوصف',req:1,cls:'f-d',ctl:textc('d'+k,l[0])})}${fld({id:'u'+k,label:'الوحدة',req:1,ctl:selc('u'+k,['م²','م³','م.ط','عدد'],l[1])})}${fld({id:'q'+k,label:'الكمية',req:1,ctl:numc('q'+k,s==='qty0'&&k===1?'0':String(l[2])),err:s==='qty0'&&k===1?'الكمية أكبر من صفر.':''})}${cp?'':fld({id:'r'+k,label:'سعر الوحدة',req:1,ctl:money('r'+k,f2(l[3]))})}${cp?'':`<div class="lt"><span>الإجمالي</span>${fg(s==='qty0'&&k===1?0:l[2]*l[3])}</div>`}<button type="button" class="ib" aria-label="حذف البند">${i('trash')}</button></div>`;
+  const tot=L.reduce((a,l,k)=>a+(s==='qty0'&&k===1?0:l[2]*l[3]),0);
+  const ed=`<div class="edt">${L.map(ln).join('')||`<div style="padding:16px">${ban('أضف بندًا واحدًا على الأقل.')}</div>`}<div class="ft2">${btn(i('plus','s')+'إضافة بند','sec2 sm')}${cp?'':`<span>الإجمالي (ج.م) ${fg(tot)}</span>`}</div></div>`;
+  return {...o,pa:btn('حفظ أمر التغيير'),body:pane((s==='failed'?ban('<b>تعذّر حفظ أمر التغيير.</b>','',retry):'')+fld({id:'ct',label:'العنوان',req:1,ctl:textc('ct','تكسية واجهة إضافية')})+sh('البنود')+ed)};
+}};
+
+/* E13 Change order */
+const COSTEPS=['المسودة','المراجعة الفنية','موافقة العميل','اعتماد المالك'];
+SCR.e13={t:'أمر التغيير',who:'كل من يقرأ المشروع، كل خطوة بعلَمها',v:{draft:'المُعِدّ',review:'المراجعة الفنية',client:'موافقة العميل',owner:'المالك',approved:'معتمد',billed:'حوسب',rejected:'مرفوض',barred:'ممنوع من المراجعة',sup:'المشرف',loading:'تحميل',failed:'تعذّر التحميل'},
+r(s){
+  const o={back:'أوامر التغيير',to:'e11',title:'تكسية واجهة إضافية',meta:meta(PRJ,'أمر تغيير 2')};
+  if(s==='loading')return {...o,title:'<span class="sk b" style="inline-size:240px;block-size:34px"></span>',meta:'',body:skel(4)};
+  if(s==='failed')return {...o,body:failed('تعذّر تحميل أمر التغيير.')};
+  const K={draft:['draft',0,'بانتظار المكتب الفني: سارة عادل','إرسال للمراجعة',btn('سحب','sec2')],
+   review:['tr',1,'بانتظار المكتب الفني: كريم حسن','اعتماد المراجعة',btn('رفض','sec2')],
+   barred:['tr',1,'بانتظار المكتب الفني: كريم حسن','',''],
+   sup:['tr',1,'بانتظار المكتب الفني: كريم حسن','',''],
+   client:['cl',2,'بانتظار المكتب الفني: تسجيل موافقة العميل','تسجيل موافقة العميل',btn('رفض العميل','sec2')],
+   owner:['ow',3,'بانتظار المالك: أحمد نبيل','اعتماد المالك',btn('رفض','sec2')],
+   approved:['ok',4,'','',''],billed:['ok',4,'','',''],rejected:['rej',3,'','','']}[s];
+  const m=s!=='sup';
+  const L=[['تكسية حجر هاشمي للواجهة الجانبية','م²',120,650],['كرانيش حجر','م.ط',40,175]];
+  const lines=sh(m?'البنود (ج.م)':'البنود')+fl([...L.map(l=>[`${l[0]}<small>${q1(l[2])} ${l[1]}${m?` × ${fg(l[3])}`:''}</small>`,m?fg(l[2]*l[3]):'']),...(m?[['الإجمالي',fg(85000),'tot']]:[])]);
+  const top=s==='approved'?rec('سيُحاسب في المستخلص القادم.'):s==='billed'?rec('حوسب في مستخلص 4.'):s==='rejected'?ban('<b>رفضه المالك</b> · أحمد نبيل · 12/06/2026<br>السعر أعلى من عرض المورد المعتمد.'):s==='barred'?ban('أرسلتَ هذا الأمر للمراجعة، فيراجعه غيرك.','note'):'';
+  const cv=(s==='approved'||s==='billed')?sh('قيمة العقد (ج.م)')+fl([['قبل الأمر',fg(1000000)],['بعد الأمر',fg(1085000),'tot']]):'';
+  const H=[['المسودة','سارة عادل','10/06/2026 09:00'],['المراجعة الفنية: اعتماد','كريم حسن','10/06/2026 14:30'],['موافقة العميل','ياسر مجدي','11/06/2026 11:00'],['المالك: اعتماد','أحمد نبيل','12/06/2026 10:00']];
+  const hn={draft:1,review:1,barred:1,sup:1,client:2,owner:3,approved:4,billed:4,rejected:3}[s];
+  const hx=s==='rejected'?[['المالك: رفض','أحمد نبيل','12/06/2026 10:00','السعر أعلى من عرض المورد المعتمد.']]:[];
+  return {...o,pill:cos(K[0]),under:chainL(K[1],COSTEPS),pa:K[3]?btn(K[3]):'',body:pane(top+(K[2]?wait(K[2]):'')+lines+cv+sh('المسار')+`<ul class="lst">${[...H.slice(0,s==='rejected'?3:hn),...hx].map(r=>`<li><b>${r[0]}</b><span class="r">${dt(r[2])}</span><small>${r[1]}${r[3]?'<br>'+r[3]:''}</small></li>`).join('')}</ul>`+more(K[4]))};
+}};
+
+/* W Withholding category, set by Finance on the project */
+SCR.wh={t:'الخصم من المنبع',who:'المالية',v:{normal:'عادي',saved:'حُفظ',individual:'عميل فرد',loading:'تحميل',failed:'تعذّر الحفظ'},
+r(s){
+  const o={back:PRJ,to:'e1',title:'الخصم من المنبع',meta:meta(CLI)};
+  if(s==='loading')return {...o,body:skel(2)};
+  if(s==='individual')return {...o,meta:meta('م. هشام عبد الله'),body:pane(st('العميل فرد، لا يُخصم من المنبع','','lock','refused'))};
+  const f=fld({id:'wc',lb:1,label:'فئة الخصم',req:1,ctl:radios('wc',[['n','لا يخصم'],['c','مقاولات وتوريدات','<bdi dir="ltr">1%</bdi>'],['s','خدمات','<bdi dir="ltr">3%</bdi>'],['p','أتعاب مهنية','<bdi dir="ltr">5%</bdi>']],'c','r1')});
+  return {...o,pa:btn('حفظ'),body:pane((s==='saved'?rec('حُفظت الفئة: مقاولات وتوريدات.'):s==='failed'?ban('<b>تعذّر الحفظ.</b>','',retry):'')+f)};
+}};
+
+/* ---------------- preview frame: sections, states, URL ---------------- */
+const ORDER=['e1','e2','e3','e4','e5','e6','e7','e8','e9','e10','e11','e12','e13','wh'];
+const q=new URLSearchParams(location.search),EMBED=q.get('embed')==='1',ONLY=q.get('only');
+const VIEW={};
+(q.get('view')||'').split(',').filter(Boolean).forEach(t=>{const [a,b]=t.includes(':')?t.split(':'):[null,t];ORDER.forEach(id=>{if(a?id===a:SCR[id].v[b])VIEW[id]=a?b:b})});
+const first=id=>Object.keys(SCR[id].v)[0];
+const $=s=>document.querySelector(s),H=document.documentElement;
+function section(id){
+  const S=SCR[id],v=VIEW[id]&&S.v[VIEW[id]]?VIEW[id]:first(id),o=S.r(v);
+  const lab=`<div class="artl"><b>${id.toUpperCase()} ${S.t} · ${S.who}</b>${Object.entries(S.v).map(([k,l])=>`<button type="button" data-s="${id}" data-v="${k}" aria-pressed="${k===v}">${l}</button>`).join('')}</div>`;
+  const head=o.head||`<div class="phl">${o.back?`<a class="back" href="#${o.to}">${i('left','s')}${o.back}</a>`:''}<div class="ttl"><h1>${o.title}</h1>${o.pill||''}</div>${o.meta?`<p class="meta">${o.meta}</p>`:''}${o.under||''}</div>`;
+  const sheetOpen=o.body.includes('class="stage');
+  return `${lab}<div class="ph">${head}<div class="acts d-only">${sheetOpen?'':o.pa||''}</div></div>${o.tabs||''}<div class="frame">${o.body}</div>${sheetOpen?'':`<div class="abar m-only"><button type="button" class="menu">${i('menu')}القائمة</button>${o.pa||''}</div>`}`;
+}
+function draw(id){const el=document.getElementById(id);el.innerHTML=section(id)}
+function url(){const v=Object.entries(VIEW).map(([a,b])=>a+':'+b).join(',');const p=new URLSearchParams();if(v)p.set('view',v);if(ONLY)p.set('only',ONLY);if(EMBED)p.set('embed','1');history.replaceState(null,'','?'+p.toString()+location.hash)}
+const main=$('#main');
+main.innerHTML=ORDER.filter(id=>!ONLY||ONLY===id).map(id=>`<section class="scr" id="${id}" aria-label="${SCR[id].t}"></section>`).join('');
+ORDER.filter(id=>!ONLY||ONLY===id).forEach(draw);
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-s]');if(b){VIEW[b.dataset.s]=b.dataset.v;draw(b.dataset.s);url();return}
+  const g=e.target.closest('[data-go]');if(g){const [id,v]=g.dataset.go.split(':');if(!document.getElementById(id))return;e.preventDefault();VIEW[id]=v||first(id);draw(id);url();document.getElementById(id).scrollIntoView({block:'start'})}
+  if(e.target.closest('.menu')){$('#app').dataset.sheet='1'}
+});
+$('#jump').insertAdjacentHTML('beforeend',ORDER.map(id=>`<button type="button" onclick="document.getElementById('${id}')?.scrollIntoView()">${id.toUpperCase()}</button>`).join(''));
+const NAV=[['projects','core','المشاريع'],['catalog','core','كتالوج الأسعار'],['bab','core','الأبواب'],['employees','core','الموظفون'],['subs','core','مقاولو الباطن'],['suppliers','core','الموردون'],['clients','core','العملاء'],['users','admin','المستخدمون'],['depts','admin','الأقسام'],['audit','admin','سجل التدقيق']];
+const navHtml=()=>[['core','البيانات الأساسية'],['admin','الإدارة']].map(g=>`<div class="grp"><div class="grp-h">${g[1]}</div>`+NAV.filter(n=>n[1]===g[0]).map(n=>`<a class="row" href="#" ${n[0]==='projects'?'aria-current="page"':''} title="${n[2]}">${i(n[0])}<span class="lbl">${n[2]}</span></a>`).join('')+'</div>').join('');
+$('#nav').innerHTML=navHtml();$('#nav2').innerHTML=navHtml();
+$('#closeN').onclick=$('#scrim').onclick=()=>{$('#app').dataset.sheet='0'};
+const tgl=()=>{const d=H.dataset.theme?H.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;H.dataset.theme=d?'light':'dark'};
+$('#themebtn').onclick=tgl;document.querySelectorAll('.thm').forEach(b=>b.onclick=tgl);
+$('#dirbtn').onclick=()=>{const l=H.dir==='rtl';H.dir=l?'ltr':'rtl';H.lang=l?'en':'ar'};
+const rail=()=>{$('#app').dataset.rail=(matchMedia('(max-width:1100px)').matches&&innerWidth>820)?'1':'0'};rail();addEventListener('resize',rail);
+if(EMBED){document.body.classList.add('embed');$('#strip').remove()}
+const ct=()=>document.querySelectorAll('.tab[aria-current="page"]').forEach(t=>t.scrollIntoView({inline:'center',block:'nearest'}));ct();if(document.fonts)document.fonts.ready.then(()=>{ct();if(!location.hash)main.scrollTop=0});
+if(location.hash){const t=document.getElementById(location.hash.slice(1));if(t)t.scrollIntoView()}
+</script>
+</body>
+</html>

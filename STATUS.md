@@ -114,9 +114,9 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | | slice 1 | slice 2 | slice 3 | slice 4 | slice 5 | slice 6 | slice 8 | slice design-system |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 41 | 47 | 0 | 31 | 21 | 5 |
+| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 49 | 47 | 0 | 31 | 21 | 5 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 🔴 REJECTED — a Verifier looked, and it did not pass | 8 | 0 | 16 | 0 | 0 | 0 | 13 | 0 |
+| 🔴 REJECTED — a Verifier looked, and it did not pass | 8 | 0 | 8 | 0 | 0 | 0 | 13 | 0 |
 | 🟡 BUILT — shipped, nobody independent has looked | 0 | 9 | 0 | 0 | 53 | 0 | 5 | 106 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 13 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
@@ -177,13 +177,13 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | [KAFF-300](stories/slice-3-treasury/KAFF-300-the-section-15-worked-example.md) | 3 | 5 | 🔵 VERIFIED | PASS | `792c1ba` | 2026-11-18 | The §15 worked example as a fixture — present and failing before anything else is built |
 | [KAFF-301](stories/slice-3-treasury/KAFF-301-post-a-movement-between-two-accounts.md) | 3 | 8 | 🔶 VERIFIED | CONDITIONAL | `792c1ba` | 2026-11-18 | Post a movement between two accounts, append-only |
 | [KAFF-302](stories/slice-3-treasury/KAFF-302-create-a-projects-account-set-on-creation.md) | 3 | 5 | 🔵 VERIFIED | PASS | `792c1ba` | 2026-11-18 | Create a project's account set when a project is created |
-| [KAFF-303](stories/slice-3-treasury/KAFF-303-correct-a-mistake-with-a-reversing-posting.md) | 3 | 5 | 🔴 BUILT | REJECTED | `792c1ba` | 2026-11-18 | Correct a mistake with a reversing posting, never an edit |
+| [KAFF-303](stories/slice-3-treasury/KAFF-303-correct-a-mistake-with-a-reversing-posting.md) | 3 | 5 | 🔶 VERIFIED | CONDITIONAL | `33ff701` | 2026-11-19 | Correct a mistake with a reversing posting, never an edit |
 | [KAFF-304](stories/slice-3-treasury/KAFF-304-every-balance-is-derived-by-summing-postings.md) | 3 | 5 | ⚪ FOLDED | none | `-` | 2026-09-28 | Every balance is derived by summing postings |
 | [KAFF-305](stories/slice-3-treasury/KAFF-305-the-posting-type-account-pair-legality-table.md) | 3 | 8 | 🔶 VERIFIED | CONDITIONAL | `792c1ba` | 2026-11-18 | The posting-type × account-pair legality table |
 | [KAFF-306](stories/slice-3-treasury/KAFF-306-treasury-read-api.md) | 3 | 5 | 🔶 VERIFIED | CONDITIONAL | `792c1ba` | 2026-11-18 | The Treasury can post and reverse, but nothing reads |
-| [KAFF-316](stories/slice-3-treasury/KAFF-316-collections-and-cheque-states.md) | 3 | 8 | 🔶 VERIFIED | CONDITIONAL | `792c1ba` | 2026-11-18 | Collections — method, date, reference, and the cheque states |
+| [KAFF-316](stories/slice-3-treasury/KAFF-316-collections-and-cheque-states.md) | 3 | 8 | 🔶 VERIFIED | CONDITIONAL | `33ff701` | 2026-11-19 | Collections — method, date, reference, and the cheque states |
 | [KAFF-317](stories/slice-3-treasury/KAFF-317-withholding-at-source-on-a-collection.md) | 3 | 8 | 🔴 BUILT | REJECTED | `792c1ba` | 2026-11-18 | Withholding at source on a corporate client's collection |
-| [KAFF-319](stories/slice-3-treasury/KAFF-319-a-refused-posting-reads-as-a-translated-message.md) | 3 | 3 | 🔴 BUILT | REJECTED | `792c1ba` | 2026-11-18 | A refused posting reads as a translated message, not a 500 |
+| [KAFF-319](stories/slice-3-treasury/KAFF-319-a-refused-posting-reads-as-a-translated-message.md) | 3 | 3 | 🔵 VERIFIED | PASS | `33ff701` | 2026-11-19 | A refused posting reads as a translated message, not a 500 |
 | [KAFF-320](stories/slice-3-treasury/KAFF-320-bank-as-an-independent-master-record.md) | 3 | 0 | ⚪ BLOCKED | none | `-` | 2026-09-15 | Bank — an independent master record, not folded into the ledger |
 | [KAFF-321](stories/slice-2-masters/KAFF-321-department-master-data.md) | 2 | 0 | 🟡 BUILT | none | `-` | 2026-09-15 | Department — dynamic master data, not a fixed enum |
 | [KAFF-322](stories/slice-3-treasury/KAFF-322-treasury-guard-tests-against-real-postgres.md) | 3 | 2 | 🔵 VERIFIED | PASS | `792c1ba` | 2026-11-18 | Treasury guard tests against real PostgreSQL |
