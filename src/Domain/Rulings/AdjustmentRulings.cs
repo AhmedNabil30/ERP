@@ -45,7 +45,7 @@ public sealed record ExtractDisputeEffect : IRuling
 }
 
 /// <summary>
-/// Q106: how a dispute ends. Registered, not resolved; the revised-extract route refuses.
+/// Q106: how a dispute ends. The revised extract is ruled by D-241 item 2; its hold case is open.
 /// </summary>
 public sealed record ExtractDisputeResolution : IRuling
 {
@@ -58,15 +58,14 @@ public sealed record ExtractDisputeResolution : IRuling
         + "resolved as a credit note, what is the extract's state afterwards and how does the client then pay?",
         "The two ways a Disputed extract ends.",
         "Credit note: the extract returns to Issued with a stored resolution reason, and a credit note (an Adjustment) "
-        + "is raised in the same save for the Owner to approve. Its postings are not touched. A collection is then "
-        + "refused while a credit note is Raised or Approved against the extract (errors.extract.credit_note_open), "
-        + "because a collection posts the stored net and would over-collect; how the client pays the reduced "
-        + "amount is the open question. Revised extract: refused with errors.extract.dispute_revision_unruled and the "
-        + "extract stays Disputed. Void is named by spec.md section 13 and exists as a status; nothing moves an "
-        + "extract to it. ASSUMED.",
-        "A revision needs: the transition Disputed to Void, whether the original's postings are reversed (and the hold "
-        + "accrual leg must stay out of that), and the chain the replacement runs. A collection after a credit note "
-        + "needs the collection to subtract the approved credit.",
+        + "is raised in the same save for the Owner to approve. Its postings are not touched; collection expects the "
+        + "net less approved credit notes (D-238). Revised extract (D-241 item 2): the original goes Disputed to Void "
+        + "and its standing accrual postings are reversed by its own flow, with a stored reason. The revised extract is "
+        + "prepared for the same period through the prepare route and runs the whole chain. Refused while a later "
+        + "extract exists, money stands on the original, it billed a change order, or it accrued a hold "
+        + "(errors.extract.revision_hold_accrued): the hold only grows before handover. RULED except the hold case.",
+        "If Nabil rules that the hold accrual of a cancelled extract carries to its revision, the revision's own hold "
+        + "accrual would be reduced by the original's, and the hold leg would stay out of the cancellation's reversals.",
         RulingStatus.Assumed);
 }
 

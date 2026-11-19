@@ -160,4 +160,44 @@ public sealed class CollectionPositionTests
             new SourceDocument(SourceDocumentType.Payment, Guid.NewGuid(), null), new DateOnly(2026, 2, 1), Guid.NewGuid(), ExtractHarness.Now)
             .IsSuccess.Should().BeTrue("a generic type stays postable");
     }
+
+    /// <summary>
+    /// O-r2-1 and D-237: a posting type only a flow writes is refused on the generic movement whatever its source, so a
+    /// hold release or a client collection cannot bypass the flow that owns it.
+    /// </summary>
+    [Theory]
+    [InlineData(PostingType.RevenueRecognition)]
+    [InlineData(PostingType.HoldAccrual)]
+    [InlineData(PostingType.HoldRelease)]
+    [InlineData(PostingType.ClientCollection)]
+    [InlineData(PostingType.TaxWithheldAtSource)]
+    [InlineData(PostingType.ClientAdvanceRecovery)]
+    [InlineData(PostingType.MaterialAdvanceIssue)]
+    [InlineData(PostingType.MaterialAdvanceRecovery)]
+    [InlineData(PostingType.CreditNote)]
+    [InlineData(PostingType.SubcontractorRetentionRelease)]
+    public void A_generic_movement_may_not_carry_a_posting_type_only_a_flow_writes(PostingType type)
+    {
+        Posting.CreateMovement(
+            TestAccounts.Safe(), TestAccounts.CompanyExpense(), new Money(10m), type,
+            new SourceDocument(SourceDocumentType.Payment, Guid.NewGuid(), null), new DateOnly(2026, 2, 1), Guid.NewGuid(), ExtractHarness.Now)
+            .Error.Code.Should().Be("treasury.flow_type_not_allowed");
+    }
+
+    /// <summary>
+    /// Copy review 2026-11-18 item 1: with nothing left to collect the refusal is its own key, because no amount was typed.
+    /// A payment past what remains keeps <c>collection.exceeds_expected</c>.
+    /// </summary>
+    [Fact]
+    public async Task Nothing_remaining_has_its_own_refusal_and_an_overpayment_keeps_exceeds_expected()
+    {
+        var h = new ExtractHarness();
+        Extract extract = await h.DriveAsync(ExtractStatus.Issued);
+        CollectionPosition covered = new(Net, Money.Zero, Net);
+
+        extract.EnsureMayRecordCollection(h.Project, h.Rulings, covered, creditNoteRaised: false)
+            .Error.Code.Should().Be("collection.nothing_remaining");
+        Extract.CheckPayment(h.Project, Fresh, Net + new Money(0.0001m), Money.Zero)
+            .Error.Code.Should().Be("collection.exceeds_expected");
+    }
 }

@@ -17,8 +17,9 @@ public sealed class ProjectFramePermissionTests
             [(Role.Owner, AssignmentLevel.Standard), (Role.TechnicalOffice, AssignmentLevel.Standard), (Role.SiteEngineer, AssignmentLevel.Supervisor)]);
     }
 
+    /// <summary>D-241 item 1: the junior site engineer reads the extracts list too; its money stays null for him.</summary>
     [Fact]
-    public void ExtractRead_is_every_project_reader_except_the_junior_engineer()
+    public void ExtractRead_is_every_project_reader_the_junior_engineer_included()
     {
         PermissionDefinition definition = PermissionCatalogue.Of(Permission.ExtractRead);
 
@@ -28,10 +29,33 @@ public sealed class ProjectFramePermissionTests
         [
             (Role.Owner, AssignmentLevel.Standard), (Role.Finance, AssignmentLevel.Standard),
             (Role.TechnicalOffice, AssignmentLevel.Standard), (Role.MarketingSales, AssignmentLevel.Standard),
-            (Role.SiteEngineer, AssignmentLevel.Supervisor),
+            (Role.SiteEngineer, AssignmentLevel.Junior),
             // Head of Design keeps the extracts reach ProjectRead gave him before D-221.
             (Role.HeadOfDesign, AssignmentLevel.Standard),
         ]);
+    }
+
+    /// <summary>D-239 item 4: the Owner and Finance read the cheques in hand; moving one stays Finance's alone.</summary>
+    [Fact]
+    public void ChequeRead_is_the_owner_and_finance_and_only_finance_moves_a_cheque()
+    {
+        PermissionDefinition read = PermissionCatalogue.Of(Permission.ChequeRead);
+
+        read.Scope.Should().Be(PermissionScope.ProjectScoped);
+        read.TouchesMoney.Should().BeTrue();
+        Granted(read).Should().BeEquivalentTo([(Role.Owner, AssignmentLevel.Standard), (Role.Finance, AssignmentLevel.Standard)]);
+        Granted(PermissionCatalogue.Of(Permission.ExtractCollect)).Should().BeEquivalentTo([(Role.Finance, AssignmentLevel.Standard)]);
+    }
+
+    /// <summary>D-241 item 4: the assigned supervisor records the client's change-order approval, not the Technical Office or the Owner.</summary>
+    [Fact]
+    public void ChangeOrderClientApprovalRecord_is_the_supervising_engineer_alone()
+    {
+        PermissionDefinition definition = PermissionCatalogue.Of(Permission.ChangeOrderClientApprovalRecord);
+
+        definition.Unresolved.Should().BeFalse("D-241 item 4 rules it");
+        definition.TouchesMoney.Should().BeFalse();
+        Granted(definition).Should().BeEquivalentTo([(Role.SiteEngineer, AssignmentLevel.Supervisor)]);
     }
 
     [Fact]

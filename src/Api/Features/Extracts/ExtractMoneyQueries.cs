@@ -22,19 +22,29 @@ internal static class ExtractMoneyQueries
     /// ever read from a balance column. Summed in memory because EF Core cannot translate a sum over a
     /// <see cref="Money"/> complex type.
     /// </summary>
+    /// <remarks>
+    /// D-242 item 3: what was received on a cancelled extract counts as already paid against the extract that revises it,
+    /// so the original's collection postings are read under the revision's id. Nothing is re-posted.
+    /// </remarks>
     public static async Task<IReadOnlyDictionary<Guid, Money>> CollectedAsync(
         KaffDbContext database, IReadOnlyCollection<Guid> extractIds, CancellationToken cancellationToken)
     {
+        Dictionary<Guid, Guid> carried = await database.Extracts
+            .AsNoTracking()
+            .Where(extract => extractIds.Contains(extract.Id) && extract.RevisesExtractId != null)
+            .ToDictionaryAsync(extract => extract.RevisesExtractId!.Value, extract => extract.Id, cancellationToken);
+        Guid[] sources = [.. extractIds, .. carried.Keys];
+
         var legs = await database.Postings
             .AsNoTracking()
             .Where(posting => posting.SourceDocumentType == SourceDocumentType.Extract
-                && extractIds.Contains(posting.SourceDocumentId)
+                && sources.Contains(posting.SourceDocumentId)
                 && CollectionTypes.Contains(posting.Type))
             .Select(posting => new { posting.SourceDocumentId, posting.Amount, IsReversal = posting.ReversesId != null })
             .ToListAsync(cancellationToken);
 
         return legs
-            .GroupBy(leg => leg.SourceDocumentId)
+            .GroupBy(leg => carried.GetValueOrDefault(leg.SourceDocumentId, leg.SourceDocumentId))
             .ToDictionary(
                 group => group.Key,
                 group => Money.Sum(group.Select(leg => leg.IsReversal ? -leg.Amount : leg.Amount)));

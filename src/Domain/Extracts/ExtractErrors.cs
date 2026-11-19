@@ -81,9 +81,39 @@ public static class ExtractErrors
     public static readonly Error NotWaitingAtThisGate =
         Error.Conflict("extract.not_waiting_at_this_gate", "errors.extract.not_waiting_at_this_gate");
 
-    /// <summary>A revised extract replaces a disputed one is unruled (Q106): nothing is built, nothing changes.</summary>
-    public static readonly Error DisputeRevisionUnruled =
-        Error.Conflict("extract.dispute_revision_unruled", "errors.extract.dispute_revision_unruled");
+    /// <summary>The extract named as revised is not a cancelled extract of this project, or already has its revision.</summary>
+    public static readonly Error RevisionTargetInvalid =
+        Error.Conflict("extract.revision_target_invalid", "errors.extract.revision_target_invalid");
+
+    /// <summary>D-242 item 2: a rejection names what was wrong, quantities or material values.</summary>
+    public static readonly Error RejectionKindRequired =
+        Error.Validation("extract.rejection_kind_required", "errors.extract.rejection_kind_required");
+
+    /// <summary>Rejected for wrong quantities: the site engineer revises the evidence before the QC report goes in again.</summary>
+    public static readonly Error AwaitingEvidenceRevision =
+        Error.Conflict("extract.awaiting_evidence_revision", "errors.extract.awaiting_evidence_revision");
+
+    /// <summary>
+    /// D-241 item 2 against CLAUDE.md's hold rule: cancelling the original would reverse its hold accrual, and the hold
+    /// only grows before handover. Refused until Nabil rules what a revision does to an accrued hold.
+    /// </summary>
+    public static readonly Error RevisionHoldAccrued =
+        Error.Conflict("extract.revision_hold_accrued", "errors.extract.revision_hold_accrued");
+
+    /// <summary>
+    /// A cheque in hand or a credit note stands on the disputed original; what a revision does to either is not ruled.
+    /// Payments already received move to the revision (D-242 item 3) and do not block.
+    /// </summary>
+    public static readonly Error RevisionMoneyStanding =
+        Error.Conflict("extract.revision_money_standing", "errors.extract.revision_money_standing");
+
+    /// <summary>A later extract was prepared after the disputed one, so its previously certified work would no longer hold.</summary>
+    public static readonly Error RevisionNotLatest =
+        Error.Conflict("extract.revision_not_latest", "errors.extract.revision_not_latest");
+
+    /// <summary>The disputed original billed a change order, which may be billed once only.</summary>
+    public static readonly Error RevisionChangeOrdersBilled =
+        Error.Conflict("extract.revision_change_orders_billed", "errors.extract.revision_change_orders_billed");
 
     /// <summary>A credit note is open against the extract, so a collection of its full net would over-collect (Q106, Q107).</summary>
     public static readonly Error CreditNoteOpen =

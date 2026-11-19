@@ -35,6 +35,13 @@ internal sealed class ExtractConfiguration : IEntityTypeConfiguration<Extract>
             .IsUnique()
             .HasDatabaseName("ux_extracts_project_number");
 
+        // D-241 item 2: a cancelled extract has at most one revision.
+        builder.HasIndex(extract => extract.RevisesExtractId)
+            .IsUnique()
+            .HasFilter("revises_extract_id IS NOT NULL")
+            .HasDatabaseName("ux_extracts_revises_extract_id");
+        builder.HasOne<Extract>().WithMany().HasForeignKey(extract => extract.RevisesExtractId).OnDelete(DeleteBehavior.Restrict);
+
         builder.HasOne<Project>().WithMany().HasForeignKey(extract => extract.ProjectId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<User>().WithMany().HasForeignKey(extract => extract.CreatedByUserId).OnDelete(DeleteBehavior.Restrict);
 

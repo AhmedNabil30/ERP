@@ -80,18 +80,57 @@ internal static class Handler
         var existing = await database.Extracts
             .AsNoTracking()
             .Where(candidate => candidate.ProjectId == projectId)
-            .Select(candidate => new { candidate.Number, candidate.Status, candidate.CumulativeCertifiedWork })
+            .Select(candidate => new
+            {
+                candidate.Id,
+                candidate.Number,
+                candidate.Status,
+                candidate.CumulativeCertifiedWork,
+                candidate.PreviouslyCertifiedWork,
+                candidate.PeriodStart,
+                candidate.PeriodEnd,
+                candidate.RevisesExtractId,
+            })
             .ToListAsync(cancellationToken);
 
-        if (existing.Any(candidate => candidate.Status is not (ExtractStatus.Issued or ExtractStatus.Collected or ExtractStatus.Disputed)))
-        {
-            return ResultExtensions.Problem(ExtractErrors.AnotherExtractOpen);
-        }
-
-        Money previous = existing.Count == 0
-            ? Money.Zero
-            : existing.OrderByDescending(candidate => candidate.Number).First().CumulativeCertifiedWork;
+        HashSet<Guid> alreadyRevised = [.. existing.Where(candidate => candidate.RevisesExtractId != null).Select(candidate => candidate.RevisesExtractId!.Value)];
         int number = existing.Count == 0 ? 1 : existing.Max(candidate => candidate.Number) + 1;
+        DateOnly periodStart = request.PeriodStart;
+        DateOnly periodEnd = request.PeriodEnd;
+        Money previous;
+
+        if (request.RevisesExtractId is { } originalId)
+        {
+            // D-241 item 2: the revision of a cancelled extract covers the same period and starts where the original did.
+            // D-242 item 4: it is the one exception to the one-extract-in-flight rule.
+            var original = existing.FirstOrDefault(candidate => candidate.Id == originalId);
+            if (original is null || original.Status != ExtractStatus.Void || alreadyRevised.Contains(originalId))
+            {
+                return ResultExtensions.Problem(ExtractErrors.RevisionTargetInvalid);
+            }
+
+            periodStart = original.PeriodStart;
+            periodEnd = original.PeriodEnd;
+            previous = original.PreviouslyCertifiedWork;
+        }
+        else
+        {
+            // A revision in flight does not block a normal extract (D-242 item 4). A cancelled extract still waiting for its
+            // revision does: until the revision exists, the previously certified work of the next extract is not known.
+            if (existing.Any(candidate => candidate.RevisesExtractId == null && candidate.Status is not (
+                    ExtractStatus.Issued or ExtractStatus.Collected or ExtractStatus.Disputed or ExtractStatus.Void))
+                || existing.Any(candidate => candidate.Status == ExtractStatus.Void && !alreadyRevised.Contains(candidate.Id)))
+            {
+                return ResultExtensions.Problem(ExtractErrors.AnotherExtractOpen);
+            }
+
+            // A Void extract's work was never certified, so the next extract starts from the last extract that stands.
+            previous = existing
+                .Where(candidate => candidate.Status != ExtractStatus.Void)
+                .OrderByDescending(candidate => candidate.Number)
+                .Select(candidate => candidate.CumulativeCertifiedWork)
+                .FirstOrDefault();
+        }
 
         Money cumulative = ExtractSupport.CumulativeCertifiedWork(boq, rulings);
 
@@ -123,9 +162,10 @@ internal static class Handler
 
         // D-235 item 4: the material values are money, and the junior site engineer who prepares never enters money. The
         // supervising engineer enters them with the QC report; until then the extract carries none.
+        // A revision bills no change order: the original billed none (Extract.CancelForRevision refuses one that did).
         Result<Extract> prepared = Extract.Prepare(
-            project, number, request.PeriodStart, request.PeriodEnd, cumulative, previous,
-            Money.Zero, Money.Zero, actor, now, changeOrders);
+            project, number, periodStart, periodEnd, cumulative, previous,
+            Money.Zero, Money.Zero, actor, now, request.RevisesExtractId is null ? changeOrders : [], request.RevisesExtractId);
         if (prepared.IsFailure)
         {
             return ResultExtensions.Problem(prepared.Error);

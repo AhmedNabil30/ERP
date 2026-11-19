@@ -22,7 +22,7 @@ namespace Kaff.Api.Features.Treasury.PostMovement;
 /// <param name="PostingDate">
 /// The accounting date. Distinct from when the request was made — a back-dated posting is checked
 /// against the accounting period it names, not against today (<c>AC-301-H</c>). Required, never defaulted, and between
-/// 2000-01-01 and one day past the site day (<c>TypedPostingDate</c>, Verifier F-7).
+/// 2000-01-01 and the site day (<c>TypedPostingDate</c>, Verifier F-7, D-240 item 3).
 /// </param>
 /// <param name="SourceDocumentType">The kind of business document this movement traces to.</param>
 /// <param name="SourceDocumentId">That document's id.</param>

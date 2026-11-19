@@ -473,12 +473,14 @@ public static class PermissionCatalogue
             new(Permission.DailyLogRead, PermissionScope.ProjectScoped, [owner, engineerJunior], "§8, §9 - D-225 item 2"),
 
             // KAFF-420. The project frame's tabs and the overview's money, decided by the server (D-217 item 37, D-218 items 5, 6).
-            // The junior site engineer holds none of the three. ExtractRead keeps every other ProjectRead holder, Head of
-            // Design included: the grant only carries the reach ProjectRead gave him before D-221.
+            // The junior site engineer holds neither BoqRead nor ProjectMoneyRead. Since D-241 item 1 (Nabil, 2026-11-19) he
+            // holds ExtractRead: he sees the extracts list (number, period, status) and starts a new extract, and every money
+            // field stays null for him because the list asks the extract money rule, not this row. ExtractRead keeps every
+            // other ProjectRead holder, Head of Design included.
             new(Permission.BoqRead, PermissionScope.ProjectScoped, [owner, technicalOffice, engineerSupervisor], "§4, §9 - D-218 item 5"),
             new(Permission.ExtractRead, PermissionScope.ProjectScoped,
-                [owner, finance, technicalOffice, marketing, engineerSupervisor, new AccessGrant { Role = Role.HeadOfDesign }],
-                "§7, §9 - D-217 item 37"),
+                [owner, finance, technicalOffice, marketing, engineerJunior, new AccessGrant { Role = Role.HeadOfDesign }],
+                "§7, §9 - D-217 item 37, D-241 item 1"),
             new(Permission.ProjectMoneyRead, PermissionScope.ProjectScoped,
                 [owner, finance, technicalOffice, engineerSupervisor], "§9 - D-218 item 6, Karim to confirm",
                 TouchesMoney: true),
@@ -570,11 +572,15 @@ public static class PermissionCatalogue
                 "§6.5, §7, §9 — holder UNRESOLVED (Q97), Finance assumed, see Rulings/CollectionApproval.cs",
                 Unresolved: true, TouchesMoney: true),
 
+            // D-239 item 4 (Nabil, 2026-11-19): the Owner reads the cheques-in-hand list as well as Finance, read-only. Only
+            // the read routes use this row; the deposit, clearance and bounce stay ExtractCollect, Finance alone.
+            new(Permission.ChequeRead, PermissionScope.ProjectScoped, [owner, finance], "§6.5 - D-239 item 4", TouchesMoney: true),
+
             new(Permission.ChangeOrderApprove,PermissionScope.ProjectScoped, [owner], "§9, §13", TouchesMoney: true),
 
             // spec.md section 13 gives the change-order chain and names only the Owner's step (section 9). Who drafts,
-            // reviews, withdraws and records the client's approval before the portal exists is unruled (Q103, Q105);
-            // the Technical Office is assumed for all three, see Rulings/ChangeOrderRulings.cs ChangeOrderApprovers.
+            // reviews and withdraws is unruled (Q105); the Technical Office is assumed for both, see
+            // Rulings/ChangeOrderRulings.cs ChangeOrderApprovers. Who records the client's approval is ruled below (D-241 item 4).
             // Money-free: Technical Office gates quantities, never money (section 9). Finance is deliberately
             // absent: it does not approve change orders. The Owner is absent so nobody holds both ends.
             new(Permission.ChangeOrderPrepare, PermissionScope.ProjectScoped, [technicalOffice],
@@ -583,9 +589,11 @@ public static class PermissionCatalogue
             new(Permission.ChangeOrderReview, PermissionScope.ProjectScoped, [technicalOffice],
                 "§13 — holder UNRESOLVED (Q105), Technical Office assumed, see Rulings/ChangeOrderRulings.cs",
                 Unresolved: true),
-            new(Permission.ChangeOrderClientApprovalRecord, PermissionScope.ProjectScoped, [technicalOffice],
-                "§12, §13 — holder UNRESOLVED (Q103), Technical Office assumed, see Rulings/ChangeOrderRulings.cs",
-                Unresolved: true),
+            // D-241 item 4 (Nabil, 2026-11-19): the project manager or the supervisor records the client's approval, not the
+            // Technical Office or the Owner. The system has no project manager role, so the assigned supervising site
+            // engineer holds it. Money-free: recording the client's word approves nothing financial (section 9).
+            new(Permission.ChangeOrderClientApprovalRecord, PermissionScope.ProjectScoped, [engineerSupervisor],
+                "§12, §13 — D-241 item 4, the supervising site engineer"),
             new(Permission.FirmAdvanceApprove, PermissionScope.ProjectScoped, [owner], "§6.4.3", TouchesMoney: true),
 
             // spec.md section 11 gives the closure flow (practical completion, snag list, handover, warranty, closed)

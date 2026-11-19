@@ -41,7 +41,9 @@ public sealed class ExtractWaitingTests
     {
         foreach (ExtractStatus from in Enum.GetValues<ExtractStatus>())
         {
-            foreach (ExtractStatus to in Extract.LegalTargetsFrom(from).Where(target => target is not (ExtractStatus.Draft or ExtractStatus.Disputed)))
+            // Void is the end of a dispute resolved by a revision (D-241 item 2), an exit like Draft and Disputed, not a step.
+            foreach (ExtractStatus to in Extract.LegalTargetsFrom(from)
+                .Where(target => target is not (ExtractStatus.Draft or ExtractStatus.Disputed or ExtractStatus.Void)))
             {
                 ExtractWaiting.PermissionToEnter.Should().ContainKey(to, $"{from} to {to} is a legal transition");
             }

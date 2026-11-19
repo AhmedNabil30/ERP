@@ -31,7 +31,8 @@ internal static class Handler
                 int unissued = await database.Extracts.CountAsync(
                     extract => extract.ProjectId == project.Id
                         && extract.Status != ExtractStatus.Issued
-                        && extract.Status != ExtractStatus.Collected,
+                        && extract.Status != ExtractStatus.Collected
+                        && extract.Status != ExtractStatus.Void,
                     token);
 
                 var readings = new ClosureReadings(unissued, ledgers.ClientAdvance, ledgers.Hold);

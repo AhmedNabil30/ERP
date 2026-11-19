@@ -1270,6 +1270,10 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("project_id");
 
+                    b.Property<Guid?>("RevisesExtractId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("revises_extract_id");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -1279,6 +1283,11 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("RevisesExtractId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_extracts_revises_extract_id")
+                        .HasFilter("revises_extract_id IS NOT NULL");
 
                     b.HasIndex("ProjectId", "Number")
                         .IsUnique()
@@ -1396,6 +1405,11 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("reason");
+
+                    b.Property<string>("RejectionKind")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("rejection_kind");
 
                     b.HasKey("Id");
 
@@ -3096,6 +3110,11 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Extracts.Extract", null)
+                        .WithMany()
+                        .HasForeignKey("RevisesExtractId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Kaff.Domain.Extracts.ExtractChangeOrderLine", b =>

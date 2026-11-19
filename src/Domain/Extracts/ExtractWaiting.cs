@@ -32,7 +32,8 @@ public sealed record ExtractWaitingOn(
 /// <remarks>
 /// <para>
 /// The forward targets of a status are <see cref="Extract.LegalTargetsFrom"/> less the two exits that are not
-/// a step forward: a rejection back to Draft and a dispute. The only thing written here is which permission
+/// a step forward: a rejection back to Draft, a dispute, and a disputed extract's cancellation to Void (D-241 item 2).
+/// The only thing written here is which permission
 /// performs the step that <i>enters</i> a status; who holds that permission comes from the catalogue. A new
 /// transition into a status this table does not know throws, and a test walks every transition to prove it.
 /// </para>
@@ -73,6 +74,19 @@ public static class ExtractWaiting
             [ExtractStatus.Disputed] = Permission.ExtractDisputeResolve,
         }.ToFrozenDictionary();
 
+    /// <summary>
+    /// The next step of this extract. A Draft returned for wrong quantities waits for the site engineer to revise the
+    /// evidence (D-242 item 2), not for the QC report; every other extract waits as its status says.
+    /// </summary>
+    public static ExtractWaitingOn For(Extract extract)
+    {
+        ArgumentNullException.ThrowIfNull(extract);
+
+        return extract.AwaitsEvidenceRevision
+            ? Build(ExtractStatus.Draft, [ExtractStatus.Draft], Permission.ExtractPrepare, isDecisionGate: false)
+            : For(extract.Status);
+    }
+
     public static ExtractWaitingOn For(ExtractStatus status)
     {
         if (OutOfMachine.TryGetValue(status, out Permission resolver))
@@ -82,7 +96,7 @@ public static class ExtractWaiting
 
         ExtractStatus[] forward =
         [
-            .. Extract.LegalTargetsFrom(status).Where(target => target is not (ExtractStatus.Draft or ExtractStatus.Disputed)),
+            .. Extract.LegalTargetsFrom(status).Where(target => target is not (ExtractStatus.Draft or ExtractStatus.Disputed or ExtractStatus.Void)),
         ];
 
         if (forward.Length == 0)

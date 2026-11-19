@@ -8,4 +8,8 @@ namespace Kaff.Api.Features.Extracts.PrepareExtract;
 /// </summary>
 /// <param name="PeriodStart">First day the extract covers.</param>
 /// <param name="PeriodEnd">Last day the extract covers.</param>
-public sealed record Request(DateOnly PeriodStart, DateOnly PeriodEnd);
+/// <param name="RevisesExtractId">
+/// The cancelled extract this one revises (D-241 item 2). Its period replaces the two above, and it may run alongside the
+/// next normal extract (D-242 item 4). Null for a normal extract.
+/// </param>
+public sealed record Request(DateOnly PeriodStart, DateOnly PeriodEnd, Guid? RevisesExtractId = null);

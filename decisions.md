@@ -17072,3 +17072,22 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 2. **A rejection goes to whoever can fix its reason.** The rejecter picks the reason: wrong quantities return the extract to the site engineer at preparation; wrong material values return it to the supervisor at the QC report. This amends spec §7, where every rejection returned to Draft.
 3. **Payments already received on an extract that a revised extract cancels move to the revised extract**, counted as already paid against it. Nothing is refunded and no payment is lost.
 4. **A revised extract is the one exception to the one-extract-in-flight rule.** It may run alongside the next normal extract; the rule stands for normal extracts.
+
+## D-243 — D-239 to D-242 as built: no credit-note cap, the Owner reads cheques, flow-owned posting types closed to the generic route, the revised extract, and rejection routing · 2026-11-19
+
+**Source.** Built by a lane dispatched by the Scrum Master on Nabil's rulings D-239 to D-242 and Verifier observation O-r2-1 (`qa/slice-3/verification-2026-11-18-r2.md`).
+
+1. **Credit notes.** The cap `adjustment.exceeds_extract_net` is removed. Reversing a credit note whose extract is Collected is refused (`adjustment.extract_collected`, 409). An overpayment on a collection is still refused (`collection.exceeds_expected`); a collection on an extract with nothing remaining has its own refusal (`collection.nothing_remaining`).
+2. **Cheque read.** New permission `ChequeRead` (Owner and Finance, project-scoped) gates the cheque list and single read. Moving a cheque stays Finance only.
+3. **Posting dates** are the site day or earlier; the 1-day tolerance of D-236 §2 is gone.
+4. **Words.** «الحجز» and «حركة» across ar.json (about 85 keys), guarded by a catalogue test. «قيد» stays where it does not mean a posting (in progress, audit records, a constraint). The NCR held portion is «الجزء المعلّق», distinct from the hold.
+5. **Flow-owned posting types** (RevenueRecognition, HoldAccrual, HoldRelease, ClientCollection, TaxWithheldAtSource, ClientAdvanceRecovery, MaterialAdvanceIssue, MaterialAdvanceRecovery, CreditNote, SubcontractorRetentionRelease) are refused on the generic movement route (`treasury.flow_type_not_allowed`). This closes O-r2-1. `SubcontractorRetentionAccrual` stays postable because no flow writes it yet.
+6. **Junior site engineer** holds ExtractRead: he lists extracts with money null and prepares by period. Money routes stay 403.
+7. **Client approval of a change order** is recorded by the assigned supervising site engineer. No project-manager role exists; "project manager or supervisor" is built as that role.
+8. **Revised extract.** The existing `Void` state means cancelled; a quantity dispute resolved as `RevisedExtract` voids the original (gate `Cancellation`, reason stored, audited) and reverses its accrual postings through its own flow. The revision is prepared with `revisesExtractId`, takes the original's period, and runs alongside the next normal extract (D-242 §4). Payments on the original stay posted and count against the revision (D-242 §3). Migration `20261119163804_ExtractRevisionAndRejectionKind`.
+9. **Revision refusals the lane chose, not ruled:** a later extract exists; a cheque in hand or a credit note stands on the original; the original billed a change order; **the original accrued a hold**. The last one follows "the hold only grows" and blocks revision on every project with a hold rate, so it waits on Nabil.
+10. **Rejection routing** (D-242 §2). A rejection carries a required `kind`: `Quantities` returns the extract to the site engineer for evidence revision, and a QC report is refused until then; `MaterialValues` returns it to the supervisor to resubmit the QC report. Gate records from before the change have no kind.
+
+**Gates at hand-back.** Build 0/0; Domain 795/795; Api 1254 passed, 2 skipped of 1256, exit 0; `ng test` 515/515; format clean apart from ENDOFLINE; health leastPrivilege true; smoke passed. One mutation per item, each red.
+
+**Not done.** The read does not yet send received and withheld separately, the dispute reason, the original-to-revision link or the holder's name and task. The web sends no rejection kind, so rejecting from the screen is refused with 400 until the extract screens are built. Reversing a collection on a revision does not reach payments carried from the original. A revision bills no change orders. No flow collects a released hold (KAFF-317-E).

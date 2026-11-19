@@ -75,6 +75,22 @@ public sealed class TranslationCatalogueTests
         onlyInEnglish.Should().BeEmpty("these keys have no Arabic translation");
     }
 
+    /// <summary>
+    /// D-240 items 1 and 2: the hold is «الحجز» and a posting is «حركة» on every screen and message. The audit log keeps
+    /// «قيد» for an audit record, which is not a posting.
+    /// </summary>
+    [Fact]
+    public void The_arabic_catalogue_says_hold_and_movement_in_the_ruled_words()
+    {
+        string[] retired = ["المحجوز", "القيد", "القيود", "قيود", "قيوده", "قيداً"];
+
+        LoadCatalogue(ArabicCatalogue)
+            .Where(entry => !entry.Key.StartsWith("audit.", StringComparison.Ordinal))
+            .Where(entry => entry.Value.Split(' ', '،', '.', '؟', ':', '(', ')').Any(word => retired.Contains(word)))
+            .Select(entry => $"{entry.Key}: {entry.Value}")
+            .Should().BeEmpty("D-240 replaces «المحجوز» with «الحجز» and «قيد» with «حركة»");
+    }
+
     [Fact]
     public void No_translation_is_left_empty()
     {

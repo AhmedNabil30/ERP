@@ -62,6 +62,13 @@ internal static class Handler
         // The validator refuses a missing date (TypedPostingDate); nothing here may default it.
         DateOnly postingDate = request.PostingDate!.Value;
 
+        // A flow's money moves only through its flow (D-237, O-r2-1): refused before any other check.
+        Result movement = Posting.CheckMovement(request.Type, request.SourceDocumentType);
+        if (movement.IsFailure)
+        {
+            return ResultExtensions.Problem(movement.Error);
+        }
+
         Account? from = await database.Accounts
             .FirstOrDefaultAsync(account => account.Id == request.FromAccountId, cancellationToken);
 

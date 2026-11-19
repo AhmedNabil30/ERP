@@ -162,8 +162,10 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
         (await CountAsync(id, PostingType.HoldRelease)).Should().Be(1);
 
         // The final collection: the client pays the released hold. Total client cash then equals the contract value.
+        // O-r2-1 closed the generic route to a ClientCollection, and no route yet collects a released hold (Verifier
+        // round 2, KAFF-317-E), so the payment is inserted directly. The generic route's refusal is asserted first.
         Guid receivable = await AccountIdAsync(id, AccountType.ClientReceivable);
-        HttpResponseMessage paid = await SendAsync(HttpMethod.Post, $"/api/projects/{id}/treasury/postings", _finance, new
+        HttpResponseMessage generic = await SendAsync(HttpMethod.Post, $"/api/projects/{id}/treasury/postings", _finance, new
         {
             fromAccountId = receivable,
             toAccountId = _safeId,
@@ -174,7 +176,18 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
             sourceDocumentId = Guid.CreateVersion7(),
             sourceDocumentReference = "HOLD",
         });
-        paid.StatusCode.Should().Be(HttpStatusCode.Created, await paid.Content.ReadAsStringAsync(Ct));
+        generic.StatusCode.Should().Be(HttpStatusCode.BadRequest, await generic.Content.ReadAsStringAsync(Ct));
+
+        await using (KaffDbContext payment = _database.CreateContext())
+        {
+            Account from = await payment.Accounts.SingleAsync(account => account.Id == receivable, Ct);
+            Account to = await payment.Accounts.SingleAsync(account => account.Id == _safeId, Ct);
+            payment.Postings.Add(Posting.Create(
+                from, to, new Money(200_000m), PostingType.ClientCollection,
+                new SourceDocument(SourceDocumentType.Collection, Guid.CreateVersion7(), "HOLD"),
+                new DateOnly(2026, 11, 6), _finance, Now, id).Value);
+            await payment.SaveChangesAsync(Ct);
+        }
 
         List<Posting> all = await PostingsAsync(id);
         all.Where(posting => posting.Type is PostingType.ClientAdvanceReceipt or PostingType.ClientCollection)

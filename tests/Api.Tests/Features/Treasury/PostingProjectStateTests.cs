@@ -56,39 +56,28 @@ public sealed class PostingProjectStateTests : IAsyncLifetime
         await _factory.DisposeAsync();
     }
 
-    [Fact]
-    public async Task A_hold_accrual_on_a_stopped_project_is_refused_and_posts_nothing()
+    /// <summary>
+    /// O-r2-1: the hold accrual and the hold release are written by their flows only, so the generic route refuses them
+    /// in every project state before the state table is asked. The state table for these types is applied by the flows
+    /// and pinned in the domain (PostingProjectStateLegalityTests).
+    /// </summary>
+    [Theory]
+    [InlineData(ProjectStatus.Stopped)]
+    [InlineData(ProjectStatus.Active)]
+    public async Task A_hold_accrual_or_release_through_the_treasury_route_is_refused_in_any_state_and_posts_nothing(ProjectStatus status)
     {
-        (Guid project, Account receivable, Account hold) = await NewProjectAsync(ProjectStatus.Stopped);
+        (Guid project, Account receivable, Account hold) = await NewProjectAsync(status);
 
-        HttpResponseMessage response = await PostAsync(project, receivable, hold, PostingType.HoldAccrual);
+        foreach ((Account from, Account to, PostingType type) in new[]
+            { (receivable, hold, PostingType.HoldAccrual), (hold, receivable, PostingType.HoldRelease) })
+        {
+            HttpResponseMessage response = await PostAsync(project, from, to, type);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await MessageKeyAsync(response)).Should().Be("errors.treasury.posting_not_allowed_in_project_state");
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest, type.ToString());
+            (await MessageKeyAsync(response)).Should().Be("errors.treasury.flow_type_not_allowed");
+        }
+
         (await PostingCountAsync(project)).Should().Be(0);
-    }
-
-    [Fact]
-    public async Task The_same_hold_accrual_on_an_active_project_is_accepted()
-    {
-        (Guid project, Account receivable, Account hold) = await NewProjectAsync(ProjectStatus.Active);
-
-        HttpResponseMessage response = await PostAsync(project, receivable, hold, PostingType.HoldAccrual);
-
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-        (await PostingCountAsync(project)).Should().Be(1);
-    }
-
-    [Fact]
-    public async Task A_hold_release_before_handover_is_refused_by_the_state_table()
-    {
-        (Guid project, Account receivable, Account hold) = await NewProjectAsync(ProjectStatus.Active);
-
-        // Release is the only type that may leave the hold; the project is not handed over yet.
-        HttpResponseMessage response = await PostAsync(project, hold, receivable, PostingType.HoldRelease);
-
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await MessageKeyAsync(response)).Should().Be("errors.treasury.posting_not_allowed_in_project_state");
     }
 
     [Fact]

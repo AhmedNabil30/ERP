@@ -42,8 +42,9 @@ public enum ExtractStatus
     Disputed = 9,
 
     /// <summary>
-    /// Named by spec.md section 13 and section 7 (a revised extract replaces the original). Nothing moves an extract
-    /// here yet: what a revision does to the original is unruled (Q106), see <c>Rulings.ExtractDisputeResolution</c>.
+    /// Named by spec.md section 13 and section 7 (a revised extract replaces the original). D-241 item 2: a disputed
+    /// extract resolved by a revision is cancelled here, its accrual postings reversed by its own flow. Final: nothing
+    /// leaves it, and the revised extract is a new one prepared for the same period.
     /// </summary>
     Void = 10,
 }
@@ -76,6 +77,12 @@ public enum ExtractGate
     /// stays where it was. Carries the stored reason.
     /// </summary>
     ChequeBounce = 12,
+
+    /// <summary>
+    /// D-241 item 2: the disputed extract was cancelled for a revised one and its accrual postings reversed. Carries the
+    /// stored reason.
+    /// </summary>
+    Cancellation = 13,
 }
 
 public enum ExtractGateOutcome
@@ -92,12 +99,24 @@ public enum ExtractGateOutcome
     Reversed = 4,
 }
 
+/// <summary>
+/// D-242 item 2 (amends spec.md section 7): the rejecter picks what was wrong, and the extract goes to whoever can fix it.
+/// </summary>
+public enum ExtractRejectionKind
+{
+    /// <summary>Wrong quantities: back to the site engineer, who revises the evidence before the QC report.</summary>
+    Quantities = 1,
+
+    /// <summary>Wrong material values: back to the supervising engineer, who submits the QC report again with new values.</summary>
+    MaterialValues = 2,
+}
+
 /// <summary>spec.md section 7: a disputed issued extract resolves as either a revised extract or a credit note.</summary>
 public enum DisputeResolutionKind
 {
     /// <summary>A credit note (an Adjustment) offsets the extract. Built.</summary>
     CreditNote = 1,
 
-    /// <summary>A revised extract replaces it. Refused: what happens to the original is unruled (Q106).</summary>
+    /// <summary>A revised extract replaces it (D-241 item 2): the original is cancelled and a new one is prepared.</summary>
     RevisedExtract = 2,
 }

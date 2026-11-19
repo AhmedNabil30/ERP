@@ -14,10 +14,11 @@ using Microsoft.EntityFrameworkCore;
 namespace Kaff.Api.Features.Extracts.ResolveDispute;
 
 /// <summary>
-/// Disputed to Issued with a credit note raised in the same save. The credit note is the shared
-/// <c>AdjustmentSupport.RaiseCreditNoteAsync</c>, so the dispute route and the adjustment route have one shape. It lands on
-/// the project's contract revenue account and cannot name the hold. The extract's own postings are not touched. A
-/// revised-extract resolution is refused before anything is read or written (<c>Rulings.ExtractDisputeResolution</c>).
+/// Two resolutions. A credit note: Disputed to Issued with the note raised in the same save, through the shared
+/// <c>AdjustmentSupport.RaiseCreditNoteAsync</c>, so the dispute route and the adjustment route have one shape; the extract's
+/// own postings are not touched. A revised extract (D-241 item 2): Disputed to Void, the extract's standing accrual postings
+/// reversed by <c>Extract.CancelForRevision</c> in the same save; the revised extract is then prepared for the same period
+/// through the prepare route and runs the whole chain again.
 /// </summary>
 internal static class Handler
 {
@@ -38,18 +39,18 @@ internal static class Handler
         return ExtractSupport.RunAsync(
             projectId,
             id,
-            needsAccounts: false,
+            needsAccounts: request.Kind == DisputeResolutionKind.RevisedExtract,
             new StepServices(database, rulings, clock, currentUser, authorization, user),
-            async (extract, project, _, services, token) =>
+            async (extract, project, context, services, token) =>
             {
                 if (request.Kind is not { } kind)
                 {
                     return Result.Failure<IReadOnlyList<Posting>>(ExtractErrors.DisputeResolutionRequired);
                 }
 
-                if (kind != DisputeResolutionKind.CreditNote)
+                if (kind == DisputeResolutionKind.RevisedExtract)
                 {
-                    return Result.Failure<IReadOnlyList<Posting>>(ExtractErrors.DisputeRevisionUnruled);
+                    return await CancelForRevisionAsync(extract, context!, request.Reason, services, token);
                 }
 
                 if (extract.Status != ExtractStatus.Disputed)
@@ -80,5 +81,30 @@ internal static class Handler
                 return ExtractSupport.NoPostings();
             },
             cancellationToken);
+    }
+
+    private static async Task<Result<IReadOnlyList<Posting>>> CancelForRevisionAsync(
+        Extract extract, ExtractPostingContext context, string? reason, StepServices services, CancellationToken token)
+    {
+        KaffDbContext database = services.Database;
+
+        bool later = await database.Extracts.AnyAsync(
+            candidate => candidate.ProjectId == extract.ProjectId
+                && candidate.Number > extract.Number
+                && candidate.Status != ExtractStatus.Void,
+            token);
+
+        // D-242 item 3: payments already received move to the revised extract, so they do not block. A cheque still in
+        // hand or a credit note on the original does: neither is ruled.
+        ExtractCollectionState? state = await ExtractCollections.StateAsync(database, extract, token);
+        bool moneyStanding = state is not null
+            && (state.Position.InCheques.IsPositive
+                || state.CreditNoteRaised
+                || state.Position.Expected != extract.NetPayable);
+
+        IReadOnlyList<ExtractPostedLeg> legs = await ExtractSupport.StandingAccrualLegsAsync(database, extract.Id, token);
+
+        return extract.CancelForRevision(
+            services.CurrentUser.UserId ?? Guid.Empty, reason, context, legs, later, moneyStanding, services.Clock.GetUtcNow());
     }
 }

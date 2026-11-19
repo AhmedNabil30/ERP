@@ -55,6 +55,9 @@ public sealed class Extract : Entity
             // resolution checks its own state instead.
             (ExtractStatus.Issued, ExtractStatus.Disputed),
 
+            // D-241 item 2: a disputed extract resolved by a revision is cancelled. Void is final.
+            (ExtractStatus.Disputed, ExtractStatus.Void),
+
             // spec.md section 7: any rejection at any gate returns the extract to Draft. A gate is where the
             // extract waits for a decision, so the rejecting states are the four that wait at one.
             (ExtractStatus.QcSubmitted, ExtractStatus.Draft),
@@ -113,6 +116,12 @@ public sealed class Extract : Entity
 
     public Guid CreatedByUserId { get; private set; }
 
+    /// <summary>
+    /// The cancelled extract this one revises (D-241 item 2), for the same period. Payments received on the original
+    /// count as already paid against this one (D-242 item 3). Null for a normal extract.
+    /// </summary>
+    public Guid? RevisesExtractId { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
 
     // ---- Evidence the Technical Office gates (quantities, never money). Priced work, as the calculator takes it. ----
@@ -168,7 +177,8 @@ public sealed class Extract : Entity
         Money materialInstalled,
         Guid preparedByUserId,
         DateTimeOffset now,
-        IReadOnlyList<ExtractChangeOrderBilling>? changeOrders = null)
+        IReadOnlyList<ExtractChangeOrderBilling>? changeOrders = null,
+        Guid? revisesExtractId = null)
     {
         ArgumentNullException.ThrowIfNull(project);
 
@@ -196,7 +206,10 @@ public sealed class Extract : Entity
 
         var extract = new Extract(
             project.Id, number, periodStart, periodEnd, cumulativeCertifiedWork, previouslyCertifiedWork,
-            materialValueOnSite, materialInstalled, preparedByUserId, now);
+            materialValueOnSite, materialInstalled, preparedByUserId, now)
+        {
+            RevisesExtractId = revisesExtractId,
+        };
         foreach (ExtractChangeOrderBilling billing in changeOrders ?? [])
         {
             extract._changeOrderLines.Add(new ExtractChangeOrderLine(extract.Id, billing.ChangeOrderId, billing.Amount));
@@ -205,9 +218,32 @@ public sealed class Extract : Entity
         return extract;
     }
 
-    /// <summary>True for a Draft extract a rejection returned. The screen asks this before offering the control.</summary>
-    public bool IsRevisable =>
-        Status == ExtractStatus.Draft && _gateHistory.Exists(record => record.Outcome == ExtractGateOutcome.Rejected);
+    /// <summary>The kind the last rejection picked (D-242 item 2), or null when the extract was never rejected.</summary>
+    public ExtractRejectionKind? LastRejectionKind =>
+        _gateHistory.FindLast(record => record.Outcome == ExtractGateOutcome.Rejected)?.RejectionKind;
+
+    /// <summary>
+    /// True for a Draft extract a rejection for wrong quantities returned (D-242 item 2): the site engineer revises the
+    /// evidence. A rejection for wrong material values goes to the supervisor's QC report instead. The screen asks this
+    /// before offering the control.
+    /// </summary>
+    public bool IsRevisable => Status == ExtractStatus.Draft && LastRejectionKind == ExtractRejectionKind.Quantities;
+
+    /// <summary>
+    /// True while a Draft returned for wrong quantities has not had its evidence revised since: the QC report waits for
+    /// the site engineer first.
+    /// </summary>
+    public bool AwaitsEvidenceRevision
+    {
+        get
+        {
+            int last = _gateHistory.FindLastIndex(record => record.Outcome == ExtractGateOutcome.Rejected);
+            return Status == ExtractStatus.Draft
+                && last >= 0
+                && _gateHistory[last].RejectionKind == ExtractRejectionKind.Quantities
+                && !_gateHistory.Skip(last + 1).Any(record => record.Gate == ExtractGate.EvidenceRevised);
+        }
+    }
 
     /// <summary>
     /// A rejection returned the extract to Draft because its evidence was wrong; this is how the preparer corrects
@@ -308,6 +344,11 @@ public sealed class Extract : Entity
         if (move.IsFailure)
         {
             return move;
+        }
+
+        if (AwaitsEvidenceRevision)
+        {
+            return Result.Failure(ExtractErrors.AwaitingEvidenceRevision);
         }
 
         Apply(ExtractStatus.QcSubmitted, ExtractGate.QcReport, ExtractGateOutcome.Passed, actorUserId, now, null, null);
@@ -552,7 +593,7 @@ public sealed class Extract : Entity
             return state;
         }
 
-        return position.Remaining.IsPositive ? Result.Success() : Result.Failure(CollectionErrors.ExceedsExpected);
+        return position.Remaining.IsPositive ? Result.Success() : Result.Failure(CollectionErrors.NothingRemaining);
     }
 
     /// <summary>
@@ -795,6 +836,79 @@ public sealed class Extract : Entity
         return Result.Success();
     }
 
+    /// <summary>
+    /// D-241 item 2: a quantity dispute resolved by a revised extract. The disputed extract becomes Void and each standing
+    /// accrual posting in <paramref name="accrualLegs"/> is mirrored by a new posting referencing it through
+    /// <c>ReversesId</c>, stamped at the same instant as the gate record so the database sees the extract's own flow. The
+    /// figures stay as they were, for the record. The revised extract is prepared for the same period afterwards and runs
+    /// the whole chain again.
+    /// </summary>
+    /// <remarks>
+    /// Refused, with nothing written, where a cancellation would break a rule this ruling did not address: a later extract
+    /// exists, a cheque in hand or a credit note stands on the original, the original billed a change order, or it
+    /// accrued a hold (the hold only grows before handover, CLAUDE.md and spec.md section 5.1). Payments already received
+    /// stay as posted and count against the revision (D-242 item 3).
+    /// </remarks>
+    public Result<IReadOnlyList<Posting>> CancelForRevision(
+        Guid actorUserId,
+        string? reason,
+        ExtractPostingContext context,
+        IReadOnlyList<ExtractPostedLeg> accrualLegs,
+        bool laterExtractExists,
+        bool moneyStanding,
+        DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(accrualLegs);
+
+        Result gate = Result.FirstFailureOrSuccess(
+            CanMoveTo(ExtractStatus.Void),
+            CheckProject(context),
+            CheckReason(reason),
+            laterExtractExists ? Result.Failure(ExtractErrors.RevisionNotLatest) : Result.Success(),
+            moneyStanding ? Result.Failure(ExtractErrors.RevisionMoneyStanding) : Result.Success(),
+            _changeOrderLines.Count > 0 ? Result.Failure(ExtractErrors.RevisionChangeOrdersBilled) : Result.Success(),
+            accrualLegs.Any(leg => leg.From.LedgerKind == LedgerKind.Hold || leg.To.LedgerKind == LedgerKind.Hold)
+                ? Result.Failure(ExtractErrors.RevisionHoldAccrued)
+                : Result.Success());
+        if (gate.IsFailure)
+        {
+            return Result.Failure<IReadOnlyList<Posting>>(gate.Error);
+        }
+
+        if (context.Rulings.ExtractPostingMoment.HasAccruedBy(ExtractStage.Issued) && accrualLegs.Count == 0)
+        {
+            return Result.Failure<IReadOnlyList<Posting>>(ExtractErrors.ReversalPostingsRequired);
+        }
+
+        Result state = PostingProjectStateLegality.Validate(
+            context.Rulings.PostingProjectStates, context.Project.Status, PostingType.RevenueRecognition, isReversal: true);
+        if (state.IsFailure)
+        {
+            return Result.Failure<IReadOnlyList<Posting>>(state.Error);
+        }
+
+        var reversals = new List<Posting>();
+        foreach (ExtractPostedLeg leg in accrualLegs)
+        {
+            if (leg.Posting.SourceDocumentId != Id)
+            {
+                return Result.Failure<IReadOnlyList<Posting>>(ExtractErrors.PostingNotFromThisExtract);
+            }
+
+            Result<Posting> reversal = Posting.Reverse(leg.Posting, leg.From, leg.To, context.PostingDate, actorUserId, now);
+            if (reversal.IsFailure)
+            {
+                return Result.Failure<IReadOnlyList<Posting>>(reversal.Error);
+            }
+
+            reversals.Add(reversal.Value);
+        }
+
+        Apply(ExtractStatus.Void, ExtractGate.Cancellation, ExtractGateOutcome.Reversed, actorUserId, now, reason!.Trim(), null);
+        return reversals;
+    }
+
     /// <summary>Everyone who raised or resolved a dispute on this extract, for separation of duties on its credit note.</summary>
     public IReadOnlyCollection<Guid> DisputeActors() =>
         [.. _gateHistory
@@ -815,13 +929,16 @@ public sealed class Extract : Entity
     }
 
     /// <summary>
-    /// Rejects at the gate the extract waits at and returns it to Draft with a stored reason. When the ruled
-    /// accrual moment has already passed, the accrual postings in <paramref name="accrualLegs"/> are reversed
-    /// by new mirror postings referencing the originals: nothing is updated or deleted.
+    /// Rejects at the gate the extract waits at and returns it to Draft with a stored reason and the kind the rejecter
+    /// picked (D-242 item 2): wrong quantities wait for the site engineer to revise the evidence, wrong material values
+    /// wait for the supervisor's QC report. When the ruled accrual moment has already passed, the accrual postings in
+    /// <paramref name="accrualLegs"/> are reversed by new mirror postings referencing the originals: nothing is updated
+    /// or deleted.
     /// </summary>
     public Result<IReadOnlyList<Posting>> Reject(
         Guid actorUserId,
         string? reason,
+        ExtractRejectionKind? kind,
         ExtractPostingContext context,
         IReadOnlyList<ExtractPostedLeg> accrualLegs,
         DateTimeOffset now)
@@ -844,6 +961,11 @@ public sealed class Extract : Entity
         if (reason.Trim().Length > Project.MaxReasonLength)
         {
             return Result.Failure<IReadOnlyList<Posting>>(ExtractErrors.ReasonTooLong);
+        }
+
+        if (kind is not (ExtractRejectionKind.Quantities or ExtractRejectionKind.MaterialValues))
+        {
+            return Result.Failure<IReadOnlyList<Posting>>(ExtractErrors.RejectionKindRequired);
         }
 
         var reversals = new List<Posting>();
@@ -885,7 +1007,10 @@ public sealed class Extract : Entity
         ApprovedPortion = Percentage.FromFraction(1m);
         HeldForNcrId = null;
         HeldPortionReleasedAt = null;
-        Apply(ExtractStatus.Draft, RejectedGate(), ExtractGateOutcome.Rejected, actorUserId, now, reason.Trim(), null);
+        ExtractGate rejectedAt = RejectedGate();
+        Status = ExtractStatus.Draft;
+        _gateHistory.Add(new ExtractGateRecord(
+            Id, rejectedAt, ExtractGateOutcome.Rejected, actorUserId, now, reason.Trim(), null, kind));
         return reversals;
     }
 

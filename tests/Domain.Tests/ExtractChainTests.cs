@@ -17,7 +17,7 @@ public sealed class ExtractChainTests
 
     private static readonly ExtractStatus[] AllStatuses = [.. Enum.GetValues<ExtractStatus>()];
 
-    /// <summary>Every status an extract can be driven to. Void is named by spec.md but nothing reaches it (Q106).</summary>
+    /// <summary>Every status the chain driver reaches. Void is reached only by a revision's cancellation (D-241 item 2).</summary>
     private static readonly ExtractStatus[] ReachableStatuses = [.. AllStatuses.Where(status => status != ExtractStatus.Void)];
 
     // ---- state machine: every legal transition and every illegal one ----
@@ -33,6 +33,7 @@ public sealed class ExtractChainTests
         (ExtractStatus.OwnerApproved, ExtractStatus.Issued),
         (ExtractStatus.Issued, ExtractStatus.Collected),
         (ExtractStatus.Issued, ExtractStatus.Disputed),
+        (ExtractStatus.Disputed, ExtractStatus.Void),
         (ExtractStatus.QcSubmitted, ExtractStatus.Draft),
         (ExtractStatus.TechnicalApproved, ExtractStatus.Draft),
         (ExtractStatus.PartiallyApproved, ExtractStatus.Draft),
@@ -97,7 +98,7 @@ public sealed class ExtractChainTests
             case "Collect":
                 return extract.Collect(actor, context, now);
             default:
-                return extract.Reject(actor, "not acceptable", context, [], now);
+                return extract.Reject(actor, "not acceptable", ExtractRejectionKind.MaterialValues, context, [], now);
         }
     }
 
@@ -156,7 +157,7 @@ public sealed class ExtractChainTests
         extract.ApproveTechnicalOffice(
             preparer, Percentage.FromFraction(1m), null, _h.Rulings, ExtractHarness.Now).Error
             .Should().Be(AuthorizationErrors.SameActorCreatedAndApproved);
-        extract.Reject(preparer, "no", _h.Context(), [], ExtractHarness.Now).Error
+        extract.Reject(preparer, "no", ExtractRejectionKind.MaterialValues, _h.Context(), [], ExtractHarness.Now).Error
             .Should().Be(AuthorizationErrors.SameActorCreatedAndApproved);
         extract.Status.Should().Be(ExtractStatus.QcSubmitted);
     }
@@ -195,7 +196,7 @@ public sealed class ExtractChainTests
         Guid technical = ExtractHarness.NewUser();
         Extract extract = _h.Prepare(ExtractHarness.NewUser());
         extract.SubmitQcReport(ExtractHarness.NewUser(), ExtractHarness.Now).IsSuccess.Should().BeTrue();
-        extract.Reject(technical, "quantities do not match the site", _h.Context(), [], ExtractHarness.Now)
+        extract.Reject(technical, "quantities do not match the site", ExtractRejectionKind.MaterialValues, _h.Context(), [], ExtractHarness.Now)
             .IsSuccess.Should().BeTrue();
 
         extract.SubmitQcReport(ExtractHarness.NewUser(), ExtractHarness.Now).IsSuccess.Should().BeTrue();
@@ -217,14 +218,14 @@ public sealed class ExtractChainTests
 
         foreach (string? blank in new[] { null, "", "   " })
         {
-            extract.Reject(rejecter, blank, _h.Context(), [], ExtractHarness.Now).Error
+            extract.Reject(rejecter, blank, ExtractRejectionKind.MaterialValues, _h.Context(), [], ExtractHarness.Now).Error
                 .Should().Be(ExtractErrors.ReasonRequired);
             extract.Status.Should().Be(at, "a rejection without a reason is not silent: it does not happen");
             extract.GateHistory.Count.Should().Be(before);
         }
 
         Result<IReadOnlyList<Posting>> rejected = extract.Reject(
-            rejecter, "  quantities are not supported by the QC report ", _h.Context(), [], ExtractHarness.Now);
+            rejecter, "  quantities are not supported by the QC report ", ExtractRejectionKind.MaterialValues, _h.Context(), [], ExtractHarness.Now);
 
         rejected.IsSuccess.Should().BeTrue();
         rejected.Value.Should().BeEmpty("nothing had accrued under the default ruling");
@@ -246,7 +247,7 @@ public sealed class ExtractChainTests
         Extract extract = await _h.DriveAsync(ExtractStatus.QcSubmitted);
 
         extract.Reject(
-            ExtractHarness.NewUser(), new string('x', Project.MaxReasonLength + 1), _h.Context(), [], ExtractHarness.Now)
+            ExtractHarness.NewUser(), new string('x', Project.MaxReasonLength + 1), ExtractRejectionKind.MaterialValues, _h.Context(), [], ExtractHarness.Now)
             .Error.Should().Be(ExtractErrors.ReasonTooLong);
     }
 
@@ -277,12 +278,12 @@ public sealed class ExtractChainTests
         IReadOnlyList<ExtractPostedLeg> legs = ExtractHarness.LegsOf(accrual.Value!);
         h.Balance(h.Hold).Should().Be(Money.Zero, "the contract carries no hold");
 
-        extract.Reject(ExtractHarness.NewUser(), "no", h.Context(), [], now).Error
+        extract.Reject(ExtractHarness.NewUser(), "no", ExtractRejectionKind.MaterialValues, h.Context(), [], now).Error
             .Should().Be(ExtractErrors.ReversalPostingsRequired);
         extract.Status.Should().Be(ExtractStatus.DeductionsApplied);
 
         Result<IReadOnlyList<Posting>> rejected = extract.Reject(
-            ExtractHarness.NewUser(), "the deductions are wrong", h.Context(), legs, now);
+            ExtractHarness.NewUser(), "the deductions are wrong", ExtractRejectionKind.MaterialValues, h.Context(), legs, now);
 
         rejected.IsSuccess.Should().BeTrue(rejected.IsFailure ? rejected.Error.Code : "");
         rejected.Value.Select(r => r.ReversesId).Should().BeEquivalentTo(originals.Select(o => (Guid?)o.Id));
@@ -317,7 +318,7 @@ public sealed class ExtractChainTests
         h.Balance(h.Hold).Should().Be(new Money(60_000m));
 
         Result<IReadOnlyList<Posting>> rejected = extract.Reject(
-            ExtractHarness.NewUser(), "the deductions are wrong", h.Context(), ExtractHarness.LegsOf(accrual.Value!), now);
+            ExtractHarness.NewUser(), "the deductions are wrong", ExtractRejectionKind.MaterialValues, h.Context(), ExtractHarness.LegsOf(accrual.Value!), now);
 
         rejected.Error.Should().Be(TreasuryErrors.HoldPostingNotReversible);
         extract.Status.Should().Be(ExtractStatus.DeductionsApplied);
@@ -344,7 +345,7 @@ public sealed class ExtractChainTests
         ];
         foreign.Should().NotBeEmpty();
 
-        mine.Reject(ExtractHarness.NewUser(), "no", h.Context(), foreign, ExtractHarness.Now).Error
+        mine.Reject(ExtractHarness.NewUser(), "no", ExtractRejectionKind.MaterialValues, h.Context(), foreign, ExtractHarness.Now).Error
             .Should().Be(ExtractErrors.PostingNotFromThisExtract);
     }
 

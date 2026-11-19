@@ -150,25 +150,19 @@ public sealed class Adjustment : Entity
 
     /// <summary>
     /// Raises a client credit note against <paramref name="extract"/>. Validates first, mutates nothing. Checks, in order:
-    /// the reason, the amount, the target account (the hold by name first), the extract and the project state.
+    /// the reason, the amount, the target account (the hold by name first), the extract and the project state. There is
+    /// no cap on the amount (D-239 item 2): a client who has then paid more than is owed is a separate, unruled question.
     /// </summary>
-    /// <param name="alreadyCredited">Credit notes already Raised or Approved against this extract, summed by the caller.</param>
-    /// <param name="alreadyPaid">
-    /// What the client has already paid on the extract, posted or in cheques in hand, summed by the caller. D-235 item 2
-    /// allows part payments, so a credit note may not bring what is owed below what was already paid.
-    /// </param>
     public static Result<Adjustment> RaiseCreditNote(
         Project project,
         int number,
         Extract extract,
         Account? target,
         Money amount,
-        Money alreadyCredited,
         string? reason,
         RulingSet rulings,
         Guid raisedByUserId,
-        DateTimeOffset now,
-        Money alreadyPaid = default)
+        DateTimeOffset now)
     {
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(extract);
@@ -203,14 +197,9 @@ public sealed class Adjustment : Entity
 
         if (extract.ProjectId != project.Id
             || extract.Status is not (ExtractStatus.Issued or ExtractStatus.Disputed)
-            || extract.NetPayable is not { } net)
+            || extract.NetPayable is null)
         {
             return Result.Failure<Adjustment>(AdjustmentErrors.SourceNotCreditable);
-        }
-
-        if (amount + alreadyCredited + alreadyPaid > net)
-        {
-            return Result.Failure<Adjustment>(AdjustmentErrors.ExceedsExtractNet);
         }
 
         if (!rulings.PostingProjectStates.Allows(project.Status, PostingType.CreditNote))
@@ -367,18 +356,24 @@ public sealed class Adjustment : Entity
     /// Corrects an approved adjustment: each standing posting in <paramref name="legs"/> is mirrored by a new posting
     /// referencing the original through <c>ReversesId</c>. Nothing is updated or deleted.
     /// </summary>
+    /// <param name="sourceExtractCollected">
+    /// True when the adjustment credits an extract that is now Collected. D-239 item 3: the reversal is refused, so the
+    /// extract is never reopened by it. The caller reads the extract under its row lock.
+    /// </param>
     public Result<IReadOnlyList<Posting>> Reverse(
         Guid actorUserId,
         IEnumerable<Guid> alsoActed,
         string? reason,
         IReadOnlyList<(Posting Posting, Account From, Account To)> legs,
         DateTimeOffset now,
-        DateOnly postingDate)
+        DateOnly postingDate,
+        bool sourceExtractCollected = false)
     {
         ArgumentNullException.ThrowIfNull(legs);
 
         Result gate = Result.FirstFailureOrSuccess(
             CanMoveTo(AdjustmentStatus.Reversed),
+            sourceExtractCollected ? Result.Failure(AdjustmentErrors.ExtractCollected) : Result.Success(),
             SeparationOfDuties.EnsureDifferentActor(PriorActors(alsoActed), actorUserId),
             CheckReason(reason));
         if (gate.IsFailure)

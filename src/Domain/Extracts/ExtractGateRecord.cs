@@ -21,9 +21,11 @@ public sealed class ExtractGateRecord : Entity
         Guid actorUserId,
         DateTimeOffset occurredAt,
         string? reason,
-        Percentage? approvedPortion)
+        Percentage? approvedPortion,
+        ExtractRejectionKind? rejectionKind = null)
         : base(NewId())
     {
+        RejectionKind = rejectionKind;
         ExtractId = extractId;
         Gate = gate;
         Outcome = outcome;
@@ -48,4 +50,7 @@ public sealed class ExtractGateRecord : Entity
 
     /// <summary>The fraction of the period's work approved for payment, on a Technical Office record.</summary>
     public Percentage? ApprovedPortion { get; private set; }
+
+    /// <summary>On a rejection, what the rejecter said was wrong and so who fixes it (D-242 item 2).</summary>
+    public ExtractRejectionKind? RejectionKind { get; private set; }
 }

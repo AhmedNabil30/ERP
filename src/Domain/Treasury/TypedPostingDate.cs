@@ -16,9 +16,7 @@ public static class TypedPostingDate
     /// <summary>No Kaff posting predates this.</summary>
     public static readonly DateOnly Earliest = new(2000, 1, 1);
 
-    /// <summary>How far past the site day a typed date may run: one day, for a caller in another time zone.</summary>
-    public const int DaysAfterSiteDay = 1;
-
+    /// <summary>D-240 item 3: a typed date may be the site day (<see cref="Rulings.SiteTime"/>) or earlier, never later.</summary>
     public static Result Check(DateOnly? date, DateOnly siteToday)
     {
         if (date is not { } typed)
@@ -26,7 +24,7 @@ public static class TypedPostingDate
             return Result.Failure(TreasuryErrors.PostingDateRequired);
         }
 
-        return typed < Earliest || typed > siteToday.AddDays(DaysAfterSiteDay)
+        return typed < Earliest || typed > siteToday
             ? Result.Failure(TreasuryErrors.PostingDateOutOfRange)
             : Result.Success();
     }

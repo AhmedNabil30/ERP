@@ -293,7 +293,7 @@ public sealed partial class ExtractEndpointTests : IAsyncLifetime
     public async Task Each_rejection_route_is_gated_like_the_gate_it_rejects_at()
     {
         Project project = await NewProjectAsync();
-        object body = new { reason = "wrong quantities" };
+        object body = new { reason = "wrong quantities", kind = "MaterialValues" };
 
         Guid atTechnical = await DriveAsync(project, ExtractStatus.QcSubmitted);
         string technical = Step(project.Id, atTechnical, "technical-rejection");
@@ -331,7 +331,7 @@ public sealed partial class ExtractEndpointTests : IAsyncLifetime
         Guid extract = await DriveAsync(project, ExtractStatus.QcSubmitted);
 
         HttpResponseMessage response = await SendAsync(
-            HttpMethod.Post, Step(project.Id, extract, "owner-rejection"), _owner, new { reason = "x" });
+            HttpMethod.Post, Step(project.Id, extract, "owner-rejection"), _owner, new { reason = "x", kind = "MaterialValues" });
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await ErrorCodeAsync(response)).Should().Be("extract.not_waiting_at_this_gate");
@@ -551,7 +551,7 @@ public sealed partial class ExtractEndpointTests : IAsyncLifetime
         Guid extract = await DriveAsync(project, ExtractStatus.DeductionsApplied, accountsRuling.Client);
 
         HttpResponseMessage rejected = await SendAsync(
-            accountsRuling.Client, HttpMethod.Post, Step(project.Id, extract, "owner-rejection"), _owner, new { reason = "test" });
+            accountsRuling.Client, HttpMethod.Post, Step(project.Id, extract, "owner-rejection"), _owner, new { reason = "test", kind = "MaterialValues" });
         rejected.StatusCode.Should().Be(HttpStatusCode.OK, await rejected.Content.ReadAsStringAsync(Ct));
 
         JsonElement proofEvent = ExtractEventOf(await ProofAsync(project.Id, accountsRuling.Client), extract, out _);
@@ -658,7 +658,7 @@ public sealed partial class ExtractEndpointTests : IAsyncLifetime
 
         (await StatusOfAsync(extract)).Should().Be(ExtractStatus.QcSubmitted, "a refused rejection steps nothing back");
 
-        (await SendAsync(HttpMethod.Post, route, _technicalOffice, new { reason = "  quantities do not match the site  " }))
+        (await SendAsync(HttpMethod.Post, route, _technicalOffice, new { reason = "  quantities do not match the site  ", kind = "MaterialValues" }))
             .StatusCode.Should().Be(HttpStatusCode.OK);
 
         await using KaffDbContext reader = _database.CreateBareContext();
@@ -694,7 +694,7 @@ public sealed partial class ExtractEndpointTests : IAsyncLifetime
         legs.Should().BePositive();
 
         HttpResponseMessage rejected = await SendAsync(
-            accountsRuling.Client, HttpMethod.Post, Step(project.Id, extract, "owner-rejection"), _owner, new { reason = "rate wrong" });
+            accountsRuling.Client, HttpMethod.Post, Step(project.Id, extract, "owner-rejection"), _owner, new { reason = "rate wrong", kind = "MaterialValues" });
         rejected.StatusCode.Should().Be(HttpStatusCode.OK, await rejected.Content.ReadAsStringAsync(Ct));
 
         (await PostingCountAsync(project.Id)).Should().Be(accrued + legs, "one mirror per accrual leg, none removed");
@@ -724,7 +724,7 @@ public sealed partial class ExtractEndpointTests : IAsyncLifetime
         long accrued = await PostingCountAsync(project.Id);
 
         HttpResponseMessage rejected = await SendAsync(
-            accountsRuling.Client, HttpMethod.Post, Step(project.Id, extract, "owner-rejection"), _owner, new { reason = "hold rate wrong" });
+            accountsRuling.Client, HttpMethod.Post, Step(project.Id, extract, "owner-rejection"), _owner, new { reason = "hold rate wrong", kind = "MaterialValues" });
 
         rejected.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await ErrorCodeAsync(rejected)).Should().Be("treasury.hold_posting_not_reversible");
@@ -784,7 +784,7 @@ public sealed partial class ExtractEndpointTests : IAsyncLifetime
     private async Task<Guid> RejectedAsync(Project project)
     {
         Guid extract = await DriveAsync(project, ExtractStatus.QcSubmitted);
-        (await SendAsync(HttpMethod.Post, Step(project.Id, extract, "technical-rejection"), _technicalOffice, new { reason = "quantities are short" }))
+        (await SendAsync(HttpMethod.Post, Step(project.Id, extract, "technical-rejection"), _technicalOffice, new { reason = "quantities are short", kind = "Quantities" }))
             .StatusCode.Should().Be(HttpStatusCode.OK);
         return extract;
     }
@@ -870,7 +870,7 @@ public sealed partial class ExtractEndpointTests : IAsyncLifetime
         (await ActionsAsync(project.Id, fresh, _prepEngineer))["reviseEvidence"].Should().BeFalse("nothing has been rejected yet");
 
         await StepAsync(_client, project, fresh, ExtractStatus.Draft, ExtractStatus.QcSubmitted);
-        (await SendAsync(HttpMethod.Post, Step(project.Id, fresh, "technical-rejection"), _technicalOffice, new { reason = "short" }))
+        (await SendAsync(HttpMethod.Post, Step(project.Id, fresh, "technical-rejection"), _technicalOffice, new { reason = "short", kind = "Quantities" }))
             .StatusCode.Should().Be(HttpStatusCode.OK);
 
         (await ActionsAsync(project.Id, fresh, _prepEngineer))["reviseEvidence"].Should().BeTrue();
@@ -1094,8 +1094,9 @@ public sealed partial class ExtractEndpointTests : IAsyncLifetime
         only.GetProperty("reversed").GetBoolean().Should().BeFalse();
         Guid cheque = only.GetProperty("chequeId").GetGuid();
 
+        // D-239 item 4: the Owner reads a cheque too; he moves none (ExtractRulingsNovemberTests).
         string route = $"/api/projects/{project.Id}/cheques/{cheque}";
-        foreach (Guid refused in new[] { _owner, _technicalOffice, _supervisor, _hr, _financeUnassigned })
+        foreach (Guid refused in new[] { _technicalOffice, _supervisor, _hr, _financeUnassigned })
         {
             (await SendAsync(HttpMethod.Get, route, refused, null)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
         }
@@ -1614,12 +1615,12 @@ public sealed partial class ExtractEndpointTests : IAsyncLifetime
         (await PostingSnapshotsAsync(project.Id)).Should().Equal(before, "the extract postings stand while disputed");
         (await BalanceAsync(project.Id, AccountType.Hold)).Should().Be(hold);
 
-        // Revised extract: refused, nothing changes, the extract stays disputed.
+        // Revised extract: the original accrued a hold, which only grows, so it is refused and the extract stays disputed.
         HttpResponseMessage revised = await SendAsync(
             HttpMethod.Post, Step(project.Id, extract, "dispute-resolution"), _finance,
             new { kind = "RevisedExtract", reason = "replace it", amount = "1000" });
         revised.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await ErrorCodeAsync(revised)).Should().Be("extract.dispute_revision_unruled");
+        (await ErrorCodeAsync(revised)).Should().Be("extract.revision_hold_accrued");
         (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Disputed);
         (await AdjustmentCountAsync(project.Id)).Should().Be(0);
 
@@ -1663,7 +1664,7 @@ public sealed partial class ExtractEndpointTests : IAsyncLifetime
             .Should().Be(HttpStatusCode.Conflict, "collect from Disputed");
         (await SendAsync(HttpMethod.Post, Step(project.Id, issued, "issue"), _owner, null)).StatusCode
             .Should().Be(HttpStatusCode.Conflict, "issue from Disputed");
-        (await SendAsync(HttpMethod.Post, Step(project.Id, issued, "owner-rejection"), _owner, new { reason = "x" })).StatusCode
+        (await SendAsync(HttpMethod.Post, Step(project.Id, issued, "owner-rejection"), _owner, new { reason = "x", kind = "MaterialValues" })).StatusCode
             .Should().Be(HttpStatusCode.Conflict, "reject from Disputed");
 
         (await StatusOfAsync(issued)).Should().Be(ExtractStatus.Disputed);
@@ -1685,9 +1686,8 @@ public sealed partial class ExtractEndpointTests : IAsyncLifetime
             .Should().Be(HttpStatusCode.BadRequest, "zero");
         (await SendAsync(HttpMethod.Post, route, _finance, new { kind = "CreditNote", reason = "x", amount = "-5" })).StatusCode
             .Should().Be(HttpStatusCode.BadRequest, "negative");
-        (await SendAsync(HttpMethod.Post, route, _finance, new { kind = "CreditNote", reason = "x", amount = "240000.0001" })).StatusCode
-            .Should().Be(HttpStatusCode.Conflict, "more than the net");
 
+        // D-239 item 2: more than the net is no longer refused, so it is not among the bad amounts.
         (await StatusOfAsync(extract)).Should().Be(ExtractStatus.Disputed);
         (await AdjustmentCountAsync(project.Id)).Should().Be(0);
     }
@@ -1818,24 +1818,15 @@ public sealed partial class ExtractEndpointTests : IAsyncLifetime
         (await PostingCountOfAsync(project.Id, PostingType.CreditNote)).Should().Be(0);
     }
 
+    /// <summary>D-239 item 2: credit notes against one extract are not capped together either.</summary>
     [Fact]
-    public async Task Credit_notes_against_one_extract_cannot_together_exceed_its_net_and_a_rejected_one_frees_its_share()
+    public async Task Credit_notes_against_one_extract_may_together_exceed_its_net_and_a_rejection_needs_a_reason()
     {
         Project project = await NewProjectAsync();
         Guid extract = await DriveAsync(project, ExtractStatus.Issued);
-        Guid revenue = await AccountIdAsync(project.Id, AccountType.ContractRevenue);
 
         Guid first = await RaiseCreditNoteAsync(project, extract, 200_000m);
-        HttpResponseMessage over = await SendAsync(HttpMethod.Post, Adjustments(project.Id), _finance, new
-        {
-            type = "ClientCreditNote",
-            reason = "x",
-            sourceExtractId = extract,
-            targetAccountId = revenue,
-            amount = "40000.0001",
-        });
-        over.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await ErrorCodeAsync(over)).Should().Be("adjustment.exceeds_extract_net");
+        await RaiseCreditNoteAsync(project, extract, 40_000.0001m);
 
         (await SendAsync(HttpMethod.Post, AdjustmentStep(project.Id, first, "rejection"), _owner, new { reason = "  " })).StatusCode
             .Should().Be(HttpStatusCode.BadRequest, "a rejection needs a reason");

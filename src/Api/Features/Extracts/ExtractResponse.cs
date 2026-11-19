@@ -236,7 +236,7 @@ internal static class ExtractView
             .IsSuccess;
 
         return new ExtractActions(
-            SubmitQcReport: Holds(Permission.ExtractQcReportSubmit) && Can(ExtractStatus.QcSubmitted),
+            SubmitQcReport: Holds(Permission.ExtractQcReportSubmit) && Can(ExtractStatus.QcSubmitted) && !extract.AwaitsEvidenceRevision,
             ApproveTechnicalOffice: Holds(Permission.QuantityGateApprove) && Can(ExtractStatus.TechnicalApproved) && mayDecide,
             RejectAtTechnicalOffice: Holds(Permission.QuantityGateApprove) && atTechnical && mayDecide,
             ApplyDeductions: Holds(Permission.ExtractDeductionsApply) && Can(ExtractStatus.DeductionsApplied) && mayDecide,

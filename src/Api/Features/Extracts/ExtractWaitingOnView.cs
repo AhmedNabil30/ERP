@@ -55,7 +55,7 @@ internal static class ExtractWaitingOnView
         ArgumentNullException.ThrowIfNull(extract);
         ArgumentNullException.ThrowIfNull(staff);
 
-        ExtractWaitingOn waiting = ExtractWaiting.For(extract.Status);
+        ExtractWaitingOn waiting = ExtractWaiting.For(extract);
 
         List<StaffMember> eligible =
         [

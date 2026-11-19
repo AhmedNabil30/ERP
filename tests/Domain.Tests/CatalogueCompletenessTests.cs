@@ -409,7 +409,8 @@ public sealed class CatalogueCompletenessTests
         //
         // ChangeOrderPrepare, ChangeOrderReview and ChangeOrderClientApprovalRecord joined the list 2026-11-04
         // (KAFF-508/509, Q103, Q105): spec.md section 13 gives the change-order chain and names only the Owner's
-        // step. The Technical Office is assumed; see Rulings/ChangeOrderRulings.cs.
+        // step. The Technical Office is assumed; see Rulings/ChangeOrderRulings.cs. ChangeOrderClientApprovalRecord
+        // left the list 2026-11-19: D-241 item 4 gives it to the supervisor.
         //
         // ProjectPracticalCompletionDeclare, ProjectHandover, SnagManage, HoldRelease, WarrantyCallbackManage and
         // ProjectClose joined the list 2026-11-04 (KAFF-800 to KAFF-807, Q109, Q110, Q113, Q115, Q116): spec.md
@@ -425,7 +426,6 @@ public sealed class CatalogueCompletenessTests
             Permission.ExtractCollect,
             Permission.ChangeOrderPrepare,
             Permission.ChangeOrderReview,
-            Permission.ChangeOrderClientApprovalRecord,
             Permission.ProjectPracticalCompletionDeclare,
             Permission.ProjectHandover,
             Permission.SnagManage,

@@ -21,7 +21,7 @@ public sealed class ExtractRevisionTests
     {
         Extract extract = _h.Prepare(preparer);
         extract.SubmitQcReport(ExtractHarness.NewUser(), ExtractHarness.Now).IsSuccess.Should().BeTrue();
-        extract.Reject(rejecter, "quantities do not match the site", _h.Context(), [], ExtractHarness.Now)
+        extract.Reject(rejecter, "quantities do not match the site", ExtractRejectionKind.Quantities, _h.Context(), [], ExtractHarness.Now)
             .IsSuccess.Should().BeTrue();
         return extract;
     }
@@ -129,7 +129,7 @@ public sealed class ExtractRevisionTests
         Extract extract = Rejected(preparer, ExtractHarness.NewUser());
         extract.ReviseEvidence(preparer, new Money(280_000m), new Money(100_000m), Money.Zero, Later).IsSuccess.Should().BeTrue();
         extract.SubmitQcReport(ExtractHarness.NewUser(), Later).IsSuccess.Should().BeTrue();
-        extract.Reject(ExtractHarness.NewUser(), "still wrong", _h.Context(), [], Later).IsSuccess.Should().BeTrue();
+        extract.Reject(ExtractHarness.NewUser(), "still wrong", ExtractRejectionKind.Quantities, _h.Context(), [], Later).IsSuccess.Should().BeTrue();
 
         extract.ReviseEvidence(preparer, new Money(260_000m), new Money(100_000m), Money.Zero, Later).IsSuccess.Should().BeTrue();
         extract.CumulativeCertifiedWork.Should().Be(new Money(260_000m));
@@ -157,7 +157,7 @@ public sealed class ExtractRevisionTests
     {
         Extract extract = _h.Prepare(ExtractHarness.NewUser(), number: 2, cumulative: 500_000m, previous: 300_000m);
         extract.SubmitQcReport(ExtractHarness.NewUser(), ExtractHarness.Now).IsSuccess.Should().BeTrue();
-        extract.Reject(ExtractHarness.NewUser(), "no", _h.Context(), [], ExtractHarness.Now).IsSuccess.Should().BeTrue();
+        extract.Reject(ExtractHarness.NewUser(), "no", ExtractRejectionKind.Quantities, _h.Context(), [], ExtractHarness.Now).IsSuccess.Should().BeTrue();
 
         extract.ReviseEvidence(ExtractHarness.NewUser(), new Money(299_999m), Money.Zero, Money.Zero, Later).Error
             .Should().Be(ExtractErrors.QuantitiesInvalid);
@@ -182,7 +182,7 @@ public sealed class ExtractRevisionTests
             ExtractHarness.Now, CancellationToken.None);
         h.Commit(accrual.Value);
         Result<IReadOnlyList<Posting>> rejected = extract.Reject(
-            ExtractHarness.NewUser(), "wrong", h.Context(), ExtractHarness.LegsOf(accrual.Value!), ExtractHarness.Now);
+            ExtractHarness.NewUser(), "wrong", ExtractRejectionKind.Quantities, h.Context(), ExtractHarness.LegsOf(accrual.Value!), ExtractHarness.Now);
         h.Ledger.AddRange(rejected.Value);
         List<Posting> beforeRevision = [.. h.Ledger];
 

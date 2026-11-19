@@ -75,11 +75,12 @@ public sealed record ChangeOrderApprovers : IRuling
         "ChangeOrderApprovers",
         "Q103/Q105: who creates, reviews technically and withdraws a change order, and who records the client's approval before the portal exists?",
         "The holders of the change-order steps other than the Owner's approval.",
-        "The Technical Office holds ChangeOrderPrepare (create, submit, withdraw), ChangeOrderReview and "
-        + "ChangeOrderClientApprovalRecord, all three Unresolved catalogue rows. The Owner alone approves "
-        + "(ChangeOrderApprove); Finance never does (spec.md 9). Separation of duties is the extract's: nobody who "
-        + "created or acted earlier on the change order may act at a later gate, so the chain needs three "
-        + "distinct Technical Office users and the Owner. ASSUMED.",
+        "The Technical Office holds ChangeOrderPrepare (create, submit, withdraw) and ChangeOrderReview, both Unresolved "
+        + "catalogue rows. ChangeOrderClientApprovalRecord is ruled (D-241 item 4): the assigned supervising site "
+        + "engineer records the client's approval, since the system has no project manager role. The Owner alone "
+        + "approves (ChangeOrderApprove); Finance never does (spec.md 9). Separation of duties is the extract's: nobody "
+        + "who created or acted earlier on the change order may act at a later gate, so the chain needs two distinct "
+        + "Technical Office users, the supervisor and the Owner. ASSUMED for the first two rows.",
         "Re-point the three rows. If the client records its own approval, that is the portal (KAFF-812) and the "
         + "ClientApproval step takes a Client actor instead.",
         RulingStatus.Assumed);

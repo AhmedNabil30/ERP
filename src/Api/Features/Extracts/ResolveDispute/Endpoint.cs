@@ -8,8 +8,9 @@ namespace Kaff.Api.Features.Extracts.ResolveDispute;
 
 /// <summary>
 /// <c>POST /api/projects/{projectId}/extracts/{id}/dispute-resolution</c>. Finance resolves a disputed extract as a credit
-/// note, which is raised for the Owner to approve (KAFF-511). A revised-extract resolution is refused: it is unruled
-/// (Q106). Gated <c>ExtractDisputeResolve</c>, holder unresolved. Role and assignment are both required. Posts nothing.
+/// note, which is raised for the Owner to approve (KAFF-511) and posts nothing, or as a revised extract (D-241 item 2),
+/// which cancels the original and reverses its accrual postings. Gated <c>ExtractDisputeResolve</c>, holder unresolved.
+/// Role and assignment are both required.
 /// </summary>
 public sealed class Endpoint : IEndpoint
 {

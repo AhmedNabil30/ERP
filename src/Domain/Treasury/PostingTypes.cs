@@ -24,6 +24,26 @@ public static class PostingTypes
 
     public static IReadOnlyCollection<PostingType> AllDefined => Natures.Keys;
 
+    /// <summary>
+    /// The posting types only a flow writes: the extract's accrual and collection (ExtractPostings), the credit note
+    /// (Adjustment), the hold release (ProjectClosure) and the subcontractor retention release (SubcontractorRetention).
+    /// A generic movement carrying one would move a flow's money without its document (O-r2-1, D-237), so
+    /// <see cref="Posting.CreateMovement"/> refuses them under any source type.
+    /// </summary>
+    public static readonly FrozenSet<PostingType> FlowOwned = new[]
+    {
+        PostingType.RevenueRecognition,
+        PostingType.HoldAccrual,
+        PostingType.HoldRelease,
+        PostingType.ClientCollection,
+        PostingType.TaxWithheldAtSource,
+        PostingType.ClientAdvanceRecovery,
+        PostingType.MaterialAdvanceIssue,
+        PostingType.MaterialAdvanceRecovery,
+        PostingType.CreditNote,
+        PostingType.SubcontractorRetentionRelease,
+    }.ToFrozenSet();
+
     private static FrozenDictionary<PostingType, PostingNature> Build()
     {
         var map = new Dictionary<PostingType, PostingNature>

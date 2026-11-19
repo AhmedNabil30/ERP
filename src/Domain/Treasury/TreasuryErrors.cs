@@ -109,6 +109,13 @@ public static class TreasuryErrors
         Error.Validation("treasury.flow_source_not_allowed", "errors.treasury.flow_source_not_allowed");
 
     /// <summary>
+    /// A generic movement may not carry a posting type only a flow writes (<see cref="PostingTypes.FlowOwned"/>): a flow's
+    /// money moves only through its flow (O-r2-1, D-237).
+    /// </summary>
+    public static readonly Error FlowTypeNotAllowed =
+        Error.Validation("treasury.flow_type_not_allowed", "errors.treasury.flow_type_not_allowed");
+
+    /// <summary>
     /// spec.md §5.1 — the hold releases in full: a release must leave it at exactly zero. Mirrors
     /// <c>KAFF_HOLD_PARTIAL_RELEASE</c>, which only the database can check.
     /// </summary>

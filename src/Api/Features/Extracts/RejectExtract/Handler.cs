@@ -50,7 +50,7 @@ internal static class Handler
                     await ExtractSupport.StandingAccrualLegsAsync(services.Database, extract.Id, token);
 
                 return extract.Reject(
-                    services.CurrentUser.UserId ?? Guid.Empty, request.Reason, context!, legs, services.Clock.GetUtcNow());
+                    services.CurrentUser.UserId ?? Guid.Empty, request.Reason, request.Kind, context!, legs, services.Clock.GetUtcNow());
             },
             cancellationToken);
     }

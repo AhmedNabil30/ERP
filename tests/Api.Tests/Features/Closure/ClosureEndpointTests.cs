@@ -801,11 +801,12 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Verifier F-2: a HoldRelease for less than the hold through the treasury posting route returned a bare 500. The
-    /// database still refuses it; the refusal now reads as a translated message.
+    /// Verifier F-2: a HoldRelease for less than the hold through the treasury posting route returned a bare 500. Since
+    /// O-r2-1 the route refuses a HoldRelease of any amount before the database is reached: only the release flow writes
+    /// one. The database guard behind it is pinned by TreasuryGuardTests.
     /// </summary>
     [Fact]
-    public async Task A_partial_hold_release_through_the_treasury_route_is_refused_with_a_translated_message()
+    public async Task A_hold_release_through_the_treasury_route_is_refused_with_a_translated_message()
     {
         Guid project = await NewProjectAsync(ProjectStatus.Handover);
         Guid hold = await AccountIdAsync(project, AccountType.Hold);
@@ -823,8 +824,8 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
             sourceDocumentReference = (string?)null,
         });
 
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict, await response.Content.ReadAsStringAsync(Ct));
-        (await ErrorCodeAsync(response)).Should().Be("treasury.hold_release_in_full");
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest, await response.Content.ReadAsStringAsync(Ct));
+        (await ErrorCodeAsync(response)).Should().Be("treasury.flow_type_not_allowed");
         (await HoldAsync(project)).Should().Be(200_000m);
         (await HoldReleaseCountAsync(project)).Should().Be(0);
     }

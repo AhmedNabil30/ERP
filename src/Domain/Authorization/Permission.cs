@@ -513,4 +513,10 @@ public enum Permission
     /// owner, Finance, the Technical Office and the supervising site engineer (Karim to confirm the last).
     /// </summary>
     ProjectMoneyRead = 94,
+
+    /// <summary>
+    /// D-239 item 4 - read a project's cheques in hand and a single cheque. Finance and the Owner, read-only: moving a cheque
+    /// stays <see cref="ExtractCollect"/>, which the Owner does not hold.
+    /// </summary>
+    ChequeRead = 95,
 }

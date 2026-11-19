@@ -1,4 +1,5 @@
 using Kaff.Domain.Common;
+using Kaff.Domain.Extracts;
 using Kaff.Domain.Identity;
 using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
@@ -43,13 +44,26 @@ internal static class Handler
                     .ToDictionaryAsync(account => account.Id, token);
 
                 IReadOnlyCollection<Guid> alsoActed = await AdjustmentSupport.DisputeActorsAsync(database, adjustment, token);
+
+                // D-239 item 3. The extract row is locked after the adjustment row, so a collection completing at the same
+                // moment either sees this reversal or is seen by it (the collection routes lock the extract only).
+                bool collected = false;
+                if (adjustment.SourceDocumentType == SourceDocumentType.Extract)
+                {
+                    await database.Database.ExecuteSqlInterpolatedAsync(
+                        $"SELECT id FROM extracts WHERE id = {adjustment.SourceDocumentId} FOR UPDATE", token);
+                    collected = await database.Extracts.AnyAsync(
+                        extract => extract.Id == adjustment.SourceDocumentId && extract.Status == ExtractStatus.Collected, token);
+                }
+
                 return adjustment.Reverse(
                     currentUser.UserId ?? Guid.Empty,
                     alsoActed,
                     request.Reason,
                     [.. postings.Select(posting => (posting, accounts[posting.FromAccountId], accounts[posting.ToAccountId]))],
                     clock.GetUtcNow(),
-                    AdjustmentSupport.Today(clock));
+                    AdjustmentSupport.Today(clock),
+                    collected);
             },
             cancellationToken);
     }

@@ -187,6 +187,9 @@ public sealed class PermissionEvaluatorTests
             Permission.AdjustmentRaise,
             Permission.SubcontractorRetentionRelease,
 
+            // Added 2026-11-19 with the row itself (D-239 item 4): reading the cheques in hand. Both grants name a role.
+            Permission.ChequeRead,
+
             Permission.ChangeOrderApprove,
             Permission.FirmAdvanceApprove,
             Permission.TreasuryPostProject,

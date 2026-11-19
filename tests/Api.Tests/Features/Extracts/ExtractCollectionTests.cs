@@ -313,8 +313,9 @@ public sealed partial class ExtractEndpointTests
             .StatusCode.Should().Be(HttpStatusCode.Conflict, "nothing stands to reverse");
     }
 
+    /// <summary>D-239 item 2: no cap on a credit note, not even past what is still unpaid.</summary>
     [Fact]
-    public async Task A_credit_note_cannot_exceed_what_is_still_unpaid()
+    public async Task A_credit_note_past_what_is_still_unpaid_is_accepted()
     {
         Project project = await NewProjectAsync();
         Guid extract = await DriveAsync(project, ExtractStatus.Issued);
@@ -330,9 +331,7 @@ public sealed partial class ExtractEndpointTests
             amount = "20000.0001",
         });
 
-        over.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await ErrorCodeAsync(over)).Should().Be("adjustment.exceeds_extract_net");
-        await RaiseCreditNoteAsync(project, extract, 20_000m);
+        over.StatusCode.Should().Be(HttpStatusCode.Created, await over.Content.ReadAsStringAsync(Ct));
     }
 
     // ---- D-235 item 4: the supervising engineer enters the material values with the QC report ------------
@@ -387,7 +386,6 @@ public sealed partial class ExtractEndpointTests
 
         (string Method, string Route, object? Body)[] money =
         [
-            ("GET", Extracts(project.Id), null),
             ("POST", Step(project.Id, draft, "deductions"), null),
             ("POST", Step(project.Id, draft, "collect"), CollectBody()),
             ("GET", Step(project.Id, draft, "collection"), null),
@@ -562,7 +560,7 @@ public sealed partial class ExtractEndpointTests
             document.RootElement.GetProperty("extractNumber").GetInt32().Should().Be(1);
         }
 
-        foreach (Guid refused in new[] { _owner, _technicalOffice, _supervisor, _prepEngineer, _hr, _financeUnassigned })
+        foreach (Guid refused in new[] { _technicalOffice, _supervisor, _prepEngineer, _hr, _financeUnassigned })
         {
             (await SendAsync(HttpMethod.Get, Cheques(project.Id), refused, null)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
         }

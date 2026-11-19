@@ -12,8 +12,8 @@ namespace Kaff.Api.Features.Cheques.ListCheques;
 
 /// <summary>
 /// <c>GET /api/projects/{projectId}/cheques</c>. The cheques in hand on a project: received or deposited, not yet cleared
-/// or bounced, oldest first, each with the number of the extract it paid. Gated <c>ExtractCollect</c>, the row that reads
-/// and moves a single cheque, with the project from the route.
+/// or bounced, oldest first, each with the number of the extract it paid. Gated <c>ChequeRead</c> (Finance and the Owner,
+/// D-239 item 4) with the project from the route.
 /// </summary>
 public sealed class Endpoint : IEndpoint
 {
@@ -24,7 +24,7 @@ public sealed class Endpoint : IEndpoint
         ArgumentNullException.ThrowIfNull(app);
 
         app.MapGet(Route, HandleAsync)
-            .RequirePermission(Permission.ExtractCollect, ProjectScope.FromRoute())
+            .RequirePermission(Permission.ChequeRead, ProjectScope.FromRoute())
             .WithName("ListCheques")
             .WithTags("Cheques");
     }

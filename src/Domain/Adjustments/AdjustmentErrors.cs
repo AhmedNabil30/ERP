@@ -45,8 +45,10 @@ public static class AdjustmentErrors
     public static readonly Error SourceNotCreditable =
         Error.Conflict("adjustment.source_not_creditable", "errors.adjustment.source_not_creditable");
 
-    public static readonly Error ExceedsExtractNet =
-        Error.Conflict("adjustment.exceeds_extract_net", "errors.adjustment.exceeds_extract_net");
+
+    /// <summary>D-239 item 3: a credit note on a Collected extract cannot be reversed.</summary>
+    public static readonly Error ExtractCollected =
+        Error.Conflict("adjustment.extract_collected", "errors.adjustment.extract_collected");
 
     public static readonly Error ProjectStateNotAllowed =
         Error.Conflict("adjustment.project_state_not_allowed", "errors.adjustment.project_state_not_allowed");

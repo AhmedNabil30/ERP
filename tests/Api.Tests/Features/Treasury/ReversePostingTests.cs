@@ -130,10 +130,18 @@ public sealed class ReversePostingTests : IAsyncLifetime
         Account receivable = await AddAccountAsync(AccountType.ClientReceivable, _projectA, PartyType.Client, clientId);
         Account hold = await AddAccountAsync(AccountType.Hold, _projectA, PartyType.Client, clientId);
 
-        HttpResponseMessage accrual = await PostProjectAsync(
-            _financeOnProjectA, _projectA, receivable.Id, hold.Id, 200_000m, PostingType.HoldAccrual);
-        accrual.StatusCode.Should().Be(HttpStatusCode.Created);
-        Guid accrualId = await IdOfAsync(accrual);
+        // A hold accrual is written by the extract flow only (O-r2-1), so the setup inserts it directly.
+        Guid accrualId;
+        await using (KaffDbContext setup = _database.CreateContext())
+        {
+            Posting accrual = Posting.Create(
+                receivable, hold, new Money(200_000m), PostingType.HoldAccrual,
+                new SourceDocument(SourceDocumentType.Payment, Guid.CreateVersion7(), null),
+                Today, Guid.CreateVersion7(), Now, _projectA).Value;
+            setup.Postings.Add(accrual);
+            await setup.SaveChangesAsync(Ct);
+            accrualId = accrual.Id;
+        }
 
         // spec.md §5.1: "Nothing may be taken out of it mid-project." A reversal of the accrual debits the
         // hold before handover exactly as a withdrawal would.

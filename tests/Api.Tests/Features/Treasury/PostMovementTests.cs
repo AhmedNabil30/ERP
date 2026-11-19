@@ -165,10 +165,16 @@ public sealed class PostMovementTests : IAsyncLifetime
             AccountType.ClientReceivable, _projectA, PartyType.Client, clientId);
         Account hold = await AddAccountAsync(AccountType.Hold, _projectA, PartyType.Client, clientId);
 
-        // Accrue into the hold first, so it has a balance a debit could otherwise draw down.
-        (await PostProjectAsync(
-                _financeOnProjectA, _projectA, receivable.Id, hold.Id, 200_000m, PostingType.HoldAccrual))
-            .StatusCode.Should().Be(HttpStatusCode.Created);
+        // Accrue into the hold first, so it has a balance a debit could otherwise draw down. A hold accrual is written by
+        // the extract flow only (O-r2-1), so the setup inserts it directly.
+        await using (KaffDbContext setup = _database.CreateContext())
+        {
+            setup.Postings.Add(Posting.Create(
+                receivable, hold, new Money(200_000m), PostingType.HoldAccrual,
+                new SourceDocument(SourceDocumentType.Payment, Guid.CreateVersion7(), null),
+                Today, Guid.CreateVersion7(), Now, _projectA).Value);
+            await setup.SaveChangesAsync(Ct);
+        }
 
         HttpResponseMessage response = await PostProjectAsync(
             _financeOnProjectA, _projectA, hold.Id, receivable.Id, 5_000m, PostingType.DebitNote);
@@ -317,10 +323,10 @@ public sealed class PostMovementTests : IAsyncLifetime
     [Theory]
     [InlineData(-1, true)]
     [InlineData(0, true)]
-    [InlineData(1, true)]
+    [InlineData(1, false)]
     [InlineData(2, false)]
     [InlineData(365, false)]
-    public async Task A_posting_date_after_the_site_day_is_accepted_only_within_one_day(int daysAhead, bool accepted)
+    public async Task A_posting_date_after_the_site_day_is_refused(int daysAhead, bool accepted)
     {
         (Account safe, Account expense) = await CreateFundedSafeAndExpenseAsync(10_000m);
         DateOnly date = SiteTime.Today(TimeProvider.System).AddDays(daysAhead);
@@ -390,6 +396,38 @@ public sealed class PostMovementTests : IAsyncLifetime
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest, await response.Content.ReadAsStringAsync(Ct));
         (await MessageKeyAsync(response)).Should().Be("errors.treasury.flow_source_not_allowed");
+        (await PostingCountAsync(safe.Id, expense.Id)).Should().Be(0);
+    }
+
+    /// <summary>
+    /// O-r2-1: a posting type only a flow writes is refused on the generic movement under any source type, so a hold
+    /// release or a client collection cannot be posted past its flow (D-237).
+    /// </summary>
+    [Theory]
+    [InlineData(nameof(PostingType.HoldRelease))]
+    [InlineData(nameof(PostingType.ClientCollection))]
+    [InlineData(nameof(PostingType.RevenueRecognition))]
+    [InlineData(nameof(PostingType.CreditNote))]
+    public async Task A_generic_movement_carrying_a_flow_owned_posting_type_is_refused_and_writes_nothing(string type)
+    {
+        (Account safe, Account expense) = await CreateFundedSafeAndExpenseAsync(10_000m);
+
+        HttpResponseMessage response = await SendBodyAsync(
+            new Uri("/api/treasury/postings", UriKind.Relative),
+            _financeCompanyWide,
+            new
+            {
+                fromAccountId = safe.Id,
+                toAccountId = expense.Id,
+                amount = "10.0000",
+                type,
+                postingDate = Today,
+                sourceDocumentType = nameof(SourceDocumentType.Payment),
+                sourceDocumentId = Guid.CreateVersion7(),
+            });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest, await response.Content.ReadAsStringAsync(Ct));
+        (await MessageKeyAsync(response)).Should().Be("errors.treasury.flow_type_not_allowed");
         (await PostingCountAsync(safe.Id, expense.Id)).Should().Be(0);
     }
 

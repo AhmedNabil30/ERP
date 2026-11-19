@@ -37,6 +37,13 @@ public static class CollectionErrors
     public static readonly Error ExceedsExpected =
         Error.Conflict("collection.exceeds_expected", "errors.collection.exceeds_expected");
 
+    /// <summary>
+    /// Nothing remains on the extract: what was collected and the cheques in hand cover all that is expected. Returned
+    /// before any amount is read (copy review 2026-11-18, item 1).
+    /// </summary>
+    public static readonly Error NothingRemaining =
+        Error.Conflict("collection.nothing_remaining", "errors.collection.nothing_remaining");
+
     /// <summary>spec.md section 6.7: a contract with no withholding category withholds nothing (AC-317-B, AC-317-F).</summary>
     public static readonly Error WithholdingNotApplicable =
         Error.Validation("collection.withholding_not_applicable", "errors.collection.withholding_not_applicable");

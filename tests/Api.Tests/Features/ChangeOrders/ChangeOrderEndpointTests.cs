@@ -150,17 +150,20 @@ public sealed class ChangeOrderEndpointTests : IAsyncLifetime
         [
             ("submit", ChangeOrderStatus.Draft, _technicalOffice),
             ("technical-review", ChangeOrderStatus.TechnicalReview, _technicalOffice2),
-            ("client-approval", ChangeOrderStatus.ClientApproval, _technicalOffice3),
+            ("client-approval", ChangeOrderStatus.ClientApproval, _supervisor),
             ("owner-approval", ChangeOrderStatus.OwnerApproval, _owner),
         ];
 
+        Guid[] offices = [_technicalOffice, _technicalOffice2, _technicalOffice3];
         foreach ((string step, ChangeOrderStatus at, Guid holder) in gates)
         {
             Guid id = await DriveAsync(project, at);
             string route = Step(project.Id, id, step);
 
-            foreach (Guid refused in new[] { _finance, _prepEngineer, _supervisor, _hr, _technicalOfficeUnassigned }
-                .Concat(holder == _owner ? [_technicalOffice, _technicalOffice2, _technicalOffice3] : [_owner]))
+            // D-241 item 4: the assigned supervisor records the client's approval; the Technical Office and the Owner do not.
+            foreach (Guid refused in new[] { _finance, _prepEngineer, _hr, _technicalOfficeUnassigned }
+                .Concat(holder == _owner ? offices : [_owner])
+                .Concat(holder == _supervisor ? offices : [_supervisor]))
             {
                 (await SendAsync(HttpMethod.Post, route, refused, null)).StatusCode
                     .Should().Be(HttpStatusCode.Forbidden, $"{step} must refuse a caller who lacks the permission or the assignment");
@@ -281,7 +284,7 @@ public sealed class ChangeOrderEndpointTests : IAsyncLifetime
         Project project = await NewProjectAsync();
         Guid id = await CreateAsync(project);
 
-        HttpResponseMessage skipped = await SendAsync(HttpMethod.Post, Step(project.Id, id, "client-approval"), _technicalOffice3, null);
+        HttpResponseMessage skipped = await SendAsync(HttpMethod.Post, Step(project.Id, id, "client-approval"), _supervisor, null);
         skipped.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await ErrorCodeAsync(skipped)).Should().Be("change_order.illegal_transition");
 
@@ -331,7 +334,7 @@ public sealed class ChangeOrderEndpointTests : IAsyncLifetime
         (string Route, ChangeOrderStatus At, Guid Rejecter)[] gates =
         [
             ("technical-rejection", ChangeOrderStatus.TechnicalReview, _technicalOffice2),
-            ("client-rejection", ChangeOrderStatus.ClientApproval, _technicalOffice3),
+            ("client-rejection", ChangeOrderStatus.ClientApproval, _supervisor),
             ("owner-rejection", ChangeOrderStatus.OwnerApproval, _owner),
         ];
 
@@ -610,7 +613,7 @@ public sealed class ChangeOrderEndpointTests : IAsyncLifetime
         [
             (ChangeOrderStatus.TechnicalReview, "submit", _technicalOffice, ChangeOrderStatus.Draft, string.Empty),
             (ChangeOrderStatus.ClientApproval, "technical-review", _technicalOffice2, ChangeOrderStatus.TechnicalReview, "technical-rejection"),
-            (ChangeOrderStatus.OwnerApproval, "client-approval", _technicalOffice3, ChangeOrderStatus.ClientApproval, "client-rejection"),
+            (ChangeOrderStatus.OwnerApproval, "client-approval", _supervisor, ChangeOrderStatus.ClientApproval, "client-rejection"),
             (ChangeOrderStatus.Approved, "owner-approval", _owner, ChangeOrderStatus.OwnerApproval, "owner-rejection"),
         ];
 

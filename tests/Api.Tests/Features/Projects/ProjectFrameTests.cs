@@ -59,7 +59,7 @@ public sealed class ProjectFrameTests : IAsyncLifetime
     [Theory]
     [InlineData("owner", true, true, true, true, true)]
     [InlineData("supervisor", true, true, true, true, true)]
-    [InlineData("junior", true, false, true, false, true)]
+    [InlineData("junior", true, false, true, true, true)]
     [InlineData("technicalOffice", true, true, false, true, true)]
     [InlineData("finance", true, false, false, true, true)]
     [InlineData("marketing", true, false, false, true, true)]
@@ -245,16 +245,14 @@ public sealed class ProjectFrameTests : IAsyncLifetime
     // ---- routes behind a tab the role does not have ----------------------------------------------------
 
     [Fact]
-    public async Task The_junior_is_refused_the_boq_and_the_extract_routes()
+    public async Task The_junior_is_refused_the_boq_and_opens_the_extract_routes()
     {
-        foreach (string path in new[]
+        (await StatusAsync(_junior, $"/api/projects/{_projectId}/boq")).Should().Be(HttpStatusCode.Forbidden);
+
+        // D-241 item 1: the junior sees the extracts list, its money null, and who each extract waits on.
+        foreach (string path in new[] { $"/api/projects/{_projectId}/extracts", $"/api/projects/{_projectId}/waiting-on" })
         {
-            $"/api/projects/{_projectId}/boq",
-            $"/api/projects/{_projectId}/extracts",
-            $"/api/projects/{_projectId}/waiting-on",
-        })
-        {
-            (await StatusAsync(_junior, path)).Should().Be(HttpStatusCode.Forbidden, path);
+            (await StatusAsync(_junior, path)).Should().Be(HttpStatusCode.OK, path);
         }
     }
 

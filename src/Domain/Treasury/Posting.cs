@@ -136,7 +136,9 @@ public sealed class Posting : Entity
 
     /// <summary>
     /// The generic movement (<c>POST .../treasury/postings</c>): <see cref="Create"/>, refused for a source type a flow
-    /// owns. A movement naming a real extract would otherwise count as that extract's own collection (D-237, open item).
+    /// owns and for a posting type only a flow writes (<see cref="PostingTypes.FlowOwned"/>). A movement naming a real
+    /// extract would otherwise count as that extract's own collection (D-237, open item), and a hold release or client
+    /// collection under any other source would move a flow's money without its document (O-r2-1).
     /// </summary>
     public static Result<Posting> CreateMovement(
         Account from,
@@ -147,10 +149,22 @@ public sealed class Posting : Entity
         DateOnly postingDate,
         Guid createdByUserId,
         DateTimeOffset createdAt,
-        Guid? projectId = null) =>
-        SourceDocument.HasOwningFlow(sourceDocument.Type)
-            ? Result.Failure<Posting>(TreasuryErrors.FlowSourceNotAllowed)
+        Guid? projectId = null)
+    {
+        Result allowed = CheckMovement(type, sourceDocument.Type);
+        return allowed.IsFailure
+            ? Result.Failure<Posting>(allowed.Error)
             : Create(from, to, amount, type, sourceDocument, postingDate, createdByUserId, createdAt, projectId);
+    }
+
+    /// <summary>
+    /// Whether the generic movement may carry this type and source at all. The route asks it before anything else, so the
+    /// refusal does not depend on which of the route's own pre-checks runs first.
+    /// </summary>
+    public static Result CheckMovement(PostingType type, SourceDocumentType sourceType) =>
+        SourceDocument.HasOwningFlow(sourceType) ? Result.Failure(TreasuryErrors.FlowSourceNotAllowed)
+        : PostingTypes.FlowOwned.Contains(type) ? Result.Failure(TreasuryErrors.FlowTypeNotAllowed)
+        : Result.Success();
 
     /// <summary>
     /// Produces the correcting posting for <paramref name="original"/>.

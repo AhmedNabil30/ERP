@@ -8,8 +8,8 @@ namespace Kaff.Api.Features.Cheques.GetCheque;
 
 /// <summary>
 /// <c>GET /api/projects/{projectId}/cheques/{id}</c>. One cheque: its state and the collection it belongs to.
-/// Gated <c>ExtractCollect</c> (the row that moves a cheque, holder unresolved, Q97) with the project from the
-/// route, so a user without the role or without the assignment is refused.
+/// Gated <c>ChequeRead</c> (Finance and the Owner, read-only, D-239 item 4) with the project from the route, so a user
+/// without the role or without the assignment is refused.
 /// </summary>
 public sealed class Endpoint : IEndpoint
 {
@@ -20,7 +20,7 @@ public sealed class Endpoint : IEndpoint
         ArgumentNullException.ThrowIfNull(app);
 
         app.MapGet(Route, Handler.HandleAsync)
-            .RequirePermission(Permission.ExtractCollect, ProjectScope.FromRoute())
+            .RequirePermission(Permission.ChequeRead, ProjectScope.FromRoute())
             .WithName("GetCheque")
             .WithTags("Cheques");
     }

@@ -34,9 +34,9 @@ public sealed class AdjustmentTests
 
     private static Result<Adjustment> Raise(
         ExtractHarness h, Extract extract, decimal amount, string? reason = "client disputes", Account? target = null,
-        decimal alreadyCredited = 0m, RulingSet? rulings = null, Guid? actor = null) =>
+        RulingSet? rulings = null, Guid? actor = null) =>
         Adjustment.RaiseCreditNote(
-            h.Project, 1, extract, target ?? h.Revenue, new Money(amount), new Money(alreadyCredited), reason,
+            h.Project, 1, extract, target ?? h.Revenue, new Money(amount), reason,
             rulings ?? h.Rulings, actor ?? ExtractHarness.NewUser(), Now);
 
     // ---- the dispute state machine: every legal move and every illegal one ----
@@ -108,7 +108,7 @@ public sealed class AdjustmentTests
 
         extract.Collect(ExtractHarness.NewUser(), h.Context(), Now).Error.Should().Be(ExtractErrors.IllegalTransition);
         extract.Issue(ExtractHarness.NewUser(), h.Context(), Now).Error.Should().Be(ExtractErrors.IllegalTransition);
-        extract.Reject(ExtractHarness.NewUser(), "no", h.Context(), [], Now).Error.Should().Be(ExtractErrors.IllegalTransition);
+        extract.Reject(ExtractHarness.NewUser(), "no", ExtractRejectionKind.MaterialValues, h.Context(), [], Now).Error.Should().Be(ExtractErrors.IllegalTransition);
 
         extract.Status.Should().Be(ExtractStatus.Disputed);
         extract.GateHistory.Count.Should().Be(history);
@@ -195,7 +195,7 @@ public sealed class AdjustmentTests
         Extract extract = await h.DriveAsync(ExtractStatus.Issued);
 
         Adjustment.RaiseCreditNote(
-                h.Project, 1, extract, null, new Money(1_000m), Money.Zero, "x", h.Rulings, ExtractHarness.NewUser(), Now)
+                h.Project, 1, extract, null, new Money(1_000m), "x", h.Rulings, ExtractHarness.NewUser(), Now)
             .Error.Should().Be(AdjustmentErrors.TargetAccountRequired);
     }
 
@@ -281,17 +281,16 @@ public sealed class AdjustmentTests
         }
     }
 
+    /// <summary>D-239 item 2: a credit note has no cap. Neither its own amount nor earlier notes are measured against the net.</summary>
     [Fact]
-    public async Task The_credit_notes_against_one_extract_cannot_exceed_its_net_payable()
+    public async Task A_credit_note_is_not_capped_by_the_extracts_net_payable()
     {
         var h = new ExtractHarness();
         Extract extract = await h.DriveAsync(ExtractStatus.Issued);
         Money net = extract.NetPayable!.Value;
 
         Raise(h, extract, net.Amount).IsSuccess.Should().BeTrue("the whole net may be credited");
-        Raise(h, extract, net.Amount + 0.0001m).Error.Should().Be(AdjustmentErrors.ExceedsExtractNet);
-        Raise(h, extract, 1m, alreadyCredited: net.Amount).Error.Should().Be(AdjustmentErrors.ExceedsExtractNet);
-        Raise(h, extract, 1m, alreadyCredited: net.Amount - 1m).IsSuccess.Should().BeTrue();
+        Raise(h, extract, net.Amount + 1_000m).IsSuccess.Should().BeTrue("D-239 item 2 removes the cap");
     }
 
     /// <summary>AC-512-F. Acceptance in each project state matches the ruled table, in the same way as every posting.</summary>
@@ -510,6 +509,21 @@ public sealed class AdjustmentTests
 
         Adjustment raisedOnly = Raise(h, extract, 1_000m).Value;
         raisedOnly.Reverse(ExtractHarness.NewUser(), [], "x", legs, Now, Date).Error.Should().Be(AdjustmentErrors.IllegalTransition);
+    }
+
+    /// <summary>D-239 item 3: a credit note on a Collected extract cannot be reversed; the extract is never reopened by it.</summary>
+    [Fact]
+    public async Task A_credit_note_on_a_collected_extract_cannot_be_reversed()
+    {
+        var h = new ExtractHarness();
+        Extract extract = await h.DriveAsync(ExtractStatus.Issued);
+        (Adjustment note, List<Posting> written) = await InAsync(h, extract, AdjustmentStatus.Approved);
+        (Posting, Account, Account)[] legs = [(written.Single(), h.Receivable, h.Revenue)];
+
+        note.Reverse(ExtractHarness.NewUser(), [], "x", legs, Now, Date, sourceExtractCollected: true)
+            .Error.Should().Be(AdjustmentErrors.ExtractCollected);
+        note.Status.Should().Be(AdjustmentStatus.Approved);
+        note.Reverse(ExtractHarness.NewUser(), [], "x", legs, Now, Date, sourceExtractCollected: false).IsSuccess.Should().BeTrue();
     }
 
     // ---- the types that are not built ----

@@ -83,24 +83,12 @@ internal static class AdjustmentSupport
             ? await database.Accounts.FirstOrDefaultAsync(account => account.Id == id, cancellationToken)
             : null;
 
-        // Money is a complex type EF cannot sum in SQL, so the amounts are read and added in memory.
-        List<Money> credited = await database.Adjustments
-            .Where(candidate => candidate.SourceDocumentType == SourceDocumentType.Extract
-                && candidate.SourceDocumentId == extract.Id
-                && (candidate.Status == AdjustmentStatus.Raised || candidate.Status == AdjustmentStatus.Approved))
-            .Select(candidate => candidate.Amount)
-            .ToListAsync(cancellationToken);
-
         int number = (await database.Adjustments
             .Where(candidate => candidate.ProjectId == project.Id)
             .Select(candidate => (int?)candidate.Number)
             .MaxAsync(cancellationToken) ?? 0) + 1;
 
-        Extracts.ExtractCollectionState? collection = await Extracts.ExtractCollections.StateAsync(database, extract, cancellationToken);
-        Money paid = collection is null ? Money.Zero : collection.Position.Collected + collection.Position.InCheques;
-
-        Result<Adjustment> raised = Adjustment.RaiseCreditNote(
-            project, number, extract, target, amount, Money.Sum(credited), reason, rulings, actor, now, paid);
+        Result<Adjustment> raised = Adjustment.RaiseCreditNote(project, number, extract, target, amount, reason, rulings, actor, now);
         if (raised.IsSuccess)
         {
             database.Adjustments.Add(raised.Value);
