@@ -1392,109 +1392,134 @@ The English/LTR text; the register-from-site form and the crew sheet (not redraw
 
 # Extract chain (`extracts.html`)
 
-**PROPOSAL, for Nabil's approval. Nothing here is built.** Thirteen screens from the screen briefs E1 to E13 in `ux/journey-extract-chain-2026-11-18.md` §8, plus one screen the server added since (the withholding category, `#wh`). The journey was written before D-235, D-238, D-239 and D-240; where they disagree, the mock follows the decisions (listed below).
+**PROPOSAL, round 2, for Nabil's approval. Nothing here is built.** Thirteen screens from the screen briefs E1 to E13 in `ux/journey-extract-chain-2026-11-18.md` §8, plus the withholding category in the contract details (`#wh`). The journey was written before D-235 and D-238 to D-241; where they disagree, the mock follows the decisions (listed below). Round 2 answers `ux/consultant-review-extracts-mock-2026-11-19.md`: all seven musts and the shoulds that need no ruling (list at the end).
 
-Open `extracts.html` directly: every screen is an artboard on one page, anchors `#e1` … `#e13` and `#wh`. Each artboard has its own state buttons (preview only). URL: `?view=e3:owner,e6:deposited` sets states per screen; `?view=loading` sets every screen that has that state; `?only=e5` draws one screen alone; `?embed=1` hides every preview label. A sheet or dialog is drawn open in place of the page it sits over, on a scrim; in the build it is the kit overlay (bottom sheet on a phone, 460 px side panel on desktop, centred dialog).
+Open `extracts.html` directly: every screen is an artboard on one page, anchors `#e1` … `#e13` and `#wh`. Each artboard has its own state buttons (preview only). URL: `?view=e3:issued,e6:deposited` sets states per screen; `?view=loading` sets every screen that has that state; `?only=e5` draws one screen alone; `?embed=1` hides every preview label. A sheet or dialog is drawn open in place of the page it sits over, on a scrim; in the build it is the kit overlay (bottom sheet on a phone, 460 px side panel on desktop, centred dialog).
+
+## One sample story for every screen
+
+Every figure on every screen comes from one story, so the build is checked against figures that agree. Today is 19/11/2026. The contract is spec §15 (1,000,000, hold 20%, advance 25%, تشوينات 75%), the client withholds at «مقاولات وتوريدات 1%».
+
+- Extract 1 (07/2026, net 240,000) and extract 2 (08/2026, net 120,000): تم تحصيله.
+- **Extract 3** (01/09/2026 – 30/09/2026): spec §15 row, work 400,000, hold −80,000, advance recovery −100,000, تشوينات 0 (no new material on site), recovery −30,000 (75% of 40,000 installed), net 190,000; hold to date 200,000. Issued 08/10/2026.
+  - Transfer TR-55821 on 12/10/2026 settles 100,000: 99,000 received, 1,000 withheld (1%).
+  - Cheque 004512 received 16/11/2026 settles 90,000: face value 89,100, 900 withheld with it.
+  - Now: «في شيكات» 90,000, «المتبقي» 0, the next task is «إيداع الشيك». E1, E3 `issued`, E5 `part`, E6 `received` and E7 all say this.
+- Extract 4 (10/2026) is with the Technical Office. It bills change order 1. No cheque exists on it.
+- **The dispute branch** (another path through the same story, so it has no cheque): after the transfer, the client disputes extract 3 on 20/10/2026. A price dispute ends in a 20,000 credit note (E9 `normal`, E10, then E3 `aftercn` and E5 `aftercn`: due 170,000, remaining 70,000). A quantity dispute ends in a revised extract, extract 5, that cancels extract 3 (E9 `qty`, E3 `cancelled`, E1 `revised`).
+- **«في شيكات» counts what a cheque in hand will settle: its face value plus the amount withheld with it.** That is what makes «المتبقي» reach 0 when the last cheque arrives, and it is how D-238 counts cheques against what remains. The cheque row shows the face value and the withheld amount separately.
 
 ## The screens
 
 | # | Screen | Who sees it | Primary action (shell slot) | Secondary, below the content |
 |---|---|---|---|---|
-| E1 | المستخلصات (project tab) | Owner, Finance, Technical Office, Supervisor; the site engineer if Q11 says yes | «مستخلص جديد», only for the preparer and only when no extract is in flight | none |
-| E2 | مستخلص جديد | Site engineer, no money | «إنشاء المستخلص» | none |
-| E3 | مستخلص {n} | every role; each control by its server flag | one by state and role: «تسليم تقرير الجودة» (Supervisor), «اعتماد الكميات» (TO), «تطبيق الخصومات» (Finance), «اعتماد» (Owner), «إصدار» (Owner), «تسجيل التحصيل» (Finance), «حل الاعتراض» (Finance), «إعادة التجهيز» (site engineer after a rejection) | «اعتماد جزء», «رفض», «تسجيل اعتراض» |
+| E1 | المستخلصات (project tab), with two sub-section links: «الشيكات تحت التحصيل», «أوامر التغيير» | Owner, Finance, Technical Office, Supervisor; the junior site engineer sees number, status and period, no money and no sub-sections (D-241 item 1) | «مستخلص جديد», only for the preparer and only when no extract is in flight | none |
+| E2 | مستخلص جديد | Junior site engineer, no money (D-241 item 1) | «إنشاء المستخلص» | none |
+| E3 | مستخلص {n} | every role; each control by its server flag | one by state and role: «تسليم تقرير الجودة» (Supervisor), «اعتماد الكميات» (TO), «تطبيق الخصومات» (Finance), «اعتماد» then, separately, «إصدار» (Owner), «تسجيل دفعة» or the cheque's next move «إيداع الشيك» (Finance), «حل الاعتراض» (Finance), «إعادة التجهيز» (site engineer after a quantity rejection) | «اعتماد جزء», «رفض», «تسجيل اعتراض» |
 | E4 | اعتماد جزء (sheet on E3) | Technical Office | «اعتماد النسبة» | «إلغاء» |
-| E5 | تسجيل التحصيل | Finance | «تسجيل التحصيل» | none |
-| E6 | الدفعات | Finance | the next cheque move, one only: «إيداع الشيك», «تأكيد الصرف»; «تسجيل دفعة» when nothing is in hand and something remains | «الشيك مرتد» (destructive trigger, beside clearance), «تصحيح التسجيل» (quiet) |
-| E7 | الشيكات تحت التحصيل | Finance; the Owner read-only (D-239/D-240: rows do not open E6, `owner` view) | none: a list's job is finding; each row opens E6 | none |
+| E5 | تسجيل دفعة | Finance | «تسجيل دفعة» | none |
+| E6 | الدفعات | Finance | the next cheque move, one only: «إيداع الشيك», «تأكيد الصرف»; «تسجيل دفعة» when nothing is in hand and something remains | «الشيك مرتد» and «عكس الدفعات», both destructive triggers |
+| E7 | الشيكات تحت التحصيل (sub-section of المستخلصات) | Finance; the Owner read-only (D-239 item 4), whose rows open the extract, not the payment | none: each row opens E6 (Finance) or E3 (Owner) | none |
 | E8 | تسجيل اعتراض | Finance | «تسجيل الاعتراض» | none |
-| E9 | حل الاعتراض | Finance | «إصدار إشعار دائن» or «إنشاء مستخلص معدّل», by the kind chosen | none |
+| E9 | حل الاعتراض | Finance | by the kind of error: «إصدار إشعار دائن» (price or amount) or «إنشاء مستخلص معدّل» (quantities) | none |
 | E10 | إشعار دائن | Owner decides, Finance reads | «اعتماد الإشعار الدائن» (Owner, not the raiser) | «رفض» |
-| E11 | أوامر التغيير | Technical Office, Owner, Supervisor (no money) | «أمر تغيير جديد» (preparer) | none |
+| E11 | أوامر التغيير (sub-section of المستخلصات) | Technical Office, Owner, Supervisor (no money) | «أمر تغيير جديد» (preparer) | none |
 | E12 | أمر تغيير جديد | Technical Office | «حفظ أمر التغيير» | «إضافة بند» inside the editor |
-| E13 | أمر التغيير | everyone who reads the project; each step by its flag | the caller's step, one only: «إرسال للمراجعة», «اعتماد المراجعة», «تسجيل موافقة العميل», «اعتماد المالك» | «سحب», «رفض», «رفض العميل» |
-| WH | الخصم من المنبع | Finance (ProjectFinancialsEdit) | «حفظ» | none |
+| E13 | أمر التغيير | everyone who reads the project; each step by its flag | the caller's step, one only: «إرسال للمراجعة», «اعتماد المراجعة» (TO), «تسجيل موافقة العميل» (project manager or Supervisor, D-241 item 4), «اعتماد المالك» | «سحب», «رفض», «رفض العميل» |
+| WH | الخصم من المنبع, a row of «شروط العقد» on the overview (D-241 item 3) | Finance edits through a sheet; the Owner reads | none on the page; the sheet's «حفظ» | «تعديل» on the row (Finance) |
 
-Primary is in the shell slot on every screen: the header's end edge on desktop, the bottom bar beside «القائمة» on a phone. While a sheet or dialog is open the page's primary is hidden and the sheet carries its own. No primary is ever disabled: a missing field keeps the primary live and names the field on submit (E2 `err`, E3 `qcerr`, E5 `err`, E8 `err`, E12 `nolines`, `qty0`). A control the caller may not use is absent (E1 `sup`, E3 `barred`, E5 `credit`, E10 `raiser`, E11 `sup`, E13 `barred`, `sup`).
+Primary is in the shell slot on every screen: the header's end edge on desktop, the bottom bar beside «القائمة» on a phone. While a sheet or dialog is open the page's primary is hidden and the sheet carries its own. No primary is ever disabled: a missing field keeps the primary live and names the field on submit (E2 `err`, E3 `qcerr`, E5 `err` and `future`, E8 `err`, E9 `err`, E12 `nolines` and `qty0`). A control the caller may not use is absent (E1 `sup` and `prep`, E3 `barred`, E5 `credit`, E7 `owner`, E10 `raiser`, E11 `sup`, E13 `barred` and `sup`, WH `owner`).
 
-## Server truth applied (D-235, D-238), and where the journey was overtaken
+**The waiting line has one form everywhere: «بانتظار {person}: {task}»** («بانتظار منى سامي: إيداع الشيك»). The client is the one holder with no person: «بانتظار العميل: الموافقة». A barred holder or the age is a dim second line.
 
-1. **Prepare takes the period only** (D-238 item 4). E2 has two dates, the quantities by باب (no prices), the change orders that will go on, and the last extract. No money field, no hint line: the journey's line under the material fields is gone with the fields.
-2. **The Supervisor enters both material values at the QC report, both required** (D-235 item 4, D-238 item 4). E3 `sup` → «تسليم تقرير الجودة» opens the sheet `qc` with «قيمة التشوينات بالموقع» and «قيمة التشوينات المركّبة», money fields with the ج.م affix. `qcerr` names both fields. The Supervisor sees what he types and no extract figure.
-3. **The junior site engineer sees no money.** E2 and E3 `sedraft` and `rejected` carry quantities and dates only.
-4. **Evidence revision has no body.** After a rejection the site engineer's primary is «إعادة التجهيز» with nothing to type; the reason sits at the top of E3 as a refusal banner with who and when.
-5. **Collection records what arrived** (D-238 item 3). E5: method (نقدًا · شيك · تحويل), date, reference (its label follows the method: رقم الإيصال, رقم الشيك, رقم التحويل), «المبلغ المستلم» required, «المخصوم من المنبع» optional and **absent when the contract has no category** (`nowh`). The withheld field's hint names the category and the expected figure («مقاولات وتوريدات 1%، المتوقع 1,900.00 ج.م»): a value the user cannot guess, so it is allowed. Part payments: `part` shows a second payment against what remains. A payment past what remains is the server refusal `collection.exceeds_expected` (`exceeds`), with the remaining figure under the field.
-6. **Expected, collected, in cheques, remaining** is one new part (`pos`, below) on E3 `issued`, E5 and E6.
-7. **A cheque is cash only when it clears** (D-238 item 2). Recording a cheque leaves the extract صادر and counts the cheque in «في شيكات». E6 walks مستلم → تم إيداعه → تم صرفه; at clearance the extract becomes تم تحصيله when the total is reached (`cleared`). Bounce needs a reason, posts nothing and keeps the extract صادر (`bounce`, `bounced`); its sheet carries the one consequence line.
-8. **Reversal reverses every standing payment at once** (D-238 item 3): the sheet's consequence line names the total; `reversed` shows the payments struck through with the reason.
-9. **Quantity dispute is a revised extract; price or amount dispute is a credit note** (D-235 item 3). E9 asks «نوع الخطأ» first: السعر أو المبلغ (إشعار دائن) or الكميات (مستخلص معدّل). The server still refuses the revised extract (`extract.dispute_revision_unruled`); until it is built, the build shows E9 without the choice, credit note only, because a control the user may not use is absent.
-10. **A raised credit note blocks collection until the Owner approves or rejects it; an approved one does not** (D-238 item 3, ruled in D-239/D-240). E3 `credit` shows the note waiting on the Owner with a link to E10, no collection primary; E5 `credit` is the refused state.
-11. **Finance sets the withholding category** (D-238 item 5). `#wh`: four choices from spec §6.7 (لا يخصم, مقاولات وتوريدات 1%, خدمات 3%, أتعاب مهنية 5%). An individual client's contract is refused: `individual` is the refused state, no control.
-12. **A credit note on a Collected extract cannot be reversed** (D-239/D-240): E10 `approved` has no action at all; no reversal control is drawn anywhere.
-13. **A credit note has no cap** (D-239 item 2): E9 shows net payable and earlier credit notes as facts, no limit on the amount field.
-14. **A payment date is today or earlier** (D-239/D-240): E5 `future` names the date field («التاريخ اليوم أو قبله.»); the primary stays live. The date defaults to today.
-15. **Words** (D-239/D-240): the hold is «الحجز» everywhere, never «المحجوز»; a money entry is «حركة», never «قيد» (neither word «المحجوز» nor «قيد» appears in the mock); material supplied to site is «تشوينات».
-16. **Each action shows only when the read's flag says so** (`ExtractActions`: `recordCollection`, `recordChequeMove`, `reverseCollection`, `raiseDispute`, `resolveDispute` and the gate flags). The mock's role views are drawn from those flags.
+## Server truth applied (D-235, D-238 to D-241)
+
+1. **Prepare takes the period only** (D-238 item 4). The junior site engineer starts the extract (D-241 item 1). E2: the last extract, «الفترة» (من, إلى), the quantities by باب with no prices, and the change orders that go on.
+2. **The Supervisor enters both material values with the QC report, both required** (D-235 item 4, D-238 item 4). The sheet is titled for what it holds, «قيم التشوينات»; its button is «تسليم تقرير الجودة». Extract 3's values are 0.00 on site and 40,000.00 installed, which give the §15 row.
+3. **The junior site engineer sees no money.** E1 `prep`, E2, E3 `sedraft` and `rejected` carry quantities, dates and status only.
+4. **A rejection lands on the person who can change something.** A quantity reason goes to the site engineer: E3 `rejected` shows the reason, a «فتح يومية الفترة» link where he corrects the log, and «إعادة التجهيز»; the chain marks «التجهيز». A material-value reason goes straight to the Supervisor: E3 `rejsup` waits on him at «تقرير الجودة» with «تسليم تقرير الجودة»; the junior sees nothing to do. A reason the site engineer cannot act on is never shown to him. **This needs a server change:** today every rejection returns to Draft (spec §7), and the reason is stored once for everybody.
+5. **Evidence revision has no body.** «إعادة التجهيز» re-reads the corrected daily logs.
+6. **The Owner keeps two steps**, «اعتماد» then «إصدار» (kept by the coordinator; S1 is not taken).
+7. **Finance sees the deductions after applying them.** E3 `applied`: the extract moves to the Owner with «طُبقت الخصومات.» and the document showing.
+8. **The document shows «الحجز حتى تاريخه»** (spec §5.1 MUST) in its own row under the total, outside the deductions. The «المجموع مطابق» badge is gone: a document that adds up says nothing; one that does not would show an error.
+9. **A payment records what arrived** (D-238 item 3). E5: method, date (today or earlier, D-240 item 3), reference (its label and its error follow the method: «أدخل رقم التحويل.»), «المبلغ المستلم» required, «المخصوم من المنبع» optional and absent when the contract has no category (`nowh`). The withheld field's hint is the category, «مقاولات وتوريدات 1%». A payment past what remains is named under the field only, no banner (`exceeds`).
+10. **The collection position** on E3, E5, E6 and E8 is five figures: «المستحق» (net payable less approved credit notes, with «بعد إشعار دائن 20,000.00» under it when one applies), «المستلم», «المخصوم من المنبع», «في شيكات», «المتبقي». Received and withheld are separate so «المستلم» matches the bank.
+11. **A cheque is cash only when it clears** (D-238 item 2). E6 walks مستلم → تم إيداعه → تم صرفه; at clearance the extract is تم تحصيله. Bounce needs a reason, posts nothing and keeps the extract صادر.
+12. **«عكس الدفعات» is one name** for the link, the sheet, its button and the banner after («عُكست الدفعات»). It is a destructive trigger, and it reverses every standing payment at once (D-238 item 3); the sheet's consequence line names the total.
+13. **A raised credit note blocks collection until the Owner decides** (D-239 item 1): E3 `credit` has no primary, E5 `credit` is refused. **After approval** the expected figure drops: E3 `aftercn` and E5 `aftercn`, due 170,000, remaining 70,000.
+14. **No cap on a credit note** (D-239 item 2). E9 shows net payable and earlier credit notes as facts; the amount field has no limit hint.
+15. **A credit note on a collected extract cannot be reversed** (D-239 item 3): no reversal control anywhere.
+16. **A price dispute ends in a credit note; a quantity dispute ends in a revised extract that cancels the original** (D-235 item 3, D-241 item 2). E9 asks «نوع الخطأ» and draws both: `normal` (price, credit note, then E10) and `qty` (quantities, «إنشاء مستخلص معدّل»). After a quantity resolution, the original is «ملغى» (E3 `cancelled`, no actions, a link to its replacement) and the revised extract 5 starts again at the Supervisor (E1 `revised`, «يحل محل مستخلص 3»). **Build plan: E9 is built with both kinds. The revised extract must be built on the server before E9 ships; a credit-note-only E9 is not an acceptable interim, because it would settle quantity disputes with money.**
+17. **Cheques in hand and change orders are sub-sections of the Extracts tab; the withholding category sits with the contract details** (D-241 item 3). E1 ends with two link rows (with counts); E7 and E11 go back to «المستخلصات». WH is the overview's «شروط العقد», opened, with «الخصم من المنبع» as a row and «تعديل» for Finance.
+18. **The client's approval of a change order is recorded by the project manager or Supervisor** (D-241 item 4). E13 `client` waits on «العميل»; the Supervisor holds «تسجيل موافقة العميل» and sees no prices.
+19. **Words** (D-240): «الحجز» everywhere, never «المحجوز»; a money entry is «حركة», never «قيد» (neither appears); material is «تشوينات». The Owner's confirmation says «ويُضاف إلى الحجز» (no ledger verb).
+20. **Each action shows only when the read's flag says so** (`ExtractActions`).
 
 ## Reused from the kit and earlier mocks, unchanged
 
-Shell (sidebar, phone header, bottom bar, destinations sheet), project frame with stage line and tabs (E1), back link, status pill, badge, buttons (filled, `sec2`, `quiet`, `dtrig`, `dconf`), fields (text, money with affix, number with affix, date with the 44 px calendar button, select, textarea), the radio group (`rdg`) from `project-team.html`, refusal and note banners, the saved-in-place banner (`rec`), state block (normal and refused), skeleton, list (`lst`), section heading, the bottom sheet and side panel (`sx`), the confirmation dialog (`dlg`), the details disclosure, the desktop table and the phone row.
+Shell (sidebar, phone header, bottom bar, destinations sheet), project frame with stage line and tabs (E1, WH), back link, status pill, badge, buttons (filled, `sec2`, `quiet`, `dtrig`, `dconf`), fields (text, money with affix, number with affix, date with the 44 px calendar button, select, textarea), the radio group (`rdg`), refusal and note banners, the saved-in-place banner (`rec`), state block (normal and refused), skeleton, list (`lst`), section heading, bottom sheet and side panel (`sx`), confirmation dialog (`dlg`), the details disclosure, the desktop table and the phone row.
 
 ## New in the kit (put these in `components.html` before building)
 
-1. **Extract status pill set.** The app's words (`extract.status.*`) on existing tones: مسودة hollow ring; عند المكتب الفني, معتمد جزئيًا, عند الحسابات, عند المالك, معتمد من المالك the in-progress dot; **صادر a new ink outline with an arrow (`s-out`)**; تم تحصيله the finished check; معترض عليه the stalled triangle, the only red. Cheque: مستلم ring, تم إيداعه dot, تم صرفه check, مرتد triangle. Change order: مسودة ring, المراجعة الفنية, موافقة العميل, اعتماد المالك dot, معتمد and مسجل check, مرفوض triangle, مسحوب the postponed tone with a cross. Credit note: بانتظار المالك dot, معتمد check, مرفوض triangle. None of these are Kaff's five project words, which stay on the project pill only.
-2. **Chain line (`stl x7`).** The project frame's stage line with seven steps (التجهيز, تقرير الجودة, المكتب الفني, الحسابات, المالك, الإصدار, التحصيل), labels at .6875rem on a phone, capped at 860 px on desktop. Four steps for a change order (المسودة, المراجعة الفنية, موافقة العميل, اعتماد المالك).
-3. **Waiting line (`wait`).** One band in the head fill: «بانتظار {role}: {name}», and a dim second line for age («منذ ساعتين») or for barred holders («لا يمكنه الاعتماد: {name}», D-204).
-4. **Figure list (`fl`).** Label at the start, figure at the end, deductions with a real minus, a ruled total row in the head fill. The unit is in the section heading once («مستند المستخلص (ج.م)»).
-5. **Collection position (`pos`).** Four figures, المتوقع, المحصّل, في شيكات, المتبقي; المتبقي in the head fill. Four across on desktop, two by two on a phone.
-6. **Quantities table (`qt`).** باب band, line name with its unit dim under it, «هذه الفترة» and «حتى تاريخه» at the end edge, one decimal, no prices.
-7. **Change-order line editor (`edt`, `ln`).** One row per line on desktop (description, unit, quantity, unit price, derived total, delete); on a phone the description takes the full width and the rest pair up. Footer band with «إضافة بند» and the running total.
-8. **Phone list band (`lh`).** A head-fill band above a phone list naming the first column and the money column with its unit, so the unit is said once on a phone as the table header says it on desktop.
+1. **Extract status pill set.** The app's words on existing tones: مسودة hollow ring; عند المكتب الفني, معتمد جزئيًا, عند الحسابات, عند المالك, معتمد من المالك the in-progress dot; **صادر a new ink outline with an arrow (`s-out`)**; تم تحصيله the finished check; معترض عليه the stalled triangle, the only red; **ملغى** the postponed tone with a cross. Cheque: مستلم ring, تم إيداعه dot, تم صرفه check, مرتد triangle. Change order, in the «عند …» form of the extract pills: مسودة ring, عند المكتب الفني, عند العميل, عند المالك dot, معتمد and مسجل check, مرفوض triangle, مسحوب cross. Credit note: عند المالك dot, معتمد check, مرفوض triangle.
+2. **Chain line (`stl x7`).** The stage line with seven steps (التجهيز … التحصيل), .6875rem labels on a phone, capped at 860 px on desktop; four steps for a change order. A cancelled extract has none.
+3. **Waiting line (`wait`).** One band, «بانتظار {person}: {task}», with a dim second line.
+4. **Figure list (`fl`).** Label at the start, figure at the end, real minus, ruled total row; the unit is in the section heading once.
+5. **Collection position (`pos`).** Five figures, المتبقي in the head fill. Five across on desktop; two by two on a phone with المتبقي full width.
+6. **Quantities table (`qt`).** باب band, line name with its unit under it, «هذه الفترة» and «حتى تاريخه», decimals only when the value has them.
+7. **Change-order line editor (`edt`, `ln`).**
+8. **List band (`lh`).** A head-fill band above a list naming the first column and the money column with its unit.
+9. **Forward link row (`back fwd`).** The back link's face with the chevron pointing forward and an optional count badge, for sub-sections (E1) and «الدفعات» (E3).
 
 ## Words on the screen beyond labels (each is allowed by the screen-brief rules)
 
-- E3 `barred`: «شاركتَ في هذا المستخلص، فلا تعتمده.» The brief keeps this line: the layout cannot say "you took part" alone.
-- E3 `stopped`: «المشروع متوقف، فلا يصدر المستخلص.» The brief asks for one line saying why issue is absent.
-- E3 `confirm`: the consequence line before a money action, «صافي المستحق 190,000.00 ج.م، ويُرحَّل الحجز 80,000.00 ج.م.»
-- E4: «المعلّق ينتظر إغلاق ملاحظة الجودة.» (brief).
-- E6 `bounce`: «لا يُسجَّل أي مبلغ، ويبقى المستخلص صادرًا.»; E6 `reverse`: «تُعكس كل الدفعات القائمة على مستخلص 3 (100,000.00 ج.م)، ويعود المستخلص صادرًا.» Consequence lines before a money action.
-- E9 `revised`: «يُجهَّز مستخلص معدّل ويمر بالمسار من البداية.» Consequence line; see open question 3 (the revised extract).
-- E10 `raiser`: «أنشأتَ هذا الإشعار، فيعتمده المالك.» (brief: raiser cannot approve, one line says why).
-- E13 `barred`: «أرسلتَ هذا الأمر للمراجعة، فيراجعه غيرك.» Same reason as E3.
-- Hint: E5 withheld field (category and expected figure): a value the user cannot guess. E9 has no cap hint: a credit note has no cap (D-239 item 2); `err` names a blank amount.
+- E3 `barred`, E10 `raiser`, E13 `barred`: the separation-of-duties line (the brief keeps it; the layout cannot say "you took part").
+- E3 `stopped`: «المشروع متوقف، فلا يصدر المستخلص.» (brief: one line saying why issue is absent).
+- E3 `confirm` and E6 `reverse`: consequence lines before a money action.
+- Cut in round 2: the E4 sentence (folded into the label «معلّق حتى إغلاق الملاحظة»), the E6 bounce sentence, the E9 revised sentence.
 
 ## Codes left on the screen
 
-Extract number («مستخلص 3») and change-order number («أمر تغيير 2»): people read and say them. Cheque number and transfer or receipt reference on E6 and E7: Finance reads and types them. Dates in DD/MM/YYYY. No id, no NCR code (title only), no category code, no account name, no enum name.
+Extract number and change-order number: people read and say them. Cheque number and transfer reference on E6 and E7: Finance reads and types them. Dates DD/MM/YYYY. No id, no NCR code (title only), no category code, no account name, no enum name.
 
 ## New words (every one is a guess; Nabil or `arabic-copy` confirms)
 
-«إعادة التجهيز» (revise with no body), «تسليم التقرير», «اعتماد جزء», «اعتماد النسبة», «المعتمد للدفع», «المعلّق», «تسجيل التحصيل», «المبلغ المستلم», «المخصوم من المنبع», «رقم الإيصال», «رقم التحويل», «المتوقع», «المحصّل», «في شيكات», «المتبقي», «الدفعات», «إيداع الشيك», «تأكيد الصرف», «الشيك مرتد», «سبب الارتداد», «تسجيل الارتداد», «تصحيح التسجيل», «عكس الدفعات», «تسجيل دفعة», «الشيكات تحت التحصيل», «آخر تغيير», «لا توجد شيكات معلقة», cheque states «مستلم», «تم إيداعه», «تم صرفه», «مرتد», «تسجيل اعتراض», «سبب الاعتراض», «معترض عليه», «حل الاعتراض», «نوع الخطأ», «السعر أو المبلغ», «الكميات», «مستخلص معدّل», «إنشاء مستخلص معدّل», «مبلغ الإشعار», «أدخل مبلغ الإشعار.», «إشعارات دائنة سابقة», «إصدار إشعار دائن», «اعتماد الإشعار الدائن», «رفض الإشعار», «بانتظار المالك», «معتمد سابقًا», «أنشأه», change-order states «المراجعة الفنية», «موافقة العميل», «اعتماد المالك», «مسحوب», «مسجل», «إرسال للمراجعة», «اعتماد المراجعة», «تسجيل موافقة العميل», «رفض العميل», «سحب», «قبل الأمر», «بعد الأمر», «الخصم من المنبع», «فئة الخصم», «لا يخصم», «مقاولات وتوريدات», «خدمات», «أتعاب مهنية», «العميل فرد، لا يُخصم من المنبع», «التاريخ اليوم أو قبله.». The material labels reuse the app's «قيمة التشوينات بالموقع» and «قيمة التشوينات المركّبة»; the server's new refusal `errors.extract.material_values_required` says «الخامات الموردة للموقع» and «الخامات المركبة»: one of the two must change.
+«إعادة التجهيز», «فتح يومية الفترة», «قيم التشوينات», «تشوينات» (the advance row), «الحجز حتى تاريخه», «طُبقت الخصومات.», «ويُضاف إلى الحجز», «اعتماد جزء», «اعتماد النسبة», «المعتمد للدفع», «معلّق حتى إغلاق الملاحظة», «تسجيل دفعة», «المبلغ المستلم», «المخصوم من المنبع», «رقم الإيصال», «رقم التحويل», «أدخل رقم التحويل.», «التاريخ اليوم أو قبله.», «أكبر من المتبقي (…)», «المستحق», «المستلم», «في شيكات», «المتبقي», «بعد إشعار دائن …», «الدفعات», «الدفعة», «إيداع الشيك», «تأكيد الصرف», «الشيك مرتد», «سبب الارتداد», «تسجيل الارتداد», «عكس الدفعات», «عُكست الدفعات», «الشيكات تحت التحصيل», «لا توجد شيكات تحت التحصيل», «منذ», cheque states «مستلم», «تم إيداعه», «تم صرفه», «مرتد», «تسجيل اعتراض», «سبب الاعتراض», «معترض عليه», «حل الاعتراض», «نوع الخطأ», «السعر أو المبلغ», «الكميات», «مستخلص معدّل», «إنشاء مستخلص معدّل», «ملغى», «أُلغي. يحل محله مستخلص 5.», «يحل محل مستخلص 3», «مبلغ الإشعار», «أدخل مبلغ الإشعار.», «إشعارات دائنة سابقة», «إصدار إشعار دائن», «اعتماد الإشعار الدائن», «رفض الإشعار», «اعتراض العميل», «المستحق بعد الإشعار», «أنشأه», change-order states «عند المكتب الفني», «عند العميل», «عند المالك», «مسحوب», «مسجل», «إرسال للمراجعة», «اعتماد المراجعة», «تسجيل موافقة العميل», «رفض العميل», «بانتظار العميل: الموافقة», «سحب», «قبل الأمر», «بعد الأمر», «السجل», «الخصم من المنبع», «فئة الخصم», «لا يخصم», «مقاولات وتوريدات», «خدمات», «أتعاب مهنية», «حُفظ الخصم من المنبع: …». The server's refusal `errors.extract.material_values_required` says «الخامات الموردة للموقع / الخامات المركبة»; the app and this mock say «قيمة التشوينات بالموقع / المركّبة», and D-240 says «تشوينات»: the server key should change.
 
 ## Not decided here: questions for Nabil (each drawn on a default)
 
-1. **Line-by-line quantity confirmation at QC.** D-235 item 4 says the Supervisor confirms the executed quantities line by line. The server has no line read and the QC route takes the two values only. The sheet draws the two values; a confirm-per-line list is not drawn until the read exists (journey gap 6 and 13). Same gap feeds the quantities table on E2 and E3.
-2. **Who sees the extracts tab as site engineer** (journey Q11). `ExtractRead` excludes the junior engineer today, but E2 is his. Drawn: he sees E1 without money and the primary when none is in flight (`prep`).
-3. **The revised extract.** What happens to the disputed original (Void, superseded, kept) is unruled; the consequence line in E9 `revised` is a placeholder until it is.
-4. **Where E7, E11 and `#wh` live in the project frame.** The frame has five tabs; none of these is one. Drawn as deeper pages reached from the project (back link to the project). Candidates: E7 and E11 as links on the المستخلصات tab, `#wh` in the overview's «شروط العقد» disclosure with an edit link for Finance.
-5. **Withheld amount against the rate** (Q99): the field accepts any figure; the hint shows the expected one. No warning is drawn when they differ.
-6. **Category changeable at any time** (Q30): drawn as always editable. Lock after the first collection?
-7. **Partial approval (E4)** needs an NCR object (journey gap 5) and a ruling on what the percentage scales (journey Q12, Q13). Drawn with open NCRs by title.
-8. **The change orders billed on an extract.** `ExtractChangeOrderResponse` carries an id and an amount, no title, so E3 cannot name them. E3 draws no change-order section on extract 3 (it has none); E2 lists titles, which the server does not send before prepare (journey gap 10).
-9. **Who records the client's approval of a change order** (journey Q103, Q105, D-235 not ruled): drawn as a third Technical Office user. The client approval has no date or reference field because the route takes no body.
-10. **The withholding word** «الخصم من المنبع» is not ruled (D-240 item 4); the mock uses it on E5, E6 and `#wh`.
-11. **A client who has paid more than is owed** after an uncapped credit note (D-239 item 2, not ruled): no refund or carry-forward is drawn.
-12. **Deposit and clearance carry no date or bank** (D-238 not done): the cheque state's date is the day it was recorded.
+1. **Rejection routing** (point 4 above): who decides where a rejection lands, the rejecter by choosing the reason's kind, or the server by the field the reason is about? Drawn: by kind (quantities to the site engineer, material values to the Supervisor). Spec §7 says every rejection returns to Draft, so this changes the spec.
+2. **Payments already received on a cancelled extract.** When a revised extract cancels extract 3, the 100,000 transfer was received against the original. Moved to the revised extract, or reversed and recorded again? Not drawn.
+3. **One extract in flight** (`ExtractPreparationScope`) while a revised extract runs beside extract 4: E1 `revised` draws both; the scope must allow it.
+4. **Line-by-line quantity confirmation at QC** (D-235 item 4): no read exists; the sheet holds the two values only.
+5. **Withheld amount against the rate** (Q99): the field accepts any figure.
+6. **Category changeable at any time** (Q30): drawn always editable by Finance.
+7. **Partial approval (E4)** needs an NCR object and a ruling on what the percentage scales (journey Q12, Q13).
+8. **Draft change orders cannot be edited** (S8, journey gap 10): a typo means withdraw and retype.
+9. **The client's approval of a change order leaves no evidence** (S9): no date, reference or document, because the route takes no body.
+10. **The withholding word** «الخصم من المنبع» is not ruled (D-240 item 4).
+11. **A client who has paid more than is owed** after an uncapped credit note (D-239 item 2).
+12. **Deposit and clearance carry no date or bank** (D-238): the state date is the day it was recorded.
+13. **A cross-project cheque list** for Finance, who banks cheques for every project at once (S4): not drawn; E7 is per project as D-241 places it.
 
 ## What the API does not send for this design (the build stops here until it does)
 
+- Received and withheld as two figures in the extract's `collection` block (it sends `Collected` as their sum), and per payment.
 - A line-by-line quantity read per extract and a quantities preview before prepare (journey gap 6).
-- The approved change orders that the next extract will bill, with titles (gap 10); the change-order title on `ExtractChangeOrderResponse`.
-- The dispute reason and the open credit note summary on the extract read.
-- The holder's name for credit notes, change orders and cheques (gap 7), so E10, E11 and E13 can say «بانتظار …».
-- Open NCRs (gap 5) for E4.
-- The days since a cheque's state changed on `GET /api/projects/{projectId}/cheques` (E7 «آخر تغيير») if the list does not carry the state date.
+- The change orders the next extract will bill, with titles (gap 10); the title on `ExtractChangeOrderResponse`.
+- The dispute reason on the extract read and on the credit note read; the credit note summary on the extract read.
+- The holder's name and task for credit notes, change orders and cheques (gap 7).
+- Open NCRs (gap 5).
+- The date a cheque's state last changed, on `GET /api/projects/{projectId}/cheques`.
+- The revised-extract resolution, the cancelled state (`Void`) and the link between the original and its replacement.
+- Rejection routing by reason (question 1).
+
+## Consultant review round 2: what changed, what was left
+
+Fixed: M1 to M7; S3 (sheet title), S4 (sub-sections, contract details, D-241 item 3), S5 (`applied`), S6 (client claim and due after the note on E10), S7 (`aftercn` on E3 and E5), S10 (one waiting-line form), S11 (waits on the client), S12 («عند …» change-order pills), S13 (one name «عكس الدفعات», destructive trigger), S14 («تسجيل دفعة» title and primary), S15 («المستحق» for the total, «المستلم» and «المخصوم من المنبع» separate, no «المتوقع»), S16 (E7 empty state), S17 (age beside the state), S18 (Owner rows open E3), S19, S20, S21; C1, C2, C4, C5, C6, C7, C9.
+
+Left: S1 (the Owner keeps two steps, coordinator), S2 (the junior starts the extract, D-241 item 1), S8 and S9 (need rulings, questions 8 and 9), C3 (the pill stays on the detail page: «معترض عليه» and «ملغى» are not said by the chain line), C8 (the sidebar shows one user for every artboard: the preview label names the role of each view).
 
 ## What the mock does not draw
 
-English/LTR text beyond the direction switch; a project in Cost Plus or Design on E1 to E10 (only E11 `cp` and E12 `cp`); the Owner's cross-project waiting list; the printed extract document; the derivation panels behind «التفاصيل» (unchanged from the built screen); a payment made by several cheques at once; the moment a busy button spins.
+English/LTR text beyond the direction switch; a project in Cost Plus or Design on E1 to E10 (only E11 `cp` and E12 `cp`); the Owner's cross-project waiting list; the printed extract document; the derivation panels behind «التفاصيل»; the daily log the rejection link opens (`daily-log.html`); a payment made by several cheques at once; the moment a busy button spins.
