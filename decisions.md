@@ -17091,3 +17091,10 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 **Gates at hand-back.** Build 0/0; Domain 795/795; Api 1254 passed, 2 skipped of 1256, exit 0; `ng test` 515/515; format clean apart from ENDOFLINE; health leastPrivilege true; smoke passed. One mutation per item, each red.
 
 **Not done.** The read does not yet send received and withheld separately, the dispute reason, the original-to-revision link or the holder's name and task. The web sends no rejection kind, so rejecting from the screen is refused with 400 until the extract screens are built. Reversing a collection on a revision does not reach payments carried from the original. A revision bills no change orders. No flow collects a released hold (KAFF-317-E).
+
+## D-244 — Nabil rules the hold on a revised extract and how a released hold is collected · 2026-11-19
+
+**Source.** Nabil, answering the Scrum Master on 2026-11-19, on the open items of D-243.
+
+1. **The original's hold carries to the revision.** Cancelling the original does not reverse its hold accrual; the hold stays as it is. The revised extract accrues only the difference between its own hold and the carried amount, never less than zero. This replaces the lane's refusal `extract.revision_hold_accrued`.
+2. **A released hold is collected on the same collection flow as an extract**: Finance records it against the handover, by cash, transfer or cheque, with part payments and withholding as on an extract. This closes KAFF-317-E's missing route.

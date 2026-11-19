@@ -250,3 +250,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-241 | 17058 | Junior sees extracts list, revised extract cancels the original, money sub-screens in the Extracts tab, supervisor records client change-order approval · 2026-11-19 |
 | D-242 | 17067 | Extract chain mock approved; rejection goes to whoever can fix it; payments move to the revised extract; revised is the one-in-flight exception · 2026-11-19 |
 | D-243 | 17076 | D-239 to D-242 as built: credit notes, cheque read, flow types closed, revised extract, rejection routing · 2026-11-19 |
+| D-244 | 17095 | Hold carries to a revised extract; a released hold is collected on the extract collection flow · 2026-11-19 |
