@@ -17045,3 +17045,12 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 4. **The Owner reads the cheques-in-hand list** as well as Finance, read-only.
 
 **Still open from D-238.** Per-payment reversal; a cleared cheque whose collection is reversed; a cheque clearing on a Disputed extract; the typed withheld amount not checked against the rate (Q99); the category changeable at any time (Q30). From the Arabic copy review of 2026-11-18: «الحجز» or «المحجوز», «قيد» or «حركة», «الخصم من المنبع» wording, and the 1-day posting date tolerance.
+
+## D-240 — Nabil rules the hold and posting words, and no future posting dates · 2026-11-19
+
+**Source.** Nabil, answering the Scrum Master on 2026-11-19, on the questions of `ux/arabic-copy-review-2026-11-18.md`.
+
+1. **The hold is «الحجز» everywhere.** «المحجوز» is replaced on every screen and message.
+2. **A posting is «حركة» everywhere** in user-facing Arabic. «قيد» is replaced.
+3. **No future posting dates.** A typed posting date may be today (the site day) or earlier, never later. This removes the 1-day tolerance of D-236 §2.
+4. **The withholding word is not ruled.** Nabil asked why tax comes up at all. The Scrum Master answered from spec §6.7: a corporate client keeps back 1–5% of a payment for the tax authority, so the collection records it; this is two fields and two accounts, not a tax module. The wording stays «الخصم من المنبع» until Nabil rules otherwise.
