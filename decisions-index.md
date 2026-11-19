@@ -245,3 +245,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-236 | 16993 | The Treasury defects of the 2026-11-18 Verifier pass, as fixed · 2026-11-18 |
 | D-237 | 17009 | The application connects as a least-privilege role, and a flow's postings are reversed only by that flow · 2026-11-18 |
 | D-238 | 17020 | An extract's money follows what actually arrived: cheques at clearance, part payments, withholding set by Finance · 2026-11-18 |
+| D-239 | 17038 | Nabil rules four open questions of D-238 on credit notes and the cheque list · 2026-11-19 |

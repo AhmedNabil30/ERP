@@ -17034,3 +17034,14 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 **Open, for Nabil.** A raised credit note blocking collection; the lane's own guard that a credit note may not exceed what is still owed (`adjustment.exceeds_extract_net`); reversing an approved credit note after the extract is Collected; per-payment reversal; a cleared cheque whose collection is reversed; a cheque clearing on a Disputed extract; the typed withheld amount not checked against the rate (Q99); the category changeable at any time (Q30); the cheque list closed to the Owner.
 
 **Not done.** The web QC button still sends an empty body and is refused; the evidence-revision panel still sends values the server ignores; no screen for collection, cheques or withholding; the new error keys are not reviewed by `arabic-copy`; no date or bank on deposit and clearance.
+
+## D-239 — Nabil rules four open questions of D-238 on credit notes and the cheque list · 2026-11-19
+
+**Source.** Nabil, answering the Scrum Master on 2026-11-19.
+
+1. **A raised credit note blocks collection** until the owner approves or rejects it. The current behaviour stands.
+2. **No cap on a credit note.** The lane's own guard `adjustment.exceeds_extract_net` is to be removed. A client who has then paid more than is owed is a separate question, not yet ruled.
+3. **A credit note on a Collected extract cannot be reversed.** The reversal is refused; the extract is never reopened by it.
+4. **The Owner reads the cheques-in-hand list** as well as Finance, read-only.
+
+**Still open from D-238.** Per-payment reversal; a cleared cheque whose collection is reversed; a cheque clearing on a Disputed extract; the typed withheld amount not checked against the rate (Q99); the category changeable at any time (Q30). From the Arabic copy review of 2026-11-18: «الحجز» or «المحجوز», «قيد» or «حركة», «الخصم من المنبع» wording, and the 1-day posting date tolerance.
