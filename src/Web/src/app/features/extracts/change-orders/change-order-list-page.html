@@ -11,7 +11,9 @@
 
   @if (failure(); as key) {
     <kaff-state mode="refusal" [titleText]="i18n.t('change_order.list.failed')" [bodyKey]="key" testId="change-order-list-failure">
-      <kaff-button stateAction variant="secondary" testId="change-order-list-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+      @if (key !== 'errors.auth.forbidden') {
+        <kaff-button stateAction variant="secondary" testId="change-order-list-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+      }
     </kaff-state>
   } @else if (loading()) {
     <kaff-state mode="loading" titleKey="extract.loading" testId="change-order-list-loading" />

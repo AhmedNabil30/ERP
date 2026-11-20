@@ -1540,3 +1540,20 @@ Left: S1 (the Owner keeps two steps, coordinator), S2 (the junior starts the ext
 ## What the mock does not draw
 
 English/LTR text beyond the direction switch; a project in Cost Plus or Design on E1 to E10 (only E11 `cp` and E12 `cp`); the Owner's cross-project waiting list; the printed extract document; the derivation panels behind «التفاصيل»; the daily log the rejection link opens (`daily-log.html`); a payment made by several cheques at once; the moment a busy button spins.
+
+## Built-app review fixes, 2026-11-20 (D-256; `ux/consultant-review-extracts-app-2026-11-20.md`)
+
+These are departures from the mock or things the mock did not draw. The mock files are not edited.
+
+- **One waiting form everywhere (C1).** The workspace banner reads «المستخلص {n} · بانتظار {person}: {task}», the same words as the extract page and list. «عندك» and the role-name form are gone, so the viewer who must act is named like anyone else; the project's one primary already opens the extract.
+- **Tab strip wraps on a phone (C2).** At 820 px and below the five tabs share the strip and wrap their names; no tab is cut and the strip no longer scrolls.
+- **The approved work stays after release (F2).** A part-approved extract keeps «المعتمد للدفع» once the held portion is approved, and shows the released part once as «الجزء المعلّق المعتمد للدفع» (new key `extract.portion.released`), both as the server sends them. Before release the row stays «معلّق حتى إغلاق تقرير عدم المطابقة».
+- **«تسجيل اعتراض» sits in the collection block (F3)**, beside the payments link. It stays in the secondary row only for an extract with no collection block.
+- **A permission refusal names the role (F4).** `errors.auth.forbidden` now reads «دورك أو تكليفك في هذا المشروع لا يسمح بهذا الإجراء.» A failed page with that refusal has no retry button. The dispute page says it only when the extract is in the right status (Issued to raise, Disputed to resolve); otherwise it keeps the status sentence.
+- **The payment reference appears after a method is chosen (C5)**, labelled by the method.
+- **Quantities (N2).** Only lines with a quantity this period or a cumulative above zero are listed. Under 560 px the name takes the whole row and the two figures sit under their headers.
+- **Closure (N3, N4).** The stage title «أين وصل المشروع», the stage sentence and the termination explanation are removed: the status pill and the buttons carry them. «طلب فسخ التعاقد» is a ghost button, no longer an outlined danger button, and the card has no heading.
+- **The Supervisor's «أوامر التغيير» link (N5)** is absent when the list is empty and the caller may not start a change order.
+- **Words (D-256).** «تقرير عدم المطابقة» for the NCR, «ما تم تصحيحه» for its close note, «يُعتمد {amount} ج.م للدفع» as its consequence, «الجزء المعلّق» for the held portion (never the hold's verbs), «تم فسخ التعاقد» for the terminated state, «شيكات لم تُصرف» for cheques in hand, «بدون خصم», «فئة الخصم», and «الخامات المركّبة» in the QC labels and errors.
+
+**Not done.** C6 (the primary sits at the top corner of the screen at 1440, far from the waiting line): the primary is placed by the shell (KAFF-936, `primary-action-contract.spec`), not by the screen, so moving it is a shell change. C3 and C4 need Nabil. F1 (closure hold figure and open extract above «بدء فترة الضمان») needs the closure read to send the open extract; not built.

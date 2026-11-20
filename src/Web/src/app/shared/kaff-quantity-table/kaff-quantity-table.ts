@@ -94,6 +94,27 @@ import { KaffFigure } from '../kaff-figure/kaff-figure';
       font-size: 0.8125rem;
     }
 
+    /* On a phone the name takes the whole row, so it never wraps one word per line (consultant N2). */
+    @media (max-width: 560px) {
+      .qh,
+      .qr {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      }
+
+      .qh span:first-child {
+        display: none;
+      }
+
+      .qr > span:first-child {
+        grid-column: 1 / -1;
+      }
+
+      .qh span + span,
+      .qr .c {
+        text-align: start;
+      }
+    }
+
     .fx {
       font-variant-numeric: tabular-nums;
     }

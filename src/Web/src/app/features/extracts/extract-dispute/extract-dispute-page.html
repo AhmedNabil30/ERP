@@ -24,14 +24,16 @@
   @if (failure(); as key) {
     <kaff-banner tone="refusal" testId="dispute-failure">
       {{ i18n.t(key) }}
-      <kaff-button bannerActions variant="secondary" testId="dispute-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+      @if (key !== 'errors.auth.forbidden') {
+        <kaff-button bannerActions variant="secondary" testId="dispute-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+      }
     </kaff-banner>
   } @else if (loading()) {
     <kaff-state mode="loading" titleKey="extract.loading" testId="dispute-loading" />
   } @else if (data(); as x) {
     <div class="pane">
       @if (!allowed()) {
-        <kaff-state mode="refusal" icon="lock" [titleText]="i18n.t('dispute.refused', { number: x.number, status: i18n.t(pill[x.status].key) })" testId="dispute-refused">
+        <kaff-state mode="refusal" icon="lock" [titleText]="statusFits() ? i18n.t('errors.auth.forbidden') : i18n.t('dispute.refused', { number: x.number, status: i18n.t(pill[x.status].key) })" testId="dispute-refused">
           <a stateAction class="lnk" [routerLink]="['/projects', projectId(), 'extracts', x.id]" data-testid="dispute-open-extract">{{ i18n.t('extract.open_extract') }}</a>
         </kaff-state>
       } @else {

@@ -20,12 +20,12 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { BoqsApi } from '../../../core/boqs/boqs.api';
 import { fractionToPercent } from '../../../core/catalogue/percent-wire';
 import { ExtractsApi, WaitingOnItem } from '../../../core/extracts/extracts.api';
-import { contractTypeKey, roleKey } from '../../../core/i18n/enum-keys';
+import { contractTypeKey } from '../../../core/i18n/enum-keys';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { HeaderActionsService } from '../../../core/layout/header-actions.service';
 import { ProjectDetail, ProjectProgress, ProjectsApi, TeamRead, WithholdingCategory } from '../../../core/projects/projects.api';
 import { closureCapsOf } from '../../closure/closure-display';
-import { WITHHOLDING_KEY } from '../../extracts/extract-display';
+import { WITHHOLDING_KEY, waitingText } from '../../extracts/extract-display';
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { Choice, KaffChoiceGroup } from '../../../shared/kaff-choice-group/kaff-choice-group';
@@ -223,14 +223,14 @@ export class ProjectWorkspacePage {
     return items === null ? null : waitingViewOf(items, this.auth.current()?.userId ?? null);
   });
 
-  /** The holder roles as one phrase: "Technical Office or Owner". */
-  protected readonly waitingWho = computed(() => {
+  /** «المستخلص {n} · بانتظار {person}: {task}»: the one waiting form, the same words as the extract page. */
+  protected readonly waitingLine = computed(() => {
     const w = this.waiting();
     if (w === null) {
       return '';
     }
-    const labels = w.roles.map((r) => this.i18n.t(r.supervisor ? 'projects.workspace.waiting.supervisor' : roleKey(r.role)));
-    return new Intl.ListFormat(this.i18n.locale(), { style: 'long', type: 'disjunction' }).format(labels);
+    const holders = w.holderNames.map((fullName) => ({ fullName }));
+    return this.i18n.t('projects.frame.waiting.line', { number: w.number, line: waitingText(this.i18n, holders, w.stepKey) });
   });
 
   protected readonly primary = computed(() => {

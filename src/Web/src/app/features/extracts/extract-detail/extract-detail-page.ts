@@ -136,13 +136,18 @@ export class ExtractDetailPage extends ChainPage {
   /** The BOQ lines' quantities as the extract kept them. [] for an extract prepared before D-248: no table. */
   protected readonly quantities = signal<readonly ExtractQuantityRow[]>([]);
 
+  /** Only the lines worked this period or in total: fifteen lines with one quantity is noise (consultant N2). */
+  protected readonly workedQuantities = computed(() =>
+    this.quantities().filter((row) => (row.currentQuantity ?? 0) !== 0 || row.cumulativeQuantity > 0),
+  );
+
   /** The credit note the extract read carries: the latest one that was not rejected. */
   protected readonly creditNote = computed<ExtractCreditNote | null>(
     () => this.data()?.creditNotes?.filter((n) => n.status !== 'Rejected').at(-1) ?? null,
   );
 
   protected readonly sheet = signal<'qc' | 'reject' | 'owner' | 'portion' | 'ncr' | null>(null);
-  /** «أُغلقت الملاحظة.»: said once, in place, after the Technical Office closed the NCR. */
+  /** «أُغلق تقرير عدم المطابقة.»: said once, in place, after the Technical Office closed the NCR. */
   protected readonly ncrClosed = signal(false);
   protected readonly portion = signal('');
   protected readonly portionError = signal<string | null>(null);
@@ -491,20 +496,24 @@ export class ExtractDetailPage extends ChainPage {
   }
 
   /**
-   * The split gate's two figures, as the server sends them (D-253 item 5). Each row appears only when non-null. Once the
-   * held portion is released the mock (`ncrdone`) draws no figures, so the section goes.
+   * The split gate's figures, as the server sends them (D-253 item 5). «المعتمد للدفع» stays once the held portion is
+   * released; the released part then shows once, in place of «معلّق حتى إغلاق تقرير عدم المطابقة» (consultant F2).
    */
   protected readonly heldRows = computed<FigureRow[]>(() => {
     const x = this.data();
-    if (!x || x.heldPortionReleasedAt) {
+    if (!x) {
       return [];
     }
     const rows: FigureRow[] = [];
-    if (x.approvedWork) {
-      rows.push({ label: this.i18n.t('extract.portion.approved'), amount: x.approvedWork, testId: 'extract-approved-work' });
+    if (isPositive(x.approvedWork)) {
+      rows.push({ label: this.i18n.t('extract.portion.approved'), amount: x.approvedWork!, testId: 'extract-approved-work' });
     }
-    if (x.heldWork) {
-      rows.push({ label: this.i18n.t('extract.portion.held'), amount: x.heldWork, testId: 'extract-held' });
+    if (isPositive(x.heldWork)) {
+      rows.push(
+        x.heldPortionReleasedAt
+          ? { label: this.i18n.t('extract.portion.released'), amount: x.heldWork!, testId: 'extract-released-work' }
+          : { label: this.i18n.t('extract.portion.held'), amount: x.heldWork!, testId: 'extract-held' },
+      );
     }
     return rows;
   });

@@ -12,7 +12,9 @@
 
   @if (failure(); as key) {
     <kaff-state mode="refusal" [bodyKey]="key" testId="closure-failure">
-      <kaff-button stateAction variant="secondary" testId="closure-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+      @if (key !== 'errors.auth.forbidden') {
+        <kaff-button stateAction variant="secondary" testId="closure-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+      }
     </kaff-state>
   } @else if (loading()) {
     <kaff-state mode="loading" titleKey="closure.loading" testId="closure-loading" />
@@ -36,9 +38,6 @@
 
       <!-- The stage: where the project stands and the one act that moves it on. -->
       <div class="panel" data-testid="closure-stage">
-        <h2 class="h2">{{ i18n.t('closure.stage.title') }}</h2>
-        <p class="lead" data-testid="closure-stage-text">{{ i18n.t('closure.stage.' + p.status) }}</p>
-
         @if (steps().length > 0) {
           <div class="buttons">
             @for (step of steps(); track step) {
@@ -332,11 +331,9 @@
            settlement is unruled, so the server refuses; the screen says "not available" (errors.closure.termination_settlement_unruled). -->
       @if (canTerminate()) {
         <div class="panel" data-testid="closure-terminate">
-          <h2 class="h2">{{ i18n.t('closure.terminate.title') }}</h2>
-          <p class="lead">{{ i18n.t('closure.terminate.body') }}</p>
           @if (!terminating()) {
             <div class="buttons">
-              <kaff-button variant="danger-outline" testId="closure-terminate-open" (clicked)="openTerminate()">
+              <kaff-button variant="ghost" testId="closure-terminate-open" (clicked)="openTerminate()">
                 {{ i18n.t('closure.terminate.ask') }}
               </kaff-button>
             </div>

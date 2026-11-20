@@ -61,7 +61,10 @@ export class ExtractListPage extends ChainPage {
   );
 
   protected readonly showCheques = computed(() => this.permissions().has('ChequeRead'));
-  protected readonly showChangeOrders = computed(() => CHANGE_ORDER_PERMISSIONS.some((p) => this.permissions().has(p)));
+  /** A change-order link with nothing behind it and nothing the caller may start is absent (consultant N5). */
+  protected readonly showChangeOrders = computed(
+    () => CHANGE_ORDER_PERMISSIONS.some((p) => this.permissions().has(p)) && (this.changeOrderCount() !== 0 || this.permissions().has('ChangeOrderPrepare')),
+  );
 
   /** «مستخلص جديد»: the project read's own answer (Lump Sum, BOQ frozen, no other extract open, caller may prepare). */
   protected readonly mayPrepare = computed(() => !this.loading() && this.failure() === null && this.project()?.actions?.prepareExtract === true);

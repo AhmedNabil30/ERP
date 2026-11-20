@@ -153,13 +153,7 @@
 
         @if (waiting(); as w) {
           <kaff-banner tone="note" icon="info" testId="workspace-waiting">
-            <span data-testid="workspace-waiting-line">
-              @if (w.viewerIsHolder) {
-                {{ i18n.t('projects.frame.waiting.mine', { number: w.number, step: i18n.t(w.stepKey) }) }}
-              } @else {
-                {{ i18n.t('projects.frame.waiting.line', { number: w.number, step: i18n.t(w.stepKey), who: waitingWho() }) }}
-              }
-            </span>
+            <span data-testid="workspace-waiting-line">{{ waitingLine() }}</span>
           </kaff-banner>
         }
 

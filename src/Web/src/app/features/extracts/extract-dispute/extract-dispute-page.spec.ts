@@ -49,7 +49,14 @@ describe('ExtractDisputePage (E8, E9)', () => {
   it('refuses with no primary when the extract may not be disputed', async () => {
     const { fixture, root } = await open('raise', extract({ status: 'Collected' }));
     expect(primary(fixture)).toBeNull();
-    expect(byTestId(root, 'dispute-refused')).not.toBeNull();
+    expect(byTestId(root, 'dispute-refused')?.textContent).toContain('dispute.refused');
+  });
+
+  it('names the role, not the status, when an issued extract is refused to this caller', async () => {
+    const { fixture, root } = await open('raise', extract({ status: 'Issued' }));
+    expect(primary(fixture)).toBeNull();
+    expect(byTestId(root, 'dispute-refused')?.textContent).toContain('errors.auth.forbidden');
+    expect(byTestId(root, 'dispute-refused')?.textContent).not.toContain('dispute.refused');
   });
 
   it('asks the kind first; a price error issues a credit note of the typed amount', async () => {

@@ -281,10 +281,11 @@ describe('ExtractDetailPage (E3)', () => {
     expect(byTestId(root, 'act-ncr-close')).toBeNull();
   });
 
-  it('draws no split figures once the held portion is released, or when the server sends none', async () => {
+  it('keeps the approved work and shows the released part once after release; draws nothing when the server sends no split', async () => {
     const released = await open(extract({ status: 'PartiallyApproved', approvedWork: '280000.0000', heldWork: '120000.0000', heldPortionReleasedAt: '2026-10-09T10:00:00Z' }));
     expect(byTestId(released.root, 'extract-held')).toBeNull();
-    expect(byTestId(released.root, 'extract-approved-work')).toBeNull();
+    expect(byTestId(released.root, 'extract-approved-work')).not.toBeNull();
+    expect(byTestId(released.root, 'extract-released-work')).not.toBeNull();
   });
 
   it('draws no split figures when the server sends none', async () => {

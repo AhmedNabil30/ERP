@@ -6,7 +6,9 @@
   <kaff-project-frame [projectId]="projectId()" current="extracts">
   @if (failure(); as key) {
     <kaff-state mode="refusal" [bodyKey]="key" testId="extract-list-failure">
-      <kaff-button stateAction variant="secondary" testId="extract-list-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+      @if (key !== 'errors.auth.forbidden') {
+        <kaff-button stateAction variant="secondary" testId="extract-list-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+      }
     </kaff-state>
   } @else if (loading()) {
     <kaff-state mode="loading" titleKey="extract.loading" testId="extract-list-loading" />

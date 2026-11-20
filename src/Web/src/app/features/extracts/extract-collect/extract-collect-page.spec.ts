@@ -42,6 +42,8 @@ describe('ExtractCollectPage (E5)', () => {
     for (const key of ['collection.method_required', 'collection.cash_required']) {
       expect(root.textContent).toContain(key);
     }
+    // The reference is asked only once a method is chosen (consultant C5).
+    expect(byTestId(root, 'collect-reference')).toBeNull();
   });
 
   it('names the reference by the method and sends what arrived and what was withheld', async () => {
@@ -66,6 +68,7 @@ describe('ExtractCollectPage (E5)', () => {
   it('refuses a date after today under the field', async () => {
     const { fixture, root, collect } = await open(extract({ status: 'Issued', collection: OPEN }, { recordCollection: true }));
     (byTestId(root, 'collect-method-Cash') as HTMLInputElement).click();
+    await settle(fixture);
     type(byTestId(root, 'collect-date'), '2999-01-01');
     type(byTestId(root, 'collect-reference'), 'R-1');
     type(byTestId(root, 'collect-cash'), '10');
@@ -79,6 +82,7 @@ describe('ExtractCollectPage (E5)', () => {
     const collect = vi.fn().mockRejectedValue(new HttpErrorResponse({ status: 409, error: { messageKey: 'errors.collection.exceeds_expected' } }));
     const { fixture, root } = await open(extract({ status: 'Issued', collection: OPEN }, { recordCollection: true }), collect);
     (byTestId(root, 'collect-method-Cash') as HTMLInputElement).click();
+    await settle(fixture);
     type(byTestId(root, 'collect-reference'), 'R-1');
     type(byTestId(root, 'collect-cash'), '200000');
     primary(fixture)?.click();

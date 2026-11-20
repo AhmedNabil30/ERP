@@ -572,14 +572,14 @@ describe('ProjectWorkspacePage · the chain is paused', () => {
     expect(q(fixture, 'workspace-waiting-line')?.textContent).toContain('projects.frame.waiting.line');
   });
 
-  it('says it is the viewer turn, and offers the extract in the slot', async () => {
+  it('uses the same waiting form for the viewer, and offers the extract in the slot', async () => {
     const fixture = await createFixture(
       active(),
       OWNER(),
       new FakeBoqsApi(),
       new FakeExtractsApi({ status: 'DeductionsApplied', role: 'Owner', holders: [SUPERVISOR] }),
     );
-    expect(q(fixture, 'workspace-waiting-line')?.textContent).toContain('projects.frame.waiting.mine');
+    expect(q(fixture, 'workspace-waiting-line')?.textContent).toContain('projects.frame.waiting.line');
     expect(slotButton()?.textContent).toContain('open_extract');
   });
 

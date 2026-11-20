@@ -75,6 +75,9 @@ export class ExtractDisputePage extends ChainPage {
     return a !== undefined && (this.mode() === 'raise' ? a.raiseDispute : a.resolveDispute);
   });
 
+  /** The extract is in the status this screen works on, so a refusal here is the caller's role, not the status. */
+  protected readonly statusFits = computed(() => this.data()?.status === (this.mode() === 'raise' ? 'Issued' : 'Disputed'));
+
   protected override readonly primaryTemplate = viewChild<TemplateRef<unknown>>('primaryAction');
   protected override readonly hasPrimary = this.allowed;
 

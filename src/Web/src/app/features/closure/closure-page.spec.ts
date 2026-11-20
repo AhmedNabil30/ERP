@@ -248,7 +248,7 @@ describe('ClosurePage', () => {
     const act = q(fixture, 'closure-act-practical-completion');
     expect(act?.className).toContain('variant-secondary');
     expect(act?.className).not.toContain('variant-primary');
-    expect(q(fixture, 'closure-terminate-open')?.className).toContain('variant-danger-outline');
+    expect(q(fixture, 'closure-terminate-open')?.className).toContain('variant-ghost');
   });
 
   it('shows a user with the permission on no act the empty state, not a disabled button', async () => {
@@ -412,6 +412,7 @@ describe('ClosurePage: the released hold is collected through the extract collec
     expect(q(fixture, 'hold-collect-form')).not.toBeNull();
 
     (q(fixture, 'hold-collect-method-Transfer') as HTMLInputElement).click();
+    await settle(fixture);
     const reference = q(fixture, 'hold-collect-reference') as HTMLInputElement;
     reference.value = 'TR-9';
     reference.dispatchEvent(new Event('input'));

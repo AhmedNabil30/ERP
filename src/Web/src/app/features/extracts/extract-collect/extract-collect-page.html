@@ -17,7 +17,9 @@
   @if (failure(); as key) {
     <kaff-banner tone="refusal" testId="collect-failure">
       <b>{{ i18n.t('extract.failed') }}</b> {{ i18n.t(key) }}
-      <kaff-button bannerActions variant="secondary" testId="collect-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+      @if (key !== 'errors.auth.forbidden') {
+        <kaff-button bannerActions variant="secondary" testId="collect-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+      }
     </kaff-banner>
   } @else if (loading()) {
     <kaff-state mode="loading" titleKey="extract.loading" testId="collect-loading" />

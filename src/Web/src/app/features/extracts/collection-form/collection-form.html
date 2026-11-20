@@ -22,19 +22,21 @@
         (input)="onDate($event)"
       />
     </kaff-field>
-    <kaff-field [labelKey]="referenceKey()" [controlId]="testIdPrefix() + '-reference'" [required]="true" [errorKey]="errors().reference" #rf="kaffField">
-      <input
-        type="text"
-        dir="ltr"
-        autocomplete="off"
-        [id]="testIdPrefix() + '-reference'"
-        [value]="reference()"
-        [attr.aria-invalid]="errors().reference ? 'true' : null"
-        [attr.aria-describedby]="rf.describedById()"
-        [attr.data-testid]="testIdPrefix() + '-reference'"
-        (input)="onReference($event)"
-      />
-    </kaff-field>
+    @if (method() !== '') {
+      <kaff-field [labelKey]="referenceKey()" [controlId]="testIdPrefix() + '-reference'" [required]="true" [errorKey]="errors().reference" #rf="kaffField">
+        <input
+          type="text"
+          dir="ltr"
+          autocomplete="off"
+          [id]="testIdPrefix() + '-reference'"
+          [value]="reference()"
+          [attr.aria-invalid]="errors().reference ? 'true' : null"
+          [attr.aria-describedby]="rf.describedById()"
+          [attr.data-testid]="testIdPrefix() + '-reference'"
+          (input)="onReference($event)"
+        />
+      </kaff-field>
+    }
   </div>
   <div class="g2">
     <kaff-money-field
