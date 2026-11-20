@@ -114,10 +114,10 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | | slice 1 | slice 2 | slice 3 | slice 4 | slice 5 | slice 6 | slice 8 | slice design-system |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 49 | 47 | 0 | 31 | 21 | 5 |
+| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 49 | 47 | 32 | 31 | 21 | 5 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 🔴 REJECTED — a Verifier looked, and it did not pass | 8 | 0 | 8 | 0 | 0 | 0 | 13 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 0 | 9 | 0 | 0 | 53 | 0 | 5 | 106 |
+| 🔴 REJECTED — a Verifier looked, and it did not pass | 8 | 0 | 8 | 0 | 21 | 0 | 13 | 0 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 9 | 0 | 0 | 0 | 0 | 5 | 106 |
 | ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 13 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | **total** | **127** | **67** | **57** | **47** | **53** | **31** | **39** | **111** |
@@ -181,8 +181,8 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | [KAFF-304](stories/slice-3-treasury/KAFF-304-every-balance-is-derived-by-summing-postings.md) | 3 | 5 | ⚪ FOLDED | none | `-` | 2026-09-28 | Every balance is derived by summing postings |
 | [KAFF-305](stories/slice-3-treasury/KAFF-305-the-posting-type-account-pair-legality-table.md) | 3 | 8 | 🔶 VERIFIED | CONDITIONAL | `792c1ba` | 2026-11-18 | The posting-type × account-pair legality table |
 | [KAFF-306](stories/slice-3-treasury/KAFF-306-treasury-read-api.md) | 3 | 5 | 🔶 VERIFIED | CONDITIONAL | `792c1ba` | 2026-11-18 | The Treasury can post and reverse, but nothing reads |
-| [KAFF-316](stories/slice-3-treasury/KAFF-316-collections-and-cheque-states.md) | 3 | 8 | 🔶 VERIFIED | CONDITIONAL | `33ff701` | 2026-11-19 | Collections — method, date, reference, and the cheque states |
-| [KAFF-317](stories/slice-3-treasury/KAFF-317-withholding-at-source-on-a-collection.md) | 3 | 8 | 🔴 BUILT | REJECTED | `792c1ba` | 2026-11-18 | Withholding at source on a corporate client's collection |
+| [KAFF-316](stories/slice-3-treasury/KAFF-316-collections-and-cheque-states.md) | 3 | 8 | 🔶 VERIFIED | CONDITIONAL | `363d5ee` | 2026-11-20 | Collections — method, date, reference, and the cheque states |
+| [KAFF-317](stories/slice-3-treasury/KAFF-317-withholding-at-source-on-a-collection.md) | 3 | 8 | 🔴 BUILT | REJECTED | `363d5ee` | 2026-11-20 | Withholding at source on a corporate client's collection |
 | [KAFF-319](stories/slice-3-treasury/KAFF-319-a-refused-posting-reads-as-a-translated-message.md) | 3 | 3 | 🔵 VERIFIED | PASS | `33ff701` | 2026-11-19 | A refused posting reads as a translated message, not a 500 |
 | [KAFF-320](stories/slice-3-treasury/KAFF-320-bank-as-an-independent-master-record.md) | 3 | 0 | ⚪ BLOCKED | none | `-` | 2026-09-15 | Bank — an independent master record, not folded into the ledger |
 | [KAFF-321](stories/slice-2-masters/KAFF-321-department-master-data.md) | 2 | 0 | 🟡 BUILT | none | `-` | 2026-09-15 | Department — dynamic master data, not a fixed enum |
@@ -193,11 +193,11 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | [KAFF-418](stories/slice-4-projects/KAFF-418-boq-builder.md) | 4 | 13 | 🔶 VERIFIED | CONDITIONAL | `91cdcb3` | 2026-11-17 | The BOQ builder: start from a prepared base or an earlier project, add many lines, sign |
 | [KAFF-419](stories/slice-4-projects/KAFF-419-project-create.md) | 4 | 5 | 🔵 VERIFIED | PASS | `91cdcb3` | 2026-11-17 | Project create: no preselected type, one name per client, add a client in the form |
 | [KAFF-420](stories/slice-4-projects/KAFF-420-project-frame-and-overview.md) | 4 | 8 | 🔵 VERIFIED | PASS | `91cdcb3` | 2026-11-17 | The project frame with real tabs, and the overview |
-| [KAFF-500](stories/slice-5-billing/KAFF-500-the-extract-chain.md) | 5 | 21 | 🟡 BUILT | none | `-` | - | The extract chain — prepare, gate, deduct, approve, issue |
-| [KAFF-508](stories/slice-5-billing/KAFF-508-change-orders-on-the-extract.md) | 5 | 8 | 🟡 BUILT | none | `-` | - | Change orders appear on the extract in their own section, at their own prices |
-| [KAFF-509](stories/slice-5-billing/KAFF-509-the-change-order-chain.md) | 5 | 8 | 🟡 BUILT | none | `-` | - | The change order chain — an approved one raises the contract value |
-| [KAFF-511](stories/slice-5-billing/KAFF-511-a-disputed-extract.md) | 5 | 8 | 🟡 BUILT | none | `-` | - | A disputed issued extract resolves as a revised extract or a credit note |
-| [KAFF-512](stories/slice-5-billing/KAFF-512-the-adjustment-object.md) | 5 | 8 | 🟡 BUILT | none | `-` | - | One `Adjustment` object for every case where money flows back |
+| [KAFF-500](stories/slice-5-billing/KAFF-500-the-extract-chain.md) | 5 | 21 | 🔴 BUILT | REJECTED | `363d5ee` | 2026-11-20 | The extract chain — prepare, gate, deduct, approve, issue |
+| [KAFF-508](stories/slice-5-billing/KAFF-508-change-orders-on-the-extract.md) | 5 | 8 | 🔶 VERIFIED | CONDITIONAL | `363d5ee` | 2026-11-20 | Change orders appear on the extract in their own section, at their own prices |
+| [KAFF-509](stories/slice-5-billing/KAFF-509-the-change-order-chain.md) | 5 | 8 | 🔶 VERIFIED | CONDITIONAL | `363d5ee` | 2026-11-20 | The change order chain — an approved one raises the contract value |
+| [KAFF-511](stories/slice-5-billing/KAFF-511-a-disputed-extract.md) | 5 | 8 | 🔶 VERIFIED | CONDITIONAL | `363d5ee` | 2026-11-20 | A disputed issued extract resolves as a revised extract or a credit note |
+| [KAFF-512](stories/slice-5-billing/KAFF-512-the-adjustment-object.md) | 5 | 8 | 🔶 VERIFIED | CONDITIONAL | `363d5ee` | 2026-11-20 | One `Adjustment` object for every case where money flows back |
 | [KAFF-600](stories/slice-6-execution/KAFF-600-the-daily-log-core.md) | 6 | 13 | 🔵 VERIFIED | PASS | `91cdcb3` | 2026-11-17 | The daily log core — one log per engineer per day, recording deltas |
 | [KAFF-613](stories/slice-6-execution/KAFF-613-check-in-with-location.md) | 6 | 5 | 🔵 VERIFIED | PASS | `91cdcb3` | 2026-11-17 | Check-in and check-out are their own buttons and record location and time |
 | [KAFF-614](stories/slice-6-execution/KAFF-614-daily-log-under-d217.md) | 6 | 8 | 🔶 VERIFIED | CONDITIONAL | `91cdcb3` | 2026-11-17 | The daily log under D-217 and D-218: check-in first, three days back, edit a quantity, stoppage as text |

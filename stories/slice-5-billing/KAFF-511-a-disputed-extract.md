@@ -1,6 +1,6 @@
 # KAFF-511 · A disputed issued extract resolves as a revised extract or a credit note
 
-<!-- kaff id=KAFF-511 slice=5 points=8 state=BUILT -->
+<!-- kaff id=KAFF-511 slice=5 points=8 state=VERIFIED verdict=CONDITIONAL at=363d5ee on=2026-11-20 -->
 
 **Slice:** 7 (reconciled build order, step 7) · **Epic:** Extract · **Points:** 8.
 **Owner:** Backend. **No UI criterion is carried here.**
