@@ -160,7 +160,9 @@ public sealed record ExtractResponse(
     WithholdingCategory? WithholdingCategory = null,
     IReadOnlyList<ExtractCreditNote>? CreditNotes = null,
     WaitingLineResponse? CreditNoteWaitingOn = null,
-    Kaff.Api.Features.Ncrs.NcrResponse? OpenNcr = null);
+    Kaff.Api.Features.Ncrs.NcrResponse? OpenNcr = null,
+    Money? ApprovedWork = null,
+    Money? HeldWork = null);
 
 /// <summary>Who is looking: their id and which of the extract permissions they hold on this project.</summary>
 internal sealed record ExtractViewer(Guid UserId, IReadOnlySet<Permission> Held)
@@ -239,7 +241,9 @@ internal static class ExtractView
                     position.Expected, extract.ExpectedWithheld, position.Collected, position.InCheques, position.Remaining,
                     collection.Received, collection.Withheld)
                 : null,
-            extract.GateHistory.LastOrDefault(record => record.Gate == ExtractGate.Dispute)?.Reason);
+            extract.GateHistory.LastOrDefault(record => record.Gate == ExtractGate.Dispute)?.Reason,
+            ApprovedWork: seesMoney ? extract.ApprovedWorkValue() : null,
+            HeldWork: seesMoney ? extract.HeldWorkValue() : null);
     }
 
     private static ExtractActions ActionsFor(

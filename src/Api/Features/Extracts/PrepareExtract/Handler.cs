@@ -26,7 +26,8 @@ namespace Kaff.Api.Features.Extracts.PrepareExtract;
 /// quantity is the running total the daily logs maintain from period deltas.
 /// </para>
 /// <para>
-/// <b>Previously certified work</b> is the cumulative figure of the project's last extract. That is only
+/// <b>Previously certified work</b> is what the project's standing extracts billed plus what an open NCR still holds
+/// (<c>Extract.PreviouslyCertifiedFor</c>, D-253), so a released remainder is billed here. That is only
 /// meaningful when no other extract is in flight, so a second one is refused until the first is issued
 /// (<c>extract.another_extract_open</c>). That refusal is ASSUMED, not ruled (D-194).
 /// </para>
@@ -135,7 +136,6 @@ internal static class Handler
                 candidate.Id,
                 candidate.Number,
                 candidate.Status,
-                candidate.CumulativeCertifiedWork,
                 candidate.PreviouslyCertifiedWork,
                 candidate.PeriodStart,
                 candidate.PeriodEnd,
@@ -170,12 +170,13 @@ internal static class Handler
                 return ResultExtensions.Problem(ExtractErrors.AnotherExtractOpen);
             }
 
-            // A Void extract's work was never certified, so the next extract starts from the last extract that stands.
-            previous = existing
-                .Where(candidate => candidate.Status != ExtractStatus.Void)
-                .OrderByDescending(candidate => candidate.Number)
-                .Select(candidate => candidate.CumulativeCertifiedWork)
-                .FirstOrDefault();
+            // D-253: what the standing extracts billed, plus what an open NCR still holds. A released remainder is
+            // left out, so this extract bills it. A Void extract's work was never certified and is not counted.
+            previous = Extract.PreviouslyCertifiedFor(
+                await database.Extracts
+                    .AsNoTracking()
+                    .Where(candidate => candidate.ProjectId == projectId && candidate.Status != ExtractStatus.Void)
+                    .ToListAsync(cancellationToken));
         }
 
         Money cumulative = ExtractSupport.CumulativeCertifiedWork(boq, rulings);

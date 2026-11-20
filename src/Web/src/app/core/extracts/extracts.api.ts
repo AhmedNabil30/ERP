@@ -217,6 +217,10 @@ export interface Extract {
   readonly heldForNcrId: string | null;
   /** AC-500-E: the NCR the held remainder waits on, while it is open. */
   readonly openNcr?: Ncr | null;
+  /** D-252 item 2: the period work this extract bills («المعتمد للدفع»). Null for a viewer who may not see money. */
+  readonly approvedWork?: string | null;
+  /** D-252 item 2: the period work a split gate held back («معلّق»). Null for a viewer who may not see money. */
+  readonly heldWork?: string | null;
   readonly gateHistory: readonly GateRecord[];
   readonly actions: ExtractActions;
   /** Null for a viewer who may not see money. */

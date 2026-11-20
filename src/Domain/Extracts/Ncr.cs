@@ -13,8 +13,8 @@ public enum NcrStatus
 /// <summary>
 /// The non-conformance report a split Technical Office gate holds the remainder of an extract against (spec.md section 7,
 /// AC-500-E, D-250 item 1). Opened by the partial approval itself, closed once, with a note. Closing it releases the held
-/// portion through <see cref="Extract.ReleaseHeldPortion"/>, which records the release and posts nothing
-/// (<c>ExtractPartialApprovalScope</c>). Carries no money: the held amount is derived from the extract on every read.
+/// portion through <see cref="Extract.ReleaseHeldPortion"/>, which records the release and posts nothing; the next
+/// extract prepared after the close bills it (<c>ExtractPartialApprovalScope</c>, D-253). Carries no money: the held amount is derived from the extract on every read.
 /// </summary>
 /// <remarks>
 /// Who closes it is the <c>NcrCloser</c> ruling, an assumption: the Technical Office. spec.md does not bar the person who

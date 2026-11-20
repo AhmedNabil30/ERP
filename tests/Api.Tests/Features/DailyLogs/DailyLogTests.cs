@@ -319,7 +319,7 @@ public sealed partial class DailyLogTests : IAsyncLifetime
         drafts.GetArrayLength().Should().Be(1);
         drafts[0].EnumerateObject().Select(member => member.Name)
             .Should().BeEquivalentTo(["entryId", "description", "occurredAt"]);
-        drafts.GetRawText().Should().NotContain("350");
+        drafts[0].TryGetProperty("amount", out _).Should().BeFalse("the engineer's read carries no amount property");
     }
 
     [Fact]

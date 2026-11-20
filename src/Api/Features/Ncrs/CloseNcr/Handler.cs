@@ -16,7 +16,7 @@ namespace Kaff.Api.Features.Ncrs.CloseNcr;
 /// <summary>
 /// Closes the NCR and releases its extract's held portion in one save, under the extract's row lock (the extract
 /// chain's own spine, <see cref="ExtractSupport.RunAsync"/>), so two closes cannot both pass. Posts nothing: the
-/// release is recorded on the extract, and how the remainder is billed is <c>ExtractPartialApprovalScope</c>'s.
+/// release is recorded on the extract, and the next extract prepared after it bills the remainder (D-253).
 /// </summary>
 internal static class Handler
 {

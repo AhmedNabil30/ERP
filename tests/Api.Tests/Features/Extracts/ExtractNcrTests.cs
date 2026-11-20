@@ -6,6 +6,7 @@ using Kaff.Domain.Extracts;
 using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
 using Kaff.Domain.Projects;
+using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -132,6 +133,106 @@ public sealed partial class ExtractEndpointTests
         Project other = await NewProjectAsync();
         HttpResponseMessage foreign = await SendAsync(HttpMethod.Post, CloseNcr(other.Id, first), _technicalOffice, new { note = "x" });
         foreign.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    /// <summary>Splits extract one at 60% (300,000 of work, 120,000 held) and returns it with its NCR.</summary>
+    private async Task<(Guid Extract, Guid Ncr)> SplitFirstAsync(Project project)
+    {
+        Guid extract = await DriveAsync(project, ExtractStatus.QcSubmitted);
+        HttpResponseMessage split = await SendAsync(
+            HttpMethod.Post, Step(project.Id, extract, "technical-approval"), _technicalOffice, new { approvedPortion = "0.6" });
+        split.StatusCode.Should().Be(HttpStatusCode.OK, await split.Content.ReadAsStringAsync(Ct));
+        return (extract, (await ReadAsync(project.Id, extract, _technicalOffice)).GetProperty("heldForNcrId").GetGuid());
+    }
+
+    private async Task CloseAsync(Project project, Guid ncr) =>
+        (await SendAsync(HttpMethod.Post, CloseNcr(project.Id, ncr), _technicalOffice, new { note = "columns recast" })).StatusCode
+            .Should().Be(HttpStatusCode.OK);
+
+    private async Task<decimal> WorkValueAsync(Project project, Guid extract) =>
+        Decimal((await ReadAsync(project.Id, extract, _owner)).GetProperty("document").GetProperty("figures"), "workValue");
+
+    /// <summary>
+    /// D-250 item 1, D-253, verification r2 proof P1: the remainder a split gate held is billed on the next extract
+    /// prepared after the NCR closes. 180,000 billed on extract one; extract two bills the released 120,000 plus its own
+    /// 100,000, and the hold accrues on the released work when it is billed.
+    /// </summary>
+    [Fact]
+    public async Task The_released_remainder_is_billed_on_the_next_extract_prepared_after_the_NCR_closes()
+    {
+        Project project = await NewProjectAsync();
+        (Guid first, Guid ncr) = await SplitFirstAsync(project);
+
+        JsonElement split = await ReadAsync(project.Id, first, _technicalOffice);
+        ParseDecimal(split.GetProperty("approvedWork")).Should().Be(180_000m);
+        ParseDecimal(split.GetProperty("heldWork")).Should().Be(120_000m);
+        JsonElement blind = await ReadAsync(project.Id, first, _prepEngineer);
+        blind.GetProperty("approvedWork").ValueKind.Should().Be(JsonValueKind.Null, "a site engineer sees no extract money");
+        blind.GetProperty("heldWork").ValueKind.Should().Be(JsonValueKind.Null);
+
+        await CloseAsync(project, ncr);
+        await StepAsync(_client, project, first, ExtractStatus.TechnicalApproved, ExtractStatus.Issued);
+        (await WorkValueAsync(project, first)).Should().Be(180_000m, "extract one bills only the approved portion");
+
+        await ExecuteAsync(project, 400m);
+        Guid second = await PrepareAsync(project);
+        (decimal cumulative, decimal previous) = await EvidenceAsync(project.Id, second);
+        previous.Should().Be(180_000m, "previously certified is what earlier extracts billed");
+        (cumulative - previous).Should().Be(220_000m);
+
+        await StepAsync(_client, project, second, ExtractStatus.Draft, ExtractStatus.Issued);
+        JsonElement figures = (await ReadAsync(project.Id, second, _owner)).GetProperty("document").GetProperty("figures");
+        Decimal(figures, "workValue").Should().Be(220_000m);
+        Decimal(figures, "holdThisPeriod").Should().Be(44_000m, "the hold is taken on the released work when it is billed");
+        (await BalanceAsync(project.Id, AccountType.Hold)).Should().Be(80_000m, "20% of the 400,000 billed in all");
+    }
+
+    /// <summary>
+    /// D-253: while the NCR is open the remainder stays held and the next extract does not bill it. An NCR closed after
+    /// that extract was prepared is billed on the next one prepared after the close, never on the one already in flight.
+    /// </summary>
+    [Fact]
+    public async Task An_open_NCR_keeps_the_remainder_held_and_a_late_close_bills_it_on_the_next_extract_prepared()
+    {
+        Project project = await NewProjectAsync();
+        (Guid first, Guid ncr) = await SplitFirstAsync(project);
+        await StepAsync(_client, project, first, ExtractStatus.TechnicalApproved, ExtractStatus.Issued);
+
+        await ExecuteAsync(project, 400m);
+        Guid second = await PrepareAsync(project);
+        (decimal cumulative, decimal previous) = await EvidenceAsync(project.Id, second);
+        previous.Should().Be(300_000m, "the open NCR's 120,000 stays held, off this extract too");
+        (cumulative - previous).Should().Be(100_000m);
+
+        await CloseAsync(project, ncr);
+        await StepAsync(_client, project, second, ExtractStatus.Draft, ExtractStatus.Issued);
+        (await WorkValueAsync(project, second)).Should().Be(100_000m, "a close after prepare does not reopen the extract in flight");
+
+        await ExecuteAsync(project, 450m);
+        Guid third = await PrepareAsync(project);
+        (cumulative, previous) = await EvidenceAsync(project.Id, third);
+        previous.Should().Be(280_000m, "180,000 on extract one and 100,000 on extract two");
+        (cumulative - previous).Should().Be(170_000m, "the released 120,000 plus the period's own 50,000");
+    }
+
+    /// <summary>
+    /// spec.md section 15's invariant over a project with a split gate: every unit of contract work is billed exactly once,
+    /// so client cash can still equal the contract value, and the hold accrues on all of it.
+    /// </summary>
+    [Fact]
+    public async Task A_project_with_a_split_gate_still_bills_its_whole_contract_value_exactly_once()
+    {
+        Project project = await NewProjectAsync();
+        (Guid first, Guid ncr) = await SplitFirstAsync(project);
+        await StepAsync(_client, project, first, ExtractStatus.TechnicalApproved, ExtractStatus.Issued);
+        await CloseAsync(project, ncr);
+
+        await ExecuteAsync(project, 1_000m);
+        Guid second = await DriveAsync(project, ExtractStatus.Issued);
+
+        ((await WorkValueAsync(project, first)) + (await WorkValueAsync(project, second)))
+            .Should().Be(1_000_000m, "the frozen BOQ's contract value: 1,000 m3 at 1,000");
+        (await BalanceAsync(project.Id, AccountType.Hold)).Should().Be(200_000m, "20% of the contract value");
     }
 
     private async Task<Guid> NewUserAsync(string name, Role role)

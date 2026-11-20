@@ -410,7 +410,8 @@ public sealed class Extract : Entity
 
     /// <summary>
     /// The NCR the held remainder waited on has closed, so the remainder is released (spec.md section 7). This
-    /// records the release. How the remainder is then billed is unruled and is not decided here.
+    /// records the release and posts nothing. The released work is billed on the next extract prepared after it
+    /// (D-250 item 1, D-253): <see cref="PreviouslyCertifiedFor"/> stops counting it as certified.
     /// </summary>
     public Result ReleaseHeldPortion(Guid actorUserId, DateTimeOffset now)
     {
@@ -448,6 +449,30 @@ public sealed class Extract : Entity
 
         Money period = CumulativeCertifiedWork - PreviouslyCertifiedWork;
         return period - ApprovedPortion.Of(period);
+    }
+
+    /// <summary>The period work value this extract bills: its period less <see cref="HeldWorkValue"/>. Derived, never stored.</summary>
+    public Money ApprovedWorkValue() => CumulativeCertifiedWork - PreviouslyCertifiedWork - HeldWorkValue();
+
+    /// <summary>
+    /// The previously certified work of the next normal extract on a project whose extracts are <paramref name="chain"/>
+    /// (D-250 item 1, D-253): every standing extract's billed period work, plus the remainder a split gate still holds
+    /// against an open NCR. A released remainder is left out, so it falls into the next extract's period and is billed
+    /// there, once. Derived from the extracts' own evidence on every prepare; nothing is stored.
+    /// </summary>
+    public static Money PreviouslyCertifiedFor(IEnumerable<Extract> chain)
+    {
+        ArgumentNullException.ThrowIfNull(chain);
+
+        Money total = Money.Zero;
+        foreach (Extract extract in chain.Where(candidate => candidate.Status != ExtractStatus.Void))
+        {
+            total += extract.HeldPortionReleasedAt is null
+                ? extract.CumulativeCertifiedWork - extract.PreviouslyCertifiedWork
+                : extract.ApprovedWorkValue();
+        }
+
+        return total;
     }
 
     /// <summary>
@@ -503,11 +528,7 @@ public sealed class Extract : Entity
     {
         ArgumentNullException.ThrowIfNull(balances);
 
-        Percentage portion = ApprovedPortion;
-        Money period = CumulativeCertifiedWork - PreviouslyCertifiedWork;
-        Money approvedCumulative = portion.Fraction == 1m
-            ? CumulativeCertifiedWork
-            : PreviouslyCertifiedWork + portion.Of(period);
+        Money approvedCumulative = PreviouslyCertifiedWork + ApprovedWorkValue();
 
         return new LumpSumBillingInput(
             approvedCumulative, PreviouslyCertifiedWork, MaterialValueOnSite, MaterialInstalled,
