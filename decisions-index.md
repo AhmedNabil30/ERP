@@ -260,3 +260,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-251 | 17185 | D-250 as built: the NCR, its close and release, and the released hold withholding ruling · 2026-11-20 |
 | D-252 | 17200 | NCR close sheet approved; E4 departures accepted · 2026-11-20 |
 | D-253 | 17210 | The released remainder of a split gate is billed on the next extract · 2026-11-20 |
+| D-254 | 17222 | Partial approval scales work only; handover waits on open NCRs and unbilled remainders · 2026-11-20 |

@@ -17218,3 +17218,13 @@ Asked after `qa/slice-5/verification-2026-11-20.md`. Nabil chose each recommende
 5. **The extract read** carries `approvedWork` and `heldWork` (the period work billed, and the period work the split gate held), null for a viewer without extract money, so E3 can draw «المعتمد للدفع» and «معلّق» (D-252 item 2). `heldWork` stays the amount this extract held after the release; `heldPortionReleasedAt` says whether it was released. The web type gains the two fields only.
 6. **`ExtractPartialApprovalScope` is now Ruled** (D-250 item 1, D-253). That the percentage scales period work only, and leaves delivered and installed material unscaled, is the reading the code has carried since KAFF-500 and is restated in the note; D-250 did not rule on it separately.
 7. **Not built.** The quantities sheet (D-248) still prices the previous column from the previous extract's executed quantities, so on the extract after a release its previous amount differs from the extract's previously certified work by the released remainder. No screen draws the two new figures yet.
+
+## D-254 — Partial approval scales work only; handover waits on NCRs · 2026-11-20
+
+Asked after `qa/slice-5/verification-2026-11-20-r3.md` (O-2, O-3). Nabil chose both recommended options.
+
+1. **A partial Technical Office approval scales the period's work value only.** Material values
+   (تشوينات) pass in full. This ratifies D-253 item 6.
+2. **Handover is refused while any NCR on the project is open, or while a released remainder has
+   not yet been billed on an extract.** Owed to a backend lane: a refusal on the handover action
+   with its own error key, and a test for each of the two cases.
