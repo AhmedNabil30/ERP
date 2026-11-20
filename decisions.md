@@ -17196,3 +17196,13 @@ Asked after `qa/slice-5/verification-2026-11-20.md`. Nabil chose each recommende
 8. **Not built.** No screen for the NCR or the split gate (E4 is still not built, D-246); the web client has the `Ncr` type and `openNcr` only, no API methods. Billing of the released remainder is not built (`ExtractPartialApprovalScope`). No NCR number: an NCR is named by its extract's number.
 
 **Gates at hand-back.** Build 0 warnings 0 errors (clean, --no-incremental); Domain 803/803; Api 1284 passed, 2 skipped of 1286, exit 0; `ng test` 591/591; format reports only ENDOFLINE; smoke passed with least privilege, and `kaff_app` holds SELECT, INSERT and UPDATE only on `ncrs`. Mutations, each killed: the release guard removed; the `HoldReleaseCarriesWithholding` default flipped to false (the existing released-hold collection test turns red); closing without the release; the close route on another permission; reusing a closed NCR on a new split; a blank close note accepted; the two باب names swapped.
+
+## D-252 — NCR close sheet approved; E4 departures accepted · 2026-11-20
+
+1. Nabil approved the NCR close sheet as drawn in `.design/v2/team-a/extracts.html` (E3 states
+   `part`, `ncrclose`, `ncrerr`, `ncrdone`): a required closing note, the line «يُفرج عن {amount}
+   ج.م.», and «إغلاق الملاحظة» / «إلغاء».
+2. Nabil accepted the E4 departures: the quality-note picker stays removed, since the server opens
+   the NCR itself. The approved-for-payment and held amounts are owed by the server and come back on
+   the extract page once it sends them. The browser does no money arithmetic (D-135).
+3. Found on review, owed to the designer: at 390px the gate stepper wraps «الحسابات» mid-word.
