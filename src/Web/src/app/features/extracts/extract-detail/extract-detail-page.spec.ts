@@ -234,4 +234,49 @@ describe('ExtractDetailPage (E3)', () => {
     expect(byTestId(root, 'extract-failure')).not.toBeNull();
     expect(byTestId(root, 'extract-retry')).not.toBeNull();
   });
+  it('sends the typed percentage as a fraction and refuses one outside 1 to 99 without sending', async () => {
+    const approvePortion = vi.fn().mockResolvedValue(undefined);
+    const { fixture, root } = await open(extract({}, { approveTechnicalOffice: true }), { approvePortion });
+    byTestId(root, 'act-portion')?.click();
+    await settle(fixture);
+
+    type(byTestId(root, 'portion-percent'), '120');
+    byTestId(root, 'portion-submit')?.click();
+    await settle(fixture);
+    expect(approvePortion).not.toHaveBeenCalled();
+    expect(root.textContent).toContain('extract.portion.error');
+
+    type(byTestId(root, 'portion-percent'), '70');
+    byTestId(root, 'portion-submit')?.click();
+    await settle(fixture);
+    expect(approvePortion).toHaveBeenCalledWith('p-1', 'e-1', '0.7');
+  });
+
+  it('closes the open NCR with its note, and names a missing note without sending', async () => {
+    const closeNcr = vi.fn().mockResolvedValue(undefined);
+    const openNcr = { id: 'n-1', extractId: 'e-1', extractNumber: 3, status: 'Open' as const, openedAt: '2026-10-05T10:00:00Z', openedByUserId: 'u-to', closedAt: null, closedByUserId: null, closeNote: null, heldAmount: '120000.0000', actions: { close: true } };
+    const { fixture, root } = await open(extract({ status: 'PartiallyApproved', openNcr }), { closeNcr });
+    expect(byTestId(root, 'extract-held')).not.toBeNull();
+    expect(primary(fixture)?.getAttribute('data-testid')).toBe('act-ncr');
+    primary(fixture)?.click();
+    await settle(fixture);
+
+    byTestId(root, 'ncr-submit')?.click();
+    await settle(fixture);
+    expect(closeNcr).not.toHaveBeenCalled();
+    expect(root.textContent).toContain('extract.ncr.note_required');
+
+    type(byTestId(root, 'ncr-note'), '  أُصلحت الشروخ  ');
+    byTestId(root, 'ncr-submit')?.click();
+    await settle(fixture);
+    expect(closeNcr).toHaveBeenCalledWith('p-1', 'n-1', 'أُصلحت الشروخ');
+  });
+
+  it('offers no close and no held figure without the server flag and the money view', async () => {
+    const openNcr = { id: 'n-1', extractId: 'e-1', extractNumber: 3, status: 'Open' as const, openedAt: '2026-10-05T10:00:00Z', openedByUserId: 'u-to', closedAt: null, closedByUserId: null, closeNote: null, heldAmount: null, actions: { close: false } };
+    const { fixture, root } = await open(extract({ status: 'PartiallyApproved', openNcr }));
+    expect(primary(fixture)).toBeNull();
+    expect(byTestId(root, 'extract-held')).toBeNull();
+    expect(byTestId(root, 'act-ncr-close')).toBeNull();
+  });
 });

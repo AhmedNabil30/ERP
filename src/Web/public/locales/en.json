@@ -2166,5 +2166,18 @@
   "change_order.line.quantity_required": "The quantity is above zero.",
   "change_order.line.price_required": "Enter the unit price.",
   "closure.hold_collection.title": "Hold collection",
-  "closure.hold_collection.done": "Payment recorded."
+  "closure.hold_collection.done": "Payment recorded.",
+  "extract.action.approve_portion": "Approve a part",
+  "extract.portion.title": "Approve a part",
+  "extract.portion.percent": "Approved percentage",
+  "extract.portion.error": "Enter a percentage from 1 to 99.",
+  "extract.portion.submit": "Approve the percentage",
+  "extract.work.heading": "Work value (EGP)",
+  "extract.portion.approved": "Approved for payment",
+  "extract.portion.held": "Held until the note is closed",
+  "extract.ncr.close": "Close the note",
+  "extract.ncr.note": "Closing note",
+  "extract.ncr.note_required": "Write the closing note.",
+  "extract.ncr.consequence": "{amount} EGP is released.",
+  "extract.ncr.closed": "The note is closed."
 }

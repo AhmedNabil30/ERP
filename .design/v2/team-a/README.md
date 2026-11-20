@@ -1386,6 +1386,18 @@ The employee code (`E-…`) in every list, panel and warning; the kind badge on 
 5. `errors.master.duplicate_phone_not_acknowledged` says «راجع العميل الذي يحمله», a client's wording, on an employee form. The mock uses its own line.
 6. «جديد» has no stored fact behind it: no "reviewed" flag and no site-versus-HR source on `Employee` (see "How a site registration reaches the list").
 
+## NCR close (round 3, 2026-11-20, D-250 and D-251)
+
+The Technical Office closes the quality note that a partial approval opened; closing releases the held portion. Drawn on E3 as states `part` (Technical Office), `partfin` (Finance, read only), `ncrclose`, `ncrerr`, `ncrdone`.
+
+- **Where it shows:** a `معتمد جزئيًا` extract carries, under the waiting line, a «قيمة الأعمال (ج.م)» figure list: «المعتمد للدفع» and «معلّق حتى إغلاق الملاحظة». The list is absent for a viewer without extract money (`openNcr.heldAmount` null).
+- **Action:** the Technical Office's primary on that extract is «إغلاق الملاحظة», present only when `openNcr.actions.close`. Finance still holds «تطبيق الخصومات» and sees the figures, no close.
+- **Sheet:** a required note «ملاحظة الإغلاق» (error «اكتب ملاحظة الإغلاق.»), the consequence line «يُفرج عن {amount} ج.م.», «إغلاق الملاحظة» and «إلغاء».
+- **After:** the in-place banner «أُغلقت الملاحظة.»; the held figures disappear; no primary for the Technical Office.
+- **Not on the screen:** NCR id or number (an NCR is named by its extract), opened-by, dates.
+- **New in the kit:** nothing. Figure list, sheet, field, banner and buttons are reused.
+- **New words (guesses):** «ملاحظة الإغلاق», «إغلاق الملاحظة» (action name, from the existing «الملاحظة»), «اكتب ملاحظة الإغلاق.», «يُفرج عن …», «أُغلقت الملاحظة.».
+
 ## Not decided here: questions for Nabil, each drawn on its recommendation
 
 1. **Does HR review site registrations?** Drawn: yes, a worker registered from site shows «جديد» until HR opens or edits him. If HR does not review them, drop the badge and gap 6. If it does, the server needs the stored fact.
@@ -1476,7 +1488,7 @@ Shell (sidebar, phone header, bottom bar, destinations sheet), project frame wit
 3. **Waiting line (`wait`).** One band, «بانتظار {person}: {task}», with a dim second line.
 4. **Figure list (`fl`).** Label at the start, figure at the end, real minus, ruled total row; the unit is in the section heading once.
 5. **Collection position (`pos`).** Five figures, المتبقي in the head fill. Five across on desktop; two by two on a phone with المتبقي full width.
-6. **Quantities table (`qt`).** باب band, line name with its unit under it, «هذه الفترة» and «حتى تاريخه», decimals only when the value has them.
+6. **Quantities table (`qt`).** باب band, line name with its unit under it, «هذه الفترة» and «حتى تاريخه», decimals only when the value has them. **Built as `kaff-quantity-table` (2026-11-20):** the server's `babNameAr` (English in an English session) draws the band; a new band starts when the باب changes, the باب code is never shown; rows without a باب draw no band.
 7. **Change-order line editor (`edt`, `ln`).**
 8. **List band (`lh`).** A head-fill band above a list naming the first column and the money column with its unit.
 9. **Forward link row (`back fwd`).** The back link's face with the chevron pointing forward and an optional count badge, for sub-sections (E1) and «الدفعات» (E3).
@@ -1501,7 +1513,7 @@ Extract number and change-order number: people read and say them. Cheque number 
 1. **Line-by-line quantity confirmation at QC** (D-235 item 4): no read exists; the sheet holds the two values only.
 2. **Withheld amount against the rate** (Q99): the field accepts any figure.
 3. **Category changeable at any time** (Q30): drawn always editable by Finance.
-4. **Partial approval (E4)** needs an NCR object and a ruling on what the percentage scales (journey Q12, Q13).
+4. **Partial approval (E4) is built** (D-251). The percentage scales this period's work value (`HeldWorkValue`); the server opens the NCR itself, so E4 has no note picker (the `ملاحظة الجودة` select and the `noncr` state were removed from the mock on 2026-11-20). Who closes an NCR is the Technical Office by assumption (D-250 item 1, `NcrCloser`), on the question sheet for Karim.
 5. **Draft change orders cannot be edited** (S8, journey gap 10): a typo means withdraw and retype.
 6. **The client's approval of a change order leaves no evidence** (S9): no date, reference or document, because the route takes no body.
 7. **The withholding word** «الخصم من المنبع» is not ruled (D-240 item 4).
@@ -1516,7 +1528,6 @@ Extract number and change-order number: people read and say them. Cheque number 
 - The change orders the next extract will bill, with titles (gap 10); the title on `ExtractChangeOrderResponse`.
 - The dispute reason on the extract read and on the credit note read; the credit note summary on the extract read.
 - The holder's name and task for credit notes, change orders and cheques (gap 7).
-- Open NCRs (gap 5).
 - The date a cheque's state last changed, on `GET /api/projects/{projectId}/cheques`.
 - The revised-extract resolution, the cancelled state (`Void`) and the link between the original and its replacement.
 

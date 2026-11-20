@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
 import { CollectionView, Extract, ExtractCreditNote, ExtractGate, ExtractQuantityRow, ExtractsApi, RejectionGate, RejectionKind } from '../../../core/extracts/extracts.api';
+import { percentToFraction } from '../../../core/catalogue/percent-wire';
 import { ProjectDetail, ProjectsApi } from '../../../core/projects/projects.api';
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
@@ -57,7 +58,7 @@ const GATE_KEYS: Readonly<Record<ExtractGate, string>> = {
 };
 
 /** The one primary, chosen by the server's flags. */
-type PrimaryKind = 'qc' | 'technical' | 'deductions' | 'owner' | 'issue' | 'revise' | 'cheque' | 'collect' | 'resolve';
+type PrimaryKind = 'qc' | 'technical' | 'deductions' | 'owner' | 'issue' | 'revise' | 'cheque' | 'collect' | 'resolve' | 'ncr';
 
 const PRIMARY_KEYS: Readonly<Record<PrimaryKind, string>> = {
   qc: 'extract.action.submit_qc',
@@ -69,6 +70,7 @@ const PRIMARY_KEYS: Readonly<Record<PrimaryKind, string>> = {
   cheque: 'cheque.action.deposit',
   collect: 'collection.record',
   resolve: 'dispute.resolve',
+  ncr: 'extract.ncr.close',
 };
 
 const REJECTION_KINDS: readonly Choice[] = [
@@ -139,7 +141,13 @@ export class ExtractDetailPage extends ChainPage {
     () => this.data()?.creditNotes?.filter((n) => n.status !== 'Rejected').at(-1) ?? null,
   );
 
-  protected readonly sheet = signal<'qc' | 'reject' | 'owner' | null>(null);
+  protected readonly sheet = signal<'qc' | 'reject' | 'owner' | 'portion' | 'ncr' | null>(null);
+  /** «أُغلقت الملاحظة.»: said once, in place, after the Technical Office closed the NCR. */
+  protected readonly ncrClosed = signal(false);
+  protected readonly portion = signal('');
+  protected readonly portionError = signal<string | null>(null);
+  protected readonly ncrNote = signal('');
+  protected readonly ncrError = signal<string | null>(null);
   /** «طُبقت الخصومات.»: said once, in place, after Finance applied them. */
   protected readonly applied = signal(false);
 
@@ -167,6 +175,7 @@ export class ExtractDetailPage extends ChainPage {
     if (a.recordChequeMove) return 'cheque';
     if (a.recordCollection) return 'collect';
     if (a.resolveDispute) return 'resolve';
+    if (this.data()?.openNcr?.actions.close) return 'ncr';
     return null;
   });
 
@@ -405,6 +414,9 @@ export class ExtractDetailPage extends ChainPage {
       case 'resolve':
         this.go('dispute-resolution');
         break;
+      case 'ncr':
+        this.openSheet('ncr');
+        break;
     }
   }
 
@@ -413,9 +425,12 @@ export class ExtractDetailPage extends ChainPage {
     void this.router.navigate(['/projects', this.projectId(), 'extracts', this.extractId(), screen]);
   }
 
-  protected openSheet(sheet: 'qc' | 'reject' | 'owner'): void {
+  protected openSheet(sheet: 'qc' | 'reject' | 'owner' | 'portion' | 'ncr'): void {
     this.actionError.set(null);
     this.applied.set(false);
+    this.ncrClosed.set(false);
+    this.portionError.set(null);
+    this.ncrError.set(null);
     this.qcErrors.set({ onSite: null, installed: null });
     this.rejectErrors.set({ kind: null, reason: null });
     this.sheet.set(sheet);
@@ -453,6 +468,39 @@ export class ExtractDetailPage extends ChainPage {
     }
   }
 
+  /** E4: a percentage from 1 to 99 goes as the wire fraction; the server opens the NCR the remainder waits on. */
+  protected submitPortion(): void {
+    const typed = wireAmount(this.portion());
+    const value = typed === null ? Number.NaN : Number(typed);
+    if (typed === null || !(value >= 1 && value <= 99)) {
+      this.portionError.set('extract.portion.error');
+      return;
+    }
+    this.portionError.set(null);
+    void this.run(() => this.api.approvePortion(this.projectId(), this.extractId(), percentToFraction(typed)));
+  }
+
+  /** The closing note is required; the held portion is released by the server. */
+  protected submitNcrClose(): void {
+    const ncr = this.data()?.openNcr;
+    const note = this.ncrNote().trim();
+    this.ncrError.set(note === '' ? 'extract.ncr.note_required' : null);
+    if (ncr && note !== '') {
+      void this.run(() => this.api.closeNcr(this.projectId(), ncr.id, note)).then((ok) => this.ncrClosed.set(ok));
+    }
+  }
+
+  /** What the server holds back until the NCR closes. Null for a viewer without extract money. */
+  protected readonly heldRows = computed<FigureRow[]>(() => {
+    const held = this.data()?.openNcr?.heldAmount;
+    return held ? [{ label: this.i18n.t('extract.portion.held'), amount: held, testId: 'extract-held' }] : [];
+  });
+
+  protected readonly ncrConsequence = computed(() => {
+    const held = this.data()?.openNcr?.heldAmount;
+    return held ? this.i18n.t('extract.ncr.consequence', { amount: this.i18n.formatAmount(held) }) : '';
+  });
+
   protected confirmOwner(): void {
     void this.run(() => this.api.step(this.projectId(), this.extractId(), 'owner-approval'));
   }
@@ -473,6 +521,8 @@ export class ExtractDetailPage extends ChainPage {
       this.sheet.set(null);
       this.reason.set('');
       this.rejectKind.set('');
+      this.portion.set('');
+      this.ncrNote.set('');
     }
     // A refusal can mean the extract moved under us; show where it stands now.
     await this.reload();

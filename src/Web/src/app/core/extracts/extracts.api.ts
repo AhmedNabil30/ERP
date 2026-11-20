@@ -368,6 +368,16 @@ export class ExtractsApi {
     await firstValueFrom(this.http.post(`${this.base(projectId)}/${id}/${step}`, {}));
   }
 
+  /** The Technical Office approves a fraction of the period's work; the server opens the NCR the rest waits on (D-251 item 2). */
+  async approvePortion(projectId: string, id: string, approvedPortion: string): Promise<void> {
+    await firstValueFrom(this.http.post(`${this.base(projectId)}/${id}/technical-approval`, { approvedPortion }));
+  }
+
+  /** Closes the extract's NCR with a note; the held portion is released (D-251 item 3). */
+  async closeNcr(projectId: string, ncrId: string, note: string): Promise<void> {
+    await firstValueFrom(this.http.post(`api/projects/${projectId}/ncrs/${ncrId}/close`, { note }));
+  }
+
   /** D-242 item 2: a rejection names where the error is, so it lands on the person who can change it. */
   async reject(projectId: string, id: string, gate: RejectionGate, reason: string, kind: RejectionKind): Promise<void> {
     await firstValueFrom(this.http.post(`${this.base(projectId)}/${id}/${gate}`, { reason, kind }));

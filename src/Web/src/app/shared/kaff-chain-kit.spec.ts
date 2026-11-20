@@ -8,6 +8,8 @@ import { FakeI18n } from '../features/extracts/testing/chain-fixtures';
 import { KaffChainLine } from './kaff-chain-line/kaff-chain-line';
 import { KaffCollectionPosition } from './kaff-collection-position/kaff-collection-position';
 import { KaffFigureList } from './kaff-figure-list/kaff-figure-list';
+import type { ExtractQuantityRow } from '../core/extracts/extracts.api';
+import { KaffQuantityTable } from './kaff-quantity-table/kaff-quantity-table';
 import { KaffForwardLink } from './kaff-forward-link/kaff-forward-link';
 import { KaffWaitingLine } from './kaff-waiting-line/kaff-waiting-line';
 
@@ -66,5 +68,13 @@ describe('extract chain kit parts', () => {
     const root = render(KaffForwardLink, { link: ['/x'], label: 'أوامر التغيير', count: '3' });
     expect(root.querySelector('a')?.getAttribute('href')).toBe('/x');
     expect(root.querySelector('.badge')?.textContent).toBe('3');
+  });
+  it('quantity table: a band starts when the باب changes, and shows its name, never its code', () => {
+    const row = (id: string, babCode: string, babNameAr: string) =>
+      ({ boqLineId: id, descriptionAr: id, unit: 'م2', cumulativeQuantity: 1, babCode, babNameAr, babNameEn: babNameAr }) as ExtractQuantityRow;
+    const root = render(KaffQuantityTable, { rows: [row('a', 'B-01', 'البياض'), row('b', 'B-01', 'البياض'), row('c', 'B-02', 'الدهانات')] });
+    expect([...root.querySelectorAll('[data-testid="quantity-band"]')].map((b) => b.textContent?.trim())).toEqual(['البياض', 'الدهانات']);
+    expect(root.querySelectorAll('[data-testid="quantity-row"]').length).toBe(3);
+    expect(root.textContent).not.toContain('B-01');
   });
 });

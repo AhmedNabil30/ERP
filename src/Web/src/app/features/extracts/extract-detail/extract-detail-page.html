@@ -35,12 +35,20 @@
       @if (actionError(); as key) {
         <kaff-banner tone="refusal" testId="extract-action-error">{{ i18n.t(key, actionErrorParams()) }}</kaff-banner>
       }
+      @if (ncrClosed()) {
+        <kaff-banner tone="ok" testId="extract-ncr-closed">{{ i18n.t('extract.ncr.closed') }}</kaff-banner>
+      }
       @if (applied()) {
         <kaff-banner tone="ok" testId="extract-applied">{{ i18n.t('extract.applied') }}</kaff-banner>
       }
 
       @if (waiting(); as w) {
         <kaff-waiting-line [text]="w.text" [sub]="w.sub" testId="extract-waiting" />
+      }
+
+      @if (heldRows().length > 0) {
+        <h2 class="sec-h">{{ i18n.t('extract.work.heading') }}</h2>
+        <kaff-figure-list [rows]="heldRows()" testId="extract-held-list" />
       }
 
       @if (barred()) {
@@ -140,8 +148,14 @@
         }
       </ul>
 
-      @if (rejectGate() !== null || x.actions.raiseDispute) {
+      @if (rejectGate() !== null || x.actions.raiseDispute || x.actions.approveTechnicalOffice || (x.openNcr?.actions?.close && primary() !== 'ncr')) {
         <div class="more" data-testid="extract-secondary">
+          @if (x.actions.approveTechnicalOffice) {
+            <kaff-button variant="secondary" testId="act-portion" (clicked)="openSheet('portion')">{{ i18n.t('extract.action.approve_portion') }}</kaff-button>
+          }
+          @if (x.openNcr?.actions?.close && primary() !== 'ncr') {
+            <kaff-button variant="secondary" testId="act-ncr-close" (clicked)="openSheet('ncr')">{{ i18n.t('extract.ncr.close') }}</kaff-button>
+          }
           @if (rejectGate() !== null) {
             <kaff-button variant="secondary" testId="act-reject" (clicked)="openSheet('reject')">{{ i18n.t('extract.action.reject') }}</kaff-button>
           }
@@ -179,6 +193,37 @@
       <div panelFooter class="panel-actions">
         <kaff-button variant="primary" [busy]="busy()" testId="reject-submit" (clicked)="submitReject()">{{ i18n.t('extract.reject.submit') }}</kaff-button>
         <kaff-button variant="secondary" [disabled]="busy()" testId="reject-cancel" (clicked)="closeSheet()">{{ i18n.t('extract.cancel') }}</kaff-button>
+      </div>
+    </kaff-detail-panel>
+
+    <kaff-detail-panel [open]="sheet() === 'portion'" [title]="i18n.t('extract.portion.title')" testId="portion-sheet" (closed)="closeSheet()">
+      <div panelBody class="sheet-form">
+        @if (actionError(); as key) {
+          <kaff-banner tone="refusal">{{ i18n.t(key, actionErrorParams()) }}</kaff-banner>
+        }
+        <kaff-money-field labelKey="extract.portion.percent" controlId="portion-percent" affixKey="bab.affix.percent" [required]="true" [errorKey]="portionError()" hintTestId="portion-error" testId="portion-percent" [(value)]="portion" />
+      </div>
+      <div panelFooter class="panel-actions">
+        <kaff-button variant="primary" [busy]="busy()" testId="portion-submit" (clicked)="submitPortion()">{{ i18n.t('extract.portion.submit') }}</kaff-button>
+        <kaff-button variant="secondary" [disabled]="busy()" testId="portion-cancel" (clicked)="closeSheet()">{{ i18n.t('extract.cancel') }}</kaff-button>
+      </div>
+    </kaff-detail-panel>
+
+    <kaff-detail-panel [open]="sheet() === 'ncr'" [title]="i18n.t('extract.ncr.close')" testId="ncr-sheet" (closed)="closeSheet()">
+      <div panelBody class="sheet-form">
+        @if (actionError(); as key) {
+          <kaff-banner tone="refusal">{{ i18n.t(key, actionErrorParams()) }}</kaff-banner>
+        }
+        <kaff-field labelKey="extract.ncr.note" controlId="ncr-note" [required]="true" [errorKey]="ncrError()" errorTestId="ncr-note-error" #nf="kaffField">
+          <textarea id="ncr-note" data-testid="ncr-note" [attr.aria-invalid]="ncrError() ? 'true' : null" [attr.aria-describedby]="nf.describedById()" [value]="ncrNote()" (input)="ncrNote.set($any($event.target).value)"></textarea>
+        </kaff-field>
+        @if (ncrConsequence(); as line) {
+          <p class="consequence" data-testid="ncr-consequence">{{ line }}</p>
+        }
+      </div>
+      <div panelFooter class="panel-actions">
+        <kaff-button variant="primary" [busy]="busy()" testId="ncr-submit" (clicked)="submitNcrClose()">{{ i18n.t('extract.ncr.close') }}</kaff-button>
+        <kaff-button variant="secondary" [disabled]="busy()" testId="ncr-cancel" (clicked)="closeSheet()">{{ i18n.t('extract.cancel') }}</kaff-button>
       </div>
     </kaff-detail-panel>
 
