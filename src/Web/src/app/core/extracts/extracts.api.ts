@@ -221,6 +221,8 @@ export interface Extract {
   readonly approvedWork?: string | null;
   /** D-252 item 2: the period work a split gate held back («معلّق»). Null for a viewer who may not see money. */
   readonly heldWork?: string | null;
+  /** When the held portion was released (the NCR closed); null while held or when nothing was split. */
+  readonly heldPortionReleasedAt?: string | null;
   readonly gateHistory: readonly GateRecord[];
   readonly actions: ExtractActions;
   /** Null for a viewer who may not see money. */

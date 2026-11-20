@@ -255,8 +255,9 @@ describe('ExtractDetailPage (E3)', () => {
   it('closes the open NCR with its note, and names a missing note without sending', async () => {
     const closeNcr = vi.fn().mockResolvedValue(undefined);
     const openNcr = { id: 'n-1', extractId: 'e-1', extractNumber: 3, status: 'Open' as const, openedAt: '2026-10-05T10:00:00Z', openedByUserId: 'u-to', closedAt: null, closedByUserId: null, closeNote: null, heldAmount: '120000.0000', actions: { close: true } };
-    const { fixture, root } = await open(extract({ status: 'PartiallyApproved', openNcr }), { closeNcr });
+    const { fixture, root } = await open(extract({ status: 'PartiallyApproved', openNcr, approvedWork: '280000.0000', heldWork: '120000.0000' }), { closeNcr });
     expect(byTestId(root, 'extract-held')).not.toBeNull();
+    expect(byTestId(root, 'extract-approved-work')).not.toBeNull();
     expect(primary(fixture)?.getAttribute('data-testid')).toBe('act-ncr');
     primary(fixture)?.click();
     await settle(fixture);
@@ -278,5 +279,16 @@ describe('ExtractDetailPage (E3)', () => {
     expect(primary(fixture)).toBeNull();
     expect(byTestId(root, 'extract-held')).toBeNull();
     expect(byTestId(root, 'act-ncr-close')).toBeNull();
+  });
+
+  it('draws no split figures once the held portion is released, or when the server sends none', async () => {
+    const released = await open(extract({ status: 'PartiallyApproved', approvedWork: '280000.0000', heldWork: '120000.0000', heldPortionReleasedAt: '2026-10-09T10:00:00Z' }));
+    expect(byTestId(released.root, 'extract-held')).toBeNull();
+    expect(byTestId(released.root, 'extract-approved-work')).toBeNull();
+  });
+
+  it('draws no split figures when the server sends none', async () => {
+    const { root } = await open(extract({ status: 'PartiallyApproved', approvedWork: null, heldWork: null }));
+    expect(byTestId(root, 'extract-held-list')).toBeNull();
   });
 });

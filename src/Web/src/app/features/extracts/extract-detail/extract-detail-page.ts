@@ -490,10 +490,23 @@ export class ExtractDetailPage extends ChainPage {
     }
   }
 
-  /** What the server holds back until the NCR closes. Null for a viewer without extract money. */
+  /**
+   * The split gate's two figures, as the server sends them (D-253 item 5). Each row appears only when non-null. Once the
+   * held portion is released the mock (`ncrdone`) draws no figures, so the section goes.
+   */
   protected readonly heldRows = computed<FigureRow[]>(() => {
-    const held = this.data()?.openNcr?.heldAmount;
-    return held ? [{ label: this.i18n.t('extract.portion.held'), amount: held, testId: 'extract-held' }] : [];
+    const x = this.data();
+    if (!x || x.heldPortionReleasedAt) {
+      return [];
+    }
+    const rows: FigureRow[] = [];
+    if (x.approvedWork) {
+      rows.push({ label: this.i18n.t('extract.portion.approved'), amount: x.approvedWork, testId: 'extract-approved-work' });
+    }
+    if (x.heldWork) {
+      rows.push({ label: this.i18n.t('extract.portion.held'), amount: x.heldWork, testId: 'extract-held' });
+    }
+    return rows;
   });
 
   protected readonly ncrConsequence = computed(() => {
