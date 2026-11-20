@@ -409,6 +409,7 @@
   "errors.extract.quantities_invalid": "الكميات المعتمدة غير صحيحة: لا يجوز أن تكون سالبة أو أقل مما سبق اعتماده.",
   "errors.extract.approved_portion_out_of_range": "النسبة المعتمدة للصرف يجب أن تكون أكبر من صفر وحتى ١٠٠٪.",
   "errors.extract.held_portion_needs_ncr": "لا يُعلَّق جزء من المستخلص إلا على تقرير عدم مطابقة مفتوح.",
+  "errors.extract.split_after_handover": "بعد التسليم يُعتمد المستخلص كاملاً أو يُرفض، فلا يبقى منه جزء معلّق ولا يُفتح له تقرير عدم المطابقة.",
   "errors.extract.no_held_portion": "لا يوجد جزء معلّق في هذا المستخلص.",
   "errors.extract.held_portion_already_released": "اعتُمد الجزء المعلّق للدفع من قبل.",
   "errors.extract.ncr_already_closed": "تقرير عدم المطابقة مُغلق من قبل.",

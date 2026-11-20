@@ -464,7 +464,7 @@ public sealed class ChangeOrderTests
             h.Project, 1, new DateOnly(2026, 1, 2), new DateOnly(2026, 2, 1), new Money(300_000m), Money.Zero,
             Money.Zero, Money.Zero, User(), Now, [new ExtractChangeOrderBilling(Guid.CreateVersion7(), new Money(100_000m))]).Value;
         extract.SubmitQcReport(User(), Now).IsSuccess.Should().BeTrue();
-        extract.ApproveTechnicalOffice(User(), Percentage.FromFraction(1m), null, h.Rulings, Now).IsSuccess.Should().BeTrue();
+        extract.ApproveTechnicalOffice(ProjectStatus.Active, User(), Percentage.FromFraction(1m), null, h.Rulings, Now).IsSuccess.Should().BeTrue();
 
         Result<PostingSet?> deductions = await extract.ApplyDeductionsAsync(
             User(), new LumpSumBillingCalculator(h.Rulings), h.Balances(), h.Context(), Now, CancellationToken.None);

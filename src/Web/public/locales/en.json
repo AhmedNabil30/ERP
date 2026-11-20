@@ -409,6 +409,7 @@
   "errors.extract.quantities_invalid": "The certified quantities are not valid: they cannot be negative or below what was already certified.",
   "errors.extract.approved_portion_out_of_range": "The portion approved for payment must be above zero and at most 100%.",
   "errors.extract.held_portion_needs_ncr": "A held portion needs the open NCR it is held against.",
+  "errors.extract.split_after_handover": "After handover the extract is approved whole or rejected: no held portion is left and no NCR is opened.",
   "errors.extract.no_held_portion": "This extract has no held portion.",
   "errors.extract.held_portion_already_released": "The held portion has already been approved for payment.",
   "errors.extract.ncr_already_closed": "This NCR is already closed.",

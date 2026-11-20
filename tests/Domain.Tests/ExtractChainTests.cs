@@ -85,9 +85,9 @@ public sealed class ExtractChainTests
             case "SubmitQc":
                 return extract.SubmitQcReport(actor, now);
             case "ApproveFull":
-                return extract.ApproveTechnicalOffice(actor, Percentage.FromFraction(1m), null, _h.Rulings, now);
+                return extract.ApproveTechnicalOffice(ProjectStatus.Active, actor, Percentage.FromFraction(1m), null, _h.Rulings, now);
             case "ApprovePartial":
-                return extract.ApproveTechnicalOffice(actor, Percentage.FromPercent(50m), Guid.NewGuid(), _h.Rulings, now);
+                return extract.ApproveTechnicalOffice(ProjectStatus.Active, actor, Percentage.FromPercent(50m), Guid.NewGuid(), _h.Rulings, now);
             case "ApplyDeductions":
                 return await extract.ApplyDeductionsAsync(
                     actor, new LumpSumBillingCalculator(_h.Rulings), _h.Balances(), context, now, CancellationToken.None);
@@ -155,7 +155,7 @@ public sealed class ExtractChainTests
         extract.EnsureMayDecide(ExtractHarness.NewUser()).IsSuccess.Should().BeTrue();
 
         extract.ApproveTechnicalOffice(
-            preparer, Percentage.FromFraction(1m), null, _h.Rulings, ExtractHarness.Now).Error
+            ProjectStatus.Active, preparer, Percentage.FromFraction(1m), null, _h.Rulings, ExtractHarness.Now).Error
             .Should().Be(AuthorizationErrors.SameActorCreatedAndApproved);
         extract.Reject(preparer, "no", ExtractRejectionKind.MaterialValues, _h.Context(), [], ExtractHarness.Now).Error
             .Should().Be(AuthorizationErrors.SameActorCreatedAndApproved);
@@ -172,8 +172,8 @@ public sealed class ExtractChainTests
         DateTimeOffset now = ExtractHarness.Now;
 
         extract.SubmitQcReport(qc, now).IsSuccess.Should().BeTrue();
-        extract.ApproveTechnicalOffice(qc, Percentage.FromFraction(1m), null, _h.Rulings, now).IsFailure.Should().BeTrue();
-        extract.ApproveTechnicalOffice(technical, Percentage.FromFraction(1m), null, _h.Rulings, now).IsSuccess.Should().BeTrue();
+        extract.ApproveTechnicalOffice(ProjectStatus.Active, qc, Percentage.FromFraction(1m), null, _h.Rulings, now).IsFailure.Should().BeTrue();
+        extract.ApproveTechnicalOffice(ProjectStatus.Active, technical, Percentage.FromFraction(1m), null, _h.Rulings, now).IsSuccess.Should().BeTrue();
 
         Result<PostingSet?> byTechnical = await extract.ApplyDeductionsAsync(
             technical, new LumpSumBillingCalculator(_h.Rulings), _h.Balances(), _h.Context(), now, CancellationToken.None);
@@ -266,7 +266,7 @@ public sealed class ExtractChainTests
         Extract extract = h.Prepare(ExtractHarness.NewUser());
         DateTimeOffset now = ExtractHarness.Now;
         extract.SubmitQcReport(ExtractHarness.NewUser(), now).IsSuccess.Should().BeTrue();
-        extract.ApproveTechnicalOffice(ExtractHarness.NewUser(), Percentage.FromFraction(1m), null, accruesAtAccounts, now)
+        extract.ApproveTechnicalOffice(ProjectStatus.Active, ExtractHarness.NewUser(), Percentage.FromFraction(1m), null, accruesAtAccounts, now)
             .IsSuccess.Should().BeTrue();
 
         Result<PostingSet?> accrual = await extract.ApplyDeductionsAsync(
@@ -309,7 +309,7 @@ public sealed class ExtractChainTests
         Extract extract = h.Prepare(ExtractHarness.NewUser());
         DateTimeOffset now = ExtractHarness.Now;
         extract.SubmitQcReport(ExtractHarness.NewUser(), now).IsSuccess.Should().BeTrue();
-        extract.ApproveTechnicalOffice(ExtractHarness.NewUser(), Percentage.FromFraction(1m), null, accruesAtAccounts, now)
+        extract.ApproveTechnicalOffice(ProjectStatus.Active, ExtractHarness.NewUser(), Percentage.FromFraction(1m), null, accruesAtAccounts, now)
             .IsSuccess.Should().BeTrue();
         Result<PostingSet?> accrual = await extract.ApplyDeductionsAsync(
             ExtractHarness.NewUser(), new LumpSumBillingCalculator(accruesAtAccounts), h.Balances(), h.Context(), now,
@@ -379,7 +379,7 @@ public sealed class ExtractChainTests
         Extract extract = await _h.DriveAsync(ExtractStatus.QcSubmitted);
         Guid office = ExtractHarness.NewUser();
         Ncr ncr = Ncr.Open(extract, office, ExtractHarness.Now);
-        extract.ApproveTechnicalOffice(office, Percentage.FromPercent(60m), ncr.Id, _h.Rulings, ExtractHarness.Now)
+        extract.ApproveTechnicalOffice(ProjectStatus.Active, office, Percentage.FromPercent(60m), ncr.Id, _h.Rulings, ExtractHarness.Now)
             .IsSuccess.Should().BeTrue();
 
         // 300,000 of period work, 60% approved: 120,000 held.
@@ -407,7 +407,7 @@ public sealed class ExtractChainTests
         Extract extract = await _h.DriveAsync(ExtractStatus.QcSubmitted);
         Guid office = ExtractHarness.NewUser();
         Ncr ncr = Ncr.Open(extract, office, ExtractHarness.Now);
-        extract.ApproveTechnicalOffice(office, Percentage.FromPercent(60m), ncr.Id, _h.Rulings, ExtractHarness.Now)
+        extract.ApproveTechnicalOffice(ProjectStatus.Active, office, Percentage.FromPercent(60m), ncr.Id, _h.Rulings, ExtractHarness.Now)
             .IsSuccess.Should().BeTrue();
         extract.Reject(ExtractHarness.NewUser(), "material values wrong", ExtractRejectionKind.MaterialValues, _h.Context(), [], ExtractHarness.Now)
             .IsSuccess.Should().BeTrue();
@@ -431,13 +431,45 @@ public sealed class ExtractChainTests
         Extract extract = await _h.DriveAsync(ExtractStatus.QcSubmitted);
         Guid actor = ExtractHarness.NewUser();
 
-        extract.ApproveTechnicalOffice(actor, Percentage.FromPercent(50m), null, _h.Rulings, ExtractHarness.Now).Error
+        extract.ApproveTechnicalOffice(ProjectStatus.Active, actor, Percentage.FromPercent(50m), null, _h.Rulings, ExtractHarness.Now).Error
             .Should().Be(ExtractErrors.HeldPortionNeedsNcr);
-        extract.ApproveTechnicalOffice(actor, Percentage.Zero, Guid.NewGuid(), _h.Rulings, ExtractHarness.Now).Error
+        extract.ApproveTechnicalOffice(ProjectStatus.Active, actor, Percentage.Zero, Guid.NewGuid(), _h.Rulings, ExtractHarness.Now).Error
             .Should().Be(ExtractErrors.ApprovedPortionOutOfRange);
-        extract.ApproveTechnicalOffice(actor, Percentage.FromPercent(101m), null, _h.Rulings, ExtractHarness.Now).Error
+        extract.ApproveTechnicalOffice(ProjectStatus.Active, actor, Percentage.FromPercent(101m), null, _h.Rulings, ExtractHarness.Now).Error
             .Should().Be(ExtractErrors.ApprovedPortionOutOfRange);
         extract.Status.Should().Be(ExtractStatus.QcSubmitted);
+    }
+
+    // ---- D-258 item 1: no split from handover on ----
+
+    [Theory]
+    [InlineData(ProjectStatus.Handover)]
+    [InlineData(ProjectStatus.UnderWarranty)]
+    [InlineData(ProjectStatus.Closed)]
+    public async Task From_handover_on_the_gate_refuses_a_split_but_passes_the_extract_whole(ProjectStatus handedOver)
+    {
+        Extract extract = await _h.DriveAsync(ExtractStatus.QcSubmitted);
+        Guid actor = ExtractHarness.NewUser();
+
+        extract.ApproveTechnicalOffice(handedOver, actor, Percentage.FromPercent(60m), Guid.NewGuid(), _h.Rulings, ExtractHarness.Now).Error
+            .Should().Be(ExtractErrors.SplitAfterHandover);
+        extract.Status.Should().Be(ExtractStatus.QcSubmitted);
+        extract.HeldForNcrId.Should().BeNull();
+
+        extract.ApproveTechnicalOffice(handedOver, actor, Percentage.FromFraction(1m), null, _h.Rulings, ExtractHarness.Now)
+            .IsSuccess.Should().BeTrue();
+        extract.Status.Should().Be(ExtractStatus.TechnicalApproved);
+    }
+
+    [Fact]
+    public async Task Before_handover_a_pending_handover_still_takes_a_split()
+    {
+        Extract extract = await _h.DriveAsync(ExtractStatus.QcSubmitted);
+
+        extract.ApproveTechnicalOffice(
+            ProjectStatus.HandoverPending, ExtractHarness.NewUser(), Percentage.FromPercent(60m), Guid.NewGuid(), _h.Rulings,
+            ExtractHarness.Now).IsSuccess.Should().BeTrue();
+        extract.Status.Should().Be(ExtractStatus.PartiallyApproved);
     }
 
     // ---- AC-500-H: a stopped project issues nothing ----
@@ -478,7 +510,7 @@ public sealed class ExtractChainTests
         RulingSet ruled = RulingSet.Default with { ExtractPostingMoment = new ExtractPostingMoment(moment) };
         Extract extract = await _h.DriveAsync(ExtractStatus.QcSubmitted);
 
-        extract.ApproveTechnicalOffice(ExtractHarness.NewUser(), Percentage.FromFraction(1m), null, ruled, ExtractHarness.Now)
+        extract.ApproveTechnicalOffice(ProjectStatus.Active, ExtractHarness.NewUser(), Percentage.FromFraction(1m), null, ruled, ExtractHarness.Now)
             .Error.Should().Be(ExtractErrors.AccrualMomentUnsupported);
         extract.Status.Should().Be(ExtractStatus.QcSubmitted);
     }

@@ -2,6 +2,7 @@ using Kaff.Domain.Authorization;
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts.Billing;
 using Kaff.Domain.Extracts;
+using Kaff.Domain.Projects;
 using Kaff.Domain.Rulings;
 using Kaff.Domain.Treasury;
 
@@ -44,7 +45,7 @@ public sealed class ExtractRevisionTests
         extract.MaterialInstalled.Should().Be(new Money(10_000m));
 
         extract.SubmitQcReport(ExtractHarness.NewUser(), Later).IsSuccess.Should().BeTrue();
-        extract.ApproveTechnicalOffice(technical, Percentage.FromFraction(1m), null, _h.Rulings, Later)
+        extract.ApproveTechnicalOffice(ProjectStatus.Active, technical, Percentage.FromFraction(1m), null, _h.Rulings, Later)
             .IsSuccess.Should().BeTrue("the rejecter is not barred from the new cycle");
 
         Result<PostingSet?> deductions = await extract.ApplyDeductionsAsync(
@@ -175,7 +176,7 @@ public sealed class ExtractRevisionTests
         Extract extract = h.Prepare(ExtractHarness.NewUser());
         extract.SubmitQcReport(ExtractHarness.NewUser(), ExtractHarness.Now).IsSuccess.Should().BeTrue();
         extract.ApproveTechnicalOffice(
-            ExtractHarness.NewUser(), Percentage.FromFraction(1m), null, accruesAtAccounts, ExtractHarness.Now)
+            ProjectStatus.Active, ExtractHarness.NewUser(), Percentage.FromFraction(1m), null, accruesAtAccounts, ExtractHarness.Now)
             .IsSuccess.Should().BeTrue();
         Result<PostingSet?> accrual = await extract.ApplyDeductionsAsync(
             ExtractHarness.NewUser(), new LumpSumBillingCalculator(accruesAtAccounts), h.Balances(), h.Context(),

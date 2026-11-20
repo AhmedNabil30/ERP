@@ -89,6 +89,8 @@ export interface GateRecord {
 export interface ExtractActions {
   readonly submitQcReport: boolean;
   readonly approveTechnicalOffice: boolean;
+  /** The gate may also split the extract; false from handover on (D-258). */
+  readonly approvePortion: boolean;
   readonly rejectAtTechnicalOffice: boolean;
   readonly applyDeductions: boolean;
   readonly rejectAtAccounts: boolean;

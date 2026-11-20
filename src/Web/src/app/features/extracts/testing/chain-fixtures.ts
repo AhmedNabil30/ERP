@@ -36,6 +36,7 @@ export class FakeI18n {
 export const NO_ACTIONS: ExtractActions = {
   submitQcReport: false,
   approveTechnicalOffice: false,
+  approvePortion: false,
   rejectAtTechnicalOffice: false,
   applyDeductions: false,
   rejectAtAccounts: false,

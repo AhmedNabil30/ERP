@@ -17313,3 +17313,30 @@ Asked after D-257 and `ux/consultant-review-extracts-app-2026-11-20.md` (F1, C3,
 3. **The stage trail (المقايسة · التنفيذ · التسليم) comes off the project workspace.** The status pill
    already says where the project is; the tab keeps «المقايسة».
 4. **The primary action stays where the page frame puts it** (KAFF-936), on every screen.
+
+## D-259 — From handover on the Technical Office approves an extract whole or rejects it; a split is refused · 2026-11-20
+
+**Source.** D-258 item 1, built by the Backend lane. Replaces the open question in D-257 item 1.
+
+1. **The guard is in the domain.** `Extract.ApproveTechnicalOffice` now takes the project's `ProjectStatus` as its first
+   argument. A split (portion below 100%) on a project in `Handover`, `UnderWarranty` or `Closed` fails with
+   `ExtractErrors.SplitAfterHandover` (`extract.split_after_handover`, Conflict, 409) before anything is changed.
+   Whole approval and rejection are unchanged. `HandoverPending`, `Stopped` and `Terminated` are not handover states
+   and keep today's behaviour; the brief named handover and the closure states after it, and nothing more.
+2. **One rule, read in two places.** `Extract.SplitAllowedIn(ProjectStatus)` is the single test. The handler asks it
+   before opening an NCR, so a refused split opens none (the domain refusal alone would also leave the NCR unsaved,
+   since it is added only on success). The extract read asks it for the new action flag.
+3. **New action flag `actions.approvePortion`.** True when the caller may pass the Technical Office gate as a split:
+   the quantity-gate permission, the legal move to `PartiallyApproved`, separation of duties, and
+   `SplitAllowedIn(project.Status)`. `approveTechnicalOffice` stays the whole-approval flag. The web type carries it
+   (`src/Web/src/app/core/extracts/extracts.api.ts`); the screen does not read it yet, so hiding «اعتماد جزء» after
+   handover is the designer's to place.
+4. **Words.** `errors.extract.split_after_handover`: «بعد التسليم يُعتمد المستخلص كاملاً أو يُرفض، فلا يبقى منه جزء
+   معلّق ولا يُفتح له تقرير عدم المطابقة.» / "After handover the extract is approved whole or rejected: no held portion
+   is left and no NCR is opened."
+5. **Tests.** The D-257 test is rewritten as `ExtractNcrTests.After_handover_a_split_is_refused_and_opens_no_NCR` (409
+   with the key, no NCR on the project, the extract still `QcSubmitted`), and
+   `After_handover_the_extract_is_still_approved_whole_and_the_read_offers_no_split` checks the flags and a whole
+   approval. Domain: `ExtractChainTests.From_handover_on_the_gate_refuses_a_split_but_passes_the_extract_whole` over the
+   three states, and `Before_handover_a_pending_handover_still_takes_a_split`. `docs/uat-manual.md` §1 now lists
+   `tech_office2_demo` and the three D-257 demo projects with how to seed them.

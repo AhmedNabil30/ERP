@@ -365,10 +365,12 @@ public sealed class Extract : Entity
 
     /// <summary>
     /// The Technical Office quantity gate. <paramref name="approvedPortion"/> of 100% passes the extract; less
-    /// than that is the splittable gate of spec.md section 7 and needs the NCR the remainder waits on.
+    /// than that is the splittable gate of spec.md section 7 and needs the NCR the remainder waits on. From handover on
+    /// the gate may pass the extract whole or reject it, but not split it (D-258 item 1).
     /// </summary>
     public Result ApproveTechnicalOffice(
-        Guid actorUserId, Percentage approvedPortion, Guid? heldForNcrId, RulingSet rulings, DateTimeOffset now)
+        ProjectStatus projectStatus, Guid actorUserId, Percentage approvedPortion, Guid? heldForNcrId, RulingSet rulings,
+        DateTimeOffset now)
     {
         ArgumentNullException.ThrowIfNull(rulings);
 
@@ -384,6 +386,11 @@ public sealed class Extract : Entity
         if (approvedPortion.Fraction <= 0m || approvedPortion.Fraction > 1m)
         {
             return Result.Failure(ExtractErrors.ApprovedPortionOutOfRange);
+        }
+
+        if (split && !SplitAllowedIn(projectStatus))
+        {
+            return Result.Failure(ExtractErrors.SplitAfterHandover);
         }
 
         if (split && (heldForNcrId is null || heldForNcrId == Guid.Empty))
@@ -407,6 +414,13 @@ public sealed class Extract : Entity
             actorUserId, now, null, approvedPortion);
         return Result.Success();
     }
+
+    /// <summary>
+    /// Whether the Technical Office gate may split an extract on a project in <paramref name="projectStatus"/>. A split
+    /// opens an NCR, and a handed-over project takes no new NCR (D-255, D-258 item 1).
+    /// </summary>
+    public static bool SplitAllowedIn(ProjectStatus projectStatus) =>
+        projectStatus is not (ProjectStatus.Handover or ProjectStatus.UnderWarranty or ProjectStatus.Closed);
 
     /// <summary>
     /// The NCR the held remainder waited on has closed, so the remainder is released (spec.md section 7). This

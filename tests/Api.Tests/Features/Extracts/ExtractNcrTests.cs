@@ -312,7 +312,7 @@ public sealed partial class ExtractEndpointTests
     /// purpose; when Nabil rules, it is rewritten to assert the ruling.
     /// </summary>
     [Fact]
-    public async Task After_handover_an_extract_can_still_be_split_and_open_an_NCR_pending_a_ruling()
+    public async Task After_handover_a_split_is_refused_and_opens_no_NCR()
     {
         Project project = await NewProjectAsync();
         await DriveAsync(project, ExtractStatus.Issued);
@@ -324,10 +324,42 @@ public sealed partial class ExtractEndpointTests
         HttpResponseMessage split = await SendAsync(
             HttpMethod.Post, Step(project.Id, second, "technical-approval"), _technicalOffice, new { approvedPortion = "0.6" });
 
-        split.StatusCode.Should().Be(HttpStatusCode.OK, await split.Content.ReadAsStringAsync(Ct));
+        string body = await split.Content.ReadAsStringAsync(Ct);
+        split.StatusCode.Should().Be(HttpStatusCode.Conflict, body);
+        body.Should().Contain("extract.split_after_handover");
         await using KaffDbContext context = _database.CreateContext();
         (await context.Projects.SingleAsync(candidate => candidate.Id == project.Id, Ct)).Status.Should().Be(ProjectStatus.Handover);
-        (await context.Ncrs.CountAsync(ncr => ncr.ProjectId == project.Id && ncr.Status == NcrStatus.Open, Ct)).Should().Be(1);
+        (await context.Ncrs.CountAsync(ncr => ncr.ProjectId == project.Id, Ct)).Should().Be(0);
+        (await context.Extracts.SingleAsync(extract => extract.Id == second, Ct)).Status.Should().Be(ExtractStatus.QcSubmitted);
+    }
+
+    [Fact]
+    public async Task After_handover_the_extract_is_still_approved_whole_and_the_read_offers_no_split()
+    {
+        Project project = await NewProjectAsync();
+        await DriveAsync(project, ExtractStatus.Issued);
+        HttpResponseMessage handover = await HandOverAsync(project);
+        handover.StatusCode.Should().Be(HttpStatusCode.OK, await handover.Content.ReadAsStringAsync(Ct));
+
+        await ExecuteAsync(project, 1_000m);
+        Guid second = await DriveAsync(project, ExtractStatus.QcSubmitted);
+        HttpResponseMessage read = await SendAsync(HttpMethod.Get, $"/api/projects/{project.Id}/extracts/{second}", _technicalOffice, null);
+        string readBody = await read.Content.ReadAsStringAsync(Ct);
+        read.StatusCode.Should().Be(HttpStatusCode.OK, readBody);
+        using (JsonDocument document = JsonDocument.Parse(readBody))
+        {
+            JsonElement actions = document.RootElement.GetProperty("actions");
+            actions.GetProperty("approveTechnicalOffice").GetBoolean().Should().BeTrue();
+            actions.GetProperty("approvePortion").GetBoolean().Should().BeFalse();
+        }
+
+        HttpResponseMessage whole = await SendAsync(
+            HttpMethod.Post, Step(project.Id, second, "technical-approval"), _technicalOffice, new { approvedPortion = "1" });
+
+        whole.StatusCode.Should().Be(HttpStatusCode.OK, await whole.Content.ReadAsStringAsync(Ct));
+        await using KaffDbContext context = _database.CreateContext();
+        (await context.Extracts.SingleAsync(extract => extract.Id == second, Ct)).Status.Should().Be(ExtractStatus.TechnicalApproved);
+        (await context.Ncrs.CountAsync(ncr => ncr.ProjectId == project.Id, Ct)).Should().Be(0);
     }
 
     private async Task<Guid> NewUserAsync(string name, Role role)

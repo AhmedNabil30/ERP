@@ -121,7 +121,7 @@ internal sealed class ExtractHarness
             ? portion ?? Percentage.FromPercent(60m)
             : Percentage.FromFraction(1m);
         Result approval = extract.ApproveTechnicalOffice(
-            NewUser(), approved, target == ExtractStatus.PartiallyApproved ? Guid.NewGuid() : null, Rulings, Now);
+            ProjectStatus.Active, NewUser(), approved, target == ExtractStatus.PartiallyApproved ? Guid.NewGuid() : null, Rulings, Now);
         approval.IsSuccess.Should().BeTrue();
         if (target is ExtractStatus.PartiallyApproved or ExtractStatus.TechnicalApproved)
         {

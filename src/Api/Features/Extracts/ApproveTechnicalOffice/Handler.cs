@@ -12,7 +12,8 @@ namespace Kaff.Api.Features.Extracts.ApproveTechnicalOffice;
 
 /// <summary>
 /// Passes the quantity gate, in full or split. Writes no posting: the figures do not exist yet. A split holds the
-/// remainder against an NCR, opened here in the same save (AC-500-E).
+/// remainder against an NCR, opened here in the same save (AC-500-E). From handover on a split is refused and no
+/// NCR is opened (D-258 item 1).
 /// </summary>
 internal static class Handler
 {
@@ -43,7 +44,7 @@ internal static class Handler
 
                 Ncr? opened = null;
                 Guid? heldFor = null;
-                if (portion < Percentage.FromFraction(1m))
+                if (portion < Percentage.FromFraction(1m) && Extract.SplitAllowedIn(project.Status))
                 {
                     heldFor = await services.Database.Ncrs
                         .Where(ncr => ncr.ExtractId == extract.Id && ncr.Status == NcrStatus.Open)
@@ -56,7 +57,7 @@ internal static class Handler
                     }
                 }
 
-                Result approved = extract.ApproveTechnicalOffice(actor, portion, heldFor, services.Rulings, now);
+                Result approved = extract.ApproveTechnicalOffice(project.Status, actor, portion, heldFor, services.Rulings, now);
                 if (approved.IsSuccess && opened is not null)
                 {
                     services.Database.Ncrs.Add(opened);

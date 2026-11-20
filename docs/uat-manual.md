@@ -10,7 +10,7 @@ A note before you start. Some of the Arabic wording on screen was written by us 
 
 Open http://localhost:4200 in Chrome. You should see the sign-in screen.
 
-There are five people to sign in as. Each one sees a different system, because what you can see and do depends on your job.
+There are six people to sign in as. Each one sees a different system, because what you can see and do depends on your job.
 
 | Who | User name | Password |
 |---|---|---|
@@ -18,11 +18,30 @@ There are five people to sign in as. Each one sees a different system, because w
 | Site engineer, junior | `site_eng_demo` | `Demo#Site1New` |
 | Site supervisor | `site_sup_demo` | `Demo#Sup1New` |
 | Technical office | `tech_office_demo` | `Demo#Tech1New` |
+| Technical office, second person | `tech_office2_demo` | `Demo#Tech2New` |
 | Accounts | `accounts_demo` | `Demo#Acct1New` |
 
 To change person, open the side menu and press تسجيل الخروج, then sign in as the next one. On a phone the side menu opens from the القائمة button at the bottom.
 
 There is one project in the system already: فيلا 47 — التجمع الخامس, a lump sum contract worth 4,672,694.01. Most of the tasks below use it.
+
+The second technical office person exists because a change order's technical review must be decided by someone other than the technical office person who drafted it.
+
+Three more projects hold extracts at every step you may want to see, so you do not have to build each step by hand:
+
+| Project | What is waiting there |
+|---|---|
+| فيلا 12 — الشيخ زايد | Extract 1 issued, with one cheque received and one deposited. Extract 2 partly approved, with its تقرير عدم المطابقة open. |
+| عمارة 5 — المعادي | Extract 1 disputed by the client. Extract 2 waiting for the technical office. One change order waiting for the client, one approved. |
+| شقة 9 — مدينة نصر | Extract 1 issued, with a credit note waiting for the owner. Extract 2 a draft, waiting for its QC report. |
+
+If these three are missing, the person running the system creates them. With the API running on port 5080, run the other `scripts/seed-demo-*.mjs` scripts first, then:
+
+```
+node scripts/seed-demo-extract-states.mjs
+```
+
+It talks to the local API only and refuses any other address. It is safe to run again: it finds the projects by name and only takes the steps that are not done yet.
 
 ## 2. What to test, in order
 

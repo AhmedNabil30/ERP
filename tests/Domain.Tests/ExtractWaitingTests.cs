@@ -3,6 +3,7 @@ using Kaff.Domain.Common;
 using Kaff.Domain.Contracts.Billing;
 using Kaff.Domain.Extracts;
 using Kaff.Domain.Identity;
+using Kaff.Domain.Projects;
 using Kaff.Domain.Treasury;
 
 namespace Kaff.Domain.Tests;
@@ -107,8 +108,8 @@ public sealed class ExtractWaitingTests
 
         // QcSubmitted to approved: the preparer, who has acted, is barred.
         ExtractWaiting.For(ExtractStatus.QcSubmitted).IsDecisionGate.Should().BeTrue();
-        extract.ApproveTechnicalOffice(preparer, whole, null, harness.Rulings, now).IsFailure.Should().BeTrue();
-        extract.ApproveTechnicalOffice(technical, whole, null, harness.Rulings, now).IsSuccess.Should().BeTrue();
+        extract.ApproveTechnicalOffice(ProjectStatus.Active, preparer, whole, null, harness.Rulings, now).IsFailure.Should().BeTrue();
+        extract.ApproveTechnicalOffice(ProjectStatus.Active, technical, whole, null, harness.Rulings, now).IsSuccess.Should().BeTrue();
 
         // TechnicalApproved to DeductionsApplied: the technical approver is barred.
         ExtractWaiting.For(ExtractStatus.TechnicalApproved).IsDecisionGate.Should().BeTrue();

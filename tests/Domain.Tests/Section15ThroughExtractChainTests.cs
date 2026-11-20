@@ -26,7 +26,7 @@ public sealed class Section15ThroughExtractChainTests
 
         extract.SubmitQcReport(ExtractHarness.NewUser(), now).IsSuccess.Should().BeTrue();
         extract.ApproveTechnicalOffice(
-            ExtractHarness.NewUser(), Percentage.FromFraction(1m), null, _h.Rulings, now).IsSuccess.Should().BeTrue();
+            ProjectStatus.Active, ExtractHarness.NewUser(), Percentage.FromFraction(1m), null, _h.Rulings, now).IsSuccess.Should().BeTrue();
 
         Result<PostingSet?> deductions = await extract.ApplyDeductionsAsync(
             ExtractHarness.NewUser(), new LumpSumBillingCalculator(_h.Rulings), _h.Balances(), context, now,

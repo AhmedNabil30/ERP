@@ -99,6 +99,10 @@ public sealed record ExtractCreditNote(Guid Id, int Number, AdjustmentStatus Sta
 /// The bare separation-of-duties answer: false when the caller prepared the extract or acted on it earlier in
 /// the current cycle. A screen can use it to say why a gate control is absent.
 /// </param>
+/// <param name="ApprovePortion">
+/// The Technical Office gate may also split the extract: false from handover on (D-258 item 1), when only whole
+/// approval or rejection is left.
+/// </param>
 /// <param name="RecordCollection">Record a payment or a cheque now: Issued, nothing waiting for the Owner, something still expected.</param>
 /// <param name="RecordChequeMove">Deposit, clear or bounce: the extract has a cheque still in hand.</param>
 /// <param name="ReverseCollection">Reverse the standing collection: something posted stands to be reversed.</param>
@@ -107,6 +111,7 @@ public sealed record ExtractCreditNote(Guid Id, int Number, AdjustmentStatus Sta
 public sealed record ExtractActions(
     bool SubmitQcReport,
     bool ApproveTechnicalOffice,
+    bool ApprovePortion,
     bool RejectAtTechnicalOffice,
     bool ApplyDeductions,
     bool RejectAtAccounts,
@@ -268,6 +273,8 @@ internal static class ExtractView
         return new ExtractActions(
             SubmitQcReport: Holds(Permission.ExtractQcReportSubmit) && Can(ExtractStatus.QcSubmitted) && !extract.AwaitsEvidenceRevision,
             ApproveTechnicalOffice: Holds(Permission.QuantityGateApprove) && Can(ExtractStatus.TechnicalApproved) && mayDecide,
+            ApprovePortion: Holds(Permission.QuantityGateApprove) && Can(ExtractStatus.PartiallyApproved) && mayDecide
+                && Extract.SplitAllowedIn(project.Status),
             RejectAtTechnicalOffice: Holds(Permission.QuantityGateApprove) && atTechnical && mayDecide,
             ApplyDeductions: Holds(Permission.ExtractDeductionsApply) && Can(ExtractStatus.DeductionsApplied) && mayDecide,
             RejectAtAccounts: Holds(Permission.ExtractDeductionsApply) && atAccounts && mayDecide,

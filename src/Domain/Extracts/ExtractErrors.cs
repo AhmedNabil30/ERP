@@ -30,6 +30,10 @@ public static class ExtractErrors
     public static readonly Error HeldPortionNeedsNcr =
         Error.Validation("extract.held_portion_needs_ncr", "errors.extract.held_portion_needs_ncr");
 
+    /// <summary>From handover on, the Technical Office approves an extract whole or rejects it (D-258 item 1).</summary>
+    public static readonly Error SplitAfterHandover =
+        Error.Conflict("extract.split_after_handover", "errors.extract.split_after_handover");
+
     public static readonly Error NoHeldPortion =
         Error.Conflict("extract.no_held_portion", "errors.extract.no_held_portion");
 
