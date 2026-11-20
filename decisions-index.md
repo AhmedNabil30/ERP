@@ -254,3 +254,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-245 | 17102 | D-244 as built: hold carries to a revision, released-hold collection, reads for the extract screens · 2026-11-20 |
 | D-246 | 17117 | The extract chain screens as built, and the server reads they still lack · 2026-11-20 |
 | D-247 | 17131 | Reads the extract screens lacked; words for stopped, unassigned step, cash · 2026-11-20 |
+| D-248 | 17143 | An extract keeps each BOQ line quantity; period = this less previous · 2026-11-20 |

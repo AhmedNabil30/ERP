@@ -17139,3 +17139,9 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 5. **Words (Nabil).** A stopped project is «متوقف». A step with nobody assigned reads «بانتظار التكليف: {task}». A cash payment is «كاش». The client's rejection of a change order is recorded with «تسجيل رفض العميل», and a released-hold cheque row reads «الحجز المُفرج عنه».
 
 **Gates at hand-back.** Build 0/0; Domain 801/801; Api 1271 passed, 2 skipped of 1273, exit 0; `ng test` 581/581; format clean apart from ENDOFLINE; smoke passed with least privilege. One mutation per item, each killed.
+
+## D-248 — Nabil rules that an extract keeps each BOQ line's quantity · 2026-11-20
+
+**Source.** Nabil, answering the Scrum Master on 2026-11-20, on D-247 item 4.
+
+When an extract is prepared, each BOQ line's executed quantity is copied onto the extract. The period quantity is that figure less the same line on the previous extract of the project (a revision uses the original's previous). The extract shows previous, current and cumulative quantity per line, the standard Egyptian extract layout. Money per line follows the frozen BOQ rate; money stays hidden from viewers without money access.
