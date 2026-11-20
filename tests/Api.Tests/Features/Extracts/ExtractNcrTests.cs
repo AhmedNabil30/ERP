@@ -235,6 +235,76 @@ public sealed partial class ExtractEndpointTests
         (await BalanceAsync(project.Id, AccountType.Hold)).Should().Be(200_000m, "20% of the contract value");
     }
 
+    // ---- D-254 item 2: handover waits on open NCRs and on released remainders not yet billed --------------
+
+    private async Task<HttpResponseMessage> HandOverAsync(Project project)
+    {
+        await using (KaffDbContext context = _database.CreateContext())
+        {
+            Project loaded = await context.Projects.SingleAsync(candidate => candidate.Id == project.Id, Ct);
+            loaded.TransitionTo(ProjectStatus.HandoverPending, new DateOnly(2026, 12, 1), "test").IsSuccess.Should().BeTrue();
+            await context.SaveChangesAsync(Ct);
+        }
+
+        return await SendAsync(HttpMethod.Post, $"/api/projects/{project.Id}/handover", _technicalOffice, null);
+    }
+
+    private static async Task<string?> ErrorOfAsync(HttpResponseMessage response)
+    {
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict, await response.Content.ReadAsStringAsync(Ct));
+        return await ErrorCodeAsync(response);
+    }
+
+    [Fact]
+    public async Task Handover_is_refused_while_an_NCR_on_the_project_is_open()
+    {
+        Project project = await NewProjectAsync();
+        (Guid first, _) = await SplitFirstAsync(project);
+        await StepAsync(_client, project, first, ExtractStatus.TechnicalApproved, ExtractStatus.Issued);
+
+        (await ErrorOfAsync(await HandOverAsync(project))).Should().Be("closure.ncr_open");
+    }
+
+    [Fact]
+    public async Task Handover_is_refused_while_a_released_remainder_is_not_yet_billed_on_an_extract()
+    {
+        Project project = await NewProjectAsync();
+        (Guid first, Guid ncr) = await SplitFirstAsync(project);
+        await StepAsync(_client, project, first, ExtractStatus.TechnicalApproved, ExtractStatus.Issued);
+        await CloseAsync(project, ncr);
+
+        (await ErrorOfAsync(await HandOverAsync(project))).Should().Be("closure.released_remainder_unbilled");
+    }
+
+    /// <summary>D-253 item 4: a remainder released after the next extract was prepared is still unbilled on that extract.</summary>
+    [Fact]
+    public async Task Handover_is_refused_when_the_NCR_closed_after_the_last_extract_was_prepared()
+    {
+        Project project = await NewProjectAsync();
+        (Guid first, Guid ncr) = await SplitFirstAsync(project);
+        await StepAsync(_client, project, first, ExtractStatus.TechnicalApproved, ExtractStatus.Issued);
+        await ExecuteAsync(project, 1_000m);
+        Guid second = await DriveAsync(project, ExtractStatus.Issued);
+        await CloseAsync(project, ncr);
+
+        (await ErrorOfAsync(await HandOverAsync(project))).Should().Be("closure.released_remainder_unbilled");
+        (await WorkValueAsync(project, second)).Should().Be(700_000m, "the extract in flight did not bill the late release");
+    }
+
+    [Fact]
+    public async Task Handover_proceeds_once_the_NCR_is_closed_and_its_remainder_is_billed()
+    {
+        Project project = await NewProjectAsync();
+        (Guid first, Guid ncr) = await SplitFirstAsync(project);
+        await StepAsync(_client, project, first, ExtractStatus.TechnicalApproved, ExtractStatus.Issued);
+        await CloseAsync(project, ncr);
+        await ExecuteAsync(project, 1_000m);
+        await DriveAsync(project, ExtractStatus.Issued);
+
+        HttpResponseMessage response = await HandOverAsync(project);
+        response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(Ct));
+    }
+
     private async Task<Guid> NewUserAsync(string name, Role role)
     {
         User user = Make(name, role, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);

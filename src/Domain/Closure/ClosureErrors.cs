@@ -16,6 +16,14 @@ public static class ClosureErrors
     public static readonly Error MajorSnagsOpen =
         Error.Conflict("closure.major_snags_open", "errors.closure.major_snags_open");
 
+    /// <summary>An NCR on the project is still open, so part of an extract is still held (D-254 item 2).</summary>
+    public static readonly Error NcrOpen =
+        Error.Conflict("closure.ncr_open", "errors.closure.ncr_open");
+
+    /// <summary>A released remainder has not yet been billed on an extract (D-254 item 2, D-253).</summary>
+    public static readonly Error ReleasedRemainderUnbilled =
+        Error.Conflict("closure.released_remainder_unbilled", "errors.closure.released_remainder_unbilled");
+
     /// <summary>Terminated is unruled: spec.md names the state and a settlement and says what settles nowhere.</summary>
     public static readonly Error TerminationSettlementUnruled =
         Error.Conflict("closure.termination_settlement_unruled", "errors.closure.termination_settlement_unruled");

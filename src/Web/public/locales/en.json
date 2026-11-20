@@ -1540,6 +1540,8 @@
   "errors.closure.not_applicable_to_design": "A Design project has no snag list, no handover, no warranty and no hold.",
   "errors.closure.hold_not_applicable": "The hold exists on lump sum contracts only.",
   "errors.closure.major_snags_open": "The project cannot be handed over while a major snag is not verified.",
+  "errors.closure.ncr_open": "The project cannot be handed over while an NCR is open.",
+  "errors.closure.released_remainder_unbilled": "The project cannot be handed over until released work is billed on an extract.",
   "errors.closure.termination_settlement_unruled": "Contract termination is not available at the moment. Nothing changed and nothing was posted.",
   "errors.closure.not_settled": "The project cannot close until all of its accounts are settled.",
   "errors.closure.hold_already_released": "The hold has already been released. It releases once only.",

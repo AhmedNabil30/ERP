@@ -476,6 +476,21 @@ public sealed class Extract : Entity
     }
 
     /// <summary>
+    /// Whether a released remainder on <paramref name="chain"/> is not yet billed on any extract (D-254 item 2). The next
+    /// extract's previously certified work leaves a released remainder out (<see cref="PreviouslyCertifiedFor"/>), so it
+    /// falls below the work already certified exactly while some released remainder waits for an extract to bill it. Once a
+    /// later extract is prepared, its period carries the remainder and the two figures meet again. Derived, never stored.
+    /// </summary>
+    public static bool HasUnbilledRelease(IReadOnlyCollection<Extract> chain)
+    {
+        ArgumentNullException.ThrowIfNull(chain);
+
+        List<Extract> standing = chain.Where(candidate => candidate.Status != ExtractStatus.Void).ToList();
+        return standing.Count > 0
+            && PreviouslyCertifiedFor(standing) < standing.Max(extract => extract.CumulativeCertifiedWork);
+    }
+
+    /// <summary>
     /// Accounts applies the deductions: the calculator derives every figure, nothing is typed. Returns the
     /// accrual postings when the ruled accrual moment is this stage, otherwise null.
     /// </summary>

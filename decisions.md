@@ -17228,3 +17228,24 @@ Asked after `qa/slice-5/verification-2026-11-20-r3.md` (O-2, O-3). Nabil chose b
 2. **Handover is refused while any NCR on the project is open, or while a released remainder has
    not yet been billed on an extract.** Owed to a backend lane: a refusal on the handover action
    with its own error key, and a test for each of the two cases.
+
+## D-255 — Handover refuses an open NCR and an unbilled released remainder · 2026-11-20
+
+**Source.** Built by a backend lane on D-254 item 2.
+
+1. **The two refusals.** `ProjectClosure.HandOver` now takes the project's NCRs and extracts. After the major snag check it
+   refuses with `closure.ncr_open` while any NCR on the project is Open, then with `closure.released_remainder_unbilled`
+   while a released remainder is not yet billed on an extract. Each has its own error key and its own Arabic and English
+   message. The handover handler loads the NCRs and extracts of the project; nothing is stored.
+2. **How "not yet billed" is derived.** `Extract.HasUnbilledRelease(chain)` compares two figures over the standing
+   (non-Void) extracts: the next extract's previously certified work (`PreviouslyCertifiedFor`, D-253) and the highest
+   cumulative certified work. A released remainder is left out of the first figure, so it falls below the second exactly
+   while no extract prepared after the release has carried the remainder in its period. A remainder still held against an
+   open NCR is counted in both, so it does not trigger this refusal (the open NCR refusal covers it). This uses the same
+   derivation the billing uses, so the refusal and the billing cannot disagree. It does not compare timestamps: the release
+   and the next prepare can carry the same instant, and the figures already record which extract billed what.
+3. **The edge from D-253 item 4.** An NCR closed after the last extract was prepared leaves that extract's period without
+   the remainder, so handover is refused until another extract is prepared. A prepared extract counts as billing it; the
+   extract does not need to be issued for handover to proceed.
+4. **Not built.** The handover refusal does not list the NCRs or extracts concerned, as the major snag refusal lists its
+   snags. The handover screen does not show the two new conditions before the action is tried.

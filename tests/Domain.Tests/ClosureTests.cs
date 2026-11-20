@@ -178,7 +178,7 @@ public sealed class ClosureTests
     {
         Project project = ProjectIn(status);
 
-        Result handedOver = ProjectClosure.HandOver(project, Today, []);
+        Result handedOver = ProjectClosure.HandOver(project, Today, [], [], []);
 
         handedOver.IsSuccess.Should().Be(status == ProjectStatus.HandoverPending, $"from {status}");
     }
@@ -188,7 +188,7 @@ public sealed class ClosureTests
     {
         Project project = ProjectIn(ProjectStatus.HandoverPending);
 
-        ProjectClosure.HandOver(project, new DateOnly(2026, 11, 30), []).IsSuccess.Should().BeTrue();
+        ProjectClosure.HandOver(project, new DateOnly(2026, 11, 30), [], [], []).IsSuccess.Should().BeTrue();
 
         project.Status.Should().Be(ProjectStatus.Handover);
         project.HandoverOn.Should().Be(new DateOnly(2026, 11, 30));
@@ -201,14 +201,14 @@ public sealed class ClosureTests
         Snag major = SnagOn(ProjectIn(ProjectStatus.HandoverPending), SnagPriority.Major);
 
         Project project = ProjectIn(ProjectStatus.HandoverPending);
-        ProjectClosure.HandOver(project, Today, [major]).Error.Should().Be(ClosureErrors.MajorSnagsOpen);
+        ProjectClosure.HandOver(project, Today, [major], [], []).Error.Should().Be(ClosureErrors.MajorSnagsOpen);
 
         major.Fix(Actor, Now);
-        ProjectClosure.HandOver(project, Today, [major]).Error.Should().Be(ClosureErrors.MajorSnagsOpen);
+        ProjectClosure.HandOver(project, Today, [major], [], []).Error.Should().Be(ClosureErrors.MajorSnagsOpen);
         project.Status.Should().Be(ProjectStatus.HandoverPending);
 
         major.Verify(Actor, Now);
-        ProjectClosure.HandOver(project, Today, [major]).IsSuccess.Should().BeTrue();
+        ProjectClosure.HandOver(project, Today, [major], [], []).IsSuccess.Should().BeTrue();
     }
 
     [Fact]
@@ -217,7 +217,7 @@ public sealed class ClosureTests
         Snag minor = SnagOn(ProjectIn(ProjectStatus.HandoverPending), SnagPriority.Minor);
         Project project = ProjectIn(ProjectStatus.HandoverPending);
 
-        ProjectClosure.HandOver(project, Today, [minor]).IsSuccess.Should().BeTrue();
+        ProjectClosure.HandOver(project, Today, [minor], [], []).IsSuccess.Should().BeTrue();
     }
 
     [Fact]
@@ -225,7 +225,7 @@ public sealed class ClosureTests
     {
         Project design = ProjectIn(ProjectStatus.Active, ContractType.Design);
 
-        ProjectClosure.HandOver(design, Today, []).Error.Should().Be(ClosureErrors.NotApplicableToDesign);
+        ProjectClosure.HandOver(design, Today, [], [], []).Error.Should().Be(ClosureErrors.NotApplicableToDesign);
         ProjectClosure.BeginWarranty(design, Today).Error.Should().Be(ClosureErrors.NotApplicableToDesign);
     }
 

@@ -1540,6 +1540,8 @@
   "errors.closure.not_applicable_to_design": "مشروع التصميم ليس له قائمة ملاحظات ولا تسليم ولا ضمان ولا حجز.",
   "errors.closure.hold_not_applicable": "الحجز موجود في عقود المقطوعية فقط.",
   "errors.closure.major_snags_open": "لا يمكن التسليم وفيه ملاحظات رئيسية لم يتم التحقق منها.",
+  "errors.closure.ncr_open": "لا يمكن التسليم وفيه بند عدم مطابقة مفتوح.",
+  "errors.closure.released_remainder_unbilled": "لا يمكن التسليم قبل إدراج الجزء المعلّق المُفرج عنه في مستخلص.",
   "errors.closure.termination_settlement_unruled": "فسخ التعاقد غير متاح حالياً. لم يتغير شيء ولم تُسجَّل أي حركة.",
   "errors.closure.not_settled": "لا يمكن إقفال المشروع قبل تسوية كل حساباته.",
   "errors.closure.hold_already_released": "تم الإفراج عن الحجز من قبل، ولا يُفرج عنه إلا مرة واحدة.",

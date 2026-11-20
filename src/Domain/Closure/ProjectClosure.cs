@@ -1,5 +1,6 @@
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
+using Kaff.Domain.Extracts;
 using Kaff.Domain.Projects;
 using Kaff.Domain.Rulings;
 using Kaff.Domain.Treasury;
@@ -63,11 +64,17 @@ public static class ProjectClosure
             : project.TransitionTo(ProjectStatus.HandoverPending, on);
     }
 
-    /// <summary>HandoverPending to Handover: stamps the handover date and the warranty end. Refused while a major snag stands.</summary>
-    public static Result HandOver(Project project, DateOnly on, IEnumerable<Snag> snags)
+    /// <summary>
+    /// HandoverPending to Handover: stamps the handover date and the warranty end. Refused while a major snag stands, while
+    /// any NCR on the project is open, or while a released remainder is not yet billed on an extract (D-254 item 2).
+    /// </summary>
+    public static Result HandOver(
+        Project project, DateOnly on, IEnumerable<Snag> snags, IEnumerable<Ncr> ncrs, IReadOnlyCollection<Extract> extracts)
     {
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(snags);
+        ArgumentNullException.ThrowIfNull(ncrs);
+        ArgumentNullException.ThrowIfNull(extracts);
 
         if (project.ContractType == ContractType.Design)
         {
@@ -80,8 +87,18 @@ public static class ProjectClosure
             return Result.Failure(ProjectErrors.IllegalTransition);
         }
 
-        return snags.Any(snag => snag.BlocksHandover)
-            ? Result.Failure(ClosureErrors.MajorSnagsOpen)
+        if (snags.Any(snag => snag.BlocksHandover))
+        {
+            return Result.Failure(ClosureErrors.MajorSnagsOpen);
+        }
+
+        if (ncrs.Any(ncr => ncr.Status == NcrStatus.Open))
+        {
+            return Result.Failure(ClosureErrors.NcrOpen);
+        }
+
+        return Extract.HasUnbilledRelease(extracts)
+            ? Result.Failure(ClosureErrors.ReleasedRemainderUnbilled)
             : project.TransitionTo(ProjectStatus.Handover, on);
     }
 
