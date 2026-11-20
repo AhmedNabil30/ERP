@@ -14,7 +14,8 @@
 --  The grants, derived from what EF writes (decisions.md, the F-1 entry):
 --    * every table: SELECT and INSERT. That is the whole of postings and audit_records, and of every
 --      record that is never changed once written (gate records, collection records, daily-log
---      entries, change-order lines, the extract's change-order lines, BOQ base lines).
+--      entries, change-order lines, the extract's change-order lines and quantity lines, BOQ base
+--      lines).
 --    * UPDATE only on the tables whose entities have behaviour that changes a written row.
 --    * DELETE only on the three child tables EF removes rows from: a draft BOQ's lines
 --      (Boq.RemoveLine), a BOQ base's lines (UpdateBoqBase) and an extract's figures (Extract

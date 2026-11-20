@@ -1425,6 +1425,43 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                     b.ToTable("extract_gate_records", (string)null);
                 });
 
+            modelBuilder.Entity("Kaff.Domain.Extracts.ExtractQuantityLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BoqLineId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("boq_line_id");
+
+                    b.Property<decimal>("CumulativeQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("cumulative_quantity");
+
+                    b.Property<Guid>("ExtractId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("extract_id");
+
+                    b.Property<decimal?>("PreviousQuantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("previous_quantity");
+
+                    b.Property<int>("Take")
+                        .HasColumnType("integer")
+                        .HasColumnName("take");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExtractId", "Take", "BoqLineId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_extract_quantity_lines_extract_take_line");
+
+                    b.ToTable("extract_quantity_lines", (string)null);
+                });
+
             modelBuilder.Entity("Kaff.Domain.Identity.ProjectAssignment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3155,6 +3192,15 @@ namespace Kaff.Infrastructure.Persistence.Migrations
 
                     b.HasOne("Kaff.Domain.Extracts.Extract", null)
                         .WithMany("GateHistory")
+                        .HasForeignKey("ExtractId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Extracts.ExtractQuantityLine", b =>
+                {
+                    b.HasOne("Kaff.Domain.Extracts.Extract", null)
+                        .WithMany()
                         .HasForeignKey("ExtractId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();

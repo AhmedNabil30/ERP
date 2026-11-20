@@ -140,6 +140,8 @@ public sealed class KaffDbContext : DbContext
 
     public DbSet<ExtractChangeOrderLine> ExtractChangeOrderLines => Set<ExtractChangeOrderLine>();
 
+    public DbSet<ExtractQuantityLine> ExtractQuantityLines => Set<ExtractQuantityLine>();
+
     public DbSet<Snag> Snags => Set<Snag>();
 
     public DbSet<WarrantyCallback> WarrantyCallbacks => Set<WarrantyCallback>();

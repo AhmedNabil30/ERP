@@ -98,3 +98,25 @@ internal sealed class ExtractFigureConfiguration : IEntityTypeConfiguration<Extr
         builder.HasIndex(figure => figure.ExtractId);
     }
 }
+
+internal sealed class ExtractQuantityLineConfiguration : IEntityTypeConfiguration<ExtractQuantityLine>
+{
+    public void Configure(EntityTypeBuilder<ExtractQuantityLine> builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        builder.ToTable(DbTables.ExtractQuantityLines);
+        builder.HasKey(line => line.Id);
+        builder.Property(line => line.Id).ValueGeneratedNever();
+        builder.Ignore(line => line.CurrentQuantity);
+
+        // D-248: one row per BOQ line per take; a revision of the evidence adds a take and changes no row.
+        builder.HasIndex(line => new { line.ExtractId, line.Take, line.BoqLineId })
+            .IsUnique()
+            .HasDatabaseName("ux_extract_quantity_lines_extract_take_line");
+        builder.HasOne<Extract>().WithMany().HasForeignKey(line => line.ExtractId).OnDelete(DeleteBehavior.Restrict);
+
+        // No foreign key to boq_lines: one would make TRUNCATE boq_lines fail on the key before the freeze guard
+        // (KAFF_BOQ_FROZEN) answers it, and the guard already keeps a frozen line, the only kind an extract reads, in place.
+    }
+}

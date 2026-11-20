@@ -53,12 +53,25 @@ internal static class Handler
                 }
 
                 Guid actor = services.CurrentUser.UserId ?? Guid.Empty;
-                return ExtractSupport.NoPostingsOr(extract.ReviseEvidence(
+                Result revised = extract.ReviseEvidence(
                     actor,
                     ExtractSupport.CumulativeCertifiedWork(boq, services.Rulings),
                     extract.MaterialValueOnSite,
                     extract.MaterialInstalled,
-                    services.Clock.GetUtcNow()));
+                    services.Clock.GetUtcNow());
+                if (revised.IsSuccess)
+                {
+                    // D-248: the revised evidence keeps a new take of the quantities. The previous extract has not
+                    // changed, so each line keeps the previous it was prepared with; no row is changed.
+                    List<ExtractQuantityLine> kept = await ExtractQuantities.LatestAsync(services.Database, extract.Id, token);
+                    services.Database.ExtractQuantityLines.AddRange(ExtractQuantityLine.Capture(
+                        extract.Id,
+                        kept.Count == 0 ? 1 : kept[0].Take + 1,
+                        boq.Lines,
+                        ExtractQuantities.Lookup(kept, line => line.PreviousQuantity)));
+                }
+
+                return ExtractSupport.NoPostingsOr(revised);
             },
             cancellationToken);
     }

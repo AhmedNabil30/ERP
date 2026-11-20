@@ -220,6 +220,10 @@ internal static class Handler
         Extract extract = prepared.Value;
         database.Extracts.Add(extract);
 
+        // D-248: each BOQ line's executed quantity is copied onto the extract, beside the same line on the previous one.
+        Func<Guid, decimal?> previousOf = await ExtractQuantities.PreviousOfAsync(database, projectId, request.RevisesExtractId, cancellationToken);
+        database.ExtractQuantityLines.AddRange(ExtractQuantityLine.Capture(extract.Id, take: 1, boq.Lines, previousOf));
+
         try
         {
             Error? refused = await GuardedSave.SaveAsync(database, cancellationToken);

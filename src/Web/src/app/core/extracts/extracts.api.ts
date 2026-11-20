@@ -136,6 +136,26 @@ export interface ExtractLink {
   readonly status: ExtractStatus;
 }
 
+/**
+ * One BOQ line of `GET .../extracts/{id}/quantities` and of `GET .../extracts/quantities-preview` (D-248): previous,
+ * current and cumulative quantity. Previous and current are null when the previous extract kept no quantities. The rate
+ * and the amounts are null for a viewer who may not see extract money. An extract prepared before D-248 reads `[]`.
+ */
+export interface ExtractQuantityRow {
+  readonly boqLineId: string;
+  readonly itemCode?: string | null;
+  readonly descriptionAr: string;
+  readonly descriptionEn?: string | null;
+  readonly unit: string;
+  readonly previousQuantity?: number | null;
+  readonly currentQuantity?: number | null;
+  readonly cumulativeQuantity: number;
+  readonly rate?: string | null;
+  readonly previousAmount?: string | null;
+  readonly currentAmount?: string | null;
+  readonly cumulativeAmount?: string | null;
+}
+
 export interface ExtractEvidence {
   readonly cumulativeCertifiedWork: string;
   readonly previouslyCertifiedWork: string;
