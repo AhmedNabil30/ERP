@@ -264,3 +264,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-255 | 17232 | Handover refuses an open NCR and an unbilled released remainder · 2026-11-20 |
 | D-256 | 17253 | Words for the NCR, held portion, termination; Draft extract carries the remainder · 2026-11-20 |
 | D-257 | 17268 | Extract gates after handover (open), closure read, demo seed for every extract step · 2026-11-20 |
+| D-258 | 17303 | No split gate after handover; «تم التسليم» kept; workspace trail dropped; primary stays in frame · 2026-11-20 |

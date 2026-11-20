@@ -17299,3 +17299,17 @@ Asked after `ux/arabic-copy-review-2026-11-20-b.md`. Nabil chose each recommende
    why the consultant's change-order attempt was refused.
 6. **Seed text.** `scripts/seed-demo-extract-pending.mjs` now writes its rejection reason in Arabic. The English reason
    already stored on فيلا 47's extract 3 stays: it is a gate record of a real rejection and history is not rewritten.
+
+## D-258 — No split gate after handover; «تم التسليم» kept; workspace trail dropped; primary stays in the frame · 2026-11-20
+
+Asked after D-257 and `ux/consultant-review-extracts-app-2026-11-20.md` (F1, C3, C4, C6). Nabil chose each recommended option.
+
+1. **After handover the Technical Office may approve an extract whole or reject it, but not split
+   it.** A final extract after handover is still allowed. A split, and so a new NCR, is refused from
+   `Handover` on, with its own error key. The D-257 test that records today's behaviour is rewritten
+   to assert the refusal.
+2. **«تم التسليم» stays** for a handed-over project. Handover is a closure stage, not a work status;
+   Kaff's five status words stay for work progress.
+3. **The stage trail (المقايسة · التنفيذ · التسليم) comes off the project workspace.** The status pill
+   already says where the project is; the tab keeps «المقايسة».
+4. **The primary action stays where the page frame puts it** (KAFF-936), on every screen.
