@@ -56,10 +56,10 @@ When each posts
 Then it moves between the accounts the ruling names
 *Rule: none yet. **HELD on `Q107`.***
 
-**AC-512-C — a credit note reverses, it does not edit**
+**AC-512-C — a credit note adds, it does not edit**
 Given an issued extract with its postings
 When a credit note is raised against it
-Then reversing postings reference the originals through `ReversesId`, and no posting row is updated or deleted
+Then one new `CreditNote` posting reduces the extract, the hold accrual is untouched, and no posting row is updated or deleted; reversing the credit note references it through `ReversesId` (D-202, ratified by Nabil in D-250)
 *Rule: 4.*
 
 **AC-512-D — nothing debits the hold before handover**

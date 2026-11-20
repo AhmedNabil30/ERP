@@ -48,7 +48,7 @@ Then only an `Issued` one succeeds, with a stored reason
 **AC-511-B — the original's postings are never edited**
 Given a disputed extract that had posted
 When it is resolved either way
-Then no posting row is updated or deleted, and any correction is a reversing posting referencing the original
+Then no posting row is updated or deleted; a credit note is one new reducing posting (D-202, ratified by Nabil in D-250), and reversing that credit note references it through `ReversesId`
 *Rules: 3, 4.*
 
 **AC-511-C — resolving as a credit note — HELD**

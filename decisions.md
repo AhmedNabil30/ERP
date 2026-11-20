@@ -17159,3 +17159,23 @@ When an extract is prepared, each BOQ line's executed quantity is copied onto th
 7. **Open for Nabil.** The period quantity can be negative if a daily log lowers a line's executed quantity (D-247 item 4). It is shown as it falls, with no rule applied.
 
 **Gates at hand-back.** Build 0/0; Domain 801/801; Api 1280 passed, 2 skipped of 1282, exit 0; `ng test` 581/581; format clean apart from ENDOFLINE; smoke passed with least privilege, and `kaff_app` holds SELECT and INSERT only on `extract_quantity_lines`. One mutation per item, each killed.
+
+## D-250 — Nabil's rulings after the extract chain verification · 2026-11-20
+
+Asked after `qa/slice-5/verification-2026-11-20.md`. Nabil chose each recommended option.
+
+1. **An NCR can be closed, and closing it releases the held portion.** AC-500-E is built now: a
+   small NCR record, a close action by the site supervisor, and the held remainder released onto
+   the next extract through the existing `Extract.ReleaseHeldPortion`. KAFF-500 stays rejected
+   until that is built and re-verified.
+2. **A credit note is one new reducing posting, not a reversal of the extract's originals.** D-202's
+   shape is ratified: a reversal would also reverse the hold accrual, which the hold-only-grows rule
+   forbids. AC-511-B and AC-512-C are reworded to match. Reversing a credit note remains a true
+   `ReversesId` mirror.
+3. **A negative period quantity is allowed and shown as it is.** If a daily log lowers a BOQ line's
+   executed quantity, the extract's period quantity is negative and the money reduces with it. No
+   refusal and no warning (closes D-249 item 7).
+4. **Withholding may be recorded on the released-hold collection after handover.** The change made
+   in D-245 without a ruling is kept. AC-317-E's false case (`HoldReleaseCarriesWithholding` false)
+   is still owed: when the ruling is false, a withheld amount on the released-hold collection is
+   refused.
