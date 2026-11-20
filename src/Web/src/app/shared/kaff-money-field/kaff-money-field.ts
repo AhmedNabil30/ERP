@@ -39,6 +39,8 @@ export class KaffMoneyField {
   readonly required = input(false);
   readonly hintKey = input<string | null>(null);
   readonly errorKey = input<string | null>(null);
+  /** Parameters of the error key (a figure the message names). */
+  readonly errorParams = input<Readonly<Record<string, string | number>> | undefined>(undefined);
   readonly affixKey = input('catalogue.currency.affix');
   /** Dim example text ("e.g. 15"), never a default value. */
   readonly placeholderKey = input<string | null>(null);

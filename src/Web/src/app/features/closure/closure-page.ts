@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked, viewChild } from '@angular/core';
 
 import { toProblem } from '../../core/api/problem-details';
 import { AuthService } from '../../core/auth/auth.service';
@@ -15,7 +15,12 @@ import { I18nService } from '../../core/i18n/i18n.service';
 import { ProofApi, ProofResponse } from '../../core/proof/proof.api';
 import { ProjectDetail, ProjectStatus, ProjectsApi } from '../../core/projects/projects.api';
 import { SubcontractorSummary, SubcontractorsApi } from '../../core/subcontractors/subcontractors.api';
+import { ChainApi, ReleasedHoldCollection } from '../../core/extracts/chain.api';
 import { KaffBadge } from '../../shared/kaff-badge/kaff-badge';
+import { KaffCollectionPosition } from '../../shared/kaff-collection-position/kaff-collection-position';
+import { KaffDetailPanel } from '../../shared/kaff-detail-panel/kaff-detail-panel';
+import { CollectionForm } from '../extracts/collection-form/collection-form';
+import { isPositive } from '../extracts/extract-display';
 import { KaffBanner } from '../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../shared/kaff-button/kaff-button';
 import { KaffFigure } from '../../shared/kaff-figure/kaff-figure';
@@ -63,7 +68,10 @@ const UNMET_KEYS: Readonly<Record<string, string>> = {
 @Component({
   selector: 'kaff-closure-page',
   imports: [
+    CollectionForm,
     KaffBadge,
+    KaffCollectionPosition,
+    KaffDetailPanel,
     KaffBanner,
     KaffButton,
     KaffFigure,
@@ -84,6 +92,7 @@ export class ClosurePage {
   private readonly proofApi = inject(ProofApi);
   private readonly subcontractorsApi = inject(SubcontractorsApi);
   private readonly auth = inject(AuthService);
+  private readonly chainApi = inject(ChainApi);
 
   protected readonly i18n = inject(I18nService);
   protected readonly statusKey = projectWorkspaceStatusKey;
@@ -104,6 +113,20 @@ export class ClosurePage {
   /** The proof read, for the hold ledger only. Null: not asked (no `HoldRelease`), or the read failed. */
   protected readonly proof = signal<ProofResponse | null>(null);
   protected readonly proofFailed = signal(false);
+
+  /**
+   * D-244 item 2: a released hold is collected like an extract, through the same collection form (E5). Read for a
+   * session that records collections, once the project is handed over. Null: not asked, refused, or failed.
+   */
+  protected readonly releasedHold = signal<ReleasedHoldCollection | null>(null);
+  protected readonly collectingHold = signal(false);
+  protected readonly holdCollectError = signal<string | null>(null);
+  protected readonly holdCollected = signal(false);
+  private readonly holdForm = viewChild(CollectionForm);
+
+  /** Something of the released hold is expected: the hold was released and the client owes it. */
+  protected readonly showHoldCollection = computed(() => isPositive(this.releasedHold()?.expected));
+  protected readonly holdMayCollect = computed(() => isPositive(this.releasedHold()?.remaining));
 
   protected readonly busy = signal(false);
   protected readonly actionError = signal<string | null>(null);
@@ -258,7 +281,7 @@ export class ClosurePage {
     } finally {
       this.loading.set(false);
     }
-    await Promise.all([this.loadSnags(), this.loadCallbacks(), this.loadHold()]);
+    await Promise.all([this.loadSnags(), this.loadCallbacks(), this.loadHold(), this.loadReleasedHold()]);
   }
 
   private async loadSnags(): Promise<void> {
@@ -288,6 +311,42 @@ export class ClosurePage {
       this.proof.set(await this.proofApi.get(this.projectId()));
     } catch {
       this.proofFailed.set(true);
+    }
+  }
+
+  private async loadReleasedHold(): Promise<void> {
+    const project = this.project();
+    const held = this.auth.current()?.projects.find((row) => row.projectId === this.projectId())?.permissions ?? [];
+    if (project === null || project.contractType !== 'LumpSum' || !held.includes('ExtractCollect')
+      || !['Handover', 'UnderWarranty', 'Closed', 'Terminated'].includes(project.status)) {
+      this.releasedHold.set(null);
+      return;
+    }
+    this.releasedHold.set(await this.chainApi.releasedHold(this.projectId()).catch(() => null));
+  }
+
+  protected openHoldCollection(): void {
+    this.holdCollectError.set(null);
+    this.holdCollected.set(false);
+    this.collectingHold.set(true);
+  }
+
+  protected async collectHold(): Promise<void> {
+    const request = this.holdForm()?.request();
+    if (!request) {
+      return;
+    }
+    this.busy.set(true);
+    this.holdCollectError.set(null);
+    try {
+      await this.chainApi.collectReleasedHold(this.projectId(), request);
+      this.collectingHold.set(false);
+      this.holdCollected.set(true);
+      await this.loadReleasedHold();
+    } catch (error) {
+      this.holdCollectError.set(toProblem(error).messageKey);
+    } finally {
+      this.busy.set(false);
     }
   }
 

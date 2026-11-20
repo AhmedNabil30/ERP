@@ -1,0 +1,72 @@
+<ng-template #primaryAction>
+  <kaff-button variant="primary" [busy]="busy()" testId="dispute-submit" (clicked)="submit()">{{ i18n.t(primaryKey()) }}</kaff-button>
+</ng-template>
+
+<section class="pg" data-testid="extract-dispute-page">
+  <kaff-page-head
+    [backLink]="['/projects', projectId(), 'extracts', extractId()]"
+    [backLabel]="name()"
+    [title]="i18n.t(mode() === 'raise' ? 'dispute.raise' : 'dispute.resolve')"
+  >
+    @if (mode() === 'resolve' && data(); as x) {
+      <kaff-status-pill titleAside [tone]="pill[x.status].tone" [icon]="pill[x.status].icon">{{ i18n.t(pill[x.status].key) }}</kaff-status-pill>
+    }
+    <p class="meta">
+      @if (project(); as p) {
+        <span dir="auto">{{ p.clientName }}</span>
+      }
+      @if (data()) {
+        <span>{{ name() }}</span>
+      }
+    </p>
+  </kaff-page-head>
+
+  @if (failure(); as key) {
+    <kaff-banner tone="refusal" testId="dispute-failure">
+      {{ i18n.t(key) }}
+      <kaff-button bannerActions variant="secondary" testId="dispute-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+    </kaff-banner>
+  } @else if (loading()) {
+    <kaff-state mode="loading" titleKey="extract.loading" testId="dispute-loading" />
+  } @else if (data(); as x) {
+    <div class="pane">
+      @if (!allowed()) {
+        <kaff-state mode="refusal" icon="lock" [titleText]="i18n.t('dispute.refused', { number: x.number, status: i18n.t(pill[x.status].key) })" testId="dispute-refused">
+          <a stateAction class="lnk" [routerLink]="['/projects', projectId(), 'extracts', x.id]" data-testid="dispute-open-extract">{{ i18n.t('extract.open_extract') }}</a>
+        </kaff-state>
+      } @else {
+        @if (actionError(); as key) {
+          <kaff-banner tone="refusal" testId="dispute-error">
+            <b>{{ i18n.t(mode() === 'raise' ? 'dispute.raise_failed' : 'dispute.resolve_failed') }}</b> {{ i18n.t(key, actionErrorParams()) }}
+          </kaff-banner>
+        }
+        @if (mode() === 'raise') {
+          @if (x.collection; as c) {
+            <h2 class="sec-h">{{ i18n.t('collection.heading') }}</h2>
+            <kaff-collection-position [expected]="c.expected" [received]="c.received" [withheld]="c.withheld" [inCheques]="c.inCheques" [remaining]="c.remaining" />
+          }
+          <kaff-field labelKey="dispute.reason" controlId="dispute-reason" [required]="true" [errorKey]="errors().reason" #rf="kaffField">
+            <textarea id="dispute-reason" data-testid="dispute-reason" [attr.aria-invalid]="errors().reason ? 'true' : null" [attr.aria-describedby]="rf.describedById()" [value]="reason()" (input)="reason.set($any($event.target).value)"></textarea>
+          </kaff-field>
+        } @else {
+          @if (claim(); as c) {
+            <kaff-banner tone="note" testId="dispute-claim">
+              <b>{{ i18n.t('dispute.client_claim') }}</b> · <bdi dir="ltr">{{ c.date }}</bdi><br /><span dir="auto">{{ c.reason }}</span>
+            </kaff-banner>
+          }
+          <kaff-choice-group [choices]="kinds" legendKey="dispute.kind" [required]="true" [errorKey]="errors().kind" testId="dispute-kind" [(value)]="kind" />
+          @if (kind() === 'CreditNote') {
+            @if (facts().length > 0) {
+              <h2 class="sec-h">{{ i18n.t('dispute.extract_unit', { number: x.number }) }}</h2>
+              <kaff-figure-list [rows]="facts()" testId="dispute-facts" />
+            }
+            <kaff-money-field labelKey="dispute.amount" controlId="dispute-amount" [required]="true" [errorKey]="errors().amount" testId="dispute-amount" [(value)]="amount" />
+          }
+          <kaff-field labelKey="dispute.resolution_reason" controlId="dispute-reason" [required]="true" [errorKey]="errors().reason" #rf="kaffField">
+            <textarea id="dispute-reason" data-testid="dispute-reason" [attr.aria-invalid]="errors().reason ? 'true' : null" [attr.aria-describedby]="rf.describedById()" [value]="reason()" (input)="reason.set($any($event.target).value)"></textarea>
+          </kaff-field>
+        }
+      }
+    </div>
+  }
+</section>

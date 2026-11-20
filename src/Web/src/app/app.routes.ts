@@ -300,10 +300,61 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/extracts/extract-list/extract-list-page').then((m) => m.ExtractListPage),
       },
+      // The fixed paths come before `:extractId`, which would otherwise read them as an id.
+      {
+        path: 'new',
+        loadComponent: () => import('./features/extracts/extract-new/extract-new-page').then((m) => m.ExtractNewPage),
+      },
+      {
+        // E7, a sub-section of the tab (D-241 item 3). `GET …/cheques` is gated ChequeRead (Finance, Owner).
+        path: 'cheques',
+        loadComponent: () => import('./features/extracts/cheque-list/cheque-list-page').then((m) => m.ChequeListPage),
+      },
+      {
+        path: 'change-orders',
+        loadComponent: () =>
+          import('./features/extracts/change-orders/change-order-list-page').then((m) => m.ChangeOrderListPage),
+      },
+      {
+        path: 'change-orders/new',
+        loadComponent: () =>
+          import('./features/extracts/change-orders/change-order-new-page').then((m) => m.ChangeOrderNewPage),
+      },
+      {
+        path: 'change-orders/:changeOrderId',
+        loadComponent: () =>
+          import('./features/extracts/change-orders/change-order-detail-page').then((m) => m.ChangeOrderDetailPage),
+      },
       {
         path: ':extractId',
         loadComponent: () =>
           import('./features/extracts/extract-detail/extract-detail-page').then((m) => m.ExtractDetailPage),
+      },
+      {
+        path: ':extractId/collect',
+        loadComponent: () =>
+          import('./features/extracts/extract-collect/extract-collect-page').then((m) => m.ExtractCollectPage),
+      },
+      {
+        path: ':extractId/payments',
+        loadComponent: () =>
+          import('./features/extracts/extract-payments/extract-payments-page').then((m) => m.ExtractPaymentsPage),
+      },
+      {
+        path: ':extractId/dispute',
+        data: { mode: 'raise' },
+        loadComponent: () =>
+          import('./features/extracts/extract-dispute/extract-dispute-page').then((m) => m.ExtractDisputePage),
+      },
+      {
+        path: ':extractId/dispute-resolution',
+        data: { mode: 'resolve' },
+        loadComponent: () =>
+          import('./features/extracts/extract-dispute/extract-dispute-page').then((m) => m.ExtractDisputePage),
+      },
+      {
+        path: ':extractId/credit-notes/:noteId',
+        loadComponent: () => import('./features/extracts/credit-note/credit-note-page').then((m) => m.CreditNotePage),
       },
     ],
   },

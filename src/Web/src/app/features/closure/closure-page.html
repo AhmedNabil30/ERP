@@ -125,6 +125,38 @@
         </div>
       }
 
+      <!-- D-244 item 2: the released hold is collected on the extract's collection flow, through the same form. -->
+      @if (releasedHold(); as rh) {
+        @if (showHoldCollection()) {
+          <div class="panel" data-testid="closure-hold-collection">
+            <h2 class="h2">{{ i18n.t('closure.hold_collection.title') }}</h2>
+            @if (holdCollected()) {
+              <kaff-banner tone="ok" testId="closure-hold-collected">{{ i18n.t('closure.hold_collection.done') }}</kaff-banner>
+            }
+            <kaff-collection-position [expected]="rh.expected" [received]="rh.received" [withheld]="rh.withheld" [inCheques]="rh.inCheques" [remaining]="rh.remaining" testId="closure-hold-position" />
+            @if (holdMayCollect()) {
+              <div class="buttons">
+                <kaff-button variant="secondary" testId="closure-hold-collect" (clicked)="openHoldCollection()">{{ i18n.t('collection.record') }}</kaff-button>
+              </div>
+            }
+          </div>
+          <kaff-detail-panel [open]="collectingHold()" [title]="i18n.t('collection.record')" testId="closure-hold-sheet" (closed)="collectingHold.set(false)">
+            <div panelBody>
+              @if (holdCollectError(); as key) {
+                @if (key !== 'errors.collection.exceeds_expected' && key !== 'errors.treasury.posting_date_out_of_range') {
+                  <kaff-banner tone="refusal" testId="closure-hold-collect-error">{{ i18n.t(key) }}</kaff-banner>
+                }
+              }
+              <kaff-collection-form [remaining]="rh.remaining" [refusalKey]="holdCollectError()" testIdPrefix="hold-collect" />
+            </div>
+            <div panelFooter class="buttons">
+              <kaff-button variant="primary" [busy]="busy()" testId="closure-hold-collect-submit" (clicked)="collectHold()">{{ i18n.t('collection.record') }}</kaff-button>
+              <kaff-button variant="secondary" [disabled]="busy()" testId="closure-hold-collect-cancel" (clicked)="collectingHold.set(false)">{{ i18n.t('extract.cancel') }}</kaff-button>
+            </div>
+          </kaff-detail-panel>
+        }
+      }
+
       <!-- The snag list. -->
       @if (showSnags()) {
         <div class="panel" data-testid="closure-snags">

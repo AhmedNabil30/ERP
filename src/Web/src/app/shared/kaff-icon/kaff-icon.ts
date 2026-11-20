@@ -55,6 +55,10 @@ const PATHS = {
   cal: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
   uadd: 'M16 20v-1.5a3.5 3.5 0 00-3.5-3.5h-5A3.5 3.5 0 004 18.5V20M10 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM19 8v6M16 11h6',
   umin: 'M16 20v-1.5a3.5 3.5 0 00-3.5-3.5h-5A3.5 3.5 0 004 18.5V20M10 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM16 11h6',
+  /** Extract chain status shapes (README "Extract chain" kit item 1): a hollow ring, a dot, a forward arrow. */
+  ring: 'M12 12m-3.5 0a3.5 3.5 0 107 0 3.5 3.5 0 10-7 0',
+  dot: 'M12 12m-3 0a3 3 0 106 0 3 3 0 10-6 0',
+  arrow: 'M5 12h12M13 7l5 5-5 5',
   folder: 'M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z',
 } as const;
 

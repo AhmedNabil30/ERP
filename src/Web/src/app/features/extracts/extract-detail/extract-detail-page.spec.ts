@@ -1,192 +1,209 @@
-import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Extract, ExtractActions, ExtractsApi } from '../../../core/extracts/extracts.api';
+import { AuthService } from '../../../core/auth/auth.service';
+import { ChainApi } from '../../../core/extracts/chain.api';
+import { Extract, ExtractsApi } from '../../../core/extracts/extracts.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { ProjectsApi } from '../../../core/projects/projects.api';
+import { ANY_ROUTE, DOCUMENT, FakeI18n, POSITION, byTestId, extract, primary, session, settle, type, waiting } from '../testing/chain-fixtures';
 import { ExtractDetailPage } from './extract-detail-page';
 
 /**
- * AC-500-D and AC-500-J on the screen. A control whose flag is false is absent, not disabled; a rejection
- * cannot be sent without a reason; the column's verdict is the server's `foots`, shown and never recomputed.
+ * E3 (`extracts.html#e3`). Every control hangs off a server flag; the one primary goes to the shell's slot; the QC
+ * report sends both material values, a rejection sends its reason and its kind, and evidence revision sends no body.
  */
-class FakeI18n implements Pick<I18nService, 't' | 'locale' | 'formatAmount' | 'formatDate'> {
-  readonly locale = signal<'ar' | 'en'>('ar');
-
-  t(key: string): string {
-    return key;
-  }
-
-  formatAmount(value: string): string {
-    return value;
-  }
-
-  formatDate(): string {
-    return 'DATE';
-  }
-}
-
-const NONE: ExtractActions = {
-  submitQcReport: false,
-  approveTechnicalOffice: false,
-  rejectAtTechnicalOffice: false,
-  applyDeductions: false,
-  rejectAtAccounts: false,
-  approveAsOwner: false,
-  rejectAtOwner: false,
-  issue: false,
-  reviseEvidence: false,
-  callerMayDecide: true,
-};
-
-function extract(overrides: Partial<Extract> = {}, actions: Partial<ExtractActions> = {}): Extract {
-  return {
-    id: 'e-1',
-    projectId: 'p-1',
-    number: 1,
-    periodStart: '2026-10-01',
-    periodEnd: '2026-10-31',
-    status: 'QcSubmitted',
-    createdByUserId: 'u-1',
-    createdAt: '2026-11-01T10:00:00Z',
-    approvedPortion: '1',
-    heldForNcrId: null,
-    gateHistory: [],
-    actions: { ...NONE, ...actions },
-    evidence: null,
-    document: null,
-    ...overrides,
-  };
-}
-
-const DOCUMENT: NonNullable<Extract['document']> = {
-  figures: [
-    {
-      key: 'workValue',
-      labelKey: 'billing.component.WorkValue',
-      kind: 'Calculated',
-      amount: '1231.6500',
-      isMemo: false,
-      derivation: [
-        { labelKey: 'extract.input.approved_portion', kind: 'Carried', amount: null, rate: '1.000000', source: 'extract.technicalOfficeGate', enteredByUserId: null, enteredAt: null },
-      ],
-    },
-  ],
-  column: [
-    { key: 'workValue', labelKey: 'billing.component.WorkValue', isDeduction: false, amount: '1231.6500' },
-    { key: 'holdThisPeriod', labelKey: 'billing.component.Hold', isDeduction: true, amount: '246.3300' },
-  ],
-  printedTotal: '985.3200',
-  columnSum: '985.3200',
-  foots: true,
-  decimals: 2,
-};
-
-async function open(data: Extract, api: Partial<ExtractsApi> = {}) {
+async function open(data: Extract, api: Partial<Record<keyof ExtractsApi, unknown>> = {}, permissions: string[] = [], chain: Partial<Record<keyof ChainApi, unknown>> = {}) {
   TestBed.configureTestingModule({
     providers: [
-      provideRouter([]),
+      provideRouter(ANY_ROUTE),
       { provide: I18nService, useClass: FakeI18n },
-      { provide: ExtractsApi, useValue: { get: () => Promise.resolve(data), ...api } },
-      { provide: ProjectsApi, useValue: { get: () => new Promise(() => undefined) } },
+      { provide: ExtractsApi, useValue: { get: vi.fn().mockResolvedValue(data), collections: vi.fn().mockResolvedValue([]), ...api } },
+      { provide: ChainApi, useValue: { adjustments: vi.fn().mockResolvedValue([]), ...chain } },
+      { provide: ProjectsApi, useValue: { get: vi.fn().mockResolvedValue({ name: 'فيلا 47', clientName: 'النيل', status: 'Active' }) } },
+      { provide: AuthService, useValue: session(permissions) },
     ],
   });
   const fixture = TestBed.createComponent(ExtractDetailPage);
   fixture.componentRef.setInput('projectId', 'p-1');
   fixture.componentRef.setInput('extractId', 'e-1');
-  await fixture.whenStable();
-  fixture.detectChanges();
-  return fixture;
+  await settle(fixture);
+  return { fixture, root: fixture.nativeElement as HTMLElement };
 }
 
-function el(fixture: { nativeElement: HTMLElement }, testId: string): HTMLElement | null {
-  return fixture.nativeElement.querySelector(`[data-testid="${testId}"]`);
-}
-
-describe('ExtractDetailPage', () => {
+describe('ExtractDetailPage (E3)', () => {
+  beforeAll(() => {
+    // jsdom has no modal <dialog>; the kit's confirmation opens one with showModal().
+    HTMLDialogElement.prototype.showModal ??= function showModal(this: HTMLDialogElement) {
+      this.setAttribute('open', '');
+    };
+    HTMLDialogElement.prototype.close ??= function close(this: HTMLDialogElement) {
+      this.removeAttribute('open');
+    };
+  });
   beforeEach(() => TestBed.resetTestingModule());
 
-  it('renders a control only when its flag is true, and never as a disabled control', async () => {
-    const fixture = await open(extract({}, { approveTechnicalOffice: true, rejectAtTechnicalOffice: true }));
-
-    expect(el(fixture, 'act-technical-approval')).not.toBeNull();
-    expect(el(fixture, 'act-reject-technical')).not.toBeNull();
-    for (const absent of ['act-qc-report', 'act-deductions', 'act-owner-approval', 'act-issue', 'act-revise', 'act-reject-accounts', 'act-reject-owner']) {
-      expect(el(fixture, absent), absent).toBeNull();
-    }
-    expect(fixture.nativeElement.querySelectorAll('button[disabled]').length).toBe(0);
+  it.each([
+    [{ submitQcReport: true }, 'act-qc', 'extract.action.submit_qc'],
+    [{ approveTechnicalOffice: true }, 'act-technical', 'extract.action.approve_technical'],
+    [{ applyDeductions: true }, 'act-deductions', 'extract.action.apply_deductions'],
+    [{ approveAsOwner: true }, 'act-owner', 'extract.action.approve_owner'],
+    [{ issue: true }, 'act-issue', 'extract.action.issue'],
+    [{ reviseEvidence: true }, 'act-revise', 'extract.action.revise_evidence'],
+    [{ recordCollection: true }, 'act-collect', 'collection.record'],
+    [{ resolveDispute: true }, 'act-resolve', 'dispute.resolve'],
+  ])('places one primary in the shell slot for the flag %o', async (flags, testId, label) => {
+    const { fixture } = await open(extract({}, flags));
+    const button = primary(fixture);
+    expect(button?.getAttribute('data-testid')).toBe(testId);
+    expect(button?.textContent).toContain(label);
+    expect(button?.hasAttribute('disabled')).toBe(false);
   });
 
-  it('shows no control at all when every flag is false, and says the stage is finished for an issued extract', async () => {
-    const fixture = await open(extract({ status: 'Issued' }));
-
-    expect(fixture.nativeElement.querySelectorAll('[data-testid="extract-actions"] button').length).toBe(0);
-    expect(el(fixture, 'extract-no-action')?.textContent).toContain('extract.no_action.done');
+  it('has no primary and no secondary when every flag is false', async () => {
+    const { fixture, root } = await open(extract());
+    expect(primary(fixture)).toBeNull();
+    expect(byTestId(root, 'extract-secondary')).toBeNull();
+    expect(root.querySelectorAll('button[disabled]').length).toBe(0);
   });
 
-  it('says why a gate control is missing when the caller already acted on the extract', async () => {
-    const fixture = await open(extract({ status: 'QcSubmitted' }, { callerMayDecide: false }));
-
-    expect(el(fixture, 'extract-no-action')?.textContent).toContain('extract.no_action.same_person');
+  it('draws no primary of its own in the page body', async () => {
+    const { root } = await open(extract({}, { approveTechnicalOffice: true, rejectAtTechnicalOffice: true }));
+    expect(byTestId(root, 'act-technical')).toBeNull();
+    expect(byTestId(root, 'act-reject')).not.toBeNull();
   });
 
-  it('refuses a rejection with a blank reason before anything is sent', async () => {
+  it('sends both material values with the QC report, and names a missing one without sending', async () => {
+    const submitQcReport = vi.fn().mockResolvedValue(undefined);
+    const { fixture, root } = await open(extract({ status: 'Draft' }, { submitQcReport: true }), { submitQcReport });
+    primary(fixture)?.click();
+    await settle(fixture);
+
+    type(byTestId(root, 'qc-installed'), '40,000.00');
+    byTestId(root, 'qc-submit')?.click();
+    await settle(fixture);
+    expect(submitQcReport).not.toHaveBeenCalled();
+    expect(root.textContent).toContain('extract.qc.on_site_required');
+
+    type(byTestId(root, 'qc-on-site'), '0');
+    byTestId(root, 'qc-submit')?.click();
+    await settle(fixture);
+    expect(submitQcReport).toHaveBeenCalledWith('p-1', 'e-1', '0', '40000.00');
+  });
+
+  it('asks where the error is before it sends a rejection, then sends the reason and the kind', async () => {
     const reject = vi.fn().mockResolvedValue(undefined);
-    const fixture = await open(extract({}, { rejectAtTechnicalOffice: true }), { reject });
+    const { fixture, root } = await open(extract({}, { rejectAtTechnicalOffice: true }), { reject });
+    byTestId(root, 'act-reject')?.click();
+    await settle(fixture);
 
-    el(fixture, 'act-reject-technical')?.click();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    const box = el(fixture, 'reject-reason') as HTMLTextAreaElement;
-    box.value = '   ';
-    box.dispatchEvent(new Event('input'));
-    el(fixture, 'reject-submit')?.click();
-    fixture.detectChanges();
-
+    type(byTestId(root, 'reject-reason'), '  كميات البياض لا تطابق اليومية  ');
+    byTestId(root, 'reject-submit')?.click();
+    await settle(fixture);
     expect(reject).not.toHaveBeenCalled();
-    expect(el(fixture, 'reject-reason-error')).not.toBeNull();
+    expect(root.textContent).toContain('extract.reject.kind_required');
+
+    (byTestId(root, 'reject-kind-Quantities') as HTMLInputElement).click();
+    byTestId(root, 'reject-submit')?.click();
+    await settle(fixture);
+    expect(reject).toHaveBeenCalledWith('p-1', 'e-1', 'technical-rejection', 'كميات البياض لا تطابق اليومية', 'Quantities');
   });
 
-  it('sends the trimmed reason to the gate it was opened for', async () => {
-    const reject = vi.fn().mockResolvedValue(undefined);
-    const fixture = await open(extract({}, { rejectAtTechnicalOffice: true }), { reject });
+  it('revises the evidence with no body', async () => {
+    const reviseEvidence = vi.fn().mockResolvedValue(undefined);
+    const rejected = extract(
+      {
+        status: 'Draft',
+        waitingOn: waiting({ status: 'Draft', permission: 'ExtractPrepare' }),
+        gateHistory: [{ gate: 'Owner', outcome: 'Rejected', actorUserId: 'u-o', occurredAt: '2026-10-07T09:15:00Z', reason: 'الكميات لا تطابق', approvedPortion: null }],
+      },
+      { reviseEvidence: true },
+    );
+    const { fixture, root } = await open(rejected, { reviseEvidence });
+    expect(byTestId(root, 'extract-rejection')?.textContent).toContain('الكميات لا تطابق');
+    expect(byTestId(root, 'extract-open-log')).not.toBeNull();
+    expect(byTestId(root, 'extract-chain')?.querySelector('[aria-current="step"]')?.textContent).toContain('extract.chain.prepare');
 
-    el(fixture, 'act-reject-technical')?.click();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    const box = el(fixture, 'reject-reason') as HTMLTextAreaElement;
-    box.value = '  quantities do not match  ';
-    box.dispatchEvent(new Event('input'));
-    el(fixture, 'reject-submit')?.click();
-    await fixture.whenStable();
-
-    expect(reject).toHaveBeenCalledWith('p-1', 'e-1', 'technical-rejection', 'quantities do not match');
+    primary(fixture)?.click();
+    await settle(fixture);
+    expect(reviseEvidence).toHaveBeenCalledWith('p-1', 'e-1');
   });
 
-  it('shows the server verdict on the column and never recomputes it', async () => {
-    // The rows above add up, but the server says they do not. The page must show the server's word.
-    const fixture = await open(extract({ status: 'Issued', evidence: {} as never, document: { ...DOCUMENT, foots: false } }));
-
-    expect(el(fixture, 'extract-foots')?.textContent).toContain('extract.foots.no');
-    expect(el(fixture, 'extract-foots')?.classList.contains('bad')).toBe(true);
+  it('never shows the junior a rejection reason he cannot act on, and shows him no money', async () => {
+    const rejected = extract({
+      status: 'Draft',
+      waitingOn: waiting({ status: 'Draft', permission: 'ExtractQcReportSubmit' }),
+      gateHistory: [{ gate: 'Owner', outcome: 'Rejected', actorUserId: 'u-o', occurredAt: '2026-10-07T09:15:00Z', reason: 'قيمة التشوينات أقل', approvedPortion: null }],
+    });
+    const { fixture, root } = await open(rejected);
+    expect(byTestId(root, 'extract-rejection')).toBeNull();
+    expect(root.textContent).not.toContain('قيمة التشوينات أقل');
+    expect(byTestId(root, 'extract-position')).toBeNull();
+    expect(byTestId(root, 'extract-document')).toBeNull();
+    expect(primary(fixture)).toBeNull();
   });
 
-  it('declares the kind of every figure and prints the column rows with their signs', async () => {
-    const fixture = await open(extract({ status: 'Issued', evidence: {} as never, document: DOCUMENT }));
+  it('says who it waits on in the one waiting-line form, with the barred holder under it', async () => {
+    const { root } = await open(
+      extract({ waitingOn: waiting({ barredHolders: [{ userId: 'u-x', fullName: 'سارة عادل', role: 'TechnicalOffice', level: 'Standard' }] }) }),
+    );
+    const line = byTestId(root, 'extract-waiting')?.textContent ?? '';
+    expect(line).toContain('waiting.line');
+    expect(line).toContain('كريم حسن');
+    expect(line).toContain('extract.task.technical');
+    expect(line).toContain('waiting.barred');
+  });
 
-    expect(el(fixture, 'extract-foots')?.textContent).toContain('extract.foots.yes');
-    const figure = el(fixture, 'figure-workValue');
-    expect(figure?.querySelector('kaff-provenance')).not.toBeNull();
-    expect(el(fixture, 'column-holdThisPeriod')?.textContent).toContain('−');
-    expect(figure?.textContent).toContain('100%');
+  it('prints the document with deductions as a real minus, the total, and the hold to date apart', async () => {
+    const { root } = await open(extract({ status: 'Issued', document: DOCUMENT, collection: POSITION, evidence: {} as never }));
+    const document = byTestId(root, 'extract-document')?.textContent ?? '';
+    expect(document).toContain('−80000');
+    expect(byTestId(root, 'extract-net')?.textContent).toContain('190000');
+    expect(byTestId(root, 'extract-hold-to-date')?.textContent).toContain('200000');
+    expect(byTestId(root, 'pos-remaining')?.textContent).toContain('0');
+    expect(byTestId(root, 'pos-cheques')?.textContent).toContain('90000');
+  });
+
+  it('names the cheque move and the deposit task when a cheque is in hand', async () => {
+    const collections = vi.fn().mockResolvedValue([
+      { id: 'c', method: 'Cheque', date: '2026-11-16', reference: '004512', cashReceived: '89100', withheldAtSource: '900', reversed: false, chequeId: 'q', chequeState: 'Deposited', recordedAt: '' },
+    ]);
+    const issued = extract({ status: 'Issued', collection: POSITION, waitingOn: waiting({ status: 'Issued', permission: 'ExtractCollect' }) }, { recordChequeMove: true });
+    const { fixture, root } = await open(issued, { collections });
+    expect(primary(fixture)?.textContent).toContain('cheque.action.clear');
+    expect(byTestId(root, 'extract-waiting')?.textContent).toContain('extract.task.deposit');
+  });
+
+  it('asks the Owner to confirm with the consequence line before approving', async () => {
+    const step = vi.fn().mockResolvedValue(undefined);
+    const { fixture, root } = await open(extract({ status: 'DeductionsApplied', document: DOCUMENT }, { approveAsOwner: true }), { step });
+    primary(fixture)?.click();
+    await settle(fixture);
+    expect(byTestId(root, 'owner-confirm')?.textContent).toContain('extract.confirm.owner_consequence');
+    expect(primary(fixture)).toBeNull();
+    byTestId(root, 'owner-confirm-yes')?.click();
+    await settle(fixture);
+    expect(step).toHaveBeenCalledWith('p-1', 'e-1', 'owner-approval');
+  });
+
+  it('shows a cancelled extract with no chain line and a way to its replacement', async () => {
+    const { root } = await open(extract({ status: 'Void', revisedBy: { id: 'e-5', number: 5, status: 'Draft' }, waitingOn: waiting({ isTerminal: true, permission: null }) }));
+    expect(byTestId(root, 'extract-chain')).toBeNull();
+    expect(byTestId(root, 'extract-cancelled')?.textContent).toContain('"number":5');
+    expect(byTestId(root, 'extract-waiting')).toBeNull();
+  });
+
+  it('shows the separation-of-duties line to a barred holder', async () => {
+    const { root } = await open(
+      extract({ waitingOn: waiting({ barredHolders: [{ userId: 'u-me', fullName: 'أنا', role: 'TechnicalOffice', level: 'Standard' }] }) }, { callerMayDecide: false }),
+    );
+    expect(byTestId(root, 'extract-barred')).not.toBeNull();
   });
 
   it('shows a way out when the extract cannot be loaded', async () => {
-    const fixture = await open(extract(), { get: () => Promise.reject(new Error('down')) });
-
-    expect(el(fixture, 'extract-failure')).not.toBeNull();
-    expect(el(fixture, 'extract-retry')).not.toBeNull();
+    const { root } = await open(extract(), { get: vi.fn().mockRejectedValue(new Error('down')) });
+    expect(byTestId(root, 'extract-failure')).not.toBeNull();
+    expect(byTestId(root, 'extract-retry')).not.toBeNull();
   });
 });

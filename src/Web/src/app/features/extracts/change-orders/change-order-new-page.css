@@ -1,0 +1,65 @@
+/* The change-order line editor (README "Extract chain", kit item 7: `edt`, `ln`). Logical properties only. */
+.edt {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.edt-empty {
+  padding: 16px;
+}
+
+.ln {
+  display: grid;
+  grid-template-columns: minmax(0, 2.4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.3fr) 44px;
+  gap: 4px 14px;
+  align-items: start;
+  padding: 12px 16px;
+  border-block-end: 1px solid var(--line);
+}
+
+.ib {
+  inline-size: 44px;
+  block-size: 44px;
+  margin-block-start: 30px;
+  display: inline-grid;
+  place-items: center;
+  border: 2px solid transparent;
+  background: transparent;
+  color: var(--ink);
+  border-radius: var(--radius);
+  padding: 0;
+}
+
+.ib:hover {
+  background: var(--hover);
+}
+
+.ib:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.ft2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+@media (width <= 820px) {
+  .ln {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .f-d {
+    grid-column: 1 / -1;
+  }
+
+  .ib {
+    margin-block-start: 0;
+    justify-self: end;
+    grid-column: 2;
+  }
+}

@@ -1,3 +1,7 @@
+<ng-template #primaryAction>
+  <kaff-button variant="primary" testId="extract-new" (clicked)="prepare()">{{ i18n.t('extract.new') }}</kaff-button>
+</ng-template>
+
 <section class="pg" data-testid="extract-list-page">
   <kaff-project-frame [projectId]="projectId()" current="extracts">
   @if (failure(); as key) {
@@ -6,45 +10,60 @@
     </kaff-state>
   } @else if (loading()) {
     <kaff-state mode="loading" titleKey="extract.loading" testId="extract-list-loading" />
-  } @else if (rows().length === 0) {
-    <kaff-state mode="empty" titleKey="extract.list.empty_title" bodyKey="extract.list.empty_body" icon="file" testId="extract-list-empty" />
   } @else {
-    <kaff-table [columns]="columns()" [columnDefs]="headerColumns()" [minInline]="minInline()" testId="extract-table-header">
-      <ul class="rows" data-testid="extract-rows">
-        @for (row of rows(); track row.id) {
-          <li class="rows-item">
-            <kaff-table-row [stacked]="true">
-              <a
-                class="row-stretched-link"
-                [routerLink]="['/projects', projectId(), 'extracts', row.id]"
-                [attr.aria-label]="i18n.t('extract.number', { number: row.number })"
-                [attr.data-testid]="'extract-row-' + row.number"
-              ></a>
-              <span class="cell-pinned cell-title num">{{ i18n.t('extract.number', { number: row.number }) }}</span>
-              <span class="cell-sub when">{{ i18n.t('extract.period', { from: day(row.periodStart), to: day(row.periodEnd) }) }}</span>
-              <span class="cell-wide when">{{ i18n.t('extract.period', { from: day(row.periodStart), to: day(row.periodEnd) }) }}</span>
-              <span class="cell-primary">
-                <kaff-status-pill [tone]="pill[row.status].tone" [icon]="pill[row.status].icon">{{ i18n.t(statusKeys[row.status]) }}</kaff-status-pill>
-              </span>
-              @let waiting = waitingText(row);
-              <span class="cell-wait" data-testid="extract-waiting">{{ waiting ?? '—' }}</span>
-              @if (showMoney()) {
-                @let m = row.money;
-                <span class="cell-secondary cell-end" data-testid="extract-net">
-                  @if (m?.netPayable; as v) { <kaff-figure [value]="v" /> } @else { <span class="none" aria-hidden="true">—</span> }
+    @if (rows().length === 0) {
+      <kaff-state mode="empty" titleKey="extract.list.empty_title" icon="file" testId="extract-list-empty" />
+    } @else {
+      <kaff-table [columns]="columns()" [columnDefs]="headerColumns()" [minInline]="minInline()" testId="extract-table-header">
+        <ul class="rows" data-testid="extract-rows">
+          @for (row of shown(); track row.id) {
+            <li class="rows-item">
+              <kaff-table-row [stacked]="true">
+                <a
+                  class="row-stretched-link"
+                  [routerLink]="['/projects', projectId(), 'extracts', row.id]"
+                  [attr.aria-label]="i18n.t('extract.number', { number: row.number })"
+                  [attr.data-testid]="'extract-row-' + row.number"
+                ></a>
+                <span class="cell-pinned cell-title num" [class.void]="row.status === 'Void'">{{ i18n.t('extract.number', { number: row.number }) }}</span>
+                <span class="cell-primary">
+                  <kaff-status-pill [tone]="pill[row.status].tone" [icon]="pill[row.status].icon">{{ i18n.t(pill[row.status].key) }}</kaff-status-pill>
                 </span>
-                <span class="cell-wide cell-end" data-testid="extract-collected">
-                  @if (m?.collected; as v) { <kaff-figure [value]="v" /> } @else { <span class="none" aria-hidden="true">—</span> }
+                @let w = waiting(row);
+                <span class="cell-wait" data-testid="extract-waiting">
+                  @if (w) {
+                    {{ w.text }}
+                    @if (w.sub) {
+                      <small>{{ w.sub }}</small>
+                    }
+                  }
                 </span>
-                <span class="cell-wide cell-end" data-testid="extract-outstanding">
-                  @if (m?.outstanding; as v) { <kaff-figure [value]="v" /> } @else { <span class="none" aria-hidden="true">—</span> }
-                </span>
-              }
-            </kaff-table-row>
-          </li>
+                <bdi class="when" dir="ltr">{{ shortDay(row.periodStart) }} – {{ shortDay(row.periodEnd) }}</bdi>
+                @if (showMoney()) {
+                  @let m = row.money;
+                  <span class="cell-wide cell-end" data-testid="extract-due">
+                    @if (m?.netPayable; as v) { <kaff-figure [value]="v" /> }
+                  </span>
+                  <span class="cell-secondary cell-end" data-testid="extract-remaining">
+                    @if (m?.outstanding; as v) { <kaff-figure [value]="v" /> }
+                  </span>
+                }
+              </kaff-table-row>
+            </li>
+          }
+        </ul>
+      </kaff-table>
+    }
+    @if (showCheques() || showChangeOrders()) {
+      <div class="subs" data-testid="extract-subsections">
+        @if (showCheques()) {
+          <kaff-forward-link [link]="['/projects', projectId(), 'extracts', 'cheques']" [label]="i18n.t('cheque.list.title')" [count]="count(chequeCount())" testId="extract-sub-cheques" />
         }
-      </ul>
-    </kaff-table>
+        @if (showChangeOrders()) {
+          <kaff-forward-link [link]="['/projects', projectId(), 'extracts', 'change-orders']" [label]="i18n.t('change_order.list.title')" [count]="count(changeOrderCount())" testId="extract-sub-change-orders" />
+        }
+      </div>
+    }
   }
   </kaff-project-frame>
 </section>

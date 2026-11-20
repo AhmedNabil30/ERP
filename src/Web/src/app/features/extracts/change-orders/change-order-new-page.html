@@ -1,0 +1,47 @@
+<ng-template #primaryAction>
+  <kaff-button variant="primary" [busy]="busy()" testId="change-order-save" (clicked)="save()">{{ i18n.t('change_order.save') }}</kaff-button>
+</ng-template>
+
+<section class="pg" data-testid="change-order-new-page">
+  <kaff-page-head [backLink]="['/projects', projectId(), 'extracts', 'change-orders']" backLabelKey="change_order.list.title" [title]="i18n.t('change_order.new')">
+    @if (project(); as p) {
+      <p class="meta"><span dir="auto">{{ p.name }}</span></p>
+    }
+  </kaff-page-head>
+
+  <div class="pane">
+    @if (actionError(); as key) {
+      <kaff-banner tone="refusal" testId="change-order-error"><b>{{ i18n.t('change_order.save_failed') }}</b> {{ i18n.t(key, actionErrorParams()) }}</kaff-banner>
+    }
+    <kaff-field labelKey="change_order.column.title" controlId="co-title" [required]="true" [errorKey]="titleError()" #tf="kaffField">
+      <input id="co-title" type="text" dir="auto" data-testid="co-title" [value]="title()" [attr.aria-invalid]="titleError() ? 'true' : null" [attr.aria-describedby]="tf.describedById()" (input)="title.set($any($event.target).value)" />
+    </kaff-field>
+
+    @if (priced()) {
+      <h2 class="sec-h">{{ i18n.t('change_order.lines') }}</h2>
+      <div class="edt" data-testid="co-lines">
+        @if (noLines()) {
+          <div class="edt-empty"><kaff-banner tone="refusal" testId="co-no-lines">{{ i18n.t('change_order.lines_required') }}</kaff-banner></div>
+        }
+        @for (line of lines(); track line.key; let k = $index) {
+          <div class="ln" [attr.data-testid]="'co-line-' + k">
+            <kaff-field class="f-d" labelKey="change_order.line.description" [controlId]="'co-d' + line.key" [required]="true" [errorKey]="errorOf(k, 'description')">
+              <input type="text" dir="auto" [id]="'co-d' + line.key" [attr.data-testid]="'co-d' + k" [value]="line.description" [attr.aria-invalid]="errorOf(k, 'description') ? 'true' : null" (input)="edit(line.key, 'description', $any($event.target).value)" />
+            </kaff-field>
+            <kaff-field labelKey="change_order.line.unit" [controlId]="'co-u' + line.key" [required]="true" [errorKey]="errorOf(k, 'unit')">
+              <input type="text" dir="auto" [id]="'co-u' + line.key" [attr.data-testid]="'co-u' + k" [value]="line.unit" [attr.aria-invalid]="errorOf(k, 'unit') ? 'true' : null" (input)="edit(line.key, 'unit', $any($event.target).value)" />
+            </kaff-field>
+            <kaff-field labelKey="change_order.line.quantity" [controlId]="'co-q' + line.key" [required]="true" [errorKey]="errorOf(k, 'quantity')">
+              <input type="text" inputmode="decimal" dir="ltr" [id]="'co-q' + line.key" [attr.data-testid]="'co-q' + k" [value]="line.quantity" [attr.aria-invalid]="errorOf(k, 'quantity') ? 'true' : null" (input)="edit(line.key, 'quantity', $any($event.target).value)" />
+            </kaff-field>
+            <kaff-money-field labelKey="change_order.line.price" [controlId]="'co-r' + line.key" [required]="true" [errorKey]="errorOf(k, 'unitPrice')" [testId]="'co-r' + k" [value]="line.unitPrice" (valueChange)="edit(line.key, 'unitPrice', $event)" />
+            <button type="button" class="ib" [attr.aria-label]="i18n.t('change_order.line.remove')" [attr.data-testid]="'co-remove-' + k" (click)="remove(line.key)"><kaff-icon name="x" /></button>
+          </div>
+        }
+        <div class="ft2">
+          <kaff-button variant="secondary" testId="co-add" (clicked)="add()"><kaff-icon name="plus" [small]="true" />{{ i18n.t('change_order.line.add') }}</kaff-button>
+        </div>
+      </div>
+    }
+  </div>
+</section>

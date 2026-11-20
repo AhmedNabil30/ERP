@@ -1,0 +1,91 @@
+/* The project frame's stage line (kaff-project-frame.css), seven steps wide. Logical properties only. */
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+.stl {
+  list-style: none;
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  max-inline-size: 860px;
+}
+
+.stl li {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  text-align: center;
+  font: 600 var(--text-xs) / 1.3 var(--display);
+  color: var(--dim);
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.stl li::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 12px;
+  inset-inline-start: -50%;
+  inset-inline-end: 50%;
+  border-block-start: 2px dashed var(--line);
+}
+
+.stl li:first-child::before {
+  display: none;
+}
+
+.stl li.done::before,
+.stl li.cur::before {
+  border-block-start: 2px solid var(--ink);
+}
+
+.mk {
+  position: relative;
+  z-index: 1;
+  inline-size: 26px;
+  block-size: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--fieldline);
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  color: var(--bg);
+}
+
+.stl li.done .mk {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.stl li.done,
+.stl li.cur {
+  color: var(--ink);
+}
+
+.stl li.cur {
+  font-weight: 700;
+}
+
+.stl li.cur .mk {
+  border-width: 3px;
+}
+
+.stl li.cur .mk::after {
+  content: '';
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+@media (width <= 820px) {
+  .stl li {
+    font-size: 0.6875rem;
+  }
+}

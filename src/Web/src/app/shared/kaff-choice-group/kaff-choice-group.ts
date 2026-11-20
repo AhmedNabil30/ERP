@@ -5,6 +5,8 @@ import { I18nService } from '../../core/i18n/i18n.service';
 export interface Choice {
   readonly value: string;
   readonly labelKey: string;
+  /** A dim second line under the label (where the choice leads). */
+  readonly hintKey?: string;
 }
 
 let nextId = 0;
@@ -29,7 +31,7 @@ export class KaffChoiceGroup {
   readonly errorKey = input<string | null>(null);
   readonly disabled = input(false);
   /** Two columns side by side (the team sheet's seniority: two short words). Default one. */
-  readonly columns = input<1 | 2>(1);
+  readonly columns = input<1 | 2 | 3>(1);
   /** Prefix for each row's `data-testid` (`<prefix>-<value>`) and for the error. */
   readonly testId = input.required<string>();
 

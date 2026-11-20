@@ -1,0 +1,234 @@
+/*
+  The extract chain's page body (extracts.html "pane", "sec-h", "more", "lst", "lead", "g2"), shared by every screen of
+  the chain so none restyles its own version. Logical properties only; colour is tokens only.
+*/
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+.pg {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  min-inline-size: 0;
+}
+
+.pane {
+  display: grid;
+  gap: 16px;
+  max-inline-size: 860px;
+  min-inline-size: 0;
+}
+
+.pane.wide {
+  max-inline-size: 1180px;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 6px 18px;
+  flex-wrap: wrap;
+  margin: 2px 0 0;
+  color: var(--dim);
+  font-size: 0.9375rem;
+}
+
+.sec-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 6px 0 -4px;
+  font: 600 1.0625rem / 1.4 var(--display);
+}
+
+.more {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-block-start: 1px solid var(--line);
+  padding-block-start: 16px;
+}
+
+.subs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 28px;
+  border-block-start: 1px solid var(--line);
+  padding-block-start: 8px;
+}
+
+.lead {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 16px;
+}
+
+.lead small {
+  color: var(--dim);
+  font-size: 0.875rem;
+}
+
+.lead .ttl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.big {
+  font: 700 2rem / 1.2 var(--body);
+}
+
+.g2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.lst {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.lst > li {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 14px;
+  padding: 10px 16px;
+  border-block-start: 1px solid var(--line);
+  align-items: center;
+  min-block-size: 60px;
+}
+
+.lst > li:first-child {
+  border-block-start: 0;
+}
+
+.lst b {
+  font-weight: 600;
+}
+
+.lst small {
+  grid-column: 1 / -1;
+  color: var(--dim);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.lst .r {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  color: var(--dim);
+  font-size: 0.875rem;
+}
+
+.lst .bar {
+  grid-column: 1 / -1;
+  font-size: 0.8125rem;
+}
+
+.lst .l3 {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: var(--dim);
+  font-size: 0.875rem;
+}
+
+.lst .void b {
+  text-decoration: line-through;
+}
+
+/* A row that opens its record: one stretched link, so the whole row is the target. */
+.lst > li.go {
+  min-block-size: 76px;
+}
+
+.lst > li.go:hover {
+  background: var(--hover);
+}
+
+.stretch {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.stretch:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+
+.lh {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 16px;
+  font: 600 0.8125rem / 1.3 var(--body);
+  color: var(--dim);
+  background: var(--head);
+  border: 1px solid var(--line);
+  border-block-end: 0;
+  border-start-start-radius: var(--radius);
+  border-start-end-radius: var(--radius);
+}
+
+.lh + .lst {
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+}
+
+.consequence {
+  margin: 0;
+}
+
+.sheet-form {
+  display: grid;
+  gap: 16px;
+}
+
+.panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.d-only {
+  display: block;
+}
+
+.m-only {
+  display: none;
+}
+
+@media (width <= 820px) {
+  .g2 {
+    grid-template-columns: 1fr;
+  }
+
+  .d-only {
+    display: none;
+  }
+
+  .m-only {
+    display: block;
+  }
+}

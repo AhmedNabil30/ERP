@@ -15,7 +15,7 @@ import { KaffIcon } from '../kaff-icon/kaff-icon';
   imports: [RouterLink, KaffIcon],
   template: `<header class="head">
     <a class="back" [routerLink]="backLink()" data-testid="page-back">
-      <kaff-icon name="back" />{{ i18n.t(backLabelKey()) }}
+      <kaff-icon name="back" />{{ backLabel() ?? i18n.t(backLabelKey()) }}
     </a>
     <div class="ttl">
       <h1 class="title" dir="auto" data-testid="page-title">{{ title() }}</h1>
@@ -30,6 +30,8 @@ export class KaffPageHead {
   protected readonly i18n = inject(I18nService);
 
   readonly backLink = input.required<readonly string[]>();
-  readonly backLabelKey = input.required<string>();
+  readonly backLabelKey = input('');
+  /** The back label as text, when it names a record («مستخلص 3»). Wins over the key. */
+  readonly backLabel = input<string | null>(null);
   readonly title = input.required<string>();
 }

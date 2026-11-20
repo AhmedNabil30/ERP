@@ -20,7 +20,9 @@ export type ExtractStatus =
   | 'DeductionsApplied'
   | 'OwnerApproved'
   | 'Issued'
-  | 'Collected';
+  | 'Collected'
+  | 'Disputed'
+  | 'Void';
 
 export type ExtractGate =
   | 'Prepared'
@@ -31,9 +33,13 @@ export type ExtractGate =
   | 'Issue'
   | 'Collect'
   | 'HeldPortionRelease'
-  | 'EvidenceRevised';
+  | 'EvidenceRevised'
+  | 'Dispute'
+  | 'DisputeResolution'
+  | 'ChequeBounce'
+  | 'Cancellation';
 
-export type ExtractGateOutcome = 'Passed' | 'PartiallyPassed' | 'Rejected';
+export type ExtractGateOutcome = 'Passed' | 'PartiallyPassed' | 'Rejected' | 'Reversed';
 
 export type FigureKind = 'Calculated' | 'Entered' | 'Carried';
 
@@ -79,6 +85,43 @@ export interface ExtractActions {
   readonly issue: boolean;
   readonly reviseEvidence: boolean;
   readonly callerMayDecide: boolean;
+  /** Record a payment or a cheque now (D-238 item 6). */
+  readonly recordCollection: boolean;
+  /** Deposit, clear or bounce a cheque still in hand. */
+  readonly recordChequeMove: boolean;
+  /** Reverse every standing payment at once. */
+  readonly reverseCollection: boolean;
+  readonly raiseDispute: boolean;
+  readonly resolveDispute: boolean;
+}
+
+/** What an issued extract expects and has received, derived on every read (D-238 item 3, D-245 item 5). Money viewers only. */
+export interface ExtractCollection {
+  /** Net payable less approved credit notes. */
+  readonly expected: string;
+  readonly expectedWithheld: string;
+  /** Received plus withheld. */
+  readonly collected: string;
+  /** What the cheques in hand will settle: face value plus what was withheld with them. */
+  readonly inCheques: string;
+  readonly remaining: string;
+  readonly received: string;
+  readonly withheld: string;
+}
+
+/** An approved change order billed on the extract. `amount` is null for a viewer who may not see money. */
+export interface ExtractChangeOrder {
+  readonly changeOrderId: string;
+  readonly number: number;
+  readonly title: string;
+  readonly amount: string | null;
+}
+
+/** The other end of a revision link (D-241 item 2). */
+export interface ExtractLink {
+  readonly id: string;
+  readonly number: number;
+  readonly status: ExtractStatus;
 }
 
 export interface ExtractEvidence {
@@ -142,6 +185,45 @@ export interface Extract {
   readonly evidence: ExtractEvidence | null;
   /** Null for a viewer who may not see money, and until Accounts has applied the deductions. */
   readonly document: ExtractDocument | null;
+  readonly changeOrders: readonly ExtractChangeOrder[] | null;
+  readonly waitingOn: WaitingOnBlock;
+  /** Null for a viewer who may not see money, and before the extract is issued. */
+  readonly collection: ExtractCollection | null;
+  /** The client's dispute reason, once disputed. */
+  readonly disputeReason?: string | null;
+  /** On a revised extract: the cancelled original. */
+  readonly revises?: ExtractLink | null;
+  /** On a cancelled original: the extract that replaces it. */
+  readonly revisedBy?: ExtractLink | null;
+}
+
+export type CollectionMethod = 'Cash' | 'Cheque' | 'Transfer';
+export type ChequeState = 'Received' | 'Deposited' | 'Cleared' | 'Bounced';
+export type RejectionKind = 'Quantities' | 'MaterialValues';
+export type DisputeResolutionKind = 'CreditNote' | 'RevisedExtract';
+
+/** What a payment records (D-238 item 3): what arrived, and what the client withheld with it. Amounts are wire strings. */
+export interface CollectRequest {
+  readonly method: CollectionMethod;
+  /** `yyyy-MM-dd`, the site day or earlier (D-240 item 3). */
+  readonly date: string;
+  readonly reference: string;
+  readonly cashReceived: string;
+  readonly withheldAtSource: string;
+}
+
+/** `GET …/extracts/{id}/collection`: one recorded payment. */
+export interface CollectionView {
+  readonly id: string;
+  readonly method: CollectionMethod;
+  readonly date: string;
+  readonly reference: string;
+  readonly cashReceived: string;
+  readonly withheldAtSource: string;
+  readonly reversed: boolean;
+  readonly chequeId: string | null;
+  readonly chequeState: ChequeState | null;
+  readonly recordedAt: string;
 }
 
 /** A person on the project's staff, as the waiting-on read names them. No contact data. */
@@ -156,6 +238,8 @@ export interface WaitingStaff {
 export interface WaitingOnBlock {
   /** The extract's CURRENT status; the step waited for is the one that leaves it. */
   readonly status: string;
+  /** The permission the next step needs; null once nothing waits. */
+  readonly permission?: string | null;
   readonly roles: readonly { readonly role: Role; readonly minimumLevel: AssignmentLevel }[];
   readonly isDecisionGate: boolean;
   readonly isTerminal: boolean;
@@ -174,7 +258,6 @@ export interface WaitingOnItem {
 
 /** The POST steps that carry no body of their own. */
 export type ExtractStep =
-  | 'qc-report'
   | 'technical-approval'
   | 'deductions'
   | 'owner-approval'
@@ -206,21 +289,44 @@ export class ExtractsApi {
     await firstValueFrom(this.http.post(`${this.base(projectId)}/${id}/${step}`, {}));
   }
 
-  async reject(projectId: string, id: string, gate: RejectionGate, reason: string): Promise<void> {
-    await firstValueFrom(this.http.post(`${this.base(projectId)}/${id}/${gate}`, { reason }));
+  /** D-242 item 2: a rejection names where the error is, so it lands on the person who can change it. */
+  async reject(projectId: string, id: string, gate: RejectionGate, reason: string, kind: RejectionKind): Promise<void> {
+    await firstValueFrom(this.http.post(`${this.base(projectId)}/${id}/${gate}`, { reason, kind }));
   }
 
-  async reviseEvidence(
-    projectId: string,
-    id: string,
-    materialValueOnSite: string,
-    materialInstalled: string,
-  ): Promise<void> {
-    await firstValueFrom(
-      this.http.post(`${this.base(projectId)}/${id}/evidence-revision`, {
-        materialValueOnSite,
-        materialInstalled,
-      }),
-    );
+  /** D-238 item 4: the supervising engineer enters both material values with the QC report. */
+  async submitQcReport(projectId: string, id: string, materialValueOnSite: string, materialInstalled: string): Promise<void> {
+    await firstValueFrom(this.http.post(`${this.base(projectId)}/${id}/qc-report`, { materialValueOnSite, materialInstalled }));
+  }
+
+  /** No body: the revision re-reads the corrected daily logs (D-238 item 4). */
+  async reviseEvidence(projectId: string, id: string): Promise<void> {
+    await firstValueFrom(this.http.post(`${this.base(projectId)}/${id}/evidence-revision`, {}));
+  }
+
+  /** The junior site engineer starts the extract with the period only (D-238 item 4, D-241 item 1). */
+  async prepare(projectId: string, periodStart: string, periodEnd: string): Promise<Extract> {
+    return await firstValueFrom(this.http.post<Extract>(this.base(projectId), { periodStart, periodEnd }));
+  }
+
+  async collect(projectId: string, id: string, request: CollectRequest): Promise<void> {
+    await firstValueFrom(this.http.post(`${this.base(projectId)}/${id}/collect`, request));
+  }
+
+  async collections(projectId: string, id: string): Promise<readonly CollectionView[]> {
+    return await firstValueFrom(this.http.get<CollectionView[]>(`${this.base(projectId)}/${id}/collection`));
+  }
+
+  async reverseCollection(projectId: string, id: string, reason: string): Promise<void> {
+    await firstValueFrom(this.http.post(`${this.base(projectId)}/${id}/collection-reversal`, { reason }));
+  }
+
+  async raiseDispute(projectId: string, id: string, reason: string): Promise<void> {
+    await firstValueFrom(this.http.post(`${this.base(projectId)}/${id}/dispute`, { reason }));
+  }
+
+  /** A price dispute ends in a credit note of `amount`; a quantity dispute in a revised extract (amount 0). */
+  async resolveDispute(projectId: string, id: string, kind: DisputeResolutionKind, reason: string, amount: string): Promise<void> {
+    await firstValueFrom(this.http.post(`${this.base(projectId)}/${id}/dispute-resolution`, { kind, reason, amount }));
   }
 }

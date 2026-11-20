@@ -1,0 +1,59 @@
+<div class="sheet-form" [attr.data-testid]="testIdPrefix() + '-form'">
+  <kaff-choice-group
+    [choices]="methods"
+    legendKey="collection.method"
+    [required]="true"
+    [columns]="3"
+    [errorKey]="errors().method"
+    [testId]="testIdPrefix() + '-method'"
+    [(value)]="method"
+  />
+  <div class="g2">
+    <kaff-field labelKey="collection.date" [controlId]="testIdPrefix() + '-date'" [required]="true" [errorKey]="errors().date ?? (refusalKey() === 'errors.treasury.posting_date_out_of_range' ? 'collection.date_future' : null)" #df="kaffField">
+      <input
+        type="date"
+        dir="ltr"
+        [id]="testIdPrefix() + '-date'"
+        [max]="today"
+        [value]="date()"
+        [attr.aria-invalid]="errors().date ? 'true' : null"
+        [attr.aria-describedby]="df.describedById()"
+        [attr.data-testid]="testIdPrefix() + '-date'"
+        (input)="onDate($event)"
+      />
+    </kaff-field>
+    <kaff-field [labelKey]="referenceKey()" [controlId]="testIdPrefix() + '-reference'" [required]="true" [errorKey]="errors().reference" #rf="kaffField">
+      <input
+        type="text"
+        dir="ltr"
+        autocomplete="off"
+        [id]="testIdPrefix() + '-reference'"
+        [value]="reference()"
+        [attr.aria-invalid]="errors().reference ? 'true' : null"
+        [attr.aria-describedby]="rf.describedById()"
+        [attr.data-testid]="testIdPrefix() + '-reference'"
+        (input)="onReference($event)"
+      />
+    </kaff-field>
+  </div>
+  <div class="g2">
+    <kaff-money-field
+      labelKey="collection.cash"
+      [controlId]="testIdPrefix() + '-cash'"
+      [required]="true"
+      [errorKey]="errors().cash ?? cashRefusal()"
+      [errorParams]="{ amount: remainingText() }"
+      [testId]="testIdPrefix() + '-cash'"
+      [(value)]="cash"
+    />
+    @if (withholding()) {
+      <kaff-money-field
+        labelKey="collection.withheld"
+        [controlId]="testIdPrefix() + '-withheld'"
+        [errorKey]="errors().withheld"
+        [testId]="testIdPrefix() + '-withheld'"
+        [(value)]="withheld"
+      />
+    }
+  </div>
+</div>

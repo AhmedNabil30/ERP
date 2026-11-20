@@ -17113,3 +17113,17 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 **Gates at hand-back.** Build 0/0 (no-incremental); Domain 800/800; Api 1261 passed, 2 skipped, 1 failed of 1264. The failure is `SubcontractorRetentionEndpointTests.The_release_is_refused_before_the_warranty_ends_and_posts_nothing`, a test that takes today from the UTC date while the server uses the Cairo site day, so it fails between 22:00 and 24:00 UTC; the code under it is unchanged. `ng test` 515/515; format clean apart from ENDOFLINE; health leastPrivilege true; smoke passed.
 
 **Open.** A revision's hold-to-date memo shows the sum of both holds instead of the larger (display only). No reversal of a released-hold collection. A revision of a revision carries payments only one level. The seven waiting-line task words and four new error strings need `arabic-copy`.
+
+## D-246 — The extract chain screens as built, and the server reads they still lack · 2026-11-20
+
+**Source.** Built by `ui-designer` in build mode from the mock approved in D-242, on the server of D-243 and D-245.
+
+1. **Built:** E1 list (the Extracts tab, with sub-section links to cheques in hand and change orders, D-241 §3), E2 new extract, E3 extract (chain line, waiting line, banners, collection position, document with «الحجز حتى تاريخه», QC values sheet, reject sheet with the kind picker, Owner confirm), E5 record a payment, E6 payments, E7 cheques in hand, E8 and E9 dispute, E10 credit note, E11 to E13 change orders, and the released-hold collection on the closure screen through the same collection form. Routes sit under `/projects/:projectId/extracts`.
+2. **The three wire breaks are fixed:** QC sends both material values, reject sends `{reason, kind}`, evidence revision sends no money.
+3. **Every action follows a server flag.** Credit notes have no flags yet, so the decision shows when the viewer is a holder on `waitingOn`; preparing has no flag, so «مستخلص جديد» uses the session's ExtractPrepare permission. The server still decides both.
+4. **Departures from the mock:** no line or grand total on a new change order (no money arithmetic in the browser, D-135); the change-order unit is free text; «إصدار» has no confirm, as in the mock.
+5. **Kit:** new parts `kaff-chain-line`, `kaff-waiting-line`, `kaff-figure-list`, `kaff-collection-position`, `kaff-forward-link`; the primary-action allowlist shrank by one.
+
+**Not built, because the server does not send it:** the withholding row on contract terms (no `withholdingCategory` or edit flag on the project read); E4 partial approval (no NCR read; journey Q12 and Q13 unruled); the quantities table on E2 and E3; names in the history (gate records carry ids); cheques-in-hand and remaining figures and the revision link on the list; the withholding category name on E5; a credit-note summary on the extract read; a waiting line for a raised credit note; cheque action flags, so a released-hold cheque cannot be moved from E7.
+
+**Gates at hand-back.** Build 0/0; Domain 800/800; Api 1262 passed, 2 skipped of 1264, exit 0 (including the site-day fix to `SubcontractorRetentionEndpointTests`); `ng test` 581/581; production build exit 0; format clean apart from ENDOFLINE; `driver.mjs layout` 46 of 46 PASS at 390 and 1440 across Owner, Finance, supervisor, junior and Technical Office; smoke passed. No per-role end-to-end chain was added; about 30 new Arabic strings beyond the mock are guesses awaiting `arabic-copy`.

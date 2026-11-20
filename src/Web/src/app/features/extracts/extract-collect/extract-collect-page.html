@@ -1,0 +1,46 @@
+<ng-template #primaryAction>
+  <kaff-button variant="primary" [busy]="busy()" testId="collect-submit" (clicked)="submit()">{{ i18n.t('collection.record') }}</kaff-button>
+</ng-template>
+
+<section class="pg" data-testid="extract-collect-page">
+  <kaff-page-head [backLink]="['/projects', projectId(), 'extracts', extractId()]" [backLabel]="name()" [title]="i18n.t('collection.record')">
+    <p class="meta">
+      @if (project(); as p) {
+        <span dir="auto">{{ p.clientName }}</span>
+      }
+      @if (data()) {
+        <span>{{ name() }}</span>
+      }
+    </p>
+  </kaff-page-head>
+
+  @if (failure(); as key) {
+    <kaff-banner tone="refusal" testId="collect-failure">
+      <b>{{ i18n.t('extract.failed') }}</b> {{ i18n.t(key) }}
+      <kaff-button bannerActions variant="secondary" testId="collect-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+    </kaff-banner>
+  } @else if (loading()) {
+    <kaff-state mode="loading" titleKey="extract.loading" testId="collect-loading" />
+  } @else if (data(); as x) {
+    <div class="pane">
+      @if (refusal(); as why) {
+        <kaff-state mode="refusal" icon="lock" [titleText]="why" testId="collect-refused">
+          @if (creditNote(); as note) {
+            <a stateAction class="lnk" [routerLink]="['/projects', projectId(), 'extracts', x.id, 'credit-notes', note.id]" data-testid="collect-open-credit-note">{{ i18n.t('credit_note.open') }}</a>
+          } @else {
+            <a stateAction class="lnk" [routerLink]="['/projects', projectId(), 'extracts', x.id]" data-testid="collect-open-extract">{{ i18n.t('extract.open_extract') }}</a>
+          }
+        </kaff-state>
+      } @else {
+        @if (bannerRefusal(); as key) {
+          <kaff-banner tone="refusal" testId="collect-error">{{ i18n.t(key, actionErrorParams()) }}</kaff-banner>
+        }
+        @if (x.collection; as c) {
+          <h2 class="sec-h">{{ i18n.t('collection.heading') }}</h2>
+          <kaff-collection-position [expected]="c.expected" [received]="c.received" [withheld]="c.withheld" [inCheques]="c.inCheques" [remaining]="c.remaining" testId="collect-position" />
+          <kaff-collection-form [withholding]="withholding()" [remaining]="c.remaining" [refusalKey]="fieldRefusal()" />
+        }
+      }
+    </div>
+  }
+</section>

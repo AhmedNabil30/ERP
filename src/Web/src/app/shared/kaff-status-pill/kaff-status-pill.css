@@ -37,3 +37,34 @@
   color: var(--dim);
   box-shadow: inset 0 0 0 1px var(--line);
 }
+
+/* The extract chain's set (README "Extract chain", kit item 1). Shape and word carry the state with the tone. */
+.pl--none {
+  color: var(--st-none-ink);
+  box-shadow: inset 0 0 0 1.5px currentColor;
+}
+
+.pl--run {
+  background: var(--st-run-bg);
+  color: var(--st-run-ink);
+}
+
+.pl--out {
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1.5px currentColor;
+}
+
+.pl--done {
+  background: var(--st-done-bg);
+  color: var(--st-done-ink);
+}
+
+.pl--stuck {
+  background: var(--st-stuck-bg);
+  color: var(--st-stuck-ink);
+}
+
+.pl--post {
+  background: var(--st-post-bg);
+  color: var(--st-post-ink);
+}

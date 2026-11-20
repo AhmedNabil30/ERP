@@ -119,3 +119,15 @@ input {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
+.lbl small {
+  display: block;
+  color: var(--dim);
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+.rows.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}

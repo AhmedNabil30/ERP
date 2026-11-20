@@ -1,0 +1,75 @@
+<ng-template #primaryAction>
+  <kaff-button variant="primary" [busy]="busy()" testId="credit-note-approve" (clicked)="approve()">{{ i18n.t('credit_note.approve') }}</kaff-button>
+</ng-template>
+
+<section class="pg" data-testid="credit-note-page">
+  <kaff-page-head [backLink]="['/projects', projectId(), 'extracts', extractId()]" [backLabel]="name()" [title]="i18n.t('credit_note.title')">
+    @if (note(); as n) {
+      <kaff-status-pill titleAside [tone]="pill[n.status].tone" [icon]="pill[n.status].icon" testId="credit-note-status">{{ i18n.t(pill[n.status].key) }}</kaff-status-pill>
+    }
+    <p class="meta">
+      @if (project(); as p) {
+        <span dir="auto">{{ p.clientName }}</span>
+      }
+      @if (extract()) {
+        <span>{{ name() }}</span>
+      }
+    </p>
+  </kaff-page-head>
+
+  @if (failure(); as key) {
+    <kaff-banner tone="refusal" testId="credit-note-failure">
+      <b>{{ i18n.t('credit_note.failed') }}</b> {{ i18n.t(key) }}
+      <kaff-button bannerActions variant="secondary" testId="credit-note-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+    </kaff-banner>
+  } @else if (loading()) {
+    <kaff-state mode="loading" titleKey="extract.loading" testId="credit-note-loading" />
+  } @else if (note(); as n) {
+    <div class="pane">
+      @if (actionError(); as key) {
+        @if (!rejecting()) {
+          <kaff-banner tone="refusal" testId="credit-note-error">{{ i18n.t(key, actionErrorParams()) }}</kaff-banner>
+        }
+      }
+      @if (n.status === 'Approved' && n.decidedAt) {
+        <kaff-banner tone="ok" testId="credit-note-approved">{{ i18n.t('credit_note.approved_on', { date: shortDay(n.decidedAt) }) }}</kaff-banner>
+      }
+      @if (n.status === 'Rejected') {
+        <kaff-banner tone="refusal" testId="credit-note-rejected">
+          <b>{{ i18n.t('credit_note.rejected_on', { date: shortDay(n.decidedAt ?? n.raisedAt) }) }}</b><br /><span dir="auto">{{ n.decisionReason }}</span>
+        </kaff-banner>
+      }
+      @if (raisedByMe()) {
+        <kaff-banner tone="note" testId="credit-note-raiser">{{ i18n.t('credit_note.raiser') }}</kaff-banner>
+      }
+      @if (waiting(); as w) {
+        <kaff-waiting-line [text]="w" testId="credit-note-waiting" />
+      }
+      <div class="lead">
+        <small>{{ i18n.t('credit_note.amount_unit') }}</small>
+        <span class="big" data-testid="credit-note-amount"><kaff-figure [value]="n.amount" /></span>
+      </div>
+      <kaff-figure-list [rows]="facts()" testId="credit-note-facts" />
+      @if (mayDecide()) {
+        <div class="more">
+          <kaff-button variant="secondary" testId="credit-note-reject" (clicked)="openReject()">{{ i18n.t('extract.action.reject') }}</kaff-button>
+        </div>
+      }
+    </div>
+
+    <kaff-detail-panel [open]="rejecting()" [title]="i18n.t('credit_note.reject_title')" testId="credit-note-reject-sheet" (closed)="rejecting.set(false)">
+      <div panelBody class="sheet-form">
+        @if (actionError(); as key) {
+          <kaff-banner tone="refusal">{{ i18n.t(key, actionErrorParams()) }}</kaff-banner>
+        }
+        <kaff-field labelKey="extract.reject.reason" controlId="credit-note-reason" [required]="true" [errorKey]="reasonError()" #rf="kaffField">
+          <textarea id="credit-note-reason" data-testid="credit-note-reason" [attr.aria-invalid]="reasonError() ? 'true' : null" [attr.aria-describedby]="rf.describedById()" [value]="reason()" (input)="reason.set($any($event.target).value)"></textarea>
+        </kaff-field>
+      </div>
+      <div panelFooter class="panel-actions">
+        <kaff-button variant="primary" [busy]="busy()" testId="credit-note-reject-submit" (clicked)="reject()">{{ i18n.t('credit_note.reject_submit') }}</kaff-button>
+        <kaff-button variant="secondary" [disabled]="busy()" testId="credit-note-reject-cancel" (clicked)="rejecting.set(false)">{{ i18n.t('extract.cancel') }}</kaff-button>
+      </div>
+    </kaff-detail-panel>
+  }
+</section>

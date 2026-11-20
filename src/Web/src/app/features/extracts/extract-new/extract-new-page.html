@@ -1,0 +1,54 @@
+<ng-template #primaryAction>
+  <kaff-button variant="primary" [busy]="busy()" testId="extract-create" (clicked)="submit()">{{ i18n.t('extract.new.create') }}</kaff-button>
+</ng-template>
+
+<section class="pg" data-testid="extract-new-page">
+  <kaff-page-head [backLink]="['/projects', projectId(), 'extracts']" backLabelKey="extract.list.title" [title]="i18n.t('extract.new')">
+    @if (project(); as p) {
+      <p class="meta"><span dir="auto">{{ p.name }}</span></p>
+    }
+  </kaff-page-head>
+
+  @if (failure(); as key) {
+    <kaff-banner tone="refusal" testId="extract-new-failure">
+      {{ i18n.t(key) }}
+      <kaff-button bannerActions variant="secondary" testId="extract-new-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+    </kaff-banner>
+  } @else if (loading()) {
+    <kaff-state mode="loading" titleKey="extract.loading" testId="extract-new-loading" />
+  } @else if (inFlight(); as open) {
+    <div class="pane">
+      <kaff-state mode="refusal" icon="lock" [titleText]="i18n.t('extract.new.in_flight', { number: open.number })" testId="extract-new-in-flight">
+        <a stateAction class="lnk" [routerLink]="['/projects', projectId(), 'extracts', open.id]" data-testid="extract-new-open">{{ i18n.t('extract.open', { number: open.number }) }}</a>
+      </kaff-state>
+    </div>
+  } @else if (unsigned()) {
+    <div class="pane">
+      <kaff-state mode="refusal" icon="lock" titleKey="extract.new.boq_unsigned" testId="extract-new-unsigned" />
+    </div>
+  } @else {
+    <div class="pane">
+      @if (actionError(); as key) {
+        <kaff-banner tone="refusal" testId="extract-new-error"><b>{{ i18n.t('extract.new.failed') }}</b> {{ i18n.t(key, actionErrorParams()) }}</kaff-banner>
+      }
+      @if (last(); as l) {
+        <div class="lead" data-testid="extract-new-last">
+          <small>{{ i18n.t('extract.new.last') }}</small>
+          <div class="ttl">
+            <b>{{ i18n.t('extract.number', { number: l.number }) }}</b>
+            <kaff-status-pill [tone]="pill[l.status].tone" [icon]="pill[l.status].icon">{{ i18n.t(pill[l.status].key) }}</kaff-status-pill>
+          </div>
+        </div>
+      }
+      <h2 class="sec-h">{{ i18n.t('extract.list.column.period') }}</h2>
+      <div class="g2">
+        <kaff-field labelKey="extract.new.from" controlId="extract-from" [required]="true" [errorKey]="errors().from" #ff="kaffField">
+          <input id="extract-from" type="date" dir="ltr" data-testid="extract-from" [value]="from()" [attr.aria-invalid]="errors().from ? 'true' : null" [attr.aria-describedby]="ff.describedById()" (input)="from.set($any($event.target).value)" />
+        </kaff-field>
+        <kaff-field labelKey="extract.new.to" controlId="extract-to" [required]="true" [errorKey]="errors().to" #tf="kaffField">
+          <input id="extract-to" type="date" dir="ltr" data-testid="extract-to" [value]="to()" [attr.aria-invalid]="errors().to ? 'true' : null" [attr.aria-describedby]="tf.describedById()" (input)="to.set($any($event.target).value)" />
+        </kaff-field>
+      </div>
+    </div>
+  }
+</section>

@@ -45,6 +45,7 @@
 .when {
   color: var(--dim);
   font-size: var(--text-sm);
+  white-space: nowrap;
 }
 
 /* The period appears once per width: in its own column on a table, under the number on a phone. */
@@ -83,4 +84,22 @@
   .pg {
     padding-inline: 16px;
   }
+}
+
+.cell-wait small {
+  display: block;
+  font-size: var(--text-xs);
+}
+
+.void {
+  text-decoration: line-through;
+}
+
+.subs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 28px;
+  margin-block-start: var(--space-3);
+  border-block-start: 1px solid var(--line);
+  padding-block-start: 8px;
 }

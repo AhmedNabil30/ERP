@@ -60,7 +60,7 @@
         } @else if (internal()) {
           <kaff-icon [name]="'eyeoff'" [small]="true" />
         }
-        <span>{{ i18n.t(key) }}</span>
+        <span>{{ errorKey() !== null ? i18n.t(key, errorParams()) : i18n.t(key) }}</span>
       </p>
     }
   </div>

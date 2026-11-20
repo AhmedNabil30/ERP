@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { AuthService, ProjectEntry, Role, Session } from '../../core/auth/auth.service';
 import { ClosureApi, Snag, WarrantyCallback } from '../../core/closure/closure.api';
+import { ChainApi } from '../../core/extracts/chain.api';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { ProofApi, ProofResponse } from '../../core/proof/proof.api';
 import { ContractType, ProjectDetail, ProjectStatus, ProjectsApi } from '../../core/projects/projects.api';
@@ -373,5 +374,59 @@ describe('ClosurePage', () => {
     fixture.componentRef.setInput('projectId', 'p-1');
     await settle(fixture);
     expect(q(fixture, 'closure-failure')).not.toBeNull();
+  });
+});
+
+describe('ClosurePage: the released hold is collected through the extract collection form (D-244 item 2)', () => {
+  const position = { projectId: 'p-1', expected: '200000.0000', received: '0', withheld: '0', inCheques: '0', remaining: '200000.0000' };
+
+  async function openWithHold(permissions: readonly string[], collectReleasedHold = async (): Promise<void> => undefined) {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideRouter([]),
+        { provide: ClosureApi, useValue: new FakeClosureApi() },
+        { provide: ProjectsApi, useValue: { get: async () => project('Handover') } },
+        { provide: ProofApi, useValue: { get: async () => proof('200000.0000', true) } },
+        { provide: SubcontractorsApi, useValue: { list: async () => [] } },
+        { provide: ChainApi, useValue: { releasedHold: async () => position, collectReleasedHold } },
+        { provide: AuthService, useValue: { current: signal(session('Finance', permissions)) } },
+        { provide: I18nService, useClass: FakeI18nService },
+      ],
+    });
+    const fixture = TestBed.createComponent(ClosurePage);
+    fixture.componentRef.setInput('projectId', 'p-1');
+    await settle(fixture);
+    return fixture;
+  }
+
+  it('shows Finance the position and records a payment with the same form', async () => {
+    const sent: unknown[] = [];
+    const fixture = await openWithHold([...FINANCE, 'ExtractCollect'], async (...args: unknown[]) => {
+      sent.push(args);
+    });
+    expect(q(fixture, 'closure-hold-position')?.textContent).toContain('200000.0000');
+    q(fixture, 'closure-hold-collect')?.click();
+    await settle(fixture);
+    expect(q(fixture, 'hold-collect-form')).not.toBeNull();
+
+    (q(fixture, 'hold-collect-method-Transfer') as HTMLInputElement).click();
+    const reference = q(fixture, 'hold-collect-reference') as HTMLInputElement;
+    reference.value = 'TR-9';
+    reference.dispatchEvent(new Event('input'));
+    const cash = q(fixture, 'hold-collect-cash') as HTMLInputElement;
+    cash.value = '200000';
+    cash.dispatchEvent(new Event('input'));
+    q(fixture, 'closure-hold-collect-submit')?.click();
+    await settle(fixture);
+    expect(sent).toHaveLength(1);
+    expect((sent[0] as unknown[])[1]).toMatchObject({ method: 'Transfer', reference: 'TR-9', cashReceived: '200000', withheldAtSource: '0' });
+    expect(q(fixture, 'closure-hold-collected')).not.toBeNull();
+  });
+
+  it('is absent for a user who does not record collections', async () => {
+    const fixture = await openWithHold(OWNER);
+    expect(q(fixture, 'closure-hold-collection')).toBeNull();
   });
 });

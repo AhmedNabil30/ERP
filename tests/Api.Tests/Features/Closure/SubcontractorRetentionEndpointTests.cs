@@ -11,6 +11,7 @@ using Kaff.Domain.Contracts;
 using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
 using Kaff.Domain.Projects;
+using Kaff.Domain.Rulings;
 using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
@@ -123,7 +124,8 @@ public sealed class SubcontractorRetentionEndpointTests : IAsyncLifetime
     [Fact]
     public async Task The_release_is_refused_before_the_warranty_ends_and_posts_nothing()
     {
-        DateOnly today = DateOnly.FromDateTime(DateTime.UtcNow);
+        // The server judges the warranty by the site day (Cairo), so the test must too (D-224).
+        DateOnly today = SiteTime.DateOf(DateTimeOffset.UtcNow);
 
         // Handover four months less one day ago: the warranty ends tomorrow.
         (Guid project, Guid sub) = await NewProjectAsync(handoverOn: today.AddMonths(-4).AddDays(1));

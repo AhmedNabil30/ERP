@@ -252,3 +252,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-243 | 17076 | D-239 to D-242 as built: credit notes, cheque read, flow types closed, revised extract, rejection routing · 2026-11-19 |
 | D-244 | 17095 | Hold carries to a revised extract; a released hold is collected on the extract collection flow · 2026-11-19 |
 | D-245 | 17102 | D-244 as built: hold carries to a revision, released-hold collection, reads for the extract screens · 2026-11-20 |
+| D-246 | 17117 | The extract chain screens as built, and the server reads they still lack · 2026-11-20 |

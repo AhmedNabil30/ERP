@@ -1,0 +1,105 @@
+<ng-template #primaryAction>
+  @if (primary(); as p) {
+    <kaff-button variant="primary" [busy]="busy()" [testId]="'payments-' + p" (clicked)="onPrimary()">{{ i18n.t(primaryKey()) }}</kaff-button>
+  }
+</ng-template>
+
+<section class="pg" data-testid="extract-payments-page">
+  <kaff-page-head [backLink]="['/projects', projectId(), 'extracts', extractId()]" [backLabel]="name()" [title]="i18n.t('collection.payments')">
+    <p class="meta">
+      @if (project(); as p) {
+        <span dir="auto">{{ p.clientName }}</span>
+      }
+      @if (data(); as x) {
+        <span>{{ name() }}</span>
+        <kaff-status-pill [tone]="extractPill[x.status].tone" [icon]="extractPill[x.status].icon">{{ i18n.t(extractPill[x.status].key) }}</kaff-status-pill>
+      }
+    </p>
+  </kaff-page-head>
+
+  @if (failure(); as key) {
+    <kaff-banner tone="refusal" testId="payments-failure">
+      <b>{{ i18n.t('collection.payments_failed') }}</b> {{ i18n.t(key) }}
+      <kaff-button bannerActions variant="secondary" testId="payments-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+    </kaff-banner>
+  } @else if (loading()) {
+    <kaff-state mode="loading" titleKey="extract.loading" testId="payments-loading" />
+  } @else if (data(); as x) {
+    <div class="pane">
+      @if (actionError(); as key) {
+        @if (sheet() === null) {
+          <kaff-banner tone="refusal" testId="payments-error">{{ i18n.t(key, actionErrorParams()) }}</kaff-banner>
+        }
+      }
+      @if (done() === 'cleared') {
+        <kaff-banner tone="ok" testId="payments-cleared">{{ i18n.t('cheque.cleared_done') }}</kaff-banner>
+      }
+      @if (done() === 'reversed' && reversal(); as r) {
+        <kaff-banner tone="note" testId="payments-reversed">
+          <b>{{ i18n.t('collection.reverse.done') }}</b> · <bdi dir="ltr">{{ r.date }}</bdi><br /><span dir="auto">{{ r.reason }}</span>
+        </kaff-banner>
+      }
+
+      @if (x.collection; as c) {
+        <h2 class="sec-h">{{ i18n.t('collection.heading') }}</h2>
+        <kaff-collection-position [expected]="c.expected" [received]="c.received" [withheld]="c.withheld" [inCheques]="c.inCheques" [remaining]="c.remaining" testId="payments-position" />
+      }
+
+      @if (payments().length === 0) {
+        <kaff-state mode="empty" titleKey="collection.no_payments" testId="payments-empty" />
+      } @else {
+        <div>
+          <div class="lh"><span>{{ i18n.t('collection.payment') }}</span><span>{{ i18n.t('collection.cash_unit') }}</span></div>
+          <ul class="lst" data-testid="payments-list">
+            @for (p of payments(); track p.id) {
+              <li [class.void]="p.reversed" [attr.data-testid]="'payment-' + $index">
+                <b>{{ i18n.t('collection.method.' + p.method) }} <bdi dir="ltr">{{ shortDay(p.date) }}</bdi></b>
+                <span class="r">
+                  @if (p.chequeState; as s) {
+                    <kaff-status-pill [tone]="chequePill[s].tone" [icon]="chequePill[s].icon">{{ i18n.t(chequePill[s].key) }}</kaff-status-pill>
+                  }
+                  <kaff-figure [value]="p.cashReceived" />
+                </span>
+                <small>
+                  <bdi dir="ltr">{{ p.reference }}</bdi> · {{ i18n.t('collection.withheld') }} <kaff-figure [value]="p.withheldAtSource" />
+                  @if (p.chequeState === 'Bounced' && bounceReason(); as why) {
+                    <br /><span dir="auto">{{ why }}</span>
+                  }
+                </small>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      @if ((x.actions.recordChequeMove && inHand()?.chequeState === 'Deposited') || x.actions.reverseCollection) {
+        <div class="more" data-testid="payments-secondary">
+          @if (x.actions.recordChequeMove && inHand()?.chequeState === 'Deposited') {
+            <kaff-button variant="danger-outline" testId="payments-bounce" (clicked)="open('bounce')">{{ i18n.t('cheque.bounce') }}</kaff-button>
+          }
+          @if (x.actions.reverseCollection) {
+            <kaff-button variant="danger-outline" testId="payments-reverse" (clicked)="open('reverse')">{{ i18n.t('collection.reverse') }}</kaff-button>
+          }
+        </div>
+      }
+    </div>
+
+    <kaff-detail-panel [open]="sheet() !== null" [title]="i18n.t(sheet() === 'bounce' ? 'cheque.bounce' : 'collection.reverse')" testId="payments-sheet" (closed)="close()">
+      <div panelBody class="sheet-form">
+        @if (actionError(); as key) {
+          <kaff-banner tone="refusal">{{ i18n.t(key, actionErrorParams()) }}</kaff-banner>
+        }
+        <kaff-field [labelKey]="sheet() === 'bounce' ? 'cheque.bounce.reason' : 'collection.reverse.reason'" controlId="payments-reason" [required]="true" [errorKey]="reasonError()" #rf="kaffField">
+          <textarea id="payments-reason" data-testid="payments-reason" [attr.aria-invalid]="reasonError() ? 'true' : null" [attr.aria-describedby]="rf.describedById()" [value]="reason()" (input)="reason.set($any($event.target).value)"></textarea>
+        </kaff-field>
+        @if (sheet() === 'reverse') {
+          <p class="consequence" data-testid="payments-consequence">{{ reverseConsequence() }}</p>
+        }
+      </div>
+      <div panelFooter class="panel-actions">
+        <kaff-button variant="danger" [busy]="busy()" testId="payments-sheet-submit" (clicked)="submitSheet()">{{ i18n.t(sheet() === 'bounce' ? 'cheque.bounce.submit' : 'collection.reverse') }}</kaff-button>
+        <kaff-button variant="secondary" [disabled]="busy()" testId="payments-sheet-cancel" (clicked)="close()">{{ i18n.t('extract.cancel') }}</kaff-button>
+      </div>
+    </kaff-detail-panel>
+  }
+</section>

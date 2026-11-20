@@ -1,287 +1,196 @@
+<!-- The shell places this in the page header on desktop and the bottom bar on a phone; the screen never draws it itself. -->
+<ng-template #primaryAction>
+  @if (primary()) {
+    <kaff-button variant="primary" [busy]="busy()" [testId]="'act-' + primary()" (clicked)="onPrimary()">{{ i18n.t(primaryKey()) }}</kaff-button>
+  }
+</ng-template>
+
 <section class="pg" data-testid="extract-page">
-  <kaff-project-frame [projectId]="projectId()" current="extracts">
-  <kaff-page-head
-    [backLink]="['/projects', projectId(), 'extracts']"
-    backLabelKey="extract.list.title"
-    [title]="data() ? i18n.t('extract.number', { number: data()!.number }) : i18n.t('extract.list.title')"
-  >
-    @if (data(); as extract) {
-      <kaff-status-pill titleAside [tone]="pill[extract.status].tone" [icon]="pill[extract.status].icon" testId="extract-status">
-        {{ i18n.t(statusKeys[extract.status]) }}
-      </kaff-status-pill>
+  <kaff-page-head [backLink]="['/projects', projectId(), 'extracts']" backLabelKey="extract.list.title" [title]="title()">
+    @if (data(); as x) {
+      <kaff-status-pill titleAside [tone]="pill[x.status].tone" [icon]="pill[x.status].icon" testId="extract-status">{{ i18n.t(pill[x.status].key) }}</kaff-status-pill>
     }
-    @if (data(); as extract) {
-      <p class="period">
-        {{
-          i18n.t('extract.period', {
-            from: i18n.formatDate(parseDay(extract.periodStart), { dateStyle: 'medium' }),
-            to: i18n.formatDate(parseDay(extract.periodEnd), { dateStyle: 'medium' }),
-          })
-        }}
+    @if (data(); as x) {
+      <p class="meta">
+        @if (project(); as p) {
+          <span dir="auto">{{ p.name }}</span>
+        }
+        <bdi dir="ltr">{{ period() }}</bdi>
       </p>
+      @if (chainAt() !== null) {
+        <kaff-chain-line [steps]="chainSteps()" [current]="chainAt()!" [ariaLabel]="i18n.t('extract.chain.label')" testId="extract-chain" />
+      }
     }
   </kaff-page-head>
 
   @if (failure(); as key) {
-    <kaff-state mode="refusal" [bodyKey]="key" testId="extract-failure">
-      <kaff-button stateAction variant="secondary" testId="extract-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
-    </kaff-state>
+    <kaff-banner tone="refusal" testId="extract-failure">
+      <b>{{ i18n.t('extract.failed') }}</b> {{ i18n.t(key) }}
+      <kaff-button bannerActions variant="secondary" testId="extract-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+    </kaff-banner>
   } @else if (loading()) {
     <kaff-state mode="loading" titleKey="extract.loading" testId="extract-loading" />
-  } @else if (data(); as extract) {
-    <!--
-      AC-500-D. Each control renders only when the server's flag for it is true. There is no disabled
-      state anywhere in this block: a caller who may not do a thing never sees the thing.
-    -->
-    <div class="panel actions" data-testid="extract-actions">
-      <h2 class="h2">{{ i18n.t('extract.actions.title') }}</h2>
-
+  } @else if (data(); as x) {
+    <div class="pane">
       @if (actionError(); as key) {
         <kaff-banner tone="refusal" testId="extract-action-error">{{ i18n.t(key, actionErrorParams()) }}</kaff-banner>
       }
+      @if (applied()) {
+        <kaff-banner tone="ok" testId="extract-applied">{{ i18n.t('extract.applied') }}</kaff-banner>
+      }
 
-      @if (anyAction()) {
-        <div class="buttons">
-          @if (extract.actions.submitQcReport) {
-            <kaff-button variant="primary" [busy]="busy()" testId="act-qc-report" (clicked)="step('qc-report')">
-              {{ i18n.t('extract.action.submit_qc') }}
-            </kaff-button>
+      @if (waiting(); as w) {
+        <kaff-waiting-line [text]="w.text" [sub]="w.sub" testId="extract-waiting" />
+      }
+
+      @if (barred()) {
+        <kaff-banner tone="note" testId="extract-barred">{{ i18n.t('extract.barred') }}</kaff-banner>
+      }
+      @if (stopped()) {
+        <kaff-banner tone="note" icon="pause" testId="extract-stopped">{{ i18n.t('extract.stopped') }}</kaff-banner>
+      }
+      @if (rejection(); as r) {
+        <kaff-banner tone="refusal" testId="extract-rejection">
+          <b>{{ i18n.t('extract.rejected_by', { gate: r.by }) }}</b> · <bdi dir="ltr">{{ r.date }}</bdi><br /><span dir="auto">{{ r.reason }}</span>
+          @if (x.actions.reviseEvidence) {
+            <a bannerActions class="lnk" [routerLink]="['/', 'projects', projectId(), 'daily-log']" data-testid="extract-open-log">{{ i18n.t('extract.open_period_log') }}</a>
           }
-          @if (extract.actions.approveTechnicalOffice) {
-            <kaff-button variant="primary" [busy]="busy()" testId="act-technical-approval" (clicked)="step('technical-approval')">
-              {{ i18n.t('extract.action.approve_technical') }}
-            </kaff-button>
+        </kaff-banner>
+      }
+      @if (dispute(); as d) {
+        <kaff-banner tone="note" testId="extract-dispute">
+          <b>{{ i18n.t('dispute.client_claim') }}</b> · <bdi dir="ltr">{{ d.date }}</bdi><br /><span dir="auto">{{ d.reason }}</span>
+        </kaff-banner>
+      }
+      @if (x.status === 'Void' && x.revisedBy; as next) {
+        <kaff-banner tone="note" testId="extract-cancelled">
+          <b>{{ i18n.t('extract.cancelled', { number: next.number }) }}</b>
+          <a bannerActions class="lnk" [routerLink]="['/', 'projects', projectId(), 'extracts', next.id]" data-testid="extract-open-revision">{{ i18n.t('extract.open', { number: next.number }) }}</a>
+        </kaff-banner>
+      }
+      @if (x.revises; as previous) {
+        <kaff-forward-link [link]="['/projects', projectId(), 'extracts', previous.id]" [label]="i18n.t('extract.replaces', { number: previous.number })" testId="extract-revises" />
+      }
+      @if (creditNote(); as note) {
+        @if (note.status === 'Raised') {
+          <kaff-banner tone="note" testId="extract-credit-note">
+            <b>{{ i18n.t('credit_note.raised_line', { amount: i18n.formatAmount(note.amount) }) }}</b>
+            <a bannerActions class="lnk" [routerLink]="['/', 'projects', projectId(), 'extracts', x.id, 'credit-notes', note.id]" data-testid="extract-open-credit-note">{{ i18n.t('extract.open_short') }}</a>
+          </kaff-banner>
+        }
+      }
+
+      @if (x.collection; as c) {
+        <h2 class="sec-h">{{ i18n.t('collection.heading') }}</h2>
+        <kaff-collection-position
+          [expected]="c.expected"
+          [received]="c.received"
+          [withheld]="c.withheld"
+          [inCheques]="c.inCheques"
+          [remaining]="c.remaining"
+          [expectedNote]="dueNote()"
+          testId="extract-position"
+        />
+        @if (paymentsLinked()) {
+          <kaff-forward-link [link]="['/projects', projectId(), 'extracts', x.id, 'payments']" [label]="i18n.t('collection.payments')" testId="extract-payments-link" />
+        }
+        @if (creditNote(); as note) {
+          @if (note.status === 'Approved') {
+            <kaff-forward-link [link]="['/projects', projectId(), 'extracts', x.id, 'credit-notes', note.id]" [label]="i18n.t('credit_note.title')" testId="extract-credit-note-link" />
           }
-          @if (extract.actions.applyDeductions) {
-            <kaff-button variant="primary" [busy]="busy()" testId="act-deductions" (clicked)="ask('deductions')">
-              {{ i18n.t('extract.action.apply_deductions') }}
-            </kaff-button>
+        }
+      }
+
+      @if (x.document) {
+        <h2 class="sec-h">{{ i18n.t('extract.document.heading') }}</h2>
+        <kaff-figure-list [rows]="documentRows()" testId="extract-document" />
+        <kaff-figure-list [rows]="holdRows()" testId="extract-hold" />
+        <details class="details" data-testid="extract-details">
+          <summary class="lnk">{{ i18n.t('extract.details') }}</summary>
+          @for (d of derivations(); track d.key) {
+            <h3 class="sec-h">{{ d.label }}</h3>
+            <kaff-figure-list [rows]="d.rows" />
           }
-          @if (extract.actions.approveAsOwner) {
-            <kaff-button variant="primary" [busy]="busy()" testId="act-owner-approval" (clicked)="ask('owner-approval')">
-              {{ i18n.t('extract.action.approve_owner') }}
-            </kaff-button>
+        </details>
+      } @else if (x.evidence) {
+        @if (x.status === 'TechnicalApproved' || x.status === 'PartiallyApproved') {
+          <h2 class="sec-h">{{ i18n.t('extract.document.heading') }}</h2>
+          <kaff-state mode="empty" titleKey="extract.document.pending" testId="extract-document-pending" />
+        }
+        @if (x.status !== 'Draft') {
+          <h2 class="sec-h">{{ i18n.t('extract.material.heading') }}</h2>
+          <kaff-figure-list [rows]="materialRows()" testId="extract-material" />
+        }
+      }
+
+      <h2 class="sec-h">{{ i18n.t('extract.history.title') }}</h2>
+      <ul class="lst" data-testid="extract-history">
+        @for (h of history(); track $index) {
+          <li>
+            <b>{{ h.label }}</b><span class="r"><bdi dir="ltr">{{ h.date }}</bdi></span>
+            @if (h.reason) {
+              <small dir="auto">{{ h.reason }}</small>
+            }
+          </li>
+        }
+      </ul>
+
+      @if (rejectGate() !== null || x.actions.raiseDispute) {
+        <div class="more" data-testid="extract-secondary">
+          @if (rejectGate() !== null) {
+            <kaff-button variant="secondary" testId="act-reject" (clicked)="openSheet('reject')">{{ i18n.t('extract.action.reject') }}</kaff-button>
           }
-          @if (extract.actions.issue) {
-            <kaff-button variant="primary" [busy]="busy()" testId="act-issue" (clicked)="ask('issue')">
-              {{ i18n.t('extract.action.issue') }}
-            </kaff-button>
-          }
-          @if (extract.actions.reviseEvidence) {
-            <kaff-button variant="primary" [busy]="busy()" testId="act-revise" (clicked)="openRevise()">
-              {{ i18n.t('extract.action.revise_evidence') }}
-            </kaff-button>
-          }
-          @if (extract.actions.rejectAtTechnicalOffice) {
-            <kaff-button variant="danger-outline" [busy]="busy()" testId="act-reject-technical" (clicked)="openReject('technical-rejection')">
-              {{ i18n.t('extract.action.reject') }}
-            </kaff-button>
-          }
-          @if (extract.actions.rejectAtAccounts) {
-            <kaff-button variant="danger-outline" [busy]="busy()" testId="act-reject-accounts" (clicked)="openReject('accounts-rejection')">
-              {{ i18n.t('extract.action.reject') }}
-            </kaff-button>
-          }
-          @if (extract.actions.rejectAtOwner) {
-            <kaff-button variant="danger-outline" [busy]="busy()" testId="act-reject-owner" (clicked)="openReject('owner-rejection')">
-              {{ i18n.t('extract.action.reject') }}
-            </kaff-button>
+          @if (x.actions.raiseDispute) {
+            <kaff-button variant="secondary" testId="act-dispute" (clicked)="go('dispute')">{{ i18n.t('dispute.raise') }}</kaff-button>
           }
         </div>
-      } @else {
-        <p class="none" data-testid="extract-no-action">
-          <kaff-icon name="info" [small]="true" /><span>{{ i18n.t(noActionKey()) }}</span>
-        </p>
-      }
-
-      @if (confirming(); as pending) {
-        <kaff-inline-confirm
-          [question]="i18n.t(confirmKeys[pending], { number: extract.number })"
-          [confirmLabel]="i18n.t('extract.confirm.yes')"
-          [cancelLabel]="i18n.t('extract.cancel')"
-          [busy]="busy()"
-          confirmTestId="act-confirm"
-          cancelTestId="act-confirm-cancel"
-          (confirmed)="step(pending)"
-          (cancelled)="closePanels()"
-        />
-      }
-
-      @if (rejecting()) {
-        <form class="reject" data-testid="reject-panel" (submit)="$event.preventDefault(); submitReject()">
-          <label class="label" for="reject-reason">
-            {{ i18n.t('extract.reject.reason') }}<span class="req" aria-hidden="true">*</span>
-          </label>
-          <textarea
-            id="reject-reason"
-            class="reason"
-            rows="3"
-            required
-            [value]="reason()"
-            [attr.aria-invalid]="reasonMissing() ? 'true' : null"
-            [attr.aria-describedby]="reasonMissing() ? 'reject-reason-error' : null"
-            data-testid="reject-reason"
-            (input)="onReason($event)"
-          ></textarea>
-          @if (reasonMissing()) {
-            <p class="field-error" id="reject-reason-error" role="alert" data-testid="reject-reason-error">
-              <kaff-icon name="alert" [small]="true" />{{ i18n.t('errors.extract.reason_required') }}
-            </p>
-          }
-          <div class="buttons">
-            <kaff-button variant="danger" type="submit" [busy]="busy()" testId="reject-submit">
-              {{ i18n.t('extract.reject.submit') }}
-            </kaff-button>
-            <kaff-button variant="secondary" [disabled]="busy()" testId="reject-cancel" (clicked)="closePanels()">
-              {{ i18n.t('extract.cancel') }}
-            </kaff-button>
-          </div>
-        </form>
-      }
-
-      @if (revising()) {
-        <form class="revise" data-testid="revise-panel" (submit)="$event.preventDefault(); submitRevise()">
-          <p class="hint">{{ i18n.t('extract.revise.hint') }}</p>
-          <kaff-money-field
-            labelKey="extract.revise.on_site"
-            controlId="revise-on-site"
-            [required]="true"
-            [(value)]="onSite"
-            testId="revise-on-site"
-          />
-          <kaff-money-field
-            labelKey="extract.revise.installed"
-            controlId="revise-installed"
-            [required]="true"
-            [(value)]="installed"
-            testId="revise-installed"
-          />
-          <div class="buttons">
-            <kaff-button variant="primary" type="submit" [busy]="busy()" testId="revise-submit">
-              {{ i18n.t('extract.revise.submit') }}
-            </kaff-button>
-            <kaff-button variant="secondary" [disabled]="busy()" testId="revise-cancel" (clicked)="closePanels()">
-              {{ i18n.t('extract.cancel') }}
-            </kaff-button>
-          </div>
-        </form>
       }
     </div>
 
-    <!-- AC-500-J. The document: six figures, each with its kind and derivation, then the printed column. -->
-    @if (extract.document; as document) {
-      <h2 class="h2">{{ i18n.t('extract.document.title') }}</h2>
-
-      @if (unrounded()) {
-        <kaff-banner tone="note" testId="extract-unrounded">{{ i18n.t('extract.document.unrounded') }}</kaff-banner>
-      }
-
-      <p class="unit-note">{{ i18n.t('money.currency_note') }}</p>
-      <kaff-table [columns]="figureColumns" [columnDefs]="figureHeader" [minInline]="560" testId="extract-figures-header">
-        <ul class="rows" data-testid="extract-figures">
-          @for (vm of figures(); track vm.figure.key) {
-            <li class="rows-item" [attr.data-testid]="'figure-' + vm.figure.key">
-              <kaff-table-row [stacked]="true">
-                <span class="cell-pinned cell-title">
-                  <span class="fl">
-                    <span class="figure-head">
-                      <span class="figure-label">{{ i18n.t(vm.figure.labelKey) }}</span>
-                      @if (vm.figure.isMemo) {
-                        <span class="memo">{{ i18n.t('extract.document.memo') }}</span>
-                      }
-                    </span>
-                    <details class="derivation">
-                      <summary>{{ i18n.t('extract.document.derivation') }}</summary>
-                      <ul>
-                        @for (input of vm.inputs; track $index) {
-                          <li>
-                            <span class="input-label">{{ i18n.t(input.labelKey) }}</span>
-                            <span class="input-value">
-                              @if (input.amount !== null) {
-                                <kaff-figure [value]="input.amount" />
-                              }
-                              @if (input.rate !== null) {
-                                <bdi dir="ltr">{{ input.rate }}%</bdi>
-                              }
-                            </span>
-                            <kaff-provenance [kind]="input.kind" [detail]="input.detail" />
-                          </li>
-                        }
-                      </ul>
-                    </details>
-                  </span>
-                </span>
-                <span class="cell-primary cell-end amt-fig" [class.net]="vm.figure.key === 'netPayable'">
-                  <kaff-figure [value]="vm.figure.amount" />
-                </span>
-                <!-- Only a figure that was typed or carried says so; "calculated" on all six is a wall, not information. -->
-                @if (vm.kind !== 'calc') {
-                  <span class="cell-sub origin">
-                    <kaff-provenance [kind]="vm.kind" />
-                  </span>
-                }
-              </kaff-table-row>
-            </li>
-          }
-        </ul>
-      </kaff-table>
-
-      <h2 class="h2">{{ i18n.t('extract.column.title') }}</h2>
-      <table class="column" data-testid="extract-column">
-        <caption class="sr">{{ i18n.t('extract.column.title') }}</caption>
-        <tbody>
-          @for (row of document.column; track row.key) {
-            <tr [attr.data-testid]="'column-' + row.key">
-              <th scope="row">{{ i18n.t(row.labelKey) }}</th>
-              <td class="amt">
-                <kaff-figure [value]="row.isDeduction ? '-' + row.amount : row.amount" [plus]="!row.isDeduction" />
-              </td>
-            </tr>
-          }
-        </tbody>
-        <tfoot>
-          <tr class="sum" data-testid="column-sum">
-            <th scope="row">{{ i18n.t('extract.column.sum') }}</th>
-            <td class="amt"><kaff-figure [value]="document.columnSum" /></td>
-          </tr>
-          <tr class="total" data-testid="column-total">
-            <th scope="row">{{ i18n.t('extract.net_payable') }}</th>
-            <td class="amt"><kaff-figure [value]="document.printedTotal" /></td>
-          </tr>
-        </tfoot>
-      </table>
-
-      <!-- The server's verdict on the column, shown as a word and an icon. Never recomputed here (D-135). -->
-      <div class="foots" [class.bad]="!document.foots" role="status" data-testid="extract-foots">
-        <kaff-icon [name]="document.foots ? 'check' : 'alert'" />
-        <b>{{ i18n.t(document.foots ? 'extract.foots.yes' : 'extract.foots.no') }}</b>
+    <kaff-detail-panel [open]="sheet() === 'qc'" [title]="i18n.t('extract.qc.title')" testId="qc-sheet" (closed)="closeSheet()">
+      <div panelBody class="sheet-form">
+        @if (actionError(); as key) {
+          <kaff-banner tone="refusal">{{ i18n.t(key, actionErrorParams()) }}</kaff-banner>
+        }
+        <kaff-money-field labelKey="extract.revise.on_site" controlId="qc-on-site" [required]="true" [errorKey]="qcErrors().onSite" testId="qc-on-site" [(value)]="onSite" />
+        <kaff-money-field labelKey="extract.revise.installed" controlId="qc-installed" [required]="true" [errorKey]="qcErrors().installed" testId="qc-installed" [(value)]="installed" />
       </div>
-    } @else if (extract.evidence === null) {
-      <kaff-banner tone="note" testId="extract-money-hidden">{{ i18n.t('extract.document.hidden') }}</kaff-banner>
-    } @else {
-      <kaff-banner tone="note" testId="extract-no-document">{{ i18n.t('extract.document.pending') }}</kaff-banner>
-    }
+      <div panelFooter class="panel-actions">
+        <kaff-button variant="primary" [busy]="busy()" testId="qc-submit" (clicked)="submitQc()">{{ i18n.t('extract.action.submit_qc') }}</kaff-button>
+        <kaff-button variant="secondary" [disabled]="busy()" testId="qc-cancel" (clicked)="closeSheet()">{{ i18n.t('extract.cancel') }}</kaff-button>
+      </div>
+    </kaff-detail-panel>
 
-    <h2 class="h2">{{ i18n.t('extract.history.title') }}</h2>
-    <ol class="history" data-testid="extract-history">
-      @for (item of history(); track $index) {
-        <li [class.rejected]="item.record.outcome === 'Rejected'">
-          <div class="history-head">
-            <b>{{ i18n.t(item.gateKey) }}</b>
-            <span class="outcome">
-              <kaff-icon [name]="item.record.outcome === 'Rejected' ? 'x' : 'check'" [small]="true" />{{ i18n.t(item.outcomeKey) }}
-            </span>
-          </div>
-          <span class="when">{{ item.time }}</span>
-          @if (item.portion; as portion) {
-            <span class="when">{{ i18n.t('extract.history.portion', { portion }) }}</span>
-          }
-          @if (item.record.reason; as reason) {
-            <p class="why" dir="auto">{{ reason }}</p>
-          }
-        </li>
-      }
-    </ol>
+    <kaff-detail-panel [open]="sheet() === 'reject'" [title]="i18n.t('extract.reject.title')" testId="reject-sheet" (closed)="closeSheet()">
+      <div panelBody class="sheet-form">
+        @if (actionError(); as key) {
+          <kaff-banner tone="refusal">{{ i18n.t(key, actionErrorParams()) }}</kaff-banner>
+        }
+        <kaff-choice-group [choices]="rejectionKinds" legendKey="extract.reject.kind" [required]="true" [errorKey]="rejectErrors().kind" testId="reject-kind" [(value)]="rejectKind" />
+        <kaff-field labelKey="extract.reject.reason" controlId="reject-reason" [required]="true" [errorKey]="rejectErrors().reason" errorTestId="reject-reason-error" #rf="kaffField">
+          <textarea id="reject-reason" data-testid="reject-reason" [attr.aria-invalid]="rejectErrors().reason ? 'true' : null" [attr.aria-describedby]="rf.describedById()" [value]="reason()" (input)="reason.set($any($event.target).value)"></textarea>
+        </kaff-field>
+      </div>
+      <div panelFooter class="panel-actions">
+        <kaff-button variant="primary" [busy]="busy()" testId="reject-submit" (clicked)="submitReject()">{{ i18n.t('extract.reject.submit') }}</kaff-button>
+        <kaff-button variant="secondary" [disabled]="busy()" testId="reject-cancel" (clicked)="closeSheet()">{{ i18n.t('extract.cancel') }}</kaff-button>
+      </div>
+    </kaff-detail-panel>
+
+    <kaff-confirm-dialog
+      [open]="sheet() === 'owner'"
+      icon="info"
+      [title]="i18n.t('extract.confirm.owner_title', { number: x.number })"
+      [body]="ownerConsequence()"
+      [confirmLabel]="i18n.t('extract.confirm.owner_yes')"
+      [cancelLabel]="i18n.t('extract.cancel')"
+      [busy]="busy()"
+      [sheetOnPhone]="true"
+      testId="owner-confirm"
+      confirmTestId="owner-confirm-yes"
+      cancelTestId="owner-confirm-no"
+      (confirmed)="confirmOwner()"
+      (cancelled)="closeSheet()"
+    />
   }
-  </kaff-project-frame>
 </section>

@@ -1,0 +1,97 @@
+<ng-template #primaryAction>
+  @if (primary(); as p) {
+    <kaff-button variant="primary" [busy]="busy()" [testId]="'co-act-' + p.step" (clicked)="onPrimary()">{{ i18n.t(p.labelKey) }}</kaff-button>
+  }
+</ng-template>
+
+<section class="pg" data-testid="change-order-page">
+  <kaff-page-head [backLink]="['/projects', projectId(), 'extracts', 'change-orders']" backLabelKey="change_order.list.title" [title]="data()?.title ?? i18n.t('change_order.list.title')">
+    @if (data(); as o) {
+      <kaff-status-pill titleAside [tone]="pill[o.status].tone" [icon]="pill[o.status].icon" testId="co-status">{{ i18n.t(pill[o.status].key) }}</kaff-status-pill>
+    }
+    @if (data(); as o) {
+      <p class="meta">
+        @if (project(); as p) {
+          <span dir="auto">{{ p.name }}</span>
+        }
+        <span>{{ i18n.t('change_order.number', { number: o.number }) }}</span>
+      </p>
+      @if (o.status !== 'Withdrawn' && o.status !== 'Logged') {
+        <kaff-chain-line [steps]="steps()" [current]="at()" [ariaLabel]="i18n.t('extract.chain.label')" testId="co-chain" />
+      }
+    }
+  </kaff-page-head>
+
+  @if (failure(); as key) {
+    <kaff-banner tone="refusal" testId="co-failure">
+      <b>{{ i18n.t('change_order.failed') }}</b> {{ i18n.t(key) }}
+      <kaff-button bannerActions variant="secondary" testId="co-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+    </kaff-banner>
+  } @else if (loading()) {
+    <kaff-state mode="loading" titleKey="extract.loading" testId="co-loading" />
+  } @else if (data(); as o) {
+    <div class="pane">
+      @if (actionError(); as key) {
+        @if (!rejecting()) {
+          <kaff-banner tone="refusal" testId="co-error">{{ i18n.t(key, actionErrorParams()) }}</kaff-banner>
+        }
+      }
+      @if (o.status === 'Approved') {
+        <kaff-banner tone="ok" testId="co-approved">{{ i18n.t('change_order.approved_next') }}</kaff-banner>
+      }
+      @if (rejected(); as r) {
+        <kaff-banner tone="refusal" testId="co-rejected">
+          <b>{{ i18n.t('change_order.rejected_on', { date: r.date }) }}</b><br /><span dir="auto">{{ r.reason }}</span>
+        </kaff-banner>
+      }
+      @if (barred()) {
+        <kaff-banner tone="note" testId="co-barred">{{ i18n.t('change_order.barred') }}</kaff-banner>
+      }
+      @if (waiting(); as w) {
+        <kaff-waiting-line [text]="w.text" [sub]="w.sub" testId="co-waiting" />
+      }
+      @if (lineRows().length > 0) {
+        <h2 class="sec-h">{{ i18n.t('change_order.lines_unit') }}</h2>
+        <kaff-figure-list [rows]="lineRows()" testId="co-lines" />
+      }
+
+      <h2 class="sec-h">{{ i18n.t('extract.history.title') }}</h2>
+      <ul class="lst" data-testid="co-history">
+        @for (h of history(); track $index) {
+          <li>
+            <b>{{ h.label }}</b><span class="r"><bdi dir="ltr">{{ h.date }}</bdi></span>
+            @if (h.reason) {
+              <small dir="auto">{{ h.reason }}</small>
+            }
+          </li>
+        }
+      </ul>
+
+      @if (o.actions.withdraw || rejection()) {
+        <div class="more" data-testid="co-secondary">
+          @if (o.actions.withdraw) {
+            <kaff-button variant="secondary" [busy]="busy()" testId="co-withdraw" (clicked)="withdraw()">{{ i18n.t('change_order.action.withdraw') }}</kaff-button>
+          }
+          @if (rejection(); as r) {
+            <kaff-button variant="secondary" testId="co-reject" (clicked)="openReject()">{{ i18n.t(r.labelKey) }}</kaff-button>
+          }
+        </div>
+      }
+    </div>
+
+    <kaff-detail-panel [open]="rejecting()" [title]="i18n.t(rejection()?.labelKey ?? 'extract.action.reject')" testId="co-reject-sheet" (closed)="rejecting.set(false)">
+      <div panelBody class="sheet-form">
+        @if (actionError(); as key) {
+          <kaff-banner tone="refusal">{{ i18n.t(key, actionErrorParams()) }}</kaff-banner>
+        }
+        <kaff-field labelKey="extract.reject.reason" controlId="co-reason" [required]="true" [errorKey]="reasonError()" #rf="kaffField">
+          <textarea id="co-reason" data-testid="co-reason" [attr.aria-invalid]="reasonError() ? 'true' : null" [attr.aria-describedby]="rf.describedById()" [value]="reason()" (input)="reason.set($any($event.target).value)"></textarea>
+        </kaff-field>
+      </div>
+      <div panelFooter class="panel-actions">
+        <kaff-button variant="primary" [busy]="busy()" testId="co-reject-submit" (clicked)="reject()">{{ i18n.t(rejection()?.labelKey ?? 'extract.action.reject') }}</kaff-button>
+        <kaff-button variant="secondary" [disabled]="busy()" testId="co-reject-cancel" (clicked)="rejecting.set(false)">{{ i18n.t('extract.cancel') }}</kaff-button>
+      </div>
+    </kaff-detail-panel>
+  }
+</section>

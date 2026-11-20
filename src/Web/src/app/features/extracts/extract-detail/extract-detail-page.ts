@@ -1,45 +1,43 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, TemplateRef, computed, effect, inject, input, signal, untracked, viewChild } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
-import {
-  Extract,
-  ExtractGate,
-  ExtractGateOutcome,
-  ExtractStatus,
-  ExtractStep,
-  ExtractsApi,
-  FigureInput,
-  FigureKind,
-  RejectionGate,
-} from '../../../core/extracts/extracts.api';
-import { I18nService } from '../../../core/i18n/i18n.service';
+import { Adjustment, ChainApi } from '../../../core/extracts/chain.api';
+import { CollectionView, Extract, ExtractGate, ExtractsApi, RejectionGate, RejectionKind } from '../../../core/extracts/extracts.api';
+import { ProjectDetail, ProjectsApi } from '../../../core/projects/projects.api';
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
-import { KaffFigure } from '../../../shared/kaff-figure/kaff-figure';
-import { KaffIcon } from '../../../shared/kaff-icon/kaff-icon';
-import { KaffInlineConfirm } from '../../../shared/kaff-inline-confirm/kaff-inline-confirm';
+import { KaffChainLine } from '../../../shared/kaff-chain-line/kaff-chain-line';
+import { Choice, KaffChoiceGroup } from '../../../shared/kaff-choice-group/kaff-choice-group';
+import { KaffCollectionPosition } from '../../../shared/kaff-collection-position/kaff-collection-position';
+import { KaffConfirmDialog } from '../../../shared/kaff-confirm-dialog/kaff-confirm-dialog';
+import { KaffDetailPanel } from '../../../shared/kaff-detail-panel/kaff-detail-panel';
+import { KaffField } from '../../../shared/kaff-field/kaff-field';
+import { FigureRow, KaffFigureList } from '../../../shared/kaff-figure-list/kaff-figure-list';
+import { KaffForwardLink } from '../../../shared/kaff-forward-link/kaff-forward-link';
 import { KaffMoneyField } from '../../../shared/kaff-money-field/kaff-money-field';
 import { KaffPageHead } from '../../../shared/kaff-page-head/kaff-page-head';
-import { KaffProjectFrame } from '../../../shared/kaff-project-frame/kaff-project-frame';
-import { KaffProvenance, ProvenanceKind } from '../../../shared/kaff-provenance/kaff-provenance';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { KaffStatusPill } from '../../../shared/kaff-status-pill/kaff-status-pill';
-import { KaffTable } from '../../../shared/kaff-table/kaff-table';
-import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
-import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
-import { EXTRACT_STATUS_PILL, extractNoActionKey, hasHiddenPrecision, percentOfFraction } from '../extract-display';
+import { KaffWaitingLine } from '../../../shared/kaff-waiting-line/kaff-waiting-line';
+import { ChainPage } from '../chain-page';
+import {
+  CHAIN_STEP_KEYS,
+  EXTRACT_PILL,
+  barredText,
+  chainIndex,
+  extractTaskKey,
+  isPositive,
+  negated,
+  percentOfFraction,
+  shortDay,
+  waitingText,
+  wireAmount,
+  lastOf,
+} from '../extract-display';
 
-/** Every label key the screen reads, written out so each one is a literal the catalogue gate can see. */
-export const STATUS_KEYS: Readonly<Record<ExtractStatus, string>> = {
-  Draft: 'extract.status.Draft',
-  QcSubmitted: 'extract.status.QcSubmitted',
-  PartiallyApproved: 'extract.status.PartiallyApproved',
-  TechnicalApproved: 'extract.status.TechnicalApproved',
-  DeductionsApplied: 'extract.status.DeductionsApplied',
-  OwnerApproved: 'extract.status.OwnerApproved',
-  Issued: 'extract.status.Issued',
-  Collected: 'extract.status.Collected',
-};
+/** Every status key, written out so each one is a literal the catalogue gate can see. */
+export const STATUS_KEYS = Object.fromEntries(Object.entries(EXTRACT_PILL).map(([status, pill]) => [status, pill.key]));
 
 const GATE_KEYS: Readonly<Record<ExtractGate, string>> = {
   Prepared: 'extract.gate.Prepared',
@@ -51,182 +49,286 @@ const GATE_KEYS: Readonly<Record<ExtractGate, string>> = {
   Collect: 'extract.gate.Collect',
   HeldPortionRelease: 'extract.gate.HeldPortionRelease',
   EvidenceRevised: 'extract.gate.EvidenceRevised',
+  Dispute: 'extract.gate.Dispute',
+  DisputeResolution: 'extract.gate.DisputeResolution',
+  ChequeBounce: 'extract.gate.ChequeBounce',
+  Cancellation: 'extract.gate.Cancellation',
 };
 
-const OUTCOME_KEYS: Readonly<Record<ExtractGateOutcome, string>> = {
-  Passed: 'extract.outcome.Passed',
-  PartiallyPassed: 'extract.outcome.PartiallyPassed',
-  Rejected: 'extract.outcome.Rejected',
+/** The one primary, chosen by the server's flags. */
+type PrimaryKind = 'qc' | 'technical' | 'deductions' | 'owner' | 'issue' | 'revise' | 'cheque' | 'collect' | 'resolve';
+
+const PRIMARY_KEYS: Readonly<Record<PrimaryKind, string>> = {
+  qc: 'extract.action.submit_qc',
+  technical: 'extract.action.approve_technical',
+  deductions: 'extract.action.apply_deductions',
+  owner: 'extract.action.approve_owner',
+  issue: 'extract.action.issue',
+  revise: 'extract.action.revise_evidence',
+  cheque: 'cheque.action.deposit',
+  collect: 'collection.record',
+  resolve: 'dispute.resolve',
 };
 
-/** Where a carried figure comes from. The server sends a stable name; the page words it. */
-const SOURCE_KEYS: Readonly<Record<string, string>> = {
-  'boq.executedQuantities': 'extract.source.boq.executedQuantities',
-  'extract.previousCertified': 'extract.source.extract.previousCertified',
-  'extract.technicalOfficeGate': 'extract.source.extract.technicalOfficeGate',
-  'project.terms': 'extract.source.project.terms',
-  'ledger.hold': 'extract.source.ledger.hold',
-  'ledger.clientAdvance': 'extract.source.ledger.clientAdvance',
-  'ruling.MaterialAdvanceRecoveryRule': 'extract.source.ruling.MaterialAdvanceRecoveryRule',
-  'ruling.WithholdingBase': 'extract.source.ruling.WithholdingBase',
-};
+const REJECTION_KINDS: readonly Choice[] = [
+  { value: 'Quantities', labelKey: 'extract.reject.kind.quantities', hintKey: 'extract.reject.kind.quantities_hint' },
+  { value: 'MaterialValues', labelKey: 'extract.reject.kind.material', hintKey: 'extract.reject.kind.material_hint' },
+];
 
-const KIND: Readonly<Record<FigureKind, ProvenanceKind>> = {
-  Calculated: 'calc',
-  Entered: 'ent',
-  Carried: 'car',
-};
-
-type ConfirmStep = 'deductions' | 'owner-approval' | 'issue';
-
-const CONFIRM_KEYS: Readonly<Record<ConfirmStep, string>> = {
-  deductions: 'extract.confirm.deductions',
-  'owner-approval': 'extract.confirm.owner_approval',
-  issue: 'extract.confirm.issue',
-};
-
-interface InputVm {
-  readonly labelKey: string;
-  readonly kind: ProvenanceKind;
-  readonly amount: string | null;
-  readonly rate: string | null;
-  readonly detail: string | null;
-}
+/** Where the extract waits at a decision gate, so a missing control may be the separation of duties. */
+const DECISION_STATUSES = new Set(['QcSubmitted', 'PartiallyApproved', 'TechnicalApproved', 'DeductionsApplied']);
 
 /**
- * The extract: where it stands, what this caller may do to it, and its document (KAFF-500 stage 3).
+ * E3, the extract (`.design/v2/team-a/extracts.html#e3`): where it stands on the chain, who it waits on, what the
+ * caller may do now, and its document.
  *
- * **A control the caller may not use is absent, never disabled** (`AC-500-D`). Every control hangs off a
- * flag in `extract.actions`, which the server computes from permission, assignment, state and separation of
- * duties. The page decides nothing: it neither re-derives a permission nor guesses a stage. `callerMayDecide`
- * is used only to say why a gate control is missing.
- *
- * **The document lays the server's strings side by side** (`AC-500-J`, D-135). Every figure prints through
- * `kaff-figure`, so one value reads one way whatever trailing zeros it travelled with, and `foots` is shown
- * as the server computed it, never recomputed here.
+ * **A control the caller may not use is absent, never disabled.** Every control hangs off a flag in
+ * `extract.actions`, which the server computes from permission, assignment, state and separation of duties. The
+ * one primary sits in the shell's slot; the secondaries sit under the content.
  */
 @Component({
   selector: 'kaff-extract-detail-page',
   imports: [
+    RouterLink,
     KaffBanner,
     KaffButton,
-    KaffFigure,
-    KaffIcon,
-    KaffInlineConfirm,
+    KaffChainLine,
+    KaffChoiceGroup,
+    KaffCollectionPosition,
+    KaffConfirmDialog,
+    KaffDetailPanel,
+    KaffField,
+    KaffFigureList,
+    KaffForwardLink,
     KaffMoneyField,
     KaffPageHead,
-    KaffProjectFrame,
-    KaffProvenance,
     KaffState,
     KaffStatusPill,
-    KaffTable,
-    KaffTableRow,
+    KaffWaitingLine,
   ],
   templateUrl: './extract-detail-page.html',
-  styleUrl: './extract-detail-page.css',
+  styleUrl: '../chain-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ExtractDetailPage {
+export class ExtractDetailPage extends ChainPage {
   private readonly api = inject(ExtractsApi);
+  private readonly chain = inject(ChainApi);
+  private readonly projects = inject(ProjectsApi);
+  private readonly router = inject(Router);
 
-  protected readonly i18n = inject(I18nService);
-  protected readonly statusKeys = STATUS_KEYS;
-  protected readonly pill = EXTRACT_STATUS_PILL;
-
-  /** The document's figures as a kit table: the figure and its derivation, the amount (currency named once), where it came from. */
-  protected readonly figureColumns = 'minmax(14rem, 1fr) 11rem 9rem';
-  protected readonly figureHeader: readonly TableColumnDef[] = [
-    { labelKey: 'extract.figures.item', pinned: true },
-    { labelKey: 'extract.figures.amount', align: 'end' },
-    { labelKey: 'extract.figures.origin' },
-  ];
-  protected readonly confirmKeys = CONFIRM_KEYS;
+  protected readonly pill = EXTRACT_PILL;
+  protected readonly rejectionKinds = REJECTION_KINDS;
+  protected readonly shortDay = shortDay;
 
   /** Bound from the route by `withComponentInputBinding`. */
   readonly projectId = input.required<string>();
   readonly extractId = input.required<string>();
 
   protected readonly data = signal<Extract | null>(null);
+  protected readonly project = signal<ProjectDetail | null>(null);
   protected readonly loading = signal(true);
   protected readonly failure = signal<string | null>(null);
+  /** Finance's payments, read only when a cheque move is offered: it names the cheque's next move. */
+  private readonly payments = signal<readonly CollectionView[]>([]);
+  /** The credit note on this extract, for a viewer who reads the treasury. */
+  protected readonly creditNote = signal<Adjustment | null>(null);
 
-  protected readonly busy = signal(false);
-  protected readonly actionError = signal<string | null>(null);
-  protected readonly actionErrorParams = signal<Record<string, string | number>>({});
+  protected readonly sheet = signal<'qc' | 'reject' | 'owner' | null>(null);
+  /** «طُبقت الخصومات.»: said once, in place, after Finance applied them. */
+  protected readonly applied = signal(false);
 
-  protected readonly confirming = signal<ConfirmStep | null>(null);
-  protected readonly rejecting = signal<RejectionGate | null>(null);
-  protected readonly reason = signal('');
-  protected readonly reasonMissing = signal(false);
-  protected readonly revising = signal(false);
   protected readonly onSite = signal('');
   protected readonly installed = signal('');
+  protected readonly qcErrors = signal<{ onSite: string | null; installed: string | null }>({ onSite: null, installed: null });
 
-  /** True when at least one control renders. When none does, the page says why. */
-  protected readonly anyAction = computed(() => {
-    const actions = this.data()?.actions;
-    return (
-      actions !== undefined &&
-      (actions.submitQcReport ||
-        actions.approveTechnicalOffice ||
-        actions.rejectAtTechnicalOffice ||
-        actions.applyDeductions ||
-        actions.rejectAtAccounts ||
-        actions.approveAsOwner ||
-        actions.rejectAtOwner ||
-        actions.issue ||
-        actions.reviseEvidence)
-    );
+  protected readonly rejectKind = signal('');
+  protected readonly reason = signal('');
+  protected readonly rejectErrors = signal<{ kind: string | null; reason: string | null }>({ kind: null, reason: null });
+
+  protected override readonly primaryTemplate = viewChild<TemplateRef<unknown>>('primaryAction');
+
+  protected readonly primary = computed<PrimaryKind | null>(() => {
+    const a = this.data()?.actions;
+    if (!a) {
+      return null;
+    }
+    if (a.submitQcReport) return 'qc';
+    if (a.approveTechnicalOffice) return 'technical';
+    if (a.applyDeductions) return 'deductions';
+    if (a.approveAsOwner) return 'owner';
+    if (a.issue) return 'issue';
+    if (a.reviseEvidence) return 'revise';
+    if (a.recordChequeMove) return 'cheque';
+    if (a.recordCollection) return 'collect';
+    if (a.resolveDispute) return 'resolve';
+    return null;
   });
 
-  /** Why nothing is offered: the separation-of-duties answer when it is the reason, else the stage. */
-  protected readonly noActionKey = computed(() => extractNoActionKey(this.data()));
+  protected override readonly hasPrimary = computed(() => this.primary() !== null && this.sheet() === null);
 
-  protected readonly history = computed(() =>
-    (this.data()?.gateHistory ?? []).map((record) => ({
-      record,
-      gateKey: GATE_KEYS[record.gate],
-      outcomeKey: OUTCOME_KEYS[record.outcome],
-      time: this.i18n.formatDate(new Date(record.occurredAt), { dateStyle: 'medium', timeStyle: 'short' }),
-      portion: record.approvedPortion === null ? null : percentOfFraction(record.approvedPortion),
+  /** The label of the primary. A cheque move says the cheque's next move, as the payments read names it. */
+  protected readonly primaryKey = computed(() => {
+    const kind = this.primary();
+    if (kind === 'cheque') {
+      return this.payments().some((p) => !p.reversed && p.chequeState === 'Deposited') &&
+        !this.payments().some((p) => !p.reversed && p.chequeState === 'Received')
+        ? 'cheque.action.clear'
+        : 'cheque.action.deposit';
+    }
+    return kind === null ? '' : PRIMARY_KEYS[kind];
+  });
+
+  /** The gate a rejection goes through: whichever the server offers this caller. */
+  protected readonly rejectGate = computed<RejectionGate | null>(() => {
+    const a = this.data()?.actions;
+    return a?.rejectAtTechnicalOffice ? 'technical-rejection' : a?.rejectAtAccounts ? 'accounts-rejection' : a?.rejectAtOwner ? 'owner-rejection' : null;
+  });
+
+  protected readonly chainSteps = computed(() => CHAIN_STEP_KEYS.map((key) => this.i18n.t(key)));
+
+  protected readonly chainAt = computed(() => {
+    const x = this.data();
+    return x === null ? null : chainIndex(x.status, x.waitingOn.permission === 'ExtractPrepare');
+  });
+
+  protected readonly title = computed(() => {
+    const x = this.data();
+    return x === null ? this.i18n.t('extract.list.title') : this.i18n.t('extract.number', { number: x.number });
+  });
+
+  protected readonly period = computed(() => {
+    const x = this.data();
+    return x === null ? '' : this.i18n.t('extract.period_short', { from: shortDay(x.periodStart), to: shortDay(x.periodEnd) });
+  });
+
+  /** «بانتظار {person}: {task}», and the barred holders under it. Null once nothing waits. */
+  protected readonly waiting = computed(() => {
+    const x = this.data();
+    if (x === null || x.waitingOn.isTerminal || !x.waitingOn.permission || x.status === 'Void') {
+      return null;
+    }
+    const chequeInHand = isPositive(x.collection?.inCheques) && !isPositive(x.collection?.remaining);
+    return {
+      text: waitingText(this.i18n, x.waitingOn.holders, extractTaskKey(x.waitingOn, chequeInHand)),
+      sub: barredText(this.i18n, x.waitingOn.barredHolders),
+    };
+  });
+
+  /** The separation-of-duties line: the caller holds the gate's role but took part in this cycle. */
+  protected readonly barred = computed(() => {
+    const x = this.data();
+    return x !== null && !x.actions.callerMayDecide && DECISION_STATUSES.has(x.status)
+      && x.waitingOn.barredHolders.some((p) => p.userId === this.auth.current()?.userId);
+  });
+
+  /** A stopped project issues nothing (the brief's one line saying why issue is absent). */
+  protected readonly stopped = computed(
+    () => this.data()?.status === 'OwnerApproved' && this.project()?.status === 'Stopped' && this.held(this.projectId()).has('FinancialMovementApprove'),
+  );
+
+  /**
+   * The rejection that sent the extract back, shown only to someone who can act on it: the site engineer revising
+   * quantities, the supervisor resubmitting the values, or a viewer of the money. A reason the junior cannot act on
+   * is never shown to him (README "Server truth applied" 4).
+   */
+  protected readonly rejection = computed(() => {
+    const x = this.data();
+    if (x === null || x.status !== 'Draft') {
+      return null;
+    }
+    const last = x.gateHistory.at(-1);
+    if (last?.outcome !== 'Rejected' || !(x.actions.reviseEvidence || x.actions.submitQcReport || x.evidence !== null)) {
+      return null;
+    }
+    return { by: this.i18n.t(GATE_KEYS[last.gate]), date: shortDay(last.occurredAt), reason: last.reason ?? '' };
+  });
+
+  protected readonly dispute = computed(() => {
+    const x = this.data();
+    if (x === null || x.status !== 'Disputed') {
+      return null;
+    }
+    const raised = lastOf(x.gateHistory, (r) => r.gate === 'Dispute');
+    return { date: raised ? shortDay(raised.occurredAt) : '', reason: x.disputeReason ?? raised?.reason ?? '' };
+  });
+
+  /** The document, as the server printed it: deductions with a real minus, the total ruled. */
+  protected readonly documentRows = computed<FigureRow[]>(() => {
+    const d = this.data()?.document;
+    if (!d) {
+      return [];
+    }
+    return [
+      ...d.column.map((row) => ({ label: this.i18n.t(row.labelKey), amount: row.isDeduction ? negated(row.amount) : row.amount })),
+      { label: this.i18n.t('extract.net_payable'), amount: d.printedTotal, total: true, testId: 'extract-net' },
+    ];
+  });
+
+  /** «الحجز حتى تاريخه» in its own row, outside the deductions (spec §5.1). */
+  protected readonly holdRows = computed<FigureRow[]>(() => {
+    const hold = this.data()?.document?.figures.find((f) => f.key === 'holdToDate');
+    return hold ? [{ label: this.i18n.t('extract.hold_to_date'), amount: hold.amount, testId: 'extract-hold-to-date' }] : [];
+  });
+
+  /** The derivation behind each figure, under «التفاصيل». */
+  protected readonly derivations = computed(() =>
+    (this.data()?.document?.figures ?? []).map((figure) => ({
+      key: figure.key,
+      label: this.i18n.t(figure.labelKey),
+      rows: figure.derivation.map<FigureRow>((input) => ({
+        label: this.i18n.t(input.labelKey),
+        amount: input.amount,
+        text: input.rate === null ? null : `${percentOfFraction(input.rate)}%`,
+      })),
     })),
   );
 
-  protected readonly figures = computed(() => {
-    const document = this.data()?.document;
-    if (!document) {
-      return [];
-    }
-    return document.figures.map((figure) => ({
-      figure,
-      kind: KIND[figure.kind],
-      inputs: figure.derivation.map((input) => this.inputVm(input)),
-    }));
+  protected readonly materialRows = computed<FigureRow[]>(() => {
+    const e = this.data()?.evidence;
+    return e
+      ? [
+          { label: this.i18n.t('extract.revise.on_site'), amount: e.materialValueOnSite },
+          { label: this.i18n.t('extract.revise.installed'), amount: e.materialInstalled },
+        ]
+      : [];
+  });
+
+  /** «بعد إشعار دائن …» under the due figure, once an approved credit note lowered it. */
+  protected readonly dueNote = computed(() => {
+    const note = this.creditNote();
+    return note?.status === 'Approved' ? this.i18n.t('collection.after_credit_note', { amount: this.i18n.formatAmount(note.amount) }) : null;
   });
 
   /**
-   * True when a printed value carries a digit beyond the document's decimals. `kaff-figure` rounds to two
-   * places, so the page says so rather than letting it pass as exact.
+   * Reasons on the history are shown to a money viewer and to whoever can act on the latest rejection; the junior
+   * never reads a reason he cannot act on (README "Server truth applied" 4).
    */
-  protected readonly unrounded = computed(() => {
-    const document = this.data()?.document;
-    if (!document) {
-      return false;
-    }
-    return [
-      ...document.figures.map((figure) => figure.amount),
-      ...document.column.map((row) => row.amount),
-      document.printedTotal,
-      document.columnSum,
-    ].some((value) => hasHiddenPrecision(value, document.decimals));
+  private readonly showsReasons = computed(() => {
+    const x = this.data();
+    return x !== null && (x.evidence !== null || x.actions.reviseEvidence || x.actions.submitQcReport || x.actions.resolveDispute);
+  });
+
+  protected readonly history = computed(() =>
+    (this.data()?.gateHistory ?? []).map((record) => ({
+      label: record.outcome === 'Rejected'
+        ? this.i18n.t('extract.history.rejected', { gate: this.i18n.t(GATE_KEYS[record.gate]) })
+        : record.outcome === 'Reversed'
+          ? this.i18n.t('extract.history.reversed', { gate: this.i18n.t(GATE_KEYS[record.gate]) })
+          : this.i18n.t(GATE_KEYS[record.gate]),
+      date: shortDay(record.occurredAt),
+      reason: this.showsReasons() ? record.reason : null,
+    })),
+  );
+
+  /** «الدفعات»: Finance's way to the payments, once one stands or a cheque is in hand. */
+  protected readonly paymentsLinked = computed(() => {
+    const a = this.data()?.actions;
+    return a !== undefined && (a.recordChequeMove || a.reverseCollection) && this.primary() !== 'cheque';
   });
 
   constructor() {
-    // The route supplies both ids as required inputs, and Angular sets them AFTER construction, so
-    // reading them in the constructor throws NG0950 and the page renders its failure state forever.
-    // An effect reads them once they exist and reloads when the route moves between extracts.
-    // reload() is called untracked: it writes data() and reads it to decide the loading state, which
-    // inside the tracked body would re-trigger this effect on every load.
+    super();
+    // The route's ids are required inputs set after construction (NG0950); read them in an effect, untracked.
     effect(() => {
       this.projectId();
       this.extractId();
@@ -234,17 +336,17 @@ export class ExtractDetailPage {
     });
   }
 
-  /** A `yyyy-MM-dd` wire date as a local date, so the day does not shift with the time zone. */
-  protected parseDay(value: string): Date {
-    const [year = 0, month = 1, day = 1] = value.split("-").map(Number);
-    return new Date(year, month - 1, day);
-  }
-
   protected async reload(): Promise<void> {
     this.loading.set(this.data() === null);
     this.failure.set(null);
     try {
-      this.data.set(await this.api.get(this.projectId(), this.extractId()));
+      const [extract, project] = await Promise.all([
+        this.api.get(this.projectId(), this.extractId()),
+        this.project() === null ? this.projects.get(this.projectId()).catch(() => null) : Promise.resolve(this.project()),
+      ]);
+      this.data.set(extract);
+      this.project.set(project);
+      void this.loadMoneySide(extract);
     } catch (error) {
       this.failure.set(toProblem(error).messageKey);
     } finally {
@@ -252,101 +354,120 @@ export class ExtractDetailPage {
     }
   }
 
-  protected step(step: ExtractStep): void {
-    this.confirming.set(null);
-    void this.act(() => this.api.step(this.projectId(), this.extractId(), step));
+  /** The two optional reads behind the money side. A refusal or a failure leaves the screen as it is. */
+  private async loadMoneySide(extract: Extract): Promise<void> {
+    if (extract.actions.recordChequeMove) {
+      this.payments.set(await this.api.collections(this.projectId(), extract.id).catch(() => []));
+    }
+    if (extract.collection !== null && this.held(this.projectId()).has('TreasuryReadProject')) {
+      const notes = await this.chain.adjustments(this.projectId()).catch(() => [] as readonly Adjustment[]);
+      this.creditNote.set(
+        notes.filter((n) => n.type === 'ClientCreditNote' && n.sourceDocumentId === extract.id && n.status !== 'Rejected').at(-1) ?? null,
+      );
+    }
   }
 
-  protected ask(step: ConfirmStep): void {
-    this.closePanels();
-    this.confirming.set(step);
+  protected onPrimary(): void {
+    const id = this.extractId();
+    switch (this.primary()) {
+      case 'qc':
+        this.openSheet('qc');
+        break;
+      case 'owner':
+        this.openSheet('owner');
+        break;
+      case 'technical':
+        void this.run(() => this.api.step(this.projectId(), id, 'technical-approval'));
+        break;
+      case 'deductions':
+        void this.run(() => this.api.step(this.projectId(), id, 'deductions')).then((ok) => this.applied.set(ok));
+        break;
+      case 'issue':
+        void this.run(() => this.api.step(this.projectId(), id, 'issue'));
+        break;
+      case 'revise':
+        void this.run(() => this.api.reviseEvidence(this.projectId(), id));
+        break;
+      case 'cheque':
+        this.go('payments');
+        break;
+      case 'collect':
+        this.go('collect');
+        break;
+      case 'resolve':
+        this.go('dispute-resolution');
+        break;
+    }
   }
 
-  protected openReject(gate: RejectionGate): void {
-    this.closePanels();
-    this.rejecting.set(gate);
+  /** One of the extract's own sub-screens. */
+  protected go(screen: 'payments' | 'collect' | 'dispute' | 'dispute-resolution'): void {
+    void this.router.navigate(['/projects', this.projectId(), 'extracts', this.extractId(), screen]);
   }
 
-  protected openRevise(): void {
-    this.closePanels();
-    this.revising.set(true);
+  protected openSheet(sheet: 'qc' | 'reject' | 'owner'): void {
+    this.actionError.set(null);
+    this.applied.set(false);
+    this.qcErrors.set({ onSite: null, installed: null });
+    this.rejectErrors.set({ kind: null, reason: null });
+    this.sheet.set(sheet);
   }
 
-  protected closePanels(): void {
-    this.confirming.set(null);
-    this.rejecting.set(null);
-    this.revising.set(false);
-    this.reason.set('');
-    this.reasonMissing.set(false);
+  protected closeSheet(): void {
+    this.sheet.set(null);
     this.actionError.set(null);
   }
 
-  protected onReason(event: Event): void {
-    this.reason.set((event.target as HTMLTextAreaElement).value);
-    this.reasonMissing.set(false);
+  /** Both values are required (D-238 item 4). The primary stays live and names the missing field on submit. */
+  protected submitQc(): void {
+    const onSite = wireAmount(this.onSite());
+    const installed = wireAmount(this.installed());
+    this.qcErrors.set({
+      onSite: onSite === null ? 'extract.qc.on_site_required' : null,
+      installed: installed === null ? 'extract.qc.installed_required' : null,
+    });
+    if (onSite !== null && installed !== null) {
+      void this.run(() => this.api.submitQcReport(this.projectId(), this.extractId(), onSite, installed));
+    }
   }
 
-  /** A rejection is never silent: a blank reason stops here, and the server refuses it too. */
+  /** A rejection names where the error is and why (D-242 item 2); neither may be blank. */
   protected submitReject(): void {
-    const gate = this.rejecting();
+    const gate = this.rejectGate();
+    const kind = this.rejectKind();
     const reason = this.reason().trim();
-    if (gate === null) {
-      return;
-    }
-    if (reason === '') {
-      this.reasonMissing.set(true);
-      return;
-    }
-    void this.act(() => this.api.reject(this.projectId(), this.extractId(), gate, reason));
-  }
-
-  protected submitRevise(): void {
-    void this.act(() =>
-      this.api.reviseEvidence(this.projectId(), this.extractId(), this.onSite().trim(), this.installed().trim()),
-    );
-  }
-
-  private async act(call: () => Promise<void>): Promise<void> {
-    this.busy.set(true);
-    this.actionError.set(null);
-    try {
-      await call();
-      this.closePanels();
-      await this.reload();
-    } catch (error) {
-      const problem = toProblem(error);
-      const params: Record<string, string | number> = {};
-      for (const [key, value] of Object.entries(problem.extensions)) {
-        if (typeof value === 'string' || typeof value === 'number') {
-          params[key] = value;
-        }
-      }
-      this.actionErrorParams.set(params);
-      this.actionError.set(problem.messageKey);
-      // A refusal can mean the extract moved under us; show where it stands now.
-      await this.reload();
-    } finally {
-      this.busy.set(false);
+    this.rejectErrors.set({
+      kind: kind === '' ? 'extract.reject.kind_required' : null,
+      reason: reason === '' ? 'extract.reject.reason_required' : null,
+    });
+    if (gate !== null && kind !== '' && reason !== '') {
+      void this.run(() => this.api.reject(this.projectId(), this.extractId(), gate, reason, kind as RejectionKind));
     }
   }
 
-  private inputVm(input: FigureInput): InputVm {
-    let detail: string | null = null;
-    if (input.kind === 'Entered' && input.enteredAt !== null) {
-      detail = this.i18n.t('extract.entered_at', {
-        time: this.i18n.formatDate(new Date(input.enteredAt), { dateStyle: 'medium', timeStyle: 'short' }),
-        who: (input.enteredByUserId ?? '').slice(0, 8),
-      });
-    } else if (input.source !== null) {
-      const key = SOURCE_KEYS[input.source];
-      detail = key === undefined ? input.source : this.i18n.t(key);
+  protected confirmOwner(): void {
+    void this.run(() => this.api.step(this.projectId(), this.extractId(), 'owner-approval'));
+  }
+
+  /** The Owner's consequence line: what is payable, and what goes to the hold («ويُضاف إلى الحجز»). */
+  protected readonly ownerConsequence = computed(() => {
+    const d = this.data()?.document;
+    if (!d) {
+      return '';
     }
-    return {
-      labelKey: input.labelKey,
-      kind: KIND[input.kind],
-      amount: input.amount,
-      rate: input.rate === null ? null : percentOfFraction(input.rate),
-      detail,
-    };
+    const hold = d.column.find((r) => r.key === 'holdThisPeriod')?.amount ?? '0';
+    return this.i18n.t('extract.confirm.owner_consequence', { net: this.i18n.formatAmount(d.printedTotal), hold: this.i18n.formatAmount(hold) });
+  });
+
+  private async run(call: () => Promise<void>): Promise<boolean> {
+    const ok = await this.act(call);
+    if (ok) {
+      this.sheet.set(null);
+      this.reason.set('');
+      this.rejectKind.set('');
+    }
+    // A refusal can mean the extract moved under us; show where it stands now.
+    await this.reload();
+    return ok;
   }
 }
