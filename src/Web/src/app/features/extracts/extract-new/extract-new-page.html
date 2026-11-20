@@ -49,6 +49,10 @@
           <input id="extract-to" type="date" dir="ltr" data-testid="extract-to" [value]="to()" [attr.aria-invalid]="errors().to ? 'true' : null" [attr.aria-describedby]="tf.describedById()" (input)="to.set($any($event.target).value)" />
         </kaff-field>
       </div>
+      @if (preview().length > 0) {
+        <h2 class="sec-h">{{ i18n.t('extract.qty.heading') }}</h2>
+        <kaff-quantity-table [rows]="preview()" testId="extract-new-quantities" />
+      }
     </div>
   }
 </section>

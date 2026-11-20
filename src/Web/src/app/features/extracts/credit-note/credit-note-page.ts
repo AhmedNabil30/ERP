@@ -18,10 +18,9 @@ import { ChainPage } from '../chain-page';
 import { CREDIT_NOTE_PILL, lineText, shortDay } from '../extract-display';
 
 /**
- * E10, «إشعار دائن» (`extracts.html#e10`): the Owner decides a credit note Finance raised; Finance reads it. **The
- * adjustment read carries no action flags**, so the decision is offered to whoever the server's waiting line names
- * as a holder: the line already excludes the raiser (separation of duties) and anyone without the Owner's
- * permission. The server checks again on approval and rejection.
+ * E10, «إشعار دائن» (`extracts.html#e10`): the Owner decides a credit note Finance raised; Finance reads it. Each
+ * decision hangs off the read's `actions` flag (D-247 item 3), which already excludes the raiser (separation of duties)
+ * and anyone without the Owner's permission. The server checks again on approval and rejection.
  */
 @Component({
   selector: 'kaff-credit-note-page',
@@ -51,18 +50,15 @@ export class CreditNotePage extends ChainPage {
   protected readonly reason = signal('');
   protected readonly reasonError = signal<string | null>(null);
 
-  /** The caller is a holder of the decision, as the server's waiting line names them. */
-  protected readonly mayDecide = computed(() => {
-    const n = this.note();
-    const me = this.auth.current()?.userId;
-    return n?.status === 'Raised' && n.waitingOn?.holders.some((h) => h.userId === me) === true;
-  });
+  /** The server's answer: the caller may approve now. */
+  protected readonly mayApprove = computed(() => this.note()?.actions?.approve === true);
+  protected readonly mayReject = computed(() => this.note()?.actions?.reject === true);
 
   /** The caller raised it: the decision is someone else's (the separation-of-duties line). */
   protected readonly raisedByMe = computed(() => this.note()?.status === 'Raised' && this.note()?.raisedByUserId === this.auth.current()?.userId);
 
   protected override readonly primaryTemplate = viewChild<TemplateRef<unknown>>('primaryAction');
-  protected override readonly hasPrimary = computed(() => this.mayDecide() && !this.rejecting());
+  protected override readonly hasPrimary = computed(() => this.mayApprove() && !this.rejecting());
 
   protected readonly name = computed(() => {
     const x = this.extract();

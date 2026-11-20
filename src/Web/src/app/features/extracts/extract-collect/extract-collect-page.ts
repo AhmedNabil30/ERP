@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, TemplateRef, computed, effect, inje
 import { Router, RouterLink } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
-import { Adjustment, ChainApi } from '../../../core/extracts/chain.api';
 import { Extract, ExtractsApi } from '../../../core/extracts/extracts.api';
 import { ProjectDetail, ProjectsApi } from '../../../core/projects/projects.api';
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
@@ -12,7 +11,7 @@ import { KaffPageHead } from '../../../shared/kaff-page-head/kaff-page-head';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { ChainPage } from '../chain-page';
 import { CollectionForm } from '../collection-form/collection-form';
-import { EXTRACT_PILL, isPositive } from '../extract-display';
+import { EXTRACT_PILL, WITHHOLDING_KEY, isPositive } from '../extract-display';
 
 /** Refusals the form shows under a field; any other is a banner. */
 const FIELD_REFUSALS = new Set(['errors.collection.exceeds_expected', 'errors.treasury.posting_date_out_of_range']);
@@ -30,7 +29,6 @@ const FIELD_REFUSALS = new Set(['errors.collection.exceeds_expected', 'errors.tr
 })
 export class ExtractCollectPage extends ChainPage {
   private readonly api = inject(ExtractsApi);
-  private readonly chain = inject(ChainApi);
   private readonly projects = inject(ProjectsApi);
   private readonly router = inject(Router);
 
@@ -39,7 +37,6 @@ export class ExtractCollectPage extends ChainPage {
 
   protected readonly data = signal<Extract | null>(null);
   protected readonly project = signal<ProjectDetail | null>(null);
-  protected readonly creditNote = signal<Adjustment | null>(null);
   protected readonly loading = signal(true);
   protected readonly failure = signal<string | null>(null);
 
@@ -54,6 +51,15 @@ export class ExtractCollectPage extends ChainPage {
 
   /** The contract withholds: the server expects a withheld amount on this extract. */
   protected readonly withholding = computed(() => isPositive(this.data()?.collection?.expectedWithheld));
+
+  /** The credit note still waiting on the Owner: it holds collection. */
+  protected readonly creditNote = computed(() => this.data()?.creditNotes?.find((n) => n.status === 'Raised') ?? null);
+
+  /** The contract's category, as the hint under the withheld field. Absent when the read sent none. */
+  protected readonly withholdingHint = computed(() => {
+    const category = this.data()?.withholdingCategory;
+    return category ? WITHHOLDING_KEY[category] : null;
+  });
 
   protected readonly fieldRefusal = computed(() => {
     const key = this.actionError();
@@ -74,7 +80,7 @@ export class ExtractCollectPage extends ChainPage {
     if (x.status !== 'Issued') {
       return this.i18n.t('collection.refused.status', { number: x.number, status: this.i18n.t(EXTRACT_PILL[x.status].key) });
     }
-    if (this.creditNote()?.status === 'Raised') {
+    if (this.creditNote() !== null) {
       return this.i18n.t('collection.refused.credit_note');
     }
     return this.i18n.t('errors.collection.nothing_remaining');
@@ -99,10 +105,6 @@ export class ExtractCollectPage extends ChainPage {
       ]);
       this.data.set(extract);
       this.project.set(project);
-      if (!extract.actions.recordCollection && extract.status === 'Issued' && this.held(this.projectId()).has('TreasuryReadProject')) {
-        const notes = await this.chain.adjustments(this.projectId()).catch(() => [] as readonly Adjustment[]);
-        this.creditNote.set(notes.find((n) => n.sourceDocumentId === extract.id && n.status === 'Raised') ?? null);
-      }
     } catch (error) {
       this.failure.set(toProblem(error).messageKey);
     } finally {

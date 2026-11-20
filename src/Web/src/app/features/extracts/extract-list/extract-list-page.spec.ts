@@ -16,13 +16,14 @@ const draft: ExtractSummary = {
   money: { certifiedValue: null, netPayable: null, collected: null, outstanding: null },
   waitingOn: waiting(),
 };
+const revision: ExtractSummary = { ...draft, id: 'e-5', number: 5, revises: { id: 'e-3', number: 3, status: 'Void' } };
 const issued: ExtractSummary = {
   id: 'e-3', number: 3, periodStart: '2026-09-01', periodEnd: '2026-09-30', status: 'Issued',
-  money: { certifiedValue: '400000', netPayable: '190000.0000', collected: '100000', outstanding: '90000.0000' },
+  money: { certifiedValue: '400000', netPayable: '190000.0000', collected: '100000', outstanding: '90000.0000', inCheques: '88000.0000', remaining: '2000.0000' },
   waitingOn: waiting({ status: 'Issued', permission: 'ExtractCollect', isDecisionGate: false }),
 };
 
-async function render(permissions: string[], rows: ExtractSummary[]) {
+async function render(permissions: string[], rows: ExtractSummary[], prepareExtract = false) {
   const cheques = vi.fn().mockResolvedValue([{}]);
   const changeOrders = vi.fn().mockResolvedValue([{}, {}, {}]);
   TestBed.configureTestingModule({
@@ -31,7 +32,7 @@ async function render(permissions: string[], rows: ExtractSummary[]) {
       { provide: I18nService, useClass: FakeI18n },
       { provide: ExtractsApi, useValue: { list: vi.fn().mockResolvedValue(rows) } },
       { provide: ChainApi, useValue: { cheques, changeOrders } },
-      { provide: ProjectsApi, useValue: { get: () => new Promise(() => undefined) } },
+      { provide: ProjectsApi, useValue: { get: vi.fn().mockResolvedValue({ id: 'p-1', name: 'فيلا 47', contractType: 'LumpSum', status: 'Active', stage: 'Execution', isSigned: true, tabs: { overview: true, boq: true, dailyLog: true, extracts: true, team: true, dailyLogMode: 'write' }, actions: { editWithholding: false, prepareExtract } }) } },
       { provide: AuthService, useValue: session(permissions) },
     ],
   });
@@ -50,6 +51,8 @@ describe('ExtractListPage (E1)', () => {
     expect(rows).toEqual(['extract-row-4', 'extract-row-3']);
     expect(root.querySelector('[data-testid="extract-due"]')).not.toBeNull();
     expect(root.textContent).toContain('190000.0000');
+    expect(root.querySelector('[data-testid="extract-row-3"]')?.closest('li')?.querySelector('[data-testid="extract-in-cheques"]')?.textContent).toContain('88000.0000');
+    expect(root.querySelector('[data-testid="extract-row-3"]')?.closest('li')?.querySelector('[data-testid="extract-remaining"]')?.textContent).toContain('2000.0000');
     expect(byTestId(root, 'extract-sub-cheques')?.textContent).toContain('1');
     expect(byTestId(root, 'extract-sub-change-orders')?.textContent).toContain('3');
   });
@@ -63,17 +66,18 @@ describe('ExtractListPage (E1)', () => {
     expect(changeOrders).not.toHaveBeenCalled();
   });
 
-  it('offers «مستخلص جديد» to the preparer only when no extract is in flight', async () => {
-    const settled = await render(['ExtractPrepare'], [issued]);
-    expect(primary(settled.fixture)?.getAttribute('data-testid')).toBe('extract-new');
+  it('offers «مستخلص جديد» exactly when the project read says the caller may prepare', async () => {
+    const may = await render(['ExtractPrepare'], [issued], true);
+    expect(primary(may.fixture)?.getAttribute('data-testid')).toBe('extract-new');
     TestBed.resetTestingModule();
 
-    const open = await render(['ExtractPrepare'], [issued, draft]);
-    expect(primary(open.fixture)).toBeNull();
-    TestBed.resetTestingModule();
+    const mayNot = await render(['ExtractPrepare'], [issued, draft], false);
+    expect(primary(mayNot.fixture)).toBeNull();
+  });
 
-    const finance = await render(['ExtractCollect'], [issued]);
-    expect(primary(finance.fixture)).toBeNull();
+  it('says which cancelled extract a revision replaces', async () => {
+    const { root } = await render(['ExtractDeductionsApply'], [revision]);
+    expect(byTestId(root, 'extract-replaces')?.textContent).toContain('"number":3');
   });
 
   it('says who each extract waits on in the waiting-line form', async () => {

@@ -318,3 +318,23 @@
   border-color: var(--ink);
   font-weight: 600;
 }
+
+/* The withholding row: the category, and «تعديل» for Finance, at the end of the same line. */
+.wh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.wh-sheet {
+  display: grid;
+  gap: 16px;
+}
+
+.wh-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}

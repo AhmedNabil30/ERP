@@ -19,8 +19,8 @@ async function open(data: Extract, api: Partial<Record<keyof ExtractsApi, unknow
     providers: [
       provideRouter(ANY_ROUTE),
       { provide: I18nService, useClass: FakeI18n },
-      { provide: ExtractsApi, useValue: { get: vi.fn().mockResolvedValue(data), collections: vi.fn().mockResolvedValue([]), ...api } },
-      { provide: ChainApi, useValue: { adjustments: vi.fn().mockResolvedValue([]), ...chain } },
+      { provide: ExtractsApi, useValue: { get: vi.fn().mockResolvedValue(data), collections: vi.fn().mockResolvedValue([]), quantities: vi.fn().mockResolvedValue([]), ...api } },
+      { provide: ChainApi, useValue: { ...chain } },
       { provide: ProjectsApi, useValue: { get: vi.fn().mockResolvedValue({ name: 'فيلا 47', clientName: 'النيل', status: 'Active' }) } },
       { provide: AuthService, useValue: session(permissions) },
     ],
@@ -173,6 +173,34 @@ describe('ExtractDetailPage (E3)', () => {
     const { fixture, root } = await open(issued, { collections });
     expect(primary(fixture)?.textContent).toContain('cheque.action.clear');
     expect(byTestId(root, 'extract-waiting')?.textContent).toContain('extract.task.deposit');
+  });
+
+  it('shows the quantities the extract kept, and no table when it kept none', async () => {
+    const rows = [{ boqLineId: 'l-1', descriptionAr: 'خرسانة الأعمدة', unit: 'م³', previousQuantity: 0, currentQuantity: 12, cumulativeQuantity: 12 }];
+    const kept = await open(extract(), { quantities: vi.fn().mockResolvedValue(rows) });
+    expect(byTestId(kept.root, 'extract-quantities')?.textContent).toContain('خرسانة الأعمدة');
+    TestBed.resetTestingModule();
+
+    const legacy = await open(extract());
+    expect(byTestId(legacy.root, 'extract-quantities')).toBeNull();
+  });
+
+  it('names who acted in the history', async () => {
+    const x = extract({ gateHistory: [{ gate: 'QcReport', outcome: 'Passed', actorUserId: 'u-s', actorName: 'هبة فؤاد', occurredAt: '2026-10-04T09:10:00Z', reason: null, approvedPortion: null }] });
+    const { root } = await open(x);
+    expect(byTestId(root, 'extract-history')?.textContent).toContain('هبة فؤاد');
+  });
+
+  it('waits on whoever decides a raised credit note, and names the note', async () => {
+    const x = extract({
+      status: 'Issued', collection: POSITION,
+      waitingOn: waiting({ status: 'Issued', permission: 'ExtractCollect' }),
+      creditNotes: [{ id: 'n-1', number: 1, status: 'Raised', amount: '20000.0000' }],
+      creditNoteWaitingOn: { taskKey: 'waiting.task.adjustment_approval', permission: 'FinancialMovementApprove', holders: [{ userId: 'u-o', fullName: 'أحمد نبيل', role: 'Owner', level: null }], barredHolders: [] },
+    });
+    const { root } = await open(x);
+    expect(byTestId(root, 'extract-waiting')?.textContent).toContain('أحمد نبيل');
+    expect(byTestId(root, 'extract-credit-note')?.textContent).toContain('credit_note.raised_line');
   });
 
   it('asks the Owner to confirm with the consequence line before approving', async () => {

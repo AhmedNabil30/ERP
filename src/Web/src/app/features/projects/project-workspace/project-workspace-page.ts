@@ -23,10 +23,13 @@ import { ExtractsApi, WaitingOnItem } from '../../../core/extracts/extracts.api'
 import { contractTypeKey, roleKey } from '../../../core/i18n/enum-keys';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { HeaderActionsService } from '../../../core/layout/header-actions.service';
-import { ProjectDetail, ProjectProgress, ProjectsApi, TeamRead } from '../../../core/projects/projects.api';
+import { ProjectDetail, ProjectProgress, ProjectsApi, TeamRead, WithholdingCategory } from '../../../core/projects/projects.api';
 import { closureCapsOf } from '../../closure/closure-display';
+import { WITHHOLDING_KEY } from '../../extracts/extract-display';
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import { Choice, KaffChoiceGroup } from '../../../shared/kaff-choice-group/kaff-choice-group';
+import { KaffDetailPanel } from '../../../shared/kaff-detail-panel/kaff-detail-panel';
 import { KaffFact, KaffFactList } from '../../../shared/kaff-fact/kaff-fact';
 import { KaffFigure } from '../../../shared/kaff-figure/kaff-figure';
 import { KaffIcon } from '../../../shared/kaff-icon/kaff-icon';
@@ -45,6 +48,9 @@ type Read<T> =
   | { readonly state: 'failed'; readonly key: string };
 
 const LOADING = { state: 'loading' } as const;
+
+/** The four categories of spec §6.7, in the order the sheet lists them. */
+const WITHHOLDING_CHOICES: readonly Choice[] = (Object.keys(WITHHOLDING_KEY) as WithholdingCategory[]).map((value) => ({ value, labelKey: WITHHOLDING_KEY[value] }));
 
 const DECIMAL_PATTERN = /^(\d+)(?:\.(\d{1,4}))?$/;
 
@@ -95,6 +101,8 @@ type ProgressRead = Read<ProjectProgress> | { readonly state: 'unavailable' };
     RouterLink,
     KaffBanner,
     KaffButton,
+    KaffChoiceGroup,
+    KaffDetailPanel,
     KaffFact,
     KaffFactList,
     KaffFigure,
@@ -138,6 +146,14 @@ export class ProjectWorkspacePage {
   /** What the open extracts wait for. Null: nothing open, not a Lump Sum, or the read failed (the server still decides). */
   private readonly waitingItems = signal<readonly WaitingOnItem[] | null>(null);
   protected readonly termsOpen = signal(false);
+  protected readonly withholdingKey = WITHHOLDING_KEY;
+  protected readonly withholdingChoices = WITHHOLDING_CHOICES;
+  /** The withholding sheet (WH `edit`): open, the chosen category, busy, and how the last save ended. */
+  protected readonly whOpen = signal(false);
+  protected readonly whChoice = signal('');
+  protected readonly whBusy = signal(false);
+  protected readonly whError = signal<string | null>(null);
+  protected readonly whSaved = signal<WithholdingCategory | null>(null);
   /** The team read, only while the overview needs it (a signed project with no daily log yet). Null: not read, or failed. */
   protected readonly team = signal<TeamRead | null>(null);
 
@@ -301,6 +317,34 @@ export class ProjectWorkspacePage {
   protected onFailed(key: string): void {
     this.project.set(null);
     this.failure.set(key);
+  }
+
+  protected openWithholding(current: WithholdingCategory | null | undefined): void {
+    this.whChoice.set(current ?? '');
+    this.whError.set(null);
+    this.whSaved.set(null);
+    this.whOpen.set(true);
+  }
+
+  /** Finance sets the category; the server checks role and assignment and refuses an individual client's claim. */
+  protected async saveWithholding(): Promise<void> {
+    const category = this.whChoice() as WithholdingCategory | '';
+    const id = this.project()?.id;
+    if (category === '' || id === undefined) {
+      return;
+    }
+    this.whBusy.set(true);
+    this.whError.set(null);
+    try {
+      await this.projectsApi.setWithholding(id, category);
+      this.whOpen.set(false);
+      this.whSaved.set(category);
+      await this.frame()?.reload();
+    } catch (error) {
+      this.whError.set(toProblem(error).messageKey);
+    } finally {
+      this.whBusy.set(false);
+    }
   }
 
   protected async retry(): Promise<void> {

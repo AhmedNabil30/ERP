@@ -38,7 +38,7 @@
         @if (x.collection; as c) {
           <h2 class="sec-h">{{ i18n.t('collection.heading') }}</h2>
           <kaff-collection-position [expected]="c.expected" [received]="c.received" [withheld]="c.withheld" [inCheques]="c.inCheques" [remaining]="c.remaining" testId="collect-position" />
-          <kaff-collection-form [withholding]="withholding()" [remaining]="c.remaining" [refusalKey]="fieldRefusal()" />
+          <kaff-collection-form [withholding]="withholding()" [withholdingHintKey]="withholdingHint()" [remaining]="c.remaining" [refusalKey]="fieldRefusal()" />
         }
       }
     </div>

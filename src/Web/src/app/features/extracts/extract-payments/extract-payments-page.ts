@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, TemplateRef, computed, effect, inje
 import { Router } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
-import { ChainApi } from '../../../core/extracts/chain.api';
+import { ChainApi, ChequeActions } from '../../../core/extracts/chain.api';
 import { CollectionView, Extract, ExtractsApi } from '../../../core/extracts/extracts.api';
 import { ProjectDetail, ProjectsApi } from '../../../core/projects/projects.api';
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
@@ -54,6 +54,8 @@ export class ExtractPaymentsPage extends ChainPage {
   protected readonly data = signal<Extract | null>(null);
   protected readonly project = signal<ProjectDetail | null>(null);
   protected readonly payments = signal<readonly CollectionView[]>([]);
+  /** What the server lets this caller do to the cheque in hand (D-247 item 3). Null: the read was refused or failed. */
+  private readonly chequeActions = signal<ChequeActions | null>(null);
   protected readonly loading = signal(true);
   protected readonly failure = signal<string | null>(null);
   protected readonly sheet = signal<'bounce' | 'reverse' | null>(null);
@@ -69,13 +71,25 @@ export class ExtractPaymentsPage extends ChainPage {
     this.payments().find((p) => !p.reversed && (p.chequeState === 'Received' || p.chequeState === 'Deposited')) ?? null,
   );
 
-  protected readonly primary = computed<Primary | null>(() => {
-    const a = this.data()?.actions;
+  /** The cheque's moves: the server's flags, or the extract's own `recordChequeMove` when the cheque read gave none. */
+  protected readonly moves = computed<ChequeActions>(() => {
     const cheque = this.inHand();
-    if (a?.recordChequeMove && cheque !== null) {
-      return cheque.chequeState === 'Received' ? 'deposit' : 'clear';
+    const flags = this.chequeActions();
+    if (cheque === null) {
+      return { deposit: false, clear: false, bounce: false };
     }
-    return a?.recordCollection ? 'collect' : null;
+    if (flags !== null) {
+      return flags;
+    }
+    const may = this.data()?.actions.recordChequeMove === true;
+    return { deposit: may && cheque.chequeState === 'Received', clear: may && cheque.chequeState === 'Deposited', bounce: may && cheque.chequeState === 'Deposited' };
+  });
+
+  protected readonly primary = computed<Primary | null>(() => {
+    const m = this.moves();
+    if (m.deposit) return 'deposit';
+    if (m.clear) return 'clear';
+    return this.data()?.actions.recordCollection ? 'collect' : null;
   });
 
   protected readonly primaryKey = computed(() => {
@@ -126,10 +140,25 @@ export class ExtractPaymentsPage extends ChainPage {
       this.data.set(extract);
       this.payments.set(payments);
       this.project.set(project);
+      await this.readChequeActions(extract);
     } catch (error) {
       this.failure.set(toProblem(error).messageKey);
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  /** The cheque in hand's own flags, from the project's cheque read. Optional: a refusal keeps the extract's flag. */
+  private async readChequeActions(extract: Extract): Promise<void> {
+    const id = this.inHand()?.chequeId;
+    if (!extract.actions.recordChequeMove || !id) {
+      this.chequeActions.set(null);
+      return;
+    }
+    try {
+      this.chequeActions.set((await this.chain.cheques(this.projectId())).find((c) => c.id === id)?.actions ?? null);
+    } catch {
+      this.chequeActions.set(null);
     }
   }
 

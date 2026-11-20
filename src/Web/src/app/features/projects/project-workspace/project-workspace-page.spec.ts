@@ -364,6 +364,27 @@ describe('ProjectWorkspacePage · the frame and the owner overview', () => {
     expect(recovery).toContain('25');
   });
 
+  it('terms: the withholding category is a row, and «تعديل» shows only when the server offers it', async () => {
+    const editable = await createFixture(
+      new FakeProjectsApi(project('LumpSum', { withholdingCategory: 'ContractingAndSupplies', actions: { editWithholding: true, prepareExtract: false } })),
+      OWNER(),
+    );
+    (q(editable, 'workspace-terms') as HTMLElement).click();
+    editable.detectChanges();
+    expect(q(editable, 'workspace-fact-withholding')?.textContent).toContain('projects.withholding.category.ContractingAndSupplies');
+    expect(q(editable, 'workspace-withholding-edit')).not.toBeNull();
+    TestBed.resetTestingModule();
+
+    const readOnly = await createFixture(
+      new FakeProjectsApi(project('LumpSum', { withholdingCategory: 'Services', actions: { editWithholding: false, prepareExtract: false } })),
+      OWNER(),
+    );
+    (q(readOnly, 'workspace-terms') as HTMLElement).click();
+    readOnly.detectChanges();
+    expect(q(readOnly, 'workspace-fact-withholding')).not.toBeNull();
+    expect(q(readOnly, 'workspace-withholding-edit')).toBeNull();
+  });
+
   it('terms: a rate the server withheld is absent, not blank', async () => {
     const fixture = await createFixture(
       new FakeProjectsApi(project('LumpSum', { advanceRate: undefined, advanceRecoveryRate: undefined })),

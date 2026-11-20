@@ -72,9 +72,9 @@
         </div>
       }
 
-      @if ((x.actions.recordChequeMove && inHand()?.chequeState === 'Deposited') || x.actions.reverseCollection) {
+      @if (moves().bounce || x.actions.reverseCollection) {
         <div class="more" data-testid="payments-secondary">
-          @if (x.actions.recordChequeMove && inHand()?.chequeState === 'Deposited') {
+          @if (moves().bounce) {
             <kaff-button variant="danger-outline" testId="payments-bounce" (clicked)="open('bounce')">{{ i18n.t('cheque.bounce') }}</kaff-button>
           }
           @if (x.actions.reverseCollection) {

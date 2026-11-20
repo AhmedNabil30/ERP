@@ -43,6 +43,13 @@ const issued = (flags: Partial<Extract['actions']>) => extract({ status: 'Issued
 describe('ExtractPaymentsPage (E6)', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
+  it('follows the cheque own flags: clear only offers confirmation and no bounce', async () => {
+    const cheques = vi.fn().mockResolvedValue([{ id: 'q-1', actions: { deposit: false, clear: true, bounce: false } }]);
+    const { fixture, root } = await open(issued({ recordChequeMove: true }), [cheque('Deposited')], { cheques });
+    expect(primary(fixture)?.textContent).toContain('cheque.action.clear');
+    expect(byTestId(root, 'payments-bounce')).toBeNull();
+  });
+
   it('deposits a received cheque from the primary', async () => {
     const deposit = vi.fn().mockResolvedValue(undefined);
     const { fixture, root } = await open(issued({ recordChequeMove: true }), [transfer, cheque('Received')], { deposit });

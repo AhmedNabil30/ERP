@@ -1,4 +1,5 @@
 import type { ChequeState, ExtractStatus, WaitingOnBlock } from '../../core/extracts/extracts.api';
+import type { WithholdingCategory } from '../../core/projects/projects.api';
 import type { AdjustmentStatus, ChangeOrderStatus, LineStaff, WaitingLine } from '../../core/extracts/chain.api';
 import type { I18nService } from '../../core/i18n/i18n.service';
 import type { KaffIconName } from '../../shared/kaff-icon/kaff-icon';
@@ -92,6 +93,14 @@ export const EXTRACT_PILL: Readonly<Record<ExtractStatus, Pill>> = {
   Collected: { tone: 'done', icon: 'check', key: 'extract.status.Collected' },
   Disputed: { tone: 'stuck', icon: 'alert', key: 'extract.status.Disputed' },
   Void: { tone: 'post', icon: 'x', key: 'extract.status.Void' },
+};
+
+/** The contract's withholding category in words, rate included (spec §6.7). Literal keys, so the catalogue scan sees each. */
+export const WITHHOLDING_KEY: Readonly<Record<WithholdingCategory, string>> = {
+  None: 'projects.withholding.category.None',
+  ContractingAndSupplies: 'projects.withholding.category.ContractingAndSupplies',
+  Services: 'projects.withholding.category.Services',
+  ProfessionalFees: 'projects.withholding.category.ProfessionalFees',
 };
 
 export const CHEQUE_PILL: Readonly<Record<ChequeState, Pill>> = {

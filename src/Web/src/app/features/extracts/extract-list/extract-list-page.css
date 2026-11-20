@@ -59,6 +59,16 @@
   .cell-wide {
     display: none;
   }
+
+  /* The period takes the row's second line, so a row with no money cell does not clip it into the action column. */
+  .when {
+    grid-area: sub;
+  }
+
+  /* No figure to share the line with: the period may use the figure's column too. */
+  .when.solo {
+    grid-column: 1 / span 2;
+  }
 }
 
 .cell-wait {

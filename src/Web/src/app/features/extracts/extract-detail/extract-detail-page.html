@@ -74,7 +74,7 @@
       @if (creditNote(); as note) {
         @if (note.status === 'Raised') {
           <kaff-banner tone="note" testId="extract-credit-note">
-            <b>{{ i18n.t('credit_note.raised_line', { amount: i18n.formatAmount(note.amount) }) }}</b>
+            <b>{{ note.amount === null ? i18n.t('credit_note.title') : i18n.t('credit_note.raised_line', { amount: i18n.formatAmount(note.amount) }) }}</b>
             <a bannerActions class="lnk" [routerLink]="['/', 'projects', projectId(), 'extracts', x.id, 'credit-notes', note.id]" data-testid="extract-open-credit-note">{{ i18n.t('extract.open_short') }}</a>
           </kaff-banner>
         }
@@ -99,6 +99,11 @@
             <kaff-forward-link [link]="['/projects', projectId(), 'extracts', x.id, 'credit-notes', note.id]" [label]="i18n.t('credit_note.title')" testId="extract-credit-note-link" />
           }
         }
+      }
+
+      @if (quantities().length > 0) {
+        <h2 class="sec-h">{{ i18n.t('extract.qty.heading') }}</h2>
+        <kaff-quantity-table [rows]="quantities()" testId="extract-quantities" />
       }
 
       @if (x.document) {
@@ -128,8 +133,8 @@
         @for (h of history(); track $index) {
           <li>
             <b>{{ h.label }}</b><span class="r"><bdi dir="ltr">{{ h.date }}</bdi></span>
-            @if (h.reason) {
-              <small dir="auto">{{ h.reason }}</small>
+            @if (h.actor || h.reason) {
+              <small dir="auto">{{ h.actor }}@if (h.actor && h.reason) {<br />}{{ h.reason }}</small>
             }
           </li>
         }

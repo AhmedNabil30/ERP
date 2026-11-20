@@ -50,7 +50,7 @@
         <span class="big" data-testid="credit-note-amount"><kaff-figure [value]="n.amount" /></span>
       </div>
       <kaff-figure-list [rows]="facts()" testId="credit-note-facts" />
-      @if (mayDecide()) {
+      @if (mayReject()) {
         <div class="more">
           <kaff-button variant="secondary" testId="credit-note-reject" (clicked)="openReject()">{{ i18n.t('extract.action.reject') }}</kaff-button>
         </div>

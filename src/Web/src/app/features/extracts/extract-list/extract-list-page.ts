@@ -3,7 +3,8 @@ import { Router, RouterLink } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
 import { ChainApi } from '../../../core/extracts/chain.api';
-import { ExtractStatus, ExtractSummary, ExtractsApi } from '../../../core/extracts/extracts.api';
+import { ExtractSummary, ExtractsApi } from '../../../core/extracts/extracts.api';
+import { ProjectDetail, ProjectsApi } from '../../../core/projects/projects.api';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { KaffFigure } from '../../../shared/kaff-figure/kaff-figure';
 import { KaffForwardLink } from '../../../shared/kaff-forward-link/kaff-forward-link';
@@ -20,8 +21,6 @@ import { EXTRACT_PILL, barredText, extractTaskKey, shortDay, waitingText } from 
 const MONEY_PERMISSIONS = ['ExtractDocumentAssemble', 'ExtractDeductionsApply', 'FinancialMovementApprove'];
 /** The change-order steps; whoever holds one reads the change orders sub-section. The junior holds none. */
 const CHANGE_ORDER_PERMISSIONS = ['ChangeOrderPrepare', 'ChangeOrderReview', 'ChangeOrderClientApprovalRecord', 'ChangeOrderApprove'];
-/** An extract in these states is no longer in flight, so a new one may be prepared. */
-const SETTLED: readonly ExtractStatus[] = ['Issued', 'Collected', 'Disputed', 'Void'];
 
 /**
  * E1, the project's «المستخلصات» tab (`extracts.html#e1`): every extract, newest first, where each stands and who it
@@ -39,6 +38,7 @@ export class ExtractListPage extends ChainPage {
   private readonly api = inject(ExtractsApi);
   private readonly chain = inject(ChainApi);
   private readonly router = inject(Router);
+  private readonly projects = inject(ProjectsApi);
 
   protected readonly pill = EXTRACT_PILL;
   protected readonly shortDay = shortDay;
@@ -51,6 +51,7 @@ export class ExtractListPage extends ChainPage {
   protected readonly failure = signal<string | null>(null);
   protected readonly chequeCount = signal<number | null>(null);
   protected readonly changeOrderCount = signal<number | null>(null);
+  protected readonly project = signal<ProjectDetail | null>(null);
 
   private readonly permissions = computed(() => this.held(this.projectId()));
 
@@ -62,20 +63,15 @@ export class ExtractListPage extends ChainPage {
   protected readonly showCheques = computed(() => this.permissions().has('ChequeRead'));
   protected readonly showChangeOrders = computed(() => CHANGE_ORDER_PERMISSIONS.some((p) => this.permissions().has(p)));
 
-  /**
-   * «مستخلص جديد», only for the preparer and only when no extract is in flight. The server refuses a second one
-   * (`another_extract_open`) and the new-extract screen says so; this only spares the click.
-   */
-  protected readonly mayPrepare = computed(
-    () => !this.loading() && this.failure() === null && this.permissions().has('ExtractPrepare') && this.rows().every((r) => SETTLED.includes(r.status)),
-  );
+  /** «مستخلص جديد»: the project read's own answer (Lump Sum, BOQ frozen, no other extract open, caller may prepare). */
+  protected readonly mayPrepare = computed(() => !this.loading() && this.failure() === null && this.project()?.actions?.prepareExtract === true);
 
   protected override readonly primaryTemplate = viewChild<TemplateRef<unknown>>('primaryAction');
   protected override readonly hasPrimary = this.mayPrepare;
 
   protected readonly columns = computed(() =>
     this.showMoney()
-      ? 'minmax(7rem, 0.8fr) minmax(9rem, 1fr) minmax(12rem, 1.6fr) minmax(11rem, 1.2fr) repeat(2, minmax(8rem, 1fr))'
+      ? 'minmax(6rem, 0.7fr) minmax(8rem, 1fr) minmax(11rem, 1.5fr) minmax(10rem, 1.1fr) repeat(3, minmax(6.5rem, 1fr))'
       : 'minmax(7rem, 0.8fr) minmax(9rem, 1fr) minmax(12rem, 1.8fr) minmax(11rem, 1.2fr)',
   );
   protected readonly minInline = computed(() => (this.showMoney() ? 900 : null));
@@ -88,6 +84,7 @@ export class ExtractListPage extends ChainPage {
     ...(this.showMoney()
       ? [
           { labelKey: 'extract.list.column.due', align: 'end' as const },
+          { labelKey: 'extract.list.column.in_cheques', align: 'end' as const },
           { labelKey: 'extract.list.column.remaining', align: 'end' as const },
         ]
       : []),
@@ -109,7 +106,9 @@ export class ExtractListPage extends ChainPage {
     this.loading.set(true);
     this.failure.set(null);
     try {
-      this.rows.set(await this.api.list(this.projectId()));
+      const [rows, project] = await Promise.all([this.api.list(this.projectId()), this.projects.get(this.projectId()).catch(() => null)]);
+      this.rows.set(rows);
+      this.project.set(project);
     } catch (error) {
       this.failure.set(toProblem(error).messageKey);
     } finally {
@@ -131,6 +130,11 @@ export class ExtractListPage extends ChainPage {
       return null;
     }
     return { text: waitingText(this.i18n, w.holders, extractTaskKey(w, false)), sub: barredText(this.i18n, w.barredHolders) };
+  }
+
+  /** «يحل محل مستخلص {n}», the dim line under a revision's waiting cell. */
+  protected replaces(row: ExtractSummary): string | null {
+    return row.revises ? this.i18n.t('extract.replaces', { number: row.revises.number }) : null;
   }
 
   protected count(value: number | null): string | null {

@@ -2,12 +2,13 @@ import { ChangeDetectionStrategy, Component, TemplateRef, computed, effect, inje
 import { Router, RouterLink } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
-import { ExtractStatus, ExtractSummary, ExtractsApi } from '../../../core/extracts/extracts.api';
+import { ExtractQuantityRow, ExtractStatus, ExtractSummary, ExtractsApi } from '../../../core/extracts/extracts.api';
 import { ProjectDetail, ProjectsApi } from '../../../core/projects/projects.api';
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { KaffField } from '../../../shared/kaff-field/kaff-field';
 import { KaffPageHead } from '../../../shared/kaff-page-head/kaff-page-head';
+import { KaffQuantityTable } from '../../../shared/kaff-quantity-table/kaff-quantity-table';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { KaffStatusPill } from '../../../shared/kaff-status-pill/kaff-status-pill';
 import { ChainPage } from '../chain-page';
@@ -25,11 +26,11 @@ export function nextDay(value: string): string {
 /**
  * E2, «مستخلص جديد» (`extracts.html#e2`): the junior site engineer starts the extract with its period only
  * (D-238 item 4, D-241 item 1). No money on this screen. The quantities preview and the change orders the extract
- * will bill are not sent by the API yet, so the screen shows the last extract and the period.
+ * will bill are not sent by the API yet, so the screen shows the last extract, the period and the quantities prepare will copy.
  */
 @Component({
   selector: 'kaff-extract-new-page',
-  imports: [RouterLink, KaffBanner, KaffButton, KaffField, KaffPageHead, KaffState, KaffStatusPill],
+  imports: [RouterLink, KaffBanner, KaffButton, KaffField, KaffPageHead, KaffQuantityTable, KaffState, KaffStatusPill],
   templateUrl: './extract-new-page.html',
   styleUrl: '../chain-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,6 +48,9 @@ export class ExtractNewPage extends ChainPage {
   protected readonly project = signal<ProjectDetail | null>(null);
   protected readonly loading = signal(true);
   protected readonly failure = signal<string | null>(null);
+
+  /** What prepare would copy now (D-249). [] when the BOQ has no lines or the read was refused. */
+  protected readonly preview = signal<readonly ExtractQuantityRow[]>([]);
 
   protected readonly from = signal('');
   protected readonly to = signal('');
@@ -78,6 +82,7 @@ export class ExtractNewPage extends ChainPage {
       this.rows.set(rows);
       this.project.set(project);
       const last = this.last();
+      this.preview.set(this.inFlight() === null && this.unsigned() === false ? await this.api.quantitiesPreview(this.projectId()).catch(() => []) : []);
       if (this.from() === '' && last !== null) {
         this.from.set(nextDay(last.periodEnd));
       }

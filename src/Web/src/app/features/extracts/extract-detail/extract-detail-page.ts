@@ -2,8 +2,7 @@ import { ChangeDetectionStrategy, Component, TemplateRef, computed, effect, inje
 import { Router, RouterLink } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
-import { Adjustment, ChainApi } from '../../../core/extracts/chain.api';
-import { CollectionView, Extract, ExtractGate, ExtractsApi, RejectionGate, RejectionKind } from '../../../core/extracts/extracts.api';
+import { CollectionView, Extract, ExtractCreditNote, ExtractGate, ExtractQuantityRow, ExtractsApi, RejectionGate, RejectionKind } from '../../../core/extracts/extracts.api';
 import { ProjectDetail, ProjectsApi } from '../../../core/projects/projects.api';
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
@@ -17,6 +16,7 @@ import { FigureRow, KaffFigureList } from '../../../shared/kaff-figure-list/kaff
 import { KaffForwardLink } from '../../../shared/kaff-forward-link/kaff-forward-link';
 import { KaffMoneyField } from '../../../shared/kaff-money-field/kaff-money-field';
 import { KaffPageHead } from '../../../shared/kaff-page-head/kaff-page-head';
+import { KaffQuantityTable } from '../../../shared/kaff-quantity-table/kaff-quantity-table';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { KaffStatusPill } from '../../../shared/kaff-status-pill/kaff-status-pill';
 import { KaffWaitingLine } from '../../../shared/kaff-waiting-line/kaff-waiting-line';
@@ -28,6 +28,7 @@ import {
   chainIndex,
   extractTaskKey,
   isPositive,
+  lineText,
   negated,
   percentOfFraction,
   shortDay,
@@ -102,6 +103,7 @@ const DECISION_STATUSES = new Set(['QcSubmitted', 'PartiallyApproved', 'Technica
     KaffForwardLink,
     KaffMoneyField,
     KaffPageHead,
+    KaffQuantityTable,
     KaffState,
     KaffStatusPill,
     KaffWaitingLine,
@@ -112,7 +114,6 @@ const DECISION_STATUSES = new Set(['QcSubmitted', 'PartiallyApproved', 'Technica
 })
 export class ExtractDetailPage extends ChainPage {
   private readonly api = inject(ExtractsApi);
-  private readonly chain = inject(ChainApi);
   private readonly projects = inject(ProjectsApi);
   private readonly router = inject(Router);
 
@@ -130,8 +131,13 @@ export class ExtractDetailPage extends ChainPage {
   protected readonly failure = signal<string | null>(null);
   /** Finance's payments, read only when a cheque move is offered: it names the cheque's next move. */
   private readonly payments = signal<readonly CollectionView[]>([]);
-  /** The credit note on this extract, for a viewer who reads the treasury. */
-  protected readonly creditNote = signal<Adjustment | null>(null);
+  /** The BOQ lines' quantities as the extract kept them. [] for an extract prepared before D-248: no table. */
+  protected readonly quantities = signal<readonly ExtractQuantityRow[]>([]);
+
+  /** The credit note the extract read carries: the latest one that was not rejected. */
+  protected readonly creditNote = computed<ExtractCreditNote | null>(
+    () => this.data()?.creditNotes?.filter((n) => n.status !== 'Rejected').at(-1) ?? null,
+  );
 
   protected readonly sheet = signal<'qc' | 'reject' | 'owner' | null>(null);
   /** «طُبقت الخصومات.»: said once, in place, after Finance applied them. */
@@ -206,6 +212,10 @@ export class ExtractDetailPage extends ChainPage {
     const x = this.data();
     if (x === null || x.waitingOn.isTerminal || !x.waitingOn.permission || x.status === 'Void') {
       return null;
+    }
+    // A raised credit note holds collection: the line names who decides it (the Owner), not Finance.
+    if (x.creditNoteWaitingOn) {
+      return { text: lineText(this.i18n, x.creditNoteWaitingOn) ?? '', sub: barredText(this.i18n, x.creditNoteWaitingOn.barredHolders) };
     }
     const chequeInHand = isPositive(x.collection?.inCheques) && !isPositive(x.collection?.remaining);
     return {
@@ -296,7 +306,7 @@ export class ExtractDetailPage extends ChainPage {
   /** «بعد إشعار دائن …» under the due figure, once an approved credit note lowered it. */
   protected readonly dueNote = computed(() => {
     const note = this.creditNote();
-    return note?.status === 'Approved' ? this.i18n.t('collection.after_credit_note', { amount: this.i18n.formatAmount(note.amount) }) : null;
+    return note?.status === 'Approved' && note.amount !== null ? this.i18n.t('collection.after_credit_note', { amount: this.i18n.formatAmount(note.amount) }) : null;
   });
 
   /**
@@ -316,6 +326,7 @@ export class ExtractDetailPage extends ChainPage {
           ? this.i18n.t('extract.history.reversed', { gate: this.i18n.t(GATE_KEYS[record.gate]) })
           : this.i18n.t(GATE_KEYS[record.gate]),
       date: shortDay(record.occurredAt),
+      actor: record.actorName ?? null,
       reason: this.showsReasons() ? record.reason : null,
     })),
   );
@@ -346,7 +357,7 @@ export class ExtractDetailPage extends ChainPage {
       ]);
       this.data.set(extract);
       this.project.set(project);
-      void this.loadMoneySide(extract);
+      void this.loadSides(extract);
     } catch (error) {
       this.failure.set(toProblem(error).messageKey);
     } finally {
@@ -354,17 +365,14 @@ export class ExtractDetailPage extends ChainPage {
     }
   }
 
-  /** The two optional reads behind the money side. A refusal or a failure leaves the screen as it is. */
-  private async loadMoneySide(extract: Extract): Promise<void> {
-    if (extract.actions.recordChequeMove) {
-      this.payments.set(await this.api.collections(this.projectId(), extract.id).catch(() => []));
-    }
-    if (extract.collection !== null && this.held(this.projectId()).has('TreasuryReadProject')) {
-      const notes = await this.chain.adjustments(this.projectId()).catch(() => [] as readonly Adjustment[]);
-      this.creditNote.set(
-        notes.filter((n) => n.type === 'ClientCreditNote' && n.sourceDocumentId === extract.id && n.status !== 'Rejected').at(-1) ?? null,
-      );
-    }
+  /** The two optional reads beside the extract. A refusal or a failure leaves the screen as it is. */
+  private async loadSides(extract: Extract): Promise<void> {
+    const [payments, quantities] = await Promise.all([
+      extract.actions.recordChequeMove ? this.api.collections(this.projectId(), extract.id).catch(() => []) : Promise.resolve([]),
+      this.api.quantities(this.projectId(), extract.id).catch(() => []),
+    ]);
+    this.payments.set(payments);
+    this.quantities.set(quantities);
   }
 
   protected onPrimary(): void {

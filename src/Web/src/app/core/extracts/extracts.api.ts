@@ -330,6 +330,16 @@ export class ExtractsApi {
     return await firstValueFrom(this.http.get<Extract>(`${this.base(projectId)}/${id}`));
   }
 
+  /** D-249: the period's quantities, as the extract kept them. [] for an extract prepared before D-248. */
+  async quantities(projectId: string, id: string): Promise<readonly ExtractQuantityRow[]> {
+    return await firstValueFrom(this.http.get<ExtractQuantityRow[]>(`${this.base(projectId)}/${id}/quantities`));
+  }
+
+  /** D-249: what prepare would copy now. The server answers prepare's own refusal when prepare would refuse. */
+  async quantitiesPreview(projectId: string): Promise<readonly ExtractQuantityRow[]> {
+    return await firstValueFrom(this.http.get<ExtractQuantityRow[]>(`${this.base(projectId)}/quantities-preview`));
+  }
+
   async step(projectId: string, id: string, step: ExtractStep): Promise<void> {
     await firstValueFrom(this.http.post(`${this.base(projectId)}/${id}/${step}`, {}));
   }

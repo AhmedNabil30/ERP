@@ -37,15 +37,21 @@
                       <small>{{ w.sub }}</small>
                     }
                   }
+                  @if (replaces(row); as r) {
+                    <small data-testid="extract-replaces">{{ r }}</small>
+                  }
                 </span>
-                <bdi class="when" dir="ltr">{{ shortDay(row.periodStart) }} – {{ shortDay(row.periodEnd) }}</bdi>
+                <bdi class="when" [class.solo]="!row.money?.remaining" dir="ltr">{{ shortDay(row.periodStart) }} – {{ shortDay(row.periodEnd) }}</bdi>
                 @if (showMoney()) {
                   @let m = row.money;
                   <span class="cell-wide cell-end" data-testid="extract-due">
                     @if (m?.netPayable; as v) { <kaff-figure [value]="v" /> }
                   </span>
+                  <span class="cell-wide cell-end" data-testid="extract-in-cheques">
+                    @if (m?.inCheques; as v) { <kaff-figure [value]="v" /> }
+                  </span>
                   <span class="cell-secondary cell-end" data-testid="extract-remaining">
-                    @if (m?.outstanding; as v) { <kaff-figure [value]="v" /> }
+                    @if (m?.remaining; as v) { <kaff-figure [value]="v" /> }
                   </span>
                 }
               </kaff-table-row>

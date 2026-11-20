@@ -49,6 +49,7 @@
     @if (withholding()) {
       <kaff-money-field
         labelKey="collection.withheld"
+        [hintKey]="withholdingHintKey()"
         [controlId]="testIdPrefix() + '-withheld'"
         [errorKey]="errors().withheld"
         [testId]="testIdPrefix() + '-withheld'"

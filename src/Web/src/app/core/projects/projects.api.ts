@@ -283,6 +283,11 @@ export class ProjectsApi {
     );
   }
 
+  /** The contract's withholding category (spec 6.7). Finance sets it; the server checks role and assignment. */
+  async setWithholding(projectId: string, category: WithholdingCategory): Promise<void> {
+    await firstValueFrom(this.http.put(`api/projects/${projectId}/withholding`, { category }));
+  }
+
   /** AC-417-J: restart the follow-up period of an archived project. 409 `errors.project.not_archived` otherwise. */
   async reopen(projectId: string): Promise<ReopenResult> {
     return await firstValueFrom(this.http.post<ReopenResult>(`api/projects/${projectId}/reopen`, {}));

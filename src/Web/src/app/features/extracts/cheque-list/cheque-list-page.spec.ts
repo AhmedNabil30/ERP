@@ -16,12 +16,16 @@ const cheque: Cheque = {
   bounceReason: null, waitingOn: null,
 };
 
-async function open(permissions: string[], rows: Cheque[]) {
+const releasedHold = (actions: Cheque['actions']): Cheque => ({
+  ...cheque, id: 'q-2', extractNumber: null, collection: { ...cheque.collection, extractId: null }, actions,
+});
+
+async function open(permissions: string[], rows: Cheque[], chain: Record<string, unknown> = {}) {
   TestBed.configureTestingModule({
     providers: [
       provideRouter(ANY_ROUTE),
       { provide: I18nService, useClass: FakeI18n },
-      { provide: ChainApi, useValue: { cheques: vi.fn().mockResolvedValue(rows) } },
+      { provide: ChainApi, useValue: { cheques: vi.fn().mockResolvedValue(rows), ...chain } },
       { provide: ProjectsApi, useValue: { get: vi.fn().mockResolvedValue({ name: 'فيلا 47' }) } },
       { provide: AuthService, useValue: session(permissions) },
     ],
@@ -46,6 +50,21 @@ describe('ChequeListPage (E7)', () => {
   it('opens the extract for the Owner, who reads only', async () => {
     const { root } = await open(['ChequeRead'], [cheque]);
     expect(byTestId(root, 'cheque-row-0')?.getAttribute('href')).toBe('/projects/p-1/extracts/e-3');
+  });
+
+  it('moves a released-hold cheque from its own row, by the server flags', async () => {
+    const deposit = vi.fn().mockResolvedValue(undefined);
+    const { fixture, root } = await open(['ChequeRead', 'ExtractCollect'], [releasedHold({ deposit: true, clear: false, bounce: false })], { deposit });
+    expect(byTestId(root, 'cheque-clear')).toBeNull();
+    expect(byTestId(root, 'cheque-bounce')).toBeNull();
+    byTestId(root, 'cheque-deposit')?.click();
+    await settle(fixture);
+    expect(deposit).toHaveBeenCalledWith('p-1', 'q-2');
+  });
+
+  it('draws no move on a cheque that belongs to an extract', async () => {
+    const { root } = await open(['ChequeRead', 'ExtractCollect'], [{ ...cheque, actions: { deposit: true, clear: false, bounce: false } }]);
+    expect(byTestId(root, 'cheque-deposit')).toBeNull();
   });
 
   it('says so when no cheque is in hand', async () => {

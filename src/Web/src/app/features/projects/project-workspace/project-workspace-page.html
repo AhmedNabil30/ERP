@@ -337,7 +337,7 @@
                 <kaff-fact [label]="i18n.t('projects.workspace.pay.collected')" testId="workspace-pay-collected"><kaff-figure [value]="m.collectedToDate" /></kaff-fact>
                 <kaff-fact [label]="i18n.t('projects.workspace.pay.outstanding')" testId="workspace-pay-outstanding"><kaff-figure [value]="m.outstanding" /></kaff-fact>
               </kaff-fact-list>
-              @if (!fresh() && (p.holdRate != null || p.advanceRate != null || p.advanceRecoveryRate != null || p.signedOn || p.startedOn)) {
+              @if (!fresh() && (p.holdRate != null || p.advanceRate != null || p.advanceRecoveryRate != null || p.withholdingCategory != null || p.signedOn || p.startedOn)) {
                 <button
                   type="button"
                   class="disc"
@@ -349,6 +349,9 @@
                   {{ i18n.t('projects.frame.terms') }}<kaff-icon name="chev" [small]="true" />
                 </button>
                 @if (termsOpen()) {
+                  @if (whSaved(); as saved) {
+                    <kaff-banner tone="ok" testId="workspace-withholding-saved">{{ i18n.t('projects.withholding.saved', { category: i18n.t(withholdingKey[saved]) }) }}</kaff-banner>
+                  }
                   <kaff-fact-list id="contract-terms">
                     @if (p.holdRate != null) {
                       <kaff-fact [label]="i18n.t('projects.workspace.vocab.fact.hold_rate')" testId="workspace-fact-hold">
@@ -363,6 +366,16 @@
                     @if (p.advanceRecoveryRate != null) {
                       <kaff-fact [label]="i18n.t('projects.workspace.vocab.fact.advance_rate')" testId="workspace-fact-advance-recovery">
                         <bdi dir="ltr" class="num">{{ rate(p.advanceRecoveryRate) }}</bdi>
+                      </kaff-fact>
+                    }
+                    @if (p.withholdingCategory; as wc) {
+                      <kaff-fact [label]="i18n.t('projects.withholding.label')" testId="workspace-fact-withholding">
+                        <span class="wh">
+                          <span>{{ i18n.t(withholdingKey[wc]) }}</span>
+                          @if (p.actions?.editWithholding) {
+                            <kaff-button variant="secondary" testId="workspace-withholding-edit" (clicked)="openWithholding(wc)">{{ i18n.t('projects.withholding.edit') }}</kaff-button>
+                          }
+                        </span>
                       </kaff-fact>
                     }
                     @if (p.signedOn) {
@@ -405,4 +418,17 @@
       </div>
     }
   </kaff-project-frame>
+
+  <kaff-detail-panel [open]="whOpen()" [title]="i18n.t('projects.withholding.label')" testId="withholding-sheet" (closed)="whOpen.set(false)">
+    <div panelBody class="wh-sheet">
+      @if (whError(); as key) {
+        <kaff-banner tone="refusal" testId="withholding-error"><b>{{ i18n.t('projects.withholding.failed') }}</b> {{ i18n.t(key) }}</kaff-banner>
+      }
+      <kaff-choice-group [choices]="withholdingChoices" legendKey="projects.withholding.field" [required]="true" testId="withholding-choice" [(value)]="whChoice" />
+    </div>
+    <div panelFooter class="wh-actions">
+      <kaff-button variant="primary" [busy]="whBusy()" testId="withholding-save" (clicked)="saveWithholding()">{{ i18n.t('projects.withholding.save') }}</kaff-button>
+      <kaff-button variant="secondary" [disabled]="whBusy()" testId="withholding-cancel" (clicked)="whOpen.set(false)">{{ i18n.t('action.cancel') }}</kaff-button>
+    </div>
+  </kaff-detail-panel>
 </section>

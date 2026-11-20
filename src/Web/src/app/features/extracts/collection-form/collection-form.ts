@@ -58,6 +58,8 @@ export class CollectionForm {
 
   /** False when the contract withholds nothing: the withheld field is absent (E5 `nowh`). */
   readonly withholding = input(true);
+  /** The contract's category, said once under the withheld field («مقاولات وتوريدات 1%»). */
+  readonly withholdingHintKey = input<string | null>(null);
   /** What may still be recorded, for the «أكبر من المتبقي (…)» line. */
   readonly remaining = input.required<string>();
   /** The server's refusal of the last submit, when it is about a field. */

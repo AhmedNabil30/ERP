@@ -232,3 +232,12 @@
     display: block;
   }
 }
+
+/* The moves of a cheque that has no extract page to carry them, under its row. */
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px 16px 12px;
+  border-block-end: 1px solid var(--line);
+}

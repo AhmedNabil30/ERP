@@ -15,7 +15,7 @@ const note = (overrides: Partial<Adjustment> = {}): Adjustment => ({
   id: 'n-1', projectId: 'p-1', number: 1, type: 'ClientCreditNote', status: 'Raised', reason: 'خصم متفق عليه',
   sourceDocumentType: 'Extract', sourceDocumentId: 'e-1', amount: '20000.0000', raisedByUserId: 'u-fin',
   raisedAt: '2026-10-20T13:10:00Z', decidedByUserId: null, decidedAt: null, decisionReason: null,
-  disputeReason: 'سعر البياض أعلى', waitingOn: {
+  disputeReason: 'سعر البياض أعلى', actions: { approve: true, reject: true, reverse: false }, waitingOn: {
     taskKey: 'waiting.task.adjustment_approval', permission: 'FinancialMovementApprove',
     holders: [{ userId: 'u-owner', fullName: 'أحمد نبيل', role: 'Owner', level: null }], barredHolders: [],
   },
@@ -55,7 +55,7 @@ describe('CreditNotePage (E10)', () => {
   });
 
   it('shows the raiser who decides, and no control', async () => {
-    const { fixture, root } = await open('u-fin', note());
+    const { fixture, root } = await open('u-fin', note({ actions: { approve: false, reject: false, reverse: false } }));
     expect(primary(fixture)).toBeNull();
     expect(byTestId(root, 'credit-note-reject')).toBeNull();
     expect(byTestId(root, 'credit-note-raiser')).not.toBeNull();
@@ -77,7 +77,7 @@ describe('CreditNotePage (E10)', () => {
   });
 
   it('says an approved note is approved, with no control', async () => {
-    const { fixture, root } = await open('u-owner', note({ status: 'Approved', decidedAt: '2026-10-21T09:00:00Z', waitingOn: null }));
+    const { fixture, root } = await open('u-owner', note({ status: 'Approved', decidedAt: '2026-10-21T09:00:00Z', waitingOn: null, actions: { approve: false, reject: false, reverse: true } }));
     expect(primary(fixture)).toBeNull();
     expect(byTestId(root, 'credit-note-approved')).not.toBeNull();
   });

@@ -4,7 +4,10 @@ import { RouterLink } from '@angular/router';
 import { toProblem } from '../../../core/api/problem-details';
 import { ChainApi, Cheque } from '../../../core/extracts/chain.api';
 import { ProjectDetail, ProjectsApi } from '../../../core/projects/projects.api';
+import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
+import { KaffDetailPanel } from '../../../shared/kaff-detail-panel/kaff-detail-panel';
+import { KaffField } from '../../../shared/kaff-field/kaff-field';
 import { KaffFigure } from '../../../shared/kaff-figure/kaff-figure';
 import { KaffPageHead } from '../../../shared/kaff-page-head/kaff-page-head';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
@@ -20,11 +23,12 @@ const DAY_MS = 86_400_000;
 /**
  * E7, «الشيكات تحت التحصيل» (`extracts.html#e7`), a sub-section of the extracts tab (D-241 item 3): the cheques in
  * hand, oldest first. Finance's rows open the extract's payments (E6); the Owner reads the list (D-239 item 4) and
- * his rows open the extract (E3). No primary: each row is the way in.
+ * his rows open the extract (E3). No primary: each row is the way in. A cheque that pays the released hold has no
+ * extract to open, so its own moves (the server's `actions` flags) sit under its row.
  */
 @Component({
   selector: 'kaff-cheque-list-page',
-  imports: [RouterLink, KaffButton, KaffFigure, KaffPageHead, KaffState, KaffStatusPill, KaffTable, KaffTableRow],
+  imports: [RouterLink, KaffBanner, KaffButton, KaffDetailPanel, KaffField, KaffFigure, KaffPageHead, KaffState, KaffStatusPill, KaffTable, KaffTableRow],
   templateUrl: './cheque-list-page.html',
   styleUrls: ['../chain-page.css', '../extract-list/extract-list-page.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -42,6 +46,11 @@ export class ChequeListPage extends ChainPage {
   protected readonly project = signal<ProjectDetail | null>(null);
   protected readonly loading = signal(true);
   protected readonly failure = signal<string | null>(null);
+
+  /** The released-hold cheque whose bounce sheet is open. */
+  protected readonly bouncing = signal<Cheque | null>(null);
+  protected readonly reason = signal('');
+  protected readonly reasonError = signal<string | null>(null);
 
   protected override readonly primaryTemplate = signal(undefined);
   protected override readonly hasPrimary = signal(false);
@@ -90,6 +99,41 @@ export class ChequeListPage extends ChainPage {
     return this.movesCheques()
       ? ['/projects', this.projectId(), 'extracts', extractId, 'payments']
       : ['/projects', this.projectId(), 'extracts', extractId];
+  }
+
+  /** The moves the server offers on a cheque with no extract page to carry them. */
+  protected moves(row: Cheque): { deposit: boolean; clear: boolean; bounce: boolean } | null {
+    const a = row.actions;
+    return a && row.collection.extractId === null && (a.deposit || a.clear || a.bounce) ? a : null;
+  }
+
+  protected async move(row: Cheque, step: 'deposit' | 'clear'): Promise<void> {
+    if (await this.act(() => (step === 'deposit' ? this.chain.deposit(this.projectId(), row.id) : this.chain.clear(this.projectId(), row.id)))) {
+      await this.reload();
+    }
+  }
+
+  protected openBounce(row: Cheque): void {
+    this.reason.set('');
+    this.reasonError.set(null);
+    this.actionError.set(null);
+    this.bouncing.set(row);
+  }
+
+  protected async submitBounce(): Promise<void> {
+    const row = this.bouncing();
+    const reason = this.reason().trim();
+    if (row === null) {
+      return;
+    }
+    if (reason === '') {
+      this.reasonError.set('cheque.bounce.reason_required');
+      return;
+    }
+    if (await this.act(() => this.chain.bounce(this.projectId(), row.id, reason))) {
+      this.bouncing.set(null);
+      await this.reload();
+    }
   }
 
   protected title(row: Cheque): string {

@@ -15,12 +15,12 @@ const row = (number: number, status: ExtractSummary['status'], periodEnd = '2026
   id: `e-${number}`, number, periodStart: '2026-09-01', periodEnd, status, money: null, waitingOn: waiting({ status }),
 });
 
-async function open(rows: ExtractSummary[], prepare = vi.fn().mockResolvedValue(extract({ id: 'e-9' })), isSigned = true) {
+async function open(rows: ExtractSummary[], prepare = vi.fn().mockResolvedValue(extract({ id: 'e-9' })), isSigned = true, preview: unknown[] = []) {
   TestBed.configureTestingModule({
     providers: [
       provideRouter(ANY_ROUTE),
       { provide: I18nService, useClass: FakeI18n },
-      { provide: ExtractsApi, useValue: { list: vi.fn().mockResolvedValue(rows), prepare } },
+      { provide: ExtractsApi, useValue: { list: vi.fn().mockResolvedValue(rows), prepare, quantitiesPreview: vi.fn().mockResolvedValue(preview) } },
       { provide: ProjectsApi, useValue: { get: vi.fn().mockResolvedValue({ name: 'فيلا 47', isSigned }) } },
       { provide: AuthService, useValue: session(['ExtractPrepare']) },
     ],
@@ -46,6 +46,16 @@ describe('ExtractNewPage (E2)', () => {
     primary(fixture)?.click();
     await settle(fixture);
     expect(prepare).toHaveBeenCalledWith('p-1', '2026-10-01', '2026-10-31');
+  });
+
+  it('shows the quantities prepare will copy, and nothing when the BOQ has none', async () => {
+    const lines = [{ boqLineId: 'l-1', descriptionAr: 'بياض داخلي', unit: 'م²', previousQuantity: null, currentQuantity: null, cumulativeQuantity: 520 }];
+    const shown = await open([], undefined, true, lines);
+    expect(byTestId(shown.root, 'extract-new-quantities')?.textContent).toContain('بياض داخلي');
+    TestBed.resetTestingModule();
+
+    const none = await open([]);
+    expect(byTestId(none.root, 'extract-new-quantities')).toBeNull();
   });
 
   it('refuses with no primary while an extract is in flight', async () => {

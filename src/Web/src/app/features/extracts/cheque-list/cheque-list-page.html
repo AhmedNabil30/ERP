@@ -14,6 +14,11 @@
   } @else if (rows().length === 0) {
     <kaff-state mode="empty" titleKey="cheque.list.empty" testId="cheque-list-empty" />
   } @else {
+    @if (actionError(); as key) {
+      @if (bouncing() === null) {
+        <kaff-banner tone="refusal" testId="cheque-error">{{ i18n.t(key, actionErrorParams()) }}</kaff-banner>
+      }
+    }
     <kaff-table [columns]="columns" [columnDefs]="headerColumns" testId="cheque-table">
       <ul class="rows" data-testid="cheque-rows">
         @for (row of rows(); track row.id) {
@@ -31,9 +36,37 @@
               <span class="cell-wait">{{ age(row) }}<span class="cell-sub"> · <bdi dir="ltr">{{ row.collection.reference }}</bdi></span></span>
               <span class="cell-secondary cell-end"><kaff-figure [value]="row.collection.cashReceived" /></span>
             </kaff-table-row>
+            @if (moves(row); as m) {
+              <div class="row-actions" [attr.data-testid]="'cheque-moves-' + $index">
+                @if (m.deposit) {
+                  <kaff-button variant="secondary" [busy]="busy()" testId="cheque-deposit" (clicked)="move(row, 'deposit')">{{ i18n.t('cheque.action.deposit') }}</kaff-button>
+                }
+                @if (m.clear) {
+                  <kaff-button variant="secondary" [busy]="busy()" testId="cheque-clear" (clicked)="move(row, 'clear')">{{ i18n.t('cheque.action.clear') }}</kaff-button>
+                }
+                @if (m.bounce) {
+                  <kaff-button variant="danger-outline" testId="cheque-bounce" (clicked)="openBounce(row)">{{ i18n.t('cheque.bounce') }}</kaff-button>
+                }
+              </div>
+            }
           </li>
         }
       </ul>
     </kaff-table>
+
+    <kaff-detail-panel [open]="bouncing() !== null" [title]="i18n.t('cheque.bounce')" testId="cheque-bounce-sheet" (closed)="bouncing.set(null)">
+      <div panelBody class="sheet-form">
+        @if (actionError(); as key) {
+          <kaff-banner tone="refusal">{{ i18n.t(key, actionErrorParams()) }}</kaff-banner>
+        }
+        <kaff-field labelKey="cheque.bounce.reason" controlId="cheque-bounce-reason" [required]="true" [errorKey]="reasonError()" #rf="kaffField">
+          <textarea id="cheque-bounce-reason" data-testid="cheque-bounce-reason" [attr.aria-invalid]="reasonError() ? 'true' : null" [attr.aria-describedby]="rf.describedById()" [value]="reason()" (input)="reason.set($any($event.target).value)"></textarea>
+        </kaff-field>
+      </div>
+      <div panelFooter class="panel-actions">
+        <kaff-button variant="danger" [busy]="busy()" testId="cheque-bounce-submit" (clicked)="submitBounce()">{{ i18n.t('cheque.bounce.submit') }}</kaff-button>
+        <kaff-button variant="secondary" [disabled]="busy()" testId="cheque-bounce-cancel" (clicked)="bouncing.set(null)">{{ i18n.t('extract.cancel') }}</kaff-button>
+      </div>
+    </kaff-detail-panel>
   }
 </section>

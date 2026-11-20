@@ -4,7 +4,6 @@ import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AuthService } from '../../../core/auth/auth.service';
-import { ChainApi } from '../../../core/extracts/chain.api';
 import { Extract, ExtractsApi } from '../../../core/extracts/extracts.api';
 import { I18nService } from '../../../core/i18n/i18n.service';
 import { ProjectsApi } from '../../../core/projects/projects.api';
@@ -15,13 +14,12 @@ import { ExtractCollectPage } from './extract-collect-page';
 /** E5 (`extracts.html#e5`) and the collection form it shares with the released hold (D-244 item 2). */
 const OPEN = { ...POSITION, collected: '0', inCheques: '0', received: '0', withheld: '0', remaining: '190000.0000' };
 
-async function open(data: Extract, collect = vi.fn().mockResolvedValue(undefined), notes: unknown[] = []) {
+async function open(data: Extract, collect = vi.fn().mockResolvedValue(undefined)) {
   TestBed.configureTestingModule({
     providers: [
       provideRouter(ANY_ROUTE),
       { provide: I18nService, useClass: FakeI18n },
       { provide: ExtractsApi, useValue: { get: vi.fn().mockResolvedValue(data), collect } },
-      { provide: ChainApi, useValue: { adjustments: vi.fn().mockResolvedValue(notes) } },
       { provide: ProjectsApi, useValue: { get: vi.fn().mockResolvedValue({ clientName: 'النيل' }) } },
       { provide: AuthService, useValue: session(['ExtractCollect', 'TreasuryReadProject']) },
     ],
@@ -89,15 +87,18 @@ describe('ExtractCollectPage (E5)', () => {
     expect(byTestId(root, 'collect-error')).toBeNull();
   });
 
+  it('says the contract category once under the withheld field', async () => {
+    const { root } = await open(extract({ status: 'Issued', collection: OPEN, withholdingCategory: 'ContractingAndSupplies' }, { recordCollection: true }));
+    expect(root.textContent).toContain('projects.withholding.category.ContractingAndSupplies');
+  });
+
   it('leaves the withheld field out when the contract withholds nothing', async () => {
     const { root } = await open(extract({ status: 'Issued', collection: { ...OPEN, expectedWithheld: '0' } }, { recordCollection: true }));
     expect(byTestId(root, 'collect-withheld')).toBeNull();
   });
 
   it('refuses, with no primary, while a credit note waits on the Owner', async () => {
-    const { fixture, root } = await open(extract({ status: 'Issued', collection: OPEN }), undefined, [
-      { id: 'n-1', sourceDocumentId: 'e-1', status: 'Raised' },
-    ]);
+    const { fixture, root } = await open(extract({ status: 'Issued', collection: OPEN, creditNotes: [{ id: 'n-1', number: 1, status: 'Raised', amount: '20000.0000' }] }));
     expect(primary(fixture)).toBeNull();
     expect(byTestId(root, 'collect-refused')?.textContent).toContain('collection.refused.credit_note');
     expect(byTestId(root, 'collect-open-credit-note')).not.toBeNull();
