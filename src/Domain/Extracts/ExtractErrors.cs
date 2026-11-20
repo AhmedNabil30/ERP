@@ -118,4 +118,15 @@ public static class ExtractErrors
     /// <summary>D-235 item 4: the supervising engineer enters both material values with the QC report.</summary>
     public static readonly Error MaterialValuesRequired =
         Error.Validation("extract.material_values_required", "errors.extract.material_values_required");
+
+    /// <summary>AC-500-E: an NCR closes once.</summary>
+    public static readonly Error NcrAlreadyClosed =
+        Error.Conflict("extract.ncr_already_closed", "errors.extract.ncr_already_closed");
+
+    /// <summary>AC-500-E: closing an NCR stores why it closed.</summary>
+    public static readonly Error NcrCloseNoteRequired =
+        Error.Validation("extract.ncr_close_note_required", "errors.extract.ncr_close_note_required");
+
+    public static readonly Error NcrNotFound =
+        Error.NotFound("extract.ncr_not_found", "errors.extract.ncr_not_found");
 }

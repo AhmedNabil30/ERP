@@ -120,3 +120,29 @@ internal sealed class ExtractQuantityLineConfiguration : IEntityTypeConfiguratio
         // (KAFF_BOQ_FROZEN) answers it, and the guard already keeps a frozen line, the only kind an extract reads, in place.
     }
 }
+
+internal sealed class NcrConfiguration : IEntityTypeConfiguration<Ncr>
+{
+    public void Configure(EntityTypeBuilder<Ncr> builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        builder.ToTable(DbTables.Ncrs);
+        builder.HasKey(ncr => ncr.Id);
+        builder.Property(ncr => ncr.Id).ValueGeneratedNever();
+        builder.Property(ncr => ncr.OpenedAt).IsRequired();
+        builder.Property(ncr => ncr.CloseNote).HasMaxLength(Project.MaxReasonLength);
+
+        // AC-500-E: an extract holds against one open NCR at a time; a second split of the same extract reuses it.
+        builder.HasIndex(ncr => ncr.ExtractId)
+            .IsUnique()
+            .HasFilter("status = 'Open'")
+            .HasDatabaseName("ux_ncrs_open_extract");
+        builder.HasIndex(ncr => ncr.ProjectId);
+
+        builder.HasOne<Project>().WithMany().HasForeignKey(ncr => ncr.ProjectId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Extract>().WithMany().HasForeignKey(ncr => ncr.ExtractId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<User>().WithMany().HasForeignKey(ncr => ncr.OpenedByUserId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<User>().WithMany().HasForeignKey(ncr => ncr.ClosedByUserId).OnDelete(DeleteBehavior.Restrict);
+    }
+}

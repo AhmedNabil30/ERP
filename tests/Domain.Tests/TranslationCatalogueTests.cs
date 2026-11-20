@@ -140,6 +140,9 @@ public sealed class TranslationCatalogueTests
             TheKey,
             "errors.collection.withholding_not_applicable",
             "errors.project.withholding_category_required",
+
+            // AC-317-E, D-250 item 4: a withheld amount on the released hold while HoldReleaseCarriesWithholding is false.
+            "errors.closure.released_hold_carries_no_withholding",
         ];
 
         static bool MentionsWithholding(string key) =>

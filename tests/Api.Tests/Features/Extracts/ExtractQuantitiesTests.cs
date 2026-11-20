@@ -67,6 +67,16 @@ public sealed partial class ExtractEndpointTests
         row.GetProperty("descriptionAr").GetString().Should().Be("خرسانة");
         row.GetProperty("unit").GetString().Should().Be("m3");
         ShouldRead(row, 0m, 300m, 300m);
+        await using (KaffDbContext reader = _database.CreateBareContext())
+        {
+            Guid lineId = row.GetProperty("boqLineId").GetGuid();
+            Kaff.Domain.Boqs.BoqLine bab = (await reader.Boqs.Include(boq => boq.Lines).Where(boq => boq.ProjectId == project.Id).SingleAsync(Ct))
+                .Lines.Single(line => line.Id == lineId);
+            row.GetProperty("babCode").GetString().Should().Be(bab.BabCode, "the row carries its line's frozen باب so a screen can band by it");
+            row.GetProperty("babNameAr").GetString().Should().Be(bab.BabNameAr);
+            row.GetProperty("babNameEn").GetString().Should().Be(bab.BabNameEn);
+        }
+
         await ShouldFootAsync(project.Id, extract);
     }
 

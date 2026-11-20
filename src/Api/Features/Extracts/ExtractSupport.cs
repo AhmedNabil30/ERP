@@ -218,9 +218,17 @@ internal static class ExtractSupport
             await ExtractCollections.StateAsync(database, extract, cancellationToken),
             titles);
 
+        // AC-500-E: the NCR the extract's held remainder waits on, while it is open.
+        Ncr? openNcr = await database.Ncrs.AsNoTracking()
+            .FirstOrDefaultAsync(ncr => ncr.ExtractId == extract.Id && ncr.Status == NcrStatus.Open, cancellationToken);
+
         bool seesMoney = viewer.MaySeeMoney;
         return built with
         {
+            OpenNcr = openNcr is null
+                ? null
+                : Kaff.Api.Features.Ncrs.NcrResponse.From(
+                    openNcr, extract, seesMoney, viewer.Held.Contains(Kaff.Api.Features.Ncrs.NcrSupport.ClosePermission)),
             GateHistory = [.. built.GateHistory.Select(record => record with { ActorName = names.GetValueOrDefault(record.ActorUserId) })],
             Revises = links.Find(link => link.Id == extract.RevisesExtractId),
             RevisedBy = links.Find(link => link.Id != extract.RevisesExtractId),

@@ -374,6 +374,50 @@ public sealed class ExtractChainTests
     }
 
     [Fact]
+    public async Task Closing_the_NCR_releases_the_held_portion_once_and_stores_its_note()
+    {
+        Extract extract = await _h.DriveAsync(ExtractStatus.QcSubmitted);
+        Guid office = ExtractHarness.NewUser();
+        Ncr ncr = Ncr.Open(extract, office, ExtractHarness.Now);
+        extract.ApproveTechnicalOffice(office, Percentage.FromPercent(60m), ncr.Id, _h.Rulings, ExtractHarness.Now)
+            .IsSuccess.Should().BeTrue();
+
+        // 300,000 of period work, 60% approved: 120,000 held.
+        extract.HeldWorkValue().Should().Be(new Money(120_000m));
+
+        ncr.Close(extract, "  ", office, ExtractHarness.Now).Error.Should().Be(ExtractErrors.NcrCloseNoteRequired);
+        ncr.Status.Should().Be(NcrStatus.Open);
+        extract.HeldPortionReleasedAt.Should().BeNull("a refused close releases nothing");
+
+        DateTimeOffset later = ExtractHarness.Now.AddDays(3);
+        ncr.Close(extract, " columns recast ", office, later).IsSuccess.Should().BeTrue();
+        ncr.Status.Should().Be(NcrStatus.Closed);
+        ncr.CloseNote.Should().Be("columns recast");
+        ncr.ClosedByUserId.Should().Be(office);
+        extract.HeldPortionReleasedAt.Should().Be(later);
+        extract.GateHistory[^1].Gate.Should().Be(ExtractGate.HeldPortionRelease);
+
+        ncr.Close(extract, "again", office, later).Error.Should().Be(ExtractErrors.NcrAlreadyClosed);
+        extract.GateHistory.Count(record => record.Gate == ExtractGate.HeldPortionRelease).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task An_NCR_whose_extract_was_rejected_closes_without_a_release()
+    {
+        Extract extract = await _h.DriveAsync(ExtractStatus.QcSubmitted);
+        Guid office = ExtractHarness.NewUser();
+        Ncr ncr = Ncr.Open(extract, office, ExtractHarness.Now);
+        extract.ApproveTechnicalOffice(office, Percentage.FromPercent(60m), ncr.Id, _h.Rulings, ExtractHarness.Now)
+            .IsSuccess.Should().BeTrue();
+        extract.Reject(ExtractHarness.NewUser(), "material values wrong", ExtractRejectionKind.MaterialValues, _h.Context(), [], ExtractHarness.Now)
+            .IsSuccess.Should().BeTrue();
+        extract.HeldWorkValue().Should().Be(Money.Zero);
+
+        ncr.Close(extract, "fixed", office, ExtractHarness.Now).IsSuccess.Should().BeTrue();
+        extract.HeldPortionReleasedAt.Should().BeNull("the extract holds nothing against the NCR any more");
+    }
+
+    [Fact]
     public async Task A_fully_approved_extract_has_nothing_to_release()
     {
         Extract extract = await _h.DriveAsync(ExtractStatus.TechnicalApproved);

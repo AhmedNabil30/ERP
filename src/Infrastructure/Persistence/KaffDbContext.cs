@@ -144,6 +144,8 @@ public sealed class KaffDbContext : DbContext
 
     public DbSet<Snag> Snags => Set<Snag>();
 
+    public DbSet<Ncr> Ncrs => Set<Ncr>();
+
     public DbSet<WarrantyCallback> WarrantyCallbacks => Set<WarrantyCallback>();
 
     public DbSet<Adjustment> Adjustments => Set<Adjustment>();

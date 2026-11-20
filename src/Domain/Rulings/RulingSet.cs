@@ -43,6 +43,9 @@ public sealed record RulingSet
     /// <summary>Who submits an extract's weekly QC report. Enforced in the permission catalogue.</summary>
     public ExtractQcReportAuthor ExtractQcReportAuthor { get; init; } = ExtractQcReportAuthor.Default;
 
+    /// <summary>Who closes an NCR and so releases a split gate's held portion (D-250 item 1).</summary>
+    public NcrCloser NcrCloser { get; init; } = NcrCloser.Default;
+
     /// <summary>What a preparer may change on an extract a rejection returned to Draft.</summary>
     public ExtractRevisionScope ExtractRevisionScope { get; init; } = ExtractRevisionScope.Default;
 
@@ -189,6 +192,7 @@ public sealed record RulingSet
         ExtractPartialApprovalScope.Note,
         ExtractPreparationScope.Note,
         ExtractQcReportAuthor.Note,
+        NcrCloser.Note,
         ExtractRevisionScope.Note,
         CollectionApproval.Note,
         CollectionSettlement.Note,

@@ -154,6 +154,10 @@ export interface ExtractQuantityRow {
   readonly previousAmount?: string | null;
   readonly currentAmount?: string | null;
   readonly cumulativeAmount?: string | null;
+  /** The BOQ line's باب, as frozen with the line. Rows band by it. */
+  readonly babCode: string;
+  readonly babNameAr: string;
+  readonly babNameEn: string;
 }
 
 export interface ExtractEvidence {
@@ -211,6 +215,8 @@ export interface Extract {
   readonly createdAt: string;
   readonly approvedPortion: string;
   readonly heldForNcrId: string | null;
+  /** AC-500-E: the NCR the held remainder waits on, while it is open. */
+  readonly openNcr?: Ncr | null;
   readonly gateHistory: readonly GateRecord[];
   readonly actions: ExtractActions;
   /** Null for a viewer who may not see money. */
@@ -233,6 +239,24 @@ export interface Extract {
   readonly creditNotes?: readonly ExtractCreditNote[] | null;
   /** Who a raised credit note waits on: the Owner, to approve it. Null when none is raised. */
   readonly creditNoteWaitingOn?: WaitingLine | null;
+}
+
+export type NcrStatus = 'Open' | 'Closed';
+
+/** AC-500-E: `GET /api/projects/{projectId}/ncrs` row, and the extract read's `openNcr`. */
+export interface Ncr {
+  readonly id: string;
+  readonly extractId: string;
+  readonly extractNumber: number;
+  readonly status: NcrStatus;
+  readonly openedAt: string;
+  readonly openedByUserId: string;
+  readonly closedAt: string | null;
+  readonly closedByUserId: string | null;
+  readonly closeNote: string | null;
+  /** The period work value held back. Null for a viewer who may not see money. */
+  readonly heldAmount: string | null;
+  readonly actions: { readonly close: boolean };
 }
 
 export interface ExtractCreditNote {

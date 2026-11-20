@@ -54,6 +54,7 @@ internal static class DbTables
     public const string ExtractChangeOrderLines = "extract_change_order_lines";
     public const string ExtractQuantityLines = "extract_quantity_lines";
     public const string Snags = "snags";
+    public const string Ncrs = "ncrs";
     public const string WarrantyCallbacks = "warranty_callbacks";
     public const string Adjustments = "adjustments";
 }

@@ -35,7 +35,7 @@ DECLARE
     v_updatable text[] := ARRAY[
         'Departments', 'accounting_periods', 'accounts', 'adjustments', 'babs', 'boq_bases',
         'boq_lines', 'boqs', 'catalogue_items', 'change_orders', 'cheques', 'clients', 'daily_logs',
-        'employees', 'engagements', 'extract_figures', 'extracts', 'opportunities',
+        'employees', 'engagements', 'extract_figures', 'extracts', 'ncrs', 'opportunities',
         'project_assignments', 'projects', 'snags', 'subcontractors', 'suppliers', 'users',
         'warranty_callbacks'];
     v_deletable text[] := ARRAY['boq_lines', 'boq_base_lines', 'extract_figures'];

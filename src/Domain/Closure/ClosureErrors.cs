@@ -102,4 +102,8 @@ public static class ClosureErrors
     /// <summary>D-244 item 2: received plus withheld may not pass what remains of the released hold.</summary>
     public static readonly Error ReleasedHoldExceeded =
         Error.Conflict("closure.released_hold_exceeded", "errors.closure.released_hold_exceeded");
+
+    /// <summary>AC-317-E: the ruling says the hold release carries no withholding, so a withheld amount on it is refused.</summary>
+    public static readonly Error ReleasedHoldCarriesNoWithholding =
+        Error.Validation("closure.released_hold_carries_no_withholding", "errors.closure.released_hold_carries_no_withholding");
 }

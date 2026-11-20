@@ -159,7 +159,8 @@ public sealed record ExtractResponse(
     ExtractLink? RevisedBy = null,
     WithholdingCategory? WithholdingCategory = null,
     IReadOnlyList<ExtractCreditNote>? CreditNotes = null,
-    WaitingLineResponse? CreditNoteWaitingOn = null);
+    WaitingLineResponse? CreditNoteWaitingOn = null,
+    Kaff.Api.Features.Ncrs.NcrResponse? OpenNcr = null);
 
 /// <summary>Who is looking: their id and which of the extract permissions they hold on this project.</summary>
 internal sealed record ExtractViewer(Guid UserId, IReadOnlySet<Permission> Held)

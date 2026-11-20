@@ -43,10 +43,21 @@ public static class ReleasedHoldPayments
     }
 
     /// <summary>A cheque is recorded as received and posts nothing; it counts against what remains until it clears or bounces.</summary>
-    public static Result AcceptCheque(Project project, RulingSet rulings, CollectionPosition position, Money cash, Money withheld) =>
-        Result.FirstFailureOrSuccess(
+    /// <remarks>
+    /// AC-317-E, D-250 item 4: withholding is recorded on the released hold only while
+    /// <see cref="WithholdingBaseRule.HoldReleaseCarriesWithholding"/> says the release carries it.
+    /// </remarks>
+    public static Result AcceptCheque(Project project, RulingSet rulings, CollectionPosition position, Money cash, Money withheld)
+    {
+        ArgumentNullException.ThrowIfNull(rulings);
+
+        return Result.FirstFailureOrSuccess(
             EnsureMayRecord(project, rulings, position),
+            withheld.IsPositive && !rulings.WithholdingBase.HoldReleaseCarriesWithholding
+                ? Result.Failure(ClosureErrors.ReleasedHoldCarriesNoWithholding)
+                : Result.Success(),
             Specific(Extract.CheckPayment(project, position, cash, withheld)));
+    }
 
     /// <summary>A payment by cash or transfer: the cash to the safe and the withheld amount to the withholding account.</summary>
     public static Result<PostingSet> Collect(

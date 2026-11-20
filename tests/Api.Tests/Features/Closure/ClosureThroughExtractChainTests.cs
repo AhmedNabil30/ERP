@@ -13,7 +13,9 @@ using Kaff.Domain.MasterData;
 using Kaff.Domain.Projects;
 using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Kaff.Api.Tests.Features.Closure;
 
@@ -177,6 +179,58 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
         HttpResponseMessage closed = await SendAsync(HttpMethod.Post, $"/api/projects/{id}/close", _owner, null);
         closed.StatusCode.Should().Be(HttpStatusCode.OK, await closed.Content.ReadAsStringAsync(Ct));
         (await StatusAsync(id)).Should().Be(ProjectStatus.Closed);
+    }
+
+    // ---- AC-317-E, D-250 item 4: the release withholds only if the ruling says so -------------------------------
+
+    /// <summary>
+    /// The same release collected under <c>HoldReleaseCarriesWithholding</c> true, then false. True: the withheld amount is
+    /// written to the withholding account. False: a withheld amount is refused, nothing is posted, and the same payment
+    /// without withholding is accepted.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task The_released_hold_withholds_only_when_the_ruling_says_the_release_carries_withholding(bool carries)
+    {
+        await using var ruled = new KaffApiFactory(_database).WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services => services.AddSingleton(Kaff.Domain.Rulings.RulingSet.Default with
+            {
+                WithholdingBase = Kaff.Domain.Rulings.WithholdingBaseRule.Default with { HoldReleaseCarriesWithholding = carries },
+            })));
+        _client.Dispose();
+        _client = ruled.CreateClient();
+
+        Project project = await NewProjectAsync(WithholdingCategory.ContractingAndSupplies);
+        Guid id = project.Id;
+        Guid first = await PrepareAsync(project, "100000", "0");
+        await AdvanceAsync(project, first, ExtractStatus.Issued);
+        await CollectAsync(project, first);
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{id}/practical-completion", _technicalOffice, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{id}/handover", _technicalOffice, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{id}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        decimal tax = await NetIntoAsync(id, AccountType.TaxWithheldAtSource);
+        long before = await CountAllAsync(id);
+
+        HttpResponseMessage withheld = await SendAsync(HttpMethod.Post, HoldCollect(id), _finance, HoldPayment("Transfer", "29400", "600", "TRX-W"));
+
+        if (carries)
+        {
+            withheld.StatusCode.Should().Be(HttpStatusCode.OK, await withheld.Content.ReadAsStringAsync(Ct));
+            (await NetIntoAsync(id, AccountType.TaxWithheldAtSource)).Should().Be(tax + 600m);
+            return;
+        }
+
+        withheld.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await ErrorCodeAsync(withheld)).Should().Be("closure.released_hold_carries_no_withholding");
+        (await CountAllAsync(id)).Should().Be(before, "a refused collection posts nothing");
+
+        // A withheld cheque is refused the same way; the payment with no withholding goes through.
+        (await SendAsync(HttpMethod.Post, HoldCollect(id), _finance, HoldPayment("Cheque", "29400", "600", "CHQ-W"))).StatusCode
+            .Should().Be(HttpStatusCode.BadRequest);
+        (await SendAsync(HttpMethod.Post, HoldCollect(id), _finance, HoldPayment("Transfer", "30000", "0", "TRX-N"))).StatusCode
+            .Should().Be(HttpStatusCode.OK);
+        (await NetIntoAsync(id, AccountType.TaxWithheldAtSource)).Should().Be(tax, "nothing is withheld on the release");
     }
 
     // ---- D-244 item 2, KAFF-317-E: the released hold is collected on the extract's collection flow ----------

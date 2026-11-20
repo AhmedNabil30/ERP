@@ -11,6 +11,7 @@ namespace Kaff.Api.Features.Extracts;
 /// One BOQ line of an extract in the standard Egyptian layout: previous, current and cumulative quantity (D-248).
 /// <paramref name="PreviousQuantity"/> and <paramref name="CurrentQuantity"/> are null when the previous extract was
 /// prepared before quantities were kept. The rate and the amounts are null for a viewer who may not see extract money.
+/// The باب is the BOQ line's own copy, frozen with it, so a screen can band the rows by باب.
 /// </summary>
 public sealed record ExtractQuantityRow(
     Guid BoqLineId,
@@ -24,7 +25,10 @@ public sealed record ExtractQuantityRow(
     Money? Rate,
     Money? PreviousAmount,
     Money? CurrentAmount,
-    Money? CumulativeAmount);
+    Money? CumulativeAmount,
+    string BabCode,
+    string BabNameAr,
+    string BabNameEn);
 
 /// <summary>
 /// The quantities an extract keeps (D-248). Prepare, the evidence revision and the preview all ask the same previous,
@@ -102,6 +106,7 @@ internal static class ExtractQuantities
             seesMoney ? line.SellRate : null,
             seesMoney ? previousAmount : null,
             seesMoney ? cumulativeAmount - previousAmount : null,
-            seesMoney ? cumulativeAmount : null);
+            seesMoney ? cumulativeAmount : null,
+            line.BabCode, line.BabNameAr, line.BabNameEn);
     }
 }

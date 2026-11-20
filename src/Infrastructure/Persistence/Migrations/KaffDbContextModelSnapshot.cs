@@ -1462,6 +1462,63 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                     b.ToTable("extract_quantity_lines", (string)null);
                 });
 
+            modelBuilder.Entity("Kaff.Domain.Extracts.Ncr", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CloseNote")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("close_note");
+
+                    b.Property<DateTimeOffset?>("ClosedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("closed_at");
+
+                    b.Property<Guid?>("ClosedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("closed_by_user_id");
+
+                    b.Property<Guid>("ExtractId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("extract_id");
+
+                    b.Property<DateTimeOffset>("OpenedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("opened_at");
+
+                    b.Property<Guid>("OpenedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("opened_by_user_id");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClosedByUserId");
+
+                    b.HasIndex("ExtractId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_ncrs_open_extract")
+                        .HasFilter("status = 'Open'");
+
+                    b.HasIndex("OpenedByUserId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("ncrs", (string)null);
+                });
+
             modelBuilder.Entity("Kaff.Domain.Identity.ProjectAssignment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3202,6 +3259,32 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                     b.HasOne("Kaff.Domain.Extracts.Extract", null)
                         .WithMany()
                         .HasForeignKey("ExtractId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Extracts.Ncr", b =>
+                {
+                    b.HasOne("Kaff.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("ClosedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kaff.Domain.Extracts.Extract", null)
+                        .WithMany()
+                        .HasForeignKey("ExtractId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("OpenedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

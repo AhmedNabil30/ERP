@@ -257,3 +257,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-248 | 17143 | An extract keeps each BOQ line quantity; period = this less previous · 2026-11-20 |
 | D-249 | 17149 | D-248 as built: extract quantity lines, quantities read and preview · 2026-11-20 |
 | D-250 | 17163 | Rulings after extract verification: NCR close, credit note shape, negative period, withholding after handover · 2026-11-20 |
+| D-251 | 17185 | D-250 as built: the NCR, its close and release, and the released hold withholding ruling · 2026-11-20 |

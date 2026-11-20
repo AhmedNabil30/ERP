@@ -436,6 +436,21 @@ public sealed class Extract : Entity
     }
 
     /// <summary>
+    /// The period work value the split gate held back: the period less the approved portion of it, the same split
+    /// <see cref="BillingInputFor"/> bills. Zero when nothing is held. Derived, never stored.
+    /// </summary>
+    public Money HeldWorkValue()
+    {
+        if (HeldForNcrId is null)
+        {
+            return Money.Zero;
+        }
+
+        Money period = CumulativeCertifiedWork - PreviouslyCertifiedWork;
+        return period - ApprovedPortion.Of(period);
+    }
+
+    /// <summary>
     /// Accounts applies the deductions: the calculator derives every figure, nothing is typed. Returns the
     /// accrual postings when the ruled accrual moment is this stage, otherwise null.
     /// </summary>
