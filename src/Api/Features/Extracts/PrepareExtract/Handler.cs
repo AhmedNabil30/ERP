@@ -40,6 +40,56 @@ internal static class Handler
     private const string NumberIndex = "ux_extracts_project_number";
     private const string ChangeOrderBilledIndex = "ux_extract_change_order_lines_change_order";
 
+    /// <summary>
+    /// The refusal a normal prepare (not a revision) would give on this project now, before anything is derived, or null.
+    /// The project read asks it for its <c>prepareExtract</c> flag, so the control and the route cannot disagree.
+    /// </summary>
+    internal static async Task<Error?> RefusalAsync(KaffDbContext database, Project project, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(database);
+        ArgumentNullException.ThrowIfNull(project);
+
+        if (!Extract.Prepares(project.ContractType))
+        {
+            return ExtractErrors.ContractTypeNotSupported;
+        }
+
+        Boq? boq = await database.Boqs.AsNoTracking().FirstOrDefaultAsync(candidate => candidate.ProjectId == project.Id, cancellationToken);
+        if (boq is null)
+        {
+            return BoqErrors.NotFound;
+        }
+
+        if (!boq.IsFrozen)
+        {
+            return DailyLogErrors.BoqNotFrozen;
+        }
+
+        List<(Guid Id, ExtractStatus Status, Guid? RevisesExtractId)> existing =
+        [
+            .. (await database.Extracts.AsNoTracking()
+                    .Where(candidate => candidate.ProjectId == project.Id)
+                    .Select(candidate => new { candidate.Id, candidate.Status, candidate.RevisesExtractId })
+                    .ToListAsync(cancellationToken))
+                .Select(candidate => (candidate.Id, candidate.Status, candidate.RevisesExtractId)),
+        ];
+
+        return AnotherExtractOpen(existing) ? ExtractErrors.AnotherExtractOpen : null;
+    }
+
+    /// <summary>
+    /// A normal extract waits while another one is in flight. A revision in flight does not block it (D-242 item 4). A
+    /// cancelled extract still waiting for its revision does: until the revision exists, the previously certified work of
+    /// the next extract is not known.
+    /// </summary>
+    private static bool AnotherExtractOpen(IReadOnlyCollection<(Guid Id, ExtractStatus Status, Guid? RevisesExtractId)> existing)
+    {
+        HashSet<Guid> revised = [.. existing.Where(candidate => candidate.RevisesExtractId != null).Select(candidate => candidate.RevisesExtractId!.Value)];
+        return existing.Any(candidate => candidate.RevisesExtractId == null && candidate.Status is not (
+                ExtractStatus.Issued or ExtractStatus.Collected or ExtractStatus.Disputed or ExtractStatus.Void))
+            || existing.Any(candidate => candidate.Status == ExtractStatus.Void && !revised.Contains(candidate.Id));
+    }
+
     public static async Task<IResult> HandleAsync(
         Guid projectId,
         Request request,
@@ -115,11 +165,7 @@ internal static class Handler
         }
         else
         {
-            // A revision in flight does not block a normal extract (D-242 item 4). A cancelled extract still waiting for its
-            // revision does: until the revision exists, the previously certified work of the next extract is not known.
-            if (existing.Any(candidate => candidate.RevisesExtractId == null && candidate.Status is not (
-                    ExtractStatus.Issued or ExtractStatus.Collected or ExtractStatus.Disputed or ExtractStatus.Void))
-                || existing.Any(candidate => candidate.Status == ExtractStatus.Void && !alreadyRevised.Contains(candidate.Id)))
+            if (AnotherExtractOpen([.. existing.Select(candidate => (candidate.Id, candidate.Status, candidate.RevisesExtractId))]))
             {
                 return ResultExtensions.Problem(ExtractErrors.AnotherExtractOpen);
             }

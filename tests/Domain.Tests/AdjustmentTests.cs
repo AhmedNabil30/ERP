@@ -538,6 +538,34 @@ public sealed class AdjustmentTests
 
     // ---- helpers ----
 
+    /// <summary>
+    /// The check the adjustment read asks for its action flags is the one each decision makes: the state machine, separation
+    /// of duties over the raiser and the dispute's actors, and D-239 item 3 for a reversal.
+    /// </summary>
+    [Fact]
+    public async Task The_decision_check_the_read_asks_is_the_one_approve_reject_and_reverse_make()
+    {
+        var h = new ExtractHarness();
+        Extract extract = await h.DriveAsync(ExtractStatus.Issued);
+        Guid raiser = ExtractHarness.NewUser();
+        Guid disputer = ExtractHarness.NewUser();
+        Guid owner = ExtractHarness.NewUser();
+        Adjustment note = Raise(h, extract, 10_000m, actor: raiser).Value;
+
+        note.EnsureMayDecide(AdjustmentStatus.Approved, owner, [disputer]).IsSuccess.Should().BeTrue();
+        note.EnsureMayDecide(AdjustmentStatus.Rejected, owner, [disputer]).IsSuccess.Should().BeTrue();
+        note.EnsureMayDecide(AdjustmentStatus.Reversed, owner, [disputer]).Error.Should().Be(AdjustmentErrors.IllegalTransition);
+        note.EnsureMayDecide(AdjustmentStatus.Approved, raiser, []).Error.Should().Be(AuthorizationErrors.SameActorCreatedAndApproved);
+        note.EnsureMayDecide(AdjustmentStatus.Rejected, disputer, [disputer]).Error.Should().Be(AuthorizationErrors.SameActorCreatedAndApproved);
+
+        note.Approve(owner, [disputer], h.Project, h.Receivable, h.Revenue, h.Rulings, Now, Date).IsSuccess.Should().BeTrue();
+
+        note.EnsureMayDecide(AdjustmentStatus.Approved, owner, []).Error.Should().Be(AdjustmentErrors.IllegalTransition);
+        note.EnsureMayDecide(AdjustmentStatus.Reversed, owner, []).IsSuccess.Should().BeTrue();
+        note.EnsureMayDecide(AdjustmentStatus.Reversed, owner, [], sourceExtractCollected: true).Error.Should().Be(AdjustmentErrors.ExtractCollected);
+        note.EnsureMayDecide(AdjustmentStatus.Reversed, raiser, []).Error.Should().Be(AuthorizationErrors.SameActorCreatedAndApproved);
+    }
+
     /// <summary>An adjustment taken to <paramref name="status"/>; the postings it wrote, if any, are committed to the ledger.</summary>
     private static Task<(Adjustment Note, List<Posting> Written)> InAsync(ExtractHarness h, Extract extract, AdjustmentStatus status)
     {

@@ -3,6 +3,8 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import type { AssignmentLevel, Role } from '../auth/auth.service';
+import type { WithholdingCategory } from '../projects/projects.api';
+import type { AdjustmentStatus, WaitingLine } from './chain.api';
 
 /**
  * `/api/projects/{projectId}/extracts` — KAFF-500, `ExtractResponse` field for field.
@@ -55,6 +57,10 @@ export interface ExtractSummary {
    */
   readonly money: ExtractSummaryMoney | null;
   readonly waitingOn: WaitingOnBlock;
+  /** On a revised extract: the cancelled original. */
+  readonly revises?: ExtractLink | null;
+  /** On a cancelled original: the extract that replaces it. */
+  readonly revisedBy?: ExtractLink | null;
 }
 
 /** `ExtractMoney` on the list row. Certified value and net payable are null until deductions are applied; collected and outstanding until the extract is issued. */
@@ -63,6 +69,10 @@ export interface ExtractSummaryMoney {
   readonly netPayable: string | null;
   readonly collected: string | null;
   readonly outstanding: string | null;
+  /** Cheques in hand, as the extract's own collection position reads them. Null before the extract is issued. */
+  readonly inCheques?: string | null;
+  /** What may still be recorded, from the same position. Null before the extract is issued. */
+  readonly remaining?: string | null;
 }
 
 export interface GateRecord {
@@ -72,6 +82,8 @@ export interface GateRecord {
   readonly occurredAt: string;
   readonly reason: string | null;
   readonly approvedPortion: string | null;
+  /** Who acted, by full name. */
+  readonly actorName?: string | null;
 }
 
 export interface ExtractActions {
@@ -195,6 +207,19 @@ export interface Extract {
   readonly revises?: ExtractLink | null;
   /** On a cancelled original: the extract that replaces it. */
   readonly revisedBy?: ExtractLink | null;
+  /** The contract's withholding category. Null for a viewer who may not see money. */
+  readonly withholdingCategory?: WithholdingCategory | null;
+  /** Credit notes raised or approved against the extract. `amount` is null for a viewer who may not see money. */
+  readonly creditNotes?: readonly ExtractCreditNote[] | null;
+  /** Who a raised credit note waits on: the Owner, to approve it. Null when none is raised. */
+  readonly creditNoteWaitingOn?: WaitingLine | null;
+}
+
+export interface ExtractCreditNote {
+  readonly id: string;
+  readonly number: number;
+  readonly status: AdjustmentStatus;
+  readonly amount: string | null;
 }
 
 export type CollectionMethod = 'Cash' | 'Cheque' | 'Transfer';

@@ -293,6 +293,20 @@ public sealed class Adjustment : Entity
     }
 
     /// <summary>
+    /// Whether <paramref name="actorUserId"/> may move this adjustment to <paramref name="target"/> now: the state machine,
+    /// separation of duties over <see cref="PriorActors"/>, and for a reversal D-239 item 3. The reason is the decision's own
+    /// check. Approve, Reject and Reverse ask it, and so does the read for its action flags, so the two cannot disagree.
+    /// </summary>
+    public Result EnsureMayDecide(
+        AdjustmentStatus target, Guid actorUserId, IEnumerable<Guid> alsoActed, bool sourceExtractCollected = false) =>
+        Result.FirstFailureOrSuccess(
+            CanMoveTo(target),
+            target == AdjustmentStatus.Reversed && sourceExtractCollected
+                ? Result.Failure(AdjustmentErrors.ExtractCollected)
+                : Result.Success(),
+            SeparationOfDuties.EnsureDifferentActor(PriorActors(alsoActed), actorUserId));
+
+    /// <summary>
     /// The Owner approves. Builds the posting set (receivable to the target, <see cref="PostingType.CreditNote"/>) and
     /// marks the adjustment Approved. The caller commits both in one save. Nobody who raised it, or raised or resolved
     /// the dispute behind it, may approve.
@@ -310,9 +324,7 @@ public sealed class Adjustment : Entity
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(rulings);
 
-        Result gate = Result.FirstFailureOrSuccess(
-            CanMoveTo(AdjustmentStatus.Approved),
-            SeparationOfDuties.EnsureDifferentActor(PriorActors(alsoActed), actorUserId));
+        Result gate = EnsureMayDecide(AdjustmentStatus.Approved, actorUserId, alsoActed);
         if (gate.IsFailure)
         {
             return Result.Failure<PostingSet>(gate.Error);
@@ -340,8 +352,7 @@ public sealed class Adjustment : Entity
     public Result Reject(Guid actorUserId, IEnumerable<Guid> alsoActed, string? reason, DateTimeOffset now)
     {
         Result gate = Result.FirstFailureOrSuccess(
-            CanMoveTo(AdjustmentStatus.Rejected),
-            SeparationOfDuties.EnsureDifferentActor(PriorActors(alsoActed), actorUserId),
+            EnsureMayDecide(AdjustmentStatus.Rejected, actorUserId, alsoActed),
             CheckReason(reason));
         if (gate.IsFailure)
         {
@@ -372,9 +383,7 @@ public sealed class Adjustment : Entity
         ArgumentNullException.ThrowIfNull(legs);
 
         Result gate = Result.FirstFailureOrSuccess(
-            CanMoveTo(AdjustmentStatus.Reversed),
-            sourceExtractCollected ? Result.Failure(AdjustmentErrors.ExtractCollected) : Result.Success(),
-            SeparationOfDuties.EnsureDifferentActor(PriorActors(alsoActed), actorUserId),
+            EnsureMayDecide(AdjustmentStatus.Reversed, actorUserId, alsoActed, sourceExtractCollected),
             CheckReason(reason));
         if (gate.IsFailure)
         {

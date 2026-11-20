@@ -1,3 +1,4 @@
+using Kaff.Domain.Adjustments;
 using Kaff.Domain.Authorization;
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts.Billing;
@@ -75,13 +76,18 @@ public sealed record ExtractChangeOrderResponse(Guid ChangeOrderId, int Number, 
 /// <summary>The other end of a revision link (D-241 item 2): a cancelled original or the extract that revises it.</summary>
 public sealed record ExtractLink(Guid Id, int Number, ExtractStatus Status);
 
+/// <param name="ActorName">Who acted, by full name, for the history. Filled on the read.</param>
 public sealed record GateRecordResponse(
     ExtractGate Gate,
     ExtractGateOutcome Outcome,
     Guid ActorUserId,
     DateTimeOffset OccurredAt,
     string? Reason,
-    Percentage? ApprovedPortion);
+    Percentage? ApprovedPortion,
+    string? ActorName = null);
+
+/// <summary>A credit note raised or approved against the extract (D-246). <paramref name="Amount"/> is null for a viewer who may not see money.</summary>
+public sealed record ExtractCreditNote(Guid Id, int Number, AdjustmentStatus Status, Money? Amount);
 
 /// <summary>
 /// What this caller may do to this extract right now. <b>A control whose flag is false is left out of the
@@ -150,7 +156,10 @@ public sealed record ExtractResponse(
     ExtractCollectionResponse? Collection,
     string? DisputeReason = null,
     ExtractLink? Revises = null,
-    ExtractLink? RevisedBy = null);
+    ExtractLink? RevisedBy = null,
+    WithholdingCategory? WithholdingCategory = null,
+    IReadOnlyList<ExtractCreditNote>? CreditNotes = null,
+    WaitingLineResponse? CreditNoteWaitingOn = null);
 
 /// <summary>Who is looking: their id and which of the extract permissions they hold on this project.</summary>
 internal sealed record ExtractViewer(Guid UserId, IReadOnlySet<Permission> Held)

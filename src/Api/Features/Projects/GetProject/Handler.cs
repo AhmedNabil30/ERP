@@ -6,6 +6,7 @@ using Kaff.Domain.Authorization;
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
 using Kaff.Domain.Extracts;
+using Kaff.Domain.MasterData;
 using Kaff.Domain.Projects;
 using Kaff.Domain.Rulings;
 using Kaff.Infrastructure.Persistence;
@@ -43,6 +44,8 @@ internal static class Handler
                 Project = candidate,
                 ClientName = database.Clients.Where(client => client.Id == candidate.ClientId)
                     .Select(client => client.Name).FirstOrDefault() ?? string.Empty,
+                ClientKind = database.Clients.Where(client => client.Id == candidate.ClientId)
+                    .Select(client => (ClientKind?)client.Kind).FirstOrDefault(),
                 TeamSize = database.ProjectAssignments.Count(assignment =>
                     assignment.ProjectId == candidate.Id && assignment.RevokedAt == null),
 
@@ -74,6 +77,12 @@ internal static class Handler
             && candidateProject.IsSigned
             && found.ExecutionProjectId is null
             && !candidateProject.IsArchived(clock.GetUtcNow(), rulings.FollowUp);
+        // Each flag is the route's own check. An individual client's contract carries no withholding (Project.SetWithholding).
+        ProjectActions actions = new(
+            EditWithholding: found.ClientKind is not ClientKind.Individual
+                && await CallerPermissions.HoldsAsync(authorization, user, Permission.ProjectFinancialsEdit),
+            PrepareExtract: await CallerPermissions.HoldsAsync(authorization, user, Permission.ExtractPrepare)
+                && await Extracts.PrepareExtract.Handler.RefusalAsync(database, candidateProject, cancellationToken) is null);
         Response project = new(
             candidateProject.Id,
             candidateProject.Code,
@@ -113,7 +122,9 @@ internal static class Handler
             conversionOffered,
             seesMoney && candidateProject.ContractType == ContractType.Design
                 ? candidateProject.DesignRatePerSquareMetre ?? ContractDefaults.DesignRatePerSquareMetre
-                : null);
+                : null,
+            seesMoney ? candidateProject.WithholdingCategory : null,
+            actions);
 
         return Microsoft.AspNetCore.Http.Results.Ok(project);
     }

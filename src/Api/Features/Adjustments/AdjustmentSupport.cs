@@ -35,7 +35,8 @@ public sealed record AdjustmentResponse(
     DateTimeOffset? DecidedAt,
     string? DecisionReason,
     string? DisputeReason = null,
-    WaitingLineResponse? WaitingOn = null)
+    WaitingLineResponse? WaitingOn = null,
+    AdjustmentActions? Actions = null)
 {
     internal static AdjustmentResponse From(Adjustment adjustment) => new(
         adjustment.Id,
@@ -56,11 +57,24 @@ public sealed record AdjustmentResponse(
         adjustment.DecisionReason);
 }
 
-/// <summary>The adjustment reads: each adjustment with its extract's dispute reason and its waiting line.</summary>
+/// <summary>
+/// What this caller may decide on the adjustment now (D-246). Each flag is <see cref="Adjustment.EnsureMayDecide"/>, the
+/// check the decision itself makes, for a <c>FinancialMovementApprove</c> holder on the route's project.
+/// </summary>
+public sealed record AdjustmentActions(bool Approve, bool Reject, bool Reverse);
+
+/// <summary>The adjustment reads: each adjustment with its extract's dispute reason, its waiting line and the caller's flags.</summary>
 internal static class AdjustmentReads
 {
+    /// <param name="viewerId">Who is reading.</param>
+    /// <param name="mayApprove">Whether the viewer holds <c>FinancialMovementApprove</c> on the route's project: role and assignment.</param>
     public static async Task<IReadOnlyList<AdjustmentResponse>> BuildAsync(
-        KaffDbContext database, Guid projectId, IReadOnlyList<Adjustment> adjustments, CancellationToken cancellationToken)
+        KaffDbContext database,
+        Guid projectId,
+        IReadOnlyList<Adjustment> adjustments,
+        Guid viewerId,
+        bool mayApprove,
+        CancellationToken cancellationToken)
     {
         Guid[] extractIds =
         [
@@ -91,10 +105,14 @@ internal static class AdjustmentReads
                         "waiting.task.adjustment_approval", Permission.FinancialMovementApprove, staff, adjustment.PriorActors(disputeActors))
                     : null;
 
+                bool May(AdjustmentStatus target) => mayApprove
+                    && adjustment.EnsureMayDecide(target, viewerId, disputeActors, extract?.Status == ExtractStatus.Collected).IsSuccess;
+
                 return AdjustmentResponse.From(adjustment) with
                 {
                     DisputeReason = extract?.GateHistory.LastOrDefault(record => record.Gate == ExtractGate.Dispute)?.Reason,
                     WaitingOn = waiting,
+                    Actions = new AdjustmentActions(May(AdjustmentStatus.Approved), May(AdjustmentStatus.Rejected), May(AdjustmentStatus.Reversed)),
                 };
             }),
         ];

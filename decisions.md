@@ -17127,3 +17127,15 @@ Items 4 to 7 answer rows of sections D and E of `ux/arabic-copy-review-2026-11-1
 **Not built, because the server does not send it:** the withholding row on contract terms (no `withholdingCategory` or edit flag on the project read); E4 partial approval (no NCR read; journey Q12 and Q13 unruled); the quantities table on E2 and E3; names in the history (gate records carry ids); cheques-in-hand and remaining figures and the revision link on the list; the withholding category name on E5; a credit-note summary on the extract read; a waiting line for a raised credit note; cheque action flags, so a released-hold cheque cannot be moved from E7.
 
 **Gates at hand-back.** Build 0/0; Domain 800/800; Api 1262 passed, 2 skipped of 1264, exit 0 (including the site-day fix to `SubcontractorRetentionEndpointTests`); `ng test` 581/581; production build exit 0; format clean apart from ENDOFLINE; `driver.mjs layout` 46 of 46 PASS at 390 and 1440 across Owner, Finance, supervisor, junior and Technical Office; smoke passed. No per-role end-to-end chain was added; about 30 new Arabic strings beyond the mock are guesses awaiting `arabic-copy`.
+
+## D-247 — The reads the extract screens lacked, as built, and Nabil's words for a stopped project, an unassigned step and cash · 2026-11-20
+
+**Source.** Built by a lane dispatched by the Scrum Master on D-246's "Not built" list; words ruled by Nabil on 2026-11-20 on `ux/arabic-copy-review-2026-11-20.md`.
+
+1. **Project read** sends `withholdingCategory` (money viewers) and `actions {editWithholding, prepareExtract}`. `prepareExtract` shares one check with the prepare route (Lump Sum, BOQ frozen, no other extract open).
+2. **Extract list rows** send `inCheques`, `remaining` and the revision links; history records send `actorName`; the extract read sends the withholding category, its raised and approved credit notes, and `creditNoteWaitingOn` while a note is raised.
+3. **Action flags** on adjustments (`approve`, `reject`, `reverse`, through the new `Adjustment.EnsureMayDecide`, which the routes call too) and on cheques (`deposit`, `clear`, `bounce`, released-hold cheques included). The `clear` flag does not check the project state; the route still does.
+4. **Not built: the quantities read.** An extract stores money only, prepare reads each BOQ line's executed quantity as it stands, and daily-log quantity entries may replace rather than add, so a per-period quantity cannot be derived without a new rule. Put to Nabil.
+5. **Words (Nabil).** A stopped project is «متوقف». A step with nobody assigned reads «بانتظار التكليف: {task}». A cash payment is «كاش». The client's rejection of a change order is recorded with «تسجيل رفض العميل», and a released-hold cheque row reads «الحجز المُفرج عنه».
+
+**Gates at hand-back.** Build 0/0; Domain 801/801; Api 1271 passed, 2 skipped of 1273, exit 0; `ng test` 581/581; format clean apart from ENDOFLINE; smoke passed with least privilege. One mutation per item, each killed.

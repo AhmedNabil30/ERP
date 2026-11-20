@@ -171,6 +171,9 @@ public sealed class Extract : Entity
     public static IReadOnlyList<ExtractStatus> LegalTargetsFrom(ExtractStatus from) =>
         [.. LegalTransitions.Where(transition => transition.From == from).Select(transition => transition.To).Order()];
 
+    /// <summary>Whether an extract is prepared from quantities on a project of this contract type. Prepare and the read's flag both ask.</summary>
+    public static bool Prepares(ContractType contractType) => contractType == ContractType.LumpSum;
+
     public static Result<Extract> Prepare(
         Project project,
         int number,
@@ -189,7 +192,7 @@ public sealed class Extract : Entity
 
         // The quantity evidence below is the Lump Sum shape. Cost Plus and Design reach the calculator with
         // their own input, and their intake is not this story's (KAFF-500 build note).
-        if (project.ContractType != ContractType.LumpSum)
+        if (!Prepares(project.ContractType))
         {
             return Result.Failure<Extract>(ExtractErrors.ContractTypeNotSupported);
         }

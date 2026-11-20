@@ -11,7 +11,10 @@ namespace Kaff.Api.Features.Extracts;
 /// <param name="NetPayable">What the client owes on it. Null until deductions are applied.</param>
 /// <param name="Collected">Cash received plus tax withheld at source, net of reversals. Null before the extract is issued.</param>
 /// <param name="Outstanding">Net payable less collected. Null before the extract is issued.</param>
-public sealed record ExtractMoney(Money? CertifiedValue, Money? NetPayable, Money? Collected, Money? Outstanding);
+/// <param name="InCheques">Cheques received or deposited and not yet cleared, as the extract's own collection position reads them. Null before the extract is issued.</param>
+/// <param name="Remaining">What may still be recorded: the extract's collection position's remaining. Null before the extract is issued.</param>
+public sealed record ExtractMoney(
+    Money? CertifiedValue, Money? NetPayable, Money? Collected, Money? Outstanding, Money? InCheques = null, Money? Remaining = null);
 
 internal static class ExtractMoneyQueries
 {

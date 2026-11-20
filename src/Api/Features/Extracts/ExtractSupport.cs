@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Kaff.Api.Authorization;
 using Kaff.Api.Common.Results;
+using Kaff.Domain.Adjustments;
 using Kaff.Domain.Authorization;
 using Kaff.Domain.Boqs;
 using Kaff.Domain.Common;
@@ -189,14 +190,43 @@ internal static class ExtractSupport
             .Select(candidate => new ExtractLink(candidate.Id, candidate.Number, candidate.Status))
             .ToListAsync(cancellationToken);
 
-        return ExtractView.Build(
+        Guid[] actorIds = [.. extract.GateHistory.Select(record => record.ActorUserId).Distinct()];
+        Dictionary<Guid, string> names = await database.Users.AsNoTracking()
+            .Where(candidate => actorIds.Contains(candidate.Id))
+            .ToDictionaryAsync(candidate => candidate.Id, candidate => candidate.FullName, cancellationToken);
+
+        // D-246: the credit notes that stand against the extract. A rejected or reversed note no longer does.
+        List<Adjustment> notes = await database.Adjustments.AsNoTracking()
+            .Where(adjustment => adjustment.SourceDocumentType == SourceDocumentType.Extract
+                && adjustment.SourceDocumentId == extract.Id
+                && (adjustment.Status == AdjustmentStatus.Raised || adjustment.Status == AdjustmentStatus.Approved))
+            .OrderBy(adjustment => adjustment.Number)
+            .ToListAsync(cancellationToken);
+
+        IReadOnlyList<StaffMember> staff = await ExtractWaitingOnView.StaffAsync(database, project.Id, cancellationToken);
+        Adjustment? raised = notes.Find(adjustment => adjustment.Status == AdjustmentStatus.Raised);
+
+        // The same waiting line the adjustment's own read gives: the Owner approves, whoever raised it or the dispute is barred.
+        WaitingLineResponse? noteWaiting = raised is null
+            ? null
+            : WaitingLine.Build(
+                "waiting.task.adjustment_approval", Permission.FinancialMovementApprove, staff, raised.PriorActors(extract.DisputeActors()));
+
+        ExtractResponse built = ExtractView.Build(
             extract, project, services.Rulings, viewer,
-            ExtractWaitingOnView.Build(extract, await ExtractWaitingOnView.StaffAsync(database, project.Id, cancellationToken)),
+            ExtractWaitingOnView.Build(extract, staff),
             await ExtractCollections.StateAsync(database, extract, cancellationToken),
-            titles) with
+            titles);
+
+        bool seesMoney = viewer.MaySeeMoney;
+        return built with
         {
+            GateHistory = [.. built.GateHistory.Select(record => record with { ActorName = names.GetValueOrDefault(record.ActorUserId) })],
             Revises = links.Find(link => link.Id == extract.RevisesExtractId),
             RevisedBy = links.Find(link => link.Id != extract.RevisesExtractId),
+            WithholdingCategory = seesMoney ? project.WithholdingCategory : null,
+            CreditNotes = [.. notes.Select(note => new ExtractCreditNote(note.Id, note.Number, note.Status, seesMoney ? note.Amount : null))],
+            CreditNoteWaitingOn = noteWaiting,
         };
     }
 

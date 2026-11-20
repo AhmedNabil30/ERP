@@ -48,6 +48,14 @@ export interface Cheque {
   readonly collection: ChequeCollection;
   readonly bounceReason: string | null;
   readonly waitingOn: WaitingLine | null;
+  /** What the caller may do to the cheque now (D-246). */
+  readonly actions?: ChequeActions | null;
+}
+
+export interface ChequeActions {
+  readonly deposit: boolean;
+  readonly clear: boolean;
+  readonly bounce: boolean;
 }
 
 export type AdjustmentStatus = 'Raised' | 'Approved' | 'Rejected' | 'Reversed';
@@ -71,6 +79,14 @@ export interface Adjustment {
   readonly disputeReason: string | null;
   /** Null once decided. */
   readonly waitingOn: WaitingLine | null;
+  /** What the caller may decide now (D-246). */
+  readonly actions?: AdjustmentActions | null;
+}
+
+export interface AdjustmentActions {
+  readonly approve: boolean;
+  readonly reject: boolean;
+  readonly reverse: boolean;
 }
 
 export type ChangeOrderStatus =

@@ -252,7 +252,10 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
 
         // A cheque that clears: cash only at clearance, and the released hold is fully collected.
         Guid good = await HoldChequeAsync(id, "30000", "CHQ-H2");
+        (await ChequeFlagsAsync(id, good)).Should().Equal(true, false, false);
         (await SendAsync(HttpMethod.Post, ChequeStep(id, good, "deposit"), _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        // A cheque on the released hold is moved from the same flags as one on an extract.
+        (await ChequeFlagsAsync(id, good)).Should().Equal(false, true, true);
         (await NetIntoAsync(id, AccountType.Safe)).Should().Be(safe + 29_400m, "a deposited cheque is not yet cash");
         HttpResponseMessage cleared = await SendAsync(HttpMethod.Post, ChequeStep(id, good, "clearance"), _finance, null);
         cleared.StatusCode.Should().Be(HttpStatusCode.OK, await cleared.Content.ReadAsStringAsync(Ct));
@@ -389,6 +392,15 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
     private static string HoldCollect(Guid project) => $"/api/projects/{project}/hold-release/collect";
 
     private static string ChequeStep(Guid project, Guid cheque, string step) => $"/api/projects/{project}/cheques/{cheque}/{step}";
+
+    /// <summary>The cheque read's deposit, clear and bounce flags, as Finance reads them.</summary>
+    private async Task<bool[]> ChequeFlagsAsync(Guid project, Guid cheque)
+    {
+        using JsonDocument read = JsonDocument.Parse(
+            await (await SendAsync(HttpMethod.Get, $"/api/projects/{project}/cheques/{cheque}", _finance, null)).Content.ReadAsStringAsync(Ct));
+        JsonElement actions = read.RootElement.GetProperty("actions");
+        return [actions.GetProperty("deposit").GetBoolean(), actions.GetProperty("clear").GetBoolean(), actions.GetProperty("bounce").GetBoolean()];
+    }
 
     private static object HoldPayment(string method, string cashReceived, string withheldAtSource, string reference) =>
         new { method, date = "2026-11-06", reference, cashReceived, withheldAtSource };

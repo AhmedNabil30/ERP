@@ -1,6 +1,7 @@
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
 using Kaff.Domain.Projects;
+using Kaff.Domain.Treasury;
 
 namespace Kaff.Api.Features.Projects.GetProject;
 
@@ -39,6 +40,8 @@ namespace Kaff.Api.Features.Projects.GetProject;
 /// The web previews the fee from this and holds no price of its own.
 /// </param>
 /// <param name="AdvanceRecoveryRate">Lump Sum only. The share of each extract that repays the advance.</param>
+/// <param name="WithholdingCategory">The contract's withholding category (spec.md section 6.7). Only for a caller who may read project money.</param>
+/// <param name="Actions">What the caller may do from the frame now.</param>
 /// <param name="TeamSize">
 /// Count of active <c>ProjectAssignment</c> rows. S-052's "team" — the per-member roster (KAFF-115) is
 /// its own story and is not built here; see the build notes.
@@ -98,7 +101,17 @@ public sealed record Response(
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] Percentage? AdvanceRecoveryRate = null,
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)] bool WorkStarted = false,
     bool ConversionOffered = false,
-    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] Money? DesignRatePerSquareMetre = null);
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] Money? DesignRatePerSquareMetre = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] WithholdingCategory? WithholdingCategory = null,
+    ProjectActions? Actions = null);
+
+/// <summary>
+/// What this caller may do from the project frame now (D-246). Each flag is the check the route behind it makes, asked of
+/// the same caller: role and assignment, then the route's own refusals.
+/// </summary>
+/// <param name="EditWithholding">Set the contract's withholding category: a <c>ProjectFinancialsEdit</c> holder, and the client is not an individual.</param>
+/// <param name="PrepareExtract">Prepare the next extract: an <c>ExtractPrepare</c> holder, and the prepare route would not refuse it now.</param>
+public sealed record ProjectActions(bool EditWithholding, bool PrepareExtract);
 
 /// <summary>
 /// What the client has been billed, paid and still owes. Only extracts issued to the client count; an extract still

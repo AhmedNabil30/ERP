@@ -1,8 +1,10 @@
+using System.Security.Claims;
 using Kaff.Api.Authorization;
 using Kaff.Api.Common.Endpoints;
 using Kaff.Domain.Authorization;
 using Kaff.Domain.Collections;
 using Kaff.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -29,12 +31,15 @@ public sealed class Endpoint : IEndpoint
             .WithTags("Cheques");
     }
 
-    private static async Task<IResult> HandleAsync(Guid projectId, KaffDbContext database, CancellationToken cancellationToken)
+    private static async Task<IResult> HandleAsync(
+        Guid projectId, KaffDbContext database, IAuthorizationService authorization, ClaimsPrincipal user, CancellationToken cancellationToken)
     {
         List<GetCheque.Response> all = await GetCheque.Handler.Project(database, projectId).ToListAsync(cancellationToken);
 
         List<GetCheque.Response> inHand = [.. all.Where(row => Cheque.IsInHand(row.State)).OrderBy(row => row.Collection.Date).ThenBy(row => row.Id)];
         return Results.Ok(GetCheque.Handler.WithWaiting(
-            inHand, await Extracts.ExtractWaitingOnView.StaffAsync(database, projectId, cancellationToken)));
+            inHand,
+            await Extracts.ExtractWaitingOnView.StaffAsync(database, projectId, cancellationToken),
+            await Projects.CallerPermissions.HoldsAsync(authorization, user, Permission.ExtractCollect)));
     }
 }

@@ -108,6 +108,19 @@ export interface ProjectDetail {
   readonly conversionOffered?: boolean;
   /** A Design project, for a caller who may read project money: the fee per square metre (decimal string). The server holds the price. */
   readonly designRatePerSquareMetre?: string | null;
+  /** spec.md section 6.7: the contract's withholding category. Absent for a caller who may not read project money. */
+  readonly withholdingCategory?: WithholdingCategory | null;
+  /** What the caller may do from the frame now (D-246). The server decides. */
+  readonly actions?: ProjectActions | null;
+}
+
+/** `WithholdingCategory` on the wire. */
+export type WithholdingCategory = 'None' | 'ContractingAndSupplies' | 'Services' | 'ProfessionalFees';
+
+/** `ProjectActions`: each flag is the check the route behind it makes for this caller now. */
+export interface ProjectActions {
+  readonly editWithholding: boolean;
+  readonly prepareExtract: boolean;
 }
 
 /** `ProjectStage` on the wire: the three stages the stage line draws (D-218 item 3). */

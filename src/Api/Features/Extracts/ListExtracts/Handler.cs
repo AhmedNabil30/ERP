@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Kaff.Domain.Collections;
 using Kaff.Domain.Common;
 using Kaff.Domain.Extracts;
 using Kaff.Infrastructure.Persistence;
@@ -20,7 +21,9 @@ public sealed record ExtractSummary(
     DateOnly PeriodEnd,
     ExtractStatus Status,
     ExtractMoney? Money,
-    WaitingOnResponse WaitingOn);
+    WaitingOnResponse WaitingOn,
+    ExtractLink? Revises = null,
+    ExtractLink? RevisedBy = null);
 
 internal static class Handler
 {
@@ -48,6 +51,19 @@ internal static class Handler
             : new Dictionary<Guid, Money>();
         IReadOnlyList<StaffMember> staff = await ExtractWaitingOnView.StaffAsync(database, projectId, cancellationToken);
 
+        // The same position the extract's own read derives, so the row and the extract cannot disagree.
+        // ponytail: one position read per billed extract; batch it if a project's list grows past a few dozen.
+        Dictionary<Guid, CollectionPosition> positions = [];
+        foreach (Extract extract in seesMoney ? extracts : [])
+        {
+            if (await ExtractCollections.StateAsync(database, extract, cancellationToken) is { } state)
+            {
+                positions[extract.Id] = state.Position;
+            }
+        }
+
+        ExtractLink? Link(Extract? other) => other is null ? null : new ExtractLink(other.Id, other.Number, other.Status);
+
         List<ExtractSummary> rows =
         [
             .. extracts.Select(extract => new ExtractSummary(
@@ -56,8 +72,16 @@ internal static class Handler
                 extract.PeriodStart,
                 extract.PeriodEnd,
                 extract.Status,
-                seesMoney ? ExtractMoneyQueries.For(extract, collected, carriedHold) : null,
-                ExtractWaitingOnView.Build(extract, staff))),
+                seesMoney
+                    ? ExtractMoneyQueries.For(extract, collected, carriedHold) with
+                    {
+                        InCheques = positions.GetValueOrDefault(extract.Id)?.InCheques,
+                        Remaining = positions.GetValueOrDefault(extract.Id)?.Remaining,
+                    }
+                    : null,
+                ExtractWaitingOnView.Build(extract, staff),
+                Link(extracts.Find(other => other.Id == extract.RevisesExtractId)),
+                Link(extracts.Find(other => other.RevisesExtractId == extract.Id)))),
         ];
 
         return Microsoft.AspNetCore.Http.Results.Ok(rows);

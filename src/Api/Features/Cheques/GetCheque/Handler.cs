@@ -1,9 +1,11 @@
+using System.Security.Claims;
 using Kaff.Api.Common.Results;
 using Kaff.Api.Features.Extracts;
 using Kaff.Domain.Authorization;
 using Kaff.Domain.Collections;
 using Kaff.Domain.Common;
 using Kaff.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -35,12 +37,24 @@ public sealed record Response(
     int? ExtractNumber,
     CollectionSummary Collection,
     string? BounceReason,
-    WaitingLineResponse? WaitingOn = null);
+    WaitingLineResponse? WaitingOn = null,
+    ChequeActions? Actions = null);
+
+/// <summary>
+/// What this caller may do to the cheque now (D-246): an <c>ExtractCollect</c> holder on the route's project, and the
+/// cheque's own state machine allows the move. The same for a cheque on an extract and on the released hold.
+/// </summary>
+public sealed record ChequeActions(bool Deposit, bool Clear, bool Bounce);
 
 internal static class Handler
 {
     public static async Task<IResult> HandleAsync(
-        Guid projectId, Guid id, KaffDbContext database, CancellationToken cancellationToken)
+        Guid projectId,
+        Guid id,
+        KaffDbContext database,
+        IAuthorizationService authorization,
+        ClaimsPrincipal user,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(database);
 
@@ -49,11 +63,18 @@ internal static class Handler
         return response is null
             ? ResultExtensions.Problem(CollectionErrors.ChequeNotFound)
             : Microsoft.AspNetCore.Http.Results.Ok(
-                WithWaiting([response], await ExtractWaitingOnView.StaffAsync(database, projectId, cancellationToken))[0]);
+                WithWaiting(
+                    [response],
+                    await ExtractWaitingOnView.StaffAsync(database, projectId, cancellationToken),
+                    await Projects.CallerPermissions.HoldsAsync(authorization, user, Permission.ExtractCollect))[0]);
     }
 
-    /// <summary>The waiting line of each cheque still in hand. Moving a cheque is not a decision, so nobody is barred.</summary>
-    internal static IReadOnlyList<Response> WithWaiting(IReadOnlyList<Response> cheques, IReadOnlyList<StaffMember> staff) =>
+    /// <summary>
+    /// The waiting line of each cheque still in hand, and the caller's flags. Moving a cheque is not a decision, so nobody
+    /// is barred.
+    /// </summary>
+    /// <param name="mayMove">Whether the caller holds <c>ExtractCollect</c> on the route's project: role and assignment.</param>
+    internal static IReadOnlyList<Response> WithWaiting(IReadOnlyList<Response> cheques, IReadOnlyList<StaffMember> staff, bool mayMove) =>
         [
             .. cheques.Select(cheque => cheque with
             {
@@ -63,6 +84,10 @@ internal static class Handler
                     ChequeState.Deposited => WaitingLine.Build("waiting.task.cheque_settlement", Permission.ExtractCollect, staff, []),
                     _ => null,
                 },
+                Actions = new ChequeActions(
+                    mayMove && Cheque.IsLegalTransition(cheque.State, ChequeState.Deposited),
+                    mayMove && Cheque.IsLegalTransition(cheque.State, ChequeState.Cleared),
+                    mayMove && Cheque.IsLegalTransition(cheque.State, ChequeState.Bounced)),
             }),
         ];
 
