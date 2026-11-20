@@ -17165,9 +17165,11 @@ When an extract is prepared, each BOQ line's executed quantity is copied onto th
 Asked after `qa/slice-5/verification-2026-11-20.md`. Nabil chose each recommended option.
 
 1. **An NCR can be closed, and closing it releases the held portion.** AC-500-E is built now: a
-   small NCR record, a close action by the site supervisor, and the held remainder released onto
+   small NCR record, a close action, and the held remainder released onto
    the next extract through the existing `Extract.ReleaseHeldPortion`. KAFF-500 stays rejected
-   until that is built and re-verified.
+   until that is built and re-verified. `spec.md` line 340 does not say who closes an NCR. It is
+   built on a recorded assumption, a `RulingNote`: the Technical Office closes it, because it is the
+   gate that held the portion back. This goes on the Karim question sheet.
 2. **A credit note is one new reducing posting, not a reversal of the extract's originals.** D-202's
    shape is ratified: a reversal would also reverse the hold accrual, which the hold-only-grows rule
    forbids. AC-511-B and AC-512-C are reworded to match. Reversing a credit note remains a true
