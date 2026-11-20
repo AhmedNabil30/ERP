@@ -319,14 +319,10 @@ const slotButton = () => {
 describe('ProjectWorkspacePage · the frame and the owner overview', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
-  it('draws the tabs the server sent, the three stages with the current one marked, and no code', async () => {
+  it('draws the tabs the server sent, and no code', async () => {
     const fixture = await createFixture(new FakeProjectsApi(project('LumpSum')), OWNER());
     expect(tabsOf(fixture)).toEqual(['overview', 'boq', 'dailyLog', 'extracts', 'team']);
     expect(q(fixture, 'project-tab-overview')?.getAttribute('aria-current')).toBe('page');
-    const stages: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('[data-testid="workspace-stages"] li'));
-    expect(stages.length).toBe(3);
-    expect(stages[1].getAttribute('aria-current')).toBe('step');
-    expect(stages[0].classList.contains('done')).toBe(true);
     expect(fixture.nativeElement.textContent as string).not.toContain('KF-P-0001');
   });
 
@@ -453,7 +449,7 @@ describe('ProjectWorkspacePage · the junior site engineer', () => {
 describe('ProjectWorkspacePage · unsigned, archived, failed', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
-  it('an unsigned project: stage line on the BOQ, tabs overview, BOQ, team, the follow-up line, no zero value', async () => {
+  it('an unsigned project: tabs overview, BOQ, team, the follow-up line, no zero value', async () => {
     const fixture = await createFixture(
       new FakeProjectsApi(
         project('LumpSum', { status: 'Setup', stage: 'Boq', isSigned: false, contractValue: null, money: undefined, followUpEndsOn: '2026-12-01' }),
@@ -461,21 +457,18 @@ describe('ProjectWorkspacePage · unsigned, archived, failed', () => {
       OWNER(),
     );
     expect(tabsOf(fixture)).toEqual(['overview', 'boq', 'team']);
-    const stages: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('[data-testid="workspace-stages"] li'));
-    expect(stages[0].getAttribute('aria-current')).toBe('step');
     expect(q(fixture, 'workspace-follow-up')).not.toBeNull();
     expect(q(fixture, 'workspace-value-null')?.textContent).toContain('projects.frame.value_unset');
     expect(q(fixture, 'workspace-progress')).toBeNull();
     expect(slotButton()?.textContent).toContain('open_boq');
   });
 
-  it('an archived project: no stage line, no status pill, reopen as the primary action', async () => {
+  it('an archived project: no status pill, reopen as the primary action', async () => {
     const fixture = await createFixture(
       new FakeProjectsApi(project('LumpSum', { status: 'Setup', isSigned: false, isArchived: true, contractValue: null, money: undefined })),
       OWNER(),
     );
     expect(q(fixture, 'workspace-archived')).not.toBeNull();
-    expect(q(fixture, 'workspace-stages')).toBeNull();
     expect(q(fixture, 'workspace-status')).toBeNull();
     expect(slotButton()?.textContent).toContain('reopen');
   });
@@ -485,7 +478,6 @@ describe('ProjectWorkspacePage · unsigned, archived, failed', () => {
     const fixture = await createFixture(new FakeProjectsApi(project('LumpSum'), { failWith: error }), OWNER());
     expect(q(fixture, 'workspace-failure')).not.toBeNull();
     expect(q(fixture, 'project-tabs')).toBeNull();
-    expect(q(fixture, 'workspace-stages')).toBeNull();
     expect(q(fixture, 'workspace-title')).toBeNull();
     expect(fixture.nativeElement.querySelector('h1')?.textContent).toContain('projects.frame.title_neutral');
   });
@@ -722,12 +714,6 @@ describe('ProjectWorkspacePage · after signing and work not started (D-228)', (
   it('a signed Design project the server does not offer to convert has no primary (design phases not built: the ruled in-progress state is unreachable)', async () => {
     await createFixture(new FakeProjectsApi(project('Design', { signedOn: '2026-11-01', conversionOffered: false })), CONVERTER());
     expect(slotButton()).toBeNull();
-  });
-
-  it('a Design project has its own stage line: contract, design, handover', async () => {
-    const fixture = await createFixture(new FakeProjectsApi(project('Design', { stage: 'Execution', signedOn: '2026-11-01' })), CONVERTER());
-    const words = Array.from(fixture.nativeElement.querySelectorAll('[data-testid="workspace-stages"] li')).map((li) => (li as HTMLElement).textContent?.trim());
-    expect(words).toEqual(['projects.frame.stage.contract', 'projects.frame.stage.design', 'projects.frame.stage.handover']);
   });
 
   it('an unsigned Design project shows the rate per square metre and the date-only notice', async () => {

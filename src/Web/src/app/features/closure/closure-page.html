@@ -36,6 +36,36 @@
         }
       </div>
 
+      <!-- D-257: what the handover moves (the hold) and what is still open, above the acts. -->
+      @if (holdRows().length > 0 || (summary()?.openExtracts?.length ?? 0) > 0) {
+        <div class="panel" data-testid="closure-pending">
+          @if (holdRows().length > 0) {
+            <kaff-figure-list [rows]="holdRows()" testId="closure-pending-hold-list" />
+          }
+          @if (summary()?.openExtracts; as open) {
+            @if (open.length > 0) {
+              <ul class="open" data-testid="closure-open-extracts">
+                @for (e of open; track e.number) {
+                  <li>
+                    @if (extractIds().get(e.number); as id) {
+                      <a [routerLink]="['/projects', projectId(), 'extracts', id]" [attr.data-testid]="'closure-open-extract-' + e.number">
+                        <span>{{ i18n.t('extract.number', { number: i18n.formatNumber(e.number) }) }}</span>
+                        <span class="st">{{ i18n.t(extractStatusKey(e.status)) }}</span>
+                      </a>
+                    } @else {
+                      <span class="row" [attr.data-testid]="'closure-open-extract-' + e.number">
+                        <span>{{ i18n.t('extract.number', { number: i18n.formatNumber(e.number) }) }}</span>
+                        <span class="st">{{ i18n.t(extractStatusKey(e.status)) }}</span>
+                      </span>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          }
+        </div>
+      }
+
       <!-- The stage: where the project stands and the one act that moves it on. -->
       <div class="panel" data-testid="closure-stage">
         @if (steps().length > 0) {

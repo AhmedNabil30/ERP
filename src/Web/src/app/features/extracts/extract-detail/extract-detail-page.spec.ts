@@ -236,7 +236,7 @@ describe('ExtractDetailPage (E3)', () => {
   });
   it('sends the typed percentage as a fraction and refuses one outside 1 to 99 without sending', async () => {
     const approvePortion = vi.fn().mockResolvedValue(undefined);
-    const { fixture, root } = await open(extract({}, { approveTechnicalOffice: true }), { approvePortion });
+    const { fixture, root } = await open(extract({}, { approveTechnicalOffice: true, approvePortion: true }), { approvePortion });
     byTestId(root, 'act-portion')?.click();
     await settle(fixture);
 

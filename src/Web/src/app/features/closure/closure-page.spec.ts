@@ -5,7 +5,8 @@ import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { AuthService, ProjectEntry, Role, Session } from '../../core/auth/auth.service';
-import { ClosureApi, Snag, WarrantyCallback } from '../../core/closure/closure.api';
+import { ClosureApi, ClosureSummary, Snag, WarrantyCallback } from '../../core/closure/closure.api';
+import { ExtractsApi } from '../../core/extracts/extracts.api';
 import { ChainApi } from '../../core/extracts/chain.api';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { ProofApi, ProofResponse } from '../../core/proof/proof.api';
@@ -83,6 +84,11 @@ function snag(patch: Partial<Snag> = {}): Snag {
 class FakeClosureApi implements Partial<ClosureApi> {
   calls: string[] = [];
   refuse: HttpErrorResponse | null = null;
+  summary: ClosureSummary = { projectId: 'p-1', hold: null, openExtracts: [] };
+
+  async getClosure(): Promise<ClosureSummary> {
+    return this.summary;
+  }
 
   constructor(
     private readonly snags: readonly Snag[] = [],
@@ -174,6 +180,7 @@ async function open(
       provideRouter([]),
       { provide: ClosureApi, useValue: closure },
       { provide: ProjectsApi, useValue: { get: async () => detail } },
+      { provide: ExtractsApi, useValue: { list: async () => [{ id: 'e-2', number: 2 }] } },
       { provide: ProofApi, useValue: { get: async () => hold } },
       { provide: SubcontractorsApi, useValue: { list: async () => [] } },
       { provide: AuthService, useValue: { current: signal(current) } },
@@ -271,6 +278,21 @@ describe('ClosurePage', () => {
     expect(q(fixture, 'closure-hold-source')).not.toBeNull();
     expect(q(fixture, 'closure-hold')?.querySelector('input, textarea, select')).toBeNull();
     expect(q(fixture, 'closure-act-hold-release')).not.toBeNull();
+  });
+
+  it('lists the hold and each open extract above the acts, the extract linking to its page', async () => {
+    const closure = new FakeClosureApi();
+    closure.summary = { projectId: 'p-1', hold: '50.0000', openExtracts: [{ number: 2, status: 'QcSubmitted' }] };
+    const fixture = await open(project('Handover'), session('Owner', OWNER), closure);
+    expect(q(fixture, 'closure-pending-hold')?.textContent).toContain('50.0000');
+    const link = q(fixture, 'closure-open-extract-2') as HTMLAnchorElement;
+    expect(link.textContent).toContain('extract.status.QcSubmitted');
+    expect(link.getAttribute('href')).toBe('/projects/p-1/extracts/e-2');
+  });
+
+  it('draws nothing for the read when there is no hold figure and no open extract', async () => {
+    const fixture = await open(project('Handover'), session('Owner', OWNER));
+    expect(q(fixture, 'closure-pending')).toBeNull();
   });
 
   it('releases the hold with the one button and sends no amount', async () => {

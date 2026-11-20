@@ -17,7 +17,7 @@ import { toProblem } from '../../core/api/problem-details';
 import { AuthService } from '../../core/auth/auth.service';
 import { contractTypeKey, projectWorkspaceStatusKey } from '../../core/i18n/enum-keys';
 import { I18nService } from '../../core/i18n/i18n.service';
-import { ProjectDetail, ProjectStage, ProjectTabs, ProjectsApi } from '../../core/projects/projects.api';
+import { ProjectDetail, ProjectTabs, ProjectsApi } from '../../core/projects/projects.api';
 import { STATUS_PILL, shownStatus } from '../../features/projects/project-status-pill';
 import { KaffBadge } from '../kaff-badge/kaff-badge';
 import { KaffIcon } from '../kaff-icon/kaff-icon';
@@ -26,20 +26,6 @@ import { KaffStatusPill } from '../kaff-status-pill/kaff-status-pill';
 export type FrameTab = keyof ProjectTabs;
 
 const TAB_ORDER: readonly FrameTab[] = ['overview', 'boq', 'dailyLog', 'extracts', 'team'];
-const STAGES: readonly ProjectStage[] = ['Boq', 'Execution', 'Handover'];
-const STAGE_KEY: Readonly<Record<ProjectStage, string>> = {
-  Boq: 'projects.frame.stage.boq',
-  Execution: 'projects.frame.stage.execution',
-  Handover: 'projects.frame.stage.handover',
-};
-
-/** D-229 item 2: a design project's own stage line. The server's three stages read as contract, design, handover. */
-const DESIGN_STAGE_KEY: Readonly<Record<ProjectStage, string>> = {
-  Boq: 'projects.frame.stage.contract',
-  Execution: 'projects.frame.stage.design',
-  Handover: 'projects.frame.stage.handover',
-};
-
 /**
  * Tabs that belong to a stage not reached or to another contract type (README "The project frame": a tab of
  * a stage not reached is absent). Facts of the project, not of the viewer: the viewer's side is `tabs`.
@@ -97,10 +83,6 @@ export class KaffProjectFrame {
   protected readonly shown = shownStatus;
   protected readonly contractTypeKey = contractTypeKey;
   protected readonly statusKey = projectWorkspaceStatusKey;
-  protected readonly stages = computed(() => {
-    const keys = this.project()?.contractType === 'Design' ? DESIGN_STAGE_KEY : STAGE_KEY;
-    return STAGES.map((id) => ({ id, key: keys[id] }));
-  });
 
   /** Tabs the server allows, in the frame's order. */
   protected readonly tabs = computed(() => {
@@ -110,12 +92,6 @@ export class KaffProjectFrame {
     }
     const hidden = notReached(project);
     return TAB_ORDER.filter((tab) => project.tabs[tab] && !hidden.includes(tab));
-  });
-
-  /** Index of the current stage; -1 on an archived project (nothing is current). */
-  protected readonly stageIndex = computed(() => {
-    const project = this.project();
-    return project === null || project.isArchived ? -1 : STAGES.indexOf(project.stage);
   });
 
   /** The meta line is for roles that see money or the BOQ; the junior site engineer gets none. */

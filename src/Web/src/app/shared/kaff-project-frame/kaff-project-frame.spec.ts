@@ -86,15 +86,7 @@ describe('KaffProjectFrame', () => {
   it('draws only the back link and a neutral title when the read fails', async () => {
     const root = await render(new Error('refused'));
     expect(root.querySelector('.tabs')).toBeNull();
-    expect(root.querySelector('.stl')).toBeNull();
     expect(root.querySelector('h1')?.textContent).toContain('projects.frame.title_neutral');
   });
 
-  it('draws the three stages only, the current one marked', async () => {
-    const root = await render({ ...DETAIL, stage: 'Handover' });
-    const stages = Array.from(root.querySelectorAll('.stl li'));
-    expect(stages.length).toBe(3);
-    expect(stages.map((s) => s.classList.contains('done'))).toEqual([true, true, false]);
-    expect(stages[2].getAttribute('aria-current')).toBe('step');
-  });
 });

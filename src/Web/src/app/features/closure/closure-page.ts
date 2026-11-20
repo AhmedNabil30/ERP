@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked, viewChild } from '@angular/core';
 
+import { RouterLink } from '@angular/router';
+
 import { toProblem } from '../../core/api/problem-details';
 import { AuthService } from '../../core/auth/auth.service';
 import {
@@ -15,14 +17,17 @@ import { I18nService } from '../../core/i18n/i18n.service';
 import { ProofApi, ProofResponse } from '../../core/proof/proof.api';
 import { ProjectDetail, ProjectStatus, ProjectsApi } from '../../core/projects/projects.api';
 import { SubcontractorSummary, SubcontractorsApi } from '../../core/subcontractors/subcontractors.api';
+import { ExtractsApi } from '../../core/extracts/extracts.api';
+import { ClosureSummary } from '../../core/closure/closure.api';
 import { ChainApi, ReleasedHoldCollection } from '../../core/extracts/chain.api';
 import { KaffBadge } from '../../shared/kaff-badge/kaff-badge';
 import { KaffCollectionPosition } from '../../shared/kaff-collection-position/kaff-collection-position';
 import { KaffDetailPanel } from '../../shared/kaff-detail-panel/kaff-detail-panel';
 import { CollectionForm } from '../extracts/collection-form/collection-form';
-import { isPositive } from '../extracts/extract-display';
+import { EXTRACT_PILL, isPositive } from '../extracts/extract-display';
 import { KaffBanner } from '../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../shared/kaff-button/kaff-button';
+import { KaffFigureList, FigureRow } from '../../shared/kaff-figure-list/kaff-figure-list';
 import { KaffFigure } from '../../shared/kaff-figure/kaff-figure';
 import { KaffIcon } from '../../shared/kaff-icon/kaff-icon';
 import { KaffInlineConfirm } from '../../shared/kaff-inline-confirm/kaff-inline-confirm';
@@ -75,6 +80,8 @@ const UNMET_KEYS: Readonly<Record<string, string>> = {
     KaffBanner,
     KaffButton,
     KaffFigure,
+    KaffFigureList,
+    RouterLink,
     KaffIcon,
     KaffInlineConfirm,
     KaffPageHead,
@@ -88,6 +95,7 @@ const UNMET_KEYS: Readonly<Record<string, string>> = {
 })
 export class ClosurePage {
   private readonly api = inject(ClosureApi);
+  private readonly extractsApi = inject(ExtractsApi);
   private readonly projectsApi = inject(ProjectsApi);
   private readonly proofApi = inject(ProofApi);
   private readonly subcontractorsApi = inject(SubcontractorsApi);
@@ -113,6 +121,16 @@ export class ClosurePage {
   /** The proof read, for the hold ledger only. Null: not asked (no `HoldRelease`), or the read failed. */
   protected readonly proof = signal<ProofResponse | null>(null);
   protected readonly proofFailed = signal(false);
+
+  /** D-257 closure read: the hold the release would move (null for a viewer without money) and the open extracts. */
+  protected readonly summary = signal<ClosureSummary | null>(null);
+  /** Extract id by number: the closure read names open extracts by number, the route by id. Empty when the list is refused. */
+  protected readonly extractIds = signal<ReadonlyMap<number, string>>(new Map());
+  protected readonly extractStatusKey = (status: keyof typeof EXTRACT_PILL): string => EXTRACT_PILL[status].key;
+  protected readonly holdRows = computed<readonly FigureRow[]>(() => {
+    const hold = this.summary()?.hold ?? null;
+    return hold === null ? [] : [{ label: this.i18n.t('closure.hold.title'), amount: hold, testId: 'closure-pending-hold' }];
+  });
 
   /**
    * D-244 item 2: a released hold is collected like an extract, through the same collection form (E5). Read for a
@@ -281,7 +299,18 @@ export class ClosurePage {
     } finally {
       this.loading.set(false);
     }
-    await Promise.all([this.loadSnags(), this.loadCallbacks(), this.loadHold(), this.loadReleasedHold()]);
+    await Promise.all([this.loadSummary(), this.loadSnags(), this.loadCallbacks(), this.loadHold(), this.loadReleasedHold()]);
+  }
+
+  private async loadSummary(): Promise<void> {
+    try {
+      this.summary.set(await this.api.getClosure(this.projectId()));
+    } catch {
+      this.summary.set(null);
+    }
+    const open = this.summary()?.openExtracts ?? [];
+    const list = open.length === 0 ? [] : await this.extractsApi.list(this.projectId()).catch(() => []);
+    this.extractIds.set(new Map(list.map((row) => [row.number, row.id])));
   }
 
   private async loadSnags(): Promise<void> {

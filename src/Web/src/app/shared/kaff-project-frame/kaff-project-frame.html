@@ -21,20 +21,10 @@
             <kaff-badge tone="accent" testId="workspace-type">{{ i18n.t(contractTypeKey(p.contractType)) }}</kaff-badge>
           </p>
         }
-        @if (stageIndex() >= 0) {
-          <ol class="stl" [attr.aria-label]="i18n.t('projects.frame.stage.label')" data-testid="workspace-stages">
-            @for (stage of stages(); track stage.id; let k = $index) {
-              <li [class.done]="k < stageIndex()" [class.cur]="k === stageIndex()" [attr.aria-current]="k === stageIndex() ? 'step' : null">
-                <span class="mk">@if (k < stageIndex()) {<kaff-icon name="check" [small]="true" />}</span>{{ i18n.t(stage.key) }}
-              </li>
-            }
-          </ol>
-        }
       }
     }
     @case ('loading') {
       <div class="ttl" role="status"><span class="sk title-sk"></span><span class="sr-only">{{ i18n.t('projects.workspace.loading') }}</span></div>
-      <span class="sk stl-sk" aria-hidden="true"></span>
     }
     @default {
       <div class="ttl"><h1 class="title">{{ i18n.t('projects.frame.title_neutral') }}</h1></div>
