@@ -17249,3 +17249,18 @@ Asked after `qa/slice-5/verification-2026-11-20-r3.md` (O-2, O-3). Nabil chose b
    extract does not need to be issued for handover to proceed.
 4. **Not built.** The handover refusal does not list the NCRs or extracts concerned, as the major snag refusal lists its
    snags. The handover screen does not show the two new conditions before the action is tried.
+
+## D-256 — Words for the NCR, the held portion and termination; a Draft extract carries the remainder · 2026-11-20
+
+Asked after `ux/arabic-copy-review-2026-11-20-b.md`. Nabil chose each recommended option.
+
+1. **The NCR is «تقرير عدم المطابقة» everywhere**, on screens and in errors. «الملاحظة» stays for
+   snags and daily-log notes, and «بند» stays for a BOQ line. The close action is «إغلاق تقرير عدم
+   المطابقة»; the held row is «معلّق حتى إغلاق تقرير عدم المطابقة».
+2. **The held portion is «الجزء المعلّق», and closing its NCR reads «يُعتمد {amount} ج.م للدفع».**
+   «الإفراج» and «المُفرج عنه» stay for the hold (الحجز) only. Every held-portion key that borrows
+   the hold's verbs, or says «محجوز», is reworded.
+3. **Termination is «فسخ التعاقد»**, for the state and the action. «تم الإنهاء» is retired.
+4. **A Draft extract is enough to carry a released remainder for handover** (D-255 as built stands).
+5. `closure.status.stopped` «متوقف» was Nabil's word in D-247 §5; the review's note that it had no
+   ruling is answered.
