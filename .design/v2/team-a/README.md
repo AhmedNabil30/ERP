@@ -1564,3 +1564,21 @@ These are departures from the mock or things the mock did not draw. The mock fil
 - **Closure page.** Above the acts (and so above «بدء فترة الضمان» and the handover act) one panel, drawn only when it has something to hold: the hold to be released, as a figure row labelled «الحجز» (`kaff-figure-list`; only when the read's `hold` is non-null, so absent for a viewer who does not see money), then each open extract as a row «مستخلص {n}» at the start with its status word at the end, linking to the extract. Nothing is drawn when there is no hold figure and no open extract. No sentence. Reads `GET /closure`; the extract id for the link comes from the extracts list, matched by number; if that list is refused the row is plain text, not a link. No new kit part and no new string.
 - **Project frame.** The stage trail (المقايسة · التنفيذ · التسليم) is removed from the frame, so from every project screen that uses it, not from the workspace alone; the status pill stays. The Design-project stage words go with it. The `stl` part in the kit mock is untouched; it is no longer used by a built screen.
 - Not decided: the closure panel's «الحجز» row and the existing hold panel further down (finance and owner, after handover) can both show a hold figure. Left as the brief said; one of them may go.
+
+## Extract chain, consultant round 2: build departures (2026-11-20)
+
+Built from `ux/consultant-review-extracts-app-2026-11-20-r2.md` and D-260. These change the E3, E4, E6, E8/E9 and credit note screens without a new mock; each departure is listed so the next review can judge it.
+
+- **E4 split sheet** now has the percentage, a server-priced approved/held pair (debounced 350 ms, `portion-preview`; no browser arithmetic) and a required «ما لا يطابق المواصفات» textarea that goes as `ncrDescription`. Blank description is refused in the sheet before any call.
+- **NCR description** shows on E3 as a row under the held figures while the report is open, and at the top of the close sheet. Reports opened before D-260 have none, so no row is drawn.
+- **E3 waiting line** adds a second line «بانتظار المكتب الفني: إغلاق تقرير عدم المطابقة» whenever a report is open. The role is fixed text: the NCR read names no holders.
+- **Deductions preview** on E3 for Finance, above the quantities: the printed column rows that have a value (deductions with a minus), «صافي المستحق», «الحجز حتى تاريخه». The preview's `gross` and `holdThisPeriod` are the column's work-value and hold rows, so they are not drawn twice.
+- **Released remainder** label is «الجزء المعلّق · يُدرج في المستخلص التالي» (it was «الجزء المعلّق المعتمد للدفع», which read as part of this document).
+- **E6 payments**: the cheque moves moved from the bottom bar and a lone «الشيك مرتد» to each cheque's own row, each button naming its cheque («إيداع الشيك {number}», «تأكيد صرف الشيك {number}», «الشيك {number} مرتد»). Departure from the mock's one primary: the bottom bar now carries only «تسجيل دفعة». The cheque list already worked per row.
+- **Dispute resolution** offers only `disputeResolutions`; a lone offer is preselected.
+- **Extract list** waiting cell reads `creditNoteWaitingOn` first, as the extract page does.
+- **Credit note** shows «المستحق بعد الإشعار» from `extractDueAfter` while the note is raised, not only after approval.
+- **QC sheet** title is «تقرير الجودة · قيم التشوينات». Both values stay required (D-235 item 4).
+- **The Owner's step** is «الاعتماد» in every waiting line (the mock's word); the workspace said «الاعتماد النهائي». The buttons stay «اعتماد». Key changed: `projects.workspace.waiting.step.DeductionsApplied`.
+
+Not done: the zero-row noise (N1), the cancellation card (N4), the change-order list amounts (C5), the primary's place at 1440 (C6), the closure hold figure (F8), and C4's pill-plus-line duplication.

@@ -77,8 +77,9 @@ export class CreditNotePage extends ChainPage {
     if (n.disputeReason) rows.push({ label: this.i18n.t('dispute.client_claim'), text: n.disputeReason });
     rows.push({ label: this.i18n.t('credit_note.reason'), text: n.reason });
     if (x?.document) rows.push({ label: this.i18n.t('credit_note.net_unit'), amount: x.document.printedTotal });
-    // The due figure after the note is the server's, so it is shown once the note is approved and has lowered it.
-    if (x?.collection && n.status === 'Approved') rows.push({ label: this.i18n.t('credit_note.due_after_unit'), amount: x.collection.expected });
+    // The due figure after the note is the server's (D-260 item 4): shown before the Owner decides, and once approved.
+    const dueAfter = n.extractDueAfter ?? (n.status === 'Approved' ? x?.collection?.expected : null);
+    if (dueAfter && (n.status === 'Raised' || n.status === 'Approved')) rows.push({ label: this.i18n.t('credit_note.due_after_unit'), amount: dueAfter });
     rows.push({ label: this.i18n.t('credit_note.raised_on'), text: shortDay(n.raisedAt) });
     return rows;
   });

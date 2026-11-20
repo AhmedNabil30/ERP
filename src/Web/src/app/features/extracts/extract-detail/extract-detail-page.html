@@ -47,6 +47,9 @@
       @if (waiting(); as w) {
         <kaff-waiting-line [text]="w.text" [sub]="w.sub" testId="extract-waiting" />
       }
+      @if (ncrWaiting(); as line) {
+        <kaff-waiting-line [text]="line" testId="extract-ncr-waiting" />
+      }
 
       @if (heldRows().length > 0) {
         <h2 class="sec-h">{{ i18n.t('extract.work.heading') }}</h2>
@@ -114,6 +117,11 @@
             <kaff-forward-link [link]="['/projects', projectId(), 'extracts', x.id, 'credit-notes', note.id]" [label]="i18n.t('credit_note.title')" testId="extract-credit-note-link" />
           }
         }
+      }
+
+      @if (x.actions.applyDeductions && deductionsRows().length > 0) {
+        <h2 class="sec-h">{{ i18n.t('extract.deductions.heading') }}</h2>
+        <kaff-figure-list [rows]="deductionsRows()" testId="extract-deductions-preview" />
       }
 
       @if (workedQuantities().length > 0) {
@@ -209,6 +217,12 @@
           <kaff-banner tone="refusal">{{ i18n.t(key, actionErrorParams()) }}</kaff-banner>
         }
         <kaff-money-field labelKey="extract.portion.percent" controlId="portion-percent" affixKey="bab.affix.percent" [required]="true" [errorKey]="portionError()" hintTestId="portion-error" testId="portion-percent" [(value)]="portion" />
+        @if (portionRows().length > 0) {
+          <kaff-figure-list [rows]="portionRows()" testId="portion-preview" />
+        }
+        <kaff-field labelKey="extract.ncr.description" controlId="portion-description" [required]="true" [errorKey]="descriptionError()" errorTestId="portion-description-error" #df="kaffField">
+          <textarea id="portion-description" data-testid="portion-description" [attr.aria-invalid]="descriptionError() ? 'true' : null" [attr.aria-describedby]="df.describedById()" [value]="ncrDescription()" (input)="ncrDescription.set($any($event.target).value)"></textarea>
+        </kaff-field>
       </div>
       <div panelFooter class="panel-actions">
         <kaff-button variant="primary" [busy]="busy()" testId="portion-submit" (clicked)="submitPortion()">{{ i18n.t('extract.portion.submit') }}</kaff-button>
@@ -220,6 +234,9 @@
       <div panelBody class="sheet-form">
         @if (actionError(); as key) {
           <kaff-banner tone="refusal">{{ i18n.t(key, actionErrorParams()) }}</kaff-banner>
+        }
+        @if (x.openNcr?.description; as what) {
+          <kaff-figure-list [rows]="[{ label: i18n.t('extract.ncr.description'), text: what }]" testId="ncr-description" />
         }
         <kaff-field labelKey="extract.ncr.note" controlId="ncr-note" [required]="true" [errorKey]="ncrError()" errorTestId="ncr-note-error" #nf="kaffField">
           <textarea id="ncr-note" data-testid="ncr-note" [attr.aria-invalid]="ncrError() ? 'true' : null" [attr.aria-describedby]="nf.describedById()" [value]="ncrNote()" (input)="ncrNote.set($any($event.target).value)"></textarea>

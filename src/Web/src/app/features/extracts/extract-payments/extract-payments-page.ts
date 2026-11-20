@@ -17,11 +17,9 @@ import { KaffStatusPill } from '../../../shared/kaff-status-pill/kaff-status-pil
 import { ChainPage } from '../chain-page';
 import { CHEQUE_PILL, EXTRACT_PILL, shortDay, lastOf } from '../extract-display';
 
-type Primary = 'deposit' | 'clear' | 'collect';
+type Primary = 'collect';
 
 const PRIMARY_KEYS: Readonly<Record<Primary, string>> = {
-  deposit: 'cheque.action.deposit',
-  clear: 'cheque.action.clear',
   collect: 'collection.record',
 };
 
@@ -54,11 +52,13 @@ export class ExtractPaymentsPage extends ChainPage {
   protected readonly data = signal<Extract | null>(null);
   protected readonly project = signal<ProjectDetail | null>(null);
   protected readonly payments = signal<readonly CollectionView[]>([]);
-  /** What the server lets this caller do to the cheque in hand (D-247 item 3). Null: the read was refused or failed. */
-  private readonly chequeActions = signal<ChequeActions | null>(null);
+  /** What the server lets this caller do to each cheque, by cheque id (D-247 item 3). Empty: the read was refused or failed. */
+  private readonly chequeActions = signal<ReadonlyMap<string, ChequeActions>>(new Map());
   protected readonly loading = signal(true);
   protected readonly failure = signal<string | null>(null);
   protected readonly sheet = signal<'bounce' | 'reverse' | null>(null);
+  /** The cheque the bounce sheet is for. */
+  private readonly bouncing = signal<CollectionView | null>(null);
   protected readonly reason = signal('');
   protected readonly reasonError = signal<string | null>(null);
   /** What was just done, said once in place. */
@@ -66,31 +66,24 @@ export class ExtractPaymentsPage extends ChainPage {
 
   protected override readonly primaryTemplate = viewChild<TemplateRef<unknown>>('primaryAction');
 
-  /** The cheque still in hand, oldest first: the one whose move comes next. */
-  protected readonly inHand = computed(() =>
-    this.payments().find((p) => !p.reversed && (p.chequeState === 'Received' || p.chequeState === 'Deposited')) ?? null,
-  );
-
-  /** The cheque's moves: the server's flags, or the extract's own `recordChequeMove` when the cheque read gave none. */
-  protected readonly moves = computed<ChequeActions>(() => {
-    const cheque = this.inHand();
-    const flags = this.chequeActions();
-    if (cheque === null) {
-      return { deposit: false, clear: false, bounce: false };
+  /**
+   * The moves offered on one cheque row: the server's flags for that cheque, or the extract's own `recordChequeMove`
+   * when the cheque read gave none. A cheque that is not in hand has none.
+   */
+  protected moves(p: CollectionView): ChequeActions | null {
+    if (p.reversed || !p.chequeId || (p.chequeState !== 'Received' && p.chequeState !== 'Deposited')) {
+      return null;
     }
-    if (flags !== null) {
-      return flags;
+    const flags = this.chequeActions().get(p.chequeId);
+    if (flags) {
+      return flags.deposit || flags.clear || flags.bounce ? flags : null;
     }
     const may = this.data()?.actions.recordChequeMove === true;
-    return { deposit: may && cheque.chequeState === 'Received', clear: may && cheque.chequeState === 'Deposited', bounce: may && cheque.chequeState === 'Deposited' };
-  });
+    const m = { deposit: may && p.chequeState === 'Received', clear: may && p.chequeState === 'Deposited', bounce: may && p.chequeState === 'Deposited' };
+    return m.deposit || m.clear || m.bounce ? m : null;
+  }
 
-  protected readonly primary = computed<Primary | null>(() => {
-    const m = this.moves();
-    if (m.deposit) return 'deposit';
-    if (m.clear) return 'clear';
-    return this.data()?.actions.recordCollection ? 'collect' : null;
-  });
+  protected readonly primary = computed<Primary | null>(() => (this.data()?.actions.recordCollection ? 'collect' : null));
 
   protected readonly primaryKey = computed(() => {
     const p = this.primary();
@@ -148,36 +141,33 @@ export class ExtractPaymentsPage extends ChainPage {
     }
   }
 
-  /** The cheque in hand's own flags, from the project's cheque read. Optional: a refusal keeps the extract's flag. */
+  /** Each cheque's own flags, from the project's cheque read. Optional: a refusal keeps the extract's flag. */
   private async readChequeActions(extract: Extract): Promise<void> {
-    const id = this.inHand()?.chequeId;
-    if (!extract.actions.recordChequeMove || !id) {
-      this.chequeActions.set(null);
+    if (!extract.actions.recordChequeMove) {
+      this.chequeActions.set(new Map());
       return;
     }
     try {
-      this.chequeActions.set((await this.chain.cheques(this.projectId())).find((c) => c.id === id)?.actions ?? null);
+      this.chequeActions.set(new Map((await this.chain.cheques(this.projectId())).filter((c) => c.actions).map((c) => [c.id, c.actions!])));
     } catch {
-      this.chequeActions.set(null);
+      this.chequeActions.set(new Map());
     }
   }
 
   protected onPrimary(): void {
-    const cheque = this.inHand();
-    switch (this.primary()) {
-      case 'deposit':
-        if (cheque?.chequeId) void this.run(() => this.chain.deposit(this.projectId(), cheque.chequeId!), null);
-        break;
-      case 'clear':
-        if (cheque?.chequeId) void this.run(() => this.chain.clear(this.projectId(), cheque.chequeId!), 'cleared');
-        break;
-      case 'collect':
-        void this.router.navigate(['/projects', this.projectId(), 'extracts', this.extractId(), 'collect']);
-        break;
-    }
+    void this.router.navigate(['/projects', this.projectId(), 'extracts', this.extractId(), 'collect']);
   }
 
-  protected open(sheet: 'bounce' | 'reverse'): void {
+  protected deposit(p: CollectionView): void {
+    void this.run(() => this.chain.deposit(this.projectId(), p.chequeId!), null);
+  }
+
+  protected clear(p: CollectionView): void {
+    void this.run(() => this.chain.clear(this.projectId(), p.chequeId!), 'cleared');
+  }
+
+  protected open(sheet: 'bounce' | 'reverse', cheque: CollectionView | null = null): void {
+    this.bouncing.set(cheque);
     this.reason.set('');
     this.reasonError.set(null);
     this.actionError.set(null);
@@ -196,7 +186,7 @@ export class ExtractPaymentsPage extends ChainPage {
       this.reasonError.set(sheet === 'bounce' ? 'cheque.bounce.reason_required' : 'collection.reverse.reason_required');
       return;
     }
-    const cheque = this.inHand();
+    const cheque = this.bouncing();
     if (sheet === 'bounce' && cheque?.chequeId) {
       void this.run(() => this.chain.bounce(this.projectId(), cheque.chequeId!, reason), null);
     } else if (sheet === 'reverse') {

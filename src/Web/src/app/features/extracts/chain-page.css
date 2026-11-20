@@ -242,6 +242,13 @@
   border-block-end: 1px solid var(--line);
 }
 
+/* A cheque's own moves, inside its row of the payments list. */
+.lst .row-actions {
+  grid-column: 1 / -1;
+  padding: 6px 0 0;
+  border-block-end: 0;
+}
+
 /* A secondary beside the primary's own block, e.g. «تسجيل اعتراض» in the collection block. */
 .more-inline {
   display: flex;

@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, TemplateRef, computed, effect, inje
 import { Router, RouterLink } from '@angular/router';
 
 import { toProblem } from '../../../core/api/problem-details';
-import { CollectionView, Extract, ExtractCreditNote, ExtractGate, ExtractQuantityRow, ExtractsApi, RejectionGate, RejectionKind } from '../../../core/extracts/extracts.api';
+import { CollectionView, DeductionsPreview, Extract, ExtractCreditNote, ExtractGate, ExtractQuantityRow, ExtractsApi, PortionPreview, RejectionGate, RejectionKind } from '../../../core/extracts/extracts.api';
 import { percentToFraction } from '../../../core/catalogue/percent-wire';
 import { ProjectDetail, ProjectsApi } from '../../../core/projects/projects.api';
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
@@ -151,6 +151,14 @@ export class ExtractDetailPage extends ChainPage {
   protected readonly ncrClosed = signal(false);
   protected readonly portion = signal('');
   protected readonly portionError = signal<string | null>(null);
+  /** What the typed percentage approves and holds, from the server (D-260 item 2). Null until a valid percentage is typed. */
+  protected readonly portionPreview = signal<PortionPreview | null>(null);
+  protected readonly ncrDescription = signal('');
+  protected readonly descriptionError = signal<string | null>(null);
+  /** What applying the deductions would produce now, from the server (D-260 item 3). Null when not offered. */
+  private readonly deductionsPreview = signal<DeductionsPreview | null>(null);
+  private previewTimer: ReturnType<typeof setTimeout> | undefined;
+  private previewSeq = 0;
   protected readonly ncrNote = signal('');
   protected readonly ncrError = signal<string | null>(null);
   /** «طُبقت الخصومات.»: said once, in place, after Finance applied them. */
@@ -236,6 +244,32 @@ export class ExtractDetailPage extends ChainPage {
       text: waitingText(this.i18n, x.waitingOn.holders, extractTaskKey(x.waitingOn, chequeInHand)),
       sub: barredText(this.i18n, x.waitingOn.barredHolders),
     };
+  });
+
+  /** The open report's own line: the Technical Office closes it, whatever else the extract waits for (consultant r2 F3). */
+  protected readonly ncrWaiting = computed(() => (this.data()?.openNcr?.status === 'Open' ? this.i18n.t('extract.ncr.waiting') : null));
+
+  /** The deductions Finance is about to apply: every row with a value, deductions with a real minus, the net ruled. */
+  protected readonly deductionsRows = computed<FigureRow[]>(() => {
+    const d = this.deductionsPreview();
+    if (d === null) {
+      return [];
+    }
+    return [
+      ...d.column.filter((row) => isPositive(row.amount)).map((row) => ({ label: this.i18n.t(row.labelKey), amount: row.isDeduction ? negated(row.amount) : row.amount })),
+      { label: this.i18n.t('extract.net_payable'), amount: d.netPayable, total: true, testId: 'extract-deductions-net' },
+      { label: this.i18n.t('extract.hold_to_date'), amount: d.holdToDate, testId: 'extract-deductions-hold' },
+    ];
+  });
+
+  protected readonly portionRows = computed<FigureRow[]>(() => {
+    const p = this.portionPreview();
+    return p?.approvedWork != null && p.heldWork != null
+      ? [
+          { label: this.i18n.t('extract.portion.approved'), amount: p.approvedWork, testId: 'portion-approved' },
+          { label: this.i18n.t('extract.portion.held'), amount: p.heldWork, testId: 'portion-held' },
+        ]
+      : [];
   });
 
   /** The separation-of-duties line: the caller holds the gate's role but took part in this cycle. */
@@ -359,6 +393,29 @@ export class ExtractDetailPage extends ChainPage {
       this.extractId();
       untracked(() => void this.reload());
     });
+    // The split sheet asks the server what the typed percentage means, a moment after typing stops (no browser arithmetic).
+    effect(() => {
+      const typed = this.portion();
+      const open = this.sheet() === 'portion';
+      untracked(() => this.schedulePortionPreview(open ? typed : ''));
+    });
+  }
+
+  private schedulePortionPreview(typed: string): void {
+    clearTimeout(this.previewTimer);
+    const seq = ++this.previewSeq;
+    const wire = wireAmount(typed);
+    const value = wire === null ? Number.NaN : Number(wire);
+    if (wire === null || !(value >= 1 && value <= 99)) {
+      this.portionPreview.set(null);
+      return;
+    }
+    this.previewTimer = setTimeout(() => {
+      this.api
+        .portionPreview(this.projectId(), this.extractId(), percentToFraction(wire))
+        .then((p) => seq === this.previewSeq && this.portionPreview.set(p))
+        .catch(() => seq === this.previewSeq && this.portionPreview.set(null));
+    }, 350);
   }
 
   protected async reload(): Promise<void> {
@@ -381,10 +438,12 @@ export class ExtractDetailPage extends ChainPage {
 
   /** The two optional reads beside the extract. A refusal or a failure leaves the screen as it is. */
   private async loadSides(extract: Extract): Promise<void> {
-    const [payments, quantities] = await Promise.all([
+    const [payments, quantities, deductions] = await Promise.all([
       extract.actions.recordChequeMove ? this.api.collections(this.projectId(), extract.id).catch(() => []) : Promise.resolve([]),
       this.api.quantities(this.projectId(), extract.id).catch(() => []),
+      extract.actions.applyDeductions ? this.api.deductionsPreview(this.projectId(), extract.id).catch(() => null) : Promise.resolve(null),
     ]);
+    this.deductionsPreview.set(deductions);
     this.payments.set(payments);
     this.quantities.set(quantities);
   }
@@ -435,6 +494,7 @@ export class ExtractDetailPage extends ChainPage {
     this.applied.set(false);
     this.ncrClosed.set(false);
     this.portionError.set(null);
+    this.descriptionError.set(null);
     this.ncrError.set(null);
     this.qcErrors.set({ onSite: null, installed: null });
     this.rejectErrors.set({ kind: null, reason: null });
@@ -481,8 +541,12 @@ export class ExtractDetailPage extends ChainPage {
       this.portionError.set('extract.portion.error');
       return;
     }
+    const description = this.ncrDescription().trim();
     this.portionError.set(null);
-    void this.run(() => this.api.approvePortion(this.projectId(), this.extractId(), percentToFraction(typed)));
+    this.descriptionError.set(description === '' ? 'extract.portion.description_required' : null);
+    if (description !== '') {
+      void this.run(() => this.api.approvePortion(this.projectId(), this.extractId(), percentToFraction(typed), description));
+    }
   }
 
   /** The closing note is required; the held portion is released by the server. */
@@ -515,6 +579,10 @@ export class ExtractDetailPage extends ChainPage {
           : { label: this.i18n.t('extract.portion.held'), amount: x.heldWork!, testId: 'extract-held' },
       );
     }
+    const what = x.openNcr?.status === 'Open' ? x.openNcr.description : null;
+    if (what) {
+      rows.push({ label: this.i18n.t('extract.ncr.description'), text: what, testId: 'extract-ncr-description' });
+    }
     return rows;
   });
 
@@ -544,6 +612,7 @@ export class ExtractDetailPage extends ChainPage {
       this.reason.set('');
       this.rejectKind.set('');
       this.portion.set('');
+      this.ncrDescription.set('');
       this.ncrNote.set('');
     }
     // A refusal can mean the extract moved under us; show where it stands now.

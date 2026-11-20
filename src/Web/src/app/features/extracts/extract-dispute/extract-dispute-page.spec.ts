@@ -28,7 +28,7 @@ async function open(mode: 'raise' | 'resolve', data: Extract, api: Record<string
   return { fixture, root: fixture.nativeElement as HTMLElement };
 }
 
-const disputed = extract({ status: 'Disputed', document: DOCUMENT, collection: POSITION, disputeReason: 'سعر البياض أعلى من المتفق عليه.' }, { resolveDispute: true });
+const disputed = extract({ status: 'Disputed', document: DOCUMENT, collection: POSITION, disputeReason: 'سعر البياض أعلى من المتفق عليه.', disputeResolutions: ['CreditNote', 'RevisedExtract'] }, { resolveDispute: true });
 
 describe('ExtractDisputePage (E8, E9)', () => {
   beforeEach(() => TestBed.resetTestingModule());
@@ -57,6 +57,12 @@ describe('ExtractDisputePage (E8, E9)', () => {
     expect(primary(fixture)).toBeNull();
     expect(byTestId(root, 'dispute-refused')?.textContent).toContain('errors.auth.forbidden');
     expect(byTestId(root, 'dispute-refused')?.textContent).not.toContain('dispute.refused');
+  });
+
+  it('offers only the resolutions the server sends, and preselects a lone one', async () => {
+    const { root } = await open('resolve', extract({ status: 'Disputed', document: DOCUMENT, collection: POSITION, disputeResolutions: ['CreditNote'] }, { resolveDispute: true }));
+    expect(byTestId(root, 'dispute-kind-RevisedExtract')).toBeNull();
+    expect((byTestId(root, 'dispute-kind-CreditNote') as HTMLInputElement).checked).toBe(true);
   });
 
   it('asks the kind first; a price error issues a credit note of the typed amount', async () => {

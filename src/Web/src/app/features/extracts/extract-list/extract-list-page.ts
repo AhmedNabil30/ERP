@@ -15,7 +15,7 @@ import { KaffTable } from '../../../shared/kaff-table/kaff-table';
 import { TableColumnDef } from '../../../shared/kaff-table-header/kaff-table-header';
 import { KaffTableRow } from '../../../shared/kaff-table-row/kaff-table-row';
 import { ChainPage } from '../chain-page';
-import { EXTRACT_PILL, barredText, extractTaskKey, shortDay, waitingText } from '../extract-display';
+import { EXTRACT_PILL, barredText, extractTaskKey, lineText, shortDay, waitingText } from '../extract-display';
 
 /** Mirrors the server's `ExtractViewer.MaySeeMoney`. Convenience only: the server withholds `money`. */
 const MONEY_PERMISSIONS = ['ExtractDocumentAssemble', 'ExtractDeductionsApply', 'FinancialMovementApprove'];
@@ -131,6 +131,10 @@ export class ExtractListPage extends ChainPage {
     const w = row.waitingOn;
     if (w.isTerminal || !w.permission || row.status === 'Void') {
       return null;
+    }
+    // A raised credit note holds collection: the line names who decides it, as the extract page does (D-260 item 5).
+    if (row.creditNoteWaitingOn) {
+      return { text: lineText(this.i18n, row.creditNoteWaitingOn) ?? '', sub: barredText(this.i18n, row.creditNoteWaitingOn.barredHolders) };
     }
     return { text: waitingText(this.i18n, w.holders, extractTaskKey(w, false)), sub: barredText(this.i18n, w.barredHolders) };
   }

@@ -45,8 +45,8 @@ describe('ExtractPaymentsPage (E6)', () => {
 
   it('follows the cheque own flags: clear only offers confirmation and no bounce', async () => {
     const cheques = vi.fn().mockResolvedValue([{ id: 'q-1', actions: { deposit: false, clear: true, bounce: false } }]);
-    const { fixture, root } = await open(issued({ recordChequeMove: true }), [cheque('Deposited')], { cheques });
-    expect(primary(fixture)?.textContent).toContain('cheque.action.clear');
+    const { root } = await open(issued({ recordChequeMove: true }), [cheque('Deposited')], { cheques });
+    expect(byTestId(root, 'payments-clear')?.textContent).toContain('cheque.action.clear_named');
     expect(byTestId(root, 'payments-bounce')).toBeNull();
   });
 
@@ -54,8 +54,8 @@ describe('ExtractPaymentsPage (E6)', () => {
     const deposit = vi.fn().mockResolvedValue(undefined);
     const { fixture, root } = await open(issued({ recordChequeMove: true }), [transfer, cheque('Received')], { deposit });
     expect(byTestId(root, 'payments-bounce')).toBeNull();
-    const button = primary(fixture);
-    expect(button?.textContent).toContain('cheque.action.deposit');
+    const button = byTestId(root, 'payments-deposit');
+    expect(button?.textContent).toContain('cheque.action.deposit_named');
     button?.click();
     await settle(fixture);
     expect(deposit).toHaveBeenCalledWith('p-1', 'q-1');
@@ -64,9 +64,9 @@ describe('ExtractPaymentsPage (E6)', () => {
   it('confirms clearance of a deposited cheque, and offers the bounce as a destructive trigger', async () => {
     const clear = vi.fn().mockResolvedValue(undefined);
     const { fixture, root } = await open(issued({ recordChequeMove: true }), [transfer, cheque('Deposited')], { clear });
-    expect(primary(fixture)?.textContent).toContain('cheque.action.clear');
+    expect(byTestId(root, 'payments-clear')?.textContent).toContain('cheque.action.clear_named');
     expect(byTestId(root, 'payments-bounce')).not.toBeNull();
-    primary(fixture)?.click();
+    byTestId(root, 'payments-clear')?.click();
     await settle(fixture);
     expect(clear).toHaveBeenCalledWith('p-1', 'q-1');
     expect(byTestId(root, 'payments-cleared')).not.toBeNull();

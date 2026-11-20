@@ -53,7 +53,6 @@ export class ExtractDisputePage extends ChainPage {
   private readonly router = inject(Router);
 
   protected readonly pill = EXTRACT_PILL;
-  protected readonly kinds = KINDS;
 
   readonly projectId = input.required<string>();
   readonly extractId = input.required<string>();
@@ -64,6 +63,9 @@ export class ExtractDisputePage extends ChainPage {
   protected readonly project = signal<ProjectDetail | null>(null);
   protected readonly loading = signal(true);
   protected readonly failure = signal<string | null>(null);
+
+  /** Only the resolutions the server would accept now (D-260 item 6). */
+  protected readonly kinds = computed(() => KINDS.filter((k) => this.data()?.disputeResolutions?.includes(k.value as DisputeResolutionKind)));
 
   protected readonly kind = signal('');
   protected readonly reason = signal('');
@@ -118,6 +120,10 @@ export class ExtractDisputePage extends ChainPage {
       const [extract, project] = await Promise.all([this.api.get(this.projectId(), this.extractId()), this.projects.get(this.projectId()).catch(() => null)]);
       this.data.set(extract);
       this.project.set(project);
+      // One offer left: it is already the choice.
+      if (this.kinds().length === 1) {
+        this.kind.set(this.kinds()[0].value);
+      }
     } catch (error) {
       this.failure.set(toProblem(error).messageKey);
     } finally {

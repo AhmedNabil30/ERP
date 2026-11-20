@@ -19,7 +19,7 @@ async function open(data: Extract, api: Partial<Record<keyof ExtractsApi, unknow
     providers: [
       provideRouter(ANY_ROUTE),
       { provide: I18nService, useClass: FakeI18n },
-      { provide: ExtractsApi, useValue: { get: vi.fn().mockResolvedValue(data), collections: vi.fn().mockResolvedValue([]), quantities: vi.fn().mockResolvedValue([]), ...api } },
+      { provide: ExtractsApi, useValue: { get: vi.fn().mockResolvedValue(data), collections: vi.fn().mockResolvedValue([]), quantities: vi.fn().mockResolvedValue([]), portionPreview: vi.fn().mockResolvedValue({ portion: '0.7', approvedWork: '700', heldWork: '300' }), deductionsPreview: vi.fn().mockRejectedValue(new Error('none')), ...api } },
       { provide: ChainApi, useValue: { ...chain } },
       { provide: ProjectsApi, useValue: { get: vi.fn().mockResolvedValue({ name: 'فيلا 47', clientName: 'النيل', status: 'Active' }) } },
       { provide: AuthService, useValue: session(permissions) },
@@ -249,7 +249,13 @@ describe('ExtractDetailPage (E3)', () => {
     type(byTestId(root, 'portion-percent'), '70');
     byTestId(root, 'portion-submit')?.click();
     await settle(fixture);
-    expect(approvePortion).toHaveBeenCalledWith('p-1', 'e-1', '0.7');
+    expect(approvePortion).not.toHaveBeenCalled();
+    expect(root.textContent).toContain('extract.portion.description_required');
+
+    type(byTestId(root, 'portion-description'), 'الدهان غير مطابق');
+    byTestId(root, 'portion-submit')?.click();
+    await settle(fixture);
+    expect(approvePortion).toHaveBeenCalledWith('p-1', 'e-1', '0.7', 'الدهان غير مطابق');
   });
 
   it('closes the open NCR with its note, and names a missing note without sending', async () => {

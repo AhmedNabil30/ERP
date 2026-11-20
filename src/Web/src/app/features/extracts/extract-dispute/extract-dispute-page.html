@@ -56,7 +56,7 @@
               <b>{{ i18n.t('dispute.client_claim') }}</b> · <bdi dir="ltr">{{ c.date }}</bdi><br /><span dir="auto">{{ c.reason }}</span>
             </kaff-banner>
           }
-          <kaff-choice-group [choices]="kinds" legendKey="dispute.kind" [required]="true" [errorKey]="errors().kind" testId="dispute-kind" [(value)]="kind" />
+          <kaff-choice-group [choices]="kinds()" legendKey="dispute.kind" [required]="true" [errorKey]="errors().kind" testId="dispute-kind" [(value)]="kind" />
           @if (kind() === 'CreditNote') {
             @if (facts().length > 0) {
               <h2 class="sec-h">{{ i18n.t('dispute.extract_unit', { number: x.number }) }}</h2>

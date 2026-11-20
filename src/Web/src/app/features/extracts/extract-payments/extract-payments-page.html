@@ -68,20 +68,28 @@
                     <br /><span dir="auto">{{ why }}</span>
                   }
                 </small>
+                @if (moves(p); as m) {
+                  <div class="row-actions" [attr.data-testid]="'payment-moves-' + $index">
+                    @if (m.deposit) {
+                      <kaff-button variant="secondary" [busy]="busy()" testId="payments-deposit" (clicked)="deposit(p)">{{ i18n.t('cheque.action.deposit_named', { number: p.reference }) }}</kaff-button>
+                    }
+                    @if (m.clear) {
+                      <kaff-button variant="secondary" [busy]="busy()" testId="payments-clear" (clicked)="clear(p)">{{ i18n.t('cheque.action.clear_named', { number: p.reference }) }}</kaff-button>
+                    }
+                    @if (m.bounce) {
+                      <kaff-button variant="danger-outline" testId="payments-bounce" (clicked)="open('bounce', p)">{{ i18n.t('cheque.bounce_named', { number: p.reference }) }}</kaff-button>
+                    }
+                  </div>
+                }
               </li>
             }
           </ul>
         </div>
       }
 
-      @if (moves().bounce || x.actions.reverseCollection) {
+      @if (x.actions.reverseCollection) {
         <div class="more" data-testid="payments-secondary">
-          @if (moves().bounce) {
-            <kaff-button variant="danger-outline" testId="payments-bounce" (clicked)="open('bounce')">{{ i18n.t('cheque.bounce') }}</kaff-button>
-          }
-          @if (x.actions.reverseCollection) {
-            <kaff-button variant="danger-outline" testId="payments-reverse" (clicked)="open('reverse')">{{ i18n.t('collection.reverse') }}</kaff-button>
-          }
+          <kaff-button variant="danger-outline" testId="payments-reverse" (clicked)="open('reverse')">{{ i18n.t('collection.reverse') }}</kaff-button>
         </div>
       }
     </div>
