@@ -305,6 +305,31 @@ public sealed partial class ExtractEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(Ct));
     }
 
+    /// <summary>
+    /// D-257, an open question for Nabil, not a rule: no extract gate checks the project's status, so after handover an
+    /// extract can still be prepared and split, and the split opens an NCR on a handed-over project. That bypasses the
+    /// D-255 refusal, which runs only at handover. This test records today's behaviour so a ruling has to change it on
+    /// purpose; when Nabil rules, it is rewritten to assert the ruling.
+    /// </summary>
+    [Fact]
+    public async Task After_handover_an_extract_can_still_be_split_and_open_an_NCR_pending_a_ruling()
+    {
+        Project project = await NewProjectAsync();
+        await DriveAsync(project, ExtractStatus.Issued);
+        HttpResponseMessage handover = await HandOverAsync(project);
+        handover.StatusCode.Should().Be(HttpStatusCode.OK, await handover.Content.ReadAsStringAsync(Ct));
+
+        await ExecuteAsync(project, 1_000m);
+        Guid second = await DriveAsync(project, ExtractStatus.QcSubmitted);
+        HttpResponseMessage split = await SendAsync(
+            HttpMethod.Post, Step(project.Id, second, "technical-approval"), _technicalOffice, new { approvedPortion = "0.6" });
+
+        split.StatusCode.Should().Be(HttpStatusCode.OK, await split.Content.ReadAsStringAsync(Ct));
+        await using KaffDbContext context = _database.CreateContext();
+        (await context.Projects.SingleAsync(candidate => candidate.Id == project.Id, Ct)).Status.Should().Be(ProjectStatus.Handover);
+        (await context.Ncrs.CountAsync(ncr => ncr.ProjectId == project.Id && ncr.Status == NcrStatus.Open, Ct)).Should().Be(1);
+    }
+
     private async Task<Guid> NewUserAsync(string name, Role role)
     {
         User user = Make(name, role, WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical);

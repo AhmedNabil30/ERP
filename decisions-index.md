@@ -263,3 +263,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-254 | 17222 | Partial approval scales work only; handover waits on open NCRs and unbilled remainders · 2026-11-20 |
 | D-255 | 17232 | Handover refuses an open NCR and an unbilled released remainder · 2026-11-20 |
 | D-256 | 17253 | Words for the NCR, held portion, termination; Draft extract carries the remainder · 2026-11-20 |
+| D-257 | 17268 | Extract gates after handover (open), closure read, demo seed for every extract step · 2026-11-20 |

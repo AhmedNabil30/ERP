@@ -71,6 +71,7 @@ public sealed class ClosureRouteGateTests : IAsyncLifetime
         ["POST /api/projects/{projectId:guid}/snags/{id:guid}/verification"] = Permission.SnagManage,
         ["POST /api/projects/{projectId:guid}/snags/{id:guid}/resolution"] = Permission.SnagManage,
         ["GET /api/projects/{projectId:guid}/snags"] = Permission.ProjectRead,
+        ["GET /api/projects/{projectId:guid}/closure"] = Permission.ProjectRead,
         ["POST /api/projects/{projectId:guid}/warranty-callbacks"] = Permission.WarrantyCallbackManage,
         ["POST /api/projects/{projectId:guid}/warranty-callbacks/{id:guid}/resolution"] = Permission.WarrantyCallbackManage,
         ["GET /api/projects/{projectId:guid}/warranty-callbacks"] = Permission.ProjectRead,

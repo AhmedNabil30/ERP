@@ -17264,3 +17264,38 @@ Asked after `ux/arabic-copy-review-2026-11-20-b.md`. Nabil chose each recommende
 4. **A Draft extract is enough to carry a released remainder for handover** (D-255 as built stands).
 5. `closure.status.stopped` «متوقف» was Nabil's word in D-247 §5; the review's note that it had no
    ruling is answered.
+
+## D-257 — Extract gates after handover (open question), the closure read, and a demo seed for every extract step · 2026-11-20
+
+**Source.** Backend lane after `ux/consultant-review-extracts-app-2026-11-20.md` F1, N6 and "Not walked".
+
+1. **Open question for Nabil: no extract gate checks the project's status.** Prepare, the QC report, the Technical
+   Office gate (a split included), deductions, Owner approval and issue all run on a project already in `Handover`. A
+   split there opens an NCR on a handed-over project, so the D-255 refusal, which runs only at the handover act, is
+   bypassed. Not changed: the rule needs a ruling. `ExtractNcrTests.After_handover_an_extract_can_still_be_split_and_open_an_NCR_pending_a_ruling`
+   records today's behaviour so a ruling has to change it on purpose.
+2. **How PRJ-CE500CBD got there (test debris).** The Verifier's r2 pass handed it over on 2026-11-18 21:32 with extract
+   1 Collected and nothing open. Extract 2 was prepared on 2026-11-20 13:19:25, after handover, then QC-reported,
+   split at 50% with an NCR opened, and the NCR closed at 13:19:48 with the note "verifier r2 probe". The audit trail
+   shows each step. The project's name «???? ????? r2 2026-11-18» came from a request sent in the wrong encoding; the
+   project is left as it is.
+3. **The closure read.** `GET /api/projects/{projectId}/closure` (`ProjectRead`, role and assignment) returns the hold
+   ledger summed from postings (what the release would move, zero once released) and every extract not yet Collected
+   or Void, by number and status. The hold is null for a viewer who does not see money (the extract read's
+   `MaySeeMoney`). Web type `ClosureSummary` and `ClosureApi.getClosure` in `src/Web/src/app/core/closure/closure.api.ts`;
+   the closure page does not use it yet (the designer places it above «بدء فترة الضمان»).
+4. **Demo seed for every extract step.** The Development seed is the API-driven `scripts/seed-demo*.mjs` family; there
+   is no C# demo seeder. `scripts/seed-demo-extract-states.mjs` follows it: every act goes through its handler, so the
+   domain method, the role and assignment check, separation of duties, the audit trail and append-only postings all
+   apply. It refuses any base URL that is not localhost and is re-runnable (projects found by name, fixed entry ids,
+   each step only when its state is not reached). A project holds one extract in flight (D-194), so it seeds three
+   projects: فيلا 12 — الشيخ زايد (extract 1 Issued with one cheque Received and one Deposited; extract 2
+   PartiallyApproved with its NCR open), عمارة 5 — المعادي (extract 1 Disputed; extract 2 QcSubmitted; one change
+   order at the client's approval and one Approved), شقة 9 — مدينة نصر (extract 1 Issued with a credit note Raised and
+   awaiting the Owner; extract 2 Draft). Each has a signed six-line BOQ and executed quantities, so every extract has
+   quantity rows.
+5. **A second Technical Office user, `tech_office2_demo` / `Demo#Tech2New`.** A change order's technical review must be
+   decided by someone other than the Technical Office user who drafted and submitted it, and the demo had one. This is
+   why the consultant's change-order attempt was refused.
+6. **Seed text.** `scripts/seed-demo-extract-pending.mjs` now writes its rejection reason in Arabic. The English reason
+   already stored on فيلا 47's extract 3 stays: it is a gate record of a real rejection and history is not rewritten.

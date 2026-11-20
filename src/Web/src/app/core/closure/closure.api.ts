@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
+import { ExtractStatus } from '../extracts/extracts.api';
 import { ProjectStatus } from '../projects/projects.api';
 
 /**
@@ -69,6 +70,22 @@ export interface HoldReleased {
   readonly postingIds: readonly string[];
 }
 
+/** An extract still short of Collected or Void (`OpenExtract`). */
+export interface OpenExtract {
+  readonly number: number;
+  readonly status: ExtractStatus;
+}
+
+/**
+ * The closure read (`GetClosure`, D-257): the hold the release would move, summed from postings, and every
+ * extract not yet Collected or Void. `hold` is null for a viewer who does not see money.
+ */
+export interface ClosureSummary {
+  readonly projectId: string;
+  readonly hold: string | null;
+  readonly openExtracts: readonly OpenExtract[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class ClosureApi {
   private readonly http = inject(HttpClient);
@@ -96,6 +113,10 @@ export class ClosureApi {
   /** Always refused by the server today (Q108): termination settlement is unruled. */
   async terminate(projectId: string, reason: string): Promise<void> {
     await firstValueFrom(this.http.post(`${this.base(projectId)}/termination`, { reason }));
+  }
+
+  async getClosure(projectId: string): Promise<ClosureSummary> {
+    return await firstValueFrom(this.http.get<ClosureSummary>(`${this.base(projectId)}/closure`));
   }
 
   /** No body: the amount is read from the hold ledger on the server. */

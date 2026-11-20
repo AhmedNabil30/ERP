@@ -99,7 +99,7 @@ async function reviseEvidence(id, alreadyRevisable) {
     const q = await sup('POST', `${url}/qc-report`);
     if (q.status >= 300) throw new Error(`qc-report ${q.status} ${q.text}`);
     const tech = await session('tech_office_demo', 'Demo#Tech1New');
-    const r = await tech('POST', `${url}/technical-rejection`, { reason: 'demo: refresh evidence with the work recorded since preparation' });
+    const r = await tech('POST', `${url}/technical-rejection`, { reason: 'تحديث الكميات بالأعمال المسجلة بعد إعداد المستخلص' });
     if (r.status >= 300) throw new Error(`technical-rejection ${r.status} ${r.text}`);
   }
   const zero = { amount: 0, currency: 'EGP' };

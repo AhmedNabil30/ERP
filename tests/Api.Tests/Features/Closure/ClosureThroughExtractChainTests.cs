@@ -439,6 +439,41 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
 
     // ---- helpers ---------------------------------------------------------------------------------------
 
+    /// <summary>
+    /// D-257: the closure read gives the hold the release would move and every extract not yet Collected or Void, and
+    /// gives no hold to a viewer who does not see money.
+    /// </summary>
+    [Fact]
+    public async Task The_closure_read_shows_the_hold_and_the_open_extracts_and_hides_the_hold_from_a_viewer_without_money()
+    {
+        Project project = await NewProjectAsync();
+        Guid first = await PrepareAsync(project, "100000", "0");
+        await AdvanceAsync(project, first, ExtractStatus.Issued);
+        await ExecuteAsync(project, 600m);
+        await PrepareAsync(project, "0", "60000");
+
+        async Task<JsonElement> ReadAsync(Guid actor)
+        {
+            HttpResponseMessage response = await SendAsync(HttpMethod.Get, $"/api/projects/{project.Id}/closure", actor, null);
+            response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(Ct));
+            return JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct)).RootElement.Clone();
+        }
+
+        static string[] Open(JsonElement body) =>
+            [.. body.GetProperty("openExtracts").EnumerateArray().Select(row => $"{row.GetProperty("number").GetInt32()} {row.GetProperty("status").GetString()}")];
+
+        JsonElement finance = await ReadAsync(_finance);
+        decimal.Parse(finance.GetProperty("hold").GetString()!, CultureInfo.InvariantCulture).Should().Be(60_000m);
+        Open(finance).Should().Equal("1 Issued", "2 Draft");
+
+        JsonElement junior = await ReadAsync(_prepEngineer);
+        junior.GetProperty("hold").ValueKind.Should().Be(JsonValueKind.Null, "the junior site engineer sees no money");
+        Open(junior).Should().Equal("1 Issued", "2 Draft");
+
+        await CollectAsync(project, first);
+        Open(await ReadAsync(_finance)).Should().Equal("2 Draft");
+    }
+
     private static string Step(Guid project, Guid extract, string step) => $"/api/projects/{project}/extracts/{extract}/{step}";
 
     private static readonly string[] HoldPositionFields = ["expected", "received", "withheld", "inCheques", "remaining"];
