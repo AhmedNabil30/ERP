@@ -1,6 +1,6 @@
 ﻿# KAFF-500 · The extract chain — prepare, gate, deduct, approve, issue
 
-<!-- kaff id=KAFF-500 slice=5 points=21 state=BUILT verdict=REJECTED at=2be5a96 on=2026-11-20 -->
+<!-- kaff id=KAFF-500 slice=5 points=21 state=VERIFIED verdict=CONDITIONAL at=432b3d3 on=2026-11-20 -->
 
 **Slice:** 5 (Billing) · **Epic:** مستخلص · **Points:** 21 (absorbs `KAFF-501`, `KAFF-502`, `KAFF-503`, `KAFF-504`).
 **Owner:** Backend, then Frontend.
