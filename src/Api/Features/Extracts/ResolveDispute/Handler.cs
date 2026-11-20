@@ -88,19 +88,9 @@ internal static class Handler
     {
         KaffDbContext database = services.Database;
 
-        bool later = await database.Extracts.AnyAsync(
-            candidate => candidate.ProjectId == extract.ProjectId
-                && candidate.Number > extract.Number
-                && candidate.Status != ExtractStatus.Void,
-            token);
 
-        // D-242 item 3: payments already received move to the revised extract, so they do not block. A cheque still in
-        // hand or a credit note on the original does: neither is ruled.
-        ExtractCollectionState? state = await ExtractCollections.StateAsync(database, extract, token);
-        bool moneyStanding = state is not null
-            && (state.Position.InCheques.IsPositive
-                || state.CreditNoteRaised
-                || state.ApprovedCredits.IsPositive);
+        bool later = await ExtractSupport.LaterExtractExistsAsync(database, extract, token);
+        bool moneyStanding = (await ExtractCollections.StateAsync(database, extract, token))?.BlocksRevision ?? false;
 
         IReadOnlyList<ExtractPostedLeg> legs = await ExtractSupport.StandingAccrualLegsAsync(database, extract.Id, token);
 

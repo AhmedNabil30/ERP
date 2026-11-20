@@ -414,6 +414,7 @@
   "errors.extract.held_portion_already_released": "The held portion has already been approved for payment.",
   "errors.extract.ncr_already_closed": "This NCR is already closed.",
   "errors.extract.ncr_close_note_required": "Write what was put right before closing the NCR.",
+  "errors.extract.ncr_description_required": "Write what does not conform before approving part of the extract.",
   "errors.extract.ncr_not_found": "This NCR is not on this project.",
   "errors.extract.contract_type_not_supported": "An extract of this kind cannot be prepared for this contract type.",
   "errors.extract.project_mismatch": "The extract does not belong to this project.",

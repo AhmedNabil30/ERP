@@ -414,6 +414,7 @@
   "errors.extract.held_portion_already_released": "اعتُمد الجزء المعلّق للدفع من قبل.",
   "errors.extract.ncr_already_closed": "تقرير عدم المطابقة مُغلق من قبل.",
   "errors.extract.ncr_close_note_required": "اكتب ما تم تصحيحه قبل إغلاق تقرير عدم المطابقة.",
+  "errors.extract.ncr_description_required": "اكتب ما لا يطابق المواصفات قبل اعتماد جزء من المستخلص.",
   "errors.extract.ncr_not_found": "تقرير عدم المطابقة غير موجود في هذا المشروع.",
   "errors.extract.contract_type_not_supported": "هذا النوع من العقود لا يُحرَّر له مستخلص بهذه الكميات.",
   "errors.extract.project_mismatch": "المستخلص لا يخص هذا المشروع.",

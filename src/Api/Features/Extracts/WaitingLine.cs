@@ -1,4 +1,6 @@
+using Kaff.Domain.Adjustments;
 using Kaff.Domain.Authorization;
+using Kaff.Domain.Extracts;
 
 namespace Kaff.Api.Features.Extracts;
 
@@ -34,5 +36,21 @@ internal static class WaitingLine
             permission,
             [.. eligible.Where(member => !barred.Contains(member.UserId))],
             [.. eligible.Where(member => barred.Contains(member.UserId))]);
+    }
+
+    /// <summary>
+    /// The line of a Raised credit note: the Owner approves it, and whoever raised it or the dispute behind it may not
+    /// (<c>Adjustment.Approve</c>). The one build behind the adjustment's read, the extract's read and the extract list's
+    /// row, so the three cannot name different people or steps (D-260 item 5).
+    /// </summary>
+    public static WaitingLineResponse ForCreditNote(Adjustment raised, Extract? extract, IReadOnlyList<StaffMember> staff)
+    {
+        ArgumentNullException.ThrowIfNull(raised);
+
+        return Build(
+            "waiting.task.adjustment_approval",
+            Permission.FinancialMovementApprove,
+            staff,
+            raised.PriorActors(extract?.DisputeActors() ?? []));
     }
 }

@@ -131,6 +131,10 @@ public static class ExtractErrors
     public static readonly Error NcrCloseNoteRequired =
         Error.Validation("extract.ncr_close_note_required", "errors.extract.ncr_close_note_required");
 
+    /// <summary>D-260 item 1: a split gate says what does not conform, and the NCR it opens stores it.</summary>
+    public static readonly Error NcrDescriptionRequired =
+        Error.Validation("extract.ncr_description_required", "errors.extract.ncr_description_required");
+
     public static readonly Error NcrNotFound =
         Error.NotFound("extract.ncr_not_found", "errors.extract.ncr_not_found");
 }

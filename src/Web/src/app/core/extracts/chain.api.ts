@@ -81,6 +81,8 @@ export interface Adjustment {
   readonly waitingOn: WaitingLine | null;
   /** What the caller may decide now (D-246). */
   readonly actions?: AdjustmentActions | null;
+  /** D-260 item 4: for a credit note on an issued extract, what the extract expects after it («بعد الإشعار»). */
+  readonly extractDueAfter?: string | null;
 }
 
 export interface AdjustmentActions {

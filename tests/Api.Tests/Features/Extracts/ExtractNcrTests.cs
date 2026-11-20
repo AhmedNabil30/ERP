@@ -30,7 +30,7 @@ public sealed partial class ExtractEndpointTests
         Guid extract = await DriveAsync(project, ExtractStatus.QcSubmitted);
 
         HttpResponseMessage split = await SendAsync(
-            HttpMethod.Post, Step(project.Id, extract, "technical-approval"), _technicalOffice, new { approvedPortion = "0.6" });
+            HttpMethod.Post, Step(project.Id, extract, "technical-approval"), _technicalOffice, new { approvedPortion = "0.6", ncrDescription = "honeycombing in column C3" });
         split.StatusCode.Should().Be(HttpStatusCode.OK, await split.Content.ReadAsStringAsync(Ct));
 
         JsonElement asOffice = await ReadAsync(project.Id, extract, _technicalOffice);
@@ -103,7 +103,7 @@ public sealed partial class ExtractEndpointTests
     {
         Project project = await NewProjectAsync();
         Guid extract = await DriveAsync(project, ExtractStatus.QcSubmitted);
-        object split = new { approvedPortion = "0.5" };
+        object split = new { approvedPortion = "0.5", ncrDescription = "honeycombing in column C3" };
         (await SendAsync(HttpMethod.Post, Step(project.Id, extract, "technical-approval"), _technicalOffice, split)).StatusCode
             .Should().Be(HttpStatusCode.OK);
         Guid first = (await ReadAsync(project.Id, extract, _technicalOffice)).GetProperty("heldForNcrId").GetGuid();
@@ -140,7 +140,7 @@ public sealed partial class ExtractEndpointTests
     {
         Guid extract = await DriveAsync(project, ExtractStatus.QcSubmitted);
         HttpResponseMessage split = await SendAsync(
-            HttpMethod.Post, Step(project.Id, extract, "technical-approval"), _technicalOffice, new { approvedPortion = "0.6" });
+            HttpMethod.Post, Step(project.Id, extract, "technical-approval"), _technicalOffice, new { approvedPortion = "0.6", ncrDescription = "honeycombing in column C3" });
         split.StatusCode.Should().Be(HttpStatusCode.OK, await split.Content.ReadAsStringAsync(Ct));
         return (extract, (await ReadAsync(project.Id, extract, _technicalOffice)).GetProperty("heldForNcrId").GetGuid());
     }
@@ -174,6 +174,14 @@ public sealed partial class ExtractEndpointTests
         await StepAsync(_client, project, first, ExtractStatus.TechnicalApproved, ExtractStatus.Issued);
         (await WorkValueAsync(project, first)).Should().Be(180_000m, "extract one bills only the approved portion");
 
+        // D-260 item 8, consultant r2 F1: the issued document of the split extract totals the approved work only. The
+        // released 120,000 is not on it; it is billed on the next extract below.
+        JsonElement issued = (await ReadAsync(project.Id, first, _owner)).GetProperty("document");
+        issued.GetProperty("foots").GetBoolean().Should().BeTrue();
+        issued.GetProperty("column").EnumerateArray().Single(row => row.GetProperty("key").GetString() == "workValue")
+            .GetProperty("amount").Should().Match<JsonElement>(amount => ParseDecimal(amount) == 180_000m);
+        Decimal(issued.GetProperty("figures"), "holdThisPeriod").Should().Be(36_000m, "the hold on the approved 180,000 only");
+
         await ExecuteAsync(project, 400m);
         Guid second = await PrepareAsync(project);
         (decimal cumulative, decimal previous) = await EvidenceAsync(project.Id, second);
@@ -182,7 +190,7 @@ public sealed partial class ExtractEndpointTests
 
         await StepAsync(_client, project, second, ExtractStatus.Draft, ExtractStatus.Issued);
         JsonElement figures = (await ReadAsync(project.Id, second, _owner)).GetProperty("document").GetProperty("figures");
-        Decimal(figures, "workValue").Should().Be(220_000m);
+        Decimal(figures, "workValue").Should().Be(220_000m, "the released 120,000 plus the period's own 100,000");
         Decimal(figures, "holdThisPeriod").Should().Be(44_000m, "the hold is taken on the released work when it is billed");
         (await BalanceAsync(project.Id, AccountType.Hold)).Should().Be(80_000m, "20% of the 400,000 billed in all");
     }
@@ -322,7 +330,7 @@ public sealed partial class ExtractEndpointTests
         await ExecuteAsync(project, 1_000m);
         Guid second = await DriveAsync(project, ExtractStatus.QcSubmitted);
         HttpResponseMessage split = await SendAsync(
-            HttpMethod.Post, Step(project.Id, second, "technical-approval"), _technicalOffice, new { approvedPortion = "0.6" });
+            HttpMethod.Post, Step(project.Id, second, "technical-approval"), _technicalOffice, new { approvedPortion = "0.6", ncrDescription = "honeycombing in column C3" });
 
         string body = await split.Content.ReadAsStringAsync(Ct);
         split.StatusCode.Should().Be(HttpStatusCode.Conflict, body);

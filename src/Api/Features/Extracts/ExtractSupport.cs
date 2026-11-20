@@ -206,17 +206,30 @@ internal static class ExtractSupport
         IReadOnlyList<StaffMember> staff = await ExtractWaitingOnView.StaffAsync(database, project.Id, cancellationToken);
         Adjustment? raised = notes.Find(adjustment => adjustment.Status == AdjustmentStatus.Raised);
 
-        // The same waiting line the adjustment's own read gives: the Owner approves, whoever raised it or the dispute is barred.
-        WaitingLineResponse? noteWaiting = raised is null
-            ? null
-            : WaitingLine.Build(
-                "waiting.task.adjustment_approval", Permission.FinancialMovementApprove, staff, raised.PriorActors(extract.DisputeActors()));
+        // The same waiting line the adjustment's own read and the extract list give.
+        WaitingLineResponse? noteWaiting = raised is null ? null : WaitingLine.ForCreditNote(raised, extract, staff);
 
+        ExtractCollectionState? collection = await ExtractCollections.StateAsync(database, extract, cancellationToken);
         ExtractResponse built = ExtractView.Build(
             extract, project, services.Rulings, viewer,
             ExtractWaitingOnView.Build(extract, staff),
-            await ExtractCollections.StateAsync(database, extract, cancellationToken),
+            collection,
             titles);
+
+        // D-260 item 6: the resolutions the dispute route would accept now, so the screen offers only those.
+        List<DisputeResolutionKind> resolutions = [];
+        if (built.Actions.ResolveDispute)
+        {
+            resolutions.Add(DisputeResolutionKind.CreditNote);
+            bool revisionPosts = PostingProjectStateLegality
+                .Validate(services.Rulings.PostingProjectStates, project.Status, PostingType.RevenueRecognition, isReversal: true)
+                .IsSuccess;
+            if (revisionPosts && extract.EnsureMayCancelForRevision(
+                    await LaterExtractExistsAsync(database, extract, cancellationToken), collection?.BlocksRevision ?? false).IsSuccess)
+            {
+                resolutions.Add(DisputeResolutionKind.RevisedExtract);
+            }
+        }
 
         // AC-500-E: the NCR the extract's held remainder waits on, while it is open.
         Ncr? openNcr = await database.Ncrs.AsNoTracking()
@@ -235,8 +248,17 @@ internal static class ExtractSupport
             WithholdingCategory = seesMoney ? project.WithholdingCategory : null,
             CreditNotes = [.. notes.Select(note => new ExtractCreditNote(note.Id, note.Number, note.Status, seesMoney ? note.Amount : null))],
             CreditNoteWaitingOn = noteWaiting,
+            DisputeResolutions = resolutions,
         };
     }
+
+    /// <summary>Whether a standing extract numbered after <paramref name="extract"/> exists: a revised extract is then refused.</summary>
+    public static Task<bool> LaterExtractExistsAsync(KaffDbContext database, Extract extract, CancellationToken cancellationToken) =>
+        database.Extracts.AnyAsync(
+            candidate => candidate.ProjectId == extract.ProjectId
+                && candidate.Number > extract.Number
+                && candidate.Status != ExtractStatus.Void,
+            cancellationToken);
 
     /// <summary>
     /// AC-500-K. The refusal names the reason and the balance of every account the postings touched <i>as it then

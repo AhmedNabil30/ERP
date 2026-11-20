@@ -1481,6 +1481,11 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("closed_by_user_id");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("description");
+
                     b.Property<Guid>("ExtractId")
                         .HasColumnType("uuid")
                         .HasColumnName("extract_id");

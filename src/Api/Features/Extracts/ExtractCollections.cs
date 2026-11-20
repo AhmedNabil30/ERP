@@ -22,7 +22,14 @@ internal sealed record ExtractCollectionState(
     IReadOnlyList<(Cheque Cheque, CollectionRecord Record)> ChequesInHand,
     Money ApprovedCredits,
     Money Received,
-    Money Withheld);
+    Money Withheld)
+{
+    /// <summary>
+    /// D-242 item 3: a cheque in hand or a credit note on the extract blocks its cancellation for a revised extract.
+    /// Payments already received do not: they move to the revision.
+    /// </summary>
+    public bool BlocksRevision => Position.InCheques.IsPositive || CreditNoteRaised || ApprovedCredits.IsPositive;
+}
 
 /// <summary>
 /// The one place the collection routes, the cheque routes and the extract's read derive the position, so the control a

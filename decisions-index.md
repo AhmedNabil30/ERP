@@ -266,3 +266,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-257 | 17268 | Extract gates after handover (open), closure read, demo seed for every extract step · 2026-11-20 |
 | D-258 | 17303 | No split gate after handover; «تم التسليم» kept; workspace trail dropped; primary stays in frame · 2026-11-20 |
 | D-259 | 17317 | Technical Office split refused from handover on; whole approval stays; actions.approvePortion · 2026-11-20 |
+| D-260 | 17344 | Consultant r2 server fixes: NCR description, split and deductions previews, credit note effect, one credit note line, dispute options · 2026-11-20 |

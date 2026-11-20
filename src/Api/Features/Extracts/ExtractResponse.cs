@@ -107,7 +107,7 @@ public sealed record ExtractCreditNote(Guid Id, int Number, AdjustmentStatus Sta
 /// <param name="RecordChequeMove">Deposit, clear or bounce: the extract has a cheque still in hand.</param>
 /// <param name="ReverseCollection">Reverse the standing collection: something posted stands to be reversed.</param>
 /// <param name="RaiseDispute">The client disputes the issued extract.</param>
-/// <param name="ResolveDispute">The dispute is open and may be resolved.</param>
+/// <param name="ResolveDispute">The dispute is open and may be resolved. Which resolutions: <see cref="ExtractResponse.DisputeResolutions"/>.</param>
 public sealed record ExtractActions(
     bool SubmitQcReport,
     bool ApproveTechnicalOffice,
@@ -140,6 +140,11 @@ public sealed record ExtractActions(
 public sealed record ExtractCollectionResponse(
     Money Expected, Money ExpectedWithheld, Money Collected, Money InCheques, Money Remaining, Money Received, Money Withheld);
 
+/// <param name="DisputeResolutions">
+/// The resolutions the dispute route would accept from this caller now (D-260 item 6): a credit note whenever
+/// <c>actions.resolveDispute</c> is true, a revised extract only while <c>Extract.EnsureMayCancelForRevision</c> passes.
+/// Empty when nothing may be resolved. Outside <see cref="ExtractActions"/>, whose members are all flags.
+/// </param>
 public sealed record ExtractResponse(
     Guid Id,
     Guid ProjectId,
@@ -167,7 +172,8 @@ public sealed record ExtractResponse(
     WaitingLineResponse? CreditNoteWaitingOn = null,
     Kaff.Api.Features.Ncrs.NcrResponse? OpenNcr = null,
     Money? ApprovedWork = null,
-    Money? HeldWork = null);
+    Money? HeldWork = null,
+    IReadOnlyList<DisputeResolutionKind>? DisputeResolutions = null);
 
 /// <summary>Who is looking: their id and which of the extract permissions they hold on this project.</summary>
 internal sealed record ExtractViewer(Guid UserId, IReadOnlySet<Permission> Held)
@@ -294,6 +300,45 @@ internal static class ExtractView
             ResolveDispute: Holds(Permission.ExtractDisputeResolve) && status == ExtractStatus.Disputed);
     }
 
+    /// <summary>
+    /// The printed column, from the billing components by kind: the stored figures on the document, the calculator's
+    /// output on the deductions preview (D-260 item 3), so the two print the same rows. The material figure is one row:
+    /// the calculator emits an issue and a recovery with opposite signs, and the column shows what they come to.
+    /// </summary>
+    internal static List<PrintedRow> ColumnFor(Func<BillingComponentKind, Money> of)
+    {
+        ArgumentNullException.ThrowIfNull(of);
+
+        Money changeOrders = of(BillingComponentKind.ChangeOrderValue);
+        Money materialNet = of(BillingComponentKind.MaterialAdvance) - of(BillingComponentKind.MaterialAdvanceRecovery);
+        Money penalty = of(BillingComponentKind.DelayPenalty);
+
+        List<PrintedRow> column =
+        [
+            new("workValue", "billing.component.WorkValue", IsDeduction: false, of(BillingComponentKind.WorkValue)),
+        ];
+
+        // spec.md section 5.1: change orders are in their own section at their own prices, a row of their own.
+        if (!changeOrders.IsZero)
+        {
+            column.Add(new PrintedRow("changeOrderValue", "billing.component.ChangeOrderValue", IsDeduction: false, changeOrders));
+        }
+
+        column.AddRange(
+        [
+            new("materialAdvance", "billing.component.MaterialAdvance", IsDeduction: materialNet.IsNegative, materialNet.Abs()),
+            new("holdThisPeriod", "billing.component.Hold", IsDeduction: true, of(BillingComponentKind.Hold)),
+            new("advanceRecovered", "billing.component.AdvanceRecovery", IsDeduction: true, of(BillingComponentKind.AdvanceRecovery)),
+        ]);
+
+        if (!penalty.IsZero)
+        {
+            column.Add(new PrintedRow("delayPenalty", "billing.component.DelayPenalty", IsDeduction: true, penalty));
+        }
+
+        return column;
+    }
+
     /// <summary>Null until Accounts has applied the deductions: there are no figures before that, and none is invented.</summary>
     private static ExtractDocument? DocumentFor(Extract extract, Project project, RulingSet rulings)
     {
@@ -313,33 +358,9 @@ internal static class ExtractView
         Money advance = Of(BillingComponentKind.AdvanceRecovery);
         Money materialIssued = Of(BillingComponentKind.MaterialAdvance);
         Money materialRecovered = Of(BillingComponentKind.MaterialAdvanceRecovery);
-        Money penalty = Of(BillingComponentKind.DelayPenalty);
         Money materialNet = materialIssued - materialRecovered;
 
-        // The printed column. The material figure is one row: the calculator emits an issue and a recovery with
-        // opposite signs, and the document shows what they come to, with both legs in the derivation below.
-        List<PrintedRow> column =
-        [
-            new("workValue", "billing.component.WorkValue", IsDeduction: false, work),
-        ];
-
-        // spec.md section 5.1: change orders are in their own section at their own prices, a row of their own.
-        if (!changeOrders.IsZero)
-        {
-            column.Add(new PrintedRow("changeOrderValue", "billing.component.ChangeOrderValue", IsDeduction: false, changeOrders));
-        }
-
-        column.AddRange(
-        [
-            new("materialAdvance", "billing.component.MaterialAdvance", IsDeduction: materialNet.IsNegative, materialNet.Abs()),
-            new("holdThisPeriod", "billing.component.Hold", IsDeduction: true, hold),
-            new("advanceRecovered", "billing.component.AdvanceRecovery", IsDeduction: true, advance),
-        ]);
-
-        if (!penalty.IsZero)
-        {
-            column.Add(new PrintedRow("delayPenalty", "billing.component.DelayPenalty", IsDeduction: true, penalty));
-        }
+        List<PrintedRow> column = ColumnFor(Of);
 
         Money columnSum = Money.Sum(column.Select(row => row.IsDeduction ? -row.Amount : row.Amount));
 

@@ -454,15 +454,42 @@ public sealed class Extract : Entity
     /// The period work value the split gate held back: the period less the approved portion of it, the same split
     /// <see cref="BillingInputFor"/> bills. Zero when nothing is held. Derived, never stored.
     /// </summary>
-    public Money HeldWorkValue()
+    public Money HeldWorkValue() => HeldForNcrId is null ? Money.Zero : SplitOfPeriod(ApprovedPortion).Held;
+
+    /// <summary>
+    /// The period work value a Technical Office approval of <paramref name="portion"/> would approve for payment and hold.
+    /// The one split behind <see cref="HeldWorkValue"/>, <see cref="ApprovedWorkValue"/> and the gate's preview (D-260 item 2).
+    /// </summary>
+    public (Money Approved, Money Held) SplitOfPeriod(Percentage portion)
     {
-        if (HeldForNcrId is null)
+        Money period = CumulativeCertifiedWork - PreviouslyCertifiedWork;
+        Money approved = portion.Of(period);
+        return (approved, period - approved);
+    }
+
+    /// <summary>
+    /// What the Technical Office gate would approve and hold at <paramref name="portion"/>, asked before it decides
+    /// (D-260 item 2). Refused where the gate itself would refuse the portion: the extract is not at the gate, the portion
+    /// is out of range, or a split after handover. Changes nothing.
+    /// </summary>
+    public Result<(Money Approved, Money Held)> PreviewSplit(ProjectStatus projectStatus, Percentage portion)
+    {
+        if (Status != ExtractStatus.QcSubmitted)
         {
-            return Money.Zero;
+            return Result.Failure<(Money, Money)>(ExtractErrors.IllegalTransition);
         }
 
-        Money period = CumulativeCertifiedWork - PreviouslyCertifiedWork;
-        return period - ApprovedPortion.Of(period);
+        if (portion.Fraction <= 0m || portion.Fraction > 1m)
+        {
+            return Result.Failure<(Money, Money)>(ExtractErrors.ApprovedPortionOutOfRange);
+        }
+
+        if (portion < Percentage.FromFraction(1m) && !SplitAllowedIn(projectStatus))
+        {
+            return Result.Failure<(Money, Money)>(ExtractErrors.SplitAfterHandover);
+        }
+
+        return SplitOfPeriod(portion);
     }
 
     /// <summary>The period work value this extract bills: its period less <see cref="HeldWorkValue"/>. Derived, never stored.</summary>
@@ -546,6 +573,26 @@ public sealed class Extract : Entity
         NetPayable = billed.Value.NetPayable;
         Apply(ExtractStatus.DeductionsApplied, ExtractGate.Accounts, ExtractGateOutcome.Passed, actorUserId, now, null, null);
         return accrual;
+    }
+
+    /// <summary>
+    /// What applying the deductions now would produce, before Accounts applies them (D-260 item 3): the same calculator
+    /// over the same <see cref="BillingInputFor"/> the step runs. Refused when the extract is not at Accounts. Changes and
+    /// posts nothing.
+    /// </summary>
+    public async Task<Result<BillingResult>> PreviewDeductionsAsync(
+        IBillingCalculator calculator, Project project, ExtractLedgerBalances balances, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(calculator);
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(balances);
+
+        Result gate = Result.FirstFailureOrSuccess(
+            CanMoveTo(ExtractStatus.DeductionsApplied),
+            project.Id == ProjectId ? Result.Success() : Result.Failure(ExtractErrors.ProjectMismatch));
+        return gate.IsFailure
+            ? Result.Failure<BillingResult>(gate.Error)
+            : await calculator.CalculateAsync(new BillingContext(project, PeriodStart, PeriodEnd, BillingInputFor(balances)), cancellationToken);
     }
 
     /// <summary>
@@ -969,9 +1016,7 @@ public sealed class Extract : Entity
             CanMoveTo(ExtractStatus.Void),
             CheckProject(context),
             CheckReason(reason),
-            laterExtractExists ? Result.Failure(ExtractErrors.RevisionNotLatest) : Result.Success(),
-            moneyStanding ? Result.Failure(ExtractErrors.RevisionMoneyStanding) : Result.Success(),
-            _changeOrderLines.Count > 0 ? Result.Failure(ExtractErrors.RevisionChangeOrdersBilled) : Result.Success());
+            EnsureMayCancelForRevision(laterExtractExists, moneyStanding));
         if (gate.IsFailure)
         {
             return Result.Failure<IReadOnlyList<Posting>>(gate.Error);
@@ -1015,6 +1060,17 @@ public sealed class Extract : Entity
         Apply(ExtractStatus.Void, ExtractGate.Cancellation, ExtractGateOutcome.Reversed, actorUserId, now, reason!.Trim(), null);
         return reversals;
     }
+
+    /// <summary>
+    /// Whether a disputed extract may still be cancelled for a revised extract: no later extract, no cheque in hand or
+    /// credit note standing on it, no change order billed on it (D-241 item 2, D-242 item 3). The check the cancellation
+    /// makes, and the one the read asks to offer the resolution (D-260 item 6).
+    /// </summary>
+    public Result EnsureMayCancelForRevision(bool laterExtractExists, bool moneyStanding) =>
+        Result.FirstFailureOrSuccess(
+            laterExtractExists ? Result.Failure(ExtractErrors.RevisionNotLatest) : Result.Success(),
+            moneyStanding ? Result.Failure(ExtractErrors.RevisionMoneyStanding) : Result.Success(),
+            _changeOrderLines.Count > 0 ? Result.Failure(ExtractErrors.RevisionChangeOrdersBilled) : Result.Success());
 
     /// <summary>
     /// D-244 item 1: the part of the hold carried from a cancelled original that is above this revision's own hold. It

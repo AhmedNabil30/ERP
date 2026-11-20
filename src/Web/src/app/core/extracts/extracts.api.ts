@@ -61,6 +61,8 @@ export interface ExtractSummary {
   readonly revises?: ExtractLink | null;
   /** On a cancelled original: the extract that replaces it. */
   readonly revisedBy?: ExtractLink | null;
+  /** D-260 item 5: who a raised credit note waits on, built as the extract read's `creditNoteWaitingOn`. Null when none is raised. */
+  readonly creditNoteWaitingOn?: WaitingLine | null;
 }
 
 /** `ExtractMoney` on the list row. Certified value and net payable are null until deductions are applied; collected and outstanding until the extract is issued. */
@@ -247,6 +249,27 @@ export interface Extract {
   readonly creditNotes?: readonly ExtractCreditNote[] | null;
   /** Who a raised credit note waits on: the Owner, to approve it. Null when none is raised. */
   readonly creditNoteWaitingOn?: WaitingLine | null;
+  /** D-260 item 6: the resolutions the dispute route would accept from this caller now. Empty when none. */
+  readonly disputeResolutions?: readonly DisputeResolutionKind[] | null;
+}
+
+/** D-260 item 2: `GET .../extracts/{id}/portion-preview?portion=`. Both figures are null for a viewer who may not see money. */
+export interface PortionPreview {
+  readonly portion: string;
+  readonly approvedWork: string | null;
+  readonly heldWork: string | null;
+}
+
+/** D-260 item 3: `GET .../extracts/{id}/deductions-preview`. What applying the deductions would produce now; the browser adds nothing. */
+export interface DeductionsPreview {
+  /** The certified value: work plus change orders. */
+  readonly gross: string;
+  /** The rows the document will print, in its order. */
+  readonly column: readonly PrintedRow[];
+  readonly holdThisPeriod: string;
+  readonly holdToDate: string;
+  readonly taxAtSource: string;
+  readonly netPayable: string;
 }
 
 export type NcrStatus = 'Open' | 'Closed';
@@ -257,6 +280,8 @@ export interface Ncr {
   readonly extractId: string;
   readonly extractNumber: number;
   readonly status: NcrStatus;
+  /** D-260 item 1: what does not conform, written at the split. Null only on an NCR opened before it was required. */
+  readonly description?: string | null;
   readonly openedAt: string;
   readonly openedByUserId: string;
   readonly closedAt: string | null;
@@ -376,9 +401,24 @@ export class ExtractsApi {
     await firstValueFrom(this.http.post(`${this.base(projectId)}/${id}/${step}`, {}));
   }
 
-  /** The Technical Office approves a fraction of the period's work; the server opens the NCR the rest waits on (D-251 item 2). */
-  async approvePortion(projectId: string, id: string, approvedPortion: string): Promise<void> {
-    await firstValueFrom(this.http.post(`${this.base(projectId)}/${id}/technical-approval`, { approvedPortion }));
+  /**
+   * The Technical Office approves a fraction of the period's work; the server opens the NCR the rest waits on (D-251 item 2)
+   * and stores `ncrDescription`, what does not conform, which a split requires (D-260 item 1).
+   */
+  async approvePortion(projectId: string, id: string, approvedPortion: string, ncrDescription?: string): Promise<void> {
+    await firstValueFrom(this.http.post(`${this.base(projectId)}/${id}/technical-approval`, { approvedPortion, ncrDescription }));
+  }
+
+  /** D-260 item 2: what `portion` (a fraction, "0.7") would approve and hold. Refused when the gate would refuse it. */
+  async portionPreview(projectId: string, id: string, portion: string): Promise<PortionPreview> {
+    return await firstValueFrom(
+      this.http.get<PortionPreview>(`${this.base(projectId)}/${id}/portion-preview`, { params: { portion } }),
+    );
+  }
+
+  /** D-260 item 3: the figures applying the deductions would produce now. */
+  async deductionsPreview(projectId: string, id: string): Promise<DeductionsPreview> {
+    return await firstValueFrom(this.http.get<DeductionsPreview>(`${this.base(projectId)}/${id}/deductions-preview`));
   }
 
   /** Closes the extract's NCR with a note; the held portion is released (D-251 item 3). */

@@ -17,6 +17,11 @@ namespace Kaff.Api.Features.Adjustments;
 /// <summary>An adjustment as read. The postings it wrote trace to it through their source document.</summary>
 /// <param name="DisputeReason">For a credit note raised on a disputed extract: the client's dispute reason. Filled on the reads.</param>
 /// <param name="WaitingOn">Who a Raised adjustment waits on, and for what. Null once decided, and on the write routes' answers.</param>
+/// <param name="ExtractDueAfter">
+/// For a credit note on an issued extract: what the extract expects after this note («بعد الإشعار», D-260 item 4). While
+/// Raised it is the extract's expected figure less this note; once Approved the expected figure already counts it. Derived
+/// from the same collection position the extract's read shows. Null otherwise, and on the write routes' answers.
+/// </param>
 public sealed record AdjustmentResponse(
     Guid Id,
     Guid ProjectId,
@@ -36,7 +41,8 @@ public sealed record AdjustmentResponse(
     string? DecisionReason,
     string? DisputeReason = null,
     WaitingLineResponse? WaitingOn = null,
-    AdjustmentActions? Actions = null)
+    AdjustmentActions? Actions = null,
+    Money? ExtractDueAfter = null)
 {
     internal static AdjustmentResponse From(Adjustment adjustment) => new(
         adjustment.Id,
@@ -84,8 +90,23 @@ internal static class AdjustmentReads
         Dictionary<Guid, Extract> extracts = await database.Extracts
             .AsNoTracking()
             .Include(extract => extract.GateHistory)
+            .Include(extract => extract.Figures)
             .Where(extract => extractIds.Contains(extract.Id))
             .ToDictionaryAsync(extract => extract.Id, cancellationToken);
+
+        // ponytail: one position read per extract with a standing credit note; batch it if a project carries dozens.
+        Dictionary<Guid, Money> expected = [];
+        foreach (Guid extractId in adjustments
+            .Where(adjustment => adjustment.Status is AdjustmentStatus.Raised or AdjustmentStatus.Approved)
+            .Select(adjustment => adjustment.SourceDocumentId)
+            .Distinct())
+        {
+            if (extracts.GetValueOrDefault(extractId) is { } extract
+                && await ExtractCollections.StateAsync(database, extract, cancellationToken) is { } state)
+            {
+                expected[extractId] = state.Position.Expected;
+            }
+        }
         IReadOnlyList<StaffMember> staff = adjustments.Any(adjustment => adjustment.Status == AdjustmentStatus.Raised)
             ? await ExtractWaitingOnView.StaffAsync(database, projectId, cancellationToken)
             : [];
@@ -101,8 +122,7 @@ internal static class AdjustmentReads
 
                 // The Owner decides a Raised adjustment; whoever raised it or the dispute behind it may not (Adjustment.Approve).
                 WaitingLineResponse? waiting = adjustment.Status == AdjustmentStatus.Raised
-                    ? WaitingLine.Build(
-                        "waiting.task.adjustment_approval", Permission.FinancialMovementApprove, staff, adjustment.PriorActors(disputeActors))
+                    ? WaitingLine.ForCreditNote(adjustment, extract, staff)
                     : null;
 
                 bool May(AdjustmentStatus target) => mayApprove
@@ -113,6 +133,14 @@ internal static class AdjustmentReads
                     DisputeReason = extract?.GateHistory.LastOrDefault(record => record.Gate == ExtractGate.Dispute)?.Reason,
                     WaitingOn = waiting,
                     Actions = new AdjustmentActions(May(AdjustmentStatus.Approved), May(AdjustmentStatus.Rejected), May(AdjustmentStatus.Reversed)),
+                    ExtractDueAfter = expected.TryGetValue(adjustment.SourceDocumentId, out Money due)
+                        ? adjustment.Status switch
+                        {
+                            AdjustmentStatus.Raised => due - adjustment.Amount,
+                            AdjustmentStatus.Approved => due,
+                            _ => null,
+                        }
+                        : null,
                 };
             }),
         ];

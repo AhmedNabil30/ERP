@@ -8,7 +8,8 @@ namespace Kaff.Api.Features.Ncrs;
 public sealed record NcrActions(bool Close);
 
 /// <summary>
-/// One NCR (AC-500-E). <paramref name="HeldAmount"/> is the period work value the split gate held back, derived from the
+/// One NCR (AC-500-E). <paramref name="Description"/> is what does not conform, written at the split (D-260 item 1).
+/// <paramref name="HeldAmount"/> is the period work value the split gate held back, derived from the
 /// extract on the read. It is null for a viewer who may not see extract money, and once a rejection has returned the
 /// extract to Draft, because the extract then holds nothing against this NCR.
 /// </summary>
@@ -17,6 +18,7 @@ public sealed record NcrResponse(
     Guid ExtractId,
     int ExtractNumber,
     NcrStatus Status,
+    string? Description,
     DateTimeOffset OpenedAt,
     Guid OpenedByUserId,
     DateTimeOffset? ClosedAt,
@@ -35,6 +37,7 @@ public sealed record NcrResponse(
             ncr.ExtractId,
             extract.Number,
             ncr.Status,
+            ncr.Description,
             ncr.OpenedAt,
             ncr.OpenedByUserId,
             ncr.ClosedAt,

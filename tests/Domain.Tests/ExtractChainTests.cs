@@ -378,7 +378,7 @@ public sealed class ExtractChainTests
     {
         Extract extract = await _h.DriveAsync(ExtractStatus.QcSubmitted);
         Guid office = ExtractHarness.NewUser();
-        Ncr ncr = Ncr.Open(extract, office, ExtractHarness.Now);
+        Ncr ncr = Ncr.Open(extract, "honeycombing in column C3", office, ExtractHarness.Now).Value;
         extract.ApproveTechnicalOffice(ProjectStatus.Active, office, Percentage.FromPercent(60m), ncr.Id, _h.Rulings, ExtractHarness.Now)
             .IsSuccess.Should().BeTrue();
 
@@ -406,7 +406,7 @@ public sealed class ExtractChainTests
     {
         Extract extract = await _h.DriveAsync(ExtractStatus.QcSubmitted);
         Guid office = ExtractHarness.NewUser();
-        Ncr ncr = Ncr.Open(extract, office, ExtractHarness.Now);
+        Ncr ncr = Ncr.Open(extract, "honeycombing in column C3", office, ExtractHarness.Now).Value;
         extract.ApproveTechnicalOffice(ProjectStatus.Active, office, Percentage.FromPercent(60m), ncr.Id, _h.Rulings, ExtractHarness.Now)
             .IsSuccess.Should().BeTrue();
         extract.Reject(ExtractHarness.NewUser(), "material values wrong", ExtractRejectionKind.MaterialValues, _h.Context(), [], ExtractHarness.Now)
@@ -415,6 +415,50 @@ public sealed class ExtractChainTests
 
         ncr.Close(extract, "fixed", office, ExtractHarness.Now).IsSuccess.Should().BeTrue();
         extract.HeldPortionReleasedAt.Should().BeNull("the extract holds nothing against the NCR any more");
+    }
+
+    [Fact]
+    public async Task An_NCR_is_opened_only_with_what_does_not_conform_and_a_reuse_takes_the_new_description()
+    {
+        Extract extract = await _h.DriveAsync(ExtractStatus.QcSubmitted);
+        Guid office = ExtractHarness.NewUser();
+
+        foreach (string? blank in new[] { null, "", "   ", new string('x', Project.MaxReasonLength + 1) })
+        {
+            Ncr.Open(extract, blank, office, ExtractHarness.Now).Error.Should().Be(ExtractErrors.NcrDescriptionRequired);
+        }
+
+        Ncr ncr = Ncr.Open(extract, "  honeycombing in column C3 ", office, ExtractHarness.Now).Value;
+        ncr.Description.Should().Be("honeycombing in column C3");
+
+        ncr.Describe(" ").Error.Should().Be(ExtractErrors.NcrDescriptionRequired);
+        ncr.Description.Should().Be("honeycombing in column C3", "a refused description changes nothing");
+        ncr.Describe("cover to rebar short on slab S2").IsSuccess.Should().BeTrue();
+        ncr.Description.Should().Be("cover to rebar short on slab S2");
+    }
+
+    [Fact]
+    public async Task The_split_preview_is_the_split_the_gate_makes_and_is_refused_where_the_gate_refuses()
+    {
+        Extract extract = await _h.DriveAsync(ExtractStatus.QcSubmitted);
+
+        // 300,000 of period work.
+        extract.PreviewSplit(ProjectStatus.Active, Percentage.FromPercent(70m)).Value
+            .Should().Be((new Money(210_000m), new Money(90_000m)));
+        extract.PreviewSplit(ProjectStatus.Active, Percentage.FromPercent(100m)).Value
+            .Should().Be((new Money(300_000m), Money.Zero));
+        extract.PreviewSplit(ProjectStatus.Active, Percentage.Zero).Error.Should().Be(ExtractErrors.ApprovedPortionOutOfRange);
+        extract.PreviewSplit(ProjectStatus.Active, Percentage.FromPercent(101m)).Error.Should().Be(ExtractErrors.ApprovedPortionOutOfRange);
+        extract.PreviewSplit(ProjectStatus.Handover, Percentage.FromPercent(70m)).Error.Should().Be(ExtractErrors.SplitAfterHandover);
+        extract.PreviewSplit(ProjectStatus.Handover, Percentage.FromPercent(100m)).IsSuccess.Should().BeTrue();
+
+        Ncr ncr = Ncr.Open(extract, "honeycombing in column C3", ExtractHarness.NewUser(), ExtractHarness.Now).Value;
+        extract.ApproveTechnicalOffice(
+                ProjectStatus.Active, ExtractHarness.NewUser(), Percentage.FromPercent(70m), ncr.Id, _h.Rulings, ExtractHarness.Now)
+            .IsSuccess.Should().BeTrue();
+        (extract.ApprovedWorkValue(), extract.HeldWorkValue()).Should().Be((new Money(210_000m), new Money(90_000m)));
+        extract.PreviewSplit(ProjectStatus.Active, Percentage.FromPercent(70m)).Error
+            .Should().Be(ExtractErrors.IllegalTransition, "the gate has passed");
     }
 
     [Fact]

@@ -175,6 +175,8 @@ public sealed partial class ExtractEndpointTests : IAsyncLifetime
             ["GET /api/projects/{projectId:guid}/extracts/{id:guid}"] = Permission.ProjectRead,
             ["GET /api/projects/{projectId:guid}/extracts/{id:guid}/quantities"] = Permission.ExtractRead,
             ["GET /api/projects/{projectId:guid}/extracts/quantities-preview"] = Permission.ExtractPrepare,
+            ["GET /api/projects/{projectId:guid}/extracts/{id:guid}/portion-preview"] = Permission.QuantityGateApprove,
+            ["GET /api/projects/{projectId:guid}/extracts/{id:guid}/deductions-preview"] = Permission.ExtractDeductionsApply,
         };
 
         Dictionary<string, PermissionRequirement> actual = [];

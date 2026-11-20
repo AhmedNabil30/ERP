@@ -132,6 +132,7 @@ internal sealed class NcrConfiguration : IEntityTypeConfiguration<Ncr>
         builder.Property(ncr => ncr.Id).ValueGeneratedNever();
         builder.Property(ncr => ncr.OpenedAt).IsRequired();
         builder.Property(ncr => ncr.CloseNote).HasMaxLength(Project.MaxReasonLength);
+        builder.Property(ncr => ncr.Description).HasMaxLength(Project.MaxReasonLength);
 
         // AC-500-E: an extract holds against one open NCR at a time; a second split of the same extract reuses it.
         builder.HasIndex(ncr => ncr.ExtractId)

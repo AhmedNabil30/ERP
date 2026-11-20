@@ -26,11 +26,12 @@ public sealed class Ncr : Entity
     {
     }
 
-    private Ncr(Guid projectId, Guid extractId, Guid openedBy, DateTimeOffset openedAt)
+    private Ncr(Guid projectId, Guid extractId, string description, Guid openedBy, DateTimeOffset openedAt)
         : base(NewId())
     {
         ProjectId = projectId;
         ExtractId = extractId;
+        Description = description;
         Status = NcrStatus.Open;
         OpenedByUserId = openedBy;
         OpenedAt = openedAt;
@@ -42,6 +43,12 @@ public sealed class Ncr : Entity
 
     public NcrStatus Status { get; private set; }
 
+    /// <summary>
+    /// What does not conform, as the Technical Office wrote it when it split the gate. Null only on an NCR opened before
+    /// the description was required (D-260 item 1); every NCR opened since carries one.
+    /// </summary>
+    public string? Description { get; private set; }
+
     public Guid OpenedByUserId { get; private set; }
 
     public DateTimeOffset OpenedAt { get; private set; }
@@ -52,12 +59,41 @@ public sealed class Ncr : Entity
 
     public string? CloseNote { get; private set; }
 
-    /// <summary>Opened for the extract whose Technical Office gate is being split.</summary>
-    public static Ncr Open(Extract extract, Guid openedBy, DateTimeOffset now)
+    /// <summary>Opened for the extract whose Technical Office gate is being split, with what does not conform.</summary>
+    public static Result<Ncr> Open(Extract extract, string? description, Guid openedBy, DateTimeOffset now)
     {
         ArgumentNullException.ThrowIfNull(extract);
-        return new Ncr(extract.ProjectId, extract.Id, openedBy, now);
+        Result described = CheckDescription(description);
+        return described.IsFailure
+            ? Result.Failure<Ncr>(described.Error)
+            : new Ncr(extract.ProjectId, extract.Id, description!.Trim(), openedBy, now);
     }
+
+    /// <summary>
+    /// A second split of the same extract (after a rejection returned it to Draft) reuses its open NCR, and the gate
+    /// writes what does not conform now. The interceptor audits the change with its before and after.
+    /// </summary>
+    public Result Describe(string? description)
+    {
+        Result described = CheckDescription(description);
+        if (described.IsFailure)
+        {
+            return described;
+        }
+
+        if (Status == NcrStatus.Closed)
+        {
+            return Result.Failure(ExtractErrors.NcrAlreadyClosed);
+        }
+
+        Description = description!.Trim();
+        return Result.Success();
+    }
+
+    private static Result CheckDescription(string? description) =>
+        string.IsNullOrWhiteSpace(description) || description.Trim().Length > Project.MaxReasonLength
+            ? Result.Failure(ExtractErrors.NcrDescriptionRequired)
+            : Result.Success();
 
     /// <summary>
     /// Closes the NCR with its note and, when <paramref name="extract"/> still holds its remainder against this NCR,

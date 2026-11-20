@@ -1,7 +1,9 @@
 using System.Security.Claims;
+using Kaff.Domain.Adjustments;
 using Kaff.Domain.Collections;
 using Kaff.Domain.Common;
 using Kaff.Domain.Extracts;
+using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -23,7 +25,8 @@ public sealed record ExtractSummary(
     ExtractMoney? Money,
     WaitingOnResponse WaitingOn,
     ExtractLink? Revises = null,
-    ExtractLink? RevisedBy = null);
+    ExtractLink? RevisedBy = null,
+    WaitingLineResponse? CreditNoteWaitingOn = null);
 
 internal static class Handler
 {
@@ -50,6 +53,16 @@ internal static class Handler
             ? await ExtractMoneyQueries.CarriedHoldAsync(database, extracts, cancellationToken)
             : new Dictionary<Guid, Money>();
         IReadOnlyList<StaffMember> staff = await ExtractWaitingOnView.StaffAsync(database, projectId, cancellationToken);
+
+        // D-260 item 5: a Raised credit note holds collection, so the row names who decides it, built as the extract's
+        // own read builds it. The lowest-numbered Raised note per extract, as the read picks it.
+        Dictionary<Guid, Adjustment> raisedNotes = (await database.Adjustments.AsNoTracking()
+                .Where(adjustment => adjustment.ProjectId == projectId
+                    && adjustment.SourceDocumentType == SourceDocumentType.Extract
+                    && adjustment.Status == AdjustmentStatus.Raised)
+                .ToListAsync(cancellationToken))
+            .GroupBy(adjustment => adjustment.SourceDocumentId)
+            .ToDictionary(group => group.Key, group => group.MinBy(adjustment => adjustment.Number)!);
 
         // The same position the extract's own read derives, so the row and the extract cannot disagree.
         // ponytail: one position read per billed extract; batch it if a project's list grows past a few dozen.
@@ -81,7 +94,8 @@ internal static class Handler
                     : null,
                 ExtractWaitingOnView.Build(extract, staff),
                 Link(extracts.Find(other => other.Id == extract.RevisesExtractId)),
-                Link(extracts.Find(other => other.RevisesExtractId == extract.Id)))),
+                Link(extracts.Find(other => other.RevisesExtractId == extract.Id)),
+                raisedNotes.TryGetValue(extract.Id, out Adjustment? raised) ? WaitingLine.ForCreditNote(raised, extract, staff) : null)),
         ];
 
         return Microsoft.AspNetCore.Http.Results.Ok(rows);

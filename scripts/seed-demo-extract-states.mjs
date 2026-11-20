@@ -208,7 +208,7 @@ async function netPayable(project, extract) {
   const second = await ensureExtract(project, 2);
   await drive(project, second, 'QcSubmitted');
   if (second.status === 'QcSubmitted') {
-    ok(await tech('POST', extractUrl(project, second, 'technical-approval'), { approvedPortion: '0.6' }), 'split gate');
+    ok(await tech('POST', extractUrl(project, second, 'technical-approval'), { approvedPortion: '0.6', ncrDescription: 'تعشيش في خرسانة العمود C3 يحتاج إصلاح' }), 'split gate');
   }
 }
 

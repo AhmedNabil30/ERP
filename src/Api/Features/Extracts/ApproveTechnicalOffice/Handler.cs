@@ -3,6 +3,7 @@ using Kaff.Domain.Common;
 using Kaff.Domain.Extracts;
 using Kaff.Domain.Identity;
 using Kaff.Domain.Rulings;
+using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -46,15 +47,25 @@ internal static class Handler
                 Guid? heldFor = null;
                 if (portion < Percentage.FromFraction(1m) && Extract.SplitAllowedIn(project.Status))
                 {
-                    heldFor = await services.Database.Ncrs
-                        .Where(ncr => ncr.ExtractId == extract.Id && ncr.Status == NcrStatus.Open)
-                        .Select(ncr => (Guid?)ncr.Id)
-                        .FirstOrDefaultAsync(token);
-                    if (heldFor is null)
+                    // D-260 item 1: the split says what does not conform. A reused open NCR takes the new description.
+                    Ncr? reused = await services.Database.Ncrs
+                        .FirstOrDefaultAsync(ncr => ncr.ExtractId == extract.Id && ncr.Status == NcrStatus.Open, token);
+                    if (reused is null)
                     {
-                        opened = Ncr.Open(extract, actor, now);
-                        heldFor = opened.Id;
+                        Result<Ncr> created = Ncr.Open(extract, request.NcrDescription, actor, now);
+                        if (created.IsFailure)
+                        {
+                            return Result.Failure<IReadOnlyList<Posting>>(created.Error);
+                        }
+
+                        opened = created.Value;
                     }
+                    else if (reused.Describe(request.NcrDescription) is { IsFailure: true } described)
+                    {
+                        return Result.Failure<IReadOnlyList<Posting>>(described.Error);
+                    }
+
+                    heldFor = (opened ?? reused)!.Id;
                 }
 
                 Result approved = extract.ApproveTechnicalOffice(project.Status, actor, portion, heldFor, services.Rulings, now);
