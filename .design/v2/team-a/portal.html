@@ -163,8 +163,8 @@ small,.dim{color:var(--dim);font-size:.875rem}
 .u{color:var(--dim);font-weight:400;font-size:.8125em;margin-inline-start:6px}
 .fig{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;white-space:nowrap}
 .abar{position:sticky;inset-block-end:0;z-index:20;background:var(--surface);border-block-start:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
-.abar>div{max-inline-size:720px;margin-inline:auto;display:flex;gap:12px}
-.abar.wide>div{max-inline-size:1040px}
+.abar>div{max-inline-size:688px;margin-inline:auto;display:flex;gap:12px}
+.abar.wide>div{max-inline-size:1008px}
 .abar .btn{flex:1;block-size:56px;font-size:1.0625rem}
 .btn.blk{inline-size:100%}
 .cfm{display:grid;gap:14px;border:2px solid var(--fieldline);border-radius:var(--radius);background:var(--surface);padding:16px}
@@ -203,7 +203,7 @@ small,.dim{color:var(--dim);font-size:.875rem}
 .tbl{inline-size:100%;border-collapse:separate;border-spacing:0;border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden}
 .tbl th{background:var(--head);text-align:start;font-weight:700;padding:10px 14px;font-size:.9375rem}
 .tbl td{padding:12px 14px;border-block-start:1px solid var(--line);vertical-align:middle}
-@media (max-width:820px){.tbl thead{display:none}.tbl,.tbl tbody,.tbl tr,.tbl td{display:block}.tbl td{display:flex;justify-content:space-between;gap:12px;border-block-start:0;padding:6px 14px}.tbl tr{border-block-start:1px solid var(--line);padding:8px 0}.tbl tr:first-child{border-block-start:0}.tbl td::before{content:attr(data-l);color:var(--dim)}}
+@media (max-width:820px){.tbl td.e{display:none}.tbl thead{display:none}.tbl,.tbl tbody,.tbl tr,.tbl td{display:block}.tbl td{display:flex;justify-content:space-between;gap:12px;border-block-start:0;padding:6px 14px}.tbl tr{border-block-start:1px solid var(--line);padding:8px 0}.tbl tr:first-child{border-block-start:0}.tbl td::before{content:attr(data-l);color:var(--dim)}}
 .tbl tr.cur{background:var(--head)}
 .cl{display:grid;list-style:none;margin:0;padding:0;border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface)}
 .cl li{display:flex;align-items:center;gap:12px;padding:10px 16px;min-block-size:56px;flex-wrap:wrap}
@@ -213,6 +213,8 @@ small,.dim{color:var(--dim);font-size:.875rem}
 .mk.ok{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .mk svg{inline-size:14px;block-size:14px}
 .chain li{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.s-stuck{background:var(--st-stuck-bg);color:var(--st-stuck-ink)}
+.tbl td.e{}
 .lnk{min-inline-size:44px;min-block-size:44px}
 .pwbox{display:flex;align-items:center;justify-content:space-between;gap:12px;font:700 1.25rem/1.2 var(--body);direction:ltr}
 </style>
@@ -229,7 +231,7 @@ const IC={chk:'M5 12.5l4.5 4.5L19 7',x:'M6 6l12 12M18 6L6 18',clock:'M12 21a9 9 
 const i=(n,c='')=>`<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[n]}"/></svg>`;
 const fig=(v,u)=>`<bdi class="fig">${Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}${u?`<span class="u">ج.م</span>`:''}</bdi>`;
 const num=v=>`<bdi class="fig">${v}</bdi>`;
-const pill=(k,t)=>{const m={paid:['s-done','chk'],unpaid:['s-none','clock'],run:['s-run','clock'],wait:['s-run','clock'],ok:['s-done','chk'],no:['s-none','x'],none:['s-none','clock']}[k];return `<span class="pill ${m[0]}">${i(m[1],'s')}${t}</span>`};
+const pill=(k,t)=>{const m={paid:['s-done','chk'],unpaid:['s-none','clock'],run:['s-run','clock'],wait:['s-run','clock'],ok:['s-done','chk'],no:['s-none','x'],none:['s-none','clock'],late:['s-stuck','alert'],wm:['s-none','lock']}[k];return `<span class="pill ${m[0]}">${i(m[1],'s')}${t}</span>`};
 const btn=(t,o={})=>`<button type="button" class="btn ${o.c||''}" ${o.b?'aria-busy="true"':''}>${o.b?'<span class="spin"></span>':(o.i?i(o.i):'')}${t}</button>`;
 const sk=(w,h=14)=>`<span class="sk b" style="inline-size:${w}%;block-size:${h}px;margin-block:8px"></span>`;
 const to=(s,v)=>`?s=${s}${v?'&view='+v:''}${EMBED?'&embed=1':''}`;
@@ -250,24 +252,24 @@ V.p1={v:[['normal','عادي'],['busy','جارٍ الدخول'],['failed','فش�
  return `<header class="top"><img src="../brand/kaaf-wordmark.png" width="519" height="155" alt="KAAF"></header><main><div class="wrap narrow"><h1>تسجيل الدخول</h1><div class="form">${v==='failed'?`<div class="ban" role="alert">${i('alert')}<span>رقم الموبايل أو كلمة السر غير صحيحة</span></div>`:''}<div class="field"><label>رقم الموبايل</label><div class="ctl ltr"><input type="tel" inputmode="tel" autocomplete="username" value="01001234567"></div></div><div class="field"><label>كلمة السر</label><div class="ctl pw"><input type="password" autocomplete="current-password" value="••••••••••"><button type="button" aria-label="إظهار كلمة السر">${i('eye')}</button></div></div>${btn(v==='busy'?'جارٍ الدخول…':'دخول',{c:'blk',b:v==='busy'})}</div></div></main>`}};
 
 /* P2 */
-const projCard=(n,st,paid,rem,wait)=>`<a class="card ${wait?'pend':''}" href="${to('p3')}"><div class="ln"><b>${n}</b>${wait?`<span class="badge fill">${i('clock')}بانتظارك ${num(wait)}</span>`:''}</div><div>${pill('run',st)}</div><div class="meter" aria-hidden="true"><i style="inline-size:${Math.round(paid/(paid+rem)*100)}%"></i></div><div class="ln dim"><span>المدفوع ${fig(paid)}</span><span>المتبقي ${fig(rem,1)}</span></div></a>`;
+const projCard=(n,st,paid,rem,wait)=>`<a class="card ${wait?'pend':''}" href="${to('p3')}"><div class="ln"><b>${n}</b>${wait?`<span class="badge fill">${i('clock')}بانتظارك ${num(wait)}</span>`:''}</div><div>${pill('run',st)}</div><div class="meter" aria-hidden="true"><i style="inline-size:${Math.round(paid/(paid+rem)*100)}%"></i></div><div class="ln dim"><span>المدفوع ${fig(paid)}</span><span>باقي العقد ${fig(rem,1)}</span></div></a>`;
 V.p2={v:[['normal','عادي'],['empty','لا مشروع'],['loading','تحميل'],['failed','تعذّر التحميل']],draw(v){
- return portal(`<h1>مشاريعي</h1>`+(v==='loading'?loadingSk():v==='failed'?fail():v==='empty'?empty('لا يوجد مشروع بعد'):`<div class="sec">${projCard(PROJ,'جاري العمل',1250000,1630000,2)}${projCard('فرش الفيلا','لم تبدأ',0,320000,0)}${projCard('تصميم شقة المعادي','جاري العمل',16200,37800,1)}</div>`))}};
+ return portal(`<h1>مشاريعي</h1>`+(v==='loading'?loadingSk():v==='failed'?fail():v==='empty'?empty('لا يوجد مشروع بعد'):`<div class="sec">${projCard(PROJ,'جاري العمل',1250000,1630000,3)}${projCard('فرش الفيلا','لم تبدأ',0,320000,0)}${projCard('تصميم شقة المعادي','جاري العمل',16200,37800,1)}</div>`))}};
 
 /* P3 */
 const BABS=[['أعمال مباني',100,'2026-05-31'],['أعمال تشطيبات',45,'2026-11-30'],['أعمال نجارة',20,'2026-12-15'],['أعمال كهرباء',60,'2026-10-31'],['أعمال صحية',30,'2026-11-15'],['أعمال معدنية',0,'2026-12-31']];
 const STAGES=['المفهوم الأولي','المخطط المبدئي','التصور ثلاثي الأبعاد','تطوير التصميم','الوثائق النهائية'];
-V.p3={v:[['normal','عادي'],['none','لا شيء ينتظره'],['noplan','بلا جدول زمني'],['nolog','بلا سجل بعد'],['design','مشروع تصميم'],['loading','تحميل'],['failed','تعذّر التحميل']],draw(v){
+V.p3={v:[['normal','عادي'],['one','أمر تغيير واحد'],['none','لا شيء ينتظره'],['noplan','بلا جدول زمني'],['nolog','بلا سجل بعد'],['design','مشروع تصميم'],['loading','تحميل'],['failed','تعذّر التحميل']],draw(v){
  if(v==='loading')return portal(loadingSk());
  if(v==='failed')return portal(back(to('p2'),'مشاريعي')+fail());
  const ds=v==='design';
- const pend=v==='none'?'':ds?`<div class="sec"><h2>بانتظارك</h2><a class="card pend" href="${to('p6')}"><div class="ln"><b>المخطط المبدئي</b>${i('go')}</div><div class="ln dim"><span>مرحلة تصميم</span>${fig(10800,1)}</div></a></div>`:`<div class="sec"><h2>بانتظارك</h2><ul class="lst pend"><li><a href="${to('p5')}"><div class="grow"><b>تعديل تصميم المطبخ</b><small>أمر تغيير</small></div>${fig(48470,1)}${i('go')}</a></li><li><a href="${to('p5')}"><div class="grow"><b>إضافة نقطة كهرباء بالحديقة</b><small>أمر تغيير</small></div>${fig(12300,1)}${i('go')}</a></li></ul></div>`;
+ const pend=v==='none'?'':ds?`<div class="sec"><h2>بانتظارك</h2><a class="card pend" href="${to('p6')}"><div class="ln"><b>المخطط المبدئي</b>${i('go')}</div><div class="ln dim"><span>مرحلة تصميم</span>${fig(10800,1)}</div></a></div>`:`<div class="sec"><h2>بانتظارك</h2><ul class="lst pend"><li><a href="${to('p5')}"><div class="grow"><b>تعديل تصميم المطبخ</b><small>أمر تغيير</small></div>${fig(48470,1)}${i('go')}</a></li>${v==='one'?'':`<li><a href="${to('p5')}"><div class="grow"><b>إضافة نقطة كهرباء بالحديقة</b><small>أمر تغيير</small></div>${fig(12300,1)}${i('go')}</a></li>`}${v==='one'?'':`<li><a href="${to('p4','unpaid')}"><div class="grow"><b>مستخلص ${num(3)}</b><small>غير مدفوع</small></div>${fig(355000,1)}${i('go')}</a></li>`}</ul></div>`;
  const prog=ds?`<div class="sec"><h2>المراحل</h2><ul class="lst">${STAGES.map((s,k)=>`<li><div class="it"><div class="grow"><b>${s}</b></div>${k===0?pill('ok','تمت الموافقة'):k===1?pill('wait','بانتظارك'):pill('none','لم تبدأ')}</div></li>`).join('')}</ul></div>`:
- `<div class="sec"><h2>التقدم</h2><ul class="lst">${BABS.map(b=>{const p=v==='nolog'?0:b[1];return `<li><div class="it" style="display:grid;gap:8px;padding-block:12px"><div class="ln"><b style="font-size:1rem">${b[0]}</b>${num(p+'%')}</div><div class="meter" aria-hidden="true"><i style="inline-size:${p}%"></i></div>${v==='noplan'?'':`<small>${num(b[2])}</small>`}</div></li>`}).join('')}</ul></div>`;
- const money=`<div class="sec"><h2>المدفوع والمتبقي</h2><div class="card"><div class="meter" aria-hidden="true"><i style="inline-size:${ds?30:43}%"></i></div><div class="kv n"><span>المدفوع</span>${fig(ds?16200:1250000,1)}</div><div class="kv n"><span>المتبقي</span>${fig(ds?37800:1630000,1)}</div></div></div>`;
+ `<div class="sec"><h2>التقدم</h2><ul class="lst">${BABS.map(b=>{const p=v==='nolog'?0:b[1];return `<li><div class="it" style="display:grid;gap:8px;padding-block:12px"><div class="ln"><b style="font-size:1rem">${b[0]}</b>${num(p+'%')}</div><div class="meter" aria-hidden="true"><i style="inline-size:${p}%"></i></div>${v==='noplan'?'':`<div class="ln"><small>النهاية المخططة ${num(b[2])}</small>${(b[1]<100&&b[2]<'2026-11-22'&&v!=='nolog')?pill('late','متعثرة'):''}</div>`}</div></li>`}).join('')}</ul></div>`;
+ const money=`<div class="sec"><h2>المدفوع وباقي العقد</h2><div class="card"><div class="meter" aria-hidden="true"><i style="inline-size:${ds?30:43}%"></i></div><div class="kv n"><span>المدفوع</span>${fig(ds?16200:1250000,1)}</div><div class="kv n"><span>باقي العقد</span>${fig(ds?37800:1630000,1)}</div></div></div>`;
  const plan=v==='noplan'?'':`<div class="sec"><h2>الجدول الزمني</h2><div class="kvs"><div class="kv"><span>البداية</span>${num('2026-03-01')}</div><div class="kv"><span>النهاية المخططة</span>${num('2026-12-31')}</div></div></div>`;
  const links=`<ul class="lst">${ds?'':`<li><a href="${to('p4')}">${i('doc')}<span class="grow"><b>المستخلصات</b></span>${i('go')}</a></li><li><a href="${to('p8')}">${i('img')}<span class="grow"><b>الصور</b></span>${i('go')}</a></li>`}<li><a href="${to('p7')}">${i('dl')}<span class="grow"><b>الملفات</b></span>${i('go')}</a></li></ul>`;
- const pa=v==='none'?'':bar(`<a class="btn" href="${to(ds?'p6':'p5')}" style="text-decoration:none">${ds?'مراجعة المرحلة':'مراجعة أمر التغيير'}</a>`);
+ const pa=(v==='one'||ds)?bar(`<a class="btn" href="${to(ds?'p6':'p5')}" style="text-decoration:none">${ds?'مراجعة المرحلة':'مراجعة أمر التغيير'}</a>`):'';
  return portal(back(to('p2'),'مشاريعي')+`<h1>${ds?'تصميم شقة المعادي':PROJ}</h1>`+pend+prog+money+plan+links,pa)}};
 
 /* P4 */
@@ -275,7 +277,7 @@ const EXT=[[3,410000,1180000,55000,355000,0],[2,420000,770000,57000,363000,1],[1
 const ex=e=>`<li><a href="${to('p4','detail')}"><div class="grow"><b>مستخلص ${num(e[0])}</b><small>صافي ${fig(e[4])}</small></div>${e[5]?pill('paid','مدفوع'):pill('unpaid','غير مدفوع')}${i('go')}</a></li>`;
 V.p4={v:[['list','القائمة'],['detail','مستخلص مدفوع'],['unpaid','مستخلص غير مدفوع'],['empty','لا مستخلصات'],['loading','تحميل'],['failed','تعذّر التحميل']],draw(v){
  const bk=back(to('p3'),PROJ);
- if(v==='detail'||v==='unpaid'){const e=v==='unpaid'?EXT[0]:EXT[1];return portal(bk+`<h1>مستخلص ${num(e[0])}</h1><div class="kvs"><div class="kv"><span>أعمال هذه الفترة</span>${fig(e[1])}</div><div class="kv"><span>الأعمال التراكمية</span>${fig(e[2])}</div><div class="kv"><span>الخصومات</span>${fig(e[3])}</div><div class="kv t"><span>الصافي المستحق</span>${fig(e[4],1)}</div><div class="kv"><span>الحالة</span>${e[5]?pill('paid','مدفوع'):pill('unpaid','غير مدفوع')}</div></div>`)}
+ if(v==='detail'||v==='unpaid'){const e=v==='unpaid'?EXT[0]:EXT[1];return portal(bk+`<h1>مستخلص ${num(e[0])}</h1><div class="kvs"><div class="kv"><span>أعمال هذه الفترة</span>${fig(e[1])}</div><div class="kv"><span>الأعمال التراكمية</span>${fig(e[2])}</div><div class="kv"><span>الخصومات</span>${fig(e[3])}</div><div class="kv t"><span>الصافي المستحق</span>${fig(e[4],1)}</div><div class="kv"><span>الدفع</span>${e[5]?pill('paid','مدفوع'):pill('unpaid','غير مدفوع')}</div></div>`)}
  return portal(bk+`<h1>المستخلصات</h1>`+(v==='loading'?loadingSk():v==='failed'?fail():v==='empty'?empty('لا توجد مستخلصات','doc'):`<ul class="lst">${EXT.map(ex).join('')}</ul>`))}};
 
 /* P5 */
@@ -285,31 +287,31 @@ V.p5={v:[['normal','عادي'],['confirm','تأكيد الموافقة'],['refus
  if(v==='loading')return portal(loadingSk());
  if(v==='failed')return portal(bk+fail());
  if(v==='notfound')return portal(bk+empty('غير موجود','ban'));
- const head=`<h1>تعديل تصميم المطبخ</h1><div class="kvs"><div class="kv"><span>مقدَّم من</span><b>فريق كف</b></div></div>`;
+ const head=`<h1>تعديل تصميم المطبخ</h1><div class="kvs"><div class="kv"><span>مقدَّم من</span><b>فريق كف</b></div><div class="kv"><span>التاريخ</span>${num('2026-11-20')}</div></div>`;
  const lines=`<div class="sec"><h2>البنود</h2><ul class="lst">${COL.map(l=>`<li><div class="it" style="display:grid;gap:4px;padding-block:10px"><div class="ln"><b style="font-size:1rem">${l[0]}</b>${fig(l[2]*l[3])}</div><small>${num(l[2])} ${l[1]} × ${fig(l[3])}</small></div></li>`).join('')}</ul></div>`;
  const tot=`<div class="kvs"><div class="kv t"><span>الإجمالي</span>${fig(48470,1)}</div><div class="kv"><span>قيمة العقد قبل</span>${fig(2880000)}</div><div class="kv"><span>قيمة العقد بعد</span>${fig(2928470)}</div></div>`;
- if(v==='approved')return portal(bk+head+`<div class="rec">${i('chk')}تمت موافقتك<small>${num('2026-11-22')}</small></div><div class="kvs"><div class="kv t"><span>قيمة العقد بعد التعديل</span>${fig(2928470,1)}</div><div class="kv"><span>الحالة</span>${pill('wait','عند كف')}</div></div>`+lines);
+ if(v==='approved')return portal(bk+head+`<div class="rec">${i('chk')}تمت الموافقة<small>${num('2026-11-22')}</small></div><div class="kvs"><div class="kv t"><span>قيمة العقد بعد التعديل</span>${fig(2928470,1)}</div></div><ol class="chain" style="grid-auto-flow:row"><li class="done"><span class="st"><span class="mk ok">${i('chk')}</span>موافقتك</span></li><li class="cur"><span class="st"><span class="mk"></span>موافقة كف</span></li></ol>`+lines);
  if(v==='refused')return portal(bk+head+`<div class="ban note" role="status">${i('x')}<span><b>مرفوض</b></span></div><div class="kvs"><div class="kv"><span>تاريخ القرار</span>${num('2026-11-22')}</div></div>`+lines);
  if(v==='withdrawn')return portal(bk+head+`<div class="ban note" role="status">${i('info')}<span><b>سحبه كف</b></span></div>`+lines);
  let mid=btn('رفض',{c:'sec2 blk'}),ab=bar(btn('موافقة',{i:'chk'}));
- if(v==='confirm'){ab='';mid=`<div class="cfm" role="group"><b>الموافقة على أمر التغيير</b><div class="kv n"><span>الإجمالي</span>${fig(48470,1)}</div><div class="kv n"><span>قيمة العقد بعد</span>${fig(2928470)}</div><div class="row2">${btn('تأكيد الموافقة',{i:'chk'})}${btn('رجوع',{c:'sec2'})}</div></div>`}
+ if(v==='confirm'){ab='';mid=`<div class="cfm" role="group"><b>الموافقة على أمر التغيير</b><div class="kv n"><span>الإجمالي</span>${fig(48470,1)}</div><div class="row2">${btn('تأكيد الموافقة',{i:'chk'})}${btn('رجوع',{c:'sec2'})}</div></div>`}
  else if(v==='busy'){ab='';mid=`<div class="cfm"><div class="kv n"><span>الإجمالي</span>${fig(48470,1)}</div><div class="row2">${btn('جارٍ الإرسال…',{b:1})}${btn('رجوع',{c:'sec2'})}</div></div>`}
  else if(v==='refuse'){ab='';mid=`<div class="cfm" role="group"><div class="field"><label>سبب الرفض</label><div class="ctl ta"><textarea></textarea></div></div><div class="row2">${btn('تأكيد الرفض',{c:'sec2'})}${btn('رجوع',{c:'quiet'})}</div></div>`}
  return portal(bk+head+(v==='failedact'?retryBan('لم تُسجَّل الموافقة'):'')+lines+tot+mid,ab)}};
 
 /* P6 */
-const dlrow=(wm,f)=>`<div class="card"><div class="ln"><div style="display:flex;gap:10px;align-items:center;min-inline-size:0">${i('doc')}<b style="font-size:1rem">المخطط المبدئي.pdf</b></div>${wm?pill('no','بعلامة مائية'):pill('ok','نسخة نظيفة')}</div>${f?`<div class="ft1">${i('alert','s')}تعذّر التنزيل</div>`:''}${btn(f?'إعادة المحاولة':'تنزيل',{c:'sec2 blk',i:f?'retry':'dl'})}</div>`;
+const dlrow=(wm,f)=>`<div class="card"><div class="ln"><div style="display:flex;gap:10px;align-items:center;min-inline-size:0">${i('doc')}<b style="font-size:1rem">الملف</b></div>${wm?pill('wm','بعلامة مائية'):pill('ok','نسخة نظيفة')}</div>${f?`<div class="ft1">${i('alert','s')}تعذّر التنزيل</div>`:''}${btn(f?'إعادة المحاولة':'تنزيل',{c:'sec2 blk',i:f?'retry':'dl'})}</div>`;
 V.p6={v:[['normal','عادي'],['confirm','تأكيد الموافقة'],['sendback','كتابة ملاحظة'],['limit','انتهت الجولات'],['busy','جارٍ الإرسال'],['failedact','فشل الإرسال'],['approved','تمت الموافقة'],['paid','مدفوعة'],['upcoming','لم تبدأ'],['dlfail','فشل التنزيل'],['loading','تحميل'],['failed','تعذّر التحميل']],draw(v){
  const bk=back(to('p3','design'),'تصميم شقة المعادي');
  if(v==='loading')return portal(loadingSk());
  if(v==='failed')return portal(bk+fail());
  const seg=n=>`<div class="seg5" aria-hidden="true">${[1,2,3,4,5].map(k=>`<i class="${k<=n?'on':''}"></i>`).join('')}</div>`;
- const head=(n,st)=>`<h1>${STAGES[n-1]}</h1><div class="sec">${seg(n)}<div class="ln dim"><span>المرحلة ${num(n)} من ${num(5)}</span>${st}</div></div>`;
+ const head=(n,st)=>`<h1>${STAGES[n-1]}</h1><div class="sec"><div class="ln dim"><span>المرحلة ${num(n)} من ${num(5)}</span>${st}</div></div>`;
  if(v==='upcoming')return portal(bk+head(3,pill('none','لم تبدأ'))+`<div class="kvs"><div class="kv"><span>الأتعاب</span>${fig(10800,1)}</div></div>`);
- if(v==='approved'||v==='paid'){const pd=v==='paid';return portal(bk+head(2,pd?pill('paid','مدفوعة'):pill('ok','تمت الموافقة'))+(pd?'':`<div class="rec">${i('chk')}تمت موافقتك<small>${num('2026-11-22')}</small></div>`)+`<div class="kvs"><div class="kv t"><span>${pd?'الأتعاب':'المستحق'}</span>${fig(10800,1)}</div><div class="kv"><span>الحالة</span>${pd?pill('paid','مدفوعة'):pill('unpaid','غير مدفوعة')}</div></div>`+dlrow(!pd)+(pd?'':`<ul class="lst"><li><a href="${to('p6','upcoming')}"><div class="grow"><small>المرحلة التالية</small><b>التصور ثلاثي الأبعاد</b></div>${pill('none','لم تبدأ')}${i('go')}</a></li></ul>`))}
- const info=`<div class="kvs"><div class="kv"><span>الأتعاب</span>${fig(10800,1)}</div><div class="kv"><span>جولات التعديل</span>${num(v==='limit'?2:1)} من ${num(2)}</div><div class="kv"><span>الحالة</span>${pill('unpaid','غير مدفوعة')}</div></div>`;
+ if(v==='approved'||v==='paid'){const pd=v==='paid';return portal(bk+head(2,pd?pill('paid','مدفوعة'):pill('ok','تمت الموافقة'))+(pd?'':`<div class="rec">${i('chk')}تمت الموافقة<small>${num('2026-11-22')}</small></div>`)+`<div class="kvs"><div class="kv t"><span>${pd?'الأتعاب':'المستحق'}</span>${fig(10800,1)}</div><div class="kv"><span>الدفع</span>${pd?pill('paid','مدفوعة'):pill('unpaid','غير مدفوعة')}</div></div>`+dlrow(!pd)+(pd?'':`<ul class="lst"><li><a href="${to('p6','upcoming')}"><div class="grow"><small>المرحلة التالية</small><b>التصور ثلاثي الأبعاد</b></div>${pill('none','لم تبدأ')}${i('go')}</a></li></ul>`))}
+ const info=`<div class="kvs"><div class="kv"><span>الأتعاب</span>${fig(10800,1)}</div><div class="kv"><span>جولات التعديل</span>${num(v==='limit'?2:1)} من ${num(2)}</div></div>`;
  let ab=bar(btn('موافقة',{i:'chk'}));
- let mid=(v==='limit'?`<div class="ban note" role="status">${i('info')}<span>التعديل خارج الجولات المتفق عليها ويُسعَّر من كف</span></div>`:'')+btn(v==='limit'?'طلب تعديل إضافي':'إرجاع للتعديل',{c:'sec2 blk'});
+ let mid=(v==='limit'?`<div class="ban note" role="status">${i('info')}<span>التعديل خارج الجولات المتفق عليها ويُسعَّر من كف</span></div>`:'')+btn(v==='limit'?'إرجاع للتعديل':'إرجاع للتعديل',{c:'sec2 blk'});
  if(v==='confirm'){ab='';mid=`<div class="cfm" role="group"><b>الموافقة على المرحلة</b><div class="kv n"><span>المستحق</span>${fig(10800,1)}</div><div class="row2">${btn('تأكيد الموافقة',{i:'chk'})}${btn('رجوع',{c:'sec2'})}</div></div>`}
  else if(v==='busy'){ab='';mid=`<div class="cfm"><div class="kv n"><span>المستحق</span>${fig(10800,1)}</div><div class="row2">${btn('جارٍ الإرسال…',{b:1})}${btn('رجوع',{c:'sec2'})}</div></div>`}
  else if(v==='sendback'){ab='';mid=`<div class="cfm" role="group"><div class="field"><label>الملاحظة</label><div class="ctl ta"><textarea></textarea></div></div><div class="row2">${btn('إرسال',{c:'sec2'})}${btn('رجوع',{c:'quiet'})}</div></div>`}
@@ -318,7 +320,7 @@ V.p6={v:[['normal','عادي'],['confirm','تأكيد الموافقة'],['sendb
 /* P7 */
 const FILES=[['المخطط المبدئي','المخطط المبدئي.pdf','2026-11-20',1],['المفهوم الأولي','المفهوم الأولي.pdf','2026-09-14',0]];
 V.p7={v:[['normal','عادي'],['empty','لا ملفات'],['loading','تحميل'],['failed','تعذّر التحميل'],['dlfail','فشل التنزيل']],draw(v){
- return portal(back(to('p3','design'),'تصميم شقة المعادي')+`<h1>الملفات</h1>`+(v==='loading'?loadingSk():v==='failed'?fail():v==='empty'?empty('لا توجد ملفات','dl'):(v==='dlfail'?retryBan('تعذّر التنزيل'):'')+`<ul class="lst">${FILES.map(f=>`<li><a href="#"><div class="grow"><small>${f[0]}</small><b>${f[1]}</b><small>${num(f[2])}</small></div>${f[3]?pill('no','بعلامة مائية'):pill('ok','نسخة نظيفة')}${i('dl')}</a></li>`).join('')}</ul>`))}};
+ return portal(back(to('p3','design'),'تصميم شقة المعادي')+`<h1>الملفات</h1>`+(v==='loading'?loadingSk():v==='failed'?fail():v==='empty'?empty('لا توجد ملفات','dl'):(v==='dlfail'?retryBan('تعذّر التنزيل'):'')+`<ul class="lst">${FILES.map(f=>`<li><a href="#"><div class="grow"><b>${f[0]}</b><small>${num(f[2])}</small></div>${f[3]?pill('wm','بعلامة مائية'):pill('ok','نسخة نظيفة')}${i('dl')}</a></li>`).join('')}</ul>`))}};
 
 /* P8 */
 const PH=[['تركيب الأرضيات','2026-11-18'],['أعمال الدهان','2026-11-12'],['واجهة المبنى','2026-11-05'],['تمديد الكهرباء','2026-10-28']];
@@ -334,22 +336,22 @@ const sfail=m=>`<div class="ban" role="alert">${i('alert')}<span><b>${m}</b></sp
 /* S1 */
 V.s1={v:[['normal','عادي'],['selected','محدد'],['busy','جارٍ النشر'],['failed','فشل النشر']],draw(v){
  const sel=v!=='normal';const cells=[['تركيب الأرضيات','2026-11-18',0],['أعمال الدهان','2026-11-12',1],['واجهة المبنى','2026-11-05',0],['تمديد الكهرباء','2026-10-28',0]];
- const grid=`<ul class="grid">${cells.map((c,k)=>`<li class="ph-c"><div class="ph3">${i('img')}</div><div class="cap"><b style="font-size:.9375rem">${c[0]}</b><small>${num(c[1])}</small>${c[2]===1?`<div class="ln">${pill('ok','منشورة')}<button type="button" class="lnk" style="min-block-size:44px">سحب النشر</button></div>`:`<label class="cb"><input type="checkbox" ${sel&&(k===0||k===2)?'checked':''}><span>تحديد</span></label>`}</div></li>`).join('')}</ul>`;
- return staff('صور اليوم','',{t:v==='busy'?'جارٍ النشر…':sel?'نشر المحدد ('+2+')':'نشر المحدد',i:'up',b:v==='busy'},grid,v==='failed'?sfail('لم تُنشر الصور'):'')}};
+ const grid=`<ul class="grid">${cells.map((c,k)=>`<li class="ph-c"><div class="ph3">${i('img')}</div><div class="cap"><b style="font-size:.9375rem">${c[0]}</b><small>${num(c[1])}</small>${c[2]===1?`<div class="ln" style="flex-wrap:wrap;justify-content:flex-start">${pill('ok','منشورة')}<button type="button" class="lnk" style="white-space:nowrap">سحب النشر</button></div>`:`<label class="cb"><input type="checkbox" ${sel&&(k===0||k===2)?'checked':''}><span>تحديد</span></label>`}</div></li>`).join('')}</ul>`;
+ return staff('صور الموقع','',{t:v==='busy'?'جارٍ النشر…':sel?'نشر المحدد ('+2+')':'نشر المحدد',i:'up',b:v==='busy'},grid,v==='failed'?sfail('لم تُنشر الصور'):'')}};
 
 /* S2 */
 const ROWS=[['المفهوم الأولي',16200,'1 من 2','مدفوعة'],['المخطط المبدئي',10800,'1 من 2','غير مدفوعة'],['التصور ثلاثي الأبعاد',10800,'0 من 2','غير مدفوعة'],['تطوير التصميم',10800,'0 من 2','غير مدفوعة'],['الوثائق النهائية',5400,'0 من 2','غير مدفوعة']];
-V.s2={v:[['progress','قيد التنفيذ'],['review','مراجعة داخلية'],['empty','قبل تحديد الشروط'],['failed','فشل الرفع'],['busy','جارٍ الرفع']],draw(v){
+V.s2={v:[['progress','جاري العمل'],['review','مراجعة داخلية'],['empty','قبل تحديد الشروط'],['failed','فشل الرفع'],['busy','جارٍ الرفع']],draw(v){
  if(v==='empty')return staff('التصميم','',null,empty('لا توجد مراحل بعد','info'));
- const st=v==='review'?['مراجعة داخلية','المالك']:['قيد التنفيذ','فريق التصميم'];
- const rows=ROWS.map((r,k)=>`<tr class="${k===1?'cur':''}"><td data-l="المرحلة"><b>${r[0]}</b></td><td data-l="الحالة">${k===1?pill('run',st[0]):k===0?pill('ok','تمت الموافقة'):pill('none','لم تبدأ')}</td><td data-l="الأتعاب">${fig(r[1])}</td><td data-l="جولات التعديل">${r[2]}</td><td data-l="السداد">${r[3]}</td><td data-l="بانتظار">${k===1?st[1]:'—'}</td></tr>`).join('');
- const tbl=`<table class="tbl"><thead><tr><th>المرحلة</th><th>الحالة</th><th>الأتعاب (ج.م)</th><th>جولات التعديل</th><th>السداد</th><th>بانتظار</th></tr></thead><tbody>${rows}</tbody></table>`;
- const cur=v==='review'?`<div class="card"><div class="ln"><b>المخطط المبدئي.pdf</b>${pill('no','بعلامة مائية')}</div><div class="row2">${btn('اعتماد وإرسال للعميل',{i:'chk'})}${btn('إرجاع للتنفيذ بسبب',{c:'sec2'})}</div></div>`:'';
- const p=v==='review'?null:{t:v==='busy'?'جارٍ الرفع…':'رفع المسلَّم',i:'up',b:v==='busy'};
+ const st=v==='review'?['مراجعة داخلية','المالك']:['جاري العمل','فريق التصميم'];
+ const rows=ROWS.map((r,k)=>`<tr class="${k===1?'cur':''}"><td data-l="المرحلة"><b>${r[0]}</b></td><td data-l="الحالة">${k===1?pill('run',st[0]):k===0?pill('ok','تمت الموافقة'):pill('none','لم تبدأ')}</td><td data-l="الأتعاب">${fig(r[1])}</td><td data-l="جولات التعديل">${r[2]}</td><td data-l="الدفع">${r[3]}</td><td data-l="بانتظار" class="${k===1?'':'e'}">${k===1?st[1]:''}</td></tr>`).join('');
+ const tbl=`<table class="tbl"><thead><tr><th>المرحلة</th><th>الحالة</th><th>الأتعاب (ج.م)</th><th>جولات التعديل</th><th>الدفع</th><th>بانتظار</th></tr></thead><tbody>${rows}</tbody></table>`;
+ const cur=v==='review'?`<div class="card"><div class="ln"><b>الملف</b>${pill('wm','بعلامة مائية')}</div><div class="row2">${btn('اعتماد وإرسال للعميل',{i:'chk'})}${btn('إرجاع للتنفيذ بسبب',{c:'sec2'})}</div></div>`:'';
+ const p=v==='review'?null:{t:v==='busy'?'جارٍ الرفع…':'رفع الملف',i:'up',b:v==='busy'};
  return staff('التصميم','تصميم شقة المعادي',p,tbl+cur,v==='failed'?sfail('تعذّر رفع الملف'):'')}};
 
 /* S3 */
-const COND=[['اكتمال تحصيل المراحل الخمس',1,''],['تسليم المخرج النهائي',1,''],['تحصيل آخر ١٠٪',0,'تسجيل تحصيل'],['نقل الملكية الفكرية للعميل',0,'تسجيل النقل']];
+const COND=[['اكتمال تحصيل المراحل الخمس',1,''],['تسليم الملف النهائي',1,''],['تحصيل آخر ١٠٪',0,'تسجيل تحصيل'],['نقل الملكية الفكرية للعميل',0,'تسجيل النقل']];
 V.s3={v:[['unmet','شروط ناقصة'],['met','الشروط مكتملة'],['refused','مرفوض'],['busy','جارٍ الإغلاق'],['closed','مغلق']],draw(v){
  const ok=v!=='unmet';
  const cl=`<ul class="cl">${COND.map(c=>{const d=c[1]||ok;return `<li><span class="mk ${d?'ok':''}">${d?i('chk'):''}</span><span class="grow"><b>${c[0]}</b></span>${d?'':`<button type="button" class="btn sm sec2">${c[2]}</button>`}</li>`}).join('')}</ul>`;

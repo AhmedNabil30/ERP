@@ -83,3 +83,29 @@ Sample data (names, amounts, dates) is made up.
 - Real photo thumbnails (drawn as placeholders).
 - Staff shell around S1 to S6 (see `layout.html`).
 - Desktop width for the portal (drawn single column, 720 px).
+
+## Round 2: changes after the consultant review (2026-11-22)
+
+Source: `ux/consultant-review-portal-mock-2026-11-22.md`. Finding numbers in brackets.
+
+Changed in the mock:
+- P3 "بانتظارك" now lists the unpaid extract with its net amount beside the change orders, and the P2 badge counts it [1]. "المتبقي" is renamed "باقي العقد" (contract balance) on P2 and P3 [1].
+- P3 with two or more pending items has no bottom bar; the rows act. The bar stays for exactly one pending item (new state `?view=one`) and for a design stage [5].
+- P3 section dates are labelled "النهاية المخططة"; a section past its planned end and under 100% carries the status word متعثرة [8].
+- P6 before approval shows the fee as "الأتعاب" only; the payment line ("الدفع") and the due amount show only after approval [2]. Stage bar removed; the text "المرحلة 2 من 5" stays [13].
+- P6 limit state: the button label is now the same as the normal one ("إرجاع للتعديل") [3]. The consequence line is unchanged (see questions).
+- P5: date added; confirm box no longer repeats the contract value; approved state shows a two-step line (موافقتك done, موافقة كف next) in place of "عند كف" [7, 16, 19].
+- One word per idea: "تمت الموافقة" everywhere; "الملف" for the deliverable (S2 button "رفع الملف", S3 "تسليم الملف النهائي"); "جاري العمل" in place of "قيد التنفيذ"; "الدفع" for the payment status on P4, P6, S2 [7, 10, 11, 21].
+- Watermark pill uses a lock mark, not X [12]. File rows: no extension, no repeated stage title [15].
+- S1 heading "صور الموقع"; unpublish link no longer wraps [20]. S2 hides the "بانتظار" row when nobody is waited on [21]. Bottom bar and cards share one width [24].
+
+Not changed, questions for Nabil (draw default kept):
+1. P4 unpaid extract: what does the client do next (account details, a phone number, a due date, or nothing)? Drawn as the status only [4].
+2. P1 locked-out client: show Kaff's phone number on the sign-in screen? Drawn without it [6].
+3. P6 limit (Q5 follow-up): the plan only says Kaff prices the extra round outside the system. Show a fee, or state that nothing is charged until Kaff quotes? Neither is in the spec or plan, so the existing consequence line is kept [3].
+4. P3 "late" is derived from planned end date and progress under 100%. Is that the rule for متعثرة? [8]
+5. P7 does not say what makes a copy clean (payment). Leave as is, or add a label? [12]
+6. Date format: ISO (2026-11-22) is drawn. Egyptian readers expect day/month/year; Latin or Arabic-Indic digits [14].
+7. S4 shows "نوع العقد" on a furnishing project: does the Owner choose it? [22]
+
+Word choices for Karim (arabic-copy): أمر تغيير or "تعديل على العقد"; مستخلص or "دفعة"; الخصومات (one total on P4, per-type lines depend on Q8); الملف / الملفات for deliverable; "باقي العقد"; متعثرة for a late section; "موافقتك / موافقة كف" step labels [9].
