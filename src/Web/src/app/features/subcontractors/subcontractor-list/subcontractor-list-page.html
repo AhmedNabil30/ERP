@@ -44,7 +44,7 @@
       <ul class="rows" data-testid="subcontractor-rows">
         @for (subcontractor of subcontractors(); track trackRow($index, subcontractor)) {
           <li class="rows-item" [attr.data-testid]="'subcontractor-row-' + subcontractor.code">
-            <kaff-table-row [archived]="!subcontractor.isActive">
+            <kaff-table-row [archived]="!subcontractor.isActive" [stacked]="true">
               <!-- KAFF-928 finding 6's stretched-link pattern — see employee-list-page.html's comment. -->
               <a
                 class="row-stretched-link"
@@ -54,24 +54,25 @@
 
               <!-- ux/components.md:259 — identity first. The Technical Office knows a subcontractor by
                    name; the generated code demotes to muted secondary text beneath it. -->
-              <span class="row-identity">
-                <span class="row-name" dir="auto">{{ subcontractor.name }}</span>
-                <bdi class="row-code" dir="ltr" translate="no">{{ subcontractor.code }}</bdi>
-              </span>
-              <bdi class="row-phone" dir="ltr">{{ subcontractor.phone }}</bdi>
-              <span class="row-trade" dir="auto">{{ tradeLabel(subcontractor) }}</span>
-              <bdi class="row-retention figure cell-end">{{ retentionLabel(subcontractor) }}%</bdi>
-
-              <!-- KAFF-928 finding 7: an always-present wrapper, so an active and an archived row
-                   project the same number of grid children. -->
-              <span class="row-trailing">
-                <span class="row-archived-badge">
+              <span class="row-identity cell-title">
+                <span class="row-name-line">
+                  <span class="row-name" dir="auto">{{ subcontractor.name }}</span>
                   @if (!subcontractor.isActive) {
-                    <span data-testid="subcontractor-row-archived-badge">
+                    <span class="row-archived-badge" data-testid="subcontractor-row-archived-badge">
                       {{ i18n.t('subcontractor.archived_badge') }}
                     </span>
                   }
                 </span>
+                <bdi class="row-code" dir="ltr" translate="no">{{ subcontractor.code }}</bdi>
+              </span>
+              <bdi class="row-phone cell-secondary" dir="ltr">{{ subcontractor.phone }}</bdi>
+              <span class="row-trade cell-sub" dir="auto">{{ tradeLabel(subcontractor) }}</span>
+              <span class="row-retention cell-primary cell-end">
+                <span class="row-label">{{ i18n.t('subcontractor.field.retention_rate') }}</span>
+                <bdi class="figure">{{ retentionLabel(subcontractor) }}%</bdi>
+              </span>
+
+              <span class="row-trailing cell-act">
                 @if (confirmingArchiveId() !== subcontractor.id) {
                   <kaff-row-menu
                     [items]="rowMenuItems(subcontractor)"

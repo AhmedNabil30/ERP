@@ -427,7 +427,7 @@
 
             <div class="confirm-actions">
               <kaff-button
-                variant="danger"
+                variant="secondary"
                 testId="user-reactivate-confirm-yes"
                 [disabled]="reason().trim().length === 0"
                 (clicked)="onConfirmReactivate()"
@@ -440,7 +440,7 @@
             </div>
           </div>
         } @else {
-          <kaff-button variant="danger-outline" testId="user-reactivate" (clicked)="onStartConfirm('reactivate')">
+          <kaff-button variant="secondary" testId="user-reactivate" (clicked)="onStartConfirm('reactivate')">
             {{ i18n.t('users.action.reactivate') }}
           </kaff-button>
         }

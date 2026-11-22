@@ -35,7 +35,7 @@
       <ul class="rows" data-testid="user-rows">
         @for (user of filteredUsers(); track trackUser($index, user)) {
           <li class="rows-item">
-            <kaff-table-row [archived]="!user.isActive">
+            <kaff-table-row [archived]="!user.isActive" [stacked]="true">
               <!-- KAFF-928 finding 6's stretched-link pattern — see catalogue-list-page.html's comment. -->
               <a
                 class="row-stretched-link"
@@ -44,11 +44,14 @@
                 [attr.data-testid]="'user-row-' + user.userName"
               ></a>
 
-              <span class="row-name" dir="auto">{{ user.fullName }}</span>
-              <span class="row-meta">
+              <span class="row-name cell-title" dir="auto">{{ user.fullName }}</span>
+              <span class="row-meta cell-sub">
                 <span class="row-role">{{ i18n.t(roleKey(user.role)) }}</span>
                 @if (user.departmentId && departmentLabel(user.departmentId); as label) {
-                  <span class="row-department" dir="auto">{{ label }}</span>
+                  @if (label !== i18n.t(roleKey(user.role))) {
+                    <span class="row-sep" aria-hidden="true">·</span>
+                    <span class="row-department" dir="auto">{{ label }}</span>
+                  }
                   @if (user.operationsSubDepartment; as subDepartment) {
                     <span class="row-sep" aria-hidden="true">·</span>
                     <span class="row-department">{{ i18n.t(operationsSubDepartmentKey(subDepartment)) }}</span>
@@ -65,8 +68,8 @@
                 without isolation the bidi algorithm reorders them against the surrounding text —
                 ux/rtl-and-i18n.md §2, which lists a username and a phone number by name.
               -->
-              <bdi class="row-username">{{ user.userName }}</bdi>
-              <bdi class="row-phone">{{ user.phone }}</bdi>
+              <bdi class="row-username cell-primary">{{ user.userName }}</bdi>
+              <bdi class="row-phone cell-secondary">{{ user.phone }}</bdi>
             </kaff-table-row>
           </li>
         }

@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   ElementRef,
   afterNextRender,
@@ -41,9 +42,10 @@ import { KaffTableHeader, TableColumnDef } from '../kaff-table-header/kaff-table
   styleUrl: './kaff-table.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    '[style.--kaff-columns]': 'columns()',
+    '[style.--kaff-columns]': 'activeColumns()',
     '[style.--kaff-table-min.px]': 'minInline()',
     '[class.is-scrolling]': 'scrolling()',
+    '[class.is-narrow]': 'narrow()',
   },
 })
 export class KaffTable {
@@ -53,7 +55,17 @@ export class KaffTable {
   /** The frame width, in px, below which the frame scrolls sideways instead of squeezing the columns. */
   readonly minInline = input<number | null>(null);
 
+  /** With `narrowBelow`: under that frame width the table switches to `narrowColumns` and drops every
+   *  column whose def has `dropNarrow` (header cell removed) and every body cell marked `.cell-drop`
+   *  (hidden by this component's own stylesheet), so a feature stylesheet never hides a grid child. */
+  readonly narrowBelow = input<number | null>(null);
+  readonly narrowColumns = input<string | null>(null);
+
   protected readonly scrolling = signal(false);
+  protected readonly narrow = signal(false);
+  protected readonly activeColumns = computed(() =>
+    this.narrow() && this.narrowColumns() ? this.narrowColumns() : this.columns(),
+  );
 
   constructor() {
     const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
@@ -66,6 +78,8 @@ export class KaffTable {
       const observer = new ResizeObserver(() => {
         const min = this.minInline();
         this.scrolling.set(min !== null && host.clientWidth < min);
+        const below = this.narrowBelow();
+        this.narrow.set(below !== null && host.clientWidth < below);
       });
       observer.observe(host);
       destroyRef.onDestroy(() => observer.disconnect());

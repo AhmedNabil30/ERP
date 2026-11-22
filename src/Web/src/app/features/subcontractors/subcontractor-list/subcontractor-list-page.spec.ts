@@ -124,7 +124,7 @@ describe('SubcontractorListPage · renders and filters by status', () => {
     const row = fixture.nativeElement.querySelector('[data-testid="subcontractor-rows"] .row');
     const identity = row.querySelector('.row-identity');
     expect(identity).not.toBeNull();
-    expect(identity.firstElementChild.classList.contains('row-name')).toBe(true);
+    expect(identity.firstElementChild.firstElementChild.classList.contains('row-name')).toBe(true);
     expect(identity.querySelector('bdi.row-code').textContent?.trim()).toBe('SUB-0001');
 
     const firstRealChild = Array.from(row.children as HTMLElement[]).find(

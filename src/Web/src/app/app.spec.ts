@@ -44,7 +44,7 @@ class Overlays {
 
 let mounted: ComponentFixture<App>;
 
-function mount(phone: boolean, declare: boolean): HTMLElement {
+function mount(phone: boolean, declare: boolean, session: Session = SESSION): HTMLElement {
   vi.stubGlobal('matchMedia', (query: string) => ({
     matches: query.includes('820') ? phone : false,
     addEventListener: () => undefined,
@@ -53,7 +53,7 @@ function mount(phone: boolean, declare: boolean): HTMLElement {
   TestBed.configureTestingModule({
     providers: [provideRouter([]), provideHttpClient(), { provide: SessionResolver, useValue: { ensureResolved: async () => undefined } }],
   });
-  TestBed.inject(AuthService).set(SESSION);
+  TestBed.inject(AuthService).set(session);
   if (declare) {
     const d = TestBed.createComponent(Declarer);
     d.detectChanges();
@@ -153,5 +153,17 @@ describe('App shell primary-action slot (KAFF-936)', () => {
       expect(hidden(root)).toBe(false);
       expect(el).toBeTruthy();
     });
+  });
+});
+
+describe('App shell account block (KAFF-922)', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('AC-922-C / AC-125-D: during a forced password change the account block and sign-out show, the nav does not', () => {
+    const el = mount(false, false, { ...SESSION, mustChangePassword: true });
+    expect(el.querySelector('[data-testid="account-menu"]')).not.toBeNull();
+    expect(el.querySelector('[data-testid="account-name"]')?.textContent).toContain('Test');
+    expect(el.querySelector('[data-testid="sign-out"]')).not.toBeNull();
+    expect(el.querySelector('nav.nav')).toBeNull();
   });
 });

@@ -64,27 +64,6 @@
 
 /* ---- the table: tracks, pinned identity ---- */
 
-.frame {
-  container: babs / inline-size;
-}
-
-.frame kaff-table {
-  --kaff-columns: minmax(300px, 1.5fr) minmax(120px, 1fr) 150px 176px 64px;
-}
-
-/* Below 1060px the English name drops out (it is in the panel) so the markup stays on screen and the
-   identity column stays pinned. */
-@container babs (max-width: 1059px) {
-  .frame kaff-table {
-    --kaff-columns: minmax(280px, 1fr) 150px 176px 64px;
-  }
-
-  .frame ::ng-deep .cell-en,
-  .frame ::ng-deep .header .cell-en {
-    display: none;
-  }
-}
-
 .rows {
   margin: 0;
   padding: 0;

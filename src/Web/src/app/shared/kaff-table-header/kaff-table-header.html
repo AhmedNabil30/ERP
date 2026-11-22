@@ -4,6 +4,7 @@
   [attr.data-testid]="testId()"
 >
   @for (col of columnDefs(); track $index) {
+    @if (!(narrow() && col.dropNarrow)) {
     <span
       role="columnheader"
       [class]="col.cssClass ?? ''"
@@ -22,5 +23,6 @@
         <kaff-badge tone="quiet">{{ i18n.t(key) }}</kaff-badge>
       }
     </span>
+    }
   }
 </div>

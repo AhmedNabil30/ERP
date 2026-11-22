@@ -131,9 +131,11 @@ export class CatalogueListPage {
   protected readonly i18n = inject(I18nService);
 
   /** Tracks run in `rowColumns` order below; the English column drops out of the narrow variant in CSS. */
+  protected readonly wideColumns = 'minmax(280px, 1.3fr) minmax(120px, 1fr) 72px 176px 140px 64px';
+  protected readonly narrowColumns = 'minmax(260px, 1fr) 72px 176px 136px 64px';
   protected readonly headerColumns: readonly TableColumnDef[] = [
     { labelKey: 'catalogue.column.description', pinned: true },
-    { labelKey: 'catalogue.column.description_en', cssClass: 'cell-en' },
+    { labelKey: 'catalogue.column.description_en', dropNarrow: true },
     { labelKey: 'catalogue.column.unit' },
     {
       labelKey: 'catalogue.column.cost_price',

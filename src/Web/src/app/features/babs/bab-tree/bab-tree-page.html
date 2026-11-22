@@ -80,7 +80,10 @@
     } @else if (loading() && !hasAnyBab()) {
       <!-- Loading: the header stays and the body is skeleton rows at the real row height (README "The
            four list states"). No spinner, no overlay. -->
-      <kaff-table [columnDefs]="headerColumns()" [minInline]="800" testId="bab-tree-table-header">
+      <kaff-table [columnDefs]="headerColumns()" [minInline]="800"
+        [columns]="wideColumns"
+        [narrowBelow]="1060"
+        [narrowColumns]="narrowColumns" testId="bab-tree-table-header">
         <div
           class="skeleton"
           role="status"
@@ -96,7 +99,7 @@
                 }
                 <span class="sk" [style.inline-size.px]="170 - skeletonIndent[row] * 30"></span>
               </span>
-              <span class="cell-wide cell-en"><span class="sk sk-en"></span></span>
+              <span class="cell-wide cell-drop"><span class="sk sk-en"></span></span>
               <span class="cell-wide"><span class="sk sk-fig"></span></span>
               <span class="cell-primary"><span class="sk sk-fig"></span></span>
               <span class="cell-act"></span>
@@ -154,6 +157,9 @@
         [attr.aria-label]="i18n.t('bab.tree.title')"
         [columnDefs]="headerColumns()"
         [minInline]="800"
+        [columns]="wideColumns"
+        [narrowBelow]="1060"
+        [narrowColumns]="narrowColumns"
         testId="bab-tree-table-header"
         data-testid="bab-tree-table-shell"
         [attr.aria-busy]="loading()"
@@ -315,7 +321,7 @@
                         </button>
                       </span>
                     } @else {
-                      <span role="gridcell" class="cell-wide cell-en en"><bdi dir="ltr">{{ row.bab.nameEn }}</bdi></span>
+                      <span role="gridcell" class="cell-wide cell-drop en"><bdi dir="ltr">{{ row.bab.nameEn }}</bdi></span>
                       <span role="gridcell" class="cell-wide count cell-end">
                         @if (itemCountOf(row.bab); as items) {
                           <bdi class="figure" dir="ltr">{{ figure(items) }}</bdi>

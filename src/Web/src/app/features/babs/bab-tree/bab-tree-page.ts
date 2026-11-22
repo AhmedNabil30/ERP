@@ -127,11 +127,13 @@ export class BabTreePage {
   protected readonly i18n = inject(I18nService);
 
   /** Tracks run in `rowColumns` order (the stylesheet); the English name drops out below 1060px. */
+  protected readonly wideColumns = 'minmax(300px, 1.5fr) minmax(120px, 1fr) 150px 176px 64px';
+  protected readonly narrowColumns = 'minmax(280px, 1fr) 150px 176px 64px';
   protected readonly headerColumns = computed<readonly TableColumnDef[]>(() => [
     // In the tree every name sits after a 44px disclosure (or its spacer), so the label skips the same
     // width; a search result or the archived view is flat and has no disclosure.
     { labelKey: 'bab.column.name', pinned: true, lead: !this.isFlat() },
-    { labelKey: 'bab.column.name_en', cssClass: 'cell-en' },
+    { labelKey: 'bab.column.name_en', dropNarrow: true },
     { labelKey: 'bab.column.items', align: 'end' },
     // The figure is followed by the 44px edit pencil, so the label ends where the figure ends.
     { labelKey: 'bab.column.default_markup', align: 'end', trail: true },

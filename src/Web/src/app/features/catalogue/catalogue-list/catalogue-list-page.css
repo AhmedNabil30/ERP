@@ -80,30 +80,6 @@
 
 /* ---- the table: tracks, pinned identity, the internal column ---- */
 
-/* The container the track string reads its width from. Below 1060px the English description drops out
-   (it is in the panel), so cost and sell stay on screen and the identity column stays pinned. */
-.frame {
-  container: cat / inline-size;
-}
-
-.frame kaff-table {
-  --kaff-columns: minmax(260px, 1fr) 72px 176px 136px 64px;
-}
-
-@container cat (min-width: 1060px) {
-  .frame kaff-table {
-    --kaff-columns: minmax(280px, 1.3fr) minmax(120px, 1fr) 72px 176px 140px 64px;
-  }
-}
-
-@container cat (max-width: 1059px) {
-  /* !important: the kit header sets `display: flex` on its cells with a higher specificity (its own scope
-     attribute lands on the cell as well), and a hidden column must leave its track in header and body. */
-  .frame ::ng-deep .cell-en {
-    display: none !important;
-  }
-}
-
 .rows {
   margin: 0;
   padding: 0;

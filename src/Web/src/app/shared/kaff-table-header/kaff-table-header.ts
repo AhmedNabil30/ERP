@@ -18,6 +18,8 @@ export interface TableColumnDef {
    *  one control-width in from the track edge. The header label skips the same width and so shares the
    *  value's inline-start edge. */
   readonly lead?: boolean;
+  /** Not rendered while the table is narrow (`kaff-table` `narrowBelow`). Body cells use `.cell-drop`. */
+  readonly dropNarrow?: boolean;
   /** The body cell of this column ends with a 44px control (an edit pencil, say). The header label skips
    *  the same width and so shares the value's inline-end edge. */
   readonly trail?: boolean;
@@ -49,6 +51,7 @@ export interface TableColumnDef {
 export class KaffTableHeader {
   readonly columnDefs = input.required<readonly TableColumnDef[]>();
   readonly testId = input<string | null>(null);
+  readonly narrow = input(false);
 
   protected readonly i18n = inject(I18nService);
 }

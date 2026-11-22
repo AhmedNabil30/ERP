@@ -100,7 +100,10 @@
     } @else if ((loading() || !totalsReady()) && items().length === 0) {
       <!-- Loading: the header stays, and the body is skeleton rows at the real row height. No spinner, no
            overlay (README "The four list states"). -->
-      <kaff-table [columnDefs]="headerColumns" [minInline]="800" testId="catalogue-table-header">
+      <kaff-table [columnDefs]="headerColumns" [minInline]="800"
+        [columns]="wideColumns"
+        [narrowBelow]="1060"
+        [narrowColumns]="narrowColumns" testId="catalogue-table-header">
         <div
           class="skeleton"
           role="status"
@@ -111,7 +114,7 @@
           @for (row of skeletonRows; track row) {
             <kaff-table-row [stacked]="true">
               <span class="cell-pinned cell-title"><span class="sk sk-name"></span></span>
-              <span class="cell-wide cell-en"><span class="sk sk-en"></span></span>
+              <span class="cell-wide cell-drop"><span class="sk sk-en"></span></span>
               <span class="cell-wide"><span class="sk sk-unit"></span></span>
               <span class="cell-secondary cell-internal"><span class="sk sk-fig"></span></span>
               <span class="cell-primary"><span class="sk sk-fig"></span></span>
@@ -124,6 +127,9 @@
       <kaff-table
         [columnDefs]="headerColumns"
         [minInline]="800"
+        [columns]="wideColumns"
+        [narrowBelow]="1060"
+        [narrowColumns]="narrowColumns"
         testId="catalogue-table-header"
         data-testid="catalogue-groups"
         [attr.aria-busy]="loading()"
@@ -222,12 +228,12 @@
                             <bdi class="figure" dir="ltr">{{ i18n.formatAmount(item.baseSellRate) }}</bdi>
                           </span>
                         } @else {
-                          <span class="cell-wide cell-en en" dir="ltr">{{ item.descriptionEn }}</span>
+                          <span class="cell-wide cell-drop en" dir="ltr">{{ item.descriptionEn }}</span>
                           <span class="cell-wide unit"
                             >{{ unitParts(item.unit).base
                             }}@if (unitParts(item.unit).sup; as sup) {<sup>{{ sup }}</sup>}</span
                           >
-                          <span class="cell-internal money cell-end">
+                          <span class="cell-internal money">
                             <bdi class="figure" dir="ltr">{{ i18n.formatAmount(item.costPrice) }}</bdi>
                           </span>
                           <span class="money cell-end">

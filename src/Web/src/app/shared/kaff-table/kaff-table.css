@@ -36,3 +36,9 @@
     max-block-size: none;
   }
 }
+
+/* A frame narrower than `narrowBelow` drops its secondary columns: the header cell is not rendered, and the
+   body cell the caller marked `.cell-drop` is hidden here, so no feature stylesheet reaches into the grid. */
+:host(.is-narrow) ::ng-deep .cell-drop {
+  display: none;
+}
