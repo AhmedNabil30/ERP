@@ -597,9 +597,10 @@ body.embed .app{block-size:100dvh}
   .opp .tg{display:contents}
   .opp .tot{order:5}
   .opp .u{display:none}
+  .opp .lb2{display:none}
   .qh{display:grid;padding:0 16px;block-size:44px;align-items:center;background:var(--head);font:600 .8125rem/1.3 var(--body);color:var(--dim)}
-  .ql,.qh{grid-template-columns:minmax(0,2.4fr) 80px 64px 110px 100px 110px 130px}
-  .qbox.mk .ql,.qbox.mk .qh{grid-template-columns:minmax(0,2.8fr) 90px 70px 130px 150px}
+  .ql,.qh{grid-template-columns:minmax(0,2.4fr) 150px 110px 120px 110px 130px}
+  .qbox.mk .ql,.qbox.mk .qh{grid-template-columns:minmax(0,2.8fr) 150px 140px 150px}
   .ql .d{grid-column:auto}
   .ql>span[data-l]::before{display:none}
   .qh .n,.ql .n{text-align:end}
@@ -608,6 +609,22 @@ body.embed .app{block-size:100dvh}
   .mg>div:first-child{border-inline-start:0}
   .paper{padding:40px}
 }
+
+/* ---------- consultant round 1 (2026-11-22) ---------- */
+:root{--paper:#ffffff;--paper-ink:#09221e;--paper-head:#ebe0d8;--paper-dim:#4b5f59;--paper-line:rgba(9,34,30,.16)}
+.paper{--bg:var(--paper);--surface:var(--paper);--head:var(--paper-head);--ink:var(--paper-ink);--dim:var(--paper-dim);--line:var(--paper-line);--fieldline:var(--paper-ink);background:var(--paper);color:var(--paper-ink)}
+.pane.nr{max-inline-size:640px}
+.paper .ql>span[data-l]{white-space:nowrap}
+.qtl{color:var(--ink)}
+.ql .d .rm{margin-inline-start:auto}
+.qg .gt{display:flex;gap:8px;align-items:baseline}
+.qg .gt small{margin:0}
+.pick .sub{display:block;color:var(--dim);font-size:.875rem}
+.opp .sts:empty{display:none}
+@media (min-width:821px){.opp .sts:empty{display:block}}
+.tools2 .seg button{padding:0 10px;font-size:.875rem}
+@media (min-width:821px){.tools2 .seg button{padding:0 18px;font-size:.9375rem}}
+.ban .acts2{margin-inline-start:auto}
 </style>
 </head>
 <body>
@@ -624,12 +641,12 @@ body.embed .app{block-size:100dvh}
   <aside class="side" aria-label="التنقل الرئيسي">
     <div class="side-top"><img src="../brand/kaaf-wordmark.png" width="519" height="155" alt="KAAF"><button type="button" class="coll" aria-label="تصغير الشريط الجانبي"><svg class="i chev" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button></div>
     <nav class="nav" id="nav" aria-label="الشاشات"></nav>
-    <div class="side-foot"><div class="who"><div class="av">م</div><div><b>منى سامي</b><span>المالية</span></div></div><div class="ctl2"><button type="button" lang="en" dir="ltr"><span class="t">English</span><span class="i-short">EN</span></button><button type="button" class="thm" aria-label="الوضع"><svg class="i" viewBox="0 0 24 24"><path d="M21 13.5A8.5 8.5 0 1110.5 3a7 7 0 0010.5 10.5z"/></svg><span class="t">الوضع</span></button></div></div>
+    <div class="side-foot"><div class="who"><div class="av">م</div><div><b>هالة محمود</b><span>التسويق</span></div></div><div class="ctl2"><button type="button" lang="en" dir="ltr"><span class="t">English</span><span class="i-short">EN</span></button><button type="button" class="thm" aria-label="الوضع"><svg class="i" viewBox="0 0 24 24"><path d="M21 13.5A8.5 8.5 0 1110.5 3a7 7 0 0010.5 10.5z"/></svg><span class="t">الوضع</span></button></div></div>
   </aside>
   <header class="mh m-only"><img src="../brand/kaaf-wordmark.png" width="519" height="155" alt="KAAF"><button type="button" class="lang" lang="en" dir="ltr">English</button></header>
   <main class="main" id="main"></main>
   <div class="scrim" id="scrim"></div>
-  <div class="nsheet m-only" id="nsheet" role="dialog" aria-label="الشاشات"><div class="grab"></div><div class="sh-top"><div class="who"><div class="av">م</div><div><b>منى سامي</b><span>المالية</span></div></div><button type="button" class="thm" aria-label="الوضع"><svg class="i" viewBox="0 0 24 24"><path d="M21 13.5A8.5 8.5 0 1110.5 3a7 7 0 0010.5 10.5z"/></svg></button><button type="button" id="closeN" aria-label="إغلاق"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><nav class="sh-nav" id="nav2"></nav></div>
+  <div class="nsheet m-only" id="nsheet" role="dialog" aria-label="الشاشات"><div class="grab"></div><div class="sh-top"><div class="who"><div class="av">م</div><div><b>هالة محمود</b><span>التسويق</span></div></div><button type="button" class="thm" aria-label="الوضع"><svg class="i" viewBox="0 0 24 24"><path d="M21 13.5A8.5 8.5 0 1110.5 3a7 7 0 0010.5 10.5z"/></svg></button><button type="button" id="closeN" aria-label="إغلاق"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><nav class="sh-nav" id="nav2"></nav></div>
 </div>
 <div class="sx-scrim" id="sxs"></div>
 <div class="sx" id="sx" role="dialog" aria-modal="true" aria-label="نافذة"></div>
@@ -705,7 +722,7 @@ const qtyB=()=>sh('الكميات')+`<div class="qt"><div class="qh"><span>ال�
 /* collection position: due, received, withheld, in cheques, remaining. due = net payable less approved credit notes */
 const pos=(due,rc,wh,ch,rem,dueNote)=>sh('التحصيل (ج.م)')+`<dl class="pos"><div><dt>المستحق</dt><dd>${fg(due)}${dueNote?`<small>${dueNote}</small>`:''}</dd></div><div><dt>المستلم</dt><dd>${fg(rc)}</dd></div><div><dt>المخصوم من المنبع</dt><dd>${fg(wh)}</dd></div><div><dt>في شيكات</dt><dd>${fg(ch)}</dd></div><div class="rem"><dt>المتبقي</dt><dd>${fg(rem)}</dd></div></dl>`;
 const MAT=sh('التشوينات (ج.م)')+fl([['قيمة التشوينات بالموقع',fg(0)],['قيمة التشوينات المركّبة',fg(40000)]]);
-const H3=[['التجهيز','خالد منصور، مهندس الموقع','02/10/2026 16:20'],['تقرير الجودة','هبة فؤاد، المشرف','04/10/2026 09:10'],['المكتب الفني: اعتماد','كريم حسن','05/10/2026 11:00'],['الحسابات: تطبيق الخصومات','منى سامي','06/10/2026 10:30'],['المالك: اعتماد','أحمد نبيل','07/10/2026 09:15'],['الإصدار','أحمد نبيل','08/10/2026 09:20']];
+const H3=[['التجهيز','خالد منصور، مهندس الموقع','02/10/2026 16:20'],['تقرير الجودة','هبة فؤاد، المشرف','04/10/2026 09:10'],['المكتب الفني: اعتماد','كريم حسن','05/10/2026 11:00'],['الحسابات: تطبيق الخصومات','هالة محمود','06/10/2026 10:30'],['المالك: اعتماد','أحمد نبيل','07/10/2026 09:15'],['الإصدار','أحمد نبيل','08/10/2026 09:20']];
 const hist=(rows,extra=[])=>sh('السجل')+`<ul class="lst">${[...rows,...extra].map(r=>`<li><b>${r[0]}</b><span class="r">${dt(r[2])}</span><small>${r[1]}${r[3]?`<br>${r[3]}`:''}</small></li>`).join('')}</ul>`;
 const linkRow=(t,to,badge)=>`<a class="back fwd" href="#${to.split(':')[0]}" ${go(...to.split(':'))}>${t}${badge?`<span class="badge q">${badge}</span>`:''}<svg class="i s" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC.left}"/></svg></a>`;
 const DISP_P='سعر البياض الداخلي أعلى من المتفق عليه.',DISP_Q='كميات البياض الداخلي أكثر من المنفذ في الدور الأول.';
@@ -715,35 +732,41 @@ const STAGES=['المقايسة','التنفيذ','التسليم','الضمان
 const stageLine=()=>`<ol class="stl" aria-label="مرحلة المشروع">${STAGES.map((s,k)=>`<li class="${k<1?'done':k===1?'cur':''}" ${k===1?'aria-current="step"':''}><span class="mk">${k<1?mi('check'):''}</span>${s}</li>`).join('')}</ol>`;
 /* ---------------- sales: sample data (one story, today 22/11/2026) ---------------- */
 Object.assign(IC,{sales:'M3 17l6-6 4 4 8-8M15 7h6v6',search:'M11 18a7 7 0 100-14 7 7 0 000 14zM21 21l-4.5-4.5',clock:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 2',camera:'M4 8h3l2-3h6l2 3h3v11H4zM12 17a3.5 3.5 0 100-7 3.5 3.5 0 000 7z',print:'M7 9V3h10v6M7 17H4v-7h16v7h-3M7 14h10v7H7z'});
-const STG=['عميل محتمل','اجتماع','معاينة','عرض سعر','تفاوض','عقد'];
 PS.post=['s-post','M9 6v12M15 6v12'];
-const OS={act:['نشطة','run'],stl:['متوقفة','stuck'],hold:['معلّقة','post'],lost:['مفقودة','x'],won:['تم الفوز','done']};
+const STG=['عميل محتمل','اجتماع','معاينة','عرض سعر','تفاوض','عقد'];
+/* status words: جاري العمل and تم تأجيلها are Kaff's own; مفقودة and تم الفوز are new (Karim confirms) */
+const OS={act:['جاري العمل','run'],hold:['تم تأجيلها','post'],lost:['مفقودة','x'],won:['تم الفوز','done']};
 const os=k=>pl(...OS[k]);
 const dys=n=>n===1?'يوم':n===2?'يومان':n<=10?n+' أيام':n+' يومًا';
-const quiet=n=>n===0?'نشاط اليوم':'هادئة منذ '+dys(n);
-const clk=t=>`<span class="qt">${i('clock','s')}${t}</span>`;
+const ago=n=>n===0?'اليوم':'منذ '+dys(n);
+const qlabel=n=>'آخر نشاط '+ago(n);
+const clk=n=>`<span class="qt">${i('clock','s')}<span class="lb2">آخر نشاط </span>${ago(n)}</span>`;
 const fu=`<span class="badge fu">${mi('clock')}تحتاج متابعة</span>`;
 const fgu=v=>`<bdi class="fig" dir="ltr">${f2(v).replace(/\.00$/,'')}<span class="u">ج.م</span></bdi>`;
-const OPP=[['أحمد سمير','فيلا التجمع الخامس',4,'act',1,1250000],['منى عادل','تشطيب شقة المعادي',3,'stl',6,480000],['شركة الأفق للتطوير','مبنى إداري، مدينة نصر',2,'act',3,0],['هشام فتحي','تجديد محل تجاري',1,'hold',12,0],['ياسر علي','دور علوي، الشيخ زايد',0,'act',0,0]];
-const oppRow=o=>`<a class="opp" href="#s3" ${go('s3')}><span class="nm"><b>${o[0]}</b><small>${o[1]}</small></span><span class="tot">${o[5]?fgu(o[5]):''}</span><span class="tg"><span class="badge t">${STG[o[2]]}</span>${os(o[3])}<span class="qw">${clk(quiet(o[4]))}${o[4]>=2&&o[3]!=='hold'?fu:''}</span></span></a>`;
-const oppList=rows=>`<div class="oppl"><div class="opph"><span>العميل</span><span>المرحلة</span><span>الحالة</span><span>الهدوء</span><span class="tot">عرض السعر (ج.م)</span></div>${rows.map(oppRow).join('')}</div>`;
-const tools=(fuOn,q='')=>`<div class="tools2"><div class="search"><label class="vh" for="sq">بحث</label>${mi('search')}<input id="sq" type="search" placeholder="اسم العميل أو رقم الهاتف" value="${q}"></div><div class="row2">${selc('fs',['كل المراحل',...STG],'كل المراحل')}${selc('fst',['كل الحالات','نشطة','متوقفة','معلّقة'],'كل الحالات')}</div><div class="seg" role="group" aria-label="التصفية"><button type="button" aria-pressed="${fuOn}">تحتاج متابعة</button></div></div>`;
+const TOTAL=415098;
+const OPP=[['أحمد سمير','فيلا التجمع الخامس',4,'act',1,TOTAL],['منى عادل','تشطيب شقة المعادي',3,'act',6,480000],['شركة الأفق للتطوير','مبنى إداري، مدينة نصر',2,'act',3,0],['هشام فتحي','تجديد محل تجاري',1,'hold',12,0],['ياسر علي','دور علوي، الشيخ زايد',0,'act',0,0],['سلمى فاروق','شقة الرحاب',5,'act',0,360000]];
+const needFu=o=>o[4]>=2&&o[3]==='act'&&o[2]<5;
+const oppRow=o=>`<a class="opp" href="#s3" ${go('s3')}><span class="nm"><b>${o[0]}</b><small>${o[1]}</small></span><span class="tot">${o[5]?fgu(o[5]):''}</span><span class="tg"><span class="badge t">${STG[o[2]]}</span><span class="sts">${o[3]==='act'?'':os(o[3])}</span><span class="qw">${clk(o[4])}${needFu(o)?fu:''}</span></span></a>`;
+const oppList=rows=>`<div class="oppl"><div class="opph"><span>العميل</span><span>المرحلة</span><span>الحالة</span><span>آخر نشاط</span><span class="tot">عرض السعر (ج.م)</span></div>${rows.map(oppRow).join('')}</div>`;
+const tools=(on,q='')=>`<div class="tools2"><div class="search"><label class="vh" for="sq">بحث</label>${mi('search')}<input id="sq" type="search" placeholder="اسم العميل أو رقم الهاتف" value="${q}"></div><div class="row2">${selc('fs',['كل المراحل',...STG],'كل المراحل')}${selc('fst',['كل الحالات','جاري العمل','تم تأجيلها'],'كل الحالات')}</div><div class="seg" role="group" aria-label="التصفية"><button type="button" aria-pressed="${on==='fu'}">تحتاج متابعة</button><button type="button" aria-pressed="${on==='aw'}">بانتظار فتح المشروع</button></div></div>`;
 const newBtn=btn(i('plus')+'فرصة جديدة','',go('s2'));
 const dtl=s=>`<bdi class="fx" dir="ltr">${s}</bdi>`;
 const RF=st('ليس لديك صلاحية لهذه الشاشة','','lock','refused');
 const LD=`<div class="pane wide" aria-busy="true" role="status"><span class="vh">جارٍ التحميل</span>${Array.from({length:5},()=>'<span class="sk b" style="block-size:76px"></span>').join('')}</div>`;
 const busy=t=>btn('<span class="spin" style="display:inline-block"></span>'+t,'','aria-busy="true"');
+const paneN=s=>`<div class="pane nr">${s}</div>`;
 
 const SCR={};
 /* S1 pipeline list */
-SCR.s1={t:'الفرص',who:'التسويق، المالك',v:{normal:'عادي',followup:'تحتاج متابعة',empty:'فارغ',loading:'تحميل',failed:'تعذّر التحميل',refused:'ممنوع'},r(s){
+SCR.s1={t:'الفرص',who:'التسويق، المالك، المكتب الفني (بانتظار فتح المشروع)',v:{normal:'عادي',followup:'تحتاج متابعة',office:'المكتب الفني',empty:'فارغ',loading:'تحميل',failed:'تعذّر التحميل',refused:'ممنوع'},r(s){
   const o={title:'الفرص',pa:newBtn};
   if(s==='refused')return {...o,pa:'',body:pane(RF,1)};
   if(s==='loading')return {...o,body:LD};
   if(s==='failed')return {...o,body:pane(ban('<b>تعذّر تحميل الفرص.</b>','',retry),1)};
   if(s==='empty')return {...o,pa:'',body:pane(st('لا توجد فرص بعد','','sales','solid',btn(i('plus')+'فرصة جديدة','',go('s2'))),1)};
-  const rows=s==='followup'?OPP.filter(x=>x[4]>=2&&x[3]!=='hold'):OPP;
-  return {...o,body:pane(tools(s==='followup')+oppList(rows),1)};
+  if(s==='office')return {...o,pa:'',body:pane(tools('aw')+oppList(OPP.filter(x=>x[2]===5&&x[3]==='act')),1)};
+  const rows=s==='followup'?OPP.filter(needFu):OPP;
+  return {...o,body:pane(tools(s==='followup'?'fu':'')+oppList(rows),1)};
 }};
 /* S2 new opportunity */
 const cli=(n,p)=>`<li><button type="button"><b>${n}</b>${dtl(p)}</button></li>`;
@@ -759,27 +782,29 @@ SCR.s2={t:'فرصة جديدة',who:'التسويق، المالك',v:{normal:'�
   if(s==='normal')b=srch('')+ttl;
   else if(s==='results')b=srch('أحمد')+`<ul class="pick">${cli('أحمد سمير','0100 123 4567')}${cli('أحمد عبد الفتاح','0122 555 8890')}</ul>`+ttl;
   else if(s==='nomatch')b=srch('محمد سالم')+`<ul class="pick"><li><span class="nm0">لا يوجد عميل مطابق</span></li><li><button type="button"><b>${i('plus','s')} إضافة «محمد سالم» كعميل جديد</b></button></li></ul>`+ttl;
-  else if(s==='newclient'||s==='dup')b=fld({id:'nn',label:'الاسم',req:1,ctl:textc('nn','محمد سالم')})+fld({id:'np',label:'رقم الهاتف',req:1,ctl:textc('np',s==='dup'?'0100 123 4567':'',1)})+(s==='dup'?ban('هذا الرقم مسجّل للعميل <b>أحمد سمير</b>.','note',`<button type="button" class="btn sec2 sm act">متابعة</button>`):'')+ttl;
+  else if(s==='newclient'||s==='dup')b=fld({id:'nn',label:'الاسم',req:1,ctl:textc('nn','محمد سالم')})+fld({id:'np',label:'رقم الهاتف',req:1,ctl:textc('np',s==='dup'?'0100 123 4567':'',1)})+(s==='dup'?ban('هذا الرقم مسجّل للعميل <b>أحمد سمير</b>.','note',`<span class="acts2"><button type="button" class="btn sec2 sm">استخدام أحمد سمير</button><button type="button" class="btn sec2 sm">إنشاء عميل جديد بنفس الرقم</button></span>`):'')+ttl;
   else b=(s==='failed'?ban('<b>تعذّر إنشاء الفرصة.</b>','',retry):'')+picked+ttl;
   return {...o,pa:s==='saving'?busy('جارٍ الإنشاء…'):create,body:pane(b)};
 }};
 /* S3 opportunity page */
+const REQ=['نقل إلى «عقد»: العميل وافق','هالة محمود','21 نوفمبر'];
 const ACT=[['نقل إلى اجتماع','هالة محمود','12 نوفمبر'],['فتح الفرصة','هالة محمود','10 نوفمبر']];
 const stlN=k=>`<ol class="stl" aria-label="المرحلة">${STG.map((s,j)=>`<li class="${j<k?'done':j===k?'cur':''}" ${j===k?'aria-current="step"':''}><span class="mk">${k>j?mi('check'):''}</span>${s}</li>`).join('')}</ol>`;
 const kvr=(l,v,a='')=>`<div><dt>${l}</dt><dd>${v}</dd>${a}</div>`;
 const lnkb=(t,a='')=>`<button type="button" class="btn quiet sm" ${a}>${t}</button>`;
 function s3body(c){
   const feeV=c.fee==='paid'?`${fgu(500)} · 3 نوفمبر`:c.fee==='pend'?`${fgu(500)} · 3 نوفمبر <span class="badge q">بانتظار تأكيد المالية</span>`:'غير مدفوعة';
-  const rows=kvr('رسوم المعاينة',feeV,!c.noact&&c.fee==='none'?lnkb('تسجيل',go('s4')):'')
-   +kvr('عرض السعر',c.quo?fgu(415098):'لا يوجد',c.noact?'':lnkb(c.quo?'فتح':'بدء العرض',go('s6')))
-   +kvr('مصاريف ما قبل العقد',c.exp?fgu(2150):'لا يوجد',c.noact?'':lnkb('عرض',go('s5')));
-  const top=c.wait?`<div class="wait" role="status"><b>${c.wait}</b></div>`:c.stalled?ban(quiet(c.days),'note',`<button type="button" class="btn sec2 sm act">تسجيل نشاط</button>`):`<span class="qtl">${i('clock','s')}${quiet(c.days)}</span>`;
+  const rows=(c.proj?kvr('المشروع','<a class="lnk" href="#">فيلا التجمع الخامس</a>'):'')
+   +kvr('رسوم المعاينة',feeV,!c.noact&&c.fee==='none'?lnkb('تسجيل',go('s4')):'')
+   +kvr('عرض السعر',c.quo?fgu(TOTAL):'لا يوجد',c.noact?'':lnkb(c.quo?'فتح':'بدء العرض',go('s6')))
+   +kvr('مصاريف ما قبل العقد',c.exp?fgu(2150):'لا يوجد',c.noact?'':lnkb('فتح',go('s5')));
+  const top=c.wait?`<div class="wait" role="status"><b>${c.wait}</b></div>`:c.stalled?ban(qlabel(c.days),'note',`<button type="button" class="btn sec2 sm act">تسجيل نشاط</button>`):`<span class="qtl">${i('clock','s')}${qlabel(c.days)}</span>`;
   const sec=c.more?`<div class="acts2">${c.more}</div>`:'';
-  return pane(stlN(c.k)+top+`<dl class="kv">${rows}</dl>`+sec+sh('النشاط')+`<ul class="lst">${(c.act||ACT).map(a=>`<li><b>${a[0]}</b><span class="r">${a[2]}</span><small>${a[1]}</small></li>`).join('')}</ul>`);
+  return paneN(stlN(c.k)+top+`<dl class="kv">${rows}</dl>`+sec+sh('النشاط')+`<ul class="lst">${(c.act||ACT).map(a=>`<li><b>${a[0]}</b><span class="r">${a[2]}</span><small>${a[1]}</small></li>`).join('')}</ul>`);
 }
 const lostB=btn('إغلاق كخسارة','quiet sm',go('s3','closing')),holdB=btn('تعليق','sec2 sm');
 const M={k:1,days:2,fee:'none',quo:0,exp:1,more:holdB+lostB};
-SCR.s3={t:'صفحة الفرصة',who:'التسويق، المالك، المكتب الفني (قراءة وفتح مشروع)',v:{normal:'عادي',pending:'رسوم بانتظار التأكيد',stalled:'متوقفة',nego:'تفاوض (التسويق)',requested:'بعد طلب الفتح',office:'تفاوض (المكتب الفني)',hold:'معلّقة',lost:'مفقودة',won:'تم الفوز',closing:'إغلاق كخسارة',loading:'تحميل',failed:'تعذّر التحميل',refused:'ممنوع'},r(s){
+SCR.s3={t:'صفحة الفرصة',who:'التسويق، المالك، المكتب الفني (قراءة وفتح مشروع)',v:{normal:'عادي',pending:'رسوم بانتظار التأكيد',stalled:'بلا نشاط',nego:'تفاوض (التسويق)',agreed:'بعد موافقة العميل (التسويق)',office:'عقد (المكتب الفني)',hold:'تم تأجيلها',lost:'مفقودة',won:'تم الفوز',closing:'إغلاق كخسارة',loading:'تحميل',failed:'تعذّر التحميل',refused:'ممنوع'},r(s){
   const o={back:'الفرص',to:'s1',title:'فيلا التجمع الخامس',meta:'<a href="#">أحمد سمير</a>',pill:os('act')};
   const nxt=n=>btn('نقل إلى «'+n+'»');
   const bare={...o,pill:'',meta:'',title:'الفرصة',pa:''};
@@ -788,13 +813,13 @@ SCR.s3={t:'صفحة الفرصة',who:'التسويق، المالك، المك�
   if(s==='failed')return {...bare,body:pane(ban('<b>تعذّر تحميل الفرصة.</b>','',retry))};
   if(s==='normal')return {...o,pa:nxt('معاينة'),body:s3body(M)};
   if(s==='pending')return {...o,pa:nxt('عرض سعر'),body:s3body({...M,k:2,days:0,fee:'pend',act:[['تسجيل رسوم المعاينة','هالة محمود','3 نوفمبر'],...ACT]})};
-  if(s==='stalled')return {...o,pill:os('stl'),pa:nxt('عرض سعر'),body:s3body({...M,k:2,days:6,stalled:1,fee:'paid',quo:1})};
-  if(s==='nego')return {...o,pa:btn('طلب فتح المشروع'),body:s3body({...M,k:4,days:1,fee:'paid',quo:1,more:lostB})};
-  if(s==='requested')return {...o,pa:'',body:s3body({...M,k:4,days:0,fee:'paid',quo:1,wait:'بانتظار المكتب الفني: فتح المشروع',more:lostB})};
-  if(s==='office')return {...o,pa:btn('فتح المشروع','',go('s7')),body:s3body({...M,k:4,days:1,fee:'paid',quo:1,more:lostB})};
-  if(s==='hold')return {...o,pill:os('hold'),pa:'',body:s3body({...M,k:3,days:12,fee:'paid',quo:1,more:lostB})};
+  if(s==='stalled')return {...o,pa:nxt('عرض سعر'),body:s3body({...M,k:2,days:6,stalled:1,fee:'paid',quo:1})};
+  if(s==='nego')return {...o,pa:btn('العميل وافق'),body:s3body({...M,k:4,days:1,fee:'paid',quo:1,more:lostB})};
+  if(s==='agreed')return {...o,pa:'',body:s3body({...M,k:5,days:0,fee:'paid',quo:1,wait:'بانتظار المكتب الفني: فتح المشروع',more:btn('إرجاع إلى «تفاوض»','sec2 sm')+lostB,act:[REQ,...ACT]})};
+  if(s==='office')return {...o,pa:btn('فتح المشروع','',go('s7')),body:s3body({...M,k:5,days:0,fee:'paid',quo:1,more:'',act:[REQ,...ACT]})};
+  if(s==='hold')return {...o,pill:os('hold'),pa:btn('استئناف'),body:s3body({...M,k:3,days:12,fee:'paid',quo:1,more:lostB})};
   if(s==='lost')return {...o,pill:os('lost'),meta:'<a href="#">أحمد سمير</a><span>السبب: السعر</span>',pa:btn('إعادة فتح'),body:s3body({...M,k:3,days:9,fee:'paid',quo:1,more:''})};
-  if(s==='won')return {...o,pill:os('won'),pa:'',body:s3body({...M,k:5,days:0,fee:'paid',quo:1,more:'',act:[['فتح المشروع','كريم حسن','20 نوفمبر'],...ACT]})};
+  if(s==='won')return {...o,pill:os('won'),pa:'',body:s3body({...M,k:6,days:0,fee:'paid',quo:1,more:'',proj:1,noact:1,act:[['فتح المشروع','كريم حسن','22 نوفمبر'],REQ,...ACT]})};
   return {...o,body:sheet('إغلاق كخسارة',fld({id:'lr',lb:1,label:'السبب',req:1,ctl:radios('lr',[['p','السعر'],['c','منافس'],['d','تأخر العميل'],['o','أخرى']],'p','r1')})+fld({id:'ln',label:'ملاحظة',ctl:areac('ln')}),btn('إغلاق كخسارة')+btn('إلغاء','sec2'))};
 }};
 /* S4 record visit fee */
@@ -820,28 +845,35 @@ const up=(c,m)=>Math.round(c*(1+m/100)*100)/100;
 let TC=0,TS=0;QL.forEach(g=>g[2].forEach(l=>{TC+=l[2]*l[3];TS+=l[2]*up(l[3],g[1])}));
 const PCT=((TS-TC)/TS*100).toFixed(1);
 let mk=0;
-const ln=(g,l,cost)=>`<div class="ql"><span class="d">${l[0]}${l[4]?'<span class="badge q">بانتظار مراجعة المكتب الفني</span>':''}</span><span data-l="الكمية">${qn(l[2])}</span><span data-l="الوحدة">${l[1]}</span>${cost?`<span data-l="التكلفة" class="n">${fg(l[3])}</span><span data-l="الهامش">${numc('m'+(mk++),g[1],'%')}</span>`:''}<span data-l="سعر الوحدة" class="n">${fg(up(l[3],g[1]))}</span><span data-l="الإجمالي" class="n tt">${fg(l[2]*up(l[3],g[1]))}</span></div>`;
-const qbox=(cost,print)=>`<div class="qbox ${cost?'':'mk'}"><div class="qh"><span>البند</span><span>الكمية</span><span>الوحدة</span>${cost?'<span class="n">التكلفة</span><span>الهامش</span>':''}<span class="n">سعر الوحدة</span><span class="n">الإجمالي (ج.م)</span></div>${QL.map(g=>`<div class="qg"><span>${g[0]}${cost?`<small>الهامش الافتراضي ${g[1]}%</small>`:''}</span>${fg(g[2].reduce((a,l)=>a+l[2]*up(l[3],g[1]),0))}</div>`+g[2].map(l=>ln(g,l,cost).replace(print?/<span class="badge q">.*?<\/span>/:/$^/,'')).join('')).join('')}</div>`;
-const addbar=open=>`<div class="tools2" style="grid-template-columns:minmax(0,1fr)"><div class="search"><label class="vh" for="aq">بحث</label>${mi('search')}<input id="aq" type="search" placeholder="ابحث بالكود أو الوصف" value="${open?'خرسانة':''}"></div></div>`+(open?`<ul class="pick"><li><button type="button"><b>خرسانة مسلحة للأسقف</b>${dtl('KF-1101')}</button></li><li><button type="button"><b>خرسانة عادية للأساسات</b>${dtl('KF-1104')}</button></li><li><button type="button"><b>${i('plus','s')} بند مخصص</b></button></li></ul>`:`<div class="acts2"><button type="button" class="btn sec2 sm">${i('plus','s')}بند مخصص</button></div>`);
+const lab=(h,l)=>h.replace('<input ',`<input aria-label="${l}" `);
+const ln=(g,l,cost,print)=>{
+  const pr=up(l[3],g[1]),id='q'+(mk++);
+  if(print)return `<div class="ql"><span class="d">${l[0]}</span><span data-l="الكمية">${qn(l[2])} ${l[1]}</span><span data-l="سعر الوحدة" class="n">${fg(pr)}</span><span data-l="الإجمالي" class="n tt">${fg(l[2]*pr)}</span></div>`;
+  return `<div class="ql"><span class="d">${l[0]}${l[4]?'<span class="badge q">بانتظار مراجعة المكتب الفني</span>':''}<button type="button" class="ib rm" aria-label="حذف البند">${i('trash','s')}</button></span><span data-l="الكمية">${lab(numc(id,l[2],l[1]),'الكمية')}</span>${cost?`<span data-l="التكلفة" class="n">${fg(l[3])}</span><span data-l="نسبة الزيادة">${lab(numc(id+'m',g[1],'%'),'نسبة الزيادة')}</span>`:''}<span data-l="سعر الوحدة" class="n">${fg(pr)}</span><span data-l="الإجمالي" class="n tt">${fg(l[2]*pr)}</span></div>`;
+};
+const qbox=(cost,print)=>`<div class="qbox ${cost?'':'mk'}"><div class="qh"><span>البند</span><span>الكمية</span>${cost?'<span class="n">التكلفة</span><span>نسبة الزيادة</span>':''}<span class="n">سعر الوحدة</span><span class="n">الإجمالي (ج.م)</span></div>${QL.map(g=>`<div class="qg"><span>${g[0]}${cost&&!print?`<small>الزيادة الافتراضية ${g[1]}%</small>`:''}</span><span class="gt"><small>إجمالي الباب</small>${fg(g[2].reduce((a,l)=>a+l[2]*up(l[3],g[1]),0))}</span></div>`+g[2].map(l=>ln(g,l,cost,print)).join('')).join('')}</div>`;
+const addbar=open=>`<div class="tools2" style="grid-template-columns:minmax(0,1fr)"><div class="search"><label class="vh" for="aq">بحث</label>${mi('search')}<input id="aq" type="search" placeholder="ابحث بالوصف أو الكود" value="${open?'خرسانة':''}"></div></div>`+(open?`<ul class="pick"><li><button type="button"><span><b>خرسانة مسلحة للأسقف</b><small class="sub">م³ · ${f2(3220)} ج.م</small></span></button></li><li><button type="button"><span><b>خرسانة عادية للأساسات</b><small class="sub">م³ · ${f2(2415)} ج.م</small></span></button></li><li><button type="button"><b>${i('plus','s')} بند مخصص</b></button></li></ul>`:`<div class="acts2"><button type="button" class="btn sec2 sm">${i('plus','s')}بند مخصص</button></div>`);
 const COND='الدفع على ثلاث دفعات. مدة التنفيذ 90 يومًا من الاستلام.';
 const mg=`<dl class="mg"><div><dt>إجمالي التكلفة</dt><dd>${fg(TC)}<span class="u"> ج.م</span></dd></div><div><dt>إجمالي البيع</dt><dd>${fg(TS)}<span class="u"> ج.م</span></dd></div><div><dt>نسبة الربح</dt><dd>${dtl(PCT+'%')}</dd></div></dl>`;
 const tot=`<dl class="mg" style="grid-template-columns:minmax(0,1fr)"><div><dt>إجمالي عرض السعر</dt><dd>${fg(TS)}<span class="u"> ج.م</span></dd></div></dl>`;
-SCR.s6={t:'عرض السعر',who:'التسويق يبني؛ المالك يرى الهامش',v:{owner:'المالك (مع الهامش)',marketing:'التسويق (بلا تكلفة)',add:'إضافة بند',old:'عروض بأسعار قديمة',empty:'فارغ',print:'نسخة العميل',loading:'تحميل',failed:'تعذّر التحميل',refused:'ممنوع'},r(s){
+SCR.s6={t:'عرض السعر',who:'التسويق يبني؛ المالك يرى الهامش',v:{owner:'المالك (مع الهامش)',marketing:'التسويق (بلا تكلفة)',add:'بحث عن بند',qty:'الكمية بعد اختيار بند',old:'عروض بأسعار قديمة',empty:'فارغ',print:'نسخة العميل',loading:'تحميل',failed:'تعذّر التحميل',refused:'ممنوع'},r(s){
   const o={back:'الفرصة',to:'s3',title:'عرض السعر',meta:'<span>أحمد سمير</span><span>فيلا التجمع الخامس</span>',pa:btn(i('print')+'طباعة للعميل','',go('s6','print'))};
   if(s==='refused')return {...o,pa:'',meta:'',body:pane(RF,1)};
   if(s==='loading')return {...o,pa:'',body:LD};
   if(s==='failed')return {...o,pa:'',body:pane(ban('<b>تعذّر تحميل عرض السعر.</b>','',retry),1)};
   if(s==='empty')return {...o,pa:'',body:pane(addbar(0)+st('لا توجد بنود','','doc','solid'),1)};
-  if(s==='print')return {...o,pa:btn(i('print')+'طباعة'),body:pane(`<div class="paper"><h2>عرض سعر</h2><div class="pm"><span>أحمد سمير</span><span>فيلا التجمع الخامس</span><span>22 نوفمبر</span></div>${qbox(0,1).replace(/<small>.*?<\/small>/g,'')}${tot}<div><b>الشروط</b><p style="margin:4px 0 0">${COND}</p></div></div>`,1)};
+  if(s==='qty')return {...o,pa:'',body:sheet('إضافة بند',fld({id:'bi',label:'البند',ctl:`<div class="ctl ro"><span class="val">خرسانة مسلحة للأسقف</span></div>`})+fld({id:'bq',label:'الكمية',req:1,ctl:lab(numc('bq','','م³'),'الكمية')})+fl([['سعر الوحدة',fg(3220)]]),btn('إضافة')+btn('إلغاء','sec2'))};
+  if(s==='print')return {...o,pa:btn(i('print')+'طباعة'),body:pane(`<div class="paper"><h2>فيلا التجمع الخامس</h2><div class="pm"><span>أحمد سمير</span><span>22 نوفمبر</span></div>${qbox(0,1)}${tot}<div><b>الشروط</b><p style="margin:4px 0 0">${COND}</p></div></div>`,1)};
   const cost=s!=='marketing';
-  return {...o,body:pane((s==='old'?ban('3 عروض مفتوحة على أسعار قديمة.','note'):'')+addbar(s==='add')+qbox(cost)+fld({id:'qc',label:'الشروط',ctl:areac('qc',COND)})+(cost?mg:tot),1)};
+  return {...o,body:pane((s==='old'?ban('3 عروض مفتوحة على أسعار قديمة.','note','<a class="btn sec2 sm act" href="#">فتح العروض</a>'):'')+(cost?mg:tot)+addbar(s==='add')+qbox(cost)+fld({id:'qc',label:'الشروط',ctl:areac('qc',COND)}),1)};
 }};
 /* S7 convert */
-SCR.s7={t:'فتح مشروع',who:'المكتب الفني، المالك',v:{normal:'عادي',nofee:'بلا رصيد رسوم',saving:'جارٍ الفتح',notnego:'ليست في التفاوض',done:'فُتح من قبل',failed:'تعذّر الفتح'},r(s){
+SCR.s7={t:'فتح مشروع',who:'المكتب الفني، المالك',v:{normal:'عادي',chosen:'بعد اختيار نوع العقد',nofee:'بلا رسوم معاينة',saving:'جارٍ الفتح',notnego:'لم تصل إلى عقد',done:'فُتح من قبل',failed:'تعذّر الفتح'},r(s){
   const o={back:'الفرصة',to:'s3',title:'فيلا التجمع الخامس'};
-  const refuse=s==='notnego'?'لا يمكن فتح مشروع: الفرصة ليست في مرحلة التفاوض.':s==='done'?'تم فتح مشروع لهذه الفرصة من قبل.':'';
-  const f=(refuse?ban(refuse):'')+(s==='failed'?ban('<b>تعذّر فتح المشروع.</b>','',retry):'')+fld({id:'pc',label:'العميل',ctl:`<div class="ctl ro"><span class="val">أحمد سمير</span></div>`})+fld({id:'pn',label:'اسم المشروع',req:1,ctl:textc('pn','فيلا التجمع الخامس')})+fld({id:'pt',lb:1,label:'نوع العقد',req:1,ctl:radios('pt',[['l','مقاولة بالمقطوعية'],['c','التكلفة زائد نسبة إشراف'],['d','تصميم']],'l','r1')})+fl([...(s==='nofee'?[]:[['رصيد رسوم المعاينة',fg(500)]]),['عرض السعر',fg(TS)]]);
-  const ok=refuse?'':s==='saving'?busy('جارٍ الفتح…'):btn('فتح المشروع');
+  const refuse=s==='notnego'?'لا يمكن فتح مشروع: الفرصة لم تصل إلى مرحلة «عقد».':s==='done'?'تم فتح مشروع لهذه الفرصة من قبل.':'';
+  const pick=s==='normal'?'':'l';
+  const f=(refuse?ban(refuse):'')+(s==='failed'?ban('<b>تعذّر فتح المشروع.</b>','',retry):'')+fld({id:'pc',label:'العميل',ctl:`<div class="ctl ro"><span class="val">أحمد سمير</span></div>`})+fld({id:'pn',label:'اسم المشروع',req:1,ctl:textc('pn','فيلا التجمع الخامس')})+fld({id:'pt',lb:1,label:'نوع العقد',req:1,ctl:radios('pt',[['l','مقاولة بالمقطوعية'],['c','التكلفة زائد نسبة إشراف'],['d','تصميم']],pick,'r1')})+fl([...(s==='nofee'?[]:[['رسوم المعاينة المدفوعة',fg(500)]]),['عرض السعر',fg(TS)]]);
+  const ok=refuse?'':s==='saving'?busy('جارٍ الفتح…'):btn('فتح المشروع','',s==='normal'?'disabled':'');
   return {...o,body:sheet('فتح مشروع',f,ok+btn(refuse?'إغلاق':'إلغاء','sec2'))};
 }};
 

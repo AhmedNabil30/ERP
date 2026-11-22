@@ -1586,74 +1586,91 @@ Not done: the zero-row noise (N1), the cancellation card (N4), the change-order 
 
 # Sales (`sales.html`)
 
-**PROPOSAL, not approved; 2026-11-22.** Seven screens of the Release 3 sales spine, drawn from `plans/release-3-sales/screens.md` (S1 to S7), `journey.md` and `questions.md`. Open `sales.html` directly, no build step. `?only=s1..s7` shows one screen, `?view=<screen>:<state>` picks a state (for example `?view=s3:nego`), `?embed=1` hides the preview strip and the state buttons. The strip and the buttons are review chrome: do not build them. Where a screen rests on an open question from `questions.md`, the mock draws that question's default and the table below says so. Nothing on a screen tells the user a rule; every dependency lives only here.
+**PROPOSAL, not approved; revised 2026-11-22 after the consultant review (`ux/consultant-review-sales-mock-2026-11-22.md`).** Seven screens of the Release 3 sales spine, from `plans/release-3-sales/screens.md` (S1 to S7), `journey.md` and `questions.md`. Open `sales.html` directly, no build step. `?only=s1..s7` shows one screen, `?view=<screen>:<state>` picks a state (for example `?view=s3:nego`), `?embed=1` hides the preview strip and the state buttons. The strip and the buttons are review chrome: do not build them. Where a screen rests on an open question from `questions.md`, the mock draws that question's default and the table below says so. Nothing on a screen tells the user a rule; every dependency lives only here.
 
-## What it holds
+## What it holds, and the `?view=` list per screen
 
-| Screen | Route | Drawn states |
+| Screen | Route | `?view=` values |
 |---|---|---|
-| S1 الفرص (pipeline list) | `/sales` | normal, needs-follow-up filter, empty, loading, failed, refused |
-| S2 فرصة جديدة | `/sales/new` | normal, search results, no match (add as new), new client inline, repeated phone (note with proceed), ready, saving, failed, refused |
-| S3 opportunity page | `/sales/:id` | normal, deposit pending confirmation, stalled, negotiation (Marketing), after the open-project request, negotiation (Technical Office), on hold, lost, won, close-as-lost dialog, loading, failed, refused |
-| S4 رسوم المعاينة (dialog on S3) | none | normal, amount refused, saving, failed, refused |
-| S5 مصاريف ما قبل العقد (panel on S3) | none | list, empty, add sheet, amount refused, failed, refused |
-| S6 عرض السعر | `/sales/:id/quotation` | owner with margin, Marketing without cost, add-item search, banner of offers on old pricing, empty, client print view, loading, failed, refused |
-| S7 فتح مشروع (dialog on S3) | none | normal, without visit-fee credit, saving, not in negotiation (refused), already converted (refused), failed |
+| S1 الفرص (pipeline list) | `/sales` | `s1:normal`, `followup`, `office` (Technical Office: filter «بانتظار فتح المشروع», no create button), `empty`, `loading`, `failed`, `refused` |
+| S2 فرصة جديدة | `/sales/new` | `s2:normal`, `results`, `nomatch`, `newclient`, `dup`, `ready`, `saving`, `failed`, `refused` |
+| S3 opportunity page | `/sales/:id` | `s3:normal`, `pending` (fee awaiting Finance), `stalled`, `nego` (Marketing, primary «العميل وافق»), `agreed` (Marketing after the move to «عقد»), `office` (Technical Office at «عقد», primary «فتح المشروع»), `hold`, `lost`, `won`, `closing` (close-as-lost dialog), `loading`, `failed`, `refused` |
+| S4 رسوم المعاينة (dialog on S3) | none | `s4:normal`, `error`, `saving`, `failed`, `refused` |
+| S5 مصاريف ما قبل العقد (panel on S3) | none | `s5:list`, `empty`, `add`, `error`, `failed`, `refused` |
+| S6 عرض السعر | `/sales/:id/quotation` | `s6:owner` (cost, markup, margin), `marketing` (sell only), `add` (search results), `qty` (quantity sheet after picking an item), `old` (offers on old pricing), `empty`, `print` (client sheet), `loading`, `failed`, `refused` |
+| S7 فتح مشروع (dialog on S3) | none | `s7:normal` (no contract type chosen, primary disabled), `chosen`, `nofee`, `saving`, `notnego`, `done`, `failed` |
 
-Every screen is one job with one primary action. The primary sits at the end of the title row on desktop and in the bottom bar on a phone, as everywhere else. A second filled button is not drawn anywhere.
+One primary per screen: it sits at the end of the title row on desktop and in the bottom bar on a phone. A second filled button is not drawn anywhere.
+
+## What changed after the consultant review
+
+- **Handoff (findings 1 to 3, Q11).** Marketing's primary at تفاوض is a stage move to «عقد», labelled «العميل وافق». That is the one event; there is no separate request state. After it, Marketing sees the waiting line «بانتظار المكتب الفني: فتح المشروع», one quiet action «إرجاع إلى «تفاوض»» to withdraw, and the activity list records who moved it and when. The Technical Office sees «فتح المشروع» as its primary on an opportunity at «عقد». Its entry point is S1, opened to that role with the filter «بانتظار فتح المشروع» (no create button). The won page has a «المشروع» row linking to the project.
+- **On hold (finding 4).** The primary is «استئناف», the mirror of «إعادة فتح» on lost.
+- **Status words (findings 12, 13).** Kaff's own words are used where they mean the same: جاري العمل (active) and تم تأجيلها (on hold). The «متوقفة» pill is gone: "no activity for N days" is carried by the last-activity line and the «تحتاج متابعة» badge. S1 shows a status pill only when the opportunity is not active.
+- **Last activity (finding 14).** «آخر نشاط منذ N أيام» (column header «آخر نشاط», value «منذ 6 أيام»). «هادئة» is gone.
+- **One word, one meaning (findings 9 to 11).** «متابعة» is no longer a button. The repeated phone offers «استخدام أحمد سمير» and «إنشاء عميل جديد بنفس الرقم». Both quotation and expenses rows on S3 open with «فتح». The S3 card is 640 px wide at most, so a value and its action stay together.
+- **S6 buildable (finding 5).** Quantity is a field with the unit as its affix; every line has a delete button; picking a search result opens a bottom sheet with quantity and «إضافة». The result row shows unit and sell price, not the catalogue code; typing a code still finds the item.
+- **S6 margin on top (finding 6).** The three figures (or the single sell total for Marketing) come first, the lines after.
+- **S6 words (findings 15, 16, 19).** The line column is «نسبة الزيادة» (on cost) and each باب heading says «الزيادة الافتراضية 15%»; the block says «نسبة الربح» (on sell). Each باب bar says «إجمالي الباب». The old-pricing banner has a link «فتح العروض».
+- **Print (finding 7).** The client sheet is fixed light in both themes and has one heading (the project name). Needs new tokens in `styles.css`: `--paper`, `--paper-ink`, `--paper-head`, `--paper-dim`, `--paper-line` (light values, not redefined in dark).
+- **S7 (findings 8, 17).** No contract type is chosen and the primary is disabled until one is. The fee row reads «رسوم المعاينة المدفوعة» (a fact); what happens to it is Q1.
+- **Mock data (finding 22).** Same quotation total (415,098) on S1, S3 and S6; the sidebar user is «هالة محمود، التسويق».
+- **Not applied.** Finding 18's alternative (verb next to value) is met by narrowing the card. The Owner-only code display (finding "KF-1101") is not drawn: the code is not shown at all.
 
 ## Reused from the kit, unchanged
 
-Shell and sidebar, page header with back link, `pill` (status), `badge`, `kv` (key-value rows), `lst`, `fl` (figure list), `ban` (refusal, note and retry), `state` (empty and refused), skeleton, `field`/`ctl` (text, money, date, select, textarea, readonly), radio group, `seg`, `search`, side sheet and bottom sheet, `wait` line, `stl` stage line (six stages here), the figure `fig`, the segmented follow-up filter and the stage badge.
+Shell and sidebar, page header with back link, `pill`, `badge`, `kv`, `lst`, `fl`, `ban`, `state`, skeleton, `field`/`ctl` (text, money, date, number with affix, select, textarea, readonly), radio group, `seg`, `search`, side sheet and bottom sheet, `wait` line, `stl` stage line (six stages), `fig`, icon button.
 
 ## New in the kit (put these in `components.html` before building)
 
-- **Opportunity row** (`opp`, S1). One link row: client name over title, quotation total at the end edge, then stage badge, status pill and the quiet-days line. Phone: two lines. Desktop (821 px and up): five aligned columns under a header line, the currency in the header (the `ج.م` suffix is shown only on the phone, where there is no header). 76 px high, the whole row is the target.
-- **Quiet-days line** (`qt`/`qtl`): clock icon, then "هادئة منذ N أيام" (or "نشاط اليوم"). The "تحتاج متابعة" badge (`badge fu`, ink border, clock icon) is added when the quiet days pass the follow-up threshold (Q5, default 2). Shape and word carry it, never colour.
-- **Picker list** (`pick`, S2 and S6): a bordered list of full-width 60 px buttons used under a search field for client results and catalogue results. The last row is the add-new action. A "no match" row is plain text.
-- **Quotation line** (`ql`/`qh`/`qbox`, S6): the line grid of the BOQ builder re-shaped for a quotation. Seven columns on desktop (description, quantity, unit, cost, markup field, unit price, total) and five when cost is hidden (the Marketing view). Phone: description on its own line, then labelled cells two to a row, each cell label drawn above its value. Markup is a number field with a `%` affix. The باب heading row (`qg`) carries the باب name, its default markup in small text and its subtotal.
-- **Margin block** (`mg`, S6): three separate figures, total cost, total sell, profit percentage. Desktop three columns, phone three stacked rows. When cost is hidden it collapses to one row, the sell total.
-- **Client paper** (`paper`, S6 print view): the print view's on-screen preview. Same line grid without cost, markup, margin, internal notes or the review badge on custom items.
-- Two helpers that already existed in `extracts.html` and now appear here: the `post` pill shape (two vertical bars) for «معلّقة», the same `s-post` colour pair as تم تأجيلها.
-
-## Rules this mock keeps
-
-- No code or id on any screen except the catalogue code in S6 search results (the brief says the user searches by it) and phone numbers (searched and typed).
-- A control the user may not use is absent. Marketing has no "فتح المشروع" on S3, only the request; after the request there is no primary at all. A stage move that is not allowed is not offered. «إعادة فتح» is the only primary on a lost opportunity.
-- No explanatory sentence. Text on screen is a label, a value, an action, a state, a refusal reason, or the waiting line «بانتظار المكتب الفني: فتح المشروع».
-- 44 px controls at 360 and 390.
+- **Opportunity row** (`opp`, S1): client over title, quotation total at the end edge, stage badge, status pill (only when not active), last-activity line, follow-up badge. Phone: two lines. Desktop (821 px and up): five columns under a header line with the currency in the header.
+- **Last-activity line** (`qt`/`qtl`) and the **follow-up badge** (`badge fu`): clock icon plus words, never colour.
+- **Picker list** (`pick`, S2 and S6): full-width 60 px buttons under a search field; the second line holds a phone number or unit and price.
+- **Quotation line** (`ql`/`qh`/`qbox`, S6): description with delete button, quantity field with unit affix, cost and increase field (owner only), unit price, total. Six columns on desktop (four without cost), labelled cell pairs on a phone. The باب bar (`qg`) holds name, default increase, and «إجمالي الباب».
+- **Margin block** (`mg`): total cost, total sell, profit percentage as three figures; one row for Marketing.
+- **Client paper** (`paper`): fixed light print preview.
+- **Segmented filter with two buttons** on S1 («تحتاج متابعة», «بانتظار فتح المشروع») uses the kit's `seg`.
 
 ## Where each screen rests on an open question (the mock draws the default)
 
 | Screen / state | Depends on | What the mock draws |
 |---|---|---|
-| S1 stage names, stage filter, status pills | Q3 | six stages عميل محتمل · اجتماع · معاينة · عرض سعر · تفاوض · عقد; statuses نشطة · متوقفة · معلّقة, plus مفقودة and تم الفوز on S3 |
-| S1 «تحتاج متابعة» badge and filter | Q5 | quiet for 2 days or more, listed on screen, no push |
-| S3 stage line, primary at تفاوض, won state | Q3 | contract and won are one stage; at تفاوض the next move is the project conversion, not a stage |
-| S3 «طلب فتح المشروع» (Marketing), waiting line, «فتح المشروع» (Technical Office, Owner) | Q11 | Marketing requests, Technical Office or Owner converts and picks the contract type |
-| S3 visit-fee row, pending-confirmation badge | Q1, Q2 | paid with date and amount, or «غير مدفوعة» (stage may be reached unpaid); Finance confirms |
-| S3 close-as-lost reasons | Q10 | list السعر · منافس · تأخر العميل · أخرى plus an optional note |
-| S4 whole dialog | Q1 | amount, date, method (كاش · شيك · تحويل, the words the collections screen uses), reference. The consequence line a money action needs is not drawn, because which account holds the fee is not decided |
-| S5 whole panel | Q4 | a list with amount, date, purpose, receipt link and a total. Nothing says where the money goes |
-| S6 where the lines live, "N offers on old pricing" banner | Q7 | the quotation is a page under the opportunity; the banner is a neutral note |
-| S6 margin block and cost column | Q6 | both drawn: owner sees cost, markup and margin; Marketing view shows sell rates only |
-| S6 stage move to عرض سعر | Q8 | not drawn; no versions are drawn (default: dated versions) |
-| S7 whole dialog, credit row | Q11, Q7, Q1 | client, project name (editable), contract type, visit-fee credit (absent when none), quotation total as reference |
+| S1 stage names, stage filter, status words | Q3 | six stages عميل محتمل · اجتماع · معاينة · عرض سعر · تفاوض · عقد; statuses جاري العمل · تم تأجيلها · مفقودة · تم الفوز |
+| S1 follow-up badge and filter | Q5 | 2 days or more without activity, listed on screen, no push |
+| S1 for the Technical Office (filter «بانتظار فتح المشروع») | **Q11** | the role may read S1 for this filter only |
+| S3 primary «العميل وافق» (move to «عقد»), waiting line, withdraw, «فتح المشروع» for Technical Office and Owner | **Q11, Q3** | Marketing moves the stage; Technical Office or Owner converts and picks the contract type. This replaces the brief's "convert when Negotiation": conversion now starts at «عقد» (Q3 merges Contract and Won) |
+| S3 stage move back («إرجاع إلى «تفاوض»») | Q3 | going back allowed (a PROPOSAL in the default) |
+| S3 on hold, «استئناف» | not in the brief | mirror of reopen; the spec does not say |
+| S3 visit-fee row, pending badge | Q1, Q2 | paid with date, or «غير مدفوعة»; Finance confirms |
+| S3 close-as-lost reasons | Q10 | list plus optional note |
+| S4 whole dialog | Q1 | amount, date, method (كاش · شيك · تحويل), reference; no consequence line because the account is undecided |
+| S5 whole panel | Q4 | list with amount, date, purpose, receipt, total; nothing says where the money goes |
+| S6 where the lines live | Q7 | a page under the opportunity |
+| S6 margin block, cost and increase columns | Q6 | owner view draws them; Marketing view does not |
+| S6 versions, move to عرض سعر | Q8 | not drawn |
+| S6 old-pricing banner link | Q7 | link target not drawn |
+| S7 whole dialog, fee row | Q11, Q7, Q1 | client, project name, contract type (none chosen), fee paid, quotation total |
 
-## Words invented here (every Arabic string is a guess; Karim confirms)
+## Words chosen (every Arabic string is a guess; for arabic-copy and Karim)
 
-Statuses and stage: نشطة, متوقفة, معلّقة, مفقودة, تم الفوز; the stage names are the ones in `questions.md` Q3.
-Screen and action words: الفرص (the list title and nav item), فرصة جديدة, تحتاج متابعة, هادئة منذ N أيام, نشاط اليوم, تسجيل نشاط, نقل إلى «معاينة» (stage moves), طلب فتح المشروع, فتح المشروع, إعادة فتح, تعليق, إغلاق كخسارة, السبب, ملاحظة, رسوم المعاينة, تسجيل الرسوم, غير مدفوعة, بانتظار تأكيد المالية, مصاريف ما قبل العقد, إضافة مصروف, الغرض, إرفاق صورة الإيصال, الإيصال, إجمالي المصاريف, بنود مخصصة, بند مخصص, بانتظار مراجعة المكتب الفني, الهامش الافتراضي, نسبة الربح, إجمالي التكلفة, إجمالي البيع, إجمالي عرض السعر, الشروط, طباعة للعميل, عروض مفتوحة على أسعار قديمة, رصيد رسوم المعاينة, اسم المشروع, نوع العقد (contract-type words are those of `project-create.html`), لا توجد فرص بعد, لا توجد مصاريف, لا توجد بنود, لا يوجد عميل مطابق, إضافة «…» كعميل جديد, هذا الرقم مسجّل للعميل … , متابعة, أدخل مبلغًا أكبر من صفر, لا يمكن فتح مشروع: الفرصة ليست في مرحلة التفاوض, تم فتح مشروع لهذه الفرصة من قبل, ليس لديك صلاحية لهذه الشاشة.
+Status words: **جاري العمل** and **تم تأجيلها** (Kaff's own), **مفقودة** and **تم الفوز** (new). Stage words as in Q3. Activity: **آخر نشاط**, **منذ N أيام**, **اليوم**, **تحتاج متابعة**, **بانتظار فتح المشروع**. Handoff: **العميل وافق**, **إرجاع إلى «تفاوض»**, **فتح المشروع**, **استئناف**, **إعادة فتح**, **تعليق**, **إغلاق كخسارة**. S2: **استخدام أحمد سمير**, **إنشاء عميل جديد بنفس الرقم**, **هذا الرقم مسجّل للعميل …**. S3 and S4: **رسوم المعاينة**, **غير مدفوعة**, **بانتظار تأكيد المالية**, **تسجيل الرسوم**, **تسجيل نشاط**, **المشروع**. S5: **مصاريف ما قبل العقد**, **إضافة مصروف**, **الغرض**, **إرفاق صورة الإيصال**, **الإيصال**, **إجمالي المصاريف**. S6: **نسبة الزيادة**, **الزيادة الافتراضية**, **إجمالي الباب**, **نسبة الربح**, **إجمالي التكلفة**, **إجمالي البيع**, **إجمالي عرض السعر**, **الشروط**, **بند مخصص**, **بانتظار مراجعة المكتب الفني**, **حذف البند**, **فتح العروض**, **3 عروض مفتوحة على أسعار قديمة**, **طباعة للعميل**. S7: **اسم المشروع**, **نوع العقد**, **رسوم المعاينة المدفوعة**, **لا يمكن فتح مشروع: الفرصة لم تصل إلى مرحلة «عقد»**, **تم فتح مشروع لهذه الفرصة من قبل**. Empty and refusal lines: **لا توجد فرص بعد**, **لا توجد مصاريف**, **لا توجد بنود**, **لا يوجد عميل مطابق**, **ليس لديك صلاحية لهذه الشاشة**. Contract types and payment methods come from `project-create.html` and the collections locale.
+
+## Rules this mock keeps
+
+- No code or id on any screen. Phone numbers appear where they are typed and searched. The catalogue code is searchable on S6 but never shown.
+- A control the user may not use is absent. Marketing has no «فتح المشروع».
+- No explanatory sentence: text is a label, value, action, state, refusal reason or the waiting line. The one sentence-like line, «هذا الرقم مسجّل للعميل …», gives the reason for the two choices beside it.
+- 44 px controls at 360 and 390.
 
 ## Not decided here
 
 - Where Sales sits in the sidebar (the mock puts «الفرص» first in the core group; another lane owns the sidebar).
-- How a stalled opportunity records activity: the button «تسجيل نشاط» is drawn; the note form behind it is not.
-- How an on-hold opportunity resumes: S3 on hold has no primary; the brief lists put on hold but no resume.
-- Profit percentage is drawn on sell (profit over total sell); confirm with Karim that it is not on cost.
-- Client form fields: only name and phone are drawn inline in S2 (phone is the match key); the rest of the client form (alternate phone, email, address, notes, kind) is not, and which are required is not decided.
-- The site-visit report (Q9) and quotation versions (Q8) are not drawn.
+- The note form behind «تسجيل نشاط»; the custom-item sheet behind «بند مخصص»; where «فتح العروض» leads.
+- Whether profit percentage is on sell (drawn) or on cost; Karim confirms. The increase on a line is on cost.
+- What the paid visit fee does at project opening (Q1); the S7 row only shows it was paid.
+- Client form fields in S2: only name and phone are drawn inline; which are required is undecided.
+- Site-visit report (Q9) and quotation versions (Q8): not drawn.
 
 ## What the mock does not draw
 
-Dark mode is checked with the theme button in the strip, not by a separate page. The activity form, the version list, the Finance side of the fee confirmation, and the project page after conversion (S7 hands off to the project screens already drawn) are not drawn.
+The Finance side of the fee confirmation, the project page after conversion (S7 hands off to the project screens already drawn), and the receipt photo picker.
