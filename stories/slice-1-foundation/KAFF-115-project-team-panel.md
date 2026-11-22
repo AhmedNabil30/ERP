@@ -1,6 +1,6 @@
 # KAFF-115 · The project team tab is built from assignment rows, not from the access check
 
-<!-- kaff id=KAFF-115 slice=1 points=8 state=BUILT verdict=REJECTED at=91cdcb3 on=2026-11-17 -->
+<!-- kaff id=KAFF-115 slice=1 points=8 state=VERIFIED verdict=PASS at=46621bc on=2026-11-22 -->
 
 **Slice:** 1 · **Epic:** Foundation · **Points:** 8 (unchanged) · **Rewritten 2026-11-18** to Nabil's rulings D-227 item 2, D-228 item 1, D-229 item 1, D-233 item 3, D-234 (Verifier finding, `qa/release-1/verification-2026-11-17.md`: AC-F, H, I not met). State is in the trailer.
 **Spec:** §9 · **Decisions:** D-010, D-044 (rulings 2, 3), D-217 item 36, D-227, D-228, D-229, D-233, D-234. ~~D-051 (Q32), D-100 (Q43)~~ — see rules 5 and 8

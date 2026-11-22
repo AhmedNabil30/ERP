@@ -114,9 +114,9 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | | slice 1 | slice 2 | slice 3 | slice 4 | slice 5 | slice 6 | slice 8 | slice design-system |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 16 | 0 | 53 | 0 | 0 | 0 |
-| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 41 | 47 | 0 | 31 | 21 | 5 |
+| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 27 | 53 | 41 | 47 | 0 | 31 | 29 | 5 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 🔴 REJECTED — a Verifier looked, and it did not pass | 8 | 0 | 0 | 0 | 0 | 0 | 13 | 0 |
+| 🔴 REJECTED — a Verifier looked, and it did not pass | 0 | 0 | 0 | 0 | 0 | 0 | 5 | 0 |
 | 🟡 BUILT — shipped, nobody independent has looked | 0 | 14 | 0 | 0 | 0 | 0 | 5 | 106 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 13 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | **total** | **127** | **67** | **57** | **47** | **53** | **31** | **39** | **111** |
@@ -142,7 +142,7 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | [KAFF-112](stories/slice-1-foundation/KAFF-112-reactivate-a-user.md) | 1 | 3 | ✅ ACCEPTED | PASS | `1d04bde` | 2026-09-09 | Reactivate a user, who comes back with nothing |
 | [KAFF-113](stories/slice-1-foundation/KAFF-113-assign-a-user-to-a-project.md) | 1 | 5 | 🔶 VERIFIED | CONDITIONAL | `91cdcb3` | 2026-11-17 | Assign a user to a project, with seniority for site engineers |
 | [KAFF-114](stories/slice-1-foundation/KAFF-114-revoke-a-project-assignment.md) | 1 | 3 | 🔶 VERIFIED | CONDITIONAL | `91cdcb3` | 2026-11-17 | Revoke a project assignment without losing who could act when |
-| [KAFF-115](stories/slice-1-foundation/KAFF-115-project-team-panel.md) | 1 | 8 | 🔴 BUILT | REJECTED | `91cdcb3` | 2026-11-17 | The project team tab is built from assignment rows, not from the access check |
+| [KAFF-115](stories/slice-1-foundation/KAFF-115-project-team-panel.md) | 1 | 8 | 🔵 VERIFIED | PASS | `46621bc` | 2026-11-22 | The project team tab is built from assignment rows, not from the access check |
 | [KAFF-116](stories/slice-1-foundation/KAFF-116-audit-records-how-access-was-granted.md) | 1 | 3 | 🔵 VERIFIED | PASS | `-` | 2026-08-26 | Every audit record says how the actor reached the project |
 | [KAFF-117](stories/slice-1-foundation/KAFF-117-read-the-audit-trail.md) | 1 | 5 | ✅ ACCEPTED | PASS | `1d04bde` | 2026-09-09 | The Owner reads the audit trail, and nobody else does |
 | [KAFF-118](stories/slice-1-foundation/KAFF-118-every-slice-1-change-is-audited.md) | 1 | 3 | ✅ ACCEPTED | PASS | `1d04bde` | 2026-09-09 | Every state change in slice 1 writes an audit record |
@@ -202,7 +202,7 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | [KAFF-614](stories/slice-6-execution/KAFF-614-daily-log-under-d217.md) | 6 | 8 | 🔶 VERIFIED | CONDITIONAL | `91cdcb3` | 2026-11-17 | The daily log under D-217 and D-218: check-in first, three days back, edit a quantity, stoppage as text |
 | [KAFF-615](stories/slice-6-execution/KAFF-615-crew-under-d217.md) | 6 | 5 | 🔵 VERIFIED | PASS | `91cdcb3` | 2026-11-17 | The crew screen under D-217 and D-218: 16 hours, half-hour steps, who edits which day |
 | [KAFF-800](stories/slice-8-closure-warranty/KAFF-800-practical-completion-and-the-snag-list.md) | 8 | 8 | 🔶 VERIFIED | CONDITIONAL | `86b9f13` | 2026-11-06 | Practical completion and the snag list — major snags block handover |
-| [KAFF-802](stories/slice-8-closure-warranty/KAFF-802-handover-and-the-hold-release.md) | 8 | 8 | 🔴 BUILT | REJECTED | `86b9f13` | 2026-11-06 | Handover releases the hold, once, in full |
+| [KAFF-802](stories/slice-8-closure-warranty/KAFF-802-handover-and-the-hold-release.md) | 8 | 8 | 🔶 VERIFIED | CONDITIONAL | `46621bc` | 2026-11-22 | Handover releases the hold, once, in full |
 | [KAFF-803](stories/slice-8-closure-warranty/KAFF-803-snag-resolution.md) | 8 | 5 | 🔴 BUILT | REJECTED | `86b9f13` | 2026-11-06 | Snag resolution — debit the subcontractor, or absorb it as internal cost |
 | [KAFF-804](stories/slice-8-closure-warranty/KAFF-804-warranty-and-callbacks.md) | 8 | 5 | 🔶 VERIFIED | CONDITIONAL | `86b9f13` | 2026-11-06 | Warranty runs four months from handover; callbacks attach to it |
 | [KAFF-806](stories/slice-8-closure-warranty/KAFF-806-subcontractor-retention-release.md) | 8 | 5 | 🟡 BUILT | none | `-` | - | Subcontractor retention releases when the warranty ends |
