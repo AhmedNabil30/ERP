@@ -114,9 +114,9 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | | slice 1 | slice 2 | slice 3 | slice 4 | slice 5 | slice 6 | slice 8 | slice design-system |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 16 | 0 | 53 | 0 | 0 | 0 |
-| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 27 | 53 | 41 | 47 | 0 | 31 | 29 | 106 |
+| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 27 | 53 | 41 | 47 | 0 | 31 | 29 | 111 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 🔴 REJECTED — a Verifier looked, and it did not pass | 0 | 0 | 0 | 0 | 0 | 0 | 5 | 5 |
+| 🔴 REJECTED — a Verifier looked, and it did not pass | 0 | 0 | 0 | 0 | 0 | 0 | 5 | 0 |
 | 🟡 BUILT — shipped, nobody independent has looked | 0 | 14 | 0 | 0 | 0 | 0 | 5 | 0 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 13 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | **total** | **127** | **67** | **57** | **47** | **53** | **31** | **39** | **111** |
@@ -221,13 +221,13 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | [KAFF-919](stories/design-system/KAFF-919-restyle-user-form.md) | design-system | 2 | 🔵 VERIFIED | PASS | `36fe371` | 2026-11-22 | Restyle: user form |
 | [KAFF-920](stories/design-system/KAFF-920-restyle-audit-trail.md) | design-system | 2 | 🔵 VERIFIED | PASS | `36fe371` | 2026-11-22 | Restyle: audit trail |
 | [KAFF-921](stories/design-system/KAFF-921-restyle-sign-in.md) | design-system | 1 | 🔵 VERIFIED | PASS | `36fe371` | 2026-11-22 | Restyle: sign-in |
-| [KAFF-922](stories/design-system/KAFF-922-sidebar-rebuild.md) | design-system | 3 | 🔶 VERIFIED | CONDITIONAL | `36fe371` | 2026-11-22 | Sidebar rebuild to match Main.dc.html |
+| [KAFF-922](stories/design-system/KAFF-922-sidebar-rebuild.md) | design-system | 3 | 🔶 VERIFIED | CONDITIONAL | `14b19a6` | 2026-11-22 | Sidebar rebuild to match Main.dc.html |
 | [KAFF-923](stories/design-system/KAFF-923-topbar-rebuild.md) | design-system | 2 | 🔶 VERIFIED | CONDITIONAL | `36fe371` | 2026-11-22 | Top bar rebuild, and where the page `<h1>` lives |
 | [KAFF-924](stories/design-system/KAFF-924-table-header-row.md) | design-system | 3 | 🔶 VERIFIED | CONDITIONAL | `36fe371` | 2026-11-22 | Table header row — the shared fix, not a per-screen patch |
 | [KAFF-925](stories/design-system/KAFF-925-apply-table-header-to-lists.md) | design-system | 3 | 🔶 VERIFIED | CONDITIONAL | `36fe371` | 2026-11-22 | Apply the table header row to every converted list |
 | [KAFF-926](stories/design-system/KAFF-926-user-list-cleanup.md) | design-system | 3 | 🔵 VERIFIED | PASS | `36fe371` | 2026-11-22 | User list — beyond what KAFF-925 already gives it |
 | [KAFF-927](stories/design-system/KAFF-927-locale-switch-segmented.md) | design-system | 1 | 🔶 VERIFIED | CONDITIONAL | `36fe371` | 2026-11-22 | Locale switch as one segmented control, not two buttons |
-| [KAFF-928](stories/design-system/KAFF-928-one-table-shell.md) | design-system | 5 | 🔴 BUILT | REJECTED | `36fe371` | 2026-11-22 | One table shell — columns that actually line up, once, for every list |
+| [KAFF-928](stories/design-system/KAFF-928-one-table-shell.md) | design-system | 5 | 🔶 VERIFIED | CONDITIONAL | `14b19a6` | 2026-11-22 | One table shell — columns that actually line up, once, for every list |
 | [KAFF-929](stories/design-system/KAFF-929-the-page-around-the-table.md) | design-system | 8 | 🔶 VERIFIED | CONDITIONAL | `36fe371` | 2026-11-22 | The page around the table — top bar, type, and money density |
 | [KAFF-930](stories/design-system/KAFF-930-interaction-kit.md) | design-system | 8 | 🔵 VERIFIED | PASS | `36fe371` | 2026-11-22 | The interaction kit — row menu, detail panel, inline edit, states |
 | [KAFF-931](stories/design-system/KAFF-931-apply-the-kit-to-the-old-screens.md) | design-system | 13 | 🔵 VERIFIED | PASS | `36fe371` | 2026-11-22 | Put the kit on the screens that exist today |
