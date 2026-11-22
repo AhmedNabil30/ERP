@@ -128,7 +128,15 @@
               </p>
             } @else {
               <p class="rule">{{ i18n.t('closure.hold.rule') }}</p>
-              @if (confirming() === 'hold-release') {
+              @if (waiting() && !canDecide() && caps().holdRelease) {
+                <p class="none" data-testid="closure-hold-waiting">
+                  <kaff-icon name="info" [small]="true" /><span>{{ i18n.t('closure.hold.waiting_owner') }}</span>
+                </p>
+              }
+              @if (canAsk() && returnedReason(); as reason) {
+                <kaff-banner tone="note" testId="closure-hold-returned">{{ i18n.t('closure.hold.returned', { reason }) }}</kaff-banner>
+              }
+              @if (confirming() === 'hold-release' && canDecide()) {
                 <kaff-inline-confirm
                   tone="irreversible"
                   [question]="i18n.t(actKeys['hold-release'].confirm)"
@@ -142,15 +150,40 @@
                   (cancelled)="closePanels()"
                 />
               }
-              <div class="buttons">
-                <kaff-button variant="primary" [busy]="busy()" testId="closure-act-hold-release" (clicked)="ask('hold-release')">
-                  {{ i18n.t('closure.action.hold_release') }}
-                </kaff-button>
-              </div>
+              @if (canAsk()) {
+                <div class="buttons">
+                  <kaff-button variant="primary" [busy]="busy()" testId="closure-act-hold-request" (clicked)="requestRelease()">
+                    {{ i18n.t('closure.hold.request') }}
+                  </kaff-button>
+                </div>
+              } @else if (canDecide()) {
+                <div class="buttons">
+                  <kaff-button variant="primary" [busy]="busy()" testId="closure-act-hold-release" (clicked)="ask('hold-release')">
+                    {{ i18n.t('extract.action.approve_owner') }}
+                  </kaff-button>
+                  <kaff-button variant="secondary" [busy]="busy()" testId="closure-act-hold-return" (clicked)="openReturn()">
+                    {{ i18n.t('closure.hold.return') }}
+                  </kaff-button>
+                </div>
+              }
             }
           } @else {
             <kaff-state mode="loading" titleKey="closure.hold.loading" testId="closure-hold-loading" />
           }
+          <kaff-detail-panel [open]="returning()" [title]="i18n.t('closure.hold.return_title')" testId="closure-hold-return-sheet" (closed)="closePanels()">
+            <div panelBody>
+              <label class="label" for="hold-return-reason">{{ i18n.t('closure.hold.return_reason') }}<span class="req" aria-hidden="true">*</span></label>
+              <textarea id="hold-return-reason" rows="3" [value]="returnReason()" data-testid="closure-hold-return-reason"
+                (input)="onReturnReason($event)"></textarea>
+              @if (returnInvalid()) {
+                <kaff-banner tone="refusal" testId="closure-hold-return-invalid">{{ i18n.t('errors.closure.reason_required') }}</kaff-banner>
+              }
+            </div>
+            <div panelFooter class="buttons">
+              <kaff-button variant="primary" [busy]="busy()" testId="closure-hold-return-submit" (clicked)="submitReturn()">{{ i18n.t('closure.hold.return') }}</kaff-button>
+              <kaff-button variant="secondary" [disabled]="busy()" testId="closure-hold-return-cancel" (clicked)="closePanels()">{{ i18n.t('extract.cancel') }}</kaff-button>
+            </div>
+          </kaff-detail-panel>
         </div>
       }
 

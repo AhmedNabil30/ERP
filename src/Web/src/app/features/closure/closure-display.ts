@@ -12,6 +12,8 @@ export interface ClosureCaps {
   readonly handover: boolean;
   readonly snag: boolean;
   readonly holdRelease: boolean;
+  /** Approval of a financial movement: approves or sends back the hold release request (D-262). */
+  readonly approve: boolean;
   readonly callback: boolean;
   readonly close: boolean;
   readonly manage: boolean;
@@ -69,6 +71,7 @@ export function closureCapsOf(permissions: readonly string[] | undefined): Closu
     handover: has('ProjectHandover'),
     snag: has('SnagManage'),
     holdRelease: has('HoldRelease'),
+    approve: has('FinancialMovementApprove'),
     callback: has('WarrantyCallbackManage'),
     close: has('ProjectClose'),
     manage: has('ProjectManage'),

@@ -191,7 +191,7 @@ export class ClosurePage {
     const project = this.project();
     return (
       project !== null &&
-      this.caps().holdRelease &&
+      (this.caps().holdRelease || this.caps().approve) &&
       project.contractType === 'LumpSum' &&
       (project.status === 'Handover' || project.status === 'UnderWarranty')
     );
@@ -245,11 +245,29 @@ export class ClosurePage {
     );
   });
 
-  /** The hold can be released now: a figure stands, and no release already does. */
+  /** The latest hold release request (D-262): Finance asks, the Owner approves or sends it back with a reason. */
+  protected readonly request = computed(() => this.summary()?.holdReleaseRequest ?? null);
+  protected readonly waiting = computed(() => this.request()?.status === 'Requested');
+  protected readonly returnedReason = computed(() => {
+    const request = this.request();
+    return request?.status === 'Rejected' ? request.rejectionReason : null;
+  });
+  /** Finance may ask while none waits. The server refuses a second request and a release with nothing to release. */
+  protected readonly canAsk = computed(() => this.caps().holdRelease && !this.waiting());
+  /** The Owner decides a waiting request, never one the same user asked for (the server refuses that too). */
+  protected readonly canDecide = computed(
+    () => this.caps().approve && this.waiting() && this.request()?.requestedByUserId !== this.auth.current()?.userId,
+  );
+
+  /** The hold can be acted on now: a figure stands, no release already does, and this user may ask or decide. */
   protected readonly holdActionable = computed(() => {
     const h = this.hold();
-    return this.showHold() && h !== null && !h.released && !h.empty;
+    return this.showHold() && h !== null && !h.released && !h.empty && (this.canAsk() || this.canDecide());
   });
+
+  protected readonly returning = signal(false);
+  protected readonly returnReason = signal('');
+  protected readonly returnInvalid = signal(false);
 
   /** True when this user has no act on the page at all, so the page says so rather than showing a blank. */
   protected readonly nothingToDo = computed(
@@ -402,6 +420,7 @@ export class ClosurePage {
 
   protected closePanels(): void {
     this.confirming.set(null);
+    this.returning.set(false);
     this.terminating.set(false);
     this.terminationRefused.set(null);
     this.raisingSnag.set(false);
@@ -419,9 +438,34 @@ export class ClosurePage {
       handover: () => this.api.handOver(id),
       warranty: () => this.api.beginWarranty(id),
       close: () => this.api.close(id),
-      'hold-release': () => this.api.releaseHold(id),
+      'hold-release': () => this.api.approveHoldRelease(id),
     };
     void this.act(call[act], DONE_KEYS[act]);
+  }
+
+  protected requestRelease(): void {
+    void this.act(() => this.api.releaseHold(this.projectId()), 'closure.done.hold_requested');
+  }
+
+  protected openReturn(): void {
+    this.closePanels();
+    this.returnReason.set('');
+    this.returnInvalid.set(false);
+    this.returning.set(true);
+  }
+
+  protected onReturnReason(event: Event): void {
+    this.returnReason.set((event.target as HTMLTextAreaElement).value);
+    this.returnInvalid.set(false);
+  }
+
+  protected submitReturn(): void {
+    const reason = this.returnReason().trim();
+    if (reason === '') {
+      this.returnInvalid.set(true);
+      return;
+    }
+    void this.act(() => this.api.rejectHoldRelease(this.projectId(), reason), 'closure.done.hold_returned');
   }
 
   protected openTerminate(): void {

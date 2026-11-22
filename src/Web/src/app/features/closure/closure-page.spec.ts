@@ -120,7 +120,15 @@ class FakeClosureApi implements Partial<ClosureApi> {
   }
 
   async releaseHold(): Promise<never> {
-    return (await this.act('hold-release')) as never;
+    return (await this.act('hold-request')) as never;
+  }
+
+  async approveHoldRelease(): Promise<never> {
+    return (await this.act('hold-approve')) as never;
+  }
+
+  async rejectHoldRelease(): Promise<never> {
+    return (await this.act('hold-return')) as never;
   }
 
   async terminate(): Promise<void> {
@@ -165,6 +173,20 @@ function session(role: Role, projectPermissions: readonly string[]): Session {
 
 const OWNER = ['ProjectRead', 'ProjectManage', 'ProjectPracticalCompletionDeclare', 'ProjectHandover', 'ProjectClose'];
 const FINANCE = ['ProjectRead', 'HoldRelease'];
+const OWNER_APPROVES = [...OWNER, 'FinancialMovementApprove'];
+
+function request(status: 'Requested' | 'Rejected', rejectionReason: string | null = null) {
+  return {
+    id: 'q-1',
+    projectId: 'p-1',
+    status,
+    requestedByUserId: 'u-fin',
+    requestedAt: '2026-11-22T00:00:00Z',
+    decidedByUserId: null,
+    decidedAt: null,
+    rejectionReason,
+  } as const;
+}
 const TECH = ['ProjectRead', 'ProjectManage', 'ProjectHandover', 'SnagManage', 'WarrantyCallbackManage'];
 
 async function open(
@@ -213,8 +235,8 @@ function click(fixture: { nativeElement: HTMLElement }, testId: string): void {
 }
 
 describe('closure display, the permission and state rules', () => {
-  const all = { declare: true, handover: true, snag: true, holdRelease: true, callback: true, close: true, manage: true };
-  const none = { declare: false, handover: false, snag: false, holdRelease: false, callback: false, close: false, manage: false };
+  const all = { declare: true, handover: true, snag: true, holdRelease: true, approve: true, callback: true, close: true, manage: true };
+  const none = { declare: false, handover: false, snag: false, holdRelease: false, approve: false, callback: false, close: false, manage: false };
 
   it('offers one act per state, and none to a user without the permission', () => {
     const expected: [ProjectStatus, string][] = [
@@ -277,7 +299,8 @@ describe('ClosurePage', () => {
     expect(q(fixture, 'closure-hold-amount')?.textContent).toContain('50.0000');
     expect(q(fixture, 'closure-hold-source')).not.toBeNull();
     expect(q(fixture, 'closure-hold')?.querySelector('input, textarea, select')).toBeNull();
-    expect(q(fixture, 'closure-act-hold-release')).not.toBeNull();
+    expect(q(fixture, 'closure-act-hold-request')).not.toBeNull();
+    expect(q(fixture, 'closure-act-hold-release')).toBeNull();
   });
 
   it('lists the hold and each open extract above the acts, the extract linking to its page', async () => {
@@ -295,14 +318,66 @@ describe('ClosurePage', () => {
     expect(q(fixture, 'closure-pending')).toBeNull();
   });
 
-  it('releases the hold with the one button and sends no amount', async () => {
+  it('Finance asks for the release, then sees the waiting line and no button', async () => {
     const closure = new FakeClosureApi();
     const fixture = await open(project('Handover'), session('Finance', FINANCE), closure);
+    click(fixture, 'closure-act-hold-request');
+    await settle(fixture);
+    expect(closure.calls).toEqual(['hold-request']);
+    closure.summary = { ...closure.summary, holdReleaseRequest: request('Requested') };
+    const waiting = await open(project('Handover'), session('Finance', FINANCE), closure);
+    expect(q(waiting, 'closure-hold-waiting')).not.toBeNull();
+    expect(q(waiting, 'closure-act-hold-request')).toBeNull();
+    expect(q(waiting, 'closure-act-hold-release')).toBeNull();
+  });
+
+  it('shows Finance the reason after a rejection and lets it ask again', async () => {
+    const closure = new FakeClosureApi();
+    closure.summary = { ...closure.summary, holdReleaseRequest: request('Rejected', 'المبلغ غير صحيح') };
+    const fixture = await open(project('Handover'), session('Finance', FINANCE), closure);
+    expect(q(fixture, 'closure-hold-returned')?.textContent).toContain('المبلغ غير صحيح');
+    expect(q(fixture, 'closure-act-hold-request')).not.toBeNull();
+  });
+
+  it('the Owner approves a waiting request with the confirmation, and sends no amount', async () => {
+    const closure = new FakeClosureApi();
+    closure.summary = { ...closure.summary, holdReleaseRequest: request('Requested') };
+    const fixture = await open(project('Handover'), session('Owner', OWNER_APPROVES), closure);
+    expect(q(fixture, 'closure-hold-amount')?.textContent).toContain('50.0000');
+    expect(q(fixture, 'closure-act-hold-request')).toBeNull();
     click(fixture, 'closure-act-hold-release');
     await settle(fixture);
     click(fixture, 'closure-confirm');
     await settle(fixture);
-    expect(closure.calls).toEqual(['hold-release']);
+    expect(closure.calls).toEqual(['hold-approve']);
+  });
+
+  it('the Owner sends a waiting request back with a required reason', async () => {
+    const closure = new FakeClosureApi();
+    closure.summary = { ...closure.summary, holdReleaseRequest: request('Requested') };
+    const fixture = await open(project('Handover'), session('Owner', OWNER_APPROVES), closure);
+    click(fixture, 'closure-act-hold-return');
+    await settle(fixture);
+    click(fixture, 'closure-hold-return-submit');
+    await settle(fixture);
+    expect(q(fixture, 'closure-hold-return-invalid')).not.toBeNull();
+    expect(closure.calls).toEqual([]);
+    const box = q(fixture, 'closure-hold-return-reason') as HTMLTextAreaElement;
+    box.value = 'المبلغ غير صحيح';
+    box.dispatchEvent(new Event('input'));
+    click(fixture, 'closure-hold-return-submit');
+    await settle(fixture);
+    expect(closure.calls).toEqual(['hold-return']);
+  });
+
+  it('gives the Owner no decision when nothing waits, or when the Owner asked for it', async () => {
+    const none = await open(project('Handover'), session('Owner', OWNER_APPROVES));
+    expect(q(none, 'closure-act-hold-release')).toBeNull();
+    expect(q(none, 'closure-act-hold-return')).toBeNull();
+    const closure = new FakeClosureApi();
+    closure.summary = { ...closure.summary, holdReleaseRequest: { ...request('Requested'), requestedByUserId: '11111111-1111-1111-1111-111111111111' } };
+    const own = await open(project('Handover'), session('Owner', OWNER_APPROVES), closure);
+    expect(q(own, 'closure-act-hold-release')).toBeNull();
   });
 
   it('offers no release when it already happened or nothing stands', async () => {
