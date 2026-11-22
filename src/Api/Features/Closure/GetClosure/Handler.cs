@@ -24,7 +24,12 @@ public sealed record OpenExtract(int Number, ExtractStatus Status);
 /// the hold at exactly zero. Null for a viewer who does not see money.
 /// </param>
 /// <param name="OpenExtracts">Every extract not yet Collected or Void, by number.</param>
-public sealed record Response(Guid ProjectId, Money? Hold, IReadOnlyList<OpenExtract> OpenExtracts);
+/// <param name="HoldReleaseRequest">
+/// The latest hold release request (AC-802-L): waiting for the Owner, approved, or rejected with its reason. Null when
+/// none was ever made.
+/// </param>
+public sealed record Response(
+    Guid ProjectId, Money? Hold, IReadOnlyList<OpenExtract> OpenExtracts, HoldReleaseRequestResponse? HoldReleaseRequest);
 
 internal static class Handler
 {
@@ -55,6 +60,21 @@ internal static class Handler
             ? BalanceQueries.GetLedgerBalances(database.AccountBalances, projectId).Hold
             : null;
 
-        return Microsoft.AspNetCore.Http.Results.Ok(new Response(projectId, hold, open));
+        HoldReleaseRequestResponse? request = await database.HoldReleaseRequests
+            .AsNoTracking()
+            .Where(candidate => candidate.ProjectId == projectId)
+            .OrderByDescending(candidate => candidate.RequestedAt)
+            .Select(candidate => new HoldReleaseRequestResponse(
+                candidate.Id,
+                candidate.ProjectId,
+                candidate.Status,
+                candidate.RequestedByUserId,
+                candidate.RequestedAt,
+                candidate.DecidedByUserId,
+                candidate.DecidedAt,
+                candidate.RejectionReason))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return Microsoft.AspNetCore.Http.Results.Ok(new Response(projectId, hold, open, request));
     }
 }

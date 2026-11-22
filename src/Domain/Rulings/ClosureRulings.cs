@@ -15,11 +15,11 @@ public sealed record ClosureActors : IRuling
         "Which permission holds each closure act.",
         "Five Unresolved catalogue rows. ProjectPracticalCompletionDeclare, ProjectHandover: Owner and Technical Office. "
         + "SnagManage and WarrantyCallbackManage (raise, fix, verify, resolve): Technical Office and the supervising site "
-        + "engineer. HoldRelease: Finance alone, no Owner approval step, so nobody can create and approve the same release. "
+        + "engineer. HoldRelease: Finance asks for the release; the Owner approves it through FinancialMovementApprove "
+        + "(spec.md section 9, D-262) and the posting is written at approval; the asker may not approve. "
         + "ProjectClose: the Owner. ASSUMED.",
-        "If the Owner approves the release, the release becomes two steps with the actor of the first read by "
-        + "SeparationOfDuties before the second, the posting is written at approval, and the Owner gains a route. Any "
-        + "change of holder is one catalogue row.",
+        "Any change of holder is one catalogue row. Dropping the Owner approval would collapse the two steps of "
+        + "HoldReleaseRequest back into one.",
         RulingStatus.Assumed);
 }
 

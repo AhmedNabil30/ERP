@@ -1,3 +1,4 @@
+using Kaff.Domain.Authorization;
 using Kaff.Domain.Closure;
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
@@ -335,6 +336,115 @@ public sealed class ClosureTests
 
             attempt.IsFailure.Should().BeTrue($"{type} must not debit the hold");
         }
+    }
+
+    // ---- KAFF-802 AC-802-L · the release is asked for by one user and approved by another -------
+
+    private static readonly Guid Owner = Guid.CreateVersion7();
+
+    private static Result<HoldReleaseRequest> Ask(Project project, decimal holdBalance, bool waiting = false) =>
+        HoldReleaseRequest.Request(
+            project,
+            TestAccounts.Hold(project.Id),
+            TestAccounts.ClientReceivable(project.Id),
+            new Money(holdBalance),
+            alreadyReleased: false,
+            requestWaiting: waiting,
+            Policy,
+            Actor,
+            Now,
+            Today);
+
+    private static Result<PostingSet> ApproveAs(HoldReleaseRequest request, Project project, Guid actor, decimal holdBalance) =>
+        request.Approve(
+            actor,
+            project,
+            TestAccounts.Hold(project.Id),
+            TestAccounts.ClientReceivable(project.Id),
+            new Money(holdBalance),
+            alreadyReleased: false,
+            Policy,
+            Now,
+            Today);
+
+    [Fact]
+    public void A_request_posts_nothing_and_the_approval_by_another_user_writes_the_one_release_for_the_balance_read_then()
+    {
+        Project project = ProjectIn(ProjectStatus.Handover);
+        HoldReleaseRequest request = Ask(project, 150_000m).Value;
+        request.Status.Should().Be(HoldReleaseRequestStatus.Requested);
+
+        PostingSet set = ApproveAs(request, project, Owner, 200_000m).Value;
+
+        Posting posting = set.Postings.Should().ContainSingle().Subject;
+        posting.Type.Should().Be(PostingType.HoldRelease);
+        posting.Amount.Should().Be(new Money(200_000m), "the amount is the hold read at approval, never one stored at the request");
+        posting.CreatedByUserId.Should().Be(Owner);
+        request.Status.Should().Be(HoldReleaseRequestStatus.Approved);
+        request.DecidedByUserId.Should().Be(Owner);
+    }
+
+    [Fact]
+    public void The_user_who_asked_for_the_release_can_neither_approve_nor_reject_it()
+    {
+        Project project = ProjectIn(ProjectStatus.Handover);
+        HoldReleaseRequest request = Ask(project, 200_000m).Value;
+
+        ApproveAs(request, project, Actor, 200_000m).Error.Should().Be(AuthorizationErrors.SameActorCreatedAndApproved);
+        request.Reject(Actor, "no", Now).Error.Should().Be(AuthorizationErrors.SameActorCreatedAndApproved);
+        request.Status.Should().Be(HoldReleaseRequestStatus.Requested);
+        request.DecidedByUserId.Should().BeNull();
+    }
+
+    [Theory]
+    [MemberData(nameof(States))]
+    public void A_release_may_be_asked_for_at_Handover_or_UnderWarranty_only(ProjectStatus status)
+    {
+        Result<HoldReleaseRequest> asked = Ask(ProjectIn(status), 200_000m);
+
+        bool expected = status is ProjectStatus.Handover or ProjectStatus.UnderWarranty;
+        asked.IsSuccess.Should().Be(expected, $"request on {status}");
+        if (!expected)
+        {
+            asked.Error.Should().Be(TreasuryErrors.PostingNotAllowedInProjectState);
+        }
+    }
+
+    [Fact]
+    public void A_second_request_while_one_waits_is_refused_and_a_zero_hold_cannot_be_asked_for()
+    {
+        Project project = ProjectIn(ProjectStatus.Handover);
+
+        Ask(project, 200_000m, waiting: true).Error.Should().Be(ClosureErrors.HoldReleaseAlreadyRequested);
+        Ask(project, 0m).Error.Should().Be(ClosureErrors.NothingToRelease);
+    }
+
+    [Fact]
+    public void A_rejection_needs_a_reason_and_a_decided_request_cannot_be_decided_again()
+    {
+        Project project = ProjectIn(ProjectStatus.Handover);
+        HoldReleaseRequest request = Ask(project, 200_000m).Value;
+
+        request.Reject(Owner, "  ", Now).Error.Should().Be(ClosureErrors.ReasonRequired);
+        request.Status.Should().Be(HoldReleaseRequestStatus.Requested);
+
+        request.Reject(Owner, "wait for the final collection", Now).IsSuccess.Should().BeTrue();
+        request.Status.Should().Be(HoldReleaseRequestStatus.Rejected);
+        request.RejectionReason.Should().Be("wait for the final collection");
+
+        ApproveAs(request, project, Owner, 200_000m).Error.Should().Be(ClosureErrors.HoldReleaseNotRequested);
+        request.Reject(Owner, "again", Now).Error.Should().Be(ClosureErrors.HoldReleaseNotRequested);
+    }
+
+    [Fact]
+    public void An_approval_is_still_refused_by_the_release_rules_when_the_project_left_the_release_states()
+    {
+        Project project = ProjectIn(ProjectStatus.UnderWarranty);
+        HoldReleaseRequest request = Ask(project, 200_000m).Value;
+        project.TransitionTo(ProjectStatus.Closed, Today).IsSuccess.Should().BeTrue();
+
+        ApproveAs(request, project, Owner, 200_000m).Error.Should().Be(TreasuryErrors.PostingNotAllowedInProjectState);
+        request.Status.Should().Be(HoldReleaseRequestStatus.Requested);
     }
 
     // ---- KAFF-803 · snag resolution --------------------------------------------------------------

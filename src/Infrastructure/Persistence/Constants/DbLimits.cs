@@ -56,5 +56,6 @@ internal static class DbTables
     public const string Snags = "snags";
     public const string Ncrs = "ncrs";
     public const string WarrantyCallbacks = "warranty_callbacks";
+    public const string HoldReleaseRequests = "hold_release_requests";
     public const string Adjustments = "adjustments";
 }

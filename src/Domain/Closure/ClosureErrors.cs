@@ -34,6 +34,14 @@ public static class ClosureErrors
     public static readonly Error HoldAlreadyReleased =
         Error.Conflict("closure.hold_already_released", "errors.closure.hold_already_released");
 
+    /// <summary>AC-802-L: a hold release request is already waiting for the Owner.</summary>
+    public static readonly Error HoldReleaseAlreadyRequested =
+        Error.Conflict("closure.hold_release_already_requested", "errors.closure.hold_release_already_requested");
+
+    /// <summary>AC-802-L: no hold release request is waiting to be approved or rejected.</summary>
+    public static readonly Error HoldReleaseNotRequested =
+        Error.Conflict("closure.hold_release_not_requested", "errors.closure.hold_release_not_requested");
+
     public static readonly Error NothingToRelease =
         Error.Conflict("closure.nothing_to_release", "errors.closure.nothing_to_release");
 

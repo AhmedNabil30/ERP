@@ -63,7 +63,24 @@ export interface ProjectClosure {
   readonly closedOn: string | null;
 }
 
-/** What the hold release returned: the amount the server summed, never one the caller typed. */
+export type HoldReleaseRequestStatus = 'Requested' | 'Approved' | 'Rejected';
+
+/**
+ * A hold release request (`HoldReleaseRequestResponse`, AC-802-L, D-262). Finance asks, the Owner approves
+ * and the posting is written then, or rejects with a reason that returns to Finance. It carries no amount.
+ */
+export interface HoldReleaseRequest {
+  readonly id: string;
+  readonly projectId: string;
+  readonly status: HoldReleaseRequestStatus;
+  readonly requestedByUserId: string;
+  readonly requestedAt: string;
+  readonly decidedByUserId: string | null;
+  readonly decidedAt: string | null;
+  readonly rejectionReason: string | null;
+}
+
+/** What the Owner's approval returned: the amount the server summed, never one the caller typed. */
 export interface HoldReleased {
   readonly projectId: string;
   readonly released: string;
@@ -84,6 +101,8 @@ export interface ClosureSummary {
   readonly projectId: string;
   readonly hold: string | null;
   readonly openExtracts: readonly OpenExtract[];
+  /** The latest hold release request; null when none was made. Always sent by the server. */
+  readonly holdReleaseRequest?: HoldReleaseRequest | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -119,9 +138,21 @@ export class ClosureApi {
     return await firstValueFrom(this.http.get<ClosureSummary>(`${this.base(projectId)}/closure`));
   }
 
-  /** No body: the amount is read from the hold ledger on the server. */
-  async releaseHold(projectId: string): Promise<HoldReleased> {
-    return await firstValueFrom(this.http.post<HoldReleased>(`${this.base(projectId)}/hold-release`, {}));
+  /** Finance asks for the release (D-262). No body, and nothing is posted until the Owner approves. */
+  async releaseHold(projectId: string): Promise<HoldReleaseRequest> {
+    return await firstValueFrom(this.http.post<HoldReleaseRequest>(`${this.base(projectId)}/hold-release`, {}));
+  }
+
+  /** The Owner approves the waiting request; the server sums the hold and writes the one release posting. */
+  async approveHoldRelease(projectId: string): Promise<HoldReleased> {
+    return await firstValueFrom(this.http.post<HoldReleased>(`${this.base(projectId)}/hold-release/approval`, {}));
+  }
+
+  /** The Owner rejects the waiting request with a reason; it returns to Finance. */
+  async rejectHoldRelease(projectId: string, reason: string): Promise<HoldReleaseRequest> {
+    return await firstValueFrom(
+      this.http.post<HoldReleaseRequest>(`${this.base(projectId)}/hold-release/rejection`, { reason }),
+    );
   }
 
   async listSnags(projectId: string): Promise<readonly Snag[]> {

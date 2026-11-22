@@ -45,3 +45,25 @@ public sealed record WarrantyCallbackResponse(
     internal static WarrantyCallbackResponse From(WarrantyCallback callback) =>
         new(callback.Id, callback.Number, callback.Description, callback.RaisedOn, callback.IsResolved, callback.ResolvedAt);
 }
+
+/// <summary>A hold release request as read (AC-802-L). It carries no amount: the release moves the hold read at approval.</summary>
+public sealed record HoldReleaseRequestResponse(
+    Guid Id,
+    Guid ProjectId,
+    HoldReleaseRequestStatus Status,
+    Guid RequestedByUserId,
+    DateTimeOffset RequestedAt,
+    Guid? DecidedByUserId,
+    DateTimeOffset? DecidedAt,
+    string? RejectionReason)
+{
+    internal static HoldReleaseRequestResponse From(HoldReleaseRequest request) => new(
+        request.Id,
+        request.ProjectId,
+        request.Status,
+        request.RequestedByUserId,
+        request.RequestedAt,
+        request.DecidedByUserId,
+        request.DecidedAt,
+        request.RejectionReason);
+}

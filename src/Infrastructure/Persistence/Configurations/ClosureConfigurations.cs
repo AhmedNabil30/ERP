@@ -63,3 +63,27 @@ internal sealed class WarrantyCallbackConfiguration : IEntityTypeConfiguration<W
         builder.Ignore(callback => callback.IsResolved);
     }
 }
+
+internal sealed class HoldReleaseRequestConfiguration : IEntityTypeConfiguration<HoldReleaseRequest>
+{
+    public void Configure(EntityTypeBuilder<HoldReleaseRequest> builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        builder.ToTable(DbTables.HoldReleaseRequests);
+        builder.HasKey(request => request.Id);
+        builder.Property(request => request.Id).ValueGeneratedNever();
+        builder.Property(request => request.RequestedAt).IsRequired();
+        builder.Property(request => request.RejectionReason).HasMaxLength(Project.MaxReasonLength);
+
+        // At most one request waits for the Owner on a project; the domain asks first, this index is the record.
+        builder.HasIndex(request => request.ProjectId)
+            .IsUnique()
+            .HasFilter("status = 'Requested'")
+            .HasDatabaseName("ux_hold_release_requests_waiting");
+
+        builder.HasOne<Project>().WithMany().HasForeignKey(request => request.ProjectId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<User>().WithMany().HasForeignKey(request => request.RequestedByUserId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<User>().WithMany().HasForeignKey(request => request.DecidedByUserId).OnDelete(DeleteBehavior.Restrict);
+    }
+}

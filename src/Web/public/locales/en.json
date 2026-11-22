@@ -1547,6 +1547,8 @@
   "errors.closure.termination_settlement_unruled": "Contract termination is not available at the moment. Nothing changed and nothing was posted.",
   "errors.closure.not_settled": "The project cannot close until all of its accounts are settled.",
   "errors.closure.hold_already_released": "The hold has already been released. It releases once only.",
+  "errors.closure.hold_release_already_requested": "A hold release request is already waiting for the Owner.",
+  "errors.closure.hold_release_not_requested": "No hold release request is waiting for approval.",
   "errors.closure.nothing_to_release": "There is no hold balance to release.",
   "errors.closure.accounts_missing": "The project's accounts are incomplete, so the hold release cannot be recorded.",
   "errors.closure.snag_list_not_open": "Snags are added after practical completion and before handover.",

@@ -17364,3 +17364,56 @@ The staging run of the full demo script remains part of Release 1's exit.
 
 He also asked that the rest of the work run in parallel: fixes for Release 1 alongside the planning
 of Releases 2 to 6, with no invented rules and no more process than the work needs.
+
+## D-262 — The hold release is asked for by Finance and approved by the Owner; the snag debit note stays unbuilt (KAFF-802, KAFF-803)
+
+2026-11-22. Backend lane, fixing the two closure rejections (`KAFF-802` AC-802-L, `KAFF-803` AC-803-E). Append-only;
+D-201's "Finance alone, no Owner approval step" for the hold release is superseded by item 1. Nothing else in D-201 is.
+
+1. **The hold release is two steps.** `spec.md` section 9 says "Owner approves all financial movements" and "nobody
+   creates and approves the same movement". The release is the largest single posting on a project, so it is a financial
+   movement and the Owner approves it. This was the change the `ClosureActors` ruling note already described.
+   - `POST /api/projects/{id}/hold-release` (`HoldRelease`, Finance) now creates a `HoldReleaseRequest` and posts
+     nothing. Every check the posting will face runs at the request (contract type, project state, already released,
+     nothing to release), so a request that could never be approved is refused at once. A second request while one
+     waits is refused (`closure.hold_release_already_requested`).
+   - `POST .../hold-release/approval` (`FinancialMovementApprove`, the Owner) writes the one `HoldRelease` posting in the
+     same save, through `ProjectClosure.ReleaseHold`, which is unchanged. The amount is the hold balance read at approval.
+     The request stores no amount, because the hold could still grow between the two steps and a stored figure would be a
+     stored balance. The user who asked may not approve or reject (`SeparationOfDuties.EnsureDifferentActor`).
+   - `POST .../hold-release/rejection` (`FinancialMovementApprove`) needs a reason, stores it on the request and posts
+     nothing. The request returns to Finance, who may ask again.
+   - `GET .../closure` carries `holdReleaseRequest`, the latest request with its status and rejection reason.
+   - New table `hold_release_requests` (migration `HoldReleaseRequests`). A filtered unique index allows one waiting
+     request per project; the project row lock makes the domain check the one that answers. No check constraint and no
+     balance column, so `DatabaseInitializer` needed no new entry.
+   - AC-802-M: the approval sets the audit reason (project state, amount, who asked), as `CloseProject` does. The skipped
+     test for it is un-skipped.
+   - Who asks remains assumed (Finance, `Q109`). Only the approver is taken from section 9.
+2. **The snag debit note (AC-803-E) is not built, and three things block it.** `spec.md` section 11 offers the toggle
+   and section 6.9 says a debit note is an Adjustment with a target account. Neither says:
+   - the amount of a snag's cost, or who sets it (`Q112`, and AC-803-D is HELD on it);
+   - the account on the other side of the posting, that is, what a debit note credits when it reduces the
+     subcontractor's payable;
+   - how a subcontractor's `SubcontractorPayable` account is opened on a project. No code path creates one today
+     (`KAFF-510`, subcontractor extracts, is not built).
+   Building a posting needs all three, so building it would invent a rule. `Snag.Resolve` still records the choice, who
+   and why, and posts nothing. `AdjustmentType.SubcontractorDebitNote` is still refused `adjustment.type_not_built`.
+   When the three are ruled, the debit note is one more `Adjustment.Raise...` beside `RaiseCreditNote`, approved by the
+   Owner and corrected by `Adjustment.Reverse` through `ReversesId`. That correction path already exists and is tested
+   for the credit note.
+3. **Not done.** No screen changed. The closure page still treats `hold-release` as the release itself. After this
+   change, the page shows a request and needs an Owner approve and reject action. That work belongs to the designer.
+   `src/Web/src/app/core/closure/closure.api.ts` has the types and the `approveHoldRelease` and `rejectHoldRelease`
+   calls.
+
+## D-263 — Nabil's word rulings for the Release 2-6 mocks · 2026-11-22
+
+Asked after `ux/arabic-copy-review-mocks-r2-r6-2026-11-22.md`. Nabil ruled four terms:
+
+1. **Staff send-back is «إرجاع».** Every place where staff return a document to its origin with a reason uses «إرجاع». «رفض» stays only for the client's final no on the portal. The built app's send-back keys (about ten) change to «إرجاع».
+2. **Every approval gate is «اعتماد».** Technical Office, Finance and Owner gates all say «اعتماد», as the built app does. The site money mock's «تصديق الكميات» and «قبول التسوية» revert.
+3. **Withholding is «الخصم والإضافة».** The built app's «الخصم من المنبع» (12+ keys) changes to «الخصم والإضافة»; the mocks keep it.
+4. **Subcontractor retention stays «الضمان».** No separate word; context tells it apart from the warranty period.
+
+The other terms in the copy review stay open for Karim through the release question sheet.

@@ -4,24 +4,16 @@ using Kaff.Domain.Common;
 using Kaff.Domain.Identity;
 using Kaff.Domain.Projects;
 using Kaff.Domain.Rulings;
-using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kaff.Api.Features.Closure.ReleaseHold;
 
-/// <summary>What was released.</summary>
-/// <param name="ProjectId">The project.</param>
-/// <param name="Released">The hold balance at the moment of release, summed from postings. Never typed.</param>
-/// <param name="PostingIds">The release posting.</param>
-public sealed record Response(Guid ProjectId, Money Released, IReadOnlyList<Guid> PostingIds);
-
 /// <summary>
-/// The single legal debit of the hold. The amount is read from the hold ledger inside the transaction that holds the
-/// project row lock; the project state, the "once" rule and the contract type are checked by
-/// <see cref="ProjectClosure.ReleaseHold"/>, not here. The database independently requires the release to leave the hold
-/// at exactly zero.
+/// Finance asks for the hold release (AC-802-L, spec.md section 9). Every check the release posting will face is asked now
+/// by <see cref="HoldReleaseRequest.Request"/>, so a request that could never be approved is refused at once. Nothing is
+/// posted here.
 /// </summary>
 internal static class Handler
 {
@@ -45,55 +37,36 @@ internal static class Handler
             return ResultExtensions.Problem(ProjectErrors.NotFound);
         }
 
-        List<Account> own = await database.Accounts
-            .Where(account => account.ProjectId == projectId && account.IsActive)
-            .ToListAsync(cancellationToken);
-
-        Money holdBalance = BalanceQueries.GetLedgerBalances(database.AccountBalances, projectId).Hold;
-
-        // Once released, released (spec.md §5.1: "It releases once"). A release reversed before 2026-11-18, when the
-        // generic reversal route still allowed it, does not reopen the release; a hold posting can no longer be reversed.
-        bool alreadyReleased = await database.Postings.AnyAsync(
-            posting => posting.ProjectId == projectId
-                && posting.Type == PostingType.HoldRelease
-                && posting.ReversesId == null,
-            cancellationToken);
+        HoldReleaseInputs inputs = await ClosureSupport.ReadHoldReleaseInputsAsync(database, projectId, cancellationToken);
+        bool waiting = await ClosureSupport.WaitingHoldReleaseAsync(database, projectId, cancellationToken) is not null;
 
         DateTimeOffset now = clock.GetUtcNow();
-        Result<PostingSet> built = ProjectClosure.ReleaseHold(
+        Result<HoldReleaseRequest> asked = HoldReleaseRequest.Request(
             project,
-            own.FirstOrDefault(account => account.Type == AccountType.Hold),
-            own.FirstOrDefault(account => account.Type == AccountType.ClientReceivable),
-            holdBalance,
-            alreadyReleased,
+            inputs.Hold,
+            inputs.Receivable,
+            inputs.HoldBalance,
+            inputs.AlreadyReleased,
+            waiting,
+            rulings.PostingProjectStates,
             currentUser.UserId ?? Guid.Empty,
             now,
-            SiteTime.DateOf(now),
-            rulings.PostingProjectStates);
+            SiteTime.DateOf(now));
 
-        if (built.IsFailure)
+        if (asked.IsFailure)
         {
-            return ResultExtensions.Problem(built.Error);
+            return ResultExtensions.Problem(asked.Error);
         }
 
-        database.Postings.AddRange(built.Value.Postings);
+        database.HoldReleaseRequests.Add(asked.Value);
 
-        // The exact-zero guard fires on the save or at COMMIT, so both are inside the translation.
         Error? refused = await GuardedSave.SaveAsync(database, cancellationToken);
-        if (refused is null)
+        if (refused is not null)
         {
-            try
-            {
-                await transaction.CommitAsync(cancellationToken);
-            }
-            catch (Exception exception) when (DatabaseGuardTranslation.Translate(exception) is { } violation)
-            {
-                refused = violation;
-            }
+            return ResultExtensions.Problem(refused);
         }
 
-        return refused is not null
-            ? ResultExtensions.Problem(refused)
-            : Microsoft.AspNetCore.Http.Results.Ok(new Response(projectId, holdBalance, [.. built.Value.Postings.Select(posting => posting.Id)]));
+        await transaction.CommitAsync(cancellationToken);
+        return Microsoft.AspNetCore.Http.Results.Ok(HoldReleaseRequestResponse.From(asked.Value));
     }
 }

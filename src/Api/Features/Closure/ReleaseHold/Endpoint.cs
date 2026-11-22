@@ -7,7 +7,9 @@ using Microsoft.AspNetCore.Routing;
 namespace Kaff.Api.Features.Closure.ReleaseHold;
 
 /// <summary>
-/// <c>POST /api/projects/{projectId:guid}/hold-release</c>. Releases the hold once and in full. The request carries no amount: it is the hold ledger balance summed from postings. Gated <c>HoldRelease</c> with the project from the route: role and assignment are both required.
+/// <c>POST /api/projects/{projectId:guid}/hold-release</c>. Finance asks for the hold release (AC-802-L). Nothing is posted:
+/// the Owner approves at <c>.../hold-release/approval</c> and the posting is written then. The request carries no amount.
+/// Gated <c>HoldRelease</c> with the project from the route: role and assignment are both required.
 /// </summary>
 public sealed class Endpoint : IEndpoint
 {

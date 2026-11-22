@@ -130,7 +130,7 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
         (await CountAsync(id, PostingType.HoldRelease)).Should().Be(0, "handing over writes no release: the release is its own act");
         (await BalanceAsync(id, AccountType.Hold)).Should().Be(200_000m);
 
-        HttpResponseMessage released = await SendAsync(HttpMethod.Post, $"/api/projects/{id}/hold-release", _finance, null);
+        HttpResponseMessage released = await ReleaseAsync(id);
         released.StatusCode.Should().Be(HttpStatusCode.OK, await released.Content.ReadAsStringAsync(Ct));
         using (JsonDocument body = JsonDocument.Parse(await released.Content.ReadAsStringAsync(Ct)))
         {
@@ -208,7 +208,7 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
         await CollectAsync(project, first);
         (await SendAsync(HttpMethod.Post, $"/api/projects/{id}/practical-completion", _technicalOffice, null)).StatusCode.Should().Be(HttpStatusCode.OK);
         (await SendAsync(HttpMethod.Post, $"/api/projects/{id}/handover", _technicalOffice, null)).StatusCode.Should().Be(HttpStatusCode.OK);
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{id}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ReleaseAsync(id)).StatusCode.Should().Be(HttpStatusCode.OK);
         decimal tax = await NetIntoAsync(id, AccountType.TaxWithheldAtSource);
         long before = await CountAllAsync(id);
 
@@ -256,7 +256,7 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
         (await ErrorCodeAsync(early)).Should().Be("closure.hold_not_released");
 
         (await SendAsync(HttpMethod.Post, $"/api/projects/{id}/handover", _technicalOffice, null)).StatusCode.Should().Be(HttpStatusCode.OK);
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{id}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ReleaseAsync(id)).StatusCode.Should().Be(HttpStatusCode.OK);
         (await BalanceAsync(id, AccountType.ClientReceivable)).Should().Be(60_000m, "the released hold is what the client owes");
         (await HoldPositionAsync(id)).Should().Equal(60_000m, 0m, 0m, 0m, 60_000m);
         decimal safe = await NetIntoAsync(id, AccountType.Safe);
@@ -368,7 +368,7 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
 
         await DrawDownAdvanceToZeroAsync(project);
         await SetStatusPathAsync(id, ProjectStatus.HandoverPending, ProjectStatus.Handover, ProjectStatus.UnderWarranty);
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{id}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ReleaseAsync(id)).StatusCode.Should().Be(HttpStatusCode.OK);
         (await BalanceAsync(id, AccountType.ClientAdvance)).Should().Be(0m);
         (await BalanceAsync(id, AccountType.Hold)).Should().Be(0m);
 
@@ -589,6 +589,14 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
         HttpResponseMessage response = await SendAsync(
             HttpMethod.Post, Step(project.Id, extract, "collect"), _finance, CollectBody(remaining));
         response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(Ct));
+    }
+
+    /// <summary>AC-802-L: Finance asks, the Owner approves. Returns the approval's response; the request must succeed.</summary>
+    private async Task<HttpResponseMessage> ReleaseAsync(Guid project)
+    {
+        HttpResponseMessage asked = await SendAsync(HttpMethod.Post, $"/api/projects/{project}/hold-release", _finance, null);
+        asked.StatusCode.Should().Be(HttpStatusCode.OK, await asked.Content.ReadAsStringAsync(Ct));
+        return await SendAsync(HttpMethod.Post, $"/api/projects/{project}/hold-release/approval", _owner, null);
     }
 
     private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string route, Guid actorId, object? body)

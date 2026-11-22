@@ -204,7 +204,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
         (await PostingCountAsync(project)).Should().Be(postings, "handing over posts nothing: the release is its own act");
 
         // The release: one posting, the whole hold, no amount in the request.
-        HttpResponseMessage released = await SendAsync(HttpMethod.Post, $"{root}/hold-release", _finance, null);
+        HttpResponseMessage released = await ReleaseAsync(project);
         released.StatusCode.Should().Be(HttpStatusCode.OK, await released.Content.ReadAsStringAsync(Ct));
         using (JsonDocument body = JsonDocument.Parse(await released.Content.ReadAsStringAsync(Ct)))
         {
@@ -274,7 +274,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
         await RaiseSnagAsync(project, SnagPriority.Minor);
         (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/handover", _technicalOffice, null)).StatusCode.Should().Be(HttpStatusCode.OK);
 
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ReleaseAsync(project)).StatusCode.Should().Be(HttpStatusCode.OK);
 
         (await HoldAsync(project)).Should().Be(0m);
     }
@@ -303,7 +303,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
         before["Hold"].Should().Be(200_000m);
         new[] { before["FirmAdvance"], before["PettyCash"], before["OwnerCurrent"] }.Should().OnlyContain(balance => balance != 0m);
 
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ReleaseAsync(project)).StatusCode.Should().Be(HttpStatusCode.OK);
 
         Dictionary<string, decimal> after = await ReadLedgersAsync(accounts);
         after["Hold"].Should().Be(0m);
@@ -320,7 +320,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
     {
         Guid project = await NewProjectAsync(ProjectStatus.UnderWarranty);
 
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ReleaseAsync(project)).StatusCode.Should().Be(HttpStatusCode.OK);
         (await HoldAsync(project)).Should().Be(0m);
     }
 
@@ -361,7 +361,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
         Guid project = await NewProjectAsync(ProjectStatus.Handover);
         MoveClockTo(instant);
 
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ReleaseAsync(project)).StatusCode.Should().Be(HttpStatusCode.OK);
 
         await using KaffDbContext reader = _database.CreateBareContext();
         Posting release = await reader.Postings.SingleAsync(p => p.ProjectId == project && p.Type == PostingType.HoldRelease, Ct);
@@ -405,11 +405,11 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
     {
         Guid project = await NewProjectAsync(ProjectStatus.Handover);
 
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ReleaseAsync(project)).StatusCode.Should().Be(HttpStatusCode.OK);
 
         await using KaffDbContext reader = _database.CreateBareContext();
         Posting release = await reader.Postings.SingleAsync(posting => posting.ProjectId == project && posting.Type == PostingType.HoldRelease, Ct);
-        release.CreatedByUserId.Should().Be(_finance);
+        release.CreatedByUserId.Should().Be(_owner, "D-262: the posting is written when the Owner approves the request");
         release.CreatedAt.Should().BeAfter(Now);
         (await reader.AuditRecords.AnyAsync(record => record.EntityId == release.Id, Ct)).Should().BeTrue();
     }
@@ -483,7 +483,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
                 .Should().Equal("AdvanceRecovered", "HoldReleased");
         }
 
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ReleaseAsync(project)).StatusCode.Should().Be(HttpStatusCode.OK);
         HttpResponseMessage advanceOnly = await SendAsync(HttpMethod.Post, close, _owner, null);
         advanceOnly.StatusCode.Should().Be(HttpStatusCode.Conflict);
         using (JsonDocument problem = JsonDocument.Parse(await advanceOnly.Content.ReadAsStringAsync(Ct)))
@@ -501,7 +501,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
         Guid project = await NewProjectAsync(ProjectStatus.UnderWarranty);
         (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/close", _owner, null)).StatusCode
             .Should().Be(HttpStatusCode.Conflict, "the hold is still 200,000");
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ReleaseAsync(project)).StatusCode.Should().Be(HttpStatusCode.OK);
 
         HttpResponseMessage closed = await SendAsync(HttpMethod.Post, $"/api/projects/{project}/close", _owner, null);
 
@@ -650,31 +650,95 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
     public async Task The_release_posting_is_audited_with_who_when_and_the_amount()
     {
         Guid project = await NewProjectAsync(ProjectStatus.Handover);
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ReleaseAsync(project)).StatusCode.Should().Be(HttpStatusCode.OK);
 
         await using KaffDbContext reader = _database.CreateBareContext();
         Posting release = await reader.Postings.SingleAsync(posting => posting.ProjectId == project && posting.Type == PostingType.HoldRelease, Ct);
         AuditRecord row = await reader.AuditRecords.SingleAsync(record => record.EntityId == release.Id && record.EntityType == nameof(Posting), Ct);
 
         row.Action.Should().Be(AuditAction.Created);
-        row.ActorUserId.Should().Be(_finance);
+        row.ActorUserId.Should().Be(_owner, "the posting is written when the Owner approves");
         row.OccurredAt.Should().BeAfter(Now);
         row.ProjectId.Should().Be(project);
         row.AfterJson.Should().Contain("200000").And.Contain("HoldRelease");
     }
 
+    // ---- AC-802-L · the release is asked for by Finance and approved by the Owner -------------------
+
+    [Fact]
+    public async Task Asking_for_the_release_posts_nothing_and_only_the_Owner_approval_writes_it()
+    {
+        Guid project = await NewProjectAsync(ProjectStatus.Handover);
+        string root = $"/api/projects/{project}";
+
+        HttpResponseMessage asked = await SendAsync(HttpMethod.Post, $"{root}/hold-release", _finance, null);
+        asked.StatusCode.Should().Be(HttpStatusCode.OK, await asked.Content.ReadAsStringAsync(Ct));
+        (await HoldAsync(project)).Should().Be(200_000m, "a request moves no money");
+        (await HoldReleaseCountAsync(project)).Should().Be(0);
+
+        // Finance prepares but does not approve: the approval route is the Owner's (spec.md section 9).
+        (await SendAsync(HttpMethod.Post, $"{root}/hold-release/approval", _finance, null)).StatusCode
+            .Should().Be(HttpStatusCode.Forbidden);
+        (await HoldReleaseCountAsync(project)).Should().Be(0);
+
+        HttpResponseMessage twice = await SendAsync(HttpMethod.Post, $"{root}/hold-release", _finance, null);
+        (await ErrorCodeAsync(twice)).Should().Be("closure.hold_release_already_requested");
+
+        HttpResponseMessage approved = await SendAsync(HttpMethod.Post, $"{root}/hold-release/approval", _owner, null);
+        approved.StatusCode.Should().Be(HttpStatusCode.OK, await approved.Content.ReadAsStringAsync(Ct));
+        (await HoldAsync(project)).Should().Be(0m);
+        (await HoldReleaseCountAsync(project)).Should().Be(1);
+
+        HttpResponseMessage again = await SendAsync(HttpMethod.Post, $"{root}/hold-release/approval", _owner, null);
+        (await ErrorCodeAsync(again)).Should().Be("closure.hold_release_not_requested");
+        (await HoldReleaseCountAsync(project)).Should().Be(1);
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        HoldReleaseRequest request = await reader.HoldReleaseRequests.SingleAsync(candidate => candidate.ProjectId == project, Ct);
+        request.Status.Should().Be(HoldReleaseRequestStatus.Approved);
+        request.RequestedByUserId.Should().Be(_finance);
+        request.DecidedByUserId.Should().Be(_owner);
+        List<AuditRecord> trail = await AuditOfAsync(request.Id);
+        trail.Select(row => row.ActorUserId).Should().Equal(_finance, _owner);
+    }
+
+    [Fact]
+    public async Task A_rejected_release_returns_to_Finance_with_its_reason_moves_nothing_and_may_be_asked_again()
+    {
+        Guid project = await NewProjectAsync(ProjectStatus.Handover);
+        string root = $"/api/projects/{project}";
+        (await SendAsync(HttpMethod.Post, $"{root}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        HttpResponseMessage blank = await SendAsync(HttpMethod.Post, $"{root}/hold-release/rejection", _owner, new { reason = " " });
+        (await ErrorCodeAsync(blank)).Should().Be("closure.reason_required");
+
+        HttpResponseMessage rejected = await SendAsync(
+            HttpMethod.Post, $"{root}/hold-release/rejection", _owner, new { reason = "final collection first" });
+        rejected.StatusCode.Should().Be(HttpStatusCode.OK, await rejected.Content.ReadAsStringAsync(Ct));
+        (await HoldAsync(project)).Should().Be(200_000m);
+        (await HoldReleaseCountAsync(project)).Should().Be(0);
+
+        HttpResponseMessage read = await SendAsync(HttpMethod.Get, $"{root}/closure", _finance, null);
+        using (JsonDocument body = JsonDocument.Parse(await read.Content.ReadAsStringAsync(Ct)))
+        {
+            JsonElement request = body.RootElement.GetProperty("holdReleaseRequest");
+            request.GetProperty("status").GetString().Should().Be("Rejected");
+            request.GetProperty("rejectionReason").GetString().Should().Be("final collection first");
+        }
+
+        (await ReleaseAsync(project)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await HoldAsync(project)).Should().Be(0m);
+    }
+
     /// <summary>
-    /// AC-802-M: the trail of a released hold carries "the project state". Nothing records it today: the release changes
-    /// no project row, so the only audit record is the posting's own, and a posting does not carry the status of the
-    /// project it was written against. Product gap, routed to the Scrum Master: the release handler would have to set
-    /// the audit reason (as CloseProject does) or the posting would have to snapshot the state. Skipped, not deleted, so
-    /// the criterion stays visible; remove the Skip when the product records it.
+    /// AC-802-M: the trail of a released hold carries who, when, the amount and the project state. The approval handler
+    /// sets the audit reason on the save that writes the posting (D-262), as CloseProject does.
     /// </summary>
-    [Fact(Skip = "PRODUCT GAP AC-802-M: the release's audit trail does not record the project state. See the remarks.")]
+    [Fact]
     public async Task The_release_audit_trail_records_the_project_state()
     {
         Guid project = await NewProjectAsync(ProjectStatus.Handover);
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{project}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ReleaseAsync(project)).StatusCode.Should().Be(HttpStatusCode.OK);
 
         await using KaffDbContext reader = _database.CreateBareContext();
         List<AuditRecord> trail = await reader.AuditRecords.Where(record => record.ProjectId == project).ToListAsync(Ct);
@@ -729,7 +793,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
     {
         Guid project = await NewProjectAsync(ProjectStatus.Handover);
         string root = $"/api/projects/{project}";
-        (await SendAsync(HttpMethod.Post, $"{root}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ReleaseAsync(project)).StatusCode.Should().Be(HttpStatusCode.OK);
 
         Guid accrual;
         Guid release;
@@ -768,7 +832,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
     {
         Guid project = await NewProjectAsync(ProjectStatus.Handover);
         string root = $"/api/projects/{project}";
-        (await SendAsync(HttpMethod.Post, $"{root}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ReleaseAsync(project)).StatusCode.Should().Be(HttpStatusCode.OK);
 
         await using (KaffDbContext legacy = _database.CreateBareAdminContext())
         {
@@ -918,6 +982,14 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
     {
         using JsonDocument problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
         return problem.RootElement.TryGetProperty("code", out JsonElement code) ? code.GetString() : null;
+    }
+
+    /// <summary>AC-802-L: Finance asks, the Owner approves. Returns the approval's response; the request must succeed.</summary>
+    private async Task<HttpResponseMessage> ReleaseAsync(Guid project)
+    {
+        HttpResponseMessage asked = await SendAsync(HttpMethod.Post, $"/api/projects/{project}/hold-release", _finance, null);
+        asked.StatusCode.Should().Be(HttpStatusCode.OK, await asked.Content.ReadAsStringAsync(Ct));
+        return await SendAsync(HttpMethod.Post, $"/api/projects/{project}/hold-release/approval", _owner, null);
     }
 
     private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string route, Guid actorId, object? body)

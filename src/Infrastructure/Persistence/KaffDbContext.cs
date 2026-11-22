@@ -148,6 +148,8 @@ public sealed class KaffDbContext : DbContext
 
     public DbSet<WarrantyCallback> WarrantyCallbacks => Set<WarrantyCallback>();
 
+    public DbSet<HoldReleaseRequest> HoldReleaseRequests => Set<HoldReleaseRequest>();
+
     public DbSet<Adjustment> Adjustments => Set<Adjustment>();
 
     /// <summary>KAFF-321 — staff departments, master data, superseding the D-153 §2 enum.</summary>

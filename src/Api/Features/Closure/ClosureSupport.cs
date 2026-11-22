@@ -3,6 +3,7 @@ using Kaff.Domain.Closure;
 using Kaff.Domain.Common;
 using Kaff.Domain.Projects;
 using Kaff.Domain.Rulings;
+using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,9 @@ internal sealed record ClosureOutcome(Result Result, IReadOnlyDictionary<string,
 {
     public static ClosureOutcome Of(Result result) => new(result);
 }
+
+/// <summary>What a hold release request or approval is checked against. Every figure is read, none is typed.</summary>
+internal sealed record HoldReleaseInputs(Account? Hold, Account? Receivable, Money HoldBalance, bool AlreadyReleased);
 
 /// <summary>The project after a closure act.</summary>
 public sealed record ProjectClosureResponse(
@@ -88,6 +92,38 @@ internal static class ClosureSupport
             ? ResultExtensions.Problem(refused)
             : Microsoft.AspNetCore.Http.Results.Ok(SnagResponse.From(snag));
     }
+
+    /// <summary>
+    /// What the hold release is checked against, read inside the caller's transaction under the project row lock: the
+    /// hold and receivable accounts, the hold balance summed from postings, and whether a standing release exists. A
+    /// release reversed before 2026-11-18, when the generic reversal route still allowed it, still counts as the release.
+    /// </summary>
+    public static async Task<HoldReleaseInputs> ReadHoldReleaseInputsAsync(
+        KaffDbContext database, Guid projectId, CancellationToken cancellationToken)
+    {
+        List<Account> own = await database.Accounts
+            .Where(account => account.ProjectId == projectId && account.IsActive)
+            .ToListAsync(cancellationToken);
+
+        bool alreadyReleased = await database.Postings.AnyAsync(
+            posting => posting.ProjectId == projectId
+                && posting.Type == PostingType.HoldRelease
+                && posting.ReversesId == null,
+            cancellationToken);
+
+        return new HoldReleaseInputs(
+            own.FirstOrDefault(account => account.Type == AccountType.Hold),
+            own.FirstOrDefault(account => account.Type == AccountType.ClientReceivable),
+            BalanceQueries.GetLedgerBalances(database.AccountBalances, projectId).Hold,
+            alreadyReleased);
+    }
+
+    /// <summary>The request waiting for the Owner on the project, if any. At most one exists (a filtered unique index).</summary>
+    public static Task<HoldReleaseRequest?> WaitingHoldReleaseAsync(
+        KaffDbContext database, Guid projectId, CancellationToken cancellationToken) =>
+        database.HoldReleaseRequests.FirstOrDefaultAsync(
+            request => request.ProjectId == projectId && request.Status == HoldReleaseRequestStatus.Requested,
+            cancellationToken);
 
     /// <summary>The next number in a project's own sequence; the unique index on (project, number) is the enforcement of record.</summary>
     public static async Task<int> NextSnagNumberAsync(KaffDbContext database, Guid projectId, CancellationToken cancellationToken) =>

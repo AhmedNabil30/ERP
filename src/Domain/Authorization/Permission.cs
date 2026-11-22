@@ -440,10 +440,10 @@ public enum Permission
     SnagManage = 82,
 
     /// <summary>
-    /// Release the hold, once and in full, at handover (spec.md sections 5.1, 11). UNRESOLVED (Q109, Q110): Finance alone
-    /// is assumed, with no Owner approval step; see <see cref="Rulings.ClosureActors"/> and
-    /// <see cref="Rulings.HoldReleaseGate"/>. The Owner is deliberately absent, so nobody creates and approves the same
-    /// release.
+    /// Ask for the hold release, once and in full, at handover (spec.md sections 5.1, 11). UNRESOLVED (Q109, Q110): Finance
+    /// is assumed. The Owner approves the request through <see cref="FinancialMovementApprove"/> and the posting is written
+    /// then (spec.md section 9, D-262); see <see cref="Rulings.ClosureActors"/> and <see cref="Rulings.HoldReleaseGate"/>.
+    /// The Owner is absent from this row, and the asker may not approve, so nobody creates and approves the same release.
     /// </summary>
     HoldRelease = 83,
 
