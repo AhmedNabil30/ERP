@@ -115,12 +115,13 @@ describe('ProjectTeamTab', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-testid^="team-remove-"]')).toBeNull();
   });
 
-  it('draws no empty list shell when the team has no rows; the no-engineer notice carries the screen', async () => {
+  it('draws the empty state, not a list shell, when the team has no rows (AC-115-F)', async () => {
     const api = new FakeApi();
     api.members = [];
     const fixture = await create(api);
     expect(el(fixture, 'workspace-team-list')).toBeNull();
     expect((fixture.nativeElement as HTMLElement).querySelector('ul.lst')).toBeNull();
+    expect(el(fixture, 'team-empty')).not.toBeNull();
     expect(el(fixture, 'team-no-engineer')).not.toBeNull();
   });
 

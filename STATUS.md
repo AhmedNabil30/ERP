@@ -117,8 +117,7 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 19 | 53 | 41 | 47 | 0 | 31 | 21 | 5 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | 🔴 REJECTED — a Verifier looked, and it did not pass | 8 | 0 | 0 | 0 | 0 | 0 | 13 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 0 | 9 | 0 | 0 | 0 | 0 | 5 | 106 |
-| ⚫ NOT-BUILT — cut, and not yet Ready | 0 | 5 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 14 | 0 | 0 | 0 | 0 | 5 | 106 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 13 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | **total** | **127** | **67** | **57** | **47** | **53** | **31** | **39** | **111** |
 
@@ -173,7 +172,7 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | [KAFF-212](stories/slice-2-masters/KAFF-212-supplier-master.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `54ff044` | 2026-09-13 | Supplier master — one account serving many projects |
 | [KAFF-213](stories/slice-2-masters/KAFF-213-archive-a-bab.md) | 2 | 3 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Archive a باب |
 | [KAFF-214](stories/slice-2-masters/KAFF-214-unarchive-a-catalogue-item.md) | 2 | 2 | 🔶 VERIFIED | CONDITIONAL | `7117704` | 2026-09-11 | Un-archive a catalogue item |
-| [KAFF-215](stories/slice-2-masters/KAFF-215-a-sidebar-that-lists-every-destination.md) | 2 | 5 | ⚫ NOT-BUILT | none | `-` | 2026-09-13 | A sidebar that lists every destination the session reaches |
+| [KAFF-215](stories/slice-2-masters/KAFF-215-a-sidebar-that-lists-every-destination.md) | 2 | 5 | 🟡 BUILT | none | `e6487b1` | 2026-11-22 | A sidebar that lists every destination the session reaches |
 | [KAFF-300](stories/slice-3-treasury/KAFF-300-the-section-15-worked-example.md) | 3 | 5 | 🔵 VERIFIED | PASS | `792c1ba` | 2026-11-18 | The §15 worked example as a fixture — present and failing before anything else is built |
 | [KAFF-301](stories/slice-3-treasury/KAFF-301-post-a-movement-between-two-accounts.md) | 3 | 8 | 🔶 VERIFIED | CONDITIONAL | `792c1ba` | 2026-11-18 | Post a movement between two accounts, append-only |
 | [KAFF-302](stories/slice-3-treasury/KAFF-302-create-a-projects-account-set-on-creation.md) | 3 | 5 | 🔵 VERIFIED | PASS | `792c1ba` | 2026-11-18 | Create a project's account set when a project is created |

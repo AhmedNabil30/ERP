@@ -1742,6 +1742,7 @@
   "projects.team.error.person": "Choose a person",
   "projects.team.error.level": "Choose the seniority",
   "projects.team.none_available": "Nobody is available to add",
+  "projects.team.empty": "Nobody is on the team",
   "projects.team.no_engineer": "No site engineer is assigned yet",
   "projects.team.origin.Automatic": "Automatic",
   "projects.team.origin.Creator": "Created the project",

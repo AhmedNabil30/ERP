@@ -45,6 +45,9 @@
           }
         </ul>
       }
+      @if (members().length === 0) {
+        <kaff-state mode="empty" icon="info" titleKey="projects.team.empty" testId="team-empty" />
+      }
       @if (noEngineer()) {
         <kaff-banner tone="note" icon="info" testId="team-no-engineer"><b>{{ i18n.t('projects.team.no_engineer') }}</b></kaff-banner>
       }

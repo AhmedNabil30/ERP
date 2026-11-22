@@ -1,6 +1,6 @@
 # KAFF-215 · A sidebar that lists every destination the session reaches
 
-<!-- kaff id=KAFF-215 slice=2 points=5 state=NOT-BUILT verdict=none at=- on=2026-09-13 -->
+<!-- kaff id=KAFF-215 slice=2 points=5 state=BUILT verdict=none at=e6487b1 on=2026-11-22 -->
 
 **Slice:** 2 (Masters) · **Epic:** Masters — nav shell · **Points:** 5. Not a 1: this is a second
 permission-driven table alongside `landing.ts`'s, a completeness test that walks `app.routes.ts`
@@ -127,7 +127,9 @@ current URL is a child route such as `/catalogue/new` or `/catalogue/:catalogueI
 **AC-215-G — the mobile drawer still works at 390px with several rows**
 Given a session with at least four rows, viewport 390px wide, Arabic locale
 When the drawer is opened
-Then it slides in from the right (RTL inline-start), lists every row the session holds, closes on a row
+> Changed 2026-11-22. Was "slides in from the right". The approved shell mock (`layout.html`, KAFF-922) draws a bottom sheet on phone, and that is what is built.
+
+Then it opens as a bottom sheet, lists every row the session holds, closes on a row
 tap and on the backdrop tap, and the page body does not scroll horizontally
 
 **AC-215-H — the post-login landing is unchanged**

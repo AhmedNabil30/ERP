@@ -1742,6 +1742,7 @@
   "projects.team.error.person": "اختر شخصاً",
   "projects.team.error.level": "اختر الدرجة",
   "projects.team.none_available": "لا يوجد أحد متاح للإضافة",
+  "projects.team.empty": "لا أحد في الفريق",
   "projects.team.no_engineer": "لم يُسنَد مهندس الموقع بعد",
   "projects.team.origin.Automatic": "تلقائي",
   "projects.team.origin.Creator": "أنشأ المشروع",
