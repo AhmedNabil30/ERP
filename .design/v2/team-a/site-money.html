@@ -57,7 +57,7 @@ body.embed .strip{display:none}
 .top{display:flex;align-items:center;justify-content:space-between;block-size:56px;padding:0 16px;background:var(--g900);color:var(--c200);font:700 1.25rem/1 var(--display)}
 .top span{font:500 .875rem/1 var(--body);color:var(--g300)}
 .main{display:flex;flex-direction:column;min-block-size:calc(100dvh - 56px)}
-.ph{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:8px 32px 12px;flex-wrap:wrap}
+.ph{display:flex;align-items:flex-end;justify-content:flex-start;gap:40px;padding:8px 32px 12px;flex-wrap:wrap}
 .ph h1{font:700 2rem/1.3 var(--display);margin:0}
 .ph .sub{color:var(--dim);font-size:.9375rem}
 .acts{display:flex;align-items:center;gap:12px}
@@ -85,6 +85,7 @@ body.embed .strip{display:none}
 .ban>svg{margin-block-start:2px}
 .state{border:1.5px solid var(--line);border-radius:var(--radius);padding:44px 24px;text-align:center;display:grid;justify-items:center;gap:10px}
 .state.refused{border-style:dashed;border-color:var(--fieldline)}
+.state.plain{border:0;padding:12px 0}
 .state .ico{inline-size:56px;block-size:56px;border-radius:var(--radius);display:grid;place-items:center;background:var(--head)}
 .state.refused .ico{border-radius:50%;border:2px solid var(--fieldline);background:transparent}
 .state .ico svg{inline-size:28px;block-size:28px}
@@ -161,6 +162,19 @@ a.rw:hover{background:var(--hover)}
 /* new part: receipt thumb */
 .rcpt{inline-size:44px;block-size:44px;border:1.5px solid var(--fieldline);border-radius:var(--radius);display:grid;place-items:center;background:var(--field);flex:none}
 .rcpt.big{inline-size:72px;block-size:72px}
+.rcpt{position:relative}
+.rcpt.has{background:var(--ok-bg);color:var(--ok-ink);border-color:var(--ok-ink)}
+.rcpt.has .ck{position:absolute;inset-block-end:-6px;inset-inline-end:-6px;inline-size:20px;block-size:20px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center}
+.rcpt.has .ck svg{inline-size:12px;block-size:12px;stroke-width:3}
+.rcpt.add{border-style:dashed}
+.sub2{display:block;color:var(--dim);font-size:.8125rem;font-weight:400}
+.qi .qp{font-weight:500}
+.chn>summary{display:flex;align-items:center;gap:10px;min-block-size:48px;padding:6px 14px;border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface);cursor:pointer;list-style:none;font-weight:600}
+.chn>summary::-webkit-details-marker{display:none}
+.chn>summary::after{content:"";margin-inline-start:auto;inline-size:8px;block-size:8px;border-inline-end:2px solid currentColor;border-block-end:2px solid currentColor;transform:rotate(45deg)}
+.chn[open]>summary::after{transform:rotate(-135deg)}
+.chn[open]>summary{border-end-start-radius:0;border-end-end-radius:0}
+.chn .chain{border-block-start:0;border-start-start-radius:0;border-start-end-radius:0}
 .ln{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 16px;border-block-start:1px solid var(--line);min-block-size:64px}
 .ln:first-child{border-block-start:0}
 /* new part: overdraw sheet over S4 */
@@ -208,6 +222,7 @@ const ic={
  alert:'<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/>',cam:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
  plus:'<path d="M12 5v14M5 12h14"/>',lock:'<rect x="5" y="11" width="14" height="9" rx="1"/><path d="M8 11V8a4 4 0 018 0v3"/>',
  clock:'<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',inbox:'<path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5l1 2h4l1-2h5"/>',
+ doc:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/>',
  send:'<path d="M4 12l16-8-6 16-3-7z"/>'
 };
 const i=(n,s)=>`<svg class="i ${s||''}" viewBox="0 0 24 24" aria-hidden="true">${ic[n]}</svg>`;
@@ -236,7 +251,7 @@ const denied=()=>st('lock','لا تملك صلاحية على هذا المشر�
 const SCR={};
 SCR.s1={name:'S1 طلب عهدة',views:{normal:'مسوداتي',empty:'فارغ',form:'طلب جديد',loading:'تحميل',failed:'تعذّر الحفظ',refused:'رُفض: عهدة سابقة',refusedcap:'رُفض: الحد'},
  f(v){
-  const L=`<div class="lst"><div class="rw" style="--cols:minmax(0,1fr) 110px auto"><span class="first"><b>مواد سباكة للدور الثاني</b></span><span class="n">${m(4500)}</span><span>${pill('none','مسودة','clock')}</span></div><div class="rw" style="--cols:minmax(0,1fr) 110px auto"><span class="first"><b>نقل ردم</b></span><span class="n">${m(2000)}</span><span>${pill('none','مسودة','clock')}</span></div></div>`;
+  const L=`<div class="lst"><div class="rw" style="--cols:minmax(0,1fr) 110px auto"><span class="first"><b>مواد سباكة للدور الثاني</b><small class="sub2">عند المشرف: هبة فؤاد</small></span><span class="n">${m(4500)}</span><span>${pill('none','مسودة','doc')}</span></div><div class="rw" style="--cols:minmax(0,1fr) 110px auto"><span class="first"><b>نقل ردم</b><small class="sub2">عند المشرف: هبة فؤاد</small></span><span class="n">${m(2000)}</span><span>${pill('none','مسودة','doc')}</span></div></div>`;
   const form=(a,p,x)=>wrap((x||'')+fld('المشروع',ro(PROJ))+fld('المبلغ',mon(a),{req:1})+fld('الغرض',ta(p),{req:1}));
   const R={t:'طلب عهدة',sub:PROJ,back:'المشروع',who:'خالد منصور · مهندس موقع',prim:btn('حفظ كمسودة')};
   if(v==='normal'){R.body=`<div class="sec-h"><h3>مسوداتي</h3></div>${L}`;R.prim=btn('طلب عهدة جديدة','','plus');}
@@ -251,7 +266,7 @@ SCR.s1={name:'S1 طلب عهدة',views:{normal:'مسوداتي',empty:'فارغ
 SCR.s2={name:'S2 مسودات للإرسال',views:{normal:'عادي',return:'إرجاع',empty:'فارغ',loading:'تحميل',failed:'تعذّر',refused:'غير معيّن'},
  f(v){
   const R={t:'عهد بانتظار الإرسال',sub:PROJ,back:'المشروع',who:'هبة فؤاد · مهندس موقع مشرف'};
-  const item=(n,amt,p,dt,open,ret)=>`<div class="qi ${open?'open':''}"><div class="qh"><b>${n}</b>${m(amt,open?'ج.م':'')}</div><div class="qm"><span>${p}</span><span>${d(dt)}</span></div>${open?(ret?`${reasonField()}<div class="qa">${btn('تأكيد الإرجاع')}${btn('إلغاء','sec2')}</div>`:`<div class="qa">${btn('إرسال','','send')}${btn('إرجاع','sec2')}</div>`):''}</div>`;
+  const item=(n,amt,p,dt,open,ret)=>`<div class="qi ${open?'open':''}"><div class="qh"><b>${n}</b>${m(amt,'ج.م')}</div><div class="qm"><span>${p}</span><span>${d(dt)}</span></div>${open?(ret?`${reasonField()}<div class="qa">${btn('تأكيد الإرجاع')}${btn('إلغاء','sec2')}</div>`:`<div class="qa">${btn('إرسال','','send')}${btn('إرجاع','sec2')}</div>`):''}</div>`;
   const Ls=ret=>`<div class="lst">${item('خالد منصور',4500,'مواد سباكة للدور الثاني','20/11/2026',1,ret)}${item('ياسر فتحي',2000,'نقل ردم','19/11/2026',0)}</div>`;
   if(v==='normal')R.body=Ls(0);
   if(v==='return')R.body=Ls(1);
@@ -264,34 +279,35 @@ SCR.s2={name:'S2 مسودات للإرسال',views:{normal:'عادي',return:'�
 SCR.s3={name:'S3 تسوية عهدة',views:{normal:'عادي',empty:'بلا بنود',returned:'أُعيدت',loading:'تحميل',failed:'تعذّر الرفع',refused:'المصروف أكبر'},
  f(v){
   const R={t:'تسوية العهدة',sub:PROJ,back:'المشروع',who:'خالد منصور · مهندس موقع',prim:btn('إرسال للمحاسبة','','send')};
-  const line=(t,a)=>`<div class="ln"><span class="rcpt">${i('cam')}</span><b>${t}</b>${m(a)}</div>`;
-  const lines=`<div class="sec-h"><h3>بنود الصرف</h3></div><div class="lst">${line('مواسير وأكواع',2100)}${line('أجرة عمالة يوم',900)}${line('نقل',500)}</div>`;
-  const add=btn('إضافة بند صرف','sec2','plus');
-  const left=a=>kv([['غير المصروف',big(a),'tot']]);
-  if(v==='normal')R.body=hero('المستلم',5000)+lines+add+left(1500);
-  if(v==='returned')R.body=ban('أُعيدت التسوية: الفاتورة الثالثة غير واضحة','','note')+hero('المستلم',5000)+lines+add+left(1500);
-  if(v==='empty'){R.body=hero('المستلم',5000)+st('cam','أضف أول بند صرف','',add)+left(5000);R.prim=off(R.prim);}
+  const line=(t,a,ph)=>`<div class="ln"><span class="rcpt ${ph===0?'add':'has'}">${i('cam')}${ph===0?'':`<em class="ck">${i('check')}</em>`}</span><span><b>${t}</b>${ph===0?'<small class="sub2">بلا صورة فاتورة</small>':''}</span>${m(a)}</div>`;
+  const lines=(np)=>`<div class="sec-h"><h3>بنود المصروف</h3></div><div class="lst">${line('مواسير وأكواع',2100)}${line('أجرة عمالة يوم',900)}${line('نقل',500,np?0:1)}</div>`;
+  const add=btn('إضافة بند مصروف','sec2','plus');
+  const left=a=>kv([['المتبقي للإرجاع',big(a),'tot']]);
+  if(v==='normal')R.body=hero('المستلم',5000)+lines(1)+add+left(1500);
+  if(v==='returned')R.body=ban('أُعيدت التسوية: الفاتورة الثالثة غير واضحة','','note')+hero('المستلم',5000)+lines(0)+add+left(1500);
+  if(v==='empty'){R.body=hero('المستلم',5000)+st('cam','أضف أول بند مصروف','',add)+left(5000);R.prim=off(R.prim);}
   if(v==='loading'){R.body=skel(3);R.prim='';}
-  if(v==='failed')R.body=ban('تعذّر الرفع. الصور محفوظة على هاتفك','إعادة المحاولة')+hero('المستلم',5000)+lines+left(1500);
-  if(v==='refused'){R.body=ban('مجموع البنود أكبر من المبلغ المستلم')+hero('المستلم',5000)+lines+add+left(-500);R.prim=off(R.prim);}
+  if(v==='failed')R.body=ban('تعذّر الرفع. الصور محفوظة على هاتفك','إعادة المحاولة')+hero('المستلم',5000)+lines(0)+left(1500);
+  if(v==='refused'){R.body=ban('مجموع البنود أكبر من المستلم بمقدار '+m(500,'ج.م'))+hero('المستلم',5000)+lines(0)+add;R.prim=off(R.prim);}
   return R;}};
 
 SCR.s4={name:'S4 بانتظار المحاسبة',views:{normal:'عادي',req:'تفاصيل: طلب',settle:'تفاصيل: تسوية',exp:'تفاصيل: مصروف',reject:'رفض',empty:'فارغ',loading:'تحميل',failed:'تعذّر'},
  f(v){
   const R={t:'بانتظار المحاسبة',sub:PROJ,back:'المشروع',who:'منى سامي · المالية'};
   const C='minmax(0,1.2fr) minmax(0,1fr) 120px 110px 170px';
-  const rows=[['طلب عهدة','خالد منصور',4500,'20/11/2026','run','جاهز للصرف'],['تسوية عهدة','هبة فؤاد',1500,'19/11/2026','run','جاهزة للاعتماد'],['مصروف','ياسر فتحي',850,'19/11/2026','run','جاهز للتأكيد'],['طلب عهدة','ياسر فتحي',2000,'18/11/2026','post','بانتظار المالك']]
-   .map(r=>`<a class="rw" href="#" style="--cols:${C}"><span class="first"><b>${r[0]}</b></span><span data-l="من">${r[1]}</span><span class="n" data-l="المبلغ">${m(r[2])}</span><span data-l="التاريخ">${d(r[3])}</span><span>${pill(r[4],r[5],r[4]==='post'?'clock':'check')}</span></a>`).join('');
+  const rw=r=>`<a class="rw" href="#" style="--cols:${C}"><span class="first"><b>${r[0]}</b></span><span>${r[1]}</span><span class="n">${m(r[2],'ج.م')}</span><span>${d(r[3])}</span><span>${pill(r[4],r[5],r[4]==='post'?'clock':'')}</span></a>`;
+  const mine=[['طلب عهدة','خالد منصور',4500,'20/11/2026','run','دورك'],['تسوية عهدة','هبة فؤاد',1500,'19/11/2026','run','دورك'],['مصروف موقع','ياسر فتحي',850,'19/11/2026','run','دورك']].map(rw).join('');
+  const other=rw(['طلب عهدة','ياسر فتحي',2000,'18/11/2026','post','بانتظار المالك']);
   const rej=btn('رفض','sec2');
   const dtl=(t)=>{R.t=t;R.back='بانتظار المحاسبة';R.sec=rej;};
-  if(v==='normal')R.body=`<div class="lst">${hd(C,['النوع','من','المبلغ (ج.م)','التاريخ','الحالة'],[2])}${rows}</div>`;
+  if(v==='normal')R.body=`<div class="sec-h"><h3>دورك</h3></div><div class="lst">${hd(C,['النوع','من','المبلغ','التاريخ','الحالة'],[2])}${mine}</div><div class="sec-h"><h3>بانتظار غيرك</h3></div><div class="lst">${other}</div>`;
   if(v==='empty')R.body=st('inbox','لا شيء بانتظارك');
   if(v==='loading')R.body=skel(4);
   if(v==='failed')R.body=fail();
-  if(v==='req'){dtl('طلب عهدة');R.prim=btn('صرف','','send');R.body=kv([['مقدّم الطلب','خالد منصور'],['المبلغ',big(4500)],['الغرض','مواد سباكة للدور الثاني'],['التاريخ',d('20/11/2026')],['الحالة',pill('run','معتمد من المالك','check')]]);}
-  if(v==='settle'){dtl('تسوية عهدة');R.prim=btn('اعتماد التسوية','','check');
+  if(v==='req'){dtl('طلب عهدة');R.prim=btn('دفع','','send');R.body=kv([['مقدّم الطلب','خالد منصور'],['المبلغ',big(4500)],['الغرض','مواد سباكة للدور الثاني'],['التاريخ',d('20/11/2026')],['الحالة',pill('run','معتمد من المالك','check')]]);}
+  if(v==='settle'){dtl('تسوية عهدة');R.prim=btn('قبول التسوية','','check');
    const ln=(t,a)=>`<div class="ln"><span class="rcpt big">${i('cam')}</span><b>${t}</b>${m(a)}</div>`;
-   R.body=kv([['صاحب العهدة','هبة فؤاد'],['المستلم',m(5000,'ج.م')],['المصروف',m(3500,'ج.م')],['غير المصروف',big(1500),'tot']])+`<div class="sec-h"><h3>الفواتير</h3></div><div class="lst">${ln('مواسير وأكواع',2100)}${ln('أجرة عمالة يوم',900)}${ln('نقل',500)}</div>`;}
+   R.body=kv([['صاحب العهدة','هبة فؤاد'],['المستلم',m(5000,'ج.م')],['المصروف',m(3500,'ج.م')],['المتبقي للإرجاع',big(1500),'tot']])+`<div class="sec-h"><h3>الفواتير</h3></div><div class="lst">${ln('مواسير وأكواع',2100)}${ln('أجرة عمالة يوم',900)}${ln('نقل',500)}</div>`;}
   if(v==='exp'){dtl('مصروف موقع');R.prim=btn('تأكيد','','check');R.body=kv([['سجّله','ياسر فتحي'],['المبلغ',big(850)],['الوصف','أدوات لياسة'],['التاريخ',d('19/11/2026')],['الفاتورة',`<span class="rcpt big">${i('cam')}</span>`]]);}
   if(v==='reject'){R.t='رفض الطلب';R.back='بانتظار المحاسبة';R.prim=btn('تأكيد الرفض');R.sec=btn('إلغاء','sec2');R.body=kv([['النوع','طلب عهدة'],['من','خالد منصور'],['المبلغ',m(4500,'ج.م')]])+wrap(reasonField());}
   return R;}};
@@ -299,8 +315,9 @@ SCR.s4={name:'S4 بانتظار المحاسبة',views:{normal:'عادي',req:'
 SCR.s5={name:'S5 بانتظار المالك',views:{normal:'عادي',reject:'رفض',empty:'فارغ',loading:'تحميل',failed:'تعذّر',refused:'أنت من جهّزه'},
  f(v){
   const R={t:'بانتظار اعتمادك',sub:'',back:'الرئيسية',who:'أحمد نبيل · المالك'};
-  const it=(k,p,amt,by,open,ret,own)=>`<div class="qi ${open?'open':''}"><div class="qh"><b>${k}</b>${m(amt,open?'ج.م':'')}</div><div class="qm"><span>${p}</span><span>${by}</span></div>${open?(own?ban('أنت من جهّز هذا الإجراء. لا يعتمده غيرك'):ret?`${reasonField()}<div class="qa">${btn('تأكيد الرفض')}${btn('إلغاء','sec2')}</div>`:`<div class="qa">${btn('اعتماد','','check')}${btn('رفض','sec2')}</div>`):''}</div>`;
-  const Ls=(r,o)=>`<div class="lst">${it('طلب عهدة',PROJ,4500,'جهّزه خالد منصور',1,r,o)}${it('مستخلص مقاول باطن','فيلا القاهرة الجديدة',169290,'جهّزته منى سامي',0)}${it('سلفة على عميل',PROJ,250000,'جهّزتها منى سامي',0)}</div>`;
+  const CL='محمود الشريف';
+  const it=(k,pu,pr,amt,by,dt,open,ret,own)=>`<div class="qi ${open?'open':''}"><div class="qh"><b>${k}</b>${m(amt,'ج.م')}</div><div class="qp">${pu}</div><div class="qm"><span>${pr}</span><span>${by}</span><span>${d(dt)}</span></div>${open?(own?ban('أنت من جهّز هذا الإجراء. لا يعتمده غيرك'):ret?`${reasonField()}<div class="qa">${btn('تأكيد الرفض')}${btn('إلغاء','sec2')}</div>`:`<div class="qa">${btn('اعتماد','','check')}${btn('رفض','sec2')}</div>`):''}</div>`;
+  const Ls=(r,o)=>`<div class="lst">${it('سلفة على عميل','رسوم ترخيص وتوصيل مرافق · العميل '+CL,PROJ,250000,o?'جهّزتها أنت':'جهّزتها منى سامي','18/11/2026',1,r,o)}${it('مستخلص مقاول باطن','شركة النور للكهرباء · 17-23/11/2026','فيلا القاهرة الجديدة',169290,'جهّزته منى سامي','19/11/2026',0)}${it('طلب عهدة','مواد سباكة للدور الثاني',PROJ,4500,'جهّزه خالد منصور','20/11/2026',0)}</div>`;
   if(v==='normal')R.body=Ls(0,0);
   if(v==='reject')R.body=Ls(1,0);
   if(v==='refused')R.body=Ls(0,1);
@@ -313,8 +330,8 @@ SCR.s6={name:'S6 سلفة على عميل',views:{finance:'المحاسب',owner
  f(v){
   const R={t:'سلفة على عميل',sub:PROJ,back:'المشروع'};
   const figs=over=>`<div class="sec-h"><h3>الحد</h3></div>`+kv([['الحد الأقصى',m(500000,'ج.م')],['الخارج حالياً',m(320000,'ج.م')],['بعد هذه السلفة',m(570000,'ج.م'),over?'tot':''],['إجمالي المعرّض لكل المشاريع',m(1490000,'ج.م')]]);
-  const view=kv([['المشروع',PROJ],['المبلغ',big(250000)],['تدفع مقابل','رسوم ترخيص وتوصيل مرافق'],['جهّزتها','منى سامي']]);
-  if(v==='finance'){R.who='منى سامي · المالية';R.prim=btn('إرسال للمالك','','send');R.body=wrap(fld('المشروع',ro(PROJ))+fld('المبلغ',mon('250000'),{req:1})+fld('تدفع مقابل',ta('رسوم ترخيص وتوصيل مرافق'),{req:1}))+figs(0).replace('570,000','570,000');}
+  const view=kv([['المشروع',PROJ],['العميل','محمود الشريف'],['المبلغ',big(250000)],['تدفع مقابل','رسوم ترخيص وتوصيل مرافق'],['جهّزتها','منى سامي']]);
+  if(v==='finance'){R.who='منى سامي · المالية';R.prim=btn('إرسال للمالك','','send');R.body=wrap(fld('المشروع',ro(PROJ))+fld('العميل',ro('محمود الشريف'))+fld('المبلغ',mon('250000'),{req:1})+fld('تدفع مقابل',ta('رسوم ترخيص وتوصيل مرافق'),{req:1}))+figs(0).replace('570,000','570,000');}
   if(v==='owner'){R.who='أحمد نبيل · المالك';R.prim=btn('اعتماد','','check');R.sec=btn('رفض','sec2');R.body=view+figs(0);}
   if(v==='overcap'){R.who='أحمد نبيل · المالك';R.prim=off(btn('اعتماد','','check'));R.sec=btn('رفض','sec2');R.body=ban('المبلغ يتجاوز الحد بمقدار '+m(70000,'ج.م'))+view+figs(1);}
   if(v==='empty'){R.who='منى سامي · المالية';R.body=st('inbox','لا توجد سلفة لهذا المشروع','',btn('تجهيز سلفة'));}
@@ -322,12 +339,12 @@ SCR.s6={name:'S6 سلفة على عميل',views:{finance:'المحاسب',owner
   if(v==='failed')R.body=fail();
   return R;}};
 
-SCR.s7={name:'S7 الخزنة لا تكفي',views:{normal:'عادي',failed:'رُفض الضخ',refused:'بلا صلاحية'},
+SCR.s7={name:'S7 الخزنة لا تكفي',views:{normal:'عادي',failed:'رُفض الإيداع',refused:'بلا صلاحية'},
  f(v){const R=SCR.s4.f('normal');R.sheet=v;return R;}};
 function sheet(v){
   let bd,ft;
-  if(v==='refused'){bd=st('lock','لا تملك صلاحية تسجيل الضخ','يسجّله المالك','','refused');ft=btn('إغلاق','sec2');}
-  else{bd=(v==='failed'?ban('رفض النظام تسجيل الضخ: المبلغ أقل من العجز'):'')+hero('العجز',12500)+'<p>الخزنة لا تكفي لهذا الصرف</p>'+fld('مبلغ الضخ',mon(v==='failed'?'10000':'12500'),{req:1,err:v==='failed'});ft=btn('تسجيل ضخ من المالك')+btn('إلغاء','sec2');}
+  if(v==='refused'){bd=st('lock','الإيداع يسجّله المالك','','','refused plain');ft=btn('إغلاق','sec2');}
+  else{bd=(v==='failed'?ban('رفض النظام الإيداع: المبلغ أقل من الناقص'):'')+hero('الناقص',12500)+fld('المبلغ',mon(v==='failed'?'10000':'12500'),{req:1,err:v==='failed'});ft=btn('تسجيل إيداع من المالك')+btn('إلغاء','sec2');}
   return `<div class="ovl"><div class="dlg" role="dialog" aria-label="الخزنة لا تكفي"><div class="hd">الخزنة لا تكفي</div><div class="bd">${bd}</div><div class="ft">${ft}</div></div></div>`;
 }
 
@@ -336,7 +353,7 @@ SCR.s8={name:'S8 حساب المالك الجاري',views:{normal:'عادي',fo
   const R={t:'حساب المالك الجاري',sub:'',back:'الرئيسية',who:'منى سامي · المالية',prim:btn('تسجيل حركة','','plus')};
   const C='110px minmax(0,1fr) 140px 190px';
   const r=(dt,k,a,s)=>`<div class="rw" style="--cols:${C}"><span class="first">${d(dt)}</span><span data-l="النوع"><b>${k}</b></span><span class="n" data-l="المبلغ">${m(a)}</span><span>${s}</span></div>`;
-  const list=`<div class="lst">${hd(C,['التاريخ','النوع','المبلغ (ج.م)','الحالة'],[2])}${r('21/11/2026','سحب · سلفة قابلة للرد',50000,pill('post','بانتظار الاعتماد','clock'))+r('15/11/2026','ضخ',200000,pill('run','معتمد','check'))+r('01/11/2026','سحب · سحب نهائي',20000,pill('run','معتمد','check'))+r('20/10/2026','سداد',100000,pill('run','معتمد','check'))}</div>`;
+  const list=`<div class="lst">${hd(C,['التاريخ','النوع','المبلغ (ج.م)','الحالة'],[2])}${r('21/11/2026','سحب · سلفة قابلة للرد',50000,pill('post','بانتظار الاعتماد','clock'))+r('15/11/2026','إيداع',200000,pill('run','معتمد','check'))+r('01/11/2026','سحب · سحب نهائي',20000,pill('run','معتمد','check'))+r('20/10/2026','سداد',100000,pill('run','معتمد','check'))}</div>`;
   const h=hero('مستحق للمالك',300000);
   if(v==='normal')R.body=h+list;
   if(v==='empty')R.body=hero('مستحق للمالك',0)+st('inbox','لا توجد حركات');
@@ -345,13 +362,13 @@ SCR.s8={name:'S8 حساب المالك الجاري',views:{normal:'عادي',fo
   if(v==='refused')R.body=ban('لا يمكنك اعتماد حركة سجّلتَها')+h+list;
   if(v==='form'){R.t='تسجيل حركة';R.back='الحساب الجاري';R.prim=btn('حفظ');R.sec=btn('إلغاء','sec2');
    const sg=(a,b,c)=>`<div class="seg" role="group">${[a,b,c].filter(Boolean).map((x,k)=>`<button type="button" aria-pressed="${k===(c?1:0)}">${x}</button>`).join('')}</div>`;
-   R.body=wrap(fld('النوع',sg('ضخ','سحب','سداد'),{req:1})+fld('المبلغ',mon('50000'),{req:1})+fld('نوع السحب',sg('سلفة قابلة للرد','سحب نهائي'),{req:1}));}
+   R.body=wrap(fld('النوع',sg('إيداع','سحب','سداد'),{req:1})+fld('المبلغ',mon('50000'),{req:1})+fld('نوع السحب',sg('سلفة قابلة للرد','سحب نهائي'),{req:1}));}
   return R;}};
 
 SCR.s9={name:'S9 تعرّض السلف',views:{normal:'عادي',empty:'فارغ',loading:'تحميل',failed:'تعذّر'},
  f(v){
   const R={t:'السلف على العملاء',sub:'',back:'الرئيسية',who:'أحمد نبيل · المالك'};
-  const row=(p,o,c)=>`<a class="rw" href="#" style="--cols:minmax(0,1fr) 220px 24px"><span class="first"><b>${p}</b><div class="trk ${o>c?'over':''}" style="margin-block-start:6px"><i style="inline-size:${Math.min(100,o/c*100)}%"></i></div></span><span data-l="الخارج">${m(o)} <small>من ${m(c)}</small></span><span aria-hidden="true">${i('chev','s')}</span></a>`;
+  const row=(p,o,c)=>`<a class="rw" href="#" style="--cols:minmax(0,1fr) 220px"><span class="first"><b>${p}</b> ${o/c>=.9?pill('stuck','قريب من الحد','alert'):''}<div class="trk ${o>c?'over':''}" style="margin-block-start:6px"><i style="inline-size:${Math.min(100,o/c*100)}%"></i></div></span><span data-l="الخارج">${m(o)} <small>من ${m(c)}</small></span></a>`;
   if(v==='normal')R.body=hero('إجمالي الخارج',1240000)+`<div class="lst">${row(PROJ,320000,500000)}${row('فيلا القاهرة الجديدة',680000,700000)}${row('مبنى المعادي',240000,400000)}</div>`;
   if(v==='empty')R.body=st('inbox','لا سلف');
   if(v==='loading')R.body=skel(3);
@@ -361,9 +378,9 @@ SCR.s9={name:'S9 تعرّض السلف',views:{normal:'عادي',empty:'فارغ
 SCR.s10={name:'S10 مستخلصات المقاولين',views:{normal:'عادي',viewer:'بلا زر',empty:'فارغ',loading:'تحميل',failed:'تعذّر',refused:'غير معيّن'},
  f(v){
   const R={t:'مستخلصات مقاولي الباطن',sub:PROJ,back:'المشروع',who:'هبة فؤاد · مهندس موقع مشرف',prim:btn('مستخلص جديد','','plus')};
-  const C='minmax(0,1.3fr) 90px 150px 170px minmax(0,1fr)';
-  const r=(n,w,a,s,t)=>`<a class="rw" href="#" style="--cols:${C}"><span class="first"><b>${n}</b></span><span data-l="الأسبوع">${d(w)}</span><span class="n" data-l="القيمة">${m(a)}</span><span>${s}</span><span data-l="الدور على">${t}</span></a>`;
-  if(v==='normal'||v==='viewer')R.body=`<div class="lst">${hd(C,['المقاول','الأسبوع','القيمة المعتمدة (ج.م)','الحالة','الدور على'],[2])}${r('شركة النور للكهرباء','47',180000,pill('run','جاري الاعتماد','clock'),'المكتب الفني')+r('الأمل للسباكة','47',96000,pill('post','بانتظار المالك','clock'),'المالك')+r('حسن للنجارة','46',74500,pill('done','مصروف','check'),'—')+r('شركة النور للكهرباء','46',150000,pill('none','مسودة'),'هبة فؤاد')}</div>`;
+  const C='minmax(0,1.3fr) 150px 150px 170px minmax(0,1fr)';
+  const r=(n,w,a,s,t)=>`<a class="rw" href="#" style="--cols:${C}"><span class="first"><b>${n}</b></span><span>${d(w)}</span><span class="n">${m(a,'ج.م')}</span><span>${s}</span><span data-l="الدور على">${t}</span></a>`;
+  if(v==='normal'||v==='viewer')R.body=`<div class="lst">${hd(C,['المقاول','الأسبوع','القيمة المصدّقة','الحالة','الدور على'],[2])}${r('شركة النور للكهرباء','17-23/11/2026',180000,pill('run','قيد المراجعة','clock'),'المكتب الفني')+r('الأمل للسباكة','17-23/11/2026',96000,pill('post','بانتظار المالك','clock'),'المالك')+r('حسن للنجارة','10-16/11/2026',74500,pill('done','مدفوع','check'),'—')+r('شركة النور للكهرباء','10-16/11/2026',150000,pill('none','مسودة'),'هبة فؤاد')}</div>`;
   if(v==='viewer')R.prim='';
   if(v==='empty')R.body=st('inbox','لا توجد مستخلصات','',btn('مستخلص جديد'));
   if(v==='loading'){R.body=skel(4);R.prim='';}
@@ -373,20 +390,20 @@ SCR.s10={name:'S10 مستخلصات المقاولين',views:{normal:'عادي'
 
 SCR.s11={name:'S11 مستخلص مقاول',views:{tech:'المكتب الفني',fin:'المحاسب: استقطاعات',owner:'المالك',pay:'المحاسب: صرف',reject:'رفض',empty:'مسودة بلا بنود',loading:'تحميل',failed:'تعذّر',refused:'جهّزه بنفسه'},
  f(v){
-  const R={t:'مستخلص شركة النور للكهرباء',sub:PROJ+' · الأسبوع 47',back:'مستخلصات المقاولين'};
-  const steps=cur=>{const N=['مسودة','اعتماد الكميات','الاستقطاعات','اعتماد المالك','الصرف'],W=['هبة فؤاد','سارة عادل','منى سامي','أحمد نبيل','منى سامي'];
-   return `<ol class="chain">${N.map((n,k)=>`<li class="${k<cur?'done':k===cur?'cur':''}"><span class="st"><span class="mk">${k<cur?i('check'):''}</span>${n}</span><span class="who2">${W[k]}</span></li>`).join('')}</ol>`;};
-  const figs=w=>kv([['القيمة المعتمدة هذا الأسبوع',big(180000)],['الضمان هذا الأسبوع ٥٪',m(9000)],['الضمان حتى الآن',m(27000)],['استقطاع الخصم والإضافة',w?m(1710):'—'],['الصافي المستحق',w?big(169290):'—','tot']]);
+  const R={t:'مستخلص شركة النور للكهرباء',sub:PROJ+' · 17-23/11/2026',back:'مستخلصات المقاولين'};
+  const steps=cur=>{const N=['مسودة','تصديق الكميات','الخصم والإضافة','اعتماد المالك','الدفع'],W=['هبة فؤاد','سارة عادل','منى سامي','أحمد نبيل','منى سامي'];
+   return `<details class="chn"><summary>الدور على: ${W[cur]} · ${N[cur]}</summary><ol class="chain">${N.map((n,k)=>`<li class="${k<cur?'done':k===cur?'cur':''}"><span class="st"><span class="mk">${k<cur?i('check'):''}</span>${n}</span><span class="who2">${W[k]}</span></li>`).join('')}</ol></details>`;};
+  const figs=w=>kv([['القيمة المصدّقة هذا الأسبوع',big(180000)]].concat(w>=1?[['الضمان هذا الأسبوع ٥٪',m(9000)],['الضمان حتى الآن',m(27000)]]:[],w>=2?[['الخصم والإضافة',m(1710)],['الصافي المستحق',big(169290),'tot']]:[]));
   const rej=btn('رفض','sec2');
-  if(v==='tech'){R.who='سارة عادل · المكتب الفني';R.prim=btn('اعتماد الكميات','','check');R.sec=rej;R.body=steps(1)+figs(0);}
-  if(v==='fin'){R.who='منى سامي · المالية';R.prim=btn('تطبيق الاستقطاعات','','check');R.sec=rej;R.body=steps(2)+figs(0);}
-  if(v==='owner'){R.who='أحمد نبيل · المالك';R.prim=btn('اعتماد','','check');R.sec=rej;R.body=steps(3)+figs(1);}
-  if(v==='pay'){R.who='منى سامي · المالية';R.prim=btn('صرف','','send');R.sec=rej;R.body=steps(4)+figs(1);}
-  if(v==='reject'){R.who='أحمد نبيل · المالك';R.prim=btn('تأكيد الرفض');R.sec=btn('إلغاء','sec2');R.body=steps(3)+figs(1)+wrap(reasonField());}
+  if(v==='tech'){R.who='سارة عادل · المكتب الفني';R.prim=btn('تصديق الكميات','','check');R.sec=rej;R.body=figs(0)+steps(1);}
+  if(v==='fin'){R.who='منى سامي · المالية';R.prim=btn('تطبيق الخصم والإضافة','','check');R.sec=rej;R.body=figs(1)+steps(2);}
+  if(v==='owner'){R.who='أحمد نبيل · المالك';R.prim=btn('اعتماد','','check');R.sec=rej;R.body=figs(2)+steps(3);}
+  if(v==='pay'){R.who='منى سامي · المالية';R.prim=btn('دفع','','send');R.sec=rej;R.body=figs(2)+steps(4);}
+  if(v==='reject'){R.who='أحمد نبيل · المالك';R.prim=btn('تأكيد الرفض');R.sec=btn('إلغاء','sec2');R.body=figs(2)+steps(3)+wrap(reasonField());}
   if(v==='empty'){R.who='هبة فؤاد · مهندس موقع مشرف';R.body=steps(0)+st('inbox','لا توجد بنود','',btn('إضافة بند','sec2','plus'));}
   if(v==='loading')R.body=skel(4);
   if(v==='failed')R.body=fail();
-  if(v==='refused'){R.who='أحمد نبيل · المالك';R.body=steps(3)+ban('أنت من جهّز هذا المستخلص. لا يعتمده غيرك')+figs(1);}
+  if(v==='refused'){R.who='أحمد نبيل · المالك';R.body=ban('أنت من جهّز هذا المستخلص. لا يعتمده غيرك')+figs(2)+steps(3);}
   return R;}};
 
 SCR.s12={name:'S12 الخصم والإضافة المحتجز',views:{normal:'عادي',empty:'فارغ',loading:'تحميل',failed:'تعذّر'},
@@ -403,7 +420,7 @@ SCR.s12={name:'S12 الخصم والإضافة المحتجز',views:{normal:'ع
 SCR.s13={name:'S13 تقرير الجودة: تشوينات',views:{normal:'عادي',capped:'مقيّد بالمتبقي',hidden:'بلا رقم مالي',loading:'تحميل',failed:'تعذّر'},
  f(v){
   const R={t:'تقرير الجودة',sub:PROJ+' · المستخلص 12',back:'المستخلص',who:'هبة فؤاد · مهندس موقع مشرف',prim:btn('إرسال التقرير','','send')};
-  const out=hero('تشوينات متبقية',60000);
+  const out=hero('رصيد التشوينات',60000);
   const form=(a,b,cap)=>wrap(fld('مواد مشوّنة بالموقع',mon(a),{req:1})+fld('مواد مركّبة',mon(b),{req:1,foot:cap?'محدود بالمتبقي':'',err:0}));
   if(v==='normal')R.body=out+form('80000','20000');
   if(v==='capped')R.body=out+form('80000','60000',1);
@@ -412,9 +429,12 @@ SCR.s13={name:'S13 تقرير الجودة: تشوينات',views:{normal:'عا�
   if(v==='failed')R.body=fail()+form('80000','20000');
   return R;}};
 
+const AL={'refused-cap':'refusedcap','refused-earlier':'refused','owner-cap':'overcap','owner-over-cap':'overcap'};
 const S={s:Q.get('screen')||'s1',v:Q.get('view')};
+S.v=AL[S.v]||S.v;
 function draw(){
-  const sc=SCR[S.s]||SCR.s1;if(!sc.views[S.v])S.v=Object.keys(sc.views)[0];
+  const sc=SCR[S.s]||SCR.s1;if(S.v&&!sc.views[S.v]&&sc.views[S.v.replace(/-/g,'')])S.v=S.v.replace(/-/g,'');
+  if(!sc.views[S.v]){console.warn('unknown view',S.v);S.v=Object.keys(sc.views)[0];}
   const R=sc.f(S.v);
   document.getElementById('who').textContent=R.who||'';
   document.getElementById('root').innerHTML=

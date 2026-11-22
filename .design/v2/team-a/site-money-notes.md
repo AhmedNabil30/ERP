@@ -2,23 +2,25 @@
 
 One file draws the 13 screens of `plans/release-2-site-money/screens.md`. Open with `?screen=s1..s13&view=<state>`; `&embed=1` hides the preview strip. The strip lists every screen and every state. The default is `?screen=s1`. The sidebar of `layout.html` is not redrawn; a top bar stands in for it. Nothing here is approved. This file replaces a README section until the README lane is allowed to take it.
 
-## Screens and states drawn
+## View names (exact `?screen=` and `?view=` values)
 
-| Screen | Views |
+Open `site-money.html?screen=<screen>&view=<view>&embed=1`. An unknown view falls back to the first one and logs `unknown view` in the console. Hyphens are ignored and four guessed names are aliased (`refused-cap`, `refused-earlier`, `owner-cap`, `owner-over-cap`).
+
+| Screen | `view=` values (first is the default) |
 |---|---|
-| S1 `s1` عهدة request | normal (my drafts, state «مسودة»), empty, form, loading, failed (typed text stays), refused: earlier عهدة (offers settlement), refused: over the cap (no ceiling figure) |
-| S2 `s2` drafts to submit | normal (one open item carrying إرسال / إرجاع), return (required reason), empty, loading, failed, refused (not assigned: page does not open) |
-| S3 `s3` settle | normal, empty (no lines, send disabled), returned (Finance reason on top), loading, failed (photos stay on the phone), refused (lines exceed received) |
-| S4 `s4` waiting on Finance | normal (list with per-row state), detail request / settlement / expense (one primary each), reject (required reason), empty, loading, failed |
-| S5 `s5` waiting on Owner | normal, reject, empty, loading, failed, refused (Owner prepared it: no approve button) |
-| S6 `s6` firm advance | Finance, Owner, Owner over the cap (figures shown), empty, loading, failed |
-| S7 `s7` safe is short | sheet over S4: normal, failed (injection refused with reason), refused (user may not inject, names who may) |
-| S8 `s8` owner current account | normal, form (kind chosen first), empty, loading, failed, refused (preparer is approver) |
-| S9 `s9` firm-advance exposure | normal, empty, loading, failed |
-| S10 `s10` subcontractor extracts | normal, viewer (role that does not prepare: button absent), empty, loading, failed, refused |
-| S11 `s11` subcontractor extract | Technical Office, Finance deductions, Owner, Finance pay, reject, empty draft, loading, failed, refused (own creation) |
-| S12 `s12` withholding carried | normal, empty, loading, failed |
-| S13 `s13` QC report, تشوينات balance | normal, capped (recovery limited to outstanding), hidden (supervisor may not see money), loading, failed |
+| `s1` عهدة request | `normal` (my drafts, each names who holds it), `empty`, `form`, `loading`, `failed`, `refused` (earlier عهدة, offers settlement), `refusedcap` (over the cap, no ceiling figure) |
+| `s2` drafts to submit | `normal`, `return` (required reason), `empty`, `loading`, `failed`, `refused` (not assigned) |
+| `s3` settle | `normal` (third line has no photo yet), `empty`, `returned` (Finance reason on top), `loading`, `failed`, `refused` (lines exceed received, send disabled) |
+| `s4` waiting on Finance | `normal` (group «دورك», then group «بانتظار غيرك»), `req`, `settle`, `exp`, `reject`, `empty`, `loading`, `failed` |
+| `s5` waiting on Owner | `normal`, `reject`, `empty`, `loading`, `failed`, `refused` (Owner prepared it, no approve button) |
+| `s6` firm advance | `finance`, `owner`, `overcap` (Owner, breach: banner, figures, approve disabled), `empty`, `loading`, `failed` |
+| `s7` safe is short | sheet over S4: `normal`, `failed`, `refused` |
+| `s8` owner current account | `normal`, `form`, `empty`, `loading`, `failed`, `refused` |
+| `s9` firm-advance exposure | `normal`, `empty`, `loading`, `failed` |
+| `s10` subcontractor extracts | `normal`, `viewer` (button absent), `empty`, `loading`, `failed`, `refused` |
+| `s11` subcontractor extract | `tech`, `fin`, `owner`, `pay`, `reject`, `empty`, `loading`, `failed`, `refused` (own creation) |
+| `s12` withholding carried | `normal`, `empty`, `loading`, `failed` |
+| `s13` QC report, تشوينات balance | `normal`, `capped`, `hidden` (supervisor may not see money), `loading`, `failed` |
 
 Money is `.fig` (LTR, tabular), currency named once in a column header, field affix or the hero. Each ledger is shown alone: no figure adds عهدة, firm advance, hold, client advance and owner account. No code, id or GUID is on any screen.
 
@@ -65,3 +67,58 @@ Names (خالد منصور, هبة فؤاد, منى سامي, أحمد نبيل,
 
 ## Not drawn
 Company-level S4 variant (Q3), the Owner dashboard tile frame around S9, the supervisor count on his project screen (S1 "who tells him" is open), dark/1440 screenshots (none taken in this run), sidebar entries for the new routes.
+
+## Consultant review applied (2026-11-22, `ux/consultant-review-site-money-mock-2026-11-22.md`)
+
+| # | Done |
+|---|---|
+| 1 | S5: every row has a one-line purpose, the amount with ج.م on every row, and the oldest item is the open one (list sorted oldest first). |
+| 2 | S7 refused: NOT solved. Spec is silent (Q7 point 4: keep a refused payment pending, or repeat it). Drawn as a lock and one line, no invented next step. Question below. |
+| 3 | S3: the figure is named by the action («المتبقي للإرجاع»). Each line shows a receipt state: photo attached (check badge) or «بلا صورة فاتورة» (dashed). Whether a line without a photo blocks the send is open (question below); send stays enabled in `normal`. |
+| 4 | S1: each draft names who holds it («عند المشرف: هبة فؤاد»); the pill icon is a document, no longer the clock used for «waiting». Journey Flow 1 step 5 ("who tells him") is still open. |
+| 5 | S4: two groups, «دورك» and «بانتظار غيرك». One phrase for "your turn": «دورك». |
+| 6 | S11: the figures come first; the chain is collapsed to «الدور على: name · step» and opens on tap. |
+| 7 | S13: nothing redrawn. The hero must update as the supervisor types, but the formula (stockpiled minus installed?) is not in the spec; the builder needs it from Karim. |
+| 8-10 | Wording, see the table below. |
+| 11 | «العجز» became «الناقص»; «ضخ» became «إيداع» (see choices); «سلفة على عميل» now shows the client on S5 and S6 (sample name). «الأساس / النسبة» (S12) and «تقرير الجودة» left: question below. |
+| 12 | S13 hero is «رصيد التشوينات»; the field stays «مواد مشوّنة بالموقع». |
+| 13 | S7 sentence deleted. S3 refused keeps one: the banner now carries the excess («… بمقدار 500 ج.م»); the red figure row is removed. S7 refused: dashed box removed, lock and one line. |
+| 14 | S4 phone rows drop the «من / المبلغ / التاريخ» labels; ج.م sits on every amount. |
+| 15 | S10 phone cards drop the «الأسبوع» and «القيمة» labels and show the date range instead of the week number. The «الدور على» label stays on the phone, because a bare «المالك» does not say what it is. S11 subtitle uses the date range too. |
+| 16 | S11 shows only the lines that exist at the step: Technical Office sees the certified value only; Finance adds the retention lines; net and withholding appear from the Owner step on. Whether Technical Office may see retention and net at all is a Karim question. |
+| 17 | S9: stray chevron removed; a row at 90% of its cap or more carries «قريب من الحد» (sample: 680,000 of 700,000). The 90% line is a placeholder. |
+| 18 | ج.م on every amount in S2, S4, S5, S10. |
+| 19 | At 821 px and wider the page action sits beside the title, not at the far edge (all screens). |
+
+## Wording choices (one term per act; for arabic-copy and Karim)
+
+| Act | Term drawn | Replaced |
+|---|---|---|
+| Finance pays out | «دفع» (button S4, S11; chain step «الدفع») | «صرف» as a button, «جاهز للصرف» |
+| Money spent on site | «مصروف» (S3 «بنود المصروف», «إضافة بند مصروف», S4 row «مصروف موقع», S4 settlement figure «المصروف») | «بنود الصرف», row title «مصروف» |
+| Paid state of an extract | «مدفوع» (S10) | «مصروف» |
+| Owner approves | «اعتماد» (Owner only: S5, S6, S11 Owner step, S8 «معتمد») | |
+| Technical Office certifies | «تصديق الكميات», figure «القيمة المصدّقة» | «اعتماد الكميات», «القيمة المعتمدة» |
+| Finance clears a settlement | «قبول التسوية» | «اعتماد التسوية» |
+| Extract under Technical Office or Finance | «قيد المراجعة» (S10 pill) | «جاري الاعتماد» |
+| Withholding | «الخصم والإضافة» everywhere (S11 chain step, S11 row, button «تطبيق الخصم والإضافة», S12 title). Column «المخصوم» stays | «الاستقطاعات», «استقطاع الخصم والإضافة» |
+| Subcontractor retention | «الضمان» unchanged; Nabil to rule against the client-side term | |
+| Owner puts money in the safe | «إيداع» («تسجيل إيداع من المالك», S8 kind) | «ضخ». «توريد» was not used: S12 already uses it for «المستحق توريده» |
+| Safe shortfall | «الناقص» | «العجز» |
+| S7 amount field | «المبلغ» | «مبلغ الضخ» |
+
+## Questions this pass leaves open (spec and plan are silent; nothing invented)
+- **Q7 (4), S7 refused:** keep the refused payment pending, or the user repeats it? Until answered the Finance user who may not record the deposit has no named next step. Q7 (1), who records the deposit, decides who the line «الإيداع يسجّله المالك» names.
+- **S3 hand-back:** when and to whom the leftover cash returns (journey Flow 1 step 10 says it goes back to the safe; no step says how the holder hands it over). Also whether a line without a receipt photo blocks «إرسال للمحاسبة».
+- **S1:** who tells the supervisor a draft waits (journey Flow 1 step 5).
+- **S11:** may Technical Office see retention and net money?
+- **S13:** what the «رصيد التشوينات» figure is computed from as the supervisor types.
+- **S12:** «الأساس» and «النسبة» are accountant words; Q4 decides the base. «تقرير الجودة» as the title of a screen where money is typed.
+- New status words «قيد المراجعة», «دورك», «قريب من الحد», «بانتظار غيرك»: Nabil to approve (with «بانتظار المالك», already new).
+
+## Invented Arabic added in this pass
+دورك · بانتظار غيرك · عند المشرف · بلا صورة فاتورة · المتبقي للإرجاع · بنود المصروف · إضافة بند مصروف · مصروف موقع · مدفوع · دفع · الدفع · قبول التسوية · تصديق الكميات · القيمة المصدّقة · قيد المراجعة · الخصم والإضافة · تطبيق الخصم والإضافة · إيداع · تسجيل إيداع من المالك · الناقص · المبلغ · الإيداع يسجّله المالك · قريب من الحد · رصيد التشوينات · العميل · محمود الشريف (sample name).
+The earlier list above still names words now replaced (صرف, بنود الصرف, جاهز للصرف, اعتماد التسوية, اعتماد الكميات, الاستقطاعات, العجز, مبلغ الضخ, ضخ, تشوينات متبقية); read it with the table above.
+
+## Sentences left on the screen, changed
+S7 «الخزنة لا تكفي لهذا الصرف» is gone; the title and the «الناقص» figure carry it. S3 refused keeps one banner sentence, now with the excess figure. S7 refused is one line. The other sentences listed above are unchanged.
