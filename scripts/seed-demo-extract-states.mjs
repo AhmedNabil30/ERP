@@ -9,6 +9,7 @@
 //   عمارة 5 — المعادي      #1 Disputed; #2 QcSubmitted (Technical Office to act); change orders: one at the client's
 //                           approval, one Approved
 //   شقة 9 — مدينة نصر      #1 Issued with a credit note raised and awaiting the Owner; #2 Draft (QC report to submit)
+//   دوبلكس 7 — القاهرة الجديدة  #1 Collected in full, no extract open, project at Handover: for the hold release demo
 //
 // Each project gets a signed BOQ from the seeded catalogue, and executed quantities through the daily log, so every
 // extract carries quantity rows. A second Technical Office user, tech_office2_demo / Demo#Tech2New, is created because
@@ -259,8 +260,26 @@ async function netPayable(project, extract) {
   await ensureExtract(project, 2);
 }
 
+// ---- دوبلكس 7: hold release demo. One extract issued and collected in full, nothing open, project at Handover ------
+// The hold accrues from the issued extract. Finance can then ask for its release and the Owner approves or sends back.
+{
+  const project = await ensureProject(4, 'دوبلكس 7 — القاهرة الجديدة', 'C-10004');
+  const first = await ensureExtract(project, 1);
+  await drive(project, first, 'Issued');
+  if (first.status === 'Issued') {
+    const net = await netPayable(project, first);
+    ok(await acct('POST', extractUrl(project, first, 'collect'), {
+      method: 'Transfer', date: '2026-11-15', reference: 'تحويل بنكي 7001',
+      cashReceived: net.toFixed(2), withheldAtSource: '0',
+    }), 'collect extract 1 on دوبلكس 7');
+  }
+  const status = ok(await owner('GET', `/api/projects/${project.id}`), 'read project').status;
+  if (status === 'Active') ok(await owner('POST', `/api/projects/${project.id}/practical-completion`, {}), 'practical completion');
+  if (['Active', 'HandoverPending'].includes(status)) ok(await owner('POST', `/api/projects/${project.id}/handover`, {}), 'handover');
+}
+
 // ---- what stands now ------------------------------------------------------------------------------------------------
-for (const p of ok(await owner('GET', '/api/projects'), 'list projects').projects.filter((x) => /^(فيلا 12|عمارة 5|شقة 9) — /.test(x.name))) {
+for (const p of ok(await owner('GET', '/api/projects'), 'list projects').projects.filter((x) => /^(فيلا 12|عمارة 5|شقة 9|دوبلكس 7) — /.test(x.name))) {
   const list = ok(await owner('GET', `/api/projects/${p.id}/extracts`), 'list extracts');
   const cos = ok(await owner('GET', `/api/projects/${p.id}/change-orders`), 'list change orders');
   const cheques = ok(await acct('GET', `/api/projects/${p.id}/cheques`), 'list cheques');
