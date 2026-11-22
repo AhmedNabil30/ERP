@@ -1,6 +1,6 @@
 # KAFF-509 · The change order chain — an approved one raises the contract value
 
-<!-- kaff id=KAFF-509 slice=5 points=8 state=VERIFIED verdict=CONDITIONAL at=363d5ee on=2026-11-20 -->
+<!-- kaff id=KAFF-509 slice=5 points=8 state=ACCEPTED verdict=CONDITIONAL at=c7460aa on=2026-11-22 -->
 
 **Slice:** 7 (reconciled build order, step 7) · **Epic:** Change orders · **Points:** 8.
 **Owner:** Backend. **No UI criterion is carried here.**

@@ -17354,3 +17354,13 @@ Asked after D-257 and `ux/consultant-review-extracts-app-2026-11-20.md` (F1, C3,
 7. **Who enters the material values (C1): no change.** spec.md does not say who supplies the material values or at which gate. Line 151 defines «تشوينات = material value × 75%» and line 155 the recovery «as advanced material is installed»; lines 333 and 341 put the weekly QC report after preparation and have the supervising engineer confirm field quantities; line 352 has the daily log capture «materials and تشوينات»; line 355 puts site financial expenses with Finance or Admin, which are expenses, not material values; line 375 says site engineers approve nothing financial, which bars approving, not entering. Nabil ruled it in D-235 item 4: the supervising engineer enters both values with the QC report. The QC report keeps both values required. The sheet title «قيم التشوينات» under the button «تسليم تقرير الجودة» is copy for the designer.
 8. **F1 is display, not money.** `ExtractNcrTests.The_released_remainder_is_billed_on_the_next_extract_prepared_after_the_NCR_closes` now also asserts that the issued document of the split extract foots on the approved 180,000 only, with the hold on that alone, and that the next extract bills the released 120,000 with its own 100,000 (D-253). Nothing changed in the billing.
 9. **Not built.** No screen reads the two previews, `description`, `extractDueAfter`, `disputeResolutions` or the list's `creditNoteWaitingOn`; the web client has the types and the API methods (`portionPreview`, `deductionsPreview`, `approvePortion` with an optional `ncrDescription`) in `src/Web/src/app/core/extracts`. Until the part-approval sheet sends a description, the split is refused with the new message. The held BOQ lines are not named (F2): a split is a percentage of the period, not a set of lines, and naming lines needs a ruling. The cheque row moves (F7) and the second waiting line for an open NCR (F3) are screen work.
+
+## D-261 — Nabil accepted the extract chain · 2026-11-22
+
+Nabil accepted KAFF-500, 316, 317, 508, 509, 511 and 512 from the phone-width screenshots of the
+built screens on 2026-11-22, without a hands-on run, because he was away from the computer. The
+Verifier's conditions on each story still stand and are listed in `qa/slice-5/verification-2026-11-20*.md`.
+The staging run of the full demo script remains part of Release 1's exit.
+
+He also asked that the rest of the work run in parallel: fixes for Release 1 alongside the planning
+of Releases 2 to 6, with no invented rules and no more process than the work needs.
