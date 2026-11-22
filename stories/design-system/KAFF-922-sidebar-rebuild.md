@@ -1,6 +1,6 @@
 # KAFF-922 · Sidebar rebuild to match Main.dc.html
 
-<!-- kaff id=KAFF-922 slice=design-system points=3 state=BUILT -->
+<!-- kaff id=KAFF-922 slice=design-system points=3 state=VERIFIED verdict=CONDITIONAL at=36fe371 on=2026-11-22 -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 3 — layout rebuild, no new
 behaviour, no new permission.

@@ -1,6 +1,6 @@
 # KAFF-923 · Top bar rebuild, and where the page `<h1>` lives
 
-<!-- kaff id=KAFF-923 slice=design-system points=2 state=BUILT -->
+<!-- kaff id=KAFF-923 slice=design-system points=2 state=VERIFIED verdict=CONDITIONAL at=36fe371 on=2026-11-22 -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 2.
 **Depends on:** `KAFF-900` (BUILT), `KAFF-922` (sidebar — do this after, the account block move

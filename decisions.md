@@ -17417,3 +17417,11 @@ Asked after `ux/arabic-copy-review-mocks-r2-r6-2026-11-22.md`. Nabil ruled four 
 4. **Subcontractor retention stays «الضمان».** No separate word; context tells it apart from the warranty period.
 
 The other terms in the copy review stay open for Karim through the release question sheet.
+
+## D-264 — Design-system stories verified; criteria superseded by D-175 are read against the KAAF v2 language · 2026-11-22
+
+The Verifier pass `qa/verification-design-system-2026-11-22.md` judged 28 BUILT design-system stories: 14 PASS (50 points), 13 CONDITIONAL (52 points), 1 REJECTED (KAFF-928, 5 points, AC-928-D: a grid child hidden with `display: none !important` in `catalogue-list-page.css` and `::ng-deep` in `bab-tree-page.css`).
+
+Ruling by the Scrum Master: where a story's text names a part that D-175 (KAAF v2 language, 2026-10-06) deleted — `--color-brand`, `--sidebar-*`, the top bar, the segmented locale switch, the tagline, the Latin `<bdi>` wordmark — that criterion is superseded by D-175 and is not a defect. KAFF-900, 922, 923, 924, 925, 927 and 929 are CONDITIONAL on that basis only, unless the report names another open item. KAFF-934 is CONDITIONAL, not REJECTED: its missing specialisation pill row is held on Q95, and building it would invent a trade list. KAFF-911, 914 and 933 are judged against the panels that replaced the named forms.
+
+Open items carried from the report: KAFF-922-C has no test for the account block during a forced password change; KAFF-901-A `kaff-money-field` is a second form-field implementation with no decision record; `employee-panel` was not opened (KAFF-914).

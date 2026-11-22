@@ -1,6 +1,6 @@
 # KAFF-934 · The field screens, and the plain pages nobody restyled
 
-<!-- kaff id=KAFF-934 slice=design-system points=8 state=BUILT -->
+<!-- kaff id=KAFF-934 slice=design-system points=8 state=VERIFIED verdict=CONDITIONAL at=36fe371 on=2026-11-22 -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 8.
 **Depends on:** `KAFF-901`, `KAFF-928`, `KAFF-930`, all on `main`. This story consumes the kit and

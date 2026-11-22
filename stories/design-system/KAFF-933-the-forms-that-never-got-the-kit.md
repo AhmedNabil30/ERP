@@ -1,6 +1,6 @@
 # KAFF-933 · The forms that never got the kit
 
-<!-- kaff id=KAFF-933 slice=design-system points=8 state=BUILT -->
+<!-- kaff id=KAFF-933 slice=design-system points=8 state=VERIFIED verdict=CONDITIONAL at=36fe371 on=2026-11-22 -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 8.
 **Depends on:** `KAFF-901` (`kaff-field`, `kaff-button`) and `KAFF-930`, both on `main`. This story

@@ -1,6 +1,6 @@
 # KAFF-901 · Shared restyled components: table row, segmented filter, form field, button, badge
 
-<!-- kaff id=KAFF-901 slice=design-system points=5 state=BUILT -->
+<!-- kaff id=KAFF-901 slice=design-system points=5 state=VERIFIED verdict=CONDITIONAL at=36fe371 on=2026-11-22 -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 5.
 **Source:** same four mockups as `KAFF-900` · `.claude/skills/apple-erp-design/SKILL.md` §3, §4, §8 ·

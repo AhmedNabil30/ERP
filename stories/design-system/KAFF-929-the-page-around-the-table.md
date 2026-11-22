@@ -1,6 +1,6 @@
 # KAFF-929 · The page around the table — top bar, type, and money density
 
-<!-- kaff id=KAFF-929 slice=design-system points=8 state=BUILT -->
+<!-- kaff id=KAFF-929 slice=design-system points=8 state=VERIFIED verdict=CONDITIONAL at=36fe371 on=2026-11-22 -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 8.
 **Depends on:** `KAFF-928` (BUILT — the table itself now aligns; this story is everything around it),

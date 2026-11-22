@@ -1,6 +1,6 @@
 # KAFF-900 · Design tokens and the app shell (sidebar, header, page frame)
 
-<!-- kaff id=KAFF-900 slice=design-system points=5 state=BUILT -->
+<!-- kaff id=KAFF-900 slice=design-system points=5 state=VERIFIED verdict=CONDITIONAL at=36fe371 on=2026-11-22 -->
 
 **Slice:** Design system (cross-cutting, not slice-numbered) · **Epic:** Apple-grade restyle ·
 **Points:** 5 — touches every screen indirectly through shared tokens and the one shell component,

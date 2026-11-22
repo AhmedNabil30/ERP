@@ -1,6 +1,6 @@
 # KAFF-928 · One table shell — columns that actually line up, once, for every list
 
-<!-- kaff id=KAFF-928 slice=design-system points=5 state=BUILT -->
+<!-- kaff id=KAFF-928 slice=design-system points=5 state=BUILT verdict=REJECTED at=36fe371 on=2026-11-22 -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 5.
 **Depends on:** `KAFF-924` (BUILT, `3b25e40`) for `kaff-table-header`/`kaff-table-row`, `KAFF-925`

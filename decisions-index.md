@@ -270,3 +270,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-261 | 17358 | Nabil accepted the extract chain from screenshots; work runs in parallel · 2026-11-22 |
 | D-262 | 17368 | Hold release asked by Finance, approved by the Owner; snag debit note stays unbuilt · 2026-11-22 |
 | D-263 | 17410 | Nabil's word rulings for the Release 2-6 mocks: إرجاع, اعتماد, الخصم والإضافة, الضمان · 2026-11-22 |
+| D-264 | 17421 | Design-system stories verified; criteria superseded by D-175 read against KAAF v2 · 2026-11-22 |

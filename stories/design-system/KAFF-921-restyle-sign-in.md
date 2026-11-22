@@ -1,6 +1,6 @@
 # KAFF-921 · Restyle: sign-in
 
-<!-- kaff id=KAFF-921 slice=design-system points=1 state=BUILT -->
+<!-- kaff id=KAFF-921 slice=design-system points=1 state=VERIFIED verdict=PASS at=36fe371 on=2026-11-22 -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 1 — one field, one button, no
 permission or money surface at all.

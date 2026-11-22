@@ -1,6 +1,6 @@
 # KAFF-932 · Subcontractor and supplier lists onto the table shell
 
-<!-- kaff id=KAFF-932 slice=design-system points=5 state=BUILT -->
+<!-- kaff id=KAFF-932 slice=design-system points=5 state=VERIFIED verdict=PASS at=36fe371 on=2026-11-22 -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 5.
 **Depends on:** `KAFF-928` (`kaff-table`) and `KAFF-930` (the interaction kit), both on `main`. This

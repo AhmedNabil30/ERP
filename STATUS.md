@@ -114,10 +114,10 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | | slice 1 | slice 2 | slice 3 | slice 4 | slice 5 | slice 6 | slice 8 | slice design-system |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | ✅ **ACCEPTED** — Nabil ran the demo script (`process/agile.md` §4) | 84 | 0 | 16 | 0 | 53 | 0 | 0 | 0 |
-| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 27 | 53 | 41 | 47 | 0 | 31 | 29 | 5 |
+| 🔵 VERIFIED — a Verifier gave a verdict, and it still stands | 27 | 53 | 41 | 47 | 0 | 31 | 29 | 106 |
 | ⛔ LAPSED — had a verdict; later code moved under it (D-096) | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| 🔴 REJECTED — a Verifier looked, and it did not pass | 0 | 0 | 0 | 0 | 0 | 0 | 5 | 0 |
-| 🟡 BUILT — shipped, nobody independent has looked | 0 | 14 | 0 | 0 | 0 | 0 | 5 | 106 |
+| 🔴 REJECTED — a Verifier looked, and it did not pass | 0 | 0 | 0 | 0 | 0 | 0 | 5 | 5 |
+| 🟡 BUILT — shipped, nobody independent has looked | 0 | 14 | 0 | 0 | 0 | 0 | 5 | 0 |
 | 🔻 DEFERRED — carried out of this slice, to a named place | 13 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | **total** | **127** | **67** | **57** | **47** | **53** | **31** | **39** | **111** |
 
@@ -207,34 +207,34 @@ to know why something was so in the past. The split saves about 20k tokens on ev
 | [KAFF-804](stories/slice-8-closure-warranty/KAFF-804-warranty-and-callbacks.md) | 8 | 5 | 🔶 VERIFIED | CONDITIONAL | `86b9f13` | 2026-11-06 | Warranty runs four months from handover; callbacks attach to it |
 | [KAFF-806](stories/slice-8-closure-warranty/KAFF-806-subcontractor-retention-release.md) | 8 | 5 | 🟡 BUILT | none | `-` | - | Subcontractor retention releases when the warranty ends |
 | [KAFF-807](stories/slice-8-closure-warranty/KAFF-807-closing-a-project.md) | 8 | 8 | 🔶 VERIFIED | CONDITIONAL | `86b9f13` | 2026-11-06 | A project closes only when every account is settled |
-| [KAFF-900](stories/design-system/KAFF-900-design-tokens-and-shell.md) | design-system | 5 | 🟡 BUILT | none | `-` | - | Design tokens and the app shell (sidebar, header, page frame) |
-| [KAFF-901](stories/design-system/KAFF-901-shared-restyled-components.md) | design-system | 5 | 🟡 BUILT | none | `-` | - | Shared restyled components: table row, segmented filter, form field, button, badge |
-| [KAFF-910](stories/design-system/KAFF-910-restyle-catalogue-list.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: catalogue list |
-| [KAFF-911](stories/design-system/KAFF-911-restyle-catalogue-form.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: catalogue form |
-| [KAFF-912](stories/design-system/KAFF-912-restyle-bab-tree.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: باب tree |
-| [KAFF-913](stories/design-system/KAFF-913-restyle-employee-list.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: employee list |
-| [KAFF-914](stories/design-system/KAFF-914-restyle-employee-form.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: employee form |
-| [KAFF-915](stories/design-system/KAFF-915-restyle-worker-registration.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: worker mobile registration |
-| [KAFF-916](stories/design-system/KAFF-916-restyle-client-list.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: client list |
-| [KAFF-917](stories/design-system/KAFF-917-restyle-client-form.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: client form |
-| [KAFF-918](stories/design-system/KAFF-918-restyle-user-list.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: user list |
-| [KAFF-919](stories/design-system/KAFF-919-restyle-user-form.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: user form |
-| [KAFF-920](stories/design-system/KAFF-920-restyle-audit-trail.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Restyle: audit trail |
-| [KAFF-921](stories/design-system/KAFF-921-restyle-sign-in.md) | design-system | 1 | 🟡 BUILT | none | `-` | - | Restyle: sign-in |
-| [KAFF-922](stories/design-system/KAFF-922-sidebar-rebuild.md) | design-system | 3 | 🟡 BUILT | none | `-` | - | Sidebar rebuild to match Main.dc.html |
-| [KAFF-923](stories/design-system/KAFF-923-topbar-rebuild.md) | design-system | 2 | 🟡 BUILT | none | `-` | - | Top bar rebuild, and where the page `<h1>` lives |
-| [KAFF-924](stories/design-system/KAFF-924-table-header-row.md) | design-system | 3 | 🟡 BUILT | none | `-` | - | Table header row — the shared fix, not a per-screen patch |
-| [KAFF-925](stories/design-system/KAFF-925-apply-table-header-to-lists.md) | design-system | 3 | 🟡 BUILT | none | `-` | - | Apply the table header row to every converted list |
-| [KAFF-926](stories/design-system/KAFF-926-user-list-cleanup.md) | design-system | 3 | 🟡 BUILT | none | `-` | - | User list — beyond what KAFF-925 already gives it |
-| [KAFF-927](stories/design-system/KAFF-927-locale-switch-segmented.md) | design-system | 1 | 🟡 BUILT | none | `-` | - | Locale switch as one segmented control, not two buttons |
-| [KAFF-928](stories/design-system/KAFF-928-one-table-shell.md) | design-system | 5 | 🟡 BUILT | none | `-` | - | One table shell — columns that actually line up, once, for every list |
-| [KAFF-929](stories/design-system/KAFF-929-the-page-around-the-table.md) | design-system | 8 | 🟡 BUILT | none | `-` | - | The page around the table — top bar, type, and money density |
-| [KAFF-930](stories/design-system/KAFF-930-interaction-kit.md) | design-system | 8 | 🟡 BUILT | none | `-` | - | The interaction kit — row menu, detail panel, inline edit, states |
-| [KAFF-931](stories/design-system/KAFF-931-apply-the-kit-to-the-old-screens.md) | design-system | 13 | 🟡 BUILT | none | `-` | - | Put the kit on the screens that exist today |
-| [KAFF-932](stories/design-system/KAFF-932-two-lists-onto-the-table-shell.md) | design-system | 5 | 🟡 BUILT | none | `-` | - | Subcontractor and supplier lists onto the table shell |
-| [KAFF-933](stories/design-system/KAFF-933-the-forms-that-never-got-the-kit.md) | design-system | 8 | 🟡 BUILT | none | `-` | - | The forms that never got the kit |
-| [KAFF-934](stories/design-system/KAFF-934-the-field-screens-and-the-plain-pages.md) | design-system | 8 | 🟡 BUILT | none | `-` | - | The field screens, and the plain pages nobody restyled |
-| [KAFF-935](stories/design-system/KAFF-935-a-destructive-action-is-bordered-not-filled.md) | design-system | 3 | 🟡 BUILT | none | `-` | - | A destructive action is bordered, not filled |
+| [KAFF-900](stories/design-system/KAFF-900-design-tokens-and-shell.md) | design-system | 5 | 🔶 VERIFIED | CONDITIONAL | `36fe371` | 2026-11-22 | Design tokens and the app shell (sidebar, header, page frame) |
+| [KAFF-901](stories/design-system/KAFF-901-shared-restyled-components.md) | design-system | 5 | 🔶 VERIFIED | CONDITIONAL | `36fe371` | 2026-11-22 | Shared restyled components: table row, segmented filter, form field, button, badge |
+| [KAFF-910](stories/design-system/KAFF-910-restyle-catalogue-list.md) | design-system | 2 | 🔶 VERIFIED | CONDITIONAL | `36fe371` | 2026-11-22 | Restyle: catalogue list |
+| [KAFF-911](stories/design-system/KAFF-911-restyle-catalogue-form.md) | design-system | 2 | 🔶 VERIFIED | CONDITIONAL | `36fe371` | 2026-11-22 | Restyle: catalogue form |
+| [KAFF-912](stories/design-system/KAFF-912-restyle-bab-tree.md) | design-system | 2 | 🔵 VERIFIED | PASS | `36fe371` | 2026-11-22 | Restyle: باب tree |
+| [KAFF-913](stories/design-system/KAFF-913-restyle-employee-list.md) | design-system | 2 | 🔵 VERIFIED | PASS | `36fe371` | 2026-11-22 | Restyle: employee list |
+| [KAFF-914](stories/design-system/KAFF-914-restyle-employee-form.md) | design-system | 2 | 🔶 VERIFIED | CONDITIONAL | `36fe371` | 2026-11-22 | Restyle: employee form |
+| [KAFF-915](stories/design-system/KAFF-915-restyle-worker-registration.md) | design-system | 2 | 🔵 VERIFIED | PASS | `36fe371` | 2026-11-22 | Restyle: worker mobile registration |
+| [KAFF-916](stories/design-system/KAFF-916-restyle-client-list.md) | design-system | 2 | 🔵 VERIFIED | PASS | `36fe371` | 2026-11-22 | Restyle: client list |
+| [KAFF-917](stories/design-system/KAFF-917-restyle-client-form.md) | design-system | 2 | 🔵 VERIFIED | PASS | `36fe371` | 2026-11-22 | Restyle: client form |
+| [KAFF-918](stories/design-system/KAFF-918-restyle-user-list.md) | design-system | 2 | 🔵 VERIFIED | PASS | `36fe371` | 2026-11-22 | Restyle: user list |
+| [KAFF-919](stories/design-system/KAFF-919-restyle-user-form.md) | design-system | 2 | 🔵 VERIFIED | PASS | `36fe371` | 2026-11-22 | Restyle: user form |
+| [KAFF-920](stories/design-system/KAFF-920-restyle-audit-trail.md) | design-system | 2 | 🔵 VERIFIED | PASS | `36fe371` | 2026-11-22 | Restyle: audit trail |
+| [KAFF-921](stories/design-system/KAFF-921-restyle-sign-in.md) | design-system | 1 | 🔵 VERIFIED | PASS | `36fe371` | 2026-11-22 | Restyle: sign-in |
+| [KAFF-922](stories/design-system/KAFF-922-sidebar-rebuild.md) | design-system | 3 | 🔶 VERIFIED | CONDITIONAL | `36fe371` | 2026-11-22 | Sidebar rebuild to match Main.dc.html |
+| [KAFF-923](stories/design-system/KAFF-923-topbar-rebuild.md) | design-system | 2 | 🔶 VERIFIED | CONDITIONAL | `36fe371` | 2026-11-22 | Top bar rebuild, and where the page `<h1>` lives |
+| [KAFF-924](stories/design-system/KAFF-924-table-header-row.md) | design-system | 3 | 🔶 VERIFIED | CONDITIONAL | `36fe371` | 2026-11-22 | Table header row — the shared fix, not a per-screen patch |
+| [KAFF-925](stories/design-system/KAFF-925-apply-table-header-to-lists.md) | design-system | 3 | 🔶 VERIFIED | CONDITIONAL | `36fe371` | 2026-11-22 | Apply the table header row to every converted list |
+| [KAFF-926](stories/design-system/KAFF-926-user-list-cleanup.md) | design-system | 3 | 🔵 VERIFIED | PASS | `36fe371` | 2026-11-22 | User list — beyond what KAFF-925 already gives it |
+| [KAFF-927](stories/design-system/KAFF-927-locale-switch-segmented.md) | design-system | 1 | 🔶 VERIFIED | CONDITIONAL | `36fe371` | 2026-11-22 | Locale switch as one segmented control, not two buttons |
+| [KAFF-928](stories/design-system/KAFF-928-one-table-shell.md) | design-system | 5 | 🔴 BUILT | REJECTED | `36fe371` | 2026-11-22 | One table shell — columns that actually line up, once, for every list |
+| [KAFF-929](stories/design-system/KAFF-929-the-page-around-the-table.md) | design-system | 8 | 🔶 VERIFIED | CONDITIONAL | `36fe371` | 2026-11-22 | The page around the table — top bar, type, and money density |
+| [KAFF-930](stories/design-system/KAFF-930-interaction-kit.md) | design-system | 8 | 🔵 VERIFIED | PASS | `36fe371` | 2026-11-22 | The interaction kit — row menu, detail panel, inline edit, states |
+| [KAFF-931](stories/design-system/KAFF-931-apply-the-kit-to-the-old-screens.md) | design-system | 13 | 🔵 VERIFIED | PASS | `36fe371` | 2026-11-22 | Put the kit on the screens that exist today |
+| [KAFF-932](stories/design-system/KAFF-932-two-lists-onto-the-table-shell.md) | design-system | 5 | 🔵 VERIFIED | PASS | `36fe371` | 2026-11-22 | Subcontractor and supplier lists onto the table shell |
+| [KAFF-933](stories/design-system/KAFF-933-the-forms-that-never-got-the-kit.md) | design-system | 8 | 🔶 VERIFIED | CONDITIONAL | `36fe371` | 2026-11-22 | The forms that never got the kit |
+| [KAFF-934](stories/design-system/KAFF-934-the-field-screens-and-the-plain-pages.md) | design-system | 8 | 🔶 VERIFIED | CONDITIONAL | `36fe371` | 2026-11-22 | The field screens, and the plain pages nobody restyled |
+| [KAFF-935](stories/design-system/KAFF-935-a-destructive-action-is-bordered-not-filled.md) | design-system | 3 | 🔵 VERIFIED | PASS | `36fe371` | 2026-11-22 | A destructive action is bordered, not filled |
 | [KAFF-936](stories/design-system/KAFF-936-the-primary-action-slot.md) | design-system | 5 | 🔶 VERIFIED | CONDITIONAL | `91cdcb3` | 2026-11-17 | The primary-action slot — one declaration, one desktop placement, one phone placement |
 | [KAFF-940](stories/slice-2-masters/KAFF-940-cost-and-override-belong-to-the-owner.md) | 2 | 5 | 🟡 BUILT | none | `-` | - | Cost and the sell-price override belong to the Owner alone |
 | [KAFF-941](stories/slice-2-masters/KAFF-941-a-request-the-owner-approves.md) | 2 | 0 | ⚫ NOT-BUILT | none | `-` | - | A change request the Owner approves |

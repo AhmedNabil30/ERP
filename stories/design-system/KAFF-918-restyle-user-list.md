@@ -1,6 +1,6 @@
 # KAFF-918 · Restyle: user list
 
-<!-- kaff id=KAFF-918 slice=design-system points=2 state=BUILT -->
+<!-- kaff id=KAFF-918 slice=design-system points=2 state=VERIFIED verdict=PASS at=36fe371 on=2026-11-22 -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 2 — a conversion, not a
 feature; no money, no permission change, no new behaviour.

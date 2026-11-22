@@ -1,6 +1,6 @@
 # KAFF-930 · The interaction kit — row menu, detail panel, inline edit, states
 
-<!-- kaff id=KAFF-930 slice=design-system points=8 state=BUILT -->
+<!-- kaff id=KAFF-930 slice=design-system points=8 state=VERIFIED verdict=PASS at=36fe371 on=2026-11-22 -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 8.
 **Depends on:** `KAFF-928` (`kaff-table` + `--kaff-columns`), `KAFF-929` (tokens, Plex, top bar).

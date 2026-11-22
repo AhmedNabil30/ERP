@@ -1,6 +1,6 @@
 # KAFF-935 · A destructive action is bordered, not filled
 
-<!-- kaff id=KAFF-935 slice=design-system points=3 state=BUILT -->
+<!-- kaff id=KAFF-935 slice=design-system points=3 state=VERIFIED verdict=PASS at=36fe371 on=2026-11-22 -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 3.
 **Depends on:** `KAFF-901` (`kaff-button`). This story **does** change a kit component — it is the only

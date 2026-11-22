@@ -1,6 +1,6 @@
 # KAFF-931 · Put the kit on the screens that exist today
 
-<!-- kaff id=KAFF-931 slice=design-system points=13 state=BUILT -->
+<!-- kaff id=KAFF-931 slice=design-system points=13 state=VERIFIED verdict=PASS at=36fe371 on=2026-11-22 -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 13.
 **Depends on:** `KAFF-930` **BUILT and on `main`** — this story only consumes the kit, it does not

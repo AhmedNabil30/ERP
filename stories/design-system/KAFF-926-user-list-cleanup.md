@@ -1,6 +1,6 @@
 # KAFF-926 · User list — beyond what KAFF-925 already gives it
 
-<!-- kaff id=KAFF-926 slice=design-system points=3 state=BUILT -->
+<!-- kaff id=KAFF-926 slice=design-system points=3 state=VERIFIED verdict=PASS at=36fe371 on=2026-11-22 -->
 
 **Slice:** Design system · **Epic:** Apple-grade restyle · **Points:** 3.
 **Depends on:** `KAFF-924` (BUILT, `3b25e40`) for `kaff-table-header`/`kaff-group-heading`. Independent
