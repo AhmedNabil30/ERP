@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>كف - مال الموقع</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* KAAF Release 2, site money (13 screens, one file). Kit parts from components.html / project.html; notes in site-money-notes.md.
+   Parts new to the kit here: .rw (row that is a table row on desktop and a stacked card on phone), .qi (queue item with its actions), .ovl (overdraw sheet), .rcpt (receipt thumb). */
+:root{
+  --g900:#09221e; --g800:#0f2e29; --g300:#9fb3ad; --c100:#f4eee9; --c200:#e6d9d1; --radius:6px;
+  --bg:var(--c100); --surface:#fbf8f5; --head:#ebe0d8; --ink:var(--g900); --dim:#4b5f59; --line:rgba(9,34,30,.16); --hover:rgba(9,34,30,.055);
+  --btn:var(--g900); --btn-h:#25544b; --btn-ink:var(--c200); --field:#fbf8f5; --fieldline:var(--g900); --focus:var(--g900);
+  --err-bg:#f9e4dd; --err-ink:#7a1a0e; --err-bar:#c2321c;
+  --st-run-bg:#d3e3db; --st-run-ink:#0b3b32; --st-done-bg:var(--g900); --st-done-ink:var(--c200);
+  --st-stuck-bg:#f9e4dd; --st-stuck-ink:#7a1a0e; --st-post-bg:#e6d9d1; --st-post-ink:#43392f; --st-none-ink:#4b5f59;
+  --note-bg:#ebe0d8; --ok-bg:#d3e3db; --ok-ink:#0b3b32;
+  --scrim:rgba(3,13,11,.55); --strip:var(--c200); --shadow:0 12px 36px rgba(9,34,30,.22);
+  --display:'Noto Kufi Arabic','IBM Plex Sans Arabic',system-ui,sans-serif;
+  --body:'IBM Plex Sans Arabic',system-ui,'Segoe UI',Tahoma,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#061815; --surface:#0a1f1b; --head:#0f2e29; --ink:var(--c200); --dim:var(--g300); --line:rgba(230,217,209,.18); --hover:rgba(230,217,209,.06);
+  --btn:var(--c200); --btn-h:#fbf6f2; --btn-ink:var(--g900); --field:#0f2e29; --fieldline:#7f9a92; --focus:var(--c200);
+  --err-bg:#3b1612; --err-ink:#ffd0c6; --err-bar:#ff7b63;
+  --st-run-bg:#17403a; --st-run-ink:#e6d9d1; --st-done-bg:var(--c200); --st-done-ink:var(--g900);
+  --st-stuck-bg:#3b1612; --st-stuck-ink:#ffd0c6; --st-post-bg:#1d2b27; --st-post-ink:#c9bfb7; --st-none-ink:#9fb3ad;
+  --note-bg:#0f2e29; --ok-bg:#17403a; --ok-ink:#e6d9d1; --strip:#030d0b; --shadow:0 12px 36px rgba(0,0,0,.6);}}
+:root[data-theme="dark"]{
+  --bg:#061815; --surface:#0a1f1b; --head:#0f2e29; --ink:var(--c200); --dim:var(--g300); --line:rgba(230,217,209,.18); --hover:rgba(230,217,209,.06);
+  --btn:var(--c200); --btn-h:#fbf6f2; --btn-ink:var(--g900); --field:#0f2e29; --fieldline:#7f9a92; --focus:var(--c200);
+  --err-bg:#3b1612; --err-ink:#ffd0c6; --err-bar:#ff7b63;
+  --st-run-bg:#17403a; --st-run-ink:#e6d9d1; --st-done-bg:var(--c200); --st-done-ink:var(--g900);
+  --st-stuck-bg:#3b1612; --st-stuck-ink:#ffd0c6; --st-post-bg:#1d2b27; --st-post-ink:#c9bfb7; --st-none-ink:#9fb3ad;
+  --note-bg:#0f2e29; --ok-bg:#17403a; --ok-ink:#e6d9d1; --strip:#030d0b; --shadow:0 12px 36px rgba(0,0,0,.6);}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 1rem/1.6 var(--body)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+svg.i{inline-size:22px;block-size:22px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+svg.i.s{inline-size:18px;block-size:18px}
+:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+bdi{unicode-bidi:isolate}
+/* preview strip (NOT part of the design) */
+.strip{background:var(--strip);font-size:.8125rem;position:relative;z-index:80}
+.strip summary{list-style:none;display:flex;align-items:center;gap:.5rem;min-block-size:44px;padding:0 1rem;cursor:pointer}
+.strip summary::-webkit-details-marker{display:none}
+.strip .panelx{display:grid;gap:.5rem;padding:.25rem 1rem .75rem}
+.strip .grp{display:flex;flex-wrap:wrap;gap:.25rem;align-items:center}
+.strip .grp>b{font-weight:600;margin-inline-end:6px}
+.strip button{min-block-size:44px;padding:0 .7rem;border:1px solid currentColor;background:transparent;border-radius:var(--radius);color:inherit}
+.strip button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+body.embed .strip{display:none}
+/* shell: top bar + page (the sidebar is layout.html and is not redrawn) */
+.top{display:flex;align-items:center;justify-content:space-between;block-size:56px;padding:0 16px;background:var(--g900);color:var(--c200);font:700 1.25rem/1 var(--display)}
+.top span{font:500 .875rem/1 var(--body);color:var(--g300)}
+.main{display:flex;flex-direction:column;min-block-size:calc(100dvh - 56px)}
+.ph{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:8px 32px 12px;flex-wrap:wrap}
+.ph h1{font:700 2rem/1.3 var(--display);margin:0}
+.ph .sub{color:var(--dim);font-size:.9375rem}
+.acts{display:flex;align-items:center;gap:12px}
+.frame{padding:0 32px 56px;flex:1;min-inline-size:0;display:grid;gap:16px;align-content:start;max-inline-size:980px;inline-size:100%}
+/* kit parts */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-block-size:48px;padding:0 22px;border:2px solid transparent;border-radius:var(--radius);background:var(--btn);color:var(--btn-ink);font:700 1rem/1 var(--display);white-space:nowrap;text-decoration:none}
+.btn.sm{min-block-size:44px;padding:0 16px;font-size:.9375rem}
+.btn:hover{background:var(--btn-h)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.sec2{background:transparent;color:var(--ink);border-color:var(--fieldline)}
+.btn.sec2:hover{background:var(--hover)}
+.back{display:inline-flex;align-items:center;gap:6px;min-block-size:44px;color:var(--ink);text-decoration:none;font-weight:600}
+[dir="rtl"] .back svg{transform:scaleX(-1)}
+.pill{display:inline-flex;align-items:center;gap:7px;block-size:28px;padding-inline:10px 12px;border-radius:var(--radius);font:600 .8125rem/1 var(--body);white-space:nowrap;box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 30%,transparent)}
+.pill svg{inline-size:13px;block-size:13px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.s-run{background:var(--st-run-bg);color:var(--st-run-ink)}
+.s-done{background:var(--st-done-bg);color:var(--st-done-ink)}
+.s-none{background:transparent;color:var(--st-none-ink);box-shadow:inset 0 0 0 1.5px currentColor}
+.s-stuck{background:var(--st-stuck-bg);color:var(--st-stuck-ink)}
+.s-post{background:var(--st-post-bg);color:var(--st-post-ink)}
+.ban{display:flex;gap:12px;align-items:flex-start;padding:12px 16px;border-radius:var(--radius);border-inline-start:6px solid var(--err-bar);background:var(--err-bg);color:var(--err-ink);font-weight:500;line-height:1.55}
+.ban.note{background:var(--note-bg);color:var(--ink);border-inline-start-color:var(--fieldline);font-weight:400}
+.ban.rowc{flex-wrap:wrap;align-items:center}
+.ban .act{margin-inline-start:auto}
+.ban>svg{margin-block-start:2px}
+.state{border:1.5px solid var(--line);border-radius:var(--radius);padding:44px 24px;text-align:center;display:grid;justify-items:center;gap:10px}
+.state.refused{border-style:dashed;border-color:var(--fieldline)}
+.state .ico{inline-size:56px;block-size:56px;border-radius:var(--radius);display:grid;place-items:center;background:var(--head)}
+.state.refused .ico{border-radius:50%;border:2px solid var(--fieldline);background:transparent}
+.state .ico svg{inline-size:28px;block-size:28px}
+.state h4{font:700 1.125rem/1.4 var(--display);margin:4px 0 0}
+.state p{margin:0;color:var(--dim);font-size:.9375rem}
+.sk{display:inline-block;block-size:14px;border-radius:4px;background:linear-gradient(90deg,var(--line),var(--hover),var(--line));background-size:200% 100%;animation:sh 1.4s linear infinite}
+@keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.sk{animation:none}}
+.fig{font-variant-numeric:tabular-nums;font-weight:500;direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+.fig .u{color:var(--dim);font-weight:400;font-size:.8125em;margin-inline-start:6px}
+.field{display:grid;gap:6px;min-inline-size:0}
+.field>label{font:600 1rem/1.4 var(--body)}
+.req{font-weight:700}
+.ctl{display:flex;align-items:stretch;min-inline-size:0;block-size:48px;border:2px solid var(--fieldline);border-radius:var(--radius);background:var(--field)}
+.ctl input,.ctl .val{flex:1;min-inline-size:0;border:0;background:transparent;padding:0 14px;font-size:1.0625rem;outline:none;block-size:100%;display:flex;align-items:center}
+.ctl:focus-within{outline:3px solid var(--focus);outline-offset:3px}
+.ctl .aff{display:flex;align-items:center;padding:0 14px;border-inline-start:2px solid var(--line);color:var(--dim);font-weight:600;white-space:nowrap}
+.ctl.money input{text-align:end;direction:ltr;font-variant-numeric:tabular-nums}
+.ctl.ro{background:var(--head);border-color:var(--line)}
+.ctl.ta{block-size:auto;min-block-size:96px}
+.ctl.ta textarea{flex:1;min-inline-size:0;min-block-size:92px;padding:12px 14px;border:0;background:transparent;font-size:1.0625rem;outline:none;line-height:1.6;resize:vertical}
+.field.err .ctl{border-color:var(--err-bar);box-shadow:inset 0 0 0 1px var(--err-bar)}
+.foot{display:flex;align-items:flex-start;gap:6px;font-size:.875rem;line-height:1.5;color:var(--dim)}
+.field.err .foot{color:var(--err-ink);font-weight:500}
+.seg{display:inline-flex;border:2px solid var(--fieldline);border-radius:var(--radius);overflow:hidden;background:var(--field);max-inline-size:100%}
+.seg button{min-block-size:44px;padding:0 16px;border:0;background:transparent;font:600 .9375rem/1 var(--body)}
+.seg button+button{border-inline-start:2px solid var(--fieldline)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);font-weight:700}
+.kv{margin:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.kv>div{display:grid;grid-template-columns:240px minmax(0,1fr);gap:2px 16px;align-items:center;min-block-size:52px;padding:6px 16px;border-block-start:1px solid var(--line)}
+.kv>div:first-child{border-block-start:0}
+.kv dt{color:var(--dim);font-size:.9375rem}
+.kv dd{margin:0;font-weight:500;min-inline-size:0}
+.kv .big{font:700 1.375rem/1.25 var(--body)}
+.kv .tot{background:var(--head)}
+.kv .tot dd{font-weight:700}
+.hero{display:grid;gap:4px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:16px}
+.hero b{font:600 .9375rem/1.4 var(--body);color:var(--dim)}
+.hero .num{font:700 2.5rem/1.1 var(--body)}
+.trk{block-size:10px;border-radius:4px;background:var(--line);overflow:hidden}
+.trk i{display:block;block-size:100%;background:var(--ink)}
+.trk.over i{background:var(--err-bar)}
+.sec-h{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.sec-h h3{font:600 1.0625rem/1.4 var(--display);margin:0}
+.chain{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden;list-style:none;margin:0;padding:0}
+.chain li{padding:12px;display:grid;gap:4px;align-content:start;min-inline-size:0}
+.chain li+li{border-inline-start:1px solid var(--line)}
+.chain .st{display:flex;align-items:center;gap:8px;font-weight:600;line-height:1.3}
+.chain .mk{inline-size:26px;block-size:26px;border-radius:50%;border:2px solid var(--fieldline);display:grid;place-items:center;flex:none}
+.chain .mk svg{inline-size:14px;block-size:14px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.chain li.done .mk{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chain li.cur{background:var(--head)}
+.chain li.cur .mk{border-width:3px}
+.chain li.cur .mk::after{content:"";inline-size:8px;block-size:8px;border-radius:50%;background:var(--ink)}
+.chain .who2{font-size:.8125rem;color:var(--dim)}
+/* new part: .rw, a row that is a table row on desktop and a stacked card on phone */
+.lst{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden}
+.rw{display:grid;grid-template-columns:var(--cols);gap:4px 16px;align-items:center;min-block-size:56px;padding:8px 16px;border-block-start:1px solid var(--line);color:inherit;text-decoration:none}
+.rw:first-child{border-block-start:0}
+a.rw:hover{background:var(--hover)}
+.rw.h{background:var(--head);min-block-size:44px;color:var(--dim);font:600 .8125rem/1.3 var(--body)}
+.rw .n{text-align:end}
+.rw b{font-weight:600}
+.rw small{color:var(--dim);font-size:.8125rem}
+/* new part: .qi, one queue item; only the open one carries its actions */
+.qi{display:grid;gap:10px;padding:14px 16px;border-block-start:1px solid var(--line)}
+.qi:first-child{border-block-start:0}
+.qi.open{background:var(--head)}
+.qi .qh{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.qi .qh b{font-weight:600}
+.qi .qm{color:var(--dim);font-size:.875rem;display:flex;gap:4px 14px;flex-wrap:wrap}
+.qi .qa{display:flex;gap:12px;flex-wrap:wrap}
+.qi .qa .btn{flex:1 1 140px}
+/* new part: receipt thumb */
+.rcpt{inline-size:44px;block-size:44px;border:1.5px solid var(--fieldline);border-radius:var(--radius);display:grid;place-items:center;background:var(--field);flex:none}
+.rcpt.big{inline-size:72px;block-size:72px}
+.ln{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 16px;border-block-start:1px solid var(--line);min-block-size:64px}
+.ln:first-child{border-block-start:0}
+/* new part: overdraw sheet over S4 */
+.ovl{position:fixed;inset:0;z-index:60;background:var(--scrim);display:grid;place-items:center;padding:16px}
+.dlg{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);inline-size:480px;max-inline-size:100%;border:1px solid var(--line)}
+.dlg .hd{padding:16px 20px 10px;border-block-end:1px solid var(--line);font:700 1.25rem/1.4 var(--display)}
+.dlg .bd{padding:16px 20px;display:grid;gap:14px}
+.dlg .bd p{margin:0}
+.dlg .ft{display:flex;gap:12px;padding:6px 20px 20px;flex-wrap:wrap}
+.dlg .ft .btn{flex:1 1 160px}
+.abar{display:none}
+@media (max-width:820px){
+  .ph{display:block;padding:8px 16px}
+  .ph h1{font-size:1.625rem}
+  .ph .acts{display:none}
+  .frame{padding:0 16px 24px}
+  .kv>div{grid-template-columns:minmax(0,1fr);padding:10px 14px}
+  .kv dt{font-size:.8125rem}
+  .abar{position:sticky;inset-block-end:0;display:flex;gap:12px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:var(--surface);border-block-start:1px solid var(--line);margin-block-start:auto}
+  .abar .btn{flex:1;block-size:60px;font-size:1.0625rem}
+  .abar .btn.sec2{flex:none;min-inline-size:96px}
+  .chain{grid-auto-flow:row}.chain li+li{border-inline-start:0;border-block-start:1px solid var(--line)}
+  .rw.h{display:none}
+  .rw{grid-template-columns:minmax(0,1fr) auto;padding:12px 14px}
+  .rw>*{min-inline-size:0}
+  .rw>[data-l]::before{content:attr(data-l) " ";color:var(--dim);font-size:.8125rem;font-weight:400;margin-inline-end:6px}
+  .rw>.first{grid-column:1/-1}
+  .rw .n{text-align:start}
+  .ovl{place-items:end center;padding:0}
+  .dlg{inline-size:100%;border-end-start-radius:0;border-end-end-radius:0}
+  .hero .num{font-size:2.25rem}
+}
+</style>
+</head>
+<body>
+<details class="strip" id="strip"><summary><span aria-hidden="true">▾</span> معاينة (ليست جزءاً من التصميم)</summary>
+<div class="panelx"><div class="grp" id="sg"></div><div class="grp" id="vg"></div></div></details>
+<div class="top">كف<span id="who"></span></div>
+<main class="main" id="root"></main>
+<script>
+const Q=new URLSearchParams(location.search);
+const EMBED=Q.get('embed')==='1';
+const ic={
+ chev:'<path d="M9 6l6 6-6 6"/>',check:'<path d="M5 12l5 5 9-10"/>',
+ alert:'<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/>',cam:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',lock:'<rect x="5" y="11" width="14" height="9" rx="1"/><path d="M8 11V8a4 4 0 018 0v3"/>',
+ clock:'<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',inbox:'<path d="M4 13l2-8h12l2 8v6H4z"/><path d="M4 13h5l1 2h4l1-2h5"/>',
+ send:'<path d="M4 12l16-8-6 16-3-7z"/>'
+};
+const i=(n,s)=>`<svg class="i ${s||''}" viewBox="0 0 24 24" aria-hidden="true">${ic[n]}</svg>`;
+const m=(n,u)=>`<bdi class="fig">${n.toLocaleString('en-US')}${u?`<span class="u">${u}</span>`:''}</bdi>`;
+const d=s=>`<bdi class="fig">${s}</bdi>`;
+const pill=(c,t,ico)=>`<span class="pill s-${c}">${ico?i(ico,'s'):''}${t}</span>`;
+const ban=(t,act,cls)=>`<div class="ban rowc ${cls||''}">${i('alert')}<span>${t}</span>${act?`<button class="btn sec2 sm act" type="button">${act}</button>`:''}</div>`;
+const st=(ico,h,p,btn_,cls)=>`<div class="state ${cls||''}"><div class="ico">${i(ico)}</div><h4>${h}</h4>${p?`<p>${p}</p>`:''}${btn_||''}</div>`;
+const skel=n=>`<div class="lst" aria-busy="true">${Array.from({length:n},()=>`<div class="rw" style="--cols:1fr;min-block-size:64px"><span class="sk" style="inline-size:60%"></span><span class="sk" style="inline-size:35%"></span></div>`).join('')}</div>`;
+const fail=t=>ban(t||'تعذّر التحميل','إعادة المحاولة');
+const fld=(l,ctl,o={})=>`<div class="field ${o.err?'err':''}"><label>${l}${o.req?'<span class="req" aria-hidden="true"> *</span>':''}</label>${ctl}${o.foot?`<div class="foot">${i('alert','s')}<span>${o.foot}</span></div>`:''}</div>`;
+const mon=v=>`<div class="ctl money"><input inputmode="decimal" value="${v||''}"><span class="aff">ج.م</span></div>`;
+const ta=v=>`<div class="ctl ta"><textarea>${v||''}</textarea></div>`;
+const ro=v=>`<div class="ctl ro"><span class="val">${v}</span></div>`;
+const btn=(t,c,ic2)=>`<button class="btn ${c||''}" type="button">${ic2?i(ic2,'s'):''}${t}</button>`;
+const off=b=>b.replace('<button','<button disabled');
+const kv=rows=>`<dl class="kv">${rows.map(r=>`<div class="${r[2]||''}"><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('')}</dl>`;
+const hd=(C,H,nn)=>`<div class="rw h" style="--cols:${C}">${H.map((h,k)=>`<span class="${nn.includes(k)?'n':''}">${h}</span>`).join('')}</div>`;
+const big=(a)=>`<span class="big">${m(a,'ج.م')}</span>`;
+const hero=(l,a)=>`<div class="hero"><b>${l}</b><span class="num">${m(a,'ج.م')}</span></div>`;
+const wrap=s=>`<div style="display:grid;gap:16px;max-inline-size:520px">${s}</div>`;
+const PROJ='فيلا التجمع الخامس';
+const reasonField=()=>fld('سبب الرفض',ta(''),{req:1});
+const denied=()=>st('lock','لا تملك صلاحية على هذا المشروع','','','refused');
+
+const SCR={};
+SCR.s1={name:'S1 طلب عهدة',views:{normal:'مسوداتي',empty:'فارغ',form:'طلب جديد',loading:'تحميل',failed:'تعذّر الحفظ',refused:'رُفض: عهدة سابقة',refusedcap:'رُفض: الحد'},
+ f(v){
+  const L=`<div class="lst"><div class="rw" style="--cols:minmax(0,1fr) 110px auto"><span class="first"><b>مواد سباكة للدور الثاني</b></span><span class="n">${m(4500)}</span><span>${pill('none','مسودة','clock')}</span></div><div class="rw" style="--cols:minmax(0,1fr) 110px auto"><span class="first"><b>نقل ردم</b></span><span class="n">${m(2000)}</span><span>${pill('none','مسودة','clock')}</span></div></div>`;
+  const form=(a,p,x)=>wrap((x||'')+fld('المشروع',ro(PROJ))+fld('المبلغ',mon(a),{req:1})+fld('الغرض',ta(p),{req:1}));
+  const R={t:'طلب عهدة',sub:PROJ,back:'المشروع',who:'خالد منصور · مهندس موقع',prim:btn('حفظ كمسودة')};
+  if(v==='normal'){R.body=`<div class="sec-h"><h3>مسوداتي</h3></div>${L}`;R.prim=btn('طلب عهدة جديدة','','plus');}
+  if(v==='empty'){R.body=st('inbox','لا توجد مسودات','',btn('طلب عهدة جديدة'));R.prim='';}
+  if(v==='form')R.body=form('','');
+  if(v==='loading'){R.body=skel(3);R.prim='';}
+  if(v==='failed')R.body=form('3500','مواد كهرباء للدور الأول',fail('تعذّر الحفظ'));
+  if(v==='refused')R.body=form('3500','مواد كهرباء للدور الأول',ban('توجد عهدة سابقة لم تُسوَّ بعد','تسوية العهدة السابقة'));
+  if(v==='refusedcap')R.body=form('30000','مواد كهرباء للدور الأول',ban('المبلغ أعلى من الحد المسموح لطلب العهدة'));
+  return R;}};
+
+SCR.s2={name:'S2 مسودات للإرسال',views:{normal:'عادي',return:'إرجاع',empty:'فارغ',loading:'تحميل',failed:'تعذّر',refused:'غير معيّن'},
+ f(v){
+  const R={t:'عهد بانتظار الإرسال',sub:PROJ,back:'المشروع',who:'هبة فؤاد · مهندس موقع مشرف'};
+  const item=(n,amt,p,dt,open,ret)=>`<div class="qi ${open?'open':''}"><div class="qh"><b>${n}</b>${m(amt,open?'ج.م':'')}</div><div class="qm"><span>${p}</span><span>${d(dt)}</span></div>${open?(ret?`${reasonField()}<div class="qa">${btn('تأكيد الإرجاع')}${btn('إلغاء','sec2')}</div>`:`<div class="qa">${btn('إرسال','','send')}${btn('إرجاع','sec2')}</div>`):''}</div>`;
+  const Ls=ret=>`<div class="lst">${item('خالد منصور',4500,'مواد سباكة للدور الثاني','20/11/2026',1,ret)}${item('ياسر فتحي',2000,'نقل ردم','19/11/2026',0)}</div>`;
+  if(v==='normal')R.body=Ls(0);
+  if(v==='return')R.body=Ls(1);
+  if(v==='empty')R.body=st('inbox','لا توجد مسودات بانتظارك');
+  if(v==='loading')R.body=skel(2);
+  if(v==='failed')R.body=fail();
+  if(v==='refused')R.body=denied();
+  return R;}};
+
+SCR.s3={name:'S3 تسوية عهدة',views:{normal:'عادي',empty:'بلا بنود',returned:'أُعيدت',loading:'تحميل',failed:'تعذّر الرفع',refused:'المصروف أكبر'},
+ f(v){
+  const R={t:'تسوية العهدة',sub:PROJ,back:'المشروع',who:'خالد منصور · مهندس موقع',prim:btn('إرسال للمحاسبة','','send')};
+  const line=(t,a)=>`<div class="ln"><span class="rcpt">${i('cam')}</span><b>${t}</b>${m(a)}</div>`;
+  const lines=`<div class="sec-h"><h3>بنود الصرف</h3></div><div class="lst">${line('مواسير وأكواع',2100)}${line('أجرة عمالة يوم',900)}${line('نقل',500)}</div>`;
+  const add=btn('إضافة بند صرف','sec2','plus');
+  const left=a=>kv([['غير المصروف',big(a),'tot']]);
+  if(v==='normal')R.body=hero('المستلم',5000)+lines+add+left(1500);
+  if(v==='returned')R.body=ban('أُعيدت التسوية: الفاتورة الثالثة غير واضحة','','note')+hero('المستلم',5000)+lines+add+left(1500);
+  if(v==='empty'){R.body=hero('المستلم',5000)+st('cam','أضف أول بند صرف','',add)+left(5000);R.prim=off(R.prim);}
+  if(v==='loading'){R.body=skel(3);R.prim='';}
+  if(v==='failed')R.body=ban('تعذّر الرفع. الصور محفوظة على هاتفك','إعادة المحاولة')+hero('المستلم',5000)+lines+left(1500);
+  if(v==='refused'){R.body=ban('مجموع البنود أكبر من المبلغ المستلم')+hero('المستلم',5000)+lines+add+left(-500);R.prim=off(R.prim);}
+  return R;}};
+
+SCR.s4={name:'S4 بانتظار المحاسبة',views:{normal:'عادي',req:'تفاصيل: طلب',settle:'تفاصيل: تسوية',exp:'تفاصيل: مصروف',reject:'رفض',empty:'فارغ',loading:'تحميل',failed:'تعذّر'},
+ f(v){
+  const R={t:'بانتظار المحاسبة',sub:PROJ,back:'المشروع',who:'منى سامي · المالية'};
+  const C='minmax(0,1.2fr) minmax(0,1fr) 120px 110px 170px';
+  const rows=[['طلب عهدة','خالد منصور',4500,'20/11/2026','run','جاهز للصرف'],['تسوية عهدة','هبة فؤاد',1500,'19/11/2026','run','جاهزة للاعتماد'],['مصروف','ياسر فتحي',850,'19/11/2026','run','جاهز للتأكيد'],['طلب عهدة','ياسر فتحي',2000,'18/11/2026','post','بانتظار المالك']]
+   .map(r=>`<a class="rw" href="#" style="--cols:${C}"><span class="first"><b>${r[0]}</b></span><span data-l="من">${r[1]}</span><span class="n" data-l="المبلغ">${m(r[2])}</span><span data-l="التاريخ">${d(r[3])}</span><span>${pill(r[4],r[5],r[4]==='post'?'clock':'check')}</span></a>`).join('');
+  const rej=btn('رفض','sec2');
+  const dtl=(t)=>{R.t=t;R.back='بانتظار المحاسبة';R.sec=rej;};
+  if(v==='normal')R.body=`<div class="lst">${hd(C,['النوع','من','المبلغ (ج.م)','التاريخ','الحالة'],[2])}${rows}</div>`;
+  if(v==='empty')R.body=st('inbox','لا شيء بانتظارك');
+  if(v==='loading')R.body=skel(4);
+  if(v==='failed')R.body=fail();
+  if(v==='req'){dtl('طلب عهدة');R.prim=btn('صرف','','send');R.body=kv([['مقدّم الطلب','خالد منصور'],['المبلغ',big(4500)],['الغرض','مواد سباكة للدور الثاني'],['التاريخ',d('20/11/2026')],['الحالة',pill('run','معتمد من المالك','check')]]);}
+  if(v==='settle'){dtl('تسوية عهدة');R.prim=btn('اعتماد التسوية','','check');
+   const ln=(t,a)=>`<div class="ln"><span class="rcpt big">${i('cam')}</span><b>${t}</b>${m(a)}</div>`;
+   R.body=kv([['صاحب العهدة','هبة فؤاد'],['المستلم',m(5000,'ج.م')],['المصروف',m(3500,'ج.م')],['غير المصروف',big(1500),'tot']])+`<div class="sec-h"><h3>الفواتير</h3></div><div class="lst">${ln('مواسير وأكواع',2100)}${ln('أجرة عمالة يوم',900)}${ln('نقل',500)}</div>`;}
+  if(v==='exp'){dtl('مصروف موقع');R.prim=btn('تأكيد','','check');R.body=kv([['سجّله','ياسر فتحي'],['المبلغ',big(850)],['الوصف','أدوات لياسة'],['التاريخ',d('19/11/2026')],['الفاتورة',`<span class="rcpt big">${i('cam')}</span>`]]);}
+  if(v==='reject'){R.t='رفض الطلب';R.back='بانتظار المحاسبة';R.prim=btn('تأكيد الرفض');R.sec=btn('إلغاء','sec2');R.body=kv([['النوع','طلب عهدة'],['من','خالد منصور'],['المبلغ',m(4500,'ج.م')]])+wrap(reasonField());}
+  return R;}};
+
+SCR.s5={name:'S5 بانتظار المالك',views:{normal:'عادي',reject:'رفض',empty:'فارغ',loading:'تحميل',failed:'تعذّر',refused:'أنت من جهّزه'},
+ f(v){
+  const R={t:'بانتظار اعتمادك',sub:'',back:'الرئيسية',who:'أحمد نبيل · المالك'};
+  const it=(k,p,amt,by,open,ret,own)=>`<div class="qi ${open?'open':''}"><div class="qh"><b>${k}</b>${m(amt,open?'ج.م':'')}</div><div class="qm"><span>${p}</span><span>${by}</span></div>${open?(own?ban('أنت من جهّز هذا الإجراء. لا يعتمده غيرك'):ret?`${reasonField()}<div class="qa">${btn('تأكيد الرفض')}${btn('إلغاء','sec2')}</div>`:`<div class="qa">${btn('اعتماد','','check')}${btn('رفض','sec2')}</div>`):''}</div>`;
+  const Ls=(r,o)=>`<div class="lst">${it('طلب عهدة',PROJ,4500,'جهّزه خالد منصور',1,r,o)}${it('مستخلص مقاول باطن','فيلا القاهرة الجديدة',169290,'جهّزته منى سامي',0)}${it('سلفة على عميل',PROJ,250000,'جهّزتها منى سامي',0)}</div>`;
+  if(v==='normal')R.body=Ls(0,0);
+  if(v==='reject')R.body=Ls(1,0);
+  if(v==='refused')R.body=Ls(0,1);
+  if(v==='empty')R.body=st('check','لا شيء ينتظرك');
+  if(v==='loading')R.body=skel(3);
+  if(v==='failed')R.body=fail();
+  return R;}};
+
+SCR.s6={name:'S6 سلفة على عميل',views:{finance:'المحاسب',owner:'المالك',overcap:'المالك: فوق الحد',empty:'فارغ',loading:'تحميل',failed:'تعذّر'},
+ f(v){
+  const R={t:'سلفة على عميل',sub:PROJ,back:'المشروع'};
+  const figs=over=>`<div class="sec-h"><h3>الحد</h3></div>`+kv([['الحد الأقصى',m(500000,'ج.م')],['الخارج حالياً',m(320000,'ج.م')],['بعد هذه السلفة',m(570000,'ج.م'),over?'tot':''],['إجمالي المعرّض لكل المشاريع',m(1490000,'ج.م')]]);
+  const view=kv([['المشروع',PROJ],['المبلغ',big(250000)],['تدفع مقابل','رسوم ترخيص وتوصيل مرافق'],['جهّزتها','منى سامي']]);
+  if(v==='finance'){R.who='منى سامي · المالية';R.prim=btn('إرسال للمالك','','send');R.body=wrap(fld('المشروع',ro(PROJ))+fld('المبلغ',mon('250000'),{req:1})+fld('تدفع مقابل',ta('رسوم ترخيص وتوصيل مرافق'),{req:1}))+figs(0).replace('570,000','570,000');}
+  if(v==='owner'){R.who='أحمد نبيل · المالك';R.prim=btn('اعتماد','','check');R.sec=btn('رفض','sec2');R.body=view+figs(0);}
+  if(v==='overcap'){R.who='أحمد نبيل · المالك';R.prim=off(btn('اعتماد','','check'));R.sec=btn('رفض','sec2');R.body=ban('المبلغ يتجاوز الحد بمقدار '+m(70000,'ج.م'))+view+figs(1);}
+  if(v==='empty'){R.who='منى سامي · المالية';R.body=st('inbox','لا توجد سلفة لهذا المشروع','',btn('تجهيز سلفة'));}
+  if(v==='loading')R.body=skel(3);
+  if(v==='failed')R.body=fail();
+  return R;}};
+
+SCR.s7={name:'S7 الخزنة لا تكفي',views:{normal:'عادي',failed:'رُفض الضخ',refused:'بلا صلاحية'},
+ f(v){const R=SCR.s4.f('normal');R.sheet=v;return R;}};
+function sheet(v){
+  let bd,ft;
+  if(v==='refused'){bd=st('lock','لا تملك صلاحية تسجيل الضخ','يسجّله المالك','','refused');ft=btn('إغلاق','sec2');}
+  else{bd=(v==='failed'?ban('رفض النظام تسجيل الضخ: المبلغ أقل من العجز'):'')+hero('العجز',12500)+'<p>الخزنة لا تكفي لهذا الصرف</p>'+fld('مبلغ الضخ',mon(v==='failed'?'10000':'12500'),{req:1,err:v==='failed'});ft=btn('تسجيل ضخ من المالك')+btn('إلغاء','sec2');}
+  return `<div class="ovl"><div class="dlg" role="dialog" aria-label="الخزنة لا تكفي"><div class="hd">الخزنة لا تكفي</div><div class="bd">${bd}</div><div class="ft">${ft}</div></div></div>`;
+}
+
+SCR.s8={name:'S8 حساب المالك الجاري',views:{normal:'عادي',form:'تسجيل حركة',empty:'فارغ',loading:'تحميل',failed:'تعذّر',refused:'اعتماد بنفسه'},
+ f(v){
+  const R={t:'حساب المالك الجاري',sub:'',back:'الرئيسية',who:'منى سامي · المالية',prim:btn('تسجيل حركة','','plus')};
+  const C='110px minmax(0,1fr) 140px 190px';
+  const r=(dt,k,a,s)=>`<div class="rw" style="--cols:${C}"><span class="first">${d(dt)}</span><span data-l="النوع"><b>${k}</b></span><span class="n" data-l="المبلغ">${m(a)}</span><span>${s}</span></div>`;
+  const list=`<div class="lst">${hd(C,['التاريخ','النوع','المبلغ (ج.م)','الحالة'],[2])}${r('21/11/2026','سحب · سلفة قابلة للرد',50000,pill('post','بانتظار الاعتماد','clock'))+r('15/11/2026','ضخ',200000,pill('run','معتمد','check'))+r('01/11/2026','سحب · سحب نهائي',20000,pill('run','معتمد','check'))+r('20/10/2026','سداد',100000,pill('run','معتمد','check'))}</div>`;
+  const h=hero('مستحق للمالك',300000);
+  if(v==='normal')R.body=h+list;
+  if(v==='empty')R.body=hero('مستحق للمالك',0)+st('inbox','لا توجد حركات');
+  if(v==='loading'){R.body=skel(4);R.prim='';}
+  if(v==='failed')R.body=fail();
+  if(v==='refused')R.body=ban('لا يمكنك اعتماد حركة سجّلتَها')+h+list;
+  if(v==='form'){R.t='تسجيل حركة';R.back='الحساب الجاري';R.prim=btn('حفظ');R.sec=btn('إلغاء','sec2');
+   const sg=(a,b,c)=>`<div class="seg" role="group">${[a,b,c].filter(Boolean).map((x,k)=>`<button type="button" aria-pressed="${k===(c?1:0)}">${x}</button>`).join('')}</div>`;
+   R.body=wrap(fld('النوع',sg('ضخ','سحب','سداد'),{req:1})+fld('المبلغ',mon('50000'),{req:1})+fld('نوع السحب',sg('سلفة قابلة للرد','سحب نهائي'),{req:1}));}
+  return R;}};
+
+SCR.s9={name:'S9 تعرّض السلف',views:{normal:'عادي',empty:'فارغ',loading:'تحميل',failed:'تعذّر'},
+ f(v){
+  const R={t:'السلف على العملاء',sub:'',back:'الرئيسية',who:'أحمد نبيل · المالك'};
+  const row=(p,o,c)=>`<a class="rw" href="#" style="--cols:minmax(0,1fr) 220px 24px"><span class="first"><b>${p}</b><div class="trk ${o>c?'over':''}" style="margin-block-start:6px"><i style="inline-size:${Math.min(100,o/c*100)}%"></i></div></span><span data-l="الخارج">${m(o)} <small>من ${m(c)}</small></span><span aria-hidden="true">${i('chev','s')}</span></a>`;
+  if(v==='normal')R.body=hero('إجمالي الخارج',1240000)+`<div class="lst">${row(PROJ,320000,500000)}${row('فيلا القاهرة الجديدة',680000,700000)}${row('مبنى المعادي',240000,400000)}</div>`;
+  if(v==='empty')R.body=st('inbox','لا سلف');
+  if(v==='loading')R.body=skel(3);
+  if(v==='failed')R.body=fail();
+  return R;}};
+
+SCR.s10={name:'S10 مستخلصات المقاولين',views:{normal:'عادي',viewer:'بلا زر',empty:'فارغ',loading:'تحميل',failed:'تعذّر',refused:'غير معيّن'},
+ f(v){
+  const R={t:'مستخلصات مقاولي الباطن',sub:PROJ,back:'المشروع',who:'هبة فؤاد · مهندس موقع مشرف',prim:btn('مستخلص جديد','','plus')};
+  const C='minmax(0,1.3fr) 90px 150px 170px minmax(0,1fr)';
+  const r=(n,w,a,s,t)=>`<a class="rw" href="#" style="--cols:${C}"><span class="first"><b>${n}</b></span><span data-l="الأسبوع">${d(w)}</span><span class="n" data-l="القيمة">${m(a)}</span><span>${s}</span><span data-l="الدور على">${t}</span></a>`;
+  if(v==='normal'||v==='viewer')R.body=`<div class="lst">${hd(C,['المقاول','الأسبوع','القيمة المعتمدة (ج.م)','الحالة','الدور على'],[2])}${r('شركة النور للكهرباء','47',180000,pill('run','جاري الاعتماد','clock'),'المكتب الفني')+r('الأمل للسباكة','47',96000,pill('post','بانتظار المالك','clock'),'المالك')+r('حسن للنجارة','46',74500,pill('done','مصروف','check'),'—')+r('شركة النور للكهرباء','46',150000,pill('none','مسودة'),'هبة فؤاد')}</div>`;
+  if(v==='viewer')R.prim='';
+  if(v==='empty')R.body=st('inbox','لا توجد مستخلصات','',btn('مستخلص جديد'));
+  if(v==='loading'){R.body=skel(4);R.prim='';}
+  if(v==='failed')R.body=fail();
+  if(v==='refused'){R.body=denied();R.prim='';}
+  return R;}};
+
+SCR.s11={name:'S11 مستخلص مقاول',views:{tech:'المكتب الفني',fin:'المحاسب: استقطاعات',owner:'المالك',pay:'المحاسب: صرف',reject:'رفض',empty:'مسودة بلا بنود',loading:'تحميل',failed:'تعذّر',refused:'جهّزه بنفسه'},
+ f(v){
+  const R={t:'مستخلص شركة النور للكهرباء',sub:PROJ+' · الأسبوع 47',back:'مستخلصات المقاولين'};
+  const steps=cur=>{const N=['مسودة','اعتماد الكميات','الاستقطاعات','اعتماد المالك','الصرف'],W=['هبة فؤاد','سارة عادل','منى سامي','أحمد نبيل','منى سامي'];
+   return `<ol class="chain">${N.map((n,k)=>`<li class="${k<cur?'done':k===cur?'cur':''}"><span class="st"><span class="mk">${k<cur?i('check'):''}</span>${n}</span><span class="who2">${W[k]}</span></li>`).join('')}</ol>`;};
+  const figs=w=>kv([['القيمة المعتمدة هذا الأسبوع',big(180000)],['الضمان هذا الأسبوع ٥٪',m(9000)],['الضمان حتى الآن',m(27000)],['استقطاع الخصم والإضافة',w?m(1710):'—'],['الصافي المستحق',w?big(169290):'—','tot']]);
+  const rej=btn('رفض','sec2');
+  if(v==='tech'){R.who='سارة عادل · المكتب الفني';R.prim=btn('اعتماد الكميات','','check');R.sec=rej;R.body=steps(1)+figs(0);}
+  if(v==='fin'){R.who='منى سامي · المالية';R.prim=btn('تطبيق الاستقطاعات','','check');R.sec=rej;R.body=steps(2)+figs(0);}
+  if(v==='owner'){R.who='أحمد نبيل · المالك';R.prim=btn('اعتماد','','check');R.sec=rej;R.body=steps(3)+figs(1);}
+  if(v==='pay'){R.who='منى سامي · المالية';R.prim=btn('صرف','','send');R.sec=rej;R.body=steps(4)+figs(1);}
+  if(v==='reject'){R.who='أحمد نبيل · المالك';R.prim=btn('تأكيد الرفض');R.sec=btn('إلغاء','sec2');R.body=steps(3)+figs(1)+wrap(reasonField());}
+  if(v==='empty'){R.who='هبة فؤاد · مهندس موقع مشرف';R.body=steps(0)+st('inbox','لا توجد بنود','',btn('إضافة بند','sec2','plus'));}
+  if(v==='loading')R.body=skel(4);
+  if(v==='failed')R.body=fail();
+  if(v==='refused'){R.who='أحمد نبيل · المالك';R.body=steps(3)+ban('أنت من جهّز هذا المستخلص. لا يعتمده غيرك')+figs(1);}
+  return R;}};
+
+SCR.s12={name:'S12 الخصم والإضافة المحتجز',views:{normal:'عادي',empty:'فارغ',loading:'تحميل',failed:'تعذّر'},
+ f(v){
+  const R={t:'الخصم والإضافة المستحق توريده',sub:'',back:'الرئيسية',who:'منى سامي · المالية'};
+  const C='100px minmax(0,1.3fr) 140px 80px 140px';
+  const r=(mo,p,b,pc,a)=>`<div class="rw" style="--cols:${C}"><span class="first">${d(mo)}</span><span data-l="المستفيد"><b>${p}</b></span><span class="n" data-l="الأساس">${m(b)}</span><span data-l="النسبة">${d(pc)}</span><span class="n" data-l="المخصوم">${m(a)}</span></div>`;
+  if(v==='normal')R.body=hero('إجمالي المستحق',5310)+`<div class="lst">${hd(C,['الشهر','المستفيد','الأساس (ج.م)','النسبة','المخصوم (ج.م)'],[2,4])}${r('2026/11','شركة النور للكهرباء',171000,'1%',1710)+r('2026/11','الأمل للسباكة',90000,'1%',900)+r('2026/10','حسن للنجارة',270000,'1%',2700)}</div>`;
+  if(v==='empty')R.body=st('inbox','لا يوجد خصم محتجز');
+  if(v==='loading')R.body=skel(3);
+  if(v==='failed')R.body=fail();
+  return R;}};
+
+SCR.s13={name:'S13 تقرير الجودة: تشوينات',views:{normal:'عادي',capped:'مقيّد بالمتبقي',hidden:'بلا رقم مالي',loading:'تحميل',failed:'تعذّر'},
+ f(v){
+  const R={t:'تقرير الجودة',sub:PROJ+' · المستخلص 12',back:'المستخلص',who:'هبة فؤاد · مهندس موقع مشرف',prim:btn('إرسال التقرير','','send')};
+  const out=hero('تشوينات متبقية',60000);
+  const form=(a,b,cap)=>wrap(fld('مواد مشوّنة بالموقع',mon(a),{req:1})+fld('مواد مركّبة',mon(b),{req:1,foot:cap?'محدود بالمتبقي':'',err:0}));
+  if(v==='normal')R.body=out+form('80000','20000');
+  if(v==='capped')R.body=out+form('80000','60000',1);
+  if(v==='hidden')R.body=form('80000','20000');
+  if(v==='loading'){R.body=skel(3);R.prim='';}
+  if(v==='failed')R.body=fail()+form('80000','20000');
+  return R;}};
+
+const S={s:Q.get('screen')||'s1',v:Q.get('view')};
+function draw(){
+  const sc=SCR[S.s]||SCR.s1;if(!sc.views[S.v])S.v=Object.keys(sc.views)[0];
+  const R=sc.f(S.v);
+  document.getElementById('who').textContent=R.who||'';
+  document.getElementById('root').innerHTML=
+   `<header class="ph"><div><a class="back" href="#">${i('chev','s')}${R.back}</a><h1>${R.t}</h1>${R.sub?`<div class="sub">${R.sub}</div>`:''}</div><div class="acts">${R.sec||''}${R.prim||''}</div></header>`+
+   `<div class="frame">${R.body}</div>`+
+   (R.prim?`<div class="abar">${R.sec||''}${R.prim}</div>`:'')+(R.sheet?sheet(R.sheet):'');
+  if(!EMBED){
+   history.replaceState(null,'','?'+new URLSearchParams({screen:S.s,view:S.v}));
+   document.getElementById('sg').innerHTML='<b>الشاشة</b>'+Object.entries(SCR).map(([k,x])=>`<button type="button" data-s="${k}" aria-pressed="${k===S.s}">${x.name}</button>`).join('');
+   document.getElementById('vg').innerHTML='<b>الحالة</b>'+Object.entries(sc.views).map(([k,x])=>`<button type="button" data-v="${k}" aria-pressed="${k===S.v}">${x}</button>`).join('');
+   document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{S.s=b.dataset.s;S.v=null;draw()});
+   document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{S.v=b.dataset.v;draw()});
+  }
+}
+if(EMBED)document.body.classList.add('embed');
+draw();
+</script>
+</body>
+</html>
