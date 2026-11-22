@@ -520,9 +520,10 @@ body.embed .app{block-size:100dvh}
   .stage .sx.inl .grab{display:block}
 }
 /* THIS FILE (accounting): labelled rows inside a list item, and the figure strip (sum) with its out-of-balance cell */
-.lst .kv{grid-column:1/-1;display:grid;gap:2px}
-.lst .kv>div{display:flex;justify-content:space-between;gap:12px;color:var(--dim);font-size:.875rem}
-.lst .kv .fig,.lst .kv .fx{color:var(--ink);font-weight:600}
+.lst .kx{grid-column:1/-1;display:grid;gap:2px}
+.lst .kx>div{display:flex;justify-content:space-between;gap:12px;color:var(--dim);font-size:.875rem}
+.lst .kx .fig,.lst .kx .fx{color:var(--ink);font-weight:600}
+.lst b a{color:var(--ink);font-weight:600;text-decoration:none}
 .tbl tfoot td{block-size:56px;padding:6px 14px;background:var(--head);border-block-start:2px solid var(--fieldline);font-weight:700}
 .sum{margin:0;display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
 .sum>div{display:grid;gap:2px;padding:12px 16px;min-inline-size:0;border-inline-start:1px solid var(--line)}
@@ -530,7 +531,27 @@ body.embed .app{block-size:100dvh}
 .sum dt{color:var(--dim);font-size:.8125rem}
 .sum dd{margin:0;font:700 1.25rem/1.3 var(--body)}
 .sum dd svg{inline-size:18px;block-size:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-inline-end:6px}
-.sum .bad{background:var(--err-bg);box-shadow:inset 6px 0 0 var(--err-bar)}
+.sum .bad{background:var(--err-bg);border-inline-start:6px solid var(--err-bar)}
+.sum.stk{position:sticky;inset-block-start:0;z-index:5}
+.s-over{background:var(--err-ink);color:var(--err-bg);box-shadow:none}
+.s-near{background:var(--err-bg);color:var(--err-ink)}
+.s-within{background:transparent;color:var(--dim)}
+.stp{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.stp li{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 16px;min-block-size:64px;border-block-start:1px solid var(--line)}
+.stp li:first-child{border-block-start:0}
+.stp li.go{cursor:pointer}
+.stp li.go:hover{background:var(--hover)}
+.stp li.nx{background:var(--head);border-inline-start:6px solid var(--ink);padding-inline-start:10px}
+.stp li.nx b{font-weight:700}
+.stp li.lk{color:var(--dim)}
+.stp .num{inline-size:32px;block-size:32px;border-radius:50%;border:2px solid var(--fieldline);display:grid;place-items:center;font:700 .875rem/1 var(--body)}
+.stp .num svg{inline-size:16px;block-size:16px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.stp .num.dn{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.stp li.nx .num{border-width:3px}
+.stp li.lk .num{border-style:dashed}
+.stp .nm small{display:block;color:var(--dim);font-size:.8125rem}
+.stp .r{display:flex;gap:10px;align-items:center}
+.tbl td small{display:block}
 .sum .bad dt,.sum .bad dd{color:var(--err-ink)}
 .flt{max-inline-size:360px}
 @media (max-width:820px){
@@ -627,15 +648,18 @@ const frameHead=()=>`<div class="phl"><a class="back" href="#">${i('left','s')}�
 const M='أكتوبر 2026',PRJ2='عمارة المعادي',PRJ3='مبنى إداري — العاصمة الإدارية';
 const MONTHS=['أكتوبر 2026','سبتمبر 2026','أغسطس 2026','يوليو 2026'];
 const m2=v=>f2(v);
+Object.assign(PS,{over:['s-over','M12 4l9 16H3zM12 10v4M12 17.5v.5'],near:['s-near','M12 21a9 9 0 100-18 9 9 0 000 18zM12 8v5M12 16v.01'],within:['s-within','M5 12.5l4.5 4.5L19 7.5']});
+/* Arabic count of accrual lines: بند، بندان، 3-10 بنود */
+const nBand=n=>n===1?'بند':n===2?'بندان':n<=10?n+' بنود':n+' بندًا';
 /* loading, failed and the standard forbidden page, the same on every screen */
 const sf=(s,o,n,m)=>s==='loading'?{...o,pa:'',body:skel(n||3)}:s==='failed'?{...o,pa:'',body:failed(m)}:s==='refused'?{...o,pa:'',body:pane(st('لا تملك صلاحية فتح هذه الشاشة','','lock','refused'))}:null;
 /* table on desktop, list on phone: first column is the title, column `pill` sits beside it, the rest are labelled rows */
 const dual=(cols,rows,o={})=>{
   const t=`<table class="tbl"><thead><tr>${cols.map(c=>`<th class="${c[1]?'n':''}">${c[0]}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr class="${r.go?'go':''}" ${r.go||''}>${r.c.map((x,k)=>`<td class="${cols[k][1]?'n':''}">${x}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
-  const l=`<ul class="lst">${rows.map(r=>`<li class="${r.go?'go':''}" ${r.go||''}><b>${r.c[0]}</b><span class="r">${o.pill!=null?r.c[o.pill]:''}</span><span class="kv">${r.c.map((x,k)=>k===0||k===o.pill||x===''?'':`<div><span>${cols[k][0]}</span><span>${x}</span></div>`).join('')}</span></li>`).join('')}</ul>`;
+  const l=`<ul class="lst">${rows.map(r=>`<li class="${r.go?'go':''}" ${r.go||''}><b>${r.c[0]}</b><span class="r">${o.pill!=null?r.c[o.pill]:''}</span><span class="kx">${r.c.map((x,k)=>k===0||k===o.pill||x===''?'':`<div><span>${cols[k][0]}</span><span>${x}</span></div>`).join('')}</span></li>`).join('')}</ul>`;
   return `<div class="d-only">${t}</div><div class="m-only">${l}</div>`;
 };
-const sum=rows=>`<dl class="sum" style="--n:${rows.length}">${rows.map(r=>`<div class="${r[2]||''}"><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('')}</dl>`;
+const sum=(rows,cls='')=>`<dl class="sum ${cls}" style="--n:${rows.length}">${rows.map(r=>`<div class="${r[2]||''}"><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('')}</dl>`;
 const diffC=d=>d?`${mi('err')}${fg(d)}`:`${mi('check')}${fg(0)}`;
 const monthF=(id,sel=MONTHS[0])=>`<div class="g2 flt">${fld({id,label:'الشهر',ctl:selc(id,MONTHS,sel)})}</div>`;
 const tagF=(sel,err)=>fld({id:'tg',lb:1,label:'الجهة',req:1,err,ctl:radios('tg',[['c','الشركة'],['p','مشروع']],sel,'')+(sel==='p'?selc('pj',[PRJ,PRJ2],PRJ):'')});
@@ -657,8 +681,8 @@ r(s){
   const ta=A.reduce((a,b)=>a+b,0),tl=L.reduce((a,b)=>a+b,0),d=Math.abs(ta-tl);
   const g=(t,defs,vals,p)=>sh(t)+`<div class="g2">${defs.map((a,k)=>fld({id:p+k,label:a[0],ctl:money(p+k,m2(vals[k]))})).join('')}</div>`;
   const body=pane((s==='failed'?ban('<b>تعذّر الحفظ.</b>','',retry):'')+
-    `<div class="g2">${fld({id:'od',label:'تاريخ بدء الاستخدام',req:1,ctl:datec('od','01/01/2026')})}</div>`+
-    sum([['إجمالي الأصول',fg(ta)],['إجمالي الالتزامات وحقوق الملكية',fg(tl)],['الفرق',diffC(d),d?'bad':'']])+
+    `<div class="g2 flt">${fld({id:'od',label:'تاريخ بدء الاستخدام',req:1,ctl:datec('od','01/01/2026')})}</div>`+
+    sum([['إجمالي الأصول',fg(ta)],['إجمالي الالتزامات وحقوق الملكية',fg(tl)],['الفرق',diffC(d),d?'bad':'']],'stk')+
     g('الأصول',OPA,A,'oa')+g('الالتزامات وحقوق الملكية',OPL,L,'ol'),1);
   return {...o,meta:meta('السنة المالية 2026','ج.م'),pa:btn('حفظ الأرصدة','',d?'disabled':''),body};
 }};
@@ -688,7 +712,7 @@ r(s){
 }};
 
 /* A4 Accruals and prepayments (proposal for months and linking) */
-const AC=[['إيجار المكتب','pre',120000,'الشركة','متبقي 5 أشهر'],['تأمين المعدات','pre',36000,'الشركة','متبقي 9 أشهر'],['أجور مقاول الحفر','acc',45000,PRJ,'مفتوح'],['كهرباء نوفمبر','acc',8400,'الشركة','مفتوح']];
+const AC=[['إيجار المكتب','pre',120000,'الشركة','متبقي 5 أشهر'],['تأمين المعدات','pre',36000,'الشركة','متبقي 9 أشهر'],['أجور مقاول الحفر','acc',45000,PRJ,'لم يُسدَّد'],['كهرباء نوفمبر','acc',8400,'الشركة','لم يُسدَّد']];
 const accK=k=>k==='pre'?pl('مدفوع مقدمًا','none'):pl('مستحق','run');
 SCR.a4={t:'المستحقات والمقدمات',who:'المالية',v:{normal:'عادي',empty:'فارغ',add:'إضافة',notag:'الجهة ناقصة',loading:'تحميل',failed:'تعذّر التحميل',refused:'ممنوع'},
 r(s){
@@ -702,49 +726,64 @@ r(s){
   return {...o,body:pane(dual(cols,AC.map(a=>({c:[a[0],accK(a[1]),fg(a[2]),a[3],a[4]]})),{pill:1}),1)};
 }};
 
-/* A5 Record a company expense (depends on Q11, A3, A4) */
-SCR.a5={t:'مصروف جديد',who:'المالية',v:{normal:'عادي',notag:'الجهة ناقصة',short:'الخزنة لا تكفي',saved:'تم الدفع',failed:'تعذّر الحفظ',loading:'تحميل',refused:'ممنوع'},
+
+/* A5 Record a company expense (depends on Q11, A3, A4). Over the safe: pay is absent, one error, one injection button. */
+const BAL={s:['الخزنة',84000],b:['البنك',1120000]};
+const balF=k=>`<span id="srcf">رصيد ${BAL[k][0]} ${fg(BAL[k][1])} ج.م</span>`;
+SCR.a5={t:'مصروف جديد',who:'المالية',v:{normal:'عادي',bank:'الدفع من البنك',notag:'الجهة ناقصة',short:'الخزنة لا تكفي',saved:'تم الدفع',failed:'تعذّر الحفظ',loading:'تحميل',refused:'ممنوع'},
 r(s){
   const o={title:'مصروف جديد',pa:btn('دفع')};const x=sf(s,o,3,'تعذّر تحميل الشاشة.');if(x)return x;
-  const blank=s==='saved',short=s==='short';
-  const f=fld({id:'cat',label:'البند',req:1,ctl:selc('cat',CATS,CATS[0])})+
+  const blank=s==='saved',short=s==='short',bank=s==='bank';
+  const f=fld({id:'cat',label:'نوع المصروف',req:1,ctl:selc('cat',CATS,CATS[0])})+
     fld({id:'amt',label:'المبلغ',req:1,err:short?'المبلغ أكبر من رصيد الخزنة':'',ctl:money('amt',blank?'':short?m2(120000):m2(4600))})+
     fld({id:'dt',label:'التاريخ',req:1,ctl:datec('dt','22/11/2026')})+
-    fld({id:'src',lb:1,label:'الدفع من',req:1,foot:`رصيد الخزنة ${fg(blank?79400:84000)} ج.م`,ctl:radios('src',[['s','الخزنة'],['b','البنك']],'s','')})+
+    fld({id:'src',lb:1,label:'الدفع من',req:1,foot:balF(bank?'b':'s'),ctl:radios('src',[['s','الخزنة'],['b','البنك']],bank?'b':'s','')})+
     tagF(s==='notag'||blank?'':'c',s==='notag'?'اختر الشركة أو مشروعًا':'');
-  const top=s==='saved'?rec(`تم الدفع. رصيد الخزنة الآن ${fg(79400)} ج.م`):s==='failed'?ban('<b>تعذّر الحفظ.</b>','',retry):short?ban('<b>رصيد الخزنة لا يكفي.</b>','',btn('ضخ من المالك','sec2 sm act')):'';
-  return {...o,body:pane(top+`<div class="g2">${f}</div>`)};
+  const top=s==='saved'?rec(`تم الدفع. رصيد الخزنة الآن ${fg(79400)} ج.م`):s==='failed'?ban('<b>تعذّر الحفظ.</b>','',retry):'';
+  return {...o,pa:short?'':btn('دفع'),body:pane(top+`<div class="g2">${f}</div>`+(short?more(btn('ضخ من المالك','sec2')):''))};
 }};
 
-/* A6 Month-end close checklist (depends on Q3) */
-const STP=[['إهلاك الأصول','a2',4,'أصول'],['المقدمات والمستحقات','a4',2,'بنود'],['الإيراد بالمنجز','a7',3,'مشروعات'],['ميزان المراجعة','a8',1,'']];
-SCR.a6={t:'إقفال الشهر',who:'المالية، المالك',v:{open:'كل الخطوات مفتوحة',partial:'خطوات منتهية',ready:'جاهز',failed:'تعذّر الإقفال',waitowner:'بانتظار المالك',owner:'المالك يعتمد',closed:'تم الإقفال',loading:'تحميل',refused:'ممنوع'},
+/* A6 Month-end close checklist (depends on Q3). Numbered steps, next one marked, owner sees the figures he locks. */
+const STP=[['إهلاك الأصول','a2',4,'أصول'],['المقدمات والمستحقات','a4',2,'بند'],['الإيراد بالمنجز','a7',3,'مشروعات'],['ميزان المراجعة','a8',0,'']];
+const cnt=(p)=>p[3]==='بند'?nBand(p[2]):p[3]?`${p[2]} ${p[3]}`:'';
+const stepsB=(st6,view)=>{
+  const nx=st6.indexOf('o'),locked=k=>k===3&&st6[3]!=='d'&&st6.slice(0,3).includes('o');
+  return `<ol class="stp">${STP.map((p,k)=>{
+    const c=st6[k],cur=k===nx||(c==='x'),lk=locked(k)&&!cur;
+    const link=!view&&c!=='d'&&!lk;
+    const pill=c==='d'?pl('تم','done'):c==='x'?pl('تعذّر','stuck'):pl('لم يتم','none');
+    return `<li class="${cur&&!view?'nx':''} ${lk?'lk':''} ${link?'go':''}" ${link?go(p[1]):''}><span class="num ${c==='d'?'dn':''}">${c==='d'?mi('check'):k+1}</span><span class="nm"><b>${p[0]}</b>${c!=='d'&&p[3]&&p[2]?`<small>${cnt(p)}</small>`:''}</span><span class="r">${pill}${link?i('left','s'):''}</span></li>`}).join('')}</ol>`;
+};
+const rejSheet=(t,err)=>sheet(t,fld({id:'rs',label:'سبب الإرجاع',req:1,err:err?'اكتب سبب الإرجاع':'',ctl:areac('rs','')}),btn('إرجاع')+btn('إلغاء','sec2'));
+SCR.a6={t:'إقفال الشهر',who:'المالية، المالك',v:{open:'كل الخطوات لم تتم',partial:'خطوات منتهية',ready:'جاهز',failed:'تعذّر الإقفال',waitowner:'بانتظار المالك',owner:'المالك يعتمد',reject:'المالك: سبب الإرجاع',rejecterr:'سبب الإرجاع ناقص',returned:'أُعيد إلى المالية',closed:'تم الإقفال',loading:'تحميل',refused:'ممنوع'},
 r(s){
   const o={title:'إقفال الشهر'};const x=sf(s,o,4,'تعذّر تحميل الخطوات.');if(x)return x;
-  const st6={open:'oooo',partial:'dooo',ready:'dddd',failed:'dddx',waitowner:'dddd',owner:'dddd',closed:'oooo'}[s];
+  if(s==='reject'||s==='rejecterr')return {...o,body:rejSheet('إرجاع إقفال '+M,s==='rejecterr')};
+  const st6={open:'oooo',partial:'dooo',ready:'dddd',failed:'dddx',waitowner:'dddd',owner:'dddd',returned:'ddod',closed:'oooo'}[s];
   const mo=s==='closed'?'نوفمبر 2026':M;
-  const nOpen=STP.reduce((n,p,k)=>n+(st6[k]==='d'?0:p[2]),0);
-  const row=(p,k)=>{const c=st6[k];return `<li class="${c==='d'?'':'go'}" ${c==='d'?'':go(p[1])}><b>${p[0]}</b><span class="r">${c==='d'?pl('تم','done'):c==='x'?pl('رفض','stuck'):pl('مفتوح','none')}</span>${c==='o'&&p[3]?`<small>${p[2]} ${p[3]}</small>`:''}</li>`};
-  const top=s==='closed'?rec(`تم إقفال ${M}.`):s==='failed'?ban('<b>تعذّر الإقفال: ميزان المراجعة غير متوازن.</b>','',retry):s==='waitowner'?wait('بانتظار أحمد نبيل: اعتماد إقفال '+M):'';
-  const pa=s==='owner'?btn('اعتماد الإقفال')+btn('رفض','sec2'):s==='waitowner'?'':btn('إقفال الشهر','',nOpen?'disabled':'');
-  return {...o,pa,body:pane(top+sum([['الشهر',mo],['البنود المفتوحة',`<bdi dir="ltr">${nOpen}</bdi>`]])+`<ul class="lst">${STP.map(row).join('')}</ul>`)};
+  const done=st6.split('').filter(c=>c==='d').length;
+  const top=s==='closed'?rec(`تم إقفال ${M}.`):s==='failed'?ban('<b>تعذّر الإقفال: ميزان المراجعة غير متوازن.</b>','',retry):s==='waitowner'?wait('بانتظار المالك منذ 22/11/2026'):s==='returned'?ban('<b>أعاد المالك إقفال '+M+':</b> إيراد '+PRJ2+' يحتاج مراجعة','note'):s==='owner'?ban('لا يمكن إعادة فتح الشهر بعد الاعتماد','note'):'';
+  const own=s==='owner'?sum([['نتيجة الشهر',fg(38000)],['إجمالي المدين',fg(4940000)],['إجمالي الدائن',fg(4940000)]]):'';
+  const pa=s==='owner'?btn('اعتماد الإقفال'):s==='waitowner'?'':btn('إقفال الشهر','',done<4?'disabled':'');
+  return {...o,pa,body:pane(top+own+sum([['الشهر',mo],['الخطوات المنتهية',`<bdi>${done} من 4</bdi>`]])+stepsB(st6,s==='owner'||s==='waitowner')+(s==='owner'?more(btn('إرجاع','sec2',go('a6','reject'))):''))};
 }};
 
-/* A7 Revenue recognition review (depends on Q1, Q12) */
+/* A7 Revenue recognition review (depends on Q1, Q12). Direction by word, amounts without sign. */
 SCR.a7={t:'مراجعة الإيراد بالمنجز',who:'المالية، المالك (قراءة)',v:{normal:'قبل الترحيل',posted:'بعد الترحيل',owner:'المالك (قراءة)',empty:'فارغ',loading:'تحميل',failed:'تعذّر الترحيل'},
 r(s){
+  const post=s==='posted';
   const o={back:'إقفال الشهر',to:'a6',title:'مراجعة الإيراد بالمنجز',meta:meta(M,'ج.م')};
   if(s==='loading')return sf(s,o,3);
   if(s==='empty')return {...o,body:pane(st('لا توجد مشاريع نشطة'))};
-  const post=s==='posted',ro=s==='owner',D='—';
+  const ro=s==='owner',D='—';
   const R=[[PRJ,1450000,1200000,'a',90000,1],[PRJ2,2100000,2300000,'l',40000,0],[PRJ3]];
-  const dir=k=>k==='a'?pl('أصل عقد','run'):pl('التزام عقد','none');
-  const cols=[['المشروع'],['الاتجاه'],['المنفذ (ج.م)',1],['المفوتر (ج.م)',1],['الفرق (ج.م)',1],['التغيير عن الشهر السابق (ج.م)',1]].concat(post?[['الرصيد المرحّل (ج.م)',1]]:[]);
-  const rows=R.map(r=>r.length===1?{c:[r[0],D,D,D,D,D].concat(post?[D]:[])}:{c:[r[0],dir(r[3]),fg(r[1]),fg(r[2]),fg(Math.abs(r[1]-r[2])),fg(r[4],!r[5])].concat(post?[fg(Math.abs(r[1]-r[2]),r[3]==='l')]:[])});
-  return {...o,pa:post||ro?'':btn('ترحيل التسوية'),body:pane((post?rec('تم ترحيل التسوية.'):s==='failed'?ban('<b>تعذّر الترحيل.</b>','',retry):'')+dual(cols,rows,{pill:1}),1)};
+  const dir=k=>k==='a'?pl('مستحق من العميل','run'):pl('مقدّم من العميل','none');
+  const cols=[['المشروع'],['الاتجاه'],['المنفذ (ج.م)',1],['المفوتر (ج.م)',1],['الفرق (ج.م)',1],['التغيير عن الشهر السابق (ج.م)',1]];
+  const rows=R.map(r=>r.length===1?{c:[`${r[0]}<small>لا توجد قراءة تقدم</small>`,D,D,D,D,D]}:{c:[r[0],dir(r[3]),fg(r[1]),fg(r[2]),fg(Math.abs(r[1]-r[2])),`${fg(r[4])}<small>${r[5]?'زيادة':'نقص'}</small>`]});
+  return {...o,pa:post?btn('العودة إلى الإقفال','',go('a6')):ro?'':btn('ترحيل التسوية'),body:pane((post?rec('تم ترحيل التسوية.'):s==='failed'?ban('<b>تعذّر الترحيل.</b>','',retry):'')+dual(cols,rows,{pill:1}),1)};
 }};
 
-/* A8 Trial balance (format depends on Q10) */
+/* A8 Trial balance (format depends on Q10). On a phone the two sides are two headed groups. */
 const TBD=[['الخزنة',85000],['البنوك',1120000],['العملاء',740000],['الأصول الثابتة',1300000],['مصروفات مدفوعة مقدمًا',60000],['تكلفة المشروعات',1430000],['مصروفات عامة',205000]];
 const TBC=[['رأس المال المدفوع',2000000],['الأرباح المحتجزة',500000],['الموردون',410000],['مصروفات مستحقة',45000],['مجمع الإهلاك',260000],['إيرادات المشروعات',1725000]];
 SCR.a8={t:'ميزان المراجعة',who:'المالية، المالك',v:{normal:'متوازن',diff:'غير متوازن',empty:'فارغ',loading:'تحميل',failed:'تعذّر التحميل',refused:'ممنوع'},
@@ -756,15 +795,15 @@ r(s){
   const td=TBD.reduce((n,a)=>n+a[1],0),tc=C.reduce((n,a)=>n+a[1],0),d=Math.abs(td-tc);
   const rows=[...TBD.map(a=>[a[0],fg(a[1]),'']),...C.map(a=>[a[0],'',fg(a[1])])];
   const sm=sum([['إجمالي المدين',fg(td)],['إجمالي الدائن',fg(tc)],['الفرق',diffC(d),d?'bad':'']]);
-  const lst=`<ul class="lst">${rows.map(r=>`<li><b>${r[0]}</b><span class="r">${r[1]||r[2]}</span><small>${r[1]?'مدين':'دائن'}</small></li>`).join('')}</ul>`;
+  const grp=(t,A)=>sh(t)+`<ul class="lst">${A.map(a=>`<li><b>${a[0]}</b><span class="r">${fg(a[1])}</span></li>`).join('')}</ul>`;
   const tbl=`<table class="tbl"><thead><tr><th>الحساب</th><th class="n">مدين (ج.م)</th><th class="n">دائن (ج.م)</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r[0]}</td><td class="n">${r[1]}</td><td class="n">${r[2]}</td></tr>`).join('')}</tbody><tfoot><tr><td>الإجمالي</td><td class="n">${fg(td)}</td><td class="n">${fg(tc)}</td></tr></tfoot></table>`;
-  return {...o,body:pane(flt+(d?ban(`<b>الفرق بين المدين والدائن ${fg(d)} ج.م</b>`):'')+`<div class="d-only">${tbl}</div><div class="m-only">${sm}${lst}</div>`,1)};
+  return {...o,body:pane(flt+(d?ban(`<b>الفرق بين المدين والدائن ${fg(d)} ج.م</b>`):'')+`<div class="d-only">${tbl}</div><div class="m-only">${sm}${grp('مدين (ج.م)',TBD)}${grp('دائن (ج.م)',C)}</div>`,1)};
 }};
 
-/* A9 Balance sheet (proposal: spec names it as the aim only) */
-SCR.a9={t:'الميزانية',who:'المالية، المالك',v:{normal:'متوازنة',diff:'غير متوازنة',empty:'فارغة',loading:'تحميل',failed:'تعذّر التحميل',refused:'ممنوع'},
+/* A9 Balance sheet (proposal: spec names it as the aim only). The five ledgers: current default is a separate block (open question). */
+SCR.a9={t:'الميزانية العمومية',who:'المالية، المالك',v:{normal:'متوازنة',diff:'غير متوازنة',empty:'فارغة',loading:'تحميل',failed:'تعذّر التحميل',refused:'ممنوع'},
 r(s){
-  const o={title:'الميزانية',meta:meta('ج.م')};const x=sf(s,o,4,'تعذّر تحميل الميزانية.');if(x)return x;
+  const o={title:'الميزانية العمومية',meta:meta('ج.م')};const x=sf(s,o,4,'تعذّر تحميل الميزانية.');if(x)return x;
   const flt=monthF('bm');
   if(s==='empty')return {...o,body:pane(flt+st('لا توجد أرصدة في هذا الشهر'))};
   const a=s==='diff'?3095000:3045000,l=455000,e=2590000,d=Math.abs(a-l-e);
@@ -773,65 +812,76 @@ r(s){
 }};
 
 /* A10 Year close (depends on Q3, Q4, A1) */
-SCR.a10={t:'إقفال السنة',who:'المالية تجهّز، المالك يعتمد',v:{normal:'جاهز',open:'أشهر مفتوحة',waitowner:'بانتظار المالك',owner:'المالك يعتمد',closed:'تم الإقفال',loading:'تحميل',failed:'تعذّر الإقفال',refused:'ممنوع'},
+SCR.a10={t:'إقفال السنة',who:'المالية تجهّز، المالك يعتمد',v:{normal:'جاهز',open:'أشهر لم تُقفل',waitowner:'بانتظار المالك',owner:'المالك يعتمد',reject:'المالك: سبب الإرجاع',rejecterr:'سبب الإرجاع ناقص',returned:'أُعيد إلى المالية',closed:'تم الإقفال',loading:'تحميل',failed:'تعذّر الإقفال',refused:'ممنوع'},
 r(s){
   const o={title:'إقفال السنة',meta:meta('2026','ج.م')};const x=sf(s,o,3,'تعذّر تحميل السنة.');if(x)return x;
+  if(s==='reject'||s==='rejecterr')return {...o,body:rejSheet('إرجاع إقفال السنة 2026',s==='rejecterr')};
   const cl=s==='closed',op=s==='open';
-  const top=cl?rec('تم إقفال السنة 2026.'):op?ban('<b>أشهر مفتوحة: نوفمبر 2026، ديسمبر 2026</b>'):s==='failed'?ban('<b>تعذّر إقفال السنة.</b>','',retry):s==='waitowner'?wait('بانتظار أحمد نبيل: اعتماد إقفال السنة'):'';
-  const rows=fl([['ربح السنة',fg(cl?0:90000)],['الأرباح المحتجزة قبل',fg(500000)],['الأرباح المحتجزة بعد',fg(590000)],['الأشهر المقفلة',op?'10 من 12':'12 من 12']]);
-  const pa=s==='owner'?btn('اعتماد الإقفال')+btn('رفض','sec2'):s==='waitowner'||cl?'':btn('إقفال السنة','',op?'disabled':'');
-  return {...o,pa,body:pane(top+rows)};
+  const top=cl?rec('تم إقفال السنة 2026.'):op?ban('<b>أشهر لم تُقفل: نوفمبر 2026، ديسمبر 2026</b>'):s==='failed'?ban('<b>تعذّر إقفال السنة.</b>','',retry):s==='waitowner'?wait('بانتظار المالك منذ 22/11/2026'):s==='returned'?ban('<b>أعاد المالك إقفال السنة:</b> مراجعة المصروفات العامة','note'):s==='owner'?ban('لا يمكن إعادة فتح السنة بعد الاعتماد','note'):'';
+  const rows=fl([['ربح السنة',fg(cl?0:90000)],[cl?'الأرباح المحتجزة قبل الإقفال':'الأرباح المحتجزة قبل الإقفال',fg(500000)],['الأرباح المحتجزة بعد الإقفال',fg(590000)],['الأشهر المقفلة',op?'10 من 12':'12 من 12']]);
+  const pa=s==='owner'?btn('اعتماد الإقفال'):s==='waitowner'||cl?'':btn('إقفال السنة','',op?'disabled':'');
+  return {...o,pa,body:pane(top+rows+(s==='owner'?more(btn('إرجاع','sec2',go('a10','reject'))):''))};
 }};
 
-/* A11 Overhead spread (report only; depends on Q9) */
+/* A11 Overhead spread (report only; depends on Q9). The shown column is marked, the one allowed line stays. */
 SCR.a11={t:'توزيع المصروفات العامة',who:'المالية، المالك',v:{normal:'عادي',empty:'فارغ',loading:'تحميل',failed:'تعذّر التحميل',refused:'ممنوع'},
 r(s){
   const o={title:'توزيع المصروفات العامة',meta:meta('ج.م')};const x=sf(s,o,4,'تعذّر تحميل التوزيع.');if(x)return x;
   const flt=monthF('om');
   if(s==='empty')return {...o,body:pane(flt+st('لا توجد مصروفات عامة في هذا الشهر'))};
   const R=[[PRJ,3000000,60,30000,900000],[PRJ2,2000000,40,20000,530000]];
-  const cols=[['المشروع'],['قيمة العقد (ج.م)',1],['الحصة',1],['المصروفات العامة (ج.م)',1],['تكلفة المشروع مع الحصة (ج.م)',1]];
+  const cols=[['المشروع'],['قيمة العقد (ج.م)',1],['الحصة',1],['المصروفات العامة (ج.م)',1],['تكلفة المشروع مع الحصة (للعرض، ج.م)',1]];
   const rows=R.map(r=>({c:[r[0],fg(r[1]),`<bdi dir="ltr">${r[2]}%</bdi>`,fg(r[3]),fg(r[4]+r[3])]}));
   return {...o,body:pane(flt+ban('للعرض فقط، غير مسجل في الدفاتر','note')+dual(cols,rows),1)};
 }};
 
-/* A12 Budgets overview (depends on Q6) */
-SCR.a12={t:'الموازنات',who:'المالك (جوال أيضًا)، المالية',v:{normal:'عادي',empty:'فارغ',loading:'تحميل',failed:'تعذّر التحميل',refused:'ممنوع'},
+/* A12 Budgets overview (depends on Q6). Sorted by danger, pill weight by danger, percent of the limit. */
+const BUD=[[PRJ3,'over',3000000,3350000,2900000,3300000],[PRJ,'near',2400000,2310000,1430000,2640000],[PRJ2,'within',1800000,900000,650000,1980000]];
+const budP=k=>pl(k==='over'?'تجاوز':k==='near'?'قريب من الحد':'ضمن الحد',k);
+SCR.a12={t:'موازنات المشاريع',who:'المالك (جوال أيضًا)، المالية',v:{normal:'عادي',empty:'فارغ',loading:'تحميل',failed:'تعذّر التحميل',refused:'ممنوع'},
 r(s){
-  const o={title:'الموازنات',meta:meta('ج.م')};const x=sf(s,o,4,'تعذّر تحميل الموازنات.');if(x)return x;
+  const o={title:'موازنات المشاريع',meta:meta('ج.م')};const x=sf(s,o,4,'تعذّر تحميل الموازنات.');if(x)return x;
   if(s==='empty')return {...o,body:pane(st('لا توجد مقايسات موقّعة'))};
-  const S={w:pl('ضمن الموازنة','done'),n:pl('قريب من الحد','run'),o:pl('تجاوز','stuck')};
-  const R=[[PRJ,'n',2400000,2310000,1430000],[PRJ2,'w',1800000,900000,650000],[PRJ3,'o',3000000,3350000,2900000]];
-  const cols=[['المشروع'],['الحالة'],['خط الأساس (ج.م)',1],['الملتزم به (ج.م)',1],['المدفوع (ج.م)',1]];
-  return {...o,body:pane(dual(cols,R.map(r=>({go:go('a13'),c:[`<a href="#a13">${r[0]}</a>`,S[r[1]],fg(r[2]),fg(r[3]),fg(r[4])]})),{pill:1}),1)};
+  const cols=[['المشروع'],['الحالة'],['المستخدم من الحد',1],['خط الأساس (ج.م)',1],['المعتمد للصرف (ج.م)',1],['المدفوع (ج.م)',1]];
+  return {...o,body:pane(dual(cols,BUD.map(r=>({go:go('a13'),c:[`<a href="#a13">${r[0]}</a>`,budP(r[1]),`<bdi class="fx" dir="ltr">${Math.round(r[3]/r[5]*100)}%</bdi>`,fg(r[2]),fg(r[3]),fg(r[4])]})),{pill:1}),1)};
 }};
 
-/* A13 Project budget tab (depends on Q6) */
+/* A13 Project budget tab (depends on Q6). Status first, tolerance between baseline and limit, limit follows the field. */
 SCR.a13={t:'موازنة المشروع',who:'المالك يحدد النسبة، المالية تقرأ',v:{owner:'المالك',finance:'المالية (قراءة)',err:'النسبة ناقصة',loading:'تحميل',failed:'تعذّر التحميل'},
 r(s){
   const o={head:frameHead(),tabs:tabs2()};
   if(s==='loading')return {...o,body:skel(3)};
   if(s==='failed')return {...o,body:failed('تعذّر تحميل الموازنة.')};
-  const ow=s!=='finance';
-  const tol=ow?fld({id:'tl',label:'نسبة السماح',req:1,err:s==='err'?'أدخل نسبة السماح':'',ctl:numc('tl',s==='err'?'':'10','%')}):'';
-  const fig=fl([['خط الأساس',fg(2400000)],...(ow?[]:[['نسبة السماح','<bdi dir="ltr">10%</bdi>']]),['الحد',fg(2640000)],['الملتزم به',fg(2310000)],['المدفوع',fg(1430000)]]);
+  const ow=s!=='finance',e=s==='err';
+  const top=sum([['الحالة',budP('near')],['المستخدم من الحد',`<bdi dir="ltr">88%</bdi>`]]);
+  const f1=fl([['خط الأساس',fg(2400000)]]);
+  const tol=ow?`<div class="g2 flt">${fld({id:'tl',label:'نسبة السماح',req:1,err:e?'أدخل نسبة السماح':'',ctl:numc('tl',e?'':'10','%')})}</div>`:fl([['نسبة السماح','<bdi dir="ltr">10%</bdi>']]);
+  const f2=fl([['الحد',`<span id="lim">${e?'—':fg(2640000)}</span>`],['المعتمد للصرف',fg(2310000)],['المدفوع',fg(1430000)]]);
   const hs=sh('سجل خط الأساس')+`<ul class="lst"><li><b>أمر تغيير 2</b><span class="r">${dt('02/11/2026')}</span><small>رفع خط الأساس من ${fg(2200000)} إلى ${fg(2400000)}</small></li><li><b>توقيع المقايسة</b><span class="r">${dt('10/03/2026')}</span><small>خط الأساس ${fg(2200000)}</small></li></ul>`;
-  return {...o,pa:ow?btn('حفظ نسبة السماح'):'',body:pane(`<h3>الموازنة (ج.م)</h3>`+(ow?`<div class="g2">${tol}</div>`:'')+fig+hs)};
+  return {...o,pa:ow?btn('حفظ نسبة السماح'):'',body:pane(top+f1+tol+f2+hs)};
 }};
 
-/* A14 Loans (only if Q8 answers yes) */
-SCR.a14={t:'القروض',who:'المالية',v:{normal:'عادي',add:'إضافة قسط',empty:'فارغ',loading:'تحميل',failed:'تعذّر التحميل',refused:'ممنوع'},
+/* A14 Loans (only if Q8 answers yes). Principal is «المتبقي من القرض» and «سداد القرض». */
+SCR.a14={t:'القروض',who:'المالية',v:{normal:'عادي',add:'إضافة قسط',addloan:'إضافة قرض',empty:'فارغ',loading:'تحميل',failed:'تعذّر التحميل',refused:'ممنوع'},
 r(s){
-  const o={title:'القروض',meta:meta('ج.م'),pa:btn('إضافة قسط','',go('a14','add'))};const x=sf(s,o,3,'تعذّر تحميل القروض.');if(x)return x;
-  if(s==='empty')return {...o,pa:'',body:pane(st('لا توجد قروض','','info','',btn('إضافة قرض','',go('a14'))))};
-  const L=dual([['المقرض'],['الأصل المتبقي (ج.م)',1],['القسط القادم (ج.م)',1],['تاريخه']],[{c:['البنك الأهلي',fg(900000),fg(54000),dt('15/12/2026')]}]);
-  const P=dual([['التاريخ'],['الأصل (ج.م)',1],['الفائدة (ج.م)',1]],[{c:[dt('15/11/2026'),fg(42000),fg(12000)]},{c:[dt('15/10/2026'),fg(41500),fg(12500)]}]);
+  const o={title:'القروض',meta:meta('ج.م'),pa:btn('إضافة قسط','',go('a14','add'))+btn('إضافة قرض','sec2',go('a14','addloan'))};const x=sf(s,o,3,'تعذّر تحميل القروض.');if(x)return x;
+  if(s==='empty')return {...o,pa:'',body:pane(st('لا توجد قروض','','info','',btn('إضافة قرض','',go('a14','addloan'))))};
+  const L=dual([['المقرض'],['المتبقي من القرض (ج.م)',1],['القسط القادم (ج.م)',1],['تاريخه']],[{c:['البنك الأهلي',fg(900000),fg(54000),dt('15/12/2026')]}]);
+  const P=dual([['التاريخ'],['سداد القرض (ج.م)',1],['الفائدة (ج.م)',1]],[{c:[dt('15/11/2026'),fg(42000),fg(12000)]},{c:[dt('15/10/2026'),fg(41500),fg(12500)]}]);
   if(s==='add'){
-    const bd=fld({id:'ln',label:'القرض',req:1,ctl:selc('ln',['البنك الأهلي'],'البنك الأهلي')})+fld({id:'ld',label:'التاريخ',req:1,ctl:datec('ld','15/12/2026')})+fld({id:'lp',label:'الأصل',req:1,ctl:money('lp','42,000.00')})+fld({id:'li',label:'الفائدة',req:1,ctl:money('li','12,000.00')});
+    const bd=fld({id:'ln',label:'القرض',req:1,ctl:selc('ln',['البنك الأهلي'],'البنك الأهلي')})+fld({id:'ld',label:'التاريخ',req:1,ctl:datec('ld','15/12/2026')})+fld({id:'lp',label:'سداد القرض',req:1,ctl:money('lp','42,000.00')})+fld({id:'li',label:'الفائدة',req:1,ctl:money('li','12,000.00')});
     return {...o,body:sheet('إضافة قسط',bd,btn('حفظ')+btn('إلغاء','sec2'))};
+  }
+  if(s==='addloan'){
+    const bd=fld({id:'lm',label:'المقرض',req:1,ctl:textc('lm','')})+fld({id:'la',label:'مبلغ القرض',req:1,ctl:money('la','')})+fld({id:'lt',label:'تاريخ الصرف',req:1,ctl:datec('lt','')});
+    return {...o,body:sheet('إضافة قرض',bd,btn('حفظ')+btn('إلغاء','sec2'))};
   }
   return {...o,body:pane(sh('القروض')+L+sh('الأقساط المسددة')+P,1)};
 }};
+
+/* live behaviour in the mock: the limit follows the tolerance field (A13), the balance follows the paid-from choice (A5) */
+document.addEventListener('input',e=>{if(e.target.id==='tl'){const v=parseFloat(e.target.value.replace(/,/g,'')),el=document.getElementById('lim');if(el)el.innerHTML=isNaN(v)?'—':fg(2400000*(1+v/100))}});
+document.addEventListener('change',e=>{if(e.target.name==='src'){const k=[...document.getElementsByName('src')].indexOf(e.target)?'b':'s',f=document.getElementById('srcf');if(f)f.innerHTML=balF(k).replace(/^<span[^>]*>|<\/span>$/g,'')}});
 
 /* ---------------- preview frame ---------------- */
 const ORDER=['a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','a11','a12','a13','a14'];
@@ -859,8 +909,8 @@ document.addEventListener('click',e=>{
   if(e.target.closest('.menu')){$('#app').dataset.sheet='1'}
 });
 $('#jump').insertAdjacentHTML('beforeend',ORDER.map(id=>`<button type="button" onclick="document.getElementById('${id}')?.scrollIntoView()">${id.toUpperCase()}</button>`).join(''));
-const NAV=[['book','acc','الأرصدة الافتتاحية'],['box','acc','الأصول'],['calc','acc','المستحقات والمقدمات'],['doc','acc','مصروف جديد'],['lock','acc','إقفال الشهر'],['scale','acc','ميزان المراجعة'],['chart','acc','الميزانية'],['chart','acc','الموازنات']];
-const navHtml=()=>[['acc','المحاسبة']].map(g=>`<div class="grp"><div class="grp-h">${g[1]}</div>`+NAV.filter(n=>n[1]===g[0]).map((n,k)=>`<a class="row" href="#" ${k===4?'aria-current="page"':''} title="${n[2]}">${i(n[0])}<span class="lbl">${n[2]}</span></a>`).join('')+'</div>').join('');
+const NAV=[['book','a1','الأرصدة الافتتاحية'],['box','a2','الأصول'],['calc','a4','المستحقات والمقدمات'],['doc','a5','مصروف جديد'],['lock','a6','إقفال الشهر'],['chart','a7','مراجعة الإيراد بالمنجز'],['lock','a10','إقفال السنة'],['scale','a8','ميزان المراجعة'],['chart','a9','الميزانية العمومية'],['calc','a11','توزيع المصروفات العامة'],['box','a12','موازنات المشاريع'],['book','a14','القروض']];
+const navHtml=()=>`<div class="grp"><div class="grp-h">المحاسبة</div>`+NAV.map(n=>`<a class="row" href="#${n[1]}" data-go="${n[1]}" title="${n[2]}">${i(n[0])}<span class="lbl">${n[2]}</span></a>`).join('')+'</div>';
 $('#nav').innerHTML=navHtml();$('#nav2').innerHTML=navHtml();
 $('#closeN').onclick=$('#scrim').onclick=()=>{$('#app').dataset.sheet='0'};
 const tgl=()=>{const d=H.dataset.theme?H.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;H.dataset.theme=d?'light':'dark'};
