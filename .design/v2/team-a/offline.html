@@ -265,7 +265,9 @@ body.embed .phone{block-size:100dvh}
 .tile .im{block-size:96px;display:grid;place-items:center;background:var(--head);color:var(--dim)}
 .tile .im svg.i{inline-size:32px;block-size:32px}
 .tile .tb{padding:8px 10px;display:grid;gap:6px;justify-items:start;min-inline-size:0}
-.tile .tb span.c{font-size:.875rem;overflow-wrap:anywhere}
+.tile .tb .c{font-size:.875rem;overflow-wrap:anywhere;inline-size:100%}
+.s-place{background:var(--head);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.tot-in.t1{grid-template-columns:1fr}
 .tile.refd{border-color:var(--err-bar);border-width:2px}
 .tile .why,.tile .ea{padding:0 10px 10px}
 .tile .why{padding-block-end:6px}
@@ -321,7 +323,7 @@ const countLink=(mid,sub,ic)=>`<a class="clink" href="#" data-go="sync">${ic||i(
 const noteForm=()=>`<div class="form"><div class="field"><label>ملاحظة</label><div class="ctl ta"><textarea rows="3" aria-label="ملاحظة"></textarea></div></div></div>`;
 const bar=(t,ic,id)=>`<button type="button" class="btn" data-testid="${id}">${ic?i(ic):''}${t}</button>`;
 const SAVE=bar('حفظ','','offline-save');
-const QS='سطر من الأحد لم يُرسل، ويُرفض غداً.';
+const QS='لم يُرسل ما سجّلته يوم الأحد، ويُرفض غداً.';
 
 const logRows=m=>grp('qty','الكميات التقديرية',2,ent('qty','تبليط أرضيات المعيشة',q('12.5','م²')+mk(m[0]))+ent('qty','محارة داخلية',q('30','م²')+mk(m[1])))
  +grp('mat','الخامات',1,ent('mat','أسمنت بورتلاندي','<span class="fg">20 <small>كيس</small></span>'+mk(m[2])))
@@ -331,52 +333,60 @@ const wrapLog=h=>`<div><h2 class="sec-h">المسجَّل</h2>${lgw(h)}</div>`;
 
 const V={};
 /* 1 daily log */
-V.unsent={t:'اليومية',b:PROJECT,body:()=>attStrip('not','',btn('الانصراف','sec2'))+countLink('لم يُرسل','<bdi>4</bdi> أسطر')+noteForm()+wrapLog(logRows(['not','sent','not','not','not'])),bar:SAVE};
-V.warn={t:'اليومية',b:PROJECT,body:()=>ban('note','warn',QS)+countLink('لم يُرسل','<bdi>4</bdi> أسطر')+wrapLog(logRows(['not','sent','not','not','not'])),bar:SAVE};
-V.sending={t:'اليومية',b:PROJECT,body:()=>attStrip('sent','',btn('الانصراف','sec2'))+countLink('جارٍ الإرسال','<bdi>2</bdi> من <bdi>5</bdi>',SP)+wrapLog(logRows(['sent','sent','sending','not','not'])),bar:SAVE};
-V.failsend={t:'اليومية',b:PROJECT,body:()=>attStrip('not','',btn('الانصراف','sec2'))+`<div class="clink">${i('sync')}<span class="tx"><b>لم يُرسل</b><span><bdi>4</bdi> أسطر</span></span>${btn('إعادة المحاولة','sec2','offline-retry')}</div>`+wrapLog(logRows(['not','sent','not','not','not'])),bar:SAVE};
-V.refused={t:'اليومية',b:PROJECT,body:()=>countLink('لم يُرسل','<bdi>1</bdi> سطر · مرفوض <bdi>1</bdi>')+wrapLog(grp('qty','الكميات التقديرية',2,
-  ent('qty','محارة داخلية',q('30','م²')+mk('ref'),'الأحد',why('مرّت أكثر من 3 أيام على هذا اليوم.')+`<div class="ea">${btn('تعديل','sec2','offline-fix')}${btn('حذف','quiet','offline-drop')}</div>`,'refd')
-  +ent('qty','تبليط أرضيات المعيشة',q('12.5','م²')+mk('sent')))),bar:SAVE};
-V.loading={t:'اليومية',b:PROJECT,body:()=>attStrip('not','')+`<div><h2 class="sec-h">المسجَّل</h2>`+lgw(grp('qty','الكميات التقديرية',1,ent('qty','تبليط أرضيات المعيشة',q('12.5','م²')+mk('not')))+`<div class="ent"><span class="sk" style="inline-size:60%"></span></div><div class="ent"><span class="sk" style="inline-size:40%"></span></div>`)+`</div>`,bar:SAVE};
+const cnt=(n,w)=>`<bdi>${n}</bdi> ${w}`;
+const NSW='لم يُرسل',RFW='مرفوض',STW='أُرسل اليوم';
+const delBtn=btn('حذف','sec2','offline-drop');
+const noteFormT=v=>`<div class="form"><div class="field"><label>ملاحظة</label><div class="ctl ta"><textarea rows="3" aria-label="ملاحظة">${v||''}</textarea></div></div></div>`;
+const NS5=['not','sent','not','not','not'];
+V.unsent={t:'اليومية',b:PROJECT,body:()=>attStrip('not','',btn('الانصراف','sec2'))+countLink('الإرسال',cnt(4,NSW))+noteFormT()+wrapLog(logRows(NS5)),bar:''};
+V.typing={t:'اليومية',b:PROJECT,body:()=>attStrip('not','',btn('الانصراف','sec2'))+countLink('الإرسال',cnt(4,NSW))+noteFormT('وصل الحديد بعد الظهر')+wrapLog(logRows(NS5)),bar:SAVE};
+V.warn={t:'اليومية',b:PROJECT,body:()=>ban('note','warn',QS)+countLink('الإرسال',cnt(5,NSW))+wrapLog(grp('qty','الأحد',1,ent('qty','محارة داخلية',q('30','م²')+mk('not')))+logRows(NS5)),bar:''};
+V.sending={t:'اليومية',b:PROJECT,body:()=>attStrip('sent','',btn('الانصراف','sec2'))+countLink('جارٍ الإرسال','<bdi>2</bdi> من <bdi>5</bdi>',SP)+wrapLog(logRows(['sent','sent','sending','not','not'])),bar:''};
+V.failsend={t:'اليومية',b:PROJECT,body:()=>attStrip('not','',btn('الانصراف','sec2'))+`<div class="clink">${i('sync')}<span class="tx"><b>الإرسال</b><span>${cnt(4,NSW)}</span></span>${btn('إرسال الآن','sec2','offline-send')}</div>`+wrapLog(logRows(NS5)),bar:''};
+V.refused={t:'اليومية',b:PROJECT,body:()=>countLink('الإرسال',cnt(1,RFW))+wrapLog(grp('qty','الكميات التقديرية',2,
+  ent('qty','محارة داخلية',q('30','م²')+mk('ref'),'الأحد',why('مرّت أكثر من 3 أيام على هذا اليوم.')+`<div class="ea">${delBtn}</div>`,'refd')
+  +ent('qty','تبليط أرضيات المعيشة',q('12.5','م²')+mk('sent')))),bar:''};
+V.loading={t:'اليومية',b:PROJECT,body:()=>attStrip('not','')+`<div><h2 class="sec-h">المسجَّل</h2>`+lgw(grp('qty','الكميات التقديرية',1,ent('qty','تبليط أرضيات المعيشة',q('12.5','م²')+mk('not')))+`<div class="ent"><span class="sk" style="inline-size:60%"></span></div><div class="ent"><span class="sk" style="inline-size:40%"></span></div>`)+`</div>`,bar:''};
 /* 2 check-in */
-V.ci={t:'اليومية',b:PROJECT,body:()=>ban('ok','check','تم تسجيل الحضور')+attStrip('not','',btn('الانصراف','sec2'))+noteForm(),bar:SAVE};
-V.cifar={t:'اليومية',b:PROJECT,body:()=>attStrip('sent','<span class="pill s-none">'+mi('pin')+'بعيد عن الموقع · <bdi dir="ltr">640</bdi> م</span>',btn('الانصراف','sec2'))+noteForm(),bar:SAVE};
+V.ci={t:'اليومية',b:PROJECT,body:()=>ban('ok','check','تم تسجيل الحضور')+attStrip('not','',btn('الانصراف','sec2'))+noteFormT(),bar:''};
+V.cifar={t:'اليومية',b:PROJECT,body:()=>attStrip('sent','<span class="pill s-none">'+mi('pin')+'بعيد عن الموقع · <bdi dir="ltr">640</bdi> م</span>',btn('الانصراف','sec2'))+noteFormT(),bar:''};
 V.cioff={t:'اليومية',b:PROJECT,body:()=>ban('','warn','الموقع مغلق على التليفون. شغّله من إعدادات المتصفح ثم اضغط «الحضور».')+state('clock','لم يُسجَّل الحضور بعد'),bar:bar('الحضور','','checkin')};
-V.cilate={t:'اليومية',b:PROJECT,body:()=>`<div class="att" style="flex-direction:column;align-items:stretch"><div class="tm">${mi('x')}<span>الحضور</span><bdi dir="ltr">07:42</bdi>${mk('ref')}</div>${why('هذا الحضور لم يعد لليوم الحالي.')}<div class="ea">${btn('حذف','sec2','offline-drop')}</div></div>`+state('clock','لم يُسجَّل الحضور بعد'),bar:bar('الحضور','','checkin')};
+V.cilate={t:'اليومية',b:PROJECT,body:()=>lgw(ent('user','الحضور <bdi dir="ltr">07:42</bdi>',mk('ref'),'',why('لم يعد هذا الحضور لليوم الحالي.')+`<div class="ea">${delBtn}</div>`,'refd')),bar:bar('الحضور','','checkin')};
 /* 3 photo */
-const tile=(m,c,x)=>`<div class="tile ${m==='ref'?'refd':''}"><div class="im">${i('cam')}</div><div class="tb"><span class="c">${c}</span>${mk(m)}</div>${x||''}</div>`;
+const capIn=`<div class="ctl" style="block-size:48px"><input aria-label="وصف الصورة" placeholder="وصف الصورة"></div>`;
+const tile=(m,c,x)=>`<div class="tile ${m==='ref'?'refd':''}"><div class="im">${i('cam')}</div><div class="tb"><div class="c">${c}</div>${mk(m)}</div>${x||''}</div>`;
 const shotBar=bar('التقاط صورة','cam','offline-photo');
-const capF=`<div class="form"><div class="field"><label>وصف الصورة</label><div class="ctl"><input aria-label="وصف الصورة"></div></div></div>`;
-V.photos={t:'الصور',b:PROJECT,body:()=>capF+`<div class="tiles">${tile('not','واجهة الفيلا')+tile('not','أعمال المحارة')+tile('sending','غرفة المعيشة')+tile('sent','المدخل')}</div>`,bar:shotBar};
-V.photofull={t:'الصور',b:PROJECT,body:()=>ban('','warn','مساحة التليفون ممتلئة. لم تُحفظ الصورة.')+capF+`<div class="tiles">${tile('not','واجهة الفيلا')}</div>`,bar:shotBar};
-V.photobig={t:'الصور',b:PROJECT,body:()=>capF+`<div class="tiles">${tile('ref','أعمال المحارة',why('الصورة كبيرة جداً.')+`<div class="ea">${btn('إعادة التقاط','sec2','offline-retake')}${btn('حذف','quiet','offline-drop')}</div>`)+tile('not','واجهة الفيلا')}</div>`,bar:shotBar};
+V.photos={t:'الصور',b:PROJECT,body:()=>`<div class="tiles">${tile('not',capIn)+tile('not','واجهة الفيلا')+tile('sending','غرفة المعيشة')+tile('sent','المدخل')}</div>`,bar:shotBar};
+V.photofull={t:'الصور',b:PROJECT,body:()=>ban('','warn','مساحة التليفون ممتلئة. لم تُحفظ الصورة.')+`<div class="tiles">${tile('not','واجهة الفيلا')}</div>`,bar:shotBar};
+V.photobig={t:'الصور',b:PROJECT,body:()=>`<div class="tiles">${tile('ref','أعمال المحارة',why('الصورة كبيرة جداً.')+`<div class="ea">${btn('إعادة التقاط','sec2','offline-retake')}${btn('حذف','quiet','offline-drop')}</div>`)+tile('not','واجهة الفيلا')}</div>`,bar:shotBar};
 /* 4 invoice photo */
-V.invoice={t:'مصروف موقع',b:PROJECT,body:()=>field('مرتبطة بـ','مصروف: لوازم كهرباء',1)+`<div class="tiles">${tile('not','الفاتورة')}</div>`,bar:bar('التقاط صورة الفاتورة','cam','offline-invoice')};
+V.invoice={t:'مصروف موقع',b:PROJECT,body:()=>lgw(ent('cash','لوازم كهرباء','<span class="fg"><bdi dir="ltr">850</bdi> <small>ج.م</small></span>','مصروف'))+`<div class="tiles">${tile('not','الفاتورة')}</div>`,bar:bar('التقاط صورة الفاتورة','cam','offline-invoice')};
 /* 5 drafts */
-const kindSeg=on=>`<div class="seg kinds" style="display:flex"><button type="button" aria-pressed="${on==='e'}">${i('cash')}مصروف</button><button type="button" aria-pressed="${on==='c'}">${i('cash')}طلب عهدة</button></div>`;
+const kindSeg=on=>`<div class="seg kinds" style="display:flex"><button type="button" aria-pressed="${on==='e'}">${i(on==='e'?'check':'cash')}مصروف</button><button type="button" aria-pressed="${on==='c'}">${i(on==='c'?'check':'cash')}طلب عهدة</button></div>`;
 V.draft={t:'مسودة جديدة',b:PROJECT,body:()=>kindSeg('e')+`<div class="form"><div class="field"><label>المبلغ<span class="req">*</span></label><div class="ctl num"><input inputmode="decimal" value="850" aria-label="المبلغ"><span class="aff">ج.م</span></div></div><div class="field"><label>السبب<span class="req">*</span></label><div class="ctl ta"><textarea rows="3" aria-label="السبب">لوازم كهرباء</textarea></div></div><div class="shotted"><span class="th">${i('cam')}</span><span class="nm">الفاتورة</span>${mk('not')}</div></div>`,bar:bar('حفظ المسودة','','offline-draft')};
 V.drafts={t:'المسودات',b:PROJECT,body:()=>lgw(grp('cash','المسودات',3,
   ent('cash','لوازم كهرباء','<span class="fg"><bdi dir="ltr">850</bdi></span>'+mk('not'),'مصروف')
-  +ent('cash','عهدة شراء مواد','<span class="fg"><bdi dir="ltr">5,000</bdi></span><span class="pill s-run">'+mi('user')+'عند المشرف</span>','طلب عهدة')
-  +ent('cash','عهدة نقل','<span class="fg"><bdi dir="ltr">12,000</bdi></span>'+mk('ref'),'طلب عهدة',why('لم تُسوَّ العهدة السابقة.')+`<div class="ea">${btn('تعديل','sec2','offline-fix')}${btn('حذف','quiet','offline-drop')}</div>`,'refd'),'ج.م')),bar:bar('مسودة جديدة','plus','offline-draft-new')};
+  +ent('cash','عهدة شراء مواد','<span class="fg"><bdi dir="ltr">5,000</bdi></span><span class="pill s-place">'+mi('user')+'عند المشرف</span>','طلب عهدة')
+  +ent('cash','عهدة نقل','<span class="fg"><bdi dir="ltr">12,000</bdi></span>'+mk('ref'),'طلب عهدة',why('لم تُسوَّ العهدة السابقة.')+`<div class="ea">${delBtn}</div>`,'refd'),'ج.م')),bar:bar('مسودة جديدة','plus','offline-draft-new')};
 V.draftsempty={t:'المسودات',b:PROJECT,body:()=>state('cash','لا مسودات'),bar:bar('مسودة جديدة','plus','offline-draft-new')};
-/* 6 sending list */
-const syncTot=(n,s,old)=>`<div class="tot"><div class="tot-in t3"><div><b>${n}</b><span>لم يُرسل</span></div><div><b>${s}</b><span>أُرسل اليوم</span></div><div><b>${old}</b><span>الأقدم</span></div></div></div>`;
-const refItems=drop=>ent('qty','كمية: محارة داخلية',mk('ref'),'الأحد · '+PROJECT,
+/* 6 sending list: strip counts are disjoint; refused rows in their own block; the rest grouped by day */
+const syncTot=cells=>`<div class="tot"><div class="tot-in t${cells.length}">${cells.map(c=>`<div><b>${c[0]}</b><span>${c[1]}</span></div>`).join('')}</div></div>`;
+const refItems=drop=>ent('qty','كمية: محارة داخلية','','الأحد · '+PROJECT,
   drop?`<div class="cfm"><div class="ban"><span>${mi('warn')}</span><span>سيُحذف هذا السطر من التليفون ولن يصل.</span></div><div class="ea">${btn('حذف','sec2','offline-drop-confirm')}${btn('تراجع','quiet','offline-drop-cancel')}</div></div>`
-  :why('مرّت أكثر من 3 أيام على هذا اليوم.')+`<div class="ea">${btn('تعديل','sec2','offline-fix')}${btn('حذف','quiet','offline-drop')}</div>`,'refd')
- +ent('crew','عامل: محمد سيد',mk('ref'),'اليوم · '+PROJECT,why('هذا الهاتف مسجَّل لعامل آخر.')+`<div class="ea">${btn('متابعة','sec2','offline-ack')}${btn('حذف','quiet','offline-drop')}</div>`,'refd')
- +ent('crew','عامل: أحمد علي',mk('ref'),'اليوم · '+PROJECT,why('هذا الهاتف مسجَّل لموظف بمرتب.')+`<div class="ea">${btn('تعديل','sec2','offline-fix')}${btn('حذف','quiet','offline-drop')}</div>`,'refd');
-const nsItems=m=>ent('user','حضور',mk(m[0]),'اليوم · '+PROJECT)+ent('qty','كمية: تبليط أرضيات المعيشة',mk(m[1]),'اليوم · '+PROJECT)+ent('cam','صورة',mk(m[2]),'اليوم · '+PROJECT)+ent('cash','مسودة مصروف',mk(m[3]),'اليوم · '+PROJECT)+ent('crew','عمالة',mk(m[4]),'أمس · '+PROJECT);
+  :why('مرّت أكثر من 3 أيام على هذا اليوم.')+`<div class="ea">${delBtn}</div>`,'refd')
+ +ent('crew','عامل: محمد سيد','','اليوم · '+PROJECT,why('هذا الهاتف مسجَّل لعامل آخر.')+`<div class="ea">${btn('إضافة رغم ذلك','sec2','offline-ack')}${btn('حذف','quiet','offline-drop')}</div>`,'refd')
+ +ent('crew','عامل: أحمد علي','','اليوم · '+PROJECT,why('هذا الهاتف مسجَّل لموظف بمرتب.')+`<div class="ea">${btn('تعديل','sec2','offline-fix')}${btn('حذف','quiet','offline-drop')}</div>`,'refd');
+const days=m=>lgw(grp('clock','اليوم',4,ent('user','حضور',mk(m[0]),PROJECT)+ent('qty','كمية: تبليط أرضيات المعيشة',mk(m[1]),PROJECT)+ent('cam','صورة: واجهة الفيلا',mk(m[2]),PROJECT)+ent('cash','مسودة مصروف',mk(m[3]),PROJECT)))
+ +lgw(grp('clock','أمس',1,ent('crew','عمالة',mk(m[4]),PROJECT)));
 const NS=['not','not','not','not','not'];
 const sendBar=bar('إرسال الآن','sync','offline-send');
-V.sync={t:'الإرسال',b:'رجوع',body:()=>syncTot('8','12','الأحد')+ban('note','warn',QS)+lgw(grp('x','مرفوض',3,refItems(false)))+lgw(grp('clock','لم يُرسل',5,nsItems(NS))),bar:sendBar};
-V.syncdrop={t:'الإرسال',b:'رجوع',body:()=>syncTot('8','12','الأحد')+lgw(grp('x','مرفوض',3,refItems(true)))+lgw(grp('clock','لم يُرسل',5,nsItems(NS))),bar:sendBar};
-V.syncoffline={t:'الإرسال',b:'رجوع',body:()=>ban('','warn','لا يوجد اتصال. السطور محفوظة على التليفون.')+syncTot('5','12','أمس')+lgw(grp('clock','لم يُرسل',5,nsItems(NS))),bar:sendBar};
-V.syncsending={t:'الإرسال',b:'رجوع',body:()=>syncTot('3','14','أمس')+lgw(grp('clock','لم يُرسل',5,nsItems(['sent','sent','sending','not','not']))),bar:`<button type="button" class="btn" aria-busy="true" data-testid="offline-send">${SP}جارٍ الإرسال</button>`};
-V.syncempty={t:'الإرسال',b:'رجوع',body:()=>syncTot('0','17','-')+state('check','لا شيء بانتظار الإرسال'),bar:''};
-V.syncsignout={t:'الإرسال',b:'رجوع',body:()=>ban('note','warn','لم يُرسل <bdi>5</bdi> أسطر.',btn('خروج','sec2','offline-signout'))+syncTot('5','0','أمس')+lgw(grp('clock','لم يُرسل',5,nsItems(NS))),bar:sendBar};
+const refBlock=d=>lgw(grp('x','مرفوض',3,refItems(d)));
+V.sync={t:'الإرسال',b:'رجوع',body:()=>syncTot([['5',NSW],['3',RFW],['12',STW]])+refBlock(false)+days(NS),bar:sendBar};
+V.syncdrop={t:'الإرسال',b:'رجوع',body:()=>syncTot([['5',NSW],['3',RFW],['12',STW]])+refBlock(true)+days(NS),bar:sendBar};
+V.syncoffline={t:'الإرسال',b:'رجوع',body:()=>syncTot([['5',NSW]])+days(NS),bar:sendBar};
+V.syncsending={t:'الإرسال',b:'رجوع',body:()=>syncTot([['3',NSW],['14',STW]])+days(['sent','sent','sending','not','not']),bar:`<button type="button" class="btn" aria-busy="true" data-testid="offline-send">${SP}جارٍ الإرسال</button>`};
+V.syncempty={t:'الإرسال',b:'رجوع',body:()=>syncTot([['17',STW]])+state('check','لا شيء بانتظار الإرسال'),bar:''};
+V.syncsignout={t:'الإرسال',b:'رجوع',body:()=>ban('note','warn',cnt(5,NSW),btn('خروج','sec2','offline-signout'))+syncTot([['5',NSW]])+days(NS),bar:sendBar};
 /* 7 new worker */
 const crewList=n=>`<div class="ph0">${btn('إضافة عامل','sec2','offline-add-worker')}</div>`+lgw(grp('crew','العمالة',n?4:3,
   (n?ent('user','سيد عبد الله',mk('not'),'مبيّض · محارة'):'')+ent('user','محمود حسن','','نجّار · أبواب')+ent('user','علاء رمضان','','سبّاك')+ent('user','إبراهيم صالح','','كهربائي')));
@@ -385,8 +395,8 @@ V.workersaved={t:'العمالة',b:PROJECT,body:()=>crewList(1),bar:''};
 const sheetHtml=()=>`<div class="grab"></div><div class="hd"><h2>إضافة عامل</h2><button type="button" class="ib" id="sxclose" aria-label="إغلاق">${i('x')}</button></div><div class="bd"><div class="field"><label>الاسم<span class="req">*</span></label><div class="ctl"><input value="سيد عبد الله" aria-label="الاسم"></div></div>${sel('الحرفة','مبيّض')}${sel('التخصص','محارة')}</div><div class="ft"><button type="button" class="btn" style="inline-size:100%;block-size:60px" data-testid="offline-save-worker">حفظ العامل</button></div>`;
 IC.x='M6 6l12 12M18 6L6 18';
 
-const GROUPS=[['1 اليومية',['unsent','warn','sending','failsend','refused','loading']],['2 الحضور',['ci','cifar','cioff','cilate']],['3 الصور',['photos','photofull','photobig']],['4 الفاتورة',['invoice']],['5 المسودات',['draft','drafts','draftsempty']],['6 الإرسال',['sync','syncdrop','syncoffline','syncsending','syncempty','syncsignout']],['7 عامل',['worker','workersaved']]];
-const NAMES={unsent:'لم يُرسل',warn:'قريب من النافذة',sending:'جارٍ الإرسال',failsend:'تعذّر الإرسال',refused:'مرفوض',loading:'تحميل',ci:'حضور محفوظ',cifar:'بعيد عن الموقع',cioff:'الموقع مغلق',cilate:'حضور مرفوض',photos:'صور',photofull:'التخزين ممتلئ',photobig:'صورة مرفوضة',invoice:'صورة فاتورة',draft:'نموذج مسودة',drafts:'قائمة المسودات',draftsempty:'لا مسودات',sync:'قائمة الإرسال',syncdrop:'تأكيد الحذف',syncoffline:'بلا اتصال',syncsending:'جارٍ الإرسال (قائمة)',syncempty:'فارغة',syncsignout:'خروج وعندي سطور',worker:'نموذج عامل',workersaved:'عامل محفوظ'};
+const GROUPS=[['1 اليومية',['unsent','typing','warn','sending','failsend','refused','loading']],['2 الحضور',['ci','cifar','cioff','cilate']],['3 الصور',['photos','photofull','photobig']],['4 الفاتورة',['invoice']],['5 المسودات',['draft','drafts','draftsempty']],['6 الإرسال',['sync','syncdrop','syncoffline','syncsending','syncempty','syncsignout']],['7 عامل',['worker','workersaved']]];
+const NAMES={unsent:'لم يُرسل',typing:'كتابة ملاحظة',warn:'قريب من النافذة',sending:'جارٍ الإرسال',failsend:'تعذّر الإرسال',refused:'مرفوض',loading:'تحميل',ci:'حضور محفوظ',cifar:'بعيد عن الموقع',cioff:'الموقع مغلق',cilate:'حضور مرفوض',photos:'صور',photofull:'التخزين ممتلئ',photobig:'صورة مرفوضة',invoice:'صورة فاتورة',draft:'نموذج مسودة',drafts:'قائمة المسودات',draftsempty:'لا مسودات',sync:'قائمة الإرسال',syncdrop:'تأكيد الحذف',syncoffline:'بلا اتصال',syncsending:'جارٍ الإرسال (قائمة)',syncempty:'فارغة',syncsignout:'خروج وعندي سطور',worker:'نموذج عامل',workersaved:'عامل محفوظ'};
 $('#panelx').innerHTML=GROUPS.map(([g,ks])=>`<div class="grp" role="group" aria-label="${g}"><b>${g}</b>${ks.map(k=>`<button type="button" data-view="${k}">${NAMES[k]}</button>`).join('')}</div>`).join('')+`<div class="grp"><button type="button" id="themebtn">فاتح / داكن</button><button type="button" id="dirbtn">اتجاه LTR</button></div>`;
 let view=q0.get('view');if(!V[view])view='unsent';
 function draw(){

@@ -1,68 +1,77 @@
 # Offline states (`offline.html`), notes for the README
 
-Mock of the Slice 9 offline states, from `plans/release-6-mobile-offline/screens.md` (7 briefs). Not yet approved by Nabil. Open `offline.html` directly. `?view=<name>`; `embed=1` hides the preview strip (review chrome, do not build it). One phone-width column (max 520 px) on every screen size: the briefs are phone first and ask for nothing on desktop.
+Mock of the Slice 9 offline states, from `plans/release-6-mobile-offline/screens.md` (7 briefs). Revised 2026-11-22 after the consultant review (`ux/consultant-review-offline-mock-2026-11-22.md`, 12 findings). Not yet approved by Nabil. Open `offline.html` directly; `embed=1` hides the preview strip (review chrome, do not build it). One phone-width column (max 520 px) on every screen size: the briefs are phone first and ask for nothing on desktop.
 
-This file is the draft of the README section. The README itself was not edited (another lane is appending to it); paste this under a heading `# Offline states (offline.html)` when that lane is done.
+This file is the draft of the README section. The README itself was not edited; paste this under a heading `# Offline states (offline.html)`.
 
-## Views
+## `?view=` list (25 views)
 
-| Brief | Views |
-|---|---|
-| 1 Daily log | `unsent`, `warn`, `sending`, `failsend`, `refused`, `loading` |
-| 2 Check-in | `ci`, `cifar`, `cioff`, `cilate` |
-| 3 Photo capture | `photos`, `photofull`, `photobig` |
-| 4 Invoice photo | `invoice` |
-| 5 Drafts (expense and عهدة) | `draft`, `drafts`, `draftsempty` |
-| 6 Sending list | `sync`, `syncdrop`, `syncoffline`, `syncsending`, `syncempty`, `syncsignout` |
-| 7 New worker | `worker` (sheet), `workersaved` |
+1. Daily log: `unsent`, `typing`, `warn`, `sending`, `failsend`, `refused`, `loading`
+2. Check-in: `ci`, `cifar`, `cioff`, `cilate`
+3. Photo capture: `photos`, `photofull`, `photobig`
+4. Invoice photo: `invoice`
+5. Drafts (expense and عهدة): `draft`, `drafts`, `draftsempty`
+6. Sending list: `sync`, `syncdrop`, `syncoffline`, `syncsending`, `syncempty`, `syncsignout`
+7. New worker: `worker` (sheet), `workersaved`
 
-The daily-log base is the approved `daily-log.html` (D-217): check-in strip, log groups, entry rows, bottom bar with one primary. Only the offline states are drawn on top of it. The `daily-log.html` entry form is reduced to the note field; the other kinds are unchanged and not redrawn.
+The daily-log base is the approved `daily-log.html` (D-217): check-in strip, log groups, entry rows, bottom bar with one primary. Only the offline states are drawn on top of it. The entry form is reduced to the note field; the other kinds are unchanged and not redrawn.
 
-## The one new thing: the four marks
+## Marks
 
-Every line, photo, check-in, draft and worker carries one mark, always shape plus word (never colour alone), made from the kit pill:
+Four state marks, always shape plus word, made from the kit pill: **لم يُرسل** (dashed outline, clock), **جارٍ الإرسال** (dashed outline, spinner), **أُرسل** (green, check), **مرفوض** (error colour, cross).
 
-- **لم يُرسل** (not sent): dashed outline pill, clock.
-- **جارٍ الإرسال** (sending): dashed outline pill, spinner.
-- **أُرسل** (sent): the kit's green pill `s-run`, check.
-- **مرفوض** (refused): `s-stuck` pill, cross. Below it, the server's reason on one line, then **تعديل** (fix, outline) and **حذف** (drop, quiet). Drop asks first in the sending list (`syncdrop`): one consequence line, then حذف and تراجع.
+**عند المشرف** is not a mark. It is a place the draft has reached, drawn in a neutral pill (`s-place`, no green, so it does not read as approved) and shown only after arrival.
+
+## Rules applied after review
+
+- **The action matches the reason (finding 1).** A refused line offers تعديل only when editing can fix it. Past-window line: حذف only. عهدة with the previous one not cleared: حذف only. Worker with a salaried phone: تعديل and حذف (he can correct the phone). Duplicate phone of another worker: «إضافة رغم ذلك» and حذف. Photo too large: إعادة التقاط and حذف.
+- **Late check-in (finding 2).** One refused row (mark, reason under it, حذف). The contradicting "not checked in yet" block is gone; the bottom primary الحضور is the way to check in now.
+- **Counts add up (findings 3, 12).** The sending list's strip has disjoint figures: not sent, refused, sent today (a figure is hidden when it is zero or meaningless). Refused rows sit in their own block at the top (the block header says مرفوض once; rows carry no mark). Everything else is grouped by day (اليوم, أمس), not by state; a group header never names a state, so a sent row inside it is no contradiction. The oldest day is the first day group. The daily-log count row has one figure with its state word.
+- **No signal is not an error (finding 4).** `syncoffline` has no banner: the not-sent marks carry it. The sent-today figure is left out on that view because it reads as "it worked".
+- **Warning and refusal do not contradict (finding 5).** The 2-day sentence shows only while nothing from that day is refused: on `warn`, not on `sync`. On `warn` the Sunday item sits in its own group named الأحد.
+- **One verb (finding 9).** The count row is titled الإرسال like the page it opens; retry and send now are both «إرسال الآن».
+- **The bar saves only when there is something to save (finding 8).** `unsent` has no bar; `typing` shows حفظ.
+- **Caption belongs to the photo (finding 10).** The field is inside the new tile; sending-list photo rows show the caption.
+- **The invoice screen draws the draft** (reason and amount) above the photo (finding 11).
+- **Selected side of the expense / عهدة switch carries a check** (finding 12).
+- Item word: counts use the state word with the figure («4 لم يُرسل») instead of a noun.
 
 ## New in the kit
 
-- **Mark** (`pill` with the four variants above). `s-stuck` is added as a pill colour from existing tokens (`--st-stuck-bg`, `--st-stuck-ink`); no new colour literal.
-- **Refused row**: an entry row with a 5 px start bar in the error colour (same bar as the edited row), the reason line with a warning icon, an action row.
-- **Photo tile**: 96 px thumbnail area, caption, mark under it; two columns. Refused variant has the error border and the reason and actions inside.
-- **Three-figure total** (`tot-in t3`): the kit total strip with three cells (unsent, sent today, oldest day).
+`s-stuck` and `s-place` pills (from existing tokens, no new colour), the refused row (5 px start bar, reason line, actions), the photo tile with its caption inside, and the 1 to 3 cell total strip.
 
 ## Not on any screen, on purpose
 
-No pay, approve or submit action anywhere (money never moves offline). No balance, ceiling, cap figure, account name or entry id. No publish control on photos. No banner for "no signal" on the daily log: the marks carry it. A sentence appears only where the brief allows it: the 2-day warning and the refusal reasons, plus one consequence line before drop.
+No pay, approve or submit action anywhere (money never moves offline). No balance, ceiling, cap figure, account name or entry id. No publish control on photos. No banner for "no signal". Sentences appear only where the brief allows: the 2-day warning, refusal reasons, the drop consequence line.
 
 ## Open questions this mock depends on
 
-- **Q1 (phones):** nothing drawn depends on it, but if it is iPhone-only the "sent/not sent" marks become the only safety net for the 7-day purge. No warning is drawn.
-- **Q2 (midnight):** drawn as the questions.md default (the day it was made). The refusal reason on a line past the window is an assumption of that default.
-- **Q3 (offline over 3 days):** default drawn: refuse and warn. `warn` and `sync` carry the one sentence «سطر من الأحد لم يُرسل، ويُرفض غداً.»; the exact day depends on the answer. No supervisor "accept late" control is drawn.
-- **Q4 (attendance clock):** `cifar` shows far-from-site with metres once the server answered. No clock-gap flag is drawn; both times stay in the data.
-- **Q5 (عهدة offline):** default drawn: junior drafts, supervisor submits online, Accounts pays online. «عند المشرف» appears only after arrival. The refusal «لم تُسوَّ العهدة السابقة» is the previous-not-cleared check on arrival. The cap refusal reuses the same row.
-- **Q6 (invoice photo target):** default drawn: attached to the expense draft (`invoice`, and the photo row in `draft`); the same tile would sit on a عهدة clearing, not drawn because that screen does not exist.
-- **Q7 (worker phone):** the add sheet is today's (no phone field, D-217 item 6). Duplicates are drawn in the sending list as refused rows: «هذا الهاتف مسجَّل لعامل آخر» with **متابعة** (acknowledge) and «هذا الهاتف مسجَّل لموظف بمرتب» with edit only. If the phone must be typed, the sheet needs one more field.
-- **Q8 (sign-out with unsent work, lost phone):** `syncsignout` is drawn only as "land on the sending list first, with خروج beside the count". What happens to the items after a deactivation is not drawn.
-- **Q9 (photo publishing):** default: online only, not the engineer; no publish control drawn.
-- **Q10 (correct a quantity offline):** default yes for unsent lines; the fix button on a refused or unsent line is the same تعديل. Not drawn separately.
+- **Q1 (phones):** nothing drawn depends on it. If iPhone-only, the marks become the only safety net for the 7-day purge; no warning is drawn.
+- **Q2 (midnight):** drawn as the default, the day it was made. The refusal «مرّت أكثر من 3 أيام» follows that default.
+- **Q3 (offline over 3 days):** default drawn: refuse and warn. Whether a past-window line may be moved to today or accepted by the supervisor is not ruled, so only حذف is offered. Needs Karim.
+- **Q4 (attendance clock):** far-from-site shows with metres once the server answered; no clock-gap flag drawn.
+- **Q5 (عهدة offline):** default drawn. Open: a عهدة refused for "previous not cleared" offers only حذف; whether the draft should instead wait and resend after the previous is cleared is not ruled.
+- **Q6 (invoice photo target):** default drawn: the expense draft only. No عهدة clearing screen exists.
+- **Q7 (worker phone):** do not approve `worker` until answered. The sheet has no phone field (today's sheet, D-217 item 6), so a duplicate surfaces only after sending, possibly when the man has left site.
+- **Q8 (sign-out and lost phone):** `syncsignout` only lands him on the list with خروج beside the count. What happens to the unsent items after sign-out or deactivation is not drawn and cannot be judged until answered.
+- **Q9 (photo publishing):** no publish control drawn.
+- **Q10 (correct a quantity offline):** not drawn separately.
+- **New (needs Nabil):** the words «إضافة رغم ذلك» for acknowledging a duplicate worker phone (D-144/D-146 say warn and acknowledge; the label is a guess).
+- **New (needs Nabil):** whether the sent-today figure should appear while there is no signal.
+- **New (needs Nabil):** the neutral «عند المشرف» place label and what a junior should read about it.
 
 ## Not decided here
 
-- The crew screen's own primary and its day-labour rows are not redrawn; `worker` and `workersaved` show only the add control, the sheet and the new row.
-- The «لم يُسجَّل الانصراف» mark belongs to the owner's review (D-226 item 3), not to this screen.
-- Storage-full and file-too-large reasons are the guessed words below; the too-large reason should come from the existing i18n text.
-- The route name for the sending list (`sync`) is not decided.
-- Where the sending list is reached from on every screen: drawn as the count row on the daily log only.
+- The crew screen's own primary and day-labour rows are not redrawn.
+- «لم يُسجَّل الانصراف» belongs to the owner's review (D-226 item 3).
+- Storage-full and too-large reasons are guessed words; the too-large reason should come from the existing text.
+- Route name `sync` for the sending list, and where it is reached from on every screen (drawn only as the count row on the daily log).
+- Layout checks do not see overflow inside a card (`cilate` was caught by eye); screenshots were opened for `cilate`, `sync`, and (first pass) `unsent`.
 
-## Arabic strings invented (all guesses, to be confirmed)
+## Arabic strings invented (all guesses)
 
 Marks: لم يُرسل · جارٍ الإرسال · أُرسل · مرفوض.
-Actions: إعادة المحاولة · تعديل · حذف · تراجع · متابعة · إرسال الآن · خروج · التقاط صورة · إعادة التقاط · التقاط صورة الفاتورة · حفظ المسودة · مسودة جديدة · إضافة عامل · حفظ العامل.
-Labels: الإرسال (title) · المسودات · لا مسودات · أُرسل اليوم · الأقدم · عند المشرف · مرتبطة بـ · مصروف · طلب عهدة · وصف الصورة · لا شيء بانتظار الإرسال · مصروف موقع.
-Sentences and reasons: سطر من الأحد لم يُرسل، ويُرفض غداً. · مرّت أكثر من 3 أيام على هذا اليوم. · هذا الحضور لم يعد لليوم الحالي. · الموقع مغلق على التليفون. شغّله من إعدادات المتصفح ثم اضغط «الحضور». (stands in for the text already in the build) · مساحة التليفون ممتلئة. لم تُحفظ الصورة. · الصورة كبيرة جداً. · لا يوجد اتصال. السطور محفوظة على التليفون. · سيُحذف هذا السطر من التليفون ولن يصل. · لم تُسوَّ العهدة السابقة. · هذا الهاتف مسجَّل لعامل آخر. · هذا الهاتف مسجَّل لموظف بمرتب. · لم يُرسل N أسطر.
+Actions: إرسال الآن · تراجع · إضافة رغم ذلك · خروج · التقاط صورة · إعادة التقاط · التقاط صورة الفاتورة · حفظ المسودة · مسودة جديدة · إضافة عامل · حفظ العامل. (تعديل and حذف are generic.)
+Labels: الإرسال · المسودات · لا مسودات · أُرسل اليوم · عند المشرف · مصروف · طلب عهدة · وصف الصورة · لا شيء بانتظار الإرسال · مصروف موقع · الأحد (group).
+Sentences and reasons: لم يُرسل ما سجّلته يوم الأحد، ويُرفض غداً. · مرّت أكثر من 3 أيام على هذا اليوم. · لم يعد هذا الحضور لليوم الحالي. · الموقع مغلق على التليفون. شغّله من إعدادات المتصفح ثم اضغط «الحضور». (stand-in for the text already in the build) · مساحة التليفون ممتلئة. لم تُحفظ الصورة. · الصورة كبيرة جداً. · سيُحذف هذا السطر من التليفون ولن يصل. · لم تُسوَّ العهدة السابقة. · هذا الهاتف مسجَّل لعامل آخر. · هذا الهاتف مسجَّل لموظف بمرتب.
 Reused from `daily-log.html`: الحضور · الانصراف · تم تسجيل الحضور · بعيد عن الموقع · لم يُسجَّل الحضور بعد · اليومية · المسجَّل · الكميات التقديرية · العمالة.
