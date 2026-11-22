@@ -288,7 +288,7 @@ kaff-table-row:hover .cell-internal {
 
   .name {
     white-space: normal;
-    min-block-size: 0;
+    min-block-size: var(--tap-target);
     line-height: 1.4;
   }
 

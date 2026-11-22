@@ -464,7 +464,7 @@
   }
 
   .name {
-    min-block-size: 0;
+    min-block-size: var(--tap-target);
     white-space: normal;
     line-height: 1.4;
   }
