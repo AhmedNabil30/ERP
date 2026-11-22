@@ -297,7 +297,7 @@ describe('ClosurePage', () => {
   it('renders the hold as a derived figure with its source, and has no amount field', async () => {
     const fixture = await open(project('Handover'), session('Finance', FINANCE));
     expect(q(fixture, 'closure-hold-amount')?.textContent).toContain('50.0000');
-    expect(q(fixture, 'closure-hold-source')).not.toBeNull();
+    expect(q(fixture, 'closure-hold-source')).toBeNull();
     expect(q(fixture, 'closure-hold')?.querySelector('input, textarea, select')).toBeNull();
     expect(q(fixture, 'closure-act-hold-request')).not.toBeNull();
     expect(q(fixture, 'closure-act-hold-release')).toBeNull();

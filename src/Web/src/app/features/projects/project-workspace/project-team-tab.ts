@@ -91,7 +91,7 @@ export class ProjectTeamTab {
   /** The primary the workspace places in the shell slot: only for a caller the server lets add. */
   readonly declared = computed<TemplateRef<unknown> | null>(() => (this.canManage() ? (this.addAction() ?? null) : null));
   protected readonly noEngineer = computed(
-    () => this.team().state === 'ok' && !this.members().some((m) => m.role === 'SiteEngineer'),
+    () => this.team().state === 'ok' && this.members().length > 0 && !this.members().some((m) => m.role === 'SiteEngineer'),
   );
 
   // ---- add ----------------------------------------------------------------------------------------

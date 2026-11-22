@@ -527,7 +527,7 @@ describe('ProjectWorkspacePage · the team tab', () => {
     expect(q(fixture, 'workspace-progress')).toBeNull();
   });
 
-  it('says no site engineer is assigned when the list has none, and offers the add primary only to a caller who manages', async () => {
+  it('shows only the empty state when the team is empty, and offers the add primary only to a caller who manages', async () => {
     const fixture = await createFixture(
       new FakeProjectsApi(project('LumpSum'), { team: [] }),
       OWNER(),
@@ -535,7 +535,7 @@ describe('ProjectWorkspacePage · the team tab', () => {
       new FakeExtractsApi(),
       'team',
     );
-    expect(q(fixture, 'team-no-engineer')).not.toBeNull();
+    expect(q(fixture, 'team-no-engineer')).toBeNull();
     expect(slotButton()?.textContent).toContain('projects.team.add');
     expect(slotButton()?.className).toContain('variant-primary');
   });

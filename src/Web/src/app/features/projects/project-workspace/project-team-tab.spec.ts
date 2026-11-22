@@ -122,7 +122,7 @@ describe('ProjectTeamTab', () => {
     expect(el(fixture, 'workspace-team-list')).toBeNull();
     expect((fixture.nativeElement as HTMLElement).querySelector('ul.lst')).toBeNull();
     expect(el(fixture, 'team-empty')).not.toBeNull();
-    expect(el(fixture, 'team-no-engineer')).not.toBeNull();
+    expect(el(fixture, 'team-no-engineer')).toBeNull();
   });
 
   it('declares the add primary for a caller who manages, and removes only rows the server marks removable', async () => {

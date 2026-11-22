@@ -71,7 +71,7 @@
         @if (steps().length > 0) {
           <div class="buttons">
             @for (step of steps(); track step) {
-              <kaff-button [variant]="step === 'practical-completion' ? 'secondary' : 'primary'" [busy]="busy()" [testId]="'closure-act-' + step" (clicked)="ask(step)">
+              <kaff-button [variant]="step === 'practical-completion' || canDecide() ? 'secondary' : 'primary'" [busy]="busy()" [testId]="'closure-act-' + step" (clicked)="ask(step)">
                 {{ i18n.t(stepLabel[step]) }}
               </kaff-button>
             }
@@ -115,9 +115,6 @@
             </kaff-banner>
           } @else if (hold(); as h) {
             <p class="fig" data-testid="closure-hold-amount"><kaff-figure [value]="h.balance" /></p>
-            <p class="source" data-testid="closure-hold-source">
-              {{ i18n.t('closure.hold.source', { count: i18n.formatNumber(h.postingCount) }) }}
-            </p>
             @if (h.released) {
               <p class="none" data-testid="closure-hold-released">
                 <kaff-icon name="check" [small]="true" /><span>{{ i18n.t('errors.closure.hold_already_released') }}</span>
@@ -127,7 +124,6 @@
                 <kaff-icon name="info" [small]="true" /><span>{{ i18n.t('errors.closure.nothing_to_release') }}</span>
               </p>
             } @else {
-              <p class="rule">{{ i18n.t('closure.hold.rule') }}</p>
               @if (waiting() && !canDecide() && caps().holdRelease) {
                 <p class="none" data-testid="closure-hold-waiting">
                   <kaff-icon name="info" [small]="true" /><span>{{ i18n.t('closure.hold.waiting_owner') }}</span>
