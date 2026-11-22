@@ -743,9 +743,33 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
         await using KaffDbContext reader = _database.CreateBareContext();
         List<AuditRecord> trail = await reader.AuditRecords.Where(record => record.ProjectId == project).ToListAsync(Ct);
 
-        trail.Where(record => record.OccurredAt > Now && record.EntityType == nameof(Posting))
-            .Should().Contain(record => (record.Reason ?? string.Empty).Contains(nameof(ProjectStatus.Handover), StringComparison.Ordinal)
-                || (record.AfterJson ?? string.Empty).Contains(nameof(ProjectStatus.Handover), StringComparison.Ordinal));
+        // AfterJson always names the status text of other rows, so only the reason written by audit.SetReason can prove the rule.
+        List<AuditRecord> postingRows = trail.Where(record => record.OccurredAt > Now && record.EntityType == nameof(Posting)).ToList();
+        postingRows.Should().Contain(record => (record.Reason ?? string.Empty).Contains(
+            $"Hold released in project state {nameof(ProjectStatus.Handover)}, amount 200000.0000, asked by {_finance}", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// F-802-2: an approval and a rejection racing on one waiting request. Both take the project row lock, so exactly one
+    /// wins and the request status agrees with the ledger: Approved with one release posting, or Rejected with none.
+    /// </summary>
+    [Fact]
+    public async Task An_approval_racing_a_rejection_leaves_the_request_and_the_ledger_in_agreement()
+    {
+        Guid project = await NewProjectAsync(ProjectStatus.Handover);
+        string root = $"/api/projects/{project}";
+        (await SendAsync(HttpMethod.Post, $"{root}/hold-release", _finance, null)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        HttpResponseMessage[] responses = await Task.WhenAll(
+            SendAsync(HttpMethod.Post, $"{root}/hold-release/approval", _owner, null),
+            SendAsync(HttpMethod.Post, $"{root}/hold-release/rejection", _owner, new { reason = "race" }));
+
+        responses.Count(response => response.StatusCode == HttpStatusCode.OK).Should().Be(1);
+        long releases = await HoldReleaseCountAsync(project);
+        await using KaffDbContext reader = _database.CreateBareContext();
+        HoldReleaseRequestStatus status = await reader.Set<HoldReleaseRequest>()
+            .Where(candidate => candidate.ProjectId == project).Select(candidate => candidate.Status).SingleAsync(Ct);
+        (releases == 1 ? HoldReleaseRequestStatus.Approved : HoldReleaseRequestStatus.Rejected).Should().Be(status);
     }
 
     // ---- snag edits after the project closes -------------------------------------------------------
