@@ -300,6 +300,72 @@ public sealed class ProjectTeamTabTests : IAsyncLifetime
         record.AfterJson.Should().Contain(_owner.ToString());
     }
 
+    // ---- AC-115-B: nor is HR ----------------------------------------------------------------------------------------
+
+    [Fact]
+    public async Task Hr_is_on_no_team_and_the_owner_cannot_add_him()
+    {
+        Guid[] before = await TeamUserIdsAsync();
+        before.Should().NotContain(_hr, "HR reaches projects without a row and so appears on no team");
+
+        HttpResponseMessage response = await SendAsync(HttpMethod.Post, AssignRoute, _owner, new { userId = _hr, level = "Standard" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await MessageKeyAsync(response)).Should().Be("errors.identity.hr_is_not_assignable");
+        (await TeamUserIdsAsync()).Should().NotContain(_hr).And.BeEquivalentTo(before, "the refusal changed nothing");
+    }
+
+    // ---- AC-115-E: a leaver is gone from the team, and still on the trail ---------------------------------------------
+
+    [Fact]
+    public async Task A_deactivated_member_leaves_the_team_and_the_trail_still_shows_when_he_came_and_went()
+    {
+        (await SendAsync(HttpMethod.Post, AssignRoute, _owner, new { userId = _engineerOne, level = "Junior" }))
+            .StatusCode.Should().Be(HttpStatusCode.Created);
+        Guid row = await ActiveRowAsync(_engineerOne);
+        (await TeamUserIdsAsync()).Should().Contain(_engineerOne);
+
+        (await SendAsync(HttpMethod.Post, $"/api/users/{_engineerOne}/deactivate", _owner, new { reason = (string?)null }))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        (await TeamUserIdsAsync()).Should().NotContain(_engineerOne, "deactivation revoked his assignment");
+
+        JsonElement trail = await ReadAsync(await SendAsync(HttpMethod.Get, $"/api/audit?projectId={_project}", _owner));
+        JsonElement[] mine = [.. trail.GetProperty("records").EnumerateArray()
+            .Where(r => r.GetProperty("entityType").GetString() == nameof(ProjectAssignment)
+                && r.GetProperty("entityId").GetGuid() == row)];
+
+        mine.Should().Contain(r => r.GetProperty("action").GetString() == AuditAction.Created.ToString(), "when he came on");
+        mine.Should().Contain(
+            r => r.GetProperty("action").GetString() == AuditAction.Modified.ToString()
+                && r.GetProperty("changedProperties").EnumerateArray().Any(p => p.GetString() == nameof(ProjectAssignment.RevokedAt)),
+            "when he came off");
+    }
+
+    // ---- AC-115-I: the team type carries people, never money ----------------------------------------------------------
+
+    [Fact]
+    public void The_team_types_carry_people_and_no_project_or_money_field()
+    {
+        Type response = typeof(Kaff.Api.Features.Projects.GetProjectTeam.TeamResponse);
+        Type member = typeof(Kaff.Api.Features.Projects.GetProjectTeam.TeamMember);
+
+        response.Should().NotBe<Kaff.Api.Features.Projects.GetProject.Response>();
+        member.Should().NotBe<Kaff.Api.Features.Projects.GetProject.Response>();
+
+        string[] responseProperties = [.. response.GetProperties().Select(p => p.Name)];
+        string[] memberProperties = [.. member.GetProperties().Select(p => p.Name)];
+
+        responseProperties.Should().BeEquivalentTo(["CanManage", "Members"]);
+        memberProperties.Should().BeEquivalentTo(
+            ["AssignmentId", "UserId", "FullName", "Role", "Level", "Origin", "CanRemove", "AssignedAt"]);
+
+        string[] forbidden = ["value", "cost", "rate", "margin", "balance", "status", "client", "code", "amount", "price"];
+        responseProperties.Concat(memberProperties).Should().NotContain(
+            name => forbidden.Any(word => name.Contains(word, StringComparison.OrdinalIgnoreCase)),
+            "a financial field or a project code must never reach the team read");
+    }
+
     // ---- helpers ----------------------------------------------------------------------------------------------------
 
     private string AssignRoute => $"/api/projects/{_project}/assignments";
@@ -316,6 +382,12 @@ public sealed class ProjectTeamTabTests : IAsyncLifetime
         return await reader.ProjectAssignments
             .Where(a => a.ProjectId == _project && a.UserId == userId && a.RevokedAt == null)
             .Select(a => a.Id).SingleAsync(Ct);
+    }
+
+    private async Task<Guid[]> TeamUserIdsAsync()
+    {
+        JsonElement body = await ReadAsync(await SendAsync(HttpMethod.Get, TeamRoute, _owner));
+        return [.. body.GetProperty("members").EnumerateArray().Select(m => m.GetProperty("userId").GetGuid())];
     }
 
     private async Task<Guid[]> CandidateIdsAsync()
