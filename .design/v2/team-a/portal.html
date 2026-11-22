@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>كف - بوابة العميل</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* KAAF client portal (release 5) + its staff screens. Tokens and kit parts copied from project.html / components.html. New parts are listed in portal-notes.md. */
+/* KAAF project workspace, r3 2026-11-11: project frame (header, stage line, tabs) plus the overview tab. Kit parts (components.html, money.html) inside the approved shell (layout.html).
+   New here: project frame (stage line, screen tabs), hero, fact list, disclosure link. All listed in README.md. */
+:root{
+  --g900:#09221e; --g800:#0f2e29; --g300:#9fb3ad; --c100:#f4eee9; --c200:#e6d9d1; --radius:6px;
+  --bg:var(--c100); --surface:#fbf8f5; --head:#ebe0d8; --ink:var(--g900); --dim:#4b5f59; --line:rgba(9,34,30,.16); --hover:rgba(9,34,30,.055);
+  --btn:var(--g900); --btn-h:#25544b; --btn-ink:var(--c200); --field:#fbf8f5; --fieldline:var(--g900); --focus:var(--g900);
+  --err-bg:#f9e4dd; --err-ink:#7a1a0e; --err-bar:#c2321c;
+  --st-run-bg:#d3e3db; --st-run-ink:#0b3b32; --st-done-bg:var(--g900); --st-done-ink:var(--c200);
+  --st-stuck-bg:#f9e4dd; --st-stuck-ink:#7a1a0e; --st-post-bg:#e6d9d1; --st-post-ink:#43392f; --st-none-ink:#4b5f59;
+  --note-bg:#ebe0d8; --ok-bg:#d3e3db; --ok-ink:#0b3b32;
+  --scrim:rgba(3,13,11,.55); --strip:var(--c200); --shadow:0 12px 36px rgba(9,34,30,.22);
+  --display:'Noto Kufi Arabic','IBM Plex Sans Arabic',system-ui,sans-serif;
+  --body:'IBM Plex Sans Arabic',system-ui,'Segoe UI',Tahoma,sans-serif;
+  --side:256px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#061815; --surface:#0a1f1b; --head:#0f2e29; --ink:var(--c200); --dim:var(--g300); --line:rgba(230,217,209,.18); --hover:rgba(230,217,209,.06);
+  --btn:var(--c200); --btn-h:#fbf6f2; --btn-ink:var(--g900); --field:#0f2e29; --fieldline:#7f9a92; --focus:var(--c200);
+  --err-bg:#3b1612; --err-ink:#ffd0c6; --err-bar:#ff7b63;
+  --st-run-bg:#17403a; --st-run-ink:#e6d9d1; --st-done-bg:var(--c200); --st-done-ink:var(--g900);
+  --st-stuck-bg:#3b1612; --st-stuck-ink:#ffd0c6; --st-post-bg:#1d2b27; --st-post-ink:#c9bfb7; --st-none-ink:#9fb3ad;
+  --note-bg:#0f2e29; --ok-bg:#17403a; --ok-ink:#e6d9d1; --strip:#030d0b; --shadow:0 12px 36px rgba(0,0,0,.6);}}
+:root[data-theme="dark"]{
+  --bg:#061815; --surface:#0a1f1b; --head:#0f2e29; --ink:var(--c200); --dim:var(--g300); --line:rgba(230,217,209,.18); --hover:rgba(230,217,209,.06);
+  --btn:var(--c200); --btn-h:#fbf6f2; --btn-ink:var(--g900); --field:#0f2e29; --fieldline:#7f9a92; --focus:var(--c200);
+  --err-bg:#3b1612; --err-ink:#ffd0c6; --err-bar:#ff7b63;
+  --st-run-bg:#17403a; --st-run-ink:#e6d9d1; --st-done-bg:var(--c200); --st-done-ink:var(--g900);
+  --st-stuck-bg:#3b1612; --st-stuck-ink:#ffd0c6; --st-post-bg:#1d2b27; --st-post-ink:#c9bfb7; --st-none-ink:#9fb3ad;
+  --note-bg:#0f2e29; --ok-bg:#17403a; --ok-ink:#e6d9d1; --strip:#030d0b; --shadow:0 12px 36px rgba(0,0,0,.6);}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 1rem/1.6 var(--body)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+svg.i{inline-size:22px;block-size:22px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+svg.i.s{inline-size:18px;block-size:18px}
+.vh{position:absolute;inline-size:1px;block-size:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus-visible,.is-focus{outline:3px solid var(--focus);outline-offset:3px}
+bdi{unicode-bidi:isolate}
+/* ---------- preview strip (NOT part of the design) ---------- */
+.strip{background:var(--strip);font-size:.8125rem;position:relative;z-index:80}
+.strip summary{list-style:none;display:flex;align-items:center;gap:.5rem;min-block-size:36px;padding:0 1rem;cursor:pointer}
+.strip summary::-webkit-details-marker{display:none}
+.strip .panelx{display:flex;flex-wrap:wrap;gap:.5rem 1.25rem;padding:.25rem 1rem .75rem}
+.strip .grp{display:flex;flex-wrap:wrap;gap:.25rem;align-items:center}
+.strip .grp>b{font-weight:600;margin-inline-end:6px}
+.strip button{min-block-size:36px;padding:0 .7rem;border:1px solid currentColor;background:transparent;border-radius:var(--radius);color:inherit}
+.strip button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+body.embed .strip{display:none}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-block-size:48px;padding:0 22px;border:2px solid transparent;border-radius:var(--radius);background:var(--btn);color:var(--btn-ink);font:700 1rem/1 var(--display);white-space:nowrap;text-decoration:none}
+.btn.sm{min-block-size:44px;padding:0 16px;font-size:.9375rem}
+.btn:hover{background:var(--btn-h)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.sec2{background:transparent;color:var(--ink);border-color:var(--fieldline)}
+.btn.sec2:hover{background:var(--hover)}
+.btn.quiet{background:transparent;color:var(--ink)}
+.btn.quiet:hover{background:var(--hover)}
+.ib{inline-size:44px;block-size:44px;display:inline-grid;place-items:center;border:2px solid transparent;background:transparent;color:var(--ink);border-radius:var(--radius);padding:0}
+.ib:hover{background:var(--hover)}
+.lnk{color:var(--ink);text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:4px;font-weight:500;background:none;border:0;padding:0}
+.lnk:hover{text-decoration-thickness:3px}
+a.lnk{display:inline-flex;align-items:center;min-block-size:44px}
+.back{display:inline-flex;align-items:center;gap:6px;min-block-size:44px;color:var(--ink);text-decoration:none;font-weight:600}
+[dir="rtl"] .back svg{transform:scaleX(-1)}
+.back:hover{text-decoration:underline;text-underline-offset:4px}
+.badge{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-inline-size:24px;block-size:24px;padding:0 8px;border-radius:var(--radius);border:1.5px solid var(--fieldline);font:600 .8125rem/1 var(--body);font-variant-numeric:tabular-nums;white-space:nowrap}
+.badge svg{inline-size:14px;block-size:14px}
+.badge.q{border-color:var(--line);color:var(--dim)}
+.pill{display:inline-flex;align-items:center;gap:7px;block-size:28px;padding-inline:10px 12px;border-radius:var(--radius);font:600 .8125rem/1 var(--body);white-space:nowrap;box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 30%,transparent)}
+.pill svg{inline-size:13px;block-size:13px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.s-run{background:var(--st-run-bg);color:var(--st-run-ink)}
+.s-done{background:var(--st-done-bg);color:var(--st-done-ink)}
+.s-none{background:transparent;color:var(--st-none-ink);box-shadow:inset 0 0 0 1.5px currentColor}
+.spin{display:none;inline-size:18px;block-size:18px;border:3px solid color-mix(in srgb,currentColor 30%,transparent);border-top-color:currentColor;border-radius:50%;animation:r .8s linear infinite}
+@keyframes r{to{transform:rotate(360deg)}}
+.ban{display:flex;gap:12px;align-items:flex-start;padding:12px 16px;border-radius:var(--radius);border-inline-start:6px solid var(--err-bar);background:var(--err-bg);color:var(--err-ink);font-weight:500;line-height:1.55}
+.ban svg{margin-block-start:2px}
+.ban.note{background:var(--note-bg);color:var(--ink);border-inline-start-color:var(--fieldline);font-weight:400}
+.ban.ok{background:var(--ok-bg);color:var(--ok-ink);border-inline-start-color:var(--ok-ink)}
+.ban .act{margin-inline-start:auto;flex:none}
+.ban>svg,.locked>svg,.cfm svg,.rec>svg{inline-size:20px;block-size:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.cfm>span{display:flex;gap:10px;align-items:flex-start}
+.ban b{font-weight:700}
+.ban.rowc{flex-wrap:wrap;align-items:center}
+.state{border:1.5px solid var(--line);border-radius:var(--radius);background:transparent;padding:44px 24px;text-align:center;display:grid;justify-items:center;gap:10px}
+.state.refused{border-style:dashed;border-color:var(--fieldline)}
+.state.solid{background:var(--surface)}
+.state .ico{inline-size:56px;block-size:56px;border-radius:var(--radius);display:grid;place-items:center;background:var(--head)}
+.state.refused .ico{border-radius:50%;border:2px solid var(--fieldline);background:transparent}
+.state .ico svg{inline-size:28px;block-size:28px}
+.state h4{font:700 1.125rem/1.4 var(--display);margin:4px 0 0}
+.state p{margin:0;color:var(--dim);max-inline-size:46ch;font-size:.9375rem}
+.sk{display:inline-block;block-size:14px;border-radius:4px;background:linear-gradient(90deg,var(--line),var(--hover),var(--line));background-size:200% 100%;animation:sh 1.4s linear infinite;vertical-align:middle}
+@keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.sk,.spin{animation:none}}
+.sk.b{display:block}
+.rec{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border-radius:var(--radius);border-inline-start:6px solid var(--ok-ink);background:var(--ok-bg);color:var(--ok-ink);font-weight:600;line-height:1.5}
+.rec svg{inline-size:20px;block-size:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.rec small{font-weight:400;flex-basis:100%}
+.chain{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:0;border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden;list-style:none;margin:0;padding:0}
+.chain li{padding:12px 12px 14px;display:grid;gap:4px;align-content:start;position:relative;min-inline-size:0}
+.chain li+li{border-inline-start:1px solid var(--line)}
+.chain .st{display:flex;align-items:center;gap:8px;font-weight:600;line-height:1.3}
+.chain .mk{inline-size:26px;block-size:26px;border-radius:50%;border:2px solid var(--fieldline);display:grid;place-items:center;flex:none;font:700 .75rem/1 var(--body)}
+.chain .mk svg{inline-size:14px;block-size:14px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.chain li.done .mk{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chain li.cur{background:var(--head)}
+.chain li.cur .mk{border-width:3px;background:var(--bg)}
+.chain li.cur .mk::after{content:"";inline-size:8px;block-size:8px;border-radius:50%;background:var(--ink)}
+.chain .who2 bdi{white-space:nowrap}
+.chain .who2{font-size:.8125rem;color:var(--dim);line-height:1.4}
+.chain .age{display:inline-flex;gap:5px;align-items:center;font-size:.8125rem;font-weight:600}
+.chain .age svg{inline-size:14px;block-size:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+/* ---------- portal parts ---------- */
+body{display:flex;flex-direction:column;min-block-size:100dvh}
+.top{flex:none;display:flex;align-items:center;justify-content:space-between;block-size:56px;padding:0 16px;background:var(--g900);color:var(--c200)}
+.top img{display:block;inline-size:88px;block-size:auto;aspect-ratio:519/155}
+.top .ib{color:var(--c200)}
+.top .ib:hover{background:rgba(230,217,209,.12)}
+main{flex:1;min-inline-size:0}
+.wrap{max-inline-size:720px;margin-inline:auto;padding:12px 16px 28px;display:grid;gap:20px;align-content:start}
+.wrap.wide{max-inline-size:1040px;padding-block-start:24px}
+.wrap.narrow{max-inline-size:440px;padding-block-start:32px}
+h1{font:700 1.5rem/1.4 var(--display);margin:0}
+h2{font:700 1.0625rem/1.4 var(--display);margin:0}
+.sub{color:var(--dim);margin:0}
+.sec{display:grid;gap:10px;min-inline-size:0}
+.card{display:grid;gap:10px;border:1.5px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:16px;min-inline-size:0;color:inherit;text-decoration:none}
+a.card{min-block-size:44px}
+a.card:hover{background:var(--hover)}
+.card.pend{border-color:var(--fieldline);border-width:2px}
+.ln{display:flex;align-items:center;justify-content:space-between;gap:12px;min-inline-size:0}
+.ln b{font:700 1.0625rem/1.4 var(--display);min-inline-size:0;overflow-wrap:anywhere}
+.lst{list-style:none;margin:0;padding:0;border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden}
+.lst.pend{border-color:var(--fieldline);border-width:2px}
+.lst>li+li{border-block-start:1px solid var(--line)}
+.lst a,.lst .it{display:flex;align-items:center;gap:12px;min-block-size:56px;padding:8px 16px;color:inherit;text-decoration:none;min-inline-size:0}
+.lst a:hover{background:var(--hover)}
+.grow{flex:1;min-inline-size:0;display:grid;gap:2px}
+small,.dim{color:var(--dim);font-size:.875rem}
+.meter{block-size:8px;border-radius:4px;background:var(--head);box-shadow:inset 0 0 0 1px var(--line);overflow:hidden}
+.meter>i{display:block;block-size:100%;background:var(--ink)}
+.kv{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-block-end:1px solid var(--line);min-block-size:44px}
+.kv:last-child{border-block-end:0}
+.kv.t{font-weight:700;font-size:1.0625rem}
+.kv.n{padding:0;border:0;min-block-size:0}
+.kvs{display:grid;border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:4px 16px}
+.kv>span:first-child{color:var(--dim)}
+.kv.t>span:first-child{color:var(--ink)}
+.u{color:var(--dim);font-weight:400;font-size:.8125em;margin-inline-start:6px}
+.fig{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+.abar{position:sticky;inset-block-end:0;z-index:20;background:var(--surface);border-block-start:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+.abar>div{max-inline-size:720px;margin-inline:auto;display:flex;gap:12px}
+.abar.wide>div{max-inline-size:1040px}
+.abar .btn{flex:1;block-size:56px;font-size:1.0625rem}
+.btn.blk{inline-size:100%}
+.cfm{display:grid;gap:14px;border:2px solid var(--fieldline);border-radius:var(--radius);background:var(--surface);padding:16px}
+.row2{display:flex;gap:12px;flex-wrap:wrap}.row2 .btn{flex:1;min-inline-size:140px}
+.field{display:grid;gap:6px;min-inline-size:0}
+.field>label{font:600 1rem/1.4 var(--body)}
+.ctl{display:flex;align-items:stretch;min-inline-size:0;block-size:48px;border:2px solid var(--fieldline);border-radius:var(--radius);background:var(--field)}
+.ctl input,.ctl select,.ctl .val{flex:1;min-inline-size:0;border:0;background:transparent;padding:0 14px;font-size:1.0625rem;outline:none;block-size:100%;display:flex;align-items:center}
+.ctl:focus-within{outline:3px solid var(--focus);outline-offset:3px}
+.ctl.ro{background:var(--head);border-color:var(--line)}
+.ctl.ro .val{font-weight:700}
+.ctl.ta{block-size:auto}
+.ctl textarea{flex:1;min-inline-size:0;min-block-size:96px;border:0;background:transparent;padding:12px 14px;font-size:1.0625rem;outline:none;resize:vertical}
+.ctl.ltr input,.ctl.ltr .val{direction:ltr;text-align:end;justify-content:flex-end}
+.ctl.pw button{border:0;background:transparent;inline-size:48px;display:grid;place-items:center}
+.ft1{display:flex;gap:6px;align-items:center;color:var(--err-ink);font-weight:500;line-height:1.4}
+.form{display:grid;gap:20px}
+.state{padding:36px 20px}
+.btn .spin{display:none}.btn[aria-busy="true"] .spin{display:inline-block}.btn[aria-busy="true"]{pointer-events:none}
+.ph3{aspect-ratio:4/3;display:grid;place-items:center;background:var(--head);color:var(--dim)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;list-style:none;margin:0;padding:0}
+@media (min-width:700px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.ph-c{display:grid;align-content:start;border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden;min-inline-size:0;color:inherit;text-decoration:none}
+.ph-c .cap{padding:8px 10px 10px;display:grid;gap:2px}
+.seg5{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.seg5 i{block-size:8px;border-radius:2px;background:var(--head);box-shadow:inset 0 0 0 1px var(--line)}
+.seg5 i.on{background:var(--ink);box-shadow:none}
+.cb{display:flex;align-items:center;gap:10px;min-block-size:44px;cursor:pointer}
+.cb input{appearance:none;margin:0;inline-size:24px;block-size:24px;border:2px solid var(--fieldline);border-radius:var(--radius);background:var(--field);display:grid;place-items:center;flex:none}
+.cb input:checked{background:var(--ink)}
+.cb input:checked::after{content:"";inline-size:6px;block-size:12px;border:solid var(--bg);border-width:0 3px 3px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.badge.fill{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.stf-h{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.stf-h .pa-d{display:none}
+@media (min-width:821px){.stf-h .pa-d{display:inline-flex}.abar.stf{display:none}}
+.tbl{inline-size:100%;border-collapse:separate;border-spacing:0;border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface);overflow:hidden}
+.tbl th{background:var(--head);text-align:start;font-weight:700;padding:10px 14px;font-size:.9375rem}
+.tbl td{padding:12px 14px;border-block-start:1px solid var(--line);vertical-align:middle}
+@media (max-width:820px){.tbl thead{display:none}.tbl,.tbl tbody,.tbl tr,.tbl td{display:block}.tbl td{display:flex;justify-content:space-between;gap:12px;border-block-start:0;padding:6px 14px}.tbl tr{border-block-start:1px solid var(--line);padding:8px 0}.tbl tr:first-child{border-block-start:0}.tbl td::before{content:attr(data-l);color:var(--dim)}}
+.tbl tr.cur{background:var(--head)}
+.cl{display:grid;list-style:none;margin:0;padding:0;border:1.5px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+.cl li{display:flex;align-items:center;gap:12px;padding:10px 16px;min-block-size:56px;flex-wrap:wrap}
+.cl li+li{border-block-start:1px solid var(--line)}
+.cl .grow{flex:1;min-inline-size:160px}
+.mk{inline-size:26px;block-size:26px;border-radius:50%;border:2px solid var(--fieldline);display:grid;place-items:center;flex:none}
+.mk.ok{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.mk svg{inline-size:14px;block-size:14px}
+.chain li{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.lnk{min-inline-size:44px;min-block-size:44px}
+.pwbox{display:flex;align-items:center;justify-content:space-between;gap:12px;font:700 1.25rem/1.2 var(--body);direction:ltr}
+</style>
+</head>
+<body>
+<details class="strip" id="strip"><summary><span>معاينة التصميم (ليست جزءًا من الشاشة)</span></summary>
+<div class="panelx"><div class="grp"><b>الشاشة</b><span id="gs"></span></div><div class="grp"><b>الحالة</b><span id="gv"></span></div><div class="grp"><button type="button" id="th">الوضع الداكن</button></div></div></details>
+<div id="root" style="display:contents"></div>
+<script>
+const q=new URLSearchParams(location.search);
+const EMBED=q.get('embed')==='1';if(EMBED)document.body.classList.add('embed');
+const SC=q.get('s')||'p3';
+const IC={chk:'M5 12.5l4.5 4.5L19 7',x:'M6 6l12 12M18 6L6 18',clock:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2',info:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v5M12 8h.01',alert:'M12 3l10 18H2zM12 10v5M12 18h.01',dl:'M12 4v11M7 11l5 5 5-5M5 20h14',img:'M3 5h18v14H3zM3 16l5-5 4 4 3-3 6 6M8.5 9.5h.01',doc:'M7 3h8l4 4v14H7zM15 3v4h4M10 12h6M10 16h6',go:'M15 6l-6 6 6 6',back:'M19 12H5M11 6l-6 6 6 6',lock:'M6 11h12v9H6zM8 11V8a4 4 0 0 1 8 0v3',retry:'M20 12a8 8 0 1 1-3-6.2M20 4v5h-5',up:'M12 16V4M7 9l5-5 5 5M5 20h14',plus:'M12 5v14M5 12h14',out:'M10 4H5v16h5M15 8l4 4-4 4M19 12H9',eye:'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',ban:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM6 6l12 12',copy:'M9 9h11v11H9zM5 15V4h11'};
+const i=(n,c='')=>`<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[n]}"/></svg>`;
+const fig=(v,u)=>`<bdi class="fig">${Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}${u?`<span class="u">ج.م</span>`:''}</bdi>`;
+const num=v=>`<bdi class="fig">${v}</bdi>`;
+const pill=(k,t)=>{const m={paid:['s-done','chk'],unpaid:['s-none','clock'],run:['s-run','clock'],wait:['s-run','clock'],ok:['s-done','chk'],no:['s-none','x'],none:['s-none','clock']}[k];return `<span class="pill ${m[0]}">${i(m[1],'s')}${t}</span>`};
+const btn=(t,o={})=>`<button type="button" class="btn ${o.c||''}" ${o.b?'aria-busy="true"':''}>${o.b?'<span class="spin"></span>':(o.i?i(o.i):'')}${t}</button>`;
+const sk=(w,h=14)=>`<span class="sk b" style="inline-size:${w}%;block-size:${h}px;margin-block:8px"></span>`;
+const to=(s,v)=>`?s=${s}${v?'&view='+v:''}${EMBED?'&embed=1':''}`;
+const fail=()=>`<div class="state refused" role="alert"><div class="ico">${i('alert')}</div><h4>تعذّر التحميل</h4>${btn('إعادة المحاولة',{c:'sec2',i:'retry'})}</div>`;
+const empty=(t,ic='info')=>`<div class="state solid" role="status"><div class="ico">${i(ic)}</div><h4>${t}</h4></div>`;
+const bar=(inner,w='')=>`<div class="abar ${w}"><div>${inner}</div></div>`;
+const topbar=()=>`<header class="top"><img src="../brand/kaaf-wordmark.png" width="519" height="155" alt="KAAF"><button type="button" class="ib" aria-label="تسجيل الخروج">${i('out')}</button></header>`;
+const back=(h,t)=>`<a class="back" href="${h}">${i('back','s')}${t}</a>`;
+const retryBan=t=>`<div class="ban" role="alert">${i('alert')}<span><b>${t}</b></span><button type="button" class="btn sm sec2 act">إعادة المحاولة</button></div>`;
+const PROJ='فيلا التجمع الخامس';
+const portal=(body,ab='',cls='')=>topbar()+`<main><div class="wrap ${cls}">${body}</div></main>`+ab;
+const loadingSk=()=>`<div class="sec">${sk(50,28)}</div>${[1,2,3].map(()=>`<div class="card">${sk(60,20)}${sk(90)}${sk(40)}</div>`).join('')}`;
+const V={};
+
+/* P1 */
+V.p1={v:[['normal','عادي'],['busy','جارٍ الدخول'],['failed','فشل الدخول'],['change','تغيير كلمة السر']],draw(v){
+ if(v==='change')return portal(`<h1>كلمة سر جديدة</h1><div class="form"><div class="field"><label>كلمة السر الجديدة</label><div class="ctl pw"><input type="password" value="••••••••••"></div></div><div class="field"><label>تأكيد كلمة السر</label><div class="ctl pw"><input type="password" value="••••••••••"></div></div>${btn('حفظ',{c:'blk'})}</div>`,'','narrow');
+ return `<header class="top"><img src="../brand/kaaf-wordmark.png" width="519" height="155" alt="KAAF"></header><main><div class="wrap narrow"><h1>تسجيل الدخول</h1><div class="form">${v==='failed'?`<div class="ban" role="alert">${i('alert')}<span>رقم الموبايل أو كلمة السر غير صحيحة</span></div>`:''}<div class="field"><label>رقم الموبايل</label><div class="ctl ltr"><input type="tel" inputmode="tel" autocomplete="username" value="01001234567"></div></div><div class="field"><label>كلمة السر</label><div class="ctl pw"><input type="password" autocomplete="current-password" value="••••••••••"><button type="button" aria-label="إظهار كلمة السر">${i('eye')}</button></div></div>${btn(v==='busy'?'جارٍ الدخول…':'دخول',{c:'blk',b:v==='busy'})}</div></div></main>`}};
+
+/* P2 */
+const projCard=(n,st,paid,rem,wait)=>`<a class="card ${wait?'pend':''}" href="${to('p3')}"><div class="ln"><b>${n}</b>${wait?`<span class="badge fill">${i('clock')}بانتظارك ${num(wait)}</span>`:''}</div><div>${pill('run',st)}</div><div class="meter" aria-hidden="true"><i style="inline-size:${Math.round(paid/(paid+rem)*100)}%"></i></div><div class="ln dim"><span>المدفوع ${fig(paid)}</span><span>المتبقي ${fig(rem,1)}</span></div></a>`;
+V.p2={v:[['normal','عادي'],['empty','لا مشروع'],['loading','تحميل'],['failed','تعذّر التحميل']],draw(v){
+ return portal(`<h1>مشاريعي</h1>`+(v==='loading'?loadingSk():v==='failed'?fail():v==='empty'?empty('لا يوجد مشروع بعد'):`<div class="sec">${projCard(PROJ,'جاري العمل',1250000,1630000,2)}${projCard('فرش الفيلا','لم تبدأ',0,320000,0)}${projCard('تصميم شقة المعادي','جاري العمل',16200,37800,1)}</div>`))}};
+
+/* P3 */
+const BABS=[['أعمال مباني',100,'2026-05-31'],['أعمال تشطيبات',45,'2026-11-30'],['أعمال نجارة',20,'2026-12-15'],['أعمال كهرباء',60,'2026-10-31'],['أعمال صحية',30,'2026-11-15'],['أعمال معدنية',0,'2026-12-31']];
+const STAGES=['المفهوم الأولي','المخطط المبدئي','التصور ثلاثي الأبعاد','تطوير التصميم','الوثائق النهائية'];
+V.p3={v:[['normal','عادي'],['none','لا شيء ينتظره'],['noplan','بلا جدول زمني'],['nolog','بلا سجل بعد'],['design','مشروع تصميم'],['loading','تحميل'],['failed','تعذّر التحميل']],draw(v){
+ if(v==='loading')return portal(loadingSk());
+ if(v==='failed')return portal(back(to('p2'),'مشاريعي')+fail());
+ const ds=v==='design';
+ const pend=v==='none'?'':ds?`<div class="sec"><h2>بانتظارك</h2><a class="card pend" href="${to('p6')}"><div class="ln"><b>المخطط المبدئي</b>${i('go')}</div><div class="ln dim"><span>مرحلة تصميم</span>${fig(10800,1)}</div></a></div>`:`<div class="sec"><h2>بانتظارك</h2><ul class="lst pend"><li><a href="${to('p5')}"><div class="grow"><b>تعديل تصميم المطبخ</b><small>أمر تغيير</small></div>${fig(48470,1)}${i('go')}</a></li><li><a href="${to('p5')}"><div class="grow"><b>إضافة نقطة كهرباء بالحديقة</b><small>أمر تغيير</small></div>${fig(12300,1)}${i('go')}</a></li></ul></div>`;
+ const prog=ds?`<div class="sec"><h2>المراحل</h2><ul class="lst">${STAGES.map((s,k)=>`<li><div class="it"><div class="grow"><b>${s}</b></div>${k===0?pill('ok','تمت الموافقة'):k===1?pill('wait','بانتظارك'):pill('none','لم تبدأ')}</div></li>`).join('')}</ul></div>`:
+ `<div class="sec"><h2>التقدم</h2><ul class="lst">${BABS.map(b=>{const p=v==='nolog'?0:b[1];return `<li><div class="it" style="display:grid;gap:8px;padding-block:12px"><div class="ln"><b style="font-size:1rem">${b[0]}</b>${num(p+'%')}</div><div class="meter" aria-hidden="true"><i style="inline-size:${p}%"></i></div>${v==='noplan'?'':`<small>${num(b[2])}</small>`}</div></li>`}).join('')}</ul></div>`;
+ const money=`<div class="sec"><h2>المدفوع والمتبقي</h2><div class="card"><div class="meter" aria-hidden="true"><i style="inline-size:${ds?30:43}%"></i></div><div class="kv n"><span>المدفوع</span>${fig(ds?16200:1250000,1)}</div><div class="kv n"><span>المتبقي</span>${fig(ds?37800:1630000,1)}</div></div></div>`;
+ const plan=v==='noplan'?'':`<div class="sec"><h2>الجدول الزمني</h2><div class="kvs"><div class="kv"><span>البداية</span>${num('2026-03-01')}</div><div class="kv"><span>النهاية المخططة</span>${num('2026-12-31')}</div></div></div>`;
+ const links=`<ul class="lst">${ds?'':`<li><a href="${to('p4')}">${i('doc')}<span class="grow"><b>المستخلصات</b></span>${i('go')}</a></li><li><a href="${to('p8')}">${i('img')}<span class="grow"><b>الصور</b></span>${i('go')}</a></li>`}<li><a href="${to('p7')}">${i('dl')}<span class="grow"><b>الملفات</b></span>${i('go')}</a></li></ul>`;
+ const pa=v==='none'?'':bar(`<a class="btn" href="${to(ds?'p6':'p5')}" style="text-decoration:none">${ds?'مراجعة المرحلة':'مراجعة أمر التغيير'}</a>`);
+ return portal(back(to('p2'),'مشاريعي')+`<h1>${ds?'تصميم شقة المعادي':PROJ}</h1>`+pend+prog+money+plan+links,pa)}};
+
+/* P4 */
+const EXT=[[3,410000,1180000,55000,355000,0],[2,420000,770000,57000,363000,1],[1,350000,350000,48000,302000,1]];
+const ex=e=>`<li><a href="${to('p4','detail')}"><div class="grow"><b>مستخلص ${num(e[0])}</b><small>صافي ${fig(e[4])}</small></div>${e[5]?pill('paid','مدفوع'):pill('unpaid','غير مدفوع')}${i('go')}</a></li>`;
+V.p4={v:[['list','القائمة'],['detail','مستخلص مدفوع'],['unpaid','مستخلص غير مدفوع'],['empty','لا مستخلصات'],['loading','تحميل'],['failed','تعذّر التحميل']],draw(v){
+ const bk=back(to('p3'),PROJ);
+ if(v==='detail'||v==='unpaid'){const e=v==='unpaid'?EXT[0]:EXT[1];return portal(bk+`<h1>مستخلص ${num(e[0])}</h1><div class="kvs"><div class="kv"><span>أعمال هذه الفترة</span>${fig(e[1])}</div><div class="kv"><span>الأعمال التراكمية</span>${fig(e[2])}</div><div class="kv"><span>الخصومات</span>${fig(e[3])}</div><div class="kv t"><span>الصافي المستحق</span>${fig(e[4],1)}</div><div class="kv"><span>الحالة</span>${e[5]?pill('paid','مدفوع'):pill('unpaid','غير مدفوع')}</div></div>`)}
+ return portal(bk+`<h1>المستخلصات</h1>`+(v==='loading'?loadingSk():v==='failed'?fail():v==='empty'?empty('لا توجد مستخلصات','doc'):`<ul class="lst">${EXT.map(ex).join('')}</ul>`))}};
+
+/* P5 */
+const COL=[['بلاط بورسلين 60×60','م²',42,650],['تركيب جزيرة رخام','عدد',1,15200],['تعديل نقاط كهرباء','نقطة',6,995]];
+V.p5={v:[['normal','عادي'],['confirm','تأكيد الموافقة'],['refuse','كتابة سبب الرفض'],['busy','جارٍ الإرسال'],['failedact','فشل الإرسال'],['approved','تمت الموافقة'],['refused','مرفوض'],['withdrawn','سحبه كف'],['notfound','غير موجود'],['loading','تحميل'],['failed','تعذّر التحميل']],draw(v){
+ const bk=back(to('p3'),PROJ);
+ if(v==='loading')return portal(loadingSk());
+ if(v==='failed')return portal(bk+fail());
+ if(v==='notfound')return portal(bk+empty('غير موجود','ban'));
+ const head=`<h1>تعديل تصميم المطبخ</h1><div class="kvs"><div class="kv"><span>مقدَّم من</span><b>فريق كف</b></div></div>`;
+ const lines=`<div class="sec"><h2>البنود</h2><ul class="lst">${COL.map(l=>`<li><div class="it" style="display:grid;gap:4px;padding-block:10px"><div class="ln"><b style="font-size:1rem">${l[0]}</b>${fig(l[2]*l[3])}</div><small>${num(l[2])} ${l[1]} × ${fig(l[3])}</small></div></li>`).join('')}</ul></div>`;
+ const tot=`<div class="kvs"><div class="kv t"><span>الإجمالي</span>${fig(48470,1)}</div><div class="kv"><span>قيمة العقد قبل</span>${fig(2880000)}</div><div class="kv"><span>قيمة العقد بعد</span>${fig(2928470)}</div></div>`;
+ if(v==='approved')return portal(bk+head+`<div class="rec">${i('chk')}تمت موافقتك<small>${num('2026-11-22')}</small></div><div class="kvs"><div class="kv t"><span>قيمة العقد بعد التعديل</span>${fig(2928470,1)}</div><div class="kv"><span>الحالة</span>${pill('wait','عند كف')}</div></div>`+lines);
+ if(v==='refused')return portal(bk+head+`<div class="ban note" role="status">${i('x')}<span><b>مرفوض</b></span></div><div class="kvs"><div class="kv"><span>تاريخ القرار</span>${num('2026-11-22')}</div></div>`+lines);
+ if(v==='withdrawn')return portal(bk+head+`<div class="ban note" role="status">${i('info')}<span><b>سحبه كف</b></span></div>`+lines);
+ let mid=btn('رفض',{c:'sec2 blk'}),ab=bar(btn('موافقة',{i:'chk'}));
+ if(v==='confirm'){ab='';mid=`<div class="cfm" role="group"><b>الموافقة على أمر التغيير</b><div class="kv n"><span>الإجمالي</span>${fig(48470,1)}</div><div class="kv n"><span>قيمة العقد بعد</span>${fig(2928470)}</div><div class="row2">${btn('تأكيد الموافقة',{i:'chk'})}${btn('رجوع',{c:'sec2'})}</div></div>`}
+ else if(v==='busy'){ab='';mid=`<div class="cfm"><div class="kv n"><span>الإجمالي</span>${fig(48470,1)}</div><div class="row2">${btn('جارٍ الإرسال…',{b:1})}${btn('رجوع',{c:'sec2'})}</div></div>`}
+ else if(v==='refuse'){ab='';mid=`<div class="cfm" role="group"><div class="field"><label>سبب الرفض</label><div class="ctl ta"><textarea></textarea></div></div><div class="row2">${btn('تأكيد الرفض',{c:'sec2'})}${btn('رجوع',{c:'quiet'})}</div></div>`}
+ return portal(bk+head+(v==='failedact'?retryBan('لم تُسجَّل الموافقة'):'')+lines+tot+mid,ab)}};
+
+/* P6 */
+const dlrow=(wm,f)=>`<div class="card"><div class="ln"><div style="display:flex;gap:10px;align-items:center;min-inline-size:0">${i('doc')}<b style="font-size:1rem">المخطط المبدئي.pdf</b></div>${wm?pill('no','بعلامة مائية'):pill('ok','نسخة نظيفة')}</div>${f?`<div class="ft1">${i('alert','s')}تعذّر التنزيل</div>`:''}${btn(f?'إعادة المحاولة':'تنزيل',{c:'sec2 blk',i:f?'retry':'dl'})}</div>`;
+V.p6={v:[['normal','عادي'],['confirm','تأكيد الموافقة'],['sendback','كتابة ملاحظة'],['limit','انتهت الجولات'],['busy','جارٍ الإرسال'],['failedact','فشل الإرسال'],['approved','تمت الموافقة'],['paid','مدفوعة'],['upcoming','لم تبدأ'],['dlfail','فشل التنزيل'],['loading','تحميل'],['failed','تعذّر التحميل']],draw(v){
+ const bk=back(to('p3','design'),'تصميم شقة المعادي');
+ if(v==='loading')return portal(loadingSk());
+ if(v==='failed')return portal(bk+fail());
+ const seg=n=>`<div class="seg5" aria-hidden="true">${[1,2,3,4,5].map(k=>`<i class="${k<=n?'on':''}"></i>`).join('')}</div>`;
+ const head=(n,st)=>`<h1>${STAGES[n-1]}</h1><div class="sec">${seg(n)}<div class="ln dim"><span>المرحلة ${num(n)} من ${num(5)}</span>${st}</div></div>`;
+ if(v==='upcoming')return portal(bk+head(3,pill('none','لم تبدأ'))+`<div class="kvs"><div class="kv"><span>الأتعاب</span>${fig(10800,1)}</div></div>`);
+ if(v==='approved'||v==='paid'){const pd=v==='paid';return portal(bk+head(2,pd?pill('paid','مدفوعة'):pill('ok','تمت الموافقة'))+(pd?'':`<div class="rec">${i('chk')}تمت موافقتك<small>${num('2026-11-22')}</small></div>`)+`<div class="kvs"><div class="kv t"><span>${pd?'الأتعاب':'المستحق'}</span>${fig(10800,1)}</div><div class="kv"><span>الحالة</span>${pd?pill('paid','مدفوعة'):pill('unpaid','غير مدفوعة')}</div></div>`+dlrow(!pd)+(pd?'':`<ul class="lst"><li><a href="${to('p6','upcoming')}"><div class="grow"><small>المرحلة التالية</small><b>التصور ثلاثي الأبعاد</b></div>${pill('none','لم تبدأ')}${i('go')}</a></li></ul>`))}
+ const info=`<div class="kvs"><div class="kv"><span>الأتعاب</span>${fig(10800,1)}</div><div class="kv"><span>جولات التعديل</span>${num(v==='limit'?2:1)} من ${num(2)}</div><div class="kv"><span>الحالة</span>${pill('unpaid','غير مدفوعة')}</div></div>`;
+ let ab=bar(btn('موافقة',{i:'chk'}));
+ let mid=(v==='limit'?`<div class="ban note" role="status">${i('info')}<span>التعديل خارج الجولات المتفق عليها ويُسعَّر من كف</span></div>`:'')+btn(v==='limit'?'طلب تعديل إضافي':'إرجاع للتعديل',{c:'sec2 blk'});
+ if(v==='confirm'){ab='';mid=`<div class="cfm" role="group"><b>الموافقة على المرحلة</b><div class="kv n"><span>المستحق</span>${fig(10800,1)}</div><div class="row2">${btn('تأكيد الموافقة',{i:'chk'})}${btn('رجوع',{c:'sec2'})}</div></div>`}
+ else if(v==='busy'){ab='';mid=`<div class="cfm"><div class="kv n"><span>المستحق</span>${fig(10800,1)}</div><div class="row2">${btn('جارٍ الإرسال…',{b:1})}${btn('رجوع',{c:'sec2'})}</div></div>`}
+ else if(v==='sendback'){ab='';mid=`<div class="cfm" role="group"><div class="field"><label>الملاحظة</label><div class="ctl ta"><textarea></textarea></div></div><div class="row2">${btn('إرسال',{c:'sec2'})}${btn('رجوع',{c:'quiet'})}</div></div>`}
+ return portal(bk+head(2,pill('wait','بانتظارك'))+(v==='failedact'?retryBan('لم يُسجَّل القرار'):'')+info+dlrow(true,v==='dlfail')+mid,ab)}};
+
+/* P7 */
+const FILES=[['المخطط المبدئي','المخطط المبدئي.pdf','2026-11-20',1],['المفهوم الأولي','المفهوم الأولي.pdf','2026-09-14',0]];
+V.p7={v:[['normal','عادي'],['empty','لا ملفات'],['loading','تحميل'],['failed','تعذّر التحميل'],['dlfail','فشل التنزيل']],draw(v){
+ return portal(back(to('p3','design'),'تصميم شقة المعادي')+`<h1>الملفات</h1>`+(v==='loading'?loadingSk():v==='failed'?fail():v==='empty'?empty('لا توجد ملفات','dl'):(v==='dlfail'?retryBan('تعذّر التنزيل'):'')+`<ul class="lst">${FILES.map(f=>`<li><a href="#"><div class="grow"><small>${f[0]}</small><b>${f[1]}</b><small>${num(f[2])}</small></div>${f[3]?pill('no','بعلامة مائية'):pill('ok','نسخة نظيفة')}${i('dl')}</a></li>`).join('')}</ul>`))}};
+
+/* P8 */
+const PH=[['تركيب الأرضيات','2026-11-18'],['أعمال الدهان','2026-11-12'],['واجهة المبنى','2026-11-05'],['تمديد الكهرباء','2026-10-28']];
+V.p8={v:[['normal','عادي'],['open','صورة مفتوحة'],['empty','لا صور'],['loading','تحميل'],['failed','تعذّر التحميل']],draw(v){
+ const bk=back(to('p3'),PROJ);
+ if(v==='open')return portal(bk+`<div class="ph-c"><div class="ph3" style="aspect-ratio:3/4">${i('img')}</div><div class="cap"><b>${PH[0][0]}</b><small>${num(PH[0][1])}</small></div></div>`);
+ return portal(bk+`<h1>الصور</h1>`+(v==='loading'?`<ul class="grid">${[1,2,3,4].map(()=>`<li class="ph-c"><div class="ph3"></div><div class="cap">${sk(70)}${sk(40)}</div></li>`).join('')}</ul>`:v==='failed'?fail():v==='empty'?empty('لا توجد صور بعد','img'):`<ul class="grid">${PH.map(p=>`<li><a class="ph-c" href="${to('p8','open')}"><div class="ph3">${i('img')}</div><div class="cap"><b style="font-size:.9375rem">${p[0]}</b><small>${num(p[1])}</small></div></a></li>`).join('')}</ul>`))}};
+
+/* staff screens: shell is layout.html, not redrawn here */
+function staff(title,sub,pr,body,extra=''){const pa=pr?btn(pr.t,{i:pr.i,b:pr.b}):'';return `<main><div class="wrap wide"><div class="stf-h"><div><h1>${title}</h1>${sub?`<p class="sub">${sub}</p>`:''}</div><span class="pa-d">${pa}</span></div>${extra}${body}</div></main>`+(pa?`<div class="abar wide stf"><div>${pa}</div></div>`:'')}
+const sfail=m=>`<div class="ban" role="alert">${i('alert')}<span><b>${m}</b></span></div>`;
+
+/* S1 */
+V.s1={v:[['normal','عادي'],['selected','محدد'],['busy','جارٍ النشر'],['failed','فشل النشر']],draw(v){
+ const sel=v!=='normal';const cells=[['تركيب الأرضيات','2026-11-18',0],['أعمال الدهان','2026-11-12',1],['واجهة المبنى','2026-11-05',0],['تمديد الكهرباء','2026-10-28',0]];
+ const grid=`<ul class="grid">${cells.map((c,k)=>`<li class="ph-c"><div class="ph3">${i('img')}</div><div class="cap"><b style="font-size:.9375rem">${c[0]}</b><small>${num(c[1])}</small>${c[2]===1?`<div class="ln">${pill('ok','منشورة')}<button type="button" class="lnk" style="min-block-size:44px">سحب النشر</button></div>`:`<label class="cb"><input type="checkbox" ${sel&&(k===0||k===2)?'checked':''}><span>تحديد</span></label>`}</div></li>`).join('')}</ul>`;
+ return staff('صور اليوم','',{t:v==='busy'?'جارٍ النشر…':sel?'نشر المحدد ('+2+')':'نشر المحدد',i:'up',b:v==='busy'},grid,v==='failed'?sfail('لم تُنشر الصور'):'')}};
+
+/* S2 */
+const ROWS=[['المفهوم الأولي',16200,'1 من 2','مدفوعة'],['المخطط المبدئي',10800,'1 من 2','غير مدفوعة'],['التصور ثلاثي الأبعاد',10800,'0 من 2','غير مدفوعة'],['تطوير التصميم',10800,'0 من 2','غير مدفوعة'],['الوثائق النهائية',5400,'0 من 2','غير مدفوعة']];
+V.s2={v:[['progress','قيد التنفيذ'],['review','مراجعة داخلية'],['empty','قبل تحديد الشروط'],['failed','فشل الرفع'],['busy','جارٍ الرفع']],draw(v){
+ if(v==='empty')return staff('التصميم','',null,empty('لا توجد مراحل بعد','info'));
+ const st=v==='review'?['مراجعة داخلية','المالك']:['قيد التنفيذ','فريق التصميم'];
+ const rows=ROWS.map((r,k)=>`<tr class="${k===1?'cur':''}"><td data-l="المرحلة"><b>${r[0]}</b></td><td data-l="الحالة">${k===1?pill('run',st[0]):k===0?pill('ok','تمت الموافقة'):pill('none','لم تبدأ')}</td><td data-l="الأتعاب">${fig(r[1])}</td><td data-l="جولات التعديل">${r[2]}</td><td data-l="السداد">${r[3]}</td><td data-l="بانتظار">${k===1?st[1]:'—'}</td></tr>`).join('');
+ const tbl=`<table class="tbl"><thead><tr><th>المرحلة</th><th>الحالة</th><th>الأتعاب (ج.م)</th><th>جولات التعديل</th><th>السداد</th><th>بانتظار</th></tr></thead><tbody>${rows}</tbody></table>`;
+ const cur=v==='review'?`<div class="card"><div class="ln"><b>المخطط المبدئي.pdf</b>${pill('no','بعلامة مائية')}</div><div class="row2">${btn('اعتماد وإرسال للعميل',{i:'chk'})}${btn('إرجاع للتنفيذ بسبب',{c:'sec2'})}</div></div>`:'';
+ const p=v==='review'?null:{t:v==='busy'?'جارٍ الرفع…':'رفع المسلَّم',i:'up',b:v==='busy'};
+ return staff('التصميم','تصميم شقة المعادي',p,tbl+cur,v==='failed'?sfail('تعذّر رفع الملف'):'')}};
+
+/* S3 */
+const COND=[['اكتمال تحصيل المراحل الخمس',1,''],['تسليم المخرج النهائي',1,''],['تحصيل آخر ١٠٪',0,'تسجيل تحصيل'],['نقل الملكية الفكرية للعميل',0,'تسجيل النقل']];
+V.s3={v:[['unmet','شروط ناقصة'],['met','الشروط مكتملة'],['refused','مرفوض'],['busy','جارٍ الإغلاق'],['closed','مغلق']],draw(v){
+ const ok=v!=='unmet';
+ const cl=`<ul class="cl">${COND.map(c=>{const d=c[1]||ok;return `<li><span class="mk ${d?'ok':''}">${d?i('chk'):''}</span><span class="grow"><b>${c[0]}</b></span>${d?'':`<button type="button" class="btn sm sec2">${c[2]}</button>`}</li>`}).join('')}</ul>`;
+ if(v==='closed')return staff('إغلاق المشروع','تصميم شقة المعادي',null,cl,`<div class="rec">${i('chk')}مغلق<small>${num('2026-11-22')}</small></div>`);
+ return staff('إغلاق المشروع','تصميم شقة المعادي',ok?{t:v==='busy'?'جارٍ الإغلاق…':'إغلاق المشروع',i:'lock',b:v==='busy'}:null,cl,v==='refused'?sfail('لم يُغلق المشروع'):'')}};
+
+/* S4 */
+V.s4={v:[['normal','عادي'],['busy','جارٍ الإنشاء'],['failed','فشل'],['refused','مرفوض']],draw(v){
+ const ro=(l,t)=>`<div class="field"><label>${l}</label><div class="ctl ro"><span class="val">${t}</span></div></div>`;
+ const f=`<div class="form" style="max-inline-size:560px">${ro('المشروع الأصلي',PROJ)}${ro('العميل','أسامة الشريف')}<div class="field"><label>اسم المشروع</label><div class="ctl"><input value="فرش الفيلا"></div></div><div class="field"><label>نوع العقد</label><div class="ctl"><select><option>مقطوعية</option><option>التكلفة زائد</option></select></div></div></div>`;
+ return staff('مشروع فرش جديد','',{t:v==='busy'?'جارٍ الإنشاء…':'إنشاء',i:'plus',b:v==='busy'},f,v==='failed'?sfail('لم يُنشأ المشروع'):v==='refused'?sfail('لا يمكن إنشاء فرش لهذا المشروع في حالته الحالية'):'')}};
+
+/* S5 */
+V.s5={v:[['normal','عادي'],['created','تم الإنشاء'],['refused','بلا رقم موبايل'],['busy','جارٍ الإنشاء']],draw(v){
+ const nop=v==='refused';
+ const f=`<div class="form" style="max-inline-size:560px"><div class="field"><label>العميل</label><div class="ctl"><select><option>أسامة الشريف</option></select></div></div><div class="field"><label>رقم الموبايل</label><div class="ctl ro ltr"><span class="val">${nop?'—':'01001234567'}</span></div></div><div class="field"><label>الدور</label><div class="ctl ro"><span class="val">عميل</span></div></div></div>`;
+ if(v==='created')return staff('حساب عميل جديد','',null,f,`<div class="cfm"><b>كلمة السر المؤقتة</b><div class="pwbox"><span>Kf7-Qm29-Xt4</span><button type="button" class="ib" aria-label="نسخ">${i('copy')}</button></div></div>`);
+ return staff('حساب عميل جديد','',{t:v==='busy'?'جارٍ الإنشاء…':'إنشاء',i:'plus',b:v==='busy'},f,nop?sfail('ملف العميل بلا رقم موبايل'):'')}};
+
+/* S6 */
+V.s6={v:[['normal','عند العميل']],draw(){
+ const ST=[['مسودة','done'],['مراجعة فنية','done'],['موافقة العميل','cur'],['موافقة المالك','']];
+ const ch=`<ol class="chain" style="grid-auto-flow:row">${ST.map(s=>`<li class="${s[1]}"><span class="st"><span class="mk ${s[1]==='done'?'ok':''}">${s[1]==='done'?i('chk'):''}</span>${s[0]}</span>${s[1]==='cur'?pill('wait','عند العميل'):''}</li>`).join('')}</ol>`;
+ return staff('تعديل تصميم المطبخ','أمر تغيير',null,`<div class="kvs"><div class="kv"><span>الحالة</span>${pill('wait','عند العميل')}</div><div class="kv"><span>الإجمالي</span>${fig(48470,1)}</div></div>`+ch)}};
+
+const D=V[SC]||V.p3;const view=q.get('view')||D.v[0][0];
+const NAME={p1:'دخول',p2:'مشاريعي',p3:'المشروع',p4:'المستخلصات',p5:'أمر تغيير',p6:'مرحلة تصميم',p7:'الملفات',p8:'الصور',s1:'نشر الصور',s2:'التصميم',s3:'إغلاق التصميم',s4:'فرش جديد',s5:'حساب عميل',s6:'أمر تغيير للموظف'};
+document.getElementById('root').innerHTML=D.draw(view);
+document.getElementById('gs').innerHTML=Object.keys(V).map(k=>`<button type="button" aria-pressed="${k===SC}" onclick="location.search='?s=${k}'">${NAME[k]}</button>`).join('');
+document.getElementById('gv').innerHTML=D.v.map(x=>`<button type="button" aria-pressed="${x[0]===view}" onclick="location.search='?s=${SC}&view=${x[0]}'">${x[1]}</button>`).join('');
+document.getElementById('th').onclick=()=>{const h=document.documentElement;h.dataset.theme=h.dataset.theme==='dark'?'light':'dark'};
+</script>
+</body>
+</html>
