@@ -1,6 +1,6 @@
 # KAFF-940 · Cost and the sell-price override belong to the Owner alone
 
-<!-- kaff id=KAFF-940 slice=2 points=5 state=BUILT -->
+<!-- kaff id=KAFF-940 slice=2 points=5 state=VERIFIED verdict=CONDITIONAL at=976a2b9 on=2026-11-23 -->
 
 **Slice:** 2 (Masters) · **Epic:** Catalogue · **Points:** 5.
 **Owner:** Backend, then Frontend.

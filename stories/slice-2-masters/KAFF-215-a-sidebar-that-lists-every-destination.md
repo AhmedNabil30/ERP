@@ -1,6 +1,6 @@
 # KAFF-215 · A sidebar that lists every destination the session reaches
 
-<!-- kaff id=KAFF-215 slice=2 points=5 state=BUILT verdict=none at=e6487b1 on=2026-11-22 -->
+<!-- kaff id=KAFF-215 slice=2 points=5 state=VERIFIED verdict=CONDITIONAL at=976a2b9 on=2026-11-23 -->
 
 **Slice:** 2 (Masters) · **Epic:** Masters — nav shell · **Points:** 5. Not a 1: this is a second
 permission-driven table alongside `landing.ts`'s, a completeness test that walks `app.routes.ts`

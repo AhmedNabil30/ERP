@@ -1,6 +1,6 @@
 # KAFF-943 · Unarchive a باب
 
-<!-- kaff id=KAFF-943 slice=2 points=2 state=BUILT -->
+<!-- kaff id=KAFF-943 slice=2 points=2 state=VERIFIED verdict=PASS at=976a2b9 on=2026-11-23 -->
 
 **Slice:** 2 (Masters) · **Epic:** أبواب · **Points:** 2.
 **Owner:** Backend, then Frontend.

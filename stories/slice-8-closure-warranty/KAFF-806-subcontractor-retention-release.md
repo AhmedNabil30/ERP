@@ -1,6 +1,6 @@
 # KAFF-806 · Subcontractor retention releases when the warranty ends
 
-<!-- kaff id=KAFF-806 slice=8 points=5 state=BUILT -->
+<!-- kaff id=KAFF-806 slice=8 points=5 state=BUILT verdict=REJECTED at=976a2b9 on=2026-11-23 -->
 
 **Slice:** 7 (reconciled build order, step 7) · **Epic:** Closure · **Points:** 5.
 **Owner:** Backend. **No UI criterion is carried here.**
