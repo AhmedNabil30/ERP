@@ -554,7 +554,7 @@ public sealed class TreasuryGuardTests
     {
         Result<Account> created = Account.Create(
             type,
-            $"T{(int)type}-{Guid.CreateVersion7():N}"[..20],
+            $"T{(int)type}-{Guid.NewGuid():N}"[..20],
             "حساب اختبار",
             "Test account",
             Currency.Egp,
@@ -581,14 +581,14 @@ public sealed class TreasuryGuardTests
         await using KaffDbContext context = _database.CreateContext();
 
         Domain.MasterData.Client client = Domain.MasterData.Client.Create(
-            $"C{Guid.CreateVersion7():N}"[..12],
+            $"C{Guid.NewGuid():N}"[..12],
             "عميل اختبار",
             UniqueNames.Phone(),
             Domain.MasterData.ClientKind.Corporate,
             Now).Value;
 
         Domain.Projects.Project project = Domain.Projects.Project.Create(
-            $"P{Guid.CreateVersion7():N}"[..12],
+            $"P{Guid.NewGuid():N}"[..12],
             "مشروع اختبار",
             client.Id,
             Domain.Contracts.ContractType.LumpSum,

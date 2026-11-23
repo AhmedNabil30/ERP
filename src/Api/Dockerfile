@@ -46,6 +46,8 @@ COPY --from=build /app ./
 #
 # After the COPY, deliberately: the copy runs as root and the process then drops to a user with read
 # access, which is all it needs. Switching first would require a --chown and buy nothing.
+# The site photo folder (Kaff:SitePhotos:Root on staging). The app runs as a non-root user and cannot create it under /var/lib.
+RUN mkdir -p /var/lib/kaff/site-photos && chown $APP_UID /var/lib/kaff/site-photos
 USER $APP_UID
 
 EXPOSE 8080

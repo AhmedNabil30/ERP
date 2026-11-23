@@ -128,7 +128,7 @@ public sealed class WithholdingTests
 
     private static Project NewProject(Guid clientId, ContractType contractType) =>
         Project.Create(
-            $"P{Guid.CreateVersion7():N}"[..12],
+            $"P{Guid.NewGuid():N}"[..12],
             "مشروع",
             clientId,
             contractType,
@@ -136,7 +136,7 @@ public sealed class WithholdingTests
 
     private static Client NewClient(ClientKind kind) =>
         Client.Create(
-            $"C{Guid.CreateVersion7():N}"[..12],
+            $"C{Guid.NewGuid():N}"[..12],
             "عميل",
             PhoneNumber.Create("01000000000").Value,
             kind,

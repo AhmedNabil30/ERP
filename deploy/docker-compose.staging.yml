@@ -70,6 +70,11 @@ services:
       #
       # ⚠️ This number is the count of proxies in front of the API. Add or remove one and change it.
       Kaff__ForwardedProxyHops: "2"
+      # Site photos live on disk, outside the database (D-225 item 2). The volume keeps them across redeploys;
+      # the image creates this folder owned by the app user, and Docker copies that ownership into a new volume.
+      Kaff__SitePhotos__Root: /var/lib/kaff/site-photos
+    volumes:
+      - kaff-staging-photos:/var/lib/kaff/site-photos
     expose:
       - "8080"
 
@@ -98,6 +103,7 @@ services:
 
 volumes:
   kaff-staging-db:
+  kaff-staging-photos:
 
 # Pinned rather than left to Compose's default address pool, because the API trusts this subnet to
 # have told it the truth about who is calling (Kaff__TrustedProxyNetworks above, decisions.md D-079)

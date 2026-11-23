@@ -164,10 +164,10 @@ public sealed partial class FreshDatabaseBootstrapTests : IAsyncLifetime
         await using (KaffDbContext seed = CreateContext())
         {
             Domain.MasterData.Client client = Domain.MasterData.Client.Create(
-                $"C{Guid.CreateVersion7():N}"[..12], "عميل اختبار", UniqueNames.Phone(),
+                $"C{Guid.NewGuid():N}"[..12], "عميل اختبار", UniqueNames.Phone(),
                 Domain.MasterData.ClientKind.Corporate, Now).Value;
             Domain.Projects.Project project = Domain.Projects.Project.Create(
-                $"P{Guid.CreateVersion7():N}"[..12], "مشروع اختبار", client.Id,
+                $"P{Guid.NewGuid():N}"[..12], "مشروع اختبار", client.Id,
                 Domain.Contracts.ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
             seed.Clients.Add(client);
             seed.Projects.Add(project);
@@ -234,10 +234,10 @@ public sealed partial class FreshDatabaseBootstrapTests : IAsyncLifetime
         await using (KaffDbContext seed = CreateMigrateOnlyContext())
         {
             Domain.MasterData.Client client = Domain.MasterData.Client.Create(
-                $"C{Guid.CreateVersion7():N}"[..12], "عميل اختبار", UniqueNames.Phone(),
+                $"C{Guid.NewGuid():N}"[..12], "عميل اختبار", UniqueNames.Phone(),
                 Domain.MasterData.ClientKind.Corporate, Now).Value;
             Domain.Projects.Project project = Domain.Projects.Project.Create(
-                $"P{Guid.CreateVersion7():N}"[..12], "مشروع اختبار", client.Id,
+                $"P{Guid.NewGuid():N}"[..12], "مشروع اختبار", client.Id,
                 Domain.Contracts.ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
             seed.Clients.Add(client);
             seed.Projects.Add(project);
@@ -306,7 +306,7 @@ public sealed partial class FreshDatabaseBootstrapTests : IAsyncLifetime
         AccountType type, Guid? projectId = null, PartyType? partyType = null, bool migrateOnly = false)
     {
         Account account = Account.Create(
-            type, $"T{(int)type}-{Guid.CreateVersion7():N}"[..20], "حساب اختبار", "Test account",
+            type, $"T{(int)type}-{Guid.NewGuid():N}"[..20], "حساب اختبار", "Test account",
             Currency.Egp, new DateOnly(2026, 1, 1), projectId, partyType,
             partyType is null ? null : Guid.CreateVersion7()).Value;
 
