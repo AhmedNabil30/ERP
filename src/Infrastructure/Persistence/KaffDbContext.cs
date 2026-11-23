@@ -149,6 +149,7 @@ public sealed class KaffDbContext : DbContext
     public DbSet<WarrantyCallback> WarrantyCallbacks => Set<WarrantyCallback>();
 
     public DbSet<HoldReleaseRequest> HoldReleaseRequests => Set<HoldReleaseRequest>();
+    public DbSet<SubcontractorRetentionReleaseRequest> SubcontractorRetentionReleaseRequests => Set<SubcontractorRetentionReleaseRequest>();
 
     public DbSet<Adjustment> Adjustments => Set<Adjustment>();
 

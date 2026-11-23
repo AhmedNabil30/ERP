@@ -138,12 +138,15 @@ public sealed record SubcontractorRetentionRelease : IRuling
         + "ledgers, never the client Hold). The release moves the whole retained balance, summed from postings, to the "
         + "same subcontractor's SubcontractorPayable as one SubcontractorRetentionRelease posting, on or after the "
         + "project's WarrantyEndsOn and only while PostingProjectStatePolicy accepts the type (UnderWarranty). Finance "
-        + "alone releases (Unresolved row SubcontractorRetentionRelease), with no Owner approval step, as for the hold "
-        + "release. A second release finds a zero balance and is refused. Zeroing is not a mechanism: a subcontractor "
+        + "asks for the release (Unresolved row SubcontractorRetentionRelease) and posts nothing; the Owner approves or "
+        + "rejects with a stored reason (FinancialMovementApprove, spec.md section 9, D-265), as for the hold release. The "
+        + "asker never decides (SeparationOfDuties). One request waits per subcontractor, every check the posting faces "
+        + "runs at the request, and the amount is the retention balance read at approval, never stored. A second release "
+        + "finds a zero balance and is refused. Zeroing is not a mechanism: a subcontractor "
         + "with nothing retained reads zero and posts nothing. Nothing accrues the retention yet (KAFF-510), so the "
         + "accounts and the accrual postings exist only when that story, or a test, writes them. ASSUMED.",
-        "An Owner approval makes the release two steps with SeparationOfDuties between them and the posting written at "
-        + "approval. A zeroing flag is read by KAFF-510 at accrual, not here. A mistaken release is a reversal through "
-        + "ReversesId; no endpoint is built.",
+        "A threshold below which Finance releases alone would change SubcontractorRetentionReleaseRequest and add a "
+        + "second permission row. A zeroing flag is read by KAFF-510 at accrual, not here. A mistaken release is a reversal through "
+        + "ReversesId; no endpoint exists, because the generic treasury route refuses a flow-owned posting (D-236, D-265).",
         RulingStatus.Assumed);
 }

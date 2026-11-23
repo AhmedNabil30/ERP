@@ -4,25 +4,17 @@ using Kaff.Domain.Common;
 using Kaff.Domain.Identity;
 using Kaff.Domain.Projects;
 using Kaff.Domain.Rulings;
-using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kaff.Api.Features.Closure.ReleaseSubcontractorRetention;
 
-/// <summary>What was released.</summary>
-/// <param name="ProjectId">The project.</param>
-/// <param name="SubcontractorId">The subcontractor.</param>
-/// <param name="Released">The retention balance at the moment of release, summed from postings. Never typed.</param>
-/// <param name="PostingIds">The release posting.</param>
-public sealed record Response(Guid ProjectId, Guid SubcontractorId, Money Released, IReadOnlyList<Guid> PostingIds);
-
 /// <summary>
-/// Releases a subcontractor's retention. The ledger is that subcontractor's own SubcontractorRetention account, which
-/// is none of the five ledgers and is never the client hold. The amount is read from it inside the transaction that
-/// holds the project row lock; the project state, the warranty end and the nothing-to-release rule are checked by
-/// <see cref="SubcontractorRetention.Release"/>, not here.
+/// Finance asks for a subcontractor's retention release (AC-806-E, spec.md section 9). Every check the release posting
+/// will face is asked now by <see cref="SubcontractorRetentionReleaseRequest.Request"/>, so a request that could never be
+/// approved is refused at once. Nothing is posted here. The ledger is that subcontractor's own SubcontractorRetention
+/// account, which is none of the five ledgers and is never the client hold.
 /// </summary>
 internal static class Handler
 {
@@ -47,50 +39,36 @@ internal static class Handler
             return ResultExtensions.Problem(ProjectErrors.NotFound);
         }
 
-        List<Account> own = await database.Accounts
-            .Where(account => account.ProjectId == projectId && account.PartyId == subcontractorId && account.IsActive)
-            .ToListAsync(cancellationToken);
-        Account? retention = own.FirstOrDefault(account => account.Type == AccountType.SubcontractorRetention);
-        Account? payable = own.FirstOrDefault(account => account.Type == AccountType.SubcontractorPayable);
-
-        Money retained = retention is null
-            ? Money.Zero
-            : BalanceQueries.GetAccountBalance(database.AccountBalances, retention.Id)?.SignedBalance ?? Money.Zero;
+        RetentionReleaseInputs inputs = await ClosureSupport.ReadRetentionReleaseInputsAsync(
+            database, projectId, subcontractorId, cancellationToken);
+        bool waiting = await ClosureSupport.WaitingRetentionReleaseAsync(database, projectId, subcontractorId, cancellationToken) is not null;
 
         DateTimeOffset now = clock.GetUtcNow();
-        Result<PostingSet> built = SubcontractorRetention.Release(
+        Result<SubcontractorRetentionReleaseRequest> asked = SubcontractorRetentionReleaseRequest.Request(
             project,
             subcontractorId,
-            retention,
-            payable,
-            retained,
+            inputs.Retention,
+            inputs.Payable,
+            inputs.Retained,
+            waiting,
+            rulings.PostingProjectStates,
             currentUser.UserId ?? Guid.Empty,
             now,
-            SiteTime.DateOf(now),
-            rulings.PostingProjectStates);
-        if (built.IsFailure)
+            SiteTime.DateOf(now));
+        if (asked.IsFailure)
         {
-            return ResultExtensions.Problem(built.Error);
+            return ResultExtensions.Problem(asked.Error);
         }
 
-        database.Postings.AddRange(built.Value.Postings);
+        database.SubcontractorRetentionReleaseRequests.Add(asked.Value);
 
         Error? refused = await GuardedSave.SaveAsync(database, cancellationToken);
-        if (refused is null)
+        if (refused is not null)
         {
-            try
-            {
-                await transaction.CommitAsync(cancellationToken);
-            }
-            catch (Exception exception) when (DatabaseGuardTranslation.Translate(exception) is { } violation)
-            {
-                refused = violation;
-            }
+            return ResultExtensions.Problem(refused);
         }
 
-        return refused is not null
-            ? ResultExtensions.Problem(refused)
-            : Microsoft.AspNetCore.Http.Results.Ok(
-                new Response(projectId, subcontractorId, retained, [.. built.Value.Postings.Select(posting => posting.Id)]));
+        await transaction.CommitAsync(cancellationToken);
+        return Microsoft.AspNetCore.Http.Results.Ok(SubcontractorRetentionReleaseRequestResponse.From(asked.Value));
     }
 }

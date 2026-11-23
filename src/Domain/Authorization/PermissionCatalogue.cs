@@ -623,7 +623,7 @@ public static class PermissionCatalogue
             // credit note, section 6.9 gives the Adjustment object, section 5.1 the subcontractor retention. None names
             // an actor (Q106, Q107, Q26, Q109). Finance raises and resolves; the Owner approves through
             // FinancialMovementApprove, a resolved row, so nobody creates and approves the same movement. See
-            // Rulings/AdjustmentRulings.cs. Retention release has no approval step, as the hold release has none.
+            // Rulings/AdjustmentRulings.cs. The retention release is asked for here and approved by the Owner (D-265).
             new(Permission.ExtractDisputeRaise, PermissionScope.ProjectScoped, [finance],
                 "§7, §9 — holder UNRESOLVED (Q106), Finance assumed, see Rulings/AdjustmentRulings.cs",
                 Unresolved: true),

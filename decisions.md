@@ -17425,3 +17425,40 @@ The Verifier pass `qa/verification-design-system-2026-11-22.md` judged 28 BUILT 
 Ruling by the Scrum Master: where a story's text names a part that D-175 (KAAF v2 language, 2026-10-06) deleted — `--color-brand`, `--sidebar-*`, the top bar, the segmented locale switch, the tagline, the Latin `<bdi>` wordmark — that criterion is superseded by D-175 and is not a defect. KAFF-900, 922, 923, 924, 925, 927 and 929 are CONDITIONAL on that basis only, unless the report names another open item. KAFF-934 is CONDITIONAL, not REJECTED: its missing specialisation pill row is held on Q95, and building it would invent a trade list. KAFF-911, 914 and 933 are judged against the panels that replaced the named forms.
 
 Open items carried from the report: KAFF-922-C has no test for the account block during a forced password change; KAFF-901-A `kaff-money-field` is a second form-field implementation with no decision record; `employee-panel` was not opened (KAFF-914).
+
+## D-265 — The subcontractor retention release is asked for by Finance and approved by the Owner (KAFF-806) · 2026-11-23
+
+Backend lane, fixing the KAFF-806 rejection (AC-806-E, `qa/verification-215-940-942-943-806-2026-11-22.md`). Append-only;
+the "Finance alone, no Owner approval step" wording of the `SubcontractorRetentionRelease` ruling note is superseded by this
+entry. It uses the same shape as D-262 item 1 for the hold release.
+
+1. **The release is two steps.** `spec.md` section 9 says "Owner approves all financial movements" and "nobody creates and
+   approves the same movement".
+   - `POST /api/projects/{id}/subcontractors/{sid}/retention-release` (`SubcontractorRetentionRelease`, Finance) now creates a
+     `SubcontractorRetentionReleaseRequest` and posts nothing. Every check the posting faces runs at the request
+     (`SubcontractorRetention.Release`: project state, warranty end, accounts, something retained). A second request for the
+     same subcontractor while one waits is refused (`closure.retention_release_already_requested`).
+   - `POST .../retention-release/approval` (`FinancialMovementApprove`, the Owner) writes the one
+     `SubcontractorRetentionRelease` posting in the same save, for the retention balance read at approval. The request stores
+     no amount, because a stored figure would be a stored balance. The audit reason carries the subcontractor, the amount and
+     who asked.
+   - `POST .../retention-release/rejection` (`FinancialMovementApprove`) needs a reason, stores it and posts nothing. The
+     request returns to Finance, who may ask again.
+   - The user who asked may not approve or reject (`SeparationOfDuties.EnsureDifferentActor`). Approval and rejection take the
+     project row lock (`FOR UPDATE`), as the hold release does since F-802-2.
+   - New table `subcontractor_retention_release_requests` (migration `SubcontractorRetentionReleaseRequests`), with a filtered
+     unique index on (project, subcontractor) where the status is `Requested`. The grant is in `Sql/005_app_role.sql`. No
+     balance column and no check constraint, so `DatabaseInitializer` needed no new entry.
+   - The entity is separate from `HoldReleaseRequest` because it carries a subcontractor and a different posting; it reuses
+     the `HoldReleaseRequestStatus` values, which are the same three states.
+2. **Tests.** AC-806-D is NOT met over HTTP. An approved release is a flow-owned posting (D-236,
+   `SourceDocument.HasOwningFlow`), so the generic treasury reversal route refuses it with
+   `treasury.flow_posting_not_reversible`, and the release has no reversal flow of its own. The reversal posting through
+   `ReversesId` exists in the Domain test only. An API test pins the refusal. Closing the gap needs a reversal endpoint for the
+   retention release (Owner approved, with a reason), which is a new flow and was not built here. The AC-806-G test asserts the amount and the
+   subcontractor in the audit record, and the audit reason. The asker-cannot-decide rule is proven in Domain tests; over HTTP
+   the asker (Finance) is refused earlier because it holds no approval permission.
+3. **Not done.** AC-806-C (zeroing a subcontractor's retention) stays held on Q26. KAFF-510 (subcontractor extracts, the
+   retention accrual) is not built; the tests still write the accrual postings by hand. `GET .../closure` does not carry the
+   retention requests and no screen was built or changed; `closure.api.ts` has no retention calls. Both belong to the
+   designer and a Frontend story when one is cut.

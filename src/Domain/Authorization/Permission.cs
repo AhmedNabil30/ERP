@@ -480,7 +480,7 @@ public enum Permission
 
     /// <summary>
     /// Release a subcontractor's retention at the warranty end (spec.md sections 5.1, 11, KAFF-806). UNRESOLVED (Q26,
-    /// Q109): Finance alone is assumed, with no Owner approval step, as for <see cref="HoldRelease"/>.
+    /// Q109): Finance is assumed to ask; the Owner approves through <see cref="FinancialMovementApprove"/> (D-265).
     /// </summary>
     SubcontractorRetentionRelease = 89,
 

@@ -67,3 +67,27 @@ public sealed record HoldReleaseRequestResponse(
         request.DecidedAt,
         request.RejectionReason);
 }
+
+/// <summary>A retention release request as read (AC-806-E). It carries no amount: the release moves the retention read at approval.</summary>
+public sealed record SubcontractorRetentionReleaseRequestResponse(
+    Guid Id,
+    Guid ProjectId,
+    Guid SubcontractorId,
+    HoldReleaseRequestStatus Status,
+    Guid RequestedByUserId,
+    DateTimeOffset RequestedAt,
+    Guid? DecidedByUserId,
+    DateTimeOffset? DecidedAt,
+    string? RejectionReason)
+{
+    internal static SubcontractorRetentionReleaseRequestResponse From(SubcontractorRetentionReleaseRequest request) => new(
+        request.Id,
+        request.ProjectId,
+        request.SubcontractorId,
+        request.Status,
+        request.RequestedByUserId,
+        request.RequestedAt,
+        request.DecidedByUserId,
+        request.DecidedAt,
+        request.RejectionReason);
+}

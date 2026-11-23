@@ -42,6 +42,14 @@ public static class ClosureErrors
     public static readonly Error HoldReleaseNotRequested =
         Error.Conflict("closure.hold_release_not_requested", "errors.closure.hold_release_not_requested");
 
+    /// <summary>AC-806-E: a retention release request for this subcontractor is already waiting for the Owner.</summary>
+    public static readonly Error RetentionReleaseAlreadyRequested =
+        Error.Conflict("closure.retention_release_already_requested", "errors.closure.retention_release_already_requested");
+
+    /// <summary>AC-806-E: no retention release request is waiting to be approved or rejected.</summary>
+    public static readonly Error RetentionReleaseNotRequested =
+        Error.Conflict("closure.retention_release_not_requested", "errors.closure.retention_release_not_requested");
+
     public static readonly Error NothingToRelease =
         Error.Conflict("closure.nothing_to_release", "errors.closure.nothing_to_release");
 

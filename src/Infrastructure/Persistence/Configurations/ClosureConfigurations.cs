@@ -87,3 +87,27 @@ internal sealed class HoldReleaseRequestConfiguration : IEntityTypeConfiguration
         builder.HasOne<User>().WithMany().HasForeignKey(request => request.DecidedByUserId).OnDelete(DeleteBehavior.Restrict);
     }
 }
+
+internal sealed class SubcontractorRetentionReleaseRequestConfiguration : IEntityTypeConfiguration<SubcontractorRetentionReleaseRequest>
+{
+    public void Configure(EntityTypeBuilder<SubcontractorRetentionReleaseRequest> builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        builder.ToTable(DbTables.SubcontractorRetentionReleaseRequests);
+        builder.HasKey(request => request.Id);
+        builder.Property(request => request.Id).ValueGeneratedNever();
+        builder.Property(request => request.RequestedAt).IsRequired();
+        builder.Property(request => request.RejectionReason).HasMaxLength(Project.MaxReasonLength);
+
+        // At most one request waits for the Owner per subcontractor on a project; the domain asks first, this index is the record.
+        builder.HasIndex(request => new { request.ProjectId, request.SubcontractorId })
+            .IsUnique()
+            .HasFilter("status = 'Requested'")
+            .HasDatabaseName("ux_subcontractor_retention_release_requests_waiting");
+
+        builder.HasOne<Project>().WithMany().HasForeignKey(request => request.ProjectId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<User>().WithMany().HasForeignKey(request => request.RequestedByUserId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<User>().WithMany().HasForeignKey(request => request.DecidedByUserId).OnDelete(DeleteBehavior.Restrict);
+    }
+}

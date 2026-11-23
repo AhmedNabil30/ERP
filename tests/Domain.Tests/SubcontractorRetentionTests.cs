@@ -1,3 +1,4 @@
+using Kaff.Domain.Authorization;
 using Kaff.Domain.Closure;
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
@@ -177,5 +178,84 @@ public sealed class SubcontractorRetentionTests
         mirror.Type.Should().Be(PostingType.SubcontractorRetentionRelease);
         mirror.FromAccountId.Should().Be(retention.Id);
         mirror.ToAccountId.Should().Be(payable.Id);
+    }
+
+    // ---- AC-806-E · asked by Finance, decided by another user ---------------------------------------
+
+    private static readonly Guid Owner = Guid.CreateVersion7();
+
+    private static Result<SubcontractorRetentionReleaseRequest> Ask(Project project, Guid sub, Account retention, Account payable, bool waiting = false) =>
+        SubcontractorRetentionReleaseRequest.Request(
+            project, sub, retention, payable, new Money(37_500m), waiting, Policy, Actor, Now, project.WarrantyEndsOn!.Value);
+
+    private static Result<PostingSet> ApproveAs(
+        SubcontractorRetentionReleaseRequest request, Project project, Account retention, Account payable, Guid actor, decimal retained) =>
+        request.Approve(actor, project, retention, payable, new Money(retained), Policy, Now, project.WarrantyEndsOn!.Value);
+
+    [Fact]
+    public void A_request_posts_nothing_and_the_approval_by_another_user_writes_the_one_release_for_the_balance_read_then()
+    {
+        Project project = ProjectIn(ProjectStatus.UnderWarranty);
+        Guid sub = Guid.CreateVersion7();
+        (Account retention, Account payable) = AccountsFor(project, sub);
+        SubcontractorRetentionReleaseRequest request = Ask(project, sub, retention, payable).Value;
+        request.Status.Should().Be(HoldReleaseRequestStatus.Requested);
+
+        PostingSet set = ApproveAs(request, project, retention, payable, Owner, 40_000m).Value;
+
+        Posting posting = set.Postings.Should().ContainSingle().Subject;
+        posting.Type.Should().Be(PostingType.SubcontractorRetentionRelease);
+        posting.Amount.Should().Be(new Money(40_000m), "the amount is the retention read at approval, never one stored at the request");
+        posting.CreatedByUserId.Should().Be(Owner);
+        request.Status.Should().Be(HoldReleaseRequestStatus.Approved);
+        request.DecidedByUserId.Should().Be(Owner);
+    }
+
+    [Fact]
+    public void The_user_who_asked_for_the_release_can_neither_approve_nor_reject_it()
+    {
+        Project project = ProjectIn(ProjectStatus.UnderWarranty);
+        Guid sub = Guid.CreateVersion7();
+        (Account retention, Account payable) = AccountsFor(project, sub);
+        SubcontractorRetentionReleaseRequest request = Ask(project, sub, retention, payable).Value;
+
+        ApproveAs(request, project, retention, payable, Actor, 37_500m).Error.Should().Be(AuthorizationErrors.SameActorCreatedAndApproved);
+        request.Reject(Actor, "no", Now).Error.Should().Be(AuthorizationErrors.SameActorCreatedAndApproved);
+        request.Status.Should().Be(HoldReleaseRequestStatus.Requested);
+        request.DecidedByUserId.Should().BeNull();
+    }
+
+    [Fact]
+    public void A_request_that_could_never_be_approved_is_refused_at_once_and_a_second_one_waits_behind_the_first()
+    {
+        Project project = ProjectIn(ProjectStatus.UnderWarranty);
+        Guid sub = Guid.CreateVersion7();
+        (Account retention, Account payable) = AccountsFor(project, sub);
+
+        SubcontractorRetentionReleaseRequest.Request(
+                project, sub, retention, payable, new Money(37_500m), false, Policy, Actor, Now, project.WarrantyEndsOn!.Value.AddDays(-1))
+            .Error.Should().Be(ClosureErrors.WarrantyNotEnded);
+        SubcontractorRetentionReleaseRequest.Request(
+                project, sub, retention, payable, Money.Zero, false, Policy, Actor, Now, project.WarrantyEndsOn!.Value)
+            .Error.Should().Be(ClosureErrors.NothingToRelease);
+        Ask(project, sub, retention, payable, waiting: true).Error.Should().Be(ClosureErrors.RetentionReleaseAlreadyRequested);
+    }
+
+    [Fact]
+    public void A_rejection_needs_a_reason_is_stored_and_ends_the_request()
+    {
+        Project project = ProjectIn(ProjectStatus.UnderWarranty);
+        Guid sub = Guid.CreateVersion7();
+        (Account retention, Account payable) = AccountsFor(project, sub);
+        SubcontractorRetentionReleaseRequest request = Ask(project, sub, retention, payable).Value;
+
+        request.Reject(Owner, "  ", Now).Error.Should().Be(ClosureErrors.ReasonRequired);
+        request.Status.Should().Be(HoldReleaseRequestStatus.Requested);
+
+        request.Reject(Owner, "snag open", Now).IsSuccess.Should().BeTrue();
+        request.Status.Should().Be(HoldReleaseRequestStatus.Rejected);
+        request.RejectionReason.Should().Be("snag open");
+        ApproveAs(request, project, retention, payable, Owner, 37_500m).Error.Should().Be(ClosureErrors.RetentionReleaseNotRequested);
+        request.Reject(Owner, "again", Now).Error.Should().Be(ClosureErrors.RetentionReleaseNotRequested);
     }
 }

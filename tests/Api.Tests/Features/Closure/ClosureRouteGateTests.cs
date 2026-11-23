@@ -78,6 +78,8 @@ public sealed class ClosureRouteGateTests : IAsyncLifetime
         ["POST /api/projects/{projectId:guid}/warranty-callbacks/{id:guid}/resolution"] = Permission.WarrantyCallbackManage,
         ["GET /api/projects/{projectId:guid}/warranty-callbacks"] = Permission.ProjectRead,
         ["POST /api/projects/{projectId:guid}/subcontractors/{subcontractorId:guid}/retention-release"] = Permission.SubcontractorRetentionRelease,
+        ["POST /api/projects/{projectId:guid}/subcontractors/{subcontractorId:guid}/retention-release/approval"] = Permission.FinancialMovementApprove,
+        ["POST /api/projects/{projectId:guid}/subcontractors/{subcontractorId:guid}/retention-release/rejection"] = Permission.FinancialMovementApprove,
     };
 
     /// <summary>

@@ -19,6 +19,9 @@ internal sealed record ClosureOutcome(Result Result, IReadOnlyDictionary<string,
 /// <summary>What a hold release request or approval is checked against. Every figure is read, none is typed.</summary>
 internal sealed record HoldReleaseInputs(Account? Hold, Account? Receivable, Money HoldBalance, bool AlreadyReleased);
 
+/// <summary>What a retention release request or approval is checked against. Every figure is read, none is typed.</summary>
+internal sealed record RetentionReleaseInputs(Account? Retention, Account? Payable, Money Retained);
+
 /// <summary>The project after a closure act.</summary>
 public sealed record ProjectClosureResponse(
     Guid Id, ProjectStatus Status, DateOnly? HandoverOn, DateOnly? WarrantyEndsOn, DateOnly? ClosedOn)
@@ -123,6 +126,33 @@ internal static class ClosureSupport
         KaffDbContext database, Guid projectId, CancellationToken cancellationToken) =>
         database.HoldReleaseRequests.FirstOrDefaultAsync(
             request => request.ProjectId == projectId && request.Status == HoldReleaseRequestStatus.Requested,
+            cancellationToken);
+
+    /// <summary>
+    /// What a retention release request or approval is checked against, read inside the caller's transaction under the
+    /// project row lock: the subcontractor's retention and payable accounts and the retention balance summed from postings.
+    /// </summary>
+    public static async Task<RetentionReleaseInputs> ReadRetentionReleaseInputsAsync(
+        KaffDbContext database, Guid projectId, Guid subcontractorId, CancellationToken cancellationToken)
+    {
+        List<Account> own = await database.Accounts
+            .Where(account => account.ProjectId == projectId && account.PartyId == subcontractorId && account.IsActive)
+            .ToListAsync(cancellationToken);
+        Account? retention = own.FirstOrDefault(account => account.Type == AccountType.SubcontractorRetention);
+        Account? payable = own.FirstOrDefault(account => account.Type == AccountType.SubcontractorPayable);
+        Money retained = retention is null
+            ? Money.Zero
+            : BalanceQueries.GetAccountBalance(database.AccountBalances, retention.Id)?.SignedBalance ?? Money.Zero;
+        return new RetentionReleaseInputs(retention, payable, retained);
+    }
+
+    /// <summary>The request waiting for the Owner for one subcontractor on the project, if any. At most one exists (a filtered unique index).</summary>
+    public static Task<SubcontractorRetentionReleaseRequest?> WaitingRetentionReleaseAsync(
+        KaffDbContext database, Guid projectId, Guid subcontractorId, CancellationToken cancellationToken) =>
+        database.SubcontractorRetentionReleaseRequests.FirstOrDefaultAsync(
+            request => request.ProjectId == projectId
+                && request.SubcontractorId == subcontractorId
+                && request.Status == HoldReleaseRequestStatus.Requested,
             cancellationToken);
 
     /// <summary>The next number in a project's own sequence; the unique index on (project, number) is the enforcement of record.</summary>

@@ -1619,6 +1619,8 @@
   "errors.treasury.flow_type_not_allowed": "This type of movement is recorded only from the screen of its own document: the extract, the adjustment or the handover.",
   "errors.project.withholding_category_required": "Choose the contract's withholding category.",
   "errors.extract.dispute_resolution_required": "Choose how the dispute is resolved.",
+  "errors.closure.retention_release_already_requested": "A retention release request for this subcontractor is already waiting for the Owner.",
+  "errors.closure.retention_release_not_requested": "No retention release request is waiting for approval.",
   "errors.closure.warranty_not_ended": "The subcontractor's retention is released only when the warranty ends.",
   "closure.title": "Closing and handover",
   "closure.back": "Back to the project",

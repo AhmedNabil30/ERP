@@ -5,7 +5,9 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Kaff.Api.Authorization;
 using Kaff.Api.Tests.Infrastructure;
+using Kaff.Domain.Auditing;
 using Kaff.Domain.Authorization;
+using Kaff.Domain.Closure;
 using Kaff.Domain.Common;
 using Kaff.Domain.Contracts;
 using Kaff.Domain.Identity;
@@ -22,7 +24,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Kaff.Api.Tests.Features.Closure;
 
 /// <summary>
-/// KAFF-806 over HTTP. A subcontractor retention is its own account on its own clock. Three things are asserted at every
+/// KAFF-806 over HTTP. A subcontractor retention is its own account on its own clock, asked for by Finance and approved by the Owner (D-265). Three things are asserted at every
 /// stage: the stage (a release the day before the warranty ends is refused), the amount (summed from postings, never
 /// typed) and the hold (a separate ledger that does not move).
 /// </summary>
@@ -141,14 +143,28 @@ public sealed class SubcontractorRetentionEndpointTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task The_release_equals_the_summed_retention_in_one_posting_and_leaves_the_hold_and_the_balance_right()
+    public async Task Asking_posts_nothing_and_the_Owner_approval_writes_one_posting_equal_to_the_summed_retention()
     {
         (Guid project, Guid sub) = await NewProjectAsync(handoverOn: new DateOnly(2025, 5, 1));
         decimal hold = await BalanceAsync(project, AccountType.Hold);
         hold.Should().Be(200_000m);
+        long postings = await PostingCountAsync(project);
 
-        HttpResponseMessage response = await SendAsync(HttpMethod.Post, Route(project, sub), _finance);
+        HttpResponseMessage asked = await SendAsync(HttpMethod.Post, Route(project, sub), _finance);
+        asked.StatusCode.Should().Be(HttpStatusCode.OK, await asked.Content.ReadAsStringAsync(Ct));
+        (await PostingCountAsync(project)).Should().Be(postings, "a request moves no money");
+        (await RetentionAsync(project, sub)).Should().Be(37_500m);
 
+        // AC-806-E: the asker cannot decide. Finance holds no approval permission, so the route refuses it before the domain does.
+        (await SendAsync(HttpMethod.Post, Route(project, sub) + "/approval", _finance)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await SendAsync(HttpMethod.Post, Route(project, sub) + "/rejection", _finance, new { reason = "x" })).StatusCode
+            .Should().Be(HttpStatusCode.Forbidden);
+        (await ReleaseCountAsync(project)).Should().Be(0);
+
+        HttpResponseMessage twice = await SendAsync(HttpMethod.Post, Route(project, sub), _finance);
+        (await ErrorCodeAsync(twice)).Should().Be("closure.retention_release_already_requested");
+
+        HttpResponseMessage response = await SendAsync(HttpMethod.Post, Route(project, sub) + "/approval", _owner);
         response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync(Ct));
         using (JsonDocument body = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct)))
         {
@@ -164,14 +180,91 @@ public sealed class SubcontractorRetentionEndpointTests : IAsyncLifetime
             p => p.ProjectId == project && p.Type == PostingType.SubcontractorRetentionRelease, Ct);
         release.Amount.Should().Be(new Money(37_500m));
         release.ReversesId.Should().BeNull();
-        release.CreatedByUserId.Should().Be(_finance);
+        release.CreatedByUserId.Should().Be(_owner, "the posting is written when the Owner approves the request");
         release.FromAccountId.Should().Be(await AccountIdAsync(project, AccountType.SubcontractorPayable, sub));
         release.ToAccountId.Should().Be(await AccountIdAsync(project, AccountType.SubcontractorRetention, sub));
-        (await reader.AuditRecords.AnyAsync(record => record.EntityId == release.Id, Ct)).Should().BeTrue("who and when are audited");
 
+        // AC-806-G: the trail names who, the amount and the subcontractor.
+        AuditRecord trail = await reader.AuditRecords.SingleAsync(record => record.EntityId == release.Id, Ct);
+        trail.ActorUserId.Should().Be(_owner);
+        trail.AfterJson.Should().Contain("37500", "the amount is in the trail");
+        trail.AfterJson.Should().Contain(sub.ToString(), "the subcontractor is in the trail");
+        trail.Reason.Should().Contain(sub.ToString()).And.Contain("37500.0000").And.Contain(_finance.ToString());
+
+        SubcontractorRetentionReleaseRequest request = await reader.SubcontractorRetentionReleaseRequests.SingleAsync(
+            candidate => candidate.ProjectId == project && candidate.SubcontractorId == sub, Ct);
+        request.Status.Should().Be(HoldReleaseRequestStatus.Approved);
+        request.RequestedByUserId.Should().Be(_finance);
+        request.DecidedByUserId.Should().Be(_owner);
+
+        (await SendAsync(HttpMethod.Post, Route(project, sub) + "/approval", _owner)).StatusCode
+            .Should().Be(HttpStatusCode.Conflict, "nothing waits any more");
         (await SendAsync(HttpMethod.Post, Route(project, sub), _finance)).StatusCode
             .Should().Be(HttpStatusCode.Conflict, "a second release finds a zero balance");
         (await ReleaseCountAsync(project)).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task A_rejection_needs_a_reason_posts_nothing_and_Finance_may_ask_again()
+    {
+        (Guid project, Guid sub) = await NewProjectAsync(handoverOn: new DateOnly(2025, 5, 1));
+        long postings = await PostingCountAsync(project);
+        (await SendAsync(HttpMethod.Post, Route(project, sub), _finance)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        HttpResponseMessage blank = await SendAsync(HttpMethod.Post, Route(project, sub) + "/rejection", _owner, new { reason = " " });
+        (await ErrorCodeAsync(blank)).Should().Be("closure.reason_required");
+
+        HttpResponseMessage rejected = await SendAsync(HttpMethod.Post, Route(project, sub) + "/rejection", _owner, new { reason = "snag still open" });
+        rejected.StatusCode.Should().Be(HttpStatusCode.OK, await rejected.Content.ReadAsStringAsync(Ct));
+        (await PostingCountAsync(project)).Should().Be(postings);
+        (await RetentionAsync(project, sub)).Should().Be(37_500m);
+
+        await using (KaffDbContext reader = _database.CreateBareContext())
+        {
+            SubcontractorRetentionReleaseRequest request = await reader.SubcontractorRetentionReleaseRequests.SingleAsync(
+                candidate => candidate.ProjectId == project, Ct);
+            request.Status.Should().Be(HoldReleaseRequestStatus.Rejected);
+            request.RejectionReason.Should().Be("snag still open");
+        }
+
+        (await SendAsync(HttpMethod.Post, Route(project, sub) + "/approval", _owner)).StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await SendAsync(HttpMethod.Post, Route(project, sub), _finance)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, Route(project, sub) + "/approval", _owner)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ReleaseCountAsync(project)).Should().Be(1);
+    }
+
+    /// <summary>
+    /// AC-806-D over HTTP. An approved release is a posting its own flow owns (D-236), so the generic treasury reversal route
+    /// refuses it and writes nothing. The release has no reversal flow of its own yet, so the reversal itself (a posting
+    /// through ReversesId) is proven only in the Domain test. This test pins the refusal so the gap cannot close by accident.
+    /// </summary>
+    [Fact]
+    public async Task The_generic_reversal_route_refuses_an_approved_release_and_writes_nothing()
+    {
+        (Guid project, Guid sub) = await NewProjectAsync(handoverOn: new DateOnly(2025, 5, 1));
+        (await SendAsync(HttpMethod.Post, Route(project, sub), _finance)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, Route(project, sub) + "/approval", _owner)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await RetentionAsync(project, sub)).Should().Be(0m);
+
+        Guid original;
+        await using (KaffDbContext reader = _database.CreateBareContext())
+        {
+            original = await reader.Postings
+                .Where(p => p.ProjectId == project && p.Type == PostingType.SubcontractorRetentionRelease)
+                .Select(p => p.Id).SingleAsync(Ct);
+        }
+
+        HttpResponseMessage reversed = await SendAsync(
+            HttpMethod.Post,
+            $"/api/projects/{project}/treasury/postings/{original}/reverse",
+            _finance,
+            new { postingDate = SiteTime.DateOf(DateTimeOffset.UtcNow) });
+        reversed.StatusCode.Should().Be(HttpStatusCode.Conflict, await reversed.Content.ReadAsStringAsync(Ct));
+        (await ErrorCodeAsync(reversed)).Should().Be("treasury.flow_posting_not_reversible");
+
+        await using KaffDbContext check = _database.CreateBareContext();
+        (await check.Postings.AnyAsync(p => p.ReversesId == original, Ct)).Should().BeFalse("a refused reversal writes nothing");
+        (await RetentionAsync(project, sub)).Should().Be(0m);
     }
 
     [Fact]
@@ -195,6 +288,7 @@ public sealed class SubcontractorRetentionEndpointTests : IAsyncLifetime
         _clock.Advance(DateTimeOffset.Parse(instant, CultureInfo.InvariantCulture) - _clock.GetUtcNow());
 
         (await SendAsync(HttpMethod.Post, Route(project, sub), _finance)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, Route(project, sub) + "/approval", _owner)).StatusCode.Should().Be(HttpStatusCode.OK);
 
         await using KaffDbContext reader = _database.CreateBareContext();
         Posting release = await reader.Postings.SingleAsync(
@@ -243,9 +337,13 @@ public sealed class SubcontractorRetentionEndpointTests : IAsyncLifetime
         return problem.RootElement.TryGetProperty("code", out JsonElement code) ? code.GetString() : null;
     }
 
-    private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string route, Guid actorId)
+    private async Task<HttpResponseMessage> SendAsync(HttpMethod method, string route, Guid actorId, object? body = null)
     {
         using var request = new HttpRequestMessage(method, new Uri(route, UriKind.Relative));
+        if (body is not null)
+        {
+            request.Content = JsonContent.Create(body);
+        }
 
         await using KaffDbContext reader = _database.CreateBareContext();
         var found = await reader.Users
