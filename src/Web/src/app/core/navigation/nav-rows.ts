@@ -90,3 +90,19 @@ export function navGroupsFor(session: Session): readonly NavRowGroup[] {
     rows: rows.filter((row) => row.group === group.key),
   })).filter((group) => group.rows.length > 0);
 }
+
+/**
+ * The one row that is active for a URL: the row with the longest path that is the URL or a parent of it.
+ * Prefix matching alone lights `/projects` and `/projects/new` together (F-215-1); longest match lights
+ * only the more specific row, while `/projects/<id>` still lights `/projects`.
+ */
+export function activeNavPath(rows: readonly NavRow[], url: string): string | null {
+  const path = url.split(/[?#]/)[0];
+  let best: string | null = null;
+  for (const { path: p } of rows) {
+    if ((path === p || path.startsWith(p + '/')) && (best === null || p.length > best.length)) {
+      best = p;
+    }
+  }
+  return best;
+}

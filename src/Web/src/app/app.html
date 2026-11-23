@@ -78,8 +78,8 @@
         <a
           class="row"
           [routerLink]="row.path"
-          routerLinkActive="is-active"
-          ariaCurrentWhenActive="page"
+          [class.is-active]="activePath() === row.path"
+          [attr.aria-current]="activePath() === row.path ? 'page' : null"
           (click)="closeNav()"
           (mouseenter)="showTip($event, row.labelKey)"
           (mouseleave)="hideTip()"

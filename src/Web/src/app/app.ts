@@ -8,7 +8,9 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { filter, map } from 'rxjs';
 import { NgTemplateOutlet } from '@angular/common';
 
 import { AuthService } from './core/auth/auth.service';
@@ -18,7 +20,7 @@ import { I18nService, Locale } from './core/i18n/i18n.service';
 import { OverlayService } from './core/layout/overlay.service';
 import { HeaderActionsService } from './core/layout/header-actions.service';
 import { navLabelKeyFor } from './core/navigation/landing';
-import { NavRowGroup, navGroupsFor } from './core/navigation/nav-rows';
+import { NavRowGroup, activeNavPath, navGroupsFor } from './core/navigation/nav-rows';
 import { ThemeService } from './core/theme/theme.service';
 
 /**
@@ -45,7 +47,7 @@ import { ThemeService } from './core/theme/theme.service';
  */
 @Component({
   selector: 'kaff-root',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, NgTemplateOutlet],
+  imports: [RouterLink, RouterOutlet, NgTemplateOutlet],
   templateUrl: './app.html',
   styleUrl: './app.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -146,6 +148,19 @@ export class App {
     const session = this.session();
     return session ? navGroupsFor(session) : [];
   });
+
+  private readonly url = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map((e) => e.urlAfterRedirects),
+    ),
+    { initialValue: this.router.url },
+  );
+
+  /** The single active row's path (F-215-1): longest match across every row, both groups. */
+  protected readonly activePath = computed(() =>
+    activeNavPath(this.navGroups().flatMap((g) => g.rows), this.url()),
+  );
 
   /** Exposed for the template — `roleKey` builds the i18n key by an exhaustive switch, never by
    *  keying on the raw role string (`enum-keys.ts` hard rule 4). */
