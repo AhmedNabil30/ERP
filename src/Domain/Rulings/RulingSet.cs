@@ -177,6 +177,15 @@ public sealed record RulingSet
 
     public SupervisorSeesProjectMoney SupervisorSeesProjectMoney { get; init; } = SupervisorSeesProjectMoney.Default;
 
+    /// <summary>R2-Q7 item 4: a payment the safe refuses is repeated by the user after the injection. Registered, not resolved.</summary>
+    public RefusedPaymentAfterInjection RefusedPaymentAfterInjection { get; init; } = RefusedPaymentAfterInjection.Default;
+
+    /// <summary>R2-Q10: the weekly QC report belongs to the client extract chain only. Registered, not resolved.</summary>
+    public QcReportScope QcReportScope { get; init; } = QcReportScope.Default;
+
+    /// <summary>R2-Q8: the supervising engineer enters the stockpiled value at the QC report. Registered, not resolved.</summary>
+    public StockpileMarker StockpileMarker { get; init; } = StockpileMarker.Default;
+
     public IReadOnlyList<RulingNote> Notes =>
     [
         MaterialAdvanceRecovery.Note,
@@ -237,5 +246,8 @@ public sealed record RulingSet
         DesignConversionTargets.Note,
         FinanceStaffing.Note,
         SupervisorSeesProjectMoney.Note,
+        RefusedPaymentAfterInjection.Note,
+        QcReportScope.Note,
+        StockpileMarker.Note,
     ];
 }

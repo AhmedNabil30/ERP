@@ -10,6 +10,7 @@ using Kaff.Domain.DailyLogs;
 using Kaff.Domain.Extracts;
 using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
+using Kaff.Domain.PettyCash;
 using Kaff.Domain.Projects;
 using Kaff.Domain.Sales;
 using Kaff.Domain.Treasury;
@@ -149,6 +150,7 @@ public sealed class KaffDbContext : DbContext
     public DbSet<WarrantyCallback> WarrantyCallbacks => Set<WarrantyCallback>();
 
     public DbSet<HoldReleaseRequest> HoldReleaseRequests => Set<HoldReleaseRequest>();
+    public DbSet<PettyCashRequest> PettyCashRequests => Set<PettyCashRequest>();
     public DbSet<SubcontractorRetentionReleaseRequest> SubcontractorRetentionReleaseRequests => Set<SubcontractorRetentionReleaseRequest>();
 
     public DbSet<Adjustment> Adjustments => Set<Adjustment>();
