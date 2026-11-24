@@ -485,6 +485,7 @@
   "errors.project.advance_recovery_rate_required": "اكتب نسبة الخصم من كل مستخلص قبل التوقيع.",
   "errors.project.rate_must_not_be_negative": "يجب ألا تكون النسبة سالبة.",
   "errors.project.signing_terms_required": "اكتب نسبة الحجز ونسبة الدفعة المقدمة قبل التوقيع.",
+  "errors.project.planned_dates_invalid": "تاريخ النهاية المخطط لا يسبق تاريخ البداية المخطط.",
   "errors.project.initial_status_not_supported": "لا يمكن أن يبدأ المشروع إلا بحالة لم تبدأ أو جاري العمل.",
 
   "errors.billing.contract_type_mismatch": "نوع التعاقد لا يطابق آلة الحساب.",

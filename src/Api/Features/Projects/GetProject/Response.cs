@@ -103,7 +103,9 @@ public sealed record Response(
     bool ConversionOffered = false,
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] Money? DesignRatePerSquareMetre = null,
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] WithholdingCategory? WithholdingCategory = null,
-    ProjectActions? Actions = null);
+    ProjectActions? Actions = null,
+    DateOnly? PlannedStart = null,
+    DateOnly? PlannedEnd = null);
 
 /// <summary>
 /// What this caller may do from the project frame now (D-246). Each flag is the check the route behind it makes, asked of

@@ -33,6 +33,10 @@ public static class ProjectErrors
     public static readonly Error SigningTermsRequired =
         Error.Validation("project.signing_terms_required", "errors.project.signing_terms_required");
 
+    /// <summary>Nabil, 2026-11-24: the planned end of a contract cannot fall before its planned start.</summary>
+    public static readonly Error PlannedDatesInvalid =
+        Error.Validation("project.planned_dates_invalid", "errors.project.planned_dates_invalid");
+
     /// <summary>D-227 item 3: a Lump Sum signature carries the advance recovery rate, typed for this project. No default applies.</summary>
     public static readonly Error AdvanceRecoveryRateRequired =
         Error.Validation("project.advance_recovery_rate_required", "errors.project.advance_recovery_rate_required");

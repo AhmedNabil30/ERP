@@ -231,6 +231,9 @@ public sealed class PettyCashRequestEndpointTests : IAsyncLifetime
         returned.GetProperty("status").GetString().Should().Be("Returned");
         returned.GetProperty("returnedReason").GetString().Should().Be("المبلغ ناقص");
         returned.GetProperty("drafterName").GetString().Should().Be("pc-jun");
+        returned.GetProperty("supervisorName").GetString().Should().Be("pc-sup", "the supervisor who returned it");
+        allRows.RootElement.EnumerateArray().Single(row => row.GetProperty("id").GetGuid() == theirs)
+            .GetProperty("supervisorName").ValueKind.Should().Be(JsonValueKind.Null, "a draft has no supervisor yet");
         returned.GetProperty("purpose").GetString().Should().Be("مواد");
         returned.GetProperty("decidedAt").ValueKind.Should().NotBe(JsonValueKind.Null);
 

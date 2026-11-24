@@ -199,6 +199,12 @@ public sealed class Project : Entity
 
     public DateOnly? SignedOn { get; private set; }
 
+    /// <summary>Nabil, 2026-11-24: the planned start the contract was signed with. Optional; null when none was entered.</summary>
+    public DateOnly? PlannedStart { get; private set; }
+
+    /// <summary>Nabil, 2026-11-24: the planned end the contract was signed with. A project past it and under 100 percent is stalled (derived, never stored).</summary>
+    public DateOnly? PlannedEnd { get; private set; }
+
     public DateOnly? StartedOn { get; private set; }
 
     public DateOnly? HandoverOn { get; private set; }
@@ -403,11 +409,18 @@ public sealed class Project : Entity
     /// </summary>
     /// <param name="signedOn">The signature date.</param>
     /// <param name="boqTotal">The sum of the BOQ lines, or null when the project has no BOQ.</param>
-    public Result Sign(DateOnly signedOn, Money? boqTotal)
+    /// <param name="plannedStart">The planned start, entered at signing. Optional.</param>
+    /// <param name="plannedEnd">The planned end, entered at signing. Optional; when both are given it is not before the start.</param>
+    public Result Sign(DateOnly signedOn, Money? boqTotal, DateOnly? plannedStart = null, DateOnly? plannedEnd = null)
     {
         if (IsSigned)
         {
             return Result.Failure(ProjectErrors.AlreadySigned);
+        }
+
+        if (plannedStart is { } start && plannedEnd is { } end && end < start)
+        {
+            return Result.Failure(ProjectErrors.PlannedDatesInvalid);
         }
 
         switch (ContractValueSource.OriginFor(ContractType))
@@ -435,6 +448,8 @@ public sealed class Project : Entity
         }
 
         SignedOn = signedOn;
+        PlannedStart = plannedStart;
+        PlannedEnd = plannedEnd;
 
         // D-230: signing is the trigger for Setup to Active (spec.md section 13 names none), in the same save. Both tables allow it.
         // A project already Active (created with its terms) or Stopped is left where it is. The signature date is the start date.

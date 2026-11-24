@@ -651,6 +651,7 @@ public static class PermissionCatalogue
             new(Permission.BudgetBaselineSet, PermissionScope.ProjectScoped, [owner], "§6.8 - R4-Q6", TouchesMoney: true),
             new(Permission.BudgetBaselineRead, PermissionScope.ProjectScoped, [owner, finance], "§6.8 - Nabil 2026-11-24", TouchesMoney: true),
             new(Permission.AccountingEntryApprove, PermissionScope.CompanyWide, [owner], "§9 - Nabil 2026-11-24", TouchesMoney: true),
+            new(Permission.SubcontractorRetentionRead, PermissionScope.ProjectScoped, [owner, finance, technicalOffice], "§5.1, §9 - Nabil 2026-11-24, D-273 answer 4", TouchesMoney: true),
             // 🟡 Karim's 2026-08-20 ruling names "Banks (BankManage)" as master data the Owner may
             // create and edit. There is no Bank master record in spec.md — a bank is an account of
             // AccountType.Bank in the §6.3 tree — so BankManage maps onto this permission, which is

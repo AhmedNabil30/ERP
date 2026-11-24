@@ -353,6 +353,29 @@ public sealed partial class PortalEndpointTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task The_home_carries_the_planned_dates_and_derives_stalled_from_them()
+    {
+        Project late = await NewProjectAsync(_clientA, "2019-01-01", "2020-01-01");
+        Project onTime = await NewProjectAsync(_clientA, "2019-01-01", "2099-01-01");
+
+        JsonElement stalled = await ReadAsync(await SendAsync(HttpMethod.Get, $"/api/portal/projects/{late.Id}", _portalA, null));
+        stalled.GetProperty("plannedStart").GetString().Should().Be("2019-01-01");
+        stalled.GetProperty("plannedEnd").GetString().Should().Be("2020-01-01");
+        stalled.GetProperty("isStalled").GetBoolean().Should().BeTrue("past the planned end and under 100 percent");
+
+        JsonElement fine = await ReadAsync(await SendAsync(HttpMethod.Get, $"/api/portal/projects/{onTime.Id}", _portalA, null));
+        fine.GetProperty("isStalled").GetBoolean().Should().BeFalse();
+
+        JsonElement none = await ReadAsync(await SendAsync(HttpMethod.Get, $"/api/portal/projects/{_projectA.Id}", _portalA, null));
+        none.TryGetProperty("plannedEnd", out _).Should().BeFalse("no planned end was entered");
+        none.GetProperty("isStalled").GetBoolean().Should().BeFalse("no planned end, never stalled");
+
+        JsonElement staff = await ReadAsync(await SendAsync(HttpMethod.Get, $"/api/projects/{late.Id}", _owner, null));
+        staff.GetProperty("plannedStart").GetString().Should().Be("2019-01-01");
+        staff.GetProperty("plannedEnd").GetString().Should().Be("2020-01-01");
+    }
+
+    [Fact]
     public async Task The_client_approves_and_the_actor_is_the_client_user_and_the_contract_value_does_not_move()
     {
         Guid id = await CreateChangeOrderAsync(_projectA);
@@ -586,7 +609,7 @@ public sealed partial class PortalEndpointTests : IAsyncLifetime
         await context.SaveChangesAsync(Ct);
     }
 
-    private async Task<Project> NewProjectAsync(Guid clientId)
+    private async Task<Project> NewProjectAsync(Guid clientId, string? plannedStart = null, string? plannedEnd = null)
     {
         Project project;
 
@@ -625,7 +648,7 @@ public sealed partial class PortalEndpointTests : IAsyncLifetime
             await context.SaveChangesAsync(Ct);
         }
 
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{project.Id}/sign", _owner, new { signedOn = "2026-09-24", holdPercentage = "0.20", clientAdvance = "0.25", advanceRecoveryRate = "0.25" }))
+        (await SendAsync(HttpMethod.Post, $"/api/projects/{project.Id}/sign", _owner, new { signedOn = "2026-09-24", holdPercentage = "0.20", clientAdvance = "0.25", advanceRecoveryRate = "0.25", plannedStart, plannedEnd }))
             .StatusCode.Should().Be(HttpStatusCode.OK);
 
         await using (KaffDbContext activate = _database.CreateContext())

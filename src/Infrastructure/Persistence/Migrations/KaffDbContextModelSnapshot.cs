@@ -2920,6 +2920,14 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("opportunity_id");
 
+                    b.Property<DateOnly?>("PlannedEnd")
+                        .HasColumnType("date")
+                        .HasColumnName("planned_end");
+
+                    b.Property<DateOnly?>("PlannedStart")
+                        .HasColumnType("date")
+                        .HasColumnName("planned_start");
+
                     b.Property<DateOnly?>("SignedOn")
                         .HasColumnType("date")
                         .HasColumnName("signed_on");

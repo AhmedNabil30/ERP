@@ -151,6 +151,10 @@ public sealed class AccountTreeSeeder
         new("ASSET-FIXED", AccountType.FixedAsset, "أصول ثابتة", "Fixed assets", null),
         new("ASSET-ACC-DEPRECIATION", AccountType.AccumulatedDepreciation, "مجمع الإهلاك", "Accumulated depreciation", null),
 
+        // ---- Accounting layer (spec.md §6.6): the accounts the accrual and prepayment forms pick. Nabil, 2026-11-24. ----
+        new("ASSET-PREPAID", AccountType.Prepayment, "مصروفات مدفوعة مقدماً", "Prepaid expenses", null),
+        new("LIAB-ACCRUED", AccountType.AccruedExpense, "مصروفات مستحقة", "Accrued expenses", null),
+
         // ---- Withholding tax (spec.md §6.7). Two accounts — this is not a tax module. ----
         new("TAX-WHT-RECEIVABLE", AccountType.TaxWithheldAtSource, "ضريبة مخصومة تحت الحساب", "Tax withheld at source", null),
         new("TAX-WHT-PAYABLE", AccountType.TaxWithholdingPayable, "ضريبة خصم واجبة السداد", "Withholding tax payable", null),
