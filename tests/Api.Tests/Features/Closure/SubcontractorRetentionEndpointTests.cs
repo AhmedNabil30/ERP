@@ -419,6 +419,89 @@ public sealed class SubcontractorRetentionEndpointTests : IAsyncLifetime
             .Should().Be(HttpStatusCode.OK, "Finance may ask again");
     }
 
+    [Fact]
+    public void The_retention_read_route_requires_project_read_and_the_route_project()
+    {
+        const string route = "/api/projects/{projectId:guid}/subcontractor-retention";
+        var found = new List<PermissionRequirement>();
+        foreach (EndpointDataSource source in _factory.Services.GetServices<EndpointDataSource>())
+        {
+            foreach (RouteEndpoint endpoint in source.Endpoints.OfType<RouteEndpoint>().Where(e => e.RoutePattern.RawText == route))
+            {
+                foreach (IAuthorizeData data in endpoint.Metadata.OfType<IAuthorizeData>())
+                {
+                    if (PermissionRequirement.TryParse(data.Policy ?? string.Empty, out PermissionRequirement? requirement) && requirement is not null)
+                    {
+                        found.Add(requirement);
+                    }
+                }
+            }
+        }
+
+        PermissionRequirement gate = found.Should().ContainSingle().Subject;
+        gate.Permission.Should().Be(Permission.ProjectRead);
+        gate.Scope.Should().Be(ProjectScope.FromRoute());
+    }
+
+    [Fact]
+    public async Task Finance_and_the_owner_read_retention_held_releases_and_waiting_requests_and_others_are_refused()
+    {
+        (Guid project, Guid sub) = await NewProjectAsync(handoverOn: new DateOnly(2025, 5, 1));
+        string read = $"/api/projects/{project}/subcontractor-retention";
+
+        foreach (Guid refused in new[] { _hr, _financeUnassigned })
+        {
+            (await SendAsync(HttpMethod.Get, read, refused)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+
+        // D-273 answer 4: an assigned Technical Office user reads (and nothing else); an unassigned one is refused.
+        (await SendAsync(HttpMethod.Get, read, _technicalOffice)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (Guid unassignedProject, _) = await NewProjectAsync(handoverOn: new DateOnly(2025, 5, 1), assignTechnicalOffice: false);
+        (await SendAsync(HttpMethod.Get, $"/api/projects/{unassignedProject}/subcontractor-retention", _technicalOffice)).StatusCode
+            .Should().Be(HttpStatusCode.Forbidden);
+        (await SendAsync(HttpMethod.Post, Route(project, sub), _technicalOffice)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        (await SendAsync(HttpMethod.Post, Route(project, sub), _finance)).StatusCode.Should().Be(HttpStatusCode.OK);
+        using (JsonDocument waiting = JsonDocument.Parse(await (await SendAsync(HttpMethod.Get, read, _owner)).Content.ReadAsStringAsync(Ct)))
+        {
+            JsonElement row = waiting.RootElement.EnumerateArray().Single();
+            row.GetProperty("subcontractorId").GetGuid().Should().Be(sub);
+            row.GetProperty("name").GetString().Should().Be("مقاول احتجاز");
+            row.GetProperty("retentionHeld").ToString().Should().Contain("37500");
+            row.GetProperty("releases").GetArrayLength().Should().Be(0);
+            row.GetProperty("releaseRequest").GetProperty("askedByName").GetString().Should().Be("rt-fin");
+            row.GetProperty("reversalRequest").ValueKind.Should().Be(JsonValueKind.Null);
+        }
+
+        (await SendAsync(HttpMethod.Post, Route(project, sub) + "/approval", _owner)).StatusCode.Should().Be(HttpStatusCode.OK);
+        Guid posting;
+        using (JsonDocument released = JsonDocument.Parse(await (await SendAsync(HttpMethod.Get, read, _finance)).Content.ReadAsStringAsync(Ct)))
+        {
+            JsonElement row = released.RootElement.EnumerateArray().Single();
+            row.GetProperty("retentionHeld").GetString().Should().Be("0.0000", "money is a 4dp string on the wire");
+            row.GetProperty("releaseRequest").ValueKind.Should().Be(JsonValueKind.Null);
+            JsonElement release = row.GetProperty("releases").EnumerateArray().Single();
+            release.GetProperty("reversed").GetBoolean().Should().BeFalse();
+            posting = release.GetProperty("postingId").GetGuid();
+        }
+
+        (await SendAsync(HttpMethod.Post, Route(project, sub) + "/reversal", _finance, new { postingId = posting, reason = "mistake" })).StatusCode
+            .Should().Be(HttpStatusCode.OK);
+        using (JsonDocument asked = JsonDocument.Parse(await (await SendAsync(HttpMethod.Get, read, _owner)).Content.ReadAsStringAsync(Ct)))
+        {
+            JsonElement reversal = asked.RootElement.EnumerateArray().Single().GetProperty("reversalRequest");
+            reversal.GetProperty("postingId").GetGuid().Should().Be(posting);
+            reversal.GetProperty("reason").GetString().Should().Be("mistake");
+            reversal.GetProperty("askedByName").GetString().Should().Be("rt-fin");
+        }
+
+        (await SendAsync(HttpMethod.Post, Route(project, sub) + "/reversal/approval", _owner)).StatusCode.Should().Be(HttpStatusCode.OK);
+        using JsonDocument reversed = JsonDocument.Parse(await (await SendAsync(HttpMethod.Get, read, _owner)).Content.ReadAsStringAsync(Ct));
+        JsonElement final = reversed.RootElement.EnumerateArray().Single();
+        final.GetProperty("releases").EnumerateArray().Single().GetProperty("reversed").GetBoolean().Should().BeTrue();
+        final.GetProperty("reversalRequest").ValueKind.Should().Be(JsonValueKind.Null);
+    }
+
     private async Task<Guid> ReleasedPostingAsync(Guid project, Guid sub)
     {
         (await SendAsync(HttpMethod.Post, Route(project, sub), _finance)).StatusCode.Should().Be(HttpStatusCode.OK);
@@ -501,7 +584,7 @@ public sealed class SubcontractorRetentionEndpointTests : IAsyncLifetime
     /// (10,000, 12,500 and 15,000 = 37,500). Finance is assigned.
     /// </summary>
     private async Task<(Guid Project, Guid Subcontractor)> NewProjectAsync(
-        DateOnly handoverOn, ProjectStatus finalStatus = ProjectStatus.UnderWarranty, decimal[]? accruals = null)
+        DateOnly handoverOn, ProjectStatus finalStatus = ProjectStatus.UnderWarranty, decimal[]? accruals = null, bool assignTechnicalOffice = true)
     {
         await using KaffDbContext context = _database.CreateContext();
         Subcontractor subcontractor = Subcontractor.Create(UniqueNames.Code("RT-SUB"), "مقاول احتجاز", UniqueNames.Phone(), Now).Value;
@@ -517,6 +600,11 @@ public sealed class SubcontractorRetentionEndpointTests : IAsyncLifetime
 
         User finance = await context.Users.SingleAsync(user => user.Id == _finance, Ct);
         context.ProjectAssignments.Add(ProjectAssignment.Create(project.Id, finance, AssignmentLevel.Standard, _owner, Now).Value);
+        if (assignTechnicalOffice)
+        {
+            User office = await context.Users.SingleAsync(user => user.Id == _technicalOffice, Ct);
+            context.ProjectAssignments.Add(ProjectAssignment.Create(project.Id, office, AssignmentLevel.Standard, _owner, Now).Value);
+        }
 
         List<Account> accounts = [.. ProjectAccountSetFactory.Create(project, new HashSet<AccountType>(), new DateOnly(2025, 1, 1)).Value];
         Account retention = Account.Create(

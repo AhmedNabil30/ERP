@@ -190,7 +190,78 @@ public sealed class PettyCashRequestEndpointTests : IAsyncLifetime
         crossed.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    public void The_list_route_requires_draft_create_and_the_route_project()
+    {
+        const string route = "/api/projects/{projectId:guid}/petty-cash-requests";
+        var found = new List<PermissionRequirement>();
+        foreach (EndpointDataSource source in _factory.Services.GetServices<EndpointDataSource>())
+        {
+            foreach (RouteEndpoint endpoint in source.Endpoints.OfType<RouteEndpoint>().Where(e => e.RoutePattern.RawText == route))
+            {
+                foreach (IAuthorizeData data in endpoint.Metadata.OfType<IAuthorizeData>())
+                {
+                    if (PermissionRequirement.TryParse(data.Policy ?? string.Empty, out PermissionRequirement? requirement) && requirement is not null)
+                    {
+                        found.Add(requirement);
+                    }
+                }
+            }
+        }
+
+        PermissionRequirement gate = found.Should().ContainSingle().Subject;
+        gate.Permission.Should().Be(Permission.DraftCreate);
+        gate.Scope.Should().Be(ProjectScope.FromRoute());
+    }
+
+    [Fact]
+    public async Task The_supervisor_lists_every_request_and_a_junior_only_his_own_with_names_and_the_status_filter()
+    {
+        (Guid project, Guid mine) = await NewDraftAsync();
+        Guid theirs = await AddDraftAsync(project, _supervisor);
+        (await SendAsync(HttpMethod.Post, Return(project, mine), _supervisor, new { reason = "المبلغ ناقص" })).StatusCode.Should().Be(HttpStatusCode.OK);
+        string route = $"/api/projects/{project}/petty-cash-requests";
+
+        HttpResponseMessage all = await SendAsync(HttpMethod.Get, route, _supervisor);
+        all.StatusCode.Should().Be(HttpStatusCode.OK);
+        using JsonDocument allRows = JsonDocument.Parse(await all.Content.ReadAsStringAsync(Ct));
+        allRows.RootElement.GetArrayLength().Should().Be(2);
+        JsonElement returned = allRows.RootElement.EnumerateArray().Single(row => row.GetProperty("id").GetGuid() == mine);
+        returned.GetProperty("amount").GetString().Should().Be("5000.0000", "money is a 4dp string on the wire");
+        returned.GetProperty("status").GetString().Should().Be("Returned");
+        returned.GetProperty("returnedReason").GetString().Should().Be("المبلغ ناقص");
+        returned.GetProperty("drafterName").GetString().Should().Be("pc-jun");
+        returned.GetProperty("purpose").GetString().Should().Be("مواد");
+        returned.GetProperty("decidedAt").ValueKind.Should().NotBe(JsonValueKind.Null);
+
+        using JsonDocument drafts = JsonDocument.Parse(await (await SendAsync(HttpMethod.Get, route + "?status=Draft", _supervisor)).Content.ReadAsStringAsync(Ct));
+        drafts.RootElement.EnumerateArray().Select(row => row.GetProperty("id").GetGuid()).Should().Equal(theirs);
+
+        using JsonDocument own = JsonDocument.Parse(await (await SendAsync(HttpMethod.Get, route, _junior)).Content.ReadAsStringAsync(Ct));
+        own.RootElement.EnumerateArray().Select(row => row.GetProperty("id").GetGuid()).Should().Equal(mine);
+    }
+
+    [Fact]
+    public async Task Finance_the_owner_and_an_unassigned_engineer_are_refused_the_list()
+    {
+        (Guid project, _) = await NewDraftAsync();
+
+        foreach (Guid refused in new[] { _finance, _owner, _supervisorUnassigned })
+        {
+            (await SendAsync(HttpMethod.Get, $"/api/projects/{project}/petty-cash-requests", refused)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+    }
+
     // ---- helpers ----
+
+    private async Task<Guid> AddDraftAsync(Guid project, Guid drafter)
+    {
+        await using KaffDbContext context = _database.CreateContext();
+        PettyCashRequest request = PettyCashRequest.Draft(project, drafter, new Money(1_000m), "نقل", Now.AddMinutes(1)).Value;
+        context.PettyCashRequests.Add(request);
+        await context.SaveChangesAsync(Ct);
+        return request.Id;
+    }
 
     private static string Submit(Guid project, Guid request) => $"/api/projects/{project}/petty-cash-requests/{request}/submission";
 

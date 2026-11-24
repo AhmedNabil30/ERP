@@ -286,6 +286,7 @@ public sealed class AccountingEndpointTests : IAsyncLifetime
         JsonElement row = listed.EnumerateArray().Single(candidate => candidate.GetProperty("id").GetGuid() == assetId);
         Dec(row.GetProperty("accumulated")).Should().Be(500m);
         Dec(row.GetProperty("bookValue")).Should().Be(11_500m);
+        Dec(row.GetProperty("monthlyDepreciation")).Should().Be(500m, "12,000 at 50 percent a year, derived on read");
     }
 
     [Fact]
@@ -410,12 +411,37 @@ public sealed class AccountingEndpointTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task The_account_list_serves_the_form_types_and_a_project_list_needs_the_project_read_with_assignment()
+    {
+        Account accrued = await AddAccountAsync(AccountType.AccruedExpense);
+        Account company = await AddAccountAsync(AccountType.CompanyExpense);
+        Account cost = await AddAccountAsync(AccountType.ProjectCost, _projectA);
+        Account safe = await AddAccountAsync(AccountType.Safe);
+        Guid projectB = await NewProjectAsync(assignFinance: false);
+
+        JsonElement all = await JsonAsync(await SendAsync(HttpMethod.Get, "/api/treasury/accounts", _financeCompanyWide));
+        Guid[] ids = [.. all.EnumerateArray().Select(row => row.GetProperty("id").GetGuid())];
+        ids.Should().Contain([accrued.Id, company.Id]).And.NotContain([cost.Id, safe.Id], "project accounts need the project read, and a safe is not a form type");
+
+        JsonElement one = await JsonAsync(await SendAsync(HttpMethod.Get, "/api/treasury/accounts?type=CompanyExpense", _owner));
+        one.EnumerateArray().Select(row => row.GetProperty("type").GetString()).Should().OnlyContain(type => type == "CompanyExpense");
+        JsonElement shape = one.EnumerateArray().First(row => row.GetProperty("id").GetGuid() == company.Id);
+        shape.EnumerateObject().Select(property => property.Name).Should().BeEquivalentTo(["id", "code", "nameAr", "nameEn", "type", "projectId"]);
+
+        JsonElement mine = await JsonAsync(await SendAsync(HttpMethod.Get, $"/api/treasury/accounts?projectId={_projectA}", _financeOnProjectA));
+        mine.EnumerateArray().Select(row => row.GetProperty("id").GetGuid()).Should().Contain(cost.Id).And.NotContain(company.Id);
+
+        (await SendAsync(HttpMethod.Get, $"/api/treasury/accounts?projectId={projectB}", _financeOnProjectA)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await SendAsync(HttpMethod.Get, $"/api/treasury/accounts?projectId={_projectA}", _hr)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task The_reports_are_read_by_owner_and_finance_only()
     {
         foreach (string route in new[]
                  {
                      "/api/treasury/trial-balance", "/api/treasury/trial-balance/export", "/api/treasury/overhead-spread?month=2012-08-01",
-                     "/api/treasury/assets", "/api/treasury/accruals", "/api/treasury/prepayments",
+                     "/api/treasury/assets", "/api/treasury/accruals", "/api/treasury/prepayments", "/api/treasury/accounts",
                  })
         {
             foreach (Guid actor in new[] { _hr, _technicalOffice })
@@ -550,6 +576,8 @@ public sealed class AccountingEndpointTests : IAsyncLifetime
         Dec(report.GetProperty("overhead")).Should().Be(900m);
         Dec(report.GetProperty("sharesTotal")).Should().Be(900m);
         report.GetProperty("projects").EnumerateArray().Select(line => line.GetProperty("projectId").GetGuid()).Should().Contain(project);
+        report.GetProperty("projects").EnumerateArray().Single(line => line.GetProperty("projectId").GetGuid() == project)
+            .GetProperty("projectName").GetString().Should().NotBeNullOrWhiteSpace();
 
         (await PostingCountAsync()).Should().Be(before, "the spread is a report: it writes no posting (spec.md section 6.10)");
     }
@@ -723,6 +751,8 @@ public sealed class AccountingEndpointTests : IAsyncLifetime
         JsonElement listed = await JsonAsync(await SendAsync(HttpMethod.Get, "/api/treasury/accounting-requests", _financeCompanyWide));
         JsonElement row = listed.EnumerateArray().Single(candidate => candidate.GetProperty("id").GetGuid() == requestId);
         row.GetProperty("rejectionReason").GetString().Should().Be("Wrong month");
+        row.GetProperty("askedByName").GetString().Should().NotBeNullOrWhiteSpace();
+        row.GetProperty("decidedByName").GetString().Should().NotBeNullOrWhiteSpace();
 
         // A decided request cannot be decided again, and Finance may simply ask again.
         HttpResponseMessage again = await SendAsync(HttpMethod.Post, $"/api/treasury/accounting-requests/{requestId}/approval", _owner);

@@ -118,7 +118,10 @@ public sealed partial class PortalEndpointTests : IAsyncLifetime
         JsonElement mine = await ReadAsync(await SendAsync(HttpMethod.Get, "/api/portal/projects", _portalA, null));
 
         mine.EnumerateArray().Select(p => p.GetProperty("id").GetGuid()).Should().BeEquivalentTo([_projectA.Id]);
-        mine[0].EnumerateObject().Select(p => p.Name).Should().BeEquivalentTo(["id", "name", "status", "contractType"]);
+        mine[0].EnumerateObject().Select(p => p.Name).Should().BeEquivalentTo(["id", "name", "status", "contractType", "paid", "remaining", "pendingCount"]);
+        mine[0].GetProperty("paid").GetString().Should().Be("250000.00", "the same rule as the home");
+        mine[0].GetProperty("remaining").GetString().Should().Be("750000.00");
+        mine[0].GetProperty("pendingCount").GetInt32().Should().Be(0);
         mine.GetRawText().Should().NotContain(_projectBName);
     }
 
@@ -316,6 +319,37 @@ public sealed partial class PortalEndpointTests : IAsyncLifetime
 
         JsonElement home = await ReadAsync(await SendAsync(HttpMethod.Get, $"/api/portal/projects/{_projectA.Id}", _portalA, null));
         home.GetProperty("pendingApprovals").GetInt32().Should().Be(1);
+
+        JsonElement mine = await ReadAsync(await SendAsync(HttpMethod.Get, "/api/portal/projects", _portalA, null));
+        mine[0].GetProperty("pendingCount").GetInt32().Should().Be(1);
+    }
+
+    [Fact]
+    public async Task One_change_order_reads_with_when_it_reached_the_client_and_the_contract_value_before_and_after()
+    {
+        Guid id = await CreateChangeOrderAsync(_projectA);
+        string route = $"/api/portal/projects/{_projectA.Id}/change-orders/{id}";
+
+        (await SendAsync(HttpMethod.Get, route, _portalA, null)).StatusCode.Should().Be(HttpStatusCode.NotFound, "a draft is not his to see");
+        await DriveAsync(_projectA, id, ChangeOrderStatus.ClientApproval);
+
+        HttpResponseMessage response = await SendAsync(HttpMethod.Get, route, _portalA, null);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        string text = await response.Content.ReadAsStringAsync(Ct);
+        JsonElement order = JsonDocument.Parse(text).RootElement;
+        order.GetProperty("total").GetString().Should().Be("100000.00");
+        order.GetProperty("canDecide").GetBoolean().Should().BeTrue();
+        order.GetProperty("contractValueBefore").GetString().Should().Be("1000000.00");
+        order.GetProperty("contractValueAfter").GetString().Should().Be("1100000.00");
+        order.GetProperty("submittedAt").ValueKind.Should().Be(JsonValueKind.String);
+        order.GetProperty("lines").GetArrayLength().Should().Be(1);
+        foreach (string banned in new[] { "cost", "margin", "markup", "profit", "supplier", "subcontractor", "internal", "audit" })
+        {
+            text.Should().NotContainEquivalentOf(banned);
+        }
+
+        (await SendAsync(HttpMethod.Get, $"/api/portal/projects/{_projectA.Id}/change-orders/{Guid.NewGuid()}", _portalA, null)).StatusCode
+            .Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
@@ -396,6 +430,7 @@ public sealed partial class PortalEndpointTests : IAsyncLifetime
         (HttpMethod.Get, $"/api/portal/projects/{project}/photos", null),
         (HttpMethod.Get, $"/api/portal/projects/{project}/photos/{photo}", null),
         (HttpMethod.Get, $"/api/portal/projects/{project}/change-orders", null),
+        (HttpMethod.Get, $"/api/portal/projects/{project}/change-orders/{order}", null),
         (HttpMethod.Post, ApproveRoute(project, order), null),
         (HttpMethod.Post, RejectRoute(project, order), new { reason = "no" }),
     ];
