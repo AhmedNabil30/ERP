@@ -38,6 +38,7 @@ interface Row {
   readonly detail: string | null;
   readonly amount: string | null;
   readonly asked: string;
+  readonly by: string | null;
   readonly status: { tone: PillTone; icon: KaffIconName; key: string };
 }
 
@@ -104,6 +105,7 @@ export class AccountingRequestsPage {
         detail: description ?? (month ? monthOf(month) : null),
         amount: payloadText(request.payload, 'amount'),
         asked: dmy(request.requestedAt),
+        by: request.decidedByName ?? request.askedByName,
         status: STATUS[request.status],
       };
     }),

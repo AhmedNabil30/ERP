@@ -48,6 +48,7 @@ export interface AssetRow {
   readonly purchaseDate: string;
   readonly accumulated: string;
   readonly bookValue: string;
+  readonly monthlyDepreciation: string;
 }
 
 export interface RequestRow {
@@ -59,6 +60,8 @@ export interface RequestRow {
   readonly requestedAt: string;
   readonly decidedAt: string | null;
   readonly rejectionReason: string | null;
+  readonly askedByName: string | null;
+  readonly decidedByName: string | null;
 }
 
 export interface TrialBalanceLine {
@@ -81,6 +84,7 @@ export interface TrialBalance {
 export interface OverheadLine {
   readonly projectId: string;
   readonly projectCode: string;
+  readonly projectName: string | null;
   readonly size: string;
   readonly overheadShare: string;
   readonly revenue: string;
@@ -159,14 +163,15 @@ export class AccountingApi {
     );
   }
 
-  /** Company accounts the forms need, read from the trial balance by type: no endpoint lists accounts. */
+  /** Company accounts the forms need, by type, from `GET /api/treasury/accounts`. The first of each type wins. */
   async accountsOfType(types: readonly string[]): Promise<ReadonlyMap<string, string>> {
-    const all = await this.trialBalance('', '');
     const found = new Map<string, string>();
-    for (const line of all.lines) {
-      if (types.includes(line.type) && !found.has(line.type)) {
-        found.set(line.type, line.accountId);
-      }
+    for (const type of types) {
+      const rows = await firstValueFrom(
+        this.http.get<{ id: string; type: string; projectId: string | null }[]>('api/treasury/accounts', { params: { type } }),
+      );
+      const company = rows.find((row) => row.projectId === null);
+      if (company) found.set(type, company.id);
     }
     return found;
   }

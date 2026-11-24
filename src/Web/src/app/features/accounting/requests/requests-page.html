@@ -39,7 +39,12 @@
                   <kaff-figure [value]="amount" />
                 }
               </span>
-              <span class="sub num">{{ row.asked }}</span>
+              <span class="stack">
+                <span class="sub num">{{ row.asked }}</span>
+                @if (row.by; as by) {
+                  <small class="sub" dir="auto" data-testid="request-by">{{ by }}</small>
+                }
+              </span>
               <span>
                 <kaff-status-pill [tone]="row.status.tone" [icon]="row.status.icon" [testId]="'request-status-' + row.request.id">
                   {{ i18n.t(row.status.key) }}

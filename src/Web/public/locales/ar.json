@@ -2476,5 +2476,6 @@
   "accounting.field.remaining": "المتبقي",
   "accounting.field.request": "الطلب",
   "accounting.field.status": "الحالة",
-  "accounting.field.to": "إلى"
+  "accounting.field.to": "إلى",
+  "accounting.field.monthly": "الإهلاك الشهري"
 }

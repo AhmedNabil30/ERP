@@ -72,12 +72,13 @@ export class AssetsPage {
   protected readonly categories = ASSET_CATEGORIES;
   protected readonly canPost = computed(() => this.auth.current()?.permissions.includes('TreasuryPostCompany') ?? false);
 
-  protected readonly rowColumns = 'minmax(0, 1fr) 8rem 8rem 8rem 8rem';
+  protected readonly rowColumns = 'minmax(0, 1fr) 8rem 8rem 8rem 8rem 8rem';
   protected readonly headerColumns: readonly TableColumnDef[] = [
     { labelKey: 'accounting.field.asset' },
     { labelKey: 'accounting.field.cost', align: 'end' },
     { labelKey: 'accounting.field.accumulated', align: 'end' },
     { labelKey: 'accounting.field.book_value', align: 'end' },
+    { labelKey: 'accounting.field.monthly', align: 'end' },
     {},
   ];
 

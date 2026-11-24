@@ -53,6 +53,8 @@ const waiting: RequestRow = {
   requestedAt: '2026-11-24T10:00:00+00:00',
   decidedAt: null,
   rejectionReason: null,
+  askedByName: 'Finance User',
+  decidedByName: null,
 };
 const returned: RequestRow = { ...waiting, id: 'r2', status: 'Rejected', rejectionReason: 'wrong month' };
 
@@ -163,6 +165,7 @@ describe('accounting pages', () => {
 
       expect(byId(host, 'request-approve-r1')).not.toBeNull();
       expect(byId(host, 'request-return-r1')).not.toBeNull();
+      expect(host.textContent).toContain('Finance User');
       expect(byId(host, 'request-approve-r2')).toBeNull();
       expect(byId(host, 'request-status-r1')?.textContent).toContain('accounting.request.status.waiting');
       expect(byId(host, 'request-status-r2')?.textContent).toContain('accounting.request.status.returned');
