@@ -1,6 +1,5 @@
 using Kaff.Api.Common.Results;
 using Kaff.Api.Features.ChangeOrders;
-using Kaff.Api.Features.Extracts;
 using Kaff.Domain.Boqs;
 using Kaff.Domain.ChangeOrders;
 using Kaff.Domain.Common;
@@ -8,6 +7,7 @@ using Kaff.Domain.Contracts;
 using Kaff.Domain.Contracts.Progress;
 using Kaff.Domain.Projects;
 using Kaff.Domain.Rulings;
+using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -36,14 +36,14 @@ internal static class Handler
             return ResultExtensions.Problem(ProjectErrors.NotFound);
         }
 
-        // Paid is the cash on the project's extracts, net of reversals, from the same postings every other money read uses.
-        Guid[] extractIds = await database.Extracts.AsNoTracking()
-            .Where(extract => extract.ProjectId == projectId)
-            .Select(extract => extract.Id)
-            .ToArrayAsync(cancellationToken);
-        IReadOnlyDictionary<Guid, (Money Received, Money Withheld)> cash =
-            await ExtractMoneyQueries.ReceivedAndWithheldAsync(database, extractIds, cancellationToken);
-        Money paid = Money.Sum(cash.Values.Select(value => value.Received));
+        // Paid is all cash the client has paid on the project (advance at signing and every collection, hold release
+        // included), net of reversals, from the same postings every other money read uses (spec.md section 15).
+        var cash = await database.Postings.AsNoTracking()
+            .Where(posting => posting.ProjectId == projectId
+                && (posting.Type == PostingType.ClientCollection || posting.Type == PostingType.ClientAdvanceReceipt))
+            .Select(posting => new { posting.Amount, IsReversal = posting.ReversesId != null })
+            .ToListAsync(cancellationToken);
+        Money paid = Money.Sum(cash.Select(leg => leg.IsReversal ? -leg.Amount : leg.Amount));
 
         Money approvedChangeOrders = await ChangeOrderQueries.ApprovedTotalAsync(database, projectId, cancellationToken);
         Money? contractValue = project.RevisedContractValue(approvedChangeOrders);

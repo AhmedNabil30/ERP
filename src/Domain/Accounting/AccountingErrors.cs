@@ -13,6 +13,9 @@ public static class AccountingErrors
     public static readonly Error RequestNotWaiting =
         Error.Conflict("accounting.request_not_waiting", "errors.accounting.request_not_waiting");
 
+    public static readonly Error RequestAlreadyWaiting =
+        Error.Conflict("accounting.request_already_waiting", "errors.accounting.request_already_waiting");
+
     public static readonly Error AccountWrongType =
         Error.Validation("accounting.account_wrong_type", "errors.accounting.account_wrong_type");
 

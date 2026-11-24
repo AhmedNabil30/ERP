@@ -124,6 +124,12 @@ internal sealed class AccountingRequestConfiguration : IEntityTypeConfiguration<
 
         builder.HasIndex(request => new { request.Status, request.RequestedAt }).HasDatabaseName("ix_accounting_requests_status");
 
+        builder.Property(request => request.SubjectKey).HasMaxLength(100);
+        builder.HasIndex(request => new { request.Kind, request.SubjectKey })
+            .IsUnique()
+            .HasFilter("status = 'Requested' AND subject_key IS NOT NULL")
+            .HasDatabaseName("ux_accounting_requests_waiting_subject");
+
         builder.HasOne<Project>().WithMany().HasForeignKey(request => request.ProjectId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<User>().WithMany().HasForeignKey(request => request.RequestedByUserId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<User>().WithMany().HasForeignKey(request => request.DecidedByUserId).OnDelete(DeleteBehavior.Restrict);

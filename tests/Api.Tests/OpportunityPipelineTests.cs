@@ -167,16 +167,16 @@ public sealed class OpportunityPipelineTests : IAsyncLifetime
     // ---- R3-02 ---------------------------------------------------------------------------------
 
     [Fact]
-    public async Task Advance_moves_one_stage_and_stops_at_Contract()
+    public async Task Advance_moves_one_stage_and_stops_at_Negotiation()
     {
         Guid id = await SeedOpportunityAsync("مراحل", Start(0));
 
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 4; i++)
         {
             (await PostAsync($"/api/opportunities/{id}/advance", _marketing, Role.MarketingSales)).StatusCode.Should().Be(HttpStatusCode.NoContent);
         }
 
-        (await ReadAsync(id)).Stage.Should().Be(OpportunityStage.Contract);
+        (await ReadAsync(id)).Stage.Should().Be(OpportunityStage.Negotiation);
         (await PostAsync($"/api/opportunities/{id}/advance", _marketing, Role.MarketingSales)).StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await PostAsync($"/api/opportunities/{Guid.NewGuid()}/advance", _marketing, Role.MarketingSales)).StatusCode.Should().Be(HttpStatusCode.NotFound);
     }

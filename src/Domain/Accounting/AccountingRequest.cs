@@ -41,9 +41,10 @@ public sealed class AccountingRequest : Entity
     {
     }
 
-    private AccountingRequest(AccountingRequestKind kind, Guid? projectId, string payload, Guid requestedByUserId, DateTimeOffset requestedAt)
+    private AccountingRequest(AccountingRequestKind kind, Guid? projectId, string payload, string? subjectKey, Guid requestedByUserId, DateTimeOffset requestedAt)
         : base(NewId())
     {
+        SubjectKey = subjectKey;
         Kind = kind;
         ProjectId = projectId;
         Payload = payload;
@@ -60,6 +61,12 @@ public sealed class AccountingRequest : Entity
     /// <summary>What Finance asked for, as JSON. The postings are built from it at approval.</summary>
     public string Payload { get; private set; } = null!;
 
+    /// <summary>
+    /// What the request acts on (the month and project, or the accrual), so two waiting requests for the same subject cannot both post.
+    /// Null for an accrual, which has no earlier subject. A partial unique index on waiting requests enforces it (F-R4-2).
+    /// </summary>
+    public string? SubjectKey { get; private set; }
+
     public AccountingRequestStatus Status { get; private set; }
 
     public Guid RequestedByUserId { get; private set; }
@@ -72,9 +79,9 @@ public sealed class AccountingRequest : Entity
 
     public string? RejectionReason { get; private set; }
 
-    public static Result<AccountingRequest> Create(AccountingRequestKind kind, Guid? projectId, string payload, Guid actor, DateTimeOffset now) =>
+    public static Result<AccountingRequest> Create(AccountingRequestKind kind, Guid? projectId, string payload, string? subjectKey, Guid actor, DateTimeOffset now) =>
         Enum.IsDefined(kind) && !string.IsNullOrWhiteSpace(payload)
-            ? Result.Success(new AccountingRequest(kind, projectId, payload, actor, now))
+            ? Result.Success(new AccountingRequest(kind, projectId, payload, subjectKey, actor, now))
             : Result.Failure<AccountingRequest>(AccountingErrors.AccountWrongType);
 
     /// <summary>Whether <paramref name="actor"/> may decide now: the request still waits, and the actor is not the user who asked.</summary>
