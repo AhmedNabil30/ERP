@@ -185,7 +185,9 @@ public sealed partial class ExtractEndpointTests : IAsyncLifetime
             foreach (RouteEndpoint route in source.Endpoints.OfType<RouteEndpoint>())
             {
                 string? pattern = route.RoutePattern.RawText;
-                if (pattern is null || !pattern.Contains("/extracts", StringComparison.Ordinal))
+                // Staff surface only; the portal's own routes are held by PortalEndpointTests and PortalReflectionGateTests.
+                if (pattern is null || !pattern.StartsWith("/api/projects/", StringComparison.Ordinal)
+                    || !pattern.Contains("/extracts", StringComparison.Ordinal))
                 {
                     continue;
                 }

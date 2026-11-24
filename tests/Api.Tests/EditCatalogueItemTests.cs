@@ -229,23 +229,12 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
 
     // ---- AC-202-G · cost price never leaves the internal surface ---------------------------------
 
-    [Fact]
-    public void No_portal_route_is_mapped_anywhere_in_the_application()
-    {
-        // The absence half. If a portal surface is ever added, it must not be able to project
-        // CostPrice — but today there is no /api/portal/* route at all, so the strongest true
-        // statement is that the surface does not exist to leak from.
-        IEnumerable<string> portalRoutes = ShippedRoutes()
-            .Where(route => route.Contains("/api/portal", StringComparison.OrdinalIgnoreCase));
-
-        portalRoutes.Should().BeEmpty(
-            "AC-202-G: costPrice must appear on no /api/portal/* response, which today holds "
-            + "vacuously because no such route is mapped");
-    }
+    // The absence half of AC-202-G moved to PortalReflectionGateTests once the portal existed (KAFF-811):
+    // it fails when any /api/portal/* response type carries a cost-shaped property.
 
     /// <summary>
     /// Positive control (D-116): this endpoint's own response DOES carry <c>CostPrice</c>, which is
-    /// what proves the absence check above is looking at something rather than passing because
+    /// what proves the portal absence check (PortalReflectionGateTests) is looking at something rather than passing because
     /// nothing anywhere ever returns the field. S-018 is the internal (TO/Owner) surface, not a
     /// portal one — carrying the field here is correct, not a leak.
     /// </summary>
