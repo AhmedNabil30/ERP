@@ -2477,5 +2477,12 @@
   "accounting.field.request": "الطلب",
   "accounting.field.status": "الحالة",
   "accounting.field.to": "إلى",
-  "accounting.field.monthly": "الإهلاك الشهري"
+  "accounting.field.monthly": "الإهلاك الشهري",
+  "portal.projects.pending": "بانتظارك {count}",
+  "portal.home.plan": "الجدول الزمني",
+  "portal.home.start": "البداية",
+  "portal.home.planned_end": "النهاية المخططة",
+  "portal.co.date": "التاريخ",
+  "portal.co.before": "قيمة العقد قبل",
+  "portal.co.after": "قيمة العقد بعد"
 }

@@ -12,6 +12,9 @@ export interface PortalProject {
   readonly name: string;
   readonly status: ProjectStatus;
   readonly contractType: string;
+  readonly paid: string;
+  readonly remaining?: string;
+  readonly pendingCount: number;
 }
 
 export interface PortalSection {
@@ -20,7 +23,10 @@ export interface PortalSection {
   readonly completion: string;
 }
 
-export interface PortalHome extends PortalProject {
+export interface PortalHome extends Omit<PortalProject, 'pendingCount'> {
+  readonly plannedStart?: string;
+  readonly plannedEnd?: string;
+  readonly isStalled: boolean;
   readonly completion?: string;
   readonly sections: readonly PortalSection[];
   readonly contractValue?: string;
@@ -63,6 +69,12 @@ export interface PortalChangeOrder {
   readonly total: string;
   readonly canDecide: boolean;
   readonly lines: readonly PortalChangeOrderLine[];
+}
+
+export interface PortalChangeOrderDetail extends PortalChangeOrder {
+  readonly submittedAt: string | null;
+  readonly contractValueBefore?: string;
+  readonly contractValueAfter?: string;
 }
 
 /** Why a portal read was refused: no session, a temporary password still in force, or anything else. */
@@ -108,6 +120,10 @@ export class PortalApi {
 
   changeOrders(projectId: string): Promise<readonly PortalChangeOrder[]> {
     return firstValueFrom(this.http.get<PortalChangeOrder[]>(`api/portal/projects/${projectId}/change-orders`));
+  }
+
+  changeOrder(projectId: string, orderId: string): Promise<PortalChangeOrderDetail> {
+    return firstValueFrom(this.http.get<PortalChangeOrderDetail>(`api/portal/projects/${projectId}/change-orders/${orderId}`));
   }
 
   approve(projectId: string, orderId: string): Promise<PortalChangeOrder> {
