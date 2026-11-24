@@ -1,0 +1,54 @@
+<ng-template #setAction>
+  <kaff-button variant="primary" testId="budget-save" [busy]="busy()" (clicked)="save()">{{ i18n.t('accounting.budget.set') }}</kaff-button>
+</ng-template>
+
+<section class="acc" data-testid="budget-page">
+  <kaff-page-head [backLink]="['/projects', projectId()]" backLabelKey="nav.projects" [title]="i18n.t('accounting.budget.title')" />
+
+  @if (loading()) {
+    <kaff-state mode="loading" titleKey="accounting.loading" testId="budget-loading" />
+  } @else if (baseline(); as base) {
+    <div class="line" data-testid="budget-baseline">
+      <span class="name">{{ i18n.t('accounting.budget.baseline') }}</span>
+      <span class="figs"><kaff-figure [value]="base.costTotal" /></span>
+    </div>
+    <div class="line" data-testid="budget-tolerance">
+      <span class="name">{{ i18n.t('accounting.budget.tolerance') }}</span>
+      <span class="figs"><bdi dir="ltr">{{ base.tolerancePercent }}%</bdi></span>
+    </div>
+    <div class="line" data-testid="budget-limit">
+      <span class="name">{{ i18n.t('accounting.budget.limit') }}</span>
+      <span class="figs"><kaff-figure [value]="base.limit" /></span>
+    </div>
+    <div class="line" data-testid="budget-set-at">
+      <span class="name">{{ i18n.t('accounting.budget.set_at') }}</span>
+      <span class="figs">{{ setDate() }}</span>
+    </div>
+  } @else if (notSet() && canSet()) {
+    <div class="form" data-testid="budget-set-form">
+      @if (refusal(); as key) {
+        <kaff-banner tone="refusal" icon="alert" testId="budget-refusal">{{ i18n.t(key) }}</kaff-banner>
+      }
+      <kaff-field labelKey="accounting.budget.tolerance" controlId="budget-tolerance" hintKey="accounting.hint.percent">
+        <input
+          id="budget-tolerance"
+          type="text"
+          inputmode="decimal"
+          dir="ltr"
+          autocomplete="off"
+          data-testid="budget-tolerance-input"
+          [value]="tolerance()"
+          (input)="tolerance.set(val($event))"
+        />
+      </kaff-field>
+    </div>
+  } @else if (notSet()) {
+    <kaff-state mode="empty" titleKey="accounting.budget.not_set" testId="budget-not-set" />
+  } @else if (failure(); as key) {
+    <kaff-state mode="refusal" [bodyKey]="key" testId="budget-failure">
+      @if (key !== 'errors.auth.forbidden') {
+        <kaff-button stateAction variant="secondary" testId="budget-retry" (clicked)="reload()">{{ i18n.t('accounting.retry') }}</kaff-button>
+      }
+    </kaff-state>
+  }
+</section>

@@ -9,6 +9,7 @@ import { dailyLogModeMatch } from './core/auth/daily-log-mode.guard';
 import { dayLabourRateManageGuard } from './core/auth/day-labour-rate-manage.guard';
 import { dayLabourSiteManageGuard } from './core/auth/day-labour-site-manage.guard';
 import { departmentManageGuard } from './core/auth/department-manage.guard';
+import { budgetBaselineReadGuard } from './core/auth/budget-baseline-read.guard';
 import { boqReadGuard } from './core/auth/boq-read.guard';
 import { extractReadGuard } from './core/auth/extract-read.guard';
 import { employeeManageGuard } from './core/auth/employee-manage.guard';
@@ -365,6 +366,37 @@ export const routes: Routes = [
     path: 'projects/:projectId/closure',
     canActivate: [sessionGuard, mustChangePasswordGuard, extractReadGuard],
     loadComponent: () => import('./features/closure/closure-page').then((m) => m.ClosurePage),
+  },
+  {
+    path: 'accounting/accruals',
+    canActivate: [sessionGuard, mustChangePasswordGuard, proofReadGuard],
+    loadComponent: () => import('./features/accounting/accruals/accruals-page').then((m) => m.AccrualsPage),
+  },
+  {
+    path: 'accounting/assets',
+    canActivate: [sessionGuard, mustChangePasswordGuard, proofReadGuard],
+    loadComponent: () => import('./features/accounting/assets/assets-page').then((m) => m.AssetsPage),
+  },
+  {
+    path: 'accounting/requests',
+    canActivate: [sessionGuard, mustChangePasswordGuard, proofReadGuard],
+    loadComponent: () => import('./features/accounting/requests/requests-page').then((m) => m.AccountingRequestsPage),
+  },
+  {
+    path: 'accounting/trial-balance',
+    canActivate: [sessionGuard, mustChangePasswordGuard, proofReadGuard],
+    loadComponent: () => import('./features/accounting/trial-balance/trial-balance-page').then((m) => m.TrialBalancePage),
+  },
+  {
+    path: 'accounting/overhead',
+    canActivate: [sessionGuard, mustChangePasswordGuard, proofReadGuard],
+    loadComponent: () => import('./features/accounting/overhead/overhead-page').then((m) => m.OverheadPage),
+  },
+  {
+    // The project budget baseline: the Owner sets it once, Finance and the Owner read it (D-267 item 2).
+    path: 'projects/:projectId/budget',
+    canActivate: [sessionGuard, mustChangePasswordGuard, budgetBaselineReadGuard],
+    loadComponent: () => import('./features/accounting/budget/budget-page').then((m) => m.BudgetPage),
   },
   {
     // The BOQ: built by clicking, then signed (frozen). Shows cost prices, so gated `ProjectManage` (Owner, Technical Office; assigned).
