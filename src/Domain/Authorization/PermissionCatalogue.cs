@@ -675,7 +675,7 @@ public static class PermissionCatalogue
             // assignment) — same grant shape as ProjectRead's own Site Engineer row above. HR is on
             // neither row — D-051 Q32 gives HR zero financial visibility and this does not reopen it.
             new(Permission.TreasuryReadProject, PermissionScope.ProjectScoped,
-                [owner, finance, new AccessGrant { Role = Role.SiteEngineer }],
+                [owner, finance, engineerSupervisor],
                 "§6, §9 — Q90 ruled by Nabil 2026-09-25, see decisions.md D-173", TouchesMoney: true),
 
             // Company-wide: the safe and bank balances are company-wide and a Site Engineer has no

@@ -332,6 +332,68 @@ public sealed class AccountingEndpointTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task The_request_list_shows_the_amount_the_owner_will_approve()
+    {
+        Account accrued = await AddAccountAsync(AccountType.AccruedExpense);
+        Account expense = await AddAccountAsync(AccountType.CompanyExpense);
+        Guid requestId = (await JsonAsync(await SendAsync(HttpMethod.Post, "/api/treasury/accruals", _financeCompanyWide,
+            new { accruedExpenseAccountId = accrued.Id, expenseAccountId = expense.Id, amount = "70", accruedOn = "2026-05-20" }))).GetProperty("requestId").GetGuid();
+
+        JsonElement listed = await JsonAsync(await SendAsync(HttpMethod.Get, "/api/treasury/accounting-requests?status=Requested", _financeCompanyWide));
+        JsonElement row = listed.EnumerateArray().Single(candidate => candidate.GetProperty("id").GetGuid() == requestId);
+        row.GetProperty("amount").GetString().Should().Be("70.0000");
+        row.GetProperty("lineCount").GetInt32().Should().Be(1);
+
+        await ApproveAsync(requestId);
+    }
+
+    [Theory]
+    [InlineData("amount = amount + 1")]
+    [InlineData("amount = NULL")]
+    public async Task Approval_is_refused_when_the_total_moved_since_the_request_or_was_never_stored(string change)
+    {
+        Account accrued = await AddAccountAsync(AccountType.AccruedExpense);
+        Account expense = await AddAccountAsync(AccountType.CompanyExpense);
+        Guid requestId = (await JsonAsync(await SendAsync(HttpMethod.Post, "/api/treasury/accruals", _financeCompanyWide,
+            new { accruedExpenseAccountId = accrued.Id, expenseAccountId = expense.Id, amount = "70", accruedOn = "2026-05-20" }))).GetProperty("requestId").GetGuid();
+
+        await using (KaffDbContext writer = _database.CreateContext())
+        {
+#pragma warning disable EF1002 // The fragment is a constant from the InlineData above, not user input.
+            await writer.Database.ExecuteSqlRawAsync($"UPDATE accounting_requests SET {change} WHERE id = '{requestId}'", Ct);
+#pragma warning restore EF1002
+        }
+
+        HttpResponseMessage refused = await SendAsync(HttpMethod.Post, $"/api/treasury/accounting-requests/{requestId}/approval", _owner);
+        refused.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await MessageKeyAsync(refused)).Should().Be("errors.accounting.request_amount_changed");
+        (await PostingCountAsync(accrued.Id)).Should().Be(0, "nothing posts when the amount changed");
+
+        await SendAsync(HttpMethod.Post, $"/api/treasury/accounting-requests/{requestId}/rejection", _owner, new { reason = "Asked again" });
+    }
+
+    [Fact]
+    public async Task A_junior_site_engineer_assigned_to_the_project_is_refused_its_accruals()
+    {
+        Guid project = await NewSignedLumpSumProjectAsync();
+        Guid junior;
+        await using (KaffDbContext context = _database.CreateContext())
+        {
+            User engineer = User.Create(
+                UniqueNames.Code("ac-jr"), "ac-jr", UniqueNames.Phone(), Role.SiteEngineer, Now,
+                WellKnownDepartments.OperationsId, OperationsSubDepartment.Technical).Value;
+            context.Users.Add(engineer);
+            await context.SaveChangesAsync(Ct);
+            context.ProjectAssignments.Add(ProjectAssignment.Create(project, engineer, AssignmentLevel.Junior, Guid.CreateVersion7(), Now).Value);
+            await context.SaveChangesAsync(Ct);
+            junior = engineer.Id;
+        }
+
+        (await SendAsync(HttpMethod.Get, $"/api/projects/{project}/treasury/accruals", junior)).StatusCode.Should().Be(HttpStatusCode.Forbidden, "D-218 item 6");
+        (await SendAsync(HttpMethod.Get, $"/api/projects/{project}/treasury/accounting-requests", junior)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task AC_700_D_an_asset_dated_inside_a_closed_month_is_refused()
     {
         await EnsureClosedPeriodAsync(2012, 3);
@@ -508,6 +570,8 @@ public sealed class AccountingEndpointTests : IAsyncLifetime
         lines.Select(line => line.GetProperty("accountId").GetGuid()).Should().Contain([hold.Id, advance.Id]);
         Dec(lines.Single(line => line.GetProperty("accountId").GetGuid() == hold.Id).GetProperty("debit")).Should().Be(100m);
         Dec(lines.Single(line => line.GetProperty("accountId").GetGuid() == advance.Id).GetProperty("credit")).Should().Be(300m);
+        lines.Single(line => line.GetProperty("accountId").GetGuid() == hold.Id).GetProperty("projectName").GetString().Should().NotBeNullOrWhiteSpace("a project-tagged account names its project");
+        lines.Single(line => line.GetProperty("accountId").GetGuid() == safe.Id).GetProperty("projectName").ValueKind.Should().Be(JsonValueKind.Null, "a company account has no project");
         report.GetProperty("isBalanced").GetBoolean().Should().BeTrue();
     }
 

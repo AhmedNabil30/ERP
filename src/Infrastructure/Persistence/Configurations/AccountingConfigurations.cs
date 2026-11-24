@@ -121,6 +121,8 @@ internal sealed class AccountingRequestConfiguration : IEntityTypeConfiguration<
         builder.Property(request => request.Payload).IsRequired();
         builder.Property(request => request.RequestedAt).IsRequired();
         builder.Property(request => request.RejectionReason).HasMaxLength(Project.MaxReasonLength);
+        builder.Property(request => request.Amount);
+        builder.Property(request => request.LineCount);
 
         builder.HasIndex(request => new { request.Status, request.RequestedAt }).HasDatabaseName("ix_accounting_requests_status");
 

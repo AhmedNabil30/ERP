@@ -36,7 +36,7 @@ public sealed class Endpoint : IEndpoint
                 Result<TrialBalanceResult> built = await Handler.BuildAsync(database, from, to, cancellationToken);
                 return built.IsFailure
                     ? ResultExtensions.Problem(built.Error)
-                    : Microsoft.AspNetCore.Http.Results.Ok(Response.Of(built.Value, from, to));
+                    : Microsoft.AspNetCore.Http.Results.Ok(Response.Of(built.Value, await Handler.ProjectNamesAsync(database, built.Value, cancellationToken), from, to));
             })
             .RequirePermission(Permission.TreasuryReadCompany)
             .WithName("GetTrialBalance")
@@ -47,7 +47,7 @@ public sealed class Endpoint : IEndpoint
                 Result<TrialBalanceResult> built = await Handler.BuildAsync(database, from, to, cancellationToken);
                 return built.IsFailure
                     ? ResultExtensions.Problem(built.Error)
-                    : Microsoft.AspNetCore.Http.Results.File(Handler.ToCsv(built.Value), "text/csv; charset=utf-8", "trial-balance.csv");
+                    : Microsoft.AspNetCore.Http.Results.File(Handler.ToCsv(built.Value, await Handler.ProjectNamesAsync(database, built.Value, cancellationToken)), "text/csv; charset=utf-8", "trial-balance.csv");
             })
             .RequirePermission(Permission.TreasuryReadCompany)
             .WithName("ExportTrialBalance")
@@ -65,18 +65,20 @@ public sealed record Line(
     NormalBalance NormalBalance,
     LedgerKind? LedgerKind,
     Guid? ProjectId,
+    string? ProjectName,
     Money Debit,
     Money Credit);
 
 public sealed record Response(DateOnly? From, DateOnly? To, IReadOnlyList<Line> Lines, Money TotalDebit, Money TotalCredit, bool IsBalanced)
 {
-    public static Response Of(TrialBalanceResult result, DateOnly? from, DateOnly? to) => new(
+    public static Response Of(TrialBalanceResult result, IReadOnlyDictionary<Guid, string> projectNames, DateOnly? from, DateOnly? to) => new(
         from,
         to,
         [
             .. result.Rows.Select(row => new Line(
                 row.Account.AccountId, row.Account.Code, row.Account.NameAr, row.Account.NameEn, row.Account.Type, row.Account.Class,
-                row.Account.NormalBalance, row.Account.LedgerKind, row.Account.ProjectId, row.Debit, row.Credit)),
+                row.Account.NormalBalance, row.Account.LedgerKind, row.Account.ProjectId,
+                row.Account.ProjectId is { } project ? projectNames.GetValueOrDefault(project) : null, row.Debit, row.Credit)),
         ],
         result.TotalDebit,
         result.TotalCredit,
@@ -126,14 +128,22 @@ internal static class Handler
         return Result.Success(TrialBalance.Build(accounts, debits, credits));
     }
 
+    /// <summary>The names of the projects the rows are tagged with, so a screen and the CSV never show a bare id.</summary>
+    public static async Task<IReadOnlyDictionary<Guid, string>> ProjectNamesAsync(KaffDbContext database, TrialBalanceResult result, CancellationToken cancellationToken)
+    {
+        List<Guid> ids = [.. result.Rows.Select(row => row.Account.ProjectId).OfType<Guid>().Distinct()];
+        return await database.Projects.AsNoTracking().Where(project => ids.Contains(project.Id)).ToDictionaryAsync(project => project.Id, project => project.Name, cancellationToken);
+    }
+
     // The CSV is a file for Excel, not a screen, so its words sit here as constants rather than in the i18n JSON. Arabic only: the UI is Arabic.
     private const string CsvHeader = "الرمز,الاسم بالعربية,الاسم بالإنجليزية,النوع,التصنيف,المشروع,مدين,دائن";
     private const string CsvTotalLabel = "الإجمالي";
 
     /// <summary>UTF-8 with a byte-order mark, so Excel reads the Arabic names. Figures show two decimals; the stored four are untouched.</summary>
-    public static byte[] ToCsv(TrialBalanceResult result)
+    public static byte[] ToCsv(TrialBalanceResult result, IReadOnlyDictionary<Guid, string> projectNames)
     {
         ArgumentNullException.ThrowIfNull(result);
+        ArgumentNullException.ThrowIfNull(projectNames);
 
         StringBuilder csv = new();
         csv.Append(CsvHeader).Append("\r\n");
@@ -145,7 +155,7 @@ internal static class Handler
                 .Append(Cell(row.Account.NameEn)).Append(',')
                 .Append(row.Account.Type).Append(',')
                 .Append(row.Account.Class).Append(',')
-                .Append(row.Account.ProjectId).Append(',')
+                .Append(row.Account.ProjectId is { } project ? Cell(projectNames.GetValueOrDefault(project) ?? string.Empty) : string.Empty).Append(',')
                 .Append(Figure(row.Debit)).Append(',')
                 .Append(Figure(row.Credit)).Append("\r\n");
         }

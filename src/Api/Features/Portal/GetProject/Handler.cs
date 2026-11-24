@@ -62,7 +62,8 @@ internal static class Handler
             project.PlannedEnd,
             // Derived on every read: past the planned end and under 100 percent. No planned end or no completion figure is never stalled.
             project.PlannedEnd is { } plannedEnd && completion is { } done
-                && SiteTime.Today(clock) > plannedEnd && done.Percent < 100m));
+                && SiteTime.Today(clock) > plannedEnd && done.Percent < 100m,
+            PortalFormat.Amount(figures.DueNow)));
     }
 
     private static async Task<(Percentage? Completion, List<PortalSection> Sections)> ProgressAsync(

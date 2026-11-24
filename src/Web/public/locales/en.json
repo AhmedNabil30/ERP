@@ -1624,6 +1624,7 @@
   "errors.extract.dispute_resolution_required": "Choose how the dispute is resolved.",
   "errors.closure.retention_release_already_requested": "A retention release request for this subcontractor is already waiting for the Owner.",
   "errors.closure.retention_release_not_requested": "No retention release request is waiting for approval.",
+  "errors.accounting.request_amount_changed": "The amount changed since the request. Ask again.",
   "errors.closure.retention_release_posting_not_found": "That retention release posting does not exist for this subcontractor on this project.",
   "errors.closure.retention_release_already_reversed": "That retention release posting is already reversed.",
   "errors.closure.retention_reversal_already_requested": "A retention release reversal request is already waiting for approval for this subcontractor.",

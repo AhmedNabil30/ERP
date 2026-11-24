@@ -61,7 +61,7 @@ internal static class AccountingEntries
             return ResultExtensions.Problem(AccountingErrors.RequestAlreadyWaiting);
         }
 
-        Result<AccountingRequest> created = AccountingRequest.Create(kind, projectId, json, subjectKey, actor, now);
+        Result<AccountingRequest> created = AccountingRequest.Create(kind, projectId, json, subjectKey, actor, now, Total(dryRun.Value), dryRun.Value.OfType<Posting>().Count());
         if (created.IsFailure)
         {
             return ResultExtensions.Problem(created.Error);
@@ -117,6 +117,9 @@ internal static class AccountingEntries
             _ => Result.Failure<IReadOnlyList<object>>(AccountingErrors.AccountWrongType),
         };
     }
+
+    /// <summary>The total of the postings an entry set carries: what the Owner is shown at ask time and what approval must still match.</summary>
+    public static Money Total(IReadOnlyList<object> built) => new(built.OfType<Posting>().Sum(posting => posting.Amount.Amount));
 
     private static T Read<T>(string json) => JsonSerializer.Deserialize<T>(json, Json)!;
 

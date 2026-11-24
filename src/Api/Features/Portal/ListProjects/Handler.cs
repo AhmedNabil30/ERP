@@ -33,7 +33,7 @@ internal static class Handler
         List<Project> owned = clientId is null
             ? []
             : await database.Projects.AsNoTracking()
-                .Where(project => project.ClientId == clientId)
+                .Where(project => project.ClientId == clientId && project.SignedOn != null)
                 .OrderBy(project => project.Name)
                 .ToListAsync(cancellationToken);
         Dictionary<Guid, PortalProjectFigures> figures = await PortalProjectMoney.ReadAsync(database, owned, cancellationToken);
@@ -45,7 +45,8 @@ internal static class Handler
             project.ContractType.ToString(),
             PortalFormat.Amount(figures[project.Id].Paid),
             PortalFormat.Amount(figures[project.Id].Remaining),
-            figures[project.Id].Pending))];
+            figures[project.Id].Pending,
+            PortalFormat.Amount(figures[project.Id].DueNow)))];
 
         return Results.Ok(projects);
     }

@@ -113,7 +113,7 @@ public sealed class ProjectAccessPolicy : IProjectAccessPolicy
         }
 
         bool belongsToClient = await _context.Projects
-            .AnyAsync(project => project.Id == projectId && project.ClientId == clientId, cancellationToken);
+            .AnyAsync(project => project.Id == projectId && project.ClientId == clientId && project.SignedOn != null, cancellationToken);
 
         return belongsToClient
             ? new ProjectAccess(ProjectAccessPath.PortalClient, AssignmentLevel.Standard)

@@ -113,12 +113,30 @@ public sealed partial class PortalEndpointTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task An_unsigned_own_project_is_not_listed_and_a_direct_read_is_refused_like_a_foreign_one()
+    {
+        Project unsigned;
+        await using (KaffDbContext context = _database.CreateContext())
+        {
+            unsigned = Project.Create(UniqueNames.Code("PT-U"), UniqueNames.Code("مشروع غير موقع"), _clientA, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
+            context.Projects.Add(unsigned);
+            await context.SaveChangesAsync(Ct);
+        }
+
+        JsonElement mine = await ReadAsync(await SendAsync(HttpMethod.Get, "/api/portal/projects", _portalA, null));
+        mine.EnumerateArray().Select(p => p.GetProperty("id").GetGuid()).Should().BeEquivalentTo([_projectA.Id]);
+
+        (await SendAsync(HttpMethod.Get, $"/api/portal/projects/{unsigned.Id}", _portalA, null)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await SendAsync(HttpMethod.Get, $"/api/portal/projects/{unsigned.Id}/extracts", _portalA, null)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task A_client_lists_his_own_projects_and_never_the_others()
     {
         JsonElement mine = await ReadAsync(await SendAsync(HttpMethod.Get, "/api/portal/projects", _portalA, null));
 
         mine.EnumerateArray().Select(p => p.GetProperty("id").GetGuid()).Should().BeEquivalentTo([_projectA.Id]);
-        mine[0].EnumerateObject().Select(p => p.Name).Should().BeEquivalentTo(["id", "name", "status", "contractType", "paid", "remaining", "pendingCount"]);
+        mine[0].EnumerateObject().Select(p => p.Name).Should().BeEquivalentTo(["id", "name", "status", "contractType", "paid", "remaining", "pendingCount", "dueNow"]);
         mine[0].GetProperty("paid").GetString().Should().Be("250000.00", "the same rule as the home");
         mine[0].GetProperty("remaining").GetString().Should().Be("750000.00");
         mine[0].GetProperty("pendingCount").GetInt32().Should().Be(0);
@@ -249,6 +267,24 @@ public sealed partial class PortalEndpointTests : IAsyncLifetime
         listed[0].GetProperty("netPayable").GetString().Should().MatchRegex(@"^-?\d+\.\d{2}$");
         listed[0].GetProperty("certifiedWork").GetString().Should().MatchRegex(@"^-?\d+\.\d{2}$");
     }
+    [Fact]
+    public async Task Due_now_is_the_net_payable_still_open_on_issued_extracts_summed_on_the_server()
+    {
+        JsonElement before = await ReadAsync(await SendAsync(HttpMethod.Get, $"/api/portal/projects/{_projectA.Id}", _portalA, null));
+        before.GetProperty("dueNow").GetString().Should().Be("0.00", "nothing is issued yet");
+
+        Guid extract = await PrepareExtractAsync(_projectA);
+        await StepExtractAsync(_projectA, extract);
+        JsonElement listed = await ReadAsync(await SendAsync(HttpMethod.Get, $"/api/portal/projects/{_projectA.Id}/extracts", _portalA, null));
+        string net = listed[0].GetProperty("netPayable").GetString()!;
+
+        JsonElement home = await ReadAsync(await SendAsync(HttpMethod.Get, $"/api/portal/projects/{_projectA.Id}", _portalA, null));
+        home.GetProperty("dueNow").GetString().Should().Be(net);
+
+        JsonElement mine = await ReadAsync(await SendAsync(HttpMethod.Get, "/api/portal/projects", _portalA, null));
+        mine[0].GetProperty("dueNow").GetString().Should().Be(net);
+    }
+
 
     // ---- R5-C: publish a photo -------------------------------------------------------------------------------------
 

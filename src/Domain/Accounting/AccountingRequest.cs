@@ -41,7 +41,7 @@ public sealed class AccountingRequest : Entity
     {
     }
 
-    private AccountingRequest(AccountingRequestKind kind, Guid? projectId, string payload, string? subjectKey, Guid requestedByUserId, DateTimeOffset requestedAt)
+    private AccountingRequest(AccountingRequestKind kind, Guid? projectId, string payload, string? subjectKey, Guid requestedByUserId, DateTimeOffset requestedAt, Money? amount, int? lineCount)
         : base(NewId())
     {
         SubjectKey = subjectKey;
@@ -51,6 +51,8 @@ public sealed class AccountingRequest : Entity
         Status = AccountingRequestStatus.Requested;
         RequestedByUserId = requestedByUserId;
         RequestedAt = requestedAt;
+        Amount = amount;
+        LineCount = lineCount;
     }
 
     public AccountingRequestKind Kind { get; private set; }
@@ -67,6 +69,15 @@ public sealed class AccountingRequest : Entity
     /// </summary>
     public string? SubjectKey { get; private set; }
 
+    /// <summary>
+    /// The total of the postings the dry run built at ask time, so the Owner sees what he approves. Approval rebuilds and refuses if the
+    /// total moved. Null only on rows asked before the amount was stored; those cannot be approved and must be asked again.
+    /// </summary>
+    public Money? Amount { get; private set; }
+
+    /// <summary>How many postings the dry run built at ask time. Null on rows asked before the amount was stored.</summary>
+    public int? LineCount { get; private set; }
+
     public AccountingRequestStatus Status { get; private set; }
 
     public Guid RequestedByUserId { get; private set; }
@@ -79,9 +90,10 @@ public sealed class AccountingRequest : Entity
 
     public string? RejectionReason { get; private set; }
 
-    public static Result<AccountingRequest> Create(AccountingRequestKind kind, Guid? projectId, string payload, string? subjectKey, Guid actor, DateTimeOffset now) =>
+    public static Result<AccountingRequest> Create(
+        AccountingRequestKind kind, Guid? projectId, string payload, string? subjectKey, Guid actor, DateTimeOffset now, Money? amount = null, int? lineCount = null) =>
         Enum.IsDefined(kind) && !string.IsNullOrWhiteSpace(payload)
-            ? Result.Success(new AccountingRequest(kind, projectId, payload, subjectKey, actor, now))
+            ? Result.Success(new AccountingRequest(kind, projectId, payload, subjectKey, actor, now, amount, lineCount))
             : Result.Failure<AccountingRequest>(AccountingErrors.AccountWrongType);
 
     /// <summary>Whether <paramref name="actor"/> may decide now: the request still waits, and the actor is not the user who asked.</summary>

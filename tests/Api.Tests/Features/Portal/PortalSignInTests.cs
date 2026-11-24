@@ -47,7 +47,7 @@ public sealed class PortalSignInTests : IAsyncLifetime
 
         Client own = Client.Create(UniqueNames.Code("PS-C1"), "عميل الدخول", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
         Client other = Client.Create(UniqueNames.Code("PS-C2"), "عميل آخر", UniqueNames.Phone(), ClientKind.Corporate, Now).Value;
-        Project project = Project.Create(UniqueNames.Code("PS-P1"), "مشروع الدخول", own.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value;
+        Project project = Project.Create(UniqueNames.Code("PS-P1"), "مشروع الدخول", own.Id, ContractType.LumpSum, DateTimeOffset.UtcNow).Value.AsSigned();
 
         User client = User.Create(UniqueNames.Code("ps-client"), "عميل", UniqueNames.Phone(), Role.Client, Now, clientId: own.Id).Value;
         client.SetOwnPassword(PasswordHasher.Hash(Password)).IsSuccess.Should().BeTrue();

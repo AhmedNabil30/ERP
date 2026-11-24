@@ -87,6 +87,12 @@ internal static class Handler
             return ResultExtensions.Problem(built.Error);
         }
 
+        // No blind approval (D-267): the Owner saw the total at ask time. A row without a stored total, or one whose rebuilt total moved, is asked again.
+        if (request.Amount is null || request.Amount.Value != AccountingEntries.Total(built.Value))
+        {
+            return ResultExtensions.Problem(AccountingErrors.RequestAmountChanged);
+        }
+
         request.Approve(actor, now);
 
         foreach (object entity in built.Value)

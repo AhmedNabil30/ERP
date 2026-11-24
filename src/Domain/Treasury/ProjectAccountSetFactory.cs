@@ -144,7 +144,7 @@ public static class ProjectAccountSetFactory
     private static string NameAr(AccountType type, ContractType contractType) => (type, contractType) switch
     {
         (AccountType.ClientAdvance, _) => "دفعة مقدمة من العميل",
-        (AccountType.Hold, _) => "محجوز",
+        (AccountType.Hold, _) => "الحجز",
         (AccountType.FirmAdvance, _) => "سلفة الشركة",
         (AccountType.MaterialAdvance, _) => "تشوينات",
         (AccountType.ClientReceivable, _) => "مستحق من العميل",
