@@ -56,6 +56,12 @@ public sealed class KaffDbContext : DbContext
     /// </summary>
     public const string SupplierCodeSequence = "supplier_code_seq";
 
+    /// <summary>
+    /// The PostgreSQL sequence opportunity codes are drawn from (R3-01 AC-B). Same shape and reason as
+    /// <see cref="ClientCodeSequence"/>: the code is generated, nobody types it.
+    /// </summary>
+    public const string OpportunityCodeSequence = "opportunity_code_seq";
+
     public KaffDbContext(DbContextOptions<KaffDbContext> options)
         : base(options)
     {
@@ -216,6 +222,9 @@ public sealed class KaffDbContext : DbContext
 
         // KAFF-212, same precedent as the three sequences above.
         modelBuilder.HasSequence<long>(SupplierCodeSequence).StartsAt(10_001);
+
+        // R3-01, same precedent as the sequences above.
+        modelBuilder.HasSequence<long>(OpportunityCodeSequence).StartsAt(10_001);
 
         foreach (IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
         {

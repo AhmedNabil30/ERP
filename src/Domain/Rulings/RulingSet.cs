@@ -177,6 +177,9 @@ public sealed record RulingSet
 
     public SupervisorSeesProjectMoney SupervisorSeesProjectMoney { get; init; } = SupervisorSeesProjectMoney.Default;
 
+    /// <summary>R3-03: the quiet-day counts of the sales pipeline (R3-Q5).</summary>
+    public OpportunityInactivity OpportunityInactivity { get; init; } = OpportunityInactivity.Default;
+
     public IReadOnlyList<RulingNote> Notes =>
     [
         MaterialAdvanceRecovery.Note,
@@ -237,5 +240,6 @@ public sealed record RulingSet
         DesignConversionTargets.Note,
         FinanceStaffing.Note,
         SupervisorSeesProjectMoney.Note,
+        OpportunityInactivity.Note,
     ];
 }

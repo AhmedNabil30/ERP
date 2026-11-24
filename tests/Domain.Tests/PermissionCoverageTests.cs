@@ -53,7 +53,7 @@ public sealed class PermissionCoverageTests
         // (tests/Domain.Tests/PermissionEvaluatorTests.cs) names it.
         // Permission.ExtractPrepare and Permission.QuantityGateApprove left this list on 2026-11-01 (KAFF-500 stage 2):
         // Api.Tests/Features/Extracts/ExtractEndpointTests.cs names both and pins the routes they gate.
-        Permission.OpportunityManage,   // slice 4 — the spine
+        // Permission.OpportunityManage left this list on 2026-11-24 (R3-01): Api.Tests/OpportunityPipelineTests.cs names it.
     ];
 
     [Fact]
