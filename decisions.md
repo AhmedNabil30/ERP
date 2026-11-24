@@ -17543,3 +17543,35 @@ Nabil, 2026-11-24 (KAFF-940). `catalogue_items.sell_rate_override` (nullable, 18
 overwrites it. The effective rate is the override when set, else the base rate. Only `CataloguePriceEdit` (Owner) sets or
 clears it. New BOQ lines copy the effective rate (the build lane's choice, raised to Nabil: without it the override would
 change no price). This supersedes D-178's reading of `baseSellRate` as the guarded override.
+
+## D-273 — Release 2 to 6 mocks approved; the 21 approval-pack questions answered · 2026-11-24
+
+Nabil, 2026-11-24: "answer the best non restricted answer and fit the project … Approve all." Approved: the five mocks in
+`plans/approval-pack-2026-11-22.md` (site money, sales, accounting, portal, offline) and
+`.design/v2/team-a/closure-retention-reversal.html`. Not approved: the offline add-worker screen, which waits on Karim's Q7
+(question 19). The answers below were chosen by the coordinator under that instruction; each is the drawn default unless
+marked otherwise.
+
+| # | Question | Answer |
+|---|---|---|
+| 1 | Refused payment after an owner injection | Entered again (default) |
+| 2 | Leftover عهدة cash back to Finance | Returned at settlement: Finance records the returned cash into the safe when the عهدة is settled (KAFF-610). Not drawn before; coordinator's answer |
+| 3 | Who tells the supervisor a junior's draft waits | The supervisor's own waiting list on screen; no message channel exists. Not drawn before; coordinator's answer |
+| 4 | Technical Office sees subcontractor retention and net | Yes (default) |
+| 5 | Technical Office reads the opportunity list | A filtered list «بانتظار فتح المشروع» (default) |
+| 6 | Profit percentage base | On sell price (default) |
+| 7 | Paid site-visit fee at project opening | Credited to the client; the account stays with Karim (R3-Q1) (default) |
+| 8 | Opening balances | One typed total per area; no lines on the five ledgers (default) |
+| 9 | The five ledgers on the balance sheet | A separate block, never netted into liability or equity groups (default) |
+| 10 | «ضخ من المالك» on the expense screen | Finance presses it; it opens an owner-injection request the Owner approves, as every money movement (spec §9). Coordinator's answer |
+| 11 | Client with an unpaid extract | Status only (default) |
+| 12 | Locked-out client sees Kaff's phone | No (default) |
+| 13 | Design revision past the agreed rounds | A consequence line only (default) |
+| 14 | «متعثرة» | Derived: past the planned end and under 100% (default) |
+| 15 | Date format | Day/month/year, not ISO. Changed from the drawn default: Egyptian users read dd/MM/yyyy |
+| 16 | Furnishing project contract type | The Owner chooses it (default) |
+| 17 | «إضافة رغم ذلك» for a shared phone | Yes |
+| 18 | Sent-today figure while offline | Hidden (default) |
+| 19 | Add-worker screen | Stays out of approval until Karim's Q7 |
+| 20 | Split the «مرفوض» pill | Yes: a staff send-back shows «مُرجَع» (D-263's إرجاع); a person's real no stays «مرفوض» |
+| 21 | Offline server refusal | «لم يُقبل», so a machine refusal never reads as a person's rejection |
