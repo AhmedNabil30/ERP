@@ -242,14 +242,13 @@ describe('closure display, the permission and state rules', () => {
     const expected: [ProjectStatus, string][] = [
       ['Active', 'practical-completion'],
       ['HandoverPending', 'handover'],
-      ['Handover', 'warranty'],
       ['UnderWarranty', 'close'],
     ];
     for (const [status, step] of expected) {
       expect(closureNextSteps('LumpSum', status, all)).toEqual([step]);
       expect(closureNextSteps('LumpSum', status, none)).toEqual([]);
     }
-    for (const status of ['Setup', 'Closed', 'Stopped', 'Terminated'] as const) {
+    for (const status of ['Setup', 'Handover', 'Closed', 'Stopped', 'Terminated'] as const) {
       expect(closureNextSteps('LumpSum', status, all)).toEqual([]);
     }
   });
@@ -292,6 +291,14 @@ describe('ClosurePage', () => {
     const stranger = { ...session('Owner', OWNER), projects: [] };
     const fixture = await open(project('Active'), stranger);
     expect(q(fixture, 'closure-act-practical-completion')).toBeNull();
+  });
+
+  it('shows the warranty end date once the project is under warranty, with no begin-warranty act', async () => {
+    const fixture = await open({ ...project('UnderWarranty'), warrantyEndsOn: '2027-11-24' }, session('Owner', OWNER));
+    expect(q(fixture, 'closure-warranty-ends')?.textContent).toContain('closure.warranty.ends');
+    expect(q(fixture, 'closure-act-warranty')).toBeNull();
+    const before = await open(project('HandoverPending'), session('Owner', OWNER));
+    expect(q(before, 'closure-warranty-ends')).toBeNull();
   });
 
   it('renders the hold as a derived figure with its source, and has no amount field', async () => {

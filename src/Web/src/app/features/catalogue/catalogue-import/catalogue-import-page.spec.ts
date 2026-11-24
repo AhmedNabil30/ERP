@@ -55,6 +55,8 @@ const EXISTING: CatalogueItem = {
   babId: 'b1',
   costPrice: '12.3400',
   baseSellRate: '18.5000',
+  sellRateOverride: null,
+  effectiveSellRate: '18.5000',
   status: 'Active',
 };
 

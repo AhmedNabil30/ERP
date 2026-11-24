@@ -22,6 +22,8 @@ function item(code: string, babId: string, status: 'Active' | 'Archived' = 'Acti
     babId,
     costPrice: '100.0000',
     baseSellRate: '120.0000',
+    sellRateOverride: null,
+    effectiveSellRate: '120.0000',
     status,
   };
 }

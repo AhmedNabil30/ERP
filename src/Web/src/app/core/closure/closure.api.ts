@@ -121,10 +121,6 @@ export class ClosureApi {
     return await firstValueFrom(this.http.post<ProjectClosure>(`${this.base(projectId)}/handover`, {}));
   }
 
-  async beginWarranty(projectId: string): Promise<ProjectClosure> {
-    return await firstValueFrom(this.http.post<ProjectClosure>(`${this.base(projectId)}/warranty`, {}));
-  }
-
   async close(projectId: string): Promise<ProjectClosure> {
     return await firstValueFrom(this.http.post<ProjectClosure>(`${this.base(projectId)}/close`, {}));
   }

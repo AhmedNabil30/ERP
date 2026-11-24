@@ -68,6 +68,24 @@
         [testId]="'catalogue-detail-sell-' + item.code"
         (valueChange)="patch({ baseSellRate: $event })"
       />
+      <kaff-money-field
+        labelKey="catalogue.panel.sell_override"
+        controlId="catalogue-detail-override"
+        [readOnly]="!canEditPrices()"
+        [dirty]="overrideDirty()"
+        [value]="draft().sellRateOverride"
+        [displayValue]="item.sellRateOverride ? i18n.formatAmount(item.sellRateOverride) : '—'"
+        [errorKey]="overrideError()"
+        [testId]="'catalogue-detail-override-' + item.code"
+        (valueChange)="patch({ sellRateOverride: $event })"
+      />
+      <kaff-money-field
+        labelKey="catalogue.panel.sell_effective"
+        controlId="catalogue-detail-effective"
+        [readOnly]="true"
+        [displayValue]="i18n.formatAmount(item.effectiveSellRate)"
+        [testId]="'catalogue-detail-effective-' + item.code"
+      />
 
       <div class="sec-h">
         <h3>{{ i18n.t('catalogue.panel.item_data') }}</h3>

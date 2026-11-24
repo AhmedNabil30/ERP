@@ -25,6 +25,8 @@ const ITEM: CatalogueItem = {
   babId: 'bab-1',
   costPrice: '3150.0000',
   baseSellRate: '3720.0000',
+  sellRateOverride: null,
+  effectiveSellRate: '3720.0000',
   status: 'Active',
 };
 
@@ -100,6 +102,24 @@ describe('CatalogueItemPanel · the Owner shape', () => {
   });
 });
 
+describe('CatalogueItemPanel · the sell-price override (D-272)', () => {
+  it('sends the override the Owner types, and null when it is cleared', () => {
+    const { saves, type, click } = render({ canEditPrices: true });
+    type('#catalogue-detail-override', '4000');
+    click('catalogue-detail-save');
+    expect(saves[0].sellRateOverride).toBe('4000');
+    expect(saves[0].baseSellRate).toBe('3720.0000');
+  });
+
+  it('sends the current override back unchanged when the user may not edit prices', () => {
+    const { saves, type, click, root } = render({ canEditPrices: false });
+    expect(root.querySelector('#catalogue-detail-override')).toBeNull();
+    type('#catalogue-detail-description-ar', 'x');
+    click('catalogue-detail-save');
+    expect(saves[0].sellRateOverride).toBeNull();
+  });
+});
+
 describe('CatalogueItemPanel · the read-only shape (AC-940-F)', () => {
   it('draws cost and sell as read-only fields with the reason, and as no input at all', () => {
     const { root } = render({ canEditPrices: false });
@@ -118,7 +138,7 @@ describe('CatalogueItemPanel · the read-only shape (AC-940-F)', () => {
     const { root } = render({ canEditPrices: false });
 
     const prices = root.querySelectorAll('kaff-money-field');
-    expect(prices.length).toBe(2);
+    expect(prices.length).toBe(4);
     expect(root.querySelectorAll('kaff-money-field [disabled]').length).toBe(0);
   });
 

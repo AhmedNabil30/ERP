@@ -1674,3 +1674,32 @@ Status words: **جاري العمل** and **تم تأجيلها** (Kaff's own), 
 ## What the mock does not draw
 
 The Finance side of the fee confirmation, the project page after conversion (S7 hands off to the project screens already drawn), and the receipt photo picker.
+
+
+## Closure: reversing a posted subcontractor retention release (`closure-retention-reversal.html`, D-271)
+
+Route: the closure screen, `/projects/:projectId/closure`. Open the file directly, no build step. `?view=released|reasonsheet|reasonerr|waitfin|returned|owner|ownerconfirm|ownerreturn|reversed|viewer|none|loading|failed|refused`, `?embed=1` hides the preview strip. The strip is review chrome: do not build it. The shell is reduced to the phone header bar in this file; the screen sits in the approved shell unchanged.
+
+**Who and the job.** Finance asks to reverse one posted release of a subcontractor's retention, with a reason. The Owner approves it (اعتماد) or returns it (إرجاع) with a reason. Approval writes one mirror posting; nothing is edited or deleted. The person who asked cannot decide. No screen brief for this exists in `ux/journey-*.md`; the brief is the lead's message of 2026-11-24 (D-271). The closure screen has no retention panel today either, so the panel below is drawn whole, but only the reversal is new.
+
+**What the screen holds.** One panel «محجوزات المقاولين» (unit «ج.م» once, in the heading) on the closure screen, below the hold panel. A list of released retentions, one row each: the subcontractor and the amount (figure, end edge), the release date. A row carries at most one thing at its foot:
+- Nothing pending, viewer may ask (Finance): the secondary button «طلب عكس الإفراج» (44 px). It opens the reason sheet (side panel on a desktop, bottom sheet on a phone, the closure screen's own detail panel): one required field «السبب», primary «إرسال الطلب», secondary «إلغاء». An empty reason shows «اكتب السبب.» in place.
+- Waiting (Finance sees): a quiet badge «بانتظار المالك» with a clock, and the reason as a value line. No button: the asker cannot decide and cannot ask twice.
+- Waiting (Owner sees): the badge «طلبته {الاسم}», the reason, then «اعتماد» (the screen's one filled button) and «إرجاع» (secondary). «اعتماد» opens an in-place confirmation with one consequence line, «يُسجَّل قيد عكسي بمبلغ الإفراج كاملاً.», because it moves money; «إرجاع» opens the same sheet with a required «سبب الإرجاع» and primary «إرجاع الطلب».
+- Returned (Finance sees): a note banner «أرجع المالك الطلب:» with the reason, and the ask button is back on the row.
+- Reversed: the ok banner «تم عكس الإفراج.», and the row carries the badge «تم عكس الإفراج» and no button.
+- A viewer without the right sees the list with no buttons at all (absent, not greyed).
+
+**States.** `released` (Finance, normal), `reasonsheet`, `reasonerr`, `waitfin`, `returned`, `owner`, `ownerconfirm`, `ownerreturn`, `reversed`, `viewer`, `none` (one line: «لم يُفرج عن محجوزات أي مقاول بعد.»), `loading` (skeleton), `failed` (refusal state with «إعادة المحاولة»), `refused` (banner «لا يمكنك اعتماد طلب قدّمته أنت.»). Checked with `layout-url` at 360, 390 and 1440.
+
+**Reused, unchanged.** Back link, page title, status pill (the neutral «تحت الضمان» pill the build already draws for that status), list frame, badge, buttons (primary, secondary), banners (note, ok, refusal), state block (empty, refused), skeleton, textarea field with its in-place error, in-place confirmation, side panel and bottom sheet, figure with the unit named once.
+
+**New in the kit.** Nothing. The request row (name and figure on one line, date, one foot) is the existing list row with a foot.
+
+**Left off on purpose.** The posting id, the request id, the project code, who approved and when (the audit log holds that), any sentence about how the reversal works. The ask and decide buttons are absent for a role that may not use them; the server still decides.
+
+**Not decided.**
+1. The release itself (Finance asks, Owner approves the release of a subcontractor's retention) has no UI on the closure screen yet and no mock. Where it sits relative to this panel, and whether a row can be both «release waiting» and «reversal waiting», is unspecified.
+2. Whether a returned reversal may be asked again at once (drawn: yes).
+3. Whether the Owner sees the amount and the asker's name in the row or must open it (drawn: in the row).
+4. All Arabic strings in this section are the designer's, not ruled.

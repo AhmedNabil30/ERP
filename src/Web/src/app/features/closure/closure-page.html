@@ -78,6 +78,12 @@
           </div>
         }
 
+        @if (warrantyEnd(); as end) {
+          <p class="none" data-testid="closure-warranty-ends">
+            <kaff-icon name="info" [small]="true" /><span>{{ i18n.t('closure.warranty.ends', { date: end }) }}</span>
+          </p>
+        }
+
         @if (confirming(); as pending) {
           @if (pending !== 'hold-release') {
           <kaff-inline-confirm

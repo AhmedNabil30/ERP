@@ -4,7 +4,7 @@ import { STATUS_PILL } from '../projects/project-status-pill';
 export const CLOSURE_PILL = STATUS_PILL;
 
 /** The closure acts a button can ask for. The hold release has its own panel, because it shows a figure. */
-export type ClosureStep = 'practical-completion' | 'handover' | 'warranty' | 'close' | 'hold-release';
+export type ClosureStep = 'practical-completion' | 'handover' | 'close' | 'hold-release';
 
 /** What a viewer holds on THIS project (`Session.projects[].permissions`). Convenience; the server decides. */
 export interface ClosureCaps {
@@ -21,8 +21,8 @@ export interface ClosureCaps {
 
 /**
  * The project acts this viewer may take now, from the state machine of `ProjectClosure`: Active ->
- * HandoverPending (declare), HandoverPending -> Handover (hand over), Handover -> UnderWarranty (begin the
- * warranty), UnderWarranty -> Closed (close). Design has none of them. The hold release is not in this
+ * HandoverPending (declare), HandoverPending -> UnderWarranty (hand over; the warranty starts
+ * with it, D-270), UnderWarranty -> Closed (close). Design has none of them. The hold release is not in this
  * list: it is the one act with its own panel, because it shows a figure.
  */
 export function closureNextSteps(type: ContractType, status: ProjectStatus, caps: ClosureCaps): readonly ClosureStep[] {
@@ -34,8 +34,6 @@ export function closureNextSteps(type: ContractType, status: ProjectStatus, caps
       return caps.declare ? ['practical-completion'] : [];
     case 'HandoverPending':
       return caps.handover ? ['handover'] : [];
-    case 'Handover':
-      return caps.handover ? ['warranty'] : [];
     case 'UnderWarranty':
       return caps.close ? ['close'] : [];
     default:
@@ -47,7 +45,6 @@ export function closureNextSteps(type: ContractType, status: ProjectStatus, caps
 export const STEP_LABEL_KEY: Readonly<Record<ClosureStep, string>> = {
   'practical-completion': 'closure.action.practical_completion',
   handover: 'closure.action.handover',
-  warranty: 'closure.action.warranty',
   close: 'closure.action.close',
   'hold-release': 'closure.action.hold_release',
 };

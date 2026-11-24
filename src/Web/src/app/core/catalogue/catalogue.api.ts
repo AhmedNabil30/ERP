@@ -26,6 +26,10 @@ export interface CatalogueItem {
   /** D-135: every decimal crosses the wire as a JSON string. Never `Number()` this. */
   readonly costPrice: string;
   readonly baseSellRate: string;
+  /** D-272: the Owner's own sell price for this item; `null` when none is set. Never overwrites `baseSellRate`. */
+  readonly sellRateOverride: string | null;
+  /** The override when set, else the base rate; what a new BOQ line copies. */
+  readonly effectiveSellRate: string;
   readonly status: CatalogueItemStatus;
 }
 
@@ -102,6 +106,8 @@ export interface CatalogueItemEdit {
   readonly unit: string;
   readonly costPrice: string;
   readonly baseSellRate: string;
+  /** Sent back unchanged by everyone but the Owner, or the server refuses; `null` clears it. */
+  readonly sellRateOverride: string | null;
 }
 
 /**

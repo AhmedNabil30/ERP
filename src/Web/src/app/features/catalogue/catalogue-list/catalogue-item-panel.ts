@@ -27,6 +27,7 @@ interface Draft {
   readonly unit: string;
   readonly costPrice: string;
   readonly baseSellRate: string;
+  readonly sellRateOverride: string;
 }
 
 /**
@@ -90,6 +91,7 @@ export class CatalogueItemPanel {
       unit: item?.unit ?? '',
       costPrice: toEditValue(item?.costPrice ?? '0'),
       baseSellRate: toEditValue(item?.baseSellRate ?? '0'),
+      sellRateOverride: item?.sellRateOverride ? toEditValue(item.sellRateOverride) : '',
     }),
   });
 
@@ -115,6 +117,15 @@ export class CatalogueItemPanel {
     );
   });
 
+  protected readonly overrideDirty = computed(() => {
+    const item = this.item();
+    if (item === null || !this.canEditPrices()) {
+      return false;
+    }
+    const text = this.draft().sellRateOverride.trim();
+    return item.sellRateOverride === null ? text.length > 0 : text.length === 0 || !sameDecimal(text, item.sellRateOverride);
+  });
+
   protected readonly dirty = computed(() => {
     const item = this.item();
     if (item === null) {
@@ -124,6 +135,7 @@ export class CatalogueItemPanel {
     return (
       this.costDirty() ||
       this.sellDirty() ||
+      this.overrideDirty() ||
       d.descriptionAr !== item.descriptionAr ||
       d.descriptionEn !== (item.descriptionEn ?? '') ||
       d.unit !== item.unit
@@ -141,6 +153,10 @@ export class CatalogueItemPanel {
   );
   protected readonly costError = computed(() => this.priceError(this.draft().costPrice));
   protected readonly sellError = computed(() => this.priceError(this.draft().baseSellRate));
+
+  protected readonly overrideError = computed(() =>
+    this.draft().sellRateOverride.trim().length === 0 ? null : this.priceError(this.draft().sellRateOverride),
+  );
 
   protected patch(change: Partial<Draft>): void {
     this.draft.update((d) => ({ ...d, ...change }));
@@ -161,7 +177,8 @@ export class CatalogueItemPanel {
       d.descriptionAr.trim().length === 0 ||
       d.unit.trim().length === 0 ||
       this.costError() !== null ||
-      this.sellError() !== null;
+      this.sellError() !== null ||
+      this.overrideError() !== null;
     if (invalid) {
       return;
     }
@@ -174,6 +191,7 @@ export class CatalogueItemPanel {
       unit: d.unit.trim(),
       costPrice: this.costDirty() ? d.costPrice.trim() : item.costPrice,
       baseSellRate: this.sellDirty() ? d.baseSellRate.trim() : item.baseSellRate,
+      sellRateOverride: !this.overrideDirty() ? item.sellRateOverride : d.sellRateOverride.trim().length > 0 ? d.sellRateOverride.trim() : null,
     });
   }
 

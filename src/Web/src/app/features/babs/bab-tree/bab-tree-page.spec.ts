@@ -35,6 +35,8 @@ function item(code: string, babCode: string): CatalogueItem {
     babId: `id-${babCode}`,
     costPrice: '100.0000',
     baseSellRate: '120.0000',
+    sellRateOverride: null,
+    effectiveSellRate: '120.0000',
     status: 'Active',
   };
 }

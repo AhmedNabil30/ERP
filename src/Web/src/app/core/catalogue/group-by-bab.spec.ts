@@ -26,6 +26,8 @@ function item(id: string, code: string, babId: string): CatalogueItem {
     babId,
     costPrice: '10',
     baseSellRate: '15',
+    sellRateOverride: null,
+    effectiveSellRate: '15',
     status: 'Active',
   };
 }

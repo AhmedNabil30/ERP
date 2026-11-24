@@ -44,7 +44,6 @@ export type ProjectAct = ClosureStep;
 const ACT_KEYS: Readonly<Record<ProjectAct, { confirm: string; detail: string | null }>> = {
   'practical-completion': { confirm: 'closure.confirm.practical_completion', detail: 'closure.confirm.practical_completion_detail' },
   handover: { confirm: 'closure.confirm.handover', detail: 'closure.confirm.handover_detail' },
-  warranty: { confirm: 'closure.confirm.warranty', detail: null },
   close: { confirm: 'closure.confirm.close', detail: 'closure.confirm.close_detail' },
   'hold-release': { confirm: 'closure.confirm.hold_release', detail: 'closure.confirm.hold_release_detail' },
 };
@@ -407,6 +406,11 @@ export class ClosurePage {
     );
   }
 
+  protected readonly warrantyEnd = computed(() => {
+    const project = this.project();
+    return project?.status === 'UnderWarranty' && project.warrantyEndsOn ? this.day(project.warrantyEndsOn) : null;
+  });
+
   protected day(value: string): string {
     const [year = 0, month = 1, day = 1] = value.split('-').map(Number);
     return this.i18n.formatDate(new Date(year, month - 1, day), { dateStyle: 'medium' });
@@ -436,7 +440,6 @@ export class ClosurePage {
     const call: Record<ProjectAct, () => Promise<unknown>> = {
       'practical-completion': () => this.api.declarePracticalCompletion(id),
       handover: () => this.api.handOver(id),
-      warranty: () => this.api.beginWarranty(id),
       close: () => this.api.close(id),
       'hold-release': () => this.api.approveHoldRelease(id),
     };
@@ -643,7 +646,6 @@ export class ClosurePage {
 const DONE_KEYS: Readonly<Record<ProjectAct, string>> = {
   'practical-completion': 'closure.done.practical_completion',
   handover: 'closure.done.handover',
-  warranty: 'closure.done.warranty',
   close: 'closure.done.close',
   'hold-release': 'closure.done.hold_release',
 };
