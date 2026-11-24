@@ -1,8 +1,8 @@
-/** `yyyy-MM-dd` (or longer) to `dd/MM/yyyy`, by splitting the string: no `Date`, so no time zone can move the day (D-273 #15). */
+import { dmyOf } from '../format/site-day';
+
+/** `dd/MM/yyyy` of a date or an instant, read in the site day (Africa/Cairo). D-273 #15. */
 export function dmy(iso: string | null): string {
-  if (!iso) return '';
-  const [y, m, d] = iso.slice(0, 10).split('-');
-  return `${d}/${m}/${y}`;
+  return dmyOf(iso);
 }
 
 /** An `<input type="month">` value `yyyy-MM` to the first day of that month. */

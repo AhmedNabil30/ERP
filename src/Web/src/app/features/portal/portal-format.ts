@@ -1,17 +1,18 @@
+import { siteDayOf } from '../../core/format/site-day';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { PillTone } from '../../shared/kaff-status-pill/kaff-status-pill';
 import { KaffIconName } from '../../shared/kaff-icon/kaff-icon';
 import { ProjectStatus } from '../../core/projects/projects.api';
 
 /**
- * D-273 #15: day/month/year, never ISO. A bare date (`2026-11-24`) is read at noon so no time zone moves it a day. Built from
+ * D-273 #15: day/month/year, never ISO. A bare date is kept as it is and an instant is read in the site day (Africa/Cairo). Built from
  * its three numbers rather than from `Intl`'s date string, which carries direction marks that scramble the order inside a
  * left-to-right figure.
  */
 export function portalDate(i18n: I18nService, value: string): string {
-  const date = new Date(value.length === 10 ? `${value}T12:00:00` : value);
-  const two = (n: number) => i18n.formatNumber(n, { minimumIntegerDigits: 2, useGrouping: false });
-  return `${two(date.getDate())}/${two(date.getMonth() + 1)}/${i18n.formatNumber(date.getFullYear(), { useGrouping: false })}`;
+  const [year = '0', month = '01', day = '01'] = siteDayOf(value).split('-');
+  const two = (n: string) => i18n.formatNumber(Number(n), { minimumIntegerDigits: 2, useGrouping: false });
+  return `${two(day)}/${two(month)}/${i18n.formatNumber(Number(year), { useGrouping: false })}`;
 }
 
 /**

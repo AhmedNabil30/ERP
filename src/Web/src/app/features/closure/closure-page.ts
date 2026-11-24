@@ -14,6 +14,7 @@ import {
 } from '../../core/closure/closure.api';
 import { projectWorkspaceStatusKey } from '../../core/i18n/enum-keys';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { dmyOf } from '../../core/format/site-day';
 import { ProofApi, ProofResponse } from '../../core/proof/proof.api';
 import { ProjectDetail, ProjectStatus, ProjectsApi } from '../../core/projects/projects.api';
 import { SubcontractorSummary, SubcontractorsApi } from '../../core/subcontractors/subcontractors.api';
@@ -414,8 +415,7 @@ export class ClosurePage {
   });
 
   protected day(value: string): string {
-    const [year = 0, month = 1, day = 1] = value.split('-').map(Number);
-    return this.i18n.formatDate(new Date(year, month - 1, day), { dateStyle: 'medium' });
+    return dmyOf(value);
   }
 
   // ---------- project acts ----------

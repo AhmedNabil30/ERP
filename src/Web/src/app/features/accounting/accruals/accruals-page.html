@@ -57,9 +57,16 @@
               </span>
               <span class="cell-act act-cell">
                 @if (canPost() && row.canRelease) {
-                  <kaff-button variant="secondary" [testId]="'accrual-release-' + row.id" (clicked)="releasing.set(row)">
-                    {{ i18n.t('accounting.action.release') }}
-                  </kaff-button>
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    [attr.aria-label]="i18n.t('accounting.action.release')"
+                    [attr.title]="i18n.t('accounting.action.release')"
+                    [attr.data-testid]="'accrual-release-' + row.id"
+                    (click)="releasing.set(row)"
+                  >
+                    <kaff-icon name="check" />
+                  </button>
                 }
               </span>
             </kaff-table-row>

@@ -1,4 +1,5 @@
 import type { ChequeState, ExtractStatus, WaitingOnBlock } from '../../core/extracts/extracts.api';
+import { dmyOf } from '../../core/format/site-day';
 import type { WithholdingCategory } from '../../core/projects/projects.api';
 import type { AdjustmentStatus, ChangeOrderStatus, LineStaff, WaitingLine } from '../../core/extracts/chain.api';
 import type { I18nService } from '../../core/i18n/i18n.service';
@@ -71,8 +72,7 @@ export function parseDay(value: string): Date {
 
 /** DD/MM/YYYY, the mock's one date form, Western digits. */
 export function shortDay(value: string): string {
-  const [year = '', month = '', day = ''] = value.slice(0, 10).split('-');
-  return `${day}/${month}/${year}`;
+  return dmyOf(value);
 }
 
 interface Pill {
