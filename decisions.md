@@ -17521,3 +17521,25 @@ Nabil, 2026-11-24 ("do the better", on R5-Q8 as raised by the re-verification). 
 has settled that part of the extract with a certificate instead of cash. The portal's "paid" is the advance receipt, every
 collection and every tax-withheld-at-source posting on the project, net of reversals, so "remaining" reaches zero on a
 fully settled contract. The ledgers stay separate; this is a read-side sum for the client only.
+
+## D-270 — Warranty starts at handover · 2026-11-24
+
+Nabil, 2026-11-24 (Q110). Handover stamps `HandoverOn` and `WarrantyEndsOn` on the handover date and moves the project to
+UnderWarranty in the same act. The hold release has no bearing on the warranty state. The begin-warranty act and its
+`POST .../warranty` route are no longer reachable from a handed-over project; the closure screen's «بدء فترة الضمان» action
+is now dead and goes to the designer. Q109 in the same pass: Finance stays the asker for the hold release, unchanged.
+
+## D-271 — A posted subcontractor retention release is reversed through its own Owner-approved flow · 2026-11-24
+
+Nabil, 2026-11-24 (AC-806-D). Finance asks to reverse the release posting with a reason; the Owner approves or returns it
+with a reason; approval writes one mirror posting through `ReversesId`, never an edit or delete. The asker cannot decide and
+the project row is locked. The generic reversal route still refuses flow postings. The `KAFF_FLOW_REVERSAL` trigger
+(`006_flow_reversal.sql`) admits a `SubcontractorRetentionRelease` reversal only when an Approved request for that posting
+was decided at the same instant. Table `subcontractor_retention_reversal_requests`.
+
+## D-272 — The sell-price override is its own field · 2026-11-24
+
+Nabil, 2026-11-24 (KAFF-940). `catalogue_items.sell_rate_override` (nullable, 18,4) sits beside `base_sell_rate` and never
+overwrites it. The effective rate is the override when set, else the base rate. Only `CataloguePriceEdit` (Owner) sets or
+clears it. New BOQ lines copy the effective rate (the build lane's choice, raised to Nabil: without it the override would
+change no price). This supersedes D-178's reading of `baseSellRate` as the guarded override.
