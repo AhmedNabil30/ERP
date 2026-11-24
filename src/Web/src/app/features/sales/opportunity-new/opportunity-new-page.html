@@ -1,0 +1,131 @@
+<ng-template #createAction>
+  <kaff-button
+    variant="primary"
+    testId="opportunity-submit"
+    [busy]="busy()"
+    [disabled]="!clientReady()"
+    (clicked)="submit()"
+  >
+    {{ i18n.t('sales.new.submit') }}
+  </kaff-button>
+</ng-template>
+
+<section class="pg" data-testid="opportunity-new">
+  <kaff-page-head [backLink]="['/sales']" backLabelKey="nav.sales" [title]="i18n.t('sales.new.title')" />
+
+  <form class="form" novalidate (submit)="$event.preventDefault(); submit()">
+    <div aria-live="polite">
+      @if (refusal(); as key) {
+        <kaff-banner tone="refusal" testId="opportunity-new-refusal">{{ i18n.t(key) }}</kaff-banner>
+      }
+    </div>
+
+    @if (picked(); as client) {
+      <div class="field">
+        <span class="label">{{ i18n.t('sales.field.client') }}</span>
+        <div class="picked" data-testid="opportunity-client-picked">
+          <span class="val" dir="auto">{{ client.name }}</span>
+          <bdi class="ph" dir="ltr">{{ client.phone }}</bdi>
+          <button type="button" class="lnk" data-testid="opportunity-client-change" (click)="changeClient()">
+            {{ i18n.t('sales.new.change_client') }}
+          </button>
+        </div>
+      </div>
+    } @else if (adding()) {
+      <kaff-field labelKey="clients.field.name" controlId="opp-new-name" [required]="true">
+        <input
+          id="opp-new-name"
+          type="text"
+          dir="auto"
+          autocomplete="off"
+          data-testid="opportunity-new-name"
+          [value]="newName()"
+          (input)="onText($event.target, newName)"
+        />
+      </kaff-field>
+      <kaff-field labelKey="clients.field.phone" controlId="opp-new-phone" [required]="true">
+        <input
+          id="opp-new-phone"
+          type="tel"
+          dir="ltr"
+          inputmode="tel"
+          autocomplete="off"
+          data-testid="opportunity-new-phone"
+          [value]="newPhone()"
+          (input)="onText($event.target, newPhone)"
+          (blur)="checkPhone()"
+        />
+      </kaff-field>
+      @if (showDuplicate()) {
+        <kaff-banner tone="note" testId="opportunity-duplicate">
+          <span class="dup">
+            {{ i18n.t('sales.new.duplicate', { name: matches()[0].name }) }}
+            <span class="dup-acts">
+              <kaff-button variant="secondary" testId="opportunity-use-match" (clicked)="useMatch(matches()[0])">
+                {{ i18n.t('sales.new.use_match', { name: matches()[0].name }) }}
+              </kaff-button>
+              <kaff-button variant="secondary" testId="opportunity-add-same-phone" (clicked)="acknowledged.set(true)">
+                {{ i18n.t('sales.new.add_same_phone') }}
+              </kaff-button>
+            </span>
+          </span>
+        </kaff-banner>
+      }
+    } @else {
+      <div class="field">
+        <span class="label">{{ i18n.t('sales.field.client') }}</span>
+        <kaff-search-field
+          [value]="query()"
+          placeholderKey="sales.new.client_placeholder"
+          clearLabelKey="sales.search.clear"
+          [busy]="searching()"
+          testId="opportunity-client-search"
+          (committed)="onSearch($event)"
+        />
+        @if (results().length > 0) {
+          <ul class="pick" data-testid="opportunity-client-results">
+            @for (client of results(); track client.id) {
+              <li>
+                <button type="button" (click)="pick(client)" [attr.data-testid]="'opportunity-client-' + client.id">
+                  <b dir="auto">{{ client.name }}</b>
+                  <bdi dir="ltr">{{ client.phone }}</bdi>
+                </button>
+              </li>
+            }
+          </ul>
+        } @else if (searched() && !searching()) {
+          <ul class="pick" data-testid="opportunity-client-none">
+            <li><span class="none">{{ i18n.t('sales.new.no_client') }}</span></li>
+            <li>
+              <button type="button" data-testid="opportunity-client-add" (click)="startAdding()">
+                <b>{{ i18n.t('sales.new.add_client', { name: query().trim() }) }}</b>
+              </button>
+            </li>
+          </ul>
+        }
+      </div>
+    }
+
+    <kaff-field
+      labelKey="sales.field.title"
+      controlId="opp-title"
+      [required]="true"
+      [errorKey]="titleError()"
+      errorTestId="opportunity-title-error"
+      #titleField="kaffField"
+    >
+      <input
+        id="opp-title"
+        type="text"
+        dir="auto"
+        autocomplete="off"
+        data-testid="opportunity-title"
+        [attr.aria-invalid]="titleError() !== null ? 'true' : null"
+        [attr.aria-describedby]="titleField.describedById()"
+        [readOnly]="busy()"
+        [value]="title()"
+        (input)="onText($event.target, title)"
+      />
+    </kaff-field>
+  </form>
+</section>

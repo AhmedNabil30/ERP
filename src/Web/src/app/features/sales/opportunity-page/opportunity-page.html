@@ -1,0 +1,100 @@
+<ng-template #primaryAction>
+  @if (!failure() && !loading()) {
+    @if (next() !== null) {
+      <kaff-button variant="primary" testId="opportunity-advance" [busy]="busy()" (clicked)="advance()">
+        {{ nextLabel() }}
+      </kaff-button>
+    } @else if (onHold()) {
+      <kaff-button variant="primary" testId="opportunity-resume" [busy]="busy()" (clicked)="run('resume')">
+        {{ i18n.t('sales.action.resume') }}
+      </kaff-button>
+    } @else if (lost()) {
+      <kaff-button variant="primary" testId="opportunity-reopen" [busy]="busy()" (clicked)="run('reopen')">
+        {{ i18n.t('sales.action.reopen') }}
+      </kaff-button>
+    }
+  }
+</ng-template>
+
+<section class="pg" data-testid="opportunity-page">
+  <kaff-page-head [backLink]="['/sales']" backLabelKey="nav.sales" [title]="opportunity()?.title ?? i18n.t('sales.page.title')">
+    @if (opportunity()) {
+      <kaff-status-pill titleAside [tone]="pill().tone" [icon]="pill().icon" testId="opportunity-status">{{ statusLabel() }}</kaff-status-pill>
+    }
+    @if (opportunity(); as o) {
+      <p class="sub" dir="auto" data-testid="opportunity-client">
+        {{ o.clientName }}
+        @if (lost() && o.closedLostReason) {
+          <span class="reason">{{ i18n.t('sales.lost.reason_line', { reason: o.closedLostReason }) }}</span>
+        }
+      </p>
+    }
+  </kaff-page-head>
+
+  @if (failure(); as key) {
+    <kaff-state mode="refusal" [bodyKey]="key" testId="opportunity-failure">
+      @if (key !== 'errors.auth.forbidden' && key !== 'errors.sales.opportunity_not_found') {
+        <kaff-button stateAction variant="secondary" testId="opportunity-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+      }
+    </kaff-state>
+  } @else if (loading()) {
+    <kaff-state mode="loading" titleKey="sales.loading" testId="opportunity-loading" />
+  } @else if (opportunity()) {
+    <div aria-live="polite">
+      @if (refusal(); as key) {
+        <kaff-banner tone="refusal" testId="opportunity-refusal">{{ i18n.t(key) }}</kaff-banner>
+      }
+    </div>
+
+    <div class="panel">
+      <kaff-stepper [steps]="steps()" [current]="current()" [ariaLabel]="i18n.t('sales.stage_line')" testId="opportunity-stages" />
+
+      @if (followUp()) {
+        <kaff-banner tone="note" testId="opportunity-quiet"><kaff-icon name="clock" [small]="true" /> {{ ago() }}</kaff-banner>
+      } @else {
+        <span class="ago" data-testid="opportunity-ago"><kaff-icon name="clock" [small]="true" />{{ ago() }}</span>
+      }
+
+      @if (canClose()) {
+        <div class="acts">
+          @if (live()) {
+            <kaff-button variant="secondary" testId="opportunity-hold" [busy]="busy()" (clicked)="run('hold')">
+              {{ i18n.t('sales.action.hold') }}
+            </kaff-button>
+          }
+          <kaff-button variant="ghost" testId="opportunity-close-lost" (clicked)="openClose()">
+            {{ i18n.t('sales.action.close_lost') }}
+          </kaff-button>
+        </div>
+      }
+    </div>
+  }
+
+  <kaff-detail-panel [open]="closing()" titleKey="sales.action.close_lost" testId="opportunity-close-panel" (closed)="closing.set(false)">
+    <div panelBody class="sheet">
+      <kaff-choice-group
+        legendKey="sales.lost.reason"
+        testId="opportunity-lost-reason"
+        [choices]="reasons()"
+        [required]="true"
+        [errorKey]="lostError()"
+        [value]="lostReason()"
+        (valueChange)="lostReason.set($event)"
+      />
+      <kaff-field labelKey="sales.lost.note" controlId="opp-lost-note">
+        <textarea id="opp-lost-note" rows="3" dir="auto" data-testid="opportunity-lost-note" [value]="lostNote()" (input)="onText($event.target, lostNote)"></textarea>
+      </kaff-field>
+      @if (refusal(); as key) {
+        <kaff-banner tone="refusal" testId="opportunity-close-refusal">{{ i18n.t(key) }}</kaff-banner>
+      }
+    </div>
+    <div panelFooter class="foot">
+      <kaff-button variant="primary" testId="opportunity-close-confirm" [busy]="busy()" (clicked)="confirmClose()">
+        {{ i18n.t('sales.action.close_lost') }}
+      </kaff-button>
+      <kaff-button variant="secondary" testId="opportunity-close-cancel" (clicked)="closing.set(false)">
+        {{ i18n.t('action.cancel') }}
+      </kaff-button>
+    </div>
+  </kaff-detail-panel>
+</section>

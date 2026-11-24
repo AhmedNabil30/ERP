@@ -15,6 +15,7 @@ import { employeeManageGuard } from './core/auth/employee-manage.guard';
 import { mustChangePasswordGuard } from './core/auth/must-change-password.guard';
 import { projectCreateGuard } from './core/auth/project-create.guard';
 import { projectListGuard } from './core/auth/project-list.guard';
+import { opportunityManageGuard } from './core/auth/opportunity-manage.guard';
 import { proofReadGuard } from './core/auth/proof-read.guard';
 import { sessionGuard } from './core/auth/session.guard';
 import { subcontractorManageGuard } from './core/auth/subcontractor-manage.guard';
@@ -61,6 +62,28 @@ export const routes: Routes = [
         path: ':clientId',
         loadComponent: () =>
           import('./features/clients/client-form/client-form-page').then((m) => m.ClientFormPage),
+      },
+    ],
+  },
+  {
+    // R3-10 — the sales pipeline. OpportunityManage (Owner, Marketing); the server gates every call again.
+    path: 'sales',
+    canActivate: [sessionGuard, mustChangePasswordGuard, opportunityManageGuard],
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/sales/opportunity-list/opportunity-list-page').then((m) => m.OpportunityListPage),
+      },
+      {
+        path: 'new',
+        loadComponent: () =>
+          import('./features/sales/opportunity-new/opportunity-new-page').then((m) => m.OpportunityNewPage),
+      },
+      {
+        path: ':opportunityId',
+        loadComponent: () =>
+          import('./features/sales/opportunity-page/opportunity-page').then((m) => m.OpportunityPage),
       },
     ],
   },

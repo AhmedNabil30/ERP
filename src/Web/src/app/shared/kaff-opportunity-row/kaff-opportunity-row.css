@@ -1,0 +1,67 @@
+:host {
+  display: block;
+}
+
+.opp {
+  display: grid;
+  gap: var(--space-2);
+  min-block-size: 76px;
+  padding: var(--space-3) var(--space-4);
+  color: inherit;
+  text-decoration: none;
+  align-content: center;
+}
+
+.nm {
+  display: grid;
+  gap: 2px;
+  min-inline-size: 0;
+}
+
+.nm b {
+  font-size: var(--text-md);
+  overflow-wrap: anywhere;
+}
+
+.nm small {
+  color: var(--dim);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.tg,
+.qw {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.sts:empty {
+  display: none;
+}
+
+.qt {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--dim);
+  font-size: var(--text-sm);
+}
+
+@media (min-width: 821px) {
+  .opp {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 2.2fr);
+    align-items: center;
+  }
+
+  .tg {
+    display: grid;
+    grid-template-columns: 8rem 8rem minmax(0, 1fr);
+  }
+
+  .sts:empty {
+    display: block;
+  }
+}
