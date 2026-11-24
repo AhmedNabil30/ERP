@@ -1,14 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { toProblem } from '../../core/api/problem-details';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { KaffBanner } from '../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../shared/kaff-button/kaff-button';
 import { KaffField } from '../../shared/kaff-field/kaff-field';
 import { KaffState } from '../../shared/kaff-state/kaff-state';
 import { KaffStatusPill } from '../../shared/kaff-status-pill/kaff-status-pill';
-import { PortalApi, PortalChangeOrder } from './portal.api';
-import { changeOrderPill } from './portal-format';
+import { PortalApi, PortalChangeOrder, PortalChangeOrderDetail } from './portal.api';
+import { changeOrderPill, portalDate } from './portal-format';
 
 type Step = 'view' | 'confirm' | 'refuse';
 
@@ -37,6 +38,14 @@ type Step = 'view' | 'confirm' | 'refuse';
         </kaff-state>
       } @else if (order(); as order) {
         <h1>{{ order.title }}</h1>
+        @if (order.submittedAt) {
+          <div class="kvs">
+            <div class="kv">
+              <span>{{ i18n.t('portal.co.date') }}</span>
+              <span class="fig" data-testid="portal-co-date">{{ date(order.submittedAt) }}</span>
+            </div>
+          </div>
+        }
         @if (!order.canDecide) {
           <div>
             <kaff-status-pill [tone]="pill().tone" [icon]="pill().icon" testId="portal-co-status">{{ i18n.t(pill().key) }}</kaff-status-pill>
@@ -72,6 +81,18 @@ type Step = 'view' | 'confirm' | 'refuse';
             <span>{{ i18n.t('portal.co.total') }}</span>
             <span class="fig" data-testid="portal-co-total">{{ i18n.formatMoney(order.total) }}</span>
           </div>
+          @if (order.contractValueBefore; as before) {
+            <div class="kv">
+              <span>{{ i18n.t('portal.co.before') }}</span>
+              <span class="fig">{{ i18n.formatMoney(before) }}</span>
+            </div>
+          }
+          @if (order.contractValueAfter; as after) {
+            <div class="kv">
+              <span>{{ i18n.t('portal.co.after') }}</span>
+              <span class="fig" data-testid="portal-co-after">{{ i18n.formatMoney(after) }}</span>
+            </div>
+          }
         </div>
 
         @if (order.canDecide) {
@@ -132,7 +153,7 @@ export class PortalChangeOrderPage {
   private readonly api = inject(PortalApi);
   protected readonly i18n = inject(I18nService);
 
-  protected readonly order = signal<PortalChangeOrder | null>(null);
+  protected readonly order = signal<PortalChangeOrderDetail | null>(null);
   protected readonly loading = signal(true);
   protected readonly failed = signal(false);
   protected readonly step = signal<Step>('view');
@@ -155,6 +176,10 @@ export class PortalChangeOrderPage {
     });
   }
 
+  protected date(value: string): string {
+    return portalDate(this.i18n, value);
+  }
+
   protected onReason(event: Event): void {
     this.reason.set((event.target as HTMLTextAreaElement).value);
   }
@@ -163,10 +188,14 @@ export class PortalChangeOrderPage {
     this.loading.set(true);
     this.failed.set(false);
     try {
-      const orders = await this.api.changeOrders(projectId);
-      this.order.set(orders.find((candidate) => candidate.id === orderId) ?? null);
+      this.order.set(await this.api.changeOrder(projectId, orderId));
     } catch (error) {
       if (this.api.routeRefusal(error)) {
+        return;
+      }
+      // The server answers 404 for an order that is not this project's: a state to show, not a failure.
+      if (toProblem(error).status === 404) {
+        this.order.set(null);
         return;
       }
       this.failed.set(true);
@@ -189,7 +218,9 @@ export class PortalChangeOrderPage {
     this.busy.set(true);
     this.actionFailed.set(false);
     try {
-      this.order.set(await send());
+      // The decision answers the list shape; the date and contract values stay from the read.
+      const updated = await send();
+      this.order.update((current) => (current === null ? null : { ...current, ...updated }));
       this.decided.set(true);
       this.step.set('view');
     } catch (error) {

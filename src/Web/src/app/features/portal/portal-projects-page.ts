@@ -3,16 +3,17 @@ import { Router, RouterLink } from '@angular/router';
 
 import { projectWorkspaceStatusKey } from '../../core/i18n/enum-keys';
 import { I18nService } from '../../core/i18n/i18n.service';
+import { KaffBadge } from '../../shared/kaff-badge/kaff-badge';
 import { KaffButton } from '../../shared/kaff-button/kaff-button';
 import { KaffState } from '../../shared/kaff-state/kaff-state';
 import { KaffStatusPill } from '../../shared/kaff-status-pill/kaff-status-pill';
 import { PortalApi, PortalProject } from './portal.api';
-import { projectPill } from './portal-format';
+import { percentOf, projectPill } from './portal-format';
 
 /** P2. The client's projects. A client with one project never sees this page: it hands on to that project. */
 @Component({
   selector: 'kaff-portal-projects-page',
-  imports: [KaffButton, KaffState, KaffStatusPill, RouterLink],
+  imports: [KaffBadge, KaffButton, KaffState, KaffStatusPill, RouterLink],
   styleUrl: './portal.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -27,17 +28,30 @@ import { projectPill } from './portal-format';
       } @else if (projects().length === 0) {
         <kaff-state mode="empty" icon="info" titleKey="portal.projects.empty" />
       } @else {
-        <ul class="lst" data-testid="portal-projects">
+        <div class="sec" data-testid="portal-projects">
           @for (project of projects(); track project.id) {
-            <li>
-              <a [routerLink]="['/portal/projects', project.id]">
-                <span class="grow"><b>{{ project.name }}</b></span>
+            <a class="card" [class.pend]="project.pendingCount > 0" [routerLink]="['/portal/projects', project.id]" data-testid="portal-project">
+              <div class="ln">
+                <b>{{ project.name }}</b>
+                @if (project.pendingCount > 0) {
+                  <kaff-badge tone="brand" testId="portal-pending-badge">{{ i18n.t('portal.projects.pending', { count: project.pendingCount }) }}</kaff-badge>
+                }
+              </div>
+              <div>
                 <kaff-status-pill [tone]="pill(project).tone" [icon]="pill(project).icon">{{ i18n.t(statusKey(project)) }}</kaff-status-pill>
-                <svg class="i fwd" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
-              </a>
-            </li>
+              </div>
+              @if (project.remaining; as remaining) {
+                <div class="meter" aria-hidden="true"><i [style.inline-size.%]="share(project, remaining)"></i></div>
+              }
+              <div class="ln dim">
+                <span>{{ i18n.t('portal.home.paid') }} <span class="fig">{{ i18n.formatAmount(project.paid) }}</span></span>
+                @if (project.remaining; as remaining) {
+                  <span>{{ i18n.t('portal.home.remaining') }} <span class="fig">{{ i18n.formatMoney(remaining) }}</span></span>
+                }
+              </div>
+            </a>
           }
-        </ul>
+        </div>
       }
     </div>
   `,
@@ -57,6 +71,12 @@ export class PortalProjectsPage {
 
   protected pill(project: PortalProject) {
     return projectPill(project.status);
+  }
+
+  /** Paid over paid plus remaining: the bar only, drawn from whole piastres. */
+  protected share(project: PortalProject, remaining: string): number {
+    const sum = (BigInt(project.paid.replace('.', '')) + BigInt(remaining.replace('.', ''))).toString().padStart(3, '0');
+    return percentOf(project.paid, `${sum.slice(0, -2)}.${sum.slice(-2)}`);
   }
 
   protected statusKey(project: PortalProject): string {

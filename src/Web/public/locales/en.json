@@ -2476,5 +2476,12 @@
   "accounting.field.remaining": "Remaining",
   "accounting.field.request": "Request",
   "accounting.field.status": "Status",
-  "accounting.field.to": "To"
+  "accounting.field.to": "To",
+  "portal.projects.pending": "Waiting for you {count}",
+  "portal.home.plan": "Time plan",
+  "portal.home.start": "Start",
+  "portal.home.planned_end": "Planned end",
+  "portal.co.date": "Date",
+  "portal.co.before": "Contract value before",
+  "portal.co.after": "Contract value after"
 }

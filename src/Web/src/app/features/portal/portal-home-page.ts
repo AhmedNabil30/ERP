@@ -7,7 +7,7 @@ import { KaffButton } from '../../shared/kaff-button/kaff-button';
 import { KaffState } from '../../shared/kaff-state/kaff-state';
 import { KaffStatusPill } from '../../shared/kaff-status-pill/kaff-status-pill';
 import { PortalApi, PortalChangeOrder, PortalExtract, PortalHome } from './portal.api';
-import { changeOrderPill, percentOf, projectPill } from './portal-format';
+import { changeOrderPill, percentOf, portalDate, projectPill } from './portal-format';
 
 /**
  * P3. Where the project stands, for a client: what waits on them first, then progress, what is paid and what remains.
@@ -131,6 +131,32 @@ import { changeOrderPill, percentOf, projectPill } from './portal-format';
           </section>
         }
 
+        @if (home.plannedStart || home.plannedEnd) {
+          <section class="sec" data-testid="portal-plan">
+            <h2>{{ i18n.t('portal.home.plan') }}</h2>
+            <div class="kvs">
+              @if (home.plannedStart; as start) {
+                <div class="kv">
+                  <span>{{ i18n.t('portal.home.start') }}</span>
+                  <span class="fig">{{ date(start) }}</span>
+                </div>
+              }
+              @if (home.plannedEnd; as end) {
+                <div class="kv">
+                  <span>{{ i18n.t('portal.home.planned_end') }}</span>
+                  <span class="fig">{{ date(end) }}</span>
+                </div>
+              }
+              @if (home.isStalled) {
+                <div class="kv">
+                  <span></span>
+                  <kaff-status-pill tone="stuck" icon="alert" testId="portal-stalled">{{ i18n.t('status.kaff.troubled') }}</kaff-status-pill>
+                </div>
+              }
+            </div>
+          </section>
+        }
+
         <ul class="lst">
           <li>
             <a [routerLink]="['/portal/projects', projectId(), 'extracts']" data-testid="portal-link-extracts">
@@ -198,6 +224,10 @@ export class PortalHomePage {
 
   protected orderPill(order: PortalChangeOrder) {
     return changeOrderPill(order.status);
+  }
+
+  protected date(value: string): string {
+    return portalDate(this.i18n, value);
   }
 
   protected percent(completion: string): string {

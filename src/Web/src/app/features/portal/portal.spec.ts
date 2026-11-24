@@ -1,10 +1,11 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { I18nService } from '../../core/i18n/i18n.service';
-import { PortalApi, PortalChangeOrder, PortalExtract, PortalHome } from './portal.api';
+import { PortalApi, PortalChangeOrder, PortalChangeOrderDetail, PortalExtract, PortalHome } from './portal.api';
 import { PortalChangeOrderPage } from './portal-change-order-page';
 import { PortalHomePage } from './portal-home-page';
 import { changeOrderPill, percentOf, portalDate } from './portal-format';
@@ -48,6 +49,9 @@ const HOME: PortalHome = {
   paid: '1250000.00',
   remaining: '1630000.00',
   pendingApprovals: 1,
+  plannedStart: '2026-03-01',
+  plannedEnd: '2026-12-31',
+  isStalled: true,
 };
 
 class FakePortalApi {
@@ -64,6 +68,13 @@ class FakePortalApi {
   }
   async changeOrders(): Promise<readonly PortalChangeOrder[]> {
     return this.orders;
+  }
+  async changeOrder(_p: string, id: string): Promise<PortalChangeOrderDetail> {
+    const found = this.orders.find((order) => order.id === id);
+    if (!found) {
+      throw new HttpErrorResponse({ status: 404 });
+    }
+    return { ...found, submittedAt: '2026-11-20T09:00:00+02:00', contractValueBefore: '2880000.00', contractValueAfter: '2928470.00' };
   }
   async approve(_p: string, id: string): Promise<PortalChangeOrder> {
     this.calls.push(`approve:${id}`);
@@ -132,6 +143,8 @@ describe('PortalChangeOrderPage', () => {
     const fixture = await open();
     expect(el(fixture, 'portal-co-approve')).not.toBeNull();
     expect(el(fixture, 'portal-co-total')?.textContent).toContain('48470.00');
+    expect(el(fixture, 'portal-co-date')?.textContent).toContain('20/11/2026');
+    expect(el(fixture, 'portal-co-after')?.textContent).toContain('2928470.00');
 
     await click(fixture, 'portal-co-approve');
     expect(el(fixture, 'portal-co-confirm')?.textContent).toContain('48470.00');
@@ -199,5 +212,7 @@ describe('PortalHomePage', () => {
     expect(host.querySelector('[data-testid="portal-paid"]')?.textContent).toContain('1250000.00');
     expect(host.querySelector('[data-testid="portal-remaining"]')?.textContent).toContain('1630000.00');
     expect(host.querySelector('[data-testid="portal-bar-action"]')).not.toBeNull();
+    expect(host.querySelector('[data-testid="portal-plan"]')?.textContent).toContain('01/03/2026');
+    expect(host.querySelector('[data-testid="portal-stalled"]')).not.toBeNull();
   });
 });
