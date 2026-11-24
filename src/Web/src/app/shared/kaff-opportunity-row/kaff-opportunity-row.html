@@ -1,0 +1,20 @@
+<a class="opp" [routerLink]="['/sales', opportunity().id]" [attr.data-testid]="'opportunity-row-' + opportunity().id">
+  <span class="nm">
+    <b dir="auto">{{ opportunity().clientName }}</b>
+    <small dir="auto">{{ opportunity().title }}</small>
+  </span>
+  <span class="tg">
+    <kaff-badge tone="accent">{{ i18n.t(stage()) }}</kaff-badge>
+    <span class="sts">
+      @if (showStatus()) {
+        <kaff-status-pill [tone]="pill().tone" [icon]="pill().icon">{{ i18n.t(status()) }}</kaff-status-pill>
+      }
+    </span>
+    <span class="qw">
+      <span class="qt"><kaff-icon name="clock" [small]="true" />{{ ago() }}</span>
+      @if (followUp()) {
+        <kaff-badge tone="warning"><kaff-icon name="clock" [small]="true" />{{ i18n.t('sales.follow_up') }}</kaff-badge>
+      }
+    </span>
+  </span>
+</a>

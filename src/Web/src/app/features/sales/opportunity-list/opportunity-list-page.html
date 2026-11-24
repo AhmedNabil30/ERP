@@ -1,0 +1,50 @@
+<ng-template #createAction>
+  <kaff-button variant="primary" testId="opportunity-create" (clicked)="onCreate()">
+    {{ i18n.t('sales.action.create') }}
+  </kaff-button>
+</ng-template>
+
+<section class="pg" data-testid="opportunity-list">
+  <h1 class="title">{{ i18n.t('nav.sales') }}</h1>
+
+  <div class="tools">
+    <kaff-search-field
+      [(value)]="searchDraft"
+      placeholderKey="sales.search.placeholder"
+      clearLabelKey="sales.search.clear"
+      testId="opportunity-search"
+      (committed)="search.set($event)"
+    />
+    <div class="selects">
+      <kaff-select [options]="stageOptions()" [(value)]="stage" ariaLabelKey="sales.filter.stage" testId="opportunity-stage" />
+      <kaff-select [options]="statusOptions()" [(value)]="status" ariaLabelKey="sales.filter.status" testId="opportunity-status" />
+    </div>
+    <kaff-segmented-filter
+      [options]="viewOptions"
+      [value]="view()"
+      (valueChange)="view.set($event)"
+      ariaLabelKey="sales.filter.view"
+      testIdPrefix="opportunity-view"
+    />
+  </div>
+
+  @if (failure(); as key) {
+    <kaff-state mode="refusal" [bodyKey]="key" testId="opportunity-list-failure">
+      @if (key !== 'errors.auth.forbidden') {
+        <kaff-button stateAction variant="secondary" testId="opportunity-retry" (clicked)="retry()">{{ i18n.t('extract.retry') }}</kaff-button>
+      }
+    </kaff-state>
+  } @else if (loading()) {
+    <kaff-state mode="loading" titleKey="sales.loading" testId="opportunity-list-loading" />
+  } @else if (rows().length > 0) {
+    <div class="frame" data-testid="opportunity-rows">
+      @for (row of rows(); track row.id) {
+        <kaff-opportunity-row [opportunity]="row" [now]="now()" />
+      }
+    </div>
+  } @else if (filtered()) {
+    <kaff-state mode="filtered-empty" titleKey="sales.empty.filtered" testId="opportunity-list-empty-filtered" />
+  } @else {
+    <kaff-state mode="empty" titleKey="sales.empty.title" testId="opportunity-list-empty" />
+  }
+</section>
