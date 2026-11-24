@@ -89,6 +89,28 @@ public sealed class StaffSessionMinter
     }
 
     /// <summary>
+    /// Mints a portal session for a <see cref="Role.Client"/> and sets it on <paramref name="response"/>. R5-A, D-062 §2, D-051 Q33.
+    /// </summary>
+    /// <remarks>
+    /// The mirror of <see cref="Issue"/>: it refuses every role but the client, so the portal door can never mint a staff session
+    /// and the staff door can never mint a client one. The token carries the same four identity claims; what the holder may reach is
+    /// decided on every request from the database (Permission.PortalRead and PortalApprove, Role.Client only), not from the token.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException"><paramref name="user"/> is not a client. A programmer-error guard, not the refusal path.</exception>
+    public void IssuePortal(HttpResponse response, User user, DateTimeOffset issuedAt)
+    {
+        ArgumentNullException.ThrowIfNull(response);
+        ArgumentNullException.ThrowIfNull(user);
+
+        if (!user.Role.MayHoldPortalSession())
+        {
+            throw new InvalidOperationException($"No portal session may be minted for {user.Role}. The caller must refuse the request before reaching here.");
+        }
+
+        Mint(response, ClaimsFor(user), issuedAt);
+    }
+
+    /// <summary>
     /// Re-mints an existing session's token with a fresh inactivity window, keeping its claims.
     /// </summary>
     /// <remarks>

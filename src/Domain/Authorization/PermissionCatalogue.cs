@@ -576,6 +576,11 @@ public static class PermissionCatalogue
             // the read routes use this row; the deposit, clearance and bounce stay ExtractCollect, Finance alone.
             new(Permission.ChequeRead, PermissionScope.ProjectScoped, [owner, finance], "§6.5 - D-239 item 4", TouchesMoney: true),
 
+            // R5-C, R5-Q12 (ASSUMED, Rulings/PortalRulings.cs PhotoPublishers): who decides what the client sees of the site.
+            new(Permission.SitePhotoPublish, PermissionScope.ProjectScoped, [technicalOffice, engineerSupervisor],
+                "§8 — holder UNRESOLVED (R5-Q12), Technical Office and supervising engineer assumed, see Rulings/PortalRulings.cs",
+                Unresolved: true),
+
             new(Permission.ChangeOrderApprove,PermissionScope.ProjectScoped, [owner], "§9, §13", TouchesMoney: true),
 
             // spec.md section 13 gives the change-order chain and names only the Owner's step (section 9). Who drafts,

@@ -391,6 +391,9 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+// R5-Q1 default: on the portal host name only /api/portal answers. Before CORS and authentication, so nothing else is even evaluated there.
+app.UseMiddleware<PortalHostMiddleware>();
+
 app.UseCors();
 
 // Before AuditCorrelationMiddleware, which is where the address is read, and therefore before

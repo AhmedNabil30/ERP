@@ -14,8 +14,10 @@
 --  The grants, derived from what EF writes (decisions.md, the F-1 entry):
 --    * every table: SELECT and INSERT. That is the whole of postings and audit_records, and of every
 --      record that is never changed once written (gate records, collection records, daily-log
---      entries, change-order lines, the extract's change-order lines and quantity lines, BOQ base
---      lines).
+--      entries bar photo_entries, change-order lines, the extract's change-order lines and quantity
+--      lines, BOQ base lines).
+--    * photo_entries is the one daily-log table that is also UPDATEd: is_published flips once, when a
+--      photo is published to the client (R5-C).
 --    * UPDATE only on the tables whose entities have behaviour that changes a written row.
 --    * DELETE only on the three child tables EF removes rows from: a draft BOQ's lines
 --      (Boq.RemoveLine), a BOQ base's lines (UpdateBoqBase) and an extract's figures (Extract
@@ -36,7 +38,7 @@ DECLARE
         'Departments', 'accounting_periods', 'accounts', 'adjustments', 'babs', 'boq_bases',
         'boq_lines', 'boqs', 'catalogue_items', 'change_orders', 'cheques', 'clients', 'daily_logs',
         'employees', 'engagements', 'extract_figures', 'extracts', 'hold_release_requests', 'ncrs',
-        'opportunities', 'project_assignments', 'projects', 'snags', 'subcontractor_retention_release_requests', 'subcontractors',
+        'opportunities', 'photo_entries', 'project_assignments', 'projects', 'snags', 'subcontractor_retention_release_requests', 'subcontractors',
         'suppliers',
         'users', 'warranty_callbacks'];
     v_deletable text[] := ARRAY['boq_lines', 'boq_base_lines', 'extract_figures'];

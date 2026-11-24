@@ -97,6 +97,12 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
             + "about which usernames exist, by status code or by clock."),
         new(
             "POST",
+            "/api/portal/auth/sign-in",
+            "R5-A - the client's door, the mirror of the staff sign-in and anonymous for the same reason: it produces the identity "
+            + "every other portal route requires. Its gate is the credential, verified before anything else decides the response, and "
+            + "every refusal is the same 401 (a staff account at this door included), bar a locked account given the correct password."),
+        new(
+            "POST",
             "/api/auth/sign-out",
             "KAFF-102 — story rule 7: \"signing out when already signed out is not an error worth a "
             + "refusal.\" Behind the fallback policy an unauthenticated caller would be refused 401 "
@@ -123,6 +129,18 @@ public sealed class EndpointPermissionCoverageTests : IAsyncLifetime
     /// </remarks>
     private static readonly SelfOnlyEndpoint[] SelfOnlyEndpoints =
     [
+        new(
+            "POST",
+            "/api/portal/auth/change-password",
+            "R5-A, KAFF-103 mirrored. A client replaces the temporary password the Owner handed over. It must be reachable while "
+            + "MustChangePassword is true, so it cannot carry a permission; RequirePortalSession re-reads active, security stamp and the "
+            + "client role on every call."),
+        new(
+            "GET",
+            "/api/portal/projects",
+            "R5-B. The client's own projects. The route names no project, so no project-scoped permission can be checked against one; "
+            + "RequirePortalSession proves a live client and the handler scopes the query to the caller's client file, read from the "
+            + "database. A refused password change is answered in the handler."),
         new(
             "POST",
             "/api/auth/change-password",

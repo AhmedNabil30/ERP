@@ -436,6 +436,7 @@ public sealed class CatalogueCompletenessTests
             Permission.ExtractDisputeResolve,
             Permission.AdjustmentRaise,
             Permission.SubcontractorRetentionRelease,
+            Permission.SitePhotoPublish,
         ];
 
         PermissionCatalogue.Unresolved

@@ -85,7 +85,11 @@ public static class LiveSession
     /// impossible, and <see cref="IsApplied"/> cannot tell the two apart.
     /// </para>
     /// </remarks>
-    private sealed class Marker;
+    private sealed class Marker(bool portal)
+    {
+        /// <summary>True when the route owes the portal door's session rule (a client) instead of the staff one.</summary>
+        public bool Portal { get; } = portal;
+    }
 
     /// <summary>
     /// Whether <paramref name="endpoint"/> actually carries <see cref="RequireLiveSession"/>.
@@ -125,9 +129,18 @@ public static class LiveSession
     /// filter — it asks this the same question and writes its audit row only on a live answer.
     /// </para>
     /// </remarks>
+    public static Task<User?> ResolveAsync(
+        HttpContext http,
+        KaffDbContext database,
+        CancellationToken cancellationToken) => ResolveAsync(http, database, portal: false, cancellationToken);
+
+    /// <summary>
+    /// The same three facts for the portal door: active, current stamp, and a role that may hold a <b>portal</b> session (R5-A).
+    /// </summary>
     public static async Task<User?> ResolveAsync(
         HttpContext http,
         KaffDbContext database,
+        bool portal,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(http);
@@ -150,7 +163,7 @@ public static class LiveSession
         if (user is null
             || !user.IsActive
             || !string.Equals(user.SecurityStamp, current.SecurityStamp, StringComparison.Ordinal)
-            || !user.Role.MayHoldStaffSession())
+            || !(portal ? user.Role.MayHoldPortalSession() : user.Role.MayHoldStaffSession()))
         {
             return null;
         }
@@ -170,7 +183,15 @@ public static class LiveSession
     /// same <see cref="HttpContext.Items"/> channel while also being parsed as a permission by
     /// <c>EndpointPermissionCoverageTests</c>, which it is not.
     /// </remarks>
-    public static RouteHandlerBuilder RequireLiveSession(this RouteHandlerBuilder builder)
+    public static RouteHandlerBuilder RequireLiveSession(this RouteHandlerBuilder builder) => RequireSession(builder, portal: false);
+
+    /// <summary>
+    /// <see cref="RequireLiveSession"/> for a portal route: the caller must be a live client, and a staff session is refused with the
+    /// same blanket 403 (R5-A, KAFF-810 AC-810-B).
+    /// </summary>
+    public static RouteHandlerBuilder RequirePortalSession(this RouteHandlerBuilder builder) => RequireSession(builder, portal: true);
+
+    private static RouteHandlerBuilder RequireSession(RouteHandlerBuilder builder, bool portal)
     {
         ArgumentNullException.ThrowIfNull(builder);
 
@@ -182,13 +203,14 @@ public static class LiveSession
                 User? caller = await ResolveAsync(
                     http,
                     http.RequestServices.GetRequiredService<KaffDbContext>(),
+                    portal,
                     http.RequestAborted);
 
                 return caller is null
                     ? ResultExtensions.Problem(AuthorizationErrors.Forbidden)
                     : await next(context);
             })
-            .WithMetadata(new Marker());
+            .WithMetadata(new Marker(portal));
     }
 
     /// <summary>The row <see cref="RequireLiveSession"/> already checked. Never null behind that filter.</summary>

@@ -519,4 +519,10 @@ public enum Permission
     /// stays <see cref="ExtractCollect"/>, which the Owner does not hold.
     /// </summary>
     ChequeRead = 95,
+
+    /// <summary>
+    /// R5-C, R5-Q12 (ASSUMED) - publish a site photo to the client portal. The supervising site engineer and the Technical
+    /// Office. Money-free: a junior engineer drafts the log but does not decide what the client sees.
+    /// </summary>
+    SitePhotoPublish = 96,
 }

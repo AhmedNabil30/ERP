@@ -166,4 +166,7 @@ public static class StaffSessionRules
         or Role.MarketingSales
         or Role.Hr
         or Role.Client;
+
+    /// <summary>True only for the role the portal door opens a session for (R5-A, decisions.md D-035, D-051 Q33).</summary>
+    public static bool MayHoldPortalSession(this Role role) => role is Role.Client;
 }

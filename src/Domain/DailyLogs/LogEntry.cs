@@ -147,8 +147,8 @@ public sealed class MaterialEntry : LogEntry
 }
 
 /// <summary>
-/// A site photo. <see cref="IsPublished"/> starts false and nothing here sets it: photos are published
-/// deliberately, never mirrored (spec.md section 8, KAFF-600 rule 8; the publish step is KAFF-606).
+/// A site photo. <see cref="IsPublished"/> starts false and only <see cref="Publish"/> sets it: photos are published
+/// deliberately, never mirrored (spec.md section 8, KAFF-600 rule 8; the publish step is R5-C).
 /// </summary>
 public sealed class PhotoEntry : LogEntry
 {
@@ -169,6 +169,9 @@ public sealed class PhotoEntry : LogEntry
     public string? Caption { get; private set; }
 
     public bool IsPublished { get; private set; }
+
+    /// <summary>Makes the photo visible to the client. Publishing a published photo changes nothing and is not an error.</summary>
+    public void Publish() => IsPublished = true;
 }
 
 /// <summary>

@@ -177,6 +177,16 @@ public sealed record RulingSet
 
     public SupervisorSeesProjectMoney SupervisorSeesProjectMoney { get; init; } = SupervisorSeesProjectMoney.Default;
 
+    public PortalDeployment PortalDeployment { get; init; } = PortalDeployment.Default;
+
+    public ClientCredentialHandover ClientCredentialHandover { get; init; } = ClientCredentialHandover.Default;
+
+    public PortalExtractVisibility PortalExtractVisibility { get; init; } = PortalExtractVisibility.Default;
+
+    public PhotoPublishers PhotoPublishers { get; init; } = PhotoPublishers.Default;
+
+    public ClientDecidesChangeOrders ClientDecidesChangeOrders { get; init; } = ClientDecidesChangeOrders.Default;
+
     public IReadOnlyList<RulingNote> Notes =>
     [
         MaterialAdvanceRecovery.Note,
@@ -237,5 +247,10 @@ public sealed record RulingSet
         DesignConversionTargets.Note,
         FinanceStaffing.Note,
         SupervisorSeesProjectMoney.Note,
+        PortalDeployment.Note,
+        ClientCredentialHandover.Note,
+        PortalExtractVisibility.Note,
+        PhotoPublishers.Note,
+        ClientDecidesChangeOrders.Note,
     ];
 }
