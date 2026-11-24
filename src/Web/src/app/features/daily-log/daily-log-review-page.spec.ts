@@ -5,6 +5,7 @@ import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { CheckInLine, DailyLog, DailyLogApi, DayLabourLine, EngineerLog, QuantityLine } from '../../core/daily-log/daily-log.api';
+import { AuthService, ProjectEntry } from '../../core/auth/auth.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { HeaderActionsService } from '../../core/layout/header-actions.service';
 import { ProjectsApi } from '../../core/projects/projects.api';
@@ -67,6 +68,10 @@ const NOTE = { entryId: 'n', text: 'x', occurredAt: '2026-11-10T09:00:00+02:00' 
 
 class FakeDailyLogApi {
   readonly reads: string[] = [];
+  readonly published: string[] = [];
+  async publishPhoto(_p: string, reference: string): Promise<void> {
+    this.published.push(reference);
+  }
   failure = false;
   constructor(public result: readonly EngineerLog[]) {}
 
@@ -89,7 +94,7 @@ async function flush(fixture: { detectChanges(): void }): Promise<void> {
   fixture.detectChanges();
 }
 
-async function createPage(api: FakeDailyLogApi) {
+async function createPage(api: FakeDailyLogApi, permissions: readonly string[] = []) {
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
@@ -114,6 +119,11 @@ async function createPage(api: FakeDailyLogApi) {
       },
       { provide: I18nService, useClass: FakeI18nService },
     ],
+  });
+  const entry: ProjectEntry = { projectId: 'project-1', name: 'x', code: 'c', accessPath: 'Assignment', level: 'Supervisor', permissions };
+  TestBed.inject(AuthService).set({
+    userId: 'u', displayName: 'u', role: 'SiteEngineer', departmentId: null, operationsSubDepartment: null,
+    mustChangePassword: false, permissions: [], projects: [entry], teamProjects: [],
   });
   const fixture = TestBed.createComponent(DailyLogReviewPage);
   fixture.componentRef.setInput('projectId', 'project-1');
@@ -294,5 +304,24 @@ describe('DailyLogReviewPage', () => {
     el(root, 'daily-log-retry')!.click();
     await flush(fixture);
     expect(el(root, 'daily-log-failure')).toBeNull();
+  });
+
+  it('offers publish-to-client on a photo only to a reader who holds SitePhotoPublish, and sends its file reference once', async () => {
+    const api = new FakeDailyLogApi([engineer('a', { photos: [{ entryId: 'ph1', fileReference: 'ref-1', caption: null, url: null, isPublished: false, occurredAt: '2026-11-10T09:00:00+02:00' }] })]);
+    const root: HTMLElement = (await createPage(api, ['SitePhotoPublish'])).nativeElement;
+
+    el(root, 'daily-log-photo-publish')!.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(api.published).toEqual(['ref-1']);
+  });
+
+  it('shows no publish control to a reader without SitePhotoPublish', async () => {
+    const api = new FakeDailyLogApi([engineer('a', { photos: [{ entryId: 'ph1', fileReference: 'ref-1', caption: null, url: null, isPublished: false, occurredAt: '2026-11-10T09:00:00+02:00' }] })]);
+    const root: HTMLElement = (await createPage(api)).nativeElement;
+
+    expect(el(root, 'daily-log-photo-publish')).toBeNull();
+    expect(el(root, 'daily-log-photo-published')).toBeNull();
   });
 });

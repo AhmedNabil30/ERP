@@ -1,0 +1,400 @@
+/*
+  The client portal's own surface (mock: .design/v2/team-a/portal.html, portal-notes.md). Phone first, one column,
+  720 px at most. Tokens come from styles.css; nothing here names a colour literal.
+*/
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  inline-size: 100%;
+  min-inline-size: 0;
+}
+
+.wrap {
+  flex: 1;
+  inline-size: 100%;
+  max-inline-size: 720px;
+  margin-inline: auto;
+  padding: 12px 16px 28px;
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
+
+.wrap.narrow {
+  max-inline-size: 440px;
+  padding-block-start: 32px;
+}
+
+/* the sticky action bar is the last child of the host; keep the page clear of it */
+.wrap.has-bar {
+  padding-block-end: 96px;
+}
+
+h1 {
+  font: 700 1.5rem/1.4 var(--display);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+h2 {
+  font: 700 1.0625rem/1.4 var(--display);
+  margin: 0;
+}
+
+small,
+.dim {
+  color: var(--dim);
+  font-size: 0.875rem;
+}
+
+.sec {
+  display: grid;
+  gap: 10px;
+  min-inline-size: 0;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 44px;
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 600;
+  justify-self: start;
+}
+
+.back:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+svg.i {
+  inline-size: 22px;
+  block-size: 22px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+svg.i.s {
+  inline-size: 18px;
+  block-size: 18px;
+}
+
+/* the back arrow and the row chevron point toward the start edge: flip them in RTL */
+:host-context([dir='rtl']) svg.i.flip,
+:host-context([dir='ltr']) svg.i.fwd {
+  transform: scaleX(-1);
+}
+
+.card {
+  display: grid;
+  gap: 10px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 16px;
+  min-inline-size: 0;
+  color: inherit;
+  text-decoration: none;
+  min-block-size: 44px;
+}
+
+a.card:hover {
+  background: var(--hover);
+}
+
+.card.pend {
+  border-color: var(--fieldline);
+  border-width: 2px;
+}
+
+.ln {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-inline-size: 0;
+}
+
+.ln b {
+  font: 700 1.0625rem/1.4 var(--display);
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.lst {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.lst.pend {
+  border-color: var(--fieldline);
+  border-width: 2px;
+}
+
+.lst > li + li {
+  border-block-start: 1px solid var(--line);
+}
+
+.lst a,
+.lst .it {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-block-size: 56px;
+  padding: 8px 16px;
+  color: inherit;
+  text-decoration: none;
+  min-inline-size: 0;
+}
+
+.lst a:hover {
+  background: var(--hover);
+}
+
+.grow {
+  flex: 1;
+  min-inline-size: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.grow b {
+  overflow-wrap: anywhere;
+}
+
+.meter {
+  block-size: 8px;
+  border-radius: 4px; /* a structural sliver, not a surface */
+  background: var(--head);
+  box-shadow: inset 0 0 0 1px var(--line);
+  overflow: hidden;
+}
+
+.meter > i {
+  display: block;
+  block-size: 100%;
+  background: var(--ink);
+}
+
+.kv {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-block-end: 1px solid var(--line);
+  min-block-size: 44px;
+}
+
+.kv:last-child {
+  border-block-end: 0;
+}
+
+.kv.t {
+  font-weight: 700;
+  font-size: 1.0625rem;
+}
+
+.kv > span:first-child {
+  color: var(--dim);
+}
+
+.kv.t > span:first-child {
+  color: var(--ink);
+}
+
+.kvs {
+  display: grid;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 4px 16px;
+}
+
+.fig {
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+  white-space: nowrap;
+}
+
+/* the one action bar: one filled button, full width, above the safe area */
+.abar {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: 20;
+  background: var(--surface);
+  border-block-start: 1px solid var(--line);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+}
+
+.abar > div {
+  max-inline-size: 688px;
+  margin-inline: auto;
+  display: flex;
+}
+
+.abar kaff-button {
+  flex: 1;
+}
+
+.form {
+  display: grid;
+  gap: 12px;
+}
+
+.ctl {
+  display: flex;
+  align-items: stretch;
+  min-inline-size: 0;
+  block-size: 48px;
+  border: 2px solid var(--fieldline);
+  border-radius: var(--radius);
+  background: var(--field);
+}
+
+.ctl:focus-within {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.ctl input,
+.ctl textarea {
+  flex: 1;
+  min-inline-size: 0;
+  border: 0;
+  background: transparent;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 1.0625rem;
+  color: inherit;
+  outline: none;
+  block-size: 100%;
+}
+
+.ctl.ltr input {
+  direction: ltr;
+  text-align: end;
+}
+
+.ctl.ta {
+  block-size: auto;
+}
+
+.ctl textarea {
+  min-block-size: 96px;
+  padding: 12px 14px;
+  resize: vertical;
+}
+
+.ctl .eye {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  inline-size: 48px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.cfm {
+  display: grid;
+  gap: 14px;
+  border: 2px solid var(--fieldline);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 16px;
+}
+
+.row2 {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+kaff-button.fill {
+  display: block;
+}
+
+.row2 kaff-button {
+  flex: 1;
+  min-inline-size: 140px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 700px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.ph {
+  display: grid;
+  align-content: start;
+  inline-size: 100%;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+  min-inline-size: 0;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  min-block-size: 44px;
+}
+
+button.ph {
+  cursor: pointer;
+}
+
+.ph .pic {
+  aspect-ratio: 4 / 3;
+  display: grid;
+  place-items: center;
+  background: var(--head);
+  color: var(--dim);
+  overflow: hidden;
+}
+
+.ph .pic img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.ph.open .pic {
+  aspect-ratio: auto;
+}
+
+.ph.open .pic img {
+  block-size: auto;
+  max-block-size: 70dvh;
+  object-fit: contain;
+}
+
+.ph .cap {
+  padding: 8px 10px 10px;
+  display: grid;
+  gap: 2px;
+}

@@ -9,12 +9,14 @@ import { dailyLogModeMatch } from './core/auth/daily-log-mode.guard';
 import { dayLabourRateManageGuard } from './core/auth/day-labour-rate-manage.guard';
 import { dayLabourSiteManageGuard } from './core/auth/day-labour-site-manage.guard';
 import { departmentManageGuard } from './core/auth/department-manage.guard';
+import { budgetBaselineReadGuard } from './core/auth/budget-baseline-read.guard';
 import { boqReadGuard } from './core/auth/boq-read.guard';
 import { extractReadGuard } from './core/auth/extract-read.guard';
 import { employeeManageGuard } from './core/auth/employee-manage.guard';
 import { mustChangePasswordGuard } from './core/auth/must-change-password.guard';
 import { projectCreateGuard } from './core/auth/project-create.guard';
 import { projectListGuard } from './core/auth/project-list.guard';
+import { opportunityManageGuard } from './core/auth/opportunity-manage.guard';
 import { proofReadGuard } from './core/auth/proof-read.guard';
 import { sessionGuard } from './core/auth/session.guard';
 import { subcontractorManageGuard } from './core/auth/subcontractor-manage.guard';
@@ -61,6 +63,28 @@ export const routes: Routes = [
         path: ':clientId',
         loadComponent: () =>
           import('./features/clients/client-form/client-form-page').then((m) => m.ClientFormPage),
+      },
+    ],
+  },
+  {
+    // R3-10 — the sales pipeline. OpportunityManage (Owner, Marketing); the server gates every call again.
+    path: 'sales',
+    canActivate: [sessionGuard, mustChangePasswordGuard, opportunityManageGuard],
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/sales/opportunity-list/opportunity-list-page').then((m) => m.OpportunityListPage),
+      },
+      {
+        path: 'new',
+        loadComponent: () =>
+          import('./features/sales/opportunity-new/opportunity-new-page').then((m) => m.OpportunityNewPage),
+      },
+      {
+        path: ':opportunityId',
+        loadComponent: () =>
+          import('./features/sales/opportunity-page/opportunity-page').then((m) => m.OpportunityPage),
       },
     ],
   },
@@ -367,6 +391,37 @@ export const routes: Routes = [
     loadComponent: () => import('./features/closure/closure-page').then((m) => m.ClosurePage),
   },
   {
+    path: 'accounting/accruals',
+    canActivate: [sessionGuard, mustChangePasswordGuard, proofReadGuard],
+    loadComponent: () => import('./features/accounting/accruals/accruals-page').then((m) => m.AccrualsPage),
+  },
+  {
+    path: 'accounting/assets',
+    canActivate: [sessionGuard, mustChangePasswordGuard, proofReadGuard],
+    loadComponent: () => import('./features/accounting/assets/assets-page').then((m) => m.AssetsPage),
+  },
+  {
+    path: 'accounting/requests',
+    canActivate: [sessionGuard, mustChangePasswordGuard, proofReadGuard],
+    loadComponent: () => import('./features/accounting/requests/requests-page').then((m) => m.AccountingRequestsPage),
+  },
+  {
+    path: 'accounting/trial-balance',
+    canActivate: [sessionGuard, mustChangePasswordGuard, proofReadGuard],
+    loadComponent: () => import('./features/accounting/trial-balance/trial-balance-page').then((m) => m.TrialBalancePage),
+  },
+  {
+    path: 'accounting/overhead',
+    canActivate: [sessionGuard, mustChangePasswordGuard, proofReadGuard],
+    loadComponent: () => import('./features/accounting/overhead/overhead-page').then((m) => m.OverheadPage),
+  },
+  {
+    // The project budget baseline: the Owner sets it once, Finance and the Owner read it (D-267 item 2).
+    path: 'projects/:projectId/budget',
+    canActivate: [sessionGuard, mustChangePasswordGuard, budgetBaselineReadGuard],
+    loadComponent: () => import('./features/accounting/budget/budget-page').then((m) => m.BudgetPage),
+  },
+  {
     // The BOQ: built by clicking, then signed (frozen). Shows cost prices, so gated `ProjectManage` (Owner, Technical Office; assigned).
     // `boqReadGuard` is convenience; `GET /api/projects/:projectId/boq` checks role and assignment.
     path: 'projects/:projectId/boq',
@@ -452,6 +507,11 @@ export const routes: Routes = [
   {
     path: 'sign-in',
     loadComponent: () => import('./features/auth/sign-in/sign-in-page').then((m) => m.SignInPage),
+  },
+  {
+    // R5-C: the client portal. Its own frame and route prefix; no staff guard (a client holds no staff session).
+    path: 'portal',
+    loadChildren: () => import('./features/portal/portal.routes').then((m) => m.PORTAL_ROUTES),
   },
   {
     // `AC-126-L`. A guard's refusal resolves here rather than bouncing to `/`, because

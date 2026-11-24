@@ -69,6 +69,24 @@ public sealed class OpportunityPipelineTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task One_opportunity_reads_in_the_list_row_shape_for_Marketing_and_the_Owner_and_an_unknown_id_is_not_found()
+    {
+        Guid id = await SeedOpportunityAsync("قراءة", Start(0));
+        JsonElement listed = await ReadRowAsync(id);
+
+        foreach ((Guid user, Role role) in new[] { (_marketing, Role.MarketingSales), (_owner, Role.Owner) })
+        {
+            HttpResponseMessage response = await GetAsync($"/api/opportunities/{id}", user, role);
+            response.StatusCode.Should().Be(HttpStatusCode.OK, role.ToString());
+            using JsonDocument one = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct));
+            one.RootElement.GetRawText().Should().Be(listed.GetRawText());
+            one.RootElement.GetProperty("title").GetString().Should().Be("قراءة");
+        }
+
+        (await GetAsync($"/api/opportunities/{Guid.NewGuid()}", _marketing, Role.MarketingSales)).StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task A_typed_code_in_the_request_is_ignored()
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, new Uri("/api/opportunities", UriKind.Relative))
@@ -108,6 +126,7 @@ public sealed class OpportunityPipelineTests : IAsyncLifetime
         {
             (await CreateAsync(user, role, _clientId, "x")).StatusCode.Should().Be(HttpStatusCode.Forbidden, role.ToString());
             (await GetAsync("/api/opportunities", user, role)).StatusCode.Should().Be(HttpStatusCode.Forbidden, role.ToString());
+            (await GetAsync($"/api/opportunities/{id}", user, role)).StatusCode.Should().Be(HttpStatusCode.Forbidden, role.ToString());
 
             foreach (string action in new[] { "advance", "hold", "resume", "close-lost", "reopen" })
             {

@@ -1,0 +1,117 @@
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+.pg {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  min-inline-size: 0;
+}
+
+.form {
+  display: grid;
+  gap: var(--space-4);
+  max-inline-size: 40rem;
+  min-inline-size: 0;
+}
+
+.field {
+  display: grid;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.label {
+  font-weight: 600;
+}
+
+.picked {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  min-block-size: 48px;
+  padding-inline: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--head);
+}
+
+.picked .val {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.picked .ph {
+  color: var(--dim);
+}
+
+.lnk {
+  margin-inline-start: auto;
+  min-block-size: 44px;
+  padding-inline: var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pick {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.pick > li + li {
+  border-block-start: 1px solid var(--line);
+}
+
+.pick button {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  inline-size: 100%;
+  min-block-size: 60px;
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.pick bdi {
+  color: var(--dim);
+}
+
+.none {
+  display: block;
+  padding: var(--space-3) var(--space-4);
+  color: var(--dim);
+}
+
+.dup {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.dup-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

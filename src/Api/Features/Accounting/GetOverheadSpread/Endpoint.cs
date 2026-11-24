@@ -41,7 +41,7 @@ public sealed class Endpoint : IEndpoint
 }
 
 public sealed record ProjectLine(
-    Guid ProjectId, string ProjectCode, Money Size, Money OverheadShare, Money Revenue, Money ProjectCost, Money GrossMargin, Money NetMargin);
+    Guid ProjectId, string ProjectCode, string ProjectName, Money Size, Money OverheadShare, Money Revenue, Money ProjectCost, Money GrossMargin, Money NetMargin);
 
 public sealed record Response(DateOnly Month, Money Overhead, IReadOnlyList<ProjectLine> Projects, Money SharesTotal);
 
@@ -100,9 +100,12 @@ internal static class Handler
         HashSet<Guid> withActivity = [.. accounts.Where(account => account.ProjectId is not null && net.ContainsKey(account.Id)).Select(account => account.ProjectId!.Value)];
         List<Guid> shown = [.. shares.Select(share => share.ProjectId).Union(withActivity)];
 
-        Dictionary<Guid, string> codes = await database.Projects
+        var named = await database.Projects
             .Where(project => shown.Contains(project.Id))
-            .ToDictionaryAsync(project => project.Id, project => project.Code, cancellationToken);
+            .Select(project => new { project.Id, project.Code, project.Name })
+            .ToListAsync(cancellationToken);
+        Dictionary<Guid, string> codes = named.ToDictionary(project => project.Id, project => project.Code);
+        Dictionary<Guid, string> names = named.ToDictionary(project => project.Id, project => project.Name);
 
         List<ProjectLine> lines =
         [
@@ -116,7 +119,7 @@ internal static class Handler
                 Money shareAmount = share?.Share ?? Money.Zero;
 
                 return new ProjectLine(
-                    id, codes.GetValueOrDefault(id) ?? string.Empty, share?.Size ?? Money.Zero, shareAmount, revenue, cost,
+                    id, codes.GetValueOrDefault(id) ?? string.Empty, names.GetValueOrDefault(id) ?? string.Empty, share?.Size ?? Money.Zero, shareAmount, revenue, cost,
                     revenue - cost, revenue - cost - shareAmount);
             }),
         ];

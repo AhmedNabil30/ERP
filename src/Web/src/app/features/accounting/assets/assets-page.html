@@ -1,0 +1,170 @@
+<ng-template #addAction>
+  <kaff-button variant="primary" testId="assets-add" (clicked)="openAdd()">{{ i18n.t('accounting.assets.add') }}</kaff-button>
+</ng-template>
+
+<section class="acc" data-testid="assets-page">
+  <div class="bar">
+    <h1 class="title">{{ i18n.t('accounting.assets.title') }}</h1>
+    @if (canPost()) {
+      <kaff-button variant="secondary" testId="assets-run" (clicked)="openRun()">{{ i18n.t('accounting.assets.run') }}</kaff-button>
+    }
+  </div>
+
+  @if (waiting()) {
+    <kaff-waiting-line [text]="i18n.t('accounting.waiting.owner')" testId="assets-waiting" />
+  }
+  @if (refusal(); as key) {
+    @if (sheet() === null) {
+      <kaff-banner tone="refusal" icon="alert" testId="assets-refusal">{{ i18n.t(key) }}</kaff-banner>
+    }
+  }
+
+  @if (failure(); as key) {
+    <kaff-state mode="refusal" [bodyKey]="key" testId="assets-failure">
+      @if (key !== 'errors.auth.forbidden') {
+        <kaff-button stateAction variant="secondary" testId="assets-retry" (clicked)="reload()">{{ i18n.t('accounting.retry') }}</kaff-button>
+      }
+    </kaff-state>
+  } @else if (loading()) {
+    <kaff-state mode="loading" titleKey="accounting.loading" testId="assets-loading" />
+  } @else if (assets().length === 0) {
+    <kaff-state mode="empty" titleKey="accounting.assets.empty" testId="assets-empty" />
+  } @else {
+    <kaff-table [columns]="rowColumns" [columnDefs]="headerColumns" testId="assets-table">
+      <ul class="rows" data-testid="assets-rows">
+        @for (asset of assets(); track asset.id) {
+          <li class="rows-item">
+            <kaff-table-row [stacked]="true">
+              <span class="cell-title stack">
+                <span class="name" dir="auto">{{ asset.name }}</span>
+                <small class="sub">{{ i18n.t(categoryKey(asset.category)) }}</small>
+                @if (fullyWritten(asset)) {
+                  <span>
+                    <kaff-status-pill tone="done" icon="check">{{ i18n.t('accounting.assets.written_off') }}</kaff-status-pill>
+                  </span>
+                }
+              </span>
+              <span class="cell-wide cell-end num"><kaff-figure [value]="asset.cost" /></span>
+              <span class="cell-wide cell-end num"><kaff-figure [value]="asset.accumulated" /></span>
+              <span class="cell-primary cell-end num"><kaff-figure [value]="asset.bookValue" /></span>
+              <span class="cell-act act-cell">
+                @if (canPost()) {
+                  <kaff-button variant="secondary" [testId]="'asset-rate-' + asset.id" (clicked)="openRate(asset)">
+                    {{ i18n.t('accounting.assets.rate') }}
+                  </kaff-button>
+                }
+              </span>
+            </kaff-table-row>
+          </li>
+        }
+      </ul>
+    </kaff-table>
+  }
+</section>
+
+<kaff-detail-panel [open]="sheet() === 'add'" [title]="i18n.t('accounting.assets.add')" testId="assets-add-panel" (closed)="closeSheet()">
+  <div panelBody class="form">
+    @if (accountsMissing()) {
+      <kaff-banner tone="refusal" icon="alert" testId="assets-accounts-missing">{{ i18n.t('accounting.accounts_missing') }}</kaff-banner>
+    }
+    @if (refusal(); as key) {
+      <kaff-banner tone="refusal" icon="alert" testId="assets-add-refusal">{{ i18n.t(key) }}</kaff-banner>
+    }
+
+    <kaff-field labelKey="accounting.field.name" controlId="assets-name" [required]="true" [errorKey]="nameError()">
+      <input
+        id="assets-name"
+        type="text"
+        dir="auto"
+        autocomplete="off"
+        data-testid="assets-name"
+        [value]="name()"
+        (input)="name.set(val($event))"
+      />
+    </kaff-field>
+
+    <kaff-field labelKey="accounting.field.category" controlId="assets-category" [required]="true">
+      <select id="assets-category" data-testid="assets-category" [value]="category()" (change)="pickCategory($event)">
+        @for (item of categories; track item) {
+          <option [value]="item">{{ i18n.t(categoryKey(item)) }}</option>
+        }
+      </select>
+    </kaff-field>
+
+    <kaff-money-field
+      labelKey="accounting.field.cost"
+      controlId="assets-cost"
+      [required]="true"
+      [errorKey]="costError()"
+      testId="assets-cost"
+      [(value)]="cost"
+    />
+
+    <kaff-field labelKey="accounting.field.rate" controlId="assets-rate" hintKey="accounting.hint.rate_default">
+      <input
+        id="assets-rate"
+        type="text"
+        inputmode="decimal"
+        dir="ltr"
+        autocomplete="off"
+        data-testid="assets-rate"
+        [value]="rate()"
+        (input)="rate.set(val($event))"
+      />
+    </kaff-field>
+
+    <kaff-field labelKey="accounting.field.purchase_date" controlId="assets-date" [required]="true">
+      <input id="assets-date" type="date" dir="ltr" data-testid="assets-date" [value]="date()" (input)="date.set(val($event))" />
+    </kaff-field>
+  </div>
+  <div panelFooter class="act">
+    @if (!accountsMissing()) {
+      <kaff-button variant="primary" testId="assets-save" [busy]="busy()" (clicked)="saveAdd()">{{ i18n.t('action.save') }}</kaff-button>
+    }
+    <kaff-button variant="secondary" testId="assets-cancel" (clicked)="closeSheet()">{{ i18n.t('action.cancel') }}</kaff-button>
+  </div>
+</kaff-detail-panel>
+
+<kaff-detail-panel
+  [open]="sheet() === 'rate'"
+  [title]="editing()?.name ?? ''"
+  testId="assets-rate-panel"
+  (closed)="closeSheet()"
+>
+  <div panelBody class="form">
+    @if (refusal(); as key) {
+      <kaff-banner tone="refusal" icon="alert" testId="assets-rate-refusal">{{ i18n.t(key) }}</kaff-banner>
+    }
+    <kaff-field labelKey="accounting.field.rate" controlId="assets-rate-edit" [required]="true" [errorKey]="rateError()">
+      <input
+        id="assets-rate-edit"
+        type="text"
+        inputmode="decimal"
+        dir="ltr"
+        autocomplete="off"
+        data-testid="assets-rate-edit"
+        [value]="rate()"
+        (input)="rate.set(val($event))"
+      />
+    </kaff-field>
+  </div>
+  <div panelFooter class="act">
+    <kaff-button variant="primary" testId="assets-rate-save" [busy]="busy()" (clicked)="saveRate()">{{ i18n.t('action.save') }}</kaff-button>
+    <kaff-button variant="secondary" testId="assets-rate-cancel" (clicked)="closeSheet()">{{ i18n.t('action.cancel') }}</kaff-button>
+  </div>
+</kaff-detail-panel>
+
+<kaff-detail-panel [open]="sheet() === 'run'" [title]="i18n.t('accounting.assets.run')" testId="assets-run-panel" (closed)="closeSheet()">
+  <div panelBody class="form">
+    @if (refusal(); as key) {
+      <kaff-banner tone="refusal" icon="alert" testId="assets-run-refusal">{{ i18n.t(key) }}</kaff-banner>
+    }
+    <kaff-field labelKey="accounting.field.month" controlId="assets-month" [required]="true">
+      <input id="assets-month" type="month" dir="ltr" data-testid="assets-month" [value]="month()" (input)="month.set(val($event))" />
+    </kaff-field>
+  </div>
+  <div panelFooter class="act">
+    <kaff-button variant="primary" testId="assets-run-save" [busy]="busy()" (clicked)="saveRun()">{{ i18n.t('accounting.action.send') }}</kaff-button>
+    <kaff-button variant="secondary" testId="assets-run-cancel" (clicked)="closeSheet()">{{ i18n.t('action.cancel') }}</kaff-button>
+  </div>
+</kaff-detail-panel>

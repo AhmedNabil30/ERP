@@ -297,6 +297,11 @@ export class DailyLogApi {
     return firstValueFrom(this.http.get(url, { responseType: 'blob' }));
   }
 
+  /** `POST …/photos/{reference}/publish` — puts one photo in front of the client. Only the Technical Office and the supervising engineer may; the server decides. */
+  async publishPhoto(projectId: string, reference: string): Promise<void> {
+    await firstValueFrom(this.http.post(`${this.base(projectId)}/photos/${reference}/publish`, {}));
+  }
+
   /** The route a recorded photo is fetched from. Needs the signed-in session, so load it through `HttpClient`, not a bare `<img src>` link to another origin. */
   photoUrl(projectId: string, reference: string): string {
     return `${this.base(projectId)}/photos/${reference}`;

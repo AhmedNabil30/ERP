@@ -23,6 +23,9 @@
           <kaff-button bannerActions variant="secondary" testId="daily-log-retry" (clicked)="reload()">{{ i18n.t('daily_log.action.retry') }}</kaff-button>
         </kaff-banner>
       } @else {
+        @if (publishFailed()) {
+          <kaff-banner tone="refusal" icon="error" testId="daily-log-publish-failed"><b>{{ i18n.t('portal.publish_failed') }}</b></kaff-banner>
+        }
         <kaff-link-row
           icon="crew"
           [link]="['/projects', projectId(), 'day-labour']"
@@ -122,6 +125,13 @@
                             }
                             <span dir="auto">{{ line.caption || i18n.t('daily_log.photo') }}</span>
                           </span>
+                          @if (canPublish()) {
+                            @if (line.isPublished || published().has(line.entryId)) {
+                              <kaff-status-pill entAction tone="done" icon="check" testId="daily-log-photo-published">{{ i18n.t('portal.published') }}</kaff-status-pill>
+                            } @else {
+                              <kaff-button entAction variant="secondary" testId="daily-log-photo-publish" [busy]="publishing() === line.entryId" (clicked)="publish(line)">{{ i18n.t('portal.publish') }}</kaff-button>
+                            }
+                          }
                         </kaff-log-entry>
                       }
                     </kaff-log-group>

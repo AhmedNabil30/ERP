@@ -1,7 +1,7 @@
 import { Session } from '../auth/auth.service';
 
 /** The sidebar's two mockup sections (`Main.dc.html` 20-91) — KAFF-922. */
-export type NavGroup = 'core' | 'admin';
+export type NavGroup = 'core' | 'admin' | 'accounting';
 
 /** One sidebar row: the company-wide permission that gates it, where it points, and its i18n key. */
 export interface NavRow {
@@ -40,6 +40,7 @@ const NAV_ROWS: readonly NavRow[] = [
   // master data. `Permission.ProjectList` is CompanyWide and granted to Owner, Finance, TechnicalOffice,
   // MarketingSales and SiteEngineer (`PermissionCatalogue.cs:542-544`); `ListProjects.Handler` still
   // filters the rows returned to what the caller is assigned to, so this row exposes no project.
+  { permission: 'OpportunityManage', path: '/sales', labelKey: 'nav.sales', group: 'core', icon: 'sales' },
   { permission: 'ProjectList', path: '/projects', labelKey: 'nav.projects', group: 'core', icon: 'projects' },
   // Opening a project is a company-wide act (`ProjectCreate`: Owner and Technical Office), so it is a row of its own
   // and not only a button on the list: a route with a permission guard and no row fails `nav-rows.spec.ts`.
@@ -51,6 +52,12 @@ const NAV_ROWS: readonly NavRow[] = [
   { permission: 'SubcontractorManage', path: '/subcontractors', labelKey: 'nav.subcontractors', group: 'core', icon: 'subcontractors' },
   { permission: 'SupplierManage', path: '/suppliers', labelKey: 'nav.suppliers', group: 'core', icon: 'suppliers' },
   { permission: 'ClientManage', path: '/clients', labelKey: 'nav.clients', group: 'core', icon: 'clients' },
+  // R4 accounting: Owner and Finance both hold `TreasuryReadCompany`; the screens hide their own controls by the post and approve permissions.
+  { permission: 'TreasuryReadCompany', path: '/accounting/accruals', labelKey: 'nav.accounting.accruals', group: 'accounting', icon: 'accounting' },
+  { permission: 'TreasuryReadCompany', path: '/accounting/assets', labelKey: 'nav.accounting.assets', group: 'accounting', icon: 'accounting' },
+  { permission: 'TreasuryReadCompany', path: '/accounting/requests', labelKey: 'nav.accounting.requests', group: 'accounting', icon: 'accounting' },
+  { permission: 'TreasuryReadCompany', path: '/accounting/trial-balance', labelKey: 'nav.accounting.trial', group: 'accounting', icon: 'accounting' },
+  { permission: 'TreasuryReadCompany', path: '/accounting/overhead', labelKey: 'nav.accounting.overhead', group: 'accounting', icon: 'accounting' },
   { permission: 'UserManage', path: '/users', labelKey: 'nav.users', group: 'admin', icon: 'users' },
   { permission: 'DepartmentManage', path: '/settings/departments', labelKey: 'nav.departments', group: 'admin', icon: 'departments' },
   { permission: 'AuditRead', path: '/audit', labelKey: 'nav.audit', group: 'admin', icon: 'audit' },
@@ -75,6 +82,7 @@ export interface NavRowGroup {
 /** The mockup's two sections, in mockup order, before any session has been applied to them. */
 const NAV_GROUP_ORDER: readonly { key: NavGroup; labelKey: string }[] = [
   { key: 'core', labelKey: 'nav.group.core' },
+  { key: 'accounting', labelKey: 'nav.group.accounting' },
   { key: 'admin', labelKey: 'nav.group.admin' },
 ];
 

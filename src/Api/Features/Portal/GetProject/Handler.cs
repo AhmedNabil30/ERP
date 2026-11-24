@@ -36,22 +36,12 @@ internal static class Handler
             return ResultExtensions.Problem(ProjectErrors.NotFound);
         }
 
-        // Paid is all the client has settled on the project: the advance at signing, every collection (hold release included) and the
-        // tax withheld at source (Nabil, 2026-11-24, so remaining reaches zero on a settled contract), net of reversals, from the same postings every other money read uses (spec.md section 15).
-        var cash = await database.Postings.AsNoTracking()
-            .Where(posting => posting.ProjectId == projectId
-                && (posting.Type == PostingType.ClientCollection || posting.Type == PostingType.ClientAdvanceReceipt
-                    || posting.Type == PostingType.TaxWithheldAtSource))
-            .Select(posting => new { posting.Amount, IsReversal = posting.ReversesId != null })
-            .ToListAsync(cancellationToken);
-        Money paid = Money.Sum(cash.Select(leg => leg.IsReversal ? -leg.Amount : leg.Amount));
-
-        Money approvedChangeOrders = await ChangeOrderQueries.ApprovedTotalAsync(database, projectId, cancellationToken);
-        Money? contractValue = project.RevisedContractValue(approvedChangeOrders);
-        Money? remaining = contractValue is { } value ? value - paid : null;
-
-        int pending = await database.ChangeOrders.AsNoTracking()
-            .CountAsync(order => order.ProjectId == projectId && order.IsPriced && order.Status == ChangeOrderStatus.ClientApproval, cancellationToken);
+        // Paid, remaining and pending come from the one rule the project list shares (D-269).
+        PortalProjectFigures figures = (await PortalProjectMoney.ReadAsync(database, [project], cancellationToken))[project.Id];
+        Money? contractValue = figures.ContractValue;
+        Money paid = figures.Paid;
+        Money? remaining = figures.Remaining;
+        int pending = figures.Pending;
 
         (string? completion, List<PortalSection> sections) = project.ContractType == ContractType.LumpSum
             ? await ProgressAsync(database, rulings, clock, dispatcher, project, cancellationToken)
