@@ -39,6 +39,13 @@ import { changeOrderPill, percentOf, portalDate, projectPill } from './portal-fo
           <kaff-status-pill [tone]="pill().tone" [icon]="pill().icon">{{ i18n.t(statusKey()) }}</kaff-status-pill>
         </div>
 
+        <div class="card" data-testid="portal-due">
+          <div class="kv" style="padding-block: 0; border: 0; min-block-size: 0">
+            <b>{{ i18n.t('portal.home.due_now') }}</b>
+            <b class="fig" data-testid="portal-due-now">{{ i18n.formatMoney(home.dueNow) }}</b>
+          </div>
+        </div>
+
         @if (pendingCount() > 0) {
           <section class="sec" data-testid="portal-pending">
             <h2>{{ i18n.t('portal.home.pending') }}</h2>

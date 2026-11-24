@@ -60,6 +60,9 @@ export interface RequestRow {
   readonly requestedAt: string;
   readonly decidedAt: string | null;
   readonly rejectionReason: string | null;
+  /** The dry run's total, stored when Finance asked; the Owner approves this figure (D-275). Null on older rows. */
+  readonly amount: string | null;
+  readonly lineCount: number | null;
   readonly askedByName: string | null;
   readonly decidedByName: string | null;
 }
@@ -70,6 +73,8 @@ export interface TrialBalanceLine {
   readonly nameAr: string;
   readonly nameEn: string;
   readonly type: string;
+  readonly projectId: string | null;
+  readonly projectName: string | null;
   readonly debit: string;
   readonly credit: string;
 }
@@ -102,7 +107,7 @@ export interface OverheadSpread {
 
 export interface Baseline {
   readonly costTotal: string;
-  readonly tolerancePercent: number;
+  readonly tolerancePercent: string;
   readonly limit: string;
   readonly setAt: string;
 }

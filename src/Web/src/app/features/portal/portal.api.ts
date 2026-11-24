@@ -14,6 +14,8 @@ export interface PortalProject {
   readonly contractType: string;
   readonly paid: string;
   readonly remaining?: string;
+  /** What is left on the issued extracts, summed on the server (D-274). */
+  readonly dueNow: string;
   readonly pendingCount: number;
 }
 

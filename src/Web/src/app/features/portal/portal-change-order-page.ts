@@ -67,9 +67,9 @@ type Step = 'view' | 'confirm' | 'refuse';
                 <div class="it" style="display: grid; gap: 4px; padding-block: 10px">
                   <div class="ln">
                     <b style="font-size: 1rem" dir="auto">{{ line.description }}</b>
-                    <span class="fig">{{ i18n.formatAmount(line.total) }}</span>
+                    <span class="fig">{{ i18n.formatMoney(line.total) }}</span>
                   </div>
-                  <small>{{ i18n.formatNumber(line.quantity) }} {{ line.unit }} × {{ i18n.formatAmount(line.unitPrice) }}</small>
+                  <small>{{ i18n.formatNumber(line.quantity) }} {{ line.unit }} × {{ i18n.formatMoney(line.unitPrice) }}</small>
                 </div>
               </li>
             }

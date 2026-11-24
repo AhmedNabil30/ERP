@@ -10,6 +10,9 @@
 
 <section class="ws" data-testid="project-workspace">
   <kaff-project-frame [projectId]="projectId()" [current]="current()" (loaded)="onLoaded($event)" (failed)="onFailed($event)">
+    @if (current() === 'overview') {
+      <kaff-project-links [projectId]="projectId()" current="workspace" />
+    }
     @if (failure(); as key) {
       <kaff-state mode="refusal" [bodyKey]="key" testId="workspace-failure" />
       <div>

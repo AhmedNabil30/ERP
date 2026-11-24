@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, TemplateRef, computed, effect, inject, input, signal, untracked, viewChild } from '@angular/core';
 
 import { AccountingApi, Baseline } from '../../../core/accounting/accounting.api';
-import { dmy } from '../../../core/accounting/accounting-format';
+import { dmy, trimPercent } from '../../../core/accounting/accounting-format';
 import { toProblem } from '../../../core/api/problem-details';
 import { AuthService } from '../../../core/auth/auth.service';
 import { I18nService } from '../../../core/i18n/i18n.service';
@@ -9,7 +9,6 @@ import { HeaderActionsService } from '../../../core/layout/header-actions.servic
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { KaffField } from '../../../shared/kaff-field/kaff-field';
-import { KaffFigure } from '../../../shared/kaff-figure/kaff-figure';
 import { KaffPageHead } from '../../../shared/kaff-page-head/kaff-page-head';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
 
@@ -26,7 +25,7 @@ const NOT_SET = 'errors.accounting.baseline_not_set';
  */
 @Component({
   selector: 'kaff-budget-page',
-  imports: [KaffBanner, KaffButton, KaffField, KaffFigure, KaffPageHead, KaffState],
+  imports: [KaffBanner, KaffButton, KaffField, KaffPageHead, KaffState],
   templateUrl: './budget-page.html',
   styleUrl: '../accounting.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -65,6 +64,8 @@ export class BudgetPage {
       untracked(() => void this.reload());
     });
   }
+
+  protected readonly trim = trimPercent;
 
   protected val(event: Event): string {
     return (event.target as HTMLInputElement).value;

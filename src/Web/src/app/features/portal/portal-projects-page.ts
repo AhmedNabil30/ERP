@@ -40,11 +40,15 @@ import { percentOf, projectPill } from './portal-format';
               <div>
                 <kaff-status-pill [tone]="pill(project).tone" [icon]="pill(project).icon">{{ i18n.t(statusKey(project)) }}</kaff-status-pill>
               </div>
+              <div class="ln">
+                <b>{{ i18n.t('portal.home.due_now') }}</b>
+                <b class="fig" data-testid="portal-card-due-now">{{ i18n.formatMoney(project.dueNow) }}</b>
+              </div>
               @if (project.remaining; as remaining) {
                 <div class="meter" aria-hidden="true"><i [style.inline-size.%]="share(project, remaining)"></i></div>
               }
               <div class="ln dim">
-                <span>{{ i18n.t('portal.home.paid') }} <span class="fig">{{ i18n.formatAmount(project.paid) }}</span></span>
+                <span>{{ i18n.t('portal.home.paid') }} <span class="fig">{{ i18n.formatMoney(project.paid) }}</span></span>
                 @if (project.remaining; as remaining) {
                   <span>{{ i18n.t('portal.home.remaining') }} <span class="fig">{{ i18n.formatMoney(remaining) }}</span></span>
                 }

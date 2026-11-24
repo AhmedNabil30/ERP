@@ -10,7 +10,6 @@ import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { KaffConfirmDialog } from '../../../shared/kaff-confirm-dialog/kaff-confirm-dialog';
 import { KaffDetailPanel } from '../../../shared/kaff-detail-panel/kaff-detail-panel';
 import { KaffField } from '../../../shared/kaff-field/kaff-field';
-import { KaffFigure } from '../../../shared/kaff-figure/kaff-figure';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { KaffStatusPill, PillTone } from '../../../shared/kaff-status-pill/kaff-status-pill';
 import { KaffIconName } from '../../../shared/kaff-icon/kaff-icon';
@@ -37,6 +36,7 @@ interface Row {
   readonly kindKey: string;
   readonly detail: string | null;
   readonly amount: string | null;
+  readonly lines: number | null;
   readonly asked: string;
   readonly by: string | null;
   readonly status: { tone: PillTone; icon: KaffIconName; key: string };
@@ -55,7 +55,6 @@ interface Row {
     KaffConfirmDialog,
     KaffDetailPanel,
     KaffField,
-    KaffFigure,
     KaffState,
     KaffStatusPill,
     KaffTable,
@@ -103,7 +102,8 @@ export class AccountingRequestsPage {
         request,
         kindKey: KIND_KEY[request.kind],
         detail: description ?? (month ? monthOf(month) : null),
-        amount: payloadText(request.payload, 'amount'),
+        amount: request.amount,
+        lines: request.lineCount,
         asked: dmy(request.requestedAt),
         by: request.decidedByName ?? request.askedByName,
         status: STATUS[request.status],
@@ -163,6 +163,8 @@ export class AccountingRequestsPage {
       return true;
     } catch (error) {
       this.refusal.set(toProblem(error).messageKey);
+      // A changed amount means the list on screen is stale: show what the server holds now.
+      await this.reload();
       return false;
     } finally {
       this.busy.set(false);

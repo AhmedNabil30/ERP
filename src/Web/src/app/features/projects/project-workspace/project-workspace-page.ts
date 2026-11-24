@@ -35,6 +35,7 @@ import { KaffFigure } from '../../../shared/kaff-figure/kaff-figure';
 import { KaffIcon } from '../../../shared/kaff-icon/kaff-icon';
 import { KaffInlineConfirm } from '../../../shared/kaff-inline-confirm/kaff-inline-confirm';
 import { KaffProjectFrame } from '../../../shared/kaff-project-frame/kaff-project-frame';
+import { KaffProjectLinks } from '../../../shared/kaff-project-links/kaff-project-links';
 import { KaffState } from '../../../shared/kaff-state/kaff-state';
 import { KaffStatusPill } from '../../../shared/kaff-status-pill/kaff-status-pill';
 import { ProjectTeamTab } from './project-team-tab';
@@ -99,6 +100,7 @@ type ProgressRead = Read<ProjectProgress> | { readonly state: 'unavailable' };
   selector: 'kaff-project-workspace-page',
   imports: [
     RouterLink,
+    KaffProjectLinks,
     KaffBanner,
     KaffButton,
     KaffChoiceGroup,

@@ -10,11 +10,11 @@
   </div>
 
   <div class="filters">
-    <kaff-field labelKey="accounting.field.from" controlId="trial-from">
-      <input id="trial-from" type="date" dir="ltr" data-testid="trial-from" [value]="from()" (change)="setFrom($event)" />
+    <kaff-field labelKey="accounting.field.from" controlId="trial-from" hintKey="accounting.hint.date_format">
+      <input id="trial-from" type="date" lang="en-GB" dir="ltr" data-testid="trial-from" [value]="from()" (change)="setFrom($event)" />
     </kaff-field>
-    <kaff-field labelKey="accounting.field.to" controlId="trial-to">
-      <input id="trial-to" type="date" dir="ltr" data-testid="trial-to" [value]="to()" (change)="setTo($event)" />
+    <kaff-field labelKey="accounting.field.to" controlId="trial-to" hintKey="accounting.hint.date_format">
+      <input id="trial-to" type="date" lang="en-GB" dir="ltr" data-testid="trial-to" [value]="to()" (change)="setTo($event)" />
     </kaff-field>
   </div>
 
@@ -42,7 +42,12 @@
           @for (line of lines(); track line.accountId) {
             <li class="rows-item">
               <kaff-table-row [stacked]="true">
-                <span class="cell-title name" dir="auto">{{ name(line) }}</span>
+                <span class="cell-title stack">
+                  <span class="name" dir="auto">{{ name(line) }}</span>
+                  @if (line.projectName; as project) {
+                    <small class="sub" dir="auto" data-testid="trial-project">{{ project }}</small>
+                  }
+                </span>
                 <span class="cell-primary cell-end num">
                   @if (!zero(line.debit)) {
                     <small class="row-price-label">{{ i18n.t('accounting.field.debit') }}</small>

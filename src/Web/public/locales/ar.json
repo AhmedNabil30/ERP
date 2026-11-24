@@ -2485,5 +2485,8 @@
   "portal.home.planned_end": "النهاية المخططة",
   "portal.co.date": "التاريخ",
   "portal.co.before": "قيمة العقد قبل",
-  "portal.co.after": "قيمة العقد بعد"
+  "portal.co.after": "قيمة العقد بعد",
+  "accounting.request.lines": "عدد الحركات: {count}",
+  "accounting.hint.date_format": "يوم/شهر/سنة",
+  "portal.home.due_now": "المستحق الآن"
 }

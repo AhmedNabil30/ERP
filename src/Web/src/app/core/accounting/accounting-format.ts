@@ -40,3 +40,9 @@ export function monthOf(iso: string | null): string {
 export function isZero(amount: string): boolean {
   return /^-?0+(\.0+)?$/.test(amount);
 }
+
+/** "10.000000" to "10", "12.500000" to "12.5": trailing zeros of a decimal string, no float. */
+export function trimPercent(value: string | number): string {
+  const text = String(value);
+  return text.includes('.') ? text.replace(/0+$/, '').replace(/\.$/, '') : text;
+}

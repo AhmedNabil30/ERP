@@ -51,7 +51,7 @@ import { portalDate } from './portal-format';
               </div>
               <div class="kv">
                 <span>{{ i18n.t('portal.extracts.work') }}</span>
-                <span class="fig">{{ i18n.formatAmount(extract.certifiedWork) }}</span>
+                <span class="fig">{{ i18n.formatMoney(extract.certifiedWork) }}</span>
               </div>
               <div class="kv t">
                 <span>{{ i18n.t('portal.extracts.net') }}</span>

@@ -48,6 +48,7 @@ const HOME: PortalHome = {
   contractValue: '2880000.00',
   paid: '1250000.00',
   remaining: '1630000.00',
+  dueNow: '250000.00',
   pendingApprovals: 1,
   plannedStart: '2026-03-01',
   plannedEnd: '2026-12-31',
@@ -211,6 +212,7 @@ describe('PortalHomePage', () => {
     const host = fixture.nativeElement as HTMLElement;
     expect(host.querySelector('[data-testid="portal-paid"]')?.textContent).toContain('1250000.00');
     expect(host.querySelector('[data-testid="portal-remaining"]')?.textContent).toContain('1630000.00');
+    expect(host.querySelector('[data-testid="portal-due-now"]')?.textContent).toContain('250000.00');
     expect(host.querySelector('[data-testid="portal-bar-action"]')).not.toBeNull();
     expect(host.querySelector('[data-testid="portal-plan"]')?.textContent).toContain('01/03/2026');
     expect(host.querySelector('[data-testid="portal-stalled"]')).not.toBeNull();

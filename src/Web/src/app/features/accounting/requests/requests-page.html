@@ -27,6 +27,9 @@
             <kaff-table-row [testId]="'request-row-' + row.request.id">
               <span class="stack">
                 <span class="name">{{ i18n.t(row.kindKey) }}</span>
+                @if (row.lines !== null) {
+                  <small class="sub" data-testid="request-lines">{{ i18n.t('accounting.request.lines', { count: row.lines }) }}</small>
+                }
                 @if (row.detail; as detail) {
                   <small class="sub" dir="auto">{{ detail }}</small>
                 }
@@ -36,7 +39,7 @@
               </span>
               <span class="cell-end num" [class.gone-narrow]="!row.amount">
                 @if (row.amount; as amount) {
-                  <kaff-figure [value]="amount" />
+                  {{ i18n.formatMoney(amount) }}
                 }
               </span>
               <span class="stack">

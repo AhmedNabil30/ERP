@@ -10,15 +10,15 @@
   } @else if (baseline(); as base) {
     <div class="line" data-testid="budget-baseline">
       <span class="name">{{ i18n.t('accounting.budget.baseline') }}</span>
-      <span class="figs"><kaff-figure [value]="base.costTotal" /></span>
+      <span class="figs">{{ i18n.formatMoney(base.costTotal) }}</span>
     </div>
     <div class="line" data-testid="budget-tolerance">
       <span class="name">{{ i18n.t('accounting.budget.tolerance') }}</span>
-      <span class="figs"><bdi dir="ltr">{{ base.tolerancePercent }}%</bdi></span>
+      <span class="figs"><bdi dir="ltr">{{ trim(base.tolerancePercent) }}%</bdi></span>
     </div>
     <div class="line" data-testid="budget-limit">
       <span class="name">{{ i18n.t('accounting.budget.limit') }}</span>
-      <span class="figs"><kaff-figure [value]="base.limit" /></span>
+      <span class="figs">{{ i18n.formatMoney(base.limit) }}</span>
     </div>
     <div class="line" data-testid="budget-set-at">
       <span class="name">{{ i18n.t('accounting.budget.set_at') }}</span>

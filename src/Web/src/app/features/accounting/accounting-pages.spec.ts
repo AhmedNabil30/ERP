@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { AccountingApi, AccrualRow, RequestRow, TrialBalance } from '../../core/accounting/accounting.api';
-import { dmy, isZero, monthOf, payloadText } from '../../core/accounting/accounting-format';
+import { dmy, isZero, monthOf, payloadText, trimPercent } from '../../core/accounting/accounting-format';
 import { AuthService, Session } from '../../core/auth/auth.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { AccrualsPage } from './accruals/accruals-page';
@@ -53,6 +53,8 @@ const waiting: RequestRow = {
   requestedAt: '2026-11-24T10:00:00+00:00',
   decidedAt: null,
   rejectionReason: null,
+  amount: '8400.0000',
+  lineCount: 2,
   askedByName: 'Finance User',
   decidedByName: null,
 };
@@ -100,7 +102,7 @@ class FakeApi {
   }
   async setBaseline(_id: string, tolerance: string): Promise<unknown> {
     this.calls.push(`baseline:${tolerance}`);
-    this.baseline = { costTotal: '1000', tolerancePercent: 10, limit: '1100', setAt: '2026-11-24T10:00:00+00:00' };
+    this.baseline = { costTotal: '1000', tolerancePercent: '10.000000', limit: '1100', setAt: '2026-11-24T10:00:00+00:00' };
     return this.baseline;
   }
 }
@@ -109,6 +111,8 @@ describe('accounting format helpers', () => {
   it('shows dates as dd/MM/yyyy, an instant in the Cairo day', () => {
     expect(dmy('2026-11-24T23:30:00+00:00')).toBe('25/11/2026');
     expect(monthOf('2026-11-01')).toBe('11/2026');
+    expect(trimPercent('10.000000')).toBe('10');
+    expect(trimPercent('12.500000')).toBe('12.5');
     expect(isZero('0')).toBe(true);
     expect(isZero('0.0000')).toBe(true);
     expect(isZero('0.0001')).toBe(false);
@@ -166,6 +170,8 @@ describe('accounting pages', () => {
       expect(byId(host, 'request-approve-r1')).not.toBeNull();
       expect(byId(host, 'request-return-r1')).not.toBeNull();
       expect(host.textContent).toContain('Finance User');
+      expect(byId(host, 'request-lines')?.textContent).toContain('accounting.request.lines');
+      expect(host.textContent).toContain('8400.0000');
       expect(byId(host, 'request-approve-r2')).toBeNull();
       expect(byId(host, 'request-status-r1')?.textContent).toContain('accounting.request.status.waiting');
       expect(byId(host, 'request-status-r2')?.textContent).toContain('accounting.request.status.returned');
@@ -235,7 +241,7 @@ describe('accounting pages', () => {
       setup(['TreasuryReadCompany']);
       api.trial = {
         lines: [
-          { accountId: 'x', code: 'C', nameAr: 'الخزنة', nameEn: 'Safe', type: 'Safe', debit: '100.0000', credit: '0' },
+          { accountId: 'x', code: 'C', nameAr: 'الخزنة', nameEn: 'Safe', type: 'Safe', projectId: 'p1', projectName: 'Villa', debit: '100.0000', credit: '0' },
         ],
         totalDebit: '100.0000',
         totalCredit: '90.0000',
@@ -244,6 +250,7 @@ describe('accounting pages', () => {
       const host = await settle(TestBed.createComponent(TrialBalancePage));
 
       expect(host.textContent).toContain('الخزنة');
+      expect(byId(host, 'trial-project')?.textContent).toContain('Villa');
       expect(host.querySelectorAll('[data-testid="trial-rows"] li').length).toBe(2);
       expect(byId(host, 'trial-unbalanced')).not.toBeNull();
       expect(host.querySelector('[data-testid="trial-rows"] li kaff-figure')).not.toBeNull();
