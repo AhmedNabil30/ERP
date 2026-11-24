@@ -275,3 +275,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-266 | 17466 | Releases 2 to 5, first server pass on recorded defaults · 2026-11-24 |
 | D-267 | 17498 | Nabil rulings: Owner approves accounting entries, baseline read, portal 403 · 2026-11-24 |
 | D-268 | 17512 | Sales pipeline: next stage stops at Negotiation; Contract only by conversion · 2026-11-24 |
+| D-269 | 17518 | Portal paid counts tax withheld at source · 2026-11-24 |

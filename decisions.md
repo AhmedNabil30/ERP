@@ -17514,3 +17514,10 @@ the full gate. No screens were built: the R2 to R6 mocks are not yet approved.
 Nabil, 2026-11-24 (verification finding F-R3-1). "Next stage" stops at Negotiation. An opportunity reaches Contract only
 through conversion to a project (R3-09, not built), so nothing is marked won without a project. Domain and Api tests guard
 the stop.
+
+## D-269 — The portal counts tax withheld at source as paid · 2026-11-24
+
+Nabil, 2026-11-24 ("do the better", on R5-Q8 as raised by the re-verification). A company client who withholds tax at source
+has settled that part of the extract with a certificate instead of cash. The portal's "paid" is the advance receipt, every
+collection and every tax-withheld-at-source posting on the project, net of reversals, so "remaining" reaches zero on a
+fully settled contract. The ledgers stay separate; this is a read-side sum for the client only.
