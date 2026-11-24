@@ -11,6 +11,7 @@ import {
   TextLine,
 } from '../../core/daily-log/daily-log.api';
 import { materialUnitLabel } from '../../core/daily-log/material-units';
+import { AuthService } from '../../core/auth/auth.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 import { ProjectDetail } from '../../core/projects/projects.api';
 import { KaffAttendanceStrip } from '../../shared/kaff-attendance-strip/kaff-attendance-strip';
@@ -81,6 +82,16 @@ export class DailyLogReviewPage {
   protected unitLabel(unit: string): string {
     return materialUnitLabel(this.i18n, unit);
   }
+
+  private readonly auth = inject(AuthService);
+
+  /** The server decides who may publish; this only keeps the button off a screen whose reader cannot use it. */
+  protected readonly canPublish = computed(
+    () => this.auth.current()?.projects.find((entry) => entry.projectId === this.projectId())?.permissions.includes('SitePhotoPublish') ?? false,
+  );
+  protected readonly published = signal<ReadonlySet<string>>(new Set());
+  protected readonly publishing = signal<string | null>(null);
+  protected readonly publishFailed = signal(false);
 
   protected readonly project = signal<ProjectDetail | null>(null);
   protected readonly stopped = computed(() => this.project()?.status === 'Stopped');
@@ -164,6 +175,19 @@ export class DailyLogReviewPage {
     });
 
     inject(DestroyRef).onDestroy(() => Object.values(this.thumbs()).forEach((url) => URL.revokeObjectURL(url)));
+  }
+
+  protected async publish(line: PhotoLine): Promise<void> {
+    this.publishing.set(line.entryId);
+    this.publishFailed.set(false);
+    try {
+      await this.api.publishPhoto(this.projectId(), line.fileReference);
+      this.published.update((current) => new Set(current).add(line.entryId));
+    } catch {
+      this.publishFailed.set(true);
+    } finally {
+      this.publishing.set(null);
+    }
   }
 
   protected onLoaded(project: ProjectDetail): void {

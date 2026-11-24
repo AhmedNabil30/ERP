@@ -454,6 +454,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/sign-in/sign-in-page').then((m) => m.SignInPage),
   },
   {
+    // R5-C: the client portal. Its own frame and route prefix; no staff guard (a client holds no staff session).
+    path: 'portal',
+    loadChildren: () => import('./features/portal/portal.routes').then((m) => m.PORTAL_ROUTES),
+  },
+  {
     // `AC-126-L`. A guard's refusal resolves here rather than bouncing to `/`, because
     // `ux/navigation.md` forbids "a redirect that hides what happened" as firmly as it forbids a
     // blank page. No guard on this route: it is what a refusal looks like, so refusing entry to it
