@@ -17589,3 +17589,17 @@ Nabil, 2026-11-24, on `ux/arabic-copy-review-words-2026-11-24.md` after the app 
    existing projects carry.
 4. **What the client still owes on the contract is «المتبقي من العقد»**, on staff screens and the portal. The portal's
    unpaid issued extracts are «المستحق الآن», a server figure.
+
+## D-275 — The Owner approves a stated amount; juniors read no project money; the portal starts at signing · 2026-11-24
+
+From `qa/verification-r2-r5-screens-2026-11-24.md` and Nabil's answer the same day.
+
+1. **An accounting request carries its amount from the moment Finance asks.** The dry run's total and line count are stored
+   on `accounting_requests`; the Owner's list shows them. At approval the postings are rebuilt, and if the total differs
+   from the stored one (or none was stored) the approval is refused with `errors.accounting.request_amount_changed` and
+   nothing posts. The Owner never approves an amount he did not see (D-267).
+2. **`TreasuryReadProject` belongs to the supervising engineer, not every site engineer.** D-218 item 6 already said only the
+   supervising engineer sees project money; the grant had admitted the junior. Balances, postings, proof, accruals,
+   prepayments and accounting requests now answer 403 to a junior.
+3. **The client portal shows a project only from contract signing onward** (Nabil). An unsigned own project answers the same
+   403 as a foreign one.
