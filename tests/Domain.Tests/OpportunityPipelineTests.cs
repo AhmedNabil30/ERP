@@ -46,6 +46,16 @@ public sealed class OpportunityPipelineTests
     }
 
     [Fact]
+    public void A_row_already_saved_at_Contract_cannot_advance_past_it()
+    {
+        Opportunity opportunity = Make();
+        typeof(Opportunity).GetProperty(nameof(Opportunity.Stage))!.SetValue(opportunity, OpportunityStage.Contract);
+
+        opportunity.AdvanceStage(Start).Error.Should().Be(SalesErrors.AlreadyAtLastStage);
+        opportunity.Stage.Should().Be(OpportunityStage.Contract);
+    }
+
+    [Fact]
     public void Hold_keeps_the_stage_and_resume_returns_to_it()
     {
         Opportunity opportunity = Make();

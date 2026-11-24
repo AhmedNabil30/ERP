@@ -185,6 +185,47 @@ public sealed partial class PortalEndpointTests : IAsyncLifetime
         home.GetProperty("remaining").GetString().Should().Be("390000.00");
     }
 
+    [Fact]
+    public async Task Paid_includes_the_tax_withheld_at_source_on_a_collection()
+    {
+        await using (KaffDbContext context = _database.CreateContext())
+        {
+            Account receivable = await context.Accounts.FirstAsync(a => a.ProjectId == _projectA.Id && a.Type == AccountType.ClientReceivable, Ct);
+            Account safe = await context.Accounts.SingleAsync(a => a.Id == _safeId, Ct);
+            Account tax = Account.Create(
+                AccountType.TaxWithheldAtSource, UniqueNames.Code("PTWHT"), "ضريبة مخصومة", "Tax withheld", Currency.Egp, new DateOnly(2026, 1, 1)).Value;
+            context.Accounts.Add(tax);
+            await context.SaveChangesAsync(Ct);
+            var source = new SourceDocument(SourceDocumentType.Extract, Guid.CreateVersion7(), "EX");
+            context.Postings.Add(Posting.Create(
+                receivable, safe, new Money(99_000m), PostingType.ClientCollection, source, new DateOnly(2026, 9, 25), _owner, Now, _projectA.Id).Value);
+            context.Postings.Add(Posting.Create(
+                receivable, tax, new Money(1_000m), PostingType.TaxWithheldAtSource, source, new DateOnly(2026, 9, 25), _owner, Now, _projectA.Id).Value);
+            await context.SaveChangesAsync(Ct);
+        }
+
+        JsonElement home = await ReadAsync(await SendAsync(HttpMethod.Get, $"/api/portal/projects/{_projectA.Id}", _portalA, null));
+        home.GetProperty("paid").GetString().Should().Be("350000.00", "250,000 advance + 99,000 cash + 1,000 withheld");
+        home.GetProperty("remaining").GetString().Should().Be("650000.00");
+    }
+
+    [Fact]
+    public async Task A_reversed_advance_receipt_is_not_counted_as_paid()
+    {
+        await using (KaffDbContext context = _database.CreateContext())
+        {
+            Posting receipt = await context.Postings.SingleAsync(p => p.ProjectId == _projectA.Id && p.Type == PostingType.ClientAdvanceReceipt && p.ReversesId == null, Ct);
+            Account from = await context.Accounts.SingleAsync(a => a.Id == receipt.FromAccountId, Ct);
+            Account to = await context.Accounts.SingleAsync(a => a.Id == receipt.ToAccountId, Ct);
+            context.Postings.Add(Posting.Reverse(receipt, from, to, new DateOnly(2026, 9, 25), _owner, Now).Value);
+            await context.SaveChangesAsync(Ct);
+        }
+
+        JsonElement home = await ReadAsync(await SendAsync(HttpMethod.Get, $"/api/portal/projects/{_projectA.Id}", _portalA, null));
+        home.GetProperty("paid").GetString().Should().Be("0.00");
+        home.GetProperty("remaining").GetString().Should().Be("1000000.00");
+    }
+
     // ---- R5-B: extracts ----------------------------------------------------------------------------------------------
 
     [Fact]

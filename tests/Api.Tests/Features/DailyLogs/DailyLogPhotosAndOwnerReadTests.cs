@@ -14,11 +14,63 @@ namespace Kaff.Api.Tests.Features.DailyLogs;
 /// </summary>
 public sealed partial class DailyLogTests
 {
-    private static readonly byte[] Jpeg = [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01, 1, 2, 3, 4, 5, 6, 7, 8];
+    // Minimal images that parse to the end: the strippers refuse a file that does not (no unread tail is ever copied).
+    private static readonly byte[] Jpeg = JpegImage();
 
-    private static readonly byte[] Png = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 13, 73, 72, 68, 82];
+    private static readonly byte[] Png = PngImage();
 
-    private static readonly byte[] Webp = [.. "RIFF"u8, 0x24, 0, 0, 0, .. "WEBPVP8 "u8, 1, 2, 3, 4];
+    private static readonly byte[] Webp = WebpImage();
+
+    /// <summary>SOI, JFIF, a table, a frame, a scan and EOI, with <paramref name="beforeScan"/> segments after the JFIF and <paramref name="afterEoi"/> behind EOI.</summary>
+    private static byte[] JpegImage(byte[]? beforeScan = null, byte[]? afterEoi = null, bool fillBytes = false)
+    {
+        byte[] fill = fillBytes ? [0xFF, 0xFF] : [];
+        return
+        [
+            0xFF, 0xD8,
+            0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01, 1, 0, 0, 1, 0, 1, 0, 0,
+            .. (beforeScan ?? []),
+            .. fill,
+            0xFF, 0xDB, 0x00, 0x43, 0x00, .. new byte[64],
+            0xFF, 0xC0, 0x00, 0x0B, 0x08, 0x00, 0x01, 0x00, 0x01, 0x01, 0x01, 0x11, 0x00,
+            0xFF, 0xC4, 0x00, 0x14, 0x00, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            .. fill,
+            0xFF, 0xDA, 0x00, 0x08, 0x01, 0x01, 0x00, 0x00, 0x3F, 0x00,
+            0x2A, 0xFF, 0x00, 0x11,
+            0xFF, 0xD9,
+            .. (afterEoi ?? []),
+        ];
+    }
+
+    private static byte[] Segment(byte marker, byte[] payload) =>
+        [0xFF, marker, (byte)((payload.Length + 2) >> 8), (byte)((payload.Length + 2) & 0xFF), .. payload];
+
+    private static byte[] PngChunk(string type, byte[] data) =>
+        [0, 0, (byte)(data.Length >> 8), (byte)(data.Length & 0xFF), .. System.Text.Encoding.ASCII.GetBytes(type), .. data, 0, 0, 0, 0];
+
+    private static byte[] PngImage(byte[]? extraChunk = null) =>
+    [
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+        .. PngChunk("IHDR", [0, 0, 0, 1, 0, 0, 0, 1, 8, 0, 0, 0, 0]),
+        .. (extraChunk ?? []),
+        .. PngChunk("IDAT", [1, 2, 3, 4]),
+        .. PngChunk("IEND", []),
+    ];
+
+    private static byte[] WebpChunk(string type, byte[] data) =>
+        [.. System.Text.Encoding.ASCII.GetBytes(type), (byte)data.Length, 0, 0, 0, .. data, .. (data.Length % 2 == 1 ? new byte[] { 0 } : [])];
+
+    private static byte[] WebpImage(bool withExif = false)
+    {
+        byte[] body =
+        [
+            .. "WEBP"u8,
+            .. WebpChunk("VP8X", [withExif ? (byte)0x08 : (byte)0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+            .. WebpChunk("VP8 ", [1, 2, 3, 4]),
+            .. (withExif ? WebpChunk("EXIF", [.. "GPSLatitude"u8]) : []),
+        ];
+        return [.. "RIFF"u8, (byte)body.Length, 0, 0, 0, .. body];
+    }
 
     private static string Photos(Guid project) => $"{Logs(project)}/photos";
 
@@ -81,34 +133,45 @@ public sealed partial class DailyLogTests
     [Fact]
     public async Task An_uploaded_photo_is_stored_and_served_without_its_metadata()
     {
-        byte[] gps = [.. "Exif\0\0GPSLatitude"u8];
-        byte[] jpegWithExif =
+        byte[] secondImage = JpegImage([.. Segment(0xE1, [.. "Exif\0\0GPSSecond"u8])]);
+        (byte[] Original, string Marker)[] cases =
         [
-            0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01, 1, 2, 3, 4, 5, 6, 7, 8,
-            0xFF, 0xE1, 0x00, (byte)(gps.Length + 2), .. gps,
-            0xFF, 0xFE, 0x00, 0x05, 65, 66, 67,
-            0xFF, 0xDA, 0x00, 0x03, 0x00, 9, 9, 0xFF, 0xD9,
-        ];
-        byte[] pngWithText =
-        [
-            .. Png[..8],
-            0, 0, 0, 0, .. "IHDR"u8, 0, 0, 0, 0,
-            0, 0, 0, 3, .. "tEXt"u8, 71, 80, 83, 0, 0, 0, 0,
-            0, 0, 0, 0, .. "IEND"u8, 0, 0, 0, 0,
+            (JpegImage([.. Segment(0xE1, [.. "Exif\0\0GPSLatitude"u8]), .. Segment(0xFE, [.. "COMMENTAUTHOR"u8])]), "GPSLatitude"),
+            (JpegImage(afterEoi: secondImage), "GPSSecond"),
+            (JpegImage(fillBytes: true, beforeScan: Segment(0xE1, [.. "Exif\0\0GPSFill"u8])), "GPSFill"),
+            (PngImage(PngChunk("tEXt", [.. "GPSPng\0x"u8])), "GPSPng"),
+            (WebpImage(withExif: true), "GPSLatitude"),
         ];
 
-        foreach ((byte[] original, string marker) in new[] { (jpegWithExif, "GPSLatitude"), (pngWithText, "tEXt") })
+        foreach ((byte[] original, string marker) in cases)
         {
             (Guid project, string reference) = await RecordedPhotoAsync(original);
             HttpResponseMessage download = await SendAsync(HttpMethod.Get, $"{Photos(project)}/{reference}", _engineerA, null);
             byte[] served = await download.Content.ReadAsByteArrayAsync(Ct);
 
-            System.Text.Encoding.Latin1.GetString(served).Should().NotContain(marker);
+            System.Text.Encoding.Latin1.GetString(served).Should().NotContain(marker).And.NotContain("COMMENTAUTHOR");
             served.Length.Should().BeLessThan(original.Length);
             Directory.GetFiles(_photoRoot, "*", SearchOption.AllDirectories)
                 .Select(file => System.Text.Encoding.Latin1.GetString(File.ReadAllBytes(file)))
                 .Should().NotContain(text => text.Contains(marker, StringComparison.Ordinal), "the stored bytes carry none either");
         }
+    }
+
+    [Fact]
+    public async Task A_photo_that_does_not_read_cleanly_to_its_end_is_refused_and_nothing_is_stored()
+    {
+        (Guid project, _) = await NewActiveProjectAsync();
+        byte[] truncated = Jpeg[..^6];
+        byte[] noEnd = PngImage()[..^12];
+
+        foreach (byte[] bad in new[] { truncated, noEnd })
+        {
+            HttpResponseMessage response = await UploadAsync(project, bad, _engineerA);
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            (await MessageKeyAsync(response)).Should().Be("errors.daily_log.photo_unreadable");
+        }
+
+        (Directory.Exists(_photoRoot) ? Directory.GetFiles(_photoRoot, "*", SearchOption.AllDirectories) : []).Should().BeEmpty("a refused photo leaves nothing on disk");
     }
 
     [Fact]

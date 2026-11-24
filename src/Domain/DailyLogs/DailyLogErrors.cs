@@ -57,6 +57,10 @@ public static class DailyLogErrors
     public static readonly Error FileReferenceInvalid =
         Error.Validation("daily_log.file_reference_invalid", "errors.daily_log.file_reference_invalid");
 
+    /// <summary>The photo does not read cleanly to its end, so its metadata cannot be removed with certainty.</summary>
+    public static readonly Error PhotoUnreadable =
+        Error.Validation("daily_log.photo_unreadable", "errors.daily_log.photo_unreadable");
+
     /// <summary>The uploaded bytes are not a JPEG, PNG or WebP, whatever the client called them.</summary>
     public static readonly Error PhotoNotAnImage =
         Error.Validation("daily_log.photo_not_an_image", "errors.daily_log.photo_not_an_image");

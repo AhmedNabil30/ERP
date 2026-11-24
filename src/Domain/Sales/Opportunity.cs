@@ -187,7 +187,7 @@ public sealed class Opportunity : Entity
             return Result.Failure(SalesErrors.OpportunityNotLive);
         }
 
-        if (Stage == OpportunityStage.Negotiation)
+        if (Stage >= OpportunityStage.Negotiation)
         {
             return Result.Failure(SalesErrors.AlreadyAtLastStage);
         }
