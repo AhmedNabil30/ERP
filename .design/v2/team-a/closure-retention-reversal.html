@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>كف - الإقفال: عكس الإفراج عن محجوزات المقاول</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@500;600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* KAAF closure screen, subcontractor retention reversal (D-271), 2026-11-24. Kit parts only (components.html, project.html). Nothing new in the kit.
+   The shell is reduced to the phone header bar: the closure screen sits in the approved shell (layout.html) unchanged. */
+:root{
+  --g900:#09221e; --g800:#0f2e29; --g300:#9fb3ad; --c100:#f4eee9; --c200:#e6d9d1; --radius:6px;
+  --bg:var(--c100); --surface:#fbf8f5; --head:#ebe0d8; --ink:var(--g900); --dim:#4b5f59; --line:rgba(9,34,30,.16); --hover:rgba(9,34,30,.055);
+  --btn:var(--g900); --btn-h:#25544b; --btn-ink:var(--c200); --field:#fbf8f5; --fieldline:var(--g900); --focus:var(--g900);
+  --err-bg:#f9e4dd; --err-ink:#7a1a0e; --err-bar:#c2321c;
+  --note-bg:#ebe0d8; --ok-bg:#d3e3db; --ok-ink:#0b3b32;
+  --scrim:rgba(3,13,11,.55); --strip:var(--c200); --shadow:0 12px 36px rgba(9,34,30,.22);
+  --display:'Noto Kufi Arabic','IBM Plex Sans Arabic',system-ui,sans-serif;
+  --body:'IBM Plex Sans Arabic',system-ui,'Segoe UI',Tahoma,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#061815; --surface:#0a1f1b; --head:#0f2e29; --ink:var(--c200); --dim:var(--g300); --line:rgba(230,217,209,.18); --hover:rgba(230,217,209,.06);
+  --btn:var(--c200); --btn-h:#fbf6f2; --btn-ink:var(--g900); --field:#0f2e29; --fieldline:#7f9a92; --focus:var(--c200);
+  --err-bg:#3b1612; --err-ink:#ffd0c6; --err-bar:#ff7b63; --note-bg:#0f2e29; --ok-bg:#17403a; --ok-ink:#e6d9d1; --strip:#030d0b; --shadow:0 12px 36px rgba(0,0,0,.6);}}
+:root[data-theme="dark"]{
+  --bg:#061815; --surface:#0a1f1b; --head:#0f2e29; --ink:var(--c200); --dim:var(--g300); --line:rgba(230,217,209,.18); --hover:rgba(230,217,209,.06);
+  --btn:var(--c200); --btn-h:#fbf6f2; --btn-ink:var(--g900); --field:#0f2e29; --fieldline:#7f9a92; --focus:var(--c200);
+  --err-bg:#3b1612; --err-ink:#ffd0c6; --err-bar:#ff7b63; --note-bg:#0f2e29; --ok-bg:#17403a; --ok-ink:#e6d9d1; --strip:#030d0b; --shadow:0 12px 36px rgba(0,0,0,.6);}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 1rem/1.6 var(--body)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+svg.i{inline-size:22px;block-size:22px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+svg.i.s{inline-size:18px;block-size:18px}
+:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+bdi{unicode-bidi:isolate}
+
+/* preview strip: NOT part of the design */
+.strip{background:var(--strip);font-size:.8125rem}
+.strip summary{list-style:none;display:flex;align-items:center;gap:.5rem;min-block-size:44px;padding:0 1rem;cursor:pointer}
+.strip summary::-webkit-details-marker{display:none}
+.strip .panelx{display:flex;flex-wrap:wrap;gap:.5rem;padding:.25rem 1rem .75rem}
+.strip button{min-block-size:44px;padding:0 .8rem;border:1px solid currentColor;background:transparent;border-radius:var(--radius);color:inherit}
+.strip button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+body.embed .strip{display:none}
+
+/* shell, reduced */
+.mh{background:var(--g900);color:var(--c200);display:flex;align-items:center;justify-content:space-between;padding:0 16px;block-size:64px}
+.mh img{display:block;inline-size:96px;block-size:auto;aspect-ratio:519/155}
+.mh .lang{min-block-size:44px;padding:0 14px;border:1.5px solid rgba(230,217,209,.55);background:transparent;color:var(--c200);border-radius:var(--radius);font-weight:600}
+
+/* kit parts, unchanged */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-block-size:48px;padding:0 22px;border:2px solid transparent;border-radius:var(--radius);background:var(--btn);color:var(--btn-ink);font:700 1rem/1 var(--display);white-space:nowrap;text-decoration:none}
+.btn.sm{min-block-size:44px;padding:0 16px;font-size:.9375rem}
+.btn:hover{background:var(--btn-h)}
+.btn.sec2{background:transparent;color:var(--ink);border-color:var(--fieldline)}
+.btn.sec2:hover{background:var(--hover)}
+.ib{inline-size:44px;block-size:44px;display:inline-grid;place-items:center;border:2px solid transparent;background:transparent;color:var(--ink);border-radius:var(--radius);padding:0}
+.ib:hover{background:var(--hover)}
+.back{display:inline-flex;align-items:center;gap:6px;min-block-size:44px;color:var(--ink);text-decoration:none;font-weight:600}
+[dir="rtl"] .back svg{transform:scaleX(-1)}
+.back:hover{text-decoration:underline;text-underline-offset:4px}
+.badge{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-inline-size:24px;block-size:24px;padding:0 8px;border-radius:var(--radius);border:1.5px solid var(--fieldline);font:600 .8125rem/1 var(--body);white-space:nowrap}
+.badge svg{inline-size:14px;block-size:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.badge.q{border-color:var(--line);color:var(--dim)}
+.pill{display:inline-flex;align-items:center;gap:7px;block-size:28px;padding-inline:10px 12px;border-radius:var(--radius);font:600 .8125rem/1 var(--body);white-space:nowrap;box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 30%,transparent);background:var(--head);color:var(--ink)}
+.pill svg{inline-size:13px;block-size:13px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.ban{display:flex;gap:12px;align-items:flex-start;padding:12px 16px;border-radius:var(--radius);border-inline-start:6px solid var(--err-bar);background:var(--err-bg);color:var(--err-ink);font-weight:500;line-height:1.55}
+.ban.note{background:var(--note-bg);color:var(--ink);border-inline-start-color:var(--fieldline);font-weight:400}
+.ban.ok{background:var(--ok-bg);color:var(--ok-ink);border-inline-start-color:var(--ok-ink)}
+.ban>svg,.cfm svg{inline-size:20px;block-size:20px;margin-block-start:2px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ban b{font-weight:700}
+.state{border:1.5px solid var(--line);border-radius:var(--radius);background:transparent;padding:44px 24px;text-align:center;display:grid;justify-items:center;gap:10px}
+.state.refused{border-style:dashed;border-color:var(--fieldline)}
+.state .ico{inline-size:56px;block-size:56px;border-radius:var(--radius);display:grid;place-items:center;background:var(--head)}
+.state.refused .ico{border-radius:50%;border:2px solid var(--fieldline);background:transparent}
+.state .ico svg{inline-size:28px;block-size:28px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.state h4{font:700 1.125rem/1.4 var(--display);margin:4px 0 0}
+.state p{margin:0;color:var(--dim);max-inline-size:46ch;font-size:.9375rem}
+.sk{display:block;block-size:14px;border-radius:4px;background:linear-gradient(90deg,var(--line),var(--hover),var(--line));background-size:200% 100%;animation:sh 1.4s linear infinite}
+@keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.sk{animation:none}}
+.fig{font-variant-numeric:tabular-nums;font-weight:500;direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+.sec-h{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.sec-h h3{font:600 1.0625rem/1.4 var(--display);margin:0}
+.sec-h h3 small{font:400 .875rem var(--body);color:var(--dim)}
+.field{display:grid;gap:6px;min-inline-size:0}
+.field>label{display:flex;gap:6px;align-items:baseline;font:600 1rem/1.4 var(--body)}
+.ctl{display:flex;align-items:stretch;min-inline-size:0;border:2px solid var(--fieldline);border-radius:var(--radius);background:var(--field)}
+.ctl:focus-within{outline:3px solid var(--focus);outline-offset:3px}
+.ctl textarea{resize:vertical;min-block-size:104px;padding:12px 14px;border:0;background:transparent;font-size:1.0625rem;flex:1;min-inline-size:0;outline:none;line-height:1.6}
+.field.err .ctl{border-color:var(--err-bar);box-shadow:inset 0 0 0 1px var(--err-bar)}
+.foot{min-block-size:24px;display:flex;gap:6px;font-size:.875rem;line-height:1.5;color:var(--dim)}
+.field.err .foot{color:var(--err-ink);font-weight:500}
+.foot svg{inline-size:18px;block-size:18px;margin-block-start:2px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* page */
+.pg{display:grid;gap:16px;padding:8px 16px 48px;max-inline-size:760px;margin-inline:auto}
+.ph{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ph h1{font:700 1.5rem/1.3 var(--display);margin:0}
+.sub{margin:0;color:var(--dim);font-size:.875rem}
+.panel{display:grid;gap:12px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:16px}
+/* the list part (lst), with a request row */
+.rr{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:var(--radius);background:var(--bg)}
+.rr>li{display:grid;gap:10px;padding:12px 16px;border-block-start:1px solid var(--line)}
+.rr>li:first-child{border-block-start:0}
+.rr .top{display:flex;justify-content:space-between;align-items:center;gap:8px 16px;flex-wrap:wrap}
+.rr .top b{font-weight:600;overflow-wrap:anywhere;min-inline-size:0}
+.rr .meta{display:flex;gap:8px 16px;flex-wrap:wrap;align-items:center;color:var(--dim);font-size:.875rem}
+.rr .why{margin:0;font-size:.9375rem;overflow-wrap:anywhere}
+.rr .why span{color:var(--dim)}
+.rr .acts{display:flex;gap:12px;flex-wrap:wrap}
+.cfm{display:grid;gap:12px;padding:12px 16px;border-radius:var(--radius);background:var(--note-bg);border:1px solid var(--fieldline)}
+.cfm>span{display:flex;gap:10px;align-items:flex-start}
+.cfm .row{display:flex;gap:12px;flex-wrap:wrap}
+/* side panel on a desktop, bottom sheet on a phone (kaff-detail-panel) */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:60}
+.sx{position:fixed;z-index:70;background:var(--bg);display:flex;flex-direction:column;box-shadow:var(--shadow);inset-block:0;inset-inline-end:0;inline-size:440px;max-inline-size:100%}
+.sx .hd{display:flex;align-items:center;gap:8px;padding:8px;padding-inline:20px 8px;border-block-end:1px solid var(--line)}
+.sx .hd h4{margin:0;font:700 1.25rem/1.4 var(--display);flex:1}
+.sx .bd{padding:16px 20px;display:grid;gap:14px;overflow:auto;flex:1;align-content:start}
+.sx .ft{display:flex;gap:12px;padding:12px 16px;border-block-start:1px solid var(--line);background:var(--surface)}
+.sx .ft .btn{min-block-size:56px}
+.sx .grab{display:none}
+@media (max-width:720px){
+  .sx{inset-block:auto 0;inset-inline:0;inline-size:auto;max-block-size:92%;border-radius:var(--radius) var(--radius) 0 0}
+  .sx .grab{display:block;inline-size:44px;block-size:4px;border-radius:2px;background:var(--line);margin:10px auto 0}
+  .sx .ft .btn{flex:1}
+}
+@media (min-width:721px){.pg{padding:16px 32px 56px}.ph h1{font-size:2rem}}
+</style>
+</head>
+<body>
+
+<details class="strip" id="strip">
+  <summary><span aria-hidden="true">▾</span> معاينة (ليست جزءاً من التصميم)</summary>
+  <div class="panelx" id="views"></div>
+  <div class="panelx"><button type="button" id="themebtn">فاتح / داكن</button><button type="button" id="dirbtn">اتجاه LTR</button></div>
+</details>
+
+<header class="mh"><img src="../brand/kaaf-wordmark.png" width="519" height="155" alt="KAAF"><button type="button" class="lang" lang="en" dir="ltr">English</button></header>
+
+<main class="pg" id="pg"></main>
+<div id="over"></div>
+
+<script>
+/* icons: the kit's one stroke family */
+const IC={left:'M15 6l-6 6 6 6',x:'M6 6l12 12M18 6L6 18',info:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 11v5M12 8v.01',clock:'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 2',check:'M5 12.5l4.5 4.5L19 7.5',alert:'M12 3l10 18H2L12 3zM12 10v5M12 18v.01',undo:'M9 7L4 12l5 5M4 12h11a5 5 0 010 10h-3',list:'M4 7h16M4 12h16M4 17h16'};
+const i=(n,c='')=>`<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[n]}"/></svg>`;
+const group=s=>s.replace(/\B(?=(\d{3})+(?!\d))/g,',');
+const fig=v=>`<bdi class="fig" dir="ltr">${group(Math.floor(v).toString())}.${v.toFixed(2).split('.')[1]}</bdi>`;
+
+const VIEWS=[['released','المالية: الإفراج مسجّل'],['reasonsheet','المالية: كتابة السبب'],['reasonerr','المالية: السبب ناقص'],['waitfin','المالية: بانتظار المالك'],['returned','المالية: أُرجع الطلب'],['owner','المالك: طلب ينتظره'],['ownerconfirm','المالك: تأكيد الاعتماد'],['ownerreturn','المالك: كتابة سبب الإرجاع'],['reversed','تم العكس'],['viewer','للاطلاع فقط'],['none','لا محجوزات'],['loading','تحميل'],['failed','تعذّر التحميل'],['refused','رفض الخادم']];
+const q=new URLSearchParams(location.search);
+const view=q.get('view')||'released';
+const EMBED=q.get('embed')==='1';
+const $=s=>document.querySelector(s);
+
+/* sample rows: names are what the person reads; ids and posting numbers never show */
+const A='مقاول الكهرباء - شركة النور', B='مقاول السباكة - أحمد حسن';
+const REASON='تم الإفراج عن مقاول آخر بالخطأ';
+const OWNERSIDE=['owner','ownerconfirm','ownerreturn'];
+const asking=()=>['reasonsheet','reasonerr'].includes(view);
+const btn=(label,id,cls='sec2 sm')=>`<button class="btn ${cls}" type="button" data-testid="${id}">${label}</button>`;
+
+function rowA(){ /* the row whose request is in play */
+  const head=`<div class="top"><b dir="auto">${A}</b>${fig(38500)}</div><div class="meta"><span>الأحد 1 نوفمبر</span></div>`;
+  if(view==='waitfin') return `<li>${head}<div class="meta"><span class="badge q">${i('clock','s')}بانتظار المالك</span></div><p class="why"><span>السبب:</span> ${REASON}</p></li>`;
+  if(OWNERSIDE.includes(view)) return `<li>${head}<div class="meta"><span class="badge q">${i('clock','s')}طلبته منى سامي</span></div><p class="why"><span>السبب:</span> ${REASON}</p>
+    ${view==='ownerconfirm'
+      ?`<div class="cfm" role="alertdialog" aria-label="تأكيد الاعتماد"><span>${i('info')}<b>اعتماد عكس الإفراج؟</b></span><span>تُسجَّل حركة عكسية بمبلغ الإفراج كاملاً.</span><div class="row"><button class="btn sm" type="button" data-testid="reversal-confirm">نعم، اعتماد</button><button class="btn sec2 sm" type="button">إلغاء</button></div></div>`
+      :`<div class="acts"><button class="btn sm" type="button" data-testid="reversal-approve">اعتماد</button>${btn('إرجاع','reversal-return')}</div>`}</li>`;
+  if(view==='reversed') return `<li>${head}<div class="meta"><span class="badge q">${i('undo','s')}تم عكس الإفراج</span></div></li>`;
+  if(view==='viewer') return `<li>${head}</li>`;
+  return `<li>${head}<div class="acts">${btn('طلب عكس الإفراج','reversal-ask')}</div></li>`;
+}
+const quietViews=['viewer','waitfin','reversed',...OWNERSIDE];
+const rowB=()=>`<li><div class="top"><b dir="auto">${B}</b>${fig(21200)}</div><div class="meta"><span>الثلاثاء 10 نوفمبر</span></div>${quietViews.includes(view)?'':`<div class="acts">${btn('طلب عكس الإفراج','reversal-ask-2')}</div>`}</li>`;
+
+function body(){
+  if(view==='loading') return `<div class="panel" aria-busy="true"><div class="sk" style="inline-size:45%"></div><div class="sk"></div><div class="sk" style="inline-size:70%"></div></div>`;
+  if(view==='failed') return `<div class="state refused" role="alert"><div class="ico">${i('alert')}</div><h4>تعذّر تحميل محجوزات المقاولين.</h4><button class="btn sec2" type="button">إعادة المحاولة</button></div>`;
+  if(view==='none') return `<div class="panel"><div class="sec-h"><h3>محجوزات المقاولين</h3></div><div class="state"><div class="ico">${i('list')}</div><p>لم يُفرج عن محجوزات أي مقاول بعد.</p></div></div>`;
+  const notes=[];
+  if(view==='returned') notes.push(`<div class="ban note" role="status">${i('info')}<span><b>أرجع المالك الطلب:</b> الإفراج صحيح، المقاول أنهى الأعمال</span></div>`);
+  if(view==='reversed') notes.push(`<div class="ban ok" role="status">${i('check')}<span>تم عكس الإفراج.</span></div>`);
+  if(view==='refused') notes.push(`<div class="ban" role="alert">${i('alert')}<span>لا يمكنك اعتماد طلب قدّمته أنت.</span></div>`);
+  return `<div aria-live="polite">${notes.join('')}</div>
+  <div class="panel" data-testid="retention-panel"><div class="sec-h"><h3>محجوزات المقاولين <small>(ج.م)</small></h3></div>
+  <ul class="rr">${rowA()}${view==='reversed'?'':rowB()}</ul></div>`;
+}
+
+function overlay(){
+  if(asking()) return `<div class="scrim"></div><div class="sx" role="dialog" aria-label="طلب عكس الإفراج"><div class="grab"></div>
+    <div class="hd"><h4>طلب عكس الإفراج</h4><button class="ib" type="button" aria-label="إغلاق">${i('x')}</button></div>
+    <div class="bd"><div class="sub" dir="auto">${A}</div>
+      <div class="field ${view==='reasonerr'?'err':''}"><label for="rs">السبب <span aria-hidden="true">*</span></label>
+        <div class="ctl"><textarea id="rs" ${view==='reasonerr'?'aria-invalid="true"':''}></textarea></div>
+        <div class="foot">${view==='reasonerr'?`${i('alert','s')}<span>اكتب السبب.</span>`:''}</div></div></div>
+    <div class="ft"><button class="btn" type="button" data-testid="reversal-send">إرسال الطلب</button><button class="btn sec2" type="button">إلغاء</button></div></div>`;
+  if(view==='ownerreturn') return `<div class="scrim"></div><div class="sx" role="dialog" aria-label="إرجاع الطلب"><div class="grab"></div>
+    <div class="hd"><h4>إرجاع الطلب</h4><button class="ib" type="button" aria-label="إغلاق">${i('x')}</button></div>
+    <div class="bd"><div class="field"><label for="rr">سبب الإرجاع <span aria-hidden="true">*</span></label>
+      <div class="ctl"><textarea id="rr"></textarea></div><div class="foot"></div></div></div>
+    <div class="ft"><button class="btn" type="button" data-testid="reversal-return-send">إرجاع الطلب</button><button class="btn sec2" type="button">إلغاء</button></div></div>`;
+  return '';
+}
+
+const pillHtml=`<span class="pill">${i('info','s')}تحت الضمان</span>`;
+$('#pg').innerHTML=`<a class="back" href="#">${i('left')}العودة إلى المشروع</a>
+  <div class="ph"><h1>الإقفال والتسليم</h1>${pillHtml}</div><p class="sub" dir="auto">فيلا 47 - التجمع الخامس</p>${body()}`;
+$('#over').innerHTML=overlay();
+
+/* preview chrome: not part of the design */
+$('#views').innerHTML=VIEWS.map(([k,t])=>`<button type="button" data-v="${k}" aria-pressed="${k===view}">${t}</button>`).join('');
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{location.search='?view='+b.dataset.v+(EMBED?'&embed=1':'')});
+$('#themebtn').onclick=()=>{const h=document.documentElement;h.dataset.theme=(h.dataset.theme==='dark'||(!h.dataset.theme&&matchMedia('(prefers-color-scheme:dark)').matches))?'light':'dark'};
+$('#dirbtn').onclick=()=>{const h=document.documentElement;h.dir=h.dir==='rtl'?'ltr':'rtl'};
+if(EMBED){document.body.classList.add('embed');$('#strip').remove()}
+</script>
+</body>
+</html>
