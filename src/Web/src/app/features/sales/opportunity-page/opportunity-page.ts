@@ -175,9 +175,7 @@ export class OpportunityPage {
     if (spinner) this.loading.set(true);
     this.failure.set(null);
     try {
-      const found = await this.api.get(id);
-      this.opportunity.set(found);
-      if (found === null) this.failure.set('errors.sales.opportunity_not_found');
+      this.opportunity.set(await this.api.get(id));
     } catch (error) {
       this.failure.set(toProblem(error).messageKey);
     } finally {
