@@ -12,7 +12,7 @@ public sealed class WireUnitTests
     /// Money, not a rate, despite the name — decisions.md D-151 §4. <c>BaseSellRate</c> is a price
     /// (spec.md §4.2); <c>DayRate</c> (currently unreachable through any route, D-153 §1) is one too.
     /// </summary>
-    private static readonly HashSet<string> MoneyNamedLikeARate = ["BaseSellRate", "DayRate"];
+    private static readonly HashSet<string> MoneyNamedLikeARate = ["BaseSellRate", "EffectiveSellRate", "DayRate"];
 
     /// <summary>
     /// Rates whose names do not end in Rate, Markup or Percentage. <c>ClientAdvance</c> is the advance rate on the create
