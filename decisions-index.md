@@ -272,3 +272,5 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-263 | 17410 | Nabil's word rulings for the Release 2-6 mocks: إرجاع, اعتماد, الخصم والإضافة, الضمان · 2026-11-22 |
 | D-264 | 17421 | Design-system stories verified; criteria superseded by D-175 read against KAAF v2 · 2026-11-22 |
 | D-265 | 17429 | Subcontractor retention release asked by Finance, approved by the Owner (KAFF-806) · 2026-11-23 |
+| D-266 | 17466 | Releases 2 to 5, first server pass on recorded defaults · 2026-11-24 |
+| D-267 | 17498 | Nabil rulings: Owner approves accounting entries, baseline read, portal 403 · 2026-11-24 |

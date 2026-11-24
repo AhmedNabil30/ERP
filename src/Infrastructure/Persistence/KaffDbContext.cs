@@ -1,4 +1,5 @@
 using System.Reflection;
+using Kaff.Domain.Accounting;
 using Kaff.Domain.Adjustments;
 using Kaff.Domain.Auditing;
 using Kaff.Domain.Boqs;
@@ -160,6 +161,16 @@ public sealed class KaffDbContext : DbContext
     public DbSet<SubcontractorRetentionReleaseRequest> SubcontractorRetentionReleaseRequests => Set<SubcontractorRetentionReleaseRequest>();
 
     public DbSet<Adjustment> Adjustments => Set<Adjustment>();
+
+    public DbSet<AssetRegisterEntry> AssetRegisterEntries => Set<AssetRegisterEntry>();
+
+    public DbSet<Accrual> Accruals => Set<Accrual>();
+
+    public DbSet<PrepaymentSchedule> PrepaymentSchedules => Set<PrepaymentSchedule>();
+
+    public DbSet<BudgetBaseline> BudgetBaselines => Set<BudgetBaseline>();
+
+    public DbSet<AccountingRequest> AccountingRequests => Set<AccountingRequest>();
 
     /// <summary>KAFF-321 — staff departments, master data, superseding the D-153 §2 enum.</summary>
     public DbSet<Department> Departments => Set<Department>();

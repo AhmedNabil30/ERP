@@ -17462,3 +17462,49 @@ entry. It uses the same shape as D-262 item 1 for the hold release.
    retention accrual) is not built; the tests still write the accrual postings by hand. `GET .../closure` does not carry the
    retention requests and no screen was built or changed; `closure.api.ts` has no retention calls. Both belong to the
    designer and a Frontend story when one is cut.
+
+## D-266 — Releases 2 to 5, first server pass on recorded defaults · 2026-11-24
+
+**Context.** Nabil asked for the rest of the project to proceed while staging and the mock approvals wait. Four lanes built
+the server side of every "Start now" story in `plans/README.md`, each in its own worktree, merged by the coordinator after
+the full gate. No screens were built: the R2 to R6 mocks are not yet approved.
+
+1. **R2 site money.** `PettyCashRequest` (`petty_cash_requests`; Draft, Submitted, Returned). The supervisor submits or
+   returns a junior's draft under `DraftSubmit` on the route project; a return stores a reason; the drafter cannot decide
+   their own request; the project row is locked `FOR UPDATE`. Nothing posts; paying it is KAFF-311 (held on R2-Q6).
+   `GET /api/projects/{id}/material-advance` (`ProjectMoneyRead`) reports issued, recovered and outstanding تشوينات summed
+   from postings. Assumed notes: `RefusedPaymentAfterInjection` (R2-Q7 item 4), `QcReportScope` (R2-Q10), `StockpileMarker`
+   (R2-Q8). KAFF-612r and KAFF-313's refusal were already built.
+2. **R3 sales.** Opportunities get an `O-{n}` code from `opportunity_code_seq`. Stalled and the day-2, day-4 and day-7
+   quiet flags are derived on read and never stored (`OpportunityInactivity`, Assumed, R3-Q5). Stages move forward one
+   step at a time (go-back and skip wait on R3-Q3). Close lost takes a free-text reason (the list waits on R3-Q10). Reopen
+   keeps the stage and the client. All routes need `OpportunityManage`.
+3. **R4 accounting.** Accruals, prepayment schedules, the asset register with straight-line depreciation, the trial
+   balance with CSV export, the overhead spread report and the budget baseline. Schedules store no running figure;
+   accumulated depreciation and amortised amounts are summed from non-reversed postings, and month runs are idempotent.
+   The trial balance shows each of the five ledgers as its own row. The overhead spread writes no posting. The baseline
+   copies the frozen BOQ cost once; nothing edits it. Assumed notes: `AssetDepreciationRule` (R4-Q7),
+   `BudgetTolerance` (R4-Q6, 10% is a placeholder), `TrialBalanceExport` (R4-Q10), `OverheadSpreadBasis` (R4-Q9).
+   Not built: the asset purchase posting and the project-tagged expense payment (R4-A2), expense categories (R4-Q11, A3),
+   the baseline rise by change order (R4-Q6).
+4. **R5 portal.** A separate `/api/portal` route group whose response types share nothing with staff types (R5-Q1
+   default: same host). The Owner creates the client user and hands over a temporary password (R5-Q7); every portal read
+   is refused until it is changed. A client sees only projects whose client is theirs. Extracts shown: Issued and
+   Collected (R5-Q8). Photos reach the portal only when published (`SitePhotoPublish`: Technical Office and the
+   supervising engineer). The client approves or rejects priced change orders; approval moves them to Owner approval
+   (R5-Q3). `PortalReflectionGateTests` fails when a portal response type carries a cost-shaped property; it replaced the
+   vacuous "no portal route exists" check for AC-202-G.
+
+## D-267 — Nabil's rulings on accounting approval, baseline read and the portal refusal · 2026-11-24
+
+1. **The Owner approves every accounting entry.** Accruals, accrual releases, prepayment amortisation runs and
+   depreciation runs are asked by Finance and approved, or returned with a reason, by the Owner, as for the hold release
+   (D-262). One `accounting_requests` row stores the kind, the tag and the payload; the postings are built from it at
+   approval, so nothing posts earlier. The asker can never decide, and the request row is locked for the decision.
+   Permission `AccountingEntryApprove` (98, Owner).
+2. **The budget baseline is read by the Owner and Finance only.** Permission `BudgetBaselineRead` (99); an assigned site
+   engineer is refused. `BudgetBaselineSet` is 97 (96 is `SitePhotoPublish`).
+3. **A client asking for another client's project gets 403**, the same uniform refusal as the rest of the system (D-071),
+   not the 404 that AC-811-D and AC-810-D name. It reveals nothing about whether the project exists.
+4. **The lanes' error texts were added to `ar.json` and `en.json` by the coordinator** on Nabil's word. One R4 text used
+   «القيد»; it now reads «الحركة» per D-240.

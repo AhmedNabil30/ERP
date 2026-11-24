@@ -199,6 +199,18 @@ public sealed record RulingSet
     /// <summary>R2-Q8: the supervising engineer enters the stockpiled value at the QC report. Registered, not resolved.</summary>
     public StockpileMarker StockpileMarker { get; init; } = StockpileMarker.Default;
 
+    /// <summary>R4-Q7: how an asset depreciates and from which month. Honoured by the depreciation run.</summary>
+    public AssetDepreciationRule AssetDepreciation { get; init; } = AssetDepreciationRule.Default;
+
+    /// <summary>R4-Q6: the tolerance a budget baseline takes when the Owner names none. A placeholder.</summary>
+    public BudgetTolerance BudgetTolerance { get; init; } = BudgetTolerance.Default;
+
+    /// <summary>R4-Q10: the trial balance export format. Registered, not resolved.</summary>
+    public TrialBalanceExport TrialBalanceExport { get; init; } = TrialBalanceExport.Default;
+
+    /// <summary>R4-Q9: which projects take a share of the overhead spread, and by what size.</summary>
+    public OverheadSpreadBasis OverheadSpreadBasis { get; init; } = OverheadSpreadBasis.Default;
+
     public IReadOnlyList<RulingNote> Notes =>
     [
         MaterialAdvanceRecovery.Note,
@@ -268,5 +280,9 @@ public sealed record RulingSet
         RefusedPaymentAfterInjection.Note,
         QcReportScope.Note,
         StockpileMarker.Note,
+        AssetDepreciation.Note,
+        BudgetTolerance.Note,
+        TrialBalanceExport.Note,
+        OverheadSpreadBasis.Note,
     ];
 }
