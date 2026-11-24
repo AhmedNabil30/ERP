@@ -215,4 +215,24 @@ describe('PortalHomePage', () => {
     expect(host.querySelector('[data-testid="portal-plan"]')?.textContent).toContain('01/03/2026');
     expect(host.querySelector('[data-testid="portal-stalled"]')).not.toBeNull();
   });
+
+  it('an unpaid extract is not waiting on the client: no waiting section without a decidable change order', async () => {
+    const api = new FakePortalApi();
+    api.orders = [{ ...ORDER, canDecide: false, status: 'Approved' }];
+    api.extractRows = [
+      { id: 'e1', number: 3, periodStart: '2026-11-01', periodEnd: '2026-11-20', certifiedWork: '1.00', netPayable: '355000.00', paid: '0.00', isPaid: false },
+    ];
+    TestBed.configureTestingModule({
+      providers: [provideRouter([]), { provide: I18nService, useClass: FakeI18nService }, { provide: PortalApi, useValue: api }],
+    });
+    const fixture = TestBed.createComponent(PortalHomePage);
+    fixture.componentRef.setInput('projectId', 'p1');
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('[data-testid="portal-pending"]')).toBeNull();
+    expect(host.querySelector('[data-testid="portal-bar-action"]')).toBeNull();
+    expect(host.textContent).not.toContain('355000.00');
+  });
 });

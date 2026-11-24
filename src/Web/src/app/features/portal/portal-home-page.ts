@@ -6,12 +6,13 @@ import { I18nService } from '../../core/i18n/i18n.service';
 import { KaffButton } from '../../shared/kaff-button/kaff-button';
 import { KaffState } from '../../shared/kaff-state/kaff-state';
 import { KaffStatusPill } from '../../shared/kaff-status-pill/kaff-status-pill';
-import { PortalApi, PortalChangeOrder, PortalExtract, PortalHome } from './portal.api';
+import { PortalApi, PortalChangeOrder, PortalHome } from './portal.api';
 import { changeOrderPill, percentOf, portalDate, projectPill } from './portal-format';
 
 /**
  * P3. Where the project stands, for a client: what waits on them first, then progress, what is paid and what remains.
- * "Waiting on you" is the change orders that can be decided and the unpaid extracts. With exactly one such change order
+ * "Waiting on you" is the change orders the client can decide, matching the server's `pendingCount`. An unpaid extract is not
+ * waiting on the client (D-273 #11, status only): it keeps its unpaid pill in the extracts list. With exactly one such change order
  * the bottom bar carries the one filled action; with more, the rows act.
  */
 @Component({
@@ -50,18 +51,6 @@ import { changeOrderPill, percentOf, portalDate, projectPill } from './portal-fo
                       <small>{{ i18n.t('portal.home.change_order') }}</small>
                     </span>
                     <span class="fig">{{ i18n.formatMoney(order.total) }}</span>
-                    <svg class="i fwd" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
-                  </a>
-                </li>
-              }
-              @for (extract of unpaidExtracts(); track extract.id) {
-                <li>
-                  <a [routerLink]="['/portal/projects', projectId(), 'extracts']">
-                    <span class="grow">
-                      <b>{{ i18n.t('portal.extracts.item', { number: extract.number }) }}</b>
-                      <small>{{ i18n.t('portal.extracts.unpaid') }}</small>
-                    </span>
-                    <span class="fig">{{ i18n.formatMoney(extract.netPayable) }}</span>
                     <svg class="i fwd" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
                   </a>
                 </li>
@@ -193,7 +182,6 @@ export class PortalHomePage {
   protected readonly i18n = inject(I18nService);
 
   protected readonly home = signal<PortalHome | null>(null);
-  protected readonly extracts = signal<readonly PortalExtract[]>([]);
   protected readonly orders = signal<readonly PortalChangeOrder[]>([]);
   protected readonly loading = signal(true);
   protected readonly failed = signal(false);
@@ -202,12 +190,11 @@ export class PortalHomePage {
   protected readonly statusKey = computed(() => projectWorkspaceStatusKey(this.home()?.status ?? 'Setup'));
   protected readonly pendingOrders = computed(() => this.orders().filter((order) => order.canDecide));
   protected readonly otherOrders = computed(() => this.orders().filter((order) => !order.canDecide));
-  protected readonly unpaidExtracts = computed(() => this.extracts().filter((extract) => !extract.isPaid));
-  protected readonly pendingCount = computed(() => this.pendingOrders().length + this.unpaidExtracts().length);
+  protected readonly pendingCount = computed(() => this.pendingOrders().length);
 
   /** Exactly one waiting item and it is a change order: the bar carries the one action. Otherwise the rows act. */
   protected readonly barOrder = computed(() =>
-    this.pendingCount() === 1 && this.pendingOrders().length === 1 ? this.pendingOrders()[0] : null,
+    this.pendingOrders().length === 1 ? this.pendingOrders()[0] : null,
   );
 
   constructor() {
@@ -246,14 +233,12 @@ export class PortalHomePage {
     this.loading.set(true);
     this.failed.set(false);
     try {
-      const [home, extracts, orders] = await Promise.all([
+      const [home, orders] = await Promise.all([
         this.api.home(projectId),
-        // The two lists only add rows to the page; a failure there leaves the rest readable.
-        this.api.extracts(projectId).catch(() => []),
+        // The list only adds rows to the page; a failure there leaves the rest readable.
         this.api.changeOrders(projectId).catch(() => []),
       ]);
       this.home.set(home);
-      this.extracts.set(extracts);
       this.orders.set(orders);
     } catch (error) {
       if (this.api.routeRefusal(error)) {
