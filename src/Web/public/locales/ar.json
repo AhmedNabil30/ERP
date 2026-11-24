@@ -2026,6 +2026,7 @@
   "extract.confirm.owner_consequence": "صافي المستحق {net} ج.م، ويُضاف إلى الحجز {hold} ج.م.",
   "extract.confirm.owner_yes": "اعتماد",
   "extract.qc.title": "تقرير الجودة · قيم التشوينات",
+  "extract.qc.stockpile": "رصيد التشوينات",
   "extract.qc.on_site_required": "أدخل قيمة التشوينات بالموقع.",
   "extract.qc.installed_required": "أدخل قيمة الخامات المركّبة.",
   "extract.reject.title": "إرجاع المستخلص",

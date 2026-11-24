@@ -92,6 +92,18 @@ describe('ExtractDetailPage (E3)', () => {
     expect(submitQcReport).toHaveBeenCalledWith('p-1', 'e-1', '0', '40000.00');
   });
 
+  it('shows the outstanding stockpile in the QC sheet, and nothing when the server refuses it', async () => {
+    const shown = await open(extract({ status: 'Draft' }, { submitQcReport: true }), { materialAdvance: vi.fn().mockResolvedValue({ outstanding: '60000.0000' }) });
+    primary(shown.fixture)?.click();
+    await settle(shown.fixture);
+    expect(byTestId(shown.root, 'qc-stockpile')).not.toBeNull();
+    TestBed.resetTestingModule();
+    const refused = await open(extract({ status: 'Draft' }, { submitQcReport: true }), { materialAdvance: vi.fn().mockRejectedValue(new Error('403')) });
+    primary(refused.fixture)?.click();
+    await settle(refused.fixture);
+    expect(byTestId(refused.root, 'qc-stockpile')).toBeNull();
+  });
+
   it('asks where the error is before it sends a rejection, then sends the reason and the kind', async () => {
     const reject = vi.fn().mockResolvedValue(undefined);
     const { fixture, root } = await open(extract({}, { rejectAtTechnicalOffice: true }), { reject });

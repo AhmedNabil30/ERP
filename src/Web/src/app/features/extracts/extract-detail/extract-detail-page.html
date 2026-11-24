@@ -186,6 +186,9 @@
         @if (actionError(); as key) {
           <kaff-banner tone="refusal">{{ i18n.t(key, actionErrorParams()) }}</kaff-banner>
         }
+        @if (stockpileRows().length > 0) {
+          <kaff-figure-list [rows]="stockpileRows()" testId="qc-stockpile-list" />
+        }
         <kaff-money-field labelKey="extract.revise.on_site" controlId="qc-on-site" [required]="true" [errorKey]="qcErrors().onSite" testId="qc-on-site" [(value)]="onSite" />
         <kaff-money-field labelKey="extract.revise.installed" controlId="qc-installed" [required]="true" [errorKey]="qcErrors().installed" testId="qc-installed" [(value)]="installed" />
       </div>

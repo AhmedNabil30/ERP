@@ -2026,6 +2026,7 @@
   "extract.confirm.owner_consequence": "Net payable {net} EGP, and {hold} EGP is added to the hold.",
   "extract.confirm.owner_yes": "Approve",
   "extract.qc.title": "QC report · material values",
+  "extract.qc.stockpile": "Stockpile balance",
   "extract.qc.on_site_required": "Enter the value of materials on site.",
   "extract.qc.installed_required": "Enter the value of installed materials.",
   "extract.reject.title": "Send back the extract",

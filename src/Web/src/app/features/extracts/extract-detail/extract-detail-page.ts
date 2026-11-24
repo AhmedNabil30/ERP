@@ -164,6 +164,9 @@ export class ExtractDetailPage extends ChainPage {
   /** «طُبقت الخصومات.»: said once, in place, after Finance applied them. */
   protected readonly applied = signal(false);
 
+  /** The تشوينات still outstanding, read when the QC sheet opens. Empty when the server refuses it (no money access) or fails. */
+  protected readonly stockpileRows = signal<FigureRow[]>([]);
+
   protected readonly onSite = signal('');
   protected readonly installed = signal('');
   protected readonly qcErrors = signal<{ onSite: string | null; installed: string | null }>({ onSite: null, installed: null });
@@ -499,6 +502,18 @@ export class ExtractDetailPage extends ChainPage {
     this.qcErrors.set({ onSite: null, installed: null });
     this.rejectErrors.set({ kind: null, reason: null });
     this.sheet.set(sheet);
+    if (sheet === 'qc') {
+      void this.loadStockpile();
+    }
+  }
+
+  private async loadStockpile(): Promise<void> {
+    try {
+      const advance = await this.api.materialAdvance(this.projectId());
+      this.stockpileRows.set([{ label: this.i18n.t('extract.qc.stockpile'), amount: advance.outstanding, testId: 'qc-stockpile' }]);
+    } catch {
+      this.stockpileRows.set([]);
+    }
   }
 
   protected closeSheet(): void {

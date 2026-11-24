@@ -88,6 +88,16 @@ export interface GateRecord {
   readonly actorName?: string | null;
 }
 
+/** `MaterialAdvanceResponse`: every amount a wire string (D-135). */
+export interface MaterialAdvance {
+  readonly projectId: string;
+  readonly issued: string;
+  readonly recovered: string;
+  readonly outstanding: string;
+  readonly openExtracts: number;
+  readonly reconciled: boolean;
+}
+
 export interface ExtractActions {
   readonly submitQcReport: boolean;
   readonly approveTechnicalOffice: boolean;
@@ -429,6 +439,11 @@ export class ExtractsApi {
   /** D-242 item 2: a rejection names where the error is, so it lands on the person who can change it. */
   async reject(projectId: string, id: string, gate: RejectionGate, reason: string, kind: RejectionKind): Promise<void> {
     await firstValueFrom(this.http.post(`${this.base(projectId)}/${id}/${gate}`, { reason, kind }));
+  }
+
+  /** The تشوينات issued, recovered and outstanding on the project (KAFF-309). Refused for a viewer who does not see money. */
+  async materialAdvance(projectId: string): Promise<MaterialAdvance> {
+    return await firstValueFrom(this.http.get<MaterialAdvance>(`api/projects/${projectId}/material-advance`));
   }
 
   /** D-238 item 4: the supervising engineer enters both material values with the QC report. */
