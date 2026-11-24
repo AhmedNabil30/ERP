@@ -105,6 +105,37 @@ export interface ClosureSummary {
   readonly holdReleaseRequest?: HoldReleaseRequest | null;
 }
 
+/** One posted retention release of a subcontractor (`GetSubcontractorRetention`). `postingDate` is yyyy-MM-dd. */
+export interface RetentionRelease {
+  readonly postingId: string;
+  readonly amount: string;
+  readonly postingDate: string;
+  readonly reversed: boolean;
+}
+
+export interface RetentionRequestBy {
+  readonly id: string;
+  readonly askedByUserId: string;
+  readonly askedByName: string;
+  readonly createdAt: string;
+}
+
+/** A waiting request to reverse one release posting, with the reason Finance gave. */
+export interface RetentionReversalRequest extends RetentionRequestBy {
+  readonly postingId: string;
+  readonly reason: string;
+}
+
+export interface SubcontractorRetention {
+  readonly subcontractorId: string;
+  readonly name: string;
+  readonly retentionHeld: string;
+  readonly releases: readonly RetentionRelease[];
+  /** A release request waiting for the Owner, shown as status only. */
+  readonly releaseRequest: RetentionRequestBy | null;
+  readonly reversalRequest: RetentionReversalRequest | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ClosureApi {
   private readonly http = inject(HttpClient);
@@ -149,6 +180,28 @@ export class ClosureApi {
     return await firstValueFrom(
       this.http.post<HoldReleaseRequest>(`${this.base(projectId)}/hold-release/rejection`, { reason }),
     );
+  }
+
+  /** Subcontractor retention on the project. Refused for a role that may not read it: the caller hides the panel. */
+  async getRetention(projectId: string): Promise<readonly SubcontractorRetention[]> {
+    return await firstValueFrom(this.http.get<SubcontractorRetention[]>(`${this.base(projectId)}/subcontractor-retention`));
+  }
+
+  private reversal(projectId: string, subcontractorId: string): string {
+    return `${this.base(projectId)}/subcontractors/${subcontractorId}/retention-release/reversal`;
+  }
+
+  /** Finance asks to reverse a posted release, with a reason. Nothing posts until the Owner approves. */
+  async requestRetentionReversal(projectId: string, subcontractorId: string, postingId: string, reason: string): Promise<void> {
+    await firstValueFrom(this.http.post(this.reversal(projectId, subcontractorId), { postingId, reason }));
+  }
+
+  async approveRetentionReversal(projectId: string, subcontractorId: string): Promise<void> {
+    await firstValueFrom(this.http.post(`${this.reversal(projectId, subcontractorId)}/approval`, {}));
+  }
+
+  async rejectRetentionReversal(projectId: string, subcontractorId: string, reason: string): Promise<void> {
+    await firstValueFrom(this.http.post(`${this.reversal(projectId, subcontractorId)}/rejection`, { reason }));
   }
 
   async listSnags(projectId: string): Promise<readonly Snag[]> {

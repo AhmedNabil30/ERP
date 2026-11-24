@@ -1,0 +1,131 @@
+.pg {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  min-inline-size: 0;
+}
+
+.sub {
+  margin: 0;
+  color: var(--dim);
+}
+
+.lst {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+/* The queue item: only the open one carries its actions (site-money.html .qi). */
+.qi {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-block-start: 1px solid var(--line);
+  min-inline-size: 0;
+}
+
+.qi:first-child {
+  border-block-start: 0;
+}
+
+.qi.open {
+  background: var(--head);
+}
+
+.qh {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  min-block-size: var(--tap-target, 44px);
+  inline-size: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+}
+
+button.qh {
+  cursor: pointer;
+  align-items: center;
+}
+
+.qh b {
+  font-weight: 600;
+}
+
+.qm {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  flex-wrap: wrap;
+  color: var(--dim);
+  font-size: var(--text-sm);
+}
+
+.why {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.why span {
+  color: var(--dim);
+}
+
+.qa {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.qa > * {
+  flex: 1 1 8.75rem;
+}
+
+.form {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.label {
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+.req {
+  margin-inline-start: 4px;
+  color: var(--err-ink);
+}
+
+textarea {
+  inline-size: 100%;
+  box-sizing: border-box;
+  min-block-size: var(--tap-target, 44px);
+  padding: var(--space-2) var(--space-3);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  resize: vertical;
+}
+
+textarea:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.field-error {
+  margin: 0;
+  color: var(--err-ink);
+  font-size: var(--text-sm);
+}

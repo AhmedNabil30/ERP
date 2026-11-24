@@ -20,6 +20,7 @@ import { SubcontractorSummary, SubcontractorsApi } from '../../core/subcontracto
 import { ExtractsApi } from '../../core/extracts/extracts.api';
 import { ClosureSummary } from '../../core/closure/closure.api';
 import { ChainApi, ReleasedHoldCollection } from '../../core/extracts/chain.api';
+import { ClosureRetention } from './retention/closure-retention';
 import { KaffBadge } from '../../shared/kaff-badge/kaff-badge';
 import { KaffCollectionPosition } from '../../shared/kaff-collection-position/kaff-collection-position';
 import { KaffDetailPanel } from '../../shared/kaff-detail-panel/kaff-detail-panel';
@@ -72,6 +73,7 @@ const UNMET_KEYS: Readonly<Record<string, string>> = {
 @Component({
   selector: 'kaff-closure-page',
   imports: [
+    ClosureRetention,
     CollectionForm,
     KaffBadge,
     KaffCollectionPosition,

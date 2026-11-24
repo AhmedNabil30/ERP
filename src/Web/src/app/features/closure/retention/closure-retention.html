@@ -1,0 +1,108 @@
+@if (visible()) {
+  <div class="panel" data-testid="retention-panel">
+    <h2 class="h2">{{ i18n.t('closure.retention.title') }} <small>({{ i18n.t('proof.unit') }})</small></h2>
+    @if (done()) {
+      <kaff-banner tone="ok" testId="retention-done">{{ i18n.t('closure.retention.reversed_done') }}</kaff-banner>
+    }
+    @if (actionError(); as key) {
+      @if (sheet() === null) {
+        <kaff-banner tone="refusal" testId="retention-error">{{ i18n.t(key) }}</kaff-banner>
+      }
+    }
+    @if (failure(); as key) {
+      <kaff-state mode="refusal" [bodyKey]="key" testId="retention-failure">
+        <kaff-button stateAction variant="secondary" testId="retention-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+      </kaff-state>
+    } @else if (loading()) {
+      <kaff-state mode="loading" titleKey="closure.retention.loading" testId="retention-loading" />
+    } @else if (rows().length === 0) {
+      <kaff-state mode="empty" titleKey="closure.retention.none" icon="list" testId="retention-none" />
+    } @else {
+      <ul class="rr" data-testid="retention-rows">
+        @for (row of rows(); track row.key) {
+          <li [attr.data-testid]="'retention-row-' + $index">
+            <div class="top">
+              <b dir="auto">{{ row.name }}</b>
+              @if (row.amount; as a) {
+                <kaff-figure [value]="a" />
+              }
+            </div>
+            <div class="meta">
+              @if (row.date; as d) {
+                <bdi dir="ltr">{{ d }}</bdi>
+              }
+              @switch (row.state) {
+                @case ('reversed') {
+                  <kaff-status-pill tone="done" icon="redo" testId="retention-reversed">{{ i18n.t('closure.retention.reversed') }}</kaff-status-pill>
+                }
+                @case ('release-waiting') {
+                  <kaff-status-pill tone="run" icon="clock" testId="retention-release-waiting">{{ i18n.t('closure.retention.release_waiting') }}</kaff-status-pill>
+                }
+                @case ('reversal-waiting') {
+                  <kaff-status-pill tone="run" icon="clock" testId="retention-reversal-waiting">
+                    @if (namesAsker(row)) {
+                      {{ i18n.t('closure.retention.asked_by', { name: row.asker ?? '' }) }}
+                    } @else {
+                      {{ i18n.t('closure.hold.waiting_owner') }}
+                    }
+                  </kaff-status-pill>
+                }
+              }
+            </div>
+            @if (row.reason; as why) {
+              <p class="why"><span>{{ i18n.t('closure.retention.reason') }}</span> {{ why }}</p>
+            }
+            @if (canAsk(row)) {
+              <div class="acts">
+                <kaff-button variant="secondary" [busy]="busy()" [testId]="'retention-ask-' + $index" (clicked)="openSheet('ask', row)">{{ i18n.t('closure.retention.ask') }}</kaff-button>
+              </div>
+            }
+            @if (canDecide(row)) {
+              @if (confirming() === row.key) {
+                <kaff-inline-confirm
+                  tone="irreversible"
+                  [question]="i18n.t('closure.retention.confirm')"
+                  [detail]="i18n.t('closure.retention.confirm_detail')"
+                  [confirmLabel]="i18n.t('closure.retention.confirm_yes')"
+                  [cancelLabel]="i18n.t('extract.cancel')"
+                  [busy]="busy()"
+                  confirmTestId="retention-confirm"
+                  cancelTestId="retention-confirm-cancel"
+                  (confirmed)="approve(row)"
+                  (cancelled)="confirming.set(null)"
+                />
+              } @else {
+                <div class="acts">
+                  <kaff-button variant="secondary" [busy]="busy()" testId="retention-approve" (clicked)="askConfirm(row)">{{ i18n.t('closure.retention.approve') }}</kaff-button>
+                  <kaff-button variant="secondary" [busy]="busy()" testId="retention-return" (clicked)="openSheet('return', row)">{{ i18n.t('closure.hold.return') }}</kaff-button>
+                </div>
+              }
+            }
+          </li>
+        }
+      </ul>
+    }
+
+    <kaff-detail-panel
+      [open]="sheet() !== null"
+      [title]="i18n.t(sheet()?.kind === 'return' ? 'closure.retention.return_title' : 'closure.retention.ask_title')"
+      testId="retention-sheet"
+      (closed)="closeSheet()"
+    >
+      <div panelBody class="form">
+        @if (actionError(); as key) {
+          <kaff-banner tone="refusal" testId="retention-sheet-error">{{ i18n.t(key) }}</kaff-banner>
+        }
+        <label class="label" for="retention-reason">{{ i18n.t(sheet()?.kind === 'return' ? 'closure.hold.return_reason' : 'closure.retention.reason_label') }}<span class="req" aria-hidden="true">*</span></label>
+        <textarea id="retention-reason" rows="3" [value]="reason()" [attr.aria-invalid]="reasonInvalid() ? 'true' : null" data-testid="retention-reason" (input)="onReason($event)"></textarea>
+        @if (reasonInvalid()) {
+          <p class="field-error" data-testid="retention-reason-invalid">{{ i18n.t('errors.closure.reason_required') }}</p>
+        }
+      </div>
+      <div panelFooter class="acts">
+        <kaff-button variant="primary" [busy]="busy()" testId="retention-send" (clicked)="sendReason()">{{ i18n.t(sheet()?.kind === 'return' ? 'closure.hold.return' : 'closure.retention.send') }}</kaff-button>
+        <kaff-button variant="secondary" [disabled]="busy()" testId="retention-cancel" (clicked)="closeSheet()">{{ i18n.t('extract.cancel') }}</kaff-button>
+      </div>
+    </kaff-detail-panel>
+  </div>
+}

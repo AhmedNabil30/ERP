@@ -1,0 +1,77 @@
+<ng-template #primaryAction>
+  @if (returning()) {
+    <kaff-button variant="primary" [busy]="busy()" testId="petty-cash-return-confirm" (clicked)="confirmReturn()">{{ i18n.t('petty_cash.return_confirm') }}</kaff-button>
+  } @else {
+    <kaff-button variant="primary" [busy]="busy()" testId="petty-cash-submit" (clicked)="submitCurrent()">{{ i18n.t('petty_cash.submit') }}</kaff-button>
+  }
+</ng-template>
+
+<section class="pg" data-testid="petty-cash-page">
+  <kaff-page-head [backLink]="['/projects', projectId()]" backLabelKey="closure.back" [title]="i18n.t(supervising() ? 'petty_cash.title.waiting' : 'petty_cash.title.mine')">
+    @if (project(); as p) {
+      <p class="sub" dir="auto" data-testid="petty-cash-project">{{ p.name }}</p>
+    }
+  </kaff-page-head>
+
+  @if (failure(); as key) {
+    <kaff-state mode="refusal" [bodyKey]="key" testId="petty-cash-failure">
+      @if (key !== 'errors.auth.forbidden') {
+        <kaff-button stateAction variant="secondary" testId="petty-cash-retry" (clicked)="reload()">{{ i18n.t('extract.retry') }}</kaff-button>
+      }
+    </kaff-state>
+  } @else if (loading()) {
+    <kaff-state mode="loading" titleKey="petty_cash.loading" testId="petty-cash-loading" />
+  } @else if (shown().length === 0) {
+    <kaff-state mode="empty" [titleKey]="supervising() ? 'petty_cash.empty.waiting' : 'petty_cash.empty.mine'" icon="file" testId="petty-cash-empty" />
+  } @else {
+    <ul class="lst" data-testid="petty-cash-rows">
+      @for (row of shown(); track row.id) {
+        <li class="qi" [class.open]="supervising() && current() === row.id" [attr.data-testid]="'petty-cash-row-' + $index">
+          @if (supervising()) {
+            <button type="button" class="qh" [attr.aria-expanded]="current() === row.id" [attr.data-testid]="'petty-cash-open-' + $index" (click)="open(row.id)">
+              <b dir="auto">{{ row.drafterName }}</b>
+              <kaff-figure [value]="row.amount" [unit]="i18n.t('proof.unit')" />
+            </button>
+          } @else {
+            <div class="qh">
+              <b dir="auto">{{ row.purpose }}</b>
+              <kaff-figure [value]="row.amount" [unit]="i18n.t('proof.unit')" />
+            </div>
+          }
+          <div class="qm">
+            @if (supervising()) {
+              <span dir="auto">{{ row.purpose }}</span>
+            } @else {
+              <kaff-status-pill [tone]="pill[row.status].tone" [icon]="pill[row.status].icon" [testId]="'petty-cash-status-' + $index">{{ i18n.t(pill[row.status].key) }}</kaff-status-pill>
+            }
+            <bdi dir="ltr">{{ shortDay(row.createdAt) }}</bdi>
+          </div>
+          @if (!supervising() && row.returnedReason; as why) {
+            <p class="why" data-testid="petty-cash-reason"><span>{{ i18n.t('petty_cash.reason') }}</span> {{ why }}</p>
+          }
+          @if (supervising() && current() === row.id) {
+            @if (actionError(); as key) {
+              <kaff-banner tone="refusal" testId="petty-cash-error">{{ i18n.t(key) }}</kaff-banner>
+            }
+            @if (returning()) {
+              <div class="form">
+                <label class="label" for="petty-cash-reason">{{ i18n.t('petty_cash.return_reason') }}<span class="req" aria-hidden="true">*</span></label>
+                <textarea id="petty-cash-reason" rows="3" [value]="reason()" [attr.aria-invalid]="reasonInvalid() ? 'true' : null" data-testid="petty-cash-reason-input" (input)="onReason($event)"></textarea>
+                @if (reasonInvalid()) {
+                  <p class="field-error" data-testid="petty-cash-reason-invalid">{{ i18n.t('errors.closure.reason_required') }}</p>
+                }
+              </div>
+              <div class="qa">
+                <kaff-button variant="secondary" [disabled]="busy()" testId="petty-cash-return-cancel" (clicked)="cancelReturn()">{{ i18n.t('extract.cancel') }}</kaff-button>
+              </div>
+            } @else {
+              <div class="qa">
+                <kaff-button variant="secondary" [disabled]="busy()" testId="petty-cash-return" (clicked)="startReturn()">{{ i18n.t('petty_cash.return') }}</kaff-button>
+              </div>
+            }
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

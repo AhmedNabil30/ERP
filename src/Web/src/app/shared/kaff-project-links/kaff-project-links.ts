@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { I18nService } from '../../core/i18n/i18n.service';
 
-type Screen = 'extracts' | 'proof' | 'daily-log' | 'boq' | 'budget';
+type Screen = 'extracts' | 'proof' | 'daily-log' | 'boq' | 'budget' | 'petty-cash';
 
 /**
  * Onward links between the project-scoped screens (extracts, proof, daily log, BOQ). A link renders only when
@@ -37,6 +37,7 @@ export class KaffProjectLinks {
       { screen: 'daily-log', labelKey: 'daily_log.title', allowed: entry?.permissions.includes('DailyLogWrite') ?? false },
       { screen: 'boq', labelKey: 'boq.title', allowed: entry?.permissions.includes('ProjectManage') ?? false },
       { screen: 'budget', labelKey: 'accounting.budget.title', allowed: entry?.permissions.includes('BudgetBaselineRead') ?? false },
+      { screen: 'petty-cash', labelKey: 'petty_cash.link', allowed: entry?.permissions.includes('DraftCreate') ?? false },
     ];
     return all.filter((link) => link.allowed && link.screen !== this.current());
   });

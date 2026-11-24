@@ -383,6 +383,13 @@ export const routes: Routes = [
     ],
   },
   {
+    // عهدة requests of a project (R2 site money): the supervisor's waiting drafts, the junior's own. The server decides
+    // who reads what; the guard is convenience.
+    path: 'projects/:projectId/petty-cash',
+    canActivate: [sessionGuard, mustChangePasswordGuard, extractReadGuard],
+    loadComponent: () => import('./features/petty-cash/petty-cash-page').then((m) => m.PettyCashPage),
+  },
+  {
     // The end of a project's life: practical completion, snags, handover, the hold release, warranty and
     // closing. `extractReadGuard` is convenience (`ProjectRead` on this project's own session entry); each
     // act is gated on the server by its own permission and by assignment. Reached from the workspace hub.

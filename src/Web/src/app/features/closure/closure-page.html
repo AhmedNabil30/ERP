@@ -189,6 +189,9 @@
         </div>
       }
 
+      <!-- D-271: subcontractor retention, each posted release by name; Finance asks to reverse, the Owner decides. -->
+      <kaff-closure-retention [projectId]="projectId()" />
+
       <!-- D-244 item 2: the released hold is collected on the extract's collection flow, through the same form. -->
       @if (releasedHold(); as rh) {
         @if (showHoldCollection()) {
