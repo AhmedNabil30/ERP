@@ -1,0 +1,52 @@
+<section class="acc" data-testid="overhead-page">
+  <div class="bar">
+    <h1 class="title">{{ i18n.t('accounting.overhead.title') }}</h1>
+  </div>
+
+  <div class="filters">
+    <kaff-field labelKey="accounting.field.month" controlId="overhead-month">
+      <input id="overhead-month" type="month" dir="ltr" data-testid="overhead-month" [value]="month()" (change)="setMonth($event)" />
+    </kaff-field>
+  </div>
+
+  @if (failure(); as key) {
+    <kaff-state mode="refusal" [bodyKey]="key" testId="overhead-failure">
+      @if (key !== 'errors.auth.forbidden') {
+        <kaff-button stateAction variant="secondary" testId="overhead-retry" (clicked)="reload()">{{ i18n.t('accounting.retry') }}</kaff-button>
+      }
+    </kaff-state>
+  } @else if (loading()) {
+    <kaff-state mode="loading" titleKey="accounting.loading" testId="overhead-loading" />
+  } @else if (data(); as spread) {
+    @if (spread.projects.length === 0) {
+      <kaff-state mode="empty" titleKey="accounting.overhead.empty" testId="overhead-empty" />
+    } @else {
+      <kaff-banner tone="note" icon="info" testId="overhead-note">{{ i18n.t('accounting.overhead.report_only') }}</kaff-banner>
+      <div class="line" data-testid="overhead-total">
+        <span class="name">{{ i18n.t('accounting.overhead.total') }}</span>
+        <span class="figs"><kaff-figure [value]="spread.overhead" /></span>
+      </div>
+      <kaff-table [columns]="rowColumns" [columnDefs]="headerColumns" testId="overhead-table">
+        <ul class="rows" data-testid="overhead-rows">
+          @for (line of spread.projects; track line.projectId) {
+            <li class="rows-item">
+              <kaff-table-row [stacked]="true">
+                <span class="cell-title name" dir="auto">{{ projectName(line) }}</span>
+                <span class="cell-wide cell-end num"><kaff-figure [value]="line.size" /></span>
+                <span class="cell-secondary cell-end num">
+                  <small class="row-price-label">{{ i18n.t('accounting.field.overhead_share') }}</small>
+                  <kaff-figure [value]="line.overheadShare" />
+                </span>
+                <span class="cell-wide cell-end num"><kaff-figure [value]="line.grossMargin" /></span>
+                <span class="cell-primary cell-end num">
+                  <small class="row-price-label">{{ i18n.t('accounting.field.net_margin') }}</small>
+                  <kaff-figure [value]="line.netMargin" />
+                </span>
+              </kaff-table-row>
+            </li>
+          }
+        </ul>
+      </kaff-table>
+    }
+  }
+</section>

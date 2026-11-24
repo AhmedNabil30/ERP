@@ -73,6 +73,7 @@ describe('AC-215-B — every guarded top-level route has a row, derived from app
       'SubcontractorManage',
       'SupplierManage',
       'OpportunityManage',
+      'TreasuryReadCompany',
     ]);
 
     const routePaths = [...guardedTopLevelRoutePaths()].sort();

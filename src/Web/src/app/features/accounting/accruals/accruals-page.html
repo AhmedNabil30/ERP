@@ -1,0 +1,218 @@
+<ng-template #addAction>
+  <kaff-button variant="primary" testId="accruals-add" (clicked)="openAdd()">{{ i18n.t('accounting.action.add') }}</kaff-button>
+</ng-template>
+
+<section class="acc" data-testid="accruals-page">
+  <div class="bar">
+    <h1 class="title">{{ i18n.t('accounting.accruals.title') }}</h1>
+    @if (canPost()) {
+      <kaff-button variant="secondary" testId="accruals-amortise" (clicked)="openAmortise()">
+        {{ i18n.t('accounting.action.amortise') }}
+      </kaff-button>
+    }
+  </div>
+
+  @if (waiting()) {
+    <kaff-waiting-line [text]="i18n.t('accounting.waiting.owner')" testId="accruals-waiting" />
+  }
+  @if (refusal(); as key) {
+    @if (sheet() === null) {
+      <kaff-banner tone="refusal" icon="alert" testId="accruals-refusal">{{ i18n.t(key) }}</kaff-banner>
+    }
+  }
+
+  @if (failure(); as key) {
+    <kaff-state mode="refusal" [bodyKey]="key" testId="accruals-failure">
+      @if (key !== 'errors.auth.forbidden') {
+        <kaff-button stateAction variant="secondary" testId="accruals-retry" (clicked)="reload()">{{ i18n.t('accounting.retry') }}</kaff-button>
+      }
+    </kaff-state>
+  } @else if (loading()) {
+    <kaff-state mode="loading" titleKey="accounting.loading" testId="accruals-loading" />
+  } @else if (rows().length === 0) {
+    <kaff-state mode="empty" titleKey="accounting.accruals.empty" testId="accruals-empty" />
+  } @else {
+    <kaff-table [columns]="rowColumns" [columnDefs]="headerColumns" testId="accruals-table">
+      <ul class="rows" data-testid="accruals-rows">
+        @for (row of rows(); track row.key) {
+          <li class="rows-item">
+            <kaff-table-row [stacked]="true" [archived]="row.kind === 'accrual' && !row.canRelease">
+              <span class="cell-title stack">
+                <span class="name" dir="auto">{{ row.title }}</span>
+                <span>
+                  @if (row.kind === 'accrual') {
+                    <kaff-status-pill tone="run" icon="clock">{{ i18n.t('accounting.kind.accrual') }}</kaff-status-pill>
+                  } @else {
+                    <kaff-status-pill tone="none" icon="arch">{{ i18n.t('accounting.kind.prepayment') }}</kaff-status-pill>
+                  }
+                </span>
+              </span>
+              <span class="cell-primary cell-end num"><kaff-figure [value]="row.amount" /></span>
+              <span class="cell-secondary cell-end num">
+                @if (row.remaining; as left) {
+                  <kaff-figure [value]="left" />
+                } @else {
+                  <span class="sub">{{ row.stateText }}</span>
+                }
+              </span>
+              <span class="cell-act act-cell">
+                @if (canPost() && row.canRelease) {
+                  <kaff-button variant="secondary" [testId]="'accrual-release-' + row.id" (clicked)="releasing.set(row)">
+                    {{ i18n.t('accounting.action.release') }}
+                  </kaff-button>
+                }
+              </span>
+            </kaff-table-row>
+          </li>
+        }
+      </ul>
+    </kaff-table>
+  }
+</section>
+
+<kaff-detail-panel
+  [open]="sheet() === 'add'"
+  [title]="i18n.t('accounting.action.add')"
+  testId="accruals-add-panel"
+  (closed)="closeSheet()"
+>
+  <div panelBody class="form">
+    <kaff-segmented-filter
+      [options]="kindOptions"
+      [value]="kind()"
+      (valueChange)="pickKind($event)"
+      ariaLabelKey="accounting.field.kind"
+      testIdPrefix="accruals-kind"
+    />
+
+    @if (refusal(); as key) {
+      <kaff-banner tone="refusal" icon="alert" testId="accruals-add-refusal">{{ i18n.t(key) }}</kaff-banner>
+    }
+    @if (accountsMissing()) {
+      <kaff-banner tone="refusal" icon="alert" testId="accruals-accounts-missing">{{ i18n.t('accounting.accounts_missing') }}</kaff-banner>
+    }
+
+    <kaff-field
+      labelKey="accounting.field.description"
+      controlId="accruals-description"
+      [required]="true"
+      [errorKey]="descriptionError()"
+    >
+      <input
+        id="accruals-description"
+        type="text"
+        dir="auto"
+        autocomplete="off"
+        data-testid="accruals-description"
+        [value]="description()"
+        (input)="description.set(val($event))"
+      />
+    </kaff-field>
+
+    @if (kind() === 'accrual') {
+      <kaff-money-field
+        labelKey="accounting.field.amount"
+        controlId="accruals-amount"
+        [required]="true"
+        [errorKey]="amountError()"
+        testId="accruals-amount"
+        [(value)]="amount"
+      />
+    } @else {
+      <kaff-field
+        labelKey="accounting.field.funding"
+        controlId="accruals-funding"
+        [required]="true"
+        [errorKey]="fundingError()"
+      >
+        <select
+          id="accruals-funding"
+          data-testid="accruals-funding"
+          [value]="funding()"
+          (change)="pickFunding(val($event))"
+        >
+          <option value="">{{ i18n.t('accounting.funding.pick') }}</option>
+          @for (posting of fundings(); track posting.id) {
+            <option [value]="posting.id">{{ fundingLabel(posting) }}</option>
+          }
+        </select>
+      </kaff-field>
+      <kaff-field labelKey="accounting.field.months" controlId="accruals-months" [required]="true">
+        <input
+          id="accruals-months"
+          type="number"
+          min="1"
+          max="120"
+          inputmode="numeric"
+          dir="ltr"
+          data-testid="accruals-months"
+          [value]="months()"
+          (input)="months.set(val($event))"
+        />
+      </kaff-field>
+    }
+
+    <kaff-field
+      [labelKey]="kind() === 'accrual' ? 'accounting.field.date' : 'accounting.field.first_month'"
+      controlId="accruals-date"
+      [required]="true"
+    >
+      <input
+        id="accruals-date"
+        type="date"
+        dir="ltr"
+        data-testid="accruals-date"
+        [value]="date()"
+        (input)="date.set(val($event))"
+      />
+    </kaff-field>
+  </div>
+  <div panelFooter class="act">
+    @if (!accountsMissing()) {
+      <kaff-button variant="primary" testId="accruals-save" [busy]="busy()" (clicked)="save()">{{ i18n.t('accounting.action.send') }}</kaff-button>
+    }
+    <kaff-button variant="secondary" testId="accruals-cancel" (clicked)="closeSheet()">{{ i18n.t('action.cancel') }}</kaff-button>
+  </div>
+</kaff-detail-panel>
+
+<kaff-detail-panel
+  [open]="sheet() === 'amortise'"
+  [title]="i18n.t('accounting.action.amortise')"
+  testId="accruals-amortise-panel"
+  (closed)="closeSheet()"
+>
+  <div panelBody class="form">
+    @if (refusal(); as key) {
+      <kaff-banner tone="refusal" icon="alert" testId="accruals-amortise-refusal">{{ i18n.t(key) }}</kaff-banner>
+    }
+    <kaff-field labelKey="accounting.field.month" controlId="accruals-month" [required]="true">
+      <input
+        id="accruals-month"
+        type="month"
+        dir="ltr"
+        data-testid="accruals-month"
+        [value]="month()"
+        (input)="month.set(val($event))"
+      />
+    </kaff-field>
+  </div>
+  <div panelFooter class="act">
+    <kaff-button variant="primary" testId="accruals-amortise-save" [busy]="busy()" (clicked)="saveAmortise()">
+      {{ i18n.t('accounting.action.send') }}
+    </kaff-button>
+    <kaff-button variant="secondary" testId="accruals-amortise-cancel" (clicked)="closeSheet()">{{ i18n.t('action.cancel') }}</kaff-button>
+  </div>
+</kaff-detail-panel>
+
+<kaff-confirm-dialog
+  [open]="releasing() !== null"
+  [title]="i18n.t('accounting.release.title')"
+  [body]="i18n.t('accounting.release.consequence')"
+  [confirmLabel]="i18n.t('accounting.action.send')"
+  [cancelLabel]="i18n.t('action.cancel')"
+  [busy]="busy()"
+  testId="accruals-release-dialog"
+  confirmTestId="accruals-release-confirm"
+  (confirmed)="confirmRelease()"
+  (cancelled)="releasing.set(null)"
+/>

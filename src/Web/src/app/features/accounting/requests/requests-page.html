@@ -1,0 +1,106 @@
+<section class="acc" data-testid="accounting-requests-page">
+  <div class="bar">
+    <h1 class="title">{{ i18n.t('accounting.requests.title') }}</h1>
+  </div>
+
+  @if (refusal(); as key) {
+    @if (returning() === null) {
+      <kaff-banner tone="refusal" icon="alert" testId="requests-refusal">{{ i18n.t(key) }}</kaff-banner>
+    }
+  }
+
+  @if (failure(); as key) {
+    <kaff-state mode="refusal" [bodyKey]="key" testId="requests-failure">
+      @if (key !== 'errors.auth.forbidden') {
+        <kaff-button stateAction variant="secondary" testId="requests-retry" (clicked)="reload()">{{ i18n.t('accounting.retry') }}</kaff-button>
+      }
+    </kaff-state>
+  } @else if (loading()) {
+    <kaff-state mode="loading" titleKey="accounting.loading" testId="requests-loading" />
+  } @else if (rows().length === 0) {
+    <kaff-state mode="empty" titleKey="accounting.requests.empty" testId="requests-empty" />
+  } @else {
+    <kaff-table [columns]="rowColumns" [columnDefs]="headerColumns" testId="requests-table">
+      <ul class="rows" data-testid="requests-rows">
+        @for (row of rows(); track row.request.id) {
+          <li class="rows-item">
+            <kaff-table-row [testId]="'request-row-' + row.request.id">
+              <span class="stack">
+                <span class="name">{{ i18n.t(row.kindKey) }}</span>
+                @if (row.detail; as detail) {
+                  <small class="sub" dir="auto">{{ detail }}</small>
+                }
+                @if (row.request.rejectionReason; as why) {
+                  <small class="sub" dir="auto" data-testid="request-reason">{{ i18n.t('accounting.request.reason', { reason: why }) }}</small>
+                }
+              </span>
+              <span class="cell-end num" [class.gone-narrow]="!row.amount">
+                @if (row.amount; as amount) {
+                  <kaff-figure [value]="amount" />
+                }
+              </span>
+              <span class="sub num">{{ row.asked }}</span>
+              <span>
+                <kaff-status-pill [tone]="row.status.tone" [icon]="row.status.icon" [testId]="'request-status-' + row.request.id">
+                  {{ i18n.t(row.status.key) }}
+                </kaff-status-pill>
+              </span>
+              <span class="act" [class.gone-narrow]="!(canDecide() && row.request.status === 'Requested')">
+                @if (canDecide() && row.request.status === 'Requested') {
+                  <kaff-button variant="secondary" [testId]="'request-approve-' + row.request.id" (clicked)="approving.set(row)">
+                    {{ i18n.t('accounting.request.approve') }}
+                  </kaff-button>
+                  <kaff-button variant="secondary" [testId]="'request-return-' + row.request.id" (clicked)="openReturn(row)">
+                    {{ i18n.t('accounting.request.return') }}
+                  </kaff-button>
+                }
+              </span>
+            </kaff-table-row>
+          </li>
+        }
+      </ul>
+    </kaff-table>
+  }
+</section>
+
+<kaff-confirm-dialog
+  [open]="approving() !== null"
+  [title]="i18n.t('accounting.approve.title')"
+  [body]="i18n.t('accounting.approve.consequence')"
+  [confirmLabel]="i18n.t('accounting.request.approve')"
+  [cancelLabel]="i18n.t('action.cancel')"
+  [busy]="busy()"
+  testId="requests-approve-dialog"
+  confirmTestId="requests-approve-confirm"
+  (confirmed)="confirmApprove()"
+  (cancelled)="approving.set(null)"
+/>
+
+<kaff-detail-panel
+  [open]="returning() !== null"
+  [title]="i18n.t('accounting.request.return')"
+  testId="requests-return-panel"
+  (closed)="returning.set(null)"
+>
+  <div panelBody class="form">
+    @if (refusal(); as key) {
+      <kaff-banner tone="refusal" icon="alert" testId="requests-return-refusal">{{ i18n.t(key) }}</kaff-banner>
+    }
+    <kaff-field labelKey="accounting.field.reason" controlId="requests-reason" [required]="true" [errorKey]="reasonError()">
+      <textarea
+        id="requests-reason"
+        rows="4"
+        dir="auto"
+        data-testid="requests-reason"
+        [value]="reason()"
+        (input)="reason.set(val($event))"
+      ></textarea>
+    </kaff-field>
+  </div>
+  <div panelFooter class="act">
+    <kaff-button variant="primary" testId="requests-return-save" [busy]="busy()" (clicked)="confirmReturn()">
+      {{ i18n.t('accounting.request.return') }}
+    </kaff-button>
+    <kaff-button variant="secondary" testId="requests-return-cancel" (clicked)="returning.set(null)">{{ i18n.t('action.cancel') }}</kaff-button>
+  </div>
+</kaff-detail-panel>
