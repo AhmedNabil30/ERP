@@ -42,8 +42,12 @@ public sealed class Endpoint : IEndpoint
                     {
                         Money accumulated = ScheduleLedger.Total(ScheduleLedger.Active(postings.Where(posting => posting.SourceDocumentId == asset.Id)));
 
+                        // Derived on every read, never stored: the next month's charge, capped at what is left to depreciate.
+                        Money remaining = asset.Cost - accumulated;
+                        Money monthly = !remaining.IsPositive ? Money.Zero : asset.MonthlyCharge < remaining ? asset.MonthlyCharge : remaining;
+
                         return new Row(
-                            asset.Id, asset.Name, asset.Category, asset.Cost, asset.Rate.Percent, asset.PurchaseDate, accumulated, asset.Cost - accumulated);
+                            asset.Id, asset.Name, asset.Category, asset.Cost, asset.Rate.Percent, asset.PurchaseDate, accumulated, remaining, monthly);
                     }),
                 ];
 
@@ -56,4 +60,4 @@ public sealed class Endpoint : IEndpoint
 }
 
 public sealed record Row(
-    Guid Id, string Name, AssetCategory Category, Money Cost, decimal RatePercent, DateOnly PurchaseDate, Money Accumulated, Money BookValue);
+    Guid Id, string Name, AssetCategory Category, Money Cost, decimal RatePercent, DateOnly PurchaseDate, Money Accumulated, Money BookValue, Money MonthlyDepreciation);

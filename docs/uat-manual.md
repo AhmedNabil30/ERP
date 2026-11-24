@@ -10,7 +10,7 @@ A note before you start. Some of the Arabic wording on screen was written by us 
 
 Open http://localhost:4200 in Chrome. You should see the sign-in screen.
 
-There are six people to sign in as. Each one sees a different system, because what you can see and do depends on your job.
+There are seven people to sign in as. Each one sees a different system, because what you can see and do depends on your job.
 
 | Who | User name | Password |
 |---|---|---|
@@ -20,6 +20,9 @@ There are six people to sign in as. Each one sees a different system, because wh
 | Technical office | `tech_office_demo` | `Demo#Tech1New` |
 | Technical office, second person | `tech_office2_demo` | `Demo#Tech2New` |
 | Accounts | `accounts_demo` | `Demo#Acct1New` |
+| Client, portal (a phone number is the user name) | `01012340010` | `Demo#Portal2`, a temporary password: the first sign-in asks for a new one |
+
+If the client sign-in is missing, the person running the system creates it with `node scripts/seed-demo-portal.mjs` (local API only).
 
 To change person, open the side menu and press تسجيل الخروج, then sign in as the next one. On a phone the side menu opens from the القائمة button at the bottom.
 

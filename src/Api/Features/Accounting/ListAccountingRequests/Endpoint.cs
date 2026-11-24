@@ -49,7 +49,9 @@ public sealed record Row(
     DateTimeOffset RequestedAt,
     Guid? DecidedByUserId,
     DateTimeOffset? DecidedAt,
-    string? RejectionReason);
+    string? RejectionReason,
+    string AskedByName,
+    string? DecidedByName);
 
 internal static class Handler
 {
@@ -69,7 +71,9 @@ internal static class Handler
             .ThenBy(request => request.Id)
             .Select(request => new Row(
                 request.Id, request.Kind, request.ProjectId, request.Status, request.Payload, request.RequestedByUserId,
-                request.RequestedAt, request.DecidedByUserId, request.DecidedAt, request.RejectionReason))
+                request.RequestedAt, request.DecidedByUserId, request.DecidedAt, request.RejectionReason,
+                database.Users.Where(person => person.Id == request.RequestedByUserId).Select(person => person.FullName).FirstOrDefault() ?? string.Empty,
+                database.Users.Where(person => person.Id == request.DecidedByUserId).Select(person => person.FullName).FirstOrDefault()))
             .ToListAsync(cancellationToken);
 
         return Microsoft.AspNetCore.Http.Results.Ok(rows);
