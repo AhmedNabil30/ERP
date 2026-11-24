@@ -92,13 +92,13 @@ public sealed class GetBalancesTests : IAsyncLifetime
     // ---- Owner and Finance only read TreasuryReadCompany; HR reaches neither -----------------------
 
     [Fact]
-    public async Task A_site_engineer_assigned_to_project_A_reads_project_As_own_balances()
+    public async Task A_junior_site_engineer_assigned_to_project_A_is_refused_project_As_balances()
     {
         HttpResponseMessage response = await GetAsync(
             new Uri($"/api/projects/{_projectA}/treasury/balances", UriKind.Relative), _siteEngineerOnProjectA);
 
         response.StatusCode.Should().Be(
-            HttpStatusCode.OK, "D-173: an assigned Site Engineer holds TreasuryReadProject on their own project");
+            HttpStatusCode.Forbidden, "D-218 item 6: only the supervising site engineer sees project money, the junior does not");
     }
 
     [Fact]

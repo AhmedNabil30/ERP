@@ -44,6 +44,11 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<decimal?>("Amount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("amount");
+
                     b.Property<DateTimeOffset?>("DecidedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("decided_at");
@@ -57,6 +62,10 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
                         .HasColumnName("kind");
+
+                    b.Property<int?>("LineCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("line_count");
 
                     b.Property<string>("Payload")
                         .IsRequired()

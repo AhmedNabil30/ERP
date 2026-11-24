@@ -13,4 +13,5 @@ public sealed record PortalProjectSummary(
     string ContractType,
     string Paid,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Remaining,
-    int PendingCount);
+    int PendingCount,
+    string DueNow);

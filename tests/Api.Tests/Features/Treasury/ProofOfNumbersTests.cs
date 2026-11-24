@@ -100,14 +100,11 @@ public sealed class ProofOfNumbersTests : IAsyncLifetime
         => (await GetAsync(_projectA, _hr)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
     /// <summary>
-    /// <b>Deliberate, and worth pinning precisely because it surprises.</b> D-173 grants
-    /// <c>TreasuryReadProject</c> to the Site Engineer, so an assigned one reaches this money data by
-    /// calling the endpoint, even though the web route guard keeps the screen to the Owner and Finance.
-    /// If this is not what Nabil wants, the permission catalogue is what changes — not the guard.
+    /// D-218 item 6: only the supervising site engineer sees project money. The junior, although assigned, is refused.
     /// </summary>
     [Fact]
-    public async Task An_assigned_site_engineer_reaches_the_data_directly_although_the_screen_hides_it()
-        => (await GetAsync(_projectA, _siteEngineerOnProjectA)).StatusCode.Should().Be(HttpStatusCode.OK);
+    public async Task An_assigned_junior_site_engineer_is_refused_the_data()
+        => (await GetAsync(_projectA, _siteEngineerOnProjectA)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
 
     /// <summary>
     /// An unauthenticated call never reaches the handler.

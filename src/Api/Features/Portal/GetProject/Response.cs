@@ -18,6 +18,7 @@ public sealed record PortalSection(string NameAr, string NameEn, string Completi
 /// <param name="PendingApprovals">Change orders waiting for the client's decision.</param>
 /// <param name="PlannedStart">The planned start the contract was signed with. Absent when none was entered.</param>
 /// <param name="PlannedEnd">The planned end the contract was signed with. Absent when none was entered.</param>
+/// <param name="DueNow">What remains on the client's Issued extracts, summed on the server from postings (net payable less collected). 0.00 when none.</param>
 /// <param name="IsStalled">Derived on every read, never stored (Nabil, D-273 answer 14): today is past the planned end and completion is under 100 percent. False when there is no planned end or no completion figure.</param>
 public sealed record PortalProjectHome(
     Guid Id,
@@ -32,4 +33,5 @@ public sealed record PortalProjectHome(
     int PendingApprovals,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] DateOnly? PlannedStart,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] DateOnly? PlannedEnd,
-    bool IsStalled);
+    bool IsStalled,
+    string DueNow);

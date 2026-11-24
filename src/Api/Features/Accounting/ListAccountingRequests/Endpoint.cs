@@ -2,6 +2,7 @@ using Kaff.Api.Authorization;
 using Kaff.Api.Common.Endpoints;
 using Kaff.Domain.Accounting;
 using Kaff.Domain.Authorization;
+using Kaff.Domain.Common;
 using Kaff.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -50,6 +51,8 @@ public sealed record Row(
     Guid? DecidedByUserId,
     DateTimeOffset? DecidedAt,
     string? RejectionReason,
+    Money? Amount,
+    int? LineCount,
     string AskedByName,
     string? DecidedByName);
 
@@ -71,7 +74,7 @@ internal static class Handler
             .ThenBy(request => request.Id)
             .Select(request => new Row(
                 request.Id, request.Kind, request.ProjectId, request.Status, request.Payload, request.RequestedByUserId,
-                request.RequestedAt, request.DecidedByUserId, request.DecidedAt, request.RejectionReason,
+                request.RequestedAt, request.DecidedByUserId, request.DecidedAt, request.RejectionReason, request.Amount, request.LineCount,
                 database.Users.Where(person => person.Id == request.RequestedByUserId).Select(person => person.FullName).FirstOrDefault() ?? string.Empty,
                 database.Users.Where(person => person.Id == request.DecidedByUserId).Select(person => person.FullName).FirstOrDefault()))
             .ToListAsync(cancellationToken);

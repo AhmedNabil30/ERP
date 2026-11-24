@@ -13,6 +13,10 @@ public static class AccountingErrors
     public static readonly Error RequestNotWaiting =
         Error.Conflict("accounting.request_not_waiting", "errors.accounting.request_not_waiting");
 
+    /// <summary>The rebuilt total differs from the total the Owner was shown at ask time (or none was stored). Nothing posts.</summary>
+    public static readonly Error RequestAmountChanged =
+        Error.Conflict("accounting.request_amount_changed", "errors.accounting.request_amount_changed");
+
     public static readonly Error RequestAlreadyWaiting =
         Error.Conflict("accounting.request_already_waiting", "errors.accounting.request_already_waiting");
 
