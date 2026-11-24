@@ -420,7 +420,7 @@ public sealed class SubcontractorRetentionEndpointTests : IAsyncLifetime
     }
 
     [Fact]
-    public void The_retention_read_route_requires_project_read_and_the_route_project()
+    public void The_retention_read_route_requires_its_own_permission_and_the_route_project()
     {
         const string route = "/api/projects/{projectId:guid}/subcontractor-retention";
         var found = new List<PermissionRequirement>();
@@ -439,7 +439,7 @@ public sealed class SubcontractorRetentionEndpointTests : IAsyncLifetime
         }
 
         PermissionRequirement gate = found.Should().ContainSingle().Subject;
-        gate.Permission.Should().Be(Permission.ProjectRead);
+        gate.Permission.Should().Be(Permission.SubcontractorRetentionRead);
         gate.Scope.Should().Be(ProjectScope.FromRoute());
     }
 
@@ -495,6 +495,26 @@ public sealed class SubcontractorRetentionEndpointTests : IAsyncLifetime
             reversal.GetProperty("askedByName").GetString().Should().Be("rt-fin");
         }
 
+        using (JsonDocument none = JsonDocument.Parse(await (await SendAsync(HttpMethod.Get, read, _owner)).Content.ReadAsStringAsync(Ct)))
+        {
+            none.RootElement.EnumerateArray().Single().GetProperty("lastReturnedReversal").ValueKind.Should().Be(JsonValueKind.Null);
+        }
+
+        (await SendAsync(HttpMethod.Post, Route(project, sub) + "/reversal/rejection", _owner, new { reason = "the release was right" })).StatusCode
+            .Should().Be(HttpStatusCode.OK);
+        using (JsonDocument returned = JsonDocument.Parse(await (await SendAsync(HttpMethod.Get, read, _finance)).Content.ReadAsStringAsync(Ct)))
+        {
+            JsonElement row = returned.RootElement.EnumerateArray().Single();
+            row.GetProperty("reversalRequest").ValueKind.Should().Be(JsonValueKind.Null);
+            JsonElement last = row.GetProperty("lastReturnedReversal");
+            last.GetProperty("postingId").GetGuid().Should().Be(posting);
+            last.GetProperty("reason").GetString().Should().Be("the release was right");
+            last.GetProperty("decidedByName").GetString().Should().Be("rt-owner");
+            last.GetProperty("decidedAt").ValueKind.Should().Be(JsonValueKind.String);
+        }
+
+        (await SendAsync(HttpMethod.Post, Route(project, sub) + "/reversal", _finance, new { postingId = posting, reason = "mistake, with the paper" })).StatusCode
+            .Should().Be(HttpStatusCode.OK);
         (await SendAsync(HttpMethod.Post, Route(project, sub) + "/reversal/approval", _owner)).StatusCode.Should().Be(HttpStatusCode.OK);
         using JsonDocument reversed = JsonDocument.Parse(await (await SendAsync(HttpMethod.Get, read, _owner)).Content.ReadAsStringAsync(Ct));
         JsonElement final = reversed.RootElement.EnumerateArray().Single();

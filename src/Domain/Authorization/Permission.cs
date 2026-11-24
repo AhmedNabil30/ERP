@@ -540,4 +540,11 @@ public enum Permission
 
     /// <summary>Nabil, 2026-11-24 - read a project's budget baseline. Owner and Finance only; an assigned site engineer is refused.</summary>
     BudgetBaselineRead = 99,
+
+    /// <summary>
+    /// Nabil, 2026-11-24 (D-273 answer 4) - read what each subcontractor's retention holds, the releases posted and the release or
+    /// reversal requests waiting (the closure screen). Finance asks, the Owner decides, Technical Office reads; project-scoped, so
+    /// role and assignment are both required. It moves no money.
+    /// </summary>
+    SubcontractorRetentionRead = 100,
 }

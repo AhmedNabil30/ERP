@@ -8,8 +8,8 @@ namespace Kaff.Api.Features.Closure.GetSubcontractorRetention;
 
 /// <summary>
 /// <c>GET /api/projects/{projectId}/subcontractor-retention</c>. What the closure screen shows for subcontractor retention.
-/// Gated <c>ProjectRead</c> with the project from the route (role and assignment); the handler then refuses a caller who
-/// is not Technical Office (D-273 answer 4) and holds neither <c>SubcontractorRetentionRelease</c> (Finance asks) nor <c>FinancialMovementApprove</c> (the Owner decides).
+/// Gated <c>SubcontractorRetentionRead</c> (Finance, Owner, Technical Office, D-273 answer 4) with the project from the route:
+/// role and assignment are both required.
 /// </summary>
 public sealed class Endpoint : IEndpoint
 {
@@ -20,7 +20,7 @@ public sealed class Endpoint : IEndpoint
         ArgumentNullException.ThrowIfNull(app);
 
         app.MapGet(Route, Handler.HandleAsync)
-            .RequirePermission(Permission.ProjectRead, ProjectScope.FromRoute())
+            .RequirePermission(Permission.SubcontractorRetentionRead, ProjectScope.FromRoute())
             .WithName("GetSubcontractorRetention")
             .WithTags("Closure");
     }

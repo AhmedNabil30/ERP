@@ -24,6 +24,8 @@ namespace Kaff.Api.Features.Projects.SignProject;
 /// Design only (KAFF-417 AC-417-K). Decimal string, e.g. <c>"100"</c> (D-135). Required when the project has no area yet;
 /// the fee is priced as area x the default rate per m2. Refused on Lump Sum and Cost Plus.
 /// </param>
+/// <param name="PlannedStart">The planned start (Nabil, 2026-11-24). Optional for every contract type: requiring it would refuse every existing signing call.</param>
+/// <param name="PlannedEnd">The planned end. Optional; not before the planned start. The portal derives a stalled project from it.</param>
 public sealed record Request(
     DateOnly? SignedOn, Percentage? HoldPercentage = null, Percentage? ClientAdvance = null, decimal? AreaSquareMetres = null,
-    Percentage? AdvanceRecoveryRate = null);
+    Percentage? AdvanceRecoveryRate = null, DateOnly? PlannedStart = null, DateOnly? PlannedEnd = null);

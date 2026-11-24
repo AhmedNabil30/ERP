@@ -210,6 +210,7 @@ public sealed class PermissionEvaluatorTests
             Permission.BudgetBaselineSet,
             Permission.BudgetBaselineRead,
             Permission.AccountingEntryApprove,
+            Permission.SubcontractorRetentionRead,
         ];
 
         // The list above is the expected set, written out rather than read from the flag — reading

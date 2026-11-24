@@ -171,7 +171,7 @@ internal static class Handler
             boqTotal = total.Value;
         }
 
-        Result signed = project.Sign(signedOn, boqTotal);
+        Result signed = project.Sign(signedOn, boqTotal, request.PlannedStart, request.PlannedEnd);
 
         if (signed.IsFailure)
         {

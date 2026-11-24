@@ -11,13 +11,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kaff.Api.Features.PettyCash.ListRequests;
 
-/// <summary>One عهدة request as a list row. <c>DecidedAt</c> is the submission or the return instant.</summary>
+/// <summary>One عهدة request as a list row. <c>DecidedAt</c> is the submission or the return instant; <c>SupervisorName</c> is who submitted or returned it, null while it is a draft.</summary>
 public sealed record Row(
     Guid Id,
     Money Amount,
     string Purpose,
     Guid DrafterUserId,
     string DrafterName,
+    string? SupervisorName,
     PettyCashRequestStatus Status,
     string? ReturnedReason,
     DateTimeOffset CreatedAt,
@@ -44,6 +45,7 @@ internal static class Handler
         List<Row> rows = await (
             from request in database.PettyCashRequests.AsNoTracking()
             join drafter in database.Users.AsNoTracking() on request.RequestedByUserId equals drafter.Id
+            let supervisorId = request.SubmittedByUserId ?? request.ReturnedByUserId
             where request.ProjectId == projectId
                 && (status == null || request.Status == status)
                 && (sees || request.RequestedByUserId == me)
@@ -54,6 +56,7 @@ internal static class Handler
                 request.Purpose,
                 drafter.Id,
                 drafter.FullName,
+                database.Users.Where(person => person.Id == supervisorId).Select(person => person.FullName).FirstOrDefault(),
                 request.Status,
                 request.ReturnReason,
                 request.CreatedAt,

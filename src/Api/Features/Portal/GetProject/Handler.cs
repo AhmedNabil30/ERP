@@ -43,7 +43,7 @@ internal static class Handler
         Money? remaining = figures.Remaining;
         int pending = figures.Pending;
 
-        (string? completion, List<PortalSection> sections) = project.ContractType == ContractType.LumpSum
+        (Percentage? completion, List<PortalSection> sections) = project.ContractType == ContractType.LumpSum
             ? await ProgressAsync(database, rulings, clock, dispatcher, project, cancellationToken)
             : (null, []);
 
@@ -52,15 +52,20 @@ internal static class Handler
             project.Name,
             project.Status.ToString(),
             project.ContractType.ToString(),
-            completion,
+            PortalFormat.Percent(completion),
             sections,
             PortalFormat.Amount(contractValue),
             PortalFormat.Amount(paid),
             PortalFormat.Amount(remaining),
-            pending));
+            pending,
+            project.PlannedStart,
+            project.PlannedEnd,
+            // Derived on every read: past the planned end and under 100 percent. No planned end or no completion figure is never stalled.
+            project.PlannedEnd is { } plannedEnd && completion is { } done
+                && SiteTime.Today(clock) > plannedEnd && done.Percent < 100m));
     }
 
-    private static async Task<(string? Completion, List<PortalSection> Sections)> ProgressAsync(
+    private static async Task<(Percentage? Completion, List<PortalSection> Sections)> ProgressAsync(
         KaffDbContext database,
         RulingSet rulings,
         TimeProvider clock,
@@ -106,6 +111,6 @@ internal static class Handler
                 }),
         ];
 
-        return (PortalFormat.Percent(reading.Value.Completion), sections);
+        return (reading.Value.Completion, sections);
     }
 }

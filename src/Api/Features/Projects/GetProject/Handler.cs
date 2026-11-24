@@ -124,7 +124,9 @@ internal static class Handler
                 ? candidateProject.DesignRatePerSquareMetre ?? ContractDefaults.DesignRatePerSquareMetre
                 : null,
             seesMoney ? candidateProject.WithholdingCategory : null,
-            actions);
+            actions,
+            candidateProject.PlannedStart,
+            candidateProject.PlannedEnd);
 
         return Microsoft.AspNetCore.Http.Results.Ok(project);
     }

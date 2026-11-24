@@ -1,14 +1,9 @@
-using System.Security.Claims;
-using Kaff.Api.Authorization;
 using Kaff.Api.Common.Results;
-using Kaff.Domain.Authorization;
 using Kaff.Domain.Closure;
 using Kaff.Domain.Common;
-using Kaff.Domain.Identity;
 using Kaff.Domain.Projects;
 using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +18,9 @@ public sealed record WaitingRelease(Guid Id, Guid AskedByUserId, string AskedByN
 /// <summary>A reversal request waiting for the Owner. It names the release posting it would reverse.</summary>
 public sealed record WaitingReversal(Guid Id, Guid PostingId, Guid AskedByUserId, string AskedByName, string Reason, DateTimeOffset CreatedAt);
 
+/// <summary>The latest reversal request the Owner returned, with his reason, so Finance sees why. <c>PostingId</c> is the release it would have reversed.</summary>
+public sealed record ReturnedReversal(Guid PostingId, string Reason, string DecidedByName, DateTimeOffset DecidedAt);
+
 /// <summary>One subcontractor with a retention account on the project. <c>RetentionHeld</c> is summed from postings.</summary>
 public sealed record SubcontractorRetentionRow(
     Guid SubcontractorId,
@@ -30,31 +28,17 @@ public sealed record SubcontractorRetentionRow(
     Money RetentionHeld,
     IReadOnlyList<ReleasedPosting> Releases,
     WaitingRelease? ReleaseRequest,
-    WaitingReversal? ReversalRequest);
+    WaitingReversal? ReversalRequest,
+    ReturnedReversal? LastReturnedReversal);
 
 internal static class Handler
 {
     public static async Task<IResult> HandleAsync(
         Guid projectId,
         KaffDbContext database,
-        IAuthorizationService authorization,
-        ClaimsPrincipal user,
-        ICurrentUser currentUser,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(database);
-        ArgumentNullException.ThrowIfNull(authorization);
-
-        // D-273 answer 4: an assigned Technical Office user reads too. The gate already required the assignment.
-        bool mayRead = currentUser.Role == Role.TechnicalOffice
-            || (await authorization.AuthorizeAsync(
-                user, resource: null, PermissionRequirement.ToPolicyName(Permission.SubcontractorRetentionRelease, ProjectScope.FromRoute()))).Succeeded
-            || (await authorization.AuthorizeAsync(
-                user, resource: null, PermissionRequirement.ToPolicyName(Permission.FinancialMovementApprove, ProjectScope.FromRoute()))).Succeeded;
-        if (!mayRead)
-        {
-            return ResultExtensions.Problem(AuthorizationErrors.Forbidden);
-        }
 
         if (!await database.Projects.AnyAsync(project => project.Id == projectId, cancellationToken))
         {
@@ -92,7 +76,16 @@ internal static class Handler
             .Where(request => request.ProjectId == projectId && request.Status == HoldReleaseRequestStatus.Requested)
             .ToListAsync(cancellationToken);
 
-        List<Guid> askers = [.. releaseRequests.Select(request => request.RequestedByUserId), .. reversalRequests.Select(request => request.RequestedByUserId)];
+        List<SubcontractorRetentionReversalRequest> returnedRequests = await database.SubcontractorRetentionReversalRequests.AsNoTracking()
+            .Where(request => request.ProjectId == projectId && request.Status == HoldReleaseRequestStatus.Rejected && request.DecidedAt != null)
+            .ToListAsync(cancellationToken);
+
+        List<Guid> askers =
+        [
+            .. releaseRequests.Select(request => request.RequestedByUserId),
+            .. reversalRequests.Select(request => request.RequestedByUserId),
+            .. returnedRequests.Where(request => request.DecidedByUserId != null).Select(request => request.DecidedByUserId!.Value),
+        ];
         Dictionary<Guid, string> askerNames = await database.Users.AsNoTracking()
             .Where(account => askers.Contains(account.Id))
             .ToDictionaryAsync(account => account.Id, account => account.FullName, cancellationToken);
@@ -102,6 +95,10 @@ internal static class Handler
             {
                 SubcontractorRetentionReleaseRequest? release = releaseRequests.FirstOrDefault(request => request.SubcontractorId == row.SubcontractorId);
                 SubcontractorRetentionReversalRequest? reversal = reversalRequests.FirstOrDefault(request => request.SubcontractorId == row.SubcontractorId);
+                SubcontractorRetentionReversalRequest? returned = returnedRequests
+                    .Where(request => request.SubcontractorId == row.SubcontractorId)
+                    .OrderByDescending(request => request.DecidedAt)
+                    .FirstOrDefault();
                 return new SubcontractorRetentionRow(
                     row.SubcontractorId,
                     names.GetValueOrDefault(row.SubcontractorId, string.Empty),
@@ -112,7 +109,12 @@ internal static class Handler
                     release is null ? null : new WaitingRelease(
                         release.Id, release.RequestedByUserId, askerNames.GetValueOrDefault(release.RequestedByUserId, string.Empty), release.RequestedAt),
                     reversal is null ? null : new WaitingReversal(
-                        reversal.Id, reversal.OriginalPostingId, reversal.RequestedByUserId, askerNames.GetValueOrDefault(reversal.RequestedByUserId, string.Empty), reversal.Reason, reversal.RequestedAt));
+                        reversal.Id, reversal.OriginalPostingId, reversal.RequestedByUserId, askerNames.GetValueOrDefault(reversal.RequestedByUserId, string.Empty), reversal.Reason, reversal.RequestedAt),
+                    returned is null ? null : new ReturnedReversal(
+                        returned.OriginalPostingId,
+                        returned.RejectionReason ?? string.Empty,
+                        askerNames.GetValueOrDefault(returned.DecidedByUserId ?? Guid.Empty, string.Empty),
+                        returned.DecidedAt!.Value));
             })
             .OrderBy(row => row.Name, StringComparer.CurrentCulture)];
 
