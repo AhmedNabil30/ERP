@@ -19,6 +19,7 @@ import { HeaderActionsService } from '../../../core/layout/header-actions.servic
 import { KaffBanner } from '../../../shared/kaff-banner/kaff-banner';
 import { KaffButton } from '../../../shared/kaff-button/kaff-button';
 import { KaffDetailPanel } from '../../../shared/kaff-detail-panel/kaff-detail-panel';
+import { KaffIcon } from '../../../shared/kaff-icon/kaff-icon';
 import { KaffField } from '../../../shared/kaff-field/kaff-field';
 import { KaffFigure } from '../../../shared/kaff-figure/kaff-figure';
 import { KaffMoneyField } from '../../../shared/kaff-money-field/kaff-money-field';
@@ -52,6 +53,7 @@ const CATEGORY_KEY: Readonly<Record<AssetCategory, string>> = {
     KaffDetailPanel,
     KaffField,
     KaffFigure,
+    KaffIcon,
     KaffMoneyField,
     KaffState,
     KaffStatusPill,

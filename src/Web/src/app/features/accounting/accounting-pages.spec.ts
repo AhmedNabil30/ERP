@@ -106,8 +106,8 @@ class FakeApi {
 }
 
 describe('accounting format helpers', () => {
-  it('shows dates as dd/MM/yyyy without parsing a Date', () => {
-    expect(dmy('2026-11-24T23:30:00+00:00')).toBe('24/11/2026');
+  it('shows dates as dd/MM/yyyy, an instant in the Cairo day', () => {
+    expect(dmy('2026-11-24T23:30:00+00:00')).toBe('25/11/2026');
     expect(monthOf('2026-11-01')).toBe('11/2026');
     expect(isZero('0')).toBe(true);
     expect(isZero('0.0000')).toBe(true);

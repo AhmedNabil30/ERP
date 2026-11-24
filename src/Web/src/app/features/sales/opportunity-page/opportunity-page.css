@@ -23,6 +23,8 @@
 
 .panel {
   display: grid;
+  /* One shrinkable column: an auto track grows to the stepper's min-content and pushes step 6 out of the card at 390px. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
   max-inline-size: 40rem;
   padding: var(--space-4);
@@ -50,4 +52,28 @@
 .sheet {
   display: grid;
   gap: var(--space-4);
+}
+
+/* On a phone the stepper keeps its seven steps inside the card: tighter cell padding, circles unchanged. */
+@media (width <= 820px) {
+  .panel ::ng-deep .stp li {
+    padding-inline: 4px;
+    gap: 4px;
+    min-inline-size: 0;
+  }
+
+  .panel ::ng-deep .stp li:not(.cur) {
+    padding-inline: 2px;
+    justify-content: center;
+  }
+
+  .panel ::ng-deep .stp li:not(.cur) .n {
+    inline-size: 24px;
+    block-size: 24px;
+  }
+
+  /* The current step keeps its word; the others give way. */
+  .panel ::ng-deep .stp li.cur {
+    flex: 1 0 auto;
+  }
 }

@@ -129,3 +129,22 @@ select {
     display: none;
   }
 }
+
+/* A 44px icon-only row action: fits the stacked phone row's action column. */
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  inline-size: var(--tap-target);
+  block-size: var(--tap-target);
+  padding: 0;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.icon-btn:focus-visible {
+  outline: 2px solid var(--color-interactive);
+  outline-offset: 2px;
+}

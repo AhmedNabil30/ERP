@@ -46,16 +46,26 @@
               </span>
               <span class="cell-wide cell-end num"><kaff-figure [value]="asset.cost" /></span>
               <span class="cell-wide cell-end num"><kaff-figure [value]="asset.accumulated" /></span>
-              <span class="cell-primary cell-end num"><kaff-figure [value]="asset.bookValue" /></span>
+              <span class="cell-primary cell-end num">
+                <small class="row-price-label">{{ i18n.t('accounting.field.book_value') }}</small>
+                <kaff-figure [value]="asset.bookValue" />
+              </span>
               <span class="cell-secondary cell-end num">
                 <small class="row-price-label">{{ i18n.t('accounting.field.monthly') }}</small>
                 <kaff-figure [value]="asset.monthlyDepreciation" />
               </span>
               <span class="cell-act act-cell">
                 @if (canPost()) {
-                  <kaff-button variant="secondary" [testId]="'asset-rate-' + asset.id" (clicked)="openRate(asset)">
-                    {{ i18n.t('accounting.assets.rate') }}
-                  </kaff-button>
+                  <button
+                    type="button"
+                    class="icon-btn"
+                    [attr.aria-label]="i18n.t('accounting.assets.rate')"
+                    [attr.title]="i18n.t('accounting.assets.rate')"
+                    [attr.data-testid]="'asset-rate-' + asset.id"
+                    (click)="openRate(asset)"
+                  >
+                    <kaff-icon name="pen" />
+                  </button>
                 }
               </span>
             </kaff-table-row>
