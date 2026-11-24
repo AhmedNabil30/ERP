@@ -1,4 +1,3 @@
-using Kaff.Api.Tests.Infrastructure;
 using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence;
 using Kaff.Infrastructure.Persistence.Seeding;
@@ -8,22 +7,17 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace Kaff.Api.Tests;
 
 /// <summary>
-/// The company accounts the accounting forms pick from (Nabil, 2026-11-24): the seeder creates the accrued-expense and prepaid-expense
-/// accounts once, and a second run adds nothing.
+/// The company accounts the accounting forms pick from (Nabil, 2026-11-24): the seeder creates the accrued-expense and
+/// prepaid-expense accounts once, and a second run adds nothing. It runs here, on a fresh database, because the shared test
+/// database holds company ledger accounts other tests create under other codes, which the seeder's own inserts would collide with.
 /// </summary>
-[Collection(DatabaseCollection.Name)]
-public sealed class AccountTreeSeederTests
+public sealed partial class FreshDatabaseBootstrapTests
 {
-    private readonly PostgresDatabase _database;
-
-    public AccountTreeSeederTests(PostgresDatabase database) => _database = database;
-
-    private static CancellationToken Ct => TestContext.Current.CancellationToken;
-
     [Fact]
     public async Task The_seeder_creates_the_accrued_and_prepaid_expense_accounts_once()
     {
-        await using KaffDbContext context = _database.CreateContext();
+        await using var context = new KaffDbContext(
+            new DbContextOptionsBuilder<KaffDbContext>().UseNpgsql(_ownerConnectionString).Options);
         var seeder = new AccountTreeSeeder(context, TimeProvider.System, NullLogger<AccountTreeSeeder>.Instance);
 
         await seeder.SeedAsync(Ct);
