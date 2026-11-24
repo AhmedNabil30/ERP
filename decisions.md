@@ -17508,3 +17508,9 @@ the full gate. No screens were built: the R2 to R6 mocks are not yet approved.
    not the 404 that AC-811-D and AC-810-D name. It reveals nothing about whether the project exists.
 4. **The lanes' error texts were added to `ar.json` and `en.json` by the coordinator** on Nabil's word. One R4 text used
    «القيد»; it now reads «الحركة» per D-240.
+
+## D-268 — The sales pipeline's last manual stage is Negotiation · 2026-11-24
+
+Nabil, 2026-11-24 (verification finding F-R3-1). "Next stage" stops at Negotiation. An opportunity reaches Contract only
+through conversion to a project (R3-09, not built), so nothing is marked won without a project. Domain and Api tests guard
+the stop.

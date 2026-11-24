@@ -308,3 +308,77 @@ Run in a throwaway git worktree of HEAD (662c88c) under the session scratchpad, 
 - No full suite run (by instruction); no rebuild of the shared Release binaries, so the Api test evidence is from the 11:11 build (see the caveat at the top).
 - Concurrency findings (F-R4-2, the R3 lost update) were reasoned from the code, not reproduced.
 - Staging: not checked.
+
+## Re-verification at 95780b4 - 2026-11-24
+
+Verifier: separate session, model Opus 5.5 (claude-opus-5-5), the strongest model. Did not write the fixes in 87d8ba0.
+Scope: only F-R4-1 (KAFF-701 AC1), F-R5-1 (R5-B AC-B-3, against spec.md section 15), F-R5-2 (R5-C AC-C-4), F-R4-2, F-R2-1, and F-R3-1 per Nabil's ruling of 2026-11-24 (next stage stops at Negotiation; Contract only by conversion).
+Binaries: tests/*/bin/Release built at 12:16-12:17 from HEAD 95780b4.
+
+Baseline, targeted classes only: Domain `AccountingTests` + `OpportunityPipelineTests` 57 of 57 passed; Api `AccountingEndpointTests`, `PortalEndpointTests`, `MaterialAdvanceReadTests`, `OpportunityPipelineTests` and `DailyLogTests.An_uploaded_photo_is_stored_and_served_without_its_metadata` 67 of 67 passed.
+
+Mutations run in a throwaway git worktree of 95780b4 under the session scratchpad; it is removed at the end. Nothing in D:\ERP was mutated.
+
+### Mutation round 1 (all six went red)
+
+| Mutation | Test that went red |
+|---|---|
+| `Accrual.Create` skips the new `AccountType.AccruedExpense` check | Domain `AccountingTests.An_accrual_cannot_credit_a_prepayment_account` |
+| `Opportunity.AdvanceStage` stops at `Contract` again | Domain `OpportunityPipelineTests.The_stage_moves_forward_one_step_at_a_time_up_to_Negotiation_and_no_further`; Api `OpportunityPipelineTests.Advance_moves_one_stage_and_stops_at_Negotiation` (5th advance answered 204, expected 409) |
+| Portal paid counts `ClientCollection` only, not `ClientAdvanceReceipt` | `PortalEndpointTests.The_home_shows_progress_paid_and_remaining_as_two_decimal_strings_and_no_cost_field` and `Paid_follows_the_section_15_worked_example_after_extract_2` |
+| `UploadPhoto` stores the raw bytes (no `SitePhotoMetadata.Strip`) | `DailyLogTests.An_uploaded_photo_is_stored_and_served_without_its_metadata` |
+| تشوينات read ignores the reversal sign | `MaterialAdvanceReadTests.A_reversal_of_the_issue_subtracts_from_what_was_issued` |
+| The application check for a second waiting accounting request is skipped | `AccountingEndpointTests.F_R4_2_...` (second POST answered 500 from the unique index, expected 409). `AC_700_A` also went red as a knock-on: the failed test left a request waiting in the shared class database. |
+
+### Mutation rounds 2 and 3
+
+| Mutation | Result |
+|---|---|
+| Remove the `CreateIndex` for `ux_accounting_requests_waiting_subject` from the migration only | No test went red: `F_R4_2_...` passed and `FreshDatabaseBootstrapTests` 8 of 8 passed. Test databases are built by `EnsureCreated` from the model (PostgresDatabase.cs:168), so the test proves the model's index, not the migration's. The migration was read and creates the same index and filter; the bootstrap test applies it cleanly at HEAD (8 of 8). |
+| Remove the `HasIndex(...).IsUnique().HasFilter(...)` from `AccountingConfigurations` | `F_R4_2_...` went red: "Expected a DbUpdateException ... but no exception was thrown." |
+| Drop `ProjectScope.FromRoute()` from `GetMaterialAdvance` | Fails closed: every caller got 403, so the four positive tests went red and the stranger test stayed green. Not a proof for the stranger test. |
+| `ProjectAccessPolicy.AssignedAccessAsync` admits a user with no assignment | `MaterialAdvanceReadTests.A_site_engineer_not_assigned_to_the_project_is_refused` went red (200, expected 403). |
+| Portal paid ignores the reversal sign (`leg.Amount` for every leg) | **No test went red.** "Net of reversals" on the portal paid figure is untested. |
+| PNG strip keeps `tEXt` chunks | `DailyLogTests.An_uploaded_photo_is_stored_and_served_without_its_metadata` went red. |
+
+### Probes of the photo stripper (throwaway test class, not kept)
+
+`SitePhotoMetadata.Strip` was called directly on hand-built files.
+
+| Probe | Result |
+|---|---|
+| JPEG: APP0, then an APP1 holding XMP with a GPS tag | Stripped. |
+| WebP: VP8X, then an `EXIF` chunk (correctly padded) | Stripped. |
+| JPEG with a second image appended after the first EOI (the MPF / Ultra HDR layout: secondary images follow the primary EOI), the second carrying an APP1 Exif GPS segment | **GPS kept.** The parser stops at the first SOS and copies everything up to the last EOI, so a secondary image keeps its own metadata. |
+| JPEG with one 0xFF fill byte before the APP1 Exif segment (fill bytes are legal before a marker, ITU T.81 B.1.1.2) | **GPS kept.** The loop reads marker 0xFF, the length check fails, and the unparsed tail is copied unchanged. |
+
+The stripper fails open by design ("A file that does not parse to the end keeps its unread tail unchanged"). Photos stored before 87d8ba0 were never stripped and the portal streams stored bytes as they are; no backfill exists.
+
+### Verdicts per finding
+
+**F-R4-1, KAFF-701 AC1: MET.** `Accrual.Create` refuses any accrued side that is not `AccountType.AccruedExpense` (src/Domain/Accounting/Accrual.cs:83-86). `Accrual.Create` is the only producer of `PostingType.ExpenseAccrual`. The new Domain test goes red when the check is removed. KAFF-701 now has AC1 to AC4 MET; the F-R4-2 note on AC3 (concurrent double release) is closed below. Recommend **VERIFIED verdict=PASS**. The link from a release to the real cost posting is still a PROPOSAL and not built; it is not an AC.
+
+**F-R5-1, R5-B AC-B-3: MET.** Paid is now every `ClientCollection` and `ClientAdvanceReceipt` posting on the project, with a reversal (same type, `ReversesId` set, confirmed in `Posting.Reverse`) subtracted (src/Api/Features/Portal/GetProject/Handler.cs:39-46). This is the same set `ProofOfNumbers` uses for client cash in. The hold collected at handover is posted as `ClientCollection` (Closure/CollectReleasedHold), so it is counted. Test `Paid_follows_the_section_15_worked_example_after_extract_2` asserts 610,000 paid and 390,000 remaining, the spec.md section 15 figures, and goes red when the advance is left out. Gaps, not blockers: (1) no test proves "net of reversals" on this figure (mutation stayed green); (2) `TaxWithheldAtSource` is not counted as paid, so on a contract with withholding the remaining figure never reaches zero. The AC says "cash received", so this is a question for R5-Q8 (the remaining formula), not a defect. R5-B now: B-1, B-2, B-3, B-4, B-6 MET; B-5 MET by construction, UNTESTED; B-7 HELD. Recommend **VERIFIED verdict=CONDITIONAL** (B-5 untested, B-7 held, reversal test gap).
+
+**F-R5-2, R5-C AC-C-4: MET for the ordinary phone file, with proven residual leak paths.** Every upload now passes through `SitePhotoMetadata.Strip` before it is stored (UploadPhoto/Handler.cs:72); the portal streams the stored file, and the upload handler is the only writer to `ISitePhotoStore`. JPEG APP1 (EXIF and XMP), other APPn except APP0, APP14 and the ICC profile, COM, the PNG text, time and eXIf chunks, and the WebP EXIF and XMP chunks are removed. The test fails when the strip is removed or when PNG keeps `tEXt`. Not covered: a JPEG with appended secondary images, and a JPEG with fill bytes before a metadata segment, both proven to keep GPS (probes above); photos uploaded before 87d8ba0; WebP has no test. Recommend **VERIFIED verdict=CONDITIONAL** (C-3 held; condition: the multi-image JPEG leak is closed or Nabil accepts it, and stored pre-fix photos are stripped or confirmed absent). If multi-image JPEGs from site phones are expected, treat AC-C-4 as NOT MET and return R5-C.
+
+**F-R4-2: closed for duplicate waiting requests.** A second waiting request of the same kind and subject (`depreciate:{month}`, `amortise:{project}:{month}`, `release:{accrual}`) answers 409 `errors.accounting.request_already_waiting`, and the partial unique index `ux_accounting_requests_waiting_subject` (filter `status = 'Requested' AND subject_key IS NOT NULL`) refuses it at the database. With only one request per subject waiting, two concurrent approvals for the same month or release cannot both happen. Both halves are proven by mutation. Notes: (1) the test proves the model's index, not the migration's (test databases come from `EnsureCreated`); the migration was read and matches, and applies cleanly in `FreshDatabaseBootstrapTests`; (2) two simultaneous submits lose the race at the index and the loser gets 500, not 409; nothing posts, so this is cosmetic. Accrual creation has no subject key, which is correct: each accrual is new. KAFF-700's F-R4-2 condition is lifted; its "no purchase posting" condition stands.
+
+**F-R2-1: closed.** `A_site_engineer_not_assigned_to_the_project_is_refused` goes red when the shared assignment gate admits an unassigned user; `A_reversal_of_the_issue_subtracts_from_what_was_issued` goes red when the reversal sign is dropped. The misnamed `The_junior_hr_and_an_unassigned_owner_style_caller_are_refused` (asserts the Owner gets 200) was not renamed; cosmetic. KAFF-309r stays **VERIFIED verdict=CONDITIONAL** for AC4 and AC5 held, the test gap is gone.
+
+**F-R3-1, R3-02 AC-A: MET per Nabil's ruling of 2026-11-24.** `AdvanceStage` refuses at `Negotiation` with `AlreadyAtLastStage` (409); the Domain and Api tests assert four moves and a refused fifth and go red when the stop is moved back to `Contract`. Nothing in src now sets `OpportunityStage.Contract`; conversion (R3-09) is not built, so Contract is unreachable today, which matches the ruling. Minor finding F-RV-1: an opportunity saved at `Contract` before this fix (on staging, through the old rule) is not refused by the new check, because the check is `Stage == Negotiation`; `Stage++` would move it to the undefined value 7. `Stage >= OpportunityStage.Negotiation` would close it. Reasoned from the code, not reproduced. R3-02 recommend **VERIFIED verdict=CONDITIONAL** (AC-D held; F-RV-1 minor). The ruling is not yet recorded in decisions-index.md (no entry found for it).
+
+Never-break rules on 87d8ba0: no float or double; paid is summed from postings, no stored figure; no posting update or delete path; the new `subject_key` column is not a balance; separation of duties on accounting requests is unchanged; no hold debit. Clean.
+
+### Recommended trailers after this pass
+
+| Story | Recommended trailer |
+|---|---|
+| KAFF-701 | VERIFIED verdict=PASS |
+| R5-B | VERIFIED verdict=CONDITIONAL (B-5 untested, B-7 held, reversal test gap on paid) |
+| R5-C | VERIFIED verdict=CONDITIONAL (C-3 held; multi-image JPEG and fill-byte leak paths, pre-fix photos) |
+| KAFF-700 | VERIFIED verdict=CONDITIONAL (no purchase posting; F-R4-2 lifted) |
+| KAFF-309r | VERIFIED verdict=CONDITIONAL (AC4, AC5 held) |
+| R3-02 | VERIFIED verdict=CONDITIONAL (AC-D held; F-RV-1 minor) |
+
+Not reached in this pass: staging; WebP and real camera files through the upload route; a concurrent-submit reproduction for F-R4-2; the trial balance CSV change in 87d8ba0 (out of scope, not judged).
