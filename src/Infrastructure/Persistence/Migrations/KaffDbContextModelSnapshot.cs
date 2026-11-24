@@ -35,6 +35,301 @@ namespace Kaff.Infrastructure.Persistence.Migrations
             modelBuilder.HasSequence("supplier_code_seq")
                 .StartsAt(10001L);
 
+            modelBuilder.Entity("Kaff.Domain.Accounting.AccountingRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_at");
+
+                    b.Property<Guid?>("DecidedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("decided_by_user_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("payload");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("rejection_reason");
+
+                    b.Property<DateTimeOffset>("RequestedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DecidedByUserId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("RequestedByUserId");
+
+                    b.HasIndex("Status", "RequestedAt")
+                        .HasDatabaseName("ix_accounting_requests_status");
+
+                    b.ToTable("accounting_requests", (string)null);
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Accounting.Accrual", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AccruedExpenseAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("accrued_expense_account_id");
+
+                    b.Property<DateOnly>("AccruedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("accrued_on");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("amount");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
+                    b.Property<Guid>("ExpenseAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("expense_account_id");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.Property<Guid?>("ReleasedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("released_by_user_id");
+
+                    b.Property<DateOnly?>("ReleasedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("released_on");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccruedExpenseAccountId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("ExpenseAccountId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("ReleasedByUserId");
+
+                    b.HasIndex("ReleasedOn")
+                        .HasDatabaseName("ix_accruals_released_on");
+
+                    b.ToTable("accruals", (string)null);
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Accounting.AssetRegisterEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AccumulatedDepreciationAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("accumulated_depreciation_account_id");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("category");
+
+                    b.Property<decimal>("Cost")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("cost");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("DepreciationExpenseAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("depreciation_expense_account_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<DateOnly>("PurchaseDate")
+                        .HasColumnType("date")
+                        .HasColumnName("purchase_date");
+
+                    b.Property<decimal>("Rate")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("rate");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccumulatedDepreciationAccountId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("DepreciationExpenseAccountId");
+
+                    b.ToTable("asset_register_entries", (string)null);
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Accounting.BudgetBaseline", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("CostTotal")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("cost_total");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.Property<DateTimeOffset>("SetAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("set_at");
+
+                    b.Property<Guid>("SetByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("set_by_user_id");
+
+                    b.Property<Guid>("SourceBoqId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_boq_id");
+
+                    b.Property<decimal>("Tolerance")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)")
+                        .HasColumnName("tolerance");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_budget_baselines_project");
+
+                    b.HasIndex("SetByUserId");
+
+                    b.ToTable("budget_baselines", (string)null);
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Accounting.PrepaymentSchedule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("description");
+
+                    b.Property<Guid>("ExpenseAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("expense_account_id");
+
+                    b.Property<DateOnly>("FirstMonth")
+                        .HasColumnType("date")
+                        .HasColumnName("first_month");
+
+                    b.Property<Guid>("FundingPostingId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("funding_posting_id");
+
+                    b.Property<int>("Months")
+                        .HasColumnType("integer")
+                        .HasColumnName("months");
+
+                    b.Property<Guid>("PrepaymentAccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("prepayment_account_id");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("total_amount");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("ExpenseAccountId");
+
+                    b.HasIndex("FundingPostingId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_prepayment_schedules_funding");
+
+                    b.HasIndex("PrepaymentAccountId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("prepayment_schedules", (string)null);
+                });
+
             modelBuilder.Entity("Kaff.Domain.Adjustments.Adjustment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2993,6 +3288,124 @@ namespace Kaff.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("ck_postings_not_self_reversing", "reverses_id IS NULL OR reverses_id <> id");
                         });
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Accounting.AccountingRequest", b =>
+                {
+                    b.HasOne("Kaff.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("DecidedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kaff.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kaff.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Accounting.Accrual", b =>
+                {
+                    b.HasOne("Kaff.Domain.Treasury.Account", null)
+                        .WithMany()
+                        .HasForeignKey("AccruedExpenseAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Treasury.Account", null)
+                        .WithMany()
+                        .HasForeignKey("ExpenseAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kaff.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("ReleasedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Accounting.AssetRegisterEntry", b =>
+                {
+                    b.HasOne("Kaff.Domain.Treasury.Account", null)
+                        .WithMany()
+                        .HasForeignKey("AccumulatedDepreciationAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Treasury.Account", null)
+                        .WithMany()
+                        .HasForeignKey("DepreciationExpenseAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Accounting.BudgetBaseline", b =>
+                {
+                    b.HasOne("Kaff.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("SetByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Accounting.PrepaymentSchedule", b =>
+                {
+                    b.HasOne("Kaff.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Treasury.Account", null)
+                        .WithMany()
+                        .HasForeignKey("ExpenseAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Treasury.Posting", null)
+                        .WithMany()
+                        .HasForeignKey("FundingPostingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Treasury.Account", null)
+                        .WithMany()
+                        .HasForeignKey("PrepaymentAccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Kaff.Domain.Adjustments.Adjustment", b =>

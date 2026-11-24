@@ -519,4 +519,19 @@ public enum Permission
     /// stays <see cref="ExtractCollect"/>, which the Owner does not hold.
     /// </summary>
     ChequeRead = 95,
+
+    /// <summary>
+    /// spec.md section 6.8, KAFF-709 - set a project's budget baseline from its signed BOQ and name the tolerance. The Owner only: the
+    /// tolerance is owner-set (R4-Q6). Nothing edits a baseline afterwards.
+    /// </summary>
+    BudgetBaselineSet = 97,
+
+    /// <summary>
+    /// Nabil, 2026-11-24 - the Owner approves or returns an accrual, an accrual release, a prepayment amortisation run or a
+    /// depreciation run that Finance asked for. Company-wide: the Owner holds every project. Nothing posts before this.
+    /// </summary>
+    AccountingEntryApprove = 98,
+
+    /// <summary>Nabil, 2026-11-24 - read a project's budget baseline. Owner and Finance only; an assigned site engineer is refused.</summary>
+    BudgetBaselineRead = 99,
 }

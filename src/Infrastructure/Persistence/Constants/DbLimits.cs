@@ -59,4 +59,9 @@ internal static class DbTables
     public const string HoldReleaseRequests = "hold_release_requests";
     public const string SubcontractorRetentionReleaseRequests = "subcontractor_retention_release_requests";
     public const string Adjustments = "adjustments";
+    public const string AssetRegisterEntries = "asset_register_entries";
+    public const string Accruals = "accruals";
+    public const string PrepaymentSchedules = "prepayment_schedules";
+    public const string BudgetBaselines = "budget_baselines";
+    public const string AccountingRequests = "accounting_requests";
 }

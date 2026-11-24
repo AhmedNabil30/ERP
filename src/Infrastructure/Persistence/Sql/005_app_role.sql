@@ -35,7 +35,7 @@ DECLARE
     v_updatable text[] := ARRAY[
         'Departments', 'accounting_periods', 'accounts', 'adjustments', 'babs', 'boq_bases',
         'boq_lines', 'boqs', 'catalogue_items', 'change_orders', 'cheques', 'clients', 'daily_logs',
-        'employees', 'engagements', 'extract_figures', 'extracts', 'hold_release_requests', 'ncrs',
+        'employees', 'engagements', 'extract_figures', 'extracts', 'hold_release_requests', 'ncrs', 'accounting_requests', 'accruals', 'asset_register_entries',
         'opportunities', 'project_assignments', 'projects', 'snags', 'subcontractor_retention_release_requests', 'subcontractors',
         'suppliers',
         'users', 'warranty_callbacks'];

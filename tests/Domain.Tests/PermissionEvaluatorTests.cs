@@ -205,6 +205,11 @@ public sealed class PermissionEvaluatorTests
 
             // KAFF-420: the project overview's claimed, collected and remaining figures (D-218 item 6).
             Permission.ProjectMoneyRead,
+
+            // Added with KAFF-709: the Owner sets the budget baseline and its tolerance. Its one grant names a role.
+            Permission.BudgetBaselineSet,
+            Permission.BudgetBaselineRead,
+            Permission.AccountingEntryApprove,
         ];
 
         // The list above is the expected set, written out rather than read from the flag — reading
