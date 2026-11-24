@@ -91,3 +91,31 @@ public sealed record SubcontractorRetentionReleaseRequestResponse(
         request.DecidedAt,
         request.RejectionReason);
 }
+
+/// <summary>A retention reversal request as read (AC-806-D). It names the release posting it would reverse and why.</summary>
+public sealed record SubcontractorRetentionReversalRequestResponse(
+    Guid Id,
+    Guid ProjectId,
+    Guid SubcontractorId,
+    Guid OriginalPostingId,
+    string Reason,
+    HoldReleaseRequestStatus Status,
+    Guid RequestedByUserId,
+    DateTimeOffset RequestedAt,
+    Guid? DecidedByUserId,
+    DateTimeOffset? DecidedAt,
+    string? RejectionReason)
+{
+    internal static SubcontractorRetentionReversalRequestResponse From(SubcontractorRetentionReversalRequest request) => new(
+        request.Id,
+        request.ProjectId,
+        request.SubcontractorId,
+        request.OriginalPostingId,
+        request.Reason,
+        request.Status,
+        request.RequestedByUserId,
+        request.RequestedAt,
+        request.DecidedByUserId,
+        request.DecidedAt,
+        request.RejectionReason);
+}

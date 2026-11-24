@@ -2,6 +2,7 @@ using Kaff.Domain.Closure;
 using Kaff.Domain.Identity;
 using Kaff.Domain.MasterData;
 using Kaff.Domain.Projects;
+using Kaff.Domain.Treasury;
 using Kaff.Infrastructure.Persistence.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -107,6 +108,32 @@ internal sealed class SubcontractorRetentionReleaseRequestConfiguration : IEntit
             .HasDatabaseName("ux_subcontractor_retention_release_requests_waiting");
 
         builder.HasOne<Project>().WithMany().HasForeignKey(request => request.ProjectId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<User>().WithMany().HasForeignKey(request => request.RequestedByUserId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<User>().WithMany().HasForeignKey(request => request.DecidedByUserId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class SubcontractorRetentionReversalRequestConfiguration : IEntityTypeConfiguration<SubcontractorRetentionReversalRequest>
+{
+    public void Configure(EntityTypeBuilder<SubcontractorRetentionReversalRequest> builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        builder.ToTable(DbTables.SubcontractorRetentionReversalRequests);
+        builder.HasKey(request => request.Id);
+        builder.Property(request => request.Id).ValueGeneratedNever();
+        builder.Property(request => request.Reason).HasMaxLength(Project.MaxReasonLength).IsRequired();
+        builder.Property(request => request.RequestedAt).IsRequired();
+        builder.Property(request => request.RejectionReason).HasMaxLength(Project.MaxReasonLength);
+
+        // At most one reversal request waits for the Owner per subcontractor on a project; the domain asks first, this index is the record.
+        builder.HasIndex(request => new { request.ProjectId, request.SubcontractorId })
+            .IsUnique()
+            .HasFilter("status = 'Requested'")
+            .HasDatabaseName("ux_subcontractor_retention_reversal_requests_waiting");
+
+        builder.HasOne<Project>().WithMany().HasForeignKey(request => request.ProjectId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Posting>().WithMany().HasForeignKey(request => request.OriginalPostingId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<User>().WithMany().HasForeignKey(request => request.RequestedByUserId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<User>().WithMany().HasForeignKey(request => request.DecidedByUserId).OnDelete(DeleteBehavior.Restrict);
     }

@@ -19,7 +19,7 @@ namespace Kaff.Api.Features.Catalogue.CreateCatalogueItem;
 /// <param name="Unit">As stored — trimmed.</param>
 /// <param name="BabId">The باب this item belongs to.</param>
 /// <param name="CostPrice">Internal — §4.2.</param>
-/// <param name="BaseSellRate">Before conditions and line markup.</param>
+/// <param name="BaseSellRate">Before conditions and line markup. Never changed by an override.</param>
 /// <param name="Status">Always <c>Active</c> on creation — <c>CatalogueItem.Create</c> says so.</param>
 public sealed record Response(
     Guid Id,
@@ -30,4 +30,6 @@ public sealed record Response(
     Guid BabId,
     decimal CostPrice,
     decimal BaseSellRate,
-    CatalogueItemStatus Status);
+    CatalogueItemStatus Status,
+    decimal? SellRateOverride,
+    decimal EffectiveSellRate);

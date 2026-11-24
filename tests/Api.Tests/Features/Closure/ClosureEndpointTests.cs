@@ -161,7 +161,7 @@ public sealed class ClosureEndpointTests : IAsyncLifetime
         (await StatusAsync(project)).Should().Be(ProjectStatus.HandoverPending);
         (await SendAsync(HttpMethod.Post, handover, _technicalOffice, null)).StatusCode
             .Should().Be(HttpStatusCode.OK, "the minor snag is still open and does not block");
-        (await StatusAsync(project)).Should().Be(ProjectStatus.Handover);
+        (await StatusAsync(project)).Should().Be(ProjectStatus.UnderWarranty, "Q110: handover moves the project to UnderWarranty by itself");
         (await SnagStatusAsync(minor)).Should().Be(SnagStatus.Open);
     }
 

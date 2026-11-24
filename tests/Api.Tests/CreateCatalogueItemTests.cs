@@ -82,7 +82,7 @@ public sealed class CreateCatalogueItemTests : IAsyncLifetime
             .GetProperties()
             .Select(property => property.Name)
             .Should().BeEquivalentTo(
-                ["Id", "Code", "DescriptionAr", "DescriptionEn", "Unit", "BabId", "CostPrice", "BaseSellRate", "Status"],
+                ["Id", "Code", "DescriptionAr", "DescriptionEn", "Unit", "BabId", "CostPrice", "BaseSellRate", "Status", "SellRateOverride", "EffectiveSellRate"],
                 "AC-202-A: the response carries no field §4.1 does not name");
     }
 

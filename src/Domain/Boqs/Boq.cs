@@ -87,7 +87,7 @@ public sealed class Boq : Entity
 
         return Append(
             item.Code, item.DescriptionAr, item.DescriptionEn, item.Unit, bab,
-            item.CostPrice, item.BaseSellRate, quantityEstimated, quantitySurveyed,
+            item.CostPrice, item.EffectiveSellRate, quantityEstimated, quantitySurveyed,
             conditionsRate, markupOverride, isCustom: false);
     }
 

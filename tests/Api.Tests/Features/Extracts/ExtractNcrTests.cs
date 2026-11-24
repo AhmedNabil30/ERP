@@ -336,7 +336,7 @@ public sealed partial class ExtractEndpointTests
         split.StatusCode.Should().Be(HttpStatusCode.Conflict, body);
         body.Should().Contain("extract.split_after_handover");
         await using KaffDbContext context = _database.CreateContext();
-        (await context.Projects.SingleAsync(candidate => candidate.Id == project.Id, Ct)).Status.Should().Be(ProjectStatus.Handover);
+        (await context.Projects.SingleAsync(candidate => candidate.Id == project.Id, Ct)).Status.Should().Be(ProjectStatus.UnderWarranty);
         (await context.Ncrs.CountAsync(ncr => ncr.ProjectId == project.Id, Ct)).Should().Be(0);
         (await context.Extracts.SingleAsync(extract => extract.Id == second, Ct)).Status.Should().Be(ExtractStatus.QcSubmitted);
     }

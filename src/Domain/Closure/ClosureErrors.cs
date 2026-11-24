@@ -50,6 +50,22 @@ public static class ClosureErrors
     public static readonly Error RetentionReleaseNotRequested =
         Error.Conflict("closure.retention_release_not_requested", "errors.closure.retention_release_not_requested");
 
+    /// <summary>AC-806-D: the posting named is not a standing retention release of this subcontractor on this project.</summary>
+    public static readonly Error RetentionReleasePostingNotFound =
+        Error.Conflict("closure.retention_release_posting_not_found", "errors.closure.retention_release_posting_not_found");
+
+    /// <summary>AC-806-D: that retention release is already reversed.</summary>
+    public static readonly Error RetentionReleaseAlreadyReversed =
+        Error.Conflict("closure.retention_release_already_reversed", "errors.closure.retention_release_already_reversed");
+
+    /// <summary>AC-806-D: a reversal request for this release is already waiting for the Owner.</summary>
+    public static readonly Error RetentionReversalAlreadyRequested =
+        Error.Conflict("closure.retention_reversal_already_requested", "errors.closure.retention_reversal_already_requested");
+
+    /// <summary>AC-806-D: no retention reversal request is waiting to be approved or returned.</summary>
+    public static readonly Error RetentionReversalNotRequested =
+        Error.Conflict("closure.retention_reversal_not_requested", "errors.closure.retention_reversal_not_requested");
+
     public static readonly Error NothingToRelease =
         Error.Conflict("closure.nothing_to_release", "errors.closure.nothing_to_release");
 

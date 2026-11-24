@@ -83,6 +83,15 @@ public sealed class CatalogueItem : Entity
     /// <summary>Base sell rate before conditions and line markup (spec.md §4.2).</summary>
     public Money BaseSellRate { get; private set; }
 
+    /// <summary>
+    /// The Owner's override of the sell rate, beside <see cref="BaseSellRate"/> and never over it (Nabil, 2026-11-24).
+    /// Null means no override. Set and cleared only by the Owner (KAFF-940).
+    /// </summary>
+    public Money? SellRateOverride { get; private set; }
+
+    /// <summary>The rate a new BOQ line copies: the override when one is set, otherwise the base sell rate.</summary>
+    public Money EffectiveSellRate => SellRateOverride ?? BaseSellRate;
+
     public CatalogueItemStatus Status { get; private set; }
 
     public static Result<CatalogueItem> Create(
@@ -180,6 +189,18 @@ public sealed class CatalogueItem : Entity
 
         CostPrice = costPrice;
         BaseSellRate = baseSellRate;
+        return Result.Success();
+    }
+
+    /// <summary>Sets or clears (null) the sell-rate override. <see cref="BaseSellRate"/> is not touched.</summary>
+    public Result SetSellRateOverride(Money? sellRateOverride)
+    {
+        if (sellRateOverride is { IsNegative: true })
+        {
+            return Result.Failure(MasterDataErrors.SellRateMustNotBeNegative);
+        }
+
+        SellRateOverride = sellRateOverride;
         return Result.Success();
     }
 

@@ -26,9 +26,14 @@ namespace Kaff.Api.Features.Catalogue.EditCatalogueItem;
 /// <c>0</c> stays legal.
 /// </param>
 /// <param name="BaseSellRate">Before conditions and line markup. Nullable — see <see cref="CostPrice"/>.</param>
+/// <param name="SellRateOverride">
+/// The Owner's override, beside the base sell rate and never over it. The body states the whole record, so null clears
+/// it; changing it in either direction is the Owner's alone (KAFF-940, AC-940-B).
+/// </param>
 public sealed record Request(
     string? DescriptionAr,
     string? DescriptionEn,
     string? Unit,
     decimal? CostPrice,
-    decimal? BaseSellRate);
+    decimal? BaseSellRate,
+    decimal? SellRateOverride = null);

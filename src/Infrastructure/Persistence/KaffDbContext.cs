@@ -159,6 +159,7 @@ public sealed class KaffDbContext : DbContext
     public DbSet<HoldReleaseRequest> HoldReleaseRequests => Set<HoldReleaseRequest>();
     public DbSet<PettyCashRequest> PettyCashRequests => Set<PettyCashRequest>();
     public DbSet<SubcontractorRetentionReleaseRequest> SubcontractorRetentionReleaseRequests => Set<SubcontractorRetentionReleaseRequest>();
+    public DbSet<SubcontractorRetentionReversalRequest> SubcontractorRetentionReversalRequests => Set<SubcontractorRetentionReversalRequest>();
 
     public DbSet<Adjustment> Adjustments => Set<Adjustment>();
 

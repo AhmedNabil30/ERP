@@ -40,6 +40,21 @@ public sealed class BoqTests
     }
 
     [Fact]
+    public void A_sell_rate_override_sits_beside_the_base_rate_and_a_new_line_copies_the_effective_rate()
+    {
+        _item.EffectiveSellRate.Should().Be(new Money(1_500m), "no override: the base rate");
+
+        _item.SetSellRateOverride(new Money(1_400m)).IsSuccess.Should().BeTrue();
+        _item.BaseSellRate.Should().Be(new Money(1_500m), "the override never overwrites the base rate");
+        _item.EffectiveSellRate.Should().Be(new Money(1_400m));
+        OpenBoq().AddCatalogueLine(_item, _bab, 10m, 12m).Value.BaseSellRate.Should().Be(new Money(1_400m));
+
+        _item.SetSellRateOverride(new Money(-1m)).IsFailure.Should().BeTrue();
+        _item.SetSellRateOverride(null).IsSuccess.Should().BeTrue();
+        _item.EffectiveSellRate.Should().Be(new Money(1_500m));
+    }
+
+    [Fact]
     public void Editing_the_catalogue_after_the_line_was_added_leaves_the_line_unchanged()
     {
         Boq boq = OpenBoq();

@@ -344,7 +344,9 @@ public sealed class ArchiveCatalogueItemTests : IAsyncLifetime
                 element.GetProperty("babId").GetGuid(),
                 WireDecimal(element.GetProperty("costPrice")),
                 WireDecimal(element.GetProperty("baseSellRate")),
-                Enum.Parse<CatalogueItemStatus>(element.GetProperty("status").GetString()!))),
+                Enum.Parse<CatalogueItemStatus>(element.GetProperty("status").GetString()!),
+                element.GetProperty("sellRateOverride").ValueKind == JsonValueKind.Null ? null : WireDecimal(element.GetProperty("sellRateOverride")),
+                WireDecimal(element.GetProperty("effectiveSellRate")))),
         ];
     }
 

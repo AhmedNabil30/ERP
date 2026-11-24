@@ -1123,6 +1123,73 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                     b.ToTable("subcontractor_retention_release_requests", (string)null);
                 });
 
+            modelBuilder.Entity("Kaff.Domain.Closure.SubcontractorRetentionReversalRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_at");
+
+                    b.Property<Guid?>("DecidedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("decided_by_user_id");
+
+                    b.Property<Guid>("OriginalPostingId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("original_posting_id");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("project_id");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("rejection_reason");
+
+                    b.Property<DateTimeOffset>("RequestedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("requested_at");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("requested_by_user_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("SubcontractorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("subcontractor_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DecidedByUserId");
+
+                    b.HasIndex("OriginalPostingId");
+
+                    b.HasIndex("RequestedByUserId");
+
+                    b.HasIndex("ProjectId", "SubcontractorId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_subcontractor_retention_reversal_requests_waiting")
+                        .HasFilter("status = 'Requested'");
+
+                    b.ToTable("subcontractor_retention_reversal_requests", (string)null);
+                });
+
             modelBuilder.Entity("Kaff.Domain.Closure.WarrantyCallback", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2218,6 +2285,11 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
                         .HasColumnName("description_en");
+
+                    b.Property<decimal?>("SellRateOverride")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)")
+                        .HasColumnName("sell_rate_override");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -3655,6 +3727,32 @@ namespace Kaff.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("DecidedByUserId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kaff.Domain.Projects.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Kaff.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("RequestedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Kaff.Domain.Closure.SubcontractorRetentionReversalRequest", b =>
+                {
+                    b.HasOne("Kaff.Domain.Identity.User", null)
+                        .WithMany()
+                        .HasForeignKey("DecidedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Kaff.Domain.Treasury.Posting", null)
+                        .WithMany()
+                        .HasForeignKey("OriginalPostingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("Kaff.Domain.Projects.Project", null)
                         .WithMany()

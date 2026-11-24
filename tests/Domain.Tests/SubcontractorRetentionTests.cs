@@ -258,4 +258,37 @@ public sealed class SubcontractorRetentionTests
         ApproveAs(request, project, retention, payable, Owner, 37_500m).Error.Should().Be(ClosureErrors.RetentionReleaseNotRequested);
         request.Reject(Owner, "again", Now).Error.Should().Be(ClosureErrors.RetentionReleaseNotRequested);
     }
+
+    // ---- AC-806-D · the Owner-approved reversal -------------------------------------------------------
+
+    [Fact]
+    public void A_reversal_request_needs_a_reason_a_standing_release_and_the_asker_cannot_approve_it()
+    {
+        Project project = ProjectIn(ProjectStatus.UnderWarranty);
+        Guid sub = Guid.CreateVersion7();
+        (Account retention, Account payable) = AccountsFor(project, sub);
+        Posting original = Release(project, sub, retention, payable, 5_000m, project.WarrantyEndsOn!.Value).Value.Postings.Single();
+
+        SubcontractorRetentionReversalRequest.Request(project, sub, original, false, false, " ", Actor, Now).Error
+            .Should().Be(ClosureErrors.ReasonRequired);
+        SubcontractorRetentionReversalRequest.Request(project, sub, null, false, false, "wrong", Actor, Now).Error
+            .Should().Be(ClosureErrors.RetentionReleasePostingNotFound);
+        SubcontractorRetentionReversalRequest.Request(project, Guid.CreateVersion7(), original, false, false, "wrong", Actor, Now).Error
+            .Should().Be(ClosureErrors.RetentionReleasePostingNotFound, "another subcontractor's release is not this one's");
+        SubcontractorRetentionReversalRequest.Request(project, sub, original, true, false, "wrong", Actor, Now).Error
+            .Should().Be(ClosureErrors.RetentionReleaseAlreadyReversed);
+        SubcontractorRetentionReversalRequest.Request(project, sub, original, false, true, "wrong", Actor, Now).Error
+            .Should().Be(ClosureErrors.RetentionReversalAlreadyRequested);
+
+        SubcontractorRetentionReversalRequest request =
+            SubcontractorRetentionReversalRequest.Request(project, sub, original, false, false, "wrong", Actor, Now).Value;
+        request.Approve(Actor, original, false, payable, retention, Now, DateOnly.FromDateTime(Now.UtcDateTime)).IsFailure
+            .Should().BeTrue("the user who asked may not approve");
+        request.Status.Should().Be(HoldReleaseRequestStatus.Requested);
+
+        Posting mirror = request.Approve(Owner, original, false, payable, retention, Now, DateOnly.FromDateTime(Now.UtcDateTime)).Value;
+        mirror.ReversesId.Should().Be(original.Id);
+        mirror.CreatedAt.Should().Be(request.DecidedAt, "the database guard matches the two instants");
+        request.Status.Should().Be(HoldReleaseRequestStatus.Approved);
+    }
 }

@@ -113,7 +113,9 @@ internal static class Handler
                 item.BabId,
                 item.CostPrice.Amount,
                 item.BaseSellRate.Amount,
-                item.Status))
+                item.Status,
+                item.SellRateOverride == null ? (decimal?)null : item.SellRateOverride.Value.Amount,
+                item.SellRateOverride == null ? item.BaseSellRate.Amount : item.SellRateOverride.Value.Amount))
             .ToListAsync(cancellationToken);
 
         return Microsoft.AspNetCore.Http.Results.Ok(new Response(items));

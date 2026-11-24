@@ -17,7 +17,9 @@
 --    * Extract: a gate record of that extract, Rejected or Reversed, stamped at the same instant as
 --      the reversal. Extract.ReverseCollection and Extract.Reject stamp both with one clock read.
 --    * Adjustment: the adjustment is Reversed, decided at the same instant. Adjustment.Reverse.
---    * ProjectHandover, SubcontractorRetentionRelease: no flow reverses them, so nothing may.
+--    * SubcontractorRetentionRelease: an Approved subcontractor_retention_reversal_requests row for that posting,
+--      decided at the same instant (KAFF-806 AC-806-D, Owner-approved).
+--    * ProjectHandover: no flow reverses it, so nothing may.
 --
 --  Idempotent. Applied after the schema on every start-up.
 -- =============================================================================================
@@ -59,6 +61,11 @@ BEGIN
              WHERE a.id = v_original.source_document_id
                AND a.status = 'Reversed'
                AND a.decided_at = NEW.created_at)
+        WHEN 'SubcontractorRetentionRelease' THEN EXISTS (
+            SELECT 1 FROM subcontractor_retention_reversal_requests r
+             WHERE r.original_posting_id = v_original.id
+               AND r.status = 'Approved'
+               AND r.decided_at = NEW.created_at)
         ELSE false
     END;
 

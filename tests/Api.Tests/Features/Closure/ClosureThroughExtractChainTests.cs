@@ -175,7 +175,6 @@ public sealed class ClosureThroughExtractChainTests : IAsyncLifetime
         (await BalanceAsync(id, AccountType.ClientReceivable)).Should().Be(0m);
 
         // Every extract is Collected, the advance is recovered and the hold released: the one query that decides closure finds nothing.
-        (await SendAsync(HttpMethod.Post, $"/api/projects/{id}/warranty", _technicalOffice, null)).StatusCode.Should().Be(HttpStatusCode.OK);
         HttpResponseMessage closed = await SendAsync(HttpMethod.Post, $"/api/projects/{id}/close", _owner, null);
         closed.StatusCode.Should().Be(HttpStatusCode.OK, await closed.Content.ReadAsStringAsync(Ct));
         (await StatusAsync(id)).Should().Be(ProjectStatus.Closed);

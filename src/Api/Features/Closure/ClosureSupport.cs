@@ -155,6 +155,15 @@ internal static class ClosureSupport
                 && request.Status == HoldReleaseRequestStatus.Requested,
             cancellationToken);
 
+    /// <summary>The reversal request waiting for the Owner for one release posting, if any. At most one exists (a filtered unique index).</summary>
+    public static Task<SubcontractorRetentionReversalRequest?> WaitingRetentionReversalAsync(
+        KaffDbContext database, Guid projectId, Guid subcontractorId, CancellationToken cancellationToken) =>
+        database.SubcontractorRetentionReversalRequests.FirstOrDefaultAsync(
+            request => request.ProjectId == projectId
+                && request.SubcontractorId == subcontractorId
+                && request.Status == HoldReleaseRequestStatus.Requested,
+            cancellationToken);
+
     /// <summary>The next number in a project's own sequence; the unique index on (project, number) is the enforcement of record.</summary>
     public static async Task<int> NextSnagNumberAsync(KaffDbContext database, Guid projectId, CancellationToken cancellationToken) =>
         (await database.Snags.Where(snag => snag.ProjectId == projectId)

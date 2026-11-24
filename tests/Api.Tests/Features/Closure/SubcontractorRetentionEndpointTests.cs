@@ -328,6 +328,107 @@ public sealed class SubcontractorRetentionEndpointTests : IAsyncLifetime
     private static string Route(Guid project, Guid subcontractor) =>
         $"/api/projects/{project}/subcontractors/{subcontractor}/retention-release";
 
+    /// <summary>
+    /// AC-806-D over HTTP (Nabil, 2026-11-24). Finance asks to reverse a posted release with a reason, the Owner approves, and
+    /// the one reversing posting points at the original through ReversesId. The generic route stays refused for the same posting.
+    /// </summary>
+    [Fact]
+    public async Task The_Owner_approved_reversal_writes_one_mirror_posting_and_restores_the_retention()
+    {
+        (Guid project, Guid sub) = await NewProjectAsync(handoverOn: new DateOnly(2025, 5, 1));
+        Guid original = await ReleasedPostingAsync(project, sub);
+        string route = Route(project, sub) + "/reversal";
+        long postings = await PostingCountAsync(project);
+
+        foreach (Guid refused in new[] { _owner, _technicalOffice, _hr, _financeUnassigned })
+        {
+            (await SendAsync(HttpMethod.Post, route, refused, new { postingId = original, reason = "x" })).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        }
+
+        (await ErrorCodeAsync(await SendAsync(HttpMethod.Post, route, _finance, new { postingId = original, reason = " " })))
+            .Should().Be("closure.reason_required");
+        (await ErrorCodeAsync(await SendAsync(HttpMethod.Post, route, _finance, new { postingId = Guid.NewGuid(), reason = "wrong release" })))
+            .Should().Be("closure.retention_release_posting_not_found");
+
+        HttpResponseMessage asked = await SendAsync(HttpMethod.Post, route, _finance, new { postingId = original, reason = "released to the wrong subcontractor" });
+        asked.StatusCode.Should().Be(HttpStatusCode.OK, await asked.Content.ReadAsStringAsync(Ct));
+        (await PostingCountAsync(project)).Should().Be(postings, "a request moves no money");
+        (await ErrorCodeAsync(await SendAsync(HttpMethod.Post, route, _finance, new { postingId = original, reason = "again" })))
+            .Should().Be("closure.retention_reversal_already_requested");
+
+        // The generic route stays refused for the release, even while a reversal is waiting.
+        HttpResponseMessage generic = await SendAsync(
+            HttpMethod.Post, $"/api/projects/{project}/treasury/postings/{original}/reverse", _finance,
+            new { postingDate = SiteTime.DateOf(DateTimeOffset.UtcNow) });
+        (await ErrorCodeAsync(generic)).Should().Be("treasury.flow_posting_not_reversible", "the generic route is not weakened");
+
+        // Creator is not approver: Finance holds no approval permission.
+        (await SendAsync(HttpMethod.Post, route + "/approval", _finance)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await RetentionAsync(project, sub)).Should().Be(0m);
+
+        HttpResponseMessage approved = await SendAsync(HttpMethod.Post, route + "/approval", _owner);
+        approved.StatusCode.Should().Be(HttpStatusCode.OK, await approved.Content.ReadAsStringAsync(Ct));
+        (await PostingCountAsync(project)).Should().Be(postings + 1);
+        (await RetentionAsync(project, sub)).Should().Be(37_500m, "the reversal gives the retention back");
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        Posting reversal = await reader.Postings.SingleAsync(p => p.ReversesId == original, Ct);
+        reversal.Type.Should().Be(PostingType.SubcontractorRetentionRelease);
+        reversal.Amount.Should().Be(new Money(37_500m));
+        reversal.CreatedByUserId.Should().Be(_owner);
+        (await reader.Postings.SingleAsync(p => p.Id == original, Ct)).ReversesId.Should().BeNull("the original is never updated");
+
+        AuditRecord trail = await reader.AuditRecords.SingleAsync(record => record.EntityId == reversal.Id, Ct);
+        trail.ActorUserId.Should().Be(_owner);
+        trail.Reason.Should().Contain(sub.ToString()).And.Contain("released to the wrong subcontractor").And.Contain(_finance.ToString());
+
+        SubcontractorRetentionReversalRequest request = await reader.SubcontractorRetentionReversalRequests.SingleAsync(r => r.ProjectId == project, Ct);
+        request.Status.Should().Be(HoldReleaseRequestStatus.Approved);
+        request.RequestedByUserId.Should().Be(_finance);
+        request.DecidedByUserId.Should().Be(_owner);
+
+        (await ErrorCodeAsync(await SendAsync(HttpMethod.Post, route, _finance, new { postingId = original, reason = "twice" })))
+            .Should().Be("closure.retention_release_already_reversed");
+        (await SendAsync(HttpMethod.Post, route + "/approval", _owner)).StatusCode.Should().Be(HttpStatusCode.Conflict, "nothing waits any more");
+    }
+
+    [Fact]
+    public async Task The_Owner_returns_a_reversal_with_a_reason_and_nothing_is_posted()
+    {
+        (Guid project, Guid sub) = await NewProjectAsync(handoverOn: new DateOnly(2025, 5, 1));
+        Guid original = await ReleasedPostingAsync(project, sub);
+        string route = Route(project, sub) + "/reversal";
+        (await SendAsync(HttpMethod.Post, route, _finance, new { postingId = original, reason = "mistake" })).StatusCode.Should().Be(HttpStatusCode.OK);
+        long postings = await PostingCountAsync(project);
+
+        (await ErrorCodeAsync(await SendAsync(HttpMethod.Post, route + "/rejection", _owner, new { reason = " " }))).Should().Be("closure.reason_required");
+        HttpResponseMessage returned = await SendAsync(HttpMethod.Post, route + "/rejection", _owner, new { reason = "the release was right" });
+        returned.StatusCode.Should().Be(HttpStatusCode.OK, await returned.Content.ReadAsStringAsync(Ct));
+        (await PostingCountAsync(project)).Should().Be(postings);
+        (await RetentionAsync(project, sub)).Should().Be(0m);
+
+        await using (KaffDbContext reader = _database.CreateBareContext())
+        {
+            SubcontractorRetentionReversalRequest request = await reader.SubcontractorRetentionReversalRequests.SingleAsync(r => r.ProjectId == project, Ct);
+            request.Status.Should().Be(HoldReleaseRequestStatus.Rejected);
+            request.RejectionReason.Should().Be("the release was right");
+        }
+
+        (await SendAsync(HttpMethod.Post, route + "/approval", _owner)).StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await SendAsync(HttpMethod.Post, route, _finance, new { postingId = original, reason = "mistake, with the paper" })).StatusCode
+            .Should().Be(HttpStatusCode.OK, "Finance may ask again");
+    }
+
+    private async Task<Guid> ReleasedPostingAsync(Guid project, Guid sub)
+    {
+        (await SendAsync(HttpMethod.Post, Route(project, sub), _finance)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await SendAsync(HttpMethod.Post, Route(project, sub) + "/approval", _owner)).StatusCode.Should().Be(HttpStatusCode.OK);
+        await using KaffDbContext reader = _database.CreateBareContext();
+        return await reader.Postings
+            .Where(p => p.ProjectId == project && p.Type == PostingType.SubcontractorRetentionRelease)
+            .Select(p => p.Id).SingleAsync(Ct);
+    }
+
     private static User Make(string name, Role role, Guid? department = null, OperationsSubDepartment? subDepartment = null) =>
         User.Create(UniqueNames.Code(name), name, UniqueNames.Phone(), role, Now, department, subDepartment).Value;
 

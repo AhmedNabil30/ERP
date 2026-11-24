@@ -15,7 +15,7 @@ namespace Kaff.Api.Features.Catalogue.EditCatalogueItem;
 /// <param name="Unit">As stored — trimmed.</param>
 /// <param name="BabId">Unchanged — moving باب is <c>KAFF-205</c>.</param>
 /// <param name="CostPrice">Internal — §4.2.</param>
-/// <param name="BaseSellRate">Before conditions and line markup.</param>
+/// <param name="BaseSellRate">Before conditions and line markup. Never changed by an override.</param>
 /// <param name="Status">Untouched by an edit — archiving is <c>KAFF-206</c>.</param>
 public sealed record Response(
     Guid Id,
@@ -26,4 +26,6 @@ public sealed record Response(
     Guid BabId,
     decimal CostPrice,
     decimal BaseSellRate,
-    CatalogueItemStatus Status);
+    CatalogueItemStatus Status,
+    decimal? SellRateOverride,
+    decimal EffectiveSellRate);

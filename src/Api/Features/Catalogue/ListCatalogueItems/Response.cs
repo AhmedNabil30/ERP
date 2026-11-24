@@ -36,7 +36,9 @@ public sealed record CatalogueItemSummary(
     Guid BabId,
     decimal CostPrice,
     decimal BaseSellRate,
-    CatalogueItemStatus Status);
+    CatalogueItemStatus Status,
+    decimal? SellRateOverride,
+    decimal EffectiveSellRate);
 
 /// <summary>
 /// The catalogue items that matched. KAFF-203.

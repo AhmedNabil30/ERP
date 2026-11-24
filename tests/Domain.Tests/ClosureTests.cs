@@ -191,7 +191,7 @@ public sealed class ClosureTests
 
         ProjectClosure.HandOver(project, new DateOnly(2026, 11, 30), [], [], []).IsSuccess.Should().BeTrue();
 
-        project.Status.Should().Be(ProjectStatus.Handover);
+        project.Status.Should().Be(ProjectStatus.UnderWarranty, "Q110: handover starts the warranty by itself");
         project.HandoverOn.Should().Be(new DateOnly(2026, 11, 30));
         project.WarrantyEndsOn.Should().Be(new DateOnly(2027, 3, 30));
     }

@@ -98,6 +98,7 @@ internal sealed class CatalogueItemConfiguration : IEntityTypeConfiguration<Cata
         builder.Property(item => item.Unit).IsRequired().HasMaxLength(CatalogueItem.MaxUnitLength);
         builder.Property(item => item.CostPrice).IsRequired();
         builder.Property(item => item.BaseSellRate).IsRequired();
+        builder.Property(item => item.SellRateOverride);
         builder.Property(item => item.Status).IsRequired();
 
         builder.HasIndex(item => item.Code).IsUnique().HasDatabaseName("ux_catalogue_items_code");

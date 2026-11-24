@@ -362,6 +362,49 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
             .Should().Be(180m);
     }
 
+    /// <summary>AC-940-B and Nabil 2026-11-24: the override is its own field beside the base rate, the Owner's alone to set or clear.</summary>
+    [Fact]
+    public async Task The_technical_office_cannot_set_or_clear_the_override_and_the_owner_can_without_touching_the_base_rate()
+    {
+        Guid id = await RegisterAsync(cost: 100m, sell: 150m);
+
+        HttpResponseMessage refused = await EditAsync(id, Body(cost: 100m, sell: 150m, sellOverride: 140m));
+        refused.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await MessageKeyAsync(refused)).Should().Be("errors.master.catalogue_price_owner_only");
+        (await ReadAsync(id)).SellRateOverride.Should().BeNull();
+
+        HttpResponseMessage set = await EditAsOwnerAsync(id, Body(cost: 100m, sell: 150m, sellOverride: 140m));
+        set.StatusCode.Should().Be(HttpStatusCode.OK, await set.Content.ReadAsStringAsync(Ct));
+        using (JsonDocument body = JsonDocument.Parse(await set.Content.ReadAsStringAsync(Ct)))
+        {
+            WireDecimal(body.RootElement.GetProperty("baseSellRate")).Should().Be(150m);
+            WireDecimal(body.RootElement.GetProperty("sellRateOverride")).Should().Be(140m);
+            WireDecimal(body.RootElement.GetProperty("effectiveSellRate")).Should().Be(140m, "effective rate is override over base");
+        }
+
+        CatalogueItem stored = await ReadAsync(id);
+        stored.BaseSellRate.Amount.Should().Be(150m, "the base sell rate is never overwritten by an override");
+        stored.SellRateOverride!.Value.Amount.Should().Be(140m);
+
+        // The Technical Office may send the whole record back with the override as stored, but not change or clear it.
+        (await EditAsync(id, Body(descriptionAr: "وصف جديد", cost: 100m, sell: 150m, sellOverride: 140m))).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await EditAsync(id, Body(cost: 100m, sell: 150m, sellOverride: null))).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await ReadAsync(id)).SellRateOverride!.Value.Amount.Should().Be(140m);
+
+        (await EditAsOwnerAsync(id, Body(descriptionAr: "وصف جديد", cost: 100m, sell: 150m, sellOverride: null))).StatusCode.Should().Be(HttpStatusCode.OK);
+        CatalogueItem cleared = await ReadAsync(id);
+        cleared.SellRateOverride.Should().BeNull();
+        cleared.EffectiveSellRate.Amount.Should().Be(150m);
+
+        await using KaffDbContext reader = _database.CreateBareContext();
+        List<AuditRecord> records = await reader.AuditRecords
+            .Where(record => record.EntityId == id && record.Action == AuditAction.Modified)
+            .ToListAsync(Ct);
+        records = [.. records.Where(record => record.ChangedProperties.Contains(nameof(CatalogueItem.SellRateOverride)))];
+        records.Should().HaveCount(2, "one for setting and one for clearing, each with who, when, before and after");
+        records.Should().OnlyContain(record => record.ActorUserId == _owner);
+    }
+
     /// <summary>AC-940-D — every capability the Technical Office had that is not a price.</summary>
     [Fact]
     public async Task The_technical_office_keeps_create_describe_unit_move_archive_and_unarchive()
@@ -433,8 +476,9 @@ public sealed class EditCatalogueItemTests : IAsyncLifetime
     // ---- helpers ------------------------------------------------------------------------------
 
     private static object Body(
-        string descriptionAr = "خرسانة عادية", string unit = "م٣", decimal cost = 100m, decimal sell = 150m) => new
+        string descriptionAr = "خرسانة عادية", string unit = "م٣", decimal cost = 100m, decimal sell = 150m, decimal? sellOverride = null) => new
         {
+            sellRateOverride = sellOverride,
             descriptionAr,
             descriptionEn = (string?)null,
             unit,

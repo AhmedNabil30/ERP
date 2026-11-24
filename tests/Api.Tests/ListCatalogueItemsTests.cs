@@ -197,7 +197,7 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
     {
         typeof(CatalogueItemSummary).GetProperties().Select(property => property.Name)
             .Should().BeEquivalentTo(
-                ["Id", "Code", "DescriptionAr", "DescriptionEn", "Unit", "BabId", "CostPrice", "BaseSellRate", "Status"],
+                ["Id", "Code", "DescriptionAr", "DescriptionEn", "Unit", "BabId", "CostPrice", "BaseSellRate", "Status", "SellRateOverride", "EffectiveSellRate"],
                 "AC-203-G: no total, no margin, no project or BOQ value — a whitelist, not a search for suspect words");
 
         typeof(Response).GetProperties().Select(property => property.Name)
@@ -469,7 +469,9 @@ public sealed class ListCatalogueItemsTests : IAsyncLifetime
                 element.GetProperty("babId").GetGuid(),
                 WireDecimal(element.GetProperty("costPrice")),
                 WireDecimal(element.GetProperty("baseSellRate")),
-                Enum.Parse<CatalogueItemStatus>(element.GetProperty("status").GetString()!))),
+                Enum.Parse<CatalogueItemStatus>(element.GetProperty("status").GetString()!),
+                element.GetProperty("sellRateOverride").ValueKind == JsonValueKind.Null ? null : WireDecimal(element.GetProperty("sellRateOverride")),
+                WireDecimal(element.GetProperty("effectiveSellRate")))),
         ];
     }
 

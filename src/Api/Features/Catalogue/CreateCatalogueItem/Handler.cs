@@ -110,7 +110,9 @@ internal static class Handler
                 item.BabId,
                 item.CostPrice.Amount,
                 item.BaseSellRate.Amount,
-                item.Status));
+                item.Status,
+                item.SellRateOverride?.Amount,
+                item.EffectiveSellRate.Amount));
     }
 
     /// <summary>A unique-violation on the catalogue item code index, and nothing else.</summary>

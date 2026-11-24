@@ -99,7 +99,15 @@ public static class ProjectClosure
 
         return Extract.HasUnbilledRelease(extracts)
             ? Result.Failure(ClosureErrors.ReleasedRemainderUnbilled)
-            : project.TransitionTo(ProjectStatus.Handover, on);
+            : MoveToWarranty(project, on);
+    }
+
+    // RULING: Q110 (Nabil, 2026-11-24). Handover starts the warranty by itself: the project passes through Handover, which
+    // stamps the handover date and the warranty end, and lands in UnderWarranty in the same act.
+    private static Result MoveToWarranty(Project project, DateOnly on)
+    {
+        Result handover = project.TransitionTo(ProjectStatus.Handover, on);
+        return handover.IsFailure ? handover : project.TransitionTo(ProjectStatus.UnderWarranty, on);
     }
 
     /// <summary>

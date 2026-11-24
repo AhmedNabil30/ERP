@@ -58,6 +58,7 @@ internal static class DbTables
     public const string WarrantyCallbacks = "warranty_callbacks";
     public const string HoldReleaseRequests = "hold_release_requests";
     public const string SubcontractorRetentionReleaseRequests = "subcontractor_retention_release_requests";
+    public const string SubcontractorRetentionReversalRequests = "subcontractor_retention_reversal_requests";
     public const string Adjustments = "adjustments";
     public const string PettyCashRequests = "petty_cash_requests";
     public const string AssetRegisterEntries = "asset_register_entries";

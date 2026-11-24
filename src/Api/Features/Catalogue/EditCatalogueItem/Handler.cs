@@ -61,7 +61,9 @@ internal static class Handler
             && request.BaseSellRate is not null
             && (request.CostPrice.Value != item.CostPrice.Amount || request.BaseSellRate.Value != item.BaseSellRate.Amount);
 
-        if (priceChanges && !await authorization.HoldsAsync(user, Permission.CataloguePriceEdit))
+        bool overrideChanges = request.SellRateOverride != item.SellRateOverride?.Amount;
+
+        if ((priceChanges || overrideChanges) && !await authorization.HoldsAsync(user, Permission.CataloguePriceEdit))
         {
             return ResultExtensions.Problem(MasterDataErrors.CataloguePriceOwnerOnly);
         }
@@ -98,6 +100,13 @@ internal static class Handler
             return ResultExtensions.Problem(repriced.Error);
         }
 
+        Result overridden = item.SetSellRateOverride(request.SellRateOverride is { } rate ? Money.From(rate) : null);
+
+        if (overridden.IsFailure)
+        {
+            return ResultExtensions.Problem(overridden.Error);
+        }
+
         await database.SaveChangesAsync(cancellationToken);
 
         return Microsoft.AspNetCore.Http.Results.Ok(
@@ -110,6 +119,8 @@ internal static class Handler
                 item.BabId,
                 item.CostPrice.Amount,
                 item.BaseSellRate.Amount,
-                item.Status));
+                item.Status,
+                item.SellRateOverride?.Amount,
+                item.EffectiveSellRate.Amount));
     }
 }
