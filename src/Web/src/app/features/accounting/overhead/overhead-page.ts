@@ -56,7 +56,7 @@ export class OverheadPage {
   }
 
   protected projectName(line: OverheadLine): string {
-    return this.names().get(line.projectId) ?? line.projectCode;
+    return line.projectName ?? this.names().get(line.projectId) ?? line.projectCode;
   }
 
   protected async setMonth(event: Event): Promise<void> {

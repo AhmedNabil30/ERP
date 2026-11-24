@@ -35,7 +35,6 @@ export type OpportunityAct = 'advance' | 'hold' | 'resume' | 'close-lost' | 'reo
 
 /**
  * The opportunity calls (R3-10). Every call is gated `OpportunityManage` by the server.
- * There is no single-opportunity read, so {@link get} reads the list and picks the row.
  */
 @Injectable({ providedIn: 'root' })
 export class OpportunitiesApi {
@@ -54,9 +53,9 @@ export class OpportunitiesApi {
     return response.opportunities;
   }
 
-  // ponytail: no GET by id on the server; the list is read and filtered here. Add the endpoint when the list outgrows one page.
-  async get(id: string): Promise<OpportunitySummary | null> {
-    return (await this.list()).find((o) => o.id === id) ?? null;
+  /** `GET /api/opportunities/{id}`: the list's row shape. `404` with `errors.sales.opportunity_not_found` for an unknown id. */
+  async get(id: string): Promise<OpportunitySummary> {
+    return await firstValueFrom(this.http.get<OpportunitySummary>('api/opportunities/' + id));
   }
 
   async create(clientId: string, title: string): Promise<{ id: string }> {

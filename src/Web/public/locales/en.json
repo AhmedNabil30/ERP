@@ -2483,5 +2483,6 @@
   "portal.home.planned_end": "Planned end",
   "portal.co.date": "Date",
   "portal.co.before": "Contract value before",
-  "portal.co.after": "Contract value after"
+  "portal.co.after": "Contract value after",
+  "accounting.field.monthly": "Monthly depreciation"
 }
