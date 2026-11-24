@@ -17575,3 +17575,17 @@ marked otherwise.
 | 19 | Add-worker screen | Stays out of approval until Karim's Q7 |
 | 20 | Split the «مرفوض» pill | Yes: a staff send-back shows «مُرجَع» (D-263's إرجاع); a person's real no stays «مرفوض» |
 | 21 | Offline server refusal | «لم يُقبل», so a machine refusal never reads as a person's rejection |
+
+## D-274 — One word per thing: sales statuses, hold, subcontractor retention, what the client owes · 2026-11-24
+
+Nabil, 2026-11-24, on `ux/arabic-copy-review-words-2026-11-24.md` after the app review
+(`ux/consultant-review-app-r2-r5-2026-11-24.md` findings 6, 9, 10).
+
+1. **Opportunity statuses** never borrow the project vocabulary: «مفتوحة» (open), «معلّقة» (on hold), «خاسرة» (lost),
+   «رابحة» (won). English: Open, On hold, Lost, Won.
+2. **Subcontractor retention is «استقطاع المقاول»**, always with «المقاول». This supersedes D-263 §4's «الضمان» for the
+   subcontractor retention: «الضمان» now means only the warranty («فترة الضمان»).
+3. **The client hold is «الحجز»** everywhere (D-240), including the project account name that new projects get and that
+   existing projects carry.
+4. **What the client still owes on the contract is «المتبقي من العقد»**, on staff screens and the portal. The portal's
+   unpaid issued extracts are «المستحق الآن», a server figure.

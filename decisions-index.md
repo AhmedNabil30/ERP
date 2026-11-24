@@ -280,3 +280,4 @@ line below. `decisions.md` is append-only, so the line numbers do not move.
 | D-271 | 17532 | A posted subcontractor retention release is reversed through its own Owner-approved flow · 2026-11-24 |
 | D-272 | 17540 | The sell-price override is its own field · 2026-11-24 |
 | D-273 | 17547 | R2-R6 mocks approved; 21 approval-pack questions answered · 2026-11-24 |
+| D-274 | 17579 | One word per thing: sales statuses, hold, subcontractor retention «استقطاع المقاول», what the client owes · 2026-11-24 |
