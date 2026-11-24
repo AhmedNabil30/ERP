@@ -1621,6 +1621,7 @@
   "errors.extract.dispute_resolution_required": "Choose how the dispute is resolved.",
   "errors.closure.retention_release_already_requested": "A retention release request for this subcontractor is already waiting for the Owner.",
   "errors.closure.retention_release_not_requested": "No retention release request is waiting for approval.",
+  "errors.daily_log.photo_unreadable": "The photo could not be read. Take it again.",
   "errors.accounting.request_already_waiting": "A request for the same month or accrual is already waiting for approval.",
   "errors.accounting.account_wrong_type": "That account is not the right kind for this entry.",
   "errors.accounting.description_too_long": "The description is too long.",

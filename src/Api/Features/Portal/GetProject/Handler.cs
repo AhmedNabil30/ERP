@@ -36,11 +36,12 @@ internal static class Handler
             return ResultExtensions.Problem(ProjectErrors.NotFound);
         }
 
-        // Paid is all cash the client has paid on the project (advance at signing and every collection, hold release
-        // included), net of reversals, from the same postings every other money read uses (spec.md section 15).
+        // Paid is all the client has settled on the project: the advance at signing, every collection (hold release included) and the
+        // tax withheld at source (Nabil, 2026-11-24, so remaining reaches zero on a settled contract), net of reversals, from the same postings every other money read uses (spec.md section 15).
         var cash = await database.Postings.AsNoTracking()
             .Where(posting => posting.ProjectId == projectId
-                && (posting.Type == PostingType.ClientCollection || posting.Type == PostingType.ClientAdvanceReceipt))
+                && (posting.Type == PostingType.ClientCollection || posting.Type == PostingType.ClientAdvanceReceipt
+                    || posting.Type == PostingType.TaxWithheldAtSource))
             .Select(posting => new { posting.Amount, IsReversal = posting.ReversesId != null })
             .ToListAsync(cancellationToken);
         Money paid = Money.Sum(cash.Select(leg => leg.IsReversal ? -leg.Amount : leg.Amount));

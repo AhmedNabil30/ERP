@@ -47,7 +47,7 @@ public sealed record PortalExtractVisibility : IRuling
         "Which extracts the portal lists, which figures it shows, and the formula for paid and remaining.",
         "Only Issued and Collected (paid) extracts are listed; Draft, in-review, Disputed and Void ones are absent. Each shows "
         + "its number, period, certified work, net payable and the cash the client has paid on it. The project home shows paid = "
-        + "all cash received from the client on the project (the advance at signing and every collection, net of reversals), and remaining = revised contract value less paid. No hold, advance or deduction line "
+        + "all the client has settled on the project (the advance at signing, every collection and the tax withheld at source, net of reversals), and remaining = revised contract value less paid. No hold, advance or deduction line "
         + "is shown. Amounts are rounded to two decimals at the last step (spec.md section 15 amendment). ASSUMED.",
         "Line detail would add a second portal extract type; the visibility cut is one status filter in "
         + "Features/Portal/PortalQueries.cs.",

@@ -38,8 +38,23 @@ internal static class Handler
             return ResultExtensions.Problem(DailyLogErrors.PhotoNotFound);
         }
 
+        // Strip on serve too: a photo stored before upload-time stripping may still carry its metadata (R5-C AC-C-4).
+        byte[] raw;
+        await using (file.Content)
+        {
+            using var buffer = new MemoryStream();
+            await file.Content.CopyToAsync(buffer, cancellationToken);
+            raw = buffer.ToArray();
+        }
+
+        byte[]? clean = SitePhotoMetadata.Strip(raw, file.ContentType);
+        if (clean is null)
+        {
+            return ResultExtensions.Problem(DailyLogErrors.PhotoNotFound);
+        }
+
         http.Response.Headers.XContentTypeOptions = "nosniff";
 
-        return Results.Stream(file.Content, file.ContentType);
+        return Results.Bytes(clean, file.ContentType);
     }
 }
